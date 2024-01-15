@@ -1,7 +1,13 @@
 <script lang="ts">
     import * as Table from "$lib/components/ui/table";
+    export let data;
+    
   </script>
-
+  <ul>
+    {#each data.countries as country}
+      <li>{country.name}</li>
+    {/each}
+  </ul>
 <Table.Root>
     <Table.Caption>A list of your recent invoices.</Table.Caption>
     <Table.Header>
