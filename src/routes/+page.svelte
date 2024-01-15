@@ -23,7 +23,7 @@
         <Table.Cell class="font-medium">INV001</Table.Cell>
         <Table.Cell>Paid</Table.Cell>
         <Table.Cell>Credit Card</Table.Cell>
-        <Table.Cell class="text-right">$260.00</Table.Cell>
+        <Table.Cell class="text-right">$270.00</Table.Cell>
       </Table.Row>
     </Table.Body>
   </Table.Root>
