@@ -1,5 +1,5 @@
 <script>import "../app.pcss";</script>
-<body class="bg-slate-50 dark:bg-slate-900">
+<body>
     <header class="flex flex-wrap sm:justify-start sm:flex-nowrap z-50 w-full text-sm">
       <nav class="relative max-w-[85rem] w-full mx-auto border-b border-gray-200 py-3 px-4 sm:py-0 sm:flex sm:items-center sm:justify-between sm:px-6 lg:px-8 xl:border-x dark:border-gray-700" aria-label="Global">
         <div class="flex items-center justify-between py-6">
