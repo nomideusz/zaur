@@ -2,7 +2,7 @@ import { supabase } from '$lib/supabaseClient';
 import { error, json } from '@sveltejs/kit';
 import { parseHTML } from 'linkedom';
 /** @type {import('./$types').RequestHandler} */
-export async function GET() {
+export async function GET(req) {
 	const html = await getAds();
 	// Użycie funkcji insertAds z wynikami funkcji parseAds
 	const ads = parseAds(html); // htmlString to string HTML z ogłoszeniami
