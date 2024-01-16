@@ -86,14 +86,22 @@ function parsePolishDate(dateString) {
 		grudnia: '12'
 	};
 
-	const parts = dateString.split(' ');
-	if (parts.length === 3) {
-		const day = parts[0].padStart(2, '0');
-		const month = monthNames[parts[1]];
-		const year = parts[2];
-		return new Date(`${year}-${month}-${day}`);
+	// Sprawdzenie, czy data zawiera słowo "Dzisiaj"
+	if (dateString.includes('Dzisiaj')) {
+		const now = new Date();
+		const today = `${now.getFullYear()}-${(now.getMonth() + 1).toString().padStart(2, '0')}-${now.getDate().toString().padStart(2, '0')}`;
+		const timePart = dateString.split(' o ')[1]; // Pobierz godzinę
+		return new Date(`${today}T${timePart}:00`); // Zakładamy, że nie ma sekund
 	} else {
-		return null;
+		const parts = dateString.split(' ');
+		if (parts.length === 3) {
+			const day = parts[0].padStart(2, '0');
+			const month = monthNames[parts[1]];
+			const year = parts[2];
+			return new Date(`${year}-${month}-${day}`);
+		} else {
+			return null;
+		}
 	}
 }
 
