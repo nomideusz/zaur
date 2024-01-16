@@ -1,11 +1,18 @@
 import { supabase } from '$lib/supabaseClient';
 
 export async function load() {
-	const { data, error } = await supabase.from('ads').insert({ id: 1, title: 'Denmark' }).select();
+	const { data, error } = await supabase
+		.from('ads')
+		.select()
+		.order('date', { ascending: true }) // Sortowanie malejąco wg daty
+		.order('id', { ascending: false }); // Następnie sortowanie malejąco wg id
 
-	console.log(data);
-	// const { data } = await supabase.from('countries').select();
+	if (error) {
+		console.error('Błąd podczas pobierania danych z bazy:', error);
+		return { ads: [] };
+	}
+
 	return {
-		countries: data ?? []
+		ads: data ?? []
 	};
 }

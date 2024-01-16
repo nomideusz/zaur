@@ -4,41 +4,106 @@ import { parseHTML } from 'linkedom';
 /** @type {import('./$types').RequestHandler} */
 export async function GET() {
 	const html = await getAds();
+	// Użycie funkcji insertAds z wynikami funkcji parseAds
+	const ads = parseAds(html); // htmlString to string HTML z ogłoszeniami
+	insertAds(ads).then(() => {
+		console.log('Zakończono wstawianie lub aktualizowanie danych w bazie');
+	});
 	return json(parseAds(html));
 }
 
-async function saveToSupabase(ads) {
-	try {
-		for (const ad of ads) {
-			const { data, error } = await supabase
-				.from('ads') // zastąp 'your_table_name' nazwą twojej tabeli
-				.insert([{ title: ad }]); // dostosuj strukturę obiektu do schematu tabeli
-
-			if (error) throw error;
-		}
-
-		console.log('Data saved to Supabase!');
-	} catch (err) {
-		console.error(err);
-	}
-}
-
 async function getAds() {
-	const api = 'https://www.olx.pl/nieruchomosci/mieszkania/';
+	const api =
+		'https://www.olx.pl/nieruchomosci/mieszkania/sprzedaz/krakow/?search%5Border%5D=created_at%3Adesc';
 	const response = await fetch(api);
-
+	if (!response.ok) {
+		throw new Error('Failed to fetch: ${response.status}');
+	}
 	return await response.text();
 }
 
 function parseAds(html: string) {
 	const { document } = parseHTML(html);
-	const titles = document.querySelectorAll('h6');
+	const adsElements = document.querySelectorAll('div[data-testid="l-card"]');
 
 	const ads = [];
-	for (const title of titles) {
-		const data = title.innerText;
-		ads.push(data);
+	for (const adElement of adsElements) {
+		const adLinkElement = adElement.querySelector('a[href]');
+		let adLink = adLinkElement ? adLinkElement.getAttribute('href') : null;
+		if (adLink && !adLink.startsWith('http')) {
+			adLink = `https://www.olx.pl${adLink}`;
+		}
+
+		const row = adElement.querySelector('div.css-1venxj6');
+		const title = row.querySelector('h6')?.innerText;
+		const priceText = row
+			.querySelector('p.css-10b0gli')
+			?.innerText.replace('zł', '')
+			.replace(/\s/g, '');
+		const price = parseInt(priceText, 10);
+
+		const locationDateText = row.querySelector('p.css-veheph')?.innerText;
+		const cityDistrict = locationDateText.split(' - ')[0].split(', ');
+		const city = cityDistrict[0];
+		const district = cityDistrict.length > 1 ? cityDistrict[1] : null;
+		const dateText = locationDateText.split(' - ')[1];
+		const date = parsePolishDate(dateText);
+
+		const sqmPriceText = row.querySelector('span.css-643j0o')?.innerText.split(' - ');
+		const sqmText = sqmPriceText?.[0].replace('m²', '').replace(',', '.');
+		const sqm = parseFloat(sqmText);
+		const pricePerSqmText = sqmPriceText?.[1].replace('zł/m²', '').replace(/\s/g, '');
+		const pricePerSqm = parseInt(pricePerSqmText, 10);
+
+		const ad = {
+			title,
+			price,
+			city,
+			district,
+			date,
+			sqm,
+			price_per_sqm: pricePerSqm,
+			ad_link: adLink
+		};
+		ads.push(ad);
 	}
-	saveToSupabase(ads);
+
 	return ads;
+}
+function parsePolishDate(dateString) {
+	const monthNames = {
+		stycznia: '01',
+		lutego: '02',
+		marca: '03',
+		kwietnia: '04',
+		maja: '05',
+		czerwca: '06',
+		lipca: '07',
+		sierpnia: '08',
+		września: '09',
+		października: '10',
+		listopada: '11',
+		grudnia: '12'
+	};
+
+	const parts = dateString.split(' ');
+	if (parts.length === 3) {
+		const day = parts[0].padStart(2, '0');
+		const month = monthNames[parts[1]];
+		const year = parts[2];
+		return new Date(`${year}-${month}-${day}`);
+	} else {
+		return null;
+	}
+}
+
+async function insertAds(ads) {
+	for (const ad of ads) {
+		const { data, error } = await supabase.from('ads').upsert(ad);
+
+		if (error) {
+			console.error('Błąd podczas wstawiania lub aktualizowania danych w bazie:', error);
+		}
+	}
+	console.log('Dane zostały pomyślnie wstawione lub zaktualizowane w bazie');
 }
