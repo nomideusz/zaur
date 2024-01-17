@@ -75,10 +75,10 @@
       header: "Tytuł",
       plugins: {
         sort: {
-          disable: true
+          disable: false
         },
         filter: {
-          exclude: true
+          exclude: false
         }
       }
     }),
@@ -97,7 +97,7 @@
           disable: false
         },
         filter: {
-          exclude: false
+          exclude: true
         }
       }
     }),
