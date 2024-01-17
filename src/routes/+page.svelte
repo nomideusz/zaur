@@ -134,7 +134,7 @@
     }),
     table.column({
       accessor: "date",
-      header: "Dodano"
+      header: "Dodano",
     }),
     table.column({
       accessor: ({ ad_link }) => ad_link,
@@ -144,7 +144,7 @@
       },
       plugins: {
         sort: {
-          disable: true
+          disable: false
         },
         filter: {
           exclude: true
@@ -217,7 +217,7 @@
             {#each headerRow.cells as cell (cell.id)}
               <Subscribe attrs={cell.attrs()} let:attrs props={cell.props()} let:props>
                 <Table.Head {...attrs}>
-                  {#if (cell.id === "price") || (cell.id === "price_per_sqm") || (cell.id === "sqm")}
+                  {#if (cell.id === "price") || (cell.id === "price_per_sqm") || (cell.id === "sqm") || (cell.id === "date")}
                     <div class="text-right">
                       <Button variant="ghost" on:click={props.sort.toggle}>
                         <Render of={cell.render()} />
@@ -246,7 +246,7 @@
             {#each row.cells as cell (cell.id)}
               <Subscribe attrs={cell.attrs()} let:attrs>
                 <Table.Cell {...attrs}>
-                  {#if (cell.id === "price") || (cell.id === "price_per_sqm") || (cell.id === "sqm")}
+                  {#if (cell.id === "price") || (cell.id === "price_per_sqm") || (cell.id === "sqm") || (cell.id === "date")}
                     <div class="text-right font-medium">
                       <Render of={cell.render()} />
                     </div>
