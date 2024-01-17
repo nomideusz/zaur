@@ -14,7 +14,7 @@ export async function GET(req) {
 
 async function getAds() {
 	const api =
-		'https://www.olx.pl/nieruchomosci/mieszkania/sprzedaz/krakow/?search%5Border%5D=created_at%3Adesc';
+		'https://www.olx.pl/nieruchomosci/mieszkania/sprzedaz/krakow/?page=1&search%5Border%5D=created_at%3Adesc';
 	const response = await fetch(api);
 	if (!response.ok) {
 		throw new Error('Failed to fetch: ${response.status}');
