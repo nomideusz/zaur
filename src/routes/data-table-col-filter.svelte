@@ -1,0 +1,127 @@
+<script lang="ts">
+    import { PlusCircled, Check } from "radix-icons-svelte";
+	import * as Command from "$lib/components/ui/command";
+	import * as Popover from "$lib/components/ui/popover";
+	import { Button } from "$lib/components/ui/button";
+    import { Badge } from "$lib/components/ui/badge";
+    import { Separator } from "$lib/components/ui/separator";
+    import { Input } from "$lib/components/ui/input";
+    import { cn } from "$lib/utils";
+
+    export let districtFilterValues: string[] = [];
+  export let title: string;
+  export let options = []; // Lista opcji w formacie { value: string, label: string }
+// Wartości filtru ceny
+export let priceRange: { min: number | null; max: number | null } = { min: null, max: null };
+
+
+  let open = false;
+  let minPrice: number | null = null;
+  let maxPrice: number | null = null;
+  export let filterValues;
+
+  const handleSelect = (currentValue: string) => {
+
+    if (districtFilterValues.includes(currentValue)) {
+      districtFilterValues = districtFilterValues.filter(v => v !== currentValue);
+    } else {
+      districtFilterValues = [...districtFilterValues, currentValue];
+    }
+  };
+
+
+
+  $: if (typeof minPrice === 'number' && typeof maxPrice === 'number') {
+    updatePriceRange();
+  }
+
+  function updatePriceRange() {
+    // Zakładając, że filterValues jest sklepem Svelte, aktualizuj priceRange
+    filterValues.update(values => {
+      return {
+        ...values,
+        priceRange: { min: minPrice, max: maxPrice }
+      };
+    });
+  }
+
+
+
+
+</script>
+<Popover.Root bind:open>
+    <Popover.Trigger asChild let:builder>
+      <Button builders={[builder]} variant="outline" class="border-dashed">
+        <PlusCircled class="mr-2 h-4 w-4" />
+        {title}
+  
+        {#if districtFilterValues.length > 0}
+          <Separator orientation="vertical" class="mx-2 h-4" />
+          <Badge variant="secondary" class="rounded-sm px-1 font-normal lg:hidden">
+            {districtFilterValues.length}
+          </Badge>
+          <div class="hidden space-x-1 lg:flex">
+            {#if districtFilterValues.length > 2}
+              <Badge variant="secondary" class="rounded-sm px-1 font-normal">
+                {districtFilterValues.length} Selected
+              </Badge>
+            {:else}
+              {#each districtFilterValues as option}
+                <Badge variant="secondary" class="rounded-sm px-1 font-normal">
+                  {option}
+                </Badge>
+              {/each}
+            {/if}
+          </div>
+        {/if}
+      </Button>
+    </Popover.Trigger>
+    <Popover.Content class="w-[200px] p-0" align="start" side="bottom">
+      <Command.Root>
+        <Command.Input placeholder={title} />
+        <Command.List>
+          <Command.Empty>No results found.</Command.Empty>
+          <Command.Group>
+            {#each options as option}
+              <Command.Item
+                value={option.value}
+                onSelect={(currentValue) => {
+                  handleSelect(currentValue);
+                }}
+              >
+							<div
+								class={cn(
+									"mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary",
+									districtFilterValues.includes(option.value)
+										? "bg-primary text-primary-foreground"
+										: "opacity-50 [&_svg]:invisible"
+								)}
+							>
+								<Check className={cn("h-4 w-4")} />
+							</div>
+                <span>
+                  {option.label}
+                </span>
+              </Command.Item>
+            {/each}
+          </Command.Group>
+          {#if districtFilterValues.length > 0}
+            <Command.Separator />
+            <Command.Item
+              class="justify-center text-center"
+              onSelect={() => {
+                districtFilterValues = [];
+              }}
+            >
+              Clear filters
+            </Command.Item>
+          {/if}
+        </Command.List>
+      </Command.Root>
+    </Popover.Content>
+  </Popover.Root>
+
+  <div class="flex space-x-2">
+      <Input placeholder="Min price" type="number" bind:value={minPrice} />
+      <Input placeholder="Max price" type="number" bind:value={maxPrice} />
+   </div>

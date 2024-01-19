@@ -4,34 +4,33 @@
   import { subscribeToAds } from '$lib/subscribeToAds';
   import { fade } from 'svelte/transition';
   import { createTable, Render, Subscribe, createRender } from "svelte-headless-table";
-  import { addPagination, addSortBy, addTableFilter, addHiddenColumns } from "svelte-headless-table/plugins";
+  import { addPagination, addSortBy, addTableFilter, addHiddenColumns, addColumnFilters } from "svelte-headless-table/plugins";
   import { Button } from "$lib/components/ui/button";
-  import { readable } from "svelte/store";
+  import { get, readable, writable, derived } from "svelte/store";
   import * as Table from '$lib/components/ui/table';
   import DataTableActions from "./data-table-actions.svelte";
+  import DataTablePagination from './data-table-pagination.svelte';
+  import DataTableColFilter from "./data-table-col-filter.svelte";
   import { CaretSort, ChevronDown, ChevronRight, ChevronLeft, DoubleArrowRight,	DoubleArrowLeft } from "radix-icons-svelte";
   import { Badge } from "$lib/components/ui/badge";
   import * as DropdownMenu from "$lib/components/ui/dropdown-menu";
   import { Input } from "$lib/components/ui/input";
   import * as Select from "$lib/components/ui/select";
 
-  const table = createTable(readable($ads), {
+  const data = writable($ads);
+  $: $data = $ads;
+  const table = createTable(data, {
     page: addPagination({ initialPageSize: 100 }),
     sort: addSortBy({ disableMultiSort: true }),
     filter: addTableFilter({
       fn: ({ filterValue, value }) =>
         value.toLowerCase().includes(filterValue.toLowerCase())
     }),
-//     filter: addTableFilter({
-//   fn: ({ filterValue, value }) => {
-//     const numericFilterValue = Number(filterValue);
-//     const numericValue = Number(value);
-//     return numericValue <= numericFilterValue;
-//   }
-// }),
+    colFilter: addColumnFilters(),
 
     hide: addHiddenColumns()
   });
+
 
   const columns = table.createColumns([
     table.column({
@@ -55,7 +54,7 @@
         },
         filter: {
           exclude: true
-        }
+        },
       }
     }),
     table.column({
@@ -67,6 +66,19 @@
         },
         filter: {
           exclude: true
+        },
+        colFilter: {
+					fn: ({ filterValue, value }) => {
+						if (filterValue.length === 0) return true;
+						if (!Array.isArray(filterValue) || typeof value !== "string") return true;
+						return filterValue.some((filter) => {
+							return value.includes(filter);
+						});
+					},
+					initialFilterValue: [],
+					render: ({ filterValue }) => {
+						return get(filterValue);
+					}
         }
       }
     }),
@@ -98,7 +110,18 @@
         },
         filter: {
           exclude: true
+        },
+        colFilter: {
+      fn: ({ filterValue, value }) => {
+        if (!filterValue || (filterValue.min == null && filterValue.max == null)) {
+          return true;
         }
+        const price = Number(value);
+        const { min, max } = filterValue;
+        return (min == null || price >= min) && (max == null || price <= max);
+      },
+      initialFilterValue: { min: null, max: null },
+    }
       }
     }),
     table.column({
@@ -158,6 +181,25 @@
   const { hasNextPage, hasPreviousPage, pageIndex, pageCount, pageSize } = pluginStates.page;
   const { filterValue } = pluginStates.filter;
   const { hiddenColumnIds } = pluginStates.hide;
+  const {
+  filterValues
+}: {
+  filterValues: Writable<{
+    district: string[];
+    priceRange: { min: number | null; max: number | null };
+  }>;
+} = pluginStates.colFilter;
+
+  const districts = derived(ads, $ads => {
+    const uniqueDistricts = new Set();
+    $ads.forEach(ad => {
+      if (ad.district) {
+        uniqueDistricts.add(ad.district);
+      }
+    });
+    return Array.from(uniqueDistricts);
+  });
+
 
   const ids = flatColumns.map((col) => col.id);
   let hideForId = Object.fromEntries(ids.map((id) => [id, true]));
@@ -174,7 +216,6 @@
   return now - adTime < 360 * 60 * 1000;
 }
 
-
   onMount(() => {
     subscribeToAds();
 	});
@@ -184,13 +225,24 @@
 
 
 <div>
-  <div class="flex items-center py-4">
+  <div class="flex items-center justify-between py-4">
+    <div class="flex flex-1 items-center space-x-2">
     <Input
       class="max-w-sm"
       placeholder="Szukaj w tytułach"
       type="text"
       bind:value={$filterValue}
     />
+
+    <DataTableColFilter
+    title="Filtruj według dzielnicy"
+    bind:districtFilterValues={$filterValues.district}
+    bind:priceRange={$filterValues.priceRange}
+    filterValues={$filterValues}
+    options={$districts.map(district => ({ value: district, label: district }))}
+  />
+</div>
+
     <DropdownMenu.Root>
       <DropdownMenu.Trigger asChild let:builder>
         <Button variant="outline" class="ml-auto" builders={[builder]}>
@@ -270,69 +322,17 @@
     </Table.Body>
   </Table.Root>
 </div>
-<div class="flex items-center justify-between px-2">
-  <div class="flex-1 text-sm text-muted-foreground">
-    Zaur opiewa na {$rows.length} ogłoszeń
-  </div>
-  <div class="flex items-center space-x-6 lg:space-x-8">
-    <div class="flex items-center space-x-2">
-      <p class="text-sm font-medium">Ogłoszeń na stronę</p>
-      <Select.Root
-        onSelectedChange={(selected) => pageSize.set(Number(selected?.value))}
-        selected={{ value: 100, label: "100" }}
-      >
-        <Select.Trigger class="w-[180px]">
-          <Select.Value placeholder="Select page size" />
-        </Select.Trigger>
-        <Select.Content>
-          <Select.Item value="25">25</Select.Item>
-          <Select.Item value="50">50</Select.Item>
-          <Select.Item value="100">100</Select.Item>
-          <Select.Item value="200">200</Select.Item>
-        </Select.Content>
-      </Select.Root>
-    </div>
-    <div class="flex w-[100px] items-center justify-center text-sm font-medium">
-      Strona {$pageIndex + 1} z {$pageCount}
-    </div>
-    <div class="flex items-center space-x-2">
-      <Button
-        variant="outline"
-        class="hidden h-8 w-8 p-0 lg:flex"
-        on:click={() => ($pageIndex = 0)}
-        disabled={!$hasPreviousPage}
-      >
-        <span class="sr-only">Pierwsza strona</span>
-        <DoubleArrowLeft size={15} />
-      </Button>
-      <Button
-        variant="outline"
-        class="p-0 w-8 h-8"
-        on:click={() => ($pageIndex = $pageIndex - 1)}
-        disabled={!$hasPreviousPage}
-      >
-        <span class="sr-only">Poprzednia strona</span>
-        <ChevronLeft size={15} />
-      </Button>
-      <Button
-        variant="outline"
-        class="p-0 w-8 h-8"
-        disabled={!$hasNextPage}
-        on:click={() => ($pageIndex = $pageIndex + 1)}
-      >
-        <span class="sr-only">Następna strona</span>
-        <ChevronRight size={15} />
-      </Button>
-      <Button
-        variant="outline"
-        class="hidden h-8 w-8 p-0 lg:flex"
-        disabled={!$hasNextPage}
-        on:click={() => ($pageIndex = Math.ceil($rows.length / $pageRows.length) - 1)}
-      >
-        <span class="sr-only">Ostatnia strona</span>
-        <DoubleArrowRight size={15} />
-      </Button>
-    </div>
-  </div>
+<div class="flex items-center justify-between py-4">
+
+    <DataTablePagination
+      pageIndex={pageIndex}
+      pageCount={pageCount}
+      rows={rows}
+      pageRows={pageRows}
+      pageSize={pageSize}
+      hasNextPage={hasNextPage}
+      hasPreviousPage={hasPreviousPage}
+    />
+
 </div>
 </div>
