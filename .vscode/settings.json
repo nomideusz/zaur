@@ -1,0 +1,9 @@
+{
+	"editor.formatOnSave": true,
+	"notebook.formatOnSave.enabled": true,
+	"editor.defaultFormatter": "svipas.prettier-plus",
+	"editor.formatOnPaste": false,
+	"[svelte]": {
+		"editor.defaultFormatter": "svelte.svelte-vscode"
+	}
+}

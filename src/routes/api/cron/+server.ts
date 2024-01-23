@@ -48,7 +48,6 @@ function parseAds(html: string) {
 		const district = cityDistrict.length > 1 ? cityDistrict[1] : null;
 		const dateText = locationDateText.split(' - ')[1];
 		const date = parsePolishDate(dateText);
-
 		const sqmPriceText = row.querySelector('span.css-643j0o')?.innerText.split(' - ');
 		const sqmText = sqmPriceText?.[0].replace('m²', '').replace(',', '.');
 		const sqm = parseFloat(sqmText);
