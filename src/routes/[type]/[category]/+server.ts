@@ -8,8 +8,6 @@ export async function GET({params}) {
     const privateHtml = await getPrivateAds(params);
     const privateAds = parseAds(privateHtml, true);
 	await insertAds(privateAds);
-	
-	await new Promise(resolve => setTimeout(resolve, 60000));
 
     // Pobierz i przetwórz ogłoszenia biznesowe
     const businessHtml = await getBusinessAds(params);
