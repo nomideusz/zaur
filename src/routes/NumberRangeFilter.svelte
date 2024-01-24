@@ -2,6 +2,7 @@
 	import { isNumber } from '$lib/utils/filter';
 	// import { formatter } from '$lib/utils/formatter';
 	import { Input } from '$lib/components/ui/input';
+	import DataTableColFilter from './data-table-col-filter.svelte';
 
 	export let filterValue;
 	export let values;
@@ -18,6 +19,11 @@
 		on:click
 		placeholder={`Min (${formatter ? formatter(min) : min})`}
 	/>
+	<!-- <DataTableColFilter
+	title="Min"
+	bind:districtFilterValues={$filterValue}
+	options={$values}
+/> -->
 	<Input
 		class="max-w-sm border-dashed text-right mb-1 h-8 text-xs"
 		type="text"

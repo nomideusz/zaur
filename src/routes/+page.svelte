@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount, tick } from 'svelte';
-	import { ads } from '$lib/adsStore';
+	import { ads_sell, ads_rent } from '$lib/adsStore';
 	import { subscribeToAds } from '$lib/subscribeToAds';
 	import RangeSlider from 'svelte-range-slider-pips';
 	import { isNumber } from '$lib/utils/filter';
@@ -28,11 +28,20 @@
 	import DataTableColFilter from './data-table-col-filter.svelte';
 	import { CaretSort, ChevronDown } from 'radix-icons-svelte';
 	import { Badge } from '$lib/components/ui/badge';
+	import * as Tabs from '$lib/components/ui/tabs';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Input } from '$lib/components/ui/input';
 
-	const data = writable($ads);
-	$: $data = $ads;
+	let selectedTab = 'sell';
+	const data = writable([]);
+
+	$: if (selectedTab === 'sell') {
+		data.set($ads_sell);
+	} else if (selectedTab === 'rent') {
+		data.set($ads_rent);
+	}
+
+	// $: $data = $ads;
 	const table = createTable(data, {
 		colFilter: addColumnFilters(),
 		page: addPagination({ initialPageSize: 100 }),
@@ -41,7 +50,9 @@
 			fn: ({ filterValue, value }) => value.toLowerCase().includes(filterValue.toLowerCase())
 		}),
 
-		hide: addHiddenColumns()
+		hide: addHiddenColumns({
+			initialHiddenColumnIds: ['city', 'is_private']
+		})
 	});
 
 	const columns = table.createColumns([
@@ -102,7 +113,7 @@
 					fn: numberRangeFilter,
 					initialFilterValue: [null, null],
 					render: ({ filterValue, values }) =>
-					createRender(NumberRangeFilter, { filterValue, values, formatter })
+						createRender(NumberRangeFilter, { filterValue, values, formatter })
 				}
 			}
 		}),
@@ -123,7 +134,11 @@
 					fn: numberRangeFilter,
 					initialFilterValue: [null, null],
 					render: ({ filterValue, values }) =>
-					createRender(NumberRangeFilter, { filterValue, values, formatter: squareMeterFormatter })
+						createRender(NumberRangeFilter, {
+							filterValue,
+							values,
+							formatter: squareMeterFormatter
+						})
 				}
 			}
 		}),
@@ -144,13 +159,33 @@
 					fn: numberRangeFilter,
 					initialFilterValue: [null, null],
 					render: ({ filterValue, values }) =>
-					createRender(NumberRangeFilter, { filterValue, values, formatter })
+						createRender(NumberRangeFilter, { filterValue, values, formatter })
 				}
 			}
 		}),
 		table.column({
 			accessor: 'date',
-			header: 'Dodano'
+			header: 'Dodano',
+			plugins: {
+				sort: {
+					disable: false
+				},
+				filter: {
+					exclude: true
+				}
+			}
+		}),
+		table.column({
+			accessor: 'is_private',
+			header: 'Prywatne?',
+			plugins: {
+				sort: {
+					disable: false
+				},
+				filter: {
+					exclude: true
+				}
+			}
 		}),
 		table.column({
 			accessor: ({ ad_link }) => ad_link,
@@ -176,9 +211,9 @@
 	const { filterValues } = pluginStates.colFilter;
 	const { hiddenColumnIds } = pluginStates.hide;
 
-	const districts = derived(ads, ($ads) => {
+	const districts = derived(data, ($data) => {
 		const uniqueDistricts = new Set();
-		$ads.forEach((ad) => {
+		$data.forEach((ad) => {
 			if (ad.district) {
 				uniqueDistricts.add(ad.district);
 			}
@@ -186,9 +221,9 @@
 		return Array.from(uniqueDistricts);
 	});
 
-	const values = derived(ads, ($ads) => {
+	const values = derived(data, ($data) => {
 		const uniquePrices = new Set();
-		$ads.forEach((ad) => {
+		$data.forEach((ad) => {
 			if (ad.price) {
 				uniquePrices.add(ad.price);
 			}
@@ -197,7 +232,18 @@
 	});
 
 	const ids = flatColumns.map((col) => col.id);
-	let hideForId = Object.fromEntries(ids.map((id) => [id, true]));
+	// let hideForId = Object.fromEntries(ids.map((id) => [id, true]));
+	// let hideForId = Object.fromEntries(ids.map((id) => [id, !['city', 'is_private'].includes(id)]));
+	$: hideForId = Object.fromEntries(
+		ids.map((id) => {
+			if (id === 'price_per_sqm') {
+				// Ukryj kolumnę price_per_sqm, jeśli wybrana jest zakładka 'rent'
+				return [id, selectedTab !== 'rent'];
+			} else {
+				return [id, !['city', 'is_private'].includes(id)];
+			}
+		})
+	);
 
 	$: $hiddenColumnIds = Object.entries(hideForId)
 		.filter(([, hide]) => !hide)
@@ -220,7 +266,6 @@
 
 	onMount(() => {
 		subscribeToAds();
-
 	});
 </script>
 
@@ -243,19 +288,25 @@
 <div>
 	<div class="flex items-center justify-between py-4">
 		<div class="flex flex-1 items-center space-x-2">
+			<DataTableColFilter
+				title="Filtruj według dzielnicy"
+				bind:districtFilterValues={$filterValues.district}
+				options={$districts.map((district) => ({ value: district, label: district }))}
+			/>
 			<Input
 				class="max-w-sm"
 				placeholder="Szukaj w tytułach"
 				type="text"
 				bind:value={$filterValue}
 			/>
-
-			<DataTableColFilter
-				title="Filtruj według dzielnicy"
-				bind:districtFilterValues={$filterValues.district}
-				options={$districts.map((district) => ({ value: district, label: district }))}
-			/>
 		</div>
+
+		<Tabs.Root bind:value={selectedTab} class="mr-2">
+			<Tabs.List>
+				<Tabs.Trigger value="sell">Sprzedaż</Tabs.Trigger>
+				<Tabs.Trigger value="rent">Wynajem</Tabs.Trigger>
+			</Tabs.List>
+		</Tabs.Root>
 
 		<DropdownMenu.Root>
 			<DropdownMenu.Trigger asChild let:builder>
@@ -292,15 +343,17 @@
 												</Button>
 											</div>
 											{#if props.colFilter?.render}
-											<div>
-												<Render of={props.colFilter.render} />
-											</div>
+												<div>
+													<Render of={props.colFilter.render} />
+												</div>
 											{/if}
 										{:else if cell.id === 'district' || cell.id === 'title'}
 											<Button variant="ghost" on:click={props.sort.toggle}>
 												<Render of={cell.render()} />
 												<CaretSort class={'ml-2 h-4 w-4'} />
 											</Button>
+										{:else if cell.id === 'is_private'}
+											<Render of={cell.render()} />
 										{:else}
 											<Render of={cell.render()} />
 										{/if}
@@ -328,7 +381,10 @@
 											</div>
 										{:else if cell.id === 'title'}
 											{#if isNewAd(row.original.created_at)}
-												<Badge class="mr-2 rounded-full font-bold">New</Badge>
+												<Badge class="mr-2 font-bold">New</Badge>
+											{/if}
+											{#if !row.original.is_private}
+												<Badge variant="destructive" class="mr-2 font-bold">Agencja</Badge>
 											{/if}
 											<Render of={cell.render()} />
 										{:else}

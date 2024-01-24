@@ -1,16 +1,9 @@
-import { supabase } from '$lib/supabaseClient';
-import { ads } from '$lib/adsStore';
+import { ads_sell, ads_rent } from "$lib/adsStore";
 
-export async function load() {
-	const { data, error } = await supabase
-		.from('ads')
-		.select()
-		.order('created_at', { ascending: false });
-
-	if (error) {
-		console.error('Błąd podczas pobierania danych z bazy:', error);
-		return;
-	}
-
-	ads.set(data ?? []);
+export async function load({ fetch }) {
+	const data_sell = await (await fetch("api/sell")).json();
+	const data_rent = await (await fetch("api/rent")).json();
+	ads_sell.set(data_sell ?? []);
+	ads_rent.set(data_rent ?? []);
+	return { data_sell, data_rent };
 }

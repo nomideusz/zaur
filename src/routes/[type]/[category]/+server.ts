@@ -1,4 +1,8 @@
-import { supabase } from "$lib/supabaseClient";
+import { SUPABASE_URL, SUPABASE_KEY } from '$env/static/private';
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
 import { error, json } from "@sveltejs/kit";
 import type { RouteParams } from './$types';
 import { parseHTML } from "linkedom";
@@ -6,17 +10,35 @@ import { parseHTML } from "linkedom";
 export async function GET({params}) {
     // Pobierz i przetwórz ogłoszenia prywatne
     const privateHtml = await getPrivateAds(params);
-    const privateAds = parseAds(privateHtml, true);
-	await insertAds(privateAds);
+    const privateAds = parseAds(privateHtml, true, params.category);
 
     // Pobierz i przetwórz ogłoszenia biznesowe
     const businessHtml = await getBusinessAds(params);
-    const businessAds = parseAds(businessHtml, false);
-    await insertAds(businessAds);
+    const businessAds = parseAds(businessHtml, false, params.category);
+
+    // Ustal nazwę tabeli na podstawie kategorii
+    const tableName = params.category === 'sprzedaz' ? 'ads_sell' : 'ads_rent';
+
+    // Dodaj ogłoszenia do odpowiedniej tabeli
+    await insertAds(privateAds, tableName);
+    await insertAds(businessAds, tableName);
 
     // Połącz wyniki i zwróć jako JSON
     const allAds = [...privateAds, ...businessAds];
     return json(allAds);
+}
+
+async function insertAds(ads, tableName) {
+    for (const ad of ads) {
+        const { data, error } = await supabase.from(tableName).upsert(ad);
+
+        if (error) {
+            console.error(
+                "Błąd podczas wstawiania lub aktualizowania danych w bazie:",
+                error
+            );
+        }
+    }
 }
 
 async function getPrivateAds({type, category}: RouteParams) {
@@ -39,7 +61,7 @@ async function getBusinessAds({type, category}: RouteParams) {
 	return await response.text();
 }
 
-function parseAds(html: string, isPrivate: boolean) {
+function parseAds(html: string, isPrivate: boolean, category: string) {
 	const { document } = parseHTML(html);
 	const adsElements = document.querySelectorAll('div[data-testid="l-card"]');
 
@@ -70,24 +92,27 @@ function parseAds(html: string, isPrivate: boolean) {
 			?.innerText.split(" - ");
 		const sqmText = sqmPriceText?.[0].replace("m²", "").replace(",", ".");
 		const sqm = parseFloat(sqmText);
-		const pricePerSqmText = sqmPriceText?.[1]
-			.replace("zł/m²", "")
-			.replace(/\s/g, "");
-		const pricePerSqm = parseInt(pricePerSqmText, 10);
+		let pricePerSqm = null;
+        if (category === 'sprzedaz') {
+            const pricePerSqmText = sqmPriceText?.[1]
+                .replace("zł/m²", "")
+                .replace(/\s/g, "");
+            pricePerSqm = parseInt(pricePerSqmText, 10);
+        }
 
-		const ad = {
-			title,
-			price,
-			city,
-			district,
-			date,
-			sqm,
-			price_per_sqm: pricePerSqm,
-			ad_link: adLink,
-			is_private: isPrivate
-		};
-		ads.push(ad);
-	}
+        const ad = {
+            title,
+            price,
+            city,
+            district,
+            date,
+            sqm,
+            price_per_sqm: pricePerSqm, // Ustawione na null dla 'wynajem'
+            ad_link: adLink,
+            is_private: isPrivate
+        };
+        ads.push(ad);
+    }
 
 	return ads;
 }
@@ -126,18 +151,4 @@ function parsePolishDate(dateString) {
 			return null;
 		}
 	}
-}
-
-async function insertAds(ads) {
-	for (const ad of ads) {
-		const { data, error } = await supabase.from("ads").upsert(ad);
-
-		if (error) {
-			console.error(
-				"Błąd podczas wstawiania lub aktualizowania danych w bazie:",
-				error
-			);
-		}
-	}
-	console.log("Dane zostały pomyślnie wstawione lub zaktualizowane w bazie");
 }
