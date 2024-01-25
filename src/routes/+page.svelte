@@ -3,15 +3,11 @@
 	import { ads_sell, ads_rent } from '$lib/adsStore';
 	import { subscribeToAds } from '$lib/subscribeToAds';
 	import RangeSlider from 'svelte-range-slider-pips';
-	import { isNumber } from '$lib/utils/filter';
+	import { Label } from '$lib/components/ui/label';
+	import { Switch } from '$lib/components/ui/switch';
 	import NumberRangeFilter from './NumberRangeFilter.svelte';
 	import { formatter, squareMeterFormatter } from '$lib/utils/formatter';
-	import {
-		textPrefixFilter,
-		minFilter,
-		numberRangeFilter,
-		districtFilter
-	} from '$lib/utils/filter';
+	import { isNumber, numberRangeFilter, districtFilter, booleanFilter } from '$lib/utils/filter';
 	import { createTable, Render, Subscribe, createRender } from 'svelte-headless-table';
 	import {
 		addPagination,
@@ -33,6 +29,7 @@
 	import { Input } from '$lib/components/ui/input';
 
 	let selectedTab = 'sell';
+	$: is_agency = true;
 	const data = writable([]);
 
 	$: if (selectedTab === 'sell') {
@@ -51,7 +48,7 @@
 		}),
 
 		hide: addHiddenColumns({
-			initialHiddenColumnIds: ['city', 'is_private']
+			initialHiddenColumnIds: []
 		})
 	});
 
@@ -65,6 +62,10 @@
 				},
 				filter: {
 					exclude: true
+				},
+				colFilter: {
+					fn: districtFilter,
+					initialFilterValue: []
 				}
 			}
 		}),
@@ -177,13 +178,17 @@
 		}),
 		table.column({
 			accessor: 'is_private',
-			header: 'Prywatne?',
+			header: 'Agencja?',
 			plugins: {
 				sort: {
 					disable: false
 				},
 				filter: {
 					exclude: true
+				},
+				colFilter: {
+					fn: booleanFilter,
+					initialFilterValue: true
 				}
 			}
 		}),
@@ -233,14 +238,12 @@
 
 	const ids = flatColumns.map((col) => col.id);
 	// let hideForId = Object.fromEntries(ids.map((id) => [id, true]));
-	// let hideForId = Object.fromEntries(ids.map((id) => [id, !['city', 'is_private'].includes(id)]));
 	$: hideForId = Object.fromEntries(
 		ids.map((id) => {
 			if (id === 'price_per_sqm') {
-				// Ukryj kolumnę price_per_sqm, jeśli wybrana jest zakładka 'rent'
 				return [id, selectedTab !== 'rent'];
 			} else {
-				return [id, !['city', 'is_private'].includes(id)];
+				return [id, !['city'].includes(id)];
 			}
 		})
 	);
@@ -249,20 +252,13 @@
 		.filter(([, hide]) => !hide)
 		.map(([id]) => id);
 
-	const hidableCols = ['city', 'district', 'date'];
+	const hidableCols = ['city', 'district', 'price', 'sqm', 'price_per_sqm', 'date', 'is_private'];
 
 	function isNewAd(createdAt) {
 		const adTime = new Date(createdAt).getTime();
 		const now = new Date().getTime();
 		return now - adTime < 360 * 60 * 1000;
 	}
-
-	$: min = $values.length === 0 ? 0 : Math.min(...$values.filter(isNumber));
-	$: max = $values.length === 0 ? 0 : Math.max(...$values.filter(isNumber));
-	filterValues.update((currentValues) => ({
-		...currentValues,
-		price: [min, max]
-	}));
 
 	onMount(() => {
 		subscribeToAds();
@@ -299,6 +295,10 @@
 				type="text"
 				bind:value={$filterValue}
 			/>
+			<div class="flex items-center space-x-2">
+				<Label for="agencies">Agencje</Label>
+				<Switch bind:checked={$filterValues.is_private} id="agencies" />
+			</div>
 		</div>
 
 		<Tabs.Root bind:value={selectedTab} class="mr-2">
@@ -383,10 +383,13 @@
 											{#if isNewAd(row.original.created_at)}
 												<Badge class="mr-2 font-bold">New</Badge>
 											{/if}
-											{#if !row.original.is_private}
-												<Badge variant="destructive" class="mr-2 font-bold">Agencja</Badge>
-											{/if}
 											<Render of={cell.render()} />
+										{:else if cell.id === 'is_private'}
+											{#if row.original.is_private}
+											<Badge variant="outline" class="font-bold">Prywatne</Badge>
+											{:else}
+											<Badge variant="primary" class="font-bold">Agencja</Badge>
+											{/if}
 										{:else}
 											<Render of={cell.render()} />
 										{/if}

@@ -30,3 +30,9 @@ export const matchFilter = ({ filterValue, value }) => {
 	if (filterValue === undefined) return true;
 	return filterValue === value;
 };
+
+export const booleanFilter = ({ filterValue, value }) => {
+	if (value === undefined) return value;
+	if (filterValue === false) return value
+		else return true;
+};
