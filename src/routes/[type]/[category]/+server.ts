@@ -81,7 +81,7 @@ function parseAds(html: string, isPrivate: boolean, category: string) {
 			.replace(/\s/g, "");
 		const price = parseInt(priceText, 10);
 
-		const locationDateText = row.querySelector("p.css-veheph")?.innerText;
+		const locationDateText = row.querySelector("p.css-1a4brun")?.innerText;
 		const cityDistrict = locationDateText.split(" - ")[0].split(", ");
 		const city = cityDistrict[0];
 		const district = cityDistrict.length > 1 ? cityDistrict[1] : null;
