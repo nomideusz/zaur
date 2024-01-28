@@ -1,4 +1,4 @@
-import { ads_sell, ads_rent } from '$lib/adsStore'; // Zaimportuj sklep
+import { ads } from '$lib/adsStore'; // Zaimportuj sklep
 import { supabase } from '$lib/supabase';
 
 export function subscribeToAds() {
@@ -7,7 +7,7 @@ export function subscribeToAds() {
 	  'postgres_changes',
 	  { event: '*', schema: 'public', table: ('ads_sell') },
 		(payload) => {
-		  ads_sell.update((currentAds) => {
+		  ads.update((currentAds) => {
 			  console.log('Change received!', payload)
 			  return [payload.new, ...currentAds];
 		  });
@@ -17,7 +17,7 @@ export function subscribeToAds() {
 		'postgres_changes',
 		{ event: '*', schema: 'public', table: ('ads_rent') },
 		  (payload) => {
-			ads_rent.update((currentAds) => {
+			ads.update((currentAds) => {
 				console.log('Change received!', payload)
 				return [payload.new, ...currentAds];
 			});

@@ -1,5 +1,14 @@
 <script>
 	import '../app.pcss';
+	import { page } from '$app/stores';
+    import Button from '$lib/components/ui/button/button.svelte';
+
+
+    let variantSales = 'outline';
+    let variantRental = 'outline';
+
+    $: variantSales = $page.url.pathname === '/sales' ? 'primary' : 'outline';
+    $: variantRental = $page.url.pathname === '/rental' ? 'primary' : 'outline';
 </script>
 
 <body>
@@ -16,6 +25,10 @@
 
 	<main id="content" role="main">
 		<div class="container mx-auto min-h-screen px-4 pb-24 pt-10 sm:px-6 lg:px-8">
+			<div>
+				<Button variant={variantSales} href="/sales">Sprzedaż</Button>
+				<Button variant={variantRental} href="/rental">Wynajem</Button>
+			</div>
 			<slot />
 		</div>
 	</main>

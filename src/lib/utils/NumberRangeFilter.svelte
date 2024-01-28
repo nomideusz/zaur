@@ -2,7 +2,7 @@
 	import { isNumber } from '$lib/utils/filter';
 	// import { formatter } from '$lib/utils/formatter';
 	import { Input } from '$lib/components/ui/input';
-	import DataTableColFilter from './data-table-col-filter.svelte';
+	import DataTableColFilter from '../../routes/(data-table)/data-table-col-filter.svelte';
 
 	export let filterValue;
 	export let values;
