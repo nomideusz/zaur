@@ -232,16 +232,6 @@ const districts = derived(data, ($data) => {
     return Array.from(uniqueDistricts);
 });
 
-const values = derived(data, ($data) => {
-    const uniquePrices = new Set();
-    $data.forEach((ad) => {
-        if (ad.price) {
-            uniquePrices.add(ad.price);
-        }
-    });
-    return Array.from(uniquePrices);
-});
-
 const ids = flatColumns.map((col) => col.id);
 let hideForId = Object.fromEntries(ids.map((id) => [id, !['city'].includes(id)]));
 

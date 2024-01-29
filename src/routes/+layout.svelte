@@ -3,7 +3,6 @@
 	import { page } from '$app/stores';
     import Button from '$lib/components/ui/button/button.svelte';
 
-
     let variantSales = 'outline';
     let variantRental = 'outline';
 
@@ -22,7 +21,6 @@
 			</div>
 		</nav>
 	</header>
-
 	<main id="content" role="main">
 		<div class="container mx-auto min-h-screen px-4 pb-24 pt-10 sm:px-6 lg:px-8">
 			<div>

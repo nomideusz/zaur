@@ -1,6 +1,4 @@
-import { ads } from "$lib/adsStore";
 export async function load({ fetch }) {
-	const data = await (await fetch("api/sell")).json();
-	ads.set(data ?? []);
-	return { data };
+	const ads = await (await fetch("api/sell")).json();
+	return { ads };
 }
