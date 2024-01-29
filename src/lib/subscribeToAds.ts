@@ -2,7 +2,7 @@ import { ads } from '$lib/adsStore'; // Zaimportuj sklep
 import { supabase } from '$lib/supabase';
 
 export function subscribeToAds() {
-	supabase.channel('custom-all-channel')
+	supabase.channel('')
 	.on(
 	  'postgres_changes',
 	  { event: '*', schema: 'public', table: ('ads_sell') },
