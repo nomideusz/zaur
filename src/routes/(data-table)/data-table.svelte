@@ -26,7 +26,8 @@ import DataTableActions from '../(data-table)/data-table-actions.svelte';
 import DataTablePagination from '../(data-table)/data-table-pagination.svelte';
 import { CaretSort, ChevronDown } from 'radix-icons-svelte';
 import { Badge } from '$lib/components/ui/badge';
-
+export let ads_data;
+ads.set(ads_data);
 const data = writable([]);
 $: $data = $ads;
 const table = createTable(data, {
