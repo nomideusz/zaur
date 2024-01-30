@@ -1,40 +1,46 @@
 <script>
+    import t1 from '$lib/img/t_josh_strowmby.jpg?enhanced&w=600';
+    import t2 from '$lib/img/t_3.jpg?enhanced&w=600';
+    import t3 from '$lib/img/t_assam_akkadu.jpg?enhanced&w=600';
+    import t4 from '$lib/img/t_clint_wayne.jpg?enhanced&w=600';
+    import t5 from '$lib/img/t_1.jpg?enhanced&w=600';
+    import t6 from '$lib/img/t_10.jpg?enhanced&w=600';
     const people = [
         {
             name: "Taylor Smarton",
             role: "Director Payments & Risk | Pensylvania Zoo",
             quote: "At first I thought it was some kind of strange dinosaur. Then I realised. It's Zaur.",
-            img: "src/lib/img/t_josh_strowmby.jpg"
+            img: t1
         },
         {
             name: "Jessica May",
             role: "Manager | Financial Times",
             quote: "Some things are better not talked about at all. Zaur is not like that.",
-            img: "src/lib/img/t_3.jpg"
+            img: t2
         },
         {
             name: "Assam Akkadu",
             role: "Farmer",
             quote: "There are few creatures so terrifying and so beautiful at the same time.",
-            img: "src/lib/img/t_assam_akkadu.jpg"
+            img: t3
         },
         {
             name: "Clint Wayne",
             role: "Animal Keeper | North Bank",
             quote: "I was shocked to see how effective such a nice animal could be. I would describe it as a mixture of horror and awe.",
-            img: "src/lib/img/t_clint_wayne.jpg"
+            img: t4
         },
         {
             name: "Jack Jarowicki",
             role: "Consultant | Real Estates",
             quote: "I've been in the business for over 20 years. I didn't think there was anything else that could surprise me. As positive as can be.",
-            img: "src/lib/img/t_1.jpg"
+            img: t5
         },
         {
             name: "Dominica Lorence",
             role: "CEO | Dominica & Dominica",
             quote: "It's huge.",
-            img: "src/lib/img/t_10.jpg"
+            img: t6
         }
 ]
     </script>
@@ -47,7 +53,8 @@
         <div class="md:grid md:grid-cols-2 md:gap-10 lg:gap-16 md:items-center">
           <div class="hidden md:block mb-24 md:mb-0 sm:px-6">
             <div class="relative">
-              <img class="rounded-xl" src={person.img} alt={person.name}>
+                <enhanced:img class="rounded-xl" src={person.img} alt={person.name} />
+
       
               <!-- SVG Element -->
               <div class="absolute bottom-0 start-0 -z-[1] translate-y-10 -translate-x-14">
