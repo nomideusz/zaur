@@ -3,4 +3,4 @@
 	export let data;
 </script>
 
-<DataTable ads_data={data.ads} />
+<DataTable ads_data={data.ads} section="sales"  />

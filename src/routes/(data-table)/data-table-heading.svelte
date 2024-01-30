@@ -6,7 +6,7 @@
 	import { CaretSort, ChevronDown } from 'radix-icons-svelte';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Input } from '$lib/components/ui/input';
-    export let hideForId, filterValue, filterValues, districts, flatColumns, hidableCols;
+    export let hideForId, filterValue, filterValues, districts, propertyTypes, flatColumns, hidableCols;
 </script>
 
 
@@ -17,6 +17,11 @@
             title="Filtruj według dzielnicy"
             bind:districtFilterValues={$filterValues.district}
             options={$districts.map((district) => ({ value: district, label: district }))}
+        />
+        <DataTableColFilter
+            title="Filtruj według rodzaju nieruchomości"
+            bind:districtFilterValues={$filterValues.property_type}
+            options={$propertyTypes.map((property_type) => ({ value: property_type, label: property_type }))}
         />
         <Input
             class="max-w-sm"

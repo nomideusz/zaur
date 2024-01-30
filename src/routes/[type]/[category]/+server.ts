@@ -10,11 +10,11 @@ import { parseHTML } from "linkedom";
 export async function GET({params}) {
     // Pobierz i przetwórz ogłoszenia prywatne
     const privateHtml = await getPrivateAds(params);
-    const privateAds = parseAds(privateHtml, true, params.category);
+    const privateAds = parseAds(privateHtml, true, params.category, params.type);
 
     // Pobierz i przetwórz ogłoszenia biznesowe
     const businessHtml = await getBusinessAds(params);
-    const businessAds = parseAds(businessHtml, false, params.category);
+    const businessAds = parseAds(businessHtml, false, params.category, params.type);
 
     // Ustal nazwę tabeli na podstawie kategorii
     const tableName = params.category === 'sprzedaz' ? 'ads_sell' : 'ads_rent';
@@ -61,7 +61,7 @@ async function getBusinessAds({type, category}: RouteParams) {
 	return await response.text();
 }
 
-function parseAds(html: string, isPrivate: boolean, category: string) {
+function parseAds(html: string, isPrivate: boolean, category: string, propertyType: string) {
 	const { document } = parseHTML(html);
 	const adsElements = document.querySelectorAll('div[data-testid="l-card"]');
 
@@ -72,7 +72,8 @@ function parseAds(html: string, isPrivate: boolean, category: string) {
 		if (adLink && !adLink.startsWith("http")) {
 			adLink = `https://www.olx.pl${adLink}`;
 		}
-
+		const imageElement = adElement.querySelector(".css-gl6djm img");
+        const imageUrl = imageElement ? imageElement.getAttribute("src") : null;
 		const row = adElement.querySelector("div.css-1venxj6");
 		const title = row.querySelector("h6")?.innerText;
 		const priceText = row
@@ -108,8 +109,10 @@ function parseAds(html: string, isPrivate: boolean, category: string) {
             date,
             sqm,
             price_per_sqm: pricePerSqm, // Ustawione na null dla 'wynajem'
-            ad_link: adLink,
-            is_private: isPrivate
+			ad_link: adLink,
+			is_private: isPrivate,
+			image_url: imageUrl,
+			property_type: propertyType
         };
         ads.push(ad);
     }

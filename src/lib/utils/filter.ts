@@ -26,6 +26,14 @@ export const districtFilter = ({ filterValue, value }) => {
 	});
 };
 
+export const typeFilter = ({ filterValue, value }) => {
+	if (filterValue.length === 0) return true;
+	if (!Array.isArray(filterValue) || typeof value !== 'string') return true;
+	return filterValue.some((filter) => {
+		return value.includes(filter);
+	});
+};
+
 export const matchFilter = ({ filterValue, value }) => {
 	if (filterValue === undefined) return true;
 	return filterValue === value;

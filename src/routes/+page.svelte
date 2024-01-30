@@ -8,7 +8,7 @@
     const people = [
         {
             name: "Taylor Smarton",
-            role: "Director Payments & Risk | Pensylvania Zoo",
+            role: "Director Payments & Risk | Pennsylvania Zoo",
             quote: "At first I thought it was some kind of strange dinosaur. Then I realised. It's Zaur.",
             img: t1
         },
@@ -135,7 +135,7 @@
               <footer class="mt-6">
                 <div class="flex items-center">
                   <div class="md:hidden flex-shrink-0">
-                    <img class="h-12 w-12 rounded-full" src="https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=facearea&facepad=2&w=320&h=320&q=80" alt="Image Description">
+                    <enhanced:img class="h-12 w-12 rounded-full" src={person.img} alt={person.name} />
                   </div>
                   <div class="ms-4 md:ms-0">
                     <div class="text-base font-semibold text-gray-800 dark:text-gray-200">{person.name}</div>
