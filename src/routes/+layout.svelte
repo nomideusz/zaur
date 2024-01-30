@@ -1,5 +1,6 @@
 <script>
 	import '../app.pcss';
+	import logo from '$lib/img/zaur.png?enhanced&w=400';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { Heart } from 'lucide-svelte';
@@ -18,7 +19,7 @@
 		>
 			<div class="flex items-end">
 				<a class="flex-none text-3xl font-bold" href="/" aria-label="Brand">
-					<img src="src/lib/img/zaur.png" alt="Zaur" />
+					<enhanced:img src={logo} alt="Zaur" />
 				</a>
 				<span class="text-sm">powered by kurcz.pl</span>
 			</div>
