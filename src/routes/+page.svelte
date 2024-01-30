@@ -4,37 +4,37 @@
             name: "Taylor Smarton",
             role: "Director Payments & Risk | Pensylvania Zoo",
             quote: "At first I thought it was some kind of strange dinosaur. Then I realised. It's Zaur.",
-            img: "/src/lib/img/t_josh_strowmby.jpg"
+            img: "src/lib/img/t_josh_strowmby.jpg"
         },
         {
             name: "Jessica May",
             role: "Manager | Financial Times",
             quote: "Some things are better not talked about at all. Zaur is not like that.",
-            img: "/src/lib/img/t_3.jpg"
+            img: "src/lib/img/t_3.jpg"
         },
         {
             name: "Assam Akkadu",
             role: "Farmer",
             quote: "There are few creatures so terrifying and so beautiful at the same time.",
-            img: "/src/lib/img/t_assam_akkadu.jpg"
+            img: "src/lib/img/t_assam_akkadu.jpg"
         },
         {
             name: "Clint Wayne",
             role: "Animal Keeper | North Bank",
             quote: "I was shocked to see how effective such a nice animal could be. I would describe it as a mixture of horror and awe.",
-            img: "/src/lib/img/t_clint_wayne.jpg"
+            img: "src/lib/img/t_clint_wayne.jpg"
         },
         {
             name: "Jack Jarowicki",
             role: "Consultant | Real Estates",
             quote: "I've been in the business for over 20 years. I didn't think there was anything else that could surprise me. As positive as can be.",
-            img: "/src/lib/img/t_1.jpg"
+            img: "src/lib/img/t_1.jpg"
         },
         {
             name: "Dominica Lorence",
             role: "CEO | Dominica & Dominica",
             quote: "It's huge.",
-            img: "/src/lib/img/t_10.jpg"
+            img: "src/lib/img/t_10.jpg"
         }
 ]
     </script>
