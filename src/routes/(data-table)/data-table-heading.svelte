@@ -3,6 +3,7 @@
 	import { Switch } from '$lib/components/ui/switch';
 	import { Button } from '$lib/components/ui/button';
 	import DataTableColFilter from '../(data-table)/data-table-col-filter.svelte';
+    import DataTableTypeFilter from './data-table-type-filter.svelte';
 	import { CaretSort, ChevronDown } from 'radix-icons-svelte';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Input } from '$lib/components/ui/input';
@@ -18,16 +19,15 @@
             bind:districtFilterValues={$filterValues.district}
             options={$districts.map((district) => ({ value: district, label: district }))}
         />
-        <DataTableColFilter
-            title="Filtruj według rodzaju nieruchomości"
-            bind:districtFilterValues={$filterValues.property_type}
-            options={$propertyTypes.map((property_type) => ({ value: property_type, label: property_type }))}
-        />
         <Input
             class="max-w-sm"
             placeholder="Szukaj w tytułach"
             type="text"
             bind:value={$filterValue}
+        />
+        <DataTableTypeFilter 
+            bind:filterValues={$filterValues.propertyTypes}
+            options={$propertyTypes.map((type) => ({ value: type, label: type }))}
         />
         <div class="flex items-center space-x-2">
             <Label for="agencies">Agencje</Label>

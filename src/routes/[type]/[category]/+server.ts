@@ -1,67 +1,135 @@
-import { SUPABASE_URL, SUPABASE_KEY } from '$env/static/private';
-import { createClient } from '@supabase/supabase-js';
+import { SUPABASE_URL, SUPABASE_KEY } from "$env/static/private";
+import { createClient } from "@supabase/supabase-js";
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium";
 
 import { error, json } from "@sveltejs/kit";
-import type { RouteParams } from './$types';
+import type { RouteParams } from "./$types";
 import { parseHTML } from "linkedom";
+let browser;
 /** @type {import('./$types').RequestHandler} */
-export async function GET({params}) {
-    // Pobierz i przetwórz ogłoszenia prywatne
-    const privateHtml = await getPrivateAds(params);
-    const privateAds = parseAds(privateHtml, true, params.category, params.type);
+export async function GET({ params }) {
+	// Pobierz i przetwórz ogłoszenia prywatne
+	const privateHtml = await getPrivateAds(params);
+	const privateAds = parseAds(privateHtml, true, params.category, params.type);
 
-    // Pobierz i przetwórz ogłoszenia biznesowe
-    const businessHtml = await getBusinessAds(params);
-    const businessAds = parseAds(businessHtml, false, params.category, params.type);
+	// Pobierz i przetwórz ogłoszenia biznesowe
+	const businessHtml = await getBusinessAds(params);
+	const businessAds = parseAds(
+		businessHtml,
+		false,
+		params.category,
+		params.type
+	);
 
-    // Ustal nazwę tabeli na podstawie kategorii
-    const tableName = params.category === 'sprzedaz' ? 'ads_sell' : 'ads_rent';
+	// Ustal nazwę tabeli na podstawie kategorii
+	const tableName = params.category === "sprzedaz" ? "ads_sell" : "ads_rent";
 
-    // Dodaj ogłoszenia do odpowiedniej tabeli
-    await insertAds(privateAds, tableName);
-    await insertAds(businessAds, tableName);
+	// Dodaj ogłoszenia do odpowiedniej tabeli
+	await insertAds(privateAds, tableName);
+	await insertAds(businessAds, tableName);
 
-    // Połącz wyniki i zwróć jako JSON
-    const allAds = [...privateAds, ...businessAds];
-    return json(allAds);
+	// Połącz wyniki i zwróć jako JSON
+	const allAds = [...privateAds, ...businessAds];
+	return json(allAds);
 }
 
 async function insertAds(ads, tableName) {
-    for (const ad of ads) {
-        const { data, error } = await supabase.from(tableName).upsert(ad);
+	for (const ad of ads) {
+		const { data, error } = await supabase.from(tableName).upsert(ad);
 
-        if (error) {
-            console.error(
-                "Błąd podczas wstawiania lub aktualizowania danych w bazie:",
-                error
-            );
-        }
-    }
-}
-
-async function getPrivateAds({type, category}: RouteParams) {
-    const api =
-        `https://www.olx.pl/nieruchomosci/${type}/${category}/krakow/?page=1&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private&view=list`;
-	const response = await fetch(api);
-	if (!response.ok) {
-		throw new Error("Failed to fetch: ${response.status}");
+		if (error) {
+			console.error(
+				"Błąd podczas wstawiania lub aktualizowania danych w bazie:",
+				error
+			);
+		}
 	}
-	return await response.text();
 }
 
-async function getBusinessAds({type, category}: RouteParams) {
-    const api =
-        `https://www.olx.pl/nieruchomosci/${type}/${category}/krakow/?page=1&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=business&view=list`;
-	const response = await fetch(api);
-	if (!response.ok) {
-		throw new Error("Failed to fetch: ${response.status}");
-	}
-	return await response.text();
+async function scrollToBottom(page, timeout = 500) {
+    const distance = 200;
+    const delay = timeout;
+
+    await page.evaluate(async (distance, delay) => {
+        await new Promise((resolve, reject) => {
+            let totalHeight = 0;
+            const timer = setInterval(() => {
+                window.scrollBy(0, distance);
+                totalHeight += distance;
+
+                if (totalHeight >= document.body.scrollHeight) {
+                    clearInterval(timer);
+                    resolve();
+                }
+            }, delay);
+        });
+    }, distance, delay);
 }
 
-function parseAds(html: string, isPrivate: boolean, category: string, propertyType: string) {
+const isProd = process.env.NODE_ENV === 'production';
+console.log(isProd);
+
+
+async function getPrivateAds({ type, category }: RouteParams) {
+	const url = `https://www.olx.pl/nieruchomosci/${type}/${category}/krakow/?page=1&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private&view=list`;
+	if (isProd) {
+		 browser = await puppeteer.launch({
+			args: chromium.args,
+			defaultViewport: chromium.defaultViewport,
+			executablePath: await chromium.executablePath(),
+			headless: 'new',
+			ignoreHTTPSErrors: true
+		})
+	} else {
+		browser = await puppeteer.launch({
+			headless: "new",
+			args: ['--no-sandbox', '--disable-setuid-sandbox'],
+			executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+		});
+	};
+	const page = await browser.newPage();
+	await page.goto(url, { waitUntil: "networkidle2" });
+	await scrollToBottom(page);
+	const content = await page.content();
+	await browser.close();
+	return content;
+}
+
+async function getBusinessAds({ type, category }: RouteParams) {
+	const url = `https://www.olx.pl/nieruchomosci/${type}/${category}/krakow/?page=1&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=business&view=list`;
+
+	if (isProd) {
+		browser = await puppeteer.launch({
+			args: chromium.args,
+			defaultViewport: chromium.defaultViewport,
+			executablePath: await chromium.executablePath(),
+			headless: 'new',
+			ignoreHTTPSErrors: true
+		})
+	} else {
+		browser = await puppeteer.launch({
+			headless: "new",
+			args: ['--no-sandbox', '--disable-setuid-sandbox'],
+			executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+		});
+	};
+	const page = await browser.newPage();
+	await page.goto(url, { waitUntil: "networkidle2" });
+	await scrollToBottom(page);
+	const content = await page.content();
+	await browser.close();
+	return content;
+}
+
+function parseAds(
+	html: string,
+	isPrivate: boolean,
+	category: string,
+	propertyType: string
+) {
 	const { document } = parseHTML(html);
 	const adsElements = document.querySelectorAll('div[data-testid="l-card"]');
 
@@ -73,7 +141,7 @@ function parseAds(html: string, isPrivate: boolean, category: string, propertyTy
 			adLink = `https://www.olx.pl${adLink}`;
 		}
 		const imageElement = adElement.querySelector(".css-gl6djm img");
-        const imageUrl = imageElement ? imageElement.getAttribute("src") : null;
+		const imageUrl = imageElement ? imageElement.getAttribute("src") : null;
 		const row = adElement.querySelector("div.css-1venxj6");
 		const title = row.querySelector("h6")?.innerText;
 		const priceText = row
@@ -94,28 +162,28 @@ function parseAds(html: string, isPrivate: boolean, category: string, propertyTy
 		const sqmText = sqmPriceText?.[0].replace("m²", "").replace(",", ".");
 		const sqm = parseFloat(sqmText);
 		let pricePerSqm = null;
-        if (category === 'sprzedaz') {
-            const pricePerSqmText = sqmPriceText?.[1]
-                .replace("zł/m²", "")
-                .replace(/\s/g, "");
-            pricePerSqm = parseInt(pricePerSqmText, 10);
-        }
+		if (category === "sprzedaz") {
+			const pricePerSqmText = sqmPriceText?.[1]
+				.replace("zł/m²", "")
+				.replace(/\s/g, "");
+			pricePerSqm = parseInt(pricePerSqmText, 10);
+		}
 
-        const ad = {
-            title,
-            price,
-            city,
-            district,
-            date,
-            sqm,
-            price_per_sqm: pricePerSqm, // Ustawione na null dla 'wynajem'
+		const ad = {
+			title,
+			price,
+			city,
+			district,
+			date,
+			sqm,
+			price_per_sqm: pricePerSqm, // Ustawione na null dla 'wynajem'
 			ad_link: adLink,
 			is_private: isPrivate,
 			image_url: imageUrl,
-			property_type: propertyType
-        };
-        ads.push(ad);
-    }
+			property_type: propertyType,
+		};
+		ads.push(ad);
+	}
 
 	return ads;
 }

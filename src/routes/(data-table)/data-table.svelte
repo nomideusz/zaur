@@ -6,8 +6,7 @@
 	import * as HoverCard from '$lib/components/ui/hover-card';
     import { ads } from '$lib/adsStore';
     import { writable, derived } from 'svelte/store';
-    export let section; // 'sales' lub 'rental'
-
+    import autoAnimate from '@formkit/auto-animate';
 	import { subscribeToAds } from '$lib/subscribeToAds';
 	import NumberRangeFilter from '$lib/utils/NumberRangeFilter.svelte';
 	import { formatter, squareMeterFormatter } from '$lib/utils/formatter';
@@ -27,6 +26,7 @@
 	import DataTablePagination from '../(data-table)/data-table-pagination.svelte';
 	import { CaretSort, ChevronDown } from 'radix-icons-svelte';
 	import { Badge } from '$lib/components/ui/badge';
+	export let section; // 'sales' lub 'rental'
 	export let ads_data;
 	ads.set(ads_data);
 

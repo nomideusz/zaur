@@ -39,7 +39,7 @@
 			<slot />
 		</div>
 	</main>
-	<footer class="mx-auto w-full max-w-[85rem] px-4 py-10 sm:px-6 lg:px-8">
+	<footer class="mx-auto w-full max-w-[85rem] px-4 pt-10 pb-20 sm:px-6 lg:px-8">
 		<!-- Grid -->
 		<div class="text-center">
 			<div>

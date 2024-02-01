@@ -2,6 +2,7 @@
 	import { cn } from '$lib/utils';
 	import type { HTMLTableAttributes } from 'svelte/elements';
 
+
 	type $$Props = HTMLTableAttributes;
 
 	let className: $$Props['class'] = undefined;

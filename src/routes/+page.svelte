@@ -3,8 +3,7 @@
     import t2 from '$lib/img/t_3.jpg?enhanced&w=600';
     import t3 from '$lib/img/t_assam_akkadu.jpg?enhanced&w=600';
     import t4 from '$lib/img/t_clint_wayne.jpg?enhanced&w=600';
-    import t5 from '$lib/img/t_1.jpg?enhanced&w=600';
-    import t6 from '$lib/img/t_10.jpg?enhanced&w=600';
+    import t5 from '$lib/img/t_10.jpg?enhanced&w=600';
     const people = [
         {
             name: "Taylor Smarton",
@@ -31,16 +30,10 @@
             img: t4
         },
         {
-            name: "Jack Jarowicki",
-            role: "Consultant | Real Estates",
-            quote: "I've been in the business for over 20 years. I didn't think there was anything else that could surprise me. As positive as can be.",
-            img: t5
-        },
-        {
             name: "Dominica Lorence",
             role: "CEO | Dominica & Dominica",
             quote: "It's huge.",
-            img: t6
+            img: t5
         }
 ]
     </script>
@@ -135,7 +128,7 @@
               <footer class="mt-6">
                 <div class="flex items-center">
                   <div class="md:hidden flex-shrink-0">
-                    <enhanced:img class="h-12 w-12 rounded-full" src={person.img} alt={person.name} />
+                    <enhanced:img class="h-12 w-12 rounded-full object-cover" src={person.img} alt={person.name} />
                   </div>
                   <div class="ms-4 md:ms-0">
                     <div class="text-base font-semibold text-gray-800 dark:text-gray-200">{person.name}</div>
