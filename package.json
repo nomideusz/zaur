@@ -4,13 +4,12 @@
 	"private": true,
 	"scripts": {
 		"dev": "vite dev",
-		"build": "svelte-kit build",
+		"build": "svelte-kit build && ln -s -f build/index.js server.js",
 		"preview": "vite preview",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync",
 		"lint": "prettier --check .",
-		"format": "prettier --write .",
-		"start": "node build"
+		"format": "prettier --write ."
 	},
 	"devDependencies": {
 		"@sparticuz/chromium": "^121.0.0",
