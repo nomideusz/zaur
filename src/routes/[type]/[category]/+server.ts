@@ -11,18 +11,13 @@ import { parseHTML } from "linkedom";
 let browser;
 /** @type {import('./$types').RequestHandler} */
 export async function GET({ params }) {
-	// Pobierz i przetwórz ogłoszenia prywatne
-	const privateHtml = await getPrivateAds(params);
-	const privateAds = parseAds(privateHtml, true, params.category, params.type);
+	params.adType = 'private';
+    const privateHtml = await fetchPageContent(params);
+    const privateAds = parseAds(privateHtml, true, params.category, params.type);
 
-	// Pobierz i przetwórz ogłoszenia biznesowe
-	const businessHtml = await getBusinessAds(params);
-	const businessAds = parseAds(
-		businessHtml,
-		false,
-		params.category,
-		params.type
-	);
+    params.adType = 'business';
+    const businessHtml = await fetchPageContent(params);
+    const businessAds = parseAds(businessHtml, false, params.category, params.type);
 
 	// Ustal nazwę tabeli na podstawie kategorii
 	const tableName = params.category === "sprzedaz" ? "ads_sell" : "ads_rent";
@@ -50,7 +45,7 @@ async function insertAds(ads, tableName) {
 }
 
 async function scrollToBottom(page, timeout = 50) {
-	const distance = 1000;
+	const distance = 1500;
 	const delay = timeout;
 
 	await page.evaluate(
@@ -76,7 +71,11 @@ async function scrollToBottom(page, timeout = 50) {
 const isProd = process.env.NODE_ENV === "production";
 console.log(isProd);
 
-async function fetchPageContent(url) {
+
+
+async function fetchPageContent({ type, category, adType }: RouteParams) {
+	const adTypeParam = adType === 'private' ? 'private' : 'business';
+	const url = `https://www.olx.pl/nieruchomosci/${type}/${category}/krakow/?page=1&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=${adTypeParam}&view=list`;
 	if (!browser) {
 		if (isProd) {
 			browser = await puppeteer.launch({
@@ -102,16 +101,6 @@ async function fetchPageContent(url) {
 	const content = await page.content();
 	await page.close();
 	return content;
-}
-
-async function getPrivateAds({ type, category }: RouteParams) {
-	const url = `https://www.olx.pl/nieruchomosci/${type}/${category}/krakow/?page=1&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private&view=list`;
-	return fetchPageContent(url);
-}
-
-async function getBusinessAds({ type, category }: RouteParams) {
-	const url = `https://www.olx.pl/nieruchomosci/${type}/${category}/krakow/?page=1&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=business&view=list`;
-	return fetchPageContent(url);
 }
 
 function parseAds(
