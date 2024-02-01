@@ -11,24 +11,12 @@ import { parseHTML } from "linkedom";
 let browser;
 /** @type {import('./$types').RequestHandler} */
 export async function GET({ params }) {
-	params.adType = 'private';
-    const privateHtml = await fetchPageContent(params);
-    const privateAds = parseAds(privateHtml, true, params.category, params.type);
-
-    params.adType = 'business';
-    const businessHtml = await fetchPageContent(params);
-    const businessAds = parseAds(businessHtml, false, params.category, params.type);
-
-	// Ustal nazwę tabeli na podstawie kategorii
+	const { type, category, adType } = params;
+	const htmlContent = await fetchPageContent({ type, category, adType });
+    const ads = parseAds(htmlContent, adType === 'private', category, type);
 	const tableName = params.category === "sprzedaz" ? "ads_sell" : "ads_rent";
-
-	// Dodaj ogłoszenia do odpowiedniej tabeli
-	await insertAds(privateAds, tableName);
-	await insertAds(businessAds, tableName);
-
-	// Połącz wyniki i zwróć jako JSON
-	const allAds = [...privateAds, ...businessAds];
-	return json(allAds);
+	await insertAds(ads, tableName);
+	return json(ads);
 }
 
 async function insertAds(ads, tableName) {
