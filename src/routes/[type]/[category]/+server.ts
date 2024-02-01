@@ -49,79 +49,69 @@ async function insertAds(ads, tableName) {
 	}
 }
 
-async function scrollToBottom(page, timeout = 500) {
-    const distance = 200;
-    const delay = timeout;
+async function scrollToBottom(page, timeout = 50) {
+	const distance = 1000;
+	const delay = timeout;
 
-    await page.evaluate(async (distance, delay) => {
-        await new Promise((resolve, reject) => {
-            let totalHeight = 0;
-            const timer = setInterval(() => {
-                window.scrollBy(0, distance);
-                totalHeight += distance;
+	await page.evaluate(
+		async (distance, delay) => {
+			await new Promise((resolve, reject) => {
+				let totalHeight = 0;
+				const timer = setInterval(() => {
+					window.scrollBy(0, distance);
+					totalHeight += distance;
 
-                if (totalHeight >= document.body.scrollHeight) {
-                    clearInterval(timer);
-                    resolve();
-                }
-            }, delay);
-        });
-    }, distance, delay);
+					if (totalHeight >= document.body.scrollHeight) {
+						clearInterval(timer);
+						resolve();
+					}
+				}, delay);
+			});
+		},
+		distance,
+		delay
+	);
 }
 
-const isProd = process.env.NODE_ENV === 'production';
+const isProd = process.env.NODE_ENV === "production";
 console.log(isProd);
 
+async function fetchPageContent(url) {
+	if (!browser) {
+		if (isProd) {
+			browser = await puppeteer.launch({
+				args: chromium.args,
+				defaultViewport: chromium.defaultViewport,
+				executablePath: await chromium.executablePath(),
+				headless: "new",
+				ignoreHTTPSErrors: true,
+			});
+		} else {
+			browser = await puppeteer.launch({
+				headless: "new",
+				args: ["--no-sandbox", "--disable-setuid-sandbox"],
+				executablePath:
+					"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+			});
+		}
+	}
 
-async function getPrivateAds({ type, category }: RouteParams) {
-	const url = `https://www.olx.pl/nieruchomosci/${type}/${category}/krakow/?page=1&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private&view=list`;
-	if (isProd) {
-		 browser = await puppeteer.launch({
-			args: chromium.args,
-			defaultViewport: chromium.defaultViewport,
-			executablePath: await chromium.executablePath(),
-			headless: 'new',
-			ignoreHTTPSErrors: true
-		})
-	} else {
-		browser = await puppeteer.launch({
-			headless: "new",
-			args: ['--no-sandbox', '--disable-setuid-sandbox'],
-			executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-		});
-	};
 	const page = await browser.newPage();
 	await page.goto(url, { waitUntil: "networkidle2" });
 	await scrollToBottom(page);
 	const content = await page.content();
-	await browser.close();
+	await page.close();
 	return content;
+}
+
+async function getPrivateAds({ type, category }: RouteParams) {
+	const url = `https://www.olx.pl/nieruchomosci/${type}/${category}/krakow/?page=1&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=private&view=list`;
+	return fetchPageContent(url);
 }
 
 async function getBusinessAds({ type, category }: RouteParams) {
 	const url = `https://www.olx.pl/nieruchomosci/${type}/${category}/krakow/?page=1&search%5Border%5D=created_at%3Adesc&search%5Bprivate_business%5D=business&view=list`;
-
-	if (isProd) {
-		browser = await puppeteer.launch({
-			args: chromium.args,
-			defaultViewport: chromium.defaultViewport,
-			executablePath: await chromium.executablePath(),
-			headless: 'new',
-			ignoreHTTPSErrors: true
-		})
-	} else {
-		browser = await puppeteer.launch({
-			headless: "new",
-			args: ['--no-sandbox', '--disable-setuid-sandbox'],
-			executablePath: 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-		});
-	};
-	const page = await browser.newPage();
-	await page.goto(url, { waitUntil: "networkidle2" });
-	await scrollToBottom(page);
-	const content = await page.content();
-	await browser.close();
-	return content;
+	return fetchPageContent(url);
 }
 
 function parseAds(
