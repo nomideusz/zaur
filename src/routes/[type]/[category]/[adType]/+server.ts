@@ -33,7 +33,7 @@ async function insertAds(ads, tableName) {
 }
 
 async function scrollToBottom(page, timeout = 50) {
-	const distance = 2000;
+	const distance = 4000;
 	const delay = timeout;
 
 	await page.evaluate(
