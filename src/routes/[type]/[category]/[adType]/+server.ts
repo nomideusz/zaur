@@ -6,7 +6,7 @@ import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
 
 import { error, json } from "@sveltejs/kit";
-import type { RouteParams } from "./$types";
+import type { RouteParams } from "../$types";
 import { parseHTML } from "linkedom";
 let browser;
 /** @type {import('./$types').RequestHandler} */
@@ -45,7 +45,7 @@ async function insertAds(ads, tableName) {
 }
 
 async function scrollToBottom(page, timeout = 50) {
-	const distance = 1500;
+	const distance = 2000;
 	const delay = timeout;
 
 	await page.evaluate(
