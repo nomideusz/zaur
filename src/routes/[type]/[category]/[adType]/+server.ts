@@ -20,17 +20,40 @@ export async function GET({ params }) {
 }
 
 async function insertAds(ads, tableName) {
+	// Zakładając, że ads jest tablicą obiektów, potrzebujemy iterować po każdym ad
 	for (const ad of ads) {
-		const { data, error } = await supabase.from(tableName).upsert(ad);
-
-		if (error) {
-			console.error(
-				"Błąd podczas wstawiania lub aktualizowania danych w bazie:",
-				error
-			);
+	  const { data, error: selectError } = await supabase
+		.from(tableName)
+		.select()
+		.match({ title: ad.title, price: ad.price });
+  
+	  if (selectError) {
+		console.error("Błąd podczas sprawdzania istnienia reklamy:", selectError);
+		continue; // Przejdź do następnego ad w przypadku błędu
+	  }
+  
+	  if (data.length === 0) {
+		// Jeśli ad nie istnieje, wykonaj upsert
+		const { error: upsertError } = await supabase
+		  .from(tableName)
+		  .upsert(ad, {
+			// opcjonalnie: określ kolumny do zaktualizowania
+			// returning: "minimal", // zmniejsza rozmiar odpowiedzi
+		  });
+  
+		if (upsertError) {
+		  console.error("Błąd podczas wstawiania lub aktualizowania danych w bazie:", upsertError);
+		} else {
+		  console.log("Wstawione/Zaktualizowane dane:", ad);
 		}
+	  } else {
+		console.log('Rekord już istnieje, pominięcie:', ad);
+		// Możesz tutaj dodać logikę aktualizacji, jeśli to konieczne
+	  }
 	}
-}
+  }
+  
+  
 
 async function scrollToBottom(page, timeout = 50) {
 	const distance = 4000;
