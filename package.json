@@ -12,7 +12,7 @@
 		"format": "prettier --write ."
 	},
 	"engines": {
-		"node": "21.0.0"
+		"node": "19.9.0"
 	  },	   
 	"devDependencies": {
 		"@sparticuz/chromium": "^121.0.0",
