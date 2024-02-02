@@ -20,7 +20,7 @@ export async function subscribeToAds() {
 				ads.update((currentAds) => {
 					const newAd = { ...payload.new, section: "sales" };
 					const updatedAds = [newAd, ...currentAds];
-					adsCount.set(updatedAds.length);
+					adsCount.update(updatedAds.length);
 					return updatedAds;
 				});
 			}
