@@ -18,7 +18,7 @@
 </script>
 
 <body>
-	<main id="content" role="main">
+	<main id="content">
 		<div class="mx-auto min-h-screen">
 			<slot />
 		</div>

@@ -37,7 +37,7 @@
 			</div>
 		</nav>
 	</header>
-	<main id="content" role="main">
+	<main id="content">
 		<div class="mx-auto min-h-screen px-4 pt-10 sm:px-6 lg:px-64">
 			<slot />
 		</div>
