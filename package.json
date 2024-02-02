@@ -10,10 +10,7 @@
 		"check:watch": "svelte-kit sync",
 		"lint": "prettier --check .",
 		"format": "prettier --write ."
-	},
-	"engines": {
-		"node": "20.11"
-	  },	  
+	},  
 	"devDependencies": {
 		"@sparticuz/chromium": "^121.0.0",
 		"@sveltejs/adapter-auto": "^3.0.0",
