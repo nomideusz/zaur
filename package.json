@@ -12,8 +12,8 @@
 		"format": "prettier --write ."
 	},
 	"engines": {
-		"node": "18.17.0"
-	  },	  
+		"node": "18.16.1"
+	  },	   
 	"devDependencies": {
 		"@sparticuz/chromium": "^121.0.0",
 		"@sveltejs/adapter-auto": "^3.0.0",
