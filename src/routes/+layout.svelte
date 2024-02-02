@@ -6,40 +6,24 @@
 	import { Heart } from 'lucide-svelte';
 	let variantSales = 'outline';
 	let variantRental = 'outline';
+	import { onMount } from 'svelte';
+	import { subscribeToAds } from '$lib/subscribeToAds';
 
 	$: variantSales = $page.url.pathname === '/sales' ? 'primary' : 'outline';
 	$: variantRental = $page.url.pathname === '/rental' ? 'primary' : 'outline';
+
+	onMount(() => {
+		subscribeToAds();
+	});
 </script>
 
 <body>
-	<header class="flex w-full flex-wrap text-sm sm:flex-nowrap sm:justify-start">
-		<nav
-			class="container mx-auto w-full px-4 py-3 sm:flex sm:items-center sm:justify-between sm:px-6 sm:py-2 lg:px-8"
-			aria-label="Global"
-		>
-			<div class="flex items-end">
-				<a class="flex-none text-3xl font-bold" href="/" aria-label="Brand">
-					<enhanced:img src={logo} alt="Zaur" />
-				</a>
-				<span class="text-sm">powered by kurcz.pl</span>
-			</div>
-
-			<div>
-				<h1 class="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">Nieruchomości</h1>
-				<h2 class="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">Kraków</h2>
-				<div class="mt-6">
-					<Button class="font-bold" size="lg" variant={variantSales} href="/sales">Sprzedaż</Button>
-					<Button class="font-bold" size="lg" variant={variantRental} href="/rental">Wynajem</Button>
-				</div>
-			</div>
-		</nav>
-	</header>
 	<main id="content" role="main">
-		<div class="container mx-auto min-h-screen px-4 pb-24 pt-10 sm:px-6 lg:px-8">
+		<div class="mx-auto min-h-screen">
 			<slot />
 		</div>
 	</main>
-	<footer class="mx-auto w-full max-w-[85rem] px-4 pt-10 pb-20 sm:px-6 lg:px-8">
+	<footer class="mx-auto w-full max-w-[85rem] px-4 pb-20 sm:px-6 lg:px-8">
 		<!-- Grid -->
 		<div class="text-center">
 			<div>

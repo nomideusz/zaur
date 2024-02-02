@@ -1,5 +1,5 @@
 <script lang="ts">
-	import DataTableHeading from '../(data-table)/data-table-heading.svelte';
+	import DataTableHeading from './data-table-heading.svelte';
 	import { onMount, tick } from 'svelte';
 	import Time, { svelteTime } from 'svelte-time';
 	import { dayjs } from 'svelte-time';
@@ -22,8 +22,8 @@
 	import { Button } from '$lib/components/ui/button';
 
 	import * as Table from '$lib/components/ui/table';
-	import DataTableActions from '../(data-table)/data-table-actions.svelte';
-	import DataTablePagination from '../(data-table)/data-table-pagination.svelte';
+	import DataTableActions from './data-table-actions.svelte';
+	import DataTablePagination from './data-table-pagination.svelte';
 	import { CaretSort, ChevronDown } from 'radix-icons-svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	export let section; // 'sales' lub 'rental'

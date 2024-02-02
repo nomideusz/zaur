@@ -11,9 +11,6 @@
 		"lint": "prettier --check .",
 		"format": "prettier --write ."
 	},
-	"engines": {
-		"node": "20.x"
-	  },	   
 	"devDependencies": {
 		"@sparticuz/chromium": "^121.0.0",
 		"@sveltejs/adapter-auto": "^3.0.0",

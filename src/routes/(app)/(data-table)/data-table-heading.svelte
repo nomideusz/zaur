@@ -2,7 +2,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Switch } from '$lib/components/ui/switch';
 	import { Button } from '$lib/components/ui/button';
-	import DataTableColFilter from '../(data-table)/data-table-col-filter.svelte';
+	import DataTableColFilter from './data-table-col-filter.svelte';
     import DataTableTypeFilter from './data-table-type-filter.svelte';
 	import { CaretSort, ChevronDown } from 'radix-icons-svelte';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';

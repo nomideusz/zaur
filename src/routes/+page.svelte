@@ -1,4 +1,6 @@
 <script>
+  import Hero from './sections/Hero.svelte';
+  import Stats from './sections/Stats.svelte';
     import t1 from '$lib/img/t_josh_strowmby.jpg?enhanced&w=600';
     import t2 from '$lib/img/t_3.jpg?enhanced&w=600';
     import t3 from '$lib/img/t_assam_akkadu.jpg?enhanced&w=600';
@@ -37,7 +39,14 @@
         }
 ]
     </script>
-     
+
+  <Hero />
+
+
+      <Stats />
+
+
+
     {#each people as person}
     <div class="max-w-[85rem] px-4 py-10 sm:px-6 lg:px-8 lg:py-14 mx-auto">
 
