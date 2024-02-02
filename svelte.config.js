@@ -10,5 +10,5 @@ export default {
 			// see below for options that can be set here
 		})
 	},
-	runtime: 'nodejs20.x'
+	runtime: 'nodejs18.x'
 };
