@@ -302,8 +302,8 @@
 	{flatColumns}
 	{hidableCols}
 />
-<div class="rounded-md border">
 	<!-- <pre>$filterValues = {JSON.stringify($filterValues, null, 2)}</pre> -->
+<div class="rounded-md border">
 	<Table.Root {...$tableAttrs}>
 		<Table.Header>
 			{#each $headerRows as headerRow}

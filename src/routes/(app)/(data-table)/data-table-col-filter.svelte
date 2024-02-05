@@ -6,16 +6,16 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Separator } from '$lib/components/ui/separator';
 	import { cn } from '$lib/utils';
-	export let districtFilterValues: string[] = [];
+	export let filterValues: string[] = [];
 	export let title: string;
 	export let options = []; // Lista opcji w formacie { value: string, label: string }
 	let open = false;
 
 	const handleSelect = (currentValue: string) => {
-		if (districtFilterValues.includes(currentValue)) {
-			districtFilterValues = districtFilterValues.filter((v) => v !== currentValue);
+		if (filterValues.includes(currentValue)) {
+			filterValues = filterValues.filter((v) => v !== currentValue);
 		} else {
-			districtFilterValues = [...districtFilterValues, currentValue];
+			filterValues = [...filterValues, currentValue];
 		}
 	};
 
@@ -27,18 +27,18 @@
 			<PlusCircled class="mr-2 h-4 w-4" />
 			{title}
 
-			{#if districtFilterValues.length > 0}
+			{#if filterValues.length > 0}
 				<Separator orientation="vertical" class="mx-2 h-4" />
 				<Badge variant="secondary" class="rounded-sm px-1 font-normal lg:hidden">
-					{districtFilterValues.length}
+					{filterValues.length}
 				</Badge>
 				<div class="hidden space-x-1 lg:flex">
-					{#if districtFilterValues.length > 2}
+					{#if filterValues.length > 2}
 						<Badge variant="secondary" class="rounded-sm px-1 font-normal">
-							{districtFilterValues.length} Selected
+							{filterValues.length} Selected
 						</Badge>
 					{:else}
-						{#each districtFilterValues as option}
+						{#each filterValues as option}
 							<Badge variant="secondary" class="rounded-sm px-1 font-normal">
 								{option}
 							</Badge>
@@ -64,7 +64,7 @@
 							<div
 								class={cn(
 									'mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary',
-									districtFilterValues.includes(option.value)
+									filterValues.includes(option.value)
 										? 'bg-primary text-primary-foreground'
 										: 'opacity-50 [&_svg]:invisible'
 								)}
@@ -77,12 +77,12 @@
 						</Command.Item>
 					{/each}
 				</Command.Group>
-				{#if districtFilterValues.length > 0}
+				{#if filterValues.length > 0}
 					<Command.Separator />
 					<Command.Item
 						class="justify-center text-center"
 						onSelect={() => {
-							districtFilterValues = [];
+							filterValues = [];
 						}}
 					>
 						Clear filters

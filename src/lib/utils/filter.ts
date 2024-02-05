@@ -27,7 +27,7 @@ export const districtFilter = ({ filterValue, value }) => {
 };
 
 export const typeFilter = ({ filterValue, value }) => {
-	if (filterValue.length === 0) return true;
+	if (filterValue.length === 0) return false;
 	if (!Array.isArray(filterValue) || typeof value !== 'string') return true;
 	return filterValue.some((filter) => {
 		return value.includes(filter);
