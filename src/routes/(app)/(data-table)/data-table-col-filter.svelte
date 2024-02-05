@@ -23,7 +23,7 @@
 
 <Popover.Root bind:open>
 	<Popover.Trigger asChild let:builder>
-		<Button builders={[builder]} variant="outline" class="border-dashed">
+		<Button builders={[builder]} variant="outline" class="border-dashed font-bold">
 			<PlusCircled class="mr-2 h-4 w-4" />
 			{title}
 

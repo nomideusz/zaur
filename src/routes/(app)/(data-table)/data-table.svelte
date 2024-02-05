@@ -47,6 +47,18 @@
 
 	const columns = table.createColumns([
 		table.column({
+			accessor: 'title',
+			header: 'Tytuł',
+			plugins: {
+				sort: {
+					disable: false
+				},
+				filter: {
+					exclude: false
+				}
+			}
+		}),
+		table.column({
 			accessor: 'city',
 			header: 'Miasto',
 			plugins: {
@@ -75,18 +87,6 @@
 				colFilter: {
 					fn: districtFilter,
 					initialFilterValue: []
-				}
-			}
-		}),
-		table.column({
-			accessor: 'title',
-			header: 'Tytuł',
-			plugins: {
-				sort: {
-					disable: false
-				},
-				filter: {
-					exclude: false
 				}
 			}
 		}),
@@ -303,6 +303,7 @@
 	{hidableCols}
 />
 <div class="rounded-md border">
+	<!-- <pre>$filterValues = {JSON.stringify($filterValues, null, 2)}</pre> -->
 	<Table.Root {...$tableAttrs}>
 		<Table.Header>
 			{#each $headerRows as headerRow}

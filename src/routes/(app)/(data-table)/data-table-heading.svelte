@@ -13,31 +13,31 @@
 
 
 <div class="flex items-center justify-between py-4">
-    <div class="flex flex-1 items-center space-x-2">
+    <div class="flex flex-1 items-center space-x-4">
+        <Input
+        class="max-w-sm font-bold"
+        placeholder="Szukaj w tytułach"
+        type="text"
+        bind:value={$filterValue}
+    />
         <DataTableColFilter
             title="Filtruj według dzielnicy"
             bind:districtFilterValues={$filterValues.district}
             options={$districts.map((district) => ({ value: district, label: district }))}
         />
-        <Input
-            class="max-w-sm"
-            placeholder="Szukaj w tytułach"
-            type="text"
-            bind:value={$filterValue}
-        />
         <DataTableTypeFilter 
-            bind:filterValues={$filterValues.propertyTypes}
+            bind:filterValues={$filterValues.property_type}
             options={$propertyTypes.map((type) => ({ value: type, label: type }))}
         />
         <div class="flex items-center space-x-2">
-            <Label for="agencies">Agencje</Label>
+            <Label for="agencies" class="font-bold">Agencje</Label>
             <Switch bind:checked={$filterValues.is_private} id="agencies" />
         </div>
     </div>
 
     <DropdownMenu.Root>
         <DropdownMenu.Trigger asChild let:builder>
-            <Button variant="outline" class="ml-auto" builders={[builder]}>
+            <Button variant="outline" class="ml-auto font-bold" builders={[builder]}>
                 Kolumny <ChevronDown class="ml-2 h-4 w-4" />
             </Button>
         </DropdownMenu.Trigger>

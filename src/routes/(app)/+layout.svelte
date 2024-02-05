@@ -18,7 +18,7 @@
 </script>
 	<header class="flex w-full flex-wrap text-sm sm:flex-nowrap sm:justify-start">
 		<nav
-			class="mx-auto w-full px-4 py-3 sm:flex sm:items-center sm:justify-between sm:px-6 sm:py-2 lg:px-64"
+			class="mx-auto w-full px-4 py-3 sm:flex sm:items-center sm:justify-between sm:px-6 sm:py-2"
 			aria-label="Global"
 		>
 			<div class="flex items-end">
@@ -38,7 +38,7 @@
 		</nav>
 	</header>
 	<main id="content">
-		<div class="mx-auto min-h-screen px-4 pt-10 sm:px-6 lg:px-64">
+		<div class="mx-auto min-h-screen px-4 pt-10 sm:px-6">
 			<slot />
 		</div>
 	</main>
