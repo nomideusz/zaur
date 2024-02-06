@@ -12,7 +12,7 @@
   export let hasPreviousPage;
 </script>
 <div class="flex-1 text-sm text-muted-foreground">
-  Zaur opiewa na {$rows.length} ogłoszeń
+  Tabela opiewa na {$rows.length} ogłoszeń
 </div>
 <div class="flex items-center space-x-6 lg:space-x-8">
 <div class="flex items-center space-x-2">

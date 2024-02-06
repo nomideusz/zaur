@@ -10,26 +10,24 @@
 	import { subscribeToAds } from '$lib/subscribeToAds';
 	import NumberRangeFilter from '$lib/utils/NumberRangeFilter.svelte';
 	import { formatter, squareMeterFormatter } from '$lib/utils/formatter';
-	import { typeFilter, numberRangeFilter, districtFilter, booleanFilter } from '$lib/utils/filter';
+	import { propertyTypeFilter, numberRangeFilter, districtFilter, booleanFilter } from '$lib/utils/filter';
 	import { createTable, Render, Subscribe, createRender } from 'svelte-headless-table';
 	import {
 		addPagination,
 		addSortBy,
 		addTableFilter,
 		addHiddenColumns,
-		addColumnFilters
+		addColumnFilters,
 	} from 'svelte-headless-table/plugins';
 	import { Button } from '$lib/components/ui/button';
-
 	import * as Table from '$lib/components/ui/table';
 	import DataTableActions from './data-table-actions.svelte';
 	import DataTablePagination from './data-table-pagination.svelte';
-	import { CaretSort, ChevronDown } from 'radix-icons-svelte';
+	import { CaretSort } from 'radix-icons-svelte';
 	import { Badge } from '$lib/components/ui/badge';
 	export let section; // 'sales' lub 'rental'
 	export let ads_data;
 	ads.set(ads_data);
-
 	const data = writable([]);
 	$: $data = $ads.filter(ad => ad.section === section);
 	const table = createTable(data, {
@@ -39,10 +37,9 @@
 		filter: addTableFilter({
 			fn: ({ filterValue, value }) => value.toLowerCase().includes(filterValue.toLowerCase())
 		}),
-
 		hide: addHiddenColumns({
-			initialHiddenColumnIds: []
-		})
+			initialHiddenColumnIds: ['city', 'created_at', 'image_url']
+		}),
 	});
 
 	const columns = table.createColumns([
@@ -167,7 +164,7 @@
 				filter: {
 					exclude: true
 				}
-			}
+			},
 		}),
 		table.column({
 			accessor: 'created_at',
@@ -183,7 +180,7 @@
 				filter: {
 					exclude: true
 				}
-			}
+			},
 		}),
 		table.column({
 			accessor: 'is_private',
@@ -199,7 +196,7 @@
 					fn: booleanFilter,
 					initialFilterValue: true
 				}
-			}
+			},
 		}),
         table.column({
 			accessor: 'property_type',
@@ -212,7 +209,7 @@
 					exclude: true
 				},
 				colFilter: {
-					fn: typeFilter,
+					fn: propertyTypeFilter,
 					initialFilterValue: []
 				}
 			}
@@ -250,8 +247,9 @@
 		table.createViewModel(columns);
 	const { hasNextPage, hasPreviousPage, pageIndex, pageCount, pageSize } = pluginStates.page;
 	const { filterValue } = pluginStates.filter;
-	const { filterValues } = pluginStates.colFilter;
+
 	const { hiddenColumnIds } = pluginStates.hide;
+	const { filterValues } = pluginStates.colFilter;
 
 	const districts = derived(data, ($data) => {
 		const uniqueDistricts = new Set();
@@ -280,7 +278,7 @@
 		.filter(([, hide]) => !hide)
 		.map(([id]) => id);
 
-	const hidableCols = ['city', 'district', 'price', 'sqm', 'price_per_sqm', 'date', 'is_private'];
+	const hidableCols = ['city', 'district', 'price', 'sqm', 'price_per_sqm', 'date', 'is_private', 'property_type'];
 
 	function isNewAd(createdAt) {
 		const adTime = new Date(createdAt).getTime();
@@ -292,7 +290,6 @@
 		subscribeToAds();
 	});
 </script>
-
 <DataTableHeading
 	bind:hideForId
 	{filterValue}
@@ -303,12 +300,12 @@
 	{hidableCols}
 />
 	<!-- <pre>$filterValues = {JSON.stringify($filterValues, null, 2)}</pre> -->
-<div class="rounded-md border">
+<div class="rounded-md border" style:overflow-x="auto">
 	<Table.Root {...$tableAttrs}>
 		<Table.Header>
-			{#each $headerRows as headerRow}
-				<Subscribe rowAttrs={headerRow.attrs()}>
-					<Table.Row>
+			{#each $headerRows as headerRow (headerRow.id)}
+				<Subscribe rowAttrs={headerRow.attrs()} let:rowAttrs>
+					<Table.Row {...rowAttrs}>
 						{#each headerRow.cells as cell (cell.id)}
 							<Subscribe attrs={cell.attrs()} let:attrs props={cell.props()} let:props>
 								<Table.Head {...attrs}>
@@ -329,8 +326,6 @@
 											<Render of={cell.render()} />
 											<CaretSort class={'ml-2 h-4 w-4'} />
 										</Button>
-									{:else if cell.id === 'is_private'}
-										<Render of={cell.render()} />
 									{:else}
 										<Render of={cell.render()} />
 									{/if}
@@ -343,10 +338,10 @@
 		</Table.Header>
 		<Table.Body {...$tableBodyAttrs}>
 			{#each $pageRows as row (row.id)}
-				<Subscribe rowAttrs={row.attrs()} let:rowAttrs>
+				<Subscribe rowAttrs={row.attrs()} let:rowAttrs rowProps={row.props()}>
 					<Table.Row {...rowAttrs}>
 						{#each row.cells as cell (cell.id)}
-							<Subscribe attrs={cell.attrs()} let:attrs>
+							<Subscribe attrs={cell.attrs()} let:attrs props={cell.props()}>
 								<Table.Cell {...attrs}>
 									{#if cell.id === 'price' || cell.id === 'price_per_sqm' || cell.id === 'sqm'}
 										<div class="text-right font-medium">
@@ -356,7 +351,7 @@
 										<div class="text-center font-medium">
 											<Render of={cell.render()} />
 											<div class="text-xs text-muted-foreground">
-												<p>zaured</p>
+												zaured
 												<time
 													use:svelteTime={{
 														relative: true,

@@ -16,12 +16,12 @@
 		hidableCols;
 </script>
 
-<div class="flex items-center justify-between pb-4">
+<div class="flex items-center pb-4">
 	<div class="flex justify-start max-w-fit items-center space-x-4 rounded-md mr-4 px-2">
 		<small class="text-sm font-bold leading-none">Wyświetlaj: </small>
 		<DataTableTypeFilter
 			bind:filterValues={$filterValues.property_type}
-			options={$propertyTypes.map((type) => ({ value: type, label: type }))}
+			options={$propertyTypes.map((propertyType) => ({ value: propertyType, label: propertyType }))}
 		/>
 		<div class="flex items-center space-x-2">
 			<Label for="agencies" class="font-bold ml-4">Pokazuj agencje</Label>
