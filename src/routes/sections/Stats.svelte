@@ -2,13 +2,17 @@
   import { adsCount } from '$lib/adsCountStore';
   import Button from '$lib/components/ui/button/button.svelte';
 	import { onMount } from 'svelte';
-  import { SpringValue, format } from 'svelte-ux';
+  import { SpringValue, format, timerStore } from 'svelte-ux';
   let randomNumber =  Math.floor(Math.random() * 9999);
   let numberOfAds : number = 0;
   let numberOfZaurs : number = 0;
   let numberOfRandom : number = 0;
-  onMount(async () => {
+
+  $: if ($adsCount > 0) {
     numberOfAds += $adsCount;
+  }
+
+  onMount(async () => {
     numberOfZaurs += 1;
     numberOfRandom += randomNumber;
 	});
@@ -23,7 +27,7 @@
       <div>
         <h4 data-static class="text-lg sm:text-xl font-semibold text-gray-800 dark:text-gray-200">Number of Ads</h4>
         <p class="mt-2 sm:mt-3 text-4xl sm:text-6xl font-bold text-blue-200">
-          <SpringValue value={numberOfAds} format="integer" options={{ stiffness: 0.01, damping: 0.25 }}  />
+          <SpringValue value={$adsCount} format="integer" options={{ stiffness: 0.01, damping: 0.25 }}  />
         </p>
         <p data-static class="mt-1 text-gray-500">unique ads without ads</p>
     </div>

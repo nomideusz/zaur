@@ -20,7 +20,7 @@ export async function subscribeToAds() {
 				ads.update((currentAds) => {
 					const newAd = { ...payload.new, section: "sales" };
 					const updatedAds = [newAd, ...currentAds];
-					adsCount.update(updatedAds.length);
+					adsCount.update((adsCount) => adsCount + updatedAds.length);
 					return updatedAds;
 				});
 			}
@@ -32,7 +32,7 @@ export async function subscribeToAds() {
 				ads.update((currentAds) => {
 					const newAd = { ...payload.new, section: "rental" };
 					const updatedAds = [newAd, ...currentAds];
-					adsCount.set(updatedAds.length);
+					adsCount.update((adsCount) => adsCount + updatedAds.length);
 					return updatedAds;
 				});
 			}
