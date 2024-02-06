@@ -22,28 +22,22 @@
 <body>
 	<header class="flex w-full flex-wrap text-sm sm:flex-nowrap sm:justify-start">
 		<nav
-			class="mx-auto w-full px-4 py-3 sm:flex sm:items-baseline sm:justify-between sm:px-6 sm:py-2"
+			class="mx-auto w-full px-4 py-3 sm:px-6 sm:py-2"
 			aria-label="Global"
 		>
-		<div class="items-start">
+		<div class="flex items-baseline">
 			<h1 class="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">
 				<a class="flex-none" href="/" aria-label="Brand"> Zaur </a>
 			</h1>
 			<span class="ml-2 text-sm">powered by kurcz.pl</span>
 		</div>
-			<div>
-				<h1 class="scroll-m-20 text-4xl font-extrabold tracking-tight lg:text-5xl">Nieruchomości</h1>
-				<h2
-					class="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0"
-				>
-					Kraków
-				</h2>
-				<div class="mt-6 flex gap-4">
-					<Button class="font-bold" size="lg" variant={variantSales} href="/sales">Sprzedaż</Button>
-					<Button class="font-bold" size="lg" variant={variantRental} href="/rental">Wynajem</Button>
-				</div>
+		<div>
+			<h1 class="scroll-m-20 font-extrabold tracking-tight text-3xl border-b pt-6">Nieruchomości Kraków</h1>
+			<div class="mt-2 flex gap-4">
+				<Button class="font-bold" size="lg" variant={variantSales} href="/sales">Sprzedaż</Button>
+				<Button class="font-bold" size="lg" variant={variantRental} href="/rental">Wynajem</Button>
 			</div>
-
+		</div>
 		</nav>
 	</header>
 	<main id="content">
