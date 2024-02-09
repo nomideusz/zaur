@@ -115,7 +115,11 @@ function parseAdsOLX(html: string, propertyType: string, adType: string) {
         const price = priceElement ? priceElement.textContent.replace(/\D/g, '') : 0;
 
         const linkElement = adElement.querySelector("a[href]");
-        const link = linkElement ? linkElement.getAttribute("href") : "";
+        let link = linkElement ? linkElement.getAttribute("href") : "";
+
+		if (link && !link.startsWith("http")) {
+			link = `https://www.olx.pl${link}`;
+		}
 
         const imageUrlElement = adElement.querySelector("img");
         const imageUrl = imageUrlElement ? imageUrlElement.getAttribute("src") : "";
@@ -123,7 +127,7 @@ function parseAdsOLX(html: string, propertyType: string, adType: string) {
         const locationDateText = adElement.querySelector("p.css-1a4brun")?.innerText;
         const cityDistrict = locationDateText.split(" - ")[0].split(", ");
         const city = cityDistrict[0];
-        const district = cityDistrict.length > 1 ? cityDistrict[1] : null;
+        const district = cityDistrict.length > 1 ? cityDistrict[1] : "";
         const dateText = locationDateText.split(" - ")[1];
         const date = parsePolishDate(dateText);
 
