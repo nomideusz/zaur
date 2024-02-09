@@ -146,8 +146,8 @@ function parseAdsOLX(html: string, propertyType: string, adType: string) {
 			city,
 			district,
 			date,
-			sqm,
-			price_per_sqm: pricePerSqm, // Ustawione na null dla 'wynajem'
+            sqm,
+            price_per_sqm: sqm && price ? Math.round(Number(price) / Number(sqm)) : pricePerSqm,
 			ad_link: link,
 			is_private,
 			image_url: imageUrl,
