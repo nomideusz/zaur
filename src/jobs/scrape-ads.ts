@@ -1,7 +1,7 @@
 import { intervalTrigger } from "@trigger.dev/sdk";
 import { client } from "../trigger";
 
-const services = ["olx"];
+const services = ["olx", "nol"];
 const types = ["mieszkania", "domy"];
 const categories = ["sprzedaz", "wynajem"];
 const adTypes = ["private", "business"];
