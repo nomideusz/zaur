@@ -45,6 +45,7 @@
 		"@trigger.dev/sdk": "^2.3.17",
 		"@trigger.dev/sveltekit": "^2.3.17",
 		"@vercel/analytics": "^1.1.2",
+		"appwrite": "^13.0.1",
 		"bits-ui": "^0.14.0",
 		"clsx": "^2.1.0",
 		"cmdk-sv": "^0.0.13",

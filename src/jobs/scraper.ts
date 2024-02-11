@@ -51,8 +51,8 @@ function constructURL(service, type, category, adType) {
     throw new Error("Unsupported service");
 }
 
-async function scrollToBottom(page, timeout = 100) {
-	const distance = 10000;
+async function scrollToBottom(page, timeout = 500) {
+	const distance = 500;
 	const delay = timeout;
 
 	await page.evaluate(
