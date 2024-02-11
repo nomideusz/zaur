@@ -1,17 +1,17 @@
 import { intervalTrigger } from "@trigger.dev/sdk";
 import { client } from "../trigger";
 
-const services = ["olx"]; // Przykładowa lista serwisów
-const types = ["mieszkania", "domy"]; // Przykładowe typy nieruchomości
-const categories = ["sprzedaz", "wynajem"]; // Przykładowe kategorie
-const adTypes = ["private", "business"]; // Przykładowe typy ogłoszeń
+const services = ["olx"];
+const types = ["mieszkania", "domy"];
+const categories = ["sprzedaz", "wynajem"];
+const adTypes = ["private", "business"];
 
 export const scrapeAds = client.defineJob({
 	id: "scrape-ads",
 	name: "Scrape Ads and Save to Database",
 	version: "0.0.1",
 	trigger: intervalTrigger({
-		seconds: 600,
+		seconds: 12000,
 	}),
 
 	run: async (payload, io, ctx) => {
@@ -31,18 +31,17 @@ export const scrapeAds = client.defineJob({
 			endpointUrl,
 			{
 				method: "GET",
-			},
-			{},
-			{
-				durationInMs: 60000,
-				retry: {
-					limit: 6,
-					minTimeoutInMs: 1000,
-					maxTimeoutInMs: 60000,
-					factor: 2,
-					randomize: true,
-				},
-			}
+      },
+      {
+        durationInMs: 10000, // 10 seconds
+        retry: {
+          limit: 6,
+          minTimeoutInMs: 1000,
+          maxTimeoutInMs: 60000,
+          factor: 2,
+          randomize: true,
+        },
+      }
 		);
 
 		return {
