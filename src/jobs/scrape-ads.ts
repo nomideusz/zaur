@@ -31,17 +31,17 @@ export const scrapeAds = client.defineJob({
 			endpointUrl,
 			{
 				method: "GET",
-      },
-      {
-        durationInMs: 10000, // 10 seconds
-        retry: {
-          limit: 6,
-          minTimeoutInMs: 1000,
-          maxTimeoutInMs: 60000,
-          factor: 2,
-          randomize: true,
-        },
-      }
+			},
+			{},
+			{
+				durationInMs: 60000,
+				retry: {
+					limit: 6,
+					minTimeoutInMs: 1000,
+					maxTimeoutInMs: 60000,
+					factor: 2
+				},
+			}
 		);
 
 		return {
