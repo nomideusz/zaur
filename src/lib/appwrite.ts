@@ -1,17 +1,17 @@
-import { PUBLIC_APPWRITE_ENDPOINT, PUBLIC_APPWRITE_PROJECT } from '$env/static/public';
-  import { Databases, Account, Client } from "appwrite";
+// import { PUBLIC_APPWRITE_ENDPOINT, PUBLIC_APPWRITE_PROJECT } from '$env/static/public';
+//   import { Databases, Account, Client } from "appwrite";
   
-  const client = new Client();
-  client
-    .setEndpoint(PUBLIC_APPWRITE_ENDPOINT)
-    .setProject(PUBLIC_APPWRITE_PROJECT);
+//   const client = new Client();
+//   client
+//     .setEndpoint(PUBLIC_APPWRITE_ENDPOINT)
+//     .setProject(PUBLIC_APPWRITE_PROJECT);
   
-  const account = new Account(client);
-  const databases = new Databases(client);
+//   const account = new Account(client);
+//   const databases = new Databases(client);
   
-  export const appwrite = {
-    client,
-    account,
-    databases,
-  };
+//   export const appwrite = {
+//     client,
+//     account,
+//     databases,
+//   };
   

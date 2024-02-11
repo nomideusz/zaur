@@ -2,7 +2,6 @@
 	import '../app.pcss';
 	import "@fontsource/jetbrains-mono/400.css";
 	import "@fontsource/jetbrains-mono/500.css";
-	import logo from '$lib/img/zaur.png?enhanced&w=400';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/button/button.svelte';
 	import { Heart } from 'lucide-svelte';

@@ -41,7 +41,7 @@
 	];
 
 	import { invalidateAll } from '$app/navigation';
-	import { appwrite } from '$lib/appwrite';
+	// import { appwrite } from '$lib/appwrite';
 
 	export let data;
 
@@ -54,13 +54,13 @@
 		await invalidateAll();
 	}
 </script>
-{#if loggedIn}
+<!-- {#if loggedIn}
 	<p>Hello {data.account?.name}!</p>
 	<button on:click={logout}>Logout</button>
 {:else}
 	<a href="/login">Login</a>
 	<a href="/signup">Signup</a>
-{/if}
+{/if} -->
 <Hero />
 <Stats />
 

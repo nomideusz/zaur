@@ -1,5 +1,5 @@
 <!-- src/routes/login/+page.svelte -->
-<script>
+<!-- <script>
 	import { invalidateAll } from '$app/navigation';
 	import { appwrite } from '$lib/appwrite';
 
@@ -49,4 +49,4 @@
 	{#if formError}
 		<p>{formError}</p>
 	{/if}
-</form>
+</form> -->
