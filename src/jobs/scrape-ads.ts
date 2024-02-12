@@ -11,7 +11,7 @@ export const scrapeAds = client.defineJob({
 	name: "Scrape Ads and Save to Database",
 	version: "0.0.1",
 	trigger: intervalTrigger({
-		seconds: 12000,
+		seconds: 6000,
 	}),
 
 	run: async (payload, io, ctx) => {
