@@ -10,7 +10,7 @@
 	import { subscribeToAds } from '$lib/subscribeToAds';
 	import NumberRangeFilter from '$lib/utils/NumberRangeFilter.svelte';
 	import { formatter, squareMeterFormatter } from '$lib/utils/formatter';
-	import { propertyTypeFilter, numberRangeFilter, districtFilter, booleanFilter } from '$lib/utils/filter';
+	import { propertyTypeFilter, matchFilter, numberRangeFilter, districtFilter, booleanFilter } from '$lib/utils/filter';
 	import { createTable, Render, Subscribe, createRender } from 'svelte-headless-table';
 	import {
 		addPagination,

@@ -20,7 +20,7 @@
 	<div class="flex justify-start max-w-fit items-center space-x-4 rounded-md mr-4 px-2">
 		<small class="text-sm font-bold leading-none">Wyświetlaj: </small>
 		<DataTableTypeFilter
-			bind:filterValues={$filterValues.property_type}
+			bind:selectedValues={$filterValues.property_type}
 			options={$propertyTypes.map((propertyType) => ({ value: propertyType, label: propertyType }))}
 		/>
 		<div class="flex items-center space-x-2">
