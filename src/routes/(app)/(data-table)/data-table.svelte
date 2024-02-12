@@ -4,20 +4,26 @@
 	import Time, { svelteTime } from 'svelte-time';
 	import { dayjs } from 'svelte-time';
 	import * as HoverCard from '$lib/components/ui/hover-card';
-    import { ads } from '$lib/adsStore';
-    import { writable, derived } from 'svelte/store';
-    import autoAnimate from '@formkit/auto-animate';
+	import { ads } from '$lib/adsStore';
+	import { writable, derived } from 'svelte/store';
+	import autoAnimate from '@formkit/auto-animate';
 	import { subscribeToAds } from '$lib/subscribeToAds';
 	import NumberRangeFilter from '$lib/utils/NumberRangeFilter.svelte';
 	import { formatter, squareMeterFormatter } from '$lib/utils/formatter';
-	import { propertyTypeFilter, matchFilter, numberRangeFilter, districtFilter, booleanFilter } from '$lib/utils/filter';
+	import {
+		propertyTypeFilter,
+		matchFilter,
+		numberRangeFilter,
+		districtFilter,
+		booleanFilter
+	} from '$lib/utils/filter';
 	import { createTable, Render, Subscribe, createRender } from 'svelte-headless-table';
 	import {
 		addPagination,
 		addSortBy,
 		addTableFilter,
 		addHiddenColumns,
-		addColumnFilters,
+		addColumnFilters
 	} from 'svelte-headless-table/plugins';
 	import { Button } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table';
@@ -29,7 +35,7 @@
 	export let ads_data;
 	ads.set(ads_data);
 	const data = writable([]);
-	$: $data = $ads.filter(ad => ad.section === section);
+	$: $data = $ads.filter((ad) => ad.section === section);
 	const table = createTable(data, {
 		colFilter: addColumnFilters(),
 		page: addPagination({ initialPageSize: 100 }),
@@ -39,7 +45,7 @@
 		}),
 		hide: addHiddenColumns({
 			initialHiddenColumnIds: ['city', 'created_at', 'image_url']
-		}),
+		})
 	});
 
 	const columns = table.createColumns([
@@ -164,7 +170,7 @@
 				filter: {
 					exclude: true
 				}
-			},
+			}
 		}),
 		table.column({
 			accessor: 'created_at',
@@ -180,7 +186,7 @@
 				filter: {
 					exclude: true
 				}
-			},
+			}
 		}),
 		table.column({
 			accessor: 'is_private',
@@ -196,9 +202,9 @@
 					fn: booleanFilter,
 					initialFilterValue: true
 				}
-			},
+			}
 		}),
-        table.column({
+		table.column({
 			accessor: 'property_type',
 			header: 'Rodzaj',
 			plugins: {
@@ -261,24 +267,49 @@
 		return Array.from(uniqueDistricts);
 	});
 
-    const propertyTypes = derived(data, ($data) => {
+	const sortOrder = [
+		'mieszkania',
+		'domy',
+		'pokoje',
+		'biura-lokale',
+		'dzialki',
+		'garaze-parkingi',
+		'hale-magazyny',
+		'pozostale-nieruchomosci'
+	];
+
+	const propertyTypes = derived(data, ($data) => {
 		const uniqueTypes = new Set();
 		$data.forEach((ad) => {
 			if (ad.property_type) {
 				uniqueTypes.add(ad.property_type);
 			}
 		});
-		return Array.from(uniqueTypes);
+		const sortedUniqueTypes = Array.from(uniqueTypes).sort((a, b) => {
+			return sortOrder.indexOf(a) - sortOrder.indexOf(b);
+		});
+		return sortedUniqueTypes;
 	});
 
 	const ids = flatColumns.map((col) => col.id);
-	let hideForId = Object.fromEntries(ids.map((id) => [id, !['city', 'created_at', 'image_url'].includes(id)]));
+	let hideForId = Object.fromEntries(
+		ids.map((id) => [id, !['city', 'created_at', 'image_url'].includes(id)])
+	);
 
 	$: $hiddenColumnIds = Object.entries(hideForId)
 		.filter(([, hide]) => !hide)
 		.map(([id]) => id);
 
-	const hidableCols = ['city', 'district', 'price', 'sqm', 'price_per_sqm', 'date', 'is_private', 'property_type'];
+	const hidableCols = [
+		'city',
+		'district',
+		'price',
+		'sqm',
+		'price_per_sqm',
+		'date',
+		'is_private',
+		'property_type'
+	];
 
 	function isNewAd(createdAt) {
 		const adTime = new Date(createdAt).getTime();
@@ -290,16 +321,17 @@
 		subscribeToAds();
 	});
 </script>
+
 <DataTableHeading
 	bind:hideForId
 	{filterValue}
 	{filterValues}
 	{districts}
-    {propertyTypes}
+	{propertyTypes}
 	{flatColumns}
 	{hidableCols}
 />
-	<!-- <pre>$filterValues = {JSON.stringify($filterValues, null, 2)}</pre> -->
+<!-- <pre>$filterValues = {JSON.stringify($filterValues, null, 2)}</pre> -->
 <div class="rounded-md border" style:overflow-x="auto">
 	<Table.Root {...$tableAttrs}>
 		<Table.Header>
@@ -379,7 +411,7 @@
 												<Render of={cell.render()} />
 											</HoverCard.Trigger>
 											<HoverCard.Content class="w-auto">
-                                                <img src={row.original.image_url} alt={row.original.title} />
+												<img src={row.original.image_url} alt={row.original.title} />
 											</HoverCard.Content>
 										</HoverCard.Root>
 									{:else if cell.id === 'is_private'}
