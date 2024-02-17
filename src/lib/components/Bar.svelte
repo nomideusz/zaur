@@ -26,7 +26,6 @@
 		'rgba(113, 205, 205,0.4)',
 		'rgba(170, 128, 252,0.4)',
 		'rgba(255, 177, 101,0.4)'
-		// Możesz dodać więcej kolorów, jeśli masz więcej słupków
 	];
 
 	// Przypisujemy kolory do każdego zestawu danych

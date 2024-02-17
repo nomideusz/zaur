@@ -68,7 +68,7 @@
 
 
 <Hero />
-<div class="w-2/3 h-auto mx-auto mt-16">
+<div class="container h-auto mx-auto mt-16">
 	<Bar data={data.props.chartData} />
 </div>
 <Stats />
