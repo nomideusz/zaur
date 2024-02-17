@@ -23,10 +23,17 @@ export async function load({ fetch }) {
         return acc;
     }, {});
 
+    const filteredByMinAds = Object.entries(groupedByDistrict).reduce((acc, [district, {ads, count}]) => {
+        if (count >= 5) {
+            acc[district] = { ads, count };
+        }
+        return acc;
+    }, {});
+
     // Obliczanie średniej ceny za metr kwadratowy dla każdej dzielnicy
     const labels = [];
     const data = [];
-    Object.entries(groupedByDistrict).forEach(([district, {ads, count}]) => {
+    Object.entries(filteredByMinAds).forEach(([district, {ads, count}]) => {
         const sortedPrices = ads.map(ad => ad.price_per_sqm).sort((a, b) => a - b);
         const cutOff = Math.floor(sortedPrices.length * 0.05); // 5% skrajnych wartości
         const filteredPrices = sortedPrices.slice(cutOff, sortedPrices.length - cutOff);
