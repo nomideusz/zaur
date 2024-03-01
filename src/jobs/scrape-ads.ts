@@ -1,7 +1,7 @@
 import { intervalTrigger } from "@trigger.dev/sdk";
 import { client } from "../trigger";
 
-const services = ["olx", "nol"];
+const services = ["olx", "nol", "gratka"];
 const types = ["mieszkania", "domy", "dzialki"];
 const categories = ["sprzedaz", "wynajem"];
 const adTypes = ["private", "business"];
@@ -34,11 +34,11 @@ export const scrapeAds = client.defineJob({
 			},
 			{},
 			{
-				durationInMs: 60000,
+				durationInMs: 40000,
 				retry: {
 					limit: 6,
 					minTimeoutInMs: 1000,
-					maxTimeoutInMs: 60000,
+					maxTimeoutInMs: 80000,
 					factor: 2
 				},
 			}
