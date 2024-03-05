@@ -1,7 +1,7 @@
 import { intervalTrigger } from "@trigger.dev/sdk";
 import { client } from "../trigger";
 
-const services = ["olx", "nol", 'gratka'];
+const services = ["olx", "nol", "gratka"];
 const types = ["mieszkania", "domy", "dzialki"];
 const categories = ["sprzedaz", "wynajem"];
 const adTypes = ["private", "business"];
@@ -11,7 +11,7 @@ export const scrapeAds = client.defineJob({
 	name: "Scrape Ads and Save to Database",
 	version: "0.0.1",
 	trigger: intervalTrigger({
-		seconds: 6000,
+		seconds: 4000,
 	}),
 
 	run: async (payload, io, ctx) => {
@@ -38,7 +38,7 @@ export const scrapeAds = client.defineJob({
 				retry: {
 					limit: 6,
 					minTimeoutInMs: 1000,
-					maxTimeoutInMs: 60000,
+					maxTimeoutInMs: 80000,
 					factor: 2
 				},
 			}
