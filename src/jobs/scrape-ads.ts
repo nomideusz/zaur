@@ -34,7 +34,7 @@ export const scrapeAds = client.defineJob({
 			},
 			{},
 			{
-				durationInMs: 60000,
+				durationInMs: 40000,
 				retry: {
 					limit: 6,
 					minTimeoutInMs: 1000,
