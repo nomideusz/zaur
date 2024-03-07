@@ -24,7 +24,7 @@ export async function load({ fetch }) {
     }, {});
 
     const filteredByMinAds = Object.entries(groupedByDistrict).reduce((acc, [district, {ads, count}]) => {
-        if (count >= 5) {
+        if (count >= 10) {
             acc[district] = { ads, count };
         }
         return acc;
@@ -48,7 +48,6 @@ export async function load({ fetch }) {
         labels: labels,
         datasets: [
             {
-                label: 'Średnia cena mieszkań za m²',
                 data: data,
                 borderWidth: 2,
             },

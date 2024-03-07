@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { Bar } from 'svelte-chartjs';
 
 	import { Chart, Title, Tooltip, Legend, BarElement, CategoryScale, LinearScale } from 'chart.js';
@@ -37,6 +37,19 @@
 	if (data && data.datasets && data.datasets.length > 0) {
 		data.datasets[0].backgroundColor = colors;
 	}
+	let options = {
+		plugins: {
+			legend: {
+				display: false
+			},
+			title: {
+				display: true,
+				text: 'Średnia cena za m2 (mieszkania)'
+			}
+		},
+		responsive: true,
+		indexAxis: 'x'
+	};
 </script>
 
-<Bar {data} options={{ responsive: true, indexAxis: 'x' }} />
+<Bar {data} {options} />
