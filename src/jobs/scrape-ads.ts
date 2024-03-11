@@ -1,5 +1,6 @@
 import { intervalTrigger } from "@trigger.dev/sdk";
 import { client } from "../trigger";
+import { toast } from 'svelte-sonner';
 
 const services = ["olx", "nol", "gratka"];
 const types = ["mieszkania", "domy", "dzialki"];
@@ -15,6 +16,7 @@ export const scrapeAds = client.defineJob({
 	}),
 
 	run: async (payload, io, ctx) => {
+		toast.info('Zaur zauruje.');
 		const serviceIndex = Math.floor(Math.random() * services.length);
 		const typeIndex = Math.floor(Math.random() * types.length);
 		const categoryIndex = Math.floor(Math.random() * categories.length);

@@ -40,7 +40,7 @@
 			img: t5
 		}
 	];
-	
+
 	export let data;
 
 	import { invalidateAll } from '$app/navigation';
@@ -64,11 +64,8 @@
 	<a href="/signup">Signup</a>
 {/if} -->
 
-
-
-
 <Hero />
-<div class="container h-auto mx-auto mt-16">
+<div class="container mx-auto mt-16 h-auto">
 	<Bar data={data.props.chartData} />
 </div>
 <Stats />

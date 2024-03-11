@@ -1,12 +1,11 @@
 <script lang="ts">
 	import DataTableHeading from './data-table-heading.svelte';
-	import { onMount, tick } from 'svelte';
-	import Time, { svelteTime } from 'svelte-time';
+	import { onMount } from 'svelte';
+	import { svelteTime } from 'svelte-time';
 	import { dayjs } from 'svelte-time';
 	import * as HoverCard from '$lib/components/ui/hover-card';
 	import { ads } from '$lib/adsStore';
 	import { writable, derived } from 'svelte/store';
-	import autoAnimate from '@formkit/auto-animate';
 	import { subscribeToAds } from '$lib/subscribeToAds';
 	import NumberRangeFilter from '$lib/utils/NumberRangeFilter.svelte';
 	import { formatter, squareMeterFormatter } from '$lib/utils/formatter';
@@ -23,7 +22,8 @@
 		addSortBy,
 		addTableFilter,
 		addHiddenColumns,
-		addColumnFilters
+		addColumnFilters,
+		addDataExport
 	} from 'svelte-headless-table/plugins';
 	import { Button } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table';
@@ -45,7 +45,8 @@
 		}),
 		hide: addHiddenColumns({
 			initialHiddenColumnIds: ['city', 'created_at', 'image_url']
-		})
+		}),
+		export: addDataExport()
 	});
 
 	const columns = table.createColumns([
@@ -108,34 +109,7 @@
 				},
 				colFilter: {
 					fn: numberRangeFilter,
-					initialFilterValue: [null, null],
-					render: ({ filterValue, values }) =>
-						createRender(NumberRangeFilter, { filterValue, values, formatter })
-				}
-			}
-		}),
-		table.column({
-			accessor: 'sqm',
-			header: 'm2',
-			cell: ({ value }) => {
-				return squareMeterFormatter(value);
-			},
-			plugins: {
-				sort: {
-					disable: false
-				},
-				filter: {
-					exclude: true
-				},
-				colFilter: {
-					fn: numberRangeFilter,
-					initialFilterValue: [null, null],
-					render: ({ filterValue, values }) =>
-						createRender(NumberRangeFilter, {
-							filterValue,
-							values,
-							formatter: squareMeterFormatter
-						})
+					initialFilterValue: [null, null]
 				}
 			}
 		}),
@@ -154,9 +128,26 @@
 				},
 				colFilter: {
 					fn: numberRangeFilter,
-					initialFilterValue: [null, null],
-					render: ({ filterValue, values }) =>
-						createRender(NumberRangeFilter, { filterValue, values, formatter })
+					initialFilterValue: [null, null]
+				}
+			}
+		}),
+		table.column({
+			accessor: 'sqm',
+			header: 'm2',
+			cell: ({ value }) => {
+				return squareMeterFormatter(value);
+			},
+			plugins: {
+				sort: {
+					disable: false
+				},
+				filter: {
+					exclude: true
+				},
+				colFilter: {
+					fn: numberRangeFilter,
+					initialFilterValue: [null, null]
 				}
 			}
 		}),
@@ -256,6 +247,7 @@
 
 	const { hiddenColumnIds } = pluginStates.hide;
 	const { filterValues } = pluginStates.colFilter;
+	const { exportedData } = pluginStates.export;
 
 	const districts = derived(data, ($data) => {
 		const uniqueDistricts = new Set();
@@ -265,6 +257,58 @@
 			}
 		});
 		return Array.from(uniqueDistricts);
+	});
+
+	const minMaxPrice = derived(exportedData, ($exportedData) => {
+		if ($exportedData.length === 0) {
+			return { min: null, max: null };
+		}
+
+		const prices = $exportedData
+			.map((item) => item.price)
+			.filter((price) => price != null && !isNaN(price));
+
+		if (prices.length === 0) {
+			return { min: null, max: null };
+		}
+
+		const minPrice = Math.min(...prices);
+		const maxPrice = Math.max(...prices);
+		return { min: minPrice, max: maxPrice };
+	});
+
+	const minMaxPricePerSqm = derived(exportedData, ($exportedData) => {
+		if ($exportedData.length === 0) {
+			return { min: null, max: null };
+		}
+
+		const pricesPerSqm = $exportedData
+			.map((item) => item.price_per_sqm)
+			.filter((price_per_sqm) => price_per_sqm != null && !isNaN(price_per_sqm));
+
+		if (pricesPerSqm.length === 0) {
+			return { min: null, max: null };
+		}
+
+		const minPricePerSqm = Math.min(...pricesPerSqm);
+		const maxPricePerSqm = Math.max(...pricesPerSqm);
+		return { min: minPricePerSqm, max: maxPricePerSqm };
+	});
+
+	const minMaxArea = derived(exportedData, ($exportedData) => {
+		if ($exportedData.length === 0) {
+			return { min: null, max: null };
+		}
+
+		const areas = $exportedData.map((item) => item.sqm).filter((sqm) => sqm != null && !isNaN(sqm));
+
+		if (areas.length === 0) {
+			return { min: null, max: null };
+		}
+
+		const minArea = Math.min(...areas);
+		const maxArea = Math.max(...areas);
+		return { min: minArea, max: maxArea };
 	});
 
 	const sortOrder = [
@@ -330,8 +374,16 @@
 	{propertyTypes}
 	{flatColumns}
 	{hidableCols}
+	minPrice={$minMaxPrice.min}
+	maxPrice={$minMaxPrice.max}
+	minPricePerSqm={$minMaxPricePerSqm.min}
+	maxPricePerSqm={$minMaxPricePerSqm.max}
+	minArea={$minMaxArea.min}
+	maxArea={$minMaxArea.max}
 />
+
 <!-- <pre>$filterValues = {JSON.stringify($filterValues, null, 2)}</pre> -->
+
 <div class="rounded-md border" style:overflow-x="auto">
 	<Table.Root {...$tableAttrs}>
 		<Table.Header>

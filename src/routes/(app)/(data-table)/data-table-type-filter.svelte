@@ -4,6 +4,7 @@
 	import { onMount } from 'svelte';
 	export let selectedValues: string[] = [];
 	export let options: { value: string; label: string }[] = [];
+	export let allProperties: { type: string; price: number }[] = []; // Przykładowe dane
 
 	onMount(() => {
 		selectedValues = ['mieszkania'];
