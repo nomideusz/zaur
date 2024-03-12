@@ -6,7 +6,6 @@
 	import t3 from '$lib/img/t_assam_akkadu.jpg?enhanced&w=600';
 	import t4 from '$lib/img/t_clint_wayne.jpg?enhanced&w=600';
 	import t5 from '$lib/img/t_10.jpg?enhanced&w=600';
-	import Bar from '$lib/components/Bar.svelte';
 	const people = [
 		{
 			name: 'Taylor Smarton',
@@ -42,32 +41,9 @@
 	];
 
 	export let data;
-
-	import { invalidateAll } from '$app/navigation';
-	// import { appwrite } from '$lib/appwrite';
-
-	// $: loggedIn = !!data.account;
-
-	// async function logout() {
-	// 	await appwrite.account.deleteSession('current');
-	// 	// invalidateAll will execute all `load` functions again.
-	// 	// In our case, this means we'll fetch the account data again.
-	// 	await invalidateAll();
-	// }
 </script>
 
-<!-- {#if loggedIn}
-	<p>Hello {data.account?.name}!</p>
-	<button on:click={logout}>Logout</button>
-{:else}
-	<a href="/login">Login</a>
-	<a href="/signup">Signup</a>
-{/if} -->
-
 <Hero />
-<div class="container mx-auto mt-16 h-auto">
-	<Bar data={data.props.chartData} />
-</div>
 <Stats />
 
 {#each people as person}

@@ -34,62 +34,56 @@
 		// 	.optional()
 		minPrice: z
 			.string()
-			.transform((val) => val.replace(/\s/g, '')) // Usuwa wszystkie spacje
-			.refine((val) => !isNaN(Number(val)), {
+			.refine((val) => !isNaN(Number(val.replace(/\s/g, ''))), {
 				message: 'Wartość musi być liczbą.'
 			})
-			.refine((val) => Number(val) <= 99999999, {
+			.refine((val) => Number(val.replace(/\s/g, '')) <= 99999999, {
 				message: 'Jest to zbyt masywna suma.'
 			})
 			.nullish(),
 		maxPrice: z
 			.string()
-			.transform((val) => val.replace(/\s/g, '')) // Usuwa wszystkie spacje
-			.refine((val) => !isNaN(Number(val)), {
+			.refine((val) => !isNaN(Number(val.replace(/\s/g, ''))), {
 				message: 'Wartość musi być liczbą.'
 			})
-			.refine((val) => Number(val) <= 99999999, {
+			.refine((val) => Number(val.replace(/\s/g, '')) <= 99999999, {
 				message: 'Jest to zbyt masywna suma.'
 			})
 			.nullish(),
 		minPricePerSqm: z
 			.string()
-			.transform((val) => val.replace(/\s/g, '')) // Usuwa wszystkie spacje
-			.refine((val) => !isNaN(Number(val)), {
+			.refine((val) => !isNaN(Number(val.replace(/\s/g, ''))), {
 				message: 'Wartość musi być liczbą.'
 			})
-			.refine((val) => Number(val) <= 99999999, {
+			.refine((val) => Number(val.replace(/\s/g, '')) <= 99999999, {
 				message: 'Jest to zbyt masywna suma.'
 			})
 			.nullish(),
 		maxPricePerSqm: z
 			.string()
-			.transform((val) => val.replace(/\s/g, '')) // Usuwa wszystkie spacje
-			.refine((val) => !isNaN(Number(val)), {
+			.refine((val) => !isNaN(Number(val.replace(/\s/g, ''))), {
 				message: 'Wartość musi być liczbą.'
 			})
-			.refine((val) => Number(val) <= 99999999, {
+			.refine((val) => Number(val.replace(/\s/g, '')) <= 99999999, {
 				message: 'Jest to zbyt masywna suma.'
 			})
 			.nullish(),
 		minArea: z
 			.string()
-			.transform((val) => val.replace(/\s/g, '')) // Usuwa wszystkie spacje
-			.refine((val) => !isNaN(Number(val)), {
+			.refine((val) => !isNaN(Number(val.replace(/\s/g, ''))), {
 				message: 'Wartość musi być liczbą.'
 			})
-			.refine((val) => Number(val) <= 99999999, {
-				message: 'Jest to zbyt masywna wartość.'
+			.refine((val) => Number(val.replace(/\s/g, '')) <= 99999999, {
+				message: 'Jest to zbyt masywna powierzchnia.'
 			})
 			.nullish(),
 		maxArea: z
 			.string()
-			.transform((val) => val.replace(/\s/g, '')) // Usuwa wszystkie spacje
-			.refine((val) => !isNaN(Number(val)), {
+			.refine((val) => !isNaN(Number(val.replace(/\s/g, ''))), {
 				message: 'Wartość musi być liczbą.'
 			})
-			.refine((val) => Number(val) <= 99999999, {
-				message: 'Jest to zbyt masywna wartość.'
+			.refine((val) => Number(val.replace(/\s/g, '')) <= 99999999, {
+				message: 'Jest to zbyt masywna powierzchnia.'
 			})
 			.nullish()
 	});
@@ -149,6 +143,15 @@
 		SPA: true,
 		validators: zodClient(formSchema),
 		resetForm: false,
+		onChange(event) {
+			if (event.target) {
+				// Form input event
+				console.log(event.path, 'was changed from', event.target, 'in form', event.formElement);
+			} else {
+				// Programmatic event
+				console.log('Fields updated:', event.paths);
+			}
+		},
 		onUpdate: ({ form: f }) => {
 			Object.keys(f.data).forEach((key) => {
 				const value = f.data[key];
