@@ -32,7 +32,7 @@ export async function subscribeToAds() {
             { event: "*", schema: "public", table: "ads_sell" },
             (payload) => {
                 if (firstLoadComplete) {
-                    showToast('Zaur zzaurował nowe ogłoszenia w dziale sprzedaży.');
+                    showToast('Zaur zzaurował nowe ogłoszenia sprzedaży.');
                 } else {
                     firstLoadComplete = true;
                 }
@@ -49,7 +49,7 @@ export async function subscribeToAds() {
             { event: "*", schema: "public", table: "ads_rent" },
             (payload) => {
                 if (firstLoadComplete) {
-                    showToast('Zaur zzaurował nowe ogłoszenia w dziale wynajmu.');
+                    showToast('Zaur zzaurował nowe ogłoszenia wynajmu.');
                 } else {
                     firstLoadComplete = true;
                 }
