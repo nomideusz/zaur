@@ -382,7 +382,7 @@
 	maxArea={$minMaxArea.max}
 />
 
-<!-- <pre>$filterValues = {JSON.stringify($filterValues, null, 2)}</pre> -->
+<pre>$filterValues = {JSON.stringify($filterValues, null, 2)}</pre>
 
 <div class="rounded-md border" style:overflow-x="auto">
 	<Table.Root {...$tableAttrs}>

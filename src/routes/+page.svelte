@@ -6,6 +6,7 @@
 	import t3 from '$lib/img/t_assam_akkadu.jpg?enhanced&w=600';
 	import t4 from '$lib/img/t_clint_wayne.jpg?enhanced&w=600';
 	import t5 from '$lib/img/t_10.jpg?enhanced&w=600';
+	import Bar from '$lib/components/Bar.svelte';
 	const people = [
 		{
 			name: 'Taylor Smarton',
@@ -44,6 +45,10 @@
 </script>
 
 <Hero />
+
+<div class="container mx-auto mt-16 h-auto">
+	<Bar data={data.props.chartData} />
+</div>
 <Stats />
 
 {#each people as person}

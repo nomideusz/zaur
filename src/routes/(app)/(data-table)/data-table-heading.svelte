@@ -5,6 +5,7 @@
 	import DataTableColFilter from './data-table-col-filter.svelte';
 	import DataTableTypeFilter from './data-table-type-filter.svelte';
 	import DataTablePriceAreaFilters from './data-table-price-area-filters.svelte';
+	import DataTableDateFilter from './data-table-date-filter.svelte';
 	import { CaretSort, ChevronDown } from 'radix-icons-svelte';
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Input } from '$lib/components/ui/input';
@@ -50,6 +51,7 @@
 				bind:pricePerSqmFilterValues={$filterValues.price_per_sqm}
 				bind:areaFilterValues={$filterValues.sqm}
 			/>
+			<!-- <DataTableDateFilter /> -->
 			<div class="flex items-center space-x-2">
 				<Label for="agencies" class="ml-4 font-bold">Pokazuj agencje</Label>
 				<Switch bind:checked={$filterValues.is_private} id="agencies" />

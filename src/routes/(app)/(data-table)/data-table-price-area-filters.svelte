@@ -2,86 +2,93 @@
 	import { z } from 'zod';
 
 	export const formSchema = z.object({
-		// minPrice: z
-		// 	.number()
-		// 	.max(99999999)
-		// 	.or(z.string().transform((val) => parseFloat(val)))
-		// 	.optional(),
-		// maxPrice: z
-		// 	.number()
-		// 	.max(99999999)
-		// 	.or(z.string().transform((val) => parseFloat(val)))
-		// 	.optional(),
-		// minPricePerSqm: z
-		// 	.number()
-		// 	.max(99999999)
-		// 	.or(z.string().transform((val) => parseFloat(val)))
-		// 	.optional(),
-		// maxPricePerSqm: z
-		// 	.number()
-		// 	.max(99999999)
-		// 	.or(z.string().transform((val) => parseFloat(val)))
-		// 	.optional(),
-		// minArea: z
-		// 	.number()
-		// 	.max(99999999)
-		// 	.or(z.string().transform((val) => parseFloat(val)))
-		// 	.optional(),
-		// maxArea: z
-		// 	.number()
-		// 	.max(99999999)
-		// 	.or(z.string().transform((val) => parseFloat(val)))
-		// 	.optional()
 		minPrice: z
 			.string()
-			.refine((val) => !isNaN(Number(val.replace(/\s/g, ''))), {
-				message: 'Wartość musi być liczbą.'
-			})
+			.refine(
+				(val) => {
+					const number = Number(val.replace(/\s/g, ''));
+					return !isNaN(number) && number >= 0; // Umożliwia wartości >= 0
+				},
+				{
+					message: 'Wartość musi być liczbą większą lub równą 0.'
+				}
+			)
 			.refine((val) => Number(val.replace(/\s/g, '')) <= 99999999, {
 				message: 'Jest to zbyt masywna suma.'
 			})
 			.nullish(),
+
 		maxPrice: z
 			.string()
-			.refine((val) => !isNaN(Number(val.replace(/\s/g, ''))), {
-				message: 'Wartość musi być liczbą.'
-			})
+			.refine(
+				(val) => {
+					const number = Number(val.replace(/\s/g, ''));
+					return !isNaN(number) && number >= 0; // Umożliwia wartości >= 0
+				},
+				{
+					message: 'Wartość musi być liczbą większą lub równą 0.'
+				}
+			)
 			.refine((val) => Number(val.replace(/\s/g, '')) <= 99999999, {
 				message: 'Jest to zbyt masywna suma.'
 			})
 			.nullish(),
 		minPricePerSqm: z
 			.string()
-			.refine((val) => !isNaN(Number(val.replace(/\s/g, ''))), {
-				message: 'Wartość musi być liczbą.'
-			})
+			.refine(
+				(val) => {
+					const number = Number(val.replace(/\s/g, ''));
+					return !isNaN(number) && number >= 0; // Umożliwia wartości >= 0
+				},
+				{
+					message: 'Wartość musi być liczbą większą lub równą 0.'
+				}
+			)
 			.refine((val) => Number(val.replace(/\s/g, '')) <= 99999999, {
 				message: 'Jest to zbyt masywna suma.'
 			})
 			.nullish(),
 		maxPricePerSqm: z
 			.string()
-			.refine((val) => !isNaN(Number(val.replace(/\s/g, ''))), {
-				message: 'Wartość musi być liczbą.'
-			})
+			.refine(
+				(val) => {
+					const number = Number(val.replace(/\s/g, ''));
+					return !isNaN(number) && number >= 0; // Umożliwia wartości >= 0
+				},
+				{
+					message: 'Wartość musi być liczbą większą lub równą 0.'
+				}
+			)
 			.refine((val) => Number(val.replace(/\s/g, '')) <= 99999999, {
 				message: 'Jest to zbyt masywna suma.'
 			})
 			.nullish(),
 		minArea: z
 			.string()
-			.refine((val) => !isNaN(Number(val.replace(/\s/g, ''))), {
-				message: 'Wartość musi być liczbą.'
-			})
+			.refine(
+				(val) => {
+					const number = Number(val.replace(/\s/g, ''));
+					return !isNaN(number) && number >= 0; // Umożliwia wartości >= 0
+				},
+				{
+					message: 'Wartość musi być liczbą większą lub równą 0.'
+				}
+			)
 			.refine((val) => Number(val.replace(/\s/g, '')) <= 99999999, {
 				message: 'Jest to zbyt masywna powierzchnia.'
 			})
 			.nullish(),
 		maxArea: z
 			.string()
-			.refine((val) => !isNaN(Number(val.replace(/\s/g, ''))), {
-				message: 'Wartość musi być liczbą.'
-			})
+			.refine(
+				(val) => {
+					const number = Number(val.replace(/\s/g, ''));
+					return !isNaN(number) && number >= 0; // Umożliwia wartości >= 0
+				},
+				{
+					message: 'Wartość musi być liczbą większą lub równą 0.'
+				}
+			)
 			.refine((val) => Number(val.replace(/\s/g, '')) <= 99999999, {
 				message: 'Jest to zbyt masywna powierzchnia.'
 			})
@@ -202,7 +209,7 @@
 
 		const numberValue = Number(valueWithoutSpaces);
 		if (!isNaN(numberValue)) {
-			return numberValue; // Wartość jest prawidłową liczbą
+			return numberValue; // Wartość jest prawidłową liczbą, w tym 0
 		} else {
 			return null; // Wartość nie jest liczbą
 		}
@@ -254,16 +261,13 @@
 				{title}
 				{#if priceFilterValues[0] != null || priceFilterValues[1] != null}
 					<Separator orientation="vertical" class="mx-2 h-4" />
-					<Badge variant="secondary" class="rounded-sm px-1 font-normal lg:hidden">
-						{priceFilterValues.length}
-					</Badge>
 					<div class="hidden space-x-1 lg:flex">
-						{#if priceFilterValues[0]}
+						{#if priceFilterValues[0] != null && priceFilterValues[0] != undefined}
 							<Badge variant="secondary" class="rounded-sm px-1 font-normal">
 								cena min {formattedMinPrice}
 							</Badge>
 						{/if}
-						{#if priceFilterValues[1]}
+						{#if priceFilterValues[1] != null && priceFilterValues[1] != undefined}
 							<Badge variant="secondary" class="rounded-sm px-1 font-normal">
 								cena max {formattedMaxPrice}
 							</Badge>
@@ -272,16 +276,13 @@
 				{/if}
 				{#if pricePerSqmFilterValues[0] != null || pricePerSqmFilterValues[1] != null}
 					<Separator orientation="vertical" class="mx-2 h-4" />
-					<Badge variant="secondary" class="rounded-sm px-1 font-normal lg:hidden">
-						{pricePerSqmFilterValues.length}
-					</Badge>
 					<div class="hidden space-x-1 lg:flex">
-						{#if pricePerSqmFilterValues[0]}
+						{#if pricePerSqmFilterValues[0] != null && pricePerSqmFilterValues[0] != undefined}
 							<Badge variant="secondary" class="rounded-sm px-1 font-normal">
 								cena za m<sup>2 </sup>&nbsp;min {formattedMinPricePerSqm}
 							</Badge>
 						{/if}
-						{#if pricePerSqmFilterValues[1]}
+						{#if pricePerSqmFilterValues[1] != null && pricePerSqmFilterValues[1] != undefined}}
 							<Badge variant="secondary" class="rounded-sm px-1 font-normal">
 								cena za m<sup>2</sup>&nbsp;max {formattedMaxPricePerSqm}
 							</Badge>
@@ -290,16 +291,13 @@
 				{/if}
 				{#if areaFilterValues[0] != null || areaFilterValues[1] != null}
 					<Separator orientation="vertical" class="mx-2 h-4" />
-					<Badge variant="secondary" class="rounded-sm px-1 font-normal lg:hidden">
-						{areaFilterValues.length}
-					</Badge>
 					<div class="hidden space-x-1 lg:flex">
-						{#if areaFilterValues[0]}
+						{#if areaFilterValues[0] != null && areaFilterValues[0] != undefined}
 							<Badge variant="secondary" class="rounded-sm px-1 font-normal">
 								powierzchnia min {formattedMinArea}
 							</Badge>
 						{/if}
-						{#if areaFilterValues[1]}
+						{#if areaFilterValues[1] != null && areaFilterValues[1] != undefined}
 							<Badge variant="secondary" class="rounded-sm px-1 font-normal">
 								powierzchnia max {formattedMaxArea}
 							</Badge>
