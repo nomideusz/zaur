@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import '../app.pcss';
 	import '@fontsource/jetbrains-mono/400.css';
 	import '@fontsource/jetbrains-mono/500.css';
@@ -12,6 +12,25 @@
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { ModeWatcher } from 'mode-watcher';
 	import { toggleMode } from 'mode-watcher';
+	import { loadingAction } from 'svelte-legos';
+	import { goto } from '$app/navigation';
+
+	let loadingSales = false;
+	let loadingRental = false;
+
+	function navigateTo(path: string | URL) {
+		if (path === '/sales') {
+			loadingSales = true;
+		} else if (path === '/rental') {
+			loadingRental = true;
+		}
+
+		goto(path).then(() => {
+			loadingSales = false;
+			loadingRental = false;
+		});
+	}
+
 	$: variantSales = $page.url.pathname === '/sales' ? 'primary' : 'outline';
 	$: variantRental = $page.url.pathname === '/rental' ? 'primary' : 'outline';
 
@@ -36,8 +55,22 @@
 				Nieruchomości Kraków
 			</h1>
 			<div class="mt-2 flex gap-4">
-				<Button class="font-bold" size="lg" variant={variantSales} href="/sales">Sprzedaż</Button>
-				<Button class="font-bold" size="lg" variant={variantRental} href="/rental">Wynajem</Button>
+				<span class="rounded-md" use:loadingAction={loadingSales}
+					><Button
+						on:click={() => navigateTo('/sales')}
+						class="font-bold"
+						size="lg"
+						variant={variantSales}>Sprzedaż</Button
+					></span
+				>
+				<span class="rounded-md" use:loadingAction={loadingRental}
+					><Button
+						on:click={() => navigateTo('/rental')}
+						class="font-bold"
+						size="lg"
+						variant={variantRental}>Wynajem</Button
+					></span
+				>
 			</div>
 		</div>
 	</nav>
