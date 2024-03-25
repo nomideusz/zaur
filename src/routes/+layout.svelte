@@ -39,7 +39,7 @@
 	});
 </script>
 
-<Toaster richColors position="top-center" />
+<Toaster richColors position="top-center" theme="light" />
 <ModeWatcher />
 
 <header class="flex w-full flex-wrap text-sm sm:flex-nowrap sm:justify-start">

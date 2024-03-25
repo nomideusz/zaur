@@ -169,6 +169,7 @@
 				}
 			});
 			if (f.valid) {
+				open = false;
 				let formDataLength = Object.keys(f.data).length;
 				if (formDataLength > 0) {
 					toast.success('Zastosowano filtry.');
@@ -187,7 +188,6 @@
 				areaFilterValues[0] = validatedMinArea ?? null;
 				const validatedMaxArea = validateInput($formData.maxArea);
 				areaFilterValues[1] = validatedMaxArea ?? null;
-				open = false;
 			} else {
 				toast.error('Zaur wykrył problem z formularzem i prosi o lepsze jego używanie.');
 			}
