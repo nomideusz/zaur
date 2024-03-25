@@ -282,7 +282,7 @@
 								cena za m<sup>2 </sup>&nbsp;min {formattedMinPricePerSqm}
 							</Badge>
 						{/if}
-						{#if pricePerSqmFilterValues[1] != null && pricePerSqmFilterValues[1] != undefined}}
+						{#if pricePerSqmFilterValues[1] != null && pricePerSqmFilterValues[1] != undefined}
 							<Badge variant="secondary" class="rounded-sm px-1 font-normal">
 								cena za m<sup>2</sup>&nbsp;max {formattedMaxPricePerSqm}
 							</Badge>
@@ -441,7 +441,14 @@
 						<Form.FieldErrors />
 					</Form.Field>
 				</div>
-				<Form.Button class="mt-4">Zastosuj filtry</Form.Button>
+				<div class="mt-4 flex items-center space-x-4">
+					<Form.Button>Zastosuj filtry</Form.Button>
+					<Button
+						on:click={() => {
+							$formData = {};
+						}}>Wyczyść filtry</Button
+					>
+				</div>
 			</form>
 			<!-- {#if browser}
 				<SuperDebug data={$formData} />
