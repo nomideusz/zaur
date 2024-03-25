@@ -71,10 +71,6 @@
 				},
 				filter: {
 					exclude: true
-				},
-				colFilter: {
-					fn: districtFilter,
-					initialFilterValue: []
 				}
 			}
 		}),
@@ -91,6 +87,18 @@
 				colFilter: {
 					fn: districtFilter,
 					initialFilterValue: []
+				}
+			}
+		}),
+		table.column({
+			accessor: 'region_name',
+			header: 'Region',
+			plugins: {
+				sort: {
+					disable: false
+				},
+				filter: {
+					exclude: true
 				}
 			}
 		}),
@@ -249,15 +257,29 @@
 	const { filterValues } = pluginStates.colFilter;
 	const { exportedData } = pluginStates.export;
 
-	const districts = derived(data, ($data) => {
-		const uniqueDistricts = new Set();
-		$data.forEach((ad) => {
-			if (ad.district) {
-				uniqueDistricts.add(ad.district);
-			}
-		});
-		return Array.from(uniqueDistricts);
-	});
+	const officialDistricts = [
+		'Stare Miasto',
+		'Grzegórzki',
+		'Prądnik Czerwony',
+		'Prądnik Biały',
+		'Krowodrza',
+		'Bronowice',
+		'Zwierzyniec',
+		'Dębniki',
+		'Łagiewniki-Borek Fałęcki',
+		'Swoszowice',
+		'Podgórze Duchackie',
+		'Bieżanów-Prokocim',
+		'Podgórze',
+		'Czyżyny',
+		'Mistrzejowice',
+		'Bieńczyce',
+		'Wzgórza Krzesławickie',
+		'Nowa Huta'
+	];
+
+	// Bezpośrednie przypisanie listy dzielnic do store
+	const districts = writable(officialDistricts);
 
 	const minMaxPrice = derived(exportedData, ($exportedData) => {
 		if ($exportedData.length === 0) {
@@ -337,7 +359,7 @@
 
 	const ids = flatColumns.map((col) => col.id);
 	let hideForId = Object.fromEntries(
-		ids.map((id) => [id, !['city', 'created_at', 'image_url'].includes(id)])
+		ids.map((id) => [id, !['city', 'region_name', 'created_at', 'image_url'].includes(id)])
 	);
 
 	$: $hiddenColumnIds = Object.entries(hideForId)
@@ -347,6 +369,7 @@
 	const hidableCols = [
 		'city',
 		'district',
+		'region_name',
 		'price',
 		'sqm',
 		'price_per_sqm',
@@ -404,7 +427,7 @@
 												<Render of={props.colFilter.render} />
 											</div>
 										{/if}
-									{:else if cell.id === 'district' || cell.id === 'title' || cell.id === 'date'}
+									{:else if cell.id === 'district' || cell.id === 'title' || cell.id === 'date' || cell.id === 'region_name'}
 										<Button variant="ghost" on:click={props.sort.toggle}>
 											<Render of={cell.render()} />
 											<CaretSort class={'ml-2 h-4 w-4'} />

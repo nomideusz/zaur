@@ -2,7 +2,7 @@
 	import { isNumber } from '$lib/utils/filter';
 	// import { formatter } from '$lib/utils/formatter';
 	import { Input } from '$lib/components/ui/input';
-	import DataTableColFilter from '../../routes/(app)/(data-table)/data-table-col-filter.svelte';
+	import DataTableDistrictFilter from '../../routes/(app)/(data-table)/data-table-district-filter.svelte';
 
 	export let filterValue;
 	export let values;
@@ -13,23 +13,18 @@
 
 <div class="flex">
 	<Input
-		class="max-w-sm border-dashed text-right mb-1 h-8 text-xs"
+		class="mb-1 h-8 max-w-sm border-dashed text-right text-xs"
 		type="text"
 		bind:value={$filterValue[0]}
 		on:click
 		placeholder={`Min (${formatter ? formatter(min) : min})`}
 	/>
-	<!-- <DataTableColFilter
-	title="Min"
-	bind:districtFilterValues={$filterValue}
-	options={$values}
-/> -->
 	<Input
-		class="max-w-sm border-dashed text-right mb-1 h-8 text-xs"
+		class="mb-1 h-8 max-w-sm border-dashed text-right text-xs"
 		type="text"
 		bind:value={$filterValue[1]}
 		on:click
-    placeholder={`Max (${formatter ? formatter(max) : max})`}
+		placeholder={`Max (${formatter ? formatter(max) : max})`}
 	/>
 </div>
 

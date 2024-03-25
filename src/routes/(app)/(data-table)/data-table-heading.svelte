@@ -2,7 +2,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Switch } from '$lib/components/ui/switch';
 	import { Button } from '$lib/components/ui/button';
-	import DataTableColFilter from './data-table-col-filter.svelte';
+	import DataTableDistrictFilter from './data-table-district-filter.svelte';
 	import DataTableTypeFilter from './data-table-type-filter.svelte';
 	import DataTablePriceAreaFilters from './data-table-price-area-filters.svelte';
 	import DataTableDateFilter from './data-table-date-filter.svelte';
@@ -40,7 +40,7 @@
 				type="text"
 				bind:value={$filterValue}
 			/>
-			<DataTableColFilter
+			<DataTableDistrictFilter
 				title="Filtruj według dzielnicy"
 				bind:filterValues={$filterValues.district}
 				options={$districts.map((district) => ({ value: district, label: district }))}
