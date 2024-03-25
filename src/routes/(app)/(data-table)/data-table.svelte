@@ -253,9 +253,29 @@
 	const { hasNextPage, hasPreviousPage, pageIndex, pageCount, pageSize } = pluginStates.page;
 	const { filterValue } = pluginStates.filter;
 
-	const { hiddenColumnIds } = pluginStates.hide;
 	const { filterValues } = pluginStates.colFilter;
 	const { exportedData } = pluginStates.export;
+	const { hiddenColumnIds } = pluginStates.hide;
+	const ids = Array.isArray(flatColumns) ? flatColumns.map((col) => col.id) : [];
+
+	let hideForId = Object.fromEntries(
+		ids.map((id) => [id, !['city', 'region_name', 'created_at', 'image_url'].includes(id)])
+	);
+
+	$: $hiddenColumnIds = Object.entries(hideForId)
+		.filter(([, hide]) => !hide)
+		.map(([id]) => id);
+
+	const hidableCols = [
+		'city',
+		'district',
+		'region_name',
+		'price',
+		'sqm',
+		'price_per_sqm',
+		'date',
+		'is_private'
+	];
 
 	const officialDistricts = [
 		'Stare Miasto',
@@ -357,27 +377,6 @@
 		return sortedUniqueTypes;
 	});
 
-	const ids = flatColumns.map((col) => col.id);
-	let hideForId = Object.fromEntries(
-		ids.map((id) => [id, !['city', 'region_name', 'created_at', 'image_url'].includes(id)])
-	);
-
-	$: $hiddenColumnIds = Object.entries(hideForId)
-		.filter(([, hide]) => !hide)
-		.map(([id]) => id);
-
-	const hidableCols = [
-		'city',
-		'district',
-		'region_name',
-		'price',
-		'sqm',
-		'price_per_sqm',
-		'date',
-		'is_private',
-		'property_type'
-	];
-
 	function isNewAd(createdAt) {
 		const adTime = new Date(createdAt).getTime();
 		const now = new Date().getTime();
@@ -385,6 +384,7 @@
 	}
 
 	onMount(() => {
+		hideForId['property_type'] = false;
 		subscribeToAds();
 	});
 </script>
@@ -404,8 +404,8 @@
 	minArea={$minMaxArea.min}
 	maxArea={$minMaxArea.max}
 />
-
-<!-- <pre>$filterValues = {JSON.stringify($filterValues, null, 2)}</pre> -->
+<!-- 
+<pre>$filterValues = {JSON.stringify(filterValues, null, 2)}</pre> -->
 <div class="rounded-md border" style:overflow-x="auto">
 	<Table.Root {...$tableAttrs}>
 		<Table.Header>

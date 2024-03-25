@@ -2,6 +2,7 @@
 	import * as DropdownMenu from '$lib/components/ui/dropdown-menu';
 	import { Button } from '$lib/components/ui/button';
 	import { MoreHorizontal } from 'lucide-svelte';
+	import { toast } from 'svelte-sonner';
 	export let link: string;
 </script>
 
@@ -20,7 +21,12 @@
 			>
 		</DropdownMenu.Group>
 		<DropdownMenu.Separator />
-		<DropdownMenu.Item on:click={() => navigator.clipboard.writeText(link)}>
+		<DropdownMenu.Item
+			on:click={() => {
+				navigator.clipboard.writeText(link);
+				toast.success('Zaur umieścił link w schowku.');
+			}}
+		>
 			Kopiuj link
 		</DropdownMenu.Item>
 	</DropdownMenu.Content>
