@@ -1,0 +1,32 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+/* Custom global styles */
+:root {
+  --primary-blue: #0053b3;
+  --accent-red: #e63946;
+  --bg-light: #f0f4f8;
+  
+  /* Font families */
+  --font-sans: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Space Grotesk', sans-serif;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-light);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+}
+
+code, pre, .code {
+  font-family: var(--font-mono);
+}
