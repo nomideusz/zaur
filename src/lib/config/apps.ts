@@ -36,7 +36,7 @@ export const apps: App[] = [
 	{
 		id: 'kino',
 		name: 'Kino',
-		description: 'Cinem, what is it really?',
+		description: 'Cinema, what is it really?',
 		url: 'https://kino.net.pl',
 		icon: '🎬',
 		supportsIframe: false,
@@ -45,7 +45,7 @@ export const apps: App[] = [
 	{
 		id: 'kompi',
 		name: 'Kompi',
-		description: 'Computer hardware and software reviews',
+		description: 'Modern electronics store',
 		url: 'https://kompi.pl',
 		icon: '💻',
 		supportsIframe: false,
