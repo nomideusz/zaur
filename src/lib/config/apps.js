@@ -21,7 +21,7 @@ export const apps = [
 		description: 'Share files with friends and family',
 		url: 'https://drive.zaur.app/g/2FbH7cq6YMBqjqeZ',
 		icon: '📄',
-		supportsIframe: false  // Zakładamy, że również ma ograniczenia
+		supportsIframe: true  // Zakładamy, że również ma ograniczenia
 	}
 ];
 
