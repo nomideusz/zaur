@@ -3,6 +3,16 @@ import { apps } from '$lib/config/apps.js';
 export async function GET() {
     const baseUrl = 'https://zaur.app';
     
+    // Define external websites
+    const externalWebsites = [
+        {
+            url: 'https://kurcz.pl',
+            name: 'Kurcz',
+            description: 'Website about cramps'
+        }
+        // Add more external websites here as needed
+    ];
+    
     // Start with the XML declaration and root element
     let xml = '<?xml version="1.0" encoding="UTF-8"?>\n';
     xml += '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n';
@@ -14,7 +24,7 @@ export async function GET() {
     <priority>1.0</priority>
   </url>\n`;
     
-    // Add each project page
+    // Add each project page (open source apps)
     for (const app of apps) {
         xml += `  <url>
     <loc>${baseUrl}/${app.id}</loc>
@@ -22,6 +32,9 @@ export async function GET() {
     <priority>0.8</priority>
   </url>\n`;
     }
+    
+    // We don't include external websites in the sitemap as they are not part of this domain
+    // They will have their own sitemaps
     
     // Close the root element
     xml += '</urlset>';
