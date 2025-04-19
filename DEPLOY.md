@@ -26,9 +26,11 @@ Kod aplikacji powinien być wrzucony do repozytorium Git. Pamiętaj, że repozyt
 
 ### 3. Konfiguracja domeny
 
+**Uwaga:** Domyślnie, aplikacja będzie dostępna pod adresem `zaur.zaur.app`. Jeśli chcesz używać domeny głównej `zaur.app`, sprawdź instrukcje w pliku `DOMAIN-SETUP.md`.
+
 1. W ustawieniach utworzonej aplikacji przejdź do zakładki "HTTP Settings"
 2. W sekcji "Connect New Domain":
-   - Wpisz domenę: zaur.app
+   - Wpisz domenę: zaur.app (lub użyj domyślnej zaur.zaur.app)
    - Zaznacz "Enable HTTPS"
    - Kliknij "Connect New Domain"
 
@@ -36,8 +38,8 @@ Kod aplikacji powinien być wrzucony do repozytorium Git. Pamiętaj, że repozyt
 
 1. W ustawieniach aplikacji przejdź do zakładki "Deployment"
 2. W sekcji "Method 3: Deploy from GitHub/GitLab/BitBucket":
-   - Wklej URL repozytorium (HTTPS lub SSH)
-   - Wprowadź gałąź (domyślnie "main" lub "master")
+   - Wklej URL repozytorium: `https://github.com/nomideusz/zaur.git`
+   - Wprowadź gałąź (domyślnie "master")
    - Kliknij "Deploy"
 
 Alternatywnie, możesz użyć CapRover CLI:
@@ -55,11 +57,19 @@ caprover deploy
 
 ### 5. Weryfikacja wdrożenia
 
-Po zakończeniu wdrożenia, aplikacja powinna być dostępna pod adresem zaur.app.
+Po zakończeniu wdrożenia, aplikacja powinna być dostępna pod adresem zaur.zaur.app lub zaur.app (w zależności od konfiguracji).
 
 ## Aktualizacja aplikacji
 
 Aby zaktualizować aplikację, wystarczy wprowadzić zmiany do kodu, zacommitować je i wypchać do repozytorium Git, a następnie ponownie wdrożyć aplikację w panelu CapRover.
+
+```bash
+git add .
+git commit -m "Opis zmian"
+git push origin master
+```
+
+Następnie z panelu CapRover kliknij "Deploy" dla aplikacji "zaur".
 
 ## Debugowanie
 
