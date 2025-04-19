@@ -1,40 +1,51 @@
-# Zaur - Dashboard Nawigacyjny
+# Zaur Dashboard
 
-Minimalistyczny dashboard dla projektów Zaur ([zaur.app](https://zaur.app)), umożliwiający nawigację między różnymi usługami i aplikacjami.
+A minimalist dashboard for navigating between Zaur's open source projects.
 
-## O projekcie
+## About
 
-Zaur to kolekcja narzędzi open-source hostowanych na CapRover, takich jak:
-- PDF Tools - narzędzia do zarządzania dokumentami PDF
-- Cloud Storage - rozwiązanie do przechowywania plików w chmurze (NextCloud)
-- File Sharing - narzędzie do udostępniania plików
+This is the main navigation hub for Zaur projects. It provides a clean, user-friendly interface to access various tools and applications within the Zaur ecosystem, including:
 
-Dashboard służy jako centrum nawigacyjne łączące wszystkie te projekty w spójny sposób.
+- PDF Tools (pdf.zaur.app)
+- Cloud Storage (cloud.zaur.app)
+- And other projects
 
-## Technologie
+## Development
 
-- SvelteKit - framework do budowy aplikacji
-- Tailwind CSS - dla stylowania
-- Docker - dla konteneryzacji aplikacji
-- CapRover - dla wdrożenia
+This project is built with SvelteKit and uses Tailwind CSS for styling.
 
-## Rozwój lokalny
+### Prerequisites
+
+- Node.js (v18 or newer)
+- pnpm
+
+### Getting Started
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   pnpm install
+   ```
+3. Start the development server:
+   ```bash
+   pnpm dev
+   ```
+4. Open your browser and navigate to `http://localhost:5173`
+
+### Build
+
+To build the project for production:
 
 ```bash
-# Instalacja zależności
-pnpm install
-
-# Uruchomienie serwera deweloperskiego
-pnpm dev
-
-# Budowanie produkcyjne
 pnpm build
 ```
 
-## Wdrażanie
+## Deployment
 
-Szczegółowe instrukcje wdrażania są dostępne w pliku [DEPLOY.md](DEPLOY.md).
+This project is deployed on CapRover at [zaur.app](https://zaur.app).
 
-## Licencja
+The application uses automatic deployment - any push to the main branch will trigger a new build and deployment to the server.
 
-MIT
+## License
+
+This project is open source and available under the [MIT License](LICENSE).
