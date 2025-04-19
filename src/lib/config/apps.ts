@@ -1,4 +1,14 @@
-export const apps = [
+interface App {
+	id: string;
+	name: string;
+	description: string;
+	url: string;
+	icon: string;
+	supportsIframe: boolean;
+	openInNewTab?: boolean;
+}
+
+export const apps: App[] = [
 	{
 		id: 'pdf',
 		name: 'PDF Tools',
@@ -22,9 +32,27 @@ export const apps = [
 		url: 'https://drive.zaur.app/g/2FbH7cq6YMBqjqeZ',
 		icon: '📄',
 		supportsIframe: true  // Zakładamy, że również ma ograniczenia
+	},
+	{
+		id: 'kino',
+		name: 'Kino',
+		description: 'Cinem, what is it really?',
+		url: 'https://kino.net.pl',
+		icon: '🎬',
+		supportsIframe: false,
+		openInNewTab: true
+	},
+	{
+		id: 'kompi',
+		name: 'Kompi',
+		description: 'Computer hardware and software reviews',
+		url: 'https://kompi.pl',
+		icon: '💻',
+		supportsIframe: false,
+		openInNewTab: true
 	}
 ];
 
-export function getAppById(id) {
+export function getAppById(id: string): App | undefined {
 	return apps.find(app => app.id === id);
 } 
