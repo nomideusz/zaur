@@ -2,7 +2,7 @@
   import { fetchAllNews, fetchNewsByCategory, getAvailableCategories } from '$lib/services/newsService.js';
   import { onMount, onDestroy, tick } from 'svelte';
   import { browser } from '$app/environment';
-  import { fly, slide, scale, fade } from 'svelte/transition';
+  import { fade } from 'svelte/transition';
   import { flip } from 'svelte/animate';
   import { watch, useEventListener, useDebounce } from 'runed';
   import { 
