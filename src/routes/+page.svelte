@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { apps } from '$lib/config/apps.js';
+	import { externalWebsites } from '$lib/config/externalWebsites.js';
 	
 	// For the animation effect on scroll
 	let visible = false;
@@ -43,6 +44,22 @@
 			</div>
 		</section>
 		
+		<section id="external-sites">
+			<h2><span class="section-marker">//</span> External Websites</h2>
+			<div class="project-grid">
+				{#each externalWebsites as site}
+					<a href={site.url} target="_blank" rel="noopener noreferrer" class="project-card external-card">
+						<div class="card-icon">{site.icon}</div>
+						<h3>{site.name}</h3>
+						<p>{site.description}</p>
+						<div class="card-footer">
+							<span class="visit-link">Visit External Site →</span>
+						</div>
+					</a>
+				{/each}
+			</div>
+		</section>
+		
 		<section id="about">
 			<h2><span class="section-marker">//</span> About Zaur</h2>
 			<div class="about-content">
@@ -63,6 +80,7 @@
 			<div class="footer-links">
 				<a href="https://github.com/nomideusz">GitHub</a>
 				<a href="#projects">Projects</a>
+				<a href="#external-sites">External Sites</a>
 				<a href="#about">About</a>
 				<a href="mailto:contact@zaur.app">Contact</a>
 			</div>
@@ -314,5 +332,13 @@
 			flex-wrap: wrap;
 			justify-content: center;
 		}
+	}
+	
+	.external-card {
+		border-left: 5px solid #4a9d5f; /* Green for external sites */
+	}
+	
+	.external-card:hover {
+		border-left-color: #e63946; /* Accent red on hover */
 	}
 </style>
