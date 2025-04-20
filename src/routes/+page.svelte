@@ -268,7 +268,15 @@
 		<!-- Mobile Navigation -->
 		{#if mobileMenuOpen}
 			<nav class="mobile-nav" bind:this={mobileMenuRef}>
-				<button class="mobile-menu-close" onclick={(e) => { e.stopPropagation(); closeMobileMenu(); }} onkeydown={(e) => e.key === 'Enter' && closeMobileMenu()} aria-label="Close menu">×</button>
+				<button 
+					class="mobile-menu-close" 
+					onclick={(e) => { 
+						e.stopPropagation(); 
+						mobileMenuOpen = false; // Directly set state variable 
+					}} 
+					onkeydown={(e) => e.key === 'Enter' && (mobileMenuOpen = false)} 
+					aria-label="Close menu"
+				>×</button>
 				<a href="#projects" class="nav-link" class:active={lastVisitedSection.current === 'projects'} onclick={(e) => { e.preventDefault(); navigateTo('projects'); }}>Projects</a>
 				<a href="#external-sites" class="nav-link" class:active={lastVisitedSection.current === 'external-sites'} onclick={(e) => { e.preventDefault(); navigateTo('external-sites'); }}>External Sites</a>
 				<a href="/news" class="nav-link">News</a>
