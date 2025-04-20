@@ -667,7 +667,7 @@
       <div class="zaur-error-message">
         <p>Zaur encountered an issue while gathering news:</p>
         <p>{error}</p>
-        <button on:click={loadZaurNews}>Ask Zaur to try again</button>
+        <button onclick={loadZaurNews}>Ask Zaur to try again</button>
       </div>
     {:else if newsItems.length === 0}
       <div class="zaur-empty-state">
