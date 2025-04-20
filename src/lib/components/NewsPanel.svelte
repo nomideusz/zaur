@@ -35,6 +35,50 @@
   let lastCheckTime = 0;
   let emphasisTimerId: number | null = null;
   let reactionTimerId: number | null = null;
+  let discoveredItemIds = new Set<string>();
+  
+  // Load previously discovered items from server
+  async function loadDiscoveredItems(): Promise<void> {
+    if (browser) {
+      try {
+        const response = await fetch('/api/discoveries');
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        if (Array.isArray(data.items)) {
+          discoveredItemIds = new Set(data.items);
+          console.log(`[ZaurNews] Loaded ${discoveredItemIds.size} discovered items from server`);
+        }
+      } catch (err) {
+        console.error('Error loading discovered items from server:', err);
+      }
+    }
+  }
+
+  // Save a newly discovered item to the server
+  async function saveDiscoveredItem(id: string): Promise<void> {
+    if (browser) {
+      try {
+        const response = await fetch('/api/discoveries', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ id })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
+        console.log(`[ZaurNews] Saved discovered item to server: ${id}`);
+      } catch (err) {
+        console.error('Error saving discovered item to server:', err);
+      }
+    }
+  }
   
   // Zaur's possible moods
   const zaurMoods = ["curious", "excited", "thoughtful", "amused", "intrigued", "surprised"];
@@ -307,6 +351,9 @@
       // Track which items we've shown
       selectedItems.forEach(item => seenItemIds.add(item.id));
       
+      // Check for discoveries that should have happened based on timestamp
+      checkForTimeBasedDiscoveries();
+      
       // Update items - make sure they're sorted by date (newest first)
       const finalItems = selectedItems.sort((a, b) => 
         new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
@@ -416,42 +463,64 @@
     return zaurMoods[Math.floor(Math.random() * zaurMoods.length)];
   }
   
-  // Schedule discoveries at fixed times
-  function startDiscoveryProcess(): void {
-    if (!browser || discoveryTimeout) return;
+  // Function to check for time-based discoveries
+  function checkForTimeBasedDiscoveries(): void {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
     
-    // Check time every few seconds
-    discoverTimerId = window.setInterval(async () => {
-      const now = new Date();
-      const currentMinute = now.getMinutes();
-      const currentSeconds = now.getSeconds();
+    // Define fixed discovery times (at 10, 25, 40, and 55 minutes past the hour)
+    const discoveryMinutes = [10, 25, 40, 55];
+    
+    // Check if we're in a discovery minute
+    const isDiscoveryMinute = discoveryMinutes.includes(currentMinute);
+    
+    if (isDiscoveryMinute && !showingDiscovery && allAvailableItems.length > 0) {
+      // Generate a consistent seed based on current hour and minute
+      // This ensures all users will see the same discovery at the same time
+      const seed = currentHour * 100 + currentMinute;
       
-      // Define specific discovery times (deterministic for all users)
-      // These will happen at XX:10:00, XX:25:00, XX:40:00, XX:55:00
-      const discoveryMinutes = [10, 25, 40, 55];
+      // Filter out items we've already discovered
+      const undiscoveredItems = allAvailableItems.filter(item => !discoveredItemIds.has(item.id));
       
-      // Only trigger if we're in a discovery minute and within the first 5 seconds
-      // and we haven't recently triggered
-      if (
-        discoveryMinutes.includes(currentMinute) && 
-        currentSeconds < 5 &&
-        now.getTime() - lastCheckTime > 10000 // Prevent multiple triggers
-      ) {
-        const availableToDiscover = allAvailableItems.filter(item => !seenItemIds.has(item.id));
-        
-        if (availableToDiscover.length > 0) {
-          // Use hour seed to select item (same item for all users in this hour)
-          const hourSeed = getHourSeed() + currentMinute; // Add minute for variety
-          await discoverNewItem(availableToDiscover, hourSeed);
-          
-          // Store last check time AFTER discovery completes
-          lastCheckTime = now.getTime();
-        } else {
-          // Just update timestamp even if no discovery happened
-          lastCheckTime = now.getTime();
-        }
+      // Only proceed if we have undiscovered items
+      if (undiscoveredItems.length > 0) {
+        discoverNewItem(undiscoveredItems, seed);
       }
-    }, 10000); // Check less frequently - every 10 seconds instead of 5
+    }
+  }
+  
+  // Start the discovery process
+  function startDiscoveryProcess(): () => void {
+    // Initial check when component mounts
+    checkForTimeBasedDiscoveries();
+    
+    // Set up an interval to check every minute
+    const interval = setInterval(() => {
+      checkForTimeBasedDiscoveries();
+    }, 60000); // Check every minute
+    
+    // Set up a more frequent check to catch discovery minutes more precisely
+    // This helps ensure we don't miss a discovery window
+    const preciseInterval = setInterval(() => {
+      const now = new Date();
+      const seconds = now.getSeconds();
+      
+      // If we're at 0-10 seconds past the minute, check for discoveries
+      // This gives us multiple chances to catch the discovery minute
+      if (seconds <= 10) {
+        checkForTimeBasedDiscoveries();
+      }
+    }, 5000); // Check every 5 seconds
+    
+    // Return a cleanup function to handle teardown
+    return () => {
+      clearInterval(interval);
+      clearInterval(preciseInterval);
+      if (discoveryTimeout) {
+        clearTimeout(discoveryTimeout);
+      }
+    };
   }
   
   // Handle the discovery of a new item
@@ -517,6 +586,11 @@
     
     // Add to seen items list
     seenItemIds.add(newItem.id);
+    
+    // Add to discovered items list to ensure it's tracked across page refreshes
+    discoveredItemIds.add(newItem.id);
+    // Save to server
+    await saveDiscoveredItem(newItem.id);
     
     // Show the discovery indicator first
     showingDiscovery = true;
@@ -611,8 +685,10 @@
   }
   
   // Initial load - only in browser context
-  onMount(() => {
+  onMount(async () => {
     if (browser) {
+      // Load discovered items from server
+      await loadDiscoveredItems();
       loadZaurNews();
       // No need to schedule full refreshes anymore
     }
