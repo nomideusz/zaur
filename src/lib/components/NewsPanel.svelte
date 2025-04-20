@@ -2,6 +2,7 @@
   import type { NewsItem } from '$lib/types/news.js';
   import { getAvailableCategories } from '$lib/services/newsService.js';
   import { onMount } from 'svelte';
+  import { browser } from '$app/environment';
   
   let loading = $state(true);
   let error = $state<string | null>(null);
@@ -72,6 +73,12 @@
   <div class="news-header">
     <h2>News</h2>
     
+    <div class="action-buttons">
+      <button class="refresh-button" onclick={() => loadNews(selectedCategory || undefined)}>
+        Refresh News
+      </button>
+    </div>
+    
     {#if lastUpdated}
       <div class="last-updated">
         Last updated: {formatDate(lastUpdated)}
@@ -116,6 +123,19 @@
         <p>No news to display</p>
         {#if selectedCategory}
           <p>Try selecting a different category or check back later</p>
+        {:else}
+          <p>This could be due to a network issue or CORS restrictions.</p>
+          <div class="debug-info">
+            <p>Debug information:</p>
+            <ul>
+              <li>Categories available: {categories.length}</li>
+              <li>Selected category: {selectedCategory || 'All'}</li>
+              <li>Browser environment: {browser ? 'Yes' : 'No'}</li>
+            </ul>
+          </div>
+          <button onclick={() => loadNews()}>
+            Try Refresh Again
+          </button>
         {/if}
       </div>
     {:else}
@@ -174,6 +194,27 @@
     margin: 0 0 0.5rem 0;
     font-size: 1.5rem;
     color: #0053b3;
+  }
+  
+  .action-buttons {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.5rem;
+  }
+  
+  .refresh-button {
+    background: #0053b3;
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: background 0.2s;
+  }
+  
+  .refresh-button:hover {
+    background: #003b80;
   }
   
   .last-updated {
@@ -349,6 +390,20 @@
   
   .read-more:hover {
     color: #e63946;
+  }
+  
+  .debug-info {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f5f5f5;
+    border-radius: 4px;
+    text-align: left;
+    font-size: 0.8rem;
+  }
+  
+  .debug-info ul {
+    margin: 0.5rem 0 0 0;
+    padding-left: 1.5rem;
   }
   
   /* Responsywność */

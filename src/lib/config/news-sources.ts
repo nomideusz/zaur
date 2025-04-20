@@ -10,44 +10,44 @@ export interface NewsSource {
 // Lista źródeł wiadomości do pobierania
 export const newsSources: NewsSource[] = [
   {
-    id: 'hackernews',
-    name: 'Hacker News',
-    url: 'https://news.ycombinator.com/rss',
-    type: 'rss',
-    category: 'tech',
-    priority: 10
-  },
-  {
-    id: 'devto',
-    name: 'DEV.to',
-    url: 'https://dev.to/feed/',
+    id: 'webdevelopernews',
+    name: 'Web Developer News',
+    url: 'https://feeds.feedburner.com/webdevelopertrends',
     type: 'rss',
     category: 'programming',
-    priority: 8
-  },
-  {
-    id: 'producthunt',
-    name: 'Product Hunt',
-    url: 'https://www.producthunt.com/feed',
-    type: 'rss',
-    category: 'products',
-    priority: 7
-  },
-  {
-    id: 'wired',
-    name: 'Wired',
-    url: 'https://www.wired.com/feed/rss',
-    type: 'rss', 
-    category: 'tech',
-    priority: 6
+    priority: 10
   },
   {
     id: 'techmeme',
     name: 'Techmeme',
-    url: 'https://www.techmeme.com/feed.xml',
+    url: 'https://feeds.feedburner.com/techmeme',
     type: 'rss',
     category: 'tech',
-    priority: 5
+    priority: 9
+  },
+  {
+    id: 'smashingmagazine',
+    name: 'Smashing Magazine',
+    url: 'https://www.smashingmagazine.com/feed/',
+    type: 'rss',
+    category: 'design',
+    priority: 8
+  },
+  {
+    id: 'css-tricks',
+    name: 'CSS-Tricks',
+    url: 'https://css-tricks.com/feed/',
+    type: 'rss',
+    category: 'design',
+    priority: 7
+  },
+  {
+    id: 'dzone',
+    name: 'DZone',
+    url: 'https://feeds.dzone.com/webdev',
+    type: 'rss',
+    category: 'programming',
+    priority: 6
   }
 ];
 
