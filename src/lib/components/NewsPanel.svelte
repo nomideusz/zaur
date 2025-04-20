@@ -36,12 +36,13 @@
   let emphasisTimerId: number | null = null;
   let reactionTimerId: number | null = null;
   let discoveredItemIds = new Set<string>();
+  let zaurComments = new Map<string, string>(); // Map of itemId -> comment
   
   // Load previously discovered items from server
   async function loadDiscoveredItems(): Promise<void> {
     if (browser) {
       try {
-        const response = await fetch('/api/discoveries');
+        const response = await fetch('/api/discoveries?includeComments=true');
         if (!response.ok) {
           throw new Error(`API error: ${response.status} ${response.statusText}`);
         }
@@ -51,6 +52,15 @@
           discoveredItemIds = new Set(data.items);
           console.log(`[ZaurNews] Loaded ${discoveredItemIds.size} discovered items from server`);
         }
+        
+        // Load Zaur's comments
+        if (Array.isArray(data.comments)) {
+          zaurComments.clear();
+          data.comments.forEach((comment: { itemId: string, comment: string }) => {
+            zaurComments.set(comment.itemId, comment.comment);
+          });
+          console.log(`[ZaurNews] Loaded ${zaurComments.size} Zaur comments from server`);
+        }
       } catch (err) {
         console.error('Error loading discovered items from server:', err);
       }
@@ -58,7 +68,7 @@
   }
 
   // Save a newly discovered item to the server
-  async function saveDiscoveredItem(id: string): Promise<void> {
+  async function saveDiscoveredItem(id: string, comment?: string): Promise<void> {
     if (browser) {
       try {
         const response = await fetch('/api/discoveries', {
@@ -66,7 +76,7 @@
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ id })
+          body: JSON.stringify({ id, comment })
         });
         
         if (!response.ok) {
@@ -76,6 +86,19 @@
         console.log(`[ZaurNews] Saved discovered item to server: ${id}`);
       } catch (err) {
         console.error('Error saving discovered item to server:', err);
+      }
+    }
+  }
+  
+  // Save Zaur's comment for an item
+  async function saveZaurComment(id: string, comment: string): Promise<void> {
+    if (browser) {
+      try {
+        await saveDiscoveredItem(id, comment);
+        // Update local cache
+        zaurComments.set(id, comment);
+      } catch (err) {
+        console.error('Error saving Zaur comment:', err);
       }
     }
   }
@@ -432,30 +455,51 @@
     if (!browser) return;
     
     reactionTimerId = window.setInterval(() => {
-      // Only a 15% chance that Zaur decides to react to something
-      if (Math.random() < 0.15 && newsItems.length > 0) {
-        // Find items that haven't had reactions
-        const unreactedItems = newsItems.filter(item => !item.hasReacted);
-        
-        if (unreactedItems.length > 0) {
-          // Pick a random article to react to
-          const randomIndex = Math.floor(Math.random() * unreactedItems.length);
-          const itemToReact = unreactedItems[randomIndex];
-          
-          // Get appropriate reactions
-          const category = itemToReact.category as string;
-          const possibleReactions = zaurReactions[category] || zaurReactions.general;
-          const reactionIndex = Math.floor(Math.random() * possibleReactions.length);
-          const reaction = possibleReactions[reactionIndex];
-          
-          // Update only the specific item
-          updateSingleItem(itemToReact.id, { 
-            hasReacted: true, 
-            zaurComment: itemToReact.zaurComment + "\n\n" + reaction 
-          });
-        }
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      
+      // Check if we're at a reaction minute - add deterministic reactions at 5, 20, 35, 50 mins
+      const reactionMinutes = [5, 20, 35, 50];
+      if (!reactionMinutes.includes(currentMinute)) {
+        return; // Not a reaction minute, skip
       }
-    }, 40000); // Reduced frequency - check every 40 seconds
+      
+      // Create a deterministic seed based on current hour and minute
+      const seed = currentHour * 100 + currentMinute;
+      
+      // Find items that haven't had reactions yet
+      const unreactedItems = newsItems.filter(item => !item.hasReacted);
+      
+      if (unreactedItems.length === 0) {
+        return; // No unreacted items to react to
+      }
+      
+      // Use seeded random to deterministically select an item
+      const selectedIndex = Math.floor(seededRandom(seed) * unreactedItems.length);
+      const itemToReact = unreactedItems[selectedIndex];
+      
+      // Get appropriate reactions
+      const category = itemToReact.category as string;
+      const possibleReactions = zaurReactions[category] || zaurReactions.general;
+      
+      // Use seeded random to deterministically select a reaction
+      const reactionIndex = Math.floor(seededRandom(seed + 1) * possibleReactions.length);
+      const reaction = possibleReactions[reactionIndex];
+      
+      // Generate the comment
+      const baseComment = itemToReact.zaurComment || "";
+      const newComment = baseComment ? `${baseComment}\n\n${reaction}` : reaction;
+      
+      // Save to server first
+      saveZaurComment(itemToReact.id, newComment).then(() => {
+        // Update only the specific item
+        updateSingleItem(itemToReact.id, { 
+          hasReacted: true, 
+          zaurComment: newComment
+        });
+      });
+    }, 10000); // Check every 10 seconds to catch the window
   }
   
   // Helper for random moods
@@ -565,6 +609,7 @@
     const commentIndex = Math.floor(seededRandom(seed + 1) * discoveryComments.length);
     
     const category = selectedItem.category as string;
+    const zaurComment = getZaurCommentary(category) || "";
     
     const newItem = { 
       ...selectedItem,
@@ -579,7 +624,7 @@
       decodedTitle: selectedItem.decodedTitle || decodeHtmlEntities(selectedItem.title),
       decodedSummary: selectedItem.decodedSummary || decodeHtmlEntities(selectedItem.summary),
       // Add Zaur's commentary
-      zaurComment: getZaurCommentary(category),
+      zaurComment,
       zaurMood: "excited", // Zaur is excited about new discoveries
       isEmphasized: true  // Emphasize new discoveries automatically
     };
@@ -589,8 +634,9 @@
     
     // Add to discovered items list to ensure it's tracked across page refreshes
     discoveredItemIds.add(newItem.id);
-    // Save to server
-    await saveDiscoveredItem(newItem.id);
+    
+    // Save to server with initial comment
+    await saveDiscoveredItem(newItem.id, zaurComment);
     
     // Show the discovery indicator first
     showingDiscovery = true;
