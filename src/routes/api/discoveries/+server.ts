@@ -7,9 +7,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Path to the discoveries data file (using parent directory for proper location)
-const dataFilePath = path.join(__dirname, '../../../../data/discoveries.json');
-const commentsFilePath = path.join(__dirname, '../../../../data/zaur_comments.json');
+// Path to the discoveries data file (using $lib/server/data for proper location)
+const dataFilePath = path.join(__dirname, '../../../lib/server/data/discoveries.json');
+const commentsFilePath = path.join(__dirname, '../../../lib/server/data/zaur_comments.json');
 
 // Data structure for Zaur's comments
 interface ZaurComment {
@@ -63,7 +63,16 @@ async function getZaurComments(): Promise<ZaurComment[]> {
 // Save Zaur's comments
 async function saveZaurComments(comments: ZaurComment[]) {
   await ensureDataDirectory();
+  console.log(`Saving ${comments.length} Zaur comments to ${commentsFilePath}`);
   await fs.writeFile(commentsFilePath, JSON.stringify(comments, null, 2), 'utf-8');
+  
+  // Verify file was created
+  try {
+    await fs.access(commentsFilePath);
+    console.log(`Verified: Comments file exists at ${commentsFilePath}`);
+  } catch (error) {
+    console.error(`ERROR: Failed to create comments file at ${commentsFilePath}`, error);
+  }
 }
 
 // GET handler - retrieve all discovered items

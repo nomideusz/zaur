@@ -299,6 +299,63 @@
     return comments[index];
   }
   
+  // Apply saved comments to news items
+  function applyZaurComments(): void {
+    if (zaurComments.size === 0 || newsItems.length === 0) return;
+    
+    // Track which items we've already processed to avoid loops
+    const processedIds = new Set<string>();
+    let hasUpdates = false;
+    
+    const updatedItems = newsItems.map(item => {
+      // Skip if we've already processed this item in this run
+      if (processedIds.has(item.id)) return item;
+      processedIds.add(item.id);
+      
+      // If we have a saved comment for this item, use it
+      if (zaurComments.has(item.id)) {
+        const savedComment = zaurComments.get(item.id);
+        // Only update if the comment is different
+        if (savedComment !== item.zaurComment) {
+          hasUpdates = true;
+          return {
+            ...item,
+            zaurComment: savedComment,
+            hasReacted: savedComment?.includes("\n\n") || false
+          };
+        }
+      }
+      return item;
+    });
+    
+    if (hasUpdates) {
+      console.log('[ZaurNews] Applied saved comments to news items');
+      // Use a direct assignment rather than the helper to avoid potential loops
+      newsItems = updatedItems;
+    }
+  }
+  
+  // Process all items for later use
+  function processNewsItems(items: any[]): ZaurNewsItem[] {
+    return items.map(item => {
+      const category = item.category as string;
+      const savedComment = zaurComments.get(item.id);
+      
+      return {
+        ...item,
+        isNew: false,
+        // Use saved comment if available, otherwise get a new one
+        zaurComment: savedComment || getZaurCommentary(category),
+        decodedTitle: decodeHtmlEntities(item.title),
+        decodedSummary: decodeHtmlEntities(item.summary),
+        zaurMood: getRandomMood(),
+        isEmphasized: false,
+        // If we have a saved comment with a line break, consider it as having reacted
+        hasReacted: savedComment?.includes("\n\n") || false
+      };
+    });
+  }
+  
   // Function to load and curate news (initial load only)
   async function loadZaurNews(): Promise<void> {
     if (!browser) return;
@@ -316,20 +373,8 @@
       await tick(); // Await a tick before updating state
       lastUpdated = result.lastUpdated;
       
-      // Process all items for later use
-      const processedItems = result.items.map(item => {
-        const category = item.category as string;
-        return {
-          ...item,
-          isNew: false,
-          zaurComment: getZaurCommentary(category),
-          decodedTitle: decodeHtmlEntities(item.title),
-          decodedSummary: decodeHtmlEntities(item.summary),
-          zaurMood: getRandomMood(),
-          isEmphasized: false,
-          hasReacted: false
-        };
-      });
+      // Process all items for later use - pass to our new processing function
+      const processedItems = processNewsItems(result.items);
       
       // Sort by date consistently - newest first
       const sortedItems = processedItems.sort((a, b) => 
@@ -468,6 +513,14 @@
       // Create a deterministic seed based on current hour and minute
       const seed = currentHour * 100 + currentMinute;
       
+      // If we have no items, try to apply comments first
+      if (newsItems.length === 0) {
+        return;
+      }
+      
+      // Do NOT apply comments here - this was causing an infinite loop
+      // applyZaurComments();
+      
       // Find items that haven't had reactions yet
       const unreactedItems = newsItems.filter(item => !item.hasReacted);
       
@@ -490,6 +543,9 @@
       // Generate the comment
       const baseComment = itemToReact.zaurComment || "";
       const newComment = baseComment ? `${baseComment}\n\n${reaction}` : reaction;
+      
+      // Log the reaction process
+      console.log(`[ZaurNews] Adding reaction to item ${itemToReact.id}: ${reaction}`);
       
       // Save to server first
       saveZaurComment(itemToReact.id, newComment).then(() => {
@@ -542,6 +598,8 @@
     // Set up an interval to check every minute
     const interval = setInterval(() => {
       checkForTimeBasedDiscoveries();
+      // Check for comments updates periodically, but only every 60 seconds
+      applyZaurComments();
     }, 60000); // Check every minute
     
     // Set up a more frequent check to catch discovery minutes more precisely
@@ -735,6 +793,7 @@
     if (browser) {
       // Load discovered items from server
       await loadDiscoveredItems();
+      // Now load the news, which will use the comments we just loaded
       loadZaurNews();
       // No need to schedule full refreshes anymore
     }
