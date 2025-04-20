@@ -257,13 +257,20 @@
 		</nav>
 		
 		<!-- Mobile Menu Button -->
-		<div class="mobile-menu-button" onclick={(e) => toggleMobileMenu(e)} bind:this={menuButtonRef}>
+		<button 
+			class="mobile-menu-button" 
+			onclick={(e) => toggleMobileMenu(e)} 
+			onkeydown={(e) => e.key === 'Enter' && (mobileMenuOpen = !mobileMenuOpen)}
+			aria-expanded={mobileMenuOpen}
+			aria-label="Toggle mobile menu"
+			bind:this={menuButtonRef}
+		>
 			<div class="menu-icon" class:open={mobileMenuOpen}>
 				<span></span>
 				<span></span>
 				<span></span>
 			</div>
-		</div>
+		</button>
 		
 		<!-- Mobile Navigation -->
 		{#if mobileMenuOpen}
@@ -810,13 +817,6 @@
 	
 	.my-project:hover {
 		border-left-color: #e63946; /* Accent red on hover */
-	}
-	
-	.author-note {
-		font-size: 0.85rem;
-		color: #666;
-		font-style: italic;
-		margin-top: 0.5rem;
 	}
 	
 	/* Dodajemy subtelny efekt tła dla karty */

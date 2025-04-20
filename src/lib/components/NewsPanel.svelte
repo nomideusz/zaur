@@ -126,7 +126,12 @@
   
   // Function to load news from API
   async function loadNews(category?: string | null): Promise<void> {
-    if (!browser) return;
+    if (!browser) {
+      // For SvelteKit SSR, we'll let the server handle data fetching
+      // This will be called during SSR, but we'll skip actual fetching
+      console.log('SSR context, skipping client-side fetch');
+      return;
+    }
     
     try {
       // Signal fetch start
@@ -366,9 +371,11 @@
     }
   });
   
-  // Initial load
+  // Initial load - only in browser context
   onMount(() => {
-    manualRefresh();
+    if (browser) {
+      manualRefresh();
+    }
   });
   
   // Pagination for category buttons on small screens

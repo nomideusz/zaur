@@ -1,0 +1,73 @@
+[
+  {
+    "id": "js-weekly-1",
+    "title": "JavaScript in 2025: What's New and Exciting",
+    "summary": "The JavaScript ecosystem continues to evolve with new features in ES2025 and innovative frameworks.",
+    "url": "https://javascriptweekly.com/issues/future",
+    "publishDate": "2025-04-15T10:30:00.000Z",
+    "source": "JavaScript Weekly",
+    "sourceId": "javascriptweekly",
+    "category": "programming",
+    "imageUrl": "https://picsum.photos/seed/js2025/600/400",
+    "author": "JS Weekly Team"
+  },
+  {
+    "id": "css-tricks-1",
+    "title": "Advanced CSS Grid Techniques",
+    "summary": "Learn how to create complex layouts using the latest CSS Grid specifications including the new subgrid feature.",
+    "url": "https://css-tricks.com/advanced-grid",
+    "publishDate": "2025-04-18T14:15:00.000Z",
+    "source": "CSS-Tricks",
+    "sourceId": "css-tricks",
+    "category": "design",
+    "imageUrl": "https://picsum.photos/seed/cssgrid/600/400",
+    "author": "Sarah Designer"
+  },
+  {
+    "id": "techcrunch-1",
+    "title": "New AI Framework Revolutionizes Web Development",
+    "summary": "A new AI-powered framework is changing how developers approach web applications by generating optimized code.",
+    "url": "https://techcrunch.com/ai-web-dev",
+    "publishDate": "2025-04-19T09:45:00.000Z",
+    "source": "TechCrunch",
+    "sourceId": "techcrunch",
+    "category": "tech",
+    "imageUrl": "https://picsum.photos/seed/aidev/600/400",
+    "author": "Tech Journalist"
+  },
+  {
+    "id": "redditprogramming-1",
+    "title": "Debate: Are Runes the Future of Reactivity?",
+    "summary": "The programming community discusses whether Svelte's runes approach will become the standard for reactive programming.",
+    "url": "https://reddit.com/r/programming/runes-future",
+    "publishDate": "2025-04-17T16:20:00.000Z",
+    "source": "Reddit Programming",
+    "sourceId": "redditprogramming",
+    "category": "programming",
+    "author": "u/reactivity_fan"
+  },
+  {
+    "id": "nature-1",
+    "title": "Quantum Computing Breakthrough Achieves 500-Qubit Stability",
+    "summary": "Researchers have achieved a significant milestone in quantum computing with a stable 500-qubit system that could revolutionize computational science.",
+    "url": "https://nature.com/quantum-breakthrough",
+    "publishDate": "2025-04-16T08:30:00.000Z",
+    "source": "Nature",
+    "sourceId": "nature",
+    "category": "science",
+    "imageUrl": "https://picsum.photos/seed/quantum/600/400",
+    "author": "Quantum Research Team"
+  },
+  {
+    "id": "forbes-1",
+    "title": "Tech Giants Embrace Sustainable Data Centers",
+    "summary": "Major technology companies are investing billions in carbon-neutral data centers powered by renewable energy sources.",
+    "url": "https://forbes.com/sustainable-tech",
+    "publishDate": "2025-04-20T11:00:00.000Z",
+    "source": "Forbes Business",
+    "sourceId": "forbes",
+    "category": "business",
+    "imageUrl": "https://picsum.photos/seed/datacenter/600/400",
+    "author": "Business Analyst"
+  }
+] 

@@ -1,0 +1,56 @@
+{
+  "lastUpdated": "2025-04-20T20:00:00.000Z",
+  "items": [],
+  "categories": {
+    "tech": "Technology",
+    "programming": "Programming",
+    "design": "Design",
+    "business": "Business",
+    "science": "Science",
+    "products": "Products"
+  },
+  "sources": [
+    {
+      "id": "javascriptweekly",
+      "name": "JavaScript Weekly",
+      "url": "https://javascriptweekly.com/rss",
+      "category": "programming",
+      "priority": 10
+    },
+    {
+      "id": "css-tricks",
+      "name": "CSS-Tricks",
+      "url": "https://css-tricks.com/feed/",
+      "category": "design",
+      "priority": 8
+    },
+    {
+      "id": "techcrunch",
+      "name": "TechCrunch",
+      "url": "https://techcrunch.com/feed/",
+      "category": "tech",
+      "priority": 7
+    },
+    {
+      "id": "redditprogramming",
+      "name": "Reddit Programming",
+      "url": "https://www.reddit.com/r/programming/.rss",
+      "category": "programming",
+      "priority": 6
+    },
+    {
+      "id": "nature",
+      "name": "Nature",
+      "url": "https://www.nature.com/nature.rss",
+      "category": "science",
+      "priority": 9
+    },
+    {
+      "id": "forbes",
+      "name": "Forbes Business",
+      "url": "https://www.forbes.com/business/feed/",
+      "category": "business",
+      "priority": 7
+    }
+  ]
+} 
