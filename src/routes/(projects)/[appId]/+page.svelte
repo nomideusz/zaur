@@ -1,6 +1,5 @@
 <script lang="ts">
 	import ProjectFrame from '$lib/components/ProjectFrame.svelte';
-	import RedirectPage from '$lib/components/RedirectPage.svelte';
 	import { onMount } from 'svelte';
 	
 	export let data;
