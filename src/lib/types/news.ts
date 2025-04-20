@@ -14,6 +14,7 @@ export interface NewsItem {
 export interface NewsResponse {
   items: NewsItem[];
   lastUpdated: Date;
+  isMock?: boolean;
 }
 
 export interface NewsState {
