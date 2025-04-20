@@ -150,6 +150,20 @@ export async function fetchAllRssFeeds() {
     // Get existing news data
     const newsData = readNewsData();
     
+    // Find the timestamp of the newest article we currently have
+    let newestExistingTimestamp = new Date(0); // Default to epoch start
+    if (newsData.items && newsData.items.length > 0) {
+      // Sort by date and get the newest
+      const sortedItems = [...newsData.items].sort(
+        (a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+      );
+      
+      if (sortedItems[0] && sortedItems[0].publishDate) {
+        newestExistingTimestamp = new Date(sortedItems[0].publishDate);
+        console.log(`Newest existing article timestamp: ${newestExistingTimestamp.toISOString()}`);
+      }
+    }
+    
     // Cast sources to NewsSource[] with default values where needed
     const sources = (newsData.sources || []).map((source: any) => ({
       id: source.id || '',
@@ -171,6 +185,8 @@ export async function fetchAllRssFeeds() {
     
     // Process each source
     const allNewsItems: NewsItem[] = [];
+    let newItemsCount = 0;
+    let skippedItemsCount = 0;
     
     for (const source of sortedSources) {
       console.log(`Fetching from ${source.name} (${source.url})...`);
@@ -178,13 +194,32 @@ export async function fetchAllRssFeeds() {
       const rssItems = await fetchRssFeed(source.url);
       
       if (rssItems.length > 0) {
-        const newsItems = convertRssToNewsItems(rssItems, source);
+        // Filter items that are newer than our newest existing item
+        const newRssItems = rssItems.filter(item => {
+          try {
+            const itemDate = new Date(item.pubDate);
+            return itemDate > newestExistingTimestamp;
+          } catch (e) {
+            // If we can't parse the date, include the item to be safe
+            return true;
+          }
+        });
+        
+        // Count skipped items
+        skippedItemsCount += (rssItems.length - newRssItems.length);
+        
+        // Only process newer items
+        const newsItems = convertRssToNewsItems(newRssItems, source);
         allNewsItems.push(...newsItems);
-        console.log(`Found ${newsItems.length} items from ${source.name}`);
+        newItemsCount += newsItems.length;
+        
+        console.log(`Found ${newsItems.length} new items from ${source.name} (skipped ${rssItems.length - newRssItems.length} older items)`);
       } else {
         console.log(`No items found from ${source.name}`);
       }
     }
+    
+    console.log(`Processing complete: ${newItemsCount} new items found, ${skippedItemsCount} older items skipped`);
     
     if (allNewsItems.length > 0) {
       // Update news database with new items

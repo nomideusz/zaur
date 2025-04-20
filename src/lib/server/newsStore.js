@@ -181,20 +181,42 @@ export function updateNews(newItems) {
     data.items.map(item => [item.id, item])
   );
   
+  // Track if we actually added or updated any items
+  let hasChanges = false;
+  let addedCount = 0;
+  let updatedCount = 0;
+  
   // Add new items if they don't exist, or update if newer
   for (const item of newItems) {
     const existingItem = existingItemsMap.get(item.id);
-    if (!existingItem || new Date(item.publishDate) > new Date(existingItem.publishDate)) {
+    if (!existingItem) {
+      // This is a new item
       existingItemsMap.set(item.id, item);
+      hasChanges = true;
+      addedCount++;
+    } else if (new Date(item.publishDate) > new Date(existingItem.publishDate)) {
+      // This is an updated item with a newer publish date
+      existingItemsMap.set(item.id, item);
+      hasChanges = true;
+      updatedCount++;
     }
   }
   
-  // Update the news data
-  data.items = Array.from(existingItemsMap.values());
-  data.lastUpdated = new Date().toISOString();
-  
-  // Write updated data back to memory and file
-  writeNewsData(data);
+  // Only update if we have changes
+  if (hasChanges) {
+    console.log(`Found changes: Added ${addedCount} new items, updated ${updatedCount} existing items`);
+    
+    // Update the news data
+    data.items = Array.from(existingItemsMap.values());
+    data.lastUpdated = new Date().toISOString();
+    
+    // Write updated data back to memory and file
+    writeNewsData(data);
+    
+    console.log(`Updated news data file with ${addedCount} new items`);
+  } else {
+    console.log('No new items found, news data file remains unchanged');
+  }
   
   return data;
 }

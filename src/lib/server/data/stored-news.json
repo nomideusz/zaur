@@ -1,5 +1,5 @@
 {
-  "lastUpdated": "2025-04-20T20:18:08.978Z",
+  "lastUpdated": "2025-04-20T21:48:36.279Z",
   "items": [
     {
       "id": "js-weekly-1",
@@ -839,6 +839,90 @@
       "category": "business",
       "imageUrl": null,
       "author": "Rob Reischel, Contributor"
+    },
+    {
+      "id": "techcrunch-74f01133",
+      "title": "Kids sure love video game movies",
+      "summary": "“A Minecraft Movie” isn’t just a hit — after three weekends in theaters, the film is estimated to have grossed $344 million domestically and $720 million worldwide. That makes it the biggest movie of ...",
+      "url": "https://techcrunch.com/2025/04/20/kids-sure-love-video-game-movies/",
+      "publishDate": "2025-04-20T20:32:35.000Z",
+      "source": "TechCrunch",
+      "sourceId": "techcrunch",
+      "category": "tech",
+      "imageUrl": null,
+      "author": "Anthony Ha"
+    },
+    {
+      "id": "forbes-44fad703",
+      "title": "Van Hollen Criticizes Newsom’s ‘Distraction Of The Day’ Comment About Abrego Garcia",
+      "summary": "Van Hollen has become the most outspoken lawmaker advocating for the return of Kilmar Abrego Garcia, recently meeting the Maryland man who was mistakenly deported to El Salvador and has remained in pr...",
+      "url": "https://www.forbes.com/sites/antoniopequenoiv/2025/04/20/van-hollen-criticizes-newsoms-distraction-of-the-day-comment-about-abrego-garcia/",
+      "publishDate": "2025-04-20T20:13:41.000Z",
+      "source": "Forbes Business",
+      "sourceId": "forbes",
+      "category": "business",
+      "imageUrl": null,
+      "author": "Antonio Pequeño IV, Forbes Staff"
+    },
+    {
+      "id": "forbes-3900eadc",
+      "title": "WrestleMania 41 Day 2 Live Updates, Highlights And Reactions",
+      "summary": "WrestleMania 41 Night 2 live results are here. It features huge title matches and live reactions from start to finish. Follow every big moment right here....",
+      "url": "https://www.forbes.com/sites/brianmazique/2025/04/20/wrestlemania-41-day-2-live-updates-highlights-and-reactions/",
+      "publishDate": "2025-04-20T21:00:45.000Z",
+      "source": "Forbes Business",
+      "sourceId": "forbes",
+      "category": "business",
+      "imageUrl": null,
+      "author": "Brian Mazique, Contributor"
+    },
+    {
+      "id": "forbes-51a49c0a",
+      "title": "Measles Updates: 800 Cases In U.S. As Illness Spreads To Louisiana, Missouri And Virginia",
+      "summary": "Texas remains the state with the highest number of cases, by far....",
+      "url": "https://www.forbes.com/sites/antoniopequenoiv/2025/04/20/measles-updates-800-cases-in-us-as-illness-spreads-to-louisiana-missouri-and-virginia/",
+      "publishDate": "2025-04-20T20:51:41.000Z",
+      "source": "Forbes Business",
+      "sourceId": "forbes",
+      "category": "business",
+      "imageUrl": null,
+      "author": "Antonio Pequeño IV, Forbes Staff"
+    },
+    {
+      "id": "forbes-2cf34f64",
+      "title": "Ryan Garcia Vs. Rolando ‘Rolly’ Romero Full Fight Card",
+      "summary": "Everything you need to know about the May 2 Times Square boxing card headlined by Ryan Garcia vs. Rolando 'Rolly' Romero....",
+      "url": "https://www.forbes.com/sites/trentreinsmith/2025/04/20/ryan-garcia-vs-rolando-rolly-romero-full-fight-card/",
+      "publishDate": "2025-04-20T20:50:38.000Z",
+      "source": "Forbes Business",
+      "sourceId": "forbes",
+      "category": "business",
+      "imageUrl": null,
+      "author": "Trent Reinsmith, Contributor"
+    },
+    {
+      "id": "forbes-51d9de42",
+      "title": "Leicester City Reveal The Ugly Truth England Refuses To Accept",
+      "summary": "There was also the fact that for Leicester City, demotion has become a matter of when, not if, a long, long time ago....",
+      "url": "https://www.forbes.com/sites/zakgarnerpurkis/2025/04/20/leicester-city-reveal-the-ugly-truth-england-refuses-to-accept/",
+      "publishDate": "2025-04-20T20:48:39.000Z",
+      "source": "Forbes Business",
+      "sourceId": "forbes",
+      "category": "business",
+      "imageUrl": null,
+      "author": "Zak Garner-Purkis, Contributor"
+    },
+    {
+      "id": "techcrunch-74f01456",
+      "title": "OpenAI’s o3 AI model scores lower on a benchmark than the company initially implied",
+      "summary": "A discrepancy between first- and third-party benchmark results for OpenAI&#8217;s o3 AI model is raising questions about the company&#8217;s transparency and model testing practices. When OpenAI unvei...",
+      "url": "https://techcrunch.com/2025/04/20/openais-o3-ai-model-scores-lower-on-a-benchmark-than-the-company-initially-implied/",
+      "publishDate": "2025-04-20T21:19:26.000Z",
+      "source": "TechCrunch",
+      "sourceId": "techcrunch",
+      "category": "tech",
+      "imageUrl": null,
+      "author": "Kyle Wiggers"
     }
   ],
   "categories": {

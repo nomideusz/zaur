@@ -16,6 +16,19 @@ export async function fetchAndUpdateNews() {
   try {
     // Get existing news data
     const newsData = readNewsData();
+    
+    // Check if last update was less than 60 minutes ago
+    const lastUpdateTime = new Date(newsData.lastUpdated).getTime();
+    const currentTime = new Date().getTime();
+    const timeSinceLastUpdate = currentTime - lastUpdateTime;
+    const oneHourInMs = 60 * 60 * 1000;
+    
+    // Skip update if it's been less than an hour since the last update
+    if (timeSinceLastUpdate < oneHourInMs) {
+      console.log(`Skipping news update - last update was only ${Math.floor(timeSinceLastUpdate / 60000)} minutes ago`);
+      return newsData;
+    }
+    
     const sources = newsData.sources || [];
     
     if (sources.length === 0) {
@@ -61,14 +74,17 @@ export function setupScheduledNewsUpdates(intervalMinutes = 60) {
   // Convert minutes to milliseconds
   const interval = intervalMinutes * 60 * 1000;
   
-  console.log(`Setting up scheduled news updates every ${intervalMinutes} minutes`);
+  console.log(`Setting up scheduled news updates every ${intervalMinutes} minutes (${interval} ms)`);
   
-  // Initial update
-  fetchAndUpdateNews().catch(err => console.error('Error in initial news update:', err));
+  // Skip initial update since we're already calling it in hooks.server.ts
+  // This prevents double-initialization
   
-  // Schedule regular updates
-  return setInterval(() => {
-    console.log('Running scheduled news update...');
+  // Schedule regular updates - ensure we use the correct interval
+  const timer = setInterval(() => {
+    const now = new Date();
+    console.log(`Running scheduled news update at ${now.toISOString()} with ${intervalMinutes} minute interval...`);
     fetchAndUpdateNews().catch(err => console.error('Error in scheduled news update:', err));
   }, interval);
+  
+  return timer;
 } 

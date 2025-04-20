@@ -4,15 +4,15 @@ import type { NewsItem, NewsResponse } from '../types/news.js';
 // Log messages to console
 function log(message: string, data?: any): void {
   if (data) {
-    console.log(`[NewsService] ${message}`, data);
+    console.log(`[ZaurNews] ${message}`, data);
   } else {
-    console.log(`[NewsService] ${message}`);
+    console.log(`[ZaurNews] ${message}`);
   }
 }
 
 // Log errors to console
 function logError(message: string, error: any): void {
-  console.error(`[NewsService] ERROR: ${message}`, error);
+  console.error(`[ZaurNews] ERROR: ${message}`, error);
 }
 
 /**
@@ -29,7 +29,7 @@ export async function fetchAllNews(): Promise<NewsResponse> {
   }
   
   try {
-    log('Fetching news from local API...', null);
+    log('Fetching Zaur news collection...', null);
     
     const response = await fetch('/api/news');
     if (!response.ok) {
@@ -44,7 +44,7 @@ export async function fetchAllNews(): Promise<NewsResponse> {
       publishDate: new Date(item.publishDate)
     }));
     
-    log(`Fetched ${items.length} news items`, null);
+    log(`Fetched ${items.length} Zaur news items`, null);
     
     return {
       items,
@@ -52,11 +52,11 @@ export async function fetchAllNews(): Promise<NewsResponse> {
       isMock: false
     };
   } catch (error) {
-    logError('Error fetching news from API', error);
+    logError('Error fetching Zaur news', error);
     
     // Generate sample items if API fails
     return {
-      items: generateMockNewsItems('sample', 5),
+      items: generateZaurNewsItems('featured', 5),
       lastUpdated: new Date(),
       isMock: true
     };
@@ -78,7 +78,7 @@ export async function fetchNewsByCategory(category: string): Promise<NewsRespons
   }
 
   try {
-    log(`Fetching news for category: ${category}`, null);
+    log(`Fetching Zaur news for category: ${category}`, null);
     
     const response = await fetch(`/api/news?category=${encodeURIComponent(category)}`);
     if (!response.ok) {
@@ -93,7 +93,7 @@ export async function fetchNewsByCategory(category: string): Promise<NewsRespons
       publishDate: new Date(item.publishDate)
     }));
     
-    log(`Fetched ${items.length} news items for category ${category}`, null);
+    log(`Fetched ${items.length} Zaur news items for category ${category}`, null);
     
     return {
       items,
@@ -101,11 +101,11 @@ export async function fetchNewsByCategory(category: string): Promise<NewsRespons
       isMock: false
     };
   } catch (error) {
-    logError(`Error fetching news for category ${category}`, error);
+    logError(`Error fetching Zaur news for category ${category}`, error);
     
     // Generate sample items if API fails
     return {
-      items: generateMockNewsItems(category, 5),
+      items: generateZaurNewsItems(category, 5),
       lastUpdated: new Date(),
       isMock: true
     };
@@ -118,49 +118,64 @@ export async function fetchNewsByCategory(category: string): Promise<NewsRespons
  */
 export function getAvailableCategories() {
   return [
-    { id: 'tech', name: 'Technology' },
-    { id: 'programming', name: 'Programming' },
-    { id: 'design', name: 'Design' },
-    { id: 'business', name: 'Business' },
-    { id: 'science', name: 'Science' },
-    { id: 'products', name: 'Products' }
+    { id: 'ai', name: 'Artificial Intelligence' },
+    { id: 'dev', name: 'Development' },
+    { id: 'crypto', name: 'Cryptocurrency' },
+    { id: 'productivity', name: 'Productivity' },
+    { id: 'tools', name: 'Tools & Utilities' },
+    { id: 'philosophy', name: 'Philosophy' }
   ];
 }
 
 /**
- * Generate mock news items (fallback)
+ * Generate Zaur-themed news items (fallback)
  * @param {string} category Category or sourceId
  * @param {number} count Number of items to generate
  * @returns {Array} Array of mock news items
  */
-function generateMockNewsItems(category = 'sample', count = 5): NewsItem[] {
-  log(`Generating ${count} mock items for ${category}`, null);
+function generateZaurNewsItems(category = 'featured', count = 5): NewsItem[] {
+  log(`Generating ${count} Zaur news items for ${category}`, null);
   
   const mockItems = [];
   const topics = [
-    'Svelte new features', 'TypeScript 5.0', 'Web Components', 
-    'CSS Grid improvements', 'JavaScript Performance', 'Web Security',
-    'Node.js updates', 'WebAssembly', 'Progressive Web Apps'
+    'AI agents breakthrough', 'TypeScript performance tips', 'Crypto market analysis', 
+    'Productivity system optimization', 'Development workflow tools', 'Philosophical perspectives on technology',
+    'Terminal customization', 'Web3 development', 'Minimalist software design'
   ];
   
   for (let i = 0; i < count; i++) {
-    const id = `${category}-mock-${i}-${Date.now()}`;
+    const id = `zaur-${category}-${i}-${Date.now()}`;
     const topicIndex = Math.floor(Math.random() * topics.length);
     const date = new Date(Date.now() - i * 3600000);
     
     mockItems.push({
       id,
-      title: `${topics[topicIndex]} - Mock Item ${i + 1}`,
-      summary: `This is a mock news item for ${topics[topicIndex]} created because the API could not be reached.`,
+      title: `${topics[topicIndex]} - Zaur's Picks ${i + 1}`,
+      summary: `A curated insight on ${topics[topicIndex]} selected for your personalized feed.`,
       url: 'https://example.com/' + id,
       publishDate: date.toISOString(),
-      source: 'Mock Source',
-      sourceId: 'mock',
-      category: category !== 'sample' ? category : (i % 2 === 0 ? 'tech' : 'programming'),
+      source: 'Zaur Collection',
+      sourceId: 'zaur',
+      category: category !== 'featured' ? category : getCategoryForTopic(topics[topicIndex]),
       imageUrl: `https://picsum.photos/seed/${id}/600/400`,
-      author: 'Mock Generator',
+      author: 'Zaur Curator',
     });
   }
   
   return mockItems;
+}
+
+/**
+ * Map topic to appropriate category
+ * @param {string} topic The topic to categorize
+ * @returns {string} Category ID
+ */
+function getCategoryForTopic(topic: string): string {
+  if (topic.includes('AI')) return 'ai';
+  if (topic.includes('TypeScript') || topic.includes('Web3')) return 'dev';
+  if (topic.includes('Crypto')) return 'crypto';
+  if (topic.includes('Productivity')) return 'productivity';
+  if (topic.includes('tools') || topic.includes('Terminal') || topic.includes('workflow')) return 'tools';
+  if (topic.includes('Philosophical') || topic.includes('minimalist')) return 'philosophy';
+  return 'ai'; // Default category
 } 
