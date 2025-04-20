@@ -4,42 +4,60 @@ export const apps = [
         name: 'PDF Tools',
         description: 'PDF tools and utilities for document management',
         url: 'https://pdf.zaur.app',
-        icon: '📄',
-        supportsIframe: true // Zakładamy, że to własna aplikacja która obsługuje iframe
+        icon: 'P',
+        supportsIframe: true, // Zakładamy, że to własna aplikacja która obsługuje iframe
+        category: 'hosted-tools',
+        poweredBy: 'Stirling PDF'
     },
     {
         id: 'cloud',
         name: 'Cloud Storage',
         description: 'Cloud storage and file management solution',
         url: 'https://cloud.zaur.app',
-        icon: '☁️',
-        supportsIframe: false // NextCloud blokuje iframe
+        icon: 'C',
+        supportsIframe: false, // NextCloud blokuje iframe
+        category: 'hosted-tools',
+        poweredBy: 'Nextcloud'
     },
     {
         id: 'share',
         name: 'File Sharing',
         description: 'Share files with friends and family',
         url: 'https://drive.zaur.app/g/2FbH7cq6YMBqjqeZ',
-        icon: '📄',
-        supportsIframe: true // Zakładamy, że również ma ograniczenia
+        icon: 'S',
+        supportsIframe: true, // Zakładamy, że również ma ograniczenia
+        category: 'hosted-tools',
+        poweredBy: 'Picoshare'
     },
     {
         id: 'kino',
         name: 'Kino',
         description: 'Cinema, what is it really?',
         url: 'https://kino.net.pl',
-        icon: '🎬',
+        icon: 'K',
         supportsIframe: false,
-        openInNewTab: true
+        openInNewTab: true,
+        category: 'my-projects'
     },
     {
         id: 'kompi',
         name: 'Kompi',
-        description: 'Modern electronics store',
+        description: 'Modern open-source e-commerce platform built with SvelteKit. Sleek, fast, and powerful.',
         url: 'https://kompi.pl',
-        icon: '💻',
+        icon: 'λ',
         supportsIframe: false,
-        openInNewTab: true
+        openInNewTab: true,
+        category: 'my-projects'
+    },
+    {
+        id: 'nieco',
+        name: 'Nieco',
+        description: 'Embracing the Kaizen way: transforming your life through small, consistent steps. Progressive improvement, one moment at a time.',
+        url: 'https://nieco.pl',
+        icon: 'N',
+        supportsIframe: false,
+        openInNewTab: true,
+        category: 'my-projects'
     }
 ];
 export function getAppById(id) {
