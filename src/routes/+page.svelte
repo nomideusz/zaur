@@ -268,6 +268,7 @@
 		<!-- Mobile Navigation -->
 		{#if mobileMenuOpen}
 			<nav class="mobile-nav" bind:this={mobileMenuRef}>
+				<button class="mobile-menu-close" onclick={(e) => { e.stopPropagation(); closeMobileMenu(); }} onkeydown={(e) => e.key === 'Enter' && closeMobileMenu()} aria-label="Close menu">×</button>
 				<a href="#projects" class="nav-link" class:active={lastVisitedSection.current === 'projects'} onclick={(e) => { e.preventDefault(); navigateTo('projects'); }}>Projects</a>
 				<a href="#external-sites" class="nav-link" class:active={lastVisitedSection.current === 'external-sites'} onclick={(e) => { e.preventDefault(); navigateTo('external-sites'); }}>External Sites</a>
 				<a href="/news" class="nav-link">News</a>
@@ -1231,5 +1232,29 @@
 			left: 10px;
 			max-width: none;
 		}
+	}
+	
+	.mobile-menu-close {
+		position: absolute;
+		top: 20px;
+		right: 20px;
+		font-size: 24px;
+		color: #aaa;
+		cursor: pointer;
+		width: 36px;
+		height: 36px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 50%;
+		border: none;
+		background: transparent;
+		padding: 0;
+		z-index: 1001;
+	}
+	
+	.mobile-menu-close:hover {
+		background: #f5f5f5;
+		color: #333;
 	}
 </style>
