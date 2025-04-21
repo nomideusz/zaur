@@ -54,6 +54,7 @@
 		"@tailwindcss/forms": "^0.5.9",
 		"@tailwindcss/typography": "^0.5.15",
 		"@tailwindcss/vite": "^4.0.0",
+		"@types/node-schedule": "^2.1.7",
 		"@types/xml2js": "^0.4.14",
 		"prettier": "^3.4.2",
 		"prettier-plugin-svelte": "^3.3.3",

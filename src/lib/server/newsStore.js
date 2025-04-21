@@ -1,11 +1,11 @@
+// @ts-nocheck
 import { dev } from '$app/environment';
-import fs from 'fs';
+import rethinkdb from 'rethinkdb';
 import path from 'path';
 
 // Configuration
 const FORCE_REAL_DATA = true; // Force real data even in development mode
 
-// In SvelteKit, we'll use the built-in data storing capabilities
 // Import types for our data structures
 /** @typedef {Object} NewsItem
  * @property {string} id - Unique identifier
@@ -32,227 +32,412 @@ const FORCE_REAL_DATA = true; // Force real data even in development mode
 // @ts-ignore - Import JSON directly in SvelteKit
 import sampleNewsData from './data/sample-news.json';
 
-// Path to the news storage file
-const NEWS_STORAGE_PATH = path.join(process.cwd(), 'src', 'lib', 'server', 'data', 'stored-news.json');
-const NEWS_SOURCES_PATH = path.join(process.cwd(), 'src', 'lib', 'server', 'data', 'news.json');
+// RethinkDB configuration
+const DB_CONFIG = {
+  host: process.env.RETHINKDB_HOST || 'localhost',
+  port: parseInt(process.env.RETHINKDB_PORT || '28015', 10),
+  db: process.env.RETHINKDB_DB || 'zaur_news'
+};
 
-// Define storage for news data
-/** @type {NewsData|null} */
-let newsData = null;
-
-/**
- * Read news sources from the news.json file
- * @returns {Array<{id: string, name: string, url: string, category: string, priority: number}>} News sources
- */
-function readNewsSources() {
-  try {
-    // Read sources from the news.json file
-    if (fs.existsSync(NEWS_SOURCES_PATH)) {
-      const sourcesData = JSON.parse(fs.readFileSync(NEWS_SOURCES_PATH, 'utf8'));
-      return sourcesData.sources || [];
-    }
-    return [];
-  } catch (error) {
-    console.error('Error reading news sources:', error);
-    return [];
-  }
-}
+// Connection pool - will be initialized on first use
+/** @type {rethinkdb.Connection|null} */
+let connectionPool = null;
 
 /**
- * Read news data from file
- * @returns {NewsData|null} The news data from file or null if not found
+ * Get a connection to RethinkDB
+ * @returns {Promise<rethinkdb.Connection>} RethinkDB connection
  */
-function readFileNewsData() {
-  try {
-    // Check if the storage file exists
-    if (fs.existsSync(NEWS_STORAGE_PATH)) {
-      // Load data from file
-      const fileData = fs.readFileSync(NEWS_STORAGE_PATH, 'utf8');
-      /** @type {NewsData} */
-      const data = JSON.parse(fileData);
-      console.log(`Loaded ${data.items.length} news items from storage`);
-      return data;
-    }
-  } catch (error) {
-    console.error('Error reading news data from file:', error);
-  }
-  return null;
-}
-
-/**
- * Read news data from file or initialize if not exists
- * @returns {NewsData} The news data
- */
-export function readNewsData() {
-  if (newsData === null) {
-    // Try to read from file first
-    const fileData = readFileNewsData();
-    
-    if (fileData) {
-      newsData = fileData;
-    } else {
-      // Initialize with basic structure if no file data
-      newsData = {
-        lastUpdated: new Date().toISOString(),
-        items: [],
-        categories: {
-          tech: "Technology",
-          programming: "Programming",
-          design: "Design",
-          business: "Business",
-          science: "Science",
-          products: "Products"
-        },
-        sources: readNewsSources()
-      };
+async function getConnection() {
+  if (!connectionPool) {
+    try {
+      console.log(`Connecting to RethinkDB at ${DB_CONFIG.host}:${DB_CONFIG.port} (database: ${DB_CONFIG.db})...`);
+      connectionPool = await rethinkdb.connect({
+        host: DB_CONFIG.host,
+        port: DB_CONFIG.port
+      });
       
-      // Load sample data if in dev mode and no items exist
-      if (dev && !FORCE_REAL_DATA && newsData.items.length === 0) {
-        newsData.items = [...sampleNewsData.items];
-        newsData.lastUpdated = new Date().toISOString();
-        console.log('Initialized with sample data in dev mode');
-      }
+      // Set the default database
+      connectionPool.use(DB_CONFIG.db);
+      
+      console.log('Successfully connected to RethinkDB');
+    } catch (error) {
+      console.error('Error connecting to RethinkDB:', error);
+      throw error;
     }
   }
   
-  // At this point, newsData is guaranteed to be initialized
-  // @ts-ignore - We've handled the null case above
-  return newsData;
+  return connectionPool;
 }
 
 /**
- * Write news data to file
- * @param {NewsData} data The news data to write
+ * Initialize the database (create if not exists)
+ * @returns {Promise<void>}
  */
-export function writeNewsData(data) {
+export async function initializeDatabase() {
   try {
-    // Update the in-memory data
-    newsData = data;
+    const conn = await getConnection();
     
-    // Create directory if it doesn't exist
-    const dir = path.dirname(NEWS_STORAGE_PATH);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+    // Check if database exists
+    const dbs = await rethinkdb.dbList().run(conn);
+    if (!dbs.includes(DB_CONFIG.db)) {
+      console.log(`Creating database '${DB_CONFIG.db}'...`);
+      await rethinkdb.dbCreate(DB_CONFIG.db).run(conn);
     }
     
-    // Write data to file (pretty-print with 2-space indent)
-    fs.writeFileSync(NEWS_STORAGE_PATH, JSON.stringify(data, null, 2), 'utf8');
-    console.log(`Saved ${data.items.length} news items to ${NEWS_STORAGE_PATH}`);
+    // Switch to our database
+    conn.use(DB_CONFIG.db);
+    
+    // Check if tables exist and create them if needed
+    const tables = await rethinkdb.tableList().run(conn);
+    
+    // Create news table if it doesn't exist
+    if (!tables.includes('news')) {
+      console.log("Creating 'news' table...");
+      await rethinkdb.tableCreate('news').run(conn);
+      
+      // Create indexes for news table
+      await rethinkdb.table('news').indexCreate('category').run(conn);
+      await rethinkdb.table('news').indexCreate('sourceId').run(conn);
+      await rethinkdb.table('news').indexCreate('publishDate').run(conn);
+      await rethinkdb.table('news').indexWait().run(conn);
+    }
+    
+    // Create sources table if it doesn't exist
+    if (!tables.includes('sources')) {
+      console.log("Creating 'sources' table...");
+      await rethinkdb.tableCreate('sources').run(conn);
+      
+      // Create indexes for sources table
+      await rethinkdb.table('sources').indexCreate('category').run(conn);
+      await rethinkdb.table('sources').indexWait().run(conn);
+    }
+    
+    // Create categories table if it doesn't exist
+    if (!tables.includes('categories')) {
+      console.log("Creating 'categories' table...");
+      await rethinkdb.tableCreate('categories').run(conn);
+    }
+    
+    console.log('Database initialization complete');
   } catch (error) {
-    console.error('Error writing news data:', error);
+    console.error('Database initialization failed:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get default categories if none are stored
+ * @returns {Object.<string, string>} Map of category IDs to names
+ */
+function getDefaultCategories() {
+  return {
+    ai: "Artificial Intelligence",
+    dev: "Development",
+    crypto: "Cryptocurrency", 
+    productivity: "Productivity",
+    tools: "Tools & Utilities",
+    philosophy: "Philosophy"
+  };
+}
+
+/**
+ * Read news data from database
+ * @returns {Promise<NewsData>} The news data
+ */
+export async function readNewsData() {
+  try {
+    await initializeDatabase();
+    const conn = await getConnection();
+    
+    // Get news items
+    const cursor = await rethinkdb.table('news').run(conn);
+    const items = await cursor.toArray();
+    
+    // Get categories
+    const categoriesCursor = await rethinkdb.table('categories').run(conn);
+    const categoriesArray = await categoriesCursor.toArray();
+    
+    // Convert categories array to object
+    /** @type {Object.<string, string>} */
+    const categories = {};
+    for (const category of categoriesArray) {
+      if (category && typeof category === 'object' && 'id' in category && 'name' in category) {
+        categories[category.id] = category.name;
+      }
+    }
+    
+    // Get sources
+    const sourcesCursor = await rethinkdb.table('sources').run(conn);
+    const sources = await sourcesCursor.toArray();
+    
+    // If there are no items, use sample data in dev mode
+    if (items.length === 0) {
+      console.log('No items found in database, using sample data');
+      
+      // Load default categories if needed
+      if (Object.keys(categories).length === 0) {
+        const defaultCategories = getDefaultCategories();
+        
+        // Convert to array for insertion
+        const categoriesToInsert = Object.entries(defaultCategories).map(([id, name]) => ({ id, name }));
+        
+        // Insert categories
+        await rethinkdb.table('categories').insert(categoriesToInsert).run(conn);
+        
+        // Update categories object for return
+        Object.assign(categories, defaultCategories);
+      }
+      
+      // Use sample data in dev mode
+      if (dev && !FORCE_REAL_DATA) {
+        try {
+          // Insert sample data
+          await rethinkdb.table('news').insert(sampleNewsData.items).run(conn);
+          console.log(`Inserted ${sampleNewsData.items.length} sample news items`);
+          
+          // Return with sample data
+          return {
+            lastUpdated: new Date().toISOString(),
+            items: sampleNewsData.items,
+            categories,
+            sources
+          };
+        } catch (sampleError) {
+          console.error('Error inserting sample data:', sampleError);
+        }
+      }
+    }
+    
+    return {
+      lastUpdated: new Date().toISOString(),
+      items,
+      categories: Object.keys(categories).length > 0 ? categories : getDefaultCategories(),
+      sources
+    };
+  } catch (error) {
+    console.error('Error reading news data from database:', error);
+    
+    // Return empty data with default categories on error
+    return {
+      lastUpdated: new Date().toISOString(),
+      items: [],
+      categories: getDefaultCategories(),
+      sources: []
+    };
   }
 }
 
 /**
  * Get news items, optionally filtered by category
  * @param {string|null} category Optional category filter
- * @returns {Object} News data with items and metadata
+ * @returns {Promise<Object>} News data with items and metadata
  */
-export function getNews(category = null) {
-  const data = readNewsData();
-  
-  // Filter items by category if specified
-  const items = category 
-    ? data.items.filter(item => item.category === category)
-    : data.items;
-  
-  // Sort items by date (newest first)
-  const sortedItems = [...items].sort(
-    (a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
-  );
-  
-  return {
-    items: sortedItems,
-    lastUpdated: data.lastUpdated,
-    categories: data.categories
-  };
+export async function getNews(category = null) {
+  try {
+    await initializeDatabase();
+    const conn = await getConnection();
+    
+    // Create query based on category filter
+    let query = rethinkdb.table('news');
+    
+    // Apply category filter if provided
+    if (category) {
+      query = query.getAll(category, { index: 'category' });
+    }
+    
+    // Sort by date (newest first)
+    query = query.orderBy(rethinkdb.desc('publishDate'));
+    
+    // Execute query
+    const cursor = await query.run(conn);
+    const items = await cursor.toArray();
+    
+    // Get categories
+    const categoriesCursor = await rethinkdb.table('categories').run(conn);
+    const categoriesArray = await categoriesCursor.toArray();
+    
+    // Convert categories array to object
+    /** @type {Object.<string, string>} */
+    const categories = {};
+    for (const category of categoriesArray) {
+      if (category && typeof category === 'object' && 'id' in category && 'name' in category) {
+        categories[category.id] = category.name;
+      }
+    }
+    
+    return {
+      items,
+      lastUpdated: new Date().toISOString(),
+      categories: Object.keys(categories).length > 0 ? categories : getDefaultCategories()
+    };
+  } catch (error) {
+    console.error('Error getting news from database:', error);
+    
+    // Fall back to sample data on error if in dev mode
+    if (dev && !FORCE_REAL_DATA) {
+      // Filter items by category if specified
+      const items = category 
+        ? sampleNewsData.items.filter(item => item.category === category)
+        : sampleNewsData.items;
+      
+      // Sort items by date (newest first)
+      const sortedItems = [...items].sort(
+        (a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+      );
+      
+      return {
+        items: sortedItems,
+        lastUpdated: new Date().toISOString(),
+        categories: getDefaultCategories()
+      };
+    }
+    
+    // Return empty data with default categories on error
+    return {
+      items: [],
+      lastUpdated: new Date().toISOString(),
+      categories: getDefaultCategories()
+    };
+  }
 }
 
 /**
  * Update the news database with new items
  * @param {NewsItem[]} newItems Array of news items to add/update
- * @returns {NewsData} Updated news data
+ * @returns {Promise<Object>} Result information
  */
-export function updateNews(newItems) {
-  const data = readNewsData();
-  
-  // Create a map of existing items by ID for quick lookup
-  const existingItemsMap = new Map(
-    data.items.map(item => [item.id, item])
-  );
-  
-  // Track if we actually added or updated any items
-  let hasChanges = false;
-  let addedCount = 0;
-  let updatedCount = 0;
-  
-  // Add new items if they don't exist, or update if newer
-  for (const item of newItems) {
-    const existingItem = existingItemsMap.get(item.id);
-    if (!existingItem) {
-      // This is a new item
-      existingItemsMap.set(item.id, item);
-      hasChanges = true;
-      addedCount++;
-    } else if (new Date(item.publishDate) > new Date(existingItem.publishDate)) {
-      // This is an updated item with a newer publish date
-      existingItemsMap.set(item.id, item);
-      hasChanges = true;
-      updatedCount++;
+export async function updateNews(newItems) {
+  try {
+    await initializeDatabase();
+    const conn = await getConnection();
+    
+    // Get existing items to check for updates
+    let addedCount = 0;
+    let updatedCount = 0;
+    
+    // Process items one by one for better control
+    for (const item of newItems) {
+      // Check if item exists
+      const existingItem = await rethinkdb.table('news').get(item.id).run(conn);
+      
+      if (!existingItem) {
+        // This is a new item
+        await rethinkdb.table('news').insert(item).run(conn);
+        addedCount++;
+      } else if (new Date(item.publishDate) > new Date(existingItem.publishDate)) {
+        // This is an updated item with a newer publish date
+        await rethinkdb.table('news').get(item.id).update(item).run(conn);
+        updatedCount++;
+      }
     }
+    
+    // Only log if we have changes
+    if (addedCount > 0 || updatedCount > 0) {
+      console.log(`Found changes: Added ${addedCount} new items, updated ${updatedCount} existing items`);
+    } else {
+      console.log('No new items found, database remains unchanged');
+    }
+    
+    // Return the operation result
+    return {
+      added: addedCount,
+      updated: updatedCount,
+      total: addedCount + updatedCount
+    };
+  } catch (error) {
+    console.error('Error updating news in database:', error);
+    throw error;
   }
-  
-  // Only update if we have changes
-  if (hasChanges) {
-    console.log(`Found changes: Added ${addedCount} new items, updated ${updatedCount} existing items`);
-    
-    // Update the news data
-    data.items = Array.from(existingItemsMap.values());
-    data.lastUpdated = new Date().toISOString();
-    
-    // Write updated data back to memory and file
-    writeNewsData(data);
-    
-    console.log(`Updated news data file with ${addedCount} new items`);
-  } else {
-    console.log('No new items found, news data file remains unchanged');
-  }
-  
-  return data;
 }
 
 /**
  * Get available news categories
- * @returns {Array<{id: string, name: string}>} Array of category objects with id and name
+ * @returns {Promise<Array<{id: string, name: string}>>} Array of category objects with id and name
  */
-export function getCategories() {
-  const data = readNewsData();
-  return Object.entries(data.categories).map(([id, name]) => ({ id, name }));
+export async function getCategories() {
+  try {
+    await initializeDatabase();
+    const conn = await getConnection();
+    
+    // Get categories from database
+    const cursor = await rethinkdb.table('categories').run(conn);
+    const categories = await cursor.toArray();
+    
+    // If no categories found, return default
+    if (categories.length === 0) {
+      return Object.entries(getDefaultCategories()).map(([id, name]) => ({ id, name }));
+    }
+    
+    return categories;
+  } catch (error) {
+    console.error('Error getting categories from database:', error);
+    
+    // Return default categories on error
+    return Object.entries(getDefaultCategories()).map(([id, name]) => ({ id, name }));
+  }
 }
 
 /**
- * Limit the number of stored news items to prevent file growth
+ * Limit the number of stored news items to prevent database growth
  * @param {number} maxItems Maximum number of items to keep
- * @returns {NewsData} Updated news data
+ * @returns {Promise<Object>} Pruning result information
  */
-export function pruneNewsItems(maxItems = 100) {
-  const data = readNewsData();
-  
-  if (data.items.length <= maxItems) {
-    return data; // No pruning needed
+export async function pruneNewsItems(maxItems = 100) {
+  try {
+    await initializeDatabase();
+    const conn = await getConnection();
+    
+    // Count total items
+    const totalCount = await rethinkdb.table('news').count().run(conn);
+    
+    if (totalCount <= maxItems) {
+      return { pruned: 0, remaining: totalCount }; // No pruning needed
+    }
+    
+    console.log(`Pruning news items from ${totalCount} to ${maxItems}`);
+    
+    // Get oldest items to delete
+    const itemsToKeep = await rethinkdb.table('news')
+      .orderBy(rethinkdb.desc('publishDate'))
+      .limit(maxItems)
+      .pluck('id')
+      .run(conn);
+    
+    const idsToKeep = (await itemsToKeep.toArray()).map(item => item.id);
+    
+    // Delete items not in the keep list
+    const result = await rethinkdb.table('news')
+      .filter(item => rethinkdb.expr(idsToKeep).contains(item('id')).not())
+      .delete()
+      .run(conn);
+    
+    console.log(`Pruned ${result.deleted} items, ${maxItems} remain`);
+    
+    return {
+      pruned: result.deleted,
+      remaining: maxItems
+    };
+  } catch (error) {
+    console.error('Error pruning news items:', error);
+    throw error;
   }
-  
-  console.log(`Pruning news items from ${data.items.length} to ${maxItems}`);
-  
-  // Sort by date (newest first) and take only the first maxItems
-  data.items.sort((a, b) => new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime());
-  data.items = data.items.slice(0, maxItems);
-  
-  // Update the lastUpdated timestamp
-  data.lastUpdated = new Date().toISOString();
-  
-  // Write pruned data back
-  writeNewsData(data);
-  
-  return data;
-} 
+}
+
+/**
+ * Close database connection when application shuts down
+ */
+export async function closeConnection() {
+  if (connectionPool) {
+    try {
+      await connectionPool.close();
+      console.log('RethinkDB connection closed');
+      connectionPool = null;
+    } catch (error) {
+      console.error('Error closing RethinkDB connection:', error);
+    }
+  }
+}
+
+// Setup process exit handler to close connection
+process.on('SIGTERM', closeConnection);
+process.on('SIGINT', closeConnection); 

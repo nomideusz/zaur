@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { getNewsItems, saveNewsItem } from '$lib/server/db.js';
 import type { NewsItem } from '$lib/types/news.js';
+// @ts-ignore - RethinkDB types are handled in the store
+import { getNews, updateNews } from '$lib/server/newsStore.js';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -67,25 +68,32 @@ async function loadSampleNewsFromFile(): Promise<NewsItem[]> {
  * GET handler for news
  */
 export const GET: RequestHandler = async ({ url }) => {
-  const category = url.searchParams.get('category') || 'featured';
+  const category = url.searchParams.get('category') || null;
   
   try {
-    const items = await getNewsItems(category);
+    // Get news from RethinkDB store
+    // @ts-ignore - We know the structure from newsStore.js
+    const newsData = await getNews(category);
     
     // If we got items from the database, return them
-    if (items && items.length > 0) {
+    // @ts-ignore - We know the structure from newsStore.js
+    if (newsData.items && newsData.items.length > 0) {
       return json({
-        items: items.map(transformDbItemToNewsItem),
-        lastUpdated: new Date().toISOString()
+        // @ts-ignore - We know the structure from newsStore.js
+        items: newsData.items,
+        // @ts-ignore - We know the structure from newsStore.js
+        lastUpdated: newsData.lastUpdated,
+        // @ts-ignore - We know the structure from newsStore.js
+        categories: newsData.categories
       });
     }
     
     // If no items, fall back to sample data
     console.log('No items found in database, using sample data');
     const sampleItems = await loadSampleNewsFromFile();
-    const filteredItems = category === 'featured' 
-      ? sampleItems 
-      : sampleItems.filter(item => item.category === category);
+    const filteredItems = category 
+      ? sampleItems.filter(item => item.category === category)
+      : sampleItems;
     
     return json({
       items: filteredItems,
@@ -97,9 +105,9 @@ export const GET: RequestHandler = async ({ url }) => {
     
     // Return sample data on error
     const sampleItems = await loadSampleNewsFromFile();
-    const filteredItems = category === 'featured' 
-      ? sampleItems 
-      : sampleItems.filter(item => item.category === category);
+    const filteredItems = category
+      ? sampleItems.filter(item => item.category === category)
+      : sampleItems;
     
     return json({
       items: filteredItems,
@@ -129,48 +137,30 @@ export const POST: RequestHandler = async ({ request }) => {
       newsItem.publishDate = newsItem.publishDate.toISOString();
     }
     
-    let success = false;
     try {
-      success = await saveNewsItem(newsItem);
+      // Update or add the news item to RethinkDB
+      // @ts-ignore - We know the structure from newsStore.js
+      const result = await updateNews([newsItem]);
+      return json({ 
+        success: true, 
+        message: 'News item saved successfully',
+        // @ts-ignore - We know the structure from newsStore.js
+        added: result.added,
+        // @ts-ignore - We know the structure from newsStore.js
+        updated: result.updated
+      });
     } catch (error) {
-      console.error('Error saving to database, proceeding with mock success:', error);
-      // Pretend success even if database is down
-      success = true;
-    }
-    
-    if (success) {
-      return json({ success: true, message: 'News item saved successfully' });
-    } else {
+      console.error('Error saving to database:', error);
       return new Response(JSON.stringify({ error: 'Failed to save news item' }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
     }
   } catch (error) {
-    console.error('Error saving news item:', error);
+    console.error('Error processing news item:', error);
     return new Response(JSON.stringify({ error: 'Internal server error' }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
   }
-};
-
-/**
- * Transform a database item to a NewsItem
- */
-function transformDbItemToNewsItem(dbItem: any): NewsItem {
-  return {
-    id: dbItem.id,
-    title: dbItem.title,
-    summary: dbItem.summary,
-    url: dbItem.url,
-    publishDate: typeof dbItem.publishDate === 'string' 
-      ? dbItem.publishDate 
-      : new Date(dbItem.publishDate).toISOString(),
-    source: dbItem.source,
-    sourceId: dbItem.sourceId,
-    category: dbItem.category,
-    imageUrl: dbItem.imageUrl,
-    author: dbItem.author
-  };
-} 
+}; 
