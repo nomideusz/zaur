@@ -498,7 +498,7 @@
         }
       }
       
-      // Next, include other previously discovered items (up to half the remaining slots)
+      // Next, include all previously discovered items, not just a subset 
       const otherDiscoveredItems: ZaurNewsItem[] = [];
       
       if (discoveredItemIds.size > 0) {
@@ -515,11 +515,8 @@
           new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
         );
         
-        // Calculate remaining slots after accounting for recently discovered items
-        const remainingSlots = itemCount - recentlyDiscoveredItems.length;
-        // Take up to half of the remaining slots for other discovered items
-        const maxOtherDiscoveredSlots = Math.floor(remainingSlots / 2);
-        otherDiscoveredItems.push(...sortedDiscoveredItems.slice(0, maxOtherDiscoveredSlots));
+        // Include ALL discovered items, not just a subset
+        otherDiscoveredItems.push(...sortedDiscoveredItems);
         
         if (otherDiscoveredItems.length > 0) {
           console.log(`[ZaurNews] Including ${otherDiscoveredItems.length} other discovered items`);
@@ -529,8 +526,14 @@
       // Combine all discovered items
       const allDiscoveredItems = [...recentlyDiscoveredItems, ...otherDiscoveredItems];
       
-      // Calculate remaining slots for new content
-      const remainingSlots = itemCount - allDiscoveredItems.length;
+      // Calculate slots for new content - ensure we display at least 2 new undiscovered items
+      const minNewItems = 2;
+      let remainingSlots = Math.max(minNewItems, itemCount - allDiscoveredItems.length);
+      
+      // If we have too many discovered items, increase the total count dynamically
+      if (allDiscoveredItems.length > itemCount - minNewItems) {
+        console.log(`[ZaurNews] Increasing display count to fit all discovered items plus ${minNewItems} new items`);
+      }
       
       // Get items that haven't been discovered yet
       const undiscoveredItems = allAvailableItems.filter(item => 
@@ -914,36 +917,11 @@
     // Wait a moment for user to notice the indicator
     await new Promise(resolve => setTimeout(resolve, 1500));
     
-    // Prepare to remove the oldest item
-    let currentNewsItems = [...newsItems];
-    
-    // Sort by date to find the oldest
-    const sortedByDate = [...currentNewsItems].sort((a, b) => 
-      new Date(a.publishDate).getTime() - new Date(b.publishDate).getTime()
-    );
-    
-    // Mark the oldest for removal
-    if (sortedByDate.length > 0) {
-      const oldestItem = sortedByDate[0];
-      
-      // Mark it for removal without rerendering everything
-      updateSingleItem(oldestItem.id, { isRemoving: true });
-      
-      // Allow the DOM to update
-      await tick();
-      
-      // Short delay to allow fade animation to start
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }
-    
-    // Wait a bit longer for the removal animation to progress
-    await new Promise(resolve => setTimeout(resolve, 700));
-    
-    // Now add the new item and remove the old one
+    // Now add the new item - DO NOT remove existing items
     // Always ensure items are sorted by date (newest first)
     const updatedItems = [
       newItem, 
-      ...newsItems.filter(item => !item.isRemoving)
+      ...newsItems
     ].sort((a, b) => 
       new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
     );
@@ -1178,7 +1156,7 @@
       <div class="zaur-error-message">
         <p>Zaur encountered an issue while gathering news:</p>
         <p>{error}</p>
-        <button onclick={loadZaurNews}>Ask Zaur to try again</button>
+        <button onclick={() => newsFsm.send('retry')}>Ask Zaur to try again</button>
       </div>
     {:else if newsItems.length === 0}
       <div class="zaur-empty-state">
