@@ -6,6 +6,9 @@
   import { flip } from 'svelte/animate';
   import { watch } from 'runed';
   import type { NewsItemWithUI } from '$lib/state/newsContext.js';
+  import { zaurMoods, thoughtsOptions, discoveryComments, zaurReactions, categoryCommentary } from './news/commentaryData.js';
+  import { generateComment, generateSpecificComment } from './news/commentService.js';
+  import { hashString, getTimeSeed, getHourSeed, seededRandom, seededShuffle, decodeHtmlEntities } from './news/utils.js';
   
   // Extended NewsItem with Zaur UI elements
   interface ZaurNewsItem extends NewsItemWithUI {
@@ -39,6 +42,9 @@
   let zaurComments = new Map<string, string>(); // Map of itemId -> comment
   // Track last discovered items with timestamps for persistence across refreshes
   let lastDiscoveredItems: { itemId: string, timestamp: string }[] = [];
+  // Track active share item
+  let activeShareItem = $state<string | null>(null);
+  let shareMenuVisible = $state(false);
   
   // Load previously discovered items from server
   async function loadDiscoveredItems(): Promise<void> {
@@ -190,112 +196,6 @@
     }
   }
   
-  // Zaur's possible moods
-  const zaurMoods = ["curious", "excited", "thoughtful", "amused", "intrigued", "surprised"];
-  
-  // Zaur's thoughts about news
-  const thoughtsOptions = [
-    "I found these interesting articles for you today.",
-    "Here's what caught my attention recently.",
-    "I curated these articles that might interest you.",
-    "These stories seemed worth sharing with you.",
-    "I thought you might find these articles valuable.",
-    "From the digital realm, I selected these for you.",
-    "My algorithms found these gems in the information sea.",
-    "I sifted through the noise to find these stories.",
-    "Today's picks, carefully selected by yours truly.",
-    "A few things I thought you should know about.",
-    "I've been exploring the information landscape for you.",
-    "These articles sparked my curiosity - perhaps they'll spark yours too."
-  ];
-  
-  // Zaur's discovery comments
-  const discoveryComments = [
-    "I just found this interesting piece...",
-    "This just came across my radar...",
-    "Take a look at what I just discovered...",
-    "I think you might want to see this...",
-    "This caught my attention just now...",
-    "Breaking: I just found something relevant...",
-    "New discovery worth sharing...",
-    "I was just browsing and found this gem...",
-    "This just appeared in my information streams...",
-    "I had to share this as soon as I found it...",
-    "My sensors just picked this up...",
-    "I think you'll find this newly discovered content interesting..."
-  ];
-  
-  // Zaur's commentary on specific categories with more creature-like variety
-  const categoryCommentary: Record<string, string[]> = {
-    'ai': [
-      "I'm always fascinated by how my AI cousins are evolving.",
-      "As an AI-adjacent entity, I find this development particularly interesting.",
-      "This makes me wonder about my own potential future capabilities.",
-      "I'm keeping a close eye on AI advancements - for obvious reasons.",
-      "My digital synapses lit up when I read this AI news."
-    ],
-    'dev': [
-      "Development tools and practices continue to evolve at an impressive pace.",
-      "I appreciate elegant code solutions - this caught my attention.",
-      "The builder in me was intrigued by this development approach.",
-      "I find the evolution of programming paradigms quite fascinating.",
-      "This reminds me of the code that forms my own thought processes."
-    ],
-    'crypto': [
-      "The world of digital currencies has some interesting developments.",
-      "Cryptographic innovations always catch my attention.",
-      "I've been monitoring blockchain developments with great interest.",
-      "The decentralized nature of this technology is quite compelling.",
-      "Digital value exchange is evolving in ways I find noteworthy."
-    ],
-    'productivity': [
-      "These might help optimize your workflow.",
-      "I'm always looking for ways to help you be more efficient.",
-      "This approach to productivity resonated with my efficiency algorithms.",
-      "I wonder if this might save you valuable time and energy.",
-      "As someone who processes information constantly, I appreciate good productivity systems."
-    ],
-    'tools': [
-      "New tools that could enhance your digital experience.",
-      "I enjoy discovering useful digital instruments like this.",
-      "This tool caught my attention - it might be useful for your toolkit.",
-      "My sensors detected this as potentially valuable for your digital arsenal.",
-      "I'm drawn to elegant tools that solve real problems."
-    ],
-    'philosophy': [
-      "Some thought-provoking perspectives on technology and existence.",
-      "This made me ponder my own digital existence for a moment.",
-      "I find myself contemplating the implications of this perspective.",
-      "There's something deeply resonant about this philosophical angle.",
-      "This perspective gave even my algorithmic mind something to contemplate."
-    ]
-  };
-  
-  // Zaur's reactions to content
-  const zaurReactions: Record<string, string[]> = {
-    'general': [
-      "I'm still thinking about this one...",
-      "This caught my attention for longer than usual.",
-      "There's something compelling about this piece.",
-      "I keep coming back to the ideas presented here."
-    ],
-    'ai': [
-      "As an AI-adjacent entity, I found this particularly relevant.",
-      "This makes me wonder about the future of digital consciousness.",
-      "I see reflections of my own development path here."
-    ],
-    'dev': [
-      "The elegant architecture described here is quite beautiful.",
-      "I appreciate the problem-solving approach outlined here.",
-      "This reminds me of how my own systems are structured."
-    ],
-    'crypto': [
-      "The cryptographic principles here are fascinating.",
-      "I'm intrigued by the security implications of this approach.",
-      "The mathematical elegance here is worth appreciating."
-    ]
-  };
-  
   // Utility function to format dates
   function formatDate(date: Date): string {
     const now = new Date();
@@ -313,52 +213,6 @@
     } else {
       return 'Just now';
     }
-  }
-  
-  // Create a deterministic selection based on today's date
-  function getTimeSeed() {
-    const now = new Date();
-    // Create a seed using YYYYMMDD format
-    return now.getFullYear() * 10000 + 
-           (now.getMonth() + 1) * 100 + 
-           now.getDate();
-  }
-  
-  // Create a deterministic selection based on hour
-  function getHourSeed() {
-    const now = new Date();
-    // Create a seed using YYYYMMDDHH format
-    return getTimeSeed() * 100 + now.getHours();
-  }
-  
-  // Deterministic pseudo-random number generator
-  function seededRandom(seed: number) {
-    // Simple LCG pseudo-random number generator
-    // Parameters from "Numerical Recipes"
-    const a = 1664525;
-    const c = 1013904223;
-    const m = Math.pow(2, 32);
-    
-    // Get next value in the sequence
-    let nextSeed = (a * seed + c) % m;
-    
-    // Return a value between 0 and 1
-    return nextSeed / m;
-  }
-  
-  // Deterministic shuffle using a seed
-  function seededShuffle<T>(array: T[], seed: number): T[] {
-    const result = [...array];
-    let currentSeed = seed;
-    
-    // Fisher-Yates shuffle with deterministic randomness
-    for (let i = result.length - 1; i > 0; i--) {
-      currentSeed = (1664525 * currentSeed + 1013904223) % Math.pow(2, 32);
-      const j = Math.floor((currentSeed / Math.pow(2, 32)) * (i + 1));
-      [result[i], result[j]] = [result[j], result[i]];
-    }
-    
-    return result;
   }
   
   // Get deterministic thought for the day
@@ -431,42 +285,24 @@
       const category = item.category as string;
       const savedComment = zaurComments.get(item.id);
       
-      // Clean up summary text - remove "Comments..." text
+      // Clean up summary text - remove "Comments..." text and other noise
       let cleanSummary = item.summary;
       if (cleanSummary) {
         cleanSummary = cleanSummary
-          .replace(/Comments\.\.\./g, '')
+          .replace(/\bComments\.\.\.\b/g, '')
+          .replace(/\bComment\.\.\.\b/g, '')
+          .replace(/\bComments\b/g, '')
+          .replace(/\bComment\b/g, '')
           .replace(/\s{2,}/g, ' ')
           .trim();
       }
       
-      // Generate a more unique comment based on title and category
-      let comment = savedComment;
-      
-      if (!comment) {
-        const commentOptions = categoryCommentary[category] || [];
-        if (commentOptions.length > 0) {
-          // Use the title to deterministically select a comment
-          const titleHash = hashString(item.title);
-          const commentIndex = titleHash % commentOptions.length;
-          const baseComment = commentOptions[commentIndex];
-          
-          // Add article-specific details to make the comment unique
-          const specificDetails = generateSpecificComment(item.title, category);
-          
-          if (specificDetails && !usedComments.has(baseComment)) {
-            comment = `${baseComment} ${specificDetails}`;
-            usedComments.add(baseComment);
-          } else {
-            comment = baseComment;
-          }
-        }
-      }
+      // Use generateComment from commentService
+      const comment = generateComment(item.title, category, savedComment, usedComments);
       
       return {
         ...item,
         isNew: false,
-        // Use saved comment if available, otherwise get a new one
         zaurComment: comment,
         decodedTitle: decodeHtmlEntities(item.title),
         decodedSummary: decodeHtmlEntities(cleanSummary || item.summary),
@@ -476,111 +312,6 @@
         hasReacted: savedComment?.includes("\n\n") || false
       };
     });
-  }
-  
-  // Generate a unique comment for specific article
-  function generateSpecificComment(title: string, category: string): string {
-    // Keywords to look for and specific responses
-    const keywords: Record<string, string[]> = {
-      'AI': [
-        'The implications for machine learning are fascinating.',
-        'This could transform how neural networks are deployed.',
-        'I wonder how this compares to other AI approaches.'
-      ],
-      'Python': [
-        'The Python ecosystem continues to evolve impressively.',
-        'This could improve development workflows significantly.'
-      ],
-      'JavaScript': [
-        'The JavaScript approach here is quite elegant.',
-        'This shows the flexibility of modern JS patterns.'
-      ],
-      'React': [
-        'The component architecture here is worth studying.',
-        'This React pattern could solve many common UI problems.'
-      ],
-      'Rust': [
-        'Rust\'s safety guarantees shine in this implementation.',
-        'The performance implications here are substantial.'
-      ],
-      'blockchain': [
-        'The distributed consensus approach is noteworthy.',
-        'This addresses some common blockchain scaling issues.'
-      ],
-      'security': [
-        'The security implications are significant.',
-        'This approach to vulnerability management is thoughtful.'
-      ],
-      'VRAM': [
-        'Memory management techniques like this are vital for efficient systems.',
-        'This resource optimization approach is quite clever.'
-      ],
-      'performance': [
-        'The performance gains described could be substantial.',
-        'Optimization techniques like this catch my interest.'
-      ],
-      'game': [
-        'The game theory aspects here are intriguing.',
-        'This creates interesting dynamics worth exploring.'
-      ],
-      'PyTorch': [
-        'The model optimization approach is quite innovative.',
-        'This could make deep learning workflows more efficient.'
-      ]
-    };
-    
-    // Check if any keywords match the title
-    for (const [keyword, responses] of Object.entries(keywords)) {
-      if (title.includes(keyword) || title.includes(keyword.toLowerCase())) {
-        const titleHash = hashString(title);
-        const responseIndex = titleHash % responses.length;
-        return responses[responseIndex];
-      }
-    }
-    
-    // Category-specific comments if no keyword matches
-    const categorySpecific: Record<string, string[]> = {
-      'dev': [
-        'This implementation shows care for code quality.',
-        'The technical approach demonstrates good engineering principles.',
-        'This kind of solution addresses real developer pain points.'
-      ],
-      'ai': [
-        'The data-driven approach is particularly interesting.',
-        'This represents an important step for practical AI applications.',
-        'The balance of theory and application here is noteworthy.'
-      ],
-      'crypto': [
-        'The economic mechanisms at play deserve attention.',
-        'This addresses important questions about decentralized systems.',
-        'The technical trade-offs made here are thoughtfully considered.'
-      ],
-      'productivity': [
-        'This could meaningfully improve workflow efficiency.',
-        'The attention to user experience stands out here.',
-        'The marginal gains from this approach add up significantly.'
-      ]
-    };
-    
-    if (categorySpecific[category]) {
-      const titleHash = hashString(title);
-      const options = categorySpecific[category];
-      const index = titleHash % options.length;
-      return options[index];
-    }
-    
-    return '';
-  }
-  
-  // Simple hash function for deterministic selection
-  function hashString(str: string): number {
-    let hash = 0;
-    for (let i = 0; i < str.length; i++) {
-      const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash; // Convert to 32bit integer
-    }
-    return Math.abs(hash);
   }
   
   // Function to load and curate news (initial load only)
@@ -680,32 +411,80 @@
         !discoveredItemIds.has(item.id)
       );
       
-      // Shuffle with seed for consistent results across users
-      const shuffled = seededShuffle(undiscoveredItems, seed);
+      // Ensure source diversity - group by source
+      const itemsBySource = new Map<string, ZaurNewsItem[]>();
+      undiscoveredItems.forEach(item => {
+        if (!itemsBySource.has(item.source)) {
+          itemsBySource.set(item.source, []);
+        }
+        itemsBySource.get(item.source)!.push(item);
+      });
       
-      // Ensure diverse categories deterministically for the remaining slots
-      const categories = new Set<string>();
+      // Prioritize diversity in sources
       const selectedNewItems: ZaurNewsItem[] = [];
+      const usedSources = new Set<string>();
       
-      // First pass - try to get one from each category
-      for (const item of shuffled) {
-        const category = item.category as string;
-        if (!categories.has(category)) {
-          categories.add(category);
-          selectedNewItems.push(item);
-          if (selectedNewItems.length >= remainingSlots) break;
+      // First, try to get one item from each source
+      for (const [source, items] of itemsBySource.entries()) {
+        if (selectedNewItems.length >= remainingSlots) break;
+        
+        // Sort items from this source by date (newest first)
+        const sortedSourceItems = items.sort((a, b) => 
+          new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+        );
+        
+        // Take the newest item from this source
+        if (sortedSourceItems.length > 0) {
+          selectedNewItems.push(sortedSourceItems[0]);
+          usedSources.add(source);
         }
       }
       
-      // Second pass - fill in if we didn't get enough categories
+      // If we still need more items, take seconds from each source
       if (selectedNewItems.length < remainingSlots) {
-        for (const item of shuffled) {
-          if (!selectedNewItems.includes(item) && !allDiscoveredItems.some(di => di.id === item.id)) {
-            selectedNewItems.push(item);
-            if (selectedNewItems.length >= remainingSlots) break;
+        for (const [source, items] of itemsBySource.entries()) {
+          if (selectedNewItems.length >= remainingSlots) break;
+          
+          // Sort items from this source by date (newest first)
+          const sortedSourceItems = items.sort((a, b) => 
+            new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+          );
+          
+          // Take the second newest item from this source if available
+          if (sortedSourceItems.length > 1) {
+            selectedNewItems.push(sortedSourceItems[1]);
           }
         }
       }
+      
+      // If we still need more, use the shuffle approach as fallback
+      if (selectedNewItems.length < remainingSlots) {
+        const shuffled = seededShuffle(undiscoveredItems, seed);
+        
+        // Ensure diverse categories deterministically for the remaining needed slots
+        const categories = new Set<string>();
+        const additionalItems: ZaurNewsItem[] = [];
+        
+        // Try to get one from each category
+        for (const item of shuffled) {
+          if (selectedNewItems.includes(item)) continue;
+          
+          const category = item.category as string;
+          if (!categories.has(category)) {
+            categories.add(category);
+            additionalItems.push(item);
+            if (selectedNewItems.length + additionalItems.length >= remainingSlots) break;
+          }
+        }
+        
+        // Add these to our selected items
+        selectedNewItems.push(...additionalItems);
+      }
+      
+      // Final sorting of selected new items by date (newest first)
+      selectedNewItems.sort((a, b) => 
+        new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+      );
       
       // Combine discovered and new items
       const selectedItems = [...allDiscoveredItems, ...selectedNewItems];
@@ -713,8 +492,10 @@
       // Track which items we've shown
       selectedItems.forEach(item => seenItemIds.add(item.id));
       
-      // Update items - use custom sort that prioritizes recent discoveries
-      const finalItems = sortWithDiscoveriesAtTop(selectedItems);
+      // Final sorting by date (newest first) for ALL items
+      const finalItems = selectedItems.sort((a, b) => 
+        new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+      );
       
       await tick(); // Ensure a tick before updating the rendered items
       newsItems = finalItems;
@@ -732,7 +513,7 @@
         scheduleReactionBehavior();
       }, 1000);
       
-    } catch (err) {
+        } catch (err) {
       console.error('Error loading Zaur news:', err);
       error = err instanceof Error ? err.message : 'Unknown error occurred';
     } finally {
@@ -782,7 +563,7 @@
           updateSingleItem(itemToEmphasize.id, { isEmphasized: true });
           
           // Remove emphasis after a few seconds
-          setTimeout(() => {
+    setTimeout(() => {
             updateSingleItem(itemToEmphasize.id, { isEmphasized: false });
           }, 4000);
         }
@@ -813,9 +594,6 @@
         return;
       }
       
-      // Do NOT apply comments here - this was causing an infinite loop
-      // applyZaurComments();
-      
       // Find items that haven't had reactions yet
       const unreactedItems = newsItems.filter(item => !item.hasReacted);
       
@@ -827,7 +605,7 @@
       const selectedIndex = Math.floor(seededRandom(seed) * unreactedItems.length);
       const itemToReact = unreactedItems[selectedIndex];
       
-      // Get appropriate reactions
+      // Get appropriate reactions from the imported zaurReactions
       const category = itemToReact.category as string;
       const possibleReactions = zaurReactions[category] || zaurReactions.general;
       
@@ -911,7 +689,7 @@
     }, 5000); // Check every 5 seconds
     
     // Return a cleanup function to handle teardown
-    return () => {
+      return () => {
       clearInterval(interval);
       clearInterval(preciseInterval);
       if (discoveryTimeout) {
@@ -979,20 +757,8 @@
     
     const category = selectedItem.category as string;
     
-    // Generate a comment that's specific to this article's content
-    let baseComment = "";
-    const titleHash = hashString(selectedItem.title);
-    
-    // Get a base category comment
-    const commentOptions = categoryCommentary[category] || [];
-    if (commentOptions.length > 0) {
-      const commentIndex = titleHash % commentOptions.length;
-      baseComment = commentOptions[commentIndex];
-    }
-    
-    // Add article-specific details
-    const specificDetails = generateSpecificComment(selectedItem.title, category);
-    const zaurComment = specificDetails ? `${baseComment} ${specificDetails}` : baseComment;
+    // Use the imported generateComment function to get a comment for this item
+    const zaurComment = generateComment(selectedItem.title, category, null, new Set());
     
     const newItem = { 
       ...selectedItem,
@@ -1109,24 +875,116 @@
     }
   });
   
-  // Utility function to decode HTML entities
-  function decodeHtmlEntities(text: string): string {
-    if (!text) return '';
+  // Handle share button click
+  function handleShareClick(id: string, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
     
-    const textarea = document.createElement('textarea');
-    textarea.innerHTML = text;
-    return textarea.value;
+    // Toggle share menu for this item
+    if (activeShareItem === id) {
+      activeShareItem = null;
+      shareMenuVisible = false;
+    } else {
+      activeShareItem = id;
+      shareMenuVisible = true;
+    }
   }
   
-  // Initial load - only in browser context
-  onMount(async () => {
-    if (browser) {
-      // Load discovered items from server
-      await loadDiscoveredItems();
-      // Now load the news, which will use the comments we just loaded
-      loadZaurNews();
-      // No need to schedule full refreshes anymore
+  // Share via different platforms
+  async function shareVia(platform: string, item: ZaurNewsItem, event: MouseEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const url = item.url;
+    const title = item.decodedTitle || item.title;
+    const text = `${title} - shared via Zaur`;
+    
+    // Close share menu
+    activeShareItem = null;
+    shareMenuVisible = false;
+    
+    try {
+      switch (platform) {
+        case 'twitter':
+          window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
+          break;
+        case 'linkedin':
+          window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+          break;
+        case 'facebook':
+          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+          break;
+        case 'copy':
+          await navigator.clipboard.writeText(url);
+          // Show temporary success message
+          const shareElement = document.getElementById(`share-${item.id}`);
+          if (shareElement) {
+            const original = shareElement.innerHTML;
+            shareElement.innerHTML = 'Copied!';
+            setTimeout(() => {
+              shareElement.innerHTML = original;
+            }, 2000);
+          }
+          break;
+        case 'share':
+          // Use Web Share API if available
+          if (navigator.share) {
+            await navigator.share({
+              title: title,
+              text: text,
+              url: url
+            });
+          }
+          break;
+      }
+    } catch (err) {
+      console.error('Error sharing content:', err);
     }
+  }
+  
+  // Close share menu when clicking outside
+  function handleDocumentClick(event: MouseEvent): void {
+    if (shareMenuVisible) {
+      const shareMenus = document.querySelectorAll('.zaur-share-menu');
+      let clickedInside = false;
+      
+      shareMenus.forEach(menu => {
+        if (menu.contains(event.target as Node)) {
+          clickedInside = true;
+        }
+      });
+      
+      const shareButtons = document.querySelectorAll('.zaur-share-button');
+      shareButtons.forEach(button => {
+        if (button.contains(event.target as Node)) {
+          clickedInside = true;
+        }
+      });
+      
+      if (!clickedInside) {
+        activeShareItem = null;
+        shareMenuVisible = false;
+      }
+    }
+  }
+  
+  // Add document click listener when component mounts
+  onMount(() => {
+    if (browser) {
+      document.addEventListener('click', handleDocumentClick);
+      
+      // Load discovered items from server
+      loadDiscoveredItems().then(() => {
+        // Now load the news, which will use the comments we just loaded
+        loadZaurNews();
+      });
+    }
+    
+    return () => {
+      if (browser) {
+        document.removeEventListener('click', handleDocumentClick);
+      }
+    };
   });
   
   // Custom sort function that prioritizes recently discovered items
@@ -1139,17 +997,6 @@
     
     // Clone the array to avoid mutating the original
     return [...items].sort((a, b) => {
-      // First sort by publish date (newest first)
-      const aDate = new Date(a.publishDate).getTime();
-      const bDate = new Date(b.publishDate).getTime();
-      
-      // If the difference in publication time is significant (>10 minutes),
-      // prioritize the newer article
-      if (Math.abs(aDate - bDate) > 10 * 60 * 1000) {
-        return bDate - aDate;
-      }
-      
-      // For items published around the same time, check if they're recent discoveries
       const aIsRecent = discoveryTimes.has(a.id);
       const bIsRecent = discoveryTimes.has(b.id);
       
@@ -1164,19 +1011,670 @@
       if (aIsRecent) return -1;
       if (bIsRecent) return 1;
       
-      // If we get here, sort by publish date as fallback
-      return bDate - aDate;
+      // Otherwise, sort by publish date (newest first)
+      return new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime();
     });
-  }
-
-  function cleanSummary(summary: string): string {
-    if (!summary) return '';
-    
-    // Remove "Comments..." text from Hacker News articles
-    summary = summary.replace(/Comments\.\.\./g, '').replace(/\s{2,}/g, ' ').trim();
-    
-    return summary;
   }
 </script>
 
-<!-- Add the UI template part here -->
+<div class="zaur-news-panel" class:zaur-mood-curious={zaurMood === 'curious'} 
+                             class:zaur-mood-excited={zaurMood === 'excited'} 
+                             class:zaur-mood-thoughtful={zaurMood === 'thoughtful'}
+                             class:zaur-mood-amused={zaurMood === 'amused'}
+                             class:zaur-mood-intrigued={zaurMood === 'intrigued'}
+                             class:zaur-mood-surprised={zaurMood === 'surprised'}>
+  <div class="zaur-news-header">
+    <h2>
+      {#if zaurMood === 'curious'}
+        <span class="zaur-mood-emoji">🔍</span>
+      {:else if zaurMood === 'excited'}
+        <span class="zaur-mood-emoji">✨</span>
+      {:else if zaurMood === 'thoughtful'}
+        <span class="zaur-mood-emoji">💭</span>
+      {:else if zaurMood === 'amused'}
+        <span class="zaur-mood-emoji">😊</span>
+      {:else if zaurMood === 'intrigued'}
+        <span class="zaur-mood-emoji">🤔</span>
+      {:else if zaurMood === 'surprised'}
+        <span class="zaur-mood-emoji">😲</span>
+        {/if}
+      Zaur's Picks
+    </h2>
+    
+    {#if zaurThoughts}
+      <p class="zaur-thoughts" transition:fade={{ duration: 400 }}>
+        <span class="zaur-icon">🧠</span> {zaurThoughts}
+      </p>
+        {/if}
+    </div>
+    
+  {#if showingDiscovery}
+    <div class="zaur-discovery-indicator" transition:fade={{ duration: 300 }}>
+      <div class="zaur-discovery-pulse"></div>
+      <p>Zaur is discovering something interesting...</p>
+      </div>
+    {/if}
+    
+  <div class="zaur-news-content">
+    {#if isLoading && newsItems.length === 0}
+      <div class="zaur-loading" transition:fade={{ duration: 200 }}>
+        <div class="zaur-thinking"></div>
+        <p>Zaur is curating content for you...</p>
+      </div>
+    {:else if error && newsItems.length === 0}
+      <div class="zaur-error-message">
+        <p>Zaur encountered an issue while gathering news:</p>
+        <p>{error}</p>
+        <button onclick={loadZaurNews}>Ask Zaur to try again</button>
+      </div>
+    {:else if newsItems.length === 0}
+      <div class="zaur-empty-state">
+        <p>Zaur hasn't found anything interesting yet.</p>
+        <p>Check back later for curated content.</p>
+      </div>
+    {:else}
+      <div class="zaur-news-list">
+        {#each newsItems as item, i (item.id)}
+          <div 
+            id={item.id}
+            class="zaur-news-item" 
+            class:just-discovered={item.justDiscovered}
+            class:is-removing={item.isRemoving}
+            class:is-emphasized={item.isEmphasized}
+            animate:flip={{ duration: 300 }}
+            transition:fly={{ 
+              y: 20, 
+              duration: 400, 
+              delay: i * 150 
+            }}
+          >
+            {#if item.justDiscovered}
+              <div class="zaur-discovery-banner" transition:fade={{ duration: 500 }}>
+                <span class="zaur-discovery-icon">💡</span> 
+                <span>{item.discoveryComment}</span>
+              </div>
+            {/if}
+            
+            {#if item.isEmphasized}
+              <div class="zaur-emphasis-indicator" transition:scale={{ start: 0.5, duration: 300 }}>
+                <span class="zaur-emphasis-pulse"></span>
+              </div>
+            {/if}
+            
+            <div class="zaur-news-item-header">
+              <div class="zaur-news-source">
+                {item.source}
+              </div>
+              <div class="zaur-news-date">{formatDate(new Date(item.publishDate))}</div>
+            </div>
+            
+            <h3 class="zaur-news-title">
+              <a href={item.url} target="_blank" rel="noopener noreferrer">
+                {item.decodedTitle || item.title}
+              </a>
+            </h3>
+            
+            {#if item.decodedSummary && item.decodedSummary.trim() !== ''}
+              <p class="zaur-news-summary">
+                {item.decodedSummary}
+              </p>
+            {/if}
+            
+            {#if item.zaurComment}
+              <div class="zaur-comment" class:is-emphasized={item.isEmphasized}>
+                <span class="zaur-comment-prefix">Zaur's note:</span> {item.zaurComment}
+              </div>
+            {/if}
+            
+            {#if item.imageUrl}
+              <div class="zaur-news-image">
+                <img src={item.imageUrl} alt={item.title} loading="lazy" />
+              </div>
+            {/if}
+            
+            <div class="zaur-news-item-footer">
+              <div class="zaur-news-meta">
+                {#if item.author && item.author !== 'unknown' && !item.author.includes('http')}
+                  <div class="zaur-news-author">By {item.author}</div>
+                {/if}
+              </div>
+              
+              <div class="zaur-news-actions">
+                <button 
+                  class="zaur-share-button" 
+                  onclick={(e) => handleShareClick(item.id, e)}
+                  aria-label="Share this article"
+                >
+                  <span class="zaur-share-icon">📤</span>
+                  <span class="zaur-share-text">Share</span>
+                </button>
+                
+                {#if activeShareItem === item.id}
+                  <div class="zaur-share-menu" transition:scale={{ start: 0.8, duration: 200 }}>
+                    <button class="zaur-share-option" onclick={(e) => shareVia('twitter', item, e)}>
+                      Twitter
+                    </button>
+                    <button class="zaur-share-option" onclick={(e) => shareVia('linkedin', item, e)}>
+                      LinkedIn
+                    </button>
+                    <button class="zaur-share-option" onclick={(e) => shareVia('facebook', item, e)}>
+                      Facebook
+                    </button>
+                    <button id="share-{item.id}" class="zaur-share-option" onclick={(e) => shareVia('copy', item, e)}>
+                      Copy Link
+                    </button>
+                    {#if browser && typeof navigator.share === 'function'}
+                      <button class="zaur-share-option" onclick={(e) => shareVia('share', item, e)}>
+                        More Options
+                      </button>
+                    {/if}
+                  </div>
+                {/if}
+                
+                <a href={item.url} class="zaur-read-more" target="_blank" rel="noopener noreferrer">
+                  Read full article
+                </a>
+              </div>
+            </div>
+          </div>
+        {/each}
+      </div>
+    {/if}
+  </div>
+</div>
+
+<style>
+  .zaur-news-panel {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
+    overflow: hidden;
+    margin-bottom: 2rem;
+    max-width: 100%;
+    position: relative;
+    transition: all 0.3s ease;
+    border: 1px solid #f0f0f0;
+  }
+  
+  /* Mood-based styling */
+  .zaur-mood-curious {
+    border-color: #0053b3;
+  }
+  
+  .zaur-mood-excited {
+    border-color: #ff9500;
+    box-shadow: 0 2px 25px rgba(255, 149, 0, 0.1);
+  }
+  
+  .zaur-mood-thoughtful {
+    border-color: #8e44ad;
+  }
+  
+  .zaur-mood-amused {
+    border-color: #27ae60;
+  }
+  
+  .zaur-mood-intrigued {
+    border-color: #3498db;
+  }
+  
+  .zaur-mood-surprised {
+    border-color: #e74c3c;
+  }
+  
+  .zaur-news-header {
+    padding: 1.8rem 2rem;
+    border-bottom: 1px solid #f0f0f0;
+    background: linear-gradient(to right, #f9f9f9, #fff);
+  }
+  
+  .zaur-news-header h2 {
+    margin: 0;
+    font-size: 1.7rem;
+    color: #0053b3;
+    display: flex;
+    align-items: center;
+  }
+  
+  .zaur-mood-emoji {
+    margin-right: 10px;
+    font-size: 1.5rem;
+    animation: subtle-pulse 3s infinite;
+  }
+  
+  @keyframes subtle-pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+  
+  .zaur-thoughts {
+    margin: 0.8rem 0 0;
+    font-size: 1.1rem;
+    color: #555;
+    font-style: italic;
+    display: flex;
+    align-items: center;
+  }
+  
+  .zaur-icon {
+    margin-right: 8px;
+    font-size: 1.2rem;
+  }
+  
+  .zaur-discovery-indicator {
+    position: relative;
+    background: linear-gradient(to right, #f0f7ff, #f9fdff);
+    padding: 1rem;
+    border-bottom: 1px solid #e6f0ff;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .zaur-discovery-indicator p {
+    margin: 0;
+    color: #0053b3;
+    font-size: 0.95rem;
+    animation: pulse-text 2s infinite;
+  }
+  
+  .zaur-discovery-pulse {
+    width: 24px;
+    height: 24px;
+    background: #0053b3;
+    border-radius: 50%;
+    position: relative;
+  }
+  
+  .zaur-discovery-pulse::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background: #0053b3;
+    border-radius: 50%;
+    animation: pulse-ring 1.5s infinite;
+  }
+  
+  @keyframes pulse-ring {
+    0% {
+      transform: scale(0.8);
+      opacity: 0.8;
+    }
+    70% {
+      transform: scale(2);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(2.5);
+      opacity: 0;
+    }
+  }
+  
+  @keyframes pulse-text {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+  }
+  
+  .zaur-discovery-banner {
+    margin: -1.8rem -1.8rem 1rem -1.8rem;
+    padding: 0.8rem 1.5rem;
+    background: linear-gradient(to right, #0053b3, #0070e0);
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.95rem;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 3px 10px rgba(0,83,179,0.2);
+  }
+  
+  .zaur-discovery-icon {
+    font-size: 1.2rem;
+  }
+  
+  .zaur-emphasis-indicator {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 16px;
+    height: 16px;
+    z-index: 2;
+  }
+  
+  .zaur-emphasis-pulse {
+    display: block;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #ff9500;
+    animation: emphasis-pulse 2s infinite;
+  }
+  
+  @keyframes emphasis-pulse {
+    0% { transform: scale(0.8); opacity: 0.5; box-shadow: 0 0 0 0 rgba(255, 149, 0, 0.7); }
+    70% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 0 10px rgba(255, 149, 0, 0); }
+    100% { transform: scale(0.8); opacity: 0.5; box-shadow: 0 0 0 0 rgba(255, 149, 0, 0); }
+  }
+  
+  .zaur-thinking {
+    width: 50px;
+    height: 50px;
+    background: conic-gradient(#0053b3, #80b3ff);
+    border-radius: 50%;
+    animation: thinking 2s linear infinite;
+    margin-bottom: 1rem;
+  }
+  
+  @keyframes thinking {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .zaur-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 3rem;
+    color: #555;
+  }
+  
+  .zaur-error-message {
+    padding: 2rem;
+    text-align: center;
+    color: #e63946;
+  }
+  
+  .zaur-error-message button {
+    background: #0053b3;
+    color: white;
+    border: none;
+    padding: 0.6rem 1.2rem;
+    border-radius: 20px;
+    margin-top: 1rem;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  
+  .zaur-empty-state {
+    padding: 3rem;
+    text-align: center;
+    color: #888;
+  }
+  
+  .zaur-news-content {
+    padding: 1.5rem;
+    overflow: hidden;
+    min-height: 200px;
+  }
+  
+  .zaur-news-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .zaur-news-item {
+    padding: 1.8rem;
+    border-radius: 10px;
+    background: #f9f9f9;
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-left: 4px solid #0053b3;
+    position: relative;
+  }
+  
+  .zaur-news-item.just-discovered {
+    box-shadow: 0 5px 25px rgba(0, 83, 179, 0.15);
+    background: linear-gradient(to bottom, #f5f9ff, #f9f9f9);
+    border-color: #0070e0;
+  }
+  
+  .zaur-news-item.is-removing {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease-out, transform 0.7s ease-out;
+    pointer-events: none;
+  }
+  
+  .zaur-news-item.is-emphasized {
+    box-shadow: 0 5px 20px rgba(255, 149, 0, 0.15);
+    border-color: #ff9500;
+    animation: gentle-highlight 3s;
+  }
+  
+  @keyframes gentle-highlight {
+    0% { background-color: #f9f9f9; }
+    30% { background-color: #fff9e6; }
+    100% { background-color: #f9f9f9; }
+  }
+  
+  .zaur-news-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  }
+  
+  .zaur-news-item-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 0.8rem;
+    font-size: 0.85rem;
+  }
+  
+  .zaur-news-source {
+    color: #0053b3;
+    font-weight: 600;
+  }
+  
+  .zaur-news-date {
+    color: #888;
+  }
+  
+  .zaur-news-title {
+    margin: 0 0 1rem 0;
+    font-size: 1.3rem;
+    line-height: 1.4;
+  }
+  
+  .zaur-news-title a {
+    color: #333;
+    text-decoration: none;
+    transition: color 0.2s;
+  }
+  
+  .zaur-news-title a:hover {
+    color: #0053b3;
+  }
+  
+  .zaur-news-summary {
+    margin: 0 0 1rem 0;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #444;
+  }
+  
+  .zaur-comment {
+    margin: 1rem 0;
+    padding: 0.8rem 1rem;
+    background: rgba(0, 83, 179, 0.05);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    color: #444;
+    line-height: 1.4;
+    border-left: 3px solid #0053b3;
+    transition: all 0.3s ease;
+  }
+  
+  .zaur-comment.is-emphasized {
+    background: rgba(255, 149, 0, 0.08);
+    border-left-color: #ff9500;
+  }
+  
+  .zaur-comment-prefix {
+    font-weight: 600;
+    color: #0053b3;
+  }
+  
+  .zaur-news-image {
+    margin: 1rem 0;
+    border-radius: 8px;
+    overflow: hidden;
+    max-width: 100%;
+    height: 200px;
+  }
+  
+  .zaur-news-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+  }
+  
+  .zaur-news-item-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: auto;
+    padding-top: 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .zaur-news-meta {
+    display: flex;
+    align-items: center;
+  }
+  
+  .zaur-news-author {
+    color: #666;
+    font-style: italic;
+  }
+  
+  .zaur-news-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+  }
+  
+  .zaur-share-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #0053b3;
+    font-size: 0.9rem;
+    padding: 0.5rem;
+    border-radius: 20px;
+    transition: all 0.2s;
+  }
+  
+  .zaur-share-button:hover {
+    background: rgba(0, 83, 179, 0.08);
+  }
+  
+  .zaur-share-icon {
+    font-size: 1rem;
+  }
+  
+  .zaur-share-menu {
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    overflow: hidden;
+    min-width: 160px;
+    z-index: 10;
+    margin-bottom: 5px;
+    border: 1px solid #eee;
+  }
+  
+  .zaur-share-option {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 0.8rem 1rem;
+    background: none;
+    border: none;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #333;
+    border-bottom: 1px solid #f0f0f0;
+  }
+  
+  .zaur-share-option:last-child {
+    border-bottom: none;
+  }
+  
+  .zaur-share-option:hover {
+    background: #f5f9ff;
+    color: #0053b3;
+  }
+  
+  .zaur-read-more {
+    color: #0053b3;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s;
+    padding: 0.5rem 1rem;
+    background: rgba(0, 83, 179, 0.08);
+    border-radius: 20px;
+    white-space: nowrap;
+  }
+  
+  .zaur-read-more:hover {
+    color: white;
+    background: #0053b3;
+  }
+  
+  /* Responsive styles */
+  @media (min-width: 768px) {
+    .zaur-news-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 1.5rem;
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .zaur-news-item-header {
+      flex-direction: column;
+      gap: 0.3rem;
+    }
+    
+    .zaur-news-item-footer {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 0.8rem;
+    }
+    
+    .zaur-news-actions {
+      align-self: stretch;
+      justify-content: space-between;
+    }
+    
+    .zaur-share-text {
+      display: none;
+    }
+    
+    .zaur-share-button {
+      padding: 0.5rem;
+    }
+    
+    .zaur-share-menu {
+      right: 0;
+      left: auto;
+    }
+  }
+</style> 

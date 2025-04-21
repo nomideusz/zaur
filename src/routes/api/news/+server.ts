@@ -117,7 +117,7 @@ export const GET: RequestHandler = async ({ url }) => {
     });
   }
 };
-
+  
 /**
  * POST handler for adding or updating a news item
  */
