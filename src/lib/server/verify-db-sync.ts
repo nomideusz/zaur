@@ -4,7 +4,7 @@ import { getConnection, closeConnection, getDiscoveredItems, getComments, getNew
 
 /**
  * Verify that all data has been properly migrated to RethinkDB
- * before we remove the JSON files
+ * or exists directly in the database if migration files are gone
  */
 async function verifyDataMigration() {
   try {
@@ -40,7 +40,12 @@ async function verifyDataMigration() {
         console.log('⚠️ Some discoveries may be missing in the database');
       }
     } catch (error) {
-      console.log('⚠️ Could not read discoveries.json file');
+      console.log('ℹ️ Could not read discoveries.json file - using database data directly');
+      if (discoveries.length > 0) {
+        console.log('✅ Database contains discoveries data');
+      } else {
+        console.log('⚠️ No discoveries found in database');
+      }
     }
     
     // Check comments JSON
@@ -56,7 +61,12 @@ async function verifyDataMigration() {
         console.log('⚠️ Some comments may be missing in the database');
       }
     } catch (error) {
-      console.log('⚠️ Could not read zaur_comments.json file');
+      console.log('ℹ️ Could not read zaur_comments.json file - using database data directly');
+      if (comments.length > 0) {
+        console.log('✅ Database contains comments data');
+      } else {
+        console.log('⚠️ No comments found in database');
+      }
     }
     
     // Check news JSON
@@ -72,13 +82,18 @@ async function verifyDataMigration() {
         console.log('⚠️ Some news items may be missing in the database');
       }
     } catch (error) {
-      console.log('⚠️ Could not read stored-news.json file');
+      console.log('ℹ️ Could not read stored-news.json file - using database data directly');
+      if (newsItems.length > 0) {
+        console.log('✅ Database contains news items data');
+      } else {
+        console.log('⚠️ No news items found in database');
+      }
     }
     
     // Close connection
     await closeConnection();
     
-    console.log('\nVerification complete. If all checks passed, you can safely remove the JSON files.');
+    console.log('\nVerification complete. Data is being stored in the RethinkDB database.');
   } catch (error) {
     console.error('Error during verification:', error);
   }

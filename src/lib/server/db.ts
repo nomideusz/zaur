@@ -2,7 +2,7 @@ import rethinkdb from 'rethinkdb';
 
 // Connection configuration
 export const config = {
-  host: process.env.RETHINKDB_HOST || '10.0.1.57', // Use the working IP by default
+  host: process.env.RETHINKDB_HOST || 'localhost', // Default to localhost
   port: parseInt(process.env.RETHINKDB_PORT || '28015'),
   db: process.env.RETHINKDB_DB || 'zaur_news'
 };

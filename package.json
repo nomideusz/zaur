@@ -14,6 +14,7 @@
 		"migrate:news": "tsx src/lib/server/migrations/news-to-rethinkdb.ts",
 		"db:check": "tsx src/lib/server/check-db.ts",
 		"db:check-news": "tsx src/lib/server/check-news.ts",
+		"db:check-all": "tsx src/lib/server/check-rethinkdb-data.js",
 		"db:create-indexes": "tsx src/lib/server/create-indexes.ts",
 		"db:verify-migration": "tsx src/lib/server/verify-db-sync.ts",
 		"db:cleanup-json": "tsx src/lib/server/cleanup-json-files.ts",
