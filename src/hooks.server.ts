@@ -7,6 +7,9 @@ let newsUpdateTimer: ReturnType<typeof setInterval> | null = null;
 // Track the last scheduler initialization to prevent duplicate timers 
 let lastSchedulerInit = 0;
 
+// Flag to force initial update
+const FORCE_INITIAL_UPDATE = true;
+
 /**
  * SvelteKit hook to handle all server requests
  */
@@ -28,8 +31,8 @@ export async function handle({ event, resolve }) {
     const lastUpdateTime = new Date(existingData.lastUpdated).getTime();
     const timeSinceLastUpdate = now - lastUpdateTime;
     
-    // Only update if it's been more than an hour since last update
-    if (timeSinceLastUpdate > hourInMs) {
+    // Force update or only update if it's been more than an hour since last update
+    if (FORCE_INITIAL_UPDATE || timeSinceLastUpdate > hourInMs) {
       try {
         console.log('Forcing immediate news update...');
         await fetchAndUpdateNews();

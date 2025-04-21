@@ -2,7 +2,7 @@ import rethinkdb from 'rethinkdb';
 
 // Connection configuration
 export const config = {
-  host: process.env.RETHINKDB_HOST || 'localhost',
+  host: process.env.RETHINKDB_HOST || '10.0.1.57', // Use the working IP by default
   port: parseInt(process.env.RETHINKDB_PORT || '28015'),
   db: process.env.RETHINKDB_DB || 'zaur_news'
 };
@@ -15,10 +15,11 @@ const RETRY_DELAY_MS = 5000; // 5 seconds
 
 // Alternative hosts to try
 const alternativeHosts = [
+  // First try the IP that we know works
+  {host: '10.0.1.57', port: 28015},   // From RethinkDB logs - this works
+  {host: '172.18.0.15', port: 28015}, // From RethinkDB logs
   {host: '127.0.0.1', port: 28015},
   {host: 'localhost', port: 28015},
-  {host: '172.18.0.15', port: 28015}, // From RethinkDB logs
-  {host: '10.0.1.57', port: 28015},   // From RethinkDB logs
 ];
 
 /**

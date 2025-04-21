@@ -5,6 +5,7 @@ import { fetchAllRssFeeds } from './fetchRssFeeds.js';
 // Configuration
 const MAX_NEWS_ITEMS = 100; // Maximum number of items to keep
 const FORCE_REAL_FEEDS = true; // Force real feeds even in development mode
+const FORCE_UPDATE = true;     // Force updates regardless of time since last update
 
 /**
  * Fetch and update news data
@@ -24,9 +25,15 @@ export async function fetchAndUpdateNews() {
     const oneHourInMs = 60 * 60 * 1000;
     
     // Skip update if it's been less than an hour since the last update
-    if (timeSinceLastUpdate < oneHourInMs) {
+    // and FORCE_UPDATE is false
+    if (timeSinceLastUpdate < oneHourInMs && !FORCE_UPDATE) {
       console.log(`Skipping news update - last update was only ${Math.floor(timeSinceLastUpdate / 60000)} minutes ago`);
       return newsData;
+    }
+    
+    // Always log when forcing update
+    if (FORCE_UPDATE) {
+      console.log(`Forcing news update despite last update being ${Math.floor(timeSinceLastUpdate / 60000)} minutes ago`);
     }
     
     const sources = newsData.sources || [];
@@ -39,17 +46,23 @@ export async function fetchAndUpdateNews() {
     // Use sample data only in dev mode AND when FORCE_REAL_FEEDS is false
     if (dev && !FORCE_REAL_FEEDS) {
       console.log('Development mode: using sample news data...');
-      // In SvelteKit, we can directly import JSON files
-      const { default: sampleData } = await import('$lib/server/data/sample-news.json');
-      
-      // Update with sample data
-      const updatedData = updateNews(sampleData);
-      console.log(`News updated successfully (dev mode). ${updatedData.items.length} items available.`);
-      
-      // Prune news items to prevent excessive growth
-      pruneNewsItems(MAX_NEWS_ITEMS);
-      
-      return updatedData;
+      try {
+        // In SvelteKit, we can directly import JSON files
+        const sampleDataModule = await import('$lib/server/data/sample-news.json');
+        const sampleData = sampleDataModule.default;
+        
+        // Update with sample data items
+        const updatedData = updateNews(sampleData.items || []);
+        console.log(`News updated successfully (dev mode). ${updatedData.items.length} items available.`);
+        
+        // Prune news items to prevent excessive growth
+        pruneNewsItems(MAX_NEWS_ITEMS);
+        
+        return updatedData;
+      } catch (error) {
+        console.error('Error loading sample data:', error);
+        // Continue with real feeds as fallback
+      }
     }
     
     // In production mode or when forced, fetch from real RSS feeds
