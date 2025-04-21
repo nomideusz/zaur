@@ -424,23 +424,163 @@
   
   // Process all items for later use
   function processNewsItems(items: any[]): ZaurNewsItem[] {
+    // Create a set to track used comments to avoid duplicates
+    const usedComments = new Set<string>();
+    
     return items.map(item => {
       const category = item.category as string;
       const savedComment = zaurComments.get(item.id);
+      
+      // Clean up summary text - remove "Comments..." text
+      let cleanSummary = item.summary;
+      if (cleanSummary) {
+        cleanSummary = cleanSummary
+          .replace(/\bComments\.\.\.\b/g, '')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+      }
+      
+      // Generate a more unique comment based on title and category
+      let comment = savedComment;
+      
+      if (!comment) {
+        const commentOptions = categoryCommentary[category] || [];
+        if (commentOptions.length > 0) {
+          // Use the title to deterministically select a comment
+          const titleHash = hashString(item.title);
+          const commentIndex = titleHash % commentOptions.length;
+          const baseComment = commentOptions[commentIndex];
+          
+          // Add article-specific details to make the comment unique
+          const specificDetails = generateSpecificComment(item.title, category);
+          
+          if (specificDetails && !usedComments.has(baseComment)) {
+            comment = `${baseComment} ${specificDetails}`;
+            usedComments.add(baseComment);
+          } else {
+            comment = baseComment;
+          }
+        }
+      }
       
       return {
         ...item,
         isNew: false,
         // Use saved comment if available, otherwise get a new one
-        zaurComment: savedComment || getZaurCommentary(category),
+        zaurComment: comment,
         decodedTitle: decodeHtmlEntities(item.title),
-        decodedSummary: decodeHtmlEntities(item.summary),
+        decodedSummary: decodeHtmlEntities(cleanSummary || item.summary),
         zaurMood: getRandomMood(),
         isEmphasized: false,
         // If we have a saved comment with a line break, consider it as having reacted
         hasReacted: savedComment?.includes("\n\n") || false
       };
     });
+  }
+  
+  // Generate a unique comment for specific article
+  function generateSpecificComment(title: string, category: string): string {
+    // Keywords to look for and specific responses
+    const keywords: Record<string, string[]> = {
+      'AI': [
+        'The implications for machine learning are fascinating.',
+        'This could transform how neural networks are deployed.',
+        'I wonder how this compares to other AI approaches.'
+      ],
+      'Python': [
+        'The Python ecosystem continues to evolve impressively.',
+        'This could improve development workflows significantly.'
+      ],
+      'JavaScript': [
+        'The JavaScript approach here is quite elegant.',
+        'This shows the flexibility of modern JS patterns.'
+      ],
+      'React': [
+        'The component architecture here is worth studying.',
+        'This React pattern could solve many common UI problems.'
+      ],
+      'Rust': [
+        'Rust\'s safety guarantees shine in this implementation.',
+        'The performance implications here are substantial.'
+      ],
+      'blockchain': [
+        'The distributed consensus approach is noteworthy.',
+        'This addresses some common blockchain scaling issues.'
+      ],
+      'security': [
+        'The security implications are significant.',
+        'This approach to vulnerability management is thoughtful.'
+      ],
+      'VRAM': [
+        'Memory management techniques like this are vital for efficient systems.',
+        'This resource optimization approach is quite clever.'
+      ],
+      'performance': [
+        'The performance gains described could be substantial.',
+        'Optimization techniques like this catch my interest.'
+      ],
+      'game': [
+        'The game theory aspects here are intriguing.',
+        'This creates interesting dynamics worth exploring.'
+      ],
+      'PyTorch': [
+        'The model optimization approach is quite innovative.',
+        'This could make deep learning workflows more efficient.'
+      ]
+    };
+    
+    // Check if any keywords match the title
+    for (const [keyword, responses] of Object.entries(keywords)) {
+      if (title.includes(keyword) || title.includes(keyword.toLowerCase())) {
+        const titleHash = hashString(title);
+        const responseIndex = titleHash % responses.length;
+        return responses[responseIndex];
+      }
+    }
+    
+    // Category-specific comments if no keyword matches
+    const categorySpecific: Record<string, string[]> = {
+      'dev': [
+        'This implementation shows care for code quality.',
+        'The technical approach demonstrates good engineering principles.',
+        'This kind of solution addresses real developer pain points.'
+      ],
+      'ai': [
+        'The data-driven approach is particularly interesting.',
+        'This represents an important step for practical AI applications.',
+        'The balance of theory and application here is noteworthy.'
+      ],
+      'crypto': [
+        'The economic mechanisms at play deserve attention.',
+        'This addresses important questions about decentralized systems.',
+        'The technical trade-offs made here are thoughtfully considered.'
+      ],
+      'productivity': [
+        'This could meaningfully improve workflow efficiency.',
+        'The attention to user experience stands out here.',
+        'The marginal gains from this approach add up significantly.'
+      ]
+    };
+    
+    if (categorySpecific[category]) {
+      const titleHash = hashString(title);
+      const options = categorySpecific[category];
+      const index = titleHash % options.length;
+      return options[index];
+    }
+    
+    return '';
+  }
+  
+  // Simple hash function for deterministic selection
+  function hashString(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32bit integer
+    }
+    return Math.abs(hash);
   }
   
   // Function to load and curate news (initial load only)
@@ -838,7 +978,21 @@
     const commentIndex = Math.floor(seededRandom(seed + 1) * discoveryComments.length);
     
     const category = selectedItem.category as string;
-    const zaurComment = getZaurCommentary(category) || "";
+    
+    // Generate a comment that's specific to this article's content
+    let baseComment = "";
+    const titleHash = hashString(selectedItem.title);
+    
+    // Get a base category comment
+    const commentOptions = categoryCommentary[category] || [];
+    if (commentOptions.length > 0) {
+      const commentIndex = titleHash % commentOptions.length;
+      baseComment = commentOptions[commentIndex];
+    }
+    
+    // Add article-specific details
+    const specificDetails = generateSpecificComment(selectedItem.title, category);
+    const zaurComment = specificDetails ? `${baseComment} ${specificDetails}` : baseComment;
     
     const newItem = { 
       ...selectedItem,
