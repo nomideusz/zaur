@@ -17,6 +17,11 @@
 		"db:create-indexes": "node --experimental-specifier-resolution=node --loader ts-node/esm src/lib/server/create-indexes.ts",
 		"db:verify-migration": "node --experimental-specifier-resolution=node --loader ts-node/esm src/lib/server/verify-db-sync.ts",
 		"db:cleanup-json": "node --experimental-specifier-resolution=node --loader ts-node/esm src/lib/server/cleanup-json-files.ts",
+		"db:init": "node scripts/init-db.js",
+		"db:populate": "node scripts/populate-db.js",
+		"db:setup": "node scripts/setup.js",
+		"news:update": "node scripts/update-news.js",
+		"news:schedule": "node scripts/schedule-news-updates.js",
 		"format": "prettier --write .",
 		"lint": "prettier --check ."
 	},
@@ -72,6 +77,7 @@
 	"packageManager": "pnpm@9.15.3+sha512.1f79bc245a66eb0b07c5d4d83131240774642caaa86ef7d0434ab47c0d16f66b04e21e0c086eb61e62c77efc4d7f7ec071afad3796af64892fae66509173893a",
 	"dependencies": {
 		"@types/rethinkdb": "^2.3.21",
+		"node-schedule": "^2.1.1",
 		"rethinkdb": "^2.4.2",
 		"rethinkdb-ts": "^2.7.0",
 		"rss-parser": "^3.13.0",
