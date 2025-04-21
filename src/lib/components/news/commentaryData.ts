@@ -169,6 +169,90 @@ export const keywordResponses: Record<string, string[]> = {
     'The computational efficiency gains here are substantial.',
     'This represents an interesting direction for AI research.'
   ],
+  'Facebook': [
+    'The social media impact described here raises important questions.',
+    'The psychological effects of social platforms continue to be studied.',
+    'Social media usage patterns described here align with recent research.',
+    'This research on platform effects provides valuable insights.',
+    'The study methodology for measuring social media impact is solid.'
+  ],
+  'Instagram': [
+    'Visual media platforms have unique effects worth understanding.',
+    'The attention economy dynamics here are particularly interesting.',
+    'This research offers valuable data on Instagram\'s psychological impact.',
+    'Platform design clearly influences user behavior in measurable ways.',
+    'The social comparison effects described here warrant attention.'
+  ],
+  'emotional state': [
+    'The psychological research methods here are worth noting.',
+    'This kind of empirical approach to wellbeing is valuable.',
+    'The mental health implications deserve broader discussion.',
+    'This data provides insights into digital wellbeing questions.',
+    'The behavioral science approach yields interesting results.'
+  ],
+  'board game': [
+    'The tabletop gaming industry faces unique challenges.',
+    'Board game economics operate differently from digital games.',
+    'The business model challenges described here are significant.',
+    'These market dynamics affect physical game designers particularly.',
+    'The production and distribution issues highlight supply chain realities.'
+  ],
+  'burning': [
+    'This industry analysis highlights sustainability challenges.',
+    'The market correction described has been building for some time.',
+    'These economic pressures create difficult realities for creators.',
+    'The structural issues described require systemic solutions.',
+    'This perspective on industry challenges is worth considering.'
+  ],
+  'PyTorch': [
+    'This technique could improve deep learning workflows considerably.',
+    'Memory management for ML models is a crucial optimization area.',
+    'VRAM utilization techniques like this help resource-constrained developers.',
+    'The model deployment efficiency gains here are notable.',
+    'This approach to model persistence is quite innovative.'
+  ],
+  'VRAM': [
+    'GPU memory optimization is crucial for efficient deep learning.',
+    'This resource management approach could benefit model deployment.',
+    'Memory utilization techniques like this help maximize hardware potential.',
+    'Efficient memory handling is often overlooked but highly valuable.',
+    'This approach to hardware resource optimization is elegant.'
+  ],
+  'hot swapping': [
+    'The code reloading approach shows clever resource management.',
+    'This development technique could streamline ML workflows.',
+    'Runtime code modification techniques have interesting applications.',
+    'This approach to persistence across code changes is innovative.',
+    'The development workflow improvements here could be substantial.'
+  ],
+  'Thai': [
+    'This highlights important digital rights issues in Southeast Asia.',
+    'Online privacy concerns transcend borders and deserve attention.',
+    'The surveillance implications here extend beyond one region.',
+    'Digital freedoms face different challenges across global contexts.',
+    'These governance issues reflect broader Internet freedom concerns.'
+  ],
+  'authorities': [
+    'The tension between security and privacy is a global challenge.',
+    'Digital governance approaches vary widely across jurisdictions.',
+    'These surveillance practices raise important privacy questions.',
+    'The policy implications deserve broader international attention.',
+    'Power asymmetries in digital spaces have real-world consequences.'
+  ],
+  'doxxing': [
+    'Privacy violations have serious personal safety implications.',
+    'Information warfare tactics like this deserve careful scrutiny.',
+    'The digital rights implications here extend beyond one country.',
+    'Personal data protection frameworks are critical in these scenarios.',
+    'The asymmetric power dynamics in online spaces manifest in concerning ways.'
+  ],
+  'dissent': [
+    'Freedom of expression online faces evolving challenges.',
+    'Digital rights need robust protection across all jurisdictions.',
+    'The information control dynamics described are concerning.',
+    'Online speech protections vary widely across global contexts.',
+    'These governance approaches highlight digital rights disparities.'
+  ],
   'Python': [
     'The Python ecosystem continues to evolve impressively.',
     'This could improve development workflows significantly.',
@@ -205,12 +289,6 @@ export const keywordResponses: Record<string, string[]> = {
     'The threat model considerations here are comprehensive.',
     'This could reduce common attack vectors substantially.'
   ],
-  'VRAM': [
-    'Memory management techniques like this are vital for efficient systems.',
-    'This resource optimization approach is quite clever.',
-    'The implications for GPU utilization are significant.',
-    'This could enable more efficient model deployment.'
-  ],
   'performance': [
     'The performance gains described could be substantial.',
     'Optimization techniques like this catch my interest.',
@@ -223,35 +301,11 @@ export const keywordResponses: Record<string, string[]> = {
     'The balance between accessibility and depth is well-considered.',
     'The emergent gameplay possibilities are fascinating.'
   ],
-  'PyTorch': [
-    'The model optimization approach is quite innovative.',
-    'This could make deep learning workflows more efficient.',
-    'The training performance improvements are substantial.',
-    'This addresses common pain points in model development.'
-  ],
   'LLM': [
     'The approach to model efficiency is particularly noteworthy.',
     'This represents an interesting direction for language model research.',
     'The quantization techniques described have promising implications.',
     'This could make language models more accessible for deployment.'
-  ],
-  'cannabis': [
-    'The data visualization approach here is quite effective.',
-    'The real-time analytics implementation is technically impressive.',
-    'This represents an interesting application of business intelligence tools.',
-    'The market insights provided could be valuable for understanding trends.'
-  ],
-  'Facebook': [
-    'The methodology for measuring social media effects is interesting.',
-    'This research adds important data points to the social media debate.',
-    'The psychological impact measured here deserves broader attention.',
-    'This kind of empirical research on platform effects is valuable.'
-  ],
-  'board game': [
-    'The economic analysis of the tabletop game industry is insightful.',
-    'This perspective on market dynamics is worth considering.',
-    'The intersection of creative design and business reality is fascinating.',
-    'The industry evolution described here has interesting parallels.'
   ],
   'Bitcoin': [
     'The market analysis framework here is quite interesting.',

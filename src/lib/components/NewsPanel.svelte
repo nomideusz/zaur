@@ -951,6 +951,31 @@
     }, 10000);
   }
   
+  // Function to regenerate all comments for displayed news items
+  function regenerateComments(): void {
+    if (newsItems.length === 0) return;
+    
+    // Create a new set to track used comments
+    const usedComments = new Set<string>();
+    
+    // Process each item to generate a fresh comment
+    const updatedItems = newsItems.map(item => {
+      // Only regenerate if not manually set (saved)
+      if (!zaurComments.has(item.id)) {
+        const comment = generateComment(item.title, item.category as string, null, usedComments);
+        return {
+          ...item,
+          zaurComment: comment
+        };
+      }
+      return item;
+    });
+    
+    // Update the news items
+    newsItems = updatedItems;
+    console.log('[ZaurNews] Regenerated comments for displayed items');
+  }
+  
   // Cleanup on component destroy
   onDestroy(() => {
     if (browser) {
@@ -1064,10 +1089,18 @@
     if (browser) {
       document.addEventListener('click', handleDocumentClick);
       
+      // For testing comment updates, add a flag to trigger regeneration
+      const shouldRegenerateComments = true;
+      
       // Load discovered items from server
       loadDiscoveredItems().then(() => {
         // Now load the news, which will use the comments we just loaded
-        loadZaurNews();
+        loadZaurNews().then(() => {
+          // For testing purposes, regenerate comments after loading
+          if (shouldRegenerateComments) {
+            regenerateComments();
+          }
+        });
       });
     }
     

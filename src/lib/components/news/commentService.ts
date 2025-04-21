@@ -3,9 +3,12 @@ import { keywordResponses, categoryCommentary, categorySpecificComments } from '
 
 // Generate a unique comment for specific article based on its title and category
 export function generateSpecificComment(title: string, category: string): string {
-  // Check if any keywords match the title
+  const titleLower = title.toLowerCase();
+  
+  // Check if any keywords match the title - prioritize this
   for (const [keyword, responses] of Object.entries(keywordResponses)) {
-    if (title.includes(keyword) || title.includes(keyword.toLowerCase())) {
+    const keywordLower = keyword.toLowerCase();
+    if (titleLower.includes(keywordLower)) {
       const titleHash = hashString(title);
       const responseIndex = titleHash % responses.length;
       return responses[responseIndex];
@@ -42,22 +45,49 @@ export function generateComment(
     return baseComment;
   }
   
-  const commentOptions = categoryCommentary[category] || [];
-  if (commentOptions.length > 0) {
-    // Use the title to deterministically select a comment
-    const titleHash = hashString(title);
-    const commentIndex = titleHash % commentOptions.length;
-    const baseComment = commentOptions[commentIndex];
-    
-    // Add article-specific details to make the comment unique
-    const specificDetails = generateSpecificComment(title, category);
-    
-    if (specificDetails && !usedComments.has(baseComment)) {
-      return `${baseComment} ${specificDetails}`;
-    } else {
-      return baseComment;
+  // First, try to get a specific comment based on keywords in the title
+  const specificDetails = generateSpecificComment(title, category);
+  if (specificDetails) {
+    // If we have a specific detail comment, use it without appending category commentary
+    if (!usedComments.has(specificDetails)) {
+      usedComments.add(specificDetails);
+      return specificDetails;
     }
   }
   
+  // If no specific keyword match or it was used, fall back to category commentary
+  const commentOptions = categoryCommentary[category] || [];
+  if (commentOptions.length > 0) {
+    // Generate a unique seed based on title + category to get more variety
+    const titleHash = hashString(title + category);
+    
+    // Try to find a comment that hasn't been used yet
+    let attempts = 0;
+    let selectedComment = '';
+    
+    while (attempts < commentOptions.length) {
+      const commentIndex = (titleHash + attempts) % commentOptions.length;
+      const candidateComment = commentOptions[commentIndex];
+      
+      if (!usedComments.has(candidateComment)) {
+        selectedComment = candidateComment;
+        break;
+      }
+      
+      attempts++;
+    }
+    
+    // If we couldn't find an unused comment, just use the first one
+    if (!selectedComment) {
+      selectedComment = commentOptions[titleHash % commentOptions.length];
+    }
+    
+    // Mark this comment as used
+    usedComments.add(selectedComment);
+    
+    return selectedComment;
+  }
+  
+  // If nothing else, return null (no comment)
   return null;
 } 
