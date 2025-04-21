@@ -4,11 +4,12 @@
   import { browser } from '$app/environment';
   import { fade, fly, scale } from 'svelte/transition';
   import { flip } from 'svelte/animate';
-  import { watch } from 'runed';
+  import { watch, FiniteStateMachine } from 'runed';
   import type { NewsItemWithUI } from '$lib/state/newsContext.js';
   import { zaurMoods, thoughtsOptions, discoveryComments, zaurReactions, categoryCommentary } from './news/commentaryData.js';
   import { generateComment, generateSpecificComment } from './news/commentService.js';
   import { hashString, getTimeSeed, getHourSeed, seededRandom, seededShuffle, decodeHtmlEntities } from './news/utils.js';
+  import './news/NewsPanelStyles.css';
   
   // Extended NewsItem with Zaur UI elements
   interface ZaurNewsItem extends NewsItemWithUI {
@@ -23,16 +24,140 @@
     hasReacted?: boolean;
   }
   
+  // Define FSM types
+  type NewsStates = 'idle' | 'loading' | 'error' | 'discovering' | 'emphasizing' | 'reacting' | 'sharing';
+  type NewsEvents = 'loadStart' | 'loadSuccess' | 'loadFailure' | 'discover' | 'emphasize' | 'deemphasize' | 'react' | 'share' | 'closeShare' | 'retry';
+  
+  // Store current FSM state separately
+  let currentFsmState = $state<NewsStates>('idle');
+  
+  // Create FSM for news panel
+  const newsFsm = new FiniteStateMachine<NewsStates, NewsEvents>('idle', {
+    idle: {
+      _enter: () => {
+        currentFsmState = 'idle';
+      },
+      loadStart: 'loading',
+      discover: 'discovering',
+      emphasize: 'emphasizing',
+      react: 'reacting',
+      share: 'sharing'
+    },
+    loading: {
+      _enter: () => {
+        currentFsmState = 'loading';
+      },
+      loadSuccess: 'idle',
+      loadFailure: 'error'
+    },
+    error: {
+      _enter: () => {
+        currentFsmState = 'error';
+      },
+      retry: 'loading',
+    },
+    discovering: {
+      _enter: async (meta) => {
+        currentFsmState = 'discovering';
+        
+        // Set Zaur's mood to excited during discovery
+        zaurMood = "excited";
+        
+        // If we have a specific item to discover from the event args
+        if (meta.args && Array.isArray(meta.args) && meta.args.length > 0) {
+          const availableItems = meta.args[0] as ZaurNewsItem[];
+          const seed = meta.args.length > 1 ? meta.args[1] as number : Date.now();
+          await discoverNewItem(availableItems, seed);
+        } else {
+          // Fallback to checking for discoveries
+          checkForTimeBasedDiscoveries();
+        }
+        
+        // Schedule transition back to idle after discovery completes
+        newsFsm.debounce(5000, 'loadSuccess');
+      },
+      loadSuccess: 'idle'
+    },
+    emphasizing: {
+      _enter: (meta) => {
+        currentFsmState = 'emphasizing';
+        
+        if (meta.args && Array.isArray(meta.args) && meta.args.length > 0) {
+          const itemId = meta.args[0] as string;
+          // Update only the specific item
+          updateSingleItem(itemId, { isEmphasized: true });
+          
+          // Remove emphasis after a few seconds
+          newsFsm.debounce(4000, 'deemphasize', itemId);
+        }
+      },
+      deemphasize: () => {
+        // Handle via _enter with args
+        return 'idle';
+      }
+    },
+    reacting: {
+      _enter: async (meta) => {
+        currentFsmState = 'reacting';
+        
+        if (meta.args && Array.isArray(meta.args) && meta.args.length > 1) {
+          const itemId = meta.args[0] as string;
+          const reaction = meta.args[1] as string;
+          
+          const item = newsItems.find(item => item.id === itemId);
+          if (item) {
+            // Generate the comment
+            const baseComment = item.zaurComment || "";
+            const newComment = baseComment ? `${baseComment}\n\n${reaction}` : reaction;
+            
+            // Save to server first
+            await saveZaurComment(itemId, newComment);
+            
+            // Update the specific item
+            updateSingleItem(itemId, { 
+              hasReacted: true, 
+              zaurComment: newComment
+            });
+          }
+        }
+        
+        // Return to idle state
+        newsFsm.send('loadSuccess');
+      },
+      loadSuccess: 'idle'
+    },
+    sharing: {
+      _enter: (meta) => {
+        currentFsmState = 'sharing';
+        
+        if (meta.args && Array.isArray(meta.args) && meta.args.length > 0) {
+          const itemId = meta.args[0] as string;
+          activeShareItem = itemId;
+          shareMenuVisible = true;
+        }
+      },
+      closeShare: () => {
+        activeShareItem = null;
+        shareMenuVisible = false;
+        return 'idle';
+      }
+    },
+    // Wildcard state for handling global events
+    '*': {
+      loadStart: 'loading'
+    }
+  });
+  
   // Track component state
   let newsItems = $state<ZaurNewsItem[]>([]);
   let allAvailableItems = $state<ZaurNewsItem[]>([]); // Store all available items
   let lastUpdated = $state<Date | null>(null);
-  let isLoading = $state(false);
+  let isLoading = $derived(currentFsmState === 'loading');
   let error = $state<string | null>(null);
   let zaurThoughts = $state<string | null>(null);
   let zaurMood = $state<string>("curious"); // Default mood
   let discoverTimerId: number | null = null;
-  let showingDiscovery = $state(false);
+  let showingDiscovery = $derived(currentFsmState === 'discovering');
   let discoveryTimeout: number | null = null;
   let seenItemIds = new Set<string>();
   let lastCheckTime = 0;
@@ -319,7 +444,8 @@
     if (!browser) return;
     
     try {
-      isLoading = true;
+      // Use the FSM to transition to loading state
+      newsFsm.send('loadStart');
       
       // Set Zaur's mood
       zaurMood = getHourlyMood();
@@ -513,11 +639,15 @@
         scheduleReactionBehavior();
       }, 1000);
       
-        } catch (err) {
+      // Transition to idle state indicating success
+      newsFsm.send('loadSuccess');
+        
+    } catch (err) {
       console.error('Error loading Zaur news:', err);
       error = err instanceof Error ? err.message : 'Unknown error occurred';
-    } finally {
-      isLoading = false;
+      
+      // Transition to error state
+      newsFsm.send('loadFailure');
     }
   }
   
@@ -559,13 +689,8 @@
           const randomIndex = Math.floor(Math.random() * nonEmphasizedItems.length);
           const itemToEmphasize = nonEmphasizedItems[randomIndex];
           
-          // Update only the specific item
-          updateSingleItem(itemToEmphasize.id, { isEmphasized: true });
-          
-          // Remove emphasis after a few seconds
-    setTimeout(() => {
-            updateSingleItem(itemToEmphasize.id, { isEmphasized: false });
-          }, 4000);
+          // Use FSM to handle emphasis
+          newsFsm.send('emphasize', itemToEmphasize.id);
         }
       }
     }, 20000); // Reduced frequency - check every 20 seconds
@@ -613,21 +738,11 @@
       const reactionIndex = Math.floor(seededRandom(seed + 1) * possibleReactions.length);
       const reaction = possibleReactions[reactionIndex];
       
-      // Generate the comment
-      const baseComment = itemToReact.zaurComment || "";
-      const newComment = baseComment ? `${baseComment}\n\n${reaction}` : reaction;
-      
       // Log the reaction process
       console.log(`[ZaurNews] Adding reaction to item ${itemToReact.id}: ${reaction}`);
       
-      // Save to server first
-      saveZaurComment(itemToReact.id, newComment).then(() => {
-        // Update only the specific item
-        updateSingleItem(itemToReact.id, { 
-          hasReacted: true, 
-          zaurComment: newComment
-        });
-      });
+      // Use FSM to handle reaction
+      newsFsm.send('react', itemToReact.id, reaction);
     }, 10000); // Check every 10 seconds to catch the window
   }
   
@@ -648,7 +763,7 @@
     // Check if we're in a discovery minute
     const isDiscoveryMinute = discoveryMinutes.includes(currentMinute);
     
-    if (isDiscoveryMinute && !showingDiscovery && allAvailableItems.length > 0) {
+    if (isDiscoveryMinute && currentFsmState !== 'discovering' && allAvailableItems.length > 0) {
       // Generate a consistent seed based on current hour and minute
       // This ensures all users will see the same discovery at the same time
       const seed = currentHour * 100 + currentMinute;
@@ -658,7 +773,8 @@
       
       // Only proceed if we have undiscovered items
       if (undiscoveredItems.length > 0) {
-        discoverNewItem(undiscoveredItems, seed);
+        // Use FSM to handle discovery
+        newsFsm.send('discover', undiscoveredItems, seed);
       }
     }
   }
@@ -880,13 +996,11 @@
     event.preventDefault();
     event.stopPropagation();
     
-    // Toggle share menu for this item
+    // Use the FSM to handle share toggle
     if (activeShareItem === id) {
-      activeShareItem = null;
-      shareMenuVisible = false;
+      newsFsm.send('closeShare');
     } else {
-      activeShareItem = id;
-      shareMenuVisible = true;
+      newsFsm.send('share', id);
     }
   }
   
@@ -899,9 +1013,8 @@
     const title = item.decodedTitle || item.title;
     const text = `${title} - shared via Zaur`;
     
-    // Close share menu
-    activeShareItem = null;
-    shareMenuVisible = false;
+    // Close share menu using FSM
+    newsFsm.send('closeShare');
     
     try {
       switch (platform) {
@@ -962,8 +1075,8 @@
       });
       
       if (!clickedInside) {
-        activeShareItem = null;
-        shareMenuVisible = false;
+        // Use FSM to handle closing
+        newsFsm.send('closeShare');
       }
     }
   }
@@ -1181,500 +1294,4 @@
       </div>
     {/if}
   </div>
-</div>
-
-<style>
-  .zaur-news-panel {
-    background: white;
-    border-radius: 12px;
-    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.06);
-    overflow: hidden;
-    margin-bottom: 2rem;
-    max-width: 100%;
-    position: relative;
-    transition: all 0.3s ease;
-    border: 1px solid #f0f0f0;
-  }
-  
-  /* Mood-based styling */
-  .zaur-mood-curious {
-    border-color: #0053b3;
-  }
-  
-  .zaur-mood-excited {
-    border-color: #ff9500;
-    box-shadow: 0 2px 25px rgba(255, 149, 0, 0.1);
-  }
-  
-  .zaur-mood-thoughtful {
-    border-color: #8e44ad;
-  }
-  
-  .zaur-mood-amused {
-    border-color: #27ae60;
-  }
-  
-  .zaur-mood-intrigued {
-    border-color: #3498db;
-  }
-  
-  .zaur-mood-surprised {
-    border-color: #e74c3c;
-  }
-  
-  .zaur-news-header {
-    padding: 1.8rem 2rem;
-    border-bottom: 1px solid #f0f0f0;
-    background: linear-gradient(to right, #f9f9f9, #fff);
-  }
-  
-  .zaur-news-header h2 {
-    margin: 0;
-    font-size: 1.7rem;
-    color: #0053b3;
-    display: flex;
-    align-items: center;
-  }
-  
-  .zaur-mood-emoji {
-    margin-right: 10px;
-    font-size: 1.5rem;
-    animation: subtle-pulse 3s infinite;
-  }
-  
-  @keyframes subtle-pulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
-  }
-  
-  .zaur-thoughts {
-    margin: 0.8rem 0 0;
-    font-size: 1.1rem;
-    color: #555;
-    font-style: italic;
-    display: flex;
-    align-items: center;
-  }
-  
-  .zaur-icon {
-    margin-right: 8px;
-    font-size: 1.2rem;
-  }
-  
-  .zaur-discovery-indicator {
-    position: relative;
-    background: linear-gradient(to right, #f0f7ff, #f9fdff);
-    padding: 1rem;
-    border-bottom: 1px solid #e6f0ff;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-  
-  .zaur-discovery-indicator p {
-    margin: 0;
-    color: #0053b3;
-    font-size: 0.95rem;
-    animation: pulse-text 2s infinite;
-  }
-  
-  .zaur-discovery-pulse {
-    width: 24px;
-    height: 24px;
-    background: #0053b3;
-    border-radius: 50%;
-    position: relative;
-  }
-  
-  .zaur-discovery-pulse::after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
-    background: #0053b3;
-    border-radius: 50%;
-    animation: pulse-ring 1.5s infinite;
-  }
-  
-  @keyframes pulse-ring {
-    0% {
-      transform: scale(0.8);
-      opacity: 0.8;
-    }
-    70% {
-      transform: scale(2);
-      opacity: 0;
-    }
-    100% {
-      transform: scale(2.5);
-      opacity: 0;
-    }
-  }
-  
-  @keyframes pulse-text {
-    0% { opacity: 0.7; }
-    50% { opacity: 1; }
-    100% { opacity: 0.7; }
-  }
-  
-  .zaur-discovery-banner {
-    margin: -1.8rem -1.8rem 1rem -1.8rem;
-    padding: 0.8rem 1.5rem;
-    background: linear-gradient(to right, #0053b3, #0070e0);
-    color: white;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.95rem;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-    box-shadow: 0 3px 10px rgba(0,83,179,0.2);
-  }
-  
-  .zaur-discovery-icon {
-    font-size: 1.2rem;
-  }
-  
-  .zaur-emphasis-indicator {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 16px;
-    height: 16px;
-    z-index: 2;
-  }
-  
-  .zaur-emphasis-pulse {
-    display: block;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: #ff9500;
-    animation: emphasis-pulse 2s infinite;
-  }
-  
-  @keyframes emphasis-pulse {
-    0% { transform: scale(0.8); opacity: 0.5; box-shadow: 0 0 0 0 rgba(255, 149, 0, 0.7); }
-    70% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 0 10px rgba(255, 149, 0, 0); }
-    100% { transform: scale(0.8); opacity: 0.5; box-shadow: 0 0 0 0 rgba(255, 149, 0, 0); }
-  }
-  
-  .zaur-thinking {
-    width: 50px;
-    height: 50px;
-    background: conic-gradient(#0053b3, #80b3ff);
-    border-radius: 50%;
-    animation: thinking 2s linear infinite;
-    margin-bottom: 1rem;
-  }
-  
-  @keyframes thinking {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-  
-  .zaur-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 3rem;
-    color: #555;
-  }
-  
-  .zaur-error-message {
-    padding: 2rem;
-    text-align: center;
-    color: #e63946;
-  }
-  
-  .zaur-error-message button {
-    background: #0053b3;
-    color: white;
-    border: none;
-    padding: 0.6rem 1.2rem;
-    border-radius: 20px;
-    margin-top: 1rem;
-    cursor: pointer;
-    font-size: 0.9rem;
-  }
-  
-  .zaur-empty-state {
-    padding: 3rem;
-    text-align: center;
-    color: #888;
-  }
-  
-  .zaur-news-content {
-    padding: 1.5rem;
-    overflow: hidden;
-    min-height: 200px;
-  }
-  
-  .zaur-news-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
-  }
-  
-  .zaur-news-item {
-    padding: 1.8rem;
-    border-radius: 10px;
-    background: #f9f9f9;
-    transition: all 0.3s;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    border-left: 4px solid #0053b3;
-    position: relative;
-  }
-  
-  .zaur-news-item.just-discovered {
-    box-shadow: 0 5px 25px rgba(0, 83, 179, 0.15);
-    background: linear-gradient(to bottom, #f5f9ff, #f9f9f9);
-    border-color: #0070e0;
-  }
-  
-  .zaur-news-item.is-removing {
-    opacity: 0;
-    transform: translateY(20px);
-    transition: opacity 0.7s ease-out, transform 0.7s ease-out;
-    pointer-events: none;
-  }
-  
-  .zaur-news-item.is-emphasized {
-    box-shadow: 0 5px 20px rgba(255, 149, 0, 0.15);
-    border-color: #ff9500;
-    animation: gentle-highlight 3s;
-  }
-  
-  @keyframes gentle-highlight {
-    0% { background-color: #f9f9f9; }
-    30% { background-color: #fff9e6; }
-    100% { background-color: #f9f9f9; }
-  }
-  
-  .zaur-news-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
-  }
-  
-  .zaur-news-item-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.8rem;
-    font-size: 0.85rem;
-  }
-  
-  .zaur-news-source {
-    color: #0053b3;
-    font-weight: 600;
-  }
-  
-  .zaur-news-date {
-    color: #888;
-  }
-  
-  .zaur-news-title {
-    margin: 0 0 1rem 0;
-    font-size: 1.3rem;
-    line-height: 1.4;
-  }
-  
-  .zaur-news-title a {
-    color: #333;
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-  
-  .zaur-news-title a:hover {
-    color: #0053b3;
-  }
-  
-  .zaur-news-summary {
-    margin: 0 0 1rem 0;
-    font-size: 1rem;
-    line-height: 1.6;
-    color: #444;
-  }
-  
-  .zaur-comment {
-    margin: 1rem 0;
-    padding: 0.8rem 1rem;
-    background: rgba(0, 83, 179, 0.05);
-    border-radius: 8px;
-    font-size: 0.95rem;
-    color: #444;
-    line-height: 1.4;
-    border-left: 3px solid #0053b3;
-    transition: all 0.3s ease;
-  }
-  
-  .zaur-comment.is-emphasized {
-    background: rgba(255, 149, 0, 0.08);
-    border-left-color: #ff9500;
-  }
-  
-  .zaur-comment-prefix {
-    font-weight: 600;
-    color: #0053b3;
-  }
-  
-  .zaur-news-image {
-    margin: 1rem 0;
-    border-radius: 8px;
-    overflow: hidden;
-    max-width: 100%;
-    height: 200px;
-  }
-  
-  .zaur-news-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-  }
-  
-  .zaur-news-item-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: auto;
-    padding-top: 1rem;
-    font-size: 0.9rem;
-  }
-  
-  .zaur-news-meta {
-    display: flex;
-    align-items: center;
-  }
-  
-  .zaur-news-author {
-    color: #666;
-    font-style: italic;
-  }
-  
-  .zaur-news-actions {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    position: relative;
-  }
-  
-  .zaur-share-button {
-    background: none;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    color: #0053b3;
-    font-size: 0.9rem;
-    padding: 0.5rem;
-    border-radius: 20px;
-    transition: all 0.2s;
-  }
-  
-  .zaur-share-button:hover {
-    background: rgba(0, 83, 179, 0.08);
-  }
-  
-  .zaur-share-icon {
-    font-size: 1rem;
-  }
-  
-  .zaur-share-menu {
-    position: absolute;
-    bottom: 100%;
-    right: 0;
-    background: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    overflow: hidden;
-    min-width: 160px;
-    z-index: 10;
-    margin-bottom: 5px;
-    border: 1px solid #eee;
-  }
-  
-  .zaur-share-option {
-    display: block;
-    width: 100%;
-    text-align: left;
-    padding: 0.8rem 1rem;
-    background: none;
-    border: none;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: all 0.15s;
-    color: #333;
-    border-bottom: 1px solid #f0f0f0;
-  }
-  
-  .zaur-share-option:last-child {
-    border-bottom: none;
-  }
-  
-  .zaur-share-option:hover {
-    background: #f5f9ff;
-    color: #0053b3;
-  }
-  
-  .zaur-read-more {
-    color: #0053b3;
-    text-decoration: none;
-    font-weight: 500;
-    transition: all 0.2s;
-    padding: 0.5rem 1rem;
-    background: rgba(0, 83, 179, 0.08);
-    border-radius: 20px;
-    white-space: nowrap;
-  }
-  
-  .zaur-read-more:hover {
-    color: white;
-    background: #0053b3;
-  }
-  
-  /* Responsive styles */
-  @media (min-width: 768px) {
-    .zaur-news-list {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-      gap: 1.5rem;
-    }
-  }
-  
-  @media (max-width: 600px) {
-    .zaur-news-item-header {
-      flex-direction: column;
-      gap: 0.3rem;
-    }
-    
-    .zaur-news-item-footer {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.8rem;
-    }
-    
-    .zaur-news-actions {
-      align-self: stretch;
-      justify-content: space-between;
-    }
-    
-    .zaur-share-text {
-      display: none;
-    }
-    
-    .zaur-share-button {
-      padding: 0.5rem;
-    }
-    
-    .zaur-share-menu {
-      right: 0;
-      left: auto;
-    }
-  }
-</style> 
+</div> 
