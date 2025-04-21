@@ -32,6 +32,16 @@ export const apps: App[] = [
 		poweredBy: 'Nextcloud'
 	},
 	{
+		id: 'notes',
+		name: 'Notes',
+		description: 'Collaborative real-time notes for teams and open source projects',
+		url: 'https://notes.zaur.app',
+		icon: 'N',
+		supportsIframe: true,
+		category: 'hosted-tools',
+		poweredBy: 'Etherpad'
+	},
+	{
 		id: 'share',
 		name: 'File Sharing',
 		description: 'Share files with friends and family',
