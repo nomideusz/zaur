@@ -55,8 +55,11 @@ export async function fetchAllNews(): Promise<NewsResponse> {
     logError('Error fetching Zaur news', error);
     
     // Generate sample items if API fails
+    const mockData = generateZaurNewsItems('featured', 5);
+    log(`Generated ${mockData.length} mock news items as fallback`, null);
+    
     return {
-      items: generateZaurNewsItems('featured', 5),
+      items: mockData,
       lastUpdated: new Date(),
       isMock: true
     };

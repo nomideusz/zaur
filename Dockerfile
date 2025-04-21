@@ -2,8 +2,8 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install pnpm
-RUN npm install -g pnpm
+# Install dependencies including ping (iputils for ping)
+RUN apk add --no-cache iputils && npm install -g pnpm
 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./

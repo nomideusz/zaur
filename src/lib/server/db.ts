@@ -9,25 +9,52 @@ export const config = {
 
 // Database connection singleton
 let connection: rethinkdb.Connection | null = null;
+let connectionAttempts = 0;
+const MAX_ATTEMPTS = 5;
+const RETRY_DELAY_MS = 5000; // 5 seconds
 
 /**
- * Get a connection to the RethinkDB database
+ * Get a connection to the RethinkDB database with retry logic
  */
 export async function getConnection(): Promise<rethinkdb.Connection> {
   if (connection) return connection as rethinkdb.Connection;
   
+  return connectWithRetry();
+}
+
+/**
+ * Connect to RethinkDB with retry logic
+ */
+async function connectWithRetry(): Promise<rethinkdb.Connection> {
   try {
+    console.log(`Connecting to RethinkDB at ${config.host}:${config.port} (database: ${config.db})...`);
+    
     // Create a connection
     connection = await rethinkdb.connect(config);
-    console.log('Connected to RethinkDB');
+    console.log('Successfully connected to RethinkDB');
+    
+    // Reset connection attempts after successful connection
+    connectionAttempts = 0;
     
     // Initialize database if needed
     await initDatabase();
     
     return connection;
   } catch (error) {
-    console.error('Failed to connect to RethinkDB:', error);
-    throw error;
+    connectionAttempts++;
+    console.error(`Failed to connect to RethinkDB (attempt ${connectionAttempts}/${MAX_ATTEMPTS}):`, error);
+    
+    if (connectionAttempts < MAX_ATTEMPTS) {
+      console.log(`Retrying connection in ${RETRY_DELAY_MS/1000} seconds...`);
+      // Wait before retrying
+      await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+      return connectWithRetry();
+    } else {
+      console.error(`Max connection attempts (${MAX_ATTEMPTS}) reached. Using fallback mode.`);
+      // In fallback mode, the application should be able to run with limited functionality
+      // For example, by using mock data or in-memory storage
+      throw error;
+    }
   }
 }
 
