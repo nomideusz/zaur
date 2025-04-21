@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import * as db from '../src/lib/server/db.js';
+import { getConnection, closeConnection, saveNewsItems } from '../src/lib/server/db.ts';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -27,7 +27,7 @@ async function populateDatabase() {
   try {
     // 1. Establish database connection
     console.log('Connecting to database...');
-    const conn = await db.getConnection();
+    const conn = await getConnection();
     console.log('Connected to RethinkDB successfully');
     
     // 2. Get sample news data
@@ -40,11 +40,11 @@ async function populateDatabase() {
     
     // 3. Save the data to RethinkDB
     console.log('Saving sample items to database...');
-    const savedCount = await db.saveNewsItems(sampleData.items);
+    const savedCount = await saveNewsItems(sampleData.items);
     console.log(`Successfully saved ${savedCount} new news items to database`);
     
     // 4. Close connection
-    await db.closeConnection();
+    await closeConnection();
     console.log('Database population completed successfully');
     process.exit(0);
   } catch (error) {

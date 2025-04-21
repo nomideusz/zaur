@@ -108,7 +108,7 @@ export function readNewsData() {
       
       // Load sample data if in dev mode and no items exist
       if (dev && !FORCE_REAL_DATA && newsData.items.length === 0) {
-        newsData.items = [...sampleNewsData];
+        newsData.items = [...sampleNewsData.items];
         newsData.lastUpdated = new Date().toISOString();
         console.log('Initialized with sample data in dev mode');
       }

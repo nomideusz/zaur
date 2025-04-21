@@ -18,7 +18,7 @@ async function runScript(scriptName) {
     console.log(`\n======= Running ${scriptName} =======\n`);
     
     const scriptPath = path.join(__dirname, scriptName);
-    const process = spawn('node', [scriptPath], {
+    const process = spawn('npx', ['tsx', scriptPath], {
       stdio: 'inherit',
       shell: true
     });
@@ -44,8 +44,8 @@ async function setup() {
     
     console.log('\n✅ Setup completed successfully!');
     console.log('\nNext steps:');
-    console.log('1. Run news updates with: node scripts/update-news.js');
-    console.log('2. Schedule automatic updates with: node scripts/schedule-news-updates.js');
+    console.log('1. Run news updates with: npx tsx scripts/update-news.js');
+    console.log('2. Schedule automatic updates with: npx tsx scripts/schedule-news-updates.js');
     
     process.exit(0);
   } catch (error) {

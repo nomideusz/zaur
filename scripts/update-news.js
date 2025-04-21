@@ -2,8 +2,8 @@
 
 import { fileURLToPath } from 'url';
 import path from 'path';
-import * as db from '../src/lib/server/db.js';
-import { fetchAllRssFeeds } from '../src/lib/server/scripts/fetchRssFeeds.js';
+import { getConnection, closeConnection, saveNewsItems, deleteOldNewsItems } from '../src/lib/server/db.ts';
+import { fetchAllRssFeeds } from '../src/lib/server/scripts/fetchRssFeeds-simple.ts';
 import fs from 'fs/promises';
 
 // Get current directory
@@ -30,7 +30,7 @@ async function updateNews() {
   
   try {
     // 1. Connect to database
-    await db.getConnection();
+    await getConnection();
     
     // 2. Read news sources configuration
     const newsConfig = await readNewsSourcesData();
@@ -49,18 +49,20 @@ async function updateNews() {
     
     if (newItems.length > 0) {
       // 4. Save new items to database
-      const savedCount = await db.saveNewsItems(newItems);
+      const savedCount = await saveNewsItems(newItems);
       console.log(`Saved ${savedCount} new items to database`);
     }
     
-    // 5. Prune old items
-    const prunedCount = await db.pruneNewsItems(MAX_NEWS_ITEMS, MAX_AGE_DAYS);
+    // 5. Prune old items (delete items older than MAX_AGE_DAYS)
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - MAX_AGE_DAYS);
+    const prunedCount = await deleteOldNewsItems(cutoffDate);
     if (prunedCount > 0) {
-      console.log(`Pruned ${prunedCount} old news items`);
+      console.log(`Pruned ${prunedCount} old news items older than ${MAX_AGE_DAYS} days`);
     }
     
     // 6. Close database connection
-    await db.closeConnection();
+    await closeConnection();
     console.log('News update completed successfully');
   } catch (error) {
     console.error('Error during news update:', error);

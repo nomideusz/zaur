@@ -15,7 +15,7 @@ const updateScriptPath = path.join(__dirname, 'update-news.js');
 function runUpdateScript() {
   console.log(`Running news update at ${new Date().toISOString()}`);
   
-  const updateProcess = spawn('node', [updateScriptPath], {
+  const updateProcess = spawn('npx', ['tsx', updateScriptPath], {
     stdio: 'inherit',
     shell: true
   });
