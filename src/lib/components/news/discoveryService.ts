@@ -138,13 +138,8 @@ export async function discoverNewItem(
     await saveZaurComment(newItem.id, zaurComment);
   }
   
-  // Sort current items by date to find the oldest
-  const sortedByDate = [...currentItems].sort((a, b) => 
-    new Date(a.publishDate).getTime() - new Date(b.publishDate).getTime()
-  );
-  
-  // Get the oldest item for removal
-  const oldestItemId = sortedByDate.length > 0 ? sortedByDate[0].id : null;
+  // Don't need to remove any old items since we're keeping all discovered items
+  const oldestItemId = null;
   
   return {
     newItem,

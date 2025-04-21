@@ -69,6 +69,15 @@
       
       // Now load the news
       await loadZaurNews();
+      
+      // Log a summary of what we're showing
+      const discoveredShown = newsItems.filter(item => discoveredItemIds.has(item.id)).length;
+      console.log(`[ZaurNews] Showing ${newsItems.length} total items, including ${discoveredShown} discovered items`);
+      
+      // Verify all discovered items are being shown
+      if (discoveredShown < discoveredItemIds.size) {
+        console.warn(`[ZaurNews] Warning: Not all discovered items are being shown (${discoveredShown}/${discoveredItemIds.size})`);
+      }
     } catch (err) {
       console.error('Error initializing NewsPanel:', err);
       error = err instanceof Error ? err.message : 'Unknown error occurred';
@@ -162,11 +171,8 @@
           new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
         );
         
-        // Calculate remaining slots after accounting for recently discovered items
-        const remainingSlots = itemCount - recentlyDiscoveredItems.length;
-        // Take up to half of the remaining slots for other discovered items
-        const maxOtherDiscoveredSlots = Math.floor(remainingSlots / 2);
-        otherDiscoveredItems.push(...sortedDiscoveredItems.slice(0, maxOtherDiscoveredSlots));
+        // Include ALL discovered items, not just a subset based on remainingSlots
+        otherDiscoveredItems.push(...sortedDiscoveredItems);
         
         if (otherDiscoveredItems.length > 0) {
           console.log(`[ZaurNews] Including ${otherDiscoveredItems.length} other discovered items`);
@@ -176,8 +182,15 @@
       // Combine all discovered items
       const allDiscoveredItems = [...recentlyDiscoveredItems, ...otherDiscoveredItems];
       
+      // Calculate a dynamic item count based on discovered items
+      // We need to show all discovered items, plus at least 2 new items
+      const minNewItems = 2;
+      const dynamicItemCount = Math.max(itemCount, allDiscoveredItems.length + minNewItems);
+      
       // Calculate remaining slots for new content
-      const remainingSlots = itemCount - allDiscoveredItems.length;
+      const remainingSlots = dynamicItemCount - allDiscoveredItems.length;
+      
+      console.log(`[ZaurNews] Using dynamic item count of ${dynamicItemCount} to show all ${allDiscoveredItems.length} discovered items plus ${remainingSlots} new items`);
       
       // Get items that haven't been discovered yet
       const undiscoveredItems = allAvailableItems.filter(item => 
@@ -329,31 +342,14 @@
       // Wait a moment for user to notice the indicator
       await new Promise(resolve => setTimeout(resolve, 1500));
       
-      // Prepare to remove the oldest item if we have one
-      if (discoveryResult.oldestItemId) {
-        const updatedItems = newsItems.map(item => 
-          item.id === discoveryResult.oldestItemId
-            ? { ...item, isRemoving: true }
-            : item
-        );
-        
-        // Update the news items
-        newsItems = updatedItems;
-        
-        // Allow the DOM to update
-        await tick();
-        
-        // Short delay to allow fade animation to start
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
+      // Since we're not removing old items anymore, we don't need this block
+      // Just add a wait time to maintain the animation flow
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Wait a bit longer for the removal animation to progress
-      await new Promise(resolve => setTimeout(resolve, 700));
-      
-      // Now add the new item and remove the old one
+      // Add the new item to the existing items list
       const updatedItems = [
         discoveryResult.newItem, 
-        ...newsItems.filter(item => !item.isRemoving)
+        ...newsItems
       ].sort((a, b) => 
         new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
       );
