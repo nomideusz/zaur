@@ -13,6 +13,14 @@ let connectionAttempts = 0;
 const MAX_ATTEMPTS = 5;
 const RETRY_DELAY_MS = 5000; // 5 seconds
 
+// Alternative hosts to try
+const alternativeHosts = [
+  {host: '127.0.0.1', port: 28015},
+  {host: 'localhost', port: 28015},
+  {host: '172.18.0.15', port: 28015}, // From RethinkDB logs
+  {host: '10.0.1.57', port: 28015},   // From RethinkDB logs
+];
+
 /**
  * Get a connection to the RethinkDB database with retry logic
  */
@@ -43,6 +51,28 @@ async function connectWithRetry(): Promise<rethinkdb.Connection> {
   } catch (error) {
     connectionAttempts++;
     console.error(`Failed to connect to RethinkDB (attempt ${connectionAttempts}/${MAX_ATTEMPTS}):`, error);
+    
+    // Try alternative hosts if main connection fails
+    if (connectionAttempts <= 2) { // Only try alternatives on first couple of attempts
+      for (const alternative of alternativeHosts) {
+        try {
+          console.log(`Trying alternative connection to ${alternative.host}:${alternative.port}...`);
+          connection = await rethinkdb.connect({
+            ...config,
+            host: alternative.host,
+            port: alternative.port
+          });
+          console.log(`Successfully connected to alternative RethinkDB at ${alternative.host}:${alternative.port}`);
+          
+          // Initialize database if needed
+          await initDatabase();
+          
+          return connection;
+        } catch (altError: any) {
+          console.error(`Failed to connect to alternative host ${alternative.host}:${alternative.port}:`, altError.message);
+        }
+      }
+    }
     
     if (connectionAttempts < MAX_ATTEMPTS) {
       console.log(`Retrying connection in ${RETRY_DELAY_MS/1000} seconds...`);

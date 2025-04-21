@@ -1,73 +1,89 @@
-[
-  {
-    "id": "js-weekly-1",
-    "title": "JavaScript in 2025: What's New and Exciting",
-    "summary": "The JavaScript ecosystem continues to evolve with new features in ES2025 and innovative frameworks.",
-    "url": "https://javascriptweekly.com/issues/future",
-    "publishDate": "2025-04-15T10:30:00.000Z",
-    "source": "JavaScript Weekly",
-    "sourceId": "javascriptweekly",
-    "category": "programming",
-    "imageUrl": "https://picsum.photos/seed/js2025/600/400",
-    "author": "JS Weekly Team"
-  },
-  {
-    "id": "css-tricks-1",
-    "title": "Advanced CSS Grid Techniques",
-    "summary": "Learn how to create complex layouts using the latest CSS Grid specifications including the new subgrid feature.",
-    "url": "https://css-tricks.com/advanced-grid",
-    "publishDate": "2025-04-18T14:15:00.000Z",
-    "source": "CSS-Tricks",
-    "sourceId": "css-tricks",
-    "category": "design",
-    "imageUrl": "https://picsum.photos/seed/cssgrid/600/400",
-    "author": "Sarah Designer"
-  },
-  {
-    "id": "techcrunch-1",
-    "title": "New AI Framework Revolutionizes Web Development",
-    "summary": "A new AI-powered framework is changing how developers approach web applications by generating optimized code.",
-    "url": "https://techcrunch.com/ai-web-dev",
-    "publishDate": "2025-04-19T09:45:00.000Z",
-    "source": "TechCrunch",
-    "sourceId": "techcrunch",
-    "category": "tech",
-    "imageUrl": "https://picsum.photos/seed/aidev/600/400",
-    "author": "Tech Journalist"
-  },
-  {
-    "id": "redditprogramming-1",
-    "title": "Debate: Are Runes the Future of Reactivity?",
-    "summary": "The programming community discusses whether Svelte's runes approach will become the standard for reactive programming.",
-    "url": "https://reddit.com/r/programming/runes-future",
-    "publishDate": "2025-04-17T16:20:00.000Z",
-    "source": "Reddit Programming",
-    "sourceId": "redditprogramming",
-    "category": "programming",
-    "author": "u/reactivity_fan"
-  },
-  {
-    "id": "nature-1",
-    "title": "Quantum Computing Breakthrough Achieves 500-Qubit Stability",
-    "summary": "Researchers have achieved a significant milestone in quantum computing with a stable 500-qubit system that could revolutionize computational science.",
-    "url": "https://nature.com/quantum-breakthrough",
-    "publishDate": "2025-04-16T08:30:00.000Z",
-    "source": "Nature",
-    "sourceId": "nature",
-    "category": "science",
-    "imageUrl": "https://picsum.photos/seed/quantum/600/400",
-    "author": "Quantum Research Team"
-  },
-  {
-    "id": "forbes-1",
-    "title": "Tech Giants Embrace Sustainable Data Centers",
-    "summary": "Major technology companies are investing billions in carbon-neutral data centers powered by renewable energy sources.",
-    "url": "https://forbes.com/sustainable-tech",
-    "publishDate": "2025-04-20T11:00:00.000Z",
-    "source": "Forbes Business",
-    "sourceId": "forbes",
-    "category": "business",
-    "imageUrl": "https://picsum.photos/seed/datacenter/600/400",
-    "author": "Business Analyst"
-  }
-] 
+{
+  "items": [
+    {
+      "id": "sample-1",
+      "title": "Getting Started with Zaur Dashboard",
+      "summary": "Learn how to use the Zaur dashboard for navigating between projects and accessing key tools.",
+      "url": "https://zaur.app/docs/dashboard",
+      "publishDate": "2025-04-21T00:00:00.000Z",
+      "source": "Zaur Documentation",
+      "sourceId": "zaur",
+      "category": "featured",
+      "imageUrl": "https://picsum.photos/seed/zaur1/600/400",
+      "author": "Zaur Team"
+    },
+    {
+      "id": "sample-2",
+      "title": "RethinkDB Migration Complete",
+      "summary": "The migration from JSON files to RethinkDB has been completed successfully, providing better scalability.",
+      "url": "https://zaur.app/news/rethinkdb-migration",
+      "publishDate": "2025-04-20T00:00:00.000Z",
+      "source": "Zaur Updates",
+      "sourceId": "zaur",
+      "category": "dev",
+      "imageUrl": "https://picsum.photos/seed/zaur2/600/400",
+      "author": "Zaur Development"
+    },
+    {
+      "id": "sample-3",
+      "title": "New AI Tools Available",
+      "summary": "Explore the new AI-powered tools available in the Zaur ecosystem, designed to boost your productivity.",
+      "url": "https://zaur.app/news/ai-tools",
+      "publishDate": "2025-04-19T00:00:00.000Z",
+      "source": "Zaur AI",
+      "sourceId": "zaur",
+      "category": "ai",
+      "imageUrl": "https://picsum.photos/seed/zaur3/600/400",
+      "author": "Zaur AI Team"
+    },
+    {
+      "id": "sample-4",
+      "title": "Cryptocurrency Trends for 2025",
+      "summary": "An analysis of the latest trends in cryptocurrency and blockchain technology for 2025.",
+      "url": "https://zaur.app/news/crypto-trends-2025",
+      "publishDate": "2025-04-18T00:00:00.000Z",
+      "source": "Zaur Crypto",
+      "sourceId": "zaur",
+      "category": "crypto",
+      "imageUrl": "https://picsum.photos/seed/zaur4/600/400",
+      "author": "Zaur Crypto Team"
+    },
+    {
+      "id": "sample-5",
+      "title": "Productivity Hacks for Developers",
+      "summary": "Discover practical productivity hacks specifically designed for software developers.",
+      "url": "https://zaur.app/news/productivity-hacks",
+      "publishDate": "2025-04-17T00:00:00.000Z",
+      "source": "Zaur Productivity",
+      "sourceId": "zaur",
+      "category": "productivity",
+      "imageUrl": "https://picsum.photos/seed/zaur5/600/400",
+      "author": "Zaur Productivity Team"
+    },
+    {
+      "id": "sample-6",
+      "title": "Essential Tools for Modern Developers",
+      "summary": "A curated list of must-have tools for modern developers to streamline their workflows.",
+      "url": "https://zaur.app/news/essential-tools",
+      "publishDate": "2025-04-16T00:00:00.000Z",
+      "source": "Zaur Tools",
+      "sourceId": "zaur",
+      "category": "tools",
+      "imageUrl": "https://picsum.photos/seed/zaur6/600/400",
+      "author": "Zaur Tools Team"
+    },
+    {
+      "id": "sample-7",
+      "title": "The Philosophy of Software Design",
+      "summary": "Exploring the philosophical principles that underpin effective software design and architecture.",
+      "url": "https://zaur.app/news/philosophy-software-design",
+      "publishDate": "2025-04-15T00:00:00.000Z",
+      "source": "Zaur Philosophy",
+      "sourceId": "zaur",
+      "category": "philosophy",
+      "imageUrl": "https://picsum.photos/seed/zaur7/600/400",
+      "author": "Zaur Philosophy Team"
+    }
+  ],
+  "lastUpdated": "2025-04-21T00:00:00.000Z"
+} 
