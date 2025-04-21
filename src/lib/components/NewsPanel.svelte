@@ -49,8 +49,14 @@
         
         const data = await response.json();
         if (Array.isArray(data.items)) {
+          // Create a proper Set from the array
           discoveredItemIds = new Set(data.items);
           console.log(`[ZaurNews] Loaded ${discoveredItemIds.size} discovered items from server`);
+          
+          // Mark these items as discovered in our allAvailableItems array when it's loaded
+          if (allAvailableItems.length > 0) {
+            markDiscoveredItems();
+          }
         }
         
         // Load Zaur's comments
@@ -66,22 +72,56 @@
       }
     }
   }
+  
+  // Mark items as discovered in the allAvailableItems array
+  function markDiscoveredItems(): void {
+    if (discoveredItemIds.size === 0 || allAvailableItems.length === 0) return;
+    
+    // Clone the existing News Items to avoid references
+    const currentItems = [...newsItems];
+    
+    // Loop through all available items and check if they were previously discovered
+    allAvailableItems.forEach(item => {
+      // If this item was discovered before and isn't already in our view
+      if (discoveredItemIds.has(item.id) && !currentItems.some(ni => ni.id === item.id)) {
+        // Add discovered item's ID to the seenItemIds set
+        seenItemIds.add(item.id);
+        
+        // Apply any saved comment
+        const savedComment = zaurComments.get(item.id);
+        if (savedComment) {
+          item.zaurComment = savedComment;
+          item.hasReacted = savedComment.includes("\n\n");
+        }
+      }
+    });
+    
+    console.log(`[ZaurNews] Marked ${discoveredItemIds.size} items as discovered`);
+  }
 
   // Save a newly discovered item to the server
   async function saveDiscoveredItem(id: string, comment?: string): Promise<void> {
     if (browser) {
       try {
+        const payload: any = { itemId: id };
+        if (comment) {
+          payload.comment = comment;
+        }
+        
         const response = await fetch('/api/discoveries', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ id, comment })
+          body: JSON.stringify(payload)
         });
         
         if (!response.ok) {
           throw new Error(`API error: ${response.status} ${response.statusText}`);
         }
+        
+        // Add to discovered items Set to persist across page refreshes
+        discoveredItemIds.add(id);
         
         console.log(`[ZaurNews] Saved discovered item to server: ${id}`);
       } catch (err) {
@@ -94,9 +134,22 @@
   async function saveZaurComment(id: string, comment: string): Promise<void> {
     if (browser) {
       try {
-        await saveDiscoveredItem(id, comment);
+        // POST to comments endpoint
+        const response = await fetch('/api/discoveries/comments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ itemId: id, comment })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
         // Update local cache
         zaurComments.set(id, comment);
+        console.log(`[ZaurNews] Saved comment for item: ${id}`);
       } catch (err) {
         console.error('Error saving Zaur comment:', err);
       }
@@ -383,44 +436,76 @@
       
       allAvailableItems = sortedItems;
       
+      // Apply our markDiscoveredItems function to mark all discovered items
+      markDiscoveredItems();
+      
       // Use deterministic selection based on today's date as seed
       const seed = getTimeSeed();
       
-      // Zaur's curation logic - consistently select 6 items for all users
+      // Zaur's curation logic
       const itemCount = 6;
       
-      // Shuffle with seed for consistent results across users
-      const shuffled = seededShuffle(allAvailableItems, seed);
+      // First, include previously discovered items (up to half the slots)
+      const discoveredItems: ZaurNewsItem[] = [];
       
-      // Ensure diverse categories deterministically
+      if (discoveredItemIds.size > 0) {
+        // Get discovered items from our allAvailableItems
+        const availableDiscoveredItems = allAvailableItems.filter(item => 
+          discoveredItemIds.has(item.id)
+        );
+        
+        // Sort discovered items by date (newest first)
+        const sortedDiscoveredItems = availableDiscoveredItems.sort((a, b) => 
+          new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+        );
+        
+        // Take up to half the slots for discovered items (at least one if any exist)
+        const maxDiscoveredSlots = Math.max(1, Math.floor(itemCount / 2));
+        discoveredItems.push(...sortedDiscoveredItems.slice(0, maxDiscoveredSlots));
+        
+        console.log(`[ZaurNews] Including ${discoveredItems.length} previously discovered items`);
+      }
+      
+      // Calculate remaining slots after including discovered items
+      const remainingSlots = itemCount - discoveredItems.length;
+      
+      // Get items that haven't been discovered yet
+      const undiscoveredItems = allAvailableItems.filter(item => 
+        !discoveredItemIds.has(item.id)
+      );
+      
+      // Shuffle with seed for consistent results across users
+      const shuffled = seededShuffle(undiscoveredItems, seed);
+      
+      // Ensure diverse categories deterministically for the remaining slots
       const categories = new Set<string>();
-      const selectedItems: ZaurNewsItem[] = [];
+      const selectedNewItems: ZaurNewsItem[] = [];
       
       // First pass - try to get one from each category
       for (const item of shuffled) {
         const category = item.category as string;
         if (!categories.has(category)) {
           categories.add(category);
-          selectedItems.push(item);
-          if (selectedItems.length >= itemCount) break;
+          selectedNewItems.push(item);
+          if (selectedNewItems.length >= remainingSlots) break;
         }
       }
       
       // Second pass - fill in if we didn't get enough categories
-      if (selectedItems.length < itemCount) {
+      if (selectedNewItems.length < remainingSlots) {
         for (const item of shuffled) {
-          if (!selectedItems.includes(item)) {
-            selectedItems.push(item);
-            if (selectedItems.length >= itemCount) break;
+          if (!selectedNewItems.includes(item) && !discoveredItems.includes(item)) {
+            selectedNewItems.push(item);
+            if (selectedNewItems.length >= remainingSlots) break;
           }
         }
       }
       
+      // Combine discovered and new items
+      const selectedItems = [...discoveredItems, ...selectedNewItems];
+      
       // Track which items we've shown
       selectedItems.forEach(item => seenItemIds.add(item.id));
-      
-      // Check for discoveries that should have happened based on timestamp
-      checkForTimeBasedDiscoveries();
       
       // Update items - make sure they're sorted by date (newest first)
       const finalItems = selectedItems.sort((a, b) => 
@@ -429,6 +514,12 @@
       
       await tick(); // Ensure a tick before updating the rendered items
       newsItems = finalItems;
+      
+      // Apply comments after loading
+      applyZaurComments();
+      
+      // Check for discoveries that should have happened based on timestamp
+      checkForTimeBasedDiscoveries();
       
       // Start the discovery process after a small delay
       setTimeout(() => {
@@ -646,6 +737,22 @@
     
     let itemsToChooseFrom = newerItems.length > 0 ? newerItems : availableItems;
     
+    // Filter out already discovered items
+    itemsToChooseFrom = itemsToChooseFrom.filter(item => !discoveredItemIds.has(item.id));
+    
+    // If we have no undiscovered items, use all items but prefer ones not currently shown
+    if (itemsToChooseFrom.length === 0) {
+      console.log('[ZaurNews] No undiscovered items available, using all items');
+      itemsToChooseFrom = availableItems.filter(item => 
+        !currentItems.some(currentItem => currentItem.id === item.id)
+      );
+      
+      // If we still have no items, use all available items
+      if (itemsToChooseFrom.length === 0) {
+        itemsToChooseFrom = availableItems;
+      }
+    }
+    
     // Sort by date (newest first) to prioritize the freshest content
     itemsToChooseFrom = itemsToChooseFrom.sort((a, b) => 
       new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
@@ -694,7 +801,12 @@
     discoveredItemIds.add(newItem.id);
     
     // Save to server with initial comment
-    await saveDiscoveredItem(newItem.id, zaurComment);
+    await saveDiscoveredItem(newItem.id);
+    
+    // Also save Zaur's comment if available
+    if (zaurComment) {
+      await saveZaurComment(newItem.id, zaurComment);
+    }
     
     // Show the discovery indicator first
     showingDiscovery = true;

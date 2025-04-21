@@ -193,7 +193,15 @@ export async function addDiscoveredItem(itemId: string): Promise<boolean> {
       .run(connection as rethinkdb.Connection);
     
     if (existing > 0) {
-      return false; // Item already exists
+      // Item already exists - update the timestamp to "refresh" it
+      await rethinkdb.db(config.db)
+        .table('discoveries')
+        .getAll(itemId, { index: 'itemId' })
+        .update({ timestamp: new Date().toISOString() })
+        .run(connection as rethinkdb.Connection);
+      
+      console.log(`Discovery already exists for ${itemId}, updated timestamp`);
+      return true; // Item exists and was updated
     }
     
     // Add the new item
@@ -202,6 +210,7 @@ export async function addDiscoveredItem(itemId: string): Promise<boolean> {
       timestamp: new Date().toISOString()
     }).run(connection as rethinkdb.Connection);
     
+    console.log(`Added new discovery: ${itemId}`);
     return true;
   } catch (error) {
     console.error('Error adding discovered item:', error);

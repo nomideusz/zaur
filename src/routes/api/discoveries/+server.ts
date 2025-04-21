@@ -31,7 +31,9 @@ export async function GET() {
  */
 export async function POST({ request }) {
   try {
-    const { itemId } = await request.json();
+    const data = await request.json();
+    const itemId = data.itemId;
+    const comment = data.comment;
     
     if (!itemId) {
       return new Response(JSON.stringify({ error: 'Item ID is required' }), {
@@ -45,6 +47,11 @@ export async function POST({ request }) {
     try {
       // Try to add to database
       result = await addDiscoveredItem(itemId);
+      
+      // If there's a comment, save it too
+      if (comment && result) {
+        await saveComment(itemId, comment);
+      }
     } catch (error) {
       console.error('Database error when adding discovery, proceeding with mock success:', error);
       // Pretend success even if database is down
