@@ -30,6 +30,7 @@ ENV NODE_ENV=production
 ENV RETHINKDB_HOST=10.0.1.57
 ENV RETHINKDB_PORT=28015
 ENV RETHINKDB_DB=zaur_news
+ENV RUN_MIGRATIONS=false
 
 # Command to run the application with database migration
 CMD ["/app/start.sh"] 

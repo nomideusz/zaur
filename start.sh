@@ -1,36 +1,45 @@
 #!/bin/sh
 
-echo "Running database migrations and setup..."
+# Set default for RUN_MIGRATIONS (if not set, don't run migrations)
+RUN_MIGRATIONS=${RUN_MIGRATIONS:-false}
 
-# Check database connection
-echo "Checking connection to RethinkDB at $RETHINKDB_HOST:$RETHINKDB_PORT..."
-MAX_RETRY=10
-RETRY_COUNT=0
+# Check if we should run migrations
+if [ "$RUN_MIGRATIONS" = "true" ]; then
+  echo "RUN_MIGRATIONS is set to true. Running database migrations and setup..."
 
-while [ $RETRY_COUNT -lt $MAX_RETRY ]; do
-  # Try connecting (this ping approach doesn't do a full connection test but checks if host is reachable)
-  if ping -c 1 $RETHINKDB_HOST > /dev/null 2>&1; then
-    echo "Host $RETHINKDB_HOST is reachable, proceeding with migrations..."
-    break
-  else
-    RETRY_COUNT=$((RETRY_COUNT+1))
-    if [ $RETRY_COUNT -eq $MAX_RETRY ]; then
-      echo "Could not connect to $RETHINKDB_HOST after $MAX_RETRY attempts."
-      echo "Will start the application anyway. The application will use retry logic to connect to the database."
+  # Check database connection
+  echo "Checking connection to RethinkDB at $RETHINKDB_HOST:$RETHINKDB_PORT..."
+  MAX_RETRY=10
+  RETRY_COUNT=0
+
+  while [ $RETRY_COUNT -lt $MAX_RETRY ]; do
+    # Try connecting (this ping approach doesn't do a full connection test but checks if host is reachable)
+    if ping -c 1 $RETHINKDB_HOST > /dev/null 2>&1; then
+      echo "Host $RETHINKDB_HOST is reachable, proceeding with migrations..."
+      break
     else
-      echo "Cannot reach $RETHINKDB_HOST. Retry $RETRY_COUNT/$MAX_RETRY. Waiting 5 seconds..."
-      sleep 5
+      RETRY_COUNT=$((RETRY_COUNT+1))
+      if [ $RETRY_COUNT -eq $MAX_RETRY ]; then
+        echo "Could not connect to $RETHINKDB_HOST after $MAX_RETRY attempts."
+        echo "Will start the application anyway. The application will use retry logic to connect to the database."
+      else
+        echo "Cannot reach $RETHINKDB_HOST. Retry $RETRY_COUNT/$MAX_RETRY. Waiting 5 seconds..."
+        sleep 5
+      fi
     fi
-  fi
-done
+  done
 
-# Run migrations - these will use the retry logic in the db.ts file
-echo "Running database migrations..."
-node --experimental-specifier-resolution=node --loader ts-node/esm src/lib/server/migrations/json-to-rethinkdb.ts --host=$RETHINKDB_HOST --port=$RETHINKDB_PORT || echo "Migration failed, but continuing startup..."
+  # Run migrations - these will use the retry logic in the db.ts file
+  echo "Running database migrations..."
+  node --experimental-specifier-resolution=node --loader ts-node/esm src/lib/server/migrations/json-to-rethinkdb.ts --host=$RETHINKDB_HOST --port=$RETHINKDB_PORT || echo "Migration failed, but continuing startup..."
 
-echo "Running news migration..."
-node --experimental-specifier-resolution=node --loader ts-node/esm src/lib/server/migrations/news-to-rethinkdb.ts --host=$RETHINKDB_HOST --port=$RETHINKDB_PORT || echo "News migration failed, but continuing startup..."
+  echo "Running news migration..."
+  node --experimental-specifier-resolution=node --loader ts-node/esm src/lib/server/migrations/news-to-rethinkdb.ts --host=$RETHINKDB_HOST --port=$RETHINKDB_PORT || echo "News migration failed, but continuing startup..."
+else
+  echo "Skipping database migrations (RUN_MIGRATIONS=$RUN_MIGRATIONS)"
+fi
 
+# Always create database indexes - this is idempotent and safe to run every time
 echo "Creating database indexes..."
 node --experimental-specifier-resolution=node --loader ts-node/esm src/lib/server/create-indexes.ts || echo "Index creation failed, but continuing startup..."
 
