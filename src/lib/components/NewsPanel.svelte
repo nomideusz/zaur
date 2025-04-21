@@ -37,12 +37,14 @@
   let reactionTimerId: number | null = null;
   let discoveredItemIds = new Set<string>();
   let zaurComments = new Map<string, string>(); // Map of itemId -> comment
+  // Track last discovered items with timestamps for persistence across refreshes
+  let lastDiscoveredItems: { itemId: string, timestamp: string }[] = [];
   
   // Load previously discovered items from server
   async function loadDiscoveredItems(): Promise<void> {
     if (browser) {
       try {
-        const response = await fetch('/api/discoveries?includeComments=true');
+        const response = await fetch('/api/discoveries?includeComments=true&includeTimestamps=true');
         if (!response.ok) {
           throw new Error(`API error: ${response.status} ${response.statusText}`);
         }
@@ -52,6 +54,12 @@
           // Create a proper Set from the array
           discoveredItemIds = new Set(data.items);
           console.log(`[ZaurNews] Loaded ${discoveredItemIds.size} discovered items from server`);
+          
+          // Get sorted items with timestamps (most recently discovered first)
+          if (Array.isArray(data.itemsData)) {
+            lastDiscoveredItems = data.itemsData;
+            console.log(`[ZaurNews] Loaded discovery timestamps for ${lastDiscoveredItems.length} items`);
+          }
           
           // Mark these items as discovered in our allAvailableItems array when it's loaded
           if (allAvailableItems.length > 0) {
@@ -80,10 +88,16 @@
     // Clone the existing News Items to avoid references
     const currentItems = [...newsItems];
     
+    // Create a map for quick lookup of most recent discovery time
+    const discoveryTimes = new Map<string, string>();
+    lastDiscoveredItems.forEach(item => {
+      discoveryTimes.set(item.itemId, item.timestamp);
+    });
+    
     // Loop through all available items and check if they were previously discovered
     allAvailableItems.forEach(item => {
-      // If this item was discovered before and isn't already in our view
-      if (discoveredItemIds.has(item.id) && !currentItems.some(ni => ni.id === item.id)) {
+      // If this item was discovered before...
+      if (discoveredItemIds.has(item.id)) {
         // Add discovered item's ID to the seenItemIds set
         seenItemIds.add(item.id);
         
@@ -92,6 +106,22 @@
         if (savedComment) {
           item.zaurComment = savedComment;
           item.hasReacted = savedComment.includes("\n\n");
+        }
+        
+        // If this was recently discovered (in the last 3 hours), mark it accordingly
+        const discoveryTimestamp = discoveryTimes.get(item.id);
+        if (discoveryTimestamp) {
+          const discoveryTime = new Date(discoveryTimestamp).getTime();
+          const now = new Date().getTime();
+          const threeHoursInMs = 3 * 60 * 60 * 1000;
+          
+          if (now - discoveryTime < threeHoursInMs) {
+            // This was discovered in the last 3 hours
+            console.log(`[ZaurNews] Item ${item.id} was recently discovered, styling appropriately`);
+            
+            // Set subtle styles for recent discoveries but don't show the banner
+            item.isEmphasized = true;
+          }
         }
       }
     });
@@ -122,6 +152,10 @@
         
         // Add to discovered items Set to persist across page refreshes
         discoveredItemIds.add(id);
+        
+        // Add to lastDiscoveredItems with current timestamp
+        const now = new Date().toISOString();
+        lastDiscoveredItems.unshift({ itemId: id, timestamp: now });
         
         console.log(`[ZaurNews] Saved discovered item to server: ${id}`);
       } catch (err) {
@@ -445,13 +479,38 @@
       // Zaur's curation logic
       const itemCount = 6;
       
-      // First, include previously discovered items (up to half the slots)
-      const discoveredItems: ZaurNewsItem[] = [];
+      // First, prioritize the most recently discovered items (at least 1 or up to 2 slots)
+      const recentlyDiscoveredItems: ZaurNewsItem[] = [];
+      
+      if (lastDiscoveredItems.length > 0) {
+        // Get the most recently discovered items (up to 2)
+        const recentDiscoveryIds = lastDiscoveredItems
+          .slice(0, 2)
+          .map(item => item.itemId);
+          
+        // Find these items in our available items
+        for (const id of recentDiscoveryIds) {
+          const foundItem = allAvailableItems.find(item => item.id === id);
+          if (foundItem) {
+            recentlyDiscoveredItems.push(foundItem);
+            // If we have at least 1 recent discovery, that's enough
+            if (recentlyDiscoveredItems.length > 0) {
+              console.log(`[ZaurNews] Including last discovered item: ${id}`);
+            }
+          }
+        }
+      }
+      
+      // Next, include other previously discovered items (up to half the remaining slots)
+      const otherDiscoveredItems: ZaurNewsItem[] = [];
       
       if (discoveredItemIds.size > 0) {
-        // Get discovered items from our allAvailableItems
+        // Filter out recently discovered items we already included
+        const recentlyDiscoveredIds = new Set(recentlyDiscoveredItems.map(item => item.id));
+        
+        // Get discovered items from our allAvailableItems, excluding the recent ones
         const availableDiscoveredItems = allAvailableItems.filter(item => 
-          discoveredItemIds.has(item.id)
+          discoveredItemIds.has(item.id) && !recentlyDiscoveredIds.has(item.id)
         );
         
         // Sort discovered items by date (newest first)
@@ -459,15 +518,22 @@
           new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
         );
         
-        // Take up to half the slots for discovered items (at least one if any exist)
-        const maxDiscoveredSlots = Math.max(1, Math.floor(itemCount / 2));
-        discoveredItems.push(...sortedDiscoveredItems.slice(0, maxDiscoveredSlots));
+        // Calculate remaining slots after accounting for recently discovered items
+        const remainingSlots = itemCount - recentlyDiscoveredItems.length;
+        // Take up to half of the remaining slots for other discovered items
+        const maxOtherDiscoveredSlots = Math.floor(remainingSlots / 2);
+        otherDiscoveredItems.push(...sortedDiscoveredItems.slice(0, maxOtherDiscoveredSlots));
         
-        console.log(`[ZaurNews] Including ${discoveredItems.length} previously discovered items`);
+        if (otherDiscoveredItems.length > 0) {
+          console.log(`[ZaurNews] Including ${otherDiscoveredItems.length} other discovered items`);
+        }
       }
       
-      // Calculate remaining slots after including discovered items
-      const remainingSlots = itemCount - discoveredItems.length;
+      // Combine all discovered items
+      const allDiscoveredItems = [...recentlyDiscoveredItems, ...otherDiscoveredItems];
+      
+      // Calculate remaining slots for new content
+      const remainingSlots = itemCount - allDiscoveredItems.length;
       
       // Get items that haven't been discovered yet
       const undiscoveredItems = allAvailableItems.filter(item => 
@@ -494,7 +560,7 @@
       // Second pass - fill in if we didn't get enough categories
       if (selectedNewItems.length < remainingSlots) {
         for (const item of shuffled) {
-          if (!selectedNewItems.includes(item) && !discoveredItems.includes(item)) {
+          if (!selectedNewItems.includes(item) && !allDiscoveredItems.some(di => di.id === item.id)) {
             selectedNewItems.push(item);
             if (selectedNewItems.length >= remainingSlots) break;
           }
@@ -502,15 +568,13 @@
       }
       
       // Combine discovered and new items
-      const selectedItems = [...discoveredItems, ...selectedNewItems];
+      const selectedItems = [...allDiscoveredItems, ...selectedNewItems];
       
       // Track which items we've shown
       selectedItems.forEach(item => seenItemIds.add(item.id));
       
-      // Update items - make sure they're sorted by date (newest first)
-      const finalItems = selectedItems.sort((a, b) => 
-        new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
-      );
+      // Update items - use custom sort that prioritizes recent discoveries
+      const finalItems = sortWithDiscoveriesAtTop(selectedItems);
       
       await tick(); // Ensure a tick before updating the rendered items
       newsItems = finalItems;
@@ -910,6 +974,35 @@
       // No need to schedule full refreshes anymore
     }
   });
+  
+  // Custom sort function that prioritizes recently discovered items
+  function sortWithDiscoveriesAtTop(items: ZaurNewsItem[]): ZaurNewsItem[] {
+    // Create a map of discovery times for quick lookup
+    const discoveryTimes = new Map<string, number>();
+    lastDiscoveredItems.forEach(item => {
+      discoveryTimes.set(item.itemId, new Date(item.timestamp).getTime());
+    });
+    
+    // Clone the array to avoid mutating the original
+    return [...items].sort((a, b) => {
+      const aIsRecent = discoveryTimes.has(a.id);
+      const bIsRecent = discoveryTimes.has(b.id);
+      
+      // If both are recent discoveries, sort by discovery time (newest first)
+      if (aIsRecent && bIsRecent) {
+        const aTime = discoveryTimes.get(a.id) || 0;
+        const bTime = discoveryTimes.get(b.id) || 0;
+        return bTime - aTime;
+      }
+      
+      // If only one is a recent discovery, it comes first
+      if (aIsRecent) return -1;
+      if (bIsRecent) return 1;
+      
+      // Otherwise, sort by publish date (newest first)
+      return new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime();
+    });
+  }
 </script>
 
 <div class="zaur-news-panel" class:zaur-mood-curious={zaurMood === 'curious'} 

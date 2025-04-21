@@ -179,6 +179,26 @@ export async function getDiscoveredItems(): Promise<string[]> {
 }
 
 /**
+ * Get all discovered items with timestamps
+ */
+export async function getDiscoveredItemsWithTimestamps(): Promise<Array<{itemId: string, timestamp: string}>> {
+  if (!connection) await getConnection();
+  
+  try {
+    const cursor = await rethinkdb.db(config.db)
+      .table('discoveries')
+      .orderBy(rethinkdb.desc('timestamp'))
+      .pluck('itemId', 'timestamp')
+      .run(connection as rethinkdb.Connection);
+    
+    return await cursor.toArray();
+  } catch (error) {
+    console.error('Error getting discovered items with timestamps:', error);
+    return [];
+  }
+}
+
+/**
  * Add a new discovered item
  */
 export async function addDiscoveredItem(itemId: string): Promise<boolean> {
