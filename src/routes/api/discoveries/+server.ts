@@ -1,8 +1,21 @@
 import { json } from '@sveltejs/kit';
-import { getDiscoveredItems, addDiscoveredItem, getComments, saveComment, getDiscoveredItemsWithTimestamps } from '$lib/server/db.js';
+import { getDiscoveredItems, addDiscoveredItem, getComments, saveComment, getDiscoveredItemsWithTimestamps } from '$lib/server/dbMock.js';
 
 // Sample data for fallback mode
 const sampleDiscoveries = ['sample-1', 'sample-2', 'sample-3'];
+
+// Define types
+interface DiscoveryItem {
+  itemId: string;
+  timestamp: string;
+}
+
+interface Comment {
+  id: string;
+  itemId: string;
+  comment: string;
+  timestamp: string;
+}
 
 /**
  * GET handler for discoveries
@@ -13,9 +26,9 @@ export async function GET({ url }) {
   
   try {
     // Get discoveries (with timestamps if requested)
-    let itemsData;
+    let itemsData: DiscoveryItem[];
     if (includeTimestamps) {
-      const discoveredItemsWithTimestamps = await getDiscoveredItemsWithTimestamps();
+      const discoveredItemsWithTimestamps = await getDiscoveredItemsWithTimestamps() as DiscoveryItem[];
       // Format: [{ itemId, timestamp }, ...]
       itemsData = discoveredItemsWithTimestamps;
       // Also include a flat array of just the IDs for backward compatibility
@@ -23,7 +36,7 @@ export async function GET({ url }) {
       
       // Get comments if requested
       if (includeComments) {
-        const comments = await getComments();
+        const comments = await getComments() as Comment[];
         return json({ items, itemsData, comments });
       }
       
@@ -34,7 +47,7 @@ export async function GET({ url }) {
       
       // Get comments if requested
       if (includeComments) {
-        const comments = await getComments();
+        const comments = await getComments() as Comment[];
         return json({ items, comments });
       }
       
@@ -82,7 +95,7 @@ export async function POST({ request }) {
     let result = false;
     
     try {
-      // Try to add to database
+      // Try to add to in-memory store
       result = await addDiscoveredItem(itemId);
       
       // If there's a comment, save it too
@@ -91,7 +104,7 @@ export async function POST({ request }) {
       }
     } catch (error) {
       console.error('Database error when adding discovery, proceeding with mock success:', error);
-      // Pretend success even if database is down
+      // Pretend success even if store has issues
       result = true;
     }
     

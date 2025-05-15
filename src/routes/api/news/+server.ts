@@ -1,16 +1,41 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import type { NewsItem } from '$lib/types/news.js';
-// @ts-ignore - RethinkDB types are handled in the store
-import { getNews, updateNews } from '$lib/server/newsStore.js';
+// @ts-ignore - Store types are handled in the implementation
+import { readNewsData, getCategories, getActiveStoreType } from '$lib/server/newsStoreInit.js';
+import { updateNews } from '$lib/server/newsStoreMock.js'; // Will need to be updated if switching to SQLite
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-// Sample data for fallback mode
+// Define the types to match what's returned from the store
+interface NewsItem {
+  id: string;
+  title: string;
+  summary: string;
+  url: string;
+  publishDate: string;
+  source: string;
+  sourceId: string;
+  category: string;
+  imageUrl?: string;
+  author?: string;
+}
+
+interface NewsData {
+  items: NewsItem[];
+  lastUpdated: string;
+  categories: Record<string, string>;
+}
+
+interface UpdateResult {
+  added: number;
+  updated: number;
+}
+
+// Sample data for fallback mode (only used if everything else fails)
 const sampleNews: NewsItem[] = [
   {
-    id: 'sample-1',
+    id: 'fallback-1',
     title: 'Getting Started with Zaur Dashboard',
     summary: 'Learn how to use the Zaur dashboard for navigating between projects and accessing key tools.',
     url: 'https://zaur.app/docs/dashboard',
@@ -22,10 +47,10 @@ const sampleNews: NewsItem[] = [
     author: 'Zaur Team'
   },
   {
-    id: 'sample-2',
-    title: 'RethinkDB Migration Complete',
-    summary: 'The migration from JSON files to RethinkDB has been completed successfully, providing better scalability.',
-    url: 'https://zaur.app/news/rethinkdb-migration',
+    id: 'fallback-2',
+    title: 'News Storage Implementation',
+    summary: 'The news storage implementation provides reliable storage with automatic periodic updates.',
+    url: 'https://zaur.app/news/news-store',
     publishDate: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
     source: 'Zaur Updates',
     sourceId: 'zaur',
@@ -34,7 +59,7 @@ const sampleNews: NewsItem[] = [
     author: 'Zaur Development'
   },
   {
-    id: 'sample-3',
+    id: 'fallback-3',
     title: 'New AI Tools Available',
     summary: 'Explore the new AI-powered tools available in the Zaur ecosystem, designed to boost your productivity.',
     url: 'https://zaur.app/news/ai-tools',
@@ -69,51 +94,55 @@ async function loadSampleNewsFromFile(): Promise<NewsItem[]> {
  */
 export const GET: RequestHandler = async ({ url }) => {
   const category = url.searchParams.get('category') || null;
+  const storeType = getActiveStoreType();
   
   try {
-    // Get news from RethinkDB store
-    // @ts-ignore - We know the structure from newsStore.js
-    const newsData = await getNews(category);
+    // Get news from store using the centralized newsStoreInit functions
+    const newsData = readNewsData() as unknown as NewsData;
     
-    // If we got items from the database, return them
-    // @ts-ignore - We know the structure from newsStore.js
-    if (newsData.items && newsData.items.length > 0) {
+    // Filter by category if specified
+    const filteredItems = category && newsData.items 
+      ? newsData.items.filter(item => item.category === category)
+      : newsData.items;
+    
+    // If we got items from the store, return them
+    if (newsData && filteredItems && filteredItems.length > 0) {
       return json({
-        // @ts-ignore - We know the structure from newsStore.js
-        items: newsData.items,
-        // @ts-ignore - We know the structure from newsStore.js
+        items: filteredItems,
         lastUpdated: newsData.lastUpdated,
-        // @ts-ignore - We know the structure from newsStore.js
-        categories: newsData.categories
+        categories: newsData.categories,
+        storeType
       });
     }
     
-    // If no items, fall back to sample data
-    console.log('No items found in database, using sample data');
+    // This should rarely happen - if the store returned nothing, use sample data
+    console.log('Store returned no items, using sample data');
     const sampleItems = await loadSampleNewsFromFile();
-    const filteredItems = category 
+    const filteredSampleItems = category 
       ? sampleItems.filter(item => item.category === category)
       : sampleItems;
     
     return json({
-      items: filteredItems,
+      items: filteredSampleItems,
       lastUpdated: new Date().toISOString(),
-      isSample: true
+      isSample: true,
+      storeType
     });
   } catch (error) {
     console.error('Error fetching news:', error);
     
-    // Return sample data on error
-    const sampleItems = await loadSampleNewsFromFile();
-    const filteredItems = category
-      ? sampleItems.filter(item => item.category === category)
-      : sampleItems;
+    // Return sample data on error as absolute last resort
+    console.log('Error fetching news, using fallback sample data');
+    const fallbackItems = category
+      ? sampleNews.filter(item => item.category === category)
+      : sampleNews;
     
     return json({
-      items: filteredItems,
+      items: fallbackItems,
       lastUpdated: new Date().toISOString(),
       isSample: true,
-      error: 'Using sample data due to database error'
+      error: 'Using fallback sample data due to store error',
+      storeType: 'fallback'
     });
   }
 };
@@ -138,29 +167,36 @@ export const POST: RequestHandler = async ({ request }) => {
     }
     
     try {
-      // Update or add the news item to RethinkDB
-      // @ts-ignore - We know the structure from newsStore.js
-      const result = await updateNews([newsItem]);
+      // Update or add the news item to store
+      // TODO: Make this work with both SQLite and mock store
+      const result = updateNews([newsItem]) as UpdateResult;
       return json({ 
         success: true, 
         message: 'News item saved successfully',
-        // @ts-ignore - We know the structure from newsStore.js
         added: result.added,
-        // @ts-ignore - We know the structure from newsStore.js
-        updated: result.updated
+        updated: result.updated,
+        storeType: getActiveStoreType()
       });
     } catch (error) {
-      console.error('Error saving to database:', error);
-      return new Response(JSON.stringify({ error: 'Failed to save news item' }), {
+      console.error('Error saving to store:', error);
+      return new Response(JSON.stringify({ 
+        error: 'Failed to save news item',
+        storeType: getActiveStoreType() 
+      }), {
         status: 500,
         headers: { 'Content-Type': 'application/json' }
       });
     }
   } catch (error) {
     console.error('Error processing news item:', error);
-    return new Response(JSON.stringify({ error: 'Internal server error' }), {
+    return new Response(JSON.stringify({ 
+      error: 'Internal server error',
+      storeType: getActiveStoreType()
+    }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
     });
   }
-}; 
+};
+
+ 

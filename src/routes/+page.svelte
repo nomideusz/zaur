@@ -3,6 +3,7 @@
 	import { externalWebsites } from '$lib/config/externalWebsites.js';
 	import { PersistedState, IsIdle, onClickOutside } from 'runed';
 	import { browser } from '$app/environment';
+	import { onMount } from 'svelte';
 	
 	// Definiowanie wspólnego typu dla projektów i stron zewnętrznych
 	type Project = {
@@ -17,12 +18,17 @@
 	
 	// Typ dla aktualności
 	type NewsItem = {
+		id?: string;
 		title: string;
-		description: string;
+		description?: string;
+		summary?: string;
 		url: string;
 		source: string;
-		date: Date;
-		category: 'tech' | 'opensource' | 'dev' | 'design';
+		date?: Date;
+		publishDate?: string;
+		category: string;
+		imageUrl?: string;
+		author?: string;
 	};
 	
 	// Zapamiętywanie ostatnio odwiedzonej sekcji
@@ -79,7 +85,10 @@
 		}
 	});
 	
-	// Przykładowe aktualności (docelowo będą pobierane z serwera)
+	// News items will be loaded from the server
+	let newsItems: NewsItem[] = [];
+	
+	// Fallback mock news in case real news fetch fails
 	const mockNewsItems: NewsItem[] = [
 		{
 			title: 'New React 19 features that will change how you write components',
@@ -115,6 +124,43 @@
 		}
 	];
 	
+	// Fetch real news items on component initialization
+	onMount(async () => {
+		try {
+			// First, force fetch fresh news immediately
+			console.log('Fetching real news on startup...');
+			try {
+				const fetchResponse = await fetch('/api/news/fetch', { method: 'GET' });
+				const fetchData = await fetchResponse.json();
+				console.log('Fetch result:', fetchData.message);
+				
+				// Wait a moment for the fetch to complete and update the store
+				await new Promise(resolve => setTimeout(resolve, 1000));
+			} catch (fetchError) {
+				console.error('Initial news fetch failed:', fetchError);
+			}
+			
+			// Then, get the news from the store (should include the newly fetched items)
+			const response = await fetch('/api/news');
+			if (response.ok) {
+				const data = await response.json();
+				if (data.items && data.items.length > 0) {
+					newsItems = data.items;
+					console.log('Loaded news items:', newsItems.length, 'real news items');
+				} else {
+					console.log('No news items available, using mock data');
+					newsItems = mockNewsItems;
+				}
+			} else {
+				console.error('Failed to fetch news items:', response.statusText);
+				newsItems = mockNewsItems;
+			}
+		} catch (error) {
+			console.error('Error fetching news:', error);
+			newsItems = mockNewsItems;
+		}
+	});
+	
 	// Funkcja do sprawdzania, czy można pokazać aktualności
 	function shouldShowNews(): boolean {
 		const lastShown = new Date(lastNewsShown.current);
@@ -126,8 +172,20 @@
 	// Funkcja do pokazywania losowych aktualności
 	function showRandomNews() {
 		if (shouldShowNews() && !showSuggestions && !showNews) {
-			const randomNews = mockNewsItems[Math.floor(Math.random() * mockNewsItems.length)];
-			currentNewsItem = randomNews;
+			// Use real news if available, otherwise fall back to mock data
+			const itemsToUse = newsItems.length > 0 ? newsItems : mockNewsItems;
+			const randomNews = itemsToUse[Math.floor(Math.random() * itemsToUse.length)];
+			
+			// Map to the expected structure for display
+			currentNewsItem = {
+				title: randomNews.title,
+				description: randomNews.description || randomNews.summary || "",
+				url: randomNews.url,
+				source: randomNews.source,
+				date: randomNews.date || (randomNews.publishDate ? new Date(randomNews.publishDate) : new Date()),
+				category: randomNews.category
+			};
+			
 			showNews = true;
 			lastNewsShown.current = new Date().toISOString();
 		}

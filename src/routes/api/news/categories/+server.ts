@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getCategories } from '$lib/server/newsStore.js';
+import { getCategories } from '$lib/server/newsStoreMock.js';
 
 /**
  * GET handler for news categories API

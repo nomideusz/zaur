@@ -1,5 +1,13 @@
 import { json } from '@sveltejs/kit';
-import { getComments, saveComment, getComment } from '$lib/server/db.js';
+import { getComments, saveComment, getComment } from '$lib/server/dbMock.js';
+
+// Define types
+interface Comment {
+  id: string;
+  itemId: string;
+  comment: string;
+  timestamp: string;
+}
 
 // Sample data for fallback mode
 const sampleComments = [
@@ -16,14 +24,14 @@ export async function GET({ url }) {
     const itemId = url.searchParams.get('itemId');
     
     if (itemId) {
-      // Try to get a specific comment from database
+      // Try to get a specific comment from in-memory store
       try {
         const comment = await getComment(itemId);
         if (comment) {
           return json({ comment });
         }
       } catch (error) {
-        console.error('Database error when getting comment, using sample data:', error);
+        console.error('Error when getting comment, using sample data:', error);
         // Find a sample comment or return null
         const sampleComment = sampleComments.find(c => c.itemId === itemId);
         return json({ 
@@ -34,12 +42,12 @@ export async function GET({ url }) {
       
       return json({ comment: null });
     } else {
-      // Try to get all comments from database
+      // Try to get all comments from in-memory store
       try {
-        const comments = await getComments();
+        const comments = await getComments() as Comment[];
         return json({ comments });
       } catch (error) {
-        console.error('Database error when getting all comments, using sample data:', error);
+        console.error('Error when getting all comments, using sample data:', error);
         // Return sample comments
         return json({ 
           comments: sampleComments,
@@ -75,11 +83,11 @@ export async function POST({ request }) {
     let result = false;
     
     try {
-      // Try to save to database
+      // Try to save to in-memory store
       result = await saveComment(itemId, comment);
     } catch (error) {
-      console.error('Database error when saving comment, proceeding with mock success:', error);
-      // Pretend success even if database is down
+      console.error('Error when saving comment, proceeding with mock success:', error);
+      // Pretend success even if there's an error
       result = true;
     }
     

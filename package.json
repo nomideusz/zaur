@@ -2,6 +2,7 @@
 	"name": "zaur",
 	"version": "0.0.1",
 	"scripts": {
+    "init-db": "node scripts/init-sqlite.js",
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
 		"preview": "vite preview",
@@ -9,9 +10,6 @@
 		"prepack": "svelte-kit sync && svelte-package && publint",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-		"migrate": "tsx src/lib/server/migrations/json-to-rethinkdb.ts",
-		"migrate:server": "tsx src/lib/server/migrations/json-to-rethinkdb.ts --host=rethink.zaur.app --port=28015",
-		"migrate:news": "tsx src/lib/server/migrations/news-to-rethinkdb.ts",
 		"db:check": "tsx src/lib/server/check-db.ts",
 		"db:check-news": "tsx src/lib/server/check-news.ts",
 		"db:check-all": "tsx src/lib/server/check-rethinkdb-data.js",
@@ -21,7 +19,8 @@
 		"db:init": "tsx scripts/init-db.js",
 		"db:populate": "tsx scripts/populate-db.js",
 		"db:setup": "node scripts/setup.js",
-		"news:update": "tsx scripts/update-news.js",
+		"news:update": "node scripts/update-news-rss-sqlite.js",
+    "news:update-sample": "node scripts/update-news-sqlite.js",
 		"news:schedule": "tsx scripts/schedule-news-updates.js",
 		"format": "prettier --write .",
 		"lint": "prettier --check ."
@@ -79,11 +78,13 @@
 	"packageManager": "pnpm@9.15.3+sha512.1f79bc245a66eb0b07c5d4d83131240774642caaa86ef7d0434ab47c0d16f66b04e21e0c086eb61e62c77efc4d7f7ec071afad3796af64892fae66509173893a",
 	"dependencies": {
 		"@types/rethinkdb": "^2.3.21",
+		"better-sqlite3": "^11.10.0",
 		"node-schedule": "^2.1.1",
 		"rethinkdb": "^2.4.2",
 		"rethinkdb-ts": "^2.7.0",
 		"rss-parser": "^3.13.0",
 		"runed": "^0.25.0",
+		"sqlite3": "^5.1.7",
 		"xml2js": "^0.6.2"
 	}
 }
