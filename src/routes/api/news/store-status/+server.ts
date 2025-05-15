@@ -16,47 +16,33 @@ export const GET: RequestHandler = async () => {
     const dataDir = path.join(projectRoot, 'data');
     const dbPath = path.join(dataDir, 'zaur_news.db');
     
-    // Check for SQLite binary existence
-    let sqliteBindingPath = null;
-    let sqliteBindingExists = false;
-    
-    try {
-      // Try to resolve the binding path
-      const bindings = await import('bindings');
-      try {
-        sqliteBindingPath = bindings.default('better_sqlite3.node');
-        sqliteBindingExists = fs.existsSync(sqliteBindingPath);
-      } catch (bindingError) {
-        sqliteBindingPath = bindingError.message || 'Error resolving binding path';
-        sqliteBindingExists = false;
-      }
-    } catch (importError) {
-      sqliteBindingPath = 'Error importing bindings module';
-      sqliteBindingExists = false;
-    }
+    // Check for SQLite db existence instead of bindings
+    const sqliteStatus = {
+      dbExists: fs.existsSync(dbPath),
+      activeStore: getActiveStoreType(),
+      size: fs.existsSync(dbPath) ? fs.statSync(dbPath).size : 0
+    };
     
     return json({
       storeType: getActiveStoreType(),
       dbFile: {
         path: dbPath,
-        exists: fs.existsSync(dbPath)
+        exists: fs.existsSync(dbPath),
+        size: sqliteStatus.size
       },
       dataDir: {
         path: dataDir,
         exists: fs.existsSync(dataDir),
         writable: await isDirectoryWritable(dataDir)
       },
-      sqliteBinding: {
-        path: sqliteBindingPath,
-        exists: sqliteBindingExists
-      },
+      sqliteStatus,
       environment: {
         platform: process.platform,
         nodeVersion: process.version,
         arch: process.arch
       }
     });
-  } catch (error) {
+  } catch (error: any) {
     return json({
       error: `Error checking store status: ${error.message}`,
       storeType: getActiveStoreType()
@@ -67,7 +53,7 @@ export const GET: RequestHandler = async () => {
 /**
  * Check if a directory is writable
  */
-async function isDirectoryWritable(directory) {
+async function isDirectoryWritable(directory: string): Promise<boolean> {
   try {
     if (!fs.existsSync(directory)) {
       return false;

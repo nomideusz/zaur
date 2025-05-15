@@ -1,8 +1,19 @@
-import type { NewsItem, NewsResponse } from '../types/news.js';
-export declare function fetchNewsFromSource(sourceId: string): Promise<NewsItem[]>;
+import type { NewsResponse } from '../types/news.js';
+/**
+ * Fetch all news from the local API
+ * @returns {Promise<NewsResponse>} The news response
+ */
 export declare function fetchAllNews(): Promise<NewsResponse>;
+/**
+ * Fetch news by category
+ * @param {string} category The category to fetch
+ * @returns {Promise<NewsResponse>} The news response
+ */
 export declare function fetchNewsByCategory(category: string): Promise<NewsResponse>;
-export declare function getCategoryName(categoryId: string): string;
+/**
+ * Get available categories
+ * @returns {Array} Array of category objects
+ */
 export declare function getAvailableCategories(): {
     id: string;
     name: string;

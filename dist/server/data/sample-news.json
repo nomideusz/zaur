@@ -1,0 +1,86 @@
+{
+  "lastUpdated": "2024-05-15T00:00:00.000Z",
+  "items": [
+    {
+      "id": "news-1",
+      "title": "Getting Started with Zaur Dashboard",
+      "summary": "Learn how to use the Zaur dashboard for navigating between projects and accessing key tools.",
+      "url": "https://zaur.app/docs/dashboard",
+      "publishDate": "2024-05-15T00:00:00.000Z",
+      "source": "Zaur Documentation",
+      "sourceId": "zaur",
+      "category": "featured",
+      "imageUrl": "https://picsum.photos/seed/zaur1/600/400",
+      "author": "Zaur Team"
+    },
+    {
+      "id": "news-2",
+      "title": "In-Memory Store Implementation",
+      "summary": "The in-memory store implementation provides a lightweight alternative to database solutions for local development.",
+      "url": "https://zaur.app/news/memory-store",
+      "publishDate": "2024-05-14T00:00:00.000Z",
+      "source": "Zaur Updates",
+      "sourceId": "zaur",
+      "category": "dev",
+      "imageUrl": "https://picsum.photos/seed/zaur2/600/400",
+      "author": "Zaur Development"
+    },
+    {
+      "id": "news-3",
+      "title": "New AI Tools Available",
+      "summary": "Explore the new AI-powered tools available in the Zaur ecosystem, designed to boost your productivity.",
+      "url": "https://zaur.app/news/ai-tools",
+      "publishDate": "2024-05-13T00:00:00.000Z",
+      "source": "Zaur AI",
+      "sourceId": "zaur",
+      "category": "ai",
+      "imageUrl": "https://picsum.photos/seed/zaur3/600/400",
+      "author": "Zaur AI Team"
+    },
+    {
+      "id": "news-4",
+      "title": "Introducing Zaur Productivity Tools",
+      "summary": "A new suite of productivity tools is now available to help you manage your tasks and time more effectively.",
+      "url": "https://zaur.app/news/productivity-tools",
+      "publishDate": "2024-05-12T00:00:00.000Z",
+      "source": "Zaur Blog",
+      "sourceId": "zaur",
+      "category": "productivity",
+      "imageUrl": "https://picsum.photos/seed/zaur4/600/400",
+      "author": "Zaur Productivity Team"
+    },
+    {
+      "id": "news-5",
+      "title": "Web3 Integration with Zaur",
+      "summary": "Learn how to integrate your Zaur projects with various Web3 technologies and cryptocurrencies.",
+      "url": "https://zaur.app/news/web3-integration",
+      "publishDate": "2024-05-11T00:00:00.000Z",
+      "source": "Zaur Crypto",
+      "sourceId": "zaur",
+      "category": "crypto",
+      "imageUrl": "https://picsum.photos/seed/zaur5/600/400",
+      "author": "Zaur Blockchain Team"
+    },
+    {
+      "id": "news-6",
+      "title": "The Philosophy of Open Source Development",
+      "summary": "Explore the principles and values that guide open source development and why they matter for modern software.",
+      "url": "https://zaur.app/news/philosophy-opensource",
+      "publishDate": "2024-05-10T00:00:00.000Z",
+      "source": "Zaur Insights",
+      "sourceId": "zaur",
+      "category": "philosophy",
+      "imageUrl": "https://picsum.photos/seed/zaur6/600/400",
+      "author": "Zaur Open Source Team"
+    }
+  ],
+  "categories": {
+    "ai": "Artificial Intelligence",
+    "dev": "Development",
+    "crypto": "Cryptocurrency",
+    "productivity": "Productivity",
+    "tools": "Tools & Utilities",
+    "philosophy": "Philosophy",
+    "featured": "Featured"
+  }
+} 

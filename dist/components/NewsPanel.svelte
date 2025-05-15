@@ -1,1241 +1,1308 @@
 <script lang="ts">
-  import { fetchAllNews, fetchNewsByCategory, getAvailableCategories } from '../services/newsService.js';
+  import { fetchAllNews } from '../services/newsService.js';
   import { onMount, onDestroy, tick } from 'svelte';
   import { browser } from '$app/environment';
-  import { fly, slide, scale, fade } from 'svelte/transition';
+  import { fade, fly, scale } from 'svelte/transition';
   import { flip } from 'svelte/animate';
-  import { watch, useEventListener, useDebounce } from 'runed';
-  import { 
-    createNewsMachine, 
-    createNewsHistory, 
-    newsContext, 
-    type NewsItemWithUI 
-  } from '../state/newsContext.js';
-  import { animateNewItems } from '../utils/newsAnimations.js';
+  import { watch, FiniteStateMachine } from 'runed';
+  import type { NewsItemWithUI } from '../state/newsContext.js';
+  import { zaurMoods, thoughtsOptions, discoveryComments, zaurReactions, categoryCommentary } from './news/commentaryData.js';
+  import { generateComment, generateSpecificComment } from './news/commentService.js';
+  import { hashString, getTimeSeed, getHourSeed, seededRandom, seededShuffle, decodeHtmlEntities } from './news/utils.js';
+  import './news/NewsPanelStyles.css';
   
-  // State management using state machine
-  const newsMachine = createNewsMachine();
-  
-  // Track component state
-  let newsItems = $state<NewsItemWithUI[]>([]);
-  let lastUpdated = $state<Date | null>(null);
-  let selectedCategory = $state<string | null>(null);
-  let isMockData = $state(false);
-  let autoRefresh = $state(true);
-  let refreshInterval = $state(300); // Increased to 5 minutes default
-  let error = $state<string | null>(null);
-  let previousItemIds = $state<Set<string>>(new Set());
-  let refreshTimerId: number | null = null;
-  let showHistory = $state(false);
-  let consecutiveErrors = $state(0); // Track consecutive errors
-  let isRefreshed = $state(false); // Track refresh button states
-  
-  // Create history tracker
-  const newsHistory = createNewsHistory(
-    () => newsItems,
-    (items) => { newsItems = items; }
-  );
-  
-  // Function to update context
-  function updateContext() {
-    newsContext.set({
-      items: newsItems,
-      state: newsMachine.current,
-      lastRefreshed: lastUpdated,
-      selectedCategory,
-      error
-    });
+  // Extended NewsItem with Zaur UI elements
+  interface ZaurNewsItem extends NewsItemWithUI {
+    zaurComment?: string | null;
+    justDiscovered?: boolean;
+    discoveryComment?: string;
+    isRemoving?: boolean;
+    decodedTitle?: string;
+    decodedSummary?: string;
+    zaurMood?: string;
+    isEmphasized?: boolean;
+    hasReacted?: boolean;
   }
   
-  // Initial context setup
-  updateContext();
+  // Define FSM types
+  type NewsStates = 'idle' | 'loading' | 'error' | 'discovering' | 'emphasizing' | 'reacting' | 'sharing';
+  type NewsEvents = 'loadStart' | 'loadSuccess' | 'loadFailure' | 'discover' | 'emphasize' | 'deemphasize' | 'react' | 'share' | 'closeShare' | 'retry';
   
-  // Watch for newsItems changes
-  watch(() => newsItems, updateContext);
+  // Store current FSM state separately
+  let currentFsmState = $state<NewsStates>('idle');
   
-  // Watch for state machine changes
-  watch(
-    () => newsMachine.current,
-    (state) => {
-      updateContext();
-      console.log(`News state changed to: ${state}`);
+  // Create FSM for news panel
+  const newsFsm = new FiniteStateMachine<NewsStates, NewsEvents>('idle', {
+    idle: {
+      _enter: () => {
+        currentFsmState = 'idle';
+      },
+      loadStart: 'loading',
+      discover: 'discovering',
+      emphasize: 'emphasizing',
+      react: 'reacting',
+      share: 'sharing'
+    },
+    loading: {
+      _enter: () => {
+        currentFsmState = 'loading';
+      },
+      loadSuccess: 'idle',
+      loadFailure: 'error'
+    },
+    error: {
+      _enter: () => {
+        currentFsmState = 'error';
+      },
+      retry: 'loading',
+    },
+    discovering: {
+      _enter: async (meta) => {
+        currentFsmState = 'discovering';
+        
+        // Set Zaur's mood to excited during discovery
+        zaurMood = "excited";
+        
+        // If we have a specific item to discover from the event args
+        if (meta.args && Array.isArray(meta.args) && meta.args.length > 0) {
+          const availableItems = meta.args[0] as ZaurNewsItem[];
+          const seed = meta.args.length > 1 ? meta.args[1] as number : Date.now();
+          await discoverNewItem(availableItems, seed);
+        } else {
+          // Fallback to checking for discoveries
+          checkForTimeBasedDiscoveries();
+        }
+        
+        // Schedule transition back to idle after discovery completes
+        newsFsm.debounce(5000, 'loadSuccess');
+      },
+      loadSuccess: 'idle'
+    },
+    emphasizing: {
+      _enter: (meta) => {
+        currentFsmState = 'emphasizing';
+        
+        if (meta.args && Array.isArray(meta.args) && meta.args.length > 0) {
+          const itemId = meta.args[0] as string;
+          // Update only the specific item
+          updateSingleItem(itemId, { isEmphasized: true });
+          
+          // Remove emphasis after a few seconds
+          newsFsm.debounce(4000, 'deemphasize', itemId);
+        }
+      },
+      deemphasize: () => {
+        // Handle via _enter with args
+        return 'idle';
+      }
+    },
+    reacting: {
+      _enter: async (meta) => {
+        currentFsmState = 'reacting';
+        
+        if (meta.args && Array.isArray(meta.args) && meta.args.length > 1) {
+          const itemId = meta.args[0] as string;
+          const reaction = meta.args[1] as string;
+          
+          const item = newsItems.find(item => item.id === itemId);
+          if (item) {
+            // Generate the comment
+            const baseComment = item.zaurComment || "";
+            const newComment = baseComment ? `${baseComment}\n\n${reaction}` : reaction;
+            
+            // Save to server first
+            await saveZaurComment(itemId, newComment);
+            
+            // Update the specific item
+            updateSingleItem(itemId, { 
+              hasReacted: true, 
+              zaurComment: newComment
+            });
+          }
+        }
+        
+        // Return to idle state
+        newsFsm.send('loadSuccess');
+      },
+      loadSuccess: 'idle'
+    },
+    sharing: {
+      _enter: (meta) => {
+        currentFsmState = 'sharing';
+        
+        if (meta.args && Array.isArray(meta.args) && meta.args.length > 0) {
+          const itemId = meta.args[0] as string;
+          activeShareItem = itemId;
+          shareMenuVisible = true;
+        }
+      },
+      closeShare: () => {
+        activeShareItem = null;
+        shareMenuVisible = false;
+        return 'idle';
+      }
+    },
+    // Wildcard state for handling global events
+    '*': {
+      loadStart: 'loading'
     }
-  );
+  });
   
-  // Watch other state changes that should update context
-  watch(() => lastUpdated, updateContext);
-  watch(() => selectedCategory, updateContext);
-  watch(() => error, updateContext);
+  // Track component state
+  let newsItems = $state<ZaurNewsItem[]>([]);
+  let allAvailableItems = $state<ZaurNewsItem[]>([]); // Store all available items
+  let lastUpdated = $state<Date | null>(null);
+  let isLoading = $derived(currentFsmState === 'loading');
+  let error = $state<string | null>(null);
+  let zaurThoughts = $state<string | null>(null);
+  let zaurMood = $state<string>("curious"); // Default mood
+  let discoverTimerId: number | null = null;
+  let showingDiscovery = $derived(currentFsmState === 'discovering');
+  let discoveryTimeout: number | null = null;
+  let seenItemIds = new Set<string>();
+  let lastCheckTime = 0;
+  let emphasisTimerId: number | null = null;
+  let reactionTimerId: number | null = null;
+  let discoveredItemIds = new Set<string>();
+  let zaurComments = new Map<string, string>(); // Map of itemId -> comment
+  // Track last discovered items with timestamps for persistence across refreshes
+  let lastDiscoveredItems: { itemId: string, timestamp: string }[] = [];
+  // Track active share item
+  let activeShareItem = $state<string | null>(null);
+  let shareMenuVisible = $state(false);
+  
+  // Load previously discovered items from server
+  async function loadDiscoveredItems(): Promise<void> {
+    if (browser) {
+      try {
+        const response = await fetch('/api/discoveries?includeComments=true&includeTimestamps=true');
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        if (Array.isArray(data.items)) {
+          // Create a proper Set from the array
+          discoveredItemIds = new Set(data.items);
+          console.log(`[ZaurNews] Loaded ${discoveredItemIds.size} discovered items from server`);
+          
+          // Get sorted items with timestamps (most recently discovered first)
+          if (Array.isArray(data.itemsData)) {
+            lastDiscoveredItems = data.itemsData;
+            console.log(`[ZaurNews] Loaded discovery timestamps for ${lastDiscoveredItems.length} items`);
+          }
+          
+          // Mark these items as discovered in our allAvailableItems array when it's loaded
+          if (allAvailableItems.length > 0) {
+            markDiscoveredItems();
+          }
+        }
+        
+        // Load Zaur's comments
+        if (Array.isArray(data.comments)) {
+          zaurComments.clear();
+          data.comments.forEach((comment: { itemId: string, comment: string }) => {
+            zaurComments.set(comment.itemId, comment.comment);
+          });
+          console.log(`[ZaurNews] Loaded ${zaurComments.size} Zaur comments from server`);
+        }
+      } catch (err) {
+        console.error('Error loading discovered items from server:', err);
+      }
+    }
+  }
+  
+  // Mark items as discovered in the allAvailableItems array
+  function markDiscoveredItems(): void {
+    if (discoveredItemIds.size === 0 || allAvailableItems.length === 0) return;
+    
+    // Clone the existing News Items to avoid references
+    const currentItems = [...newsItems];
+    
+    // Create a map for quick lookup of most recent discovery time
+    const discoveryTimes = new Map<string, string>();
+    lastDiscoveredItems.forEach(item => {
+      discoveryTimes.set(item.itemId, item.timestamp);
+    });
+    
+    // Loop through all available items and check if they were previously discovered
+    allAvailableItems.forEach(item => {
+      // If this item was discovered before...
+      if (discoveredItemIds.has(item.id)) {
+        // Add discovered item's ID to the seenItemIds set
+        seenItemIds.add(item.id);
+        
+        // Apply any saved comment
+        const savedComment = zaurComments.get(item.id);
+        if (savedComment) {
+          item.zaurComment = savedComment;
+          item.hasReacted = savedComment.includes("\n\n");
+        }
+        
+        // If this was recently discovered (in the last 3 hours), mark it accordingly
+        const discoveryTimestamp = discoveryTimes.get(item.id);
+        if (discoveryTimestamp) {
+          const discoveryTime = new Date(discoveryTimestamp).getTime();
+          const now = new Date().getTime();
+          const threeHoursInMs = 3 * 60 * 60 * 1000;
+          
+          if (now - discoveryTime < threeHoursInMs) {
+            // This was discovered in the last 3 hours
+            console.log(`[ZaurNews] Item ${item.id} was recently discovered, styling appropriately`);
+            
+            // Set subtle styles for recent discoveries but don't show the banner
+            item.isEmphasized = true;
+          }
+        }
+      }
+    });
+    
+    console.log(`[ZaurNews] Marked ${discoveredItemIds.size} items as discovered`);
+  }
+
+  // Save a newly discovered item to the server
+  async function saveDiscoveredItem(id: string, comment?: string): Promise<void> {
+    if (browser) {
+      try {
+        const payload: any = { itemId: id };
+        if (comment) {
+          payload.comment = comment;
+        }
+        
+        const response = await fetch('/api/discoveries', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
+        // Add to discovered items Set to persist across page refreshes
+        discoveredItemIds.add(id);
+        
+        // Add to lastDiscoveredItems with current timestamp
+        const now = new Date().toISOString();
+        lastDiscoveredItems.unshift({ itemId: id, timestamp: now });
+        
+        console.log(`[ZaurNews] Saved discovered item to server: ${id}`);
+      } catch (err) {
+        console.error('Error saving discovered item to server:', err);
+      }
+    }
+  }
+  
+  // Save Zaur's comment for an item
+  async function saveZaurComment(id: string, comment: string): Promise<void> {
+    if (browser) {
+      try {
+        // POST to comments endpoint
+        const response = await fetch('/api/discoveries/comments', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ itemId: id, comment })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+        
+        // Update local cache
+        zaurComments.set(id, comment);
+        console.log(`[ZaurNews] Saved comment for item: ${id}`);
+      } catch (err) {
+        console.error('Error saving Zaur comment:', err);
+      }
+    }
+  }
   
   // Utility function to format dates
   function formatDate(date: Date): string {
-    return new Intl.DateTimeFormat('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    }).format(new Date(date));
-  }
-  
-  // Fallback function to show example data if all sources fail
-  function getExampleNewsItems(): NewsItemWithUI[] {
     const now = new Date();
-    const oneHourAgo = new Date(now.getTime() - 3600000);
-    const twoHoursAgo = new Date(now.getTime() - 7200000);
+    const diff = now.getTime() - date.getTime();
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor(diff / (1000 * 60));
     
-    return [
-      {
-        id: 'local-javascript-1',
-        title: 'Using Svelte 5 with TypeScript and Runes',
-        summary: 'Learn how to leverage Svelte 5\'s new runes API with TypeScript for better reactivity and type safety in your applications.',
-        url: 'https://svelte.dev/blog/runes',
-        publishDate: oneHourAgo,
-        source: 'Svelte Blog',
-        sourceId: 'svelte',
-        category: 'programming',
-        author: 'Svelte Team',
-        isNew: false
-      },
-      {
-        id: 'local-tech-1',
-        title: 'Building Better CORS Proxies for Frontend Applications',
-        summary: 'CORS issues can be frustrating when developing frontend applications. Learn how to build and manage your own CORS proxy to avoid rate limiting and errors.',
-        url: 'https://example.com/cors-proxy',
-        publishDate: twoHoursAgo,
-        source: 'Dev Tips',
-        sourceId: 'devtips',
-        category: 'tech',
-        author: 'Web Dev Team',
-        isNew: false
-      },
-      {
-        id: 'local-design-1',
-        title: 'Modern UI Design Patterns for News Applications',
-        summary: 'Explore effective design patterns for displaying news content, including card layouts, infinite scrolling, and category navigation.',
-        url: 'https://example.com/ui-news',
-        publishDate: now,
-        source: 'UI Patterns',
-        sourceId: 'uipatterns',
-        category: 'design',
-        author: 'Design Systems Team',
-        isNew: false
-      }
-    ];
+    if (days > 0) {
+      return `${days} day${days > 1 ? 's' : ''} ago`;
+    } else if (hours > 0) {
+      return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+    } else if (minutes > 0) {
+      return `${minutes} minute${minutes > 1 ? 's' : ''} ago`;
+    } else {
+      return 'Just now';
+    }
   }
   
-  // Function to load news from API
-  async function loadNews(category?: string | null): Promise<void> {
+  // Get deterministic thought for the day
+  function getDailyThought(): string {
+    const seed = getTimeSeed();
+    const index = Math.floor(seededRandom(seed) * thoughtsOptions.length);
+    return thoughtsOptions[index];
+  }
+  
+  // Get deterministic mood for the hour
+  function getHourlyMood(): string {
+    const seed = getHourSeed();
+    const index = Math.floor(seededRandom(seed) * zaurMoods.length);
+    return zaurMoods[index];
+  }
+  
+  // Get a Zaur commentary for a category
+  function getZaurCommentary(category: string): string | null {
+    const comments = categoryCommentary[category] || [];
+    if (comments.length === 0) return null;
+    
+    // Deterministic but varies by hour
+    const seed = getHourSeed() + category.charCodeAt(0);
+    const index = Math.floor(seededRandom(seed) * comments.length);
+    return comments[index];
+  }
+  
+  // Apply saved comments to news items
+  function applyZaurComments(): void {
+    if (zaurComments.size === 0 || newsItems.length === 0) return;
+    
+    // Track which items we've already processed to avoid loops
+    const processedIds = new Set<string>();
+    let hasUpdates = false;
+    
+    const updatedItems = newsItems.map(item => {
+      // Skip if we've already processed this item in this run
+      if (processedIds.has(item.id)) return item;
+      processedIds.add(item.id);
+      
+      // If we have a saved comment for this item, use it
+      if (zaurComments.has(item.id)) {
+        const savedComment = zaurComments.get(item.id);
+        // Only update if the comment is different
+        if (savedComment !== item.zaurComment) {
+          hasUpdates = true;
+          return {
+            ...item,
+            zaurComment: savedComment,
+            hasReacted: savedComment?.includes("\n\n") || false
+          };
+        }
+      }
+      return item;
+    });
+    
+    if (hasUpdates) {
+      console.log('[ZaurNews] Applied saved comments to news items');
+      // Use a direct assignment rather than the helper to avoid potential loops
+      newsItems = updatedItems;
+    }
+  }
+  
+  // Process all items for later use
+  function processNewsItems(items: any[]): ZaurNewsItem[] {
+    // Create a set to track used comments to avoid duplicates
+    const usedComments = new Set<string>();
+    
+    return items.map(item => {
+      const category = item.category as string;
+      const savedComment = zaurComments.get(item.id);
+      
+      // Clean up summary text - remove "Comments..." text and other noise
+      let cleanSummary = item.summary;
+      if (cleanSummary) {
+        cleanSummary = cleanSummary
+          .replace(/\bComments\.\.\.\b/g, '')
+          .replace(/\bComment\.\.\.\b/g, '')
+          .replace(/\bComments\b/g, '')
+          .replace(/\bComment\b/g, '')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+      }
+      
+      // Use generateComment from commentService
+      const comment = generateComment(item.title, category, savedComment, usedComments);
+      
+      return {
+        ...item,
+        isNew: false,
+        zaurComment: comment,
+        decodedTitle: decodeHtmlEntities(item.title),
+        decodedSummary: decodeHtmlEntities(cleanSummary || item.summary),
+        zaurMood: getRandomMood(),
+        isEmphasized: false,
+        // If we have a saved comment with a line break, consider it as having reacted
+        hasReacted: savedComment?.includes("\n\n") || false
+      };
+    });
+  }
+  
+  // Function to load and curate news (initial load only)
+  async function loadZaurNews(): Promise<void> {
     if (!browser) return;
     
     try {
-      // Signal fetch start
-      newsMachine.send('fetch');
+      // Use the FSM to transition to loading state
+      newsFsm.send('loadStart');
       
-      console.log(`Fetching news: category=${category}, autoRefresh=${autoRefresh}`);
+      // Set Zaur's mood
+      zaurMood = getHourlyMood();
       
-      const result = category 
-        ? await fetchNewsByCategory(category)
-        : await fetchAllNews();
+      // Generate a thought from Zaur that's consistent for all users today
+      zaurThoughts = getDailyThought();
       
-      // Signal successful fetch
-      newsMachine.send('success');
+      const result = await fetchAllNews();
+      await tick(); // Await a tick before updating state
+      lastUpdated = result.lastUpdated;
       
-      console.log(`News fetch result:`, {
-        itemCount: result.items.length,
-        isMock: result.isMock,
-        timestamp: result.lastUpdated
+      // Process all items for later use - pass to our new processing function
+      const processedItems = processNewsItems(result.items);
+      
+      // Sort by date consistently - newest first
+      const sortedItems = processedItems.sort((a, b) => 
+        new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+      );
+      
+      allAvailableItems = sortedItems;
+      
+      // Apply our markDiscoveredItems function to mark all discovered items
+      markDiscoveredItems();
+      
+      // Use deterministic selection based on today's date as seed
+      const seed = getTimeSeed();
+      
+      // Zaur's curation logic
+      const itemCount = 6;
+      
+      // First, prioritize the most recently discovered items (at least 1 or up to 2 slots)
+      const recentlyDiscoveredItems: ZaurNewsItem[] = [];
+      
+      if (lastDiscoveredItems.length > 0) {
+        // Get the most recently discovered items (up to 2)
+        const recentDiscoveryIds = lastDiscoveredItems
+          .slice(0, 2)
+          .map(item => item.itemId);
+          
+        // Find these items in our available items
+        for (const id of recentDiscoveryIds) {
+          const foundItem = allAvailableItems.find(item => item.id === id);
+          if (foundItem) {
+            recentlyDiscoveredItems.push(foundItem);
+            // If we have at least 1 recent discovery, that's enough
+            if (recentlyDiscoveredItems.length > 0) {
+              console.log(`[ZaurNews] Including last discovered item: ${id}`);
+            }
+          }
+        }
+      }
+      
+      // Next, include all previously discovered items, not just a subset 
+      const otherDiscoveredItems: ZaurNewsItem[] = [];
+      
+      if (discoveredItemIds.size > 0) {
+        // Filter out recently discovered items we already included
+        const recentlyDiscoveredIds = new Set(recentlyDiscoveredItems.map(item => item.id));
+        
+        // Get discovered items from our allAvailableItems, excluding the recent ones
+        const availableDiscoveredItems = allAvailableItems.filter(item => 
+          discoveredItemIds.has(item.id) && !recentlyDiscoveredIds.has(item.id)
+        );
+        
+        // Sort discovered items by date (newest first)
+        const sortedDiscoveredItems = availableDiscoveredItems.sort((a, b) => 
+          new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+        );
+        
+        // Include ALL discovered items, not just a subset
+        otherDiscoveredItems.push(...sortedDiscoveredItems);
+        
+        if (otherDiscoveredItems.length > 0) {
+          console.log(`[ZaurNews] Including ${otherDiscoveredItems.length} other discovered items`);
+        }
+      }
+      
+      // Combine all discovered items
+      const allDiscoveredItems = [...recentlyDiscoveredItems, ...otherDiscoveredItems];
+      
+      // Calculate slots for new content - ensure we display at least 2 new undiscovered items
+      const minNewItems = 2;
+      let remainingSlots = Math.max(minNewItems, itemCount - allDiscoveredItems.length);
+      
+      // If we have too many discovered items, increase the total count dynamically
+      if (allDiscoveredItems.length > itemCount - minNewItems) {
+        console.log(`[ZaurNews] Increasing display count to fit all discovered items plus ${minNewItems} new items`);
+      }
+      
+      // Get items that haven't been discovered yet
+      const undiscoveredItems = allAvailableItems.filter(item => 
+        !discoveredItemIds.has(item.id)
+      );
+      
+      // Ensure source diversity - group by source
+      const itemsBySource = new Map<string, ZaurNewsItem[]>();
+      undiscoveredItems.forEach(item => {
+        if (!itemsBySource.has(item.source)) {
+          itemsBySource.set(item.source, []);
+        }
+        itemsBySource.get(item.source)!.push(item);
       });
       
-      // Reset error counter on success
-      consecutiveErrors = 0;
+      // Prioritize diversity in sources
+      const selectedNewItems: ZaurNewsItem[] = [];
+      const usedSources = new Set<string>();
       
-      // Track current items for animation purposes
-      const currentIds = new Set(newsItems.map(item => item.id));
-      
-      // Update metadata
-      lastUpdated = result.lastUpdated;
-      isMockData = result.isMock === true;
-      
-      // Mark new items
-      const processedItems = result.items.map(item => ({
-        ...item,
-        isNew: !currentIds.has(item.id) && newsItems.length > 0
-      }));
-      
-      // Update items
-      newsItems = processedItems;
-      previousItemIds = currentIds;
-      
-      // Record in history
-      if (newsItems.length > 0) {
-        // StateHistory automatically captures state changes
-        // No explicit capture() method needed
+      // First, try to get one item from each source
+      for (const [source, items] of itemsBySource.entries()) {
+        if (selectedNewItems.length >= remainingSlots) break;
+        
+        // Sort items from this source by date (newest first)
+        const sortedSourceItems = items.sort((a, b) => 
+          new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+        );
+        
+        // Take the newest item from this source
+        if (sortedSourceItems.length > 0) {
+          selectedNewItems.push(sortedSourceItems[0]);
+          usedSources.add(source);
+        }
       }
       
-      // Animate new items after DOM update
-      await tick();
-      
-      // Find new item elements
-      const newElements = [...document.querySelectorAll('.news-item.is-new')];
-      if (newElements.length > 0) {
-        animateNewItems(newElements, {
-          duration: 600,
-          staggerDelay: 150
-        });
+      // If we still need more items, take seconds from each source
+      if (selectedNewItems.length < remainingSlots) {
+        for (const [source, items] of itemsBySource.entries()) {
+          if (selectedNewItems.length >= remainingSlots) break;
+          
+          // Sort items from this source by date (newest first)
+          const sortedSourceItems = items.sort((a, b) => 
+            new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+          );
+          
+          // Take the second newest item from this source if available
+          if (sortedSourceItems.length > 1) {
+            selectedNewItems.push(sortedSourceItems[1]);
+          }
+        }
       }
       
-      // Clear new item flags after animation
+      // If we still need more, use the shuffle approach as fallback
+      if (selectedNewItems.length < remainingSlots) {
+        const shuffled = seededShuffle(undiscoveredItems, seed);
+        
+        // Ensure diverse categories deterministically for the remaining needed slots
+        const categories = new Set<string>();
+        const additionalItems: ZaurNewsItem[] = [];
+        
+        // Try to get one from each category
+        for (const item of shuffled) {
+          if (selectedNewItems.includes(item)) continue;
+          
+          const category = item.category as string;
+          if (!categories.has(category)) {
+            categories.add(category);
+            additionalItems.push(item);
+            if (selectedNewItems.length + additionalItems.length >= remainingSlots) break;
+          }
+        }
+        
+        // Add these to our selected items
+        selectedNewItems.push(...additionalItems);
+      }
+      
+      // Final sorting of selected new items by date (newest first)
+      selectedNewItems.sort((a, b) => 
+        new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+      );
+      
+      // Combine discovered and new items
+      const selectedItems = [...allDiscoveredItems, ...selectedNewItems];
+      
+      // Track which items we've shown
+      selectedItems.forEach(item => seenItemIds.add(item.id));
+      
+      // Final sorting by date (newest first) for ALL items
+      const finalItems = selectedItems.sort((a, b) => 
+        new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+      );
+      
+      await tick(); // Ensure a tick before updating the rendered items
+      newsItems = finalItems;
+      
+      // Apply comments after loading
+      applyZaurComments();
+      
+      // Check for discoveries that should have happened based on timestamp
+      checkForTimeBasedDiscoveries();
+      
+      // Start the discovery process after a small delay
       setTimeout(() => {
-        newsItems = newsItems.map(item => ({
-          ...item,
-          isNew: false
-        }));
-      }, 3000);
+        startDiscoveryProcess();
+        scheduleEmphasisBehavior();
+        scheduleReactionBehavior();
+      }, 1000);
       
-      // Signal refresh complete
-      newsMachine.send('complete');
+      // Transition to idle state indicating success
+      newsFsm.send('loadSuccess');
+        
     } catch (err) {
-      console.error('Error loading news:', err);
+      console.error('Error loading Zaur news:', err);
       error = err instanceof Error ? err.message : 'Unknown error occurred';
       
-      // Increment consecutive error counter
-      consecutiveErrors++;
-      
-      // If we have multiple consecutive errors, increase the refresh interval temporarily
-      if (consecutiveErrors > 2 && refreshInterval < 600) {
-        console.log(`Increasing refresh interval due to ${consecutiveErrors} consecutive errors`);
-        refreshInterval = Math.min(refreshInterval * 2, 1800); // Up to 30 minutes max
-      }
-      
-      // After 5 consecutive errors, if no news is shown, use local example data
-      if (consecutiveErrors >= 5 && newsItems.length === 0) {
-        console.log('Showing example news data after multiple fetch failures');
-        newsItems = getExampleNewsItems();
-        lastUpdated = new Date();
-        isMockData = true;
-      }
-      
-      // Signal error state
-      newsMachine.send('error');
+      // Transition to error state
+      newsFsm.send('loadFailure');
     }
   }
   
-  // Schedule next refresh with debounce
-  function scheduleNextRefresh(interval: number): void {
-    if (refreshTimerId !== null) {
-      window.clearTimeout(refreshTimerId);
-      refreshTimerId = null;
-    }
-    
-    if (autoRefresh && browser) {
-      console.log(`Scheduling next refresh in ${interval} seconds`);
-      refreshTimerId = window.setTimeout(() => {
-        console.log('Auto-refreshing news');
-        if (autoRefresh) { 
-          loadNews(selectedCategory);
-        }
-      }, interval * 1000);
-    }
-  }
-  
-  // Watch for category changes to reload data
-  watch(
-    () => selectedCategory,
-    (category) => {
-      if (browser) {
-        loadNews(category);
-        scheduleNextRefresh(refreshInterval);
-      }
-    }
-  );
-  
-  // Watch refresh interval changes
-  watch(
-    () => refreshInterval,
-    (interval) => {
-      if (autoRefresh) {
-        scheduleNextRefresh(interval);
-      }
-    },
-    { lazy: true }
-  );
-  
-  // Watch auto-refresh toggle changes
-  watch(
-    () => autoRefresh,
-    (isEnabled) => {
-      if (isEnabled) {
-        scheduleNextRefresh(refreshInterval);
-      } else if (refreshTimerId !== null) {
-        window.clearTimeout(refreshTimerId);
-        refreshTimerId = null;
-      }
-    },
-    { lazy: true }
-  );
-  
-  // Select category function
-  function selectCategory(category?: string) {
-    if (category === selectedCategory) {
-      selectedCategory = null;
-    } else {
-      selectedCategory = category || null;
-    }
-  }
-  
-  // Toggle auto-refresh
-  function toggleAutoRefresh() {
-    autoRefresh = !autoRefresh;
-  }
-  
-  // Manual refresh
-  async function manualRefresh() {
-    // Prepare for a full refresh - clear any caches if needed
-    error = null;
-    
-    // Force reinitialization of any services that might be in a bad state
-    if (isMockData) {
-      console.log('Attempting to force real data fetch...');
-      
-      // Try importing the RSS parser module directly to trigger re-initialization
-      if (browser) {
-        try {
-          // Try importing the RSS parser module directly to trigger re-initialization
-          await import('rss-parser');
-          console.log('RSS parser module successfully imported directly');
-        } catch (err) {
-          console.warn('Could not directly import RSS parser:', err);
-        }
-      }
-      
-      // Try disabling and re-enabling auto-refresh to reset timers
-      if (autoRefresh) {
-        console.log('Recycling auto-refresh state');
-        autoRefresh = false;
-        // Short delay to let state update
-        await new Promise(resolve => setTimeout(resolve, 50));
-        autoRefresh = true;
-      }
-      
-      // Add a small delay to ensure any pending operations complete
-      await new Promise(resolve => setTimeout(resolve, 300));
-    }
-    
-    console.log('Starting news fetch (manual refresh)');
-    
-    // Perform the news fetch
-    await loadNews(selectedCategory);
-    scheduleNextRefresh(refreshInterval);
-    
-    // Show success state 
-    isRefreshed = true;
-    setTimeout(() => {
-      isRefreshed = false;
-    }, 1000);
-  }
-  
-  // Toggle history view
-  function toggleHistory() {
-    showHistory = !showHistory;
-  }
-  
-  // Add keyboard shortcut for refresh (Ctrl+R) - only in browser
-  $effect(() => {
+  // Helper function to batch UI updates
+  function safeUpdateItems(newItems: ZaurNewsItem[]): void {
     if (browser) {
-      const handleKeyDown = (event: KeyboardEvent) => {
-        if (event.ctrlKey && event.key === 'r') {
-          event.preventDefault();
-          manualRefresh();
-        }
-      };
-      
-      window.addEventListener('keydown', handleKeyDown);
-      
-      return () => {
-        window.removeEventListener('keydown', handleKeyDown);
-      };
+      // Use requestAnimationFrame to sync with the browser's render cycle
+      requestAnimationFrame(() => {
+        newsItems = newItems;
+      });
+    } else {
+      newsItems = newItems;
     }
-  });
+  }
+  
+  // Update individual news item without full rerender
+  function updateSingleItem(id: string, updates: Partial<ZaurNewsItem>): void {
+    const updatedItems = newsItems.map(item => 
+      item.id === id 
+        ? { ...item, ...updates }
+        : item
+    );
+    
+    safeUpdateItems(updatedItems);
+  }
+  
+  // Function to simulate Zaur emphasizing different articles
+  function scheduleEmphasisBehavior(): void {
+    if (!browser) return;
+    
+    emphasisTimerId = window.setInterval(() => {
+      // Only a 20% chance that Zaur decides to emphasize something
+      if (Math.random() < 0.2 && newsItems.length > 0) {
+        // Find an item that isn't already emphasized
+        const nonEmphasizedItems = newsItems.filter(item => !item.isEmphasized);
+        
+        if (nonEmphasizedItems.length > 0) {
+          // Pick a random non-emphasized article
+          const randomIndex = Math.floor(Math.random() * nonEmphasizedItems.length);
+          const itemToEmphasize = nonEmphasizedItems[randomIndex];
+          
+          // Use FSM to handle emphasis
+          newsFsm.send('emphasize', itemToEmphasize.id);
+        }
+      }
+    }, 20000); // Reduced frequency - check every 20 seconds
+  }
+  
+  // Function to add occasional reactions to articles
+  function scheduleReactionBehavior(): void {
+    if (!browser) return;
+    
+    reactionTimerId = window.setInterval(() => {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      
+      // Check if we're at a reaction minute - add deterministic reactions at 5, 20, 35, 50 mins
+      const reactionMinutes = [5, 20, 35, 50];
+      if (!reactionMinutes.includes(currentMinute)) {
+        return; // Not a reaction minute, skip
+      }
+      
+      // Create a deterministic seed based on current hour and minute
+      const seed = currentHour * 100 + currentMinute;
+      
+      // If we have no items, try to apply comments first
+      if (newsItems.length === 0) {
+        return;
+      }
+      
+      // Find items that haven't had reactions yet
+      const unreactedItems = newsItems.filter(item => !item.hasReacted);
+      
+      if (unreactedItems.length === 0) {
+        return; // No unreacted items to react to
+      }
+      
+      // Use seeded random to deterministically select an item
+      const selectedIndex = Math.floor(seededRandom(seed) * unreactedItems.length);
+      const itemToReact = unreactedItems[selectedIndex];
+      
+      // Get appropriate reactions from the imported zaurReactions
+      const category = itemToReact.category as string;
+      const possibleReactions = zaurReactions[category] || zaurReactions.general;
+      
+      // Use seeded random to deterministically select a reaction
+      const reactionIndex = Math.floor(seededRandom(seed + 1) * possibleReactions.length);
+      const reaction = possibleReactions[reactionIndex];
+      
+      // Log the reaction process
+      console.log(`[ZaurNews] Adding reaction to item ${itemToReact.id}: ${reaction}`);
+      
+      // Use FSM to handle reaction
+      newsFsm.send('react', itemToReact.id, reaction);
+    }, 10000); // Check every 10 seconds to catch the window
+  }
+  
+  // Helper for random moods
+  function getRandomMood(): string {
+    return zaurMoods[Math.floor(Math.random() * zaurMoods.length)];
+  }
+  
+  // Function to check for time-based discoveries
+  function checkForTimeBasedDiscoveries(): void {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    
+    // Define fixed discovery times (at 10, 25, 40, and 55 minutes past the hour)
+    const discoveryMinutes = [10, 25, 40, 55];
+    
+    // Check if we're in a discovery minute
+    const isDiscoveryMinute = discoveryMinutes.includes(currentMinute);
+    
+    if (isDiscoveryMinute && currentFsmState !== 'discovering' && allAvailableItems.length > 0) {
+      // Generate a consistent seed based on current hour and minute
+      // This ensures all users will see the same discovery at the same time
+      const seed = currentHour * 100 + currentMinute;
+      
+      // Filter out items we've already discovered
+      const undiscoveredItems = allAvailableItems.filter(item => !discoveredItemIds.has(item.id));
+      
+      // Only proceed if we have undiscovered items
+      if (undiscoveredItems.length > 0) {
+        // Use FSM to handle discovery
+        newsFsm.send('discover', undiscoveredItems, seed);
+      }
+    }
+  }
+  
+  // Start the discovery process
+  function startDiscoveryProcess(): () => void {
+    // Initial check when component mounts
+    checkForTimeBasedDiscoveries();
+    
+    // Set up an interval to check every minute
+    const interval = setInterval(() => {
+      checkForTimeBasedDiscoveries();
+      // Check for comments updates periodically, but only every 60 seconds
+      applyZaurComments();
+    }, 60000); // Check every minute
+    
+    // Set up a more frequent check to catch discovery minutes more precisely
+    // This helps ensure we don't miss a discovery window
+    const preciseInterval = setInterval(() => {
+      const now = new Date();
+      const seconds = now.getSeconds();
+      
+      // If we're at 0-10 seconds past the minute, check for discoveries
+      // This gives us multiple chances to catch the discovery minute
+      if (seconds <= 10) {
+        checkForTimeBasedDiscoveries();
+      }
+    }, 5000); // Check every 5 seconds
+    
+    // Return a cleanup function to handle teardown
+      return () => {
+      clearInterval(interval);
+      clearInterval(preciseInterval);
+      if (discoveryTimeout) {
+        clearTimeout(discoveryTimeout);
+      }
+    };
+  }
+  
+  // Handle the discovery of a new item
+  async function discoverNewItem(availableItems: ZaurNewsItem[], seed: number): Promise<void> {
+    // Change Zaur's mood on discoveries
+    zaurMood = "excited";
+    
+    // Get the current news items
+    const currentItems = [...newsItems];
+    
+    // Find the newest item's date
+    const newestCurrentDate = currentItems.length > 0 
+      ? Math.max(...currentItems.map(item => new Date(item.publishDate).getTime()))
+      : 0;
+    
+    // Filter for items that are newer than our current newest
+    // If we have newer items available, prioritize those
+    const newerItems = availableItems.filter(item => 
+      new Date(item.publishDate).getTime() > newestCurrentDate
+    );
+    
+    let itemsToChooseFrom = newerItems.length > 0 ? newerItems : availableItems;
+    
+    // Filter out already discovered items
+    itemsToChooseFrom = itemsToChooseFrom.filter(item => !discoveredItemIds.has(item.id));
+    
+    // If we have no undiscovered items, use all items but prefer ones not currently shown
+    if (itemsToChooseFrom.length === 0) {
+      console.log('[ZaurNews] No undiscovered items available, using all items');
+      itemsToChooseFrom = availableItems.filter(item => 
+        !currentItems.some(currentItem => currentItem.id === item.id)
+      );
+      
+      // If we still have no items, use all available items
+      if (itemsToChooseFrom.length === 0) {
+        itemsToChooseFrom = availableItems;
+      }
+    }
+    
+    // Sort by date (newest first) to prioritize the freshest content
+    itemsToChooseFrom = itemsToChooseFrom.sort((a, b) => 
+      new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+    );
+    
+    // For deterministic selection, but prioritizing newer content
+    // Take from the first 25% of the sorted list (the newest items)
+    const availableCount = itemsToChooseFrom.length;
+    const newestQuarter = Math.max(1, Math.floor(availableCount * 0.25));
+    
+    // Generate a pseudo-random index within the newest quarter of items
+    const pseudoRandom = seededRandom(seed);
+    const index = Math.floor(pseudoRandom * newestQuarter);
+    
+    // Select from the newest quarter
+    const selectedItem = itemsToChooseFrom[index];
+    
+    // Also select a discovery comment deterministically
+    const commentIndex = Math.floor(seededRandom(seed + 1) * discoveryComments.length);
+    
+    const category = selectedItem.category as string;
+    
+    // Use the imported generateComment function to get a comment for this item
+    const zaurComment = generateComment(selectedItem.title, category, null, new Set());
+    
+    const newItem = { 
+      ...selectedItem,
+      isNew: true,
+      justDiscovered: true,
+      discoveryComment: discoveryComments[commentIndex],
+      // If we couldn't find newer content, make it appear slightly newer
+      publishDate: newerItems.length > 0 
+        ? selectedItem.publishDate 
+        : new Date(newestCurrentDate + 60000).toISOString(), // Make it 1 minute newer
+      // Ensure decoded content is available
+      decodedTitle: selectedItem.decodedTitle || decodeHtmlEntities(selectedItem.title),
+      decodedSummary: selectedItem.decodedSummary || decodeHtmlEntities(selectedItem.summary),
+      // Add Zaur's commentary
+      zaurComment,
+      zaurMood: "excited", // Zaur is excited about new discoveries
+      isEmphasized: true  // Emphasize new discoveries automatically
+    };
+    
+    // Add to seen items list
+    seenItemIds.add(newItem.id);
+    
+    // Add to discovered items list to ensure it's tracked across page refreshes
+    discoveredItemIds.add(newItem.id);
+    
+    // Save to server with initial comment
+    await saveDiscoveredItem(newItem.id);
+    
+    // Also save Zaur's comment if available
+    if (zaurComment) {
+      await saveZaurComment(newItem.id, zaurComment);
+    }
+    
+    // Show the discovery indicator first
+    showingDiscovery = true;
+    
+    // Wait a moment for user to notice the indicator
+    await new Promise(resolve => setTimeout(resolve, 1500));
+    
+    // Now add the new item - DO NOT remove existing items
+    // Always ensure items are sorted by date (newest first)
+    const updatedItems = [
+      newItem, 
+      ...newsItems
+    ].sort((a, b) => 
+      new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime()
+    );
+    
+    // Update with the next animation frame
+    safeUpdateItems(updatedItems);
+    
+    // Hide the discovery indicator after a delay
+    await new Promise(resolve => {
+      discoveryTimeout = window.setTimeout(() => {
+        showingDiscovery = false;
+        discoveryTimeout = null;
+        resolve(null);
+      }, 5000);
+    });
+    
+    // Clear the "justDiscovered" flag after animation completes
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Update the newsItems array to remove the "justDiscovered" flag but keep emphasis for a bit
+    updateSingleItem(newItem.id, { justDiscovered: false });
+    
+    // After a few more seconds, remove the emphasis and return Zaur to normal mood
+    setTimeout(() => {
+      updateSingleItem(newItem.id, { isEmphasized: false });
+      zaurMood = getHourlyMood();
+    }, 10000);
+  }
+  
+  // Function to regenerate all comments for displayed news items
+  function regenerateComments(): void {
+    if (newsItems.length === 0) return;
+    
+    // Create a new set to track used comments
+    const usedComments = new Set<string>();
+    
+    // Process each item to generate a fresh comment
+    const updatedItems = newsItems.map(item => {
+      // Only regenerate if not manually set (saved)
+      if (!zaurComments.has(item.id)) {
+        const comment = generateComment(item.title, item.category as string, null, usedComments);
+        return {
+          ...item,
+          zaurComment: comment
+        };
+      }
+      return item;
+    });
+    
+    // Update the news items
+    newsItems = updatedItems;
+    console.log('[ZaurNews] Regenerated comments for displayed items');
+  }
   
   // Cleanup on component destroy
   onDestroy(() => {
-    if (refreshTimerId !== null && browser) {
-      window.clearTimeout(refreshTimerId);
-      refreshTimerId = null;
+    if (browser) {
+      if (discoverTimerId !== null) {
+        window.clearInterval(discoverTimerId);
+      }
+      if (discoveryTimeout !== null) {
+        window.clearTimeout(discoveryTimeout);
+      }
+      if (emphasisTimerId !== null) {
+        window.clearInterval(emphasisTimerId);
+      }
+      if (reactionTimerId !== null) {
+        window.clearInterval(reactionTimerId);
+      }
     }
   });
   
-  // Initial load
+  // Handle share button click
+  function handleShareClick(id: string, event: MouseEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    // Use the FSM to handle share toggle
+    if (activeShareItem === id) {
+      newsFsm.send('closeShare');
+    } else {
+      newsFsm.send('share', id);
+    }
+  }
+  
+  // Share via different platforms
+  async function shareVia(platform: string, item: ZaurNewsItem, event: MouseEvent): Promise<void> {
+    event.preventDefault();
+    event.stopPropagation();
+    
+    const url = item.url;
+    const title = item.decodedTitle || item.title;
+    const text = `${title} - shared via Zaur`;
+    
+    // Close share menu using FSM
+    newsFsm.send('closeShare');
+    
+    try {
+      switch (platform) {
+        case 'twitter':
+          window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`, '_blank');
+          break;
+        case 'linkedin':
+          window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(url)}`, '_blank');
+          break;
+        case 'facebook':
+          window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`, '_blank');
+          break;
+        case 'copy':
+          await navigator.clipboard.writeText(url);
+          // Show temporary success message
+          const shareElement = document.getElementById(`share-${item.id}`);
+          if (shareElement) {
+            const original = shareElement.innerHTML;
+            shareElement.innerHTML = 'Copied!';
+            setTimeout(() => {
+              shareElement.innerHTML = original;
+            }, 2000);
+          }
+          break;
+        case 'share':
+          // Use Web Share API if available
+          if (navigator.share) {
+            await navigator.share({
+              title: title,
+              text: text,
+              url: url
+            });
+          }
+          break;
+      }
+    } catch (err) {
+      console.error('Error sharing content:', err);
+    }
+  }
+  
+  // Close share menu when clicking outside
+  function handleDocumentClick(event: MouseEvent): void {
+    if (shareMenuVisible) {
+      const shareMenus = document.querySelectorAll('.zaur-share-menu');
+      let clickedInside = false;
+      
+      shareMenus.forEach(menu => {
+        if (menu.contains(event.target as Node)) {
+          clickedInside = true;
+        }
+      });
+      
+      const shareButtons = document.querySelectorAll('.zaur-share-button');
+      shareButtons.forEach(button => {
+        if (button.contains(event.target as Node)) {
+          clickedInside = true;
+        }
+      });
+      
+      if (!clickedInside) {
+        // Use FSM to handle closing
+        newsFsm.send('closeShare');
+      }
+    }
+  }
+  
+  // Add document click listener when component mounts
   onMount(() => {
-    manualRefresh();
+    if (browser) {
+      document.addEventListener('click', handleDocumentClick);
+      
+      // For testing comment updates, add a flag to trigger regeneration
+      const shouldRegenerateComments = true;
+      
+      // Load discovered items from server
+      loadDiscoveredItems().then(() => {
+        // Now load the news, which will use the comments we just loaded
+        loadZaurNews().then(() => {
+          // For testing purposes, regenerate comments after loading
+          if (shouldRegenerateComments) {
+            regenerateComments();
+          }
+        });
+      });
+    }
+    
+    return () => {
+      if (browser) {
+        document.removeEventListener('click', handleDocumentClick);
+      }
+    };
   });
   
-  // Pagination for category buttons on small screens
-  let categoryContainer: HTMLElement;
-  let scrolled = $state(false);
-  
-  function scrollCategories(direction: 'left' | 'right') {
-    if (!categoryContainer) return;
+  // Custom sort function that prioritizes recently discovered items
+  function sortWithDiscoveriesAtTop(items: ZaurNewsItem[]): ZaurNewsItem[] {
+    // Create a map of discovery times for quick lookup
+    const discoveryTimes = new Map<string, number>();
+    lastDiscoveredItems.forEach(item => {
+      discoveryTimes.set(item.itemId, new Date(item.timestamp).getTime());
+    });
     
-    const scrollAmount = direction === 'left' ? -200 : 200;
-    categoryContainer.scrollBy({ left: scrollAmount, behavior: 'smooth' });
-    
-    // Mark as scrolled for indicator visibility
-    scrolled = true;
+    // Clone the array to avoid mutating the original
+    return [...items].sort((a, b) => {
+      const aIsRecent = discoveryTimes.has(a.id);
+      const bIsRecent = discoveryTimes.has(b.id);
+      
+      // If both are recent discoveries, sort by discovery time (newest first)
+      if (aIsRecent && bIsRecent) {
+        const aTime = discoveryTimes.get(a.id) || 0;
+        const bTime = discoveryTimes.get(b.id) || 0;
+        return bTime - aTime;
+      }
+      
+      // If only one is a recent discovery, it comes first
+      if (aIsRecent) return -1;
+      if (bIsRecent) return 1;
+      
+      // Otherwise, sort by publish date (newest first)
+      return new Date(b.publishDate).getTime() - new Date(a.publishDate).getTime();
+    });
   }
 </script>
 
-<div class="news-panel" class:state-idle={newsMachine.current === 'idle'} 
-                         class:state-fetching={newsMachine.current === 'fetching'}
-                         class:state-refreshing={newsMachine.current === 'refreshing'}
-                         class:state-error={newsMachine.current === 'error'}>
-  <div class="news-header">
-    <div class="header-top">
-      <h2>News</h2>
-      
-      <div class="action-buttons">
-        <label class="auto-refresh-toggle">
-          <input type="checkbox" bind:checked={autoRefresh} onchange={toggleAutoRefresh}>
-          <span>Auto-refresh</span>
-        </label>
-        
-        <select bind:value={refreshInterval} disabled={!autoRefresh}>
-          <option value={60}>1m</option>
-          <option value={300}>5m</option>
-          <option value={600}>10m</option>
-          <option value={1800}>30m</option>
-        </select>
-        
-        <button class="refresh-button" 
-                class:refreshed={isRefreshed}
-                class:refreshing={newsMachine.current === 'fetching'}
-                onclick={manualRefresh} 
-                disabled={newsMachine.current === 'fetching'}
-                title="Refresh news (Ctrl+R)">
-          <div class="button-icon">
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
-              <path d="M21 3v5h-5"></path>
-              <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
-              <path d="M3 21v-5h5"></path>
-            </svg>
-          </div>
-          <span class="button-text">Refresh</span>
-        </button>
-      
-        {#if newsHistory.canUndo}
-          <button class="history-button" onclick={newsHistory.undo} title="View previous news state">
-            <div class="button-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 9l-6 6 6 6"></path>
-              </svg>
-            </div>
-            <span class="button-text">Previous</span>
-          </button>
+<div class="zaur-news-panel" class:zaur-mood-curious={zaurMood === 'curious'} 
+                             class:zaur-mood-excited={zaurMood === 'excited'} 
+                             class:zaur-mood-thoughtful={zaurMood === 'thoughtful'}
+                             class:zaur-mood-amused={zaurMood === 'amused'}
+                             class:zaur-mood-intrigued={zaurMood === 'intrigued'}
+                             class:zaur-mood-surprised={zaurMood === 'surprised'}>
+  <div class="zaur-news-header">
+    <h2>
+      {#if zaurMood === 'curious'}
+        <span class="zaur-mood-emoji">🔍</span>
+      {:else if zaurMood === 'excited'}
+        <span class="zaur-mood-emoji">✨</span>
+      {:else if zaurMood === 'thoughtful'}
+        <span class="zaur-mood-emoji">💭</span>
+      {:else if zaurMood === 'amused'}
+        <span class="zaur-mood-emoji">😊</span>
+      {:else if zaurMood === 'intrigued'}
+        <span class="zaur-mood-emoji">🤔</span>
+      {:else if zaurMood === 'surprised'}
+        <span class="zaur-mood-emoji">😲</span>
         {/if}
-        
-        {#if newsHistory.canRedo}
-          <button class="history-button" onclick={newsHistory.redo} title="View newer news state">
-            <div class="button-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M10 15l6-6-6-6"></path>
-              </svg>
-            </div>
-            <span class="button-text">Next</span>
-          </button>
+      Zaur's Picks
+    </h2>
+    
+    {#if zaurThoughts}
+      <p class="zaur-thoughts" transition:fade={{ duration: 400 }}>
+        <span class="zaur-icon">🧠</span> {zaurThoughts}
+      </p>
         {/if}
-      </div>
     </div>
     
-    {#if lastUpdated}
-      <div class="last-updated">
-        Last updated: {formatDate(lastUpdated)}
-        {#if isMockData}
-          <span class="mock-data-badge">Using Demo Data</span>
-          <button 
-            class="try-real-data-button" 
-            onclick={manualRefresh}
-            disabled={newsMachine.current === 'fetching'}>
-            Try Loading Real Data
-          </button>
-        {/if}
+  {#if showingDiscovery}
+    <div class="zaur-discovery-indicator" transition:fade={{ duration: 300 }}>
+      <div class="zaur-discovery-pulse"></div>
+      <p>Zaur is discovering something interesting...</p>
       </div>
     {/if}
     
-    <div class="news-filters-container">
-      {#if scrolled}
-        <button class="scroll-button left" 
-                onclick={() => scrollCategories('left')}
-                aria-label="Scroll categories left">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="m15 18-6-6 6-6"></path>
-          </svg>
-        </button>
-      {/if}
-      
-      <div class="news-filters" bind:this={categoryContainer}>
-        <button 
-          class="category-filter {selectedCategory === null ? 'active' : ''}" 
-          onclick={() => selectCategory()}
-        >
-          All
-        </button>
-        
-        {#each getAvailableCategories() as category}
-          <button 
-            class="category-filter {selectedCategory === category.id ? 'active' : ''}" 
-            onclick={() => selectCategory(category.id)}
-          >
-            {category.name}
-          </button>
-        {/each}
-      </div>
-      
-      <button class="scroll-button right" 
-              onclick={() => scrollCategories('right')}
-              aria-label="Scroll categories right">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="m9 18 6-6-6-6"></path>
-        </svg>
-      </button>
-    </div>
-  </div>
-  
-  <div class="news-content">
-    {#if newsItems.length === 0 && newsMachine.current === 'fetching'}
-      <div class="initial-loading" transition:fade={{ duration: 200 }}>
-        <div class="spinner"></div>
-        <p>Loading news...</p>
+  <div class="zaur-news-content">
+    {#if isLoading && newsItems.length === 0}
+      <div class="zaur-loading" transition:fade={{ duration: 200 }}>
+        <div class="zaur-thinking"></div>
+        <p>Zaur is curating content for you...</p>
       </div>
     {:else if error && newsItems.length === 0}
-      <div class="error-message">
-        <p>Error loading news:</p>
+      <div class="zaur-error-message">
+        <p>Zaur encountered an issue while gathering news:</p>
         <p>{error}</p>
-        <button onclick={manualRefresh}>
-          Try again
-        </button>
+        <button onclick={() => newsFsm.send('retry')}>Ask Zaur to try again</button>
       </div>
     {:else if newsItems.length === 0}
-      <div class="empty-state">
-        <p>No news to display</p>
-        {#if selectedCategory}
-          <p>Try selecting a different category or check back later</p>
-        {:else}
-          <p>This could be due to a network issue or CORS restrictions.</p>
-          <button onclick={manualRefresh}>
-            Try Refresh Again
-          </button>
-        {/if}
+      <div class="zaur-empty-state">
+        <p>Zaur hasn't found anything interesting yet.</p>
+        <p>Check back later for curated content.</p>
       </div>
     {:else}
-      <div class="news-list" class:is-refreshing={newsMachine.current === 'refreshing'}>
-        {#each newsItems as item (item.id)}
+      <div class="zaur-news-list">
+        {#each newsItems as item, i (item.id)}
           <div 
             id={item.id}
-            class="news-item" 
-            class:is-new={item.isNew}
-            class:is-viewing={showHistory && item.isViewed}
+            class="zaur-news-item" 
+            class:just-discovered={item.justDiscovered}
+            class:is-removing={item.isRemoving}
+            class:is-emphasized={item.isEmphasized}
             animate:flip={{ duration: 300 }}
+            transition:fly={{ 
+              y: 20, 
+              duration: 400, 
+              delay: i * 150 
+            }}
           >
-            <div class="news-item-header">
-              <div class="news-source" class:tech={item.category === 'tech'} 
-                  class:programming={item.category === 'programming'}
-                  class:design={item.category === 'design'}
-                  class:products={item.category === 'products'}
-                  class:business={item.category === 'business'}
-                  class:science={item.category === 'science'}>
-                {item.source}
-                {#if item.isNew}
-                  <span class="new-indicator" transition:fade={{ duration: 300 }}>NEW</span>
-                {/if}
+            {#if item.justDiscovered}
+              <div class="zaur-discovery-banner" transition:fade={{ duration: 500 }}>
+                <span class="zaur-discovery-icon">💡</span> 
+                <span>{item.discoveryComment}</span>
               </div>
-              <div class="news-date">{formatDate(item.publishDate)}</div>
+            {/if}
+            
+            {#if item.isEmphasized}
+              <div class="zaur-emphasis-indicator" transition:scale={{ start: 0.5, duration: 300 }}>
+                <span class="zaur-emphasis-pulse"></span>
+              </div>
+            {/if}
+            
+            <div class="zaur-news-item-header">
+              <div class="zaur-news-source">
+                {item.source}
+              </div>
+              <div class="zaur-news-date">{formatDate(new Date(item.publishDate))}</div>
             </div>
             
-            <h3 class="news-title">
+            <h3 class="zaur-news-title">
               <a href={item.url} target="_blank" rel="noopener noreferrer">
-                {item.title}
+                {item.decodedTitle || item.title}
               </a>
             </h3>
             
-            {#if item.summary && item.summary.trim() !== ''}
-              <p class="news-summary" class:hacker-news={item.sourceId === 'techmeme'}>
-                {#if item.summary.includes("<p>") || item.summary.includes("Points:") || item.summary.includes("Comments:")}
-                  <!-- Special handling for badly formatted content -->
-                  View the full article for more details.
-                {:else}
-                  {item.summary}
-                {/if}
+            {#if item.decodedSummary && item.decodedSummary.trim() !== ''}
+              <p class="zaur-news-summary">
+                {item.decodedSummary}
               </p>
             {/if}
             
+            {#if item.zaurComment}
+              <div class="zaur-comment" class:is-emphasized={item.isEmphasized}>
+                <span class="zaur-comment-prefix">Zaur's note:</span> {item.zaurComment}
+              </div>
+            {/if}
+            
             {#if item.imageUrl}
-              <div class="news-image">
+              <div class="zaur-news-image">
                 <img src={item.imageUrl} alt={item.title} loading="lazy" />
               </div>
             {/if}
             
-            <div class="news-item-footer">
-              {#if item.author && item.author !== 'unknown' && !item.author.includes('http')}
-                <div class="news-author">Author: {item.author}</div>
-              {:else}
-                <div class="news-source-tag">{item.source}</div>
-              {/if}
-              <div class="news-item-category" class:tech={item.category === 'tech'} 
-                   class:programming={item.category === 'programming'}
-                   class:design={item.category === 'design'}
-                   class:products={item.category === 'products'}
-                   class:business={item.category === 'business'}
-                   class:science={item.category === 'science'}>
-                {item.category}
+            <div class="zaur-news-item-footer">
+              <div class="zaur-news-meta">
+                {#if item.author && item.author !== 'unknown' && !item.author.includes('http')}
+                  <div class="zaur-news-author">By {item.author}</div>
+                {/if}
               </div>
-              <a href={item.url} class="read-more" target="_blank" rel="noopener noreferrer">
-                Read more →
-              </a>
+              
+              <div class="zaur-news-actions">
+                <button 
+                  class="zaur-share-button" 
+                  onclick={(e) => handleShareClick(item.id, e)}
+                  aria-label="Share this article"
+                >
+                  <span class="zaur-share-icon">📤</span>
+                  <span class="zaur-share-text">Share</span>
+                </button>
+                
+                {#if activeShareItem === item.id}
+                  <div class="zaur-share-menu" transition:scale={{ start: 0.8, duration: 200 }}>
+                    <button class="zaur-share-option" onclick={(e) => shareVia('twitter', item, e)}>
+                      Twitter
+                    </button>
+                    <button class="zaur-share-option" onclick={(e) => shareVia('linkedin', item, e)}>
+                      LinkedIn
+                    </button>
+                    <button class="zaur-share-option" onclick={(e) => shareVia('facebook', item, e)}>
+                      Facebook
+                    </button>
+                    <button id="share-{item.id}" class="zaur-share-option" onclick={(e) => shareVia('copy', item, e)}>
+                      Copy Link
+                    </button>
+                    {#if browser && typeof navigator.share === 'function'}
+                      <button class="zaur-share-option" onclick={(e) => shareVia('share', item, e)}>
+                        More Options
+                      </button>
+                    {/if}
+                  </div>
+                {/if}
+                
+                <a href={item.url} class="zaur-read-more" target="_blank" rel="noopener noreferrer">
+                  Read full article
+                </a>
+              </div>
             </div>
           </div>
         {/each}
       </div>
     {/if}
   </div>
-  
-  <!-- Refreshing indicator that appears in the corner instead of overlay -->
-  {#if newsMachine.current === 'fetching' && newsItems.length > 0}
-    <div class="refresh-indicator" transition:fade={{ duration: 200 }}>
-      <div class="spinner small"></div>
-      <span>Updating...</span>
-    </div>
-  {/if}
-</div>
-
-<style>
-  .news-panel {
-    background: white;
-    border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
-    overflow: hidden;
-    margin-bottom: 2rem;
-    max-width: 100%;
-    position: relative;
-    transition: all 0.3s ease;
-  }
-  
-  /* State-specific styles */
-  .news-panel.state-fetching {
-    box-shadow: 0 2px 8px rgba(0, 83, 179, 0.1);
-  }
-  
-  .news-panel.state-refreshing .news-list {
-    opacity: 0.8;
-    transition: opacity 0.5s ease;
-  }
-  
-  .news-panel.state-error {
-    box-shadow: 0 2px 8px rgba(229, 57, 53, 0.1);
-  }
-  
-  .news-header {
-    padding: 1.5rem;
-    border-bottom: 1px solid #f0f0f0;
-  }
-  
-  .header-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-  
-  .news-header h2 {
-    margin: 0;
-    font-size: 1.5rem;
-    color: #0053b3;
-  }
-  
-  .news-list.is-refreshing {
-    opacity: 0.7;
-    transition: opacity 0.3s ease;
-  }
-  
-  .refresh-indicator {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: rgba(0, 83, 179, 0.9);
-    color: white;
-    padding: 10px 16px;
-    border-radius: 30px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-    font-size: 0.9rem;
-    z-index: 1000;
-  }
-  
-  .button-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  .spinner {
-    width: 30px;
-    height: 30px;
-    border: 3px solid rgba(0, 83, 179, 0.1);
-    border-radius: 50%;
-    border-top-color: #0053b3;
-    animation: spin 1s ease-in-out infinite;
-    margin-bottom: 1rem;
-  }
-  
-  @keyframes spin {
-    to { transform: rotate(360deg); }
-  }
-  
-  .spinner.small {
-    width: 16px;
-    height: 16px;
-    border-width: 2px;
-    margin: 0;
-  }
-  
-  /* Animation states for news items */
-  
-  @keyframes slideIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-  
-  .is-new {
-    box-shadow: 0 0 15px rgba(0, 83, 179, 0.3);
-    animation: pulse 2s;
-  }
-  
-  @keyframes pulse {
-    0% { box-shadow: 0 0 0 0 rgba(0, 83, 179, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(0, 83, 179, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(0, 83, 179, 0); }
-  }
-  
-  .new-indicator {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    background-color: #ff3d00;
-    color: white;
-    font-size: 0.6rem;
-    padding: 0.1rem 0.3rem;
-    border-radius: 2px;
-    margin-left: 0.5rem;
-    font-weight: bold;
-    animation: blink 1s infinite;
-  }
-  
-  @keyframes blink {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-  }
-  
-  .action-buttons {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .auto-refresh-toggle {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
-    color: #555;
-    margin-right: 1rem;
-    cursor: pointer;
-  }
-  
-  .action-buttons select {
-    padding: 0.25rem;
-    border-radius: 4px;
-    border: 1px solid #ddd;
-    font-size: 0.85rem;
-  }
-  
-  .refresh-button, .history-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    min-width: 44px;
-    background: #0053b3;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: background 0.2s, transform 0.1s;
-  }
-  
-  .refresh-button:hover, .history-button:hover {
-    background: #003b80;
-  }
-  
-  .refresh-button:active, .history-button:active {
-    transform: scale(0.95);
-  }
-  
-  .refresh-button.refreshed {
-    background-color: #4caf50;
-    animation: pulse-success 1s ease;
-  }
-  
-  .refresh-button.refreshing {
-    background-color: #ff9800;
-    animation: pulse 1s infinite;
-  }
-  
-  @keyframes pulse-success {
-    0% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0.7); }
-    70% { box-shadow: 0 0 0 10px rgba(76, 175, 80, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(76, 175, 80, 0); }
-  }
-  
-  .refresh-button:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
-  }
-  
-  .history-button {
-    background: #555;
-  }
-  
-  .history-button:hover {
-    background: #333;
-  }
-  
-  .last-updated {
-    font-size: 0.8rem;
-    color: #888;
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .mock-data-badge {
-    background-color: #ffd700;
-    color: #333;
-    font-size: 0.7rem;
-    padding: 0.2rem 0.5rem;
-    border-radius: 12px;
-    font-weight: bold;
-  }
-  
-  .try-real-data-button {
-    background-color: #4caf50;
-    color: white;
-    border: none;
-    font-size: 0.7rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 12px;
-    cursor: pointer;
-    margin-left: 0.5rem;
-    font-weight: bold;
-    transition: background-color 0.2s ease;
-  }
-  
-  .try-real-data-button:hover {
-    background-color: #388e3c;
-  }
-  
-  .try-real-data-button:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-  }
-  
-  .news-filters-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-  }
-  
-  .scroll-button {
-    position: absolute;
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    z-index: 5;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    transition: all 0.2s;
-  }
-  
-  .scroll-button:hover {
-    background: #f5f5f5;
-  }
-  
-  .scroll-button.left {
-    left: 0;
-  }
-  
-  .scroll-button.right {
-    right: 0;
-  }
-  
-  .news-filters {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 0.5rem;
-    margin-top: 1rem;
-    width: 100%;
-    overflow-x: auto;
-    padding-bottom: 0.3rem;
-    padding: 0 2rem;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* IE and Edge */
-    scroll-behavior: smooth;
-  }
-  
-  .news-filters::-webkit-scrollbar {
-    display: none; /* Chrome, Safari, Opera */
-  }
-  
-  .category-filter {
-    background: none;
-    border: 1px solid #e0e0e0;
-    padding: 0.4rem 0.8rem;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    transition: all 0.2s;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  
-  .category-filter:hover {
-    background: #f5f5f5;
-  }
-  
-  .category-filter.active {
-    background: #0053b3;
-    color: white;
-    border-color: #0053b3;
-  }
-  
-  .news-content {
-    padding: 1rem;
-    overflow: hidden;
-    min-height: 200px;
-  }
-  
-  .initial-loading {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 2rem;
-    color: #888;
-  }
-  
-  .error-message {
-    padding: 2rem;
-    text-align: center;
-    color: #e63946;
-  }
-  
-  .error-message button {
-    background: #0053b3;
-    color: white;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 4px;
-    margin-top: 1rem;
-    cursor: pointer;
-  }
-  
-  .empty-state {
-    padding: 2rem;
-    text-align: center;
-    color: #888;
-  }
-  
-  .news-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1.5rem;
-  }
-  
-  .news-item {
-    padding: 1.5rem;
-    border-radius: 8px;
-    background: #f9f9f9;
-    transition: all 0.2s;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  }
-  
-  .news-item:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  }
-  
-  .news-item-header {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.8rem;
-    font-size: 0.8rem;
-  }
-  
-  .news-source {
-    color: #0053b3;
-    font-weight: 600;
-    position: relative;
-    padding-left: 0.5rem;
-  }
-  
-  /* Add colored borders for different categories */
-  .news-source.tech {
-    color: #6200ea;
-    border-left: 3px solid #6200ea;
-  }
-  
-  .news-source.programming {
-    color: #2962ff;
-    border-left: 3px solid #2962ff;
-  }
-  
-  .news-source.design {
-    color: #00c853;
-    border-left: 3px solid #00c853;
-  }
-  
-  .news-source.products {
-    color: #ff6d00;
-    border-left: 3px solid #ff6d00;
-  }
-  
-  .news-source.business {
-    color: #c51162;
-    border-left: 3px solid #c51162;
-  }
-  
-  .news-source.science {
-    color: #00bfa5;
-    border-left: 3px solid #00bfa5;
-  }
-  
-  .news-date {
-    color: #888;
-  }
-  
-  .news-title {
-    margin: 0 0 0.8rem 0;
-    font-size: 1.2rem;
-    line-height: 1.4;
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
-  
-  .news-title a {
-    color: #333;
-    text-decoration: none;
-    transition: color 0.2s;
-  }
-  
-  .news-title a:hover {
-    color: #0053b3;
-  }
-  
-  .news-summary {
-    margin: 0 0 1rem 0;
-    font-size: 0.95rem;
-    line-height: 1.5;
-    color: #555;
-    overflow-wrap: break-word;
-    word-break: break-word;
-  }
-  
-  .news-summary.hacker-news {
-    font-style: italic;
-    color: #555;
-    background-color: #f5f5f5;
-    padding: 0.5rem;
-    border-left: 3px solid #0053b3;
-    margin-bottom: 1rem;
-  }
-  
-  .news-image {
-    margin: 1rem 0;
-    border-radius: 8px;
-    overflow: hidden;
-    max-width: 100%;
-    height: 160px;
-  }
-  
-  .news-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    object-position: center;
-  }
-  
-  .news-item-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: auto;
-    padding-top: 1rem;
-    font-size: 0.85rem;
-    flex-wrap: wrap;
-    gap: 0.5rem;
-  }
-  
-  .news-item-footer .read-more {
-    margin-left: auto;
-  }
-  
-  .news-author {
-    color: #666;
-    font-style: italic;
-  }
-  
-  .read-more {
-    color: #0053b3;
-    text-decoration: none;
-    font-weight: 500;
-    transition: color 0.2s;
-  }
-  
-  .read-more:hover {
-    color: #e63946;
-  }
-  
-  .news-source-tag {
-    color: #666;
-    font-size: 0.85rem;
-    background-color: #f0f0f0;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-  }
-  
-  .news-item-category {
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    padding: 0.2rem 0.5rem;
-    border-radius: 4px;
-    background-color: #f0f0f0;
-    color: #555;
-  }
-  
-  .news-item-category.tech {
-    background-color: rgba(98, 0, 234, 0.1);
-    color: #6200ea;
-  }
-  
-  .news-item-category.programming {
-    background-color: rgba(41, 98, 255, 0.1);
-    color: #2962ff;
-  }
-  
-  .news-item-category.design {
-    background-color: rgba(0, 200, 83, 0.1);
-    color: #00c853;
-  }
-  
-  .news-item-category.products {
-    background-color: rgba(255, 109, 0, 0.1);
-    color: #ff6d00;
-  }
-  
-  .news-item-category.business {
-    background-color: rgba(197, 17, 98, 0.1);
-    color: #c51162;
-  }
-  
-  .news-item-category.science {
-    background-color: rgba(0, 191, 165, 0.1);
-    color: #00bfa5;
-  }
-  
-  /* Responsywność */
-  @media (min-width: 768px) {
-    .news-list {
-      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    }
-    
-    .button-text {
-      display: inline;
-    }
-  }
-  
-  @media (min-width: 1200px) {
-    .news-list {
-      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .header-top {
-      flex-direction: column;
-      align-items: stretch;
-      gap: 1rem;
-    }
-    
-    .action-buttons {
-      justify-content: space-between;
-    }
-    
-    .button-text {
-      display: none;
-    }
-    
-    .refresh-button, .history-button {
-      min-width: 36px;
-      padding: 0.5rem;
-    }
-  }
-  
-  @media (max-width: 600px) {
-    .news-item-header {
-      flex-direction: column;
-      gap: 0.3rem;
-    }
-    
-    .news-filters-container {
-      margin: 0 -1rem;
-      width: calc(100% + 2rem);
-    }
-    
-    .news-filters {
-      padding: 0 3rem;
-    }
-    
-    .news-item-footer {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 0.5rem;
-    }
-    
-    .news-item-footer .read-more {
-      margin-left: 0;
-      align-self: flex-end;
-    }
-  }
-</style> 
+</div> 
