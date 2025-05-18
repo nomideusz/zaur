@@ -37,6 +37,7 @@ ENV RETHINKDB_HOST=10.0.1.57
 ENV RETHINKDB_PORT=28015
 ENV RETHINKDB_DB=zaur_news
 ENV RUN_MIGRATIONS=false
+ENV GNEWS_API_KEY=cc03f767a7e5ad02b401b8e599212b99
 
 # Command to run the application with database migration
 CMD ["/app/start.sh"] 
