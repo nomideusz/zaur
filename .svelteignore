@@ -1,0 +1,11 @@
+# Exclude legacy RethinkDB files
+/src/lib/server/check-news.ts
+/src/lib/server/check-rethinkdb-data.js
+/src/lib/server/create-indexes.ts
+/src/lib/server/db.ts
+/src/lib/server/migrations/
+/scripts/check-db.js
+/scripts/check-remote-db.js
+/scripts/migrate-file-to-remote.js
+/scripts/migrate-local-to-remote.js
+/scripts/test-remote-db-connection.js 

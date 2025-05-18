@@ -36,8 +36,7 @@ ENV POSTGRES_HOST=srv-captain--postgres
 ENV POSTGRES_PORT=5432
 ENV POSTGRES_DB=zaur_news
 ENV POSTGRES_USER=postgres
-# Password will be provided via environment variable
-ENV GNEWS_API_KEY=cc03f767a7e5ad02b401b8e599212b99
+# API keys and passwords should be provided via environment variables
 ENV RUN_MIGRATIONS=true
 
 # Command to run the application with database migration

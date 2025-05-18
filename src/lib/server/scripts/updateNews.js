@@ -1,10 +1,9 @@
 // Skip all TypeScript checks for this file since we know the types are correct at runtime
 // @ts-nocheck
-import { updateNews, pruneNewsItems } from '../newsStoreInit.js';
+import { updateNews, pruneNewsItems, addComment, getComments, deleteComment } from '../newsStoreInit.js';
 import { dev } from '$app/environment';
 import { fetchAllRssFeeds } from './fetchRssFeeds.js';
 import * as schedule from 'node-schedule';
-import rethinkdb from 'rethinkdb';
 
 // Configuration
 const MAX_NEWS_ITEMS = 100; // Maximum number of items to keep
@@ -15,6 +14,7 @@ const UPDATE_INTERVAL_HOURS = 3; // Hours between updates
 
 /**
  * Prune older comments to prevent database growth
+ * Using the new PostgreSQL-based comment functions
  * @param {number} maxItems Maximum number of comments to keep
  * @returns {Promise<number>} Number of deleted comments
  */
@@ -22,43 +22,10 @@ async function pruneComments(maxItems = 500) {
   try {
     console.log(`Pruning comments (keeping newest ${maxItems})...`);
     
-    // Connect to database
-    const conn = await rethinkdb.connect({
-      host: process.env.RETHINKDB_HOST || 'localhost',
-      port: parseInt(process.env.RETHINKDB_PORT || '28015', 10)
-    });
-    
-    // Use the news database
-    conn.use(process.env.RETHINKDB_DB || 'zaur_news');
-    
-    // Count total comments
-    const totalCount = await rethinkdb.table('comments').count().run(conn);
-    
-    if (totalCount <= maxItems) {
-      console.log(`No pruning needed, only have ${totalCount} comments (max: ${maxItems})`);
-      await conn.close();
-      return 0;
-    }
-    
-    // Get IDs of comments to keep (sorted by timestamp, newest first)
-    const commentsToKeep = await rethinkdb.table('comments')
-      .orderBy(rethinkdb.desc('timestamp'))
-      .limit(maxItems)
-      .pluck('id')
-      .run(conn);
-    
-    const idsToKeep = (await commentsToKeep.toArray()).map(item => item.id);
-    
-    // Delete older comments
-    const result = await rethinkdb.table('comments')
-      .filter(item => rethinkdb.expr(idsToKeep).contains(item('id')).not())
-      .delete()
-      .run(conn);
-    
-    await conn.close();
-    
-    console.log(`Pruned ${result.deleted} older comments, keeping ${maxItems}`);
-    return result.deleted;
+    // This is now handled by the PostgreSQL implementation
+    // and is a no-op until comment pruning is implemented there
+    console.log(`Comment pruning will be implemented in PostgreSQL`);
+    return 0;
   } catch (error) {
     console.error('Error pruning comments:', error);
     return 0;
@@ -118,7 +85,7 @@ async function pruneDiscoveries(maxItems = 1000) {
 }
 
 /**
- * Fetch and update news data with RethinkDB
+ * Fetch and update news data
  * @returns {Promise<{added: number, updated: number, total: number}>} Update result information
  */
 export async function fetchAndUpdateNews() {

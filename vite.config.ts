@@ -32,5 +32,26 @@ export default defineConfig({
 	// Add explicit watchOptions to ignore data files
 	optimizeDeps: {
 		exclude: ['src/lib/server/data']
+	},
+	// Handle RethinkDB module in build
+	build: {
+		rollupOptions: {
+			external: [
+				'rethinkdb',
+				'rethinkdb-ts'
+			],
+			output: {
+				// Prevent warnings about missing exports from external modules
+				manualChunks(id) {
+					if (id.includes('src/lib/server/check-news.ts') ||
+						id.includes('src/lib/server/check-rethinkdb-data.js') ||
+						id.includes('src/lib/server/create-indexes.ts') ||
+						id.includes('src/lib/server/db.ts') ||
+						id.includes('src/lib/server/migrations/')) {
+						return 'legacy';
+					}
+				}
+			}
+		}
 	}
 });

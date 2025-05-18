@@ -3,6 +3,9 @@ import { readNewsData, updateNews, getCategories } from '../newsStoreInit.js';
 import { parseStringPromise } from 'xml2js';
 import pg from 'pg';
 
+// For usage outside of SvelteKit
+const dev = process.env.NODE_ENV !== 'production';
+
 // Define interfaces locally if import path is causing issues
 interface RssItem {
   title: string;
