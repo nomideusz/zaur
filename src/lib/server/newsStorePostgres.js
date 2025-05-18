@@ -59,6 +59,45 @@ export function getConnection() {
   if (!pool) {
     try {
       console.log(`Connecting to PostgreSQL at ${DB_CONFIG.host}:${DB_CONFIG.port}...`);
+      
+      // First, try to connect to the postgres database to check if our target database exists
+      const tempPool = new pg.Pool({
+        host: DB_CONFIG.host,
+        port: DB_CONFIG.port,
+        database: 'postgres', // Connect to default postgres database first
+        user: DB_CONFIG.user,
+        password: DB_CONFIG.password
+      });
+      
+      // Check if our database exists and create it if it doesn't
+      tempPool.query(`SELECT 1 FROM pg_database WHERE datname = '${DB_CONFIG.database}'`)
+        .then(result => {
+          if (result.rows.length === 0) {
+            console.log(`Database '${DB_CONFIG.database}' does not exist, creating...`);
+            return tempPool.query(`CREATE DATABASE ${DB_CONFIG.database}`);
+          }
+        })
+        .then(() => {
+          console.log(`Ensuring database '${DB_CONFIG.database}' exists`);
+          tempPool.end();
+          
+          // Now connect to the actual database
+          pool = new pg.Pool({
+            host: DB_CONFIG.host,
+            port: DB_CONFIG.port,
+            database: DB_CONFIG.database,
+            user: DB_CONFIG.user,
+            password: DB_CONFIG.password
+          });
+          
+          console.log('Successfully connected to PostgreSQL');
+        })
+        .catch(err => {
+          console.error('Error creating database:', err);
+          throw err;
+        });
+      
+      // Create a temporary pool for immediate use while we check the database
       pool = new pg.Pool({
         host: DB_CONFIG.host,
         port: DB_CONFIG.port,
@@ -66,7 +105,7 @@ export function getConnection() {
         user: DB_CONFIG.user,
         password: DB_CONFIG.password
       });
-      console.log('Successfully connected to PostgreSQL');
+      
     } catch (error) {
       console.error('Error connecting to PostgreSQL:', error);
       throw error;
