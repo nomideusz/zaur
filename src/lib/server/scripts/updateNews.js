@@ -1,6 +1,6 @@
 // Skip all TypeScript checks for this file since we know the types are correct at runtime
 // @ts-nocheck
-import { updateNews, pruneNewsItems } from '../newsStore.js';
+import { updateNews, pruneNewsItems } from '../newsStoreInit.js';
 import { dev } from '$app/environment';
 import { fetchAllRssFeeds } from './fetchRssFeeds.js';
 import * as schedule from 'node-schedule';

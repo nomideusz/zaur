@@ -1,5 +1,6 @@
 // @ts-nocheck
-import { dev } from '$app/environment';
+// import { dev } from '$app/environment';
+const dev = process.env.NODE_ENV !== 'production';
 import pg from 'pg';
 import path from 'path';
 import fs from 'fs';
@@ -31,12 +32,19 @@ const FORCE_REAL_DATA = true; // Force real data even in development mode
 
 // Import sample data with type assertion
 /** @type {NewsItem[]} */
-// @ts-ignore - Import JSON directly in SvelteKit
-import sampleNewsData from './data/sample-news.json';
-
 // Get the directory where the script is executed
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Load sample data using fs
+const sampleDataPath = path.join(__dirname, 'data/sample-news.json');
+let sampleNewsData;
+try {
+  sampleNewsData = JSON.parse(fs.readFileSync(sampleDataPath, 'utf8'));
+} catch (error) {
+  console.error('Error loading sample news data:', error);
+  sampleNewsData = { items: [] };
+}
 
 // PostgreSQL configuration
 const DB_CONFIG = {
@@ -177,6 +185,21 @@ export async function initializeDatabase() {
           name TEXT NOT NULL
         )
       `);
+      
+      // Create comments table if it doesn't exist
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS comments (
+          id TEXT PRIMARY KEY,
+          news_id TEXT NOT NULL,
+          author TEXT,
+          content TEXT NOT NULL,
+          timestamp TEXT NOT NULL,
+          FOREIGN KEY (news_id) REFERENCES news(id) ON DELETE CASCADE
+        )
+      `);
+      
+      // Create index for comments table
+      await client.query(`CREATE INDEX IF NOT EXISTS idx_comments_news_id ON comments(news_id)`);
       
       // Commit transaction
       await client.query('COMMIT');
@@ -397,21 +420,21 @@ export async function getNews(category = null) {
 
 /**
  * Update news items in the database
- * @param {NewsItem[]} items - Array of news items to update
- * @returns {Promise<{updated: number, inserted: number}>} Number of updated and inserted items
+ * @param {Array<any>} items - Array of news items to update
+ * @returns {Promise<{added: number, updated: number}>} Number of updated and added items
  */
 export async function updateNews(items) {
   try {
     if (!items || items.length === 0) {
       console.log('No items to update');
-      return { updated: 0, inserted: 0 };
+      return { updated: 0, added: 0 };
     }
     
     const pool = getConnection();
     const client = await pool.connect();
     
     let updated = 0;
-    let inserted = 0;
+    let added = 0;
     
     try {
       await client.query('BEGIN');
@@ -459,14 +482,14 @@ export async function updateNews(items) {
               item.author
             ]
           );
-          inserted++;
+          added++;
         }
       }
       
       await client.query('COMMIT');
-      console.log(`Updated news: ${updated} updated, ${inserted} added`);
+      console.log(`Updated news: ${updated} updated, ${added} added`);
       
-      return { updated, inserted };
+      return { updated, added };
     } catch (error) {
       await client.query('ROLLBACK');
       throw error;
@@ -475,7 +498,7 @@ export async function updateNews(items) {
     }
   } catch (error) {
     console.error('Error updating news items:', error);
-    return { updated: 0, inserted: 0 };
+    return { updated: 0, added: 0 };
   }
 }
 
@@ -561,6 +584,104 @@ export async function pruneNewsItems(maxItems = 100) {
   } catch (error) {
     console.error('Error pruning news items:', error);
     return 0;
+  }
+}
+
+/**
+ * Get comments for a specific news item
+ * @param {string} newsId News item ID
+ * @returns {Promise<Array>} Comments for the news item
+ */
+export async function getComments(newsId) {
+  try {
+    const pool = getConnection();
+    
+    const result = await pool.query(
+      'SELECT * FROM comments WHERE news_id = $1 ORDER BY timestamp DESC',
+      [newsId]
+    );
+    
+    // Transform column names to camelCase
+    return result.rows.map(comment => ({
+      id: comment.id,
+      newsId: comment.news_id,
+      author: comment.author,
+      content: comment.content,
+      timestamp: comment.timestamp
+    }));
+  } catch (error) {
+    console.error(`Error getting comments for news item ${newsId}:`, error);
+    return [];
+  }
+}
+
+/**
+ * Add a comment to a news item
+ * @param {Object} comment Comment object with newsId, author, content
+ * @returns {Promise<Object>} Result with success status and the added comment
+ */
+export async function addComment(comment) {
+  try {
+    if (!comment || !comment.newsId || !comment.content) {
+      throw new Error('Invalid comment data');
+    }
+    
+    const pool = getConnection();
+    const commentId = `comment-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    const timestamp = new Date().toISOString();
+    
+    // Check if the news item exists
+    const newsCheck = await pool.query('SELECT id FROM news WHERE id = $1', [comment.newsId]);
+    if (newsCheck.rows.length === 0) {
+      throw new Error(`News item with ID ${comment.newsId} not found`);
+    }
+    
+    // Insert the comment
+    await pool.query(
+      'INSERT INTO comments (id, news_id, author, content, timestamp) VALUES ($1, $2, $3, $4, $5)',
+      [commentId, comment.newsId, comment.author || 'Anonymous', comment.content, timestamp]
+    );
+    
+    return {
+      success: true,
+      comment: {
+        id: commentId,
+        newsId: comment.newsId,
+        author: comment.author || 'Anonymous',
+        content: comment.content,
+        timestamp
+      }
+    };
+  } catch (error) {
+    console.error('Error adding comment:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Delete a comment
+ * @param {string} commentId Comment ID to delete
+ * @returns {Promise<Object>} Result with success status
+ */
+export async function deleteComment(commentId) {
+  try {
+    const pool = getConnection();
+    
+    const result = await pool.query('DELETE FROM comments WHERE id = $1', [commentId]);
+    
+    return {
+      success: true,
+      deleted: result.rowCount > 0
+    };
+  } catch (error) {
+    console.error(`Error deleting comment ${commentId}:`, error);
+    return {
+      success: false,
+      error: error.message
+    };
   }
 }
 

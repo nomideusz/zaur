@@ -1,6 +1,6 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
-import { getActiveStoreType } from '$lib/server/newsStoreInit.js';
+import { getActiveStoreType, getComments } from '$lib/server/newsStoreInit.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -23,6 +23,28 @@ export const GET: RequestHandler = async () => {
       size: fs.existsSync(dbPath) ? fs.statSync(dbPath).size : 0
     };
     
+    // Get the active store type
+    const activeStore = getActiveStoreType();
+    
+    // Check if comments are supported
+    let commentsSupported = false;
+    let commentsTestResult = null;
+    
+    try {
+      // Try to fetch comments for a test ID
+      const comments = await getComments('test-id');
+      commentsSupported = Array.isArray(comments);
+      commentsTestResult = {
+        success: commentsSupported,
+        count: comments.length
+      };
+    } catch (error) {
+      commentsTestResult = {
+        success: false,
+        error: (error as Error).message
+      };
+    }
+    
     return json({
       storeType: getActiveStoreType(),
       dbFile: {
@@ -40,12 +62,20 @@ export const GET: RequestHandler = async () => {
         platform: process.platform,
         nodeVersion: process.version,
         arch: process.arch
+      },
+      activeStore,
+      storeDescription: activeStore === 'postgres' ? 'PostgreSQL database' : 'In-memory mock store',
+      timestamp: new Date().toISOString(),
+      comments: {
+        supported: commentsSupported,
+        testResult: commentsTestResult
       }
     });
   } catch (error: any) {
+    console.error('Error in store-status endpoint:', error);
     return json({
-      error: `Error checking store status: ${error.message}`,
-      storeType: getActiveStoreType()
+      error: `Error getting store status: ${(error as Error).message}`,
+      stack: (error as Error).stack
     }, { status: 500 });
   }
 };

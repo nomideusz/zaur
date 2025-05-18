@@ -1,6 +1,6 @@
 // Support for PostgreSQL database with in-memory fallback
-import { initializeDatabase as initPostgres, readNewsData as readPostgresData, getCategories as getPostgresCategories, closeConnection as closePostgresConnection } from './newsStorePostgres.js';
-import { initializeDatabase as initMock, readNewsData as readMockData, getCategories as getMockCategories, closeConnection as closeMockConnection } from './newsStoreMock.js';
+import { initializeDatabase as initPostgres, readNewsData as readPostgresData, getCategories as getPostgresCategories, closeConnection as closePostgresConnection, updateNews as updatePostgresNews, pruneNewsItems as prunePostgresItems, getNews as getPostgresNews, getComments as getPostgresComments, addComment as addPostgresComment, deleteComment as deletePostgresComment } from './newsStorePostgres.js';
+import { initializeDatabase as initMock, readNewsData as readMockData, getCategories as getMockCategories, closeConnection as closeMockConnection, updateNews as updateMockNews, pruneNewsItems as pruneMockItems, getNews as getMockNews } from './newsStoreMock.js';
 import { initializeScheduler, cleanup as cleanupScheduler } from './newsFetchScheduler.js';
 
 // Flag to track if store has been initialized
@@ -91,6 +91,90 @@ export async function getCategories() {
     case 'postgres': return await getPostgresCategories();
     default: return getMockCategories();
   }
+}
+
+/**
+ * Update news items in the database
+ * @param {Array<any>} items Array of news items to add or update
+ * @returns {Promise<{added: number, updated: number}>} Result with counts of added and updated items
+ */
+export async function updateNews(items) {
+  switch (activeStore) {
+    case 'postgres': return await updatePostgresNews(items);
+    default: {
+      // Use type assertion to handle potentially incompatible return type
+      const result = await updateMockNews(items);
+      return { 
+        added: result && typeof result === 'object' && 'added' in result ? Number(result.added) : 0, 
+        updated: result && typeof result === 'object' && 'updated' in result ? Number(result.updated) : 0 
+      };
+    }
+  }
+}
+
+export async function pruneNewsItems(maxItems = 100) {
+  switch (activeStore) {
+    case 'postgres': return await prunePostgresItems(maxItems);
+    default: return pruneMockItems(maxItems);
+  }
+}
+
+export async function getNews(category = null) {
+  switch (activeStore) {
+    case 'postgres': return await getPostgresNews(category);
+    default: return getMockNews(category);
+  }
+}
+
+/**
+ * Get comments for a specific news item
+ * @param {string} newsId News item ID
+ * @returns {Promise<Array<any>>} Comments for the news item
+ */
+export async function getComments(newsId) {
+  if (activeStore === 'postgres') {
+    return await getPostgresComments(newsId);
+  }
+  
+  // Mock store doesn't support comments yet
+  console.warn('Comments not supported in mock store');
+  return [];
+}
+
+/**
+ * Add a comment to a news item
+ * @param {Object} comment Comment object with newsId, author, content
+ * @returns {Promise<Object>} Result with success status and the added comment
+ */
+export async function addComment(comment) {
+  if (activeStore === 'postgres') {
+    return await addPostgresComment(comment);
+  }
+  
+  // Mock store doesn't support comments yet
+  console.warn('Comments not supported in mock store');
+  return {
+    success: false,
+    error: 'Comments not supported in mock store'
+  };
+}
+
+/**
+ * Delete a comment
+ * @param {string} commentId Comment ID to delete
+ * @returns {Promise<Object>} Result with success status
+ */
+export async function deleteComment(commentId) {
+  if (activeStore === 'postgres') {
+    return await deletePostgresComment(commentId);
+  }
+  
+  // Mock store doesn't support comments yet
+  console.warn('Comments not supported in mock store');
+  return {
+    success: false,
+    error: 'Comments not supported in mock store'
+  };
 }
 
 export function getActiveStoreType() {

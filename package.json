@@ -12,15 +12,12 @@
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"db:check": "tsx src/lib/server/check-db.ts",
 		"db:check-news": "tsx src/lib/server/check-news.ts",
-		"db:check-all": "tsx src/lib/server/check-rethinkdb-data.js",
 		"db:create-indexes": "tsx src/lib/server/create-indexes.ts",
-		"db:verify-migration": "tsx src/lib/server/verify-db-sync.ts",
-		"db:cleanup-json": "tsx src/lib/server/cleanup-json-files.ts",
 		"db:init": "tsx scripts/init-db.js",
 		"db:populate": "tsx scripts/populate-db.js",
 		"db:setup": "node scripts/setup.js",
-		"news:update": "node scripts/update-news-rss-sqlite.js",
-		"news:update-sample": "node scripts/update-news-sqlite.js",
+		"news:update": "node scripts/update-news-rss-postgres.js",
+		"news:update-sample": "node scripts/update-news-postgres.js",
 		"news:schedule": "tsx scripts/schedule-news-updates.js",
 		"format": "prettier --write .",
 		"lint": "prettier --check ."
@@ -77,15 +74,11 @@
 	},
 	"packageManager": "pnpm@9.15.3+sha512.1f79bc245a66eb0b07c5d4d83131240774642caaa86ef7d0434ab47c0d16f66b04e21e0c086eb61e62c77efc4d7f7ec071afad3796af64892fae66509173893a",
 	"dependencies": {
-		"@types/rethinkdb": "^2.3.21",
-		"better-sqlite3": "^11.10.0",
+		"@types/pg": "^8.10.9",
 		"node-schedule": "^2.1.1",
 		"pg": "^8.16.0",
-		"rethinkdb": "^2.4.2",
-		"rethinkdb-ts": "^2.7.0",
 		"rss-parser": "^3.13.0",
 		"runed": "^0.25.0",
-		"sqlite3": "^5.1.7",
 		"xml2js": "^0.6.2"
 	}
 }
