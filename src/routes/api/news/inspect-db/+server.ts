@@ -16,10 +16,10 @@ export const GET: RequestHandler = async () => {
     const expectedDbPath = path.join(projectRoot, 'data', 'zaur_news.db');
     
     // Find all .db files
-    let dbFiles = [];
+    let dbFiles: string[] = [];
     
     // Check for .db files in the project root and subdirectories
-    const findDbFiles = (dir, maxDepth = 3, currentDepth = 0) => {
+    const findDbFiles = (dir: string, maxDepth = 3, currentDepth = 0) => {
       if (currentDepth > maxDepth) return;
       
       try {
@@ -59,19 +59,19 @@ export const GET: RequestHandler = async () => {
       const configMatch = sqliteContent.match(/DB_CONFIG\s*=\s*{[\s\S]*?};/);
       sqliteConfig = configMatch ? configMatch[0] : 'Config not found';
     } catch (error) {
-      sqliteConfig = `Error reading config: ${error.message}`;
+      sqliteConfig = `Error reading config: ${(error as Error).message}`;
     }
     
     // Check data directory
     const dataPath = path.join(projectRoot, 'data');
     const dataFolderExists = fs.existsSync(dataPath);
-    let dataFolderContent = [];
+    let dataFolderContent: string[] = [];
     
     if (dataFolderExists) {
       try {
         dataFolderContent = fs.readdirSync(dataPath);
       } catch (error) {
-        dataFolderContent = [`Error reading data folder: ${error.message}`];
+        dataFolderContent = [`Error reading data folder: ${(error as Error).message}`];
       }
     }
     
@@ -94,8 +94,8 @@ export const GET: RequestHandler = async () => {
   } catch (error) {
     console.error('Error in inspect-db endpoint:', error);
     return json({
-      error: `Error inspecting database: ${error.message}`,
-      stack: error.stack
+      error: `Error inspecting database: ${(error as Error).message}`,
+      stack: (error as Error).stack
     }, { status: 500 });
   }
 }; 
