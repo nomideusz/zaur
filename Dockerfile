@@ -11,11 +11,11 @@ RUN npm install -g pnpm
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Set up native module build configuration 
+# Configure for native modules
 RUN echo '{"pnpm":{"onlyBuiltDependencies":["better-sqlite3","sqlite3"]}}' > .npmrc
 
-# Install dependencies without frozen lockfile to fix dependency issues
-RUN pnpm install
+# Install dependencies with specific flags for better-sqlite3
+RUN npm install better-sqlite3 --build-from-source && pnpm install
 
 # Create directories for SQLite data
 RUN mkdir -p /app/data
@@ -29,10 +29,6 @@ RUN chmod +x /app/start.sh
 # Build the app
 RUN pnpm build
 
-# Ensure native modules are built correctly
-RUN cd node_modules/better-sqlite3 && \
-    npm run build-release
-
 # Expose port 3000 for the app
 EXPOSE 3000
 
@@ -45,6 +41,7 @@ ENV RETHINKDB_PORT=28015
 ENV RETHINKDB_DB=zaur_news
 ENV RUN_MIGRATIONS=false
 ENV GNEWS_API_KEY=cc03f767a7e5ad02b401b8e599212b99
+ENV BETTER_SQLITE3_FORCE_LOAD=true
 
 # Command to run the application with database migration
 CMD ["/app/start.sh"] 
