@@ -263,6 +263,31 @@ export async function initializeDatabase() {
       // Create index for comments table
       await client.query(`CREATE INDEX IF NOT EXISTS idx_comments_news_id ON comments(news_id)`);
       
+      // Create discoveries table if it doesn't exist
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS discoveries (
+          id SERIAL PRIMARY KEY,
+          item_id TEXT NOT NULL UNIQUE,
+          timestamp TEXT NOT NULL
+        )
+      `);
+      
+      // Create index for discoveries table
+      await client.query(`CREATE INDEX IF NOT EXISTS idx_discoveries_item_id ON discoveries(item_id)`);
+      
+      // Create zaur_comments table if it doesn't exist (for Zaur's thoughts on news items)
+      await client.query(`
+        CREATE TABLE IF NOT EXISTS zaur_comments (
+          id SERIAL PRIMARY KEY,
+          item_id TEXT NOT NULL UNIQUE,
+          comment TEXT NOT NULL,
+          timestamp TEXT NOT NULL
+        )
+      `);
+      
+      // Create index for zaur_comments table
+      await client.query(`CREATE INDEX IF NOT EXISTS idx_zaur_comments_item_id ON zaur_comments(item_id)`);
+      
       // Commit transaction
       await client.query('COMMIT');
       
@@ -548,27 +573,26 @@ export async function updateNews(items) {
       await client.query('BEGIN');
       
       for (const item of items) {
-        // Check if item exists
-        const checkResult = await client.query('SELECT id FROM news WHERE id = $1', [item.id]);
+        // Check if item exists by URL (to avoid duplicates with different IDs)
+        const checkResult = await client.query('SELECT id FROM news WHERE url = $1', [item.url]);
         
         if (checkResult.rowCount > 0) {
           // Update existing item
           await client.query(
             `UPDATE news 
-             SET title = $1, summary = $2, url = $3, publish_date = $4, 
-                 source = $5, source_id = $6, category = $7, image_url = $8, author = $9
-             WHERE id = $10`,
+             SET title = $1, summary = $2, publish_date = $3, 
+                 source = $4, source_id = $5, category = $6, image_url = $7, author = $8
+             WHERE id = $9`,
             [
               item.title,
               item.summary,
-              item.url,
               item.publishDate,
               item.source,
               item.sourceId,
               item.category,
               item.imageUrl || null,
               item.author,
-              item.id
+              checkResult.rows[0].id // Use the existing ID
             ]
           );
           updated++;
@@ -806,5 +830,192 @@ export async function closeConnection() {
     } catch (error) {
       console.error('Error closing PostgreSQL connection:', error);
     }
+  }
+}
+
+/**
+ * Get all discovered item IDs from PostgreSQL
+ * @returns {Promise<string[]>} Array of discovered item IDs
+ */
+export async function getDiscoveredItems() {
+  try {
+    const pool = getConnection();
+    
+    const result = await pool.query('SELECT item_id FROM discoveries ORDER BY timestamp DESC');
+    
+    return result.rows.map(row => row.item_id);
+  } catch (error) {
+    console.error('Error getting discovered items:', error);
+    return [];
+  }
+}
+
+/**
+ * Get all discovered items with timestamps from PostgreSQL
+ * @returns {Promise<Array<{itemId: string, timestamp: string}>>} Array of discovered items with timestamps
+ */
+export async function getDiscoveredItemsWithTimestamps() {
+  try {
+    const pool = getConnection();
+    
+    const result = await pool.query('SELECT item_id, timestamp FROM discoveries ORDER BY timestamp DESC');
+    
+    return result.rows.map(row => ({
+      itemId: row.item_id,
+      timestamp: row.timestamp
+    }));
+  } catch (error) {
+    console.error('Error getting discovered items with timestamps:', error);
+    return [];
+  }
+}
+
+/**
+ * Add a new discovered item to PostgreSQL
+ * @param {string} itemId Item ID to add or update
+ * @returns {Promise<boolean>} Success indicator
+ */
+export async function addDiscoveredItem(itemId) {
+  try {
+    const pool = getConnection();
+    const timestamp = new Date().toISOString();
+    
+    // Check if the item already exists
+    const existingResult = await pool.query('SELECT id FROM discoveries WHERE item_id = $1', [itemId]);
+    
+    if (existingResult.rows.length > 0) {
+      // Update timestamp for existing item
+      await pool.query('UPDATE discoveries SET timestamp = $1 WHERE item_id = $2', [timestamp, itemId]);
+      console.log(`Updated timestamp for existing discovery: ${itemId}`);
+    } else {
+      // Insert new discovery
+      await pool.query('INSERT INTO discoveries (item_id, timestamp) VALUES ($1, $2)', [itemId, timestamp]);
+      console.log(`Added new discovery: ${itemId}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error adding/updating discovery for ${itemId}:`, error);
+    return false;
+  }
+}
+
+/**
+ * Get Zaur's comments from PostgreSQL
+ * @returns {Promise<Array<{itemId: string, comment: string, timestamp: string}>>} Array of comments
+ */
+export async function getZaurComments() {
+  try {
+    const pool = getConnection();
+    
+    const result = await pool.query('SELECT item_id, comment, timestamp FROM zaur_comments');
+    
+    return result.rows.map(row => ({
+      itemId: row.item_id,
+      comment: row.comment,
+      timestamp: row.timestamp
+    }));
+  } catch (error) {
+    console.error('Error getting Zaur comments:', error);
+    return [];
+  }
+}
+
+/**
+ * Get a specific Zaur comment from PostgreSQL
+ * @param {string} itemId The item ID to get the comment for
+ * @returns {Promise<string|null>} The comment or null
+ */
+export async function getZaurComment(itemId) {
+  try {
+    const pool = getConnection();
+    
+    const result = await pool.query('SELECT comment FROM zaur_comments WHERE item_id = $1', [itemId]);
+    
+    if (result.rows.length > 0) {
+      return result.rows[0].comment;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error(`Error getting Zaur comment for ${itemId}:`, error);
+    return null;
+  }
+}
+
+/**
+ * Save a Zaur comment to PostgreSQL
+ * @param {string} itemId Item ID to add comment for
+ * @param {string} comment The comment text
+ * @returns {Promise<boolean>} Success indicator
+ */
+export async function saveZaurComment(itemId, comment) {
+  try {
+    const pool = getConnection();
+    const timestamp = new Date().toISOString();
+    
+    // Check if a comment already exists for this item
+    const existingResult = await pool.query('SELECT id FROM zaur_comments WHERE item_id = $1', [itemId]);
+    
+    if (existingResult.rows.length > 0) {
+      // Update existing comment
+      await pool.query(
+        'UPDATE zaur_comments SET comment = $1, timestamp = $2 WHERE item_id = $3',
+        [comment, timestamp, itemId]
+      );
+      console.log(`Updated Zaur comment for item ${itemId}`);
+    } else {
+      // Insert new comment
+      await pool.query(
+        'INSERT INTO zaur_comments (item_id, comment, timestamp) VALUES ($1, $2, $3)',
+        [itemId, comment, timestamp]
+      );
+      console.log(`Added new Zaur comment for item ${itemId}`);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error(`Error saving Zaur comment for ${itemId}:`, error);
+    return false;
+  }
+}
+
+/**
+ * Prune older discoveries to prevent database growth
+ * @param {number} maxItems Maximum number of items to keep
+ * @returns {Promise<number>} Number of items deleted
+ */
+export async function pruneDiscoveries(maxItems = 1000) {
+  try {
+    const pool = getConnection();
+    
+    // First count all discoveries
+    const countResult = await pool.query('SELECT COUNT(*) FROM discoveries');
+    const totalCount = parseInt(countResult.rows[0].count, 10);
+    
+    if (totalCount <= maxItems) {
+      console.log(`No pruning needed, only have ${totalCount} discoveries (max: ${maxItems})`);
+      return 0;
+    }
+    
+    // Get the IDs of the most recent maxItems discoveries
+    const recentResult = await pool.query(
+      'SELECT item_id FROM discoveries ORDER BY timestamp DESC LIMIT $1',
+      [maxItems]
+    );
+    
+    const recentIds = recentResult.rows.map(row => row.item_id);
+    
+    // Now delete all entries that aren't in the recentIds list
+    const deleteResult = await pool.query(
+      'DELETE FROM discoveries WHERE item_id NOT IN (SELECT unnest($1::text[]))',
+      [recentIds]
+    );
+    
+    console.log(`Pruned ${deleteResult.rowCount} older discoveries, keeping ${maxItems}`);
+    return deleteResult.rowCount;
+  } catch (error) {
+    console.error('Error pruning discoveries:', error);
+    return 0;
   }
 } 

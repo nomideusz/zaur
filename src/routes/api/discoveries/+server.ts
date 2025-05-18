@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getDiscoveredItems, addDiscoveredItem, getComments, saveComment, getDiscoveredItemsWithTimestamps } from '$lib/server/dbMock.js';
+import { getDiscoveredItems, addDiscoveredItem, getZaurComments, saveZaurComment, getDiscoveredItemsWithTimestamps } from '$lib/server/newsStoreInit.js';
 
 // Sample data for fallback mode
 const sampleDiscoveries = ['sample-1', 'sample-2', 'sample-3'];
@@ -36,7 +36,7 @@ export async function GET({ url }) {
       
       // Get comments if requested
       if (includeComments) {
-        const comments = await getComments() as Comment[];
+        const comments = await getZaurComments() as Comment[];
         return json({ items, itemsData, comments });
       }
       
@@ -47,7 +47,7 @@ export async function GET({ url }) {
       
       // Get comments if requested
       if (includeComments) {
-        const comments = await getComments() as Comment[];
+        const comments = await getZaurComments() as Comment[];
         return json({ items, comments });
       }
       
@@ -100,7 +100,7 @@ export async function POST({ request }) {
       
       // If there's a comment, save it too
       if (comment && result) {
-        await saveComment(itemId, comment);
+        await saveZaurComment(itemId, comment);
       }
     } catch (error) {
       console.error('Database error when adding discovery, proceeding with mock success:', error);

@@ -1,5 +1,5 @@
 import { json } from '@sveltejs/kit';
-import { getComments, saveComment, getComment } from '$lib/server/dbMock.js';
+import { getZaurComments, saveZaurComment, getZaurComment } from '$lib/server/newsStoreInit.js';
 
 // Define types
 interface Comment {
@@ -26,7 +26,7 @@ export async function GET({ url }) {
     if (itemId) {
       // Try to get a specific comment from in-memory store
       try {
-        const comment = await getComment(itemId);
+        const comment = await getZaurComment(itemId);
         if (comment) {
           return json({ comment });
         }
@@ -44,7 +44,7 @@ export async function GET({ url }) {
     } else {
       // Try to get all comments from in-memory store
       try {
-        const comments = await getComments() as Comment[];
+        const comments = await getZaurComments() as Comment[];
         return json({ comments });
       } catch (error) {
         console.error('Error when getting all comments, using sample data:', error);
@@ -84,7 +84,7 @@ export async function POST({ request }) {
     
     try {
       // Try to save to in-memory store
-      result = await saveComment(itemId, comment);
+      result = await saveZaurComment(itemId, comment);
     } catch (error) {
       console.error('Error when saving comment, proceeding with mock success:', error);
       // Pretend success even if there's an error
