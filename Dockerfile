@@ -5,11 +5,23 @@ WORKDIR /app
 # Install dependencies including ping (iputils for ping)
 RUN apk add --no-cache iputils && npm install -g pnpm
 
+# Install build dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    build-essential \
+    sqlite3 \
+    libsqlite3-dev
+
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
+
+# After npm install
+RUN npm rebuild better-sqlite3 --build-from-source
 
 # Copy the rest of the application
 COPY . .
