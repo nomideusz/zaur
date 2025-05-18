@@ -2,17 +2,8 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# Install dependencies including ping (iputils for ping)
-RUN apk add --no-cache iputils && npm install -g pnpm
-
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    python3 \
-    make \
-    g++ \
-    build-essential \
-    sqlite3 \
-    libsqlite3-dev
+# Install dependencies and build tools
+RUN apk add --no-cache iputils python3 make g++ build-base sqlite sqlite-dev
 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
@@ -21,7 +12,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # After npm install
-RUN npm rebuild better-sqlite3 --build-from-source
+RUN pnpm rebuild better-sqlite3 --build-from-source
 
 # Copy the rest of the application
 COPY . .
