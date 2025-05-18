@@ -205,6 +205,52 @@ export async function initializeDatabase() {
       await client.query('COMMIT');
       
       console.log('Database initialization complete');
+      
+      // Check if we have any news data already
+      const newsCount = await pool.query('SELECT COUNT(*) FROM news');
+      if (newsCount.rows[0].count === '0') {
+        console.log('No news items found in database, populating with sample data');
+        
+        // Insert default categories
+        const defaultCategories = getDefaultCategories();
+        const categoriesToInsert = Object.entries(defaultCategories).map(([id, name]) => ({ id, name }));
+        
+        for (const category of categoriesToInsert) {
+          await pool.query(
+            'INSERT INTO categories (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING',
+            [category.id, category.name]
+          );
+        }
+        
+        // Insert sample news items
+        if (sampleNewsData && sampleNewsData.items && sampleNewsData.items.length > 0) {
+          console.log(`Inserting ${sampleNewsData.items.length} sample news items into database`);
+          for (const item of sampleNewsData.items) {
+            await pool.query(
+              `INSERT INTO news (id, title, summary, url, publish_date, source, source_id, category, image_url, author)
+               VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) ON CONFLICT (id) DO NOTHING`,
+              [
+                item.id,
+                item.title,
+                item.summary,
+                item.url,
+                item.publishDate,
+                item.source,
+                item.sourceId,
+                item.category,
+                item.imageUrl || null,
+                item.author
+              ]
+            );
+          }
+          console.log('Sample data inserted successfully');
+        } else {
+          console.warn('No sample data available to populate database');
+        }
+      } else {
+        console.log(`Database already contains ${newsCount.rows[0].count} news items`);
+      }
+      
     } catch (error) {
       // Roll back transaction on error
       await client.query('ROLLBACK');
