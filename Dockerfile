@@ -3,19 +3,23 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Install dependencies and build tools
-RUN apk add --no-cache iputils python3 make g++ build-base sqlite sqlite-dev && npm install -g pnpm
+RUN apk add --no-cache python3 make g++ build-base sqlite sqlite-dev git curl iputils
+
+# Install pnpm globally
+RUN npm install -g pnpm
 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Configure pnpm to allow building native dependencies
-RUN echo '{"pnpm":{"onlyBuiltDependencies":["better-sqlite3","sqlite3"]}}' > .npmrc
+# Install dependencies with explicit handling of native modules
+RUN pnpm add -D node-gyp && \
+    pnpm config set registry https://registry.npmjs.org/ && \
+    pnpm config set node-linker hoisted && \
+    pnpm config set --global node_gyp $(npm prefix -g)/lib/node_modules/node-gyp/bin/node-gyp.js && \
+    pnpm install --frozen-lockfile
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
-
-# After npm install
-RUN pnpm rebuild
+# Create directories for SQLite data
+RUN mkdir -p /app/data
 
 # Copy the rest of the application
 COPY . .
@@ -25,6 +29,10 @@ RUN chmod +x /app/start.sh
 
 # Build the app
 RUN pnpm build
+
+# Ensure native modules are built correctly
+RUN cd node_modules/better-sqlite3 && \
+    npm run build-release
 
 # Expose port 3000 for the app
 EXPOSE 3000
