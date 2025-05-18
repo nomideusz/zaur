@@ -1018,4 +1018,83 @@ export async function pruneDiscoveries(maxItems = 1000) {
     console.error('Error pruning discoveries:', error);
     return 0;
   }
+}
+
+/**
+ * Remove duplicate news items by URL, keeping only the most recent version
+ * @returns {Promise<number>} Number of duplicates removed
+ */
+export async function removeDuplicateNews() {
+  try {
+    const pool = getConnection();
+    const client = await pool.connect();
+    
+    try {
+      await client.query('BEGIN');
+      
+      // Find duplicate URLs
+      const duplicatesQuery = `
+        SELECT url, COUNT(*) as count, array_agg(id) as ids
+        FROM news
+        GROUP BY url
+        HAVING COUNT(*) > 1
+      `;
+      
+      const duplicatesResult = await client.query(duplicatesQuery);
+      
+      if (duplicatesResult.rows.length === 0) {
+        console.log('No duplicate news items found');
+        await client.query('COMMIT');
+        return 0;
+      }
+      
+      console.log(`Found ${duplicatesResult.rows.length} URLs with duplicate entries`);
+      
+      let removedCount = 0;
+      
+      for (const row of duplicatesResult.rows) {
+        const { url, count, ids } = row;
+        
+        // For each URL with duplicates, find the most recent entry
+        const mostRecentQuery = `
+          SELECT id
+          FROM news
+          WHERE url = $1
+          ORDER BY publish_date DESC
+          LIMIT 1
+        `;
+        
+        const mostRecentResult = await client.query(mostRecentQuery, [url]);
+        const keepId = mostRecentResult.rows[0].id;
+        
+        // Delete all other entries
+        const idsToDelete = ids.filter(id => id !== keepId);
+        
+        if (idsToDelete.length > 0) {
+          const deleteQuery = `
+            DELETE FROM news
+            WHERE id = ANY($1::text[])
+          `;
+          
+          const deleteResult = await client.query(deleteQuery, [idsToDelete]);
+          removedCount += deleteResult.rowCount;
+          
+          console.log(`Kept ID ${keepId} and removed ${deleteResult.rowCount} duplicates for URL: ${url}`);
+        }
+      }
+      
+      await client.query('COMMIT');
+      console.log(`Removed ${removedCount} duplicate news items`);
+      
+      return removedCount;
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  } catch (error) {
+    console.error('Error removing duplicate news items:', error);
+    return 0;
+  }
 } 

@@ -419,6 +419,9 @@
 						<div class="card-header">
 							<div class="card-icon">{app.icon}</div>
 							<h3>{app.name}</h3>
+							{#if app.url.includes('kompi.pl') || app.url.includes('nieco.pl')}
+								<span class="wip-badge">Work in Progress</span>
+							{/if}
 						</div>
 						<p class="url-info">{app.url.replace(/^https?:\/\//, '')}</p>
 						<p class="card-description">{app.description}</p>
@@ -439,6 +442,9 @@
 						<div class="card-header">
 							<div class="card-icon">{site.icon}</div>
 							<h3>{site.name}</h3>
+							{#if site.url.includes('kompi.pl') || site.url.includes('nieco.pl')}
+								<span class="wip-badge">Work in Progress</span>
+							{/if}
 						</div>
 						<p class="url-info">{site.url.replace(/^https?:\/\//, '')}</p>
 						<p class="card-description">{site.description}</p>
@@ -1320,7 +1326,21 @@
 	}
 	
 	.mobile-menu-close:hover {
-		background: #f5f5f5;
-		color: #333;
-	}
+	background: #f5f5f5;
+	color: #333;
+}
+
+/* Work in Progress badge */
+.wip-badge {
+	font-size: 0.65rem;
+	background: #fff2e0;
+	color: #e67700;
+	padding: 2px 8px;
+	border-radius: 10px;
+	margin-left: 10px;
+	font-weight: 600;
+	letter-spacing: 0.02em;
+	white-space: nowrap;
+	align-self: center;
+}
 </style>

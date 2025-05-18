@@ -1,5 +1,5 @@
 <script lang="ts">
-  import NewsPanel from '$lib/components/NewsPanel.svelte';
+  import NewsPanel from '$lib/components/news/NewsPanel.svelte';
 </script>
 
 <div class="news-container">
