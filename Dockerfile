@@ -11,8 +11,12 @@ RUN npm install -g pnpm
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies
+# Install dependencies and additional development tools
 RUN pnpm install
+RUN pnpm add -D ts-node
+
+# Create directories for SQLite data
+RUN mkdir -p /app/data
 
 # Copy the rest of the application
 COPY . .
@@ -30,12 +34,12 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOST=0.0.0.0
 ENV NODE_ENV=production
-# PostgreSQL connection details
+# PostgreSQL connection details (password updated to 'postgres123')
 ENV POSTGRES_HOST=srv-captain--postgres
 ENV POSTGRES_PORT=5432
 ENV POSTGRES_DB=zaur_news
 ENV POSTGRES_USER=postgres
-ENV POSTGRES_PASSWORD=postgres
+ENV POSTGRES_PASSWORD=postgres123
 ENV GNEWS_API_KEY=cc03f767a7e5ad02b401b8e599212b99
 
 # Command to run the application with database migration

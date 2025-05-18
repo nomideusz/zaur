@@ -85,9 +85,8 @@ else
   echo "Skipping database migrations (RUN_MIGRATIONS=$RUN_MIGRATIONS)"
 fi
 
-# Always create database indexes - this is idempotent and safe to run every time
-echo "Creating database indexes..."
-node --experimental-specifier-resolution=node --loader ts-node/esm src/lib/server/create-indexes.ts || echo "Index creation failed, but continuing startup..."
+# Skip index creation in production as it requires ts-node
+echo "Skipping database index creation in production..."
 
 echo "Starting the application..."
 exec node build/index.js 
