@@ -2,7 +2,7 @@
 	"name": "zaur",
 	"version": "0.0.1",
 	"scripts": {
-    "init-db": "node scripts/init-sqlite.js",
+		"init-db": "node scripts/init-sqlite.js",
 		"dev": "vite dev",
 		"build": "vite build && npm run prepack",
 		"preview": "vite preview",
@@ -20,7 +20,7 @@
 		"db:populate": "tsx scripts/populate-db.js",
 		"db:setup": "node scripts/setup.js",
 		"news:update": "node scripts/update-news-rss-sqlite.js",
-    "news:update-sample": "node scripts/update-news-sqlite.js",
+		"news:update-sample": "node scripts/update-news-sqlite.js",
 		"news:schedule": "tsx scripts/schedule-news-updates.js",
 		"format": "prettier --write .",
 		"lint": "prettier --check ."
@@ -80,6 +80,7 @@
 		"@types/rethinkdb": "^2.3.21",
 		"better-sqlite3": "^11.10.0",
 		"node-schedule": "^2.1.1",
+		"pg": "^8.16.0",
 		"rethinkdb": "^2.4.2",
 		"rethinkdb-ts": "^2.7.0",
 		"rss-parser": "^3.13.0",
