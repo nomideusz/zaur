@@ -22,7 +22,7 @@ COPY . .
 RUN chmod +x /app/start.sh
 
 # Build the app
-RUN pnpm build
+RUN pnpm build --verbose
 
 # Expose port 3000 for the app
 EXPOSE 3000

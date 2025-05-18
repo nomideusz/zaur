@@ -60,44 +60,7 @@ export function getConnection() {
     try {
       console.log(`Connecting to PostgreSQL at ${DB_CONFIG.host}:${DB_CONFIG.port}...`);
       
-      // First, try to connect to the postgres database to check if our target database exists
-      const tempPool = new pg.Pool({
-        host: DB_CONFIG.host,
-        port: DB_CONFIG.port,
-        database: 'postgres', // Connect to default postgres database first
-        user: DB_CONFIG.user,
-        password: DB_CONFIG.password
-      });
-      
-      // Check if our database exists and create it if it doesn't
-      tempPool.query(`SELECT 1 FROM pg_database WHERE datname = '${DB_CONFIG.database}'`)
-        .then(result => {
-          if (result.rows.length === 0) {
-            console.log(`Database '${DB_CONFIG.database}' does not exist, creating...`);
-            return tempPool.query(`CREATE DATABASE ${DB_CONFIG.database}`);
-          }
-        })
-        .then(() => {
-          console.log(`Ensuring database '${DB_CONFIG.database}' exists`);
-          tempPool.end();
-          
-          // Now connect to the actual database
-          pool = new pg.Pool({
-            host: DB_CONFIG.host,
-            port: DB_CONFIG.port,
-            database: DB_CONFIG.database,
-            user: DB_CONFIG.user,
-            password: DB_CONFIG.password
-          });
-          
-          console.log('Successfully connected to PostgreSQL');
-        })
-        .catch(err => {
-          console.error('Error creating database:', err);
-          throw err;
-        });
-      
-      // Create a temporary pool for immediate use while we check the database
+      // Connect directly to the target database
       pool = new pg.Pool({
         host: DB_CONFIG.host,
         port: DB_CONFIG.port,
@@ -106,6 +69,7 @@ export function getConnection() {
         password: DB_CONFIG.password
       });
       
+      console.log('Successfully connected to PostgreSQL');
     } catch (error) {
       console.error('Error connecting to PostgreSQL:', error);
       throw error;
@@ -116,11 +80,54 @@ export function getConnection() {
 }
 
 /**
+ * Try to create database if it doesn't exist
+ * @returns {Promise<void>}
+ */
+async function ensureDatabaseExists() {
+  // Create a temporary connection to postgres database
+  const tempPool = new pg.Pool({
+    host: DB_CONFIG.host,
+    port: DB_CONFIG.port,
+    database: 'postgres', // Connect to default database
+    user: DB_CONFIG.user,
+    password: DB_CONFIG.password
+  });
+  
+  try {
+    // Check if database exists
+    const result = await tempPool.query(`
+      SELECT 1 FROM pg_database WHERE datname = '${DB_CONFIG.database}'
+    `);
+    
+    // Create database if it doesn't exist
+    if (result.rows.length === 0) {
+      console.log(`Database '${DB_CONFIG.database}' does not exist, creating...`);
+      await tempPool.query(`CREATE DATABASE ${DB_CONFIG.database}`);
+      console.log(`Database '${DB_CONFIG.database}' created successfully`);
+    } else {
+      console.log(`Database '${DB_CONFIG.database}' already exists`);
+    }
+  } catch (error) {
+    console.error('Error checking/creating database:', error);
+    throw error;
+  } finally {
+    await tempPool.end();
+  }
+}
+
+/**
  * Initialize the database (create tables if they don't exist)
  * @returns {Promise<void>}
  */
 export async function initializeDatabase() {
   try {
+    // First try to ensure database exists
+    try {
+      await ensureDatabaseExists();
+    } catch (error) {
+      console.warn('Could not create database, will try to connect anyway:', error.message);
+    }
+    
     const pool = getConnection();
     const client = await pool.connect();
     
