@@ -1,8 +1,7 @@
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types.js';
 // @ts-ignore - Store types are handled in the implementation
-import { readNewsData, getCategories, getActiveStoreType } from '$lib/server/newsStoreInit.js';
-import { updateNews } from '$lib/server/newsStoreMock.js'; // Will need to be updated if switching to SQLite
+import { readNewsData, getCategories, getActiveStoreType, updateNews, getNews } from '$lib/server/newsStoreInit.js';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -72,60 +71,48 @@ const sampleNews: NewsItem[] = [
   }
 ];
 
-// Try to load sample data from file if available
-async function loadSampleNewsFromFile(): Promise<NewsItem[]> {
-  try {
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const dataDir = path.join(__dirname, '../../../../lib/server/data');
-    const samplePath = path.join(dataDir, 'sample-news.json');
-    
-    const data = await fs.readFile(samplePath, 'utf8');
-    const parsedData = JSON.parse(data);
-    return parsedData.items || sampleNews;
-  } catch (error) {
-    console.log('Could not load sample news from file, using built-in sample data');
-    return sampleNews;
-  }
-}
-
 /**
  * GET handler for news
  */
 export const GET: RequestHandler = async ({ url }) => {
-  const category = url.searchParams.get('category') || null;
+  const categoryParam = url.searchParams.get('category');
   const storeType = getActiveStoreType();
   
   try {
-    // Get news from store using the centralized newsStoreInit functions
-    const newsData = readNewsData() as unknown as NewsData;
+    // Get categories first for the response
+    const categories = await getCategories();
     
-    // Filter by category if specified
-    const filteredItems = category && newsData.items 
-      ? newsData.items.filter(item => item.category === category)
-      : newsData.items;
+    // Use getNews if a category is specified, otherwise use readNewsData
+    let newsItems: NewsItem[] = [];
+    if (categoryParam) {
+      // Get news by category from the active store
+      newsItems = await getNews(categoryParam as any) as unknown as NewsItem[];
+    } else {
+      // Get all news items from the active store
+      const newsData = await readNewsData() as unknown as NewsData;
+      newsItems = newsData.items;
+    }
     
     // If we got items from the store, return them
-    if (newsData && filteredItems && filteredItems.length > 0) {
+    if (newsItems && Array.isArray(newsItems) && newsItems.length > 0) {
       return json({
-        items: filteredItems,
-        lastUpdated: newsData.lastUpdated,
-        categories: newsData.categories,
+        items: newsItems,
+        lastUpdated: new Date().toISOString(),
+        categories: categories,
         storeType
       });
     }
     
-    // This should rarely happen - if the store returned nothing, use sample data
-    console.log('Store returned no items, using sample data');
-    const sampleItems = await loadSampleNewsFromFile();
-    const filteredSampleItems = category 
-      ? sampleItems.filter(item => item.category === category)
-      : sampleItems;
+    // This should rarely happen - if the store returned nothing, use fallback sample data
+    console.log('Store returned no items, using fallback sample data');
     
     return json({
-      items: filteredSampleItems,
+      items: categoryParam 
+        ? sampleNews.filter(item => item.category === categoryParam)
+        : sampleNews,
       lastUpdated: new Date().toISOString(),
       isSample: true,
+      categories: categories,
       storeType
     });
   } catch (error) {
@@ -133,17 +120,39 @@ export const GET: RequestHandler = async ({ url }) => {
     
     // Return sample data on error as absolute last resort
     console.log('Error fetching news, using fallback sample data');
-    const fallbackItems = category
-      ? sampleNews.filter(item => item.category === category)
+    const fallbackItems = categoryParam
+      ? sampleNews.filter(item => item.category === categoryParam)
       : sampleNews;
     
-    return json({
-      items: fallbackItems,
-      lastUpdated: new Date().toISOString(),
-      isSample: true,
-      error: 'Using fallback sample data due to store error',
-      storeType: 'fallback'
-    });
+    try {
+      const categories = await getCategories();
+      
+      return json({
+        items: fallbackItems,
+        lastUpdated: new Date().toISOString(),
+        isSample: true,
+        error: 'Using fallback sample data due to store error',
+        categories: categories,
+        storeType: 'fallback'
+      });
+    } catch (catError) {
+      // If even getting categories fails, use hardcoded fallback
+      return json({
+        items: fallbackItems,
+        lastUpdated: new Date().toISOString(),
+        isSample: true,
+        error: 'Using complete fallback data due to store error',
+        categories: {
+          ai: "Artificial Intelligence",
+          dev: "Development",
+          crypto: "Cryptocurrency", 
+          productivity: "Productivity",
+          tools: "Tools & Utilities",
+          philosophy: "Philosophy"
+        },
+        storeType: 'fallback'
+      });
+    }
   }
 };
   
@@ -167,9 +176,8 @@ export const POST: RequestHandler = async ({ request }) => {
     }
     
     try {
-      // Update or add the news item to store
-      // TODO: Make this work with both SQLite and mock store
-      const result = updateNews([newsItem]) as UpdateResult;
+      // Update or add the news item to the active store via newsStoreInit
+      const result = await updateNews([newsItem]) as UpdateResult;
       return json({ 
         success: true, 
         message: 'News item saved successfully',
