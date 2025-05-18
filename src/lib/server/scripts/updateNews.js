@@ -12,6 +12,36 @@ const MAX_DISCOVERIES = 1000; // Maximum number of discoveries to keep
 const FORCE_REAL_FEEDS = true; // Force real feeds even in development mode
 const UPDATE_INTERVAL_HOURS = 3; // Hours between updates
 
+// Built-in sample data for development mode
+const SAMPLE_NEWS_DATA = {
+  items: [
+    {
+      id: "ai-sample-1",
+      title: "Recent Advancements in AI Technology",
+      summary: "A look at how artificial intelligence is transforming industries and creating new opportunities.",
+      url: "https://example.com/ai-news-1",
+      publishDate: "2023-05-15T12:30:00Z",
+      source: "Tech Insights",
+      sourceId: "tech-insights",
+      category: "ai",
+      imageUrl: "https://picsum.photos/seed/ai1/600/400",
+      author: "Sarah Johnson"
+    },
+    {
+      id: "dev-sample-1",
+      title: "The Future of Web Development",
+      summary: "Exploring upcoming trends and technologies that will shape web development in the coming years.",
+      url: "https://example.com/dev-news-1",
+      publishDate: "2023-05-14T10:15:00Z",
+      source: "Developer Weekly",
+      sourceId: "dev-weekly",
+      category: "dev",
+      imageUrl: "https://picsum.photos/seed/dev1/600/400",
+      author: "Michael Chen"
+    }
+  ]
+};
+
 /**
  * Prune older comments to prevent database growth
  * Using the new PostgreSQL-based comment functions
@@ -96,9 +126,8 @@ export async function fetchAndUpdateNews() {
     if (dev && !FORCE_REAL_FEEDS) {
       console.log('Development mode: using sample news data...');
       try {
-        // In SvelteKit, we can directly import JSON files
-        const sampleDataModule = await import('$lib/server/data/sample-news.json');
-        const sampleData = sampleDataModule.default;
+        // Use built-in sample data instead of loading from file
+        const sampleData = SAMPLE_NEWS_DATA;
         
         // Update database with sample data
         const result = await updateNews(sampleData.items || []);

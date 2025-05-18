@@ -3,6 +3,13 @@
 # Set default for RUN_MIGRATIONS (if not set, don't run migrations)
 RUN_MIGRATIONS=${RUN_MIGRATIONS:-false}
 
+# Check for necessary environment variables
+if [ -z "$POSTGRES_PASSWORD" ]; then
+  echo "WARNING: POSTGRES_PASSWORD environment variable is not set. PostgreSQL connection may fail."
+  echo "Please ensure the POSTGRES_PASSWORD environment variable is set in your deployment environment."
+  echo "The application will continue and try to connect using default credentials or fall back to in-memory store."
+fi
+
 # Function to check PostgreSQL connection
 check_postgres() {
   echo "Checking connection to PostgreSQL at $POSTGRES_HOST:$POSTGRES_PORT..."

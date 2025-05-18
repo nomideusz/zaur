@@ -12,7 +12,7 @@ const inMemoryStore = {
 };
 
 // Default sample data
-const defaultSampleData = {
+const sampleNewsData = {
   items: [
     {
       id: 'default-1',
@@ -37,22 +37,57 @@ const defaultSampleData = {
       category: 'dev',
       imageUrl: 'https://picsum.photos/seed/zaur2/600/400',
       author: 'Zaur Development'
+    },
+    {
+      id: "ai-sample-1",
+      title: "Recent Advancements in AI Technology",
+      summary: "A look at how artificial intelligence is transforming industries and creating new opportunities.",
+      url: "https://example.com/ai-news-1",
+      publishDate: "2023-05-15T12:30:00Z",
+      source: "Tech Insights",
+      sourceId: "tech-insights",
+      category: "ai",
+      imageUrl: "https://picsum.photos/seed/ai1/600/400",
+      author: "Sarah Johnson"
+    },
+    {
+      id: "dev-sample-1",
+      title: "The Future of Web Development",
+      summary: "Exploring upcoming trends and technologies that will shape web development in the coming years.",
+      url: "https://example.com/dev-news-1",
+      publishDate: "2023-05-14T10:15:00Z",
+      source: "Developer Weekly",
+      sourceId: "dev-weekly",
+      category: "dev",
+      imageUrl: "https://picsum.photos/seed/dev1/600/400",
+      author: "Michael Chen"
+    },
+    {
+      id: "crypto-sample-1",
+      title: "Understanding Blockchain Applications",
+      summary: "A beginner's guide to blockchain technology and its applications beyond cryptocurrency.",
+      url: "https://example.com/crypto-news-1",
+      publishDate: "2023-05-13T09:45:00Z",
+      source: "Crypto Insider",
+      sourceId: "crypto-insider",
+      category: "crypto",
+      imageUrl: "https://picsum.photos/seed/crypto1/600/400",
+      author: "Alex Rivera"
+    },
+    {
+      id: "productivity-sample-1",
+      title: "Maximizing Productivity in Remote Work",
+      summary: "Tips and strategies for staying productive while working remotely.",
+      url: "https://example.com/productivity-news-1",
+      publishDate: "2023-05-12T14:20:00Z",
+      source: "Work Smarter",
+      sourceId: "work-smarter",
+      category: "productivity",
+      imageUrl: "https://picsum.photos/seed/productivity1/600/400",
+      author: "Emma Wilson"
     }
   ]
 };
-
-// Try to import sample data
-let sampleNewsData;
-try {
-  // Import sample data with type assertion
-  // @ts-ignore - Import JSON directly in SvelteKit
-  sampleNewsData = await import('./data/sample-news.json').catch(() => defaultSampleData);
-} catch (error) {
-  console.log('Could not import sample news data, using default sample data');
-  sampleNewsData = defaultSampleData;
-}
-
-// Configurationconst FORCE_REAL_DATA = true; // Always prioritize real data over sample dataconst ALLOW_SYNTHETIC_NEWS = true; // Allow synthetic news generation when APIs fail
 
 // Get the directory where the script is executed
 const __filename = fileURLToPath(import.meta.url);

@@ -5,6 +5,8 @@ import { resolve } from 'path';
 
 export default defineConfig({
 	plugins: [tailwindcss(), sveltekit()],
+	// Ensure data directory is copied to the build output
+	assetsInclude: ['**/*.json'],
 	server: {
 		proxy: {
 			'/api/cors-proxy': {
@@ -19,8 +21,8 @@ export default defineConfig({
 			overlay: false
 		},
 		watch: {
-			// Ignore news data files to prevent rebuilds when they change
-			ignored: ['**/src/lib/server/data/**/*.json']
+			// Don't ignore data files - we need these to be included in the build
+			ignored: []
 		},
 		// Reduce the frequency of file system polling (in milliseconds)
 		// Default is 100ms, increase to 10 seconds
@@ -29,12 +31,13 @@ export default defineConfig({
 			strict: true
 		}
 	},
-	// Add explicit watchOptions to ignore data files
+	// Remove optimizeDeps.exclude for data directory
 	optimizeDeps: {
-		exclude: ['src/lib/server/data']
+		exclude: []
 	},
 	// Handle RethinkDB module in build
 	build: {
+		copyPublicDir: true,
 		rollupOptions: {
 			external: [
 				'rethinkdb',

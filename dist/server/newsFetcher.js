@@ -1,6 +1,6 @@
 // @ts-nocheck
-import { dev } from '$app/environment';
-import { updateNews } from './newsStoreMock.js';
+const dev = process.env.NODE_ENV !== 'production';
+import { updateNews } from './newsStoreInit.js';
 
 // List of categories we support
 const CATEGORIES = ['dev', 'ai', 'crypto', 'productivity', 'tools', 'philosophy'];

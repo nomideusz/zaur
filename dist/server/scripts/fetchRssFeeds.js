@@ -1,7 +1,9 @@
 // @ts-nocheck
-import { readNewsData, updateNews } from '../newsStore.js';
+import { readNewsData, updateNews, getCategories } from '../newsStoreInit.js';
 import { parseStringPromise } from 'xml2js';
-import rethinkdb from 'rethinkdb';
+import pg from 'pg';
+// For usage outside of SvelteKit
+const dev = process.env.NODE_ENV !== 'production';
 /**
  * Fetch and parse an RSS feed
  * @param url The URL of the RSS feed
@@ -105,32 +107,15 @@ function convertRssToNewsItems(rssItems, source) {
  */
 async function getSourcesFromDatabase() {
     try {
-        // Connect to database
-        const conn = await rethinkdb.connect({
-            host: process.env.RETHINKDB_HOST || 'localhost',
-            port: parseInt(process.env.RETHINKDB_PORT || '28015', 10)
-        });
-        // Use the news database
-        conn.use(process.env.RETHINKDB_DB || 'zaur_news');
-        // Get sources
-        const cursor = await rethinkdb.table('sources').run(conn);
-        const sources = await cursor.toArray();
-        // Close connection
-        await conn.close();
-        if (sources.length === 0) {
+        // Get news data from the store which will have the sources
+        const newsData = await readNewsData();
+        if (!newsData || !newsData.sources || newsData.sources.length === 0) {
             console.warn('No sources found in database');
+            return [];
         }
-        else {
-            console.log(`Retrieved ${sources.length} sources from database`);
-        }
-        // Cast to NewsSource[]
-        return sources.map((source) => ({
-            id: source.id || '',
-            name: source.name || '',
-            url: source.url || '',
-            category: source.category || 'general',
-            priority: typeof source.priority === 'number' ? source.priority : 0
-        }));
+        console.log(`Retrieved ${newsData.sources.length} sources from database`);
+        // Return the sources array
+        return newsData.sources;
     }
     catch (error) {
         console.error('Error getting sources from database:', error);
@@ -143,23 +128,16 @@ async function getSourcesFromDatabase() {
  */
 async function getNewestArticleTimestamp() {
     try {
-        // Connect to database
-        const conn = await rethinkdb.connect({
-            host: process.env.RETHINKDB_HOST || 'localhost',
-            port: parseInt(process.env.RETHINKDB_PORT || '28015', 10)
-        });
-        // Use the news database
-        conn.use(process.env.RETHINKDB_DB || 'zaur_news');
-        // Get newest article by publish date
-        const cursor = await rethinkdb.table('news')
-            .orderBy(rethinkdb.desc('publishDate'))
-            .limit(1)
-            .run(conn);
-        const items = await cursor.toArray();
-        // Close connection
-        await conn.close();
-        if (items.length > 0 && items[0].publishDate) {
-            const timestamp = new Date(items[0].publishDate);
+        // Get news data from the store
+        const newsData = await readNewsData();
+        if (newsData && newsData.items && newsData.items.length > 0) {
+            // Sort items by publishDate (newest first)
+            const sortedItems = [...newsData.items].sort((a, b) => {
+                const dateA = new Date(a.publishDate);
+                const dateB = new Date(b.publishDate);
+                return dateB.getTime() - dateA.getTime();
+            });
+            const timestamp = new Date(sortedItems[0].publishDate);
             console.log(`Newest existing article timestamp: ${timestamp.toISOString()}`);
             return timestamp;
         }
@@ -189,47 +167,42 @@ export async function fetchAllRssFeeds() {
         // Sort sources by priority (higher number = higher priority)
         const sortedSources = [...sources].sort((a, b) => (b.priority || 0) - (a.priority || 0));
         // Process each source
-        const allNewsItems = [];
-        let newItemsCount = 0;
-        let skippedItemsCount = 0;
+        const allNewItems = [];
+        let fetchedCount = 0;
         for (const source of sortedSources) {
+            if (!source.url) {
+                console.warn(`Source ${source.name} (${source.id}) has no URL, skipping`);
+                continue;
+            }
             console.log(`Fetching from ${source.name} (${source.url})...`);
+            // Fetch RSS feed
             const rssItems = await fetchRssFeed(source.url);
-            if (rssItems.length > 0) {
-                // Filter items that are newer than our newest existing item
-                const newRssItems = rssItems.filter(item => {
-                    try {
-                        const itemDate = new Date(item.pubDate);
-                        return itemDate > newestExistingTimestamp;
-                    }
-                    catch (e) {
-                        // If we can't parse the date, include the item to be safe
-                        return true;
-                    }
-                });
-                // Count skipped items
-                skippedItemsCount += (rssItems.length - newRssItems.length);
-                // Only process newer items
-                const newsItems = convertRssToNewsItems(newRssItems, source);
-                allNewsItems.push(...newsItems);
-                newItemsCount += newsItems.length;
-                console.log(`Found ${newsItems.length} new items from ${source.name} (skipped ${rssItems.length - newRssItems.length} older items)`);
-            }
-            else {
-                console.log(`No items found from ${source.name}`);
-            }
+            fetchedCount += rssItems.length;
+            console.log(`Found ${rssItems.length} items from ${source.name}`);
+            // Convert to our news item format
+            const newsItems = convertRssToNewsItems(rssItems, source);
+            // Only add items newer than our newest existing item
+            const newItems = newsItems.filter(item => {
+                try {
+                    const itemDate = new Date(item.publishDate);
+                    return itemDate.getTime() > newestExistingTimestamp.getTime();
+                }
+                catch (error) {
+                    // If date parsing fails, include the item to be safe
+                    return true;
+                }
+            });
+            // Add to our collection
+            allNewItems.push(...newItems);
         }
-        console.log(`Processing complete: ${newItemsCount} new items found, ${skippedItemsCount} older items skipped`);
-        if (allNewsItems.length > 0) {
-            // Update news database with new items
-            const result = await updateNews(allNewsItems);
-            console.log(`News updated successfully. Added: ${result.added}, Updated: ${result.updated}`);
-            return result;
-        }
-        else {
-            console.log('No new items found from any source');
-            return { added: 0, updated: 0, total: 0 };
-        }
+        // Update the database with all new items
+        const result = await updateNews(allNewItems);
+        console.log(`RSS feeds update complete. Fetched: ${fetchedCount}, New: ${allNewItems.length}, Added: ${result.added}, Updated: ${result.updated}`);
+        return {
+            added: result.added,
+            updated: result.updated,
+            total: allNewItems.length
+        };
     }
     catch (error) {
         console.error('Error updating RSS feeds:', error);

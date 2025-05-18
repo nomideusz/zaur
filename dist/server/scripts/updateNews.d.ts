@@ -1,5 +1,5 @@
 /**
- * Fetch and update news data with RethinkDB
+ * Fetch and update news data
  * @returns {Promise<{added: number, updated: number, total: number}>} Update result information
  */
 export function fetchAndUpdateNews(): Promise<{

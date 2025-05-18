@@ -13,54 +13,26 @@ export const GET: RequestHandler = async () => {
     // Calculate paths
     const projectRoot = path.resolve(__dirname, '../../../../../');
     const libServerDir = path.join(projectRoot, 'src/lib/server');
-    const expectedDbPath = path.join(projectRoot, 'data', 'zaur_news.db');
     
-    // Find all .db files
-    let dbFiles: string[] = [];
+    // Read newsStorePostgres.js to get PostgreSQL config
+    let postgresConfig = '';
+    try {
+      const postgresConfigPath = path.join(libServerDir, 'newsStorePostgres.js');
+      const postgresContent = fs.readFileSync(postgresConfigPath, 'utf8');
+      const configMatch = postgresContent.match(/DB_CONFIG\s*=\s*{[\s\S]*?};/);
+      postgresConfig = configMatch ? configMatch[0] : 'Config not found';
+    } catch (error) {
+      postgresConfig = `Error reading config: ${(error as Error).message}`;
+    }
     
-    // Check for .db files in the project root and subdirectories
-    const findDbFiles = (dir: string, maxDepth = 3, currentDepth = 0) => {
-      if (currentDepth > maxDepth) return;
-      
-      try {
-        const files = fs.readdirSync(dir);
-        for (const file of files) {
-          const fullPath = path.join(dir, file);
-          
-          if (fs.statSync(fullPath).isDirectory() && 
-              !fullPath.includes('node_modules') && 
-              !file.startsWith('.')) {
-            findDbFiles(fullPath, maxDepth, currentDepth + 1);
-          } else if (file.endsWith('.db') || file.endsWith('.sqlite') || file.endsWith('.sqlite3')) {
-            dbFiles.push(fullPath);
-          }
-        }
-      } catch (error) {
-        console.error(`Error reading directory ${dir}:`, error);
-      }
+    // Get PostgreSQL environment variables
+    const postgresEnvVars = {
+      POSTGRES_HOST: process.env.POSTGRES_HOST || 'Not set',
+      POSTGRES_PORT: process.env.POSTGRES_PORT || 'Not set',
+      POSTGRES_DB: process.env.POSTGRES_DB || 'Not set',
+      POSTGRES_USER: process.env.POSTGRES_USER || 'Not set',
+      POSTGRES_PASSWORD: process.env.POSTGRES_PASSWORD ? 'Set (hidden)' : 'Not set'
     };
-    
-    findDbFiles(projectRoot);
-    
-    // Check if better-sqlite3 is installed
-    let sqliteInstalled = false;
-    try {
-      require.resolve('better-sqlite3');
-      sqliteInstalled = true;
-    } catch (error) {
-      sqliteInstalled = false;
-    }
-    
-    // Read newsStoreSqlite.js to get DB_CONFIG
-    let sqliteConfig = '';
-    try {
-      const sqliteConfigPath = path.join(libServerDir, 'newsStoreSqlite.js');
-      const sqliteContent = fs.readFileSync(sqliteConfigPath, 'utf8');
-      const configMatch = sqliteContent.match(/DB_CONFIG\s*=\s*{[\s\S]*?};/);
-      sqliteConfig = configMatch ? configMatch[0] : 'Config not found';
-    } catch (error) {
-      sqliteConfig = `Error reading config: ${(error as Error).message}`;
-    }
     
     // Check data directory
     const dataPath = path.join(projectRoot, 'data');
@@ -78,18 +50,17 @@ export const GET: RequestHandler = async () => {
     return json({
       paths: {
         projectRoot,
-        libServerDir,
-        expectedDbPath,
-        expectedDbExists: fs.existsSync(expectedDbPath)
+        libServerDir
       },
       dataFolder: {
         path: dataPath,
         exists: dataFolderExists,
         content: dataFolderContent
       },
-      foundDbFiles: dbFiles,
-      sqliteInstalled,
-      sqliteConfig
+      postgresql: {
+        config: postgresConfig,
+        envVars: postgresEnvVars
+      }
     });
   } catch (error) {
     console.error('Error in inspect-db endpoint:', error);

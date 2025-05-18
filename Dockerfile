@@ -31,7 +31,7 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOST=0.0.0.0
 ENV NODE_ENV=production
-# PostgreSQL connection details
+# PostgreSQL connection details - these will be overridden by CapRover environment variables
 ENV POSTGRES_HOST=srv-captain--postgres
 ENV POSTGRES_PORT=5432
 ENV POSTGRES_DB=zaur_news
