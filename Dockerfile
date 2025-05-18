@@ -36,7 +36,7 @@ ENV POSTGRES_HOST=srv-captain--postgres
 ENV POSTGRES_PORT=5432
 ENV POSTGRES_DB=zaur_news
 ENV POSTGRES_USER=postgres
-ENV POSTGRES_PASSWORD=postgres123
+ENV POSTGRES_PASSWORD=Szczerzuj1a!
 ENV GNEWS_API_KEY=cc03f767a7e5ad02b401b8e599212b99
 
 # Command to run the application with database migration
