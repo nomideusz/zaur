@@ -11,12 +11,11 @@ RUN npm install -g pnpm
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
-# Install dependencies with explicit handling of native modules
-RUN pnpm add -D node-gyp && \
-    pnpm config set registry https://registry.npmjs.org/ && \
-    pnpm config set node-linker hoisted && \
-    pnpm config set --global node_gyp $(npm prefix -g)/lib/node_modules/node-gyp/bin/node-gyp.js && \
-    pnpm install --frozen-lockfile
+# Set up native module build configuration 
+RUN echo '{"pnpm":{"onlyBuiltDependencies":["better-sqlite3","sqlite3"]}}' > .npmrc
+
+# Install dependencies without frozen lockfile to fix dependency issues
+RUN pnpm install
 
 # Create directories for SQLite data
 RUN mkdir -p /app/data
