@@ -3,7 +3,7 @@ FROM node:18-alpine
 WORKDIR /app
 
 # Install dependencies and build tools
-RUN apk add --no-cache iputils python3 make g++ build-base sqlite sqlite-dev
+RUN apk add --no-cache iputils python3 make g++ build-base sqlite sqlite-dev && npm install -g pnpm
 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
