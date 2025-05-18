@@ -8,11 +8,14 @@ RUN apk add --no-cache iputils python3 make g++ build-base sqlite sqlite-dev && 
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
+# Configure pnpm to allow building native dependencies
+RUN echo '{"pnpm":{"onlyBuiltDependencies":["better-sqlite3","sqlite3"]}}' > .npmrc
+
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # After npm install
-RUN pnpm rebuild better-sqlite3 --build-from-source
+RUN pnpm rebuild
 
 # Copy the rest of the application
 COPY . .
