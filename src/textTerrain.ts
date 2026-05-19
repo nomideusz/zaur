@@ -67,6 +67,7 @@ export class TextTerrain {
 
   /** Reposition all currently active text blocks when constraints change. */
   repositionAll(): void {
+    fetch(`http://localhost:9999/log?msg=${encodeURIComponent(`repositionAll called: blocksCount=${this.blocks.length}, viewW=${this.constraints.viewW}, viewH=${this.constraints.viewH}`)}`).catch(() => {});
     const tempBlocks = [...this.blocks];
     this.blocks.length = 0;
 
@@ -275,6 +276,8 @@ export class TextTerrain {
     const { viewW, viewH, marginX, marginTop, marginBottom } = this.constraints;
     const usableW = viewW - marginX * 2 - w;
     const usableH = viewH - marginTop - marginBottom - h;
+
+    fetch(`http://localhost:9999/log?msg=${encodeURIComponent(`findPosition: w=${w}, h=${h}, viewW=${viewW}, viewH=${viewH}, usableW=${usableW}, usableH=${usableH}, blocks=${this.blocks.length}`)}`).catch(() => {});
 
     if (usableW <= 0 || usableH <= 0) {
       // Viewport too small — stack vertically with some offset.
