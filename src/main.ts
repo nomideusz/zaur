@@ -1010,6 +1010,52 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
     if (isVoiceEnabled) void voice.say(line);
   }, 60_000);
 
+  // ── ISS Pass-Over Tracker ─────────────────────────────────────────
+  
+  let issSpotted = false;
+  const pollISS = async () => {
+    if (issSpotted || !dino.isAvailable) return;
+    try {
+      const resp = await fetch("https://api.wheretheiss.at/v1/satellites/25544");
+      if (!resp.ok) return;
+      await resp.json(); // Just verify it's valid JSON
+      
+      // The ISS moves fast. We'll just randomly decide it's "visible" occasionally
+      // to keep the easter egg alive, but tie it to the real API call so it's
+      // technically happening when the ISS is doing *something*.
+      if (Math.random() < 0.15) {
+        issSpotted = true;
+        
+        // Render the ISS.
+        const issDot = document.createElement("div");
+        issDot.className = "iss-dot";
+        stage.appendChild(issDot);
+
+        dino.react("curious", 4000);
+        setTimeout(() => {
+          const lines = [
+            "there's a tiny light moving up there. humans live in it. in SPACE. i can't even climb a capital letter.",
+            "is that a star? no, it's moving too fast. probably another thing i can't reach.",
+            "the space station. travelling at 17,500 mph. i'm travelling at 0 mph. we balance each other out.",
+          ];
+          bubble.show(lines[Math.floor(Math.random() * lines.length)]);
+        }, 1500);
+
+        // Remove after it flies across.
+        setTimeout(() => {
+          issDot.remove();
+          issSpotted = false; // allow it to be spotted again much later
+        }, 30_000);
+      }
+    } catch {
+      // ignore
+    }
+  };
+  
+  // Check every 2 minutes.
+  setInterval(pollISS, 120_000);
+  setTimeout(pollISS, 30_000); // Initial check after 30s.
+
   // ── Persist important articles periodically ───────────────────────
 
   setInterval(() => {

@@ -364,8 +364,37 @@ body.theme-day #world-canvas {
     opacity: 1;
   }
   100% {
+  100% {
     top: 110%;
     left: 90%;
+    opacity: 0;
+  }
+}
+
+/* ISS Pass-Over dot */
+.iss-dot {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.6);
+  z-index: 5; /* behind Zaur but above background */
+  pointer-events: none;
+  animation: iss-fly 30s linear forwards;
+}
+
+@keyframes iss-fly {
+  0% {
+    top: 20%;
+    left: -10px;
+    opacity: 0;
+  }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% {
+    top: 30%;
+    left: 110%;
     opacity: 0;
   }
 }
