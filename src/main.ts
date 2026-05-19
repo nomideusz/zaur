@@ -935,18 +935,24 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
     console.warn("[stream] SSE connection error:", err);
   });
 
-  // ── Window resize ─────────────────────────────────────────────────
+  // ── Stage size observer ───────────────────────────────────────────
 
   let resizeRaf = 0;
-  window.addEventListener("resize", () => {
+  const resizeObserver = new ResizeObserver(() => {
     if (resizeRaf) cancelAnimationFrame(resizeRaf);
     resizeRaf = requestAnimationFrame(() => {
+      const oldW = cssW;
+      const oldH = cssH;
       applySize();
-      world.resize({ width: cssW, height: cssH });
-      dino.resize(cssW, cssH);
-      terrain.updateConstraints(cssW, cssH);
+      if (cssW !== oldW || cssH !== oldH) {
+        world.resize({ width: cssW, height: cssH });
+        dino.resize(cssW, cssH);
+        terrain.updateConstraints(cssW, cssH);
+        terrain.repositionAll();
+      }
     });
   });
+  resizeObserver.observe(stage);
 
   // ── Idle wandering between text blocks ────────────────────────────
 

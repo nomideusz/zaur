@@ -65,6 +65,36 @@ export class TextTerrain {
     this.constraints.viewH = viewH;
   }
 
+  /** Reposition all currently active text blocks when constraints change. */
+  repositionAll(): void {
+    const tempBlocks = [...this.blocks];
+    this.blocks.length = 0;
+
+    for (const block of tempBlocks) {
+      const blockW = blockWidthFor(block.item, this.constraints.viewW);
+      const estH = Math.max(60, Math.min(200, block.item.text.length * 0.8 + 40));
+      const pos = this.findPosition(blockW, estH);
+      if (pos) {
+        block.x = pos.x;
+        block.y = pos.y;
+        block.w = blockW;
+        block.h = estH;
+
+        block.el.style.left = `${pos.x}px`;
+        block.el.style.top = `${pos.y}px`;
+        block.el.style.maxWidth = `${blockW}px`;
+
+        requestAnimationFrame(() => {
+          const rect = block.el.getBoundingClientRect();
+          const containerRect = this.container.getBoundingClientRect();
+          block.h = rect.height;
+          block.y = rect.top - containerRect.top;
+        });
+      }
+      this.blocks.push(block);
+    }
+  }
+
   /**
    * Place a new content item on the terrain. Returns the created block,
    * or null if the terrain is full and no space was found.

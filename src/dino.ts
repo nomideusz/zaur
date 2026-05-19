@@ -127,6 +127,13 @@ export class Dino {
   resize(worldWidth: number, worldHeight: number): void {
     this.opts.worldWidth = worldWidth;
     this.opts.worldHeight = worldHeight;
+
+    const newScale = Math.max(2, Math.min(4, Math.round(Math.min(worldWidth, worldHeight) / 240)));
+    if (newScale !== this.opts.scale) {
+      this.opts.scale = newScale;
+      this.frames = buildFrames(newScale, this.currentColor);
+    }
+
     this.x = clamp(this.x, this.minX, this.maxX);
     this.y = clamp(this.y, this.minY, this.maxY);
     this.targetX = clamp(this.targetX, this.minX, this.maxX);
