@@ -32,7 +32,7 @@ const SCALE_FREQS: Record<RadioChannel, number[]> = {
   bird: [523.25, 587.33, 659.25, 698.46, 783.99, 880.0, 987.77, 1046.5],
 };
 
-function channelFrequency(channel: RadioChannel): number {
+export function channelFrequency(channel: RadioChannel): number {
   switch (channel) {
     case "all":   return 92.5;
     case "news":  return 88.0;
@@ -80,16 +80,33 @@ export class RadioAudio {
     return this.enabled;
   }
 
-  async toggleMusic(channel: RadioChannel): Promise<boolean> {
+  get isMusicEnabled(): boolean {
+    return this.musicEnabled;
+  }
+
+  async playMusic(channel: RadioChannel): Promise<boolean> {
+    this.musicChannel = channel;
     if (this.musicEnabled) {
-      this.stopMusic();
-      return false;
+      if (this.track) {
+        await this.switchTrack(channel);
+      } else {
+        this.tune(channel);
+      }
+      return true;
     }
     const trackStarted = await this.startTrack(channel);
     if (trackStarted) return true;
     await this.ensureStarted(channel);
     this.startMusic(channel);
     return this.musicEnabled;
+  }
+
+  async toggleMusic(channel: RadioChannel): Promise<boolean> {
+    if (this.musicEnabled) {
+      this.stopMusic();
+      return false;
+    }
+    return this.playMusic(channel);
   }
 
   isLiveStream(): boolean {
@@ -197,7 +214,7 @@ export class RadioAudio {
     this.playMusicStep();
   }
 
-  private stopMusic(): void {
+  public stopMusic(): void {
     if (this.musicTimer !== null) window.clearInterval(this.musicTimer);
     this.musicTimer = null;
     if (this.track) {
