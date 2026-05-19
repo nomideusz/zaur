@@ -380,6 +380,24 @@ body.zaur-cool .dino-bubble {
   box-shadow: 0 4px 0 rgba(0, 0, 0, 0.35), 0 0 12px rgba(100, 200, 255, 0.15);
 }
 
+/* Watermark for screenshots */
+.screenshot-watermark {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  font-family: var(--mono-stack);
+  font-size: 0.8rem;
+  color: var(--ink);
+  opacity: 0.6;
+  z-index: 50;
+  pointer-events: none;
+}
+
+body.capturing .bottom-bar,
+body.capturing .radio-drawer {
+  display: none !important;
+}
+
 /* ── Bottom console panel ───────────────────────────────────────────── */
 
 .bottom-bar {

@@ -178,6 +178,7 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
   const systemMsg = document.getElementById("system-msg") as HTMLElement;
   const chatForm = document.getElementById("chat-form") as HTMLFormElement;
   const chatInput = document.getElementById("chat-input") as HTMLInputElement;
+  const cameraBtn = document.getElementById("camera-btn") as HTMLButtonElement;
   const voiceBtn = document.getElementById("voice-btn") as HTMLButtonElement;
   const radioBtn = document.getElementById("radio-btn") as HTMLButtonElement;
   const radioDrawer = document.getElementById("radio-drawer") as HTMLElement;
@@ -456,9 +457,7 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
     }
 
     // Note the article in Zaur's memory.
-    if (isNew) {
-      memory.noteArticle(item.text, item.kind);
-    }
+    memory.noteArticle(item.text, item.kind);
 
     // Try to get a unique AI reaction from the server.
     let comment: string | null = null;
@@ -568,6 +567,15 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
     dino.react("excited", 800);
     if (userBlock) {
       dino.goTo(userBlock.x + userBlock.w / 2, userBlock.y - dino.heightPx);
+    }
+
+    // Check if user is introducing themselves.
+    const foundName = memory.checkForName(text);
+    if (foundName) {
+      // Small local override for introductions.
+      setTimeout(() => {
+        bubble.show(`nice to meet you, ${memory.userName}. i'm zaur. i don't have a last name.`);
+      }, 1500);
     }
 
     try {
@@ -718,6 +726,86 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
     dino.react("curious", 1800);
     lastRadioNudge = performance.now();
   }, 30_000);
+
+  // Screenshot / Share Mode
+  let isCapturing = false;
+
+  const captureScreenshot = async () => {
+    if (isCapturing) return;
+    isCapturing = true;
+
+    // React to being photographed.
+    dino.react("surprised", 1500);
+    setTimeout(() => {
+      bubble.show("did you just... screenshot me? i wasn't ready! my pixels were relaxed!");
+    }, 800);
+
+    // Hide UI elements.
+    document.body.classList.add("capturing");
+    
+    // Add watermark.
+    const watermark = document.createElement("div");
+    watermark.className = "screenshot-watermark";
+    watermark.textContent = "dino.zaur.app";
+    stage.appendChild(watermark);
+
+    try {
+      // Dynamic import to avoid blocking initial load.
+      const { toBlob } = await import("html-to-image");
+      
+      const blob = await toBlob(stage, {
+        quality: 0.95,
+        backgroundColor: "#14141a",
+        style: {
+          transform: "scale(1)",
+          transformOrigin: "top left",
+        },
+        filter: (node) => {
+          // Don't capture UI controls or chat form.
+          if (node instanceof HTMLElement) {
+            if (node.classList?.contains("bottom-bar")) return false;
+            if (node.classList?.contains("radio-drawer")) return false;
+          }
+          return true;
+        }
+      });
+
+      if (blob) {
+        // Download.
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `zaur-world-${new Date().toISOString().replace(/[:.]/g, "-")}.png`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        // Copy to clipboard if supported.
+        try {
+          if (navigator.clipboard && window.ClipboardItem) {
+            await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+          }
+        } catch {
+          // Ignore clipboard errors.
+        }
+      }
+    } catch (err) {
+      console.error("Screenshot failed:", err);
+      bubble.show("the camera broke. it's probably my fault.");
+    } finally {
+      document.body.classList.remove("capturing");
+      watermark.remove();
+      isCapturing = false;
+    }
+  };
+
+  cameraBtn.addEventListener("click", captureScreenshot);
+
+  // Press 's' to screenshot (if not typing in chat).
+  document.addEventListener("keydown", (ev) => {
+    if (ev.key === "s" && document.activeElement !== chatInput) {
+      void captureScreenshot();
+    }
+  });
 
   // ── Click/Poke handling ───────────────────────────────────────────
 
@@ -877,7 +965,8 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
     // Idle commentary.
     if (Math.random() < 0.25) {
       const hour = new Date().getHours();
-      const line = getIdleComment(hour);
+      // Try memory comment first, fallback to time-of-day.
+      const line = memory.getMemoryIdleComment() ?? getIdleComment(hour);
       setTimeout(() => {
         bubble.show(line);
         if (isVoiceEnabled && Math.random() < 0.2) {
