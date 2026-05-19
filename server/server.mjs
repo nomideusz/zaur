@@ -18,7 +18,7 @@ import { createBirds } from "./sources/birds.mjs";
 import { DevTo } from "./sources/devto.mjs";
 import { Facts } from "./sources/facts.mjs";
 import { HackerNews } from "./sources/hn.mjs";
-import { createMusings } from "./sources/musings.mjs";
+import { createMusings, talkToZaur, reactToArticle } from "./sources/musings.mjs";
 import { Quakes } from "./sources/quakes.mjs";
 import { createSfxPrompter } from "./sources/sfx.mjs";
 import { Space } from "./sources/space.mjs";
@@ -1291,6 +1291,81 @@ const server = createServer(async (req, res) => {
         return;
       }
       proxyTts(raw, req, res);
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/zaur-react") {
+      let body;
+      try {
+        body = await readJson(req);
+      } catch {
+        sendJson(req, res, 400, { error: "invalid json" });
+        return;
+      }
+      const kind = typeof body?.kind === "string" ? body.kind : "news";
+      const text = typeof body?.text === "string" ? body.text.trim() : "";
+      if (!text) {
+        sendJson(req, res, 400, { error: "missing text" });
+        return;
+      }
+
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      let replyText = null;
+      if (apiKey) {
+        try {
+          replyText = await reactToArticle(apiKey, kind, text);
+        } catch (err) {
+          console.warn("[zaur-react] Claude reaction failed:", err);
+        }
+      }
+
+      if (!replyText) {
+        sendJson(req, res, 204, null);
+        return;
+      }
+
+      sendJson(req, res, 200, { text: replyText });
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/zaur-talk") {
+      let body;
+      try {
+        body = await readJson(req);
+      } catch {
+        sendJson(req, res, 400, { error: "invalid json" });
+        return;
+      }
+      const message = typeof body?.message === "string" ? body.message.trim() : "";
+      if (!message) {
+        sendJson(req, res, 400, { error: "missing message" });
+        return;
+      }
+
+      let replyText = "";
+      const apiKey = process.env.ANTHROPIC_API_KEY;
+      if (apiKey) {
+        try {
+          replyText = await talkToZaur(apiKey, message);
+        } catch (err) {
+          console.warn("[zaur-talk] Claude chat failed, falling back:", err);
+        }
+      }
+
+      if (!replyText) {
+        const pool = [
+          "I forgot what you said... but it sounded important. Tell me again?",
+          "My tiny arms can't handle such big words. Let's hide under the letter Q.",
+          "A rex-istential crisis is hitting me. I'm going to eat a fern now.",
+          "Is that a comma? It looks delicious. Oh, sorry, what were you saying?",
+          "I got my tail caught in the scroll bar. Help!",
+          "The letters here are so comfy. I'm going to take a nap right on your message.",
+          "Rawr! (Translation: I don't understand, but I like you.)"
+        ];
+        replyText = pool[Math.floor(Math.random() * pool.length)];
+      }
+
+      sendJson(req, res, 200, { text: replyText });
       return;
     }
 

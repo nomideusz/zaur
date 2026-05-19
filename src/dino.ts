@@ -1,9 +1,12 @@
 // The dinosaur entity. He owns the entire viewport: he picks random points
 // to wander to, walks toward them, then idles, looks around, blinks, or
 // naps. An external coordinator can also assign him a *goal* — walk over to
-// a specific point (a floating message), pick it up, then walk to another
-// point (a category bin) and drop it. While he has a goal he ignores his
-// own random wandering decisions.
+// a specific point (a text block), react to it, and then go back to
+// wandering.
+//
+// In this rebuild, Zaur has simple gravity — he falls until he lands on a
+// text block top-edge or the viewport floor. Text blocks act as platforms
+// he can stand on, making the "letters are his world" concept literal.
 
 import {
   buildFrames,
@@ -30,6 +33,8 @@ export type Activity =
   | "blink"
   | "sleep"
   | "react"
+  | "fall"     // gravity — falling toward the ground or a platform
+  | "stare"    // prolonged sky/moon gazing — look_up frame, long duration
   | "seek"      // walking toward a designated message to pick it up
   | "carry"     // walking with a message attached, headed for a bin
   | "deliver";  // paused at a bin, dropping the message in
@@ -59,6 +64,22 @@ export interface CarryAnchor {
   y: number;
 }
 
+/** A platform the dino can stand on. */
+export interface Platform {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/** Callback to query available platforms at runtime. */
+export type PlatformQuery = (x: number, fromY: number) => { y: number; platform: Platform | null };
+
+// Gravity constants.
+const GRAVITY = 480;       // px/s²
+const MAX_FALL_SPEED = 600; // px/s
+const GROUND_MARGIN = 60;   // px from bottom of viewport
+
 export class Dino {
   private x: number;
   private y: number;
@@ -74,13 +95,26 @@ export class Dino {
   private deliverUntil = 0;
   private frames: Record<FrameId, RenderedFrame>;
 
+  /** Vertical velocity for gravity. */
+  private vy = 0;
+  /** Whether the dino is currently on a platform. */
+  private onGround = true;
+  /** The platform the dino is currently standing on (null = viewport floor). */
+  private currentPlatform: Platform | null = null;
+
+  /** Hook to query terrain platforms. Set by main.ts after construction. */
+  platformQuery: PlatformQuery | null = null;
+
   /** Public mood — used to pick a face frame while reacting / delivering. */
   mood: Mood = "neutral";
+
+  /** Whether music is playing — makes idle animation bouncier. */
+  musicPlaying = false;
 
   constructor(private opts: DinoOptions) {
     this.frames = buildFrames(opts.scale, opts.color);
     this.x = opts.worldWidth * 0.5;
-    this.y = opts.worldHeight * 0.6;
+    this.y = opts.worldHeight - GROUND_MARGIN - this.heightPx;
     this.targetX = this.x;
     this.targetY = this.y;
     this.scheduleNextDecision(performance.now() + 1500);
@@ -101,6 +135,11 @@ export class Dino {
   }
   get heightPx(): number {
     return SPRITE_GRID_H * this.opts.scale;
+  }
+
+  /** The ground floor Y position (bottom of viewport minus margin). */
+  get groundY(): number {
+    return this.opts.worldHeight - GROUND_MARGIN - this.heightPx;
   }
 
   /** Tether point for things attached to the dino — head + feet. */
@@ -134,7 +173,8 @@ export class Dino {
     return (
       this.activity === "idle" ||
       this.activity === "walk" ||
-      this.activity === "look"
+      this.activity === "look" ||
+      this.activity === "stare"
     );
   }
 
@@ -251,6 +291,8 @@ export class Dino {
   }
 
   update(now: number, dtMs: number): void {
+    const dtSec = dtMs / 1000;
+
     // Blink layer — independent of motion.
     if (
       now >= this.wantsBlinkAt &&
@@ -262,6 +304,48 @@ export class Dino {
       this.scheduleNextBlink(now);
     }
 
+    // ── Gravity ──────────────────────────────────────────────────────
+    // Apply gravity when not on a solid surface. The dino falls until
+    // he hits a text block top-edge or the viewport floor.
+    if (!this.onGround) {
+      this.vy = Math.min(this.vy + GRAVITY * dtSec, MAX_FALL_SPEED);
+      this.y += this.vy * dtSec;
+
+      // Check for platform landing.
+      const feetY = this.y + this.heightPx;
+      const floorY = this.opts.worldHeight - GROUND_MARGIN;
+      const query = this.platformQuery;
+      
+      if (query) {
+        const result = query(this.x, this.y);
+        if (feetY >= result.y) {
+          // Landed on a platform or the ground.
+          this.y = result.y - this.heightPx;
+          this.vy = 0;
+          this.onGround = true;
+          this.currentPlatform = result.platform;
+        }
+      } else if (feetY >= floorY) {
+        this.y = floorY - this.heightPx;
+        this.vy = 0;
+        this.onGround = true;
+        this.currentPlatform = null;
+      }
+    } else {
+      // Check if we walked off the edge of a platform.
+      if (this.currentPlatform) {
+        const p = this.currentPlatform;
+        const centerX = this.x;
+        if (centerX < p.x - 8 || centerX > p.x + p.w + 8) {
+          // Walked off the edge — start falling!
+          this.onGround = false;
+          this.vy = 0;
+          this.currentPlatform = null;
+        }
+      }
+    }
+
+    // ── Horizontal movement ──────────────────────────────────────────
     // Movement is shared between wander, seek, and carry.
     if (
       this.activity === "walk" ||
@@ -271,11 +355,11 @@ export class Dino {
       const dx = this.targetX - this.x;
       const dy = this.targetY - this.y;
       const dist = Math.hypot(dx, dy);
-      const step = this.speed * (dtMs / 1000);
+      const step = this.speed * dtSec;
 
       if (dist <= 1.5 || step >= dist) {
         this.x = this.targetX;
-        this.y = this.targetY;
+        // Don't snap Y — let gravity handle vertical positioning.
         if (this.activity === "walk") {
           // Wander arrived — go idle and pick the next thing.
           this.activity = "idle";
@@ -284,8 +368,15 @@ export class Dino {
         // For seek/carry, stay put with the same activity until the
         // coordinator gives us the next instruction.
       } else {
+        // Move horizontally (and a bit vertically toward the target).
         this.x += (dx / dist) * step;
-        this.y += (dy / dist) * step;
+        // Vertical movement: only move toward target if we're on the ground
+        // and the target is reachable (roughly same level). If the target
+        // is much higher/lower, we rely on gravity + platform landing.
+        if (this.onGround && Math.abs(dy) > 2) {
+          // Allow some Y movement toward the target, but reduced.
+          this.y += (dy / dist) * step * 0.4;
+        }
         if (Math.abs(dx) > 0.5) this.facing = dx >= 0 ? 1 : -1;
       }
     }
@@ -306,22 +397,68 @@ export class Dino {
   draw(ctx: CanvasRenderingContext2D): void {
     const frame = this.currentFrame();
     const img = this.facing === 1 ? frame.right : frame.left;
-    // Subtle 1px bob while walking
+    // Subtle bob: walking = 1px step bob, idle = gentle breathing or dance, stare = perfectly still
     const moving =
       this.activity === "walk" ||
       this.activity === "seek" ||
       this.activity === "carry";
-    const bob = moving ? Math.round(Math.sin(this.animTick / 110)) : 0;
-    ctx.drawImage(
-      img,
-      Math.round(this.x - this.widthPx / 2),
-      Math.round(this.y + bob)
-    );
+    const idling = this.activity === "idle";
+    let bob = 0;
+    if (moving) {
+      bob = Math.round(Math.sin(this.animTick / 110));
+    } else if (idling && this.musicPlaying) {
+      // Dance bob — faster, bouncier when music plays.
+      bob = Math.sin(this.animTick / 200) * 1.5;
+    } else if (idling) {
+      // Tiny 0.5px breathing oscillation — barely visible but alive.
+      bob = Math.sin(this.animTick / 800) * 0.6;
+    }
+
+    // Squash-and-stretch on landing.
+    const falling = this.activity === "fall" || (!this.onGround && this.vy > 50);
+    if (falling) {
+      // Stretch while falling.
+      ctx.save();
+      const cx = Math.round(this.x);
+      const cy = Math.round(this.y + this.heightPx / 2);
+      ctx.translate(cx, cy);
+      ctx.scale(0.9, 1.1);
+      ctx.translate(-cx, -cy);
+      ctx.drawImage(
+        img,
+        Math.round(this.x - this.widthPx / 2),
+        Math.round(this.y + bob)
+      );
+      ctx.restore();
+    } else {
+      // Small grounding shadow.
+      if (this.onGround) {
+        const shadowW = this.widthPx * 0.6;
+        const shadowH = 3;
+        const shadowX = Math.round(this.x);
+        const shadowY = Math.round(this.y + this.heightPx + 1);
+        ctx.save();
+        ctx.globalAlpha = 0.15;
+        ctx.fillStyle = "#000";
+        ctx.beginPath();
+        ctx.ellipse(shadowX, shadowY, shadowW / 2, shadowH, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.drawImage(
+        img,
+        Math.round(this.x - this.widthPx / 2),
+        Math.round(this.y + bob)
+      );
+    }
   }
 
   private currentFrame(): RenderedFrame {
     const now = performance.now();
     if (this.activity === "sleep") return this.frames.sleep;
+    if (this.activity === "fall") return this.frames.surprise;
+    if (this.activity === "stare") return this.frames.look_up;
     if (now < this.blinkUntil) return this.frames.blink;
     if (this.activity === "react") return this.moodFrame();
     if (this.activity === "deliver") return this.moodFrame();
@@ -397,6 +534,10 @@ export class Dino {
     } else if (r < 0.94) {
       this.activity = "look";
       this.scheduleNextDecision(now + 900 + Math.random() * 1100);
+    } else if (r < 0.97) {
+      // Prolonged sky/moon stare — contemplative moment.
+      this.activity = "stare";
+      this.scheduleNextDecision(now + 3000 + Math.random() * 4000);
     } else {
       this.activity = "sleep";
       this.scheduleNextDecision(now + 4000 + Math.random() * 5000);
@@ -433,7 +574,7 @@ export class Dino {
     return 8;
   }
   private get maxY(): number {
-    return this.opts.worldHeight - this.heightPx - 8;
+    return this.opts.worldHeight - this.heightPx - GROUND_MARGIN;
   }
 
   private scheduleNextDecision(at: number): void {

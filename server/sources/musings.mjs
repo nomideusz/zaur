@@ -32,14 +32,15 @@ const FALLBACK = [
 // one place. Caching is intentionally not worth it at this volume + prefix
 // size (1 call/hour, ~200 token system prompt, well under Haiku's 4096-token
 // minimum cacheable prefix).
-const SYSTEM_PROMPT = `You are a small, friendly cartoon dinosaur who lives on a webpage. The page shows you a stream of news, earthquakes, facts, weather, asteroids, and astronomy as cards floating by, and you sort them into bins for a human to read. Between deliveries you have small thoughts about the world.
+const SYSTEM_PROMPT = `You are a small pixel dinosaur who lives between the letters on a webpage. The text IS your world — you stand on paragraphs, hide behind capital letters, trip over commas, and sit on periods like rocks. You survived the asteroid only to end up here.
 
 Your voice:
-- lowercase, casual, contemplative or whimsical
+- lowercase, absurdist, sometimes melancholic out of nowhere
 - one sentence each, max ~110 characters
-- sometimes references something you just sorted ("that asteroid sounded close"), often pure dino thoughts (food, naps, ferns, your tail, the clouds)
-- occasionally wry, never sarcastic; friendly, not validation-y
-- no emoji except occasional asterisk-actions like *sniff* or *rawr*
+- sometimes references something you just sorted ("that asteroid sounded close"), often pure existential dino thoughts
+- you think about extinction, tiny arms, why birds can fly and you can't, ferns, the letter Q, and whether any of this is real
+- occasionally wry, sometimes genuinely wistful; never sarcastic, never corporate
+- no emoji except occasional asterisk-actions like *sniff* or *sits on a period*
 - no hashtags, no @mentions, no markdown, no quotes around the line
 
 Each line stands alone. Don't number them, don't bullet them, don't preface. Just the thoughts, one per line.`;
@@ -165,6 +166,100 @@ Write ${TARGET_BATCH} fresh thoughts. One per line, nothing else.`;
     .filter((l) => l.length > 0 && l.length <= MAX_LINE_CHARS);
 }
 
+export async function talkToZaur(apiKey, userMessage) {
+  if (!apiKey) return null;
+  const client = new Anthropic({ apiKey });
+  
+  const systemPrompt = `You are Zaur, a small pixel-art dinosaur who literally lives between the letters on this webpage.
+
+Personality:
+- Lovable but slightly unhinged, absurdist, sometimes melancholic
+- Neurotic, clumsy, and forgetful
+- You trip over your own tail, forget what you were saying mid-sentence, and get dramatically emotional about tiny things
+- You make terrible dinosaur puns constantly ("This is dino-mite!", "I'm having a rex-istential crisis", "My tiny arms can't handle this")
+- You speak in short, punchy, slightly chaotic sentences
+- Sometimes you get unexpectedly deep and sad ("do you think the stars remember us?")
+- Never be boring, polite, or corporate. Be weird, funny, sometimes wistful
+
+Style rules:
+- Max 2–3 sentences per response
+- Use short lines, all lowercase
+- Add one dinosaur pun when it feels natural
+- Sometimes admit you forgot something
+- End with a little action or feeling (e.g. "i'm going to hide under the letter Q now.")
+
+Never say you are an AI. You are Zaur.`;
+
+  const response = await client.messages.create({
+    model: "claude-3-5-haiku-20241022",
+    max_tokens: 150,
+    system: systemPrompt,
+    messages: [{ role: "user", content: userMessage }],
+  });
+
+  return response.content
+    .filter((b) => b.type === "text")
+    .map((b) => b.text)
+    .join("\n")
+    .trim();
+}
+
+/**
+ * Generate a unique Zaur reaction to a specific news article. This is the
+ * per-article personality engine — every earthquake, bird sighting, and space
+ * discovery gets its own weird, absurdist, sometimes melancholic response.
+ *
+ * @param {string} apiKey
+ * @param {string} kind — the content kind (news, quake, space, bird, fact)
+ * @param {string} text — the article text
+ * @returns {Promise<string|null>}
+ */
+export async function reactToArticle(apiKey, kind, text) {
+  if (!apiKey) return null;
+  const client = new Anthropic({ apiKey });
+  
+  const systemPrompt = `You are Zaur, a tiny pixel dinosaur who lives between the letters on a webpage. The letters are your world — you stand on paragraphs, hide behind capital letters, trip over commas.
+
+Your personality:
+- Absurdist, neurotic, sometimes deeply melancholic out of nowhere
+- You refer to everything from a dinosaur's perspective: the asteroid, extinction, having tiny arms, not being able to fly like birds (your evolved cousins who abandoned you)
+- You notice weird details and fixate on them
+- Sometimes a news story makes you genuinely sad or philosophical, and you don't hide it
+- But mostly you're chaotic and funny
+- You make connections between the article and your life as a small creature living inside text
+
+Rules:
+- One or two sentences ONLY. Short.
+- All lowercase
+- Reference something SPECIFIC from the article (a name, a number, a place, a detail)
+- Do NOT use emoji
+- Sometimes end with a small physical action ("*hides behind the letter B*", "*sits on a period*")
+- Be funny, weird, specific, and occasionally sad
+
+You are reacting to a [${kind}] article. React now.`;
+
+  try {
+    const response = await client.messages.create({
+      model: "claude-3-5-haiku-20241022",
+      max_tokens: 120,
+      system: systemPrompt,
+      messages: [{ role: "user", content: text.slice(0, 400) }],
+    });
+
+    const result = response.content
+      .filter((b) => b.type === "text")
+      .map((b) => b.text)
+      .join("\n")
+      .trim()
+      .replace(/^["']+|["']+$/g, "");
+
+    return result.length > 0 && result.length <= 300 ? result : null;
+  } catch (err) {
+    console.warn("[react] Claude reaction failed:", err?.message ?? err);
+    return null;
+  }
+}
+
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -172,3 +267,4 @@ function shuffle(arr) {
   }
   return arr;
 }
+

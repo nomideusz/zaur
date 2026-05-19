@@ -14,7 +14,7 @@ function injectStylesOnce(): void {
   const style = document.createElement("style");
   style.textContent = `
     .dino-bubble {
-      position: absolute;
+      position: fixed;
       max-width: 220px;
       padding: 8px 10px 7px;
       background: var(--paper, #1f1e26);
@@ -26,7 +26,7 @@ function injectStylesOnce(): void {
       opacity: 0;
       transform: translate(-50%, -100%) translateY(-12px);
       transition: opacity 240ms ease, transform 240ms cubic-bezier(.2,.7,.2,1.4);
-      z-index: 5;
+      z-index: 15;
       white-space: pre-wrap;
       word-break: break-word;
     }

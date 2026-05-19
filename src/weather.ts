@@ -257,7 +257,7 @@ function injectStylesOnce(): void {
   const style = document.createElement("style");
   style.textContent = `
     .wx-card {
-      position: absolute;
+      position: fixed;
       top: 14px;
       right: 14px;
       display: flex;
@@ -275,7 +275,7 @@ function injectStylesOnce(): void {
       opacity: 0;
       transform: translateY(-6px);
       transition: opacity 360ms ease, transform 360ms cubic-bezier(.2,.7,.2,1.4);
-      z-index: 5;
+      z-index: 12;
       max-width: min(64vw, 320px);
     }
     .wx-card--visible {

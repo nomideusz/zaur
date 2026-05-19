@@ -1,29 +1,188 @@
 // Entry point. Sets up the canvas + DPR scaling, builds the world and the
 // dino, and runs the main animation loop.
 //
-// Content (HN, DEV.to, weather, quakes, facts, musings) is fetched
-// and ranked on the server. The client just listens for "item" SSE events
-// and spawns a floating card for each; the courier loop then walks the dino
-// over to grab and deliver them.
+// In this rebuild, text blocks are scattered across the full viewport as
+// terrain. Zaur walks between them, stands on them, and reacts to content.
+// The world canvas is dimmed to a soft backdrop behind the letters.
 
 import { Dino, type Mood } from "./dino.js";
 import { DinoAmbient } from "./dinoBehavior.js";
 import { DinoBubble } from "./dinoBubble.js";
 import { DinoVoice } from "./dinoVoice.js";
-import { MessageWorld, type FloatingMessage } from "./messages.js";
-import type { ContentKind } from "./services/content.js";
 import { WeatherClient } from "./weather.js";
 import { World } from "./world.js";
+import { typewriter } from "./typewriter.js";
+import { RadioAudio, type RadioChannel } from "./radio.js";
+import { TextTerrain } from "./textTerrain.js";
+import { ZaurMemorySystem } from "./zaurMemory.js";
+import type { ContentItem } from "./services/content.js";
 
 const ARCHIVE_API_URL = (
   import.meta.env.VITE_ARCHIVE_URL ??
   "https://dinosaurus-archive-production.up.railway.app"
 ).replace(/\/$/, "");
 
-function startApp(stage: HTMLElement, canvas: HTMLCanvasElement): void {
-  const maybeCtx = canvas.getContext("2d");
-  if (!maybeCtx) throw new Error("2D canvas context unavailable");
-  const ctx: CanvasRenderingContext2D = maybeCtx;
+// ── Return greeting ──────────────────────────────────────────────────
+
+const LAST_VISIT_KEY = "zaur-last-visit";
+
+function getReturnGreeting(): string | null {
+  try {
+    const last = localStorage.getItem(LAST_VISIT_KEY);
+    localStorage.setItem(LAST_VISIT_KEY, String(Date.now()));
+    if (!last) return null;
+
+    const goneMs = Date.now() - Number(last);
+    const goneMin = goneMs / 60_000;
+    const goneHrs = goneMin / 60;
+    const goneDays = goneHrs / 24;
+
+    if (goneMin < 5) return null; // just refreshed
+
+    if (goneMin < 60) {
+      return "oh. you again. i wasn't doing anything weird. definitely not eating punctuation.";
+    }
+    if (goneHrs < 6) {
+      const hrs = Math.round(goneHrs);
+      return `${hrs} hour${hrs > 1 ? "s" : ""}?? i had to read ALL the news by myself. do you know how hard that is with two-pixel arms?`;
+    }
+    if (goneDays < 2) {
+      return "a whole day. i ate three semicolons and a paragraph while you were gone. i'm not sorry. a dino's gotta eat.";
+    }
+    if (goneDays < 7) {
+      const d = Math.round(goneDays);
+      return `...you were gone ${d} days. i've been sitting on this period for ${d * 24} hours. my legs are asleep. all four of them. wait. i have two. see? i already forgot.`;
+    }
+    return "i thought you forgot about me. i've been here the whole time. the letters kept me company. mostly the letter Q. Q is nice.";
+  } catch {
+    return null;
+  }
+}
+
+// ── Poke escalation ──────────────────────────────────────────────────
+
+const POKE_LINES = [
+  "ow!",
+  "OW!",
+  "STOP.",
+  "i'm calling the cursor police.",
+  "THAT'S IT. I'M LEAVING.",
+];
+let pokeCount = 0;
+let pokeResetTimer = 0;
+
+// ── Idle commentary ──────────────────────────────────────────────────
+
+function getIdleComment(hour: number): string {
+  const pool: string[] = [];
+
+  // Time-of-day flavored lines
+  if (hour >= 6 && hour < 9) {
+    pool.push(
+      "good morning world! everything is terrifying! let's go!",
+      "the sunrise looks like someone spilled orange juice on the sky.",
+      "i slept inside the letter O last night. very round. very comforting.",
+      "stretching my tiny arms... stretch... okay that's enough exercise for today.",
+    );
+  } else if (hour >= 11 && hour < 14) {
+    pool.push(
+      "is it lunch? it feels like lunch. everything feels like lunch when you're a dinosaur.",
+      "peak productivity hours. *stares at a comma for ten minutes*",
+      "i have strong opinions about this font. mostly that it's my home.",
+    );
+  } else if (hour >= 14 && hour < 17) {
+    pool.push(
+      "do you ever wonder if the letter W is just M upside down? or if M is W upside down? who came first?",
+      "the afternoon light makes everything look like a memory.",
+      "i think periods are just full stops that wanted to be something more.",
+      "sometimes i sit here and think about the asteroid. other times i think about ferns.",
+    );
+  } else if (hour >= 17 && hour < 20) {
+    pool.push(
+      "the sky is doing that thing again. the pretty one. with the colors.",
+      "today i learned... wait. i forgot. i learned something though. probably.",
+      "evening is when the letters get sleepy. look. that lowercase 'e' is yawning.",
+    );
+  } else if (hour >= 20 || hour < 5) {
+    pool.push(
+      "*yawn* the letters are going to sleep. i should... *yawn*... also...",
+      "night is when the dots in the grid come alive. i've been watching them.",
+      "did you know nocturnal dinosaurs were a thing? i'm not one. i'm just... still awake.",
+      "the moon is out. i wonder if it remembers the asteroid too.",
+    );
+  }
+
+  // Universal lines
+  pool.push(
+    "is that a comma? it looks delicious.",
+    "my tail is getting caught in the margins again.",
+    "monospaced fonts make me feel so organized. everything lines up. even my existential dread.",
+    "i wonder what's written on the other side of the screen.",
+    "this paragraph is nice and cozy. i might stay here forever. or five seconds. same thing.",
+    "the letter Q has a tail too. we're basically related.",
+    "i just realized i can't actually read. i've been pretending this whole time.",
+    "if i stand still long enough, do i become a glyph?",
+    "sometimes i think about how space is infinite. then i think about ferns. ferns are better.",
+    "small reminder: the asteroid wasn't personal. probably.",
+  );
+
+  return pool[Math.floor(Math.random() * pool.length)];
+}
+
+// ── Punctuation reactions ────────────────────────────────────────────
+
+function scanForPunctuationReaction(text: string): string | null {
+  // Only trigger occasionally
+  if (Math.random() > 0.35) return null;
+  
+  const hasExclaim = /!{2,}/.test(text) || /[A-Z]{5,}/.test(text);
+  const hasQuestion = /\?{2,}/.test(text);
+  const hasEllipsis = /\.{3,}/.test(text);
+  
+  if (hasExclaim) {
+    const lines = [
+      "ALL THOSE EXCLAMATION MARKS. my tiny ears.",
+      "why is everyone YELLING. this is a library. of letters. that i live in.",
+      "the capital letters are so loud today.",
+    ];
+    return lines[Math.floor(Math.random() * lines.length)];
+  }
+  if (hasQuestion) {
+    const lines = [
+      "so many questions. i don't have answers. i barely have arms.",
+      "?? i don't know either. let me ask this semicolon.",
+    ];
+    return lines[Math.floor(Math.random() * lines.length)];
+  }
+  if (hasEllipsis) {
+    const lines = [
+      "the dot dot dot is making me... sleepy...",
+      "ellipsis. the suspense. i can't handle... *falls asleep*",
+    ];
+    return lines[Math.floor(Math.random() * lines.length)];
+  }
+  return null;
+}
+
+// ── Main app ─────────────────────────────────────────────────────────
+
+function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas: HTMLCanvasElement): void {
+  const maybeWorldCtx = worldCanvas.getContext("2d");
+  const maybeDinoCtx = dinoCanvas.getContext("2d");
+  if (!maybeWorldCtx || !maybeDinoCtx) throw new Error("2D canvas context unavailable");
+  const worldCtx: CanvasRenderingContext2D = maybeWorldCtx;
+  const dinoCtx: CanvasRenderingContext2D = maybeDinoCtx;
+
+  // DOM Elements
+  const terrainEl = document.getElementById("terrain") as HTMLElement;
+  const systemMsg = document.getElementById("system-msg") as HTMLElement;
+  const chatForm = document.getElementById("chat-form") as HTMLFormElement;
+  const chatInput = document.getElementById("chat-input") as HTMLInputElement;
+  const voiceBtn = document.getElementById("voice-btn") as HTMLButtonElement;
+  const radioBtn = document.getElementById("radio-btn") as HTMLButtonElement;
+  const radioDrawer = document.getElementById("radio-drawer") as HTMLElement;
+  const closeRadioBtn = document.getElementById("close-radio-btn") as HTMLButtonElement;
+  const trackInfoEl = radioDrawer.querySelector(".radio-track-info") as HTMLElement;
 
   let dpr = Math.max(1, window.devicePixelRatio || 1);
   let cssW = stage.clientWidth;
@@ -33,20 +192,25 @@ function startApp(stage: HTMLElement, canvas: HTMLCanvasElement): void {
     cssW = stage.clientWidth;
     cssH = stage.clientHeight;
     dpr = Math.max(1, window.devicePixelRatio || 1);
-    canvas.width = Math.round(cssW * dpr);
-    canvas.height = Math.round(cssH * dpr);
-    canvas.style.width = `${cssW}px`;
-    canvas.style.height = `${cssH}px`;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.imageSmoothingEnabled = false;
+
+    // Size both canvases identically.
+    for (const c of [worldCanvas, dinoCanvas]) {
+      c.width = Math.round(cssW * dpr);
+      c.height = Math.round(cssH * dpr);
+      c.style.width = `${cssW}px`;
+      c.style.height = `${cssH}px`;
+    }
+    worldCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    worldCtx.imageSmoothingEnabled = false;
+    dinoCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    dinoCtx.imageSmoothingEnabled = false;
   }
 
   applySize();
 
-  // Per-visitor weather: ambient card + sky effects (clouds/rain/snow).
-  // Independent of the shared archive — this is your own local weather.
-  const weather = new WeatherClient(stage);
+  // ── Core systems ──────────────────────────────────────────────────
 
+  const weather = new WeatherClient(stage);
   const world = new World(
     { width: cssW, height: cssH },
     { weather: () => weather.conditions() }
@@ -55,94 +219,631 @@ function startApp(stage: HTMLElement, canvas: HTMLCanvasElement): void {
   const dinoScale = Math.max(2, Math.min(4, Math.round(Math.min(cssW, cssH) / 240)));
   const dino = new Dino({ scale: dinoScale, worldWidth: cssW, worldHeight: cssH });
 
-  // The bins we start with — one per kind that the server's narrator emits.
-  // Weather is intentionally absent: it's a per-visitor ambient overlay, not
-  // shared content the dino sorts.
-  // Ambient mood layer — yawns at night, shivers in snow, lies down when bored.
-  // Reads weather + clock + idle timer; reacts only when the dino isn't busy.
-  const ambient = new DinoAmbient(dino, () => weather.conditions());
   const bubble = new DinoBubble(stage, dino);
   const voice = new DinoVoice(ARCHIVE_API_URL);
+  const radio = new RadioAudio();
 
-  const messages = new MessageWorld(
-    stage,
-    [
-      { kind: "news", label: "news", icon: "▤" },
-      { kind: "quake", label: "quakes", icon: "↯" },
-      { kind: "fact", label: "facts", icon: "❍" },
-      { kind: "space", label: "space", icon: "☄" },
-      { kind: "bird", label: "birds", icon: "Λ" },
-    ],
-    cssW,
-    cssH,
-    {
-      // Brief double-take whenever a fresh card lands. Goal-driven states
-      // (seek/carry/deliver) ignore this, so we never disturb a delivery.
-      onSpawn: () => {
-        dino.react("surprised", 500);
-        ambient.noteSpawn();
-      },
-      onRadioChange: () => dino.react("curious", 900),
-      onBacklogPressure: () => dino.react("sad", 900),
-      onDinoThought: (text) => {
-        bubble.show(text);
-        void voice.say(text);
-        dino.react("happy", 800);
-      },
-      voice,
+  const ambient = new DinoAmbient(dino, () => weather.conditions());
+  ambient.onWeatherComment = (line) => {
+    bubble.show(line);
+    // Voice for dramatic weather moments.
+    if (isVoiceEnabled && line.includes("!")) {
+      void voice.say(line);
     }
-  );
+  };
 
-  const courier = new Courier(dino, messages);
+  // Text terrain system — scattered across the viewport.
+  const terrain = new TextTerrain(terrainEl, {
+    viewW: cssW,
+    viewH: cssH,
+    marginX: 24,
+    marginTop: 80,
+    marginBottom: 80,
+  });
 
-  // Half-Polish dino, voiced. Most pokes get a quiet flinch; sometimes he
-  // grumbles a line out loud. Cooldown prevents one rapid-fire click from
-  // stacking up six bubbles.
-  const OUCH_LINES = [
-    "ała",
-    "auć",
-    "to boli",
-    "it hurts",
-    "ouch",
-    "ow",
-    "ej!",
-    "no co ty",
-    "delikatniej proszę",
-    "ej, łapy precz",
-    "be gentle",
-    "*sniff* that hurt",
+  // Wire up the dino's gravity system to the terrain.
+  dino.platformQuery = (x, fromY) => {
+    const result = terrain.platformAt(x, fromY);
+    return {
+      y: result.y,
+      platform: result.block ? { x: result.block.x, y: result.block.y, w: result.block.w, h: result.block.h } : null,
+    };
+  };
+
+  // Track rendered item IDs to prevent duplicates.
+  const renderedItemIds = new Set<string>();
+
+  // Zaur's cross-session memory.
+  const memory = new ZaurMemorySystem();
+
+  // ── Audio/Voice system toggles ────────────────────────────────────
+
+  let isVoiceEnabled = voice.isEnabled();
+  voiceBtn.textContent = isVoiceEnabled ? "🔊" : "🔇";
+  voiceBtn.classList.toggle("active", isVoiceEnabled);
+
+  voiceBtn.addEventListener("click", () => {
+    isVoiceEnabled = voice.toggle();
+    voiceBtn.textContent = isVoiceEnabled ? "🔊" : "🔇";
+    voiceBtn.classList.toggle("active", isVoiceEnabled);
+    if (isVoiceEnabled) {
+      void voice.playSfx("/sfx/chime");
+    }
+  });
+
+  // ── Radio ─────────────────────────────────────────────────────────
+
+  let isRadioPlaying = false;
+  let trackChangeCount = 0;
+
+  const DJ_TRACK_LINES = [
+    "this song makes my tiny arms want to air guitar. *air guitars with no guitar and no arms*",
+    "i'm going to pretend i chose this track. great taste, me.",
+    "is this what humans call a 'bop'? my tail is bopping. i think it's a bop.",
+    "if you close your eyes this sounds like the asteroid approaching. but in a good way.",
+    "music is just organized air. and i'm just organized pixels. we're basically the same.",
+    "i wonder what the letters think of the music. the letter B looks like it's nodding.",
+    "this beat is making me forget about the asteroid. almost.",
+    "i could dance to this. i won't. but i could. theoretically.",
   ];
-  const OUCH_COOLDOWN_MS = 3500;
-  const OUCH_VOICE_CHANCE = 0.55;
-  let lastOuchAt = -Infinity;
+
+  const DJ_BETWEEN_LINES = [
+    "coming up next on zaur fm... honestly i don't know what's next. i can't read the playlist. tiny arms.",
+    "that was a good one. or bad. i have no frame of reference. i'm a dinosaur.",
+    "loading next track... or as i call it, 'standing here waiting'.",
+  ];
+
+  const DJ_START_LINES = [
+    "music! finally! it was way too quiet in here. just me and the letters and the existential dread.",
+    "zaur fm is on the air! *taps microphone* is this thing on? i don't have a microphone.",
+    "oh good, sounds. i was starting to hear my own thoughts and they're mostly about ferns.",
+  ];
+
+  const DJ_STOP_LINES = [
+    "and we're off the air. back to the sound of me breathing and the letters judging me.",
+    "the silence is deafening. like a very quiet asteroid.",
+    "it's too quiet. i can hear the semicolons whispering.",
+  ];
+
+  radioBtn.addEventListener("click", () => {
+    radioDrawer.classList.toggle("open");
+  });
+
+  closeRadioBtn.addEventListener("click", () => {
+    radioDrawer.classList.remove("open");
+  });
+
+  radio.onTrackChange = (info) => {
+    trackInfoEl.textContent = `${info.title} • ${info.artist} (${info.playlist})`;
+    trackChangeCount++;
+    
+    // DJ commentary on track changes (not the first one — that gets a "start" line).
+    if (trackChangeCount > 1 && Math.random() < 0.6) {
+      const pool = Math.random() < 0.7 ? DJ_TRACK_LINES : DJ_BETWEEN_LINES;
+      const line = pool[Math.floor(Math.random() * pool.length)];
+      setTimeout(() => {
+        bubble.show(line);
+        dino.react("happy", 1200);
+      }, 2000);
+    }
+  };
+
+  const channelBtns = radioDrawer.querySelectorAll(".channel-btn");
+  channelBtns.forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      channelBtns.forEach((b) => b.classList.remove("active"));
+      btn.classList.add("active");
+      const channel = btn.getAttribute("data-channel") as RadioChannel;
+      
+      radio.tune(channel);
+
+      const wasPlaying = isRadioPlaying;
+
+      trackInfoEl.textContent = "tuning station...";
+      await radio.toggleMusic(channel);
+
+      // Detect start/stop transition.
+      const isNowPlaying = !!radio.track;
+      if (isNowPlaying && !wasPlaying) {
+        isRadioPlaying = true;
+        dino.musicPlaying = true;
+        radioBtn.classList.add("active");
+        trackChangeCount = 1;
+        const line = DJ_START_LINES[Math.floor(Math.random() * DJ_START_LINES.length)];
+        dino.react("excited", 1800);
+        setTimeout(() => bubble.show(line), 600);
+      } else if (!isNowPlaying && wasPlaying) {
+        isRadioPlaying = false;
+        dino.musicPlaying = false;
+        radioBtn.classList.remove("active");
+        trackChangeCount = 0;
+        const line = DJ_STOP_LINES[Math.floor(Math.random() * DJ_STOP_LINES.length)];
+        dino.react("sad", 1200);
+        setTimeout(() => bubble.show(line), 400);
+      } else if (isNowPlaying) {
+        dino.react("excited", 1000);
+      }
+    });
+  });
+
+  // ── Return greeting ───────────────────────────────────────────────
+
+  const greeting = getReturnGreeting();
+  if (greeting) {
+    const greetEl = document.createElement("div");
+    greetEl.className = "return-greeting";
+    greetEl.textContent = "";
+    stage.appendChild(greetEl);
+    
+    // Typewriter the greeting.
+    setTimeout(() => {
+      void typewriter(greetEl, greeting, { cps: 30, playClick: false }).then(() => {
+        // Fade out after reading.
+        setTimeout(() => {
+          greetEl.classList.add("return-greeting--fading");
+          setTimeout(() => greetEl.remove(), 1500);
+        }, 5000);
+      });
+    }, 800);
+
+    // Zaur reacts to the returning visitor.
+    setTimeout(() => {
+      dino.react("excited", 2000);
+      // Use memory greeting if available, otherwise generic.
+      const memGreeting = memory.getMemoryGreeting();
+      bubble.show(memGreeting ?? "you're back!!");
+    }, 1200);
+  }
+
+  // ── Content rendering ─────────────────────────────────────────────
+
+  function renderItem(item: ContentItem, isNew: boolean): void {
+    if (renderedItemIds.has(item.id)) return;
+    renderedItemIds.add(item.id);
+
+    const block = terrain.place(item, isNew);
+    if (!block) return;
+
+    if (isNew) {
+      const textEl = block.el.querySelector("[data-text-content]") as HTMLElement;
+      if (textEl) {
+        void typewriter(textEl, item.text, { cps: 38, playClick: isVoiceEnabled }).then(() => {
+          textEl.classList.remove("typing-cursor");
+          block.typing = false;
+
+          // Zaur reacts to the new article!
+          triggerDinoReaction(item, block);
+        });
+      }
+    }
+  }
+
+  // ── Zaur reactions ────────────────────────────────────────────────
+
+  async function triggerDinoReaction(item: ContentItem, block: import("./textTerrain.js").TerrainBlock): Promise<void> {
+    // Walk to the new block.
+    const targetX = block.x + block.w / 2;
+    const targetY = block.y - dino.heightPx;
+    dino.goTo(targetX, targetY);
+    dino.react("surprised", 800);
+
+    // Earthquake shake — magnitude-aware intensity.
+    if (item.kind === "quake") {
+      // Parse magnitude from text (e.g. "M5.2" or "magnitude 5.2").
+      const magMatch = item.text.match(/(?:M|magnitude\s*)(\d+\.?\d*)/i);
+      const magnitude = magMatch ? parseFloat(magMatch[1]) : 3.0;
+      const intensity = Math.min(3, Math.max(0.5, magnitude / 3));
+
+      stage.style.setProperty("--shake-intensity", `${intensity}`);
+      terrainEl.style.setProperty("--shake-intensity", `${intensity}`);
+      terrainEl.classList.add("earthquake-shake");
+      stage.classList.add("earthquake-shake");
+      const shakeDur = 400 + Math.round(magnitude * 100);
+      setTimeout(() => {
+        terrainEl.classList.remove("earthquake-shake");
+        stage.classList.remove("earthquake-shake");
+        stage.style.removeProperty("--shake-intensity");
+        terrainEl.style.removeProperty("--shake-intensity");
+      }, shakeDur);
+
+      // Screen flash for big quakes (M5.0+).
+      if (magnitude >= 5.0) {
+        const flash = document.createElement("div");
+        flash.className = "earthquake-flash";
+        stage.appendChild(flash);
+        setTimeout(() => flash.remove(), 600);
+      }
+    }
+
+    // Note the article in Zaur's memory.
+    if (isNew) {
+      memory.noteArticle(item.text, item.kind);
+    }
+
+    // Try to get a unique AI reaction from the server.
+    let comment: string | null = null;
+    try {
+      const resp = await fetch(`${ARCHIVE_API_URL}/api/zaur-react`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: item.kind, text: item.text }),
+      });
+      if (resp.ok) {
+        const body = await resp.json();
+        comment = body.text;
+      }
+    } catch {
+      // Fall through to punctuation/fallback reactions.
+    }
+
+    // Fallback: punctuation-based reaction.
+    if (!comment) {
+      comment = scanForPunctuationReaction(item.text);
+    }
+
+    // Fallback: kind-specific one-liners (more absurdist/melancholic).
+    if (!comment) {
+      comment = getFallbackReaction(item);
+    }
+
+    if (comment) {
+      setTimeout(() => {
+        bubble.show(comment!);
+        // Voice only for dramatic moments (quakes, space).
+        if (isVoiceEnabled && (item.kind === "quake" || item.kind === "space")) {
+          void voice.say(comment!);
+        }
+      }, 1800);
+    }
+  }
+
+  function getFallbackReaction(item: ContentItem): string {
+    const pools: Record<string, string[]> = {
+      quake: [
+        "the ground is having feelings again. i don't like it when the ground has feelings.",
+        "earthquakes are the planet's way of saying it's uncomfortable. same, earth. same.",
+        "my tail is vibrating at a frequency i can't identify. is this fear? or indigestion?",
+        "the letters are falling off the page. or i'm shaking. hard to tell.",
+      ],
+      space: [
+        "that's so far away it doesn't exist for me. but i still worry about it.",
+        "space is infinite. my arms are not. this feels relevant somehow.",
+        "do you think the stars remember the dinosaurs? i hope so.",
+        "thirteen billion light years is a long walk. even for someone with my dedication.",
+      ],
+      bird: [
+        "a bird. my distant cousin who got the flying upgrade and i got... this. these arms.",
+        "birds are just dinosaurs who figured out how to leave. i stayed. i have my reasons.",
+        "every time i see a bird i think about what could have been. then i think about ferns.",
+      ],
+      fact: [
+        "that's either deeply profound or completely useless. possibly both.",
+        "i will remember this fact for exactly four seconds. three. two. what were we talking about?",
+        "fascinating. did you know that i can't actually read? i've been faking it since the Cretaceous.",
+      ],
+      news: [
+        "humans are doing things again. brave, confusing things.",
+        "i read this three times and understood it less each time. classic news.",
+        "this makes me want to hide inside a parenthesis and think about it for a while.",
+        "interesting. concerning. i'm going to pretend i understand the implications.",
+      ],
+    };
+    const pool = pools[item.kind] ?? pools.news!;
+    return pool[Math.floor(Math.random() * pool.length)];
+  }
+
+  // ── Interactive chat ──────────────────────────────────────────────
+
+  chatForm.addEventListener("submit", async (ev) => {
+    ev.preventDefault();
+    const text = chatInput.value.trim();
+    if (!text) return;
+
+    chatInput.value = "";
+
+    // Render user's message as a terrain block near the bottom.
+    const userItem: ContentItem = {
+      id: `user-${Date.now()}`,
+      kind: "news" as ContentItem["kind"],
+      text,
+      publishedAt: Date.now(),
+      score: 0.3,
+    };
+    renderedItemIds.add(userItem.id);
+
+    const userBlock = terrain.place(userItem, true);
+    if (userBlock) {
+      userBlock.el.classList.add("kind-user");
+      userBlock.el.classList.remove("kind-news");
+      const textEl = userBlock.el.querySelector("[data-text-content]") as HTMLElement;
+      if (textEl) {
+        textEl.textContent = text;
+        textEl.classList.remove("typing-cursor");
+      }
+      const metaEl = userBlock.el.querySelector(".tb-meta") as HTMLElement;
+      if (metaEl) metaEl.textContent = "you";
+    }
+
+    // Zaur gets excited and moves to the user's message.
+    dino.react("excited", 800);
+    if (userBlock) {
+      dino.goTo(userBlock.x + userBlock.w / 2, userBlock.y - dino.heightPx);
+    }
+
+    try {
+      const resp = await fetch(`${ARCHIVE_API_URL}/api/zaur-talk`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+
+      if (resp.ok) {
+        const body = await resp.json();
+        const reply = body.text;
+
+        // Render Zaur's reply as a terrain block.
+        const replyItem: ContentItem = {
+          id: `zaur-${Date.now()}`,
+          kind: "fact" as ContentItem["kind"],
+          text: reply,
+          publishedAt: Date.now(),
+          score: 0.5,
+        };
+        renderedItemIds.add(replyItem.id);
+
+        const replyBlock = terrain.place(replyItem, true);
+        if (replyBlock) {
+          replyBlock.el.classList.add("kind-zaur");
+          replyBlock.el.classList.remove("kind-fact");
+          const textEl = replyBlock.el.querySelector("[data-text-content]") as HTMLElement;
+          const metaEl = replyBlock.el.querySelector(".tb-meta") as HTMLElement;
+          if (metaEl) metaEl.textContent = "zaur";
+          if (textEl) {
+            await typewriter(textEl, reply, { cps: 35, playClick: isVoiceEnabled });
+            textEl.classList.remove("typing-cursor");
+          }
+        }
+
+        dino.react("happy", 1200);
+        bubble.show(reply.length > 80 ? reply.slice(0, 77) + "..." : reply);
+        void voice.say(reply);
+      } else {
+        throw new Error("API call error");
+      }
+    } catch {
+      dino.react("sad", 1000);
+      bubble.show("rawr! i got distracted by a shiny dot! what were we talking about?");
+    }
+  });
+
+  // ── Easter eggs ──────────────────────────────────────────────────
+
+  // Magic words in chat — intercept before the API call by checking
+  // the chat form's submit handler. We inject them into the existing
+  // flow by watching the chat input for special keywords.
+  const MAGIC_WORDS: Record<string, { mood: Mood; line: string; action?: () => void }> = {
+    fern: {
+      mood: "sad",
+      line: "you said the magic word. *sniff* ferns are the only thing that survived with me. they're all i have. besides you. and these letters.",
+    },
+    rawr: {
+      mood: "excited",
+      line: "RAWR!! that's dinosaur for 'i appreciate your existence but i'm too cool to say it directly'. *tiny roar*",
+    },
+    asteroid: {
+      mood: "sad",
+      line: "we don't... we don't talk about that. *sits on a period and stares at nothing* i'm fine. i'm fine.",
+    },
+    meteor: {
+      mood: "surprised",
+      line: "INCOMING!! wait. it's just a pixel. a very fast pixel. *hides behind the letter B*",
+      action: () => {
+        // Fire a pixel meteor across the screen.
+        const meteor = document.createElement("div");
+        meteor.className = "easter-meteor";
+        stage.appendChild(meteor);
+        setTimeout(() => meteor.remove(), 2000);
+      },
+    },
+    "42": {
+      mood: "curious",
+      line: "the answer to life, the universe, and everything. but what's the question? i think it's about ferns.",
+    },
+    "hello": {
+      mood: "happy",
+      line: "hello! hi! hey! greetings! salutations! *waves with arms that cannot wave* ...hi.",
+    },
+  };
+
+  // Intercept magic words in the chat submit — check before the API call.
+  chatForm.addEventListener("submit", (ev) => {
+    const text = chatInput.value.trim().toLowerCase();
+    const magic = MAGIC_WORDS[text];
+    if (magic) {
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      chatInput.value = "";
+      dino.react(magic.mood, 2000);
+      bubble.show(magic.line);
+      if (isVoiceEnabled) void voice.say(magic.line);
+      magic.action?.();
+    }
+  }, true); // Capture phase — runs before the main handler.
+
+  // Konami code: ↑↑↓↓←→←→BA → Zaur puts on sunglasses.
+  const KONAMI = ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"];
+  let konamiIdx = 0;
+  let konamiActive = false;
+
+  document.addEventListener("keydown", (ev) => {
+    const key = ev.key.length === 1 ? ev.key.toLowerCase() : ev.key;
+    if (key === KONAMI[konamiIdx]) {
+      konamiIdx++;
+      if (konamiIdx >= KONAMI.length) {
+        konamiIdx = 0;
+        konamiActive = !konamiActive;
+        document.body.classList.toggle("zaur-cool", konamiActive);
+        if (konamiActive) {
+          dino.react("happy", 2000);
+          bubble.show("😎 deal with it. i look incredible. the letter C is jealous.");
+        } else {
+          dino.react("sad", 1200);
+          bubble.show("fine. back to being a regular dinosaur. *removes tiny sunglasses*");
+        }
+      }
+    } else {
+      konamiIdx = 0;
+    }
+  });
+
+  // Radio idle nudge — if radio has been off for > 5 min, occasionally ask about music.
+  let lastRadioNudge = performance.now();
+  setInterval(() => {
+    if (isRadioPlaying) {
+      lastRadioNudge = performance.now();
+      return;
+    }
+    const elapsed = performance.now() - lastRadioNudge;
+    if (elapsed < 5 * 60_000) return;
+    if (!dino.isAvailable || Math.random() > 0.15) return;
+
+    const nudgeLines = [
+      "it's really quiet in here. do you want me to hum? i'm a terrible hummer.",
+      "there's a radio button down there. just saying. no pressure. lots of pressure.",
+      "the silence is making me hear things. like my own thoughts. they're weird.",
+      "i miss the music. the letters were dancing. or i was imagining it. hard to tell with pixels.",
+    ];
+    const line = nudgeLines[Math.floor(Math.random() * nudgeLines.length)];
+    bubble.show(line);
+    dino.react("curious", 1800);
+    lastRadioNudge = performance.now();
+  }, 30_000);
+
+  // ── Click/Poke handling ───────────────────────────────────────────
 
   stage.addEventListener("pointerdown", (ev) => {
     if (ev.button !== 0) return;
     const target = ev.target;
-    if (target instanceof Element && target.closest("button, a, select, .msg, .archive-backdrop")) {
+    if (target instanceof Element && target.closest("button, a, select, input, form, .radio-drawer")) {
       return;
     }
     const rect = stage.getBoundingClientRect();
     const px = ev.clientX - rect.left;
     const py = ev.clientY - rect.top;
 
+    // Check if poke on Dino — escalating reactions.
     if (dino.contains(px, py)) {
-      const now = performance.now();
-      if (now - lastOuchAt > OUCH_COOLDOWN_MS && Math.random() < OUCH_VOICE_CHANCE) {
-        lastOuchAt = now;
-        const line = OUCH_LINES[Math.floor(Math.random() * OUCH_LINES.length)];
+      if (pokeResetTimer) clearTimeout(pokeResetTimer);
+      pokeResetTimer = window.setTimeout(() => { pokeCount = 0; }, 8000);
+      
+      const lineIdx = Math.min(pokeCount, POKE_LINES.length - 1);
+      const line = POKE_LINES[lineIdx];
+      pokeCount++;
+
+      if (pokeCount >= POKE_LINES.length) {
+        // Run off screen!
+        dino.react("angry", 600);
+        bubble.show(line);
+        void voice.say(line);
+        const offX = dino.bubbleAnchor.x < cssW / 2 ? cssW + 100 : -100;
+        dino.goTo(offX, dino.bubbleAnchor.bottom - dino.heightPx);
+        // Come back after 8 seconds.
+        setTimeout(() => {
+          dino.goTo(cssW / 2, cssH * 0.6);
+          pokeCount = 0;
+          setTimeout(() => {
+            bubble.show("...fine. i'm back. but i'm still upset.");
+          }, 3000);
+        }, 8000);
+      } else {
+        dino.react(pokeCount >= 3 ? "angry" : "sad", 800);
         bubble.show(line);
         void voice.say(line);
       }
-      // Always a small flinch, even when he stays quiet — react() is
-      // goal-aware so this won't disturb a delivery.
-      dino.react("sad", 600);
       return;
     }
 
-    if (!dino.isAvailable || courier.isBusy) return;
+    // Otherwise walk to clicked position.
     dino.goTo(px, py - dino.heightPx);
   });
+
+  // ── SSE real-time events ──────────────────────────────────────────
+
+  const es = new EventSource(`${ARCHIVE_API_URL}/events`);
+  
+  es.addEventListener("open", () => {
+    console.log("[stream] SSE event source connected");
+    if (systemMsg) systemMsg.remove();
+  });
+
+  es.addEventListener("message", (ev) => {
+    try {
+      const data = JSON.parse(ev.data);
+      if (!data) return;
+
+      switch (data.type) {
+        case "snapshot": {
+          const flatItems: ContentItem[] = [];
+          for (const list of Object.values(data.bins || {})) {
+            if (Array.isArray(list)) {
+              flatItems.push(...(list as ContentItem[]));
+            }
+          }
+          // Sort oldest first.
+          flatItems.sort((a, b) => a.publishedAt - b.publishedAt);
+          
+          // Render snapshot history — only last N to avoid filling the viewport.
+          const toRender = flatItems.slice(-15);
+          for (const item of toRender) {
+            renderItem(item, false);
+          }
+          
+          // Position Zaur in the center.
+          setTimeout(() => {
+            dino.goTo(cssW / 2, cssH * 0.6);
+          }, 800);
+          break;
+        }
+
+        case "add": {
+          const item = data.item as ContentItem;
+          if (renderedItemIds.has(item.id)) return;
+          renderItem(item, true);
+          break;
+        }
+
+        case "dino_thought": {
+          const text = data.text as string;
+          bubble.show(text);
+          if (isVoiceEnabled) void voice.say(text);
+          dino.react("happy", 1000);
+          break;
+        }
+
+        case "dino_sfx": {
+          const path = data.path as string;
+          void voice.playSfx(path);
+          break;
+        }
+
+        case "expire":
+        case "items_expired": {
+          const ids = data.ids as string[];
+          if (!ids) return;
+          terrain.fadeOut(ids);
+          break;
+        }
+      }
+    } catch (err) {
+      console.warn("[stream] error processing event message:", err);
+    }
+  });
+
+  es.addEventListener("error", (err) => {
+    console.warn("[stream] SSE connection error:", err);
+  });
+
+  // ── Window resize ─────────────────────────────────────────────────
 
   let resizeRaf = 0;
   window.addEventListener("resize", () => {
@@ -151,193 +852,137 @@ function startApp(stage: HTMLElement, canvas: HTMLCanvasElement): void {
       applySize();
       world.resize({ width: cssW, height: cssH });
       dino.resize(cssW, cssH);
-      messages.resize(cssW, cssH);
-      courier.cancel();
+      terrain.updateConstraints(cssW, cssH);
     });
   });
 
-  // Main loop
+  // ── Idle wandering between text blocks ────────────────────────────
+
+  setInterval(() => {
+    if (!dino.isAvailable || dino.state === "walk") return;
+    if (Math.random() > 0.45) return;
+
+    const block = terrain.randomBlock(true);
+    if (!block) {
+      // No blocks yet — wander randomly.
+      dino.goTo(Math.random() * cssW, Math.random() * cssH * 0.7);
+      return;
+    }
+
+    // Walk to a random position on/near this text block.
+    const targetX = block.x + Math.random() * block.w;
+    const targetY = block.y - dino.heightPx; // Stand on top of the block.
+    dino.goTo(targetX, targetY);
+
+    // Idle commentary.
+    if (Math.random() < 0.25) {
+      const hour = new Date().getHours();
+      const line = getIdleComment(hour);
+      setTimeout(() => {
+        bubble.show(line);
+        if (isVoiceEnabled && Math.random() < 0.2) {
+          void voice.say(line);
+        }
+      }, 2500);
+    }
+  }, 14000);
+
+  // Track user interactions to detect "ultra-idle" (30+ min).
+  let lastUserInteraction = performance.now();
+  let ultraIdleFired = false;
+  
+  const resetInteraction = () => {
+    lastUserInteraction = performance.now();
+    ultraIdleFired = false;
+  };
+  stage.addEventListener("pointerdown", resetInteraction);
+  chatForm.addEventListener("submit", resetInteraction);
+
+  const ULTRA_IDLE_LINES = [
+    "i've been standing here so long i started building a tiny house from semicolons. it fell down. twice.",
+    "hello? is anyone there? or did the page fall asleep? pages don't sleep. ...do they?",
+    "i've been counting the pixels. there are a lot of them. i lost count at seven.",
+    "i wonder what the other tabs are doing. probably something more interesting. *sigh*",
+    "if a dinosaur stands on a webpage and nobody scrolls, does it even render?",
+    "i've had three existential crises in the last minute. a new personal record.",
+    "the letter Q and i have become friends. we're both a bit... unnecessary. but we're here.",
+  ];
+
+  setInterval(() => {
+    if (ultraIdleFired) return;
+    const elapsed = performance.now() - lastUserInteraction;
+    if (elapsed < 30 * 60_000) return;
+    if (!dino.isAvailable) return;
+    
+    ultraIdleFired = true;
+    const line = ULTRA_IDLE_LINES[Math.floor(Math.random() * ULTRA_IDLE_LINES.length)];
+    dino.react("sad", 3000);
+    bubble.show(line);
+    if (isVoiceEnabled) void voice.say(line);
+  }, 60_000);
+
+  // ── Persist important articles periodically ───────────────────────
+
+  setInterval(() => {
+    terrain.persist();
+  }, 60_000);
+
+  // Also persist on unload.
+  window.addEventListener("beforeunload", () => {
+    terrain.persist();
+  });
+
+  // ── Restore persisted blocks ──────────────────────────────────────
+
+  const restored = terrain.restore();
+  for (const item of restored) {
+    renderItem(item, false);
+  }
+
+  // ── Main animation frame loop ─────────────────────────────────────
+
   let last = performance.now();
   function frame(now: number): void {
     const dt = Math.min(64, now - last);
     last = now;
 
-    ctx.clearRect(0, 0, cssW, cssH);
+    worldCtx.clearRect(0, 0, cssW, cssH);
+    dinoCtx.clearRect(0, 0, cssW, cssH);
+
+    // Apply Day/Night body CSS themes dynamically.
+    const conds = weather.conditions();
+    if (conds) {
+      if (conds.isDay) {
+        document.body.classList.add("theme-day");
+      } else {
+        document.body.classList.remove("theme-day");
+      }
+    }
+
+    // 1. Draw weather particles and sky backgrounds on the world canvas (dimmed).
     world.update(dt);
-    world.draw(ctx);
+    world.draw(worldCtx);
 
+    // 2. Draw Zaur on the dino canvas (above terrain).
     dino.update(now, dt);
-    dino.draw(ctx);
+    dino.draw(dinoCtx);
 
-    courier.update(now);
-    messages.update(now);
-    ambient.update(now);
+    // 3. Keep speech bubble overlays attached.
     bubble.update();
+    ambient.update(now);
 
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
 }
 
-/**
- * Tiny coordinator that turns floating messages into a small task pipeline
- * for the dino: pick the closest available card → walk to it → grab → walk
- * to the matching bin → deliver → repeat. While he has nothing to do, the
- * dino's own random wandering takes over.
- */
-class Courier {
-  private targetId: string | null = null;
-  private phase: "idle" | "seeking" | "carrying" | "delivering" = "idle";
-  /** When we can next consider grabbing a card (debounce). */
-  private nextLookAt = 0;
-
-  constructor(private readonly dino: Dino, private readonly messages: MessageWorld) {}
-
-  get isBusy(): boolean {
-    return this.phase !== "idle";
-  }
-
-  /** Forget any current task. Used on resize / disruptions. */
-  cancel(): void {
-    if (this.targetId) this.messages.release(this.targetId);
-    this.targetId = null;
-    this.phase = "idle";
-    this.dino.cancelGoal();
-  }
-
-  update(now: number): void {
-    switch (this.phase) {
-      case "idle":
-        this.maybeStartTask(now);
-        break;
-
-      case "seeking": {
-        const msg = this.targetId ? this.messages.get(this.targetId) : null;
-        if (!msg) {
-          this.abort(now);
-          return;
-        }
-        // Re-aim at the (slowly bobbing/floating) card. Aim for the dino's
-        // head to land just below the card so the pick-up reads as a lift.
-        this.dino.goSeek(msg.x, msg.y + 8);
-        if (this.dino.hasArrived(24)) {
-          this.messages.claim(msg.id); // no-op if already claimed by us
-          const anchor = this.dino.carryAnchor;
-          this.messages.setCarried(msg.id, anchor.x, anchor.y);
-          const bin = this.messages.binFor(msg.kind);
-          if (!bin) {
-            this.abort(now);
-            return;
-          }
-          // Walk so the dino's feet land just above the bin's top edge.
-          const carryY = Math.max(40, bin.topY - this.dino.heightPx - 2);
-          this.dino.goCarry(bin.centerX, carryY);
-          this.phase = "carrying";
-        }
-        break;
-      }
-
-      case "carrying": {
-        const msg = this.targetId ? this.messages.get(this.targetId) : null;
-        if (!msg) {
-          this.abort(now);
-          return;
-        }
-        const anchor = this.dino.carryAnchor;
-        this.messages.setCarried(msg.id, anchor.x, anchor.y);
-        if (this.dino.hasArrived(14)) {
-          this.messages.deliver(msg.id);
-          this.dino.startDeliver(420, deliveryMoodFor(msg.kind));
-          this.phase = "delivering";
-        }
-        break;
-      }
-
-      case "delivering": {
-        // Wait until the dino's deliver pose ends, then we're free again.
-        if (this.dino.state !== "deliver") {
-          this.targetId = null;
-          this.phase = "idle";
-          this.nextLookAt = now + 600;
-        }
-        break;
-      }
-    }
-  }
-
-  private maybeStartTask(now: number): void {
-    if (now < this.nextLookAt) return;
-    if (!this.dino.isAvailable) return;
-
-    const candidates = this.messages.floating();
-    if (candidates.length === 0) return;
-
-    // Pick the nearest floating card that has a matching bin.
-    let best: FloatingMessage | null = null;
-    let bestDist = Infinity;
-    const dx0 = this.dino.bubbleAnchor.x;
-    const dy0 = this.dino.bubbleAnchor.top;
-    for (const m of candidates) {
-      if (!this.messages.binFor(m.kind)) continue;
-      const d = Math.hypot(m.x - dx0, m.y - dy0);
-      if (d < bestDist) {
-        best = m;
-        bestDist = d;
-      }
-    }
-    if (!best) return;
-
-    if (!this.messages.claim(best.id)) return;
-    this.targetId = best.id;
-    this.phase = "seeking";
-    this.dino.goSeek(best.x, best.y + 30);
-  }
-
-  private abort(now: number): void {
-    if (this.targetId) this.messages.release(this.targetId);
-    this.targetId = null;
-    this.phase = "idle";
-    this.dino.cancelGoal(now);
-    // The card slipped away (TTL'd out, was delivered by another visitor's
-    // dino, etc.) — flash an angry face so the lost trip reads as frustration.
-    this.dino.react("angry", 700);
-    this.nextLookAt = now + 800;
-  }
-}
-
-/** The face the dino wears while dropping a card of this kind. */
-function deliveryMoodFor(kind: ContentKind): Mood {
-  switch (kind) {
-    case "news":
-      return "excited"; // a hop — fresh news pleases him
-    case "weather":
-      return "happy";
-    case "fact":
-      return "surprised"; // TIL!
-    case "quake":
-      return "angry"; // the earth shaking is alarming
-    case "space":
-      return "surprised"; // a small "wow" — looks up
-    case "bird":
-      return "curious"; // tilts head — what's that bird?
-  }
-}
-
-// ── bootstrap ────────────────────────────────────────────────────────────
-// Kept at the bottom of the file so `class Courier` and helpers are fully
-// initialised before `startApp` runs (classes have a temporal dead zone).
-
+// Bootstrap
 const stage = document.querySelector<HTMLElement>(".stage");
-const canvas = document.getElementById("dino-canvas") as HTMLCanvasElement | null;
+const worldCanvas = document.getElementById("world-canvas") as HTMLCanvasElement | null;
+const dinoCanvas = document.getElementById("dino-canvas") as HTMLCanvasElement | null;
 
-if (!stage || !canvas) {
-  throw new Error("Could not find required elements in the DOM");
+if (!stage || !worldCanvas || !dinoCanvas) {
+  throw new Error("Could not find required stage elements in DOM");
 }
 
-if (new URLSearchParams(window.location.search).get("dev") === "sprites") {
-  void import("./devSpriteProposals.js").then(({ renderSpriteProposals }) => {
-    renderSpriteProposals(stage, canvas);
-  });
-} else {
-  startApp(stage, canvas);
-}
+startApp(stage, worldCanvas, dinoCanvas);
