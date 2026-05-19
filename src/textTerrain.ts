@@ -223,7 +223,7 @@ export class TextTerrain {
           it &&
           typeof it.id === "string" &&
           typeof it.text === "string" &&
-          (it.savedAt ?? it.publishedAt) >= cutoff
+          (it.savedAt ?? it.publishedAt ?? it.deliveredAt ?? Date.now()) >= cutoff
       );
     } catch {
       return [];
@@ -301,7 +301,8 @@ export class TextTerrain {
     block.style.top = `${y}px`;
     block.style.maxWidth = `${w}px`;
 
-    const timeStr = new Date(item.publishedAt).toLocaleTimeString([], {
+    const timeVal = item.publishedAt ?? item.deliveredAt ?? Date.now();
+    const timeStr = new Date(timeVal).toLocaleTimeString([], {
       hour: "2-digit",
       minute: "2-digit",
     });

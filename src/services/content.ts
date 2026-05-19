@@ -20,7 +20,8 @@ export interface ContentItem {
   href?: string;
   linkLabel?: string;
   /** When the source thinks the item became known (epoch ms). */
-  publishedAt: number;
+  publishedAt?: number;
+  deliveredAt?: number;
   /** 0..1 — higher = juicier. Used by the ranker. */
   score: number;
 }

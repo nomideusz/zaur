@@ -1069,11 +1069,12 @@ async function syncRadioPlaylists() {
 
 function validate(item) {
   if (!item || typeof item !== "object") return null;
-  const { id, kind, text, href, linkLabel } = item;
+  const { id, kind, text, href, linkLabel, publishedAt } = item;
   if (typeof id !== "string" || id.length === 0 || id.length > 200) return null;
   if (typeof kind !== "string" || !ALLOWED_KINDS.has(kind)) return null;
   if (typeof text !== "string" || text.length === 0 || text.length > 600) return null;
   const cleaned = { id, kind, text, deliveredAt: Date.now() };
+  if (typeof publishedAt === "number") cleaned.publishedAt = publishedAt;
   if (typeof href === "string" && href.length <= 1000) cleaned.href = href;
   if (typeof linkLabel === "string" && linkLabel.length <= 80) cleaned.linkLabel = linkLabel;
   return cleaned;
@@ -1538,6 +1539,7 @@ function handleDeliver(client, id) {
     text: item.text,
     href: item.href,
     linkLabel: item.linkLabel,
+    publishedAt: item.publishedAt,
     deliveredAt: Date.now(),
   });
 }
@@ -1582,8 +1584,18 @@ const narrator = new Narrator({
     const active = activeItemFromSource(item);
     activeItems.set(active.id, active);
     pushRecentItem(item);
-    broadcastEvent({ type: "item", item: active });
-    broadcastRealtimeForItem({ type: "item_spawned", item: active }, active);
+    
+    // Auto-deliver immediately to shared archive (bins).
+    addDeliveredItem({
+      id: active.id,
+      sourceId: active.sourceId,
+      kind: active.kind,
+      text: active.text,
+      href: active.href,
+      linkLabel: active.linkLabel,
+      publishedAt: active.publishedAt,
+      deliveredAt: Date.now(),
+    });
   },
   logger: console,
 });

@@ -878,7 +878,11 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
             }
           }
           // Sort oldest first.
-          flatItems.sort((a, b) => a.publishedAt - b.publishedAt);
+          flatItems.sort((a, b) => {
+            const timeA = a.publishedAt ?? a.deliveredAt ?? 0;
+            const timeB = b.publishedAt ?? b.deliveredAt ?? 0;
+            return timeA - timeB;
+          });
           
           // Render snapshot history — only last N to avoid filling the viewport.
           const toRender = flatItems.slice(-15);
