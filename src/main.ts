@@ -885,7 +885,7 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
           });
           
           // Render snapshot history — only last N to avoid filling the viewport.
-          const toRender = flatItems.slice(-15);
+          const toRender = flatItems.slice(-8);
           for (const item of toRender) {
             renderItem(item, false);
           }

@@ -41,7 +41,7 @@ interface PlacementConstraints {
   marginBottom: number;
 }
 
-const MAX_BLOCKS = 40;
+const MAX_BLOCKS = 12;
 const PERSIST_KEY = "zaur-terrain-blocks";
 const MAX_PERSISTED = 12;
 
@@ -257,7 +257,7 @@ export class TextTerrain {
     // Try random positions, pick the one with least overlap.
     let bestPos = { x: 0, y: 0 };
     let bestOverlap = Infinity;
-    const attempts = 20;
+    const attempts = 120;
 
     for (let i = 0; i < attempts; i++) {
       const x = marginX + Math.random() * usableW;
@@ -276,9 +276,13 @@ export class TextTerrain {
 
   private overlapScore(x: number, y: number, w: number, h: number): number {
     let total = 0;
+    // Add safety margins to prevent blocks from spawning too close.
+    const padX = 45;
+    const padY = 25;
+    
     for (const b of this.blocks) {
-      const ox = Math.max(0, Math.min(x + w, b.x + b.w) - Math.max(x, b.x));
-      const oy = Math.max(0, Math.min(y + h, b.y + b.h) - Math.max(y, b.y));
+      const ox = Math.max(0, Math.min(x + w + padX, b.x + b.w + padX) - Math.max(x - padX, b.x - padX));
+      const oy = Math.max(0, Math.min(y + h + padY, b.y + b.h + padY) - Math.max(y - padY, b.y - padY));
       const area = ox * oy;
       if (area > 0) {
         total += area / (w * h);

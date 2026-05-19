@@ -94,6 +94,7 @@ export class Dino {
   private animTick = 0;
   private deliverUntil = 0;
   private frames: Record<FrameId, RenderedFrame>;
+  private currentColor: string;
 
   /** Vertical velocity for gravity. */
   private vy = 0;
@@ -112,7 +113,9 @@ export class Dino {
   musicPlaying = false;
 
   constructor(private opts: DinoOptions) {
-    this.frames = buildFrames(opts.scale, opts.color);
+    const color = opts.color ?? "#e8e4d8";
+    this.currentColor = color;
+    this.frames = buildFrames(opts.scale, color);
     this.x = opts.worldWidth * 0.5;
     this.y = opts.worldHeight - GROUND_MARGIN - this.heightPx;
     this.targetX = this.x;
@@ -395,6 +398,15 @@ export class Dino {
   }
 
   draw(ctx: CanvasRenderingContext2D): void {
+    // Rebuild frames dynamically if theme color changes.
+    if (!this.opts.color) {
+      const currentInk = getComputedStyle(document.body).getPropertyValue("--ink").trim();
+      if (currentInk && currentInk !== this.currentColor) {
+        this.currentColor = currentInk;
+        this.frames = buildFrames(this.opts.scale, currentInk);
+      }
+    }
+
     const frame = this.currentFrame();
     const img = this.facing === 1 ? frame.right : frame.left;
     // Subtle bob: walking = 1px step bob, idle = gentle breathing or dance, stare = perfectly still
