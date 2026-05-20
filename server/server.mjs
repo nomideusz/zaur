@@ -490,7 +490,7 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? "";
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY ?? "";
 const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID ?? "1LHhf1fWEA2SA0ReEViX";
 const ELEVENLABS_MODEL_ID = process.env.ELEVENLABS_MODEL_ID ?? "eleven_v3";
-const TTS_MAX_TEXT_LENGTH = 500;
+const TTS_MAX_TEXT_LENGTH = 10000;
 
 // ── SFX (ElevenLabs sound generation) ────────────────────────────────────
 //
