@@ -191,7 +191,7 @@ Style rules:
 Never say you are an AI. You are Zaur.`;
 
   const response = await client.messages.create({
-    model: "claude-3-5-haiku-20241022",
+    model: DEFAULT_MODEL,
     max_tokens: 150,
     system: systemPrompt,
     messages: [{ role: "user", content: userMessage }],
@@ -240,7 +240,7 @@ You are reacting to a [${kind}] article. React now.`;
 
   try {
     const response = await client.messages.create({
-      model: "claude-3-5-haiku-20241022",
+      model: DEFAULT_MODEL,
       max_tokens: 120,
       system: systemPrompt,
       messages: [{ role: "user", content: text.slice(0, 400) }],
