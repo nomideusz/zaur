@@ -152,6 +152,11 @@ export class Dino {
     return this.opts.worldHeight - GROUND_MARGIN - this.heightPx;
   }
 
+  /** Current (x, y) coordinates in stage CSS pixels. */
+  get position(): { x: number; y: number } {
+    return { x: this.x, y: this.y };
+  }
+
   /** Tether point for things attached to the dino — head + feet. */
   get bubbleAnchor(): BubbleAnchor {
     // The head sits in the upper-right of the 20×16 sprite (cols ~13-19).

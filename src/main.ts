@@ -423,6 +423,108 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
     }, 1200);
   }
 
+  // ── Queue for staggered typewriter rendering ──────────────────────
+  const typewriterQueue: ContentItem[] = [];
+
+  function escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function awaitDinoArrival(targetX: number, targetY: number): Promise<void> {
+    return new Promise((resolve) => {
+      let attempts = 0;
+      const check = () => {
+        attempts++;
+        const dist = Math.hypot(dino.position.x - targetX, dino.position.y - targetY);
+        // Arrived, or Dino went back to idle/wandering (finished walk), or timeout
+        if (
+          dist < 32 ||
+          dino.state === "idle" ||
+          dino.state === "look" ||
+          dino.state === "stare" ||
+          attempts > 100
+        ) {
+          resolve();
+        } else {
+          setTimeout(check, 100);
+        }
+      };
+      check();
+    });
+  }
+
+  async function eatLetterAnimation(block: import("./textTerrain.js").TerrainBlock): Promise<string | null> {
+    const textEl = block.el.querySelector("[data-text-content]") as HTMLElement;
+    if (!textEl) return null;
+    const rawText = textEl.textContent || "";
+    if (!rawText) return null;
+
+    // Find indices of punctuation first, they are tastier.
+    const punctRegex = /[\.,;!\?\(\)\[\]\{\}\-\"\']/g;
+    const indices: number[] = [];
+    let match;
+    while ((match = punctRegex.exec(rawText)) !== null) {
+      indices.push(match.index);
+    }
+
+    // If no punctuation, pick any letter or number.
+    if (indices.length === 0) {
+      const letterRegex = /[a-zA-Z0-9]/g;
+      while ((match = letterRegex.exec(rawText)) !== null) {
+        indices.push(match.index);
+      }
+    }
+
+    if (indices.length === 0) return null;
+
+    // Pick a random index.
+    const targetIdx = indices[Math.floor(Math.random() * indices.length)];
+    const char = rawText[targetIdx];
+
+    const before = rawText.slice(0, targetIdx);
+    const after = rawText.slice(targetIdx + 1);
+
+    // Make it flash!
+    textEl.innerHTML = `${escapeHtml(before)}<span class="eaten-letter-flash">${escapeHtml(char)}</span>${escapeHtml(after)}`;
+
+    // Wait 500ms.
+    await new Promise((r) => setTimeout(r, 500));
+
+    // Replace the letter with a space so the block length remains identical and doesn't shift layout.
+    textEl.innerHTML = `${escapeHtml(before)} <span style="opacity: 0;">${escapeHtml(char)}</span>${escapeHtml(after)}`;
+
+    return char;
+  }
+
+  function processTypewriterQueue(): void {
+    if (typewriterQueue.length === 0) {
+      setTimeout(processTypewriterQueue, 2500);
+      return;
+    }
+
+    const isTyping = terrain.blocks.some((b) => b.typing);
+    if (!dino.isAvailable || isTyping) {
+      setTimeout(processTypewriterQueue, 2500);
+      return;
+    }
+
+    const nextItem = typewriterQueue.shift();
+    if (nextItem) {
+      renderItem(nextItem, true);
+    }
+
+    const nextDelay = 18000 + Math.random() * 9000; // occasionally show up, e.g. 18-27s
+    setTimeout(processTypewriterQueue, nextDelay);
+  }
+
+  // Start the queue processor after a brief startup delay.
+  setTimeout(processTypewriterQueue, 5000);
+
   // ── Content rendering ─────────────────────────────────────────────
 
   function renderItem(item: ContentItem, isNew: boolean): void {
@@ -455,6 +557,31 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
     dino.goTo(targetX, targetY);
     dino.react("surprised", 800);
 
+    // Fetch the reaction in parallel while Zaur is walking.
+    const commentPromise = (async () => {
+      let resComment: string | null = null;
+      try {
+        const resp = await fetch(`${ARCHIVE_API_URL}/api/zaur-react`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: item.kind, text: item.text }),
+        });
+        if (resp.ok) {
+          const body = await resp.json();
+          resComment = body.text;
+        }
+      } catch {
+        // Fall through
+      }
+      if (!resComment) {
+        resComment = scanForPunctuationReaction(item.text);
+      }
+      if (!resComment) {
+        resComment = getFallbackReaction(item);
+      }
+      return resComment;
+    })();
+
     // Earthquake shake — magnitude-aware intensity.
     if (item.kind === "quake") {
       // Parse magnitude from text (e.g. "M5.2" or "magnitude 5.2").
@@ -486,40 +613,53 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
     // Note the article in Zaur's memory.
     memory.noteArticle(item.text, item.kind);
 
-    // Try to get a unique AI reaction from the server.
-    let comment: string | null = null;
+    // Wait for Dino to arrive near the block.
+    await awaitDinoArrival(targetX, targetY);
+
+    // Face the target (forces dino to face it properly upon arrival).
+    dino.goTo(targetX, targetY);
+
+    // Eat a letter!
+    let eatenChar: string | null = null;
     try {
-      const resp = await fetch(`${ARCHIVE_API_URL}/api/zaur-react`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kind: item.kind, text: item.text }),
-      });
-      if (resp.ok) {
-        const body = await resp.json();
-        comment = body.text;
+      eatenChar = await eatLetterAnimation(block);
+    } catch (err) {
+      console.warn("[eat] failed to eat letter:", err);
+    }
+
+    if (eatenChar) {
+      dino.react("happy", 1200);
+      block.el.style.transform = "scale(0.97) translateY(1px)";
+      setTimeout(() => {
+        block.el.style.transform = "";
+      }, 150);
+      // Wait for chew animation to finish/partially run.
+      await new Promise((r) => setTimeout(r, 1000));
+    }
+
+    let comment = await commentPromise;
+
+    if (eatenChar && comment) {
+      // 60% chance to comment on the character eaten
+      if (Math.random() < 0.6) {
+        const foodJokes = [
+          `nom. that '${eatenChar}' was crunchy.`,
+          `burp. that '${eatenChar}' was a bit stale.`,
+          `i ate the '${eatenChar}'. you didn't need it anyway.`,
+          `that '${eatenChar}' tasted like pixels.`,
+          `crunchy '${eatenChar}'. 7/10.`,
+          `the '${eatenChar}' was the best part of this text.`,
+        ];
+        const joke = foodJokes[Math.floor(Math.random() * foodJokes.length)];
+        comment = `${joke} ${comment}`;
       }
-    } catch {
-      // Fall through to punctuation/fallback reactions.
-    }
-
-    // Fallback: punctuation-based reaction.
-    if (!comment) {
-      comment = scanForPunctuationReaction(item.text);
-    }
-
-    // Fallback: kind-specific one-liners (more absurdist/melancholic).
-    if (!comment) {
-      comment = getFallbackReaction(item);
     }
 
     if (comment) {
-      setTimeout(() => {
-        bubble.show(comment!);
-        // Voice only for dramatic moments (quakes, space).
-        if (isVoiceEnabled && (item.kind === "quake" || item.kind === "space")) {
-          void voice.say(comment!);
-        }
-      }, 1800);
+      bubble.show(comment);
+      if (isVoiceEnabled && (item.kind === "quake" || item.kind === "space")) {
+        void voice.say(comment);
+      }
     }
   }
 
@@ -592,17 +732,39 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
 
     // Zaur gets excited and moves to the user's message.
     dino.react("excited", 800);
+    let eatenCharPromise: Promise<string | null> = Promise.resolve(null);
     if (userBlock) {
-      dino.goTo(userBlock.x + userBlock.w / 2, userBlock.y - dino.heightPx);
+      const tx = userBlock.x + userBlock.w / 2;
+      const ty = userBlock.y - dino.heightPx;
+      dino.goTo(tx, ty);
+      eatenCharPromise = (async () => {
+        await awaitDinoArrival(tx, ty);
+        let eaten: string | null = null;
+        try {
+          eaten = await eatLetterAnimation(userBlock);
+        } catch {
+          // ignore
+        }
+        if (eaten) {
+          dino.react("happy", 1200);
+          userBlock.el.style.transform = "scale(0.97) translateY(1px)";
+          setTimeout(() => {
+            userBlock.el.style.transform = "";
+          }, 150);
+          await new Promise((r) => setTimeout(r, 1000));
+        }
+        return eaten;
+      })();
     }
 
     // Check if user is introducing themselves.
     const foundName = memory.checkForName(text);
     if (foundName) {
-      // Small local override for introductions.
-      setTimeout(() => {
-        bubble.show(`nice to meet you, ${memory.userName}. i'm zaur. i don't have a last name.`);
-      }, 1500);
+      void eatenCharPromise.then(() => {
+        setTimeout(() => {
+          bubble.show(`nice to meet you, ${memory.userName}. i'm zaur. i don't have a last name.`);
+        }, 300);
+      });
     }
 
     try {
@@ -626,6 +788,9 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
         };
         renderedItemIds.add(replyItem.id);
 
+        // Wait for Zaur to finish eating the user's message before responding!
+        await eatenCharPromise;
+
         const replyBlock = terrain.place(replyItem, true);
         if (replyBlock) {
           replyBlock.el.classList.add("kind-zaur");
@@ -646,6 +811,7 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
         throw new Error("API call error");
       }
     } catch {
+      await eatenCharPromise;
       dino.react("sad", 1000);
       bubble.show("rawr! i got distracted by a shiny dot! what were we talking about?");
     }
@@ -911,10 +1077,19 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
             return timeA - timeB;
           });
           
-          // Render snapshot history — only last N to avoid filling the viewport.
-          const toRender = flatItems.slice(-8);
-          for (const item of toRender) {
+          // Render first 3 snapshot items instantly so the page is not empty.
+          const initialCount = Math.min(3, flatItems.length);
+          const initial = flatItems.slice(0, initialCount);
+          for (const item of initial) {
             renderItem(item, false);
+          }
+          
+          // Queue the rest to typewriter one by one.
+          const remaining = flatItems.slice(initialCount);
+          for (const item of remaining) {
+            if (!renderedItemIds.has(item.id)) {
+              typewriterQueue.push(item);
+            }
           }
           
           // Position Zaur in the center.
@@ -927,7 +1102,7 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
         case "add": {
           const item = data.item as ContentItem;
           if (renderedItemIds.has(item.id)) return;
-          renderItem(item, true);
+          typewriterQueue.push(item);
           break;
         }
 

@@ -295,6 +295,26 @@ body.theme-day #world-canvas {
   50% { opacity: 1; }
 }
 
+/* ── Eaten letter animation ─────────────────────────────────────────── */
+
+.eaten-letter-flash {
+  display: inline-block;
+  animation: letter-flash 0.5s ease-out forwards;
+}
+
+@keyframes letter-flash {
+  0% {
+    color: #ff4444;
+    text-shadow: 0 0 8px #ff4444;
+    transform: scale(1.4);
+  }
+  100% {
+    color: transparent;
+    text-shadow: none;
+    transform: scale(0.5) rotate(15deg);
+  }
+}
+
 /* ── Earthquake Shake ───────────────────────────────────────────────── */
 
 @keyframes shake {

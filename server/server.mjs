@@ -488,7 +488,7 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? "";
 // /tts endpoint proxies a stream of MP3 audio for a given thought back to
 // the client. Key never leaves the server.
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY ?? "";
-const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID ?? "1LHhf1fWEA2SA0ReEViX";
+const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID ?? "C21lwcJUiYtgqXZrnOpk";
 const ELEVENLABS_MODEL_ID = process.env.ELEVENLABS_MODEL_ID ?? "eleven_v3";
 const TTS_MAX_TEXT_LENGTH = 10000;
 
@@ -1567,8 +1567,7 @@ if (ARCHIVE_PERSIST_PATH) {
 
 server.listen(PORT, () => {
   console.log(
-    `[archive] listening on :${PORT} (TTL ${ARCHIVE_TTL_MS}ms, persist=${
-      ARCHIVE_PERSIST_PATH ?? "off"
+    `[archive] listening on :${PORT} (TTL ${ARCHIVE_TTL_MS}ms, persist=${ARCHIVE_PERSIST_PATH ?? "off"
     })`
   );
 });
@@ -1584,7 +1583,7 @@ const narrator = new Narrator({
     const active = activeItemFromSource(item);
     activeItems.set(active.id, active);
     pushRecentItem(item);
-    
+
     // Auto-deliver immediately to shared archive (bins).
     addDeliveredItem({
       id: active.id,
