@@ -48,7 +48,7 @@ export class DinoVoice {
   async say(text: string): Promise<void> {
     const trimmed = text.trim();
     if (!trimmed) return;
-    await this.fetchAndPlay((signal) =>
+    const ok = await this.fetchAndPlay((signal) =>
       fetch(`${this.archiveUrl}/tts`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -56,6 +56,17 @@ export class DinoVoice {
         signal,
       })
     );
+    if (!ok && this.enabled && typeof window !== "undefined" && window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+        const utterance = new SpeechSynthesisUtterance(trimmed);
+        utterance.rate = 1.05;
+        utterance.pitch = 1.15;
+        window.speechSynthesis.speak(utterance);
+      } catch (err) {
+        console.warn("[voice] speech synthesis fallback failed:", err);
+      }
+    }
   }
 
   /**
@@ -71,8 +82,8 @@ export class DinoVoice {
 
   private async fetchAndPlay(
     fetcher: (signal: AbortSignal) => Promise<Response>
-  ): Promise<void> {
-    if (!this.enabled) return;
+  ): Promise<boolean> {
+    if (!this.enabled) return false;
 
     this.stopCurrent();
     const ac = new AbortController();
@@ -81,18 +92,18 @@ export class DinoVoice {
     let blob: Blob | null = null;
     try {
       const resp = await fetcher(ac.signal);
-      if (!resp.ok) return;
+      if (!resp.ok) return false;
       blob = await resp.blob();
     } catch (err) {
       if ((err as { name?: string })?.name !== "AbortError") {
         console.warn("[voice] fetch failed:", err);
       }
-      return;
+      return false;
     } finally {
       if (this.currentAbort === ac) this.currentAbort = null;
     }
 
-    if (ac.signal.aborted || !blob) return;
+    if (ac.signal.aborted || !blob) return false;
 
     const objectUrl = URL.createObjectURL(blob);
     const audio = new Audio(objectUrl);
@@ -111,13 +122,22 @@ export class DinoVoice {
 
     try {
       await audio.play();
+      return true;
     } catch {
       // Autoplay blocked, or playback rejected. Drop quietly.
       cleanup();
+      return false;
     }
   }
 
   private stopCurrent(): void {
+    if (typeof window !== "undefined" && window.speechSynthesis) {
+      try {
+        window.speechSynthesis.cancel();
+      } catch {
+        // ignore
+      }
+    }
     if (this.currentAbort) {
       this.currentAbort.abort();
       this.currentAbort = null;
