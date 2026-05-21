@@ -271,6 +271,7 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
     if (isVoiceEnabled) {
       void voice.playSfx("/sfx/chime");
     }
+    connectSse();
   });
 
   // ── Radio ─────────────────────────────────────────────────────────
@@ -806,7 +807,7 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
 
         dino.react("happy", 1200);
         bubble.show(reply.length > 80 ? reply.slice(0, 77) + "..." : reply);
-        void voice.say(reply);
+        if (isVoiceEnabled) void voice.say(reply);
       } else {
         throw new Error("API call error");
       }
@@ -1025,7 +1026,7 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
         // Run off screen!
         dino.react("angry", 600);
         bubble.show(line);
-        void voice.say(line);
+        if (isVoiceEnabled) void voice.say(line);
         const offX = dino.bubbleAnchor.x < cssW / 2 ? cssW + 100 : -100;
         dino.goTo(offX, dino.bubbleAnchor.bottom - dino.heightPx);
         // Come back after 8 seconds.
@@ -1039,7 +1040,7 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
       } else {
         dino.react(pokeCount >= 3 ? "angry" : "sad", 800);
         bubble.show(line);
-        void voice.say(line);
+        if (isVoiceEnabled) void voice.say(line);
       }
       return;
     }
@@ -1050,92 +1051,106 @@ function startApp(stage: HTMLElement, worldCanvas: HTMLCanvasElement, dinoCanvas
 
   // ── SSE real-time events ──────────────────────────────────────────
 
-  const es = new EventSource(`${ARCHIVE_API_URL}/events`);
-  
-  es.addEventListener("open", () => {
-    console.log("[stream] SSE event source connected");
-    if (systemMsg) systemMsg.remove();
-  });
+  let es: EventSource | null = null;
+  let isFirstLoad = true;
 
-  es.addEventListener("message", (ev) => {
-    try {
-      const data = JSON.parse(ev.data);
-      if (!data) return;
-
-      switch (data.type) {
-        case "snapshot": {
-          const flatItems: ContentItem[] = [];
-          for (const list of Object.values(data.bins || {})) {
-            if (Array.isArray(list)) {
-              flatItems.push(...(list as ContentItem[]));
-            }
-          }
-          // Sort oldest first.
-          flatItems.sort((a, b) => {
-            const timeA = a.publishedAt ?? a.deliveredAt ?? 0;
-            const timeB = b.publishedAt ?? b.deliveredAt ?? 0;
-            return timeA - timeB;
-          });
-          
-          // Render first 3 snapshot items instantly so the page is not empty.
-          const initialCount = Math.min(3, flatItems.length);
-          const initial = flatItems.slice(0, initialCount);
-          for (const item of initial) {
-            renderItem(item, false);
-          }
-          
-          // Queue the rest to typewriter one by one.
-          const remaining = flatItems.slice(initialCount);
-          for (const item of remaining) {
-            if (!renderedItemIds.has(item.id)) {
-              typewriterQueue.push(item);
-            }
-          }
-          
-          // Position Zaur in the center.
-          setTimeout(() => {
-            dino.goTo(cssW / 2, cssH * 0.6);
-          }, 800);
-          break;
-        }
-
-        case "add": {
-          const item = data.item as ContentItem;
-          if (renderedItemIds.has(item.id)) return;
-          typewriterQueue.push(item);
-          break;
-        }
-
-        case "dino_thought": {
-          const text = data.text as string;
-          bubble.show(text);
-          if (isVoiceEnabled) void voice.say(text);
-          dino.react("happy", 1000);
-          break;
-        }
-
-        case "dino_sfx": {
-          const path = data.path as string;
-          void voice.playSfx(path);
-          break;
-        }
-
-        case "expire":
-        case "items_expired": {
-          const ids = data.ids as string[];
-          if (!ids) return;
-          terrain.fadeOut(ids);
-          break;
-        }
-      }
-    } catch (err) {
-      console.warn("[stream] error processing event message:", err);
+  function connectSse(): void {
+    if (es) {
+      es.close();
     }
-  });
 
-  es.addEventListener("error", (err) => {
-    console.warn("[stream] SSE connection error:", err);
-  });
+    es = new EventSource(`${ARCHIVE_API_URL}/events?sound=${isVoiceEnabled ? "1" : "0"}`);
+
+    es.addEventListener("open", () => {
+      console.log("[stream] SSE event source connected");
+      if (systemMsg) systemMsg.remove();
+    });
+
+    es.addEventListener("message", (ev) => {
+      try {
+        const data = JSON.parse(ev.data);
+        if (!data) return;
+
+        switch (data.type) {
+          case "snapshot": {
+            const flatItems: ContentItem[] = [];
+            for (const list of Object.values(data.bins || {})) {
+              if (Array.isArray(list)) {
+                flatItems.push(...(list as ContentItem[]));
+              }
+            }
+            // Sort oldest first.
+            flatItems.sort((a, b) => {
+              const timeA = a.publishedAt ?? a.deliveredAt ?? 0;
+              const timeB = b.publishedAt ?? b.deliveredAt ?? 0;
+              return timeA - timeB;
+            });
+            
+            // Render first 3 snapshot items instantly so the page is not empty.
+            const initialCount = Math.min(3, flatItems.length);
+            const initial = flatItems.slice(0, initialCount);
+            for (const item of initial) {
+              renderItem(item, false);
+            }
+            
+            // Queue the rest to typewriter one by one.
+            const remaining = flatItems.slice(initialCount);
+            for (const item of remaining) {
+              if (!renderedItemIds.has(item.id)) {
+                typewriterQueue.push(item);
+              }
+            }
+            
+            // Position Zaur in the center, but only on first load so we don't reset him when toggling sound.
+            if (isFirstLoad) {
+              setTimeout(() => {
+                dino.goTo(cssW / 2, cssH * 0.6);
+              }, 800);
+              isFirstLoad = false;
+            }
+            break;
+          }
+
+          case "add": {
+            const item = data.item as ContentItem;
+            if (renderedItemIds.has(item.id)) return;
+            typewriterQueue.push(item);
+            break;
+          }
+
+          case "dino_thought": {
+            const text = data.text as string;
+            bubble.show(text);
+            if (isVoiceEnabled) void voice.say(text);
+            dino.react("happy", 1000);
+            break;
+          }
+
+          case "dino_sfx": {
+            const path = data.path as string;
+            if (isVoiceEnabled) void voice.playSfx(path);
+            break;
+          }
+
+          case "expire":
+          case "items_expired": {
+            const ids = data.ids as string[];
+            if (!ids) return;
+            terrain.fadeOut(ids);
+            break;
+          }
+        }
+      } catch (err) {
+        console.warn("[stream] error processing event message:", err);
+      }
+    });
+
+    es.addEventListener("error", (err) => {
+      console.warn("[stream] SSE connection error:", err);
+    });
+  }
+
+  connectSse();
 
   // ── Stage size observer ───────────────────────────────────────────
 

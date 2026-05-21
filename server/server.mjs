@@ -1124,7 +1124,8 @@ const server = createServer(async (req, res) => {
           /* socket gone — handled by close listener */
         }
       }, 25_000);
-      const client = { res, hb };
+      const soundEnabled = url.searchParams.get("sound") === "1";
+      const client = { res, hb, soundEnabled };
       sseClients.add(client);
       req.on("close", () => {
         clearInterval(hb);
@@ -1650,6 +1651,19 @@ async function broadcastDinoSfx() {
   if (!ELEVENLABS_API_KEY || !process.env.ANTHROPIC_API_KEY) return;
   if (recentSpokenItems.length === 0) return;
   if (sseClients.size === 0 && wsClients.size === 0) return;
+
+  // Guard ElevenLabs token usage: only generate sound effects if at least one client has sound enabled.
+  let anySoundEnabled = false;
+  for (const client of sseClients) {
+    if (client.soundEnabled) {
+      anySoundEnabled = true;
+      break;
+    }
+  }
+  if (!anySoundEnabled) {
+    return;
+  }
+
   const item = recentSpokenItems[Math.floor(Math.random() * recentSpokenItems.length)];
   let prompt;
   try {
