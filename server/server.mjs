@@ -489,7 +489,7 @@ const ADMIN_TOKEN = process.env.ADMIN_TOKEN ?? "";
 // the client. Key never leaves the server.
 const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY ?? "";
 const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID ?? "C21lwcJUiYtgqXZrnOpk";
-const ELEVENLABS_MODEL_ID = process.env.ELEVENLABS_MODEL_ID ?? "eleven_v3";
+const ELEVENLABS_MODEL_ID = process.env.ELEVENLABS_MODEL_ID ?? "eleven_flash_v2_5";
 const TTS_MAX_TEXT_LENGTH = 10000;
 
 // ── SFX (ElevenLabs sound generation) ────────────────────────────────────
