@@ -1,0 +1,38 @@
+name: Deploy to CapRover
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create deployment tarball
+        uses: a7ul/tar-action@v1.1.0
+        with:
+          command: c
+          cwd: ./
+          files: |
+            captain-definition
+            Dockerfile
+            .dockerignore
+            package.json
+            pnpm-lock.yaml
+            svelte.config.js
+            tsconfig.json
+            vite.config.ts
+            src/
+            static/
+          outPath: deploy.tar
+
+      - name: Deploy to CapRover
+        uses: caprover/deploy-from-github@v1.1.2
+        with:
+          server: https://captain.zaur.app
+          app: webmail
+          token: ${{ secrets.CAPROVER_APP_TOKEN }}

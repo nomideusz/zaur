@@ -1,0 +1,9 @@
+node_modules
+.svelte-kit
+.git
+.github
+.env
+.env.*
+!.env.example
+*.md
+deploy.tar
