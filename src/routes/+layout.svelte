@@ -3,12 +3,14 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
 
 	let { children } = $props();
 
 	onMount(() => {
 		theme.init();
+		settings.init();
 		void auth.init();
 	});
 </script>

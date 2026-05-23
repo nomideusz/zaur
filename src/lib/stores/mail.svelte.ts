@@ -221,6 +221,39 @@ class MailStore {
 		this.removeMessage(message);
 	}
 
+	async handlePushChange(client: JMAPClient, accountChanges: { Email?: string; Mailbox?: string }) {
+		if (accountChanges.Mailbox) {
+			await this.loadMailboxes(client);
+		}
+
+		if (accountChanges.Email && this.currentMailboxRouteId) {
+			const routeId = this.currentMailboxRouteId;
+			const selectedId = this.selectedMessage?.id;
+			await this.refreshMessages(client, routeId);
+
+			if (selectedId) {
+				const email = await client.getEmail(selectedId);
+				if (email) {
+					this.selectedMessage = mapEmailDetail(email, routeId);
+				}
+			}
+		}
+	}
+
+	async refreshMessages(client: JMAPClient, routeMailboxId: string) {
+		const mailbox = this.mailboxByRouteId(routeMailboxId);
+		if (!mailbox?.jmapId) return;
+
+		try {
+			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0);
+			this.messages = emails.map((email) => mapEmailPreview(email, routeMailboxId));
+			this.messagesTotal = total;
+			this.messagesHasMore = hasMore;
+		} catch {
+			// Background refresh — ignore transient errors
+		}
+	}
+
 	mailboxByRouteId(routeId: string): Mailbox | undefined {
 		return (
 			this.mailboxes.find((mb) => mb.id === routeId) ??

@@ -30,6 +30,14 @@ export function extractBodyText(email: JMAPEmail): string {
 	return email.preview?.trim() ?? '';
 }
 
+export function extractBodyHtml(email: JMAPEmail): string | undefined {
+	const htmlPartId = email.htmlBody?.[0]?.partId;
+	if (htmlPartId && email.bodyValues?.[htmlPartId]?.value) {
+		return email.bodyValues[htmlPartId].value;
+	}
+	return undefined;
+}
+
 function stripHtml(html: string): string {
 	return html
 		.replace(/<style[\s\S]*?<\/style>/gi, '')
@@ -73,6 +81,7 @@ export function mapEmailDetail(email: JMAPEmail, routeMailboxId: string): Messag
 	return {
 		...mapEmailPreview(email, routeMailboxId),
 		to: mapAddresses(email.to),
+		bodyHtml: extractBodyHtml(email),
 		bodyText: extractBodyText(email)
 	};
 }

@@ -37,7 +37,8 @@ export const componentTree = {
 	ui: ['Button', 'IconButton', 'Badge', 'Avatar'],
 	jmap: {
 		client: ['JmapClient.connect', 'getMailboxes', 'getIdentities'],
-		planned: ['SyncEngine', 'PushListener (SSE)']
+		pushListener: ['PushListener (state polling)'],
+		planned: ['SyncEngine', 'RxDB offline']
 	},
 	db: {
 		planned: ['RxDB drafts', 'RxDB outbox', 'RxDB recentThreads', 'RxDB syncState']

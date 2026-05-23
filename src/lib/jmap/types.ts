@@ -58,3 +58,15 @@ export type JMAPMethodCall = [string, Record<string, unknown>, string];
 export interface JMAPResponse {
 	methodResponses: Array<[string, Record<string, unknown>, string]>;
 }
+
+export interface StateChange {
+	'@type': 'StateChange';
+	changed: Record<
+		string,
+		{
+			Email?: string;
+			Mailbox?: string;
+			Thread?: string;
+		}
+	>;
+}

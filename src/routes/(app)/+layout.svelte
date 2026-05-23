@@ -2,7 +2,9 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import AppHeader from '$lib/components/shell/AppHeader.svelte';
+	import { pushListener } from '$lib/jmap/push-listener';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { mail } from '$lib/stores/mail.svelte';
 
 	let { children } = $props();
 
@@ -11,6 +13,23 @@
 		if (!auth.isAuthenticated && !$page.url.pathname.startsWith('/login')) {
 			goto('/login');
 		}
+	});
+
+	$effect(() => {
+		const client = auth.client;
+		if (!client || !auth.isAuthenticated || auth.isRestoring) {
+			pushListener.stop();
+			return;
+		}
+
+		pushListener.start(client, (change) => {
+			const accountChanges = change.changed[client.getAccountId()];
+			if (accountChanges) {
+				void mail.handlePushChange(client, accountChanges);
+			}
+		});
+
+		return () => pushListener.stop();
 	});
 </script>
 

@@ -5,13 +5,17 @@
 		ArrowLeft,
 		MoreHorizontal,
 		Reply,
+		Shield,
 		Star,
 		Trash2
 	} from 'lucide-svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
+	import { renderMessageBody } from '$lib/email/html';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
 
@@ -24,12 +28,28 @@
 
 	let { message, mailboxRouteId, onBack, onMoved }: Props = $props();
 
+	let showImagesOnce = $state(false);
+
+	const allowExternal = $derived(!settings.blockExternalContent || showImagesOnce);
+	const preview = $derived(
+		renderMessageBody({
+			bodyHtml: message.bodyHtml,
+			bodyText: message.bodyText,
+			allowExternal
+		})
+	);
+
 	const when = $derived(
 		new Intl.DateTimeFormat(undefined, {
 			dateStyle: 'medium',
 			timeStyle: 'short'
 		}).format(new Date(message.receivedAt))
 	);
+
+	$effect(() => {
+		message.id;
+		showImagesOnce = false;
+	});
 
 	async function withClient(action: (client: NonNullable<typeof auth.client>) => Promise<void>) {
 		if (!auth.client) return;
@@ -105,9 +125,21 @@
 		</div>
 	</header>
 
-	<div class="flex-1 overflow-y-auto px-6 py-5">
-		<div class="mx-auto max-w-(--z-reader-measure) whitespace-pre-wrap text-sm leading-relaxed text-fg">
-			{message.bodyText}
+	{#if preview.blockedExternal}
+		<div class="flex items-center gap-2 border-b border-border bg-surface px-6 py-2 text-xs text-fg-muted">
+			<Shield class="size-3.5 shrink-0" aria-hidden="true" />
+			External images blocked ·
+			<button type="button" class="text-accent hover:underline" onclick={() => (showImagesOnce = true)}>
+				Show images once
+			</button>
 		</div>
+	{/if}
+
+	<div class="flex-1 overflow-y-auto px-6 py-5">
+		<MessageBody
+			bodyHtml={message.bodyHtml}
+			bodyText={message.bodyText}
+			{allowExternal}
+		/>
 	</div>
 </article>

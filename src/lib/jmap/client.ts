@@ -105,6 +105,20 @@ export class JMAPClient {
 		this.session = null;
 	}
 
+	async fetchSyncStates(): Promise<Record<string, string>> {
+		const response = await this.request([
+			['Mailbox/get', { accountId: this.accountId, ids: null, properties: ['id'] }, 'mb'],
+			['Email/get', { accountId: this.accountId, ids: [], properties: ['id'] }, 'em']
+		]);
+
+		const states: Record<string, string> = {};
+		for (const [method, result] of response.methodResponses ?? []) {
+			if (method === 'Mailbox/get' && result.state) states.Mailbox = result.state as string;
+			if (method === 'Email/get' && result.state) states.Email = result.state as string;
+		}
+		return states;
+	}
+
 	private rewriteSessionUrl(url: string): string {
 		try {
 			const parsed = new URL(url);

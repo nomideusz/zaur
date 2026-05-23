@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { theme } from '$lib/stores/theme.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
 <svelte:head>
@@ -31,7 +32,12 @@
 				<p class="text-sm font-medium text-fg">Block external content</p>
 				<p class="text-xs text-fg-muted">Images and remote resources in HTML mail</p>
 			</div>
-			<input type="checkbox" checked disabled class="size-4 accent-accent" />
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.blockExternalContent}
+				onchange={(e) => settings.setBlockExternalContent(e.currentTarget.checked)}
+			/>
 		</label>
 
 		<label class="flex items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">

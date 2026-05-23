@@ -111,4 +111,21 @@
 	.z-list-row {
 		min-height: var(--z-list-row);
 	}
+
+	.z-email-body :where(a) {
+		@apply text-accent underline-offset-2 hover:underline;
+	}
+
+	.z-email-body :where(img) {
+		max-width: 100%;
+		height: auto;
+	}
+
+	.z-email-body :where(table) {
+		max-width: 100%;
+	}
+
+	.z-email-body :where(blockquote) {
+		@apply border-l-2 border-border pl-4 text-fg-muted;
+	}
 }
