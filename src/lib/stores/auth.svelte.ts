@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 import { appConfig } from '$lib/config';
 import { JMAPClient } from '$lib/jmap/client';
+import { classifyJmapError, loginErrorMessage, type LoginErrorCode } from '$lib/jmap/errors';
 import { pushListener } from '$lib/jmap/push-listener';
 import { mail } from '$lib/stores/mail.svelte';
 import { compose } from '$lib/stores/compose.svelte';
