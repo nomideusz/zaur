@@ -6,6 +6,8 @@ const session = require('express-session');
 const rateLimit = require('express-rate-limit');
 
 const stalwart = require('./lib/stalwart');
+const invites = require('./lib/invites');
+const keycloak = require('./lib/keycloak');
 const {
   validateUsername,
   validatePassword,
@@ -99,7 +101,12 @@ app.post('/api/check-username', checkUsernameLimiter, async (req, res) => {
 });
 
 app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (req, res) => {
-  const { username, domainId, password, confirmPassword, captchaAnswer } = req.body;
+  const { username, domainId, inviteCode, password, confirmPassword, captchaAnswer } = req.body;
+
+  const inviteValidation = invites.validateInvite(inviteCode);
+  if (!inviteValidation.valid) {
+    return res.status(400).json({ error: inviteValidation.error });
+  }
 
   const usernameValidation = validateUsername(username);
   if (!usernameValidation.valid) {
@@ -127,17 +134,26 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
       return res.status(400).json({ error: 'Invalid domain selected.' });
     }
 
+    const email = `${usernameValidation.username}@${domain.name}`;
+
     const available = await stalwart.checkUsernameAcrossDomains(usernameValidation.username);
     const selected = available.find((r) => r.domainId === domainId);
     if (!selected?.available) {
       return res.status(409).json({ error: 'This email address is no longer available.' });
     }
 
-    const { email } = await stalwart.createAccount(
+    // 1. Create User in Keycloak
+    await keycloak.createUser(email, password);
+
+    // 2. Create User in Stalwart
+    await stalwart.createAccount(
       usernameValidation.username,
       domainId,
       password,
     );
+
+    // 3. Mark the invite code as used
+    invites.markInviteAsUsed(inviteCode, email);
 
     delete req.session.captchaAnswer;
 
@@ -153,6 +169,121 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
     req.session.captchaAnswer = captcha.answer;
     res.status(400).json({ error: err.message, captcha: captcha.question });
   }
+});
+
+function requireAdmin(req, res, next) {
+  if (!process.env.ADMIN_PASSWORD) {
+    return res.status(403).json({ error: 'Admin panel is disabled.' });
+  }
+  if (!req.session.isAdmin) {
+    return res.status(401).json({ error: 'Unauthorized.' });
+  }
+  next();
+}
+
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body;
+  const adminPass = process.env.ADMIN_PASSWORD;
+
+  if (!adminPass) {
+    return res.status(403).json({ error: 'Admin panel is disabled.' });
+  }
+
+  if (password === adminPass) {
+    req.session.isAdmin = true;
+    return res.json({ success: true });
+  } else {
+    return res.status(401).json({ error: 'Invalid admin password.' });
+  }
+});
+
+app.post('/api/admin/logout', (req, res) => {
+  req.session.isAdmin = false;
+  res.json({ success: true });
+});
+
+app.get('/api/admin/status', (req, res) => {
+  const adminEnabled = !!process.env.ADMIN_PASSWORD;
+  res.json({
+    enabled: adminEnabled,
+    authenticated: adminEnabled && !!req.session.isAdmin
+  });
+});
+
+app.get('/api/admin/invites', requireAdmin, (req, res) => {
+  try {
+    const list = invites.readInvites();
+    res.json({ invites: list });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/invites/generate', requireAdmin, (req, res) => {
+  const count = parseInt(req.body.count || '1', 10);
+  if (isNaN(count) || count <= 0) {
+    return res.status(400).json({ error: 'Invalid count.' });
+  }
+
+  try {
+    const currentInvites = invites.readInvites();
+    const newCodes = [];
+
+    const generateRandomCode = () => {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      const segment = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+      return `zaur-${segment()}-${segment()}-${segment()}`;
+    };
+
+    for (let i = 0; i < count; i++) {
+      const code = generateRandomCode();
+      const codeObj = {
+        code,
+        used: false,
+        usedAt: null,
+        emailCreated: null,
+        createdAt: new Date().toISOString(),
+        revoked: false,
+      };
+      currentInvites.push(codeObj);
+      newCodes.push(codeObj);
+    }
+
+    invites.writeInvites(currentInvites);
+    res.json({ success: true, codes: newCodes.map(c => c.code) });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/invites/revoke', requireAdmin, (req, res) => {
+  const { code } = req.body;
+  if (!code) {
+    return res.status(400).json({ error: 'Code is required.' });
+  }
+
+  try {
+    const list = invites.readInvites();
+    const found = list.find((c) => c.code === code.trim());
+
+    if (!found) {
+      return res.status(404).json({ error: 'Invite code not found.' });
+    }
+
+    if (found.used) {
+      return res.status(400).json({ error: 'Invite code has already been used and cannot be revoked.' });
+    }
+
+    found.revoked = true;
+    invites.writeInvites(list);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 app.get('/', (_req, res) => {

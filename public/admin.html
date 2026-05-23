@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>newinternet | Admin Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="/" class="logo">newinternet</a>
+      <nav class="nav-links">
+        <a href="/" class="nav-link">Home</a>
+        <a href="#" id="logout-btn" class="nav-link" style="display: none;">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-page">
+    <div class="container">
+      
+      <!-- Login Container -->
+      <div id="login-container" class="register-panel visible" style="max-width: 450px; margin: 3rem auto 0 auto;">
+        <h2>Admin Authentication</h2>
+        <div class="notification error" id="login-error" role="alert" style="display: none; margin-bottom: 1.5rem;"></div>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="admin-password">Admin Password</label>
+            <input type="password" id="admin-password" name="password" placeholder="Enter admin password" required>
+          </div>
+          <button type="submit" class="btn btn-primary" id="login-submit" style="width:100%">Authenticate</button>
+        </form>
+      </div>
+
+      <!-- Dashboard Container -->
+      <div id="dashboard-container" style="display: none; margin-top: 2rem;">
+        
+        <!-- Stats Row -->
+        <div class="stats-row">
+          <div class="stat-card">
+            <span class="stat-label">Total Codes</span>
+            <span class="stat-value" id="stat-total">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Unused</span>
+            <span class="stat-value text-success" id="stat-unused">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Used</span>
+            <span class="stat-value text-warning" id="stat-used">0</span>
+          </div>
+          <div class="stat-card">
+            <span class="stat-label">Revoked</span>
+            <span class="stat-value text-danger" id="stat-revoked">0</span>
+          </div>
+        </div>
+
+        <!-- Generator Section -->
+        <div class="register-panel admin-panel-card visible" style="margin-top: 2rem;">
+          <h3>Generate Invitation Codes</h3>
+          <div class="notification error" id="generate-error" role="alert" style="display: none; margin-bottom: 1rem;"></div>
+          <div class="notification success" id="generate-success" role="alert" style="display: none; margin-bottom: 1rem;"></div>
+          <form id="generate-form" class="inline-form">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+              <input type="number" id="generate-count" name="count" min="1" max="100" value="5" placeholder="Number of codes" required style="width: 100%;">
+            </div>
+            <button type="submit" class="btn btn-primary" id="generate-submit" style="margin-left: 1rem; min-width: 150px;">Generate</button>
+          </form>
+        </div>
+
+        <!-- Invites Table Section -->
+        <div class="register-panel admin-panel-card visible" style="margin-top: 2rem; max-width: 100%;">
+          <h3>Manage Codes</h3>
+          <div class="search-box table-filter-box" style="margin-bottom: 1.5rem;">
+            <input type="text" id="table-filter" class="search-input filter-input" placeholder="Filter codes or users..." autocomplete="off" style="width: 100%;">
+          </div>
+          
+          <div class="table-responsive">
+            <table class="invites-table" id="invites-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Status</th>
+                  <th>Created At</th>
+                  <th>Used By / Used At</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="invites-table-body">
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 2rem; color: var(--text-muted);">Loading codes...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>&copy; 2026</span>
+    </div>
+  </footer>
+
+  <script src="/admin.js"></script>
+</body>
+</html>

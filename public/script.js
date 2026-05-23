@@ -278,6 +278,7 @@ registerForm.addEventListener('submit', async (e) => {
       body: JSON.stringify({
         username: currentUsername,
         domainId: selectedResult.domainId,
+        inviteCode: document.getElementById('invite-code').value,
         password: passwordInput.value,
         confirmPassword: confirmPasswordInput.value,
         captchaAnswer: document.getElementById('captcha-answer').value,
