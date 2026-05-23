@@ -2,16 +2,19 @@
 	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
 	import MessageReaderEmpty from '$lib/components/mail/MessageReaderEmpty.svelte';
-	import { mockMessages } from '$lib/mocks/inbox';
+	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 
 	const { data } = $props();
 
 	const mailbox = $derived(mail.mailboxByRouteId(data.mailboxId));
 	const mailboxName = $derived(mailbox?.name ?? 'Inbox');
-	const messages = $derived(
-		mockMessages.filter((m) => m.mailboxId === data.mailboxId || m.mailboxId === mailbox?.role)
-	);
+
+	$effect(() => {
+		const client = auth.client;
+		if (!client || auth.isRestoring) return;
+		void mail.loadMessages(client, data.mailboxId);
+	});
 </script>
 
 <svelte:head>
@@ -19,5 +22,16 @@
 </svelte:head>
 
 <MailboxSidebar />
-<MessageList {messages} {mailboxName} />
+<MessageList
+	messages={mail.messages}
+	{mailboxName}
+	loading={mail.messagesLoading}
+	loadingMore={mail.messagesLoadingMore}
+	hasMore={mail.messagesHasMore}
+	error={mail.messagesError}
+	total={mail.messagesTotal}
+	onLoadMore={() => {
+		if (auth.client) void mail.loadMoreMessages(auth.client);
+	}}
+/>
 <MessageReaderEmpty />

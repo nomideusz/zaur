@@ -29,13 +29,13 @@
 	</div>
 
 	<nav class="flex-1 overflow-y-auto p-2">
-		{#if mail.isLoading}
+		{#if mail.mailboxesLoading}
 			<div class="flex items-center gap-2 px-3 py-4 text-sm text-fg-muted">
 				<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
 				Loading folders…
 			</div>
-		{:else if mail.error}
-			<p class="px-3 py-4 text-sm text-danger">{mail.error}</p>
+		{:else if mail.mailboxesError}
+			<p class="px-3 py-4 text-sm text-danger">{mail.mailboxesError}</p>
 		{:else}
 			<ul class="space-y-0.5">
 				{#each topLevel as mailbox (mailbox.id)}

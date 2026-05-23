@@ -1,0 +1,61 @@
+import type { JMAPEmail } from '$lib/jmap/types';
+import type { MessageDetail, MessagePreview } from '$lib/types/mail';
+
+function firstAddress(addrs?: { name?: string; email: string }[]) {
+	const first = addrs?.[0];
+	if (!first) return { name: 'Unknown', email: '' };
+	return { name: first.name?.trim() || first.email, email: first.email };
+}
+
+function mapAddresses(addrs?: { name?: string; email: string }[]) {
+	return (addrs ?? []).map((a) => ({
+		name: a.name?.trim() || a.email,
+		email: a.email
+	}));
+}
+
+export function extractBodyText(email: JMAPEmail): string {
+	if (email.bodyValues) {
+		const textPartId = email.textBody?.[0]?.partId;
+		if (textPartId && email.bodyValues[textPartId]?.value) {
+			return email.bodyValues[textPartId].value;
+		}
+		const htmlPartId = email.htmlBody?.[0]?.partId;
+		if (htmlPartId && email.bodyValues[htmlPartId]?.value) {
+			return stripHtml(email.bodyValues[htmlPartId].value);
+		}
+	}
+	return email.preview?.trim() ?? '';
+}
+
+function stripHtml(html: string): string {
+	return html
+		.replace(/<style[\s\S]*?<\/style>/gi, '')
+		.replace(/<script[\s\S]*?<\/script>/gi, '')
+		.replace(/<[^>]+>/g, ' ')
+		.replace(/\s+/g, ' ')
+		.trim();
+}
+
+export function mapEmailPreview(email: JMAPEmail, routeMailboxId: string): MessagePreview {
+	return {
+		id: email.id,
+		threadId: email.threadId,
+		mailboxId: routeMailboxId,
+		from: firstAddress(email.from),
+		subject: email.subject?.trim() || '(no subject)',
+		preview: email.preview?.trim() || '',
+		receivedAt: email.receivedAt,
+		unread: !email.keywords?.$seen,
+		starred: !!email.keywords?.$flagged,
+		hasAttachment: !!email.hasAttachment
+	};
+}
+
+export function mapEmailDetail(email: JMAPEmail, routeMailboxId: string): MessageDetail {
+	return {
+		...mapEmailPreview(email, routeMailboxId),
+		to: mapAddresses(email.to),
+		bodyText: extractBodyText(email)
+	};
+}

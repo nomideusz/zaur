@@ -1,14 +1,28 @@
 <script lang="ts">
-	import { ArrowLeft, MoreHorizontal, Reply, Shield } from 'lucide-svelte';
+	import { goto } from '$app/navigation';
+	import {
+		Archive,
+		ArrowLeft,
+		MoreHorizontal,
+		Reply,
+		Star,
+		Trash2
+	} from 'lucide-svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import { auth } from '$lib/stores/auth.svelte';
+	import { compose } from '$lib/stores/compose.svelte';
+	import { mail } from '$lib/stores/mail.svelte';
+	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
 
 	interface Props {
 		message: MessageDetail;
+		mailboxRouteId: string;
 		onBack?: () => void;
+		onMoved?: () => void;
 	}
 
-	let { message, onBack }: Props = $props();
+	let { message, mailboxRouteId, onBack, onMoved }: Props = $props();
 
 	const when = $derived(
 		new Intl.DateTimeFormat(undefined, {
@@ -16,6 +30,26 @@
 			timeStyle: 'short'
 		}).format(new Date(message.receivedAt))
 	);
+
+	async function withClient(action: (client: NonNullable<typeof auth.client>) => Promise<void>) {
+		if (!auth.client) return;
+		try {
+			await action(auth.client);
+			onMoved?.();
+		} catch (error) {
+			console.error(error);
+		}
+	}
+
+	function reply() {
+		compose.startReply(message);
+		goto('/mail/compose?mode=reply');
+	}
+
+	function toggleStar() {
+		if (!auth.client) return;
+		void mail.toggleStar(auth.client, message);
+	}
 </script>
 
 <article class="flex flex-1 flex-col overflow-hidden bg-surface-raised" style="view-transition-name: message-reader;">
@@ -34,12 +68,35 @@
 			<div class="min-w-0 text-sm">
 				<p class="font-medium text-fg">{message.from.name}</p>
 				<p class="text-fg-muted">{message.from.email}</p>
+				{#if message.to.length}
+					<p class="mt-1 text-xs text-fg-subtle">
+						To {message.to.map((addr) => addr.name || addr.email).join(', ')}
+					</p>
+				{/if}
 				<p class="mt-1 text-xs text-fg-subtle">{when}</p>
 			</div>
 
 			<div class="flex items-center gap-1">
-				<IconButton label="Reply">
+				<IconButton label={message.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
+					<Star
+						class={cn('size-4', message.starred && 'fill-star text-star')}
+						aria-hidden="true"
+					/>
+				</IconButton>
+				<IconButton label="Reply" onclick={reply}>
 					<Reply class="size-4" />
+				</IconButton>
+				<IconButton
+					label="Archive"
+					onclick={() => withClient((client) => mail.moveMessage(client, message, 'archive'))}
+				>
+					<Archive class="size-4" />
+				</IconButton>
+				<IconButton
+					label="Delete"
+					onclick={() => withClient((client) => mail.deleteMessage(client, message, mailboxRouteId))}
+				>
+					<Trash2 class="size-4" />
 				</IconButton>
 				<IconButton label="More actions">
 					<MoreHorizontal class="size-4" />
@@ -47,12 +104,6 @@
 			</div>
 		</div>
 	</header>
-
-	<div class="flex items-center gap-2 border-b border-border bg-surface px-6 py-2 text-xs text-fg-muted">
-		<Shield class="size-3.5 shrink-0" aria-hidden="true" />
-		External images blocked ·
-		<button type="button" class="text-accent hover:underline">Show images once</button>
-	</div>
 
 	<div class="flex-1 overflow-y-auto px-6 py-5">
 		<div class="mx-auto max-w-(--z-reader-measure) whitespace-pre-wrap text-sm leading-relaxed text-fg">

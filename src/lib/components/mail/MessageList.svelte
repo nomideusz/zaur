@@ -1,16 +1,34 @@
 <script lang="ts">
+	import { LoaderCircle } from 'lucide-svelte';
 	import { page } from '$app/stores';
+	import Button from '$lib/components/ui/Button.svelte';
 	import MessageListItem from './MessageListItem.svelte';
 	import type { MessagePreview } from '$lib/types/mail';
 
 	interface Props {
 		messages: MessagePreview[];
 		mailboxName: string;
+		loading?: boolean;
+		loadingMore?: boolean;
+		hasMore?: boolean;
+		error?: string | null;
+		total?: number;
+		onLoadMore?: () => void;
 	}
 
-	let { messages, mailboxName }: Props = $props();
+	let {
+		messages,
+		mailboxName,
+		loading = false,
+		loadingMore = false,
+		hasMore = false,
+		error = null,
+		total,
+		onLoadMore
+	}: Props = $props();
 
 	const activeThreadId = $derived($page.params.threadId);
+	const countLabel = $derived(total ?? messages.length);
 </script>
 
 <section
@@ -20,11 +38,18 @@
 >
 	<div class="flex h-12 items-center border-b border-border px-4">
 		<h2 class="text-sm font-semibold text-fg">{mailboxName}</h2>
-		<span class="ml-2 text-xs text-fg-subtle">{messages.length}</span>
+		<span class="ml-2 text-xs text-fg-subtle">{countLabel}</span>
 	</div>
 
 	<div class="flex-1 overflow-y-auto">
-		{#if messages.length === 0}
+		{#if loading}
+			<div class="flex items-center gap-2 px-4 py-8 text-sm text-fg-muted">
+				<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+				Loading messages…
+			</div>
+		{:else if error}
+			<p class="px-4 py-8 text-center text-sm text-danger">{error}</p>
+		{:else if messages.length === 0}
 			<p class="px-4 py-8 text-center text-sm text-fg-muted">No messages in this folder.</p>
 		{:else}
 			{#each messages as message (message.id)}
@@ -34,6 +59,19 @@
 					active={activeThreadId === message.threadId}
 				/>
 			{/each}
+
+			{#if hasMore && onLoadMore}
+				<div class="border-t border-border px-4 py-3">
+					<Button variant="ghost" class="w-full" disabled={loadingMore} onclick={onLoadMore}>
+						{#if loadingMore}
+							<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+							Loading…
+						{:else}
+							Load more
+						{/if}
+					</Button>
+				</div>
+			{/if}
 		{/if}
 	</div>
 </section>

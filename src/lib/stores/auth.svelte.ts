@@ -4,6 +4,7 @@ import { appConfig } from '$lib/config';
 import { JMAPClient } from '$lib/jmap/client';
 import { classifyJmapError, loginErrorMessage, type LoginErrorCode } from '$lib/jmap/errors';
 import { mail } from '$lib/stores/mail.svelte';
+import { compose } from '$lib/stores/compose.svelte';
 
 const SESSION_KEY = 'zaur:session';
 
@@ -104,6 +105,7 @@ class AuthStore {
 		this.error = null;
 		this.errorCode = null;
 		mail.reset();
+		compose.reset();
 		sessionStorage.removeItem(SESSION_KEY);
 		goto('/login');
 	}
