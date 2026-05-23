@@ -8,7 +8,8 @@ export const routeMap = {
 		inbox: '/mail/inbox',
 		mailbox: '/mail/[mailbox]',
 		thread: '/mail/[mailbox]/[threadId]',
-		compose: '/mail/compose'
+		compose: '/mail/compose',
+		search: '/mail/search'
 	},
 	settings: {
 		root: '/settings',

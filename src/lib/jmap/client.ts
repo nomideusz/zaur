@@ -206,6 +206,44 @@ export class JMAPClient {
 		return { emails, total, hasMore };
 	}
 
+	async searchEmails(query: string, limit = 50, position = 0): Promise<EmailQueryResult> {
+		const response = await this.request([
+			[
+				'Email/query',
+				{
+					accountId: this.accountId,
+					filter: { text: query },
+					sort: [{ property: 'receivedAt', isAscending: false }],
+					limit,
+					position
+				},
+				's0'
+			],
+			[
+				'Email/get',
+				{
+					accountId: this.accountId,
+					'#ids': { resultOf: 's0', name: 'Email/query', path: '/ids' },
+					properties: [...EMAIL_LIST_PROPERTIES]
+				},
+				'g0'
+			]
+		]);
+
+		const queryResult = response.methodResponses?.[0]?.[1];
+		const getResult = response.methodResponses?.[1]?.[1];
+
+		if (response.methodResponses?.[1]?.[0] !== 'Email/get' || !getResult) {
+			return { emails: [], total: 0, hasMore: false };
+		}
+
+		const emails = (getResult.list as JMAPEmail[]) ?? [];
+		const total = (queryResult?.total as number) ?? emails.length;
+		const hasMore = position + emails.length < total;
+
+		return { emails, total, hasMore };
+	}
+
 	async getEmail(emailId: string): Promise<JMAPEmail | null> {
 		const response = await this.request([
 			[

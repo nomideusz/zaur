@@ -1,0 +1,78 @@
+import type { JMAPClient } from '$lib/jmap/client';
+import { mapEmailPreview, resolveRouteMailboxId } from '$lib/jmap/map';
+import type { Mailbox, MessagePreview } from '$lib/types/mail';
+
+const PAGE_SIZE = 50;
+
+class SearchStore {
+	query = $state('');
+	results = $state<MessagePreview[]>([]);
+	loading = $state(false);
+	loadingMore = $state(false);
+	error = $state<string | null>(null);
+	total = $state(0);
+	hasMore = $state(false);
+
+	async search(client: JMAPClient, query: string, mailboxes: Mailbox[]) {
+		const trimmed = query.trim();
+		this.query = trimmed;
+
+		if (!trimmed) {
+			this.results = [];
+			this.total = 0;
+			this.hasMore = false;
+			this.error = null;
+			return;
+		}
+
+		this.loading = true;
+		this.error = null;
+
+		try {
+			const { emails, total, hasMore } = await client.searchEmails(trimmed, PAGE_SIZE, 0);
+			this.results = emails.map((email) =>
+				mapEmailPreview(email, resolveRouteMailboxId(email, mailboxes))
+			);
+			this.total = total;
+			this.hasMore = hasMore;
+		} catch (error) {
+			this.results = [];
+			this.total = 0;
+			this.hasMore = false;
+			this.error = error instanceof Error ? error.message : 'Search failed';
+		} finally {
+			this.loading = false;
+		}
+	}
+
+	async loadMore(client: JMAPClient, mailboxes: Mailbox[]) {
+		if (!this.query || !this.hasMore || this.loadingMore) return;
+
+		this.loadingMore = true;
+		try {
+			const position = this.results.length;
+			const { emails, hasMore } = await client.searchEmails(this.query, PAGE_SIZE, position);
+			const previews = emails.map((email) =>
+				mapEmailPreview(email, resolveRouteMailboxId(email, mailboxes))
+			);
+			this.results = [...this.results, ...previews];
+			this.hasMore = hasMore;
+		} catch (error) {
+			this.error = error instanceof Error ? error.message : 'Failed to load more results';
+		} finally {
+			this.loadingMore = false;
+		}
+	}
+
+	reset() {
+		this.query = '';
+		this.results = [];
+		this.loading = false;
+		this.loadingMore = false;
+		this.error = null;
+		this.total = 0;
+		this.hasMore = false;
+	}
+}
+
+export const search = new SearchStore();

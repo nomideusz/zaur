@@ -5,6 +5,7 @@ import { JMAPClient } from '$lib/jmap/client';
 import { classifyJmapError, loginErrorMessage, type LoginErrorCode } from '$lib/jmap/errors';
 import { mail } from '$lib/stores/mail.svelte';
 import { compose } from '$lib/stores/compose.svelte';
+import { search } from '$lib/stores/search.svelte';
 
 const SESSION_KEY = 'zaur:session';
 
@@ -106,6 +107,7 @@ class AuthStore {
 		this.errorCode = null;
 		mail.reset();
 		compose.reset();
+		search.reset();
 		sessionStorage.removeItem(SESSION_KEY);
 		goto('/login');
 	}

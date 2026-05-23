@@ -1,5 +1,7 @@
 import type { JMAPEmail } from '$lib/jmap/types';
-import type { MessageDetail, MessagePreview } from '$lib/types/mail';
+import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
+
+const ROLE_PRIORITY: Mailbox['role'][] = ['inbox', 'sent', 'archive', 'drafts', 'junk', 'trash'];
 
 function firstAddress(addrs?: { name?: string; email: string }[]) {
 	const first = addrs?.[0];
@@ -35,6 +37,21 @@ function stripHtml(html: string): string {
 		.replace(/<[^>]+>/g, ' ')
 		.replace(/\s+/g, ' ')
 		.trim();
+}
+
+export function resolveRouteMailboxId(email: JMAPEmail, mailboxes: Mailbox[]): string {
+	const jmapIds = Object.keys(email.mailboxIds ?? {});
+
+	for (const role of ROLE_PRIORITY) {
+		const mailbox = mailboxes.find((mb) => mb.role === role && mb.jmapId && jmapIds.includes(mb.jmapId));
+		if (mailbox) return mailbox.id;
+	}
+
+	for (const mailbox of mailboxes) {
+		if (mailbox.jmapId && jmapIds.includes(mailbox.jmapId)) return mailbox.id;
+	}
+
+	return mailboxes.find((mb) => mb.role === 'inbox')?.id ?? 'inbox';
 }
 
 export function mapEmailPreview(email: JMAPEmail, routeMailboxId: string): MessagePreview {
