@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>newinternet</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a href="/" class="logo">newinternet</a>
+      <nav class="nav-links">
+        <a href="#" id="webmail-link" target="_blank" rel="noopener">Webmail</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="home-page">
+    <div class="container">
+      <div class="search-box">
+        <input
+          type="text"
+          id="username-input"
+          class="search-input"
+          placeholder="Search usernames"
+          autocomplete="off"
+          spellcheck="false"
+          autofocus
+        >
+        <div class="validation-hint" id="validation-hint"></div>
+      </div>
+
+      <div id="results-container"></div>
+
+      <div class="register-panel" id="register-panel">
+        <h2 id="selected-email-label">Create account</h2>
+        <div class="notification error" id="form-error" role="alert"></div>
+
+        <form id="register-form">
+          <input type="hidden" id="selected-domain-id" name="domainId">
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" autocomplete="new-password" required>
+            <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+            <div class="strength-label" id="strength-label"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="confirm-password">Confirm password</label>
+            <input type="password" id="confirm-password" name="confirmPassword" autocomplete="new-password" required>
+          </div>
+
+          <div class="form-group">
+            <label for="captcha-answer">Security check</label>
+            <div class="captcha-row">
+              <span class="captcha-question" id="captcha-question">Loading…</span>
+              <input type="number" id="captcha-answer" name="captchaAnswer" inputmode="numeric" required>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="submit-btn" style="width:100%">Create account</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <span>&copy; 2026</span>
+      <div class="footer-links">
+        <a href="#" id="footer-webmail-link" target="_blank" rel="noopener">Webmail</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/script.js"></script>
+</body>
+</html>
