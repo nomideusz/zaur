@@ -1,0 +1,30 @@
+export type MailboxRole = 'inbox' | 'drafts' | 'sent' | 'junk' | 'trash' | 'archive' | 'custom';
+
+export interface Mailbox {
+	id: string;
+	jmapId?: string;
+	name: string;
+	role?: MailboxRole;
+	unread: number;
+	total: number;
+	parentId?: string;
+}
+
+export interface MessagePreview {
+	id: string;
+	threadId: string;
+	mailboxId: string;
+	from: { name: string; email: string };
+	subject: string;
+	preview: string;
+	receivedAt: string;
+	unread: boolean;
+	starred: boolean;
+	hasAttachment: boolean;
+}
+
+export interface MessageDetail extends MessagePreview {
+	to: { name: string; email: string }[];
+	bodyHtml?: string;
+	bodyText: string;
+}

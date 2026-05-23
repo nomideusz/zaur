@@ -1,0 +1,47 @@
+<script lang="ts">
+	import type { Snippet } from 'svelte';
+	import { cn } from '$lib/utils/cn';
+
+	type Variant = 'primary' | 'ghost' | 'danger';
+
+	interface Props {
+		variant?: Variant;
+		href?: string;
+		type?: 'button' | 'submit';
+		class?: string;
+		disabled?: boolean;
+		children: Snippet;
+		onclick?: (e: MouseEvent) => void;
+	}
+
+	let {
+		variant = 'primary',
+		href,
+		type = 'button',
+		class: className,
+		disabled = false,
+		children,
+		onclick
+	}: Props = $props();
+
+	const classes = $derived(
+		cn(
+			variant === 'primary' && 'z-btn-primary',
+			variant === 'ghost' && 'z-btn-ghost',
+			variant === 'danger' &&
+				'inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm text-danger hover:bg-danger/10',
+			disabled && 'pointer-events-none opacity-50',
+			className
+		)
+	);
+</script>
+
+{#if href}
+	<a {href} class={classes} aria-disabled={disabled}>
+		{@render children()}
+	</a>
+{:else}
+	<button {type} class={classes} {disabled} {onclick}>
+		{@render children()}
+	</button>
+{/if}
