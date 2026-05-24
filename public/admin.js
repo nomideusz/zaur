@@ -109,7 +109,7 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTable(invitesList);
     } catch (err) {
       console.error(err);
-      invitesTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">Error loading invite codes.</td></tr>`;
+      invitesTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--z-fg-muted); padding: 2rem;">Error loading invite codes.</td></tr>`;
     }
   }
 
@@ -127,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderTable(list) {
     if (list.length === 0) {
-      invitesTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No invite codes found.</td></tr>`;
+      invitesTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--z-fg-muted); padding: 2rem;">No invite codes found.</td></tr>`;
       return;
     }
 
@@ -177,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
       } else {
         tdUsed.textContent = '—';
-        tdUsed.style.color = 'var(--text-muted)';
+        tdUsed.style.color = 'var(--z-fg-muted)';
       }
 
       // Actions Column
@@ -190,7 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tdActions.appendChild(revokeBtn);
       } else {
         tdActions.textContent = '—';
-        tdActions.style.color = 'var(--text-muted)';
+        tdActions.style.color = 'var(--z-fg-muted)';
       }
 
       tr.appendChild(tdCode);

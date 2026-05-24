@@ -64,7 +64,7 @@ const registerDailyLimiter = rateLimit({
 
 app.get('/api/config', (_req, res) => {
   res.json({
-    webmailUrl: process.env.WEBMAIL_URL || 'https://bulwark.zaur.app',
+    webmailUrl: process.env.WEBMAIL_URL || 'https://webmail.zaur.app',
     mailHost: process.env.MAIL_HOST || 'mail.zaur.app',
   });
 });
@@ -160,7 +160,7 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
     res.json({
       success: true,
       email,
-      webmailUrl: process.env.WEBMAIL_URL || 'https://bulwark.zaur.app',
+      webmailUrl: process.env.WEBMAIL_URL || 'https://webmail.zaur.app',
       mailHost: process.env.MAIL_HOST || 'mail.zaur.app',
     });
   } catch (err) {
