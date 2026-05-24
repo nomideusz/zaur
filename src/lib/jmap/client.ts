@@ -467,6 +467,59 @@ export class JMAPClient {
 		return list[0] ?? null;
 	}
 
+	private buildCalendarEventData(
+		input: {
+			calendarId: string;
+			title: string;
+			start: string;
+			duration: string;
+			timeZone: string;
+			showWithoutTime: boolean;
+			description?: string;
+			location?: string;
+			previousCalendarIds?: string[];
+		},
+		mode: 'create' | 'update'
+	): Record<string, unknown> {
+		const calendarIds: Record<string, boolean | null> = { [input.calendarId]: true };
+		if (mode === 'update' && input.previousCalendarIds) {
+			for (const id of input.previousCalendarIds) {
+				if (id !== input.calendarId) calendarIds[id] = null;
+			}
+		}
+
+		const eventData: Record<string, unknown> = {
+			calendarIds,
+			title: input.title,
+			start: input.start,
+			duration: input.duration,
+			timeZone: input.timeZone,
+			showWithoutTime: input.showWithoutTime
+		};
+
+		if (mode === 'create') {
+			eventData['@type'] = 'Event';
+			eventData.uid = crypto.randomUUID();
+			eventData.useDefaultAlerts = true;
+		}
+
+		if (input.description) {
+			eventData.description = input.description;
+		} else if (mode === 'update') {
+			eventData.description = null;
+		}
+
+		if (input.location) {
+			eventData.locations = {
+				'1': { '@type': 'Location', name: input.location }
+			};
+		} else if (mode === 'update') {
+			eventData.locations = null;
+		}
+
+		return eventData;
+	}
+
 	async createCalendarEvent(input: {
 		calendarId: string;
 		title: string;
@@ -481,31 +534,13 @@ export class JMAPClient {
 
 		const accountId = this.getCalendarAccountId();
 		const createKey = `evt-${Date.now()}`;
-		const eventData: Record<string, unknown> = {
-			'@type': 'Event',
-			uid: crypto.randomUUID(),
-			calendarIds: { [input.calendarId]: true },
-			title: input.title,
-			start: input.start,
-			duration: input.duration,
-			timeZone: input.timeZone,
-			showWithoutTime: input.showWithoutTime,
-			useDefaultAlerts: true
-		};
-
-		if (input.description) eventData.description = input.description;
-		if (input.location) {
-			eventData.locations = {
-				'1': { '@type': 'Location', name: input.location }
-			};
-		}
 
 		const response = await this.calendarRequest([
 			[
 				'CalendarEvent/set',
 				{
 					accountId,
-					create: { [createKey]: eventData }
+					create: { [createKey]: this.buildCalendarEventData(input, 'create') }
 				},
 				'ces'
 			]
@@ -534,6 +569,51 @@ export class JMAPClient {
 		const id = created?.[createKey]?.id;
 		if (!id) throw new Error('Failed to create event');
 		return id;
+	}
+
+	async updateCalendarEvent(
+		eventId: string,
+		input: {
+			calendarId: string;
+			title: string;
+			start: string;
+			duration: string;
+			timeZone: string;
+			showWithoutTime: boolean;
+			description?: string;
+			location?: string;
+			previousCalendarIds?: string[];
+		}
+	): Promise<void> {
+		if (!this.hasCalendars()) throw new Error('Calendars not supported');
+
+		const response = await this.calendarRequest([
+			[
+				'CalendarEvent/set',
+				{
+					accountId: this.getCalendarAccountId(),
+					update: { [eventId]: this.buildCalendarEventData(input, 'update') }
+				},
+				'ceu'
+			]
+		]);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] === 'error') {
+			const error = first[1] as { type?: string; description?: string };
+			throw new Error(error.description ?? error.type ?? 'Failed to update event');
+		}
+		if (first?.[0] !== 'CalendarEvent/set') {
+			throw new Error('Unexpected CalendarEvent/set response');
+		}
+
+		const notUpdated = first[1].notUpdated as
+			| Record<string, { description?: string; type?: string }>
+			| undefined;
+		if (notUpdated && Object.keys(notUpdated).length) {
+			const firstError = Object.values(notUpdated)[0];
+			throw new Error(firstError?.description ?? firstError?.type ?? 'Failed to update event');
+		}
 	}
 
 	async destroyCalendarEvent(eventId: string): Promise<void> {

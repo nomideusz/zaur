@@ -8,10 +8,13 @@ import {
 	isSameDay,
 	localTimeZone,
 	monthRange,
+	pad2,
 	parseDateInputValue,
 	parseDatetimeLocalValue,
 	toDateInputValue
 } from '$lib/utils/dates';
+
+export type EventComposeMode = 'create' | 'edit';
 
 export interface EventComposeDraft {
 	calendarId: string;
@@ -36,6 +39,9 @@ class CalendarStore {
 	selectedEventId = $state<string | null>(null);
 
 	composeOpen = $state(false);
+	composeMode = $state<EventComposeMode>('create');
+	composeEventId = $state<string | null>(null);
+	composePreviousCalendarIds = $state<string[]>([]);
 	composeSaving = $state(false);
 	composeError = $state<string | null>(null);
 	composeDraft = $state<EventComposeDraft>(this.emptyDraft());
@@ -55,11 +61,25 @@ class CalendarStore {
 			title: '',
 			allDay: false,
 			startDate: toDateInputValue(start),
-			startTime: `${start.getHours().toString().padStart(2, '0')}:${start.getMinutes().toString().padStart(2, '0')}`,
+			startTime: `${pad2(start.getHours())}:${pad2(start.getMinutes())}`,
 			endDate: toDateInputValue(end),
-			endTime: `${end.getHours().toString().padStart(2, '0')}:${end.getMinutes().toString().padStart(2, '0')}`,
+			endTime: `${pad2(end.getHours())}:${pad2(end.getMinutes())}`,
 			location: '',
 			description: ''
+		};
+	}
+
+	private draftFromEvent(event: CalendarEvent): EventComposeDraft {
+		return {
+			calendarId: event.calendarIds[0] ?? this.defaultCalendarId() ?? '',
+			title: event.title === '(No title)' ? '' : event.title,
+			allDay: event.allDay,
+			startDate: toDateInputValue(event.start),
+			startTime: `${pad2(event.start.getHours())}:${pad2(event.start.getMinutes())}`,
+			endDate: toDateInputValue(event.end),
+			endTime: `${pad2(event.end.getHours())}:${pad2(event.end.getMinutes())}`,
+			location: event.location ?? '',
+			description: event.description ?? ''
 		};
 	}
 
@@ -169,6 +189,9 @@ class CalendarStore {
 	}
 
 	openCompose(day?: Date) {
+		this.composeMode = 'create';
+		this.composeEventId = null;
+		this.composePreviousCalendarIds = [];
 		this.composeDraft = this.emptyDraft(day);
 		if (!this.composeDraft.calendarId) {
 			this.composeDraft.calendarId = this.defaultCalendarId() ?? '';
@@ -177,8 +200,20 @@ class CalendarStore {
 		this.composeOpen = true;
 	}
 
+	openComposeEdit(event: CalendarEvent) {
+		this.composeMode = 'edit';
+		this.composeEventId = event.id;
+		this.composePreviousCalendarIds = [...event.calendarIds];
+		this.composeDraft = this.draftFromEvent(event);
+		this.composeError = null;
+		this.composeOpen = true;
+	}
+
 	closeCompose() {
 		this.composeOpen = false;
+		this.composeMode = 'create';
+		this.composeEventId = null;
+		this.composePreviousCalendarIds = [];
 		this.composeSaving = false;
 		this.composeError = null;
 	}
@@ -197,63 +232,100 @@ class CalendarStore {
 		return { start, end };
 	}
 
-	async createEvent(client: JMAPClient): Promise<boolean> {
+	private validateCompose():
+		| { ok: true; title: string; start: Date; end: Date }
+		| { ok: false; error: string } {
 		const title = this.composeDraft.title.trim();
-		if (!title) {
-			this.composeError = 'Title is required';
-			return false;
-		}
-		if (!this.composeDraft.calendarId) {
-			this.composeError = 'Choose a calendar';
-			return false;
-		}
+		if (!title) return { ok: false, error: 'Title is required' };
+		if (!this.composeDraft.calendarId) return { ok: false, error: 'Choose a calendar' };
 
 		const { start, end } = this.composeRange();
 		if (end.getTime() <= start.getTime()) {
-			this.composeError = 'End must be after start';
+			return { ok: false, error: 'End must be after start' };
+		}
+
+		return { ok: true, title, start, end };
+	}
+
+	private composePayload(title: string, start: Date, end: Date) {
+		const allDay = this.composeDraft.allDay;
+		return {
+			calendarId: this.composeDraft.calendarId,
+			title,
+			start: allDay
+				? toDateInputValue(start)
+				: `${toDateInputValue(start)}T${this.composeDraft.startTime}:00`,
+			duration: durationBetween(start, end, allDay),
+			timeZone: localTimeZone(),
+			showWithoutTime: allDay,
+			description: this.composeDraft.description.trim() || undefined,
+			location: this.composeDraft.location.trim() || undefined
+		};
+	}
+
+	private async afterSave(
+		client: JMAPClient,
+		title: string,
+		start: Date,
+		eventId: string,
+		mode: EventComposeMode
+	) {
+		this.closeCompose();
+		toast.show(`"${title}" ${mode === 'edit' ? 'updated' : 'created'}`, 'success');
+
+		if (start.getFullYear() !== this.viewYear || start.getMonth() !== this.viewMonth) {
+			this.viewYear = start.getFullYear();
+			this.viewMonth = start.getMonth();
+		}
+
+		await this.loadMonth(client, { preserveSelection: true });
+		this.selectedEventId = eventId;
+	}
+
+	async saveCompose(client: JMAPClient): Promise<boolean> {
+		const validated = this.validateCompose();
+		if (!validated.ok) {
+			this.composeError = validated.error;
 			return false;
 		}
 
 		this.composeSaving = true;
 		this.composeError = null;
 
-		const timeZone = localTimeZone();
-		const allDay = this.composeDraft.allDay;
-		const startValue = allDay
-			? toDateInputValue(start)
-			: `${toDateInputValue(start)}T${this.composeDraft.startTime}:00`;
+		const payload = this.composePayload(validated.title, validated.start, validated.end);
 
 		try {
-			const id = await client.createCalendarEvent({
-				calendarId: this.composeDraft.calendarId,
-				title,
-				start: startValue,
-				duration: durationBetween(start, end, allDay),
-				timeZone,
-				showWithoutTime: allDay,
-				description: this.composeDraft.description.trim() || undefined,
-				location: this.composeDraft.location.trim() || undefined
-			});
-
-			this.closeCompose();
-			toast.show(`"${title}" created`, 'success');
-
-			if (start.getFullYear() !== this.viewYear || start.getMonth() !== this.viewMonth) {
-				this.viewYear = start.getFullYear();
-				this.viewMonth = start.getMonth();
+			if (this.composeMode === 'edit') {
+				if (!this.composeEventId) throw new Error('No event selected');
+				const eventId = this.composeEventId;
+				await client.updateCalendarEvent(eventId, {
+					...payload,
+					previousCalendarIds: this.composePreviousCalendarIds
+				});
+				await this.afterSave(client, validated.title, validated.start, eventId, 'edit');
+				return true;
 			}
 
-			await this.loadMonth(client, { preserveSelection: true });
-			this.selectedEventId = id;
+			const id = await client.createCalendarEvent(payload);
+			await this.afterSave(client, validated.title, validated.start, id, 'create');
 			return true;
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Failed to create event';
+			const message =
+				error instanceof Error
+					? error.message
+					: this.composeMode === 'edit'
+						? 'Failed to update event'
+						: 'Failed to create event';
 			this.composeError = message;
 			toast.show(message, 'error');
 			return false;
 		} finally {
 			this.composeSaving = false;
 		}
+	}
+
+	async createEvent(client: JMAPClient): Promise<boolean> {
+		return this.saveCompose(client);
 	}
 
 	async deleteEvent(client: JMAPClient, event: CalendarEvent): Promise<boolean> {
@@ -306,6 +378,9 @@ class CalendarStore {
 		this.viewMonth = new Date().getMonth();
 		this.selectedEventId = null;
 		this.composeOpen = false;
+		this.composeMode = 'create';
+		this.composeEventId = null;
+		this.composePreviousCalendarIds = [];
 		this.composeSaving = false;
 		this.composeError = null;
 		this.composeDraft = this.emptyDraft();

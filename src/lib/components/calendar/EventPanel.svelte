@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { MapPin, Trash2, X } from 'lucide-svelte';
+	import { MapPin, Pencil, Trash2, X } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -14,6 +14,11 @@
 	function deleteEvent() {
 		if (!auth.client || !event) return;
 		void calendar.deleteEvent(auth.client, event);
+	}
+
+	function editEvent() {
+		if (!event) return;
+		calendar.openComposeEdit(event);
 	}
 </script>
 
@@ -64,10 +69,14 @@
 		{/if}
 	</div>
 
-	<footer class="border-t border-border px-4 py-3">
+	<footer class="flex gap-2 border-t border-border px-4 py-3">
+		<Button variant="ghost" onclick={editEvent}>
+			<Pencil class="size-4" aria-hidden="true" />
+			Edit
+		</Button>
 		<Button variant="danger" onclick={deleteEvent}>
 			<Trash2 class="size-4" aria-hidden="true" />
-			Delete event
+			Delete
 		</Button>
 	</footer>
 {/snippet}
