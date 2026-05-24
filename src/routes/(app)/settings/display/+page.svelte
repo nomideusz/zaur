@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { settings, type ListDensity } from '$lib/stores/settings.svelte';
-	import { theme } from '$lib/stores/theme.svelte';
+	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
 </script>
 
 <svelte:head>
@@ -15,13 +15,14 @@
 		<label class="flex items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
 			<div>
 				<p class="text-sm font-medium text-fg">Theme</p>
-				<p class="text-xs text-fg-muted">Light or dark appearance</p>
+				<p class="text-xs text-fg-muted">Light, dark, or match your system</p>
 			</div>
 			<select
 				class="z-input w-auto"
 				value={theme.theme}
-				onchange={(e) => theme.set(e.currentTarget.value as 'light' | 'dark')}
+				onchange={(e) => theme.set(e.currentTarget.value as ThemeMode)}
 			>
+				<option value="system">System</option>
 				<option value="light">Light</option>
 				<option value="dark">Dark</option>
 			</select>

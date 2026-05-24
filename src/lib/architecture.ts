@@ -14,6 +14,7 @@ export const routeMap = {
 	settings: {
 		root: '/settings',
 		display: '/settings/display',
+		mail: '/settings/mail',
 		account: '/settings/account'
 	},
 	calendar: '/calendar',

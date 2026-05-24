@@ -74,7 +74,7 @@
 					close();
 				}}
 			>
-				{#if theme.theme === 'dark'}
+				{#if theme.resolved === 'dark'}
 					<Sun class="size-4 text-fg-muted" />
 					Light mode
 				{:else}

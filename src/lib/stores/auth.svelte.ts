@@ -5,11 +5,12 @@ import { JMAPClient } from '$lib/jmap/client';
 import { classifyJmapError, loginErrorMessage, type LoginErrorCode } from '$lib/jmap/errors';
 import { pushListener } from '$lib/jmap/push-listener';
 import { mail } from '$lib/stores/mail.svelte';
-	import { compose } from '$lib/stores/compose.svelte';
-	import { search } from '$lib/stores/search.svelte';
-	import { outbox } from '$lib/stores/outbox.svelte';
-	import { calendar } from '$lib/stores/calendar.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
+import { compose } from '$lib/stores/compose.svelte';
+import { search } from '$lib/stores/search.svelte';
+import { outbox } from '$lib/stores/outbox.svelte';
+import { calendar } from '$lib/stores/calendar.svelte';
+import { settings } from '$lib/stores/settings.svelte';
+import { toast } from '$lib/stores/toast.svelte';
 
 interface SessionResponse {
 	authenticated: boolean;
@@ -117,6 +118,27 @@ class AuthStore {
 			this.startBackgroundSync(client, payload.username, payload.displayName ?? payload.username);
 		} catch {
 			// Session cookie invalid or server unreachable
+		}
+	}
+
+	/** Wipe offline mail data on this device and resync from the server. */
+	async clearLocalCache(): Promise<boolean> {
+		if (!browser || !this.client || !this.username) return false;
+
+		pushListener.stop();
+		this.stopBackgroundSync();
+		await this.closeOfflineLayer();
+		mail.reset();
+
+		try {
+			await this.openOfflineLayer(this.client);
+			await mail.loadMailboxes(this.client);
+			this.startBackgroundSync(this.client, this.username, this.displayName ?? undefined);
+			toast.show('Local mail cache cleared. Sync will rebuild from the server.', 'success');
+			return true;
+		} catch {
+			toast.show('Could not rebuild local cache. Try signing out and back in.', 'error');
+			return false;
 		}
 	}
 

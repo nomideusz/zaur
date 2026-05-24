@@ -3,6 +3,25 @@
 	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+
+	let clearingCache = $state(false);
+
+	async function clearLocalCache() {
+		if (
+			!confirm(
+				'Clear downloaded mail and sync state from this device? Your messages on the server are not affected.'
+			)
+		) {
+			return;
+		}
+
+		clearingCache = true;
+		try {
+			await auth.clearLocalCache();
+		} finally {
+			clearingCache = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -52,7 +71,23 @@
 			</div>
 		</dl>
 
-		<div class="border-t border-border pt-6">
+		<div class="space-y-4 border-t border-border pt-6">
+			<div>
+				<p class="text-sm font-medium text-fg">Local data</p>
+				<p class="mt-0.5 text-xs text-fg-muted">
+					Remove cached messages and sync state from this browser. Your account on the server is
+					unchanged.
+				</p>
+				<Button
+					variant="ghost"
+					class="mt-3"
+					disabled={clearingCache}
+					onclick={clearLocalCache}
+				>
+					{clearingCache ? 'Clearing…' : 'Clear local cache'}
+				</Button>
+			</div>
+
 			<Button variant="ghost" onclick={() => auth.logout()}>Sign out</Button>
 		</div>
 	</div>

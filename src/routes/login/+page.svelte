@@ -95,7 +95,7 @@
 
 		<p class="mt-6 text-center text-xs text-fg-subtle">
 			<button type="button" class="text-accent hover:underline" onclick={() => theme.toggle()}>
-				Toggle {theme.theme === 'dark' ? 'light' : 'dark'} mode
+				Toggle {theme.resolved === 'dark' ? 'light' : 'dark'} mode
 			</button>
 		</p>
 	</div>
