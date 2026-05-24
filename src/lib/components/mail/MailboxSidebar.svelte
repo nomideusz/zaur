@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LoaderCircle, Settings, Users } from 'lucide-svelte';
+	import { Settings, Users } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
 	import MailboxTreeItem from './MailboxTreeItem.svelte';
@@ -22,9 +22,10 @@
 
 	<nav class="flex-1 overflow-y-auto p-2">
 		{#if mail.mailboxesLoading}
-			<div class="flex items-center gap-2 px-3 py-4 text-sm text-fg-muted">
-				<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
-				Loading folders…
+			<div class="space-y-2 px-3 py-2" aria-busy="true" aria-label="Loading folders">
+				{#each Array(6) as _, index (index)}
+					<div class="h-8 animate-pulse rounded-md bg-surface-sunken"></div>
+				{/each}
 			</div>
 		{:else if mail.mailboxesError}
 			<div class="flex flex-col items-center gap-2 px-3 py-4 text-center">

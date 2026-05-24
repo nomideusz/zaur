@@ -57,6 +57,40 @@
 		if (unread > 0) return `${unread} unread · ${totalCount}`;
 		return String(totalCount);
 	});
+
+	const defaultEmptyMessage = $derived.by(() => {
+		switch (mailboxRouteId) {
+			case 'inbox':
+				return 'Your inbox is empty';
+			case 'drafts':
+				return 'No drafts';
+			case 'sent':
+				return 'No sent messages';
+			case 'trash':
+				return 'Trash is empty';
+			case 'archive':
+				return 'Archive is empty';
+			case 'junk':
+				return 'No junk mail';
+			default:
+				return 'No messages here';
+		}
+	});
+
+	const defaultEmptyHint = $derived.by(() => {
+		switch (mailboxRouteId) {
+			case 'inbox':
+				return 'New mail will show up here when it arrives.';
+			case 'drafts':
+				return 'Saved drafts and unfinished messages appear here.';
+			case 'sent':
+				return 'Messages you send will appear here.';
+			case 'trash':
+				return 'Deleted messages are kept here until emptied.';
+			default:
+				return null;
+		}
+	});
 </script>
 
 <section
@@ -135,20 +169,17 @@
 				{/if}
 				<div>
 					<p class="text-sm font-medium text-fg">
-						{emptyMessage ??
-							(mailboxRouteId === 'inbox' ? 'Your inbox is empty' : 'No messages here')}
+						{emptyMessage ?? defaultEmptyMessage}
 					</p>
 					{#if emptyHint}
 						<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">{emptyHint}</p>
-					{:else if !emptyMessage && mailboxRouteId === 'inbox'}
-						<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">
-							New mail will show up here when it arrives.
-						</p>
+					{:else if !emptyMessage && defaultEmptyHint}
+						<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">{defaultEmptyHint}</p>
 					{/if}
 				</div>
 				{#if emptyActionHref && emptyActionLabel}
 					<Button href={emptyActionHref} variant="ghost" class="text-sm">{emptyActionLabel}</Button>
-				{:else if mailboxRouteId === 'inbox'}
+				{:else if mailboxRouteId === 'inbox' || mailboxRouteId === 'drafts'}
 					<Button href="/mail/compose" variant="ghost" class="text-sm">Write a message</Button>
 				{/if}
 			</div>
