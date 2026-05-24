@@ -47,7 +47,7 @@
 </script>
 
 <section
-	class="z-panel flex w-full max-w-none shrink-0 flex-col border-r md:max-w-(--width-list) md:w-(--width-list) {hideOnMobile ? 'hidden md:flex' : 'flex'}"
+	class="z-panel flex min-h-0 w-full max-w-none flex-1 shrink-0 flex-col border-r md:max-w-(--width-list) md:flex-none md:w-(--width-list) {hideOnMobile ? 'hidden md:flex' : 'flex'}"
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
@@ -66,7 +66,9 @@
 				</select>
 			</label>
 		{/if}
-		<h2 class="hidden truncate text-sm font-semibold text-fg md:block">{mailboxName}</h2>
+		<h2 class="hidden truncate text-sm font-semibold text-fg md:block">
+			{mailboxName.startsWith('Search:') ? mailboxName.slice(8) : mailboxName}
+		</h2>
 		<span class="hidden shrink-0 text-xs text-fg-subtle md:inline">{countLabel}</span>
 		{#if mailboxRouteId}
 			<span class="ml-auto shrink-0 text-xs text-fg-subtle md:ml-2 md:hidden">{countLabel}</span>

@@ -36,6 +36,29 @@
 </svelte:head>
 
 <MailboxSidebar />
+
+<form
+	class="z-panel shrink-0 border-b border-border px-4 py-3 md:hidden"
+	role="search"
+	onsubmit={(e) => {
+		e.preventDefault();
+		submit();
+	}}
+>
+	<label class="sr-only" for="mobile-search">Search mail</label>
+	<div class="relative">
+		<Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
+		<input
+			id="mobile-search"
+			type="search"
+			class="z-input w-full pl-9"
+			placeholder="Search messages or contacts…"
+			autocomplete="off"
+			bind:value={input}
+		/>
+	</div>
+</form>
+
 <MessageList
 	messages={search.results}
 	{mailboxName}
@@ -49,34 +72,6 @@
 		if (auth.client) void search.loadMore(auth.client, mail.mailboxes);
 	}}
 />
-<MessageReaderEmpty />
-
-<div class="hidden min-w-0 flex-1 flex-col md:flex">
-	<form
-		class="border-b border-border px-6 py-4 md:hidden"
-		role="search"
-		onsubmit={(e) => {
-			e.preventDefault();
-			submit();
-		}}
-	>
-		<label class="sr-only" for="mobile-search">Search mail</label>
-		<div class="relative">
-			<Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
-			<input
-				id="mobile-search"
-				type="search"
-				class="z-input w-full pl-9"
-				placeholder="Search messages…"
-				autocomplete="off"
-				bind:value={input}
-			/>
-		</div>
-	</form>
-
-	{#if !query && !search.loading}
-		<p class="flex flex-1 items-center justify-center px-6 text-sm text-fg-muted">
-			Enter a search term to find messages.
-		</p>
-	{/if}
+<div class="hidden min-w-0 flex-1 md:flex">
+	<MessageReaderEmpty />
 </div>
