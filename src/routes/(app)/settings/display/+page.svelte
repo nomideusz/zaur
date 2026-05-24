@@ -43,7 +43,7 @@
 			</select>
 		</SettingsRow>
 
-		<SettingsRow title="Show message preview" description="Snippet line under the subject in the list">
+		<SettingsRow title="Show message preview" description="Second line under the subject in the inbox list">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"

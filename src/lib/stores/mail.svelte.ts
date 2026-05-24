@@ -421,6 +421,21 @@ class MailStore {
 		}
 	}
 
+	async bulkMarkAsUnread(client: JMAPClient) {
+		const messages = this.selectedMessages().filter((message) => !message.unread);
+		if (!messages.length) return;
+
+		this.bulkActionLoading = true;
+		try {
+			for (const message of messages) {
+				await this.markAsRead(client, message, false);
+			}
+			this.clearSelection();
+		} finally {
+			this.bulkActionLoading = false;
+		}
+	}
+
 	async bulkDelete(client: JMAPClient, routeMailboxId: string) {
 		const messages = this.selectedMessages();
 		if (!messages.length) return;

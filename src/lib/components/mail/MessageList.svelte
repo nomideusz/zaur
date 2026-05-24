@@ -74,7 +74,9 @@
 					onchange={(e) => goto(`/mail/${e.currentTarget.value}`)}
 				>
 					{#each mail.mailboxes as folder (folder.id)}
-						<option value={folder.id}>{folder.name}</option>
+						<option value={folder.id}>
+							{folder.name}{folder.unread > 0 ? ` (${folder.unread})` : ''}
+						</option>
 					{/each}
 				</select>
 			</label>

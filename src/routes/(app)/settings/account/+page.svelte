@@ -82,7 +82,14 @@
 				</Button>
 			</div>
 
-			<Button variant="ghost" onclick={() => auth.logout()}>Sign out</Button>
+			<Button
+				variant="ghost"
+				onclick={() => {
+					if (confirm('Sign out of ZAUR Webmail on this device?')) auth.logout();
+				}}
+			>
+				Sign out
+			</Button>
 		</div>
 	{/snippet}
 </SettingsPanel>

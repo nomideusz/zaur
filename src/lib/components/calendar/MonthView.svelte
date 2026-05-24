@@ -2,6 +2,7 @@
 	import { ChevronLeft, ChevronRight, LoaderCircle, Plus } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import type { CalendarEvent } from '$lib/types/calendar';
 	import { formatMonthTitle, isSameDay, isSameMonth, monthGrid, weekdayLabels } from '$lib/utils/dates';
@@ -47,6 +48,9 @@
 			</IconButton>
 		</div>
 		<Button variant="ghost" onclick={() => calendar.goToToday()}>Today</Button>
+		<IconButton label="New event" class="sm:hidden" onclick={() => calendar.openCompose()}>
+			<Plus class="size-4" aria-hidden="true" />
+		</IconButton>
 		<Button onclick={() => calendar.openCompose()} class="hidden sm:inline-flex">
 			<Plus class="size-4" aria-hidden="true" />
 			New event
@@ -65,9 +69,14 @@
 			Loading events…
 		</div>
 	{:else if calendar.error}
-		<p class="flex flex-1 items-center justify-center px-4 text-center text-sm text-danger">
-			{calendar.error}
-		</p>
+		<div class="flex flex-1 flex-col items-center justify-center gap-3 px-4 py-12 text-center">
+			<p class="text-sm text-danger">{calendar.error}</p>
+			{#if auth.client}
+				<Button variant="ghost" class="text-sm" onclick={() => void calendar.loadMonth(auth.client!)}>
+					Try again
+				</Button>
+			{/if}
+		</div>
 	{:else}
 		<div class="grid min-h-0 flex-1 auto-rows-fr grid-cols-7">
 			{#each days as day (day.toISOString())}

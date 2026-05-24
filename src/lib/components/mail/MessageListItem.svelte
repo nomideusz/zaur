@@ -28,9 +28,9 @@
 
 	const rowClass = $derived(
 		cn(
-			'z-list-row flex items-start gap-3 border-b border-border px-3 py-2.5 transition-colors',
+			'z-list-row flex items-start gap-3 border-b border-l-2 border-border border-l-transparent px-3 py-2.5 transition-colors',
 			selectionMode ? 'cursor-pointer' : '',
-			active || selected ? 'bg-surface-sunken' : 'hover:bg-surface-sunken/70'
+			active || selected ? 'border-l-accent bg-surface-sunken' : 'hover:bg-surface-sunken/70'
 		)
 	);
 </script>
@@ -97,7 +97,7 @@
 		{@render content()}
 	</div>
 {:else}
-	<a {href} class={rowClass} style="view-transition-name: message-{message.id};">
+	<a {href} class={rowClass} aria-current={active ? 'true' : undefined} style="view-transition-name: message-{message.id};">
 		{@render content()}
 	</a>
 {/if}

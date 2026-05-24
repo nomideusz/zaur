@@ -78,5 +78,10 @@
 	}}
 />
 <div class="hidden min-w-0 flex-1 md:flex">
-	<MessageReaderEmpty />
+	<MessageReaderEmpty
+		title="Select a result"
+		description="Choose a message from the search results to read it here."
+		showCompose={false}
+		showSettings={false}
+	/>
 </div>

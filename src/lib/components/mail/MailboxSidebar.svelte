@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LoaderCircle, Users } from 'lucide-svelte';
+	import { LoaderCircle, Settings, Users } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
 	import MailboxTreeItem from './MailboxTreeItem.svelte';
@@ -48,7 +48,7 @@
 		{/if}
 	</nav>
 
-	<div class="border-t border-border p-2">
+	<div class="space-y-0.5 border-t border-border p-2">
 		<a
 			href="/contacts"
 			class={cn(
@@ -60,6 +60,18 @@
 		>
 			<Users class="size-4 shrink-0" aria-hidden="true" />
 			Contacts
+		</a>
+		<a
+			href="/settings/display"
+			class={cn(
+				'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+				$page.url.pathname.startsWith('/settings')
+					? 'bg-surface-sunken font-medium text-fg'
+					: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
+			)}
+		>
+			<Settings class="size-4 shrink-0" aria-hidden="true" />
+			Settings
 		</a>
 	</div>
 </aside>
