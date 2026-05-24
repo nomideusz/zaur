@@ -36,19 +36,13 @@ export function buildEmailCreateData(input: EmailCreateInput): Record<string, un
 
 	if (!attachments.length) return data;
 
-	data.bodyStructure = {
-		type: 'multipart/mixed',
-		subParts: [
-			{ partId: '1', type: 'text/plain' },
-			...attachments.map((attachment) => ({
-				type: attachment.type || 'application/octet-stream',
-				name: attachment.name,
-				blobId: attachment.blobId,
-				size: attachment.size,
-				disposition: 'attachment'
-			}))
-		]
-	};
+	data.attachments = attachments.map((attachment) => ({
+		type: attachment.type || 'application/octet-stream',
+		name: attachment.name,
+		blobId: attachment.blobId,
+		size: attachment.size,
+		disposition: 'attachment'
+	}));
 
 	return data;
 }
