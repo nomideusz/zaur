@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { createRxDatabase, type RxCollection, type RxDatabase } from 'rxdb/plugins/core';
+import { createRxDatabase, removeRxDatabase, type RxCollection, type RxDatabase } from 'rxdb';
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
 import {
 	draftSchema,
@@ -77,16 +77,46 @@ export async function initMailDatabase(nextAccountId: string): Promise<MailDatab
 	await closeMailDatabase();
 
 	const name = `zaur-mail-${sanitizeAccountId(nextAccountId)}`;
-	const database = await createRxDatabase({
-		name,
-		storage: getRxStorageDexie(),
-		multiInstance: false,
-		eventReduce: true
-	});
+	let database: RxDatabase | null = null;
+	try {
+		database = await createRxDatabase({
+			name,
+			storage: getRxStorageDexie(),
+			multiInstance: false,
+			eventReduce: true
+		});
 
-	db = await ensureCollections(database);
-	accountId = nextAccountId;
-	return db;
+		db = await ensureCollections(database);
+		accountId = nextAccountId;
+		return db;
+	} catch (err) {
+		console.warn('Failed to initialize MailDatabase, attempting to clear and recreate:', err);
+
+		if (database) {
+			try {
+				await database.close();
+			} catch (closeErr) {
+				console.error('Failed to close database instance:', closeErr);
+			}
+		}
+
+		try {
+			await removeRxDatabase(name, getRxStorageDexie());
+		} catch (cleanupErr) {
+			console.error('Failed to remove database during cleanup:', cleanupErr);
+		}
+
+		const cleanDatabase = await createRxDatabase({
+			name,
+			storage: getRxStorageDexie(),
+			multiInstance: false,
+			eventReduce: true
+		});
+
+		db = await ensureCollections(cleanDatabase);
+		accountId = nextAccountId;
+		return db;
+	}
 }
 
 export async function closeMailDatabase(): Promise<void> {
