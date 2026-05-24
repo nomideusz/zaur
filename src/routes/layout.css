@@ -50,6 +50,7 @@
 
 	--z-list-row: 4.25rem;
 	--z-reader-measure: 42rem;
+	--z-reader-text: 0.875rem;
 }
 
 :root.dark {
@@ -111,6 +112,10 @@
 
 	.z-list-row {
 		min-height: var(--z-list-row);
+	}
+
+	.z-email-body {
+		font-size: var(--z-reader-text);
 	}
 
 	.z-email-body :where(a) {

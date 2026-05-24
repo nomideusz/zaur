@@ -1,4 +1,6 @@
 <script lang="ts">
+	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
+	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
@@ -6,39 +8,29 @@
 	<title>Mail · ZAUR Webmail</title>
 </svelte:head>
 
-<div class="z-panel rounded-xl p-6">
-	<h2 class="text-lg font-semibold text-fg">Mail</h2>
-	<p class="mt-1 text-sm text-fg-muted">Reading and message behavior.</p>
+<SettingsPanel title="Mail" description="Reading and message behavior.">
+	<SettingsRow title="Notify on new mail" description="Toast and browser notification for new Inbox mail">
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.notifyOnNewMail}
+			onchange={(e) => settings.setNotifyOnNewMail(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 
-	<div class="mt-6 space-y-4">
-		<label class="flex items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
-			<div>
-				<p class="text-sm font-medium text-fg">Notify on new mail</p>
-				<p class="text-xs text-fg-muted">Toast and browser notification for new Inbox mail</p>
-			</div>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.notifyOnNewMail}
-				onchange={(e) => settings.setNotifyOnNewMail(e.currentTarget.checked)}
-			/>
-		</label>
+	<SettingsRow
+		title="Mark as read when opened"
+		description="Automatically mark conversations read when you open them"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.markAsReadOnOpen}
+			onchange={(e) => settings.setMarkAsReadOnOpen(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 
-		<label class="flex items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
-			<div>
-				<p class="text-sm font-medium text-fg">Mark as read when opened</p>
-				<p class="text-xs text-fg-muted">Automatically mark conversations read when you open them</p>
-			</div>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.markAsReadOnOpen}
-				onchange={(e) => settings.setMarkAsReadOnOpen(e.currentTarget.checked)}
-			/>
-		</label>
-	</div>
-
-	<div class="mt-8 border-t border-border pt-6">
+	{#snippet footer()}
 		<h3 class="text-sm font-medium text-fg">Keyboard shortcuts</h3>
 		<dl class="mt-3 space-y-2 text-sm">
 			<div class="flex justify-between gap-4">
@@ -58,5 +50,5 @@
 				<dd class="font-mono text-xs text-fg">Esc</dd>
 			</div>
 		</dl>
-	</div>
-</div>
+	{/snippet}
+</SettingsPanel>

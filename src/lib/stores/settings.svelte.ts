@@ -2,10 +2,13 @@ import { browser } from '$app/environment';
 import { requestBrowserNotificationPermission } from '$lib/utils/notifications';
 
 export type ListDensity = 'comfortable' | 'compact';
+export type ReaderTextSize = 'normal' | 'large';
 
 const STORAGE = {
 	blockExternal: 'zaur:block-external',
 	listDensity: 'zaur:list-density',
+	showListPreview: 'zaur:show-list-preview',
+	readerTextSize: 'zaur:reader-text-size',
 	markAsReadOnOpen: 'zaur:mark-read-on-open',
 	notifyOnNewMail: 'zaur:notify-new-mail',
 	displayName: (email: string) => `zaur:display-name:${email}`,
@@ -17,6 +20,11 @@ const LIST_ROW_HEIGHT: Record<ListDensity, string> = {
 	compact: '3rem'
 };
 
+const READER_TEXT_SIZE: Record<ReaderTextSize, string> = {
+	normal: '0.875rem',
+	large: '1rem'
+};
+
 function readBlockExternal(): boolean {
 	if (!browser) return true;
 	return localStorage.getItem(STORAGE.blockExternal) !== 'false';
@@ -25,6 +33,16 @@ function readBlockExternal(): boolean {
 function readListDensity(): ListDensity {
 	if (!browser) return 'comfortable';
 	return localStorage.getItem(STORAGE.listDensity) === 'compact' ? 'compact' : 'comfortable';
+}
+
+function readShowListPreview(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showListPreview) !== 'false';
+}
+
+function readReaderTextSize(): ReaderTextSize {
+	if (!browser) return 'normal';
+	return localStorage.getItem(STORAGE.readerTextSize) === 'large' ? 'large' : 'normal';
 }
 
 function readMarkAsReadOnOpen(): boolean {
@@ -50,6 +68,8 @@ function readSignature(email: string | null): string {
 class SettingsStore {
 	blockExternalContent = $state(readBlockExternal());
 	listDensity = $state<ListDensity>(readListDensity());
+	showListPreview = $state(readShowListPreview());
+	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	markAsReadOnOpen = $state(readMarkAsReadOnOpen());
 	notifyOnNewMail = $state(readNotifyOnNewMail());
 	displayName = $state('');
@@ -60,9 +80,12 @@ class SettingsStore {
 	init() {
 		this.blockExternalContent = readBlockExternal();
 		this.listDensity = readListDensity();
+		this.showListPreview = readShowListPreview();
+		this.readerTextSize = readReaderTextSize();
 		this.markAsReadOnOpen = readMarkAsReadOnOpen();
 		this.notifyOnNewMail = readNotifyOnNewMail();
 		this.applyListDensity(this.listDensity);
+		this.applyReaderTextSize(this.readerTextSize);
 	}
 
 	setUser(email: string | null) {
@@ -98,6 +121,21 @@ class SettingsStore {
 			localStorage.setItem(STORAGE.listDensity, value);
 		}
 		this.applyListDensity(value);
+	}
+
+	setShowListPreview(value: boolean) {
+		this.showListPreview = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showListPreview, String(value));
+		}
+	}
+
+	setReaderTextSize(value: ReaderTextSize) {
+		this.readerTextSize = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.readerTextSize, value);
+		}
+		this.applyReaderTextSize(value);
 	}
 
 	setMarkAsReadOnOpen(value: boolean) {
@@ -144,6 +182,11 @@ class SettingsStore {
 	private applyListDensity(value: ListDensity) {
 		if (!browser) return;
 		document.documentElement.style.setProperty('--z-list-row', LIST_ROW_HEIGHT[value]);
+	}
+
+	private applyReaderTextSize(value: ReaderTextSize) {
+		if (!browser) return;
+		document.documentElement.style.setProperty('--z-reader-text', READER_TEXT_SIZE[value]);
 	}
 }
 

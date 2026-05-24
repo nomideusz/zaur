@@ -176,33 +176,34 @@
 </script>
 
 <article class="flex flex-1 flex-col overflow-hidden bg-surface-raised" style="view-transition-name: message-reader;">
-	<header class="border-b border-border px-6 py-4">
-		<div class="mb-3 flex items-center gap-2 md:hidden">
+	<header class="border-b border-border px-4 py-3 md:px-6">
+		<div class="flex items-start gap-2">
 			{#if onBack}
-				<IconButton label="Back to list" onclick={onBack}>
+				<IconButton label="Back to list" class="mt-0.5 md:hidden" onclick={onBack}>
 					<ArrowLeft class="size-4" />
 				</IconButton>
 			{/if}
-		</div>
 
-		<h1 class="text-xl font-semibold leading-snug text-fg">{subject}</h1>
+			<div class="min-w-0 flex-1">
+				<h1 class="text-lg font-semibold leading-snug text-fg md:text-xl">{subject}</h1>
 
-		{#if thread.length > 1}
-			<div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
-				<span>{thread.length} messages</span>
-				{#if collapsedCount > 0}
-					<button type="button" class="text-accent hover:underline" onclick={expandAll}>
-						Expand all
-					</button>
-				{:else if thread.length > 1}
-					<button type="button" class="text-accent hover:underline" onclick={collapseToLatest}>
-						Collapse earlier
-					</button>
+				{#if thread.length > 1}
+					<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
+						<span>{thread.length} messages</span>
+						{#if collapsedCount > 0}
+							<button type="button" class="text-accent hover:underline" onclick={expandAll}>
+								Expand all
+							</button>
+						{:else}
+							<button type="button" class="text-accent hover:underline" onclick={collapseToLatest}>
+								Collapse earlier
+							</button>
+						{/if}
+					</div>
 				{/if}
 			</div>
-		{/if}
 
-		<div class="mt-3 flex flex-wrap items-center justify-end gap-1">
+			<div class="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
 			<IconButton label={latest?.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
 				<Star
 					class={cn('size-4', latest?.starred && 'fill-star text-star')}
@@ -240,6 +241,7 @@
 			>
 				<Trash2 class="size-4" />
 			</IconButton>
+			</div>
 		</div>
 	</header>
 
@@ -250,12 +252,14 @@
 	{/if}
 
 	{#if hasBlockedExternal && !allowExternal}
-		<div class="flex items-center gap-2 border-b border-border bg-surface px-6 py-2 text-xs text-fg-muted">
+		<div class="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-border bg-surface px-4 py-2 text-xs text-fg-muted md:px-6">
 			<Shield class="size-3.5 shrink-0" aria-hidden="true" />
-			External images blocked ·
+			<span>External images blocked.</span>
 			<button type="button" class="text-accent hover:underline" onclick={() => (showImagesOnce = true)}>
-				Show images once
+				Show once
 			</button>
+			<span class="text-fg-subtle">·</span>
+			<a href="/settings/display" class="text-accent hover:underline">Display settings</a>
 		</div>
 	{/if}
 
@@ -347,7 +351,8 @@
 		<footer class="shrink-0 border-t border-border bg-surface/80 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
 			<div class="mx-auto flex max-w-(--z-reader-measure) gap-2">
 				<textarea
-					class="z-input min-h-10 flex-1 resize-none py-2 text-sm leading-relaxed"
+					class="z-input min-h-10 flex-1 resize-none py-2 leading-relaxed"
+					style="font-size: var(--z-reader-text)"
 					rows="2"
 					placeholder="Write a quick reply…"
 					bind:value={quickReply}
