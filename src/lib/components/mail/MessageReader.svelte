@@ -125,6 +125,10 @@
 		void mail.toggleStar(auth.client, latest);
 	}
 
+	function composeTo(email: string) {
+		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
+	}
+
 	async function sendQuickReply() {
 		if (!auth.client || !auth.username || !latest) return;
 
@@ -252,7 +256,13 @@
 								<div class="flex flex-wrap items-baseline justify-between gap-2">
 									<div class="min-w-0 text-sm">
 										<p class="font-medium text-fg">{message.from.name}</p>
-										<p class="text-fg-muted">{message.from.email}</p>
+										<button
+											type="button"
+											class="text-left text-fg-muted hover:text-accent hover:underline"
+											onclick={() => composeTo(message.from.email)}
+										>
+											{message.from.email}
+										</button>
 									</div>
 									<div class="flex items-center gap-2">
 										<p class="text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</p>
@@ -271,6 +281,11 @@
 								{#if message.to.length}
 									<p class="mt-1 text-xs text-fg-subtle">
 										To {message.to.map((addr) => addr.name || addr.email).join(', ')}
+									</p>
+								{/if}
+								{#if message.cc.length}
+									<p class="mt-0.5 text-xs text-fg-subtle">
+										Cc {message.cc.map((addr) => addr.name || addr.email).join(', ')}
 									</p>
 								{/if}
 							</div>
@@ -308,7 +323,7 @@
 	</div>
 
 	{#if latest && auth.client}
-		<footer class="shrink-0 border-t border-border bg-surface/80 px-6 py-4">
+		<footer class="shrink-0 border-t border-border bg-surface/80 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
 			<div class="mx-auto flex max-w-(--z-reader-measure) gap-2">
 				<textarea
 					class="z-input min-h-10 flex-1 resize-none py-2 text-sm leading-relaxed"

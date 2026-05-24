@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Search } from 'lucide-svelte';
+	import { Search, User } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import { auth } from '$lib/stores/auth.svelte';
+	import { listContacts } from '$lib/utils/contact-index';
 
 	let input = $state('');
+	let open = $state(false);
 
 	$effect(() => {
 		if ($page.url.pathname === '/mail/search') {
@@ -12,10 +15,25 @@
 		}
 	});
 
+	const contactMatches = $derived.by(() => {
+		const query = input.trim();
+		if (query.length < 1) return [];
+		return listContacts(auth.client?.getAccountId() ?? null, query).slice(0, 4);
+	});
+
+	const showDropdown = $derived(open && input.trim().length > 0);
+
 	function submit() {
 		const query = input.trim();
 		if (!query) return;
+		open = false;
 		goto(`/mail/search?q=${encodeURIComponent(query)}`);
+	}
+
+	function composeTo(email: string) {
+		open = false;
+		input = '';
+		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
 	}
 </script>
 
@@ -36,9 +54,45 @@
 	<input
 		id="global-search"
 		type="search"
-		placeholder="Search messages…"
+		placeholder="Search messages or contacts…"
 		class="z-input pl-9"
 		autocomplete="off"
 		bind:value={input}
+		onfocus={() => (open = true)}
+		onblur={() => setTimeout(() => (open = false), 150)}
 	/>
+
+	{#if showDropdown}
+		<div
+			class="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-md border border-border bg-surface-raised py-1 shadow-md"
+		>
+			<button
+				type="submit"
+				class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-sunken"
+			>
+				<Search class="size-4 text-fg-subtle" aria-hidden="true" />
+				Search mail for “{input.trim()}”
+			</button>
+
+			{#if contactMatches.length}
+				<p class="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-fg-subtle">
+					Contacts
+				</p>
+				{#each contactMatches as contact (contact.email)}
+					<button
+						type="button"
+						class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-sunken"
+						onmousedown={(e) => e.preventDefault()}
+						onclick={() => composeTo(contact.email)}
+					>
+						<User class="size-4 text-fg-subtle" aria-hidden="true" />
+						<span class="min-w-0 truncate">
+							<span class="text-fg">{contact.name}</span>
+							<span class="ml-1 text-fg-muted">{contact.email}</span>
+						</span>
+					</button>
+				{/each}
+			{/if}
+		</div>
+	{/if}
 </form>

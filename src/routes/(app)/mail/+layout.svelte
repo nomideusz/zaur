@@ -4,9 +4,13 @@
 
 	let { children } = $props();
 
-	const showComposeFab = $derived(
-		$page.url.pathname.startsWith('/mail') && !$page.url.pathname.startsWith('/mail/compose')
-	);
+	const showComposeFab = $derived.by(() => {
+		const path = $page.url.pathname;
+		if (!path.startsWith('/mail') || path.startsWith('/mail/compose')) return false;
+		// Hide on thread view — quick reply bar lives at the bottom on mobile
+		if (/^\/mail\/[^/]+\/[^/]+\/?$/.test(path)) return false;
+		return true;
+	});
 </script>
 
 <div class="relative flex min-h-0 flex-1 overflow-hidden">
