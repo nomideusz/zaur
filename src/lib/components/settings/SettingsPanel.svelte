@@ -15,7 +15,7 @@
 <div class="z-panel rounded-xl p-6">
 	<h2 class="text-lg font-semibold text-fg">{title}</h2>
 	<p class="mt-1 text-sm text-fg-muted">{description}</p>
-	<div class="mt-6 space-y-4">
+	<div class="mt-6 space-y-8">
 		{@render children()}
 	</div>
 	{#if footer}

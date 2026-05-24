@@ -67,7 +67,7 @@
 				<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
 			{/if}
 		</div>
-		{#if settings.showListPreview}
+		{#if settings.showListPreview && message.preview}
 			<p class="mt-0.5 truncate text-xs text-fg-subtle">{message.preview}</p>
 		{/if}
 	</div>

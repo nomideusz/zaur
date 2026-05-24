@@ -246,7 +246,7 @@
 	</header>
 
 	{#if mail.selectedError}
-		<div class="border-b border-border bg-surface px-6 py-2 text-xs text-fg-muted">
+		<div class="border-b border-border bg-surface px-4 py-2 text-xs text-fg-muted md:px-6">
 			{mail.selectedError}
 		</div>
 	{/if}
@@ -267,7 +267,7 @@
 		{#each thread as message, index (message.id)}
 			<section class={cn(index > 0 && 'border-t border-border')}>
 				{#if isExpanded(message)}
-					<div class="px-6 py-5">
+					<div class="px-4 py-5 md:px-6">
 						<div class="mb-4 flex flex-wrap items-start gap-3">
 							<Avatar name={message.from.name} email={message.from.email} class="size-9 text-sm" />
 							<div class="min-w-0 flex-1">
@@ -329,7 +329,7 @@
 				{:else}
 					<button
 						type="button"
-						class="flex w-full items-center gap-3 px-6 py-3 text-left transition-colors hover:bg-surface-sunken/70"
+						class="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-sunken/70 md:px-6"
 						onclick={() => toggleMessage(message)}
 					>
 						<Avatar name={message.from.name} email={message.from.email} />
@@ -348,7 +348,7 @@
 	</div>
 
 	{#if latest && auth.client}
-		<footer class="shrink-0 border-t border-border bg-surface/80 px-6 py-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+		<footer class="shrink-0 border-t border-border bg-surface/80 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-6">
 			<div class="mx-auto flex max-w-(--z-reader-measure) gap-2">
 				<textarea
 					class="z-input min-h-10 flex-1 resize-none py-2 leading-relaxed"
