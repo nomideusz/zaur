@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { PenSquare } from 'lucide-svelte';
+	import { CalendarPlus, PenSquare } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import GlobalSearch from './GlobalSearch.svelte';
 	import OfflineIndicator from './OfflineIndicator.svelte';
 	import OutboxMenu from './OutboxMenu.svelte';
 	import ToolSwitcher from './ToolSwitcher.svelte';
 	import UserMenu from './UserMenu.svelte';
+	import { calendar } from '$lib/stores/calendar.svelte';
 	import { outbox } from '$lib/stores/outbox.svelte';
 </script>
 
@@ -32,6 +33,11 @@
 		<Button href="/mail/compose" class="hidden sm:inline-flex">
 			<PenSquare class="size-4" aria-hidden="true" />
 			New
+		</Button>
+	{:else if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false}
+		<Button onclick={() => calendar.openCompose()} class="hidden sm:inline-flex">
+			<CalendarPlus class="size-4" aria-hidden="true" />
+			New event
 		</Button>
 	{/if}
 

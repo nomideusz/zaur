@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronLeft, ChevronRight, LoaderCircle } from 'lucide-svelte';
+	import { ChevronLeft, ChevronRight, LoaderCircle, Plus } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
@@ -25,6 +25,10 @@
 	function selectEvent(id: string) {
 		calendar.selectEvent(id);
 	}
+
+	function createOnDay(day: Date) {
+		calendar.openCompose(day);
+	}
 </script>
 
 <section
@@ -43,6 +47,10 @@
 			</IconButton>
 		</div>
 		<Button variant="ghost" onclick={() => calendar.goToToday()}>Today</Button>
+		<Button onclick={() => calendar.openCompose()} class="hidden sm:inline-flex">
+			<Plus class="size-4" aria-hidden="true" />
+			New event
+		</Button>
 	</div>
 
 	<div class="grid grid-cols-7 border-b border-border bg-surface-sunken/50">
@@ -68,11 +76,20 @@
 				{@const dayEvents = calendar.eventsForDay(day)}
 				<div
 					class={cn(
-						'min-h-24 border-b border-r border-border p-1.5',
+						'group min-h-24 border-b border-r border-border p-1.5',
 						!inMonth && 'bg-surface-sunken/30 text-fg-subtle'
 					)}
 				>
-					<div class="mb-1 flex justify-end">
+					<div class="mb-1 flex items-center justify-between gap-1">
+						<button
+							type="button"
+							class="rounded p-0.5 text-fg-subtle opacity-0 transition-opacity hover:bg-surface-sunken hover:text-fg group-hover:opacity-100 focus:opacity-100"
+							class:opacity-100={inMonth}
+							aria-label="Create event on {day.toLocaleDateString()}"
+							onclick={() => createOnDay(day)}
+						>
+							<Plus class="size-3.5" />
+						</button>
 						<span
 							class={cn(
 								'inline-flex size-6 items-center justify-center rounded-full text-xs',

@@ -26,7 +26,7 @@ export const componentTree = {
 		AppSidebar: 'settings navigation when in /settings'
 	},
 	calendar: {
-		CalendarLayout: ['CalendarSidebar', 'MonthView', 'EventPanel | EventPanelEmpty']
+		CalendarLayout: ['CalendarSidebar', 'MonthView', 'EventPanel | EventPanelEmpty', 'EventComposePanel']
 	},
 	mail: {
 		MailLayout: ['MailboxSidebar', 'MessageList', 'MessageReader | MessageReaderEmpty'],
@@ -44,7 +44,8 @@ export const componentTree = {
 			'Email/changes',
 			'Mailbox/changes',
 			'Calendar/get',
-			'CalendarEvent/query'
+			'CalendarEvent/query',
+			'CalendarEvent/set'
 		],
 		proxy: ['POST /api/jmap', 'GET /api/jmap/session', 'httpOnly session cookie'],
 		pushListener: ['EventSource via /api/jmap/events', 'polling fallback'],

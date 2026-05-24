@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Calendar } from 'lucide-svelte';
 	import CalendarSidebar from '$lib/components/calendar/CalendarSidebar.svelte';
+	import EventComposePanel from '$lib/components/calendar/EventComposePanel.svelte';
 	import EventPanel from '$lib/components/calendar/EventPanel.svelte';
 	import EventPanelEmpty from '$lib/components/calendar/EventPanelEmpty.svelte';
 	import MonthView from '$lib/components/calendar/MonthView.svelte';
@@ -49,4 +50,8 @@
 	{:else}
 		<EventPanelEmpty />
 	{/if}
+{/if}
+
+{#if calendar.composeOpen}
+	<EventComposePanel />
 {/if}

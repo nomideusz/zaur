@@ -87,3 +87,52 @@ export function formatEventTime(event: { start: Date; end: Date; allDay: boolean
 	const end = new Intl.DateTimeFormat(undefined, { ...dateOpts, ...timeOpts }).format(event.end);
 	return `${start} – ${end}`;
 }
+
+export function toDateInputValue(date: Date): string {
+	return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+export function toDatetimeLocalValue(date: Date): string {
+	return `${toDateInputValue(date)}T${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+}
+
+export function parseDateInputValue(value: string): Date {
+	const [year, month, day] = value.split('-').map(Number);
+	return new Date(year, month - 1, day);
+}
+
+export function parseDatetimeLocalValue(value: string): Date {
+	const [datePart, timePart] = value.split('T');
+	const [year, month, day] = datePart.split('-').map(Number);
+	const [hours, minutes] = timePart.split(':').map(Number);
+	return new Date(year, month - 1, day, hours, minutes);
+}
+
+export function durationBetween(start: Date, end: Date, allDay: boolean): string {
+	if (allDay) {
+		const days = Math.max(
+			1,
+			Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1
+		);
+		return `P${days}D`;
+	}
+
+	const ms = Math.max(60_000, end.getTime() - start.getTime());
+	const totalMinutes = Math.round(ms / 60_000);
+	const hours = Math.floor(totalMinutes / 60);
+	const minutes = totalMinutes % 60;
+
+	if (hours && minutes) return `PT${hours}H${minutes}M`;
+	if (hours) return `PT${hours}H`;
+	return `PT${minutes}M`;
+}
+
+export function defaultEventTimes(day = new Date()): { start: Date; end: Date } {
+	const start = new Date(day);
+	if (start.getHours() === 0 && start.getMinutes() === 0) {
+		start.setHours(9, 0, 0, 0);
+	}
+	const end = new Date(start);
+	end.setHours(start.getHours() + 1);
+	return { start, end };
+}

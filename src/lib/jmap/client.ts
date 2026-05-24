@@ -467,6 +467,107 @@ export class JMAPClient {
 		return list[0] ?? null;
 	}
 
+	async createCalendarEvent(input: {
+		calendarId: string;
+		title: string;
+		start: string;
+		duration: string;
+		timeZone: string;
+		showWithoutTime: boolean;
+		description?: string;
+		location?: string;
+	}): Promise<string> {
+		if (!this.hasCalendars()) throw new Error('Calendars not supported');
+
+		const accountId = this.getCalendarAccountId();
+		const createKey = `evt-${Date.now()}`;
+		const eventData: Record<string, unknown> = {
+			'@type': 'Event',
+			uid: crypto.randomUUID(),
+			calendarIds: { [input.calendarId]: true },
+			title: input.title,
+			start: input.start,
+			duration: input.duration,
+			timeZone: input.timeZone,
+			showWithoutTime: input.showWithoutTime,
+			useDefaultAlerts: true
+		};
+
+		if (input.description) eventData.description = input.description;
+		if (input.location) {
+			eventData.locations = {
+				'1': { '@type': 'Location', name: input.location }
+			};
+		}
+
+		const response = await this.calendarRequest([
+			[
+				'CalendarEvent/set',
+				{
+					accountId,
+					create: { [createKey]: eventData }
+				},
+				'ces'
+			]
+		]);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] === 'error') {
+			const error = first[1] as { type?: string; description?: string };
+			throw new Error(error.description ?? error.type ?? 'Failed to create event');
+		}
+		if (first?.[0] !== 'CalendarEvent/set') {
+			throw new Error('Unexpected CalendarEvent/set response');
+		}
+
+		const result = first[1];
+		const created = result.created as Record<string, { id?: string }> | undefined;
+		const notCreated = result.notCreated as
+			| Record<string, { description?: string; type?: string }>
+			| undefined;
+
+		if (notCreated && Object.keys(notCreated).length) {
+			const firstError = Object.values(notCreated)[0];
+			throw new Error(firstError?.description ?? firstError?.type ?? 'Failed to create event');
+		}
+
+		const id = created?.[createKey]?.id;
+		if (!id) throw new Error('Failed to create event');
+		return id;
+	}
+
+	async destroyCalendarEvent(eventId: string): Promise<void> {
+		if (!this.hasCalendars()) throw new Error('Calendars not supported');
+
+		const response = await this.calendarRequest([
+			[
+				'CalendarEvent/set',
+				{
+					accountId: this.getCalendarAccountId(),
+					destroy: [eventId]
+				},
+				'ced'
+			]
+		]);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] === 'error') {
+			const error = first[1] as { type?: string; description?: string };
+			throw new Error(error.description ?? error.type ?? 'Failed to delete event');
+		}
+		if (first?.[0] !== 'CalendarEvent/set') {
+			throw new Error('Unexpected CalendarEvent/set response');
+		}
+
+		const notDestroyed = first[1].notDestroyed as
+			| Record<string, { description?: string; type?: string }>
+			| undefined;
+		if (notDestroyed && Object.keys(notDestroyed).length) {
+			const firstError = Object.values(notDestroyed)[0];
+			throw new Error(firstError?.description ?? firstError?.type ?? 'Failed to delete event');
+		}
+	}
+
 	async getMailboxes(): Promise<JMAPMailbox[]> {
 		const response = await this.request([['Mailbox/get', { accountId: this.accountId }, 'mb']]);
 		const first = response.methodResponses?.[0];
