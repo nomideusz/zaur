@@ -137,6 +137,22 @@
 		border: 1px solid var(--z-border);
 		border-radius: var(--radius-md);
 		padding: 1rem 1.25rem;
+
+		/* Reset color variables to light-theme defaults within the white container */
+		--z-fg: #1a2332;
+		--z-fg-muted: #5c677a;
+		--z-fg-subtle: #8b95a5;
+		--z-border: #e2e6ee;
+		--z-border-strong: #cdd3df;
+		--z-accent: #2563eb;
+		--z-unread: #2563eb;
+
+		--color-fg: #1a2332;
+		--color-fg-muted: #5c677a;
+		--color-fg-subtle: #8b95a5;
+		--color-border: #e2e6ee;
+		--color-border-strong: #cdd3df;
+		--color-accent: #2563eb;
 	}
 
 	:root.dark .z-email-body--html :where(a) {
