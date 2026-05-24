@@ -1,6 +1,7 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { appConfig } from '$lib/config';
 import { createConnectedClient } from '$lib/server/jmap';
+import { findIdentityEmail, normalizeEmail } from '$lib/jmap/account';
 import { writeSession } from '$lib/server/session';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
@@ -11,7 +12,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		return json({ error: 'Invalid request body' }, { status: 400 });
 	}
 
-	const email = body.email?.trim();
+	const email = normalizeEmail(body.email ?? '');
 	const password = body.password;
 	if (!email || !password) {
 		return json({ error: 'Email and password are required' }, { status: 400 });
@@ -28,7 +29,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		});
 
 		const identities = await client.getIdentities();
-		const primary = identities.find((id) => id.email === email) ?? identities[0];
+		const primary = findIdentityEmail(identities, email) ?? identities[0];
 
 		writeSession(cookies, {
 			serverUrl,

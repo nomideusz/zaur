@@ -1,5 +1,6 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { createConnectedClient } from '$lib/server/jmap';
+import { findIdentityEmail } from '$lib/jmap/account';
 import { readSession } from '$lib/server/session';
 
 export const GET: RequestHandler = async ({ cookies }) => {
@@ -12,7 +13,7 @@ export const GET: RequestHandler = async ({ cookies }) => {
 		const client = await createConnectedClient(session);
 		const identities = await client.getIdentities();
 		const primary =
-			identities.find((id) => id.email === session.username) ?? identities[0];
+			findIdentityEmail(identities, session.username) ?? identities[0];
 
 		return json({
 			authenticated: true,

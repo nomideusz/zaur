@@ -8,6 +8,8 @@ import type {
 	JMAPEmail
 } from './types';
 import { buildEmailCreateData, type EmailAttachmentInput } from './email-build';
+import { resolveMailAccountId } from './account';
+import { buildDownloadUrl, buildUploadUrl } from './urls';
 import type {
 	CalendarEventQueryResult,
 	JMAPCalendar,
@@ -168,9 +170,8 @@ export class JMAPClient {
 			this.session = session;
 			this.apiUrl = session.apiUrl;
 
-			const mailAccount = session.primaryAccounts?.['urn:ietf:params:jmap:mail'];
-			const fallbackAccount = Object.keys(session.accounts ?? {})[0];
-			this.accountId = mailAccount ?? fallbackAccount ?? '';
+			const mailAccount = resolveMailAccountId(session, this.username);
+			this.accountId = mailAccount;
 
 			if (!this.accountId) {
 				throw new Error('No mail account found in session');
@@ -207,10 +208,7 @@ export class JMAPClient {
 			throw new Error('Not connected. Call connect() first.');
 		}
 
-		const base = this.session.downloadUrl.endsWith('/')
-			? this.session.downloadUrl
-			: `${this.session.downloadUrl}/`;
-		const url = `${base}${this.accountId}/${blobId}/${encodeURIComponent(name)}?accept=${encodeURIComponent(type)}`;
+		const url = buildDownloadUrl(this.session.downloadUrl, this.accountId, blobId, name, type);
 		return this.authenticatedFetch(url);
 	}
 
@@ -226,8 +224,13 @@ export class JMAPClient {
 			});
 
 			if (!response.ok) {
-				const payload = (await response.json().catch(() => ({}))) as { error?: string };
-				throw new Error(payload.error ?? `Upload failed: ${response.status}`);
+				const payload = (await response.json().catch(() => ({}))) as {
+					error?: string;
+					message?: string;
+				};
+				throw new Error(
+					payload.error ?? payload.message ?? `Upload failed: ${response.status}`
+				);
 			}
 
 			return (await response.json()) as { blobId: string; size: number; type: string };
@@ -237,10 +240,7 @@ export class JMAPClient {
 			throw new Error('Upload not supported by this server');
 		}
 
-		const base = this.session.uploadUrl.endsWith('/')
-			? this.session.uploadUrl
-			: `${this.session.uploadUrl}/`;
-		const url = `${base}${this.accountId}`;
+		const url = buildUploadUrl(this.session.uploadUrl, this.accountId);
 
 		const response = await this.authenticatedFetch(url, {
 			method: 'POST',
@@ -249,7 +249,10 @@ export class JMAPClient {
 		});
 
 		if (!response.ok) {
-			throw new Error(`Upload failed: ${response.status}`);
+			const detail = (await response.text()).slice(0, 200);
+			throw new Error(
+				detail ? `Upload failed: ${response.status} - ${detail}` : `Upload failed: ${response.status}`
+			);
 		}
 
 		const payload = (await response.json()) as {
@@ -710,6 +713,10 @@ export class JMAPClient {
 	async getMailboxes(): Promise<JMAPMailbox[]> {
 		const response = await this.request([['Mailbox/get', { accountId: this.accountId }, 'mb']]);
 		const first = response.methodResponses?.[0];
+		if (first?.[0] === 'error') {
+			const error = first[1] as { type?: string; description?: string };
+			throw new Error(error.description ?? error.type ?? 'Mailbox/get failed');
+		}
 		if (first?.[0] !== 'Mailbox/get') {
 			throw new Error('Unexpected Mailbox/get response');
 		}

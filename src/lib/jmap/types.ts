@@ -60,7 +60,7 @@ export interface JMAPSession {
 	uploadUrl?: string;
 	eventSourceUrl?: string;
 	primaryAccounts?: Record<string, string>;
-	accounts?: Record<string, { name?: string }>;
+	accounts?: Record<string, { name?: string; accountCapabilities?: Record<string, unknown> }>;
 	capabilities?: Record<string, unknown>;
 }
 

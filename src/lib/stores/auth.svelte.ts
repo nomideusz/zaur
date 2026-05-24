@@ -81,7 +81,11 @@ class AuthStore {
 		} catch (error) {
 			const code = classifyJmapError(error);
 			this.errorCode = code;
-			this.error = loginErrorMessage(code);
+			const detail = error instanceof Error ? error.message : '';
+			this.error =
+				detail && (code !== 'generic' || detail.length < 120)
+					? detail
+					: loginErrorMessage(code);
 			this.client?.disconnect();
 			this.client = null;
 			this.isAuthenticated = false;

@@ -2,6 +2,10 @@ import { json, error, type RequestHandler } from '@sveltejs/kit';
 import { createConnectedClient } from '$lib/server/jmap';
 import { readSession } from '$lib/server/session';
 
+export const config = {
+	bodySizeLimit: 25 * 1024 * 1024
+};
+
 export const POST: RequestHandler = async ({ request, cookies }) => {
 	const session = readSession(cookies);
 	if (!session) {
@@ -21,6 +25,6 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		return json(result);
 	} catch (err) {
 		const message = err instanceof Error ? err.message : 'Upload failed';
-		error(502, message);
+		return json({ error: message }, { status: 502 });
 	}
 };
