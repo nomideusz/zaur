@@ -13,7 +13,7 @@
 	const isNotFound = $derived(message === 'Message not found');
 </script>
 
-<div class="flex flex-1 flex-col items-center justify-center gap-4 bg-surface-raised p-8 text-center">
+<div class="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 bg-surface-raised p-8 text-center">
 	<div class="rounded-full bg-surface-sunken p-4">
 		{#if isOffline}
 			<WifiOff class="size-8 text-fg-subtle" aria-hidden="true" />

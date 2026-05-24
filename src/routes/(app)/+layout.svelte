@@ -51,9 +51,9 @@
 		Connecting…
 	</div>
 {:else if auth.isAuthenticated}
-	<div class="flex min-h-dvh flex-col">
+	<div class="flex h-dvh flex-col overflow-hidden">
 		<AppHeader />
-		<main class="flex min-h-0 flex-1 flex-col">
+		<main class="flex min-h-0 flex-1 flex-col overflow-hidden">
 			{@render children()}
 		</main>
 	</div>

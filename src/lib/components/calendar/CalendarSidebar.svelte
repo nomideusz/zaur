@@ -6,7 +6,7 @@
 </script>
 
 <aside
-	class="z-panel flex w-(--width-sidebar) shrink-0 flex-col border-r"
+	class="z-panel flex min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden border-r"
 	style="view-transition-name: calendar-sidebar;"
 	aria-label="Calendars"
 >
@@ -14,7 +14,7 @@
 		<h2 class="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Calendars</h2>
 	</div>
 
-	<nav class="flex-1 overflow-y-auto p-2">
+	<nav class="min-h-0 flex-1 overflow-y-auto p-2">
 		{#if calendar.calendarsLoading}
 			<div class="flex items-center gap-2 px-3 py-4 text-sm text-fg-muted">
 				<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />

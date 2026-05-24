@@ -30,6 +30,6 @@
 	});
 </script>
 
-<div class="relative flex min-h-0 flex-1 overflow-hidden">
+<div class="relative flex min-h-0 flex-1 flex-row overflow-hidden">
 	{@render children()}
 </div>

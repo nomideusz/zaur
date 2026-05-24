@@ -55,7 +55,7 @@
 />
 
 {#if mail.selectedLoading}
-	<div class="hidden min-w-0 flex-1 md:flex">
+	<div class="z-mail-reader-pane">
 		<MessageReaderSkeleton />
 	</div>
 	<div
@@ -65,7 +65,7 @@
 		<MessageReaderSkeleton />
 	</div>
 {:else if thread.length}
-	<div class="hidden min-w-0 flex-1 md:flex">
+	<div class="z-mail-reader-pane">
 		<MessageReader {thread} mailboxRouteId={data.mailboxId} onMoved={afterMove} />
 	</div>
 
@@ -81,7 +81,7 @@
 		/>
 	</div>
 {:else}
-	<div class="hidden min-w-0 flex-1 md:flex">
+	<div class="z-mail-reader-pane">
 		<MessageReaderStatus
 			message={mail.selectedError ?? 'Message not found.'}
 			onBack={backToList}

@@ -12,7 +12,7 @@
 </script>
 
 <aside
-	class="z-panel hidden w-(--width-sidebar) shrink-0 flex-col border-r md:flex"
+	class="z-panel hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden border-r md:flex"
 	style="view-transition-name: mail-sidebar;"
 	aria-label="Folders"
 >
@@ -20,7 +20,7 @@
 		<h2 class="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Folders</h2>
 	</div>
 
-	<nav class="flex-1 overflow-y-auto p-2">
+	<nav class="min-h-0 flex-1 overflow-y-auto p-2">
 		{#if mail.mailboxesLoading}
 			<div class="space-y-2 px-3 py-2" aria-busy="true" aria-label="Loading folders">
 				{#each Array(6) as _, index (index)}

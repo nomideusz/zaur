@@ -78,7 +78,7 @@
 
 <svelte:window onclick={() => (moveOpen = false)} />
 
-<div class="flex min-h-12 flex-wrap items-center gap-2 border-b border-border px-4 py-2">
+<div class="flex min-h-12 shrink-0 flex-wrap items-center gap-2 border-b border-border px-4 py-2">
 	{#if mail.selectionMode}
 		<Button variant="ghost" class="!px-2 !py-1.5 text-xs" onclick={() => mail.exitSelectionMode()}>
 			<X class="size-3.5" aria-hidden="true" />

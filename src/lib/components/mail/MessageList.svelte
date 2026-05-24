@@ -98,7 +98,7 @@
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
-	<div class="flex h-12 items-center gap-2 border-b border-border px-4">
+	<div class="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4">
 		{#if mailboxRouteId}
 			<label class="min-w-0 flex-1 md:hidden">
 				<span class="sr-only">Folder</span>
@@ -130,7 +130,7 @@
 		<MessageListToolbar {mailboxRouteId} {onBulkAction} />
 	{/if}
 
-	<div class="flex-1 overflow-y-auto">
+	<div class="min-h-0 flex-1 overflow-y-auto">
 		{#if loading}
 			<div class="divide-y divide-border" aria-busy="true" aria-label="Loading messages">
 				{#each Array(6) as _, index (index)}

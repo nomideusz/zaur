@@ -224,8 +224,8 @@
 
 <svelte:window onclick={() => (moreOpen = false)} />
 
-<article class="flex flex-1 flex-col overflow-hidden bg-surface-raised" style="view-transition-name: message-reader;">
-	<header class="border-b border-border px-4 py-3 md:px-6">
+<article class="flex min-h-0 flex-1 flex-col overflow-hidden bg-surface-raised" style="view-transition-name: message-reader;">
+	<header class="shrink-0 border-b border-border px-4 py-3 md:px-6">
 		<div class="flex items-start gap-2">
 			{#if onBack}
 				<IconButton label="Back to list" class="mt-0.5 md:hidden" onclick={onBack}>
@@ -234,6 +234,7 @@
 			{/if}
 
 			<div class="min-w-0 flex-1">
+				<div class="max-w-(--z-reader-measure)">
 				<h1 class="line-clamp-2 text-lg font-semibold leading-snug text-fg md:text-xl">{subject}</h1>
 
 				{#if thread.length > 1}
@@ -250,6 +251,7 @@
 						{/if}
 					</div>
 				{/if}
+				</div>
 			</div>
 
 			<div class="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
@@ -369,7 +371,7 @@
 	{#if mail.selectedError}
 		<div
 			class={cn(
-				'border-b px-4 py-2 text-xs md:px-6',
+				'shrink-0 border-b px-4 py-2 text-xs md:px-6',
 				mail.selectedError.startsWith('Offline')
 					? 'border-border bg-surface text-fg-muted'
 					: 'border-danger/20 bg-danger/5 text-danger'
@@ -380,7 +382,7 @@
 	{/if}
 
 	{#if hasBlockedExternal && !allowExternal}
-		<div class="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-border bg-surface px-4 py-2 text-xs text-fg-muted md:px-6">
+		<div class="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-border bg-surface px-4 py-2 text-xs text-fg-muted md:px-6">
 			<Shield class="size-3.5 shrink-0" aria-hidden="true" />
 			<span>External images blocked.</span>
 			<button type="button" class="text-accent hover:underline" onclick={() => (showImagesOnce = true)}>
@@ -391,7 +393,7 @@
 		</div>
 	{/if}
 
-	<div class="flex-1 overflow-y-auto">
+	<div class="min-h-0 flex-1 overflow-y-auto">
 		{#each thread as message, index (message.id)}
 			<section class={cn(index > 0 && 'border-t border-border')}>
 				{#if isExpanded(message)}

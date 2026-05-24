@@ -36,7 +36,7 @@
 		{/if}
 	</header>
 
-	<div class="flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
+	<div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
 		{#if eventCalendars.length}
 			<div>
 				<p class="text-xs font-medium uppercase tracking-wide text-fg-subtle">Calendars</p>
@@ -84,7 +84,7 @@
 
 {#if event}
 	<aside
-		class="z-panel hidden w-80 shrink-0 flex-col border-l md:flex"
+		class="z-panel hidden min-h-0 w-80 shrink-0 flex-col overflow-hidden border-l md:flex"
 		style="view-transition-name: calendar-event;"
 		aria-label="Event details"
 	>

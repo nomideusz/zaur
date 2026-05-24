@@ -38,6 +38,6 @@
 		if (auth.client) void mail.loadMessages(auth.client, data.mailboxId);
 	}}
 />
-<div class="hidden min-w-0 flex-1 md:flex">
+<div class="z-mail-reader-pane">
 	<MessageReaderEmpty />
 </div>

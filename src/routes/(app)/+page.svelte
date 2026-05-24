@@ -7,7 +7,7 @@
 	<title>Home · ZAUR</title>
 </svelte:head>
 
-<div class="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-8 p-8">
+<div class="mx-auto flex w-full max-w-3xl flex-1 flex-col justify-center gap-8 overflow-y-auto p-8">
 	<div>
 		<h1 class="text-2xl font-semibold text-fg">Welcome back</h1>
 		<p class="mt-1 text-sm text-fg-muted">Choose a tool to get started.</p>

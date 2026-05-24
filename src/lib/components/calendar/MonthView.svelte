@@ -33,11 +33,11 @@
 </script>
 
 <section
-	class="z-panel flex min-w-0 flex-1 flex-col border-r"
+	class="z-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-r"
 	style="view-transition-name: calendar-grid;"
 	aria-label="Month view"
 >
-	<div class="flex h-12 items-center justify-between gap-2 border-b border-border px-4">
+	<div class="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
 		<div class="flex items-center gap-1">
 			<IconButton label="Previous month" onclick={() => calendar.prevMonth()}>
 				<ChevronLeft class="size-4" />
@@ -78,7 +78,7 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="grid min-h-0 flex-1 auto-rows-fr grid-cols-7">
+		<div class="grid min-h-0 flex-1 auto-rows-fr grid-cols-7 overflow-y-auto">
 			{#each days as day (day.toISOString())}
 				{@const inMonth = isSameMonth(day, calendar.viewYear, calendar.viewMonth)}
 				{@const isToday = isSameDay(day, today)}

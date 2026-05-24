@@ -69,7 +69,7 @@
 	<title>Contacts · ZAUR Webmail</title>
 </svelte:head>
 
-<div class="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-4 p-6 md:p-8">
+<div class="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col gap-4 overflow-y-auto p-6 md:p-8">
 	<header class="flex flex-wrap items-end justify-between gap-4">
 		<div>
 			<h1 class="text-xl font-semibold text-fg">Contacts</h1>

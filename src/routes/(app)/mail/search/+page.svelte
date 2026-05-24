@@ -77,7 +77,7 @@
 		if (auth.client && query) void search.search(auth.client, query, mail.mailboxes);
 	}}
 />
-<div class="hidden min-w-0 flex-1 md:flex">
+<div class="z-mail-reader-pane">
 	<MessageReaderEmpty
 		title="Select a result"
 		description="Choose a message from the search results to read it here."

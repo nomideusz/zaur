@@ -54,7 +54,10 @@
 	</SettingsGroup>
 
 	<SettingsGroup title="Reading">
-		<SettingsRow title="Reading size" description="Text size when reading and writing messages">
+		<SettingsRow
+			title="Reading size"
+			description="Text size when reading and writing — HTML mail follows the reader theme in dark mode"
+		>
 			<select
 				class="z-input w-auto"
 				value={settings.readerTextSize}

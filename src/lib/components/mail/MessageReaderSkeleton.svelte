@@ -1,4 +1,4 @@
-<div class="flex flex-1 flex-col overflow-hidden bg-surface-raised">
+<div class="flex min-h-0 flex-1 flex-col overflow-hidden bg-surface-raised">
 	<div class="border-b border-border px-4 py-3 md:px-6">
 		<div class="h-6 w-2/3 max-w-md animate-pulse rounded bg-surface-sunken"></div>
 		<div class="mt-3 h-4 w-1/3 animate-pulse rounded bg-surface-sunken"></div>
