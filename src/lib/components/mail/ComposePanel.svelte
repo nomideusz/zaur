@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
 	import { Paperclip, X } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import ComposeAttachments from '$lib/components/mail/ComposeAttachments.svelte';
@@ -73,12 +74,20 @@
 	$effect(() => {
 		mode;
 		queueMicrotask(() => {
-			if (mode === 'new') {
+			if (mode === 'new' || mode === 'forward') {
 				toInput?.focus();
 			} else {
 				bodyInput?.focus();
 			}
 		});
+	});
+
+	onMount(() => {
+		function onKeydown(event: KeyboardEvent) {
+			if (event.key === 'Escape') close();
+		}
+		window.addEventListener('keydown', onKeydown);
+		return () => window.removeEventListener('keydown', onKeydown);
 	});
 
 	async function send() {

@@ -53,6 +53,12 @@
 	<div class="hidden min-w-0 flex-1 md:flex">
 		<MessageReaderSkeleton />
 	</div>
+	<div
+		class="fixed inset-x-0 bottom-0 z-30 flex bg-surface md:hidden"
+		style="top: var(--height-header);"
+	>
+		<MessageReaderSkeleton />
+	</div>
 {:else if thread.length}
 	<div class="hidden min-w-0 flex-1 md:flex">
 		<MessageReader {thread} mailboxRouteId={data.mailboxId} onMoved={afterMove} />
@@ -74,5 +80,11 @@
 		<p class="flex flex-1 items-center justify-center text-sm text-fg-muted">
 			{mail.selectedError ?? 'Message not found.'}
 		</p>
+	</div>
+	<div
+		class="fixed inset-x-0 bottom-0 z-30 flex items-center justify-center bg-surface px-6 md:hidden"
+		style="top: var(--height-header);"
+	>
+		<p class="text-center text-sm text-fg-muted">{mail.selectedError ?? 'Message not found.'}</p>
 	</div>
 {/if}

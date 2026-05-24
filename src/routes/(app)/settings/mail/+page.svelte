@@ -53,6 +53,10 @@
 				<dt class="text-fg-muted">Send message</dt>
 				<dd class="font-mono text-xs text-fg">Ctrl+Enter</dd>
 			</div>
+			<div class="flex justify-between gap-4">
+				<dt class="text-fg-muted">Close compose</dt>
+				<dd class="font-mono text-xs text-fg">Esc</dd>
+			</div>
 		</dl>
 	</div>
 </div>
