@@ -31,10 +31,10 @@
 >
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div
-		class="z-panel flex h-full w-full max-w-lg flex-col border-l shadow-md"
+		class="z-panel flex h-full min-h-0 w-full max-w-lg flex-col overflow-hidden border-l shadow-md"
 		onclick={(e) => e.stopPropagation()}
 	>
-		<header class="flex items-center justify-between border-b border-border px-4 py-3">
+		<header class="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
 			<h2 class="text-sm font-semibold text-fg">{isEdit ? 'Edit event' : 'New event'}</h2>
 			<IconButton label="Close" onclick={close}>
 				<X class="size-4" />
@@ -42,7 +42,7 @@
 		</header>
 
 		<form
-			class="flex flex-1 flex-col overflow-hidden"
+			class="flex min-h-0 flex-1 flex-col overflow-hidden"
 			onsubmit={(e) => {
 				e.preventDefault();
 				if (auth.client) void calendar.saveCompose(auth.client);

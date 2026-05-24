@@ -10,7 +10,7 @@
 	style="view-transition-name: calendar-sidebar;"
 	aria-label="Calendars"
 >
-	<div class="border-b border-border px-4 py-3">
+	<div class="shrink-0 border-b border-border px-4 py-3">
 		<h2 class="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Calendars</h2>
 	</div>
 
@@ -53,7 +53,7 @@
 		{/if}
 	</nav>
 
-	<div class="border-t border-border p-2">
+	<div class="shrink-0 border-t border-border p-2">
 		<a
 			href="/settings/display"
 			class={cn(

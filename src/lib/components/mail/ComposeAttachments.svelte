@@ -6,7 +6,7 @@
 </script>
 
 {#if compose.attachments.length}
-	<div class="flex flex-wrap gap-2 border-t border-border px-5 py-3">
+	<div class="flex shrink-0 flex-wrap gap-2 border-t border-border px-5 py-3">
 		{#each compose.attachments as attachment (attachment.id)}
 			<div
 				class="flex max-w-full items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-fg"

@@ -144,10 +144,10 @@
 <div class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]" onclick={close}>
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div
-		class="z-panel flex h-full w-full max-w-2xl flex-col border-l shadow-md"
+		class="z-panel flex h-full min-h-0 w-full max-w-2xl flex-col overflow-hidden border-l shadow-md"
 		onclick={(e) => e.stopPropagation()}
 	>
-		<header class="flex items-center justify-between border-b border-border px-5 py-3.5">
+		<header class="flex shrink-0 items-center justify-between border-b border-border px-5 py-3.5">
 			<div>
 				<h2 class="text-base font-semibold text-fg">{title}</h2>
 				{#if draftStatus}
@@ -160,13 +160,13 @@
 		</header>
 
 		<form
-			class="flex flex-1 flex-col overflow-hidden"
+			class="flex min-h-0 flex-1 flex-col overflow-hidden"
 			onsubmit={(e) => {
 				e.preventDefault();
 				void send();
 			}}
 		>
-			<div class="space-y-0 border-b border-border bg-surface/50">
+			<div class="shrink-0 space-y-0 border-b border-border bg-surface/50">
 				<div class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
 					<span class="w-14 shrink-0 text-fg-subtle">From</span>
 					<div class="min-w-0 flex-1">
@@ -261,7 +261,7 @@
 				<p class="border-t border-border px-5 py-2 text-sm text-danger" role="alert">{compose.error}</p>
 			{/if}
 
-			<footer class="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+			<footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
 				<div class="flex flex-wrap items-center gap-3">
 					<Button variant="ghost" type="button" onclick={openFilePicker}>
 						<Paperclip class="size-4" aria-hidden="true" />

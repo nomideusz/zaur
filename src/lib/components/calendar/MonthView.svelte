@@ -57,7 +57,7 @@
 		</Button>
 	</div>
 
-	<div class="grid grid-cols-7 border-b border-border bg-surface-sunken/50">
+	<div class="grid shrink-0 grid-cols-7 border-b border-border bg-surface-sunken/50">
 		{#each weekdays as weekday}
 			<div class="px-2 py-2 text-center text-xs font-medium text-fg-subtle">{weekday}</div>
 		{/each}

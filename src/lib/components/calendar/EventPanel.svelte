@@ -24,7 +24,7 @@
 </script>
 
 {#snippet details(showClose: boolean)}
-	<header class="flex items-start justify-between gap-2 border-b border-border px-4 py-3">
+	<header class="flex shrink-0 items-start justify-between gap-2 border-b border-border px-4 py-3">
 		<div class="min-w-0">
 			<h2 class="text-base font-semibold text-fg">{event!.title}</h2>
 			<p class="mt-1 text-sm text-fg-muted">{formatEventTime(event!)}</p>
@@ -70,7 +70,7 @@
 		{/if}
 	</div>
 
-	<footer class="flex gap-2 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+	<footer class="flex shrink-0 gap-2 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
 		<Button variant="ghost" onclick={editEvent}>
 			<Pencil class="size-4" aria-hidden="true" />
 			Edit
