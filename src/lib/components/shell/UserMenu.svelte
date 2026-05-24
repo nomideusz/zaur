@@ -26,8 +26,10 @@
 	<button
 		type="button"
 		class="flex items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-surface-sunken"
+		aria-label="Account menu"
 		aria-expanded={open}
 		aria-haspopup="menu"
+		title="Account menu"
 		onclick={(e) => {
 			e.stopPropagation();
 			open = !open;
@@ -67,7 +69,10 @@
 				type="button"
 				role="menuitem"
 				class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
-				onclick={() => theme.toggle()}
+				onclick={() => {
+					theme.toggle();
+					close();
+				}}
 			>
 				{#if theme.theme === 'dark'}
 					<Sun class="size-4 text-fg-muted" />

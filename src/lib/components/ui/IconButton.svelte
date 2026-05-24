@@ -16,6 +16,7 @@
 	type="button"
 	class={cn('z-btn-ghost p-2', className)}
 	aria-label={label}
+	title={label}
 	{onclick}
 >
 	{@render children()}

@@ -12,7 +12,7 @@
 </script>
 
 <header
-	class="z-panel flex h-(--height-header) shrink-0 items-center gap-4 border-b px-4"
+	class="z-panel relative z-40 flex h-(--height-header) shrink-0 items-center gap-4 border-b px-4"
 	style="view-transition-name: app-header;"
 >
 	<a href="/" class="text-base font-semibold tracking-tight text-fg">ZAUR</a>

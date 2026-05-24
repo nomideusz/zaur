@@ -57,7 +57,10 @@
 		<MessageReader {thread} mailboxRouteId={data.mailboxId} onMoved={afterMove} />
 	</div>
 
-	<div class="fixed inset-0 z-30 flex bg-surface md:hidden">
+	<div
+		class="fixed inset-x-0 bottom-0 z-30 flex bg-surface md:hidden"
+		style="top: var(--height-header);"
+	>
 		<MessageReader
 			{thread}
 			mailboxRouteId={data.mailboxId}

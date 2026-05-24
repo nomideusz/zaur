@@ -26,7 +26,10 @@
 	<IconButton
 		label={outbox.pendingCount ? `${outbox.pendingCount} queued messages` : 'Outbox'}
 		class="relative"
-		onclick={() => (open = !open)}
+		onclick={(e) => {
+			e.stopPropagation();
+			open = !open;
+		}}
 	>
 		<Send class="size-4" />
 		{#if outbox.pendingCount}

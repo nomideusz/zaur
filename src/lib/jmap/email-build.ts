@@ -40,8 +40,7 @@ export function buildEmailCreateData(input: EmailCreateInput): Record<string, un
 		type: 'multipart/mixed',
 		subParts: [
 			{ partId: '1', type: 'text/plain' },
-			...attachments.map((attachment, index) => ({
-				partId: String(index + 2),
+			...attachments.map((attachment) => ({
 				type: attachment.type || 'application/octet-stream',
 				name: attachment.name,
 				blobId: attachment.blobId,

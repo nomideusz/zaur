@@ -64,6 +64,9 @@ class MailStore {
 	selectedMessageIds = $state<Set<string>>(new Set());
 	bulkActionLoading = $state(false);
 
+	/** In-flight keyword changes the server may not have echoed yet. */
+	private pendingKeywords = new Map<string, { starred?: boolean; unread?: boolean }>();
+
 	get selectedCount() {
 		return this.selectedMessageIds.size;
 	}
@@ -170,6 +173,15 @@ class MailStore {
 	}
 
 	async loadMessage(client: JMAPClient, routeMailboxId: string, threadId: string) {
+		if (
+			this.selectedThreadId === threadId &&
+			this.currentMailboxRouteId === routeMailboxId &&
+			this.selectedThread.length &&
+			!this.selectedLoading
+		) {
+			return;
+		}
+
 		if (this.currentMailboxRouteId !== routeMailboxId || !this.messages.length) {
 			await this.loadMessages(client, routeMailboxId);
 		}
@@ -230,6 +242,7 @@ class MailStore {
 
 	async markAsRead(client: JMAPClient, message: MessagePreview, read: boolean) {
 		const previousUnread = message.unread;
+		this.setPendingKeyword(message.id, { unread: !read });
 		this.patchMessage(message.id, { unread: !read });
 		this.patchThreadMessage(message.id, { unread: !read });
 		if (previousUnread && read) {
@@ -240,7 +253,9 @@ class MailStore {
 
 		try {
 			await client.markAsRead(message.id, read);
+			this.clearPendingKeyword(message.id, 'unread');
 		} catch {
+			this.clearPendingKeyword(message.id, 'unread');
 			this.patchMessage(message.id, { unread: previousUnread });
 			this.patchThreadMessage(message.id, { unread: previousUnread });
 			if (previousUnread && read) {
@@ -253,12 +268,15 @@ class MailStore {
 
 	async toggleStar(client: JMAPClient, message: MessagePreview) {
 		const next = !message.starred;
+		this.setPendingKeyword(message.id, { starred: next });
 		this.patchMessage(message.id, { starred: next });
 		this.patchThreadMessage(message.id, { starred: next });
 
 		try {
 			await client.toggleStar(message.id, next);
+			this.clearPendingKeyword(message.id, 'starred');
 		} catch {
+			this.clearPendingKeyword(message.id, 'starred');
 			this.patchMessage(message.id, { starred: !next });
 			this.patchThreadMessage(message.id, { starred: !next });
 		}
@@ -418,7 +436,7 @@ class MailStore {
 
 		for (const email of emails) {
 			const inMailbox = !!email.mailboxIds?.[mailboxJmapId];
-			const preview = mapEmailPreview(email, routeId);
+			const preview = this.applyPendingKeywords(email.id, mapEmailPreview(email, routeId));
 			const existingIdx = next.findIndex((m) => m.id === email.id);
 
 			if (inMailbox) {
@@ -452,11 +470,11 @@ class MailStore {
 
 		const threadId = this.selectedThreadId;
 		if (threadId) {
-			const affectsThread =
-				emails.some((email) => email.threadId === threadId) ||
-				destroyed.some((id) => this.selectedThread.some((m) => m.id === id));
+			const hasNewMessage = emails.some(
+				(email) => email.threadId === threadId && !this.selectedThread.some((m) => m.id === email.id)
+			);
 
-			if (affectsThread) {
+			if (hasNewMessage) {
 				try {
 					const threadEmails = await client.getThreadEmails(threadId);
 					this.setSelectedThread(threadEmails, routeId);
@@ -576,10 +594,35 @@ class MailStore {
 		this.selectedThread = this.selectedThread.map((m) => (m.id === id ? { ...m, ...patch } : m));
 	}
 
+	private setPendingKeyword(id: string, patch: { starred?: boolean; unread?: boolean }) {
+		this.pendingKeywords.set(id, { ...this.pendingKeywords.get(id), ...patch });
+	}
+
+	private clearPendingKeyword(id: string, key: 'starred' | 'unread') {
+		const pending = this.pendingKeywords.get(id);
+		if (!pending) return;
+		delete pending[key];
+		if (Object.keys(pending).length === 0) {
+			this.pendingKeywords.delete(id);
+		}
+	}
+
+	private applyPendingKeywords(id: string, preview: MessagePreview): MessagePreview {
+		const pending = this.pendingKeywords.get(id);
+		if (!pending) return preview;
+		return {
+			...preview,
+			...(pending.starred !== undefined && { starred: pending.starred }),
+			...(pending.unread !== undefined && { unread: pending.unread })
+		};
+	}
+
 	private patchSelectedFromEmail(email: JMAPEmail, routeMailboxId: string) {
 		if (!this.selectedThread.some((m) => m.id === email.id)) return;
-		const detail = mapEmailDetail(email, routeMailboxId);
-		this.selectedThread = this.selectedThread.map((m) => (m.id === email.id ? detail : m));
+		const preview = this.applyPendingKeywords(email.id, mapEmailPreview(email, routeMailboxId));
+		this.selectedThread = this.selectedThread.map((m) =>
+			m.id === email.id ? { ...m, ...preview } : m
+		);
 	}
 
 	private removeFromSelectedThread(id: string) {
@@ -646,6 +689,7 @@ class MailStore {
 		this.selectedLoading = false;
 		this.selectedError = null;
 		this.clearSelection();
+		this.pendingKeywords.clear();
 	}
 }
 

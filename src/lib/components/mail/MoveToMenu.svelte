@@ -35,7 +35,13 @@
 <svelte:window onclick={() => (open = false)} />
 
 <div class="relative">
-	<IconButton label="Move to folder" onclick={() => (open = !open)}>
+	<IconButton
+		label="Move to folder"
+		onclick={(e) => {
+			e.stopPropagation();
+			open = !open;
+		}}
+	>
 		<FolderInput class="size-4" />
 	</IconButton>
 

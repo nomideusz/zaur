@@ -22,6 +22,7 @@
 				isActive ? 'bg-surface-sunken font-medium text-fg' : 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
 			)}
 			aria-current={isActive ? 'page' : undefined}
+			title={tool.label}
 		>
 			<Icon class="size-4" aria-hidden="true" />
 			<span class="hidden sm:inline">{tool.label}</span>

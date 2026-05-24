@@ -66,6 +66,7 @@
 	--z-accent: #3b82f6;
 	--z-accent-hover: #2563eb;
 	--z-unread: #60a5fa;
+	--z-star: #fbbf24;
 }
 
 @layer base {
@@ -127,5 +128,18 @@
 
 	.z-email-body :where(blockquote) {
 		@apply border-l-2 border-border pl-4 text-fg-muted;
+	}
+
+	/* HTML emails often ship with light-theme inline styles — render on a light canvas in dark mode */
+	:root.dark .z-email-body--html {
+		background: #ffffff;
+		color: #1a2332;
+		border: 1px solid var(--z-border);
+		border-radius: var(--radius-md);
+		padding: 1rem 1.25rem;
+	}
+
+	:root.dark .z-email-body--html :where(a) {
+		color: #2563eb;
 	}
 }

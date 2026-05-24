@@ -14,6 +14,7 @@
 
 <div
 	class="z-email-body mx-auto max-w-(--z-reader-measure) text-sm leading-relaxed text-fg"
+	class:z-email-body--html={rendered.isHtml}
 	class:whitespace-pre-wrap={!rendered.isHtml}
 >
 	{@html rendered.html}
