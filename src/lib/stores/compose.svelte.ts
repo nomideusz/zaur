@@ -5,19 +5,8 @@ import type { MessageDetail } from '$lib/types/mail';
 
 export type ComposeMode = 'new' | 'reply' | 'reply-all' | 'forward';
 
-const LOCAL_DRAFT_KEY = 'zaur:compose-draft';
 const AUTOSAVE_MS = 2000;
 const SERVER_DRAFT_MS = 5000;
-
-interface LocalDraft {
-	to: string;
-	cc: string;
-	bcc: string;
-	subject: string;
-	body: string;
-	jmapDraftId?: string;
-	updatedAt: number;
-}
 
 function quoteHeader(message: MessageDetail) {
 	const when = new Intl.DateTimeFormat(undefined, {
@@ -47,9 +36,38 @@ class ComposeStore {
 	private serverDraftTimer: ReturnType<typeof setTimeout> | null = null;
 
 	startNew() {
-		const restored = this.restoreLocalDraft();
-		if (restored) return;
+		void this.restoreLocalDraft();
+	}
 
+	private async restoreLocalDraft() {
+		if (!browser) return;
+
+		const { getAccountId, getComposeDraft } = await import('$lib/db');
+		const accountId = getAccountId();
+		if (!accountId) {
+			this.resetComposeFields();
+			return;
+		}
+
+		const draft = await getComposeDraft(accountId);
+		if (!draft) {
+			this.resetComposeFields();
+			return;
+		}
+
+		this.to = draft.to;
+		this.cc = draft.cc;
+		this.bcc = draft.bcc;
+		this.subject = draft.subject;
+		this.body = draft.body;
+		this.jmapDraftId = draft.jmapDraftId;
+		this.showCcBcc = !!(draft.cc || draft.bcc);
+		this.mode = draft.mode;
+		this.draftSavedAt = draft.updatedAt;
+		this.error = null;
+	}
+
+	private resetComposeFields() {
 		this.to = '';
 		this.cc = '';
 		this.bcc = '';
@@ -135,7 +153,7 @@ class ComposeStore {
 
 		if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
 		this.autosaveTimer = setTimeout(() => {
-			this.persistLocalDraft();
+			void this.persistLocalDraft();
 		}, AUTOSAVE_MS);
 
 		if (!client || this.mode !== 'new') return;
@@ -149,7 +167,7 @@ class ComposeStore {
 	reset() {
 		if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
 		if (this.serverDraftTimer) clearTimeout(this.serverDraftTimer);
-		this.clearLocalDraft();
+		void this.clearLocalDraft();
 		this.to = '';
 		this.cc = '';
 		this.bcc = '';
@@ -208,55 +226,37 @@ class ComposeStore {
 		}
 	}
 
-	private persistLocalDraft() {
+	private async persistLocalDraft() {
 		if (!browser || this.mode !== 'new') return;
 		if (!this.to && !this.cc && !this.bcc && !this.subject && !this.body) {
-			this.clearLocalDraft();
+			await this.clearLocalDraft();
 			return;
 		}
 
-		const draft: LocalDraft = {
+		const { getAccountId, saveComposeDraft } = await import('$lib/db');
+		const accountId = getAccountId();
+		if (!accountId) return;
+
+		const updatedAt = Date.now();
+		await saveComposeDraft(accountId, {
 			to: this.to,
 			cc: this.cc,
 			bcc: this.bcc,
 			subject: this.subject,
 			body: this.body,
+			mode: this.mode,
 			jmapDraftId: this.jmapDraftId,
-			updatedAt: Date.now()
-		};
-		localStorage.setItem(LOCAL_DRAFT_KEY, JSON.stringify(draft));
-		this.draftSavedAt = draft.updatedAt;
+			updatedAt
+		});
+		this.draftSavedAt = updatedAt;
 	}
 
-	private restoreLocalDraft(): boolean {
-		if (!browser) return false;
-
-		const raw = localStorage.getItem(LOCAL_DRAFT_KEY);
-		if (!raw) return false;
-
-		try {
-			const draft = JSON.parse(raw) as LocalDraft;
-			if (!draft.to && !draft.cc && !draft.bcc && !draft.subject && !draft.body) {
-				return false;
-			}
-
-			this.to = draft.to;
-			this.cc = draft.cc;
-			this.bcc = draft.bcc;
-			this.subject = draft.subject;
-			this.body = draft.body;
-			this.jmapDraftId = draft.jmapDraftId;
-			this.showCcBcc = !!(draft.cc || draft.bcc);
-			this.mode = 'new';
-			this.draftSavedAt = draft.updatedAt;
-			return true;
-		} catch {
-			return false;
-		}
-	}
-
-	private clearLocalDraft() {
-		if (browser) localStorage.removeItem(LOCAL_DRAFT_KEY);
+	private async clearLocalDraft() {
+		if (!browser) return;
+		const { getAccountId, clearComposeDraft } = await import('$lib/db');
+		const accountId = getAccountId();
+		if (!accountId) return;
+		await clearComposeDraft(accountId);
 	}
 
 	private async saveServerDraft(client: JMAPClient, fromEmail: string, fromName?: string) {
@@ -276,7 +276,7 @@ class ComposeStore {
 			});
 			this.jmapDraftId = id;
 			this.draftSavedAt = Date.now();
-			this.persistLocalDraft();
+			void this.persistLocalDraft();
 		} catch {
 			// Server draft save is best-effort
 		} finally {

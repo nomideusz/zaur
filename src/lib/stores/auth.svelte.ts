@@ -63,6 +63,7 @@ class AuthStore {
 
 			const client = JMAPClient.createProxy();
 			await client.connect();
+			await this.openOfflineLayer(client);
 			await mail.loadMailboxes(client);
 
 			this.client = client;
@@ -94,6 +95,7 @@ class AuthStore {
 
 			const client = JMAPClient.createProxy();
 			await client.connect();
+			await this.openOfflineLayer(client);
 			await mail.loadMailboxes(client);
 
 			this.client = client;
@@ -108,6 +110,7 @@ class AuthStore {
 
 	async logout() {
 		pushListener.stop();
+		await this.closeOfflineLayer();
 		this.client?.disconnect();
 		this.client = null;
 		this.serverUrl = null;
@@ -133,6 +136,7 @@ class AuthStore {
 	handleUnauthorized() {
 		if (!this.isAuthenticated) return;
 		pushListener.stop();
+		void this.closeOfflineLayer();
 		this.client?.disconnect();
 		this.client = null;
 		this.serverUrl = null;
@@ -143,6 +147,21 @@ class AuthStore {
 		compose.reset();
 		search.reset();
 		goto('/login');
+	}
+
+	private async openOfflineLayer(client: JMAPClient) {
+		if (!browser) return;
+
+		const { initMailDatabase, migrateLegacyComposeDraft } = await import('$lib/db');
+		const accountId = client.getAccountId();
+		await initMailDatabase(accountId);
+		await migrateLegacyComposeDraft(accountId);
+	}
+
+	private async closeOfflineLayer() {
+		if (!browser) return;
+		const { closeMailDatabase } = await import('$lib/db');
+		await closeMailDatabase();
 	}
 }
 

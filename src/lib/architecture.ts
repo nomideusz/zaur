@@ -39,9 +39,11 @@ export const componentTree = {
 		client: ['JmapClient.connect', 'getMailboxes', 'getIdentities'],
 		proxy: ['POST /api/jmap', 'GET /api/jmap/session', 'httpOnly session cookie'],
 		pushListener: ['EventSource via /api/jmap/events', 'polling fallback'],
-		planned: ['SyncEngine', 'RxDB offline']
+		planned: ['SyncEngine']
 	},
 	db: {
-		planned: ['RxDB drafts', 'RxDB outbox', 'RxDB recentThreads', 'RxDB syncState']
+		rxdb: ['drafts', 'outbox', 'recentThreads', 'syncState'],
+		storage: 'Dexie/IndexedDB per JMAP account',
+		planned: ['SyncEngine replication', 'offline send queue processor']
 	}
 } as const;

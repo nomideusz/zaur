@@ -1,4 +1,5 @@
 import type { JMAPClient } from '$lib/jmap/client';
+import { browser } from '$app/environment';
 import { mapEmailDetail, mapEmailPreview } from '$lib/jmap/map';
 import type { JMAPMailbox } from '$lib/jmap/types';
 import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
@@ -48,6 +49,7 @@ class MailStore {
 	messagesError = $state<string | null>(null);
 	messagesTotal = $state(0);
 	messagesHasMore = $state(false);
+	messagesFromCache = $state(false);
 	currentMailboxRouteId = $state<string | null>(null);
 
 	selectedThread = $state<MessageDetail[]>([]);
@@ -85,15 +87,38 @@ class MailStore {
 		this.selectedThreadId = null;
 		this.selectedError = null;
 
+		const accountId = client.getAccountId();
+		if (browser) {
+			const { getCachedMessagePreviews } = await import('$lib/db');
+			const cached = await getCachedMessagePreviews(accountId, routeMailboxId);
+			if (cached.length) {
+				this.messages = cached;
+				this.messagesFromCache = true;
+				this.messagesHasMore = false;
+			}
+		}
+
 		try {
 			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0);
 			this.messages = emails.map((email) => mapEmailPreview(email, routeMailboxId));
 			this.messagesTotal = total;
 			this.messagesHasMore = hasMore;
+			this.messagesFromCache = false;
+			this.messagesError = null;
+
+			if (browser) {
+				const { cacheMessagePreviews } = await import('$lib/db');
+				await cacheMessagePreviews(accountId, routeMailboxId, this.messages);
+			}
 		} catch (error) {
+			if (this.messagesFromCache && this.messages.length) {
+				this.messagesError = 'Offline — showing cached messages';
+				return;
+			}
 			this.messages = [];
 			this.messagesTotal = 0;
 			this.messagesHasMore = false;
+			this.messagesFromCache = false;
 			this.messagesError = error instanceof Error ? error.message : 'Failed to load messages';
 		} finally {
 			this.messagesLoading = false;
@@ -114,6 +139,12 @@ class MailStore {
 			const previews = emails.map((email) => mapEmailPreview(email, routeMailboxId));
 			this.messages = [...this.messages, ...previews];
 			this.messagesHasMore = hasMore;
+			this.messagesFromCache = false;
+
+			if (browser) {
+				const { cacheMessagePreviews } = await import('$lib/db');
+				await cacheMessagePreviews(client.getAccountId(), routeMailboxId, previews);
+			}
 		} catch (error) {
 			this.messagesError = error instanceof Error ? error.message : 'Failed to load more messages';
 		} finally {
@@ -253,6 +284,12 @@ class MailStore {
 			this.messages = emails.map((email) => mapEmailPreview(email, routeMailboxId));
 			this.messagesTotal = total;
 			this.messagesHasMore = hasMore;
+			this.messagesFromCache = false;
+
+			if (browser) {
+				const { cacheMessagePreviews } = await import('$lib/db');
+				await cacheMessagePreviews(client.getAccountId(), routeMailboxId, this.messages);
+			}
 		} catch {
 			// Background refresh — ignore transient errors
 		}
@@ -272,6 +309,13 @@ class MailStore {
 
 	private patchMessage(id: string, patch: Partial<MessagePreview>) {
 		this.messages = this.messages.map((m) => (m.id === id ? { ...m, ...patch } : m));
+		if (browser) {
+			void import('$lib/db').then(({ getAccountId, patchCachedMessage }) => {
+				const accountId = getAccountId();
+				if (!accountId) return;
+				return patchCachedMessage(accountId, id, patch);
+			});
+		}
 	}
 
 	private removeMessage(message: MessagePreview) {
@@ -280,6 +324,13 @@ class MailStore {
 		}
 		this.messages = this.messages.filter((m) => m.id !== message.id);
 		this.messagesTotal = Math.max(0, this.messagesTotal - 1);
+		if (browser) {
+			void import('$lib/db').then(({ getAccountId, removeCachedMessage }) => {
+				const accountId = getAccountId();
+				if (!accountId) return;
+				return removeCachedMessage(accountId, message.id);
+			});
+		}
 		if (this.selectedThread.some((m) => m.id === message.id)) {
 			this.selectedThread = this.selectedThread.filter((m) => m.id !== message.id);
 			if (!this.selectedThread.length) {
@@ -304,6 +355,7 @@ class MailStore {
 		this.messagesError = null;
 		this.messagesTotal = 0;
 		this.messagesHasMore = false;
+		this.messagesFromCache = false;
 		this.currentMailboxRouteId = null;
 		this.selectedThread = [];
 		this.selectedThreadId = null;
