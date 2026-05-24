@@ -43,6 +43,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			displayName: primary?.name ?? primary?.email ?? email
 		});
 	} catch (error) {
+		console.error('[Login Error]:', error);
 		const message = error instanceof Error ? error.message : 'Sign-in failed';
 		if (message.includes('Invalid username or password')) {
 			return json({ error: message, code: 'invalid_credentials' }, { status: 401 });
