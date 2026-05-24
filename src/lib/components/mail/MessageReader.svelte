@@ -396,6 +396,7 @@
 			<section class={cn(index > 0 && 'border-t border-border')}>
 				{#if isExpanded(message)}
 					<div class="px-4 py-5 md:px-6">
+						<div class="w-full max-w-(--z-reader-measure)">
 						<div class="mb-4 flex flex-wrap items-start gap-3">
 							<Avatar name={message.from.name} email={message.from.email} class="size-9 text-sm" />
 							<div class="min-w-0 flex-1">
@@ -460,6 +461,7 @@
 							bodyText={message.bodyText}
 							{allowExternal}
 						/>
+						</div>
 					</div>
 				{:else}
 					<button

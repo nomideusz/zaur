@@ -31,8 +31,8 @@
 	}
 </script>
 
-<div class="mb-4 rounded-lg border border-border bg-surface/60 p-3">
-	<p class="mb-2 text-xs font-medium text-fg-muted">
+<div class="mb-4">
+	<p class="mb-2 text-xs text-fg-subtle">
 		{attachments.length === 1 ? '1 attachment' : `${attachments.length} attachments`}
 	</p>
 	<ul class="flex flex-wrap gap-2">

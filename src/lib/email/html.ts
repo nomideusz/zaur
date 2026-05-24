@@ -61,6 +61,18 @@ function isLightColor(value: string): boolean {
 	return false;
 }
 
+function isDarkColor(value: string): boolean {
+	const normalized = value.trim().toLowerCase();
+	if (!normalized) return false;
+	if (normalized === '#000' || normalized === '#000000' || normalized === 'black') return true;
+	const rgb = normalized.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+	if (rgb) {
+		const [, r, g, b] = rgb.map(Number);
+		return r < 60 && g < 60 && b < 60;
+	}
+	return false;
+}
+
 function stripLightBackground(node: Element) {
 	const bgcolor = node.getAttribute('bgcolor');
 	if (bgcolor && isLightColor(bgcolor)) {
@@ -86,12 +98,40 @@ function stripLightBackground(node: Element) {
 	else node.removeAttribute('style');
 }
 
+function stripDarkTextColor(node: Element) {
+	const color = node.getAttribute('color');
+	if (color && isDarkColor(color)) {
+		node.removeAttribute('color');
+	}
+
+	if (!node.hasAttribute('style')) return;
+
+	const style = node.getAttribute('style') ?? '';
+	const cleaned = style
+		.split(';')
+		.filter((rule) => {
+			const trimmed = rule.trim();
+			if (!trimmed) return false;
+			const match = trimmed.match(/^color\s*:\s*(.+)$/i);
+			if (!match) return true;
+			return !isDarkColor(match[1]);
+		})
+		.join(';')
+		.trim();
+
+	if (cleaned) node.setAttribute('style', cleaned);
+	else node.removeAttribute('style');
+}
+
 function integrateHtmlForDarkMode(root: ParentNode) {
 	if (!browser || !document.documentElement.classList.contains('dark')) return;
 
-	const elements = root.querySelectorAll('table, tbody, tr, td, th, div, p, span, section, center');
+	const elements = root.querySelectorAll(
+		'table, tbody, tr, td, th, div, p, span, section, center, font, li'
+	);
 	for (const element of elements) {
 		stripLightBackground(element);
+		stripDarkTextColor(element);
 	}
 }
 

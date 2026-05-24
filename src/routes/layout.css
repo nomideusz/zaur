@@ -161,6 +161,10 @@
 	}
 
 	/* HTML mail: flow with the reader theme instead of a separate light card */
+	:root.dark .z-email-body--html {
+		color: var(--z-fg);
+	}
+
 	:root.dark .z-email-body--html :where(a) {
 		color: var(--z-accent);
 	}
