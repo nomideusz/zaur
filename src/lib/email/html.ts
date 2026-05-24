@@ -123,8 +123,8 @@ function stripDarkTextColor(node: Element) {
 	else node.removeAttribute('style');
 }
 
-function integrateHtmlForDarkMode(root: ParentNode) {
-	if (!browser || !document.documentElement.classList.contains('dark')) return;
+function integrateHtmlForDarkMode(root: ParentNode, darkMode: boolean) {
+	if (!browser || !darkMode) return;
 
 	const elements = root.querySelectorAll(
 		'table, tbody, tr, td, th, div, p, span, section, center, font, li'
@@ -183,7 +183,7 @@ function formatPlainSegment(text: string, skipLinkify = false): string {
 
 export function prepareEmailHtml(
 	rawHtml: string,
-	options: { allowExternal: boolean }
+	options: { allowExternal: boolean; darkMode?: boolean }
 ): { html: string; blockedExternal: boolean } {
 	let blockedExternal = false;
 
@@ -222,7 +222,10 @@ export function prepareEmailHtml(
 
 	const container = document.createElement('div');
 	container.innerHTML = html;
-	integrateHtmlForDarkMode(container);
+	const darkMode =
+		options.darkMode ??
+		(browser && document.documentElement.classList.contains('dark'));
+	integrateHtmlForDarkMode(container, darkMode);
 
 	return { html: container.innerHTML, blockedExternal };
 }
@@ -231,9 +234,13 @@ export function renderMessageBody(options: {
 	bodyHtml?: string;
 	bodyText: string;
 	allowExternal: boolean;
+	darkMode?: boolean;
 }): { html: string; blockedExternal: boolean; isHtml: boolean } {
 	if (options.bodyHtml?.trim()) {
-		const prepared = prepareEmailHtml(options.bodyHtml, { allowExternal: options.allowExternal });
+		const prepared = prepareEmailHtml(options.bodyHtml, {
+			allowExternal: options.allowExternal,
+			darkMode: options.darkMode
+		});
 		return { ...prepared, isHtml: true };
 	}
 

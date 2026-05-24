@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { renderMessageBody } from '$lib/email/html';
+	import { theme } from '$lib/stores/theme.svelte';
 
 	interface Props {
 		bodyHtml?: string;
@@ -9,7 +10,14 @@
 
 	let { bodyHtml, bodyText, allowExternal }: Props = $props();
 
-	const rendered = $derived(renderMessageBody({ bodyHtml, bodyText, allowExternal }));
+	const rendered = $derived(
+		renderMessageBody({
+			bodyHtml,
+			bodyText,
+			allowExternal,
+			darkMode: theme.resolved === 'dark'
+		})
+	);
 </script>
 
 <div
