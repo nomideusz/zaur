@@ -7,6 +7,7 @@ type AccountChanges = { Email?: string; Mailbox?: string };
 
 class SyncEngine {
 	private syncing = false;
+	private pendingChanges: AccountChanges | null = null;
 
 	async bootstrap(client: JMAPClient): Promise<void> {
 		if (!browser) return;
@@ -20,19 +21,38 @@ class SyncEngine {
 	}
 
 	async handlePushChange(client: JMAPClient, changes: AccountChanges): Promise<void> {
-		if (!browser || this.syncing) return;
+		if (!browser) return;
+
+		this.pendingChanges = this.mergeChanges(this.pendingChanges, changes);
+		if (this.syncing) return;
 
 		this.syncing = true;
 		try {
-			if (changes.Mailbox) {
-				await this.syncMailbox(client, changes.Mailbox);
-			}
-			if (changes.Email) {
-				await this.syncEmail(client, changes.Email);
+			while (this.pendingChanges) {
+				const batch = this.pendingChanges;
+				this.pendingChanges = null;
+
+				if (batch.Mailbox) {
+					await this.syncMailbox(client, batch.Mailbox);
+				}
+				if (batch.Email) {
+					await this.syncEmail(client, batch.Email);
+				}
 			}
 		} finally {
 			this.syncing = false;
 		}
+	}
+
+	private mergeChanges(
+		existing: AccountChanges | null,
+		incoming: AccountChanges
+	): AccountChanges {
+		if (!existing) return { ...incoming };
+		return {
+			Mailbox: incoming.Mailbox ?? existing.Mailbox,
+			Email: incoming.Email ?? existing.Email
+		};
 	}
 
 	private async syncMailbox(client: JMAPClient, newState: string): Promise<void> {
@@ -47,20 +67,31 @@ class SyncEngine {
 		}
 
 		try {
+			const created: string[] = [];
+			const updated: string[] = [];
+			const destroyed: string[] = [];
 			let currentSince = sinceState;
 			let hasMore = true;
+			let latestState = newState;
 
 			while (hasMore) {
 				const result = await client.getMailboxChanges(currentSince);
-				hasMore = result.hasMoreChanges;
+				created.push(...result.created);
+				updated.push(...result.updated);
+				destroyed.push(...result.destroyed);
 				currentSince = result.newState;
+				latestState = result.newState;
+				hasMore = result.hasMoreChanges;
 			}
 
-			await mail.loadMailboxes(client);
-			await setSyncState(accountId, 'Mailbox', newState);
+			const changedIds = [...new Set([...created, ...updated])];
+			const mailboxes = changedIds.length ? await client.getMailboxesByIds(changedIds) : [];
+
+			mail.applyMailboxSync(mailboxes, destroyed);
+			await setSyncState(accountId, 'Mailbox', latestState);
 		} catch (error) {
 			if (isStateTooOldError(error)) {
-				await mail.loadMailboxes(client);
+				await mail.refreshMailboxes(client);
 				await setSyncState(accountId, 'Mailbox', newState);
 				return;
 			}

@@ -5,6 +5,9 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
+
+	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
 
 	interface Props {
 		mode?: ComposeMode;
@@ -33,12 +36,12 @@
 		compose.bcc;
 		compose.subject;
 		compose.body;
-		compose.scheduleAutosave(auth.client, auth.username ?? '', auth.displayName ?? undefined);
+		compose.scheduleAutosave(auth.client, auth.username ?? '', senderName);
 	});
 
 	async function send() {
 		if (!auth.client || !auth.username) return;
-		const result = await compose.send(auth.client, auth.username, auth.displayName ?? undefined);
+		const result = await compose.send(auth.client, auth.username, senderName);
 		if (result === 'sent') goto('/mail/sent');
 		else if (result === 'queued') goto('/mail/inbox');
 	}

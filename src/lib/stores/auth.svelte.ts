@@ -9,6 +9,7 @@ import { mail } from '$lib/stores/mail.svelte';
 	import { search } from '$lib/stores/search.svelte';
 	import { outbox } from '$lib/stores/outbox.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 
 interface SessionResponse {
 	authenticated: boolean;
@@ -73,6 +74,7 @@ class AuthStore {
 			this.username = payload.username;
 			this.displayName = payload.displayName;
 			this.isAuthenticated = true;
+			settings.setUser(payload.username);
 			this.startBackgroundSync(client, payload.username, payload.displayName);
 
 			await goto('/mail/inbox');
@@ -106,6 +108,7 @@ class AuthStore {
 			this.username = payload.username;
 			this.displayName = payload.displayName ?? payload.username;
 			this.isAuthenticated = true;
+			settings.setUser(payload.username);
 			this.startBackgroundSync(client, payload.username, payload.displayName ?? payload.username);
 		} catch {
 			// Session cookie invalid or server unreachable
@@ -124,6 +127,7 @@ class AuthStore {
 		this.isAuthenticated = false;
 		this.error = null;
 		this.errorCode = null;
+		settings.setUser(null);
 		mail.reset();
 		compose.reset();
 		search.reset();
@@ -151,6 +155,7 @@ class AuthStore {
 		this.username = null;
 		this.displayName = null;
 		this.isAuthenticated = false;
+		settings.setUser(null);
 		mail.reset();
 		compose.reset();
 		search.reset();

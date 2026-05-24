@@ -657,6 +657,19 @@ export class JMAPClient {
 		return (first[1].list as JMAPMailbox[]) ?? [];
 	}
 
+	async getMailboxesByIds(ids: string[]): Promise<JMAPMailbox[]> {
+		if (!ids.length) return [];
+
+		const response = await this.request([
+			['Mailbox/get', { accountId: this.accountId, ids }, 'mb']
+		]);
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'Mailbox/get') {
+			throw new Error('Unexpected Mailbox/get response');
+		}
+		return (first[1].list as JMAPMailbox[]) ?? [];
+	}
+
 	async getIdentities(): Promise<JMAPIdentity[]> {
 		const response = await this.request(
 			[['Identity/get', { accountId: this.accountId }, 'id']],

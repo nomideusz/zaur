@@ -3,6 +3,7 @@ import { browser } from '$app/environment';
 import { mapEmailDetail, mapEmailPreview } from '$lib/jmap/map';
 import type { JMAPEmail, JMAPMailbox } from '$lib/jmap/types';
 import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
+import { settings } from '$lib/stores/settings.svelte';
 
 const PAGE_SIZE = 50;
 
@@ -189,8 +190,10 @@ class MailStore {
 				}
 			}
 
-			for (const message of this.selectedThread.filter((m) => m.unread)) {
-				await this.markAsRead(client, message, true);
+			if (settings.markAsReadOnOpen) {
+				for (const message of this.selectedThread.filter((m) => m.unread)) {
+					await this.markAsRead(client, message, true);
+				}
 			}
 		} catch (error) {
 			if (browser) {
@@ -291,9 +294,12 @@ class MailStore {
 		const accountId = client.getAccountId();
 		const mailboxJmapId = mailbox.jmapId;
 		let next = [...this.messages];
+		let totalDelta = 0;
 
 		for (const id of destroyed) {
+			const wasInList = next.some((m) => m.id === id);
 			next = next.filter((m) => m.id !== id);
+			if (wasInList) totalDelta -= 1;
 			this.removeFromSelectedThread(id);
 		}
 
@@ -304,9 +310,13 @@ class MailStore {
 
 			if (inMailbox) {
 				if (existingIdx >= 0) next[existingIdx] = preview;
-				else next.push(preview);
+				else {
+					next.push(preview);
+					totalDelta += 1;
+				}
 			} else if (existingIdx >= 0) {
 				next = next.filter((m) => m.id !== email.id);
+				totalDelta -= 1;
 			}
 
 			this.patchSelectedFromEmail(email, routeId);
@@ -314,6 +324,7 @@ class MailStore {
 
 		next.sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
 		this.messages = next;
+		this.messagesTotal = Math.max(0, this.messagesTotal + totalDelta);
 		this.messagesFromCache = false;
 
 		if (browser) {
@@ -352,6 +363,32 @@ class MailStore {
 				if (!accountId || !this.selectedThreadId) return;
 				return cacheThread(accountId, routeMailboxId, this.selectedThreadId, this.selectedThread);
 			});
+		}
+	}
+
+	applyMailboxSync(mailboxes: JMAPMailbox[], destroyed: string[]) {
+		let next = [...this.mailboxes];
+
+		for (const id of destroyed) {
+			next = next.filter((mb) => mb.jmapId !== id && mb.id !== id);
+		}
+
+		for (const mb of mailboxes) {
+			const mapped = mapMailbox(mb);
+			const idx = next.findIndex((item) => item.jmapId === mapped.jmapId);
+			if (idx >= 0) next[idx] = mapped;
+			else next.push(mapped);
+		}
+
+		this.mailboxes = next.sort(sortMailboxes);
+	}
+
+	async refreshMailboxes(client: JMAPClient) {
+		try {
+			const list = await client.getMailboxes();
+			this.mailboxes = list.map(mapMailbox).sort(sortMailboxes);
+		} catch {
+			// Background refresh — ignore transient errors
 		}
 	}
 

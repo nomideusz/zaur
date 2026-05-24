@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Paperclip, Star } from 'lucide-svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 	import type { MessagePreview } from '$lib/types/mail';
 
@@ -44,5 +45,7 @@
 			<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
 		{/if}
 	</div>
-	<p class="truncate text-xs text-fg-subtle">{message.preview}</p>
+	{#if settings.listDensity !== 'compact'}
+		<p class="truncate text-xs text-fg-subtle">{message.preview}</p>
+	{/if}
 </a>

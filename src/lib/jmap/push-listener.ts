@@ -1,7 +1,5 @@
-import { browser } from '$app/environment';
 import type { JMAPClient } from './client';
 import type { StateChange } from './types';
-import type { SyncStateType } from '$lib/db/types';
 
 const POLL_INTERVAL_MS = 15_000;
 
@@ -58,6 +56,7 @@ export class PushListener {
 			try {
 				const data = JSON.parse(event.data) as StateChange;
 				if (data['@type'] === 'StateChange') {
+					this.trackIncomingStates(data);
 					onChange(data);
 				}
 			} catch {
@@ -81,23 +80,18 @@ export class PushListener {
 	}
 
 	private async syncStates(client: JMAPClient) {
-		const states = await client.fetchSyncStates();
-		this.states = states;
-		await this.persistSyncStates(states);
+		this.states = await client.fetchSyncStates();
 	}
 
-	private async persistSyncStates(states: Record<string, string>) {
-		if (!browser) return;
-
-		const { getAccountId, setSyncState } = await import('$lib/db');
-		const accountId = getAccountId();
+	private trackIncomingStates(change: StateChange) {
+		const accountId = this.client?.getAccountId();
 		if (!accountId) return;
 
-		for (const [type, state] of Object.entries(states)) {
-			if (type === 'Email' || type === 'Mailbox' || type === 'Thread') {
-				await setSyncState(accountId, type as SyncStateType, state);
-			}
-		}
+		const accountChanges = change.changed[accountId];
+		if (!accountChanges) return;
+
+		if (accountChanges.Mailbox) this.states.Mailbox = accountChanges.Mailbox;
+		if (accountChanges.Email) this.states.Email = accountChanges.Email;
 	}
 
 	private async check(client: JMAPClient) {
@@ -115,7 +109,6 @@ export class PushListener {
 		}
 
 		this.states = next;
-		await this.persistSyncStates(next);
 
 		if (hasChanges && this.callback) {
 			this.callback({

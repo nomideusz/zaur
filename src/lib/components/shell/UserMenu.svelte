@@ -4,13 +4,14 @@
 	import { ChevronDown, LogOut, Moon, Settings, Sun, User } from 'lucide-svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	let open = $state(false);
 
 	const user = $derived({
-		name: auth.displayName ?? auth.username ?? 'User',
+		name: settings.resolvedDisplayName(auth.displayName ?? auth.username),
 		email: auth.username ?? ''
 	});
 
