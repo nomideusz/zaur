@@ -116,6 +116,15 @@
 
 	.z-email-body {
 		font-size: var(--z-reader-text);
+		overflow-wrap: anywhere;
+	}
+
+	.z-email-body--plain {
+		@apply py-1;
+	}
+
+	.z-email-body--html {
+		overflow-x: auto;
 	}
 
 	.z-email-body :where(a) {
@@ -151,32 +160,13 @@
 		@apply mt-4 border-l-2 border-border/80 bg-surface/60 py-3 pl-4 pr-2 text-fg-muted;
 	}
 
-	/* HTML emails often ship with light-theme inline styles — render on a light canvas in dark mode */
-	:root.dark .z-email-body--html {
-		background: #ffffff;
-		color: #1a2332;
-		border: 1px solid var(--z-border);
-		border-radius: var(--radius-md);
-		padding: 1rem 1.25rem;
-
-		/* Reset color variables to light-theme defaults within the white container */
-		--z-fg: #1a2332;
-		--z-fg-muted: #5c677a;
-		--z-fg-subtle: #8b95a5;
-		--z-border: #e2e6ee;
-		--z-border-strong: #cdd3df;
-		--z-accent: #2563eb;
-		--z-unread: #2563eb;
-
-		--color-fg: #1a2332;
-		--color-fg-muted: #5c677a;
-		--color-fg-subtle: #8b95a5;
-		--color-border: #e2e6ee;
-		--color-border-strong: #cdd3df;
-		--color-accent: #2563eb;
+	/* HTML mail: flow with the reader theme instead of a separate light card */
+	:root.dark .z-email-body--html :where(a) {
+		color: var(--z-accent);
 	}
 
-	:root.dark .z-email-body--html :where(a) {
-		color: #2563eb;
+	:root.dark .z-email-body--html :where(blockquote) {
+		border-color: var(--z-border);
+		color: var(--z-fg-muted);
 	}
 }

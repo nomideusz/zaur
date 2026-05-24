@@ -1,4 +1,5 @@
 import DOMPurify from 'dompurify';
+import { browser } from '$app/environment';
 
 const EMAIL_SANITIZE_CONFIG = {
 	ADD_ATTR: ['target', 'rel', 'style', 'class', 'width', 'height', 'align', 'valign', 'bgcolor', 'color'],
@@ -46,6 +47,52 @@ function escapeHtml(text: string): string {
 
 function isExternalUrl(url: string): boolean {
 	return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//');
+}
+
+function isLightColor(value: string): boolean {
+	const normalized = value.trim().toLowerCase();
+	if (!normalized || normalized === 'transparent') return false;
+	if (normalized === '#fff' || normalized === '#ffffff' || normalized === 'white') return true;
+	const rgb = normalized.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+	if (rgb) {
+		const [, r, g, b] = rgb.map(Number);
+		return r > 240 && g > 240 && b > 240;
+	}
+	return false;
+}
+
+function stripLightBackground(node: Element) {
+	const bgcolor = node.getAttribute('bgcolor');
+	if (bgcolor && isLightColor(bgcolor)) {
+		node.removeAttribute('bgcolor');
+	}
+
+	if (!node.hasAttribute('style')) return;
+
+	const style = node.getAttribute('style') ?? '';
+	const cleaned = style
+		.split(';')
+		.filter((rule) => {
+			const trimmed = rule.trim();
+			if (!trimmed) return false;
+			const match = trimmed.match(/^(background(?:-color)?)\s*:\s*(.+)$/i);
+			if (!match) return true;
+			return !isLightColor(match[2]);
+		})
+		.join(';')
+		.trim();
+
+	if (cleaned) node.setAttribute('style', cleaned);
+	else node.removeAttribute('style');
+}
+
+function integrateHtmlForDarkMode(root: ParentNode) {
+	if (!browser || !document.documentElement.classList.contains('dark')) return;
+
+	const elements = root.querySelectorAll('table, tbody, tr, td, th, div, p, span, section, center');
+	for (const element of elements) {
+		stripLightBackground(element);
+	}
 }
 
 export function plainTextToSafeHtml(text: string): string {
@@ -129,7 +176,15 @@ export function prepareEmailHtml(
 	const html = DOMPurify.sanitize(rawHtml, EMAIL_SANITIZE_CONFIG);
 	DOMPurify.removeHook('afterSanitizeAttributes');
 
-	return { html, blockedExternal };
+	if (!browser) {
+		return { html, blockedExternal };
+	}
+
+	const container = document.createElement('div');
+	container.innerHTML = html;
+	integrateHtmlForDarkMode(container);
+
+	return { html: container.innerHTML, blockedExternal };
 }
 
 export function renderMessageBody(options: {

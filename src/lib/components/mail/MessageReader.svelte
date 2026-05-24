@@ -484,7 +484,7 @@
 
 	{#if latest && auth.client}
 		<footer class="shrink-0 border-t border-border bg-surface/80 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-6">
-			<div class="mx-auto flex max-w-(--z-reader-measure) gap-2">
+			<div class="flex w-full max-w-(--z-reader-measure) gap-2">
 				<textarea
 					class="z-input min-h-10 flex-1 resize-none py-2 leading-relaxed"
 					style="font-size: var(--z-reader-text)"
