@@ -48,7 +48,7 @@
 				if (auth.client) void calendar.saveCompose(auth.client);
 			}}
 		>
-			<div class="space-y-4 overflow-y-auto px-4 py-4">
+			<div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
 				<label class="block space-y-1.5">
 					<span class="text-sm font-medium text-fg">Title</span>
 					<input
@@ -126,7 +126,7 @@
 				</p>
 			{/if}
 
-			<footer class="flex items-center justify-end gap-2 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+			<footer class="flex shrink-0 items-center justify-end gap-2 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
 				<Button variant="ghost" type="button" onclick={close}>Cancel</Button>
 				<Button type="submit" disabled={calendar.composeSaving}>
 					{submitLabel}
