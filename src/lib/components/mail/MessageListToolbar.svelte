@@ -1,0 +1,141 @@
+<script lang="ts">
+	import { Archive, FolderInput, Trash2, X } from 'lucide-svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import { auth } from '$lib/stores/auth.svelte';
+	import { mail } from '$lib/stores/mail.svelte';
+	import { toast } from '$lib/stores/toast.svelte';
+
+	interface Props {
+		mailboxRouteId: string;
+		onBulkAction?: () => void;
+	}
+
+	let { mailboxRouteId, onBulkAction }: Props = $props();
+
+	let moveOpen = $state(false);
+
+	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
+	const moveTargets = $derived(
+		mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
+	);
+	const canArchive = $derived(currentMailbox?.role !== 'archive');
+	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
+
+	async function run(action: () => Promise<void>) {
+		if (!auth.client || mail.bulkActionLoading) return;
+
+		try {
+			await action();
+			onBulkAction?.();
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Bulk action failed';
+			toast.show(message, 'error');
+		}
+	}
+
+	async function archiveSelected() {
+		if (!auth.client) return;
+		await run(() => mail.bulkArchive(auth.client!));
+	}
+
+	async function deleteSelected() {
+		if (!auth.client) return;
+		await run(() => mail.bulkDelete(auth.client!, mailboxRouteId));
+	}
+
+	async function moveSelected(targetRouteId: string) {
+		moveOpen = false;
+		if (!auth.client) return;
+		await run(() => mail.bulkMoveToMailbox(auth.client!, targetRouteId));
+	}
+</script>
+
+<svelte:window onclick={() => (moveOpen = false)} />
+
+<div class="flex min-h-12 flex-wrap items-center gap-2 border-b border-border px-4 py-2">
+	{#if mail.selectionMode}
+		<Button variant="ghost" class="!px-2 !py-1.5 text-xs" onclick={() => mail.exitSelectionMode()}>
+			<X class="size-3.5" aria-hidden="true" />
+			Cancel
+		</Button>
+		<Button
+			variant="ghost"
+			class="!px-2 !py-1.5 text-xs"
+			disabled={!mail.messages.length}
+			onclick={() => mail.selectAllMessages()}
+		>
+			Select all
+		</Button>
+		<span class="text-xs text-fg-muted">
+			{mail.selectedCount} selected
+		</span>
+
+		{#if mail.selectedCount}
+			<div class="ml-auto flex flex-wrap items-center gap-1">
+				{#if canArchive}
+					<Button
+						variant="ghost"
+						class="!px-2 !py-1.5 text-xs"
+						disabled={mail.bulkActionLoading}
+						onclick={archiveSelected}
+					>
+						<Archive class="size-3.5" aria-hidden="true" />
+						Archive
+					</Button>
+				{/if}
+
+				<div class="relative">
+					<Button
+						variant="ghost"
+						class="!px-2 !py-1.5 text-xs"
+						disabled={mail.bulkActionLoading}
+						onclick={(e) => {
+							e.stopPropagation();
+							moveOpen = !moveOpen;
+						}}
+					>
+						<FolderInput class="size-3.5" aria-hidden="true" />
+						Move
+					</Button>
+
+					{#if moveOpen}
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div
+							class="absolute right-0 z-20 mt-1 max-h-64 w-52 overflow-y-auto rounded-md border border-border bg-surface-raised py-1 shadow-md"
+							onpointerdown={(e) => e.stopPropagation()}
+						>
+							{#each moveTargets as mailbox (mailbox.id)}
+								<button
+									type="button"
+									class="block w-full truncate px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
+									onclick={() => moveSelected(mailbox.id)}
+								>
+									{mailbox.name}
+								</button>
+							{/each}
+						</div>
+					{/if}
+				</div>
+
+				<Button
+					variant="ghost"
+					class="!px-2 !py-1.5 text-xs text-danger"
+					disabled={mail.bulkActionLoading}
+					onclick={deleteSelected}
+				>
+					<Trash2 class="size-3.5" aria-hidden="true" />
+					{deleteLabel}
+				</Button>
+			</div>
+		{/if}
+	{:else}
+		<Button
+			variant="ghost"
+			class="ml-auto !px-2 !py-1.5 text-xs"
+			disabled={!mail.messages.length || mail.messagesLoading}
+			onclick={() => mail.enterSelectionMode()}
+		>
+			Select
+		</Button>
+	{/if}
+</div>

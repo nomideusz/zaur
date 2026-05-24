@@ -60,6 +60,18 @@ class MailStore {
 	selectedLoading = $state(false);
 	selectedError = $state<string | null>(null);
 
+	selectionMode = $state(false);
+	selectedMessageIds = $state<Set<string>>(new Set());
+	bulkActionLoading = $state(false);
+
+	get selectedCount() {
+		return this.selectedMessageIds.size;
+	}
+
+	selectedMessages(): MessagePreview[] {
+		return this.messages.filter((message) => this.selectedMessageIds.has(message.id));
+	}
+
 	async loadMailboxes(client: JMAPClient) {
 		this.mailboxesLoading = true;
 		this.mailboxesError = null;
@@ -85,6 +97,7 @@ class MailStore {
 		}
 
 		this.currentMailboxRouteId = routeMailboxId;
+		this.clearSelection();
 		this.messagesLoading = true;
 		this.messagesError = null;
 		this.selectedThread = [];
@@ -280,6 +293,103 @@ class MailStore {
 		}
 
 		this.removeMessage(message);
+	}
+
+	enterSelectionMode() {
+		this.selectionMode = true;
+	}
+
+	exitSelectionMode() {
+		this.selectionMode = false;
+		this.selectedMessageIds = new Set();
+	}
+
+	toggleMessageSelection(messageId: string) {
+		const next = new Set(this.selectedMessageIds);
+		if (next.has(messageId)) next.delete(messageId);
+		else next.add(messageId);
+		this.selectedMessageIds = next;
+	}
+
+	selectAllMessages() {
+		this.selectedMessageIds = new Set(this.messages.map((message) => message.id));
+	}
+
+	clearSelection() {
+		this.selectedMessageIds = new Set();
+		this.selectionMode = false;
+		this.bulkActionLoading = false;
+	}
+
+	async bulkArchive(client: JMAPClient) {
+		const messages = this.selectedMessages();
+		if (!messages.length) return;
+
+		const archive = this.mailboxes.find((mb) => mb.role === 'archive');
+		if (!archive?.jmapId) throw new Error('Archive folder not found');
+
+		this.bulkActionLoading = true;
+		try {
+			await client.moveEmailsToMailbox(
+				messages.map((message) => message.id),
+				archive.jmapId
+			);
+			for (const message of messages) {
+				this.removeMessage(message);
+			}
+			this.clearSelection();
+		} finally {
+			this.bulkActionLoading = false;
+		}
+	}
+
+	async bulkMoveToMailbox(client: JMAPClient, targetRouteId: string) {
+		const messages = this.selectedMessages();
+		if (!messages.length) return;
+
+		const target = this.mailboxByRouteId(targetRouteId);
+		if (!target?.jmapId) throw new Error('Folder not found');
+
+		this.bulkActionLoading = true;
+		try {
+			await client.moveEmailsToMailbox(
+				messages.map((message) => message.id),
+				target.jmapId
+			);
+			for (const message of messages) {
+				this.removeMessage(message);
+			}
+			this.clearSelection();
+		} finally {
+			this.bulkActionLoading = false;
+		}
+	}
+
+	async bulkDelete(client: JMAPClient, routeMailboxId: string) {
+		const messages = this.selectedMessages();
+		if (!messages.length) return;
+
+		const currentMailbox = this.mailboxByRouteId(routeMailboxId);
+		const trash = this.mailboxes.find((mb) => mb.role === 'trash');
+		const ids = messages.map((message) => message.id);
+
+		this.bulkActionLoading = true;
+		try {
+			if (currentMailbox?.role === 'trash') {
+				await client.destroyEmails(ids);
+			} else if (trash?.jmapId) {
+				await client.moveEmailsToMailbox(ids, trash.jmapId);
+			} else {
+				await client.destroyEmails(ids);
+			}
+
+			for (const message of messages) {
+				this.removeMessage(message);
+			}
+			this.clearSelection();
+		} finally {
+			this.bulkActionLoading = false;
+		}
 	}
 
 	async handlePushChange(client: JMAPClient, accountChanges: { Email?: string; Mailbox?: string }) {
@@ -535,6 +645,7 @@ class MailStore {
 		this.selectedThreadId = null;
 		this.selectedLoading = false;
 		this.selectedError = null;
+		this.clearSelection();
 	}
 }
 

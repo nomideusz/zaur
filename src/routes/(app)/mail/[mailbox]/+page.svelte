@@ -25,6 +25,7 @@
 <MessageList
 	messages={mail.messages}
 	{mailboxName}
+	mailboxRouteId={data.mailboxId}
 	loading={mail.messagesLoading}
 	loadingMore={mail.messagesLoadingMore}
 	hasMore={mail.messagesHasMore}

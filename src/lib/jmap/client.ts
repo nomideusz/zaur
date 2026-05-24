@@ -900,21 +900,31 @@ export class JMAPClient {
 	}
 
 	async moveToMailbox(emailId: string, mailboxId: string): Promise<void> {
+		await this.moveEmailsToMailbox([emailId], mailboxId);
+	}
+
+	async moveEmailsToMailbox(emailIds: string[], mailboxId: string): Promise<void> {
+		if (!emailIds.length) return;
+
+		const update: Record<string, { mailboxIds: Record<string, boolean> }> = {};
+		for (const emailId of emailIds) {
+			update[emailId] = { mailboxIds: { [mailboxId]: true } };
+		}
+
 		await this.request([
-			[
-				'Email/set',
-				{
-					accountId: this.accountId,
-					update: { [emailId]: { mailboxIds: { [mailboxId]: true } } }
-				},
-				'0'
-			]
+			['Email/set', { accountId: this.accountId, update }, '0']
 		]);
 	}
 
 	async destroyEmail(emailId: string): Promise<void> {
+		await this.destroyEmails([emailId]);
+	}
+
+	async destroyEmails(emailIds: string[]): Promise<void> {
+		if (!emailIds.length) return;
+
 		await this.request([
-			['Email/set', { accountId: this.accountId, destroy: [emailId] }, '0']
+			['Email/set', { accountId: this.accountId, destroy: emailIds }, '0']
 		]);
 	}
 
