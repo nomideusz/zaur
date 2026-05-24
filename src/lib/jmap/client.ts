@@ -986,7 +986,16 @@ export class JMAPClient {
 			throw new Error('No event source URL');
 		}
 
-		const url = `${this.session.eventSourceUrl}?types=Mailbox,Email&closeafter=no&ping=30000`;
+		let url = this.session.eventSourceUrl;
+		if (url.includes('{types}')) {
+			url = url
+				.replace('{types}', encodeURIComponent('Mailbox,Email'))
+				.replace('{closeafter}', encodeURIComponent('no'))
+				.replace('{ping}', encodeURIComponent('30'));
+		} else {
+			const separator = url.includes('?') ? '&' : '?';
+			url = `${url}${separator}types=Mailbox,Email&closeafter=no&ping=30`;
+		}
 		return this.authenticatedFetch(url, { headers: { Accept: 'text/event-stream' } });
 	}
 
