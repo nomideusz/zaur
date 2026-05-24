@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { LoaderCircle } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -19,6 +20,7 @@
 		emptyMessage?: string;
 		emptyActionHref?: string;
 		emptyActionLabel?: string;
+		hideOnMobile?: boolean;
 		onLoadMore?: () => void;
 		onBulkAction?: () => void;
 	}
@@ -35,6 +37,7 @@
 		emptyMessage,
 		emptyActionHref,
 		emptyActionLabel,
+		hideOnMobile = false,
 		onLoadMore,
 		onBulkAction
 	}: Props = $props();
@@ -44,13 +47,32 @@
 </script>
 
 <section
-	class="z-panel flex w-full max-w-(--width-list) shrink-0 flex-col border-r md:w-(--width-list)"
+	class="z-panel flex w-full max-w-none shrink-0 flex-col border-r md:max-w-(--width-list) md:w-(--width-list) {hideOnMobile ? 'hidden md:flex' : 'flex'}"
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
-	<div class="flex h-12 items-center border-b border-border px-4">
-		<h2 class="text-sm font-semibold text-fg">{mailboxName}</h2>
-		<span class="ml-2 text-xs text-fg-subtle">{countLabel}</span>
+	<div class="flex h-12 items-center gap-2 border-b border-border px-4">
+		{#if mailboxRouteId}
+			<label class="min-w-0 flex-1 md:hidden">
+				<span class="sr-only">Folder</span>
+				<select
+					class="z-input w-full py-1.5 text-sm"
+					value={mailboxRouteId}
+					onchange={(e) => goto(`/mail/${e.currentTarget.value}`)}
+				>
+					{#each mail.mailboxes as folder (folder.id)}
+						<option value={folder.id}>{folder.name}</option>
+					{/each}
+				</select>
+			</label>
+		{/if}
+		<h2 class="hidden truncate text-sm font-semibold text-fg md:block">{mailboxName}</h2>
+		<span class="hidden shrink-0 text-xs text-fg-subtle md:inline">{countLabel}</span>
+		{#if mailboxRouteId}
+			<span class="ml-auto shrink-0 text-xs text-fg-subtle md:ml-2 md:hidden">{countLabel}</span>
+		{:else}
+			<span class="ml-2 shrink-0 text-xs text-fg-subtle">{countLabel}</span>
+		{/if}
 	</div>
 
 	{#if mailboxRouteId && !loading && !error && messages.length}

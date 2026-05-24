@@ -10,7 +10,7 @@
 </script>
 
 <aside
-	class="z-panel flex w-(--width-sidebar) shrink-0 flex-col border-r"
+	class="z-panel hidden w-(--width-sidebar) shrink-0 flex-col border-r md:flex"
 	style="view-transition-name: mail-sidebar;"
 	aria-label="Folders"
 >
