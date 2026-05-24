@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Paperclip, Star } from 'lucide-svelte';
+	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 	import type { MessagePreview } from '$lib/types/mail';
@@ -30,14 +31,39 @@
 
 	const rowClass = $derived(
 		cn(
-			'z-list-row flex border-b border-border transition-colors',
-			selectionMode ? 'cursor-pointer items-start gap-3 px-3 py-3' : 'flex-col justify-center px-4',
+			'z-list-row flex items-start gap-3 border-b border-border px-3 py-2.5 transition-colors',
+			selectionMode ? 'cursor-pointer' : '',
 			active || selected ? 'bg-surface-sunken' : 'hover:bg-surface-sunken/70',
-			message.unread && !selectionMode && 'border-l-2 border-l-unread pl-[calc(1rem-2px)]',
-			message.unread && selectionMode && 'border-l-2 border-l-unread'
+			message.unread && 'border-l-2 border-l-unread pl-[calc(0.75rem-2px)]'
 		)
 	);
 </script>
+
+{#snippet content()}
+	<Avatar name={message.from.name} email={message.from.email} class="mt-0.5 size-8" />
+	<div class="min-w-0 flex-1">
+		<div class="flex items-baseline justify-between gap-2">
+			<span class={cn('truncate text-sm', message.unread ? 'font-semibold text-fg' : 'text-fg')}>
+				{message.from.name}
+			</span>
+			<span class="shrink-0 text-xs text-fg-subtle">{when}</span>
+		</div>
+		<div class="mt-0.5 flex items-center gap-1.5">
+			{#if message.starred}
+				<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
+			{/if}
+			<span class={cn('truncate text-sm', message.unread ? 'font-medium text-fg' : 'text-fg-muted')}>
+				{message.subject}
+			</span>
+			{#if message.hasAttachment}
+				<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
+			{/if}
+		</div>
+		{#if settings.listDensity !== 'compact'}
+			<p class="mt-0.5 truncate text-xs text-fg-subtle">{message.preview}</p>
+		{/if}
+	</div>
+{/snippet}
 
 {#if selectionMode}
 	<div
@@ -54,58 +80,16 @@
 	>
 		<input
 			type="checkbox"
-			class="mt-0.5 size-4 shrink-0 accent-accent"
+			class="mt-2 size-4 shrink-0 accent-accent"
 			checked={selected}
 			onclick={(e) => e.stopPropagation()}
 			onchange={onToggleSelect}
 			aria-label="Select {message.subject}"
 		/>
-		<div class="min-w-0 flex-1">
-			<div class="flex items-baseline justify-between gap-2">
-				<span class={cn('truncate text-sm', message.unread ? 'font-semibold text-fg' : 'text-fg')}>
-					{message.from.name}
-				</span>
-				<span class="shrink-0 text-xs text-fg-subtle">{when}</span>
-			</div>
-			<div class="flex items-center gap-1.5">
-				{#if message.starred}
-					<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
-				{/if}
-				<span
-					class={cn('truncate text-sm', message.unread ? 'font-medium text-fg' : 'text-fg-muted')}
-				>
-					{message.subject}
-				</span>
-				{#if message.hasAttachment}
-					<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
-				{/if}
-			</div>
-			{#if settings.listDensity !== 'compact'}
-				<p class="truncate text-xs text-fg-subtle">{message.preview}</p>
-			{/if}
-		</div>
+		{@render content()}
 	</div>
 {:else}
 	<a {href} class={rowClass} style="view-transition-name: message-{message.id};">
-		<div class="flex items-baseline justify-between gap-2">
-			<span class={cn('truncate text-sm', message.unread ? 'font-semibold text-fg' : 'text-fg')}>
-				{message.from.name}
-			</span>
-			<span class="shrink-0 text-xs text-fg-subtle">{when}</span>
-		</div>
-		<div class="flex items-center gap-1.5">
-			{#if message.starred}
-				<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
-			{/if}
-			<span class={cn('truncate text-sm', message.unread ? 'font-medium text-fg' : 'text-fg-muted')}>
-				{message.subject}
-			</span>
-			{#if message.hasAttachment}
-				<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
-			{/if}
-		</div>
-		{#if settings.listDensity !== 'compact'}
-			<p class="truncate text-xs text-fg-subtle">{message.preview}</p>
-		{/if}
+		{@render content()}
 	</a>
 {/if}

@@ -3,6 +3,7 @@
 	import { Paperclip, X } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import ComposeAttachments from '$lib/components/mail/ComposeAttachments.svelte';
+	import ComposeRecipientInput from '$lib/components/mail/ComposeRecipientInput.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
@@ -20,6 +21,23 @@
 	let fileInput = $state<HTMLInputElement | null>(null);
 	let bodyInput = $state<HTMLTextAreaElement | null>(null);
 	let toInput = $state<HTMLInputElement | null>(null);
+
+	const quoteMarker = /\n\n---\n/;
+
+	const quotedPart = $derived.by(() => {
+		const match = compose.body.match(/\n\n---\n[\s\S]+$/);
+		return match?.[0] ?? '';
+	});
+
+	const editableBody = $derived.by(() => {
+		const idx = compose.body.search(quoteMarker);
+		return idx >= 0 ? compose.body.slice(0, idx) : compose.body;
+	});
+
+	function setEditableBody(value: string) {
+		const idx = compose.body.search(quoteMarker);
+		compose.body = idx >= 0 ? value + compose.body.slice(idx) : value;
+	}
 
 	const titles: Record<ComposeMode, string> = {
 		new: 'New message',
@@ -135,15 +153,14 @@
 					</p>
 				</div>
 
-				<label class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
+				<div class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
 					<span class="w-14 shrink-0 text-fg-subtle">To</span>
-					<input
-						bind:this={toInput}
-						type="text"
-						class="flex-1 bg-transparent outline-none placeholder:text-fg-subtle"
+					<ComposeRecipientInput
+						bind:inputElement={toInput}
+						value={compose.to}
 						placeholder="recipient@example.com"
-						bind:value={compose.to}
 						autocomplete="email"
+						oninput={(value) => (compose.to = value)}
 					/>
 					{#if !compose.showCcBcc}
 						<button
@@ -154,19 +171,18 @@
 							Cc/Bcc
 						</button>
 					{/if}
-				</label>
+				</div>
 
 				{#if compose.showCcBcc}
-					<label class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
+					<div class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
 						<span class="w-14 shrink-0 text-fg-subtle">Cc</span>
-						<input
-							type="text"
-							class="flex-1 bg-transparent outline-none placeholder:text-fg-subtle"
+						<ComposeRecipientInput
+							value={compose.cc}
 							placeholder="cc@example.com"
-							bind:value={compose.cc}
 							autocomplete="email"
+							oninput={(value) => (compose.cc = value)}
 						/>
-					</label>
+					</div>
 					<label class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
 						<span class="w-14 shrink-0 text-fg-subtle">Bcc</span>
 						<input
@@ -190,13 +206,23 @@
 				</label>
 			</div>
 
-			<textarea
-				bind:this={bodyInput}
-				class="min-h-0 flex-1 resize-none bg-transparent px-5 py-4 text-sm leading-relaxed outline-none placeholder:text-fg-subtle"
-				placeholder="Write your message…"
-				bind:value={compose.body}
-				onkeydown={onKeydown}
-			></textarea>
+			<div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+				<textarea
+					bind:this={bodyInput}
+					class="min-h-0 flex-1 resize-none bg-transparent px-5 py-4 text-sm leading-relaxed outline-none placeholder:text-fg-subtle"
+					placeholder="Write your message…"
+					value={editableBody}
+					oninput={(e) => setEditableBody(e.currentTarget.value)}
+					onkeydown={onKeydown}
+				></textarea>
+
+				{#if quotedPart}
+					<details class="shrink-0 border-t border-border bg-surface/50 px-5 py-2" open>
+						<summary class="cursor-pointer text-xs font-medium text-fg-muted">Quoted message</summary>
+						<pre class="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed text-fg-subtle">{quotedPart.trim()}</pre>
+					</details>
+				{/if}
+			</div>
 
 			<ComposeAttachments />
 

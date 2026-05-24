@@ -4,16 +4,35 @@
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
-	import { listContacts, type ContactEntry } from '$lib/utils/contact-index';
+	import { listContacts, recordContact, type ContactEntry } from '$lib/utils/contact-index';
 
 	let query = $state('');
+	let refresh = $state(0);
+	let showAddForm = $state(false);
+	let newName = $state('');
+	let newEmail = $state('');
 
-	const contacts = $derived(
-		listContacts(auth.client?.getAccountId() ?? null, query)
-	);
+	const contacts = $derived.by(() => {
+		refresh;
+		return listContacts(auth.client?.getAccountId() ?? null, query);
+	});
 
 	function composeTo(email: string) {
 		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
+	}
+
+	function addContact(event: Event) {
+		event.preventDefault();
+		const accountId = auth.client?.getAccountId();
+		const email = newEmail.trim();
+		const name = newName.trim() || email;
+		if (!accountId || !email) return;
+
+		recordContact(accountId, name, email);
+		newName = '';
+		newEmail = '';
+		showAddForm = false;
+		refresh++;
 	}
 </script>
 
@@ -26,14 +45,40 @@
 		<div>
 			<h1 class="text-xl font-semibold text-fg">Contacts</h1>
 			<p class="mt-1 text-sm text-fg-muted">
-				People you've mailed with on this device. Full address book sync is coming later.
+				People you've mailed with, plus any you add manually.
 			</p>
 		</div>
-		<Button href="/mail/compose" variant="ghost">
-			<UserPlus class="size-4" aria-hidden="true" />
-			New message
-		</Button>
+		<div class="flex gap-2">
+			<Button variant="ghost" onclick={() => (showAddForm = !showAddForm)}>
+				<UserPlus class="size-4" aria-hidden="true" />
+				Add contact
+			</Button>
+			<Button href="/mail/compose">New message</Button>
+		</div>
 	</header>
+
+	{#if showAddForm}
+		<form class="z-panel grid gap-3 rounded-xl p-4 sm:grid-cols-2" onsubmit={addContact}>
+			<label class="block text-sm">
+				<span class="mb-1 block text-fg-muted">Name</span>
+				<input type="text" class="z-input" placeholder="Jane Doe" bind:value={newName} />
+			</label>
+			<label class="block text-sm">
+				<span class="mb-1 block text-fg-muted">Email</span>
+				<input
+					type="email"
+					class="z-input"
+					placeholder="jane@example.com"
+					bind:value={newEmail}
+					required
+				/>
+			</label>
+			<div class="flex gap-2 sm:col-span-2">
+				<Button type="submit">Save contact</Button>
+				<Button type="button" variant="ghost" onclick={() => (showAddForm = false)}>Cancel</Button>
+			</div>
+		</form>
+	{/if}
 
 	<label class="relative block">
 		<Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
@@ -70,10 +115,11 @@
 				{#if query.trim()}
 					No contacts match your search.
 				{:else}
-					No contacts yet. Open mail and sync a few conversations — addresses will appear here.
+					No contacts yet. Sync mail or add someone manually.
 				{/if}
 			</p>
-			<div class="mt-4">
+			<div class="mt-4 flex justify-center gap-2">
+				<Button variant="ghost" onclick={() => (showAddForm = true)}>Add contact</Button>
 				<Button href="/mail/inbox" variant="ghost">Go to inbox</Button>
 			</div>
 		</div>

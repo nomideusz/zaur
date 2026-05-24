@@ -13,7 +13,7 @@
 </script>
 
 <div
-	class="z-email-body mx-auto max-w-(--z-reader-measure) text-sm leading-relaxed text-fg"
+	class="z-email-body mx-auto max-w-(--z-reader-measure) rounded-lg px-1 py-1 text-sm leading-relaxed text-fg sm:px-2"
 	class:z-email-body--html={rendered.isHtml}
 	class:whitespace-pre-wrap={!rendered.isHtml}
 >
