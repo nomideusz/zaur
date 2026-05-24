@@ -9,13 +9,17 @@
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
+	const senderEmail = $derived(auth.username ?? '');
 
 	interface Props {
 		mode?: ComposeMode;
+		initialTo?: string;
 	}
 
-	let { mode = 'new' }: Props = $props();
+	let { mode = 'new', initialTo = '' }: Props = $props();
 	let fileInput = $state<HTMLInputElement | null>(null);
+	let bodyInput = $state<HTMLTextAreaElement | null>(null);
+	let toInput = $state<HTMLInputElement | null>(null);
 
 	const titles: Record<ComposeMode, string> = {
 		new: 'New message',
@@ -33,6 +37,12 @@
 	});
 
 	$effect(() => {
+		if (initialTo && mode === 'new' && !compose.to) {
+			compose.to = initialTo;
+		}
+	});
+
+	$effect(() => {
 		compose.to;
 		compose.cc;
 		compose.bcc;
@@ -40,6 +50,17 @@
 		compose.body;
 		compose.attachments;
 		compose.scheduleAutosave(auth.client, auth.username ?? '', senderName);
+	});
+
+	$effect(() => {
+		mode;
+		queueMicrotask(() => {
+			if (mode === 'new') {
+				toInput?.focus();
+			} else {
+				bodyInput?.focus();
+			}
+		});
 	});
 
 	async function send() {
@@ -65,6 +86,13 @@
 		await compose.addAttachments(auth.client, files);
 		input.value = '';
 	}
+
+	function onKeydown(event: KeyboardEvent) {
+		if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+			event.preventDefault();
+			void send();
+		}
+	}
 </script>
 
 <input
@@ -77,9 +105,9 @@
 
 <div class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]">
 	<div class="z-panel flex h-full w-full max-w-2xl flex-col border-l shadow-md">
-		<header class="flex items-center justify-between border-b border-border px-4 py-3">
+		<header class="flex items-center justify-between border-b border-border px-5 py-3.5">
 			<div>
-				<h2 class="text-sm font-semibold text-fg">{title}</h2>
+				<h2 class="text-base font-semibold text-fg">{title}</h2>
 				{#if draftStatus}
 					<p class="text-xs text-fg-subtle">{draftStatus}</p>
 				{/if}
@@ -89,13 +117,30 @@
 			</IconButton>
 		</header>
 
-		<form class="flex flex-1 flex-col overflow-hidden" onsubmit={(e) => { e.preventDefault(); void send(); }}>
-			<div class="space-y-0 border-b border-border">
-				<label class="flex items-center gap-3 border-b border-border px-4 py-2.5 text-sm">
-					<span class="w-12 shrink-0 text-fg-subtle">To</span>
+		<form
+			class="flex flex-1 flex-col overflow-hidden"
+			onsubmit={(e) => {
+				e.preventDefault();
+				void send();
+			}}
+		>
+			<div class="space-y-0 border-b border-border bg-surface/50">
+				<div class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
+					<span class="w-14 shrink-0 text-fg-subtle">From</span>
+					<p class="min-w-0 truncate text-fg">
+						{senderName}
+						{#if senderEmail}
+							<span class="text-fg-muted">&lt;{senderEmail}&gt;</span>
+						{/if}
+					</p>
+				</div>
+
+				<label class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
+					<span class="w-14 shrink-0 text-fg-subtle">To</span>
 					<input
+						bind:this={toInput}
 						type="text"
-						class="flex-1 bg-transparent outline-none"
+						class="flex-1 bg-transparent outline-none placeholder:text-fg-subtle"
 						placeholder="recipient@example.com"
 						bind:value={compose.to}
 						autocomplete="email"
@@ -112,21 +157,21 @@
 				</label>
 
 				{#if compose.showCcBcc}
-					<label class="flex items-center gap-3 border-b border-border px-4 py-2.5 text-sm">
-						<span class="w-12 shrink-0 text-fg-subtle">Cc</span>
+					<label class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
+						<span class="w-14 shrink-0 text-fg-subtle">Cc</span>
 						<input
 							type="text"
-							class="flex-1 bg-transparent outline-none"
+							class="flex-1 bg-transparent outline-none placeholder:text-fg-subtle"
 							placeholder="cc@example.com"
 							bind:value={compose.cc}
 							autocomplete="email"
 						/>
 					</label>
-					<label class="flex items-center gap-3 border-b border-border px-4 py-2.5 text-sm">
-						<span class="w-12 shrink-0 text-fg-subtle">Bcc</span>
+					<label class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
+						<span class="w-14 shrink-0 text-fg-subtle">Bcc</span>
 						<input
 							type="text"
-							class="flex-1 bg-transparent outline-none"
+							class="flex-1 bg-transparent outline-none placeholder:text-fg-subtle"
 							placeholder="bcc@example.com"
 							bind:value={compose.bcc}
 							autocomplete="email"
@@ -134,11 +179,11 @@
 					</label>
 				{/if}
 
-				<label class="flex items-center gap-3 px-4 py-2.5 text-sm">
-					<span class="w-12 shrink-0 text-fg-subtle">Subject</span>
+				<label class="flex items-center gap-3 px-5 py-2.5 text-sm">
+					<span class="w-14 shrink-0 text-fg-subtle">Subject</span>
 					<input
 						type="text"
-						class="flex-1 bg-transparent outline-none"
+						class="flex-1 bg-transparent outline-none placeholder:text-fg-subtle"
 						placeholder="Subject"
 						bind:value={compose.subject}
 					/>
@@ -146,23 +191,26 @@
 			</div>
 
 			<textarea
-				class="min-h-0 flex-1 resize-none bg-transparent px-4 py-4 text-sm leading-relaxed outline-none"
+				bind:this={bodyInput}
+				class="min-h-0 flex-1 resize-none bg-transparent px-5 py-4 text-sm leading-relaxed outline-none placeholder:text-fg-subtle"
 				placeholder="Write your message…"
 				bind:value={compose.body}
+				onkeydown={onKeydown}
 			></textarea>
 
 			<ComposeAttachments />
 
 			{#if compose.error}
-				<p class="border-t border-border px-4 py-2 text-sm text-danger">{compose.error}</p>
+				<p class="border-t border-border px-5 py-2 text-sm text-danger">{compose.error}</p>
 			{/if}
 
-			<footer class="flex items-center justify-between gap-2 border-t border-border px-4 py-3">
+			<footer class="flex items-center justify-between gap-2 border-t border-border px-5 py-3">
 				<Button variant="ghost" type="button" onclick={openFilePicker}>
 					<Paperclip class="size-4" aria-hidden="true" />
 					Attach
 				</Button>
 				<div class="flex items-center gap-2">
+					<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter to send</span>
 					<Button variant="ghost" type="button" onclick={close}>Discard</Button>
 					<Button type="submit" disabled={!compose.canSend}>
 						{compose.isSending ? 'Sending…' : compose.hasUploadingAttachments ? 'Uploading…' : 'Send'}

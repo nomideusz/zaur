@@ -130,6 +130,10 @@
 		@apply border-l-2 border-border pl-4 text-fg-muted;
 	}
 
+	.z-email-quote {
+		@apply mt-4 border-l-2 border-border/80 bg-surface/60 py-3 pl-4 pr-2 text-fg-muted;
+	}
+
 	/* HTML emails often ship with light-theme inline styles — render on a light canvas in dark mode */
 	:root.dark .z-email-body--html {
 		background: #ffffff;

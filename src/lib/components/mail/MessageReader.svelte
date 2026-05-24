@@ -3,6 +3,8 @@
 	import {
 		Archive,
 		ArrowLeft,
+		ChevronDown,
+		ChevronUp,
 		Forward,
 		Reply,
 		ReplyAll,
@@ -10,6 +12,7 @@
 		Star,
 		Trash2
 	} from 'lucide-svelte';
+	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
@@ -33,6 +36,7 @@
 	let { thread, mailboxRouteId, onBack, onMoved }: Props = $props();
 
 	let showImagesOnce = $state(false);
+	let expandedIds = $state<Set<string>>(new Set());
 
 	const latest = $derived(thread.at(-1));
 	const subject = $derived(latest?.subject ?? '(no subject)');
@@ -46,10 +50,13 @@
 			}).blockedExternal
 		)
 	);
+	const collapsedCount = $derived(Math.max(0, thread.length - expandedIds.size));
 
 	$effect(() => {
 		thread.map((m) => m.id).join(',');
 		showImagesOnce = false;
+		const latestId = thread.at(-1)?.id;
+		expandedIds = latestId ? new Set([latestId]) : new Set();
 	});
 
 	function formatWhen(iso: string) {
@@ -57,6 +64,26 @@
 			dateStyle: 'medium',
 			timeStyle: 'short'
 		}).format(new Date(iso));
+	}
+
+	function isExpanded(message: MessageDetail) {
+		return expandedIds.has(message.id);
+	}
+
+	function toggleMessage(message: MessageDetail) {
+		const next = new Set(expandedIds);
+		if (next.has(message.id)) next.delete(message.id);
+		else next.add(message.id);
+		expandedIds = next;
+	}
+
+	function expandAll() {
+		expandedIds = new Set(thread.map((message) => message.id));
+	}
+
+	function collapseToLatest() {
+		const latestId = thread.at(-1)?.id;
+		expandedIds = latestId ? new Set([latestId]) : new Set();
 	}
 
 	async function withClient(action: (client: NonNullable<typeof auth.client>) => Promise<void>) {
@@ -107,7 +134,18 @@
 		<h1 class="text-xl font-semibold leading-snug text-fg">{subject}</h1>
 
 		{#if thread.length > 1}
-			<p class="mt-1 text-xs text-fg-subtle">{thread.length} messages</p>
+			<div class="mt-2 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
+				<span>{thread.length} messages</span>
+				{#if collapsedCount > 0}
+					<button type="button" class="text-accent hover:underline" onclick={expandAll}>
+						Expand all
+					</button>
+				{:else if thread.length > 1}
+					<button type="button" class="text-accent hover:underline" onclick={collapseToLatest}>
+						Collapse earlier
+					</button>
+				{/if}
+			</div>
 		{/if}
 
 		<div class="mt-3 flex flex-wrap items-center justify-end gap-1">
@@ -163,29 +201,66 @@
 
 	<div class="flex-1 overflow-y-auto">
 		{#each thread as message, index (message.id)}
-			<section class={cn('px-6 py-5', index > 0 && 'border-t border-border')}>
-				<div class="mb-4 flex flex-wrap items-start justify-between gap-3">
-					<div class="min-w-0 text-sm">
-						<p class="font-medium text-fg">{message.from.name}</p>
-						<p class="text-fg-muted">{message.from.email}</p>
-						{#if message.to.length}
-							<p class="mt-1 text-xs text-fg-subtle">
-								To {message.to.map((addr) => addr.name || addr.email).join(', ')}
-							</p>
+			<section class={cn(index > 0 && 'border-t border-border')}>
+				{#if isExpanded(message)}
+					<div class="px-6 py-5">
+						<div class="mb-4 flex flex-wrap items-start gap-3">
+							<Avatar name={message.from.name} email={message.from.email} class="size-9 text-sm" />
+							<div class="min-w-0 flex-1">
+								<div class="flex flex-wrap items-baseline justify-between gap-2">
+									<div class="min-w-0 text-sm">
+										<p class="font-medium text-fg">{message.from.name}</p>
+										<p class="text-fg-muted">{message.from.email}</p>
+									</div>
+									<div class="flex items-center gap-2">
+										<p class="text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</p>
+										{#if thread.length > 1}
+											<button
+												type="button"
+												class="rounded p-1 text-fg-subtle hover:bg-surface-sunken hover:text-fg"
+												aria-label="Collapse message"
+												onclick={() => toggleMessage(message)}
+											>
+												<ChevronUp class="size-4" />
+											</button>
+										{/if}
+									</div>
+								</div>
+								{#if message.to.length}
+									<p class="mt-1 text-xs text-fg-subtle">
+										To {message.to.map((addr) => addr.name || addr.email).join(', ')}
+									</p>
+								{/if}
+							</div>
+						</div>
+
+						{#if message.attachments.length}
+							<MessageAttachments attachments={message.attachments} />
 						{/if}
+
+						<MessageBody
+							bodyHtml={message.bodyHtml}
+							bodyText={message.bodyText}
+							{allowExternal}
+						/>
 					</div>
-					<p class="text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</p>
-				</div>
-
-				{#if message.attachments.length}
-					<MessageAttachments attachments={message.attachments} />
+				{:else}
+					<button
+						type="button"
+						class="flex w-full items-center gap-3 px-6 py-3 text-left transition-colors hover:bg-surface-sunken/70"
+						onclick={() => toggleMessage(message)}
+					>
+						<Avatar name={message.from.name} email={message.from.email} />
+						<div class="min-w-0 flex-1">
+							<p class="truncate text-sm">
+								<span class="font-medium text-fg">{message.from.name}</span>
+								<span class="ml-2 text-fg-muted">{message.preview || message.bodyText.slice(0, 120)}</span>
+							</p>
+						</div>
+						<span class="shrink-0 text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</span>
+						<ChevronDown class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+					</button>
 				{/if}
-
-				<MessageBody
-					bodyHtml={message.bodyHtml}
-					bodyText={message.bodyText}
-					{allowExternal}
-				/>
 			</section>
 		{/each}
 	</div>

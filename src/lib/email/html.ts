@@ -49,15 +49,49 @@ function isExternalUrl(url: string): boolean {
 }
 
 export function plainTextToSafeHtml(text: string): string {
-	return escapeHtml(text)
-		.replace(/\r\n/g, '<br>')
-		.replace(/\r/g, '<br>')
-		.replace(/\n/g, '<br>')
-		.replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
-		.replace(
-			/(https?:\/\/[^\s<]+)/g,
-			'<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+	const quoteIndex = text.search(/\n\n---\n(?:On .+ wrote:|Forwarded message:)/);
+	if (quoteIndex >= 0) {
+		const main = text.slice(0, quoteIndex);
+		const quote = text.slice(quoteIndex).trim();
+		return `${formatPlainSegment(main)}<blockquote class="z-email-quote">${formatPlainSegment(quote, true)}</blockquote>`;
+	}
+
+	return formatPlainSegment(text);
+}
+
+function formatPlainSegment(text: string, skipLinkify = false): string {
+	const lines = text.split('\n');
+	const parts: string[] = [];
+	let quoteLines: string[] = [];
+
+	function linkify(text: string): string {
+		return escapeHtml(text)
+			.replace(/\t/g, '&nbsp;&nbsp;&nbsp;&nbsp;')
+			.replace(
+				/(https?:\/\/[^\s<]+)/g,
+				'<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>'
+			);
+	}
+
+	function flushQuote() {
+		if (!quoteLines.length) return;
+		parts.push(
+			`<blockquote class="z-email-quote">${quoteLines.map((line) => linkify(line.replace(/^>\s?/, ''))).join('<br>')}</blockquote>`
 		);
+		quoteLines = [];
+	}
+
+	for (const line of lines) {
+		if (/^>\s?/.test(line)) {
+			quoteLines.push(line);
+			continue;
+		}
+		flushQuote();
+		parts.push(skipLinkify ? escapeHtml(line) : linkify(line));
+	}
+
+	flushQuote();
+	return parts.join('<br>');
 }
 
 export function prepareEmailHtml(

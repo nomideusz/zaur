@@ -11,6 +11,8 @@
 		return value && COMPOSE_MODES.has(value as ComposeMode) ? (value as ComposeMode) : 'new';
 	});
 
+	const initialTo = $derived($page.url.searchParams.get('to') ?? '');
+
 	afterNavigate(({ from, to }) => {
 		if (to?.url.pathname !== '/mail/compose') return;
 		const toMode = to.url.searchParams.get('mode');
@@ -24,4 +26,4 @@
 	<title>Compose · ZAUR Webmail</title>
 </svelte:head>
 
-<ComposePanel {mode} />
+<ComposePanel {mode} {initialTo} />

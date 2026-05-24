@@ -7,6 +7,7 @@ import { settings } from '$lib/stores/settings.svelte';
 import { toast } from '$lib/stores/toast.svelte';
 import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
 import { showBrowserNotification } from '$lib/utils/notifications';
+import { recordContact, recordContacts } from '$lib/utils/contact-index';
 
 const PAGE_SIZE = 50;
 
@@ -40,6 +41,23 @@ function sortMailboxes(a: Mailbox, b: Mailbox): number {
 	if (aRole !== undefined) return -1;
 	if (bRole !== undefined) return 1;
 	return a.name.localeCompare(b.name);
+}
+
+function indexMessagesContacts(messages: Array<MessagePreview | MessageDetail>) {
+	if (!browser || !messages.length) return;
+
+	void import('$lib/db').then(({ getAccountId }) => {
+		const accountId = getAccountId();
+		if (!accountId) return;
+
+		for (const message of messages) {
+			recordContact(accountId, message.from.name, message.from.email);
+			if ('to' in message) {
+				recordContacts(accountId, message.to);
+				recordContacts(accountId, message.cc);
+			}
+		}
+	});
 }
 
 class MailStore {
@@ -116,6 +134,7 @@ class MailStore {
 				this.messages = cached;
 				this.messagesFromCache = true;
 				this.messagesHasMore = false;
+				indexMessagesContacts(cached);
 			}
 		}
 
@@ -126,6 +145,7 @@ class MailStore {
 			this.messagesHasMore = hasMore;
 			this.messagesFromCache = false;
 			this.messagesError = null;
+			indexMessagesContacts(this.messages);
 
 			if (browser) {
 				const { cacheMessagePreviews } = await import('$lib/db');
@@ -161,6 +181,7 @@ class MailStore {
 			this.messages = [...this.messages, ...previews];
 			this.messagesHasMore = hasMore;
 			this.messagesFromCache = false;
+			indexMessagesContacts(previews);
 
 			if (browser) {
 				const { cacheMessagePreviews } = await import('$lib/db');
@@ -529,6 +550,7 @@ class MailStore {
 
 	setSelectedThread(emails: JMAPEmail[], routeMailboxId: string) {
 		this.selectedThread = emails.map((email) => mapEmailDetail(email, routeMailboxId));
+		indexMessagesContacts(this.selectedThread);
 
 		if (browser && this.selectedThreadId && this.selectedThread.length) {
 			void import('$lib/db').then(({ getAccountId, cacheThread }) => {
