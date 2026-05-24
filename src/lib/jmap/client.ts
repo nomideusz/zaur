@@ -7,6 +7,7 @@ import type {
 	JMAPSession,
 	JMAPEmail
 } from './types';
+import { buildEmailCreateData, type EmailAttachmentInput } from './email-build';
 import type {
 	CalendarEventQueryResult,
 	JMAPCalendar,
@@ -213,6 +214,61 @@ export class JMAPClient {
 		return this.authenticatedFetch(url);
 	}
 
+	async uploadBlob(
+		data: ArrayBuffer | Blob,
+		type: string
+	): Promise<{ blobId: string; size: number; type: string }> {
+		if (this.proxyMode) {
+			const response = await fetch('/api/jmap/upload', {
+				method: 'POST',
+				headers: { 'Content-Type': type || 'application/octet-stream' },
+				body: data
+			});
+
+			if (!response.ok) {
+				const payload = (await response.json().catch(() => ({}))) as { error?: string };
+				throw new Error(payload.error ?? `Upload failed: ${response.status}`);
+			}
+
+			return (await response.json()) as { blobId: string; size: number; type: string };
+		}
+
+		if (!this.session?.uploadUrl) {
+			throw new Error('Upload not supported by this server');
+		}
+
+		const base = this.session.uploadUrl.endsWith('/')
+			? this.session.uploadUrl
+			: `${this.session.uploadUrl}/`;
+		const url = `${base}${this.accountId}`;
+
+		const response = await this.authenticatedFetch(url, {
+			method: 'POST',
+			headers: { 'Content-Type': type || 'application/octet-stream' },
+			body: data
+		});
+
+		if (!response.ok) {
+			throw new Error(`Upload failed: ${response.status}`);
+		}
+
+		const payload = (await response.json()) as {
+			blobId?: string;
+			size?: number;
+			type?: string;
+		};
+
+		if (!payload.blobId) {
+			throw new Error('Upload response missing blobId');
+		}
+
+		return {
+			blobId: payload.blobId,
+			size: payload.size ?? 0,
+			type: payload.type ?? type
+		};
+	}
+
 	async fetchSyncStates(): Promise<Record<string, string>> {
 		const response = await this.request([
 			['Mailbox/get', { accountId: this.accountId, ids: null, properties: ['id'] }, 'mb'],
@@ -327,6 +383,9 @@ export class JMAPClient {
 	private rewriteSessionUrls(session: JMAPSession): void {
 		session.apiUrl = this.rewriteSessionUrl(session.apiUrl);
 		session.downloadUrl = this.rewriteSessionUrl(session.downloadUrl);
+		if (session.uploadUrl) {
+			session.uploadUrl = this.rewriteSessionUrl(session.uploadUrl);
+		}
 		if (session.eventSourceUrl) {
 			session.eventSourceUrl = this.rewriteSessionUrl(session.eventSourceUrl);
 		}
@@ -868,23 +927,25 @@ export class JMAPClient {
 		body: string;
 		fromEmail: string;
 		fromName?: string;
+		attachments?: EmailAttachmentInput[];
 	}): Promise<string> {
 		const mailboxes = await this.getMailboxes();
 		const draftsMailbox = mailboxes.find((mb) => mb.role === 'drafts');
 		if (!draftsMailbox) throw new Error('No drafts folder found');
 
 		const draftKey = params.jmapDraftId ?? `draft-${Date.now()}`;
-		const emailData = {
-			from: [{ ...(params.fromName ? { name: params.fromName } : {}), email: params.fromEmail }],
-			to: params.to.map((email) => ({ email })),
-			...(params.cc?.length ? { cc: params.cc.map((email) => ({ email })) } : {}),
-			...(params.bcc?.length ? { bcc: params.bcc.map((email) => ({ email })) } : {}),
+		const emailData = buildEmailCreateData({
+			fromEmail: params.fromEmail,
+			fromName: params.fromName,
+			to: params.to,
+			cc: params.cc,
+			bcc: params.bcc,
 			subject: params.subject,
-			keywords: { $draft: true },
+			body: params.body,
 			mailboxIds: { [draftsMailbox.id]: true },
-			bodyValues: { '1': { value: params.body } },
-			textBody: [{ partId: '1', type: 'text/plain' }]
-		};
+			keywords: { $draft: true },
+			attachments: params.attachments
+		});
 
 		if (params.jmapDraftId) {
 			await this.request([
@@ -916,7 +977,14 @@ export class JMAPClient {
 		to: string[],
 		subject: string,
 		body: string,
-		options?: { cc?: string[]; bcc?: string[]; identityId?: string; fromEmail?: string; fromName?: string }
+		options?: {
+			cc?: string[];
+			bcc?: string[];
+			identityId?: string;
+			fromEmail?: string;
+			fromName?: string;
+			attachments?: EmailAttachmentInput[];
+		}
 	): Promise<void> {
 		const mailboxes = await this.getMailboxes();
 		const sentMailbox = mailboxes.find((mb) => mb.role === 'sent');
@@ -934,7 +1002,19 @@ export class JMAPClient {
 		const emailId = `draft-${Date.now()}`;
 		const holdingMailboxId = draftsMailbox?.id ?? sentMailbox.id;
 		const fromEmail = options?.fromEmail ?? this.username;
-		const fromName = options?.fromName;
+
+		const emailData = buildEmailCreateData({
+			fromEmail,
+			fromName: options?.fromName,
+			to,
+			cc: options?.cc,
+			bcc: options?.bcc,
+			subject,
+			body,
+			mailboxIds: { [holdingMailboxId]: true },
+			keywords: { $draft: true },
+			attachments: options?.attachments
+		});
 
 		const response = await this.request(
 			[
@@ -942,19 +1022,7 @@ export class JMAPClient {
 					'Email/set',
 					{
 						accountId: this.accountId,
-						create: {
-							[emailId]: {
-								from: [{ ...(fromName ? { name: fromName } : {}), email: fromEmail }],
-								to: to.map((email) => ({ email })),
-								cc: options?.cc?.map((email) => ({ email })),
-								bcc: options?.bcc?.map((email) => ({ email })),
-								subject,
-								keywords: { $draft: true },
-								mailboxIds: { [holdingMailboxId]: true },
-								bodyValues: { '1': { value: body } },
-								textBody: [{ partId: '1', type: 'text/plain' }]
-							}
-						}
+						create: { [emailId]: emailData }
 					},
 					'0'
 				],

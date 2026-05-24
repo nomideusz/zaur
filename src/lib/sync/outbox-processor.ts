@@ -4,9 +4,20 @@ import { parseAddressList } from '$lib/utils/addresses';
 import { isOfflineError } from '$lib/utils/network';
 import { outbox } from '$lib/stores/outbox.svelte';
 import { toast } from '$lib/stores/toast.svelte';
+import type { OutboxAttachmentPayload } from '$lib/types/compose';
 
 const RETRY_MS = 30_000;
 const MAX_ATTEMPTS = 5;
+
+function parseOutboxAttachments(json?: string): OutboxAttachmentPayload[] | undefined {
+	if (!json) return undefined;
+	try {
+		const parsed = JSON.parse(json) as OutboxAttachmentPayload[];
+		return Array.isArray(parsed) ? parsed : undefined;
+	} catch {
+		return undefined;
+	}
+}
 
 class OutboxProcessor {
 	private client: JMAPClient | null = null;
@@ -78,7 +89,8 @@ class OutboxProcessor {
 						fromEmail: item.fromEmail || this.fromEmail,
 						fromName: item.fromName ?? this.fromName,
 						cc: cc.length ? cc : undefined,
-						bcc: bcc.length ? bcc : undefined
+						bcc: bcc.length ? bcc : undefined,
+						attachments: parseOutboxAttachments(item.attachmentsJson)
 					});
 
 					const subject = item.subject || '(no subject)';

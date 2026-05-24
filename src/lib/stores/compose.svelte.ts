@@ -1,9 +1,13 @@
 import { browser } from '$app/environment';
 import type { JMAPClient } from '$lib/jmap/client';
+import type { EmailAttachmentInput } from '$lib/jmap/email-build';
+import { validateAttachmentFile } from '$lib/attachments/upload';
 import { parseAddressList } from '$lib/utils/addresses';
 import { isOfflineError } from '$lib/utils/network';
 import { outbox } from '$lib/stores/outbox.svelte';
+import { settings } from '$lib/stores/settings.svelte';
 import { toast } from '$lib/stores/toast.svelte';
+import type { ComposeAttachment, StoredComposeAttachment } from '$lib/types/compose';
 import type { MessageDetail } from '$lib/types/mail';
 
 export type ComposeMode = 'new' | 'reply' | 'reply-all' | 'forward';
@@ -35,9 +39,18 @@ class ComposeStore {
 	isSavingDraft = $state(false);
 	draftSavedAt = $state<number | null>(null);
 	error = $state<string | null>(null);
+	attachments = $state<ComposeAttachment[]>([]);
 
 	private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 	private serverDraftTimer: ReturnType<typeof setTimeout> | null = null;
+
+	get hasUploadingAttachments() {
+		return this.attachments.some((attachment) => attachment.uploading);
+	}
+
+	get canSend() {
+		return !this.isSending && !this.hasUploadingAttachments;
+	}
 
 	startNew() {
 		void this.restoreLocalDraft();
@@ -69,6 +82,18 @@ class ComposeStore {
 		this.mode = draft.mode;
 		this.draftSavedAt = draft.updatedAt;
 		this.error = null;
+		this.attachments = (draft.attachments ?? []).map((attachment) => ({
+			id: crypto.randomUUID(),
+			name: attachment.name,
+			type: attachment.type,
+			size: attachment.size,
+			blobId: attachment.blobId,
+			uploading: false
+		}));
+	}
+
+	private clearAttachments() {
+		this.attachments = [];
 	}
 
 	private resetComposeFields() {
@@ -76,12 +101,78 @@ class ComposeStore {
 		this.cc = '';
 		this.bcc = '';
 		this.subject = '';
-		this.body = '';
+		this.body = settings.composeBodyWithSignature();
 		this.showCcBcc = false;
 		this.mode = 'new';
 		this.jmapDraftId = undefined;
 		this.error = null;
 		this.draftSavedAt = null;
+		this.clearAttachments();
+	}
+
+	private storedAttachments(): StoredComposeAttachment[] {
+		return this.attachments
+			.filter((attachment): attachment is ComposeAttachment & { blobId: string } => !!attachment.blobId)
+			.map((attachment) => ({
+				name: attachment.name,
+				type: attachment.type,
+				size: attachment.size,
+				blobId: attachment.blobId
+			}));
+	}
+
+	private readyAttachments(): EmailAttachmentInput[] {
+		return this.storedAttachments();
+	}
+
+	async addAttachments(client: JMAPClient, files: FileList | File[]) {
+		if (!browser) return;
+		if (!navigator.onLine) {
+			toast.show('Connect to the internet to attach files', 'error');
+			return;
+		}
+
+		for (const file of files) {
+			const validationError = validateAttachmentFile(file, this.attachments.length);
+			if (validationError) {
+				toast.show(validationError, 'error');
+				continue;
+			}
+
+			const id = crypto.randomUUID();
+			this.attachments = [
+				...this.attachments,
+				{
+					id,
+					name: file.name,
+					type: file.type || 'application/octet-stream',
+					size: file.size,
+					blobId: null,
+					uploading: true
+				}
+			];
+
+			try {
+				const uploaded = await client.uploadBlob(file, file.type || 'application/octet-stream');
+				this.attachments = this.attachments.map((attachment) =>
+					attachment.id === id
+						? { ...attachment, blobId: uploaded.blobId, uploading: false, uploadError: undefined }
+						: attachment
+				);
+			} catch (error) {
+				const message = error instanceof Error ? error.message : 'Upload failed';
+				this.attachments = this.attachments.map((attachment) =>
+					attachment.id === id
+						? { ...attachment, uploading: false, uploadError: message }
+						: attachment
+				);
+				toast.show(`Could not attach "${file.name}" — ${message}`, 'error');
+			}
+		}
+	}
+
+	removeAttachment(id: string) {
+		this.attachments = this.attachments.filter((attachment) => attachment.id !== id);
 	}
 
 	startReply(message: MessageDetail) {
@@ -96,10 +187,13 @@ class ComposeStore {
 		this.bcc = '';
 		this.showCcBcc = false;
 		this.subject = message.subject.startsWith('Re:') ? message.subject : `Re: ${message.subject}`;
-		this.body = `\n\n---\nOn ${when}, ${message.from.name} wrote:\n${message.bodyText}`;
+		this.body = settings.composeBodyWithSignature(
+			`\n\n---\nOn ${when}, ${message.from.name} wrote:\n${message.bodyText}`
+		);
 		this.jmapDraftId = undefined;
 		this.error = null;
 		this.draftSavedAt = null;
+		this.clearAttachments();
 	}
 
 	startReplyAll(message: MessageDetail, thread: MessageDetail[], userEmail: string) {
@@ -133,10 +227,13 @@ class ComposeStore {
 		this.bcc = '';
 		this.showCcBcc = false;
 		this.subject = message.subject.startsWith('Re:') ? message.subject : `Re: ${message.subject}`;
-		this.body = `\n\n---\nOn ${when}, ${message.from.name} wrote:\n${message.bodyText}`;
+		this.body = settings.composeBodyWithSignature(
+			`\n\n---\nOn ${when}, ${message.from.name} wrote:\n${message.bodyText}`
+		);
 		this.jmapDraftId = undefined;
 		this.error = null;
 		this.draftSavedAt = null;
+		this.clearAttachments();
 	}
 
 	startForward(message: MessageDetail) {
@@ -146,10 +243,13 @@ class ComposeStore {
 		this.bcc = '';
 		this.showCcBcc = false;
 		this.subject = message.subject.startsWith('Fwd:') ? message.subject : `Fwd: ${message.subject}`;
-		this.body = `\n\n---\nForwarded message:\n${quoteHeader(message)}\n\n${message.bodyText}`;
+		this.body = settings.composeBodyWithSignature(
+			`\n\n---\nForwarded message:\n${quoteHeader(message)}\n\n${message.bodyText}`
+		);
 		this.jmapDraftId = undefined;
 		this.error = null;
 		this.draftSavedAt = null;
+		this.clearAttachments();
 	}
 
 	scheduleAutosave(client: JMAPClient | null, fromEmail: string, fromName?: string) {
@@ -184,6 +284,7 @@ class ComposeStore {
 		this.isSavingDraft = false;
 		this.draftSavedAt = null;
 		this.error = null;
+		this.clearAttachments();
 	}
 
 	async send(client: JMAPClient, fromEmail: string, fromName?: string): Promise<ComposeSendResult> {
@@ -196,6 +297,16 @@ class ComposeStore {
 			this.error = 'Subject is required';
 			return false;
 		}
+		if (this.hasUploadingAttachments) {
+			this.error = 'Wait for attachments to finish uploading';
+			return false;
+		}
+
+		const failedAttachment = this.attachments.find((attachment) => attachment.uploadError);
+		if (failedAttachment) {
+			this.error = `Remove or re-attach "${failedAttachment.name}" before sending`;
+			return false;
+		}
 
 		this.isSending = true;
 		this.error = null;
@@ -203,14 +314,17 @@ class ComposeStore {
 		const cc = parseAddressList(this.cc);
 		const bcc = parseAddressList(this.bcc);
 		const draftId = this.jmapDraftId;
+		const attachments = this.readyAttachments();
+		const sendOptions = {
+			fromEmail,
+			fromName: fromName?.trim() || undefined,
+			cc: cc.length ? cc : undefined,
+			bcc: bcc.length ? bcc : undefined,
+			attachments: attachments.length ? attachments : undefined
+		};
 
 		try {
-			await client.sendEmail(recipients, this.subject.trim(), this.body, {
-				fromEmail,
-				fromName: fromName?.trim() || undefined,
-				cc: cc.length ? cc : undefined,
-				bcc: bcc.length ? bcc : undefined
-			});
+			await client.sendEmail(recipients, this.subject.trim(), this.body, sendOptions);
 
 			if (draftId) {
 				try {
@@ -235,7 +349,8 @@ class ComposeStore {
 						subject: this.subject.trim(),
 						body: this.body,
 						fromEmail,
-						fromName: fromName?.trim() || undefined
+						fromName: fromName?.trim() || undefined,
+						attachments: attachments.length ? attachments : undefined
 					});
 					void import('$lib/sync/outbox-processor').then(({ outboxProcessor }) =>
 						outboxProcessor.processQueue()
@@ -258,7 +373,7 @@ class ComposeStore {
 
 	private async persistLocalDraft() {
 		if (!browser || this.mode !== 'new') return;
-		if (!this.to && !this.cc && !this.bcc && !this.subject && !this.body) {
+		if (!this.to && !this.cc && !this.bcc && !this.subject && !this.body && !this.attachments.length) {
 			await this.clearLocalDraft();
 			return;
 		}
@@ -268,6 +383,7 @@ class ComposeStore {
 		if (!accountId) return;
 
 		const updatedAt = Date.now();
+		const storedAttachments = this.storedAttachments();
 		await saveComposeDraft(accountId, {
 			to: this.to,
 			cc: this.cc,
@@ -276,6 +392,7 @@ class ComposeStore {
 			body: this.body,
 			mode: this.mode,
 			jmapDraftId: this.jmapDraftId,
+			attachments: storedAttachments.length ? storedAttachments : undefined,
 			updatedAt
 		});
 		this.draftSavedAt = updatedAt;
@@ -302,7 +419,8 @@ class ComposeStore {
 				subject: this.subject.trim(),
 				body: this.body,
 				fromEmail,
-				fromName: fromName?.trim() || undefined
+				fromName: fromName?.trim() || undefined,
+				attachments: this.readyAttachments()
 			});
 			this.jmapDraftId = id;
 			this.draftSavedAt = Date.now();

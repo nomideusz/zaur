@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { X } from 'lucide-svelte';
+	import { Paperclip, X } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import ComposeAttachments from '$lib/components/mail/ComposeAttachments.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
@@ -14,6 +15,7 @@
 	}
 
 	let { mode = 'new' }: Props = $props();
+	let fileInput = $state<HTMLInputElement | null>(null);
 
 	const titles: Record<ComposeMode, string> = {
 		new: 'New message',
@@ -36,6 +38,7 @@
 		compose.bcc;
 		compose.subject;
 		compose.body;
+		compose.attachments;
 		compose.scheduleAutosave(auth.client, auth.username ?? '', senderName);
 	});
 
@@ -50,7 +53,27 @@
 		compose.reset();
 		goto('/mail/inbox');
 	}
+
+	function openFilePicker() {
+		fileInput?.click();
+	}
+
+	async function onFilesSelected(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const files = input.files;
+		if (!files?.length || !auth.client) return;
+		await compose.addAttachments(auth.client, files);
+		input.value = '';
+	}
 </script>
+
+<input
+	bind:this={fileInput}
+	type="file"
+	class="hidden"
+	multiple
+	onchange={onFilesSelected}
+/>
 
 <div class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]">
 	<div class="z-panel flex h-full w-full max-w-2xl flex-col border-l shadow-md">
@@ -128,15 +151,23 @@
 				bind:value={compose.body}
 			></textarea>
 
+			<ComposeAttachments />
+
 			{#if compose.error}
 				<p class="border-t border-border px-4 py-2 text-sm text-danger">{compose.error}</p>
 			{/if}
 
-			<footer class="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
-				<Button variant="ghost" type="button" onclick={close}>Discard</Button>
-				<Button type="submit" disabled={compose.isSending}>
-					{compose.isSending ? 'Sending…' : 'Send'}
+			<footer class="flex items-center justify-between gap-2 border-t border-border px-4 py-3">
+				<Button variant="ghost" type="button" onclick={openFilePicker}>
+					<Paperclip class="size-4" aria-hidden="true" />
+					Attach
 				</Button>
+				<div class="flex items-center gap-2">
+					<Button variant="ghost" type="button" onclick={close}>Discard</Button>
+					<Button type="submit" disabled={!compose.canSend}>
+						{compose.isSending ? 'Sending…' : compose.hasUploadingAttachments ? 'Uploading…' : 'Send'}
+					</Button>
+				</div>
 			</footer>
 		</form>
 	</div>

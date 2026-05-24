@@ -4,6 +4,8 @@ import { mapEmailDetail, mapEmailPreview } from '$lib/jmap/map';
 import type { JMAPEmail, JMAPMailbox } from '$lib/jmap/types';
 import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
 import { settings } from '$lib/stores/settings.svelte';
+import { toast } from '$lib/stores/toast.svelte';
+import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
 
 const PAGE_SIZE = 50;
 
@@ -64,6 +66,7 @@ class MailStore {
 		try {
 			const list = await client.getMailboxes();
 			this.mailboxes = list.map(mapMailbox).sort(sortMailboxes);
+			applyUnreadPrefixToDocument();
 		} catch (error) {
 			this.mailboxesError = error instanceof Error ? error.message : 'Failed to load folders';
 			this.mailboxes = [];
@@ -354,6 +357,43 @@ class MailStore {
 		}
 	}
 
+	notifyNewMail(created: string[], emails: JMAPEmail[]) {
+		if (!browser || !settings.notifyOnNewMail || !created.length) return;
+
+		const inbox = this.mailboxes.find((mb) => mb.role === 'inbox');
+		if (!inbox?.jmapId) return;
+
+		const createdIds = new Set(created);
+		const incoming = emails.filter(
+			(email) =>
+				createdIds.has(email.id) &&
+				email.mailboxIds?.[inbox.jmapId!] &&
+				!email.keywords?.$seen
+		);
+
+		if (!incoming.length) return;
+
+		const notifiable = incoming.filter((email) => {
+			if (email.threadId === this.selectedThreadId) return false;
+
+			const browsingInboxList =
+				this.currentMailboxRouteId === 'inbox' && !this.selectedThreadId && document.hasFocus();
+			return !browsingInboxList;
+		});
+
+		if (!notifiable.length) return;
+
+		if (notifiable.length === 1) {
+			const email = notifiable[0];
+			const from = email.from?.[0]?.name?.trim() || email.from?.[0]?.email || 'Someone';
+			const subject = email.subject?.trim() || '(no subject)';
+			toast.show(`New mail from ${from}: ${subject}`, 'info');
+			return;
+		}
+
+		toast.show(`${notifiable.length} new messages in Inbox`, 'info');
+	}
+
 	setSelectedThread(emails: JMAPEmail[], routeMailboxId: string) {
 		this.selectedThread = emails.map((email) => mapEmailDetail(email, routeMailboxId));
 
@@ -381,12 +421,14 @@ class MailStore {
 		}
 
 		this.mailboxes = next.sort(sortMailboxes);
+		applyUnreadPrefixToDocument();
 	}
 
 	async refreshMailboxes(client: JMAPClient) {
 		try {
 			const list = await client.getMailboxes();
 			this.mailboxes = list.map(mapMailbox).sort(sortMailboxes);
+			applyUnreadPrefixToDocument();
 		} catch {
 			// Background refresh — ignore transient errors
 		}
@@ -474,6 +516,7 @@ class MailStore {
 		this.mailboxes = this.mailboxes.map((mb) =>
 			mb.id === routeId ? { ...mb, unread: Math.max(0, mb.unread + delta) } : mb
 		);
+		applyUnreadPrefixToDocument();
 	}
 
 	reset() {

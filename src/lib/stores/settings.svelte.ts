@@ -6,7 +6,9 @@ const STORAGE = {
 	blockExternal: 'zaur:block-external',
 	listDensity: 'zaur:list-density',
 	markAsReadOnOpen: 'zaur:mark-read-on-open',
-	displayName: (email: string) => `zaur:display-name:${email}`
+	notifyOnNewMail: 'zaur:notify-new-mail',
+	displayName: (email: string) => `zaur:display-name:${email}`,
+	signature: (email: string) => `zaur:signature:${email}`
 } as const;
 
 const LIST_ROW_HEIGHT: Record<ListDensity, string> = {
@@ -29,16 +31,28 @@ function readMarkAsReadOnOpen(): boolean {
 	return localStorage.getItem(STORAGE.markAsReadOnOpen) !== 'false';
 }
 
+function readNotifyOnNewMail(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.notifyOnNewMail) !== 'false';
+}
+
 function readDisplayName(email: string | null): string {
 	if (!browser || !email) return '';
 	return localStorage.getItem(STORAGE.displayName(email)) ?? '';
+}
+
+function readSignature(email: string | null): string {
+	if (!browser || !email) return '';
+	return localStorage.getItem(STORAGE.signature(email)) ?? '';
 }
 
 class SettingsStore {
 	blockExternalContent = $state(readBlockExternal());
 	listDensity = $state<ListDensity>(readListDensity());
 	markAsReadOnOpen = $state(readMarkAsReadOnOpen());
+	notifyOnNewMail = $state(readNotifyOnNewMail());
 	displayName = $state('');
+	signature = $state('');
 
 	private userEmail: string | null = null;
 
@@ -46,12 +60,21 @@ class SettingsStore {
 		this.blockExternalContent = readBlockExternal();
 		this.listDensity = readListDensity();
 		this.markAsReadOnOpen = readMarkAsReadOnOpen();
+		this.notifyOnNewMail = readNotifyOnNewMail();
 		this.applyListDensity(this.listDensity);
 	}
 
 	setUser(email: string | null) {
 		this.userEmail = email;
 		this.displayName = readDisplayName(email);
+		this.signature = readSignature(email);
+	}
+
+	/** Prepend blank lines and signature before optional quoted reply/forward content. */
+	composeBodyWithSignature(suffix = ''): string {
+		const trimmed = this.signature.trim();
+		if (!trimmed) return suffix;
+		return `\n\n${trimmed}${suffix}`;
 	}
 
 	resolvedDisplayName(fallback?: string | null): string {
@@ -83,6 +106,13 @@ class SettingsStore {
 		}
 	}
 
+	setNotifyOnNewMail(value: boolean) {
+		this.notifyOnNewMail = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.notifyOnNewMail, String(value));
+		}
+	}
+
 	setDisplayName(value: string) {
 		this.displayName = value;
 		if (!browser || !this.userEmail) return;
@@ -92,6 +122,18 @@ class SettingsStore {
 			localStorage.setItem(STORAGE.displayName(this.userEmail), trimmed);
 		} else {
 			localStorage.removeItem(STORAGE.displayName(this.userEmail));
+		}
+	}
+
+	setSignature(value: string) {
+		this.signature = value;
+		if (!browser || !this.userEmail) return;
+
+		const trimmed = value.trim();
+		if (trimmed) {
+			localStorage.setItem(STORAGE.signature(this.userEmail), value);
+		} else {
+			localStorage.removeItem(STORAGE.signature(this.userEmail));
 		}
 	}
 

@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import AppHeader from '$lib/components/shell/AppHeader.svelte';
 	import { pushListener } from '$lib/jmap/push-listener';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
 
 	let { children } = $props();
 
@@ -13,6 +14,16 @@
 		if (!auth.isAuthenticated && !$page.url.pathname.startsWith('/login')) {
 			goto('/login');
 		}
+	});
+
+	$effect(() => {
+		if (!auth.isAuthenticated) return;
+		mail.mailboxes;
+		applyUnreadPrefixToDocument();
+	});
+
+	afterNavigate(() => {
+		if (auth.isAuthenticated) applyUnreadPrefixToDocument();
 	});
 
 	$effect(() => {

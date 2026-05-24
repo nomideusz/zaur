@@ -16,6 +16,7 @@ export const draftSchema: RxJsonSchema<DraftDoc> = {
 		body: { type: 'string' },
 		mode: { type: 'string', maxLength: 16 },
 		jmapDraftId: { type: 'string', maxLength: 128 },
+		attachmentsJson: { type: 'string' },
 		updatedAt: { type: 'number', minimum: 0, maximum: 9_000_000_000_000, multipleOf: 1 },
 		createdAt: { type: 'number', minimum: 0, maximum: 9_000_000_000_000, multipleOf: 1 }
 	},
@@ -38,6 +39,7 @@ export const outboxSchema: RxJsonSchema<OutboxDoc> = {
 		body: { type: 'string' },
 		fromEmail: { type: 'string', maxLength: 320 },
 		fromName: { type: 'string', maxLength: 320 },
+		attachmentsJson: { type: 'string' },
 		status: { type: 'string', maxLength: 16 },
 		error: { type: 'string' },
 		attempts: { type: 'number', minimum: 0, maximum: 1000, multipleOf: 1 },

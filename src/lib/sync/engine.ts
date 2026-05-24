@@ -131,6 +131,7 @@ class SyncEngine {
 			const emails = changedIds.length ? await client.getEmailsByIds(changedIds) : [];
 
 			await mail.applyEmailSync(client, emails, destroyed);
+			mail.notifyNewMail(created, emails);
 			await setSyncState(accountId, 'Email', latestState);
 		} catch (error) {
 			if (isStateTooOldError(error)) {

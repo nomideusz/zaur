@@ -1,6 +1,7 @@
 import { getMailDatabase } from './database';
 import type { DraftDoc } from './types';
 import type { ComposeMode } from '$lib/stores/compose.svelte';
+import type { StoredComposeAttachment } from '$lib/types/compose';
 
 const LOCAL_DRAFT_KEY = 'zaur:compose-draft';
 const COMPOSE_DRAFT_ID = 'compose';
@@ -13,7 +14,18 @@ export interface DraftSnapshot {
 	body: string;
 	mode: ComposeMode;
 	jmapDraftId?: string;
+	attachments?: StoredComposeAttachment[];
 	updatedAt: number;
+}
+
+function parseAttachments(json?: string): StoredComposeAttachment[] | undefined {
+	if (!json) return undefined;
+	try {
+		const parsed = JSON.parse(json) as StoredComposeAttachment[];
+		return Array.isArray(parsed) ? parsed : undefined;
+	} catch {
+		return undefined;
+	}
 }
 
 function toSnapshot(doc: DraftDoc): DraftSnapshot {
@@ -25,6 +37,7 @@ function toSnapshot(doc: DraftDoc): DraftSnapshot {
 		body: doc.body,
 		mode: doc.mode,
 		jmapDraftId: doc.jmapDraftId,
+		attachments: parseAttachments(doc.attachmentsJson),
 		updatedAt: doc.updatedAt
 	};
 }
@@ -58,6 +71,7 @@ export async function saveComposeDraft(
 		body: draft.body,
 		mode: draft.mode,
 		jmapDraftId: draft.jmapDraftId,
+		attachmentsJson: draft.attachments?.length ? JSON.stringify(draft.attachments) : undefined,
 		updatedAt: now,
 		createdAt: existing?.createdAt ?? now
 	});

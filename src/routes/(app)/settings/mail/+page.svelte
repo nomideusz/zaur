@@ -13,6 +13,19 @@
 	<div class="mt-6 space-y-4">
 		<label class="flex items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
 			<div>
+				<p class="text-sm font-medium text-fg">Notify on new mail</p>
+				<p class="text-xs text-fg-muted">Show a toast when new messages arrive in Inbox</p>
+			</div>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.notifyOnNewMail}
+				onchange={(e) => settings.setNotifyOnNewMail(e.currentTarget.checked)}
+			/>
+		</label>
+
+		<label class="flex items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
+			<div>
 				<p class="text-sm font-medium text-fg">Mark as read when opened</p>
 				<p class="text-xs text-fg-muted">Automatically mark conversations read when you open them</p>
 			</div>

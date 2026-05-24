@@ -1,5 +1,6 @@
 import { getMailDatabase } from './database';
 import type { OutboxDoc, OutboxStatus } from './types';
+import type { OutboxAttachmentPayload } from '$lib/types/compose';
 
 export interface OutboxEnqueueInput {
 	to: string;
@@ -9,6 +10,7 @@ export interface OutboxEnqueueInput {
 	body: string;
 	fromEmail: string;
 	fromName?: string;
+	attachments?: OutboxAttachmentPayload[];
 }
 
 function newOutboxId(): string {
@@ -32,6 +34,7 @@ export async function enqueueOutbox(accountId: string, input: OutboxEnqueueInput
 		body: input.body,
 		fromEmail: input.fromEmail,
 		fromName: input.fromName,
+		attachmentsJson: input.attachments?.length ? JSON.stringify(input.attachments) : undefined,
 		status: 'pending',
 		attempts: 0,
 		createdAt: now,

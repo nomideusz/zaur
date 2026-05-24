@@ -10,6 +10,7 @@ export interface DraftDoc {
 	body: string;
 	mode: ComposeMode;
 	jmapDraftId?: string;
+	attachmentsJson?: string;
 	updatedAt: number;
 	createdAt: number;
 }
@@ -26,6 +27,7 @@ export interface OutboxDoc {
 	body: string;
 	fromEmail: string;
 	fromName?: string;
+	attachmentsJson?: string;
 	status: OutboxStatus;
 	error?: string;
 	attempts: number;

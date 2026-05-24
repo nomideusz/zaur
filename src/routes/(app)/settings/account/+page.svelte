@@ -26,6 +26,17 @@
 			/>
 		</label>
 
+		<label class="block">
+			<span class="text-sm font-medium text-fg">Email signature</span>
+			<p class="mt-0.5 text-xs text-fg-muted">Appended to new messages, replies, and forwards</p>
+			<textarea
+				class="z-input mt-2 min-h-24 resize-y"
+				value={settings.signature}
+				placeholder="Best regards,&#10;Your name"
+				oninput={(e) => settings.setSignature(e.currentTarget.value)}
+			></textarea>
+		</label>
+
 		<dl class="space-y-4 border-t border-border pt-6 text-sm">
 			<div class="flex justify-between gap-4 border-b border-border pb-3">
 				<dt class="text-fg-muted">Primary address</dt>
