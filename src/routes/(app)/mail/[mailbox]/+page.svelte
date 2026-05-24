@@ -34,6 +34,9 @@
 	onLoadMore={() => {
 		if (auth.client) void mail.loadMoreMessages(auth.client);
 	}}
+	onRetry={() => {
+		if (auth.client) void mail.loadMessages(auth.client, data.mailboxId);
+	}}
 />
 <div class="hidden min-w-0 flex-1 md:flex">
 	<MessageReaderEmpty />

@@ -1,7 +1,6 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { ChevronDown, LogOut, Moon, Settings, Sun, User } from 'lucide-svelte';
+	import { ChevronDown, LogOut, Moon, Settings, Sun } from 'lucide-svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -53,7 +52,7 @@
 			</div>
 
 			<a
-				href="/settings"
+				href="/settings/display"
 				role="menuitem"
 				class={cn(
 					'flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-surface-sunken',
@@ -82,16 +81,6 @@
 					Dark mode
 				{/if}
 			</button>
-
-			<a
-				href="/settings/account"
-				role="menuitem"
-				class="flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-surface-sunken"
-				onclick={close}
-			>
-				<User class="size-4 text-fg-muted" />
-				Account
-			</a>
 
 			<hr class="my-1 border-border" />
 

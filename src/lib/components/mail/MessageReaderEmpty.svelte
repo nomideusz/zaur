@@ -13,8 +13,11 @@
 			Choose a conversation from the list to read it here, or start writing something new.
 		</p>
 	</div>
-	<Button href="/mail/compose">
-		<PenSquare class="size-4" aria-hidden="true" />
-		Compose
-	</Button>
+	<div class="flex flex-wrap items-center justify-center gap-2">
+		<Button href="/mail/compose">
+			<PenSquare class="size-4" aria-hidden="true" />
+			Compose
+		</Button>
+		<Button href="/settings/display" variant="ghost">Display settings</Button>
+	</div>
 </div>

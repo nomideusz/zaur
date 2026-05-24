@@ -69,7 +69,7 @@
 		{/if}
 	</div>
 
-	<footer class="flex gap-2 border-t border-border px-4 py-3">
+	<footer class="flex gap-2 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
 		<Button variant="ghost" onclick={editEvent}>
 			<Pencil class="size-4" aria-hidden="true" />
 			Edit
@@ -90,8 +90,15 @@
 		{@render details(false)}
 	</aside>
 
-	<div class="fixed inset-0 z-30 flex justify-end bg-black/20 md:hidden">
-		<div class="z-panel flex h-full w-full max-w-md flex-col border-l shadow-md">
+	<div
+		class="fixed inset-0 z-30 flex justify-end bg-black/20 md:hidden"
+		onclick={() => calendar.selectEvent(null)}
+	>
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<div
+			class="z-panel flex h-full w-full max-w-md flex-col border-l shadow-md"
+			onclick={(e) => e.stopPropagation()}
+		>
 			{@render details(true)}
 		</div>
 	</div>

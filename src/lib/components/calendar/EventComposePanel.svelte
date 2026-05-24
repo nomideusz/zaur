@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { X } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
@@ -9,13 +10,33 @@
 	const submitLabel = $derived(
 		calendar.composeSaving ? (isEdit ? 'Saving…' : 'Creating…') : isEdit ? 'Save changes' : 'Create event'
 	);
+
+	function close() {
+		calendar.closeCompose();
+	}
+
+	onMount(() => {
+		function onKeydown(event: KeyboardEvent) {
+			if (event.key === 'Escape') close();
+		}
+		window.addEventListener('keydown', onKeydown);
+		return () => window.removeEventListener('keydown', onKeydown);
+	});
 </script>
 
-<div class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]">
-	<div class="z-panel flex h-full w-full max-w-lg flex-col border-l shadow-md">
+<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+<div
+	class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]"
+	onclick={close}
+>
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div
+		class="z-panel flex h-full w-full max-w-lg flex-col border-l shadow-md"
+		onclick={(e) => e.stopPropagation()}
+	>
 		<header class="flex items-center justify-between border-b border-border px-4 py-3">
 			<h2 class="text-sm font-semibold text-fg">{isEdit ? 'Edit event' : 'New event'}</h2>
-			<IconButton label="Close" onclick={() => calendar.closeCompose()}>
+			<IconButton label="Close" onclick={close}>
 				<X class="size-4" />
 			</IconButton>
 		</header>
@@ -28,8 +49,8 @@
 			}}
 		>
 			<div class="space-y-4 overflow-y-auto px-4 py-4">
-				<label class="block space-y-1.5 text-sm">
-					<span class="text-fg-subtle">Title</span>
+				<label class="block space-y-1.5">
+					<span class="text-sm font-medium text-fg">Title</span>
 					<input
 						type="text"
 						class="z-input"
@@ -39,8 +60,8 @@
 					/>
 				</label>
 
-				<label class="block space-y-1.5 text-sm">
-					<span class="text-fg-subtle">Calendar</span>
+				<label class="block space-y-1.5">
+					<span class="text-sm font-medium text-fg">Calendar</span>
 					<select class="z-input" bind:value={calendar.composeDraft.calendarId} required>
 						{#each calendar.calendars as item (item.id)}
 							<option value={item.id}>{item.name}</option>
@@ -54,23 +75,23 @@
 				</label>
 
 				<div class="grid gap-3 sm:grid-cols-2">
-					<label class="block space-y-1.5 text-sm">
-						<span class="text-fg-subtle">Starts</span>
+					<label class="block space-y-1.5">
+						<span class="text-sm font-medium text-fg">Starts</span>
 						<input type="date" class="z-input" bind:value={calendar.composeDraft.startDate} required />
 					</label>
 
 					{#if calendar.composeDraft.allDay}
-						<label class="block space-y-1.5 text-sm">
-							<span class="text-fg-subtle">Ends</span>
+						<label class="block space-y-1.5">
+							<span class="text-sm font-medium text-fg">Ends</span>
 							<input type="date" class="z-input" bind:value={calendar.composeDraft.endDate} required />
 						</label>
 					{:else}
-						<label class="block space-y-1.5 text-sm">
-							<span class="text-fg-subtle">Start time</span>
+						<label class="block space-y-1.5">
+							<span class="text-sm font-medium text-fg">Start time</span>
 							<input type="time" class="z-input" bind:value={calendar.composeDraft.startTime} required />
 						</label>
-						<label class="block space-y-1.5 text-sm sm:col-span-2">
-							<span class="text-fg-subtle">End time</span>
+						<label class="block space-y-1.5 sm:col-span-2">
+							<span class="text-sm font-medium text-fg">End time</span>
 							<div class="grid gap-3 sm:grid-cols-2">
 								<input type="date" class="z-input" bind:value={calendar.composeDraft.endDate} required />
 								<input type="time" class="z-input" bind:value={calendar.composeDraft.endTime} required />
@@ -79,8 +100,8 @@
 					{/if}
 				</div>
 
-				<label class="block space-y-1.5 text-sm">
-					<span class="text-fg-subtle">Location</span>
+				<label class="block space-y-1.5">
+					<span class="text-sm font-medium text-fg">Location</span>
 					<input
 						type="text"
 						class="z-input"
@@ -89,8 +110,8 @@
 					/>
 				</label>
 
-				<label class="block space-y-1.5 text-sm">
-					<span class="text-fg-subtle">Description</span>
+				<label class="block space-y-1.5">
+					<span class="text-sm font-medium text-fg">Description</span>
 					<textarea
 						class="z-input min-h-24 resize-y"
 						placeholder="Optional"
@@ -103,8 +124,8 @@
 				<p class="border-t border-border px-4 py-2 text-sm text-danger">{calendar.composeError}</p>
 			{/if}
 
-			<footer class="flex items-center justify-end gap-2 border-t border-border px-4 py-3">
-				<Button variant="ghost" type="button" onclick={() => calendar.closeCompose()}>Cancel</Button>
+			<footer class="flex items-center justify-end gap-2 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+				<Button variant="ghost" type="button" onclick={close}>Cancel</Button>
 				<Button type="submit" disabled={calendar.composeSaving}>
 					{submitLabel}
 				</Button>

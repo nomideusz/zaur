@@ -68,8 +68,13 @@
 	error={search.error}
 	total={search.total}
 	emptyMessage={query ? `No messages match “${query}”.` : 'Enter a search term to find messages.'}
+	emptyHint={query ? undefined : 'Try a sender, subject, or keyword from the message body.'}
+	emptyIcon="search"
 	onLoadMore={() => {
 		if (auth.client) void search.loadMore(auth.client, mail.mailboxes);
+	}}
+	onRetry={() => {
+		if (auth.client && query) void search.search(auth.client, query, mail.mailboxes);
 	}}
 />
 <div class="hidden min-w-0 flex-1 md:flex">

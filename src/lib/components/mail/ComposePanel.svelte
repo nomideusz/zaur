@@ -140,8 +140,13 @@
 	onchange={onFilesSelected}
 />
 
-<div class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]">
-	<div class="z-panel flex h-full w-full max-w-2xl flex-col border-l shadow-md">
+<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+<div class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]" onclick={close}>
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div
+		class="z-panel flex h-full w-full max-w-2xl flex-col border-l shadow-md"
+		onclick={(e) => e.stopPropagation()}
+	>
 		<header class="flex items-center justify-between border-b border-border px-5 py-3.5">
 			<div>
 				<h2 class="text-base font-semibold text-fg">{title}</h2>
@@ -249,11 +254,18 @@
 				<p class="border-t border-border px-5 py-2 text-sm text-danger">{compose.error}</p>
 			{/if}
 
-			<footer class="flex items-center justify-between gap-2 border-t border-border px-5 py-3">
-				<Button variant="ghost" type="button" onclick={openFilePicker}>
-					<Paperclip class="size-4" aria-hidden="true" />
-					Attach
-				</Button>
+			<footer class="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+				<div class="flex flex-wrap items-center gap-3">
+					<Button variant="ghost" type="button" onclick={openFilePicker}>
+						<Paperclip class="size-4" aria-hidden="true" />
+						Attach
+					</Button>
+					{#if !settings.signature.trim() && mode === 'new'}
+						<a href="/settings/account" class="text-xs text-fg-subtle hover:text-accent hover:underline">
+							Add a signature
+						</a>
+					{/if}
+				</div>
 				<div class="flex items-center gap-2">
 					<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter to send</span>
 					<Button variant="ghost" type="button" onclick={close}>Discard</Button>

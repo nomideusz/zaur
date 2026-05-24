@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { LoaderCircle, Inbox } from 'lucide-svelte';
+	import { LoaderCircle, Inbox, Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
 	import MessageListItem from './MessageListItem.svelte';
 	import MessageListToolbar from './MessageListToolbar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import type { MessagePreview } from '$lib/types/mail';
 
 	interface Props {
@@ -18,10 +19,13 @@
 		error?: string | null;
 		total?: number;
 		emptyMessage?: string;
+		emptyHint?: string;
+		emptyIcon?: 'inbox' | 'search' | 'none';
 		emptyActionHref?: string;
 		emptyActionLabel?: string;
 		hideOnMobile?: boolean;
 		onLoadMore?: () => void;
+		onRetry?: () => void;
 		onBulkAction?: () => void;
 	}
 
@@ -35,10 +39,13 @@
 		error = null,
 		total,
 		emptyMessage,
+		emptyHint,
+		emptyIcon = 'inbox',
 		emptyActionHref,
 		emptyActionLabel,
 		hideOnMobile = false,
 		onLoadMore,
+		onRetry,
 		onBulkAction
 	}: Props = $props();
 
@@ -89,23 +96,49 @@
 
 	<div class="flex-1 overflow-y-auto">
 		{#if loading}
-			<div class="flex items-center gap-2 px-4 py-8 text-sm text-fg-muted">
-				<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
-				Loading messages…
+			<div class="divide-y divide-border" aria-busy="true" aria-label="Loading messages">
+				{#each Array(6) as _, index (index)}
+					<div class="z-list-row flex items-start gap-3 px-3 py-2.5">
+						<div class="mt-0.5 size-8 shrink-0 animate-pulse rounded-full bg-surface-sunken"></div>
+						<div class="min-w-0 flex-1 space-y-2 py-1">
+							<div class="flex items-center justify-between gap-2">
+								<div class="h-3.5 w-28 animate-pulse rounded bg-surface-sunken"></div>
+								<div class="h-3 w-10 shrink-0 animate-pulse rounded bg-surface-sunken"></div>
+							</div>
+							<div class="h-3.5 w-4/5 animate-pulse rounded bg-surface-sunken"></div>
+							{#if settings.showListPreview}
+								<div class="h-3 w-full animate-pulse rounded bg-surface-sunken"></div>
+							{/if}
+						</div>
+					</div>
+				{/each}
 			</div>
 		{:else if error}
-			<p class="px-4 py-8 text-center text-sm text-danger">{error}</p>
+			<div class="flex flex-col items-center gap-3 px-4 py-12 text-center">
+				<p class="text-sm text-danger">{error}</p>
+				{#if onRetry}
+					<Button variant="ghost" class="text-sm" onclick={onRetry}>Try again</Button>
+				{/if}
+			</div>
 		{:else if messages.length === 0}
 			<div class="flex flex-col items-center gap-4 px-6 py-16 text-center">
-				<div class="rounded-full bg-surface-sunken p-4">
-					<Inbox class="size-8 text-fg-subtle" aria-hidden="true" />
-				</div>
+				{#if emptyIcon !== 'none'}
+					<div class="rounded-full bg-surface-sunken p-4">
+						{#if emptyIcon === 'search'}
+							<Search class="size-8 text-fg-subtle" aria-hidden="true" />
+						{:else}
+							<Inbox class="size-8 text-fg-subtle" aria-hidden="true" />
+						{/if}
+					</div>
+				{/if}
 				<div>
 					<p class="text-sm font-medium text-fg">
 						{emptyMessage ??
 							(mailboxRouteId === 'inbox' ? 'Your inbox is empty' : 'No messages here')}
 					</p>
-					{#if !emptyMessage && mailboxRouteId === 'inbox'}
+					{#if emptyHint}
+						<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">{emptyHint}</p>
+					{:else if !emptyMessage && mailboxRouteId === 'inbox'}
 						<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">
 							New mail will show up here when it arrives.
 						</p>

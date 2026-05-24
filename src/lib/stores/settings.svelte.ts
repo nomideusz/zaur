@@ -25,6 +25,11 @@ const READER_TEXT_SIZE: Record<ReaderTextSize, string> = {
 	large: '1rem'
 };
 
+const READER_MEASURE: Record<ReaderTextSize, string> = {
+	normal: '42rem',
+	large: '48rem'
+};
+
 function readBlockExternal(): boolean {
 	if (!browser) return true;
 	return localStorage.getItem(STORAGE.blockExternal) !== 'false';
@@ -190,6 +195,7 @@ class SettingsStore {
 	private applyReaderTextSize(value: ReaderTextSize) {
 		if (!browser) return;
 		document.documentElement.style.setProperty('--z-reader-text', READER_TEXT_SIZE[value]);
+		document.documentElement.style.setProperty('--z-reader-measure', READER_MEASURE[value]);
 	}
 }
 

@@ -48,6 +48,9 @@
 	onLoadMore={() => {
 		if (auth.client) void mail.loadMoreMessages(auth.client);
 	}}
+	onRetry={() => {
+		if (auth.client) void mail.loadMessages(auth.client, data.mailboxId);
+	}}
 	onBulkAction={afterMove}
 />
 
