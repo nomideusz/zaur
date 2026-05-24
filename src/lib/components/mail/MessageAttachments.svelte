@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Paperclip } from 'lucide-svelte';
+	import { LoaderCircle, Paperclip } from 'lucide-svelte';
+	import { downloadAttachment } from '$lib/attachments/download';
 	import type { MessageAttachment } from '$lib/types/mail';
 
 	interface Props {
@@ -8,36 +9,51 @@
 
 	let { attachments }: Props = $props();
 
-	function downloadUrl(attachment: MessageAttachment) {
-		const params = new URLSearchParams({
-			blobId: attachment.blobId,
-			name: attachment.name,
-			type: attachment.type
-		});
-		return `/api/jmap/download?${params}`;
-	}
+	let downloadingId = $state<string | null>(null);
+	let error = $state<string | null>(null);
 
 	function formatSize(bytes: number) {
 		if (bytes < 1024) return `${bytes} B`;
 		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
 		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 	}
+
+	async function handleDownload(attachment: MessageAttachment) {
+		error = null;
+		downloadingId = attachment.blobId;
+		try {
+			await downloadAttachment(attachment);
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Download failed';
+		} finally {
+			downloadingId = null;
+		}
+	}
 </script>
+
+{#if error}
+	<p class="mb-2 text-xs text-red-600 dark:text-red-400">{error}</p>
+{/if}
 
 <ul class="mb-4 flex flex-wrap gap-2">
 	{#each attachments as attachment (attachment.blobId)}
 		<li>
-			<a
-				href={downloadUrl(attachment)}
-				download={attachment.name}
-				class="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-fg transition-colors hover:bg-surface-sunken"
+			<button
+				type="button"
+				class="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-1.5 text-xs text-fg transition-colors hover:bg-surface-sunken disabled:opacity-60"
+				disabled={downloadingId === attachment.blobId}
+				onclick={() => handleDownload(attachment)}
 			>
-				<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
+				{#if downloadingId === attachment.blobId}
+					<LoaderCircle class="size-3.5 shrink-0 animate-spin text-fg-subtle" aria-hidden="true" />
+				{:else}
+					<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
+				{/if}
 				<span class="max-w-48 truncate">{attachment.name}</span>
 				{#if attachment.size}
 					<span class="text-fg-subtle">({formatSize(attachment.size)})</span>
 				{/if}
-			</a>
+			</button>
 		</li>
 	{/each}
 </ul>

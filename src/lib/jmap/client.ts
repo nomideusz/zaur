@@ -1,4 +1,12 @@
-import type { JMAPIdentity, JMAPMailbox, JMAPMethodCall, JMAPResponse, JMAPSession, JMAPEmail } from './types';
+import type {
+	JMAPChangesResult,
+	JMAPIdentity,
+	JMAPMailbox,
+	JMAPMethodCall,
+	JMAPResponse,
+	JMAPSession,
+	JMAPEmail
+} from './types';
 import { browser } from '$app/environment';
 
 const EMAIL_LIST_PROPERTIES = [
@@ -187,6 +195,91 @@ export class JMAPClient {
 			if (method === 'Email/get' && result.state) states.Email = result.state as string;
 		}
 		return states;
+	}
+
+	async getEmailChanges(sinceState: string, maxChanges = 500): Promise<JMAPChangesResult> {
+		const response = await this.request([
+			[
+				'Email/changes',
+				{ accountId: this.accountId, sinceState, maxChanges },
+				'ec0'
+			]
+		]);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] === 'error') {
+			const error = first[1] as { type?: string; description?: string };
+			throw new Error(error.description ?? error.type ?? 'Email/changes failed');
+		}
+		if (first?.[0] !== 'Email/changes') {
+			throw new Error('Unexpected Email/changes response');
+		}
+
+		const result = first[1];
+		return {
+			oldState: (result.oldState as string) ?? sinceState,
+			newState: result.newState as string,
+			hasMoreChanges: !!result.hasMoreChanges,
+			created: (result.created as string[]) ?? [],
+			updated: (result.updated as string[]) ?? [],
+			destroyed: (result.destroyed as string[]) ?? []
+		};
+	}
+
+	async getMailboxChanges(sinceState: string, maxChanges = 100): Promise<JMAPChangesResult> {
+		const response = await this.request([
+			[
+				'Mailbox/changes',
+				{ accountId: this.accountId, sinceState, maxChanges },
+				'mc0'
+			]
+		]);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] === 'error') {
+			const error = first[1] as { type?: string; description?: string };
+			throw new Error(error.description ?? error.type ?? 'Mailbox/changes failed');
+		}
+		if (first?.[0] !== 'Mailbox/changes') {
+			throw new Error('Unexpected Mailbox/changes response');
+		}
+
+		const result = first[1];
+		return {
+			oldState: (result.oldState as string) ?? sinceState,
+			newState: result.newState as string,
+			hasMoreChanges: !!result.hasMoreChanges,
+			created: (result.created as string[]) ?? [],
+			updated: (result.updated as string[]) ?? [],
+			destroyed: (result.destroyed as string[]) ?? []
+		};
+	}
+
+	async getEmailsByIds(ids: string[], detail = false): Promise<JMAPEmail[]> {
+		if (!ids.length) return [];
+
+		const response = await this.request([
+			[
+				'Email/get',
+				{
+					accountId: this.accountId,
+					ids,
+					properties: detail ? [...EMAIL_DETAIL_PROPERTIES] : [...EMAIL_LIST_PROPERTIES],
+					...(detail
+						? {
+								fetchTextBodyValues: true,
+								fetchHTMLBodyValues: true,
+								maxBodyValueBytes: 256000
+							}
+						: {})
+				},
+				'eg0'
+			]
+		]);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'Email/get') return [];
+		return (first[1].list as JMAPEmail[]) ?? [];
 	}
 
 	private rewriteSessionUrl(url: string): string {

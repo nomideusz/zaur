@@ -41,6 +41,37 @@ export async function enqueueOutbox(accountId: string, input: OutboxEnqueueInput
 	return id;
 }
 
+export async function listOutboxItems(accountId: string): Promise<OutboxDoc[]> {
+	const db = getMailDatabase();
+	if (!db) return [];
+
+	const docs = await db.outbox
+		.find({
+			selector: {
+				accountId,
+				status: { $in: ['pending', 'sending', 'failed'] as OutboxStatus[] }
+			},
+			sort: [{ createdAt: 'asc' }]
+		})
+		.exec();
+
+	return docs.map((doc) => doc.toJSON());
+}
+
+export async function retryOutboxItem(id: string): Promise<void> {
+	const db = getMailDatabase();
+	if (!db) return;
+
+	const doc = await db.outbox.findOne({ selector: { id } }).exec();
+	if (!doc) return;
+
+	await doc.patch({
+		status: 'pending',
+		error: undefined,
+		updatedAt: Date.now()
+	});
+}
+
 export async function listPendingOutbox(accountId: string): Promise<OutboxDoc[]> {
 	const db = getMailDatabase();
 	if (!db) return [];

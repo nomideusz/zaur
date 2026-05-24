@@ -1,5 +1,5 @@
 import type { RxJsonSchema } from 'rxdb';
-import type { DraftDoc, OutboxDoc, RecentThreadDoc, SyncStateDoc } from './types';
+import type { DraftDoc, OutboxDoc, RecentThreadDoc, SyncStateDoc, ThreadCacheDoc, AttachmentBlobDoc } from './types';
 
 export const draftSchema: RxJsonSchema<DraftDoc> = {
 	title: 'draft',
@@ -115,4 +115,40 @@ export const syncStateSchema: RxJsonSchema<SyncStateDoc> = {
 	},
 	required: ['id', 'accountId', 'type', 'state', 'updatedAt'],
 	indexes: ['accountId', 'type']
+};
+
+export const threadCacheSchema: RxJsonSchema<ThreadCacheDoc> = {
+	title: 'threadCache',
+	version: 0,
+	primaryKey: 'id',
+	type: 'object',
+	properties: {
+		id: { type: 'string', maxLength: 256 },
+		accountId: { type: 'string', maxLength: 128 },
+		threadId: { type: 'string', maxLength: 128 },
+		mailboxRouteId: { type: 'string', maxLength: 128 },
+		messagesJson: { type: 'string' },
+		cachedAt: { type: 'number', minimum: 0, maximum: 9_000_000_000_000, multipleOf: 1 }
+	},
+	required: ['id', 'accountId', 'threadId', 'mailboxRouteId', 'messagesJson', 'cachedAt'],
+	indexes: ['accountId', 'threadId', 'cachedAt']
+};
+
+export const attachmentBlobSchema: RxJsonSchema<AttachmentBlobDoc> = {
+	title: 'attachmentBlob',
+	version: 0,
+	primaryKey: 'id',
+	type: 'object',
+	properties: {
+		id: { type: 'string', maxLength: 256 },
+		accountId: { type: 'string', maxLength: 128 },
+		blobId: { type: 'string', maxLength: 128 },
+		name: { type: 'string', maxLength: 512 },
+		type: { type: 'string', maxLength: 128 },
+		size: { type: 'number', minimum: 0, maximum: 52_428_800, multipleOf: 1 },
+		dataBase64: { type: 'string' },
+		cachedAt: { type: 'number', minimum: 0, maximum: 9_000_000_000_000, multipleOf: 1 }
+	},
+	required: ['id', 'accountId', 'blobId', 'name', 'type', 'size', 'dataBase64', 'cachedAt'],
+	indexes: ['accountId', 'blobId', 'cachedAt']
 };

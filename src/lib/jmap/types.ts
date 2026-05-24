@@ -81,3 +81,12 @@ export interface StateChange {
 		}
 	>;
 }
+
+export interface JMAPChangesResult {
+	oldState: string;
+	newState: string;
+	hasMoreChanges: boolean;
+	created: string[];
+	updated: string[];
+	destroyed: string[];
+}

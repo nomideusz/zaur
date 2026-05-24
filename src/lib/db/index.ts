@@ -15,8 +15,10 @@ export {
 export {
 	countPendingOutbox,
 	enqueueOutbox,
+	listOutboxItems,
 	listPendingOutbox,
 	removeOutboxItem,
+	retryOutboxItem,
 	updateOutboxStatus,
 	type OutboxEnqueueInput
 } from './outbox';
@@ -27,4 +29,20 @@ export {
 	removeCachedMessage
 } from './recent-threads';
 export { getAllSyncStates, getSyncState, setSyncState } from './sync-state';
-export type { DraftDoc, OutboxDoc, OutboxStatus, RecentThreadDoc, SyncStateDoc, SyncStateType } from './types';
+export { cacheThread, getCachedThread } from './thread-cache';
+export {
+	cacheAttachmentBlob,
+	getCachedAttachmentBlob,
+	isAttachmentCached,
+	MAX_BLOB_BYTES
+} from './attachment-blobs';
+export type {
+	DraftDoc,
+	OutboxDoc,
+	OutboxStatus,
+	RecentThreadDoc,
+	SyncStateDoc,
+	SyncStateType,
+	ThreadCacheDoc,
+	AttachmentBlobDoc
+} from './types';

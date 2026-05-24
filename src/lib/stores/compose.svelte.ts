@@ -1,6 +1,8 @@
 import { browser } from '$app/environment';
 import type { JMAPClient } from '$lib/jmap/client';
 import { parseAddressList } from '$lib/utils/addresses';
+import { isOfflineError } from '$lib/utils/network';
+import { outbox } from '$lib/stores/outbox.svelte';
 import type { MessageDetail } from '$lib/types/mail';
 
 export type ComposeMode = 'new' | 'reply' | 'reply-all' | 'forward';
@@ -219,6 +221,29 @@ class ComposeStore {
 			this.reset();
 			return true;
 		} catch (error) {
+			if (browser && isOfflineError(error)) {
+				const { getAccountId, enqueueOutbox } = await import('$lib/db');
+				const accountId = getAccountId();
+				if (accountId) {
+					await enqueueOutbox(accountId, {
+						to: this.to,
+						cc: this.cc,
+						bcc: this.bcc,
+						subject: this.subject.trim(),
+						body: this.body,
+						fromEmail,
+						fromName: fromName?.trim() || undefined
+					});
+					void import('$lib/sync/outbox-processor').then(({ outboxProcessor }) =>
+						outboxProcessor.processQueue()
+					);
+					void outbox.refresh();
+					this.reset();
+					this.error = 'Queued — will send when back online';
+					return true;
+				}
+			}
+
 			this.error = error instanceof Error ? error.message : 'Failed to send message';
 			return false;
 		} finally {

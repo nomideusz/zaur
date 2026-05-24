@@ -7,6 +7,7 @@ import { pushListener } from '$lib/jmap/push-listener';
 import { mail } from '$lib/stores/mail.svelte';
 import { compose } from '$lib/stores/compose.svelte';
 import { search } from '$lib/stores/search.svelte';
+import { outbox } from '$lib/stores/outbox.svelte';
 
 interface SessionResponse {
 	authenticated: boolean;
@@ -71,6 +72,7 @@ class AuthStore {
 			this.username = payload.username;
 			this.displayName = payload.displayName;
 			this.isAuthenticated = true;
+			this.startBackgroundSync(client, payload.username, payload.displayName);
 
 			await goto('/mail/inbox');
 		} catch (error) {
@@ -103,6 +105,7 @@ class AuthStore {
 			this.username = payload.username;
 			this.displayName = payload.displayName ?? payload.username;
 			this.isAuthenticated = true;
+			this.startBackgroundSync(client, payload.username, payload.displayName ?? payload.username);
 		} catch {
 			// Session cookie invalid or server unreachable
 		}
@@ -110,6 +113,7 @@ class AuthStore {
 
 	async logout() {
 		pushListener.stop();
+		this.stopBackgroundSync();
 		await this.closeOfflineLayer();
 		this.client?.disconnect();
 		this.client = null;
@@ -122,6 +126,7 @@ class AuthStore {
 		mail.reset();
 		compose.reset();
 		search.reset();
+		outbox.reset();
 
 		try {
 			await fetch('/api/auth/logout', { method: 'POST' });
@@ -136,6 +141,7 @@ class AuthStore {
 	handleUnauthorized() {
 		if (!this.isAuthenticated) return;
 		pushListener.stop();
+		this.stopBackgroundSync();
 		void this.closeOfflineLayer();
 		this.client?.disconnect();
 		this.client = null;
@@ -146,6 +152,7 @@ class AuthStore {
 		mail.reset();
 		compose.reset();
 		search.reset();
+		outbox.reset();
 		goto('/login');
 	}
 
@@ -156,6 +163,25 @@ class AuthStore {
 		const accountId = client.getAccountId();
 		await initMailDatabase(accountId);
 		await migrateLegacyComposeDraft(accountId);
+
+		const { syncEngine } = await import('$lib/sync/engine');
+		await syncEngine.bootstrap(client);
+	}
+
+	private startBackgroundSync(client: JMAPClient, fromEmail: string, fromName?: string) {
+		if (!browser) return;
+		outbox.start();
+		void import('$lib/sync/outbox-processor').then(({ outboxProcessor }) => {
+			outboxProcessor.start(client, fromEmail, fromName);
+		});
+	}
+
+	private stopBackgroundSync() {
+		if (!browser) return;
+		outbox.stop();
+		void import('$lib/sync/outbox-processor').then(({ outboxProcessor }) => {
+			outboxProcessor.stop();
+		});
 	}
 
 	private async closeOfflineLayer() {

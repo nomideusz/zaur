@@ -59,3 +59,23 @@ export interface SyncStateDoc {
 	state: string;
 	updatedAt: number;
 }
+
+export interface ThreadCacheDoc {
+	id: string;
+	accountId: string;
+	threadId: string;
+	mailboxRouteId: string;
+	messagesJson: string;
+	cachedAt: number;
+}
+
+export interface AttachmentBlobDoc {
+	id: string;
+	accountId: string;
+	blobId: string;
+	name: string;
+	type: string;
+	size: number;
+	dataBase64: string;
+	cachedAt: number;
+}

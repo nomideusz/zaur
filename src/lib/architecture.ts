@@ -36,14 +36,16 @@ export const componentTree = {
 	},
 	ui: ['Button', 'IconButton', 'Badge', 'Avatar'],
 	jmap: {
-		client: ['JmapClient.connect', 'getMailboxes', 'getIdentities'],
+		client: ['JmapClient.connect', 'getMailboxes', 'getIdentities', 'Email/changes', 'Mailbox/changes'],
 		proxy: ['POST /api/jmap', 'GET /api/jmap/session', 'httpOnly session cookie'],
 		pushListener: ['EventSource via /api/jmap/events', 'polling fallback'],
-		planned: ['SyncEngine']
+		syncEngine: ['incremental Email/Mailbox sync', 'syncState in RxDB']
 	},
 	db: {
-		rxdb: ['drafts', 'outbox', 'recentThreads', 'syncState'],
-		storage: 'Dexie/IndexedDB per JMAP account',
-		planned: ['SyncEngine replication', 'offline send queue processor']
+		rxdb: ['drafts', 'outbox', 'recentThreads', 'syncState', 'threadCache', 'attachmentBlobs'],
+		storage: 'Dexie/IndexedDB per JMAP account'
+	},
+	sync: {
+		outboxProcessor: ['offline send queue', 'retry on reconnect']
 	}
 } as const;

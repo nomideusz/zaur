@@ -3,8 +3,10 @@
 	import { PenSquare } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import GlobalSearch from './GlobalSearch.svelte';
+	import OutboxMenu from './OutboxMenu.svelte';
 	import ToolSwitcher from './ToolSwitcher.svelte';
 	import UserMenu from './UserMenu.svelte';
+	import { outbox } from '$lib/stores/outbox.svelte';
 </script>
 
 <header
@@ -19,7 +21,8 @@
 		<GlobalSearch />
 	</div>
 
-	{#if $page.url.pathname.startsWith('/mail')}
+	{#if $page.url.pathname.startsWith('/mail') && outbox.pendingCount > 0}
+		<OutboxMenu />
 		<Button href="/mail/compose" class="hidden sm:inline-flex">
 			<PenSquare class="size-4" aria-hidden="true" />
 			New

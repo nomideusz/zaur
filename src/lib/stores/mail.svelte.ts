@@ -1,7 +1,7 @@
 import type { JMAPClient } from '$lib/jmap/client';
 import { browser } from '$app/environment';
 import { mapEmailDetail, mapEmailPreview } from '$lib/jmap/map';
-import type { JMAPMailbox } from '$lib/jmap/types';
+import type { JMAPEmail, JMAPMailbox } from '$lib/jmap/types';
 import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
 
 const PAGE_SIZE = 50;
@@ -165,6 +165,7 @@ class MailStore {
 		this.selectedLoading = true;
 		this.selectedError = null;
 		this.selectedThreadId = threadId;
+		const accountId = client.getAccountId();
 
 		try {
 			const emails = await client.getThreadEmails(threadId);
@@ -176,10 +177,31 @@ class MailStore {
 
 			this.selectedThread = emails.map((email) => mapEmailDetail(email, routeMailboxId));
 
+			if (browser) {
+				const { cacheThread } = await import('$lib/db');
+				await cacheThread(accountId, routeMailboxId, threadId, this.selectedThread);
+
+				const attachments = this.selectedThread.flatMap((message) => message.attachments);
+				if (attachments.length) {
+					void import('$lib/attachments/download').then(({ prefetchAttachments }) =>
+						prefetchAttachments(attachments)
+					);
+				}
+			}
+
 			for (const message of this.selectedThread.filter((m) => m.unread)) {
 				await this.markAsRead(client, message, true);
 			}
 		} catch (error) {
+			if (browser) {
+				const { getCachedThread } = await import('$lib/db');
+				const cached = await getCachedThread(accountId, threadId);
+				if (cached?.length) {
+					this.selectedThread = cached;
+					this.selectedError = 'Offline — showing cached conversation';
+					return;
+				}
+			}
 			this.selectedThread = [];
 			this.selectedError = error instanceof Error ? error.message : 'Failed to load message';
 		} finally {
@@ -255,23 +277,81 @@ class MailStore {
 	}
 
 	async handlePushChange(client: JMAPClient, accountChanges: { Email?: string; Mailbox?: string }) {
-		if (accountChanges.Mailbox) {
-			await this.loadMailboxes(client);
+		const { syncEngine } = await import('$lib/sync/engine');
+		await syncEngine.handlePushChange(client, accountChanges);
+	}
+
+	async applyEmailSync(client: JMAPClient, emails: JMAPEmail[], destroyed: string[]) {
+		const routeId = this.currentMailboxRouteId;
+		if (!routeId) return;
+
+		const mailbox = this.mailboxByRouteId(routeId);
+		if (!mailbox?.jmapId) return;
+
+		const accountId = client.getAccountId();
+		const mailboxJmapId = mailbox.jmapId;
+		let next = [...this.messages];
+
+		for (const id of destroyed) {
+			next = next.filter((m) => m.id !== id);
+			this.removeFromSelectedThread(id);
 		}
 
-		if (accountChanges.Email && this.currentMailboxRouteId) {
-			const routeId = this.currentMailboxRouteId;
-			const threadId = this.selectedThreadId;
-			await this.refreshMessages(client, routeId);
+		for (const email of emails) {
+			const inMailbox = !!email.mailboxIds?.[mailboxJmapId];
+			const preview = mapEmailPreview(email, routeId);
+			const existingIdx = next.findIndex((m) => m.id === email.id);
 
-			if (threadId) {
+			if (inMailbox) {
+				if (existingIdx >= 0) next[existingIdx] = preview;
+				else next.push(preview);
+			} else if (existingIdx >= 0) {
+				next = next.filter((m) => m.id !== email.id);
+			}
+
+			this.patchSelectedFromEmail(email, routeId);
+		}
+
+		next.sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
+		this.messages = next;
+		this.messagesFromCache = false;
+
+		if (browser) {
+			const { cacheMessagePreviews } = await import('$lib/db');
+			const previews = emails
+				.filter((email) => email.mailboxIds?.[mailboxJmapId])
+				.map((email) => mapEmailPreview(email, routeId));
+			if (previews.length) {
+				await cacheMessagePreviews(accountId, routeId, previews);
+			}
+		}
+
+		const threadId = this.selectedThreadId;
+		if (threadId) {
+			const affectsThread =
+				emails.some((email) => email.threadId === threadId) ||
+				destroyed.some((id) => this.selectedThread.some((m) => m.id === id));
+
+			if (affectsThread) {
 				try {
-					const emails = await client.getThreadEmails(threadId);
-					this.selectedThread = emails.map((email) => mapEmailDetail(email, routeId));
+					const threadEmails = await client.getThreadEmails(threadId);
+					this.setSelectedThread(threadEmails, routeId);
 				} catch {
 					// Background refresh — ignore transient errors
 				}
 			}
+		}
+	}
+
+	setSelectedThread(emails: JMAPEmail[], routeMailboxId: string) {
+		this.selectedThread = emails.map((email) => mapEmailDetail(email, routeMailboxId));
+
+		if (browser && this.selectedThreadId && this.selectedThread.length) {
+			void import('$lib/db').then(({ getAccountId, cacheThread }) => {
+				const accountId = getAccountId();
+				if (!accountId || !this.selectedThreadId) return;
+				return cacheThread(accountId, routeMailboxId, this.selectedThreadId, this.selectedThread);
+			});
 		}
 	}
 
@@ -305,6 +385,20 @@ class MailStore {
 	private patchThreadMessage(id: string, patch: Partial<MessageDetail>) {
 		if (!this.selectedThread.some((m) => m.id === id)) return;
 		this.selectedThread = this.selectedThread.map((m) => (m.id === id ? { ...m, ...patch } : m));
+	}
+
+	private patchSelectedFromEmail(email: JMAPEmail, routeMailboxId: string) {
+		if (!this.selectedThread.some((m) => m.id === email.id)) return;
+		const detail = mapEmailDetail(email, routeMailboxId);
+		this.selectedThread = this.selectedThread.map((m) => (m.id === email.id ? detail : m));
+	}
+
+	private removeFromSelectedThread(id: string) {
+		if (!this.selectedThread.some((m) => m.id === id)) return;
+		this.selectedThread = this.selectedThread.filter((m) => m.id !== id);
+		if (!this.selectedThread.length) {
+			this.selectedThreadId = null;
+		}
 	}
 
 	private patchMessage(id: string, patch: Partial<MessagePreview>) {
