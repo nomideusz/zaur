@@ -74,4 +74,6 @@
 	</aside>
 
 	<div class="min-w-0 flex-1">{@render children()}</div>
+
+	<p class="text-center text-xs text-fg-subtle md:text-left">Settings are saved locally in this browser.</p>
 </div>

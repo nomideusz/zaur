@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { LoaderCircle, Users } from 'lucide-svelte';
 	import { page } from '$app/stores';
+	import Button from '$lib/components/ui/Button.svelte';
 	import MailboxTreeItem from './MailboxTreeItem.svelte';
+	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { buildMailboxTree } from '$lib/utils/mailbox-tree';
 	import { cn } from '$lib/utils/cn';
@@ -25,7 +27,18 @@
 				Loading folders…
 			</div>
 		{:else if mail.mailboxesError}
-			<p class="px-3 py-4 text-sm text-danger">{mail.mailboxesError}</p>
+			<div class="flex flex-col items-center gap-2 px-3 py-4 text-center">
+				<p class="text-sm text-danger">{mail.mailboxesError}</p>
+				{#if auth.client}
+					<Button
+						variant="ghost"
+						class="text-sm"
+						onclick={() => void mail.loadMailboxes(auth.client!)}
+					>
+						Try again
+					</Button>
+				{/if}
+			</div>
 		{:else}
 			<ul class="space-y-0.5">
 				{#each tree as node (node.id)}

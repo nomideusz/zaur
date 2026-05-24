@@ -1,4 +1,5 @@
 import { mail } from '$lib/stores/mail.svelte';
+import { settings } from '$lib/stores/settings.svelte';
 
 const UNREAD_PREFIX = /^\(\d+\)\s*/;
 
@@ -13,6 +14,7 @@ export function stripUnreadPrefix(title: string): string {
 
 export function withUnreadPrefix(title: string, unread: number): string {
 	const base = stripUnreadPrefix(title);
+	if (!settings.showUnreadInTitle) return base;
 	return unread > 0 ? `(${unread}) ${base}` : base;
 }
 

@@ -10,6 +10,7 @@ const STORAGE = {
 	showListPreview: 'zaur:show-list-preview',
 	readerTextSize: 'zaur:reader-text-size',
 	markAsReadOnOpen: 'zaur:mark-read-on-open',
+	showUnreadInTitle: 'zaur:show-unread-in-title',
 	notifyOnNewMail: 'zaur:notify-new-mail',
 	displayName: (email: string) => `zaur:display-name:${email}`,
 	signature: (email: string) => `zaur:signature:${email}`
@@ -55,6 +56,11 @@ function readMarkAsReadOnOpen(): boolean {
 	return localStorage.getItem(STORAGE.markAsReadOnOpen) !== 'false';
 }
 
+function readShowUnreadInTitle(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showUnreadInTitle) !== 'false';
+}
+
 function readNotifyOnNewMail(): boolean {
 	if (!browser) return true;
 	return localStorage.getItem(STORAGE.notifyOnNewMail) !== 'false';
@@ -76,6 +82,7 @@ class SettingsStore {
 	showListPreview = $state(readShowListPreview());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	markAsReadOnOpen = $state(readMarkAsReadOnOpen());
+	showUnreadInTitle = $state(readShowUnreadInTitle());
 	notifyOnNewMail = $state(readNotifyOnNewMail());
 	displayName = $state('');
 	signature = $state('');
@@ -88,6 +95,7 @@ class SettingsStore {
 		this.showListPreview = readShowListPreview();
 		this.readerTextSize = readReaderTextSize();
 		this.markAsReadOnOpen = readMarkAsReadOnOpen();
+		this.showUnreadInTitle = readShowUnreadInTitle();
 		this.notifyOnNewMail = readNotifyOnNewMail();
 		this.applyListLayout();
 		this.applyReaderTextSize(this.readerTextSize);
@@ -148,6 +156,18 @@ class SettingsStore {
 		this.markAsReadOnOpen = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.markAsReadOnOpen, String(value));
+		}
+	}
+
+	setShowUnreadInTitle(value: boolean) {
+		this.showUnreadInTitle = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showUnreadInTitle, String(value));
+		}
+		if (browser) {
+			void import('$lib/utils/document-title').then(({ applyUnreadPrefixToDocument }) =>
+				applyUnreadPrefixToDocument()
+			);
 		}
 	}
 

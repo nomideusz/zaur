@@ -52,6 +52,7 @@
 	const moveTargets = $derived(
 		mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
 	);
+	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
 	const allowExternal = $derived(!settings.blockExternalContent || showImagesOnce);
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>
@@ -136,6 +137,12 @@
 	function deleteMessage() {
 		moreOpen = false;
 		if (!latest) return;
+		if (currentMailbox?.role === 'trash') {
+			const count = 1;
+			if (!confirm(`Permanently delete ${count === 1 ? 'this message' : `${count} messages`}? This cannot be undone.`)) {
+				return;
+			}
+		}
 		void withClient((client) => mail.deleteMessage(client, latest, mailboxRouteId));
 	}
 
@@ -258,7 +265,7 @@
 							{onMoved}
 						/>
 					{/if}
-					<IconButton label="Delete" onclick={deleteMessage}>
+					<IconButton label={deleteLabel} onclick={deleteMessage}>
 						<Trash2 class="size-4" />
 					</IconButton>
 				</div>
@@ -306,7 +313,7 @@
 								onclick={deleteMessage}
 							>
 								<Trash2 class="size-4 shrink-0" aria-hidden="true" />
-								Delete
+								{deleteLabel}
 							</button>
 						</div>
 					{/if}

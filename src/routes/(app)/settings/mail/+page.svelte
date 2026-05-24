@@ -21,6 +21,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Show unread count in tab title"
+			description="Prefix the browser tab with the number of unread Inbox messages"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showUnreadInTitle}
+				onchange={(e) => settings.setShowUnreadInTitle(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Mark as read when opened"
 			description="Automatically mark conversations read when you open them"
 		>
@@ -33,25 +45,18 @@
 		</SettingsRow>
 	</SettingsGroup>
 
-	{#snippet footer()}
-		<h3 class="text-sm font-medium text-fg">Keyboard shortcuts</h3>
-		<dl class="mt-3 space-y-2 text-sm">
-			<div class="flex justify-between gap-4">
-				<dt class="text-fg-muted">Compose</dt>
-				<dd class="font-mono text-xs text-fg">c</dd>
-			</div>
-			<div class="flex justify-between gap-4">
-				<dt class="text-fg-muted">Search</dt>
-				<dd class="font-mono text-xs text-fg">/</dd>
-			</div>
-			<div class="flex justify-between gap-4">
-				<dt class="text-fg-muted">Send message</dt>
-				<dd class="font-mono text-xs text-fg">Ctrl+Enter</dd>
-			</div>
-			<div class="flex justify-between gap-4">
-				<dt class="text-fg-muted">Close compose</dt>
-				<dd class="font-mono text-xs text-fg">Esc</dd>
-			</div>
-		</dl>
-	{/snippet}
+	<SettingsGroup title="Keyboard shortcuts">
+		<SettingsRow title="Compose" description="Start a new message from the mail view">
+			<span class="font-mono text-xs text-fg">c</span>
+		</SettingsRow>
+		<SettingsRow title="Search" description="Focus the search field from anywhere in mail">
+			<span class="font-mono text-xs text-fg">/</span>
+		</SettingsRow>
+		<SettingsRow title="Send message" description="While writing in compose or quick reply">
+			<span class="font-mono text-xs text-fg">Ctrl+Enter</span>
+		</SettingsRow>
+		<SettingsRow title="Close compose" description="Dismiss the compose panel">
+			<span class="font-mono text-xs text-fg">Esc</span>
+		</SettingsRow>
+	</SettingsGroup>
 </SettingsPanel>

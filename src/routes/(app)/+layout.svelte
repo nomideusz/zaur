@@ -5,6 +5,7 @@
 	import { pushListener } from '$lib/jmap/push-listener';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
 
 	let { children } = $props();
@@ -19,6 +20,7 @@
 	$effect(() => {
 		if (!auth.isAuthenticated) return;
 		mail.mailboxes;
+		settings.showUnreadInTitle;
 		applyUnreadPrefixToDocument();
 	});
 
