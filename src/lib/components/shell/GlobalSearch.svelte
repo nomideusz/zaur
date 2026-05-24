@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { Search, User } from 'lucide-svelte';
+	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -8,6 +9,7 @@
 
 	let input = $state('');
 	let open = $state(false);
+	let searchInput = $state<HTMLInputElement | null>(null);
 
 	$effect(() => {
 		if ($page.url.pathname === '/mail/search') {
@@ -35,6 +37,30 @@
 		input = '';
 		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
 	}
+
+	function isTypingTarget(target: EventTarget | null) {
+		return (
+			target instanceof HTMLInputElement ||
+			target instanceof HTMLTextAreaElement ||
+			target instanceof HTMLSelectElement ||
+			(target instanceof HTMLElement && target.isContentEditable)
+		);
+	}
+
+	onMount(() => {
+		function onKeydown(event: KeyboardEvent) {
+			if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
+			if (isTypingTarget(event.target)) return;
+			if (!searchInput) return;
+
+			event.preventDefault();
+			searchInput.focus();
+			open = true;
+		}
+
+		window.addEventListener('keydown', onKeydown);
+		return () => window.removeEventListener('keydown', onKeydown);
+	});
 </script>
 
 <IconButton label="Search mail" class="md:hidden" onclick={() => goto('/mail/search')}>
@@ -52,9 +78,10 @@
 	<label class="sr-only" for="global-search">Search mail</label>
 	<Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
 	<input
+		bind:this={searchInput}
 		id="global-search"
 		type="search"
-		placeholder="Search messages or contacts…"
+		placeholder="Search messages or contacts… (/ to focus)"
 		class="z-input pl-9"
 		autocomplete="off"
 		bind:value={input}

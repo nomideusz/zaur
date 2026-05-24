@@ -3,6 +3,7 @@
 	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
 	import MessageReader from '$lib/components/mail/MessageReader.svelte';
+	import MessageReaderSkeleton from '$lib/components/mail/MessageReaderSkeleton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 
@@ -49,8 +50,8 @@
 />
 
 {#if mail.selectedLoading}
-	<div class="hidden min-w-0 flex-1 items-center justify-center md:flex">
-		<p class="text-sm text-fg-muted">Loading message…</p>
+	<div class="hidden min-w-0 flex-1 md:flex">
+		<MessageReaderSkeleton />
 	</div>
 {:else if thread.length}
 	<div class="hidden min-w-0 flex-1 md:flex">

@@ -44,6 +44,7 @@
 	hasMore={search.hasMore}
 	error={search.error}
 	total={search.total}
+	emptyMessage={query ? `No messages match “${query}”.` : 'Enter a search term to find messages.'}
 	onLoadMore={() => {
 		if (auth.client) void search.loadMore(auth.client, mail.mailboxes);
 	}}

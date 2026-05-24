@@ -16,6 +16,9 @@
 		hasMore?: boolean;
 		error?: string | null;
 		total?: number;
+		emptyMessage?: string;
+		emptyActionHref?: string;
+		emptyActionLabel?: string;
 		onLoadMore?: () => void;
 		onBulkAction?: () => void;
 	}
@@ -29,6 +32,9 @@
 		hasMore = false,
 		error = null,
 		total,
+		emptyMessage,
+		emptyActionHref,
+		emptyActionLabel,
 		onLoadMore,
 		onBulkAction
 	}: Props = $props();
@@ -60,7 +66,17 @@
 		{:else if error}
 			<p class="px-4 py-8 text-center text-sm text-danger">{error}</p>
 		{:else if messages.length === 0}
-			<p class="px-4 py-8 text-center text-sm text-fg-muted">No messages in this folder.</p>
+			<div class="flex flex-col items-center gap-3 px-6 py-12 text-center">
+				<p class="text-sm text-fg-muted">
+					{emptyMessage ??
+						(mailboxRouteId === 'inbox' ? 'Your inbox is empty.' : 'No messages in this folder.')}
+				</p>
+				{#if emptyActionHref && emptyActionLabel}
+					<Button href={emptyActionHref} variant="ghost" class="text-sm">{emptyActionLabel}</Button>
+				{:else if mailboxRouteId === 'inbox'}
+					<Button href="/mail/compose" variant="ghost" class="text-sm">Write a message</Button>
+				{/if}
+			</div>
 		{:else}
 			{#each messages as message (message.id)}
 				<MessageListItem

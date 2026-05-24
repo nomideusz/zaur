@@ -1,0 +1,20 @@
+<div class="flex flex-1 flex-col overflow-hidden bg-surface-raised">
+	<div class="border-b border-border px-6 py-4">
+		<div class="h-6 w-2/3 max-w-md animate-pulse rounded bg-surface-sunken"></div>
+		<div class="mt-3 h-4 w-1/3 animate-pulse rounded bg-surface-sunken"></div>
+	</div>
+	<div class="space-y-4 px-6 py-5">
+		<div class="flex gap-3">
+			<div class="size-9 shrink-0 animate-pulse rounded-full bg-surface-sunken"></div>
+			<div class="flex-1 space-y-2">
+				<div class="h-4 w-40 animate-pulse rounded bg-surface-sunken"></div>
+				<div class="h-3 w-56 animate-pulse rounded bg-surface-sunken"></div>
+			</div>
+		</div>
+		<div class="space-y-2">
+			<div class="h-3 w-full animate-pulse rounded bg-surface-sunken"></div>
+			<div class="h-3 w-full animate-pulse rounded bg-surface-sunken"></div>
+			<div class="h-3 w-4/5 animate-pulse rounded bg-surface-sunken"></div>
+		</div>
+	</div>
+</div>

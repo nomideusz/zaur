@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Mail, Search, UserPlus } from 'lucide-svelte';
+	import { Mail, Search, UserPlus, Copy } from 'lucide-svelte';
+	import { toast } from '$lib/stores/toast.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -52,6 +53,15 @@
 		if (!accountId || !confirm(`Remove ${email} from contacts?`)) return;
 		removeContact(accountId, email);
 		refresh++;
+	}
+
+	async function copyEmail(email: string) {
+		try {
+			await navigator.clipboard.writeText(email);
+			toast.show('Email copied', 'success');
+		} catch {
+			toast.show('Could not copy email', 'error');
+		}
 	}
 </script>
 
@@ -134,16 +144,32 @@
 									</div>
 									<Mail class="size-4 shrink-0 text-fg-subtle group-hover:hidden" aria-hidden="true" />
 								</button>
-								<button
-									type="button"
-									class="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded px-2 py-1 text-xs text-danger hover:bg-danger/10 group-hover:block"
-									onclick={(e) => {
-										e.stopPropagation();
-										deleteContact(contact.email);
-									}}
+								<div
+									class="absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 group-hover:flex"
 								>
-									Remove
-								</button>
+									<button
+										type="button"
+										class="rounded p-1 text-fg-subtle hover:bg-surface-sunken hover:text-fg"
+										title="Copy email"
+										aria-label="Copy {contact.email}"
+										onclick={(e) => {
+											e.stopPropagation();
+											void copyEmail(contact.email);
+										}}
+									>
+										<Copy class="size-3.5" aria-hidden="true" />
+									</button>
+									<button
+										type="button"
+										class="rounded px-2 py-1 text-xs text-danger hover:bg-danger/10"
+										onclick={(e) => {
+											e.stopPropagation();
+											deleteContact(contact.email);
+										}}
+									>
+										Remove
+									</button>
+								</div>
 							</li>
 						{/each}
 					</ul>

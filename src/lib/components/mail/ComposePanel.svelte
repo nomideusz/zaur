@@ -195,12 +195,11 @@
 					</div>
 					<label class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
 						<span class="w-14 shrink-0 text-fg-subtle">Bcc</span>
-						<input
-							type="text"
-							class="flex-1 bg-transparent outline-none placeholder:text-fg-subtle"
+						<ComposeRecipientInput
+							value={compose.bcc}
 							placeholder="bcc@example.com"
-							bind:value={compose.bcc}
 							autocomplete="email"
+							oninput={(value) => (compose.bcc = value)}
 						/>
 					</label>
 				{/if}

@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { onMount } from 'svelte';
 	import { PenSquare } from 'lucide-svelte';
 
 	let { children } = $props();
@@ -7,9 +9,32 @@
 	const showComposeFab = $derived.by(() => {
 		const path = $page.url.pathname;
 		if (!path.startsWith('/mail') || path.startsWith('/mail/compose')) return false;
-		// Hide on thread view — quick reply bar lives at the bottom on mobile
 		if (/^\/mail\/[^/]+\/[^/]+\/?$/.test(path)) return false;
 		return true;
+	});
+
+	onMount(() => {
+		function onKeydown(event: KeyboardEvent) {
+			if (event.key !== 'c' || event.metaKey || event.ctrlKey || event.altKey) return;
+
+			const target = event.target;
+			if (
+				target instanceof HTMLInputElement ||
+				target instanceof HTMLTextAreaElement ||
+				target instanceof HTMLSelectElement ||
+				(target instanceof HTMLElement && target.isContentEditable)
+			) {
+				return;
+			}
+
+			if (!$page.url.pathname.startsWith('/mail/compose')) {
+				event.preventDefault();
+				goto('/mail/compose');
+			}
+		}
+
+		window.addEventListener('keydown', onKeydown);
+		return () => window.removeEventListener('keydown', onKeydown);
 	});
 </script>
 
