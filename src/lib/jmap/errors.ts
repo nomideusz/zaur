@@ -23,7 +23,7 @@ export function loginErrorMessage(code: LoginErrorCode): string {
 		case 'invalid_credentials':
 			return 'Invalid email or password. If 2FA is enabled, append your code as password$123456.';
 		case 'cors_blocked':
-			return 'Cannot reach the mail server from the browser (CORS). Enable permissive CORS on Stalwart or use a proxy.';
+			return 'Cannot reach the mail server. Check server connectivity and configuration.';
 		case 'connection_failed':
 			return 'Could not connect to the mail server. Check the URL and your network.';
 		default:

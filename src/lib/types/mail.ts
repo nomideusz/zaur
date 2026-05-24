@@ -27,4 +27,12 @@ export interface MessageDetail extends MessagePreview {
 	to: { name: string; email: string }[];
 	bodyHtml?: string;
 	bodyText: string;
+	attachments: MessageAttachment[];
+}
+
+export interface MessageAttachment {
+	blobId: string;
+	name: string;
+	type: string;
+	size: number;
 }

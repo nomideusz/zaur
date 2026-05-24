@@ -41,6 +41,17 @@ export interface JMAPEmail {
 	htmlBody?: JMAPEmailBodyPart[];
 	bodyValues?: Record<string, { value: string; isEncodingProblem?: boolean; isTruncated?: boolean }>;
 	hasAttachment?: boolean;
+	bodyStructure?: JMAPBodyPart;
+}
+
+export interface JMAPBodyPart {
+	partId?: string;
+	blobId?: string;
+	name?: string;
+	type?: string;
+	size?: number;
+	disposition?: string;
+	subParts?: JMAPBodyPart[];
 }
 
 export interface JMAPSession {

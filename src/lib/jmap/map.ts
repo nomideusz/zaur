@@ -1,5 +1,5 @@
-import type { JMAPEmail } from '$lib/jmap/types';
-import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
+import type { JMAPEmail, JMAPBodyPart } from '$lib/jmap/types';
+import type { Mailbox, MessageAttachment, MessageDetail, MessagePreview } from '$lib/types/mail';
 
 const ROLE_PRIORITY: Mailbox['role'][] = ['inbox', 'sent', 'archive', 'drafts', 'junk', 'trash'];
 
@@ -47,6 +47,38 @@ function stripHtml(html: string): string {
 		.trim();
 }
 
+export function extractAttachments(bodyStructure?: JMAPBodyPart): MessageAttachment[] {
+	if (!bodyStructure) return [];
+
+	const attachments: MessageAttachment[] = [];
+
+	function walk(part: JMAPBodyPart) {
+		if (part.subParts?.length) {
+			for (const sub of part.subParts) walk(sub);
+			return;
+		}
+
+		const isAttachment =
+			part.disposition === 'attachment' ||
+			(!!part.name &&
+				!!part.blobId &&
+				part.type !== 'text/plain' &&
+				part.type !== 'text/html');
+
+		if (isAttachment && part.blobId && part.name) {
+			attachments.push({
+				blobId: part.blobId,
+				name: part.name,
+				type: part.type ?? 'application/octet-stream',
+				size: part.size ?? 0
+			});
+		}
+	}
+
+	walk(bodyStructure);
+	return attachments;
+}
+
 export function resolveRouteMailboxId(email: JMAPEmail, mailboxes: Mailbox[]): string {
 	const jmapIds = Object.keys(email.mailboxIds ?? {});
 
@@ -82,6 +114,7 @@ export function mapEmailDetail(email: JMAPEmail, routeMailboxId: string): Messag
 		...mapEmailPreview(email, routeMailboxId),
 		to: mapAddresses(email.to),
 		bodyHtml: extractBodyHtml(email),
-		bodyText: extractBodyText(email)
+		bodyText: extractBodyText(email),
+		attachments: extractAttachments(email.bodyStructure)
 	};
 }

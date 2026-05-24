@@ -10,7 +10,8 @@
 
 	const mailbox = $derived(mail.mailboxByRouteId(data.mailboxId));
 	const mailboxName = $derived(mailbox?.name ?? 'Inbox');
-	const message = $derived(mail.selectedMessage);
+	const thread = $derived(mail.selectedThread);
+	const latest = $derived(thread.at(-1));
 
 	function backToList() {
 		goto(`/mail/${data.mailboxId}`);
@@ -28,7 +29,7 @@
 </script>
 
 <svelte:head>
-	<title>{message?.subject ?? mailboxName} · ZAUR Webmail</title>
+	<title>{latest?.subject ?? mailboxName} · ZAUR Webmail</title>
 </svelte:head>
 
 <MailboxSidebar />
@@ -49,14 +50,14 @@
 	<div class="hidden min-w-0 flex-1 items-center justify-center md:flex">
 		<p class="text-sm text-fg-muted">Loading message…</p>
 	</div>
-{:else if message}
+{:else if thread.length}
 	<div class="hidden min-w-0 flex-1 md:flex">
-		<MessageReader {message} mailboxRouteId={data.mailboxId} onMoved={afterMove} />
+		<MessageReader {thread} mailboxRouteId={data.mailboxId} onMoved={afterMove} />
 	</div>
 
 	<div class="fixed inset-0 z-30 flex bg-surface md:hidden">
 		<MessageReader
-			{message}
+			{thread}
 			mailboxRouteId={data.mailboxId}
 			onBack={backToList}
 			onMoved={afterMove}

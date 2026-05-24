@@ -12,6 +12,10 @@
 		theme.init();
 		settings.init();
 		void auth.init();
+
+		const onUnauthorized = () => auth.handleUnauthorized();
+		window.addEventListener('zaur:unauthorized', onUnauthorized);
+		return () => window.removeEventListener('zaur:unauthorized', onUnauthorized);
 	});
 </script>
 

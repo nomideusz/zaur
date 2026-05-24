@@ -50,7 +50,8 @@ class MailStore {
 	messagesHasMore = $state(false);
 	currentMailboxRouteId = $state<string | null>(null);
 
-	selectedMessage = $state<MessageDetail | null>(null);
+	selectedThread = $state<MessageDetail[]>([]);
+	selectedThreadId = $state<string | null>(null);
 	selectedLoading = $state(false);
 	selectedError = $state<string | null>(null);
 
@@ -80,7 +81,8 @@ class MailStore {
 		this.currentMailboxRouteId = routeMailboxId;
 		this.messagesLoading = true;
 		this.messagesError = null;
-		this.selectedMessage = null;
+		this.selectedThread = [];
+		this.selectedThreadId = null;
 		this.selectedError = null;
 
 		try {
@@ -124,30 +126,30 @@ class MailStore {
 			await this.loadMessages(client, routeMailboxId);
 		}
 
-		const match = this.messages.find((m) => m.threadId === threadId);
-		if (!match) {
-			this.selectedMessage = null;
-			this.selectedError = 'Message not found';
-			return;
+		const listMatch = this.messages.find((m) => m.threadId === threadId);
+		if (!listMatch && !this.messages.some((m) => m.threadId === threadId)) {
+			// Thread may not be in current page — still try to load it
 		}
 
 		this.selectedLoading = true;
 		this.selectedError = null;
+		this.selectedThreadId = threadId;
 
 		try {
-			const email = await client.getEmail(match.id);
-			if (!email) {
-				this.selectedMessage = null;
+			const emails = await client.getThreadEmails(threadId);
+			if (!emails.length) {
+				this.selectedThread = [];
 				this.selectedError = 'Message not found';
 				return;
 			}
-			this.selectedMessage = mapEmailDetail(email, routeMailboxId);
 
-			if (this.selectedMessage.unread) {
-				await this.markAsRead(client, this.selectedMessage, true);
+			this.selectedThread = emails.map((email) => mapEmailDetail(email, routeMailboxId));
+
+			for (const message of this.selectedThread.filter((m) => m.unread)) {
+				await this.markAsRead(client, message, true);
 			}
 		} catch (error) {
-			this.selectedMessage = null;
+			this.selectedThread = [];
 			this.selectedError = error instanceof Error ? error.message : 'Failed to load message';
 		} finally {
 			this.selectedLoading = false;
@@ -157,9 +159,7 @@ class MailStore {
 	async markAsRead(client: JMAPClient, message: MessagePreview, read: boolean) {
 		const previousUnread = message.unread;
 		this.patchMessage(message.id, { unread: !read });
-		if (this.selectedMessage?.id === message.id) {
-			this.selectedMessage = { ...this.selectedMessage, unread: !read };
-		}
+		this.patchThreadMessage(message.id, { unread: !read });
 		if (previousUnread && read) {
 			this.adjustUnreadCount(message.mailboxId, -1);
 		} else if (!previousUnread && !read) {
@@ -170,9 +170,7 @@ class MailStore {
 			await client.markAsRead(message.id, read);
 		} catch {
 			this.patchMessage(message.id, { unread: previousUnread });
-			if (this.selectedMessage?.id === message.id) {
-				this.selectedMessage = { ...this.selectedMessage, unread: previousUnread };
-			}
+			this.patchThreadMessage(message.id, { unread: previousUnread });
 			if (previousUnread && read) {
 				this.adjustUnreadCount(message.mailboxId, 1);
 			} else if (!previousUnread && !read) {
@@ -184,17 +182,13 @@ class MailStore {
 	async toggleStar(client: JMAPClient, message: MessagePreview) {
 		const next = !message.starred;
 		this.patchMessage(message.id, { starred: next });
-		if (this.selectedMessage?.id === message.id) {
-			this.selectedMessage = { ...this.selectedMessage, starred: next };
-		}
+		this.patchThreadMessage(message.id, { starred: next });
 
 		try {
 			await client.toggleStar(message.id, next);
 		} catch {
 			this.patchMessage(message.id, { starred: !next });
-			if (this.selectedMessage?.id === message.id) {
-				this.selectedMessage = { ...this.selectedMessage, starred: !next };
-			}
+			this.patchThreadMessage(message.id, { starred: !next });
 		}
 	}
 
@@ -228,13 +222,15 @@ class MailStore {
 
 		if (accountChanges.Email && this.currentMailboxRouteId) {
 			const routeId = this.currentMailboxRouteId;
-			const selectedId = this.selectedMessage?.id;
+			const threadId = this.selectedThreadId;
 			await this.refreshMessages(client, routeId);
 
-			if (selectedId) {
-				const email = await client.getEmail(selectedId);
-				if (email) {
-					this.selectedMessage = mapEmailDetail(email, routeId);
+			if (threadId) {
+				try {
+					const emails = await client.getThreadEmails(threadId);
+					this.selectedThread = emails.map((email) => mapEmailDetail(email, routeId));
+				} catch {
+					// Background refresh — ignore transient errors
 				}
 			}
 		}
@@ -261,6 +257,11 @@ class MailStore {
 		);
 	}
 
+	private patchThreadMessage(id: string, patch: Partial<MessageDetail>) {
+		if (!this.selectedThread.some((m) => m.id === id)) return;
+		this.selectedThread = this.selectedThread.map((m) => (m.id === id ? { ...m, ...patch } : m));
+	}
+
 	private patchMessage(id: string, patch: Partial<MessagePreview>) {
 		this.messages = this.messages.map((m) => (m.id === id ? { ...m, ...patch } : m));
 	}
@@ -271,8 +272,11 @@ class MailStore {
 		}
 		this.messages = this.messages.filter((m) => m.id !== message.id);
 		this.messagesTotal = Math.max(0, this.messagesTotal - 1);
-		if (this.selectedMessage?.id === message.id) {
-			this.selectedMessage = null;
+		if (this.selectedThread.some((m) => m.id === message.id)) {
+			this.selectedThread = this.selectedThread.filter((m) => m.id !== message.id);
+			if (!this.selectedThread.length) {
+				this.selectedThreadId = null;
+			}
 		}
 	}
 
@@ -293,7 +297,8 @@ class MailStore {
 		this.messagesTotal = 0;
 		this.messagesHasMore = false;
 		this.currentMailboxRouteId = null;
-		this.selectedMessage = null;
+		this.selectedThread = [];
+		this.selectedThreadId = null;
 		this.selectedLoading = false;
 		this.selectedError = null;
 	}

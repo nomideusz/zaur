@@ -11,6 +11,7 @@
 	} from 'lucide-svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
+	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -20,39 +21,43 @@
 	import type { MessageDetail } from '$lib/types/mail';
 
 	interface Props {
-		message: MessageDetail;
+		thread: MessageDetail[];
 		mailboxRouteId: string;
 		onBack?: () => void;
 		onMoved?: () => void;
 	}
 
-	let { message, mailboxRouteId, onBack, onMoved }: Props = $props();
+	let { thread, mailboxRouteId, onBack, onMoved }: Props = $props();
 
 	let showImagesOnce = $state(false);
 
+	const latest = $derived(thread.at(-1));
+	const subject = $derived(latest?.subject ?? '(no subject)');
 	const allowExternal = $derived(!settings.blockExternalContent || showImagesOnce);
-	const preview = $derived(
-		renderMessageBody({
-			bodyHtml: message.bodyHtml,
-			bodyText: message.bodyText,
-			allowExternal
-		})
-	);
-
-	const when = $derived(
-		new Intl.DateTimeFormat(undefined, {
-			dateStyle: 'medium',
-			timeStyle: 'short'
-		}).format(new Date(message.receivedAt))
+	const hasBlockedExternal = $derived(
+		thread.some((message) =>
+			renderMessageBody({
+				bodyHtml: message.bodyHtml,
+				bodyText: message.bodyText,
+				allowExternal: false
+			}).blockedExternal
+		)
 	);
 
 	$effect(() => {
-		message.id;
+		thread.map((m) => m.id).join(',');
 		showImagesOnce = false;
 	});
 
+	function formatWhen(iso: string) {
+		return new Intl.DateTimeFormat(undefined, {
+			dateStyle: 'medium',
+			timeStyle: 'short'
+		}).format(new Date(iso));
+	}
+
 	async function withClient(action: (client: NonNullable<typeof auth.client>) => Promise<void>) {
-		if (!auth.client) return;
+		if (!auth.client || !latest) return;
 		try {
 			await action(auth.client);
 			onMoved?.();
@@ -62,13 +67,14 @@
 	}
 
 	function reply() {
-		compose.startReply(message);
+		if (!latest) return;
+		compose.startReply(latest);
 		goto('/mail/compose?mode=reply');
 	}
 
 	function toggleStar() {
-		if (!auth.client) return;
-		void mail.toggleStar(auth.client, message);
+		if (!auth.client || !latest) return;
+		void mail.toggleStar(auth.client, latest);
 	}
 </script>
 
@@ -82,50 +88,43 @@
 			{/if}
 		</div>
 
-		<h1 class="text-xl font-semibold leading-snug text-fg">{message.subject}</h1>
+		<h1 class="text-xl font-semibold leading-snug text-fg">{subject}</h1>
 
-		<div class="mt-3 flex flex-wrap items-start justify-between gap-3">
-			<div class="min-w-0 text-sm">
-				<p class="font-medium text-fg">{message.from.name}</p>
-				<p class="text-fg-muted">{message.from.email}</p>
-				{#if message.to.length}
-					<p class="mt-1 text-xs text-fg-subtle">
-						To {message.to.map((addr) => addr.name || addr.email).join(', ')}
-					</p>
-				{/if}
-				<p class="mt-1 text-xs text-fg-subtle">{when}</p>
-			</div>
+		{#if thread.length > 1}
+			<p class="mt-1 text-xs text-fg-subtle">{thread.length} messages</p>
+		{/if}
 
-			<div class="flex items-center gap-1">
-				<IconButton label={message.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
-					<Star
-						class={cn('size-4', message.starred && 'fill-star text-star')}
-						aria-hidden="true"
-					/>
-				</IconButton>
-				<IconButton label="Reply" onclick={reply}>
-					<Reply class="size-4" />
-				</IconButton>
-				<IconButton
-					label="Archive"
-					onclick={() => withClient((client) => mail.moveMessage(client, message, 'archive'))}
-				>
-					<Archive class="size-4" />
-				</IconButton>
-				<IconButton
-					label="Delete"
-					onclick={() => withClient((client) => mail.deleteMessage(client, message, mailboxRouteId))}
-				>
-					<Trash2 class="size-4" />
-				</IconButton>
-				<IconButton label="More actions">
-					<MoreHorizontal class="size-4" />
-				</IconButton>
-			</div>
+		<div class="mt-3 flex flex-wrap items-center justify-end gap-1">
+			<IconButton label={latest?.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
+				<Star
+					class={cn('size-4', latest?.starred && 'fill-star text-star')}
+					aria-hidden="true"
+				/>
+			</IconButton>
+			<IconButton label="Reply" onclick={reply}>
+				<Reply class="size-4" />
+			</IconButton>
+			<IconButton
+				label="Archive"
+				onclick={() => latest && withClient((client) => mail.moveMessage(client, latest, 'archive'))}
+			>
+				<Archive class="size-4" />
+			</IconButton>
+			<IconButton
+				label="Delete"
+				onclick={() =>
+					latest &&
+					withClient((client) => mail.deleteMessage(client, latest, mailboxRouteId))}
+			>
+				<Trash2 class="size-4" />
+			</IconButton>
+			<IconButton label="More actions">
+				<MoreHorizontal class="size-4" />
+			</IconButton>
 		</div>
 	</header>
 
-	{#if preview.blockedExternal}
+	{#if hasBlockedExternal && !allowExternal}
 		<div class="flex items-center gap-2 border-b border-border bg-surface px-6 py-2 text-xs text-fg-muted">
 			<Shield class="size-3.5 shrink-0" aria-hidden="true" />
 			External images blocked ·
@@ -135,11 +134,37 @@
 		</div>
 	{/if}
 
-	<div class="flex-1 overflow-y-auto px-6 py-5">
-		<MessageBody
-			bodyHtml={message.bodyHtml}
-			bodyText={message.bodyText}
-			{allowExternal}
-		/>
+	<div class="flex-1 overflow-y-auto">
+		{#each thread as message, index (message.id)}
+			<section
+				class={cn(
+					'px-6 py-5',
+					index > 0 && 'border-t border-border'
+				)}
+			>
+				<div class="mb-4 flex flex-wrap items-start justify-between gap-3">
+					<div class="min-w-0 text-sm">
+						<p class="font-medium text-fg">{message.from.name}</p>
+						<p class="text-fg-muted">{message.from.email}</p>
+						{#if message.to.length}
+							<p class="mt-1 text-xs text-fg-subtle">
+								To {message.to.map((addr) => addr.name || addr.email).join(', ')}
+							</p>
+						{/if}
+					</div>
+					<p class="text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</p>
+				</div>
+
+				{#if message.attachments.length}
+					<MessageAttachments attachments={message.attachments} />
+				{/if}
+
+				<MessageBody
+					bodyHtml={message.bodyHtml}
+					bodyText={message.bodyText}
+					{allowExternal}
+				/>
+			</section>
+		{/each}
 	</div>
 </article>

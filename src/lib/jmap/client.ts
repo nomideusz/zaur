@@ -1,4 +1,5 @@
 import type { JMAPIdentity, JMAPMailbox, JMAPMethodCall, JMAPResponse, JMAPSession, JMAPEmail } from './types';
+import { browser } from '$app/environment';
 
 const EMAIL_LIST_PROPERTIES = [
 	'id',
@@ -15,6 +16,24 @@ const EMAIL_LIST_PROPERTIES = [
 	'hasAttachment'
 ] as const;
 
+const EMAIL_DETAIL_PROPERTIES = [
+	'id',
+	'threadId',
+	'mailboxIds',
+	'keywords',
+	'receivedAt',
+	'from',
+	'to',
+	'cc',
+	'subject',
+	'preview',
+	'textBody',
+	'htmlBody',
+	'bodyValues',
+	'hasAttachment',
+	'bodyStructure'
+] as const;
+
 export interface EmailQueryResult {
 	emails: JMAPEmail[];
 	total: number;
@@ -29,12 +48,19 @@ export class JMAPClient {
 	private apiUrl = '';
 	private accountId = '';
 	private session: JMAPSession | null = null;
+	private readonly proxyMode: boolean;
 
-	constructor(serverUrl: string, username: string, password: string) {
+	constructor(serverUrl: string, username: string, password: string, proxyMode = false) {
 		this.serverUrl = serverUrl.replace(/\/$/, '');
 		this.username = username;
 		this.password = password;
-		this.authHeader = `Basic ${btoa(`${username}:${password}`)}`;
+		this.proxyMode = proxyMode;
+		this.authHeader = proxyMode ? '' : `Basic ${btoa(`${username}:${password}`)}`;
+	}
+
+	/** Browser client that routes JMAP through the server-side proxy. */
+	static createProxy(): JMAPClient {
+		return new JMAPClient('', '', '', true);
 	}
 
 	getSession(): JMAPSession | null {
@@ -58,6 +84,33 @@ export class JMAPClient {
 	}
 
 	async connect(): Promise<void> {
+		if (this.proxyMode) {
+			const sessionResponse = await fetch('/api/jmap/session');
+
+			if (!sessionResponse.ok) {
+				if (sessionResponse.status === 401) {
+					if (browser) {
+						window.dispatchEvent(new CustomEvent('zaur:unauthorized'));
+					}
+					throw new Error('Unauthorized');
+				}
+				const payload = (await sessionResponse.json().catch(() => ({}))) as { error?: string };
+				throw new Error(payload.error ?? `Failed to get session: ${sessionResponse.status}`);
+			}
+
+			const payload = (await sessionResponse.json()) as {
+				session: JMAPSession;
+				accountId: string;
+				username: string;
+			};
+
+			this.session = payload.session;
+			this.apiUrl = '/api/jmap';
+			this.accountId = payload.accountId;
+			this.username = payload.username;
+			return;
+		}
+
 		const sessionUrl = `${this.serverUrl}/.well-known/jmap`;
 
 		try {
@@ -105,6 +158,23 @@ export class JMAPClient {
 		this.session = null;
 	}
 
+	async downloadBlob(blobId: string, name: string, type: string): Promise<Response> {
+		if (this.proxyMode) {
+			const params = new URLSearchParams({ blobId, name, type });
+			return fetch(`/api/jmap/download?${params}`);
+		}
+
+		if (!this.session) {
+			throw new Error('Not connected. Call connect() first.');
+		}
+
+		const base = this.session.downloadUrl.endsWith('/')
+			? this.session.downloadUrl
+			: `${this.session.downloadUrl}/`;
+		const url = `${base}${this.accountId}/${blobId}/${encodeURIComponent(name)}?accept=${encodeURIComponent(type)}`;
+		return this.authenticatedFetch(url);
+	}
+
 	async fetchSyncStates(): Promise<Record<string, string>> {
 		const response = await this.request([
 			['Mailbox/get', { accountId: this.accountId, ids: null, properties: ['id'] }, 'mb'],
@@ -139,22 +209,36 @@ export class JMAPClient {
 		}
 	}
 
-	private async request(methodCalls: JMAPMethodCall[], using?: string[]): Promise<JMAPResponse> {
+	async request(methodCalls: JMAPMethodCall[], using?: string[]): Promise<JMAPResponse> {
 		if (!this.apiUrl) {
 			throw new Error('Not connected. Call connect() first.');
 		}
 
-		const response = await this.authenticatedFetch(this.apiUrl, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				using: using ?? ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'],
-				methodCalls
-			})
+		const body = JSON.stringify({
+			using: using ?? ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'],
+			methodCalls
 		});
+
+		const response = this.proxyMode
+			? await fetch('/api/jmap', {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body
+				})
+			: await this.authenticatedFetch(this.apiUrl, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body
+				});
 
 		const responseText = await response.text();
 		if (!response.ok) {
+			if (response.status === 401) {
+				if (browser) {
+					window.dispatchEvent(new CustomEvent('zaur:unauthorized'));
+				}
+				throw new Error('Unauthorized');
+			}
 			throw new Error(`Request failed: ${response.status} - ${responseText.slice(0, 200)}`);
 		}
 
@@ -265,22 +349,7 @@ export class JMAPClient {
 				{
 					accountId: this.accountId,
 					ids: [emailId],
-					properties: [
-						'id',
-						'threadId',
-						'mailboxIds',
-						'keywords',
-						'receivedAt',
-						'from',
-						'to',
-						'cc',
-						'subject',
-						'preview',
-						'textBody',
-						'htmlBody',
-						'bodyValues',
-						'hasAttachment'
-					],
+					properties: [...EMAIL_DETAIL_PROPERTIES],
 					fetchTextBodyValues: true,
 					fetchHTMLBodyValues: true,
 					maxBodyValueBytes: 256000
@@ -293,6 +362,40 @@ export class JMAPClient {
 		if (first?.[0] !== 'Email/get') return null;
 		const list = (first[1].list as JMAPEmail[]) ?? [];
 		return list[0] ?? null;
+	}
+
+	async getThreadEmails(threadId: string): Promise<JMAPEmail[]> {
+		const response = await this.request([
+			[
+				'Email/query',
+				{
+					accountId: this.accountId,
+					filter: { inThread: threadId },
+					sort: [{ property: 'receivedAt', isAscending: true }],
+					limit: 100
+				},
+				'tq0'
+			],
+			[
+				'Email/get',
+				{
+					accountId: this.accountId,
+					'#ids': { resultOf: 'tq0', name: 'Email/query', path: '/ids' },
+					properties: [...EMAIL_DETAIL_PROPERTIES],
+					fetchTextBodyValues: true,
+					fetchHTMLBodyValues: true,
+					maxBodyValueBytes: 256000
+				},
+				'tg0'
+			]
+		]);
+
+		const getResult = response.methodResponses?.[1]?.[1];
+		if (response.methodResponses?.[1]?.[0] !== 'Email/get' || !getResult) {
+			return [];
+		}
+
+		return (getResult.list as JMAPEmail[]) ?? [];
 	}
 
 	async markAsRead(emailId: string, read = true): Promise<void> {
