@@ -243,6 +243,12 @@
 		</div>
 	</header>
 
+	{#if mail.selectedError}
+		<div class="border-b border-border bg-surface px-6 py-2 text-xs text-fg-muted">
+			{mail.selectedError}
+		</div>
+	{/if}
+
 	{#if hasBlockedExternal && !allowExternal}
 		<div class="flex items-center gap-2 border-b border-border bg-surface px-6 py-2 text-xs text-fg-muted">
 			<Shield class="size-3.5 shrink-0" aria-hidden="true" />
