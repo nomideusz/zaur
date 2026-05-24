@@ -6,6 +6,8 @@
 		ChevronDown,
 		ChevronUp,
 		Forward,
+		Mail,
+		MailOpen,
 		MoreHorizontal,
 		Reply,
 		ReplyAll,
@@ -161,11 +163,25 @@
 		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
 	}
 
+	function toggleLatestRead() {
+		if (!auth.client || !latest) return;
+		void mail.markAsRead(auth.client, latest, latest.unread);
+	}
+
 	function saveContact(message: MessageDetail) {
 		const accountId = auth.client?.getAccountId();
 		if (!accountId) return;
 		recordContact(accountId, message.from.name, message.from.email);
 		toast.show(`${message.from.name} added to contacts`, 'success');
+	}
+
+	async function copyEmail(email: string) {
+		try {
+			await navigator.clipboard.writeText(email);
+			toast.show('Email copied', 'success');
+		} catch {
+			toast.show('Could not copy email', 'error');
+		}
 	}
 
 	async function sendQuickReply() {
@@ -243,6 +259,18 @@
 						aria-hidden="true"
 					/>
 				</IconButton>
+				{#if latest}
+					<IconButton
+						label={latest.unread ? 'Mark as read' : 'Mark as unread'}
+						onclick={toggleLatestRead}
+					>
+						{#if latest.unread}
+							<MailOpen class="size-4" />
+						{:else}
+							<Mail class="size-4" />
+						{/if}
+					</IconButton>
+				{/if}
 				<IconButton label="Reply" onclick={reply}>
 					<Reply class="size-4" />
 				</IconButton>
@@ -287,6 +315,22 @@
 							class="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-md border border-border bg-surface-raised py-1 shadow-md"
 							onpointerdown={(e) => e.stopPropagation()}
 						>
+							<button
+								type="button"
+								class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
+								onclick={() => {
+									moreOpen = false;
+									toggleLatestRead();
+								}}
+							>
+								{#if latest?.unread}
+									<MailOpen class="size-4 shrink-0" aria-hidden="true" />
+									Mark as read
+								{:else}
+									<Mail class="size-4 shrink-0" aria-hidden="true" />
+									Mark as unread
+								{/if}
+							</button>
 							<button
 								type="button"
 								class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
@@ -371,6 +415,13 @@
 											onclick={() => saveContact(message)}
 										>
 											Save contact
+										</button>
+										<button
+											type="button"
+											class="mt-1 ml-3 text-xs text-fg-subtle hover:text-accent hover:underline"
+											onclick={() => copyEmail(message.from.email)}
+										>
+											Copy email
 										</button>
 									</div>
 									<div class="flex items-center gap-2">

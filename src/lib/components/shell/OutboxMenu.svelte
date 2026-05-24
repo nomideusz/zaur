@@ -78,7 +78,12 @@
 											<Clock class="size-4" />
 										</IconButton>
 									{/if}
-									<IconButton label="Discard" onclick={() => outbox.discard(item.id)}>
+									<IconButton
+										label="Discard queued message"
+										onclick={() => {
+											if (confirm('Discard this queued message?')) outbox.discard(item.id);
+										}}
+									>
 										<Trash2 class="size-4" />
 									</IconButton>
 								</div>

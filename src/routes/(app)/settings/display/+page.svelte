@@ -15,7 +15,7 @@
 	description="Appearance and how messages are shown in the list and reader."
 >
 	<SettingsGroup title="Appearance">
-		<SettingsRow title="Theme" description="Light, dark, or match your system">
+		<SettingsRow title="Theme" description="Light, dark, or match your system — also in the account menu">
 			<select
 				class="z-input w-auto"
 				value={theme.theme}
@@ -65,7 +65,10 @@
 			</select>
 		</SettingsRow>
 
-		<SettingsRow title="Block external content" description="Images and remote resources in HTML mail">
+		<SettingsRow
+			title="Block external content"
+			description="Block remote images in HTML mail — you can still show them once per message"
+		>
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"

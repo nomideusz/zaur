@@ -2,7 +2,7 @@
 	import { CalendarDays } from 'lucide-svelte';
 </script>
 
-<div class="hidden min-w-0 flex-1 flex-col items-center justify-center gap-3 bg-surface p-8 text-center md:flex">
+<div class="hidden min-w-0 flex-1 flex-col items-center justify-center gap-3 bg-surface-raised p-8 text-center md:flex">
 	<div class="rounded-full bg-surface-sunken p-4">
 		<CalendarDays class="size-8 text-fg-subtle" aria-hidden="true" />
 	</div>

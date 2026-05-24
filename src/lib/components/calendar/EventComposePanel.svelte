@@ -121,7 +121,9 @@
 			</div>
 
 			{#if calendar.composeError}
-				<p class="border-t border-border px-4 py-2 text-sm text-danger">{calendar.composeError}</p>
+				<p class="border-t border-border px-4 py-2 text-sm text-danger" role="alert">
+					{calendar.composeError}
+				</p>
 			{/if}
 
 			<footer class="flex items-center justify-end gap-2 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">

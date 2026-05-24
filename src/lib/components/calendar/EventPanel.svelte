@@ -13,6 +13,7 @@
 
 	function deleteEvent() {
 		if (!auth.client || !event) return;
+		if (!confirm(`Delete “${event.title}”?`)) return;
 		void calendar.deleteEvent(auth.client, event);
 	}
 

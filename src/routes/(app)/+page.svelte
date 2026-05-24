@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Calendar, Mail, Users } from 'lucide-svelte';
+	import { Calendar, Mail, Settings, Users } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 </script>
 
@@ -13,7 +13,7 @@
 		<p class="mt-1 text-sm text-fg-muted">Choose a tool to get started.</p>
 	</div>
 
-	<div class="grid gap-4 sm:grid-cols-3">
+	<div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 		<a href="/mail/inbox" class="z-panel group rounded-xl p-5 transition-shadow hover:shadow-md">
 			<Mail class="size-6 text-accent" aria-hidden="true" />
 			<h2 class="mt-3 font-medium text-fg group-hover:text-accent">Mail</h2>
@@ -30,6 +30,12 @@
 			<Users class="size-6 text-accent" aria-hidden="true" />
 			<h2 class="mt-3 font-medium text-fg group-hover:text-accent">Contacts</h2>
 			<p class="mt-1 text-xs text-fg-muted">People and address books</p>
+		</a>
+
+		<a href="/settings/display" class="z-panel group rounded-xl p-5 transition-shadow hover:shadow-md">
+			<Settings class="size-6 text-accent" aria-hidden="true" />
+			<h2 class="mt-3 font-medium text-fg group-hover:text-accent">Settings</h2>
+			<p class="mt-1 text-xs text-fg-muted">Theme, mail, and account</p>
 		</a>
 	</div>
 

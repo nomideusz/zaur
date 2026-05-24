@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Archive, FolderInput, Trash2, X } from 'lucide-svelte';
+	import { Archive, FolderInput, MailOpen, Trash2, X } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -20,6 +20,9 @@
 	);
 	const canArchive = $derived(currentMailbox?.role !== 'archive');
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
+	const hasUnreadSelected = $derived(
+		mail.messages.some((message) => mail.selectedMessageIds.has(message.id) && message.unread)
+	);
 
 	async function run(action: () => Promise<void>) {
 		if (!auth.client || mail.bulkActionLoading) return;
@@ -58,6 +61,11 @@
 		if (!auth.client) return;
 		await run(() => mail.bulkMoveToMailbox(auth.client!, targetRouteId));
 	}
+
+	async function markSelectedRead() {
+		if (!auth.client) return;
+		await run(() => mail.bulkMarkAsRead(auth.client!));
+	}
 </script>
 
 <svelte:window onclick={() => (moveOpen = false)} />
@@ -82,6 +90,17 @@
 
 		{#if mail.selectedCount}
 			<div class="ml-auto flex flex-wrap items-center gap-1">
+				{#if hasUnreadSelected}
+					<Button
+						variant="ghost"
+						class="!px-2 !py-1.5 text-xs"
+						disabled={mail.bulkActionLoading}
+						onclick={markSelectedRead}
+					>
+						<MailOpen class="size-3.5" aria-hidden="true" />
+						Mark read
+					</Button>
+				{/if}
 				{#if canArchive}
 					<Button
 						variant="ghost"

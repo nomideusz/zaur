@@ -258,7 +258,7 @@
 			<ComposeAttachments />
 
 			{#if compose.error}
-				<p class="border-t border-border px-5 py-2 text-sm text-danger">{compose.error}</p>
+				<p class="border-t border-border px-5 py-2 text-sm text-danger" role="alert">{compose.error}</p>
 			{/if}
 
 			<footer class="flex flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">

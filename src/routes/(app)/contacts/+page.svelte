@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Mail, Search, UserPlus, Copy } from 'lucide-svelte';
+	import { Mail, Search, UserPlus, Copy, Users } from 'lucide-svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -177,15 +177,27 @@
 			{/each}
 		</div>
 	{:else}
-		<div class="z-panel rounded-xl px-6 py-12 text-center">
-			<p class="text-sm text-fg-muted">
-				{#if query.trim()}
-					No contacts match your search.
-				{:else}
-					No contacts yet. Sync mail or add someone manually.
-				{/if}
-			</p>
-			<div class="mt-4 flex justify-center gap-2">
+		<div class="z-panel flex flex-col items-center gap-4 rounded-xl px-6 py-16 text-center">
+			<div class="rounded-full bg-surface-sunken p-4">
+				<Users class="size-8 text-fg-subtle" aria-hidden="true" />
+			</div>
+			<div>
+				<p class="text-sm font-medium text-fg">
+					{#if query.trim()}
+						No contacts match your search
+					{:else}
+						No contacts yet
+					{/if}
+				</p>
+				<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">
+					{#if query.trim()}
+						Try a different name or email address.
+					{:else}
+						Contacts appear as you send and receive mail, or add someone manually.
+					{/if}
+				</p>
+			</div>
+			<div class="flex flex-wrap justify-center gap-2">
 				<Button variant="ghost" onclick={() => (showAddForm = true)}>Add contact</Button>
 				<Button href="/mail/inbox" variant="ghost">Go to inbox</Button>
 			</div>

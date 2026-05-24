@@ -40,6 +40,9 @@
 			New
 		</Button>
 	{:else if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false}
+		<IconButton label="New event" class="sm:hidden" onclick={() => calendar.openCompose()}>
+			<CalendarPlus class="size-4" aria-hidden="true" />
+		</IconButton>
 		<Button onclick={() => calendar.openCompose()} class="hidden sm:inline-flex">
 			<CalendarPlus class="size-4" aria-hidden="true" />
 			New event

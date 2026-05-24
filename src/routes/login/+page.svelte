@@ -42,6 +42,7 @@
 					class="z-input"
 					bind:value={email}
 					autocomplete="username"
+					autofocus
 					required
 					disabled={auth.isLoading}
 				/>

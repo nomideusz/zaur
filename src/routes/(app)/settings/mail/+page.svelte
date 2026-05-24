@@ -11,7 +11,10 @@
 
 <SettingsPanel title="Mail" description="Reading and message behavior.">
 	<SettingsGroup title="Behavior">
-		<SettingsRow title="Notify on new mail" description="Toast and browser notification for new Inbox mail">
+		<SettingsRow
+			title="Notify on new mail"
+			description="Toast and browser notification when new mail arrives in Inbox"
+		>
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
