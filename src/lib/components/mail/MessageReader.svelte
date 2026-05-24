@@ -6,6 +6,7 @@
 		ChevronDown,
 		ChevronUp,
 		Forward,
+		MoreHorizontal,
 		Reply,
 		ReplyAll,
 		Shield,
@@ -41,11 +42,16 @@
 	let expandedIds = $state<Set<string>>(new Set());
 	let quickReply = $state('');
 	let quickReplySending = $state(false);
+	let moreOpen = $state(false);
 
 	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
 
 	const latest = $derived(thread.at(-1));
 	const subject = $derived(latest?.subject ?? '(no subject)');
+	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
+	const moveTargets = $derived(
+		mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
+	);
 	const allowExternal = $derived(!settings.blockExternalContent || showImagesOnce);
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>
@@ -121,6 +127,24 @@
 		goto('/mail/compose?mode=forward');
 	}
 
+	function archiveMessage() {
+		moreOpen = false;
+		if (!latest) return;
+		void withClient((client) => mail.moveMessage(client, latest, 'archive'));
+	}
+
+	function deleteMessage() {
+		moreOpen = false;
+		if (!latest) return;
+		void withClient((client) => mail.deleteMessage(client, latest, mailboxRouteId));
+	}
+
+	function moveMessage(targetRouteId: string) {
+		moreOpen = false;
+		if (!auth.client || !latest) return;
+		void withClient((client) => mail.moveMessageToMailbox(client, latest, targetRouteId));
+	}
+
 	function toggleStar() {
 		if (!auth.client || !latest) return;
 		void mail.toggleStar(auth.client, latest);
@@ -175,6 +199,8 @@
 	}
 </script>
 
+<svelte:window onclick={() => (moreOpen = false)} />
+
 <article class="flex flex-1 flex-col overflow-hidden bg-surface-raised" style="view-transition-name: message-reader;">
 	<header class="border-b border-border px-4 py-3 md:px-6">
 		<div class="flex items-start gap-2">
@@ -185,7 +211,7 @@
 			{/if}
 
 			<div class="min-w-0 flex-1">
-				<h1 class="text-lg font-semibold leading-snug text-fg md:text-xl">{subject}</h1>
+				<h1 class="line-clamp-2 text-lg font-semibold leading-snug text-fg md:text-xl">{subject}</h1>
 
 				{#if thread.length > 1}
 					<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
@@ -204,43 +230,87 @@
 			</div>
 
 			<div class="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
-			<IconButton label={latest?.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
-				<Star
-					class={cn('size-4', latest?.starred && 'fill-star text-star')}
-					aria-hidden="true"
-				/>
-			</IconButton>
-			<IconButton label="Reply" onclick={reply}>
-				<Reply class="size-4" />
-			</IconButton>
-			<IconButton label="Reply all" onclick={replyAll}>
-				<ReplyAll class="size-4" />
-			</IconButton>
-			<IconButton label="Forward" onclick={forward}>
-				<Forward class="size-4" />
-			</IconButton>
-			<IconButton
-				label="Archive"
-				onclick={() => latest && withClient((client) => mail.moveMessage(client, latest, 'archive'))}
-			>
-				<Archive class="size-4" />
-			</IconButton>
-			{#if latest && auth.client}
-				<MoveToMenu
-					message={latest}
-					currentMailboxRouteId={mailboxRouteId}
-					client={auth.client}
-					{onMoved}
-				/>
-			{/if}
-			<IconButton
-				label="Delete"
-				onclick={() =>
-					latest &&
-					withClient((client) => mail.deleteMessage(client, latest, mailboxRouteId))}
-			>
-				<Trash2 class="size-4" />
-			</IconButton>
+				<IconButton label={latest?.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
+					<Star
+						class={cn('size-4', latest?.starred && 'fill-star text-star')}
+						aria-hidden="true"
+					/>
+				</IconButton>
+				<IconButton label="Reply" onclick={reply}>
+					<Reply class="size-4" />
+				</IconButton>
+				<IconButton label="Reply all" onclick={replyAll}>
+					<ReplyAll class="size-4" />
+				</IconButton>
+				<IconButton label="Forward" onclick={forward}>
+					<Forward class="size-4" />
+				</IconButton>
+
+				<div class="hidden items-center gap-0.5 md:flex">
+					<IconButton label="Archive" onclick={archiveMessage}>
+						<Archive class="size-4" />
+					</IconButton>
+					{#if latest && auth.client}
+						<MoveToMenu
+							message={latest}
+							currentMailboxRouteId={mailboxRouteId}
+							client={auth.client}
+							{onMoved}
+						/>
+					{/if}
+					<IconButton label="Delete" onclick={deleteMessage}>
+						<Trash2 class="size-4" />
+					</IconButton>
+				</div>
+
+				<div class="relative md:hidden">
+					<IconButton
+						label="More actions"
+						onclick={(e) => {
+							e.stopPropagation();
+							moreOpen = !moreOpen;
+						}}
+					>
+						<MoreHorizontal class="size-4" />
+					</IconButton>
+
+					{#if moreOpen}
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<div
+							class="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-md border border-border bg-surface-raised py-1 shadow-md"
+							onpointerdown={(e) => e.stopPropagation()}
+						>
+							<button
+								type="button"
+								class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
+								onclick={archiveMessage}
+							>
+								<Archive class="size-4 shrink-0" aria-hidden="true" />
+								Archive
+							</button>
+							{#if moveTargets.length}
+								<p class="px-3 py-1.5 text-xs font-medium text-fg-subtle">Move to</p>
+								{#each moveTargets as mailbox (mailbox.id)}
+									<button
+										type="button"
+										class="block w-full truncate px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
+										onclick={() => moveMessage(mailbox.id)}
+									>
+										{mailbox.name}
+									</button>
+								{/each}
+							{/if}
+							<button
+								type="button"
+								class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-danger hover:bg-surface-sunken"
+								onclick={deleteMessage}
+							>
+								<Trash2 class="size-4 shrink-0" aria-hidden="true" />
+								Delete
+							</button>
+						</div>
+					{/if}
+				</div>
 			</div>
 		</div>
 	</header>
@@ -366,10 +436,11 @@
 					disabled={quickReplySending}
 					onkeydown={onQuickReplyKeydown}
 				></textarea>
-				<div class="flex shrink-0 flex-col gap-1">
+				<div class="flex shrink-0 flex-col items-end gap-1">
 					<Button disabled={!quickReply.trim() || quickReplySending} onclick={sendQuickReply}>
 						{quickReplySending ? 'Sending…' : 'Send'}
 					</Button>
+					<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter</span>
 					<Button variant="ghost" class="!px-2 text-xs" onclick={reply}>Full reply</Button>
 				</div>
 			</div>

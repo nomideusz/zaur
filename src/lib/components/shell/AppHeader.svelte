@@ -1,7 +1,9 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { CalendarPlus, PenSquare } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import GlobalSearch from './GlobalSearch.svelte';
 	import OfflineIndicator from './OfflineIndicator.svelte';
 	import OutboxMenu from './OutboxMenu.svelte';
@@ -30,6 +32,9 @@
 	{/if}
 
 	{#if $page.url.pathname.startsWith('/mail')}
+		<IconButton label="New message" class="sm:hidden" onclick={() => goto('/mail/compose')}>
+			<PenSquare class="size-4" aria-hidden="true" />
+		</IconButton>
 		<Button href="/mail/compose" class="hidden sm:inline-flex">
 			<PenSquare class="size-4" aria-hidden="true" />
 			New
