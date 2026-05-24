@@ -16,16 +16,17 @@ export const routeMap = {
 		display: '/settings/display',
 		account: '/settings/account'
 	},
-	future: {
-		calendar: '/calendar',
-		contacts: '/contacts'
-	}
+	calendar: '/calendar',
+	contacts: '/contacts'
 } as const;
 
 export const componentTree = {
 	shell: {
-		AppHeader: ['ToolSwitcher', 'GlobalSearch', 'NewButton', 'UserMenu'],
+		AppHeader: ['ToolSwitcher', 'OfflineIndicator', 'GlobalSearch', 'OutboxMenu', 'NewButton', 'UserMenu'],
 		AppSidebar: 'settings navigation when in /settings'
+	},
+	calendar: {
+		CalendarLayout: ['CalendarSidebar', 'MonthView', 'EventPanel | EventPanelEmpty']
 	},
 	mail: {
 		MailLayout: ['MailboxSidebar', 'MessageList', 'MessageReader | MessageReaderEmpty'],
@@ -34,9 +35,17 @@ export const componentTree = {
 		MessageReader: ['ReaderHeader', 'ReaderBody', 'ReaderActions'],
 		ComposePanel: ['ComposeHeader', 'ComposeFields', 'ComposeEditor']
 	},
-	ui: ['Button', 'IconButton', 'Badge', 'Avatar'],
+	ui: ['Button', 'IconButton', 'Badge', 'Avatar', 'ToastStack'],
 	jmap: {
-		client: ['JmapClient.connect', 'getMailboxes', 'getIdentities', 'Email/changes', 'Mailbox/changes'],
+		client: [
+			'JmapClient.connect',
+			'getMailboxes',
+			'getIdentities',
+			'Email/changes',
+			'Mailbox/changes',
+			'Calendar/get',
+			'CalendarEvent/query'
+		],
 		proxy: ['POST /api/jmap', 'GET /api/jmap/session', 'httpOnly session cookie'],
 		pushListener: ['EventSource via /api/jmap/events', 'polling fallback'],
 		syncEngine: ['incremental Email/Mailbox sync', 'syncState in RxDB']

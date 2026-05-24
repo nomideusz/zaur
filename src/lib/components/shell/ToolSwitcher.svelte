@@ -5,8 +5,8 @@
 
 	const tools = [
 		{ href: '/mail/inbox', label: 'Mail', icon: Mail, active: (path: string) => path.startsWith('/mail') },
-		{ href: '/calendar', label: 'Calendar', icon: Calendar, active: () => false, soon: true },
-		{ href: '/contacts', label: 'Contacts', icon: Users, active: () => false, soon: true },
+		{ href: '/calendar', label: 'Calendar', icon: Calendar, active: (path: string) => path.startsWith('/calendar') },
+		{ href: '/contacts', label: 'Contacts', icon: Users, active: (path: string) => path.startsWith('/contacts') },
 		{ href: '/', label: 'Home', icon: Home, active: (path: string) => path === '/' }
 	];
 </script>
@@ -19,16 +19,12 @@
 			href={tool.href}
 			class={cn(
 				'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors',
-				isActive ? 'bg-surface-sunken font-medium text-fg' : 'text-fg-muted hover:bg-surface-sunken hover:text-fg',
-				tool.soon && 'pointer-events-none opacity-40'
+				isActive ? 'bg-surface-sunken font-medium text-fg' : 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
 			)}
 			aria-current={isActive ? 'page' : undefined}
 		>
 			<Icon class="size-4" aria-hidden="true" />
 			<span class="hidden sm:inline">{tool.label}</span>
-			{#if tool.soon}
-				<span class="hidden text-[10px] uppercase tracking-wide text-fg-subtle lg:inline">Soon</span>
-			{/if}
 		</a>
 	{/each}
 </nav>

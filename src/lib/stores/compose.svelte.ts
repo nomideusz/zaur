@@ -3,9 +3,11 @@ import type { JMAPClient } from '$lib/jmap/client';
 import { parseAddressList } from '$lib/utils/addresses';
 import { isOfflineError } from '$lib/utils/network';
 import { outbox } from '$lib/stores/outbox.svelte';
+import { toast } from '$lib/stores/toast.svelte';
 import type { MessageDetail } from '$lib/types/mail';
 
 export type ComposeMode = 'new' | 'reply' | 'reply-all' | 'forward';
+export type ComposeSendResult = 'sent' | 'queued' | false;
 
 const AUTOSAVE_MS = 2000;
 const SERVER_DRAFT_MS = 5000;
@@ -184,7 +186,7 @@ class ComposeStore {
 		this.error = null;
 	}
 
-	async send(client: JMAPClient, fromEmail: string, fromName?: string) {
+	async send(client: JMAPClient, fromEmail: string, fromName?: string): Promise<ComposeSendResult> {
 		const recipients = parseAddressList(this.to);
 		if (!recipients.length) {
 			this.error = 'Enter at least one recipient';
@@ -219,12 +221,13 @@ class ComposeStore {
 			}
 
 			this.reset();
-			return true;
+			return 'sent';
 		} catch (error) {
 			if (browser && isOfflineError(error)) {
 				const { getAccountId, enqueueOutbox } = await import('$lib/db');
 				const accountId = getAccountId();
 				if (accountId) {
+					const subject = this.subject.trim() || '(no subject)';
 					await enqueueOutbox(accountId, {
 						to: this.to,
 						cc: this.cc,
@@ -239,12 +242,14 @@ class ComposeStore {
 					);
 					void outbox.refresh();
 					this.reset();
-					this.error = 'Queued — will send when back online';
-					return true;
+					toast.show(`"${subject}" queued — will send when back online`, 'info');
+					return 'queued';
 				}
 			}
 
-			this.error = error instanceof Error ? error.message : 'Failed to send message';
+			const message = error instanceof Error ? error.message : 'Failed to send message';
+			this.error = message;
+			toast.show(message, 'error');
 			return false;
 		} finally {
 			this.isSending = false;

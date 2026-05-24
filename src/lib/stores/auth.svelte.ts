@@ -5,9 +5,10 @@ import { JMAPClient } from '$lib/jmap/client';
 import { classifyJmapError, loginErrorMessage, type LoginErrorCode } from '$lib/jmap/errors';
 import { pushListener } from '$lib/jmap/push-listener';
 import { mail } from '$lib/stores/mail.svelte';
-import { compose } from '$lib/stores/compose.svelte';
-import { search } from '$lib/stores/search.svelte';
-import { outbox } from '$lib/stores/outbox.svelte';
+	import { compose } from '$lib/stores/compose.svelte';
+	import { search } from '$lib/stores/search.svelte';
+	import { outbox } from '$lib/stores/outbox.svelte';
+	import { calendar } from '$lib/stores/calendar.svelte';
 
 interface SessionResponse {
 	authenticated: boolean;
@@ -127,6 +128,7 @@ class AuthStore {
 		compose.reset();
 		search.reset();
 		outbox.reset();
+		calendar.reset();
 
 		try {
 			await fetch('/api/auth/logout', { method: 'POST' });
@@ -153,6 +155,7 @@ class AuthStore {
 		compose.reset();
 		search.reset();
 		outbox.reset();
+		calendar.reset();
 		goto('/login');
 	}
 

@@ -20,17 +20,17 @@
 			<p class="mt-1 text-xs text-fg-muted">Read and send messages</p>
 		</a>
 
-		<div class="z-panel rounded-xl p-5 opacity-50">
-			<Calendar class="size-6 text-fg-subtle" aria-hidden="true" />
-			<h2 class="mt-3 font-medium text-fg">Calendar</h2>
-			<p class="mt-1 text-xs text-fg-muted">Coming soon</p>
-		</div>
+		<a href="/calendar" class="z-panel group rounded-xl p-5 transition-shadow hover:shadow-md">
+			<Calendar class="size-6 text-accent" aria-hidden="true" />
+			<h2 class="mt-3 font-medium text-fg group-hover:text-accent">Calendar</h2>
+			<p class="mt-1 text-xs text-fg-muted">Events and scheduling</p>
+		</a>
 
-		<div class="z-panel rounded-xl p-5 opacity-50">
-			<Users class="size-6 text-fg-subtle" aria-hidden="true" />
-			<h2 class="mt-3 font-medium text-fg">Contacts</h2>
-			<p class="mt-1 text-xs text-fg-muted">Coming soon</p>
-		</div>
+		<a href="/contacts" class="z-panel group rounded-xl p-5 transition-shadow hover:shadow-md">
+			<Users class="size-6 text-accent" aria-hidden="true" />
+			<h2 class="mt-3 font-medium text-fg group-hover:text-accent">Contacts</h2>
+			<p class="mt-1 text-xs text-fg-muted">People and address books</p>
+		</a>
 	</div>
 
 	<Button href="/mail/inbox">Open inbox</Button>

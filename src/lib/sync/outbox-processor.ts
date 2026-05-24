@@ -3,6 +3,7 @@ import type { JMAPClient } from '$lib/jmap/client';
 import { parseAddressList } from '$lib/utils/addresses';
 import { isOfflineError } from '$lib/utils/network';
 import { outbox } from '$lib/stores/outbox.svelte';
+import { toast } from '$lib/stores/toast.svelte';
 
 const RETRY_MS = 30_000;
 const MAX_ATTEMPTS = 5;
@@ -80,7 +81,9 @@ class OutboxProcessor {
 						bcc: bcc.length ? bcc : undefined
 					});
 
+					const subject = item.subject || '(no subject)';
 					await removeOutboxItem(item.id);
+					toast.show(`"${subject}" sent`, 'success');
 				} catch (error) {
 					const message = error instanceof Error ? error.message : 'Send failed';
 					if (isOfflineError(error)) {
@@ -91,10 +94,16 @@ class OutboxProcessor {
 						break;
 					}
 
+					const subject = item.subject || '(no subject)';
+					const nextAttempts = item.attempts + 1;
 					await updateOutboxStatus(item.id, 'failed', {
-						attempts: item.attempts + 1,
+						attempts: nextAttempts,
 						error: message
 					});
+
+					if (nextAttempts >= MAX_ATTEMPTS) {
+						toast.show(`Could not send "${subject}" — ${message}`, 'error');
+					}
 				}
 			}
 		} finally {

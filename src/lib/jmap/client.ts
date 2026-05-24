@@ -7,7 +7,29 @@ import type {
 	JMAPSession,
 	JMAPEmail
 } from './types';
+import type {
+	CalendarEventQueryResult,
+	JMAPCalendar,
+	JMAPCalendarEvent
+} from './calendar-types';
 import { browser } from '$app/environment';
+
+const CALENDARS_URN = 'urn:ietf:params:jmap:calendars';
+const CALENDAR_USING = ['urn:ietf:params:jmap:core', CALENDARS_URN] as const;
+
+const CALENDAR_EVENT_PROPERTIES = [
+	'id',
+	'calendarIds',
+	'title',
+	'description',
+	'start',
+	'duration',
+	'timeZone',
+	'showWithoutTime',
+	'utcStart',
+	'utcEnd',
+	'locations'
+] as const;
 
 const EMAIL_LIST_PROPERTIES = [
 	'id',
@@ -77,6 +99,14 @@ export class JMAPClient {
 
 	getAccountId(): string {
 		return this.accountId;
+	}
+
+	hasCalendars(): boolean {
+		return !!this.session?.capabilities?.[CALENDARS_URN];
+	}
+
+	getCalendarAccountId(): string {
+		return this.session?.primaryAccounts?.[CALENDARS_URN] ?? this.accountId;
 	}
 
 	getUsername(): string {
@@ -336,6 +366,105 @@ export class JMAPClient {
 		}
 
 		return JSON.parse(responseText) as JMAPResponse;
+	}
+
+	private async calendarRequest(methodCalls: JMAPMethodCall[]): Promise<JMAPResponse> {
+		return this.request(methodCalls, [...CALENDAR_USING]);
+	}
+
+	async getCalendars(): Promise<JMAPCalendar[]> {
+		if (!this.hasCalendars()) return [];
+
+		const response = await this.calendarRequest([
+			['Calendar/get', { accountId: this.getCalendarAccountId() }, 'cal']
+		]);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] === 'error') {
+			const error = first[1] as { type?: string; description?: string };
+			throw new Error(error.description ?? error.type ?? 'Calendar/get failed');
+		}
+		if (first?.[0] !== 'Calendar/get') {
+			throw new Error('Unexpected Calendar/get response');
+		}
+
+		const list = (first[1].list as JMAPCalendar[]) ?? [];
+		return list.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+	}
+
+	async queryCalendarEvents(params: {
+		after: string;
+		before: string;
+		calendarId?: string;
+		timeZone?: string;
+	}): Promise<CalendarEventQueryResult> {
+		if (!this.hasCalendars()) return { events: [], total: 0 };
+
+		const accountId = this.getCalendarAccountId();
+		const filter: Record<string, string> = {
+			after: params.after,
+			before: params.before
+		};
+		if (params.calendarId) filter.inCalendar = params.calendarId;
+
+		const response = await this.calendarRequest([
+			[
+				'CalendarEvent/query',
+				{
+					accountId,
+					filter,
+					expandRecurrences: true,
+					timeZone: params.timeZone ?? 'Etc/UTC',
+					limit: 500
+				},
+				'ceq'
+			],
+			[
+				'CalendarEvent/get',
+				{
+					accountId,
+					'#ids': { resultOf: 'ceq', name: 'CalendarEvent/query', path: '/ids' },
+					properties: [...CALENDAR_EVENT_PROPERTIES]
+				},
+				'ceg'
+			]
+		]);
+
+		const queryResult = response.methodResponses?.[0];
+		if (queryResult?.[0] === 'error') {
+			const error = queryResult[1] as { type?: string; description?: string };
+			throw new Error(error.description ?? error.type ?? 'CalendarEvent/query failed');
+		}
+
+		const getResult = response.methodResponses?.[1];
+		if (getResult?.[0] !== 'CalendarEvent/get') {
+			return { events: [], total: 0 };
+		}
+
+		const events = (getResult[1].list as JMAPCalendarEvent[]) ?? [];
+		const total = (queryResult?.[1]?.total as number) ?? events.length;
+		return { events, total };
+	}
+
+	async getCalendarEvent(eventId: string): Promise<JMAPCalendarEvent | null> {
+		if (!this.hasCalendars()) return null;
+
+		const response = await this.calendarRequest([
+			[
+				'CalendarEvent/get',
+				{
+					accountId: this.getCalendarAccountId(),
+					ids: [eventId],
+					properties: [...CALENDAR_EVENT_PROPERTIES]
+				},
+				'ce0'
+			]
+		]);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'CalendarEvent/get') return null;
+		const list = (first[1].list as JMAPCalendarEvent[]) ?? [];
+		return list[0] ?? null;
 	}
 
 	async getMailboxes(): Promise<JMAPMailbox[]> {

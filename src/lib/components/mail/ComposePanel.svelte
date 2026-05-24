@@ -38,8 +38,9 @@
 
 	async function send() {
 		if (!auth.client || !auth.username) return;
-		const ok = await compose.send(auth.client, auth.username, auth.displayName ?? undefined);
-		if (ok) goto('/mail/sent');
+		const result = await compose.send(auth.client, auth.username, auth.displayName ?? undefined);
+		if (result === 'sent') goto('/mail/sent');
+		else if (result === 'queued') goto('/mail/inbox');
 	}
 
 	function close() {
