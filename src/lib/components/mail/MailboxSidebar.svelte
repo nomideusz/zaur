@@ -1,22 +1,10 @@
 <script lang="ts">
-	import { page } from '$app/stores';
-	import { Archive, FileText, Inbox, LoaderCircle, Send, ShieldAlert, Trash2 } from 'lucide-svelte';
-	import Badge from '$lib/components/ui/Badge.svelte';
+	import { LoaderCircle } from 'lucide-svelte';
+	import MailboxTreeItem from './MailboxTreeItem.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
-	import { cn } from '$lib/utils/cn';
-	import type { MailboxRole } from '$lib/types/mail';
+	import { buildMailboxTree } from '$lib/utils/mailbox-tree';
 
-	const icons: Record<MailboxRole, typeof Inbox> = {
-		inbox: Inbox,
-		drafts: FileText,
-		sent: Send,
-		junk: ShieldAlert,
-		trash: Trash2,
-		archive: Archive,
-		custom: FileText
-	};
-
-	const topLevel = $derived(mail.mailboxes.filter((mb) => !mb.parentId));
+	const tree = $derived(buildMailboxTree(mail.mailboxes));
 </script>
 
 <aside
@@ -38,26 +26,8 @@
 			<p class="px-3 py-4 text-sm text-danger">{mail.mailboxesError}</p>
 		{:else}
 			<ul class="space-y-0.5">
-				{#each topLevel as mailbox (mailbox.id)}
-					{@const Icon = icons[mailbox.role ?? 'custom']}
-					{@const href = `/mail/${mailbox.id}`}
-					{@const isActive = $page.url.pathname.startsWith(href)}
-					<li>
-						<a
-							{href}
-							class={cn(
-								'flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition-colors',
-								isActive
-									? 'bg-surface-sunken font-medium text-fg'
-									: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
-							)}
-							aria-current={isActive ? 'page' : undefined}
-						>
-							<Icon class="size-4 shrink-0" aria-hidden="true" />
-							<span class="flex-1 truncate">{mailbox.name}</span>
-							<Badge count={mailbox.unread} />
-						</a>
-					</li>
+				{#each tree as node (node.id)}
+					<MailboxTreeItem {node} />
 				{/each}
 			</ul>
 		{/if}

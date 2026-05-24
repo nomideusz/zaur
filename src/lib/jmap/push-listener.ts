@@ -10,6 +10,7 @@ const STATE_METHODS = [
 
 export class PushListener {
 	private interval: ReturnType<typeof setInterval> | null = null;
+	private eventSource: EventSource | null = null;
 	private states: Record<string, string> = {};
 	private callback: ((change: StateChange) => void) | null = null;
 	private client: JMAPClient | null = null;
@@ -19,19 +20,62 @@ export class PushListener {
 		this.client = client;
 		this.callback = onChange;
 		void this.syncStates(client);
+
+		if (typeof EventSource !== 'undefined') {
+			this.startEventSource(onChange);
+		} else {
+			this.startPolling(client);
+		}
+	}
+
+	stop() {
+		this.stopPolling();
+		this.stopEventSource();
+		this.states = {};
+		this.callback = null;
+		this.client = null;
+	}
+
+	private startPolling(client: JMAPClient) {
 		this.interval = setInterval(() => {
 			if (this.client) void this.check(this.client);
 		}, POLL_INTERVAL_MS);
 	}
 
-	stop() {
+	private stopPolling() {
 		if (this.interval) {
 			clearInterval(this.interval);
 			this.interval = null;
 		}
-		this.states = {};
-		this.callback = null;
-		this.client = null;
+	}
+
+	private startEventSource(onChange: (change: StateChange) => void) {
+		this.eventSource = new EventSource('/api/jmap/events');
+
+		this.eventSource.onmessage = (event) => {
+			try {
+				const data = JSON.parse(event.data) as StateChange;
+				if (data['@type'] === 'StateChange') {
+					onChange(data);
+				}
+			} catch {
+				// Ignore malformed events
+			}
+		};
+
+		this.eventSource.onerror = () => {
+			this.stopEventSource();
+			if (this.client) {
+				this.startPolling(this.client);
+			}
+		};
+	}
+
+	private stopEventSource() {
+		if (this.eventSource) {
+			this.eventSource.close();
+			this.eventSource = null;
+		}
 	}
 
 	private async syncStates(client: JMAPClient) {

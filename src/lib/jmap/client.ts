@@ -443,6 +443,59 @@ export class JMAPClient {
 		]);
 	}
 
+	async saveDraft(params: {
+		jmapDraftId?: string;
+		to: string[];
+		cc?: string[];
+		bcc?: string[];
+		subject: string;
+		body: string;
+		fromEmail: string;
+		fromName?: string;
+	}): Promise<string> {
+		const mailboxes = await this.getMailboxes();
+		const draftsMailbox = mailboxes.find((mb) => mb.role === 'drafts');
+		if (!draftsMailbox) throw new Error('No drafts folder found');
+
+		const draftKey = params.jmapDraftId ?? `draft-${Date.now()}`;
+		const emailData = {
+			from: [{ ...(params.fromName ? { name: params.fromName } : {}), email: params.fromEmail }],
+			to: params.to.map((email) => ({ email })),
+			...(params.cc?.length ? { cc: params.cc.map((email) => ({ email })) } : {}),
+			...(params.bcc?.length ? { bcc: params.bcc.map((email) => ({ email })) } : {}),
+			subject: params.subject,
+			keywords: { $draft: true },
+			mailboxIds: { [draftsMailbox.id]: true },
+			bodyValues: { '1': { value: params.body } },
+			textBody: [{ partId: '1', type: 'text/plain' }]
+		};
+
+		if (params.jmapDraftId) {
+			await this.request([
+				['Email/set', { accountId: this.accountId, update: { [params.jmapDraftId]: emailData } }, '0']
+			]);
+			return params.jmapDraftId;
+		}
+
+		await this.request([
+			['Email/set', { accountId: this.accountId, create: { [draftKey]: emailData } }, '0']
+		]);
+		return draftKey;
+	}
+
+	openEventStream(): Promise<Response> {
+		if (this.proxyMode) {
+			return fetch('/api/jmap/events');
+		}
+
+		if (!this.session?.eventSourceUrl) {
+			throw new Error('No event source URL');
+		}
+
+		const url = `${this.session.eventSourceUrl}?types=Mailbox,Email&closeafter=no&ping=30000`;
+		return this.authenticatedFetch(url, { headers: { Accept: 'text/event-stream' } });
+	}
+
 	async sendEmail(
 		to: string[],
 		subject: string,

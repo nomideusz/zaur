@@ -38,8 +38,8 @@ export const componentTree = {
 	jmap: {
 		client: ['JmapClient.connect', 'getMailboxes', 'getIdentities'],
 		proxy: ['POST /api/jmap', 'GET /api/jmap/session', 'httpOnly session cookie'],
-		pushListener: ['PushListener (state polling)'],
-		planned: ['EventSource push', 'SyncEngine', 'RxDB offline']
+		pushListener: ['EventSource via /api/jmap/events', 'polling fallback'],
+		planned: ['SyncEngine', 'RxDB offline']
 	},
 	db: {
 		planned: ['RxDB drafts', 'RxDB outbox', 'RxDB recentThreads', 'RxDB syncState']

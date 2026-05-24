@@ -113,6 +113,7 @@ export function mapEmailDetail(email: JMAPEmail, routeMailboxId: string): Messag
 	return {
 		...mapEmailPreview(email, routeMailboxId),
 		to: mapAddresses(email.to),
+		cc: mapAddresses(email.cc),
 		bodyHtml: extractBodyHtml(email),
 		bodyText: extractBodyText(email),
 		attachments: extractAttachments(email.bodyStructure)

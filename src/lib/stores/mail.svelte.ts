@@ -200,6 +200,14 @@ class MailStore {
 		this.removeMessage(message);
 	}
 
+	async moveMessageToMailbox(client: JMAPClient, message: MessagePreview, targetRouteId: string) {
+		const target = this.mailboxByRouteId(targetRouteId);
+		if (!target?.jmapId) throw new Error('Folder not found');
+
+		await client.moveToMailbox(message.id, target.jmapId);
+		this.removeMessage(message);
+	}
+
 	async deleteMessage(client: JMAPClient, message: MessagePreview, routeMailboxId: string) {
 		const trash = this.mailboxes.find((mb) => mb.role === 'trash');
 		const currentMailbox = this.mailboxByRouteId(routeMailboxId);

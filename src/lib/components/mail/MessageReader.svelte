@@ -3,8 +3,9 @@
 	import {
 		Archive,
 		ArrowLeft,
-		MoreHorizontal,
+		Forward,
 		Reply,
+		ReplyAll,
 		Shield,
 		Star,
 		Trash2
@@ -12,6 +13,7 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
+	import MoveToMenu from '$lib/components/mail/MoveToMenu.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -72,6 +74,18 @@
 		goto('/mail/compose?mode=reply');
 	}
 
+	function replyAll() {
+		if (!latest || !auth.username) return;
+		compose.startReplyAll(latest, thread, auth.username);
+		goto('/mail/compose?mode=reply-all');
+	}
+
+	function forward() {
+		if (!latest) return;
+		compose.startForward(latest);
+		goto('/mail/compose?mode=forward');
+	}
+
 	function toggleStar() {
 		if (!auth.client || !latest) return;
 		void mail.toggleStar(auth.client, latest);
@@ -104,12 +118,26 @@
 			<IconButton label="Reply" onclick={reply}>
 				<Reply class="size-4" />
 			</IconButton>
+			<IconButton label="Reply all" onclick={replyAll}>
+				<ReplyAll class="size-4" />
+			</IconButton>
+			<IconButton label="Forward" onclick={forward}>
+				<Forward class="size-4" />
+			</IconButton>
 			<IconButton
 				label="Archive"
 				onclick={() => latest && withClient((client) => mail.moveMessage(client, latest, 'archive'))}
 			>
 				<Archive class="size-4" />
 			</IconButton>
+			{#if latest && auth.client}
+				<MoveToMenu
+					message={latest}
+					currentMailboxRouteId={mailboxRouteId}
+					client={auth.client}
+					{onMoved}
+				/>
+			{/if}
 			<IconButton
 				label="Delete"
 				onclick={() =>
@@ -117,9 +145,6 @@
 					withClient((client) => mail.deleteMessage(client, latest, mailboxRouteId))}
 			>
 				<Trash2 class="size-4" />
-			</IconButton>
-			<IconButton label="More actions">
-				<MoreHorizontal class="size-4" />
 			</IconButton>
 		</div>
 	</header>
@@ -136,12 +161,7 @@
 
 	<div class="flex-1 overflow-y-auto">
 		{#each thread as message, index (message.id)}
-			<section
-				class={cn(
-					'px-6 py-5',
-					index > 0 && 'border-t border-border'
-				)}
-			>
+			<section class={cn('px-6 py-5', index > 0 && 'border-t border-border')}>
 				<div class="mb-4 flex flex-wrap items-start justify-between gap-3">
 					<div class="min-w-0 text-sm">
 						<p class="font-medium text-fg">{message.from.name}</p>

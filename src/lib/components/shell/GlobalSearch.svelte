@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
+	import IconButton from '$lib/components/ui/IconButton.svelte';
 
 	let input = $state('');
 
@@ -17,6 +18,10 @@
 		goto(`/mail/search?q=${encodeURIComponent(query)}`);
 	}
 </script>
+
+<IconButton label="Search mail" class="md:hidden" onclick={() => goto('/mail/search')}>
+	<Search class="size-4" />
+</IconButton>
 
 <form
 	role="search"
