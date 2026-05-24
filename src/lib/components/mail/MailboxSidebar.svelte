@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { LoaderCircle } from 'lucide-svelte';
+	import { LoaderCircle, Users } from 'lucide-svelte';
+	import { page } from '$app/stores';
 	import MailboxTreeItem from './MailboxTreeItem.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { buildMailboxTree } from '$lib/utils/mailbox-tree';
+	import { cn } from '$lib/utils/cn';
 
 	const tree = $derived(buildMailboxTree(mail.mailboxes));
 </script>
@@ -32,4 +34,19 @@
 			</ul>
 		{/if}
 	</nav>
+
+	<div class="border-t border-border p-2">
+		<a
+			href="/contacts"
+			class={cn(
+				'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+				$page.url.pathname.startsWith('/contacts')
+					? 'bg-surface-sunken font-medium text-fg'
+					: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
+			)}
+		>
+			<Users class="size-4 shrink-0" aria-hidden="true" />
+			Contacts
+		</a>
+	</div>
 </aside>

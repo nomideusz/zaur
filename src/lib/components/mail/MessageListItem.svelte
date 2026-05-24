@@ -2,6 +2,7 @@
 	import { Paperclip, Star } from 'lucide-svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { formatMessageListWhen } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 	import type { MessagePreview } from '$lib/types/mail';
 
@@ -23,11 +24,7 @@
 		onToggleSelect
 	}: Props = $props();
 
-	const when = $derived(
-		new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(
-			new Date(message.receivedAt)
-		)
-	);
+	const when = $derived(formatMessageListWhen(message.receivedAt));
 
 	const rowClass = $derived(
 		cn(

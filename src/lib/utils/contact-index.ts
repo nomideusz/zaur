@@ -76,3 +76,14 @@ export function listContacts(accountId: string | null, query = ''): ContactEntry
 		)
 		.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 }
+
+export function removeContact(accountId: string, email: string): void {
+	if (!browser || !accountId) return;
+
+	const normalized = email.trim().toLowerCase();
+	if (!normalized) return;
+
+	const index = readIndex(accountId);
+	if (!index.delete(normalized)) return;
+	writeIndex(accountId, index);
+}

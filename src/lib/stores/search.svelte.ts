@@ -1,8 +1,23 @@
 import type { JMAPClient } from '$lib/jmap/client';
+import { browser } from '$app/environment';
 import { mapEmailPreview, resolveRouteMailboxId } from '$lib/jmap/map';
 import type { Mailbox, MessagePreview } from '$lib/types/mail';
+import { recordContacts } from '$lib/utils/contact-index';
 
 const PAGE_SIZE = 50;
+
+function indexSearchContacts(previews: MessagePreview[]) {
+	if (!browser || !previews.length) return;
+
+	void import('$lib/db').then(({ getAccountId }) => {
+		const accountId = getAccountId();
+		if (!accountId) return;
+		recordContacts(
+			accountId,
+			previews.map((message) => message.from)
+		);
+	});
+}
 
 class SearchStore {
 	query = $state('');
@@ -35,6 +50,7 @@ class SearchStore {
 			);
 			this.total = total;
 			this.hasMore = hasMore;
+			indexSearchContacts(this.results);
 		} catch (error) {
 			this.results = [];
 			this.total = 0;
@@ -57,6 +73,7 @@ class SearchStore {
 			);
 			this.results = [...this.results, ...previews];
 			this.hasMore = hasMore;
+			indexSearchContacts(previews);
 		} catch (error) {
 			this.error = error instanceof Error ? error.message : 'Failed to load more results';
 		} finally {

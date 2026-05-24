@@ -13,6 +13,7 @@
 		Trash2
 	} from 'lucide-svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
@@ -37,6 +38,10 @@
 
 	let showImagesOnce = $state(false);
 	let expandedIds = $state<Set<string>>(new Set());
+	let quickReply = $state('');
+	let quickReplySending = $state(false);
+
+	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
 
 	const latest = $derived(thread.at(-1));
 	const subject = $derived(latest?.subject ?? '(no subject)');
@@ -118,6 +123,43 @@
 	function toggleStar() {
 		if (!auth.client || !latest) return;
 		void mail.toggleStar(auth.client, latest);
+	}
+
+	async function sendQuickReply() {
+		if (!auth.client || !auth.username || !latest) return;
+
+		const text = quickReply.trim();
+		if (!text || quickReplySending) return;
+
+		quickReplySending = true;
+		compose.startReply(latest);
+
+		const quoteMarker = /\n\n---\n/;
+		const idx = compose.body.search(quoteMarker);
+		const quote = idx >= 0 ? compose.body.slice(idx) : '';
+		const signature = settings.composeBodyWithSignature('').trim();
+		compose.body = signature ? `${text}\n\n${signature}${quote}` : `${text}${quote}`;
+
+		try {
+			const result = await compose.send(auth.client, auth.username, senderName);
+			if (result === 'sent') {
+				quickReply = '';
+				toast.show('Reply sent', 'success');
+				void mail.loadMessage(auth.client, mailboxRouteId, latest.threadId);
+			} else if (result === 'queued') {
+				quickReply = '';
+				toast.show('Reply queued — will send when back online', 'info');
+			}
+		} finally {
+			quickReplySending = false;
+		}
+	}
+
+	function onQuickReplyKeydown(event: KeyboardEvent) {
+		if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+			event.preventDefault();
+			void sendQuickReply();
+		}
 	}
 </script>
 
@@ -264,4 +306,25 @@
 			</section>
 		{/each}
 	</div>
+
+	{#if latest && auth.client}
+		<footer class="shrink-0 border-t border-border bg-surface/80 px-6 py-4">
+			<div class="mx-auto flex max-w-(--z-reader-measure) gap-2">
+				<textarea
+					class="z-input min-h-10 flex-1 resize-none py-2 text-sm leading-relaxed"
+					rows="2"
+					placeholder="Write a quick reply…"
+					bind:value={quickReply}
+					disabled={quickReplySending}
+					onkeydown={onQuickReplyKeydown}
+				></textarea>
+				<div class="flex shrink-0 flex-col gap-1">
+					<Button disabled={!quickReply.trim() || quickReplySending} onclick={sendQuickReply}>
+						{quickReplySending ? 'Sending…' : 'Send'}
+					</Button>
+					<Button variant="ghost" class="!px-2 text-xs" onclick={reply}>Full reply</Button>
+				</div>
+			</div>
+		</footer>
+	{/if}
 </article>

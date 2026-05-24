@@ -4,7 +4,7 @@
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
-	import { listContacts, recordContact, type ContactEntry } from '$lib/utils/contact-index';
+	import { listContacts, recordContact, removeContact, type ContactEntry } from '$lib/utils/contact-index';
 
 	let query = $state('');
 	let refresh = $state(0);
@@ -15,6 +15,18 @@
 	const contacts = $derived.by(() => {
 		refresh;
 		return listContacts(auth.client?.getAccountId() ?? null, query);
+	});
+
+	const groupedContacts = $derived.by(() => {
+		const groups = new Map<string, ContactEntry[]>();
+		for (const contact of contacts) {
+			const letter = (contact.name[0] ?? '#').toUpperCase();
+			const key = /[A-Z]/.test(letter) ? letter : '#';
+			const list = groups.get(key) ?? [];
+			list.push(contact);
+			groups.set(key, list);
+		}
+		return [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
 	});
 
 	function composeTo(email: string) {
@@ -32,6 +44,13 @@
 		newName = '';
 		newEmail = '';
 		showAddForm = false;
+		refresh++;
+	}
+
+	function deleteContact(email: string) {
+		const accountId = auth.client?.getAccountId();
+		if (!accountId || !confirm(`Remove ${email} from contacts?`)) return;
+		removeContact(accountId, email);
 		refresh++;
 	}
 </script>
@@ -91,24 +110,43 @@
 	</label>
 
 	{#if contacts.length}
-		<ul class="z-panel divide-y divide-border overflow-hidden rounded-xl">
-			{#each contacts as contact (contact.email)}
-				<li>
-					<button
-						type="button"
-						class="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-sunken"
-						onclick={() => composeTo(contact.email)}
-					>
-						<Avatar name={contact.name} email={contact.email} />
-						<div class="min-w-0 flex-1">
-							<p class="truncate text-sm font-medium text-fg">{contact.name}</p>
-							<p class="truncate text-xs text-fg-muted">{contact.email}</p>
-						</div>
-						<Mail class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-					</button>
-				</li>
+		<div class="space-y-4">
+			{#each groupedContacts as [letter, group] (letter)}
+				<section>
+					<h2 class="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-fg-subtle">
+						{letter}
+					</h2>
+					<ul class="z-panel divide-y divide-border overflow-hidden rounded-xl">
+						{#each group as contact (contact.email)}
+							<li class="group relative">
+								<button
+									type="button"
+									class="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-sunken"
+									onclick={() => composeTo(contact.email)}
+								>
+									<Avatar name={contact.name} email={contact.email} />
+									<div class="min-w-0 flex-1">
+										<p class="truncate text-sm font-medium text-fg">{contact.name}</p>
+										<p class="truncate text-xs text-fg-muted">{contact.email}</p>
+									</div>
+									<Mail class="size-4 shrink-0 text-fg-subtle group-hover:hidden" aria-hidden="true" />
+								</button>
+								<button
+									type="button"
+									class="absolute right-3 top-1/2 hidden -translate-y-1/2 rounded px-2 py-1 text-xs text-danger hover:bg-danger/10 group-hover:block"
+									onclick={(e) => {
+										e.stopPropagation();
+										deleteContact(contact.email);
+									}}
+								>
+									Remove
+								</button>
+							</li>
+						{/each}
+					</ul>
+				</section>
 			{/each}
-		</ul>
+		</div>
 	{:else}
 		<div class="z-panel rounded-xl px-6 py-12 text-center">
 			<p class="text-sm text-fg-muted">

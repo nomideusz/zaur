@@ -130,6 +130,18 @@
 		@apply border-l-2 border-border pl-4 text-fg-muted;
 	}
 
+	.z-email-body :where(pre, code) {
+		@apply rounded-sm bg-surface-sunken/80 text-[0.9em];
+	}
+
+	.z-email-body :where(pre) {
+		@apply overflow-x-auto p-3;
+	}
+
+	.z-email-body :where(hr) {
+		@apply my-4 border-border;
+	}
+
 	.z-email-quote {
 		@apply mt-4 border-l-2 border-border/80 bg-surface/60 py-3 pl-4 pr-2 text-fg-muted;
 	}

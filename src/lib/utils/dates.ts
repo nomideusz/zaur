@@ -69,6 +69,32 @@ export function formatMonthTitle(year: number, month: number): string {
 	);
 }
 
+/** Compact timestamp for message lists — time today, date otherwise. */
+export function formatMessageListWhen(iso: string): string {
+	const date = new Date(iso);
+	const now = new Date();
+
+	if (isSameDay(date, now)) {
+		return new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(date);
+	}
+
+	const weekAgo = new Date(now);
+	weekAgo.setDate(now.getDate() - 6);
+	if (date >= weekAgo) {
+		return new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(date);
+	}
+
+	if (date.getFullYear() === now.getFullYear()) {
+		return new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
+	}
+
+	return new Intl.DateTimeFormat(undefined, {
+		month: 'short',
+		day: 'numeric',
+		year: 'numeric'
+	}).format(date);
+}
+
 export function formatEventTime(event: { start: Date; end: Date; allDay: boolean }): string {
 	if (event.allDay) return 'All day';
 

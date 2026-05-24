@@ -89,6 +89,16 @@
 	}
 
 	function close() {
+		const hasContent =
+			compose.to.trim() ||
+			compose.cc.trim() ||
+			compose.bcc.trim() ||
+			compose.subject.trim() ||
+			compose.body.trim() ||
+			compose.attachments.length;
+
+		if (hasContent && !confirm('Discard this message?')) return;
+
 		compose.reset();
 		goto('/mail/inbox');
 	}
