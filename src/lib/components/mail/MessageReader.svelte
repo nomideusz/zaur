@@ -393,7 +393,7 @@
 		</div>
 	{/if}
 
-	<div class="min-h-0 flex-1 overflow-y-auto">
+	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 		{#each thread as message, index (message.id)}
 			<section class={cn(index > 0 && 'border-t border-border')}>
 				{#if isExpanded(message)}

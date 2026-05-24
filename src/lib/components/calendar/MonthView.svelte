@@ -78,7 +78,7 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="grid min-h-0 flex-1 auto-rows-fr grid-cols-7 overflow-y-auto">
+		<div class="z-pane-scroll grid min-h-0 flex-1 auto-rows-fr grid-cols-7 overflow-y-auto">
 			{#each days as day (day.toISOString())}
 				{@const inMonth = isSameMonth(day, calendar.viewYear, calendar.viewMonth)}
 				{@const isToday = isSameDay(day, today)}

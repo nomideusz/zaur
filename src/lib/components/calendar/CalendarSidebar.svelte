@@ -14,7 +14,7 @@
 		<h2 class="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Calendars</h2>
 	</div>
 
-	<nav class="min-h-0 flex-1 overflow-y-auto p-2">
+	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto p-2">
 		{#if calendar.calendarsLoading}
 			<div class="flex items-center gap-2 px-3 py-4 text-sm text-fg-muted">
 				<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />

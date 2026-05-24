@@ -102,6 +102,10 @@
 		@apply hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex;
 	}
 
+	.z-pane-scroll {
+		overscroll-behavior-y: contain;
+	}
+
 	.z-btn-primary {
 		@apply inline-flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
 	}

@@ -130,7 +130,7 @@
 		<MessageListToolbar {mailboxRouteId} {onBulkAction} />
 	{/if}
 
-	<div class="min-h-0 flex-1 overflow-y-auto">
+	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 		{#if loading}
 			<div class="divide-y divide-border" aria-busy="true" aria-label="Loading messages">
 				{#each Array(6) as _, index (index)}

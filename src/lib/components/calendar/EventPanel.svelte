@@ -36,7 +36,7 @@
 		{/if}
 	</header>
 
-	<div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
+	<div class="z-pane-scroll min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
 		{#if eventCalendars.length}
 			<div>
 				<p class="text-xs font-medium uppercase tracking-wide text-fg-subtle">Calendars</p>
