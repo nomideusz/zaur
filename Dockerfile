@@ -24,6 +24,7 @@ WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
+ENV BODY_SIZE_LIMIT=50M
 
 RUN addgroup --system --gid 1001 nodejs && \
 	adduser --system --uid 1001 sveltekit
