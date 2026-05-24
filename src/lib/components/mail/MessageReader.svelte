@@ -18,6 +18,7 @@
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { toast } from '$lib/stores/toast.svelte';
 	import { renderMessageBody } from '$lib/email/html';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
@@ -64,7 +65,8 @@
 			await action(auth.client);
 			onMoved?.();
 		} catch (error) {
-			console.error(error);
+			const message = error instanceof Error ? error.message : 'Action failed';
+			toast.show(message, 'error');
 		}
 	}
 

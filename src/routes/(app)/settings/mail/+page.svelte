@@ -14,7 +14,7 @@
 		<label class="flex items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
 			<div>
 				<p class="text-sm font-medium text-fg">Notify on new mail</p>
-				<p class="text-xs text-fg-muted">Show a toast when new messages arrive in Inbox</p>
+				<p class="text-xs text-fg-muted">Toast and browser notification for new Inbox mail</p>
 			</div>
 			<input
 				type="checkbox"

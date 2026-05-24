@@ -6,6 +6,7 @@ import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
 import { settings } from '$lib/stores/settings.svelte';
 import { toast } from '$lib/stores/toast.svelte';
 import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
+import { showBrowserNotification } from '$lib/utils/notifications';
 
 const PAGE_SIZE = 50;
 
@@ -515,11 +516,15 @@ class MailStore {
 			const email = notifiable[0];
 			const from = email.from?.[0]?.name?.trim() || email.from?.[0]?.email || 'Someone';
 			const subject = email.subject?.trim() || '(no subject)';
-			toast.show(`New mail from ${from}: ${subject}`, 'info');
+			const message = `New mail from ${from}: ${subject}`;
+			toast.show(message, 'info');
+			showBrowserNotification('New mail', `${from}: ${subject}`);
 			return;
 		}
 
-		toast.show(`${notifiable.length} new messages in Inbox`, 'info');
+		const message = `${notifiable.length} new messages in Inbox`;
+		toast.show(message, 'info');
+		showBrowserNotification('New mail', message);
 	}
 
 	setSelectedThread(emails: JMAPEmail[], routeMailboxId: string) {

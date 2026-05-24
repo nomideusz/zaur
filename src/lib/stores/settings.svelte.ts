@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { requestBrowserNotificationPermission } from '$lib/utils/notifications';
 
 export type ListDensity = 'comfortable' | 'compact';
 
@@ -110,6 +111,9 @@ class SettingsStore {
 		this.notifyOnNewMail = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.notifyOnNewMail, String(value));
+			if (value) {
+				void requestBrowserNotificationPermission();
+			}
 		}
 	}
 

@@ -80,7 +80,6 @@ class AuthStore {
 
 			await goto('/mail/inbox');
 		} catch (error) {
-			console.error('[Client Login Error]:', error);
 			const code = classifyJmapError(error);
 			this.errorCode = code;
 			const detail = error instanceof Error ? error.message : '';

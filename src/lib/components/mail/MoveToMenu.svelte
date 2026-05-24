@@ -2,6 +2,7 @@
 	import { FolderInput } from 'lucide-svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { toast } from '$lib/stores/toast.svelte';
 	import type { JMAPClient } from '$lib/jmap/client';
 	import type { MessagePreview } from '$lib/types/mail';
 
@@ -27,7 +28,8 @@
 			await mail.moveMessageToMailbox(client, message, targetRouteId);
 			onMoved?.();
 		} catch (error) {
-			console.error(error);
+			const message = error instanceof Error ? error.message : 'Could not move message';
+			toast.show(message, 'error');
 		}
 	}
 </script>
