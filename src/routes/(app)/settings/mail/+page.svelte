@@ -37,4 +37,22 @@
 			/>
 		</label>
 	</div>
+
+	<div class="mt-8 border-t border-border pt-6">
+		<h3 class="text-sm font-medium text-fg">Keyboard shortcuts</h3>
+		<dl class="mt-3 space-y-2 text-sm">
+			<div class="flex justify-between gap-4">
+				<dt class="text-fg-muted">Compose</dt>
+				<dd class="font-mono text-xs text-fg">c</dd>
+			</div>
+			<div class="flex justify-between gap-4">
+				<dt class="text-fg-muted">Search</dt>
+				<dd class="font-mono text-xs text-fg">/</dd>
+			</div>
+			<div class="flex justify-between gap-4">
+				<dt class="text-fg-muted">Send message</dt>
+				<dd class="font-mono text-xs text-fg">Ctrl+Enter</dd>
+			</div>
+		</dl>
+	</div>
 </div>

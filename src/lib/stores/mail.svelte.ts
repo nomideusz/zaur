@@ -227,6 +227,7 @@ class MailStore {
 			}
 
 			this.selectedThread = emails.map((email) => mapEmailDetail(email, routeMailboxId));
+			indexMessagesContacts(this.selectedThread);
 
 			if (browser) {
 				const { cacheThread } = await import('$lib/db');

@@ -24,6 +24,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { renderMessageBody } from '$lib/email/html';
+	import { recordContact } from '$lib/utils/contact-index';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
 
@@ -127,6 +128,13 @@
 
 	function composeTo(email: string) {
 		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
+	}
+
+	function saveContact(message: MessageDetail) {
+		const accountId = auth.client?.getAccountId();
+		if (!accountId) return;
+		recordContact(accountId, message.from.name, message.from.email);
+		toast.show(`${message.from.name} added to contacts`, 'success');
 	}
 
 	async function sendQuickReply() {
@@ -262,6 +270,13 @@
 											onclick={() => composeTo(message.from.email)}
 										>
 											{message.from.email}
+										</button>
+										<button
+											type="button"
+											class="mt-1 text-xs text-accent hover:underline"
+											onclick={() => saveContact(message)}
+										>
+											Save contact
 										</button>
 									</div>
 									<div class="flex items-center gap-2">
