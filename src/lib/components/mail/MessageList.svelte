@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { LoaderCircle } from 'lucide-svelte';
+	import { LoaderCircle, Inbox } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
 	import MessageListItem from './MessageListItem.svelte';
@@ -43,7 +43,13 @@
 	}: Props = $props();
 
 	const activeThreadId = $derived($page.params.threadId);
-	const countLabel = $derived(total ?? messages.length);
+	const mailbox = $derived(mailboxRouteId ? mail.mailboxByRouteId(mailboxRouteId) : null);
+	const countLabel = $derived.by(() => {
+		const totalCount = total ?? messages.length;
+		const unread = mailbox?.unread ?? 0;
+		if (unread > 0) return `${unread} unread · ${totalCount}`;
+		return String(totalCount);
+	});
 </script>
 
 <section
@@ -90,11 +96,21 @@
 		{:else if error}
 			<p class="px-4 py-8 text-center text-sm text-danger">{error}</p>
 		{:else if messages.length === 0}
-			<div class="flex flex-col items-center gap-3 px-6 py-12 text-center">
-				<p class="text-sm text-fg-muted">
-					{emptyMessage ??
-						(mailboxRouteId === 'inbox' ? 'Your inbox is empty.' : 'No messages in this folder.')}
-				</p>
+			<div class="flex flex-col items-center gap-4 px-6 py-16 text-center">
+				<div class="rounded-full bg-surface-sunken p-4">
+					<Inbox class="size-8 text-fg-subtle" aria-hidden="true" />
+				</div>
+				<div>
+					<p class="text-sm font-medium text-fg">
+						{emptyMessage ??
+							(mailboxRouteId === 'inbox' ? 'Your inbox is empty' : 'No messages here')}
+					</p>
+					{#if !emptyMessage && mailboxRouteId === 'inbox'}
+						<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">
+							New mail will show up here when it arrives.
+						</p>
+					{/if}
+				</div>
 				{#if emptyActionHref && emptyActionLabel}
 					<Button href={emptyActionHref} variant="ghost" class="text-sm">{emptyActionLabel}</Button>
 				{:else if mailboxRouteId === 'inbox'}

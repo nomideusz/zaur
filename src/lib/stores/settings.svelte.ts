@@ -15,9 +15,9 @@ const STORAGE = {
 	signature: (email: string) => `zaur:signature:${email}`
 } as const;
 
-const LIST_ROW_HEIGHT: Record<ListDensity, string> = {
-	comfortable: '4.25rem',
-	compact: '3rem'
+const LIST_ROW_HEIGHT: Record<ListDensity, { preview: string; noPreview: string }> = {
+	comfortable: { preview: '4.25rem', noPreview: '3.25rem' },
+	compact: { preview: '3rem', noPreview: '2.75rem' }
 };
 
 const READER_TEXT_SIZE: Record<ReaderTextSize, string> = {
@@ -84,7 +84,7 @@ class SettingsStore {
 		this.readerTextSize = readReaderTextSize();
 		this.markAsReadOnOpen = readMarkAsReadOnOpen();
 		this.notifyOnNewMail = readNotifyOnNewMail();
-		this.applyListDensity(this.listDensity);
+		this.applyListLayout();
 		this.applyReaderTextSize(this.readerTextSize);
 	}
 
@@ -120,7 +120,7 @@ class SettingsStore {
 		if (browser) {
 			localStorage.setItem(STORAGE.listDensity, value);
 		}
-		this.applyListDensity(value);
+		this.applyListLayout();
 	}
 
 	setShowListPreview(value: boolean) {
@@ -128,6 +128,7 @@ class SettingsStore {
 		if (browser) {
 			localStorage.setItem(STORAGE.showListPreview, String(value));
 		}
+		this.applyListLayout();
 	}
 
 	setReaderTextSize(value: ReaderTextSize) {
@@ -179,9 +180,11 @@ class SettingsStore {
 		}
 	}
 
-	private applyListDensity(value: ListDensity) {
+	private applyListLayout() {
 		if (!browser) return;
-		document.documentElement.style.setProperty('--z-list-row', LIST_ROW_HEIGHT[value]);
+		const heights = LIST_ROW_HEIGHT[this.listDensity];
+		const height = this.showListPreview ? heights.preview : heights.noPreview;
+		document.documentElement.style.setProperty('--z-list-row', height);
 	}
 
 	private applyReaderTextSize(value: ReaderTextSize) {

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Button from '$lib/components/ui/Button.svelte';
 	import SettingsField from '$lib/components/settings/SettingsField.svelte';
+	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
 	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -31,27 +32,30 @@
 </svelte:head>
 
 <SettingsPanel title="Account" description="Your profile and sign-in details.">
-	<SettingsField title="Display name" description="Shown when you send mail and in the header">
-		<input
-			type="text"
-			class="z-input"
-			value={settings.displayName}
-			placeholder={auth.displayName ?? auth.username ?? 'Your name'}
-			oninput={(e) => settings.setDisplayName(e.currentTarget.value)}
-		/>
-	</SettingsField>
+	<SettingsGroup title="Profile">
+		<SettingsField title="Display name" description="Shown when you send mail and in the header">
+			<input
+				type="text"
+				class="z-input"
+				value={settings.displayName}
+				placeholder={auth.displayName ?? auth.username ?? 'Your name'}
+				oninput={(e) => settings.setDisplayName(e.currentTarget.value)}
+			/>
+		</SettingsField>
 
-	<SettingsField title="Email signature" description="Appended to new messages, replies, and forwards">
-		<textarea
-			class="z-input min-h-24 resize-y"
-			value={settings.signature}
-			placeholder="Best regards,&#10;Your name"
-			oninput={(e) => settings.setSignature(e.currentTarget.value)}
-		></textarea>
-	</SettingsField>
+		<SettingsField title="Email signature" description="Appended to new messages, replies, and forwards">
+			<textarea
+				class="z-input min-h-24 resize-y"
+				value={settings.signature}
+				placeholder="Best regards,&#10;Your name"
+				oninput={(e) => settings.setSignature(e.currentTarget.value)}
+			></textarea>
+		</SettingsField>
+	</SettingsGroup>
 
 	{#snippet footer()}
-		<dl class="space-y-4 text-sm">
+		<h3 class="text-xs font-medium tracking-wide text-fg-subtle uppercase">Account details</h3>
+		<dl class="mt-4 space-y-4 text-sm">
 			<div class="flex justify-between gap-4 border-b border-border pb-3">
 				<dt class="text-fg-muted">Primary address</dt>
 				<dd class="font-medium text-fg">{auth.username ?? '—'}</dd>

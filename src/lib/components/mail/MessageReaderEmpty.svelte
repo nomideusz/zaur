@@ -3,7 +3,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 </script>
 
-<div class="flex flex-1 flex-col items-center justify-center gap-4 bg-surface p-8 text-center">
+<div class="flex flex-1 flex-col items-center justify-center gap-4 bg-surface-raised p-8 text-center">
 	<div class="rounded-full bg-surface-sunken p-4">
 		<Mail class="size-8 text-fg-subtle" aria-hidden="true" />
 	</div>

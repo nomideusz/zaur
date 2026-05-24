@@ -246,7 +246,14 @@
 	</header>
 
 	{#if mail.selectedError}
-		<div class="border-b border-border bg-surface px-4 py-2 text-xs text-fg-muted md:px-6">
+		<div
+			class={cn(
+				'border-b px-4 py-2 text-xs md:px-6',
+				mail.selectedError.startsWith('Offline')
+					? 'border-border bg-surface text-fg-muted'
+					: 'border-danger/20 bg-danger/5 text-danger'
+			)}
+		>
 			{mail.selectedError}
 		</div>
 	{/if}

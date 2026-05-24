@@ -29,7 +29,10 @@
 	</SettingsGroup>
 
 	<SettingsGroup title="Inbox list">
-		<SettingsRow title="List density" description="Spacing between messages in the inbox list">
+		<SettingsRow
+			title="List density"
+			description="Row spacing — turn off previews below for a tighter list"
+		>
 			<select
 				class="z-input w-auto"
 				value={settings.listDensity}

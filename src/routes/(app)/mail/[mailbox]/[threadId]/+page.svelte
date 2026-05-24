@@ -4,6 +4,7 @@
 	import MessageList from '$lib/components/mail/MessageList.svelte';
 	import MessageReader from '$lib/components/mail/MessageReader.svelte';
 	import MessageReaderSkeleton from '$lib/components/mail/MessageReaderSkeleton.svelte';
+	import MessageReaderStatus from '$lib/components/mail/MessageReaderStatus.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 
@@ -78,14 +79,18 @@
 	</div>
 {:else}
 	<div class="hidden min-w-0 flex-1 md:flex">
-		<p class="flex flex-1 items-center justify-center text-sm text-fg-muted">
-			{mail.selectedError ?? 'Message not found.'}
-		</p>
+		<MessageReaderStatus
+			message={mail.selectedError ?? 'Message not found.'}
+			onBack={backToList}
+		/>
 	</div>
 	<div
-		class="fixed inset-x-0 bottom-0 z-30 flex items-center justify-center bg-surface px-6 md:hidden"
+		class="fixed inset-x-0 bottom-0 z-30 flex bg-surface md:hidden"
 		style="top: var(--height-header);"
 	>
-		<p class="text-center text-sm text-fg-muted">{mail.selectedError ?? 'Message not found.'}</p>
+		<MessageReaderStatus
+			message={mail.selectedError ?? 'Message not found.'}
+			onBack={backToList}
+		/>
 	</div>
 {/if}
