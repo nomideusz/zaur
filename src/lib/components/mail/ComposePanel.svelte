@@ -210,7 +210,7 @@
 					<input
 						type="text"
 						class="flex-1 bg-transparent outline-none placeholder:text-fg-subtle"
-						placeholder="Subject"
+						placeholder="Subject (optional)"
 						bind:value={compose.subject}
 					/>
 				</label>

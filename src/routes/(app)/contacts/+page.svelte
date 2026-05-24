@@ -128,6 +128,9 @@
 									<div class="min-w-0 flex-1">
 										<p class="truncate text-sm font-medium text-fg">{contact.name}</p>
 										<p class="truncate text-xs text-fg-muted">{contact.email}</p>
+										{#if contact.count > 1}
+											<p class="text-[11px] text-fg-subtle">{contact.count} messages</p>
+										{/if}
 									</div>
 									<Mail class="size-4 shrink-0 text-fg-subtle group-hover:hidden" aria-hidden="true" />
 								</button>

@@ -293,10 +293,6 @@ class ComposeStore {
 			this.error = 'Enter at least one recipient';
 			return false;
 		}
-		if (!this.subject.trim()) {
-			this.error = 'Subject is required';
-			return false;
-		}
 		if (this.hasUploadingAttachments) {
 			this.error = 'Wait for attachments to finish uploading';
 			return false;
@@ -315,6 +311,7 @@ class ComposeStore {
 		const bcc = parseAddressList(this.bcc);
 		const draftId = this.jmapDraftId;
 		const attachments = this.readyAttachments();
+		const subject = this.subject.trim() || '(no subject)';
 		const sendOptions = {
 			fromEmail,
 			fromName: fromName?.trim() || undefined,
@@ -324,7 +321,7 @@ class ComposeStore {
 		};
 
 		try {
-			await client.sendEmail(recipients, this.subject.trim(), this.body, sendOptions);
+			await client.sendEmail(recipients, subject, this.body, sendOptions);
 
 			if (draftId) {
 				try {
@@ -346,7 +343,7 @@ class ComposeStore {
 						to: this.to,
 						cc: this.cc,
 						bcc: this.bcc,
-						subject: this.subject.trim(),
+						subject,
 						body: this.body,
 						fromEmail,
 						fromName: fromName?.trim() || undefined,

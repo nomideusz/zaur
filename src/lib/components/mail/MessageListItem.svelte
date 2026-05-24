@@ -30,14 +30,25 @@
 		cn(
 			'z-list-row flex items-start gap-3 border-b border-border px-3 py-2.5 transition-colors',
 			selectionMode ? 'cursor-pointer' : '',
-			active || selected ? 'bg-surface-sunken' : 'hover:bg-surface-sunken/70',
-			message.unread && 'border-l-2 border-l-unread pl-[calc(0.75rem-2px)]'
+			active || selected ? 'bg-surface-sunken' : 'hover:bg-surface-sunken/70'
 		)
 	);
 </script>
 
+{#snippet avatar()}
+	<div class="relative shrink-0">
+		<Avatar name={message.from.name} email={message.from.email} class="mt-0.5 size-8" />
+		{#if message.unread}
+			<span
+				class="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-unread ring-2 ring-surface-raised"
+				aria-label="Unread"
+			></span>
+		{/if}
+	</div>
+{/snippet}
+
 {#snippet content()}
-	<Avatar name={message.from.name} email={message.from.email} class="mt-0.5 size-8" />
+	{@render avatar()}
 	<div class="min-w-0 flex-1">
 		<div class="flex items-baseline justify-between gap-2">
 			<span class={cn('truncate text-sm', message.unread ? 'font-semibold text-fg' : 'text-fg')}>
