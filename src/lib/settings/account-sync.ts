@@ -58,8 +58,8 @@ export function scheduleAccountSettingsPush() {
 	}, PUSH_DEBOUNCE_MS);
 }
 
-async function pushAccountSettings(): Promise<void> {
-	if (!browser || pushInFlight || !syncAccountEmail) return;
+async function pushAccountSettings(): Promise<boolean> {
+	if (!browser || pushInFlight || !syncAccountEmail) return false;
 
 	pushInFlight = true;
 	const email = syncAccountEmail;
@@ -80,20 +80,31 @@ async function pushAccountSettings(): Promise<void> {
 		if (response.ok) {
 			const payload = (await response.json()) as { updatedAt?: string };
 			markSyncedAt(email, payload.updatedAt ?? updatedAt);
-			return;
+			return true;
 		}
 
 		const payload = (await response.json().catch(() => null)) as { error?: string } | null;
 		const message = payload?.error ?? `Could not save settings (${response.status})`;
 		console.warn('Account settings sync failed:', message);
 		toast.show(message, 'error');
+		return false;
 	} catch (error) {
 		const message = error instanceof Error ? error.message : 'Could not save settings';
 		console.warn('Account settings sync failed:', error);
 		toast.show(message, 'error');
+		return false;
 	} finally {
 		pushInFlight = false;
 	}
+}
+
+/** Flush pending settings changes to the account immediately. */
+export async function pushAccountSettingsNow(): Promise<boolean> {
+	if (pushTimer) {
+		clearTimeout(pushTimer);
+		pushTimer = null;
+	}
+	return pushAccountSettings();
 }
 
 export async function pullAccountSettings(

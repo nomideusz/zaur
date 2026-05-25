@@ -1552,6 +1552,16 @@ class SettingsStore {
 		}
 	}
 
+	async syncToAccount(): Promise<boolean> {
+		const { pushAccountSettingsNow } = await import('$lib/settings/account-sync');
+		const ok = await pushAccountSettingsNow();
+		if (ok) {
+			const { toast } = await import('$lib/stores/toast.svelte');
+			toast.show('Settings saved to your account', 'success');
+		}
+		return ok;
+	}
+
 	private writeStorage(key: string, value: string) {
 		if (!browser) return;
 		localStorage.setItem(key, value);

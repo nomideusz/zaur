@@ -89,6 +89,14 @@
 
 	<SettingsGroup title="Preferences backup">
 		<SettingsRow
+			title="Sync to account"
+			description="Save your current preferences to your mail account for use on other devices"
+		>
+			<button type="button" class="z-btn-ghost text-sm" onclick={() => void settings.syncToAccount()}>
+				Sync now
+			</button>
+		</SettingsRow>
+		<SettingsRow
 			title="Export settings"
 			description="Download a JSON backup of your preferences — also under Backup & reset"
 		>
