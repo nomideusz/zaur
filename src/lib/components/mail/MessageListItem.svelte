@@ -149,7 +149,7 @@
 	>
 		<input
 			type="checkbox"
-			class="mt-2 size-4 shrink-0 accent-accent"
+			class="z-checkbox mt-2"
 			checked={selected}
 			onclick={(e) => e.stopPropagation()}
 			onchange={onToggleSelect}

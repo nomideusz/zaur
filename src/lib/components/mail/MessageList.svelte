@@ -151,7 +151,9 @@
 		)}
 	>
 		{#if showBulkToolbar && !mail.selectionMode}
-			<MessageListMasterCheckbox class="shrink-0" />
+			<label class="flex shrink-0 cursor-pointer items-center rounded-md p-0.5 hover:bg-surface-sunken/80">
+				<MessageListMasterCheckbox />
+			</label>
 		{/if}
 		{#if mailboxRouteId}
 			<label class="min-w-0 flex-1 md:hidden">
