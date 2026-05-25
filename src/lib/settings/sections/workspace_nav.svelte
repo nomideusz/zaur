@@ -5,7 +5,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Getting around" description="Home screen, tools, search, and folders.">
+<SettingsGroup title="Home screen" description="Welcome screen and where Mail opens.">
 		<SettingsRow
 			title="Skip home screen"
 			description="Open inbox directly — hides the Home tab and welcome screen"
@@ -84,7 +84,9 @@
 				onchange={(e) => settings.setRememberLastMailbox(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+</SettingsGroup>
 
+<SettingsGroup title="Folders & sidebar" description="Folder sidebar links and unread badges.">
 		<SettingsRow
 			title="Hide sidebar shortcuts"
 			description="Remove Contacts and Settings links from the mail folder sidebar — they stay in the top bar"
@@ -115,7 +117,9 @@
 				/>
 			</SettingsRow>
 		</SettingsDepends>
+</SettingsGroup>
 
+<SettingsGroup title="Navigation" description="Which tools appear in the top bar.">
 		<SettingsRow
 			title="Mail-only navigation"
 			description="Hide Calendar and Contacts from the top bar — for a focused mail experience"
@@ -127,7 +131,9 @@
 				onchange={(e) => settings.setMailOnlyNavigation(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+</SettingsGroup>
 
+<SettingsGroup title="Header search" description="Global search in the top bar.">
 		<SettingsRow
 			title="Hide header search"
 			description="Remove the search bar from the top bar — search remains on mobile via the icon"
