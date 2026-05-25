@@ -1,9 +1,13 @@
+import { plainTextToSafeHtml } from '$lib/email/html';
+
 export interface EmailAttachmentInput {
 	blobId: string;
 	name: string;
 	type: string;
 	size: number;
 }
+
+export type ComposeFormat = 'plain' | 'html';
 
 export interface EmailCreateInput {
 	fromEmail: string;
@@ -13,6 +17,7 @@ export interface EmailCreateInput {
 	bcc?: string[];
 	subject: string;
 	body: string;
+	format?: ComposeFormat;
 	mailboxIds: Record<string, boolean>;
 	keywords?: Record<string, boolean>;
 	attachments?: EmailAttachmentInput[];
@@ -30,8 +35,19 @@ export function buildEmailCreateData(input: EmailCreateInput): Record<string, un
 		subject: input.subject,
 		mailboxIds: input.mailboxIds,
 		...(input.keywords ? { keywords: input.keywords } : {}),
-		bodyValues: { '1': { value: input.body } },
-		textBody: [{ partId: '1', type: 'text/plain' }]
+		...(input.format === 'html'
+			? {
+					bodyValues: {
+						'1': { value: input.body },
+						'2': { value: plainTextToSafeHtml(input.body) }
+					},
+					textBody: [{ partId: '1', type: 'text/plain' }],
+					htmlBody: [{ partId: '2', type: 'text/html' }]
+				}
+			: {
+					bodyValues: { '1': { value: input.body } },
+					textBody: [{ partId: '1', type: 'text/plain' }]
+				})
 	};
 
 	if (!attachments.length) return data;

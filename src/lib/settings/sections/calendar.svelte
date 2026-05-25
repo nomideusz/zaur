@@ -240,3 +240,22 @@
 		/>
 	</SettingsRow>
 </SettingsGroup>
+
+<SettingsGroup title="Defaults">
+	<SettingsRow
+		title="Reset calendar settings"
+		description="Restore every calendar option on this page to its original value"
+	>
+		<button
+			type="button"
+			class="z-btn-ghost text-sm"
+			onclick={() => {
+				if (confirm('Reset all calendar settings to defaults?')) {
+					settings.resetCalendarSettings();
+				}
+			}}
+		>
+			Reset
+		</button>
+	</SettingsRow>
+</SettingsGroup>

@@ -6,13 +6,24 @@ Live at [webmail.zaur.app](https://webmail.zaur.app).
 
 ## Features
 
-- **Mail** — inbox, folders, search, compose, reply/forward, attachments, quick reply
+- **Mail** — inbox, folders, search (with operators like `from:` and `has:attachment`), compose, reply/forward, attachments, quick reply, undo for archive/delete
 - **Contacts** — built from mail history, manual add, search integration
 - **Calendar** — month view, create and edit events
 - **Offline** — cached threads and an outbox queue for sending when back online
-- **Settings** — theme, list density, external content blocking, read/notify behavior, display name, signature (synced to your JMAP account across devices)
+- **Settings** — synced preferences across devices (JMAP account blob), Essential vs All options modes, settings search, per-page resets, and export/import
 
-Keyboard shortcuts: `c` compose, `/` search, `Ctrl+Enter` send, `Esc` close compose.
+### Settings overview
+
+| Section | Pages |
+| --- | --- |
+| **Personal** | You (name, signature, include signature toggle, export) |
+| **Behavior** | Notifications, keyboard shortcuts, read/send confirmations |
+| **Customize** | Look & feel (accent color, corner style, surface tone, theme), Inbox, Reading, Writing, Workspace, Calendar, Contacts |
+| **More** | Backup & reset (All options only) |
+
+Look & feel includes accent presets (blue, teal, violet, slate), corner style (default, soft, sharp), surface tone, theme, motion, and loading indicator style.
+
+Keyboard shortcuts (when enabled): `c` compose, `/` search, `j`/`k` list navigation, `r` reply, `a` reply all, `e` archive, `u` toggle read, `#` trash, `Ctrl+Enter` send, `Esc` close compose.
 
 ## Requirements
 
@@ -46,6 +57,12 @@ pnpm dev      # development server
 pnpm build    # production build
 pnpm preview  # preview production build
 pnpm check    # TypeScript + Svelte checks
+```
+
+After adding or renaming settings rows, regenerate the search index and Essential-mode counts:
+
+```sh
+node scripts/generate-settings-index.mjs
 ```
 
 ## Deploy

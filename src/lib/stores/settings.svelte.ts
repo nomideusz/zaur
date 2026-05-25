@@ -10,6 +10,7 @@ export type LoadingIndicatorStyle = 'skeleton' | 'minimal' | 'spinner';
 export type ComposeLayout = 'drawer' | 'pane';
 export type DefaultReplyMode = 'reply' | 'reply-all';
 export type ListTextSize = 'normal' | 'large';
+export type ComposeFormat = 'plain' | 'html';
 
 const STORAGE = {
 	blockExternal: 'zaur:block-external',
@@ -185,6 +186,7 @@ const STORAGE = {
 	readerTextSize: 'zaur:reader-text-size',
 	listTextSize: 'zaur:list-text-size',
 	defaultReplyMode: 'zaur:default-reply-mode',
+	defaultComposeFormat: 'zaur:default-compose-format',
 	useSignature: (email: string) => `zaur:use-signature:${email}`,
 	markAsReadOnOpen: 'zaur:mark-read-on-open',
 	showUnreadInTitle: 'zaur:show-unread-in-title',
@@ -1094,6 +1096,11 @@ function readDefaultReplyMode(): DefaultReplyMode {
 	return localStorage.getItem(STORAGE.defaultReplyMode) === 'reply-all' ? 'reply-all' : 'reply';
 }
 
+function readDefaultComposeFormat(): ComposeFormat {
+	if (!browser) return 'plain';
+	return localStorage.getItem(STORAGE.defaultComposeFormat) === 'html' ? 'html' : 'plain';
+}
+
 function readUseSignature(email: string | null): boolean {
 	if (!browser || !email) return true;
 	return localStorage.getItem(STORAGE.useSignature(email)) !== 'false';
@@ -1297,6 +1304,7 @@ class SettingsStore {
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	listTextSize = $state<ListTextSize>(readListTextSize());
 	defaultReplyMode = $state<DefaultReplyMode>(readDefaultReplyMode());
+	defaultComposeFormat = $state<ComposeFormat>(readDefaultComposeFormat());
 	markAsReadOnOpen = $state(readMarkAsReadOnOpen());
 	showUnreadInTitle = $state(readShowUnreadInTitle());
 	notifyOnNewMail = $state(readNotifyOnNewMail());
@@ -1482,6 +1490,7 @@ class SettingsStore {
 		this.readerTextSize = readReaderTextSize();
 		this.listTextSize = readListTextSize();
 		this.defaultReplyMode = readDefaultReplyMode();
+		this.defaultComposeFormat = readDefaultComposeFormat();
 		this.markAsReadOnOpen = readMarkAsReadOnOpen();
 		this.showUnreadInTitle = readShowUnreadInTitle();
 		this.notifyOnNewMail = readNotifyOnNewMail();
@@ -2757,6 +2766,13 @@ class SettingsStore {
 		}
 	}
 
+	setDefaultComposeFormat(value: ComposeFormat) {
+		this.defaultComposeFormat = value;
+		if (browser) {
+			this.writeStorage(STORAGE.defaultComposeFormat, value);
+		}
+	}
+
 	setUseSignature(value: boolean) {
 		this.useSignature = value;
 		if (!browser || !this.userEmail) return;
@@ -3222,6 +3238,7 @@ class SettingsStore {
 	resetComposeSettings() {
 		this.setComposeLayout('drawer');
 		this.setDefaultReplyMode('reply');
+		this.setDefaultComposeFormat('plain');
 		this.setHideComposeHints(false);
 		this.setCollapseQuotedInCompose(false);
 		this.setShowCcBccInCompose(true);
@@ -3277,6 +3294,51 @@ class SettingsStore {
 		this.setHideOutboxUnlessFailed(false);
 		this.setCompactOutboxMenu(false);
 		this.setCompactMobileSearch(false);
+	}
+
+	resetCalendarSettings() {
+		this.setCompactCalendarGrid(false);
+		this.setCompactCalendarHeader(false);
+		this.setCalendarWeekStartsOnMonday(false);
+		this.setCalendarMaxEventsPerDay(3);
+		this.setHideCalendarEventTimes(false);
+		this.setHideCalendarMoreEventsLabel(false);
+		this.setCompactCalendarSidebar(false);
+		this.setHideCalendarSidebarHeader(false);
+		this.setHideCalendarSidebarSettings(false);
+		this.setHideCalendarNewEventButton(false);
+		this.setIconOnlyCalendarNewEvent(false);
+		this.setCompactCalendarEventPanel(false);
+		this.setHideCalendarEmptyEventPanel(false);
+		this.setCompactCalendarEmptyEventPanel(false);
+		this.setCompactCalendarCompose(false);
+		this.setHideCalendarComposeFieldLabels(false);
+		this.setHideCalendarPaneBorders(false);
+	}
+
+	resetContactsSettings() {
+		this.setCompactContactsPage(false);
+		this.setCompactContactsList(false);
+		this.setCompactContactsSearch(false);
+		this.setCompactContactsAddForm(false);
+		this.setHideContactMessageCounts(false);
+		this.setHideContactGroupLetters(false);
+		this.setHideContactsEmailLine(false);
+		this.setHideContactsPageSubtitle(false);
+		this.setHideContactsHeaderSettings(false);
+		this.setHideContactsComposeButton(false);
+		this.setHideContactsHoverActions(false);
+		this.setHideContactsRowMailIcon(false);
+		this.setCompactContactsEmptyState(false);
+		this.setHideContactsEmptyHints(false);
+		this.setHideContactsEmptyActions(false);
+	}
+
+	resetAccountSettings() {
+		this.setDisplayName('');
+		this.setSignature('');
+		this.setUseSignature(true);
+		this.setHideAccountFieldHints(false);
 	}
 
 	simplificationCount(): number {

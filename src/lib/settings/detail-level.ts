@@ -11,6 +11,9 @@ const BASIC_TITLE_OVERRIDES = new Set([
 	'Reset reading settings',
 	'Reset writing settings',
 	'Reset workspace settings',
+	'Reset calendar settings',
+	'Reset contacts settings',
+	'Reset you settings',
 	'Restore mail defaults',
 	'Export settings',
 	'Import settings'

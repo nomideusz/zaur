@@ -317,7 +317,8 @@ class ComposeStore {
 			fromName: fromName?.trim() || undefined,
 			cc: cc.length ? cc : undefined,
 			bcc: bcc.length ? bcc : undefined,
-			attachments: attachments.length ? attachments : undefined
+			attachments: attachments.length ? attachments : undefined,
+			format: settings.defaultComposeFormat
 		};
 
 		try {
@@ -417,7 +418,8 @@ class ComposeStore {
 				body: this.body,
 				fromEmail,
 				fromName: fromName?.trim() || undefined,
-				attachments: this.readyAttachments()
+				attachments: this.readyAttachments(),
+				format: settings.defaultComposeFormat
 			});
 			this.jmapDraftId = id;
 			this.draftSavedAt = Date.now();

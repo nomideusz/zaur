@@ -37,6 +37,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/account-reset-you-settings",
+		"href": "/settings/account",
+		"title": "Reset you settings",
+		"description": ""
+	},
+	{
 		"id": "/settings/appearance-accent-color",
 		"href": "/settings/appearance",
 		"title": "Accent color",
@@ -247,6 +253,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/calendar-reset-calendar-settings",
+		"href": "/settings/calendar",
+		"title": "Reset calendar settings",
+		"description": ""
+	},
+	{
 		"id": "/settings/calendar-week-starts-on-monday",
 		"href": "/settings/calendar",
 		"title": "Week starts on Monday",
@@ -292,6 +304,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/compose-compose-layout",
 		"href": "/settings/compose",
 		"title": "Compose layout",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-default-compose-format",
+		"href": "/settings/compose",
+		"title": "Default compose format",
 		"description": ""
 	},
 	{
@@ -439,9 +457,27 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/contacts-reset-contacts-settings",
+		"href": "/settings/contacts",
+		"title": "Reset contacts settings",
+		"description": ""
+	},
+	{
 		"id": "/settings/data-apply-simple-mode",
 		"href": "/settings/data",
 		"title": "Apply simple mode",
+		"description": ""
+	},
+	{
+		"id": "/settings/data-export-settings",
+		"href": "/settings/data",
+		"title": "Export settings",
+		"description": ""
+	},
+	{
+		"id": "/settings/data-import-settings",
+		"href": "/settings/data",
+		"title": "Import settings",
 		"description": ""
 	},
 	{

@@ -8,7 +8,7 @@ import type {
 	JMAPEmail
 } from './types';
 import { parseSearchQuery } from '$lib/mail/search-query';
-import { buildEmailCreateData, type EmailAttachmentInput } from './email-build';
+import { buildEmailCreateData, type ComposeFormat, type EmailAttachmentInput } from './email-build';
 import { resolveMailAccountId } from './account';
 import { buildDownloadUrl, buildUploadUrl } from './urls';
 import type {
@@ -948,6 +948,7 @@ export class JMAPClient {
 		fromEmail: string;
 		fromName?: string;
 		attachments?: EmailAttachmentInput[];
+		format?: ComposeFormat;
 	}): Promise<string> {
 		const mailboxes = await this.getMailboxes();
 		const draftsMailbox = mailboxes.find((mb) => mb.role === 'drafts');
@@ -962,6 +963,7 @@ export class JMAPClient {
 			bcc: params.bcc,
 			subject: params.subject,
 			body: params.body,
+			format: params.format,
 			mailboxIds: { [draftsMailbox.id]: true },
 			keywords: { $draft: true },
 			attachments: params.attachments
@@ -1013,6 +1015,7 @@ export class JMAPClient {
 			fromEmail?: string;
 			fromName?: string;
 			attachments?: EmailAttachmentInput[];
+			format?: ComposeFormat;
 		}
 	): Promise<void> {
 		const mailboxes = await this.getMailboxes();
@@ -1040,6 +1043,7 @@ export class JMAPClient {
 			bcc: options?.bcc,
 			subject,
 			body,
+			format: options?.format,
 			mailboxIds: { [holdingMailboxId]: true },
 			keywords: { $draft: true },
 			attachments: options?.attachments

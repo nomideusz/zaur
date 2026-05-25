@@ -98,6 +98,25 @@
 		</SettingsRow>
 	</SettingsGroup>
 
+	<SettingsGroup title="Defaults">
+		<SettingsRow
+			title="Reset you settings"
+			description="Restore display name, signature, and field hints on this page to their original values"
+		>
+			<button
+				type="button"
+				class="z-btn-ghost text-sm"
+				onclick={() => {
+					if (confirm('Reset your profile settings to defaults?')) {
+						settings.resetAccountSettings();
+					}
+				}}
+			>
+				Reset
+			</button>
+		</SettingsRow>
+	</SettingsGroup>
+
 	{#snippet footer()}
 		<h3 class="text-xs font-medium tracking-wide text-fg-subtle uppercase">Account details</h3>
 		<dl class="mt-4 space-y-4 text-sm">

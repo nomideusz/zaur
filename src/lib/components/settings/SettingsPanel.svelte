@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { page } from '$app/stores';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { hiddenSettingsCountForPage } from '$lib/settings/page-stats';
 	import { cn } from '$lib/utils/cn';
 
 	let {
@@ -13,6 +15,12 @@
 		children: import('svelte').Snippet;
 		footer?: import('svelte').Snippet;
 	} = $props();
+
+	const hiddenCount = $derived(
+		settings.settingsDetailLevel === 'basic'
+			? hiddenSettingsCountForPage($page.url.pathname)
+			: 0
+	);
 </script>
 
 <div class={cn('z-panel rounded-xl', settings.compactSettingsPanel ? 'p-4 md:p-5' : 'p-5 md:p-7')}>
@@ -22,6 +30,18 @@
 		</h2>
 		{#if !settings.hideSettingsPanelDescriptions}
 			<p class="mt-1 max-w-3xl text-sm text-fg-muted">{description}</p>
+			{#if hiddenCount > 0}
+				<p class="mt-1.5 text-xs text-fg-muted">
+					{hiddenCount} more {hiddenCount === 1 ? 'option' : 'options'} in
+					<button
+						type="button"
+						class="text-accent underline-offset-2 hover:underline"
+						onclick={() => settings.setSettingsDetailLevel('advanced')}
+					>
+						All options
+					</button>.
+				</p>
+			{/if}
 		{/if}
 	</div>
 	<div

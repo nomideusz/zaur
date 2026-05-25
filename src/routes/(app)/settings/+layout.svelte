@@ -28,7 +28,9 @@
 	class={cn(
 		'mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-y-auto xl:max-w-7xl',
 		'md:flex-row',
-		settings.compactSettingsLayout ? 'gap-4 p-4 md:gap-6 md:p-6' : 'gap-6 p-5 md:gap-8 md:p-8 lg:p-10'
+		settings.compactSettingsLayout
+			? 'gap-4 px-4 pt-4 pb-[max(2rem,env(safe-area-inset-bottom))] md:gap-6 md:px-6 md:pt-6 md:pb-[max(2.5rem,env(safe-area-inset-bottom))]'
+			: 'gap-6 px-5 pt-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] md:gap-8 md:px-8 md:pt-8 md:pb-[max(3rem,env(safe-area-inset-bottom))] lg:px-10 lg:pt-10 lg:pb-[max(3.5rem,env(safe-area-inset-bottom))]'
 	)}
 >
 	<header class="md:hidden">

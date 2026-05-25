@@ -2,7 +2,7 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import { settings, type ComposeLayout, type DefaultReplyMode } from '$lib/stores/settings.svelte';
+	import { settings, type ComposeFormat, type ComposeLayout, type DefaultReplyMode } from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="Writing email" description="Compose panel and recipient fields.">
@@ -18,6 +18,21 @@
 			>
 				<option value="reply">Reply</option>
 				<option value="reply-all">Reply all</option>
+			</select>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Default compose format"
+			description="Plain text or HTML when sending — the compose box stays plain text; HTML wraps your message for recipients"
+		>
+			<select
+				class="z-input w-auto"
+				value={settings.defaultComposeFormat}
+				onchange={(e) =>
+					settings.setDefaultComposeFormat(e.currentTarget.value as ComposeFormat)}
+			>
+				<option value="plain">Plain text</option>
+				<option value="html">HTML</option>
 			</select>
 		</SettingsRow>
 

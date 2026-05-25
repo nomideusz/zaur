@@ -196,3 +196,22 @@
 		</SettingsRow>
 	</SettingsDepends>
 </SettingsGroup>
+
+<SettingsGroup title="Defaults">
+	<SettingsRow
+		title="Reset contacts settings"
+		description="Restore every contacts option on this page to its original value"
+	>
+		<button
+			type="button"
+			class="z-btn-ghost text-sm"
+			onclick={() => {
+				if (confirm('Reset all contacts settings to defaults?')) {
+					settings.resetContactsSettings();
+				}
+			}}
+		>
+			Reset
+		</button>
+	</SettingsRow>
+</SettingsGroup>
