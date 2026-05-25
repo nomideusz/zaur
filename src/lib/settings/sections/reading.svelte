@@ -75,7 +75,9 @@
 			onchange={(e) => settings.setPreferPlainText(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
+</SettingsGroup>
 
+<SettingsGroup title="Reading pane layout" description="Padding and dividers in the reading pane.">
 	<SettingsRow
 		title="Compact reader body"
 		description="Less padding around message content in the reading pane"

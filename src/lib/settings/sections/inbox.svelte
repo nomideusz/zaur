@@ -167,7 +167,9 @@
 			onchange={(e) => settings.setShowListTimestamps(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
+</SettingsGroup>
 
+<SettingsGroup title="Row appearance" description="Unread styling, selection, and dividers between rows.">
 	<SettingsRow
 		title="Highlight unread messages"
 		description="Bold text and unread dots in the message list"
@@ -179,9 +181,7 @@
 			onchange={(e) => settings.setHighlightUnreadInList(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
-</SettingsGroup>
 
-<SettingsGroup title="Row appearance" description="Selection highlight and dividers between rows.">
 	<SettingsRow
 		title="Hide list row dividers"
 		description="Remove horizontal lines between messages in the inbox list"

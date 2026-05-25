@@ -1,5 +1,6 @@
 {
-  "iteration": 13,
+  "iteration": 14,
+  "maxIterations": 20,
   "deployEvery": 5,
   "lastDeployIteration": 10,
   "focus": "UI/UX/settings: layout, consistency, settings grouping, missing options",
