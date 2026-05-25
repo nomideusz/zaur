@@ -21,6 +21,7 @@ jobs:
             captain-definition
             Dockerfile
             .dockerignore
+            .npmrc
             package.json
             pnpm-lock.yaml
             svelte.config.js
