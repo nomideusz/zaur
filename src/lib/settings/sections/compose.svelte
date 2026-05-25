@@ -5,7 +5,7 @@
 	import { settings, type ComposeDrawerWidth, type ComposeFormat, type ComposeLayout } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Writing email" description="Compose panel and recipient fields.">
+<SettingsGroup title="Layout & format" description="How the compose panel opens and how messages are sent.">
 		<SettingsRow
 			title="Default compose format"
 			description="Plain text or HTML when sending — the compose box stays plain text; HTML wraps your message for recipients"
@@ -35,30 +35,31 @@
 			</select>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Hide compose hints"
-			description="Remove nudges like “Set display name”, “Add a signature”, and keyboard shortcut tips"
+		<SettingsDepends
+			enabled={settings.composeLayout === 'drawer'}
+			inactiveReason={settings.composeLayout === 'drawer'
+				? 'Drawer width on desktop'
+				: 'Only applies when compose layout is set to drawer'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideComposeHints}
-				onchange={(e) => settings.setHideComposeHints(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Drawer width"
+				description="How wide the compose drawer is on desktop — pane layout uses the full reader column instead"
+			>
+				<select
+					class="z-input w-auto"
+					value={settings.composeDrawerWidth}
+					onchange={(e) =>
+						settings.setComposeDrawerWidth(e.currentTarget.value as ComposeDrawerWidth)}
+				>
+					<option value="narrow">Narrow</option>
+					<option value="default">Default</option>
+					<option value="wide">Wide</option>
+				</select>
+			</SettingsRow>
+		</SettingsDepends>
+</SettingsGroup>
 
-		<SettingsRow
-			title="Collapse quoted text"
-			description="Keep quoted reply content folded when composing"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.collapseQuotedInCompose}
-				onchange={(e) => settings.setCollapseQuotedInCompose(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
+<SettingsGroup title="Recipient fields" description="To, Cc, Bcc, and contact autocomplete.">
 		<SettingsRow
 			title="Show Cc/Bcc fields"
 			description="Cc and Bcc rows in compose — reply-all still shows Cc when needed"
@@ -95,29 +96,6 @@
 			/>
 		</SettingsRow>
 
-		<SettingsDepends
-			enabled={settings.composeLayout === 'drawer'}
-			inactiveReason={settings.composeLayout === 'drawer'
-				? 'Drawer width on desktop'
-				: 'Only applies when compose layout is set to drawer'}
-		>
-			<SettingsRow
-				title="Drawer width"
-				description="How wide the compose drawer is on desktop — pane layout uses the full reader column instead"
-			>
-				<select
-					class="z-input w-auto"
-					value={settings.composeDrawerWidth}
-					onchange={(e) =>
-						settings.setComposeDrawerWidth(e.currentTarget.value as ComposeDrawerWidth)}
-				>
-					<option value="narrow">Narrow</option>
-					<option value="default">Default</option>
-					<option value="wide">Wide</option>
-				</select>
-			</SettingsRow>
-		</SettingsDepends>
-
 		<SettingsRow
 			title="Compose contact suggestions"
 			description="Autocomplete contacts while typing recipients"
@@ -148,7 +126,32 @@
 				/>
 			</SettingsRow>
 		</SettingsDepends>
+</SettingsGroup>
 
+<SettingsGroup title="Reply content" description="Hints and quoted text when replying or forwarding.">
+	<SettingsRow
+		title="Hide compose hints"
+		description="Remove nudges like “Set display name”, “Add a signature”, and keyboard shortcut tips"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.hideComposeHints}
+			onchange={(e) => settings.setHideComposeHints(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Collapse quoted text"
+		description="Keep quoted reply content folded when composing"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.collapseQuotedInCompose}
+			onchange={(e) => settings.setCollapseQuotedInCompose(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Compose toolbar & chrome" description="Footer buttons, dividers, and attachment strip spacing.">
