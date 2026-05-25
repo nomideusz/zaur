@@ -5,7 +5,7 @@
 	import { settings, type ListDensity, type ListTextSize } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="List rows" description="What each message row shows and how tall it is.">
+<SettingsGroup title="Row size" description="Text size, density, and vertical spacing.">
 	<SettingsRow
 		title="List text size"
 		description="Font size for sender, subject, and preview in the message list"
@@ -44,6 +44,20 @@
 		/>
 	</SettingsRow>
 
+	<SettingsRow
+		title="Compact list rows"
+		description="Extra vertical padding trim on each row — stacks with list density above"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactListRows}
+			onchange={(e) => settings.setCompactListRows(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
+<SettingsGroup title="Row content" description="What each message row displays.">
 	<SettingsRow
 		title="Show sender avatars"
 		description="Color initials beside each message — turn off for a simpler, text-only list"
@@ -165,19 +179,9 @@
 			onchange={(e) => settings.setHighlightUnreadInList(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
+</SettingsGroup>
 
-	<SettingsRow
-		title="Compact list rows"
-		description="Extra vertical padding trim on each row — stacks with list density above"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactListRows}
-			onchange={(e) => settings.setCompactListRows(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
+<SettingsGroup title="Row appearance" description="Selection highlight and dividers between rows.">
 	<SettingsRow
 		title="Hide list row dividers"
 		description="Remove horizontal lines between messages in the inbox list"
