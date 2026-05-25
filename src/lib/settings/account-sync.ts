@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { toast } from '$lib/stores/toast.svelte';
 import {
 	ACCOUNT_SETTINGS_SYNC_AT_KEY,
 	accountSettingsSyncAtKey,
@@ -11,6 +12,16 @@ let pushTimer: ReturnType<typeof setTimeout> | null = null;
 let pushInFlight = false;
 let syncAccountEmail: string | null = null;
 
+const EMAIL_SCOPED_PREFIXES = ['zaur:display-name:', 'zaur:signature:', 'zaur:use-signature:'] as const;
+
+function isOtherAccountsScopedKey(key: string, email: string): boolean {
+	for (const prefix of EMAIL_SCOPED_PREFIXES) {
+		if (!key.startsWith(prefix)) continue;
+		return key.slice(prefix.length).trim().toLowerCase() !== email;
+	}
+	return false;
+}
+
 /** Keys synced to the JMAP account (device-local-only keys are omitted). */
 export function collectSyncableSettings(): Record<string, string> {
 	if (!browser) return {};
@@ -22,6 +33,8 @@ export function collectSyncableSettings(): Record<string, string> {
 			continue;
 		}
 		if (!key.startsWith('zaur:') && key !== 'zaur-theme') continue;
+		if (syncAccountEmail && isOtherAccountsScopedKey(key, syncAccountEmail)) continue;
+
 		const value = localStorage.getItem(key);
 		if (value !== null) data[key] = value;
 	}
@@ -71,9 +84,13 @@ async function pushAccountSettings(): Promise<void> {
 		}
 
 		const payload = (await response.json().catch(() => null)) as { error?: string } | null;
-		console.warn('Account settings sync failed:', payload?.error ?? response.status);
+		const message = payload?.error ?? `Could not save settings (${response.status})`;
+		console.warn('Account settings sync failed:', message);
+		toast.show(message, 'error');
 	} catch (error) {
+		const message = error instanceof Error ? error.message : 'Could not save settings';
 		console.warn('Account settings sync failed:', error);
+		toast.show(message, 'error');
 	} finally {
 		pushInFlight = false;
 	}
@@ -116,6 +133,7 @@ export async function pullAccountSettings(
 		for (const [key, value] of Object.entries(remote.settings)) {
 			if (typeof value !== 'string') continue;
 			if (!key.startsWith('zaur:') && key !== 'zaur-theme') continue;
+			if (isOtherAccountsScopedKey(key, normalizedEmail)) continue;
 			localStorage.setItem(key, value);
 		}
 
