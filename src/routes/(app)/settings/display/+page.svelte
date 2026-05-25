@@ -137,6 +137,30 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Highlight unread messages"
+			description="Bold text and unread dots in the message list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.highlightUnreadInList}
+				onchange={(e) => settings.setHighlightUnreadInList(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Show bulk select"
+			description="Select button and multi-message actions in the list toolbar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showBulkSelect}
+				onchange={(e) => settings.setShowBulkSelect(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Expand list until opened"
 			description="Use the full width for the message list on desktop until you pick a message"
 		>
@@ -287,6 +311,30 @@
 				class="size-4 accent-accent"
 				checked={settings.mailOnlyNavigation}
 				onchange={(e) => settings.setMailOnlyNavigation(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide header search"
+			description="Remove the search bar from the top bar — search remains on mobile via the icon"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideHeaderSearch}
+				onchange={(e) => settings.setHideHeaderSearch(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Show folder unread counts"
+			description="Unread badges on folders in the sidebar and mobile folder picker"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showFolderUnreadCounts}
+				onchange={(e) => settings.setShowFolderUnreadCounts(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

@@ -15,6 +15,10 @@ const STORAGE = {
 	showFullDatesInList: 'zaur:show-full-dates-in-list',
 	showSenderEmailInList: 'zaur:show-sender-email-in-list',
 	showListTimestamps: 'zaur:show-list-timestamps',
+	highlightUnreadInList: 'zaur:highlight-unread-in-list',
+	showFolderUnreadCounts: 'zaur:show-folder-unread-counts',
+	showBulkSelect: 'zaur:show-bulk-select',
+	hideHeaderSearch: 'zaur:hide-header-search',
 	showQuickReply: 'zaur:show-quick-reply',
 	showReaderContactActions: 'zaur:show-reader-contact-actions',
 	expandAllThreadMessages: 'zaur:expand-all-thread-messages',
@@ -98,6 +102,26 @@ function readShowSenderEmailInList(): boolean {
 function readShowListTimestamps(): boolean {
 	if (!browser) return true;
 	return localStorage.getItem(STORAGE.showListTimestamps) !== 'false';
+}
+
+function readHighlightUnreadInList(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.highlightUnreadInList) !== 'false';
+}
+
+function readShowFolderUnreadCounts(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showFolderUnreadCounts) !== 'false';
+}
+
+function readShowBulkSelect(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showBulkSelect) !== 'false';
+}
+
+function readHideHeaderSearch(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideHeaderSearch) === 'true';
 }
 
 function readShowQuickReply(): boolean {
@@ -201,6 +225,10 @@ class SettingsStore {
 	showFullDatesInList = $state(readShowFullDatesInList());
 	showSenderEmailInList = $state(readShowSenderEmailInList());
 	showListTimestamps = $state(readShowListTimestamps());
+	highlightUnreadInList = $state(readHighlightUnreadInList());
+	showFolderUnreadCounts = $state(readShowFolderUnreadCounts());
+	showBulkSelect = $state(readShowBulkSelect());
+	hideHeaderSearch = $state(readHideHeaderSearch());
 	showQuickReply = $state(readShowQuickReply());
 	showReaderContactActions = $state(readShowReaderContactActions());
 	expandAllThreadMessages = $state(readExpandAllThreadMessages());
@@ -233,6 +261,10 @@ class SettingsStore {
 		this.showFullDatesInList = readShowFullDatesInList();
 		this.showSenderEmailInList = readShowSenderEmailInList();
 		this.showListTimestamps = readShowListTimestamps();
+		this.highlightUnreadInList = readHighlightUnreadInList();
+		this.showFolderUnreadCounts = readShowFolderUnreadCounts();
+		this.showBulkSelect = readShowBulkSelect();
+		this.hideHeaderSearch = readHideHeaderSearch();
 		this.showQuickReply = readShowQuickReply();
 		this.showReaderContactActions = readShowReaderContactActions();
 		this.expandAllThreadMessages = readExpandAllThreadMessages();
@@ -343,6 +375,34 @@ class SettingsStore {
 		this.showListTimestamps = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.showListTimestamps, String(value));
+		}
+	}
+
+	setHighlightUnreadInList(value: boolean) {
+		this.highlightUnreadInList = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.highlightUnreadInList, String(value));
+		}
+	}
+
+	setShowFolderUnreadCounts(value: boolean) {
+		this.showFolderUnreadCounts = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showFolderUnreadCounts, String(value));
+		}
+	}
+
+	setShowBulkSelect(value: boolean) {
+		this.showBulkSelect = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showBulkSelect, String(value));
+		}
+	}
+
+	setHideHeaderSearch(value: boolean) {
+		this.hideHeaderSearch = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideHeaderSearch, String(value));
 		}
 	}
 
@@ -502,6 +562,10 @@ class SettingsStore {
 		this.setShowFullDatesInList(false);
 		this.setShowSenderEmailInList(false);
 		this.setShowListTimestamps(true);
+		this.setHighlightUnreadInList(true);
+		this.setShowFolderUnreadCounts(true);
+		this.setShowBulkSelect(true);
+		this.setHideHeaderSearch(false);
 		this.setExpandListUntilOpen(false);
 		this.setReaderTextSize('normal');
 		this.setBlockExternalContent(true);

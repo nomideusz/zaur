@@ -42,14 +42,14 @@
 	{#if settings.showAvatars}
 		<div class="relative shrink-0">
 			<Avatar name={message.from.name} email={message.from.email} class="mt-0.5 size-8" />
-			{#if message.unread}
+			{#if settings.highlightUnreadInList && message.unread}
 				<span
 					class="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-unread ring-2 ring-surface-raised"
 					aria-label="Unread"
 				></span>
 			{/if}
 		</div>
-	{:else if message.unread}
+	{:else if settings.highlightUnreadInList && message.unread}
 		<span
 			class="mt-2 size-2 shrink-0 rounded-full bg-unread"
 			aria-label="Unread"
@@ -61,7 +61,12 @@
 	{@render avatar()}
 	<div class="min-w-0 flex-1">
 		<div class="flex items-baseline justify-between gap-2">
-			<span class={cn('truncate text-sm', message.unread ? 'font-semibold text-fg' : 'text-fg')}>
+			<span
+				class={cn(
+					'truncate text-sm',
+					settings.highlightUnreadInList && message.unread ? 'font-semibold text-fg' : 'text-fg'
+				)}
+			>
 				{senderLabel}
 			</span>
 			{#if settings.showListTimestamps}
@@ -72,7 +77,12 @@
 			{#if settings.showStarsInList && message.starred}
 				<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 			{/if}
-			<span class={cn('truncate text-sm', message.unread ? 'font-medium text-fg' : 'text-fg-muted')}>
+			<span
+				class={cn(
+					'truncate text-sm',
+					settings.highlightUnreadInList && message.unread ? 'font-medium text-fg' : 'text-fg-muted'
+				)}
+			>
 				{message.subject}
 			</span>
 			{#if settings.showAttachmentIcons && message.hasAttachment}

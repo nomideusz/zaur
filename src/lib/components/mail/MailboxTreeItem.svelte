@@ -5,6 +5,7 @@
 	import Self from './MailboxTreeItem.svelte';
 	import type { MailboxNode } from '$lib/utils/mailbox-tree';
 	import { cn } from '$lib/utils/cn';
+	import { settings } from '$lib/stores/settings.svelte';
 	import type { MailboxRole } from '$lib/types/mail';
 
 	interface Props {
@@ -43,7 +44,9 @@
 	>
 		<Icon class="size-4 shrink-0" aria-hidden="true" />
 		<span class="flex-1 truncate">{node.name}</span>
-		<Badge count={node.unread} />
+		{#if settings.showFolderUnreadCounts}
+			<Badge count={node.unread} />
+		{/if}
 	</a>
 
 	{#if node.children.length}

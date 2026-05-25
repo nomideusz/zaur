@@ -56,8 +56,15 @@
 	const countLabel = $derived.by(() => {
 		const totalCount = total ?? messages.length;
 		const unread = mailbox?.unread ?? 0;
+		if (!settings.showFolderUnreadCounts) return String(totalCount);
 		if (unread > 0) return `${unread} unread · ${totalCount}`;
 		return String(totalCount);
+	});
+
+	$effect(() => {
+		if (!settings.showBulkSelect && mail.selectionMode) {
+			mail.exitSelectionMode();
+		}
 	});
 
 	const defaultEmptyMessage = $derived.by(() => {
@@ -113,7 +120,9 @@
 				>
 					{#each mail.mailboxes as folder (folder.id)}
 						<option value={folder.id}>
-							{folder.name}{folder.unread > 0 ? ` (${folder.unread})` : ''}
+							{folder.name}{settings.showFolderUnreadCounts && folder.unread > 0
+								? ` (${folder.unread})`
+								: ''}
 						</option>
 					{/each}
 				</select>
@@ -130,7 +139,7 @@
 		{/if}
 	</div>
 
-	{#if mailboxRouteId && !loading && !error && messages.length}
+	{#if mailboxRouteId && !loading && !error && messages.length && settings.showBulkSelect}
 		<MessageListToolbar {mailboxRouteId} {onBulkAction} />
 	{/if}
 

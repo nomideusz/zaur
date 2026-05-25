@@ -25,7 +25,9 @@
 	<ToolSwitcher />
 
 	<div class="flex-1">
-		<GlobalSearch />
+		{#if !settings.hideHeaderSearch}
+			<GlobalSearch />
+		{/if}
 	</div>
 
 	<OfflineIndicator />
