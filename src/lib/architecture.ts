@@ -42,10 +42,11 @@ export const componentTree = {
 		ContactsLayout: ['ContactsSidebar', 'ContactsList', 'ContactDetailPanel | ContactDetailEmpty']
 	},
 	mail: {
-		MailLayout: ['MailboxSidebar', 'MessageList', 'MessageReader | MessageReaderEmpty'],
+		MailLayout: ['MailboxSidebar', 'MailPane'],
+		MailPane: ['MailPaneToolbar', 'MessageList', 'MessageReader | MessageReaderEmpty'],
 		MailboxSidebar: ['MailboxTree', 'MailboxItem'],
-		MessageList: ['MessageListToolbar', 'MessageListItem'],
-		MessageReader: ['ReaderHeader', 'ReaderBody', 'ReaderActions'],
+		MessageList: ['MessageListItem'],
+		MessageReader: ['ReaderHeader', 'ReaderBody'],
 		ComposePanel: ['ComposeHeader', 'ComposeFields', 'ComposeEditor']
 	},
 	ui: ['Button', 'IconButton', 'Badge', 'Avatar', 'ToastStack'],

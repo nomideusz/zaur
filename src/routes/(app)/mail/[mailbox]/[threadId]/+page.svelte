@@ -1,10 +1,11 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
+	import MailPane from '$lib/components/mail/MailPane.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
 	import MessageReader from '$lib/components/mail/MessageReader.svelte';
 	import MessageReaderSkeleton from '$lib/components/mail/MessageReaderSkeleton.svelte';
 	import MessageReaderStatus from '$lib/components/mail/MessageReaderStatus.svelte';
+	import { mailCountLabel } from '$lib/mail/count-label';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 
@@ -14,6 +15,9 @@
 	const mailboxName = $derived(mailbox?.name ?? 'Inbox');
 	const thread = $derived(mail.selectedThread);
 	const latest = $derived(thread.at(-1));
+	const countLabel = $derived(
+		mailCountLabel(mail.messagesTotal, mail.messages.length, mailbox)
+	);
 
 	function backToList() {
 		goto(`/mail/${data.mailboxId}`);
@@ -34,66 +38,52 @@
 	<title>{latest?.subject ?? mailboxName} · ZAUR Webmail</title>
 </svelte:head>
 
-<MailboxSidebar />
-<MessageList
-	messages={mail.messages}
+<MailPane
 	{mailboxName}
+	{countLabel}
 	mailboxRouteId={data.mailboxId}
-	hideOnMobile
 	loading={mail.messagesLoading}
-	loadingMore={mail.messagesLoadingMore}
-	hasMore={mail.messagesHasMore}
 	error={mail.messagesError}
-	total={mail.messagesTotal}
-	onLoadMore={() => {
-		if (auth.client) void mail.loadMoreMessages(auth.client);
-	}}
-	onRetry={() => {
-		if (auth.client) void mail.loadMessages(auth.client, data.mailboxId);
-	}}
+	messageCount={mail.messages.length}
 	onBulkAction={afterMove}
-/>
-
-{#if mail.selectedLoading}
-	<div class="z-mail-reader-pane">
-		<MessageReaderSkeleton />
-	</div>
-	<div
-		class="fixed inset-x-0 bottom-0 z-30 flex bg-surface md:hidden"
-		style="top: var(--height-header);"
-	>
-		<MessageReaderSkeleton />
-	</div>
-{:else if thread.length}
-	<div class="z-mail-reader-pane">
-		<MessageReader {thread} mailboxRouteId={data.mailboxId} onMoved={afterMove} />
-	</div>
-
-	<div
-		class="fixed inset-x-0 bottom-0 z-30 flex bg-surface md:hidden"
-		style="top: var(--height-header);"
-	>
-		<MessageReader
-			{thread}
+	onBack={backToList}
+	fullScreenMobile
+>
+	{#snippet list()}
+		<MessageList
+			messages={mail.messages}
+			{mailboxName}
 			mailboxRouteId={data.mailboxId}
-			onBack={backToList}
-			onMoved={afterMove}
+			hideOnMobile
+			loading={mail.messagesLoading}
+			loadingMore={mail.messagesLoadingMore}
+			hasMore={mail.messagesHasMore}
+			error={mail.messagesError}
+			total={mail.messagesTotal}
+			onLoadMore={() => {
+				if (auth.client) void mail.loadMoreMessages(auth.client);
+			}}
+			onRetry={() => {
+				if (auth.client) void mail.loadMessages(auth.client, data.mailboxId);
+			}}
 		/>
-	</div>
-{:else}
-	<div class="z-mail-reader-pane">
-		<MessageReaderStatus
-			message={mail.selectedError ?? 'Message not found.'}
-			onBack={backToList}
-		/>
-	</div>
-	<div
-		class="fixed inset-x-0 bottom-0 z-30 flex bg-surface md:hidden"
-		style="top: var(--height-header);"
-	>
-		<MessageReaderStatus
-			message={mail.selectedError ?? 'Message not found.'}
-			onBack={backToList}
-		/>
-	</div>
-{/if}
+	{/snippet}
+	{#snippet reader()}
+		{#if mail.selectedLoading}
+			<div class="z-mail-reader-pane">
+				<MessageReaderSkeleton />
+			</div>
+		{:else if thread.length}
+			<div class="z-mail-reader-pane">
+				<MessageReader {thread} mailboxRouteId={data.mailboxId} />
+			</div>
+		{:else}
+			<div class="z-mail-reader-pane">
+				<MessageReaderStatus
+					message={mail.selectedError ?? 'Message not found.'}
+					onBack={backToList}
+				/>
+			</div>
+		{/if}
+	{/snippet}
+</MailPane>

@@ -1,12 +1,9 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { LoaderCircle, Inbox, Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
 	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
 	import MessageListItem from './MessageListItem.svelte';
-	import MessageListMasterCheckbox from './MessageListMasterCheckbox.svelte';
-	import MessageListToolbar from './MessageListToolbar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import type { MessagePreview } from '$lib/types/mail';
@@ -30,7 +27,6 @@
 		expanded?: boolean;
 		onLoadMore?: () => void;
 		onRetry?: () => void;
-		onBulkAction?: () => void;
 	}
 
 	let {
@@ -50,8 +46,7 @@
 		hideOnMobile = false,
 		expanded = false,
 		onLoadMore,
-		onRetry,
-		onBulkAction
+		onRetry
 	}: Props = $props();
 
 	let loadSentinel = $state<HTMLDivElement | null>(null);
@@ -66,15 +61,6 @@
 		);
 	});
 	const selectedIds = $derived([...mail.selectedMessageIds]);
-	const mailbox = $derived(mailboxRouteId ? mail.mailboxByRouteId(mailboxRouteId) : null);
-	const countLabel = $derived.by(() => {
-		const totalCount = total ?? messages.length;
-		const unread = mailbox?.unread ?? 0;
-		if (!settings.showFolderUnreadCounts) return String(totalCount);
-		if (unread > 0) return `${unread} unread · ${totalCount}`;
-		return String(totalCount);
-	});
-
 	$effect(() => {
 		if (!settings.showBulkSelect && mail.selectionMode) {
 			mail.exitSelectionMode();
@@ -132,22 +118,6 @@
 				return null;
 		}
 	});
-
-	const listHeaderClass = $derived(
-		cn(
-			'flex shrink-0 items-center gap-2 px-4',
-			!settings.hidePaneBorders && 'border-b border-border',
-			settings.compactListHeader ? 'h-10' : 'h-12'
-		)
-	);
-
-	const showBulkToolbar = $derived(
-		!!mailboxRouteId &&
-			!loading &&
-			!error &&
-			messages.length > 0 &&
-			settings.showBulkSelect
-	);
 </script>
 
 <section
@@ -160,57 +130,6 @@
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
-	<div class={listHeaderClass}>
-		{#if showBulkToolbar}
-			<div class="flex shrink-0 items-center rounded-md p-0.5">
-				<MessageListMasterCheckbox />
-			</div>
-		{/if}
-
-		{#if showBulkToolbar && mail.selectionMode && mailboxRouteId}
-			<MessageListToolbar {mailboxRouteId} {onBulkAction} />
-		{:else}
-			{#if mailboxRouteId}
-				<label class="min-w-0 flex-1 md:hidden">
-					<span class="sr-only">Folder</span>
-					<select
-						class={cn('z-input w-full', settings.compactMobileFolderPicker ? 'py-1' : 'py-1.5')}
-						value={mailboxRouteId}
-						onchange={(e) => goto(`/mail/${e.currentTarget.value}`)}
-					>
-						{#each mail.mailboxes as folder (folder.id)}
-							<option value={folder.id}>
-								{folder.name}{settings.showFolderUnreadCounts && folder.unread > 0
-									? ` (${folder.unread})`
-									: ''}
-							</option>
-						{/each}
-					</select>
-				</label>
-			{/if}
-			<h2
-				class={cn(
-					'z-type-pane-title hidden md:block',
-					settings.hideListHeader && 'md:hidden'
-				)}
-			>
-				{mailboxName.startsWith('Search:') ? mailboxName.slice(8) : mailboxName}
-			</h2>
-			<span
-				class={cn(
-					'hidden shrink-0 text-xs text-fg-subtle md:inline',
-					settings.hideListHeader && 'md:hidden',
-					!settings.showMessageCounts && 'md:hidden'
-				)}
-			>{countLabel}</span>
-			{#if mailboxRouteId}
-				<span class="ml-auto shrink-0 text-xs text-fg-subtle md:ml-2 md:hidden">{settings.showMessageCounts ? countLabel : ''}</span>
-			{:else if settings.showMessageCounts}
-				<span class="ml-2 shrink-0 text-xs text-fg-subtle">{countLabel}</span>
-			{/if}
-		{/if}
-	</div>
-
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 		{#if loading}
 			{#if settings.loadingIndicatorStyle === 'skeleton'}

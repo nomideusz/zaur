@@ -242,6 +242,27 @@
 		@apply hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex;
 	}
 
+	.z-mail-pane {
+		@apply bg-surface-raised;
+	}
+
+	.z-mail-pane-body {
+		@apply bg-surface-raised;
+	}
+
+	.z-mail-pane--mobile-fullscreen {
+		@apply max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-30 max-md:flex max-md:flex-col max-md:bg-surface;
+		top: var(--height-header);
+	}
+
+	.z-mail-pane--mobile-fullscreen .z-mail-reader-pane {
+		@apply flex min-h-0 flex-1 flex-col;
+	}
+
+	.z-mail-pane-toolbar {
+		@apply bg-surface-raised;
+	}
+
 	.z-pane-scroll {
 		overscroll-behavior-y: contain;
 	}

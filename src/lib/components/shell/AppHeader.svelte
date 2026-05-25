@@ -45,21 +45,7 @@
 		<OutboxMenu />
 	{/if}
 
-	{#if $page.url.pathname.startsWith('/mail')}
-		{#if settings.compactHeaderActions}
-			<IconButton label="New message" onclick={() => goto('/mail/compose')}>
-				<PenSquare class="size-4" aria-hidden="true" />
-			</IconButton>
-		{:else}
-			<IconButton label="New message" class="sm:hidden" onclick={() => goto('/mail/compose')}>
-				<PenSquare class="size-4" aria-hidden="true" />
-			</IconButton>
-			<Button href="/mail/compose" class="hidden sm:inline-flex">
-				<PenSquare class="size-4" aria-hidden="true" />
-				New message
-			</Button>
-		{/if}
-	{:else if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false && !settings.hideCalendarNewEventButton}
+	{#if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false && !settings.hideCalendarNewEventButton}
 		{#if settings.compactHeaderActions}
 			<IconButton label="New event" onclick={() => calendar.openCompose()}>
 				<CalendarPlus class="size-4" aria-hidden="true" />

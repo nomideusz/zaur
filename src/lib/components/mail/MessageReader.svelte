@@ -1,26 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import {
-		Archive,
-		ArrowLeft,
-		ChevronDown,
-		ChevronUp,
-		Forward,
-		Mail,
-		MailOpen,
-		MoreHorizontal,
-		Reply,
-		ReplyAll,
-		Shield,
-		Star,
-		Trash2
-	} from 'lucide-svelte';
+	import { ChevronDown, ChevronUp, Shield } from 'lucide-svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
-	import MoveToMenu from '$lib/components/mail/MoveToMenu.svelte';
+	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
+	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -34,40 +20,24 @@
 	interface Props {
 		thread: MessageDetail[];
 		mailboxRouteId: string;
-		onBack?: () => void;
-		onMoved?: () => void;
 	}
 
-	let { thread, mailboxRouteId, onBack, onMoved }: Props = $props();
+	let { thread, mailboxRouteId }: Props = $props();
 
-	let showImagesOnce = $state(false);
+	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
+
+	let localShowImagesOnce = $state(false);
 	let expandedIds = $state<Set<string>>(new Set());
 	let quickReply = $state('');
 	let quickReplySending = $state(false);
-	let moreOpen = $state(false);
 
 	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
 
 	const latest = $derived(thread.at(-1));
 	const subject = $derived(latest?.subject ?? '(no subject)');
-	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
-	const moveTargets = $derived(
-		mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
+	const allowExternal = $derived(
+		!settings.blockExternalContent || (pane?.showImagesOnce ?? localShowImagesOnce)
 	);
-	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
-	const moreMenuItemClass = $derived(
-		cn(
-			'flex w-full items-center gap-2 px-3 text-left text-sm text-fg hover:bg-surface-sunken',
-			settings.compactReaderMoreMenu ? 'py-1.5' : 'py-2'
-		)
-	);
-	const moreMenuMoveItemClass = $derived(
-		cn(
-			'block w-full truncate px-3 text-left text-sm text-fg hover:bg-surface-sunken',
-			settings.compactMoveMenu || settings.compactReaderMoreMenu ? 'py-1.5' : 'py-2'
-		)
-	);
-	const allowExternal = $derived(!settings.blockExternalContent || showImagesOnce);
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>
 			renderMessageBody({
@@ -87,7 +57,8 @@
 	$effect(() => {
 		thread.map((m) => m.id).join(',');
 		settings.expandAllThreadMessages;
-		showImagesOnce = false;
+		if (pane) pane.setShowImagesOnce(false);
+		else localShowImagesOnce = false;
 		if (settings.expandAllThreadMessages) {
 			expandedIds = new Set(thread.map((message) => message.id));
 		} else {
@@ -123,15 +94,9 @@
 		expandedIds = latestId ? new Set([latestId]) : new Set();
 	}
 
-	async function withClient(action: (client: NonNullable<typeof auth.client>) => Promise<void>) {
-		if (!auth.client || !latest) return;
-		try {
-			await action(auth.client);
-			onMoved?.();
-		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Action failed';
-			toast.show(message, 'error');
-		}
+	function showImagesOnce() {
+		if (pane) pane.setShowImagesOnce(true);
+		else localShowImagesOnce = true;
 	}
 
 	function reply() {
@@ -140,59 +105,8 @@
 		goto('/mail/compose?mode=reply');
 	}
 
-	function replyAll() {
-		if (!latest || !auth.username) return;
-		compose.startReplyAll(latest, thread, auth.username);
-		goto('/mail/compose?mode=reply-all');
-	}
-
-	function primaryReply() {
-		if (settings.defaultReplyMode === 'reply-all') replyAll();
-		else reply();
-	}
-
-	const primaryReplyLabel = $derived(
-		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
-	);
-
-	function forward() {
-		if (!latest) return;
-		compose.startForward(latest);
-		goto('/mail/compose?mode=forward');
-	}
-
-	function archiveMessage() {
-		moreOpen = false;
-		if (!latest) return;
-		void withClient((client) => mail.moveMessage(client, latest, 'archive'));
-	}
-
-	function deleteMessage() {
-		moreOpen = false;
-		if (!latest) return;
-		const permanent = currentMailbox?.role === 'trash';
-		if (!settings.confirmDeleteMessage(1, permanent)) return;
-		void withClient((client) => mail.deleteMessage(client, latest, mailboxRouteId));
-	}
-
-	function moveMessage(targetRouteId: string) {
-		moreOpen = false;
-		if (!auth.client || !latest) return;
-		void withClient((client) => mail.moveMessageToMailbox(client, latest, targetRouteId));
-	}
-
-	function toggleStar() {
-		if (!auth.client || !latest) return;
-		void mail.toggleStar(auth.client, latest);
-	}
-
 	function composeTo(email: string) {
 		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
-	}
-
-	function toggleLatestRead() {
-		if (!auth.client || !latest) return;
-		void mail.markAsRead(auth.client, latest, latest.unread);
 	}
 
 	function saveContact(message: MessageDetail) {
@@ -249,240 +163,25 @@
 	}
 </script>
 
-<svelte:window onclick={() => (moreOpen = false)} />
-
 <article class="flex min-h-0 flex-1 flex-col overflow-hidden bg-surface-raised" style="view-transition-name: message-reader;">
 	<header class={cn('shrink-0', !settings.hideReaderPaneBorders && 'border-b border-border', settings.compactReaderHeader ? 'px-4 py-2 md:px-5' : 'px-4 py-3 md:px-6')}>
-		<div class="flex items-start gap-2">
-			{#if onBack}
-				<IconButton label="Back to list" class="mt-0.5 md:hidden" onclick={onBack}>
-					<ArrowLeft class="size-4" />
-				</IconButton>
-			{/if}
+		<div class="max-w-(--z-reader-measure)">
+			<h1 class={cn('z-type-reader-title line-clamp-2', settings.compactReaderHeader ? 'text-base md:text-lg' : 'text-lg md:text-xl')}>{subject}</h1>
 
-			<div class="min-w-0 flex-1">
-				<div class="max-w-(--z-reader-measure)">
-				<h1 class={cn('z-type-reader-title line-clamp-2', settings.compactReaderHeader ? 'text-base md:text-lg' : 'text-lg md:text-xl')}>{subject}</h1>
-
-				{#if thread.length > 1 && !settings.hideThreadSummary}
-					<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
-						<span>{thread.length} messages</span>
-						{#if collapsedCount > 0}
-							<button type="button" class="text-accent hover:underline" onclick={expandAll}>
-								Expand all
-							</button>
-						{:else}
-							<button type="button" class="text-accent hover:underline" onclick={collapseToLatest}>
-								Collapse earlier
-							</button>
-						{/if}
-					</div>
-				{/if}
-				</div>
-			</div>
-
-			<div class={cn('flex shrink-0 flex-wrap items-center justify-end', settings.compactReaderToolbar ? 'gap-0' : 'gap-0.5')}>
-				{#if !settings.minimalReaderToolbar}
-					<IconButton
-						class="hidden md:inline-flex"
-						label={latest?.starred ? 'Unstar' : 'Star'}
-						onclick={toggleStar}
-					>
-						<Star
-							class={cn('size-4', latest?.starred && 'fill-star text-star')}
-							aria-hidden="true"
-						/>
-					</IconButton>
-				{/if}
-				{#if latest}
-					<IconButton
-						class="hidden md:inline-flex"
-						label={latest.unread ? 'Mark as read' : 'Mark as unread'}
-						onclick={toggleLatestRead}
-					>
-						{#if latest.unread}
-							<MailOpen class="size-4" />
-						{:else}
-							<Mail class="size-4" />
-						{/if}
-					</IconButton>
-				{/if}
-				<IconButton label={primaryReplyLabel} onclick={primaryReply}>
-					{#if settings.defaultReplyMode === 'reply-all'}
-						<ReplyAll class="size-4" />
+			{#if thread.length > 1 && !settings.hideThreadSummary}
+				<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
+					<span>{thread.length} messages</span>
+					{#if collapsedCount > 0}
+						<button type="button" class="text-accent hover:underline" onclick={expandAll}>
+							Expand all
+						</button>
 					{:else}
-						<Reply class="size-4" />
-					{/if}
-				</IconButton>
-				{#if !settings.minimalReaderToolbar}
-					<IconButton class="hidden md:inline-flex" label="Reply all" onclick={replyAll}>
-						<ReplyAll class="size-4" />
-					</IconButton>
-					<IconButton class="hidden md:inline-flex" label="Forward" onclick={forward}>
-						<Forward class="size-4" />
-					</IconButton>
-				{/if}
-				{#if hasBlockedExternal && !allowExternal && settings.hideExternalContentBanner}
-					<IconButton
-						class="hidden md:inline-flex"
-						label="Show external images"
-						onclick={() => (showImagesOnce = true)}
-					>
-						<Shield class="size-4" />
-					</IconButton>
-				{/if}
-
-				<div class={cn('hidden items-center md:flex', settings.compactReaderToolbar ? 'gap-0' : 'gap-0.5')}>
-					<IconButton label="Archive" onclick={archiveMessage}>
-						<Archive class="size-4" />
-					</IconButton>
-					{#if latest && auth.client}
-						<MoveToMenu
-							message={latest}
-							currentMailboxRouteId={mailboxRouteId}
-							client={auth.client}
-							{onMoved}
-						/>
-					{/if}
-					<IconButton label={deleteLabel} onclick={deleteMessage}>
-						<Trash2 class="size-4" />
-					</IconButton>
-				</div>
-
-				<div class="relative md:hidden">
-					<IconButton
-						label="More actions"
-						onclick={(e) => {
-							e.stopPropagation();
-							moreOpen = !moreOpen;
-						}}
-					>
-						<MoreHorizontal class="size-4" />
-					</IconButton>
-
-					{#if moreOpen}
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<div
-							class="absolute right-0 z-20 mt-1 w-48 overflow-hidden rounded-md border border-border bg-surface-raised py-1 shadow-md"
-							onpointerdown={(e) => e.stopPropagation()}
-						>
-							<button
-								type="button"
-								class={moreMenuItemClass}
-								onclick={() => {
-									moreOpen = false;
-									toggleLatestRead();
-								}}
-							>
-								{#if latest?.unread}
-									<MailOpen class="size-4 shrink-0" aria-hidden="true" />
-									Mark as read
-								{:else}
-									<Mail class="size-4 shrink-0" aria-hidden="true" />
-									Mark as unread
-								{/if}
-							</button>
-							{#if !settings.minimalReaderToolbar}
-								<button
-									type="button"
-									class={moreMenuItemClass}
-									onclick={() => {
-										moreOpen = false;
-										toggleStar();
-									}}
-								>
-									<Star
-										class={cn(
-											'size-4 shrink-0',
-											latest?.starred && 'fill-star text-star'
-										)}
-										aria-hidden="true"
-									/>
-									{latest?.starred ? 'Unstar' : 'Star'}
-								</button>
-								{#if settings.defaultReplyMode === 'reply-all'}
-									<button
-										type="button"
-										class={moreMenuItemClass}
-										onclick={() => {
-											moreOpen = false;
-											reply();
-										}}
-									>
-										<Reply class="size-4 shrink-0" aria-hidden="true" />
-										Reply
-									</button>
-								{:else}
-									<button
-										type="button"
-										class={moreMenuItemClass}
-										onclick={() => {
-											moreOpen = false;
-											replyAll();
-										}}
-									>
-										<ReplyAll class="size-4 shrink-0" aria-hidden="true" />
-										Reply all
-									</button>
-								{/if}
-								<button
-									type="button"
-									class={moreMenuItemClass}
-									onclick={() => {
-										moreOpen = false;
-										forward();
-									}}
-								>
-									<Forward class="size-4 shrink-0" aria-hidden="true" />
-									Forward
-								</button>
-							{/if}
-							{#if hasBlockedExternal && !allowExternal && settings.hideExternalContentBanner}
-								<button
-									type="button"
-									class={moreMenuItemClass}
-									onclick={() => {
-										moreOpen = false;
-										showImagesOnce = true;
-									}}
-								>
-									<Shield class="size-4 shrink-0" aria-hidden="true" />
-									Show images
-								</button>
-							{/if}
-							<button type="button" class={moreMenuItemClass} onclick={archiveMessage}>
-								<Archive class="size-4 shrink-0" aria-hidden="true" />
-								Archive
-							</button>
-							{#if moveTargets.length}
-								{#if !settings.hideMoveMenuLabels}
-									<p
-										class={cn(
-											'px-3 text-xs font-medium text-fg-subtle',
-											settings.compactMoveMenu || settings.compactReaderMoreMenu ? 'py-1' : 'py-1.5'
-										)}
-									>
-										Move to
-									</p>
-								{/if}
-								{#each moveTargets as mailbox (mailbox.id)}
-									<button type="button" class={moreMenuMoveItemClass} onclick={() => moveMessage(mailbox.id)}>
-										{mailbox.name}
-									</button>
-								{/each}
-							{/if}
-							<button
-								type="button"
-								class={cn(moreMenuItemClass, 'text-danger')}
-								onclick={deleteMessage}
-							>
-								<Trash2 class="size-4 shrink-0" aria-hidden="true" />
-								{deleteLabel}
-							</button>
-						</div>
+						<button type="button" class="text-accent hover:underline" onclick={collapseToLatest}>
+							Collapse earlier
+						</button>
 					{/if}
 				</div>
-			</div>
+			{/if}
 		</div>
 	</header>
 
@@ -513,7 +212,7 @@
 		>
 			<Shield class={cn('shrink-0', settings.compactExternalContentBanner ? 'size-3' : 'size-3.5')} aria-hidden="true" />
 			<span>External images blocked.</span>
-			<button type="button" class="text-accent hover:underline" onclick={() => (showImagesOnce = true)}>
+			<button type="button" class="text-accent hover:underline" onclick={showImagesOnce}>
 				Show once
 			</button>
 			<span class="text-fg-subtle">·</span>

@@ -13,9 +13,10 @@
 		currentMailboxRouteId: string;
 		client: JMAPClient;
 		onMoved?: () => void;
+		class?: string;
 	}
 
-	let { message, currentMailboxRouteId, client, onMoved }: Props = $props();
+	let { message, currentMailboxRouteId, client, onMoved, class: className }: Props = $props();
 
 	let open = $state(false);
 
@@ -41,6 +42,7 @@
 <div class="relative">
 	<IconButton
 		label="Move to folder"
+		class={className}
 		onclick={(e) => {
 			e.stopPropagation();
 			open = !open;
