@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Archive, FolderInput, Mail, MailOpen, Trash2, X } from 'lucide-svelte';
-	import Button from '$lib/components/ui/Button.svelte';
+	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -22,11 +22,12 @@
 	);
 	const canArchive = $derived(currentMailbox?.role !== 'archive');
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
+	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const hasUnreadSelected = $derived(
-		mail.messages.some((message) => mail.selectedMessageIds.has(message.id) && message.unread)
+		mail.messages.some((message) => selectedIds.includes(message.id) && message.unread)
 	);
 	const hasReadSelected = $derived(
-		mail.messages.some((message) => mail.selectedMessageIds.has(message.id) && !message.unread)
+		mail.messages.some((message) => selectedIds.includes(message.id) && !message.unread)
 	);
 
 	async function run(action: () => Promise<void>) {
@@ -73,67 +74,54 @@
 
 <svelte:window onclick={() => (moveOpen = false)} />
 
-<div class="flex min-h-0 min-w-0 flex-1 items-center gap-2 overflow-x-auto">
-	<Button variant="ghost" class="!px-2 !py-1.5 text-xs" onclick={() => mail.exitSelectionMode()}>
-		<X class="size-3.5" aria-hidden="true" />
-		Cancel
-	</Button>
+<div class="flex min-w-0 flex-1 items-center gap-1.5 overflow-hidden">
+	<IconButton label="Cancel selection" class="!p-1.5" onclick={() => mail.exitSelectionMode()}>
+		<X class="size-3.5" />
+	</IconButton>
 	<span class="min-w-0 truncate text-xs text-fg-muted">
-		{mail.selectedCount} selected
+		{selectedIds.length} selected
 	</span>
-	{#if !mail.selectedCount && !settings.hideSelectionHints}
-		<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl or Shift+click to add messages</span>
+	{#if !selectedIds.length && !settings.hideSelectionHints}
+		<span class="hidden truncate text-xs text-fg-subtle sm:inline">Ctrl/Shift+click</span>
 	{/if}
 
-	{#if mail.selectedCount}
-		<div class="ml-auto flex shrink-0 items-center gap-1">
+	{#if selectedIds.length}
+		<div class="ml-auto flex shrink-0 items-center gap-0.5">
 			{#if hasUnreadSelected}
-				<Button
-					variant="ghost"
-					class="!px-2 !py-1.5 text-xs"
-					disabled={mail.bulkActionLoading}
+				<IconButton
+					label="Mark read"
+					class="!p-1.5"
 					onclick={markSelectedRead}
 				>
 					<MailOpen class="size-3.5" aria-hidden="true" />
-					<span class={settings.iconOnlyBulkActions ? 'sr-only' : ''}>Mark read</span>
-				</Button>
+				</IconButton>
 			{/if}
 			{#if hasReadSelected}
-				<Button
-					variant="ghost"
-					class="!px-2 !py-1.5 text-xs"
-					disabled={mail.bulkActionLoading}
+				<IconButton
+					label="Mark unread"
+					class="!p-1.5"
 					onclick={markSelectedUnread}
 				>
 					<Mail class="size-3.5" aria-hidden="true" />
-					<span class={settings.iconOnlyBulkActions ? 'sr-only' : ''}>Mark unread</span>
-				</Button>
+				</IconButton>
 			{/if}
 			{#if canArchive}
-				<Button
-					variant="ghost"
-					class="!px-2 !py-1.5 text-xs"
-					disabled={mail.bulkActionLoading}
-					onclick={archiveSelected}
-				>
+				<IconButton label="Archive" class="!p-1.5" onclick={archiveSelected}>
 					<Archive class="size-3.5" aria-hidden="true" />
-					<span class={settings.iconOnlyBulkActions ? 'sr-only' : ''}>Archive</span>
-				</Button>
+				</IconButton>
 			{/if}
 
 			<div class="relative">
-				<Button
-					variant="ghost"
-					class="!px-2 !py-1.5 text-xs"
-					disabled={mail.bulkActionLoading}
+				<IconButton
+					label="Move"
+					class="!p-1.5"
 					onclick={(e) => {
 						e.stopPropagation();
 						moveOpen = !moveOpen;
 					}}
 				>
 					<FolderInput class="size-3.5" aria-hidden="true" />
-					<span class={settings.iconOnlyBulkActions ? 'sr-only' : ''}>Move</span>
-				</Button>
+				</IconButton>
 
 				{#if moveOpen}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -167,15 +155,13 @@
 				{/if}
 			</div>
 
-			<Button
-				variant="danger"
-				class="!px-2 !py-1.5 text-xs"
-				disabled={mail.bulkActionLoading}
+			<IconButton
+				label={deleteLabel}
+				class="!p-1.5 text-danger hover:bg-danger/10"
 				onclick={deleteSelected}
 			>
 				<Trash2 class="size-3.5" aria-hidden="true" />
-				<span class={settings.iconOnlyBulkActions ? 'sr-only' : ''}>{deleteLabel}</span>
-			</Button>
+			</IconButton>
 		</div>
 	{/if}
 </div>

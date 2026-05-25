@@ -26,6 +26,9 @@
 		"vite": "^8.0.7"
 	},
 	"dependencies": {
+		"@fontsource/inter": "^5.2.8",
+		"@fontsource/jetbrains-mono": "^5.2.8",
+		"@fontsource/source-serif-4": "^5.2.9",
 		"clsx": "^2.1.1",
 		"dexie": "^4.4.2",
 		"dompurify": "^3.4.5",

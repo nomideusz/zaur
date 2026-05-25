@@ -9,15 +9,16 @@
 
 	let input = $state<HTMLInputElement | null>(null);
 
+	const selectedCount = $derived([...mail.selectedMessageIds].length);
 	const allSelected = $derived(
 		mail.selectionMode &&
 			mail.messages.length > 0 &&
-			mail.selectedCount === mail.messages.length
+			selectedCount === mail.messages.length
 	);
 	const someSelected = $derived(
 		mail.selectionMode &&
-			mail.selectedCount > 0 &&
-			mail.selectedCount < mail.messages.length
+			selectedCount > 0 &&
+			selectedCount < mail.messages.length
 	);
 
 	function onClick(event: MouseEvent) {
