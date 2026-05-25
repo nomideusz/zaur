@@ -1,7 +1,7 @@
 {
-  "iteration": 9,
+  "iteration": 10,
   "deployEvery": 5,
-  "lastDeployIteration": 5,
+  "lastDeployIteration": 10,
   "focus": "UI/UX/settings: layout, consistency, settings grouping, missing options",
   "completed": false
 }

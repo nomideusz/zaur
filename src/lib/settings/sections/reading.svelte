@@ -115,7 +115,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Toolbar & actions" description="Buttons and reply options in the reading pane header.">
+<SettingsGroup title="Reply" description="Default reply action and the quick reply box.">
 	<SettingsRow
 		title="Default reply action"
 		description="Primary reply button in the reading pane — r always replies, a always reply all"
@@ -161,7 +161,9 @@
 			/>
 		</SettingsRow>
 	</SettingsDepends>
+</SettingsGroup>
 
+<SettingsGroup title="Message header" description="Sender, recipients, and avatars at the top of a message.">
 	<SettingsRow
 		title="Show contact actions"
 		description="Save contact and copy email links in the message header"
@@ -259,18 +261,6 @@
 			/>
 		</SettingsRow>
 	</SettingsDepends>
-
-	<SettingsRow
-		title="Compact reader header"
-		description="Smaller subject line and less padding at the top of the reading pane"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactReaderHeader}
-			onchange={(e) => settings.setCompactReaderHeader(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Move to folder" description="Folder picker when moving messages from the list or reading pane.">
