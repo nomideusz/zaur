@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import { settings, type ListDensity, type ReaderTextSize } from '$lib/stores/settings.svelte';
@@ -30,17 +31,24 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Compact folder sidebar header"
-			description="Less padding around the Folders label in the sidebar"
+		<SettingsDepends
+			enabled={!settings.hideFolderSidebarHeader}
+			inactiveReason={settings.hideFolderSidebarHeader
+				? 'Folder sidebar header is hidden'
+				: 'Folder sidebar header'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactFolderSidebarHeader}
-				onchange={(e) => settings.setCompactFolderSidebarHeader(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact folder sidebar header"
+				description="Less padding around the Folders label in the sidebar"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactFolderSidebarHeader}
+					onchange={(e) => settings.setCompactFolderSidebarHeader(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 		<SettingsRow
 			title="Hide folder icons"
@@ -90,17 +98,24 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Compact list header"
-			description="Shorter folder title bar above the message list"
+		<SettingsDepends
+			enabled={!settings.hideListHeader}
+			inactiveReason={settings.hideListHeader
+				? 'List header is hidden on desktop'
+				: 'List header on desktop'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactListHeader}
-				onchange={(e) => settings.setCompactListHeader(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact list header"
+				description="Shorter folder title bar above the message list"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactListHeader}
+					onchange={(e) => settings.setCompactListHeader(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 		<SettingsRow
 			title="Compact mobile folder picker"

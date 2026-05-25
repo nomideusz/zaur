@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import { settings, type ListDensity, type ReaderTextSize } from '$lib/stores/settings.svelte';
@@ -32,29 +33,36 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Hide blocked-images banner"
-			description="Do not show the external images notice in the reader — change blocking in Display settings"
+		<SettingsDepends
+			enabled={settings.blockExternalContent}
+			inactiveReason={settings.blockExternalContent
+				? 'Blocked images notice'
+				: 'Only applies when external images are blocked'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideExternalContentBanner}
-				onchange={(e) => settings.setHideExternalContentBanner(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Hide blocked-images banner"
+				description="Do not show the external images notice in the reader"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.hideExternalContentBanner}
+					onchange={(e) => settings.setHideExternalContentBanner(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
 
-		<SettingsRow
-			title="Compact blocked-images banner"
-			description="Smaller external images notice in the reading pane"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactExternalContentBanner}
-				onchange={(e) => settings.setCompactExternalContentBanner(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact blocked-images banner"
+				description="Smaller external images notice in the reading pane"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactExternalContentBanner}
+					onchange={(e) => settings.setCompactExternalContentBanner(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 		<SettingsRow
 			title="Prefer plain text"
@@ -80,17 +88,24 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Compact quick reply"
-			description="Single-line reply box with less padding at the bottom of the reading pane"
+		<SettingsDepends
+			enabled={settings.showQuickReply}
+			inactiveReason={settings.showQuickReply
+				? 'Quick reply appearance'
+				: 'Turn on quick reply above to adjust its layout'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactQuickReply}
-				onchange={(e) => settings.setCompactQuickReply(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact quick reply"
+				description="Single-line reply box with less padding at the bottom of the reading pane"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactQuickReply}
+					onchange={(e) => settings.setCompactQuickReply(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 		<SettingsRow
 			title="Expand all thread messages"
@@ -152,29 +167,55 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Compact reader toolbar"
-			description="Tighter spacing between action buttons in the reading pane header"
+		<SettingsDepends
+			enabled={!settings.minimalReaderToolbar}
+			inactiveReason={settings.minimalReaderToolbar
+				? 'Toolbar is already minimal — fewer buttons to space'
+				: 'Reader toolbar spacing'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactReaderToolbar}
-				onchange={(e) => settings.setCompactReaderToolbar(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact reader toolbar"
+				description="Tighter spacing between action buttons in the reading pane header"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactReaderToolbar}
+					onchange={(e) => settings.setCompactReaderToolbar(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
 
-		<SettingsRow
-			title="Compact reader avatars"
-			description="Smaller sender avatars in the reading pane"
+			<SettingsRow
+				title="Compact reader more menu"
+				description="Tighter spacing in the mobile more-actions menu in the reading pane"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactReaderMoreMenu}
+					onchange={(e) => settings.setCompactReaderMoreMenu(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
+
+		<SettingsDepends
+			enabled={settings.showAvatars}
+			inactiveReason={settings.showAvatars
+				? 'Reader avatar size'
+				: 'Turn on sender avatars in the inbox list to size reader avatars'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactReaderAvatars}
-				onchange={(e) => settings.setCompactReaderAvatars(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact reader avatars"
+				description="Smaller sender avatars in the reading pane"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactReaderAvatars}
+					onchange={(e) => settings.setCompactReaderAvatars(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 		<SettingsRow
 			title="Compact reader header"
@@ -212,29 +253,24 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Compact move menu"
-			description="Tighter spacing in folder move dropdowns from the reading pane"
+		<SettingsDepends
+			enabled={!settings.hideMoveMenuLabels}
+			inactiveReason={settings.hideMoveMenuLabels
+				? 'Move menu labels are hidden'
+				: 'Move menu layout'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactMoveMenu}
-				onchange={(e) => settings.setCompactMoveMenu(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Compact reader more menu"
-			description="Tighter spacing in the mobile more-actions menu in the reading pane"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactReaderMoreMenu}
-				onchange={(e) => settings.setCompactReaderMoreMenu(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact move menu"
+				description="Tighter spacing in folder move dropdowns from the reading pane"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactMoveMenu}
+					onchange={(e) => settings.setCompactMoveMenu(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 		<SettingsRow
 			title="Compact reader body"
@@ -332,100 +368,109 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Hide empty reader description"
-			description="Keep the empty reading pane title but remove the explanatory paragraph below it"
+		<SettingsDepends
+			enabled={!settings.hideEmptyReaderPrompts}
+			inactiveReason={settings.hideEmptyReaderPrompts
+				? 'Empty reading pane shows no prompts'
+				: 'Empty reading pane appearance'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideEmptyReaderDescription}
-				onchange={(e) => settings.setHideEmptyReaderDescription(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Hide empty reader description"
+				description="Keep the empty reading pane title but remove the explanatory paragraph below it"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.hideEmptyReaderDescription}
+					onchange={(e) => settings.setHideEmptyReaderDescription(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
 
-		<SettingsRow
-			title="Hide empty reader actions"
-			description="Remove Compose and Display settings buttons when no message is selected"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideEmptyReaderActions}
-				onchange={(e) => settings.setHideEmptyReaderActions(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Hide empty reader actions"
+				description="Remove Compose and settings buttons when no message is selected"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.hideEmptyReaderActions}
+					onchange={(e) => settings.setHideEmptyReaderActions(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
 
-		<SettingsRow
-			title="Hide empty reader icon"
-			description="Remove the mail icon above the empty reading pane title"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideEmptyReaderIcon}
-				onchange={(e) => settings.setHideEmptyReaderIcon(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Hide empty reader icon"
+				description="Remove the mail icon above the empty reading pane title"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.hideEmptyReaderIcon}
+					onchange={(e) => settings.setHideEmptyReaderIcon(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
 
-		<SettingsRow
-			title="Compact empty reader"
-			description="Less padding and smaller text in the reading pane when no message is selected"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactEmptyReader}
-				onchange={(e) => settings.setCompactEmptyReader(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact empty reader"
+				description="Less padding and smaller text in the reading pane when no message is selected"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactEmptyReader}
+					onchange={(e) => settings.setCompactEmptyReader(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
-		<SettingsRow
-			title="Compact reader status"
-			description="Less padding on offline, not-found, and load-error screens in the reading pane"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactReaderStatus}
-				onchange={(e) => settings.setCompactReaderStatus(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+		<SettingsDepends inactiveReason="Reader error and offline screens">
+			<SettingsRow
+				title="Compact reader status"
+				description="Less padding on offline, not-found, and load-error screens in the reading pane"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactReaderStatus}
+					onchange={(e) => settings.setCompactReaderStatus(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
 
-		<SettingsRow
-			title="Compact reader inline error"
-			description="Smaller load-error banner above the message body when a thread fails to open"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactReaderInlineError}
-				onchange={(e) => settings.setCompactReaderInlineError(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact reader inline error"
+				description="Smaller load-error banner above the message body when a thread fails to open"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactReaderInlineError}
+					onchange={(e) => settings.setCompactReaderInlineError(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
 
-		<SettingsRow
-			title="Hide reader status back button"
-			description="Remove the Back to list button on offline, not-found, and load-error screens"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideReaderStatusBackButton}
-				onchange={(e) => settings.setHideReaderStatusBackButton(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Hide reader status back button"
+				description="Remove the Back to list button on offline, not-found, and load-error screens"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.hideReaderStatusBackButton}
+					onchange={(e) => settings.setHideReaderStatusBackButton(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
 
-		<SettingsRow
-			title="Hide reader status message"
-			description="Show only the status heading on offline, not-found, and load-error screens — no detail text"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideReaderStatusMessage}
-				onchange={(e) => settings.setHideReaderStatusMessage(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Hide reader status message"
+				description="Show only the status heading on offline, not-found, and load-error screens — no detail text"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.hideReaderStatusMessage}
+					onchange={(e) => settings.setHideReaderStatusMessage(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 </SettingsGroup>

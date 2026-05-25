@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import { settings, type ListDensity, type ReaderTextSize } from '$lib/stores/settings.svelte';
@@ -41,17 +42,24 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Compact list avatars"
-			description="Smaller sender avatars in the message list"
+		<SettingsDepends
+			enabled={settings.showAvatars}
+			inactiveReason={settings.showAvatars
+				? 'List avatar size'
+				: 'Turn on sender avatars above to change their size'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactListAvatars}
-				onchange={(e) => settings.setCompactListAvatars(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact list avatars"
+				description="Smaller sender avatars in the message list"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactListAvatars}
+					onchange={(e) => settings.setCompactListAvatars(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 		<SettingsRow
 			title="Show stars in list"
@@ -102,19 +110,6 @@
 		</SettingsRow>
 
 		<SettingsRow
-			title="Show sender email in list"
-			description="Use the email address instead of the sender name in each row"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.showSenderEmailInList}
-				disabled={settings.subjectOnlyList}
-				onchange={(e) => settings.setShowSenderEmailInList(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
 			title="Subject-only list"
 			description="Show only the subject on each row — hides the sender line for a tighter inbox"
 		>
@@ -125,6 +120,25 @@
 				onchange={(e) => settings.setSubjectOnlyList(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsDepends
+			enabled={!settings.subjectOnlyList}
+			inactiveReason={settings.subjectOnlyList
+				? 'Sender line is hidden in subject-only mode'
+				: 'Sender line in the list'}
+		>
+			<SettingsRow
+				title="Show sender email in list"
+				description="Use the email address instead of the sender name in each row"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.showSenderEmailInList}
+					onchange={(e) => settings.setShowSenderEmailInList(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 		<SettingsRow
 			title="Show timestamps in list"
@@ -162,29 +176,48 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Hide selection hints"
-			description="Remove the “Click messages to select” hint in bulk selection mode"
+		<SettingsDepends
+			enabled={settings.showBulkSelect}
+			inactiveReason={settings.showBulkSelect
+				? 'Bulk selection options'
+				: 'Turn on bulk select above to adjust selection mode'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideSelectionHints}
-				onchange={(e) => settings.setHideSelectionHints(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Hide selection hints"
+				description="Remove the “Click messages to select” hint in bulk selection mode"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.hideSelectionHints}
+					onchange={(e) => settings.setHideSelectionHints(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
 
-		<SettingsRow
-			title="Icon-only bulk actions"
-			description="Show icons without labels on archive, move, and delete in selection mode"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.iconOnlyBulkActions}
-				onchange={(e) => settings.setIconOnlyBulkActions(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Icon-only bulk actions"
+				description="Show icons without labels on archive, move, and delete in selection mode"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.iconOnlyBulkActions}
+					onchange={(e) => settings.setIconOnlyBulkActions(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+
+			<SettingsRow
+				title="Compact bulk toolbar"
+				description="Less height on the selection toolbar above the message list"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactBulkToolbar}
+					onchange={(e) => settings.setCompactBulkToolbar(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 		<SettingsRow
 			title="Hide list row dividers"
@@ -195,18 +228,6 @@
 				class="size-4 accent-accent"
 				checked={settings.hideListRowDividers}
 				onchange={(e) => settings.setHideListRowDividers(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Compact bulk toolbar"
-			description="Less height on the selection toolbar above the message list"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactBulkToolbar}
-				onchange={(e) => settings.setCompactBulkToolbar(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

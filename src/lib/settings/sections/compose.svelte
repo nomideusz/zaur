@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import { settings, type ListDensity, type ReaderTextSize } from '$lib/stores/settings.svelte';
@@ -138,16 +139,23 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Compact compose suggestions"
-			description="Tighter spacing in recipient autocomplete while composing"
+		<SettingsDepends
+			enabled={settings.showComposeContactSuggestions}
+			inactiveReason={settings.showComposeContactSuggestions
+				? 'Recipient suggestions appearance'
+				: 'Turn on compose contact suggestions above to adjust spacing'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactComposeSuggestions}
-				onchange={(e) => settings.setCompactComposeSuggestions(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact compose suggestions"
+				description="Tighter spacing in recipient autocomplete while composing"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactComposeSuggestions}
+					onchange={(e) => settings.setCompactComposeSuggestions(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 </SettingsGroup>

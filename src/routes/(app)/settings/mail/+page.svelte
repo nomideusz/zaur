@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
@@ -95,17 +96,24 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Hide keyboard shortcuts help"
-			description="Remove the shortcut reference section at the bottom of Mail settings"
+		<SettingsDepends
+			enabled={settings.enableKeyboardShortcuts}
+			inactiveReason={settings.enableKeyboardShortcuts
+				? 'Shortcut help'
+				: 'Turn on keyboard shortcuts above to show help and references'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideMailShortcutsHelp}
-				onchange={(e) => settings.setHideMailShortcutsHelp(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Hide keyboard shortcuts help"
+				description="Remove the shortcut reference section at the bottom of Mail settings"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.hideMailShortcutsHelp}
+					onchange={(e) => settings.setHideMailShortcutsHelp(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 		<SettingsRow
 			title="Hide action toasts"
@@ -119,17 +127,36 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Compact toasts"
-			description="Smaller notification popups in the bottom-right corner"
+		<SettingsDepends
+			enabled={!settings.hideActionToasts}
+			inactiveReason={settings.hideActionToasts
+				? 'Success and info toasts are hidden — errors still show'
+				: 'Toast appearance'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactToasts}
-				onchange={(e) => settings.setCompactToasts(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact toasts"
+				description="Smaller notification popups in the bottom-right corner"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactToasts}
+					onchange={(e) => settings.setCompactToasts(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+
+			<SettingsRow
+				title="Hide toast icons"
+				description="Text-only notification popups — no success, error, or info icons"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.hideToastIcons}
+					onchange={(e) => settings.setHideToastIcons(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 	</SettingsGroup>
 
 	<SettingsGroup title="Defaults">
@@ -151,7 +178,7 @@
 		</SettingsRow>
 	</SettingsGroup>
 
-	{#if !settings.hideMailShortcutsHelp}
+	{#if settings.enableKeyboardShortcuts && !settings.hideMailShortcutsHelp}
 	<SettingsGroup title="Keyboard shortcuts" description="Quick keys while viewing mail.">
 		<SettingsRow title="Compose" description="Start a new message from the mail view">
 			<span class="font-mono text-xs text-fg">c</span>

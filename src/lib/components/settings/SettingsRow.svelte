@@ -24,9 +24,10 @@
 {#if visible}
 	<label
 		class={cn(
-			'flex items-center justify-between gap-4 rounded-lg border border-border',
+			'flex min-w-0 items-center justify-between gap-4 rounded-lg border border-border',
 			settings.compactSettingsRows ? 'px-3 py-2' : 'px-4 py-3',
-			settings.hidePaneBorders && 'border-transparent'
+			settings.hidePaneBorders && 'border-transparent',
+			'[&:has(:disabled)]:cursor-not-allowed'
 		)}
 	>
 		<div class="min-w-0 flex-1">
