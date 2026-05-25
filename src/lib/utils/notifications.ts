@@ -101,13 +101,13 @@ export async function unsubscribeFromPushNotifications(): Promise<void> {
 	await subscription.unsubscribe();
 }
 
-export async function syncPushSubscription(enabled: boolean): Promise<void> {
+export async function syncPushSubscription(enabled: boolean): Promise<boolean> {
 	if (enabled) {
-		await subscribeToPushNotifications();
-		return;
+		return subscribeToPushNotifications();
 	}
 
 	await unsubscribeFromPushNotifications();
+	return true;
 }
 
 export type PushNotificationStatus =
@@ -155,7 +155,7 @@ export function pushStatusLabel(status: PushNotificationStatus): string {
 		case 'unsupported':
 			return 'Not supported in this browser';
 		case 'service_worker_unavailable':
-			return 'Waiting for app install';
+			return 'Service worker not ready';
 		case 'denied':
 			return 'Blocked in browser settings';
 		case 'prompt':

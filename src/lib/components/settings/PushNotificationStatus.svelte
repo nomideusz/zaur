@@ -14,6 +14,7 @@
 
 	let pushStatus = $state<PushNotificationStatus>({ state: 'prompt' });
 	let busy = $state(false);
+	let lastError = $state<string | null>(null);
 
 	async function refreshStatus() {
 		pushStatus = await getPushNotificationStatus();
@@ -32,6 +33,7 @@
 
 	async function enablePush() {
 		busy = true;
+		lastError = null;
 		try {
 			if (!settings.notifyOnNewMail) {
 				settings.setNotifyOnNewMail(true);
@@ -39,6 +41,13 @@
 				await syncPushSubscription(true);
 			}
 			await refreshStatus();
+			if (pushStatus.state === 'denied') {
+				lastError = 'Notifications are blocked for this site in browser settings.';
+			} else if (pushStatus.state === 'unsupported') {
+				lastError = 'Background push needs Chrome or Firefox on desktop.';
+			} else if (pushStatus.state !== 'subscribed' && pushStatus.state !== 'prompt') {
+				lastError = 'Could not register push on this device.';
+			}
 		} finally {
 			busy = false;
 		}
@@ -46,6 +55,7 @@
 
 	async function disablePush() {
 		busy = true;
+		lastError = null;
 		try {
 			if (settings.notifyOnNewMail) {
 				settings.setNotifyOnNewMail(false);
@@ -60,8 +70,10 @@
 
 	async function retryPush() {
 		busy = true;
+		lastError = null;
 		try {
-			await syncPushSubscription(settings.notifyOnNewMail);
+			const ok = await syncPushSubscription(settings.notifyOnNewMail || true);
+			if (!ok) lastError = 'Service worker or push registration failed.';
 			await refreshStatus();
 		} finally {
 			busy = false;
@@ -75,30 +87,42 @@
 				? 'text-amber-700 dark:text-amber-300'
 				: 'text-fg-muted'
 	);
+
+	const showInstall = $derived(!pwa.isInstalled && (pwa.canInstall || pwa.showIosHint));
 </script>
 
-<div class="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
+<div class="flex max-w-sm flex-col items-end gap-2">
 	<span class={cn('text-right text-xs font-medium', toneClass)}>
 		{pushStatusLabel(pushStatus)}
 	</span>
 
-	{#if !pwa.isInstalled && (pwa.canInstall || pwa.showIosHint)}
-		<button type="button" class="z-btn-ghost text-sm" onclick={() => pwa.showInstallPromptAgain()}>
-			Install app
-		</button>
-	{:else if pushStatus.state === 'subscribed'}
-		<button type="button" class="z-btn-ghost text-sm" disabled={busy} onclick={() => void disablePush()}>
-			Turn off push
-		</button>
-	{:else if pushStatus.state === 'prompt' || pushStatus.state === 'not_subscribed'}
-		<button type="button" class="z-btn-ghost text-sm" disabled={busy} onclick={() => void enablePush()}>
-			Enable push
-		</button>
-	{:else if pushStatus.state === 'denied'}
-		<span class="text-xs text-fg-subtle">Change in browser site settings</span>
-	{:else if pushStatus.state === 'service_worker_unavailable'}
-		<button type="button" class="z-btn-ghost text-sm" disabled={busy} onclick={() => void retryPush()}>
-			Retry
-		</button>
+	{#if lastError}
+		<p class="text-right text-xs text-amber-700 dark:text-amber-300">{lastError}</p>
 	{/if}
+
+	<div class="flex flex-wrap items-center justify-end gap-2">
+		{#if pushStatus.state === 'subscribed'}
+			<button type="button" class="z-btn-ghost text-sm" disabled={busy} onclick={() => void disablePush()}>
+				Turn off push
+			</button>
+		{:else if pushStatus.state === 'prompt' || pushStatus.state === 'not_subscribed'}
+			<button type="button" class="z-btn-ghost text-sm" disabled={busy} onclick={() => void enablePush()}>
+				Enable push
+			</button>
+		{:else if pushStatus.state === 'denied'}
+			<span class="text-xs text-fg-subtle">Change in browser site settings</span>
+		{:else if pushStatus.state === 'service_worker_unavailable'}
+			<button type="button" class="z-btn-ghost text-sm" disabled={busy} onclick={() => void retryPush()}>
+				Retry
+			</button>
+		{:else if pushStatus.state === 'unsupported'}
+			<span class="text-xs text-fg-subtle">Use Chrome or Firefox for background push</span>
+		{/if}
+
+		{#if showInstall}
+			<button type="button" class="z-btn-ghost text-sm" onclick={() => pwa.showInstallPromptAgain()}>
+				Install app
+			</button>
+		{/if}
+	</div>
 </div>
