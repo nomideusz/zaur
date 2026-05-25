@@ -132,6 +132,12 @@
 		</select>
 	</label>
 
+	{#if mail.selectionMode}
+		<span class="min-w-0 flex-1 truncate text-xs text-fg-muted md:hidden">
+			{currentMailbox?.name ?? 'Folder'}
+		</span>
+	{/if}
+
 	{#if !mail.selectionMode && settings.showMessageCounts && countLabel}
 		<span class="shrink-0 text-xs text-fg-subtle md:hidden">{countLabel}</span>
 	{/if}
