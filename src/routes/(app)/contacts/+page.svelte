@@ -270,8 +270,10 @@
 				{/if}
 			</div>
 			<div class="flex flex-wrap justify-center gap-2">
-				<Button variant="ghost" onclick={() => (showAddForm = true)}>Add contact</Button>
-				<Button href="/mail/inbox" variant="ghost">Go to inbox</Button>
+				{#if !settings.hideContactsEmptyActions}
+					<Button variant="ghost" onclick={() => (showAddForm = true)}>Add contact</Button>
+					<Button href="/mail/inbox" variant="ghost">Go to inbox</Button>
+				{/if}
 			</div>
 		</div>
 	{/if}

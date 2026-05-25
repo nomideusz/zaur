@@ -46,6 +46,7 @@ const STORAGE = {
 	hideAppTitle: 'zaur:hide-app-title',
 	compactUserMenu: 'zaur:compact-user-menu',
 	hideListEmptyHints: 'zaur:hide-list-empty-hints',
+	hideListEmptyActions: 'zaur:hide-list-empty-actions',
 	hideSelectionHints: 'zaur:hide-selection-hints',
 	hideReaderTimestamps: 'zaur:hide-reader-timestamps',
 	hideCollapsedThreadPreviews: 'zaur:hide-collapsed-thread-previews',
@@ -121,6 +122,7 @@ const STORAGE = {
 	compactReaderStatus: 'zaur:compact-reader-status',
 	compactReaderMoreMenu: 'zaur:compact-reader-more-menu',
 	compactListErrorState: 'zaur:compact-list-error-state',
+	hideListErrorRetry: 'zaur:hide-list-error-retry',
 	compactReaderSkeleton: 'zaur:compact-reader-skeleton',
 	compactFolderBadges: 'zaur:compact-folder-badges',
 	compactFolderTree: 'zaur:compact-folder-tree',
@@ -135,6 +137,7 @@ const STORAGE = {
 	hideContactsHeaderSettings: 'zaur:hide-contacts-header-settings',
 	hideContactsComposeButton: 'zaur:hide-contacts-compose-button',
 	hideContactsEmptyHints: 'zaur:hide-contacts-empty-hints',
+	hideContactsEmptyActions: 'zaur:hide-contacts-empty-actions',
 	compactReaderInlineError: 'zaur:compact-reader-inline-error',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
@@ -378,6 +381,11 @@ function readCompactUserMenu(): boolean {
 function readHideListEmptyHints(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideListEmptyHints) === 'true';
+}
+
+function readHideListEmptyActions(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideListEmptyActions) === 'true';
 }
 
 function readHideSelectionHints(): boolean {
@@ -755,6 +763,11 @@ function readCompactListErrorState(): boolean {
 	return localStorage.getItem(STORAGE.compactListErrorState) === 'true';
 }
 
+function readHideListErrorRetry(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideListErrorRetry) === 'true';
+}
+
 function readCompactReaderSkeleton(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactReaderSkeleton) === 'true';
@@ -823,6 +836,11 @@ function readHideContactsComposeButton(): boolean {
 function readHideContactsEmptyHints(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideContactsEmptyHints) === 'true';
+}
+
+function readHideContactsEmptyActions(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideContactsEmptyActions) === 'true';
 }
 
 function readCompactReaderInlineError(): boolean {
@@ -953,6 +971,7 @@ class SettingsStore {
 	hideAppTitle = $state(readHideAppTitle());
 	compactUserMenu = $state(readCompactUserMenu());
 	hideListEmptyHints = $state(readHideListEmptyHints());
+	hideListEmptyActions = $state(readHideListEmptyActions());
 	hideSelectionHints = $state(readHideSelectionHints());
 	hideReaderTimestamps = $state(readHideReaderTimestamps());
 	hideCollapsedThreadPreviews = $state(readHideCollapsedThreadPreviews());
@@ -1028,6 +1047,7 @@ class SettingsStore {
 	compactReaderStatus = $state(readCompactReaderStatus());
 	compactReaderMoreMenu = $state(readCompactReaderMoreMenu());
 	compactListErrorState = $state(readCompactListErrorState());
+	hideListErrorRetry = $state(readHideListErrorRetry());
 	compactReaderSkeleton = $state(readCompactReaderSkeleton());
 	compactFolderBadges = $state(readCompactFolderBadges());
 	compactFolderTree = $state(readCompactFolderTree());
@@ -1042,6 +1062,7 @@ class SettingsStore {
 	hideContactsHeaderSettings = $state(readHideContactsHeaderSettings());
 	hideContactsComposeButton = $state(readHideContactsComposeButton());
 	hideContactsEmptyHints = $state(readHideContactsEmptyHints());
+	hideContactsEmptyActions = $state(readHideContactsEmptyActions());
 	compactReaderInlineError = $state(readCompactReaderInlineError());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
@@ -1104,6 +1125,7 @@ class SettingsStore {
 		this.hideAppTitle = readHideAppTitle();
 		this.compactUserMenu = readCompactUserMenu();
 		this.hideListEmptyHints = readHideListEmptyHints();
+		this.hideListEmptyActions = readHideListEmptyActions();
 		this.hideSelectionHints = readHideSelectionHints();
 		this.hideReaderTimestamps = readHideReaderTimestamps();
 		this.hideCollapsedThreadPreviews = readHideCollapsedThreadPreviews();
@@ -1179,6 +1201,7 @@ class SettingsStore {
 		this.compactReaderStatus = readCompactReaderStatus();
 		this.compactReaderMoreMenu = readCompactReaderMoreMenu();
 		this.compactListErrorState = readCompactListErrorState();
+		this.hideListErrorRetry = readHideListErrorRetry();
 		this.compactReaderSkeleton = readCompactReaderSkeleton();
 		this.compactFolderBadges = readCompactFolderBadges();
 		this.compactFolderTree = readCompactFolderTree();
@@ -1193,6 +1216,7 @@ class SettingsStore {
 		this.hideContactsHeaderSettings = readHideContactsHeaderSettings();
 		this.hideContactsComposeButton = readHideContactsComposeButton();
 		this.hideContactsEmptyHints = readHideContactsEmptyHints();
+		this.hideContactsEmptyActions = readHideContactsEmptyActions();
 		this.compactReaderInlineError = readCompactReaderInlineError();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
@@ -1530,6 +1554,13 @@ class SettingsStore {
 		this.hideListEmptyHints = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.hideListEmptyHints, String(value));
+		}
+	}
+
+	setHideListEmptyActions(value: boolean) {
+		this.hideListEmptyActions = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideListEmptyActions, String(value));
 		}
 	}
 
@@ -2059,6 +2090,13 @@ class SettingsStore {
 		}
 	}
 
+	setHideListErrorRetry(value: boolean) {
+		this.hideListErrorRetry = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideListErrorRetry, String(value));
+		}
+	}
+
 	setCompactReaderSkeleton(value: boolean) {
 		this.compactReaderSkeleton = value;
 		if (browser) {
@@ -2154,6 +2192,13 @@ class SettingsStore {
 		this.hideContactsEmptyHints = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.hideContactsEmptyHints, String(value));
+		}
+	}
+
+	setHideContactsEmptyActions(value: boolean) {
+		this.hideContactsEmptyActions = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideContactsEmptyActions, String(value));
 		}
 	}
 
@@ -2342,6 +2387,7 @@ class SettingsStore {
 		this.setHideAppTitle(false);
 		this.setCompactUserMenu(false);
 		this.setHideListEmptyHints(false);
+		this.setHideListEmptyActions(false);
 		this.setHideSelectionHints(false);
 		this.setHideReaderTimestamps(false);
 		this.setHideCollapsedThreadPreviews(false);
@@ -2417,6 +2463,7 @@ class SettingsStore {
 		this.setCompactReaderStatus(false);
 		this.setCompactReaderMoreMenu(false);
 		this.setCompactListErrorState(false);
+		this.setHideListErrorRetry(false);
 		this.setCompactReaderSkeleton(false);
 		this.setCompactFolderBadges(false);
 		this.setCompactFolderTree(false);
@@ -2431,6 +2478,7 @@ class SettingsStore {
 		this.setHideContactsHeaderSettings(false);
 		this.setHideContactsComposeButton(false);
 		this.setHideContactsEmptyHints(false);
+		this.setHideContactsEmptyActions(false);
 		this.setCompactReaderInlineError(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
@@ -2460,6 +2508,7 @@ class SettingsStore {
 		this.setHideAppTitle(true);
 		this.setCompactUserMenu(true);
 		this.setHideListEmptyHints(true);
+		this.setHideListEmptyActions(true);
 		this.setHideSelectionHints(true);
 		this.setHideReaderTimestamps(true);
 		this.setHideCollapsedThreadPreviews(true);
@@ -2535,6 +2584,7 @@ class SettingsStore {
 		this.setCompactReaderStatus(true);
 		this.setCompactReaderMoreMenu(true);
 		this.setCompactListErrorState(true);
+		this.setHideListErrorRetry(true);
 		this.setCompactReaderSkeleton(true);
 		this.setCompactFolderBadges(true);
 		this.setCompactFolderTree(true);
@@ -2549,6 +2599,7 @@ class SettingsStore {
 		this.setHideContactsHeaderSettings(true);
 		this.setHideContactsComposeButton(true);
 		this.setHideContactsEmptyHints(true);
+		this.setHideContactsEmptyActions(true);
 		this.setCompactReaderInlineError(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
@@ -2623,6 +2674,7 @@ class SettingsStore {
 			this.hideAppTitle,
 			this.compactUserMenu,
 			this.hideListEmptyHints,
+			this.hideListEmptyActions,
 			this.hideSelectionHints,
 			this.hideReaderTimestamps,
 			this.hideCollapsedThreadPreviews,
@@ -2698,6 +2750,7 @@ class SettingsStore {
 			this.compactReaderStatus,
 			this.compactReaderMoreMenu,
 			this.compactListErrorState,
+			this.hideListErrorRetry,
 			this.compactReaderSkeleton,
 			this.compactFolderBadges,
 			this.compactFolderTree,
@@ -2712,6 +2765,7 @@ class SettingsStore {
 			this.hideContactsHeaderSettings,
 			this.hideContactsComposeButton,
 			this.hideContactsEmptyHints,
+			this.hideContactsEmptyActions,
 			this.compactReaderInlineError,
 			this.rememberLastMailbox
 		];

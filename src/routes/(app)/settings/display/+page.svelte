@@ -402,13 +402,25 @@
 
 		<SettingsRow
 			title="Hide empty list hints"
-			description="Show only the primary empty-folder message — no icons, hints, or Write a message button"
+			description="Show only the primary empty-folder message — no icons or secondary hint text"
 		>
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
 				checked={settings.hideListEmptyHints}
 				onchange={(e) => settings.setHideListEmptyHints(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide empty list actions"
+			description="Remove Write a message and other action buttons when a folder or search is empty"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideListEmptyActions}
+				onchange={(e) => settings.setHideListEmptyActions(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 
@@ -433,6 +445,18 @@
 				class="size-4 accent-accent"
 				checked={settings.compactListErrorState}
 				onchange={(e) => settings.setCompactListErrorState(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide list error retry"
+			description="Remove the Try again button when the message list fails to load"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideListErrorRetry}
+				onchange={(e) => settings.setHideListErrorRetry(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>
@@ -1573,6 +1597,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideContactsEmptyHints}
 				onchange={(e) => settings.setHideContactsEmptyHints(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide contacts empty actions"
+			description="Remove Add contact and Go to inbox buttons when the contacts list is empty"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideContactsEmptyActions}
+				onchange={(e) => settings.setHideContactsEmptyActions(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

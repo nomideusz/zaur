@@ -214,7 +214,7 @@
 				)}
 			>
 				<p class="text-sm text-danger">{error}</p>
-				{#if onRetry}
+				{#if onRetry && !settings.hideListErrorRetry}
 					<Button variant="ghost" class="text-sm" onclick={onRetry}>Try again</Button>
 				{/if}
 			</div>
@@ -246,7 +246,7 @@
 						{/if}
 					{/if}
 				</div>
-				{#if !settings.hideListEmptyHints}
+				{#if !settings.hideListEmptyActions}
 					{#if emptyActionHref && emptyActionLabel}
 						<Button href={emptyActionHref} variant="ghost" class="text-sm">{emptyActionLabel}</Button>
 					{:else if mailboxRouteId === 'inbox' || mailboxRouteId === 'drafts'}
