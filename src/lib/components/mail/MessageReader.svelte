@@ -165,11 +165,8 @@
 	function deleteMessage() {
 		moreOpen = false;
 		if (!latest) return;
-		if (currentMailbox?.role === 'trash') {
-			if (!confirm('Permanently delete this message? This cannot be undone.')) {
-				return;
-			}
-		}
+		const permanent = currentMailbox?.role === 'trash';
+		if (!settings.confirmDeleteMessage(1, permanent)) return;
 		void withClient((client) => mail.deleteMessage(client, latest, mailboxRouteId));
 	}
 

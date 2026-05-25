@@ -164,13 +164,8 @@
 							const routeId =
 								parseMailContext($page.url.pathname)?.mailboxRouteId ?? message.mailboxId;
 							const mailbox = mail.mailboxByRouteId(routeId);
-							if (mailbox?.role === 'trash') {
-								if (
-									!confirm('Permanently delete this message? This cannot be undone.')
-								) {
-									return;
-								}
-							}
+							const permanent = mailbox?.role === 'trash';
+							if (!settings.confirmDeleteMessage(1, permanent)) return;
 							return mail.deleteMessage(auth.client, message, routeId);
 						},
 						{ leaveThread: true }

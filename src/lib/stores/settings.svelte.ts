@@ -1535,6 +1535,20 @@ class SettingsStore {
 		return fromFallback || 'User';
 	}
 
+	confirmDeleteMessage(count: number, permanent: boolean): boolean {
+		if (permanent) {
+			return confirm(
+				count === 1
+					? 'Permanently delete this message? This cannot be undone.'
+					: `Permanently delete ${count} messages? This cannot be undone.`
+			);
+		}
+		if (!this.confirmBeforeDelete) return true;
+		return confirm(
+			count === 1 ? 'Move this message to trash?' : `Move ${count} messages to trash?`
+		);
+	}
+
 	/** Load preferences from the signed-in JMAP account (newer copy wins). */
 	async syncFromAccount(): Promise<void> {
 		if (!this.userEmail) return;

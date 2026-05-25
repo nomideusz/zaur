@@ -52,15 +52,8 @@
 	async function deleteSelected() {
 		if (!auth.client) return;
 		const count = mail.selectedCount;
-		if (currentMailbox?.role === 'trash') {
-			if (
-				!confirm(
-					`Permanently delete ${count === 1 ? 'this message' : `${count} messages`}? This cannot be undone.`
-				)
-			) {
-				return;
-			}
-		}
+		const permanent = currentMailbox?.role === 'trash';
+		if (!settings.confirmDeleteMessage(count, permanent)) return;
 		await run(() => mail.bulkDelete(auth.client!, mailboxRouteId));
 	}
 
