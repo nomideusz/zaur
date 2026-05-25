@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { Archive, FolderInput, Mail, MailOpen, Trash2, X } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -17,7 +18,6 @@
 	let { mailboxRouteId, countLabel = '', onBulkAction }: Props = $props();
 
 	let moveOpen = $state(false);
-	let masterCheckbox = $state<HTMLInputElement | null>(null);
 
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const moveTargets = $derived(
@@ -72,41 +72,19 @@
 		if (!auth.client) return;
 		await run(() => mail.bulkMarkAsUnread(auth.client!));
 	}
-
-	function handleMasterCheckbox() {
-		if (!mail.selectionMode) {
-			mail.enterSelectionMode();
-			return;
-		}
-
-		if (mail.selectedCount === mail.messages.length) {
-			mail.selectedMessageIds = new Set();
-		} else {
-			mail.selectAllMessages();
-		}
-	}
-
-	$effect(() => {
-		if (!masterCheckbox) return;
-		masterCheckbox.indeterminate =
-			mail.selectionMode &&
-			mail.selectedCount > 0 &&
-			mail.selectedCount < mail.messages.length;
-	});
 </script>
 
 <svelte:window onclick={() => (moveOpen = false)} />
 
-<div class={cn('flex shrink-0 flex-wrap items-center gap-2 px-4', settings.compactBulkToolbar ? 'min-h-10 py-1.5' : 'min-h-12 py-2', !settings.hidePaneBorders && 'border-b border-border')}>
-	<input
-		bind:this={masterCheckbox}
-		type="checkbox"
-		class="size-4 shrink-0 accent-accent"
-		checked={mail.selectionMode && mail.messages.length > 0 && mail.selectedCount === mail.messages.length}
-		disabled={!mail.messages.length || mail.messagesLoading}
-		aria-label={mail.selectionMode ? 'Select all messages in this list' : 'Select messages'}
-		onchange={handleMasterCheckbox}
-	/>
+	<div
+		class={cn(
+			'flex shrink-0 flex-wrap items-center gap-2 px-4',
+			settings.compactBulkToolbar ? 'min-h-10 py-1.5' : 'min-h-12 py-2',
+			!settings.hidePaneBorders && 'border-b border-border',
+			!mail.selectionMode && 'md:hidden'
+		)}
+	>
+		<MessageListMasterCheckbox class="hidden shrink-0 md:block" />
 
 	<label class={cn('min-w-0 flex-1 md:hidden', mail.selectionMode && 'hidden')}>
 		<span class="sr-only">Folder</span>

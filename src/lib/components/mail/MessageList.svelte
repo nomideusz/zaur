@@ -5,6 +5,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
 	import MessageListItem from './MessageListItem.svelte';
+	import MessageListMasterCheckbox from './MessageListMasterCheckbox.svelte';
 	import MessageListToolbar from './MessageListToolbar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -168,6 +169,9 @@
 					{/each}
 				</select>
 			</label>
+		{/if}
+		{#if showBulkToolbar && !mail.selectionMode}
+			<MessageListMasterCheckbox class="hidden shrink-0 md:block" />
 		{/if}
 		<h2 class="hidden truncate text-sm font-semibold text-fg md:block">
 			{mailboxName.startsWith('Search:') ? mailboxName.slice(8) : mailboxName}
