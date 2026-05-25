@@ -101,6 +101,32 @@
 		goto('/mail/compose?mode=reply-all');
 	}
 
+	async function forwardSelectedMessage() {
+		const ctx = parseMailContext($page.url.pathname);
+		if (!ctx?.threadId || !auth.client) return;
+
+		let latest = mail.selectedThread.at(-1);
+		const routeId =
+			ctx.mailboxRouteId ??
+			latest?.mailboxId ??
+			mail.messages.find((message) => message.threadId === ctx.threadId)?.mailboxId;
+		if (!routeId) return;
+
+		const needsLoad =
+			!latest ||
+			mail.selectedThreadId !== ctx.threadId ||
+			(latest.hasAttachment && latest.attachments.length === 0);
+
+		if (needsLoad) {
+			await mail.loadMessage(auth.client, routeId, ctx.threadId);
+			latest = mail.selectedThread.at(-1);
+		}
+
+		if (!latest) return;
+		compose.startForward(latest);
+		goto('/mail/compose?mode=forward');
+	}
+
 	onMount(() => {
 		function onKeydown(event: KeyboardEvent) {
 			if (!settings.enableKeyboardShortcuts) return;
@@ -131,12 +157,7 @@
 					break;
 				case 'f':
 					event.preventDefault();
-					{
-						const latest = mail.selectedThread.at(-1);
-						if (!latest) return;
-						compose.startForward(latest);
-						goto('/mail/compose?mode=forward');
-					}
+					void forwardSelectedMessage();
 					break;
 				case 'e':
 					event.preventDefault();

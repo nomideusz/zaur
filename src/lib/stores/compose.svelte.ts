@@ -265,6 +265,7 @@ class ComposeStore {
 		this.error = null;
 		this.draftSavedAt = null;
 		this.importMessageAttachments(message);
+		void this.persistLocalDraft();
 	}
 
 	scheduleAutosave(client: JMAPClient | null, fromEmail: string, fromName?: string) {
