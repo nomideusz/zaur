@@ -37,7 +37,7 @@
 				once it is enabled on your account.
 			</p>
 			<div class="mt-6">
-				<Button href="/mail/inbox" variant="ghost">Back to mail</Button>
+				<Button href={settings.preferredMailHref()} variant="ghost">Back to mail</Button>
 			</div>
 		</div>
 	</div>

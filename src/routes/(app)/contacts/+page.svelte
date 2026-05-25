@@ -322,7 +322,7 @@
 				<div class="flex flex-wrap justify-center gap-2">
 					{#if !settings.hideContactsEmptyActions}
 						<Button variant="ghost" onclick={() => (showAddForm = true)}>Add contact</Button>
-						<Button href="/mail/inbox" variant="ghost">Go to inbox</Button>
+						<Button href={settings.preferredMailHref()} variant="ghost">Open mail</Button>
 					{/if}
 				</div>
 			</div>
