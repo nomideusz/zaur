@@ -18,6 +18,22 @@
 	);
 	const composeBorderB = $derived(settings.hideComposePanelBorders ? '' : 'border-b border-border');
 	const composeBorderT = $derived(settings.hideComposePanelBorders ? '' : 'border-t border-border');
+	const hideBorders = $derived(settings.hideComposePanelBorders || settings.hidePaneBorders);
+
+	function panelShellClass(variant: 'drawer' | 'pane'): string {
+		if (variant === 'pane') {
+			return cn(
+				'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-surface-raised',
+				!hideBorders && 'border-l border-border'
+			);
+		}
+
+		return cn(
+			'z-panel flex h-full min-h-0 w-full flex-col overflow-hidden shadow-md',
+			!hideBorders && 'border-l',
+			settings.compactComposePanel ? 'max-w-xl' : 'max-w-2xl'
+		);
+	}
 
 	interface Props {
 		mode?: ComposeMode;
@@ -28,6 +44,10 @@
 	let fileInput = $state<HTMLInputElement | null>(null);
 	let bodyInput = $state<HTMLTextAreaElement | null>(null);
 	let toInput = $state<HTMLInputElement | null>(null);
+	let composeDesktop = $state(false);
+
+	const usePaneLayout = $derived(settings.composeLayout === 'pane');
+	const showPaneShell = $derived(usePaneLayout && composeDesktop);
 
 	const quoteMarker = /\n\n---\n/;
 
@@ -89,11 +109,24 @@
 	});
 
 	onMount(() => {
+		const media = window.matchMedia('(min-width: 768px)');
+
+		function syncDesktop() {
+			composeDesktop = media.matches;
+		}
+
+		syncDesktop();
+		media.addEventListener('change', syncDesktop);
+
 		function onKeydown(event: KeyboardEvent) {
 			if (event.key === 'Escape') close();
 		}
 		window.addEventListener('keydown', onKeydown);
-		return () => window.removeEventListener('keydown', onKeydown);
+
+		return () => {
+			media.removeEventListener('change', syncDesktop);
+			window.removeEventListener('keydown', onKeydown);
+		};
 	});
 
 	async function send() {
@@ -146,16 +179,8 @@
 	onchange={onFilesSelected}
 />
 
-<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-<div class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]" onclick={close}>
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-	<div
-		class={cn(
-			'z-panel flex h-full min-h-0 w-full flex-col overflow-hidden border-l shadow-md',
-			settings.compactComposePanel ? 'max-w-xl' : 'max-w-2xl'
-		)}
-		onclick={(e) => e.stopPropagation()}
-	>
+{#snippet composePanel(variant: 'drawer' | 'pane')}
+	<div class={panelShellClass(variant)}>
 		<header class={cn('flex shrink-0 items-center justify-between px-5 py-3.5', composeBorderB)}>
 			<div>
 				<h2 class="text-base font-semibold text-fg">{title}</h2>
@@ -301,4 +326,18 @@
 			</footer>
 		</form>
 	</div>
-</div>
+{/snippet}
+
+{#if showPaneShell}
+	<div class="z-mail-reader-pane">
+		{@render composePanel('pane')}
+	</div>
+{:else}
+	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]" onclick={close}>
+		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+		<div class="h-full w-full" onclick={(e) => e.stopPropagation()}>
+			{@render composePanel('drawer')}
+		</div>
+	</div>
+{/if}

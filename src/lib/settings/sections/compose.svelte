@@ -2,11 +2,24 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import { settings, type ListDensity, type ReaderTextSize } from '$lib/stores/settings.svelte';
-	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
+	import { settings, type ComposeLayout } from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="Writing email" description="Compose panel and recipient fields.">
+		<SettingsRow
+			title="Compose layout"
+			description="Drawer slides over mail on desktop — pane keeps the folder sidebar visible while you write"
+		>
+			<select
+				class="z-input w-auto"
+				value={settings.composeLayout}
+				onchange={(e) => settings.setComposeLayout(e.currentTarget.value as ComposeLayout)}
+			>
+				<option value="drawer">Drawer</option>
+				<option value="pane">Pane (sidebar visible)</option>
+			</select>
+		</SettingsRow>
+
 		<SettingsRow
 			title="Hide compose hints"
 			description="Remove nudges like “Set display name”, “Add a signature”, and keyboard shortcut tips"
@@ -67,17 +80,24 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Compact compose panel"
-			description="Narrower compose drawer on desktop — more room beside the message list"
+		<SettingsDepends
+			enabled={settings.composeLayout === 'drawer'}
+			inactiveReason={settings.composeLayout === 'drawer'
+				? 'Drawer width on desktop'
+				: 'Only applies when compose layout is set to drawer'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactComposePanel}
-				onchange={(e) => settings.setCompactComposePanel(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact compose panel"
+				description="Narrower compose drawer on desktop — more room beside the message list"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactComposePanel}
+					onchange={(e) => settings.setCompactComposePanel(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 		<SettingsRow
 			title="Icon-only attach button"
@@ -105,7 +125,7 @@
 
 		<SettingsRow
 			title="Hide compose panel borders"
-			description="Remove divider lines between header, fields, and footer in the compose drawer"
+			description="Remove divider lines between header, fields, and footer in compose"
 		>
 			<input
 				type="checkbox"

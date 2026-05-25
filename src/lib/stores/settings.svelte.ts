@@ -7,6 +7,7 @@ export type ListDensity = 'comfortable' | 'compact';
 export type ReaderTextSize = 'normal' | 'large';
 export type CalendarMaxEventsPerDay = 2 | 3 | 5;
 export type LoadingIndicatorStyle = 'skeleton' | 'minimal' | 'spinner';
+export type ComposeLayout = 'drawer' | 'pane';
 
 const STORAGE = {
 	blockExternal: 'zaur:block-external',
@@ -66,6 +67,7 @@ const STORAGE = {
 	hideThreadCollapseButtons: 'zaur:hide-thread-collapse-buttons',
 	hideComposeFieldLabels: 'zaur:hide-compose-field-labels',
 	compactComposePanel: 'zaur:compact-compose-panel',
+	composeLayout: 'zaur:compose-layout',
 	hideOutboxUnlessFailed: 'zaur:hide-outbox-unless-failed',
 	hideListActiveIndicator: 'zaur:hide-list-active-indicator',
 	compactListRows: 'zaur:compact-list-rows',
@@ -490,6 +492,12 @@ function readHideComposeFieldLabels(): boolean {
 function readCompactComposePanel(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactComposePanel) === 'true';
+}
+
+function readComposeLayout(): ComposeLayout {
+	if (!browser) return 'drawer';
+	const value = localStorage.getItem(STORAGE.composeLayout);
+	return value === 'pane' ? 'pane' : 'drawer';
 }
 
 function readHideOutboxUnlessFailed(): boolean {
@@ -1149,6 +1157,7 @@ class SettingsStore {
 	hideThreadCollapseButtons = $state(readHideThreadCollapseButtons());
 	hideComposeFieldLabels = $state(readHideComposeFieldLabels());
 	compactComposePanel = $state(readCompactComposePanel());
+	composeLayout = $state<ComposeLayout>(readComposeLayout());
 	hideOutboxUnlessFailed = $state(readHideOutboxUnlessFailed());
 	hideListActiveIndicator = $state(readHideListActiveIndicator());
 	compactListRows = $state(readCompactListRows());
@@ -1327,6 +1336,7 @@ class SettingsStore {
 		this.hideThreadCollapseButtons = readHideThreadCollapseButtons();
 		this.hideComposeFieldLabels = readHideComposeFieldLabels();
 		this.compactComposePanel = readCompactComposePanel();
+		this.composeLayout = readComposeLayout();
 		this.hideOutboxUnlessFailed = readHideOutboxUnlessFailed();
 		this.hideListActiveIndicator = readHideListActiveIndicator();
 		this.compactListRows = readCompactListRows();
@@ -1898,6 +1908,13 @@ class SettingsStore {
 		this.compactComposePanel = value;
 		if (browser) {
 			this.writeStorage(STORAGE.compactComposePanel, String(value));
+		}
+	}
+
+	setComposeLayout(value: ComposeLayout) {
+		this.composeLayout = value;
+		if (browser) {
+			this.writeStorage(STORAGE.composeLayout, value);
 		}
 	}
 
@@ -2804,6 +2821,7 @@ class SettingsStore {
 		this.setHideThreadCollapseButtons(false);
 		this.setHideComposeFieldLabels(false);
 		this.setCompactComposePanel(false);
+		this.setComposeLayout('drawer');
 		this.setHideOutboxUnlessFailed(false);
 		this.setHideListActiveIndicator(false);
 		this.setCompactListRows(false);

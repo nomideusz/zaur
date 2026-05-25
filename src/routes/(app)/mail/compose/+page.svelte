@@ -2,7 +2,9 @@
 	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/stores';
 	import ComposePanel from '$lib/components/mail/ComposePanel.svelte';
+	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 
 	const COMPOSE_MODES = new Set<ComposeMode>(['new', 'reply', 'reply-all', 'forward']);
 
@@ -25,5 +27,9 @@
 <svelte:head>
 	<title>Compose · ZAUR Webmail</title>
 </svelte:head>
+
+{#if settings.composeLayout === 'pane'}
+	<MailboxSidebar />
+{/if}
 
 <ComposePanel {mode} {initialTo} />
