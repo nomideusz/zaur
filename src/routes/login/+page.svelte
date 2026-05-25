@@ -1,15 +1,19 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { appConfig } from '$lib/config';
+	import { loadRememberedLogin } from '$lib/auth/remember-login';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
 
-	let email = $state('');
+	const remembered = loadRememberedLogin();
+
+	let email = $state(remembered.email);
 	let password = $state('');
 	let totp = $state('');
 	let showTotp = $state(false);
+	let rememberMe = $state(remembered.rememberMe);
 
 	$effect(() => {
 		if (!auth.isRestoring && auth.isAuthenticated) {
@@ -19,7 +23,7 @@
 
 	function submit(e: Event) {
 		e.preventDefault();
-		void auth.login(email, password, showTotp ? totp : undefined);
+		void auth.login(email, password, showTotp ? totp : undefined, rememberMe);
 	}
 </script>
 
@@ -61,6 +65,16 @@
 					disabled={auth.isLoading}
 				/>
 			</div>
+
+			<label class="flex cursor-pointer items-center gap-2 text-sm text-fg-muted">
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					bind:checked={rememberMe}
+					disabled={auth.isLoading}
+				/>
+				Remember me
+			</label>
 
 			{#if showTotp}
 				<div>

@@ -5,7 +5,7 @@ import { findIdentityEmail, normalizeEmail } from '$lib/jmap/account';
 import { writeSession } from '$lib/server/session';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
-	let body: { email?: string; password?: string; totp?: string };
+	let body: { email?: string; password?: string; totp?: string; rememberMe?: boolean };
 	try {
 		body = await request.json();
 	} catch {
@@ -31,11 +31,15 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		const identities = await client.getIdentities();
 		const primary = findIdentityEmail(identities, email) ?? identities[0];
 
-		writeSession(cookies, {
-			serverUrl,
-			username: email,
-			password: effectivePassword
-		});
+		writeSession(
+			cookies,
+			{
+				serverUrl,
+				username: email,
+				password: effectivePassword
+			},
+			{ remember: body.rememberMe === true }
+		);
 
 		return json({
 			serverUrl,

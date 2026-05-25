@@ -11,6 +11,7 @@ import { outbox } from '$lib/stores/outbox.svelte';
 import { calendar } from '$lib/stores/calendar.svelte';
 import { settings } from '$lib/stores/settings.svelte';
 import { toast } from '$lib/stores/toast.svelte';
+import { saveRememberedLogin } from '$lib/auth/remember-login';
 
 interface SessionResponse {
 	authenticated: boolean;
@@ -44,7 +45,7 @@ class AuthStore {
 		this.isRestoring = false;
 	}
 
-	async login(email: string, password: string, totp?: string) {
+	async login(email: string, password: string, totp?: string, rememberMe = false) {
 		this.isLoading = true;
 		this.error = null;
 		this.errorCode = null;
@@ -53,7 +54,7 @@ class AuthStore {
 			const response = await fetch('/api/auth/login', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email: email.trim(), password, totp })
+				body: JSON.stringify({ email: email.trim(), password, totp, rememberMe })
 			});
 
 			const payload = (await response.json()) as LoginResponse;
@@ -76,6 +77,7 @@ class AuthStore {
 			this.displayName = payload.displayName;
 			this.isAuthenticated = true;
 			settings.setUser(payload.username);
+			saveRememberedLogin(email, rememberMe);
 			await settings.syncFromAccount();
 			this.startBackgroundSync(client, payload.username, payload.displayName);
 
