@@ -505,12 +505,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-compact-move-menu",
-		"href": "/settings/inbox",
-		"title": "Compact move menu",
-		"description": ""
-	},
-	{
 		"id": "/settings/inbox-hide-active-message-indicator",
 		"href": "/settings/inbox",
 		"title": "Hide active message indicator",
@@ -538,12 +532,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/inbox-hide-list-row-dividers",
 		"href": "/settings/inbox",
 		"title": "Hide list row dividers",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-hide-move-menu-labels",
-		"href": "/settings/inbox",
-		"title": "Hide move menu labels",
 		"description": ""
 	},
 	{

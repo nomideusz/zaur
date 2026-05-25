@@ -3202,8 +3202,6 @@ class SettingsStore {
 		this.setHideSelectionHints(false);
 		this.setIconOnlyBulkActions(false);
 		this.setCompactBulkToolbar(false);
-		this.setHideMoveMenuLabels(false);
-		this.setCompactMoveMenu(false);
 		this.setHideSearchListPrefix(false);
 		this.setHideListEmptyHints(false);
 		this.setHideListEmptyActions(false);
@@ -3233,6 +3231,8 @@ class SettingsStore {
 		this.setCompactReaderMoreMenu(false);
 		this.setCompactReaderAvatars(false);
 		this.setCompactReaderHeader(false);
+		this.setHideMoveMenuLabels(false);
+		this.setCompactMoveMenu(false);
 		this.setExpandAllThreadMessages(false);
 		this.setHideThreadSummary(false);
 		this.setHideThreadCollapseButtons(false);
