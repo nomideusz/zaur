@@ -148,6 +148,85 @@
 				/>
 			</SettingsRow>
 		</SettingsDepends>
+
+		<SettingsRow
+			title="Hide folder sidebar header"
+			description="Remove the “Folders” label above the mailbox tree"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideFolderSidebarHeader}
+				onchange={(e) => settings.setHideFolderSidebarHeader(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsDepends
+			enabled={!settings.hideFolderSidebarHeader}
+			inactiveReason={settings.hideFolderSidebarHeader
+				? 'Folder sidebar header is hidden'
+				: 'Folder sidebar header'}
+		>
+			<SettingsRow
+				title="Compact folder sidebar header"
+				description="Less padding around the Folders label in the sidebar"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactFolderSidebarHeader}
+					onchange={(e) => settings.setCompactFolderSidebarHeader(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
+
+		<SettingsRow
+			title="Hide folder icons"
+			description="Text-only folder names in the sidebar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideFolderIcons}
+				onchange={(e) => settings.setHideFolderIcons(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact folder sidebar"
+			description="Tighter spacing on folder rows and sidebar padding"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactFolderSidebar}
+				onchange={(e) => settings.setCompactFolderSidebar(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact folder tree"
+			description="Less indentation and spacing for nested folders in the sidebar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactFolderTree}
+				onchange={(e) => settings.setCompactFolderTree(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact folder sidebar error"
+			description="Smaller folder load error message and retry button in the sidebar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactFolderSidebarError}
+				onchange={(e) => settings.setCompactFolderSidebarError(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Navigation" description="Which tools appear in the top bar.">
