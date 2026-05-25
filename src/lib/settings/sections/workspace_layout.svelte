@@ -86,30 +86,6 @@
 		</SettingsRow>
 
 		<SettingsRow
-			title="Compact header actions"
-			description="Icon-only New and New event buttons in the top bar — saves horizontal space"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactHeaderActions}
-				onchange={(e) => settings.setCompactHeaderActions(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Compact app header"
-			description="Shorter top bar with less horizontal padding and spacing"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactAppHeader}
-				onchange={(e) => settings.setCompactAppHeader(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
 			title="Hide pane borders"
 			description="Remove divider lines between the header, folder sidebar, and message list"
 		>
@@ -118,42 +94,6 @@
 				class="size-4 accent-accent"
 				checked={settings.hidePaneBorders}
 				onchange={(e) => settings.setHidePaneBorders(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Hide app title"
-			description="Remove the ZAUR label from the top bar — the logo link still works for screen readers"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideAppTitle}
-				onchange={(e) => settings.setHideAppTitle(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Compact account menu"
-			description="Show only your avatar in the account button — no dropdown chevron"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactUserMenu}
-				onchange={(e) => settings.setCompactUserMenu(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Compact account menu dropdown"
-			description="Tighter spacing in the account menu panel — name, settings, theme, and sign out"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactUserMenuDropdown}
-				onchange={(e) => settings.setCompactUserMenuDropdown(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 
@@ -181,6 +121,68 @@
 			/>
 		</SettingsRow>
 
+</SettingsGroup>
+
+<SettingsGroup title="App header" description="Top bar, New buttons, and account menu.">
+	<SettingsRow
+		title="Compact header actions"
+		description="Icon-only New and New event buttons in the top bar — saves horizontal space"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactHeaderActions}
+			onchange={(e) => settings.setCompactHeaderActions(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Compact app header"
+		description="Shorter top bar with less horizontal padding and spacing"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactAppHeader}
+			onchange={(e) => settings.setCompactAppHeader(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Hide app title"
+		description="Remove the ZAUR label from the top bar — the logo link still works for screen readers"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.hideAppTitle}
+			onchange={(e) => settings.setHideAppTitle(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Compact account menu"
+		description="Show only your avatar in the account button — no dropdown chevron"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactUserMenu}
+			onchange={(e) => settings.setCompactUserMenu(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Compact account menu dropdown"
+		description="Tighter spacing in the account menu panel — name, settings, theme, and sign out"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactUserMenuDropdown}
+			onchange={(e) => settings.setCompactUserMenuDropdown(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Defaults">
