@@ -1582,9 +1582,11 @@ class SettingsStore {
 		await this.syncFromAccount();
 		const { pushAccountSettingsNow } = await import('$lib/settings/account-sync');
 		const ok = await pushAccountSettingsNow();
+		const { toast } = await import('$lib/stores/toast.svelte');
 		if (ok) {
-			const { toast } = await import('$lib/stores/toast.svelte');
 			toast.show('Settings saved to your account', 'success');
+		} else {
+			toast.show('Could not sync settings to your account', 'error');
 		}
 		return ok;
 	}

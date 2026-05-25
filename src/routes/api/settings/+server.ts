@@ -4,6 +4,7 @@ import { loadAccountSettings, saveAccountSettings } from '$lib/server/account-se
 import { readSession } from '$lib/server/session';
 import {
 	ACCOUNT_SETTINGS_SCHEMA_VERSION,
+	sanitizeAccountSettings,
 	type AccountSettingsBlob
 } from '$lib/settings/account-settings-types';
 
@@ -55,13 +56,7 @@ export const PUT: RequestHandler = async ({ request, cookies }) => {
 		return json({ error: 'Invalid settings payload' }, { status: 400 });
 	}
 
-	const settings: Record<string, string> = {};
-	for (const [key, value] of Object.entries(body.settings)) {
-		if (typeof value !== 'string') continue;
-		if (!key.startsWith('zaur:') && key !== 'zaur-theme') continue;
-		if (key === 'zaur:account-settings-synced-at') continue;
-		settings[key] = value;
-	}
+	const settings = sanitizeAccountSettings(body.settings, session.username);
 
 	const blob: AccountSettingsBlob = {
 		version: ACCOUNT_SETTINGS_SCHEMA_VERSION,

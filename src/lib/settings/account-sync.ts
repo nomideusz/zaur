@@ -3,6 +3,8 @@ import { toast } from '$lib/stores/toast.svelte';
 import {
 	ACCOUNT_SETTINGS_SYNC_AT_KEY,
 	accountSettingsSyncAtKey,
+	isOtherAccountsScopedKey,
+	sanitizeAccountSettings,
 	type AccountSettingsBlob
 } from '$lib/settings/account-settings-types';
 
@@ -11,16 +13,6 @@ const PUSH_DEBOUNCE_MS = 1500;
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
 let pushInFlight = false;
 let syncAccountEmail: string | null = null;
-
-const EMAIL_SCOPED_PREFIXES = ['zaur:display-name:', 'zaur:signature:', 'zaur:use-signature:'] as const;
-
-export function isOtherAccountsScopedKey(key: string, email: string): boolean {
-	for (const prefix of EMAIL_SCOPED_PREFIXES) {
-		if (!key.startsWith(prefix)) continue;
-		return key.slice(prefix.length).trim().toLowerCase() !== email;
-	}
-	return false;
-}
 
 /** Keys synced to the JMAP account (device-local-only keys are omitted). */
 export function collectSyncableSettings(): Record<string, string> {
@@ -38,8 +30,11 @@ export function collectSyncableSettings(): Record<string, string> {
 		const value = localStorage.getItem(key);
 		if (value !== null) data[key] = value;
 	}
-	return data;
+
+	return sanitizeAccountSettings(data, syncAccountEmail ?? undefined);
 }
+
+export { isOtherAccountsScopedKey };
 
 export function setSyncAccountEmail(email: string | null) {
 	syncAccountEmail = email?.trim().toLowerCase() ?? null;

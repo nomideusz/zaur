@@ -4,6 +4,7 @@ import type { JMAPEmail } from '$lib/jmap/types';
 import {
 	ACCOUNT_SETTINGS_SCHEMA_VERSION,
 	ACCOUNT_SETTINGS_SUBJECT,
+	sanitizeAccountSettings,
 	type AccountSettingsBlob
 } from '$lib/settings/account-settings-types';
 
@@ -11,21 +12,50 @@ const WEBMAIL_SETTINGS_URN = 'https://zaur.app/jmap/webmail-settings/v1';
 
 type JmapMethodResponse = [string, Record<string, unknown>?];
 
+type SetFailure = {
+	type?: string;
+	description?: string;
+	properties?: string[];
+};
+
+function formatSetFailure(failure: SetFailure, fallback: string): string {
+	const props = failure.properties?.length ? ` (${failure.properties.join(', ')})` : '';
+	return (failure.description ?? failure.type ?? fallback) + props;
+}
+
 function assertEmailSetSucceeded(response: Awaited<ReturnType<JMAPClient['request']>>) {
 	const first = response.methodResponses?.[0] as unknown as JmapMethodResponse | undefined;
 	if (first?.[0] === 'error') {
-		const error = first[1] as { type?: string; description?: string };
-		throw new Error(error.description ?? error.type ?? 'Email/set failed');
+		const error = first[1] as SetFailure;
+		throw new Error(formatSetFailure(error, 'Email/set failed'));
 	}
 	if (first?.[0] !== 'Email/set') {
 		throw new Error('Unexpected Email/set response');
 	}
 
 	const result = first[1] ?? {};
-	const notUpdated = result.notUpdated as Record<string, { type?: string; description?: string }> | undefined;
-	if (notUpdated && Object.keys(notUpdated).length > 0) {
-		const failure = Object.values(notUpdated)[0];
-		throw new Error(failure?.description ?? failure?.type ?? 'Email/set failed');
+	for (const key of ['notCreated', 'notUpdated', 'notDestroyed'] as const) {
+		const failures = result[key] as Record<string, SetFailure> | undefined;
+		if (!failures || !Object.keys(failures).length) continue;
+		throw new Error(formatSetFailure(Object.values(failures)[0], `${key} failed`));
+	}
+}
+
+function assertWebmailSettingsSetSucceeded(response: Awaited<ReturnType<JMAPClient['request']>>) {
+	const first = response.methodResponses?.[0] as unknown as JmapMethodResponse | undefined;
+	if (first?.[0] === 'error') {
+		const error = first[1] as SetFailure;
+		throw new Error(formatSetFailure(error, 'WebmailSettings/set failed'));
+	}
+	if (first?.[0] !== 'WebmailSettings/set') {
+		throw new Error('Unexpected WebmailSettings/set response');
+	}
+
+	const result = first[1] ?? {};
+	for (const key of ['notCreated', 'notUpdated', 'notDestroyed'] as const) {
+		const failures = result[key] as Record<string, SetFailure> | undefined;
+		if (!failures || !Object.keys(failures).length) continue;
+		throw new Error(formatSetFailure(Object.values(failures)[0], `${key} failed`));
 	}
 }
 
@@ -77,34 +107,25 @@ async function loadViaWebmailSettings(client: JMAPClient): Promise<AccountSettin
 	};
 }
 
-async function saveViaWebmailSettings(client: JMAPClient, blob: AccountSettingsBlob): Promise<boolean> {
+async function saveViaWebmailSettings(client: JMAPClient, blob: AccountSettingsBlob): Promise<void> {
 	const accountId = client.getAccountId();
+	const existing = await loadViaWebmailSettings(client);
+	const patch = { settings: blob.settings };
+
 	const response = await client.request(
 		[
 			[
 				'WebmailSettings/set',
-				{
-					accountId,
-					update: {
-						singleton: {
-							settings: blob.settings,
-							updatedAt: blob.updatedAt
-						}
-					}
-				},
+				existing
+					? { accountId, update: { singleton: patch } }
+					: { accountId, create: { singleton: patch } },
 				'ws-set'
 			]
 		],
 		[WEBMAIL_SETTINGS_URN, 'urn:ietf:params:jmap:core']
 	);
 
-	const first = response.methodResponses?.[0];
-	if (first?.[0] === 'error') return false;
-	if (first?.[0] !== 'WebmailSettings/set') return false;
-
-	const result = first[1] ?? {};
-	const notUpdated = result.notUpdated as Record<string, unknown> | undefined;
-	return !notUpdated || Object.keys(notUpdated).length === 0;
+	assertWebmailSettingsSetSucceeded(response);
 }
 
 async function listSettingsEmails(client: JMAPClient): Promise<JMAPEmail[]> {
@@ -171,47 +192,28 @@ async function saveViaSettingsEmail(client: JMAPClient, blob: AccountSettingsBlo
 	if (!username) throw new Error('Not signed in');
 
 	const body = JSON.stringify(blob);
-	const allSettingsEmails = await listSettingsEmails(client);
-	const existing = pickNewestSettingsEmail(allSettingsEmails);
-	const duplicateIds = allSettingsEmails
-		.filter((email) => email.id !== existing?.id)
-		.map((email) => email.id);
+	const destroyIds = (await listSettingsEmails(client)).map((email) => email.id);
 
 	const emailData = buildEmailCreateData({
 		fromEmail: username,
 		to: [username],
 		subject: ACCOUNT_SETTINGS_SUBJECT,
 		body,
-		mailboxIds: { [mailboxId]: true },
-		keywords: { $seen: true }
+		mailboxIds: { [mailboxId]: true }
 	});
 
-	if (existing?.id) {
-		const { mailboxIds: _mailboxIds, ...updateData } = emailData;
-		const response = await client.request([
-			['Email/set', { accountId: client.getAccountId(), update: { [existing.id]: updateData } }, '0']
-		]);
-		assertEmailSetSucceeded(response);
-	} else {
-		const response = await client.request([
-			[
-				'Email/set',
-				{
-					accountId: client.getAccountId(),
-					create: { 'settings-v1': emailData }
-				},
-				'0'
-			]
-		]);
-		assertEmailSetSucceeded(response);
-	}
-
-	if (duplicateIds.length) {
-		const response = await client.request([
-			['Email/set', { accountId: client.getAccountId(), destroy: duplicateIds }, '1']
-		]);
-		assertEmailSetSucceeded(response);
-	}
+	const response = await client.request([
+		[
+			'Email/set',
+			{
+				accountId: client.getAccountId(),
+				create: { 'settings-v1': emailData },
+				...(destroyIds.length ? { destroy: destroyIds } : {})
+			},
+			'0'
+		]
+	]);
+	assertEmailSetSucceeded(response);
 }
 
 export async function loadAccountSettings(client: JMAPClient): Promise<AccountSettingsBlob | null> {
@@ -224,10 +226,20 @@ export async function loadAccountSettings(client: JMAPClient): Promise<AccountSe
 }
 
 export async function saveAccountSettings(client: JMAPClient, blob: AccountSettingsBlob): Promise<void> {
+	const username = client.getUsername() ?? undefined;
+	const payload: AccountSettingsBlob = {
+		...blob,
+		settings: sanitizeAccountSettings(blob.settings, username)
+	};
+
 	if (client.getSession()?.capabilities?.[WEBMAIL_SETTINGS_URN]) {
-		const ok = await saveViaWebmailSettings(client, blob);
-		if (ok) return;
+		try {
+			await saveViaWebmailSettings(client, payload);
+			return;
+		} catch (error) {
+			console.warn('WebmailSettings/set failed, falling back to settings email:', error);
+		}
 	}
 
-	await saveViaSettingsEmail(client, blob);
+	await saveViaSettingsEmail(client, payload);
 }
