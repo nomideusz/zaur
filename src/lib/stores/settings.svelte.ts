@@ -28,6 +28,7 @@ const STORAGE = {
 	collapseQuotedInCompose: 'zaur:collapse-quoted-in-compose',
 	hideEmptyReaderPrompts: 'zaur:hide-empty-reader-prompts',
 	hideEmptyReaderDescription: 'zaur:hide-empty-reader-description',
+	hideEmptyReaderActions: 'zaur:hide-empty-reader-actions',
 	hideThreadSummary: 'zaur:hide-thread-summary',
 	showFolderUnreadCounts: 'zaur:show-folder-unread-counts',
 	showBulkSelect: 'zaur:show-bulk-select',
@@ -138,6 +139,8 @@ const STORAGE = {
 	hideContactsComposeButton: 'zaur:hide-contacts-compose-button',
 	hideContactsEmptyHints: 'zaur:hide-contacts-empty-hints',
 	hideContactsEmptyActions: 'zaur:hide-contacts-empty-actions',
+	hideContactsHoverActions: 'zaur:hide-contacts-hover-actions',
+	hideContactsRowMailIcon: 'zaur:hide-contacts-row-mail-icon',
 	compactReaderInlineError: 'zaur:compact-reader-inline-error',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
@@ -286,6 +289,11 @@ function readHideEmptyReaderPrompts(): boolean {
 function readHideEmptyReaderDescription(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideEmptyReaderDescription) === 'true';
+}
+
+function readHideEmptyReaderActions(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideEmptyReaderActions) === 'true';
 }
 
 function readHideThreadSummary(): boolean {
@@ -843,6 +851,16 @@ function readHideContactsEmptyActions(): boolean {
 	return localStorage.getItem(STORAGE.hideContactsEmptyActions) === 'true';
 }
 
+function readHideContactsHoverActions(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideContactsHoverActions) === 'true';
+}
+
+function readHideContactsRowMailIcon(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideContactsRowMailIcon) === 'true';
+}
+
 function readCompactReaderInlineError(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactReaderInlineError) === 'true';
@@ -953,6 +971,7 @@ class SettingsStore {
 	collapseQuotedInCompose = $state(readCollapseQuotedInCompose());
 	hideEmptyReaderPrompts = $state(readHideEmptyReaderPrompts());
 	hideEmptyReaderDescription = $state(readHideEmptyReaderDescription());
+	hideEmptyReaderActions = $state(readHideEmptyReaderActions());
 	hideThreadSummary = $state(readHideThreadSummary());
 	showFolderUnreadCounts = $state(readShowFolderUnreadCounts());
 	showBulkSelect = $state(readShowBulkSelect());
@@ -1063,6 +1082,8 @@ class SettingsStore {
 	hideContactsComposeButton = $state(readHideContactsComposeButton());
 	hideContactsEmptyHints = $state(readHideContactsEmptyHints());
 	hideContactsEmptyActions = $state(readHideContactsEmptyActions());
+	hideContactsHoverActions = $state(readHideContactsHoverActions());
+	hideContactsRowMailIcon = $state(readHideContactsRowMailIcon());
 	compactReaderInlineError = $state(readCompactReaderInlineError());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
@@ -1107,6 +1128,7 @@ class SettingsStore {
 		this.collapseQuotedInCompose = readCollapseQuotedInCompose();
 		this.hideEmptyReaderPrompts = readHideEmptyReaderPrompts();
 		this.hideEmptyReaderDescription = readHideEmptyReaderDescription();
+		this.hideEmptyReaderActions = readHideEmptyReaderActions();
 		this.hideThreadSummary = readHideThreadSummary();
 		this.showFolderUnreadCounts = readShowFolderUnreadCounts();
 		this.showBulkSelect = readShowBulkSelect();
@@ -1217,6 +1239,8 @@ class SettingsStore {
 		this.hideContactsComposeButton = readHideContactsComposeButton();
 		this.hideContactsEmptyHints = readHideContactsEmptyHints();
 		this.hideContactsEmptyActions = readHideContactsEmptyActions();
+		this.hideContactsHoverActions = readHideContactsHoverActions();
+		this.hideContactsRowMailIcon = readHideContactsRowMailIcon();
 		this.compactReaderInlineError = readCompactReaderInlineError();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
@@ -1419,6 +1443,13 @@ class SettingsStore {
 		this.hideEmptyReaderDescription = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.hideEmptyReaderDescription, String(value));
+		}
+	}
+
+	setHideEmptyReaderActions(value: boolean) {
+		this.hideEmptyReaderActions = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideEmptyReaderActions, String(value));
 		}
 	}
 
@@ -2202,6 +2233,20 @@ class SettingsStore {
 		}
 	}
 
+	setHideContactsHoverActions(value: boolean) {
+		this.hideContactsHoverActions = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideContactsHoverActions, String(value));
+		}
+	}
+
+	setHideContactsRowMailIcon(value: boolean) {
+		this.hideContactsRowMailIcon = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideContactsRowMailIcon, String(value));
+		}
+	}
+
 	setCompactReaderInlineError(value: boolean) {
 		this.compactReaderInlineError = value;
 		if (browser) {
@@ -2361,6 +2406,7 @@ class SettingsStore {
 		this.setCollapseQuotedInCompose(false);
 		this.setHideEmptyReaderPrompts(false);
 		this.setHideEmptyReaderDescription(false);
+		this.setHideEmptyReaderActions(false);
 		this.setHideThreadSummary(false);
 		this.setShowFolderUnreadCounts(true);
 		this.setShowBulkSelect(true);
@@ -2479,6 +2525,8 @@ class SettingsStore {
 		this.setHideContactsComposeButton(false);
 		this.setHideContactsEmptyHints(false);
 		this.setHideContactsEmptyActions(false);
+		this.setHideContactsHoverActions(false);
+		this.setHideContactsRowMailIcon(false);
 		this.setCompactReaderInlineError(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
@@ -2600,6 +2648,8 @@ class SettingsStore {
 		this.setHideContactsComposeButton(true);
 		this.setHideContactsEmptyHints(true);
 		this.setHideContactsEmptyActions(true);
+		this.setHideContactsHoverActions(true);
+		this.setHideContactsRowMailIcon(true);
 		this.setCompactReaderInlineError(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
@@ -2613,6 +2663,7 @@ class SettingsStore {
 		this.setCollapseQuotedInCompose(true);
 		this.setHideEmptyReaderPrompts(true);
 		this.setHideEmptyReaderDescription(true);
+		this.setHideEmptyReaderActions(true);
 		this.setHideThreadSummary(true);
 		this.setHideFolderSidebarHeader(true);
 		this.setHideFolderIcons(true);
@@ -2659,6 +2710,7 @@ class SettingsStore {
 			this.hideThreadSummary,
 			this.hideEmptyReaderPrompts,
 			this.hideEmptyReaderDescription,
+			this.hideEmptyReaderActions,
 			this.hideFolderSidebarHeader,
 			this.hideFolderIcons,
 			this.hideListHeader,
@@ -2766,6 +2818,8 @@ class SettingsStore {
 			this.hideContactsComposeButton,
 			this.hideContactsEmptyHints,
 			this.hideContactsEmptyActions,
+			this.hideContactsHoverActions,
+			this.hideContactsRowMailIcon,
 			this.compactReaderInlineError,
 			this.rememberLastMailbox
 		];

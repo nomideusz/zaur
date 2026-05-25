@@ -188,8 +188,11 @@
 											<p class="text-[11px] text-fg-subtle">{contact.count} messages</p>
 										{/if}
 									</div>
-									<Mail class="size-4 shrink-0 text-fg-subtle group-hover:hidden" aria-hidden="true" />
+									{#if !settings.hideContactsRowMailIcon}
+										<Mail class="size-4 shrink-0 text-fg-subtle group-hover:hidden" aria-hidden="true" />
+									{/if}
 								</button>
+								{#if !settings.hideContactsHoverActions}
 								<div
 									class="absolute right-3 top-1/2 hidden -translate-y-1/2 items-center gap-1 group-hover:flex"
 								>
@@ -216,6 +219,7 @@
 										Remove
 									</button>
 								</div>
+								{/if}
 							</li>
 						{/each}
 					</ul>

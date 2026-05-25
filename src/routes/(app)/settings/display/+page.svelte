@@ -801,6 +801,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Hide empty reader actions"
+			description="Remove Compose and Display settings buttons when no message is selected"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideEmptyReaderActions}
+				onchange={(e) => settings.setHideEmptyReaderActions(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Compact empty reader"
 			description="Less padding and smaller text in the reading pane when no message is selected"
 		>
@@ -1609,6 +1621,30 @@
 				class="size-4 accent-accent"
 				checked={settings.hideContactsEmptyActions}
 				onchange={(e) => settings.setHideContactsEmptyActions(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide contacts hover actions"
+			description="Remove copy and remove buttons that appear when hovering a contact row"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideContactsHoverActions}
+				onchange={(e) => settings.setHideContactsHoverActions(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide contacts row mail icon"
+			description="Remove the mail icon on the right side of each contact row"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideContactsRowMailIcon}
+				onchange={(e) => settings.setHideContactsRowMailIcon(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

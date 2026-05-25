@@ -18,8 +18,8 @@
 		showSettings = true
 	}: Props = $props();
 
-	const showComposeButton = $derived(showCompose && !settings.hideEmptyReaderPrompts);
-	const showSettingsButton = $derived(showSettings && !settings.hideEmptyReaderPrompts);
+	const showComposeButton = $derived(showCompose && !settings.hideEmptyReaderPrompts && !settings.hideEmptyReaderActions);
+	const showSettingsButton = $derived(showSettings && !settings.hideEmptyReaderPrompts && !settings.hideEmptyReaderActions);
 	const showPrompts = $derived(!settings.hideEmptyReaderPrompts);
 </script>
 
