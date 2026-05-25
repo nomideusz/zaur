@@ -70,7 +70,9 @@
 			onchange={(e) => settings.setReduceMotion(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
+</SettingsGroup>
 
+<SettingsGroup title="Loading states" description="Placeholders while mail, folders, and session restore load.">
 	<SettingsRow
 		title="Loading indicator"
 		description="How loading placeholders appear in the message list, reader, and folder sidebar"
