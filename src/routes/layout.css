@@ -78,6 +78,70 @@
 	--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 58%, transparent);
 }
 
+/* Accent color presets */
+:root[data-accent='teal'] {
+	--z-accent: #0d9488;
+	--z-accent-hover: #0f766e;
+	--z-unread: #0d9488;
+}
+
+:root.dark[data-accent='teal'] {
+	--z-accent: #14b8a6;
+	--z-accent-hover: #0d9488;
+	--z-unread: #5eead4;
+}
+
+:root[data-accent='violet'] {
+	--z-accent: #7c3aed;
+	--z-accent-hover: #6d28d9;
+	--z-unread: #7c3aed;
+}
+
+:root.dark[data-accent='violet'] {
+	--z-accent: #8b5cf6;
+	--z-accent-hover: #7c3aed;
+	--z-unread: #c4b5fd;
+}
+
+:root[data-accent='slate'] {
+	--z-accent: #475569;
+	--z-accent-hover: #334155;
+	--z-unread: #475569;
+}
+
+:root.dark[data-accent='slate'] {
+	--z-accent: #64748b;
+	--z-accent-hover: #475569;
+	--z-unread: #94a3b8;
+}
+
+/* Corner radius presets */
+:root[data-corners='soft'] {
+	--radius-sm: 0.5rem;
+	--radius-md: 0.625rem;
+	--radius-lg: 1rem;
+}
+
+:root[data-corners='sharp'] {
+	--radius-sm: 0.25rem;
+	--radius-md: 0.375rem;
+	--radius-lg: 0.5rem;
+}
+
+/* Surface tone presets */
+:root[data-surface='soft'] {
+	--z-surface: #f7f8fa;
+	--z-border: #e8ebf0;
+	--z-border-strong: #d8dde6;
+}
+
+:root.dark[data-surface='soft'] {
+	--z-surface: #121820;
+	--z-surface-raised: #1a212c;
+	--z-border: #2a3342;
+	--z-border-strong: #384456;
+}
+
 @layer base {
 	html {
 		font-family: var(--font-sans);

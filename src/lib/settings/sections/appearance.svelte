@@ -1,10 +1,49 @@
 <script lang="ts">
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
+	import AccentColorPicker from '$lib/components/settings/AccentColorPicker.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import { settings, type LoadingIndicatorStyle } from '$lib/stores/settings.svelte';
 	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
+	import { visual } from '$lib/stores/visual.svelte';
+	import { CORNER_OPTIONS, SURFACE_OPTIONS, type CornerStyle, type SurfaceStyle } from '$lib/theme/visual';
 </script>
+
+<SettingsGroup title="Colors & shape" description="Accent color, corners, and surface tone.">
+	<SettingsRow
+		title="Accent color"
+		description="Primary buttons, links, focus rings, and unread highlights"
+	>
+		<AccentColorPicker value={visual.accentColor} onchange={(value) => visual.setAccentColor(value)} />
+	</SettingsRow>
+
+	<SettingsRow title="Corner style" description="Roundness of buttons, inputs, and panels">
+		<select
+			class="z-input w-auto"
+			value={visual.cornerStyle}
+			onchange={(e) => visual.setCornerStyle(e.currentTarget.value as CornerStyle)}
+		>
+			{#each CORNER_OPTIONS as option (option.id)}
+				<option value={option.id}>{option.label}</option>
+			{/each}
+		</select>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Surface tone"
+		description="Softer backgrounds and borders for a calmer, lower-contrast look"
+	>
+		<select
+			class="z-input w-auto"
+			value={visual.surfaceStyle}
+			onchange={(e) => visual.setSurfaceStyle(e.currentTarget.value as SurfaceStyle)}
+		>
+			{#each SURFACE_OPTIONS as option (option.id)}
+				<option value={option.id}>{option.label}</option>
+			{/each}
+		</select>
+	</SettingsRow>
+</SettingsGroup>
 
 <SettingsGroup title="Theme & motion" description="Colors, motion, and loading placeholders.">
 		<SettingsRow title="Theme" description="Light, dark, or match your system — also in the account menu">

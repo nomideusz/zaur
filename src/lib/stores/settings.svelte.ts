@@ -1484,6 +1484,7 @@ class SettingsStore {
 		const result = await pullAccountSettings(() => this.init());
 		if (result === 'applied') {
 			void import('$lib/stores/theme.svelte').then(({ theme }) => theme.init());
+			void import('$lib/stores/visual.svelte').then(({ visual }) => visual.init());
 		} else if (result === 'empty') {
 			scheduleAccountSettingsPush();
 		}
@@ -3278,6 +3279,7 @@ class SettingsStore {
 
 			this.init();
 			void import('$lib/stores/theme.svelte').then(({ theme }) => theme.init());
+			void import('$lib/stores/visual.svelte').then(({ visual }) => visual.init());
 			scheduleAccountSettingsPush();
 			return { ok: true };
 		} catch {

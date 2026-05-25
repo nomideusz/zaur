@@ -7,11 +7,13 @@
 	import { network } from '$lib/stores/network.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
+	import { visual } from '$lib/stores/visual.svelte';
 
 	let { children } = $props();
 
 	onMount(() => {
 		theme.init();
+		visual.init();
 		settings.init();
 		void auth.init();
 		network.init(() => {
