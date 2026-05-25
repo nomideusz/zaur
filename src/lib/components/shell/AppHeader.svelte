@@ -20,7 +20,9 @@
 	class="z-panel relative z-40 flex h-(--height-header) shrink-0 items-center gap-4 border-b px-4"
 	style="view-transition-name: app-header;"
 >
-	<a href={homeHref} class="text-base font-semibold tracking-tight text-fg">ZAUR</a>
+	<a href={homeHref} class="text-base font-semibold tracking-tight text-fg">
+		<span class={settings.hideAppTitle ? 'sr-only' : ''}>ZAUR</span>
+	</a>
 
 	<ToolSwitcher />
 

@@ -199,7 +199,7 @@
 			</div>
 		{:else if messages.length === 0}
 			<div class="flex flex-col items-center gap-4 px-6 py-16 text-center">
-				{#if emptyIcon !== 'none'}
+				{#if emptyIcon !== 'none' && !settings.hideListEmptyHints}
 					<div class="rounded-full bg-surface-sunken p-4">
 						{#if emptyIcon === 'search'}
 							<Search class="size-8 text-fg-subtle" aria-hidden="true" />
@@ -212,16 +212,20 @@
 					<p class="text-sm font-medium text-fg">
 						{emptyMessage ?? defaultEmptyMessage}
 					</p>
-					{#if emptyHint}
-						<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">{emptyHint}</p>
-					{:else if !emptyMessage && defaultEmptyHint}
-						<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">{defaultEmptyHint}</p>
+					{#if !settings.hideListEmptyHints}
+						{#if emptyHint}
+							<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">{emptyHint}</p>
+						{:else if !emptyMessage && defaultEmptyHint}
+							<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">{defaultEmptyHint}</p>
+						{/if}
 					{/if}
 				</div>
-				{#if emptyActionHref && emptyActionLabel}
-					<Button href={emptyActionHref} variant="ghost" class="text-sm">{emptyActionLabel}</Button>
-				{:else if mailboxRouteId === 'inbox' || mailboxRouteId === 'drafts'}
-					<Button href="/mail/compose" variant="ghost" class="text-sm">Write a message</Button>
+				{#if !settings.hideListEmptyHints}
+					{#if emptyActionHref && emptyActionLabel}
+						<Button href={emptyActionHref} variant="ghost" class="text-sm">{emptyActionLabel}</Button>
+					{:else if mailboxRouteId === 'inbox' || mailboxRouteId === 'drafts'}
+						<Button href="/mail/compose" variant="ghost" class="text-sm">Write a message</Button>
+					{/if}
 				{/if}
 			</div>
 		{:else}

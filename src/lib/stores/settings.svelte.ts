@@ -42,6 +42,9 @@ const STORAGE = {
 	showCcBccInCompose: 'zaur:show-cc-bcc-in-compose',
 	reduceMotion: 'zaur:reduce-motion',
 	compactHeaderActions: 'zaur:compact-header-actions',
+	hideAppTitle: 'zaur:hide-app-title',
+	compactUserMenu: 'zaur:compact-user-menu',
+	hideListEmptyHints: 'zaur:hide-list-empty-hints',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -266,6 +269,21 @@ function readRememberLastMailbox(): boolean {
 	return localStorage.getItem(STORAGE.rememberLastMailbox) === 'true';
 }
 
+function readHideAppTitle(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideAppTitle) === 'true';
+}
+
+function readCompactUserMenu(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactUserMenu) === 'true';
+}
+
+function readHideListEmptyHints(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideListEmptyHints) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -385,6 +403,9 @@ class SettingsStore {
 	showCcBccInCompose = $state(readShowCcBccInCompose());
 	reduceMotion = $state(readReduceMotion());
 	compactHeaderActions = $state(readCompactHeaderActions());
+	hideAppTitle = $state(readHideAppTitle());
+	compactUserMenu = $state(readCompactUserMenu());
+	hideListEmptyHints = $state(readHideListEmptyHints());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -442,6 +463,9 @@ class SettingsStore {
 		this.showCcBccInCompose = readShowCcBccInCompose();
 		this.reduceMotion = readReduceMotion();
 		this.compactHeaderActions = readCompactHeaderActions();
+		this.hideAppTitle = readHideAppTitle();
+		this.compactUserMenu = readCompactUserMenu();
+		this.hideListEmptyHints = readHideListEmptyHints();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -752,6 +776,27 @@ class SettingsStore {
 		}
 	}
 
+	setHideAppTitle(value: boolean) {
+		this.hideAppTitle = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideAppTitle, String(value));
+		}
+	}
+
+	setCompactUserMenu(value: boolean) {
+		this.compactUserMenu = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactUserMenu, String(value));
+		}
+	}
+
+	setHideListEmptyHints(value: boolean) {
+		this.hideListEmptyHints = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideListEmptyHints, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -926,6 +971,9 @@ class SettingsStore {
 		this.setShowCcBccInCompose(true);
 		this.setReduceMotion(false);
 		this.setCompactHeaderActions(false);
+		this.setHideAppTitle(false);
+		this.setCompactUserMenu(false);
+		this.setHideListEmptyHints(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -951,6 +999,9 @@ class SettingsStore {
 		this.setShowCcBccInCompose(false);
 		this.setReduceMotion(true);
 		this.setCompactHeaderActions(true);
+		this.setHideAppTitle(true);
+		this.setCompactUserMenu(true);
+		this.setHideListEmptyHints(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1017,6 +1068,9 @@ class SettingsStore {
 			!this.showReaderContactActions,
 			this.reduceMotion,
 			this.compactHeaderActions,
+			this.hideAppTitle,
+			this.compactUserMenu,
+			this.hideListEmptyHints,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

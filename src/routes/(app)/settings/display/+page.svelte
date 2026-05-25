@@ -231,6 +231,18 @@
 				onchange={(e) => settings.setAutoLoadMore(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Hide empty list hints"
+			description="Show only the primary empty-folder message — no icons, hints, or Write a message button"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideListEmptyHints}
+				onchange={(e) => settings.setHideListEmptyHints(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Reading">
@@ -477,6 +489,30 @@
 				class="size-4 accent-accent"
 				checked={settings.compactHeaderActions}
 				onchange={(e) => settings.setCompactHeaderActions(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide app title"
+			description="Remove the ZAUR label from the top bar — the logo link still works for screen readers"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideAppTitle}
+				onchange={(e) => settings.setHideAppTitle(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact account menu"
+			description="Show only your avatar in the account button — no dropdown chevron"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactUserMenu}
+				onchange={(e) => settings.setCompactUserMenu(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

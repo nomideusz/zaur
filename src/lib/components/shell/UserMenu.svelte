@@ -24,7 +24,10 @@
 <div class="relative">
 	<button
 		type="button"
-		class="flex items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-surface-sunken"
+		class={cn(
+			'flex items-center rounded-md transition-colors hover:bg-surface-sunken',
+			settings.compactUserMenu ? 'p-1' : 'gap-2 p-1.5'
+		)}
 		aria-label="Account menu"
 		aria-expanded={open}
 		aria-haspopup="menu"
@@ -41,7 +44,9 @@
 				<User class="size-4" aria-hidden="true" />
 			</span>
 		{/if}
-		<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
+		{#if !settings.compactUserMenu}
+			<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
+		{/if}
 	</button>
 
 	{#if open}
