@@ -94,6 +94,18 @@
 				onchange={(e) => settings.setReturnToInboxAfterSend(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Hide keyboard shortcuts help"
+			description="Remove the shortcut reference section at the bottom of Mail settings"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideMailShortcutsHelp}
+				onchange={(e) => settings.setHideMailShortcutsHelp(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Reset">
@@ -115,6 +127,7 @@
 		</SettingsRow>
 	</SettingsGroup>
 
+	{#if !settings.hideMailShortcutsHelp}
 	<SettingsGroup title="Keyboard shortcuts">
 		<SettingsRow title="Compose" description="Start a new message from the mail view">
 			<span class="font-mono text-xs text-fg">c</span>
@@ -129,4 +142,5 @@
 			<span class="font-mono text-xs text-fg">Esc</span>
 		</SettingsRow>
 	</SettingsGroup>
+	{/if}
 </SettingsPanel>

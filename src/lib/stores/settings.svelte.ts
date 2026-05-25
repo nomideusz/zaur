@@ -58,6 +58,9 @@ const STORAGE = {
 	hideComposeFieldLabels: 'zaur:hide-compose-field-labels',
 	compactComposePanel: 'zaur:compact-compose-panel',
 	hideOutboxUnlessFailed: 'zaur:hide-outbox-unless-failed',
+	hideListActiveIndicator: 'zaur:hide-list-active-indicator',
+	compactListRows: 'zaur:compact-list-rows',
+	hideMailShortcutsHelp: 'zaur:hide-mail-shortcuts-help',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -362,6 +365,21 @@ function readHideOutboxUnlessFailed(): boolean {
 	return localStorage.getItem(STORAGE.hideOutboxUnlessFailed) === 'true';
 }
 
+function readHideListActiveIndicator(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideListActiveIndicator) === 'true';
+}
+
+function readCompactListRows(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactListRows) === 'true';
+}
+
+function readHideMailShortcutsHelp(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideMailShortcutsHelp) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -497,6 +515,9 @@ class SettingsStore {
 	hideComposeFieldLabels = $state(readHideComposeFieldLabels());
 	compactComposePanel = $state(readCompactComposePanel());
 	hideOutboxUnlessFailed = $state(readHideOutboxUnlessFailed());
+	hideListActiveIndicator = $state(readHideListActiveIndicator());
+	compactListRows = $state(readCompactListRows());
+	hideMailShortcutsHelp = $state(readHideMailShortcutsHelp());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -570,6 +591,9 @@ class SettingsStore {
 		this.hideComposeFieldLabels = readHideComposeFieldLabels();
 		this.compactComposePanel = readCompactComposePanel();
 		this.hideOutboxUnlessFailed = readHideOutboxUnlessFailed();
+		this.hideListActiveIndicator = readHideListActiveIndicator();
+		this.compactListRows = readCompactListRows();
+		this.hideMailShortcutsHelp = readHideMailShortcutsHelp();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -992,6 +1016,27 @@ class SettingsStore {
 		}
 	}
 
+	setHideListActiveIndicator(value: boolean) {
+		this.hideListActiveIndicator = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideListActiveIndicator, String(value));
+		}
+	}
+
+	setCompactListRows(value: boolean) {
+		this.compactListRows = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactListRows, String(value));
+		}
+	}
+
+	setHideMailShortcutsHelp(value: boolean) {
+		this.hideMailShortcutsHelp = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideMailShortcutsHelp, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1182,6 +1227,9 @@ class SettingsStore {
 		this.setHideComposeFieldLabels(false);
 		this.setCompactComposePanel(false);
 		this.setHideOutboxUnlessFailed(false);
+		this.setHideListActiveIndicator(false);
+		this.setCompactListRows(false);
+		this.setHideMailShortcutsHelp(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1223,6 +1271,9 @@ class SettingsStore {
 		this.setHideComposeFieldLabels(true);
 		this.setCompactComposePanel(true);
 		this.setHideOutboxUnlessFailed(true);
+		this.setHideListActiveIndicator(true);
+		this.setCompactListRows(true);
+		this.setHideMailShortcutsHelp(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1249,6 +1300,7 @@ class SettingsStore {
 		this.setConfirmBeforeDelete(true);
 		this.setConfirmBeforeDiscardCompose(true);
 		this.setReturnToInboxAfterSend(false);
+		this.setHideMailShortcutsHelp(false);
 	}
 
 	simplificationCount(): number {
@@ -1305,6 +1357,9 @@ class SettingsStore {
 			this.hideComposeFieldLabels,
 			this.compactComposePanel,
 			this.hideOutboxUnlessFailed,
+			this.hideListActiveIndicator,
+			this.compactListRows,
+			this.hideMailShortcutsHelp,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

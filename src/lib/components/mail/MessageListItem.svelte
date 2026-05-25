@@ -31,9 +31,16 @@
 
 	const rowClass = $derived(
 		cn(
-			'z-list-row flex items-start gap-3 border-b border-l-2 border-border border-l-transparent px-3 py-2.5 transition-colors',
+			'z-list-row flex items-start gap-3 border-b border-border px-3 transition-colors',
+			settings.compactListRows ? 'py-2' : 'py-2.5',
+			settings.hideListActiveIndicator ? '' : 'border-l-2 border-l-transparent',
 			selectionMode ? 'cursor-pointer' : '',
-			active || selected ? 'border-l-accent bg-surface-sunken' : 'hover:bg-surface-sunken/70'
+			active || selected
+				? cn(
+						'bg-surface-sunken',
+						!settings.hideListActiveIndicator && 'border-l-accent'
+					)
+				: 'hover:bg-surface-sunken/70'
 		)
 	);
 </script>

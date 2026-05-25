@@ -245,6 +245,30 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact list rows"
+			description="Tighter vertical padding on each message row in the inbox list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactListRows}
+				onchange={(e) => settings.setCompactListRows(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide active message indicator"
+			description="Remove the colored left border on the selected message in the list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideListActiveIndicator}
+				onchange={(e) => settings.setHideListActiveIndicator(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Auto-load more messages"
 			description="Load older messages automatically when you scroll to the bottom of the list"
 		>
