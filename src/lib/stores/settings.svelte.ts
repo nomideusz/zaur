@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { pullAccountSettings, scheduleAccountSettingsPush } from '$lib/settings/account-sync';
+import { pullAccountSettings, scheduleAccountSettingsPush, setSyncAccountEmail } from '$lib/settings/account-sync';
 import type { SettingsDetailLevel } from '$lib/settings/detail-level';
 import { requestBrowserNotificationPermission } from '$lib/utils/notifications';
 
@@ -1514,6 +1514,7 @@ class SettingsStore {
 
 	setUser(email: string | null) {
 		this.userEmail = email;
+		setSyncAccountEmail(email);
 		this.displayName = readDisplayName(email);
 		this.signature = readSignature(email);
 		this.useSignature = readUseSignature(email);
@@ -1536,12 +1537,18 @@ class SettingsStore {
 
 	/** Load preferences from the signed-in JMAP account (newer copy wins). */
 	async syncFromAccount(): Promise<void> {
-		const result = await pullAccountSettings(() => this.init());
+		if (!this.userEmail) return;
+
+		const result = await pullAccountSettings(this.userEmail, () => this.init());
 		if (result === 'applied') {
 			void import('$lib/stores/theme.svelte').then(({ theme }) => theme.init());
 			void import('$lib/stores/visual.svelte').then(({ visual }) => visual.init());
 		} else if (result === 'empty') {
-			scheduleAccountSettingsPush();
+			// Only push when this account has synced from this device before.
+			const { accountSettingsSyncAtKey } = await import('$lib/settings/account-settings-types');
+			if (browser && localStorage.getItem(accountSettingsSyncAtKey(this.userEmail))) {
+				scheduleAccountSettingsPush();
+			}
 		}
 	}
 

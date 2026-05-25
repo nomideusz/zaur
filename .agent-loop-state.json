@@ -1,8 +1,8 @@
 {
-  "iteration": 20,
+  "iteration": 1,
   "maxIterations": 20,
   "deployEvery": 5,
-  "lastDeployIteration": 20,
-  "focus": "UI/UX: buttons, spacing, organization, inconsistencies, design patterns",
-  "completed": true
+  "lastDeployIteration": 0,
+  "focus": "bugs and errors: settings account sync, forward attachments, other fixes",
+  "completed": false
 }

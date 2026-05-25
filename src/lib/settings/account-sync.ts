@@ -1,10 +1,15 @@
 import { browser } from '$app/environment';
-import { ACCOUNT_SETTINGS_SYNC_AT_KEY, type AccountSettingsBlob } from '$lib/settings/account-settings-types';
+import {
+	ACCOUNT_SETTINGS_SYNC_AT_KEY,
+	accountSettingsSyncAtKey,
+	type AccountSettingsBlob
+} from '$lib/settings/account-settings-types';
 
 const PUSH_DEBOUNCE_MS = 1500;
 
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
 let pushInFlight = false;
+let syncAccountEmail: string | null = null;
 
 /** Keys synced to the JMAP account (device-local-only keys are omitted). */
 export function collectSyncableSettings(): Record<string, string> {
@@ -13,7 +18,9 @@ export function collectSyncableSettings(): Record<string, string> {
 	const data: Record<string, string> = {};
 	for (let index = 0; index < localStorage.length; index++) {
 		const key = localStorage.key(index);
-		if (!key || key === ACCOUNT_SETTINGS_SYNC_AT_KEY) continue;
+		if (!key || key === ACCOUNT_SETTINGS_SYNC_AT_KEY || key.startsWith(`${ACCOUNT_SETTINGS_SYNC_AT_KEY}:`)) {
+			continue;
+		}
 		if (!key.startsWith('zaur:') && key !== 'zaur-theme') continue;
 		const value = localStorage.getItem(key);
 		if (value !== null) data[key] = value;
@@ -21,12 +28,16 @@ export function collectSyncableSettings(): Record<string, string> {
 	return data;
 }
 
-function markSyncedAt(updatedAt: string) {
-	localStorage.setItem(ACCOUNT_SETTINGS_SYNC_AT_KEY, updatedAt);
+export function setSyncAccountEmail(email: string | null) {
+	syncAccountEmail = email?.trim().toLowerCase() ?? null;
+}
+
+function markSyncedAt(email: string, updatedAt: string) {
+	localStorage.setItem(accountSettingsSyncAtKey(email), updatedAt);
 }
 
 export function scheduleAccountSettingsPush() {
-	if (!browser) return;
+	if (!browser || !syncAccountEmail) return;
 	if (pushTimer) clearTimeout(pushTimer);
 	pushTimer = setTimeout(() => {
 		pushTimer = null;
@@ -35,9 +46,10 @@ export function scheduleAccountSettingsPush() {
 }
 
 async function pushAccountSettings(): Promise<void> {
-	if (!browser || pushInFlight) return;
+	if (!browser || pushInFlight || !syncAccountEmail) return;
 
 	pushInFlight = true;
+	const email = syncAccountEmail;
 	const updatedAt = new Date().toISOString();
 	const blob: AccountSettingsBlob = {
 		version: 2,
@@ -54,17 +66,26 @@ async function pushAccountSettings(): Promise<void> {
 
 		if (response.ok) {
 			const payload = (await response.json()) as { updatedAt?: string };
-			markSyncedAt(payload.updatedAt ?? updatedAt);
+			markSyncedAt(email, payload.updatedAt ?? updatedAt);
+			return;
 		}
-	} catch {
-		// Offline or server unavailable — local values remain; will retry on next change.
+
+		const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+		console.warn('Account settings sync failed:', payload?.error ?? response.status);
+	} catch (error) {
+		console.warn('Account settings sync failed:', error);
 	} finally {
 		pushInFlight = false;
 	}
 }
 
-export async function pullAccountSettings(apply: () => void): Promise<'applied' | 'unchanged' | 'empty'> {
-	if (!browser) return 'empty';
+export async function pullAccountSettings(
+	email: string | null,
+	apply: () => void
+): Promise<'applied' | 'unchanged' | 'empty'> {
+	if (!browser || !email) return 'empty';
+
+	const normalizedEmail = email.trim().toLowerCase();
 
 	try {
 		const response = await fetch('/api/settings');
@@ -75,7 +96,16 @@ export async function pullAccountSettings(apply: () => void): Promise<'applied' 
 		const remote = payload.settings;
 		if (!remote?.settings) return 'empty';
 
-		const localAt = localStorage.getItem(ACCOUNT_SETTINGS_SYNC_AT_KEY) ?? '';
+		const syncAtKey = accountSettingsSyncAtKey(normalizedEmail);
+		let localAt = localStorage.getItem(syncAtKey) ?? '';
+		if (!localAt) {
+			const legacyAt = localStorage.getItem(ACCOUNT_SETTINGS_SYNC_AT_KEY);
+			if (legacyAt) {
+				localAt = legacyAt;
+				localStorage.setItem(syncAtKey, legacyAt);
+				localStorage.removeItem(ACCOUNT_SETTINGS_SYNC_AT_KEY);
+			}
+		}
 		if (localAt && remote.updatedAt <= localAt) {
 			if (localAt > remote.updatedAt) {
 				scheduleAccountSettingsPush();
@@ -89,7 +119,7 @@ export async function pullAccountSettings(apply: () => void): Promise<'applied' 
 			localStorage.setItem(key, value);
 		}
 
-		markSyncedAt(remote.updatedAt);
+		markSyncedAt(normalizedEmail, remote.updatedAt);
 		apply();
 		return 'applied';
 	} catch {

@@ -96,6 +96,17 @@ class ComposeStore {
 		this.attachments = [];
 	}
 
+	private importMessageAttachments(message: MessageDetail) {
+		this.attachments = message.attachments.map((attachment) => ({
+			id: crypto.randomUUID(),
+			name: attachment.name,
+			type: attachment.type,
+			size: attachment.size,
+			blobId: attachment.blobId,
+			uploading: false
+		}));
+	}
+
 	private resetComposeFields() {
 		this.to = '';
 		this.cc = '';
@@ -249,7 +260,7 @@ class ComposeStore {
 		this.jmapDraftId = undefined;
 		this.error = null;
 		this.draftSavedAt = null;
-		this.clearAttachments();
+		this.importMessageAttachments(message);
 	}
 
 	scheduleAutosave(client: JMAPClient | null, fromEmail: string, fromName?: string) {
