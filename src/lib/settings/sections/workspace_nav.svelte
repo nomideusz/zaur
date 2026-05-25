@@ -271,7 +271,7 @@
 
 		<SettingsRow
 			title="Hide outbox unless failed"
-			description="Do not show the outbox icon while messages are sending — only when a send fails"
+			description="When on, hide the outbox icon while messages are queued or sending — show it only after a send fails. When off, the icon stays in the header even when the queue is empty"
 		>
 			<input
 				type="checkbox"

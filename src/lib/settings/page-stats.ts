@@ -4,7 +4,7 @@ export const SETTINGS_PAGE_HIDDEN_COUNTS: Record<string, number> = {
 	"/settings/appearance": 12,
 	"/settings/inbox": 15,
 	"/settings/reading": 26,
-	"/settings/compose": 10,
+	"/settings/compose": 9,
 	"/settings/workspace": 31,
 	"/settings/calendar": 15,
 	"/settings/contacts": 15,

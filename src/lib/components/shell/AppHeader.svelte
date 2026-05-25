@@ -15,6 +15,10 @@
 	import { cn } from '$lib/utils/cn';
 
 	const homeHref = $derived(settings.skipHomeScreen ? settings.preferredMailHref() : '/');
+	const showOutbox = $derived(
+		!settings.hideOutboxUnlessFailed ||
+			outbox.items.some((item) => item.status === 'failed')
+	);
 </script>
 
 <header
@@ -37,7 +41,7 @@
 
 	<OfflineIndicator />
 
-	{#if outbox.pendingCount > 0 && (!settings.hideOutboxUnlessFailed || outbox.items.some((item) => item.status === 'failed'))}
+	{#if showOutbox}
 		<OutboxMenu />
 	{/if}
 

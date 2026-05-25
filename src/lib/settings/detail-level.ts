@@ -4,6 +4,7 @@ export type SettingsDetailLevel = 'basic' | 'advanced';
 const BASIC_TITLE_OVERRIDES = new Set([
 	'Compact layout',
 	'List density',
+	'Drawer width',
 	'Apply simple mode',
 	'Reset all display & layout settings',
 	'Reset look & feel',

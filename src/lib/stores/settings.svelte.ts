@@ -8,6 +8,7 @@ export type ReaderTextSize = 'small' | 'normal' | 'large';
 export type CalendarMaxEventsPerDay = 2 | 3 | 5;
 export type LoadingIndicatorStyle = 'skeleton' | 'minimal' | 'spinner';
 export type ComposeLayout = 'drawer' | 'pane';
+export type ComposeDrawerWidth = 'narrow' | 'default' | 'wide';
 export type DefaultReplyMode = 'reply' | 'reply-all';
 export type ListTextSize = 'small' | 'normal' | 'large';
 export type ComposeFormat = 'plain' | 'html';
@@ -69,7 +70,7 @@ const STORAGE = {
 	hideComposeFromLine: 'zaur:hide-compose-from-line',
 	hideThreadCollapseButtons: 'zaur:hide-thread-collapse-buttons',
 	hideComposeFieldLabels: 'zaur:hide-compose-field-labels',
-	compactComposePanel: 'zaur:compact-compose-panel',
+	composeDrawerWidth: 'zaur:compose-drawer-width',
 	composeLayout: 'zaur:compose-layout',
 	hideOutboxUnlessFailed: 'zaur:hide-outbox-unless-failed',
 	hideListActiveIndicator: 'zaur:hide-list-active-indicator',
@@ -504,9 +505,13 @@ function readHideComposeFieldLabels(): boolean {
 	return localStorage.getItem(STORAGE.hideComposeFieldLabels) === 'true';
 }
 
-function readCompactComposePanel(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactComposePanel) === 'true';
+function readComposeDrawerWidth(): ComposeDrawerWidth {
+	if (!browser) return 'default';
+	const stored = localStorage.getItem(STORAGE.composeDrawerWidth);
+	if (stored === 'narrow' || stored === 'wide') return stored;
+	if (stored === 'default') return 'default';
+	if (localStorage.getItem('zaur:compact-compose-panel') === 'true') return 'narrow';
+	return 'default';
 }
 
 function readComposeLayout(): ComposeLayout {
@@ -1196,7 +1201,7 @@ class SettingsStore {
 	hideComposeFromLine = $state(readHideComposeFromLine());
 	hideThreadCollapseButtons = $state(readHideThreadCollapseButtons());
 	hideComposeFieldLabels = $state(readHideComposeFieldLabels());
-	compactComposePanel = $state(readCompactComposePanel());
+	composeDrawerWidth = $state<ComposeDrawerWidth>(readComposeDrawerWidth());
 	composeLayout = $state<ComposeLayout>(readComposeLayout());
 	hideOutboxUnlessFailed = $state(readHideOutboxUnlessFailed());
 	hideListActiveIndicator = $state(readHideListActiveIndicator());
@@ -1379,7 +1384,7 @@ class SettingsStore {
 		this.hideComposeFromLine = readHideComposeFromLine();
 		this.hideThreadCollapseButtons = readHideThreadCollapseButtons();
 		this.hideComposeFieldLabels = readHideComposeFieldLabels();
-		this.compactComposePanel = readCompactComposePanel();
+		this.composeDrawerWidth = readComposeDrawerWidth();
 		this.composeLayout = readComposeLayout();
 		this.hideOutboxUnlessFailed = readHideOutboxUnlessFailed();
 		this.hideListActiveIndicator = readHideListActiveIndicator();
@@ -1955,10 +1960,10 @@ class SettingsStore {
 		}
 	}
 
-	setCompactComposePanel(value: boolean) {
-		this.compactComposePanel = value;
+	setComposeDrawerWidth(value: ComposeDrawerWidth) {
+		this.composeDrawerWidth = value;
 		if (browser) {
-			this.writeStorage(STORAGE.compactComposePanel, String(value));
+			this.writeStorage(STORAGE.composeDrawerWidth, value);
 		}
 	}
 
@@ -2901,7 +2906,7 @@ class SettingsStore {
 		this.setHideComposeFromLine(false);
 		this.setHideThreadCollapseButtons(false);
 		this.setHideComposeFieldLabels(false);
-		this.setCompactComposePanel(false);
+		this.setComposeDrawerWidth('default');
 		this.setComposeLayout('drawer');
 		this.setHideOutboxUnlessFailed(false);
 		this.setHideListActiveIndicator(false);
@@ -3058,7 +3063,7 @@ class SettingsStore {
 		this.setHideComposeFromLine(true);
 		this.setHideThreadCollapseButtons(true);
 		this.setHideComposeFieldLabels(true);
-		this.setCompactComposePanel(true);
+		this.setComposeDrawerWidth('narrow');
 		this.setHideOutboxUnlessFailed(true);
 		this.setHideListActiveIndicator(true);
 		this.setCompactListRows(true);
@@ -3252,7 +3257,7 @@ class SettingsStore {
 		this.setShowCcBccInCompose(true);
 		this.setHideComposeFromLine(false);
 		this.setHideComposeFieldLabels(false);
-		this.setCompactComposePanel(false);
+		this.setComposeDrawerWidth('default');
 		this.setIconOnlyComposeAttach(false);
 		this.setIconOnlyComposeDiscard(false);
 		this.setHideComposePanelBorders(false);
@@ -3406,7 +3411,7 @@ class SettingsStore {
 			this.hideComposeFromLine,
 			this.hideThreadCollapseButtons,
 			this.hideComposeFieldLabels,
-			this.compactComposePanel,
+			this.composeDrawerWidth !== 'default',
 			this.hideOutboxUnlessFailed,
 			this.hideListActiveIndicator,
 			this.compactListRows,

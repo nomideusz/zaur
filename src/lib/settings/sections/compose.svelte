@@ -2,7 +2,7 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import { settings, type ComposeFormat, type ComposeLayout, type DefaultReplyMode } from '$lib/stores/settings.svelte';
+	import { settings, type ComposeDrawerWidth, type ComposeFormat, type ComposeLayout, type DefaultReplyMode } from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="Writing email" description="Compose panel and recipient fields.">
@@ -38,14 +38,14 @@
 
 		<SettingsRow
 			title="Compose layout"
-			description="Drawer slides over mail on desktop — pane keeps the folder sidebar visible while you write"
+			description="Drawer slides in from the right over mail — pane fills the reader column with the folder sidebar still visible"
 		>
 			<select
 				class="z-input w-auto"
 				value={settings.composeLayout}
 				onchange={(e) => settings.setComposeLayout(e.currentTarget.value as ComposeLayout)}
 			>
-				<option value="drawer">Drawer</option>
+				<option value="drawer">Drawer (from the right)</option>
 				<option value="pane">Pane (sidebar visible)</option>
 			</select>
 		</SettingsRow>
@@ -117,15 +117,19 @@
 				: 'Only applies when compose layout is set to drawer'}
 		>
 			<SettingsRow
-				title="Compact compose panel"
-				description="Narrower compose drawer on desktop — more room beside the message list"
+				title="Drawer width"
+				description="How wide the compose drawer is on desktop — pane layout uses the full reader column instead"
 			>
-				<input
-					type="checkbox"
-					class="size-4 accent-accent"
-					checked={settings.compactComposePanel}
-					onchange={(e) => settings.setCompactComposePanel(e.currentTarget.checked)}
-				/>
+				<select
+					class="z-input w-auto"
+					value={settings.composeDrawerWidth}
+					onchange={(e) =>
+						settings.setComposeDrawerWidth(e.currentTarget.value as ComposeDrawerWidth)}
+				>
+					<option value="narrow">Narrow</option>
+					<option value="default">Default</option>
+					<option value="wide">Wide</option>
+				</select>
 			</SettingsRow>
 		</SettingsDepends>
 

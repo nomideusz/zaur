@@ -283,12 +283,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/compose-compact-compose-panel",
-		"href": "/settings/compose",
-		"title": "Compact compose panel",
-		"description": ""
-	},
-	{
 		"id": "/settings/compose-compact-compose-suggestions",
 		"href": "/settings/compose",
 		"title": "Compact compose suggestions",
@@ -316,6 +310,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/compose-default-reply-action",
 		"href": "/settings/compose",
 		"title": "Default reply action",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-drawer-width",
+		"href": "/settings/compose",
+		"title": "Drawer width",
 		"description": ""
 	},
 	{

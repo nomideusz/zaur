@@ -8,8 +8,14 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
+	import { settings, type ComposeDrawerWidth } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
+
+	const DRAWER_WIDTH_CLASS: Record<ComposeDrawerWidth, string> = {
+		narrow: 'max-w-xl',
+		default: 'max-w-2xl',
+		wide: 'max-w-3xl'
+	};
 
 	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
 	const senderEmail = $derived(auth.username ?? '');
@@ -31,7 +37,7 @@
 		return cn(
 			'z-panel flex h-full min-h-0 w-full flex-col overflow-hidden shadow-md',
 			!hideBorders && 'border-l',
-			settings.compactComposePanel ? 'max-w-xl' : 'max-w-2xl'
+			DRAWER_WIDTH_CLASS[settings.composeDrawerWidth]
 		);
 	}
 
