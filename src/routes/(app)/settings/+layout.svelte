@@ -15,7 +15,12 @@
 	const mailHref = $derived(settings.preferredMailHref());
 </script>
 
-<div class="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-6 overflow-y-auto p-6 md:flex-row md:gap-8 md:p-8">
+<div
+	class={cn(
+		'mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col overflow-y-auto md:flex-row',
+		settings.compactSettingsLayout ? 'gap-4 p-4 md:gap-6 md:p-6' : 'gap-6 p-6 md:gap-8 md:p-8'
+	)}
+>
 	<header class="md:hidden">
 		<a
 			href={mailHref}

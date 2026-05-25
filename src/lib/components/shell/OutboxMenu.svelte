@@ -3,6 +3,8 @@
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { outbox } from '$lib/stores/outbox.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
+	import { cn } from '$lib/utils/cn';
 	import type { OutboxDoc } from '$lib/db/types';
 
 	let open = $state(false);
@@ -45,19 +47,33 @@
 			class="absolute right-0 z-30 mt-1 w-80 rounded-md border border-border bg-surface-raised shadow-md"
 			onpointerdown={(e) => e.stopPropagation()}
 		>
-			<div class="flex items-center justify-between border-b border-border px-3 py-2">
-				<p class="text-sm font-medium text-fg">Outbox</p>
+			<div
+				class={cn(
+					'flex items-center justify-between px-3',
+					settings.compactOutboxMenu ? 'py-1.5' : 'py-2',
+					!settings.hidePaneBorders && 'border-b border-border'
+				)}
+			>
+				<p class={cn('font-medium text-fg', settings.compactOutboxMenu ? 'text-xs' : 'text-sm')}>Outbox</p>
 				<IconButton label="Close outbox" onclick={() => (open = false)}>
 					<X class="size-4" />
 				</IconButton>
 			</div>
 
 			{#if !outbox.items.length}
-				<p class="px-3 py-4 text-sm text-fg-muted">No queued messages</p>
+				<p class={cn('px-3 text-sm text-fg-muted', settings.compactOutboxMenu ? 'py-3' : 'py-4')}>
+					No queued messages
+				</p>
 			{:else}
 				<ul class="max-h-72 overflow-y-auto py-1">
 					{#each outbox.items as item (item.id)}
-						<li class="border-b border-border px-3 py-2 last:border-b-0">
+						<li
+							class={cn(
+								'px-3',
+								settings.compactOutboxMenu ? 'py-1.5' : 'py-2',
+								!settings.hidePaneBorders && 'border-b border-border last:border-b-0'
+							)}
+						>
 							<div class="flex items-start justify-between gap-2">
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-sm font-medium text-fg">
@@ -94,7 +110,13 @@
 			{/if}
 
 			{#if hasFailed}
-				<p class="border-t border-border px-3 py-2 text-xs text-fg-muted">
+				<p
+					class={cn(
+						'px-3 text-xs text-fg-muted',
+						settings.compactOutboxMenu ? 'py-1.5' : 'py-2',
+						!settings.hidePaneBorders && 'border-t border-border'
+					)}
+				>
 					Failed messages retry automatically when online.
 				</p>
 			{/if}

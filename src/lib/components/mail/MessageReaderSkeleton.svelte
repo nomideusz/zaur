@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { settings } from '$lib/stores/settings.svelte';
+	import { cn } from '$lib/utils/cn';
 </script>
 
 <div class="flex min-h-0 flex-1 flex-col overflow-hidden bg-surface-raised">
@@ -8,7 +9,13 @@
 			Loading message…
 		</p>
 	{:else}
-		<div class="shrink-0 border-b border-border px-4 py-3 md:px-6">
+		<div
+			class={cn(
+				'shrink-0 px-4 md:px-6',
+				settings.compactReaderHeader ? 'py-2' : 'py-3',
+				!settings.hideReaderPaneBorders && 'border-b border-border'
+			)}
+		>
 			<div class="h-6 w-2/3 max-w-md animate-pulse rounded bg-surface-sunken"></div>
 			<div class="mt-3 h-4 w-1/3 animate-pulse rounded bg-surface-sunken"></div>
 		</div>

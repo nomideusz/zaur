@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { settings } from '$lib/stores/settings.svelte';
+	import { cn } from '$lib/utils/cn';
+
 	let {
 		title,
 		description,
@@ -10,7 +13,13 @@
 	} = $props();
 </script>
 
-<label class="flex items-center justify-between gap-4 rounded-lg border border-border px-4 py-3">
+<label
+	class={cn(
+		'flex items-center justify-between gap-4 rounded-lg border border-border',
+		settings.compactSettingsRows ? 'px-3 py-2' : 'px-4 py-3',
+		settings.hidePaneBorders && 'border-transparent'
+	)}
+>
 	<div>
 		<p class="text-sm font-medium text-fg">{title}</p>
 		{#if description}

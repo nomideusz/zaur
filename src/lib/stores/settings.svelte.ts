@@ -85,6 +85,9 @@ const STORAGE = {
 	compactToasts: 'zaur:compact-toasts',
 	compactLoadMore: 'zaur:compact-load-more',
 	compactUserMenuDropdown: 'zaur:compact-user-menu-dropdown',
+	compactOutboxMenu: 'zaur:compact-outbox-menu',
+	compactSettingsRows: 'zaur:compact-settings-rows',
+	compactSettingsLayout: 'zaur:compact-settings-layout',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -524,6 +527,21 @@ function readCompactUserMenuDropdown(): boolean {
 	return localStorage.getItem(STORAGE.compactUserMenuDropdown) === 'true';
 }
 
+function readCompactOutboxMenu(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactOutboxMenu) === 'true';
+}
+
+function readCompactSettingsRows(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactSettingsRows) === 'true';
+}
+
+function readCompactSettingsLayout(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactSettingsLayout) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -686,6 +704,9 @@ class SettingsStore {
 	compactToasts = $state(readCompactToasts());
 	compactLoadMore = $state(readCompactLoadMore());
 	compactUserMenuDropdown = $state(readCompactUserMenuDropdown());
+	compactOutboxMenu = $state(readCompactOutboxMenu());
+	compactSettingsRows = $state(readCompactSettingsRows());
+	compactSettingsLayout = $state(readCompactSettingsLayout());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -786,6 +807,9 @@ class SettingsStore {
 		this.compactToasts = readCompactToasts();
 		this.compactLoadMore = readCompactLoadMore();
 		this.compactUserMenuDropdown = readCompactUserMenuDropdown();
+		this.compactOutboxMenu = readCompactOutboxMenu();
+		this.compactSettingsRows = readCompactSettingsRows();
+		this.compactSettingsLayout = readCompactSettingsLayout();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1397,6 +1421,27 @@ class SettingsStore {
 		}
 	}
 
+	setCompactOutboxMenu(value: boolean) {
+		this.compactOutboxMenu = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactOutboxMenu, String(value));
+		}
+	}
+
+	setCompactSettingsRows(value: boolean) {
+		this.compactSettingsRows = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactSettingsRows, String(value));
+		}
+	}
+
+	setCompactSettingsLayout(value: boolean) {
+		this.compactSettingsLayout = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactSettingsLayout, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1614,6 +1659,9 @@ class SettingsStore {
 		this.setCompactToasts(false);
 		this.setCompactLoadMore(false);
 		this.setCompactUserMenuDropdown(false);
+		this.setCompactOutboxMenu(false);
+		this.setCompactSettingsRows(false);
+		this.setCompactSettingsLayout(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1682,6 +1730,9 @@ class SettingsStore {
 		this.setCompactToasts(true);
 		this.setCompactLoadMore(true);
 		this.setCompactUserMenuDropdown(true);
+		this.setCompactOutboxMenu(true);
+		this.setCompactSettingsRows(true);
+		this.setCompactSettingsLayout(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1793,6 +1844,9 @@ class SettingsStore {
 			this.compactToasts,
 			this.compactLoadMore,
 			this.compactUserMenuDropdown,
+			this.compactOutboxMenu,
+			this.compactSettingsRows,
+			this.compactSettingsLayout,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

@@ -1011,6 +1011,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact outbox menu"
+			description="Tighter spacing in the queued-messages dropdown from the header"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactOutboxMenu}
+				onchange={(e) => settings.setCompactOutboxMenu(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Search contact suggestions"
 			description="Contact matches while typing in the header search bar"
 		>
@@ -1057,6 +1069,30 @@
 				class="size-4 accent-accent"
 				checked={settings.hideSettingsNavHints}
 				onchange={(e) => settings.setHideSettingsNavHints(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact settings rows"
+			description="Less padding on each option row and between groups on settings pages"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactSettingsRows}
+				onchange={(e) => settings.setCompactSettingsRows(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact settings layout"
+			description="Reduce outer padding and column gap on settings pages"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactSettingsLayout}
+				onchange={(e) => settings.setCompactSettingsLayout(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>
