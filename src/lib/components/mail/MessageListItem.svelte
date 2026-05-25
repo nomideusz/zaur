@@ -35,20 +35,18 @@
 		)
 	);
 
+	const hideActiveIndicator = $derived(settings.hideListActiveIndicator);
+	const isCurrent = $derived(active || selected);
+
 	const rowClass = $derived(
 		cn(
 			'z-list-row flex gap-3 transition-colors',
 			selectionMode ? 'items-center pl-4 pr-3' : 'items-start px-3',
 			!settings.hideListRowDividers && 'border-b border-border',
 			settings.compactListRows ? 'py-2' : 'py-2.5',
-			settings.hideListActiveIndicator ? '' : 'border-l-2 border-l-transparent',
 			selectionMode ? 'cursor-pointer' : '',
-			active || selected
-				? cn(
-						'bg-surface-sunken',
-						!settings.hideListActiveIndicator && 'border-l-accent'
-					)
-				: 'hover:bg-surface-sunken/70'
+			isCurrent && 'z-list-row--current',
+			!isCurrent && 'hover:bg-surface-sunken/70'
 		)
 	);
 
@@ -147,6 +145,7 @@
 {#if selectionMode}
 	<div
 		class={rowClass}
+		data-hide-active-indicator={hideActiveIndicator || undefined}
 		role="button"
 		tabindex="0"
 		onclick={handleSelect}
@@ -166,6 +165,7 @@
 	<a
 		{href}
 		class={rowClass}
+		data-hide-active-indicator={hideActiveIndicator || undefined}
 		aria-current={active ? 'true' : undefined}
 		style="view-transition-name: message-{message.id};"
 		onclick={handleSelect}

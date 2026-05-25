@@ -194,7 +194,7 @@
 
 	<SettingsRow
 		title="Hide active message indicator"
-		description="Remove the colored left border on the selected message in the list"
+		description="Remove the left border and background highlight on the open message in the list"
 	>
 		<input
 			type="checkbox"

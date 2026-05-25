@@ -347,6 +347,15 @@
 		min-height: var(--z-list-row);
 	}
 
+	.z-list-row:not([data-hide-active-indicator]) {
+		border-left: 2px solid transparent;
+	}
+
+	.z-list-row--current:not([data-hide-active-indicator]) {
+		border-left-color: var(--z-accent);
+		background-color: var(--z-surface-sunken);
+	}
+
 	.z-list-text {
 		font-size: var(--z-list-text);
 	}
