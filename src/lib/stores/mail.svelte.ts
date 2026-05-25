@@ -524,7 +524,7 @@ class MailStore {
 		const messages = this.selectedMessages();
 		if (!messages.length) return;
 
-		const archive = this.mailboxes.find((mb) => mb.role === 'archive');
+		const archive = this.archiveMailbox();
 		if (!archive?.jmapId) throw new Error('Archive folder not found');
 
 		const sourceRouteId = this.currentMailboxRouteId;
@@ -836,6 +836,14 @@ class MailStore {
 			this.mailboxes.find((mb) => mb.id === routeId) ??
 			this.mailboxes.find((mb) => mb.jmapId === routeId)
 		);
+	}
+
+	archiveMailbox(): Mailbox | undefined {
+		return this.mailboxes.find((mb) => mb.role === 'archive' && mb.jmapId);
+	}
+
+	canArchiveFrom(mailbox: Mailbox | null | undefined): boolean {
+		return !!this.archiveMailbox() && mailbox?.role !== 'archive';
 	}
 
 	private patchThreadMessage(id: string, patch: Partial<MessageDetail>) {

@@ -155,9 +155,11 @@
 				<Shield class="size-3.5" />
 			</IconButton>
 		{/if}
-		<IconButton label="Archive" class="!p-1.5" onclick={archiveMessage}>
-			<Archive class="size-3.5" />
-		</IconButton>
+		{#if mail.canArchiveFrom(currentMailbox)}
+			<IconButton label="Archive" class="!p-1.5" onclick={archiveMessage}>
+				<Archive class="size-3.5" />
+			</IconButton>
+		{/if}
 		{#if auth.client}
 			<MoveToMenu
 				message={latest}

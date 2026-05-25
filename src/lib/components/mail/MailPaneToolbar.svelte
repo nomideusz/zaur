@@ -68,7 +68,7 @@
 	const moveTargets = $derived(
 		mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
 	);
-	const canArchive = $derived(currentMailbox?.role !== 'archive');
+	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
 	const hasUnreadSelected = $derived(
 		mail.messages.some((message) => selectedIds.includes(message.id) && message.unread)

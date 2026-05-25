@@ -167,6 +167,7 @@
 					void forwardSelectedMessage();
 					break;
 				case 'e':
+					if (!mail.archiveMailbox()) return;
 					event.preventDefault();
 					void withLatest(
 						(message) => {
