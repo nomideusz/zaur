@@ -59,7 +59,7 @@
 				New message
 			</Button>
 		{/if}
-	{:else if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false}
+	{:else if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false && !settings.hideCalendarNewEventButton}
 		{#if settings.compactHeaderActions}
 			<IconButton label="New event" onclick={() => calendar.openCompose()}>
 				<CalendarPlus class="size-4" aria-hidden="true" />

@@ -68,25 +68,6 @@
 			</IconButton>
 		</div>
 		<Button variant="ghost" onclick={() => calendar.goToToday()}>Today</Button>
-		{#if !settings.hideCalendarNewEventButton}
-			<IconButton label="New event" class="sm:hidden" onclick={() => calendar.openCompose()}>
-				<Plus class="size-4" aria-hidden="true" />
-			</IconButton>
-			{#if settings.iconOnlyCalendarNewEvent}
-				<IconButton
-					label="New event"
-					class="hidden sm:inline-flex"
-					onclick={() => calendar.openCompose()}
-				>
-					<Plus class="size-4" aria-hidden="true" />
-				</IconButton>
-			{:else}
-				<Button onclick={() => calendar.openCompose()} class="hidden sm:inline-flex">
-					<Plus class="size-4" aria-hidden="true" />
-					New event
-				</Button>
-			{/if}
-		{/if}
 	</div>
 
 	<div
