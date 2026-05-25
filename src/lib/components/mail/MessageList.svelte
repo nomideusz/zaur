@@ -260,7 +260,7 @@
 					{#if emptyActionHref && emptyActionLabel}
 						<Button href={emptyActionHref} variant="ghost" class="text-sm">{emptyActionLabel}</Button>
 					{:else if mailboxRouteId === 'inbox' || mailboxRouteId === 'drafts'}
-						<Button href="/mail/compose" variant="ghost" class="text-sm">Write a message</Button>
+						<Button href="/mail/compose" variant="ghost" class="text-sm">New message</Button>
 					{/if}
 				{/if}
 			</div>
