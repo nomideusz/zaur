@@ -31,7 +31,8 @@
 
 	const rowClass = $derived(
 		cn(
-			'z-list-row flex items-start gap-3 px-3 transition-colors',
+			'z-list-row flex gap-3 transition-colors',
+			selectionMode ? 'items-center pl-4 pr-3' : 'items-start px-3',
 			!settings.hideListRowDividers && 'border-b border-border',
 			settings.compactListRows ? 'py-2' : 'py-2.5',
 			settings.hideListActiveIndicator ? '' : 'border-l-2 border-l-transparent',
@@ -162,7 +163,7 @@
 	>
 		<input
 			type="checkbox"
-			class="z-checkbox mt-2"
+			class="z-checkbox shrink-0"
 			checked={selected}
 			onclick={(e) => e.stopPropagation()}
 			onchange={handleCheckboxChange}

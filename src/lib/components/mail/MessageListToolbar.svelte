@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Archive, FolderInput, Mail, MailOpen, Trash2, X } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -74,20 +73,12 @@
 
 <svelte:window onclick={() => (moveOpen = false)} />
 
-<div
-	class={cn(
-		'flex shrink-0 flex-wrap items-center gap-2 px-4',
-		settings.compactBulkToolbar ? 'min-h-10 py-1.5' : 'min-h-12 py-2',
-		!settings.hidePaneBorders && 'border-b border-border'
-	)}
->
-	<MessageListMasterCheckbox class="shrink-0" />
-
+<div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
 	<Button variant="ghost" class="!px-2 !py-1.5 text-xs" onclick={() => mail.exitSelectionMode()}>
 		<X class="size-3.5" aria-hidden="true" />
 		Cancel
 	</Button>
-	<span class="min-w-0 flex-1 truncate text-xs text-fg-muted">
+	<span class="min-w-0 truncate text-xs text-fg-muted">
 		{mail.selectedCount} selected
 	</span>
 	{#if !mail.selectedCount && !settings.hideSelectionHints}
@@ -95,7 +86,7 @@
 	{/if}
 
 	{#if mail.selectedCount}
-		<div class="flex w-full flex-wrap items-center gap-1 md:ml-auto md:w-auto">
+		<div class="ml-auto flex flex-wrap items-center gap-1">
 			{#if hasUnreadSelected}
 				<Button
 					variant="ghost"

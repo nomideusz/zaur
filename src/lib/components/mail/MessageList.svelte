@@ -127,6 +127,20 @@
 		}
 	});
 
+	const listHeaderClass = $derived(
+		cn(
+			'flex shrink-0 flex-wrap items-center gap-2 px-4',
+			!settings.hidePaneBorders && 'border-b border-border',
+			mail.selectionMode
+				? settings.compactBulkToolbar
+					? 'min-h-10 py-1.5'
+					: 'min-h-12 py-2'
+				: settings.compactListHeader
+					? 'h-10'
+					: 'h-12'
+		)
+	);
+
 	const showBulkToolbar = $derived(
 		!!mailboxRouteId &&
 			!loading &&
@@ -146,61 +160,56 @@
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
-	<div
-		class={cn(
-			'flex shrink-0 items-center gap-2 px-4',
-			settings.compactListHeader ? 'h-10' : 'h-12',
-			!settings.hidePaneBorders && 'border-b border-border'
-		)}
-	>
-		{#if showBulkToolbar && !mail.selectionMode}
+	<div class={listHeaderClass}>
+		{#if showBulkToolbar}
 			<label class="flex shrink-0 cursor-pointer items-center rounded-md p-0.5 hover:bg-surface-sunken/80">
 				<MessageListMasterCheckbox {activeMessageId} />
 			</label>
 		{/if}
-		{#if mailboxRouteId}
-			<label class="min-w-0 flex-1 md:hidden">
-				<span class="sr-only">Folder</span>
-				<select
-					class={cn('z-input w-full', settings.compactMobileFolderPicker ? 'py-1' : 'py-1.5')}
-					value={mailboxRouteId}
-					onchange={(e) => goto(`/mail/${e.currentTarget.value}`)}
-				>
-					{#each mail.mailboxes as folder (folder.id)}
-						<option value={folder.id}>
-							{folder.name}{settings.showFolderUnreadCounts && folder.unread > 0
-								? ` (${folder.unread})`
-								: ''}
-						</option>
-					{/each}
-				</select>
-			</label>
-		{/if}
-		<h2
-			class={cn(
-				'hidden truncate text-sm font-semibold text-fg md:block',
-				settings.hideListHeader && 'md:hidden'
-			)}
-		>
-			{mailboxName.startsWith('Search:') ? mailboxName.slice(8) : mailboxName}
-		</h2>
-		<span
-			class={cn(
-				'hidden shrink-0 text-xs text-fg-subtle md:inline',
-				settings.hideListHeader && 'md:hidden',
-				!settings.showMessageCounts && 'md:hidden'
-			)}
-		>{countLabel}</span>
-		{#if mailboxRouteId}
-			<span class="ml-auto shrink-0 text-xs text-fg-subtle md:ml-2 md:hidden">{settings.showMessageCounts ? countLabel : ''}</span>
-		{:else if settings.showMessageCounts}
-			<span class="ml-2 shrink-0 text-xs text-fg-subtle">{countLabel}</span>
+
+		{#if showBulkToolbar && mail.selectionMode && mailboxRouteId}
+			<MessageListToolbar {mailboxRouteId} {onBulkAction} />
+		{:else}
+			{#if mailboxRouteId}
+				<label class="min-w-0 flex-1 md:hidden">
+					<span class="sr-only">Folder</span>
+					<select
+						class={cn('z-input w-full', settings.compactMobileFolderPicker ? 'py-1' : 'py-1.5')}
+						value={mailboxRouteId}
+						onchange={(e) => goto(`/mail/${e.currentTarget.value}`)}
+					>
+						{#each mail.mailboxes as folder (folder.id)}
+							<option value={folder.id}>
+								{folder.name}{settings.showFolderUnreadCounts && folder.unread > 0
+									? ` (${folder.unread})`
+									: ''}
+							</option>
+						{/each}
+					</select>
+				</label>
+			{/if}
+			<h2
+				class={cn(
+					'hidden truncate text-sm font-semibold text-fg md:block',
+					settings.hideListHeader && 'md:hidden'
+				)}
+			>
+				{mailboxName.startsWith('Search:') ? mailboxName.slice(8) : mailboxName}
+			</h2>
+			<span
+				class={cn(
+					'hidden shrink-0 text-xs text-fg-subtle md:inline',
+					settings.hideListHeader && 'md:hidden',
+					!settings.showMessageCounts && 'md:hidden'
+				)}
+			>{countLabel}</span>
+			{#if mailboxRouteId}
+				<span class="ml-auto shrink-0 text-xs text-fg-subtle md:ml-2 md:hidden">{settings.showMessageCounts ? countLabel : ''}</span>
+			{:else if settings.showMessageCounts}
+				<span class="ml-2 shrink-0 text-xs text-fg-subtle">{countLabel}</span>
+			{/if}
 		{/if}
 	</div>
-
-	{#if showBulkToolbar && mailboxRouteId && mail.selectionMode}
-		<MessageListToolbar mailboxRouteId={mailboxRouteId} {onBulkAction} />
-	{/if}
 
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 		{#if loading}
