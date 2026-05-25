@@ -5,19 +5,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Panels & chrome" description="Sidebar, list, and header spacing.">
-		<SettingsRow
-			title="Compact layout"
-			description="Narrower folder sidebar and message list on desktop — separate from list density in Inbox"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactLayout}
-				onchange={(e) => settings.setCompactLayout(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
+<SettingsGroup title="Folder sidebar" description="Mailbox tree in the left panel.">
 		<SettingsRow
 			title="Hide folder sidebar header"
 			description="Remove the “Folders” label above the mailbox tree"
@@ -86,30 +74,6 @@
 		</SettingsRow>
 
 		<SettingsRow
-			title="Hide pane borders"
-			description="Remove divider lines between the header, folder sidebar, and message list"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hidePaneBorders}
-				onchange={(e) => settings.setHidePaneBorders(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Expand list until opened"
-			description="Use the full width for the message list on desktop until you pick a message"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.expandListUntilOpen}
-				onchange={(e) => settings.setExpandListUntilOpen(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
 			title="Compact folder sidebar error"
 			description="Smaller folder load error message and retry button in the sidebar"
 		>
@@ -121,6 +85,44 @@
 			/>
 		</SettingsRow>
 
+</SettingsGroup>
+
+<SettingsGroup title="Mail layout" description="How the list and reading panes share space on desktop.">
+	<SettingsRow
+		title="Compact layout"
+		description="Narrower folder sidebar and message list on desktop — separate from list density in Inbox"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactLayout}
+			onchange={(e) => settings.setCompactLayout(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Hide pane borders"
+		description="Remove divider lines between the header, folder sidebar, and message list"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.hidePaneBorders}
+			onchange={(e) => settings.setHidePaneBorders(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Expand list until opened"
+		description="Use the full width for the message list on desktop until you pick a message"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.expandListUntilOpen}
+			onchange={(e) => settings.setExpandListUntilOpen(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="App header" description="Top bar, New buttons, and account menu.">
