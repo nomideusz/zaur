@@ -4,6 +4,7 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { cn } from '$lib/utils/cn';
 	import type { JMAPClient } from '$lib/jmap/client';
 	import type { MessagePreview } from '$lib/types/mail';
 
@@ -55,12 +56,17 @@
 			onpointerdown={(e) => e.stopPropagation()}
 		>
 			{#if !settings.hideMoveMenuLabels}
-				<p class="px-3 py-1.5 text-xs font-medium text-fg-subtle">Move to</p>
+				<p class={cn('px-3 text-xs font-medium text-fg-subtle', settings.compactMoveMenu ? 'py-1' : 'py-1.5')}>
+					Move to
+				</p>
 			{/if}
 			{#each options as mailbox (mailbox.id)}
 				<button
 					type="button"
-					class="block w-full truncate px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
+					class={cn(
+						'block w-full truncate px-3 text-left text-sm text-fg hover:bg-surface-sunken',
+						settings.compactMoveMenu ? 'py-1.5' : 'py-2'
+					)}
 					onclick={() => moveTo(mailbox.id)}
 				>
 					{mailbox.name}

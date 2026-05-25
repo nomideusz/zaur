@@ -525,6 +525,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact move menu"
+			description="Tighter spacing in folder move dropdowns from the reading pane"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactMoveMenu}
+				onchange={(e) => settings.setCompactMoveMenu(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Compact reader body"
 			description="Less padding around message content in the reading pane"
 		>
@@ -987,6 +999,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact search dropdown"
+			description="Tighter spacing in header search suggestion results"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactSearchDropdown}
+				onchange={(e) => settings.setCompactSearchDropdown(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Hide offline indicator"
 			description="Do not show the offline badge in the header when you lose connection"
 		>
@@ -1093,6 +1117,18 @@
 				class="size-4 accent-accent"
 				checked={settings.compactSettingsLayout}
 				onchange={(e) => settings.setCompactSettingsLayout(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact settings panel"
+			description="Less padding inside each settings card (Display, Mail, Account)"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactSettingsPanel}
+				onchange={(e) => settings.setCompactSettingsPanel(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

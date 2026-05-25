@@ -1,4 +1,7 @@
 <script lang="ts">
+	import { settings } from '$lib/stores/settings.svelte';
+	import { cn } from '$lib/utils/cn';
+
 	let {
 		title,
 		description,
@@ -12,14 +15,19 @@
 	} = $props();
 </script>
 
-<div class="z-panel rounded-xl p-6">
-	<h2 class="text-lg font-semibold text-fg">{title}</h2>
+<div class={cn('z-panel rounded-xl', settings.compactSettingsPanel ? 'p-4' : 'p-6')}>
+	<h2 class={cn('font-semibold text-fg', settings.compactSettingsPanel ? 'text-base' : 'text-lg')}>{title}</h2>
 	<p class="mt-1 text-sm text-fg-muted">{description}</p>
-	<div class="mt-6 space-y-8">
+	<div class={cn(settings.compactSettingsPanel ? 'mt-4 space-y-6' : 'mt-6 space-y-8')}>
 		{@render children()}
 	</div>
 	{#if footer}
-		<div class="mt-8 border-t border-border pt-6">
+		<div
+			class={cn(
+				settings.compactSettingsPanel ? 'mt-6 pt-4' : 'mt-8 pt-6',
+				!settings.hidePaneBorders && 'border-t border-border'
+			)}
+		>
 			{@render footer()}
 		</div>
 	{/if}

@@ -7,6 +7,7 @@
 	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { cn } from '$lib/utils/cn';
 
 	let clearingCache = $state(false);
 
@@ -77,11 +78,21 @@
 	{#snippet footer()}
 		<h3 class="text-xs font-medium tracking-wide text-fg-subtle uppercase">Account details</h3>
 		<dl class="mt-4 space-y-4 text-sm">
-			<div class="flex justify-between gap-4 border-b border-border pb-3">
+			<div
+				class={cn(
+					'flex justify-between gap-4 pb-3',
+					!settings.hidePaneBorders && 'border-b border-border'
+				)}
+			>
 				<dt class="text-fg-muted">Primary address</dt>
 				<dd class="font-medium text-fg">{auth.username ?? '—'}</dd>
 			</div>
-			<div class="flex justify-between gap-4 border-b border-border pb-3">
+			<div
+				class={cn(
+					'flex justify-between gap-4 pb-3',
+					!settings.hidePaneBorders && 'border-b border-border'
+				)}
+			>
 				<dt class="text-fg-muted">JMAP server</dt>
 				<dd class="truncate font-medium text-fg">{auth.serverUrl ?? appConfig.jmapServerUrl}</dd>
 			</div>
@@ -91,7 +102,13 @@
 			</div>
 		</dl>
 
-		<div class="mt-6 space-y-4 border-t border-border pt-6">
+		<div
+			class={cn(
+				'mt-6 space-y-4',
+				settings.compactSettingsPanel ? 'pt-4' : 'pt-6',
+				!settings.hidePaneBorders && 'border-t border-border'
+			)}
+		>
 			<div>
 				<p class="text-sm font-medium text-fg">Local data</p>
 				{#if !settings.hideAccountFieldHints}

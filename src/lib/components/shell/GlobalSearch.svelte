@@ -7,6 +7,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { listContacts } from '$lib/utils/contact-index';
+	import { cn } from '$lib/utils/cn';
 
 	let input = $state('');
 	let open = $state(false);
@@ -104,7 +105,10 @@
 		>
 			<button
 				type="submit"
-				class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-sunken"
+				class={cn(
+					'flex w-full items-center gap-2 px-3 text-left text-sm hover:bg-surface-sunken',
+					settings.compactSearchDropdown ? 'py-1.5' : 'py-2'
+				)}
 			>
 				<Search class="size-4 text-fg-subtle" aria-hidden="true" />
 				Search mail for “{input.trim()}”
@@ -112,14 +116,22 @@
 
 			{#if contactMatches.length}
 				{#if !settings.hideSearchDropdownHeaders}
-					<p class="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-fg-subtle">
+					<p
+						class={cn(
+							'px-3 text-[11px] font-semibold uppercase tracking-wide text-fg-subtle',
+							settings.compactSearchDropdown ? 'py-1' : 'py-1.5'
+						)}
+					>
 						Contacts
 					</p>
 				{/if}
 				{#each contactMatches as contact (contact.email)}
 					<button
 						type="button"
-						class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-sunken"
+						class={cn(
+							'flex w-full items-center gap-2 px-3 text-left text-sm hover:bg-surface-sunken',
+							settings.compactSearchDropdown ? 'py-1.5' : 'py-2'
+						)}
 						onmousedown={(e) => e.preventDefault()}
 						onclick={() => composeTo(contact.email)}
 					>
