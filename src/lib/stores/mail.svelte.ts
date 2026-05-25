@@ -81,6 +81,7 @@ class MailStore {
 
 	selectionMode = $state(false);
 	selectedMessageIds = $state<Set<string>>(new Set());
+	selectionAnchorId = $state<string | null>(null);
 	bulkActionLoading = $state(false);
 
 	/** In-flight keyword changes the server may not have echoed yet. */
@@ -388,29 +389,107 @@ class MailStore {
 		}
 	}
 
-	enterSelectionMode() {
+	enterSelectionMode(initialMessageId?: string | null) {
 		this.selectionMode = true;
+		if (initialMessageId) {
+			this.selectedMessageIds = new Set([initialMessageId]);
+			this.selectionAnchorId = initialMessageId;
+		} else {
+			this.selectedMessageIds = new Set();
+			this.selectionAnchorId = null;
+		}
 	}
 
 	exitSelectionMode() {
 		this.selectionMode = false;
 		this.selectedMessageIds = new Set();
+		this.selectionAnchorId = null;
+	}
+
+	private applySelection(next: Set<string>, anchor: string | null) {
+		if (next.size === 0) {
+			this.exitSelectionMode();
+			return;
+		}
+
+		this.selectionMode = true;
+		this.selectedMessageIds = next;
+		this.selectionAnchorId = anchor;
+	}
+
+	selectMessageAt(
+		messageId: string,
+		options: { shift?: boolean; ctrl?: boolean; activeMessageId?: string | null } = {}
+	) {
+		const index = this.messages.findIndex((message) => message.id === messageId);
+		if (index < 0) return;
+
+		const shift = options.shift ?? false;
+		const ctrl = options.ctrl ?? false;
+		const wasSelecting = this.selectionMode;
+
+		if (!wasSelecting && !shift && !ctrl) return;
+
+		let next = new Set(this.selectedMessageIds);
+		let anchor = this.selectionAnchorId;
+
+		if (!wasSelecting) {
+			const activeId = options.activeMessageId ?? null;
+			if (activeId) {
+				next = new Set([activeId]);
+				anchor = activeId;
+			} else {
+				next = new Set();
+				anchor = null;
+			}
+		}
+
+		if (shift) {
+			const anchorId = anchor ?? options.activeMessageId ?? messageId;
+			const anchorIndex = this.messages.findIndex((message) => message.id === anchorId);
+			if (anchorIndex < 0) {
+				next.add(messageId);
+				anchor = messageId;
+			} else {
+				const start = Math.min(anchorIndex, index);
+				const end = Math.max(anchorIndex, index);
+				if (!ctrl) next = new Set();
+				for (let i = start; i <= end; i++) {
+					next.add(this.messages[i].id);
+				}
+			}
+		} else if (ctrl) {
+			if (next.has(messageId)) next.delete(messageId);
+			else next.add(messageId);
+			anchor = messageId;
+		} else {
+			if (next.has(messageId)) next.delete(messageId);
+			else next.add(messageId);
+			anchor = messageId;
+		}
+
+		this.applySelection(next, anchor);
 	}
 
 	toggleMessageSelection(messageId: string) {
+		if (!this.selectionMode) {
+			this.selectionMode = true;
+		}
+
 		const next = new Set(this.selectedMessageIds);
 		if (next.has(messageId)) next.delete(messageId);
 		else next.add(messageId);
-		this.selectedMessageIds = next;
+		this.applySelection(next, messageId);
 	}
 
 	selectAllMessages() {
+		this.selectionMode = true;
 		this.selectedMessageIds = new Set(this.messages.map((message) => message.id));
+		this.selectionAnchorId = this.messages[0]?.id ?? null;
 	}
 
 	clearSelection() {
-		this.selectedMessageIds = new Set();
-		this.selectionMode = false;
+		this.exitSelectionMode();
 		this.bulkActionLoading = false;
 	}
 

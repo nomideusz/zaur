@@ -12,7 +12,7 @@
 		href: string;
 		selectionMode?: boolean;
 		selected?: boolean;
-		onToggleSelect?: () => void;
+		onSelect?: (modifiers: { shift: boolean; ctrl: boolean }) => void;
 	}
 
 	let {
@@ -21,7 +21,7 @@
 		href,
 		selectionMode = false,
 		selected = false,
-		onToggleSelect
+		onSelect
 	}: Props = $props();
 
 	const when = $derived(formatMessageListWhen(message.receivedAt, settings.showFullDatesInList));
@@ -44,6 +44,24 @@
 				: 'hover:bg-surface-sunken/70'
 		)
 	);
+
+	function handleSelect(event: MouseEvent) {
+		const shift = event.shiftKey;
+		const ctrl = event.ctrlKey || event.metaKey;
+		if (!selectionMode && !shift && !ctrl) return;
+		event.preventDefault();
+		onSelect?.({ shift, ctrl });
+	}
+
+	function handleSelectKey(event: KeyboardEvent) {
+		if (event.key !== 'Enter' && event.key !== ' ') return;
+		event.preventDefault();
+		onSelect?.({ shift: event.shiftKey, ctrl: event.ctrlKey || event.metaKey });
+	}
+
+	function handleCheckboxChange() {
+		onSelect?.({ shift: false, ctrl: false });
+	}
 </script>
 
 {#snippet avatar()}
@@ -139,26 +157,27 @@
 		class={rowClass}
 		role="button"
 		tabindex="0"
-		onclick={onToggleSelect}
-		onkeydown={(e) => {
-			if (e.key === 'Enter' || e.key === ' ') {
-				e.preventDefault();
-				onToggleSelect?.();
-			}
-		}}
+		onclick={handleSelect}
+		onkeydown={handleSelectKey}
 	>
 		<input
 			type="checkbox"
 			class="z-checkbox mt-2"
 			checked={selected}
 			onclick={(e) => e.stopPropagation()}
-			onchange={onToggleSelect}
+			onchange={handleCheckboxChange}
 			aria-label="Select {message.subject}"
 		/>
 		{@render content()}
 	</div>
 {:else}
-	<a {href} class={rowClass} aria-current={active ? 'true' : undefined} style="view-transition-name: message-{message.id};">
+	<a
+		{href}
+		class={rowClass}
+		aria-current={active ? 'true' : undefined}
+		style="view-transition-name: message-{message.id};"
+		onclick={handleSelect}
+	>
 		{@render content()}
 	</a>
 {/if}

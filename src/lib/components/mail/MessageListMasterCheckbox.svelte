@@ -2,18 +2,21 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { cn } from '$lib/utils/cn';
 
-	let { class: className = '' }: { class?: string } = $props();
+	let {
+		class: className = '',
+		activeMessageId = null
+	}: { class?: string; activeMessageId?: string | null } = $props();
 
 	let input = $state<HTMLInputElement | null>(null);
 
 	function onChange() {
 		if (!mail.selectionMode) {
-			mail.enterSelectionMode();
+			mail.enterSelectionMode(activeMessageId);
 			return;
 		}
 
 		if (mail.selectedCount === mail.messages.length) {
-			mail.selectedMessageIds = new Set();
+			mail.exitSelectionMode();
 		} else {
 			mail.selectAllMessages();
 		}

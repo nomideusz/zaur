@@ -91,7 +91,7 @@
 		{mail.selectedCount} selected
 	</span>
 	{#if !mail.selectedCount && !settings.hideSelectionHints}
-		<span class="hidden text-xs text-fg-subtle sm:inline">Click messages to select</span>
+		<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl or Shift+click to add messages</span>
 	{/if}
 
 	{#if mail.selectedCount}

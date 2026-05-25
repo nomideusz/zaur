@@ -265,7 +265,7 @@
 <SettingsGroup title="Bulk selection" description="Multi-select messages for archive, move, and delete.">
 	<SettingsRow
 		title="Show bulk select"
-		description="Checkbox beside the folder name to select messages; archive, move, and delete appear while selecting"
+		description="Checkbox or Ctrl/Shift+click to select messages; the open message is selected when you start"
 	>
 		<input
 			type="checkbox"
@@ -283,7 +283,7 @@
 	>
 		<SettingsRow
 			title="Hide selection hints"
-			description="Remove the “Click messages to select” hint in bulk selection mode"
+			description="Remove the “Ctrl or Shift+click to add messages” hint in bulk selection mode"
 		>
 			<input
 				type="checkbox"

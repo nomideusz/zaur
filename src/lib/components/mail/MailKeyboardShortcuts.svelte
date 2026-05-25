@@ -130,8 +130,15 @@
 	onMount(() => {
 		function onKeydown(event: KeyboardEvent) {
 			if (!settings.enableKeyboardShortcuts) return;
-			if (event.metaKey || event.ctrlKey || event.altKey) return;
 			if (isTypingTarget(event.target)) return;
+
+			if (event.key === 'Escape' && mail.selectionMode) {
+				event.preventDefault();
+				mail.exitSelectionMode();
+				return;
+			}
+
+			if (event.metaKey || event.ctrlKey || event.altKey) return;
 
 			const ctx = parseMailContext($page.url.pathname);
 			if (!ctx) return;

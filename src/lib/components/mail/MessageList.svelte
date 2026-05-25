@@ -57,6 +57,9 @@
 	let loadSentinel = $state<HTMLDivElement | null>(null);
 
 	const activeThreadId = $derived($page.params.threadId);
+	const activeMessageId = $derived(
+		activeThreadId ? (messages.find((message) => message.threadId === activeThreadId)?.id ?? null) : null
+	);
 	const mailbox = $derived(mailboxRouteId ? mail.mailboxByRouteId(mailboxRouteId) : null);
 	const countLabel = $derived.by(() => {
 		const totalCount = total ?? messages.length;
@@ -152,7 +155,7 @@
 	>
 		{#if showBulkToolbar && !mail.selectionMode}
 			<label class="flex shrink-0 cursor-pointer items-center rounded-md p-0.5 hover:bg-surface-sunken/80">
-				<MessageListMasterCheckbox />
+				<MessageListMasterCheckbox {activeMessageId} />
 			</label>
 		{/if}
 		{#if mailboxRouteId}
@@ -287,8 +290,11 @@
 					active={activeThreadId === message.threadId}
 					selectionMode={mailboxRouteId ? mail.selectionMode : false}
 					selected={mailboxRouteId ? mail.selectedMessageIds.has(message.id) : false}
-					onToggleSelect={
-						mailboxRouteId ? () => mail.toggleMessageSelection(message.id) : undefined
+					onSelect={
+						mailboxRouteId
+							? (modifiers) =>
+									mail.selectMessageAt(message.id, { ...modifiers, activeMessageId })
+							: undefined
 					}
 				/>
 			{/each}
