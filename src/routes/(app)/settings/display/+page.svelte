@@ -387,6 +387,18 @@
 				onchange={(e) => settings.setCompactListEmptyState(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Compact list error state"
+			description="Less padding when the message list fails to load"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactListErrorState}
+				onchange={(e) => settings.setCompactListErrorState(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Reading">
@@ -609,6 +621,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact reader more menu"
+			description="Tighter spacing in the mobile more-actions menu in the reading pane"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactReaderMoreMenu}
+				onchange={(e) => settings.setCompactReaderMoreMenu(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Compact reader body"
 			description="Less padding around message content in the reading pane"
 		>
@@ -713,6 +737,18 @@
 				class="size-4 accent-accent"
 				checked={settings.compactEmptyReader}
 				onchange={(e) => settings.setCompactEmptyReader(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact reader status"
+			description="Less padding on offline, not-found, and load-error screens in the reading pane"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactReaderStatus}
+				onchange={(e) => settings.setCompactReaderStatus(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

@@ -207,7 +207,12 @@
 			</div>
 			{/if}
 		{:else if error}
-			<div class="flex flex-col items-center gap-3 px-4 py-12 text-center">
+			<div
+				class={cn(
+					'flex flex-col items-center text-center',
+					settings.compactListErrorState ? 'gap-2 px-4 py-8' : 'gap-3 px-4 py-12'
+				)}
+			>
 				<p class="text-sm text-danger">{error}</p>
 				{#if onRetry}
 					<Button variant="ghost" class="text-sm" onclick={onRetry}>Try again</Button>

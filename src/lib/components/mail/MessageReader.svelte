@@ -55,6 +55,18 @@
 		mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
 	);
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
+	const moreMenuItemClass = $derived(
+		cn(
+			'flex w-full items-center gap-2 px-3 text-left text-sm text-fg hover:bg-surface-sunken',
+			settings.compactReaderMoreMenu ? 'py-1.5' : 'py-2'
+		)
+	);
+	const moreMenuMoveItemClass = $derived(
+		cn(
+			'block w-full truncate px-3 text-left text-sm text-fg hover:bg-surface-sunken',
+			settings.compactMoveMenu || settings.compactReaderMoreMenu ? 'py-1.5' : 'py-2'
+		)
+	);
 	const allowExternal = $derived(!settings.blockExternalContent || showImagesOnce);
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>
@@ -337,7 +349,7 @@
 						>
 							<button
 								type="button"
-								class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
+								class={moreMenuItemClass}
 								onclick={() => {
 									moreOpen = false;
 									toggleLatestRead();
@@ -354,7 +366,7 @@
 							{#if hasBlockedExternal && !allowExternal && settings.hideExternalContentBanner}
 								<button
 									type="button"
-									class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
+									class={moreMenuItemClass}
 									onclick={() => {
 										moreOpen = false;
 										showImagesOnce = true;
@@ -364,31 +376,30 @@
 									Show images
 								</button>
 							{/if}
-							<button
-								type="button"
-								class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
-								onclick={archiveMessage}
-							>
+							<button type="button" class={moreMenuItemClass} onclick={archiveMessage}>
 								<Archive class="size-4 shrink-0" aria-hidden="true" />
 								Archive
 							</button>
 							{#if moveTargets.length}
 								{#if !settings.hideMoveMenuLabels}
-									<p class="px-3 py-1.5 text-xs font-medium text-fg-subtle">Move to</p>
+									<p
+										class={cn(
+											'px-3 text-xs font-medium text-fg-subtle',
+											settings.compactMoveMenu || settings.compactReaderMoreMenu ? 'py-1' : 'py-1.5'
+										)}
+									>
+										Move to
+									</p>
 								{/if}
 								{#each moveTargets as mailbox (mailbox.id)}
-									<button
-										type="button"
-										class="block w-full truncate px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
-										onclick={() => moveMessage(mailbox.id)}
-									>
+									<button type="button" class={moreMenuMoveItemClass} onclick={() => moveMessage(mailbox.id)}>
 										{mailbox.name}
 									</button>
 								{/each}
 							{/if}
 							<button
 								type="button"
-								class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-danger hover:bg-surface-sunken"
+								class={cn(moreMenuItemClass, 'text-danger')}
 								onclick={deleteMessage}
 							>
 								<Trash2 class="size-4 shrink-0" aria-hidden="true" />

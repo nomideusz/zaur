@@ -109,6 +109,9 @@ const STORAGE = {
 	compactListAvatars: 'zaur:compact-list-avatars',
 	compactReaderAvatars: 'zaur:compact-reader-avatars',
 	compactCollapsedThreads: 'zaur:compact-collapsed-threads',
+	compactReaderStatus: 'zaur:compact-reader-status',
+	compactReaderMoreMenu: 'zaur:compact-reader-more-menu',
+	compactListErrorState: 'zaur:compact-list-error-state',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -668,6 +671,21 @@ function readCompactCollapsedThreads(): boolean {
 	return localStorage.getItem(STORAGE.compactCollapsedThreads) === 'true';
 }
 
+function readCompactReaderStatus(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactReaderStatus) === 'true';
+}
+
+function readCompactReaderMoreMenu(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactReaderMoreMenu) === 'true';
+}
+
+function readCompactListErrorState(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactListErrorState) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -854,6 +872,9 @@ class SettingsStore {
 	compactListAvatars = $state(readCompactListAvatars());
 	compactReaderAvatars = $state(readCompactReaderAvatars());
 	compactCollapsedThreads = $state(readCompactCollapsedThreads());
+	compactReaderStatus = $state(readCompactReaderStatus());
+	compactReaderMoreMenu = $state(readCompactReaderMoreMenu());
+	compactListErrorState = $state(readCompactListErrorState());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -978,6 +999,9 @@ class SettingsStore {
 		this.compactListAvatars = readCompactListAvatars();
 		this.compactReaderAvatars = readCompactReaderAvatars();
 		this.compactCollapsedThreads = readCompactCollapsedThreads();
+		this.compactReaderStatus = readCompactReaderStatus();
+		this.compactReaderMoreMenu = readCompactReaderMoreMenu();
+		this.compactListErrorState = readCompactListErrorState();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1759,6 +1783,27 @@ class SettingsStore {
 		}
 	}
 
+	setCompactReaderStatus(value: boolean) {
+		this.compactReaderStatus = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactReaderStatus, String(value));
+		}
+	}
+
+	setCompactReaderMoreMenu(value: boolean) {
+		this.compactReaderMoreMenu = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactReaderMoreMenu, String(value));
+		}
+	}
+
+	setCompactListErrorState(value: boolean) {
+		this.compactListErrorState = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactListErrorState, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -2000,6 +2045,9 @@ class SettingsStore {
 		this.setCompactListAvatars(false);
 		this.setCompactReaderAvatars(false);
 		this.setCompactCollapsedThreads(false);
+		this.setCompactReaderStatus(false);
+		this.setCompactReaderMoreMenu(false);
+		this.setCompactListErrorState(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -2092,6 +2140,9 @@ class SettingsStore {
 		this.setCompactListAvatars(true);
 		this.setCompactReaderAvatars(true);
 		this.setCompactCollapsedThreads(true);
+		this.setCompactReaderStatus(true);
+		this.setCompactReaderMoreMenu(true);
+		this.setCompactListErrorState(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -2227,6 +2278,9 @@ class SettingsStore {
 			this.compactListAvatars,
 			this.compactReaderAvatars,
 			this.compactCollapsedThreads,
+			this.compactReaderStatus,
+			this.compactReaderMoreMenu,
+			this.compactListErrorState,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;
