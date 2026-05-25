@@ -2,7 +2,7 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
+	import { settings, type LoadingIndicatorStyle } from '$lib/stores/settings.svelte';
 	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
 </script>
 
@@ -32,22 +32,26 @@
 		</SettingsRow>
 
 		<SettingsRow
-			title="Minimal loading states"
-			description="Show simple loading text instead of animated skeleton placeholders"
+			title="Loading indicator"
+			description="How loading placeholders appear in the message list, reader, and folder sidebar"
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.minimalLoadingStates}
-				onchange={(e) => settings.setMinimalLoadingStates(e.currentTarget.checked)}
-			/>
+			<select
+				class="z-input w-auto"
+				value={settings.loadingIndicatorStyle}
+				onchange={(e) =>
+					settings.setLoadingIndicatorStyle(e.currentTarget.value as LoadingIndicatorStyle)}
+			>
+				<option value="skeleton">Skeleton placeholders</option>
+				<option value="minimal">Text only</option>
+				<option value="spinner">Spinner</option>
+			</select>
 		</SettingsRow>
 
 		<SettingsDepends
-			enabled={!settings.minimalLoadingStates}
-			inactiveReason={settings.minimalLoadingStates
-				? 'Skeleton placeholders are off while minimal loading is enabled'
-				: 'Loading skeleton appearance'}
+			enabled={settings.loadingIndicatorStyle === 'skeleton'}
+			inactiveReason={settings.loadingIndicatorStyle === 'skeleton'
+				? 'Loading skeleton appearance'
+				: 'Skeleton options apply only when loading indicator is set to skeleton placeholders'}
 		>
 			<SettingsRow
 				title="Compact list loading skeleton"

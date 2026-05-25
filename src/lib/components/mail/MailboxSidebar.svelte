@@ -2,6 +2,7 @@
 	import { Settings, Users } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
+	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
 	import MailboxTreeItem from './MailboxTreeItem.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -33,9 +34,7 @@
 
 	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto {settings.compactFolderSidebar ? 'p-1' : 'p-2'}">
 		{#if mail.mailboxesLoading}
-			{#if settings.minimalLoadingStates}
-				<p class="px-3 py-4 text-center text-xs text-fg-muted" aria-busy="true">Loading folders…</p>
-			{:else}
+			{#if settings.loadingIndicatorStyle === 'skeleton'}
 			<div
 				class={cn(
 					'px-3',
@@ -53,6 +52,8 @@
 					></div>
 				{/each}
 			</div>
+			{:else}
+				<LoadingIndicator label="Loading folders…" compact />
 			{/if}
 		{:else if mail.mailboxesError}
 			<div

@@ -73,8 +73,8 @@
 
 <div
 	class={cn(
-		'mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col overflow-y-auto',
-		settings.compactContactsPage ? 'gap-3 p-4 md:p-6' : 'gap-4 p-6 md:p-8'
+		'mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col overflow-y-auto lg:max-w-4xl xl:max-w-6xl',
+		settings.compactContactsPage ? 'gap-3 p-4 md:p-6 xl:px-10' : 'gap-4 p-6 md:p-8 xl:px-10'
 	)}
 >
 	<header class="flex flex-wrap items-end justify-between gap-4">
@@ -90,7 +90,7 @@
 		</div>
 		<div class="flex gap-2">
 			{#if !settings.hideContactsHeaderSettings}
-				<Button variant="ghost" href="/settings/appearance">Settings</Button>
+				<Button variant="ghost" href="/settings/contacts">Settings</Button>
 			{/if}
 			<Button variant="ghost" onclick={() => (showAddForm = !showAddForm)}>
 				<UserPlus class="size-4" aria-hidden="true" />
@@ -105,7 +105,7 @@
 	{#if showAddForm}
 		<form
 			class={cn(
-				'z-panel grid sm:grid-cols-2',
+				'z-panel grid sm:grid-cols-2 xl:grid-cols-[1fr_1fr_auto]',
 				settings.compactContactsAddForm ? 'gap-2 rounded-lg p-3' : 'gap-3 rounded-xl p-4'
 			)}
 			onsubmit={addContact}
@@ -128,7 +128,12 @@
 					required
 				/>
 			</label>
-			<div class="flex gap-2 sm:col-span-2">
+			<div
+				class={cn(
+					'flex gap-2 sm:col-span-2 xl:col-span-1 xl:col-start-3 xl:items-end xl:justify-end xl:self-end',
+					!settings.compactContactsAddForm && 'xl:pb-0.5'
+				)}
+			>
 				<Button type="submit">Save contact</Button>
 				<Button type="button" variant="ghost" onclick={() => (showAddForm = false)}>Cancel</Button>
 			</div>
@@ -151,9 +156,14 @@
 	</label>
 
 	{#if contacts.length}
-		<div class={cn(settings.compactContactsList ? 'space-y-3' : 'space-y-4')}>
+		<div
+			class={cn(
+				settings.compactContactsList ? 'space-y-3' : 'space-y-4',
+				'xl:columns-2 xl:gap-x-10'
+			)}
+		>
 			{#each groupedContacts as [letter, group] (letter)}
-				<section>
+				<section class="mb-4 break-inside-avoid last:mb-0">
 					{#if !settings.hideContactGroupLetters}
 						<h2 class="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-fg-subtle">
 							{letter}
@@ -178,13 +188,26 @@
 									{#if settings.showAvatars}
 										<Avatar name={contact.name} email={contact.email} />
 									{/if}
-									<div class="min-w-0 flex-1">
+									<div
+										class={cn(
+											'min-w-0 flex-1',
+											!settings.hideContactsEmailLine &&
+												'md:grid md:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] md:items-center md:gap-4 xl:gap-8'
+										)}
+									>
 										<p class="truncate text-sm font-medium text-fg">{contact.name}</p>
 										{#if !settings.hideContactsEmailLine}
-											<p class="truncate text-xs text-fg-muted">{contact.email}</p>
+											<p class="truncate text-xs text-fg-muted md:text-right">{contact.email}</p>
 										{/if}
 										{#if !settings.hideContactMessageCounts && contact.count > 1}
-											<p class="text-[11px] text-fg-subtle">{contact.count} messages</p>
+											<p
+												class={cn(
+													'text-[11px] text-fg-subtle',
+													!settings.hideContactsEmailLine && 'md:col-span-2'
+												)}
+											>
+												{contact.count} messages
+											</p>
 										{/if}
 									</div>
 									{#if !settings.hideContactsRowMailIcon}

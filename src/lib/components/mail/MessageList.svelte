@@ -3,6 +3,7 @@
 	import { LoaderCircle, Inbox, Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
+	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
 	import MessageListItem from './MessageListItem.svelte';
 	import MessageListToolbar from './MessageListToolbar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -176,9 +177,7 @@
 
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 		{#if loading}
-			{#if settings.minimalLoadingStates}
-				<p class="px-4 py-8 text-center text-sm text-fg-muted" aria-busy="true">Loading messages…</p>
-			{:else}
+			{#if settings.loadingIndicatorStyle === 'skeleton'}
 			<div class={cn(!settings.hideListRowDividers && 'divide-y divide-border')} aria-busy="true" aria-label="Loading messages">
 				{#each Array(settings.compactListLoadingSkeleton ? 4 : 6) as _, index (index)}
 					<div
@@ -205,6 +204,8 @@
 					</div>
 				{/each}
 			</div>
+			{:else}
+				<LoadingIndicator label="Loading messages…" />
 			{/if}
 		{:else if error}
 			<div

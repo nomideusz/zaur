@@ -6,6 +6,7 @@ import { requestBrowserNotificationPermission } from '$lib/utils/notifications';
 export type ListDensity = 'comfortable' | 'compact';
 export type ReaderTextSize = 'normal' | 'large';
 export type CalendarMaxEventsPerDay = 2 | 3 | 5;
+export type LoadingIndicatorStyle = 'skeleton' | 'minimal' | 'spinner';
 
 const STORAGE = {
 	blockExternal: 'zaur:block-external',
@@ -74,6 +75,7 @@ const STORAGE = {
 	compactReaderHeader: 'zaur:compact-reader-header',
 	compactReaderBody: 'zaur:compact-reader-body',
 	minimalLoadingStates: 'zaur:minimal-loading-states',
+	loadingIndicatorStyle: 'zaur:loading-indicator-style',
 	hideConnectingScreen: 'zaur:hide-connecting-screen',
 	compactToolSwitcher: 'zaur:compact-tool-switcher',
 	hideSearchDropdownHeaders: 'zaur:hide-search-dropdown-headers',
@@ -530,9 +532,19 @@ function readCompactReaderBody(): boolean {
 	return localStorage.getItem(STORAGE.compactReaderBody) === 'true';
 }
 
-function readMinimalLoadingStates(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.minimalLoadingStates) === 'true';
+function readLoadingIndicatorStyle(): LoadingIndicatorStyle {
+	if (!browser) return 'skeleton';
+
+	const value = localStorage.getItem(STORAGE.loadingIndicatorStyle);
+	if (value === 'minimal' || value === 'spinner' || value === 'skeleton') {
+		return value;
+	}
+
+	if (localStorage.getItem(STORAGE.minimalLoadingStates) === 'true') {
+		return 'minimal';
+	}
+
+	return 'skeleton';
 }
 
 function readHideConnectingScreen(): boolean {
@@ -1145,7 +1157,7 @@ class SettingsStore {
 	iconOnlyComposeAttach = $state(readIconOnlyComposeAttach());
 	compactReaderHeader = $state(readCompactReaderHeader());
 	compactReaderBody = $state(readCompactReaderBody());
-	minimalLoadingStates = $state(readMinimalLoadingStates());
+	loadingIndicatorStyle = $state<LoadingIndicatorStyle>(readLoadingIndicatorStyle());
 	hideConnectingScreen = $state(readHideConnectingScreen());
 	compactToolSwitcher = $state(readCompactToolSwitcher());
 	hideSearchDropdownHeaders = $state(readHideSearchDropdownHeaders());
@@ -1323,7 +1335,7 @@ class SettingsStore {
 		this.iconOnlyComposeAttach = readIconOnlyComposeAttach();
 		this.compactReaderHeader = readCompactReaderHeader();
 		this.compactReaderBody = readCompactReaderBody();
-		this.minimalLoadingStates = readMinimalLoadingStates();
+		this.loadingIndicatorStyle = readLoadingIndicatorStyle();
 		this.hideConnectingScreen = readHideConnectingScreen();
 		this.compactToolSwitcher = readCompactToolSwitcher();
 		this.hideSearchDropdownHeaders = readHideSearchDropdownHeaders();
@@ -1945,10 +1957,11 @@ class SettingsStore {
 		}
 	}
 
-	setMinimalLoadingStates(value: boolean) {
-		this.minimalLoadingStates = value;
+	setLoadingIndicatorStyle(value: LoadingIndicatorStyle) {
+		this.loadingIndicatorStyle = value;
 		if (browser) {
-			this.writeStorage(STORAGE.minimalLoadingStates, String(value));
+			this.writeStorage(STORAGE.loadingIndicatorStyle, value);
+			this.removeStorage(STORAGE.minimalLoadingStates);
 		}
 	}
 
@@ -2799,7 +2812,7 @@ class SettingsStore {
 		this.setIconOnlyComposeAttach(false);
 		this.setCompactReaderHeader(false);
 		this.setCompactReaderBody(false);
-		this.setMinimalLoadingStates(false);
+		this.setLoadingIndicatorStyle('skeleton');
 		this.setHideConnectingScreen(false);
 		this.setCompactToolSwitcher(false);
 		this.setHideSearchDropdownHeaders(false);
@@ -2941,7 +2954,7 @@ class SettingsStore {
 		this.setIconOnlyComposeAttach(true);
 		this.setCompactReaderHeader(true);
 		this.setCompactReaderBody(true);
-		this.setMinimalLoadingStates(true);
+		this.setLoadingIndicatorStyle('minimal');
 		this.setHideConnectingScreen(true);
 		this.setCompactToolSwitcher(true);
 		this.setHideSearchDropdownHeaders(true);
@@ -3115,7 +3128,7 @@ class SettingsStore {
 			this.iconOnlyComposeAttach,
 			this.compactReaderHeader,
 			this.compactReaderBody,
-			this.minimalLoadingStates,
+			this.loadingIndicatorStyle !== 'skeleton',
 			this.hideConnectingScreen,
 			this.compactToolSwitcher,
 			this.hideSearchDropdownHeaders,

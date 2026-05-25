@@ -1,14 +1,11 @@
 <script lang="ts">
+	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 </script>
 
 <div class="flex min-h-0 flex-1 flex-col overflow-hidden bg-surface-raised">
-	{#if settings.minimalLoadingStates}
-		<p class="flex flex-1 items-center justify-center text-sm text-fg-muted" aria-busy="true">
-			Loading message…
-		</p>
-	{:else}
+	{#if settings.loadingIndicatorStyle === 'skeleton'}
 		<div
 			class={cn(
 				'shrink-0 px-4 md:px-6',
@@ -16,8 +13,18 @@
 				!settings.hideReaderPaneBorders && 'border-b border-border'
 			)}
 		>
-			<div class={cn('w-2/3 max-w-md animate-pulse rounded bg-surface-sunken', settings.compactReaderSkeleton ? 'h-5' : 'h-6')}></div>
-			<div class={cn('animate-pulse rounded bg-surface-sunken', settings.compactReaderSkeleton ? 'mt-2 h-3 w-1/4' : 'mt-3 h-4 w-1/3')}></div>
+			<div
+				class={cn(
+					'w-2/3 max-w-md animate-pulse rounded bg-surface-sunken',
+					settings.compactReaderSkeleton ? 'h-5' : 'h-6'
+				)}
+			></div>
+			<div
+				class={cn(
+					'animate-pulse rounded bg-surface-sunken',
+					settings.compactReaderSkeleton ? 'mt-2 h-3 w-1/4' : 'mt-3 h-4 w-1/3'
+				)}
+			></div>
 		</div>
 		<div
 			class={cn(
@@ -43,5 +50,7 @@
 				<div class="h-3 w-4/5 animate-pulse rounded bg-surface-sunken"></div>
 			</div>
 		</div>
+	{:else}
+		<LoadingIndicator label="Loading message…" class="flex flex-1 items-center" />
 	{/if}
 </div>
