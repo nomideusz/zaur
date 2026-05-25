@@ -78,6 +78,11 @@
 		)
 	);
 	const collapsedCount = $derived(Math.max(0, thread.length - expandedIds.size));
+	const threadRowX = $derived(
+		settings.compactCollapsedThreads || settings.compactReaderBody
+			? 'px-4 md:px-5'
+			: 'px-4 md:px-6'
+	);
 
 	$effect(() => {
 		thread.map((m) => m.id).join(',');
@@ -520,7 +525,7 @@
 		{#each thread as message, index (message.id)}
 			<section class={cn(index > 0 && !settings.hideReaderPaneBorders && 'border-t border-border')}>
 				{#if isExpanded(message)}
-					<div class={cn(settings.compactReaderBody ? 'px-4 py-3 md:px-5' : 'px-4 py-5 md:px-6')}>
+					<div class={cn(threadRowX, settings.compactReaderBody ? 'py-3' : 'py-5')}>
 						<div class="mb-4 flex items-start gap-3">
 							{#if settings.showAvatars}
 								<Avatar
@@ -569,19 +574,21 @@
 									</p>
 								{/if}
 							</div>
-							{#if !settings.hideReaderTimestamps}
-								<span class="shrink-0 text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</span>
-							{/if}
-							{#if thread.length > 1 && !settings.hideThreadCollapseButtons}
-								<button
-									type="button"
-									class="shrink-0 rounded p-1 text-fg-subtle hover:bg-surface-sunken hover:text-fg"
-									aria-label="Collapse message"
-									onclick={() => toggleMessage(message)}
-								>
-									<ChevronUp class="size-4" />
-								</button>
-							{/if}
+							<div class="flex shrink-0 items-center gap-2 self-start">
+								{#if !settings.hideReaderTimestamps}
+									<span class="whitespace-nowrap text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</span>
+								{/if}
+								{#if thread.length > 1 && !settings.hideThreadCollapseButtons}
+									<button
+										type="button"
+										class="flex size-4 shrink-0 items-center justify-center rounded text-fg-subtle hover:bg-surface-sunken hover:text-fg"
+										aria-label="Collapse message"
+										onclick={() => toggleMessage(message)}
+									>
+										<ChevronUp class="size-4" />
+									</button>
+								{/if}
+							</div>
 						</div>
 
 						<div class="w-full max-w-(--z-reader-measure)">
@@ -601,7 +608,8 @@
 						type="button"
 						class={cn(
 							'flex w-full items-center gap-3 text-left transition-colors hover:bg-surface-sunken/70',
-							settings.compactCollapsedThreads ? 'px-3 py-2 md:px-5' : 'px-4 py-3 md:px-6'
+							threadRowX,
+							settings.compactCollapsedThreads ? 'py-2' : 'py-3'
 						)}
 						onclick={() => toggleMessage(message)}
 					>
@@ -620,12 +628,14 @@
 								{/if}
 							</p>
 						</div>
-						{#if !settings.hideReaderTimestamps}
-							<span class="shrink-0 text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</span>
-						{/if}
-						{#if !settings.hideThreadCollapseButtons}
-							<ChevronDown class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-						{/if}
+						<div class="flex shrink-0 items-center gap-2">
+							{#if !settings.hideReaderTimestamps}
+								<span class="whitespace-nowrap text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</span>
+							{/if}
+							{#if thread.length > 1 && !settings.hideThreadCollapseButtons}
+								<ChevronDown class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+							{/if}
+						</div>
 					</button>
 				{/if}
 			</section>

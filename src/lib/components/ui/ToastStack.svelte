@@ -23,7 +23,7 @@
 	{#each toast.toasts as item (item.id)}
 		<div
 			class={cn(
-				'pointer-events-auto flex items-start rounded-lg border shadow-md',
+				'pointer-events-auto flex items-center rounded-lg border shadow-md',
 				settings.compactToasts ? 'gap-2 px-2.5 py-2' : 'gap-3 px-3 py-2.5',
 				variantStyles[item.variant]
 			)}
@@ -32,17 +32,17 @@
 			{#if !settings.hideToastIcons}
 				{#if item.variant === 'success'}
 					<CheckCircle2
-						class={cn('shrink-0', settings.compactToasts ? 'mt-0.5 size-3.5' : 'mt-0.5 size-4')}
+						class={cn('shrink-0', settings.compactToasts ? 'size-3.5' : 'size-4')}
 						aria-hidden="true"
 					/>
 				{:else if item.variant === 'error'}
 					<XCircle
-						class={cn('shrink-0', settings.compactToasts ? 'mt-0.5 size-3.5' : 'mt-0.5 size-4')}
+						class={cn('shrink-0', settings.compactToasts ? 'size-3.5' : 'size-4')}
 						aria-hidden="true"
 					/>
 				{:else}
 					<Info
-						class={cn('shrink-0', settings.compactToasts ? 'mt-0.5 size-3.5' : 'mt-0.5 size-4')}
+						class={cn('shrink-0', settings.compactToasts ? 'size-3.5' : 'size-4')}
 						aria-hidden="true"
 					/>
 				{/if}
@@ -62,7 +62,7 @@
 					{item.action.label}
 				</button>
 			{/if}
-			<IconButton label="Dismiss notification" onclick={() => toast.dismiss(item.id)}>
+			<IconButton class="!p-1" label="Dismiss notification" onclick={() => toast.dismiss(item.id)}>
 				<X class="size-4" />
 			</IconButton>
 		</div>
