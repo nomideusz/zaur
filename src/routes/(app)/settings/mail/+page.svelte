@@ -106,6 +106,18 @@
 				onchange={(e) => settings.setHideMailShortcutsHelp(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Hide action toasts"
+			description="Suppress success and info notifications — errors still appear"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideActionToasts}
+				onchange={(e) => settings.setHideActionToasts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Reset">

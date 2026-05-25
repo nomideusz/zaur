@@ -707,6 +707,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact compose attachments"
+			description="Tighter spacing and smaller chips for files attached in compose"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactComposeAttachments}
+				onchange={(e) => settings.setCompactComposeAttachments(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Compose contact suggestions"
 			description="Autocomplete contacts while typing recipients"
 		>
@@ -863,6 +875,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideSidebarShortcuts}
 				onchange={(e) => settings.setHideSidebarShortcuts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact sidebar shortcuts"
+			description="Tighter Contacts and Settings links at the bottom of the folder sidebar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactSidebarShortcuts}
+				onchange={(e) => settings.setCompactSidebarShortcuts(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

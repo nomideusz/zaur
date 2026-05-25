@@ -58,11 +58,18 @@
 	</nav>
 
 	{#if !settings.hideSidebarShortcuts}
-		<div class="shrink-0 space-y-0.5 border-t border-border {settings.compactFolderSidebar ? 'p-1' : 'p-2'}">
+		<div
+			class={cn(
+				'shrink-0 space-y-0.5',
+				!settings.hidePaneBorders && 'border-t border-border',
+				settings.compactFolderSidebar ? 'p-1' : settings.compactSidebarShortcuts ? 'p-1.5' : 'p-2'
+			)}
+		>
 		<a
 			href="/contacts"
 			class={cn(
-				'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+				'flex items-center gap-2 rounded-md px-3 text-sm transition-colors',
+				settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',
 				$page.url.pathname.startsWith('/contacts')
 					? 'bg-surface-sunken font-medium text-fg'
 					: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
@@ -74,7 +81,8 @@
 		<a
 			href="/settings/display"
 			class={cn(
-				'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+				'flex items-center gap-2 rounded-md px-3 text-sm transition-colors',
+				settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',
 				$page.url.pathname.startsWith('/settings')
 					? 'bg-surface-sunken font-medium text-fg'
 					: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'

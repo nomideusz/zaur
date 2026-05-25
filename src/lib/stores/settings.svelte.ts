@@ -79,6 +79,9 @@ const STORAGE = {
 	compactQuickReply: 'zaur:compact-quick-reply',
 	hideComposePanelBorders: 'zaur:hide-compose-panel-borders',
 	iconOnlyComposeDiscard: 'zaur:icon-only-compose-discard',
+	compactComposeAttachments: 'zaur:compact-compose-attachments',
+	hideActionToasts: 'zaur:hide-action-toasts',
+	compactSidebarShortcuts: 'zaur:compact-sidebar-shortcuts',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -488,6 +491,21 @@ function readIconOnlyComposeDiscard(): boolean {
 	return localStorage.getItem(STORAGE.iconOnlyComposeDiscard) === 'true';
 }
 
+function readCompactComposeAttachments(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactComposeAttachments) === 'true';
+}
+
+function readHideActionToasts(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideActionToasts) === 'true';
+}
+
+function readCompactSidebarShortcuts(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactSidebarShortcuts) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -644,6 +662,9 @@ class SettingsStore {
 	compactQuickReply = $state(readCompactQuickReply());
 	hideComposePanelBorders = $state(readHideComposePanelBorders());
 	iconOnlyComposeDiscard = $state(readIconOnlyComposeDiscard());
+	compactComposeAttachments = $state(readCompactComposeAttachments());
+	hideActionToasts = $state(readHideActionToasts());
+	compactSidebarShortcuts = $state(readCompactSidebarShortcuts());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -738,6 +759,9 @@ class SettingsStore {
 		this.compactQuickReply = readCompactQuickReply();
 		this.hideComposePanelBorders = readHideComposePanelBorders();
 		this.iconOnlyComposeDiscard = readIconOnlyComposeDiscard();
+		this.compactComposeAttachments = readCompactComposeAttachments();
+		this.hideActionToasts = readHideActionToasts();
+		this.compactSidebarShortcuts = readCompactSidebarShortcuts();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1307,6 +1331,27 @@ class SettingsStore {
 		}
 	}
 
+	setCompactComposeAttachments(value: boolean) {
+		this.compactComposeAttachments = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactComposeAttachments, String(value));
+		}
+	}
+
+	setHideActionToasts(value: boolean) {
+		this.hideActionToasts = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideActionToasts, String(value));
+		}
+	}
+
+	setCompactSidebarShortcuts(value: boolean) {
+		this.compactSidebarShortcuts = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactSidebarShortcuts, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1518,6 +1563,9 @@ class SettingsStore {
 		this.setCompactQuickReply(false);
 		this.setHideComposePanelBorders(false);
 		this.setIconOnlyComposeDiscard(false);
+		this.setCompactComposeAttachments(false);
+		this.setHideActionToasts(false);
+		this.setCompactSidebarShortcuts(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1580,6 +1628,9 @@ class SettingsStore {
 		this.setCompactQuickReply(true);
 		this.setHideComposePanelBorders(true);
 		this.setIconOnlyComposeDiscard(true);
+		this.setCompactComposeAttachments(true);
+		this.setHideActionToasts(true);
+		this.setCompactSidebarShortcuts(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1607,6 +1658,7 @@ class SettingsStore {
 		this.setConfirmBeforeDiscardCompose(true);
 		this.setReturnToInboxAfterSend(false);
 		this.setHideMailShortcutsHelp(false);
+		this.setHideActionToasts(false);
 	}
 
 	simplificationCount(): number {
@@ -1684,6 +1736,9 @@ class SettingsStore {
 			this.compactQuickReply,
 			this.hideComposePanelBorders,
 			this.iconOnlyComposeDiscard,
+			this.compactComposeAttachments,
+			this.hideActionToasts,
+			this.compactSidebarShortcuts,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

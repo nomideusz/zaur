@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { settings } from '$lib/stores/settings.svelte';
 
 export type ToastVariant = 'info' | 'success' | 'error';
 
@@ -18,6 +19,7 @@ class ToastStore {
 
 	show(message: string, variant: ToastVariant = 'info') {
 		if (!browser) return;
+		if (settings.hideActionToasts && variant !== 'error') return;
 
 		const id = crypto.randomUUID();
 		this.toasts = [{ id, message, variant }, ...this.toasts].slice(0, MAX_TOASTS);
