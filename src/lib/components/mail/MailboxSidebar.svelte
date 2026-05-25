@@ -15,8 +15,8 @@
 
 <aside
 	class={cn(
-		'z-panel hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden md:flex',
-		!settings.hidePaneBorders && 'border-r'
+		'flex hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden bg-surface-raised md:flex',
+		!settings.hidePaneBorders && 'border-r border-border'
 	)}
 	style="view-transition-name: mail-sidebar;"
 	aria-label="Folders"

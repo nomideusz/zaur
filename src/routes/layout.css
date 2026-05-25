@@ -243,7 +243,7 @@
 	}
 
 	.z-mail-pane {
-		@apply bg-surface-raised;
+		@apply border-l-0 bg-surface-raised;
 	}
 
 	.z-mail-pane-body {
@@ -348,11 +348,25 @@
 	}
 
 	.z-list-row:not([data-hide-active-indicator]) {
-		border-left: 2px solid transparent;
+		position: relative;
+	}
+
+	.z-list-row:not([data-hide-active-indicator])::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 2px;
+		background: transparent;
+		pointer-events: none;
+	}
+
+	.z-list-row--current:not([data-hide-active-indicator])::before {
+		background-color: var(--z-accent);
 	}
 
 	.z-list-row--current:not([data-hide-active-indicator]) {
-		border-left-color: var(--z-accent);
 		background-color: var(--z-surface-sunken);
 	}
 
