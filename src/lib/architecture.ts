@@ -38,6 +38,9 @@ export const componentTree = {
 	calendar: {
 		CalendarLayout: ['CalendarSidebar', 'MonthView', 'EventPanel | EventPanelEmpty', 'EventComposePanel']
 	},
+	contacts: {
+		ContactsLayout: ['ContactsSidebar', 'ContactsList', 'ContactDetailPanel | ContactDetailEmpty']
+	},
 	mail: {
 		MailLayout: ['MailboxSidebar', 'MessageList', 'MessageReader | MessageReaderEmpty'],
 		MailboxSidebar: ['MailboxTree', 'MailboxItem'],
