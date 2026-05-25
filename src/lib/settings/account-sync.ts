@@ -150,6 +150,7 @@ export async function pullAccountSettings(
 
 		for (const [key, value] of Object.entries(remote.settings)) {
 			if (typeof value !== 'string') continue;
+			if (key.startsWith(ACCOUNT_SETTINGS_SYNC_AT_KEY)) continue;
 			if (!key.startsWith('zaur:') && key !== 'zaur-theme') continue;
 			if (isOtherAccountsScopedKey(key, normalizedEmail)) continue;
 			localStorage.setItem(key, value);
