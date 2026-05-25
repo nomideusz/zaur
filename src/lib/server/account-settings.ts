@@ -9,6 +9,26 @@ import {
 
 const WEBMAIL_SETTINGS_URN = 'https://zaur.app/jmap/webmail-settings/v1';
 
+type JmapMethodResponse = [string, Record<string, unknown>?];
+
+function assertEmailSetSucceeded(response: Awaited<ReturnType<JMAPClient['request']>>) {
+	const first = response.methodResponses?.[0] as JmapMethodResponse | undefined;
+	if (first?.[0] === 'error') {
+		const error = first[1] as { type?: string; description?: string };
+		throw new Error(error.description ?? error.type ?? 'Email/set failed');
+	}
+	if (first?.[0] !== 'Email/set') {
+		throw new Error('Unexpected Email/set response');
+	}
+
+	const result = first[1] ?? {};
+	const notUpdated = result.notUpdated as Record<string, { type?: string; description?: string }> | undefined;
+	if (notUpdated && Object.keys(notUpdated).length > 0) {
+		const failure = Object.values(notUpdated)[0];
+		throw new Error(failure?.description ?? failure?.type ?? 'Email/set failed');
+	}
+}
+
 function pickSettingsMailbox(
 	mailboxes: Awaited<ReturnType<JMAPClient['getMailboxes']>>
 ): string | null {
@@ -82,7 +102,7 @@ async function saveViaWebmailSettings(client: JMAPClient, blob: AccountSettingsB
 	return first?.[0] === 'WebmailSettings/set';
 }
 
-async function findSettingsEmail(client: JMAPClient): Promise<JMAPEmail | null> {
+async function listSettingsEmails(client: JMAPClient): Promise<JMAPEmail[]> {
 	const accountId = client.getAccountId();
 	const response = await client.request([
 		[
@@ -108,12 +128,15 @@ async function findSettingsEmail(client: JMAPClient): Promise<JMAPEmail | null> 
 	]);
 
 	const getResult = response.methodResponses?.[1];
-	if (getResult?.[0] !== 'Email/get') return null;
-	const list = (getResult[1].list as JMAPEmail[]) ?? [];
-	if (!list.length) return null;
+	if (getResult?.[0] !== 'Email/get') return [];
+	return (getResult[1].list as JMAPEmail[]) ?? [];
+}
+
+function pickNewestSettingsEmail(emails: JMAPEmail[]): JMAPEmail | null {
+	if (!emails.length) return null;
 
 	let best: { email: JMAPEmail; updatedAt: string } | null = null;
-	for (const email of list) {
+	for (const email of emails) {
 		const blob = parseBlobFromEmail(email);
 		const updatedAt = blob?.updatedAt ?? email.receivedAt ?? '';
 		if (!best || updatedAt > best.updatedAt) {
@@ -121,7 +144,11 @@ async function findSettingsEmail(client: JMAPClient): Promise<JMAPEmail | null> 
 		}
 	}
 
-	return best?.email ?? list[0];
+	return best?.email ?? emails[0];
+}
+
+async function findSettingsEmail(client: JMAPClient): Promise<JMAPEmail | null> {
+	return pickNewestSettingsEmail(await listSettingsEmails(client));
 }
 
 async function loadViaSettingsEmail(client: JMAPClient): Promise<AccountSettingsBlob | null> {
@@ -139,7 +166,11 @@ async function saveViaSettingsEmail(client: JMAPClient, blob: AccountSettingsBlo
 	if (!username) throw new Error('Not signed in');
 
 	const body = JSON.stringify(blob);
-	const existing = await findSettingsEmail(client);
+	const allSettingsEmails = await listSettingsEmails(client);
+	const existing = pickNewestSettingsEmail(allSettingsEmails);
+	const duplicateIds = allSettingsEmails
+		.filter((email) => email.id !== existing?.id)
+		.map((email) => email.id);
 
 	const emailData = buildEmailCreateData({
 		fromEmail: username,
@@ -152,22 +183,30 @@ async function saveViaSettingsEmail(client: JMAPClient, blob: AccountSettingsBlo
 
 	if (existing?.id) {
 		const { mailboxIds: _mailboxIds, ...updateData } = emailData;
-		await client.request([
+		const response = await client.request([
 			['Email/set', { accountId: client.getAccountId(), update: { [existing.id]: updateData } }, '0']
 		]);
-		return;
+		assertEmailSetSucceeded(response);
+	} else {
+		const response = await client.request([
+			[
+				'Email/set',
+				{
+					accountId: client.getAccountId(),
+					create: { 'settings-v1': emailData }
+				},
+				'0'
+			]
+		]);
+		assertEmailSetSucceeded(response);
 	}
 
-	await client.request([
-		[
-			'Email/set',
-			{
-				accountId: client.getAccountId(),
-				create: { 'settings-v1': emailData }
-			},
-			'0'
-		]
-	]);
+	if (duplicateIds.length) {
+		const response = await client.request([
+			['Email/set', { accountId: client.getAccountId(), destroy: duplicateIds }, '1']
+		]);
+		assertEmailSetSucceeded(response);
+	}
 }
 
 export async function loadAccountSettings(client: JMAPClient): Promise<AccountSettingsBlob | null> {
