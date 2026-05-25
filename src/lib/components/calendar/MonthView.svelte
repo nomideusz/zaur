@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronLeft, ChevronRight, LoaderCircle, Plus } from 'lucide-svelte';
+	import { CalendarDays, ChevronLeft, ChevronRight, LoaderCircle, Plus } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -16,6 +16,8 @@
 	const monthTitle = $derived(formatMonthTitle(calendar.viewYear, calendar.viewMonth));
 	const maxEventsPerDay = $derived(settings.calendarMaxEventsPerDay);
 	const hideBorders = $derived(settings.hideCalendarPaneBorders || settings.hidePaneBorders);
+
+	let calendarsOpen = $state(false);
 
 	function eventColor(event: CalendarEvent): string {
 		const primaryCalendarId = event.calendarIds[0];
@@ -35,6 +37,8 @@
 		calendar.openCompose(day);
 	}
 </script>
+
+<svelte:window onclick={() => (calendarsOpen = false)} />
 
 <section
 	class={cn(
@@ -68,7 +72,55 @@
 			</IconButton>
 		</div>
 		<Button variant="ghost" onclick={() => calendar.goToToday()}>Today</Button>
+		<IconButton
+			label="Show calendars"
+			class="md:hidden"
+			onclick={(e) => {
+				e.stopPropagation();
+				calendarsOpen = !calendarsOpen;
+			}}
+		>
+			<CalendarDays class="size-4" aria-hidden="true" />
+		</IconButton>
 	</div>
+
+	{#if calendarsOpen && calendar.calendars.length}
+		<div
+			class={cn(
+				'z-pane-scroll max-h-48 shrink-0 overflow-y-auto border-b md:hidden',
+				settings.compactCalendarSidebar ? 'px-2 py-1' : 'px-2 py-2',
+				!hideBorders && 'border-border'
+			)}
+			onpointerdown={(e) => e.stopPropagation()}
+		>
+			<ul class="space-y-0.5">
+				{#each calendar.calendars as item (item.id)}
+					<li>
+						<label
+							class={cn(
+								'flex cursor-pointer items-center gap-2 rounded-md px-3 text-sm transition-colors hover:bg-surface-sunken',
+								settings.compactCalendarSidebar ? 'py-1.5' : 'py-2',
+								calendar.isCalendarVisible(item.id) ? 'text-fg' : 'text-fg-muted'
+							)}
+						>
+							<input
+								type="checkbox"
+								class="size-4 accent-accent"
+								checked={calendar.isCalendarVisible(item.id)}
+								onchange={() => calendar.toggleCalendar(item.id)}
+							/>
+							<span
+								class="size-2.5 shrink-0 rounded-full"
+								style:background-color={item.color}
+								aria-hidden="true"
+							></span>
+							<span class="truncate">{item.name}</span>
+						</label>
+					</li>
+				{/each}
+			</ul>
+		</div>
+	{/if}
 
 	<div
 		class={cn(
