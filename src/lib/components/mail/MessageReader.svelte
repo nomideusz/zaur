@@ -309,15 +309,19 @@
 					{/if}
 				</IconButton>
 				{#if !settings.minimalReaderToolbar}
-					<IconButton label="Reply all" onclick={replyAll}>
+					<IconButton class="hidden md:inline-flex" label="Reply all" onclick={replyAll}>
 						<ReplyAll class="size-4" />
 					</IconButton>
-					<IconButton label="Forward" onclick={forward}>
+					<IconButton class="hidden md:inline-flex" label="Forward" onclick={forward}>
 						<Forward class="size-4" />
 					</IconButton>
 				{/if}
 				{#if hasBlockedExternal && !allowExternal && settings.hideExternalContentBanner}
-					<IconButton label="Show external images" onclick={() => (showImagesOnce = true)}>
+					<IconButton
+						class="hidden md:inline-flex"
+						label="Show external images"
+						onclick={() => (showImagesOnce = true)}
+					>
 						<Shield class="size-4" />
 					</IconButton>
 				{/if}
@@ -372,6 +376,44 @@
 									Mark as unread
 								{/if}
 							</button>
+							{#if !settings.minimalReaderToolbar}
+								{#if settings.defaultReplyMode === 'reply-all'}
+									<button
+										type="button"
+										class={moreMenuItemClass}
+										onclick={() => {
+											moreOpen = false;
+											reply();
+										}}
+									>
+										<Reply class="size-4 shrink-0" aria-hidden="true" />
+										Reply
+									</button>
+								{:else}
+									<button
+										type="button"
+										class={moreMenuItemClass}
+										onclick={() => {
+											moreOpen = false;
+											replyAll();
+										}}
+									>
+										<ReplyAll class="size-4 shrink-0" aria-hidden="true" />
+										Reply all
+									</button>
+								{/if}
+								<button
+									type="button"
+									class={moreMenuItemClass}
+									onclick={() => {
+										moreOpen = false;
+										forward();
+									}}
+								>
+									<Forward class="size-4 shrink-0" aria-hidden="true" />
+									Forward
+								</button>
+							{/if}
 							{#if hasBlockedExternal && !allowExternal && settings.hideExternalContentBanner}
 								<button
 									type="button"
