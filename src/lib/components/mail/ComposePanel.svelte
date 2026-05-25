@@ -9,9 +9,13 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { cn } from '$lib/utils/cn';
 
 	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
 	const senderEmail = $derived(auth.username ?? '');
+	const fieldLabelClass = $derived(
+		settings.hideComposeFieldLabels ? 'sr-only' : 'w-14 shrink-0 text-fg-subtle'
+	);
 
 	interface Props {
 		mode?: ComposeMode;
@@ -144,7 +148,10 @@
 <div class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]" onclick={close}>
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div
-		class="z-panel flex h-full min-h-0 w-full max-w-2xl flex-col overflow-hidden border-l shadow-md"
+		class={cn(
+			'z-panel flex h-full min-h-0 w-full flex-col overflow-hidden border-l shadow-md',
+			settings.compactComposePanel ? 'max-w-xl' : 'max-w-2xl'
+		)}
 		onclick={(e) => e.stopPropagation()}
 	>
 		<header class="flex shrink-0 items-center justify-between border-b border-border px-5 py-3.5">
@@ -169,7 +176,7 @@
 			<div class="shrink-0 space-y-0 border-b border-border bg-surface/50">
 				{#if !settings.hideComposeFromLine}
 				<div class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
-					<span class="w-14 shrink-0 text-fg-subtle">From</span>
+					<span class={fieldLabelClass}>From</span>
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-fg">
 							{senderName}
@@ -187,7 +194,7 @@
 				{/if}
 
 				<div class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
-					<span class="w-14 shrink-0 text-fg-subtle">To</span>
+					<span class={fieldLabelClass}>To</span>
 					<ComposeRecipientInput
 						bind:inputElement={toInput}
 						value={compose.to}
@@ -208,7 +215,7 @@
 
 				{#if compose.showCcBcc && (settings.showCcBccInCompose || compose.cc.trim() || compose.bcc.trim())}
 					<div class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
-						<span class="w-14 shrink-0 text-fg-subtle">Cc</span>
+						<span class={fieldLabelClass}>Cc</span>
 						<ComposeRecipientInput
 							value={compose.cc}
 							placeholder="cc@example.com"
@@ -217,7 +224,7 @@
 						/>
 					</div>
 					<label class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
-						<span class="w-14 shrink-0 text-fg-subtle">Bcc</span>
+						<span class={fieldLabelClass}>Bcc</span>
 						<ComposeRecipientInput
 							value={compose.bcc}
 							placeholder="bcc@example.com"
@@ -228,7 +235,7 @@
 				{/if}
 
 				<label class="flex items-center gap-3 px-5 py-2.5 text-sm">
-					<span class="w-14 shrink-0 text-fg-subtle">Subject</span>
+					<span class={fieldLabelClass}>Subject</span>
 					<input
 						type="text"
 						class="flex-1 bg-transparent outline-none placeholder:text-fg-subtle"

@@ -442,7 +442,7 @@
 
 		<SettingsRow
 			title="Compact attachments"
-			description="Smaller attachment chips without the count label or file sizes"
+			description="Smaller attachment chips without the count label or file sizes — in reader and compose"
 		>
 			<input
 				type="checkbox"
@@ -511,6 +511,30 @@
 				class="size-4 accent-accent"
 				checked={settings.hideComposeFromLine}
 				onchange={(e) => settings.setHideComposeFromLine(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide compose field labels"
+			description="Remove To, Cc, Bcc, and Subject labels — fields stay usable with placeholders"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideComposeFieldLabels}
+				onchange={(e) => settings.setHideComposeFieldLabels(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact compose panel"
+			description="Narrower compose drawer on desktop — more room beside the message list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactComposePanel}
+				onchange={(e) => settings.setCompactComposePanel(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 
@@ -719,6 +743,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideOfflineIndicator}
 				onchange={(e) => settings.setHideOfflineIndicator(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide outbox unless failed"
+			description="Do not show the outbox icon while messages are sending — only when a send fails"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideOutboxUnlessFailed}
+				onchange={(e) => settings.setHideOutboxUnlessFailed(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

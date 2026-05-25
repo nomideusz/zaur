@@ -3,6 +3,7 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { formatAttachmentSize } from '$lib/attachments/upload';
 	import { compose } from '$lib/stores/compose.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
 {#if compose.attachments.length}
@@ -13,7 +14,9 @@
 			>
 				<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
 				<span class="truncate">{attachment.name}</span>
-				<span class="shrink-0 text-fg-subtle">({formatAttachmentSize(attachment.size)})</span>
+				{#if !settings.compactAttachments}
+					<span class="shrink-0 text-fg-subtle">({formatAttachmentSize(attachment.size)})</span>
+				{/if}
 				{#if attachment.uploading}
 					<LoaderCircle class="size-3.5 shrink-0 animate-spin text-fg-subtle" aria-label="Uploading" />
 				{:else if attachment.uploadError}

@@ -32,7 +32,7 @@
 
 	<OfflineIndicator />
 
-	{#if outbox.pendingCount > 0}
+	{#if outbox.pendingCount > 0 && (!settings.hideOutboxUnlessFailed || outbox.items.some((item) => item.status === 'failed'))}
 		<OutboxMenu />
 	{/if}
 

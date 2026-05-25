@@ -55,6 +55,9 @@ const STORAGE = {
 	iconOnlyBulkActions: 'zaur:icon-only-bulk-actions',
 	hideComposeFromLine: 'zaur:hide-compose-from-line',
 	hideThreadCollapseButtons: 'zaur:hide-thread-collapse-buttons',
+	hideComposeFieldLabels: 'zaur:hide-compose-field-labels',
+	compactComposePanel: 'zaur:compact-compose-panel',
+	hideOutboxUnlessFailed: 'zaur:hide-outbox-unless-failed',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -344,6 +347,21 @@ function readHideThreadCollapseButtons(): boolean {
 	return localStorage.getItem(STORAGE.hideThreadCollapseButtons) === 'true';
 }
 
+function readHideComposeFieldLabels(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideComposeFieldLabels) === 'true';
+}
+
+function readCompactComposePanel(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactComposePanel) === 'true';
+}
+
+function readHideOutboxUnlessFailed(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideOutboxUnlessFailed) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -476,6 +494,9 @@ class SettingsStore {
 	iconOnlyBulkActions = $state(readIconOnlyBulkActions());
 	hideComposeFromLine = $state(readHideComposeFromLine());
 	hideThreadCollapseButtons = $state(readHideThreadCollapseButtons());
+	hideComposeFieldLabels = $state(readHideComposeFieldLabels());
+	compactComposePanel = $state(readCompactComposePanel());
+	hideOutboxUnlessFailed = $state(readHideOutboxUnlessFailed());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -546,6 +567,9 @@ class SettingsStore {
 		this.iconOnlyBulkActions = readIconOnlyBulkActions();
 		this.hideComposeFromLine = readHideComposeFromLine();
 		this.hideThreadCollapseButtons = readHideThreadCollapseButtons();
+		this.hideComposeFieldLabels = readHideComposeFieldLabels();
+		this.compactComposePanel = readCompactComposePanel();
+		this.hideOutboxUnlessFailed = readHideOutboxUnlessFailed();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -947,6 +971,27 @@ class SettingsStore {
 		}
 	}
 
+	setHideComposeFieldLabels(value: boolean) {
+		this.hideComposeFieldLabels = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideComposeFieldLabels, String(value));
+		}
+	}
+
+	setCompactComposePanel(value: boolean) {
+		this.compactComposePanel = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactComposePanel, String(value));
+		}
+	}
+
+	setHideOutboxUnlessFailed(value: boolean) {
+		this.hideOutboxUnlessFailed = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideOutboxUnlessFailed, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1134,6 +1179,9 @@ class SettingsStore {
 		this.setIconOnlyBulkActions(false);
 		this.setHideComposeFromLine(false);
 		this.setHideThreadCollapseButtons(false);
+		this.setHideComposeFieldLabels(false);
+		this.setCompactComposePanel(false);
+		this.setHideOutboxUnlessFailed(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1172,6 +1220,9 @@ class SettingsStore {
 		this.setIconOnlyBulkActions(true);
 		this.setHideComposeFromLine(true);
 		this.setHideThreadCollapseButtons(true);
+		this.setHideComposeFieldLabels(true);
+		this.setCompactComposePanel(true);
+		this.setHideOutboxUnlessFailed(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1251,6 +1302,9 @@ class SettingsStore {
 			this.iconOnlyBulkActions,
 			this.hideComposeFromLine,
 			this.hideThreadCollapseButtons,
+			this.hideComposeFieldLabels,
+			this.compactComposePanel,
+			this.hideOutboxUnlessFailed,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;
