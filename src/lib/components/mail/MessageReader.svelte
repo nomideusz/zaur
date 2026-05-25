@@ -394,7 +394,7 @@
 		</div>
 	{/if}
 
-	{#if hasBlockedExternal && !allowExternal}
+	{#if hasBlockedExternal && !allowExternal && !settings.hideExternalContentBanner}
 		<div class="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-border bg-surface px-4 py-2 text-xs text-fg-muted md:px-6">
 			<Shield class="size-3.5 shrink-0" aria-hidden="true" />
 			<span>External images blocked.</span>

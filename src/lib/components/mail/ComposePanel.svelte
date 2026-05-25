@@ -150,7 +150,7 @@
 		<header class="flex shrink-0 items-center justify-between border-b border-border px-5 py-3.5">
 			<div>
 				<h2 class="text-base font-semibold text-fg">{title}</h2>
-				{#if draftStatus}
+				{#if !settings.hideComposeHints && draftStatus}
 					<p class="text-xs text-fg-subtle">{draftStatus}</p>
 				{/if}
 			</div>

@@ -139,7 +139,20 @@
 				type="checkbox"
 				class="size-4 accent-accent"
 				checked={settings.showSenderEmailInList}
+				disabled={settings.subjectOnlyList}
 				onchange={(e) => settings.setShowSenderEmailInList(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Subject-only list"
+			description="Show only the subject on each row — hides the sender line for a tighter inbox"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.subjectOnlyList}
+				onchange={(e) => settings.setSubjectOnlyList(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 
@@ -216,6 +229,18 @@
 				class="size-4 accent-accent"
 				checked={settings.blockExternalContent}
 				onchange={(e) => settings.setBlockExternalContent(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide blocked-images banner"
+			description="Do not show the external images notice in the reader — change blocking in Display settings"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideExternalContentBanner}
+				onchange={(e) => settings.setHideExternalContentBanner(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

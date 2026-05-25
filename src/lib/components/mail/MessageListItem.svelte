@@ -60,6 +60,32 @@
 {#snippet content()}
 	{@render avatar()}
 	<div class="min-w-0 flex-1">
+		{#if settings.subjectOnlyList}
+			<div class="flex items-baseline justify-between gap-2">
+				<div class="mt-0.5 flex min-w-0 flex-1 items-center gap-1.5">
+					{#if settings.showStarsInList && message.starred}
+						<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
+					{/if}
+					<span
+						class={cn(
+							'truncate text-sm',
+							settings.highlightUnreadInList && message.unread ? 'font-semibold text-fg' : 'text-fg'
+						)}
+					>
+						{message.subject}
+					</span>
+					{#if settings.showAttachmentIcons && message.hasAttachment}
+						<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
+					{/if}
+				</div>
+				{#if settings.showListTimestamps}
+					<span class="shrink-0 text-xs text-fg-subtle">{when}</span>
+				{/if}
+			</div>
+			{#if settings.showListPreview && message.preview}
+				<p class="mt-0.5 truncate text-xs text-fg-subtle">{message.preview}</p>
+			{/if}
+		{:else}
 		<div class="flex items-baseline justify-between gap-2">
 			<span
 				class={cn(
@@ -91,6 +117,7 @@
 		</div>
 		{#if settings.showListPreview && message.preview}
 			<p class="mt-0.5 truncate text-xs text-fg-subtle">{message.preview}</p>
+		{/if}
 		{/if}
 	</div>
 {/snippet}
