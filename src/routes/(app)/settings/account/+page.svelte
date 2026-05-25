@@ -59,6 +59,18 @@
 				oninput={(e) => settings.setSignature(e.currentTarget.value)}
 			></textarea>
 		</SettingsField>
+
+		<SettingsRow
+			title="Include signature"
+			description="Append your signature to new messages, replies, and forwards"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.useSignature}
+				onchange={(e) => settings.setUseSignature(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="This page" advanced>

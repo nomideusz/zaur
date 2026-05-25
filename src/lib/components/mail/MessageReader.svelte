@@ -141,6 +141,15 @@
 		goto('/mail/compose?mode=reply-all');
 	}
 
+	function primaryReply() {
+		if (settings.defaultReplyMode === 'reply-all') replyAll();
+		else reply();
+	}
+
+	const primaryReplyLabel = $derived(
+		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
+	);
+
 	function forward() {
 		if (!latest) return;
 		compose.startForward(latest);
@@ -291,8 +300,12 @@
 						{/if}
 					</IconButton>
 				{/if}
-				<IconButton label="Reply" onclick={reply}>
-					<Reply class="size-4" />
+				<IconButton label={primaryReplyLabel} onclick={primaryReply}>
+					{#if settings.defaultReplyMode === 'reply-all'}
+						<ReplyAll class="size-4" />
+					{:else}
+						<Reply class="size-4" />
+					{/if}
 				</IconButton>
 				{#if !settings.minimalReaderToolbar}
 					<IconButton label="Reply all" onclick={replyAll}>

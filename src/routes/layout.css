@@ -49,6 +49,7 @@
 	--z-danger: #dc2626;
 
 	--z-list-row: 4.25rem;
+	--z-list-text: 0.875rem;
 	--z-reader-measure: 42rem;
 	--z-reader-text: 0.875rem;
 
@@ -282,6 +283,10 @@
 
 	.z-list-row {
 		min-height: var(--z-list-row);
+	}
+
+	.z-list-text {
+		font-size: var(--z-list-text);
 	}
 
 	.z-email-body {

@@ -82,12 +82,15 @@
 		}
 	}
 
-	function openCompose(mode: 'reply' | 'reply-all') {
+	function openCompose(mode?: 'reply' | 'reply-all') {
 		const thread = mail.selectedThread;
 		const latest = thread.at(-1);
 		if (!latest) return;
 
-		if (mode === 'reply') {
+		const resolved =
+			mode ?? (settings.defaultReplyMode === 'reply-all' ? 'reply-all' : 'reply');
+
+		if (resolved === 'reply') {
 			compose.startReply(latest);
 			goto('/mail/compose?mode=reply');
 			return;

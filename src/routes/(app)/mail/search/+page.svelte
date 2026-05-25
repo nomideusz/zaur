@@ -9,6 +9,7 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { search } from '$lib/stores/search.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { searchOperatorHint } from '$lib/mail/search-query';
 	import { cn } from '$lib/utils/cn';
 
 	let input = $state('');
@@ -63,7 +64,9 @@
 			id="mobile-search"
 			type="search"
 			class="z-input w-full pl-9"
-			placeholder="Search messages or contacts…"
+			placeholder="Search messages or contacts…{settings.enableKeyboardShortcuts && !settings.hideComposeHints
+			? ' (/ to focus)'
+			: ''}{!settings.hideComposeHints ? ` · ${searchOperatorHint()}` : ''}"
 			autocomplete="off"
 			bind:value={input}
 		/>

@@ -71,7 +71,7 @@
 
 {#snippet content()}
 	{@render avatar()}
-	<div class="min-w-0 flex-1">
+	<div class="z-list-text min-w-0 flex-1">
 		{#if settings.subjectOnlyList}
 			<div class="flex items-baseline justify-between gap-2">
 				<div class="mt-0.5 flex min-w-0 flex-1 items-center gap-1.5">

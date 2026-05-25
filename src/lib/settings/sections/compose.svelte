@@ -2,10 +2,25 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import { settings, type ComposeLayout } from '$lib/stores/settings.svelte';
+	import { settings, type ComposeLayout, type DefaultReplyMode } from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="Writing email" description="Compose panel and recipient fields.">
+		<SettingsRow
+			title="Default reply action"
+			description="Primary reply button in the reading pane — r always replies, a always reply all"
+		>
+			<select
+				class="z-input w-auto"
+				value={settings.defaultReplyMode}
+				onchange={(e) =>
+					settings.setDefaultReplyMode(e.currentTarget.value as DefaultReplyMode)}
+			>
+				<option value="reply">Reply</option>
+				<option value="reply-all">Reply all</option>
+			</select>
+		</SettingsRow>
+
 		<SettingsRow
 			title="Compose layout"
 			description="Drawer slides over mail on desktop — pane keeps the folder sidebar visible while you write"
@@ -190,4 +205,23 @@
 			</SettingsRow>
 		</SettingsDepends>
 
+</SettingsGroup>
+
+<SettingsGroup title="Defaults">
+	<SettingsRow
+		title="Reset writing settings"
+		description="Restore every compose and reply option on this page to its original value"
+	>
+		<button
+			type="button"
+			class="z-btn-ghost text-sm"
+			onclick={() => {
+				if (confirm('Reset all writing settings to defaults?')) {
+					settings.resetComposeSettings();
+				}
+			}}
+		>
+			Reset
+		</button>
+	</SettingsRow>
 </SettingsGroup>

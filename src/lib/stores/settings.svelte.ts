@@ -8,6 +8,8 @@ export type ReaderTextSize = 'normal' | 'large';
 export type CalendarMaxEventsPerDay = 2 | 3 | 5;
 export type LoadingIndicatorStyle = 'skeleton' | 'minimal' | 'spinner';
 export type ComposeLayout = 'drawer' | 'pane';
+export type DefaultReplyMode = 'reply' | 'reply-all';
+export type ListTextSize = 'normal' | 'large';
 
 const STORAGE = {
 	blockExternal: 'zaur:block-external',
@@ -181,6 +183,9 @@ const STORAGE = {
 	returnToInboxAfterSend: 'zaur:return-to-inbox-after-send',
 	skipHomeScreen: 'zaur:skip-home-screen',
 	readerTextSize: 'zaur:reader-text-size',
+	listTextSize: 'zaur:list-text-size',
+	defaultReplyMode: 'zaur:default-reply-mode',
+	useSignature: (email: string) => `zaur:use-signature:${email}`,
 	markAsReadOnOpen: 'zaur:mark-read-on-open',
 	showUnreadInTitle: 'zaur:show-unread-in-title',
 	notifyOnNewMail: 'zaur:notify-new-mail',
@@ -202,6 +207,11 @@ const READER_TEXT_SIZE: Record<ReaderTextSize, string> = {
 const READER_MEASURE: Record<ReaderTextSize, string> = {
 	normal: '42rem',
 	large: '48rem'
+};
+
+const LIST_TEXT_SIZE: Record<ListTextSize, string> = {
+	normal: '0.875rem',
+	large: '1rem'
 };
 
 function readBlockExternal(): boolean {
@@ -1074,6 +1084,21 @@ function readReaderTextSize(): ReaderTextSize {
 	return localStorage.getItem(STORAGE.readerTextSize) === 'large' ? 'large' : 'normal';
 }
 
+function readListTextSize(): ListTextSize {
+	if (!browser) return 'normal';
+	return localStorage.getItem(STORAGE.listTextSize) === 'large' ? 'large' : 'normal';
+}
+
+function readDefaultReplyMode(): DefaultReplyMode {
+	if (!browser) return 'reply';
+	return localStorage.getItem(STORAGE.defaultReplyMode) === 'reply-all' ? 'reply-all' : 'reply';
+}
+
+function readUseSignature(email: string | null): boolean {
+	if (!browser || !email) return true;
+	return localStorage.getItem(STORAGE.useSignature(email)) !== 'false';
+}
+
 function readMarkAsReadOnOpen(): boolean {
 	if (!browser) return true;
 	return localStorage.getItem(STORAGE.markAsReadOnOpen) !== 'false';
@@ -1270,11 +1295,14 @@ class SettingsStore {
 	returnToInboxAfterSend = $state(readReturnToInboxAfterSend());
 	skipHomeScreen = $state(readSkipHomeScreen());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
+	listTextSize = $state<ListTextSize>(readListTextSize());
+	defaultReplyMode = $state<DefaultReplyMode>(readDefaultReplyMode());
 	markAsReadOnOpen = $state(readMarkAsReadOnOpen());
 	showUnreadInTitle = $state(readShowUnreadInTitle());
 	notifyOnNewMail = $state(readNotifyOnNewMail());
 	displayName = $state('');
 	signature = $state('');
+	useSignature = $state(true);
 
 	private userEmail: string | null = null;
 
@@ -1452,21 +1480,26 @@ class SettingsStore {
 		this.returnToInboxAfterSend = readReturnToInboxAfterSend();
 		this.skipHomeScreen = readSkipHomeScreen();
 		this.readerTextSize = readReaderTextSize();
+		this.listTextSize = readListTextSize();
+		this.defaultReplyMode = readDefaultReplyMode();
 		this.markAsReadOnOpen = readMarkAsReadOnOpen();
 		this.showUnreadInTitle = readShowUnreadInTitle();
 		this.notifyOnNewMail = readNotifyOnNewMail();
 		this.applyListLayout();
 		this.applyReaderTextSize(this.readerTextSize);
+		this.applyListTextSize(this.listTextSize);
 	}
 
 	setUser(email: string | null) {
 		this.userEmail = email;
 		this.displayName = readDisplayName(email);
 		this.signature = readSignature(email);
+		this.useSignature = readUseSignature(email);
 	}
 
 	/** Prepend blank lines and signature before optional quoted reply/forward content. */
 	composeBodyWithSignature(suffix = ''): string {
+		if (!this.useSignature) return suffix;
 		const trimmed = this.signature.trim();
 		if (!trimmed) return suffix;
 		return `\n\n${trimmed}${suffix}`;
@@ -2709,6 +2742,27 @@ class SettingsStore {
 		this.applyReaderTextSize(value);
 	}
 
+	setListTextSize(value: ListTextSize) {
+		this.listTextSize = value;
+		if (browser) {
+			this.writeStorage(STORAGE.listTextSize, value);
+		}
+		this.applyListTextSize(value);
+	}
+
+	setDefaultReplyMode(value: DefaultReplyMode) {
+		this.defaultReplyMode = value;
+		if (browser) {
+			this.writeStorage(STORAGE.defaultReplyMode, value);
+		}
+	}
+
+	setUseSignature(value: boolean) {
+		this.useSignature = value;
+		if (!browser || !this.userEmail) return;
+		this.writeStorage(STORAGE.useSignature(this.userEmail), String(value));
+	}
+
 	setMarkAsReadOnOpen(value: boolean) {
 		this.markAsReadOnOpen = value;
 		if (browser) {
@@ -2789,6 +2843,8 @@ class SettingsStore {
 		this.setHideOfflineIndicator(false);
 		this.setExpandListUntilOpen(false);
 		this.setReaderTextSize('normal');
+		this.setListTextSize('normal');
+		this.setDefaultReplyMode('reply');
 		this.setBlockExternalContent(true);
 		this.setHideExternalContentBanner(false);
 		this.setAutoLoadMore(false);
@@ -3093,6 +3149,134 @@ class SettingsStore {
 		this.setReturnToInboxAfterSend(false);
 		this.setHideMailShortcutsHelp(false);
 		this.setHideActionToasts(false);
+		this.setAutoLoadMore(false);
+		this.setCompactLoadMore(false);
+	}
+
+	resetInboxSettings() {
+		this.setListDensity('comfortable');
+		this.setShowListPreview(true);
+		this.setShowAvatars(true);
+		this.setCompactListAvatars(false);
+		this.setShowStarsInList(true);
+		this.setShowAttachmentIcons(true);
+		this.setShowMessageCounts(true);
+		this.setShowFullDatesInList(false);
+		this.setSubjectOnlyList(false);
+		this.setShowSenderEmailInList(false);
+		this.setShowListTimestamps(true);
+		this.setHighlightUnreadInList(true);
+		this.setCompactListRows(false);
+		this.setHideListRowDividers(false);
+		this.setHideListActiveIndicator(false);
+		this.setShowBulkSelect(true);
+		this.setHideSelectionHints(false);
+		this.setIconOnlyBulkActions(false);
+		this.setCompactBulkToolbar(false);
+		this.setHideMoveMenuLabels(false);
+		this.setCompactMoveMenu(false);
+		this.setHideSearchListPrefix(false);
+		this.setHideListEmptyHints(false);
+		this.setHideListEmptyActions(false);
+		this.setCompactListEmptyState(false);
+		this.setCompactListErrorState(false);
+		this.setHideListErrorRetry(false);
+		this.setListTextSize('normal');
+	}
+
+	resetReadingSettings() {
+		this.setReaderTextSize('normal');
+		this.setBlockExternalContent(true);
+		this.setHideExternalContentBanner(false);
+		this.setCompactExternalContentBanner(false);
+		this.setPreferPlainText(false);
+		this.setCompactReaderBody(false);
+		this.setHideReaderPaneBorders(false);
+		this.setShowQuickReply(true);
+		this.setCompactQuickReply(false);
+		this.setShowReaderContactActions(true);
+		this.setHideReaderRecipients(false);
+		this.setHideReaderSenderEmail(false);
+		this.setMinimalReaderToolbar(false);
+		this.setCompactReaderToolbar(false);
+		this.setCompactReaderMoreMenu(false);
+		this.setCompactReaderAvatars(false);
+		this.setCompactReaderHeader(false);
+		this.setExpandAllThreadMessages(false);
+		this.setHideThreadSummary(false);
+		this.setHideThreadCollapseButtons(false);
+		this.setHideReaderTimestamps(false);
+		this.setHideCollapsedThreadPreviews(false);
+		this.setCompactCollapsedThreads(false);
+		this.setHideEmptyReaderPrompts(false);
+		this.setHideEmptyReaderDescription(false);
+		this.setHideEmptyReaderActions(false);
+		this.setHideEmptyReaderIcon(false);
+		this.setCompactEmptyReader(false);
+		this.setCompactReaderStatus(false);
+		this.setCompactReaderInlineError(false);
+		this.setHideReaderStatusBackButton(false);
+		this.setHideReaderStatusMessage(false);
+	}
+
+	resetComposeSettings() {
+		this.setComposeLayout('drawer');
+		this.setDefaultReplyMode('reply');
+		this.setHideComposeHints(false);
+		this.setCollapseQuotedInCompose(false);
+		this.setShowCcBccInCompose(true);
+		this.setHideComposeFromLine(false);
+		this.setHideComposeFieldLabels(false);
+		this.setCompactComposePanel(false);
+		this.setIconOnlyComposeAttach(false);
+		this.setIconOnlyComposeDiscard(false);
+		this.setHideComposePanelBorders(false);
+		this.setCompactComposeAttachments(false);
+		this.setCompactAttachments(false);
+		this.setShowComposeContactSuggestions(true);
+		this.setCompactComposeSuggestions(false);
+	}
+
+	resetWorkspaceSettings() {
+		this.setCompactLayout(false);
+		this.setHideFolderSidebarHeader(false);
+		this.setCompactFolderSidebarHeader(false);
+		this.setHideFolderIcons(false);
+		this.setCompactFolderSidebar(false);
+		this.setCompactFolderTree(false);
+		this.setHideListHeader(false);
+		this.setCompactListHeader(false);
+		this.setCompactMobileFolderPicker(false);
+		this.setCompactHeaderActions(false);
+		this.setCompactAppHeader(false);
+		this.setHidePaneBorders(false);
+		this.setHideAppTitle(false);
+		this.setCompactUserMenu(false);
+		this.setCompactUserMenuDropdown(false);
+		this.setExpandListUntilOpen(false);
+		this.setCompactFolderSidebarError(false);
+		this.setSkipHomeScreen(false);
+		this.setCompactHomeScreen(false);
+		this.setHideHomeScreenSubtitle(false);
+		this.setHideHomeCardDescriptions(false);
+		this.setHideHomeOpenInboxButton(false);
+		this.setRememberLastMailbox(false);
+		this.setHideSidebarShortcuts(false);
+		this.setCompactSidebarShortcuts(false);
+		this.setMailOnlyNavigation(false);
+		this.setHideHeaderSearch(false);
+		this.setShowSearchContactSuggestions(true);
+		this.setHideSearchDropdownHeaders(false);
+		this.setCompactSearchDropdown(false);
+		this.setShowFolderUnreadCounts(true);
+		this.setCompactFolderBadges(false);
+		this.setToolIconsOnly(false);
+		this.setCompactToolSwitcher(false);
+		this.setHideOfflineIndicator(false);
+		this.setCompactOfflineIndicator(false);
+		this.setHideOutboxUnlessFailed(false);
+		this.setCompactOutboxMenu(false);
+		this.setCompactMobileSearch(false);
 	}
 
 	simplificationCount(): number {
@@ -3340,6 +3524,11 @@ class SettingsStore {
 		if (!browser) return;
 		document.documentElement.style.setProperty('--z-reader-text', READER_TEXT_SIZE[value]);
 		document.documentElement.style.setProperty('--z-reader-measure', READER_MEASURE[value]);
+	}
+
+	private applyListTextSize(value: ListTextSize) {
+		if (!browser) return;
+		document.documentElement.style.setProperty('--z-list-text', LIST_TEXT_SIZE[value]);
 	}
 }
 

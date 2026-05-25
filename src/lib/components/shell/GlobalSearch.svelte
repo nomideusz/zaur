@@ -7,6 +7,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { listContacts } from '$lib/utils/contact-index';
+	import { searchOperatorHint } from '$lib/mail/search-query';
 	import { cn } from '$lib/utils/cn';
 
 	let input = $state('');
@@ -91,7 +92,7 @@
 		type="search"
 		placeholder="Search messages or contacts…{settings.enableKeyboardShortcuts && !settings.hideComposeHints
 			? ' (/ to focus)'
-			: ''}"
+			: ''}{!settings.hideComposeHints ? ` · ${searchOperatorHint()}` : ''}"
 		class="z-input pl-9"
 		autocomplete="off"
 		bind:value={input}

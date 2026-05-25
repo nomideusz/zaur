@@ -7,6 +7,10 @@ const BASIC_TITLE_OVERRIDES = new Set([
 	'Apply simple mode',
 	'Reset all display & layout settings',
 	'Reset look & feel',
+	'Reset inbox settings',
+	'Reset reading settings',
+	'Reset writing settings',
+	'Reset workspace settings',
 	'Restore mail defaults',
 	'Export settings',
 	'Import settings'

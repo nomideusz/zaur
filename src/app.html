@@ -22,6 +22,10 @@
 					if (corners) document.documentElement.dataset.corners = corners;
 					var surface = localStorage.getItem('zaur:surface-style');
 					if (surface) document.documentElement.dataset.surface = surface;
+					var listText = localStorage.getItem('zaur:list-text-size');
+					if (listText === 'large') {
+						document.documentElement.style.setProperty('--z-list-text', '1rem');
+					}
 				} catch (e) {}
 			})();
 		</script>

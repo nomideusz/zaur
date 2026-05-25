@@ -225,3 +225,22 @@
 		</SettingsRow>
 
 </SettingsGroup>
+
+<SettingsGroup title="Defaults">
+	<SettingsRow
+		title="Reset workspace settings"
+		description="Restore layout, sidebar, and navigation options on this page to their original values"
+	>
+		<button
+			type="button"
+			class="z-btn-ghost text-sm"
+			onclick={() => {
+				if (confirm('Reset all workspace settings to defaults?')) {
+					settings.resetWorkspaceSettings();
+				}
+			}}
+		>
+			Reset
+		</button>
+	</SettingsRow>
+</SettingsGroup>

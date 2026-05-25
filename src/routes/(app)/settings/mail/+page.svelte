@@ -7,10 +7,10 @@
 </script>
 
 <svelte:head>
-	<title>Mail · ZAUR Webmail</title>
+	<title>Behavior · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel title="Mail" description="Notifications, shortcuts, and what happens when you read or send mail.">
+<SettingsPanel title="Behavior" description="Notifications, shortcuts, and what happens when you read or send mail.">
 	<SettingsGroup title="While using mail" description="Everyday behavior in your inbox.">
 		<SettingsRow
 			title="Notify on new mail"
@@ -135,7 +135,7 @@
 		>
 			<SettingsRow
 				title="Hide keyboard shortcuts help"
-				description="Remove the shortcut reference section at the bottom of Mail settings"
+				description="Remove the shortcut reference section at the bottom of Behavior settings"
 			>
 				<input
 					type="checkbox"

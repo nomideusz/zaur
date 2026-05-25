@@ -7,6 +7,7 @@ import type {
 	JMAPSession,
 	JMAPEmail
 } from './types';
+import { parseSearchQuery } from '$lib/mail/search-query';
 import { buildEmailCreateData, type EmailAttachmentInput } from './email-build';
 import { resolveMailAccountId } from './account';
 import { buildDownloadUrl, buildUploadUrl } from './urls';
@@ -787,12 +788,14 @@ export class JMAPClient {
 	}
 
 	async searchEmails(query: string, limit = 50, position = 0): Promise<EmailQueryResult> {
+		const { filter } = parseSearchQuery(query);
+
 		const response = await this.request([
 			[
 				'Email/query',
 				{
 					accountId: this.accountId,
-					filter: { text: query },
+					filter,
 					sort: [{ property: 'receivedAt', isAscending: false }],
 					limit,
 					position

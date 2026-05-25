@@ -435,3 +435,22 @@
 		/>
 	</SettingsRow>
 </SettingsGroup>
+
+<SettingsGroup title="Defaults">
+	<SettingsRow
+		title="Reset reading settings"
+		description="Restore every reading pane option on this page to its original value"
+	>
+		<button
+			type="button"
+			class="z-btn-ghost text-sm"
+			onclick={() => {
+				if (confirm('Reset all reading settings to defaults?')) {
+					settings.resetReadingSettings();
+				}
+			}}
+		>
+			Reset
+		</button>
+	</SettingsRow>
+</SettingsGroup>

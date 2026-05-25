@@ -10,7 +10,7 @@ export type SettingsNavLink = {
 
 const ALL_LINKS: SettingsNavLink[] = [
 	{ href: '/settings/account', label: 'You', hint: 'Name, signature, sign out', section: 'personal' },
-	{ href: '/settings/mail', label: 'Mail', hint: 'Notifications and shortcuts', section: 'mail' },
+	{ href: '/settings/mail', label: 'Behavior', hint: 'Notifications, shortcuts, and actions', section: 'mail' },
 	{
 		href: '/settings/appearance',
 		label: 'Look & feel',

@@ -14,7 +14,7 @@
 
 	const sections = $derived([
 		{ id: 'personal', label: 'Personal' },
-		{ id: 'mail', label: 'Mail' },
+		{ id: 'mail', label: 'Behavior' },
 		{ id: 'customize', label: 'Customize' },
 		...(settings.settingsDetailLevel === 'advanced' ? [{ id: 'advanced', label: 'More' }] : [])
 	] as const);

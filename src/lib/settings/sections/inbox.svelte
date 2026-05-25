@@ -2,10 +2,24 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import { settings, type ListDensity } from '$lib/stores/settings.svelte';
+	import { settings, type ListDensity, type ListTextSize } from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="List rows" description="What each message row shows and how tall it is.">
+	<SettingsRow
+		title="List text size"
+		description="Font size for sender, subject, and preview in the message list"
+	>
+		<select
+			class="z-input w-auto"
+			value={settings.listTextSize}
+			onchange={(e) => settings.setListTextSize(e.currentTarget.value as ListTextSize)}
+		>
+			<option value="normal">Normal</option>
+			<option value="large">Large</option>
+		</select>
+	</SettingsRow>
+
 	<SettingsRow
 		title="List density"
 		description="Row height preset — turn off previews for a tighter list; compact list rows adds extra padding trim"
@@ -361,5 +375,24 @@
 			checked={settings.hideListErrorRetry}
 			onchange={(e) => settings.setHideListErrorRetry(e.currentTarget.checked)}
 		/>
+	</SettingsRow>
+</SettingsGroup>
+
+<SettingsGroup title="Defaults">
+	<SettingsRow
+		title="Reset inbox settings"
+		description="Restore every option on this page to its original value"
+	>
+		<button
+			type="button"
+			class="z-btn-ghost text-sm"
+			onclick={() => {
+				if (confirm('Reset all inbox list settings to defaults?')) {
+					settings.resetInboxSettings();
+				}
+			}}
+		>
+			Reset
+		</button>
 	</SettingsRow>
 </SettingsGroup>
