@@ -234,7 +234,7 @@
 <svelte:window onclick={() => (moreOpen = false)} />
 
 <article class="flex min-h-0 flex-1 flex-col overflow-hidden bg-surface-raised" style="view-transition-name: message-reader;">
-	<header class={cn('shrink-0 border-b border-border', settings.compactReaderHeader ? 'px-4 py-2 md:px-5' : 'px-4 py-3 md:px-6')}>
+	<header class={cn('shrink-0', !settings.hideReaderPaneBorders && 'border-b border-border', settings.compactReaderHeader ? 'px-4 py-2 md:px-5' : 'px-4 py-3 md:px-6')}>
 		<div class="flex items-start gap-2">
 			{#if onBack}
 				<IconButton label="Back to list" class="mt-0.5 md:hidden" onclick={onBack}>
@@ -404,7 +404,8 @@
 	{#if mail.selectedError}
 		<div
 			class={cn(
-				'shrink-0 border-b px-4 py-2 text-xs md:px-6',
+				'shrink-0 px-4 py-2 text-xs md:px-6',
+				!settings.hideReaderPaneBorders && 'border-b',
 				mail.selectedError.startsWith('Offline')
 					? 'border-border bg-surface text-fg-muted'
 					: 'border-danger/20 bg-danger/5 text-danger'
@@ -415,7 +416,7 @@
 	{/if}
 
 	{#if hasBlockedExternal && !allowExternal && !settings.hideExternalContentBanner}
-		<div class="flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 border-b border-border bg-surface px-4 py-2 text-xs text-fg-muted md:px-6">
+		<div class={cn('flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 bg-surface px-4 py-2 text-xs text-fg-muted md:px-6', !settings.hideReaderPaneBorders && 'border-b border-border')}>
 			<Shield class="size-3.5 shrink-0" aria-hidden="true" />
 			<span>External images blocked.</span>
 			<button type="button" class="text-accent hover:underline" onclick={() => (showImagesOnce = true)}>
@@ -428,7 +429,7 @@
 
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 		{#each thread as message, index (message.id)}
-			<section class={cn(index > 0 && 'border-t border-border')}>
+			<section class={cn(index > 0 && !settings.hideReaderPaneBorders && 'border-t border-border')}>
 				{#if isExpanded(message)}
 					<div class={cn(settings.compactReaderBody ? 'px-4 py-3 md:px-5' : 'px-4 py-5 md:px-6')}>
 						<div class="w-full max-w-(--z-reader-measure)">

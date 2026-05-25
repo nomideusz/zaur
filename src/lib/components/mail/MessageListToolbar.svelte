@@ -5,6 +5,7 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { cn } from '$lib/utils/cn';
 
 	interface Props {
 		mailboxRouteId: string;
@@ -84,7 +85,7 @@
 
 <svelte:window onclick={() => (moveOpen = false)} />
 
-<div class="flex min-h-12 shrink-0 flex-wrap items-center gap-2 border-b border-border px-4 py-2">
+<div class={cn('flex shrink-0 flex-wrap items-center gap-2 px-4', settings.compactBulkToolbar ? 'min-h-10 py-1.5' : 'min-h-12 py-2', !settings.hidePaneBorders && 'border-b border-border')}>
 	{#if mail.selectionMode}
 		<Button variant="ghost" class="!px-2 !py-1.5 text-xs" onclick={() => mail.exitSelectionMode()}>
 			<X class="size-3.5" aria-hidden="true" />

@@ -257,6 +257,30 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Hide list row dividers"
+			description="Remove horizontal lines between messages in the inbox list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideListRowDividers}
+				onchange={(e) => settings.setHideListRowDividers(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact bulk toolbar"
+			description="Less height on the selection toolbar above the message list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactBulkToolbar}
+				onchange={(e) => settings.setCompactBulkToolbar(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Expand list until opened"
 			description="Use the full width for the message list on desktop until you pick a message"
 		>
@@ -449,6 +473,18 @@
 				class="size-4 accent-accent"
 				checked={settings.compactReaderHeader}
 				onchange={(e) => settings.setCompactReaderHeader(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide reader pane borders"
+			description="Remove divider lines in the reading pane header, banners, and between thread messages"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideReaderPaneBorders}
+				onchange={(e) => settings.setHideReaderPaneBorders(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 
