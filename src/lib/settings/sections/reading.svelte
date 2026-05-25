@@ -200,6 +200,39 @@
 		/>
 	</SettingsRow>
 
+	<SettingsDepends
+		enabled={settings.showAvatars}
+		inactiveReason={settings.showAvatars
+			? 'Reader avatar size'
+			: 'Turn on sender avatars in the inbox list to size reader avatars'}
+	>
+		<SettingsRow
+			title="Compact reader avatars"
+			description="Smaller sender avatars in the reading pane"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactReaderAvatars}
+				onchange={(e) => settings.setCompactReaderAvatars(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsDepends>
+
+	<SettingsRow
+		title="Compact reader header"
+		description="Smaller subject line and less padding at the top of the reading pane"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactReaderHeader}
+			onchange={(e) => settings.setCompactReaderHeader(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
+<SettingsGroup title="Toolbar buttons" description="Action buttons in the reading pane header.">
 	<SettingsRow
 		title="Minimal reader toolbar"
 		description="Hide star, reply all, and forward buttons — reply and more actions stay available"
@@ -239,25 +272,6 @@
 				class="size-4 accent-accent"
 				checked={settings.compactReaderMoreMenu}
 				onchange={(e) => settings.setCompactReaderMoreMenu(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-	</SettingsDepends>
-
-	<SettingsDepends
-		enabled={settings.showAvatars}
-		inactiveReason={settings.showAvatars
-			? 'Reader avatar size'
-			: 'Turn on sender avatars in the inbox list to size reader avatars'}
-	>
-		<SettingsRow
-			title="Compact reader avatars"
-			description="Smaller sender avatars in the reading pane"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactReaderAvatars}
-				onchange={(e) => settings.setCompactReaderAvatars(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsDepends>
