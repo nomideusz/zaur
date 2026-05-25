@@ -54,11 +54,14 @@
 			if (!settings.enableKeyboardShortcuts) return;
 			if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
 			if (isTypingTarget(event.target)) return;
-			if (!searchInput) return;
 
 			event.preventDefault();
-			searchInput.focus();
-			open = true;
+			if (searchInput && !settings.hideHeaderSearch) {
+				searchInput.focus();
+				open = true;
+			} else {
+				goto('/mail/search');
+			}
 		}
 
 		window.addEventListener('keydown', onKeydown);
@@ -70,6 +73,7 @@
 	<Search class="size-4" />
 </IconButton>
 
+{#if !settings.hideHeaderSearch}
 <form
 	role="search"
 	class="relative mx-auto hidden w-full max-w-md md:block"
@@ -84,7 +88,9 @@
 		bind:this={searchInput}
 		id="global-search"
 		type="search"
-		placeholder="Search messages or contacts…{settings.enableKeyboardShortcuts ? ' (/ to focus)' : ''}"
+		placeholder="Search messages or contacts…{settings.enableKeyboardShortcuts && !settings.hideComposeHints
+			? ' (/ to focus)'
+			: ''}"
 		class="z-input pl-9"
 		autocomplete="off"
 		bind:value={input}
@@ -126,3 +132,4 @@
 		</div>
 	{/if}
 </form>
+{/if}

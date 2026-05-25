@@ -438,13 +438,15 @@
 								<div class="flex flex-wrap items-baseline justify-between gap-2">
 									<div class="min-w-0 text-sm">
 										<p class="font-medium text-fg">{message.from.name}</p>
-										<button
-											type="button"
-											class="text-left text-fg-muted hover:text-accent hover:underline"
-											onclick={() => composeTo(message.from.email)}
-										>
-											{message.from.email}
-										</button>
+										{#if !settings.hideReaderSenderEmail}
+											<button
+												type="button"
+												class="text-left text-fg-muted hover:text-accent hover:underline"
+												onclick={() => composeTo(message.from.email)}
+											>
+												{message.from.email}
+											</button>
+										{/if}
 										{#if settings.showReaderContactActions}
 											<button
 												type="button"

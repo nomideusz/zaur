@@ -115,7 +115,7 @@
 						onclick={markSelectedRead}
 					>
 						<MailOpen class="size-3.5" aria-hidden="true" />
-						Mark read
+						<span class={settings.iconOnlyBulkActions ? 'sr-only' : ''}>Mark read</span>
 					</Button>
 				{/if}
 				{#if hasReadSelected}
@@ -126,7 +126,7 @@
 						onclick={markSelectedUnread}
 					>
 						<Mail class="size-3.5" aria-hidden="true" />
-						Mark unread
+						<span class={settings.iconOnlyBulkActions ? 'sr-only' : ''}>Mark unread</span>
 					</Button>
 				{/if}
 				{#if canArchive}
@@ -137,7 +137,7 @@
 						onclick={archiveSelected}
 					>
 						<Archive class="size-3.5" aria-hidden="true" />
-						Archive
+						<span class={settings.iconOnlyBulkActions ? 'sr-only' : ''}>Archive</span>
 					</Button>
 				{/if}
 
@@ -152,7 +152,7 @@
 						}}
 					>
 						<FolderInput class="size-3.5" aria-hidden="true" />
-						Move
+						<span class={settings.iconOnlyBulkActions ? 'sr-only' : ''}>Move</span>
 					</Button>
 
 					{#if moveOpen}
@@ -181,7 +181,7 @@
 					onclick={deleteSelected}
 				>
 					<Trash2 class="size-3.5" aria-hidden="true" />
-					{deleteLabel}
+					<span class={settings.iconOnlyBulkActions ? 'sr-only' : ''}>{deleteLabel}</span>
 				</Button>
 			</div>
 		{/if}

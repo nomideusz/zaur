@@ -221,6 +221,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Icon-only bulk actions"
+			description="Show icons without labels on archive, move, and delete in selection mode"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.iconOnlyBulkActions}
+				onchange={(e) => settings.setIconOnlyBulkActions(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Expand list until opened"
 			description="Use the full width for the message list on desktop until you pick a message"
 		>
@@ -353,6 +365,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideReaderRecipients}
 				onchange={(e) => settings.setHideReaderRecipients(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide sender email"
+			description="Show only the sender name in the message header — no email address line"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideReaderSenderEmail}
+				onchange={(e) => settings.setHideReaderSenderEmail(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

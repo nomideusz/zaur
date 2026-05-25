@@ -51,6 +51,8 @@ const STORAGE = {
 	hideSettingsNavHints: 'zaur:hide-settings-nav-hints',
 	compactFolderSidebar: 'zaur:compact-folder-sidebar',
 	compactAttachments: 'zaur:compact-attachments',
+	hideReaderSenderEmail: 'zaur:hide-reader-sender-email',
+	iconOnlyBulkActions: 'zaur:icon-only-bulk-actions',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -320,6 +322,16 @@ function readCompactAttachments(): boolean {
 	return localStorage.getItem(STORAGE.compactAttachments) === 'true';
 }
 
+function readHideReaderSenderEmail(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideReaderSenderEmail) === 'true';
+}
+
+function readIconOnlyBulkActions(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.iconOnlyBulkActions) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -448,6 +460,8 @@ class SettingsStore {
 	hideSettingsNavHints = $state(readHideSettingsNavHints());
 	compactFolderSidebar = $state(readCompactFolderSidebar());
 	compactAttachments = $state(readCompactAttachments());
+	hideReaderSenderEmail = $state(readHideReaderSenderEmail());
+	iconOnlyBulkActions = $state(readIconOnlyBulkActions());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -514,6 +528,8 @@ class SettingsStore {
 		this.hideSettingsNavHints = readHideSettingsNavHints();
 		this.compactFolderSidebar = readCompactFolderSidebar();
 		this.compactAttachments = readCompactAttachments();
+		this.hideReaderSenderEmail = readHideReaderSenderEmail();
+		this.iconOnlyBulkActions = readIconOnlyBulkActions();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -887,6 +903,20 @@ class SettingsStore {
 		}
 	}
 
+	setHideReaderSenderEmail(value: boolean) {
+		this.hideReaderSenderEmail = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideReaderSenderEmail, String(value));
+		}
+	}
+
+	setIconOnlyBulkActions(value: boolean) {
+		this.iconOnlyBulkActions = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.iconOnlyBulkActions, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1070,6 +1100,8 @@ class SettingsStore {
 		this.setHideSettingsNavHints(false);
 		this.setCompactFolderSidebar(false);
 		this.setCompactAttachments(false);
+		this.setHideReaderSenderEmail(false);
+		this.setIconOnlyBulkActions(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1104,6 +1136,8 @@ class SettingsStore {
 		this.setHideSettingsNavHints(true);
 		this.setCompactFolderSidebar(true);
 		this.setCompactAttachments(true);
+		this.setHideReaderSenderEmail(true);
+		this.setIconOnlyBulkActions(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1179,6 +1213,8 @@ class SettingsStore {
 			this.hideSettingsNavHints,
 			this.compactFolderSidebar,
 			this.compactAttachments,
+			this.hideReaderSenderEmail,
+			this.iconOnlyBulkActions,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;
