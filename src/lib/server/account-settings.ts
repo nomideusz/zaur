@@ -99,7 +99,12 @@ async function saveViaWebmailSettings(client: JMAPClient, blob: AccountSettingsB
 	);
 
 	const first = response.methodResponses?.[0];
-	return first?.[0] === 'WebmailSettings/set';
+	if (first?.[0] === 'error') return false;
+	if (first?.[0] !== 'WebmailSettings/set') return false;
+
+	const result = first[1] ?? {};
+	const notUpdated = result.notUpdated as Record<string, unknown> | undefined;
+	return !notUpdated || Object.keys(notUpdated).length === 0;
 }
 
 async function listSettingsEmails(client: JMAPClient): Promise<JMAPEmail[]> {
