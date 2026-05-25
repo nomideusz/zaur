@@ -14,21 +14,21 @@ const ALL_LINKS: SettingsNavLink[] = [
 	{
 		href: '/settings/appearance',
 		label: 'Look & feel',
-		hint: 'Accent, theme, and motion',
+		hint: 'Colors, theme, loading',
 		section: 'customize'
 	},
-	{ href: '/settings/inbox', label: 'Inbox', hint: 'Message list layout', section: 'customize' },
+	{ href: '/settings/inbox', label: 'Inbox', hint: 'List rows and bulk actions', section: 'customize' },
 	{
 		href: '/settings/reading',
 		label: 'Reading',
-		hint: 'Open messages and threads',
+		hint: 'Reply, threads, attachments',
 		section: 'customize'
 	},
-	{ href: '/settings/compose', label: 'Writing', hint: 'Compose and replies', section: 'customize' },
+	{ href: '/settings/compose', label: 'Writing', hint: 'Layout, fields, toolbar', section: 'customize' },
 	{
 		href: '/settings/workspace',
 		label: 'Workspace',
-		hint: 'Layout, folders, navigation',
+		hint: 'Sidebar, header, home',
 		section: 'customize'
 	},
 	{

@@ -5,7 +5,7 @@
 	import { settings, type DefaultReplyMode, type ReaderTextSize } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Message content & privacy" description="Text size and how HTML mail is handled.">
+<SettingsGroup title="Message content" description="Text size and how HTML mail is handled.">
 	<SettingsRow
 		title="Reading size"
 		description="Text size when reading and writing — HTML mail follows the reader theme in dark mode"
