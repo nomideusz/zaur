@@ -1,10 +1,18 @@
 import type { JMAPClient } from '$lib/jmap/client';
 import { browser } from '$app/environment';
 import { mapEmailPreview, resolveRouteMailboxId } from '$lib/jmap/map';
+import { isAccountSettingsSubject } from '$lib/settings/account-settings-types';
+import type { JMAPEmail } from '$lib/jmap/types';
 import type { Mailbox, MessagePreview } from '$lib/types/mail';
 import { recordContacts } from '$lib/utils/contact-index';
 
 const PAGE_SIZE = 50;
+
+function mapVisibleSearchPreviews(emails: JMAPEmail[], mailboxes: Mailbox[]): MessagePreview[] {
+	return emails
+		.filter((email) => !isAccountSettingsSubject(email.subject))
+		.map((email) => mapEmailPreview(email, resolveRouteMailboxId(email, mailboxes)));
+}
 
 function indexSearchContacts(previews: MessagePreview[]) {
 	if (!browser || !previews.length) return;
@@ -45,9 +53,7 @@ class SearchStore {
 
 		try {
 			const { emails, total, hasMore } = await client.searchEmails(trimmed, PAGE_SIZE, 0);
-			this.results = emails.map((email) =>
-				mapEmailPreview(email, resolveRouteMailboxId(email, mailboxes))
-			);
+			this.results = mapVisibleSearchPreviews(emails, mailboxes);
 			this.total = total;
 			this.hasMore = hasMore;
 			indexSearchContacts(this.results);
@@ -68,9 +74,7 @@ class SearchStore {
 		try {
 			const position = this.results.length;
 			const { emails, hasMore } = await client.searchEmails(this.query, PAGE_SIZE, position);
-			const previews = emails.map((email) =>
-				mapEmailPreview(email, resolveRouteMailboxId(email, mailboxes))
-			);
+			const previews = mapVisibleSearchPreviews(emails, mailboxes);
 			this.results = [...this.results, ...previews];
 			this.hasMore = hasMore;
 			indexSearchContacts(previews);

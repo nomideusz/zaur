@@ -2,6 +2,7 @@ import type { JMAPClient } from '$lib/jmap/client';
 import { browser } from '$app/environment';
 import { mapEmailDetail, mapEmailPreview } from '$lib/jmap/map';
 import type { JMAPEmail, JMAPMailbox } from '$lib/jmap/types';
+import { isAccountSettingsSubject } from '$lib/settings/account-settings-types';
 import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
 import { settings } from '$lib/stores/settings.svelte';
 import { toast } from '$lib/stores/toast.svelte';
@@ -10,6 +11,14 @@ import { showBrowserNotification } from '$lib/utils/notifications';
 import { recordContact, recordContacts } from '$lib/utils/contact-index';
 
 const PAGE_SIZE = 50;
+
+function isVisibleListEmail(email: JMAPEmail): boolean {
+	return !isAccountSettingsSubject(email.subject);
+}
+
+function mapVisiblePreviews(emails: JMAPEmail[], routeMailboxId: string): MessagePreview[] {
+	return emails.filter(isVisibleListEmail).map((email) => mapEmailPreview(email, routeMailboxId));
+}
 
 const ROLE_ORDER: Record<string, number> = {
 	inbox: 0,
@@ -132,7 +141,7 @@ class MailStore {
 			const { getCachedMessagePreviews } = await import('$lib/db');
 			const cached = await getCachedMessagePreviews(accountId, routeMailboxId);
 			if (cached.length) {
-				this.messages = cached;
+				this.messages = cached.filter((message) => !isAccountSettingsSubject(message.subject));
 				this.messagesFromCache = true;
 				this.messagesHasMore = false;
 				indexMessagesContacts(cached);
@@ -141,7 +150,7 @@ class MailStore {
 
 		try {
 			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0);
-			this.messages = emails.map((email) => mapEmailPreview(email, routeMailboxId));
+			this.messages = mapVisiblePreviews(emails, routeMailboxId);
 			this.messagesTotal = total;
 			this.messagesHasMore = hasMore;
 			this.messagesFromCache = false;
@@ -178,7 +187,7 @@ class MailStore {
 		try {
 			const position = this.messages.length;
 			const { emails, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, position);
-			const previews = emails.map((email) => mapEmailPreview(email, routeMailboxId));
+			const previews = mapVisiblePreviews(emails, routeMailboxId);
 			this.messages = [...this.messages, ...previews];
 			this.messagesHasMore = hasMore;
 			this.messagesFromCache = false;
@@ -227,12 +236,25 @@ class MailStore {
 				return;
 			}
 
-			this.selectedThread = emails.map((email) => mapEmailDetail(email, routeMailboxId));
+			if (emails.every((email) => isAccountSettingsSubject(email.subject))) {
+				this.selectedThread = [];
+				this.selectedError =
+					'This message stores synced app settings and cannot be opened here. Use Settings → Backup to export or import preferences.';
+				return;
+			}
+
+			this.selectedThread = emails
+				.filter((email) => !isAccountSettingsSubject(email.subject))
+				.map((email) => mapEmailDetail(email, routeMailboxId));
 			indexMessagesContacts(this.selectedThread);
 
 			if (browser) {
-				const { cacheThread } = await import('$lib/db');
-				await cacheThread(accountId, routeMailboxId, threadId, this.selectedThread);
+				try {
+					const { cacheThread } = await import('$lib/db');
+					await cacheThread(accountId, routeMailboxId, threadId, this.selectedThread);
+				} catch {
+					// Cache failures should not block reading
+				}
 
 				const attachments = this.selectedThread.flatMap((message) => message.attachments);
 				if (attachments.length) {
@@ -795,7 +817,7 @@ class MailStore {
 
 		try {
 			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0);
-			this.messages = emails.map((email) => mapEmailPreview(email, routeMailboxId));
+			this.messages = mapVisiblePreviews(emails, routeMailboxId);
 			this.messagesTotal = total;
 			this.messagesHasMore = hasMore;
 			this.messagesFromCache = false;

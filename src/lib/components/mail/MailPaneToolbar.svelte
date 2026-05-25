@@ -238,14 +238,15 @@
 			<span class="ml-auto shrink-0 text-xs text-fg-subtle md:hidden">{settings.showMessageCounts ? countLabel : ''}</span>
 		{/if}
 
-		{#if showThreadActions && mailboxRouteId}
-			<MessageThreadActions {thread} {mailboxRouteId} onMoved={onBulkAction} />
-		{:else if showNewMessage}
-			<div class="ml-auto shrink-0">
+		<div class="ml-auto flex shrink-0 items-center gap-0.5">
+			{#if showThreadActions && mailboxRouteId}
+				<MessageThreadActions {thread} {mailboxRouteId} onMoved={onBulkAction} />
+			{/if}
+			{#if showNewMessage}
 				<IconButton label="New message" class="!p-1.5" onclick={() => goto('/mail/compose')}>
 					<PenSquare class="size-3.5" />
 				</IconButton>
-			</div>
-		{/if}
+			{/if}
+		</div>
 	{/if}
 </header>

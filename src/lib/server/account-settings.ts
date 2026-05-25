@@ -64,9 +64,12 @@ function pickSettingsMailbox(
 ): string | null {
 	const archive = mailboxes.find((mb) => mb.role === 'archive');
 	if (archive) return archive.id;
-	const drafts = mailboxes.find((mb) => mb.role === 'drafts');
-	if (drafts) return drafts.id;
-	return mailboxes[0]?.id ?? null;
+	const sent = mailboxes.find((mb) => mb.role === 'sent');
+	if (sent) return sent.id;
+	const trash = mailboxes.find((mb) => mb.role === 'trash');
+	if (trash) return trash.id;
+	const fallback = mailboxes.find((mb) => mb.role !== 'drafts' && mb.role !== 'inbox');
+	return fallback?.id ?? null;
 }
 
 function parseBlobFromEmail(email: JMAPEmail): AccountSettingsBlob | null {

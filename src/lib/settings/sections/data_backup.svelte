@@ -26,7 +26,7 @@
 <SettingsGroup title="Backup" description="Export or import your preferences.">
 		<SettingsRow
 			title="Export settings"
-			description="Download a JSON backup of your preferences (also synced to your mail account)"
+			description="Download a JSON backup of your preferences on this device"
 		>
 			<button type="button" class="z-btn-ghost text-sm" onclick={() => settings.downloadLocalPreferences()}>
 				Export
