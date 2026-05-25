@@ -288,7 +288,7 @@
 <SettingsGroup title="Defaults">
 	<SettingsRow
 		title="Reset workspace settings"
-		description="Restore layout, sidebar, and navigation options on this page to their original values"
+		description="Restore folder sidebar, mail layout, app header, and navigation options on this page to their original values"
 	>
 		<button
 			type="button"
