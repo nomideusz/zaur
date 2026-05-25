@@ -273,6 +273,39 @@
 	</SettingsRow>
 </SettingsGroup>
 
+<SettingsGroup title="Move to folder" description="Folder picker when moving messages from the list or reading pane.">
+	<SettingsRow
+		title="Hide move menu labels"
+		description="Remove the “Move to” heading in folder move dropdowns — in the list toolbar and reading pane"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.hideMoveMenuLabels}
+			onchange={(e) => settings.setHideMoveMenuLabels(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsDepends
+		enabled={!settings.hideMoveMenuLabels}
+		inactiveReason={settings.hideMoveMenuLabels
+			? 'Move menu labels are hidden'
+			: 'Move menu layout'}
+	>
+		<SettingsRow
+			title="Compact move menu"
+			description="Tighter spacing in folder move dropdowns from the list toolbar and reading pane"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactMoveMenu}
+				onchange={(e) => settings.setCompactMoveMenu(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsDepends>
+</SettingsGroup>
+
 <SettingsGroup title="Threads" description="How conversations expand and collapse.">
 	<SettingsRow
 		title="Expand all thread messages"

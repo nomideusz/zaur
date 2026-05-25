@@ -817,6 +817,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/reading-compact-move-menu",
+		"href": "/settings/reading",
+		"title": "Compact move menu",
+		"description": ""
+	},
+	{
 		"id": "/settings/reading-compact-quick-reply",
 		"href": "/settings/reading",
 		"title": "Compact quick reply",
@@ -910,6 +916,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-hide-empty-reader-prompts",
 		"href": "/settings/reading",
 		"title": "Hide empty reader prompts",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-hide-move-menu-labels",
+		"href": "/settings/reading",
+		"title": "Hide move menu labels",
 		"description": ""
 	},
 	{
