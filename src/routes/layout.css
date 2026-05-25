@@ -91,6 +91,19 @@
 			navigation: auto;
 		}
 	}
+
+	html.z-reduce-motion *,
+	html.z-reduce-motion *::before,
+	html.z-reduce-motion *::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+
+	html.z-reduce-motion [style*='view-transition-name'] {
+		view-transition-name: none !important;
+	}
 }
 
 @layer components {

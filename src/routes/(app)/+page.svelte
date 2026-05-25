@@ -6,7 +6,7 @@
 
 	$effect(() => {
 		if (settings.skipHomeScreen) {
-			goto('/mail/inbox', { replaceState: true });
+			goto(settings.preferredMailHref(), { replaceState: true });
 		}
 	});
 </script>

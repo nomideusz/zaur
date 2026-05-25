@@ -3,6 +3,7 @@
 	import { appConfig } from '$lib/config';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
 
 	let email = $state('');
@@ -12,7 +13,7 @@
 
 	$effect(() => {
 		if (!auth.isRestoring && auth.isAuthenticated) {
-			goto('/mail/inbox');
+			goto(settings.preferredMailHref());
 		}
 	});
 

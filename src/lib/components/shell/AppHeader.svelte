@@ -13,7 +13,7 @@
 	import { outbox } from '$lib/stores/outbox.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 
-	const homeHref = $derived(settings.skipHomeScreen ? '/mail/inbox' : '/');
+	const homeHref = $derived(settings.skipHomeScreen ? settings.preferredMailHref() : '/');
 </script>
 
 <header
@@ -37,21 +37,33 @@
 	{/if}
 
 	{#if $page.url.pathname.startsWith('/mail')}
-		<IconButton label="New message" class="sm:hidden" onclick={() => goto('/mail/compose')}>
-			<PenSquare class="size-4" aria-hidden="true" />
-		</IconButton>
-		<Button href="/mail/compose" class="hidden sm:inline-flex">
-			<PenSquare class="size-4" aria-hidden="true" />
-			New
-		</Button>
+		{#if settings.compactHeaderActions}
+			<IconButton label="New message" onclick={() => goto('/mail/compose')}>
+				<PenSquare class="size-4" aria-hidden="true" />
+			</IconButton>
+		{:else}
+			<IconButton label="New message" class="sm:hidden" onclick={() => goto('/mail/compose')}>
+				<PenSquare class="size-4" aria-hidden="true" />
+			</IconButton>
+			<Button href="/mail/compose" class="hidden sm:inline-flex">
+				<PenSquare class="size-4" aria-hidden="true" />
+				New
+			</Button>
+		{/if}
 	{:else if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false}
-		<IconButton label="New event" class="sm:hidden" onclick={() => calendar.openCompose()}>
-			<CalendarPlus class="size-4" aria-hidden="true" />
-		</IconButton>
-		<Button onclick={() => calendar.openCompose()} class="hidden sm:inline-flex">
-			<CalendarPlus class="size-4" aria-hidden="true" />
-			New event
-		</Button>
+		{#if settings.compactHeaderActions}
+			<IconButton label="New event" onclick={() => calendar.openCompose()}>
+				<CalendarPlus class="size-4" aria-hidden="true" />
+			</IconButton>
+		{:else}
+			<IconButton label="New event" class="sm:hidden" onclick={() => calendar.openCompose()}>
+				<CalendarPlus class="size-4" aria-hidden="true" />
+			</IconButton>
+			<Button onclick={() => calendar.openCompose()} class="hidden sm:inline-flex">
+				<CalendarPlus class="size-4" aria-hidden="true" />
+				New event
+			</Button>
+		{/if}
 	{/if}
 
 	<UserMenu />

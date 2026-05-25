@@ -49,6 +49,18 @@
 				<option value="dark">Dark</option>
 			</select>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Reduce motion"
+			description="Turn off page transitions, loading animations, and other motion effects"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.reduceMotion}
+				onchange={(e) => settings.setReduceMotion(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Inbox list">
@@ -455,6 +467,18 @@
 				onchange={(e) => settings.setHideListHeader(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Compact header actions"
+			description="Icon-only New and New event buttons in the top bar — saves horizontal space"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactHeaderActions}
+				onchange={(e) => settings.setCompactHeaderActions(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Navigation">
@@ -467,6 +491,18 @@
 				class="size-4 accent-accent"
 				checked={settings.skipHomeScreen}
 				onchange={(e) => settings.setSkipHomeScreen(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Remember last mailbox"
+			description="Open your last visited folder instead of Inbox when signing in or clicking Mail"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.rememberLastMailbox}
+				onchange={(e) => settings.setRememberLastMailbox(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

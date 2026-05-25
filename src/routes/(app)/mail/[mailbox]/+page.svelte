@@ -16,6 +16,10 @@
 		if (!client || auth.isRestoring) return;
 		void mail.loadMessages(client, data.mailboxId);
 	});
+
+	$effect(() => {
+		settings.setLastMailbox(data.mailboxId);
+	});
 </script>
 
 <svelte:head>

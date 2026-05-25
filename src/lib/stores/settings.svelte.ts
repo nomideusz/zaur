@@ -40,6 +40,10 @@ const STORAGE = {
 	showComposeContactSuggestions: 'zaur:show-compose-contact-suggestions',
 	showSearchContactSuggestions: 'zaur:show-search-contact-suggestions',
 	showCcBccInCompose: 'zaur:show-cc-bcc-in-compose',
+	reduceMotion: 'zaur:reduce-motion',
+	compactHeaderActions: 'zaur:compact-header-actions',
+	rememberLastMailbox: 'zaur:remember-last-mailbox',
+	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
 	hideSidebarShortcuts: 'zaur:hide-sidebar-shortcuts',
 	expandListUntilOpen: 'zaur:expand-list-until-open',
@@ -247,6 +251,27 @@ function readShowCcBccInCompose(): boolean {
 	return localStorage.getItem(STORAGE.showCcBccInCompose) !== 'false';
 }
 
+function readReduceMotion(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.reduceMotion) === 'true';
+}
+
+function readCompactHeaderActions(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactHeaderActions) === 'true';
+}
+
+function readRememberLastMailbox(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.rememberLastMailbox) === 'true';
+}
+
+function readLastMailbox(): string {
+	if (!browser) return 'inbox';
+	const saved = localStorage.getItem(STORAGE.lastMailbox);
+	return saved?.trim() || 'inbox';
+}
+
 function readMinimalReaderToolbar(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.minimalReaderToolbar) === 'true';
@@ -358,6 +383,9 @@ class SettingsStore {
 	showComposeContactSuggestions = $state(readShowComposeContactSuggestions());
 	showSearchContactSuggestions = $state(readShowSearchContactSuggestions());
 	showCcBccInCompose = $state(readShowCcBccInCompose());
+	reduceMotion = $state(readReduceMotion());
+	compactHeaderActions = $state(readCompactHeaderActions());
+	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
 	expandListUntilOpen = $state(readExpandListUntilOpen());
@@ -412,7 +440,11 @@ class SettingsStore {
 		this.showComposeContactSuggestions = readShowComposeContactSuggestions();
 		this.showSearchContactSuggestions = readShowSearchContactSuggestions();
 		this.showCcBccInCompose = readShowCcBccInCompose();
+		this.reduceMotion = readReduceMotion();
+		this.compactHeaderActions = readCompactHeaderActions();
+		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
+		this.applyReduceMotion();
 		this.hideSidebarShortcuts = readHideSidebarShortcuts();
 		this.applyLayoutWidth();
 		this.expandListUntilOpen = readExpandListUntilOpen();
@@ -698,6 +730,38 @@ class SettingsStore {
 		}
 	}
 
+	setReduceMotion(value: boolean) {
+		this.reduceMotion = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.reduceMotion, String(value));
+		}
+		this.applyReduceMotion();
+	}
+
+	setCompactHeaderActions(value: boolean) {
+		this.compactHeaderActions = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactHeaderActions, String(value));
+		}
+	}
+
+	setRememberLastMailbox(value: boolean) {
+		this.rememberLastMailbox = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.rememberLastMailbox, String(value));
+		}
+	}
+
+	setLastMailbox(routeId: string) {
+		if (!browser || !routeId.trim()) return;
+		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
+	}
+
+	preferredMailHref(): string {
+		if (!this.rememberLastMailbox) return '/mail/inbox';
+		return `/mail/${readLastMailbox()}`;
+	}
+
 	setMinimalReaderToolbar(value: boolean) {
 		this.minimalReaderToolbar = value;
 		if (browser) {
@@ -860,6 +924,9 @@ class SettingsStore {
 		this.setShowComposeContactSuggestions(true);
 		this.setShowSearchContactSuggestions(true);
 		this.setShowCcBccInCompose(true);
+		this.setReduceMotion(false);
+		this.setCompactHeaderActions(false);
+		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
 		this.setHideSidebarShortcuts(false);
@@ -882,6 +949,9 @@ class SettingsStore {
 		this.setShowComposeContactSuggestions(false);
 		this.setShowSearchContactSuggestions(false);
 		this.setShowCcBccInCompose(false);
+		this.setReduceMotion(true);
+		this.setCompactHeaderActions(true);
+		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
 		this.setHighlightUnreadInList(false);
@@ -944,7 +1014,10 @@ class SettingsStore {
 			this.autoLoadMore,
 			!this.showFolderUnreadCounts,
 			!this.showQuickReply,
-			!this.showReaderContactActions
+			!this.showReaderContactActions,
+			this.reduceMotion,
+			this.compactHeaderActions,
+			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;
 	}
@@ -1001,6 +1074,11 @@ class SettingsStore {
 		anchor.download = `zaur-webmail-settings-${new Date().toISOString().slice(0, 10)}.json`;
 		anchor.click();
 		URL.revokeObjectURL(url);
+	}
+
+	private applyReduceMotion() {
+		if (!browser) return;
+		document.documentElement.classList.toggle('z-reduce-motion', this.reduceMotion);
 	}
 
 	private applyLayoutWidth() {

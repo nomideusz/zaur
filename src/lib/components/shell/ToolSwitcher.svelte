@@ -5,7 +5,12 @@
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const tools = $derived([
-		{ href: '/mail/inbox', label: 'Mail', icon: Mail, active: (path: string) => path.startsWith('/mail') },
+		{
+			href: settings.preferredMailHref(),
+			label: 'Mail',
+			icon: Mail,
+			active: (path: string) => path.startsWith('/mail')
+		},
 		...(!settings.mailOnlyNavigation
 			? [
 					{

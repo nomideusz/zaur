@@ -78,7 +78,7 @@ class AuthStore {
 			settings.setUser(payload.username);
 			this.startBackgroundSync(client, payload.username, payload.displayName);
 
-			await goto('/mail/inbox');
+			await goto(settings.preferredMailHref());
 		} catch (error) {
 			const code = classifyJmapError(error);
 			this.errorCode = code;
