@@ -183,6 +183,92 @@
 			onchange={(e) => settings.setCompactUserMenuDropdown(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
+
+	<SettingsRow
+		title="Tool icons only"
+		description="Hide Mail, Calendar, and other tool names in the top bar — icons with tooltips only"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.toolIconsOnly}
+			onchange={(e) => settings.setToolIconsOnly(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Compact tool switcher"
+		description="Tighter padding on Mail, Calendar, and Home tabs in the top bar"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactToolSwitcher}
+			onchange={(e) => settings.setCompactToolSwitcher(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Hide offline indicator"
+		description="Do not show the offline badge in the header when you lose connection"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.hideOfflineIndicator}
+			onchange={(e) => settings.setHideOfflineIndicator(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsDepends
+		enabled={!settings.hideOfflineIndicator}
+		inactiveReason={settings.hideOfflineIndicator
+			? 'Offline indicator is hidden'
+			: 'Offline indicator appearance'}
+	>
+		<SettingsRow
+			title="Compact offline indicator"
+			description="Smaller offline badge in the header"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactOfflineIndicator}
+				onchange={(e) => settings.setCompactOfflineIndicator(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsDepends>
+
+	<SettingsRow
+		title="Hide outbox unless failed"
+		description="When on, hide the outbox icon while messages are queued or sending — show it only after a send fails. When off, the icon stays in the header even when the queue is empty"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.hideOutboxUnlessFailed}
+			onchange={(e) => settings.setHideOutboxUnlessFailed(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsDepends
+		enabled={!settings.hideOutboxUnlessFailed}
+		inactiveReason={settings.hideOutboxUnlessFailed
+			? 'Outbox icon only appears when a send fails'
+			: 'Outbox menu appearance when visible'}
+	>
+		<SettingsRow
+			title="Compact outbox menu"
+			description="Tighter spacing in the queued-messages dropdown from the header"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactOutboxMenu}
+				onchange={(e) => settings.setCompactOutboxMenu(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsDepends>
 </SettingsGroup>
 
 <SettingsGroup title="Defaults">
