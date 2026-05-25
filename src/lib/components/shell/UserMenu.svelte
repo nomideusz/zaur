@@ -57,8 +57,8 @@
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.key === 'Escape' && close()}
 		>
-			<div class="border-b border-border px-3 py-2">
-				<p class="truncate text-sm font-medium text-fg">{user.name}</p>
+			<div class={cn('px-3', !settings.hidePaneBorders && 'border-b border-border', settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2')}>
+				<p class={cn('truncate font-medium text-fg', settings.compactUserMenuDropdown ? 'text-xs' : 'text-sm')}>{user.name}</p>
 				<p class="truncate text-xs text-fg-muted">{user.email}</p>
 			</div>
 
@@ -66,7 +66,8 @@
 				href="/settings/display"
 				role="menuitem"
 				class={cn(
-					'flex items-center gap-2 px-3 py-2 text-sm text-fg hover:bg-surface-sunken',
+					'flex items-center gap-2 px-3 text-sm text-fg hover:bg-surface-sunken',
+					settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2',
 					$page.url.pathname.startsWith('/settings') && 'bg-surface-sunken'
 				)}
 				onclick={close}
@@ -78,7 +79,10 @@
 			<button
 				type="button"
 				role="menuitem"
-				class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
+				class={cn(
+					'flex w-full items-center gap-2 px-3 text-left text-sm text-fg hover:bg-surface-sunken',
+					settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2'
+				)}
 				onclick={() => {
 					theme.toggle();
 					close();
@@ -93,12 +97,17 @@
 				{/if}
 			</button>
 
-			<hr class="my-1 border-border" />
+			{#if !settings.hidePaneBorders}
+				<hr class="my-1 border-border" />
+			{/if}
 
 			<button
 				type="button"
 				role="menuitem"
-				class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
+				class={cn(
+					'flex w-full items-center gap-2 px-3 text-left text-sm text-fg hover:bg-surface-sunken',
+					settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2'
+				)}
 				onclick={() => auth.logout()}
 			>
 				<LogOut class="size-4 text-fg-muted" />

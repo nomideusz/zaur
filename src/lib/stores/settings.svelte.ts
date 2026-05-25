@@ -82,6 +82,9 @@ const STORAGE = {
 	compactComposeAttachments: 'zaur:compact-compose-attachments',
 	hideActionToasts: 'zaur:hide-action-toasts',
 	compactSidebarShortcuts: 'zaur:compact-sidebar-shortcuts',
+	compactToasts: 'zaur:compact-toasts',
+	compactLoadMore: 'zaur:compact-load-more',
+	compactUserMenuDropdown: 'zaur:compact-user-menu-dropdown',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -506,6 +509,21 @@ function readCompactSidebarShortcuts(): boolean {
 	return localStorage.getItem(STORAGE.compactSidebarShortcuts) === 'true';
 }
 
+function readCompactToasts(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactToasts) === 'true';
+}
+
+function readCompactLoadMore(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactLoadMore) === 'true';
+}
+
+function readCompactUserMenuDropdown(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactUserMenuDropdown) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -665,6 +683,9 @@ class SettingsStore {
 	compactComposeAttachments = $state(readCompactComposeAttachments());
 	hideActionToasts = $state(readHideActionToasts());
 	compactSidebarShortcuts = $state(readCompactSidebarShortcuts());
+	compactToasts = $state(readCompactToasts());
+	compactLoadMore = $state(readCompactLoadMore());
+	compactUserMenuDropdown = $state(readCompactUserMenuDropdown());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -762,6 +783,9 @@ class SettingsStore {
 		this.compactComposeAttachments = readCompactComposeAttachments();
 		this.hideActionToasts = readHideActionToasts();
 		this.compactSidebarShortcuts = readCompactSidebarShortcuts();
+		this.compactToasts = readCompactToasts();
+		this.compactLoadMore = readCompactLoadMore();
+		this.compactUserMenuDropdown = readCompactUserMenuDropdown();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1352,6 +1376,27 @@ class SettingsStore {
 		}
 	}
 
+	setCompactToasts(value: boolean) {
+		this.compactToasts = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactToasts, String(value));
+		}
+	}
+
+	setCompactLoadMore(value: boolean) {
+		this.compactLoadMore = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactLoadMore, String(value));
+		}
+	}
+
+	setCompactUserMenuDropdown(value: boolean) {
+		this.compactUserMenuDropdown = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactUserMenuDropdown, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1566,6 +1611,9 @@ class SettingsStore {
 		this.setCompactComposeAttachments(false);
 		this.setHideActionToasts(false);
 		this.setCompactSidebarShortcuts(false);
+		this.setCompactToasts(false);
+		this.setCompactLoadMore(false);
+		this.setCompactUserMenuDropdown(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1631,6 +1679,9 @@ class SettingsStore {
 		this.setCompactComposeAttachments(true);
 		this.setHideActionToasts(true);
 		this.setCompactSidebarShortcuts(true);
+		this.setCompactToasts(true);
+		this.setCompactLoadMore(true);
+		this.setCompactUserMenuDropdown(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1739,6 +1790,9 @@ class SettingsStore {
 			this.compactComposeAttachments,
 			this.hideActionToasts,
 			this.compactSidebarShortcuts,
+			this.compactToasts,
+			this.compactLoadMore,
+			this.compactUserMenuDropdown,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

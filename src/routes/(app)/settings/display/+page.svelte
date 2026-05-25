@@ -329,6 +329,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact load more"
+			description="Tighter spacing for the load-more area at the bottom of the message list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactLoadMore}
+				onchange={(e) => settings.setCompactLoadMore(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Hide empty list hints"
 			description="Show only the primary empty-folder message — no icons, hints, or Write a message button"
 		>
@@ -837,6 +849,18 @@
 				class="size-4 accent-accent"
 				checked={settings.compactUserMenu}
 				onchange={(e) => settings.setCompactUserMenu(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact account menu dropdown"
+			description="Tighter spacing in the account menu panel — name, settings, theme, and sign out"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactUserMenuDropdown}
+				onchange={(e) => settings.setCompactUserMenuDropdown(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

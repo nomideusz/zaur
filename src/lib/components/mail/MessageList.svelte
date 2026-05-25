@@ -253,9 +253,22 @@
 			{/each}
 
 			{#if hasMore && onLoadMore}
-				<div class="border-t border-border px-4 py-3" bind:this={loadSentinel}>
+				<div
+					class={cn(
+						'px-4',
+						settings.compactLoadMore ? 'py-1.5' : 'py-3',
+						!settings.hideListRowDividers && 'border-t border-border'
+					)}
+					bind:this={loadSentinel}
+				>
 					{#if settings.autoLoadMore}
-						<div class="flex items-center justify-center py-2 text-xs text-fg-subtle" aria-live="polite">
+						<div
+							class={cn(
+								'flex items-center justify-center text-xs text-fg-subtle',
+								settings.compactLoadMore ? 'py-1' : 'py-2'
+							)}
+							aria-live="polite"
+						>
 							{#if loadingMore}
 								<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
 								<span class="ml-2">Loading…</span>

@@ -3,6 +3,7 @@
 	import { cn } from '$lib/utils/cn';
 	import IconButton from './IconButton.svelte';
 	import { toast, type ToastVariant } from '$lib/stores/toast.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 
 	const variantStyles: Record<ToastVariant, string> = {
 		info: 'border-border bg-surface-raised text-fg',
@@ -12,26 +13,30 @@
 </script>
 
 <div
-	class="pointer-events-none fixed bottom-4 right-4 z-50 flex w-full max-w-sm flex-col gap-2"
+	class={cn(
+		'pointer-events-none fixed z-50 flex w-full flex-col',
+		settings.compactToasts ? 'bottom-3 right-3 max-w-xs gap-1.5' : 'bottom-4 right-4 max-w-sm gap-2'
+	)}
 	aria-live="polite"
 	aria-relevant="additions"
 >
 	{#each toast.toasts as item (item.id)}
 		<div
 			class={cn(
-				'pointer-events-auto flex items-start gap-3 rounded-lg border px-3 py-2.5 shadow-md',
+				'pointer-events-auto flex items-start rounded-lg border shadow-md',
+				settings.compactToasts ? 'gap-2 px-2.5 py-2' : 'gap-3 px-3 py-2.5',
 				variantStyles[item.variant]
 			)}
 			role="status"
 		>
 			{#if item.variant === 'success'}
-				<CheckCircle2 class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+				<CheckCircle2 class={cn('shrink-0', settings.compactToasts ? 'mt-0.5 size-3.5' : 'mt-0.5 size-4')} aria-hidden="true" />
 			{:else if item.variant === 'error'}
-				<XCircle class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+				<XCircle class={cn('shrink-0', settings.compactToasts ? 'mt-0.5 size-3.5' : 'mt-0.5 size-4')} aria-hidden="true" />
 			{:else}
-				<Info class="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+				<Info class={cn('shrink-0', settings.compactToasts ? 'mt-0.5 size-3.5' : 'mt-0.5 size-4')} aria-hidden="true" />
 			{/if}
-			<p class="min-w-0 flex-1 text-sm leading-snug">{item.message}</p>
+			<p class={cn('min-w-0 flex-1 leading-snug', settings.compactToasts ? 'text-xs' : 'text-sm')}>{item.message}</p>
 			<IconButton label="Dismiss notification" onclick={() => toast.dismiss(item.id)}>
 				<X class="size-4" />
 			</IconButton>

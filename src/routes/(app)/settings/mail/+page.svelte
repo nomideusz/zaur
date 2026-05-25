@@ -118,6 +118,18 @@
 				onchange={(e) => settings.setHideActionToasts(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Compact toasts"
+			description="Smaller notification popups in the bottom-right corner"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactToasts}
+				onchange={(e) => settings.setCompactToasts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Reset">
