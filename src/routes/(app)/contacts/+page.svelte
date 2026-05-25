@@ -99,13 +99,23 @@
 	</header>
 
 	{#if showAddForm}
-		<form class="z-panel grid gap-3 rounded-xl p-4 sm:grid-cols-2" onsubmit={addContact}>
-			<label class="block text-sm">
-				<span class="mb-1 block text-fg-muted">Name</span>
+		<form
+			class={cn(
+				'z-panel grid sm:grid-cols-2',
+				settings.compactContactsAddForm ? 'gap-2 rounded-lg p-3' : 'gap-3 rounded-xl p-4'
+			)}
+			onsubmit={addContact}
+		>
+			<label class={cn('block', settings.compactContactsAddForm ? 'text-xs' : 'text-sm')}>
+				<span class={cn('block text-fg-muted', settings.compactContactsAddForm ? 'mb-0.5' : 'mb-1')}>
+					Name
+				</span>
 				<input type="text" class="z-input" placeholder="Jane Doe" bind:value={newName} />
 			</label>
-			<label class="block text-sm">
-				<span class="mb-1 block text-fg-muted">Email</span>
+			<label class={cn('block', settings.compactContactsAddForm ? 'text-xs' : 'text-sm')}>
+				<span class={cn('block text-fg-muted', settings.compactContactsAddForm ? 'mb-0.5' : 'mb-1')}>
+					Email
+				</span>
 				<input
 					type="email"
 					class="z-input"

@@ -55,12 +55,19 @@
 			</div>
 			{/if}
 		{:else if mail.mailboxesError}
-			<div class="flex flex-col items-center gap-2 px-3 py-4 text-center">
-				<p class="text-sm text-danger">{mail.mailboxesError}</p>
+			<div
+				class={cn(
+					'flex flex-col items-center text-center',
+					settings.compactFolderSidebarError ? 'gap-1 px-2 py-2' : 'gap-2 px-3 py-4'
+				)}
+			>
+				<p class={cn('text-danger', settings.compactFolderSidebarError ? 'text-xs' : 'text-sm')}>
+					{mail.mailboxesError}
+				</p>
 				{#if auth.client}
 					<Button
 						variant="ghost"
-						class="text-sm"
+						class={settings.compactFolderSidebarError ? 'text-xs' : 'text-sm'}
 						onclick={() => void mail.loadMailboxes(auth.client!)}
 					>
 						Try again

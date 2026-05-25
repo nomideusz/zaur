@@ -415,7 +415,10 @@
 	{#if mail.selectedError}
 		<div
 			class={cn(
-				'shrink-0 px-4 py-2 text-xs md:px-6',
+				'shrink-0',
+				settings.compactReaderInlineError
+					? 'px-3 py-1 text-[11px] md:px-4'
+					: 'px-4 py-2 text-xs md:px-6',
 				!settings.hideReaderPaneBorders && 'border-b',
 				mail.selectedError.startsWith('Offline')
 					? 'border-border bg-surface text-fg-muted'

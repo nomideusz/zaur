@@ -111,6 +111,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact folder sidebar error"
+			description="Smaller folder load error message and retry button in the sidebar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactFolderSidebarError}
+				onchange={(e) => settings.setCompactFolderSidebarError(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Hide connecting screen"
 			description="Blank screen while restoring your session — no “Connecting…” message"
 		>
@@ -775,6 +787,18 @@
 				onchange={(e) => settings.setCompactReaderStatus(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Compact reader inline error"
+			description="Smaller load-error banner above the message body when a thread fails to open"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactReaderInlineError}
+				onchange={(e) => settings.setCompactReaderInlineError(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Compose">
@@ -1393,6 +1417,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideContactGroupLetters}
 				onchange={(e) => settings.setHideContactGroupLetters(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact contacts add form"
+			description="Less padding and smaller labels on the add-contact form"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactContactsAddForm}
+				onchange={(e) => settings.setCompactContactsAddForm(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>
