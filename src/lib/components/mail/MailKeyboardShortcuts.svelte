@@ -129,6 +129,15 @@
 					event.preventDefault();
 					openCompose('reply-all');
 					break;
+				case 'f':
+					event.preventDefault();
+					{
+						const latest = mail.selectedThread.at(-1);
+						if (!latest) return;
+						compose.startForward(latest);
+						goto('/mail/compose?mode=forward');
+					}
+					break;
 				case 'e':
 					event.preventDefault();
 					void withLatest(
