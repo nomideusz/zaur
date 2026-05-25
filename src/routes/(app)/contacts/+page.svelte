@@ -160,11 +160,6 @@
 		)}
 	>
 		<h2 class="truncate text-sm font-semibold text-fg">{listTitle}</h2>
-		<div class="flex gap-2">
-			{#if !settings.hideContactsComposeButton}
-				<Button href="/mail/compose" variant="ghost" class="hidden sm:inline-flex">New message</Button>
-			{/if}
-		</div>
 	</div>
 
 	<div

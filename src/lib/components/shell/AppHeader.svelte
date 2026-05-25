@@ -73,6 +73,20 @@
 				New event
 			</Button>
 		{/if}
+	{:else if $page.url.pathname.startsWith('/contacts') && !settings.hideContactsComposeButton}
+		{#if settings.compactHeaderActions}
+			<IconButton label="New message" onclick={() => goto('/mail/compose')}>
+				<PenSquare class="size-4" aria-hidden="true" />
+			</IconButton>
+		{:else}
+			<IconButton label="New message" class="sm:hidden" onclick={() => goto('/mail/compose')}>
+				<PenSquare class="size-4" aria-hidden="true" />
+			</IconButton>
+			<Button href="/mail/compose" class="hidden sm:inline-flex">
+				<PenSquare class="size-4" aria-hidden="true" />
+				New message
+			</Button>
+		{/if}
 	{/if}
 
 	<UserMenu />
