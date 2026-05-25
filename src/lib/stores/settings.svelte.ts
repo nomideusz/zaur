@@ -4,12 +4,12 @@ import type { SettingsDetailLevel } from '$lib/settings/detail-level';
 import { requestBrowserNotificationPermission } from '$lib/utils/notifications';
 
 export type ListDensity = 'comfortable' | 'compact';
-export type ReaderTextSize = 'normal' | 'large';
+export type ReaderTextSize = 'small' | 'normal' | 'large';
 export type CalendarMaxEventsPerDay = 2 | 3 | 5;
 export type LoadingIndicatorStyle = 'skeleton' | 'minimal' | 'spinner';
 export type ComposeLayout = 'drawer' | 'pane';
 export type DefaultReplyMode = 'reply' | 'reply-all';
-export type ListTextSize = 'normal' | 'large';
+export type ListTextSize = 'small' | 'normal' | 'large';
 export type ComposeFormat = 'plain' | 'html';
 
 const STORAGE = {
@@ -202,16 +202,19 @@ const LIST_ROW_HEIGHT: Record<ListDensity, { preview: string; noPreview: string 
 };
 
 const READER_TEXT_SIZE: Record<ReaderTextSize, string> = {
+	small: '0.8125rem',
 	normal: '0.875rem',
 	large: '1rem'
 };
 
 const READER_MEASURE: Record<ReaderTextSize, string> = {
+	small: '40rem',
 	normal: '42rem',
 	large: '48rem'
 };
 
 const LIST_TEXT_SIZE: Record<ListTextSize, string> = {
+	small: '0.75rem',
 	normal: '0.875rem',
 	large: '1rem'
 };
@@ -1081,14 +1084,19 @@ function readSkipHomeScreen(): boolean {
 	return localStorage.getItem(STORAGE.skipHomeScreen) === 'true';
 }
 
-function readReaderTextSize(): ReaderTextSize {
+function readStoredTextSize(key: string): 'small' | 'normal' | 'large' {
 	if (!browser) return 'normal';
-	return localStorage.getItem(STORAGE.readerTextSize) === 'large' ? 'large' : 'normal';
+	const stored = localStorage.getItem(key);
+	if (stored === 'small' || stored === 'large') return stored;
+	return 'normal';
+}
+
+function readReaderTextSize(): ReaderTextSize {
+	return readStoredTextSize(STORAGE.readerTextSize);
 }
 
 function readListTextSize(): ListTextSize {
-	if (!browser) return 'normal';
-	return localStorage.getItem(STORAGE.listTextSize) === 'large' ? 'large' : 'normal';
+	return readStoredTextSize(STORAGE.listTextSize);
 }
 
 function readDefaultReplyMode(): DefaultReplyMode {

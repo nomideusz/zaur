@@ -31,7 +31,9 @@
 					<span class="shrink-0 text-fg-subtle">({formatAttachmentSize(attachment.size)})</span>
 				{/if}
 				{#if attachment.uploading}
-					<LoaderCircle class="size-3.5 shrink-0 animate-spin text-fg-subtle" aria-label="Uploading" />
+					<span class="z-spinner size-3.5 shrink-0 text-fg-subtle" aria-label="Uploading">
+						<LoaderCircle class="size-full" />
+					</span>
 				{:else if attachment.uploadError}
 					<span class="shrink-0 text-danger">Failed</span>
 				{/if}

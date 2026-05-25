@@ -251,6 +251,24 @@
 		background-color: var(--z-scrollbar-thumb-hover);
 	}
 
+	.z-spinner {
+		display: inline-flex;
+		line-height: 0;
+		transform-origin: center;
+		animation: z-spin 1s linear infinite;
+	}
+
+	@keyframes z-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	html.z-reduce-motion .z-spinner {
+		animation-duration: 1s !important;
+		animation-iteration-count: infinite !important;
+	}
+
 	@media (prefers-reduced-motion: no-preference) {
 		*::-webkit-scrollbar-thumb {
 			transition: background-color 150ms ease;

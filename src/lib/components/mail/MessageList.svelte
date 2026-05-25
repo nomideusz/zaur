@@ -296,14 +296,18 @@
 							aria-live="polite"
 						>
 							{#if loadingMore}
-								<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+								<span class="z-spinner size-4" aria-hidden="true">
+									<LoaderCircle class="size-full" />
+								</span>
 								<span class="ml-2">Loading…</span>
 							{/if}
 						</div>
 					{:else}
 						<Button variant="ghost" class="w-full" disabled={loadingMore} onclick={onLoadMore}>
 							{#if loadingMore}
-								<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+								<span class="z-spinner size-4" aria-hidden="true">
+									<LoaderCircle class="size-full" />
+								</span>
 								Loading…
 							{:else}
 								Load more

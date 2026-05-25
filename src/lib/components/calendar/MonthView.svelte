@@ -109,7 +109,9 @@
 
 	{#if calendar.eventsLoading}
 		<div class="flex flex-1 items-center justify-center gap-2 text-sm text-fg-muted">
-			<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+			<span class="z-spinner size-4" aria-hidden="true">
+				<LoaderCircle class="size-full" />
+			</span>
 			Loading events…
 		</div>
 	{:else if calendar.error}

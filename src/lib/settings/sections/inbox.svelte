@@ -15,6 +15,7 @@
 			value={settings.listTextSize}
 			onchange={(e) => settings.setListTextSize(e.currentTarget.value as ListTextSize)}
 		>
+			<option value="small">Small</option>
 			<option value="normal">Normal</option>
 			<option value="large">Large</option>
 		</select>

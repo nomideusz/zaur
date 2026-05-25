@@ -36,7 +36,9 @@
 	>
 		{#if calendar.calendarsLoading}
 			<div class="flex items-center gap-2 px-3 py-4 text-sm text-fg-muted">
-				<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+				<span class="z-spinner size-4" aria-hidden="true">
+					<LoaderCircle class="size-full" />
+				</span>
 				Loading calendars…
 			</div>
 		{:else if calendar.supported === false}

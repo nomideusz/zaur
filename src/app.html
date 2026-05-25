@@ -25,6 +25,16 @@
 					var listText = localStorage.getItem('zaur:list-text-size');
 					if (listText === 'large') {
 						document.documentElement.style.setProperty('--z-list-text', '1rem');
+					} else if (listText === 'small') {
+						document.documentElement.style.setProperty('--z-list-text', '0.75rem');
+					}
+					var readerText = localStorage.getItem('zaur:reader-text-size');
+					if (readerText === 'large') {
+						document.documentElement.style.setProperty('--z-reader-text', '1rem');
+						document.documentElement.style.setProperty('--z-reader-measure', '48rem');
+					} else if (readerText === 'small') {
+						document.documentElement.style.setProperty('--z-reader-text', '0.8125rem');
+						document.documentElement.style.setProperty('--z-reader-measure', '40rem');
 					}
 				} catch (e) {}
 			})();

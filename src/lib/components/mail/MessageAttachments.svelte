@@ -53,7 +53,9 @@
 					onclick={() => handleDownload(attachment)}
 				>
 					{#if downloadingId === attachment.blobId}
-						<LoaderCircle class="size-3.5 shrink-0 animate-spin text-fg-subtle" aria-hidden="true" />
+						<span class="z-spinner size-3.5 shrink-0 text-fg-subtle" aria-hidden="true">
+							<LoaderCircle class="size-full" />
+						</span>
 					{:else}
 						<FileText class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
 					{/if}

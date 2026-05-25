@@ -15,6 +15,7 @@
 			value={settings.readerTextSize}
 			onchange={(e) => settings.setReaderTextSize(e.currentTarget.value as ReaderTextSize)}
 		>
+			<option value="small">Small</option>
 			<option value="normal">Normal</option>
 			<option value="large">Large</option>
 		</select>

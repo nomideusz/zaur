@@ -23,7 +23,9 @@
 		)}
 		aria-busy="true"
 	>
-		<LoaderCircle class={cn('animate-spin', compact ? 'size-3.5' : 'size-4')} aria-hidden="true" />
+		<span class={cn('z-spinner', compact ? 'size-3.5' : 'size-4')} aria-hidden="true">
+			<LoaderCircle class="size-full" />
+		</span>
 		<span>{label}</span>
 	</div>
 {:else}
