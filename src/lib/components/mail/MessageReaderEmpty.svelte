@@ -30,9 +30,11 @@
 	)}
 >
 	{#if showPrompts}
+		{#if !settings.hideEmptyReaderIcon}
 		<div class={cn('rounded-full bg-surface-sunken', settings.compactEmptyReader ? 'p-3' : 'p-4')}>
 			<Mail class={cn('text-fg-subtle', settings.compactEmptyReader ? 'size-6' : 'size-8')} aria-hidden="true" />
 		</div>
+		{/if}
 		<div>
 			<h2 class={cn('font-medium text-fg', settings.compactEmptyReader ? 'text-base' : 'text-lg')}>{title}</h2>
 			{#if !settings.hideEmptyReaderDescription}

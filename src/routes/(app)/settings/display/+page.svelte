@@ -813,6 +813,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Hide empty reader icon"
+			description="Remove the mail icon above the empty reading pane title"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideEmptyReaderIcon}
+				onchange={(e) => settings.setHideEmptyReaderIcon(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Compact empty reader"
 			description="Less padding and smaller text in the reading pane when no message is selected"
 		>
@@ -1419,6 +1431,30 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact toasts"
+			description="Smaller notification popups in the bottom-right corner"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactToasts}
+				onchange={(e) => settings.setCompactToasts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide toast icons"
+			description="Text-only notification popups — no success, error, or info icons"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideToastIcons}
+				onchange={(e) => settings.setHideToastIcons(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Hide outbox unless failed"
 			description="Do not show the outbox icon while messages are sending — only when a send fails"
 		>
@@ -1645,6 +1681,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideContactsRowMailIcon}
 				onchange={(e) => settings.setHideContactsRowMailIcon(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide contacts email line"
+			description="Show only contact names in the list — no email address under each name"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideContactsEmailLine}
+				onchange={(e) => settings.setHideContactsEmailLine(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

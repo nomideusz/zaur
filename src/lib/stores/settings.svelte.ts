@@ -29,6 +29,7 @@ const STORAGE = {
 	hideEmptyReaderPrompts: 'zaur:hide-empty-reader-prompts',
 	hideEmptyReaderDescription: 'zaur:hide-empty-reader-description',
 	hideEmptyReaderActions: 'zaur:hide-empty-reader-actions',
+	hideEmptyReaderIcon: 'zaur:hide-empty-reader-icon',
 	hideThreadSummary: 'zaur:hide-thread-summary',
 	showFolderUnreadCounts: 'zaur:show-folder-unread-counts',
 	showBulkSelect: 'zaur:show-bulk-select',
@@ -87,6 +88,7 @@ const STORAGE = {
 	hideActionToasts: 'zaur:hide-action-toasts',
 	compactSidebarShortcuts: 'zaur:compact-sidebar-shortcuts',
 	compactToasts: 'zaur:compact-toasts',
+	hideToastIcons: 'zaur:hide-toast-icons',
 	compactLoadMore: 'zaur:compact-load-more',
 	compactUserMenuDropdown: 'zaur:compact-user-menu-dropdown',
 	compactOutboxMenu: 'zaur:compact-outbox-menu',
@@ -141,6 +143,7 @@ const STORAGE = {
 	hideContactsEmptyActions: 'zaur:hide-contacts-empty-actions',
 	hideContactsHoverActions: 'zaur:hide-contacts-hover-actions',
 	hideContactsRowMailIcon: 'zaur:hide-contacts-row-mail-icon',
+	hideContactsEmailLine: 'zaur:hide-contacts-email-line',
 	compactReaderInlineError: 'zaur:compact-reader-inline-error',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
@@ -294,6 +297,11 @@ function readHideEmptyReaderDescription(): boolean {
 function readHideEmptyReaderActions(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideEmptyReaderActions) === 'true';
+}
+
+function readHideEmptyReaderIcon(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideEmptyReaderIcon) === 'true';
 }
 
 function readHideThreadSummary(): boolean {
@@ -591,6 +599,11 @@ function readCompactToasts(): boolean {
 	return localStorage.getItem(STORAGE.compactToasts) === 'true';
 }
 
+function readHideToastIcons(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideToastIcons) === 'true';
+}
+
 function readCompactLoadMore(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactLoadMore) === 'true';
@@ -861,6 +874,11 @@ function readHideContactsRowMailIcon(): boolean {
 	return localStorage.getItem(STORAGE.hideContactsRowMailIcon) === 'true';
 }
 
+function readHideContactsEmailLine(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideContactsEmailLine) === 'true';
+}
+
 function readCompactReaderInlineError(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactReaderInlineError) === 'true';
@@ -972,6 +990,7 @@ class SettingsStore {
 	hideEmptyReaderPrompts = $state(readHideEmptyReaderPrompts());
 	hideEmptyReaderDescription = $state(readHideEmptyReaderDescription());
 	hideEmptyReaderActions = $state(readHideEmptyReaderActions());
+	hideEmptyReaderIcon = $state(readHideEmptyReaderIcon());
 	hideThreadSummary = $state(readHideThreadSummary());
 	showFolderUnreadCounts = $state(readShowFolderUnreadCounts());
 	showBulkSelect = $state(readShowBulkSelect());
@@ -1030,6 +1049,7 @@ class SettingsStore {
 	hideActionToasts = $state(readHideActionToasts());
 	compactSidebarShortcuts = $state(readCompactSidebarShortcuts());
 	compactToasts = $state(readCompactToasts());
+	hideToastIcons = $state(readHideToastIcons());
 	compactLoadMore = $state(readCompactLoadMore());
 	compactUserMenuDropdown = $state(readCompactUserMenuDropdown());
 	compactOutboxMenu = $state(readCompactOutboxMenu());
@@ -1084,6 +1104,7 @@ class SettingsStore {
 	hideContactsEmptyActions = $state(readHideContactsEmptyActions());
 	hideContactsHoverActions = $state(readHideContactsHoverActions());
 	hideContactsRowMailIcon = $state(readHideContactsRowMailIcon());
+	hideContactsEmailLine = $state(readHideContactsEmailLine());
 	compactReaderInlineError = $state(readCompactReaderInlineError());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
@@ -1129,6 +1150,7 @@ class SettingsStore {
 		this.hideEmptyReaderPrompts = readHideEmptyReaderPrompts();
 		this.hideEmptyReaderDescription = readHideEmptyReaderDescription();
 		this.hideEmptyReaderActions = readHideEmptyReaderActions();
+		this.hideEmptyReaderIcon = readHideEmptyReaderIcon();
 		this.hideThreadSummary = readHideThreadSummary();
 		this.showFolderUnreadCounts = readShowFolderUnreadCounts();
 		this.showBulkSelect = readShowBulkSelect();
@@ -1187,6 +1209,7 @@ class SettingsStore {
 		this.hideActionToasts = readHideActionToasts();
 		this.compactSidebarShortcuts = readCompactSidebarShortcuts();
 		this.compactToasts = readCompactToasts();
+		this.hideToastIcons = readHideToastIcons();
 		this.compactLoadMore = readCompactLoadMore();
 		this.compactUserMenuDropdown = readCompactUserMenuDropdown();
 		this.compactOutboxMenu = readCompactOutboxMenu();
@@ -1241,6 +1264,7 @@ class SettingsStore {
 		this.hideContactsEmptyActions = readHideContactsEmptyActions();
 		this.hideContactsHoverActions = readHideContactsHoverActions();
 		this.hideContactsRowMailIcon = readHideContactsRowMailIcon();
+		this.hideContactsEmailLine = readHideContactsEmailLine();
 		this.compactReaderInlineError = readCompactReaderInlineError();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
@@ -1450,6 +1474,13 @@ class SettingsStore {
 		this.hideEmptyReaderActions = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.hideEmptyReaderActions, String(value));
+		}
+	}
+
+	setHideEmptyReaderIcon(value: boolean) {
+		this.hideEmptyReaderIcon = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideEmptyReaderIcon, String(value));
 		}
 	}
 
@@ -1868,6 +1899,13 @@ class SettingsStore {
 		}
 	}
 
+	setHideToastIcons(value: boolean) {
+		this.hideToastIcons = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideToastIcons, String(value));
+		}
+	}
+
 	setCompactLoadMore(value: boolean) {
 		this.compactLoadMore = value;
 		if (browser) {
@@ -2247,6 +2285,13 @@ class SettingsStore {
 		}
 	}
 
+	setHideContactsEmailLine(value: boolean) {
+		this.hideContactsEmailLine = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideContactsEmailLine, String(value));
+		}
+	}
+
 	setCompactReaderInlineError(value: boolean) {
 		this.compactReaderInlineError = value;
 		if (browser) {
@@ -2407,6 +2452,7 @@ class SettingsStore {
 		this.setHideEmptyReaderPrompts(false);
 		this.setHideEmptyReaderDescription(false);
 		this.setHideEmptyReaderActions(false);
+		this.setHideEmptyReaderIcon(false);
 		this.setHideThreadSummary(false);
 		this.setShowFolderUnreadCounts(true);
 		this.setShowBulkSelect(true);
@@ -2473,6 +2519,7 @@ class SettingsStore {
 		this.setHideActionToasts(false);
 		this.setCompactSidebarShortcuts(false);
 		this.setCompactToasts(false);
+		this.setHideToastIcons(false);
 		this.setCompactLoadMore(false);
 		this.setCompactUserMenuDropdown(false);
 		this.setCompactOutboxMenu(false);
@@ -2527,6 +2574,7 @@ class SettingsStore {
 		this.setHideContactsEmptyActions(false);
 		this.setHideContactsHoverActions(false);
 		this.setHideContactsRowMailIcon(false);
+		this.setHideContactsEmailLine(false);
 		this.setCompactReaderInlineError(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
@@ -2596,6 +2644,7 @@ class SettingsStore {
 		this.setHideActionToasts(true);
 		this.setCompactSidebarShortcuts(true);
 		this.setCompactToasts(true);
+		this.setHideToastIcons(true);
 		this.setCompactLoadMore(true);
 		this.setCompactUserMenuDropdown(true);
 		this.setCompactOutboxMenu(true);
@@ -2650,6 +2699,7 @@ class SettingsStore {
 		this.setHideContactsEmptyActions(true);
 		this.setHideContactsHoverActions(true);
 		this.setHideContactsRowMailIcon(true);
+		this.setHideContactsEmailLine(true);
 		this.setCompactReaderInlineError(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
@@ -2664,6 +2714,7 @@ class SettingsStore {
 		this.setHideEmptyReaderPrompts(true);
 		this.setHideEmptyReaderDescription(true);
 		this.setHideEmptyReaderActions(true);
+		this.setHideEmptyReaderIcon(true);
 		this.setHideThreadSummary(true);
 		this.setHideFolderSidebarHeader(true);
 		this.setHideFolderIcons(true);
@@ -2711,6 +2762,7 @@ class SettingsStore {
 			this.hideEmptyReaderPrompts,
 			this.hideEmptyReaderDescription,
 			this.hideEmptyReaderActions,
+			this.hideEmptyReaderIcon,
 			this.hideFolderSidebarHeader,
 			this.hideFolderIcons,
 			this.hideListHeader,
@@ -2766,6 +2818,7 @@ class SettingsStore {
 			this.hideActionToasts,
 			this.compactSidebarShortcuts,
 			this.compactToasts,
+			this.hideToastIcons,
 			this.compactLoadMore,
 			this.compactUserMenuDropdown,
 			this.compactOutboxMenu,
@@ -2820,6 +2873,7 @@ class SettingsStore {
 			this.hideContactsEmptyActions,
 			this.hideContactsHoverActions,
 			this.hideContactsRowMailIcon,
+			this.hideContactsEmailLine,
 			this.compactReaderInlineError,
 			this.rememberLastMailbox
 		];

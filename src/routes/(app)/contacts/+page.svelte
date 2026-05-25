@@ -183,7 +183,9 @@
 									{/if}
 									<div class="min-w-0 flex-1">
 										<p class="truncate text-sm font-medium text-fg">{contact.name}</p>
-										<p class="truncate text-xs text-fg-muted">{contact.email}</p>
+										{#if !settings.hideContactsEmailLine}
+											<p class="truncate text-xs text-fg-muted">{contact.email}</p>
+										{/if}
 										{#if !settings.hideContactMessageCounts && contact.count > 1}
 											<p class="text-[11px] text-fg-subtle">{contact.count} messages</p>
 										{/if}

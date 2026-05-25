@@ -29,12 +29,14 @@
 			)}
 			role="status"
 		>
+			{#if !settings.hideToastIcons}
 			{#if item.variant === 'success'}
 				<CheckCircle2 class={cn('shrink-0', settings.compactToasts ? 'mt-0.5 size-3.5' : 'mt-0.5 size-4')} aria-hidden="true" />
 			{:else if item.variant === 'error'}
 				<XCircle class={cn('shrink-0', settings.compactToasts ? 'mt-0.5 size-3.5' : 'mt-0.5 size-4')} aria-hidden="true" />
 			{:else}
 				<Info class={cn('shrink-0', settings.compactToasts ? 'mt-0.5 size-3.5' : 'mt-0.5 size-4')} aria-hidden="true" />
+			{/if}
 			{/if}
 			<p class={cn('min-w-0 flex-1 leading-snug', settings.compactToasts ? 'text-xs' : 'text-sm')}>{item.message}</p>
 			<IconButton label="Dismiss notification" onclick={() => toast.dismiss(item.id)}>
