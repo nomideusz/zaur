@@ -89,6 +89,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Show message counts"
+			description="Unread and total counts in the list header"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showMessageCounts}
+				onchange={(e) => settings.setShowMessageCounts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Expand list until opened"
 			description="Use the full width for the message list on desktop until you pick a message"
 		>
@@ -125,6 +137,42 @@
 				class="size-4 accent-accent"
 				checked={settings.blockExternalContent}
 				onchange={(e) => settings.setBlockExternalContent(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Show quick reply"
+			description="Reply box at the bottom of an open message — use Full reply for the compose panel"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showQuickReply}
+				onchange={(e) => settings.setShowQuickReply(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Expand all thread messages"
+			description="Show every message in a conversation expanded by default"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.expandAllThreadMessages}
+				onchange={(e) => settings.setExpandAllThreadMessages(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Show contact actions"
+			description="Save contact and copy email links in the message header"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showReaderContactActions}
+				onchange={(e) => settings.setShowReaderContactActions(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

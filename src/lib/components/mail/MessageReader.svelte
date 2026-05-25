@@ -69,9 +69,14 @@
 
 	$effect(() => {
 		thread.map((m) => m.id).join(',');
+		settings.expandAllThreadMessages;
 		showImagesOnce = false;
-		const latestId = thread.at(-1)?.id;
-		expandedIds = latestId ? new Set([latestId]) : new Set();
+		if (settings.expandAllThreadMessages) {
+			expandedIds = new Set(thread.map((message) => message.id));
+		} else {
+			const latestId = thread.at(-1)?.id;
+			expandedIds = latestId ? new Set([latestId]) : new Set();
+		}
 	});
 
 	function formatWhen(iso: string) {
@@ -414,20 +419,22 @@
 										>
 											{message.from.email}
 										</button>
-										<button
-											type="button"
-											class="mt-1 text-xs text-accent hover:underline"
-											onclick={() => saveContact(message)}
-										>
-											Save contact
-										</button>
-										<button
-											type="button"
-											class="mt-1 ml-3 text-xs text-fg-subtle hover:text-accent hover:underline"
-											onclick={() => copyEmail(message.from.email)}
-										>
-											Copy email
-										</button>
+										{#if settings.showReaderContactActions}
+											<button
+												type="button"
+												class="mt-1 text-xs text-accent hover:underline"
+												onclick={() => saveContact(message)}
+											>
+												Save contact
+											</button>
+											<button
+												type="button"
+												class="mt-1 ml-3 text-xs text-fg-subtle hover:text-accent hover:underline"
+												onclick={() => copyEmail(message.from.email)}
+											>
+												Copy email
+											</button>
+										{/if}
 									</div>
 									<div class="flex items-center gap-2">
 										<p class="text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</p>
@@ -490,7 +497,7 @@
 		{/each}
 	</div>
 
-	{#if latest && auth.client}
+	{#if latest && auth.client && settings.showQuickReply}
 		<footer class="shrink-0 border-t border-border bg-surface/80 px-4 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-6">
 			<div class="flex w-full max-w-(--z-reader-measure) gap-2">
 				<textarea

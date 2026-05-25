@@ -11,6 +11,10 @@ const STORAGE = {
 	showAvatars: 'zaur:show-avatars',
 	showStarsInList: 'zaur:show-stars-in-list',
 	showAttachmentIcons: 'zaur:show-attachment-icons',
+	showMessageCounts: 'zaur:show-message-counts',
+	showQuickReply: 'zaur:show-quick-reply',
+	showReaderContactActions: 'zaur:show-reader-contact-actions',
+	expandAllThreadMessages: 'zaur:expand-all-thread-messages',
 	hideSidebarShortcuts: 'zaur:hide-sidebar-shortcuts',
 	expandListUntilOpen: 'zaur:expand-list-until-open',
 	mailOnlyNavigation: 'zaur:mail-only-navigation',
@@ -67,6 +71,26 @@ function readShowStarsInList(): boolean {
 function readShowAttachmentIcons(): boolean {
 	if (!browser) return true;
 	return localStorage.getItem(STORAGE.showAttachmentIcons) !== 'false';
+}
+
+function readShowMessageCounts(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showMessageCounts) !== 'false';
+}
+
+function readShowQuickReply(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showQuickReply) !== 'false';
+}
+
+function readShowReaderContactActions(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showReaderContactActions) !== 'false';
+}
+
+function readExpandAllThreadMessages(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.expandAllThreadMessages) === 'true';
 }
 
 function readHideSidebarShortcuts(): boolean {
@@ -131,6 +155,10 @@ class SettingsStore {
 	showAvatars = $state(readShowAvatars());
 	showStarsInList = $state(readShowStarsInList());
 	showAttachmentIcons = $state(readShowAttachmentIcons());
+	showMessageCounts = $state(readShowMessageCounts());
+	showQuickReply = $state(readShowQuickReply());
+	showReaderContactActions = $state(readShowReaderContactActions());
+	expandAllThreadMessages = $state(readExpandAllThreadMessages());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
 	expandListUntilOpen = $state(readExpandListUntilOpen());
 	mailOnlyNavigation = $state(readMailOnlyNavigation());
@@ -152,6 +180,10 @@ class SettingsStore {
 		this.showAvatars = readShowAvatars();
 		this.showStarsInList = readShowStarsInList();
 		this.showAttachmentIcons = readShowAttachmentIcons();
+		this.showMessageCounts = readShowMessageCounts();
+		this.showQuickReply = readShowQuickReply();
+		this.showReaderContactActions = readShowReaderContactActions();
+		this.expandAllThreadMessages = readExpandAllThreadMessages();
 		this.hideSidebarShortcuts = readHideSidebarShortcuts();
 		this.expandListUntilOpen = readExpandListUntilOpen();
 		this.mailOnlyNavigation = readMailOnlyNavigation();
@@ -226,6 +258,34 @@ class SettingsStore {
 		this.showAttachmentIcons = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.showAttachmentIcons, String(value));
+		}
+	}
+
+	setShowMessageCounts(value: boolean) {
+		this.showMessageCounts = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showMessageCounts, String(value));
+		}
+	}
+
+	setShowQuickReply(value: boolean) {
+		this.showQuickReply = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showQuickReply, String(value));
+		}
+	}
+
+	setShowReaderContactActions(value: boolean) {
+		this.showReaderContactActions = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showReaderContactActions, String(value));
+		}
+	}
+
+	setExpandAllThreadMessages(value: boolean) {
+		this.expandAllThreadMessages = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.expandAllThreadMessages, String(value));
 		}
 	}
 

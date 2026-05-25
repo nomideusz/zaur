@@ -122,10 +122,10 @@
 		<h2 class="hidden truncate text-sm font-semibold text-fg md:block">
 			{mailboxName.startsWith('Search:') ? mailboxName.slice(8) : mailboxName}
 		</h2>
-		<span class="hidden shrink-0 text-xs text-fg-subtle md:inline">{countLabel}</span>
+		<span class="hidden shrink-0 text-xs text-fg-subtle md:inline">{settings.showMessageCounts ? countLabel : ''}</span>
 		{#if mailboxRouteId}
-			<span class="ml-auto shrink-0 text-xs text-fg-subtle md:ml-2 md:hidden">{countLabel}</span>
-		{:else}
+			<span class="ml-auto shrink-0 text-xs text-fg-subtle md:ml-2 md:hidden">{settings.showMessageCounts ? countLabel : ''}</span>
+		{:else if settings.showMessageCounts}
 			<span class="ml-2 shrink-0 text-xs text-fg-subtle">{countLabel}</span>
 		{/if}
 	</div>
