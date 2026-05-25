@@ -101,7 +101,7 @@
 		<span class="text-xs text-fg-muted">
 			{mail.selectedCount} selected
 		</span>
-		{#if !mail.selectedCount}
+		{#if !mail.selectedCount && !settings.hideSelectionHints}
 			<span class="hidden text-xs text-fg-subtle sm:inline">Click messages to select</span>
 		{/if}
 

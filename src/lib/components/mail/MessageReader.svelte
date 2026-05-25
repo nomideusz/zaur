@@ -463,7 +463,9 @@
 										{/if}
 									</div>
 									<div class="flex items-center gap-2">
-										<p class="text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</p>
+										{#if !settings.hideReaderTimestamps}
+											<p class="text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</p>
+										{/if}
 										{#if thread.length > 1}
 											<button
 												type="button"
@@ -512,10 +514,14 @@
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-sm">
 								<span class="font-medium text-fg">{message.from.name}</span>
-								<span class="ml-2 text-fg-muted">{message.preview || message.bodyText.slice(0, 120)}</span>
+								{#if !settings.hideCollapsedThreadPreviews}
+									<span class="ml-2 text-fg-muted">{message.preview || message.bodyText.slice(0, 120)}</span>
+								{/if}
 							</p>
 						</div>
-						<span class="shrink-0 text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</span>
+						{#if !settings.hideReaderTimestamps}
+							<span class="shrink-0 text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</span>
+						{/if}
 						<ChevronDown class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
 					</button>
 				{/if}
@@ -539,8 +545,10 @@
 					<Button disabled={!quickReply.trim() || quickReplySending} onclick={sendQuickReply}>
 						{quickReplySending ? 'Sending…' : 'Send'}
 					</Button>
-					<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter</span>
-					<Button variant="ghost" class="!px-2 text-xs" onclick={reply}>Full reply</Button>
+					{#if !settings.hideComposeHints}
+						<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter</span>
+						<Button variant="ghost" class="!px-2 text-xs" onclick={reply}>Full reply</Button>
+					{/if}
 				</div>
 			</div>
 		</footer>

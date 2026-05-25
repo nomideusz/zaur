@@ -209,6 +209,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Hide selection hints"
+			description="Remove the “Click messages to select” hint in bulk selection mode"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideSelectionHints}
+				onchange={(e) => settings.setHideSelectionHints(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Expand list until opened"
 			description="Use the full width for the message list on desktop until you pick a message"
 		>
@@ -365,6 +377,30 @@
 				class="size-4 accent-accent"
 				checked={settings.hideThreadSummary}
 				onchange={(e) => settings.setHideThreadSummary(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide reader timestamps"
+			description="Do not show received date and time on messages in the reading pane"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideReaderTimestamps}
+				onchange={(e) => settings.setHideReaderTimestamps(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide collapsed thread previews"
+			description="Show only sender names on collapsed messages in a thread — no preview snippet"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideCollapsedThreadPreviews}
+				onchange={(e) => settings.setHideCollapsedThreadPreviews(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

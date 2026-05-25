@@ -45,6 +45,9 @@ const STORAGE = {
 	hideAppTitle: 'zaur:hide-app-title',
 	compactUserMenu: 'zaur:compact-user-menu',
 	hideListEmptyHints: 'zaur:hide-list-empty-hints',
+	hideSelectionHints: 'zaur:hide-selection-hints',
+	hideReaderTimestamps: 'zaur:hide-reader-timestamps',
+	hideCollapsedThreadPreviews: 'zaur:hide-collapsed-thread-previews',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -284,6 +287,21 @@ function readHideListEmptyHints(): boolean {
 	return localStorage.getItem(STORAGE.hideListEmptyHints) === 'true';
 }
 
+function readHideSelectionHints(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideSelectionHints) === 'true';
+}
+
+function readHideReaderTimestamps(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideReaderTimestamps) === 'true';
+}
+
+function readHideCollapsedThreadPreviews(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideCollapsedThreadPreviews) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -406,6 +424,9 @@ class SettingsStore {
 	hideAppTitle = $state(readHideAppTitle());
 	compactUserMenu = $state(readCompactUserMenu());
 	hideListEmptyHints = $state(readHideListEmptyHints());
+	hideSelectionHints = $state(readHideSelectionHints());
+	hideReaderTimestamps = $state(readHideReaderTimestamps());
+	hideCollapsedThreadPreviews = $state(readHideCollapsedThreadPreviews());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -466,6 +487,9 @@ class SettingsStore {
 		this.hideAppTitle = readHideAppTitle();
 		this.compactUserMenu = readCompactUserMenu();
 		this.hideListEmptyHints = readHideListEmptyHints();
+		this.hideSelectionHints = readHideSelectionHints();
+		this.hideReaderTimestamps = readHideReaderTimestamps();
+		this.hideCollapsedThreadPreviews = readHideCollapsedThreadPreviews();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -797,6 +821,27 @@ class SettingsStore {
 		}
 	}
 
+	setHideSelectionHints(value: boolean) {
+		this.hideSelectionHints = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideSelectionHints, String(value));
+		}
+	}
+
+	setHideReaderTimestamps(value: boolean) {
+		this.hideReaderTimestamps = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideReaderTimestamps, String(value));
+		}
+	}
+
+	setHideCollapsedThreadPreviews(value: boolean) {
+		this.hideCollapsedThreadPreviews = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideCollapsedThreadPreviews, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -974,6 +1019,9 @@ class SettingsStore {
 		this.setHideAppTitle(false);
 		this.setCompactUserMenu(false);
 		this.setHideListEmptyHints(false);
+		this.setHideSelectionHints(false);
+		this.setHideReaderTimestamps(false);
+		this.setHideCollapsedThreadPreviews(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1002,6 +1050,9 @@ class SettingsStore {
 		this.setHideAppTitle(true);
 		this.setCompactUserMenu(true);
 		this.setHideListEmptyHints(true);
+		this.setHideSelectionHints(true);
+		this.setHideReaderTimestamps(true);
+		this.setHideCollapsedThreadPreviews(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1071,6 +1122,9 @@ class SettingsStore {
 			this.hideAppTitle,
 			this.compactUserMenu,
 			this.hideListEmptyHints,
+			this.hideSelectionHints,
+			this.hideReaderTimestamps,
+			this.hideCollapsedThreadPreviews,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;
