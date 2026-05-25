@@ -97,10 +97,11 @@
 				class="z-btn-ghost text-sm"
 				onclick={async () => {
 					const changed = await settings.refreshFromAccount();
-					if (changed) {
-						const { toast } = await import('$lib/stores/toast.svelte');
-						toast.show('Settings updated from your account', 'success');
-					}
+					const { toast } = await import('$lib/stores/toast.svelte');
+					toast.show(
+						changed ? 'Settings updated from your account' : 'Settings are already up to date',
+						changed ? 'success' : 'info'
+					);
 				}}
 			>
 				Refresh

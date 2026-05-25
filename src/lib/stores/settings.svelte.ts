@@ -1567,9 +1567,15 @@ class SettingsStore {
 	}
 
 	async refreshFromAccount(): Promise<boolean> {
+		if (!this.userEmail) return false;
+
 		const before = this.exportLocalPreferences();
-		await this.syncFromAccount();
-		return this.exportLocalPreferences() !== before;
+		const result = await pullAccountSettings(this.userEmail, () => this.init(), { force: true });
+		if (result === 'applied') {
+			void import('$lib/stores/theme.svelte').then(({ theme }) => theme.init());
+			void import('$lib/stores/visual.svelte').then(({ visual }) => visual.init());
+		}
+		return result === 'applied' || this.exportLocalPreferences() !== before;
 	}
 
 	async syncToAccount(): Promise<boolean> {

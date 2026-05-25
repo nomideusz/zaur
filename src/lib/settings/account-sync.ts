@@ -113,7 +113,8 @@ export async function pushAccountSettingsNow(): Promise<boolean> {
 
 export async function pullAccountSettings(
 	email: string | null,
-	apply: () => void
+	apply: () => void,
+	options?: { force?: boolean }
 ): Promise<'applied' | 'unchanged' | 'empty'> {
 	if (!browser || !email) return 'empty';
 
@@ -141,7 +142,7 @@ export async function pullAccountSettings(
 				localStorage.removeItem(ACCOUNT_SETTINGS_SYNC_AT_KEY);
 			}
 		}
-		if (localAt && remote.updatedAt <= localAt) {
+		if (!options?.force && localAt && remote.updatedAt <= localAt) {
 			if (localAt > remote.updatedAt) {
 				scheduleAccountSettingsPush();
 			}
