@@ -3220,6 +3220,7 @@ class SettingsStore {
 		this.setCompactExternalContentBanner(false);
 		this.setPreferPlainText(false);
 		this.setCompactReaderBody(false);
+		this.setCompactAttachments(false);
 		this.setHideReaderPaneBorders(false);
 		this.setShowQuickReply(true);
 		this.setCompactQuickReply(false);
@@ -3262,7 +3263,6 @@ class SettingsStore {
 		this.setIconOnlyComposeDiscard(false);
 		this.setHideComposePanelBorders(false);
 		this.setCompactComposeAttachments(false);
-		this.setCompactAttachments(false);
 		this.setShowComposeContactSuggestions(true);
 		this.setCompactComposeSuggestions(false);
 	}

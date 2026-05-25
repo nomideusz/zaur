@@ -271,12 +271,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/compose-compact-attachments",
-		"href": "/settings/compose",
-		"title": "Compact attachments",
-		"description": ""
-	},
-	{
 		"id": "/settings/compose-compact-compose-attachments",
 		"href": "/settings/compose",
 		"title": "Compact compose attachments",
@@ -814,6 +808,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-block-external-content",
 		"href": "/settings/reading",
 		"title": "Block external content",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-compact-attachments",
+		"href": "/settings/reading",
+		"title": "Compact attachments",
 		"description": ""
 	},
 	{

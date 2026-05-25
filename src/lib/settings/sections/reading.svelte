@@ -101,6 +101,20 @@
 	</SettingsRow>
 </SettingsGroup>
 
+<SettingsGroup title="Attachments" description="How files appear in the reading pane and compose.">
+	<SettingsRow
+		title="Compact attachments"
+		description="Smaller attachment chips without the count label or file sizes — in reader and compose"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactAttachments}
+			onchange={(e) => settings.setCompactAttachments(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
 <SettingsGroup title="Toolbar & actions" description="Buttons and reply options in the reading pane header.">
 	<SettingsRow
 		title="Show quick reply"
