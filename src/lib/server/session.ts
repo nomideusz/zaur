@@ -8,7 +8,7 @@ export interface SessionData {
 	password: string;
 }
 
-const COOKIE_NAME = 'zaur_session';
+export const COOKIE_NAME = 'zaur_session';
 const ALGO = 'aes-256-gcm';
 const IV_LEN = 12;
 const TAG_LEN = 16;

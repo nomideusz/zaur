@@ -3,6 +3,8 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
+	import PushNotificationStatus from '$lib/components/settings/PushNotificationStatus.svelte';
+	import { pwa } from '$lib/stores/pwa.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
@@ -11,10 +13,36 @@
 </svelte:head>
 
 <SettingsPanel title="Behavior" description="Notifications, shortcuts, and what happens when you read or send mail.">
+	<SettingsGroup title="App & notifications" description="Install the app and manage background mail alerts.">
+		<SettingsRow
+			title="App install"
+			description={pwa.isInstalled
+				? 'Running as an installed app on this device'
+				: 'Install for home-screen access, offline use, and reliable push delivery'}
+		>
+			{#if pwa.isInstalled}
+				<span class="text-xs font-medium text-green-700 dark:text-green-300">Installed</span>
+			{:else if pwa.canInstall}
+				<button type="button" class="z-btn-ghost text-sm" onclick={() => pwa.showInstallPromptAgain()}>
+					Install
+				</button>
+			{:else}
+				<span class="text-xs text-fg-muted">Use browser menu to install</span>
+			{/if}
+		</SettingsRow>
+
+		<SettingsRow
+			title="Push notification status"
+			description="Background alerts when new mail arrives — separate from in-app toasts"
+		>
+			<PushNotificationStatus />
+		</SettingsRow>
+	</SettingsGroup>
+
 	<SettingsGroup title="While using mail" description="Everyday behavior in your inbox.">
 		<SettingsRow
 			title="Notify on new mail"
-			description="Toast and browser notification when new mail arrives in Inbox"
+			description="Toast and push notification when new mail arrives in Inbox, including when the app is closed"
 		>
 			<input
 				type="checkbox"

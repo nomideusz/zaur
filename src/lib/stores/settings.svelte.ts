@@ -1,7 +1,10 @@
 import { browser } from '$app/environment';
 import { collectSyncableSettings, pullAccountSettings, scheduleAccountSettingsPush, setSyncAccountEmail, isOtherAccountsScopedKey } from '$lib/settings/account-sync';
 import type { SettingsDetailLevel } from '$lib/settings/detail-level';
-import { requestBrowserNotificationPermission } from '$lib/utils/notifications';
+import {
+	requestBrowserNotificationPermission,
+	syncPushSubscription
+} from '$lib/utils/notifications';
 
 export type ListDensity = 'comfortable' | 'compact';
 export type ReaderTextSize = 'small' | 'normal' | 'large';
@@ -2816,6 +2819,7 @@ class SettingsStore {
 		this.notifyOnNewMail = value;
 		if (browser) {
 			this.writeStorage(STORAGE.notifyOnNewMail, String(value));
+			void syncPushSubscription(value);
 			if (value) {
 				void requestBrowserNotificationPermission();
 			}

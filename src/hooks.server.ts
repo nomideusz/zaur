@@ -1,6 +1,14 @@
 import type { Handle } from '@sveltejs/kit';
+import { pushWatcher } from '$lib/server/push-watcher';
+
+let pushWatcherStarted = false;
 
 export const handle: Handle = async ({ event, resolve }) => {
+	if (!pushWatcherStarted) {
+		pushWatcherStarted = true;
+		void pushWatcher.start();
+	}
+
 	const response = await resolve(event);
 
 	response.headers.set('X-Frame-Options', 'DENY');
