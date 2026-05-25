@@ -16,6 +16,8 @@
 	const fieldLabelClass = $derived(
 		settings.hideComposeFieldLabels ? 'sr-only' : 'w-14 shrink-0 text-fg-subtle'
 	);
+	const composeBorderB = $derived(settings.hideComposePanelBorders ? '' : 'border-b border-border');
+	const composeBorderT = $derived(settings.hideComposePanelBorders ? '' : 'border-t border-border');
 
 	interface Props {
 		mode?: ComposeMode;
@@ -154,7 +156,7 @@
 		)}
 		onclick={(e) => e.stopPropagation()}
 	>
-		<header class="flex shrink-0 items-center justify-between border-b border-border px-5 py-3.5">
+		<header class={cn('flex shrink-0 items-center justify-between px-5 py-3.5', composeBorderB)}>
 			<div>
 				<h2 class="text-base font-semibold text-fg">{title}</h2>
 				{#if !settings.hideComposeHints && draftStatus}
@@ -173,9 +175,9 @@
 				void send();
 			}}
 		>
-			<div class="shrink-0 space-y-0 border-b border-border bg-surface/50">
+			<div class={cn('shrink-0 space-y-0 bg-surface/50', composeBorderB)}>
 				{#if !settings.hideComposeFromLine}
-				<div class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
+				<div class={cn('flex items-center gap-3 px-5 py-2.5 text-sm', composeBorderB)}>
 					<span class={fieldLabelClass}>From</span>
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-fg">
@@ -193,7 +195,7 @@
 				</div>
 				{/if}
 
-				<div class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
+				<div class={cn('flex items-center gap-3 px-5 py-2.5 text-sm', composeBorderB)}>
 					<span class={fieldLabelClass}>To</span>
 					<ComposeRecipientInput
 						bind:inputElement={toInput}
@@ -214,7 +216,7 @@
 				</div>
 
 				{#if compose.showCcBcc && (settings.showCcBccInCompose || compose.cc.trim() || compose.bcc.trim())}
-					<div class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
+					<div class={cn('flex items-center gap-3 px-5 py-2.5 text-sm', composeBorderB)}>
 						<span class={fieldLabelClass}>Cc</span>
 						<ComposeRecipientInput
 							value={compose.cc}
@@ -223,7 +225,7 @@
 							oninput={(value) => (compose.cc = value)}
 						/>
 					</div>
-					<label class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
+					<label class={cn('flex items-center gap-3 px-5 py-2.5 text-sm', composeBorderB)}>
 						<span class={fieldLabelClass}>Bcc</span>
 						<ComposeRecipientInput
 							value={compose.bcc}
@@ -257,7 +259,7 @@
 				></textarea>
 
 				{#if quotedPart}
-					<details class="shrink-0 border-t border-border bg-surface/50 px-5 py-2" open={!settings.collapseQuotedInCompose}>
+					<details class={cn('shrink-0 bg-surface/50 px-5 py-2', composeBorderT)} open={!settings.collapseQuotedInCompose}>
 						<summary class="cursor-pointer text-xs font-medium text-fg-muted">Quoted message</summary>
 						<pre class="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed text-fg-subtle">{quotedPart.trim()}</pre>
 					</details>
@@ -267,10 +269,10 @@
 			<ComposeAttachments />
 
 			{#if compose.error}
-				<p class="border-t border-border px-5 py-2 text-sm text-danger" role="alert">{compose.error}</p>
+				<p class={cn('px-5 py-2 text-sm text-danger', composeBorderT)} role="alert">{compose.error}</p>
 			{/if}
 
-			<footer class="flex shrink-0 flex-wrap items-center justify-between gap-2 border-t border-border px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+			<footer class={cn('flex shrink-0 flex-wrap items-center justify-between gap-2 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]', composeBorderT)}>
 				<div class="flex flex-wrap items-center gap-3">
 					<Button variant="ghost" type="button" onclick={openFilePicker}>
 						<Paperclip class="size-4" aria-hidden="true" />
@@ -286,7 +288,13 @@
 					{#if !settings.hideComposeHints}
 						<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter to send</span>
 					{/if}
-					<Button variant="ghost" type="button" onclick={close}>Discard</Button>
+					{#if settings.iconOnlyComposeDiscard}
+						<IconButton label="Discard compose" onclick={close}>
+							<X class="size-4" />
+						</IconButton>
+					{:else}
+						<Button variant="ghost" type="button" onclick={close}>Discard</Button>
+					{/if}
 					<Button type="submit" disabled={!compose.canSend}>
 						{compose.isSending ? 'Sending…' : compose.hasUploadingAttachments ? 'Uploading…' : 'Send'}
 					</Button>

@@ -76,6 +76,9 @@ const STORAGE = {
 	hideSearchListPrefix: 'zaur:hide-search-list-prefix',
 	compactMobileSearch: 'zaur:compact-mobile-search',
 	hideAccountFieldHints: 'zaur:hide-account-field-hints',
+	compactQuickReply: 'zaur:compact-quick-reply',
+	hideComposePanelBorders: 'zaur:hide-compose-panel-borders',
+	iconOnlyComposeDiscard: 'zaur:icon-only-compose-discard',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -470,6 +473,21 @@ function readHideAccountFieldHints(): boolean {
 	return localStorage.getItem(STORAGE.hideAccountFieldHints) === 'true';
 }
 
+function readCompactQuickReply(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactQuickReply) === 'true';
+}
+
+function readHideComposePanelBorders(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideComposePanelBorders) === 'true';
+}
+
+function readIconOnlyComposeDiscard(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.iconOnlyComposeDiscard) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -623,6 +641,9 @@ class SettingsStore {
 	hideSearchListPrefix = $state(readHideSearchListPrefix());
 	compactMobileSearch = $state(readCompactMobileSearch());
 	hideAccountFieldHints = $state(readHideAccountFieldHints());
+	compactQuickReply = $state(readCompactQuickReply());
+	hideComposePanelBorders = $state(readHideComposePanelBorders());
+	iconOnlyComposeDiscard = $state(readIconOnlyComposeDiscard());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -714,6 +735,9 @@ class SettingsStore {
 		this.hideSearchListPrefix = readHideSearchListPrefix();
 		this.compactMobileSearch = readCompactMobileSearch();
 		this.hideAccountFieldHints = readHideAccountFieldHints();
+		this.compactQuickReply = readCompactQuickReply();
+		this.hideComposePanelBorders = readHideComposePanelBorders();
+		this.iconOnlyComposeDiscard = readIconOnlyComposeDiscard();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1262,6 +1286,27 @@ class SettingsStore {
 		}
 	}
 
+	setCompactQuickReply(value: boolean) {
+		this.compactQuickReply = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactQuickReply, String(value));
+		}
+	}
+
+	setHideComposePanelBorders(value: boolean) {
+		this.hideComposePanelBorders = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideComposePanelBorders, String(value));
+		}
+	}
+
+	setIconOnlyComposeDiscard(value: boolean) {
+		this.iconOnlyComposeDiscard = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.iconOnlyComposeDiscard, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1470,6 +1515,9 @@ class SettingsStore {
 		this.setHideSearchListPrefix(false);
 		this.setCompactMobileSearch(false);
 		this.setHideAccountFieldHints(false);
+		this.setCompactQuickReply(false);
+		this.setHideComposePanelBorders(false);
+		this.setIconOnlyComposeDiscard(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1529,6 +1577,9 @@ class SettingsStore {
 		this.setHideSearchListPrefix(true);
 		this.setCompactMobileSearch(true);
 		this.setHideAccountFieldHints(true);
+		this.setCompactQuickReply(true);
+		this.setHideComposePanelBorders(true);
+		this.setIconOnlyComposeDiscard(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1630,6 +1681,9 @@ class SettingsStore {
 			this.hideSearchListPrefix,
 			this.compactMobileSearch,
 			this.hideAccountFieldHints,
+			this.compactQuickReply,
+			this.hideComposePanelBorders,
+			this.iconOnlyComposeDiscard,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

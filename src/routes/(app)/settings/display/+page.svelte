@@ -405,6 +405,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact quick reply"
+			description="Single-line reply box with less padding at the bottom of the reading pane"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactQuickReply}
+				onchange={(e) => settings.setCompactQuickReply(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Expand all thread messages"
 			description="Show every message in a conversation expanded by default"
 		>
@@ -667,6 +679,30 @@
 				class="size-4 accent-accent"
 				checked={settings.iconOnlyComposeAttach}
 				onchange={(e) => settings.setIconOnlyComposeAttach(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Icon-only discard button"
+			description="Show an X icon instead of the Discard label in compose"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.iconOnlyComposeDiscard}
+				onchange={(e) => settings.setIconOnlyComposeDiscard(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide compose panel borders"
+			description="Remove divider lines between header, fields, and footer in the compose drawer"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideComposePanelBorders}
+				onchange={(e) => settings.setHideComposePanelBorders(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 
