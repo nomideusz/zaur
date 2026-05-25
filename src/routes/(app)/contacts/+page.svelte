@@ -160,7 +160,7 @@
 			!hideBorders && 'border-b border-border'
 		)}
 	>
-		<h2 class="truncate text-sm font-semibold text-fg">{listTitle}</h2>
+		<h2 class="z-type-pane-title">{listTitle}</h2>
 		<IconButton
 			label="Add contact"
 			class="md:hidden"
@@ -235,7 +235,7 @@
 				{#each groupedContacts as [letter, group] (letter)}
 					<section>
 						{#if !settings.hideContactGroupLetters}
-							<h3 class="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-fg-subtle">
+							<h3 class="z-type-label mb-1 px-1">
 								{letter}
 							</h3>
 						{/if}
@@ -260,7 +260,7 @@
 											<Avatar name={contact.name} email={contact.email} />
 										{/if}
 										<div class="min-w-0 flex-1">
-											<p class="truncate text-sm font-medium text-fg">{contact.name}</p>
+											<p class="truncate text-sm font-semibold tracking-tight text-fg">{contact.name}</p>
 											{#if !settings.hideContactsEmailLine}
 												<p class="truncate text-xs text-fg-muted">{contact.email}</p>
 											{/if}

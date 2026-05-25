@@ -37,7 +37,7 @@
 			!hideBorders && 'border-b border-border'
 		)}
 	>
-		<h2 class="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Contacts</h2>
+		<h2 class="z-type-label">Contacts</h2>
 		{#if !settings.hideContactsPageSubtitle && !settings.compactContactsPage}
 			<p class="mt-1 text-xs text-fg-muted">{totalCount} saved</p>
 		{/if}

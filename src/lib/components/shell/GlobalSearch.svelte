@@ -119,7 +119,7 @@
 				{#if !settings.hideSearchDropdownHeaders}
 					<p
 						class={cn(
-							'px-3 text-[11px] font-semibold uppercase tracking-wide text-fg-subtle',
+							'z-type-label px-3',
 							settings.compactSearchDropdown ? 'py-1' : 'py-1.5'
 						)}
 					>

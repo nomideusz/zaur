@@ -29,7 +29,7 @@
 	)}
 	style="view-transition-name: app-header;"
 >
-	<a href={homeHref} class="text-base font-semibold tracking-tight text-fg">
+	<a href={homeHref} class="z-type-brand text-base">
 		<span class={settings.hideAppTitle ? 'sr-only' : ''}>ZAUR</span>
 	</a>
 

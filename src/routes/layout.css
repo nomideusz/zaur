@@ -1,8 +1,8 @@
 @import 'tailwindcss';
 
 @theme {
-	/* https://modernfontstacks.com — Humanist + Monospace Code */
-	--font-sans: Seravek, 'Gill Sans Nova', Ubuntu, Calibri, 'DejaVu Sans', source-sans-pro, sans-serif;
+	/* https://modernfontstacks.com — System UI + Monospace Code */
+	--font-sans: system-ui, sans-serif;
 	--font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono',
 		monospace;
 
@@ -330,9 +330,46 @@
 		font-size: var(--z-list-text);
 	}
 
+	.z-type-brand {
+		@apply font-bold tracking-tight text-fg;
+	}
+
+	.z-type-label {
+		@apply text-[11px] font-semibold uppercase tracking-wider text-fg-subtle;
+	}
+
+	.z-type-pane-title {
+		@apply truncate text-sm font-semibold tracking-tight text-fg;
+	}
+
+	.z-type-reader-title {
+		@apply font-bold tracking-tight leading-snug text-fg;
+	}
+
+	.z-type-list-sender {
+		@apply truncate text-xs font-medium text-fg-muted;
+	}
+
+	.z-type-list-subject {
+		@apply truncate font-semibold tracking-tight text-fg;
+		font-size: var(--z-list-text);
+	}
+
+	.z-type-list-subject--unread {
+		@apply font-bold;
+	}
+
+	.z-type-list-preview {
+		@apply mt-0.5 truncate text-xs leading-snug text-fg-subtle;
+	}
+
+	.z-type-list-time {
+		@apply shrink-0 text-xs tabular-nums tracking-tight text-fg-subtle;
+	}
+
 	.z-email-body {
 		font-size: var(--z-reader-text);
-		line-height: 1.65;
+		line-height: 1.7;
 		overflow-wrap: anywhere;
 	}
 

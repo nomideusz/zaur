@@ -190,7 +190,7 @@
 			{/if}
 			<h2
 				class={cn(
-					'hidden truncate text-sm font-semibold text-fg md:block',
+					'z-type-pane-title hidden md:block',
 					settings.hideListHeader && 'md:hidden'
 				)}
 			>

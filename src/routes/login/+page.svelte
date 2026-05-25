@@ -34,7 +34,7 @@
 <div class="flex min-h-dvh items-center justify-center bg-surface px-4">
 	<div class="z-panel w-full max-w-md rounded-xl p-8 shadow-md">
 		<div class="mb-8 text-center">
-			<p class="text-2xl font-semibold tracking-tight text-fg">ZAUR</p>
+			<p class="z-type-brand text-2xl">ZAUR</p>
 			<p class="mt-1 text-sm text-fg-muted">Sign in to {appConfig.jmapServerUrl.replace('https://', '')}</p>
 		</div>
 

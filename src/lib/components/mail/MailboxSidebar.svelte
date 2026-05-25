@@ -29,7 +29,7 @@
 			settings.hideFolderSidebarHeader ? 'sr-only' : ''
 		)}
 	>
-		<h2 class="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Folders</h2>
+		<h2 class="z-type-label">Folders</h2>
 	</div>
 
 	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto {settings.compactFolderSidebar ? 'p-1' : 'p-2'}">

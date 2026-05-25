@@ -28,6 +28,12 @@
 	const senderLabel = $derived(
 		settings.showSenderEmailInList ? message.from.email || message.from.name : message.from.name
 	);
+	const subjectClass = $derived(
+		cn(
+			'z-type-list-subject',
+			settings.highlightUnreadInList && message.unread && 'z-type-list-subject--unread'
+		)
+	);
 
 	const rowClass = $derived(
 		cn(
@@ -97,12 +103,7 @@
 					{#if settings.showStarsInList && message.starred}
 						<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 					{/if}
-					<span
-						class={cn(
-							'truncate text-sm',
-							settings.highlightUnreadInList && message.unread ? 'font-semibold text-fg' : 'text-fg'
-						)}
-					>
+					<span class={subjectClass}>
 						{message.subject}
 					</span>
 					{#if settings.showAttachmentIcons && message.hasAttachment}
@@ -110,45 +111,35 @@
 					{/if}
 				</div>
 				{#if settings.showListTimestamps}
-					<span class="shrink-0 text-xs text-fg-subtle">{when}</span>
+					<span class="z-type-list-time">{when}</span>
 				{/if}
 			</div>
 			{#if settings.showListPreview && message.preview}
-				<p class="mt-0.5 truncate text-xs text-fg-subtle">{message.preview}</p>
+				<p class="z-type-list-preview">{message.preview}</p>
 			{/if}
 		{:else}
-		<div class="flex items-baseline justify-between gap-2">
-			<span
-				class={cn(
-					'truncate text-sm',
-					settings.highlightUnreadInList && message.unread ? 'font-semibold text-fg' : 'text-fg'
-				)}
-			>
-				{senderLabel}
-			</span>
-			{#if settings.showListTimestamps}
-				<span class="shrink-0 text-xs text-fg-subtle">{when}</span>
+			<div class="flex items-baseline justify-between gap-2">
+				<span class="z-type-list-sender">
+					{senderLabel}
+				</span>
+				{#if settings.showListTimestamps}
+					<span class="z-type-list-time">{when}</span>
+				{/if}
+			</div>
+			<div class="mt-0.5 flex items-center gap-1.5">
+				{#if settings.showStarsInList && message.starred}
+					<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
+				{/if}
+				<span class={subjectClass}>
+					{message.subject}
+				</span>
+				{#if settings.showAttachmentIcons && message.hasAttachment}
+					<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
+				{/if}
+			</div>
+			{#if settings.showListPreview && message.preview}
+				<p class="z-type-list-preview">{message.preview}</p>
 			{/if}
-		</div>
-		<div class="mt-0.5 flex items-center gap-1.5">
-			{#if settings.showStarsInList && message.starred}
-				<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
-			{/if}
-			<span
-				class={cn(
-					'truncate text-sm',
-					settings.highlightUnreadInList && message.unread ? 'font-medium text-fg' : 'text-fg-muted'
-				)}
-			>
-				{message.subject}
-			</span>
-			{#if settings.showAttachmentIcons && message.hasAttachment}
-				<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
-			{/if}
-		</div>
-		{#if settings.showListPreview && message.preview}
-			<p class="mt-0.5 truncate text-xs text-fg-subtle">{message.preview}</p>
-		{/if}
 		{/if}
 	</div>
 {/snippet}

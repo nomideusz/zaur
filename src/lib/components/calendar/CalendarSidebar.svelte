@@ -24,7 +24,7 @@
 				!hideBorders && 'border-border'
 			)}
 		>
-			<h2 class="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Calendars</h2>
+			<h2 class="z-type-label">Calendars</h2>
 		</div>
 	{/if}
 

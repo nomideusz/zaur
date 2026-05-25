@@ -262,7 +262,7 @@
 
 			<div class="min-w-0 flex-1">
 				<div class="max-w-(--z-reader-measure)">
-				<h1 class={cn('line-clamp-2 font-semibold leading-snug text-fg', settings.compactReaderHeader ? 'text-base md:text-lg' : 'text-lg md:text-xl')}>{subject}</h1>
+				<h1 class={cn('z-type-reader-title line-clamp-2', settings.compactReaderHeader ? 'text-base md:text-lg' : 'text-lg md:text-xl')}>{subject}</h1>
 
 				{#if thread.length > 1 && !settings.hideThreadSummary}
 					<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">

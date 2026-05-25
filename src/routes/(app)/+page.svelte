@@ -25,7 +25,7 @@
 	)}
 >
 	<div>
-		<h1 class={cn('font-semibold text-fg', settings.compactHomeScreen ? 'text-xl' : 'text-2xl')}>
+		<h1 class={cn('z-type-reader-title', settings.compactHomeScreen ? 'text-xl' : 'text-2xl')}>
 			Welcome back
 		</h1>
 		{#if !settings.hideHomeScreenSubtitle && !settings.compactHomeScreen}
