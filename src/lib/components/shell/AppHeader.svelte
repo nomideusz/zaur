@@ -19,7 +19,8 @@
 
 <header
 	class={cn(
-		'z-panel relative z-40 flex h-(--height-header) shrink-0 items-center gap-4 px-4',
+		'z-panel relative z-40 flex h-(--height-header) shrink-0 items-center',
+		settings.compactAppHeader ? 'gap-2 px-3' : 'gap-4 px-4',
 		!settings.hidePaneBorders && 'border-b'
 	)}
 	style="view-transition-name: app-header;"

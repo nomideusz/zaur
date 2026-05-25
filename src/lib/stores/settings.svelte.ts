@@ -91,6 +91,9 @@ const STORAGE = {
 	compactSettingsPanel: 'zaur:compact-settings-panel',
 	compactMoveMenu: 'zaur:compact-move-menu',
 	compactSearchDropdown: 'zaur:compact-search-dropdown',
+	compactComposeSuggestions: 'zaur:compact-compose-suggestions',
+	compactOfflineIndicator: 'zaur:compact-offline-indicator',
+	compactAppHeader: 'zaur:compact-app-header',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -560,6 +563,21 @@ function readCompactSearchDropdown(): boolean {
 	return localStorage.getItem(STORAGE.compactSearchDropdown) === 'true';
 }
 
+function readCompactComposeSuggestions(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactComposeSuggestions) === 'true';
+}
+
+function readCompactOfflineIndicator(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactOfflineIndicator) === 'true';
+}
+
+function readCompactAppHeader(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactAppHeader) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -728,6 +746,9 @@ class SettingsStore {
 	compactSettingsPanel = $state(readCompactSettingsPanel());
 	compactMoveMenu = $state(readCompactMoveMenu());
 	compactSearchDropdown = $state(readCompactSearchDropdown());
+	compactComposeSuggestions = $state(readCompactComposeSuggestions());
+	compactOfflineIndicator = $state(readCompactOfflineIndicator());
+	compactAppHeader = $state(readCompactAppHeader());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -834,11 +855,15 @@ class SettingsStore {
 		this.compactSettingsPanel = readCompactSettingsPanel();
 		this.compactMoveMenu = readCompactMoveMenu();
 		this.compactSearchDropdown = readCompactSearchDropdown();
+		this.compactComposeSuggestions = readCompactComposeSuggestions();
+		this.compactOfflineIndicator = readCompactOfflineIndicator();
+		this.compactAppHeader = readCompactAppHeader();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
 		this.hideSidebarShortcuts = readHideSidebarShortcuts();
 		this.applyLayoutWidth();
+		this.applyHeaderLayout();
 		this.expandListUntilOpen = readExpandListUntilOpen();
 		this.mailOnlyNavigation = readMailOnlyNavigation();
 		this.enableKeyboardShortcuts = readEnableKeyboardShortcuts();
@@ -1487,6 +1512,28 @@ class SettingsStore {
 		}
 	}
 
+	setCompactComposeSuggestions(value: boolean) {
+		this.compactComposeSuggestions = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactComposeSuggestions, String(value));
+		}
+	}
+
+	setCompactOfflineIndicator(value: boolean) {
+		this.compactOfflineIndicator = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactOfflineIndicator, String(value));
+		}
+	}
+
+	setCompactAppHeader(value: boolean) {
+		this.compactAppHeader = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactAppHeader, String(value));
+		}
+		this.applyHeaderLayout();
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1710,6 +1757,9 @@ class SettingsStore {
 		this.setCompactSettingsPanel(false);
 		this.setCompactMoveMenu(false);
 		this.setCompactSearchDropdown(false);
+		this.setCompactComposeSuggestions(false);
+		this.setCompactOfflineIndicator(false);
+		this.setCompactAppHeader(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1784,6 +1834,9 @@ class SettingsStore {
 		this.setCompactSettingsPanel(true);
 		this.setCompactMoveMenu(true);
 		this.setCompactSearchDropdown(true);
+		this.setCompactComposeSuggestions(true);
+		this.setCompactOfflineIndicator(true);
+		this.setCompactAppHeader(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1901,6 +1954,9 @@ class SettingsStore {
 			this.compactSettingsPanel,
 			this.compactMoveMenu,
 			this.compactSearchDropdown,
+			this.compactComposeSuggestions,
+			this.compactOfflineIndicator,
+			this.compactAppHeader,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;
@@ -1969,6 +2025,11 @@ class SettingsStore {
 		if (!browser) return;
 		document.documentElement.style.setProperty('--width-sidebar', this.compactLayout ? '12rem' : '15rem');
 		document.documentElement.style.setProperty('--width-list', this.compactLayout ? '18rem' : '22rem');
+	}
+
+	private applyHeaderLayout() {
+		if (!browser) return;
+		document.documentElement.style.setProperty('--height-header', this.compactAppHeader ? '2.75rem' : '3.25rem');
 	}
 
 	private applyListLayout() {

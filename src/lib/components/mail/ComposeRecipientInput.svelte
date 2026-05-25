@@ -94,7 +94,8 @@
 					<button
 						type="button"
 						class={cn(
-							'flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-sunken',
+							'flex w-full items-center gap-2 px-3 text-left text-sm hover:bg-surface-sunken',
+							settings.compactComposeSuggestions ? 'py-1.5' : 'py-2',
 							index === activeIndex && 'bg-surface-sunken'
 						)}
 						onmousedown={(e) => e.preventDefault()}

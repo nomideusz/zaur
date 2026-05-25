@@ -753,6 +753,18 @@
 				onchange={(e) => settings.setShowComposeContactSuggestions(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Compact compose suggestions"
+			description="Tighter spacing in recipient autocomplete while composing"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactComposeSuggestions}
+				onchange={(e) => settings.setCompactComposeSuggestions(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Layout">
@@ -825,6 +837,18 @@
 				class="size-4 accent-accent"
 				checked={settings.compactHeaderActions}
 				onchange={(e) => settings.setCompactHeaderActions(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact app header"
+			description="Shorter top bar with less horizontal padding and spacing"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactAppHeader}
+				onchange={(e) => settings.setCompactAppHeader(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 
@@ -1019,6 +1043,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideOfflineIndicator}
 				onchange={(e) => settings.setHideOfflineIndicator(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact offline indicator"
+			description="Smaller offline badge in the header"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactOfflineIndicator}
+				onchange={(e) => settings.setCompactOfflineIndicator(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

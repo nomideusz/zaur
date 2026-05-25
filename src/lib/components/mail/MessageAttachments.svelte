@@ -45,8 +45,9 @@
 				<button
 					type="button"
 					class={cn(
-						'inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-surface-raised text-xs text-fg transition-colors hover:bg-surface-sunken disabled:opacity-60',
-						settings.compactAttachments ? 'px-2 py-1' : 'px-3 py-2'
+						'inline-flex max-w-full items-center gap-2 rounded-md bg-surface-raised text-xs text-fg transition-colors hover:bg-surface-sunken disabled:opacity-60',
+						settings.compactAttachments ? 'px-2 py-1' : 'px-3 py-2',
+						!settings.hideReaderPaneBorders && 'border border-border'
 					)}
 					disabled={downloadingId === attachment.blobId}
 					onclick={() => handleDownload(attachment)}
