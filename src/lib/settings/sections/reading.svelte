@@ -2,7 +2,7 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import { settings, type ReaderTextSize } from '$lib/stores/settings.svelte';
+	import { settings, type DefaultReplyMode, type ReaderTextSize } from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="Message content & privacy" description="Text size and how HTML mail is handled.">
@@ -116,6 +116,21 @@
 </SettingsGroup>
 
 <SettingsGroup title="Toolbar & actions" description="Buttons and reply options in the reading pane header.">
+	<SettingsRow
+		title="Default reply action"
+		description="Primary reply button in the reading pane — r always replies, a always reply all"
+	>
+		<select
+			class="z-input w-auto"
+			value={settings.defaultReplyMode}
+			onchange={(e) =>
+				settings.setDefaultReplyMode(e.currentTarget.value as DefaultReplyMode)}
+		>
+			<option value="reply">Reply</option>
+			<option value="reply-all">Reply all</option>
+		</select>
+	</SettingsRow>
+
 	<SettingsRow
 		title="Show quick reply"
 		description="Reply box at the bottom of an open message — use Full reply for the compose panel"

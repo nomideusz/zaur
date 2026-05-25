@@ -3222,6 +3222,7 @@ class SettingsStore {
 		this.setCompactReaderBody(false);
 		this.setCompactAttachments(false);
 		this.setHideReaderPaneBorders(false);
+		this.setDefaultReplyMode('reply');
 		this.setShowQuickReply(true);
 		this.setCompactQuickReply(false);
 		this.setShowReaderContactActions(true);
@@ -3251,7 +3252,6 @@ class SettingsStore {
 
 	resetComposeSettings() {
 		this.setComposeLayout('drawer');
-		this.setDefaultReplyMode('reply');
 		this.setDefaultComposeFormat('plain');
 		this.setHideComposeHints(false);
 		this.setCollapseQuotedInCompose(false);

@@ -301,12 +301,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/compose-default-reply-action",
-		"href": "/settings/compose",
-		"title": "Default reply action",
-		"description": ""
-	},
-	{
 		"id": "/settings/compose-drawer-width",
 		"href": "/settings/compose",
 		"title": "Drawer width",
@@ -880,6 +874,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-compact-reader-toolbar",
 		"href": "/settings/reading",
 		"title": "Compact reader toolbar",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-default-reply-action",
+		"href": "/settings/reading",
+		"title": "Default reply action",
 		"description": ""
 	},
 	{
