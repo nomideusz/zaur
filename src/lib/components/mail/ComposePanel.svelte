@@ -274,7 +274,7 @@
 				<div class="flex flex-wrap items-center gap-3">
 					<Button variant="ghost" type="button" onclick={openFilePicker}>
 						<Paperclip class="size-4" aria-hidden="true" />
-						Attach
+						<span class={settings.iconOnlyComposeAttach ? 'sr-only' : ''}>Attach</span>
 					</Button>
 					{#if !settings.hideComposeHints && !settings.signature.trim() && mode === 'new'}
 						<a href="/settings/account" class="text-xs text-fg-subtle hover:text-accent hover:underline">

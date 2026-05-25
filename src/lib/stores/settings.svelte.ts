@@ -61,6 +61,9 @@ const STORAGE = {
 	hideListActiveIndicator: 'zaur:hide-list-active-indicator',
 	compactListRows: 'zaur:compact-list-rows',
 	hideMailShortcutsHelp: 'zaur:hide-mail-shortcuts-help',
+	hideMoveMenuLabels: 'zaur:hide-move-menu-labels',
+	iconOnlyComposeAttach: 'zaur:icon-only-compose-attach',
+	compactReaderHeader: 'zaur:compact-reader-header',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -380,6 +383,21 @@ function readHideMailShortcutsHelp(): boolean {
 	return localStorage.getItem(STORAGE.hideMailShortcutsHelp) === 'true';
 }
 
+function readHideMoveMenuLabels(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideMoveMenuLabels) === 'true';
+}
+
+function readIconOnlyComposeAttach(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.iconOnlyComposeAttach) === 'true';
+}
+
+function readCompactReaderHeader(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactReaderHeader) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -518,6 +536,9 @@ class SettingsStore {
 	hideListActiveIndicator = $state(readHideListActiveIndicator());
 	compactListRows = $state(readCompactListRows());
 	hideMailShortcutsHelp = $state(readHideMailShortcutsHelp());
+	hideMoveMenuLabels = $state(readHideMoveMenuLabels());
+	iconOnlyComposeAttach = $state(readIconOnlyComposeAttach());
+	compactReaderHeader = $state(readCompactReaderHeader());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -594,6 +615,9 @@ class SettingsStore {
 		this.hideListActiveIndicator = readHideListActiveIndicator();
 		this.compactListRows = readCompactListRows();
 		this.hideMailShortcutsHelp = readHideMailShortcutsHelp();
+		this.hideMoveMenuLabels = readHideMoveMenuLabels();
+		this.iconOnlyComposeAttach = readIconOnlyComposeAttach();
+		this.compactReaderHeader = readCompactReaderHeader();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1037,6 +1061,27 @@ class SettingsStore {
 		}
 	}
 
+	setHideMoveMenuLabels(value: boolean) {
+		this.hideMoveMenuLabels = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideMoveMenuLabels, String(value));
+		}
+	}
+
+	setIconOnlyComposeAttach(value: boolean) {
+		this.iconOnlyComposeAttach = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.iconOnlyComposeAttach, String(value));
+		}
+	}
+
+	setCompactReaderHeader(value: boolean) {
+		this.compactReaderHeader = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactReaderHeader, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1230,6 +1275,9 @@ class SettingsStore {
 		this.setHideListActiveIndicator(false);
 		this.setCompactListRows(false);
 		this.setHideMailShortcutsHelp(false);
+		this.setHideMoveMenuLabels(false);
+		this.setIconOnlyComposeAttach(false);
+		this.setCompactReaderHeader(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1274,6 +1322,9 @@ class SettingsStore {
 		this.setHideListActiveIndicator(true);
 		this.setCompactListRows(true);
 		this.setHideMailShortcutsHelp(true);
+		this.setHideMoveMenuLabels(true);
+		this.setIconOnlyComposeAttach(true);
+		this.setCompactReaderHeader(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1360,6 +1411,9 @@ class SettingsStore {
 			this.hideListActiveIndicator,
 			this.compactListRows,
 			this.hideMailShortcutsHelp,
+			this.hideMoveMenuLabels,
+			this.iconOnlyComposeAttach,
+			this.compactReaderHeader,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

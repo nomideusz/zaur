@@ -234,7 +234,7 @@
 <svelte:window onclick={() => (moreOpen = false)} />
 
 <article class="flex min-h-0 flex-1 flex-col overflow-hidden bg-surface-raised" style="view-transition-name: message-reader;">
-	<header class="shrink-0 border-b border-border px-4 py-3 md:px-6">
+	<header class={cn('shrink-0 border-b border-border', settings.compactReaderHeader ? 'px-4 py-2 md:px-5' : 'px-4 py-3 md:px-6')}>
 		<div class="flex items-start gap-2">
 			{#if onBack}
 				<IconButton label="Back to list" class="mt-0.5 md:hidden" onclick={onBack}>
@@ -244,7 +244,7 @@
 
 			<div class="min-w-0 flex-1">
 				<div class="max-w-(--z-reader-measure)">
-				<h1 class="line-clamp-2 text-lg font-semibold leading-snug text-fg md:text-xl">{subject}</h1>
+				<h1 class={cn('line-clamp-2 font-semibold leading-snug text-fg', settings.compactReaderHeader ? 'text-base md:text-lg' : 'text-lg md:text-xl')}>{subject}</h1>
 
 				{#if thread.length > 1 && !settings.hideThreadSummary}
 					<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
@@ -373,7 +373,9 @@
 								Archive
 							</button>
 							{#if moveTargets.length}
-								<p class="px-3 py-1.5 text-xs font-medium text-fg-subtle">Move to</p>
+								{#if !settings.hideMoveMenuLabels}
+									<p class="px-3 py-1.5 text-xs font-medium text-fg-subtle">Move to</p>
+								{/if}
 								{#each moveTargets as mailbox (mailbox.id)}
 									<button
 										type="button"

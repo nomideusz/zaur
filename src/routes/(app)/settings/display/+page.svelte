@@ -417,6 +417,30 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact reader header"
+			description="Smaller subject line and less padding at the top of the reading pane"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactReaderHeader}
+				onchange={(e) => settings.setCompactReaderHeader(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide move menu labels"
+			description="Remove the “Move to” heading above folder names in move menus"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideMoveMenuLabels}
+				onchange={(e) => settings.setHideMoveMenuLabels(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Hide thread summary"
 			description="Do not show message count and expand/collapse controls under the subject"
 		>
@@ -559,6 +583,18 @@
 				class="size-4 accent-accent"
 				checked={settings.compactComposePanel}
 				onchange={(e) => settings.setCompactComposePanel(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Icon-only attach button"
+			description="Show only the paperclip icon for attachments in compose — no “Attach” label"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.iconOnlyComposeAttach}
+				onchange={(e) => settings.setIconOnlyComposeAttach(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

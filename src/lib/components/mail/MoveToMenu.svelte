@@ -2,6 +2,7 @@
 	import { FolderInput } from 'lucide-svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { JMAPClient } from '$lib/jmap/client';
 	import type { MessagePreview } from '$lib/types/mail';
@@ -53,7 +54,9 @@
 			class="absolute right-0 z-20 mt-1 max-h-64 w-52 overflow-y-auto rounded-md border border-border bg-surface-raised py-1 shadow-md"
 			onpointerdown={(e) => e.stopPropagation()}
 		>
-			<p class="px-3 py-1.5 text-xs font-medium text-fg-subtle">Move to</p>
+			{#if !settings.hideMoveMenuLabels}
+				<p class="px-3 py-1.5 text-xs font-medium text-fg-subtle">Move to</p>
+			{/if}
 			{#each options as mailbox (mailbox.id)}
 				<button
 					type="button"
