@@ -4,19 +4,14 @@
 
 	let { class: className = '' }: { class?: string } = $props();
 
-	let input = $state<HTMLInputElement | null>(null);
-
-	const selectedCount = $derived([...mail.selectedMessageIds].length);
+	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const allSelected = $derived(
 		mail.selectionMode &&
 			mail.messages.length > 0 &&
-			selectedCount === mail.messages.length
+			mail.messages.every((message) => selectedIds.includes(message.id))
 	);
-	const someSelected = $derived(
-		mail.selectionMode &&
-			selectedCount > 0 &&
-			selectedCount < mail.messages.length
-	);
+	const someSelected = $derived(mail.selectionMode && selectedIds.length > 0 && !allSelected);
+	const checkboxState = $derived(allSelected ? 'checked' : someSelected ? 'indeterminate' : 'unchecked');
 
 	function onClick(event: MouseEvent) {
 		event.preventDefault();
@@ -28,18 +23,14 @@
 
 		mail.selectAllMessages();
 	}
-
-	$effect(() => {
-		if (!input) return;
-		input.indeterminate = someSelected && !allSelected;
-	});
 </script>
 
 <input
-	bind:this={input}
 	type="checkbox"
 	class={cn('z-checkbox cursor-pointer', className)}
+	data-state={checkboxState}
 	checked={allSelected}
+	aria-checked={allSelected ? 'true' : someSelected ? 'mixed' : 'false'}
 	disabled={!mail.messages.length || mail.messagesLoading}
 	aria-label={mail.selectionMode ? 'Select all messages in this list' : 'Select messages'}
 	onclick={onClick}
