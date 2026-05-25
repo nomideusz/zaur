@@ -468,7 +468,7 @@
 										{#if !settings.hideReaderTimestamps}
 											<p class="text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</p>
 										{/if}
-										{#if thread.length > 1}
+										{#if thread.length > 1 && !settings.hideThreadCollapseButtons}
 											<button
 												type="button"
 												class="rounded p-1 text-fg-subtle hover:bg-surface-sunken hover:text-fg"
@@ -524,7 +524,9 @@
 						{#if !settings.hideReaderTimestamps}
 							<span class="shrink-0 text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</span>
 						{/if}
-						<ChevronDown class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+						{#if !settings.hideThreadCollapseButtons}
+							<ChevronDown class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+						{/if}
 					</button>
 				{/if}
 			</section>

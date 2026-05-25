@@ -405,6 +405,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Hide thread collapse buttons"
+			description="Remove expand/collapse chevrons on individual messages in a thread"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideThreadCollapseButtons}
+				onchange={(e) => settings.setHideThreadCollapseButtons(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Hide reader timestamps"
 			description="Do not show received date and time on messages in the reading pane"
 		>
@@ -487,6 +499,18 @@
 				class="size-4 accent-accent"
 				checked={settings.showCcBccInCompose}
 				onchange={(e) => settings.setShowCcBccInCompose(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide From line in compose"
+			description="Remove the sender row at the top of the compose panel"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideComposeFromLine}
+				onchange={(e) => settings.setHideComposeFromLine(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

@@ -53,6 +53,8 @@ const STORAGE = {
 	compactAttachments: 'zaur:compact-attachments',
 	hideReaderSenderEmail: 'zaur:hide-reader-sender-email',
 	iconOnlyBulkActions: 'zaur:icon-only-bulk-actions',
+	hideComposeFromLine: 'zaur:hide-compose-from-line',
+	hideThreadCollapseButtons: 'zaur:hide-thread-collapse-buttons',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -332,6 +334,16 @@ function readIconOnlyBulkActions(): boolean {
 	return localStorage.getItem(STORAGE.iconOnlyBulkActions) === 'true';
 }
 
+function readHideComposeFromLine(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideComposeFromLine) === 'true';
+}
+
+function readHideThreadCollapseButtons(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideThreadCollapseButtons) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -462,6 +474,8 @@ class SettingsStore {
 	compactAttachments = $state(readCompactAttachments());
 	hideReaderSenderEmail = $state(readHideReaderSenderEmail());
 	iconOnlyBulkActions = $state(readIconOnlyBulkActions());
+	hideComposeFromLine = $state(readHideComposeFromLine());
+	hideThreadCollapseButtons = $state(readHideThreadCollapseButtons());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -530,6 +544,8 @@ class SettingsStore {
 		this.compactAttachments = readCompactAttachments();
 		this.hideReaderSenderEmail = readHideReaderSenderEmail();
 		this.iconOnlyBulkActions = readIconOnlyBulkActions();
+		this.hideComposeFromLine = readHideComposeFromLine();
+		this.hideThreadCollapseButtons = readHideThreadCollapseButtons();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -917,6 +933,20 @@ class SettingsStore {
 		}
 	}
 
+	setHideComposeFromLine(value: boolean) {
+		this.hideComposeFromLine = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideComposeFromLine, String(value));
+		}
+	}
+
+	setHideThreadCollapseButtons(value: boolean) {
+		this.hideThreadCollapseButtons = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideThreadCollapseButtons, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1102,6 +1132,8 @@ class SettingsStore {
 		this.setCompactAttachments(false);
 		this.setHideReaderSenderEmail(false);
 		this.setIconOnlyBulkActions(false);
+		this.setHideComposeFromLine(false);
+		this.setHideThreadCollapseButtons(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1138,6 +1170,8 @@ class SettingsStore {
 		this.setCompactAttachments(true);
 		this.setHideReaderSenderEmail(true);
 		this.setIconOnlyBulkActions(true);
+		this.setHideComposeFromLine(true);
+		this.setHideThreadCollapseButtons(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1215,6 +1249,8 @@ class SettingsStore {
 			this.compactAttachments,
 			this.hideReaderSenderEmail,
 			this.iconOnlyBulkActions,
+			this.hideComposeFromLine,
+			this.hideThreadCollapseButtons,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;
