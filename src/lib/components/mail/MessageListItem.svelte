@@ -25,6 +25,9 @@
 	}: Props = $props();
 
 	const when = $derived(formatMessageListWhen(message.receivedAt, settings.showFullDatesInList));
+	const senderLabel = $derived(
+		settings.showSenderEmailInList ? message.from.email || message.from.name : message.from.name
+	);
 
 	const rowClass = $derived(
 		cn(
@@ -59,9 +62,11 @@
 	<div class="min-w-0 flex-1">
 		<div class="flex items-baseline justify-between gap-2">
 			<span class={cn('truncate text-sm', message.unread ? 'font-semibold text-fg' : 'text-fg')}>
-				{message.from.name}
+				{senderLabel}
 			</span>
-			<span class="shrink-0 text-xs text-fg-subtle">{when}</span>
+			{#if settings.showListTimestamps}
+				<span class="shrink-0 text-xs text-fg-subtle">{when}</span>
+			{/if}
 		</div>
 		<div class="mt-0.5 flex items-center gap-1.5">
 			{#if settings.showStarsInList && message.starred}

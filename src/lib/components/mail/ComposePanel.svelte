@@ -176,7 +176,7 @@
 								<span class="text-fg-muted">&lt;{senderEmail}&gt;</span>
 							{/if}
 						</p>
-						{#if !settings.displayName.trim()}
+						{#if !settings.hideComposeHints && !settings.displayName.trim()}
 							<a href="/settings/account" class="text-xs text-fg-subtle hover:text-accent hover:underline">
 								Set display name
 							</a>
@@ -267,14 +267,16 @@
 						<Paperclip class="size-4" aria-hidden="true" />
 						Attach
 					</Button>
-					{#if !settings.signature.trim() && mode === 'new'}
+					{#if !settings.hideComposeHints && !settings.signature.trim() && mode === 'new'}
 						<a href="/settings/account" class="text-xs text-fg-subtle hover:text-accent hover:underline">
 							Add a signature
 						</a>
 					{/if}
 				</div>
 				<div class="flex items-center gap-2">
-					<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter to send</span>
+					{#if !settings.hideComposeHints}
+						<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter to send</span>
+					{/if}
 					<Button variant="ghost" type="button" onclick={close}>Discard</Button>
 					<Button type="submit" disabled={!compose.canSend}>
 						{compose.isSending ? 'Sending…' : compose.hasUploadingAttachments ? 'Uploading…' : 'Send'}

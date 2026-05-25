@@ -264,12 +264,14 @@
 			</div>
 
 			<div class="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
-				<IconButton label={latest?.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
-					<Star
-						class={cn('size-4', latest?.starred && 'fill-star text-star')}
-						aria-hidden="true"
-					/>
-				</IconButton>
+				{#if !settings.minimalReaderToolbar}
+					<IconButton label={latest?.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
+						<Star
+							class={cn('size-4', latest?.starred && 'fill-star text-star')}
+							aria-hidden="true"
+						/>
+					</IconButton>
+				{/if}
 				{#if latest}
 					<IconButton
 						label={latest.unread ? 'Mark as read' : 'Mark as unread'}
@@ -285,12 +287,14 @@
 				<IconButton label="Reply" onclick={reply}>
 					<Reply class="size-4" />
 				</IconButton>
-				<IconButton label="Reply all" onclick={replyAll}>
-					<ReplyAll class="size-4" />
-				</IconButton>
-				<IconButton label="Forward" onclick={forward}>
-					<Forward class="size-4" />
-				</IconButton>
+				{#if !settings.minimalReaderToolbar}
+					<IconButton label="Reply all" onclick={replyAll}>
+						<ReplyAll class="size-4" />
+					</IconButton>
+					<IconButton label="Forward" onclick={forward}>
+						<Forward class="size-4" />
+					</IconButton>
+				{/if}
 
 				<div class="hidden items-center gap-0.5 md:flex">
 					<IconButton label="Archive" onclick={archiveMessage}>

@@ -13,9 +13,14 @@ const STORAGE = {
 	showAttachmentIcons: 'zaur:show-attachment-icons',
 	showMessageCounts: 'zaur:show-message-counts',
 	showFullDatesInList: 'zaur:show-full-dates-in-list',
+	showSenderEmailInList: 'zaur:show-sender-email-in-list',
+	showListTimestamps: 'zaur:show-list-timestamps',
 	showQuickReply: 'zaur:show-quick-reply',
 	showReaderContactActions: 'zaur:show-reader-contact-actions',
 	expandAllThreadMessages: 'zaur:expand-all-thread-messages',
+	compactLayout: 'zaur:compact-layout',
+	hideComposeHints: 'zaur:hide-compose-hints',
+	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
 	hideSidebarShortcuts: 'zaur:hide-sidebar-shortcuts',
 	expandListUntilOpen: 'zaur:expand-list-until-open',
 	mailOnlyNavigation: 'zaur:mail-only-navigation',
@@ -85,6 +90,16 @@ function readShowFullDatesInList(): boolean {
 	return localStorage.getItem(STORAGE.showFullDatesInList) === 'true';
 }
 
+function readShowSenderEmailInList(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.showSenderEmailInList) === 'true';
+}
+
+function readShowListTimestamps(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showListTimestamps) !== 'false';
+}
+
 function readShowQuickReply(): boolean {
 	if (!browser) return true;
 	return localStorage.getItem(STORAGE.showQuickReply) !== 'false';
@@ -98,6 +113,21 @@ function readShowReaderContactActions(): boolean {
 function readExpandAllThreadMessages(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.expandAllThreadMessages) === 'true';
+}
+
+function readCompactLayout(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactLayout) === 'true';
+}
+
+function readHideComposeHints(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideComposeHints) === 'true';
+}
+
+function readMinimalReaderToolbar(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.minimalReaderToolbar) === 'true';
 }
 
 function readHideSidebarShortcuts(): boolean {
@@ -169,9 +199,14 @@ class SettingsStore {
 	showAttachmentIcons = $state(readShowAttachmentIcons());
 	showMessageCounts = $state(readShowMessageCounts());
 	showFullDatesInList = $state(readShowFullDatesInList());
+	showSenderEmailInList = $state(readShowSenderEmailInList());
+	showListTimestamps = $state(readShowListTimestamps());
 	showQuickReply = $state(readShowQuickReply());
 	showReaderContactActions = $state(readShowReaderContactActions());
 	expandAllThreadMessages = $state(readExpandAllThreadMessages());
+	compactLayout = $state(readCompactLayout());
+	hideComposeHints = $state(readHideComposeHints());
+	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
 	expandListUntilOpen = $state(readExpandListUntilOpen());
 	mailOnlyNavigation = $state(readMailOnlyNavigation());
@@ -196,10 +231,16 @@ class SettingsStore {
 		this.showAttachmentIcons = readShowAttachmentIcons();
 		this.showMessageCounts = readShowMessageCounts();
 		this.showFullDatesInList = readShowFullDatesInList();
+		this.showSenderEmailInList = readShowSenderEmailInList();
+		this.showListTimestamps = readShowListTimestamps();
 		this.showQuickReply = readShowQuickReply();
 		this.showReaderContactActions = readShowReaderContactActions();
 		this.expandAllThreadMessages = readExpandAllThreadMessages();
+		this.compactLayout = readCompactLayout();
+		this.hideComposeHints = readHideComposeHints();
+		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.hideSidebarShortcuts = readHideSidebarShortcuts();
+		this.applyLayoutWidth();
 		this.expandListUntilOpen = readExpandListUntilOpen();
 		this.mailOnlyNavigation = readMailOnlyNavigation();
 		this.enableKeyboardShortcuts = readEnableKeyboardShortcuts();
@@ -291,6 +332,20 @@ class SettingsStore {
 		}
 	}
 
+	setShowSenderEmailInList(value: boolean) {
+		this.showSenderEmailInList = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showSenderEmailInList, String(value));
+		}
+	}
+
+	setShowListTimestamps(value: boolean) {
+		this.showListTimestamps = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showListTimestamps, String(value));
+		}
+	}
+
 	setShowQuickReply(value: boolean) {
 		this.showQuickReply = value;
 		if (browser) {
@@ -309,6 +364,28 @@ class SettingsStore {
 		this.expandAllThreadMessages = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.expandAllThreadMessages, String(value));
+		}
+	}
+
+	setCompactLayout(value: boolean) {
+		this.compactLayout = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactLayout, String(value));
+		}
+		this.applyLayoutWidth();
+	}
+
+	setHideComposeHints(value: boolean) {
+		this.hideComposeHints = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideComposeHints, String(value));
+		}
+	}
+
+	setMinimalReaderToolbar(value: boolean) {
+		this.minimalReaderToolbar = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.minimalReaderToolbar, String(value));
 		}
 	}
 
@@ -423,15 +500,26 @@ class SettingsStore {
 		this.setShowAttachmentIcons(true);
 		this.setShowMessageCounts(true);
 		this.setShowFullDatesInList(false);
+		this.setShowSenderEmailInList(false);
+		this.setShowListTimestamps(true);
 		this.setExpandListUntilOpen(false);
 		this.setReaderTextSize('normal');
 		this.setBlockExternalContent(true);
 		this.setShowQuickReply(true);
 		this.setExpandAllThreadMessages(false);
 		this.setShowReaderContactActions(true);
+		this.setCompactLayout(false);
+		this.setHideComposeHints(false);
+		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
 		this.setHideSidebarShortcuts(false);
 		this.setMailOnlyNavigation(false);
+	}
+
+	private applyLayoutWidth() {
+		if (!browser) return;
+		document.documentElement.style.setProperty('--width-sidebar', this.compactLayout ? '12rem' : '15rem');
+		document.documentElement.style.setProperty('--width-list', this.compactLayout ? '18rem' : '22rem');
 	}
 
 	private applyListLayout() {

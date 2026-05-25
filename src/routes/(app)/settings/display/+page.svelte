@@ -113,6 +113,30 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Show sender email in list"
+			description="Use the email address instead of the sender name in each row"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showSenderEmailInList}
+				onchange={(e) => settings.setShowSenderEmailInList(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Show timestamps in list"
+			description="Date or time on the right side of each message row"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showListTimestamps}
+				onchange={(e) => settings.setShowListTimestamps(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Expand list until opened"
 			description="Use the full width for the message list on desktop until you pick a message"
 		>
@@ -185,6 +209,46 @@
 				class="size-4 accent-accent"
 				checked={settings.showReaderContactActions}
 				onchange={(e) => settings.setShowReaderContactActions(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Minimal reader toolbar"
+			description="Hide star, reply all, and forward buttons — reply and more actions stay available"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.minimalReaderToolbar}
+				onchange={(e) => settings.setMinimalReaderToolbar(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsGroup>
+
+	<SettingsGroup title="Compose">
+		<SettingsRow
+			title="Hide compose hints"
+			description="Remove nudges like “Set display name”, “Add a signature”, and keyboard shortcut tips"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideComposeHints}
+				onchange={(e) => settings.setHideComposeHints(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsGroup>
+
+	<SettingsGroup title="Layout">
+		<SettingsRow
+			title="Compact layout"
+			description="Narrower folder sidebar and message list — more room for reading on desktop"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactLayout}
+				onchange={(e) => settings.setCompactLayout(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>
