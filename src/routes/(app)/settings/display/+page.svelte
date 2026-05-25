@@ -937,6 +937,30 @@
 				onchange={(e) => settings.setShowSearchContactSuggestions(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Hide search list prefix"
+			description="Show the query alone in search results — no “Search:” label"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideSearchListPrefix}
+				onchange={(e) => settings.setHideSearchListPrefix(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact mobile search"
+			description="Less padding on the search field bar on mobile"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactMobileSearch}
+				onchange={(e) => settings.setCompactMobileSearch(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Settings page">

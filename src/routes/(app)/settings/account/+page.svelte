@@ -3,6 +3,7 @@
 	import SettingsField from '$lib/components/settings/SettingsField.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
+	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -33,7 +34,10 @@
 
 <SettingsPanel title="Account" description="Your profile and sign-in details.">
 	<SettingsGroup title="Profile">
-		<SettingsField title="Display name" description="Shown when you send mail and in the header">
+		<SettingsField
+			title="Display name"
+			description={settings.hideAccountFieldHints ? undefined : 'Shown when you send mail and in the header'}
+		>
 			<input
 				type="text"
 				class="z-input"
@@ -43,7 +47,10 @@
 			/>
 		</SettingsField>
 
-		<SettingsField title="Email signature" description="Appended to new messages, replies, and forwards">
+		<SettingsField
+			title="Email signature"
+			description={settings.hideAccountFieldHints ? undefined : 'Appended to new messages, replies, and forwards'}
+		>
 			<textarea
 				class="z-input min-h-24 resize-y"
 				value={settings.signature}
@@ -51,6 +58,20 @@
 				oninput={(e) => settings.setSignature(e.currentTarget.value)}
 			></textarea>
 		</SettingsField>
+	</SettingsGroup>
+
+	<SettingsGroup title="Display">
+		<SettingsRow
+			title="Hide field hints"
+			description="Remove description text under profile fields and local data on this page"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideAccountFieldHints}
+				onchange={(e) => settings.setHideAccountFieldHints(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	{#snippet footer()}
@@ -73,10 +94,12 @@
 		<div class="mt-6 space-y-4 border-t border-border pt-6">
 			<div>
 				<p class="text-sm font-medium text-fg">Local data</p>
-				<p class="mt-0.5 text-xs text-fg-muted">
-					Remove cached messages and sync state from this browser. Your account on the server is
-					unchanged.
-				</p>
+				{#if !settings.hideAccountFieldHints}
+					<p class="mt-0.5 text-xs text-fg-muted">
+						Remove cached messages and sync state from this browser. Your account on the server is
+						unchanged.
+					</p>
+				{/if}
 				<Button variant="ghost" class="mt-3" disabled={clearingCache} onclick={clearLocalCache}>
 					{clearingCache ? 'Clearing…' : 'Clear local cache'}
 				</Button>

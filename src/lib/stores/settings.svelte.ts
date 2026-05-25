@@ -73,6 +73,9 @@ const STORAGE = {
 	hideListRowDividers: 'zaur:hide-list-row-dividers',
 	hideReaderPaneBorders: 'zaur:hide-reader-pane-borders',
 	compactBulkToolbar: 'zaur:compact-bulk-toolbar',
+	hideSearchListPrefix: 'zaur:hide-search-list-prefix',
+	compactMobileSearch: 'zaur:compact-mobile-search',
+	hideAccountFieldHints: 'zaur:hide-account-field-hints',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -452,6 +455,21 @@ function readCompactBulkToolbar(): boolean {
 	return localStorage.getItem(STORAGE.compactBulkToolbar) === 'true';
 }
 
+function readHideSearchListPrefix(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideSearchListPrefix) === 'true';
+}
+
+function readCompactMobileSearch(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactMobileSearch) === 'true';
+}
+
+function readHideAccountFieldHints(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideAccountFieldHints) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -602,6 +620,9 @@ class SettingsStore {
 	hideListRowDividers = $state(readHideListRowDividers());
 	hideReaderPaneBorders = $state(readHideReaderPaneBorders());
 	compactBulkToolbar = $state(readCompactBulkToolbar());
+	hideSearchListPrefix = $state(readHideSearchListPrefix());
+	compactMobileSearch = $state(readCompactMobileSearch());
+	hideAccountFieldHints = $state(readHideAccountFieldHints());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -690,6 +711,9 @@ class SettingsStore {
 		this.hideListRowDividers = readHideListRowDividers();
 		this.hideReaderPaneBorders = readHideReaderPaneBorders();
 		this.compactBulkToolbar = readCompactBulkToolbar();
+		this.hideSearchListPrefix = readHideSearchListPrefix();
+		this.compactMobileSearch = readCompactMobileSearch();
+		this.hideAccountFieldHints = readHideAccountFieldHints();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1217,6 +1241,27 @@ class SettingsStore {
 		}
 	}
 
+	setHideSearchListPrefix(value: boolean) {
+		this.hideSearchListPrefix = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideSearchListPrefix, String(value));
+		}
+	}
+
+	setCompactMobileSearch(value: boolean) {
+		this.compactMobileSearch = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactMobileSearch, String(value));
+		}
+	}
+
+	setHideAccountFieldHints(value: boolean) {
+		this.hideAccountFieldHints = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideAccountFieldHints, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1422,6 +1467,9 @@ class SettingsStore {
 		this.setHideListRowDividers(false);
 		this.setHideReaderPaneBorders(false);
 		this.setCompactBulkToolbar(false);
+		this.setHideSearchListPrefix(false);
+		this.setCompactMobileSearch(false);
+		this.setHideAccountFieldHints(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1478,6 +1526,9 @@ class SettingsStore {
 		this.setHideListRowDividers(true);
 		this.setHideReaderPaneBorders(true);
 		this.setCompactBulkToolbar(true);
+		this.setHideSearchListPrefix(true);
+		this.setCompactMobileSearch(true);
+		this.setHideAccountFieldHints(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1576,6 +1627,9 @@ class SettingsStore {
 			this.hideListRowDividers,
 			this.hideReaderPaneBorders,
 			this.compactBulkToolbar,
+			this.hideSearchListPrefix,
+			this.compactMobileSearch,
+			this.hideAccountFieldHints,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

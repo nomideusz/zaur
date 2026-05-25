@@ -9,11 +9,17 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { search } from '$lib/stores/search.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { cn } from '$lib/utils/cn';
 
 	let input = $state('');
 
 	const query = $derived($page.url.searchParams.get('q')?.trim() ?? '');
-	const mailboxName = $derived(query ? `Search: ${query}` : 'Search');
+	const mailboxName = $derived(
+		query ? (settings.hideSearchListPrefix ? query : `Search: ${query}`) : 'Search'
+	);
+	const searchEmptyHint = $derived(
+		settings.hideListEmptyHints || query ? undefined : 'Try a sender, subject, or keyword from the message body.'
+	);
 
 	$effect(() => {
 		input = query;
@@ -39,7 +45,11 @@
 <MailboxSidebar />
 
 <form
-	class="z-panel shrink-0 border-b border-border px-4 py-3 md:hidden"
+	class={cn(
+		'z-panel shrink-0 px-4 md:hidden',
+		settings.compactMobileSearch ? 'py-2' : 'py-3',
+		!settings.hidePaneBorders && 'border-b border-border'
+	)}
 	role="search"
 	onsubmit={(e) => {
 		e.preventDefault();
@@ -70,7 +80,7 @@
 	error={search.error}
 	total={search.total}
 	emptyMessage={query ? `No messages match “${query}”.` : 'Enter a search term to find messages.'}
-	emptyHint={query ? undefined : 'Try a sender, subject, or keyword from the message body.'}
+	emptyHint={searchEmptyHint}
 	emptyIcon="search"
 	onLoadMore={() => {
 		if (auth.client) void search.loadMore(auth.client, mail.mailboxes);
