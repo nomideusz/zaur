@@ -57,9 +57,15 @@
 	let loadSentinel = $state<HTMLDivElement | null>(null);
 
 	const activeThreadId = $derived($page.params.threadId);
-	const activeMessageId = $derived(
-		activeThreadId ? (messages.find((message) => message.threadId === activeThreadId)?.id ?? null) : null
-	);
+	const activeMessageId = $derived.by(() => {
+		if (!activeThreadId) return null;
+		return (
+			messages.find((message) => message.threadId === activeThreadId)?.id ??
+			mail.messages.find((message) => message.threadId === activeThreadId)?.id ??
+			null
+		);
+	});
+	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const mailbox = $derived(mailboxRouteId ? mail.mailboxByRouteId(mailboxRouteId) : null);
 	const countLabel = $derived.by(() => {
 		const totalCount = total ?? messages.length;
@@ -129,15 +135,9 @@
 
 	const listHeaderClass = $derived(
 		cn(
-			'flex shrink-0 flex-wrap items-center gap-2 px-4',
+			'flex shrink-0 items-center gap-2 px-4',
 			!settings.hidePaneBorders && 'border-b border-border',
-			mail.selectionMode
-				? settings.compactBulkToolbar
-					? 'min-h-10 py-1.5'
-					: 'min-h-12 py-2'
-				: settings.compactListHeader
-					? 'h-10'
-					: 'h-12'
+			settings.compactListHeader ? 'h-10' : 'h-12'
 		)
 	);
 
@@ -162,9 +162,9 @@
 >
 	<div class={listHeaderClass}>
 		{#if showBulkToolbar}
-			<label class="flex shrink-0 cursor-pointer items-center rounded-md p-0.5 hover:bg-surface-sunken/80">
+			<div class="flex shrink-0 items-center rounded-md p-0.5">
 				<MessageListMasterCheckbox {activeMessageId} />
-			</label>
+			</div>
 		{/if}
 
 		{#if showBulkToolbar && mail.selectionMode && mailboxRouteId}
@@ -298,7 +298,7 @@
 					href="/mail/{message.mailboxId}/{message.threadId}"
 					active={activeThreadId === message.threadId}
 					selectionMode={mailboxRouteId ? mail.selectionMode : false}
-					selected={mailboxRouteId ? mail.selectedMessageIds.has(message.id) : false}
+					selected={mailboxRouteId ? selectedIds.includes(message.id) : false}
 					onSelect={
 						mailboxRouteId
 							? (modifiers) =>

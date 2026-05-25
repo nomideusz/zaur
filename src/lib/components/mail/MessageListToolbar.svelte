@@ -73,7 +73,7 @@
 
 <svelte:window onclick={() => (moveOpen = false)} />
 
-<div class="flex min-w-0 flex-1 flex-wrap items-center gap-2">
+<div class="flex min-h-0 min-w-0 flex-1 items-center gap-2 overflow-x-auto">
 	<Button variant="ghost" class="!px-2 !py-1.5 text-xs" onclick={() => mail.exitSelectionMode()}>
 		<X class="size-3.5" aria-hidden="true" />
 		Cancel
@@ -86,7 +86,7 @@
 	{/if}
 
 	{#if mail.selectedCount}
-		<div class="ml-auto flex flex-wrap items-center gap-1">
+		<div class="ml-auto flex shrink-0 items-center gap-1">
 			{#if hasUnreadSelected}
 				<Button
 					variant="ghost"

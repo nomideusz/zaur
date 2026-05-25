@@ -9,13 +9,26 @@
 
 	let input = $state<HTMLInputElement | null>(null);
 
-	function onChange() {
+	const allSelected = $derived(
+		mail.selectionMode &&
+			mail.messages.length > 0 &&
+			mail.selectedCount === mail.messages.length
+	);
+	const someSelected = $derived(
+		mail.selectionMode &&
+			mail.selectedCount > 0 &&
+			mail.selectedCount < mail.messages.length
+	);
+
+	function onClick(event: MouseEvent) {
+		event.preventDefault();
+
 		if (!mail.selectionMode) {
 			mail.enterSelectionMode(activeMessageId);
 			return;
 		}
 
-		if (mail.selectedCount === mail.messages.length) {
+		if (allSelected) {
 			mail.exitSelectionMode();
 		} else {
 			mail.selectAllMessages();
@@ -24,19 +37,16 @@
 
 	$effect(() => {
 		if (!input) return;
-		input.indeterminate =
-			mail.selectionMode &&
-			mail.selectedCount > 0 &&
-			mail.selectedCount < mail.messages.length;
+		input.indeterminate = someSelected;
 	});
 </script>
 
 <input
 	bind:this={input}
 	type="checkbox"
-	class={cn('z-checkbox', className)}
-	checked={mail.selectionMode && mail.messages.length > 0 && mail.selectedCount === mail.messages.length}
+	class={cn('z-checkbox cursor-pointer', className)}
+	checked={allSelected}
 	disabled={!mail.messages.length || mail.messagesLoading}
 	aria-label={mail.selectionMode ? 'Select all messages in this list' : 'Select messages'}
-	onchange={onChange}
+	onclick={onClick}
 />

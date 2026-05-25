@@ -390,10 +390,15 @@ class MailStore {
 	}
 
 	enterSelectionMode(initialMessageId?: string | null) {
+		let messageId = initialMessageId ?? null;
+		if (!messageId && this.selectedThreadId) {
+			messageId = this.messages.find((message) => message.threadId === this.selectedThreadId)?.id ?? null;
+		}
+
 		this.selectionMode = true;
-		if (initialMessageId) {
-			this.selectedMessageIds = new Set([initialMessageId]);
-			this.selectionAnchorId = initialMessageId;
+		if (messageId) {
+			this.selectedMessageIds = new Set([messageId]);
+			this.selectionAnchorId = messageId;
 		} else {
 			this.selectedMessageIds = new Set();
 			this.selectionAnchorId = null;
