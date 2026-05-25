@@ -5,7 +5,7 @@
 	import { settings, type ListDensity, type ListTextSize } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Row size" description="Text size, density, and vertical spacing.">
+<SettingsGroup title="Message list" description="Row size, preview, and what each message shows.">
 	<SettingsRow
 		title="List text size"
 		description="Font size for sender, subject, and preview in the message list"
@@ -55,9 +55,7 @@
 			onchange={(e) => settings.setCompactListRows(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
-</SettingsGroup>
 
-<SettingsGroup title="Row content" description="What each message row displays.">
 	<SettingsRow
 		title="Show sender avatars"
 		description="Color initials beside each message — turn off for a simpler, text-only list"
@@ -169,7 +167,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Row appearance" description="Unread styling, selection, and dividers between rows.">
+<SettingsGroup title="Unread & dividers" description="How unread messages and selected rows look.">
 	<SettingsRow
 		title="Highlight unread messages"
 		description="Bold text and unread dots in the message list"
@@ -207,7 +205,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="List header" description="Folder title bar and mobile folder picker above the message list.">
+<SettingsGroup title="List toolbar" description="Folder title bar, counts, and mobile folder picker.">
 	<SettingsRow
 		title="Show message counts"
 		description="Unread and total counts in the list header"
@@ -321,7 +319,7 @@
 	</SettingsDepends>
 </SettingsGroup>
 
-<SettingsGroup title="Search results" description="How search appears in the message list.">
+<SettingsGroup title="Search results" description="How search appears in the message list." advanced>
 	<SettingsRow
 		title="Hide search list prefix"
 		description="Show the query alone in search results — no “Search:” label"

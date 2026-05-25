@@ -86,7 +86,38 @@
 		</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Folders & sidebar" description="Folder sidebar links and unread badges.">
+<SettingsGroup title="Folders & sidebar" description="Folder sidebar, unread badges, and shortcuts.">
+		<SettingsRow
+			title="Show folder unread counts"
+			description="Unread badges on folders in the sidebar and mobile folder picker"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showFolderUnreadCounts}
+				onchange={(e) => settings.setShowFolderUnreadCounts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsDepends
+			enabled={settings.showFolderUnreadCounts}
+			inactiveReason={settings.showFolderUnreadCounts
+				? 'Folder badge appearance'
+				: 'Turn on folder unread counts above to adjust badge size'}
+		>
+			<SettingsRow
+				title="Compact folder badges"
+				description="Smaller unread count badges on folders in the sidebar"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactFolderBadges}
+					onchange={(e) => settings.setCompactFolderBadges(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
+
 		<SettingsRow
 			title="Hide sidebar shortcuts"
 			description="Remove Contacts and Settings links from the mail folder sidebar — they stay in the top bar"
@@ -133,7 +164,7 @@
 		</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Header search" description="Global search in the top bar.">
+<SettingsGroup title="Search" description="Global search in the top bar.">
 		<SettingsRow
 			title="Hide header search"
 			description="Remove the search bar from the top bar — search remains on mobile via the icon"
@@ -188,36 +219,4 @@
 				/>
 			</SettingsRow>
 		</SettingsDepends>
-
-		<SettingsRow
-			title="Show folder unread counts"
-			description="Unread badges on folders in the sidebar and mobile folder picker"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.showFolderUnreadCounts}
-				onchange={(e) => settings.setShowFolderUnreadCounts(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsDepends
-			enabled={settings.showFolderUnreadCounts}
-			inactiveReason={settings.showFolderUnreadCounts
-				? 'Folder badge appearance'
-				: 'Turn on folder unread counts above to adjust badge size'}
-		>
-			<SettingsRow
-				title="Compact folder badges"
-				description="Smaller unread count badges on folders in the sidebar"
-			>
-				<input
-					type="checkbox"
-					class="size-4 accent-accent"
-					checked={settings.compactFolderBadges}
-					onchange={(e) => settings.setCompactFolderBadges(e.currentTarget.checked)}
-				/>
-			</SettingsRow>
-		</SettingsDepends>
-
 </SettingsGroup>

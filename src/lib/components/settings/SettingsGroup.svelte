@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { settings } from '$lib/stores/settings.svelte';
+	import { observeVisibleSettingsRows } from '$lib/settings/observe-visible-rows';
 	import { settingsSearch } from '$lib/settings/search-registry.svelte';
 	import { cn } from '$lib/utils/cn';
 
@@ -21,24 +22,32 @@
 	const visible = $derived(settings.settingsDetailLevel === 'advanced' || !advanced);
 
 	$effect(() => {
-		const q = settingsSearch.query.trim();
-		if (!sectionRef) return;
-		if (!q) {
-			hasRows = true;
+		settings.settingsDetailLevel;
+		settingsSearch.query;
+		if (!sectionRef || !visible) {
+			hasRows = false;
 			return;
 		}
-		hasRows = sectionRef.querySelector('[data-settings-row]') !== null;
+
+		return observeVisibleSettingsRows(sectionRef, (next) => {
+			hasRows = next;
+		});
 	});
 </script>
 
-{#if visible && hasRows}
-	<section bind:this={sectionRef} class={cn(settings.compactSettingsRows ? 'space-y-3' : 'space-y-4')}>
-		<div>
-			<h3 class="text-sm font-semibold text-fg">{title}</h3>
-			{#if description && !settings.hideSettingsPanelDescriptions}
-				<p class="mt-0.5 text-xs text-fg-muted">{description}</p>
-			{/if}
-		</div>
+{#if visible}
+	<section
+		bind:this={sectionRef}
+		class={cn(settings.compactSettingsRows ? 'space-y-3' : 'space-y-4', !hasRows && 'hidden')}
+	>
+		{#if hasRows}
+			<div>
+				<h3 class="text-sm font-semibold text-fg">{title}</h3>
+				{#if description && !settings.hideSettingsPanelDescriptions}
+					<p class="mt-0.5 text-xs text-fg-muted">{description}</p>
+				{/if}
+			</div>
+		{/if}
 		<div
 			class={cn(
 				'grid gap-3',

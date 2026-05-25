@@ -5,7 +5,7 @@
 	import { settings, type DefaultReplyMode, type ReaderTextSize } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Message content" description="Text size and how HTML mail is handled.">
+<SettingsGroup title="Reading & replies" description="Text size, privacy, default reply, and quick reply.">
 	<SettingsRow
 		title="Reading size"
 		description="Text size when reading and writing — HTML mail follows the reader theme in dark mode"
@@ -75,49 +75,7 @@
 			onchange={(e) => settings.setPreferPlainText(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
-</SettingsGroup>
 
-<SettingsGroup title="Reading pane layout" description="Padding and dividers in the reading pane.">
-	<SettingsRow
-		title="Compact reader body"
-		description="Less padding around message content in the reading pane"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactReaderBody}
-			onchange={(e) => settings.setCompactReaderBody(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		title="Hide reader pane borders"
-		description="Remove divider lines in the reading pane header, banners, and between thread messages"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.hideReaderPaneBorders}
-			onchange={(e) => settings.setHideReaderPaneBorders(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-</SettingsGroup>
-
-<SettingsGroup title="Attachments" description="How files appear in the reading pane and compose.">
-	<SettingsRow
-		title="Compact attachments"
-		description="Smaller attachment chips without the count label or file sizes — in reader and compose"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactAttachments}
-			onchange={(e) => settings.setCompactAttachments(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-</SettingsGroup>
-
-<SettingsGroup title="Reply" description="Default reply action and the quick reply box.">
 	<SettingsRow
 		title="Default reply action"
 		description="Primary reply button in the reading pane — r always replies, a always reply all"
@@ -163,6 +121,46 @@
 			/>
 		</SettingsRow>
 	</SettingsDepends>
+</SettingsGroup>
+
+<SettingsGroup title="Reading pane layout" description="Padding and dividers in the reading pane." advanced>
+	<SettingsRow
+		title="Compact reader body"
+		description="Less padding around message content in the reading pane"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactReaderBody}
+			onchange={(e) => settings.setCompactReaderBody(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Hide reader pane borders"
+		description="Remove divider lines in the reading pane header, banners, and between thread messages"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.hideReaderPaneBorders}
+			onchange={(e) => settings.setHideReaderPaneBorders(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
+<SettingsGroup title="Attachments" description="How files appear in the reading pane and compose." advanced>
+	<SettingsRow
+		title="Compact attachments"
+		description="Smaller attachment chips without the count label or file sizes — in reader and compose"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactAttachments}
+			onchange={(e) => settings.setCompactAttachments(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Message header" description="Sender, recipients, and avatars at the top of a message.">
@@ -234,7 +232,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Toolbar buttons" description="Action buttons in the reading pane header.">
+<SettingsGroup title="Toolbar buttons" description="Action buttons in the reading pane header." advanced>
 	<SettingsRow
 		title="Minimal reader toolbar"
 		description="Hide star, reply all, and forward buttons — reply and more actions stay available"
@@ -279,7 +277,7 @@
 	</SettingsDepends>
 </SettingsGroup>
 
-<SettingsGroup title="Move to folder" description="Folder picker when moving messages from the list or reading pane.">
+<SettingsGroup title="Move to folder" description="Folder picker when moving messages from the list or reading pane." advanced>
 	<SettingsRow
 		title="Hide move menu labels"
 		description="Remove the “Move to” heading in folder move dropdowns — in the list toolbar and reading pane"

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { settings } from '$lib/stores/settings.svelte';
+	import { observeVisibleSettingsRows } from '$lib/settings/observe-visible-rows';
+	import { settingsSearch } from '$lib/settings/search-registry.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	let {
@@ -7,15 +9,29 @@
 		inactiveReason,
 		children
 	}: {
-		/** When false, dependent controls are disabled and visually de-emphasized. */
 		enabled?: boolean;
-		/** Shown inside the group when disabled — explain why or what to change. */
 		inactiveReason?: string;
 		children: import('svelte').Snippet;
 	} = $props();
+
+	let containerRef = $state<HTMLDivElement | null>(null);
+	let hasRows = $state(false);
+
+	$effect(() => {
+		settings.settingsDetailLevel;
+		settingsSearch.query;
+		if (!containerRef) {
+			hasRows = false;
+			return;
+		}
+
+		return observeVisibleSettingsRows(containerRef, (next) => {
+			hasRows = next;
+		});
+	});
 </script>
 
-<div class="col-span-full">
+<div bind:this={containerRef} class={cn('col-span-full', !hasRows && 'hidden')}>
 	<fieldset
 		disabled={!enabled}
 		class={cn(
@@ -25,7 +41,7 @@
 			'grid gap-3 lg:grid-cols-2 lg:gap-4 xl:gap-5'
 		)}
 	>
-		{#if inactiveReason}
+		{#if inactiveReason && hasRows}
 			<legend
 				class={cn(
 					'col-span-full max-w-none px-0 text-xs font-normal',

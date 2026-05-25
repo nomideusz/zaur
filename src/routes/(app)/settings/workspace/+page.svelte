@@ -10,8 +10,8 @@
 
 <SettingsPanel
 	title="Workspace"
-	description="Folder sidebar, mail pane layout, top bar, home screen, and header search."
+	description="Home screen, navigation, folder sidebar, and how panes are laid out."
 >
-	<WorkspaceLayoutSection />
 	<WorkspaceNavSection />
+	<WorkspaceLayoutSection />
 </SettingsPanel>

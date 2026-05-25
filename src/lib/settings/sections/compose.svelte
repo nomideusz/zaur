@@ -154,7 +154,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Compose toolbar & chrome" description="Footer buttons, dividers, and attachment strip spacing.">
+<SettingsGroup title="Compose toolbar & chrome" description="Footer buttons, dividers, and attachment strip spacing." advanced>
 	<SettingsRow
 		title="Icon-only attach button"
 		description="Show only the paperclip icon for attachments in compose — no “Attach” label"

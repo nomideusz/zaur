@@ -5,7 +5,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Folder sidebar" description="Mailbox tree in the left panel.">
+<SettingsGroup title="Folder sidebar" description="Mailbox tree in the left panel." advanced>
 		<SettingsRow
 			title="Hide folder sidebar header"
 			description="Remove the “Folders” label above the mailbox tree"
@@ -125,7 +125,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="App header" description="Top bar, New buttons, and account menu.">
+<SettingsGroup title="App header" description="Top bar, New buttons, and account menu." advanced>
 	<SettingsRow
 		title="Compact header actions"
 		description="Icon-only New and New event buttons in the top bar — saves horizontal space"
