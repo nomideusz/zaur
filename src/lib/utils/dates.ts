@@ -1,5 +1,7 @@
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
+export type WeekStart = 'sunday' | 'monday';
+
 export function pad2(value: number): string {
 	return value.toString().padStart(2, '0');
 }
@@ -19,11 +21,12 @@ export function monthRange(year: number, month: number): { after: string; before
 	return { after, before };
 }
 
-/** Six-week grid covering the month (Sunday-start). */
-export function monthGrid(year: number, month: number): Date[] {
+/** Six-week grid covering the month. */
+export function monthGrid(year: number, month: number, weekStart: WeekStart = 'sunday'): Date[] {
 	const firstOfMonth = new Date(year, month, 1);
 	const start = new Date(firstOfMonth);
-	start.setDate(start.getDate() - start.getDay());
+	const offset = weekStart === 'monday' ? (start.getDay() + 6) % 7 : start.getDay();
+	start.setDate(start.getDate() - offset);
 
 	const days: Date[] = [];
 	for (let i = 0; i < 42; i++) {
@@ -34,7 +37,10 @@ export function monthGrid(year: number, month: number): Date[] {
 	return days;
 }
 
-export function weekdayLabels(): string[] {
+export function weekdayLabels(weekStart: WeekStart = 'sunday'): string[] {
+	if (weekStart === 'monday') {
+		return [...WEEKDAY_LABELS.slice(1), WEEKDAY_LABELS[0]];
+	}
 	return WEEKDAY_LABELS;
 }
 

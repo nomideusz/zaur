@@ -5,11 +5,16 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
+	import { cn } from '$lib/utils/cn';
 
 	const isEdit = $derived(calendar.composeMode === 'edit');
 	const submitLabel = $derived(
 		calendar.composeSaving ? (isEdit ? 'Saving…' : 'Creating…') : isEdit ? 'Save changes' : 'Create event'
 	);
+	const hideBorders = $derived(settings.hideCalendarPaneBorders || settings.hidePaneBorders);
+	const panelPadding = $derived(settings.compactCalendarCompose ? 'px-3 py-2.5' : 'px-4 py-3');
+	const fieldGap = $derived(settings.compactCalendarCompose ? 'space-y-3' : 'space-y-4');
 
 	function close() {
 		calendar.closeCompose();
@@ -31,10 +36,19 @@
 >
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div
-		class="z-panel flex h-full min-h-0 w-full max-w-lg flex-col overflow-hidden border-l shadow-md"
+		class={cn(
+			'z-panel flex h-full min-h-0 w-full max-w-lg flex-col overflow-hidden shadow-md',
+			!hideBorders && 'border-l'
+		)}
 		onclick={(e) => e.stopPropagation()}
 	>
-		<header class="flex shrink-0 items-center justify-between border-b border-border px-4 py-3">
+		<header
+			class={cn(
+				'flex shrink-0 items-center justify-between border-b',
+				panelPadding,
+				!hideBorders && 'border-border'
+			)}
+		>
 			<h2 class="text-sm font-semibold text-fg">{isEdit ? 'Edit event' : 'New event'}</h2>
 			<IconButton label="Close" onclick={close}>
 				<X class="size-4" />
@@ -48,9 +62,17 @@
 				if (auth.client) void calendar.saveCompose(auth.client);
 			}}
 		>
-			<div class="z-pane-scroll min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4">
+			<div
+				class={cn(
+					'z-pane-scroll min-h-0 flex-1 overflow-y-auto',
+					fieldGap,
+					settings.compactCalendarCompose ? 'px-3 py-3' : 'px-4 py-4'
+				)}
+			>
 				<label class="block space-y-1.5">
-					<span class="text-sm font-medium text-fg">Title</span>
+					{#if !settings.hideCalendarComposeFieldLabels}
+						<span class="text-sm font-medium text-fg">Title</span>
+					{/if}
 					<input
 						type="text"
 						class="z-input"
@@ -61,7 +83,9 @@
 				</label>
 
 				<label class="block space-y-1.5">
-					<span class="text-sm font-medium text-fg">Calendar</span>
+					{#if !settings.hideCalendarComposeFieldLabels}
+						<span class="text-sm font-medium text-fg">Calendar</span>
+					{/if}
 					<select class="z-input" bind:value={calendar.composeDraft.calendarId} required>
 						{#each calendar.calendars as item (item.id)}
 							<option value={item.id}>{item.name}</option>
@@ -76,22 +100,30 @@
 
 				<div class="grid gap-3 sm:grid-cols-2">
 					<label class="block space-y-1.5">
-						<span class="text-sm font-medium text-fg">Starts</span>
+						{#if !settings.hideCalendarComposeFieldLabels}
+							<span class="text-sm font-medium text-fg">Starts</span>
+						{/if}
 						<input type="date" class="z-input" bind:value={calendar.composeDraft.startDate} required />
 					</label>
 
 					{#if calendar.composeDraft.allDay}
 						<label class="block space-y-1.5">
-							<span class="text-sm font-medium text-fg">Ends</span>
+							{#if !settings.hideCalendarComposeFieldLabels}
+								<span class="text-sm font-medium text-fg">Ends</span>
+							{/if}
 							<input type="date" class="z-input" bind:value={calendar.composeDraft.endDate} required />
 						</label>
 					{:else}
 						<label class="block space-y-1.5">
-							<span class="text-sm font-medium text-fg">Start time</span>
+							{#if !settings.hideCalendarComposeFieldLabels}
+								<span class="text-sm font-medium text-fg">Start time</span>
+							{/if}
 							<input type="time" class="z-input" bind:value={calendar.composeDraft.startTime} required />
 						</label>
 						<label class="block space-y-1.5 sm:col-span-2">
-							<span class="text-sm font-medium text-fg">End time</span>
+							{#if !settings.hideCalendarComposeFieldLabels}
+								<span class="text-sm font-medium text-fg">End time</span>
+							{/if}
 							<div class="grid gap-3 sm:grid-cols-2">
 								<input type="date" class="z-input" bind:value={calendar.composeDraft.endDate} required />
 								<input type="time" class="z-input" bind:value={calendar.composeDraft.endTime} required />
@@ -101,7 +133,9 @@
 				</div>
 
 				<label class="block space-y-1.5">
-					<span class="text-sm font-medium text-fg">Location</span>
+					{#if !settings.hideCalendarComposeFieldLabels}
+						<span class="text-sm font-medium text-fg">Location</span>
+					{/if}
 					<input
 						type="text"
 						class="z-input"
@@ -111,7 +145,9 @@
 				</label>
 
 				<label class="block space-y-1.5">
-					<span class="text-sm font-medium text-fg">Description</span>
+					{#if !settings.hideCalendarComposeFieldLabels}
+						<span class="text-sm font-medium text-fg">Description</span>
+					{/if}
 					<textarea
 						class="z-input min-h-24 resize-y"
 						placeholder="Optional"
@@ -121,12 +157,24 @@
 			</div>
 
 			{#if calendar.composeError}
-				<p class="border-t border-border px-4 py-2 text-sm text-danger" role="alert">
+				<p
+					class={cn(
+						'border-t px-4 py-2 text-sm text-danger',
+						!hideBorders && 'border-border'
+					)}
+					role="alert"
+				>
 					{calendar.composeError}
 				</p>
 			{/if}
 
-			<footer class="flex shrink-0 items-center justify-end gap-2 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+			<footer
+				class={cn(
+					'flex shrink-0 items-center justify-end gap-2 border-t pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+					panelPadding,
+					!hideBorders && 'border-border'
+				)}
+			>
 				<Button variant="ghost" type="button" onclick={close}>Cancel</Button>
 				<Button type="submit" disabled={calendar.composeSaving}>
 					{submitLabel}

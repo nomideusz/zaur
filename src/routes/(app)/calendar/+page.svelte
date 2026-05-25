@@ -8,6 +8,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { formatMonthTitle } from '$lib/utils/dates';
 
 	const monthTitle = $derived(formatMonthTitle(calendar.viewYear, calendar.viewMonth));
@@ -47,7 +48,7 @@
 	<MonthView />
 	{#if calendar.selectedEvent}
 		<EventPanel />
-	{:else}
+	{:else if !settings.hideCalendarEmptyEventPanel}
 		<EventPanelEmpty />
 	{/if}
 {/if}

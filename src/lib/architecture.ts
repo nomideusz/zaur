@@ -21,6 +21,7 @@ export const routeMap = {
 		mail: '/settings/mail',
 		account: '/settings/account',
 		contacts: '/settings/contacts',
+		calendar: '/settings/calendar',
 		data: '/settings/data',
 		/** Legacy alias — redirects to appearance */
 		display: '/settings/display'

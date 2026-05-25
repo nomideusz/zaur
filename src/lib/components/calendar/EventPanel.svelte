@@ -4,12 +4,16 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { formatEventTime } from '$lib/utils/dates';
+	import { cn } from '$lib/utils/cn';
 
 	const event = $derived(calendar.selectedEvent);
 	const eventCalendars = $derived(
 		event ? event.calendarIds.map((id) => calendar.calendarById(id)).filter(Boolean) : []
 	);
+	const hideBorders = $derived(settings.hideCalendarPaneBorders || settings.hidePaneBorders);
+	const panelPadding = $derived(settings.compactCalendarEventPanel ? 'px-3 py-2.5' : 'px-4 py-3');
 
 	function deleteEvent() {
 		if (!auth.client || !event) return;
@@ -24,7 +28,13 @@
 </script>
 
 {#snippet details(showClose: boolean)}
-	<header class="flex shrink-0 items-start justify-between gap-2 border-b border-border px-4 py-3">
+	<header
+		class={cn(
+			'flex shrink-0 items-start justify-between gap-2 border-b',
+			panelPadding,
+			!hideBorders && 'border-border'
+		)}
+	>
 		<div class="min-w-0">
 			<h2 class="text-base font-semibold text-fg">{event!.title}</h2>
 			<p class="mt-1 text-sm text-fg-muted">{formatEventTime(event!)}</p>
@@ -36,7 +46,12 @@
 		{/if}
 	</header>
 
-	<div class="z-pane-scroll min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
+	<div
+		class={cn(
+			'z-pane-scroll min-h-0 flex-1 space-y-4 overflow-y-auto text-sm',
+			settings.compactCalendarEventPanel ? 'space-y-3 px-3 py-3' : 'px-4 py-4'
+		)}
+	>
 		{#if eventCalendars.length}
 			<div>
 				<p class="text-xs font-medium uppercase tracking-wide text-fg-subtle">Calendars</p>
@@ -70,7 +85,13 @@
 		{/if}
 	</div>
 
-	<footer class="flex shrink-0 gap-2 border-t border-border px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+	<footer
+		class={cn(
+			'flex shrink-0 gap-2 border-t pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+			panelPadding,
+			!hideBorders && 'border-border'
+		)}
+	>
 		<Button variant="ghost" onclick={editEvent}>
 			<Pencil class="size-4" aria-hidden="true" />
 			Edit
@@ -84,7 +105,10 @@
 
 {#if event}
 	<aside
-		class="z-panel hidden min-h-0 w-80 shrink-0 flex-col overflow-hidden border-l md:flex"
+		class={cn(
+			'z-panel hidden min-h-0 w-80 shrink-0 flex-col overflow-hidden md:flex',
+			!hideBorders && 'border-l'
+		)}
 		style="view-transition-name: calendar-event;"
 		aria-label="Event details"
 	>
@@ -97,7 +121,10 @@
 	>
 		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 		<div
-			class="z-panel flex h-full w-full max-w-md flex-col border-l shadow-md"
+			class={cn(
+				'z-panel flex h-full w-full max-w-md flex-col shadow-md',
+				!hideBorders && 'border-l'
+			)}
 			onclick={(e) => e.stopPropagation()}
 		>
 			{@render details(true)}

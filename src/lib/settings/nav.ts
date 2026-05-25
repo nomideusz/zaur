@@ -38,6 +38,12 @@ const ALL_LINKS: SettingsNavLink[] = [
 		section: 'advanced'
 	},
 	{
+		href: '/settings/calendar',
+		label: 'Calendar',
+		hint: 'Month grid and events',
+		section: 'customize'
+	},
+	{
 		href: '/settings/data',
 		label: 'Backup & reset',
 		hint: 'Export, import, defaults',

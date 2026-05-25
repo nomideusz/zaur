@@ -5,6 +5,7 @@ import { requestBrowserNotificationPermission } from '$lib/utils/notifications';
 
 export type ListDensity = 'comfortable' | 'compact';
 export type ReaderTextSize = 'normal' | 'large';
+export type CalendarMaxEventsPerDay = 2 | 3 | 5;
 
 const STORAGE = {
 	blockExternal: 'zaur:block-external',
@@ -146,6 +147,23 @@ const STORAGE = {
 	hideContactsHoverActions: 'zaur:hide-contacts-hover-actions',
 	hideContactsRowMailIcon: 'zaur:hide-contacts-row-mail-icon',
 	hideContactsEmailLine: 'zaur:hide-contacts-email-line',
+	compactCalendarGrid: 'zaur:compact-calendar-grid',
+	compactCalendarHeader: 'zaur:compact-calendar-header',
+	compactCalendarSidebar: 'zaur:compact-calendar-sidebar',
+	calendarWeekStartsOnMonday: 'zaur:calendar-week-starts-on-monday',
+	hideCalendarEventTimes: 'zaur:hide-calendar-event-times',
+	calendarMaxEventsPerDay: 'zaur:calendar-max-events-per-day',
+	hideCalendarMoreEventsLabel: 'zaur:hide-calendar-more-events-label',
+	hideCalendarSidebarHeader: 'zaur:hide-calendar-sidebar-header',
+	hideCalendarSidebarSettings: 'zaur:hide-calendar-sidebar-settings',
+	hideCalendarNewEventButton: 'zaur:hide-calendar-new-event-button',
+	iconOnlyCalendarNewEvent: 'zaur:icon-only-calendar-new-event',
+	compactCalendarEventPanel: 'zaur:compact-calendar-event-panel',
+	hideCalendarEmptyEventPanel: 'zaur:hide-calendar-empty-event-panel',
+	compactCalendarEmptyEventPanel: 'zaur:compact-calendar-empty-event-panel',
+	compactCalendarCompose: 'zaur:compact-calendar-compose',
+	hideCalendarComposeFieldLabels: 'zaur:hide-calendar-compose-field-labels',
+	hideCalendarPaneBorders: 'zaur:hide-calendar-pane-borders',
 	compactReaderInlineError: 'zaur:compact-reader-inline-error',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
@@ -888,6 +906,93 @@ function readHideContactsEmailLine(): boolean {
 	return localStorage.getItem(STORAGE.hideContactsEmailLine) === 'true';
 }
 
+function readCompactCalendarGrid(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactCalendarGrid) === 'true';
+}
+
+function readCompactCalendarHeader(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactCalendarHeader) === 'true';
+}
+
+function readCompactCalendarSidebar(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactCalendarSidebar) === 'true';
+}
+
+function readCalendarWeekStartsOnMonday(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.calendarWeekStartsOnMonday) === 'true';
+}
+
+function readHideCalendarEventTimes(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideCalendarEventTimes) === 'true';
+}
+
+function readCalendarMaxEventsPerDay(): CalendarMaxEventsPerDay {
+	if (!browser) return 3;
+	const value = localStorage.getItem(STORAGE.calendarMaxEventsPerDay);
+	if (value === '2' || value === '5') return Number(value) as CalendarMaxEventsPerDay;
+	return 3;
+}
+
+function readHideCalendarMoreEventsLabel(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideCalendarMoreEventsLabel) === 'true';
+}
+
+function readHideCalendarSidebarHeader(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideCalendarSidebarHeader) === 'true';
+}
+
+function readHideCalendarSidebarSettings(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideCalendarSidebarSettings) === 'true';
+}
+
+function readHideCalendarNewEventButton(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideCalendarNewEventButton) === 'true';
+}
+
+function readIconOnlyCalendarNewEvent(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.iconOnlyCalendarNewEvent) === 'true';
+}
+
+function readCompactCalendarEventPanel(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactCalendarEventPanel) === 'true';
+}
+
+function readHideCalendarEmptyEventPanel(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideCalendarEmptyEventPanel) === 'true';
+}
+
+function readCompactCalendarEmptyEventPanel(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactCalendarEmptyEventPanel) === 'true';
+}
+
+function readCompactCalendarCompose(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactCalendarCompose) === 'true';
+}
+
+function readHideCalendarComposeFieldLabels(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideCalendarComposeFieldLabels) === 'true';
+}
+
+function readHideCalendarPaneBorders(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideCalendarPaneBorders) === 'true';
+}
+
 function readCompactReaderInlineError(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactReaderInlineError) === 'true';
@@ -1115,6 +1220,23 @@ class SettingsStore {
 	hideContactsHoverActions = $state(readHideContactsHoverActions());
 	hideContactsRowMailIcon = $state(readHideContactsRowMailIcon());
 	hideContactsEmailLine = $state(readHideContactsEmailLine());
+	compactCalendarGrid = $state(readCompactCalendarGrid());
+	compactCalendarHeader = $state(readCompactCalendarHeader());
+	compactCalendarSidebar = $state(readCompactCalendarSidebar());
+	calendarWeekStartsOnMonday = $state(readCalendarWeekStartsOnMonday());
+	hideCalendarEventTimes = $state(readHideCalendarEventTimes());
+	calendarMaxEventsPerDay = $state<CalendarMaxEventsPerDay>(readCalendarMaxEventsPerDay());
+	hideCalendarMoreEventsLabel = $state(readHideCalendarMoreEventsLabel());
+	hideCalendarSidebarHeader = $state(readHideCalendarSidebarHeader());
+	hideCalendarSidebarSettings = $state(readHideCalendarSidebarSettings());
+	hideCalendarNewEventButton = $state(readHideCalendarNewEventButton());
+	iconOnlyCalendarNewEvent = $state(readIconOnlyCalendarNewEvent());
+	compactCalendarEventPanel = $state(readCompactCalendarEventPanel());
+	hideCalendarEmptyEventPanel = $state(readHideCalendarEmptyEventPanel());
+	compactCalendarEmptyEventPanel = $state(readCompactCalendarEmptyEventPanel());
+	compactCalendarCompose = $state(readCompactCalendarCompose());
+	hideCalendarComposeFieldLabels = $state(readHideCalendarComposeFieldLabels());
+	hideCalendarPaneBorders = $state(readHideCalendarPaneBorders());
 	compactReaderInlineError = $state(readCompactReaderInlineError());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
@@ -1276,6 +1398,23 @@ class SettingsStore {
 		this.hideContactsHoverActions = readHideContactsHoverActions();
 		this.hideContactsRowMailIcon = readHideContactsRowMailIcon();
 		this.hideContactsEmailLine = readHideContactsEmailLine();
+		this.compactCalendarGrid = readCompactCalendarGrid();
+		this.compactCalendarHeader = readCompactCalendarHeader();
+		this.compactCalendarSidebar = readCompactCalendarSidebar();
+		this.calendarWeekStartsOnMonday = readCalendarWeekStartsOnMonday();
+		this.hideCalendarEventTimes = readHideCalendarEventTimes();
+		this.calendarMaxEventsPerDay = readCalendarMaxEventsPerDay();
+		this.hideCalendarMoreEventsLabel = readHideCalendarMoreEventsLabel();
+		this.hideCalendarSidebarHeader = readHideCalendarSidebarHeader();
+		this.hideCalendarSidebarSettings = readHideCalendarSidebarSettings();
+		this.hideCalendarNewEventButton = readHideCalendarNewEventButton();
+		this.iconOnlyCalendarNewEvent = readIconOnlyCalendarNewEvent();
+		this.compactCalendarEventPanel = readCompactCalendarEventPanel();
+		this.hideCalendarEmptyEventPanel = readHideCalendarEmptyEventPanel();
+		this.compactCalendarEmptyEventPanel = readCompactCalendarEmptyEventPanel();
+		this.compactCalendarCompose = readCompactCalendarCompose();
+		this.hideCalendarComposeFieldLabels = readHideCalendarComposeFieldLabels();
+		this.hideCalendarPaneBorders = readHideCalendarPaneBorders();
 		this.compactReaderInlineError = readCompactReaderInlineError();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
@@ -2332,6 +2471,125 @@ class SettingsStore {
 		}
 	}
 
+	setCompactCalendarGrid(value: boolean) {
+		this.compactCalendarGrid = value;
+		if (browser) {
+			this.writeStorage(STORAGE.compactCalendarGrid, String(value));
+		}
+	}
+
+	setCompactCalendarHeader(value: boolean) {
+		this.compactCalendarHeader = value;
+		if (browser) {
+			this.writeStorage(STORAGE.compactCalendarHeader, String(value));
+		}
+	}
+
+	setCompactCalendarSidebar(value: boolean) {
+		this.compactCalendarSidebar = value;
+		if (browser) {
+			this.writeStorage(STORAGE.compactCalendarSidebar, String(value));
+		}
+	}
+
+	setCalendarWeekStartsOnMonday(value: boolean) {
+		this.calendarWeekStartsOnMonday = value;
+		if (browser) {
+			this.writeStorage(STORAGE.calendarWeekStartsOnMonday, String(value));
+		}
+	}
+
+	setHideCalendarEventTimes(value: boolean) {
+		this.hideCalendarEventTimes = value;
+		if (browser) {
+			this.writeStorage(STORAGE.hideCalendarEventTimes, String(value));
+		}
+	}
+
+	setCalendarMaxEventsPerDay(value: CalendarMaxEventsPerDay) {
+		this.calendarMaxEventsPerDay = value;
+		if (browser) {
+			this.writeStorage(STORAGE.calendarMaxEventsPerDay, String(value));
+		}
+	}
+
+	setHideCalendarMoreEventsLabel(value: boolean) {
+		this.hideCalendarMoreEventsLabel = value;
+		if (browser) {
+			this.writeStorage(STORAGE.hideCalendarMoreEventsLabel, String(value));
+		}
+	}
+
+	setHideCalendarSidebarHeader(value: boolean) {
+		this.hideCalendarSidebarHeader = value;
+		if (browser) {
+			this.writeStorage(STORAGE.hideCalendarSidebarHeader, String(value));
+		}
+	}
+
+	setHideCalendarSidebarSettings(value: boolean) {
+		this.hideCalendarSidebarSettings = value;
+		if (browser) {
+			this.writeStorage(STORAGE.hideCalendarSidebarSettings, String(value));
+		}
+	}
+
+	setHideCalendarNewEventButton(value: boolean) {
+		this.hideCalendarNewEventButton = value;
+		if (browser) {
+			this.writeStorage(STORAGE.hideCalendarNewEventButton, String(value));
+		}
+	}
+
+	setIconOnlyCalendarNewEvent(value: boolean) {
+		this.iconOnlyCalendarNewEvent = value;
+		if (browser) {
+			this.writeStorage(STORAGE.iconOnlyCalendarNewEvent, String(value));
+		}
+	}
+
+	setCompactCalendarEventPanel(value: boolean) {
+		this.compactCalendarEventPanel = value;
+		if (browser) {
+			this.writeStorage(STORAGE.compactCalendarEventPanel, String(value));
+		}
+	}
+
+	setHideCalendarEmptyEventPanel(value: boolean) {
+		this.hideCalendarEmptyEventPanel = value;
+		if (browser) {
+			this.writeStorage(STORAGE.hideCalendarEmptyEventPanel, String(value));
+		}
+	}
+
+	setCompactCalendarEmptyEventPanel(value: boolean) {
+		this.compactCalendarEmptyEventPanel = value;
+		if (browser) {
+			this.writeStorage(STORAGE.compactCalendarEmptyEventPanel, String(value));
+		}
+	}
+
+	setCompactCalendarCompose(value: boolean) {
+		this.compactCalendarCompose = value;
+		if (browser) {
+			this.writeStorage(STORAGE.compactCalendarCompose, String(value));
+		}
+	}
+
+	setHideCalendarComposeFieldLabels(value: boolean) {
+		this.hideCalendarComposeFieldLabels = value;
+		if (browser) {
+			this.writeStorage(STORAGE.hideCalendarComposeFieldLabels, String(value));
+		}
+	}
+
+	setHideCalendarPaneBorders(value: boolean) {
+		this.hideCalendarPaneBorders = value;
+		if (browser) {
+			this.writeStorage(STORAGE.hideCalendarPaneBorders, String(value));
+		}
+	}
+
 	setCompactReaderInlineError(value: boolean) {
 		this.compactReaderInlineError = value;
 		if (browser) {
@@ -2615,6 +2873,23 @@ class SettingsStore {
 		this.setHideContactsHoverActions(false);
 		this.setHideContactsRowMailIcon(false);
 		this.setHideContactsEmailLine(false);
+		this.setCompactCalendarGrid(false);
+		this.setCompactCalendarHeader(false);
+		this.setCompactCalendarSidebar(false);
+		this.setCalendarWeekStartsOnMonday(false);
+		this.setHideCalendarEventTimes(false);
+		this.setCalendarMaxEventsPerDay(3);
+		this.setHideCalendarMoreEventsLabel(false);
+		this.setHideCalendarSidebarHeader(false);
+		this.setHideCalendarSidebarSettings(false);
+		this.setHideCalendarNewEventButton(false);
+		this.setIconOnlyCalendarNewEvent(false);
+		this.setCompactCalendarEventPanel(false);
+		this.setHideCalendarEmptyEventPanel(false);
+		this.setCompactCalendarEmptyEventPanel(false);
+		this.setCompactCalendarCompose(false);
+		this.setHideCalendarComposeFieldLabels(false);
+		this.setHideCalendarPaneBorders(false);
 		this.setCompactReaderInlineError(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
@@ -2914,6 +3189,22 @@ class SettingsStore {
 			this.hideContactsHoverActions,
 			this.hideContactsRowMailIcon,
 			this.hideContactsEmailLine,
+			this.compactCalendarGrid,
+			this.compactCalendarHeader,
+			this.compactCalendarSidebar,
+			this.calendarWeekStartsOnMonday,
+			this.hideCalendarEventTimes,
+			this.hideCalendarMoreEventsLabel,
+			this.hideCalendarSidebarHeader,
+			this.hideCalendarSidebarSettings,
+			this.hideCalendarNewEventButton,
+			this.iconOnlyCalendarNewEvent,
+			this.compactCalendarEventPanel,
+			this.hideCalendarEmptyEventPanel,
+			this.compactCalendarEmptyEventPanel,
+			this.compactCalendarCompose,
+			this.hideCalendarComposeFieldLabels,
+			this.hideCalendarPaneBorders,
 			this.compactReaderInlineError,
 			this.rememberLastMailbox
 		];

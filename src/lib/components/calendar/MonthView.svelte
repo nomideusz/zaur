@@ -4,14 +4,18 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import type { CalendarEvent } from '$lib/types/calendar';
 	import { formatMonthTitle, isSameDay, isSameMonth, monthGrid, weekdayLabels } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 
 	const today = new Date();
-	const weekdays = weekdayLabels();
-	const days = $derived(monthGrid(calendar.viewYear, calendar.viewMonth));
+	const weekStart = $derived(settings.calendarWeekStartsOnMonday ? 'monday' : 'sunday');
+	const weekdays = $derived(weekdayLabels(weekStart));
+	const days = $derived(monthGrid(calendar.viewYear, calendar.viewMonth, weekStart));
 	const monthTitle = $derived(formatMonthTitle(calendar.viewYear, calendar.viewMonth));
+	const maxEventsPerDay = $derived(settings.calendarMaxEventsPerDay);
+	const hideBorders = $derived(settings.hideCalendarPaneBorders || settings.hidePaneBorders);
 
 	function eventColor(event: CalendarEvent): string {
 		const primaryCalendarId = event.calendarIds[0];
@@ -19,7 +23,7 @@
 	}
 
 	function formatChipTime(event: CalendarEvent): string {
-		if (event.allDay) return '';
+		if (event.allDay || settings.hideCalendarEventTimes) return '';
 		return new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(event.start);
 	}
 
@@ -33,33 +37,73 @@
 </script>
 
 <section
-	class="z-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden border-r"
+	class={cn(
+		'z-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+		!hideBorders && 'border-r'
+	)}
 	style="view-transition-name: calendar-grid;"
 	aria-label="Month view"
 >
-	<div class="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border px-4">
+	<div
+		class={cn(
+			'flex shrink-0 items-center justify-between gap-2 px-4',
+			settings.compactCalendarHeader ? 'h-10' : 'h-12',
+			!hideBorders && 'border-b border-border'
+		)}
+	>
 		<div class="flex items-center gap-1">
 			<IconButton label="Previous month" onclick={() => calendar.prevMonth()}>
 				<ChevronLeft class="size-4" />
 			</IconButton>
-			<h2 class="min-w-36 text-center text-sm font-semibold text-fg">{monthTitle}</h2>
+			<h2
+				class={cn(
+					'min-w-36 text-center font-semibold text-fg',
+					settings.compactCalendarHeader ? 'text-xs' : 'text-sm'
+				)}
+			>
+				{monthTitle}
+			</h2>
 			<IconButton label="Next month" onclick={() => calendar.nextMonth()}>
 				<ChevronRight class="size-4" />
 			</IconButton>
 		</div>
 		<Button variant="ghost" onclick={() => calendar.goToToday()}>Today</Button>
-		<IconButton label="New event" class="sm:hidden" onclick={() => calendar.openCompose()}>
-			<Plus class="size-4" aria-hidden="true" />
-		</IconButton>
-		<Button onclick={() => calendar.openCompose()} class="hidden sm:inline-flex">
-			<Plus class="size-4" aria-hidden="true" />
-			New event
-		</Button>
+		{#if !settings.hideCalendarNewEventButton}
+			<IconButton label="New event" class="sm:hidden" onclick={() => calendar.openCompose()}>
+				<Plus class="size-4" aria-hidden="true" />
+			</IconButton>
+			{#if settings.iconOnlyCalendarNewEvent}
+				<IconButton
+					label="New event"
+					class="hidden sm:inline-flex"
+					onclick={() => calendar.openCompose()}
+				>
+					<Plus class="size-4" aria-hidden="true" />
+				</IconButton>
+			{:else}
+				<Button onclick={() => calendar.openCompose()} class="hidden sm:inline-flex">
+					<Plus class="size-4" aria-hidden="true" />
+					New event
+				</Button>
+			{/if}
+		{/if}
 	</div>
 
-	<div class="grid shrink-0 grid-cols-7 border-b border-border bg-surface-sunken/50">
+	<div
+		class={cn(
+			'grid shrink-0 grid-cols-7 border-b bg-surface-sunken/50',
+			!hideBorders && 'border-border'
+		)}
+	>
 		{#each weekdays as weekday}
-			<div class="px-2 py-2 text-center text-xs font-medium text-fg-subtle">{weekday}</div>
+			<div
+				class={cn(
+					'px-2 text-center text-xs font-medium text-fg-subtle',
+					settings.compactCalendarGrid ? 'py-1.5' : 'py-2'
+				)}
+			>
+				{weekday}
+			</div>
 		{/each}
 	</div>
 
@@ -85,7 +129,9 @@
 				{@const dayEvents = calendar.eventsForDay(day)}
 				<div
 					class={cn(
-						'group min-h-24 border-b border-r border-border p-1.5',
+						'group p-1.5',
+						settings.compactCalendarGrid ? 'min-h-16 p-1' : 'min-h-24',
+						!hideBorders && 'border-b border-r border-border',
 						!inMonth && 'bg-surface-sunken/30 text-fg-subtle'
 					)}
 				>
@@ -110,12 +156,13 @@
 					</div>
 
 					<ul class="space-y-0.5">
-						{#each dayEvents.slice(0, 3) as event (event.id)}
+						{#each dayEvents.slice(0, maxEventsPerDay) as event (event.id)}
 							<li>
 								<button
 									type="button"
 									class={cn(
-										'flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left text-[11px] leading-tight transition-opacity hover:opacity-80',
+										'flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left leading-tight transition-opacity hover:opacity-80',
+										settings.compactCalendarGrid ? 'text-[10px]' : 'text-[11px]',
 										calendar.selectedEventId === event.id && 'ring-1 ring-accent/40'
 									)}
 									style:background-color={`color-mix(in srgb, ${eventColor(event)} 18%, transparent)`}
@@ -129,8 +176,10 @@
 								</button>
 							</li>
 						{/each}
-						{#if dayEvents.length > 3}
-							<li class="px-1 text-[10px] text-fg-subtle">+{dayEvents.length - 3} more</li>
+						{#if !settings.hideCalendarMoreEventsLabel && dayEvents.length > maxEventsPerDay}
+							<li class="px-1 text-[10px] text-fg-subtle">
+								+{dayEvents.length - maxEventsPerDay} more
+							</li>
 						{/if}
 					</ul>
 				</div>
