@@ -139,7 +139,7 @@
 		if (!auth.client || !auth.username) return;
 		const result = await compose.send(auth.client, auth.username, senderName);
 		if (result === 'sent') goto(settings.returnToInboxAfterSend ? '/mail/inbox' : '/mail/sent');
-		else if (result === 'queued') goto('/mail/inbox');
+		else if (result === 'queued') goto(settings.preferredMailHref());
 	}
 
 	function close() {
@@ -154,7 +154,7 @@
 		if (hasContent && settings.confirmBeforeDiscardCompose && !confirm('Discard this message?')) return;
 
 		compose.reset();
-		goto('/mail/inbox');
+		goto(settings.preferredMailHref());
 	}
 
 	function openFilePicker() {
