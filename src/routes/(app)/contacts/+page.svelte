@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Mail, Search, Users } from 'lucide-svelte';
+	import { Mail, Search, UserPlus, Users } from 'lucide-svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import ContactDetailEmpty from '$lib/components/contacts/ContactDetailEmpty.svelte';
 	import ContactDetailPanel from '$lib/components/contacts/ContactDetailPanel.svelte';
 	import ContactsSidebar from '$lib/components/contacts/ContactsSidebar.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -160,6 +161,16 @@
 		)}
 	>
 		<h2 class="truncate text-sm font-semibold text-fg">{listTitle}</h2>
+		<IconButton
+			label="Add contact"
+			class="md:hidden"
+			onclick={() => {
+				showAddForm = true;
+				selectedEmail = null;
+			}}
+		>
+			<UserPlus class="size-4" aria-hidden="true" />
+		</IconButton>
 	</div>
 
 	<div
