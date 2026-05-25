@@ -269,6 +269,18 @@
 			/>
 		</SettingsRow>
 	</SettingsDepends>
+
+	<SettingsRow
+		title="Compact mobile search"
+		description="Less padding on the search field in the top bar on mobile"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactMobileSearch}
+			onchange={(e) => settings.setCompactMobileSearch(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Defaults">
