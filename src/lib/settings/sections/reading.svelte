@@ -508,7 +508,7 @@
 <SettingsGroup title="Defaults">
 	<SettingsRow
 		title="Reset reading settings"
-		description="Restore every reading pane option on this page to its original value"
+		description="Restore reply, header, threads, attachments, and layout options on this page to their original value"
 	>
 		<button
 			type="button"
