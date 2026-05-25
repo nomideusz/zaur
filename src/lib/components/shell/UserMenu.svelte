@@ -63,6 +63,20 @@
 			</div>
 
 			<a
+				href="/settings/account"
+				role="menuitem"
+				class={cn(
+					'flex items-center gap-2 px-3 text-sm text-fg hover:bg-surface-sunken',
+					settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2',
+					$page.url.pathname.startsWith('/settings/account') && 'bg-surface-sunken'
+				)}
+				onclick={close}
+			>
+				<User class="size-4 text-fg-muted" />
+				Account
+			</a>
+
+			<a
 				href="/settings/appearance"
 				role="menuitem"
 				class={cn(
