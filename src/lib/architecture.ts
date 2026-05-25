@@ -56,7 +56,11 @@ export const componentTree = {
 			'CalendarEvent/query',
 			'CalendarEvent/set'
 		],
-		proxy: ['POST /api/jmap', 'GET /api/jmap/session', 'httpOnly session cookie'],
+		proxy: ['POST /api/jmap', 'GET /api/jmap/session', 'GET/PUT /api/settings', 'httpOnly session cookie'],
+		accountSettings: [
+			'WebmailSettings/get+set when server supports https://zaur.app/jmap/webmail-settings/v1',
+			'fallback: private archive Email with subject __zaur_webmail_settings_v1__'
+		],
 		pushListener: ['EventSource via /api/jmap/events', 'polling fallback'],
 		syncEngine: ['incremental Email/Mailbox sync', 'syncState in RxDB']
 	},

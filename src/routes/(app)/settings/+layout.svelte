@@ -147,7 +147,8 @@
 		<div class="min-w-0 flex-1">{@render children()}</div>
 		{#if !settings.hideSettingsNavHints}
 			<p class="text-center text-xs text-fg-subtle md:text-left">
-				Settings are saved locally in this browser.
+				Settings sync to your mail account and stay available on other devices. This browser keeps a
+				local copy for offline use.
 			</p>
 		{/if}
 	</div>

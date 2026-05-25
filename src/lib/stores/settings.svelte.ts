@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { pullAccountSettings, scheduleAccountSettingsPush } from '$lib/settings/account-sync';
 import type { SettingsDetailLevel } from '$lib/settings/detail-level';
 import { requestBrowserNotificationPermission } from '$lib/utils/notifications';
 
@@ -1317,52 +1318,74 @@ class SettingsStore {
 		return fromFallback || 'User';
 	}
 
+	/** Load preferences from the signed-in JMAP account (newer copy wins). */
+	async syncFromAccount(): Promise<void> {
+		const result = await pullAccountSettings(() => this.init());
+		if (result === 'applied') {
+			void import('$lib/stores/theme.svelte').then(({ theme }) => theme.init());
+		} else if (result === 'empty') {
+			scheduleAccountSettingsPush();
+		}
+	}
+
+	private writeStorage(key: string, value: string) {
+		if (!browser) return;
+		localStorage.setItem(key, value);
+		scheduleAccountSettingsPush();
+	}
+
+	private removeStorage(key: string) {
+		if (!browser) return;
+		localStorage.removeItem(key);
+		scheduleAccountSettingsPush();
+	}
+
 	setBlockExternalContent(value: boolean) {
 		this.blockExternalContent = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.blockExternal, String(value));
+			this.writeStorage(STORAGE.blockExternal, String(value));
 		}
 	}
 
 	setHideExternalContentBanner(value: boolean) {
 		this.hideExternalContentBanner = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideExternalContentBanner, String(value));
+			this.writeStorage(STORAGE.hideExternalContentBanner, String(value));
 		}
 	}
 
 	setAutoLoadMore(value: boolean) {
 		this.autoLoadMore = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.autoLoadMore, String(value));
+			this.writeStorage(STORAGE.autoLoadMore, String(value));
 		}
 	}
 
 	setHideFolderSidebarHeader(value: boolean) {
 		this.hideFolderSidebarHeader = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideFolderSidebarHeader, String(value));
+			this.writeStorage(STORAGE.hideFolderSidebarHeader, String(value));
 		}
 	}
 
 	setHideFolderIcons(value: boolean) {
 		this.hideFolderIcons = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideFolderIcons, String(value));
+			this.writeStorage(STORAGE.hideFolderIcons, String(value));
 		}
 	}
 
 	setHideListHeader(value: boolean) {
 		this.hideListHeader = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideListHeader, String(value));
+			this.writeStorage(STORAGE.hideListHeader, String(value));
 		}
 	}
 
 	setListDensity(value: ListDensity) {
 		this.listDensity = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.listDensity, value);
+			this.writeStorage(STORAGE.listDensity, value);
 		}
 		this.applyListLayout();
 	}
@@ -1370,7 +1393,7 @@ class SettingsStore {
 	setShowListPreview(value: boolean) {
 		this.showListPreview = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showListPreview, String(value));
+			this.writeStorage(STORAGE.showListPreview, String(value));
 		}
 		this.applyListLayout();
 	}
@@ -1378,182 +1401,182 @@ class SettingsStore {
 	setShowAvatars(value: boolean) {
 		this.showAvatars = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showAvatars, String(value));
+			this.writeStorage(STORAGE.showAvatars, String(value));
 		}
 	}
 
 	setShowStarsInList(value: boolean) {
 		this.showStarsInList = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showStarsInList, String(value));
+			this.writeStorage(STORAGE.showStarsInList, String(value));
 		}
 	}
 
 	setShowAttachmentIcons(value: boolean) {
 		this.showAttachmentIcons = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showAttachmentIcons, String(value));
+			this.writeStorage(STORAGE.showAttachmentIcons, String(value));
 		}
 	}
 
 	setShowMessageCounts(value: boolean) {
 		this.showMessageCounts = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showMessageCounts, String(value));
+			this.writeStorage(STORAGE.showMessageCounts, String(value));
 		}
 	}
 
 	setShowFullDatesInList(value: boolean) {
 		this.showFullDatesInList = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showFullDatesInList, String(value));
+			this.writeStorage(STORAGE.showFullDatesInList, String(value));
 		}
 	}
 
 	setShowSenderEmailInList(value: boolean) {
 		this.showSenderEmailInList = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showSenderEmailInList, String(value));
+			this.writeStorage(STORAGE.showSenderEmailInList, String(value));
 		}
 	}
 
 	setSubjectOnlyList(value: boolean) {
 		this.subjectOnlyList = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.subjectOnlyList, String(value));
+			this.writeStorage(STORAGE.subjectOnlyList, String(value));
 		}
 	}
 
 	setShowListTimestamps(value: boolean) {
 		this.showListTimestamps = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showListTimestamps, String(value));
+			this.writeStorage(STORAGE.showListTimestamps, String(value));
 		}
 	}
 
 	setHighlightUnreadInList(value: boolean) {
 		this.highlightUnreadInList = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.highlightUnreadInList, String(value));
+			this.writeStorage(STORAGE.highlightUnreadInList, String(value));
 		}
 	}
 
 	setPreferPlainText(value: boolean) {
 		this.preferPlainText = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.preferPlainText, String(value));
+			this.writeStorage(STORAGE.preferPlainText, String(value));
 		}
 	}
 
 	setHideReaderRecipients(value: boolean) {
 		this.hideReaderRecipients = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideReaderRecipients, String(value));
+			this.writeStorage(STORAGE.hideReaderRecipients, String(value));
 		}
 	}
 
 	setToolIconsOnly(value: boolean) {
 		this.toolIconsOnly = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.toolIconsOnly, String(value));
+			this.writeStorage(STORAGE.toolIconsOnly, String(value));
 		}
 	}
 
 	setCollapseQuotedInCompose(value: boolean) {
 		this.collapseQuotedInCompose = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.collapseQuotedInCompose, String(value));
+			this.writeStorage(STORAGE.collapseQuotedInCompose, String(value));
 		}
 	}
 
 	setHideEmptyReaderPrompts(value: boolean) {
 		this.hideEmptyReaderPrompts = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideEmptyReaderPrompts, String(value));
+			this.writeStorage(STORAGE.hideEmptyReaderPrompts, String(value));
 		}
 	}
 
 	setHideEmptyReaderDescription(value: boolean) {
 		this.hideEmptyReaderDescription = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideEmptyReaderDescription, String(value));
+			this.writeStorage(STORAGE.hideEmptyReaderDescription, String(value));
 		}
 	}
 
 	setHideEmptyReaderActions(value: boolean) {
 		this.hideEmptyReaderActions = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideEmptyReaderActions, String(value));
+			this.writeStorage(STORAGE.hideEmptyReaderActions, String(value));
 		}
 	}
 
 	setHideEmptyReaderIcon(value: boolean) {
 		this.hideEmptyReaderIcon = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideEmptyReaderIcon, String(value));
+			this.writeStorage(STORAGE.hideEmptyReaderIcon, String(value));
 		}
 	}
 
 	setHideThreadSummary(value: boolean) {
 		this.hideThreadSummary = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideThreadSummary, String(value));
+			this.writeStorage(STORAGE.hideThreadSummary, String(value));
 		}
 	}
 
 	setShowFolderUnreadCounts(value: boolean) {
 		this.showFolderUnreadCounts = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showFolderUnreadCounts, String(value));
+			this.writeStorage(STORAGE.showFolderUnreadCounts, String(value));
 		}
 	}
 
 	setShowBulkSelect(value: boolean) {
 		this.showBulkSelect = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showBulkSelect, String(value));
+			this.writeStorage(STORAGE.showBulkSelect, String(value));
 		}
 	}
 
 	setHideHeaderSearch(value: boolean) {
 		this.hideHeaderSearch = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideHeaderSearch, String(value));
+			this.writeStorage(STORAGE.hideHeaderSearch, String(value));
 		}
 	}
 
 	setHideOfflineIndicator(value: boolean) {
 		this.hideOfflineIndicator = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideOfflineIndicator, String(value));
+			this.writeStorage(STORAGE.hideOfflineIndicator, String(value));
 		}
 	}
 
 	setShowQuickReply(value: boolean) {
 		this.showQuickReply = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showQuickReply, String(value));
+			this.writeStorage(STORAGE.showQuickReply, String(value));
 		}
 	}
 
 	setShowReaderContactActions(value: boolean) {
 		this.showReaderContactActions = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showReaderContactActions, String(value));
+			this.writeStorage(STORAGE.showReaderContactActions, String(value));
 		}
 	}
 
 	setExpandAllThreadMessages(value: boolean) {
 		this.expandAllThreadMessages = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.expandAllThreadMessages, String(value));
+			this.writeStorage(STORAGE.expandAllThreadMessages, String(value));
 		}
 	}
 
 	setCompactLayout(value: boolean) {
 		this.compactLayout = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactLayout, String(value));
+			this.writeStorage(STORAGE.compactLayout, String(value));
 		}
 		this.applyLayoutWidth();
 	}
@@ -1561,35 +1584,35 @@ class SettingsStore {
 	setHideComposeHints(value: boolean) {
 		this.hideComposeHints = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideComposeHints, String(value));
+			this.writeStorage(STORAGE.hideComposeHints, String(value));
 		}
 	}
 
 	setShowComposeContactSuggestions(value: boolean) {
 		this.showComposeContactSuggestions = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showComposeContactSuggestions, String(value));
+			this.writeStorage(STORAGE.showComposeContactSuggestions, String(value));
 		}
 	}
 
 	setShowSearchContactSuggestions(value: boolean) {
 		this.showSearchContactSuggestions = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showSearchContactSuggestions, String(value));
+			this.writeStorage(STORAGE.showSearchContactSuggestions, String(value));
 		}
 	}
 
 	setShowCcBccInCompose(value: boolean) {
 		this.showCcBccInCompose = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showCcBccInCompose, String(value));
+			this.writeStorage(STORAGE.showCcBccInCompose, String(value));
 		}
 	}
 
 	setReduceMotion(value: boolean) {
 		this.reduceMotion = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.reduceMotion, String(value));
+			this.writeStorage(STORAGE.reduceMotion, String(value));
 		}
 		this.applyReduceMotion();
 	}
@@ -1597,399 +1620,399 @@ class SettingsStore {
 	setCompactHeaderActions(value: boolean) {
 		this.compactHeaderActions = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactHeaderActions, String(value));
+			this.writeStorage(STORAGE.compactHeaderActions, String(value));
 		}
 	}
 
 	setRememberLastMailbox(value: boolean) {
 		this.rememberLastMailbox = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.rememberLastMailbox, String(value));
+			this.writeStorage(STORAGE.rememberLastMailbox, String(value));
 		}
 	}
 
 	setHideAppTitle(value: boolean) {
 		this.hideAppTitle = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideAppTitle, String(value));
+			this.writeStorage(STORAGE.hideAppTitle, String(value));
 		}
 	}
 
 	setCompactUserMenu(value: boolean) {
 		this.compactUserMenu = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactUserMenu, String(value));
+			this.writeStorage(STORAGE.compactUserMenu, String(value));
 		}
 	}
 
 	setHideListEmptyHints(value: boolean) {
 		this.hideListEmptyHints = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideListEmptyHints, String(value));
+			this.writeStorage(STORAGE.hideListEmptyHints, String(value));
 		}
 	}
 
 	setHideListEmptyActions(value: boolean) {
 		this.hideListEmptyActions = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideListEmptyActions, String(value));
+			this.writeStorage(STORAGE.hideListEmptyActions, String(value));
 		}
 	}
 
 	setHideSelectionHints(value: boolean) {
 		this.hideSelectionHints = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideSelectionHints, String(value));
+			this.writeStorage(STORAGE.hideSelectionHints, String(value));
 		}
 	}
 
 	setHideReaderTimestamps(value: boolean) {
 		this.hideReaderTimestamps = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideReaderTimestamps, String(value));
+			this.writeStorage(STORAGE.hideReaderTimestamps, String(value));
 		}
 	}
 
 	setHideCollapsedThreadPreviews(value: boolean) {
 		this.hideCollapsedThreadPreviews = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideCollapsedThreadPreviews, String(value));
+			this.writeStorage(STORAGE.hideCollapsedThreadPreviews, String(value));
 		}
 	}
 
 	setHideSettingsNavHints(value: boolean) {
 		this.hideSettingsNavHints = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideSettingsNavHints, String(value));
+			this.writeStorage(STORAGE.hideSettingsNavHints, String(value));
 		}
 	}
 
 	setHideSettingsPanelDescriptions(value: boolean) {
 		this.hideSettingsPanelDescriptions = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideSettingsPanelDescriptions, String(value));
+			this.writeStorage(STORAGE.hideSettingsPanelDescriptions, String(value));
 		}
 	}
 
 	setCompactFolderSidebar(value: boolean) {
 		this.compactFolderSidebar = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactFolderSidebar, String(value));
+			this.writeStorage(STORAGE.compactFolderSidebar, String(value));
 		}
 	}
 
 	setCompactAttachments(value: boolean) {
 		this.compactAttachments = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactAttachments, String(value));
+			this.writeStorage(STORAGE.compactAttachments, String(value));
 		}
 	}
 
 	setHideReaderSenderEmail(value: boolean) {
 		this.hideReaderSenderEmail = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideReaderSenderEmail, String(value));
+			this.writeStorage(STORAGE.hideReaderSenderEmail, String(value));
 		}
 	}
 
 	setIconOnlyBulkActions(value: boolean) {
 		this.iconOnlyBulkActions = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.iconOnlyBulkActions, String(value));
+			this.writeStorage(STORAGE.iconOnlyBulkActions, String(value));
 		}
 	}
 
 	setHideComposeFromLine(value: boolean) {
 		this.hideComposeFromLine = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideComposeFromLine, String(value));
+			this.writeStorage(STORAGE.hideComposeFromLine, String(value));
 		}
 	}
 
 	setHideThreadCollapseButtons(value: boolean) {
 		this.hideThreadCollapseButtons = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideThreadCollapseButtons, String(value));
+			this.writeStorage(STORAGE.hideThreadCollapseButtons, String(value));
 		}
 	}
 
 	setHideComposeFieldLabels(value: boolean) {
 		this.hideComposeFieldLabels = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideComposeFieldLabels, String(value));
+			this.writeStorage(STORAGE.hideComposeFieldLabels, String(value));
 		}
 	}
 
 	setCompactComposePanel(value: boolean) {
 		this.compactComposePanel = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactComposePanel, String(value));
+			this.writeStorage(STORAGE.compactComposePanel, String(value));
 		}
 	}
 
 	setHideOutboxUnlessFailed(value: boolean) {
 		this.hideOutboxUnlessFailed = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideOutboxUnlessFailed, String(value));
+			this.writeStorage(STORAGE.hideOutboxUnlessFailed, String(value));
 		}
 	}
 
 	setHideListActiveIndicator(value: boolean) {
 		this.hideListActiveIndicator = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideListActiveIndicator, String(value));
+			this.writeStorage(STORAGE.hideListActiveIndicator, String(value));
 		}
 	}
 
 	setCompactListRows(value: boolean) {
 		this.compactListRows = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactListRows, String(value));
+			this.writeStorage(STORAGE.compactListRows, String(value));
 		}
 	}
 
 	setHideMailShortcutsHelp(value: boolean) {
 		this.hideMailShortcutsHelp = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideMailShortcutsHelp, String(value));
+			this.writeStorage(STORAGE.hideMailShortcutsHelp, String(value));
 		}
 	}
 
 	setHideMoveMenuLabels(value: boolean) {
 		this.hideMoveMenuLabels = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideMoveMenuLabels, String(value));
+			this.writeStorage(STORAGE.hideMoveMenuLabels, String(value));
 		}
 	}
 
 	setIconOnlyComposeAttach(value: boolean) {
 		this.iconOnlyComposeAttach = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.iconOnlyComposeAttach, String(value));
+			this.writeStorage(STORAGE.iconOnlyComposeAttach, String(value));
 		}
 	}
 
 	setCompactReaderHeader(value: boolean) {
 		this.compactReaderHeader = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactReaderHeader, String(value));
+			this.writeStorage(STORAGE.compactReaderHeader, String(value));
 		}
 	}
 
 	setCompactReaderBody(value: boolean) {
 		this.compactReaderBody = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactReaderBody, String(value));
+			this.writeStorage(STORAGE.compactReaderBody, String(value));
 		}
 	}
 
 	setMinimalLoadingStates(value: boolean) {
 		this.minimalLoadingStates = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.minimalLoadingStates, String(value));
+			this.writeStorage(STORAGE.minimalLoadingStates, String(value));
 		}
 	}
 
 	setHideConnectingScreen(value: boolean) {
 		this.hideConnectingScreen = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideConnectingScreen, String(value));
+			this.writeStorage(STORAGE.hideConnectingScreen, String(value));
 		}
 	}
 
 	setCompactToolSwitcher(value: boolean) {
 		this.compactToolSwitcher = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactToolSwitcher, String(value));
+			this.writeStorage(STORAGE.compactToolSwitcher, String(value));
 		}
 	}
 
 	setHideSearchDropdownHeaders(value: boolean) {
 		this.hideSearchDropdownHeaders = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideSearchDropdownHeaders, String(value));
+			this.writeStorage(STORAGE.hideSearchDropdownHeaders, String(value));
 		}
 	}
 
 	setHidePaneBorders(value: boolean) {
 		this.hidePaneBorders = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hidePaneBorders, String(value));
+			this.writeStorage(STORAGE.hidePaneBorders, String(value));
 		}
 	}
 
 	setHideListRowDividers(value: boolean) {
 		this.hideListRowDividers = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideListRowDividers, String(value));
+			this.writeStorage(STORAGE.hideListRowDividers, String(value));
 		}
 	}
 
 	setHideReaderPaneBorders(value: boolean) {
 		this.hideReaderPaneBorders = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideReaderPaneBorders, String(value));
+			this.writeStorage(STORAGE.hideReaderPaneBorders, String(value));
 		}
 	}
 
 	setCompactBulkToolbar(value: boolean) {
 		this.compactBulkToolbar = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactBulkToolbar, String(value));
+			this.writeStorage(STORAGE.compactBulkToolbar, String(value));
 		}
 	}
 
 	setHideSearchListPrefix(value: boolean) {
 		this.hideSearchListPrefix = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideSearchListPrefix, String(value));
+			this.writeStorage(STORAGE.hideSearchListPrefix, String(value));
 		}
 	}
 
 	setCompactMobileSearch(value: boolean) {
 		this.compactMobileSearch = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactMobileSearch, String(value));
+			this.writeStorage(STORAGE.compactMobileSearch, String(value));
 		}
 	}
 
 	setHideAccountFieldHints(value: boolean) {
 		this.hideAccountFieldHints = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideAccountFieldHints, String(value));
+			this.writeStorage(STORAGE.hideAccountFieldHints, String(value));
 		}
 	}
 
 	setCompactQuickReply(value: boolean) {
 		this.compactQuickReply = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactQuickReply, String(value));
+			this.writeStorage(STORAGE.compactQuickReply, String(value));
 		}
 	}
 
 	setHideComposePanelBorders(value: boolean) {
 		this.hideComposePanelBorders = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideComposePanelBorders, String(value));
+			this.writeStorage(STORAGE.hideComposePanelBorders, String(value));
 		}
 	}
 
 	setIconOnlyComposeDiscard(value: boolean) {
 		this.iconOnlyComposeDiscard = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.iconOnlyComposeDiscard, String(value));
+			this.writeStorage(STORAGE.iconOnlyComposeDiscard, String(value));
 		}
 	}
 
 	setCompactComposeAttachments(value: boolean) {
 		this.compactComposeAttachments = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactComposeAttachments, String(value));
+			this.writeStorage(STORAGE.compactComposeAttachments, String(value));
 		}
 	}
 
 	setHideActionToasts(value: boolean) {
 		this.hideActionToasts = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideActionToasts, String(value));
+			this.writeStorage(STORAGE.hideActionToasts, String(value));
 		}
 	}
 
 	setCompactSidebarShortcuts(value: boolean) {
 		this.compactSidebarShortcuts = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactSidebarShortcuts, String(value));
+			this.writeStorage(STORAGE.compactSidebarShortcuts, String(value));
 		}
 	}
 
 	setCompactToasts(value: boolean) {
 		this.compactToasts = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactToasts, String(value));
+			this.writeStorage(STORAGE.compactToasts, String(value));
 		}
 	}
 
 	setHideToastIcons(value: boolean) {
 		this.hideToastIcons = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideToastIcons, String(value));
+			this.writeStorage(STORAGE.hideToastIcons, String(value));
 		}
 	}
 
 	setCompactLoadMore(value: boolean) {
 		this.compactLoadMore = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactLoadMore, String(value));
+			this.writeStorage(STORAGE.compactLoadMore, String(value));
 		}
 	}
 
 	setCompactUserMenuDropdown(value: boolean) {
 		this.compactUserMenuDropdown = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactUserMenuDropdown, String(value));
+			this.writeStorage(STORAGE.compactUserMenuDropdown, String(value));
 		}
 	}
 
 	setCompactOutboxMenu(value: boolean) {
 		this.compactOutboxMenu = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactOutboxMenu, String(value));
+			this.writeStorage(STORAGE.compactOutboxMenu, String(value));
 		}
 	}
 
 	setCompactSettingsRows(value: boolean) {
 		this.compactSettingsRows = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactSettingsRows, String(value));
+			this.writeStorage(STORAGE.compactSettingsRows, String(value));
 		}
 	}
 
 	setCompactSettingsLayout(value: boolean) {
 		this.compactSettingsLayout = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactSettingsLayout, String(value));
+			this.writeStorage(STORAGE.compactSettingsLayout, String(value));
 		}
 	}
 
 	setCompactSettingsPanel(value: boolean) {
 		this.compactSettingsPanel = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactSettingsPanel, String(value));
+			this.writeStorage(STORAGE.compactSettingsPanel, String(value));
 		}
 	}
 
 	setCompactMoveMenu(value: boolean) {
 		this.compactMoveMenu = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactMoveMenu, String(value));
+			this.writeStorage(STORAGE.compactMoveMenu, String(value));
 		}
 	}
 
 	setCompactSearchDropdown(value: boolean) {
 		this.compactSearchDropdown = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactSearchDropdown, String(value));
+			this.writeStorage(STORAGE.compactSearchDropdown, String(value));
 		}
 	}
 
 	setCompactComposeSuggestions(value: boolean) {
 		this.compactComposeSuggestions = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactComposeSuggestions, String(value));
+			this.writeStorage(STORAGE.compactComposeSuggestions, String(value));
 		}
 	}
 
 	setCompactOfflineIndicator(value: boolean) {
 		this.compactOfflineIndicator = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactOfflineIndicator, String(value));
+			this.writeStorage(STORAGE.compactOfflineIndicator, String(value));
 		}
 	}
 
 	setCompactAppHeader(value: boolean) {
 		this.compactAppHeader = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactAppHeader, String(value));
+			this.writeStorage(STORAGE.compactAppHeader, String(value));
 		}
 		this.applyHeaderLayout();
 	}
@@ -1997,328 +2020,328 @@ class SettingsStore {
 	setCompactEmptyReader(value: boolean) {
 		this.compactEmptyReader = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactEmptyReader, String(value));
+			this.writeStorage(STORAGE.compactEmptyReader, String(value));
 		}
 	}
 
 	setCompactSettingsNav(value: boolean) {
 		this.compactSettingsNav = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactSettingsNav, String(value));
+			this.writeStorage(STORAGE.compactSettingsNav, String(value));
 		}
 	}
 
 	setSettingsDetailLevel(value: SettingsDetailLevel) {
 		this.settingsDetailLevel = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.settingsDetailLevel, value);
+			this.writeStorage(STORAGE.settingsDetailLevel, value);
 		}
 	}
 
 	setHideSettingsBackLink(value: boolean) {
 		this.hideSettingsBackLink = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideSettingsBackLink, String(value));
+			this.writeStorage(STORAGE.hideSettingsBackLink, String(value));
 		}
 	}
 
 	setHideSettingsPageTitle(value: boolean) {
 		this.hideSettingsPageTitle = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideSettingsPageTitle, String(value));
+			this.writeStorage(STORAGE.hideSettingsPageTitle, String(value));
 		}
 	}
 
 	setHideReaderStatusBackButton(value: boolean) {
 		this.hideReaderStatusBackButton = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideReaderStatusBackButton, String(value));
+			this.writeStorage(STORAGE.hideReaderStatusBackButton, String(value));
 		}
 	}
 
 	setHideReaderStatusMessage(value: boolean) {
 		this.hideReaderStatusMessage = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideReaderStatusMessage, String(value));
+			this.writeStorage(STORAGE.hideReaderStatusMessage, String(value));
 		}
 	}
 
 	setCompactExternalContentBanner(value: boolean) {
 		this.compactExternalContentBanner = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactExternalContentBanner, String(value));
+			this.writeStorage(STORAGE.compactExternalContentBanner, String(value));
 		}
 	}
 
 	setCompactContactsPage(value: boolean) {
 		this.compactContactsPage = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactContactsPage, String(value));
+			this.writeStorage(STORAGE.compactContactsPage, String(value));
 		}
 	}
 
 	setCompactContactsList(value: boolean) {
 		this.compactContactsList = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactContactsList, String(value));
+			this.writeStorage(STORAGE.compactContactsList, String(value));
 		}
 	}
 
 	setHideContactMessageCounts(value: boolean) {
 		this.hideContactMessageCounts = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideContactMessageCounts, String(value));
+			this.writeStorage(STORAGE.hideContactMessageCounts, String(value));
 		}
 	}
 
 	setCompactListEmptyState(value: boolean) {
 		this.compactListEmptyState = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactListEmptyState, String(value));
+			this.writeStorage(STORAGE.compactListEmptyState, String(value));
 		}
 	}
 
 	setCompactListHeader(value: boolean) {
 		this.compactListHeader = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactListHeader, String(value));
+			this.writeStorage(STORAGE.compactListHeader, String(value));
 		}
 	}
 
 	setCompactHomeScreen(value: boolean) {
 		this.compactHomeScreen = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactHomeScreen, String(value));
+			this.writeStorage(STORAGE.compactHomeScreen, String(value));
 		}
 	}
 
 	setHideHomeScreenSubtitle(value: boolean) {
 		this.hideHomeScreenSubtitle = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideHomeScreenSubtitle, String(value));
+			this.writeStorage(STORAGE.hideHomeScreenSubtitle, String(value));
 		}
 	}
 
 	setHideHomeCardDescriptions(value: boolean) {
 		this.hideHomeCardDescriptions = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideHomeCardDescriptions, String(value));
+			this.writeStorage(STORAGE.hideHomeCardDescriptions, String(value));
 		}
 	}
 
 	setHideHomeOpenInboxButton(value: boolean) {
 		this.hideHomeOpenInboxButton = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideHomeOpenInboxButton, String(value));
+			this.writeStorage(STORAGE.hideHomeOpenInboxButton, String(value));
 		}
 	}
 
 	setCompactListLoadingSkeleton(value: boolean) {
 		this.compactListLoadingSkeleton = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactListLoadingSkeleton, String(value));
+			this.writeStorage(STORAGE.compactListLoadingSkeleton, String(value));
 		}
 	}
 
 	setCompactMobileFolderPicker(value: boolean) {
 		this.compactMobileFolderPicker = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactMobileFolderPicker, String(value));
+			this.writeStorage(STORAGE.compactMobileFolderPicker, String(value));
 		}
 	}
 
 	setCompactReaderToolbar(value: boolean) {
 		this.compactReaderToolbar = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactReaderToolbar, String(value));
+			this.writeStorage(STORAGE.compactReaderToolbar, String(value));
 		}
 	}
 
 	setCompactListAvatars(value: boolean) {
 		this.compactListAvatars = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactListAvatars, String(value));
+			this.writeStorage(STORAGE.compactListAvatars, String(value));
 		}
 	}
 
 	setCompactReaderAvatars(value: boolean) {
 		this.compactReaderAvatars = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactReaderAvatars, String(value));
+			this.writeStorage(STORAGE.compactReaderAvatars, String(value));
 		}
 	}
 
 	setCompactCollapsedThreads(value: boolean) {
 		this.compactCollapsedThreads = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactCollapsedThreads, String(value));
+			this.writeStorage(STORAGE.compactCollapsedThreads, String(value));
 		}
 	}
 
 	setCompactReaderStatus(value: boolean) {
 		this.compactReaderStatus = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactReaderStatus, String(value));
+			this.writeStorage(STORAGE.compactReaderStatus, String(value));
 		}
 	}
 
 	setCompactReaderMoreMenu(value: boolean) {
 		this.compactReaderMoreMenu = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactReaderMoreMenu, String(value));
+			this.writeStorage(STORAGE.compactReaderMoreMenu, String(value));
 		}
 	}
 
 	setCompactListErrorState(value: boolean) {
 		this.compactListErrorState = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactListErrorState, String(value));
+			this.writeStorage(STORAGE.compactListErrorState, String(value));
 		}
 	}
 
 	setHideListErrorRetry(value: boolean) {
 		this.hideListErrorRetry = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideListErrorRetry, String(value));
+			this.writeStorage(STORAGE.hideListErrorRetry, String(value));
 		}
 	}
 
 	setCompactReaderSkeleton(value: boolean) {
 		this.compactReaderSkeleton = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactReaderSkeleton, String(value));
+			this.writeStorage(STORAGE.compactReaderSkeleton, String(value));
 		}
 	}
 
 	setCompactFolderBadges(value: boolean) {
 		this.compactFolderBadges = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactFolderBadges, String(value));
+			this.writeStorage(STORAGE.compactFolderBadges, String(value));
 		}
 	}
 
 	setCompactFolderTree(value: boolean) {
 		this.compactFolderTree = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactFolderTree, String(value));
+			this.writeStorage(STORAGE.compactFolderTree, String(value));
 		}
 	}
 
 	setCompactFolderSidebarHeader(value: boolean) {
 		this.compactFolderSidebarHeader = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactFolderSidebarHeader, String(value));
+			this.writeStorage(STORAGE.compactFolderSidebarHeader, String(value));
 		}
 	}
 
 	setCompactFolderLoadingSkeleton(value: boolean) {
 		this.compactFolderLoadingSkeleton = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactFolderLoadingSkeleton, String(value));
+			this.writeStorage(STORAGE.compactFolderLoadingSkeleton, String(value));
 		}
 	}
 
 	setHideContactGroupLetters(value: boolean) {
 		this.hideContactGroupLetters = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideContactGroupLetters, String(value));
+			this.writeStorage(STORAGE.hideContactGroupLetters, String(value));
 		}
 	}
 
 	setCompactFolderSidebarError(value: boolean) {
 		this.compactFolderSidebarError = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactFolderSidebarError, String(value));
+			this.writeStorage(STORAGE.compactFolderSidebarError, String(value));
 		}
 	}
 
 	setCompactContactsAddForm(value: boolean) {
 		this.compactContactsAddForm = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactContactsAddForm, String(value));
+			this.writeStorage(STORAGE.compactContactsAddForm, String(value));
 		}
 	}
 
 	setHideContactsPageSubtitle(value: boolean) {
 		this.hideContactsPageSubtitle = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideContactsPageSubtitle, String(value));
+			this.writeStorage(STORAGE.hideContactsPageSubtitle, String(value));
 		}
 	}
 
 	setCompactContactsSearch(value: boolean) {
 		this.compactContactsSearch = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactContactsSearch, String(value));
+			this.writeStorage(STORAGE.compactContactsSearch, String(value));
 		}
 	}
 
 	setCompactContactsEmptyState(value: boolean) {
 		this.compactContactsEmptyState = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactContactsEmptyState, String(value));
+			this.writeStorage(STORAGE.compactContactsEmptyState, String(value));
 		}
 	}
 
 	setHideContactsHeaderSettings(value: boolean) {
 		this.hideContactsHeaderSettings = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideContactsHeaderSettings, String(value));
+			this.writeStorage(STORAGE.hideContactsHeaderSettings, String(value));
 		}
 	}
 
 	setHideContactsComposeButton(value: boolean) {
 		this.hideContactsComposeButton = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideContactsComposeButton, String(value));
+			this.writeStorage(STORAGE.hideContactsComposeButton, String(value));
 		}
 	}
 
 	setHideContactsEmptyHints(value: boolean) {
 		this.hideContactsEmptyHints = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideContactsEmptyHints, String(value));
+			this.writeStorage(STORAGE.hideContactsEmptyHints, String(value));
 		}
 	}
 
 	setHideContactsEmptyActions(value: boolean) {
 		this.hideContactsEmptyActions = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideContactsEmptyActions, String(value));
+			this.writeStorage(STORAGE.hideContactsEmptyActions, String(value));
 		}
 	}
 
 	setHideContactsHoverActions(value: boolean) {
 		this.hideContactsHoverActions = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideContactsHoverActions, String(value));
+			this.writeStorage(STORAGE.hideContactsHoverActions, String(value));
 		}
 	}
 
 	setHideContactsRowMailIcon(value: boolean) {
 		this.hideContactsRowMailIcon = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideContactsRowMailIcon, String(value));
+			this.writeStorage(STORAGE.hideContactsRowMailIcon, String(value));
 		}
 	}
 
 	setHideContactsEmailLine(value: boolean) {
 		this.hideContactsEmailLine = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideContactsEmailLine, String(value));
+			this.writeStorage(STORAGE.hideContactsEmailLine, String(value));
 		}
 	}
 
 	setCompactReaderInlineError(value: boolean) {
 		this.compactReaderInlineError = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.compactReaderInlineError, String(value));
+			this.writeStorage(STORAGE.compactReaderInlineError, String(value));
 		}
 	}
 
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
-		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
+		this.writeStorage(STORAGE.lastMailbox, routeId.trim());
 	}
 
 	preferredMailHref(): string {
@@ -2329,70 +2352,70 @@ class SettingsStore {
 	setMinimalReaderToolbar(value: boolean) {
 		this.minimalReaderToolbar = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.minimalReaderToolbar, String(value));
+			this.writeStorage(STORAGE.minimalReaderToolbar, String(value));
 		}
 	}
 
 	setHideSidebarShortcuts(value: boolean) {
 		this.hideSidebarShortcuts = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.hideSidebarShortcuts, String(value));
+			this.writeStorage(STORAGE.hideSidebarShortcuts, String(value));
 		}
 	}
 
 	setExpandListUntilOpen(value: boolean) {
 		this.expandListUntilOpen = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.expandListUntilOpen, String(value));
+			this.writeStorage(STORAGE.expandListUntilOpen, String(value));
 		}
 	}
 
 	setMailOnlyNavigation(value: boolean) {
 		this.mailOnlyNavigation = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.mailOnlyNavigation, String(value));
+			this.writeStorage(STORAGE.mailOnlyNavigation, String(value));
 		}
 	}
 
 	setEnableKeyboardShortcuts(value: boolean) {
 		this.enableKeyboardShortcuts = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.enableKeyboardShortcuts, String(value));
+			this.writeStorage(STORAGE.enableKeyboardShortcuts, String(value));
 		}
 	}
 
 	setConfirmBeforeDelete(value: boolean) {
 		this.confirmBeforeDelete = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.confirmBeforeDelete, String(value));
+			this.writeStorage(STORAGE.confirmBeforeDelete, String(value));
 		}
 	}
 
 	setConfirmBeforeDiscardCompose(value: boolean) {
 		this.confirmBeforeDiscardCompose = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.confirmBeforeDiscardCompose, String(value));
+			this.writeStorage(STORAGE.confirmBeforeDiscardCompose, String(value));
 		}
 	}
 
 	setReturnToInboxAfterSend(value: boolean) {
 		this.returnToInboxAfterSend = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.returnToInboxAfterSend, String(value));
+			this.writeStorage(STORAGE.returnToInboxAfterSend, String(value));
 		}
 	}
 
 	setSkipHomeScreen(value: boolean) {
 		this.skipHomeScreen = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.skipHomeScreen, String(value));
+			this.writeStorage(STORAGE.skipHomeScreen, String(value));
 		}
 	}
 
 	setReaderTextSize(value: ReaderTextSize) {
 		this.readerTextSize = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.readerTextSize, value);
+			this.writeStorage(STORAGE.readerTextSize, value);
 		}
 		this.applyReaderTextSize(value);
 	}
@@ -2400,14 +2423,14 @@ class SettingsStore {
 	setMarkAsReadOnOpen(value: boolean) {
 		this.markAsReadOnOpen = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.markAsReadOnOpen, String(value));
+			this.writeStorage(STORAGE.markAsReadOnOpen, String(value));
 		}
 	}
 
 	setShowUnreadInTitle(value: boolean) {
 		this.showUnreadInTitle = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.showUnreadInTitle, String(value));
+			this.writeStorage(STORAGE.showUnreadInTitle, String(value));
 		}
 		if (browser) {
 			void import('$lib/utils/document-title').then(({ applyUnreadPrefixToDocument }) =>
@@ -2419,7 +2442,7 @@ class SettingsStore {
 	setNotifyOnNewMail(value: boolean) {
 		this.notifyOnNewMail = value;
 		if (browser) {
-			localStorage.setItem(STORAGE.notifyOnNewMail, String(value));
+			this.writeStorage(STORAGE.notifyOnNewMail, String(value));
 			if (value) {
 				void requestBrowserNotificationPermission();
 			}
@@ -2432,9 +2455,9 @@ class SettingsStore {
 
 		const trimmed = value.trim();
 		if (trimmed) {
-			localStorage.setItem(STORAGE.displayName(this.userEmail), trimmed);
+			this.writeStorage(STORAGE.displayName(this.userEmail), trimmed);
 		} else {
-			localStorage.removeItem(STORAGE.displayName(this.userEmail));
+			this.removeStorage(STORAGE.displayName(this.userEmail));
 		}
 	}
 
@@ -2444,9 +2467,9 @@ class SettingsStore {
 
 		const trimmed = value.trim();
 		if (trimmed) {
-			localStorage.setItem(STORAGE.signature(this.userEmail), value);
+			this.writeStorage(STORAGE.signature(this.userEmail), value);
 		} else {
-			localStorage.removeItem(STORAGE.signature(this.userEmail));
+			this.removeStorage(STORAGE.signature(this.userEmail));
 		}
 	}
 
@@ -2933,6 +2956,7 @@ class SettingsStore {
 
 			this.init();
 			void import('$lib/stores/theme.svelte').then(({ theme }) => theme.init());
+			scheduleAccountSettingsPush();
 			return { ok: true };
 		} catch {
 			return { ok: false, error: 'Could not parse the settings file.' };

@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { scheduleAccountSettingsPush } from '$lib/settings/account-sync';
 
 export type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -44,6 +45,7 @@ class ThemeStore {
 		this.resolved = resolveTheme(value);
 		if (browser) {
 			localStorage.setItem('zaur-theme', value);
+			scheduleAccountSettingsPush();
 		}
 		this.applyResolved();
 	}

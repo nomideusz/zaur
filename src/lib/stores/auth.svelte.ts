@@ -76,6 +76,7 @@ class AuthStore {
 			this.displayName = payload.displayName;
 			this.isAuthenticated = true;
 			settings.setUser(payload.username);
+			await settings.syncFromAccount();
 			this.startBackgroundSync(client, payload.username, payload.displayName);
 
 			await goto(settings.preferredMailHref());
@@ -114,6 +115,7 @@ class AuthStore {
 			this.displayName = payload.displayName ?? payload.username;
 			this.isAuthenticated = true;
 			settings.setUser(payload.username);
+			await settings.syncFromAccount();
 			this.startBackgroundSync(client, payload.username, payload.displayName ?? payload.username);
 		} catch {
 			// Session cookie invalid or server unreachable

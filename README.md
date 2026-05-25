@@ -10,7 +10,7 @@ Live at [webmail.zaur.app](https://webmail.zaur.app).
 - **Contacts** — built from mail history, manual add, search integration
 - **Calendar** — month view, create and edit events
 - **Offline** — cached threads and an outbox queue for sending when back online
-- **Settings** — theme, list density, external content blocking, read/notify behavior, display name, signature
+- **Settings** — theme, list density, external content blocking, read/notify behavior, display name, signature (synced to your JMAP account across devices)
 
 Keyboard shortcuts: `c` compose, `/` search, `Ctrl+Enter` send, `Esc` close compose.
 
