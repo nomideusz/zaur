@@ -1553,6 +1553,7 @@ class SettingsStore {
 	}
 
 	async syncToAccount(): Promise<boolean> {
+		await this.syncFromAccount();
 		const { pushAccountSettingsNow } = await import('$lib/settings/account-sync');
 		const ok = await pushAccountSettingsNow();
 		if (ok) {
