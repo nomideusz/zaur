@@ -237,8 +237,8 @@
 				</div>
 
 				<Button
-					variant="ghost"
-					class="!px-2 !py-1.5 text-xs text-danger"
+					variant="danger"
+					class="!px-2 !py-1.5 text-xs"
 					disabled={mail.bulkActionLoading}
 					onclick={deleteSelected}
 				>
