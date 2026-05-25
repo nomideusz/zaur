@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import MailKeyboardShortcuts from '$lib/components/mail/MailKeyboardShortcuts.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	let { children } = $props();
@@ -31,6 +32,8 @@
 		return () => window.removeEventListener('keydown', onKeydown);
 	});
 </script>
+
+<MailKeyboardShortcuts />
 
 <div class="relative flex min-h-0 flex-1 flex-row overflow-hidden">
 	{@render children()}

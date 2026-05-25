@@ -75,6 +75,17 @@
 		</SettingsRow>
 	</SettingsGroup>
 
+	<SettingsGroup title="Preferences backup">
+		<SettingsRow
+			title="Export settings"
+			description="Download a JSON backup of your preferences — also under Backup & reset"
+		>
+			<button type="button" class="z-btn-ghost text-sm" onclick={() => settings.downloadLocalPreferences()}>
+				Export
+			</button>
+		</SettingsRow>
+	</SettingsGroup>
+
 	{#snippet footer()}
 		<h3 class="text-xs font-medium tracking-wide text-fg-subtle uppercase">Account details</h3>
 		<dl class="mt-4 space-y-4 text-sm">

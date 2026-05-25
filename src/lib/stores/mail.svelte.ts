@@ -309,31 +309,83 @@ class MailStore {
 		const target = this.mailboxes.find((mb) => mb.role === targetRole);
 		if (!target?.jmapId) throw new Error(`${targetRole ?? 'target'} folder not found`);
 
+		const sourceRouteId = message.mailboxId;
+		const sourceJmapId = this.mailboxByRouteId(sourceRouteId)?.jmapId;
+		const snapshot = { ...message };
+
 		await client.moveToMailbox(message.id, target.jmapId);
 		this.removeMessage(message);
+
+		if (sourceJmapId) {
+			const label =
+				targetRole === 'archive'
+					? snapshot.subject
+						? `Archived “${snapshot.subject}”`
+						: 'Message archived'
+					: `Moved to ${target.name}`;
+			this.offerMoveUndo({
+				client,
+				snapshots: [snapshot],
+				sourceRouteId,
+				sourceJmapId,
+				message: label
+			});
+		}
 	}
 
 	async moveMessageToMailbox(client: JMAPClient, message: MessagePreview, targetRouteId: string) {
 		const target = this.mailboxByRouteId(targetRouteId);
 		if (!target?.jmapId) throw new Error('Folder not found');
 
+		const sourceRouteId = message.mailboxId;
+		const sourceJmapId = this.mailboxByRouteId(sourceRouteId)?.jmapId;
+		const snapshot = { ...message };
+
 		await client.moveToMailbox(message.id, target.jmapId);
 		this.removeMessage(message);
+
+		if (sourceJmapId) {
+			this.offerMoveUndo({
+				client,
+				snapshots: [snapshot],
+				sourceRouteId,
+				sourceJmapId,
+				message: `Moved to ${target.name}`
+			});
+		}
 	}
 
 	async deleteMessage(client: JMAPClient, message: MessagePreview, routeMailboxId: string) {
 		const trash = this.mailboxes.find((mb) => mb.role === 'trash');
 		const currentMailbox = this.mailboxByRouteId(routeMailboxId);
+		const snapshot = { ...message };
+		const sourceJmapId = currentMailbox?.jmapId;
 
 		if (currentMailbox?.role === 'trash') {
 			await client.destroyEmail(message.id);
-		} else if (trash?.jmapId) {
+			this.removeMessage(message);
+			return;
+		}
+
+		if (trash?.jmapId) {
 			await client.moveToMailbox(message.id, trash.jmapId);
 		} else {
 			await client.destroyEmail(message.id);
+			this.removeMessage(message);
+			return;
 		}
 
 		this.removeMessage(message);
+
+		if (sourceJmapId) {
+			this.offerMoveUndo({
+				client,
+				snapshots: [snapshot],
+				sourceRouteId: routeMailboxId,
+				sourceJmapId,
+				message: snapshot.subject ? `Moved “${snapshot.subject}” to trash` : 'Moved to trash'
+			});
+		}
 	}
 
 	enterSelectionMode() {
@@ -369,6 +421,12 @@ class MailStore {
 		const archive = this.mailboxes.find((mb) => mb.role === 'archive');
 		if (!archive?.jmapId) throw new Error('Archive folder not found');
 
+		const sourceRouteId = this.currentMailboxRouteId;
+		const sourceJmapId = sourceRouteId
+			? this.mailboxByRouteId(sourceRouteId)?.jmapId
+			: undefined;
+		const snapshots = messages.map((message) => ({ ...message }));
+
 		this.bulkActionLoading = true;
 		try {
 			await client.moveEmailsToMailbox(
@@ -379,6 +437,18 @@ class MailStore {
 				this.removeMessage(message);
 			}
 			this.clearSelection();
+			if (sourceRouteId && sourceJmapId) {
+				this.offerMoveUndo({
+					client,
+					snapshots,
+					sourceRouteId,
+					sourceJmapId,
+					message:
+						snapshots.length === 1
+							? 'Message archived'
+							: `${snapshots.length} messages archived`
+				});
+			}
 		} finally {
 			this.bulkActionLoading = false;
 		}
@@ -443,6 +513,8 @@ class MailStore {
 		const currentMailbox = this.mailboxByRouteId(routeMailboxId);
 		const trash = this.mailboxes.find((mb) => mb.role === 'trash');
 		const ids = messages.map((message) => message.id);
+		const snapshots = messages.map((message) => ({ ...message }));
+		const sourceJmapId = currentMailbox?.jmapId;
 
 		this.bulkActionLoading = true;
 		try {
@@ -458,6 +530,19 @@ class MailStore {
 				this.removeMessage(message);
 			}
 			this.clearSelection();
+
+			if (currentMailbox?.role !== 'trash' && sourceJmapId) {
+				this.offerMoveUndo({
+					client,
+					snapshots,
+					sourceRouteId: routeMailboxId,
+					sourceJmapId,
+					message:
+						snapshots.length === 1
+							? 'Moved to trash'
+							: `${snapshots.length} messages moved to trash`
+				});
+			}
 		} finally {
 			this.bulkActionLoading = false;
 		}
@@ -721,6 +806,51 @@ class MailStore {
 				this.selectedThreadId = null;
 			}
 		}
+	}
+
+	restoreMessage(message: MessagePreview) {
+		if (this.messages.some((m) => m.id === message.id)) return;
+
+		this.messages = [...this.messages, message].sort(
+			(a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
+		);
+		this.messagesTotal += 1;
+		if (message.unread) {
+			this.adjustUnreadCount(message.mailboxId, 1);
+		}
+
+		if (browser) {
+			void import('$lib/db').then(({ getAccountId, patchCachedMessage }) => {
+				const accountId = getAccountId();
+				if (!accountId) return;
+				return patchCachedMessage(accountId, message.id, message);
+			});
+		}
+	}
+
+	private offerMoveUndo(params: {
+		client: JMAPClient;
+		snapshots: MessagePreview[];
+		sourceRouteId: string;
+		sourceJmapId: string;
+		message: string;
+	}) {
+		const snapshots = params.snapshots.map((message) => ({ ...message }));
+		toast.showUndo(params.message, async () => {
+			try {
+				await params.client.moveEmailsToMailbox(
+					snapshots.map((message) => message.id),
+					params.sourceJmapId
+				);
+				if (this.currentMailboxRouteId === params.sourceRouteId) {
+					for (const message of snapshots) {
+						this.restoreMessage(message);
+					}
+				}
+			} catch (error) {
+				toast.show(error instanceof Error ? error.message : 'Undo failed', 'error');
+			}
+		});
 	}
 
 	private adjustUnreadCount(routeId: string, delta: number) {

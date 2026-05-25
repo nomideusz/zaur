@@ -1,6 +1,10 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { get } from 'svelte/store';
+	import { page } from '$app/stores';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { shouldShowSetting } from '$lib/settings/detail-level';
+	import { settingsSearch, settingsSearchSlug } from '$lib/settings/search-registry.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	let {
@@ -11,20 +15,35 @@
 	}: {
 		title: string;
 		description?: string;
-		/** Force hide in essential mode, or force show when true with advanced false. */
 		advanced?: boolean;
 		children: import('svelte').Snippet;
 	} = $props();
 
+	const rowId = $derived(`${$page.url.pathname}-${settingsSearchSlug(title)}`);
+
 	const visible = $derived(
-		shouldShowSetting(settings.settingsDetailLevel, { advanced, title })
+		shouldShowSetting(settings.settingsDetailLevel, { advanced, title }) &&
+			settingsSearch.matchesRow(title, description)
 	);
+
+	onMount(() => {
+		const href = get(page).url.pathname;
+		settingsSearch.register({ id: rowId, title, description: description ?? '', href });
+		return () => settingsSearch.unregister(rowId);
+	});
+
+	$effect(() => {
+		if ($page.url.hash !== `#${rowId}`) return;
+		requestAnimationFrame(() => settingsSearch.scrollTo(rowId));
+	});
 </script>
 
 {#if visible}
 	<label
+		id={rowId}
+		data-settings-row
 		class={cn(
-			'flex min-w-0 items-center justify-between gap-4 rounded-lg border border-border',
+			'flex min-w-0 scroll-mt-24 items-center justify-between gap-4 rounded-lg border border-border transition-shadow',
 			settings.compactSettingsRows ? 'px-3 py-2' : 'px-4 py-3',
 			settings.hidePaneBorders && 'border-transparent',
 			'[&:has(:disabled)]:cursor-not-allowed'

@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { ArrowLeft } from 'lucide-svelte';
 	import SettingsDetailToggle from '$lib/components/settings/SettingsDetailToggle.svelte';
+	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
 	import { settingsNavLinks, isSettingsNavActive } from '$lib/settings/nav';
 	import { cn } from '$lib/utils/cn';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -50,6 +51,9 @@
 				<SettingsDetailToggle />
 			</div>
 		{/if}
+		<div class="mb-3">
+			<SettingsSearch />
+		</div>
 		<nav class="flex flex-col gap-3 pb-1">
 			{#each sections as section}
 				{@const sectionLinks = linksForSection(section.id)}
@@ -93,6 +97,9 @@
 		{#if !settings.hideSettingsPageTitle}
 			<h1 class="mb-4 text-lg font-semibold text-fg lg:text-xl">Settings</h1>
 		{/if}
+		<div class="mb-4">
+			<SettingsSearch />
+		</div>
 		<nav class="space-y-5">
 			{#each sections as section}
 				{@const sectionLinks = linksForSection(section.id)}

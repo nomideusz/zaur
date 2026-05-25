@@ -60,11 +60,6 @@
 			) {
 				return;
 			}
-		} else if (
-			settings.confirmBeforeDelete &&
-			!confirm(`Move ${count === 1 ? 'this message' : `${count} messages`} to trash?`)
-		) {
-			return;
 		}
 		await run(() => mail.bulkDelete(auth.client!, mailboxRouteId));
 	}

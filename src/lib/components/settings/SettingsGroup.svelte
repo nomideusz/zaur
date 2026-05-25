@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { settings } from '$lib/stores/settings.svelte';
+	import { settingsSearch } from '$lib/settings/search-registry.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	let {
@@ -10,16 +11,28 @@
 	}: {
 		title: string;
 		description?: string;
-		/** Hide the whole group in essential settings mode. */
 		advanced?: boolean;
 		children: import('svelte').Snippet;
 	} = $props();
 
+	let sectionRef = $state<HTMLElement | null>(null);
+	let hasRows = $state(true);
+
 	const visible = $derived(settings.settingsDetailLevel === 'advanced' || !advanced);
+
+	$effect(() => {
+		const q = settingsSearch.query.trim();
+		if (!sectionRef) return;
+		if (!q) {
+			hasRows = true;
+			return;
+		}
+		hasRows = sectionRef.querySelector('[data-settings-row]') !== null;
+	});
 </script>
 
-{#if visible}
-	<section class={cn(settings.compactSettingsRows ? 'space-y-3' : 'space-y-4')}>
+{#if visible && hasRows}
+	<section bind:this={sectionRef} class={cn(settings.compactSettingsRows ? 'space-y-3' : 'space-y-4')}>
 		<div>
 			<h3 class="text-sm font-semibold text-fg">{title}</h3>
 			{#if description && !settings.hideSettingsPanelDescriptions}

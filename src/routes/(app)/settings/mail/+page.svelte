@@ -217,6 +217,27 @@
 		<SettingsRow title="Search" description="Focus the search field from anywhere in mail">
 			<span class="font-mono text-xs text-fg">/</span>
 		</SettingsRow>
+		<SettingsRow title="Next message" description="Move to the next message in the list">
+			<span class="font-mono text-xs text-fg">j</span>
+		</SettingsRow>
+		<SettingsRow title="Previous message" description="Move to the previous message in the list">
+			<span class="font-mono text-xs text-fg">k</span>
+		</SettingsRow>
+		<SettingsRow title="Reply" description="Reply to the open message">
+			<span class="font-mono text-xs text-fg">r</span>
+		</SettingsRow>
+		<SettingsRow title="Reply all" description="Reply all on the open thread">
+			<span class="font-mono text-xs text-fg">a</span>
+		</SettingsRow>
+		<SettingsRow title="Archive" description="Archive the open message">
+			<span class="font-mono text-xs text-fg">e</span>
+		</SettingsRow>
+		<SettingsRow title="Mark unread" description="Toggle read/unread on the open message">
+			<span class="font-mono text-xs text-fg">u</span>
+		</SettingsRow>
+		<SettingsRow title="Delete" description="Move the open message to trash — undo appears in the toast">
+			<span class="font-mono text-xs text-fg">#</span>
+		</SettingsRow>
 		<SettingsRow title="Send message" description="While writing in compose or quick reply">
 			<span class="font-mono text-xs text-fg">Ctrl+Enter</span>
 		</SettingsRow>

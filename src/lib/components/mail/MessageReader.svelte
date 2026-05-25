@@ -160,11 +160,6 @@
 			if (!confirm('Permanently delete this message? This cannot be undone.')) {
 				return;
 			}
-		} else if (
-			settings.confirmBeforeDelete &&
-			!confirm('Move this message to trash?')
-		) {
-			return;
 		}
 		void withClient((client) => mail.deleteMessage(client, latest, mailboxRouteId));
 	}
