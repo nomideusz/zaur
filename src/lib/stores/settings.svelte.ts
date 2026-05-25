@@ -8,6 +8,9 @@ const STORAGE = {
 	blockExternal: 'zaur:block-external',
 	hideExternalContentBanner: 'zaur:hide-external-content-banner',
 	autoLoadMore: 'zaur:auto-load-more',
+	hideFolderSidebarHeader: 'zaur:hide-folder-sidebar-header',
+	hideFolderIcons: 'zaur:hide-folder-icons',
+	hideListHeader: 'zaur:hide-list-header',
 	listDensity: 'zaur:list-density',
 	showListPreview: 'zaur:show-list-preview',
 	showAvatars: 'zaur:show-avatars',
@@ -41,6 +44,7 @@ const STORAGE = {
 	enableKeyboardShortcuts: 'zaur:enable-keyboard-shortcuts',
 	confirmBeforeDelete: 'zaur:confirm-before-delete',
 	confirmBeforeDiscardCompose: 'zaur:confirm-before-discard-compose',
+	returnToInboxAfterSend: 'zaur:return-to-inbox-after-send',
 	skipHomeScreen: 'zaur:skip-home-screen',
 	readerTextSize: 'zaur:reader-text-size',
 	markAsReadOnOpen: 'zaur:mark-read-on-open',
@@ -78,6 +82,21 @@ function readHideExternalContentBanner(): boolean {
 function readAutoLoadMore(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.autoLoadMore) === 'true';
+}
+
+function readHideFolderSidebarHeader(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideFolderSidebarHeader) === 'true';
+}
+
+function readHideFolderIcons(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideFolderIcons) === 'true';
+}
+
+function readHideListHeader(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideListHeader) === 'true';
 }
 
 function readListDensity(): ListDensity {
@@ -245,6 +264,11 @@ function readConfirmBeforeDiscardCompose(): boolean {
 	return localStorage.getItem(STORAGE.confirmBeforeDiscardCompose) !== 'false';
 }
 
+function readReturnToInboxAfterSend(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.returnToInboxAfterSend) === 'true';
+}
+
 function readSkipHomeScreen(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.skipHomeScreen) === 'true';
@@ -284,6 +308,9 @@ class SettingsStore {
 	blockExternalContent = $state(readBlockExternal());
 	hideExternalContentBanner = $state(readHideExternalContentBanner());
 	autoLoadMore = $state(readAutoLoadMore());
+	hideFolderSidebarHeader = $state(readHideFolderSidebarHeader());
+	hideFolderIcons = $state(readHideFolderIcons());
+	hideListHeader = $state(readHideListHeader());
 	listDensity = $state<ListDensity>(readListDensity());
 	showListPreview = $state(readShowListPreview());
 	showAvatars = $state(readShowAvatars());
@@ -317,6 +344,7 @@ class SettingsStore {
 	enableKeyboardShortcuts = $state(readEnableKeyboardShortcuts());
 	confirmBeforeDelete = $state(readConfirmBeforeDelete());
 	confirmBeforeDiscardCompose = $state(readConfirmBeforeDiscardCompose());
+	returnToInboxAfterSend = $state(readReturnToInboxAfterSend());
 	skipHomeScreen = $state(readSkipHomeScreen());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	markAsReadOnOpen = $state(readMarkAsReadOnOpen());
@@ -331,6 +359,9 @@ class SettingsStore {
 		this.blockExternalContent = readBlockExternal();
 		this.hideExternalContentBanner = readHideExternalContentBanner();
 		this.autoLoadMore = readAutoLoadMore();
+		this.hideFolderSidebarHeader = readHideFolderSidebarHeader();
+		this.hideFolderIcons = readHideFolderIcons();
+		this.hideListHeader = readHideListHeader();
 		this.listDensity = readListDensity();
 		this.showListPreview = readShowListPreview();
 		this.showAvatars = readShowAvatars();
@@ -365,6 +396,7 @@ class SettingsStore {
 		this.enableKeyboardShortcuts = readEnableKeyboardShortcuts();
 		this.confirmBeforeDelete = readConfirmBeforeDelete();
 		this.confirmBeforeDiscardCompose = readConfirmBeforeDiscardCompose();
+		this.returnToInboxAfterSend = readReturnToInboxAfterSend();
 		this.skipHomeScreen = readSkipHomeScreen();
 		this.readerTextSize = readReaderTextSize();
 		this.markAsReadOnOpen = readMarkAsReadOnOpen();
@@ -412,6 +444,27 @@ class SettingsStore {
 		this.autoLoadMore = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.autoLoadMore, String(value));
+		}
+	}
+
+	setHideFolderSidebarHeader(value: boolean) {
+		this.hideFolderSidebarHeader = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideFolderSidebarHeader, String(value));
+		}
+	}
+
+	setHideFolderIcons(value: boolean) {
+		this.hideFolderIcons = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideFolderIcons, String(value));
+		}
+	}
+
+	setHideListHeader(value: boolean) {
+		this.hideListHeader = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideListHeader, String(value));
 		}
 	}
 
@@ -649,6 +702,13 @@ class SettingsStore {
 		}
 	}
 
+	setReturnToInboxAfterSend(value: boolean) {
+		this.returnToInboxAfterSend = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.returnToInboxAfterSend, String(value));
+		}
+	}
+
 	setSkipHomeScreen(value: boolean) {
 		this.skipHomeScreen = value;
 		if (browser) {
@@ -744,6 +804,9 @@ class SettingsStore {
 		this.setBlockExternalContent(true);
 		this.setHideExternalContentBanner(false);
 		this.setAutoLoadMore(false);
+		this.setHideFolderSidebarHeader(false);
+		this.setHideFolderIcons(false);
+		this.setHideListHeader(false);
 		this.setShowQuickReply(true);
 		this.setExpandAllThreadMessages(false);
 		this.setShowReaderContactActions(true);
@@ -779,6 +842,10 @@ class SettingsStore {
 		this.setCollapseQuotedInCompose(true);
 		this.setHideEmptyReaderPrompts(true);
 		this.setHideThreadSummary(true);
+		this.setHideFolderSidebarHeader(true);
+		this.setHideFolderIcons(true);
+		this.setHideListHeader(true);
+		this.setAutoLoadMore(true);
 	}
 
 	resetMailSettings() {
@@ -788,6 +855,7 @@ class SettingsStore {
 		this.setEnableKeyboardShortcuts(true);
 		this.setConfirmBeforeDelete(true);
 		this.setConfirmBeforeDiscardCompose(true);
+		this.setReturnToInboxAfterSend(false);
 	}
 
 	exportLocalPreferences(): string {

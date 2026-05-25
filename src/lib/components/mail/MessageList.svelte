@@ -129,7 +129,11 @@
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
-	<div class="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4">
+	<div
+		class="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4 {settings.hideListHeader
+			? 'md:hidden'
+			: ''}"
+	>
 		{#if mailboxRouteId}
 			<label class="min-w-0 flex-1 md:hidden">
 				<span class="sr-only">Folder</span>

@@ -391,6 +391,42 @@
 				onchange={(e) => settings.setCompactLayout(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Hide folder sidebar header"
+			description="Remove the “Folders” label above the mailbox tree"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideFolderSidebarHeader}
+				onchange={(e) => settings.setHideFolderSidebarHeader(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide folder icons"
+			description="Text-only folder names in the sidebar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideFolderIcons}
+				onchange={(e) => settings.setHideFolderIcons(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide list header on desktop"
+			description="Remove the folder title bar above messages — mobile folder picker stays"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideListHeader}
+				onchange={(e) => settings.setHideListHeader(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Navigation">

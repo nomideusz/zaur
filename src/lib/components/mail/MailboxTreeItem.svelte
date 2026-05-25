@@ -42,7 +42,9 @@
 		style="padding-left: {0.75 + depth * 0.75}rem; padding-right: 0.75rem;"
 		aria-current={isActive ? 'page' : undefined}
 	>
-		<Icon class="size-4 shrink-0" aria-hidden="true" />
+		{#if !settings.hideFolderIcons}
+			<Icon class="size-4 shrink-0" aria-hidden="true" />
+		{/if}
 		<span class="flex-1 truncate">{node.name}</span>
 		{#if settings.showFolderUnreadCounts}
 			<Badge count={node.unread} />

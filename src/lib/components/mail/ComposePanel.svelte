@@ -93,7 +93,7 @@
 	async function send() {
 		if (!auth.client || !auth.username) return;
 		const result = await compose.send(auth.client, auth.username, senderName);
-		if (result === 'sent') goto('/mail/sent');
+		if (result === 'sent') goto(settings.returnToInboxAfterSend ? '/mail/inbox' : '/mail/sent');
 		else if (result === 'queued') goto('/mail/inbox');
 	}
 

@@ -17,7 +17,7 @@
 	style="view-transition-name: mail-sidebar;"
 	aria-label="Folders"
 >
-	<div class="shrink-0 border-b border-border px-4 py-3">
+	<div class="shrink-0 border-b border-border px-4 py-3 {settings.hideFolderSidebarHeader ? 'sr-only' : ''}">
 		<h2 class="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Folders</h2>
 	</div>
 

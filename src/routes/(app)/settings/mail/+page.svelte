@@ -82,6 +82,18 @@
 				onchange={(e) => settings.setConfirmBeforeDiscardCompose(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Return to inbox after sending"
+			description="Go back to Inbox instead of Sent after a message is delivered"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.returnToInboxAfterSend}
+				onchange={(e) => settings.setReturnToInboxAfterSend(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Reset">
