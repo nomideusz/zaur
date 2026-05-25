@@ -1,5 +1,5 @@
 import { browser } from '$app/environment';
-import { pullAccountSettings, scheduleAccountSettingsPush, setSyncAccountEmail } from '$lib/settings/account-sync';
+import { collectSyncableSettings, pullAccountSettings, scheduleAccountSettingsPush, setSyncAccountEmail, isOtherAccountsScopedKey } from '$lib/settings/account-sync';
 import type { SettingsDetailLevel } from '$lib/settings/detail-level';
 import { requestBrowserNotificationPermission } from '$lib/utils/notifications';
 
@@ -3537,15 +3537,11 @@ class SettingsStore {
 	exportLocalPreferences(): string {
 		if (!browser) return '{}';
 
-		const data: Record<string, string> = {};
-		for (let index = 0; index < localStorage.length; index++) {
-			const key = localStorage.key(index);
-			if (!key || (!key.startsWith('zaur:') && key !== 'zaur-theme')) continue;
-			const value = localStorage.getItem(key);
-			if (value !== null) data[key] = value;
-		}
-
-		return JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), settings: data }, null, 2);
+		return JSON.stringify(
+			{ version: 1, exportedAt: new Date().toISOString(), settings: collectSyncableSettings() },
+			null,
+			2
+		);
 	}
 
 	importLocalPreferences(json: string): { ok: true } | { ok: false; error: string } {
@@ -3565,6 +3561,7 @@ class SettingsStore {
 			for (const [key, value] of Object.entries(data)) {
 				if (typeof value !== 'string') continue;
 				if (!key.startsWith('zaur:') && key !== 'zaur-theme') continue;
+				if (this.userEmail && isOtherAccountsScopedKey(key, this.userEmail)) continue;
 				localStorage.setItem(key, value);
 			}
 

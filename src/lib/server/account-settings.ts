@@ -12,7 +12,7 @@ const WEBMAIL_SETTINGS_URN = 'https://zaur.app/jmap/webmail-settings/v1';
 type JmapMethodResponse = [string, Record<string, unknown>?];
 
 function assertEmailSetSucceeded(response: Awaited<ReturnType<JMAPClient['request']>>) {
-	const first = response.methodResponses?.[0] as JmapMethodResponse | undefined;
+	const first = response.methodResponses?.[0] as unknown as JmapMethodResponse | undefined;
 	if (first?.[0] === 'error') {
 		const error = first[1] as { type?: string; description?: string };
 		throw new Error(error.description ?? error.type ?? 'Email/set failed');
