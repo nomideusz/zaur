@@ -119,54 +119,6 @@
 		</SettingsDepends>
 
 		<SettingsRow
-			title="Icon-only attach button"
-			description="Show only the paperclip icon for attachments in compose — no “Attach” label"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.iconOnlyComposeAttach}
-				onchange={(e) => settings.setIconOnlyComposeAttach(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Icon-only discard button"
-			description="Show an X icon instead of the Discard label in compose"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.iconOnlyComposeDiscard}
-				onchange={(e) => settings.setIconOnlyComposeDiscard(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Hide compose panel borders"
-			description="Remove divider lines between header, fields, and footer in compose"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideComposePanelBorders}
-				onchange={(e) => settings.setHideComposePanelBorders(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Compact compose attachments"
-			description="Tighter spacing for files you attach while writing — also set Compact attachments under Reading for chip size"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactComposeAttachments}
-				onchange={(e) => settings.setCompactComposeAttachments(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
 			title="Compose contact suggestions"
 			description="Autocomplete contacts while typing recipients"
 		>
@@ -197,6 +149,56 @@
 			</SettingsRow>
 		</SettingsDepends>
 
+</SettingsGroup>
+
+<SettingsGroup title="Compose toolbar & chrome" description="Footer buttons, dividers, and attachment strip spacing.">
+	<SettingsRow
+		title="Icon-only attach button"
+		description="Show only the paperclip icon for attachments in compose — no “Attach” label"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.iconOnlyComposeAttach}
+			onchange={(e) => settings.setIconOnlyComposeAttach(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Icon-only discard button"
+		description="Show an X icon instead of the Discard label in compose"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.iconOnlyComposeDiscard}
+			onchange={(e) => settings.setIconOnlyComposeDiscard(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Hide compose panel borders"
+		description="Remove divider lines between header, fields, and footer in compose"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.hideComposePanelBorders}
+			onchange={(e) => settings.setHideComposePanelBorders(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Compact compose attachments"
+		description="Tighter spacing for files you attach while writing — also set Compact attachments under Reading for chip size"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactComposeAttachments}
+			onchange={(e) => settings.setCompactComposeAttachments(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Defaults">
