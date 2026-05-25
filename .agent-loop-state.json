@@ -1,8 +1,8 @@
 {
-  "iteration": 4,
+  "iteration": 5,
   "maxIterations": 20,
   "deployEvery": 5,
-  "lastDeployIteration": 0,
+  "lastDeployIteration": 5,
   "focus": "bugs and errors: settings account sync, forward attachments, other fixes",
   "completed": false
 }
