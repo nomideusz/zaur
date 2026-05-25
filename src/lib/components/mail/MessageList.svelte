@@ -169,6 +169,9 @@
 
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 		{#if loading}
+			{#if settings.minimalLoadingStates}
+				<p class="px-4 py-8 text-center text-sm text-fg-muted" aria-busy="true">Loading messages…</p>
+			{:else}
 			<div class="divide-y divide-border" aria-busy="true" aria-label="Loading messages">
 				{#each Array(6) as _, index (index)}
 					<div class="z-list-row flex items-start gap-3 px-3 py-2.5">
@@ -190,6 +193,7 @@
 					</div>
 				{/each}
 			</div>
+			{/if}
 		{:else if error}
 			<div class="flex flex-col items-center gap-3 px-4 py-12 text-center">
 				<p class="text-sm text-danger">{error}</p>

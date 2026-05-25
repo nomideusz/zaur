@@ -23,11 +23,15 @@
 
 	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto {settings.compactFolderSidebar ? 'p-1' : 'p-2'}">
 		{#if mail.mailboxesLoading}
+			{#if settings.minimalLoadingStates}
+				<p class="px-3 py-4 text-center text-xs text-fg-muted" aria-busy="true">Loading folders…</p>
+			{:else}
 			<div class="space-y-2 px-3 py-2" aria-busy="true" aria-label="Loading folders">
 				{#each Array(6) as _, index (index)}
 					<div class="h-8 animate-pulse rounded-md bg-surface-sunken"></div>
 				{/each}
 			</div>
+			{/if}
 		{:else if mail.mailboxesError}
 			<div class="flex flex-col items-center gap-2 px-3 py-4 text-center">
 				<p class="text-sm text-danger">{mail.mailboxesError}</p>

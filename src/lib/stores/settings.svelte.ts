@@ -64,6 +64,9 @@ const STORAGE = {
 	hideMoveMenuLabels: 'zaur:hide-move-menu-labels',
 	iconOnlyComposeAttach: 'zaur:icon-only-compose-attach',
 	compactReaderHeader: 'zaur:compact-reader-header',
+	compactReaderBody: 'zaur:compact-reader-body',
+	minimalLoadingStates: 'zaur:minimal-loading-states',
+	hideConnectingScreen: 'zaur:hide-connecting-screen',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -398,6 +401,21 @@ function readCompactReaderHeader(): boolean {
 	return localStorage.getItem(STORAGE.compactReaderHeader) === 'true';
 }
 
+function readCompactReaderBody(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactReaderBody) === 'true';
+}
+
+function readMinimalLoadingStates(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.minimalLoadingStates) === 'true';
+}
+
+function readHideConnectingScreen(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideConnectingScreen) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -539,6 +557,9 @@ class SettingsStore {
 	hideMoveMenuLabels = $state(readHideMoveMenuLabels());
 	iconOnlyComposeAttach = $state(readIconOnlyComposeAttach());
 	compactReaderHeader = $state(readCompactReaderHeader());
+	compactReaderBody = $state(readCompactReaderBody());
+	minimalLoadingStates = $state(readMinimalLoadingStates());
+	hideConnectingScreen = $state(readHideConnectingScreen());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -618,6 +639,9 @@ class SettingsStore {
 		this.hideMoveMenuLabels = readHideMoveMenuLabels();
 		this.iconOnlyComposeAttach = readIconOnlyComposeAttach();
 		this.compactReaderHeader = readCompactReaderHeader();
+		this.compactReaderBody = readCompactReaderBody();
+		this.minimalLoadingStates = readMinimalLoadingStates();
+		this.hideConnectingScreen = readHideConnectingScreen();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1082,6 +1106,27 @@ class SettingsStore {
 		}
 	}
 
+	setCompactReaderBody(value: boolean) {
+		this.compactReaderBody = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactReaderBody, String(value));
+		}
+	}
+
+	setMinimalLoadingStates(value: boolean) {
+		this.minimalLoadingStates = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.minimalLoadingStates, String(value));
+		}
+	}
+
+	setHideConnectingScreen(value: boolean) {
+		this.hideConnectingScreen = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideConnectingScreen, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1278,6 +1323,9 @@ class SettingsStore {
 		this.setHideMoveMenuLabels(false);
 		this.setIconOnlyComposeAttach(false);
 		this.setCompactReaderHeader(false);
+		this.setCompactReaderBody(false);
+		this.setMinimalLoadingStates(false);
+		this.setHideConnectingScreen(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1325,6 +1373,9 @@ class SettingsStore {
 		this.setHideMoveMenuLabels(true);
 		this.setIconOnlyComposeAttach(true);
 		this.setCompactReaderHeader(true);
+		this.setCompactReaderBody(true);
+		this.setMinimalLoadingStates(true);
+		this.setHideConnectingScreen(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1414,6 +1465,9 @@ class SettingsStore {
 			this.hideMoveMenuLabels,
 			this.iconOnlyComposeAttach,
 			this.compactReaderHeader,
+			this.compactReaderBody,
+			this.minimalLoadingStates,
+			this.hideConnectingScreen,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

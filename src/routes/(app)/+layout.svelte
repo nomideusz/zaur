@@ -48,7 +48,7 @@
 
 {#if auth.isRestoring}
 	<div class="flex min-h-dvh items-center justify-center bg-surface text-sm text-fg-muted">
-		Connecting…
+		<span class={settings.hideConnectingScreen ? 'sr-only' : ''}>Connecting…</span>
 	</div>
 {:else if auth.isAuthenticated}
 	<div class="flex h-dvh flex-col overflow-hidden">

@@ -61,6 +61,30 @@
 				onchange={(e) => settings.setReduceMotion(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Minimal loading states"
+			description="Show simple loading text instead of animated skeleton placeholders"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.minimalLoadingStates}
+				onchange={(e) => settings.setMinimalLoadingStates(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide connecting screen"
+			description="Blank screen while restoring your session — no “Connecting…” message"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideConnectingScreen}
+				onchange={(e) => settings.setHideConnectingScreen(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Inbox list">
@@ -437,6 +461,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideMoveMenuLabels}
 				onchange={(e) => settings.setHideMoveMenuLabels(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact reader body"
+			description="Less padding around message content in the reading pane"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactReaderBody}
+				onchange={(e) => settings.setCompactReaderBody(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

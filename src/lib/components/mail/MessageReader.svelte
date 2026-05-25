@@ -430,7 +430,7 @@
 		{#each thread as message, index (message.id)}
 			<section class={cn(index > 0 && 'border-t border-border')}>
 				{#if isExpanded(message)}
-					<div class="px-4 py-5 md:px-6">
+					<div class={cn(settings.compactReaderBody ? 'px-4 py-3 md:px-5' : 'px-4 py-5 md:px-6')}>
 						<div class="w-full max-w-(--z-reader-measure)">
 						<div class="mb-4 flex flex-wrap items-start gap-3">
 							{#if settings.showAvatars}
