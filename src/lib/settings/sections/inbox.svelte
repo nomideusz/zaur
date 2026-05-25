@@ -265,7 +265,7 @@
 <SettingsGroup title="Bulk selection" description="Multi-select messages for archive, move, and delete.">
 	<SettingsRow
 		title="Show bulk select"
-		description="Checkbox or Ctrl/Shift+click to select messages; the open message is selected when you start"
+		description="Header checkbox selects all loaded messages; Ctrl/Shift+click to build a partial selection"
 	>
 		<input
 			type="checkbox"

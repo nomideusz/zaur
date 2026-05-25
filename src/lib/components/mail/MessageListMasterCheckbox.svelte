@@ -2,10 +2,7 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { cn } from '$lib/utils/cn';
 
-	let {
-		class: className = '',
-		activeMessageId = null
-	}: { class?: string; activeMessageId?: string | null } = $props();
+	let { class: className = '' }: { class?: string } = $props();
 
 	let input = $state<HTMLInputElement | null>(null);
 
@@ -24,21 +21,17 @@
 	function onClick(event: MouseEvent) {
 		event.preventDefault();
 
-		if (!mail.selectionMode) {
-			mail.enterSelectionMode(activeMessageId);
+		if (allSelected) {
+			mail.exitSelectionMode();
 			return;
 		}
 
-		if (allSelected) {
-			mail.exitSelectionMode();
-		} else {
-			mail.selectAllMessages();
-		}
+		mail.selectAllMessages();
 	}
 
 	$effect(() => {
 		if (!input) return;
-		input.indeterminate = someSelected;
+		input.indeterminate = someSelected && !allSelected;
 	});
 </script>
 

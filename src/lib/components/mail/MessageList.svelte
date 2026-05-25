@@ -163,7 +163,7 @@
 	<div class={listHeaderClass}>
 		{#if showBulkToolbar}
 			<div class="flex shrink-0 items-center rounded-md p-0.5">
-				<MessageListMasterCheckbox {activeMessageId} />
+				<MessageListMasterCheckbox />
 			</div>
 		{/if}
 
