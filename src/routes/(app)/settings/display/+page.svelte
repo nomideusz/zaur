@@ -393,6 +393,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact blocked-images banner"
+			description="Smaller external images notice in the reading pane"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactExternalContentBanner}
+				onchange={(e) => settings.setCompactExternalContentBanner(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Prefer plain text"
 			description="Show the plain-text version when available instead of formatted HTML"
 		>
@@ -617,6 +629,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideEmptyReaderPrompts}
 				onchange={(e) => settings.setHideEmptyReaderPrompts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact empty reader"
+			description="Less padding and smaller text in the reading pane when no message is selected"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactEmptyReader}
+				onchange={(e) => settings.setCompactEmptyReader(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>
@@ -1165,6 +1189,18 @@
 				class="size-4 accent-accent"
 				checked={settings.compactSettingsPanel}
 				onchange={(e) => settings.setCompactSettingsPanel(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact settings nav"
+			description="Tighter sidebar and mobile tab links on settings pages"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactSettingsNav}
+				onchange={(e) => settings.setCompactSettingsNav(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

@@ -2,6 +2,7 @@
 	import { PenSquare, Mail } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { cn } from '$lib/utils/cn';
 
 	interface Props {
 		title?: string;
@@ -22,14 +23,21 @@
 	const showPrompts = $derived(!settings.hideEmptyReaderPrompts);
 </script>
 
-<div class="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 bg-surface-raised p-8 text-center">
+<div
+	class={cn(
+		'flex min-h-0 flex-1 flex-col items-center justify-center bg-surface-raised text-center',
+		settings.compactEmptyReader ? 'gap-3 p-4' : 'gap-4 p-8'
+	)}
+>
 	{#if showPrompts}
-		<div class="rounded-full bg-surface-sunken p-4">
-			<Mail class="size-8 text-fg-subtle" aria-hidden="true" />
+		<div class={cn('rounded-full bg-surface-sunken', settings.compactEmptyReader ? 'p-3' : 'p-4')}>
+			<Mail class={cn('text-fg-subtle', settings.compactEmptyReader ? 'size-6' : 'size-8')} aria-hidden="true" />
 		</div>
 		<div>
-			<h2 class="text-lg font-medium text-fg">{title}</h2>
-			<p class="mx-auto mt-2 max-w-sm text-sm text-fg-muted">{description}</p>
+			<h2 class={cn('font-medium text-fg', settings.compactEmptyReader ? 'text-base' : 'text-lg')}>{title}</h2>
+			<p class={cn('mx-auto mt-2 max-w-sm text-fg-muted', settings.compactEmptyReader ? 'text-xs' : 'text-sm')}>
+				{description}
+			</p>
 		</div>
 	{/if}
 	{#if showComposeButton || showSettingsButton}

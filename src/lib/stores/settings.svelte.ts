@@ -94,6 +94,9 @@ const STORAGE = {
 	compactComposeSuggestions: 'zaur:compact-compose-suggestions',
 	compactOfflineIndicator: 'zaur:compact-offline-indicator',
 	compactAppHeader: 'zaur:compact-app-header',
+	compactEmptyReader: 'zaur:compact-empty-reader',
+	compactSettingsNav: 'zaur:compact-settings-nav',
+	compactExternalContentBanner: 'zaur:compact-external-content-banner',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -578,6 +581,21 @@ function readCompactAppHeader(): boolean {
 	return localStorage.getItem(STORAGE.compactAppHeader) === 'true';
 }
 
+function readCompactEmptyReader(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactEmptyReader) === 'true';
+}
+
+function readCompactSettingsNav(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactSettingsNav) === 'true';
+}
+
+function readCompactExternalContentBanner(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactExternalContentBanner) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -749,6 +767,9 @@ class SettingsStore {
 	compactComposeSuggestions = $state(readCompactComposeSuggestions());
 	compactOfflineIndicator = $state(readCompactOfflineIndicator());
 	compactAppHeader = $state(readCompactAppHeader());
+	compactEmptyReader = $state(readCompactEmptyReader());
+	compactSettingsNav = $state(readCompactSettingsNav());
+	compactExternalContentBanner = $state(readCompactExternalContentBanner());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -858,6 +879,9 @@ class SettingsStore {
 		this.compactComposeSuggestions = readCompactComposeSuggestions();
 		this.compactOfflineIndicator = readCompactOfflineIndicator();
 		this.compactAppHeader = readCompactAppHeader();
+		this.compactEmptyReader = readCompactEmptyReader();
+		this.compactSettingsNav = readCompactSettingsNav();
+		this.compactExternalContentBanner = readCompactExternalContentBanner();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1534,6 +1558,27 @@ class SettingsStore {
 		this.applyHeaderLayout();
 	}
 
+	setCompactEmptyReader(value: boolean) {
+		this.compactEmptyReader = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactEmptyReader, String(value));
+		}
+	}
+
+	setCompactSettingsNav(value: boolean) {
+		this.compactSettingsNav = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactSettingsNav, String(value));
+		}
+	}
+
+	setCompactExternalContentBanner(value: boolean) {
+		this.compactExternalContentBanner = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactExternalContentBanner, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1760,6 +1805,9 @@ class SettingsStore {
 		this.setCompactComposeSuggestions(false);
 		this.setCompactOfflineIndicator(false);
 		this.setCompactAppHeader(false);
+		this.setCompactEmptyReader(false);
+		this.setCompactSettingsNav(false);
+		this.setCompactExternalContentBanner(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1837,6 +1885,9 @@ class SettingsStore {
 		this.setCompactComposeSuggestions(true);
 		this.setCompactOfflineIndicator(true);
 		this.setCompactAppHeader(true);
+		this.setCompactEmptyReader(true);
+		this.setCompactSettingsNav(true);
+		this.setCompactExternalContentBanner(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1957,6 +2008,9 @@ class SettingsStore {
 			this.compactComposeSuggestions,
 			this.compactOfflineIndicator,
 			this.compactAppHeader,
+			this.compactEmptyReader,
+			this.compactSettingsNav,
+			this.compactExternalContentBanner,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

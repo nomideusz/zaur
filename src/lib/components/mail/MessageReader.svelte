@@ -416,8 +416,14 @@
 	{/if}
 
 	{#if hasBlockedExternal && !allowExternal && !settings.hideExternalContentBanner}
-		<div class={cn('flex shrink-0 flex-wrap items-center gap-x-2 gap-y-1 bg-surface px-4 py-2 text-xs text-fg-muted md:px-6', !settings.hideReaderPaneBorders && 'border-b border-border')}>
-			<Shield class="size-3.5 shrink-0" aria-hidden="true" />
+		<div
+			class={cn(
+				'flex shrink-0 flex-wrap items-center bg-surface text-fg-muted md:px-6',
+				settings.compactExternalContentBanner ? 'gap-x-1.5 gap-y-1 px-3 py-1.5 text-[11px]' : 'gap-x-2 gap-y-1 px-4 py-2 text-xs',
+				!settings.hideReaderPaneBorders && 'border-b border-border'
+			)}
+		>
+			<Shield class={cn('shrink-0', settings.compactExternalContentBanner ? 'size-3' : 'size-3.5')} aria-hidden="true" />
 			<span>External images blocked.</span>
 			<button type="button" class="text-accent hover:underline" onclick={() => (showImagesOnce = true)}>
 				Show once

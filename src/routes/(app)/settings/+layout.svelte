@@ -35,7 +35,8 @@
 				<a
 					href={link.href}
 					class={cn(
-						'shrink-0 rounded-md px-3 py-2 text-sm transition-colors',
+						'shrink-0 rounded-md text-sm transition-colors',
+						settings.compactSettingsNav ? 'px-2.5 py-1.5' : 'px-3 py-2',
 						$page.url.pathname === link.href
 							? 'bg-surface-sunken font-medium text-fg'
 							: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
@@ -61,7 +62,8 @@
 				<a
 					href={link.href}
 					class={cn(
-						'block rounded-md px-3 py-2 transition-colors',
+						'block rounded-md px-3 transition-colors',
+						settings.compactSettingsNav ? 'py-1.5' : 'py-2',
 						$page.url.pathname === link.href
 							? 'bg-surface-sunken'
 							: 'hover:bg-surface-sunken'
