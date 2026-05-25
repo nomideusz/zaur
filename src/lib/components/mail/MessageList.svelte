@@ -178,7 +178,7 @@
 			{#if settings.minimalLoadingStates}
 				<p class="px-4 py-8 text-center text-sm text-fg-muted" aria-busy="true">Loading messages…</p>
 			{:else}
-			<div class="divide-y divide-border" aria-busy="true" aria-label="Loading messages">
+			<div class={cn(!settings.hideListRowDividers && 'divide-y divide-border')} aria-busy="true" aria-label="Loading messages">
 				{#each Array(6) as _, index (index)}
 					<div class="z-list-row flex items-start gap-3 px-3 py-2.5">
 						{#if settings.showAvatars}

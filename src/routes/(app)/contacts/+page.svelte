@@ -5,6 +5,8 @@
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
+	import { cn } from '$lib/utils/cn';
 	import { listContacts, recordContact, removeContact, type ContactEntry } from '$lib/utils/contact-index';
 
 	let query = $state('');
@@ -69,13 +71,22 @@
 	<title>Contacts · ZAUR Webmail</title>
 </svelte:head>
 
-<div class="mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col gap-4 overflow-y-auto p-6 md:p-8">
+<div
+	class={cn(
+		'mx-auto flex min-h-0 w-full max-w-3xl flex-1 flex-col overflow-y-auto',
+		settings.compactContactsPage ? 'gap-3 p-4 md:p-6' : 'gap-4 p-6 md:p-8'
+	)}
+>
 	<header class="flex flex-wrap items-end justify-between gap-4">
 		<div>
-			<h1 class="text-xl font-semibold text-fg">Contacts</h1>
-			<p class="mt-1 text-sm text-fg-muted">
-				People you've mailed with, plus any you add manually.
-			</p>
+			<h1 class={cn('font-semibold text-fg', settings.compactContactsPage ? 'text-lg' : 'text-xl')}>
+				Contacts
+			</h1>
+			{#if !settings.compactContactsPage}
+				<p class="mt-1 text-sm text-fg-muted">
+					People you've mailed with, plus any you add manually.
+				</p>
+			{/if}
 		</div>
 		<div class="flex gap-2">
 			<Button variant="ghost" href="/settings/display">Settings</Button>
@@ -121,25 +132,35 @@
 	</label>
 
 	{#if contacts.length}
-		<div class="space-y-4">
+		<div class={cn(settings.compactContactsList ? 'space-y-3' : 'space-y-4')}>
 			{#each groupedContacts as [letter, group] (letter)}
 				<section>
 					<h2 class="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-fg-subtle">
 						{letter}
 					</h2>
-					<ul class="z-panel divide-y divide-border overflow-hidden rounded-xl">
+					<ul
+						class={cn(
+							'z-panel overflow-hidden rounded-xl',
+							!settings.hidePaneBorders && 'divide-y divide-border'
+						)}
+					>
 						{#each group as contact (contact.email)}
 							<li class="group relative">
 								<button
 									type="button"
-									class="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-sunken"
+									class={cn(
+										'flex w-full items-center gap-3 text-left transition-colors hover:bg-surface-sunken',
+										settings.compactContactsList ? 'px-3 py-2' : 'px-4 py-3'
+									)}
 									onclick={() => composeTo(contact.email)}
 								>
-									<Avatar name={contact.name} email={contact.email} />
+									{#if settings.showAvatars}
+										<Avatar name={contact.name} email={contact.email} />
+									{/if}
 									<div class="min-w-0 flex-1">
 										<p class="truncate text-sm font-medium text-fg">{contact.name}</p>
 										<p class="truncate text-xs text-fg-muted">{contact.email}</p>
-										{#if contact.count > 1}
+										{#if !settings.hideContactMessageCounts && contact.count > 1}
 											<p class="text-[11px] text-fg-subtle">{contact.count} messages</p>
 										{/if}
 									</div>
@@ -178,9 +199,14 @@
 			{/each}
 		</div>
 	{:else}
-		<div class="z-panel flex flex-col items-center gap-4 rounded-xl px-6 py-16 text-center">
-			<div class="rounded-full bg-surface-sunken p-4">
-				<Users class="size-8 text-fg-subtle" aria-hidden="true" />
+		<div
+			class={cn(
+				'z-panel flex flex-col items-center rounded-xl text-center',
+				settings.compactContactsPage ? 'gap-3 px-4 py-10' : 'gap-4 px-6 py-16'
+			)}
+		>
+			<div class={cn('rounded-full bg-surface-sunken', settings.compactContactsPage ? 'p-3' : 'p-4')}>
+				<Users class={cn('text-fg-subtle', settings.compactContactsPage ? 'size-6' : 'size-8')} aria-hidden="true" />
 			</div>
 			<div>
 				<p class="text-sm font-medium text-fg">

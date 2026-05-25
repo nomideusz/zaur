@@ -97,6 +97,9 @@ const STORAGE = {
 	compactEmptyReader: 'zaur:compact-empty-reader',
 	compactSettingsNav: 'zaur:compact-settings-nav',
 	compactExternalContentBanner: 'zaur:compact-external-content-banner',
+	compactContactsPage: 'zaur:compact-contacts-page',
+	compactContactsList: 'zaur:compact-contacts-list',
+	hideContactMessageCounts: 'zaur:hide-contact-message-counts',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -596,6 +599,21 @@ function readCompactExternalContentBanner(): boolean {
 	return localStorage.getItem(STORAGE.compactExternalContentBanner) === 'true';
 }
 
+function readCompactContactsPage(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactContactsPage) === 'true';
+}
+
+function readCompactContactsList(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactContactsList) === 'true';
+}
+
+function readHideContactMessageCounts(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideContactMessageCounts) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -770,6 +788,9 @@ class SettingsStore {
 	compactEmptyReader = $state(readCompactEmptyReader());
 	compactSettingsNav = $state(readCompactSettingsNav());
 	compactExternalContentBanner = $state(readCompactExternalContentBanner());
+	compactContactsPage = $state(readCompactContactsPage());
+	compactContactsList = $state(readCompactContactsList());
+	hideContactMessageCounts = $state(readHideContactMessageCounts());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -882,6 +903,9 @@ class SettingsStore {
 		this.compactEmptyReader = readCompactEmptyReader();
 		this.compactSettingsNav = readCompactSettingsNav();
 		this.compactExternalContentBanner = readCompactExternalContentBanner();
+		this.compactContactsPage = readCompactContactsPage();
+		this.compactContactsList = readCompactContactsList();
+		this.hideContactMessageCounts = readHideContactMessageCounts();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1579,6 +1603,27 @@ class SettingsStore {
 		}
 	}
 
+	setCompactContactsPage(value: boolean) {
+		this.compactContactsPage = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactContactsPage, String(value));
+		}
+	}
+
+	setCompactContactsList(value: boolean) {
+		this.compactContactsList = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactContactsList, String(value));
+		}
+	}
+
+	setHideContactMessageCounts(value: boolean) {
+		this.hideContactMessageCounts = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideContactMessageCounts, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1808,6 +1853,9 @@ class SettingsStore {
 		this.setCompactEmptyReader(false);
 		this.setCompactSettingsNav(false);
 		this.setCompactExternalContentBanner(false);
+		this.setCompactContactsPage(false);
+		this.setCompactContactsList(false);
+		this.setHideContactMessageCounts(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1888,6 +1936,9 @@ class SettingsStore {
 		this.setCompactEmptyReader(true);
 		this.setCompactSettingsNav(true);
 		this.setCompactExternalContentBanner(true);
+		this.setCompactContactsPage(true);
+		this.setCompactContactsList(true);
+		this.setHideContactMessageCounts(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -2011,6 +2062,9 @@ class SettingsStore {
 			this.compactEmptyReader,
 			this.compactSettingsNav,
 			this.compactExternalContentBanner,
+			this.compactContactsPage,
+			this.compactContactsList,
+			this.hideContactMessageCounts,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

@@ -1143,6 +1143,44 @@
 		</SettingsRow>
 	</SettingsGroup>
 
+	<SettingsGroup title="Contacts">
+		<SettingsRow
+			title="Compact contacts page"
+			description="Less padding and a smaller header on the Contacts page"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactContactsPage}
+				onchange={(e) => settings.setCompactContactsPage(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact contacts list"
+			description="Tighter rows in the contacts list — avatars follow the show avatars setting"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactContactsList}
+				onchange={(e) => settings.setCompactContactsList(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide contact message counts"
+			description="Do not show how many messages you've exchanged with each contact"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideContactMessageCounts}
+				onchange={(e) => settings.setHideContactMessageCounts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsGroup>
+
 	<SettingsGroup title="Settings page">
 		<SettingsRow
 			title="Hide settings nav hints"
