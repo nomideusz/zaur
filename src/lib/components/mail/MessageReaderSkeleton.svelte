@@ -12,16 +12,26 @@
 		<div
 			class={cn(
 				'shrink-0 px-4 md:px-6',
-				settings.compactReaderHeader ? 'py-2' : 'py-3',
+				settings.compactReaderHeader || settings.compactReaderSkeleton ? 'py-2' : 'py-3',
 				!settings.hideReaderPaneBorders && 'border-b border-border'
 			)}
 		>
-			<div class="h-6 w-2/3 max-w-md animate-pulse rounded bg-surface-sunken"></div>
-			<div class="mt-3 h-4 w-1/3 animate-pulse rounded bg-surface-sunken"></div>
+			<div class={cn('w-2/3 max-w-md animate-pulse rounded bg-surface-sunken', settings.compactReaderSkeleton ? 'h-5' : 'h-6')}></div>
+			<div class={cn('animate-pulse rounded bg-surface-sunken', settings.compactReaderSkeleton ? 'mt-2 h-3 w-1/4' : 'mt-3 h-4 w-1/3')}></div>
 		</div>
-		<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto space-y-4 px-4 py-5 md:px-6">
+		<div
+			class={cn(
+				'z-pane-scroll min-h-0 flex-1 overflow-y-auto px-4 md:px-6',
+				settings.compactReaderSkeleton ? 'space-y-3 py-3' : 'space-y-4 py-5'
+			)}
+		>
 			<div class="flex gap-3">
-				<div class="size-9 shrink-0 animate-pulse rounded-full bg-surface-sunken"></div>
+				<div
+					class={cn(
+						'shrink-0 animate-pulse rounded-full bg-surface-sunken',
+						settings.compactReaderSkeleton || settings.compactReaderAvatars ? 'size-8' : 'size-9'
+					)}
+				></div>
 				<div class="flex-1 space-y-2">
 					<div class="h-4 w-40 animate-pulse rounded bg-surface-sunken"></div>
 					<div class="h-3 w-56 animate-pulse rounded bg-surface-sunken"></div>

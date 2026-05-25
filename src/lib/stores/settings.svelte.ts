@@ -112,6 +112,9 @@ const STORAGE = {
 	compactReaderStatus: 'zaur:compact-reader-status',
 	compactReaderMoreMenu: 'zaur:compact-reader-more-menu',
 	compactListErrorState: 'zaur:compact-list-error-state',
+	compactReaderSkeleton: 'zaur:compact-reader-skeleton',
+	compactFolderBadges: 'zaur:compact-folder-badges',
+	compactFolderTree: 'zaur:compact-folder-tree',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -686,6 +689,21 @@ function readCompactListErrorState(): boolean {
 	return localStorage.getItem(STORAGE.compactListErrorState) === 'true';
 }
 
+function readCompactReaderSkeleton(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactReaderSkeleton) === 'true';
+}
+
+function readCompactFolderBadges(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactFolderBadges) === 'true';
+}
+
+function readCompactFolderTree(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactFolderTree) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -875,6 +893,9 @@ class SettingsStore {
 	compactReaderStatus = $state(readCompactReaderStatus());
 	compactReaderMoreMenu = $state(readCompactReaderMoreMenu());
 	compactListErrorState = $state(readCompactListErrorState());
+	compactReaderSkeleton = $state(readCompactReaderSkeleton());
+	compactFolderBadges = $state(readCompactFolderBadges());
+	compactFolderTree = $state(readCompactFolderTree());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -1002,6 +1023,9 @@ class SettingsStore {
 		this.compactReaderStatus = readCompactReaderStatus();
 		this.compactReaderMoreMenu = readCompactReaderMoreMenu();
 		this.compactListErrorState = readCompactListErrorState();
+		this.compactReaderSkeleton = readCompactReaderSkeleton();
+		this.compactFolderBadges = readCompactFolderBadges();
+		this.compactFolderTree = readCompactFolderTree();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1804,6 +1828,27 @@ class SettingsStore {
 		}
 	}
 
+	setCompactReaderSkeleton(value: boolean) {
+		this.compactReaderSkeleton = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactReaderSkeleton, String(value));
+		}
+	}
+
+	setCompactFolderBadges(value: boolean) {
+		this.compactFolderBadges = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactFolderBadges, String(value));
+		}
+	}
+
+	setCompactFolderTree(value: boolean) {
+		this.compactFolderTree = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactFolderTree, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -2048,6 +2093,9 @@ class SettingsStore {
 		this.setCompactReaderStatus(false);
 		this.setCompactReaderMoreMenu(false);
 		this.setCompactListErrorState(false);
+		this.setCompactReaderSkeleton(false);
+		this.setCompactFolderBadges(false);
+		this.setCompactFolderTree(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -2143,6 +2191,9 @@ class SettingsStore {
 		this.setCompactReaderStatus(true);
 		this.setCompactReaderMoreMenu(true);
 		this.setCompactListErrorState(true);
+		this.setCompactReaderSkeleton(true);
+		this.setCompactFolderBadges(true);
+		this.setCompactFolderTree(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -2281,6 +2332,9 @@ class SettingsStore {
 			this.compactReaderStatus,
 			this.compactReaderMoreMenu,
 			this.compactListErrorState,
+			this.compactReaderSkeleton,
+			this.compactFolderBadges,
+			this.compactFolderTree,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

@@ -40,7 +40,7 @@
 				? 'bg-surface-sunken font-medium text-fg'
 				: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
 		)}
-		style="padding-left: {0.75 + depth * 0.75}rem; padding-right: 0.75rem;"
+		style="padding-left: {0.75 + depth * (settings.compactFolderTree ? 0.5 : 0.75)}rem; padding-right: 0.75rem;"
 		aria-current={isActive ? 'page' : undefined}
 	>
 		{#if !settings.hideFolderIcons}
@@ -53,7 +53,7 @@
 	</a>
 
 	{#if node.children.length}
-		<ul class="space-y-0.5">
+		<ul class={settings.compactFolderTree ? 'space-y-0' : 'space-y-0.5'}>
 			{#each node.children as child (child.id)}
 				<Self node={child} depth={depth + 1} />
 			{/each}

@@ -87,6 +87,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact reader skeleton"
+			description="Smaller placeholder layout while a message loads in the reading pane"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactReaderSkeleton}
+				onchange={(e) => settings.setCompactReaderSkeleton(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Hide connecting screen"
 			description="Blank screen while restoring your session — no “Connecting…” message"
 		>
@@ -949,6 +961,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact folder tree"
+			description="Less indentation and spacing for nested folders in the sidebar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactFolderTree}
+				onchange={(e) => settings.setCompactFolderTree(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Hide list header on desktop"
 			description="Remove the folder title bar above messages — mobile folder picker stays"
 		>
@@ -1151,6 +1175,18 @@
 				class="size-4 accent-accent"
 				checked={settings.showFolderUnreadCounts}
 				onchange={(e) => settings.setShowFolderUnreadCounts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact folder badges"
+			description="Smaller unread count badges on folders in the sidebar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactFolderBadges}
+				onchange={(e) => settings.setCompactFolderBadges(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 
