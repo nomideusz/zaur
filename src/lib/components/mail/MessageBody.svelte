@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { renderMessageBody } from '$lib/email/html';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
 
 	interface Props {
@@ -15,7 +16,8 @@
 			bodyHtml,
 			bodyText,
 			allowExternal,
-			darkMode: theme.resolved === 'dark'
+			darkMode: theme.resolved === 'dark',
+			preferPlainText: settings.preferPlainText
 		})
 	);
 </script>

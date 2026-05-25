@@ -201,6 +201,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Prefer plain text"
+			description="Show the plain-text version when available instead of formatted HTML"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.preferPlainText}
+				onchange={(e) => settings.setPreferPlainText(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Show quick reply"
 			description="Reply box at the bottom of an open message — use Full reply for the compose panel"
 		>
@@ -237,6 +249,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Hide To and Cc lines"
+			description="Do not show recipient lists under the sender in the message header"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideReaderRecipients}
+				onchange={(e) => settings.setHideReaderRecipients(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Minimal reader toolbar"
 			description="Hide star, reply all, and forward buttons — reply and more actions stay available"
 		>
@@ -259,6 +283,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideComposeHints}
 				onchange={(e) => settings.setHideComposeHints(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Collapse quoted text"
+			description="Keep quoted reply content folded when composing"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.collapseQuotedInCompose}
+				onchange={(e) => settings.setCollapseQuotedInCompose(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>
@@ -337,9 +373,38 @@
 				onchange={(e) => settings.setShowFolderUnreadCounts(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Tool icons only"
+			description="Hide Mail, Calendar, and other tool names in the top bar — icons with tooltips only"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.toolIconsOnly}
+				onchange={(e) => settings.setToolIconsOnly(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Reset">
+		<SettingsRow
+			title="Apply simple mode"
+			description="One step to a minimal mail-only layout — you can still tweak individual options afterward"
+		>
+			<button
+				type="button"
+				class="z-btn-ghost text-sm"
+				onclick={() => {
+					if (confirm('Apply simple mode? This updates many display and navigation settings at once.')) {
+						settings.applySimpleMode();
+					}
+				}}
+			>
+				Apply
+			</button>
+		</SettingsRow>
+
 		<SettingsRow
 			title="Restore display defaults"
 			description="Reset all options on this page to their original values"

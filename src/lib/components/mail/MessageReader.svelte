@@ -458,12 +458,12 @@
 										{/if}
 									</div>
 								</div>
-								{#if message.to.length}
+								{#if !settings.hideReaderRecipients && message.to.length}
 									<p class="mt-1 text-xs text-fg-subtle">
 										To {message.to.map((addr) => addr.name || addr.email).join(', ')}
 									</p>
 								{/if}
-								{#if message.cc.length}
+								{#if !settings.hideReaderRecipients && message.cc.length}
 									<p class="mt-0.5 text-xs text-fg-subtle">
 										Cc {message.cc.map((addr) => addr.name || addr.email).join(', ')}
 									</p>

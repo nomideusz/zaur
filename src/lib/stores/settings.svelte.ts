@@ -16,6 +16,10 @@ const STORAGE = {
 	showSenderEmailInList: 'zaur:show-sender-email-in-list',
 	showListTimestamps: 'zaur:show-list-timestamps',
 	highlightUnreadInList: 'zaur:highlight-unread-in-list',
+	preferPlainText: 'zaur:prefer-plain-text',
+	hideReaderRecipients: 'zaur:hide-reader-recipients',
+	toolIconsOnly: 'zaur:tool-icons-only',
+	collapseQuotedInCompose: 'zaur:collapse-quoted-in-compose',
 	showFolderUnreadCounts: 'zaur:show-folder-unread-counts',
 	showBulkSelect: 'zaur:show-bulk-select',
 	hideHeaderSearch: 'zaur:hide-header-search',
@@ -107,6 +111,26 @@ function readShowListTimestamps(): boolean {
 function readHighlightUnreadInList(): boolean {
 	if (!browser) return true;
 	return localStorage.getItem(STORAGE.highlightUnreadInList) !== 'false';
+}
+
+function readPreferPlainText(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.preferPlainText) === 'true';
+}
+
+function readHideReaderRecipients(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideReaderRecipients) === 'true';
+}
+
+function readToolIconsOnly(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.toolIconsOnly) === 'true';
+}
+
+function readCollapseQuotedInCompose(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.collapseQuotedInCompose) === 'true';
 }
 
 function readShowFolderUnreadCounts(): boolean {
@@ -226,6 +250,10 @@ class SettingsStore {
 	showSenderEmailInList = $state(readShowSenderEmailInList());
 	showListTimestamps = $state(readShowListTimestamps());
 	highlightUnreadInList = $state(readHighlightUnreadInList());
+	preferPlainText = $state(readPreferPlainText());
+	hideReaderRecipients = $state(readHideReaderRecipients());
+	toolIconsOnly = $state(readToolIconsOnly());
+	collapseQuotedInCompose = $state(readCollapseQuotedInCompose());
 	showFolderUnreadCounts = $state(readShowFolderUnreadCounts());
 	showBulkSelect = $state(readShowBulkSelect());
 	hideHeaderSearch = $state(readHideHeaderSearch());
@@ -262,6 +290,10 @@ class SettingsStore {
 		this.showSenderEmailInList = readShowSenderEmailInList();
 		this.showListTimestamps = readShowListTimestamps();
 		this.highlightUnreadInList = readHighlightUnreadInList();
+		this.preferPlainText = readPreferPlainText();
+		this.hideReaderRecipients = readHideReaderRecipients();
+		this.toolIconsOnly = readToolIconsOnly();
+		this.collapseQuotedInCompose = readCollapseQuotedInCompose();
 		this.showFolderUnreadCounts = readShowFolderUnreadCounts();
 		this.showBulkSelect = readShowBulkSelect();
 		this.hideHeaderSearch = readHideHeaderSearch();
@@ -382,6 +414,34 @@ class SettingsStore {
 		this.highlightUnreadInList = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.highlightUnreadInList, String(value));
+		}
+	}
+
+	setPreferPlainText(value: boolean) {
+		this.preferPlainText = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.preferPlainText, String(value));
+		}
+	}
+
+	setHideReaderRecipients(value: boolean) {
+		this.hideReaderRecipients = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideReaderRecipients, String(value));
+		}
+	}
+
+	setToolIconsOnly(value: boolean) {
+		this.toolIconsOnly = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.toolIconsOnly, String(value));
+		}
+	}
+
+	setCollapseQuotedInCompose(value: boolean) {
+		this.collapseQuotedInCompose = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.collapseQuotedInCompose, String(value));
 		}
 	}
 
@@ -563,6 +623,10 @@ class SettingsStore {
 		this.setShowSenderEmailInList(false);
 		this.setShowListTimestamps(true);
 		this.setHighlightUnreadInList(true);
+		this.setPreferPlainText(false);
+		this.setHideReaderRecipients(false);
+		this.setToolIconsOnly(false);
+		this.setCollapseQuotedInCompose(false);
 		this.setShowFolderUnreadCounts(true);
 		this.setShowBulkSelect(true);
 		this.setHideHeaderSearch(false);
@@ -578,6 +642,28 @@ class SettingsStore {
 		this.setSkipHomeScreen(false);
 		this.setHideSidebarShortcuts(false);
 		this.setMailOnlyNavigation(false);
+	}
+
+	applySimpleMode() {
+		this.setSkipHomeScreen(true);
+		this.setMailOnlyNavigation(true);
+		this.setShowAvatars(false);
+		this.setShowStarsInList(false);
+		this.setShowAttachmentIcons(false);
+		this.setShowListPreview(false);
+		this.setHideSidebarShortcuts(true);
+		this.setHideHeaderSearch(true);
+		this.setShowBulkSelect(false);
+		this.setHideComposeHints(true);
+		this.setMinimalReaderToolbar(true);
+		this.setExpandListUntilOpen(true);
+		this.setHighlightUnreadInList(false);
+		this.setCompactLayout(true);
+		this.setShowReaderContactActions(false);
+		this.setShowQuickReply(false);
+		this.setHideReaderRecipients(true);
+		this.setToolIconsOnly(true);
+		this.setCollapseQuotedInCompose(true);
 	}
 
 	private applyLayoutWidth() {

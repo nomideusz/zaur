@@ -42,7 +42,7 @@
 			title={tool.label}
 		>
 			<Icon class="size-4" aria-hidden="true" />
-			<span class="hidden sm:inline">{tool.label}</span>
+			<span class={settings.toolIconsOnly ? 'sr-only' : 'hidden sm:inline'}>{tool.label}</span>
 		</a>
 	{/each}
 </nav>

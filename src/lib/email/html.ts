@@ -235,7 +235,16 @@ export function renderMessageBody(options: {
 	bodyText: string;
 	allowExternal: boolean;
 	darkMode?: boolean;
+	preferPlainText?: boolean;
 }): { html: string; blockedExternal: boolean; isHtml: boolean } {
+	if (options.preferPlainText && options.bodyText.trim()) {
+		return {
+			html: plainTextToSafeHtml(options.bodyText),
+			blockedExternal: false,
+			isHtml: false
+		};
+	}
+
 	if (options.bodyHtml?.trim()) {
 		const prepared = prepareEmailHtml(options.bodyHtml, {
 			allowExternal: options.allowExternal,

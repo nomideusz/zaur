@@ -248,7 +248,7 @@
 				></textarea>
 
 				{#if quotedPart}
-					<details class="shrink-0 border-t border-border bg-surface/50 px-5 py-2" open>
+					<details class="shrink-0 border-t border-border bg-surface/50 px-5 py-2" open={!settings.collapseQuotedInCompose}>
 						<summary class="cursor-pointer text-xs font-medium text-fg-muted">Quoted message</summary>
 						<pre class="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap text-xs leading-relaxed text-fg-subtle">{quotedPart.trim()}</pre>
 					</details>
