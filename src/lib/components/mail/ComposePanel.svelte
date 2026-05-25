@@ -180,7 +180,10 @@
 />
 
 {#snippet composePanel(variant: 'drawer' | 'pane')}
-	<div class={panelShellClass(variant)}>
+	<div
+		class={panelShellClass(variant)}
+		onclick={variant === 'drawer' ? (e) => e.stopPropagation() : undefined}
+	>
 		<header class={cn('flex shrink-0 items-center justify-between px-5 py-3.5', composeBorderB)}>
 			<div>
 				<h2 class="text-base font-semibold text-fg">{title}</h2>
@@ -335,9 +338,6 @@
 {:else}
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
 	<div class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]" onclick={close}>
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-		<div class="h-full w-full" onclick={(e) => e.stopPropagation()}>
-			{@render composePanel('drawer')}
-		</div>
+		{@render composePanel('drawer')}
 	</div>
 {/if}
