@@ -89,12 +89,16 @@
 			{/if}
 		</div>
 		<div class="flex gap-2">
-			<Button variant="ghost" href="/settings/display">Settings</Button>
+			{#if !settings.hideContactsHeaderSettings}
+				<Button variant="ghost" href="/settings/display">Settings</Button>
+			{/if}
 			<Button variant="ghost" onclick={() => (showAddForm = !showAddForm)}>
 				<UserPlus class="size-4" aria-hidden="true" />
 				Add contact
 			</Button>
-			<Button href="/mail/compose">New message</Button>
+			{#if !settings.hideContactsComposeButton}
+				<Button href="/mail/compose">New message</Button>
+			{/if}
 		</div>
 	</header>
 
@@ -255,13 +259,15 @@
 						No contacts yet
 					{/if}
 				</p>
-				<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">
-					{#if query.trim()}
-						Try a different name or email address.
-					{:else}
-						Contacts appear as you send and receive mail, or add someone manually.
-					{/if}
-				</p>
+				{#if !settings.hideContactsEmptyHints}
+					<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">
+						{#if query.trim()}
+							Try a different name or email address.
+						{:else}
+							Contacts appear as you send and receive mail, or add someone manually.
+						{/if}
+					</p>
+				{/if}
 			</div>
 			<div class="flex flex-wrap justify-center gap-2">
 				<Button variant="ghost" onclick={() => (showAddForm = true)}>Add contact</Button>

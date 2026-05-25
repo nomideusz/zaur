@@ -126,6 +126,9 @@ const STORAGE = {
 	hideContactsPageSubtitle: 'zaur:hide-contacts-page-subtitle',
 	compactContactsSearch: 'zaur:compact-contacts-search',
 	compactContactsEmptyState: 'zaur:compact-contacts-empty-state',
+	hideContactsHeaderSettings: 'zaur:hide-contacts-header-settings',
+	hideContactsComposeButton: 'zaur:hide-contacts-compose-button',
+	hideContactsEmptyHints: 'zaur:hide-contacts-empty-hints',
 	compactReaderInlineError: 'zaur:compact-reader-inline-error',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
@@ -771,6 +774,21 @@ function readCompactContactsEmptyState(): boolean {
 	return localStorage.getItem(STORAGE.compactContactsEmptyState) === 'true';
 }
 
+function readHideContactsHeaderSettings(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideContactsHeaderSettings) === 'true';
+}
+
+function readHideContactsComposeButton(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideContactsComposeButton) === 'true';
+}
+
+function readHideContactsEmptyHints(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideContactsEmptyHints) === 'true';
+}
+
 function readCompactReaderInlineError(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactReaderInlineError) === 'true';
@@ -979,6 +997,9 @@ class SettingsStore {
 	hideContactsPageSubtitle = $state(readHideContactsPageSubtitle());
 	compactContactsSearch = $state(readCompactContactsSearch());
 	compactContactsEmptyState = $state(readCompactContactsEmptyState());
+	hideContactsHeaderSettings = $state(readHideContactsHeaderSettings());
+	hideContactsComposeButton = $state(readHideContactsComposeButton());
+	hideContactsEmptyHints = $state(readHideContactsEmptyHints());
 	compactReaderInlineError = $state(readCompactReaderInlineError());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
@@ -1121,6 +1142,9 @@ class SettingsStore {
 		this.hideContactsPageSubtitle = readHideContactsPageSubtitle();
 		this.compactContactsSearch = readCompactContactsSearch();
 		this.compactContactsEmptyState = readCompactContactsEmptyState();
+		this.hideContactsHeaderSettings = readHideContactsHeaderSettings();
+		this.hideContactsComposeButton = readHideContactsComposeButton();
+		this.hideContactsEmptyHints = readHideContactsEmptyHints();
 		this.compactReaderInlineError = readCompactReaderInlineError();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
@@ -2022,6 +2046,27 @@ class SettingsStore {
 		}
 	}
 
+	setHideContactsHeaderSettings(value: boolean) {
+		this.hideContactsHeaderSettings = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideContactsHeaderSettings, String(value));
+		}
+	}
+
+	setHideContactsComposeButton(value: boolean) {
+		this.hideContactsComposeButton = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideContactsComposeButton, String(value));
+		}
+	}
+
+	setHideContactsEmptyHints(value: boolean) {
+		this.hideContactsEmptyHints = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideContactsEmptyHints, String(value));
+		}
+	}
+
 	setCompactReaderInlineError(value: boolean) {
 		this.compactReaderInlineError = value;
 		if (browser) {
@@ -2287,6 +2332,9 @@ class SettingsStore {
 		this.setHideContactsPageSubtitle(false);
 		this.setCompactContactsSearch(false);
 		this.setCompactContactsEmptyState(false);
+		this.setHideContactsHeaderSettings(false);
+		this.setHideContactsComposeButton(false);
+		this.setHideContactsEmptyHints(false);
 		this.setCompactReaderInlineError(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
@@ -2397,6 +2445,9 @@ class SettingsStore {
 		this.setHideContactsPageSubtitle(true);
 		this.setCompactContactsSearch(true);
 		this.setCompactContactsEmptyState(true);
+		this.setHideContactsHeaderSettings(true);
+		this.setHideContactsComposeButton(true);
+		this.setHideContactsEmptyHints(true);
 		this.setCompactReaderInlineError(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
@@ -2550,6 +2601,9 @@ class SettingsStore {
 			this.hideContactsPageSubtitle,
 			this.compactContactsSearch,
 			this.compactContactsEmptyState,
+			this.hideContactsHeaderSettings,
+			this.hideContactsComposeButton,
+			this.hideContactsEmptyHints,
 			this.compactReaderInlineError,
 			this.rememberLastMailbox
 		];

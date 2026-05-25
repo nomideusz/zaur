@@ -1503,6 +1503,42 @@
 				onchange={(e) => settings.setCompactContactsEmptyState(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Hide contacts settings button"
+			description="Remove the Settings shortcut from the Contacts page header"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideContactsHeaderSettings}
+				onchange={(e) => settings.setHideContactsHeaderSettings(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide contacts new message button"
+			description="Remove the New message button from the Contacts page header"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideContactsComposeButton}
+				onchange={(e) => settings.setHideContactsComposeButton(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide contacts empty hints"
+			description="Remove the secondary help text when the contacts list is empty or has no search matches"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideContactsEmptyHints}
+				onchange={(e) => settings.setHideContactsEmptyHints(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Settings page">
