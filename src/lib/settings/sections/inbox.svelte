@@ -100,18 +100,6 @@
 	</SettingsRow>
 
 	<SettingsRow
-		title="Show message counts"
-		description="Unread and total counts in the list header"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.showMessageCounts}
-			onchange={(e) => settings.setShowMessageCounts(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
 		title="Show full dates in list"
 		description="Use full date and time instead of compact labels like Mon or May 25"
 	>
@@ -216,6 +204,18 @@
 </SettingsGroup>
 
 <SettingsGroup title="List header" description="Folder title bar and mobile folder picker above the message list.">
+	<SettingsRow
+		title="Show message counts"
+		description="Unread and total counts in the list header"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.showMessageCounts}
+			onchange={(e) => settings.setShowMessageCounts(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
 	<SettingsRow
 		title="Hide list header on desktop"
 		description="Remove the folder title bar above messages — mobile folder picker stays"
