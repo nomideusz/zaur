@@ -499,9 +499,21 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/inbox-compact-list-header",
+		"href": "/settings/inbox",
+		"title": "Compact list header",
+		"description": ""
+	},
+	{
 		"id": "/settings/inbox-compact-list-rows",
 		"href": "/settings/inbox",
 		"title": "Compact list rows",
+		"description": ""
+	},
+	{
+		"id": "/settings/inbox-compact-mobile-folder-picker",
+		"href": "/settings/inbox",
+		"title": "Compact mobile folder picker",
 		"description": ""
 	},
 	{
@@ -526,6 +538,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/inbox-hide-list-error-retry",
 		"href": "/settings/inbox",
 		"title": "Hide list error retry",
+		"description": ""
+	},
+	{
+		"id": "/settings/inbox-hide-list-header-on-desktop",
+		"href": "/settings/inbox",
+		"title": "Hide list header on desktop",
 		"description": ""
 	},
 	{
@@ -1075,18 +1093,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/workspace-compact-list-header",
-		"href": "/settings/workspace",
-		"title": "Compact list header",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-mobile-folder-picker",
-		"href": "/settings/workspace",
-		"title": "Compact mobile folder picker",
-		"description": ""
-	},
-	{
 		"id": "/settings/workspace-compact-mobile-search",
 		"href": "/settings/workspace",
 		"title": "Compact mobile search",
@@ -1162,12 +1168,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/workspace-hide-home-screen-subtitle",
 		"href": "/settings/workspace",
 		"title": "Hide home screen subtitle",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-hide-list-header-on-desktop",
-		"href": "/settings/workspace",
-		"title": "Hide list header on desktop",
 		"description": ""
 	},
 	{

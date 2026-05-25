@@ -215,6 +215,51 @@
 	</SettingsRow>
 </SettingsGroup>
 
+<SettingsGroup title="List header" description="Folder title bar and mobile folder picker above the message list.">
+	<SettingsRow
+		title="Hide list header on desktop"
+		description="Remove the folder title bar above messages — mobile folder picker stays"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.hideListHeader}
+			onchange={(e) => settings.setHideListHeader(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsDepends
+		enabled={!settings.hideListHeader}
+		inactiveReason={settings.hideListHeader
+			? 'List header is hidden on desktop'
+			: 'List header on desktop'}
+	>
+		<SettingsRow
+			title="Compact list header"
+			description="Shorter folder title bar above the message list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactListHeader}
+				onchange={(e) => settings.setCompactListHeader(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsDepends>
+
+	<SettingsRow
+		title="Compact mobile folder picker"
+		description="Smaller folder dropdown above the message list on mobile"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactMobileFolderPicker}
+			onchange={(e) => settings.setCompactMobileFolderPicker(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
 <SettingsGroup title="Bulk selection" description="Multi-select messages for archive, move, and delete.">
 	<SettingsRow
 		title="Show bulk select"

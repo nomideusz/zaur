@@ -86,49 +86,6 @@
 		</SettingsRow>
 
 		<SettingsRow
-			title="Hide list header on desktop"
-			description="Remove the folder title bar above messages — mobile folder picker stays"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideListHeader}
-				onchange={(e) => settings.setHideListHeader(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsDepends
-			enabled={!settings.hideListHeader}
-			inactiveReason={settings.hideListHeader
-				? 'List header is hidden on desktop'
-				: 'List header on desktop'}
-		>
-			<SettingsRow
-				title="Compact list header"
-				description="Shorter folder title bar above the message list"
-			>
-				<input
-					type="checkbox"
-					class="size-4 accent-accent"
-					checked={settings.compactListHeader}
-					onchange={(e) => settings.setCompactListHeader(e.currentTarget.checked)}
-				/>
-			</SettingsRow>
-		</SettingsDepends>
-
-		<SettingsRow
-			title="Compact mobile folder picker"
-			description="Smaller folder dropdown above the message list on mobile"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactMobileFolderPicker}
-				onchange={(e) => settings.setCompactMobileFolderPicker(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
 			title="Compact header actions"
 			description="Icon-only New and New event buttons in the top bar — saves horizontal space"
 		>

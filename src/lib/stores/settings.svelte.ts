@@ -3209,6 +3209,9 @@ class SettingsStore {
 		this.setCompactListErrorState(false);
 		this.setHideListErrorRetry(false);
 		this.setListTextSize('normal');
+		this.setHideListHeader(false);
+		this.setCompactListHeader(false);
+		this.setCompactMobileFolderPicker(false);
 	}
 
 	resetReadingSettings() {
@@ -3274,9 +3277,6 @@ class SettingsStore {
 		this.setHideFolderIcons(false);
 		this.setCompactFolderSidebar(false);
 		this.setCompactFolderTree(false);
-		this.setHideListHeader(false);
-		this.setCompactListHeader(false);
-		this.setCompactMobileFolderPicker(false);
 		this.setCompactHeaderActions(false);
 		this.setCompactAppHeader(false);
 		this.setHidePaneBorders(false);
