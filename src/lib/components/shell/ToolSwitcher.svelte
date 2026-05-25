@@ -2,13 +2,16 @@
 	import { page } from '$app/stores';
 	import { cn } from '$lib/utils/cn';
 	import { Calendar, Home, Mail, Users } from 'lucide-svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 
-	const tools = [
+	const tools = $derived([
 		{ href: '/mail/inbox', label: 'Mail', icon: Mail, active: (path: string) => path.startsWith('/mail') },
 		{ href: '/calendar', label: 'Calendar', icon: Calendar, active: (path: string) => path.startsWith('/calendar') },
 		{ href: '/contacts', label: 'Contacts', icon: Users, active: (path: string) => path.startsWith('/contacts') },
-		{ href: '/', label: 'Home', icon: Home, active: (path: string) => path === '/' }
-	];
+		...(!settings.skipHomeScreen
+			? [{ href: '/', label: 'Home', icon: Home, active: (path: string) => path === '/' }]
+			: [])
+	]);
 </script>
 
 <nav aria-label="Tools" class="flex items-center gap-1">

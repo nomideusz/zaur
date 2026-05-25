@@ -36,15 +36,22 @@
 </script>
 
 {#snippet avatar()}
-	<div class="relative shrink-0">
-		<Avatar name={message.from.name} email={message.from.email} class="mt-0.5 size-8" />
-		{#if message.unread}
-			<span
-				class="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-unread ring-2 ring-surface-raised"
-				aria-label="Unread"
-			></span>
-		{/if}
-	</div>
+	{#if settings.showAvatars}
+		<div class="relative shrink-0">
+			<Avatar name={message.from.name} email={message.from.email} class="mt-0.5 size-8" />
+			{#if message.unread}
+				<span
+					class="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-unread ring-2 ring-surface-raised"
+					aria-label="Unread"
+				></span>
+			{/if}
+		</div>
+	{:else if message.unread}
+		<span
+			class="mt-2 size-2 shrink-0 rounded-full bg-unread"
+			aria-label="Unread"
+		></span>
+	{/if}
 {/snippet}
 
 {#snippet content()}

@@ -51,6 +51,18 @@
 				onchange={(e) => settings.setShowListPreview(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Show sender avatars"
+			description="Color initials beside each message — turn off for a simpler, text-only list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showAvatars}
+				onchange={(e) => settings.setShowAvatars(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Reading">
@@ -77,6 +89,20 @@
 				class="size-4 accent-accent"
 				checked={settings.blockExternalContent}
 				onchange={(e) => settings.setBlockExternalContent(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsGroup>
+
+	<SettingsGroup title="Navigation">
+		<SettingsRow
+			title="Skip home screen"
+			description="Open inbox directly — hides the Home tab and welcome screen"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.skipHomeScreen}
+				onchange={(e) => settings.setSkipHomeScreen(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

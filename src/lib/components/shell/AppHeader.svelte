@@ -11,13 +11,16 @@
 	import UserMenu from './UserMenu.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { outbox } from '$lib/stores/outbox.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
+
+	const homeHref = $derived(settings.skipHomeScreen ? '/mail/inbox' : '/');
 </script>
 
 <header
 	class="z-panel relative z-40 flex h-(--height-header) shrink-0 items-center gap-4 border-b px-4"
 	style="view-transition-name: app-header;"
 >
-	<a href="/" class="text-base font-semibold tracking-tight text-fg">ZAUR</a>
+	<a href={homeHref} class="text-base font-semibold tracking-tight text-fg">ZAUR</a>
 
 	<ToolSwitcher />
 

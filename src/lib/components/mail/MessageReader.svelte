@@ -400,7 +400,9 @@
 					<div class="px-4 py-5 md:px-6">
 						<div class="w-full max-w-(--z-reader-measure)">
 						<div class="mb-4 flex flex-wrap items-start gap-3">
-							<Avatar name={message.from.name} email={message.from.email} class="size-9 text-sm" />
+							{#if settings.showAvatars}
+								<Avatar name={message.from.name} email={message.from.email} class="size-9 text-sm" />
+							{/if}
 							<div class="min-w-0 flex-1">
 								<div class="flex flex-wrap items-baseline justify-between gap-2">
 									<div class="min-w-0 text-sm">
@@ -471,7 +473,9 @@
 						class="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-sunken/70 md:px-6"
 						onclick={() => toggleMessage(message)}
 					>
-						<Avatar name={message.from.name} email={message.from.email} />
+						{#if settings.showAvatars}
+							<Avatar name={message.from.name} email={message.from.email} />
+						{/if}
 						<div class="min-w-0 flex-1">
 							<p class="truncate text-sm">
 								<span class="font-medium text-fg">{message.from.name}</span>

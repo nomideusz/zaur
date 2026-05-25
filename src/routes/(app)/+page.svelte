@@ -1,6 +1,14 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { Calendar, Mail, Settings, Users } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
+
+	$effect(() => {
+		if (settings.skipHomeScreen) {
+			goto('/mail/inbox', { replaceState: true });
+		}
+	});
 </script>
 
 <svelte:head>

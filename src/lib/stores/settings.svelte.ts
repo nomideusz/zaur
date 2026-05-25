@@ -8,6 +8,8 @@ const STORAGE = {
 	blockExternal: 'zaur:block-external',
 	listDensity: 'zaur:list-density',
 	showListPreview: 'zaur:show-list-preview',
+	showAvatars: 'zaur:show-avatars',
+	skipHomeScreen: 'zaur:skip-home-screen',
 	readerTextSize: 'zaur:reader-text-size',
 	markAsReadOnOpen: 'zaur:mark-read-on-open',
 	showUnreadInTitle: 'zaur:show-unread-in-title',
@@ -46,6 +48,16 @@ function readShowListPreview(): boolean {
 	return localStorage.getItem(STORAGE.showListPreview) !== 'false';
 }
 
+function readShowAvatars(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showAvatars) !== 'false';
+}
+
+function readSkipHomeScreen(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.skipHomeScreen) === 'true';
+}
+
 function readReaderTextSize(): ReaderTextSize {
 	if (!browser) return 'normal';
 	return localStorage.getItem(STORAGE.readerTextSize) === 'large' ? 'large' : 'normal';
@@ -80,6 +92,8 @@ class SettingsStore {
 	blockExternalContent = $state(readBlockExternal());
 	listDensity = $state<ListDensity>(readListDensity());
 	showListPreview = $state(readShowListPreview());
+	showAvatars = $state(readShowAvatars());
+	skipHomeScreen = $state(readSkipHomeScreen());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	markAsReadOnOpen = $state(readMarkAsReadOnOpen());
 	showUnreadInTitle = $state(readShowUnreadInTitle());
@@ -93,6 +107,8 @@ class SettingsStore {
 		this.blockExternalContent = readBlockExternal();
 		this.listDensity = readListDensity();
 		this.showListPreview = readShowListPreview();
+		this.showAvatars = readShowAvatars();
+		this.skipHomeScreen = readSkipHomeScreen();
 		this.readerTextSize = readReaderTextSize();
 		this.markAsReadOnOpen = readMarkAsReadOnOpen();
 		this.showUnreadInTitle = readShowUnreadInTitle();
@@ -142,6 +158,20 @@ class SettingsStore {
 			localStorage.setItem(STORAGE.showListPreview, String(value));
 		}
 		this.applyListLayout();
+	}
+
+	setShowAvatars(value: boolean) {
+		this.showAvatars = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showAvatars, String(value));
+		}
+	}
+
+	setSkipHomeScreen(value: boolean) {
+		this.skipHomeScreen = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.skipHomeScreen, String(value));
+		}
 	}
 
 	setReaderTextSize(value: ReaderTextSize) {
