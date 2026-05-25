@@ -1,7 +1,8 @@
 <script lang="ts">
+	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import { settings, type ListDensity, type ReaderTextSize } from '$lib/stores/settings.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
 </script>
 
@@ -42,41 +43,48 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Compact list loading skeleton"
-			description="Fewer and tighter placeholder rows while messages load"
+		<SettingsDepends
+			enabled={!settings.minimalLoadingStates}
+			inactiveReason={settings.minimalLoadingStates
+				? 'Skeleton placeholders are off while minimal loading is enabled'
+				: 'Loading skeleton appearance'}
 		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactListLoadingSkeleton}
-				onchange={(e) => settings.setCompactListLoadingSkeleton(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact list loading skeleton"
+				description="Fewer and tighter placeholder rows while messages load"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactListLoadingSkeleton}
+					onchange={(e) => settings.setCompactListLoadingSkeleton(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
 
-		<SettingsRow
-			title="Compact reader skeleton"
-			description="Smaller placeholder layout while a message loads in the reading pane"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactReaderSkeleton}
-				onchange={(e) => settings.setCompactReaderSkeleton(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact reader skeleton"
+				description="Smaller placeholder layout while a message loads in the reading pane"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactReaderSkeleton}
+					onchange={(e) => settings.setCompactReaderSkeleton(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
 
-		<SettingsRow
-			title="Compact folder loading skeleton"
-			description="Fewer and tighter placeholder rows while folders load in the sidebar"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactFolderLoadingSkeleton}
-				onchange={(e) => settings.setCompactFolderLoadingSkeleton(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+			<SettingsRow
+				title="Compact folder loading skeleton"
+				description="Fewer and tighter placeholder rows while folders load in the sidebar"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactFolderLoadingSkeleton}
+					onchange={(e) => settings.setCompactFolderLoadingSkeleton(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
 
 		<SettingsRow
 			title="Compact folder sidebar error"
