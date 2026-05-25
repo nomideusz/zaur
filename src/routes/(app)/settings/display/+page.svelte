@@ -23,6 +23,8 @@
 			input.value = '';
 		});
 	}
+
+	const simplificationCount = $derived(settings.simplificationCount());
 </script>
 
 <svelte:head>
@@ -31,7 +33,9 @@
 
 <SettingsPanel
 	title="Display"
-	description="Appearance and how messages are shown in the list and reader."
+	description="Appearance and how messages are shown in the list and reader.{simplificationCount > 0
+		? ` ${simplificationCount} simplification${simplificationCount === 1 ? '' : 's'} active.`
+		: ''}"
 >
 	<SettingsGroup title="Appearance">
 		<SettingsRow title="Theme" description="Light, dark, or match your system — also in the account menu">
@@ -377,6 +381,30 @@
 				onchange={(e) => settings.setCollapseQuotedInCompose(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Show Cc/Bcc fields"
+			description="Cc and Bcc rows in compose — reply-all still shows Cc when needed"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showCcBccInCompose}
+				onchange={(e) => settings.setShowCcBccInCompose(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compose contact suggestions"
+			description="Autocomplete contacts while typing recipients"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showComposeContactSuggestions}
+				onchange={(e) => settings.setShowComposeContactSuggestions(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Layout">
@@ -511,6 +539,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideOfflineIndicator}
 				onchange={(e) => settings.setHideOfflineIndicator(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Search contact suggestions"
+			description="Contact matches while typing in the header search bar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showSearchContactSuggestions}
+				onchange={(e) => settings.setShowSearchContactSuggestions(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

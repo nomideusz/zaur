@@ -37,6 +37,9 @@ const STORAGE = {
 	expandAllThreadMessages: 'zaur:expand-all-thread-messages',
 	compactLayout: 'zaur:compact-layout',
 	hideComposeHints: 'zaur:hide-compose-hints',
+	showComposeContactSuggestions: 'zaur:show-compose-contact-suggestions',
+	showSearchContactSuggestions: 'zaur:show-search-contact-suggestions',
+	showCcBccInCompose: 'zaur:show-cc-bcc-in-compose',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
 	hideSidebarShortcuts: 'zaur:hide-sidebar-shortcuts',
 	expandListUntilOpen: 'zaur:expand-list-until-open',
@@ -229,6 +232,21 @@ function readHideComposeHints(): boolean {
 	return localStorage.getItem(STORAGE.hideComposeHints) === 'true';
 }
 
+function readShowComposeContactSuggestions(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showComposeContactSuggestions) !== 'false';
+}
+
+function readShowSearchContactSuggestions(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showSearchContactSuggestions) !== 'false';
+}
+
+function readShowCcBccInCompose(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showCcBccInCompose) !== 'false';
+}
+
 function readMinimalReaderToolbar(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.minimalReaderToolbar) === 'true';
@@ -337,6 +355,9 @@ class SettingsStore {
 	expandAllThreadMessages = $state(readExpandAllThreadMessages());
 	compactLayout = $state(readCompactLayout());
 	hideComposeHints = $state(readHideComposeHints());
+	showComposeContactSuggestions = $state(readShowComposeContactSuggestions());
+	showSearchContactSuggestions = $state(readShowSearchContactSuggestions());
+	showCcBccInCompose = $state(readShowCcBccInCompose());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
 	expandListUntilOpen = $state(readExpandListUntilOpen());
@@ -388,6 +409,9 @@ class SettingsStore {
 		this.expandAllThreadMessages = readExpandAllThreadMessages();
 		this.compactLayout = readCompactLayout();
 		this.hideComposeHints = readHideComposeHints();
+		this.showComposeContactSuggestions = readShowComposeContactSuggestions();
+		this.showSearchContactSuggestions = readShowSearchContactSuggestions();
+		this.showCcBccInCompose = readShowCcBccInCompose();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.hideSidebarShortcuts = readHideSidebarShortcuts();
 		this.applyLayoutWidth();
@@ -653,6 +677,27 @@ class SettingsStore {
 		}
 	}
 
+	setShowComposeContactSuggestions(value: boolean) {
+		this.showComposeContactSuggestions = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showComposeContactSuggestions, String(value));
+		}
+	}
+
+	setShowSearchContactSuggestions(value: boolean) {
+		this.showSearchContactSuggestions = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showSearchContactSuggestions, String(value));
+		}
+	}
+
+	setShowCcBccInCompose(value: boolean) {
+		this.showCcBccInCompose = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showCcBccInCompose, String(value));
+		}
+	}
+
 	setMinimalReaderToolbar(value: boolean) {
 		this.minimalReaderToolbar = value;
 		if (browser) {
@@ -812,6 +857,9 @@ class SettingsStore {
 		this.setShowReaderContactActions(true);
 		this.setCompactLayout(false);
 		this.setHideComposeHints(false);
+		this.setShowComposeContactSuggestions(true);
+		this.setShowSearchContactSuggestions(true);
+		this.setShowCcBccInCompose(true);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
 		this.setHideSidebarShortcuts(false);
@@ -831,6 +879,9 @@ class SettingsStore {
 		this.setHideOfflineIndicator(true);
 		this.setShowBulkSelect(false);
 		this.setHideComposeHints(true);
+		this.setShowComposeContactSuggestions(false);
+		this.setShowSearchContactSuggestions(false);
+		this.setShowCcBccInCompose(false);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
 		this.setHighlightUnreadInList(false);
@@ -856,6 +907,46 @@ class SettingsStore {
 		this.setConfirmBeforeDelete(true);
 		this.setConfirmBeforeDiscardCompose(true);
 		this.setReturnToInboxAfterSend(false);
+	}
+
+	simplificationCount(): number {
+		const flags = [
+			!this.showAvatars,
+			!this.showListPreview,
+			this.subjectOnlyList,
+			!this.showStarsInList,
+			!this.showAttachmentIcons,
+			!this.showMessageCounts,
+			!this.showListTimestamps,
+			!this.highlightUnreadInList,
+			!this.showBulkSelect,
+			this.expandListUntilOpen,
+			this.compactLayout,
+			this.hideSidebarShortcuts,
+			this.mailOnlyNavigation,
+			this.skipHomeScreen,
+			this.hideHeaderSearch,
+			this.hideOfflineIndicator,
+			this.hideComposeHints,
+			!this.showComposeContactSuggestions,
+			!this.showSearchContactSuggestions,
+			!this.showCcBccInCompose,
+			this.minimalReaderToolbar,
+			this.hideReaderRecipients,
+			this.hideThreadSummary,
+			this.hideEmptyReaderPrompts,
+			this.hideFolderSidebarHeader,
+			this.hideFolderIcons,
+			this.hideListHeader,
+			this.toolIconsOnly,
+			this.hideExternalContentBanner,
+			this.preferPlainText,
+			this.autoLoadMore,
+			!this.showFolderUnreadCounts,
+			!this.showQuickReply,
+			!this.showReaderContactActions
+		];
+		return flags.filter(Boolean).length;
 	}
 
 	exportLocalPreferences(): string {

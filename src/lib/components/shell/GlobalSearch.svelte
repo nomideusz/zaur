@@ -19,6 +19,7 @@
 	});
 
 	const contactMatches = $derived.by(() => {
+		if (!settings.showSearchContactSuggestions) return [];
 		const query = input.trim();
 		if (query.length < 1) return [];
 		return listContacts(auth.client?.getAccountId() ?? null, query).slice(0, 4);

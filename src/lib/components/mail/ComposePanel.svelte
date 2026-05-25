@@ -193,7 +193,7 @@
 						autocomplete="email"
 						oninput={(value) => (compose.to = value)}
 					/>
-					{#if !compose.showCcBcc}
+					{#if settings.showCcBccInCompose && !compose.showCcBcc}
 						<button
 							type="button"
 							class="shrink-0 text-xs text-accent hover:underline"
@@ -204,7 +204,7 @@
 					{/if}
 				</div>
 
-				{#if compose.showCcBcc}
+				{#if compose.showCcBcc && (settings.showCcBccInCompose || compose.cc.trim() || compose.bcc.trim())}
 					<div class="flex items-center gap-3 border-b border-border px-5 py-2.5 text-sm">
 						<span class="w-14 shrink-0 text-fg-subtle">Cc</span>
 						<ComposeRecipientInput
