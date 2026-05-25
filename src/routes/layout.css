@@ -51,6 +51,11 @@
 	--z-list-row: 4.25rem;
 	--z-reader-measure: 42rem;
 	--z-reader-text: 0.875rem;
+
+	--z-scrollbar-size: 0.625rem;
+	--z-scrollbar-track: transparent;
+	--z-scrollbar-thumb: color-mix(in srgb, var(--z-border-strong) 72%, transparent);
+	--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 68%, transparent);
 }
 
 :root.dark {
@@ -68,6 +73,9 @@
 	--z-accent-hover: #2563eb;
 	--z-unread: #60a5fa;
 	--z-star: #fbbf24;
+
+	--z-scrollbar-thumb: color-mix(in srgb, var(--z-border-strong) 88%, transparent);
+	--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 58%, transparent);
 }
 
 @layer base {
@@ -80,6 +88,35 @@
 		@apply bg-surface text-fg;
 		margin: 0;
 		min-height: 100dvh;
+	}
+
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: var(--z-scrollbar-thumb) var(--z-scrollbar-track);
+	}
+
+	*::-webkit-scrollbar {
+		width: var(--z-scrollbar-size);
+		height: var(--z-scrollbar-size);
+	}
+
+	*::-webkit-scrollbar-track {
+		background: var(--z-scrollbar-track);
+	}
+
+	*::-webkit-scrollbar-thumb {
+		background-color: var(--z-scrollbar-thumb);
+		border: 2px solid transparent;
+		border-radius: 9999px;
+		background-clip: padding-box;
+	}
+
+	*::-webkit-scrollbar-thumb:hover {
+		background-color: var(--z-scrollbar-thumb-hover);
+	}
+
+	*::-webkit-scrollbar-corner {
+		background: transparent;
 	}
 
 	::selection {
@@ -139,6 +176,20 @@
 
 	.z-pane-scroll {
 		overscroll-behavior-y: contain;
+	}
+
+	.z-pane-scroll:hover {
+		scrollbar-color: var(--z-scrollbar-thumb-hover) var(--z-scrollbar-track);
+	}
+
+	.z-pane-scroll:hover::-webkit-scrollbar-thumb {
+		background-color: var(--z-scrollbar-thumb-hover);
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		*::-webkit-scrollbar-thumb {
+			transition: background-color 150ms ease;
+		}
 	}
 
 	.z-btn-primary {
