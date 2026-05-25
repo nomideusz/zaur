@@ -122,6 +122,14 @@
 				return null;
 		}
 	});
+
+	const showBulkToolbar = $derived(
+		!!mailboxRouteId &&
+			!loading &&
+			!error &&
+			messages.length > 0 &&
+			settings.showBulkSelect
+	);
 </script>
 
 <section
@@ -139,7 +147,8 @@
 			'flex shrink-0 items-center gap-2 px-4',
 			settings.compactListHeader ? 'h-10' : 'h-12',
 			!settings.hidePaneBorders && 'border-b border-border',
-			settings.hideListHeader ? 'md:hidden' : ''
+			settings.hideListHeader ? 'md:hidden' : '',
+			showBulkToolbar && 'hidden md:flex'
 		)}
 	>
 		{#if mailboxRouteId}
@@ -171,8 +180,8 @@
 		{/if}
 	</div>
 
-	{#if mailboxRouteId && !loading && !error && messages.length && settings.showBulkSelect}
-		<MessageListToolbar {mailboxRouteId} {onBulkAction} />
+	{#if showBulkToolbar && mailboxRouteId}
+		<MessageListToolbar mailboxRouteId={mailboxRouteId} {countLabel} {onBulkAction} />
 	{/if}
 
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">

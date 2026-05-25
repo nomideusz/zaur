@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { Archive, FolderInput, Mail, MailOpen, Trash2, X } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -9,10 +10,11 @@
 
 	interface Props {
 		mailboxRouteId: string;
+		countLabel?: string;
 		onBulkAction?: () => void;
 	}
 
-	let { mailboxRouteId, onBulkAction }: Props = $props();
+	let { mailboxRouteId, countLabel = '', onBulkAction }: Props = $props();
 
 	let moveOpen = $state(false);
 	let masterCheckbox = $state<HTMLInputElement | null>(null);
@@ -118,6 +120,27 @@
 		onchange={handleMasterCheckbox}
 	/>
 
+	<label class={cn('min-w-0 flex-1 md:hidden', mail.selectionMode && 'hidden')}>
+		<span class="sr-only">Folder</span>
+		<select
+			class={cn('z-input w-full min-w-0', settings.compactMobileFolderPicker ? 'py-1' : 'py-1.5')}
+			value={mailboxRouteId}
+			onchange={(e) => goto(`/mail/${e.currentTarget.value}`)}
+		>
+			{#each mail.mailboxes as folder (folder.id)}
+				<option value={folder.id}>
+					{folder.name}{settings.showFolderUnreadCounts && folder.unread > 0
+						? ` (${folder.unread})`
+						: ''}
+				</option>
+			{/each}
+		</select>
+	</label>
+
+	{#if !mail.selectionMode && settings.showMessageCounts && countLabel}
+		<span class="shrink-0 text-xs text-fg-subtle md:hidden">{countLabel}</span>
+	{/if}
+
 	{#if mail.selectionMode}
 		<Button variant="ghost" class="!px-2 !py-1.5 text-xs" onclick={() => mail.exitSelectionMode()}>
 			<X class="size-3.5" aria-hidden="true" />
@@ -131,7 +154,7 @@
 		{/if}
 
 		{#if mail.selectedCount}
-			<div class="ml-auto flex flex-wrap items-center gap-1">
+			<div class="flex w-full flex-wrap items-center gap-1 md:ml-auto md:w-auto">
 				{#if hasUnreadSelected}
 					<Button
 						variant="ghost"
