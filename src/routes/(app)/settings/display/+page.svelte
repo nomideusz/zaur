@@ -77,6 +77,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Show attachment icons"
+			description="Paperclip beside messages that include files"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showAttachmentIcons}
+				onchange={(e) => settings.setShowAttachmentIcons(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Expand list until opened"
 			description="Use the full width for the message list on desktop until you pick a message"
 		>
@@ -139,6 +151,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideSidebarShortcuts}
 				onchange={(e) => settings.setHideSidebarShortcuts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Mail-only navigation"
+			description="Hide Calendar and Contacts from the top bar — for a focused mail experience"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.mailOnlyNavigation}
+				onchange={(e) => settings.setMailOnlyNavigation(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

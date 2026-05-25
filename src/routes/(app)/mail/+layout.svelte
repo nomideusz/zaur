@@ -2,11 +2,13 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 
 	let { children } = $props();
 
 	onMount(() => {
 		function onKeydown(event: KeyboardEvent) {
+			if (!settings.enableKeyboardShortcuts) return;
 			if (event.key !== 'c' || event.metaKey || event.ctrlKey || event.altKey) return;
 
 			const target = event.target;

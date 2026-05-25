@@ -6,8 +6,22 @@
 
 	const tools = $derived([
 		{ href: '/mail/inbox', label: 'Mail', icon: Mail, active: (path: string) => path.startsWith('/mail') },
-		{ href: '/calendar', label: 'Calendar', icon: Calendar, active: (path: string) => path.startsWith('/calendar') },
-		{ href: '/contacts', label: 'Contacts', icon: Users, active: (path: string) => path.startsWith('/contacts') },
+		...(!settings.mailOnlyNavigation
+			? [
+					{
+						href: '/calendar',
+						label: 'Calendar',
+						icon: Calendar,
+						active: (path: string) => path.startsWith('/calendar')
+					},
+					{
+						href: '/contacts',
+						label: 'Contacts',
+						icon: Users,
+						active: (path: string) => path.startsWith('/contacts')
+					}
+				]
+			: []),
 		...(!settings.skipHomeScreen
 			? [{ href: '/', label: 'Home', icon: Home, active: (path: string) => path === '/' }]
 			: [])

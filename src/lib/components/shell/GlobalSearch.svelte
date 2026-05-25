@@ -5,6 +5,7 @@
 	import { page } from '$app/stores';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { listContacts } from '$lib/utils/contact-index';
 
 	let input = $state('');
@@ -49,6 +50,7 @@
 
 	onMount(() => {
 		function onKeydown(event: KeyboardEvent) {
+			if (!settings.enableKeyboardShortcuts) return;
 			if (event.key !== '/' || event.metaKey || event.ctrlKey || event.altKey) return;
 			if (isTypingTarget(event.target)) return;
 			if (!searchInput) return;
@@ -81,7 +83,7 @@
 		bind:this={searchInput}
 		id="global-search"
 		type="search"
-		placeholder="Search messages or contacts… (/ to focus)"
+		placeholder="Search messages or contacts…{settings.enableKeyboardShortcuts ? ' (/ to focus)' : ''}"
 		class="z-input pl-9"
 		autocomplete="off"
 		bind:value={input}

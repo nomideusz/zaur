@@ -46,6 +46,18 @@
 				onchange={(e) => settings.setMarkAsReadOnOpen(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Keyboard shortcuts"
+			description="Press c to compose and / to focus search while in mail"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.enableKeyboardShortcuts}
+				onchange={(e) => settings.setEnableKeyboardShortcuts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Keyboard shortcuts">

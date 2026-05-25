@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { ChevronDown, LogOut, Moon, Settings, Sun } from 'lucide-svelte';
+	import { ChevronDown, LogOut, Moon, Settings, Sun, User } from 'lucide-svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -34,7 +34,13 @@
 			open = !open;
 		}}
 	>
-		<Avatar name={user.name} email={user.email} />
+		{#if settings.showAvatars}
+			<Avatar name={user.name} email={user.email} />
+		{:else}
+			<span class="flex size-8 items-center justify-center rounded-full bg-surface-sunken text-fg-muted">
+				<User class="size-4" aria-hidden="true" />
+			</span>
+		{/if}
 		<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
 	</button>
 

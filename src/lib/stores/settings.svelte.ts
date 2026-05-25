@@ -10,8 +10,11 @@ const STORAGE = {
 	showListPreview: 'zaur:show-list-preview',
 	showAvatars: 'zaur:show-avatars',
 	showStarsInList: 'zaur:show-stars-in-list',
+	showAttachmentIcons: 'zaur:show-attachment-icons',
 	hideSidebarShortcuts: 'zaur:hide-sidebar-shortcuts',
 	expandListUntilOpen: 'zaur:expand-list-until-open',
+	mailOnlyNavigation: 'zaur:mail-only-navigation',
+	enableKeyboardShortcuts: 'zaur:enable-keyboard-shortcuts',
 	skipHomeScreen: 'zaur:skip-home-screen',
 	readerTextSize: 'zaur:reader-text-size',
 	markAsReadOnOpen: 'zaur:mark-read-on-open',
@@ -61,6 +64,11 @@ function readShowStarsInList(): boolean {
 	return localStorage.getItem(STORAGE.showStarsInList) !== 'false';
 }
 
+function readShowAttachmentIcons(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showAttachmentIcons) !== 'false';
+}
+
 function readHideSidebarShortcuts(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideSidebarShortcuts) === 'true';
@@ -69,6 +77,16 @@ function readHideSidebarShortcuts(): boolean {
 function readExpandListUntilOpen(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.expandListUntilOpen) === 'true';
+}
+
+function readMailOnlyNavigation(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.mailOnlyNavigation) === 'true';
+}
+
+function readEnableKeyboardShortcuts(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.enableKeyboardShortcuts) !== 'false';
 }
 
 function readSkipHomeScreen(): boolean {
@@ -112,8 +130,11 @@ class SettingsStore {
 	showListPreview = $state(readShowListPreview());
 	showAvatars = $state(readShowAvatars());
 	showStarsInList = $state(readShowStarsInList());
+	showAttachmentIcons = $state(readShowAttachmentIcons());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
 	expandListUntilOpen = $state(readExpandListUntilOpen());
+	mailOnlyNavigation = $state(readMailOnlyNavigation());
+	enableKeyboardShortcuts = $state(readEnableKeyboardShortcuts());
 	skipHomeScreen = $state(readSkipHomeScreen());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	markAsReadOnOpen = $state(readMarkAsReadOnOpen());
@@ -130,8 +151,11 @@ class SettingsStore {
 		this.showListPreview = readShowListPreview();
 		this.showAvatars = readShowAvatars();
 		this.showStarsInList = readShowStarsInList();
+		this.showAttachmentIcons = readShowAttachmentIcons();
 		this.hideSidebarShortcuts = readHideSidebarShortcuts();
 		this.expandListUntilOpen = readExpandListUntilOpen();
+		this.mailOnlyNavigation = readMailOnlyNavigation();
+		this.enableKeyboardShortcuts = readEnableKeyboardShortcuts();
 		this.skipHomeScreen = readSkipHomeScreen();
 		this.readerTextSize = readReaderTextSize();
 		this.markAsReadOnOpen = readMarkAsReadOnOpen();
@@ -198,6 +222,13 @@ class SettingsStore {
 		}
 	}
 
+	setShowAttachmentIcons(value: boolean) {
+		this.showAttachmentIcons = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showAttachmentIcons, String(value));
+		}
+	}
+
 	setHideSidebarShortcuts(value: boolean) {
 		this.hideSidebarShortcuts = value;
 		if (browser) {
@@ -209,6 +240,20 @@ class SettingsStore {
 		this.expandListUntilOpen = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.expandListUntilOpen, String(value));
+		}
+	}
+
+	setMailOnlyNavigation(value: boolean) {
+		this.mailOnlyNavigation = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.mailOnlyNavigation, String(value));
+		}
+	}
+
+	setEnableKeyboardShortcuts(value: boolean) {
+		this.enableKeyboardShortcuts = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.enableKeyboardShortcuts, String(value));
 		}
 	}
 

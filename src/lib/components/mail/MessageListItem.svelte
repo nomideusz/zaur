@@ -70,7 +70,7 @@
 			<span class={cn('truncate text-sm', message.unread ? 'font-medium text-fg' : 'text-fg-muted')}>
 				{message.subject}
 			</span>
-			{#if message.hasAttachment}
+			{#if settings.showAttachmentIcons && message.hasAttachment}
 				<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
 			{/if}
 		</div>
