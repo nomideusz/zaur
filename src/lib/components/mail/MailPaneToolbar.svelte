@@ -201,7 +201,7 @@
 			<span class="hidden truncate text-xs text-fg-subtle sm:inline">Ctrl/Shift+click</span>
 		{/if}
 	{:else}
-		{#if mailboxRouteId}
+		{#if mailboxRouteId && !threadId}
 			<label class="min-w-0 flex-1 md:hidden">
 				<span class="sr-only">Folder</span>
 				<select
@@ -234,12 +234,12 @@
 				!settings.showMessageCounts && 'md:hidden'
 			)}
 		>{countLabel}</span>
-		{#if mailboxRouteId}
+		{#if mailboxRouteId && !showThreadActions}
 			<span class="ml-auto shrink-0 text-xs text-fg-subtle md:hidden">{settings.showMessageCounts ? countLabel : ''}</span>
 		{/if}
 
 		{#if showThreadActions && mailboxRouteId}
-			<MessageThreadActions {thread} {mailboxRouteId} onMoved={onBulkAction} class="ml-auto" />
+			<MessageThreadActions {thread} {mailboxRouteId} onMoved={onBulkAction} />
 		{:else if showNewMessage}
 			<div class="ml-auto shrink-0">
 				<IconButton label="New message" class="!p-1.5" onclick={() => goto('/mail/compose')}>

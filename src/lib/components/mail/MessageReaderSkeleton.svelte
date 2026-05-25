@@ -8,30 +8,30 @@
 	{#if settings.loadingIndicatorStyle === 'skeleton'}
 		<div
 			class={cn(
-				'shrink-0 px-4 md:px-6',
-				settings.compactReaderHeader || settings.compactReaderSkeleton ? 'py-2' : 'py-3',
-				!settings.hideReaderPaneBorders && 'border-b border-border'
-			)}
-		>
-			<div
-				class={cn(
-					'w-2/3 max-w-md animate-pulse rounded bg-surface-sunken',
-					settings.compactReaderSkeleton ? 'h-5' : 'h-6'
-				)}
-			></div>
-			<div
-				class={cn(
-					'animate-pulse rounded bg-surface-sunken',
-					settings.compactReaderSkeleton ? 'mt-2 h-3 w-1/4' : 'mt-3 h-4 w-1/3'
-				)}
-			></div>
-		</div>
-		<div
-			class={cn(
 				'z-pane-scroll min-h-0 flex-1 overflow-y-auto px-4 md:px-6',
 				settings.compactReaderSkeleton ? 'space-y-3 py-3' : 'space-y-4 py-5'
 			)}
 		>
+			<div
+				class={cn(
+					'max-w-(--z-reader-measure)',
+					settings.compactReaderHeader || settings.compactReaderSkeleton ? 'pb-2' : 'pb-3',
+					!settings.hideReaderPaneBorders && 'border-b border-border'
+				)}
+			>
+				<div
+					class={cn(
+						'w-2/3 max-w-md animate-pulse rounded bg-surface-sunken',
+						settings.compactReaderSkeleton ? 'h-5' : 'h-6'
+					)}
+				></div>
+				<div
+					class={cn(
+						'animate-pulse rounded bg-surface-sunken',
+						settings.compactReaderSkeleton ? 'mt-2 h-3 w-1/4' : 'mt-3 h-4 w-1/3'
+					)}
+				></div>
+			</div>
 			<div class="flex gap-3">
 				<div
 					class={cn(

@@ -220,8 +220,8 @@
 	</SettingsDepends>
 
 	<SettingsRow
-		title="Compact reader header"
-		description="Smaller subject line and less padding at the top of the reading pane"
+		title="Compact subject title"
+		description="Smaller subject line and less padding above the message body"
 	>
 		<input
 			type="checkbox"
@@ -232,7 +232,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Toolbar buttons" description="Action buttons in the reading pane header." advanced>
+<SettingsGroup title="Toolbar buttons" description="Action buttons in the mail pane toolbar when reading a message." advanced>
 	<SettingsRow
 		title="Minimal reader toolbar"
 		description="Hide star, reply all, and forward buttons — reply and more actions stay available"

@@ -46,7 +46,7 @@ export const componentTree = {
 		MailPane: ['MailPaneToolbar', 'MessageList', 'MessageReader | MessageReaderEmpty'],
 		MailboxSidebar: ['MailboxTree', 'MailboxItem'],
 		MessageList: ['MessageListItem'],
-		MessageReader: ['ReaderHeader', 'ReaderBody'],
+		MessageReader: ['ReaderTitle', 'ReaderBody'],
 		ComposePanel: ['ComposeHeader', 'ComposeFields', 'ComposeEditor']
 	},
 	ui: ['Button', 'IconButton', 'Badge', 'Avatar', 'ToastStack'],

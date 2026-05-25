@@ -873,7 +873,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 	{
 		"id": "/settings/reading-compact-reader-header",
 		"href": "/settings/reading",
-		"title": "Compact reader header",
+		"title": "Compact subject title",
 		"description": ""
 	},
 	{

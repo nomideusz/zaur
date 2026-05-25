@@ -164,27 +164,6 @@
 </script>
 
 <article class="flex min-h-0 flex-1 flex-col overflow-hidden bg-surface-raised" style="view-transition-name: message-reader;">
-	<header class={cn('shrink-0', !settings.hideReaderPaneBorders && 'border-b border-border', settings.compactReaderHeader ? 'px-4 py-2 md:px-5' : 'px-4 py-3 md:px-6')}>
-		<div class="max-w-(--z-reader-measure)">
-			<h1 class={cn('z-type-reader-title line-clamp-2', settings.compactReaderHeader ? 'text-base md:text-lg' : 'text-lg md:text-xl')}>{subject}</h1>
-
-			{#if thread.length > 1 && !settings.hideThreadSummary}
-				<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
-					<span>{thread.length} messages</span>
-					{#if collapsedCount > 0}
-						<button type="button" class="text-accent hover:underline" onclick={expandAll}>
-							Expand all
-						</button>
-					{:else}
-						<button type="button" class="text-accent hover:underline" onclick={collapseToLatest}>
-							Collapse earlier
-						</button>
-					{/if}
-				</div>
-			{/if}
-		</div>
-	</header>
-
 	{#if mail.selectedError}
 		<div
 			class={cn(
@@ -221,6 +200,40 @@
 	{/if}
 
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
+		<div
+			class={cn(
+				threadRowX,
+				settings.compactReaderHeader ? 'pb-2 pt-3' : 'pb-3 pt-4',
+				!settings.hideReaderPaneBorders && 'border-b border-border'
+			)}
+		>
+			<div class="max-w-(--z-reader-measure)">
+				<h1
+					class={cn(
+						'z-type-reader-title',
+						settings.compactReaderHeader ? 'text-base md:text-lg' : 'text-lg md:text-xl'
+					)}
+				>
+					{subject}
+				</h1>
+
+				{#if thread.length > 1 && !settings.hideThreadSummary}
+					<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
+						<span>{thread.length} messages</span>
+						{#if collapsedCount > 0}
+							<button type="button" class="text-accent hover:underline" onclick={expandAll}>
+								Expand all
+							</button>
+						{:else}
+							<button type="button" class="text-accent hover:underline" onclick={collapseToLatest}>
+								Collapse earlier
+							</button>
+						{/if}
+					</div>
+				{/if}
+			</div>
+		</div>
+
 		{#each thread as message, index (message.id)}
 			<section class={cn(index > 0 && !settings.hideReaderPaneBorders && 'border-t border-border')}>
 				{#if isExpanded(message)}
