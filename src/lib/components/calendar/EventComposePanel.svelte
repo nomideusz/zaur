@@ -175,7 +175,7 @@
 					!hideBorders && 'border-border'
 				)}
 			>
-				<Button variant="ghost" type="button" onclick={close}>Cancel</Button>
+				<Button variant="ghost" type="button" onclick={close}>Close</Button>
 				<Button type="submit" disabled={calendar.composeSaving}>
 					{submitLabel}
 				</Button>
