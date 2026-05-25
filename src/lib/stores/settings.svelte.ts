@@ -7,6 +7,7 @@ export type ReaderTextSize = 'normal' | 'large';
 const STORAGE = {
 	blockExternal: 'zaur:block-external',
 	hideExternalContentBanner: 'zaur:hide-external-content-banner',
+	autoLoadMore: 'zaur:auto-load-more',
 	listDensity: 'zaur:list-density',
 	showListPreview: 'zaur:show-list-preview',
 	showAvatars: 'zaur:show-avatars',
@@ -27,6 +28,7 @@ const STORAGE = {
 	showFolderUnreadCounts: 'zaur:show-folder-unread-counts',
 	showBulkSelect: 'zaur:show-bulk-select',
 	hideHeaderSearch: 'zaur:hide-header-search',
+	hideOfflineIndicator: 'zaur:hide-offline-indicator',
 	showQuickReply: 'zaur:show-quick-reply',
 	showReaderContactActions: 'zaur:show-reader-contact-actions',
 	expandAllThreadMessages: 'zaur:expand-all-thread-messages',
@@ -71,6 +73,11 @@ function readBlockExternal(): boolean {
 function readHideExternalContentBanner(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideExternalContentBanner) === 'true';
+}
+
+function readAutoLoadMore(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.autoLoadMore) === 'true';
 }
 
 function readListDensity(): ListDensity {
@@ -173,6 +180,11 @@ function readHideHeaderSearch(): boolean {
 	return localStorage.getItem(STORAGE.hideHeaderSearch) === 'true';
 }
 
+function readHideOfflineIndicator(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideOfflineIndicator) === 'true';
+}
+
 function readShowQuickReply(): boolean {
 	if (!browser) return true;
 	return localStorage.getItem(STORAGE.showQuickReply) !== 'false';
@@ -271,6 +283,7 @@ function readSignature(email: string | null): string {
 class SettingsStore {
 	blockExternalContent = $state(readBlockExternal());
 	hideExternalContentBanner = $state(readHideExternalContentBanner());
+	autoLoadMore = $state(readAutoLoadMore());
 	listDensity = $state<ListDensity>(readListDensity());
 	showListPreview = $state(readShowListPreview());
 	showAvatars = $state(readShowAvatars());
@@ -291,6 +304,7 @@ class SettingsStore {
 	showFolderUnreadCounts = $state(readShowFolderUnreadCounts());
 	showBulkSelect = $state(readShowBulkSelect());
 	hideHeaderSearch = $state(readHideHeaderSearch());
+	hideOfflineIndicator = $state(readHideOfflineIndicator());
 	showQuickReply = $state(readShowQuickReply());
 	showReaderContactActions = $state(readShowReaderContactActions());
 	expandAllThreadMessages = $state(readExpandAllThreadMessages());
@@ -316,6 +330,7 @@ class SettingsStore {
 	init() {
 		this.blockExternalContent = readBlockExternal();
 		this.hideExternalContentBanner = readHideExternalContentBanner();
+		this.autoLoadMore = readAutoLoadMore();
 		this.listDensity = readListDensity();
 		this.showListPreview = readShowListPreview();
 		this.showAvatars = readShowAvatars();
@@ -336,6 +351,7 @@ class SettingsStore {
 		this.showFolderUnreadCounts = readShowFolderUnreadCounts();
 		this.showBulkSelect = readShowBulkSelect();
 		this.hideHeaderSearch = readHideHeaderSearch();
+		this.hideOfflineIndicator = readHideOfflineIndicator();
 		this.showQuickReply = readShowQuickReply();
 		this.showReaderContactActions = readShowReaderContactActions();
 		this.expandAllThreadMessages = readExpandAllThreadMessages();
@@ -389,6 +405,13 @@ class SettingsStore {
 		this.hideExternalContentBanner = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.hideExternalContentBanner, String(value));
+		}
+	}
+
+	setAutoLoadMore(value: boolean) {
+		this.autoLoadMore = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.autoLoadMore, String(value));
 		}
 	}
 
@@ -531,6 +554,13 @@ class SettingsStore {
 		this.hideHeaderSearch = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.hideHeaderSearch, String(value));
+		}
+	}
+
+	setHideOfflineIndicator(value: boolean) {
+		this.hideOfflineIndicator = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideOfflineIndicator, String(value));
 		}
 	}
 
@@ -708,10 +738,12 @@ class SettingsStore {
 		this.setShowFolderUnreadCounts(true);
 		this.setShowBulkSelect(true);
 		this.setHideHeaderSearch(false);
+		this.setHideOfflineIndicator(false);
 		this.setExpandListUntilOpen(false);
 		this.setReaderTextSize('normal');
 		this.setBlockExternalContent(true);
 		this.setHideExternalContentBanner(false);
+		this.setAutoLoadMore(false);
 		this.setShowQuickReply(true);
 		this.setExpandAllThreadMessages(false);
 		this.setShowReaderContactActions(true);
@@ -733,6 +765,7 @@ class SettingsStore {
 		this.setSubjectOnlyList(true);
 		this.setHideSidebarShortcuts(true);
 		this.setHideHeaderSearch(true);
+		this.setHideOfflineIndicator(true);
 		this.setShowBulkSelect(false);
 		this.setHideComposeHints(true);
 		this.setMinimalReaderToolbar(true);

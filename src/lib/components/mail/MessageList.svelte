@@ -51,6 +51,8 @@
 		onBulkAction
 	}: Props = $props();
 
+	let loadSentinel = $state<HTMLDivElement | null>(null);
+
 	const activeThreadId = $derived($page.params.threadId);
 	const mailbox = $derived(mailboxRouteId ? mail.mailboxByRouteId(mailboxRouteId) : null);
 	const countLabel = $derived.by(() => {
@@ -65,6 +67,24 @@
 		if (!settings.showBulkSelect && mail.selectionMode) {
 			mail.exitSelectionMode();
 		}
+	});
+
+	$effect(() => {
+		settings.autoLoadMore;
+		hasMore;
+		loadingMore;
+		const sentinel = loadSentinel;
+		const load = onLoadMore;
+		if (!settings.autoLoadMore || !hasMore || !load || !sentinel) return;
+
+		const observer = new IntersectionObserver(
+			(entries) => {
+				if (entries[0]?.isIntersecting && !loadingMore) load();
+			},
+			{ rootMargin: '240px' }
+		);
+		observer.observe(sentinel);
+		return () => observer.disconnect();
 	});
 
 	const defaultEmptyMessage = $derived.by(() => {
@@ -215,15 +235,24 @@
 			{/each}
 
 			{#if hasMore && onLoadMore}
-				<div class="border-t border-border px-4 py-3">
-					<Button variant="ghost" class="w-full" disabled={loadingMore} onclick={onLoadMore}>
-						{#if loadingMore}
-							<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
-							Loading…
-						{:else}
-							Load more
-						{/if}
-					</Button>
+				<div class="border-t border-border px-4 py-3" bind:this={loadSentinel}>
+					{#if settings.autoLoadMore}
+						<div class="flex items-center justify-center py-2 text-xs text-fg-subtle" aria-live="polite">
+							{#if loadingMore}
+								<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+								<span class="ml-2">Loading…</span>
+							{/if}
+						</div>
+					{:else}
+						<Button variant="ghost" class="w-full" disabled={loadingMore} onclick={onLoadMore}>
+							{#if loadingMore}
+								<LoaderCircle class="size-4 animate-spin" aria-hidden="true" />
+								Loading…
+							{:else}
+								Load more
+							{/if}
+						</Button>
+					{/if}
 				</div>
 			{/if}
 		{/if}

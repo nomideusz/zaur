@@ -203,6 +203,18 @@
 				onchange={(e) => settings.setExpandListUntilOpen(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Auto-load more messages"
+			description="Load older messages automatically when you scroll to the bottom of the list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.autoLoadMore}
+				onchange={(e) => settings.setAutoLoadMore(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Reading">
@@ -451,6 +463,18 @@
 				class="size-4 accent-accent"
 				checked={settings.toolIconsOnly}
 				onchange={(e) => settings.setToolIconsOnly(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide offline indicator"
+			description="Do not show the offline badge in the header when you lose connection"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideOfflineIndicator}
+				onchange={(e) => settings.setHideOfflineIndicator(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

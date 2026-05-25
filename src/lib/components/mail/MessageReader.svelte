@@ -295,6 +295,11 @@
 						<Forward class="size-4" />
 					</IconButton>
 				{/if}
+				{#if hasBlockedExternal && !allowExternal && settings.hideExternalContentBanner}
+					<IconButton label="Show external images" onclick={() => (showImagesOnce = true)}>
+						<Shield class="size-4" />
+					</IconButton>
+				{/if}
 
 				<div class="hidden items-center gap-0.5 md:flex">
 					<IconButton label="Archive" onclick={archiveMessage}>
@@ -346,6 +351,19 @@
 									Mark as unread
 								{/if}
 							</button>
+							{#if hasBlockedExternal && !allowExternal && settings.hideExternalContentBanner}
+								<button
+									type="button"
+									class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
+									onclick={() => {
+										moreOpen = false;
+										showImagesOnce = true;
+									}}
+								>
+									<Shield class="size-4 shrink-0" aria-hidden="true" />
+									Show images
+								</button>
+							{/if}
 							<button
 								type="button"
 								class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
