@@ -1431,6 +1431,42 @@
 				onchange={(e) => settings.setCompactContactsAddForm(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Hide contacts page subtitle"
+			description="Remove the description under the Contacts heading"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideContactsPageSubtitle}
+				onchange={(e) => settings.setHideContactsPageSubtitle(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact contacts search"
+			description="Smaller search field on the Contacts page"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactContactsSearch}
+				onchange={(e) => settings.setCompactContactsSearch(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact contacts empty state"
+			description="Less padding and smaller icon when the contacts list is empty"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactContactsEmptyState}
+				onchange={(e) => settings.setCompactContactsEmptyState(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Settings page">

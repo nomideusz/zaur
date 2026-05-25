@@ -82,7 +82,7 @@
 			<h1 class={cn('font-semibold text-fg', settings.compactContactsPage ? 'text-lg' : 'text-xl')}>
 				Contacts
 			</h1>
-			{#if !settings.compactContactsPage}
+			{#if !settings.hideContactsPageSubtitle && !settings.compactContactsPage}
 				<p class="mt-1 text-sm text-fg-muted">
 					People you've mailed with, plus any you add manually.
 				</p>
@@ -132,10 +132,18 @@
 	{/if}
 
 	<label class="relative block">
-		<Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
+		<Search
+			class={cn(
+				'pointer-events-none absolute top-1/2 -translate-y-1/2 text-fg-subtle',
+				settings.compactContactsSearch ? 'left-2.5 size-3.5' : 'left-3 size-4'
+			)}
+		/>
 		<input
 			type="search"
-			class="z-input pl-9"
+			class={cn(
+				'z-input',
+				settings.compactContactsSearch ? 'py-1.5 pl-8 text-xs' : 'pl-9'
+			)}
 			placeholder="Search contacts…"
 			bind:value={query}
 		/>
@@ -214,14 +222,33 @@
 		<div
 			class={cn(
 				'z-panel flex flex-col items-center rounded-xl text-center',
-				settings.compactContactsPage ? 'gap-3 px-4 py-10' : 'gap-4 px-6 py-16'
+				settings.compactContactsEmptyState
+					? 'gap-2 px-4 py-8'
+					: settings.compactContactsPage
+						? 'gap-3 px-4 py-10'
+						: 'gap-4 px-6 py-16'
 			)}
 		>
-			<div class={cn('rounded-full bg-surface-sunken', settings.compactContactsPage ? 'p-3' : 'p-4')}>
-				<Users class={cn('text-fg-subtle', settings.compactContactsPage ? 'size-6' : 'size-8')} aria-hidden="true" />
+			<div
+				class={cn(
+					'rounded-full bg-surface-sunken',
+					settings.compactContactsEmptyState ? 'p-2' : settings.compactContactsPage ? 'p-3' : 'p-4'
+				)}
+			>
+				<Users
+					class={cn(
+						'text-fg-subtle',
+						settings.compactContactsEmptyState
+							? 'size-5'
+							: settings.compactContactsPage
+								? 'size-6'
+								: 'size-8'
+					)}
+					aria-hidden="true"
+				/>
 			</div>
 			<div>
-				<p class="text-sm font-medium text-fg">
+				<p class={cn('font-medium text-fg', settings.compactContactsEmptyState ? 'text-xs' : 'text-sm')}>
 					{#if query.trim()}
 						No contacts match your search
 					{:else}

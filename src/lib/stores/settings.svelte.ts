@@ -120,6 +120,9 @@ const STORAGE = {
 	hideContactGroupLetters: 'zaur:hide-contact-group-letters',
 	compactFolderSidebarError: 'zaur:compact-folder-sidebar-error',
 	compactContactsAddForm: 'zaur:compact-contacts-add-form',
+	hideContactsPageSubtitle: 'zaur:hide-contacts-page-subtitle',
+	compactContactsSearch: 'zaur:compact-contacts-search',
+	compactContactsEmptyState: 'zaur:compact-contacts-empty-state',
 	compactReaderInlineError: 'zaur:compact-reader-inline-error',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
@@ -735,6 +738,21 @@ function readCompactContactsAddForm(): boolean {
 	return localStorage.getItem(STORAGE.compactContactsAddForm) === 'true';
 }
 
+function readHideContactsPageSubtitle(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideContactsPageSubtitle) === 'true';
+}
+
+function readCompactContactsSearch(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactContactsSearch) === 'true';
+}
+
+function readCompactContactsEmptyState(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactContactsEmptyState) === 'true';
+}
+
 function readCompactReaderInlineError(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactReaderInlineError) === 'true';
@@ -937,6 +955,9 @@ class SettingsStore {
 	hideContactGroupLetters = $state(readHideContactGroupLetters());
 	compactFolderSidebarError = $state(readCompactFolderSidebarError());
 	compactContactsAddForm = $state(readCompactContactsAddForm());
+	hideContactsPageSubtitle = $state(readHideContactsPageSubtitle());
+	compactContactsSearch = $state(readCompactContactsSearch());
+	compactContactsEmptyState = $state(readCompactContactsEmptyState());
 	compactReaderInlineError = $state(readCompactReaderInlineError());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
@@ -1073,6 +1094,9 @@ class SettingsStore {
 		this.hideContactGroupLetters = readHideContactGroupLetters();
 		this.compactFolderSidebarError = readCompactFolderSidebarError();
 		this.compactContactsAddForm = readCompactContactsAddForm();
+		this.hideContactsPageSubtitle = readHideContactsPageSubtitle();
+		this.compactContactsSearch = readCompactContactsSearch();
+		this.compactContactsEmptyState = readCompactContactsEmptyState();
 		this.compactReaderInlineError = readCompactReaderInlineError();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
@@ -1932,6 +1956,27 @@ class SettingsStore {
 		}
 	}
 
+	setHideContactsPageSubtitle(value: boolean) {
+		this.hideContactsPageSubtitle = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideContactsPageSubtitle, String(value));
+		}
+	}
+
+	setCompactContactsSearch(value: boolean) {
+		this.compactContactsSearch = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactContactsSearch, String(value));
+		}
+	}
+
+	setCompactContactsEmptyState(value: boolean) {
+		this.compactContactsEmptyState = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactContactsEmptyState, String(value));
+		}
+	}
+
 	setCompactReaderInlineError(value: boolean) {
 		this.compactReaderInlineError = value;
 		if (browser) {
@@ -2191,6 +2236,9 @@ class SettingsStore {
 		this.setHideContactGroupLetters(false);
 		this.setCompactFolderSidebarError(false);
 		this.setCompactContactsAddForm(false);
+		this.setHideContactsPageSubtitle(false);
+		this.setCompactContactsSearch(false);
+		this.setCompactContactsEmptyState(false);
 		this.setCompactReaderInlineError(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
@@ -2295,6 +2343,9 @@ class SettingsStore {
 		this.setHideContactGroupLetters(true);
 		this.setCompactFolderSidebarError(true);
 		this.setCompactContactsAddForm(true);
+		this.setHideContactsPageSubtitle(true);
+		this.setCompactContactsSearch(true);
+		this.setCompactContactsEmptyState(true);
 		this.setCompactReaderInlineError(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
@@ -2442,6 +2493,9 @@ class SettingsStore {
 			this.hideContactGroupLetters,
 			this.compactFolderSidebarError,
 			this.compactContactsAddForm,
+			this.hideContactsPageSubtitle,
+			this.compactContactsSearch,
+			this.compactContactsEmptyState,
 			this.compactReaderInlineError,
 			this.rememberLastMailbox
 		];
