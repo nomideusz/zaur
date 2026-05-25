@@ -724,6 +724,60 @@ class SettingsStore {
 		this.setConfirmBeforeDiscardCompose(true);
 	}
 
+	exportLocalPreferences(): string {
+		if (!browser) return '{}';
+
+		const data: Record<string, string> = {};
+		for (let index = 0; index < localStorage.length; index++) {
+			const key = localStorage.key(index);
+			if (!key || (!key.startsWith('zaur:') && key !== 'zaur-theme')) continue;
+			const value = localStorage.getItem(key);
+			if (value !== null) data[key] = value;
+		}
+
+		return JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), settings: data }, null, 2);
+	}
+
+	importLocalPreferences(json: string): { ok: true } | { ok: false; error: string } {
+		if (!browser) return { ok: false, error: 'Import is only available in the browser.' };
+
+		try {
+			const parsed = JSON.parse(json) as { settings?: Record<string, unknown> } | Record<string, unknown>;
+			const data = ('settings' in parsed && parsed.settings ? parsed.settings : parsed) as Record<
+				string,
+				unknown
+			>;
+
+			if (typeof data !== 'object' || data === null || Array.isArray(data)) {
+				return { ok: false, error: 'Invalid settings file format.' };
+			}
+
+			for (const [key, value] of Object.entries(data)) {
+				if (typeof value !== 'string') continue;
+				if (!key.startsWith('zaur:') && key !== 'zaur-theme') continue;
+				localStorage.setItem(key, value);
+			}
+
+			this.init();
+			void import('$lib/stores/theme.svelte').then(({ theme }) => theme.init());
+			return { ok: true };
+		} catch {
+			return { ok: false, error: 'Could not parse the settings file.' };
+		}
+	}
+
+	downloadLocalPreferences() {
+		if (!browser) return;
+
+		const blob = new Blob([this.exportLocalPreferences()], { type: 'application/json' });
+		const url = URL.createObjectURL(blob);
+		const anchor = document.createElement('a');
+		anchor.href = url;
+		anchor.download = `zaur-webmail-settings-${new Date().toISOString().slice(0, 10)}.json`;
+		anchor.click();
+		URL.revokeObjectURL(url);
+	}
+
 	private applyLayoutWidth() {
 		if (!browser) return;
 		document.documentElement.style.setProperty('--width-sidebar', this.compactLayout ? '12rem' : '15rem');

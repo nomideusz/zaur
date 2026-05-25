@@ -4,7 +4,7 @@
 	import { cn } from '$lib/utils/cn';
 
 	const links = [
-		{ href: '/settings/display', label: 'Display', hint: 'Theme, list, reading' },
+		{ href: '/settings/display', label: 'Display', hint: 'Layout, reading, navigation' },
 		{ href: '/settings/mail', label: 'Mail', hint: 'Notifications, shortcuts' },
 		{ href: '/settings/account', label: 'Account', hint: 'Profile, sign out' }
 	];
