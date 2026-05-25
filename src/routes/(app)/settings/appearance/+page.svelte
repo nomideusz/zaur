@@ -12,7 +12,7 @@
 
 <SettingsPanel
 	title="Look & feel"
-	description="Accent color, corners, theme, motion, and loading behavior.{simplificationCount > 0
+	description="Accent color, corners, theme, motion, and loading states.{simplificationCount > 0
 		? ` ${simplificationCount} simplification${simplificationCount === 1 ? '' : 's'} active elsewhere.`
 		: ''}"
 >

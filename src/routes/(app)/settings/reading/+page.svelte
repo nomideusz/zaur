@@ -9,7 +9,7 @@
 
 <SettingsPanel
 	title="Reading"
-	description="Control text size, privacy, threads, and the reading pane when you open a message."
+	description="Message content, reply actions, threads, attachments, and empty or error states in the reading pane."
 >
 	<ReadingSection />
 </SettingsPanel>

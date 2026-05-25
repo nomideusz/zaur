@@ -9,7 +9,7 @@
 
 <SettingsPanel
 	title="Inbox"
-	description="Choose how your message list looks and behaves — density, previews, and what to show on each row."
+	description="Row size and content, list header, bulk selection, and empty or search list states."
 >
 	<InboxSection />
 </SettingsPanel>

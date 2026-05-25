@@ -10,7 +10,7 @@
 
 <SettingsPanel
 	title="Workspace"
-	description="Adjust the overall layout, sidebar, top bar, and how you move between mail, calendar, and home."
+	description="Folder sidebar, mail pane layout, top bar, home screen, and header search."
 >
 	<WorkspaceLayoutSection />
 	<WorkspaceNavSection />

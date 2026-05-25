@@ -9,7 +9,7 @@
 
 <SettingsPanel
 	title="Writing"
-	description="Compose panel layout, quoted replies, and recipient fields."
+	description="Compose layout, recipient fields, reply content, and toolbar chrome."
 >
 	<ComposeSection />
 </SettingsPanel>
