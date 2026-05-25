@@ -99,6 +99,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact folder loading skeleton"
+			description="Fewer and tighter placeholder rows while folders load in the sidebar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactFolderLoadingSkeleton}
+				onchange={(e) => settings.setCompactFolderLoadingSkeleton(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Hide connecting screen"
 			description="Blank screen while restoring your session — no “Connecting…” message"
 		>
@@ -937,6 +949,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact folder sidebar header"
+			description="Less padding around the Folders label in the sidebar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactFolderSidebarHeader}
+				onchange={(e) => settings.setCompactFolderSidebarHeader(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Hide folder icons"
 			description="Text-only folder names in the sidebar"
 		>
@@ -1357,6 +1381,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideContactMessageCounts}
 				onchange={(e) => settings.setHideContactMessageCounts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide contact group letters"
+			description="Remove A–Z section headings in the contacts list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideContactGroupLetters}
+				onchange={(e) => settings.setHideContactGroupLetters(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

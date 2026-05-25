@@ -135,9 +135,11 @@
 		<div class={cn(settings.compactContactsList ? 'space-y-3' : 'space-y-4')}>
 			{#each groupedContacts as [letter, group] (letter)}
 				<section>
-					<h2 class="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-fg-subtle">
-						{letter}
-					</h2>
+					{#if !settings.hideContactGroupLetters}
+						<h2 class="mb-1 px-1 text-xs font-semibold uppercase tracking-wide text-fg-subtle">
+							{letter}
+						</h2>
+					{/if}
 					<ul
 						class={cn(
 							'z-panel overflow-hidden rounded-xl',

@@ -115,6 +115,9 @@ const STORAGE = {
 	compactReaderSkeleton: 'zaur:compact-reader-skeleton',
 	compactFolderBadges: 'zaur:compact-folder-badges',
 	compactFolderTree: 'zaur:compact-folder-tree',
+	compactFolderSidebarHeader: 'zaur:compact-folder-sidebar-header',
+	compactFolderLoadingSkeleton: 'zaur:compact-folder-loading-skeleton',
+	hideContactGroupLetters: 'zaur:hide-contact-group-letters',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -704,6 +707,21 @@ function readCompactFolderTree(): boolean {
 	return localStorage.getItem(STORAGE.compactFolderTree) === 'true';
 }
 
+function readCompactFolderSidebarHeader(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactFolderSidebarHeader) === 'true';
+}
+
+function readCompactFolderLoadingSkeleton(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactFolderLoadingSkeleton) === 'true';
+}
+
+function readHideContactGroupLetters(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideContactGroupLetters) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -896,6 +914,9 @@ class SettingsStore {
 	compactReaderSkeleton = $state(readCompactReaderSkeleton());
 	compactFolderBadges = $state(readCompactFolderBadges());
 	compactFolderTree = $state(readCompactFolderTree());
+	compactFolderSidebarHeader = $state(readCompactFolderSidebarHeader());
+	compactFolderLoadingSkeleton = $state(readCompactFolderLoadingSkeleton());
+	hideContactGroupLetters = $state(readHideContactGroupLetters());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -1026,6 +1047,9 @@ class SettingsStore {
 		this.compactReaderSkeleton = readCompactReaderSkeleton();
 		this.compactFolderBadges = readCompactFolderBadges();
 		this.compactFolderTree = readCompactFolderTree();
+		this.compactFolderSidebarHeader = readCompactFolderSidebarHeader();
+		this.compactFolderLoadingSkeleton = readCompactFolderLoadingSkeleton();
+		this.hideContactGroupLetters = readHideContactGroupLetters();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1849,6 +1873,27 @@ class SettingsStore {
 		}
 	}
 
+	setCompactFolderSidebarHeader(value: boolean) {
+		this.compactFolderSidebarHeader = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactFolderSidebarHeader, String(value));
+		}
+	}
+
+	setCompactFolderLoadingSkeleton(value: boolean) {
+		this.compactFolderLoadingSkeleton = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactFolderLoadingSkeleton, String(value));
+		}
+	}
+
+	setHideContactGroupLetters(value: boolean) {
+		this.hideContactGroupLetters = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideContactGroupLetters, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -2096,6 +2141,9 @@ class SettingsStore {
 		this.setCompactReaderSkeleton(false);
 		this.setCompactFolderBadges(false);
 		this.setCompactFolderTree(false);
+		this.setCompactFolderSidebarHeader(false);
+		this.setCompactFolderLoadingSkeleton(false);
+		this.setHideContactGroupLetters(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -2194,6 +2242,9 @@ class SettingsStore {
 		this.setCompactReaderSkeleton(true);
 		this.setCompactFolderBadges(true);
 		this.setCompactFolderTree(true);
+		this.setCompactFolderSidebarHeader(true);
+		this.setCompactFolderLoadingSkeleton(true);
+		this.setHideContactGroupLetters(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -2335,6 +2386,9 @@ class SettingsStore {
 			this.compactReaderSkeleton,
 			this.compactFolderBadges,
 			this.compactFolderTree,
+			this.compactFolderSidebarHeader,
+			this.compactFolderLoadingSkeleton,
+			this.hideContactGroupLetters,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

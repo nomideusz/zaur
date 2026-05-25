@@ -20,7 +20,14 @@
 	style="view-transition-name: mail-sidebar;"
 	aria-label="Folders"
 >
-	<div class={cn('shrink-0 px-4 py-3', !settings.hidePaneBorders && 'border-b border-border', settings.hideFolderSidebarHeader ? 'sr-only' : '')}>
+	<div
+		class={cn(
+			'shrink-0',
+			settings.compactFolderSidebarHeader ? 'px-3 py-2' : 'px-4 py-3',
+			!settings.hidePaneBorders && 'border-b border-border',
+			settings.hideFolderSidebarHeader ? 'sr-only' : ''
+		)}
+	>
 		<h2 class="text-xs font-semibold uppercase tracking-wide text-fg-subtle">Folders</h2>
 	</div>
 
@@ -29,9 +36,21 @@
 			{#if settings.minimalLoadingStates}
 				<p class="px-3 py-4 text-center text-xs text-fg-muted" aria-busy="true">Loading folders…</p>
 			{:else}
-			<div class="space-y-2 px-3 py-2" aria-busy="true" aria-label="Loading folders">
-				{#each Array(6) as _, index (index)}
-					<div class="h-8 animate-pulse rounded-md bg-surface-sunken"></div>
+			<div
+				class={cn(
+					'px-3',
+					settings.compactFolderLoadingSkeleton ? 'space-y-1.5 py-1.5' : 'space-y-2 py-2'
+				)}
+				aria-busy="true"
+				aria-label="Loading folders"
+			>
+				{#each Array(settings.compactFolderLoadingSkeleton ? 4 : 6) as _, index (index)}
+					<div
+						class={cn(
+							'animate-pulse rounded-md bg-surface-sunken',
+							settings.compactFolderLoadingSkeleton ? 'h-7' : 'h-8'
+						)}
+					></div>
 				{/each}
 			</div>
 			{/if}
