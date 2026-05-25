@@ -90,7 +90,7 @@ async function findSettingsEmail(client: JMAPClient): Promise<JMAPEmail | null> 
 			{
 				accountId,
 				filter: { subject: ACCOUNT_SETTINGS_SUBJECT },
-				limit: 1
+				limit: 8
 			},
 			'q0'
 		],
@@ -99,7 +99,7 @@ async function findSettingsEmail(client: JMAPClient): Promise<JMAPEmail | null> 
 			{
 				accountId,
 				'#ids': { resultOf: 'q0', name: 'Email/query', path: '/ids' },
-				properties: ['id', 'subject', 'bodyValues', 'textBody', 'mailboxIds'],
+				properties: ['id', 'subject', 'bodyValues', 'textBody', 'mailboxIds', 'receivedAt'],
 				fetchTextBodyValues: true,
 				maxBodyValueBytes: 512000
 			},
@@ -110,7 +110,18 @@ async function findSettingsEmail(client: JMAPClient): Promise<JMAPEmail | null> 
 	const getResult = response.methodResponses?.[1];
 	if (getResult?.[0] !== 'Email/get') return null;
 	const list = (getResult[1].list as JMAPEmail[]) ?? [];
-	return list[0] ?? null;
+	if (!list.length) return null;
+
+	let best: { email: JMAPEmail; updatedAt: string } | null = null;
+	for (const email of list) {
+		const blob = parseBlobFromEmail(email);
+		const updatedAt = blob?.updatedAt ?? email.receivedAt ?? '';
+		if (!best || updatedAt > best.updatedAt) {
+			best = { email, updatedAt };
+		}
+	}
+
+	return best?.email ?? list[0];
 }
 
 async function loadViaSettingsEmail(client: JMAPClient): Promise<AccountSettingsBlob | null> {
@@ -140,8 +151,9 @@ async function saveViaSettingsEmail(client: JMAPClient, blob: AccountSettingsBlo
 	});
 
 	if (existing?.id) {
+		const { mailboxIds: _mailboxIds, ...updateData } = emailData;
 		await client.request([
-			['Email/set', { accountId: client.getAccountId(), update: { [existing.id]: emailData } }, '0']
+			['Email/set', { accountId: client.getAccountId(), update: { [existing.id]: updateData } }, '0']
 		]);
 		return;
 	}
