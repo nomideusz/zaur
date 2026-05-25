@@ -188,7 +188,7 @@
 						)}
 					>
 						{#if settings.showAvatars}
-							<div class="mt-0.5 size-8 shrink-0 animate-pulse rounded-full bg-surface-sunken"></div>
+							<div class={cn('shrink-0 animate-pulse rounded-full bg-surface-sunken', settings.compactListAvatars ? 'mt-0.5 size-7' : 'mt-0.5 size-8')}></div>
 						{:else}
 							<div class="mt-2 size-2 shrink-0"></div>
 						{/if}

@@ -136,6 +136,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact list avatars"
+			description="Smaller sender avatars in the message list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactListAvatars}
+				onchange={(e) => settings.setCompactListAvatars(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Show stars in list"
 			description="Star icon beside starred messages in the inbox list"
 		>
@@ -537,6 +549,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact reader avatars"
+			description="Smaller sender avatars in the reading pane"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactReaderAvatars}
+				onchange={(e) => settings.setCompactReaderAvatars(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Compact reader header"
 			description="Smaller subject line and less padding at the top of the reading pane"
 		>
@@ -641,6 +665,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideCollapsedThreadPreviews}
 				onchange={(e) => settings.setHideCollapsedThreadPreviews(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact collapsed threads"
+			description="Tighter spacing on collapsed messages in a conversation"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactCollapsedThreads}
+				onchange={(e) => settings.setCompactCollapsedThreads(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

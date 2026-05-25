@@ -441,7 +441,11 @@
 						<div class="w-full max-w-(--z-reader-measure)">
 						<div class="mb-4 flex flex-wrap items-start gap-3">
 							{#if settings.showAvatars}
-								<Avatar name={message.from.name} email={message.from.email} class="size-9 text-sm" />
+								<Avatar
+									name={message.from.name}
+									email={message.from.email}
+									class={cn(settings.compactReaderAvatars ? 'size-8 text-xs' : 'size-9 text-sm')}
+								/>
 							{/if}
 							<div class="min-w-0 flex-1">
 								<div class="flex flex-wrap items-baseline justify-between gap-2">
@@ -516,14 +520,21 @@
 				{:else}
 					<button
 						type="button"
-						class="flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-sunken/70 md:px-6"
+						class={cn(
+							'flex w-full items-center gap-3 text-left transition-colors hover:bg-surface-sunken/70',
+							settings.compactCollapsedThreads ? 'px-3 py-2 md:px-5' : 'px-4 py-3 md:px-6'
+						)}
 						onclick={() => toggleMessage(message)}
 					>
 						{#if settings.showAvatars}
-							<Avatar name={message.from.name} email={message.from.email} />
+							<Avatar
+								name={message.from.name}
+								email={message.from.email}
+								class={cn(settings.compactReaderAvatars ? 'size-7' : 'size-8')}
+							/>
 						{/if}
 						<div class="min-w-0 flex-1">
-							<p class="truncate text-sm">
+							<p class={cn('truncate', settings.compactCollapsedThreads ? 'text-xs' : 'text-sm')}>
 								<span class="font-medium text-fg">{message.from.name}</span>
 								{#if !settings.hideCollapsedThreadPreviews}
 									<span class="ml-2 text-fg-muted">{message.preview || message.bodyText.slice(0, 120)}</span>

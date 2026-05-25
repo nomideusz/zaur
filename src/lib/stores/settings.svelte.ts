@@ -106,6 +106,9 @@ const STORAGE = {
 	compactListLoadingSkeleton: 'zaur:compact-list-loading-skeleton',
 	compactMobileFolderPicker: 'zaur:compact-mobile-folder-picker',
 	compactReaderToolbar: 'zaur:compact-reader-toolbar',
+	compactListAvatars: 'zaur:compact-list-avatars',
+	compactReaderAvatars: 'zaur:compact-reader-avatars',
+	compactCollapsedThreads: 'zaur:compact-collapsed-threads',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -650,6 +653,21 @@ function readCompactReaderToolbar(): boolean {
 	return localStorage.getItem(STORAGE.compactReaderToolbar) === 'true';
 }
 
+function readCompactListAvatars(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactListAvatars) === 'true';
+}
+
+function readCompactReaderAvatars(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactReaderAvatars) === 'true';
+}
+
+function readCompactCollapsedThreads(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactCollapsedThreads) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -833,6 +851,9 @@ class SettingsStore {
 	compactListLoadingSkeleton = $state(readCompactListLoadingSkeleton());
 	compactMobileFolderPicker = $state(readCompactMobileFolderPicker());
 	compactReaderToolbar = $state(readCompactReaderToolbar());
+	compactListAvatars = $state(readCompactListAvatars());
+	compactReaderAvatars = $state(readCompactReaderAvatars());
+	compactCollapsedThreads = $state(readCompactCollapsedThreads());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -954,6 +975,9 @@ class SettingsStore {
 		this.compactListLoadingSkeleton = readCompactListLoadingSkeleton();
 		this.compactMobileFolderPicker = readCompactMobileFolderPicker();
 		this.compactReaderToolbar = readCompactReaderToolbar();
+		this.compactListAvatars = readCompactListAvatars();
+		this.compactReaderAvatars = readCompactReaderAvatars();
+		this.compactCollapsedThreads = readCompactCollapsedThreads();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1714,6 +1738,27 @@ class SettingsStore {
 		}
 	}
 
+	setCompactListAvatars(value: boolean) {
+		this.compactListAvatars = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactListAvatars, String(value));
+		}
+	}
+
+	setCompactReaderAvatars(value: boolean) {
+		this.compactReaderAvatars = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactReaderAvatars, String(value));
+		}
+	}
+
+	setCompactCollapsedThreads(value: boolean) {
+		this.compactCollapsedThreads = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactCollapsedThreads, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1952,6 +1997,9 @@ class SettingsStore {
 		this.setCompactListLoadingSkeleton(false);
 		this.setCompactMobileFolderPicker(false);
 		this.setCompactReaderToolbar(false);
+		this.setCompactListAvatars(false);
+		this.setCompactReaderAvatars(false);
+		this.setCompactCollapsedThreads(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -2041,6 +2089,9 @@ class SettingsStore {
 		this.setCompactListLoadingSkeleton(true);
 		this.setCompactMobileFolderPicker(true);
 		this.setCompactReaderToolbar(true);
+		this.setCompactListAvatars(true);
+		this.setCompactReaderAvatars(true);
+		this.setCompactCollapsedThreads(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -2173,6 +2224,9 @@ class SettingsStore {
 			this.compactListLoadingSkeleton,
 			this.compactMobileFolderPicker,
 			this.compactReaderToolbar,
+			this.compactListAvatars,
+			this.compactReaderAvatars,
+			this.compactCollapsedThreads,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

@@ -49,7 +49,11 @@
 {#snippet avatar()}
 	{#if settings.showAvatars}
 		<div class="relative shrink-0">
-			<Avatar name={message.from.name} email={message.from.email} class="mt-0.5 size-8" />
+			<Avatar
+				name={message.from.name}
+				email={message.from.email}
+				class={cn('mt-0.5', settings.compactListAvatars ? 'size-7' : 'size-8')}
+			/>
 			{#if settings.highlightUnreadInList && message.unread}
 				<span
 					class="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-unread ring-2 ring-surface-raised"
