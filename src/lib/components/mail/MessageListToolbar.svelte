@@ -15,6 +15,7 @@
 	let { mailboxRouteId, onBulkAction }: Props = $props();
 
 	let moveOpen = $state(false);
+	let masterCheckbox = $state<HTMLInputElement | null>(null);
 
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const moveTargets = $derived(
@@ -81,23 +82,46 @@
 		if (!auth.client) return;
 		await run(() => mail.bulkMarkAsUnread(auth.client!));
 	}
+
+	function handleMasterCheckbox() {
+		if (!mail.selectionMode) {
+			mail.enterSelectionMode();
+			return;
+		}
+
+		if (mail.selectedCount === mail.messages.length) {
+			mail.selectedMessageIds = new Set();
+		} else {
+			mail.selectAllMessages();
+		}
+	}
+
+	$effect(() => {
+		if (!masterCheckbox) return;
+		masterCheckbox.indeterminate =
+			mail.selectionMode &&
+			mail.selectedCount > 0 &&
+			mail.selectedCount < mail.messages.length;
+	});
 </script>
 
 <svelte:window onclick={() => (moveOpen = false)} />
 
 <div class={cn('flex shrink-0 flex-wrap items-center gap-2 px-4', settings.compactBulkToolbar ? 'min-h-10 py-1.5' : 'min-h-12 py-2', !settings.hidePaneBorders && 'border-b border-border')}>
+	<input
+		bind:this={masterCheckbox}
+		type="checkbox"
+		class="size-4 shrink-0 accent-accent"
+		checked={mail.selectionMode && mail.messages.length > 0 && mail.selectedCount === mail.messages.length}
+		disabled={!mail.messages.length || mail.messagesLoading}
+		aria-label={mail.selectionMode ? 'Select all messages in this list' : 'Select messages'}
+		onchange={handleMasterCheckbox}
+	/>
+
 	{#if mail.selectionMode}
 		<Button variant="ghost" class="!px-2 !py-1.5 text-xs" onclick={() => mail.exitSelectionMode()}>
 			<X class="size-3.5" aria-hidden="true" />
 			Cancel
-		</Button>
-		<Button
-			variant="ghost"
-			class="!px-2 !py-1.5 text-xs"
-			disabled={!mail.messages.length}
-			onclick={() => mail.selectAllMessages()}
-		>
-			Select all
 		</Button>
 		<span class="text-xs text-fg-muted">
 			{mail.selectedCount} selected
@@ -199,14 +223,5 @@
 				</Button>
 			</div>
 		{/if}
-	{:else}
-		<Button
-			variant="ghost"
-			class="ml-auto !px-2 !py-1.5 text-xs"
-			disabled={!mail.messages.length || mail.messagesLoading}
-			onclick={() => mail.enterSelectionMode()}
-		>
-			Select
-		</Button>
 	{/if}
 </div>
