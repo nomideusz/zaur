@@ -5,6 +5,7 @@
 	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
 	import MessageReaderEmpty from '$lib/components/mail/MessageReaderEmpty.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { search } from '$lib/stores/search.svelte';
@@ -71,6 +72,7 @@
 			bind:value={input}
 		/>
 	</div>
+	<Button type="submit" class="mt-2 w-full">Search</Button>
 </form>
 
 <MessageList
