@@ -24,6 +24,7 @@
 		emptyActionHref?: string;
 		emptyActionLabel?: string;
 		hideOnMobile?: boolean;
+		expanded?: boolean;
 		onLoadMore?: () => void;
 		onRetry?: () => void;
 		onBulkAction?: () => void;
@@ -44,6 +45,7 @@
 		emptyActionHref,
 		emptyActionLabel,
 		hideOnMobile = false,
+		expanded = false,
 		onLoadMore,
 		onRetry,
 		onBulkAction
@@ -94,7 +96,9 @@
 </script>
 
 <section
-	class="z-panel flex min-h-0 w-full max-w-none flex-1 shrink-0 flex-col border-r md:max-w-(--width-list) md:flex-none md:w-(--width-list) {hideOnMobile ? 'hidden md:flex' : 'flex'}"
+	class="z-panel flex min-h-0 w-full max-w-none flex-1 shrink-0 flex-col border-r md:flex-none {expanded
+		? 'md:w-auto md:max-w-none md:flex-1'
+		: 'md:w-(--width-list) md:max-w-(--width-list)'} {hideOnMobile ? 'hidden md:flex' : 'flex'}"
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
@@ -135,7 +139,11 @@
 			<div class="divide-y divide-border" aria-busy="true" aria-label="Loading messages">
 				{#each Array(6) as _, index (index)}
 					<div class="z-list-row flex items-start gap-3 px-3 py-2.5">
-						<div class="mt-0.5 size-8 shrink-0 animate-pulse rounded-full bg-surface-sunken"></div>
+						{#if settings.showAvatars}
+							<div class="mt-0.5 size-8 shrink-0 animate-pulse rounded-full bg-surface-sunken"></div>
+						{:else}
+							<div class="mt-2 size-2 shrink-0"></div>
+						{/if}
 						<div class="min-w-0 flex-1 space-y-2 py-1">
 							<div class="flex items-center justify-between gap-2">
 								<div class="h-3.5 w-28 animate-pulse rounded bg-surface-sunken"></div>

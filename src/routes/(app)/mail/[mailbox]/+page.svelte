@@ -4,6 +4,7 @@
 	import MessageReaderEmpty from '$lib/components/mail/MessageReaderEmpty.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 
 	const { data } = $props();
 
@@ -26,6 +27,7 @@
 	messages={mail.messages}
 	{mailboxName}
 	mailboxRouteId={data.mailboxId}
+	expanded={settings.expandListUntilOpen}
 	loading={mail.messagesLoading}
 	loadingMore={mail.messagesLoadingMore}
 	hasMore={mail.messagesHasMore}
@@ -38,6 +40,8 @@
 		if (auth.client) void mail.loadMessages(auth.client, data.mailboxId);
 	}}
 />
-<div class="z-mail-reader-pane">
-	<MessageReaderEmpty />
-</div>
+{#if !settings.expandListUntilOpen}
+	<div class="z-mail-reader-pane">
+		<MessageReaderEmpty />
+	</div>
+{/if}

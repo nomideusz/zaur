@@ -8,6 +8,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { search } from '$lib/stores/search.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 
 	let input = $state('');
 
@@ -62,6 +63,7 @@
 <MessageList
 	messages={search.results}
 	{mailboxName}
+	expanded={settings.expandListUntilOpen}
 	loading={search.loading}
 	loadingMore={search.loadingMore}
 	hasMore={search.hasMore}
@@ -77,11 +79,13 @@
 		if (auth.client && query) void search.search(auth.client, query, mail.mailboxes);
 	}}
 />
-<div class="z-mail-reader-pane">
-	<MessageReaderEmpty
-		title="Select a result"
-		description="Choose a message from the search results to read it here."
-		showCompose={false}
-		showSettings={false}
-	/>
-</div>
+{#if !settings.expandListUntilOpen}
+	<div class="z-mail-reader-pane">
+		<MessageReaderEmpty
+			title="Select a result"
+			description="Choose a message from the search results to read it here."
+			showCompose={false}
+			showSettings={false}
+		/>
+	</div>
+{/if}

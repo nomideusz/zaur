@@ -63,6 +63,30 @@
 				onchange={(e) => settings.setShowAvatars(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Show stars in list"
+			description="Star icon beside starred messages in the inbox list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showStarsInList}
+				onchange={(e) => settings.setShowStarsInList(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Expand list until opened"
+			description="Use the full width for the message list on desktop until you pick a message"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.expandListUntilOpen}
+				onchange={(e) => settings.setExpandListUntilOpen(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Reading">
@@ -103,6 +127,18 @@
 				class="size-4 accent-accent"
 				checked={settings.skipHomeScreen}
 				onchange={(e) => settings.setSkipHomeScreen(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide sidebar shortcuts"
+			description="Remove Contacts and Settings links from the mail folder sidebar — they stay in the top bar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideSidebarShortcuts}
+				onchange={(e) => settings.setHideSidebarShortcuts(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

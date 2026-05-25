@@ -7,6 +7,7 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { buildMailboxTree } from '$lib/utils/mailbox-tree';
 	import { cn } from '$lib/utils/cn';
+	import { settings } from '$lib/stores/settings.svelte';
 
 	const tree = $derived(buildMailboxTree(mail.mailboxes));
 </script>
@@ -49,7 +50,8 @@
 		{/if}
 	</nav>
 
-	<div class="shrink-0 space-y-0.5 border-t border-border p-2">
+	{#if !settings.hideSidebarShortcuts}
+		<div class="shrink-0 space-y-0.5 border-t border-border p-2">
 		<a
 			href="/contacts"
 			class={cn(
@@ -74,5 +76,6 @@
 			<Settings class="size-4 shrink-0" aria-hidden="true" />
 			Settings
 		</a>
-	</div>
+		</div>
+	{/if}
 </aside>

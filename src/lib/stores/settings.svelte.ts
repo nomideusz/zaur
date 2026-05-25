@@ -9,6 +9,9 @@ const STORAGE = {
 	listDensity: 'zaur:list-density',
 	showListPreview: 'zaur:show-list-preview',
 	showAvatars: 'zaur:show-avatars',
+	showStarsInList: 'zaur:show-stars-in-list',
+	hideSidebarShortcuts: 'zaur:hide-sidebar-shortcuts',
+	expandListUntilOpen: 'zaur:expand-list-until-open',
 	skipHomeScreen: 'zaur:skip-home-screen',
 	readerTextSize: 'zaur:reader-text-size',
 	markAsReadOnOpen: 'zaur:mark-read-on-open',
@@ -53,6 +56,21 @@ function readShowAvatars(): boolean {
 	return localStorage.getItem(STORAGE.showAvatars) !== 'false';
 }
 
+function readShowStarsInList(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showStarsInList) !== 'false';
+}
+
+function readHideSidebarShortcuts(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideSidebarShortcuts) === 'true';
+}
+
+function readExpandListUntilOpen(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.expandListUntilOpen) === 'true';
+}
+
 function readSkipHomeScreen(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.skipHomeScreen) === 'true';
@@ -93,6 +111,9 @@ class SettingsStore {
 	listDensity = $state<ListDensity>(readListDensity());
 	showListPreview = $state(readShowListPreview());
 	showAvatars = $state(readShowAvatars());
+	showStarsInList = $state(readShowStarsInList());
+	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
+	expandListUntilOpen = $state(readExpandListUntilOpen());
 	skipHomeScreen = $state(readSkipHomeScreen());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	markAsReadOnOpen = $state(readMarkAsReadOnOpen());
@@ -108,6 +129,9 @@ class SettingsStore {
 		this.listDensity = readListDensity();
 		this.showListPreview = readShowListPreview();
 		this.showAvatars = readShowAvatars();
+		this.showStarsInList = readShowStarsInList();
+		this.hideSidebarShortcuts = readHideSidebarShortcuts();
+		this.expandListUntilOpen = readExpandListUntilOpen();
 		this.skipHomeScreen = readSkipHomeScreen();
 		this.readerTextSize = readReaderTextSize();
 		this.markAsReadOnOpen = readMarkAsReadOnOpen();
@@ -164,6 +188,27 @@ class SettingsStore {
 		this.showAvatars = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.showAvatars, String(value));
+		}
+	}
+
+	setShowStarsInList(value: boolean) {
+		this.showStarsInList = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showStarsInList, String(value));
+		}
+	}
+
+	setHideSidebarShortcuts(value: boolean) {
+		this.hideSidebarShortcuts = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideSidebarShortcuts, String(value));
+		}
+	}
+
+	setExpandListUntilOpen(value: boolean) {
+		this.expandListUntilOpen = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.expandListUntilOpen, String(value));
 		}
 	}
 

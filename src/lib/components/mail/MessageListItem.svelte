@@ -64,7 +64,7 @@
 			<span class="shrink-0 text-xs text-fg-subtle">{when}</span>
 		</div>
 		<div class="mt-0.5 flex items-center gap-1.5">
-			{#if message.starred}
+			{#if settings.showStarsInList && message.starred}
 				<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 			{/if}
 			<span class={cn('truncate text-sm', message.unread ? 'font-medium text-fg' : 'text-fg-muted')}>
