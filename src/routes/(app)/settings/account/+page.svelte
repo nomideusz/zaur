@@ -89,6 +89,24 @@
 
 	<SettingsGroup title="Preferences backup">
 		<SettingsRow
+			title="Refresh from account"
+			description="Load the latest preferences saved on your mail account"
+		>
+			<button
+				type="button"
+				class="z-btn-ghost text-sm"
+				onclick={async () => {
+					const changed = await settings.refreshFromAccount();
+					if (changed) {
+						const { toast } = await import('$lib/stores/toast.svelte');
+						toast.show('Settings updated from your account', 'success');
+					}
+				}}
+			>
+				Refresh
+			</button>
+		</SettingsRow>
+		<SettingsRow
 			title="Sync to account"
 			description="Save your current preferences to your mail account for use on other devices"
 		>

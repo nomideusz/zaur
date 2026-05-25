@@ -1566,6 +1566,12 @@ class SettingsStore {
 		}
 	}
 
+	async refreshFromAccount(): Promise<boolean> {
+		const before = this.exportLocalPreferences();
+		await this.syncFromAccount();
+		return this.exportLocalPreferences() !== before;
+	}
+
 	async syncToAccount(): Promise<boolean> {
 		await this.syncFromAccount();
 		const { pushAccountSettingsNow } = await import('$lib/settings/account-sync');
