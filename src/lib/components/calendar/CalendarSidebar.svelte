@@ -55,7 +55,7 @@
 
 	<div class="shrink-0 border-t border-border p-2">
 		<a
-			href="/settings/display"
+			href="/settings/appearance"
 			class={cn(
 				'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
 				$page.url.pathname.startsWith('/settings')

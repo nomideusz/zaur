@@ -81,7 +81,7 @@
 		</a>
 
 		<a
-			href="/settings/display"
+			href="/settings/appearance"
 			class={cn(
 				'z-panel group rounded-xl transition-shadow hover:shadow-md',
 				settings.compactHomeScreen ? 'p-4' : 'p-5'

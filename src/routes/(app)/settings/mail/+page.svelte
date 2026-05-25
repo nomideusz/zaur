@@ -9,8 +9,8 @@
 	<title>Mail · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel title="Mail" description="Reading and message behavior.">
-	<SettingsGroup title="Behavior">
+<SettingsPanel title="Mail" description="Notifications, shortcuts, and what happens when you read or send mail.">
+	<SettingsGroup title="While using mail" description="Everyday behavior in your inbox.">
 		<SettingsRow
 			title="Notify on new mail"
 			description="Toast and browser notification when new mail arrives in Inbox"
@@ -132,7 +132,7 @@
 		</SettingsRow>
 	</SettingsGroup>
 
-	<SettingsGroup title="Reset">
+	<SettingsGroup title="Defaults">
 		<SettingsRow
 			title="Restore mail defaults"
 			description="Reset notifications, shortcuts, and confirmation options on this page"
@@ -152,7 +152,7 @@
 	</SettingsGroup>
 
 	{#if !settings.hideMailShortcutsHelp}
-	<SettingsGroup title="Keyboard shortcuts">
+	<SettingsGroup title="Keyboard shortcuts" description="Quick keys while viewing mail.">
 		<SettingsRow title="Compose" description="Start a new message from the mail view">
 			<span class="font-mono text-xs text-fg">c</span>
 		</SettingsRow>

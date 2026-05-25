@@ -105,7 +105,7 @@
 			Contacts
 		</a>
 		<a
-			href="/settings/display"
+			href="/settings/appearance"
 			class={cn(
 				'flex items-center gap-2 rounded-md px-3 text-sm transition-colors',
 				settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',

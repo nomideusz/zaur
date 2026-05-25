@@ -1,24 +1,33 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { ArrowLeft } from 'lucide-svelte';
+	import SettingsDetailToggle from '$lib/components/settings/SettingsDetailToggle.svelte';
+	import { settingsNavLinks, isSettingsNavActive } from '$lib/settings/nav';
 	import { cn } from '$lib/utils/cn';
 	import { settings } from '$lib/stores/settings.svelte';
-
-	const links = [
-		{ href: '/settings/display', label: 'Display', hint: 'Layout, reading, navigation' },
-		{ href: '/settings/mail', label: 'Mail', hint: 'Notifications, shortcuts' },
-		{ href: '/settings/account', label: 'Account', hint: 'Profile, sign out' }
-	];
 
 	let { children } = $props();
 
 	const mailHref = $derived(settings.preferredMailHref());
+	const links = $derived(settingsNavLinks(settings.settingsDetailLevel));
+
+	const sections = $derived([
+		{ id: 'personal', label: 'Personal' },
+		{ id: 'mail', label: 'Mail' },
+		{ id: 'customize', label: 'Customize' },
+		...(settings.settingsDetailLevel === 'advanced' ? [{ id: 'advanced', label: 'More' }] : [])
+	] as const);
+
+	function linksForSection(sectionId: string) {
+		return links.filter((link) => link.section === sectionId);
+	}
 </script>
 
 <div
 	class={cn(
-		'mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col overflow-y-auto md:flex-row',
-		settings.compactSettingsLayout ? 'gap-4 p-4 md:gap-6 md:p-6' : 'gap-6 p-6 md:gap-8 md:p-8'
+		'mx-auto flex min-h-0 w-full max-w-6xl flex-1 flex-col overflow-y-auto xl:max-w-7xl',
+		'md:flex-row',
+		settings.compactSettingsLayout ? 'gap-4 p-4 md:gap-6 md:p-6' : 'gap-6 p-5 md:gap-8 md:p-8 lg:p-10'
 	)}
 >
 	<header class="md:hidden">
@@ -32,27 +41,46 @@
 			</a>
 		{/if}
 		{#if !settings.hideSettingsPageTitle}
-			<h1 class="mb-3 text-lg font-semibold text-fg">Settings</h1>
+			<div class="mb-3 flex items-center justify-between gap-3">
+				<h1 class="text-lg font-semibold text-fg">Settings</h1>
+				<SettingsDetailToggle />
+			</div>
+		{:else}
+			<div class="mb-3 flex justify-end">
+				<SettingsDetailToggle />
+			</div>
 		{/if}
-		<nav class="flex gap-1 overflow-x-auto pb-1">
-			{#each links as link}
-				<a
-					href={link.href}
-					class={cn(
-						'shrink-0 rounded-md text-sm transition-colors',
-						settings.compactSettingsNav ? 'px-2.5 py-1.5' : 'px-3 py-2',
-						$page.url.pathname === link.href
-							? 'bg-surface-sunken font-medium text-fg'
-							: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
-					)}
-				>
-					{link.label}
-				</a>
+		<nav class="flex flex-col gap-3 pb-1">
+			{#each sections as section}
+				{@const sectionLinks = linksForSection(section.id)}
+				{#if sectionLinks.length > 0}
+					<div>
+						<p class="mb-1 px-1 text-[10px] font-medium tracking-wide text-fg-subtle uppercase">
+							{section.label}
+						</p>
+						<div class="flex gap-1 overflow-x-auto">
+							{#each sectionLinks as link}
+								<a
+									href={link.href}
+									class={cn(
+										'shrink-0 rounded-md text-sm transition-colors',
+										settings.compactSettingsNav ? 'px-2.5 py-1.5' : 'px-3 py-2',
+										isSettingsNavActive($page.url.pathname, link.href)
+											? 'bg-surface-sunken font-medium text-fg'
+											: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
+									)}
+								>
+									{link.label}
+								</a>
+							{/each}
+						</div>
+					</div>
+				{/if}
 			{/each}
 		</nav>
 	</header>
 
-	<aside class="hidden w-52 shrink-0 md:block">
+	<aside class="hidden w-56 shrink-0 md:block lg:w-60">
 		{#if !settings.hideSettingsBackLink}
 			<a
 				href={mailHref}
@@ -63,39 +91,64 @@
 			</a>
 		{/if}
 		{#if !settings.hideSettingsPageTitle}
-			<h1 class="mb-4 text-lg font-semibold text-fg">Settings</h1>
+			<h1 class="mb-4 text-lg font-semibold text-fg lg:text-xl">Settings</h1>
 		{/if}
-		<nav class="space-y-1">
-			{#each links as link}
-				<a
-					href={link.href}
-					class={cn(
-						'block rounded-md px-3 transition-colors',
-						settings.compactSettingsNav ? 'py-1.5' : 'py-2',
-						$page.url.pathname === link.href
-							? 'bg-surface-sunken'
-							: 'hover:bg-surface-sunken'
-					)}
-				>
-					<span
-						class={cn(
-							'block text-sm',
-							$page.url.pathname === link.href ? 'font-medium text-fg' : 'text-fg'
-						)}
-					>
-						{link.label}
-					</span>
-					{#if !settings.hideSettingsNavHints}
-						<span class="block text-xs text-fg-muted">{link.hint}</span>
-					{/if}
-				</a>
+		<nav class="space-y-5">
+			{#each sections as section}
+				{@const sectionLinks = linksForSection(section.id)}
+				{#if sectionLinks.length > 0}
+					<div>
+						<p class="mb-1.5 px-3 text-[10px] font-medium tracking-wide text-fg-subtle uppercase">
+							{section.label}
+						</p>
+						<div class="space-y-0.5">
+							{#each sectionLinks as link}
+								<a
+									href={link.href}
+									class={cn(
+										'block rounded-md px-3 transition-colors',
+										settings.compactSettingsNav ? 'py-1.5' : 'py-2',
+										isSettingsNavActive($page.url.pathname, link.href)
+											? 'bg-surface-sunken'
+											: 'hover:bg-surface-sunken'
+									)}
+								>
+									<span
+										class={cn(
+											'block text-sm',
+											isSettingsNavActive($page.url.pathname, link.href)
+												? 'font-medium text-fg'
+												: 'text-fg'
+										)}
+									>
+										{link.label}
+									</span>
+									{#if !settings.hideSettingsNavHints}
+										<span class="block text-xs text-fg-muted">{link.hint}</span>
+									{/if}
+								</a>
+							{/each}
+						</div>
+					</div>
+				{/if}
 			{/each}
 		</nav>
+		{#if settings.settingsDetailLevel === 'basic'}
+			<p class="mt-4 px-3 text-xs text-fg-subtle">
+				Switch to <strong class="font-medium text-fg-muted">All options</strong> in any section for fine-tuning.
+			</p>
+		{/if}
 	</aside>
 
-	<div class="min-w-0 flex-1">{@render children()}</div>
-
-	{#if !settings.hideSettingsNavHints}
-		<p class="text-center text-xs text-fg-subtle md:text-left">Settings are saved locally in this browser.</p>
-	{/if}
+	<div class="flex min-w-0 flex-1 flex-col gap-4">
+		<div class="hidden md:flex md:justify-end">
+			<SettingsDetailToggle />
+		</div>
+		<div class="min-w-0 flex-1">{@render children()}</div>
+		{#if !settings.hideSettingsNavHints}
+			<p class="text-center text-xs text-fg-subtle md:text-left">
+				Settings are saved locally in this browser.
+			</p>
+		{/if}
+	</div>
 </div>

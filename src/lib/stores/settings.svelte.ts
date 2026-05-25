@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import type { SettingsDetailLevel } from '$lib/settings/detail-level';
 import { requestBrowserNotificationPermission } from '$lib/utils/notifications';
 
 export type ListDensity = 'comfortable' | 'compact';
@@ -161,7 +162,8 @@ const STORAGE = {
 	showUnreadInTitle: 'zaur:show-unread-in-title',
 	notifyOnNewMail: 'zaur:notify-new-mail',
 	displayName: (email: string) => `zaur:display-name:${email}`,
-	signature: (email: string) => `zaur:signature:${email}`
+	signature: (email: string) => `zaur:signature:${email}`,
+	settingsDetailLevel: 'zaur:settings-detail-level'
 } as const;
 
 const LIST_ROW_HEIGHT: Record<ListDensity, { preview: string; noPreview: string }> = {
@@ -664,6 +666,12 @@ function readCompactEmptyReader(): boolean {
 	return localStorage.getItem(STORAGE.compactEmptyReader) === 'true';
 }
 
+function readSettingsDetailLevel(): SettingsDetailLevel {
+	if (!browser) return 'basic';
+	const stored = localStorage.getItem(STORAGE.settingsDetailLevel);
+	return stored === 'advanced' ? 'advanced' : 'basic';
+}
+
 function readCompactSettingsNav(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactSettingsNav) === 'true';
@@ -1063,6 +1071,7 @@ class SettingsStore {
 	compactAppHeader = $state(readCompactAppHeader());
 	compactEmptyReader = $state(readCompactEmptyReader());
 	compactSettingsNav = $state(readCompactSettingsNav());
+	settingsDetailLevel = $state(readSettingsDetailLevel());
 	hideSettingsBackLink = $state(readHideSettingsBackLink());
 	hideSettingsPageTitle = $state(readHideSettingsPageTitle());
 	hideReaderStatusBackButton = $state(readHideReaderStatusBackButton());
@@ -1223,6 +1232,7 @@ class SettingsStore {
 		this.compactAppHeader = readCompactAppHeader();
 		this.compactEmptyReader = readCompactEmptyReader();
 		this.compactSettingsNav = readCompactSettingsNav();
+		this.settingsDetailLevel = readSettingsDetailLevel();
 		this.hideSettingsBackLink = readHideSettingsBackLink();
 		this.hideSettingsPageTitle = readHideSettingsPageTitle();
 		this.hideReaderStatusBackButton = readHideReaderStatusBackButton();
@@ -1995,6 +2005,13 @@ class SettingsStore {
 		this.compactSettingsNav = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.compactSettingsNav, String(value));
+		}
+	}
+
+	setSettingsDetailLevel(value: SettingsDetailLevel) {
+		this.settingsDetailLevel = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.settingsDetailLevel, value);
 		}
 	}
 

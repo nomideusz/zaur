@@ -63,7 +63,7 @@
 			</div>
 
 			<a
-				href="/settings/display"
+				href="/settings/appearance"
 				role="menuitem"
 				class={cn(
 					'flex items-center gap-2 px-3 text-sm text-fg hover:bg-surface-sunken',

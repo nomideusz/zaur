@@ -30,11 +30,11 @@
 </script>
 
 <svelte:head>
-	<title>Account · ZAUR Webmail</title>
+	<title>You · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel title="Account" description="Your profile and sign-in details.">
-	<SettingsGroup title="Profile">
+<SettingsPanel title="You" description="How you appear when sending mail, plus account and local data on this device.">
+	<SettingsGroup title="About you" description="Name and signature for outgoing messages.">
 		<SettingsField
 			title="Display name"
 			description={settings.hideAccountFieldHints ? undefined : 'Shown when you send mail and in the header'}
@@ -61,7 +61,7 @@
 		</SettingsField>
 	</SettingsGroup>
 
-	<SettingsGroup title="Display">
+	<SettingsGroup title="This page" advanced>
 		<SettingsRow
 			title="Hide field hints"
 			description="Remove description text under profile fields and local data on this page"

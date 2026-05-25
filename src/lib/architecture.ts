@@ -13,9 +13,17 @@ export const routeMap = {
 	},
 	settings: {
 		root: '/settings',
-		display: '/settings/display',
+		appearance: '/settings/appearance',
+		inbox: '/settings/inbox',
+		reading: '/settings/reading',
+		compose: '/settings/compose',
+		workspace: '/settings/workspace',
 		mail: '/settings/mail',
-		account: '/settings/account'
+		account: '/settings/account',
+		contacts: '/settings/contacts',
+		data: '/settings/data',
+		/** Legacy alias — redirects to appearance */
+		display: '/settings/display'
 	},
 	calendar: '/calendar',
 	contacts: '/contacts'

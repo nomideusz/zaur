@@ -53,7 +53,7 @@
 				</Button>
 			{/if}
 			{#if showSettingsButton}
-				<Button href="/settings/display" variant="ghost">Display settings</Button>
+				<Button href="/settings/appearance" variant="ghost">Settings</Button>
 			{/if}
 		</div>
 	{/if}

@@ -90,7 +90,7 @@
 		</div>
 		<div class="flex gap-2">
 			{#if !settings.hideContactsHeaderSettings}
-				<Button variant="ghost" href="/settings/display">Settings</Button>
+				<Button variant="ghost" href="/settings/appearance">Settings</Button>
 			{/if}
 			<Button variant="ghost" onclick={() => (showAddForm = !showAddForm)}>
 				<UserPlus class="size-4" aria-hidden="true" />

@@ -443,7 +443,7 @@
 				Show once
 			</button>
 			<span class="text-fg-subtle">·</span>
-			<a href="/settings/display" class="text-accent hover:underline">Display settings</a>
+			<a href="/settings/appearance" class="text-accent hover:underline">Settings</a>
 		</div>
 	{/if}
 

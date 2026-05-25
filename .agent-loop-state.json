@@ -1,7 +1,8 @@
 {
-  "iteration": 49,
+  "iteration": 50,
   "maxIterations": 50,
   "deployEvery": 10,
-  "lastDeployIteration": 40,
-  "focus": "Settings: UX/UI/behaviour options — avatars, layout simplification, skip home screen, desktop and mobile usability"
+  "lastDeployIteration": 50,
+  "focus": "Settings: UX/UI/behaviour options — avatars, layout simplification, skip home screen, desktop and mobile usability",
+  "completed": true
 }
