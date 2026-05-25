@@ -116,7 +116,7 @@
 			{selectedIds.length} selected
 		</span>
 		{#if selectedIds.length}
-			<div class="flex shrink-0 items-center gap-0.5">
+			<div class={cn('flex shrink-0 items-center', settings.compactReaderToolbar ? 'gap-0' : 'gap-0.5')}>
 				{#if hasUnreadSelected}
 					<IconButton
 						label="Mark read"

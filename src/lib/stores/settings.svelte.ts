@@ -66,7 +66,6 @@ const STORAGE = {
 	compactFolderSidebar: 'zaur:compact-folder-sidebar',
 	compactAttachments: 'zaur:compact-attachments',
 	hideReaderSenderEmail: 'zaur:hide-reader-sender-email',
-	iconOnlyBulkActions: 'zaur:icon-only-bulk-actions',
 	hideComposeFromLine: 'zaur:hide-compose-from-line',
 	hideThreadCollapseButtons: 'zaur:hide-thread-collapse-buttons',
 	hideComposeFieldLabels: 'zaur:hide-compose-field-labels',
@@ -88,7 +87,6 @@ const STORAGE = {
 	hidePaneBorders: 'zaur:hide-pane-borders',
 	hideListRowDividers: 'zaur:hide-list-row-dividers',
 	hideReaderPaneBorders: 'zaur:hide-reader-pane-borders',
-	compactBulkToolbar: 'zaur:compact-bulk-toolbar',
 	hideSearchListPrefix: 'zaur:hide-search-list-prefix',
 	compactMobileSearch: 'zaur:compact-mobile-search',
 	hideAccountFieldHints: 'zaur:hide-account-field-hints',
@@ -134,7 +132,6 @@ const STORAGE = {
 	compactReaderAvatars: 'zaur:compact-reader-avatars',
 	compactCollapsedThreads: 'zaur:compact-collapsed-threads',
 	compactReaderStatus: 'zaur:compact-reader-status',
-	compactReaderMoreMenu: 'zaur:compact-reader-more-menu',
 	compactListErrorState: 'zaur:compact-list-error-state',
 	hideListErrorRetry: 'zaur:hide-list-error-retry',
 	compactReaderSkeleton: 'zaur:compact-reader-skeleton',
@@ -485,11 +482,6 @@ function readHideReaderSenderEmail(): boolean {
 	return localStorage.getItem(STORAGE.hideReaderSenderEmail) === 'true';
 }
 
-function readIconOnlyBulkActions(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.iconOnlyBulkActions) === 'true';
-}
-
 function readHideComposeFromLine(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideComposeFromLine) === 'true';
@@ -603,11 +595,6 @@ function readHideListRowDividers(): boolean {
 function readHideReaderPaneBorders(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideReaderPaneBorders) === 'true';
-}
-
-function readCompactBulkToolbar(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactBulkToolbar) === 'true';
 }
 
 function readHideSearchListPrefix(): boolean {
@@ -839,11 +826,6 @@ function readCompactCollapsedThreads(): boolean {
 function readCompactReaderStatus(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactReaderStatus) === 'true';
-}
-
-function readCompactReaderMoreMenu(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactReaderMoreMenu) === 'true';
 }
 
 function readCompactListErrorState(): boolean {
@@ -1197,7 +1179,6 @@ class SettingsStore {
 	compactFolderSidebar = $state(readCompactFolderSidebar());
 	compactAttachments = $state(readCompactAttachments());
 	hideReaderSenderEmail = $state(readHideReaderSenderEmail());
-	iconOnlyBulkActions = $state(readIconOnlyBulkActions());
 	hideComposeFromLine = $state(readHideComposeFromLine());
 	hideThreadCollapseButtons = $state(readHideThreadCollapseButtons());
 	hideComposeFieldLabels = $state(readHideComposeFieldLabels());
@@ -1218,7 +1199,6 @@ class SettingsStore {
 	hidePaneBorders = $state(readHidePaneBorders());
 	hideListRowDividers = $state(readHideListRowDividers());
 	hideReaderPaneBorders = $state(readHideReaderPaneBorders());
-	compactBulkToolbar = $state(readCompactBulkToolbar());
 	hideSearchListPrefix = $state(readHideSearchListPrefix());
 	compactMobileSearch = $state(readCompactMobileSearch());
 	hideAccountFieldHints = $state(readHideAccountFieldHints());
@@ -1265,7 +1245,6 @@ class SettingsStore {
 	compactReaderAvatars = $state(readCompactReaderAvatars());
 	compactCollapsedThreads = $state(readCompactCollapsedThreads());
 	compactReaderStatus = $state(readCompactReaderStatus());
-	compactReaderMoreMenu = $state(readCompactReaderMoreMenu());
 	compactListErrorState = $state(readCompactListErrorState());
 	hideListErrorRetry = $state(readHideListErrorRetry());
 	compactReaderSkeleton = $state(readCompactReaderSkeleton());
@@ -1380,7 +1359,6 @@ class SettingsStore {
 		this.compactFolderSidebar = readCompactFolderSidebar();
 		this.compactAttachments = readCompactAttachments();
 		this.hideReaderSenderEmail = readHideReaderSenderEmail();
-		this.iconOnlyBulkActions = readIconOnlyBulkActions();
 		this.hideComposeFromLine = readHideComposeFromLine();
 		this.hideThreadCollapseButtons = readHideThreadCollapseButtons();
 		this.hideComposeFieldLabels = readHideComposeFieldLabels();
@@ -1401,7 +1379,6 @@ class SettingsStore {
 		this.hidePaneBorders = readHidePaneBorders();
 		this.hideListRowDividers = readHideListRowDividers();
 		this.hideReaderPaneBorders = readHideReaderPaneBorders();
-		this.compactBulkToolbar = readCompactBulkToolbar();
 		this.hideSearchListPrefix = readHideSearchListPrefix();
 		this.compactMobileSearch = readCompactMobileSearch();
 		this.hideAccountFieldHints = readHideAccountFieldHints();
@@ -1448,7 +1425,6 @@ class SettingsStore {
 		this.compactReaderAvatars = readCompactReaderAvatars();
 		this.compactCollapsedThreads = readCompactCollapsedThreads();
 		this.compactReaderStatus = readCompactReaderStatus();
-		this.compactReaderMoreMenu = readCompactReaderMoreMenu();
 		this.compactListErrorState = readCompactListErrorState();
 		this.hideListErrorRetry = readHideListErrorRetry();
 		this.compactReaderSkeleton = readCompactReaderSkeleton();
@@ -1978,13 +1954,6 @@ class SettingsStore {
 		}
 	}
 
-	setIconOnlyBulkActions(value: boolean) {
-		this.iconOnlyBulkActions = value;
-		if (browser) {
-			this.writeStorage(STORAGE.iconOnlyBulkActions, String(value));
-		}
-	}
-
 	setHideComposeFromLine(value: boolean) {
 		this.hideComposeFromLine = value;
 		if (browser) {
@@ -2123,13 +2092,6 @@ class SettingsStore {
 		this.hideReaderPaneBorders = value;
 		if (browser) {
 			this.writeStorage(STORAGE.hideReaderPaneBorders, String(value));
-		}
-	}
-
-	setCompactBulkToolbar(value: boolean) {
-		this.compactBulkToolbar = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactBulkToolbar, String(value));
 		}
 	}
 
@@ -2453,13 +2415,6 @@ class SettingsStore {
 		this.compactReaderStatus = value;
 		if (browser) {
 			this.writeStorage(STORAGE.compactReaderStatus, String(value));
-		}
-	}
-
-	setCompactReaderMoreMenu(value: boolean) {
-		this.compactReaderMoreMenu = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactReaderMoreMenu, String(value));
 		}
 	}
 
@@ -2948,7 +2903,6 @@ class SettingsStore {
 		this.setCompactFolderSidebar(false);
 		this.setCompactAttachments(false);
 		this.setHideReaderSenderEmail(false);
-		this.setIconOnlyBulkActions(false);
 		this.setHideComposeFromLine(false);
 		this.setHideThreadCollapseButtons(false);
 		this.setHideComposeFieldLabels(false);
@@ -2969,7 +2923,6 @@ class SettingsStore {
 		this.setHidePaneBorders(false);
 		this.setHideListRowDividers(false);
 		this.setHideReaderPaneBorders(false);
-		this.setCompactBulkToolbar(false);
 		this.setHideSearchListPrefix(false);
 		this.setCompactMobileSearch(false);
 		this.setHideAccountFieldHints(false);
@@ -3015,7 +2968,6 @@ class SettingsStore {
 		this.setCompactReaderAvatars(false);
 		this.setCompactCollapsedThreads(false);
 		this.setCompactReaderStatus(false);
-		this.setCompactReaderMoreMenu(false);
 		this.setCompactListErrorState(false);
 		this.setHideListErrorRetry(false);
 		this.setCompactReaderSkeleton(false);
@@ -3105,7 +3057,6 @@ class SettingsStore {
 		this.setCompactFolderSidebar(true);
 		this.setCompactAttachments(true);
 		this.setHideReaderSenderEmail(true);
-		this.setIconOnlyBulkActions(true);
 		this.setHideComposeFromLine(true);
 		this.setHideThreadCollapseButtons(true);
 		this.setHideComposeFieldLabels(true);
@@ -3125,7 +3076,6 @@ class SettingsStore {
 		this.setHidePaneBorders(true);
 		this.setHideListRowDividers(true);
 		this.setHideReaderPaneBorders(true);
-		this.setCompactBulkToolbar(true);
 		this.setHideSearchListPrefix(true);
 		this.setCompactMobileSearch(true);
 		this.setHideAccountFieldHints(true);
@@ -3171,7 +3121,6 @@ class SettingsStore {
 		this.setCompactReaderAvatars(true);
 		this.setCompactCollapsedThreads(true);
 		this.setCompactReaderStatus(true);
-		this.setCompactReaderMoreMenu(true);
 		this.setCompactListErrorState(true);
 		this.setHideListErrorRetry(true);
 		this.setCompactReaderSkeleton(true);
@@ -3246,8 +3195,6 @@ class SettingsStore {
 		this.setHideListActiveIndicator(false);
 		this.setShowBulkSelect(true);
 		this.setHideSelectionHints(false);
-		this.setIconOnlyBulkActions(false);
-		this.setCompactBulkToolbar(false);
 		this.setHideSearchListPrefix(false);
 		this.setHideListEmptyHints(false);
 		this.setHideListEmptyActions(false);
@@ -3277,7 +3224,6 @@ class SettingsStore {
 		this.setHideReaderSenderEmail(false);
 		this.setMinimalReaderToolbar(false);
 		this.setCompactReaderToolbar(false);
-		this.setCompactReaderMoreMenu(false);
 		this.setCompactReaderAvatars(false);
 		this.setCompactReaderHeader(false);
 		this.setHideMoveMenuLabels(false);
@@ -3453,7 +3399,6 @@ class SettingsStore {
 			this.compactFolderSidebar,
 			this.compactAttachments,
 			this.hideReaderSenderEmail,
-			this.iconOnlyBulkActions,
 			this.hideComposeFromLine,
 			this.hideThreadCollapseButtons,
 			this.hideComposeFieldLabels,
@@ -3473,7 +3418,6 @@ class SettingsStore {
 			this.hidePaneBorders,
 			this.hideListRowDividers,
 			this.hideReaderPaneBorders,
-			this.compactBulkToolbar,
 			this.hideSearchListPrefix,
 			this.compactMobileSearch,
 			this.hideAccountFieldHints,
@@ -3519,7 +3463,6 @@ class SettingsStore {
 			this.compactReaderAvatars,
 			this.compactCollapsedThreads,
 			this.compactReaderStatus,
-			this.compactReaderMoreMenu,
 			this.compactListErrorState,
 			this.hideListErrorRetry,
 			this.compactReaderSkeleton,

@@ -114,7 +114,7 @@
 </script>
 
 {#if latest}
-	<div class={cn('flex shrink-0 items-center gap-0.5', className)}>
+	<div class={cn('flex shrink-0 items-center', settings.compactReaderToolbar ? 'gap-0' : 'gap-0.5', className)}>
 		{#if !settings.minimalReaderToolbar}
 			<IconButton
 				label={latest.starred ? 'Unstar' : 'Star'}

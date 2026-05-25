@@ -487,12 +487,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-compact-bulk-toolbar",
-		"href": "/settings/inbox",
-		"title": "Compact bulk toolbar",
-		"description": ""
-	},
-	{
 		"id": "/settings/inbox-compact-empty-list-state",
 		"href": "/settings/inbox",
 		"title": "Compact empty list state",
@@ -513,7 +507,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 	{
 		"id": "/settings/inbox-compact-list-header",
 		"href": "/settings/inbox",
-		"title": "Compact list header",
+		"title": "Compact mail pane toolbar",
 		"description": ""
 	},
 	{
@@ -555,7 +549,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 	{
 		"id": "/settings/inbox-hide-list-header-on-desktop",
 		"href": "/settings/inbox",
-		"title": "Hide list header on desktop",
+		"title": "Hide folder title on desktop",
 		"description": ""
 	},
 	{
@@ -580,12 +574,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/inbox-highlight-unread-messages",
 		"href": "/settings/inbox",
 		"title": "Highlight unread messages",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-icon-only-bulk-actions",
-		"href": "/settings/inbox",
-		"title": "Icon-only bulk actions",
 		"description": ""
 	},
 	{
@@ -883,12 +871,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-compact-reader-more-menu",
-		"href": "/settings/reading",
-		"title": "Compact reader more menu",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-compact-reader-status",
 		"href": "/settings/reading",
 		"title": "Compact reader status",
@@ -897,7 +879,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 	{
 		"id": "/settings/reading-compact-reader-toolbar",
 		"href": "/settings/reading",
-		"title": "Compact reader toolbar",
+		"title": "Compact toolbar actions",
 		"description": ""
 	},
 	{

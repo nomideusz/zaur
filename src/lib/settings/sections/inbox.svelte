@@ -205,10 +205,10 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="List toolbar" description="Folder title bar, counts, and mobile folder picker.">
+<SettingsGroup title="Mail pane toolbar" description="Folder title, counts, and mobile folder picker in the bar above the list and reader.">
 	<SettingsRow
 		title="Show message counts"
-		description="Unread and total counts in the list header"
+		description="Unread and total counts in the mail pane toolbar"
 	>
 		<input
 			type="checkbox"
@@ -219,8 +219,8 @@
 	</SettingsRow>
 
 	<SettingsRow
-		title="Hide list header on desktop"
-		description="Hide the folder title and count — the bulk-select checkbox stays visible when enabled"
+		title="Hide folder title on desktop"
+		description="Hide the folder name and count in the mail pane toolbar on desktop — checkbox and actions stay visible"
 	>
 		<input
 			type="checkbox"
@@ -233,12 +233,12 @@
 	<SettingsDepends
 		enabled={!settings.hideListHeader}
 		inactiveReason={settings.hideListHeader
-			? 'List header is hidden on desktop'
-			: 'List header on desktop'}
+			? 'Folder title is hidden on desktop'
+			: 'Mail pane toolbar height'}
 	>
 		<SettingsRow
-			title="Compact list header"
-			description="Shorter folder title bar above the message list"
+			title="Compact mail pane toolbar"
+			description="Shorter toolbar above the list and reader"
 		>
 			<input
 				type="checkbox"
@@ -251,7 +251,7 @@
 
 	<SettingsRow
 		title="Compact mobile folder picker"
-		description="Smaller folder dropdown above the message list on mobile"
+		description="Smaller folder dropdown in the mail pane toolbar on mobile"
 	>
 		<input
 			type="checkbox"
@@ -265,7 +265,7 @@
 <SettingsGroup title="Bulk selection" description="Multi-select messages for archive, move, and delete.">
 	<SettingsRow
 		title="Show bulk select"
-		description="Header checkbox selects all loaded messages; Ctrl/Shift+click to build a partial selection"
+		description="Toolbar checkbox selects all loaded messages; Ctrl/Shift+click to build a partial selection"
 	>
 		<input
 			type="checkbox"
@@ -290,30 +290,6 @@
 				class="size-4 accent-accent"
 				checked={settings.hideSelectionHints}
 				onchange={(e) => settings.setHideSelectionHints(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Icon-only bulk actions"
-			description="Show icons without labels on archive, move, and delete in selection mode"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.iconOnlyBulkActions}
-				onchange={(e) => settings.setIconOnlyBulkActions(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Compact bulk toolbar"
-			description="Less height on the selection bar that replaces the folder name while messages are selected"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactBulkToolbar}
-				onchange={(e) => settings.setCompactBulkToolbar(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsDepends>

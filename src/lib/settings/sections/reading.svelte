@@ -138,7 +138,7 @@
 
 	<SettingsRow
 		title="Hide reader pane borders"
-		description="Remove divider lines in the reading pane header, banners, and between thread messages"
+		description="Remove divider lines under the subject title, banners, and between thread messages"
 	>
 		<input
 			type="checkbox"
@@ -235,7 +235,7 @@
 <SettingsGroup title="Toolbar buttons" description="Action buttons in the mail pane toolbar when reading a message." advanced>
 	<SettingsRow
 		title="Minimal reader toolbar"
-		description="Hide star, reply all, and forward buttons — reply and more actions stay available"
+		description="Hide star, reply all, and forward — reply, archive, move, and delete stay available"
 	>
 		<input
 			type="checkbox"
@@ -249,11 +249,11 @@
 		enabled={!settings.minimalReaderToolbar}
 		inactiveReason={settings.minimalReaderToolbar
 			? 'Toolbar is already minimal — fewer buttons to space'
-			: 'Reader toolbar spacing'}
+			: 'Mail pane toolbar spacing'}
 	>
 		<SettingsRow
-			title="Compact reader toolbar"
-			description="Tighter spacing between action buttons in the reading pane header"
+			title="Compact toolbar actions"
+			description="Tighter spacing between action buttons in the mail pane toolbar"
 		>
 			<input
 				type="checkbox"
@@ -262,25 +262,13 @@
 				onchange={(e) => settings.setCompactReaderToolbar(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
-
-		<SettingsRow
-			title="Compact reader more menu"
-			description="Tighter spacing in the mobile more-actions menu in the reading pane"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactReaderMoreMenu}
-				onchange={(e) => settings.setCompactReaderMoreMenu(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
 	</SettingsDepends>
 </SettingsGroup>
 
-<SettingsGroup title="Move to folder" description="Folder picker when moving messages from the list or reading pane." advanced>
+<SettingsGroup title="Move to folder" description="Folder picker when moving messages from the mail pane toolbar." advanced>
 	<SettingsRow
 		title="Hide move menu labels"
-		description="Remove the “Move to” heading in folder move dropdowns — in the list toolbar and reading pane"
+		description="Remove the “Move to” heading in folder move dropdowns in the mail pane toolbar"
 	>
 		<input
 			type="checkbox"
@@ -298,7 +286,7 @@
 	>
 		<SettingsRow
 			title="Compact move menu"
-			description="Tighter spacing in folder move dropdowns from the list toolbar and reading pane"
+			description="Tighter spacing in folder move dropdowns from the mail pane toolbar"
 		>
 			<input
 				type="checkbox"
