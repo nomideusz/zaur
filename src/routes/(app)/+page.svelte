@@ -5,6 +5,8 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 
+	const mailHref = $derived(settings.preferredMailHref());
+
 	$effect(() => {
 		if (settings.skipHomeScreen) {
 			goto(settings.preferredMailHref(), { replaceState: true });
@@ -33,7 +35,7 @@
 
 	<div class={cn('grid sm:grid-cols-2 lg:grid-cols-4', settings.compactHomeScreen ? 'gap-3' : 'gap-4')}>
 		<a
-			href="/mail/inbox"
+			href={mailHref}
 			class={cn(
 				'z-panel group rounded-xl transition-shadow hover:shadow-md',
 				settings.compactHomeScreen ? 'p-4' : 'p-5'
@@ -98,6 +100,6 @@
 	</div>
 
 	{#if !settings.hideHomeOpenInboxButton}
-		<Button href="/mail/inbox">Open inbox</Button>
+		<Button href={mailHref}>Open mail</Button>
 	{/if}
 </div>
