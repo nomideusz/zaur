@@ -145,7 +145,7 @@
 			<label class="min-w-0 flex-1 md:hidden">
 				<span class="sr-only">Folder</span>
 				<select
-					class={cn('z-input w-full text-sm', settings.compactMobileFolderPicker ? 'py-1' : 'py-1.5')}
+					class={cn('z-input w-full', settings.compactMobileFolderPicker ? 'py-1' : 'py-1.5')}
 					value={mailboxRouteId}
 					onchange={(e) => goto(`/mail/${e.currentTarget.value}`)}
 				>

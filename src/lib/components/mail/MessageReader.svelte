@@ -571,8 +571,7 @@
 		<footer class={cn('shrink-0 bg-surface/80 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-6', !settings.hideReaderPaneBorders && 'border-t border-border', settings.compactQuickReply ? 'py-2.5' : 'py-4')}>
 			<div class="flex w-full max-w-(--z-reader-measure) gap-2">
 				<textarea
-					class="z-input min-h-10 flex-1 resize-none py-2 leading-relaxed"
-					style="font-size: var(--z-reader-text)"
+					class="z-input z-compose-editor min-h-10 flex-1 resize-none py-2 leading-relaxed"
 					rows={settings.compactQuickReply ? 1 : 2}
 					placeholder="Write a quick reply…"
 					bind:value={quickReply}

@@ -250,8 +250,7 @@
 			<div class="flex min-h-0 flex-1 flex-col overflow-hidden">
 				<textarea
 					bind:this={bodyInput}
-					class="min-h-0 flex-1 resize-none bg-transparent px-5 py-4 leading-relaxed outline-none placeholder:text-fg-subtle"
-					style="font-size: var(--z-reader-text)"
+					class="z-compose-editor min-h-0 flex-1 resize-none bg-transparent px-5 py-4 leading-relaxed outline-none placeholder:text-fg-subtle"
 					placeholder="Write your message…"
 					value={editableBody}
 					oninput={(e) => setEditableBody(e.currentTarget.value)}

@@ -144,10 +144,7 @@
 		/>
 		<input
 			type="search"
-			class={cn(
-				'z-input',
-				settings.compactContactsSearch ? 'py-1.5 pl-8 text-xs' : 'pl-9'
-			)}
+			class={cn('z-input', settings.compactContactsSearch ? 'py-1.5 pl-8' : 'pl-9')}
 			placeholder="Search contacts…"
 			bind:value={query}
 		/>

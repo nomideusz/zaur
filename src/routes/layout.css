@@ -104,6 +104,28 @@
 	html.z-reduce-motion [style*='view-transition-name'] {
 		view-transition-name: none !important;
 	}
+
+	/*
+	 * iOS Safari zooms the page when focusing inputs below 16px.
+	 * Use at least 1rem on narrow viewports (keeps desktop density via .z-input md:text-sm).
+	 */
+	@media (max-width: 767px) {
+		input:not(
+				[type='checkbox'],
+				[type='radio'],
+				[type='range'],
+				[type='file'],
+				[type='hidden'],
+				[type='color'],
+				[type='button'],
+				[type='submit'],
+				[type='reset']
+			),
+		textarea,
+		select {
+			font-size: 1rem;
+		}
+	}
 }
 
 @layer components {
@@ -128,7 +150,19 @@
 	}
 
 	.z-input {
-		@apply w-full rounded-md border border-border bg-surface-raised px-3 py-2 text-sm text-fg placeholder:text-fg-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20;
+		@apply w-full rounded-md border border-border bg-surface-raised px-3 py-2 text-base text-fg placeholder:text-fg-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 md:text-sm;
+	}
+
+	.z-compose-editor,
+	.z-input.z-compose-editor {
+		font-size: var(--z-reader-text);
+	}
+
+	@media (max-width: 767px) {
+		.z-compose-editor,
+		.z-input.z-compose-editor {
+			font-size: 1rem;
+		}
 	}
 
 	.z-list-row {
