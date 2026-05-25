@@ -135,7 +135,8 @@
 >
 	<div
 		class={cn(
-			'flex h-12 shrink-0 items-center gap-2 px-4',
+			'flex shrink-0 items-center gap-2 px-4',
+			settings.compactListHeader ? 'h-10' : 'h-12',
 			!settings.hidePaneBorders && 'border-b border-border',
 			settings.hideListHeader ? 'md:hidden' : ''
 		)}
@@ -208,13 +209,18 @@
 				{/if}
 			</div>
 		{:else if messages.length === 0}
-			<div class="flex flex-col items-center gap-4 px-6 py-16 text-center">
+			<div
+				class={cn(
+					'flex flex-col items-center text-center',
+					settings.compactListEmptyState ? 'gap-3 px-4 py-10' : 'gap-4 px-6 py-16'
+				)}
+			>
 				{#if emptyIcon !== 'none' && !settings.hideListEmptyHints}
-					<div class="rounded-full bg-surface-sunken p-4">
+					<div class={cn('rounded-full bg-surface-sunken', settings.compactListEmptyState ? 'p-3' : 'p-4')}>
 						{#if emptyIcon === 'search'}
-							<Search class="size-8 text-fg-subtle" aria-hidden="true" />
+							<Search class={cn('text-fg-subtle', settings.compactListEmptyState ? 'size-6' : 'size-8')} aria-hidden="true" />
 						{:else}
-							<Inbox class="size-8 text-fg-subtle" aria-hidden="true" />
+							<Inbox class={cn('text-fg-subtle', settings.compactListEmptyState ? 'size-6' : 'size-8')} aria-hidden="true" />
 						{/if}
 					</div>
 				{/if}

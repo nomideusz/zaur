@@ -100,6 +100,9 @@ const STORAGE = {
 	compactContactsPage: 'zaur:compact-contacts-page',
 	compactContactsList: 'zaur:compact-contacts-list',
 	hideContactMessageCounts: 'zaur:hide-contact-message-counts',
+	compactListEmptyState: 'zaur:compact-list-empty-state',
+	compactListHeader: 'zaur:compact-list-header',
+	compactHomeScreen: 'zaur:compact-home-screen',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -614,6 +617,21 @@ function readHideContactMessageCounts(): boolean {
 	return localStorage.getItem(STORAGE.hideContactMessageCounts) === 'true';
 }
 
+function readCompactListEmptyState(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactListEmptyState) === 'true';
+}
+
+function readCompactListHeader(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactListHeader) === 'true';
+}
+
+function readCompactHomeScreen(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactHomeScreen) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -791,6 +809,9 @@ class SettingsStore {
 	compactContactsPage = $state(readCompactContactsPage());
 	compactContactsList = $state(readCompactContactsList());
 	hideContactMessageCounts = $state(readHideContactMessageCounts());
+	compactListEmptyState = $state(readCompactListEmptyState());
+	compactListHeader = $state(readCompactListHeader());
+	compactHomeScreen = $state(readCompactHomeScreen());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -906,6 +927,9 @@ class SettingsStore {
 		this.compactContactsPage = readCompactContactsPage();
 		this.compactContactsList = readCompactContactsList();
 		this.hideContactMessageCounts = readHideContactMessageCounts();
+		this.compactListEmptyState = readCompactListEmptyState();
+		this.compactListHeader = readCompactListHeader();
+		this.compactHomeScreen = readCompactHomeScreen();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1624,6 +1648,27 @@ class SettingsStore {
 		}
 	}
 
+	setCompactListEmptyState(value: boolean) {
+		this.compactListEmptyState = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactListEmptyState, String(value));
+		}
+	}
+
+	setCompactListHeader(value: boolean) {
+		this.compactListHeader = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactListHeader, String(value));
+		}
+	}
+
+	setCompactHomeScreen(value: boolean) {
+		this.compactHomeScreen = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactHomeScreen, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1856,6 +1901,9 @@ class SettingsStore {
 		this.setCompactContactsPage(false);
 		this.setCompactContactsList(false);
 		this.setHideContactMessageCounts(false);
+		this.setCompactListEmptyState(false);
+		this.setCompactListHeader(false);
+		this.setCompactHomeScreen(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1939,6 +1987,9 @@ class SettingsStore {
 		this.setCompactContactsPage(true);
 		this.setCompactContactsList(true);
 		this.setHideContactMessageCounts(true);
+		this.setCompactListEmptyState(true);
+		this.setCompactListHeader(true);
+		this.setCompactHomeScreen(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -2065,6 +2116,9 @@ class SettingsStore {
 			this.compactContactsPage,
 			this.compactContactsList,
 			this.hideContactMessageCounts,
+			this.compactListEmptyState,
+			this.compactListHeader,
+			this.compactHomeScreen,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

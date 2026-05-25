@@ -351,6 +351,18 @@
 				onchange={(e) => settings.setHideListEmptyHints(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Compact empty list state"
+			description="Less padding and smaller icons when a folder or search has no messages"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactListEmptyState}
+				onchange={(e) => settings.setCompactListEmptyState(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Reading">
@@ -853,6 +865,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact list header"
+			description="Shorter folder title bar above the message list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactListHeader}
+				onchange={(e) => settings.setCompactListHeader(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Compact header actions"
 			description="Icon-only New and New event buttons in the top bar — saves horizontal space"
 		>
@@ -935,6 +959,18 @@
 				class="size-4 accent-accent"
 				checked={settings.skipHomeScreen}
 				onchange={(e) => settings.setSkipHomeScreen(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact home screen"
+			description="Tighter welcome screen with smaller tool cards — only applies when Home is visible"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactHomeScreen}
+				onchange={(e) => settings.setCompactHomeScreen(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 
