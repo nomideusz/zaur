@@ -70,8 +70,12 @@ export function formatMonthTitle(year: number, month: number): string {
 }
 
 /** Compact timestamp for message lists — time today, date otherwise. */
-export function formatMessageListWhen(iso: string): string {
+export function formatMessageListWhen(iso: string, full = false): string {
 	const date = new Date(iso);
+	if (full) {
+		return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+	}
+
 	const now = new Date();
 
 	if (isSameDay(date, now)) {

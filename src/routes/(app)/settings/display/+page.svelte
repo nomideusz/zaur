@@ -101,6 +101,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Show full dates in list"
+			description="Use full date and time instead of compact labels like Mon or May 25"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showFullDatesInList}
+				onchange={(e) => settings.setShowFullDatesInList(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Expand list until opened"
 			description="Use the full width for the message list on desktop until you pick a message"
 		>
@@ -212,6 +224,25 @@
 				checked={settings.mailOnlyNavigation}
 				onchange={(e) => settings.setMailOnlyNavigation(e.currentTarget.checked)}
 			/>
+		</SettingsRow>
+	</SettingsGroup>
+
+	<SettingsGroup title="Reset">
+		<SettingsRow
+			title="Restore display defaults"
+			description="Reset all options on this page to their original values"
+		>
+			<button
+				type="button"
+				class="z-btn-ghost text-sm"
+				onclick={() => {
+					if (confirm('Reset all display and navigation settings to defaults?')) {
+						settings.resetDisplaySettings();
+					}
+				}}
+			>
+				Reset
+			</button>
 		</SettingsRow>
 	</SettingsGroup>
 </SettingsPanel>

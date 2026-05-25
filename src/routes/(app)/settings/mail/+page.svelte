@@ -58,6 +58,18 @@
 				onchange={(e) => settings.setEnableKeyboardShortcuts(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Confirm before delete"
+			description="Ask before moving messages to trash — permanent delete in Trash always asks"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.confirmBeforeDelete}
+				onchange={(e) => settings.setConfirmBeforeDelete(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Keyboard shortcuts">

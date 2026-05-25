@@ -145,10 +145,14 @@
 		moreOpen = false;
 		if (!latest) return;
 		if (currentMailbox?.role === 'trash') {
-			const count = 1;
-			if (!confirm(`Permanently delete ${count === 1 ? 'this message' : `${count} messages`}? This cannot be undone.`)) {
+			if (!confirm('Permanently delete this message? This cannot be undone.')) {
 				return;
 			}
+		} else if (
+			settings.confirmBeforeDelete &&
+			!confirm('Move this message to trash?')
+		) {
+			return;
 		}
 		void withClient((client) => mail.deleteMessage(client, latest, mailboxRouteId));
 	}

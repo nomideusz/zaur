@@ -12,6 +12,7 @@ const STORAGE = {
 	showStarsInList: 'zaur:show-stars-in-list',
 	showAttachmentIcons: 'zaur:show-attachment-icons',
 	showMessageCounts: 'zaur:show-message-counts',
+	showFullDatesInList: 'zaur:show-full-dates-in-list',
 	showQuickReply: 'zaur:show-quick-reply',
 	showReaderContactActions: 'zaur:show-reader-contact-actions',
 	expandAllThreadMessages: 'zaur:expand-all-thread-messages',
@@ -19,6 +20,7 @@ const STORAGE = {
 	expandListUntilOpen: 'zaur:expand-list-until-open',
 	mailOnlyNavigation: 'zaur:mail-only-navigation',
 	enableKeyboardShortcuts: 'zaur:enable-keyboard-shortcuts',
+	confirmBeforeDelete: 'zaur:confirm-before-delete',
 	skipHomeScreen: 'zaur:skip-home-screen',
 	readerTextSize: 'zaur:reader-text-size',
 	markAsReadOnOpen: 'zaur:mark-read-on-open',
@@ -78,6 +80,11 @@ function readShowMessageCounts(): boolean {
 	return localStorage.getItem(STORAGE.showMessageCounts) !== 'false';
 }
 
+function readShowFullDatesInList(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.showFullDatesInList) === 'true';
+}
+
 function readShowQuickReply(): boolean {
 	if (!browser) return true;
 	return localStorage.getItem(STORAGE.showQuickReply) !== 'false';
@@ -111,6 +118,11 @@ function readMailOnlyNavigation(): boolean {
 function readEnableKeyboardShortcuts(): boolean {
 	if (!browser) return true;
 	return localStorage.getItem(STORAGE.enableKeyboardShortcuts) !== 'false';
+}
+
+function readConfirmBeforeDelete(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.confirmBeforeDelete) !== 'false';
 }
 
 function readSkipHomeScreen(): boolean {
@@ -156,6 +168,7 @@ class SettingsStore {
 	showStarsInList = $state(readShowStarsInList());
 	showAttachmentIcons = $state(readShowAttachmentIcons());
 	showMessageCounts = $state(readShowMessageCounts());
+	showFullDatesInList = $state(readShowFullDatesInList());
 	showQuickReply = $state(readShowQuickReply());
 	showReaderContactActions = $state(readShowReaderContactActions());
 	expandAllThreadMessages = $state(readExpandAllThreadMessages());
@@ -163,6 +176,7 @@ class SettingsStore {
 	expandListUntilOpen = $state(readExpandListUntilOpen());
 	mailOnlyNavigation = $state(readMailOnlyNavigation());
 	enableKeyboardShortcuts = $state(readEnableKeyboardShortcuts());
+	confirmBeforeDelete = $state(readConfirmBeforeDelete());
 	skipHomeScreen = $state(readSkipHomeScreen());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	markAsReadOnOpen = $state(readMarkAsReadOnOpen());
@@ -181,6 +195,7 @@ class SettingsStore {
 		this.showStarsInList = readShowStarsInList();
 		this.showAttachmentIcons = readShowAttachmentIcons();
 		this.showMessageCounts = readShowMessageCounts();
+		this.showFullDatesInList = readShowFullDatesInList();
 		this.showQuickReply = readShowQuickReply();
 		this.showReaderContactActions = readShowReaderContactActions();
 		this.expandAllThreadMessages = readExpandAllThreadMessages();
@@ -188,6 +203,7 @@ class SettingsStore {
 		this.expandListUntilOpen = readExpandListUntilOpen();
 		this.mailOnlyNavigation = readMailOnlyNavigation();
 		this.enableKeyboardShortcuts = readEnableKeyboardShortcuts();
+		this.confirmBeforeDelete = readConfirmBeforeDelete();
 		this.skipHomeScreen = readSkipHomeScreen();
 		this.readerTextSize = readReaderTextSize();
 		this.markAsReadOnOpen = readMarkAsReadOnOpen();
@@ -268,6 +284,13 @@ class SettingsStore {
 		}
 	}
 
+	setShowFullDatesInList(value: boolean) {
+		this.showFullDatesInList = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.showFullDatesInList, String(value));
+		}
+	}
+
 	setShowQuickReply(value: boolean) {
 		this.showQuickReply = value;
 		if (browser) {
@@ -314,6 +337,13 @@ class SettingsStore {
 		this.enableKeyboardShortcuts = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.enableKeyboardShortcuts, String(value));
+		}
+	}
+
+	setConfirmBeforeDelete(value: boolean) {
+		this.confirmBeforeDelete = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.confirmBeforeDelete, String(value));
 		}
 	}
 
@@ -383,6 +413,25 @@ class SettingsStore {
 		} else {
 			localStorage.removeItem(STORAGE.signature(this.userEmail));
 		}
+	}
+
+	resetDisplaySettings() {
+		this.setListDensity('comfortable');
+		this.setShowListPreview(true);
+		this.setShowAvatars(true);
+		this.setShowStarsInList(true);
+		this.setShowAttachmentIcons(true);
+		this.setShowMessageCounts(true);
+		this.setShowFullDatesInList(false);
+		this.setExpandListUntilOpen(false);
+		this.setReaderTextSize('normal');
+		this.setBlockExternalContent(true);
+		this.setShowQuickReply(true);
+		this.setExpandAllThreadMessages(false);
+		this.setShowReaderContactActions(true);
+		this.setSkipHomeScreen(false);
+		this.setHideSidebarShortcuts(false);
+		this.setMailOnlyNavigation(false);
 	}
 
 	private applyListLayout() {

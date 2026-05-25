@@ -3,6 +3,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 
 	interface Props {
@@ -55,6 +56,11 @@
 			) {
 				return;
 			}
+		} else if (
+			settings.confirmBeforeDelete &&
+			!confirm(`Move ${count === 1 ? 'this message' : `${count} messages`} to trash?`)
+		) {
+			return;
 		}
 		await run(() => mail.bulkDelete(auth.client!, mailboxRouteId));
 	}

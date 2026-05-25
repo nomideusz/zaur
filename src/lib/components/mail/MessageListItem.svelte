@@ -24,7 +24,7 @@
 		onToggleSelect
 	}: Props = $props();
 
-	const when = $derived(formatMessageListWhen(message.receivedAt));
+	const when = $derived(formatMessageListWhen(message.receivedAt, settings.showFullDatesInList));
 
 	const rowClass = $derived(
 		cn(
