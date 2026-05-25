@@ -117,8 +117,8 @@ class AuthStore {
 			settings.setUser(payload.username);
 			await settings.syncFromAccount();
 			this.startBackgroundSync(client, payload.username, payload.displayName ?? payload.username);
-		} catch {
-			// Session cookie invalid or server unreachable
+		} catch (error) {
+			console.warn('Session restore failed:', error);
 		}
 	}
 

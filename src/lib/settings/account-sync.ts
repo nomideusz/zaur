@@ -122,7 +122,10 @@ export async function pullAccountSettings(
 	try {
 		const response = await fetch('/api/settings');
 		if (response.status === 401) return 'empty';
-		if (!response.ok) return 'unchanged';
+		if (!response.ok) {
+			console.warn('Account settings pull failed:', response.status);
+			return 'unchanged';
+		}
 
 		const payload = (await response.json()) as { settings: AccountSettingsBlob | null };
 		const remote = payload.settings;

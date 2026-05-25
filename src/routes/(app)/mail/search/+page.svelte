@@ -29,13 +29,19 @@
 
 	$effect(() => {
 		const client = auth.client;
-		if (!client || auth.isRestoring || !query) return;
+		if (!client || auth.isRestoring || !query) {
+			if (!query) search.reset();
+			return;
+		}
 		void search.search(client, query, mail.mailboxes);
 	});
 
 	function submit() {
 		const trimmed = input.trim();
-		if (!trimmed) return;
+		if (!trimmed) {
+			goto('/mail/search');
+			return;
+		}
 		goto(`/mail/search?q=${encodeURIComponent(trimmed)}`);
 	}
 </script>
