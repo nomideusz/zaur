@@ -41,9 +41,11 @@
 				Couldn't load message
 			{/if}
 		</h2>
-		<p class={cn('mx-auto mt-2 max-w-sm text-fg-muted', settings.compactReaderStatus ? 'text-xs' : 'text-sm')}>
-			{message}
-		</p>
+		{#if !settings.hideReaderStatusMessage}
+			<p class={cn('mx-auto mt-2 max-w-sm text-fg-muted', settings.compactReaderStatus ? 'text-xs' : 'text-sm')}>
+				{message}
+			</p>
+		{/if}
 	</div>
 
 	{#if onBack && !settings.hideReaderStatusBackButton}

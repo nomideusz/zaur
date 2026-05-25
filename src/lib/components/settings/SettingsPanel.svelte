@@ -17,8 +17,15 @@
 
 <div class={cn('z-panel rounded-xl', settings.compactSettingsPanel ? 'p-4' : 'p-6')}>
 	<h2 class={cn('font-semibold text-fg', settings.compactSettingsPanel ? 'text-base' : 'text-lg')}>{title}</h2>
-	<p class="mt-1 text-sm text-fg-muted">{description}</p>
-	<div class={cn(settings.compactSettingsPanel ? 'mt-4 space-y-6' : 'mt-6 space-y-8')}>
+	{#if !settings.hideSettingsPanelDescriptions}
+		<p class="mt-1 text-sm text-fg-muted">{description}</p>
+	{/if}
+	<div
+		class={cn(
+			settings.compactSettingsPanel ? 'mt-4 space-y-6' : 'mt-6 space-y-8',
+			settings.hideSettingsPanelDescriptions && (settings.compactSettingsPanel ? 'mt-3' : 'mt-4')
+		)}
+	>
 		{@render children()}
 	</div>
 	{#if footer}

@@ -27,6 +27,7 @@ const STORAGE = {
 	toolIconsOnly: 'zaur:tool-icons-only',
 	collapseQuotedInCompose: 'zaur:collapse-quoted-in-compose',
 	hideEmptyReaderPrompts: 'zaur:hide-empty-reader-prompts',
+	hideEmptyReaderDescription: 'zaur:hide-empty-reader-description',
 	hideThreadSummary: 'zaur:hide-thread-summary',
 	showFolderUnreadCounts: 'zaur:show-folder-unread-counts',
 	showBulkSelect: 'zaur:show-bulk-select',
@@ -49,6 +50,7 @@ const STORAGE = {
 	hideReaderTimestamps: 'zaur:hide-reader-timestamps',
 	hideCollapsedThreadPreviews: 'zaur:hide-collapsed-thread-previews',
 	hideSettingsNavHints: 'zaur:hide-settings-nav-hints',
+	hideSettingsPanelDescriptions: 'zaur:hide-settings-panel-descriptions',
 	compactFolderSidebar: 'zaur:compact-folder-sidebar',
 	compactAttachments: 'zaur:compact-attachments',
 	hideReaderSenderEmail: 'zaur:hide-reader-sender-email',
@@ -99,6 +101,7 @@ const STORAGE = {
 	hideSettingsBackLink: 'zaur:hide-settings-back-link',
 	hideSettingsPageTitle: 'zaur:hide-settings-page-title',
 	hideReaderStatusBackButton: 'zaur:hide-reader-status-back-button',
+	hideReaderStatusMessage: 'zaur:hide-reader-status-message',
 	compactExternalContentBanner: 'zaur:compact-external-content-banner',
 	compactContactsPage: 'zaur:compact-contacts-page',
 	compactContactsList: 'zaur:compact-contacts-list',
@@ -277,6 +280,11 @@ function readHideEmptyReaderPrompts(): boolean {
 	return localStorage.getItem(STORAGE.hideEmptyReaderPrompts) === 'true';
 }
 
+function readHideEmptyReaderDescription(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideEmptyReaderDescription) === 'true';
+}
+
 function readHideThreadSummary(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideThreadSummary) === 'true';
@@ -390,6 +398,11 @@ function readHideCollapsedThreadPreviews(): boolean {
 function readHideSettingsNavHints(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideSettingsNavHints) === 'true';
+}
+
+function readHideSettingsPanelDescriptions(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideSettingsPanelDescriptions) === 'true';
 }
 
 function readCompactFolderSidebar(): boolean {
@@ -640,6 +653,11 @@ function readHideSettingsPageTitle(): boolean {
 function readHideReaderStatusBackButton(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideReaderStatusBackButton) === 'true';
+}
+
+function readHideReaderStatusMessage(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideReaderStatusMessage) === 'true';
 }
 
 function readCompactExternalContentBanner(): boolean {
@@ -916,6 +934,7 @@ class SettingsStore {
 	toolIconsOnly = $state(readToolIconsOnly());
 	collapseQuotedInCompose = $state(readCollapseQuotedInCompose());
 	hideEmptyReaderPrompts = $state(readHideEmptyReaderPrompts());
+	hideEmptyReaderDescription = $state(readHideEmptyReaderDescription());
 	hideThreadSummary = $state(readHideThreadSummary());
 	showFolderUnreadCounts = $state(readShowFolderUnreadCounts());
 	showBulkSelect = $state(readShowBulkSelect());
@@ -938,6 +957,7 @@ class SettingsStore {
 	hideReaderTimestamps = $state(readHideReaderTimestamps());
 	hideCollapsedThreadPreviews = $state(readHideCollapsedThreadPreviews());
 	hideSettingsNavHints = $state(readHideSettingsNavHints());
+	hideSettingsPanelDescriptions = $state(readHideSettingsPanelDescriptions());
 	compactFolderSidebar = $state(readCompactFolderSidebar());
 	compactAttachments = $state(readCompactAttachments());
 	hideReaderSenderEmail = $state(readHideReaderSenderEmail());
@@ -988,6 +1008,7 @@ class SettingsStore {
 	hideSettingsBackLink = $state(readHideSettingsBackLink());
 	hideSettingsPageTitle = $state(readHideSettingsPageTitle());
 	hideReaderStatusBackButton = $state(readHideReaderStatusBackButton());
+	hideReaderStatusMessage = $state(readHideReaderStatusMessage());
 	compactExternalContentBanner = $state(readCompactExternalContentBanner());
 	compactContactsPage = $state(readCompactContactsPage());
 	compactContactsList = $state(readCompactContactsList());
@@ -1064,6 +1085,7 @@ class SettingsStore {
 		this.toolIconsOnly = readToolIconsOnly();
 		this.collapseQuotedInCompose = readCollapseQuotedInCompose();
 		this.hideEmptyReaderPrompts = readHideEmptyReaderPrompts();
+		this.hideEmptyReaderDescription = readHideEmptyReaderDescription();
 		this.hideThreadSummary = readHideThreadSummary();
 		this.showFolderUnreadCounts = readShowFolderUnreadCounts();
 		this.showBulkSelect = readShowBulkSelect();
@@ -1086,6 +1108,7 @@ class SettingsStore {
 		this.hideReaderTimestamps = readHideReaderTimestamps();
 		this.hideCollapsedThreadPreviews = readHideCollapsedThreadPreviews();
 		this.hideSettingsNavHints = readHideSettingsNavHints();
+		this.hideSettingsPanelDescriptions = readHideSettingsPanelDescriptions();
 		this.compactFolderSidebar = readCompactFolderSidebar();
 		this.compactAttachments = readCompactAttachments();
 		this.hideReaderSenderEmail = readHideReaderSenderEmail();
@@ -1136,6 +1159,7 @@ class SettingsStore {
 		this.hideSettingsBackLink = readHideSettingsBackLink();
 		this.hideSettingsPageTitle = readHideSettingsPageTitle();
 		this.hideReaderStatusBackButton = readHideReaderStatusBackButton();
+		this.hideReaderStatusMessage = readHideReaderStatusMessage();
 		this.compactExternalContentBanner = readCompactExternalContentBanner();
 		this.compactContactsPage = readCompactContactsPage();
 		this.compactContactsList = readCompactContactsList();
@@ -1367,6 +1391,13 @@ class SettingsStore {
 		}
 	}
 
+	setHideEmptyReaderDescription(value: boolean) {
+		this.hideEmptyReaderDescription = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideEmptyReaderDescription, String(value));
+		}
+	}
+
 	setHideThreadSummary(value: boolean) {
 		this.hideThreadSummary = value;
 		if (browser) {
@@ -1527,6 +1558,13 @@ class SettingsStore {
 		this.hideSettingsNavHints = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.hideSettingsNavHints, String(value));
+		}
+	}
+
+	setHideSettingsPanelDescriptions(value: boolean) {
+		this.hideSettingsPanelDescriptions = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideSettingsPanelDescriptions, String(value));
 		}
 	}
 
@@ -1878,6 +1916,13 @@ class SettingsStore {
 		this.hideReaderStatusBackButton = value;
 		if (browser) {
 			localStorage.setItem(STORAGE.hideReaderStatusBackButton, String(value));
+		}
+	}
+
+	setHideReaderStatusMessage(value: boolean) {
+		this.hideReaderStatusMessage = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideReaderStatusMessage, String(value));
 		}
 	}
 
@@ -2270,6 +2315,7 @@ class SettingsStore {
 		this.setToolIconsOnly(false);
 		this.setCollapseQuotedInCompose(false);
 		this.setHideEmptyReaderPrompts(false);
+		this.setHideEmptyReaderDescription(false);
 		this.setHideThreadSummary(false);
 		this.setShowFolderUnreadCounts(true);
 		this.setShowBulkSelect(true);
@@ -2300,6 +2346,7 @@ class SettingsStore {
 		this.setHideReaderTimestamps(false);
 		this.setHideCollapsedThreadPreviews(false);
 		this.setHideSettingsNavHints(false);
+		this.setHideSettingsPanelDescriptions(false);
 		this.setCompactFolderSidebar(false);
 		this.setCompactAttachments(false);
 		this.setHideReaderSenderEmail(false);
@@ -2350,6 +2397,7 @@ class SettingsStore {
 		this.setHideSettingsBackLink(false);
 		this.setHideSettingsPageTitle(false);
 		this.setHideReaderStatusBackButton(false);
+		this.setHideReaderStatusMessage(false);
 		this.setCompactExternalContentBanner(false);
 		this.setCompactContactsPage(false);
 		this.setCompactContactsList(false);
@@ -2416,6 +2464,7 @@ class SettingsStore {
 		this.setHideReaderTimestamps(true);
 		this.setHideCollapsedThreadPreviews(true);
 		this.setHideSettingsNavHints(true);
+		this.setHideSettingsPanelDescriptions(true);
 		this.setCompactFolderSidebar(true);
 		this.setCompactAttachments(true);
 		this.setHideReaderSenderEmail(true);
@@ -2466,6 +2515,7 @@ class SettingsStore {
 		this.setHideSettingsBackLink(true);
 		this.setHideSettingsPageTitle(true);
 		this.setHideReaderStatusBackButton(true);
+		this.setHideReaderStatusMessage(true);
 		this.setCompactExternalContentBanner(true);
 		this.setCompactContactsPage(true);
 		this.setCompactContactsList(true);
@@ -2511,6 +2561,7 @@ class SettingsStore {
 		this.setToolIconsOnly(true);
 		this.setCollapseQuotedInCompose(true);
 		this.setHideEmptyReaderPrompts(true);
+		this.setHideEmptyReaderDescription(true);
 		this.setHideThreadSummary(true);
 		this.setHideFolderSidebarHeader(true);
 		this.setHideFolderIcons(true);
@@ -2556,6 +2607,7 @@ class SettingsStore {
 			this.hideReaderRecipients,
 			this.hideThreadSummary,
 			this.hideEmptyReaderPrompts,
+			this.hideEmptyReaderDescription,
 			this.hideFolderSidebarHeader,
 			this.hideFolderIcons,
 			this.hideListHeader,
@@ -2575,6 +2627,7 @@ class SettingsStore {
 			this.hideReaderTimestamps,
 			this.hideCollapsedThreadPreviews,
 			this.hideSettingsNavHints,
+			this.hideSettingsPanelDescriptions,
 			this.compactFolderSidebar,
 			this.compactAttachments,
 			this.hideReaderSenderEmail,
@@ -2625,6 +2678,7 @@ class SettingsStore {
 			this.hideSettingsBackLink,
 			this.hideSettingsPageTitle,
 			this.hideReaderStatusBackButton,
+			this.hideReaderStatusMessage,
 			this.compactExternalContentBanner,
 			this.compactContactsPage,
 			this.compactContactsList,

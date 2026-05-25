@@ -35,9 +35,11 @@
 		</div>
 		<div>
 			<h2 class={cn('font-medium text-fg', settings.compactEmptyReader ? 'text-base' : 'text-lg')}>{title}</h2>
-			<p class={cn('mx-auto mt-2 max-w-sm text-fg-muted', settings.compactEmptyReader ? 'text-xs' : 'text-sm')}>
-				{description}
-			</p>
+			{#if !settings.hideEmptyReaderDescription}
+				<p class={cn('mx-auto mt-2 max-w-sm text-fg-muted', settings.compactEmptyReader ? 'text-xs' : 'text-sm')}>
+					{description}
+				</p>
+			{/if}
 		</div>
 	{/if}
 	{#if showComposeButton || showSettingsButton}

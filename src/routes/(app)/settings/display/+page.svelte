@@ -765,6 +765,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Hide empty reader description"
+			description="Keep the empty reading pane title but remove the explanatory paragraph below it"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideEmptyReaderDescription}
+				onchange={(e) => settings.setHideEmptyReaderDescription(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Compact empty reader"
 			description="Less padding and smaller text in the reading pane when no message is selected"
 		>
@@ -809,6 +821,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideReaderStatusBackButton}
 				onchange={(e) => settings.setHideReaderStatusBackButton(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide reader status message"
+			description="Show only the status heading on offline, not-found, and load-error screens — no detail text"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideReaderStatusMessage}
+				onchange={(e) => settings.setHideReaderStatusMessage(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>
@@ -1563,6 +1587,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideSettingsNavHints}
 				onchange={(e) => settings.setHideSettingsNavHints(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide settings panel descriptions"
+			description="Remove the intro paragraph under each settings section heading on Display, Mail, and Account"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideSettingsPanelDescriptions}
+				onchange={(e) => settings.setHideSettingsPanelDescriptions(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 
