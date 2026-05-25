@@ -40,7 +40,8 @@
 		<a
 			href={tool.href}
 			class={cn(
-				'flex items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors',
+				'flex items-center rounded-md text-sm transition-colors',
+				settings.compactToolSwitcher ? 'gap-1.5 px-2 py-1' : 'gap-2 px-2.5 py-1.5',
 				isActive ? 'bg-surface-sunken font-medium text-fg' : 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
 			)}
 			aria-current={isActive ? 'page' : undefined}

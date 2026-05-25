@@ -111,9 +111,11 @@
 			</button>
 
 			{#if contactMatches.length}
-				<p class="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-fg-subtle">
-					Contacts
-				</p>
+				{#if !settings.hideSearchDropdownHeaders}
+					<p class="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wide text-fg-subtle">
+						Contacts
+					</p>
+				{/if}
 				{#each contactMatches as contact (contact.email)}
 					<button
 						type="button"

@@ -721,6 +721,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Hide pane borders"
+			description="Remove divider lines between the header, folder sidebar, and message list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hidePaneBorders}
+				onchange={(e) => settings.setHidePaneBorders(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Hide app title"
 			description="Remove the ZAUR label from the top bar — the logo link still works for screen readers"
 		>
@@ -827,6 +839,30 @@
 				class="size-4 accent-accent"
 				checked={settings.toolIconsOnly}
 				onchange={(e) => settings.setToolIconsOnly(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact tool switcher"
+			description="Tighter padding on Mail, Calendar, and Home tabs in the top bar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactToolSwitcher}
+				onchange={(e) => settings.setCompactToolSwitcher(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide search dropdown headers"
+			description="Remove section labels like “Contacts” in the header search suggestions"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideSearchDropdownHeaders}
+				onchange={(e) => settings.setHideSearchDropdownHeaders(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

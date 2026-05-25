@@ -8,6 +8,7 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import type { MessagePreview } from '$lib/types/mail';
+	import { cn } from '$lib/utils/cn';
 
 	interface Props {
 		messages: MessagePreview[];
@@ -123,16 +124,21 @@
 </script>
 
 <section
-	class="z-panel flex min-h-0 w-full max-w-none flex-1 shrink-0 flex-col border-r md:flex-none {expanded
-		? 'md:w-auto md:max-w-none md:flex-1'
-		: 'md:w-(--width-list) md:max-w-(--width-list)'} {hideOnMobile ? 'hidden md:flex' : 'flex'}"
+	class={cn(
+		'z-panel flex min-h-0 w-full max-w-none flex-1 shrink-0 flex-col md:flex-none',
+		!settings.hidePaneBorders && 'border-r',
+		expanded ? 'md:w-auto md:max-w-none md:flex-1' : 'md:w-(--width-list) md:max-w-(--width-list)',
+		hideOnMobile ? 'hidden md:flex' : 'flex'
+	)}
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
 	<div
-		class="flex h-12 shrink-0 items-center gap-2 border-b border-border px-4 {settings.hideListHeader
-			? 'md:hidden'
-			: ''}"
+		class={cn(
+			'flex h-12 shrink-0 items-center gap-2 px-4',
+			!settings.hidePaneBorders && 'border-b border-border',
+			settings.hideListHeader ? 'md:hidden' : ''
+		)}
 	>
 		{#if mailboxRouteId}
 			<label class="min-w-0 flex-1 md:hidden">

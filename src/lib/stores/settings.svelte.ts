@@ -67,6 +67,9 @@ const STORAGE = {
 	compactReaderBody: 'zaur:compact-reader-body',
 	minimalLoadingStates: 'zaur:minimal-loading-states',
 	hideConnectingScreen: 'zaur:hide-connecting-screen',
+	compactToolSwitcher: 'zaur:compact-tool-switcher',
+	hideSearchDropdownHeaders: 'zaur:hide-search-dropdown-headers',
+	hidePaneBorders: 'zaur:hide-pane-borders',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -416,6 +419,21 @@ function readHideConnectingScreen(): boolean {
 	return localStorage.getItem(STORAGE.hideConnectingScreen) === 'true';
 }
 
+function readCompactToolSwitcher(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactToolSwitcher) === 'true';
+}
+
+function readHideSearchDropdownHeaders(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideSearchDropdownHeaders) === 'true';
+}
+
+function readHidePaneBorders(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hidePaneBorders) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -560,6 +578,9 @@ class SettingsStore {
 	compactReaderBody = $state(readCompactReaderBody());
 	minimalLoadingStates = $state(readMinimalLoadingStates());
 	hideConnectingScreen = $state(readHideConnectingScreen());
+	compactToolSwitcher = $state(readCompactToolSwitcher());
+	hideSearchDropdownHeaders = $state(readHideSearchDropdownHeaders());
+	hidePaneBorders = $state(readHidePaneBorders());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -642,6 +663,9 @@ class SettingsStore {
 		this.compactReaderBody = readCompactReaderBody();
 		this.minimalLoadingStates = readMinimalLoadingStates();
 		this.hideConnectingScreen = readHideConnectingScreen();
+		this.compactToolSwitcher = readCompactToolSwitcher();
+		this.hideSearchDropdownHeaders = readHideSearchDropdownHeaders();
+		this.hidePaneBorders = readHidePaneBorders();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -1127,6 +1151,27 @@ class SettingsStore {
 		}
 	}
 
+	setCompactToolSwitcher(value: boolean) {
+		this.compactToolSwitcher = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactToolSwitcher, String(value));
+		}
+	}
+
+	setHideSearchDropdownHeaders(value: boolean) {
+		this.hideSearchDropdownHeaders = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideSearchDropdownHeaders, String(value));
+		}
+	}
+
+	setHidePaneBorders(value: boolean) {
+		this.hidePaneBorders = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hidePaneBorders, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1326,6 +1371,9 @@ class SettingsStore {
 		this.setCompactReaderBody(false);
 		this.setMinimalLoadingStates(false);
 		this.setHideConnectingScreen(false);
+		this.setCompactToolSwitcher(false);
+		this.setHideSearchDropdownHeaders(false);
+		this.setHidePaneBorders(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1376,6 +1424,9 @@ class SettingsStore {
 		this.setCompactReaderBody(true);
 		this.setMinimalLoadingStates(true);
 		this.setHideConnectingScreen(true);
+		this.setCompactToolSwitcher(true);
+		this.setHideSearchDropdownHeaders(true);
+		this.setHidePaneBorders(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1468,6 +1519,9 @@ class SettingsStore {
 			this.compactReaderBody,
 			this.minimalLoadingStates,
 			this.hideConnectingScreen,
+			this.compactToolSwitcher,
+			this.hideSearchDropdownHeaders,
+			this.hidePaneBorders,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

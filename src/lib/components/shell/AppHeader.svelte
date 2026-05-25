@@ -12,12 +12,16 @@
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { outbox } from '$lib/stores/outbox.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { cn } from '$lib/utils/cn';
 
 	const homeHref = $derived(settings.skipHomeScreen ? settings.preferredMailHref() : '/');
 </script>
 
 <header
-	class="z-panel relative z-40 flex h-(--height-header) shrink-0 items-center gap-4 border-b px-4"
+	class={cn(
+		'z-panel relative z-40 flex h-(--height-header) shrink-0 items-center gap-4 px-4',
+		!settings.hidePaneBorders && 'border-b'
+	)}
 	style="view-transition-name: app-header;"
 >
 	<a href={homeHref} class="text-base font-semibold tracking-tight text-fg">
