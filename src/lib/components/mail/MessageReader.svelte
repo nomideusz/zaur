@@ -521,8 +521,7 @@
 			<section class={cn(index > 0 && !settings.hideReaderPaneBorders && 'border-t border-border')}>
 				{#if isExpanded(message)}
 					<div class={cn(settings.compactReaderBody ? 'px-4 py-3 md:px-5' : 'px-4 py-5 md:px-6')}>
-						<div class="w-full max-w-(--z-reader-measure)">
-						<div class="mb-4 flex flex-wrap items-start gap-3">
+						<div class="mb-4 flex items-start gap-3">
 							{#if settings.showAvatars}
 								<Avatar
 									name={message.from.name}
@@ -531,53 +530,34 @@
 								/>
 							{/if}
 							<div class="min-w-0 flex-1">
-								<div class="flex flex-wrap items-baseline justify-between gap-2">
-									<div class="min-w-0 text-sm">
-										<p class="font-medium text-fg">{message.from.name}</p>
-										{#if !settings.hideReaderSenderEmail}
-											<button
-												type="button"
-												class="text-left text-fg-muted hover:text-accent hover:underline"
-												onclick={() => composeTo(message.from.email)}
-											>
-												{message.from.email}
-											</button>
-										{/if}
-										{#if settings.showReaderContactActions}
-											<div class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
-												<button
-													type="button"
-													class="text-xs text-accent hover:underline"
-													onclick={() => saveContact(message)}
-												>
-													Save contact
-												</button>
-												<button
-													type="button"
-													class="text-xs text-fg-subtle hover:text-accent hover:underline"
-													onclick={() => copyEmail(message.from.email)}
-												>
-													Copy email
-												</button>
-											</div>
-										{/if}
+								<p class="text-sm font-medium text-fg">{message.from.name}</p>
+								{#if !settings.hideReaderSenderEmail}
+									<button
+										type="button"
+										class="text-left text-sm text-fg-muted hover:text-accent hover:underline"
+										onclick={() => composeTo(message.from.email)}
+									>
+										{message.from.email}
+									</button>
+								{/if}
+								{#if settings.showReaderContactActions}
+									<div class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+										<button
+											type="button"
+											class="text-xs text-accent hover:underline"
+											onclick={() => saveContact(message)}
+										>
+											Save contact
+										</button>
+										<button
+											type="button"
+											class="text-xs text-fg-subtle hover:text-accent hover:underline"
+											onclick={() => copyEmail(message.from.email)}
+										>
+											Copy email
+										</button>
 									</div>
-									<div class="flex items-center gap-2">
-										{#if !settings.hideReaderTimestamps}
-											<p class="text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</p>
-										{/if}
-										{#if thread.length > 1 && !settings.hideThreadCollapseButtons}
-											<button
-												type="button"
-												class="rounded p-1 text-fg-subtle hover:bg-surface-sunken hover:text-fg"
-												aria-label="Collapse message"
-												onclick={() => toggleMessage(message)}
-											>
-												<ChevronUp class="size-4" />
-											</button>
-										{/if}
-									</div>
-								</div>
+								{/if}
 								{#if !settings.hideReaderRecipients && message.to.length}
 									<p class="mt-1 text-xs text-fg-subtle">
 										To {message.to.map((addr) => addr.name || addr.email).join(', ')}
@@ -589,8 +569,22 @@
 									</p>
 								{/if}
 							</div>
+							{#if !settings.hideReaderTimestamps}
+								<span class="shrink-0 text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</span>
+							{/if}
+							{#if thread.length > 1 && !settings.hideThreadCollapseButtons}
+								<button
+									type="button"
+									class="shrink-0 rounded p-1 text-fg-subtle hover:bg-surface-sunken hover:text-fg"
+									aria-label="Collapse message"
+									onclick={() => toggleMessage(message)}
+								>
+									<ChevronUp class="size-4" />
+								</button>
+							{/if}
 						</div>
 
+						<div class="w-full max-w-(--z-reader-measure)">
 						{#if message.attachments.length}
 							<MessageAttachments attachments={message.attachments} />
 						{/if}
