@@ -37,9 +37,21 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/account-refresh-from-account",
+		"href": "/settings/account",
+		"title": "Refresh from account",
+		"description": ""
+	},
+	{
 		"id": "/settings/account-reset-you-settings",
 		"href": "/settings/account",
 		"title": "Reset you settings",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-sync-to-account",
+		"href": "/settings/account",
+		"title": "Sync to account",
 		"description": ""
 	},
 	{

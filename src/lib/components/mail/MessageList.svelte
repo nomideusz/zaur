@@ -147,11 +147,12 @@
 		class={cn(
 			'flex shrink-0 items-center gap-2 px-4',
 			settings.compactListHeader ? 'h-10' : 'h-12',
-			!settings.hidePaneBorders && 'border-b border-border',
-			settings.hideListHeader ? 'md:hidden' : '',
-			showBulkToolbar && 'hidden md:flex'
+			!settings.hidePaneBorders && 'border-b border-border'
 		)}
 	>
+		{#if showBulkToolbar && !mail.selectionMode}
+			<MessageListMasterCheckbox class="shrink-0" />
+		{/if}
 		{#if mailboxRouteId}
 			<label class="min-w-0 flex-1 md:hidden">
 				<span class="sr-only">Folder</span>
@@ -170,13 +171,21 @@
 				</select>
 			</label>
 		{/if}
-		{#if showBulkToolbar && !mail.selectionMode}
-			<MessageListMasterCheckbox class="hidden shrink-0 md:block" />
-		{/if}
-		<h2 class="hidden truncate text-sm font-semibold text-fg md:block">
+		<h2
+			class={cn(
+				'hidden truncate text-sm font-semibold text-fg md:block',
+				settings.hideListHeader && 'md:hidden'
+			)}
+		>
 			{mailboxName.startsWith('Search:') ? mailboxName.slice(8) : mailboxName}
 		</h2>
-		<span class="hidden shrink-0 text-xs text-fg-subtle md:inline">{settings.showMessageCounts ? countLabel : ''}</span>
+		<span
+			class={cn(
+				'hidden shrink-0 text-xs text-fg-subtle md:inline',
+				settings.hideListHeader && 'md:hidden',
+				!settings.showMessageCounts && 'md:hidden'
+			)}
+		>{countLabel}</span>
 		{#if mailboxRouteId}
 			<span class="ml-auto shrink-0 text-xs text-fg-subtle md:ml-2 md:hidden">{settings.showMessageCounts ? countLabel : ''}</span>
 		{:else if settings.showMessageCounts}
@@ -184,8 +193,8 @@
 		{/if}
 	</div>
 
-	{#if showBulkToolbar && mailboxRouteId}
-		<MessageListToolbar mailboxRouteId={mailboxRouteId} {countLabel} {onBulkAction} />
+	{#if showBulkToolbar && mailboxRouteId && mail.selectionMode}
+		<MessageListToolbar mailboxRouteId={mailboxRouteId} {onBulkAction} />
 	{/if}
 
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">

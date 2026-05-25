@@ -220,7 +220,7 @@
 
 	<SettingsRow
 		title="Hide list header on desktop"
-		description="Remove the folder title bar above messages — mobile folder picker stays"
+		description="Hide the folder title and count — the bulk-select checkbox stays visible when enabled"
 	>
 		<input
 			type="checkbox"
@@ -265,7 +265,7 @@
 <SettingsGroup title="Bulk selection" description="Multi-select messages for archive, move, and delete.">
 	<SettingsRow
 		title="Show bulk select"
-		description="Checkbox in the list toolbar to enter selection mode and select multiple messages"
+		description="Checkbox beside the folder name to select messages; archive, move, and delete appear while selecting"
 	>
 		<input
 			type="checkbox"
@@ -307,7 +307,7 @@
 
 		<SettingsRow
 			title="Compact bulk toolbar"
-			description="Less height on the selection toolbar above the message list"
+			description="Less height on the selection bar that replaces the folder name while messages are selected"
 		>
 			<input
 				type="checkbox"
