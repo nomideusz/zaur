@@ -19,8 +19,8 @@
 	<fieldset
 		disabled={!enabled}
 		class={cn(
-			'min-w-0 rounded-lg border border-border/50 border-l-[3px] transition-opacity',
-			enabled ? 'border-l-accent/50 bg-surface-sunken/30' : 'border-l-border bg-surface-sunken/15 opacity-55',
+			'min-w-0 rounded-lg border border-border/60 transition-opacity',
+			enabled ? 'bg-surface-sunken/25' : 'bg-surface-sunken/10 opacity-55',
 			settings.compactSettingsRows ? 'px-2.5 py-2' : 'px-3 py-2.5',
 			'grid gap-3 lg:grid-cols-2 lg:gap-4 xl:gap-5'
 		)}
