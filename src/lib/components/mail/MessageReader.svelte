@@ -281,7 +281,11 @@
 
 			<div class={cn('flex shrink-0 flex-wrap items-center justify-end', settings.compactReaderToolbar ? 'gap-0' : 'gap-0.5')}>
 				{#if !settings.minimalReaderToolbar}
-					<IconButton label={latest?.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
+					<IconButton
+						class="hidden md:inline-flex"
+						label={latest?.starred ? 'Unstar' : 'Star'}
+						onclick={toggleStar}
+					>
 						<Star
 							class={cn('size-4', latest?.starred && 'fill-star text-star')}
 							aria-hidden="true"
@@ -376,6 +380,25 @@
 									Mark as unread
 								{/if}
 							</button>
+							{#if !settings.minimalReaderToolbar}
+								<button
+									type="button"
+									class={moreMenuItemClass}
+									onclick={() => {
+										moreOpen = false;
+										toggleStar();
+									}}
+								>
+									<Star
+										class={cn(
+											'size-4 shrink-0',
+											latest?.starred && 'fill-star text-star'
+										)}
+										aria-hidden="true"
+									/>
+									{latest?.starred ? 'Unstar' : 'Star'}
+								</button>
+							{/if}
 							{#if !settings.minimalReaderToolbar}
 								{#if settings.defaultReplyMode === 'reply-all'}
 									<button
