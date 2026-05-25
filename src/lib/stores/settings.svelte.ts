@@ -96,6 +96,9 @@ const STORAGE = {
 	compactAppHeader: 'zaur:compact-app-header',
 	compactEmptyReader: 'zaur:compact-empty-reader',
 	compactSettingsNav: 'zaur:compact-settings-nav',
+	hideSettingsBackLink: 'zaur:hide-settings-back-link',
+	hideSettingsPageTitle: 'zaur:hide-settings-page-title',
+	hideReaderStatusBackButton: 'zaur:hide-reader-status-back-button',
 	compactExternalContentBanner: 'zaur:compact-external-content-banner',
 	compactContactsPage: 'zaur:compact-contacts-page',
 	compactContactsList: 'zaur:compact-contacts-list',
@@ -624,6 +627,21 @@ function readCompactSettingsNav(): boolean {
 	return localStorage.getItem(STORAGE.compactSettingsNav) === 'true';
 }
 
+function readHideSettingsBackLink(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideSettingsBackLink) === 'true';
+}
+
+function readHideSettingsPageTitle(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideSettingsPageTitle) === 'true';
+}
+
+function readHideReaderStatusBackButton(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideReaderStatusBackButton) === 'true';
+}
+
 function readCompactExternalContentBanner(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactExternalContentBanner) === 'true';
@@ -967,6 +985,9 @@ class SettingsStore {
 	compactAppHeader = $state(readCompactAppHeader());
 	compactEmptyReader = $state(readCompactEmptyReader());
 	compactSettingsNav = $state(readCompactSettingsNav());
+	hideSettingsBackLink = $state(readHideSettingsBackLink());
+	hideSettingsPageTitle = $state(readHideSettingsPageTitle());
+	hideReaderStatusBackButton = $state(readHideReaderStatusBackButton());
 	compactExternalContentBanner = $state(readCompactExternalContentBanner());
 	compactContactsPage = $state(readCompactContactsPage());
 	compactContactsList = $state(readCompactContactsList());
@@ -1112,6 +1133,9 @@ class SettingsStore {
 		this.compactAppHeader = readCompactAppHeader();
 		this.compactEmptyReader = readCompactEmptyReader();
 		this.compactSettingsNav = readCompactSettingsNav();
+		this.hideSettingsBackLink = readHideSettingsBackLink();
+		this.hideSettingsPageTitle = readHideSettingsPageTitle();
+		this.hideReaderStatusBackButton = readHideReaderStatusBackButton();
 		this.compactExternalContentBanner = readCompactExternalContentBanner();
 		this.compactContactsPage = readCompactContactsPage();
 		this.compactContactsList = readCompactContactsList();
@@ -1836,6 +1860,27 @@ class SettingsStore {
 		}
 	}
 
+	setHideSettingsBackLink(value: boolean) {
+		this.hideSettingsBackLink = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideSettingsBackLink, String(value));
+		}
+	}
+
+	setHideSettingsPageTitle(value: boolean) {
+		this.hideSettingsPageTitle = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideSettingsPageTitle, String(value));
+		}
+	}
+
+	setHideReaderStatusBackButton(value: boolean) {
+		this.hideReaderStatusBackButton = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideReaderStatusBackButton, String(value));
+		}
+	}
+
 	setCompactExternalContentBanner(value: boolean) {
 		this.compactExternalContentBanner = value;
 		if (browser) {
@@ -2302,6 +2347,9 @@ class SettingsStore {
 		this.setCompactAppHeader(false);
 		this.setCompactEmptyReader(false);
 		this.setCompactSettingsNav(false);
+		this.setHideSettingsBackLink(false);
+		this.setHideSettingsPageTitle(false);
+		this.setHideReaderStatusBackButton(false);
 		this.setCompactExternalContentBanner(false);
 		this.setCompactContactsPage(false);
 		this.setCompactContactsList(false);
@@ -2415,6 +2463,9 @@ class SettingsStore {
 		this.setCompactAppHeader(true);
 		this.setCompactEmptyReader(true);
 		this.setCompactSettingsNav(true);
+		this.setHideSettingsBackLink(true);
+		this.setHideSettingsPageTitle(true);
+		this.setHideReaderStatusBackButton(true);
 		this.setCompactExternalContentBanner(true);
 		this.setCompactContactsPage(true);
 		this.setCompactContactsList(true);
@@ -2571,6 +2622,9 @@ class SettingsStore {
 			this.compactAppHeader,
 			this.compactEmptyReader,
 			this.compactSettingsNav,
+			this.hideSettingsBackLink,
+			this.hideSettingsPageTitle,
+			this.hideReaderStatusBackButton,
 			this.compactExternalContentBanner,
 			this.compactContactsPage,
 			this.compactContactsList,

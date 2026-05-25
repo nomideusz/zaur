@@ -22,14 +22,18 @@
 	)}
 >
 	<header class="md:hidden">
-		<a
-			href={mailHref}
-			class="mb-4 inline-flex items-center gap-1.5 text-sm text-fg-muted transition-colors hover:text-fg"
-		>
-			<ArrowLeft class="size-4" aria-hidden="true" />
-			Back to mail
-		</a>
-		<h1 class="mb-3 text-lg font-semibold text-fg">Settings</h1>
+		{#if !settings.hideSettingsBackLink}
+			<a
+				href={mailHref}
+				class="mb-4 inline-flex items-center gap-1.5 text-sm text-fg-muted transition-colors hover:text-fg"
+			>
+				<ArrowLeft class="size-4" aria-hidden="true" />
+				Back to mail
+			</a>
+		{/if}
+		{#if !settings.hideSettingsPageTitle}
+			<h1 class="mb-3 text-lg font-semibold text-fg">Settings</h1>
+		{/if}
 		<nav class="flex gap-1 overflow-x-auto pb-1">
 			{#each links as link}
 				<a
@@ -49,14 +53,18 @@
 	</header>
 
 	<aside class="hidden w-52 shrink-0 md:block">
-		<a
-			href={mailHref}
-			class="mb-4 inline-flex items-center gap-1.5 text-sm text-fg-muted transition-colors hover:text-fg"
-		>
-			<ArrowLeft class="size-4" aria-hidden="true" />
-			Back to mail
-		</a>
-		<h1 class="mb-4 text-lg font-semibold text-fg">Settings</h1>
+		{#if !settings.hideSettingsBackLink}
+			<a
+				href={mailHref}
+				class="mb-4 inline-flex items-center gap-1.5 text-sm text-fg-muted transition-colors hover:text-fg"
+			>
+				<ArrowLeft class="size-4" aria-hidden="true" />
+				Back to mail
+			</a>
+		{/if}
+		{#if !settings.hideSettingsPageTitle}
+			<h1 class="mb-4 text-lg font-semibold text-fg">Settings</h1>
+		{/if}
 		<nav class="space-y-1">
 			{#each links as link}
 				<a

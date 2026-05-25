@@ -799,6 +799,18 @@
 				onchange={(e) => settings.setCompactReaderInlineError(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Hide reader status back button"
+			description="Remove the Back to list button on offline, not-found, and load-error screens"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideReaderStatusBackButton}
+				onchange={(e) => settings.setHideReaderStatusBackButton(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Compose">
@@ -1599,6 +1611,30 @@
 				class="size-4 accent-accent"
 				checked={settings.compactSettingsNav}
 				onchange={(e) => settings.setCompactSettingsNav(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide settings back link"
+			description="Remove the Back to mail link above settings navigation"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideSettingsBackLink}
+				onchange={(e) => settings.setHideSettingsBackLink(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide settings page title"
+			description="Remove the Settings heading above the sidebar and mobile tabs"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideSettingsPageTitle}
+				onchange={(e) => settings.setHideSettingsPageTitle(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

@@ -46,7 +46,7 @@
 		</p>
 	</div>
 
-	{#if onBack}
+	{#if onBack && !settings.hideReaderStatusBackButton}
 		<Button variant="ghost" onclick={onBack}>
 			<ArrowLeft class="size-4" aria-hidden="true" />
 			Back to list
