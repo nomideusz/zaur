@@ -398,8 +398,6 @@
 									/>
 									{latest?.starred ? 'Unstar' : 'Star'}
 								</button>
-							{/if}
-							{#if !settings.minimalReaderToolbar}
 								{#if settings.defaultReplyMode === 'reply-all'}
 									<button
 										type="button"
@@ -549,20 +547,22 @@
 											</button>
 										{/if}
 										{#if settings.showReaderContactActions}
-											<button
-												type="button"
-												class="mt-1 text-xs text-accent hover:underline"
-												onclick={() => saveContact(message)}
-											>
-												Save contact
-											</button>
-											<button
-												type="button"
-												class="mt-1 ml-3 text-xs text-fg-subtle hover:text-accent hover:underline"
-												onclick={() => copyEmail(message.from.email)}
-											>
-												Copy email
-											</button>
+											<div class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+												<button
+													type="button"
+													class="text-xs text-accent hover:underline"
+													onclick={() => saveContact(message)}
+												>
+													Save contact
+												</button>
+												<button
+													type="button"
+													class="text-xs text-fg-subtle hover:text-accent hover:underline"
+													onclick={() => copyEmail(message.from.email)}
+												>
+													Copy email
+												</button>
+											</div>
 										{/if}
 									</div>
 									<div class="flex items-center gap-2">
