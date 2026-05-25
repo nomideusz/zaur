@@ -49,7 +49,11 @@ class ComposeStore {
 	}
 
 	get canSend() {
-		return !this.isSending && !this.hasUploadingAttachments;
+		return (
+			!this.isSending &&
+			!this.hasUploadingAttachments &&
+			parseAddressList(this.to).length > 0
+		);
 	}
 
 	startNew() {
@@ -381,7 +385,8 @@ class ComposeStore {
 	}
 
 	private async persistLocalDraft() {
-		if (!browser || this.mode !== 'new') return;
+		if (!browser) return;
+		if (this.mode !== 'new' && !this.attachments.length) return;
 		if (!this.to && !this.cc && !this.bcc && !this.subject && !this.body && !this.attachments.length) {
 			await this.clearLocalDraft();
 			return;
