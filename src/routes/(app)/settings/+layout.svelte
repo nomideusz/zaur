@@ -2,6 +2,7 @@
 	import { page } from '$app/stores';
 	import { ArrowLeft } from 'lucide-svelte';
 	import { cn } from '$lib/utils/cn';
+	import { settings } from '$lib/stores/settings.svelte';
 
 	const links = [
 		{ href: '/settings/display', label: 'Display', hint: 'Layout, reading, navigation' },
@@ -10,12 +11,14 @@
 	];
 
 	let { children } = $props();
+
+	const mailHref = $derived(settings.preferredMailHref());
 </script>
 
 <div class="mx-auto flex min-h-0 w-full max-w-4xl flex-1 flex-col gap-6 overflow-y-auto p-6 md:flex-row md:gap-8 md:p-8">
 	<header class="md:hidden">
 		<a
-			href="/mail/inbox"
+			href={mailHref}
 			class="mb-4 inline-flex items-center gap-1.5 text-sm text-fg-muted transition-colors hover:text-fg"
 		>
 			<ArrowLeft class="size-4" aria-hidden="true" />
@@ -41,7 +44,7 @@
 
 	<aside class="hidden w-52 shrink-0 md:block">
 		<a
-			href="/mail/inbox"
+			href={mailHref}
 			class="mb-4 inline-flex items-center gap-1.5 text-sm text-fg-muted transition-colors hover:text-fg"
 		>
 			<ArrowLeft class="size-4" aria-hidden="true" />
@@ -67,7 +70,9 @@
 					>
 						{link.label}
 					</span>
-					<span class="block text-xs text-fg-muted">{link.hint}</span>
+					{#if !settings.hideSettingsNavHints}
+						<span class="block text-xs text-fg-muted">{link.hint}</span>
+					{/if}
 				</a>
 			{/each}
 		</nav>
@@ -75,5 +80,7 @@
 
 	<div class="min-w-0 flex-1">{@render children()}</div>
 
-	<p class="text-center text-xs text-fg-subtle md:text-left">Settings are saved locally in this browser.</p>
+	{#if !settings.hideSettingsNavHints}
+		<p class="text-center text-xs text-fg-subtle md:text-left">Settings are saved locally in this browser.</p>
+	{/if}
 </div>

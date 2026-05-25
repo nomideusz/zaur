@@ -48,6 +48,9 @@ const STORAGE = {
 	hideSelectionHints: 'zaur:hide-selection-hints',
 	hideReaderTimestamps: 'zaur:hide-reader-timestamps',
 	hideCollapsedThreadPreviews: 'zaur:hide-collapsed-thread-previews',
+	hideSettingsNavHints: 'zaur:hide-settings-nav-hints',
+	compactFolderSidebar: 'zaur:compact-folder-sidebar',
+	compactAttachments: 'zaur:compact-attachments',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
@@ -302,6 +305,21 @@ function readHideCollapsedThreadPreviews(): boolean {
 	return localStorage.getItem(STORAGE.hideCollapsedThreadPreviews) === 'true';
 }
 
+function readHideSettingsNavHints(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideSettingsNavHints) === 'true';
+}
+
+function readCompactFolderSidebar(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactFolderSidebar) === 'true';
+}
+
+function readCompactAttachments(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.compactAttachments) === 'true';
+}
+
 function readLastMailbox(): string {
 	if (!browser) return 'inbox';
 	const saved = localStorage.getItem(STORAGE.lastMailbox);
@@ -427,6 +445,9 @@ class SettingsStore {
 	hideSelectionHints = $state(readHideSelectionHints());
 	hideReaderTimestamps = $state(readHideReaderTimestamps());
 	hideCollapsedThreadPreviews = $state(readHideCollapsedThreadPreviews());
+	hideSettingsNavHints = $state(readHideSettingsNavHints());
+	compactFolderSidebar = $state(readCompactFolderSidebar());
+	compactAttachments = $state(readCompactAttachments());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
@@ -490,6 +511,9 @@ class SettingsStore {
 		this.hideSelectionHints = readHideSelectionHints();
 		this.hideReaderTimestamps = readHideReaderTimestamps();
 		this.hideCollapsedThreadPreviews = readHideCollapsedThreadPreviews();
+		this.hideSettingsNavHints = readHideSettingsNavHints();
+		this.compactFolderSidebar = readCompactFolderSidebar();
+		this.compactAttachments = readCompactAttachments();
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
@@ -842,6 +866,27 @@ class SettingsStore {
 		}
 	}
 
+	setHideSettingsNavHints(value: boolean) {
+		this.hideSettingsNavHints = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideSettingsNavHints, String(value));
+		}
+	}
+
+	setCompactFolderSidebar(value: boolean) {
+		this.compactFolderSidebar = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactFolderSidebar, String(value));
+		}
+	}
+
+	setCompactAttachments(value: boolean) {
+		this.compactAttachments = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.compactAttachments, String(value));
+		}
+	}
+
 	setLastMailbox(routeId: string) {
 		if (!browser || !routeId.trim()) return;
 		localStorage.setItem(STORAGE.lastMailbox, routeId.trim());
@@ -1022,6 +1067,9 @@ class SettingsStore {
 		this.setHideSelectionHints(false);
 		this.setHideReaderTimestamps(false);
 		this.setHideCollapsedThreadPreviews(false);
+		this.setHideSettingsNavHints(false);
+		this.setCompactFolderSidebar(false);
+		this.setCompactAttachments(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
 		this.setSkipHomeScreen(false);
@@ -1053,6 +1101,9 @@ class SettingsStore {
 		this.setHideSelectionHints(true);
 		this.setHideReaderTimestamps(true);
 		this.setHideCollapsedThreadPreviews(true);
+		this.setHideSettingsNavHints(true);
+		this.setCompactFolderSidebar(true);
+		this.setCompactAttachments(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
 		this.setExpandListUntilOpen(true);
@@ -1125,6 +1176,9 @@ class SettingsStore {
 			this.hideSelectionHints,
 			this.hideReaderTimestamps,
 			this.hideCollapsedThreadPreviews,
+			this.hideSettingsNavHints,
+			this.compactFolderSidebar,
+			this.compactAttachments,
 			this.rememberLastMailbox
 		];
 		return flags.filter(Boolean).length;

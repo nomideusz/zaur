@@ -405,6 +405,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact attachments"
+			description="Smaller attachment chips without the count label or file sizes"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactAttachments}
+				onchange={(e) => settings.setCompactAttachments(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Hide empty reader prompts"
 			description="Leave the reading pane blank until a message is selected — no compose or settings nudges"
 		>
@@ -501,6 +513,18 @@
 				class="size-4 accent-accent"
 				checked={settings.hideFolderIcons}
 				onchange={(e) => settings.setHideFolderIcons(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact folder sidebar"
+			description="Tighter spacing on folder rows and sidebar padding"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactFolderSidebar}
+				onchange={(e) => settings.setCompactFolderSidebar(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 
@@ -659,6 +683,20 @@
 				class="size-4 accent-accent"
 				checked={settings.showSearchContactSuggestions}
 				onchange={(e) => settings.setShowSearchContactSuggestions(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsGroup>
+
+	<SettingsGroup title="Settings page">
+		<SettingsRow
+			title="Hide settings nav hints"
+			description="Remove section descriptions under Display, Mail, and Account — and the local storage note"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideSettingsNavHints}
+				onchange={(e) => settings.setHideSettingsNavHints(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>

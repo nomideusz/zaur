@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { FileText, LoaderCircle } from 'lucide-svelte';
 	import { downloadAttachment } from '$lib/attachments/download';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { cn } from '$lib/utils/cn';
 	import type { MessageAttachment } from '$lib/types/mail';
 
 	interface Props {
@@ -32,15 +34,20 @@
 </script>
 
 <div class="mb-4">
-	<p class="mb-2 text-xs text-fg-subtle">
-		{attachments.length === 1 ? '1 attachment' : `${attachments.length} attachments`}
-	</p>
+	{#if !settings.compactAttachments}
+		<p class="mb-2 text-xs text-fg-subtle">
+			{attachments.length === 1 ? '1 attachment' : `${attachments.length} attachments`}
+		</p>
+	{/if}
 	<ul class="flex flex-wrap gap-2">
 		{#each attachments as attachment (attachment.blobId)}
 			<li>
 				<button
 					type="button"
-					class="inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-surface-raised px-3 py-2 text-xs text-fg transition-colors hover:bg-surface-sunken disabled:opacity-60"
+					class={cn(
+						'inline-flex max-w-full items-center gap-2 rounded-md border border-border bg-surface-raised text-xs text-fg transition-colors hover:bg-surface-sunken disabled:opacity-60',
+						settings.compactAttachments ? 'px-2 py-1' : 'px-3 py-2'
+					)}
 					disabled={downloadingId === attachment.blobId}
 					onclick={() => handleDownload(attachment)}
 				>
@@ -50,7 +57,7 @@
 						<FileText class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
 					{/if}
 					<span class="max-w-48 truncate font-medium">{attachment.name}</span>
-					{#if attachment.size}
+					{#if !settings.compactAttachments && attachment.size}
 						<span class="text-fg-subtle">{formatSize(attachment.size)}</span>
 					{/if}
 				</button>

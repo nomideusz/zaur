@@ -34,7 +34,8 @@
 	<a
 		{href}
 		class={cn(
-			'flex items-center gap-2.5 rounded-md py-2 text-sm transition-colors',
+			'flex items-center gap-2.5 rounded-md text-sm transition-colors',
+			settings.compactFolderSidebar ? 'py-1.5' : 'py-2',
 			isActive
 				? 'bg-surface-sunken font-medium text-fg'
 				: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
