@@ -2,8 +2,7 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import { settings, type ListDensity, type ReaderTextSize } from '$lib/stores/settings.svelte';
-	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="Getting around" description="Home screen, tools, search, and folders.">
@@ -300,18 +299,6 @@
 				/>
 			</SettingsRow>
 		</SettingsDepends>
-
-		<SettingsRow
-			title="Hide search list prefix"
-			description="Show the query alone in search results — no “Search:” label"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideSearchListPrefix}
-				onchange={(e) => settings.setHideSearchListPrefix(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
 
 		<SettingsRow
 			title="Compact mobile search"

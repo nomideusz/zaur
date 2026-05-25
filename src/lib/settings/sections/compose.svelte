@@ -148,6 +148,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact attachments"
+			description="Smaller attachment chips without the count label or file sizes — in reader and compose"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactAttachments}
+				onchange={(e) => settings.setCompactAttachments(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Compose contact suggestions"
 			description="Autocomplete contacts while typing recipients"
 		>

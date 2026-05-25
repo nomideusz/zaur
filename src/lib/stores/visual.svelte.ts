@@ -52,6 +52,12 @@ class VisualStore {
 		this.apply();
 	}
 
+	resetToDefaults() {
+		this.setAccentColor('blue');
+		this.setCornerStyle('default');
+		this.setSurfaceStyle('default');
+	}
+
 	private apply() {
 		if (!browser) return;
 		applyVisualPreferences(document.documentElement, {

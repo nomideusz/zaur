@@ -2,14 +2,13 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import { settings, type ListDensity, type ReaderTextSize } from '$lib/stores/settings.svelte';
-	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="Panels & chrome" description="Sidebar, list, and header spacing.">
 		<SettingsRow
 			title="Compact layout"
-			description="Narrower folder sidebar and message list — more room for reading on desktop"
+			description="Narrower folder sidebar and message list on desktop — separate from list density in Inbox"
 		>
 			<input
 				type="checkbox"
@@ -198,6 +197,30 @@
 				class="size-4 accent-accent"
 				checked={settings.compactUserMenuDropdown}
 				onchange={(e) => settings.setCompactUserMenuDropdown(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Expand list until opened"
+			description="Use the full width for the message list on desktop until you pick a message"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.expandListUntilOpen}
+				onchange={(e) => settings.setExpandListUntilOpen(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact folder sidebar error"
+			description="Smaller folder load error message and retry button in the sidebar"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactFolderSidebarError}
+				onchange={(e) => settings.setCompactFolderSidebarError(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

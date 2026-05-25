@@ -96,6 +96,37 @@
 			/>
 		</SettingsRow>
 
+		<SettingsRow
+			title="Auto-load more messages"
+			description="Load older messages automatically when you scroll to the bottom of the list"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.autoLoadMore}
+				onchange={(e) => settings.setAutoLoadMore(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsDepends
+			enabled={settings.autoLoadMore}
+			inactiveReason={settings.autoLoadMore
+				? 'Load-more area appearance'
+				: 'Only applies when auto-load is enabled — use Load more button otherwise'}
+		>
+			<SettingsRow
+				title="Compact load more"
+				description="Tighter spacing for the load-more area at the bottom of the message list"
+			>
+				<input
+					type="checkbox"
+					class="size-4 accent-accent"
+					checked={settings.compactLoadMore}
+					onchange={(e) => settings.setCompactLoadMore(e.currentTarget.checked)}
+				/>
+			</SettingsRow>
+		</SettingsDepends>
+
 		<SettingsDepends
 			enabled={settings.enableKeyboardShortcuts}
 			inactiveReason={settings.enableKeyboardShortcuts

@@ -14,7 +14,7 @@ const ALL_LINKS: SettingsNavLink[] = [
 	{
 		href: '/settings/appearance',
 		label: 'Look & feel',
-		hint: 'Theme and motion',
+		hint: 'Accent, theme, and motion',
 		section: 'customize'
 	},
 	{ href: '/settings/inbox', label: 'Inbox', hint: 'Message list layout', section: 'customize' },

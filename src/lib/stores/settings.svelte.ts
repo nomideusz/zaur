@@ -2928,6 +2928,20 @@ class SettingsStore {
 		this.setSkipHomeScreen(false);
 		this.setHideSidebarShortcuts(false);
 		this.setMailOnlyNavigation(false);
+		void import('$lib/stores/visual.svelte').then(({ visual }) => visual.resetToDefaults());
+		void import('$lib/stores/theme.svelte').then(({ theme }) => theme.set('system'));
+	}
+
+	resetLookAndFeel() {
+		void import('$lib/stores/visual.svelte').then(({ visual }) => visual.resetToDefaults());
+		void import('$lib/stores/theme.svelte').then(({ theme }) => theme.set('system'));
+		this.setReduceMotion(false);
+		this.setLoadingIndicatorStyle('skeleton');
+		this.setCompactListLoadingSkeleton(false);
+		this.setCompactReaderSkeleton(false);
+		this.setCompactFolderLoadingSkeleton(false);
+		this.setCompactFolderSidebarError(false);
+		this.setHideConnectingScreen(false);
 	}
 
 	applySimpleMode() {

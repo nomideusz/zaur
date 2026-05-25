@@ -5,38 +5,41 @@
 </script>
 
 <SettingsGroup title="Defaults" description="Restore or simplify your setup.">
-		<SettingsRow
-			title="Apply simple mode"
-			description="One step to a minimal mail-only layout — you can still tweak individual options afterward"
+	<SettingsRow
+		title="Apply simple mode"
+		description="One step to a minimal mail-only layout — you can still tweak individual options afterward"
+	>
+		<button
+			type="button"
+			class="z-btn-ghost text-sm"
+			onclick={() => {
+				if (confirm('Apply simple mode? This updates many display and navigation settings at once.')) {
+					settings.applySimpleMode();
+				}
+			}}
 		>
-			<button
-				type="button"
-				class="z-btn-ghost text-sm"
-				onclick={() => {
-					if (confirm('Apply simple mode? This updates many display and navigation settings at once.')) {
-						settings.applySimpleMode();
-					}
-				}}
-			>
-				Apply
-			</button>
-		</SettingsRow>
+			Apply
+		</button>
+	</SettingsRow>
 
-		<SettingsRow
-			title="Restore display defaults"
-			description="Reset all options on this page to their original values"
+	<SettingsRow
+		title="Reset all display & layout settings"
+		description="Reset every display, layout, and navigation option across the app — not mail behavior like notifications"
+	>
+		<button
+			type="button"
+			class="z-btn-ghost text-sm"
+			onclick={() => {
+				if (
+					confirm(
+						'Reset all display and layout settings to defaults? Mail behavior (notifications, shortcuts) is unchanged.'
+					)
+				) {
+					settings.resetDisplaySettings();
+				}
+			}}
 		>
-			<button
-				type="button"
-				class="z-btn-ghost text-sm"
-				onclick={() => {
-					if (confirm('Reset all display and navigation settings to defaults?')) {
-						settings.resetDisplaySettings();
-					}
-				}}
-			>
-				Reset
-			</button>
-		</SettingsRow>
-
+			Reset
+		</button>
+	</SettingsRow>
 </SettingsGroup>
