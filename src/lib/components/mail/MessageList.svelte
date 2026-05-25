@@ -122,8 +122,8 @@
 
 <section
 	class={cn(
-		'z-panel flex min-h-0 w-full max-w-none flex-1 shrink-0 flex-col md:flex-none',
-		!settings.hidePaneBorders && 'border-r',
+		'flex min-h-0 w-full max-w-none flex-1 shrink-0 flex-col bg-surface-raised md:flex-none',
+		!settings.hidePaneBorders && 'border-r border-border',
 		expanded ? 'md:w-auto md:max-w-none md:flex-1' : 'md:w-(--width-list) md:max-w-(--width-list)',
 		hideOnMobile ? 'hidden md:flex' : 'flex'
 	)}
