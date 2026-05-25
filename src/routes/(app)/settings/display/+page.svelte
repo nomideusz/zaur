@@ -271,6 +271,30 @@
 				onchange={(e) => settings.setMinimalReaderToolbar(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Hide thread summary"
+			description="Do not show message count and expand/collapse controls under the subject"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideThreadSummary}
+				onchange={(e) => settings.setHideThreadSummary(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide empty reader prompts"
+			description="Leave the reading pane blank until a message is selected — no compose or settings nudges"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideEmptyReaderPrompts}
+				onchange={(e) => settings.setHideEmptyReaderPrompts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Compose">

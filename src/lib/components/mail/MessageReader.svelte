@@ -246,7 +246,7 @@
 				<div class="max-w-(--z-reader-measure)">
 				<h1 class="line-clamp-2 text-lg font-semibold leading-snug text-fg md:text-xl">{subject}</h1>
 
-				{#if thread.length > 1}
+				{#if thread.length > 1 && !settings.hideThreadSummary}
 					<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
 						<span>{thread.length} messages</span>
 						{#if collapsedCount > 0}

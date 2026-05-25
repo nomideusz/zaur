@@ -70,6 +70,37 @@
 				onchange={(e) => settings.setConfirmBeforeDelete(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow
+			title="Confirm before discarding compose"
+			description="Ask when closing compose with unsent content"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.confirmBeforeDiscardCompose}
+				onchange={(e) => settings.setConfirmBeforeDiscardCompose(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsGroup>
+
+	<SettingsGroup title="Reset">
+		<SettingsRow
+			title="Restore mail defaults"
+			description="Reset notifications, shortcuts, and confirmation options on this page"
+		>
+			<button
+				type="button"
+				class="z-btn-ghost text-sm"
+				onclick={() => {
+					if (confirm('Reset all mail behavior settings to defaults?')) {
+						settings.resetMailSettings();
+					}
+				}}
+			>
+				Reset
+			</button>
+		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Keyboard shortcuts">

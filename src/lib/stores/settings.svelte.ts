@@ -20,6 +20,8 @@ const STORAGE = {
 	hideReaderRecipients: 'zaur:hide-reader-recipients',
 	toolIconsOnly: 'zaur:tool-icons-only',
 	collapseQuotedInCompose: 'zaur:collapse-quoted-in-compose',
+	hideEmptyReaderPrompts: 'zaur:hide-empty-reader-prompts',
+	hideThreadSummary: 'zaur:hide-thread-summary',
 	showFolderUnreadCounts: 'zaur:show-folder-unread-counts',
 	showBulkSelect: 'zaur:show-bulk-select',
 	hideHeaderSearch: 'zaur:hide-header-search',
@@ -34,6 +36,7 @@ const STORAGE = {
 	mailOnlyNavigation: 'zaur:mail-only-navigation',
 	enableKeyboardShortcuts: 'zaur:enable-keyboard-shortcuts',
 	confirmBeforeDelete: 'zaur:confirm-before-delete',
+	confirmBeforeDiscardCompose: 'zaur:confirm-before-discard-compose',
 	skipHomeScreen: 'zaur:skip-home-screen',
 	readerTextSize: 'zaur:reader-text-size',
 	markAsReadOnOpen: 'zaur:mark-read-on-open',
@@ -133,6 +136,16 @@ function readCollapseQuotedInCompose(): boolean {
 	return localStorage.getItem(STORAGE.collapseQuotedInCompose) === 'true';
 }
 
+function readHideEmptyReaderPrompts(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideEmptyReaderPrompts) === 'true';
+}
+
+function readHideThreadSummary(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideThreadSummary) === 'true';
+}
+
 function readShowFolderUnreadCounts(): boolean {
 	if (!browser) return true;
 	return localStorage.getItem(STORAGE.showFolderUnreadCounts) !== 'false';
@@ -203,6 +216,11 @@ function readConfirmBeforeDelete(): boolean {
 	return localStorage.getItem(STORAGE.confirmBeforeDelete) !== 'false';
 }
 
+function readConfirmBeforeDiscardCompose(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.confirmBeforeDiscardCompose) !== 'false';
+}
+
 function readSkipHomeScreen(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.skipHomeScreen) === 'true';
@@ -254,6 +272,8 @@ class SettingsStore {
 	hideReaderRecipients = $state(readHideReaderRecipients());
 	toolIconsOnly = $state(readToolIconsOnly());
 	collapseQuotedInCompose = $state(readCollapseQuotedInCompose());
+	hideEmptyReaderPrompts = $state(readHideEmptyReaderPrompts());
+	hideThreadSummary = $state(readHideThreadSummary());
 	showFolderUnreadCounts = $state(readShowFolderUnreadCounts());
 	showBulkSelect = $state(readShowBulkSelect());
 	hideHeaderSearch = $state(readHideHeaderSearch());
@@ -268,6 +288,7 @@ class SettingsStore {
 	mailOnlyNavigation = $state(readMailOnlyNavigation());
 	enableKeyboardShortcuts = $state(readEnableKeyboardShortcuts());
 	confirmBeforeDelete = $state(readConfirmBeforeDelete());
+	confirmBeforeDiscardCompose = $state(readConfirmBeforeDiscardCompose());
 	skipHomeScreen = $state(readSkipHomeScreen());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	markAsReadOnOpen = $state(readMarkAsReadOnOpen());
@@ -294,6 +315,8 @@ class SettingsStore {
 		this.hideReaderRecipients = readHideReaderRecipients();
 		this.toolIconsOnly = readToolIconsOnly();
 		this.collapseQuotedInCompose = readCollapseQuotedInCompose();
+		this.hideEmptyReaderPrompts = readHideEmptyReaderPrompts();
+		this.hideThreadSummary = readHideThreadSummary();
 		this.showFolderUnreadCounts = readShowFolderUnreadCounts();
 		this.showBulkSelect = readShowBulkSelect();
 		this.hideHeaderSearch = readHideHeaderSearch();
@@ -309,6 +332,7 @@ class SettingsStore {
 		this.mailOnlyNavigation = readMailOnlyNavigation();
 		this.enableKeyboardShortcuts = readEnableKeyboardShortcuts();
 		this.confirmBeforeDelete = readConfirmBeforeDelete();
+		this.confirmBeforeDiscardCompose = readConfirmBeforeDiscardCompose();
 		this.skipHomeScreen = readSkipHomeScreen();
 		this.readerTextSize = readReaderTextSize();
 		this.markAsReadOnOpen = readMarkAsReadOnOpen();
@@ -445,6 +469,20 @@ class SettingsStore {
 		}
 	}
 
+	setHideEmptyReaderPrompts(value: boolean) {
+		this.hideEmptyReaderPrompts = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideEmptyReaderPrompts, String(value));
+		}
+	}
+
+	setHideThreadSummary(value: boolean) {
+		this.hideThreadSummary = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideThreadSummary, String(value));
+		}
+	}
+
 	setShowFolderUnreadCounts(value: boolean) {
 		this.showFolderUnreadCounts = value;
 		if (browser) {
@@ -544,6 +582,13 @@ class SettingsStore {
 		}
 	}
 
+	setConfirmBeforeDiscardCompose(value: boolean) {
+		this.confirmBeforeDiscardCompose = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.confirmBeforeDiscardCompose, String(value));
+		}
+	}
+
 	setSkipHomeScreen(value: boolean) {
 		this.skipHomeScreen = value;
 		if (browser) {
@@ -627,6 +672,8 @@ class SettingsStore {
 		this.setHideReaderRecipients(false);
 		this.setToolIconsOnly(false);
 		this.setCollapseQuotedInCompose(false);
+		this.setHideEmptyReaderPrompts(false);
+		this.setHideThreadSummary(false);
 		this.setShowFolderUnreadCounts(true);
 		this.setShowBulkSelect(true);
 		this.setHideHeaderSearch(false);
@@ -664,6 +711,17 @@ class SettingsStore {
 		this.setHideReaderRecipients(true);
 		this.setToolIconsOnly(true);
 		this.setCollapseQuotedInCompose(true);
+		this.setHideEmptyReaderPrompts(true);
+		this.setHideThreadSummary(true);
+	}
+
+	resetMailSettings() {
+		this.setNotifyOnNewMail(true);
+		this.setShowUnreadInTitle(true);
+		this.setMarkAsReadOnOpen(true);
+		this.setEnableKeyboardShortcuts(true);
+		this.setConfirmBeforeDelete(true);
+		this.setConfirmBeforeDiscardCompose(true);
 	}
 
 	private applyLayoutWidth() {

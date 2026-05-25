@@ -106,7 +106,7 @@
 			compose.body.trim() ||
 			compose.attachments.length;
 
-		if (hasContent && !confirm('Discard this message?')) return;
+		if (hasContent && settings.confirmBeforeDiscardCompose && !confirm('Discard this message?')) return;
 
 		compose.reset();
 		goto('/mail/inbox');
