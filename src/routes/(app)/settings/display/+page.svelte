@@ -75,6 +75,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact list loading skeleton"
+			description="Fewer and tighter placeholder rows while messages load"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactListLoadingSkeleton}
+				onchange={(e) => settings.setCompactListLoadingSkeleton(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Hide connecting screen"
 			description="Blank screen while restoring your session — no “Connecting…” message"
 		>
@@ -513,6 +525,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Compact reader toolbar"
+			description="Tighter spacing between action buttons in the reading pane header"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactReaderToolbar}
+				onchange={(e) => settings.setCompactReaderToolbar(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Compact reader header"
 			description="Smaller subject line and less padding at the top of the reading pane"
 		>
@@ -873,6 +897,18 @@
 				class="size-4 accent-accent"
 				checked={settings.compactListHeader}
 				onchange={(e) => settings.setCompactListHeader(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Compact mobile folder picker"
+			description="Smaller folder dropdown above the message list on mobile"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactMobileFolderPicker}
+				onchange={(e) => settings.setCompactMobileFolderPicker(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 

@@ -162,10 +162,23 @@
 							class="absolute right-0 z-20 mt-1 max-h-64 w-52 overflow-y-auto rounded-md border border-border bg-surface-raised py-1 shadow-md"
 							onpointerdown={(e) => e.stopPropagation()}
 						>
+							{#if !settings.hideMoveMenuLabels}
+								<p
+									class={cn(
+										'px-3 text-xs font-medium text-fg-subtle',
+										settings.compactMoveMenu ? 'py-1' : 'py-1.5'
+									)}
+								>
+									Move to
+								</p>
+							{/if}
 							{#each moveTargets as mailbox (mailbox.id)}
 								<button
 									type="button"
-									class="block w-full truncate px-3 py-2 text-left text-sm text-fg hover:bg-surface-sunken"
+									class={cn(
+										'block w-full truncate px-3 text-left text-sm text-fg hover:bg-surface-sunken',
+										settings.compactMoveMenu ? 'py-1.5' : 'py-2'
+									)}
 									onclick={() => moveSelected(mailbox.id)}
 								>
 									{mailbox.name}

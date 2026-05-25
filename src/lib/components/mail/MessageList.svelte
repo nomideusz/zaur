@@ -145,7 +145,7 @@
 			<label class="min-w-0 flex-1 md:hidden">
 				<span class="sr-only">Folder</span>
 				<select
-					class="z-input w-full py-1.5 text-sm"
+					class={cn('z-input w-full text-sm', settings.compactMobileFolderPicker ? 'py-1' : 'py-1.5')}
 					value={mailboxRouteId}
 					onchange={(e) => goto(`/mail/${e.currentTarget.value}`)}
 				>
@@ -180,8 +180,13 @@
 				<p class="px-4 py-8 text-center text-sm text-fg-muted" aria-busy="true">Loading messages…</p>
 			{:else}
 			<div class={cn(!settings.hideListRowDividers && 'divide-y divide-border')} aria-busy="true" aria-label="Loading messages">
-				{#each Array(6) as _, index (index)}
-					<div class="z-list-row flex items-start gap-3 px-3 py-2.5">
+				{#each Array(settings.compactListLoadingSkeleton ? 4 : 6) as _, index (index)}
+					<div
+						class={cn(
+							'z-list-row flex items-start gap-3 px-3',
+							settings.compactListLoadingSkeleton ? 'py-2' : 'py-2.5'
+						)}
+					>
 						{#if settings.showAvatars}
 							<div class="mt-0.5 size-8 shrink-0 animate-pulse rounded-full bg-surface-sunken"></div>
 						{:else}

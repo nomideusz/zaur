@@ -263,7 +263,7 @@
 				</div>
 			</div>
 
-			<div class="flex shrink-0 flex-wrap items-center justify-end gap-0.5">
+			<div class={cn('flex shrink-0 flex-wrap items-center justify-end', settings.compactReaderToolbar ? 'gap-0' : 'gap-0.5')}>
 				{#if !settings.minimalReaderToolbar}
 					<IconButton label={latest?.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
 						<Star
@@ -301,7 +301,7 @@
 					</IconButton>
 				{/if}
 
-				<div class="hidden items-center gap-0.5 md:flex">
+				<div class={cn('hidden items-center md:flex', settings.compactReaderToolbar ? 'gap-0' : 'gap-0.5')}>
 					<IconButton label="Archive" onclick={archiveMessage}>
 						<Archive class="size-4" />
 					</IconButton>
