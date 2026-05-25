@@ -14,7 +14,7 @@ let syncAccountEmail: string | null = null;
 
 const EMAIL_SCOPED_PREFIXES = ['zaur:display-name:', 'zaur:signature:', 'zaur:use-signature:'] as const;
 
-function isOtherAccountsScopedKey(key: string, email: string): boolean {
+export function isOtherAccountsScopedKey(key: string, email: string): boolean {
 	for (const prefix of EMAIL_SCOPED_PREFIXES) {
 		if (!key.startsWith(prefix)) continue;
 		return key.slice(prefix.length).trim().toLowerCase() !== email;
@@ -54,11 +54,11 @@ export function scheduleAccountSettingsPush() {
 	if (pushTimer) clearTimeout(pushTimer);
 	pushTimer = setTimeout(() => {
 		pushTimer = null;
-		void pushAccountSettings();
+		void pushAccountSettings({ quiet: true });
 	}, PUSH_DEBOUNCE_MS);
 }
 
-async function pushAccountSettings(): Promise<boolean> {
+async function pushAccountSettings(options?: { quiet?: boolean }): Promise<boolean> {
 	if (!browser || pushInFlight || !syncAccountEmail) return false;
 
 	pushInFlight = true;
@@ -86,12 +86,16 @@ async function pushAccountSettings(): Promise<boolean> {
 		const payload = (await response.json().catch(() => null)) as { error?: string } | null;
 		const message = payload?.error ?? `Could not save settings (${response.status})`;
 		console.warn('Account settings sync failed:', message);
-		toast.show(message, 'error');
+		if (!options?.quiet && navigator.onLine) {
+			toast.show(message, 'error');
+		}
 		return false;
 	} catch (error) {
 		const message = error instanceof Error ? error.message : 'Could not save settings';
 		console.warn('Account settings sync failed:', error);
-		toast.show(message, 'error');
+		if (!options?.quiet && navigator.onLine) {
+			toast.show(message, 'error');
+		}
 		return false;
 	} finally {
 		pushInFlight = false;
