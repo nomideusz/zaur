@@ -56,7 +56,7 @@
 			</IconButton>
 			<Button href="/mail/compose" class="hidden sm:inline-flex">
 				<PenSquare class="size-4" aria-hidden="true" />
-				New
+				New message
 			</Button>
 		{/if}
 	{:else if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false}

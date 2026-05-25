@@ -49,7 +49,7 @@
 			{#if showComposeButton}
 				<Button href="/mail/compose">
 					<PenSquare class="size-4" aria-hidden="true" />
-					Compose
+					New message
 				</Button>
 			{/if}
 			{#if showSettingsButton}

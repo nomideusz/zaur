@@ -290,6 +290,7 @@
 				{/if}
 				{#if latest}
 					<IconButton
+						class="hidden md:inline-flex"
 						label={latest.unread ? 'Mark as read' : 'Mark as unread'}
 						onclick={toggleLatestRead}
 					>

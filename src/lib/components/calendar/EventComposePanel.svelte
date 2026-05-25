@@ -49,8 +49,8 @@
 				!hideBorders && 'border-border'
 			)}
 		>
-			<h2 class="text-sm font-semibold text-fg">{isEdit ? 'Edit event' : 'New event'}</h2>
-			<IconButton label="Close" onclick={close}>
+			<h2 class="text-base font-semibold text-fg">{isEdit ? 'Edit event' : 'New event'}</h2>
+			<IconButton label="Close event" onclick={close}>
 				<X class="size-4" />
 			</IconButton>
 		</header>
