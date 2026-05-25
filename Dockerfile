@@ -25,9 +25,12 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOST=0.0.0.0
 ENV BODY_SIZE_LIMIT=50M
+ENV PUSH_SUBSCRIPTIONS_PATH=/app/.data/push-subscriptions.json
 
 RUN addgroup --system --gid 1001 nodejs && \
-	adduser --system --uid 1001 sveltekit
+	adduser --system --uid 1001 sveltekit && \
+	mkdir -p /app/.data && \
+	chown -R sveltekit:nodejs /app/.data
 
 COPY --from=builder /app/build ./build
 COPY --from=builder /app/node_modules ./node_modules

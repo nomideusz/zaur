@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { getAppServiceWorkerRegistration } from '$lib/utils/service-worker';
 
 export function canUseBrowserNotifications(): boolean {
 	return browser && 'Notification' in window;
@@ -37,29 +38,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
-	if (!browser || !('serviceWorker' in navigator)) return null;
-
-	const existing = await navigator.serviceWorker.getRegistration();
-	if (existing) return existing;
-
-	try {
-		const { registerSW } = await import('virtual:pwa-register');
-		await new Promise<void>((resolve, reject) => {
-			registerSW({
-				immediate: true,
-				onRegistered() {
-					resolve();
-				},
-				onRegisterError(_error: unknown) {
-					reject(_error);
-				}
-			});
-		});
-	} catch {
-		return null;
-	}
-
-	return navigator.serviceWorker.ready;
+	return getAppServiceWorkerRegistration();
 }
 
 export async function isPushSupported(): Promise<boolean> {

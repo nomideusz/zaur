@@ -38,6 +38,14 @@ def main() -> None:
         icon.save(ROOT / f"pwa-{size}x{size}.png", format="PNG")
         print(f"Wrote {ROOT / f'pwa-{size}x{size}.png'}")
 
+    touch = draw_icon(192)
+    touch.save(ROOT / "apple-touch-icon.png", format="PNG")
+    touch.save(ROOT / "apple-touch-icon-precomposed.png", format="PNG")
+    touch.save(ROOT / "favicon.ico", format="ICO", sizes=[(192, 192)])
+    print(f"Wrote {ROOT / 'apple-touch-icon.png'}")
+    print(f"Wrote {ROOT / 'apple-touch-icon-precomposed.png'}")
+    print(f"Wrote {ROOT / 'favicon.ico'}")
+
 
 if __name__ == "__main__":
     main()

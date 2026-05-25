@@ -11,9 +11,9 @@
 	import { theme } from '$lib/stores/theme.svelte';
 	import { visual } from '$lib/stores/visual.svelte';
 	import { syncPushSubscription } from '$lib/utils/notifications';
+	import { registerAppServiceWorker } from '$lib/utils/service-worker';
 
 	let { children } = $props();
-	let webManifestLink = $state('');
 
 	onMount(() => {
 		theme.init();
@@ -28,13 +28,7 @@
 		});
 
 		void (async () => {
-			const { pwaInfo } = await import('virtual:pwa-info');
-			webManifestLink = pwaInfo?.webManifest.linkTag ?? '';
-
-			if (pwaInfo) {
-				const { registerSW } = await import('virtual:pwa-register');
-				registerSW({ immediate: true });
-			}
+			await registerAppServiceWorker();
 
 			if (settings.notifyOnNewMail) {
 				await syncPushSubscription(true);
@@ -53,8 +47,8 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
+	<link rel="manifest" href="/manifest.webmanifest" />
 	<link rel="apple-touch-icon" href="/pwa-192x192.png" />
-	{@html webManifestLink}
 </svelte:head>
 
 {@render children()}
