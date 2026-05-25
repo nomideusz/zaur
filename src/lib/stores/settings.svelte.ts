@@ -103,6 +103,9 @@ const STORAGE = {
 	compactListEmptyState: 'zaur:compact-list-empty-state',
 	compactListHeader: 'zaur:compact-list-header',
 	compactHomeScreen: 'zaur:compact-home-screen',
+	hideHomeScreenSubtitle: 'zaur:hide-home-screen-subtitle',
+	hideHomeCardDescriptions: 'zaur:hide-home-card-descriptions',
+	hideHomeOpenInboxButton: 'zaur:hide-home-open-inbox-button',
 	compactListLoadingSkeleton: 'zaur:compact-list-loading-skeleton',
 	compactMobileFolderPicker: 'zaur:compact-mobile-folder-picker',
 	compactReaderToolbar: 'zaur:compact-reader-toolbar',
@@ -653,6 +656,21 @@ function readCompactHomeScreen(): boolean {
 	return localStorage.getItem(STORAGE.compactHomeScreen) === 'true';
 }
 
+function readHideHomeScreenSubtitle(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideHomeScreenSubtitle) === 'true';
+}
+
+function readHideHomeCardDescriptions(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideHomeCardDescriptions) === 'true';
+}
+
+function readHideHomeOpenInboxButton(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.hideHomeOpenInboxButton) === 'true';
+}
+
 function readCompactListLoadingSkeleton(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactListLoadingSkeleton) === 'true';
@@ -938,6 +956,9 @@ class SettingsStore {
 	compactListEmptyState = $state(readCompactListEmptyState());
 	compactListHeader = $state(readCompactListHeader());
 	compactHomeScreen = $state(readCompactHomeScreen());
+	hideHomeScreenSubtitle = $state(readHideHomeScreenSubtitle());
+	hideHomeCardDescriptions = $state(readHideHomeCardDescriptions());
+	hideHomeOpenInboxButton = $state(readHideHomeOpenInboxButton());
 	compactListLoadingSkeleton = $state(readCompactListLoadingSkeleton());
 	compactMobileFolderPicker = $state(readCompactMobileFolderPicker());
 	compactReaderToolbar = $state(readCompactReaderToolbar());
@@ -1077,6 +1098,9 @@ class SettingsStore {
 		this.compactListEmptyState = readCompactListEmptyState();
 		this.compactListHeader = readCompactListHeader();
 		this.compactHomeScreen = readCompactHomeScreen();
+		this.hideHomeScreenSubtitle = readHideHomeScreenSubtitle();
+		this.hideHomeCardDescriptions = readHideHomeCardDescriptions();
+		this.hideHomeOpenInboxButton = readHideHomeOpenInboxButton();
 		this.compactListLoadingSkeleton = readCompactListLoadingSkeleton();
 		this.compactMobileFolderPicker = readCompactMobileFolderPicker();
 		this.compactReaderToolbar = readCompactReaderToolbar();
@@ -1837,6 +1861,27 @@ class SettingsStore {
 		}
 	}
 
+	setHideHomeScreenSubtitle(value: boolean) {
+		this.hideHomeScreenSubtitle = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideHomeScreenSubtitle, String(value));
+		}
+	}
+
+	setHideHomeCardDescriptions(value: boolean) {
+		this.hideHomeCardDescriptions = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideHomeCardDescriptions, String(value));
+		}
+	}
+
+	setHideHomeOpenInboxButton(value: boolean) {
+		this.hideHomeOpenInboxButton = value;
+		if (browser) {
+			localStorage.setItem(STORAGE.hideHomeOpenInboxButton, String(value));
+		}
+	}
+
 	setCompactListLoadingSkeleton(value: boolean) {
 		this.compactListLoadingSkeleton = value;
 		if (browser) {
@@ -2219,6 +2264,9 @@ class SettingsStore {
 		this.setCompactListEmptyState(false);
 		this.setCompactListHeader(false);
 		this.setCompactHomeScreen(false);
+		this.setHideHomeScreenSubtitle(false);
+		this.setHideHomeCardDescriptions(false);
+		this.setHideHomeOpenInboxButton(false);
 		this.setCompactListLoadingSkeleton(false);
 		this.setCompactMobileFolderPicker(false);
 		this.setCompactReaderToolbar(false);
@@ -2326,6 +2374,9 @@ class SettingsStore {
 		this.setCompactListEmptyState(true);
 		this.setCompactListHeader(true);
 		this.setCompactHomeScreen(true);
+		this.setHideHomeScreenSubtitle(true);
+		this.setHideHomeCardDescriptions(true);
+		this.setHideHomeOpenInboxButton(true);
 		this.setCompactListLoadingSkeleton(true);
 		this.setCompactMobileFolderPicker(true);
 		this.setCompactReaderToolbar(true);
@@ -2476,6 +2527,9 @@ class SettingsStore {
 			this.compactListEmptyState,
 			this.compactListHeader,
 			this.compactHomeScreen,
+			this.hideHomeScreenSubtitle,
+			this.hideHomeCardDescriptions,
+			this.hideHomeOpenInboxButton,
 			this.compactListLoadingSkeleton,
 			this.compactMobileFolderPicker,
 			this.compactReaderToolbar,

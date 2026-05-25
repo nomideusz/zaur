@@ -1155,6 +1155,42 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Hide home screen subtitle"
+			description="Remove the “Choose a tool to get started” line under Welcome back"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideHomeScreenSubtitle}
+				onchange={(e) => settings.setHideHomeScreenSubtitle(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide home card descriptions"
+			description="Show only tool names on the welcome screen cards — no subtitle under each"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideHomeCardDescriptions}
+				onchange={(e) => settings.setHideHomeCardDescriptions(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
+			title="Hide open inbox button"
+			description="Remove the Open inbox button at the bottom of the home screen"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.hideHomeOpenInboxButton}
+				onchange={(e) => settings.setHideHomeOpenInboxButton(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Remember last mailbox"
 			description="Open your last visited folder instead of Inbox when signing in or clicking Mail"
 		>

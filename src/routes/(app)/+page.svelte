@@ -26,7 +26,7 @@
 		<h1 class={cn('font-semibold text-fg', settings.compactHomeScreen ? 'text-xl' : 'text-2xl')}>
 			Welcome back
 		</h1>
-		{#if !settings.compactHomeScreen}
+		{#if !settings.hideHomeScreenSubtitle && !settings.compactHomeScreen}
 			<p class="mt-1 text-sm text-fg-muted">Choose a tool to get started.</p>
 		{/if}
 	</div>
@@ -43,7 +43,7 @@
 			<h2 class={cn('font-medium text-fg group-hover:text-accent', settings.compactHomeScreen ? 'mt-2' : 'mt-3')}>
 				Mail
 			</h2>
-			{#if !settings.compactHomeScreen}
+			{#if !settings.hideHomeCardDescriptions && !settings.compactHomeScreen}
 				<p class="mt-1 text-xs text-fg-muted">Read and send messages</p>
 			{/if}
 		</a>
@@ -59,7 +59,7 @@
 			<h2 class={cn('font-medium text-fg group-hover:text-accent', settings.compactHomeScreen ? 'mt-2' : 'mt-3')}>
 				Calendar
 			</h2>
-			{#if !settings.compactHomeScreen}
+			{#if !settings.hideHomeCardDescriptions && !settings.compactHomeScreen}
 				<p class="mt-1 text-xs text-fg-muted">Events and scheduling</p>
 			{/if}
 		</a>
@@ -75,7 +75,7 @@
 			<h2 class={cn('font-medium text-fg group-hover:text-accent', settings.compactHomeScreen ? 'mt-2' : 'mt-3')}>
 				Contacts
 			</h2>
-			{#if !settings.compactHomeScreen}
+			{#if !settings.hideHomeCardDescriptions && !settings.compactHomeScreen}
 				<p class="mt-1 text-xs text-fg-muted">People and address books</p>
 			{/if}
 		</a>
@@ -91,11 +91,13 @@
 			<h2 class={cn('font-medium text-fg group-hover:text-accent', settings.compactHomeScreen ? 'mt-2' : 'mt-3')}>
 				Settings
 			</h2>
-			{#if !settings.compactHomeScreen}
+			{#if !settings.hideHomeCardDescriptions && !settings.compactHomeScreen}
 				<p class="mt-1 text-xs text-fg-muted">Theme, mail, and account</p>
 			{/if}
 		</a>
 	</div>
 
-	<Button href="/mail/inbox">Open inbox</Button>
+	{#if !settings.hideHomeOpenInboxButton}
+		<Button href="/mail/inbox">Open inbox</Button>
+	{/if}
 </div>
