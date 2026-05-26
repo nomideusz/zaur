@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin · ZAUR Domains</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="logo">ZAUR</a>
+      <nav class="tool-nav" aria-label="Tools">
+        <a href="/" class="tool-link">Domains</a>
+        <a href="#" id="logout-btn" class="tool-link" style="display: none;">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="admin-page">
+    <div class="container">
+      <div id="login-container" class="register-panel z-panel visible login-panel">
+        <h2>Admin sign in</h2>
+        <div class="notification error" id="login-error" role="alert" style="display: none;"></div>
+        <form id="login-form">
+          <div class="form-group">
+            <label for="admin-password">Admin password</label>
+            <input type="password" id="admin-password" name="password" class="z-input" placeholder="Enter admin password" required>
+          </div>
+          <button type="submit" class="btn btn-primary" id="login-submit">Sign in</button>
+        </form>
+      </div>
+
+      <div id="dashboard-container" class="dashboard-container" style="display: none;">
+        <div class="page-intro">
+          <h1>Invitation codes</h1>
+          <p>Generate and manage registration codes.</p>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-card z-panel">
+            <span class="stat-label">Total codes</span>
+            <span class="stat-value" id="stat-total">0</span>
+          </div>
+          <div class="stat-card z-panel">
+            <span class="stat-label">Unused</span>
+            <span class="stat-value text-success" id="stat-unused">0</span>
+          </div>
+          <div class="stat-card z-panel">
+            <span class="stat-label">Used</span>
+            <span class="stat-value text-warning" id="stat-used">0</span>
+          </div>
+          <div class="stat-card z-panel">
+            <span class="stat-label">Revoked</span>
+            <span class="stat-value text-danger" id="stat-revoked">0</span>
+          </div>
+        </div>
+
+        <div class="register-panel z-panel admin-panel-card visible">
+          <h3>Generate codes</h3>
+          <div class="notification error" id="generate-error" role="alert" style="display: none;"></div>
+          <div class="notification success" id="generate-success" role="alert" style="display: none;"></div>
+          <form id="generate-form" class="inline-form">
+            <div class="form-group inline-field">
+              <input type="number" id="generate-count" name="count" class="z-input" min="1" max="100" value="5" placeholder="Number of codes" required>
+            </div>
+            <button type="submit" class="btn btn-primary" id="generate-submit">Generate</button>
+          </form>
+        </div>
+
+        <div class="register-panel z-panel admin-panel-card visible">
+          <div class="panel-heading-row">
+            <div>
+              <h3>Provisioning audit</h3>
+              <p class="panel-description">Find accounts that exist only in Keycloak or only in Stalwart.</p>
+            </div>
+            <button type="button" class="btn btn-ghost" id="run-audit-btn">Run audit</button>
+          </div>
+          <div class="notification error" id="audit-error" role="alert" style="display: none;"></div>
+          <div class="notification success" id="audit-success" role="alert" style="display: none;"></div>
+          <div id="audit-summary" class="audit-summary"></div>
+          <div id="audit-results" class="audit-results"></div>
+        </div>
+
+        <div class="register-panel z-panel admin-panel-card visible table-panel">
+          <div class="panel-heading-row">
+            <h3>Manage codes</h3>
+            <button type="button" class="btn btn-ghost btn-sm" id="cleanup-pending-btn">Clear stale pending</button>
+          </div>
+          <div class="search-box table-filter-box">
+            <input type="text" id="table-filter" class="search-input z-input filter-input" placeholder="Filter codes or users…" autocomplete="off">
+          </div>
+
+          <div class="table-responsive">
+            <table class="invites-table" id="invites-table">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th>Used by</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="invites-table-body">
+                <tr>
+                  <td colspan="5" class="table-empty">Loading codes…</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span>&copy; 2026 ZAUR</span>
+    </div>
+  </footer>
+
+  <script src="/admin.js"></script>
+</body>
+</html>

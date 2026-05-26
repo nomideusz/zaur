@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Domains · ZAUR</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="/" class="logo">ZAUR</a>
+      <nav class="tool-nav" aria-label="Tools">
+        <a href="/" class="tool-link is-active">Domains</a>
+        <a href="#" id="webmail-link" class="tool-link" target="_blank" rel="noopener">Mail</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="home-page">
+    <div class="container">
+      <div class="page-intro">
+        <h1>Claim your address</h1>
+        <p>Search for an available username across ZAUR domains.</p>
+      </div>
+
+      <div class="search-box">
+        <input
+          type="text"
+          id="username-input"
+          class="search-input z-input"
+          placeholder="Search usernames"
+          autocomplete="off"
+          spellcheck="false"
+          autofocus
+        >
+        <div class="validation-hint" id="validation-hint"></div>
+      </div>
+
+      <div id="results-container"></div>
+
+      <div class="register-panel z-panel" id="register-panel">
+        <h2 id="selected-email-label">Create account</h2>
+        <div class="notification error" id="form-error" role="alert"></div>
+
+        <form id="register-form">
+          <input type="hidden" id="selected-domain-id" name="domainId">
+
+          <div class="form-group">
+            <label for="invite-code">Invitation code</label>
+            <input type="text" id="invite-code" name="inviteCode" class="z-input" placeholder="zaur-XXXX-XXXX-XXXX" required>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" class="z-input" autocomplete="new-password" required>
+            <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
+            <div class="strength-label" id="strength-label"></div>
+          </div>
+
+          <div class="form-group">
+            <label for="confirm-password">Confirm password</label>
+            <input type="password" id="confirm-password" name="confirmPassword" class="z-input" autocomplete="new-password" required>
+          </div>
+
+          <div class="form-group">
+            <label for="captcha-answer">Security check</label>
+            <div class="captcha-row">
+              <span class="captcha-question" id="captcha-question">Loading…</span>
+              <input type="number" id="captcha-answer" name="captchaAnswer" class="z-input" inputmode="numeric" required>
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-primary" id="submit-btn">Create account</button>
+        </form>
+      </div>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <span>&copy; 2026 ZAUR</span>
+      <div class="footer-links">
+        <a href="#" id="footer-webmail-link" target="_blank" rel="noopener">Mail</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="/script.js"></script>
+</body>
+</html>
