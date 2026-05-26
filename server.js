@@ -3,6 +3,7 @@ require('dotenv').config();
 const path = require('path');
 const express = require('express');
 const session = require('express-session');
+const FileStore = require('session-file-store')(session);
 const rateLimit = require('express-rate-limit');
 
 const stalwart = require('./lib/stalwart');
@@ -21,11 +22,38 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 app.set('trust proxy', 1);
 
+app.use((req, res, next) => {
+  res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  res.setHeader(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self'",
+      "style-src 'self' https://fonts.googleapis.com",
+      "font-src 'self' https://fonts.gstatic.com",
+      "img-src 'self' data:",
+      "connect-src 'self'",
+      "form-action 'self'",
+      "frame-ancestors 'none'",
+      "base-uri 'self'",
+      "object-src 'none'",
+    ].join('; '),
+  );
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  next();
+});
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
 app.use(
   session({
+    store: new FileStore({
+      path: process.env.SESSION_STORE_PATH || '/app/data/sessions',
+      retries: 0,
+    }),
     secret: process.env.SESSION_SECRET || 'dev-secret-change-me',
     resave: false,
     saveUninitialized: false,
@@ -142,18 +170,57 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
       return res.status(409).json({ error: 'This email address is no longer available.' });
     }
 
-    // 1. Create User in Keycloak
-    await keycloak.createUser(email, password);
+    const inviteReservation = invites.reserveInvite(inviteCode, email);
+    if (!inviteReservation.valid) {
+      return res.status(409).json({ error: inviteReservation.error });
+    }
 
-    // 2. Create User in Stalwart
-    await stalwart.createAccount(
-      usernameValidation.username,
-      domainId,
-      password,
-    );
+    let accountId = null;
+    let keycloakCreated = false;
 
-    // 3. Mark the invite code as used
-    invites.markInviteAsUsed(inviteCode, email);
+    try {
+      // Create Stalwart first so mail access can be verified before provisioning SSO.
+      const account = await stalwart.createAccount(
+        usernameValidation.username,
+        domainId,
+        password,
+      );
+      accountId = account.accountId;
+
+      await stalwart.ensureStandardMailboxes(email, password);
+      await keycloak.createUser(email, password);
+      keycloakCreated = true;
+
+      if (!invites.markInviteAsUsed(inviteCode, email)) {
+        throw new Error('Account was created, but the invitation code could not be marked as used.');
+      }
+    } catch (err) {
+      const cleanupErrors = [];
+      if (keycloakCreated) {
+        try {
+          await keycloak.deleteUser(email);
+        } catch (cleanupErr) {
+          cleanupErrors.push(`Keycloak cleanup failed: ${cleanupErr.message}`);
+        }
+      }
+      if (accountId) {
+        try {
+          await stalwart.deleteAccount(accountId);
+        } catch (cleanupErr) {
+          cleanupErrors.push(`Stalwart cleanup failed: ${cleanupErr.message}`);
+        }
+      }
+
+      if (!cleanupErrors.length) {
+        invites.releaseInviteReservation(inviteCode);
+      }
+
+      if (cleanupErrors.length) {
+        console.error('Registration cleanup errors:', cleanupErrors.join('; '));
+      }
+
+      throw err;
+    }
 
     delete req.session.captchaAnswer;
 
