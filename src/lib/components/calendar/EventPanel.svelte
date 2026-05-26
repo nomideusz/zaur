@@ -111,8 +111,8 @@
 {#if event}
 	<aside
 		class={cn(
-			'z-panel hidden min-h-0 w-80 shrink-0 flex-col overflow-hidden md:flex',
-			!hideBorders && 'border-l'
+			'm-3 hidden min-h-0 w-80 shrink-0 flex-col overflow-hidden rounded-lg bg-surface-raised/95 shadow-sm md:flex',
+			!hideBorders && 'border border-border'
 		)}
 		style="view-transition-name: calendar-event;"
 		aria-label="Event details"
@@ -123,8 +123,8 @@
 	<div class="fixed inset-0 z-30 flex justify-end bg-black/20 backdrop-blur-[1px] md:hidden">
 		<div
 			class={cn(
-				'z-panel flex h-full w-full max-w-md flex-col shadow-md',
-				!hideBorders && 'border-l'
+				'm-2 flex h-[calc(100%-1rem)] w-[calc(100%-1rem)] max-w-md flex-col overflow-hidden rounded-2xl bg-surface-raised shadow-md',
+				!hideBorders && 'border border-border'
 			)}
 		>
 			{@render details(true)}

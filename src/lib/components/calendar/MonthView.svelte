@@ -57,8 +57,8 @@
 
 <section
 	class={cn(
-		'z-panel flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
-		!hideBorders && 'border-r'
+		'm-2 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-surface-raised/95 shadow-sm md:m-3 md:mr-0',
+		!hideBorders && 'border border-border'
 	)}
 	style="view-transition-name: calendar-grid;"
 	aria-label="Month view"
@@ -67,7 +67,7 @@
 		class={cn(
 			'flex shrink-0 items-center justify-between gap-2 px-4',
 			settings.compactCalendarHeader ? 'h-10' : 'h-12',
-			!hideBorders && 'border-b border-border'
+			!hideBorders && 'border-b border-border/80'
 		)}
 	>
 		<div class="flex items-center gap-1">
@@ -119,14 +119,14 @@
 					<li>
 						<label
 							class={cn(
-								'flex cursor-pointer items-center gap-2 rounded-md px-3 text-sm transition-colors hover:bg-surface-sunken',
+								'flex cursor-pointer items-center gap-2 rounded-md px-3 text-sm transition-all hover:bg-surface-sunken/80 focus-within:ring-2 focus-within:ring-accent/20',
 								settings.compactCalendarSidebar ? 'py-1.5' : 'py-2',
 								calendar.isCalendarVisible(item.id) ? 'text-fg' : 'text-fg-muted'
 							)}
 						>
 							<input
 								type="checkbox"
-								class="size-4 accent-accent"
+								class="z-checkbox"
 								checked={calendar.isCalendarVisible(item.id)}
 								onchange={() => calendar.toggleCalendar(item.id)}
 							/>
@@ -146,7 +146,7 @@
 	<div
 		class={cn(
 			'grid shrink-0 grid-cols-7 border-b bg-surface-sunken/50',
-			!hideBorders && 'border-border'
+			!hideBorders && 'border-border/80'
 		)}
 	>
 		{#each weekdays as weekday}
@@ -185,7 +185,7 @@
 				{@const dayEvents = calendar.eventsForDay(day)}
 				<div
 					class={cn(
-						'group p-1.5',
+						'group p-1.5 transition-colors hover:bg-surface-sunken/40',
 						settings.compactCalendarGrid ? 'min-h-16 p-1' : 'min-h-24',
 						!hideBorders && 'border-b border-r border-border',
 						!inMonth && 'bg-surface-sunken/30 text-fg-subtle'
@@ -195,7 +195,7 @@
 					<div class="mb-1 flex items-center justify-between gap-1">
 						<button
 							type="button"
-							class="rounded p-0.5 text-fg-subtle opacity-0 transition-opacity hover:bg-surface-sunken hover:text-fg group-hover:opacity-100 focus:opacity-100"
+							class="rounded p-0.5 text-fg-subtle opacity-0 transition-all hover:bg-surface-raised hover:text-fg group-hover:opacity-100 focus:opacity-100"
 							class:opacity-100={inMonth}
 							aria-label="Create event on {day.toLocaleDateString()}"
 							onclick={() => createOnDay(day)}
@@ -218,7 +218,7 @@
 								<button
 									type="button"
 									class={cn(
-										'flex w-full items-center gap-1 truncate rounded px-1 py-0.5 text-left leading-tight transition-opacity hover:opacity-80',
+										'flex w-full items-center gap-1 truncate rounded-md px-1 py-0.5 text-left leading-tight shadow-sm transition-all hover:-translate-y-px hover:opacity-90',
 										settings.compactCalendarGrid ? 'text-[10px]' : 'text-[11px]',
 										calendar.selectedEventId === event.id && 'ring-1 ring-accent/40'
 									)}

@@ -42,7 +42,7 @@
 	>
 		{#if hasRows}
 			<div>
-				<h3 class="text-sm font-semibold text-fg">{title}</h3>
+				<h3 class="text-sm font-semibold tracking-tight text-fg">{title}</h3>
 				{#if description && !settings.hideSettingsPanelDescriptions}
 					<p class="mt-0.5 text-xs text-fg-muted">{description}</p>
 				{/if}

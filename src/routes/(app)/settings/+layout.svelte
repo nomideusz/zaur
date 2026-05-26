@@ -109,27 +109,29 @@
 	</header>
 
 	<aside class="hidden w-56 shrink-0 md:block lg:w-60">
-		{#if !settings.hideSettingsBackLink}
-			<a
-				href={mailHref}
-				class="mb-4 inline-flex items-center gap-1.5 text-sm text-fg-muted transition-colors hover:text-fg"
-			>
-				<ArrowLeft class="size-4" aria-hidden="true" />
-				Back to mail
-			</a>
-		{/if}
-		{#if !settings.hideSettingsPageTitle}
-			<h1 class="mb-4 text-lg font-semibold text-fg lg:text-xl">Settings</h1>
-		{/if}
-		<div class="mb-4">
-			<SettingsSearch />
+		<div class="sticky top-6 rounded-lg border border-border bg-surface-raised/90 p-3 shadow-sm">
+			{#if !settings.hideSettingsBackLink}
+				<a
+					href={mailHref}
+					class="mb-4 inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm text-fg-muted transition-colors hover:bg-surface-sunken hover:text-fg"
+				>
+					<ArrowLeft class="size-4" aria-hidden="true" />
+					Back to mail
+				</a>
+			{/if}
+			{#if !settings.hideSettingsPageTitle}
+				<h1 class="mb-4 px-2 text-lg font-semibold text-fg lg:text-xl">Settings</h1>
+			{/if}
+			<div class="mb-4">
+				<SettingsSearch />
+			</div>
+			<SettingsNavList {links} {sections} />
+			{#if settings.settingsDetailLevel === 'basic'}
+				<p class="mt-4 px-3 text-xs text-fg-subtle">
+					Switch to <strong class="font-medium text-fg-muted">All options</strong> in any section for fine-tuning.
+				</p>
+			{/if}
 		</div>
-		<SettingsNavList {links} {sections} />
-		{#if settings.settingsDetailLevel === 'basic'}
-			<p class="mt-4 px-3 text-xs text-fg-subtle">
-				Switch to <strong class="font-medium text-fg-muted">All options</strong> in any section for fine-tuning.
-			</p>
-		{/if}
 	</aside>
 
 	<div class="flex min-w-0 flex-1 flex-col gap-4">

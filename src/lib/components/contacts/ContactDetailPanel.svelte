@@ -105,8 +105,8 @@
 
 <aside
 	class={cn(
-		'z-panel hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex',
-		!hideBorders && 'border-l'
+		'm-3 hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-surface-raised/95 shadow-sm md:flex',
+		!hideBorders && 'border border-border'
 	)}
 	style="view-transition-name: contact-detail;"
 	aria-label="Contact details"
@@ -116,7 +116,7 @@
 
 <div class="z-mobile-sheet-backdrop md:hidden">
 	<div
-		class={cn('z-panel flex h-full w-full max-w-md flex-col border-l shadow-md', !hideBorders && 'border-border')}
+		class={cn('m-2 flex h-[calc(100%-1rem)] w-[calc(100%-1rem)] max-w-md flex-col overflow-hidden rounded-2xl bg-surface-raised shadow-md', !hideBorders && 'border border-border')}
 	>
 		{@render details(true)}
 	</div>

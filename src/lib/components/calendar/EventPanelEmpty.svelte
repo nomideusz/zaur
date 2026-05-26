@@ -8,24 +8,24 @@
 
 <div
 	class={cn(
-		'hidden min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden bg-surface-raised text-center md:flex',
+		'm-3 hidden min-h-0 min-w-0 flex-1 flex-col items-center justify-center gap-3 overflow-hidden rounded-lg bg-surface-raised/90 text-center shadow-sm md:flex',
 		settings.compactCalendarEmptyEventPanel ? 'p-5' : 'p-8'
 	)}
 >
 	<div
 		class={cn(
-			'rounded-full bg-surface-sunken',
+			'rounded-full bg-accent/10 text-accent',
 			settings.compactCalendarEmptyEventPanel ? 'p-3' : 'p-4'
 		)}
 	>
 		<CalendarDays
-			class={cn('text-fg-subtle', settings.compactCalendarEmptyEventPanel ? 'size-6' : 'size-8')}
+			class={cn(settings.compactCalendarEmptyEventPanel ? 'size-6' : 'size-8')}
 			aria-hidden="true"
 		/>
 	</div>
 	<h2
 		class={cn(
-			'font-medium text-fg',
+			'font-semibold text-fg',
 			settings.compactCalendarEmptyEventPanel ? 'text-base' : 'text-lg'
 		)}
 	>

@@ -15,11 +15,11 @@
 
 	const letterButtonClass = (active: boolean) =>
 		cn(
-			'rounded-lg font-semibold transition-colors',
+			'rounded-lg font-semibold transition-all',
 			variant === 'horizontal' ? 'min-h-10 min-w-10 shrink-0 px-3 text-sm' : 'size-9 text-sm',
 			active
 				? 'bg-accent text-accent-fg shadow-sm'
-				: 'text-fg-muted hover:bg-surface-sunken hover:text-fg active:bg-surface-sunken'
+				: 'text-fg-muted hover:bg-surface-sunken/80 hover:text-fg active:bg-surface-sunken'
 		);
 </script>
 
@@ -55,7 +55,7 @@
 			aria-label="Browse contacts by letter"
 		>
 			<div
-				class="pointer-events-auto z-pane-scroll flex max-h-full flex-col items-center gap-0.5 overflow-y-auto rounded-xl border border-border/60 bg-surface/90 px-0.5 py-1 shadow-sm backdrop-blur-sm"
+				class="pointer-events-auto z-pane-scroll flex max-h-full flex-col items-center gap-0.5 overflow-y-auto rounded-xl border border-border/80 bg-surface-raised/90 px-0.5 py-1 shadow-sm backdrop-blur-sm"
 			>
 				{#each letters as letter (letter)}
 					<button

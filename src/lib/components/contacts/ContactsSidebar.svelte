@@ -22,8 +22,8 @@
 
 <aside
 	class={cn(
-		'z-panel hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden md:flex',
-		!hideBorders && 'border-r'
+		'm-3 mr-0 hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden rounded-lg bg-surface-raised/90 shadow-sm md:flex',
+		!hideBorders && 'border border-border'
 	)}
 	style="view-transition-name: contacts-sidebar;"
 	aria-label="Contacts navigation"
@@ -32,7 +32,7 @@
 		class={cn(
 			'shrink-0 px-4',
 			settings.compactContactsPage ? 'py-2' : 'py-3',
-			!hideBorders && 'border-b border-border'
+			!hideBorders && 'border-b border-border/80'
 		)}
 	>
 		<h2 class="z-type-label">Contacts</h2>
@@ -41,17 +41,17 @@
 		{/if}
 	</div>
 
-	<nav class={cn('z-pane-scroll min-h-0 flex-1 overflow-y-auto', settings.compactContactsPage ? 'p-1' : 'p-2')}>
+	<nav class={cn('z-pane-scroll min-h-0 flex-1 overflow-y-auto', settings.compactContactsPage ? 'p-1.5' : 'p-2.5')}>
 		<ul class="space-y-0.5">
 			<li>
 				<button
 					type="button"
 					class={cn(
-						'flex w-full items-center justify-between rounded-lg px-3 text-sm transition-colors',
+						'flex w-full items-center justify-between rounded-lg px-3 text-sm transition-all',
 						settings.compactContactsPage ? 'min-h-9 py-2' : 'min-h-10 py-2.5',
 						selectedLetter === null
-							? 'bg-surface-sunken font-medium text-fg'
-							: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
+							? 'bg-accent/10 font-semibold text-fg shadow-sm'
+							: 'text-fg-muted hover:bg-surface-sunken/80 hover:text-fg'
 					)}
 					onclick={() => onSelectLetter(null)}
 				>
@@ -66,7 +66,7 @@
 		class={cn(
 			'shrink-0 space-y-0.5',
 			settings.compactContactsPage ? 'p-1' : 'p-2',
-			!hideBorders && 'border-t border-border'
+			!hideBorders && 'border-t border-border/80'
 		)}
 	>
 		<Button
@@ -81,11 +81,11 @@
 			<a
 				href="/settings/contacts"
 				class={cn(
-					'flex items-center gap-2 rounded-lg px-3 text-sm transition-colors',
+					'flex items-center gap-2 rounded-lg px-3 text-sm transition-all',
 					settings.compactContactsPage ? 'min-h-9 py-2' : 'min-h-10 py-2.5',
 					$page.url.pathname.startsWith('/settings')
-						? 'bg-surface-sunken font-medium text-fg'
-						: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
+						? 'bg-accent/10 font-semibold text-fg shadow-sm'
+						: 'text-fg-muted hover:bg-surface-sunken/80 hover:text-fg'
 				)}
 			>
 				<Settings class="size-4 shrink-0" aria-hidden="true" />

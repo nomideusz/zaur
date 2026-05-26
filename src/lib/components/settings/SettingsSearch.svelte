@@ -78,7 +78,7 @@
 			id="settings-search"
 			bind:this={input}
 			type="search"
-			class="z-input w-full pl-9 md:max-w-xs"
+			class="z-input w-full rounded-full border-transparent bg-surface-sunken/80 pl-9 shadow-none focus:bg-surface-raised md:max-w-xs"
 			placeholder="Search settings…"
 			autocomplete="off"
 			aria-controls={results.length ? resultsId : undefined}
@@ -90,7 +90,7 @@
 	{#if results.length}
 		<ul
 			id={resultsId}
-			class="absolute top-full z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-border bg-surface-raised py-1 shadow-md md:max-w-xs"
+			class="absolute top-full z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-lg border border-border bg-surface-raised py-1.5 shadow-md md:max-w-xs"
 			role="listbox"
 			aria-label="Settings search results"
 			onkeydown={onResultsKeydown}

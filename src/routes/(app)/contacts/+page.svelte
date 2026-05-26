@@ -164,8 +164,8 @@
 
 <section
 	class={cn(
-		'z-panel flex min-h-0 w-full max-w-none flex-1 shrink-0 flex-col overflow-hidden md:w-(--width-list) md:max-w-(--width-list)',
-		!hideBorders && 'border-r',
+		'm-2 flex min-h-0 w-[calc(100%-1rem)] max-w-none flex-1 shrink-0 flex-col overflow-hidden rounded-lg bg-surface-raised/90 shadow-sm md:m-3 md:mr-0 md:w-(--width-list) md:max-w-(--width-list)',
+		!hideBorders && 'border border-border',
 		selectedEmail ? 'hidden md:flex' : 'flex'
 	)}
 	style="view-transition-name: contacts-list;"
@@ -175,7 +175,7 @@
 		class={cn(
 			'flex shrink-0 flex-wrap items-center justify-between gap-2 px-4',
 			settings.compactContactsPage ? 'min-h-10 py-2' : 'min-h-12 py-2.5',
-			!hideBorders && 'border-b border-border'
+			!hideBorders && 'border-b border-border/80'
 		)}
 	>
 		<h2 class="z-type-pane-title">{listTitle}</h2>
@@ -195,13 +195,13 @@
 		class={cn(
 			'flex shrink-0 flex-col gap-3 px-4',
 			settings.compactContactsPage ? 'py-2' : 'py-3',
-			!hideBorders && 'border-b border-border'
+			!hideBorders && 'border-b border-border/80'
 		)}
 	>
 		{#if showAddForm}
 			<form
 				class={cn(
-					'z-panel grid sm:grid-cols-2',
+					'grid border border-border bg-surface-raised shadow-sm sm:grid-cols-2',
 					settings.compactContactsAddForm ? 'mb-2 gap-2 rounded-lg p-3' : 'mb-3 gap-3 rounded-xl p-4'
 				)}
 				onsubmit={addContact}
@@ -259,7 +259,7 @@
 			/>
 			<input
 				type="search"
-				class={cn('z-input w-full', settings.compactContactsSearch ? 'py-1.5 pl-8' : 'pl-9')}
+				class={cn('z-input w-full rounded-full border-transparent bg-surface-sunken/80 shadow-none focus:bg-surface-raised', settings.compactContactsSearch ? 'py-1.5 pl-8' : 'pl-9')}
 				placeholder="Search contacts…"
 				bind:value={query}
 			/>
@@ -306,7 +306,7 @@
 						{/if}
 						<ul
 							class={cn(
-								'z-panel overflow-hidden rounded-xl',
+								'overflow-hidden rounded-xl border border-border bg-surface-raised/90 shadow-sm',
 								!hideBorders && 'divide-y divide-border'
 							)}
 						>
@@ -315,9 +315,9 @@
 									<button
 										type="button"
 										class={cn(
-											'flex w-full items-center gap-3 text-left transition-colors hover:bg-surface-sunken',
+											'flex w-full items-center gap-3 text-left transition-all hover:bg-surface-sunken/80',
 											settings.compactContactsList ? 'min-h-11 px-3 py-2.5' : 'min-h-14 px-4 py-3.5',
-											selectedEmail === contact.email && 'bg-surface-sunken'
+											selectedEmail === contact.email && 'bg-accent/10 shadow-sm'
 										)}
 										aria-current={selectedEmail === contact.email ? 'true' : undefined}
 										onclick={() => selectContact(contact.email)}
@@ -353,20 +353,19 @@
 			>
 				<div
 					class={cn(
-						'rounded-full bg-surface-sunken',
+						'rounded-full bg-accent/10 text-accent',
 						settings.compactContactsEmptyState ? 'p-2' : 'p-3'
 					)}
 				>
 					<Users
 						class={cn(
-							'text-fg-subtle',
 							settings.compactContactsEmptyState ? 'size-5' : 'size-6'
 						)}
 						aria-hidden="true"
 					/>
 				</div>
 				<div>
-					<p class={cn('font-medium text-fg', settings.compactContactsEmptyState ? 'text-xs' : 'text-sm')}>
+					<p class={cn('font-semibold text-fg', settings.compactContactsEmptyState ? 'text-xs' : 'text-sm')}>
 						{#if query.trim()}
 							No contacts match your search
 						{:else if selectedLetter}

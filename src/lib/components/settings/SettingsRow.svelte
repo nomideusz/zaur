@@ -43,16 +43,16 @@
 		id={rowId}
 		data-settings-row
 		class={cn(
-			'flex min-w-0 scroll-mt-24 items-center justify-between gap-4 rounded-lg border border-border transition-shadow',
+			'flex min-w-0 scroll-mt-24 items-center justify-between gap-4 rounded-lg border border-border bg-surface-raised/70 transition-all hover:border-border-strong hover:bg-surface-raised hover:shadow-sm focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/20',
 			settings.compactSettingsRows ? 'px-3 py-2' : 'px-4 py-3',
 			settings.hidePaneBorders && 'border-transparent',
 			'[&:has(:disabled)]:cursor-not-allowed'
 		)}
 	>
 		<div class="min-w-0 flex-1">
-			<p class="text-sm font-medium text-fg">{title}</p>
+			<p class="text-sm font-semibold text-fg">{title}</p>
 			{#if description}
-				<p class="text-xs text-fg-muted">{description}</p>
+				<p class="mt-0.5 text-xs leading-relaxed text-fg-muted">{description}</p>
 			{/if}
 		</div>
 		<div class="shrink-0">{@render children()}</div>

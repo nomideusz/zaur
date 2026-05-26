@@ -23,9 +23,9 @@
 	);
 </script>
 
-<div class={cn('z-panel rounded-xl', settings.compactSettingsPanel ? 'p-4 md:p-5' : 'p-5 md:p-7')}>
+<div class={cn('z-panel rounded-2xl bg-surface-raised/95 shadow-sm', settings.compactSettingsPanel ? 'p-4 md:p-5' : 'p-5 md:p-7')}>
 	<div>
-		<h2 class={cn('font-semibold text-fg', settings.compactSettingsPanel ? 'text-base' : 'text-lg md:text-xl')}>
+		<h2 class={cn('font-semibold tracking-tight text-fg', settings.compactSettingsPanel ? 'text-base' : 'text-lg md:text-xl')}>
 			{title}
 		</h2>
 		{#if !settings.hideSettingsPanelDescriptions}
@@ -35,7 +35,7 @@
 					{hiddenCount} more {hiddenCount === 1 ? 'option' : 'options'} in
 					<button
 						type="button"
-						class="text-accent underline-offset-2 hover:underline"
+						class="rounded-sm text-accent underline-offset-2 hover:underline"
 						onclick={() => settings.setSettingsDetailLevel('advanced')}
 					>
 						All options

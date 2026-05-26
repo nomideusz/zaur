@@ -10,8 +10,8 @@
 
 <aside
 	class={cn(
-		'z-panel flex min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden',
-		!hideBorders && 'border-r'
+		'm-3 mr-0 flex min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden rounded-lg bg-surface-raised/90 shadow-sm',
+		!hideBorders && 'border border-border'
 	)}
 	style="view-transition-name: calendar-sidebar;"
 	aria-label="Calendars"
@@ -21,7 +21,7 @@
 			class={cn(
 				'shrink-0 border-b px-4',
 				settings.compactCalendarSidebar ? 'py-2' : 'py-3',
-				!hideBorders && 'border-border'
+				!hideBorders && 'border-border/80'
 			)}
 		>
 			<h2 class="z-type-label">Calendars</h2>
@@ -31,7 +31,7 @@
 	<nav
 		class={cn(
 			'z-pane-scroll min-h-0 flex-1 overflow-y-auto',
-			settings.compactCalendarSidebar ? 'p-1' : 'p-2'
+			settings.compactCalendarSidebar ? 'p-1.5' : 'p-2.5'
 		)}
 	>
 		{#if calendar.calendarsLoading}
@@ -51,14 +51,14 @@
 					<li>
 						<label
 							class={cn(
-								'flex cursor-pointer items-center gap-2 rounded-md px-3 text-sm transition-colors hover:bg-surface-sunken',
+								'flex cursor-pointer items-center gap-2 rounded-md px-3 text-sm transition-all hover:bg-surface-sunken/80 focus-within:ring-2 focus-within:ring-accent/20',
 								settings.compactCalendarSidebar ? 'py-1.5' : 'py-2',
 								calendar.isCalendarVisible(item.id) ? 'text-fg' : 'text-fg-muted'
 							)}
 						>
 							<input
 								type="checkbox"
-								class="size-4 accent-accent"
+								class="z-checkbox"
 								checked={calendar.isCalendarVisible(item.id)}
 								onchange={() => calendar.toggleCalendar(item.id)}
 							/>
@@ -76,14 +76,14 @@
 	</nav>
 
 	{#if !settings.hideCalendarSidebarSettings}
-		<div class={cn('shrink-0 p-2', !hideBorders && 'border-t border-border')}>
+		<div class={cn('shrink-0 p-2', !hideBorders && 'border-t border-border/80')}>
 			<a
 				href="/settings/calendar"
 				class={cn(
-					'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-colors',
+					'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-all',
 					$page.url.pathname.startsWith('/settings')
-						? 'bg-surface-sunken font-medium text-fg'
-						: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
+						? 'bg-accent/10 font-semibold text-fg shadow-sm'
+						: 'text-fg-muted hover:bg-surface-sunken/80 hover:text-fg'
 				)}
 			>
 				<Settings class="size-4 shrink-0" aria-hidden="true" />

@@ -103,8 +103,8 @@
 					</select>
 				</label>
 
-				<label class="flex items-center gap-2 text-sm">
-					<input type="checkbox" class="size-4 accent-accent" bind:checked={calendar.composeDraft.allDay} />
+				<label class="flex items-center gap-2 rounded-md text-sm">
+					<input type="checkbox" class="z-checkbox" bind:checked={calendar.composeDraft.allDay} />
 					<span class="text-fg">All day</span>
 				</label>
 

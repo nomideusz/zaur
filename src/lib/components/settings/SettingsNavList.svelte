@@ -24,7 +24,7 @@
 		{@const sectionLinks = linksForSection(section.id)}
 		{#if sectionLinks.length > 0}
 			<div>
-				<p class="mb-1.5 px-3 text-xs font-medium tracking-wide text-fg-subtle uppercase">
+				<p class="mb-1.5 px-3 text-xs font-semibold tracking-wide text-fg-subtle uppercase">
 					{section.label}
 				</p>
 				<div class="space-y-0.5">
@@ -32,10 +32,10 @@
 						<a
 							href={link.href}
 							class={cn(
-								'flex min-h-11 items-center rounded-lg px-3 transition-colors',
+								'flex min-h-11 items-center rounded-lg px-3 transition-all',
 								settings.compactSettingsNav ? 'py-2' : 'py-2.5',
 								isSettingsNavActive($page.url.pathname, link.href)
-									? 'bg-surface-sunken'
+									? 'bg-accent/10 shadow-sm'
 									: 'hover:bg-surface-sunken active:bg-surface-sunken'
 							)}
 							aria-current={isSettingsNavActive($page.url.pathname, link.href) ? 'page' : undefined}
@@ -46,7 +46,7 @@
 									class={cn(
 										'block text-sm',
 										isSettingsNavActive($page.url.pathname, link.href)
-											? 'font-semibold text-fg'
+											? 'font-semibold text-accent'
 											: 'font-medium text-fg'
 									)}
 								>
