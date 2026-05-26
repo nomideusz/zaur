@@ -9,7 +9,7 @@
 
 <SettingsPanel
 	title="Inbox"
-	description="Row size and content, list header, bulk selection, and empty or search list states."
+	description="Message list rows, bulk selection, and empty states."
 >
 	<InboxSection />
 </SettingsPanel>

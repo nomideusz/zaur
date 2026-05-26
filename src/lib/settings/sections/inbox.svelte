@@ -5,10 +5,10 @@
 	import { settings, type ListDensity, type ListTextSize } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Message list" description="Row size, preview, and what each message shows.">
+<SettingsGroup title="Message list" description="What each row shows and how dense it feels.">
 	<SettingsRow
 		title="List text size"
-		description="Font size for sender, subject, and preview in the message list"
+		description="Font size for sender, subject, and preview"
 	>
 		<select
 			class="z-input w-auto"
@@ -23,7 +23,7 @@
 
 	<SettingsRow
 		title="List density"
-		description="Row height preset — turn off previews for a tighter list; compact list rows adds extra padding trim"
+		description="Row height preset — turn off previews for a tighter list"
 	>
 		<select
 			class="z-input w-auto"
@@ -35,7 +35,7 @@
 		</select>
 	</SettingsRow>
 
-	<SettingsRow title="Show message preview" description="Second line under the subject in the inbox list">
+	<SettingsRow title="Show message preview" description="Second line under the subject">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -46,7 +46,7 @@
 
 	<SettingsRow
 		title="Compact list rows"
-		description="Extra vertical padding trim on each row — stacks with list density above"
+		description="Extra vertical padding trim — stacks with list density"
 	>
 		<input
 			type="checkbox"
@@ -58,7 +58,7 @@
 
 	<SettingsRow
 		title="Show sender avatars"
-		description="Photos from Gravatar, Libravatar, Cravatar, or GitHub when available — otherwise initials"
+		description="Photos from Gravatar, Libravatar, Cravatar, or GitHub — otherwise initials"
 	>
 		<input
 			type="checkbox"
@@ -74,10 +74,7 @@
 			? 'List avatar size'
 			: 'Turn on sender avatars above to change their size'}
 	>
-		<SettingsRow
-			title="Compact list avatars"
-			description="Smaller sender avatars in the message list"
-		>
+		<SettingsRow title="Compact list avatars" description="Smaller avatars in each row">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
@@ -87,10 +84,7 @@
 		</SettingsRow>
 	</SettingsDepends>
 
-	<SettingsRow
-		title="Show stars in list"
-		description="Star icon beside starred messages in the inbox list"
-	>
+	<SettingsRow title="Show stars in list" description="Star icon beside starred messages">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -99,10 +93,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow
-		title="Show attachment icons"
-		description="Paperclip beside messages that include files"
-	>
+	<SettingsRow title="Show attachment icons" description="Paperclip beside messages with files">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -113,7 +104,7 @@
 
 	<SettingsRow
 		title="Show full dates in list"
-		description="Use full date and time instead of compact labels like Mon or May 25"
+		description="Full date and time instead of compact labels like Mon or May 25"
 	>
 		<input
 			type="checkbox"
@@ -125,7 +116,7 @@
 
 	<SettingsRow
 		title="Subject-only list"
-		description="Show only the subject on each row — hides the sender line for a tighter inbox"
+		description="Subject on each row only — hides the sender line"
 	>
 		<input
 			type="checkbox"
@@ -143,7 +134,7 @@
 	>
 		<SettingsRow
 			title="Show sender email in list"
-			description="Use the email address instead of the sender name in each row"
+			description="Email address instead of display name"
 		>
 			<input
 				type="checkbox"
@@ -154,10 +145,7 @@
 		</SettingsRow>
 	</SettingsDepends>
 
-	<SettingsRow
-		title="Show timestamps in list"
-		description="Date or time on the right side of each message row"
-	>
+	<SettingsRow title="Show timestamps in list" description="Date or time on the right of each row">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -165,13 +153,8 @@
 			onchange={(e) => settings.setShowListTimestamps(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
-</SettingsGroup>
 
-<SettingsGroup title="Unread & dividers" description="How unread messages and selected rows look.">
-	<SettingsRow
-		title="Highlight unread messages"
-		description="Bold text and unread dots in the message list"
-	>
+	<SettingsRow title="Highlight unread messages" description="Bold subject and unread dots in the list gutter">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -180,10 +163,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow
-		title="Hide list row dividers"
-		description="Remove horizontal lines between messages in the inbox list"
-	>
+	<SettingsRow title="Hide list row dividers" description="Remove horizontal lines between messages">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -194,7 +174,7 @@
 
 	<SettingsRow
 		title="Hide active message indicator"
-		description="Remove the left border and background highlight on the open message in the list"
+		description="Remove the highlight on the open message in the list"
 	>
 		<input
 			type="checkbox"
@@ -205,60 +185,13 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="App header (mail)" description="Folder name, counts, and mobile folder picker in the top bar while reading mail.">
-	<SettingsRow
-		title="Show message counts"
-		description="Unread badges on folders in the sidebar and totals in settings views"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.showMessageCounts}
-			onchange={(e) => settings.setShowMessageCounts(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		title="Hide folder title in app header"
-		description="Hide the folder name in the center of the top bar on desktop — folders stay in the sidebar"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.hideListHeader}
-			onchange={(e) => settings.setHideListHeader(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		title="Compact selection bar"
-		description="Shorter bar at the top of the message list for bulk select"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactListHeader}
-			onchange={(e) => settings.setCompactListHeader(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		title="Compact mobile folder picker"
-		description="Smaller folder dropdown in the app header on mobile"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactMobileFolderPicker}
-			onchange={(e) => settings.setCompactMobileFolderPicker(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-</SettingsGroup>
-
-<SettingsGroup title="Bulk selection" description="Multi-select for archive, move, and delete — hidden until you choose Select messages or Shift+click.">
+<SettingsGroup
+	title="Bulk selection"
+	description="Checkbox row above the list — Shift+click ranges, Ctrl+click to toggle. Bulk actions replace the row while selecting."
+>
 	<SettingsRow
 		title="Enable bulk select"
-		description="Checkbox at the top of the message list with All, Read, Unread, or None. First click selects all loaded messages."
+		description="Master checkbox and menu (All, Read, Unread, None) above the message list"
 	>
 		<input
 			type="checkbox"
@@ -272,11 +205,11 @@
 		enabled={settings.showBulkSelect}
 		inactiveReason={settings.showBulkSelect
 			? 'Bulk selection options'
-			: 'Turn on bulk select above to adjust selection mode'}
+			: 'Turn on bulk select above to adjust the selection bar'}
 	>
 		<SettingsRow
 			title="Hide selection hints"
-			description="Remove the Shift+click and Ctrl+click hints in the bulk selection bar"
+			description="Remove the Shift+click and Ctrl+click hints next to the checkbox"
 		>
 			<input
 				type="checkbox"
@@ -285,13 +218,48 @@
 				onchange={(e) => settings.setHideSelectionHints(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+
+		<SettingsRow title="Compact selection bar" description="Shorter bulk selection row">
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactListHeader}
+				onchange={(e) => settings.setCompactListHeader(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 	</SettingsDepends>
 </SettingsGroup>
 
-<SettingsGroup title="Search results" description="How search appears in the message list." advanced>
+<SettingsGroup title="Top bar & mobile" description="Folder title in the app header and mobile folder picker." advanced>
+	<SettingsRow
+		title="Hide folder title in app header"
+		description="Hide the folder name centered in the top bar on desktop — folders stay in the sidebar"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.hideListHeader}
+			onchange={(e) => settings.setHideListHeader(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Compact mobile folder picker"
+		description="Smaller folder dropdown in the top bar on phones"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactMobileFolderPicker}
+			onchange={(e) => settings.setCompactMobileFolderPicker(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
+<SettingsGroup title="Search results" description="How search results appear in the message list." advanced>
 	<SettingsRow
 		title="Hide search list prefix"
-		description="Show the query alone in search results — no “Search:” label"
+		description="Show the query alone in the app header — no “Search:” prefix"
 	>
 		<input
 			type="checkbox"
@@ -305,7 +273,7 @@
 <SettingsGroup title="Empty & error states" description="When a folder is empty or the list fails to load." advanced>
 	<SettingsRow
 		title="Hide empty list hints"
-		description="Show only the primary empty-folder message — no icons or secondary hint text"
+		description="Primary empty message only — no icons or secondary hint text"
 	>
 		<input
 			type="checkbox"
@@ -317,7 +285,7 @@
 
 	<SettingsRow
 		title="Hide empty list actions"
-		description="Remove Write a message and other action buttons when a folder or search is empty"
+		description="Remove action buttons when a folder or search has no messages"
 	>
 		<input
 			type="checkbox"
@@ -327,10 +295,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow
-		title="Compact empty list state"
-		description="Less padding and smaller icons when a folder or search has no messages"
-	>
+	<SettingsRow title="Compact empty list state" description="Less padding when a folder has no messages">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -339,10 +304,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow
-		title="Compact list error state"
-		description="Less padding when the message list fails to load"
-	>
+	<SettingsRow title="Compact list error state" description="Less padding when the list fails to load">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -351,10 +313,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow
-		title="Hide list error retry"
-		description="Remove the Try again button when the message list fails to load"
-	>
+	<SettingsRow title="Hide list error retry" description="Remove the Try again button on list load errors">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -365,10 +324,7 @@
 </SettingsGroup>
 
 <SettingsGroup title="Defaults">
-	<SettingsRow
-		title="Reset inbox settings"
-		description="Restore every option on this page to its original value"
-	>
+	<SettingsRow title="Reset inbox settings" description="Restore every option on this page to its original value">
 		<button
 			type="button"
 			class="z-btn-ghost text-sm"

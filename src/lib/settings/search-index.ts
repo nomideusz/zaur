@@ -505,12 +505,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-compact-list-header",
-		"href": "/settings/inbox",
-		"title": "Compact selection bar",
-		"description": ""
-	},
-	{
 		"id": "/settings/inbox-compact-list-rows",
 		"href": "/settings/inbox",
 		"title": "Compact list rows",
@@ -520,6 +514,18 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/inbox-compact-mobile-folder-picker",
 		"href": "/settings/inbox",
 		"title": "Compact mobile folder picker",
+		"description": ""
+	},
+	{
+		"id": "/settings/inbox-compact-selection-bar",
+		"href": "/settings/inbox",
+		"title": "Compact selection bar",
+		"description": ""
+	},
+	{
+		"id": "/settings/inbox-enable-bulk-select",
+		"href": "/settings/inbox",
+		"title": "Enable bulk select",
 		"description": ""
 	},
 	{
@@ -541,15 +547,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-hide-list-error-retry",
+		"id": "/settings/inbox-hide-folder-title-in-app-header",
 		"href": "/settings/inbox",
-		"title": "Hide list error retry",
+		"title": "Hide folder title in app header",
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-hide-list-header-on-desktop",
+		"id": "/settings/inbox-hide-list-error-retry",
 		"href": "/settings/inbox",
-		"title": "Hide folder title on desktop",
+		"title": "Hide list error retry",
 		"description": ""
 	},
 	{
@@ -601,21 +607,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-show-bulk-select",
-		"href": "/settings/inbox",
-		"title": "Show bulk select",
-		"description": ""
-	},
-	{
 		"id": "/settings/inbox-show-full-dates-in-list",
 		"href": "/settings/inbox",
 		"title": "Show full dates in list",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-show-message-counts",
-		"href": "/settings/inbox",
-		"title": "Show message counts",
 		"description": ""
 	},
 	{
@@ -652,6 +646,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/inbox-subject-only-list",
 		"href": "/settings/inbox",
 		"title": "Subject-only list",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-app-install",
+		"href": "/settings/mail",
+		"title": "App install",
 		"description": ""
 	},
 	{
@@ -763,6 +763,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/mail-push-notification-status",
+		"href": "/settings/mail",
+		"title": "Push notification status",
+		"description": ""
+	},
+	{
 		"id": "/settings/mail-reply",
 		"href": "/settings/mail",
 		"title": "Reply",
@@ -802,6 +808,18 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/mail-show-unread-count-in-tab-title",
 		"href": "/settings/mail",
 		"title": "Show unread count in tab title",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-show-unread-count-on-app-icon",
+		"href": "/settings/mail",
+		"title": "Show unread count on app icon",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-undo-send",
+		"href": "/settings/mail",
+		"title": "Undo send",
 		"description": ""
 	},
 	{
@@ -859,12 +877,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-compact-reader-header",
-		"href": "/settings/reading",
-		"title": "Compact subject title",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-compact-reader-inline-error",
 		"href": "/settings/reading",
 		"title": "Compact reader inline error",
@@ -877,9 +889,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-compact-reader-toolbar",
+		"id": "/settings/reading-compact-subject-title",
 		"href": "/settings/reading",
-		"title": "Compact toolbar actions",
+		"title": "Compact subject title",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-compact-thread-actions",
+		"href": "/settings/reading",
+		"title": "Compact thread actions",
 		"description": ""
 	},
 	{
@@ -985,7 +1003,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-minimal-reader-toolbar",
+		"id": "/settings/reading-icon-only-thread-actions",
 		"href": "/settings/reading",
 		"title": "Icon-only thread actions",
 		"description": ""
@@ -1051,18 +1069,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/workspace-compact-folder-sidebar-error",
-		"href": "/settings/workspace",
-		"title": "Compact folder sidebar error",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-folder-sidebar-header",
-		"href": "/settings/workspace",
-		"title": "Compact folder sidebar header",
-		"description": ""
-	},
-	{
 		"id": "/settings/workspace-compact-folder-tree",
 		"href": "/settings/workspace",
 		"title": "Compact folder tree",
@@ -1087,12 +1093,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/workspace-compact-mobile-search",
-		"href": "/settings/workspace",
-		"title": "Compact mobile search",
-		"description": ""
-	},
-	{
 		"id": "/settings/workspace-compact-offline-indicator",
 		"href": "/settings/workspace",
 		"title": "Compact offline indicator",
@@ -1108,6 +1108,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/workspace-compact-search-dropdown",
 		"href": "/settings/workspace",
 		"title": "Compact search dropdown",
+		"description": ""
+	},
+	{
+		"id": "/settings/workspace-compact-search-field",
+		"href": "/settings/workspace",
+		"title": "Compact search field",
 		"description": ""
 	},
 	{
@@ -1138,18 +1144,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/workspace-hide-folder-icons",
 		"href": "/settings/workspace",
 		"title": "Hide folder icons",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-hide-folder-sidebar-header",
-		"href": "/settings/workspace",
-		"title": "Hide folder sidebar header",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-hide-header-search",
-		"href": "/settings/workspace",
-		"title": "Hide header search",
 		"description": ""
 	},
 	{
@@ -1192,6 +1186,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/workspace-hide-search-dropdown-headers",
 		"href": "/settings/workspace",
 		"title": "Hide search dropdown headers",
+		"description": ""
+	},
+	{
+		"id": "/settings/workspace-hide-sidebar-search",
+		"href": "/settings/workspace",
+		"title": "Hide sidebar search",
 		"description": ""
 	},
 	{

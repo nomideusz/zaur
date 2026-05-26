@@ -266,7 +266,7 @@
 		<SettingsRow title="Compose" description="Start a new message from the mail view">
 			<span class="font-mono text-xs text-fg">c</span>
 		</SettingsRow>
-		<SettingsRow title="Search" description="Focus the search field from anywhere in mail">
+		<SettingsRow title="Search" description="Focus sidebar search on desktop (/ also works in mail)">
 			<span class="font-mono text-xs text-fg">/</span>
 		</SettingsRow>
 		<SettingsRow title="Next message" description="Move to the next message in the list">

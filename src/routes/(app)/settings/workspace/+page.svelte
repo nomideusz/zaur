@@ -10,7 +10,7 @@
 
 <SettingsPanel
 	title="Workspace"
-	description="Home screen, navigation, folder sidebar, and how panes are laid out."
+	description="Sidebar, search, pane layout, and top bar."
 >
 	<WorkspaceNavSection />
 	<WorkspaceLayoutSection />

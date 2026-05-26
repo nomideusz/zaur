@@ -5,10 +5,10 @@
 	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Mail layout" description="How the list and reading panes share space on desktop.">
+<SettingsGroup title="Mail layout" description="How the sidebar, list, and reader share space on desktop.">
 	<SettingsRow
 		title="Compact layout"
-		description="Narrower folder sidebar and message list on desktop — separate from list density in Inbox"
+		description="Narrower sidebar and message list — separate from list density in Inbox"
 	>
 		<input
 			type="checkbox"
@@ -20,7 +20,7 @@
 
 	<SettingsRow
 		title="Hide pane borders"
-		description="Remove divider lines between the header, folder sidebar, and message list"
+		description="Remove divider lines between sidebar, list, and reader"
 	>
 		<input
 			type="checkbox"
@@ -32,7 +32,7 @@
 
 	<SettingsRow
 		title="Expand list until opened"
-		description="Use the full width for the message list on desktop until you pick a message"
+		description="Full-width message list on desktop until you open a message"
 	>
 		<input
 			type="checkbox"
@@ -43,10 +43,14 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="App header" description="Top bar, New buttons, and account menu." advanced>
+<SettingsGroup
+	title="App header"
+	description="Top bar with New message, folder context, outbox, and account. New message stays visible on mail pages."
+	advanced
+>
 	<SettingsRow
 		title="Compact header actions"
-		description="Icon-only New and New event buttons in the top bar — saves horizontal space"
+		description="Icon-only New message on small screens — text label from sm breakpoint up"
 	>
 		<input
 			type="checkbox"
@@ -56,10 +60,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow
-		title="Compact app header"
-		description="Shorter top bar with less horizontal padding and spacing"
-	>
+	<SettingsRow title="Compact app header" description="Shorter top bar with less padding">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -70,7 +71,7 @@
 
 	<SettingsRow
 		title="Hide app title"
-		description="Remove the ZAUR label from the top bar — the logo link still works for screen readers"
+		description="Hide the ZAUR label — the logo link still works for screen readers"
 	>
 		<input
 			type="checkbox"
@@ -82,7 +83,7 @@
 
 	<SettingsRow
 		title="Compact account menu"
-		description="Show only your avatar in the account button — no dropdown chevron"
+		description="Avatar only on the account button — no dropdown chevron"
 	>
 		<input
 			type="checkbox"
@@ -92,10 +93,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow
-		title="Compact account menu dropdown"
-		description="Tighter spacing in the account menu panel — name, settings, theme, and sign out"
-	>
+	<SettingsRow title="Compact account menu dropdown" description="Tighter spacing in the account menu panel">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -106,7 +104,7 @@
 
 	<SettingsRow
 		title="Tool icons only"
-		description="Hide Mail, Calendar, and other tool names in the top bar — icons with tooltips only"
+		description="Hide Mail, Calendar, and Home names in the top bar — icons with tooltips only"
 	>
 		<input
 			type="checkbox"
@@ -116,10 +114,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow
-		title="Compact tool switcher"
-		description="Tighter padding on Mail, Calendar, and Home tabs in the top bar"
-	>
+	<SettingsRow title="Compact tool switcher" description="Tighter Mail, Calendar, and Home tabs">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -128,10 +123,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow
-		title="Hide offline indicator"
-		description="Do not show the offline badge in the header when you lose connection"
-	>
+	<SettingsRow title="Hide offline indicator" description="Do not show the offline badge when you lose connection">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -142,14 +134,9 @@
 
 	<SettingsDepends
 		enabled={!settings.hideOfflineIndicator}
-		inactiveReason={settings.hideOfflineIndicator
-			? 'Offline indicator is hidden'
-			: 'Offline indicator appearance'}
+		inactiveReason={settings.hideOfflineIndicator ? 'Offline indicator is hidden' : 'Offline indicator appearance'}
 	>
-		<SettingsRow
-			title="Compact offline indicator"
-			description="Smaller offline badge in the header"
-		>
+		<SettingsRow title="Compact offline indicator" description="Smaller offline badge">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
@@ -161,7 +148,7 @@
 
 	<SettingsRow
 		title="Hide outbox unless failed"
-		description="When on, hide the outbox icon while messages are queued or sending — show it only after a send fails. When off, the icon stays in the header even when the queue is empty"
+		description="Show the outbox icon only after a send fails — hide it while the queue is empty"
 	>
 		<input
 			type="checkbox"
@@ -177,10 +164,7 @@
 			? 'Outbox icon only appears when a send fails'
 			: 'Outbox menu appearance when visible'}
 	>
-		<SettingsRow
-			title="Compact outbox menu"
-			description="Tighter spacing in the queued-messages dropdown from the header"
-		>
+		<SettingsRow title="Compact outbox menu" description="Tighter spacing in the outbox dropdown">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
@@ -189,24 +173,12 @@
 			/>
 		</SettingsRow>
 	</SettingsDepends>
-
-	<SettingsRow
-		title="Compact mobile search"
-		description="Less padding on the search field in the top bar on mobile"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactMobileSearch}
-			onchange={(e) => settings.setCompactMobileSearch(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Defaults">
 	<SettingsRow
 		title="Reset workspace settings"
-		description="Restore folder sidebar, mail layout, app header, and navigation options on this page to their original values"
+		description="Restore layout, sidebar, search, and header options on this page"
 	>
 		<button
 			type="button"

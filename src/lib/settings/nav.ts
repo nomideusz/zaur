@@ -17,7 +17,7 @@ const ALL_LINKS: SettingsNavLink[] = [
 		hint: 'Colors, theme, loading',
 		section: 'customize'
 	},
-	{ href: '/settings/inbox', label: 'Inbox', hint: 'List rows and bulk actions', section: 'customize' },
+	{ href: '/settings/inbox', label: 'Inbox', hint: 'List rows and bulk select', section: 'customize' },
 	{
 		href: '/settings/reading',
 		label: 'Reading',
@@ -28,7 +28,7 @@ const ALL_LINKS: SettingsNavLink[] = [
 	{
 		href: '/settings/workspace',
 		label: 'Workspace',
-		hint: 'Sidebar, header, home',
+		hint: 'Sidebar search, layout, header',
 		section: 'customize'
 	},
 	{

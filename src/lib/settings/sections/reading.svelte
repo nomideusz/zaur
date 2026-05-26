@@ -232,10 +232,10 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Thread actions" description="Buttons when reading a message — primary actions in the reader header, more in the ⋮ menu." advanced>
+<SettingsGroup title="Thread actions" description="Mark read, Reply, and ⋮ menu — in the app header on mobile, reader toolbar on desktop." advanced>
 	<SettingsRow
 		title="Icon-only thread actions"
-		description="Show Mark read and Reply as icons only — hide text labels on the thread toolbar"
+		description="Show Mark read and Reply as icons only in the thread toolbar"
 	>
 		<input
 			type="checkbox"
