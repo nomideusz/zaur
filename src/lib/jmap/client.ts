@@ -277,7 +277,7 @@ export class JMAPClient {
 	async fetchSyncStates(): Promise<Record<string, string>> {
 		const response = await this.request([
 			['Mailbox/get', { accountId: this.accountId, ids: null, properties: ['id'] }, 'mb'],
-			['Email/get', { accountId: this.accountId, ids: [], properties: ['id'] }, 'em']
+			['Email/get', { accountId: this.accountId, ids: null, properties: ['id'] }, 'em']
 		]);
 
 		const states: Record<string, string> = {};

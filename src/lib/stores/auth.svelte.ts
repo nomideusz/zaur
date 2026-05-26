@@ -74,7 +74,9 @@ class AuthStore {
 			if (!response.ok) {
 				const code = payload.code ?? classifyJmapError(new Error(payload.error ?? ''));
 				this.errorCode = code;
-				this.error = payload.error ?? loginErrorMessage(code);
+				this.error =
+					payload.error ??
+					loginErrorMessage(code, payload.serverUrl ?? appConfig.jmapServerUrl);
 				return;
 			}
 

@@ -1,6 +1,7 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { appConfig } from '$lib/config';
 import { createConnectedClient } from '$lib/server/jmap';
+import { classifyJmapError, loginErrorMessage } from '$lib/jmap/errors';
 import { findIdentityEmail, normalizeEmail } from '$lib/jmap/account';
 import { writeSession } from '$lib/server/session';
 
@@ -48,9 +49,14 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		});
 	} catch (error) {
 		console.error('[Login Error]:', error);
-		const message = error instanceof Error ? error.message : 'Sign-in failed';
-		if (message.includes('Invalid username or password')) {
-			return json({ error: message, code: 'invalid_credentials' }, { status: 401 });
+		const code = classifyJmapError(error);
+		const message = loginErrorMessage(code, serverUrl);
+
+		if (code === 'invalid_credentials') {
+			return json({ error: message, code }, { status: 401 });
+		}
+		if (code === 'server_unavailable' || code === 'connection_failed') {
+			return json({ error: message, code }, { status: 503 });
 		}
 		return json({ error: message, code: 'generic' }, { status: 502 });
 	}

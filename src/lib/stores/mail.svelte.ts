@@ -656,7 +656,15 @@ class MailStore {
 
 	async handlePushChange(client: JMAPClient, accountChanges: { Email?: string; Mailbox?: string }) {
 		const { syncEngine } = await import('$lib/sync/engine');
-		await syncEngine.handlePushChange(client, accountChanges);
+		try {
+			await syncEngine.handlePushChange(client, accountChanges);
+		} catch (error) {
+			console.warn('[mail] Push sync failed:', error);
+			const routeId = this.currentMailboxRouteId;
+			if (routeId) {
+				void this.refreshMessages(client, routeId);
+			}
+		}
 	}
 
 	async applyEmailSync(client: JMAPClient, emails: JMAPEmail[], destroyed: string[]) {
@@ -745,13 +753,7 @@ class MailStore {
 
 		if (!incoming.length) return;
 
-		const notifiable = incoming.filter((email) => {
-			if (email.threadId === this.selectedThreadId) return false;
-
-			const browsingInboxList =
-				this.currentMailboxRouteId === 'inbox' && !this.selectedThreadId && document.hasFocus();
-			return !browsingInboxList;
-		});
+		const notifiable = incoming.filter((email) => email.threadId !== this.selectedThreadId);
 
 		if (!notifiable.length) return;
 
@@ -760,14 +762,18 @@ class MailStore {
 			const from = email.from?.[0]?.name?.trim() || email.from?.[0]?.email || 'Someone';
 			const subject = email.subject?.trim() || '(no subject)';
 			const message = `New mail from ${from}: ${subject}`;
-			toast.show(message, 'info');
-			showBrowserNotification('New mail', `${from}: ${subject}`);
+			toast.showAction(message, 'info', undefined, 5_000, { force: true });
+			if (!document.hasFocus()) {
+				showBrowserNotification('New mail', `${from}: ${subject}`);
+			}
 			return;
 		}
 
 		const message = `${notifiable.length} new messages in Inbox`;
-		toast.show(message, 'info');
-		showBrowserNotification('New mail', message);
+		toast.showAction(message, 'info', undefined, 5_000, { force: true });
+		if (!document.hasFocus()) {
+			showBrowserNotification('New mail', message);
+		}
 	}
 
 	setSelectedThread(emails: JMAPEmail[], routeMailboxId: string) {
