@@ -202,7 +202,8 @@ async function saveViaSettingsEmail(client: JMAPClient, blob: AccountSettingsBlo
 		to: [username],
 		subject: ACCOUNT_SETTINGS_SUBJECT,
 		body,
-		mailboxIds: { [mailboxId]: true }
+		mailboxIds: { [mailboxId]: true },
+		keywords: { $seen: true }
 	});
 
 	const response = await client.request([

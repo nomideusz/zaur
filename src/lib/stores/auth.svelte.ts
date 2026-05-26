@@ -45,6 +45,18 @@ class AuthStore {
 		this.isRestoring = false;
 	}
 
+	private async bootstrapMail(client: JMAPClient) {
+		await mail.loadMailboxes(client);
+		try {
+			const { markAccountSettingsEmailsRead } = await import('$lib/settings/account-settings-email');
+			if (await markAccountSettingsEmailsRead(client)) {
+				await mail.refreshMailboxes(client);
+			}
+		} catch {
+			// Non-critical housekeeping
+		}
+	}
+
 	async login(email: string, password: string, totp?: string, rememberMe = false) {
 		this.isLoading = true;
 		this.error = null;
@@ -69,7 +81,7 @@ class AuthStore {
 			const client = JMAPClient.createProxy();
 			await client.connect();
 			await this.openOfflineLayer(client);
-			await mail.loadMailboxes(client);
+			await this.bootstrapMail(client);
 
 			this.client = client;
 			this.serverUrl = payload.serverUrl;
@@ -109,7 +121,7 @@ class AuthStore {
 			const client = JMAPClient.createProxy();
 			await client.connect();
 			await this.openOfflineLayer(client);
-			await mail.loadMailboxes(client);
+			await this.bootstrapMail(client);
 
 			this.client = client;
 			this.serverUrl = payload.serverUrl ?? appConfig.jmapServerUrl;
@@ -135,7 +147,7 @@ class AuthStore {
 
 		try {
 			await this.openOfflineLayer(this.client);
-			await mail.loadMailboxes(this.client);
+			await this.bootstrapMail(this.client);
 			this.startBackgroundSync(this.client, this.username, this.displayName ?? undefined);
 			toast.show('Local mail cache cleared. Sync will rebuild from the server.', 'success');
 			return true;
