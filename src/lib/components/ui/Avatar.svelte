@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { cn } from '$lib/utils/cn';
 	import { avatarUrlsForEmail } from '$lib/utils/avatar';
+	import { getCachedAvatarUrl, setCachedAvatarUrl } from '$lib/utils/avatar-cache';
 
 	interface Props {
 		name: string;
@@ -14,6 +15,8 @@
 	let urls = $state<string[]>([]);
 	let exhausted = $state(false);
 
+	const normalizedEmail = $derived(email?.trim().toLowerCase() ?? '');
+
 	const initials = $derived(
 		name
 			.split(/\s+/)
@@ -25,12 +28,25 @@
 	const src = $derived(exhausted ? null : (urls[providerIndex] ?? null));
 
 	$effect(() => {
-		const currentEmail = email;
+		const currentEmail = normalizedEmail;
+		if (!currentEmail) {
+			providerIndex = 0;
+			exhausted = false;
+			urls = [];
+			return;
+		}
+
+		const cached = getCachedAvatarUrl(currentEmail);
+		if (cached) {
+			urls = [cached];
+			providerIndex = 0;
+			exhausted = false;
+			return;
+		}
+
 		providerIndex = 0;
 		exhausted = false;
 		urls = [];
-
-		if (!currentEmail?.trim()) return;
 
 		let cancelled = false;
 		void avatarUrlsForEmail(currentEmail, 128).then((next) => {
@@ -41,6 +57,11 @@
 			cancelled = true;
 		};
 	});
+
+	function handleLoad(event: Event) {
+		const url = (event.currentTarget as HTMLImageElement).currentSrc;
+		if (normalizedEmail && url) setCachedAvatarUrl(normalizedEmail, url);
+	}
 
 	function handleError() {
 		if (providerIndex + 1 < urls.length) {
@@ -68,6 +89,7 @@
 			loading="lazy"
 			decoding="async"
 			referrerpolicy="no-referrer"
+			onload={handleLoad}
 			onerror={handleError}
 		/>
 	{/if}

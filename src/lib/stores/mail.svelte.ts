@@ -20,6 +20,28 @@ function mapVisiblePreviews(emails: JMAPEmail[], routeMailboxId: string): Messag
 	return emails.filter(isVisibleListEmail).map((email) => mapEmailPreview(email, routeMailboxId));
 }
 
+function messagePreviewEqual(a: MessagePreview, b: MessagePreview): boolean {
+	return (
+		a.id === b.id &&
+		a.unread === b.unread &&
+		a.starred === b.starred &&
+		a.subject === b.subject &&
+		a.preview === b.preview &&
+		a.receivedAt === b.receivedAt &&
+		a.from.name === b.from.name &&
+		a.from.email === b.from.email &&
+		a.hasAttachment === b.hasAttachment
+	);
+}
+
+function messagePreviewsEqual(a: MessagePreview[], b: MessagePreview[]): boolean {
+	if (a.length !== b.length) return false;
+	for (let i = 0; i < a.length; i++) {
+		if (!messagePreviewEqual(a[i], b[i])) return false;
+	}
+	return true;
+}
+
 const ROLE_ORDER: Record<string, number> = {
 	inbox: 0,
 	drafts: 1,
@@ -97,6 +119,7 @@ class MailStore {
 	private pendingKeywords = new Map<string, { starred?: boolean; unread?: boolean }>();
 	/** Hidden settings-sync emails per mailbox JMAP id (excluded from folder totals). */
 	private hiddenSettingsPerMailbox = new Map<string, number>();
+	private lastFallbackRefreshAt = 0;
 
 	get selectedCount() {
 		return this.selectedMessageIds.size;
@@ -141,7 +164,15 @@ class MailStore {
 		}
 	}
 
-	async loadMessages(client: JMAPClient, routeMailboxId: string) {
+	async loadMessages(client: JMAPClient, routeMailboxId: string, options?: { force?: boolean }) {
+		if (
+			!options?.force &&
+			this.currentMailboxRouteId === routeMailboxId &&
+			(this.messages.length > 0 || this.messagesLoading)
+		) {
+			return;
+		}
+
 		const mailbox = this.mailboxByRouteId(routeMailboxId);
 		if (!mailbox?.jmapId) {
 			this.messages = [];
@@ -682,6 +713,9 @@ class MailStore {
 			await syncEngine.handlePushChange(client, accountChanges);
 		} catch (error) {
 			console.warn('[mail] Push sync failed:', error);
+			const now = Date.now();
+			if (now - this.lastFallbackRefreshAt < 10_000) return;
+			this.lastFallbackRefreshAt = now;
 			const routeId = this.currentMailboxRouteId;
 			if (routeId) {
 				void this.refreshMessages(client, routeId);
@@ -695,6 +729,16 @@ class MailStore {
 
 		const mailbox = this.mailboxByRouteId(routeId);
 		if (!mailbox?.jmapId) return;
+
+		const onlyHiddenChanges =
+			emails.length > 0 &&
+			emails.every((email) => isAccountSettingsSubject(email.subject)) &&
+			!destroyed.some((id) => this.messages.some((message) => message.id === id));
+
+		if (onlyHiddenChanges) {
+			void this.refreshMailboxes(client);
+			return;
+		}
 
 		const accountId = client.getAccountId();
 		const mailboxJmapId = mailbox.jmapId;
@@ -716,8 +760,11 @@ class MailStore {
 			const existingIdx = next.findIndex((m) => m.id === email.id);
 
 			if (inMailbox) {
-				if (existingIdx >= 0) next[existingIdx] = preview;
-				else {
+				if (existingIdx >= 0) {
+					if (!messagePreviewEqual(next[existingIdx], preview)) {
+						next[existingIdx] = preview;
+					}
+				} else {
 					next.push(preview);
 					totalDelta += 1;
 				}
@@ -729,15 +776,12 @@ class MailStore {
 			this.patchSelectedFromEmail(email, routeId);
 		}
 
-		if (emails.some((email) => isAccountSettingsSubject(email.subject))) {
-			void (async () => {
-				await this.refreshMailboxes(client);
-				const currentRouteId = this.currentMailboxRouteId;
-				if (currentRouteId) await this.refreshMessages(client, currentRouteId);
-			})();
+		next.sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
+
+		if (totalDelta === 0 && messagePreviewsEqual(this.messages, next)) {
+			return;
 		}
 
-		next.sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
 		this.messages = next;
 		this.messagesTotal = Math.max(0, this.messagesTotal + totalDelta);
 		this.messagesFromCache = false;
@@ -856,15 +900,18 @@ class MailStore {
 
 		try {
 			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0);
-			this.messages = mapVisiblePreviews(emails, routeMailboxId);
+			const previews = mapVisiblePreviews(emails, routeMailboxId);
+			if (!messagePreviewsEqual(this.messages, previews)) {
+				this.messages = previews;
+				this.messagesFromCache = false;
+
+				if (browser) {
+					const { cacheMessagePreviews } = await import('$lib/db');
+					await cacheMessagePreviews(client.getAccountId(), routeMailboxId, previews);
+				}
+			}
 			this.messagesTotal = this.visibleMailboxTotal(mailbox.jmapId, total);
 			this.messagesHasMore = hasMore;
-			this.messagesFromCache = false;
-
-			if (browser) {
-				const { cacheMessagePreviews } = await import('$lib/db');
-				await cacheMessagePreviews(client.getAccountId(), routeMailboxId, this.messages);
-			}
 		} catch {
 			// Background refresh — ignore transient errors
 		}

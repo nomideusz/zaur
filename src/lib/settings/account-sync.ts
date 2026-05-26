@@ -79,8 +79,6 @@ async function pushAccountSettings(options?: { quiet?: boolean }): Promise<boole
 				if (!auth.client) return;
 				void import('$lib/stores/mail.svelte').then(({ mail }) => {
 					void mail.refreshMailboxes(auth.client!);
-					const routeId = mail.currentMailboxRouteId;
-					if (routeId) void mail.refreshMessages(auth.client!, routeId);
 				});
 			});
 			return true;
