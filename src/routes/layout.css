@@ -60,6 +60,11 @@
 	--z-scrollbar-track: transparent;
 	--z-scrollbar-thumb: color-mix(in srgb, var(--z-border-strong) 72%, transparent);
 	--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 68%, transparent);
+
+	/* Header, sidebar, list/reader panes */
+	--z-chrome: var(--z-surface-raised);
+	/* Active folder, selected row, etc. */
+	--z-chrome-active: var(--z-surface-sunken);
 }
 
 :root.dark {
@@ -67,7 +72,9 @@
 
 	--z-surface: #111111;
 	--z-surface-raised: #1a1a1a;
-	--z-surface-sunken: #0d0d0d;
+	--z-surface-sunken: color-mix(in srgb, var(--z-surface) 92%, var(--z-fg) 8%);
+	--z-chrome: var(--z-surface);
+	--z-chrome-active: color-mix(in srgb, var(--z-surface) 86%, var(--z-fg) 14%);
 	--z-border: #2a2a2a;
 	--z-border-strong: #3a3a3a;
 	--z-fg: #ededec;
@@ -270,11 +277,13 @@
 
 @layer components {
 	.z-panel {
-		@apply border-b border-border bg-surface-raised;
+		@apply border-b border-border;
+		background-color: var(--z-chrome);
 	}
 
 	.z-mail-pane-surface {
-		@apply flex min-h-0 flex-col bg-surface-raised;
+		@apply flex min-h-0 flex-col;
+		background-color: var(--z-chrome);
 	}
 
 	.z-mail-reader-pane {
@@ -437,11 +446,34 @@
 	}
 
 	.z-list-row--current:not([data-hide-active-indicator])::before {
-		background-color: var(--z-fg);
+		background-color: var(--z-accent);
 	}
 
 	.z-list-row--current:not([data-hide-active-indicator]) {
-		background-color: var(--z-surface-sunken);
+		background-color: var(--z-chrome-active);
+	}
+
+	:root.dark .z-list-row--current:not([data-hide-active-indicator])::before {
+		background-color: var(--z-fg-muted);
+	}
+
+	.z-list-row[role='button']:focus-visible {
+		outline-color: var(--z-border-strong);
+		outline-offset: -2px;
+	}
+
+	.z-surface-active {
+		background-color: var(--z-chrome-active);
+		@apply font-medium text-fg;
+	}
+
+	.z-chrome-field {
+		@apply border border-border/80 bg-surface-sunken/80;
+	}
+
+	.z-chrome-field:focus {
+		background-color: var(--z-chrome-active);
+		border-color: var(--z-border-strong);
 	}
 
 	.z-list-text {
@@ -508,7 +540,7 @@
 	.z-reader-subject-row .z-type-reader-title,
 	.z-reader-chrome__actions .z-btn-ghost,
 	.z-reader-subject-toolbar .z-btn-ghost {
-		text-box-trim: both;
+		text-box-trim: trim-both;
 		text-box-edge: cap alphabetic;
 	}
 
@@ -638,7 +670,26 @@
 	}
 
 	.z-email-body :where(blockquote) {
-		@apply border-l-2 border-border pl-4 text-fg-muted;
+		margin-top: 1rem;
+		margin-bottom: 0;
+		padding: 0 0 0 1rem;
+		border: 0;
+		border-left: 2px solid color-mix(in srgb, var(--z-border) 55%, transparent);
+		border-radius: 0;
+		background: transparent;
+		color: var(--z-fg-muted);
+	}
+
+	.z-email-body :where(blockquote blockquote) {
+		margin-top: 0.75rem;
+		padding-left: 0.75rem;
+		border-left-width: 1px;
+		border-left-color: color-mix(in srgb, var(--z-border) 35%, transparent);
+		color: var(--z-fg-subtle);
+	}
+
+	.z-email-body :where(blockquote blockquote blockquote) {
+		border-left-color: color-mix(in srgb, var(--z-border) 22%, transparent);
 	}
 
 	.z-email-body :where(pre, code) {
@@ -655,12 +706,7 @@
 	}
 
 	.z-email-quote {
-		@apply mt-4 rounded-md border-l-2 border-border bg-surface-sunken/80 py-3 pl-4 pr-3 text-sm leading-relaxed whitespace-pre-wrap text-fg-muted;
-	}
-
-	.z-email-body--plain .z-email-quote,
-	.z-email-body--html .z-email-quote {
-		@apply mt-4;
+		@apply text-sm leading-relaxed whitespace-pre-wrap;
 	}
 
 	/* HTML mail: inherit reader theme; inline colors stripped except on light email sections */
@@ -672,24 +718,26 @@
 		color: var(--z-accent);
 	}
 
-	:root.dark .z-email-body--html :where(blockquote) {
-		border-color: var(--z-border);
-		color: var(--z-fg-muted);
+	:root.dark .z-email-body :where(blockquote) {
+		border-left-color: color-mix(in srgb, var(--z-border-strong) 40%, transparent);
+		color: var(--z-fg-subtle);
+	}
+
+	:root.dark .z-email-body :where(blockquote blockquote) {
+		border-left-color: color-mix(in srgb, var(--z-border) 28%, transparent);
+	}
+
+	:root.dark .z-email-body--html :where(blockquote a) {
+		color: var(--z-accent);
 	}
 
 	:root.dark .z-email-body--html [data-z-light-surface] {
 		color-scheme: light;
 		border-radius: 0.25rem;
+		isolation: isolate;
 	}
 
 	:root.dark .z-email-body--html [data-z-light-surface] :where(a) {
 		color: revert;
-	}
-
-	/* Fallback when inline color survives sanitization */
-	:root.dark
-		.z-email-body--html
-		:not(:is([data-z-light-surface], [data-z-light-surface] *)) {
-		color: inherit;
 	}
 }

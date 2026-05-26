@@ -181,7 +181,7 @@
 			data-zaur-mail-search={isSidebar ? '' : undefined}
 			{placeholder}
 			class={cn(
-				'z-input w-full border-transparent bg-surface-sunken/80 shadow-none focus:bg-surface-raised',
+				'z-input z-chrome-field w-full shadow-none',
 				isSidebar ? 'h-9 rounded-md pl-8 text-sm' : 'rounded-full pl-9'
 			)}
 			autocomplete="off"

@@ -99,9 +99,7 @@
 			class={cn(
 				'flex items-center gap-2 rounded-sm px-3 text-sm transition-colors',
 				settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',
-				$page.url.pathname.startsWith('/contacts')
-					? 'bg-surface-sunken font-medium text-fg'
-					: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
+				$page.url.pathname.startsWith('/contacts') ? 'z-surface-active' : 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
 			)}
 		>
 			<Users class="size-4 shrink-0" aria-hidden="true" />
@@ -115,7 +113,7 @@
 					'flex items-center gap-2 rounded-sm px-3 text-sm transition-colors',
 					settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',
 					$page.url.pathname.startsWith('/calendar')
-						? 'bg-surface-sunken font-medium text-fg'
+						? 'z-surface-active'
 						: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
 				)}
 			>
@@ -129,9 +127,7 @@
 			class={cn(
 				'flex items-center gap-2 rounded-sm px-3 text-sm transition-colors',
 				settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',
-				$page.url.pathname.startsWith('/settings')
-					? 'bg-surface-sunken font-medium text-fg'
-					: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
+				$page.url.pathname.startsWith('/settings') ? 'z-surface-active' : 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
 			)}
 		>
 			<Settings class="size-4 shrink-0" aria-hidden="true" />

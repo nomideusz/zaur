@@ -256,13 +256,31 @@ function stripDarkTextColor(node: Element) {
 	else node.removeAttribute('style');
 }
 
+function normalizeEmailBlockquotes(root: ParentNode) {
+	for (const blockquote of root.querySelectorAll('blockquote')) {
+		blockquote.classList.add('z-email-quote');
+	}
+}
+
 function integrateHtmlForDarkMode(root: ParentNode, darkMode: boolean) {
 	if (!browser || !darkMode) return;
 
 	markLightSurfaces(root);
 
+	for (const blockquote of root.querySelectorAll('blockquote')) {
+		if (!(blockquote instanceof HTMLElement)) continue;
+		stripLightBackground(blockquote);
+		stripDarkTextColor(blockquote);
+		for (const element of blockquote.querySelectorAll('*')) {
+			if (!(element instanceof HTMLElement)) continue;
+			stripLightBackground(element);
+			stripDarkTextColor(element);
+		}
+	}
+
 	for (const element of root.querySelectorAll('*')) {
 		if (!(element instanceof HTMLElement)) continue;
+		if (element.tagName === 'BLOCKQUOTE') continue;
 		if (isWithinLightSurface(element, root)) continue;
 		stripLightBackground(element);
 		stripDarkTextColor(element);
@@ -392,6 +410,7 @@ function postProcessSanitizedHtml(
 	const blockedExternal = blockExternalContentInDocument(container, options.allowExternal);
 	hardenLinks(container);
 	wrapHtmlQuotedReplies(container);
+	normalizeEmailBlockquotes(container);
 	const darkMode =
 		options.darkMode ??
 		(browser && document.documentElement.classList.contains('dark'));

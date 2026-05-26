@@ -52,9 +52,7 @@
 		class={cn(
 			'flex items-center gap-2.5 rounded-sm text-sm transition-colors',
 			settings.compactFolderSidebar ? 'py-1.5' : 'py-2',
-			isActive
-				? 'bg-surface-sunken font-medium text-fg'
-				: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
+			isActive ? 'z-surface-active' : 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
 		)}
 		style="padding-left: {0.75 + depth * (settings.compactFolderTree ? 0.5 : 0.75)}rem; padding-right: 0.75rem;"
 		aria-current={isActive ? 'page' : undefined}

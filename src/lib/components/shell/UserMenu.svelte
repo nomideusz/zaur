@@ -68,7 +68,7 @@
 				class={cn(
 					'flex items-center gap-2 px-3 text-sm text-fg hover:bg-surface-sunken',
 					settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2',
-					$page.url.pathname.startsWith('/settings/account') && 'bg-surface-sunken'
+					$page.url.pathname.startsWith('/settings/account') && 'z-surface-active'
 				)}
 				onclick={close}
 			>
@@ -82,7 +82,7 @@
 				class={cn(
 					'flex items-center gap-2 px-3 text-sm text-fg hover:bg-surface-sunken',
 					settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2',
-					$page.url.pathname.startsWith('/settings') && 'bg-surface-sunken'
+					$page.url.pathname.startsWith('/settings') && 'z-surface-active'
 				)}
 				onclick={close}
 			>
