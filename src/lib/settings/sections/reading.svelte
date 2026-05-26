@@ -37,7 +37,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Privacy" description="External content in HTML mail.">
+<SettingsGroup title="Privacy & safety" description="Protect against tracking pixels and unfamiliar senders.">
 	<SettingsRow title="Block external content" description="Block remote images in HTML mail — you can still show them per message">
 		<input
 			type="checkbox"
@@ -62,6 +62,18 @@
 			/>
 		</SettingsRow>
 	</SettingsDepends>
+
+	<SettingsRow
+		title="Flag external senders"
+		description="Show an External chip when mail comes from outside your own domain"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.warnExternalSenders}
+			onchange={(e) => settings.setWarnExternalSenders(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Replies" description="Reply behavior and the quick reply box.">

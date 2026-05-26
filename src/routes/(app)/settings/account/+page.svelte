@@ -6,10 +6,16 @@
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 
 	let clearingCache = $state(false);
+	let emptyingTrash = $state(false);
+	let emptyingSpam = $state(false);
+
+	const trashMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'trash'));
+	const junkMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'junk'));
 
 	async function clearLocalCache() {
 		if (
@@ -25,6 +31,43 @@
 			await auth.clearLocalCache();
 		} finally {
 			clearingCache = false;
+		}
+	}
+
+	async function emptyMailbox(role: 'trash' | 'junk') {
+		const mailbox = role === 'trash' ? trashMailbox : junkMailbox;
+		const client = auth.client;
+		if (!mailbox?.jmapId || !client) {
+			toast.show(`No ${role === 'trash' ? 'Trash' : 'Spam'} folder available on this account`, 'error');
+			return;
+		}
+		const label = role === 'trash' ? 'Trash' : 'Spam';
+		if (
+			!confirm(
+				`Permanently delete every message in ${label}? This cannot be undone.`
+			)
+		) {
+			return;
+		}
+
+		if (role === 'trash') emptyingTrash = true;
+		else emptyingSpam = true;
+
+		try {
+			const removed = await client.emptyMailbox(mailbox.jmapId);
+			toast.show(
+				removed
+					? `Deleted ${removed} message${removed === 1 ? '' : 's'} from ${label}`
+					: `${label} was already empty`,
+				removed ? 'success' : 'info'
+			);
+			await mail.refreshMailboxes(client);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : `Could not empty ${label}`;
+			toast.show(message, 'error');
+		} finally {
+			if (role === 'trash') emptyingTrash = false;
+			else emptyingSpam = false;
 		}
 	}
 </script>
@@ -100,6 +143,62 @@
 			</Button>
 		</SettingsRow>
 	</SettingsGroup>
+
+	{#if auth.identities.length > 1}
+		<SettingsGroup
+			title="Addresses"
+			description="Aliases configured on your mail account. Manage these on the server."
+		>
+			{#each auth.identities as identity (identity.id)}
+				<SettingsRow title={identity.name?.trim() || identity.email}>
+					<div class="flex flex-col items-end text-sm">
+						<span class="font-medium text-fg">{identity.email}</span>
+						{#if identity.name?.trim() && identity.name !== identity.email}
+							<span class="text-xs text-fg-subtle">{identity.name}</span>
+						{/if}
+					</div>
+				</SettingsRow>
+			{/each}
+		</SettingsGroup>
+	{/if}
+
+	{#if trashMailbox || junkMailbox}
+		<SettingsGroup
+			title="Mailbox cleanup"
+			description="Permanently delete every message in the selected folder. This cannot be undone."
+		>
+			{#if trashMailbox}
+				<SettingsRow
+					title="Empty Trash"
+					description="Permanently delete every message in {trashMailbox.name}"
+				>
+					<Button
+						variant="ghost"
+						class="text-sm"
+						disabled={emptyingTrash || !auth.client}
+						onclick={() => void emptyMailbox('trash')}
+					>
+						{emptyingTrash ? 'Emptying…' : 'Empty'}
+					</Button>
+				</SettingsRow>
+			{/if}
+			{#if junkMailbox}
+				<SettingsRow
+					title="Empty Spam"
+					description="Permanently delete every message in {junkMailbox.name}"
+				>
+					<Button
+						variant="ghost"
+						class="text-sm"
+						disabled={emptyingSpam || !auth.client}
+						onclick={() => void emptyMailbox('junk')}
+					>
+						{emptyingSpam ? 'Emptying…' : 'Empty'}
+					</Button>
+				</SettingsRow>
+			{/if}
+		</SettingsGroup>
+	{/if}
 
 	<SettingsGroup
 		title="Sync"

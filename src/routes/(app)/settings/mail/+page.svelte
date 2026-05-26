@@ -75,6 +75,29 @@
 			/>
 		</SettingsRow>
 
+		{#if settings.markAsReadOnOpen}
+			<SettingsRow
+				title="Mark-as-read delay"
+				description="Wait briefly before marking a conversation read — useful when skimming"
+			>
+				<select
+					class="z-input text-sm"
+					value={String(settings.markAsReadDelay)}
+					onchange={(e) => {
+						const next = Number(e.currentTarget.value);
+						if (next === 0 || next === 500 || next === 1000 || next === 2000) {
+							settings.setMarkAsReadDelay(next);
+						}
+					}}
+				>
+					<option value="0">Immediate</option>
+					<option value="500">0.5 seconds</option>
+					<option value="1000">1 second</option>
+					<option value="2000">2 seconds</option>
+				</select>
+			</SettingsRow>
+		{/if}
+
 		<SettingsRow title="Confirm before delete" description="Ask before moving messages to trash">
 			<input
 				type="checkbox"
@@ -127,6 +150,25 @@
 				checked={settings.hideActionToasts}
 				onchange={(e) => settings.setHideActionToasts(e.currentTarget.checked)}
 			/>
+		</SettingsRow>
+	</SettingsGroup>
+
+	<SettingsGroup title="Dates & times" description="How timestamps appear in lists and the reader.">
+		<SettingsRow title="Time format" description="Pick 12-hour, 24-hour, or follow your operating system">
+			<select
+				class="z-input text-sm"
+				value={settings.timeFormat}
+				onchange={(e) => {
+					const value = e.currentTarget.value;
+					if (value === 'auto' || value === '12h' || value === '24h') {
+						settings.setTimeFormat(value);
+					}
+				}}
+			>
+				<option value="auto">Match system</option>
+				<option value="12h">12-hour (1:30 PM)</option>
+				<option value="24h">24-hour (13:30)</option>
+			</select>
 		</SettingsRow>
 	</SettingsGroup>
 

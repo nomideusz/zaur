@@ -24,6 +24,9 @@ export type ComposeDrawerWidth = 'narrow' | 'default' | 'wide';
 export type DefaultReplyMode = 'reply' | 'reply-all';
 export type ListTextSize = 'small' | 'normal' | 'large';
 export type ComposeFormat = 'plain' | 'html';
+export type TimeFormat = 'auto' | '12h' | '24h';
+export type SearchScope = 'all' | 'current-folder';
+export type MarkAsReadDelay = 0 | 500 | 1000 | 2000;
 
 const STORAGE = {
 	blockExternal: 'zaur:block-external',
@@ -197,6 +200,12 @@ const STORAGE = {
 	showUnreadInTitle: 'zaur:show-unread-in-title',
 	showUnreadAppBadge: 'zaur:show-unread-app-badge',
 	notifyOnNewMail: 'zaur:notify-new-mail',
+	bccSelf: 'zaur:bcc-self',
+	autoArchiveOnReply: 'zaur:auto-archive-on-reply',
+	markAsReadDelay: 'zaur:mark-as-read-delay',
+	warnExternalSenders: 'zaur:warn-external-senders',
+	timeFormat: 'zaur:time-format',
+	searchScope: 'zaur:search-scope',
 	displayName: (email: string) => `zaur:display-name:${email}`,
 	signature: (email: string) => `zaur:signature:${email}`,
 	settingsDetailLevel: 'zaur:settings-detail-level'
@@ -1104,6 +1113,40 @@ function readNotifyOnNewMail(): boolean {
 	return localStorage.getItem(STORAGE.notifyOnNewMail) !== 'false';
 }
 
+function readBccSelf(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.bccSelf) === 'true';
+}
+
+function readAutoArchiveOnReply(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.autoArchiveOnReply) === 'true';
+}
+
+function readMarkAsReadDelay(): MarkAsReadDelay {
+	if (!browser) return 0;
+	const value = Number(localStorage.getItem(STORAGE.markAsReadDelay));
+	if (value === 500 || value === 1000 || value === 2000) return value;
+	return 0;
+}
+
+function readWarnExternalSenders(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.warnExternalSenders) !== 'false';
+}
+
+function readTimeFormat(): TimeFormat {
+	if (!browser) return 'auto';
+	const value = localStorage.getItem(STORAGE.timeFormat);
+	if (value === '12h' || value === '24h') return value;
+	return 'auto';
+}
+
+function readSearchScope(): SearchScope {
+	if (!browser) return 'all';
+	return localStorage.getItem(STORAGE.searchScope) === 'current-folder' ? 'current-folder' : 'all';
+}
+
 function readDisplayName(email: string | null): string {
 	if (!browser || !email) return '';
 	return localStorage.getItem(STORAGE.displayName(email)) ?? '';
@@ -1284,6 +1327,12 @@ class SettingsStore {
 	showUnreadInTitle = $state(readShowUnreadInTitle());
 	showUnreadAppBadge = $state(readShowUnreadAppBadge());
 	notifyOnNewMail = $state(readNotifyOnNewMail());
+	bccSelf = $state(readBccSelf());
+	autoArchiveOnReply = $state(readAutoArchiveOnReply());
+	markAsReadDelay = $state<MarkAsReadDelay>(readMarkAsReadDelay());
+	warnExternalSenders = $state(readWarnExternalSenders());
+	timeFormat = $state<TimeFormat>(readTimeFormat());
+	searchScope = $state<SearchScope>(readSearchScope());
 	displayName = $state('');
 	signature = $state('');
 	useSignature = $state(true);
@@ -1463,6 +1512,12 @@ class SettingsStore {
 		this.showUnreadInTitle = readShowUnreadInTitle();
 		this.showUnreadAppBadge = readShowUnreadAppBadge();
 		this.notifyOnNewMail = readNotifyOnNewMail();
+		this.bccSelf = readBccSelf();
+		this.autoArchiveOnReply = readAutoArchiveOnReply();
+		this.markAsReadDelay = readMarkAsReadDelay();
+		this.warnExternalSenders = readWarnExternalSenders();
+		this.timeFormat = readTimeFormat();
+		this.searchScope = readSearchScope();
 		this.applyListLayout();
 		this.applyReaderTextSize(this.readerTextSize);
 		this.applyListTextSize(this.listTextSize);
@@ -2775,6 +2830,48 @@ class SettingsStore {
 		}
 	}
 
+	setBccSelf(value: boolean) {
+		this.bccSelf = value;
+		if (browser) {
+			this.writeStorage(STORAGE.bccSelf, String(value));
+		}
+	}
+
+	setAutoArchiveOnReply(value: boolean) {
+		this.autoArchiveOnReply = value;
+		if (browser) {
+			this.writeStorage(STORAGE.autoArchiveOnReply, String(value));
+		}
+	}
+
+	setMarkAsReadDelay(value: MarkAsReadDelay) {
+		this.markAsReadDelay = value;
+		if (browser) {
+			this.writeStorage(STORAGE.markAsReadDelay, String(value));
+		}
+	}
+
+	setWarnExternalSenders(value: boolean) {
+		this.warnExternalSenders = value;
+		if (browser) {
+			this.writeStorage(STORAGE.warnExternalSenders, String(value));
+		}
+	}
+
+	setTimeFormat(value: TimeFormat) {
+		this.timeFormat = value;
+		if (browser) {
+			this.writeStorage(STORAGE.timeFormat, value);
+		}
+	}
+
+	setSearchScope(value: SearchScope) {
+		this.searchScope = value;
+		if (browser) {
+			this.writeStorage(STORAGE.searchScope, value);
+		}
+	}
+
 	setDisplayName(value: string) {
 		this.displayName = value;
 		if (!browser || !this.userEmail) return;
@@ -3109,6 +3206,7 @@ class SettingsStore {
 		this.setShowUnreadInTitle(true);
 		this.setShowUnreadAppBadge(true);
 		this.setMarkAsReadOnOpen(true);
+		this.setMarkAsReadDelay(0);
 		this.setEnableKeyboardShortcuts(true);
 		this.setConfirmBeforeDelete(true);
 		this.setConfirmBeforeDiscardCompose(true);
@@ -3118,6 +3216,7 @@ class SettingsStore {
 		this.setHideActionToasts(false);
 		this.setAutoLoadMore(false);
 		this.setCompactLoadMore(false);
+		this.setTimeFormat('auto');
 	}
 
 	resetInboxSettings() {
@@ -3154,6 +3253,7 @@ class SettingsStore {
 		this.setReaderTextSize('normal');
 		this.setBlockExternalContent(true);
 		this.setHideExternalContentBanner(false);
+		this.setWarnExternalSenders(true);
 		this.setCompactExternalContentBanner(false);
 		this.setPreferPlainText(false);
 		this.setCompactReaderBody(false);
@@ -3190,6 +3290,8 @@ class SettingsStore {
 	resetComposeSettings() {
 		this.setComposeLayout('drawer');
 		this.setDefaultComposeFormat('plain');
+		this.setBccSelf(false);
+		this.setAutoArchiveOnReply(false);
 		this.setHideComposeHints(false);
 		this.setCollapseQuotedInCompose(false);
 		this.setShowCcBccInCompose(true);
@@ -3206,6 +3308,7 @@ class SettingsStore {
 
 	resetWorkspaceSettings() {
 		this.setCompactLayout(false);
+		this.setSearchScope('all');
 		this.setHideFolderSidebarHeader(false);
 		this.setCompactFolderSidebarHeader(false);
 		this.setHideFolderIcons(false);

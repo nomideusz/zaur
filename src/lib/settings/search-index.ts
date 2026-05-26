@@ -19,6 +19,18 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/account-empty-spam",
+		"href": "/settings/account",
+		"title": "Empty Spam",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-empty-trash",
+		"href": "/settings/account",
+		"title": "Empty Trash",
+		"description": ""
+	},
+	{
 		"id": "/settings/account-include-signature",
 		"href": "/settings/account",
 		"title": "Include signature",
@@ -136,6 +148,18 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/calendar-week-starts-on-monday",
 		"href": "/settings/calendar",
 		"title": "Week starts on Monday",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-always-bcc-me",
+		"href": "/settings/compose",
+		"title": "Always Bcc me",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-auto-archive-after-reply",
+		"href": "/settings/compose",
+		"title": "Auto-archive after reply",
 		"description": ""
 	},
 	{
@@ -307,6 +331,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/layout-default-search-scope",
+		"href": "/settings/layout",
+		"title": "Default search scope",
+		"description": ""
+	},
+	{
 		"id": "/settings/layout-expand-list-until-opened",
 		"href": "/settings/layout",
 		"title": "Expand list until opened",
@@ -421,6 +451,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/mail-mark-as-read-delay",
+		"href": "/settings/mail",
+		"title": "Mark-as-read delay",
+		"description": ""
+	},
+	{
 		"id": "/settings/mail-mark-as-read-when-opened",
 		"href": "/settings/mail",
 		"title": "Mark as read when opened",
@@ -475,6 +511,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/mail-time-format",
+		"href": "/settings/mail",
+		"title": "Time format",
+		"description": ""
+	},
+	{
 		"id": "/settings/mail-undo-send",
 		"href": "/settings/mail",
 		"title": "Undo send",
@@ -514,6 +556,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-expand-all-thread-messages",
 		"href": "/settings/reading",
 		"title": "Expand all thread messages",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-flag-external-senders",
+		"href": "/settings/reading",
+		"title": "Flag external senders",
 		"description": ""
 	},
 	{

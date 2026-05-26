@@ -80,6 +80,32 @@
 	</SettingsRow>
 </SettingsGroup>
 
+<SettingsGroup title="Sending" description="What happens when you press Send.">
+	<SettingsRow
+		title="Always Bcc me"
+		description="Add your own address to Bcc on every outgoing message — useful as a personal archive"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.bccSelf}
+			onchange={(e) => settings.setBccSelf(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Auto-archive after reply"
+		description="Move the source conversation to Archive once a reply is sent successfully"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.autoArchiveOnReply}
+			onchange={(e) => settings.setAutoArchiveOnReply(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
 <SettingsGroup title="Reply content" description="Hints and quoted text when replying or forwarding.">
 	<SettingsRow title="Hide compose hints" description="Remove tips like “Set display name”, “Add a signature”, and shortcut nudges">
 		<input

@@ -3,6 +3,7 @@ import { goto } from '$app/navigation';
 import { appConfig } from '$lib/config';
 import { JMAPClient } from '$lib/jmap/client';
 import { classifyJmapError, loginErrorMessage, type LoginErrorCode } from '$lib/jmap/errors';
+import type { JMAPIdentity } from '$lib/jmap/types';
 import { pushListener } from '$lib/jmap/push-listener';
 import { mail } from '$lib/stores/mail.svelte';
 import { compose } from '$lib/stores/compose.svelte';
@@ -18,12 +19,14 @@ interface SessionResponse {
 	serverUrl?: string;
 	username?: string;
 	displayName?: string;
+	identities?: JMAPIdentity[];
 }
 
 interface LoginResponse {
 	serverUrl: string;
 	username: string;
 	displayName: string;
+	identities?: JMAPIdentity[];
 	error?: string;
 	code?: LoginErrorCode;
 }
@@ -37,6 +40,7 @@ class AuthStore {
 	serverUrl = $state<string | null>(null);
 	username = $state<string | null>(null);
 	displayName = $state<string | null>(null);
+	identities = $state<JMAPIdentity[]>([]);
 	client = $state<JMAPClient | null>(null);
 
 	async init() {
@@ -89,6 +93,7 @@ class AuthStore {
 			this.serverUrl = payload.serverUrl;
 			this.username = payload.username;
 			this.displayName = payload.displayName;
+			this.identities = payload.identities ?? [];
 			this.isAuthenticated = true;
 			settings.setUser(payload.username);
 			saveRememberedLogin(email, rememberMe);
@@ -129,6 +134,7 @@ class AuthStore {
 			this.serverUrl = payload.serverUrl ?? appConfig.jmapServerUrl;
 			this.username = payload.username;
 			this.displayName = payload.displayName ?? payload.username;
+			this.identities = payload.identities ?? [];
 			this.isAuthenticated = true;
 			settings.setUser(payload.username);
 			await settings.syncFromAccount();
@@ -168,6 +174,7 @@ class AuthStore {
 		this.serverUrl = null;
 		this.username = null;
 		this.displayName = null;
+		this.identities = [];
 		this.isAuthenticated = false;
 		this.error = null;
 		this.errorCode = null;
@@ -199,6 +206,7 @@ class AuthStore {
 		this.serverUrl = null;
 		this.username = null;
 		this.displayName = null;
+		this.identities = [];
 		this.isAuthenticated = false;
 		settings.setUser(null);
 		mail.reset();

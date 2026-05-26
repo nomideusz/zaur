@@ -10,8 +10,19 @@
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const query = $derived($page.url.searchParams.get('q')?.trim() ?? '');
+	const scopedMailboxId = $derived($page.url.searchParams.get('mailbox')?.trim() || null);
+	const scopedMailbox = $derived(
+		scopedMailboxId
+			? mail.mailboxes.find((mb) => mb.jmapId === scopedMailboxId)
+			: undefined
+	);
+	const scopeSuffix = $derived(scopedMailbox ? ` in ${scopedMailbox.name}` : '');
 	const mailboxName = $derived(
-		query ? (settings.hideSearchListPrefix ? query : `Search: ${query}`) : 'Search'
+		query
+			? settings.hideSearchListPrefix
+				? `${query}${scopeSuffix}`
+				: `Search: ${query}${scopeSuffix}`
+			: 'Search'
 	);
 	const countLabel = $derived(mailCountLabel(search.total, search.results.length, null));
 	const searchEmptyHint = $derived(
@@ -24,7 +35,7 @@
 			if (!query) search.reset();
 			return;
 		}
-		void search.search(client, query, mail.mailboxes);
+		void search.search(client, query, mail.mailboxes, scopedMailboxId);
 	});
 </script>
 

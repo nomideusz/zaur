@@ -45,7 +45,13 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		return json({
 			serverUrl,
 			username: email,
-			displayName: primary?.name ?? primary?.email ?? email
+			displayName: primary?.name ?? primary?.email ?? email,
+			identities: identities.map((identity) => ({
+				id: identity.id,
+				name: identity.name,
+				email: identity.email,
+				replyTo: identity.replyTo
+			}))
 		});
 	} catch (error) {
 		console.error('[Login Error]:', error);

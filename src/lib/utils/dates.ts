@@ -1,6 +1,14 @@
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 export type WeekStart = 'sunday' | 'monday';
+export type TimeFormatPref = 'auto' | '12h' | '24h';
+
+function timeStyleOptions(pref: TimeFormatPref): Intl.DateTimeFormatOptions {
+	const base: Intl.DateTimeFormatOptions = { timeStyle: 'short' };
+	if (pref === '12h') return { ...base, hour12: true };
+	if (pref === '24h') return { ...base, hour12: false };
+	return base;
+}
 
 export function pad2(value: number): string {
 	return value.toString().padStart(2, '0');
@@ -76,16 +84,21 @@ export function formatMonthTitle(year: number, month: number): string {
 }
 
 /** Compact timestamp for message lists — time today, date otherwise. */
-export function formatMessageListWhen(iso: string, full = false): string {
+export function formatMessageListWhen(
+	iso: string,
+	full = false,
+	timeFormat: TimeFormatPref = 'auto'
+): string {
 	const date = new Date(iso);
+	const timeOpts = timeStyleOptions(timeFormat);
 	if (full) {
-		return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+		return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', ...timeOpts }).format(date);
 	}
 
 	const now = new Date();
 
 	if (isSameDay(date, now)) {
-		return new Intl.DateTimeFormat(undefined, { timeStyle: 'short' }).format(date);
+		return new Intl.DateTimeFormat(undefined, timeOpts).format(date);
 	}
 
 	const weekAgo = new Date(now);

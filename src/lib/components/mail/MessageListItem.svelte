@@ -26,7 +26,9 @@
 		onSelect
 	}: Props = $props();
 
-	const when = $derived(formatMessageListWhen(message.receivedAt, settings.showFullDatesInList));
+	const when = $derived(
+		formatMessageListWhen(message.receivedAt, settings.showFullDatesInList, settings.timeFormat)
+	);
 	const senderLabel = $derived(
 		settings.showSenderEmailInList ? message.from.email || message.from.name : message.from.name
 	);

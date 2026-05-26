@@ -19,7 +19,13 @@ export const GET: RequestHandler = async ({ cookies }) => {
 			authenticated: true,
 			serverUrl: session.serverUrl,
 			username: session.username,
-			displayName: primary?.name ?? primary?.email ?? session.username
+			displayName: primary?.name ?? primary?.email ?? session.username,
+			identities: identities.map((identity) => ({
+				id: identity.id,
+				name: identity.name,
+				email: identity.email,
+				replyTo: identity.replyTo
+			}))
 		});
 	} catch {
 		clearSession(cookies);

@@ -2,7 +2,7 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
+	import { settings, type SearchScope } from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="Navigation" description="What's available in the top bar and where the app opens.">
@@ -77,6 +77,20 @@
 			checked={!settings.hideHeaderSearch}
 			onchange={(e) => settings.setHideHeaderSearch(!e.currentTarget.checked)}
 		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Default search scope"
+		description="Start in the current folder when searching from a mailbox view, or always look everywhere"
+	>
+		<select
+			class="z-input w-auto"
+			value={settings.searchScope}
+			onchange={(e) => settings.setSearchScope(e.currentTarget.value as SearchScope)}
+		>
+			<option value="all">All mail</option>
+			<option value="current-folder">Current folder</option>
+		</select>
 	</SettingsRow>
 
 	<SettingsDepends

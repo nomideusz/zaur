@@ -29,6 +29,7 @@ function indexSearchContacts(previews: MessagePreview[]) {
 
 class SearchStore {
 	query = $state('');
+	mailboxId = $state<string | null>(null);
 	results = $state<MessagePreview[]>([]);
 	loading = $state(false);
 	loadingMore = $state(false);
@@ -36,9 +37,15 @@ class SearchStore {
 	total = $state(0);
 	hasMore = $state(false);
 
-	async search(client: JMAPClient, query: string, mailboxes: Mailbox[]) {
+	async search(
+		client: JMAPClient,
+		query: string,
+		mailboxes: Mailbox[],
+		mailboxId: string | null = null
+	) {
 		const trimmed = query.trim();
 		this.query = trimmed;
+		this.mailboxId = mailboxId;
 
 		if (!trimmed) {
 			this.results = [];
@@ -52,7 +59,12 @@ class SearchStore {
 		this.error = null;
 
 		try {
-			const { emails, total, hasMore } = await client.searchEmails(trimmed, PAGE_SIZE, 0);
+			const { emails, total, hasMore } = await client.searchEmails(
+				trimmed,
+				PAGE_SIZE,
+				0,
+				mailboxId ?? undefined
+			);
 			this.results = mapVisibleSearchPreviews(emails, mailboxes);
 			this.total = total;
 			this.hasMore = hasMore;
@@ -73,7 +85,12 @@ class SearchStore {
 		this.loadingMore = true;
 		try {
 			const position = this.results.length;
-			const { emails, hasMore } = await client.searchEmails(this.query, PAGE_SIZE, position);
+			const { emails, hasMore } = await client.searchEmails(
+				this.query,
+				PAGE_SIZE,
+				position,
+				this.mailboxId ?? undefined
+			);
 			const previews = mapVisibleSearchPreviews(emails, mailboxes);
 			this.results = [...this.results, ...previews];
 			this.hasMore = hasMore;
@@ -87,6 +104,7 @@ class SearchStore {
 
 	reset() {
 		this.query = '';
+		this.mailboxId = null;
 		this.results = [];
 		this.loading = false;
 		this.loadingMore = false;

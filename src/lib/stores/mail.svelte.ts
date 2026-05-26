@@ -328,8 +328,18 @@ class MailStore {
 			}
 
 			if (settings.markAsReadOnOpen) {
-				for (const message of this.selectedThread.filter((m) => m.unread)) {
-					await this.markAsRead(client, message, true);
+				const openedThreadId = threadId;
+				const delay = settings.markAsReadDelay;
+				const doMark = async () => {
+					if (this.selectedThreadId !== openedThreadId) return;
+					for (const message of this.selectedThread.filter((m) => m.unread)) {
+						await this.markAsRead(client, message, true);
+					}
+				};
+				if (delay > 0) {
+					setTimeout(() => void doMark(), delay);
+				} else {
+					await doMark();
 				}
 			}
 		} catch (error) {

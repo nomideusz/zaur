@@ -5,6 +5,7 @@
 	import { page } from '$app/stores';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { listContacts } from '$lib/utils/contact-index';
 	import { searchOperatorHint } from '$lib/mail/search-query';
@@ -46,11 +47,23 @@
 		return `Search messages or contacts…${settings.enableKeyboardShortcuts && !settings.hideComposeHints ? ' (/ to focus)' : ''}${!settings.hideComposeHints ? ` · ${searchOperatorHint()}` : ''}`;
 	});
 
+	function currentMailboxIdFromPath(): string | null {
+		const match = $page.url.pathname.match(/^\/mail\/m\/([^/]+)/);
+		return match ? decodeURIComponent(match[1]) : null;
+	}
+
 	function submit() {
 		const query = input.trim();
 		if (!query) return;
 		open = false;
-		goto(`/mail/search?q=${encodeURIComponent(query)}`);
+
+		const params = new URLSearchParams({ q: query });
+		if (settings.searchScope === 'current-folder') {
+			const routeId = currentMailboxIdFromPath();
+			const mailbox = routeId ? mail.mailboxByRouteId(routeId) : null;
+			if (mailbox?.jmapId) params.set('mailbox', mailbox.jmapId);
+		}
+		goto(`/mail/search?${params.toString()}`);
 	}
 
 	function composeTo(email: string) {

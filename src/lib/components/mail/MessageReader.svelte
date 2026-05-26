@@ -40,6 +40,13 @@
 
 	const latest = $derived(thread.at(-1));
 	const subject = $derived(latest?.subject ?? '(no subject)');
+
+	const userDomain = $derived((auth.username ?? '').split('@')[1]?.toLowerCase() ?? '');
+	function isExternalSender(email: string): boolean {
+		if (!settings.warnExternalSenders || !userDomain) return false;
+		const domain = email.split('@')[1]?.toLowerCase();
+		return !!domain && domain !== userDomain;
+	}
 	const allowExternal = $derived(
 		!settings.blockExternalContent || (pane?.showImagesOnce ?? localShowImagesOnce)
 	);
@@ -84,10 +91,15 @@
 	});
 
 	function formatWhen(iso: string) {
-		return new Intl.DateTimeFormat(undefined, {
-			dateStyle: 'medium',
-			timeStyle: 'short'
-		}).format(new Date(iso));
+		const timeOpts: Intl.DateTimeFormatOptions =
+			settings.timeFormat === '12h'
+				? { timeStyle: 'short', hour12: true }
+				: settings.timeFormat === '24h'
+					? { timeStyle: 'short', hour12: false }
+					: { timeStyle: 'short' };
+		return new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', ...timeOpts }).format(
+			new Date(iso)
+		);
 	}
 
 	function senderLabel(message: MessageDetail) {
@@ -351,7 +363,18 @@
 										/>
 									{/if}
 									<div class="min-w-0 flex-1">
-										<p class="z-reader-from">{senderLabel(message)}</p>
+										<div class="flex items-center gap-1.5">
+											<p class="z-reader-from truncate">{senderLabel(message)}</p>
+											{#if isExternalSender(message.from.email)}
+												<span
+													class="inline-flex shrink-0 items-center gap-1 rounded-sm border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200"
+													title="Sender is outside {userDomain}"
+												>
+													<Shield class="size-3" aria-hidden="true" />
+													External
+												</span>
+											{/if}
+										</div>
 										{#if !settings.hideReaderSenderEmail}
 											{#if message.from.email !== senderLabel(message)}
 												<button

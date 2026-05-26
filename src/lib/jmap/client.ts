@@ -821,15 +821,21 @@ export class JMAPClient {
 		return { emails, total, hasMore };
 	}
 
-	async searchEmails(query: string, limit = 50, position = 0): Promise<EmailQueryResult> {
+	async searchEmails(
+		query: string,
+		limit = 50,
+		position = 0,
+		mailboxId?: string
+	): Promise<EmailQueryResult> {
 		const { filter } = parseSearchQuery(query);
+		const scopedFilter = mailboxId ? { and: [{ inMailbox: mailboxId }, filter] } : filter;
 
 		const response = await this.request([
 			[
 				'Email/query',
 				{
 					accountId: this.accountId,
-					filter,
+					filter: scopedFilter,
 					sort: [{ property: 'receivedAt', isAscending: false }],
 					limit,
 					position
@@ -970,6 +976,34 @@ export class JMAPClient {
 
 	async destroyEmail(emailId: string): Promise<void> {
 		await this.destroyEmails([emailId]);
+	}
+
+	/** Permanently delete every email in a mailbox. Returns the count removed. */
+	async emptyMailbox(mailboxId: string): Promise<number> {
+		const BATCH = 200;
+		let removed = 0;
+		while (true) {
+			const response = await this.request([
+				[
+					'Email/query',
+					{
+						accountId: this.accountId,
+						filter: { inMailbox: mailboxId },
+						limit: BATCH,
+						position: 0
+					},
+					'q0'
+				]
+			]);
+			const queryResult = response.methodResponses?.[0]?.[1] as
+				| { ids?: string[] }
+				| undefined;
+			const ids = queryResult?.ids ?? [];
+			if (!ids.length) return removed;
+			await this.destroyEmails(ids);
+			removed += ids.length;
+			if (ids.length < BATCH) return removed;
+		}
 	}
 
 	async destroyEmails(emailIds: string[]): Promise<void> {
