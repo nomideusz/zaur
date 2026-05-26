@@ -4,3 +4,7 @@ node_modules/
 .DS_Store
 deploy.tar
 temporary-captain-to-deploy.tar
+.env.*
+!.env.example
+test-results/
+playwright-report/

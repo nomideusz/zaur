@@ -17,6 +17,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const tableFilter = document.getElementById('table-filter');
   const invitesTableBody = document.getElementById('invites-table-body');
+  const cleanupPendingBtn = document.getElementById('cleanup-pending-btn');
+  const runAuditBtn = document.getElementById('run-audit-btn');
+  const auditError = document.getElementById('audit-error');
+  const auditSuccess = document.getElementById('audit-success');
+  const auditSummary = document.getElementById('audit-summary');
+  const auditResults = document.getElementById('audit-results');
 
   let invitesList = [];
 
@@ -115,7 +121,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderStats() {
     const total = invitesList.length;
-    const unused = invitesList.filter(i => !i.used && !i.revoked).length;
+    const unused = invitesList.filter(i => !i.used && !i.revoked && !i.pending).length;
     const used = invitesList.filter(i => i.used).length;
     const revoked = invitesList.filter(i => i.revoked).length;
 
@@ -160,6 +166,9 @@ document.addEventListener('DOMContentLoaded', () => {
       } else if (invite.used) {
         statusClass = 'badge-used';
         statusText = 'Used';
+      } else if (invite.pending) {
+        statusClass = 'badge-pending';
+        statusText = 'Pending';
       }
 
       tdStatus.innerHTML = `<span class="badge ${statusClass}">${statusText}</span>`;
@@ -175,6 +184,11 @@ document.addEventListener('DOMContentLoaded', () => {
           <div class="used-email">${escapeHtml(invite.emailCreated)}</div>
           <div class="used-time">${formatDate(invite.usedAt)}</div>
         `;
+      } else if (invite.pending) {
+        tdUsed.innerHTML = `
+          <div class="used-email">${escapeHtml(invite.emailPending)}</div>
+          <div class="used-time">Reserved ${formatDate(invite.pendingAt)}</div>
+        `;
       } else {
         tdUsed.textContent = '—';
         tdUsed.style.color = 'var(--z-fg-muted)';
@@ -182,7 +196,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Actions Column
       const tdActions = document.createElement('td');
-      if (!invite.used && !invite.revoked) {
+      if (!invite.used && !invite.revoked && !invite.pending) {
         const revokeBtn = document.createElement('button');
         revokeBtn.className = 'btn btn-danger btn-sm';
         revokeBtn.textContent = 'Revoke';
@@ -234,6 +248,102 @@ document.addEventListener('DOMContentLoaded', () => {
 
     renderTable(filtered);
   });
+
+  cleanupPendingBtn.addEventListener('click', async () => {
+    cleanupPendingBtn.disabled = true;
+    try {
+      const res = await fetch('/api/admin/invites/cleanup-pending', { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Cleanup failed.');
+      await loadInvites();
+    } catch (err) {
+      alert(err.message || 'Could not clean up stale pending invites.');
+    } finally {
+      cleanupPendingBtn.disabled = false;
+    }
+  });
+
+  runAuditBtn.addEventListener('click', () => runAudit());
+
+  async function runAudit() {
+    auditError.style.display = 'none';
+    auditSuccess.style.display = 'none';
+    auditSummary.innerHTML = '';
+    auditResults.innerHTML = '';
+    runAuditBtn.disabled = true;
+
+    try {
+      const res = await fetch('/api/admin/audit');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Audit failed.');
+
+      auditSummary.innerHTML = `
+        <div class="audit-card"><span>Stalwart</span><strong>${data.counts.stalwartAccounts}</strong></div>
+        <div class="audit-card"><span>Keycloak</span><strong>${data.counts.keycloakUsers}</strong></div>
+        <div class="audit-card"><span>Keycloak only</span><strong>${data.counts.keycloakOnly}</strong></div>
+        <div class="audit-card"><span>Stalwart only</span><strong>${data.counts.stalwartOnly}</strong></div>
+      `;
+
+      auditResults.appendChild(renderAuditGroup('Keycloak only', data.keycloakOnly, 'keycloak'));
+      auditResults.appendChild(renderAuditGroup('Stalwart only', data.stalwartOnly, 'stalwart'));
+
+      auditSuccess.textContent = data.counts.keycloakOnly || data.counts.stalwartOnly
+        ? 'Audit completed. Review mismatches below before cleanup.'
+        : 'Audit completed. No provisioning mismatches found.';
+      auditSuccess.style.display = 'block';
+    } catch (err) {
+      showError(err.message || 'Audit failed.', auditError);
+    } finally {
+      runAuditBtn.disabled = false;
+    }
+  }
+
+  function renderAuditGroup(title, rows, cleanupTarget) {
+    const section = document.createElement('section');
+    section.className = 'audit-group';
+    section.innerHTML = `<h4>${escapeHtml(title)}</h4>`;
+
+    if (!rows.length) {
+      const empty = document.createElement('p');
+      empty.className = 'audit-empty';
+      empty.textContent = 'No mismatches.';
+      section.appendChild(empty);
+      return section;
+    }
+
+    const list = document.createElement('div');
+    list.className = 'audit-list';
+    rows.forEach((row) => {
+      const email = row.email || row.username;
+      const item = document.createElement('div');
+      item.className = 'audit-row';
+      item.innerHTML = `
+        <span>${escapeHtml(email)}</span>
+        <button type="button" class="btn btn-danger btn-sm">Delete from ${cleanupTarget}</button>
+      `;
+      item.querySelector('button').addEventListener('click', () => cleanupAccount(email, cleanupTarget));
+      list.appendChild(item);
+    });
+    section.appendChild(list);
+    return section;
+  }
+
+  async function cleanupAccount(email, target) {
+    if (!confirm(`Delete ${email} from ${target}? This cannot be undone.`)) return;
+
+    try {
+      const res = await fetch('/api/admin/cleanup-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, target }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Cleanup failed.');
+      await runAudit();
+    } catch (err) {
+      showError(err.message || 'Cleanup failed.', auditError);
+    }
+  }
 
   // Handle Generation
   generateForm.addEventListener('submit', async (e) => {

@@ -279,10 +279,83 @@ app.get('/api/admin/status', (req, res) => {
 
 app.get('/api/admin/invites', requireAdmin, (req, res) => {
   try {
+    invites.cleanupPendingReservations();
     const list = invites.readInvites();
     res.json({ invites: list });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/invites/cleanup-pending', requireAdmin, (_req, res) => {
+  try {
+    const changed = invites.cleanupPendingReservations();
+    res.json({ success: true, changed });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+async function getProvisioningAudit() {
+  const [mailAccounts, keycloakUsers] = await Promise.all([
+    stalwart.listAccounts(),
+    keycloak.listUsers(),
+  ]);
+
+  const mailEmails = new Set(mailAccounts.map((account) => account.email.toLowerCase()));
+  const aliasEmails = new Set(
+    mailAccounts.flatMap((account) => account.aliases || []).map((alias) => alias.email.toLowerCase()),
+  );
+  const keycloakEmails = new Set(keycloakUsers.map((user) => user.email.toLowerCase()));
+
+  const keycloakOnly = keycloakUsers.filter((user) => !mailEmails.has(user.email) && !aliasEmails.has(user.email));
+  const stalwartOnly = mailAccounts.filter((account) => !keycloakEmails.has(account.email.toLowerCase()));
+
+  return {
+    counts: {
+      stalwartAccounts: mailAccounts.length,
+      keycloakUsers: keycloakUsers.length,
+      keycloakOnly: keycloakOnly.length,
+      stalwartOnly: stalwartOnly.length,
+    },
+    keycloakOnly,
+    stalwartOnly,
+  };
+}
+
+app.get('/api/admin/audit', requireAdmin, async (_req, res) => {
+  try {
+    res.json(await getProvisioningAudit());
+  } catch (err) {
+    console.error('GET /api/admin/audit:', err.message);
+    res.status(502).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/cleanup-account', requireAdmin, async (req, res) => {
+  const email = String(req.body.email || '').trim().toLowerCase();
+  const target = req.body.target;
+
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'Email is required.' });
+  }
+
+  if (!['keycloak', 'stalwart', 'both'].includes(target)) {
+    return res.status(400).json({ error: 'Cleanup target must be keycloak, stalwart, or both.' });
+  }
+
+  try {
+    const result = {};
+    if (target === 'keycloak' || target === 'both') {
+      result.keycloak = await keycloak.deleteUser(email);
+    }
+    if (target === 'stalwart' || target === 'both') {
+      result.stalwart = await stalwart.deleteAccountByEmail(email);
+    }
+    res.json({ success: true, result });
+  } catch (err) {
+    console.error('POST /api/admin/cleanup-account:', err.message);
+    res.status(502).json({ error: err.message });
   }
 });
 

@@ -71,8 +71,25 @@
           </form>
         </div>
 
+        <div class="register-panel z-panel admin-panel-card visible">
+          <div class="panel-heading-row">
+            <div>
+              <h3>Provisioning audit</h3>
+              <p class="panel-description">Find accounts that exist only in Keycloak or only in Stalwart.</p>
+            </div>
+            <button type="button" class="btn btn-ghost" id="run-audit-btn">Run audit</button>
+          </div>
+          <div class="notification error" id="audit-error" role="alert" style="display: none;"></div>
+          <div class="notification success" id="audit-success" role="alert" style="display: none;"></div>
+          <div id="audit-summary" class="audit-summary"></div>
+          <div id="audit-results" class="audit-results"></div>
+        </div>
+
         <div class="register-panel z-panel admin-panel-card visible table-panel">
-          <h3>Manage codes</h3>
+          <div class="panel-heading-row">
+            <h3>Manage codes</h3>
+            <button type="button" class="btn btn-ghost btn-sm" id="cleanup-pending-btn">Clear stale pending</button>
+          </div>
           <div class="search-box table-filter-box">
             <input type="text" id="table-filter" class="search-input z-input filter-input" placeholder="Filter codes or users…" autocomplete="off">
           </div>
