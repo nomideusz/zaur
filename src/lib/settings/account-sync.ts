@@ -75,6 +75,14 @@ async function pushAccountSettings(options?: { quiet?: boolean }): Promise<boole
 		if (response.ok) {
 			const payload = (await response.json()) as { updatedAt?: string };
 			markSyncedAt(email, payload.updatedAt ?? updatedAt);
+			void import('$lib/stores/auth.svelte').then(({ auth }) => {
+				if (!auth.client) return;
+				void import('$lib/stores/mail.svelte').then(({ mail }) => {
+					void mail.refreshMailboxes(auth.client!);
+					const routeId = mail.currentMailboxRouteId;
+					if (routeId) void mail.refreshMessages(auth.client!, routeId);
+				});
+			});
 			return true;
 		}
 

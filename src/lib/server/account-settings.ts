@@ -64,11 +64,11 @@ function pickSettingsMailbox(
 ): string | null {
 	const archive = mailboxes.find((mb) => mb.role === 'archive');
 	if (archive) return archive.id;
-	const sent = mailboxes.find((mb) => mb.role === 'sent');
-	if (sent) return sent.id;
 	const trash = mailboxes.find((mb) => mb.role === 'trash');
 	if (trash) return trash.id;
-	const fallback = mailboxes.find((mb) => mb.role !== 'drafts' && mb.role !== 'inbox');
+	const fallback = mailboxes.find(
+		(mb) => mb.role !== 'drafts' && mb.role !== 'inbox' && mb.role !== 'sent'
+	);
 	return fallback?.id ?? null;
 }
 

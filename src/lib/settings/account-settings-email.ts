@@ -30,6 +30,22 @@ async function listAccountSettingsEmails(client: JMAPClient): Promise<JMAPEmail[
 	return (getResult[1].list as JMAPEmail[]) ?? [];
 }
 
+/** Count hidden settings-sync messages per mailbox (for adjusting folder totals). */
+export async function getHiddenSettingsCountByMailbox(
+	client: JMAPClient
+): Promise<Map<string, number>> {
+	const emails = await listAccountSettingsEmails(client);
+	const counts = new Map<string, number>();
+
+	for (const email of emails) {
+		for (const mailboxId of Object.keys(email.mailboxIds ?? {})) {
+			counts.set(mailboxId, (counts.get(mailboxId) ?? 0) + 1);
+		}
+	}
+
+	return counts;
+}
+
 /** Hidden settings-sync messages should never affect folder unread badges. */
 export async function markAccountSettingsEmailsRead(client: JMAPClient): Promise<number> {
 	const emails = await listAccountSettingsEmails(client);

@@ -95,6 +95,8 @@ class MailStore {
 
 	/** In-flight keyword changes the server may not have echoed yet. */
 	private pendingKeywords = new Map<string, { starred?: boolean; unread?: boolean }>();
+	/** Hidden settings-sync emails per mailbox JMAP id (excluded from folder totals). */
+	private hiddenSettingsPerMailbox = new Map<string, number>();
 
 	get selectedCount() {
 		return this.selectedMessageIds.size;
@@ -104,12 +106,32 @@ class MailStore {
 		return this.messages.filter((message) => this.selectedMessageIds.has(message.id));
 	}
 
+	async syncHiddenSettingsCounts(client: JMAPClient) {
+		try {
+			const { getHiddenSettingsCountByMailbox } = await import('$lib/settings/account-settings-email');
+			this.hiddenSettingsPerMailbox = await getHiddenSettingsCountByMailbox(client);
+		} catch {
+			// Non-critical — folder totals may include the hidden settings message
+		}
+	}
+
+	private visibleMailboxTotal(jmapId: string, rawTotal: number): number {
+		return Math.max(0, rawTotal - (this.hiddenSettingsPerMailbox.get(jmapId) ?? 0));
+	}
+
+	private decorateMailbox(mb: JMAPMailbox): Mailbox {
+		const mapped = mapMailbox(mb);
+		mapped.total = this.visibleMailboxTotal(mb.id, mb.totalEmails ?? 0);
+		return mapped;
+	}
+
 	async loadMailboxes(client: JMAPClient) {
 		this.mailboxesLoading = true;
 		this.mailboxesError = null;
 		try {
+			await this.syncHiddenSettingsCounts(client);
 			const list = await client.getMailboxes();
-			this.mailboxes = list.map(mapMailbox).sort(sortMailboxes);
+			this.mailboxes = list.map((mb) => this.decorateMailbox(mb)).sort(sortMailboxes);
 			applyUnreadPrefixToDocument();
 		} catch (error) {
 			this.mailboxesError = error instanceof Error ? error.message : 'Failed to load folders';
@@ -151,7 +173,7 @@ class MailStore {
 		try {
 			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0);
 			this.messages = mapVisiblePreviews(emails, routeMailboxId);
-			this.messagesTotal = total;
+			this.messagesTotal = this.visibleMailboxTotal(mailbox.jmapId, total);
 			this.messagesHasMore = hasMore;
 			this.messagesFromCache = false;
 			this.messagesError = null;
@@ -687,6 +709,8 @@ class MailStore {
 		}
 
 		for (const email of emails) {
+			if (!isVisibleListEmail(email)) continue;
+
 			const inMailbox = !!email.mailboxIds?.[mailboxJmapId];
 			const preview = this.applyPendingKeywords(email.id, mapEmailPreview(email, routeId));
 			const existingIdx = next.findIndex((m) => m.id === email.id);
@@ -705,6 +729,14 @@ class MailStore {
 			this.patchSelectedFromEmail(email, routeId);
 		}
 
+		if (emails.some((email) => isAccountSettingsSubject(email.subject))) {
+			void (async () => {
+				await this.refreshMailboxes(client);
+				const currentRouteId = this.currentMailboxRouteId;
+				if (currentRouteId) await this.refreshMessages(client, currentRouteId);
+			})();
+		}
+
 		next.sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
 		this.messages = next;
 		this.messagesTotal = Math.max(0, this.messagesTotal + totalDelta);
@@ -713,7 +745,7 @@ class MailStore {
 		if (browser) {
 			const { cacheMessagePreviews } = await import('$lib/db');
 			const previews = emails
-				.filter((email) => email.mailboxIds?.[mailboxJmapId])
+				.filter((email) => email.mailboxIds?.[mailboxJmapId] && isVisibleListEmail(email))
 				.map((email) => mapEmailPreview(email, routeId));
 			if (previews.length) {
 				await cacheMessagePreviews(accountId, routeId, previews);
@@ -797,7 +829,7 @@ class MailStore {
 		}
 
 		for (const mb of mailboxes) {
-			const mapped = mapMailbox(mb);
+			const mapped = this.decorateMailbox(mb);
 			const idx = next.findIndex((item) => item.jmapId === mapped.jmapId);
 			if (idx >= 0) next[idx] = mapped;
 			else next.push(mapped);
@@ -809,8 +841,9 @@ class MailStore {
 
 	async refreshMailboxes(client: JMAPClient) {
 		try {
+			await this.syncHiddenSettingsCounts(client);
 			const list = await client.getMailboxes();
-			this.mailboxes = list.map(mapMailbox).sort(sortMailboxes);
+			this.mailboxes = list.map((mb) => this.decorateMailbox(mb)).sort(sortMailboxes);
 			applyUnreadPrefixToDocument();
 		} catch {
 			// Background refresh — ignore transient errors
@@ -824,7 +857,7 @@ class MailStore {
 		try {
 			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0);
 			this.messages = mapVisiblePreviews(emails, routeMailboxId);
-			this.messagesTotal = total;
+			this.messagesTotal = this.visibleMailboxTotal(mailbox.jmapId, total);
 			this.messagesHasMore = hasMore;
 			this.messagesFromCache = false;
 
