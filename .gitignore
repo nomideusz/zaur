@@ -23,5 +23,9 @@ cookies.txt
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
+# Playwright
+test-results/
+playwright-report/
+
 # PWA push subscription store
 .data/
