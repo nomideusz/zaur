@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import ComposePanel from '$lib/components/mail/ComposePanel.svelte';
 	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
+	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 
@@ -14,13 +15,23 @@
 	});
 
 	const initialTo = $derived($page.url.searchParams.get('to') ?? '');
+	const draftId = $derived($page.url.searchParams.get('draft'));
 
 	afterNavigate(({ from, to }) => {
 		if (to?.url.pathname !== '/mail/compose') return;
+		if (to.url.searchParams.get('draft')) return;
 		const toMode = to.url.searchParams.get('mode');
 		if (toMode && toMode !== 'new') return;
 		if (from?.url.pathname === '/mail/compose') return;
 		compose.startNew();
+	});
+
+	$effect(() => {
+		const client = auth.client;
+		if (!client || auth.isRestoring || !draftId) return;
+		void compose.loadDraft(client, draftId).catch((error) => {
+			compose.error = error instanceof Error ? error.message : 'Could not open draft';
+		});
 	});
 </script>
 

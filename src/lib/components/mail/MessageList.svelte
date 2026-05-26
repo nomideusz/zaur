@@ -214,7 +214,9 @@
 			{#each messages as message (message.id)}
 				<MessageListItem
 					{message}
-					href="/mail/{message.mailboxId}/{message.threadId}"
+					href={mailboxRouteId === 'drafts'
+						? `/mail/compose?draft=${message.id}`
+						: `/mail/${message.mailboxId}/${message.threadId}`}
 					active={activeThreadId === message.threadId}
 					selectionMode={mailboxRouteId ? mail.selectionMode : false}
 					selected={mailboxRouteId ? selectedIds.includes(message.id) : false}

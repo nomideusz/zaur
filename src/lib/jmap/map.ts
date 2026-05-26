@@ -114,6 +114,7 @@ export function mapEmailDetail(email: JMAPEmail, routeMailboxId: string): Messag
 		...mapEmailPreview(email, routeMailboxId),
 		to: mapAddresses(email.to),
 		cc: mapAddresses(email.cc),
+		bcc: mapAddresses(email.bcc),
 		bodyHtml: extractBodyHtml(email),
 		bodyText: extractBodyText(email),
 		attachments: extractAttachments(email.bodyStructure)

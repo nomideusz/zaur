@@ -79,7 +79,9 @@
 		forward: 'Forward'
 	};
 
-	const title = $derived(titles[mode] ?? 'New message');
+	const title = $derived(
+		compose.jmapDraftId ? 'Edit draft' : (titles[mode] ?? 'New message')
+	);
 
 	const draftStatus = $derived.by(() => {
 		if (compose.isSavingDraft) return 'Saving draft…';

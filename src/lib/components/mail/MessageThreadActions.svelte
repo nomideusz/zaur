@@ -5,12 +5,15 @@
 		Forward,
 		Mail,
 		MailOpen,
+		Pencil,
 		Reply,
 		ReplyAll,
+		Send,
 		Shield,
 		Star,
 		Trash2
 	} from 'lucide-svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MoveToMenu from '$lib/components/mail/MoveToMenu.svelte';
 	import { getContext } from 'svelte';
@@ -36,6 +39,7 @@
 	const pane = getContext<MailPaneContext>(MAIL_PANE_CTX);
 
 	const latest = $derived(thread.at(-1));
+	const isDraft = $derived(mailboxRouteId === 'drafts');
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
 	const primaryReplyLabel = $derived(
@@ -86,6 +90,29 @@
 		goto('/mail/compose?mode=forward');
 	}
 
+	function editDraft() {
+		if (!latest) return;
+		goto(`/mail/compose?draft=${latest.id}`);
+	}
+
+	async function sendDraft() {
+		if (!auth.client || !auth.username || !latest) return;
+
+		compose.openDraft(latest);
+		const senderName = settings.resolvedDisplayName(auth.displayName ?? auth.username);
+		const destination = settings.returnToInboxAfterSend ? '/mail/inbox' : '/mail/sent';
+		const result = await compose.send(auth.client, auth.username, senderName, {
+			onUndo: () => goto(`/mail/compose?draft=${latest.id}`),
+			onComplete: (outcome) => {
+				if (outcome === 'sent') goto(destination);
+				else if (outcome === 'queued') goto(settings.preferredMailHref());
+			}
+		});
+		if (result === 'pending' || result === 'sent') goto(destination);
+		else if (result === 'queued') goto(settings.preferredMailHref());
+		else if (result === false) goto(`/mail/compose?draft=${latest.id}`);
+	}
+
 	function archiveMessage() {
 		if (!latest) return;
 		void withClient((client) => mail.moveMessage(client, latest, 'archive'));
@@ -115,6 +142,22 @@
 
 {#if latest}
 	<div class={cn('flex shrink-0 items-center', settings.compactReaderToolbar ? 'gap-0' : 'gap-0.5', className)}>
+		{#if isDraft}
+			<IconButton label="Edit draft" class="!p-1.5" onclick={editDraft}>
+				<Pencil class="size-3.5" />
+			</IconButton>
+			<Button class="!h-8 !px-2.5 !text-xs" onclick={() => void sendDraft()}>
+				<Send class="size-3.5" aria-hidden="true" />
+				Send
+			</Button>
+			<IconButton
+				label={deleteLabel}
+				class="!p-1.5 text-danger hover:bg-danger/10"
+				onclick={deleteMessage}
+			>
+				<Trash2 class="size-3.5" />
+			</IconButton>
+		{:else}
 		{#if !settings.minimalReaderToolbar}
 			<IconButton
 				label={latest.starred ? 'Unstar' : 'Star'}
@@ -176,5 +219,6 @@
 		>
 			<Trash2 class="size-3.5" />
 		</IconButton>
+		{/if}
 	</div>
 {/if}

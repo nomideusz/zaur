@@ -35,6 +35,7 @@ export interface JMAPEmail {
 	from?: JMAPEmailAddress[];
 	to?: JMAPEmailAddress[];
 	cc?: JMAPEmailAddress[];
+	bcc?: JMAPEmailAddress[];
 	subject?: string;
 	preview?: string;
 	textBody?: JMAPEmailBodyPart[];

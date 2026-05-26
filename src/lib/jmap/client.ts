@@ -59,6 +59,7 @@ const EMAIL_DETAIL_PROPERTIES = [
 	'from',
 	'to',
 	'cc',
+	'bcc',
 	'subject',
 	'preview',
 	'textBody',

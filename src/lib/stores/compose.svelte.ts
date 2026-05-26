@@ -2,7 +2,8 @@ import { browser } from '$app/environment';
 import type { JMAPClient } from '$lib/jmap/client';
 import type { EmailAttachmentInput } from '$lib/jmap/email-build';
 import { validateAttachmentFile } from '$lib/attachments/upload';
-import { parseAddressList } from '$lib/utils/addresses';
+import { parseAddressList, formatAddressList } from '$lib/utils/addresses';
+import { mapEmailDetail } from '$lib/jmap/map';
 import { isOfflineError } from '$lib/utils/network';
 import { outbox } from '$lib/stores/outbox.svelte';
 import { settings, type ComposeFormat } from '$lib/stores/settings.svelte';
@@ -330,6 +331,28 @@ class ComposeStore {
 		this.draftSavedAt = null;
 		this.importMessageAttachments(message);
 		void this.persistLocalDraft();
+	}
+
+	openDraft(message: MessageDetail) {
+		this.cancelPendingSend();
+		this.mode = 'new';
+		this.to = formatAddressList(message.to);
+		this.cc = formatAddressList(message.cc);
+		this.bcc = formatAddressList(message.bcc ?? []);
+		this.showCcBcc = !!(this.cc || this.bcc);
+		this.subject = message.subject === '(no subject)' ? '' : message.subject;
+		this.body = message.bodyText || '';
+		this.jmapDraftId = message.id;
+		this.error = null;
+		this.draftSavedAt = null;
+		this.importMessageAttachments(message);
+		void this.persistLocalDraft();
+	}
+
+	async loadDraft(client: JMAPClient, draftId: string) {
+		const email = await client.getEmail(draftId);
+		if (!email) throw new Error('Draft not found');
+		this.openDraft(mapEmailDetail(email, 'drafts'));
 	}
 
 	scheduleAutosave(client: JMAPClient | null, fromEmail: string, fromName?: string) {

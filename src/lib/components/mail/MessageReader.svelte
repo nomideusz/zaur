@@ -366,7 +366,7 @@
 		{/each}
 	</div>
 
-	{#if latest && auth.client && settings.showQuickReply}
+	{#if latest && auth.client && settings.showQuickReply && mailboxRouteId !== 'drafts'}
 		<footer class={cn('shrink-0 bg-surface/80 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-6', !settings.hideReaderPaneBorders && 'border-t border-border', settings.compactQuickReply ? 'py-2.5' : 'py-4')}>
 			<div class="flex w-full max-w-(--z-reader-measure) gap-2">
 				<textarea

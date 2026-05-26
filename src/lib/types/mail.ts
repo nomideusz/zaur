@@ -26,6 +26,7 @@ export interface MessagePreview {
 export interface MessageDetail extends MessagePreview {
 	to: { name: string; email: string }[];
 	cc: { name: string; email: string }[];
+	bcc: { name: string; email: string }[];
 	bodyHtml?: string;
 	bodyText: string;
 	attachments: MessageAttachment[];
