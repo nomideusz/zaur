@@ -27,17 +27,28 @@
 			);
 		});
 
+		const onPreloadError = (event: Event) => {
+			event.preventDefault();
+			window.location.reload();
+		};
+		window.addEventListener('vite:preloadError', onPreloadError);
+
 		void (async () => {
 			await registerAppServiceWorker();
 
 			if (settings.notifyOnNewMail) {
-				await syncPushSubscription(true);
+				try {
+					await syncPushSubscription(true);
+				} catch {
+					// Push may be unavailable (browser, network, or service worker state)
+				}
 			}
 		})();
 
 		const onUnauthorized = () => auth.handleUnauthorized();
 		window.addEventListener('zaur:unauthorized', onUnauthorized);
 		return () => {
+			window.removeEventListener('vite:preloadError', onPreloadError);
 			window.removeEventListener('zaur:unauthorized', onUnauthorized);
 			network.stop();
 			pwa.destroy();

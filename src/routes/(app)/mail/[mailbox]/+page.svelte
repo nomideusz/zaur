@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import MailPane from '$lib/components/mail/MailPane.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
 	import MessageReaderEmpty from '$lib/components/mail/MessageReaderEmpty.svelte';
@@ -17,8 +18,11 @@
 
 	$effect(() => {
 		const client = auth.client;
+		const mailboxId = data.mailboxId;
 		if (!client || auth.isRestoring) return;
-		void mail.loadMessages(client, data.mailboxId);
+		untrack(() => {
+			void mail.loadMessages(client, mailboxId);
+		});
 	});
 
 	$effect(() => {
@@ -53,7 +57,7 @@
 				if (auth.client) void mail.loadMoreMessages(auth.client);
 			}}
 			onRetry={() => {
-				if (auth.client) void mail.loadMessages(auth.client, data.mailboxId);
+				if (auth.client) void mail.loadMessages(auth.client, data.mailboxId, { force: true });
 			}}
 		/>
 	{/snippet}

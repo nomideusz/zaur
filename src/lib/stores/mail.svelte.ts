@@ -104,6 +104,8 @@ class MailStore {
 	messagesHasMore = $state(false);
 	messagesFromCache = $state(false);
 	currentMailboxRouteId = $state<string | null>(null);
+	/** Last mailbox route id whose message list fetch finished (including empty folders). */
+	messagesLoadSettledForRouteId = $state<string | null>(null);
 
 	selectedThread = $state<MessageDetail[]>([]);
 	selectedThreadId = $state<string | null>(null);
@@ -167,8 +169,9 @@ class MailStore {
 	async loadMessages(client: JMAPClient, routeMailboxId: string, options?: { force?: boolean }) {
 		if (
 			!options?.force &&
-			this.currentMailboxRouteId === routeMailboxId &&
-			(this.messages.length > 0 || this.messagesLoading)
+			(this.messagesLoading ||
+				(this.messagesLoadSettledForRouteId === routeMailboxId &&
+					this.currentMailboxRouteId === routeMailboxId))
 		) {
 			return;
 		}
@@ -178,6 +181,8 @@ class MailStore {
 			this.messages = [];
 			this.messagesError = 'Folder not found';
 			this.messagesHasMore = false;
+			this.messagesLoadSettledForRouteId = routeMailboxId;
+			this.currentMailboxRouteId = routeMailboxId;
 			return;
 		}
 
@@ -226,6 +231,7 @@ class MailStore {
 			this.messagesError = error instanceof Error ? error.message : 'Failed to load messages';
 		} finally {
 			this.messagesLoading = false;
+			this.messagesLoadSettledForRouteId = routeMailboxId;
 		}
 	}
 
@@ -1078,6 +1084,7 @@ class MailStore {
 		this.messagesHasMore = false;
 		this.messagesFromCache = false;
 		this.currentMailboxRouteId = null;
+		this.messagesLoadSettledForRouteId = null;
 		this.selectedThread = [];
 		this.selectedThreadId = null;
 		this.selectedLoading = false;

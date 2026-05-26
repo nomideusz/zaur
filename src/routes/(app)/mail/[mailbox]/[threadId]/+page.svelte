@@ -69,7 +69,7 @@
 				if (auth.client) void mail.loadMoreMessages(auth.client);
 			}}
 			onRetry={() => {
-				if (auth.client) void mail.loadMessages(auth.client, data.mailboxId);
+				if (auth.client) void mail.loadMessages(auth.client, data.mailboxId, { force: true });
 			}}
 		/>
 	{/snippet}

@@ -70,10 +70,17 @@ export async function subscribeToPushNotifications(): Promise<boolean> {
 
 	let subscription = await registration.pushManager.getSubscription();
 	if (!subscription) {
-		subscription = await registration.pushManager.subscribe({
-			userVisibleOnly: true,
-			applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource
-		});
+		try {
+			subscription = await registration.pushManager.subscribe({
+				userVisibleOnly: true,
+				applicationServerKey: urlBase64ToUint8Array(publicKey) as BufferSource
+			});
+		} catch (error) {
+			if (error instanceof DOMException && error.name === 'AbortError') {
+				return false;
+			}
+			throw error;
+		}
 	}
 
 	const subscribeResponse = await fetch('/api/push/subscribe', {
