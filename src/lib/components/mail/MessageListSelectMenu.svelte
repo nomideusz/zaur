@@ -3,6 +3,12 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 
+	interface Props {
+		disabled?: boolean;
+	}
+
+	let { disabled = false }: Props = $props();
+
 	let open = $state(false);
 	let root = $state<HTMLDivElement | null>(null);
 
@@ -30,6 +36,7 @@
 		ariaControls={menuId}
 		ariaHaspopup="menu"
 		onclick={(event) => {
+			if (disabled) return;
 			event.stopPropagation();
 			open = !open;
 		}}

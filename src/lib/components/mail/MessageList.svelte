@@ -140,7 +140,7 @@
 
 <section
 	class={cn(
-		'z-mail-pane-surface flex min-h-0 min-w-0 flex-col',
+		'z-mail-pane-surface flex min-h-0 min-w-0 flex-col overflow-hidden',
 		listExpanded ? 'flex-1' : 'w-full md:w-(--width-list) md:max-w-(--width-list) md:flex-none',
 		hideOnMobile ? (mail.hasSelection ? 'flex' : 'hidden md:flex') : 'flex',
 		!settings.hidePaneBorders && !listExpanded && 'border-r border-border',
@@ -149,8 +149,16 @@
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
-	{#if mailboxRouteId && settings.showBulkSelect && !loading && !error && messages.length}
-		<MessageListHeader {mailboxName} {mailboxRouteId} {countLabel} {onBulkAction} />
+	{#if mailboxRouteId && settings.showBulkSelect}
+		<div class="relative z-10 shrink-0">
+			<MessageListHeader
+				{mailboxName}
+				{mailboxRouteId}
+				{countLabel}
+				{onBulkAction}
+				disabled={loading || !!error || !messages.length}
+			/>
+		</div>
 	{/if}
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 		{#if loading}

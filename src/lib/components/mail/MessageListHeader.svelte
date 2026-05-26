@@ -13,10 +13,11 @@
 		mailboxName: string;
 		mailboxRouteId: string;
 		countLabel?: string;
+		disabled?: boolean;
 		onBulkAction?: () => void;
 	}
 
-	let { mailboxName, mailboxRouteId, countLabel, onBulkAction }: Props = $props();
+	let { mailboxName, mailboxRouteId, countLabel, disabled = false, onBulkAction }: Props = $props();
 
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const displayMailboxName = $derived(
@@ -35,9 +36,11 @@
 		mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
 	);
 	const actionButtonClass = '!h-8 shrink-0 !px-2 !text-xs';
-	const moveSelectClass = cn(
-		'z-input h-8 max-w-[9rem] shrink-0 truncate py-0 pl-2 pr-7 text-xs',
-		settings.compactListHeader && 'max-w-[8rem]'
+	const moveSelectClass = $derived(
+		cn(
+			'z-input h-8 max-w-[9rem] shrink-0 truncate py-0 pl-2 pr-7 text-xs',
+			settings.compactListHeader && 'max-w-[8rem]'
+		)
 	);
 
 	async function runBulk(action: () => Promise<void>) {
@@ -70,15 +73,16 @@
 <div
 	class={cn(
 		'z-mail-list-header',
-		settings.compactListHeader && 'z-mail-list-header--compact'
+		settings.compactListHeader && 'z-mail-list-header--compact',
+		disabled && 'pointer-events-none opacity-60'
 	)}
 >
 	<div class="flex shrink-0 items-center gap-0.5">
 		<MessageListMasterCheckbox />
-		<MessageListSelectMenu />
+		<MessageListSelectMenu {disabled} />
 	</div>
 
-	{#if mail.hasSelection}
+	{#if mail.hasSelection && !disabled}
 		<div class="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
 			<span class="shrink-0 text-sm font-medium text-fg">{selectedIds.length} selected</span>
 			{#if hasUnreadSelected}

@@ -28,7 +28,9 @@
 		ctx.mailboxName.startsWith('Search:') ? ctx.mailboxName.slice(8) : ctx.mailboxName
 	);
 	const folderInListHeader = $derived(
-		settings.showBulkSelect && !!ctx.mailboxRouteId && !settings.hideListHeader
+		settings.showBulkSelect &&
+			!!ctx.mailboxRouteId &&
+			!settings.hideListHeader
 	);
 </script>
 
