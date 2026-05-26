@@ -43,10 +43,46 @@
 		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
 	}
 
+	function menuItems(): HTMLButtonElement[] {
+		const menu = document.getElementById(dropdownId);
+		return menu ? Array.from(menu.querySelectorAll<HTMLButtonElement>('button[role="menuitem"]')) : [];
+	}
+
+	function focusMenuItem(index: number) {
+		const items = menuItems();
+		if (!items.length) return;
+		items[Math.max(0, Math.min(index, items.length - 1))]?.focus();
+	}
+
 	function onSearchKeydown(event: KeyboardEvent) {
 		if (event.key === 'Escape') {
 			open = false;
 			searchInput?.blur();
+		} else if (event.key === 'ArrowDown' && showDropdown) {
+			event.preventDefault();
+			focusMenuItem(0);
+		}
+	}
+
+	function onMenuKeydown(event: KeyboardEvent) {
+		const items = menuItems();
+		const currentIndex = items.findIndex((item) => item === document.activeElement);
+		if (event.key === 'Escape') {
+			event.preventDefault();
+			open = false;
+			searchInput?.focus();
+		} else if (event.key === 'ArrowDown') {
+			event.preventDefault();
+			focusMenuItem((currentIndex + 1) % items.length);
+		} else if (event.key === 'ArrowUp') {
+			event.preventDefault();
+			focusMenuItem((currentIndex - 1 + items.length) % items.length);
+		} else if (event.key === 'Home') {
+			event.preventDefault();
+			focusMenuItem(0);
+		} else if (event.key === 'End') {
+			event.preventDefault();
+			focusMenuItem(items.length - 1);
 		}
 	}
 
@@ -120,6 +156,7 @@
 			role="menu"
 			tabindex="-1"
 			class="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-md border border-border bg-surface-raised py-1 shadow-md"
+			onkeydown={onMenuKeydown}
 		>
 			<button
 				type="submit"

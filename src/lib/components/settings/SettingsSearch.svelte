@@ -22,11 +22,47 @@
 		settingsSearch.setQuery((e.currentTarget as HTMLInputElement).value);
 	}
 
+	function resultButtons(): HTMLButtonElement[] {
+		const list = document.getElementById(resultsId);
+		return list ? Array.from(list.querySelectorAll<HTMLButtonElement>('button')) : [];
+	}
+
+	function focusResult(index: number) {
+		const buttons = resultButtons();
+		if (!buttons.length) return;
+		buttons[Math.max(0, Math.min(index, buttons.length - 1))]?.focus();
+	}
+
 	function onKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
 			settingsSearch.setQuery('');
 			if (input) input.value = '';
 			input?.blur();
+		} else if (e.key === 'ArrowDown' && results.length) {
+			e.preventDefault();
+			focusResult(0);
+		}
+	}
+
+	function onResultsKeydown(e: KeyboardEvent) {
+		const buttons = resultButtons();
+		const currentIndex = buttons.findIndex((button) => button === document.activeElement);
+		if (e.key === 'Escape') {
+			settingsSearch.setQuery('');
+			if (input) input.value = '';
+			input?.focus();
+		} else if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			focusResult((currentIndex + 1) % buttons.length);
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			focusResult((currentIndex - 1 + buttons.length) % buttons.length);
+		} else if (e.key === 'Home') {
+			e.preventDefault();
+			focusResult(0);
+		} else if (e.key === 'End') {
+			e.preventDefault();
+			focusResult(buttons.length - 1);
 		}
 	}
 </script>
@@ -57,6 +93,7 @@
 			class="absolute top-full z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-border bg-surface-raised py-1 shadow-md md:max-w-xs"
 			role="listbox"
 			aria-label="Settings search results"
+			onkeydown={onResultsKeydown}
 		>
 			{#each results as entry (entry.id + entry.href)}
 				<li role="option" aria-selected="false">
