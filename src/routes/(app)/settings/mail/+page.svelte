@@ -53,6 +53,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Show unread count on app icon"
+			description="Badge on the installed app icon with your Inbox unread count — Chrome and Edge on desktop and Android"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.showUnreadAppBadge}
+				onchange={(e) => settings.setShowUnreadAppBadge(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Show unread count in tab title"
 			description="Prefix the browser tab with the number of unread Inbox messages"
 		>

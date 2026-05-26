@@ -175,6 +175,7 @@ class AuthStore {
 		search.reset();
 		outbox.reset();
 		calendar.reset();
+		void import('$lib/utils/app-badge').then(({ clearAppBadge }) => clearAppBadge());
 
 		try {
 			await fetch('/api/auth/logout', { method: 'POST' });
@@ -203,6 +204,7 @@ class AuthStore {
 		search.reset();
 		outbox.reset();
 		calendar.reset();
+		void import('$lib/utils/app-badge').then(({ clearAppBadge }) => clearAppBadge());
 		goto('/login');
 	}
 

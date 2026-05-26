@@ -191,6 +191,7 @@ const STORAGE = {
 	useSignature: (email: string) => `zaur:use-signature:${email}`,
 	markAsReadOnOpen: 'zaur:mark-read-on-open',
 	showUnreadInTitle: 'zaur:show-unread-in-title',
+	showUnreadAppBadge: 'zaur:show-unread-app-badge',
 	notifyOnNewMail: 'zaur:notify-new-mail',
 	displayName: (email: string) => `zaur:display-name:${email}`,
 	signature: (email: string) => `zaur:signature:${email}`,
@@ -1114,6 +1115,11 @@ function readShowUnreadInTitle(): boolean {
 	return localStorage.getItem(STORAGE.showUnreadInTitle) !== 'false';
 }
 
+function readShowUnreadAppBadge(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.showUnreadAppBadge) !== 'false';
+}
+
 function readNotifyOnNewMail(): boolean {
 	if (!browser) return true;
 	return localStorage.getItem(STORAGE.notifyOnNewMail) !== 'false';
@@ -1302,6 +1308,7 @@ class SettingsStore {
 	defaultComposeFormat = $state<ComposeFormat>(readDefaultComposeFormat());
 	markAsReadOnOpen = $state(readMarkAsReadOnOpen());
 	showUnreadInTitle = $state(readShowUnreadInTitle());
+	showUnreadAppBadge = $state(readShowUnreadAppBadge());
 	notifyOnNewMail = $state(readNotifyOnNewMail());
 	displayName = $state('');
 	signature = $state('');
@@ -1485,6 +1492,7 @@ class SettingsStore {
 		this.defaultComposeFormat = readDefaultComposeFormat();
 		this.markAsReadOnOpen = readMarkAsReadOnOpen();
 		this.showUnreadInTitle = readShowUnreadInTitle();
+		this.showUnreadAppBadge = readShowUnreadAppBadge();
 		this.notifyOnNewMail = readNotifyOnNewMail();
 		this.applyListLayout();
 		this.applyReaderTextSize(this.readerTextSize);
@@ -2815,6 +2823,16 @@ class SettingsStore {
 		}
 	}
 
+	setShowUnreadAppBadge(value: boolean) {
+		this.showUnreadAppBadge = value;
+		if (browser) {
+			this.writeStorage(STORAGE.showUnreadAppBadge, String(value));
+			void import('$lib/utils/document-title').then(({ applyUnreadPrefixToDocument }) =>
+				applyUnreadPrefixToDocument()
+			);
+		}
+	}
+
 	setNotifyOnNewMail(value: boolean) {
 		this.notifyOnNewMail = value;
 		if (browser) {
@@ -3170,6 +3188,7 @@ class SettingsStore {
 	resetMailSettings() {
 		this.setNotifyOnNewMail(true);
 		this.setShowUnreadInTitle(true);
+		this.setShowUnreadAppBadge(true);
 		this.setMarkAsReadOnOpen(true);
 		this.setEnableKeyboardShortcuts(true);
 		this.setConfirmBeforeDelete(true);

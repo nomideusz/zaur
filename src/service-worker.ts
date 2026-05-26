@@ -12,7 +12,13 @@ interface PushPayload {
 	body?: string;
 	url?: string;
 	tag?: string;
+	unreadCount?: number;
 }
+
+type BadgeCapableRegistration = ServiceWorkerRegistration & {
+	setAppBadge?: (count?: number) => Promise<void>;
+	clearAppBadge?: () => Promise<void>;
+};
 
 self.addEventListener('push', (event) => {
 	const payload = parsePushPayload(event);
@@ -25,7 +31,12 @@ self.addEventListener('push', (event) => {
 		data: { url: payload.url ?? '/mail/inbox' }
 	};
 
-	event.waitUntil(self.registration.showNotification(title, options));
+	event.waitUntil(
+		Promise.all([
+			self.registration.showNotification(title, options),
+			syncAppBadgeFromPush(payload.unreadCount)
+		])
+	);
 });
 
 self.addEventListener('notificationclick', (event) => {
@@ -45,6 +56,21 @@ self.addEventListener('notificationclick', (event) => {
 		})
 	);
 });
+
+async function syncAppBadgeFromPush(unreadCount: number | undefined): Promise<void> {
+	if (typeof unreadCount !== 'number') return;
+
+	const registration = self.registration as BadgeCapableRegistration;
+	try {
+		if (unreadCount > 0 && registration.setAppBadge) {
+			await registration.setAppBadge(unreadCount);
+		} else if (registration.clearAppBadge) {
+			await registration.clearAppBadge();
+		}
+	} catch {
+		// Badging is optional
+	}
+}
 
 function parsePushPayload(event: PushEvent): PushPayload {
 	if (!event.data) return {};

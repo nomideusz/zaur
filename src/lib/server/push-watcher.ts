@@ -247,10 +247,29 @@ class SubscriptionWatcher {
 		);
 		if (!incoming.length) return;
 
-		await this.notifyIncomingMail(incoming);
+		await this.notifyIncomingMail(client, inboxId, incoming);
 	}
 
-	private async notifyIncomingMail(emails: JMAPEmail[]) {
+	private async getInboxUnreadCount(
+		client: Awaited<ReturnType<typeof createConnectedClient>>,
+		inboxId: string
+	): Promise<number | undefined> {
+		try {
+			const mailboxes = await client.getMailboxes();
+			const inbox = mailboxes.find((mailbox) => mailbox.id === inboxId);
+			return inbox?.unreadEmails;
+		} catch {
+			return undefined;
+		}
+	}
+
+	private async notifyIncomingMail(
+		client: Awaited<ReturnType<typeof createConnectedClient>>,
+		inboxId: string,
+		emails: JMAPEmail[]
+	) {
+		const unreadCount = await this.getInboxUnreadCount(client, inboxId);
+
 		if (emails.length === 1) {
 			const email = emails[0];
 			const from = email.from?.[0]?.name?.trim() || email.from?.[0]?.email || 'Someone';
@@ -258,14 +277,16 @@ class SubscriptionWatcher {
 			await sendPushNotification(this.record, {
 				title: 'New mail',
 				body: `${from}: ${subject}`,
-				url: email.threadId ? `/mail/inbox/${email.threadId}` : '/mail/inbox'
+				url: email.threadId ? `/mail/inbox/${email.threadId}` : '/mail/inbox',
+				unreadCount
 			});
 			return;
 		}
 
 		await sendPushNotification(this.record, {
 			title: 'New mail',
-			body: `${emails.length} new messages in Inbox`
+			body: `${emails.length} new messages in Inbox`,
+			unreadCount
 		});
 	}
 }

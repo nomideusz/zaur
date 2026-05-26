@@ -6,6 +6,7 @@ export interface PushMessage {
 	body: string;
 	url?: string;
 	tag?: string;
+	unreadCount?: number;
 }
 
 export async function sendPushNotification(
@@ -21,7 +22,8 @@ export async function sendPushNotification(
 				title: message.title,
 				body: message.body,
 				url: message.url ?? '/mail/inbox',
-				tag: message.tag ?? 'zaur-new-mail'
+				tag: message.tag ?? 'zaur-new-mail',
+				unreadCount: message.unreadCount
 			})
 		);
 		return true;
