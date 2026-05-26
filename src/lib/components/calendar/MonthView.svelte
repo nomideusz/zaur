@@ -36,9 +36,24 @@
 	function createOnDay(day: Date) {
 		calendar.openCompose(day);
 	}
+
+	function formatDayLabel(day: Date): string {
+		return new Intl.DateTimeFormat(undefined, { dateStyle: 'full' }).format(day);
+	}
+
+	function eventLabel(event: CalendarEvent): string {
+		const time = event.allDay ? 'All day' : formatChipTime(event);
+		return `${event.title || 'Untitled event'}${time ? `, ${time}` : ''}`;
+	}
+
+	function onCalendarsKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			calendarsOpen = false;
+		}
+	}
 </script>
 
-<svelte:window onclick={() => (calendarsOpen = false)} />
+<svelte:window onclick={() => (calendarsOpen = false)} onkeydown={onCalendarsKeydown} />
 
 <section
 	class={cn(
@@ -75,6 +90,9 @@
 		<IconButton
 			label="Show calendars"
 			class="md:hidden"
+			ariaExpanded={calendarsOpen}
+			ariaControls="mobile-calendar-list"
+			ariaHaspopup="true"
 			onclick={(e) => {
 				e.stopPropagation();
 				calendarsOpen = !calendarsOpen;
@@ -86,6 +104,10 @@
 
 	{#if calendarsOpen && calendar.calendars.length}
 		<div
+			id="mobile-calendar-list"
+			role="group"
+			aria-label="Visible calendars"
+			tabindex="-1"
 			class={cn(
 				'z-pane-scroll max-h-48 shrink-0 overflow-y-auto border-b md:hidden',
 				settings.compactCalendarSidebar ? 'px-2 py-1' : 'px-2 py-2',
@@ -168,6 +190,7 @@
 						!hideBorders && 'border-b border-r border-border',
 						!inMonth && 'bg-surface-sunken/30 text-fg-subtle'
 					)}
+					aria-label={`${formatDayLabel(day)}, ${dayEvents.length} ${dayEvents.length === 1 ? 'event' : 'events'}`}
 				>
 					<div class="mb-1 flex items-center justify-between gap-1">
 						<button
@@ -201,6 +224,8 @@
 									)}
 									style:background-color={`color-mix(in srgb, ${eventColor(event)} 18%, transparent)`}
 									style:color={eventColor(event)}
+									aria-label={eventLabel(event)}
+									aria-current={calendar.selectedEventId === event.id ? 'true' : undefined}
 									onclick={() => selectEvent(event.id)}
 								>
 									{#if formatChipTime(event)}
@@ -215,6 +240,7 @@
 								<button
 									type="button"
 									class="w-full rounded px-1 text-left text-[10px] text-fg-subtle hover:bg-surface-sunken hover:text-fg"
+									aria-label={`Show ${dayEvents.length - maxEventsPerDay} more events on ${formatDayLabel(day)}`}
 									onclick={() => selectEvent(dayEvents[maxEventsPerDay].id)}
 								>
 									+{dayEvents.length - maxEventsPerDay} more

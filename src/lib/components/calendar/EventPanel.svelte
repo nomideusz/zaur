@@ -12,11 +12,15 @@
 	const eventCalendars = $derived(
 		event ? event.calendarIds.map((id) => calendar.calendarById(id)).filter(Boolean) : []
 	);
+	const eventTitle = $derived(event?.title?.trim() || 'Untitled event');
+	const eventDescription = $derived(event?.description?.trim() ?? '');
+	const eventLocation = $derived(event?.location?.trim() ?? '');
 	const hideBorders = $derived(settings.hideCalendarPaneBorders || settings.hidePaneBorders);
 	const panelPadding = $derived(settings.compactCalendarEventPanel ? 'px-3 py-2.5' : 'px-4 py-3');
 
 	function deleteEvent() {
 		if (!auth.client || !event) return;
+		if (!confirm(`Delete “${eventTitle}”? This cannot be undone.`)) return;
 		void calendar.deleteEvent(auth.client, event);
 	}
 
@@ -35,7 +39,7 @@
 		)}
 	>
 		<div class="min-w-0">
-			<h2 class="text-base font-semibold text-fg">{event!.title}</h2>
+			<h2 class="text-base font-semibold text-fg">{eventTitle}</h2>
 			<p class="mt-1 text-sm text-fg-muted">{formatEventTime(event!)}</p>
 		</div>
 		{#if showClose}
@@ -69,18 +73,20 @@
 			</div>
 		{/if}
 
-		{#if event!.location}
+		{#if eventLocation}
 			<div class="flex items-start gap-2 text-fg">
 				<MapPin class="mt-0.5 size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-				<span>{event!.location}</span>
+				<span>{eventLocation}</span>
 			</div>
 		{/if}
 
-		{#if event!.description}
+		{#if eventDescription}
 			<div>
 				<p class="text-xs font-medium uppercase tracking-wide text-fg-subtle">Description</p>
-				<p class="mt-2 whitespace-pre-wrap text-fg">{event!.description}</p>
+				<p class="mt-2 whitespace-pre-wrap text-fg">{eventDescription}</p>
 			</div>
+		{:else if !eventLocation && !eventCalendars.length}
+			<p class="text-sm text-fg-muted">No extra details for this event.</p>
 		{/if}
 	</div>
 

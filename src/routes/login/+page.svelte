@@ -15,6 +15,7 @@
 	let totp = $state('');
 	let showTotp = $state(false);
 	let rememberMe = $state(remembered.rememberMe);
+	const canSubmit = $derived(email.trim().length > 0 && password.length > 0 && (!showTotp || totp.trim().length > 0));
 	const nextPath = $derived.by(() => {
 		const next = $page.url.searchParams.get('next');
 		return next?.startsWith('/') && !next.startsWith('//') ? next : undefined;
@@ -52,6 +53,7 @@
 					class="z-input"
 					bind:value={email}
 					autocomplete="username"
+					placeholder="you@example.com"
 					required
 					disabled={auth.isLoading}
 				/>
@@ -65,9 +67,13 @@
 					class="z-input"
 					bind:value={password}
 					autocomplete="current-password"
+					aria-describedby="password-hint"
 					required
 					disabled={auth.isLoading}
 				/>
+				<p id="password-hint" class="mt-1 text-xs text-fg-subtle">
+					Use your mailbox password or app password.
+				</p>
 			</div>
 
 			<label class="flex cursor-pointer items-center gap-2 text-sm text-fg-muted">
@@ -79,10 +85,27 @@
 				/>
 				Remember me
 			</label>
+			{#if rememberMe}
+				<p class="-mt-2 text-xs text-fg-subtle">
+					This keeps you signed in on this device.
+				</p>
+			{/if}
 
 			{#if showTotp}
 				<div>
-					<label for="totp" class="mb-1.5 block text-sm font-medium text-fg">Authentication code</label>
+					<div class="mb-1.5 flex items-center justify-between gap-2">
+						<label for="totp" class="block text-sm font-medium text-fg">Authentication code</label>
+						<button
+							type="button"
+							class="text-xs text-fg-subtle hover:text-accent hover:underline"
+							onclick={() => {
+								showTotp = false;
+								totp = '';
+							}}
+						>
+							No code
+						</button>
+					</div>
 					<input
 						id="totp"
 						type="text"
@@ -108,7 +131,12 @@
 				<p class="text-sm text-danger" role="alert">{auth.error}</p>
 			{/if}
 
-			<Button type="submit" class="w-full" disabled={auth.isLoading}>
+			<Button
+				type="submit"
+				class="w-full"
+				disabled={auth.isLoading || !canSubmit}
+				title={canSubmit ? 'Sign in' : 'Enter your sign-in details'}
+			>
 				{auth.isLoading ? 'Signing in…' : 'Sign in'}
 			</Button>
 		</form>

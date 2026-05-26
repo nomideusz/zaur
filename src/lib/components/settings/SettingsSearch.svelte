@@ -5,6 +5,7 @@
 	import { cn } from '$lib/utils/cn';
 
 	let input = $state<HTMLInputElement | null>(null);
+	const resultsId = 'settings-search-results';
 
 	const results = $derived(settingsSearch.filtered());
 
@@ -44,6 +45,7 @@
 			class="z-input w-full pl-9 md:max-w-xs"
 			placeholder="Search settings…"
 			autocomplete="off"
+			aria-controls={results.length ? resultsId : undefined}
 			oninput={onInput}
 			onkeydown={onKeydown}
 		/>
@@ -51,8 +53,10 @@
 
 	{#if results.length}
 		<ul
+			id={resultsId}
 			class="absolute top-full z-30 mt-1 max-h-72 w-full overflow-y-auto rounded-md border border-border bg-surface-raised py-1 shadow-md md:max-w-xs"
 			role="listbox"
+			aria-label="Settings search results"
 		>
 			{#each results as entry (entry.id + entry.href)}
 				<li role="option" aria-selected="false">

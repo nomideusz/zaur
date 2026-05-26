@@ -11,6 +11,7 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { invalidAddressParts, parseAddressList } from '$lib/utils/addresses';
 	import { cn } from '$lib/utils/cn';
 	import { listContacts, recordContact, removeContact, type ContactEntry } from '$lib/utils/contact-index';
 
@@ -75,6 +76,17 @@
 	const showLetterNav = $derived(
 		!query.trim() && !settings.hideContactGroupLetters && availableLetters.length > 0
 	);
+	const newEmailInvalid = $derived(newEmail.trim() && invalidAddressParts(newEmail).length > 0);
+	const newEmailExists = $derived(
+		!!newEmail.trim() &&
+			allContacts.some((contact) => contact.email.toLowerCase() === newEmail.trim().toLowerCase())
+	);
+	const canSaveContact = $derived(
+		!!auth.client?.getAccountId() &&
+			parseAddressList(newEmail).length === 1 &&
+			!newEmailInvalid &&
+			!newEmailExists
+	);
 
 	function selectLetter(letter: string | null) {
 		selectedLetter = letter;
@@ -98,7 +110,7 @@
 		const accountId = auth.client?.getAccountId();
 		const email = newEmail.trim();
 		const name = newName.trim() || email;
-		if (!accountId || !email) return;
+		if (!accountId || !canSaveContact) return;
 
 		recordContact(accountId, name, email);
 		newName = '';
@@ -198,7 +210,7 @@
 					<span class={cn('block text-fg-muted', settings.compactContactsAddForm ? 'mb-0.5' : 'mb-1')}>
 						Name
 					</span>
-					<input type="text" class="z-input" placeholder="Jane Doe" bind:value={newName} />
+					<input type="text" class="z-input" placeholder="Jane Doe" autocomplete="name" bind:value={newName} />
 				</label>
 				<label class={cn('block', settings.compactContactsAddForm ? 'text-xs' : 'text-sm')}>
 					<span class={cn('block text-fg-muted', settings.compactContactsAddForm ? 'mb-0.5' : 'mb-1')}>
@@ -208,12 +220,30 @@
 						type="email"
 						class="z-input"
 						placeholder="jane@example.com"
+						autocomplete="email"
+						aria-invalid={newEmailInvalid || newEmailExists ? 'true' : undefined}
+						aria-describedby="new-contact-email-hint"
 						bind:value={newEmail}
 						required
 					/>
 				</label>
+				<p
+					id="new-contact-email-hint"
+					class={cn(
+						'sm:col-span-2 text-xs',
+						newEmailInvalid || newEmailExists ? 'text-danger' : 'text-fg-subtle'
+					)}
+				>
+					{#if newEmailExists}
+						This contact is already saved.
+					{:else if newEmailInvalid}
+						Enter one valid email address.
+					{:else}
+						Use one address, like jane@example.com.
+					{/if}
+				</p>
 				<div class="flex gap-2 sm:col-span-2">
-					<Button type="submit">Save contact</Button>
+					<Button type="submit" disabled={!canSaveContact}>Save contact</Button>
 					<Button type="button" variant="ghost" onclick={() => (showAddForm = false)}>Cancel</Button>
 				</div>
 			</form>
@@ -289,6 +319,7 @@
 											settings.compactContactsList ? 'min-h-11 px-3 py-2.5' : 'min-h-14 px-4 py-3.5',
 											selectedEmail === contact.email && 'bg-surface-sunken'
 										)}
+										aria-current={selectedEmail === contact.email ? 'true' : undefined}
 										onclick={() => selectContact(contact.email)}
 									>
 										{#if settings.showAvatars}

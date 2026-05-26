@@ -23,6 +23,7 @@
 
 	const hideBorders = $derived(settings.hidePaneBorders);
 	const panelPadding = $derived(settings.compactContactsPage ? 'px-3 py-2.5' : 'px-4 py-3');
+	const displayName = $derived(contact.name.trim() || contact.email);
 </script>
 
 {#snippet details(showClose: boolean)}
@@ -38,7 +39,7 @@
 				<Avatar name={contact.name} email={contact.email} />
 			{/if}
 			<div class="min-w-0">
-				<h2 class="truncate text-base font-semibold text-fg">{contact.name}</h2>
+				<h2 class="truncate text-base font-semibold text-fg">{displayName}</h2>
 				{#if !settings.hideContactsEmailLine}
 					<p class="mt-1 truncate text-sm text-fg-muted">{contact.email}</p>
 				{/if}
@@ -71,6 +72,10 @@
 				<p class="text-xs font-medium uppercase tracking-wide text-fg-subtle">Email</p>
 				<p class="mt-2 break-all text-fg">{contact.email}</p>
 			</div>
+		{/if}
+
+		{#if contact.count === 0 && !settings.hideContactMessageCounts}
+			<p class="text-sm text-fg-muted">No indexed messages for this contact yet.</p>
 		{/if}
 	</div>
 

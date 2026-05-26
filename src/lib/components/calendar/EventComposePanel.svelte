@@ -15,6 +15,26 @@
 	const hideBorders = $derived(settings.hideCalendarPaneBorders || settings.hidePaneBorders);
 	const panelPadding = $derived(settings.compactCalendarCompose ? 'px-3 py-2.5' : 'px-4 py-3');
 	const fieldGap = $derived(settings.compactCalendarCompose ? 'space-y-3' : 'space-y-4');
+	const fieldLabelClass = $derived(
+		settings.hideCalendarComposeFieldLabels ? 'sr-only' : 'text-sm font-medium text-fg'
+	);
+	const composeStart = $derived.by(() => {
+		const draft = calendar.composeDraft;
+		return new Date(`${draft.startDate}T${draft.allDay ? '00:00' : draft.startTime}`);
+	});
+	const composeEnd = $derived.by(() => {
+		const draft = calendar.composeDraft;
+		return new Date(`${draft.endDate}T${draft.allDay ? '00:00' : draft.endTime}`);
+	});
+	const timeRangeInvalid = $derived(composeEnd.getTime() <= composeStart.getTime());
+	const saveBlockedReason = $derived.by(() => {
+		if (calendar.composeSaving) return isEdit ? 'Saving changes…' : 'Creating event…';
+		if (!calendar.composeDraft.title.trim()) return 'Add a title to save this event.';
+		if (!calendar.composeDraft.calendarId) return 'Choose a calendar.';
+		if (timeRangeInvalid) return 'End must be after start.';
+		return null;
+	});
+	const canSave = $derived(!calendar.composeSaving && !saveBlockedReason);
 
 	function close() {
 		calendar.closeCompose();
@@ -53,7 +73,7 @@
 			class="flex min-h-0 flex-1 flex-col overflow-hidden"
 			onsubmit={(e) => {
 				e.preventDefault();
-				if (auth.client) void calendar.saveCompose(auth.client);
+				if (auth.client && canSave) void calendar.saveCompose(auth.client);
 			}}
 		>
 			<div
@@ -64,9 +84,7 @@
 				)}
 			>
 				<label class="block space-y-1.5">
-					{#if !settings.hideCalendarComposeFieldLabels}
-						<span class="text-sm font-medium text-fg">Title</span>
-					{/if}
+					<span class={fieldLabelClass}>Title</span>
 					<input
 						type="text"
 						class="z-input"
@@ -77,9 +95,7 @@
 				</label>
 
 				<label class="block space-y-1.5">
-					{#if !settings.hideCalendarComposeFieldLabels}
-						<span class="text-sm font-medium text-fg">Calendar</span>
-					{/if}
+					<span class={fieldLabelClass}>Calendar</span>
 					<select class="z-input" bind:value={calendar.composeDraft.calendarId} required>
 						{#each calendar.calendars as item (item.id)}
 							<option value={item.id}>{item.name}</option>
@@ -94,42 +110,55 @@
 
 				<div class="grid gap-3 sm:grid-cols-2">
 					<label class="block space-y-1.5">
-						{#if !settings.hideCalendarComposeFieldLabels}
-							<span class="text-sm font-medium text-fg">Starts</span>
-						{/if}
+						<span class={fieldLabelClass}>Starts</span>
 						<input type="date" class="z-input" bind:value={calendar.composeDraft.startDate} required />
 					</label>
 
 					{#if calendar.composeDraft.allDay}
 						<label class="block space-y-1.5">
-							{#if !settings.hideCalendarComposeFieldLabels}
-								<span class="text-sm font-medium text-fg">Ends</span>
-							{/if}
-							<input type="date" class="z-input" bind:value={calendar.composeDraft.endDate} required />
+							<span class={fieldLabelClass}>Ends</span>
+							<input
+								type="date"
+								class="z-input"
+								aria-invalid={timeRangeInvalid ? 'true' : undefined}
+								bind:value={calendar.composeDraft.endDate}
+								required
+							/>
 						</label>
 					{:else}
 						<label class="block space-y-1.5">
-							{#if !settings.hideCalendarComposeFieldLabels}
-								<span class="text-sm font-medium text-fg">Start time</span>
-							{/if}
+							<span class={fieldLabelClass}>Start time</span>
 							<input type="time" class="z-input" bind:value={calendar.composeDraft.startTime} required />
 						</label>
 						<label class="block space-y-1.5 sm:col-span-2">
-							{#if !settings.hideCalendarComposeFieldLabels}
-								<span class="text-sm font-medium text-fg">End time</span>
-							{/if}
+							<span class={fieldLabelClass}>End time</span>
 							<div class="grid gap-3 sm:grid-cols-2">
-								<input type="date" class="z-input" bind:value={calendar.composeDraft.endDate} required />
-								<input type="time" class="z-input" bind:value={calendar.composeDraft.endTime} required />
+								<input
+									type="date"
+									class="z-input"
+									aria-invalid={timeRangeInvalid ? 'true' : undefined}
+									bind:value={calendar.composeDraft.endDate}
+									required
+								/>
+								<input
+									type="time"
+									class="z-input"
+									aria-invalid={timeRangeInvalid ? 'true' : undefined}
+									bind:value={calendar.composeDraft.endTime}
+									required
+								/>
 							</div>
 						</label>
 					{/if}
 				</div>
+				{#if saveBlockedReason && !calendar.composeError}
+					<p class={cn('text-xs', timeRangeInvalid ? 'text-danger' : 'text-fg-subtle')}>
+						{saveBlockedReason}
+					</p>
+				{/if}
 
 				<label class="block space-y-1.5">
-					{#if !settings.hideCalendarComposeFieldLabels}
-						<span class="text-sm font-medium text-fg">Location</span>
-					{/if}
+					<span class={fieldLabelClass}>Location</span>
 					<input
 						type="text"
 						class="z-input"
@@ -139,9 +168,7 @@
 				</label>
 
 				<label class="block space-y-1.5">
-					{#if !settings.hideCalendarComposeFieldLabels}
-						<span class="text-sm font-medium text-fg">Description</span>
-					{/if}
+					<span class={fieldLabelClass}>Description</span>
 					<textarea
 						class="z-input min-h-24 resize-y"
 						placeholder="Optional"
@@ -170,7 +197,7 @@
 				)}
 			>
 				<Button variant="ghost" type="button" onclick={close}>Close</Button>
-				<Button type="submit" disabled={calendar.composeSaving}>
+				<Button type="submit" disabled={!canSave} title={saveBlockedReason ?? submitLabel}>
 					{submitLabel}
 				</Button>
 			</footer>

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { CalendarDays } from 'lucide-svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import { calendar } from '$lib/stores/calendar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 </script>
@@ -37,4 +39,7 @@
 	>
 		Choose an event from the month grid to view its details here.
 	</p>
+	{#if !settings.hideCalendarNewEventButton}
+		<Button variant="ghost" onclick={() => calendar.openCompose()}>New event</Button>
+	{/if}
 </div>

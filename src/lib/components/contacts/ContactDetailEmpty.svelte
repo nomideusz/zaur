@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Users } from 'lucide-svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 </script>
@@ -37,4 +38,5 @@
 	>
 		Choose someone from the list to view their details and start a message.
 	</p>
+	<Button href="/mail/compose" variant="ghost">New message</Button>
 </div>
