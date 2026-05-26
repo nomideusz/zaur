@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { cn } from '$lib/utils/cn';
-	import { avatarUrlsForEmail } from '$lib/utils/avatar';
+	import { avatarProxyUrl } from '$lib/utils/avatar';
 	import { getCachedAvatarUrl, resolveCachedAvatarUrl } from '$lib/utils/avatar-cache';
 
 	interface Props {
@@ -40,11 +40,9 @@
 
 		resolvedSrc = null;
 
-		void avatarUrlsForEmail(currentEmail, 128).then((next) => {
-			if (cancelled) return;
-			void resolveCachedAvatarUrl(currentEmail, next).then((url) => {
-				if (!cancelled) resolvedSrc = url;
-			});
+		const proxied = avatarProxyUrl(currentEmail, 128);
+		void resolveCachedAvatarUrl(currentEmail, proxied ? [proxied] : []).then((url) => {
+			if (!cancelled) resolvedSrc = url;
 		});
 
 		return () => {

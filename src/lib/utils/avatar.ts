@@ -38,6 +38,12 @@ export async function avatarUrlsForEmail(
 	];
 }
 
+export function avatarProxyUrl(email: string | undefined | null, size = DEFAULT_SIZE): string | null {
+	const normalized = email?.trim().toLowerCase();
+	if (!normalized) return null;
+	return `/api/avatar?email=${encodeURIComponent(normalized)}&size=${size}`;
+}
+
 /** @deprecated Use avatarUrlsForEmail — kept for single-provider callers. */
 export function gravatarUrl(email: string | undefined | null, size = DEFAULT_SIZE): string | null {
 	const normalized = email?.trim().toLowerCase();

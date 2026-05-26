@@ -68,9 +68,23 @@
 	}
 
 	function handleSelectKey(event: KeyboardEvent) {
+		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+			event.preventDefault();
+			focusSiblingRow(event.currentTarget as HTMLElement, event.key === 'ArrowDown' ? 1 : -1);
+			return;
+		}
 		if (event.key !== 'Enter' && event.key !== ' ') return;
 		event.preventDefault();
 		onSelect?.({ shift: event.shiftKey, ctrl: event.ctrlKey || event.metaKey });
+	}
+
+	function focusSiblingRow(current: HTMLElement, delta: number) {
+		const rows = Array.from(
+			current.closest('section')?.querySelectorAll<HTMLElement>('[data-message-row]') ?? []
+		);
+		const index = rows.indexOf(current);
+		if (index < 0) return;
+		rows[Math.max(0, Math.min(index + delta, rows.length - 1))]?.focus();
 	}
 
 	function handleCheckboxChange() {
@@ -157,6 +171,7 @@
 		data-hide-active-indicator={hideActiveIndicator || undefined}
 		role="button"
 		tabindex="0"
+		data-message-row
 		aria-label={messageAriaLabel}
 		title={messageAriaLabel}
 		onclick={handleSelect}
@@ -176,12 +191,14 @@
 	<a
 		{href}
 		class={rowClass}
+		data-message-row
 		data-hide-active-indicator={hideActiveIndicator || undefined}
 		aria-current={active ? 'true' : undefined}
 		aria-label={messageAriaLabel}
 		title={messageAriaLabel}
 		style="view-transition-name: message-{message.id};"
 		onclick={handleSelect}
+		onkeydown={handleSelectKey}
 	>
 		{@render content()}
 	</a>

@@ -128,6 +128,7 @@
 		const href = `/mail/${message.mailboxId}/${message.threadId}`;
 		return searchReturnTo ? `${href}?returnTo=${encodeURIComponent(searchReturnTo)}` : href;
 	}
+
 </script>
 
 <section

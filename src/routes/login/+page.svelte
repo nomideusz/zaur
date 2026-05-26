@@ -15,7 +15,10 @@
 	let totp = $state('');
 	let showTotp = $state(false);
 	let rememberMe = $state(remembered.rememberMe);
-	const canSubmit = $derived(email.trim().length > 0 && password.length > 0 && (!showTotp || totp.trim().length > 0));
+	let showHelp = $state(!remembered.email);
+	const canSubmit = $derived(
+		email.trim().length > 0 && password.length > 0 && (!showTotp || totp.trim().length > 0)
+	);
 	const nextPath = $derived.by(() => {
 		const next = $page.url.searchParams.get('next');
 		return next?.startsWith('/') && !next.startsWith('//') ? next : undefined;
@@ -43,6 +46,17 @@
 			<p class="z-type-brand text-2xl">ZAUR</p>
 			<p class="mt-1 text-sm text-fg-muted">Sign in to {appConfig.jmapServerUrl.replace('https://', '')}</p>
 		</div>
+
+		{#if showHelp}
+			<div class="mb-5 rounded-lg border border-border bg-surface-sunken/60 p-3 text-sm text-fg-muted">
+				<p class="font-medium text-fg">Before you sign in</p>
+				<ul class="mt-2 list-disc space-y-1 pl-4 text-xs leading-relaxed">
+					<li>Use your ZAUR mailbox address and password, or an app password if your account requires one.</li>
+					<li>If your account uses 2FA, open the code field before signing in.</li>
+					<li>Offline drafts, queued mail, and settings are stored on this device after sign-in.</li>
+				</ul>
+			</div>
+		{/if}
 
 		<form class="space-y-4" onsubmit={submit}>
 			<div>
@@ -72,7 +86,10 @@
 					disabled={auth.isLoading}
 				/>
 				<p id="password-hint" class="mt-1 text-xs text-fg-subtle">
-					Use your mailbox password or app password.
+					Use your mailbox password or app password. Having trouble?
+					<button type="button" class="text-accent hover:underline" onclick={() => (showHelp = true)}>
+						Show sign-in tips
+					</button>
 				</p>
 			</div>
 

@@ -28,6 +28,22 @@
 	const Icon = $derived(icons[node.role ?? 'custom']);
 	const href = $derived(`/mail/${node.id}`);
 	const isActive = $derived($page.url.pathname.startsWith(href));
+
+	function onFolderKeydown(event: KeyboardEvent) {
+		if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
+		const current = event.currentTarget as HTMLAnchorElement;
+		const links = Array.from(
+			current.closest('nav')?.querySelectorAll<HTMLAnchorElement>('a[href]') ?? []
+		);
+		const index = links.indexOf(current);
+		if (index < 0) return;
+		event.preventDefault();
+		const nextIndex =
+			event.key === 'ArrowDown'
+				? Math.min(index + 1, links.length - 1)
+				: Math.max(index - 1, 0);
+		links[nextIndex]?.focus();
+	}
 </script>
 
 <li>
@@ -42,6 +58,7 @@
 		)}
 		style="padding-left: {0.75 + depth * (settings.compactFolderTree ? 0.5 : 0.75)}rem; padding-right: 0.75rem;"
 		aria-current={isActive ? 'page' : undefined}
+		onkeydown={onFolderKeydown}
 	>
 		{#if !settings.hideFolderIcons}
 			<Icon class="size-4 shrink-0" aria-hidden="true" />
