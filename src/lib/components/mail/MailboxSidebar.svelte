@@ -94,6 +94,7 @@
 		>
 		<a
 			href="/contacts"
+			aria-current={$page.url.pathname.startsWith('/contacts') ? 'page' : undefined}
 			class={cn(
 				'flex items-center gap-2 rounded-md px-3 text-sm transition-colors',
 				settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',
@@ -107,6 +108,7 @@
 		</a>
 		<a
 			href="/settings/appearance"
+			aria-current={$page.url.pathname.startsWith('/settings') ? 'page' : undefined}
 			class={cn(
 				'flex items-center gap-2 rounded-md px-3 text-sm transition-colors',
 				settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',

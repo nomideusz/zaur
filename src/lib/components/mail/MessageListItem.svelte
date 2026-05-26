@@ -28,6 +28,15 @@
 	const senderLabel = $derived(
 		settings.showSenderEmailInList ? message.from.email || message.from.name : message.from.name
 	);
+	const displaySubject = $derived(message.subject.trim() || '(no subject)');
+	const messageAriaLabel = $derived.by(() => {
+		const flags = [
+			message.unread ? 'Unread' : 'Read',
+			message.starred ? 'starred' : null,
+			message.hasAttachment ? 'has attachment' : null
+		].filter(Boolean);
+		return `${flags.join(', ')} message from ${senderLabel || message.from.email || 'Unknown sender'}: ${displaySubject}, ${when}`;
+	});
 	const subjectClass = $derived(
 		cn(
 			'z-type-list-subject',
@@ -102,7 +111,7 @@
 						<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 					{/if}
 					<span class={subjectClass}>
-						{message.subject}
+						{displaySubject}
 					</span>
 					{#if settings.showAttachmentIcons && message.hasAttachment}
 						<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
@@ -129,7 +138,7 @@
 					<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 				{/if}
 				<span class={subjectClass}>
-					{message.subject}
+					{displaySubject}
 				</span>
 				{#if settings.showAttachmentIcons && message.hasAttachment}
 					<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
@@ -148,6 +157,8 @@
 		data-hide-active-indicator={hideActiveIndicator || undefined}
 		role="button"
 		tabindex="0"
+		aria-label={messageAriaLabel}
+		title={messageAriaLabel}
 		onclick={handleSelect}
 		onkeydown={handleSelectKey}
 	>
@@ -167,6 +178,8 @@
 		class={rowClass}
 		data-hide-active-indicator={hideActiveIndicator || undefined}
 		aria-current={active ? 'true' : undefined}
+		aria-label={messageAriaLabel}
+		title={messageAriaLabel}
 		style="view-transition-name: message-{message.id};"
 		onclick={handleSelect}
 	>

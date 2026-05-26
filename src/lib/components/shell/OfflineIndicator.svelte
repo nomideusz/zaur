@@ -15,6 +15,7 @@
 		title="Offline"
 	>
 		<WifiOff class={cn('shrink-0', settings.compactOfflineIndicator ? 'size-3' : 'size-3.5')} aria-hidden="true" />
+		<span class="sr-only">Offline. Queued messages will send when the connection returns.</span>
 		<span class="hidden sm:inline">Offline</span>
 	</div>
 {/if}

@@ -20,6 +20,12 @@
 	function recipientPreview(item: OutboxDoc) {
 		return item.to.split(',')[0]?.trim() || 'No recipient';
 	}
+
+	function onMenuKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			open = false;
+		}
+	}
 </script>
 
 <svelte:window onclick={() => (open = false)} />
@@ -28,6 +34,9 @@
 	<IconButton
 		label={outbox.pendingCount ? `${outbox.pendingCount} queued messages` : 'Outbox'}
 		class="relative"
+		ariaExpanded={open}
+		ariaControls="outbox-menu"
+		ariaHaspopup="dialog"
 		onclick={(e) => {
 			e.stopPropagation();
 			open = !open;
@@ -42,10 +51,14 @@
 	</IconButton>
 
 	{#if open}
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
-			class="absolute right-0 z-30 mt-1 w-80 rounded-md border border-border bg-surface-raised shadow-md"
+			id="outbox-menu"
+			role="dialog"
+			aria-label="Outbox"
+			tabindex="-1"
+			class="absolute right-0 z-30 mt-1 w-[min(20rem,calc(100vw-1rem))] rounded-md border border-border bg-surface-raised shadow-md"
 			onpointerdown={(e) => e.stopPropagation()}
+			onkeydown={onMenuKeydown}
 		>
 			<div
 				class={cn(

@@ -10,6 +10,8 @@
 		type?: 'button' | 'submit';
 		class?: string;
 		disabled?: boolean;
+		title?: string;
+		ariaDescribedby?: string;
 		children: Snippet;
 		onclick?: (e: MouseEvent) => void;
 	}
@@ -20,6 +22,8 @@
 		type = 'button',
 		class: className,
 		disabled = false,
+		title,
+		ariaDescribedby,
 		children,
 		onclick
 	}: Props = $props();
@@ -37,11 +41,11 @@
 </script>
 
 {#if href}
-	<a {href} class={classes} aria-disabled={disabled}>
+	<a {href} class={classes} aria-disabled={disabled} {title} aria-describedby={ariaDescribedby}>
 		{@render children()}
 	</a>
 {:else}
-	<button {type} class={classes} {disabled} {onclick}>
+	<button {type} class={classes} {disabled} {title} aria-describedby={ariaDescribedby} {onclick}>
 		{@render children()}
 	</button>
 {/if}

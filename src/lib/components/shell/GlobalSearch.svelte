@@ -13,6 +13,7 @@
 	let input = $state('');
 	let open = $state(false);
 	let searchInput = $state<HTMLInputElement | null>(null);
+	const dropdownId = 'global-search-suggestions';
 
 	$effect(() => {
 		if ($page.url.pathname === '/mail/search') {
@@ -40,6 +41,13 @@
 		open = false;
 		input = '';
 		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
+	}
+
+	function onSearchKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			open = false;
+			searchInput?.blur();
+		}
 	}
 
 	function isTypingTarget(target: EventTarget | null) {
@@ -100,16 +108,22 @@
 		class="z-input pl-9"
 		autocomplete="off"
 		bind:value={input}
+		aria-controls={showDropdown ? dropdownId : undefined}
 		onfocus={() => (open = true)}
 		onblur={() => setTimeout(() => (open = false), 150)}
+		onkeydown={onSearchKeydown}
 	/>
 
 	{#if showDropdown}
 		<div
+			id={dropdownId}
+			role="menu"
+			tabindex="-1"
 			class="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-md border border-border bg-surface-raised py-1 shadow-md"
 		>
 			<button
 				type="submit"
+				role="menuitem"
 				class={cn(
 					'flex w-full items-center gap-2 px-3 text-left text-sm hover:bg-surface-sunken',
 					settings.compactSearchDropdown ? 'py-1.5' : 'py-2'
@@ -133,6 +147,7 @@
 				{#each contactMatches as contact (contact.email)}
 					<button
 						type="button"
+						role="menuitem"
 						class={cn(
 							'flex w-full items-center gap-2 px-3 text-left text-sm hover:bg-surface-sunken',
 							settings.compactSearchDropdown ? 'py-1.5' : 'py-2'

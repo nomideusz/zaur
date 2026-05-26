@@ -383,8 +383,8 @@
 					</Button>
 					{#if !settings.hideComposeHints}
 						<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter</span>
-						<Button variant="ghost" class="!px-2 text-xs" onclick={reply}>Full reply</Button>
 					{/if}
+					<Button variant="ghost" class="!px-2 text-xs" onclick={reply}>Full reply</Button>
 				</div>
 			</div>
 		</footer>

@@ -9,6 +9,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
 	import { settings, type ComposeDrawerWidth } from '$lib/stores/settings.svelte';
+	import { invalidAddressParts } from '$lib/utils/addresses';
 	import { cn } from '$lib/utils/cn';
 
 	const DRAWER_WIDTH_CLASS: Record<ComposeDrawerWidth, string> = {
@@ -86,6 +87,21 @@
 	const draftStatus = $derived.by(() => {
 		if (compose.isSavingDraft) return 'Saving draft…';
 		if (compose.draftSavedAt) return 'Draft saved';
+		return null;
+	});
+	const invalidRecipients = $derived([
+		...invalidAddressParts(compose.to),
+		...invalidAddressParts(compose.cc),
+		...invalidAddressParts(compose.bcc)
+	]);
+	const sendBlockedReason = $derived.by(() => {
+		if (compose.isSending) return 'Sending message…';
+		if (compose.hasUploadingAttachments) return 'Wait for attachments to finish uploading.';
+		if (!compose.to.trim()) return 'Add at least one recipient to send.';
+		if (invalidRecipients.length) {
+			return `Fix recipient ${invalidRecipients[0]} before sending.`;
+		}
+		if (!compose.canSend) return 'Enter a valid recipient address to send.';
 		return null;
 	});
 
@@ -312,8 +328,10 @@
 
 			<ComposeAttachments />
 
-			{#if compose.error}
-				<p class={cn('px-5 py-2 text-sm text-danger', composeBorderT)} role="alert">{compose.error}</p>
+			{#if compose.error || invalidRecipients.length}
+				<p class={cn('px-5 py-2 text-sm text-danger', composeBorderT)} role="alert">
+					{compose.error ?? `Check recipient: ${invalidRecipients[0]}`}
+				</p>
 			{/if}
 
 			<footer class={cn('flex shrink-0 flex-wrap items-center justify-between gap-2 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]', composeBorderT)}>
@@ -330,7 +348,9 @@
 				</div>
 				<div class="flex items-center gap-2">
 					{#if !settings.hideComposeHints}
-						<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter to send</span>
+						<span id="compose-send-hint" class="hidden max-w-48 text-right text-xs text-fg-subtle sm:inline">
+							{sendBlockedReason ?? 'Ctrl+Enter to send'}
+						</span>
 					{/if}
 					{#if settings.iconOnlyComposeDiscard}
 						<IconButton label="Discard compose" onclick={close}>
@@ -339,7 +359,12 @@
 					{:else}
 						<Button variant="ghost" type="button" onclick={close}>Discard</Button>
 					{/if}
-					<Button type="submit" disabled={!compose.canSend}>
+					<Button
+						type="submit"
+						disabled={!compose.canSend || invalidRecipients.length > 0}
+						title={sendBlockedReason ?? 'Send message'}
+						ariaDescribedby={!settings.hideComposeHints ? 'compose-send-hint' : undefined}
+					>
 						{compose.isSending ? 'Sending…' : compose.hasUploadingAttachments ? 'Uploading…' : 'Send'}
 					</Button>
 				</div>
