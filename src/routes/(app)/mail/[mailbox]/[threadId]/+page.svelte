@@ -58,7 +58,6 @@
 		<MessageList
 			messages={mail.messages}
 			{mailboxName}
-			{countLabel}
 			mailboxRouteId={data.mailboxId}
 			hideOnMobile
 			loading={mail.messagesLoading}

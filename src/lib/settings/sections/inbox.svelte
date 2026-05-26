@@ -208,7 +208,7 @@
 <SettingsGroup title="App header (mail)" description="Folder name, counts, and mobile folder picker in the top bar while reading mail.">
 	<SettingsRow
 		title="Show message counts"
-		description="Unread and total counts next to the folder name in the app header"
+		description="Unread badges on folders in the sidebar and totals in settings views"
 	>
 		<input
 			type="checkbox"
@@ -219,8 +219,8 @@
 	</SettingsRow>
 
 	<SettingsRow
-		title="Hide folder title on desktop"
-		description="Hide the folder name and count in the app header on desktop — search and account stay visible"
+		title="Hide folder title in app header"
+		description="Hide the folder name in the center of the top bar on desktop — folders stay in the sidebar"
 	>
 		<input
 			type="checkbox"
@@ -276,7 +276,7 @@
 	>
 		<SettingsRow
 			title="Hide selection hints"
-			description="Remove keyboard shortcut hints in the message list selection bar"
+			description="Remove the Shift+click and Ctrl+click hints in the bulk selection bar"
 		>
 			<input
 				type="checkbox"

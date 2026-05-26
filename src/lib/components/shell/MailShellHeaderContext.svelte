@@ -27,11 +27,7 @@
 	const displayMailboxName = $derived(
 		ctx.mailboxName.startsWith('Search:') ? ctx.mailboxName.slice(8) : ctx.mailboxName
 	);
-	const folderInListHeader = $derived(
-		settings.showBulkSelect &&
-			!!ctx.mailboxRouteId &&
-			!settings.hideListHeader
-	);
+	const showFolderTitle = $derived(!mail.hasSelection && !settings.hideListHeader);
 </script>
 
 <div class="flex min-w-0 flex-1 items-center gap-2">
@@ -39,6 +35,10 @@
 		<IconButton label="Back to list" class="md:hidden" onclick={ctx.onBack}>
 			<ArrowLeft class="size-5" />
 		</IconButton>
+	{/if}
+
+	{#if showFolderTitle}
+		<h2 class="z-type-pane-title hidden min-w-0 truncate md:block">{displayMailboxName}</h2>
 	{/if}
 
 	{#if ctx.mailboxRouteId && !threadId && !mail.hasSelection}
@@ -58,24 +58,6 @@
 				{/each}
 			</select>
 		</label>
-	{/if}
-
-	<div
-		class={cn(
-			'hidden min-w-0 items-baseline gap-2 md:flex',
-			(settings.hideListHeader || folderInListHeader) && 'md:hidden'
-		)}
-	>
-		<h2 class="z-type-pane-title truncate">{displayMailboxName}</h2>
-		{#if settings.showMessageCounts}
-			<span class="shrink-0 text-xs text-fg-subtle">{ctx.countLabel}</span>
-		{/if}
-	</div>
-
-	{#if ctx.mailboxRouteId && !mail.hasSelection}
-		<span class="shrink-0 text-xs text-fg-subtle md:hidden">
-			{settings.showMessageCounts ? ctx.countLabel : displayMailboxName}
-		</span>
 	{/if}
 
 	{#if showThreadActions && ctx.mailboxRouteId}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { CalendarPlus, PenSquare } from 'lucide-svelte';
+	import { CalendarPlus, PenSquare, Search } from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import GlobalSearch from './GlobalSearch.svelte';
@@ -11,7 +11,6 @@
 	import ToolSwitcher from './ToolSwitcher.svelte';
 	import UserMenu from './UserMenu.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
-	import { mail } from '$lib/stores/mail.svelte';
 	import { outbox } from '$lib/stores/outbox.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -25,10 +24,11 @@
 	const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
 	const showMailContext = $derived(onMailRoute && shellHeader.mail !== null);
 	const showToolSwitcher = $derived(!onMailRoute);
-	const showNewMessage = $derived(
-		showMailContext &&
-			shellHeader.mail?.showNewMessage &&
-			!mail.hasSelection
+	const showComposeButton = $derived(
+		showMailContext && shellHeader.mail?.showNewMessage
+	);
+	const showMobileMailSearch = $derived(
+		showMailContext && !settings.hideHeaderSearch
 	);
 </script>
 
@@ -56,10 +56,12 @@
 
 	{#if showMailContext && shellHeader.mail}
 		<MailShellHeaderContext ctx={shellHeader.mail} />
-	{:else}
+	{:else if !settings.hideHeaderSearch}
 		<div class="min-w-0 flex-1">
 			<GlobalSearch />
 		</div>
+	{:else}
+		<div class="min-w-0 flex-1"></div>
 	{/if}
 
 	<div
@@ -68,16 +70,10 @@
 			settings.compactAppHeader ? 'gap-1.5' : 'gap-2'
 		)}
 	>
-		{#if showMailContext}
-			<div class="hidden min-w-0 flex-1 md:block md:max-w-sm lg:max-w-md">
-				<GlobalSearch />
-			</div>
-		{/if}
-
-		{#if showNewMessage}
-			<Button href="/mail/compose" class="shrink-0 md:hidden">
+		{#if showComposeButton}
+			<Button href="/mail/compose" class="shrink-0">
 				<PenSquare class="size-5" aria-hidden="true" />
-				New message
+				<span class={settings.compactHeaderActions ? 'sr-only sm:not-sr-only' : ''}>New message</span>
 			</Button>
 		{/if}
 
@@ -117,6 +113,12 @@
 					</Button>
 				{/if}
 			{/if}
+		{/if}
+
+		{#if showMobileMailSearch}
+			<IconButton label="Search mail" class="md:hidden" onclick={() => goto('/mail/search')}>
+				<Search class="size-5" aria-hidden="true" />
+			</IconButton>
 		{/if}
 
 		<UserMenu />

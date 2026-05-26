@@ -1,8 +1,9 @@
 <script lang="ts">
-	import { Calendar, Settings, Users, PenSquare } from 'lucide-svelte';
+	import { Calendar, Settings, Users } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
 	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
+	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
 	import MailboxTreeItem from './MailboxTreeItem.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
@@ -16,7 +17,7 @@
 
 <aside
 	class={cn(
-		'z-mail-pane-surface hidden w-(--width-sidebar) shrink-0 overflow-hidden md:flex',
+		'z-mail-pane-surface hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col md:flex',
 		!settings.hidePaneBorders && 'border-r border-border'
 	)}
 	style="view-transition-name: mail-sidebar;"
@@ -24,15 +25,12 @@
 >
 	<div
 		class={cn(
-			'shrink-0',
+			'relative z-20 shrink-0',
 			settings.compactFolderSidebarHeader ? 'px-3 py-2' : 'px-3 py-3',
 			!settings.hidePaneBorders && 'border-b border-border/80'
 		)}
 	>
-		<Button href="/mail/compose" class="w-full">
-			<PenSquare class="size-5" aria-hidden="true" />
-			New message
-		</Button>
+		<GlobalSearch placement="sidebar" />
 	</div>
 
 	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto {settings.compactFolderSidebar ? 'p-1.5' : 'p-2.5'}">

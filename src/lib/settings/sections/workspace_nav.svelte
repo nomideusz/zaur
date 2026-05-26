@@ -243,10 +243,10 @@
 		</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Search" description="Global search in the top bar.">
+<SettingsGroup title="Search" description="Search lives in the mail sidebar on desktop; mobile uses the header icon.">
 		<SettingsRow
-			title="Hide header search"
-			description="Remove the search bar from the top bar — search remains on mobile via the icon"
+			title="Hide sidebar search"
+			description="Remove search from the mail sidebar — use the mobile header icon or / on the search page"
 		>
 			<input
 				type="checkbox"
@@ -259,12 +259,12 @@
 		<SettingsDepends
 			enabled={!settings.hideHeaderSearch}
 			inactiveReason={settings.hideHeaderSearch
-				? 'Header search is hidden — show it above to adjust search options'
-				: 'Header search options'}
+				? 'Sidebar search is hidden — show it above to adjust search options'
+				: 'Sidebar search options'}
 		>
 			<SettingsRow
 				title="Search contact suggestions"
-				description="Contact matches while typing in the header search bar"
+				description="Contact matches while typing in the sidebar search field"
 			>
 				<input
 					type="checkbox"

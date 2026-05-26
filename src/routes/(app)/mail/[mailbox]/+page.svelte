@@ -46,7 +46,6 @@
 		<MessageList
 			messages={mail.messages}
 			{mailboxName}
-			{countLabel}
 			mailboxRouteId={data.mailboxId}
 			expanded={settings.expandListUntilOpen}
 			loading={mail.messagesLoading}

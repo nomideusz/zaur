@@ -10,20 +10,15 @@
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
-		mailboxName: string;
-		mailboxRouteId: string;
-		countLabel?: string;
+		mailboxRouteId?: string;
 		disabled?: boolean;
 		onBulkAction?: () => void;
 	}
 
-	let { mailboxName, mailboxRouteId, countLabel, disabled = false, onBulkAction }: Props = $props();
+	let { mailboxRouteId, disabled = false, onBulkAction }: Props = $props();
 
 	const selectedIds = $derived([...mail.selectedMessageIds]);
-	const displayMailboxName = $derived(
-		mailboxName.startsWith('Search:') ? mailboxName.slice(8) : mailboxName
-	);
-	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
+	const currentMailbox = $derived(mailboxRouteId ? mail.mailboxByRouteId(mailboxRouteId) : null);
 	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
 	const hasUnreadSelected = $derived(
@@ -33,7 +28,9 @@
 		mail.messages.some((message) => selectedIds.includes(message.id) && !message.unread)
 	);
 	const moveTargets = $derived(
-		mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
+		mailboxRouteId
+			? mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
+			: []
 	);
 	const actionButtonClass = '!h-8 shrink-0 !px-2 !text-xs';
 	const moveSelectClass = $derived(
@@ -55,7 +52,7 @@
 	}
 
 	function deleteSelected() {
-		if (!auth.client) return;
+		if (!auth.client || !mailboxRouteId) return;
 		const permanent = currentMailbox?.role === 'trash';
 		if (!settings.confirmDeleteMessage(selectedIds.length, permanent)) return;
 		void runBulk(() => mail.bulkDelete(auth.client!, mailboxRouteId));
@@ -134,19 +131,9 @@
 				{deleteLabel}
 			</Button>
 		</div>
-	{:else if !settings.hideListHeader}
-		<div class="flex min-w-0 items-baseline gap-2">
-			<h2 class="z-type-pane-title truncate">{displayMailboxName}</h2>
-			{#if settings.showMessageCounts && countLabel}
-				<span class="shrink-0 text-xs text-fg-subtle">{countLabel}</span>
-			{/if}
-		</div>
-		{#if !settings.hideSelectionHints}
-			<span class="ml-auto hidden truncate text-xs text-fg-subtle lg:inline">
-				Shift+click to select a range
-			</span>
-		{/if}
 	{:else if !settings.hideSelectionHints}
-		<span class="truncate text-xs text-fg-subtle">Shift+click to select a range</span>
+		<p class="min-w-0 truncate text-xs text-fg-subtle">
+			Shift+click for a range · Ctrl+click to toggle
+		</p>
 	{/if}
 </div>

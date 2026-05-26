@@ -10,10 +10,19 @@
 	import { searchOperatorHint } from '$lib/mail/search-query';
 	import { cn } from '$lib/utils/cn';
 
+	interface Props {
+		placement?: 'shell' | 'sidebar';
+		class?: string;
+	}
+
+	let { placement = 'shell', class: className = '' }: Props = $props();
+
 	let input = $state('');
 	let open = $state(false);
 	let searchInput = $state<HTMLInputElement | null>(null);
-	const dropdownId = 'global-search-suggestions';
+	const isSidebar = $derived(placement === 'sidebar');
+	const dropdownId = $derived(isSidebar ? 'sidebar-search-suggestions' : 'global-search-suggestions');
+	const inputId = $derived(isSidebar ? 'sidebar-search' : 'global-search');
 
 	$effect(() => {
 		if ($page.url.pathname === '/mail/search') {
@@ -29,6 +38,13 @@
 	});
 
 	const showDropdown = $derived(open && input.trim().length > 0);
+
+	const placeholder = $derived.by(() => {
+		if (isSidebar) {
+			return `Search…${settings.enableKeyboardShortcuts && !settings.hideComposeHints ? ' (/)' : ''}`;
+		}
+		return `Search messages or contacts…${settings.enableKeyboardShortcuts && !settings.hideComposeHints ? ' (/ to focus)' : ''}${!settings.hideComposeHints ? ` · ${searchOperatorHint()}` : ''}`;
+	});
 
 	function submit() {
 		const query = input.trim();
@@ -95,6 +111,17 @@
 		);
 	}
 
+	function focusVisibleMailSearch() {
+		for (const candidate of document.querySelectorAll<HTMLInputElement>('[data-zaur-mail-search]')) {
+			if (candidate.offsetParent !== null) {
+				candidate.focus();
+				open = true;
+				return true;
+			}
+		}
+		return false;
+	}
+
 	onMount(() => {
 		function onKeydown(event: KeyboardEvent) {
 			if (!settings.enableKeyboardShortcuts) return;
@@ -102,12 +129,15 @@
 			if (isTypingTarget(event.target)) return;
 
 			event.preventDefault();
-			if (searchInput && !settings.hideHeaderSearch) {
-				searchInput.focus();
-				open = true;
-			} else {
-				goto('/mail/search');
+			if (!settings.hideHeaderSearch) {
+				if (focusVisibleMailSearch()) return;
+				if (searchInput) {
+					searchInput.focus();
+					open = true;
+					return;
+				}
 			}
+			goto('/mail/search');
 		}
 
 		window.addEventListener('keydown', onKeydown);
@@ -115,92 +145,107 @@
 	});
 </script>
 
-<IconButton
-	label="Search mail"
-	class={settings.hideHeaderSearch ? '' : 'md:hidden'}
-	onclick={() => goto('/mail/search')}
->
-	<Search class="size-4" />
-</IconButton>
+{#if !isSidebar}
+	<IconButton
+		label="Search mail"
+		class={settings.hideHeaderSearch ? '' : 'md:hidden'}
+		onclick={() => goto('/mail/search')}
+	>
+		<Search class="size-4" />
+	</IconButton>
+{/if}
 
 {#if !settings.hideHeaderSearch}
-<form
-	role="search"
-	class="relative mx-auto hidden w-full max-w-xl md:block"
-	onsubmit={(e) => {
-		e.preventDefault();
-		submit();
-	}}
->
-	<label class="sr-only" for="global-search">Search mail</label>
-	<Search class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle" />
-	<input
-		bind:this={searchInput}
-		id="global-search"
-		type="search"
-		placeholder="Search messages or contacts…{settings.enableKeyboardShortcuts && !settings.hideComposeHints
-			? ' (/ to focus)'
-			: ''}{!settings.hideComposeHints ? ` · ${searchOperatorHint()}` : ''}"
-		class="z-input rounded-full border-transparent bg-surface-sunken/80 pl-9 shadow-none focus:bg-surface-raised"
-		autocomplete="off"
-		bind:value={input}
-		aria-controls={showDropdown ? dropdownId : undefined}
-		onfocus={() => (open = true)}
-		onblur={() => setTimeout(() => (open = false), 150)}
-		onkeydown={onSearchKeydown}
-	/>
+	<form
+		role="search"
+		class={cn(
+			'relative w-full min-w-0',
+			isSidebar ? className : cn('mx-auto hidden max-w-xl md:block', className)
+		)}
+		onsubmit={(e) => {
+			e.preventDefault();
+			submit();
+		}}
+	>
+		<label class="sr-only" for={inputId}>Search mail</label>
+		<Search
+			class={cn(
+				'pointer-events-none absolute top-1/2 -translate-y-1/2 text-fg-subtle',
+				isSidebar ? 'left-2.5 size-3.5' : 'left-3 size-4'
+			)}
+		/>
+		<input
+			bind:this={searchInput}
+			id={inputId}
+			type="search"
+			data-zaur-mail-search={isSidebar ? '' : undefined}
+			{placeholder}
+			class={cn(
+				'z-input w-full border-transparent bg-surface-sunken/80 shadow-none focus:bg-surface-raised',
+				isSidebar ? 'h-9 rounded-md pl-8 text-sm' : 'rounded-full pl-9'
+			)}
+			autocomplete="off"
+			bind:value={input}
+			aria-controls={showDropdown ? dropdownId : undefined}
+			onfocus={() => (open = true)}
+			onblur={() => setTimeout(() => (open = false), 150)}
+			onkeydown={onSearchKeydown}
+		/>
 
-	{#if showDropdown}
-		<div
-			id={dropdownId}
-			role="menu"
-			tabindex="-1"
-			class="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-lg border border-border bg-surface-raised py-1.5 shadow-md"
-			onkeydown={onMenuKeydown}
-		>
-			<button
-				type="submit"
-				role="menuitem"
+		{#if showDropdown}
+			<div
+				id={dropdownId}
+				role="menu"
+				tabindex="-1"
 				class={cn(
-					'flex w-full items-center gap-2 px-3 text-left text-sm hover:bg-surface-sunken',
-					settings.compactSearchDropdown ? 'py-1.5' : 'py-2'
+					'absolute left-0 top-full z-50 mt-1.5 overflow-hidden rounded-lg border border-border bg-surface-raised py-1.5 shadow-md',
+					isSidebar ? 'right-0 min-w-[14rem]' : 'right-0'
 				)}
+				onkeydown={onMenuKeydown}
 			>
-				<Search class="size-4 text-fg-subtle" aria-hidden="true" />
-				Search mail for “{input.trim()}”
-			</button>
+				<button
+					type="submit"
+					role="menuitem"
+					class={cn(
+						'flex w-full items-center gap-2 px-3 text-left text-sm hover:bg-surface-sunken',
+						settings.compactSearchDropdown ? 'py-1.5' : 'py-2'
+					)}
+				>
+					<Search class="size-4 text-fg-subtle" aria-hidden="true" />
+					Search mail for “{input.trim()}”
+				</button>
 
-			{#if contactMatches.length}
-				{#if !settings.hideSearchDropdownHeaders}
-					<p
-						class={cn(
-							'z-type-label px-3',
-							settings.compactSearchDropdown ? 'py-1' : 'py-1.5'
-						)}
-					>
-						Contacts
-					</p>
+				{#if contactMatches.length}
+					{#if !settings.hideSearchDropdownHeaders}
+						<p
+							class={cn(
+								'z-type-label px-3',
+								settings.compactSearchDropdown ? 'py-1' : 'py-1.5'
+							)}
+						>
+							Contacts
+						</p>
+					{/if}
+					{#each contactMatches as contact (contact.email)}
+						<button
+							type="button"
+							role="menuitem"
+							class={cn(
+								'flex w-full items-center gap-2 px-3 text-left text-sm hover:bg-surface-sunken',
+								settings.compactSearchDropdown ? 'py-1.5' : 'py-2'
+							)}
+							onmousedown={(e) => e.preventDefault()}
+							onclick={() => composeTo(contact.email)}
+						>
+							<User class="size-4 text-fg-subtle" aria-hidden="true" />
+							<span class="min-w-0 truncate">
+								<span class="text-fg">{contact.name}</span>
+								<span class="ml-1 text-fg-muted">{contact.email}</span>
+							</span>
+						</button>
+					{/each}
 				{/if}
-				{#each contactMatches as contact (contact.email)}
-					<button
-						type="button"
-						role="menuitem"
-						class={cn(
-							'flex w-full items-center gap-2 px-3 text-left text-sm hover:bg-surface-sunken',
-							settings.compactSearchDropdown ? 'py-1.5' : 'py-2'
-						)}
-						onmousedown={(e) => e.preventDefault()}
-						onclick={() => composeTo(contact.email)}
-					>
-						<User class="size-4 text-fg-subtle" aria-hidden="true" />
-						<span class="min-w-0 truncate">
-							<span class="text-fg">{contact.name}</span>
-							<span class="ml-1 text-fg-muted">{contact.email}</span>
-						</span>
-					</button>
-				{/each}
-			{/if}
-		</div>
-	{/if}
-</form>
+			</div>
+		{/if}
+	</form>
 {/if}

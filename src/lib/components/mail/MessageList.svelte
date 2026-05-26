@@ -13,7 +13,6 @@
 	interface Props {
 		messages: MessagePreview[];
 		mailboxName: string;
-		countLabel?: string;
 		mailboxRouteId?: string;
 		loading?: boolean;
 		loadingMore?: boolean;
@@ -35,7 +34,6 @@
 	let {
 		messages,
 		mailboxName,
-		countLabel,
 		mailboxRouteId,
 		loading = false,
 		loadingMore = false,
@@ -135,7 +133,7 @@
 	}
 
 	const listExpanded = $derived(expanded || mail.hasSelection);
-
+	const showListHeader = $derived(!!mailboxRouteId && settings.showBulkSelect);
 </script>
 
 <section
@@ -149,14 +147,12 @@
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
-	{#if mailboxRouteId && settings.showBulkSelect}
+	{#if showListHeader}
 		<div class="relative z-10 shrink-0">
 			<MessageListHeader
-				{mailboxName}
 				{mailboxRouteId}
-				{countLabel}
 				{onBulkAction}
-				disabled={loading || !!error || !messages.length}
+				disabled={!!mailboxRouteId && (loading || !!error || !messages.length)}
 			/>
 		</div>
 	{/if}
