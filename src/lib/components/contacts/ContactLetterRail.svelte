@@ -26,7 +26,7 @@
 {#if letters.length}
 	{#if variant === 'horizontal'}
 		<nav
-			class="shrink-0 overflow-x-auto px-4 pb-2 md:hidden"
+			class="w-full shrink-0 overflow-x-auto pb-1 md:hidden"
 			aria-label="Browse contacts by letter"
 		>
 			<div class="flex min-w-max items-center gap-1.5">

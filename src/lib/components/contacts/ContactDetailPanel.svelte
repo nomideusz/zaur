@@ -110,7 +110,7 @@
 </aside>
 
 <div
-	class="fixed inset-0 z-30 flex justify-end bg-black/20 backdrop-blur-[1px] md:hidden"
+	class="z-mobile-sheet-backdrop md:hidden"
 	onclick={onClose}
 >
 	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->

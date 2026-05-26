@@ -152,7 +152,7 @@
 
 <section
 	class={cn(
-		'z-panel flex min-h-0 w-full max-w-none flex-1 shrink-0 flex-col md:w-(--width-list) md:max-w-(--width-list)',
+		'z-panel flex min-h-0 w-full max-w-none flex-1 shrink-0 flex-col overflow-hidden md:w-(--width-list) md:max-w-(--width-list)',
 		!hideBorders && 'border-r',
 		selectedEmail ? 'hidden md:flex' : 'flex'
 	)}
@@ -181,7 +181,7 @@
 
 	<div
 		class={cn(
-			'shrink-0 px-4',
+			'flex shrink-0 flex-col gap-3 px-4',
 			settings.compactContactsPage ? 'py-2' : 'py-3',
 			!hideBorders && 'border-b border-border'
 		)}
@@ -244,7 +244,7 @@
 		{/if}
 	</div>
 
-	<div class="relative min-h-0 flex-1">
+	<div class="relative flex min-h-0 flex-1 flex-col overflow-hidden">
 		{#if showLetterNav}
 			<ContactLetterRail
 				letters={availableLetters}
@@ -253,7 +253,7 @@
 			/>
 		{/if}
 
-		<div class="z-pane-scroll h-full overflow-y-auto">
+		<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 		{#if contacts.length}
 			<div
 				class={cn(

@@ -67,7 +67,7 @@
 
 	<SettingsRow
 		title="Compact settings nav"
-		description="Tighter sidebar and mobile tab links on settings pages"
+		description="Tighter spacing in the settings section list"
 	>
 		<input
 			type="checkbox"
