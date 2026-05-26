@@ -7,13 +7,11 @@
 
 	let {
 		totalCount,
-		letters,
 		selectedLetter,
 		onSelectLetter,
 		onAddContact
 	}: {
 		totalCount: number;
-		letters: string[];
 		selectedLetter: string | null;
 		onSelectLetter: (letter: string | null) => void;
 		onAddContact: () => void;
@@ -62,30 +60,6 @@
 				</button>
 			</li>
 		</ul>
-
-		{#if letters.length && !settings.hideContactGroupLetters}
-			<p class="mb-1.5 mt-4 px-3 text-xs font-medium text-fg-subtle">Browse A–Z</p>
-			<ul class="space-y-0.5 px-1">
-				{#each letters as letter (letter)}
-					<li>
-						<button
-							type="button"
-							class={cn(
-								'flex w-full items-center rounded-lg px-3 text-sm font-semibold transition-colors',
-								settings.compactContactsPage ? 'min-h-9 py-2' : 'min-h-10 py-2.5',
-								selectedLetter === letter
-									? 'bg-accent text-accent-fg shadow-sm'
-									: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
-							)}
-							aria-current={selectedLetter === letter ? 'true' : undefined}
-							onclick={() => onSelectLetter(selectedLetter === letter ? null : letter)}
-						>
-							{letter}
-						</button>
-					</li>
-				{/each}
-			</ul>
-		{/if}
 	</nav>
 
 	<div

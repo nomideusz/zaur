@@ -141,7 +141,6 @@
 <div class="hidden md:contents">
 	<ContactsSidebar
 		totalCount={listContacts(auth.client?.getAccountId() ?? null).length}
-		letters={availableLetters}
 		{selectedLetter}
 		onSelectLetter={selectLetter}
 		onAddContact={() => {
