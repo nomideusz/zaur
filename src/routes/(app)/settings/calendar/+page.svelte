@@ -9,7 +9,7 @@
 
 <SettingsPanel
 	title="Calendar"
-	description="Adjust the month grid, event chips, sidebar, and event details panel."
+	description="Week start, events per day, and event display."
 >
 	<CalendarSection />
 </SettingsPanel>

@@ -2,137 +2,86 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import { settings, type ComposeDrawerWidth, type ComposeFormat, type ComposeLayout } from '$lib/stores/settings.svelte';
+	import {
+		settings,
+		type ComposeDrawerWidth,
+		type ComposeFormat,
+		type ComposeLayout
+	} from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Layout & format" description="How the compose panel opens and how messages are sent.">
-		<SettingsRow
-			title="Default compose format"
-			description="Plain text or HTML when sending — the compose box stays plain text; HTML wraps your message for recipients"
+<SettingsGroup title="Format & layout" description="How compose opens and how messages are sent.">
+	<SettingsRow
+		title="Default format"
+		description="Plain text or HTML when sending — the compose box stays plain text either way"
+	>
+		<select
+			class="z-input w-auto"
+			value={settings.defaultComposeFormat}
+			onchange={(e) => settings.setDefaultComposeFormat(e.currentTarget.value as ComposeFormat)}
 		>
+			<option value="plain">Plain text</option>
+			<option value="html">HTML</option>
+		</select>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Compose layout"
+		description="Drawer slides in from the right; pane fills the reader column with the sidebar still visible"
+	>
+		<select
+			class="z-input w-auto"
+			value={settings.composeLayout}
+			onchange={(e) => settings.setComposeLayout(e.currentTarget.value as ComposeLayout)}
+		>
+			<option value="drawer">Drawer</option>
+			<option value="pane">Pane</option>
+		</select>
+	</SettingsRow>
+
+	<SettingsDepends
+		enabled={settings.composeLayout === 'drawer'}
+		inactiveReason={settings.composeLayout === 'drawer'
+			? undefined
+			: 'Only applies when the compose layout is set to drawer'}
+	>
+		<SettingsRow title="Drawer width" description="How wide the compose drawer is on desktop">
 			<select
 				class="z-input w-auto"
-				value={settings.defaultComposeFormat}
+				value={settings.composeDrawerWidth}
 				onchange={(e) =>
-					settings.setDefaultComposeFormat(e.currentTarget.value as ComposeFormat)}
+					settings.setComposeDrawerWidth(e.currentTarget.value as ComposeDrawerWidth)}
 			>
-				<option value="plain">Plain text</option>
-				<option value="html">HTML</option>
+				<option value="narrow">Narrow</option>
+				<option value="default">Default</option>
+				<option value="wide">Wide</option>
 			</select>
 		</SettingsRow>
-
-		<SettingsRow
-			title="Compose layout"
-			description="Drawer slides in from the right over mail — pane fills the reader column with the folder sidebar still visible"
-		>
-			<select
-				class="z-input w-auto"
-				value={settings.composeLayout}
-				onchange={(e) => settings.setComposeLayout(e.currentTarget.value as ComposeLayout)}
-			>
-				<option value="drawer">Drawer (from the right)</option>
-				<option value="pane">Pane (sidebar visible)</option>
-			</select>
-		</SettingsRow>
-
-		<SettingsDepends
-			enabled={settings.composeLayout === 'drawer'}
-			inactiveReason={settings.composeLayout === 'drawer'
-				? 'Drawer width on desktop'
-				: 'Only applies when compose layout is set to drawer'}
-		>
-			<SettingsRow
-				title="Drawer width"
-				description="How wide the compose drawer is on desktop — pane layout uses the full reader column instead"
-			>
-				<select
-					class="z-input w-auto"
-					value={settings.composeDrawerWidth}
-					onchange={(e) =>
-						settings.setComposeDrawerWidth(e.currentTarget.value as ComposeDrawerWidth)}
-				>
-					<option value="narrow">Narrow</option>
-					<option value="default">Default</option>
-					<option value="wide">Wide</option>
-				</select>
-			</SettingsRow>
-		</SettingsDepends>
+	</SettingsDepends>
 </SettingsGroup>
 
-<SettingsGroup title="Recipient fields" description="To, Cc, Bcc, and contact autocomplete.">
-		<SettingsRow
-			title="Show Cc/Bcc fields"
-			description="Cc and Bcc rows in compose — reply-all still shows Cc when needed"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.showCcBccInCompose}
-				onchange={(e) => settings.setShowCcBccInCompose(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+<SettingsGroup title="Fields" description="Recipient rows and autocomplete.">
+	<SettingsRow title="Show Cc/Bcc" description="Cc and Bcc rows in compose — reply-all still shows Cc when needed">
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.showCcBccInCompose}
+			onchange={(e) => settings.setShowCcBccInCompose(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 
-		<SettingsRow
-			title="Hide From line in compose"
-			description="Remove the sender row at the top of the compose panel"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideComposeFromLine}
-				onchange={(e) => settings.setHideComposeFromLine(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Hide compose field labels"
-			description="Remove To, Cc, Bcc, and Subject labels — fields stay usable with placeholders"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideComposeFieldLabels}
-				onchange={(e) => settings.setHideComposeFieldLabels(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Compose contact suggestions"
-			description="Autocomplete contacts while typing recipients"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.showComposeContactSuggestions}
-				onchange={(e) => settings.setShowComposeContactSuggestions(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsDepends
-			enabled={settings.showComposeContactSuggestions}
-			inactiveReason={settings.showComposeContactSuggestions
-				? 'Recipient suggestions appearance'
-				: 'Turn on compose contact suggestions above to adjust spacing'}
-		>
-			<SettingsRow
-				title="Compact compose suggestions"
-				description="Tighter spacing in recipient autocomplete while composing"
-			>
-				<input
-					type="checkbox"
-					class="size-4 accent-accent"
-					checked={settings.compactComposeSuggestions}
-					onchange={(e) => settings.setCompactComposeSuggestions(e.currentTarget.checked)}
-				/>
-			</SettingsRow>
-		</SettingsDepends>
+	<SettingsRow title="Contact suggestions" description="Autocomplete contacts while typing recipients">
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.showComposeContactSuggestions}
+			onchange={(e) => settings.setShowComposeContactSuggestions(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Reply content" description="Hints and quoted text when replying or forwarding.">
-	<SettingsRow
-		title="Hide compose hints"
-		description="Remove nudges like “Set display name”, “Add a signature”, and keyboard shortcut tips"
-	>
+	<SettingsRow title="Hide compose hints" description="Remove tips like “Set display name”, “Add a signature”, and shortcut nudges">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -141,10 +90,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow
-		title="Collapse quoted text"
-		description="Keep quoted reply content folded when composing"
-	>
+	<SettingsRow title="Collapse quoted text" description="Keep quoted reply content folded when composing">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -154,66 +100,13 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Compose toolbar & chrome" description="Footer buttons, dividers, and attachment strip spacing." advanced>
-	<SettingsRow
-		title="Icon-only attach button"
-		description="Show only the paperclip icon for attachments in compose — no “Attach” label"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.iconOnlyComposeAttach}
-			onchange={(e) => settings.setIconOnlyComposeAttach(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		title="Icon-only discard button"
-		description="Show an X icon instead of the Discard label in compose"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.iconOnlyComposeDiscard}
-			onchange={(e) => settings.setIconOnlyComposeDiscard(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		title="Hide compose panel borders"
-		description="Remove divider lines between header, fields, and footer in compose"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.hideComposePanelBorders}
-			onchange={(e) => settings.setHideComposePanelBorders(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		title="Compact compose attachments"
-		description="Tighter spacing for files you attach while writing — also set Compact attachments under Reading for chip size"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactComposeAttachments}
-			onchange={(e) => settings.setCompactComposeAttachments(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-</SettingsGroup>
-
 <SettingsGroup title="Defaults">
-	<SettingsRow
-		title="Reset writing settings"
-		description="Restore every compose and reply option on this page to its original value"
-	>
+	<SettingsRow title="Reset writing settings" description="Restore every option on this page">
 		<button
 			type="button"
 			class="z-btn-ghost text-sm"
 			onclick={() => {
-				if (confirm('Reset all writing settings to defaults?')) {
+				if (confirm('Reset writing settings to defaults?')) {
 					settings.resetComposeSettings();
 				}
 			}}

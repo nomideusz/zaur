@@ -9,7 +9,7 @@
 
 <SettingsPanel
 	title="Writing"
-	description="Compose layout, recipient fields, reply content, and toolbar chrome."
+	description="Format, fields, and reply content when composing mail."
 >
 	<ComposeSection />
 </SettingsPanel>

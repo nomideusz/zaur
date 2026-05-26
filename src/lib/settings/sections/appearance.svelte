@@ -5,11 +5,16 @@
 	import { settings, type LoadingIndicatorStyle } from '$lib/stores/settings.svelte';
 	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
 	import { visual } from '$lib/stores/visual.svelte';
-	import { CORNER_OPTIONS, SURFACE_OPTIONS, type CornerStyle, type SurfaceStyle } from '$lib/theme/visual';
+	import {
+		CORNER_OPTIONS,
+		SURFACE_OPTIONS,
+		type CornerStyle,
+		type SurfaceStyle
+	} from '$lib/theme/visual';
 </script>
 
 <SettingsGroup title="Theme" description="Color mode and accent.">
-	<SettingsRow title="Theme" description="Also available in the account menu">
+	<SettingsRow title="Color mode" description="Also available in the account menu">
 		<select
 			class="z-input w-auto"
 			value={theme.theme}
@@ -25,10 +30,7 @@
 		<AccentColorPicker value={visual.accentColor} onchange={(value) => visual.setAccentColor(value)} />
 	</SettingsRow>
 
-	<SettingsRow
-		title="Reduce motion"
-		description="Turn off page transitions and loading animations"
-	>
+	<SettingsRow title="Reduce motion" description="Turn off page transitions and loading animations">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -38,7 +40,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Style tweaks" description="Corners and background tone." advanced>
+<SettingsGroup title="Style" description="Corners, surface tone, and loading.">
 	<SettingsRow title="Corner style" description="Roundness of buttons and panels">
 		<select
 			class="z-input w-auto"
@@ -62,10 +64,8 @@
 			{/each}
 		</select>
 	</SettingsRow>
-</SettingsGroup>
 
-<SettingsGroup title="Loading" description="Placeholders while content loads." advanced>
-	<SettingsRow title="Loading indicator" description="Message list, reader, and folder sidebar">
+	<SettingsRow title="Loading indicator" description="Placeholder shown while content loads">
 		<select
 			class="z-input w-auto"
 			value={settings.loadingIndicatorStyle}

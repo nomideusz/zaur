@@ -7,29 +7,20 @@ const BASIC_TITLE_OVERRIDES = new Set([
 	'Drawer width',
 	'Apply simple mode',
 	'Reset all display & layout settings',
-	'Reset look & feel',
 	'Reset theme settings',
 	'Reset layout settings',
-	'Reset sidebar settings',
 	'Reset inbox settings',
 	'Reset reading settings',
 	'Reset writing settings',
-	'Reset workspace settings',
 	'Reset calendar settings',
-	'Reset contacts settings',
-	'Reset you settings',
 	'Reset profile settings',
-	'Restore mail defaults',
 	'Reset general mail settings',
 	'Export settings',
 	'Import settings'
 ]);
 
 /** Whole nav sections only shown in advanced mode. */
-export const ADVANCED_ONLY_SETTINGS_PATHS = new Set([
-	'/settings/contacts',
-	'/settings/data'
-]);
+export const ADVANCED_ONLY_SETTINGS_PATHS = new Set(['/settings/data']);
 
 export function isAdvancedSettingTitle(title: string): boolean {
 	if (BASIC_TITLE_OVERRIDES.has(title)) return false;
@@ -40,8 +31,7 @@ export function isAdvancedSettingTitle(title: string): boolean {
 		lower.startsWith('hide ') ||
 		lower.startsWith('minimal ') ||
 		lower.includes('icon-only') ||
-		lower.includes('skeleton') ||
-		lower === 'hide connecting screen'
+		lower.includes('skeleton')
 	);
 }
 

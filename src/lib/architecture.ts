@@ -16,16 +16,16 @@ export const routeMap = {
 		mail: '/settings/mail',
 		inbox: '/settings/inbox',
 		reading: '/settings/reading',
+		compose: '/settings/compose',
 		appearance: '/settings/appearance',
 		layout: '/settings/layout',
-		sidebar: '/settings/sidebar',
-		compose: '/settings/compose',
 		calendar: '/settings/calendar',
-		contacts: '/settings/contacts',
 		data: '/settings/data',
 		/** Legacy — redirect */
 		workspace: '/settings/workspace',
-		display: '/settings/display'
+		display: '/settings/display',
+		sidebar: '/settings/sidebar',
+		contacts: '/settings/contacts'
 	},
 	calendar: '/calendar',
 	contacts: '/contacts'

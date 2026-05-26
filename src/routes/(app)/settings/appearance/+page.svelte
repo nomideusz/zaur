@@ -4,9 +4,12 @@
 </script>
 
 <svelte:head>
-	<title>Theme · ZAUR Webmail</title>
+	<title>Appearance · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel title="Theme" description="Color mode, accent, and motion.">
+<SettingsPanel
+	title="Appearance"
+	description="Theme, accent, motion, and visual style."
+>
 	<AppearanceSection />
 </SettingsPanel>

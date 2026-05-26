@@ -19,12 +19,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/account-email-signature",
-		"href": "/settings/account",
-		"title": "Email signature",
-		"description": ""
-	},
-	{
 		"id": "/settings/account-include-signature",
 		"href": "/settings/account",
 		"title": "Include signature",
@@ -49,9 +43,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/account-reset-profile-settings",
+		"id": "/settings/account-reset-profile",
 		"href": "/settings/account",
-		"title": "Reset profile settings",
+		"title": "Reset profile",
 		"description": ""
 	},
 	{
@@ -73,9 +67,21 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/account-signature",
+		"href": "/settings/account",
+		"title": "Signature",
+		"description": ""
+	},
+	{
 		"id": "/settings/appearance-accent-color",
 		"href": "/settings/appearance",
 		"title": "Accent color",
+		"description": ""
+	},
+	{
+		"id": "/settings/appearance-color-mode",
+		"href": "/settings/appearance",
+		"title": "Color mode",
 		"description": ""
 	},
 	{
@@ -109,111 +115,21 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/appearance-theme",
-		"href": "/settings/appearance",
-		"title": "Theme",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-compact-calendar-grid",
+		"id": "/settings/calendar-events-per-day",
 		"href": "/settings/calendar",
-		"title": "Compact calendar grid",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-compact-calendar-header",
-		"href": "/settings/calendar",
-		"title": "Compact calendar header",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-compact-calendar-sidebar",
-		"href": "/settings/calendar",
-		"title": "Compact calendar sidebar",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-compact-empty-event-panel",
-		"href": "/settings/calendar",
-		"title": "Compact empty event panel",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-compact-event-compose",
-		"href": "/settings/calendar",
-		"title": "Compact event compose",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-compact-event-panel",
-		"href": "/settings/calendar",
-		"title": "Compact event panel",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-events-shown-per-day",
-		"href": "/settings/calendar",
-		"title": "Events shown per day",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-hide-calendar-pane-borders",
-		"href": "/settings/calendar",
-		"title": "Hide calendar pane borders",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-hide-calendar-settings-link",
-		"href": "/settings/calendar",
-		"title": "Hide calendar settings link",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-hide-calendar-sidebar-header",
-		"href": "/settings/calendar",
-		"title": "Hide calendar sidebar header",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-hide-compose-field-labels",
-		"href": "/settings/calendar",
-		"title": "Hide compose field labels",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-hide-empty-event-panel",
-		"href": "/settings/calendar",
-		"title": "Hide empty event panel",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-hide-event-times-in-grid",
-		"href": "/settings/calendar",
-		"title": "Hide event times in grid",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-hide-more-events-label",
-		"href": "/settings/calendar",
-		"title": "Hide more-events label",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-hide-new-event-button",
-		"href": "/settings/calendar",
-		"title": "Hide new event button",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-icon-only-new-event-button",
-		"href": "/settings/calendar",
-		"title": "Icon-only new event button",
+		"title": "Events per day",
 		"description": ""
 	},
 	{
 		"id": "/settings/calendar-reset-calendar-settings",
 		"href": "/settings/calendar",
 		"title": "Reset calendar settings",
+		"description": ""
+	},
+	{
+		"id": "/settings/calendar-show-event-times",
+		"href": "/settings/calendar",
+		"title": "Show event times",
 		"description": ""
 	},
 	{
@@ -229,33 +145,21 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/compose-compact-compose-attachments",
-		"href": "/settings/compose",
-		"title": "Compact compose attachments",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-compact-compose-suggestions",
-		"href": "/settings/compose",
-		"title": "Compact compose suggestions",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-compose-contact-suggestions",
-		"href": "/settings/compose",
-		"title": "Compose contact suggestions",
-		"description": ""
-	},
-	{
 		"id": "/settings/compose-compose-layout",
 		"href": "/settings/compose",
 		"title": "Compose layout",
 		"description": ""
 	},
 	{
-		"id": "/settings/compose-default-compose-format",
+		"id": "/settings/compose-contact-suggestions",
 		"href": "/settings/compose",
-		"title": "Default compose format",
+		"title": "Contact suggestions",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-default-format",
+		"href": "/settings/compose",
+		"title": "Default format",
 		"description": ""
 	},
 	{
@@ -265,39 +169,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/compose-hide-compose-field-labels",
-		"href": "/settings/compose",
-		"title": "Hide compose field labels",
-		"description": ""
-	},
-	{
 		"id": "/settings/compose-hide-compose-hints",
 		"href": "/settings/compose",
 		"title": "Hide compose hints",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-hide-compose-panel-borders",
-		"href": "/settings/compose",
-		"title": "Hide compose panel borders",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-hide-from-line-in-compose",
-		"href": "/settings/compose",
-		"title": "Hide From line in compose",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-icon-only-attach-button",
-		"href": "/settings/compose",
-		"title": "Icon-only attach button",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-icon-only-discard-button",
-		"href": "/settings/compose",
-		"title": "Icon-only discard button",
 		"description": ""
 	},
 	{
@@ -307,105 +181,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/compose-show-cc-bcc-fields",
+		"id": "/settings/compose-show-cc-bcc",
 		"href": "/settings/compose",
-		"title": "Show Cc/Bcc fields",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-compact-contacts-add-form",
-		"href": "/settings/contacts",
-		"title": "Compact contacts add form",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-compact-contacts-empty-state",
-		"href": "/settings/contacts",
-		"title": "Compact contacts empty state",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-compact-contacts-list",
-		"href": "/settings/contacts",
-		"title": "Compact contacts list",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-compact-contacts-page",
-		"href": "/settings/contacts",
-		"title": "Compact contacts page",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-compact-contacts-search",
-		"href": "/settings/contacts",
-		"title": "Compact contacts search",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-hide-contact-group-letters",
-		"href": "/settings/contacts",
-		"title": "Hide contact group letters",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-hide-contact-message-counts",
-		"href": "/settings/contacts",
-		"title": "Hide contact message counts",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-hide-contacts-email-line",
-		"href": "/settings/contacts",
-		"title": "Hide contacts email line",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-hide-contacts-empty-actions",
-		"href": "/settings/contacts",
-		"title": "Hide contacts empty actions",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-hide-contacts-empty-hints",
-		"href": "/settings/contacts",
-		"title": "Hide contacts empty hints",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-hide-contacts-hover-actions",
-		"href": "/settings/contacts",
-		"title": "Hide contacts hover actions",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-hide-contacts-new-message-button",
-		"href": "/settings/contacts",
-		"title": "Hide contacts new message button",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-hide-contacts-page-subtitle",
-		"href": "/settings/contacts",
-		"title": "Hide contacts page subtitle",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-hide-contacts-row-mail-icon",
-		"href": "/settings/contacts",
-		"title": "Hide contacts row mail icon",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-hide-contacts-settings-button",
-		"href": "/settings/contacts",
-		"title": "Hide contacts settings button",
-		"description": ""
-	},
-	{
-		"id": "/settings/contacts-reset-contacts-settings",
-		"href": "/settings/contacts",
-		"title": "Reset contacts settings",
+		"title": "Show Cc/Bcc",
 		"description": ""
 	},
 	{
@@ -433,27 +211,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-compact-empty-list-state",
+		"id": "/settings/inbox-attachment-icons",
 		"href": "/settings/inbox",
-		"title": "Compact empty list state",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-compact-list-avatars",
-		"href": "/settings/inbox",
-		"title": "Compact list avatars",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-compact-mobile-folder-picker",
-		"href": "/settings/inbox",
-		"title": "Compact mobile folder picker",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-compact-selection-bar",
-		"href": "/settings/inbox",
-		"title": "Compact selection bar",
+		"title": "Attachment icons",
 		"description": ""
 	},
 	{
@@ -463,39 +223,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-hide-empty-list-actions",
+		"id": "/settings/inbox-full-dates",
 		"href": "/settings/inbox",
-		"title": "Hide empty list actions",
+		"title": "Full dates",
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-hide-empty-list-hints",
+		"id": "/settings/inbox-highlight-unread",
 		"href": "/settings/inbox",
-		"title": "Hide empty list hints",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-hide-folder-title-in-app-header",
-		"href": "/settings/inbox",
-		"title": "Hide folder title in app header",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-hide-list-row-dividers",
-		"href": "/settings/inbox",
-		"title": "Hide list row dividers",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-hide-selection-hints",
-		"href": "/settings/inbox",
-		"title": "Hide selection hints",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-highlight-unread-messages",
-		"href": "/settings/inbox",
-		"title": "Highlight unread messages",
+		"title": "Highlight unread",
 		"description": ""
 	},
 	{
@@ -505,27 +241,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-list-text-size",
+		"id": "/settings/inbox-reset-inbox-settings",
 		"href": "/settings/inbox",
-		"title": "List text size",
+		"title": "Reset inbox settings",
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-reset-inbox-list-settings",
+		"id": "/settings/inbox-sender-avatars",
 		"href": "/settings/inbox",
-		"title": "Reset inbox list settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-show-attachment-icons",
-		"href": "/settings/inbox",
-		"title": "Show attachment icons",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-show-full-dates-in-list",
-		"href": "/settings/inbox",
-		"title": "Show full dates in list",
+		"title": "Sender avatars",
 		"description": ""
 	},
 	{
@@ -535,45 +259,51 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-show-sender-avatars",
+		"id": "/settings/inbox-show-sender-email",
 		"href": "/settings/inbox",
-		"title": "Show sender avatars",
+		"title": "Show sender email",
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-show-sender-email-in-list",
+		"id": "/settings/inbox-stars",
 		"href": "/settings/inbox",
-		"title": "Show sender email in list",
+		"title": "Stars",
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-show-stars-in-list",
+		"id": "/settings/inbox-subject-only",
 		"href": "/settings/inbox",
-		"title": "Show stars in list",
+		"title": "Subject only",
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-show-timestamps-in-list",
+		"id": "/settings/inbox-text-size",
 		"href": "/settings/inbox",
-		"title": "Show timestamps in list",
+		"title": "Text size",
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-subject-only-list",
+		"id": "/settings/inbox-timestamps",
 		"href": "/settings/inbox",
-		"title": "Subject-only list",
+		"title": "Timestamps",
 		"description": ""
 	},
 	{
-		"id": "/settings/layout-compact-app-header",
+		"id": "/settings/layout-compact-folder-sidebar",
 		"href": "/settings/layout",
-		"title": "Compact app header",
+		"title": "Compact folder sidebar",
 		"description": ""
 	},
 	{
 		"id": "/settings/layout-compact-layout",
 		"href": "/settings/layout",
 		"title": "Compact layout",
+		"description": ""
+	},
+	{
+		"id": "/settings/layout-contact-suggestions-in-search",
+		"href": "/settings/layout",
+		"title": "Contact suggestions in search",
 		"description": ""
 	},
 	{
@@ -589,21 +319,51 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/layout-hide-pane-borders",
+		"id": "/settings/layout-mail-only-navigation",
 		"href": "/settings/layout",
-		"title": "Hide pane borders",
+		"title": "Mail-only navigation",
 		"description": ""
 	},
 	{
-		"id": "/settings/layout-icon-only-thread-actions",
+		"id": "/settings/layout-remember-last-mailbox",
 		"href": "/settings/layout",
-		"title": "Icon-only thread actions",
+		"title": "Remember last mailbox",
 		"description": ""
 	},
 	{
 		"id": "/settings/layout-reset-layout-settings",
 		"href": "/settings/layout",
 		"title": "Reset layout settings",
+		"description": ""
+	},
+	{
+		"id": "/settings/layout-show-folder-icons",
+		"href": "/settings/layout",
+		"title": "Show folder icons",
+		"description": ""
+	},
+	{
+		"id": "/settings/layout-show-folder-unread-counts",
+		"href": "/settings/layout",
+		"title": "Show folder unread counts",
+		"description": ""
+	},
+	{
+		"id": "/settings/layout-show-pane-borders",
+		"href": "/settings/layout",
+		"title": "Show pane borders",
+		"description": ""
+	},
+	{
+		"id": "/settings/layout-show-sidebar-search",
+		"href": "/settings/layout",
+		"title": "Show sidebar search",
+		"description": ""
+	},
+	{
+		"id": "/settings/layout-show-sidebar-shortcuts",
+		"href": "/settings/layout",
+		"title": "Show sidebar shortcuts",
 		"description": ""
 	},
 	{
@@ -649,15 +409,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-hide-action-toasts",
+		"id": "/settings/mail-enable-keyboard-shortcuts",
 		"href": "/settings/mail",
-		"title": "Hide action toasts",
+		"title": "Enable keyboard shortcuts",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-keyboard-shortcuts",
+		"id": "/settings/mail-hide-action-toasts",
 		"href": "/settings/mail",
-		"title": "Keyboard shortcuts",
+		"title": "Hide action toasts",
 		"description": ""
 	},
 	{
@@ -679,9 +439,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-push-notification-status",
+		"id": "/settings/mail-push-notifications",
 		"href": "/settings/mail",
-		"title": "Push notification status",
+		"title": "Push notifications",
 		"description": ""
 	},
 	{
@@ -739,57 +499,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-compact-attachments",
+		"id": "/settings/reading-contact-actions",
 		"href": "/settings/reading",
-		"title": "Compact attachments",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-compact-collapsed-threads",
-		"href": "/settings/reading",
-		"title": "Compact collapsed threads",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-compact-empty-reader",
-		"href": "/settings/reading",
-		"title": "Compact empty reader",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-compact-move-menu",
-		"href": "/settings/reading",
-		"title": "Compact move menu",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-compact-quick-reply",
-		"href": "/settings/reading",
-		"title": "Compact quick reply",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-compact-reader-avatars",
-		"href": "/settings/reading",
-		"title": "Compact reader avatars",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-compact-reader-body",
-		"href": "/settings/reading",
-		"title": "Compact reader body",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-compact-subject-title",
-		"href": "/settings/reading",
-		"title": "Compact subject title",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-compact-thread-actions",
-		"href": "/settings/reading",
-		"title": "Compact thread actions",
+		"title": "Contact actions",
 		"description": ""
 	},
 	{
@@ -811,63 +523,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-hide-collapsed-thread-previews",
-		"href": "/settings/reading",
-		"title": "Hide collapsed thread previews",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-hide-empty-reader-description",
-		"href": "/settings/reading",
-		"title": "Hide empty reader description",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-hide-empty-reader-prompts",
-		"href": "/settings/reading",
-		"title": "Hide empty reader prompts",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-hide-reader-pane-borders",
-		"href": "/settings/reading",
-		"title": "Hide reader pane borders",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-hide-reader-timestamps",
-		"href": "/settings/reading",
-		"title": "Hide reader timestamps",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-hide-sender-email",
-		"href": "/settings/reading",
-		"title": "Hide sender email",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-hide-thread-summary",
-		"href": "/settings/reading",
-		"title": "Hide thread summary",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-hide-to-and-cc-lines",
-		"href": "/settings/reading",
-		"title": "Hide To and Cc lines",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-icon-only-thread-actions",
-		"href": "/settings/reading",
-		"title": "Icon-only thread actions",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-prefer-plain-text",
 		"href": "/settings/reading",
 		"title": "Prefer plain text",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-quick-reply",
+		"href": "/settings/reading",
+		"title": "Quick reply",
 		"description": ""
 	},
 	{
@@ -880,78 +544,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-reset-reading-settings",
 		"href": "/settings/reading",
 		"title": "Reset reading settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-show-contact-actions",
-		"href": "/settings/reading",
-		"title": "Show contact actions",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-show-quick-reply",
-		"href": "/settings/reading",
-		"title": "Show quick reply",
-		"description": ""
-	},
-	{
-		"id": "/settings/sidebar-compact-folder-badges",
-		"href": "/settings/sidebar",
-		"title": "Compact folder badges",
-		"description": ""
-	},
-	{
-		"id": "/settings/sidebar-compact-folder-sidebar",
-		"href": "/settings/sidebar",
-		"title": "Compact folder sidebar",
-		"description": ""
-	},
-	{
-		"id": "/settings/sidebar-hide-folder-icons",
-		"href": "/settings/sidebar",
-		"title": "Hide folder icons",
-		"description": ""
-	},
-	{
-		"id": "/settings/sidebar-hide-sidebar-search",
-		"href": "/settings/sidebar",
-		"title": "Hide sidebar search",
-		"description": ""
-	},
-	{
-		"id": "/settings/sidebar-hide-sidebar-shortcuts",
-		"href": "/settings/sidebar",
-		"title": "Hide sidebar shortcuts",
-		"description": ""
-	},
-	{
-		"id": "/settings/sidebar-mail-only-navigation",
-		"href": "/settings/sidebar",
-		"title": "Mail-only navigation",
-		"description": ""
-	},
-	{
-		"id": "/settings/sidebar-remember-last-mailbox",
-		"href": "/settings/sidebar",
-		"title": "Remember last mailbox",
-		"description": ""
-	},
-	{
-		"id": "/settings/sidebar-reset-sidebar-settings",
-		"href": "/settings/sidebar",
-		"title": "Reset sidebar settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/sidebar-search-contact-suggestions",
-		"href": "/settings/sidebar",
-		"title": "Search contact suggestions",
-		"description": ""
-	},
-	{
-		"id": "/settings/sidebar-show-folder-unread-counts",
-		"href": "/settings/sidebar",
-		"title": "Show folder unread counts",
 		"description": ""
 	}
 ];

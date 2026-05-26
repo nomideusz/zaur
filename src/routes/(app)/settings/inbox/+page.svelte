@@ -4,12 +4,12 @@
 </script>
 
 <svelte:head>
-	<title>Mail · Inbox list · ZAUR Webmail</title>
+	<title>Inbox · ZAUR Webmail</title>
 </svelte:head>
 
 <SettingsPanel
-	title="Inbox list"
-	description="How messages appear in the list and bulk selection."
+	title="Inbox"
+	description="Density and what each row shows in the message list."
 >
 	<InboxSection />
 </SettingsPanel>

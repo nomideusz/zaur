@@ -79,7 +79,7 @@
 		</Button>
 		{#if !settings.hideContactsHeaderSettings}
 			<a
-				href="/settings/contacts"
+				href="/settings/account"
 				class={cn(
 					'flex items-center gap-2 rounded-lg px-3 text-sm transition-all',
 					settings.compactContactsPage ? 'min-h-9 py-2' : 'min-h-10 py-2.5',

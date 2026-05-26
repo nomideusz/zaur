@@ -8,12 +8,12 @@
 </script>
 
 <svelte:head>
-	<title>Mail · General · ZAUR Webmail</title>
+	<title>General · ZAUR Webmail</title>
 </svelte:head>
 
 <SettingsPanel
 	title="General"
-	description="Notifications, confirmations, and shortcuts."
+	description="Notifications, behavior, and keyboard shortcuts."
 >
 	<SettingsGroup title="Notifications" description="Alerts and unread counts.">
 		<SettingsRow
@@ -33,17 +33,11 @@
 			{/if}
 		</SettingsRow>
 
-		<SettingsRow
-			title="Push notification status"
-			description="Background alerts when new mail arrives"
-		>
+		<SettingsRow title="Push notifications" description="Background alerts when new mail arrives">
 			<PushNotificationStatus />
 		</SettingsRow>
 
-		<SettingsRow
-			title="Notify on new mail"
-			description="Toast and push when new mail arrives in Inbox"
-		>
+		<SettingsRow title="Notify on new mail" description="Toast and push when new mail arrives in Inbox">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
@@ -52,10 +46,7 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Unread count on app icon"
-			description="Badge on the installed app icon (Chrome and Edge)"
-		>
+		<SettingsRow title="Unread count on app icon" description="Badge on the installed app icon (Chrome and Edge)">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
@@ -64,10 +55,7 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Unread count in tab title"
-			description="Prefix the browser tab with your Inbox unread count"
-		>
+		<SettingsRow title="Unread count in tab title" description="Prefix the browser tab with your Inbox unread count">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
@@ -77,11 +65,8 @@
 		</SettingsRow>
 	</SettingsGroup>
 
-	<SettingsGroup title="Actions" description="What happens when you read, send, or delete mail.">
-		<SettingsRow
-			title="Mark as read when opened"
-			description="Automatically mark conversations read when you open them"
-		>
+	<SettingsGroup title="Behavior" description="What happens when you read, send, or delete mail.">
+		<SettingsRow title="Mark as read when opened" description="Automatically mark conversations read when you open them">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
@@ -90,10 +75,7 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Confirm before delete"
-			description="Ask before moving messages to trash"
-		>
+		<SettingsRow title="Confirm before delete" description="Ask before moving messages to trash">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
@@ -102,10 +84,7 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Confirm before discarding compose"
-			description="Ask when closing compose with unsent content"
-		>
+		<SettingsRow title="Confirm before discarding compose" description="Ask when closing compose with unsent content">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
@@ -114,22 +93,7 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Return to inbox after sending"
-			description="Go back to Inbox instead of Sent after delivery"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.returnToInboxAfterSend}
-				onchange={(e) => settings.setReturnToInboxAfterSend(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Undo send"
-			description="Brief delay before sending so you can cancel from the toast"
-		>
+		<SettingsRow title="Undo send" description="Brief delay before sending so you can cancel from the toast">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
@@ -138,10 +102,16 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Auto-load more messages"
-			description="Load older messages when you scroll to the bottom of the list"
-		>
+		<SettingsRow title="Return to inbox after sending" description="Go back to Inbox instead of Sent after delivery">
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.returnToInboxAfterSend}
+				onchange={(e) => settings.setReturnToInboxAfterSend(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow title="Auto-load more messages" description="Load older messages when you scroll to the bottom of the list">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
@@ -150,10 +120,7 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow
-			title="Hide action toasts"
-			description="Suppress success and info notifications — errors still appear"
-		>
+		<SettingsRow title="Hide action toasts" description="Suppress success and info notifications — errors still appear">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
@@ -163,11 +130,8 @@
 		</SettingsRow>
 	</SettingsGroup>
 
-	<SettingsGroup title="Shortcuts">
-		<SettingsRow
-			title="Keyboard shortcuts"
-			description="Press c to compose, j/k to move between messages, and more"
-		>
+	<SettingsGroup title="Shortcuts" description="Keyboard navigation.">
+		<SettingsRow title="Enable keyboard shortcuts" description="Press c to compose, j/k to move between messages, and more">
 			<input
 				type="checkbox"
 				class="size-4 accent-accent"
@@ -199,10 +163,7 @@
 	</SettingsGroup>
 
 	<SettingsGroup title="Defaults">
-		<SettingsRow
-			title="Reset general mail settings"
-			description="Restore notifications, actions, and shortcuts on this page"
-		>
+		<SettingsRow title="Reset general mail settings" description="Restore notifications, behavior, and shortcuts on this page">
 			<button
 				type="button"
 				class="z-btn-ghost text-sm"

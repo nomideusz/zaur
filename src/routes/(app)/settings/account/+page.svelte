@@ -8,6 +8,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+
 	let clearingCache = $state(false);
 
 	async function clearLocalCache() {
@@ -29,11 +30,14 @@
 </script>
 
 <svelte:head>
-	<title>You · ZAUR Webmail</title>
+	<title>Account · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel title="You" description="Your name and signature, plus account details on this device.">
-	<SettingsGroup title="About you" description="Name and signature for outgoing messages.">
+<SettingsPanel
+	title="Account"
+	description="Your name and signature, and the account on this device."
+>
+	<SettingsGroup title="Identity" description="Name and signature for outgoing messages.">
 		<SettingsField
 			title="Display name"
 			description={settings.hideAccountFieldHints ? undefined : 'Shown when you send mail and in the header'}
@@ -48,7 +52,7 @@
 		</SettingsField>
 
 		<SettingsField
-			title="Email signature"
+			title="Signature"
 			description={settings.hideAccountFieldHints ? undefined : 'Appended to new messages, replies, and forwards'}
 		>
 			<textarea
@@ -72,7 +76,35 @@
 		</SettingsRow>
 	</SettingsGroup>
 
-	<SettingsGroup title="Sync" description="Preferences are stored on your mail account and cached in this browser.">
+	<SettingsGroup title="Account" description="Server connection for this session.">
+		<SettingsRow title="Primary address">
+			<span class="text-sm font-medium text-fg">{auth.username ?? '—'}</span>
+		</SettingsRow>
+		<SettingsRow title="JMAP server">
+			<span class="max-w-[12rem] truncate text-sm font-medium text-fg sm:max-w-none">
+				{auth.serverUrl ?? appConfig.jmapServerUrl}
+			</span>
+		</SettingsRow>
+		<SettingsRow title="Session">
+			<span class="text-sm font-medium text-fg">{auth.isAuthenticated ? 'Active' : 'Signed out'}</span>
+		</SettingsRow>
+		<SettingsRow title="Sign out" description="Sign out of ZAUR Webmail on this device">
+			<Button
+				variant="ghost"
+				class="text-sm"
+				onclick={() => {
+					if (confirm('Sign out of ZAUR Webmail on this device?')) auth.logout();
+				}}
+			>
+				Sign out
+			</Button>
+		</SettingsRow>
+	</SettingsGroup>
+
+	<SettingsGroup
+		title="Sync"
+		description="Preferences are stored on your mail account and cached in this browser."
+	>
 		<SettingsRow
 			title="Refresh from account"
 			description="Load the latest preferences from your mail account"
@@ -93,7 +125,7 @@
 		</SettingsRow>
 		<SettingsRow
 			title="Save to account"
-			description="Push your current preferences to other devices"
+			description="Push your current preferences to your other devices"
 		>
 			<button type="button" class="z-btn-ghost text-sm" onclick={() => void settings.syncToAccount()}>
 				Save
@@ -101,58 +133,36 @@
 		</SettingsRow>
 	</SettingsGroup>
 
+	<SettingsGroup
+		title="Local data"
+		description="Cached mail on this device — your account on the server is unchanged."
+	>
+		<SettingsRow
+			title="Clear local cache"
+			description="Remove downloaded messages and sync state from this browser"
+		>
+			<Button variant="ghost" class="text-sm" disabled={clearingCache} onclick={clearLocalCache}>
+				{clearingCache ? 'Clearing…' : 'Clear'}
+			</Button>
+		</SettingsRow>
+	</SettingsGroup>
+
 	<SettingsGroup title="Defaults">
 		<SettingsRow
-			title="Reset profile settings"
+			title="Reset profile"
 			description="Restore display name and signature on this page"
 		>
 			<button
 				type="button"
 				class="z-btn-ghost text-sm"
 				onclick={() => {
-					if (confirm('Reset your profile settings to defaults?')) {
+					if (confirm('Reset your profile to defaults?')) {
 						settings.resetAccountSettings();
 					}
 				}}
 			>
 				Reset
 			</button>
-		</SettingsRow>
-	</SettingsGroup>
-
-	<SettingsGroup title="Account details" description="Server connection for this session.">
-		<SettingsRow title="Primary address">
-			<span class="text-sm font-medium text-fg">{auth.username ?? '—'}</span>
-		</SettingsRow>
-		<SettingsRow title="JMAP server">
-			<span class="max-w-[12rem] truncate text-sm font-medium text-fg sm:max-w-none">
-				{auth.serverUrl ?? appConfig.jmapServerUrl}
-			</span>
-		</SettingsRow>
-		<SettingsRow title="Session">
-			<span class="text-sm font-medium text-fg">{auth.isAuthenticated ? 'Active' : 'Signed out'}</span>
-		</SettingsRow>
-	</SettingsGroup>
-
-	<SettingsGroup
-		title="Local data"
-		description="Cached mail on this device — your account on the server is unchanged."
-	>
-		<SettingsRow title="Clear local cache" description="Remove downloaded messages and sync state from this browser">
-			<Button variant="ghost" class="text-sm" disabled={clearingCache} onclick={clearLocalCache}>
-				{clearingCache ? 'Clearing…' : 'Clear'}
-			</Button>
-		</SettingsRow>
-		<SettingsRow title="Sign out" description="Sign out of ZAUR Webmail on this device">
-			<Button
-				variant="ghost"
-				class="text-sm"
-				onclick={() => {
-					if (confirm('Sign out of ZAUR Webmail on this device?')) auth.logout();
-				}}
-			>
-				Sign out
-			</Button>
 		</SettingsRow>
 	</SettingsGroup>
 </SettingsPanel>

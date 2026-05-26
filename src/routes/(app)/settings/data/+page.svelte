@@ -13,9 +13,11 @@
 
 <SettingsPanel
 	title="Backup & reset"
-	description="Export or restore preferences, reset display settings app-wide, or simplify the whole layout at once.{simplificationCount > 0
-		? ` ${simplificationCount} simplification${simplificationCount === 1 ? '' : 's'} currently active.`
-		: ''}"
+	description={`Export your settings, restore defaults, or apply simple mode for a minimal layout.${
+		simplificationCount > 0
+			? ` ${simplificationCount} simplification${simplificationCount === 1 ? '' : 's'} currently active.`
+			: ''
+	}`}
 >
 	<DataResetSection />
 	<DataBackupSection />

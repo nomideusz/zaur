@@ -4,10 +4,10 @@
 	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Defaults" description="Restore or simplify your setup.">
+<SettingsGroup title="Reset" description="Restore defaults or simplify the layout in one step.">
 	<SettingsRow
 		title="Apply simple mode"
-		description="One step to a minimal mail-only layout — you can still tweak individual options afterward"
+		description="A minimal mail-only layout — you can still tweak individual options afterward"
 	>
 		<button
 			type="button"
@@ -24,7 +24,7 @@
 
 	<SettingsRow
 		title="Reset all display & layout settings"
-		description="Reset every display, layout, and navigation option across the app — not mail behavior like notifications"
+		description="Restore every display, layout, and navigation option — keeps notifications and shortcuts"
 	>
 		<button
 			type="button"

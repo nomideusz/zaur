@@ -2,18 +2,12 @@
 	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
 	import SettingsNavList from '$lib/components/settings/SettingsNavList.svelte';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
-	import { settingsNavLinks } from '$lib/settings/nav';
+	import { settingsNavLinks, SETTINGS_SECTIONS } from '$lib/settings/nav';
 	import { cn } from '$lib/utils/cn';
 	import { settings } from '$lib/stores/settings.svelte';
 
-	const sections = [
-		{ id: 'personal', label: 'Account' },
-		{ id: 'mail', label: 'Mail' },
-		{ id: 'customize', label: 'Interface' },
-		{ id: 'advanced', label: 'More' }
-	] as const;
-
 	const links = $derived(settingsNavLinks());
+	const sections = SETTINGS_SECTIONS;
 </script>
 
 <aside

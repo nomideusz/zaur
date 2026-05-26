@@ -5,21 +5,31 @@ export type SettingsNavLink = {
 };
 
 const ALL_LINKS: SettingsNavLink[] = [
-	{ href: '/settings/account', label: 'You', section: 'personal' },
+	{ href: '/settings/account', label: 'Account', section: 'personal' },
 	{ href: '/settings/mail', label: 'General', section: 'mail' },
-	{ href: '/settings/inbox', label: 'Inbox list', section: 'mail' },
+	{ href: '/settings/inbox', label: 'Inbox', section: 'mail' },
 	{ href: '/settings/reading', label: 'Reading', section: 'mail' },
-	{ href: '/settings/appearance', label: 'Theme', section: 'customize' },
+	{ href: '/settings/compose', label: 'Writing', section: 'mail' },
+	{ href: '/settings/appearance', label: 'Appearance', section: 'customize' },
 	{ href: '/settings/layout', label: 'Layout', section: 'customize' },
-	{ href: '/settings/sidebar', label: 'Sidebar', section: 'customize' },
-	{ href: '/settings/compose', label: 'Writing', section: 'customize' },
 	{ href: '/settings/calendar', label: 'Calendar', section: 'customize' },
-	{ href: '/settings/contacts', label: 'Contacts', section: 'advanced' },
 	{ href: '/settings/data', label: 'Backup & reset', section: 'advanced' }
 ];
 
 /** Paths merged into other settings pages — kept for redirects and search. */
-export const LEGACY_SETTINGS_PATHS = new Set(['/settings/workspace', '/settings/display']);
+export const LEGACY_SETTINGS_PATHS = new Set([
+	'/settings/workspace',
+	'/settings/display',
+	'/settings/sidebar',
+	'/settings/contacts'
+]);
+
+export const SETTINGS_SECTIONS = [
+	{ id: 'personal', label: 'Account' },
+	{ id: 'mail', label: 'Mail' },
+	{ id: 'customize', label: 'Interface' },
+	{ id: 'advanced', label: 'More' }
+] as const;
 
 export function settingsNavLinks(): SettingsNavLink[] {
 	return ALL_LINKS;
@@ -28,7 +38,7 @@ export function settingsNavLinks(): SettingsNavLink[] {
 export function isSettingsNavActive(pathname: string, href: string): boolean {
 	if (pathname === href) return true;
 	if (href === '/settings/layout') {
-		return pathname === '/settings/workspace';
+		return pathname === '/settings/workspace' || pathname === '/settings/sidebar';
 	}
 	return false;
 }
