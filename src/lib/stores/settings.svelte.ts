@@ -1,6 +1,15 @@
 import { browser } from '$app/environment';
-import { collectSyncableSettings, pullAccountSettings, scheduleAccountSettingsPush, setSyncAccountEmail, isOtherAccountsScopedKey } from '$lib/settings/account-sync';
+import {
+	collectSyncableSettings,
+	pullAccountSettings,
+	pushAccountSettingsNow,
+	scheduleAccountSettingsPush,
+	setSyncAccountEmail,
+	isOtherAccountsScopedKey
+} from '$lib/settings/account-sync';
+import { accountSettingsSyncAtKey } from '$lib/settings/account-settings-types';
 import type { SettingsDetailLevel } from '$lib/settings/detail-level';
+import { toast } from '$lib/stores/toast.svelte';
 import {
 	requestBrowserNotificationPermission,
 	syncPushSubscription
@@ -1554,7 +1563,6 @@ class SettingsStore {
 			void import('$lib/stores/visual.svelte').then(({ visual }) => visual.init());
 		} else if (result === 'empty') {
 			// Only push when this account has synced from this device before.
-			const { accountSettingsSyncAtKey } = await import('$lib/settings/account-settings-types');
 			if (browser && localStorage.getItem(accountSettingsSyncAtKey(this.userEmail))) {
 				scheduleAccountSettingsPush();
 			}
@@ -1575,9 +1583,7 @@ class SettingsStore {
 
 	async syncToAccount(): Promise<boolean> {
 		await this.syncFromAccount();
-		const { pushAccountSettingsNow } = await import('$lib/settings/account-sync');
 		const ok = await pushAccountSettingsNow();
-		const { toast } = await import('$lib/stores/toast.svelte');
 		if (ok) {
 			toast.show('Settings saved to your account', 'success');
 		} else {

@@ -4,7 +4,6 @@ import { SvelteKitPWA } from '@vite-pwa/sveltekit';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
-	base: '/',
 	define: {
 		'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV ?? 'development')
 	},
@@ -57,7 +56,10 @@ export default defineConfig({
 				globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,webmanifest}']
 			},
 			injectManifest: {
-				globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,webmanifest}']
+				globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,webmanifest}'],
+				modifyURLPrefix: {
+					'client/': ''
+				}
 			}
 		})
 	]

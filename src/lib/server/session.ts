@@ -168,7 +168,7 @@ export function unsealSession(token: string, secret?: string): SessionData | nul
 export function readSession(cookies: Cookies, secret?: string): SessionData | null {
 	const token = cookies.get(COOKIE_NAME);
 	if (!token) return null;
-	return readSessionById(token, secret) ?? unsealSession(token, secret);
+	return readSessionById(token, secret);
 }
 
 export function writeSession(

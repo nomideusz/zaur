@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { toast } from '$lib/stores/toast.svelte';
 
 class NetworkStore {
 	isOnline = $state(true);
@@ -17,9 +18,7 @@ class NetworkStore {
 			const wasOffline = !this.isOnline;
 			this.isOnline = true;
 			if (wasOffline) {
-				void import('$lib/stores/toast.svelte').then(({ toast }) => {
-					toast.show('Back online', 'success');
-				});
+				toast.show('Back online', 'success');
 				this.onReconnect?.();
 			}
 		};

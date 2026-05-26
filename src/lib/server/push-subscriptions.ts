@@ -9,7 +9,6 @@ export interface StoredPushSubscription {
 	id: string;
 	username: string;
 	sessionId: string;
-	sessionToken?: string;
 	subscription: webpush.PushSubscription;
 	emailState?: string;
 	inboxMailboxId?: string;
@@ -119,7 +118,7 @@ export async function removePushSubscriptionsForSession(sessionId: string): Prom
 	let removed = 0;
 
 	for (const [id, record] of Object.entries(store)) {
-		if (record.sessionId === sessionId || record.sessionToken === sessionId) {
+		if (record.sessionId === sessionId) {
 			delete store[id];
 			removed += 1;
 		}

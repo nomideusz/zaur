@@ -7,6 +7,7 @@
 	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { toast } from '$lib/stores/toast.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	let clearingCache = $state(false);
@@ -97,7 +98,6 @@
 				class="z-btn-ghost text-sm"
 				onclick={async () => {
 					const changed = await settings.refreshFromAccount();
-					const { toast } = await import('$lib/stores/toast.svelte');
 					toast.show(
 						changed ? 'Settings updated from your account' : 'Settings are already up to date',
 						changed ? 'success' : 'info'
