@@ -1,0 +1,26 @@
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+COPY apps/dinosaurus/server/package.json ./apps/dinosaurus/server/
+RUN pnpm install --frozen-lockfile --filter @zaur/dinosaurus-archive...
+
+COPY apps/dinosaurus/server ./apps/dinosaurus/server
+
+RUN pnpm --filter @zaur/dinosaurus-archive --prod deploy /out --legacy
+
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=8080
+
+COPY --from=builder /out ./
+
+EXPOSE 8080
+
+CMD ["node", "server.mjs"]

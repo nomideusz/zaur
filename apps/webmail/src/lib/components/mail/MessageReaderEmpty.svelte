@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { PenSquare, Mail } from 'lucide-svelte';
+	import { PenSquare } from 'lucide-svelte';
+	import { frameSvg } from '@zaur/sprite';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -31,7 +32,9 @@
 >
 	{#if showPrompts}
 	{#if !settings.hideEmptyReaderIcon}
-		<Mail class={cn('text-fg-subtle', settings.compactEmptyReader ? 'size-8' : 'size-10')} aria-hidden="true" />
+		<div class="text-fg-subtle">
+			{@html frameSvg('look_up', { color: 'currentColor', scale: 2 })}
+		</div>
 	{/if}
 		<div>
 			<h2 class={cn('font-semibold text-fg', settings.compactEmptyReader ? 'text-base' : 'text-lg')}>{title}</h2>

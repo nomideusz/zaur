@@ -1,0 +1,35 @@
+FROM node:22-alpine AS builder
+
+WORKDIR /app
+
+RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
+
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+COPY packages/sprite/package.json ./packages/sprite/
+COPY apps/dinosaurus/package.json ./apps/dinosaurus/
+RUN pnpm install --frozen-lockfile --filter @zaur/dinosaurus...
+
+COPY packages/sprite ./packages/sprite
+COPY apps/dinosaurus ./apps/dinosaurus
+
+ARG VITE_ARCHIVE_URL
+ENV VITE_ARCHIVE_URL=$VITE_ARCHIVE_URL
+
+RUN pnpm --filter @zaur/dinosaurus build
+RUN pnpm --filter @zaur/dinosaurus --prod deploy /out --legacy
+
+# Copy the built client assets into the production deployment folder
+RUN cp -r apps/dinosaurus/dist /out/dist
+
+FROM node:22-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV PORT=4173
+
+COPY --from=builder /out ./
+
+EXPOSE 4173
+
+CMD ["node", "static-server.mjs"]

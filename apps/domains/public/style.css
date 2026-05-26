@@ -99,16 +99,29 @@ a:hover {
 }
 
 .logo {
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.125rem;
+  font-weight: 700;
   letter-spacing: -0.02em;
   color: var(--z-fg);
   text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.logo .logo-dino {
+  height: 1.25rem;
+  width: auto;
+  transition: transform 0.2s ease-in-out;
 }
 
 .logo:hover {
   text-decoration: none;
   color: var(--z-fg);
+}
+
+.logo:hover .logo-dino {
+  transform: scale(1.15) rotate(5deg);
 }
 
 .tool-nav {

@@ -5,7 +5,7 @@
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build",
+		"build": "vite build && node scripts/inject-pwa.mjs",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
@@ -30,11 +30,13 @@
 		"typescript": "^6.0.2",
 		"vite": "^8.0.7",
 		"vite-plugin-pwa": "^1.3.0",
+		"workbox-build": "^7.4.1",
 		"workbox-core": "^7.4.1",
 		"workbox-precaching": "^7.4.1",
 		"workbox-window": "^7.4.1"
 	},
 	"dependencies": {
+		"@zaur/sprite": "workspace:*",
 		"clsx": "^2.1.1",
 		"dexie": "^4.4.2",
 		"dompurify": "^3.4.5",

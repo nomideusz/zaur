@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Users } from 'lucide-svelte';
+	import { frameSvg } from '@zaur/sprite';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -11,16 +11,8 @@
 		settings.compactContactsEmptyState ? 'p-5' : 'p-8'
 	)}
 >
-	<div
-		class={cn(
-			'rounded-full bg-accent/10 text-accent',
-			settings.compactContactsEmptyState ? 'p-3' : 'p-4'
-		)}
-	>
-		<Users
-			class={cn(settings.compactContactsEmptyState ? 'size-6' : 'size-8')}
-			aria-hidden="true"
-		/>
+	<div class="text-accent">
+		{@html frameSvg('happy', { color: 'currentColor', scale: 2 })}
 	</div>
 	<h2
 		class={cn(

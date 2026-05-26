@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { AlertCircle, LoaderCircle, Inbox, RefreshCw, Search } from 'lucide-svelte';
+	import { frameSvg } from '@zaur/sprite';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
 	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
@@ -219,9 +220,9 @@
 				{#if emptyIcon !== 'none' && !settings.hideListEmptyHints}
 					<div class="text-fg-subtle">
 						{#if emptyIcon === 'search'}
-							<Search class={cn(settings.compactListEmptyState ? 'size-8' : 'size-10')} aria-hidden="true" />
+							{@html frameSvg('sad', { color: 'currentColor', scale: 2 })}
 						{:else}
-							<Inbox class={cn(settings.compactListEmptyState ? 'size-8' : 'size-10')} aria-hidden="true" />
+							{@html frameSvg('sleep', { color: 'currentColor', scale: 2 })}
 						{/if}
 					</div>
 				{/if}

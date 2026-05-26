@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { CalendarDays } from 'lucide-svelte';
+	import { frameSvg } from '@zaur/sprite';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -12,16 +12,8 @@
 		settings.compactCalendarEmptyEventPanel ? 'p-5' : 'p-8'
 	)}
 >
-	<div
-		class={cn(
-			'rounded-full bg-accent/10 text-accent',
-			settings.compactCalendarEmptyEventPanel ? 'p-3' : 'p-4'
-		)}
-	>
-		<CalendarDays
-			class={cn(settings.compactCalendarEmptyEventPanel ? 'size-6' : 'size-8')}
-			aria-hidden="true"
-		/>
+	<div class="text-accent">
+		{@html frameSvg('cheer', { color: 'currentColor', scale: 2 })}
 	</div>
 	<h2
 		class={cn(
