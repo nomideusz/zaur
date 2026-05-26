@@ -9,9 +9,9 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		error(503, 'Push notifications are not configured');
 	}
 
-	const sessionToken = cookies.get(COOKIE_NAME);
+	const sessionId = cookies.get(COOKIE_NAME);
 	const session = readSession(cookies);
-	if (!session || !sessionToken) {
+	if (!session || !sessionId) {
 		error(401, 'Unauthorized');
 	}
 
@@ -29,7 +29,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
 	const record = await upsertPushSubscription({
 		username: session.username,
-		sessionToken,
+		sessionId,
 		subscription: {
 			endpoint: subscription.endpoint,
 			expirationTime: subscription.expirationTime ?? null,

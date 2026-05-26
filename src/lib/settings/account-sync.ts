@@ -58,6 +58,7 @@ async function pushAccountSettings(options?: { quiet?: boolean }): Promise<boole
 
 	pushInFlight = true;
 	const email = syncAccountEmail;
+	const baseUpdatedAt = localStorage.getItem(accountSettingsSyncAtKey(email)) ?? undefined;
 	const updatedAt = new Date().toISOString();
 	const blob: AccountSettingsBlob = {
 		version: 2,
@@ -69,7 +70,7 @@ async function pushAccountSettings(options?: { quiet?: boolean }): Promise<boole
 		const response = await fetch('/api/settings', {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(blob)
+			body: JSON.stringify({ ...blob, baseUpdatedAt })
 		});
 
 		if (response.ok) {
@@ -84,7 +85,18 @@ async function pushAccountSettings(options?: { quiet?: boolean }): Promise<boole
 			return true;
 		}
 
-		const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+		const payload = (await response.json().catch(() => null)) as { error?: string; remote?: AccountSettingsBlob } | null;
+		if (response.status === 409 && payload?.remote?.settings) {
+			markSyncedAt(email, payload.remote.updatedAt);
+			const applied = await pullAccountSettings(email, () => {}, { force: true });
+			if (applied === 'applied') {
+				scheduleAccountSettingsPush();
+			}
+			if (!options?.quiet) {
+				toast.show('Settings changed elsewhere. Pulled the latest copy and will retry.', 'info');
+			}
+			return false;
+		}
 		const message = payload?.error ?? `Could not save settings (${response.status})`;
 		console.warn('Account settings sync failed:', message);
 		if (!options?.quiet && navigator.onLine) {

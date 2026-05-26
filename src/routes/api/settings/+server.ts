@@ -20,6 +20,12 @@ function isValidBlob(body: unknown): body is AccountSettingsBlob {
 	);
 }
 
+function baseUpdatedAt(body: unknown): string | null {
+	if (!body || typeof body !== 'object') return null;
+	const value = (body as { baseUpdatedAt?: unknown }).baseUpdatedAt;
+	return typeof value === 'string' && value ? value : null;
+}
+
 export const GET: RequestHandler = async ({ cookies }) => {
 	const session = readSession(cookies);
 	if (!session) {
@@ -57,6 +63,7 @@ export const PUT: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	const settings = sanitizeAccountSettings(body.settings, session.username);
+	const baseAt = baseUpdatedAt(body);
 
 	const blob: AccountSettingsBlob = {
 		version: ACCOUNT_SETTINGS_SCHEMA_VERSION,
@@ -66,6 +73,16 @@ export const PUT: RequestHandler = async ({ request, cookies }) => {
 
 	try {
 		const client = await createConnectedClient(session);
+		const existing = await loadAccountSettings(client);
+		if (existing?.updatedAt && baseAt && existing.updatedAt > baseAt) {
+			return json(
+				{
+					error: 'Settings changed elsewhere. Pull latest settings before saving.',
+					remote: existing
+				},
+				{ status: 409 }
+			);
+		}
 		await saveAccountSettings(client, blob);
 		return json({ ok: true, updatedAt: blob.updatedAt });
 	} catch (error) {

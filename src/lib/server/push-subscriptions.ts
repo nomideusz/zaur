@@ -8,7 +8,8 @@ import { REMEMBERED_SESSION_MAX_AGE_SEC } from '$lib/server/session';
 export interface StoredPushSubscription {
 	id: string;
 	username: string;
-	sessionToken: string;
+	sessionId: string;
+	sessionToken?: string;
 	subscription: webpush.PushSubscription;
 	emailState?: string;
 	inboxMailboxId?: string;
@@ -75,7 +76,7 @@ export async function getPushSubscription(id: string): Promise<StoredPushSubscri
 
 export async function upsertPushSubscription(input: {
 	username: string;
-	sessionToken: string;
+	sessionId: string;
 	subscription: webpush.PushSubscription;
 }): Promise<StoredPushSubscription> {
 	const store = await readStore();
@@ -86,7 +87,7 @@ export async function upsertPushSubscription(input: {
 	const record: StoredPushSubscription = {
 		id,
 		username: input.username,
-		sessionToken: input.sessionToken,
+		sessionId: input.sessionId,
 		subscription: input.subscription,
 		emailState: existing?.emailState,
 		inboxMailboxId: existing?.inboxMailboxId,
@@ -113,12 +114,12 @@ export async function removePushSubscription(id: string): Promise<boolean> {
 	return true;
 }
 
-export async function removePushSubscriptionsForSession(sessionToken: string): Promise<number> {
+export async function removePushSubscriptionsForSession(sessionId: string): Promise<number> {
 	const store = await readStore();
 	let removed = 0;
 
 	for (const [id, record] of Object.entries(store)) {
-		if (record.sessionToken === sessionToken) {
+		if (record.sessionId === sessionId || record.sessionToken === sessionId) {
 			delete store[id];
 			removed += 1;
 		}

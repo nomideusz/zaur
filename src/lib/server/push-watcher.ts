@@ -8,7 +8,7 @@ import {
 	updatePushSubscriptionState,
 	type StoredPushSubscription
 } from '$lib/server/push-subscriptions';
-import { unsealSession } from '$lib/server/session';
+import { readSessionById, unsealSession } from '$lib/server/session';
 
 const RECONNECT_DELAY_MS = 5_000;
 const POLL_INTERVAL_MS = 30_000;
@@ -64,7 +64,7 @@ class SubscriptionWatcher {
 	) {}
 
 	async start(): Promise<void> {
-		const session = unsealSession(this.record.sessionToken);
+		const session = readSessionById(this.record.sessionId) ?? unsealSession(this.record.sessionToken ?? '');
 		if (!session) {
 			await removePushSubscription(this.record.id);
 			this.onInvalid();
