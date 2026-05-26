@@ -79,7 +79,6 @@ const STORAGE = {
 	compactAttachments: 'zaur:compact-attachments',
 	hideReaderSenderEmail: 'zaur:hide-reader-sender-email',
 	hideComposeFromLine: 'zaur:hide-compose-from-line',
-	hideThreadCollapseButtons: 'zaur:hide-thread-collapse-buttons',
 	hideComposeFieldLabels: 'zaur:hide-compose-field-labels',
 	composeDrawerWidth: 'zaur:compose-drawer-width',
 	composeLayout: 'zaur:compose-layout',
@@ -499,11 +498,6 @@ function readHideReaderSenderEmail(): boolean {
 function readHideComposeFromLine(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideComposeFromLine) === 'true';
-}
-
-function readHideThreadCollapseButtons(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideThreadCollapseButtons) === 'true';
 }
 
 function readHideComposeFieldLabels(): boolean {
@@ -1204,7 +1198,6 @@ class SettingsStore {
 	compactAttachments = $state(readCompactAttachments());
 	hideReaderSenderEmail = $state(readHideReaderSenderEmail());
 	hideComposeFromLine = $state(readHideComposeFromLine());
-	hideThreadCollapseButtons = $state(readHideThreadCollapseButtons());
 	hideComposeFieldLabels = $state(readHideComposeFieldLabels());
 	composeDrawerWidth = $state<ComposeDrawerWidth>(readComposeDrawerWidth());
 	composeLayout = $state<ComposeLayout>(readComposeLayout());
@@ -1386,7 +1379,6 @@ class SettingsStore {
 		this.compactAttachments = readCompactAttachments();
 		this.hideReaderSenderEmail = readHideReaderSenderEmail();
 		this.hideComposeFromLine = readHideComposeFromLine();
-		this.hideThreadCollapseButtons = readHideThreadCollapseButtons();
 		this.hideComposeFieldLabels = readHideComposeFieldLabels();
 		this.composeDrawerWidth = readComposeDrawerWidth();
 		this.composeLayout = readComposeLayout();
@@ -1983,13 +1975,6 @@ class SettingsStore {
 		this.hideComposeFromLine = value;
 		if (browser) {
 			this.writeStorage(STORAGE.hideComposeFromLine, String(value));
-		}
-	}
-
-	setHideThreadCollapseButtons(value: boolean) {
-		this.hideThreadCollapseButtons = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideThreadCollapseButtons, String(value));
 		}
 	}
 
@@ -2947,7 +2932,6 @@ class SettingsStore {
 		this.setCompactAttachments(false);
 		this.setHideReaderSenderEmail(false);
 		this.setHideComposeFromLine(false);
-		this.setHideThreadCollapseButtons(false);
 		this.setHideComposeFieldLabels(false);
 		this.setComposeDrawerWidth('default');
 		this.setComposeLayout('drawer');
@@ -3101,7 +3085,6 @@ class SettingsStore {
 		this.setCompactAttachments(true);
 		this.setHideReaderSenderEmail(true);
 		this.setHideComposeFromLine(true);
-		this.setHideThreadCollapseButtons(true);
 		this.setHideComposeFieldLabels(true);
 		this.setComposeDrawerWidth('narrow');
 		this.setHideOutboxUnlessFailed(true);
@@ -3275,7 +3258,6 @@ class SettingsStore {
 		this.setCompactMoveMenu(false);
 		this.setExpandAllThreadMessages(false);
 		this.setHideThreadSummary(false);
-		this.setHideThreadCollapseButtons(false);
 		this.setHideReaderTimestamps(false);
 		this.setHideCollapsedThreadPreviews(false);
 		this.setCompactCollapsedThreads(false);
@@ -3445,7 +3427,6 @@ class SettingsStore {
 			this.compactAttachments,
 			this.hideReaderSenderEmail,
 			this.hideComposeFromLine,
-			this.hideThreadCollapseButtons,
 			this.hideComposeFieldLabels,
 			this.composeDrawerWidth !== 'default',
 			this.hideOutboxUnlessFailed,

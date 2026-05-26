@@ -49,33 +49,164 @@ function isExternalUrl(url: string): boolean {
 	return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//');
 }
 
-function isLightColor(value: string): boolean {
+const NAMED_CSS_COLORS: Record<string, string> = {
+	black: '#000000',
+	white: '#ffffff',
+	gray: '#808080',
+	grey: '#808080',
+	silver: '#c0c0c0',
+	darkgray: '#a9a9a9',
+	darkgrey: '#a9a9a9',
+	dimgray: '#696969',
+	dimgrey: '#696969',
+	lightgray: '#d3d3d3',
+	lightgrey: '#d3d3d3',
+	gainsboro: '#dcdcdc',
+	whitesmoke: '#f5f5f5',
+	ghostwhite: '#f8f8ff',
+	snow: '#fffafa',
+	ivory: '#fffff0',
+	seashell: '#fff5ee',
+	linen: '#faf0e6',
+	antiquewhite: '#faebd7',
+	beige: '#f5f5dc',
+	mintcream: '#f5fffa',
+	azure: '#f0ffff',
+	aliceblue: '#f0f8ff'
+};
+
+type Rgb = { r: number; g: number; b: number };
+
+function expandHex(hex: string): string | null {
+	const h = hex.replace('#', '');
+	if (h.length === 3) return `#${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`;
+	if (h.length === 6) return `#${h}`;
+	return null;
+}
+
+function parseCssColor(value: string): Rgb | null {
 	const normalized = value.trim().toLowerCase();
-	if (!normalized || normalized === 'transparent') return false;
-	if (normalized === '#fff' || normalized === '#ffffff' || normalized === 'white') return true;
-	const rgb = normalized.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
+	if (!normalized || normalized === 'transparent' || normalized === 'inherit' || normalized === 'initial') {
+		return null;
+	}
+
+	const named = NAMED_CSS_COLORS[normalized];
+	if (named) return parseCssColor(named);
+
+	const hex = normalized.match(/^#([0-9a-f]{3,8})$/i);
+	if (hex) {
+		const expanded = expandHex(`#${hex[1]}`);
+		if (!expanded) return null;
+		const h = expanded.slice(1);
+		return {
+			r: parseInt(h.slice(0, 2), 16),
+			g: parseInt(h.slice(2, 4), 16),
+			b: parseInt(h.slice(4, 6), 16)
+		};
+	}
+
+	const rgb = normalized.match(
+		/^rgba?\(\s*([\d.]+)(%?)\s*,\s*([\d.]+)(%?)\s*,\s*([\d.]+)(%?)(?:\s*,\s*[\d.]+%?)?\s*\)$/i
+	);
 	if (rgb) {
-		const [, r, g, b] = rgb.map(Number);
-		return r > 240 && g > 240 && b > 240;
+		const channel = (n: number, pct: string) => (pct === '%' ? (n / 100) * 255 : n);
+		return {
+			r: Math.round(channel(Number(rgb[1]), rgb[2])),
+			g: Math.round(channel(Number(rgb[3]), rgb[4])),
+			b: Math.round(channel(Number(rgb[5]), rgb[6]))
+		};
+	}
+
+	const hsl = normalized.match(
+		/^hsla?\(\s*([\d.]+)\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%(?:\s*,\s*[\d.]+%?)?\s*\)$/i
+	);
+	if (hsl) {
+		const h = Number(hsl[1]) / 360;
+		const s = Number(hsl[2]) / 100;
+		const l = Number(hsl[3]) / 100;
+		const hue2rgb = (p: number, q: number, t: number) => {
+			if (t < 0) t += 1;
+			if (t > 1) t -= 1;
+			if (t < 1 / 6) return p + (q - p) * 6 * t;
+			if (t < 1 / 2) return q;
+			if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
+			return p;
+		};
+		let r: number;
+		let g: number;
+		let b: number;
+		if (s === 0) {
+			r = g = b = l;
+		} else {
+			const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+			const p = 2 * l - q;
+			r = hue2rgb(p, q, h + 1 / 3);
+			g = hue2rgb(p, q, h);
+			b = hue2rgb(p, q, h - 1 / 3);
+		}
+		return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
+	}
+
+	return null;
+}
+
+function relativeLuminance({ r, g, b }: Rgb): number {
+	const channel = (c: number) => {
+		const s = c / 255;
+		return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+	};
+	return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+}
+
+/** Colors meant for white/light email backgrounds — strip in dark mode so theme text shows. */
+function isDarkTextColor(value: string): boolean {
+	const rgb = parseCssColor(value);
+	if (!rgb) return false;
+	return relativeLuminance(rgb) < 0.42;
+}
+
+/** Light card/section backgrounds inside HTML mail — keep and preserve their text colors. */
+function isLightBackgroundColor(value: string): boolean {
+	const rgb = parseCssColor(value);
+	if (!rgb) return false;
+	return relativeLuminance(rgb) > 0.82;
+}
+
+function elementHasLightBackground(element: HTMLElement): boolean {
+	const bgcolor = element.getAttribute('bgcolor');
+	if (bgcolor && isLightBackgroundColor(bgcolor)) return true;
+
+	const style = element.getAttribute('style');
+	if (!style) return false;
+
+	for (const rule of style.split(';')) {
+		const trimmed = rule.trim();
+		const match = trimmed.match(/^(background(?:-color)?)\s*:\s*(.+)$/i);
+		if (match && isLightBackgroundColor(match[2])) return true;
 	}
 	return false;
 }
 
-function isDarkColor(value: string): boolean {
-	const normalized = value.trim().toLowerCase();
-	if (!normalized) return false;
-	if (normalized === '#000' || normalized === '#000000' || normalized === 'black') return true;
-	const rgb = normalized.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/i);
-	if (rgb) {
-		const [, r, g, b] = rgb.map(Number);
-		return r < 60 && g < 60 && b < 60;
+function isWithinLightSurface(element: Element, root: ParentNode): boolean {
+	let node: Element | null = element;
+	while (node && node !== root) {
+		if (node instanceof HTMLElement && node.hasAttribute('data-z-light-surface')) return true;
+		node = node.parentElement;
 	}
 	return false;
+}
+
+function markLightSurfaces(root: ParentNode) {
+	for (const element of root.querySelectorAll('*')) {
+		if (element instanceof HTMLElement && elementHasLightBackground(element)) {
+			element.setAttribute('data-z-light-surface', '');
+		}
+	}
 }
 
 function stripLightBackground(node: Element) {
 	const bgcolor = node.getAttribute('bgcolor');
-	if (bgcolor && isLightColor(bgcolor)) {
+	if (bgcolor && isLightBackgroundColor(bgcolor)) {
 		node.removeAttribute('bgcolor');
 	}
 
@@ -89,7 +220,7 @@ function stripLightBackground(node: Element) {
 			if (!trimmed) return false;
 			const match = trimmed.match(/^(background(?:-color)?)\s*:\s*(.+)$/i);
 			if (!match) return true;
-			return !isLightColor(match[2]);
+			return !isLightBackgroundColor(match[2]);
 		})
 		.join(';')
 		.trim();
@@ -100,7 +231,7 @@ function stripLightBackground(node: Element) {
 
 function stripDarkTextColor(node: Element) {
 	const color = node.getAttribute('color');
-	if (color && isDarkColor(color)) {
+	if (color && isDarkTextColor(color)) {
 		node.removeAttribute('color');
 	}
 
@@ -114,7 +245,9 @@ function stripDarkTextColor(node: Element) {
 			if (!trimmed) return false;
 			const match = trimmed.match(/^color\s*:\s*(.+)$/i);
 			if (!match) return true;
-			return !isDarkColor(match[1]);
+			const value = match[1].trim();
+			if (value === 'inherit' || value === 'initial' || value === 'unset') return true;
+			return !isDarkTextColor(value);
 		})
 		.join(';')
 		.trim();
@@ -126,10 +259,11 @@ function stripDarkTextColor(node: Element) {
 function integrateHtmlForDarkMode(root: ParentNode, darkMode: boolean) {
 	if (!browser || !darkMode) return;
 
-	const elements = root.querySelectorAll(
-		'table, tbody, tr, td, th, div, p, span, section, center, font, li'
-	);
-	for (const element of elements) {
+	markLightSurfaces(root);
+
+	for (const element of root.querySelectorAll('*')) {
+		if (!(element instanceof HTMLElement)) continue;
+		if (isWithinLightSurface(element, root)) continue;
 		stripLightBackground(element);
 		stripDarkTextColor(element);
 	}
@@ -167,6 +301,81 @@ function hardenLinks(root: ParentNode) {
 	}
 }
 
+const PLAIN_QUOTE_PATTERNS = [
+	/\n\n---\n(?:On .+ wrote:|Forwarded message:)/,
+	/\n-{5,}\s*original message\s*-{5,}/i,
+	/\nOn .+ wrote:\n/,
+	/(?:^|\n)-{5,}\s*original message\s*-{5,}/i
+];
+
+const HTML_QUOTE_PATTERNS = [
+	/-{5,}\s*original message\s*-{5,}/i,
+	/\nOn .+ wrote:/i,
+	/\n-{3,}\s*\nOn .+ wrote:/i,
+	/\n-{3,}\nForwarded message:/i
+];
+
+export function normalizeEmailPlainText(text: string): string {
+	return text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+}
+
+function findQuoteStart(text: string, patterns: RegExp[]): number {
+	let earliest = -1;
+	for (const pattern of patterns) {
+		const index = text.search(pattern);
+		if (index >= 0 && (earliest < 0 || index < earliest)) {
+			earliest = index;
+		}
+	}
+	return earliest;
+}
+
+function splitElementAtTextOffset(root: HTMLElement, offset: number) {
+	if (offset <= 0) return;
+
+	const range = document.createRange();
+	const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+	let remaining = offset;
+	let startNode: Text | null = null;
+	let startOffset = 0;
+
+	while (walker.nextNode()) {
+		const node = walker.currentNode as Text;
+		if (remaining <= node.data.length) {
+			startNode = node;
+			startOffset = remaining;
+			break;
+		}
+		remaining -= node.data.length;
+	}
+
+	if (!startNode) return;
+
+	range.setStart(startNode, startOffset);
+	range.setEnd(root, root.childNodes.length);
+
+	const quote = document.createElement('blockquote');
+	quote.className = 'z-email-quote';
+	quote.appendChild(range.extractContents());
+	root.appendChild(quote);
+}
+
+function wrapHtmlQuotedReplies(root: HTMLElement) {
+	if (root.querySelector('.z-email-quote')) return;
+
+	const offset = findQuoteStart(root.textContent ?? '', HTML_QUOTE_PATTERNS);
+	if (offset > 0) {
+		splitElementAtTextOffset(root, offset);
+		return;
+	}
+
+	for (const child of Array.from(root.children)) {
+		if (child instanceof HTMLElement && !child.classList.contains('z-email-quote')) {
+			wrapHtmlQuotedReplies(child);
+		}
+	}
+}
+
 function postProcessSanitizedHtml(
 	html: string,
 	options: { allowExternal: boolean; darkMode?: boolean }
@@ -182,6 +391,7 @@ function postProcessSanitizedHtml(
 	container.innerHTML = html;
 	const blockedExternal = blockExternalContentInDocument(container, options.allowExternal);
 	hardenLinks(container);
+	wrapHtmlQuotedReplies(container);
 	const darkMode =
 		options.darkMode ??
 		(browser && document.documentElement.classList.contains('dark'));
@@ -207,15 +417,29 @@ function postProcessSanitizedHtmlString(html: string, allowExternal: boolean): s
 	return next;
 }
 
+/** Start index of trailing quoted reply in plain-text bodies (Gmail, Proton, Apple Mail, etc.). */
+export function findPlainTextQuoteStart(text: string): number {
+	return findQuoteStart(normalizeEmailPlainText(text), PLAIN_QUOTE_PATTERNS);
+}
+
+export function plainTextExcerpt(text: string, maxLen = 120): string {
+	const trimmed = normalizeEmailPlainText(text).trim();
+	if (!trimmed) return '';
+	const quoteAt = findPlainTextQuoteStart(trimmed);
+	const main = quoteAt >= 0 ? trimmed.slice(0, quoteAt).trim() : trimmed;
+	return main.slice(0, maxLen);
+}
+
 export function plainTextToSafeHtml(text: string): string {
-	const quoteIndex = text.search(/\n\n---\n(?:On .+ wrote:|Forwarded message:)/);
+	const normalized = normalizeEmailPlainText(text);
+	const quoteIndex = findPlainTextQuoteStart(normalized);
 	if (quoteIndex >= 0) {
-		const main = text.slice(0, quoteIndex);
-		const quote = text.slice(quoteIndex).trim();
+		const main = normalized.slice(0, quoteIndex);
+		const quote = normalized.slice(quoteIndex).trim();
 		return `${formatPlainSegment(main)}<blockquote class="z-email-quote">${formatPlainSegment(quote, true)}</blockquote>`;
 	}
 
-	return formatPlainSegment(text);
+	return formatPlainSegment(normalized);
 }
 
 function formatPlainSegment(text: string, skipLinkify = false): string {
@@ -281,6 +505,16 @@ export function renderMessageBody(options: {
 			allowExternal: options.allowExternal,
 			darkMode: options.darkMode
 		});
+		const textHasQuote =
+			options.bodyText.trim() && findPlainTextQuoteStart(options.bodyText) >= 0;
+		const htmlHasQuote = prepared.html.includes('z-email-quote');
+		if (textHasQuote && !htmlHasQuote) {
+			return {
+				html: plainTextToSafeHtml(options.bodyText),
+				blockedExternal: prepared.blockedExternal,
+				isHtml: false
+			};
+		}
 		return { ...prepared, isHtml: true };
 	}
 

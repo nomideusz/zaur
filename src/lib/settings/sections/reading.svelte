@@ -324,18 +324,6 @@
 	</SettingsRow>
 
 	<SettingsRow
-		title="Hide thread collapse buttons"
-		description="Remove expand/collapse chevrons on individual messages in a thread"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.hideThreadCollapseButtons}
-			onchange={(e) => settings.setHideThreadCollapseButtons(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
 		title="Hide reader timestamps"
 		description="Do not show received date and time on messages in the reading pane"
 	>

@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
+	import { tick } from 'svelte';
 	import { ChevronDown, ChevronUp, Shield } from 'lucide-svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -13,7 +15,7 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { renderMessageBody } from '$lib/email/html';
+	import { plainTextExcerpt, renderMessageBody } from '$lib/email/html';
 	import { recordContact } from '$lib/utils/contact-index';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
@@ -32,6 +34,7 @@
 	let expandedIds = $state<Set<string>>(new Set());
 	let quickReply = $state('');
 	let quickReplySending = $state(false);
+	let scrollPane = $state<HTMLDivElement | null>(null);
 
 	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
 
@@ -57,6 +60,7 @@
 	);
 
 	$effect(() => {
+		$page.params.threadId;
 		thread.map((m) => m.id).join(',');
 		settings.expandAllThreadMessages;
 		if (pane) pane.setShowImagesOnce(false);
@@ -69,11 +73,34 @@
 		}
 	});
 
+	$effect(() => {
+		$page.params.threadId;
+		thread.map((m) => m.id).join(',');
+		const paneEl = scrollPane;
+		if (!paneEl || thread.length < 2) return;
+		void tick().then(() => {
+			paneEl.scrollTop = paneEl.scrollHeight;
+		});
+	});
+
 	function formatWhen(iso: string) {
 		return new Intl.DateTimeFormat(undefined, {
 			dateStyle: 'medium',
 			timeStyle: 'short'
 		}).format(new Date(iso));
+	}
+
+	function senderLabel(message: MessageDetail) {
+		const name = message.from.name?.trim();
+		const email = message.from.email;
+		if (!name || name === email) return email;
+		return name;
+	}
+
+	function collapsedPreview(message: MessageDetail) {
+		const preview = message.preview?.trim();
+		if (preview) return preview;
+		return plainTextExcerpt(message.bodyText);
 	}
 
 	function isExpanded(message: MessageDetail) {
@@ -215,142 +242,301 @@
 		</div>
 	{/if}
 
-	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
-		<div
-			class={cn(
-				threadRowX,
-				settings.compactReaderHeader ? 'pb-2 pt-3' : 'pb-3 pt-4',
-				!settings.hideReaderPaneBorders && 'border-b border-border'
-			)}
-		>
-			<div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
-				<div class="min-w-0 max-w-(--z-reader-measure) flex-1">
-					<h1
+	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto" bind:this={scrollPane}>
+		<div class={cn('z-reader-column', threadRowX)}>
+			{#if thread.length > 1}
+				<div class={cn('pb-1 pt-3', settings.compactReaderHeader && 'pt-2.5')}>
+					<div
 						class={cn(
-							'z-type-reader-title',
-							settings.compactReaderHeader ? 'text-base md:text-lg' : 'text-lg md:text-xl'
+							'z-reader-subject-row flex-col gap-2 sm:flex-row',
+							!settings.hideThreadSummary && 'sm:items-start'
 						)}
 					>
-						{subject}
-					</h1>
+						<div class="min-w-0 flex-1">
+							<h1
+								class={cn(
+									'z-type-reader-title',
+									settings.compactReaderHeader && 'text-lg md:text-xl'
+								)}
+							>
+								{subject}
+							</h1>
 
-					{#if thread.length > 1 && !settings.hideThreadSummary}
-						<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
-							<span>{thread.length} messages</span>
-							{#if collapsedCount > 0}
-								<button type="button" class="text-accent hover:underline" onclick={expandAll}>
-									Expand all
-								</button>
-							{:else}
-								<button type="button" class="text-accent hover:underline" onclick={collapseToLatest}>
-									Collapse earlier
-								</button>
+							{#if !settings.hideThreadSummary}
+								<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
+									<span>{thread.length} messages</span>
+									{#if collapsedCount > 0}
+										<button type="button" class="text-accent hover:underline" onclick={expandAll}>
+											Expand all
+										</button>
+									{:else}
+										<button
+											type="button"
+											class="text-accent hover:underline"
+											onclick={collapseToLatest}
+										>
+											Collapse earlier
+										</button>
+									{/if}
+								</div>
 							{/if}
 						</div>
-					{/if}
+
+						{#if !mail.hasSelection}
+							<MessageThreadActions
+								{thread}
+								{mailboxRouteId}
+								{onMoved}
+								readerHeader
+								class="hidden shrink-0 md:flex"
+							/>
+						{/if}
+					</div>
 				</div>
+			{/if}
 
-				{#if !mail.hasSelection}
-					<MessageThreadActions
-						{thread}
-						{mailboxRouteId}
-						{onMoved}
-						class="hidden shrink-0 md:flex"
-					/>
-				{/if}
-			</div>
-		</div>
-
-		{#each thread as message, index (message.id)}
-			<section class={cn(index > 0 && !settings.hideReaderPaneBorders && 'border-t border-border/70')}>
-				{#if isExpanded(message)}
-					<div class={cn(threadRowX, settings.compactReaderBody ? 'py-3' : 'py-5')}>
-						<div class="mb-4 flex items-start gap-3 max-sm:flex-wrap">
-							{#if settings.showAvatars}
-								<Avatar
-									name={message.from.name}
-									email={message.from.email}
-									class={cn(settings.compactReaderAvatars ? 'size-8 text-xs' : 'size-9 text-sm')}
-								/>
-							{/if}
-							<div class="min-w-0 flex-1">
-								<p class="text-sm font-medium text-fg">{message.from.name}</p>
-								{#if !settings.hideReaderSenderEmail}
-									<button
-										type="button"
-										class="text-left text-sm text-fg-muted hover:text-accent hover:underline"
-										onclick={() => composeTo(message.from.email)}
+			{#each thread as message, index (message.id)}
+				<section
+					class={cn(
+						index > 0 && !settings.hideReaderPaneBorders && 'border-t border-border/70',
+						index === 0 && thread.length > 1 && 'pt-0.5',
+						index === 0 && thread.length === 1 && 'pt-3'
+					)}
+				>
+					{#if isExpanded(message)}
+						<div
+							class={cn(
+								index === 0
+									? settings.compactReaderBody
+										? 'pb-3 pt-1'
+										: 'pb-4 pt-1.5'
+									: settings.compactReaderBody
+										? 'py-3'
+										: 'py-4'
+							)}
+						>
+						{#if thread.length === 1}
+							<header class="z-reader-chrome z-reader-chrome--bordered">
+								<div class="z-reader-chrome__head">
+									<h1
+										class={cn(
+											'z-type-reader-title min-w-0 flex-1',
+											settings.compactReaderHeader && 'text-lg md:text-xl'
+										)}
 									>
-										{message.from.email}
-									</button>
-								{/if}
-								{#if settings.showReaderContactActions}
-									<div class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
-										<button
-											type="button"
-											class="text-xs text-accent hover:underline"
-											onclick={() => saveContact(message)}
-										>
-											Save contact
-										</button>
-										<button
-											type="button"
-											class="text-xs text-fg-subtle hover:text-accent hover:underline"
-											onclick={() => copyEmail(message.from.email)}
-										>
-											Copy email
-										</button>
+										{subject}
+									</h1>
+
+									{#if !mail.hasSelection}
+										<div class="z-reader-chrome__actions hidden shrink-0 md:block">
+											<MessageThreadActions
+												{thread}
+												{mailboxRouteId}
+												{onMoved}
+												readerHeader
+											/>
+										</div>
+									{/if}
+								</div>
+
+								<div class="z-reader-chrome__meta">
+								<div class="z-reader-chrome__from flex items-start gap-3">
+									{#if settings.showAvatars}
+										<Avatar
+											name={message.from.name}
+											email={message.from.email}
+											class={cn(
+												settings.compactReaderAvatars ? 'size-8 text-xs' : 'size-9 text-sm'
+											)}
+										/>
+									{/if}
+									<div class="min-w-0 flex-1">
+										<p class="z-reader-from">{senderLabel(message)}</p>
+										{#if !settings.hideReaderSenderEmail}
+											{#if message.from.email !== senderLabel(message)}
+												<button
+													type="button"
+													class="z-reader-meta mt-0.5 block max-w-full truncate text-left hover:text-accent hover:underline"
+													onclick={() => composeTo(message.from.email)}
+												>
+													{message.from.email}
+												</button>
+											{:else}
+												<p class="z-reader-meta mt-0.5">{message.from.email}</p>
+											{/if}
+										{/if}
+										{#if !settings.hideReaderRecipients && (message.to.length || message.cc.length)}
+											<div class="z-reader-meta mt-1 space-y-0.5">
+												{#if message.to.length}
+													<p class="truncate">
+														To {message.to.map((addr) => addr.name || addr.email).join(', ')}
+													</p>
+												{/if}
+												{#if message.cc.length}
+													<p class="truncate">
+														Cc {message.cc.map((addr) => addr.name || addr.email).join(', ')}
+													</p>
+												{/if}
+											</div>
+										{/if}
+										{#if settings.showReaderContactActions}
+											<div class="mt-2 flex flex-wrap gap-x-3 gap-y-0.5">
+												<button
+													type="button"
+													class="text-xs font-medium text-accent hover:underline"
+													onclick={() => saveContact(message)}
+												>
+													Save contact
+												</button>
+												<button
+													type="button"
+													class="text-xs text-fg-subtle hover:text-accent hover:underline"
+													onclick={() => copyEmail(message.from.email)}
+												>
+													Copy email
+												</button>
+											</div>
+										{/if}
 									</div>
-								{/if}
-								{#if !settings.hideReaderRecipients && message.to.length}
-									<p class="mt-1 text-xs text-fg-subtle">
-										To {message.to.map((addr) => addr.name || addr.email).join(', ')}
-									</p>
-								{/if}
-								{#if !settings.hideReaderRecipients && message.cc.length}
-									<p class="mt-0.5 text-xs text-fg-subtle">
-										Cc {message.cc.map((addr) => addr.name || addr.email).join(', ')}
-									</p>
-								{/if}
-							</div>
-							<div class="flex shrink-0 items-center gap-2 self-start max-sm:ml-11 max-sm:w-[calc(100%-2.75rem)] max-sm:justify-between">
-								{#if !settings.hideReaderTimestamps}
-									<span class="whitespace-nowrap text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</span>
-								{/if}
-								{#if thread.length > 1 && !settings.hideThreadCollapseButtons}
-									<button
-										type="button"
-										class="flex size-4 shrink-0 items-center justify-center rounded text-fg-subtle hover:bg-surface-sunken hover:text-fg"
-										aria-label="Collapse message"
-										onclick={() => toggleMessage(message)}
-									>
-										<ChevronUp class="size-4" />
-									</button>
-								{/if}
-							</div>
-						</div>
+								</div>
 
-						<div class="w-full max-w-(--z-reader-measure)">
-						{#if message.attachments.length}
-							<MessageAttachments attachments={message.attachments} />
+								{#if !settings.hideReaderTimestamps}
+									<time
+										class="z-reader-chrome__time z-type-list-time whitespace-nowrap"
+										datetime={message.receivedAt}
+									>
+										{formatWhen(message.receivedAt)}
+									</time>
+								{/if}
+								</div>
+							</header>
+						{:else}
+							<header class="z-reader-message-head">
+								<button
+									type="button"
+									class={cn(
+										'z-reader-thread-toggle',
+										settings.compactCollapsedThreads ? 'py-2' : 'py-3'
+									)}
+									aria-expanded={true}
+									aria-label={`Collapse message from ${senderLabel(message)}`}
+									onclick={() => toggleMessage(message)}
+								>
+									{#if settings.showAvatars}
+										<Avatar
+											name={message.from.name}
+											email={message.from.email}
+											class={cn(
+												settings.compactReaderAvatars ? 'size-8 text-xs' : 'size-9 text-sm'
+											)}
+										/>
+									{/if}
+									<div class="min-w-0 flex-1">
+										<div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+											<span class="z-reader-from">{senderLabel(message)}</span>
+											{#if message.id === latest?.id}
+												<span class="z-reader-latest-badge">Latest</span>
+											{/if}
+										</div>
+									</div>
+									<div class="z-reader-thread-meta">
+										{#if !settings.hideReaderTimestamps}
+											<time
+												class="z-type-list-time whitespace-nowrap"
+												datetime={message.receivedAt}
+											>
+												{formatWhen(message.receivedAt)}
+											</time>
+										{/if}
+										<ChevronUp class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+									</div>
+								</button>
+
+							{#if !settings.hideReaderSenderEmail || (settings.showReaderContactActions) || (!settings.hideReaderRecipients && (message.to.length || message.cc.length))}
+								<div
+									class={cn(
+										'min-w-0',
+										settings.showAvatars &&
+											(settings.compactReaderAvatars ? 'pl-11' : 'pl-12')
+									)}
+								>
+									{#if !settings.hideReaderSenderEmail && message.from.email !== senderLabel(message)}
+										<button
+											type="button"
+											class="z-reader-meta mt-0.5 block max-w-full truncate text-left hover:text-accent hover:underline"
+											onclick={() => composeTo(message.from.email)}
+										>
+											{message.from.email}
+										</button>
+									{/if}
+
+									{#if !settings.hideReaderRecipients && (message.to.length || message.cc.length)}
+										<div class="z-reader-meta mt-1 space-y-0.5">
+											{#if message.to.length}
+												<p class="truncate">
+													To {message.to.map((addr) => addr.name || addr.email).join(', ')}
+												</p>
+											{/if}
+											{#if message.cc.length}
+												<p class="truncate">
+													Cc {message.cc.map((addr) => addr.name || addr.email).join(', ')}
+												</p>
+											{/if}
+										</div>
+									{/if}
+
+									{#if settings.showReaderContactActions}
+										<div class="mt-2 flex flex-wrap gap-x-3 gap-y-0.5">
+											<button
+												type="button"
+												class="text-xs font-medium text-accent hover:underline"
+												onclick={() => saveContact(message)}
+											>
+												Save contact
+											</button>
+											<button
+												type="button"
+												class="text-xs text-fg-subtle hover:text-accent hover:underline"
+												onclick={() => copyEmail(message.from.email)}
+											>
+												Copy email
+											</button>
+										</div>
+									{/if}
+								</div>
+							{/if}
+							</header>
 						{/if}
 
-						<MessageBody
-							bodyHtml={message.bodyHtml}
-							bodyText={message.bodyText}
-							{allowExternal}
-						/>
+						<div
+							class={cn(
+								'z-reader-content w-full',
+								settings.compactReaderBody && 'z-reader-content--compact'
+							)}
+						>
+							{#if message.attachments.length}
+								<div class={cn(settings.compactReaderBody ? 'mb-3' : 'mb-4')}>
+									<MessageAttachments attachments={message.attachments} />
+								</div>
+							{/if}
+
+							<div class="z-reader-body">
+								<MessageBody
+									bodyHtml={message.bodyHtml}
+									bodyText={message.bodyText}
+									{allowExternal}
+								/>
+							</div>
 						</div>
 					</div>
-				{:else}
-					<button
-						type="button"
-						class={cn(
-							'flex w-full items-center gap-3 text-left transition-colors hover:bg-surface-sunken/70 max-sm:items-start',
-							threadRowX,
-							settings.compactCollapsedThreads ? 'py-2' : 'py-3'
-						)}
-						onclick={() => toggleMessage(message)}
+					{:else}
+						<button
+							type="button"
+							class={cn(
+								'z-reader-thread-toggle max-sm:items-start',
+								settings.compactCollapsedThreads ? 'py-2' : 'py-3'
+							)}
+							onclick={() => toggleMessage(message)}
 					>
 						{#if settings.showAvatars}
 							<Avatar
@@ -360,30 +546,48 @@
 							/>
 						{/if}
 						<div class="min-w-0 flex-1">
-							<p class={cn('truncate', settings.compactCollapsedThreads ? 'text-xs' : 'text-sm')}>
-								<span class="font-medium text-fg">{message.from.name}</span>
-								{#if !settings.hideCollapsedThreadPreviews}
-									<span class="ml-2 text-fg-muted">{message.preview || message.bodyText.slice(0, 120)}</span>
-								{/if}
-							</p>
-						</div>
-						<div class="flex shrink-0 items-center gap-2 max-sm:flex-col max-sm:items-end max-sm:gap-1">
-							{#if !settings.hideReaderTimestamps}
-								<span class="whitespace-nowrap text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</span>
+							{#if !settings.hideCollapsedThreadPreviews && collapsedPreview(message)}
+								<p class={cn('truncate font-medium text-fg', settings.compactCollapsedThreads ? 'text-xs' : 'text-sm')}>
+									{senderLabel(message)}
+								</p>
+								<p
+									class={cn(
+										'mt-0.5 truncate text-fg-muted',
+										settings.compactCollapsedThreads ? 'text-[11px]' : 'text-xs'
+									)}
+								>
+									{collapsedPreview(message)}
+								</p>
+							{:else}
+								<p class={cn('truncate', settings.compactCollapsedThreads ? 'text-xs' : 'text-sm')}>
+									<span class="font-medium text-fg">{senderLabel(message)}</span>
+								</p>
 							{/if}
-							{#if thread.length > 1 && !settings.hideThreadCollapseButtons}
+						</div>
+						<div class="z-reader-thread-meta">
+							{#if !settings.hideReaderTimestamps}
+								<span class="z-type-list-time whitespace-nowrap">{formatWhen(message.receivedAt)}</span>
+							{/if}
+							{#if thread.length > 1}
 								<ChevronDown class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
 							{/if}
 						</div>
-					</button>
-				{/if}
-			</section>
-		{/each}
+						</button>
+					{/if}
+				</section>
+			{/each}
+		</div>
 	</div>
 
 	{#if latest && auth.client && settings.showQuickReply && mailboxRouteId !== 'drafts'}
-		<footer class={cn('shrink-0 bg-surface/80 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-6', !settings.hideReaderPaneBorders && 'border-t border-border/80', settings.compactQuickReply ? 'py-2.5' : 'py-4')}>
-			<div class="flex w-full max-w-(--z-reader-measure) flex-col gap-2 sm:flex-row">
+		<footer
+			class={cn(
+				'shrink-0 bg-surface/80 pb-[max(1rem,env(safe-area-inset-bottom))]',
+				!settings.hideReaderPaneBorders && 'border-t border-border/80',
+				settings.compactQuickReply ? 'py-2.5' : 'py-4'
+			)}
+		>
+			<div class={cn('z-reader-column flex flex-col gap-2 sm:flex-row', threadRowX)}>
 				<textarea
 					class="z-input z-compose-editor min-h-10 flex-1 resize-none py-2 leading-relaxed"
 					rows={settings.compactQuickReply ? 1 : 2}

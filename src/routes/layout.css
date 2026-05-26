@@ -469,7 +469,124 @@
 	}
 
 	.z-type-reader-title {
-		@apply text-lg font-semibold leading-snug tracking-tight text-fg md:text-xl;
+		@apply m-0 p-0 text-xl font-semibold leading-none tracking-tight text-fg md:text-2xl;
+	}
+
+	.z-reader-from {
+		font-size: var(--z-reader-text);
+		@apply font-semibold leading-snug tracking-tight text-fg;
+	}
+
+	.z-reader-meta {
+		@apply text-sm leading-snug text-fg-muted;
+	}
+
+	.z-reader-chrome {
+		@apply flex flex-col gap-2;
+	}
+
+	.z-reader-chrome--bordered {
+		@apply border-b border-border/80 pb-3;
+	}
+
+	.z-reader-chrome__head,
+	.z-reader-subject-row {
+		@apply flex min-w-0 items-baseline justify-between gap-4;
+	}
+
+	.z-reader-chrome__head:has(.z-reader-chrome__actions),
+	.z-reader-subject-row:has(.z-reader-subject-toolbar) {
+		flex-wrap: wrap;
+	}
+
+	.z-reader-chrome__actions {
+		@apply flex items-baseline;
+	}
+
+	/* Cap-height alignment between large subject and sm toolbar labels */
+	.z-reader-chrome__head .z-type-reader-title,
+	.z-reader-subject-row .z-type-reader-title,
+	.z-reader-chrome__actions .z-btn-ghost,
+	.z-reader-subject-toolbar .z-btn-ghost {
+		text-box-trim: both;
+		text-box-edge: cap alphabetic;
+	}
+
+	.z-reader-chrome__meta {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		column-gap: 1rem;
+		align-items: start;
+	}
+
+	.z-reader-chrome__from {
+		min-width: 0;
+	}
+
+	.z-reader-chrome__time {
+		justify-self: end;
+	}
+
+	/* Reader header toolbar: override fixed !h-9; keep default ghost padding for tap targets */
+	.z-reader-chrome__actions .z-btn-ghost.z-thread-toolbar-btn,
+	.z-reader-subject-toolbar .z-btn-ghost.z-thread-toolbar-btn {
+		height: auto !important;
+		min-height: 2.25rem !important;
+		padding-block: 0.5rem !important;
+		padding-inline: 0.75rem !important;
+		line-height: 1 !important;
+	}
+
+	.z-reader-message-head {
+		@apply border-b border-border/80 pb-3;
+	}
+
+	.z-reader-content {
+		@apply pt-4;
+	}
+
+	.z-reader-content--compact {
+		@apply pt-3;
+	}
+
+	.z-reader-attachments {
+		@apply w-full;
+	}
+
+	.z-reader-section-label {
+		@apply text-xs font-medium text-fg-subtle;
+	}
+
+	.z-reader-latest-badge {
+		@apply shrink-0 text-[11px] font-medium tracking-wide text-fg-subtle uppercase;
+	}
+
+	.z-reader-thread-meta {
+		@apply flex w-44 shrink-0 items-center justify-end gap-2 sm:w-48;
+	}
+
+	.z-reader-thread-toggle {
+		@apply flex w-full items-center gap-3 rounded-md text-left transition-colors hover:bg-surface-sunken/70;
+	}
+
+	.z-thread-toolbar-btn {
+		@apply !items-center gap-2 leading-none;
+	}
+
+	.z-thread-toolbar-btn :where(svg) {
+		@apply size-4 shrink-0;
+	}
+
+	.z-reader-column {
+		@apply mx-auto w-full max-w-(--z-reader-measure);
+	}
+
+	.z-reader-body {
+		@apply w-full text-fg;
+	}
+
+	.z-email-body :where(p + p, p + ul, p + ol, ul + p, ol + p) {
+		margin-top: 0.75em;
 	}
 
 	.z-type-list-sender {
@@ -508,7 +625,7 @@
 	}
 
 	.z-email-body :where(a) {
-		@apply text-accent underline-offset-2 hover:underline;
+		@apply text-accent underline underline-offset-2 hover:text-accent-hover;
 	}
 
 	.z-email-body :where(img) {
@@ -538,10 +655,15 @@
 	}
 
 	.z-email-quote {
-		@apply mt-4 rounded-md border-l-2 border-border/80 bg-surface/70 py-3 pl-4 pr-3 text-fg-muted;
+		@apply mt-4 rounded-md border-l-2 border-border bg-surface-sunken/80 py-3 pl-4 pr-3 text-sm leading-relaxed whitespace-pre-wrap text-fg-muted;
 	}
 
-	/* HTML mail: flow with the reader theme instead of a separate light card */
+	.z-email-body--plain .z-email-quote,
+	.z-email-body--html .z-email-quote {
+		@apply mt-4;
+	}
+
+	/* HTML mail: inherit reader theme; inline colors stripped except on light email sections */
 	:root.dark .z-email-body--html {
 		color: var(--z-fg);
 	}
@@ -553,5 +675,21 @@
 	:root.dark .z-email-body--html :where(blockquote) {
 		border-color: var(--z-border);
 		color: var(--z-fg-muted);
+	}
+
+	:root.dark .z-email-body--html [data-z-light-surface] {
+		color-scheme: light;
+		border-radius: 0.25rem;
+	}
+
+	:root.dark .z-email-body--html [data-z-light-surface] :where(a) {
+		color: revert;
+	}
+
+	/* Fallback when inline color survives sanitization */
+	:root.dark
+		.z-email-body--html
+		:not(:is([data-z-light-surface], [data-z-light-surface] *)) {
+		color: inherit;
 	}
 }

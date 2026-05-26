@@ -33,10 +33,13 @@
 		thread: MessageDetail[];
 		mailboxRouteId: string;
 		onMoved?: () => void;
+		/** Reader pane header: avoid fixed button height so title can align with labels. */
+		readerHeader?: boolean;
 		class?: string;
 	}
 
-	let { thread, mailboxRouteId, onMoved, class: className = '' }: Props = $props();
+	let { thread, mailboxRouteId, onMoved, readerHeader = false, class: className = '' }: Props =
+		$props();
 
 	const pane = getContext<MailPaneContext>(MAIL_PANE_CTX);
 
@@ -49,7 +52,11 @@
 		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
 	);
 	const toolbarButtonClass = $derived(
-		cn('shrink-0 !h-9 !px-3 !text-sm', settings.compactReaderToolbar && '!px-2.5')
+		cn(
+			'z-thread-toolbar-btn shrink-0 !px-3 !text-sm',
+			readerHeader ? '!h-auto !min-h-9 leading-none' : '!h-9',
+			settings.compactReaderToolbar && '!px-2.5'
+		)
 	);
 	const allowExternal = $derived(!settings.blockExternalContent || pane?.showImagesOnce);
 	const hasBlockedExternal = $derived(
@@ -162,7 +169,14 @@
 	<div
 		class={cn(
 			'flex min-w-0 shrink flex-wrap items-center',
-			settings.compactReaderToolbar ? 'gap-0' : 'gap-1',
+			readerHeader && 'z-reader-subject-toolbar items-baseline',
+			readerHeader
+				? settings.compactReaderToolbar
+					? 'gap-1'
+					: 'gap-1.5'
+				: settings.compactReaderToolbar
+					? 'gap-0'
+					: 'gap-1',
 			className
 		)}
 	>

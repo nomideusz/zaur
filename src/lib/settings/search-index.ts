@@ -985,12 +985,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-hide-thread-collapse-buttons",
-		"href": "/settings/reading",
-		"title": "Hide thread collapse buttons",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-hide-thread-summary",
 		"href": "/settings/reading",
 		"title": "Hide thread summary",
