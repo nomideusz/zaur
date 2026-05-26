@@ -1,8 +1,17 @@
-name: Deploy to CapRover
+name: Deploy webmail to CapRover
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'apps/webmail/**'
+      - 'packages/sprite/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
+      - '.npmrc'
+      - 'infra/deploy/webmail.captain-definition'
+      - '.github/workflows/deploy-webmail.yml'
   workflow_dispatch:
 
 jobs:
@@ -12,6 +21,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare captain-definition
+        run: cp infra/deploy/webmail.captain-definition captain-definition
+
       - name: Create deployment tarball
         uses: a7ul/tar-action@v1.1.0
         with:
@@ -19,16 +31,12 @@ jobs:
           cwd: ./
           files: |
             captain-definition
-            Dockerfile
-            .dockerignore
-            .npmrc
-            package.json
             pnpm-lock.yaml
-            svelte.config.js
-            tsconfig.json
-            vite.config.ts
-            src/
-            static/
+            pnpm-workspace.yaml
+            package.json
+            .npmrc
+            packages/sprite/
+            apps/webmail/
           outPath: deploy.tar
 
       - name: Deploy to CapRover

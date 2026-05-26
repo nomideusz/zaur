@@ -1,0 +1,15 @@
+{
+  "name": "zaur",
+  "private": true,
+  "packageManager": "pnpm@10.32.1",
+  "scripts": {
+    "dev:webmail": "pnpm --filter @zaur/webmail dev",
+    "dev:dinosaurus": "pnpm --filter @zaur/dinosaurus dev",
+    "dev:domains": "pnpm --filter @zaur/domains dev",
+    "build:webmail": "pnpm --filter @zaur/webmail build",
+    "build:dinosaurus": "pnpm --filter @zaur/dinosaurus build",
+    "check:webmail": "pnpm --filter @zaur/webmail check",
+    "test:webmail": "pnpm --filter @zaur/webmail test",
+    "test:domains": "pnpm --filter @zaur/domains test:e2e"
+  }
+}

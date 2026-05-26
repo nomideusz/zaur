@@ -1,5 +1,5 @@
 {
-  "name": "newinternet-registration",
+  "name": "@zaur/domains",
   "version": "1.0.0",
   "description": "Self-service email registration portal for Stalwart mail",
   "main": "server.js",

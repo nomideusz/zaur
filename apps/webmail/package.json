@@ -1,5 +1,5 @@
 {
-	"name": "zaur-webmail",
+	"name": "@zaur/webmail",
 	"private": true,
 	"version": "0.0.1",
 	"type": "module",

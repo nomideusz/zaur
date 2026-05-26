@@ -4,18 +4,21 @@ WORKDIR /app
 
 RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
 
-COPY package.json pnpm-lock.yaml .npmrc ./
-RUN pnpm install --frozen-lockfile
+COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
+COPY packages/sprite/package.json ./packages/sprite/
+COPY apps/webmail/package.json ./apps/webmail/
+RUN pnpm install --frozen-lockfile --filter @zaur/webmail...
 
-COPY . .
+COPY packages/sprite ./packages/sprite
+COPY apps/webmail ./apps/webmail
 
 ARG PUBLIC_JMAP_SERVER_URL=https://mail.zaur.app
 ARG PUBLIC_APP_NAME=ZAUR Webmail
 ENV PUBLIC_JMAP_SERVER_URL=$PUBLIC_JMAP_SERVER_URL
 ENV PUBLIC_APP_NAME=$PUBLIC_APP_NAME
 
-RUN pnpm build
-RUN pnpm prune --prod
+RUN pnpm --filter @zaur/webmail build
+RUN pnpm --filter @zaur/webmail --prod deploy /out --legacy
 
 FROM node:22-alpine AS runner
 
@@ -32,9 +35,8 @@ RUN addgroup --system --gid 1001 nodejs && \
 	mkdir -p /app/.data && \
 	chown -R sveltekit:nodejs /app/.data
 
-COPY --from=builder /app/build ./build
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
+COPY --from=builder /out ./
+COPY --from=builder /app/apps/webmail/build ./build
 
 USER sveltekit
 

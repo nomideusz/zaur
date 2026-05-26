@@ -1,0 +1,45 @@
+name: Deploy domains to CapRover
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/domains/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
+      - '.npmrc'
+      - 'infra/deploy/domains.captain-definition'
+      - '.github/workflows/deploy-domains.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Prepare captain-definition
+        run: cp infra/deploy/domains.captain-definition captain-definition
+
+      - name: Create deployment tarball
+        uses: a7ul/tar-action@v1.1.0
+        with:
+          command: c
+          cwd: ./
+          files: |
+            captain-definition
+            pnpm-lock.yaml
+            pnpm-workspace.yaml
+            package.json
+            .npmrc
+            apps/domains/
+          outPath: deploy.tar
+
+      - name: Deploy to CapRover
+        uses: caprover/deploy-from-github@v1.1.2
+        with:
+          server: https://captain.zaur.app
+          app: newinternet
+          token: ${{ secrets.CAPROVER_APP_TOKEN }}
