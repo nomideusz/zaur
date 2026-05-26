@@ -29,18 +29,12 @@
 	});
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
-<div
-	class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]"
-	onclick={close}
->
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+<div class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]">
 	<div
 		class={cn(
 			'z-panel flex h-full min-h-0 w-full max-w-lg flex-col overflow-hidden shadow-md',
 			!hideBorders && 'border-l'
 		)}
-		onclick={(e) => e.stopPropagation()}
 	>
 		<header
 			class={cn(

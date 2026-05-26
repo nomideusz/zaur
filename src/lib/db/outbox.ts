@@ -83,7 +83,7 @@ export async function listPendingOutbox(accountId: string): Promise<OutboxDoc[]>
 		.find({
 			selector: {
 				accountId,
-				status: { $in: ['pending', 'failed'] as OutboxStatus[] }
+				status: { $in: ['pending', 'sending', 'failed'] as OutboxStatus[] }
 			},
 			sort: [{ createdAt: 'asc' }]
 		})
@@ -123,5 +123,7 @@ export async function countPendingOutbox(accountId: string): Promise<number> {
 	const db = getMailDatabase();
 	if (!db) return 0;
 
-	return db.outbox.count({ selector: { accountId, status: { $in: ['pending', 'failed'] } } }).exec();
+	return db.outbox
+		.count({ selector: { accountId, status: { $in: ['pending', 'sending', 'failed'] } } })
+		.exec();
 }

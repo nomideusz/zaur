@@ -41,7 +41,7 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
 	event.notification.close();
-	const targetUrl = (event.notification.data?.url as string | undefined) ?? '/mail/inbox';
+	const targetUrl = safeNotificationUrl(event.notification.data?.url as string | undefined);
 
 	event.waitUntil(
 		self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clients) => {
@@ -56,6 +56,17 @@ self.addEventListener('notificationclick', (event) => {
 		})
 	);
 });
+
+function safeNotificationUrl(url: string | undefined): string {
+	if (!url) return '/mail/inbox';
+	try {
+		const parsed = new URL(url, self.location.origin);
+		if (parsed.origin !== self.location.origin) return '/mail/inbox';
+		return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+	} catch {
+		return '/mail/inbox';
+	}
+}
 
 async function syncAppBadgeFromPush(unreadCount: number | undefined): Promise<void> {
 	if (typeof unreadCount !== 'number') return;

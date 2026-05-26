@@ -69,6 +69,39 @@ const EMAIL_DETAIL_PROPERTIES = [
 	'bodyStructure'
 ] as const;
 
+function jmapFailureMessage(value: unknown, fallback: string): string {
+	if (value && typeof value === 'object') {
+		const failure = value as { description?: unknown; type?: unknown };
+		if (typeof failure.description === 'string' && failure.description) return failure.description;
+		if (typeof failure.type === 'string' && failure.type) return failure.type;
+	}
+	return fallback;
+}
+
+function assertNoMethodErrors(response: JMAPResponse, fallback: string): void {
+	for (const [methodName, result] of response.methodResponses ?? []) {
+		if (methodName.endsWith('/error') || methodName === 'error') {
+			throw new Error(jmapFailureMessage(result, fallback));
+		}
+	}
+}
+
+function assertEmailSetSucceeded(response: JMAPResponse, fallback: string): Record<string, unknown> {
+	assertNoMethodErrors(response, fallback);
+	const first = response.methodResponses?.find(([methodName]) => methodName === 'Email/set');
+	if (!first) throw new Error('Unexpected Email/set response');
+
+	const result = first[1];
+	const failureBuckets = [result.notCreated, result.notUpdated, result.notDestroyed];
+	for (const bucket of failureBuckets) {
+		if (bucket && typeof bucket === 'object' && Object.keys(bucket).length) {
+			throw new Error(jmapFailureMessage(Object.values(bucket)[0], fallback));
+		}
+	}
+
+	return result;
+}
+
 export interface EmailQueryResult {
 	emails: JMAPEmail[];
 	total: number;
@@ -885,7 +918,7 @@ export class JMAPClient {
 	}
 
 	async markAsRead(emailId: string, read = true): Promise<void> {
-		await this.request([
+		const response = await this.request([
 			[
 				'Email/set',
 				{
@@ -895,10 +928,11 @@ export class JMAPClient {
 				'0'
 			]
 		]);
+		assertEmailSetSucceeded(response, 'Could not update read status');
 	}
 
 	async toggleStar(emailId: string, starred: boolean): Promise<void> {
-		await this.request([
+		const response = await this.request([
 			[
 				'Email/set',
 				{
@@ -908,23 +942,30 @@ export class JMAPClient {
 				'0'
 			]
 		]);
+		assertEmailSetSucceeded(response, 'Could not update star');
 	}
 
-	async moveToMailbox(emailId: string, mailboxId: string): Promise<void> {
-		await this.moveEmailsToMailbox([emailId], mailboxId);
+	async moveToMailbox(emailId: string, mailboxId: string, sourceMailboxId?: string): Promise<void> {
+		await this.moveEmailsToMailbox([emailId], mailboxId, sourceMailboxId);
 	}
 
-	async moveEmailsToMailbox(emailIds: string[], mailboxId: string): Promise<void> {
+	async moveEmailsToMailbox(emailIds: string[], mailboxId: string, sourceMailboxId?: string): Promise<void> {
 		if (!emailIds.length) return;
 
-		const update: Record<string, { mailboxIds: Record<string, boolean> }> = {};
+		const update: Record<string, Record<string, unknown>> = {};
 		for (const emailId of emailIds) {
-			update[emailId] = { mailboxIds: { [mailboxId]: true } };
+			update[emailId] = sourceMailboxId
+				? {
+						[`mailboxIds/${sourceMailboxId}`]: null,
+						[`mailboxIds/${mailboxId}`]: true
+					}
+				: { mailboxIds: { [mailboxId]: true } };
 		}
 
-		await this.request([
+		const response = await this.request([
 			['Email/set', { accountId: this.accountId, update }, '0']
 		]);
+		assertEmailSetSucceeded(response, 'Could not move message');
 	}
 
 	async destroyEmail(emailId: string): Promise<void> {
@@ -934,9 +975,10 @@ export class JMAPClient {
 	async destroyEmails(emailIds: string[]): Promise<void> {
 		if (!emailIds.length) return;
 
-		await this.request([
+		const response = await this.request([
 			['Email/set', { accountId: this.accountId, destroy: emailIds }, '0']
 		]);
+		assertEmailSetSucceeded(response, 'Could not delete message');
 	}
 
 	async saveDraft(params: {
@@ -971,16 +1013,21 @@ export class JMAPClient {
 		});
 
 		if (params.jmapDraftId) {
-			await this.request([
+			const response = await this.request([
 				['Email/set', { accountId: this.accountId, update: { [params.jmapDraftId]: emailData } }, '0']
 			]);
+			assertEmailSetSucceeded(response, 'Could not update draft');
 			return params.jmapDraftId;
 		}
 
-		await this.request([
+		const response = await this.request([
 			['Email/set', { accountId: this.accountId, create: { [draftKey]: emailData } }, '0']
 		]);
-		return draftKey;
+		const result = assertEmailSetSucceeded(response, 'Could not save draft');
+		const created = result.created as Record<string, { id?: string }> | undefined;
+		const createdId = created?.[draftKey]?.id;
+		if (!createdId) throw new Error('Draft save response missing id');
+		return createdId;
 	}
 
 	openEventStream(): Promise<Response> {

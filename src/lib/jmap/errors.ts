@@ -42,7 +42,7 @@ export function loginErrorMessage(code: LoginErrorCode, serverUrl?: string): str
 
 	switch (code) {
 		case 'invalid_credentials':
-			return 'Invalid email or password. If 2FA is enabled, append your code as password$123456.';
+			return 'Invalid email, password, or 2FA code.';
 		case 'cors_blocked':
 			return 'Cannot reach the mail server. Check server connectivity and configuration.';
 		case 'connection_failed':

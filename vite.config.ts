@@ -54,10 +54,10 @@ export default defineConfig({
 				]
 			},
 			workbox: {
-				globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,webmanifest}', 'prerendered/**/*.{html,json}']
+				globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,webmanifest}']
 			},
 			injectManifest: {
-				globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,webmanifest}', 'prerendered/**/*.{html,json}']
+				globPatterns: ['client/**/*.{js,css,ico,png,svg,webp,webmanifest}']
 			}
 		})
 	]

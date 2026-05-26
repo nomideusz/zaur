@@ -52,6 +52,10 @@
 	let loadSentinel = $state<HTMLDivElement | null>(null);
 
 	const activeThreadId = $derived($page.params.threadId);
+	const searchReturnTo = $derived.by(() => {
+		if ($page.url.pathname !== '/mail/search') return null;
+		return `${$page.url.pathname}${$page.url.search}`;
+	});
 	const activeMessageId = $derived.by(() => {
 		if (!activeThreadId) return null;
 		return (
@@ -118,6 +122,12 @@
 				return null;
 		}
 	});
+
+	function messageHref(message: MessagePreview): string {
+		if (mailboxRouteId === 'drafts') return `/mail/compose?draft=${message.id}`;
+		const href = `/mail/${message.mailboxId}/${message.threadId}`;
+		return searchReturnTo ? `${href}?returnTo=${encodeURIComponent(searchReturnTo)}` : href;
+	}
 </script>
 
 <section
@@ -214,9 +224,7 @@
 			{#each messages as message (message.id)}
 				<MessageListItem
 					{message}
-					href={mailboxRouteId === 'drafts'
-						? `/mail/compose?draft=${message.id}`
-						: `/mail/${message.mailboxId}/${message.threadId}`}
+					href={messageHref(message)}
 					active={activeThreadId === message.threadId}
 					selectionMode={mailboxRouteId ? mail.selectionMode : false}
 					selected={mailboxRouteId ? selectedIds.includes(message.id) : false}

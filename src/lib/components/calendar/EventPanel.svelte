@@ -114,17 +114,12 @@
 		{@render details(false)}
 	</aside>
 
-	<div
-		class="fixed inset-0 z-30 flex justify-end bg-black/20 backdrop-blur-[1px] md:hidden"
-		onclick={() => calendar.selectEvent(null)}
-	>
-		<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+	<div class="fixed inset-0 z-30 flex justify-end bg-black/20 backdrop-blur-[1px] md:hidden">
 		<div
 			class={cn(
 				'z-panel flex h-full w-full max-w-md flex-col shadow-md',
 				!hideBorders && 'border-l'
 			)}
-			onclick={(e) => e.stopPropagation()}
 		>
 			{@render details(true)}
 		</div>

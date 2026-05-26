@@ -71,7 +71,11 @@
 	});
 </script>
 
-<IconButton label="Search mail" class="md:hidden" onclick={() => goto('/mail/search')}>
+<IconButton
+	label="Search mail"
+	class={settings.hideHeaderSearch ? '' : 'md:hidden'}
+	onclick={() => goto('/mail/search')}
+>
 	<Search class="size-4" />
 </IconButton>
 

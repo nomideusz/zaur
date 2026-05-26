@@ -157,7 +157,6 @@
 			});
 			if (result === 'sent') {
 				quickReply = '';
-				toast.show('Reply sent', 'success');
 				void mail.loadMessage(auth.client, mailboxRouteId, latest.threadId);
 			} else if (result === 'pending' || result === 'queued') {
 				quickReply = '';
@@ -373,6 +372,7 @@
 					class="z-input z-compose-editor min-h-10 flex-1 resize-none py-2 leading-relaxed"
 					rows={settings.compactQuickReply ? 1 : 2}
 					placeholder="Write a quick reply…"
+					aria-label="Quick reply"
 					bind:value={quickReply}
 					disabled={quickReplySending}
 					onkeydown={onQuickReplyKeydown}

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import { appConfig } from '$lib/config';
 	import { loadRememberedLogin } from '$lib/auth/remember-login';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -14,16 +15,20 @@
 	let totp = $state('');
 	let showTotp = $state(false);
 	let rememberMe = $state(remembered.rememberMe);
+	const nextPath = $derived.by(() => {
+		const next = $page.url.searchParams.get('next');
+		return next?.startsWith('/') && !next.startsWith('//') ? next : undefined;
+	});
 
 	$effect(() => {
 		if (!auth.isRestoring && auth.isAuthenticated) {
-			goto(settings.preferredMailHref());
+			goto(nextPath ?? settings.preferredMailHref());
 		}
 	});
 
 	function submit(e: Event) {
 		e.preventDefault();
-		void auth.login(email, password, showTotp ? totp : undefined, rememberMe);
+		void auth.login(email, password, showTotp ? totp : undefined, rememberMe, nextPath);
 	}
 </script>
 
@@ -47,7 +52,6 @@
 					class="z-input"
 					bind:value={email}
 					autocomplete="username"
-					autofocus
 					required
 					disabled={auth.isLoading}
 				/>

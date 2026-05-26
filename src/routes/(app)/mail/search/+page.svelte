@@ -63,7 +63,8 @@
 		<div class="flex min-h-0 min-w-0 flex-1 flex-col md:contents">
 			<form
 			class={cn(
-				'z-panel shrink-0 px-4 md:hidden',
+				'z-panel shrink-0 px-4',
+				settings.hideHeaderSearch ? 'md:block' : 'md:hidden',
 				settings.compactMobileSearch ? 'py-2' : 'py-3',
 				!settings.hidePaneBorders && 'border-b border-border'
 			)}

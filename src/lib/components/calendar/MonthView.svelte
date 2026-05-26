@@ -91,7 +91,6 @@
 				settings.compactCalendarSidebar ? 'px-2 py-1' : 'px-2 py-2',
 				!hideBorders && 'border-border'
 			)}
-			onpointerdown={(e) => e.stopPropagation()}
 		>
 			<ul class="space-y-0.5">
 				{#each calendar.calendars as item (item.id)}

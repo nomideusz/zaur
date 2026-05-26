@@ -109,14 +109,9 @@
 	{@render details(false)}
 </aside>
 
-<div
-	class="z-mobile-sheet-backdrop md:hidden"
-	onclick={onClose}
->
-	<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions -->
+<div class="z-mobile-sheet-backdrop md:hidden">
 	<div
 		class={cn('z-panel flex h-full w-full max-w-md flex-col border-l shadow-md', !hideBorders && 'border-border')}
-		onclick={(e) => e.stopPropagation()}
 	>
 		{@render details(true)}
 	</div>

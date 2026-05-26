@@ -57,7 +57,7 @@ class AuthStore {
 		}
 	}
 
-	async login(email: string, password: string, totp?: string, rememberMe = false) {
+	async login(email: string, password: string, totp?: string, rememberMe = false, redirectTo?: string) {
 		this.isLoading = true;
 		this.error = null;
 		this.errorCode = null;
@@ -95,7 +95,7 @@ class AuthStore {
 			await settings.syncFromAccount();
 			this.startBackgroundSync(client, payload.username, payload.displayName);
 
-			await goto(settings.preferredMailHref());
+			await goto(redirectTo ?? settings.preferredMailHref());
 		} catch (error) {
 			const code = classifyJmapError(error);
 			this.errorCode = code;
@@ -207,6 +207,9 @@ class AuthStore {
 		outbox.reset();
 		calendar.reset();
 		void import('$lib/utils/app-badge').then(({ clearAppBadge }) => clearAppBadge());
+		void fetch('/api/auth/logout', { method: 'POST' }).catch(() => {
+			// Best-effort stale cookie cleanup
+		});
 		goto('/login');
 	}
 

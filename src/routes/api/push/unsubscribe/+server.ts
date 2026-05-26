@@ -1,5 +1,5 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
-import { removePushSubscription, subscriptionId } from '$lib/server/push-subscriptions';
+import { getPushSubscription, removePushSubscription, subscriptionId } from '$lib/server/push-subscriptions';
 import { pushWatcher } from '$lib/server/push-watcher';
 import { readSession } from '$lib/server/session';
 
@@ -21,7 +21,13 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		error(400, 'Missing subscription endpoint');
 	}
 
-	await removePushSubscription(subscriptionId(endpoint));
+	const id = subscriptionId(endpoint);
+	const record = await getPushSubscription(id);
+	if (record && record.username !== session.username) {
+		error(403, 'Forbidden');
+	}
+
+	await removePushSubscription(id);
 	await pushWatcher.refresh();
 
 	return json({ ok: true });

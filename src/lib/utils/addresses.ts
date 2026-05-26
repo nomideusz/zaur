@@ -1,8 +1,7 @@
 export function parseAddressList(input: string): string[] {
-	return input
-		.split(/[,;]/)
-		.map((part) => part.trim())
-		.filter(Boolean);
+	return parseAddressEntries(input)
+		.filter((entry) => entry.valid)
+		.map((entry) => entry.email);
 }
 
 export function formatAddressList(addrs: { name?: string; email: string }[]): string {
@@ -18,4 +17,55 @@ export function formatAddressList(addrs: { name?: string; email: string }[]): st
 		})
 		.filter(Boolean)
 		.join(', ');
+}
+
+export function invalidAddressParts(input: string): string[] {
+	return parseAddressEntries(input)
+		.filter((entry) => !entry.valid)
+		.map((entry) => entry.raw);
+}
+
+function parseAddressEntries(input: string): Array<{ raw: string; email: string; valid: boolean }> {
+	return splitAddressList(input)
+		.map((raw) => {
+			const email = extractEmail(raw);
+			return { raw, email, valid: isValidEmail(email) };
+		})
+		.filter((entry) => entry.raw || entry.email);
+}
+
+function splitAddressList(input: string): string[] {
+	const parts: string[] = [];
+	let current = '';
+	let inQuotes = false;
+	let angleDepth = 0;
+
+	for (const char of input) {
+		if (char === '"') inQuotes = !inQuotes;
+		if (!inQuotes) {
+			if (char === '<') angleDepth += 1;
+			if (char === '>' && angleDepth > 0) angleDepth -= 1;
+			if ((char === ',' || char === ';') && angleDepth === 0) {
+				const part = current.trim();
+				if (part) parts.push(part);
+				current = '';
+				continue;
+			}
+		}
+		current += char;
+	}
+
+	const tail = current.trim();
+	if (tail) parts.push(tail);
+	return parts;
+}
+
+function extractEmail(raw: string): string {
+	const angleMatch = raw.match(/<([^<>]+)>/);
+	const value = angleMatch?.[1] ?? raw;
+	return value.trim().replace(/^mailto:/i, '');
+}
+
+function isValidEmail(email: string): boolean {
+	return /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(email);
 }

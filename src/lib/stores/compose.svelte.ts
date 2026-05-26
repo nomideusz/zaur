@@ -2,7 +2,7 @@ import { browser } from '$app/environment';
 import type { JMAPClient } from '$lib/jmap/client';
 import type { EmailAttachmentInput } from '$lib/jmap/email-build';
 import { validateAttachmentFile } from '$lib/attachments/upload';
-import { parseAddressList, formatAddressList } from '$lib/utils/addresses';
+import { invalidAddressParts, parseAddressList, formatAddressList } from '$lib/utils/addresses';
 import { mapEmailDetail } from '$lib/jmap/map';
 import { isOfflineError } from '$lib/utils/network';
 import { outbox } from '$lib/stores/outbox.svelte';
@@ -458,6 +458,16 @@ class ComposeStore {
 		fromName?: string,
 		options?: ComposeSendOptions
 	): Promise<ComposeSendResult> {
+		const invalid = [
+			...invalidAddressParts(this.to),
+			...invalidAddressParts(this.cc),
+			...invalidAddressParts(this.bcc)
+		];
+		if (invalid.length) {
+			this.error = `Check recipient address: ${invalid[0]}`;
+			return false;
+		}
+
 		const recipients = parseAddressList(this.to);
 		if (!recipients.length) {
 			this.error = 'Enter at least one recipient';

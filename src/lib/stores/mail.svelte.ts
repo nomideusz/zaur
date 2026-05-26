@@ -389,7 +389,7 @@ class MailStore {
 		const sourceJmapId = this.mailboxByRouteId(sourceRouteId)?.jmapId;
 		const snapshot = { ...message };
 
-		await client.moveToMailbox(message.id, target.jmapId);
+		await client.moveToMailbox(message.id, target.jmapId, sourceJmapId);
 		this.removeMessage(message);
 
 		if (sourceJmapId) {
@@ -417,7 +417,7 @@ class MailStore {
 		const sourceJmapId = this.mailboxByRouteId(sourceRouteId)?.jmapId;
 		const snapshot = { ...message };
 
-		await client.moveToMailbox(message.id, target.jmapId);
+		await client.moveToMailbox(message.id, target.jmapId, sourceJmapId);
 		this.removeMessage(message);
 
 		if (sourceJmapId) {
@@ -444,7 +444,7 @@ class MailStore {
 		}
 
 		if (trash?.jmapId) {
-			await client.moveToMailbox(message.id, trash.jmapId);
+			await client.moveToMailbox(message.id, trash.jmapId, sourceJmapId);
 		} else {
 			await client.destroyEmail(message.id);
 			this.removeMessage(message);
@@ -590,7 +590,8 @@ class MailStore {
 		try {
 			await client.moveEmailsToMailbox(
 				messages.map((message) => message.id),
-				archive.jmapId
+				archive.jmapId,
+				sourceJmapId
 			);
 			for (const message of messages) {
 				this.removeMessage(message);
@@ -619,12 +620,17 @@ class MailStore {
 
 		const target = this.mailboxByRouteId(targetRouteId);
 		if (!target?.jmapId) throw new Error('Folder not found');
+		const sourceRouteId = this.currentMailboxRouteId;
+		const sourceJmapId = sourceRouteId
+			? this.mailboxByRouteId(sourceRouteId)?.jmapId
+			: undefined;
 
 		this.bulkActionLoading = true;
 		try {
 			await client.moveEmailsToMailbox(
 				messages.map((message) => message.id),
-				target.jmapId
+				target.jmapId,
+				sourceJmapId
 			);
 			for (const message of messages) {
 				this.removeMessage(message);
@@ -680,7 +686,7 @@ class MailStore {
 			if (currentMailbox?.role === 'trash') {
 				await client.destroyEmails(ids);
 			} else if (trash?.jmapId) {
-				await client.moveEmailsToMailbox(ids, trash.jmapId);
+				await client.moveEmailsToMailbox(ids, trash.jmapId, sourceJmapId);
 			} else {
 				await client.destroyEmails(ids);
 			}

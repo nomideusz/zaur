@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import MailPane from '$lib/components/mail/MailPane.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
 	import MessageReader from '$lib/components/mail/MessageReader.svelte';
@@ -18,9 +19,13 @@
 	const countLabel = $derived(
 		mailCountLabel(mail.messagesTotal, mail.messages.length, mailbox)
 	);
+	const returnTo = $derived.by(() => {
+		const value = $page.url.searchParams.get('returnTo');
+		return value?.startsWith('/mail/search') ? value : null;
+	});
 
 	function backToList() {
-		goto(`/mail/${data.mailboxId}`);
+		goto(returnTo ?? `/mail/${data.mailboxId}`);
 	}
 
 	function afterMove() {

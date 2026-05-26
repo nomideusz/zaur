@@ -55,7 +55,7 @@
 			role="listbox"
 		>
 			{#each results as entry (entry.id + entry.href)}
-				<li role="option">
+				<li role="option" aria-selected="false">
 					<button
 						type="button"
 						class={cn(
