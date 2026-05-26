@@ -58,7 +58,7 @@
 
 	<SettingsRow
 		title="Show sender avatars"
-		description="Color initials beside each message — turn off for a simpler, text-only list"
+		description="Profile photos from Gravatar when available, otherwise initials"
 	>
 		<input
 			type="checkbox"
