@@ -4,6 +4,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import ContactDetailEmpty from '$lib/components/contacts/ContactDetailEmpty.svelte';
 	import ContactDetailPanel from '$lib/components/contacts/ContactDetailPanel.svelte';
+	import ContactLetterRail from '$lib/components/contacts/ContactLetterRail.svelte';
 	import ContactsSidebar from '$lib/components/contacts/ContactsSidebar.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -71,6 +72,15 @@
 				: 'All contacts'
 	);
 
+	const showLetterNav = $derived(
+		!query.trim() && !settings.hideContactGroupLetters && availableLetters.length > 0
+	);
+
+	function selectLetter(letter: string | null) {
+		selectedLetter = letter;
+		selectedEmail = null;
+	}
+
 	function composeTo(email: string) {
 		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
 	}
@@ -133,10 +143,7 @@
 		totalCount={listContacts(auth.client?.getAccountId() ?? null).length}
 		letters={availableLetters}
 		{selectedLetter}
-		onSelectLetter={(letter) => {
-			selectedLetter = letter;
-			selectedEmail = null;
-		}}
+		onSelectLetter={selectLetter}
 		onAddContact={() => {
 			showAddForm = true;
 			selectedEmail = null;
@@ -227,15 +234,43 @@
 				bind:value={query}
 			/>
 		</label>
+
+		{#if showLetterNav}
+			<ContactLetterRail
+				variant="horizontal"
+				letters={availableLetters}
+				{selectedLetter}
+				onSelectLetter={selectLetter}
+			/>
+		{/if}
 	</div>
 
-	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
+	<div class="relative min-h-0 flex-1">
+		{#if showLetterNav}
+			<ContactLetterRail
+				letters={availableLetters}
+				{selectedLetter}
+				onSelectLetter={selectLetter}
+			/>
+		{/if}
+
+		<div class="z-pane-scroll h-full overflow-y-auto">
 		{#if contacts.length}
-			<div class={settings.compactContactsList ? 'space-y-3 p-2' : 'space-y-4 p-3'}>
+			<div
+				class={cn(
+					settings.compactContactsList ? 'space-y-3 p-2' : 'space-y-4 p-3',
+					showLetterNav && 'md:pr-12'
+				)}
+			>
 				{#each groupedContacts as [letter, group] (letter)}
 					<section>
 						{#if !settings.hideContactGroupLetters}
-							<h3 class="z-type-label mb-1 px-1">
+							<h3
+								class={cn(
+									'sticky top-0 z-[1] mb-1 bg-surface/95 px-2 py-1.5 font-semibold text-fg-muted backdrop-blur-sm',
+									settings.compactContactsList ? 'text-xs' : 'text-sm'
+								)}
+							>
 								{letter}
 							</h3>
 						{/if}
@@ -251,7 +286,7 @@
 										type="button"
 										class={cn(
 											'flex w-full items-center gap-3 text-left transition-colors hover:bg-surface-sunken',
-											settings.compactContactsList ? 'px-3 py-2' : 'px-4 py-3',
+											settings.compactContactsList ? 'min-h-11 px-3 py-2.5' : 'min-h-14 px-4 py-3.5',
 											selectedEmail === contact.email && 'bg-surface-sunken'
 										)}
 										onclick={() => selectContact(contact.email)}
@@ -327,6 +362,7 @@
 				</div>
 			</div>
 		{/if}
+		</div>
 	</div>
 </section>
 

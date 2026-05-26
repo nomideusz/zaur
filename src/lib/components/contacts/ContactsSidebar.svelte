@@ -49,8 +49,8 @@
 				<button
 					type="button"
 					class={cn(
-						'flex w-full items-center justify-between rounded-md px-3 text-sm transition-colors',
-						settings.compactContactsPage ? 'py-1.5' : 'py-2',
+						'flex w-full items-center justify-between rounded-lg px-3 text-sm transition-colors',
+						settings.compactContactsPage ? 'min-h-9 py-2' : 'min-h-10 py-2.5',
 						selectedLetter === null
 							? 'bg-surface-sunken font-medium text-fg'
 							: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
@@ -64,19 +64,21 @@
 		</ul>
 
 		{#if letters.length && !settings.hideContactGroupLetters}
-			<p class="mb-1 mt-3 px-3 text-[10px] font-medium uppercase tracking-wide text-fg-subtle">Browse</p>
-			<ul class="grid grid-cols-4 gap-0.5 px-1">
+			<p class="mb-1.5 mt-4 px-3 text-xs font-medium text-fg-subtle">Browse A–Z</p>
+			<ul class="space-y-0.5 px-1">
 				{#each letters as letter (letter)}
 					<li>
 						<button
 							type="button"
 							class={cn(
-								'rounded-md py-1.5 text-center text-xs font-medium transition-colors',
+								'flex w-full items-center rounded-lg px-3 text-sm font-semibold transition-colors',
+								settings.compactContactsPage ? 'min-h-9 py-2' : 'min-h-10 py-2.5',
 								selectedLetter === letter
-									? 'bg-accent text-accent-fg'
+									? 'bg-accent text-accent-fg shadow-sm'
 									: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
 							)}
-							onclick={() => onSelectLetter(letter)}
+							aria-current={selectedLetter === letter ? 'true' : undefined}
+							onclick={() => onSelectLetter(selectedLetter === letter ? null : letter)}
 						>
 							{letter}
 						</button>
@@ -105,8 +107,8 @@
 			<a
 				href="/settings/contacts"
 				class={cn(
-					'flex items-center gap-2 rounded-md px-3 text-sm transition-colors',
-					settings.compactContactsPage ? 'py-1.5' : 'py-2',
+					'flex items-center gap-2 rounded-lg px-3 text-sm transition-colors',
+					settings.compactContactsPage ? 'min-h-9 py-2' : 'min-h-10 py-2.5',
 					$page.url.pathname.startsWith('/settings')
 						? 'bg-surface-sunken font-medium text-fg'
 						: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
