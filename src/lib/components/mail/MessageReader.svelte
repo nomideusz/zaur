@@ -174,7 +174,13 @@
 	}
 </script>
 
-<article class="flex min-h-0 flex-1 flex-col overflow-hidden bg-surface-raised" style="view-transition-name: message-reader;">
+<article
+	class={cn(
+		'm-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-surface-raised/95 shadow-sm md:m-3',
+		!settings.hideReaderPaneBorders && 'border border-border'
+	)}
+	style="view-transition-name: message-reader;"
+>
 	{#if mail.selectedError}
 		<div
 			class={cn(
@@ -197,7 +203,7 @@
 			class={cn(
 				'flex shrink-0 flex-wrap items-center bg-surface text-fg-muted md:px-6',
 				settings.compactExternalContentBanner ? 'gap-x-1.5 gap-y-1 px-3 py-1.5 text-[11px]' : 'gap-x-2 gap-y-1 px-4 py-2 text-xs',
-				!settings.hideReaderPaneBorders && 'border-b border-border'
+				!settings.hideReaderPaneBorders && 'border-b border-border/80'
 			)}
 		>
 			<Shield class={cn('shrink-0', settings.compactExternalContentBanner ? 'size-3' : 'size-3.5')} aria-hidden="true" />
@@ -246,10 +252,10 @@
 		</div>
 
 		{#each thread as message, index (message.id)}
-			<section class={cn(index > 0 && !settings.hideReaderPaneBorders && 'border-t border-border')}>
+			<section class={cn(index > 0 && !settings.hideReaderPaneBorders && 'border-t border-border/70')}>
 				{#if isExpanded(message)}
 					<div class={cn(threadRowX, settings.compactReaderBody ? 'py-3' : 'py-5')}>
-						<div class="mb-4 flex items-start gap-3">
+						<div class="mb-4 flex items-start gap-3 max-sm:flex-wrap">
 							{#if settings.showAvatars}
 								<Avatar
 									name={message.from.name}
@@ -297,7 +303,7 @@
 									</p>
 								{/if}
 							</div>
-							<div class="flex shrink-0 items-center gap-2 self-start">
+							<div class="flex shrink-0 items-center gap-2 self-start max-sm:ml-11 max-sm:w-[calc(100%-2.75rem)] max-sm:justify-between">
 								{#if !settings.hideReaderTimestamps}
 									<span class="whitespace-nowrap text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</span>
 								{/if}
@@ -330,7 +336,7 @@
 					<button
 						type="button"
 						class={cn(
-							'flex w-full items-center gap-3 text-left transition-colors hover:bg-surface-sunken/70',
+							'flex w-full items-center gap-3 text-left transition-colors hover:bg-surface-sunken/70 max-sm:items-start',
 							threadRowX,
 							settings.compactCollapsedThreads ? 'py-2' : 'py-3'
 						)}
@@ -351,7 +357,7 @@
 								{/if}
 							</p>
 						</div>
-						<div class="flex shrink-0 items-center gap-2">
+						<div class="flex shrink-0 items-center gap-2 max-sm:flex-col max-sm:items-end max-sm:gap-1">
 							{#if !settings.hideReaderTimestamps}
 								<span class="whitespace-nowrap text-xs text-fg-subtle">{formatWhen(message.receivedAt)}</span>
 							{/if}
@@ -366,8 +372,8 @@
 	</div>
 
 	{#if latest && auth.client && settings.showQuickReply && mailboxRouteId !== 'drafts'}
-		<footer class={cn('shrink-0 bg-surface/80 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-6', !settings.hideReaderPaneBorders && 'border-t border-border', settings.compactQuickReply ? 'py-2.5' : 'py-4')}>
-			<div class="flex w-full max-w-(--z-reader-measure) gap-2">
+		<footer class={cn('shrink-0 bg-surface/80 px-3 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-6', !settings.hideReaderPaneBorders && 'border-t border-border/80', settings.compactQuickReply ? 'py-2.5' : 'py-4')}>
+			<div class="flex w-full max-w-(--z-reader-measure) flex-col gap-2 sm:flex-row">
 				<textarea
 					class="z-input z-compose-editor min-h-10 flex-1 resize-none py-2 leading-relaxed"
 					rows={settings.compactQuickReply ? 1 : 2}
@@ -377,14 +383,14 @@
 					disabled={quickReplySending}
 					onkeydown={onQuickReplyKeydown}
 				></textarea>
-				<div class="flex shrink-0 flex-col items-end gap-1">
-					<Button disabled={!quickReply.trim() || quickReplySending} onclick={sendQuickReply}>
+				<div class="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end sm:justify-start sm:gap-1">
+					<Button class="max-sm:flex-1" disabled={!quickReply.trim() || quickReplySending} onclick={sendQuickReply}>
 						{quickReplySending ? 'Sending…' : 'Send'}
 					</Button>
 					{#if !settings.hideComposeHints}
 						<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter</span>
 					{/if}
-					<Button variant="ghost" class="!px-2 text-xs" onclick={reply}>Full reply</Button>
+					<Button variant="ghost" class="!px-2 text-xs max-sm:flex-1" onclick={reply}>Full reply</Button>
 				</div>
 			</div>
 		</footer>

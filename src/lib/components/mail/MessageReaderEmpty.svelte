@@ -13,7 +13,7 @@
 
 	let {
 		title = 'Select a message',
-		description = 'Choose a conversation from the list to read it here, or start writing something new.',
+		description = 'Pick a conversation from the list, or start a new message when you are ready.',
 		showCompose = true,
 		showSettings = true
 	}: Props = $props();
@@ -25,18 +25,19 @@
 
 <div
 	class={cn(
-		'flex min-h-0 flex-1 flex-col items-center justify-center bg-surface-raised text-center',
+		'm-2 flex min-h-0 flex-1 flex-col items-center justify-center rounded-lg bg-surface-raised/90 text-center shadow-sm md:m-3',
+		!settings.hideReaderPaneBorders && 'border border-border',
 		settings.compactEmptyReader ? 'gap-3 p-4' : 'gap-4 p-8'
 	)}
 >
 	{#if showPrompts}
 		{#if !settings.hideEmptyReaderIcon}
-		<div class={cn('rounded-full bg-surface-sunken', settings.compactEmptyReader ? 'p-3' : 'p-4')}>
-			<Mail class={cn('text-fg-subtle', settings.compactEmptyReader ? 'size-6' : 'size-8')} aria-hidden="true" />
+		<div class={cn('rounded-full bg-accent/10 text-accent', settings.compactEmptyReader ? 'p-3' : 'p-4')}>
+			<Mail class={cn(settings.compactEmptyReader ? 'size-6' : 'size-8')} aria-hidden="true" />
 		</div>
 		{/if}
 		<div>
-			<h2 class={cn('font-medium text-fg', settings.compactEmptyReader ? 'text-base' : 'text-lg')}>{title}</h2>
+			<h2 class={cn('font-semibold text-fg', settings.compactEmptyReader ? 'text-base' : 'text-lg')}>{title}</h2>
 			{#if !settings.hideEmptyReaderDescription}
 				<p class={cn('mx-auto mt-2 max-w-sm text-fg-muted', settings.compactEmptyReader ? 'text-xs' : 'text-sm')}>
 					{description}

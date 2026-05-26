@@ -99,9 +99,9 @@
 
 <header
 	class={cn(
-		'z-mail-pane-toolbar flex shrink-0 items-center gap-2 px-4',
+		'z-mail-pane-toolbar mx-2 mt-2 flex shrink-0 items-center gap-2 rounded-lg px-3 shadow-sm md:mx-3 md:mt-3 md:px-4',
 		settings.compactListHeader ? 'h-10' : 'h-12',
-		!settings.hidePaneBorders && 'border-b border-border'
+		!settings.hidePaneBorders && 'border border-border'
 	)}
 >
 	{#if showBulkToolbar}
@@ -256,7 +256,7 @@
 				{thread}
 				{mailboxRouteId}
 				onMoved={onBulkAction}
-				class="max-w-[calc(100vw-6rem)] overflow-x-auto md:max-w-none md:overflow-visible"
+				class="max-w-[calc(100vw-7rem)] overflow-x-auto md:max-w-none md:overflow-visible"
 			/>
 		{/if}
 	{/if}

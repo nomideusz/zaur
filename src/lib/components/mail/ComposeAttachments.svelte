@@ -10,19 +10,19 @@
 {#if compose.attachments.length}
 	<div
 		class={cn(
-			'flex shrink-0 flex-wrap',
+			'flex shrink-0 flex-wrap bg-surface/60',
 			settings.compactComposeAttachments ? 'gap-1 px-3 py-1.5' : 'gap-2 px-5 py-3',
-			!settings.hideComposePanelBorders && 'border-t border-border'
+			!settings.hideComposePanelBorders && 'border-t border-border/80'
 		)}
 	>
 		{#each compose.attachments as attachment (attachment.id)}
 			<div
 				class={cn(
-					'flex max-w-full items-center rounded-md bg-surface text-fg',
+					'flex max-w-full items-center rounded-full bg-surface-raised text-fg shadow-sm',
 					settings.compactComposeAttachments
 						? 'gap-1.5 px-2 py-1 text-[11px]'
 						: 'gap-2 px-2.5 py-1.5 text-xs',
-					!settings.hideComposePanelBorders && 'border border-border'
+					!settings.hideComposePanelBorders && 'border border-border/80'
 				)}
 			>
 				<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />

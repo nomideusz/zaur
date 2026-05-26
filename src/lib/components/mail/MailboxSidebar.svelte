@@ -15,8 +15,8 @@
 
 <aside
 	class={cn(
-		'flex hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden bg-surface-raised md:flex',
-		!settings.hidePaneBorders && 'border-r border-border'
+		'm-3 mr-0 hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden rounded-lg bg-surface-raised/90 shadow-sm md:flex',
+		!settings.hidePaneBorders && 'border border-border'
 	)}
 	style="view-transition-name: mail-sidebar;"
 	aria-label="Folders"
@@ -25,14 +25,14 @@
 		class={cn(
 			'shrink-0',
 			settings.compactFolderSidebarHeader ? 'px-3 py-2' : 'px-4 py-3',
-			!settings.hidePaneBorders && 'border-b border-border',
+			!settings.hidePaneBorders && 'border-b border-border/80',
 			settings.hideFolderSidebarHeader ? 'sr-only' : ''
 		)}
 	>
 		<h2 class="z-type-label">Folders</h2>
 	</div>
 
-	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto {settings.compactFolderSidebar ? 'p-1' : 'p-2'}">
+	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto {settings.compactFolderSidebar ? 'p-1.5' : 'p-2.5'}">
 		{#if mail.mailboxesLoading}
 			{#if settings.loadingIndicatorStyle === 'skeleton'}
 			<div
@@ -88,8 +88,8 @@
 		<div
 			class={cn(
 				'shrink-0 space-y-0.5',
-				!settings.hidePaneBorders && 'border-t border-border',
-				settings.compactFolderSidebar ? 'p-1' : settings.compactSidebarShortcuts ? 'p-1.5' : 'p-2'
+				!settings.hidePaneBorders && 'border-t border-border/80',
+				settings.compactFolderSidebar ? 'p-1.5' : settings.compactSidebarShortcuts ? 'p-2' : 'p-2.5'
 			)}
 		>
 		<a

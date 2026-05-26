@@ -49,13 +49,13 @@
 
 	const rowClass = $derived(
 		cn(
-			'z-list-row flex gap-3 transition-colors',
+			'z-list-row mx-1.5 my-1 flex gap-3 rounded-md transition-all',
 			selectionMode ? 'items-center pl-4 pr-3' : 'items-start px-3',
-			!settings.hideListRowDividers && 'border-b border-border',
+			!settings.hideListRowDividers && 'border-b border-border/60',
 			settings.compactListRows ? 'py-2' : 'py-2.5',
 			selectionMode ? 'cursor-pointer' : '',
 			isCurrent && 'z-list-row--current',
-			!isCurrent && 'hover:bg-surface-sunken/70'
+			!isCurrent && 'hover:bg-surface-sunken/70 hover:shadow-sm'
 		)
 	);
 

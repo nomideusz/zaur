@@ -18,21 +18,21 @@
 	<div
 		class={cn(
 			'flex items-center justify-center gap-2 text-fg-muted',
-			compact ? 'px-3 py-4 text-xs' : 'px-4 py-8 text-sm',
+			compact ? 'px-3 py-4 text-xs' : 'px-4 py-10 text-sm',
 			className
 		)}
 		aria-busy="true"
 	>
-		<span class={cn('z-spinner', compact ? 'size-3.5' : 'size-4')} aria-hidden="true">
+		<span class={cn('z-spinner rounded-full bg-accent/10 p-1 text-accent', compact ? 'size-6' : 'size-7')} aria-hidden="true">
 			<LoaderCircle class="size-full" />
 		</span>
-		<span>{label}</span>
+		<span class="font-medium">{label}</span>
 	</div>
 {:else}
 	<p
 		class={cn(
-			'text-center text-fg-muted',
-			compact ? 'px-3 py-4 text-xs' : 'px-4 py-8 text-sm',
+			'text-center font-medium text-fg-muted',
+			compact ? 'px-3 py-4 text-xs' : 'px-4 py-10 text-sm',
 			className
 		)}
 		aria-busy="true"

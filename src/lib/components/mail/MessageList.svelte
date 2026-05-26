@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LoaderCircle, Inbox, Search } from 'lucide-svelte';
+	import { AlertCircle, LoaderCircle, Inbox, RefreshCw, Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
 	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
@@ -92,32 +92,32 @@
 	const defaultEmptyMessage = $derived.by(() => {
 		switch (mailboxRouteId) {
 			case 'inbox':
-				return 'Your inbox is empty';
+				return 'Inbox zero';
 			case 'drafts':
-				return 'No drafts';
+				return 'No drafts yet';
 			case 'sent':
-				return 'No sent messages';
+				return 'Nothing sent yet';
 			case 'trash':
-				return 'Trash is empty';
+				return 'Trash is clear';
 			case 'archive':
-				return 'Archive is empty';
+				return 'Archive is clear';
 			case 'junk':
 				return 'No junk mail';
 			default:
-				return 'No messages here';
+				return 'Nothing here yet';
 		}
 	});
 
 	const defaultEmptyHint = $derived.by(() => {
 		switch (mailboxRouteId) {
 			case 'inbox':
-				return 'New mail will show up here when it arrives.';
+				return 'New messages will appear here as soon as they arrive.';
 			case 'drafts':
-				return 'Saved drafts and unfinished messages appear here.';
+				return 'Start a message and it will be saved here automatically.';
 			case 'sent':
-				return 'Messages you send will appear here.';
+				return 'Messages you send will be collected here for easy reference.';
 			case 'trash':
-				return 'Deleted messages are kept here until emptied.';
+				return 'Deleted messages will stay here until you empty them.';
 			default:
 				return null;
 		}
@@ -133,8 +133,8 @@
 
 <section
 	class={cn(
-		'flex min-h-0 w-full max-w-none flex-1 shrink-0 flex-col bg-surface-raised md:flex-none',
-		!settings.hidePaneBorders && 'border-r border-border',
+		'm-2 flex min-h-0 w-[calc(100%-1rem)] max-w-none flex-1 shrink-0 flex-col overflow-hidden rounded-lg bg-surface-raised/90 shadow-sm md:m-3 md:mr-0 md:w-[calc(100%-1.5rem)] md:flex-none',
+		!settings.hidePaneBorders && 'border border-border',
 		expanded ? 'md:w-auto md:max-w-none md:flex-1' : 'md:w-(--width-list) md:max-w-(--width-list)',
 		hideOnMobile ? 'hidden md:flex' : 'flex'
 	)}
@@ -144,11 +144,11 @@
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 		{#if loading}
 			{#if settings.loadingIndicatorStyle === 'skeleton'}
-			<div class={cn(!settings.hideListRowDividers && 'divide-y divide-border')} aria-busy="true" aria-label="Loading messages">
+			<div class="p-1.5" aria-busy="true" aria-label="Loading messages">
 				{#each Array(settings.compactListLoadingSkeleton ? 4 : 6) as _, index (index)}
 					<div
 						class={cn(
-							'z-list-row flex items-start gap-3 px-3',
+							'z-list-row flex items-start gap-3 rounded-md px-3',
 							settings.compactListLoadingSkeleton ? 'py-2' : 'py-2.5'
 						)}
 					>
@@ -177,12 +177,21 @@
 			<div
 				class={cn(
 					'flex flex-col items-center text-center',
-					settings.compactListErrorState ? 'gap-2 px-4 py-8' : 'gap-3 px-4 py-12'
+					settings.compactListErrorState ? 'gap-2 px-4 py-8' : 'gap-3 px-5 py-12'
 				)}
 			>
-				<p class="text-sm text-danger">{error}</p>
+				<div class={cn('rounded-full bg-danger/10 text-danger', settings.compactListErrorState ? 'p-2.5' : 'p-3')}>
+					<AlertCircle class={cn(settings.compactListErrorState ? 'size-5' : 'size-6')} aria-hidden="true" />
+				</div>
+				<div>
+					<p class="text-sm font-semibold text-fg">Messages could not load</p>
+					<p class="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-fg-muted">{error}</p>
+				</div>
 				{#if onRetry && !settings.hideListErrorRetry}
-					<Button variant="ghost" class="text-sm" onclick={onRetry}>Try again</Button>
+					<Button variant="ghost" class="text-sm" onclick={onRetry}>
+						<RefreshCw class="size-4" aria-hidden="true" />
+						Try again
+					</Button>
 				{/if}
 			</div>
 		{:else if messages.length === 0}
@@ -193,16 +202,16 @@
 				)}
 			>
 				{#if emptyIcon !== 'none' && !settings.hideListEmptyHints}
-					<div class={cn('rounded-full bg-surface-sunken', settings.compactListEmptyState ? 'p-3' : 'p-4')}>
+					<div class={cn('rounded-full bg-accent/10 text-accent', settings.compactListEmptyState ? 'p-3' : 'p-4')}>
 						{#if emptyIcon === 'search'}
-							<Search class={cn('text-fg-subtle', settings.compactListEmptyState ? 'size-6' : 'size-8')} aria-hidden="true" />
+							<Search class={cn(settings.compactListEmptyState ? 'size-6' : 'size-8')} aria-hidden="true" />
 						{:else}
-							<Inbox class={cn('text-fg-subtle', settings.compactListEmptyState ? 'size-6' : 'size-8')} aria-hidden="true" />
+							<Inbox class={cn(settings.compactListEmptyState ? 'size-6' : 'size-8')} aria-hidden="true" />
 						{/if}
 					</div>
 				{/if}
 				<div>
-					<p class="text-sm font-medium text-fg">
+					<p class="text-sm font-semibold text-fg">
 						{emptyMessage ?? defaultEmptyMessage}
 					</p>
 					{#if !settings.hideListEmptyHints}

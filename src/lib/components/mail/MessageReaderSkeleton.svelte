@@ -4,7 +4,12 @@
 	import { cn } from '$lib/utils/cn';
 </script>
 
-<div class="flex min-h-0 flex-1 flex-col overflow-hidden bg-surface-raised">
+<div
+	class={cn(
+		'm-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-surface-raised/90 shadow-sm md:m-3',
+		!settings.hideReaderPaneBorders && 'border border-border'
+	)}
+>
 	{#if settings.loadingIndicatorStyle === 'skeleton'}
 		<div
 			class={cn(
@@ -16,7 +21,7 @@
 				class={cn(
 					'max-w-(--z-reader-measure)',
 					settings.compactReaderHeader || settings.compactReaderSkeleton ? 'pb-2' : 'pb-3',
-					!settings.hideReaderPaneBorders && 'border-b border-border'
+					!settings.hideReaderPaneBorders && 'border-b border-border/80'
 				)}
 			>
 				<div

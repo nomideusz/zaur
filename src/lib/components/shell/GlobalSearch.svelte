@@ -126,7 +126,7 @@
 {#if !settings.hideHeaderSearch}
 <form
 	role="search"
-	class="relative mx-auto hidden w-full max-w-md md:block"
+	class="relative mx-auto hidden w-full max-w-xl md:block"
 	onsubmit={(e) => {
 		e.preventDefault();
 		submit();
@@ -141,7 +141,7 @@
 		placeholder="Search messages or contacts…{settings.enableKeyboardShortcuts && !settings.hideComposeHints
 			? ' (/ to focus)'
 			: ''}{!settings.hideComposeHints ? ` · ${searchOperatorHint()}` : ''}"
-		class="z-input pl-9"
+		class="z-input rounded-full border-transparent bg-surface-sunken/80 pl-9 shadow-none focus:bg-surface-raised"
 		autocomplete="off"
 		bind:value={input}
 		aria-controls={showDropdown ? dropdownId : undefined}
@@ -155,7 +155,7 @@
 			id={dropdownId}
 			role="menu"
 			tabindex="-1"
-			class="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-md border border-border bg-surface-raised py-1 shadow-md"
+			class="absolute left-0 right-0 top-full z-50 mt-2 overflow-hidden rounded-lg border border-border bg-surface-raised py-1.5 shadow-md"
 			onkeydown={onMenuKeydown}
 		>
 			<button

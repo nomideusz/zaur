@@ -86,7 +86,7 @@
 
 	{#if showSuggestions}
 		<ul
-			class="absolute left-0 right-0 top-full z-20 mt-1 overflow-hidden rounded-md border border-border bg-surface-raised py-1 shadow-md"
+			class="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-lg border border-border bg-surface-raised py-1.5 shadow-md"
 			role="listbox"
 		>
 			{#each suggestions as contact, index (contact.email)}
@@ -94,7 +94,7 @@
 					<button
 						type="button"
 						class={cn(
-							'flex w-full items-center gap-2 px-3 text-left text-sm hover:bg-surface-sunken',
+							'flex w-full items-center gap-2 px-3 text-left text-sm transition-colors hover:bg-surface-sunken',
 							settings.compactComposeSuggestions ? 'py-1.5' : 'py-2',
 							index === activeIndex && 'bg-surface-sunken'
 						)}
@@ -105,7 +105,7 @@
 							<Avatar name={contact.name} email={contact.email} class="size-6 text-[10px]" />
 						{/if}
 						<span class="min-w-0 truncate">
-							<span class="text-fg">{contact.name}</span>
+							<span class="font-medium text-fg">{contact.name}</span>
 							<span class="ml-1 text-fg-muted">{contact.email}</span>
 						</span>
 					</button>

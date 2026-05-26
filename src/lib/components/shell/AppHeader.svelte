@@ -23,19 +23,19 @@
 
 <header
 	class={cn(
-		'z-panel relative z-40 flex h-(--height-header) shrink-0 items-center',
+		'z-panel relative z-40 flex h-(--height-header) shrink-0 items-center border-x-0 border-t-0',
 		settings.compactAppHeader ? 'gap-2 px-3' : 'gap-4 px-4',
 		!settings.hidePaneBorders && 'border-b'
 	)}
 	style="view-transition-name: app-header;"
 >
-	<a href={homeHref} class="z-type-brand text-base">
+	<a href={homeHref} class="z-type-brand inline-flex items-center rounded-md bg-accent/10 px-2.5 py-1 text-base text-accent">
 		<span class={settings.hideAppTitle ? 'sr-only' : ''}>ZAUR</span>
 	</a>
 
 	<ToolSwitcher />
 
-	<div class="flex-1">
+	<div class="min-w-0 flex-1">
 		<GlobalSearch />
 	</div>
 

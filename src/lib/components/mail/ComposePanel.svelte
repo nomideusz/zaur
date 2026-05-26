@@ -30,14 +30,14 @@
 	function panelShellClass(variant: 'drawer' | 'pane'): string {
 		if (variant === 'pane') {
 			return cn(
-				'flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-surface-raised',
-				!hideBorders && 'border-l border-border'
+				'm-3 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-surface-raised/95 shadow-sm',
+				!hideBorders && 'border border-border'
 			);
 		}
 
 		return cn(
-			'z-panel flex h-full min-h-0 w-full flex-col overflow-hidden shadow-md',
-			!hideBorders && 'border-l',
+			'z-panel m-2 flex h-[calc(100%-1rem)] min-h-0 w-[calc(100%-1rem)] flex-col overflow-hidden rounded-2xl shadow-md sm:m-4 sm:h-[calc(100%-2rem)] sm:w-[calc(100%-2rem)]',
+			!hideBorders && 'border',
 			DRAWER_WIDTH_CLASS[settings.composeDrawerWidth]
 		);
 	}
@@ -217,11 +217,11 @@
 	<div
 		class={panelShellClass(variant)}
 	>
-		<header class={cn('flex shrink-0 items-center justify-between px-5 py-3.5', composeBorderB)}>
+		<header class={cn('flex shrink-0 items-center justify-between gap-3 bg-surface-raised/90 px-4 py-3.5 sm:px-5', composeBorderB)}>
 			<div>
 				<h2 class="text-base font-semibold text-fg">{title}</h2>
 				{#if !settings.hideComposeHints && draftStatus}
-					<p class="text-xs text-fg-subtle">{draftStatus}</p>
+					<p class="mt-0.5 text-xs text-fg-subtle">{draftStatus}</p>
 				{/if}
 			</div>
 			<IconButton label="Close compose" onclick={close}>
@@ -236,9 +236,9 @@
 				void send();
 			}}
 		>
-			<div class={cn('shrink-0 space-y-0 bg-surface/50', composeBorderB)}>
+			<div class={cn('shrink-0 space-y-1 bg-surface/40 p-2 sm:p-3', composeBorderB)}>
 				{#if !settings.hideComposeFromLine}
-				<div class={cn('flex items-center gap-3 px-5 py-2.5 text-sm', composeBorderB)}>
+				<div class="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-accent/20 sm:gap-3">
 					<span class={fieldLabelClass}>From</span>
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-fg">
@@ -256,12 +256,12 @@
 				</div>
 				{/if}
 
-				<div class={cn('flex items-center gap-3 px-5 py-2.5 text-sm', composeBorderB)}>
+				<div class="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-accent/20 sm:gap-3">
 					<span class={fieldLabelClass}>To</span>
 					<ComposeRecipientInput
 						bind:inputElement={toInput}
 						value={compose.to}
-						placeholder="recipient@example.com"
+						placeholder="Name or email"
 						autocomplete="email"
 						oninput={(value) => (compose.to = value)}
 					/>
@@ -277,32 +277,32 @@
 				</div>
 
 				{#if compose.showCcBcc && (settings.showCcBccInCompose || compose.cc.trim() || compose.bcc.trim())}
-					<div class={cn('flex items-center gap-3 px-5 py-2.5 text-sm', composeBorderB)}>
+					<div class="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-accent/20 sm:gap-3">
 						<span class={fieldLabelClass}>Cc</span>
 						<ComposeRecipientInput
 							value={compose.cc}
-							placeholder="cc@example.com"
+							placeholder="Name or email"
 							autocomplete="email"
 							oninput={(value) => (compose.cc = value)}
 						/>
 					</div>
-					<label class={cn('flex items-center gap-3 px-5 py-2.5 text-sm', composeBorderB)}>
+					<label class="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-accent/20 sm:gap-3">
 						<span class={fieldLabelClass}>Bcc</span>
 						<ComposeRecipientInput
 							value={compose.bcc}
-							placeholder="bcc@example.com"
+							placeholder="Name or email"
 							autocomplete="email"
 							oninput={(value) => (compose.bcc = value)}
 						/>
 					</label>
 				{/if}
 
-				<label class="flex items-center gap-3 px-5 py-2.5 text-sm">
+				<label class="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-accent/20 sm:gap-3">
 					<span class={fieldLabelClass}>Subject</span>
 					<input
 						type="text"
-						class="flex-1 bg-transparent outline-none placeholder:text-fg-subtle"
-						placeholder="Subject (optional)"
+						class="min-w-0 flex-1 bg-transparent font-medium outline-none placeholder:font-normal placeholder:text-fg-subtle"
+						placeholder="Add a subject"
 						bind:value={compose.subject}
 					/>
 				</label>
@@ -311,8 +311,8 @@
 			<div class="flex min-h-0 flex-1 flex-col overflow-hidden">
 				<textarea
 					bind:this={bodyInput}
-					class="z-compose-editor min-h-0 flex-1 resize-none bg-transparent px-5 py-4 leading-relaxed outline-none placeholder:text-fg-subtle"
-					placeholder="Write your message…"
+					class="z-compose-editor min-h-0 flex-1 resize-none bg-transparent px-4 py-4 leading-relaxed outline-none placeholder:text-fg-subtle sm:px-5 sm:py-5"
+					placeholder="Write naturally..."
 					value={editableBody}
 					oninput={(e) => setEditableBody(e.currentTarget.value)}
 					onkeydown={onKeydown}
@@ -334,7 +334,7 @@
 				</p>
 			{/if}
 
-			<footer class={cn('flex shrink-0 flex-wrap items-center justify-between gap-2 px-5 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]', composeBorderT)}>
+			<footer class={cn('flex shrink-0 flex-wrap items-center justify-between gap-2 bg-surface/70 px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-5', composeBorderT)}>
 				<div class="flex flex-wrap items-center gap-3">
 					<Button variant="ghost" type="button" onclick={openFilePicker}>
 						<Paperclip class="size-4" aria-hidden="true" />
