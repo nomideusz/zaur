@@ -4,6 +4,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
 	import MessageListItem from './MessageListItem.svelte';
+	import MessageListHeader from './MessageListHeader.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import type { MessagePreview } from '$lib/types/mail';
@@ -12,6 +13,7 @@
 	interface Props {
 		messages: MessagePreview[];
 		mailboxName: string;
+		countLabel?: string;
 		mailboxRouteId?: string;
 		loading?: boolean;
 		loadingMore?: boolean;
@@ -27,11 +29,13 @@
 		expanded?: boolean;
 		onLoadMore?: () => void;
 		onRetry?: () => void;
+		onBulkAction?: () => void;
 	}
 
 	let {
 		messages,
 		mailboxName,
+		countLabel,
 		mailboxRouteId,
 		loading = false,
 		loadingMore = false,
@@ -46,7 +50,8 @@
 		hideOnMobile = false,
 		expanded = false,
 		onLoadMore,
-		onRetry
+		onRetry,
+		onBulkAction
 	}: Props = $props();
 
 	let loadSentinel = $state<HTMLDivElement | null>(null);
@@ -66,8 +71,8 @@
 	});
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	$effect(() => {
-		if (!settings.showBulkSelect && mail.selectionMode) {
-			mail.exitSelectionMode();
+		if (!settings.showBulkSelect && mail.hasSelection) {
+			mail.clearSelection();
 		}
 	});
 
@@ -129,18 +134,24 @@
 		return searchReturnTo ? `${href}?returnTo=${encodeURIComponent(searchReturnTo)}` : href;
 	}
 
+	const listExpanded = $derived(expanded || mail.hasSelection);
+
 </script>
 
 <section
 	class={cn(
-		'm-2 flex min-h-0 w-[calc(100%-1rem)] max-w-none flex-1 shrink-0 flex-col overflow-hidden rounded-lg bg-surface-raised/90 shadow-sm md:m-3 md:mr-0 md:w-[calc(100%-1.5rem)] md:flex-none',
-		!settings.hidePaneBorders && 'border border-border',
-		expanded ? 'md:w-auto md:max-w-none md:flex-1' : 'md:w-(--width-list) md:max-w-(--width-list)',
-		hideOnMobile ? 'hidden md:flex' : 'flex'
+		'z-mail-pane-surface flex min-h-0 min-w-0 flex-col',
+		listExpanded ? 'flex-1' : 'w-full md:w-(--width-list) md:max-w-(--width-list) md:flex-none',
+		hideOnMobile ? (mail.hasSelection ? 'flex' : 'hidden md:flex') : 'flex',
+		!settings.hidePaneBorders && !listExpanded && 'border-r border-border',
+		mail.hasSelection && 'bg-surface-raised/50'
 	)}
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
+	{#if mailboxRouteId && settings.showBulkSelect && !loading && !error && messages.length}
+		<MessageListHeader {mailboxName} {mailboxRouteId} {countLabel} {onBulkAction} />
+	{/if}
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 		{#if loading}
 			{#if settings.loadingIndicatorStyle === 'skeleton'}
@@ -180,8 +191,8 @@
 					settings.compactListErrorState ? 'gap-2 px-4 py-8' : 'gap-3 px-5 py-12'
 				)}
 			>
-				<div class={cn('rounded-full bg-danger/10 text-danger', settings.compactListErrorState ? 'p-2.5' : 'p-3')}>
-					<AlertCircle class={cn(settings.compactListErrorState ? 'size-5' : 'size-6')} aria-hidden="true" />
+				<div class={cn('text-danger', settings.compactListErrorState ? 'p-1' : 'p-2')}>
+					<AlertCircle class={cn(settings.compactListErrorState ? 'size-8' : 'size-10')} aria-hidden="true" />
 				</div>
 				<div>
 					<p class="text-sm font-semibold text-fg">Messages could not load</p>
@@ -202,11 +213,11 @@
 				)}
 			>
 				{#if emptyIcon !== 'none' && !settings.hideListEmptyHints}
-					<div class={cn('rounded-full bg-accent/10 text-accent', settings.compactListEmptyState ? 'p-3' : 'p-4')}>
+					<div class="text-fg-subtle">
 						{#if emptyIcon === 'search'}
-							<Search class={cn(settings.compactListEmptyState ? 'size-6' : 'size-8')} aria-hidden="true" />
+							<Search class={cn(settings.compactListEmptyState ? 'size-8' : 'size-10')} aria-hidden="true" />
 						{:else}
-							<Inbox class={cn(settings.compactListEmptyState ? 'size-6' : 'size-8')} aria-hidden="true" />
+							<Inbox class={cn(settings.compactListEmptyState ? 'size-8' : 'size-10')} aria-hidden="true" />
 						{/if}
 					</div>
 				{/if}
@@ -236,7 +247,8 @@
 					{message}
 					href={messageHref(message)}
 					active={activeThreadId === message.threadId}
-					selectionMode={mailboxRouteId ? mail.selectionMode : false}
+					showCheckboxes={!!mailboxRouteId && settings.showBulkSelect && mail.hasSelection}
+					showListGutter={!!mailboxRouteId && settings.showBulkSelect}
 					selected={mailboxRouteId ? selectedIds.includes(message.id) : false}
 					onSelect={
 						mailboxRouteId

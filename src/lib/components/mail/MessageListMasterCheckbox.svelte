@@ -6,18 +6,17 @@
 
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const allSelected = $derived(
-		mail.selectionMode &&
-			mail.messages.length > 0 &&
+		mail.messages.length > 0 &&
 			mail.messages.every((message) => selectedIds.includes(message.id))
 	);
-	const someSelected = $derived(mail.selectionMode && selectedIds.length > 0 && !allSelected);
+	const someSelected = $derived(selectedIds.length > 0 && !allSelected);
 	const checkboxState = $derived(allSelected ? 'checked' : someSelected ? 'indeterminate' : 'unchecked');
 
 	function onClick(event: MouseEvent) {
 		event.preventDefault();
 
 		if (allSelected) {
-			mail.exitSelectionMode();
+			mail.clearSelection();
 			return;
 		}
 
@@ -32,6 +31,6 @@
 	checked={allSelected}
 	aria-checked={allSelected ? 'true' : someSelected ? 'mixed' : 'false'}
 	disabled={!mail.messages.length || mail.messagesLoading}
-	aria-label={mail.selectionMode ? 'Select all messages in this list' : 'Select messages'}
+	aria-label={allSelected ? 'Deselect all messages' : 'Select all messages'}
 	onclick={onClick}
 />

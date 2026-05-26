@@ -5,6 +5,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
+	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -20,9 +21,10 @@
 	interface Props {
 		thread: MessageDetail[];
 		mailboxRouteId: string;
+		onMoved?: () => void;
 	}
 
-	let { thread, mailboxRouteId }: Props = $props();
+	let { thread, mailboxRouteId, onMoved }: Props = $props();
 
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
 
@@ -175,10 +177,7 @@
 </script>
 
 <article
-	class={cn(
-		'm-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-surface-raised/95 shadow-sm md:m-3',
-		!settings.hideReaderPaneBorders && 'border border-border'
-	)}
+	class="z-mail-pane-surface min-h-0 flex-1 overflow-hidden"
 	style="view-transition-name: message-reader;"
 >
 	{#if mail.selectedError}
@@ -224,29 +223,40 @@
 				!settings.hideReaderPaneBorders && 'border-b border-border'
 			)}
 		>
-			<div class="max-w-(--z-reader-measure)">
-				<h1
-					class={cn(
-						'z-type-reader-title',
-						settings.compactReaderHeader ? 'text-base md:text-lg' : 'text-lg md:text-xl'
-					)}
-				>
-					{subject}
-				</h1>
+			<div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between md:gap-4">
+				<div class="min-w-0 max-w-(--z-reader-measure) flex-1">
+					<h1
+						class={cn(
+							'z-type-reader-title',
+							settings.compactReaderHeader ? 'text-base md:text-lg' : 'text-lg md:text-xl'
+						)}
+					>
+						{subject}
+					</h1>
 
-				{#if thread.length > 1 && !settings.hideThreadSummary}
-					<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
-						<span>{thread.length} messages</span>
-						{#if collapsedCount > 0}
-							<button type="button" class="text-accent hover:underline" onclick={expandAll}>
-								Expand all
-							</button>
-						{:else}
-							<button type="button" class="text-accent hover:underline" onclick={collapseToLatest}>
-								Collapse earlier
-							</button>
-						{/if}
-					</div>
+					{#if thread.length > 1 && !settings.hideThreadSummary}
+						<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
+							<span>{thread.length} messages</span>
+							{#if collapsedCount > 0}
+								<button type="button" class="text-accent hover:underline" onclick={expandAll}>
+									Expand all
+								</button>
+							{:else}
+								<button type="button" class="text-accent hover:underline" onclick={collapseToLatest}>
+									Collapse earlier
+								</button>
+							{/if}
+						</div>
+					{/if}
+				</div>
+
+				{#if !mail.hasSelection}
+					<MessageThreadActions
+						{thread}
+						{mailboxRouteId}
+						{onMoved}
+						class="hidden shrink-0 md:flex"
+					/>
 				{/if}
 			</div>
 		</div>

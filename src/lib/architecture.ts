@@ -32,7 +32,15 @@ export const routeMap = {
 
 export const componentTree = {
 	shell: {
-		AppHeader: ['ToolSwitcher', 'OfflineIndicator', 'GlobalSearch', 'OutboxMenu', 'NewButton', 'UserMenu'],
+		AppShellHeader: [
+			'ToolSwitcher',
+			'MailShellHeaderContext',
+			'GlobalSearch',
+			'OfflineIndicator',
+			'OutboxMenu',
+			'NewButton',
+			'UserMenu'
+		],
 		AppSidebar: 'settings navigation when in /settings'
 	},
 	calendar: {
@@ -43,7 +51,7 @@ export const componentTree = {
 	},
 	mail: {
 		MailLayout: ['MailboxSidebar', 'MailPane'],
-		MailPane: ['MailPaneToolbar', 'MessageList', 'MessageReader | MessageReaderEmpty'],
+		MailPane: ['MessageList', 'MessageReader | MessageReaderEmpty'],
 		MailboxSidebar: ['MailboxTree', 'MailboxItem'],
 		MessageList: ['MessageListItem'],
 		MessageReader: ['ReaderTitle', 'ReaderBody'],

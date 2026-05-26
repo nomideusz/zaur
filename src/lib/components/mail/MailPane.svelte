@@ -1,9 +1,11 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import { onDestroy } from 'svelte';
 	import { setContext } from 'svelte';
 	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
-	import MailPaneToolbar from '$lib/components/mail/MailPaneToolbar.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
+	import { mail } from '$lib/stores/mail.svelte';
+	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
@@ -48,6 +50,24 @@
 			showImagesOnce = value;
 		}
 	});
+
+	$effect(() => {
+		shellHeader.setMail({
+			mailboxName,
+			countLabel,
+			mailboxRouteId,
+			loading,
+			error,
+			messageCount,
+			onBulkAction,
+			onBack,
+			showNewMessage
+		});
+	});
+
+	onDestroy(() => {
+		shellHeader.clearMail();
+	});
 </script>
 
 <MailboxSidebar />
@@ -59,20 +79,10 @@
 		className
 	)}
 >
-	<MailPaneToolbar
-		{mailboxName}
-		{countLabel}
-		{mailboxRouteId}
-		{loading}
-		{error}
-		{messageCount}
-		{onBulkAction}
-		{onBack}
-		{showNewMessage}
-	/>
-
 	<div class="z-mail-pane-body flex min-h-0 flex-1 overflow-hidden">
 		{@render list()}
-		{@render reader()}
+		{#if !mail.hasSelection}
+			{@render reader()}
+		{/if}
 	</div>
 </div>

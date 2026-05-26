@@ -507,7 +507,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 	{
 		"id": "/settings/inbox-compact-list-header",
 		"href": "/settings/inbox",
-		"title": "Compact mail pane toolbar",
+		"title": "Compact selection bar",
 		"description": ""
 	},
 	{
@@ -987,7 +987,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 	{
 		"id": "/settings/reading-minimal-reader-toolbar",
 		"href": "/settings/reading",
-		"title": "Minimal reader toolbar",
+		"title": "Icon-only thread actions",
 		"description": ""
 	},
 	{

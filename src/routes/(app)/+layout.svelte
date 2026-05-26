@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import AppHeader from '$lib/components/shell/AppHeader.svelte';
+	import AppShellHeader from '$lib/components/shell/AppShellHeader.svelte';
 	import { pushListener } from '$lib/jmap/push-listener';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -52,7 +52,7 @@
 	</div>
 {:else if auth.isAuthenticated}
 	<div class="flex h-dvh flex-col overflow-hidden">
-		<AppHeader />
+		<AppShellHeader />
 		<main id="main-content" class="flex min-h-0 flex-1 flex-col overflow-hidden" tabindex="-1">
 			{@render children()}
 		</main>

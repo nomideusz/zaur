@@ -1,10 +1,11 @@
 <script lang="ts">
-	import { Settings, Users } from 'lucide-svelte';
+	import { Calendar, Settings, Users, PenSquare } from 'lucide-svelte';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
 	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
 	import MailboxTreeItem from './MailboxTreeItem.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { calendar } from '$lib/stores/calendar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { buildMailboxTree } from '$lib/utils/mailbox-tree';
 	import { cn } from '$lib/utils/cn';
@@ -15,8 +16,8 @@
 
 <aside
 	class={cn(
-		'm-3 mr-0 hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden rounded-lg bg-surface-raised/90 shadow-sm md:flex',
-		!settings.hidePaneBorders && 'border border-border'
+		'z-mail-pane-surface hidden w-(--width-sidebar) shrink-0 overflow-hidden md:flex',
+		!settings.hidePaneBorders && 'border-r border-border'
 	)}
 	style="view-transition-name: mail-sidebar;"
 	aria-label="Folders"
@@ -24,12 +25,14 @@
 	<div
 		class={cn(
 			'shrink-0',
-			settings.compactFolderSidebarHeader ? 'px-3 py-2' : 'px-4 py-3',
-			!settings.hidePaneBorders && 'border-b border-border/80',
-			settings.hideFolderSidebarHeader ? 'sr-only' : ''
+			settings.compactFolderSidebarHeader ? 'px-3 py-2' : 'px-3 py-3',
+			!settings.hidePaneBorders && 'border-b border-border/80'
 		)}
 	>
-		<h2 class="z-type-label">Folders</h2>
+		<Button href="/mail/compose" class="w-full">
+			<PenSquare class="size-5" aria-hidden="true" />
+			New message
+		</Button>
 	</div>
 
 	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto {settings.compactFolderSidebar ? 'p-1.5' : 'p-2.5'}">
@@ -96,25 +99,41 @@
 			href="/contacts"
 			aria-current={$page.url.pathname.startsWith('/contacts') ? 'page' : undefined}
 			class={cn(
-				'flex items-center gap-2 rounded-md px-3 text-sm transition-colors',
+				'flex items-center gap-2 rounded-sm px-3 text-sm transition-colors',
 				settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',
 				$page.url.pathname.startsWith('/contacts')
 					? 'bg-surface-sunken font-medium text-fg'
-					: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
+					: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
 			)}
 		>
 			<Users class="size-4 shrink-0" aria-hidden="true" />
 			Contacts
 		</a>
+		{#if !settings.mailOnlyNavigation && calendar.supported !== false}
+			<a
+				href="/calendar"
+				aria-current={$page.url.pathname.startsWith('/calendar') ? 'page' : undefined}
+				class={cn(
+					'flex items-center gap-2 rounded-sm px-3 text-sm transition-colors',
+					settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',
+					$page.url.pathname.startsWith('/calendar')
+						? 'bg-surface-sunken font-medium text-fg'
+						: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
+				)}
+			>
+				<Calendar class="size-4 shrink-0" aria-hidden="true" />
+				Calendar
+			</a>
+		{/if}
 		<a
 			href="/settings/appearance"
 			aria-current={$page.url.pathname.startsWith('/settings') ? 'page' : undefined}
 			class={cn(
-				'flex items-center gap-2 rounded-md px-3 text-sm transition-colors',
+				'flex items-center gap-2 rounded-sm px-3 text-sm transition-colors',
 				settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',
 				$page.url.pathname.startsWith('/settings')
 					? 'bg-surface-sunken font-medium text-fg'
-					: 'text-fg-muted hover:bg-surface-sunken hover:text-fg'
+					: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
 			)}
 		>
 			<Settings class="size-4 shrink-0" aria-hidden="true" />

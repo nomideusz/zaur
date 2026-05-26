@@ -25,8 +25,8 @@
 	--radius-md: 0.75rem;
 	--radius-lg: 1rem;
 
-	--shadow-sm: 0 1px 2px rgb(15 23 42 / 0.05), 0 1px 1px rgb(15 23 42 / 0.03);
-	--shadow-md: 0 12px 32px rgb(15 23 42 / 0.08), 0 2px 8px rgb(15 23 42 / 0.04);
+	--shadow-sm: 0 1px 2px rgb(0 0 0 / 0.03);
+	--shadow-md: 0 4px 16px rgb(0 0 0 / 0.06);
 
 	--width-sidebar: 15rem;
 	--width-list: 22rem;
@@ -36,25 +36,25 @@
 :root {
 	color-scheme: light;
 
-	--z-surface: #f6f7fb;
+	--z-surface: #fbfbfa;
 	--z-surface-raised: #ffffff;
-	--z-surface-sunken: #eef2f7;
-	--z-border: #e1e6ef;
-	--z-border-strong: #cbd4e1;
-	--z-fg: #172033;
-	--z-fg-muted: #5b667a;
-	--z-fg-subtle: #8a95a7;
-	--z-accent: #2563eb;
-	--z-accent-hover: #1d4ed8;
+	--z-surface-sunken: #f7f6f3;
+	--z-border: #eaeaea;
+	--z-border-strong: #d8d8d8;
+	--z-fg: #2f3437;
+	--z-fg-muted: #787774;
+	--z-fg-subtle: #9b9a97;
+	--z-accent: #2f3437;
+	--z-accent-hover: #111111;
 	--z-accent-fg: #ffffff;
-	--z-unread: #2563eb;
-	--z-star: #d97706;
-	--z-danger: #dc2626;
+	--z-unread: #2f3437;
+	--z-star: #956400;
+	--z-danger: #9f2f2d;
 
-	--z-list-row: 4.25rem;
-	--z-list-text: 0.875rem;
+	--z-list-row: 4rem;
+	--z-list-text: 1rem;
 	--z-reader-measure: 42rem;
-	--z-reader-text: 0.875rem;
+	--z-reader-text: 1rem;
 
 	--z-scrollbar-size: 0.625rem;
 	--z-scrollbar-track: transparent;
@@ -65,18 +65,19 @@
 :root.dark {
 	color-scheme: dark;
 
-	--z-surface: #0d1219;
-	--z-surface-raised: #151c27;
-	--z-surface-sunken: #0a0f16;
-	--z-border: #263140;
-	--z-border-strong: #38465a;
-	--z-fg: #edf2f8;
-	--z-fg-muted: #a6b0c1;
-	--z-fg-subtle: #737f92;
-	--z-accent: #3b82f6;
-	--z-accent-hover: #2563eb;
-	--z-unread: #60a5fa;
-	--z-star: #fbbf24;
+	--z-surface: #111111;
+	--z-surface-raised: #1a1a1a;
+	--z-surface-sunken: #0d0d0d;
+	--z-border: #2a2a2a;
+	--z-border-strong: #3a3a3a;
+	--z-fg: #ededec;
+	--z-fg-muted: #a8a8a6;
+	--z-fg-subtle: #787774;
+	--z-accent: #ededec;
+	--z-accent-hover: #ffffff;
+	--z-accent-fg: #111111;
+	--z-unread: #ededec;
+	--z-star: #d4a017;
 
 	--z-scrollbar-thumb: color-mix(in srgb, var(--z-border-strong) 88%, transparent);
 	--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 58%, transparent);
@@ -175,9 +176,6 @@
 
 	body {
 		@apply bg-surface text-fg;
-		background:
-			radial-gradient(circle at top left, color-mix(in srgb, var(--z-accent) 12%, transparent), transparent 28rem),
-			linear-gradient(180deg, color-mix(in srgb, var(--z-surface-raised) 55%, var(--z-surface)), var(--z-surface) 16rem);
 		margin: 0;
 		min-height: 100dvh;
 	}
@@ -213,6 +211,14 @@
 
 	::selection {
 		background: color-mix(in srgb, var(--z-accent) 25%, transparent);
+	}
+
+	:where(a[href], button, label:has(input:not([type='hidden'])), select, summary, [role='button'], [role='menuitem'], [role='option'], [role='tab']) {
+		cursor: pointer;
+	}
+
+	:where(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']), textarea) {
+		cursor: text;
 	}
 
 	:where(a, button, input, textarea, select, [role='button']):focus-visible {
@@ -264,8 +270,11 @@
 
 @layer components {
 	.z-panel {
-		@apply border border-border bg-surface-raised/95 shadow-sm;
-		backdrop-filter: blur(16px);
+		@apply border-b border-border bg-surface-raised;
+	}
+
+	.z-mail-pane-surface {
+		@apply flex min-h-0 flex-col bg-surface-raised;
 	}
 
 	.z-mail-reader-pane {
@@ -294,11 +303,6 @@
 		@apply flex min-h-0 flex-1 flex-col;
 	}
 
-	.z-mail-pane-toolbar {
-		@apply bg-surface-raised/90;
-		backdrop-filter: blur(14px);
-	}
-
 	.z-pane-scroll {
 		overscroll-behavior-y: contain;
 	}
@@ -308,6 +312,35 @@
 	}
 
 	.z-pane-scroll:hover::-webkit-scrollbar-thumb {
+		background-color: var(--z-scrollbar-thumb-hover);
+	}
+
+	.z-overflow-menu {
+		@apply absolute right-0 z-20 mt-2 w-72 min-w-64 overflow-hidden rounded-lg border border-border bg-surface-raised py-2;
+	}
+
+	.z-overflow-menu-label {
+		@apply px-4 py-2 text-xs font-medium tracking-wide text-fg-subtle uppercase;
+	}
+
+	.z-overflow-menu-item {
+		@apply flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-fg hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50;
+	}
+
+	.z-overflow-menu-item--danger {
+		@apply text-danger;
+	}
+
+	.z-overflow-menu-scroll {
+		@apply max-h-[min(50vh,20rem)] overflow-y-auto overscroll-contain py-1;
+		overscroll-behavior-y: contain;
+	}
+
+	.z-overflow-menu-scroll:hover {
+		scrollbar-color: var(--z-scrollbar-thumb-hover) var(--z-scrollbar-track);
+	}
+
+	.z-overflow-menu-scroll:hover::-webkit-scrollbar-thumb {
 		background-color: var(--z-scrollbar-thumb-hover);
 	}
 
@@ -341,15 +374,15 @@
 	}
 
 	.z-btn-primary {
-		@apply inline-flex items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-accent-fg shadow-sm transition-all hover:-translate-y-px hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:translate-y-0;
+		@apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-sm bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.98];
 	}
 
 	.z-btn-ghost {
-		@apply inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-surface-sunken hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+		@apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-sm px-3 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-surface-sunken hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
 	}
 
 	.z-input {
-		@apply w-full rounded-md border border-border bg-surface-raised px-3 py-2 text-base text-fg shadow-sm placeholder:text-fg-subtle focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/20 md:text-sm;
+		@apply w-full rounded-sm border border-border bg-surface-raised px-3 py-2 text-base text-fg placeholder:text-fg-subtle focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-border-strong md:text-sm;
 	}
 
 	.z-checkbox {
@@ -404,11 +437,11 @@
 	}
 
 	.z-list-row--current:not([data-hide-active-indicator])::before {
-		background-color: var(--z-accent);
+		background-color: var(--z-fg);
 	}
 
 	.z-list-row--current:not([data-hide-active-indicator]) {
-		background-color: color-mix(in srgb, var(--z-accent) 9%, var(--z-surface-raised));
+		background-color: var(--z-surface-sunken);
 	}
 
 	.z-list-text {
@@ -424,28 +457,36 @@
 	}
 
 	.z-type-pane-title {
-		@apply truncate text-sm font-semibold tracking-tight text-fg;
+		@apply truncate text-sm font-medium text-fg;
+	}
+
+	.z-mail-list-header {
+		@apply relative z-10 flex h-11 min-h-11 shrink-0 items-center gap-2 border-b border-border px-4;
+	}
+
+	.z-mail-list-header--compact {
+		@apply h-10 min-h-10;
 	}
 
 	.z-type-reader-title {
-		@apply font-bold tracking-tight leading-snug text-fg;
+		@apply text-lg font-semibold leading-snug tracking-tight text-fg md:text-xl;
 	}
 
 	.z-type-list-sender {
-		@apply truncate text-xs font-medium text-fg-muted;
+		@apply truncate text-sm text-fg-muted;
 	}
 
 	.z-type-list-subject {
-		@apply truncate font-semibold tracking-tight text-fg;
+		@apply truncate font-medium tracking-tight text-fg;
 		font-size: var(--z-list-text);
 	}
 
 	.z-type-list-subject--unread {
-		@apply font-bold;
+		@apply font-semibold;
 	}
 
 	.z-type-list-preview {
-		@apply mt-1 truncate text-xs leading-snug text-fg-subtle;
+		@apply mt-0.5 truncate text-sm leading-snug text-fg-subtle;
 	}
 
 	.z-type-list-time {

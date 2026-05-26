@@ -112,10 +112,14 @@ class MailStore {
 	selectedLoading = $state(false);
 	selectedError = $state<string | null>(null);
 
-	selectionMode = $state(false);
 	selectedMessageIds = $state<Set<string>>(new Set());
 	selectionAnchorId = $state<string | null>(null);
 	bulkActionLoading = $state(false);
+
+	/** True when one or more list messages are checked. */
+	get hasSelection() {
+		return this.selectedMessageIds.size > 0;
+	}
 
 	/** In-flight keyword changes the server may not have echoed yet. */
 	private pendingKeywords = new Map<string, { starred?: boolean; unread?: boolean }>();
@@ -470,35 +474,18 @@ class MailStore {
 		}
 	}
 
-	enterSelectionMode(initialMessageId?: string | null) {
-		let messageId = initialMessageId ?? null;
-		if (!messageId && this.selectedThreadId) {
-			messageId = this.messages.find((message) => message.threadId === this.selectedThreadId)?.id ?? null;
-		}
-
-		this.selectionMode = true;
-		if (messageId) {
-			this.selectedMessageIds = new Set([messageId]);
-			this.selectionAnchorId = messageId;
-		} else {
-			this.selectedMessageIds = new Set();
-			this.selectionAnchorId = null;
-		}
-	}
-
-	exitSelectionMode() {
-		this.selectionMode = false;
+	clearSelection() {
 		this.selectedMessageIds = new Set();
 		this.selectionAnchorId = null;
+		this.bulkActionLoading = false;
 	}
 
 	private applySelection(next: Set<string>, anchor: string | null) {
 		if (next.size === 0) {
-			this.exitSelectionMode();
+			this.clearSelection();
 			return;
 		}
 
-		this.selectionMode = true;
 		this.selectedMessageIds = next;
 		this.selectionAnchorId = anchor;
 	}
@@ -512,7 +499,7 @@ class MailStore {
 
 		const shift = options.shift ?? false;
 		const ctrl = options.ctrl ?? false;
-		const wasSelecting = this.selectionMode;
+		const wasSelecting = this.selectedMessageIds.size > 0;
 
 		if (!wasSelecting && !shift && !ctrl) return;
 
@@ -558,10 +545,6 @@ class MailStore {
 	}
 
 	toggleMessageSelection(messageId: string) {
-		if (!this.selectionMode) {
-			this.selectionMode = true;
-		}
-
 		const next = new Set(this.selectedMessageIds);
 		if (next.has(messageId)) next.delete(messageId);
 		else next.add(messageId);
@@ -569,14 +552,29 @@ class MailStore {
 	}
 
 	selectAllMessages() {
-		this.selectionMode = true;
 		this.selectedMessageIds = new Set(this.messages.map((message) => message.id));
 		this.selectionAnchorId = this.messages[0]?.id ?? null;
 	}
 
-	clearSelection() {
-		this.exitSelectionMode();
-		this.bulkActionLoading = false;
+	selectMessagesByFilter(filter: 'all' | 'read' | 'unread' | 'none') {
+		if (filter === 'none') {
+			this.clearSelection();
+			return;
+		}
+
+		const matching = this.messages.filter((message) => {
+			if (filter === 'all') return true;
+			if (filter === 'read') return !message.unread;
+			return message.unread;
+		});
+
+		if (!matching.length) {
+			this.clearSelection();
+			return;
+		}
+
+		this.selectedMessageIds = new Set(matching.map((message) => message.id));
+		this.selectionAnchorId = matching[0]?.id ?? null;
 	}
 
 	async bulkArchive(client: JMAPClient) {

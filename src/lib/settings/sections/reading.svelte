@@ -232,10 +232,10 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Toolbar buttons" description="Action buttons in the mail pane toolbar when reading a message." advanced>
+<SettingsGroup title="Thread actions" description="Buttons when reading a message — primary actions in the reader header, more in the ⋮ menu." advanced>
 	<SettingsRow
-		title="Minimal reader toolbar"
-		description="Hide star, reply all, and forward — reply, archive, move, and delete stay available"
+		title="Icon-only thread actions"
+		description="Show Mark read and Reply as icons only — hide text labels on the thread toolbar"
 	>
 		<input
 			type="checkbox"
@@ -248,12 +248,12 @@
 	<SettingsDepends
 		enabled={!settings.minimalReaderToolbar}
 		inactiveReason={settings.minimalReaderToolbar
-			? 'Toolbar is already minimal — fewer buttons to space'
-			: 'Mail pane toolbar spacing'}
+			? 'Thread actions are icon-only'
+			: 'Thread toolbar spacing'}
 	>
 		<SettingsRow
-			title="Compact toolbar actions"
-			description="Tighter spacing between action buttons in the mail pane toolbar"
+			title="Compact thread actions"
+			description="Tighter spacing between buttons in the thread toolbar"
 		>
 			<input
 				type="checkbox"
@@ -265,10 +265,10 @@
 	</SettingsDepends>
 </SettingsGroup>
 
-<SettingsGroup title="Move to folder" description="Folder picker when moving messages from the mail pane toolbar." advanced>
+<SettingsGroup title="Move to folder" description="Folder picker in the ⋮ menu when moving messages." advanced>
 	<SettingsRow
 		title="Hide move menu labels"
-		description="Remove the “Move to” heading in folder move dropdowns in the mail pane toolbar"
+		description="Remove the “Move to” heading in folder move dropdowns"
 	>
 		<input
 			type="checkbox"
@@ -286,7 +286,7 @@
 	>
 		<SettingsRow
 			title="Compact move menu"
-			description="Tighter spacing in folder move dropdowns from the mail pane toolbar"
+			description="Tighter spacing in folder move dropdowns"
 		>
 			<input
 				type="checkbox"

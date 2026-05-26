@@ -205,10 +205,10 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Mail pane toolbar" description="Folder title, counts, and mobile folder picker in the bar above the list and reader.">
+<SettingsGroup title="App header (mail)" description="Folder name, counts, and mobile folder picker in the top bar while reading mail.">
 	<SettingsRow
 		title="Show message counts"
-		description="Unread and total counts in the mail pane toolbar"
+		description="Unread and total counts next to the folder name in the app header"
 	>
 		<input
 			type="checkbox"
@@ -220,7 +220,7 @@
 
 	<SettingsRow
 		title="Hide folder title on desktop"
-		description="Hide the folder name and count in the mail pane toolbar on desktop — checkbox and actions stay visible"
+		description="Hide the folder name and count in the app header on desktop — search and account stay visible"
 	>
 		<input
 			type="checkbox"
@@ -230,28 +230,21 @@
 		/>
 	</SettingsRow>
 
-	<SettingsDepends
-		enabled={!settings.hideListHeader}
-		inactiveReason={settings.hideListHeader
-			? 'Folder title is hidden on desktop'
-			: 'Mail pane toolbar height'}
+	<SettingsRow
+		title="Compact selection bar"
+		description="Shorter bar at the top of the message list for bulk select"
 	>
-		<SettingsRow
-			title="Compact mail pane toolbar"
-			description="Shorter toolbar above the list and reader"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactListHeader}
-				onchange={(e) => settings.setCompactListHeader(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-	</SettingsDepends>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactListHeader}
+			onchange={(e) => settings.setCompactListHeader(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 
 	<SettingsRow
 		title="Compact mobile folder picker"
-		description="Smaller folder dropdown in the mail pane toolbar on mobile"
+		description="Smaller folder dropdown in the app header on mobile"
 	>
 		<input
 			type="checkbox"
@@ -262,10 +255,10 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Bulk selection" description="Multi-select messages for archive, move, and delete.">
+<SettingsGroup title="Bulk selection" description="Multi-select for archive, move, and delete — hidden until you choose Select messages or Shift+click.">
 	<SettingsRow
-		title="Show bulk select"
-		description="Toolbar checkbox selects all loaded messages; Ctrl/Shift+click to build a partial selection"
+		title="Enable bulk select"
+		description="Checkbox at the top of the message list with All, Read, Unread, or None. First click selects all loaded messages."
 	>
 		<input
 			type="checkbox"
@@ -283,7 +276,7 @@
 	>
 		<SettingsRow
 			title="Hide selection hints"
-			description="Remove the “Ctrl or Shift+click to add messages” hint in bulk selection mode"
+			description="Remove keyboard shortcut hints in the message list selection bar"
 		>
 			<input
 				type="checkbox"

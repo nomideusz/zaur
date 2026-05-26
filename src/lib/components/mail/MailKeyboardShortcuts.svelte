@@ -132,9 +132,9 @@
 			if (!settings.enableKeyboardShortcuts) return;
 			if (isTypingTarget(event.target)) return;
 
-			if (event.key === 'Escape' && mail.selectionMode) {
+			if (event.key === 'Escape' && mail.hasSelection) {
 				event.preventDefault();
-				mail.exitSelectionMode();
+				mail.clearSelection();
 				return;
 			}
 

@@ -25,7 +25,7 @@
 
 <button
 	type="button"
-	class={cn('z-btn-ghost p-2', className)}
+	class={cn('z-btn-ghost min-h-10 min-w-10 cursor-pointer p-2.5', className)}
 	aria-label={label}
 	aria-expanded={ariaExpanded}
 	aria-controls={ariaControls}

@@ -50,11 +50,11 @@
 	<a
 		{href}
 		class={cn(
-			'flex items-center gap-2.5 rounded-md text-sm transition-all',
+			'flex items-center gap-2.5 rounded-sm text-sm transition-colors',
 			settings.compactFolderSidebar ? 'py-1.5' : 'py-2',
 			isActive
-				? 'bg-accent/10 font-semibold text-fg shadow-sm'
-				: 'text-fg-muted hover:bg-surface-sunken/80 hover:text-fg'
+				? 'bg-surface-sunken font-medium text-fg'
+				: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
 		)}
 		style="padding-left: {0.75 + depth * (settings.compactFolderTree ? 0.5 : 0.75)}rem; padding-right: 0.75rem;"
 		aria-current={isActive ? 'page' : undefined}

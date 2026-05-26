@@ -58,6 +58,7 @@
 		<MessageList
 			messages={mail.messages}
 			{mailboxName}
+			{countLabel}
 			mailboxRouteId={data.mailboxId}
 			hideOnMobile
 			loading={mail.messagesLoading}
@@ -71,6 +72,7 @@
 			onRetry={() => {
 				if (auth.client) void mail.loadMessages(auth.client, data.mailboxId, { force: true });
 			}}
+			onBulkAction={afterMove}
 		/>
 	{/snippet}
 	{#snippet reader()}
@@ -80,7 +82,7 @@
 			</div>
 		{:else if thread.length}
 			<div class="z-mail-reader-pane">
-				<MessageReader {thread} mailboxRouteId={data.mailboxId} />
+				<MessageReader {thread} mailboxRouteId={data.mailboxId} onMoved={afterMove} />
 			</div>
 		{:else}
 			<div class="z-mail-reader-pane">

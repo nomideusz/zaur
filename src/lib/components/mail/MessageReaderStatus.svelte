@@ -27,12 +27,11 @@
 
 <div
 	class={cn(
-		'm-2 flex min-h-0 flex-1 flex-col items-center justify-center rounded-lg bg-surface-raised/90 text-center shadow-sm md:m-3',
-		!settings.hideReaderPaneBorders && 'border border-border',
+		'z-mail-pane-surface min-h-0 flex-1 items-center justify-center text-center',
 		settings.compactReaderStatus ? 'gap-3 p-4' : 'gap-4 p-8'
 	)}
 >
-	<div class={cn('rounded-full bg-accent/10 text-accent', settings.compactReaderStatus ? 'p-3' : 'p-4')}>
+	<div class={cn('text-fg-subtle', settings.compactReaderStatus ? 'p-1' : 'p-2')}>
 		{#if isOffline}
 			<WifiOff class={cn(settings.compactReaderStatus ? 'size-6' : 'size-8')} aria-hidden="true" />
 		{:else if isNotFound}

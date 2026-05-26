@@ -10,8 +10,9 @@
 		message: MessagePreview;
 		active?: boolean;
 		href: string;
-		selectionMode?: boolean;
+		showCheckboxes?: boolean;
 		selected?: boolean;
+		showListGutter?: boolean;
 		onSelect?: (modifiers: { shift: boolean; ctrl: boolean }) => void;
 	}
 
@@ -19,8 +20,9 @@
 		message,
 		active = false,
 		href,
-		selectionMode = false,
+		showCheckboxes = false,
 		selected = false,
+		showListGutter = false,
 		onSelect
 	}: Props = $props();
 
@@ -46,23 +48,25 @@
 
 	const hideActiveIndicator = $derived(settings.hideListActiveIndicator);
 	const isCurrent = $derived(active || selected);
+	const showAvatarUnreadBadge = $derived(
+		settings.highlightUnreadInList && message.unread && !showListGutter
+	);
 
 	const rowClass = $derived(
 		cn(
-			'z-list-row mx-1.5 my-1 flex gap-3 rounded-md transition-all',
-			selectionMode ? 'items-center pl-4 pr-3' : 'items-start px-3',
-			!settings.hideListRowDividers && 'border-b border-border/60',
+			'z-list-row flex items-start gap-3 px-4 transition-[background-color] duration-150 ease-out',
+			showCheckboxes && 'cursor-pointer',
+			!settings.hideListRowDividers && 'border-b border-border',
 			settings.compactListRows ? 'py-2' : 'py-2.5',
-			selectionMode ? 'cursor-pointer' : '',
 			isCurrent && 'z-list-row--current',
-			!isCurrent && 'hover:bg-surface-sunken/70 hover:shadow-sm'
+			!isCurrent && 'hover:bg-surface-sunken/60'
 		)
 	);
 
 	function handleSelect(event: MouseEvent) {
 		const shift = event.shiftKey;
 		const ctrl = event.ctrlKey || event.metaKey;
-		if (!selectionMode && !shift && !ctrl) return;
+		if (!showCheckboxes && !shift && !ctrl) return;
 		event.preventDefault();
 		onSelect?.({ shift, ctrl });
 	}
@@ -92,6 +96,25 @@
 	}
 </script>
 
+{#snippet listMarker()}
+	{#if showListGutter}
+		<div class="mt-2.5 flex h-4 w-4 shrink-0 items-center justify-center">
+			{#if showCheckboxes}
+				<input
+					type="checkbox"
+					class="z-checkbox shrink-0"
+					checked={selected}
+					onclick={(event) => event.stopPropagation()}
+					onchange={handleCheckboxChange}
+					aria-label="Select {displaySubject}"
+				/>
+			{:else if message.unread}
+				<span class="size-2 rounded-full bg-unread" aria-label="Unread"></span>
+			{/if}
+		</div>
+	{/if}
+{/snippet}
+
 {#snippet avatar()}
 	{#if settings.showAvatars}
 		<div class="relative shrink-0">
@@ -100,18 +123,15 @@
 				email={message.from.email}
 				class={cn('mt-0.5', settings.compactListAvatars ? 'size-7' : 'size-8')}
 			/>
-			{#if settings.highlightUnreadInList && message.unread}
+			{#if showAvatarUnreadBadge}
 				<span
 					class="absolute -right-0.5 -top-0.5 size-2 rounded-full bg-unread ring-2 ring-surface-raised"
 					aria-label="Unread"
 				></span>
 			{/if}
 		</div>
-	{:else if settings.highlightUnreadInList && message.unread}
-		<span
-			class="mt-2 size-2 shrink-0 rounded-full bg-unread"
-			aria-label="Unread"
-		></span>
+	{:else if showAvatarUnreadBadge}
+		<span class="mt-2 size-2 shrink-0 rounded-full bg-unread" aria-label="Unread"></span>
 	{/if}
 {/snippet}
 
@@ -165,7 +185,7 @@
 	</div>
 {/snippet}
 
-{#if selectionMode}
+{#if showCheckboxes}
 	<div
 		class={rowClass}
 		data-hide-active-indicator={hideActiveIndicator || undefined}
@@ -177,14 +197,7 @@
 		onclick={handleSelect}
 		onkeydown={handleSelectKey}
 	>
-		<input
-			type="checkbox"
-			class="z-checkbox shrink-0"
-			checked={selected}
-			onclick={(e) => e.stopPropagation()}
-			onchange={handleCheckboxChange}
-			aria-label="Select {message.subject}"
-		/>
+		{@render listMarker()}
 		{@render content()}
 	</div>
 {:else}
@@ -200,6 +213,7 @@
 		onclick={handleSelect}
 		onkeydown={handleSelectKey}
 	>
+		{@render listMarker()}
 		{@render content()}
 	</a>
 {/if}

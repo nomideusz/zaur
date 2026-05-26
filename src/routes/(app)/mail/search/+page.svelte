@@ -94,6 +94,7 @@
 		<MessageList
 			messages={search.results}
 			{mailboxName}
+			{countLabel}
 			expanded={settings.expandListUntilOpen}
 			loading={search.loading}
 			loadingMore={search.loadingMore}

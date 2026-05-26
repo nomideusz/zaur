@@ -4,12 +4,7 @@
 	import { cn } from '$lib/utils/cn';
 </script>
 
-<div
-	class={cn(
-		'm-2 flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg bg-surface-raised/90 shadow-sm md:m-3',
-		!settings.hideReaderPaneBorders && 'border border-border'
-	)}
->
+<div class="z-mail-pane-surface min-h-0 flex-1 overflow-hidden">
 	{#if settings.loadingIndicatorStyle === 'skeleton'}
 		<div
 			class={cn(

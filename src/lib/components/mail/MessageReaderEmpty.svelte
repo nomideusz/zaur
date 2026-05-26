@@ -25,17 +25,14 @@
 
 <div
 	class={cn(
-		'm-2 flex min-h-0 flex-1 flex-col items-center justify-center rounded-lg bg-surface-raised/90 text-center shadow-sm md:m-3',
-		!settings.hideReaderPaneBorders && 'border border-border',
+		'z-mail-pane-surface min-h-0 flex-1 items-center justify-center text-center',
 		settings.compactEmptyReader ? 'gap-3 p-4' : 'gap-4 p-8'
 	)}
 >
 	{#if showPrompts}
-		{#if !settings.hideEmptyReaderIcon}
-		<div class={cn('rounded-full bg-accent/10 text-accent', settings.compactEmptyReader ? 'p-3' : 'p-4')}>
-			<Mail class={cn(settings.compactEmptyReader ? 'size-6' : 'size-8')} aria-hidden="true" />
-		</div>
-		{/if}
+	{#if !settings.hideEmptyReaderIcon}
+		<Mail class={cn('text-fg-subtle', settings.compactEmptyReader ? 'size-8' : 'size-10')} aria-hidden="true" />
+	{/if}
 		<div>
 			<h2 class={cn('font-semibold text-fg', settings.compactEmptyReader ? 'text-base' : 'text-lg')}>{title}</h2>
 			{#if !settings.hideEmptyReaderDescription}

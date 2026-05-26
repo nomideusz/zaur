@@ -41,9 +41,9 @@
 </svelte:head>
 
 <div class="flex min-h-dvh items-center justify-center px-4 py-10">
-	<div class="z-panel w-full max-w-md rounded-2xl p-6 shadow-md sm:p-8">
+	<div class="z-panel w-full max-w-md rounded-lg border border-border p-6 sm:p-8">
 		<div class="mb-7 text-center">
-			<p class="z-type-brand mx-auto inline-flex rounded-lg bg-accent/10 px-3 py-1.5 text-2xl text-accent">ZAUR</p>
+			<p class="z-type-brand text-2xl text-fg">ZAUR</p>
 			<p class="mt-3 text-sm font-medium text-fg">Private, focused email</p>
 			<p class="mt-1 text-sm text-fg-muted">Sign in to {appConfig.jmapServerUrl.replace('https://', '')}</p>
 		</div>

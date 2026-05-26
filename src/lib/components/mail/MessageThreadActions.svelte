@@ -15,7 +15,9 @@
 	} from 'lucide-svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
-	import MoveToMenu from '$lib/components/mail/MoveToMenu.svelte';
+	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
+	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
+	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
@@ -42,8 +44,12 @@
 	const isDraft = $derived(mailboxRouteId === 'drafts');
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
+	const markReadLabel = $derived(latest?.unread ? 'Mark read' : 'Mark unread');
 	const primaryReplyLabel = $derived(
 		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
+	);
+	const toolbarButtonClass = $derived(
+		cn('shrink-0 !h-9 !px-3 !text-sm', settings.compactReaderToolbar && '!px-2.5')
 	);
 	const allowExternal = $derived(!settings.blockExternalContent || pane?.showImagesOnce);
 	const hasBlockedExternal = $derived(
@@ -138,87 +144,125 @@
 	function showImagesOnce() {
 		pane?.setShowImagesOnce(true);
 	}
+
+	async function moveTo(targetRouteId: string) {
+		if (!auth.client || !latest) return;
+		try {
+			await mail.moveMessageToMailbox(auth.client, latest, targetRouteId);
+			onMoved?.();
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Could not move message';
+			toast.show(message, 'error');
+		}
+	}
+
 </script>
 
 {#if latest}
-	<div class={cn('flex min-w-0 shrink items-center', settings.compactReaderToolbar ? 'gap-0' : 'gap-0.5', className)}>
+	<div
+		class={cn(
+			'flex min-w-0 shrink flex-wrap items-center',
+			settings.compactReaderToolbar ? 'gap-0' : 'gap-1',
+			className
+		)}
+	>
 		{#if isDraft}
-			<IconButton label="Edit draft" class="!p-1.5" onclick={editDraft}>
-				<Pencil class="size-3.5" />
-			</IconButton>
-			<Button class="!h-8 !px-2.5 !text-xs" onclick={() => void sendDraft()}>
-				<Send class="size-3.5" aria-hidden="true" />
+			{#if settings.minimalReaderToolbar}
+				<IconButton label="Edit draft" onclick={editDraft}>
+					<Pencil class="size-5" />
+				</IconButton>
+			{:else}
+				<Button variant="ghost" class={toolbarButtonClass} onclick={editDraft}>
+					<Pencil class="size-4" aria-hidden="true" />
+					Edit draft
+				</Button>
+			{/if}
+			<Button class={toolbarButtonClass} onclick={() => void sendDraft()}>
+				<Send class="size-4" aria-hidden="true" />
 				Send
 			</Button>
-			<IconButton
-				label={deleteLabel}
-				class="!p-1.5 text-danger hover:bg-danger/10"
-				onclick={deleteMessage}
-			>
-				<Trash2 class="size-3.5" />
-			</IconButton>
+			{#if settings.minimalReaderToolbar}
+				<IconButton
+					label={deleteLabel}
+					class="text-danger hover:bg-danger/10"
+					onclick={deleteMessage}
+				>
+					<Trash2 class="size-5" />
+				</IconButton>
+			{:else}
+				<Button variant="danger" class={toolbarButtonClass} onclick={deleteMessage}>
+					<Trash2 class="size-4" aria-hidden="true" />
+					{deleteLabel}
+				</Button>
+			{/if}
 		{:else}
-		{#if !settings.minimalReaderToolbar}
-			<IconButton
-				label={latest.starred ? 'Unstar' : 'Star'}
-				class="!p-1.5"
-				onclick={toggleStar}
-			>
-				<Star class={cn('size-3.5', latest.starred && 'fill-star text-star')} aria-hidden="true" />
-			</IconButton>
-		{/if}
-		<IconButton
-			label={latest.unread ? 'Mark as read' : 'Mark as unread'}
-			class="!p-1.5"
-			onclick={toggleLatestRead}
-		>
-			{#if latest.unread}
-				<MailOpen class="size-3.5" />
+			{#if settings.minimalReaderToolbar}
+				<IconButton label={markReadLabel} onclick={toggleLatestRead}>
+					{#if latest.unread}
+						<MailOpen class="size-5" />
+					{:else}
+						<Mail class="size-5" />
+					{/if}
+				</IconButton>
+				<IconButton label={primaryReplyLabel} onclick={primaryReply}>
+					{#if settings.defaultReplyMode === 'reply-all'}
+						<ReplyAll class="size-5" />
+					{:else}
+						<Reply class="size-5" />
+					{/if}
+				</IconButton>
 			{:else}
-				<Mail class="size-3.5" />
+				<Button variant="ghost" class={toolbarButtonClass} onclick={toggleLatestRead}>
+					{#if latest.unread}
+						<MailOpen class="size-4" aria-hidden="true" />
+					{:else}
+						<Mail class="size-4" aria-hidden="true" />
+					{/if}
+					{markReadLabel}
+				</Button>
+				<Button variant="ghost" class={toolbarButtonClass} onclick={primaryReply}>
+					{#if settings.defaultReplyMode === 'reply-all'}
+						<ReplyAll class="size-4" aria-hidden="true" />
+					{:else}
+						<Reply class="size-4" aria-hidden="true" />
+					{/if}
+					{primaryReplyLabel}
+				</Button>
 			{/if}
-		</IconButton>
-		<IconButton label={primaryReplyLabel} class="!p-1.5" onclick={primaryReply}>
-			{#if settings.defaultReplyMode === 'reply-all'}
-				<ReplyAll class="size-3.5" />
-			{:else}
-				<Reply class="size-3.5" />
-			{/if}
-		</IconButton>
-		{#if !settings.minimalReaderToolbar}
-			<IconButton label="Reply all" class="!p-1.5" onclick={replyAll}>
-				<ReplyAll class="size-3.5" />
-			</IconButton>
-			<IconButton label="Forward" class="!p-1.5" onclick={forward}>
-				<Forward class="size-3.5" />
-			</IconButton>
-		{/if}
-		{#if hasBlockedExternal && !allowExternal && settings.hideExternalContentBanner}
-			<IconButton label="Show external images" class="!p-1.5" onclick={showImagesOnce}>
-				<Shield class="size-3.5" />
-			</IconButton>
-		{/if}
-		{#if mail.canArchiveFrom(currentMailbox)}
-			<IconButton label="Archive" class="!p-1.5" onclick={archiveMessage}>
-				<Archive class="size-3.5" />
-			</IconButton>
-		{/if}
-		{#if auth.client}
-			<MoveToMenu
-				message={latest}
-				currentMailboxRouteId={mailboxRouteId}
-				client={auth.client}
-				{onMoved}
-				class="!p-1.5"
-			/>
-		{/if}
-		<IconButton
-			label={deleteLabel}
-			class="!p-1.5 text-danger hover:bg-danger/10"
-			onclick={deleteMessage}
-		>
-			<Trash2 class="size-3.5" />
-		</IconButton>
+			<OverflowMenu label="More message actions" menuId="thread-actions-overflow-menu">
+				<OverflowMenuItem label={latest.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
+					{#snippet icon()}<Star class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+				{#if settings.defaultReplyMode !== 'reply-all'}
+					<OverflowMenuItem label="Reply all" onclick={replyAll}>
+						{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+				{:else}
+					<OverflowMenuItem label="Reply" onclick={reply}>
+						{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+				{/if}
+				<OverflowMenuItem label="Forward" onclick={forward}>
+					{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+				{#if mail.canArchiveFrom(currentMailbox)}
+					<OverflowMenuItem label="Archive" onclick={archiveMessage}>
+						{#snippet icon()}<Archive class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+				{/if}
+				{#if auth.client}
+					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
+				{/if}
+				{#if hasBlockedExternal && !allowExternal && settings.hideExternalContentBanner}
+					<OverflowMenuItem label="Show external images" onclick={showImagesOnce}>
+						{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+				{/if}
+				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
+				<OverflowMenuItem label={deleteLabel} danger onclick={deleteMessage}>
+					{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+			</OverflowMenu>
 		{/if}
 	</div>
 {/if}
