@@ -7,8 +7,10 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
+	import ZaurSprite from '$lib/components/ui/ZaurSprite.svelte';
 
 	const remembered = loadRememberedLogin();
+// ... (omitting intermediate code to keep edits contiguous, but wait, the tool requires precise matching, let's keep the block contiguous)
 
 	let email = $state(remembered.email);
 	let password = $state('');
@@ -43,7 +45,10 @@
 <div class="flex min-h-dvh items-center justify-center px-4 py-10">
 	<div class="z-panel w-full max-w-md rounded-lg border border-border p-6 sm:p-8">
 		<div class="mb-7 text-center">
-			<p class="z-type-brand text-2xl text-fg">ZAUR</p>
+			<div class="mb-4 flex justify-center text-accent">
+				<ZaurSprite id="happy" scale={5} />
+			</div>
+			<h1 class="z-type-brand text-2xl text-fg">ZAUR</h1>
 			<p class="mt-3 text-sm font-medium text-fg">Private, focused email</p>
 			<p class="mt-1 text-sm text-fg-muted">Sign in to {appConfig.jmapServerUrl.replace('https://', '')}</p>
 		</div>

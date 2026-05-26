@@ -16,6 +16,8 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 
+	import ZaurSprite from '$lib/components/ui/ZaurSprite.svelte';
+
 	const homeHref = $derived(settings.preferredMailHref());
 	const showOutbox = $derived(
 		!settings.hideOutboxUnlessFailed ||
@@ -43,7 +45,8 @@
 			settings.compactAppHeader ? 'gap-2' : 'gap-3'
 		)}
 	>
-		<a href={homeHref} class="z-type-brand text-base text-fg transition-colors hover:text-fg-muted">
+		<a href={homeHref} class="z-type-brand flex items-center gap-2 text-base text-fg transition-colors hover:text-fg-muted">
+			<ZaurSprite id="happy" scale={1} class="size-5" />
 			<span class={settings.hideAppTitle ? 'sr-only' : ''}>ZAUR</span>
 		</a>
 
