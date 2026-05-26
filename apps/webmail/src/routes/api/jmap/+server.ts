@@ -1,0 +1,32 @@
+import { json, type RequestHandler } from '@sveltejs/kit';
+import type { JMAPMethodCall, JMAPResponse } from '$lib/jmap/types';
+import { createConnectedClient } from '$lib/server/jmap';
+import { readSession } from '$lib/server/session';
+
+export const POST: RequestHandler = async ({ request, cookies }) => {
+	const session = readSession(cookies);
+	if (!session) {
+		return json({ error: 'Unauthorized' }, { status: 401 });
+	}
+
+	let body: { using?: string[]; methodCalls?: JMAPMethodCall[] };
+	try {
+		body = await request.json();
+	} catch {
+		return json({ error: 'Invalid request body' }, { status: 400 });
+	}
+
+	if (!body.methodCalls?.length) {
+		return json({ error: 'methodCalls required' }, { status: 400 });
+	}
+
+	try {
+		const client = await createConnectedClient(session);
+		const response = await client.request(body.methodCalls, body.using);
+		return json(response satisfies JMAPResponse);
+	} catch (error) {
+		const message = error instanceof Error ? error.message : 'JMAP request failed';
+		const status = message.includes('401') || message.includes('Unauthorized') ? 401 : 502;
+		return json({ error: message }, { status });
+	}
+};

@@ -1,0 +1,743 @@
+@import 'tailwindcss';
+
+@theme {
+	/* https://modernfontstacks.com — System UI + Monospace Code */
+	--font-sans: system-ui, sans-serif;
+	--font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono',
+		monospace;
+
+	--color-surface: var(--z-surface);
+	--color-surface-raised: var(--z-surface-raised);
+	--color-surface-sunken: var(--z-surface-sunken);
+	--color-border: var(--z-border);
+	--color-border-strong: var(--z-border-strong);
+	--color-fg: var(--z-fg);
+	--color-fg-muted: var(--z-fg-muted);
+	--color-fg-subtle: var(--z-fg-subtle);
+	--color-accent: var(--z-accent);
+	--color-accent-hover: var(--z-accent-hover);
+	--color-accent-fg: var(--z-accent-fg);
+	--color-unread: var(--z-unread);
+	--color-star: var(--z-star);
+	--color-danger: var(--z-danger);
+
+	--radius-sm: 0.5rem;
+	--radius-md: 0.75rem;
+	--radius-lg: 1rem;
+
+	--shadow-sm: 0 1px 2px rgb(0 0 0 / 0.03);
+	--shadow-md: 0 4px 16px rgb(0 0 0 / 0.06);
+
+	--width-sidebar: 15rem;
+	--width-list: 22rem;
+	--height-header: 3.25rem;
+}
+
+:root {
+	color-scheme: light;
+
+	--z-surface: #fbfbfa;
+	--z-surface-raised: #ffffff;
+	--z-surface-sunken: #f7f6f3;
+	--z-border: #eaeaea;
+	--z-border-strong: #d8d8d8;
+	--z-fg: #2f3437;
+	--z-fg-muted: #787774;
+	--z-fg-subtle: #9b9a97;
+	--z-accent: #2f3437;
+	--z-accent-hover: #111111;
+	--z-accent-fg: #ffffff;
+	--z-unread: #2f3437;
+	--z-star: #956400;
+	--z-danger: #9f2f2d;
+
+	--z-list-row: 4rem;
+	--z-list-text: 1rem;
+	--z-reader-measure: 42rem;
+	--z-reader-text: 1rem;
+
+	--z-scrollbar-size: 0.625rem;
+	--z-scrollbar-track: transparent;
+	--z-scrollbar-thumb: color-mix(in srgb, var(--z-border-strong) 72%, transparent);
+	--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 68%, transparent);
+
+	/* Header, sidebar, list/reader panes */
+	--z-chrome: var(--z-surface-raised);
+	/* Active folder, selected row, etc. */
+	--z-chrome-active: var(--z-surface-sunken);
+}
+
+:root.dark {
+	color-scheme: dark;
+
+	--z-surface: #111111;
+	--z-surface-raised: #1a1a1a;
+	--z-surface-sunken: color-mix(in srgb, var(--z-surface) 92%, var(--z-fg) 8%);
+	--z-chrome: var(--z-surface);
+	--z-chrome-active: color-mix(in srgb, var(--z-surface) 86%, var(--z-fg) 14%);
+	--z-border: #2a2a2a;
+	--z-border-strong: #3a3a3a;
+	--z-fg: #ededec;
+	--z-fg-muted: #a8a8a6;
+	--z-fg-subtle: #787774;
+	--z-accent: #ededec;
+	--z-accent-hover: #ffffff;
+	--z-accent-fg: #111111;
+	--z-unread: #ededec;
+	--z-star: #d4a017;
+
+	--z-scrollbar-thumb: color-mix(in srgb, var(--z-border-strong) 88%, transparent);
+	--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 58%, transparent);
+}
+
+.z-skip-link {
+	position: fixed;
+	left: 0.75rem;
+	top: 0.75rem;
+	z-index: 100;
+	transform: translateY(-150%);
+	border-radius: var(--radius-md);
+	background: var(--z-accent);
+	color: var(--z-accent-fg);
+	padding: 0.5rem 0.75rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	transition: transform 120ms ease;
+}
+
+.z-skip-link:focus {
+	transform: translateY(0);
+	outline: 2px solid var(--z-accent-fg);
+	outline-offset: 2px;
+}
+
+/* Accent color presets */
+:root[data-accent='teal'] {
+	--z-accent: #0d9488;
+	--z-accent-hover: #0f766e;
+	--z-unread: #0d9488;
+}
+
+:root.dark[data-accent='teal'] {
+	--z-accent: #14b8a6;
+	--z-accent-hover: #0d9488;
+	--z-unread: #5eead4;
+}
+
+:root[data-accent='violet'] {
+	--z-accent: #7c3aed;
+	--z-accent-hover: #6d28d9;
+	--z-unread: #7c3aed;
+}
+
+:root.dark[data-accent='violet'] {
+	--z-accent: #8b5cf6;
+	--z-accent-hover: #7c3aed;
+	--z-unread: #c4b5fd;
+}
+
+:root[data-accent='slate'] {
+	--z-accent: #475569;
+	--z-accent-hover: #334155;
+	--z-unread: #475569;
+}
+
+:root.dark[data-accent='slate'] {
+	--z-accent: #64748b;
+	--z-accent-hover: #475569;
+	--z-unread: #94a3b8;
+}
+
+/* Corner radius presets */
+:root[data-corners='soft'] {
+	--radius-sm: 0.5rem;
+	--radius-md: 0.625rem;
+	--radius-lg: 1rem;
+}
+
+:root[data-corners='sharp'] {
+	--radius-sm: 0.25rem;
+	--radius-md: 0.375rem;
+	--radius-lg: 0.5rem;
+}
+
+/* Surface tone presets */
+:root[data-surface='soft'] {
+	--z-surface: #f7f8fa;
+	--z-border: #e8ebf0;
+	--z-border-strong: #d8dde6;
+}
+
+:root.dark[data-surface='soft'] {
+	--z-surface: #121820;
+	--z-surface-raised: #1a212c;
+	--z-border: #2a3342;
+	--z-border-strong: #384456;
+}
+
+@layer base {
+	html {
+		font-family: var(--font-sans);
+		-webkit-font-smoothing: antialiased;
+	}
+
+	body {
+		@apply bg-surface text-fg;
+		margin: 0;
+		min-height: 100dvh;
+	}
+
+	* {
+		scrollbar-width: thin;
+		scrollbar-color: var(--z-scrollbar-thumb) var(--z-scrollbar-track);
+	}
+
+	*::-webkit-scrollbar {
+		width: var(--z-scrollbar-size);
+		height: var(--z-scrollbar-size);
+	}
+
+	*::-webkit-scrollbar-track {
+		background: var(--z-scrollbar-track);
+	}
+
+	*::-webkit-scrollbar-thumb {
+		background-color: var(--z-scrollbar-thumb);
+		border: 2px solid transparent;
+		border-radius: 9999px;
+		background-clip: padding-box;
+	}
+
+	*::-webkit-scrollbar-thumb:hover {
+		background-color: var(--z-scrollbar-thumb-hover);
+	}
+
+	*::-webkit-scrollbar-corner {
+		background: transparent;
+	}
+
+	::selection {
+		background: color-mix(in srgb, var(--z-accent) 25%, transparent);
+	}
+
+	:where(a[href], button, label:has(input:not([type='hidden'])), select, summary, [role='button'], [role='menuitem'], [role='option'], [role='tab']) {
+		cursor: pointer;
+	}
+
+	:where(input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']), textarea) {
+		cursor: text;
+	}
+
+	:where(a, button, input, textarea, select, [role='button']):focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: 2px;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		@view-transition {
+			navigation: auto;
+		}
+	}
+
+	html.z-reduce-motion *,
+	html.z-reduce-motion *::before,
+	html.z-reduce-motion *::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+
+	html.z-reduce-motion [style*='view-transition-name'] {
+		view-transition-name: none !important;
+	}
+
+	/*
+	 * iOS Safari zooms the page when focusing inputs below 16px.
+	 * Use at least 1rem on narrow viewports (keeps desktop density via .z-input md:text-sm).
+	 */
+	@media (max-width: 767px) {
+		input:not(
+				[type='checkbox'],
+				[type='radio'],
+				[type='range'],
+				[type='file'],
+				[type='hidden'],
+				[type='color'],
+				[type='button'],
+				[type='submit'],
+				[type='reset']
+			),
+		textarea,
+		select {
+			font-size: 1rem;
+		}
+	}
+}
+
+@layer components {
+	.z-panel {
+		@apply border-b border-border;
+		background-color: var(--z-chrome);
+	}
+
+	.z-mail-pane-surface {
+		@apply flex min-h-0 flex-col;
+		background-color: var(--z-chrome);
+	}
+
+	.z-mail-reader-pane {
+		@apply hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex;
+	}
+
+	.z-mail-pane {
+		@apply border-l-0 bg-transparent;
+	}
+
+	.z-mail-pane-body {
+		@apply bg-transparent;
+	}
+
+	.z-mail-pane--mobile-fullscreen {
+		@apply max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-30 max-md:flex max-md:flex-col max-md:bg-surface;
+		top: var(--height-header);
+	}
+
+	.z-mobile-sheet-backdrop {
+		@apply fixed inset-x-0 bottom-0 z-30 flex justify-end bg-black/20 backdrop-blur-[1px];
+		top: var(--height-header);
+	}
+
+	.z-mail-pane--mobile-fullscreen .z-mail-reader-pane {
+		@apply flex min-h-0 flex-1 flex-col;
+	}
+
+	.z-pane-scroll {
+		overscroll-behavior-y: contain;
+	}
+
+	.z-pane-scroll:hover {
+		scrollbar-color: var(--z-scrollbar-thumb-hover) var(--z-scrollbar-track);
+	}
+
+	.z-pane-scroll:hover::-webkit-scrollbar-thumb {
+		background-color: var(--z-scrollbar-thumb-hover);
+	}
+
+	.z-overflow-menu {
+		@apply absolute right-0 z-20 mt-2 w-72 min-w-64 overflow-hidden rounded-lg border border-border bg-surface-raised py-2;
+	}
+
+	.z-overflow-menu-label {
+		@apply px-4 py-2 text-xs font-medium tracking-wide text-fg-subtle uppercase;
+	}
+
+	.z-overflow-menu-item {
+		@apply flex w-full items-center gap-3 px-4 py-2.5 text-left text-sm text-fg hover:bg-surface-sunken disabled:cursor-not-allowed disabled:opacity-50;
+	}
+
+	.z-overflow-menu-item--danger {
+		@apply text-danger;
+	}
+
+	.z-overflow-menu-scroll {
+		@apply max-h-[min(50vh,20rem)] overflow-y-auto overscroll-contain py-1;
+		overscroll-behavior-y: contain;
+	}
+
+	.z-overflow-menu-scroll:hover {
+		scrollbar-color: var(--z-scrollbar-thumb-hover) var(--z-scrollbar-track);
+	}
+
+	.z-overflow-menu-scroll:hover::-webkit-scrollbar-thumb {
+		background-color: var(--z-scrollbar-thumb-hover);
+	}
+
+	.z-spinner {
+		display: inline-flex;
+		line-height: 0;
+		transform-origin: center;
+		animation: z-spin 1s linear infinite;
+	}
+
+	@keyframes z-spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	html.z-reduce-motion .z-spinner {
+		animation-duration: 1s !important;
+		animation-iteration-count: infinite !important;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		*::-webkit-scrollbar-thumb {
+			transition: background-color 150ms ease;
+		}
+
+		:where(a, button, input, textarea, select, [role='button']) {
+			transition-duration: 150ms;
+			transition-timing-function: ease;
+		}
+	}
+
+	.z-btn-primary {
+		@apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-sm bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.98];
+	}
+
+	.z-btn-ghost {
+		@apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-sm px-3 py-2 text-sm font-medium text-fg-muted transition-colors hover:bg-surface-sunken hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+	}
+
+	.z-input {
+		@apply w-full rounded-sm border border-border bg-surface-raised px-3 py-2 text-base text-fg placeholder:text-fg-subtle focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-border-strong md:text-sm;
+	}
+
+	.z-checkbox {
+		@apply size-4 shrink-0 cursor-pointer appearance-none rounded-sm border border-border-strong bg-surface text-fg;
+		@apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+		@apply disabled:cursor-not-allowed disabled:opacity-50;
+		background-position: center;
+		background-repeat: no-repeat;
+		background-size: 0.75rem 0.75rem;
+	}
+
+	.z-checkbox[data-state='checked'],
+	.z-checkbox:checked {
+		@apply border-accent bg-accent;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5 6.5 11.5 12.5 4.5'/%3E%3C/svg%3E");
+	}
+
+	.z-checkbox[data-state='indeterminate'] {
+		@apply border-accent bg-accent;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M4 8h8'/%3E%3C/svg%3E");
+	}
+
+	.z-compose-editor,
+	.z-input.z-compose-editor {
+		font-size: var(--z-reader-text);
+	}
+
+	@media (max-width: 767px) {
+		.z-compose-editor,
+		.z-input.z-compose-editor {
+			font-size: 1rem;
+		}
+	}
+
+	.z-list-row {
+		min-height: var(--z-list-row);
+	}
+
+	.z-list-row:not([data-hide-active-indicator]) {
+		position: relative;
+	}
+
+	.z-list-row:not([data-hide-active-indicator])::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0;
+		bottom: 0;
+		width: 2px;
+		background: transparent;
+		pointer-events: none;
+	}
+
+	.z-list-row--current:not([data-hide-active-indicator])::before {
+		background-color: var(--z-accent);
+	}
+
+	.z-list-row--current:not([data-hide-active-indicator]) {
+		background-color: var(--z-chrome-active);
+	}
+
+	:root.dark .z-list-row--current:not([data-hide-active-indicator])::before {
+		background-color: var(--z-fg-muted);
+	}
+
+	.z-list-row[role='button']:focus-visible {
+		outline-color: var(--z-border-strong);
+		outline-offset: -2px;
+	}
+
+	.z-surface-active {
+		background-color: var(--z-chrome-active);
+		@apply font-medium text-fg;
+	}
+
+	.z-chrome-field {
+		@apply border border-border/80 bg-surface-sunken/80;
+	}
+
+	.z-chrome-field:focus {
+		background-color: var(--z-chrome-active);
+		border-color: var(--z-border-strong);
+	}
+
+	.z-list-text {
+		font-size: var(--z-list-text);
+	}
+
+	.z-type-brand {
+		@apply font-bold tracking-tight text-fg;
+	}
+
+	.z-type-label {
+		@apply text-[11px] font-semibold uppercase tracking-wider text-fg-subtle;
+	}
+
+	.z-type-pane-title {
+		@apply truncate text-sm font-medium text-fg;
+	}
+
+	.z-mail-list-header {
+		@apply relative z-10 flex h-11 min-h-11 shrink-0 items-center gap-2 border-b border-border px-4;
+	}
+
+	.z-mail-list-header--compact {
+		@apply h-10 min-h-10;
+	}
+
+	.z-type-reader-title {
+		@apply m-0 p-0 text-xl font-semibold leading-none tracking-tight text-fg md:text-2xl;
+	}
+
+	.z-reader-from {
+		font-size: var(--z-reader-text);
+		@apply font-semibold leading-snug tracking-tight text-fg;
+	}
+
+	.z-reader-meta {
+		@apply text-sm leading-snug text-fg-muted;
+	}
+
+	.z-reader-chrome {
+		@apply flex flex-col gap-2;
+	}
+
+	.z-reader-chrome--bordered {
+		@apply border-b border-border/80 pb-3;
+	}
+
+	.z-reader-chrome__head,
+	.z-reader-subject-row {
+		@apply flex min-w-0 items-baseline justify-between gap-4;
+	}
+
+	.z-reader-chrome__head:has(.z-reader-chrome__actions),
+	.z-reader-subject-row:has(.z-reader-subject-toolbar) {
+		flex-wrap: wrap;
+	}
+
+	.z-reader-chrome__actions {
+		@apply flex items-baseline;
+	}
+
+	/* Cap-height alignment between large subject and sm toolbar labels */
+	.z-reader-chrome__head .z-type-reader-title,
+	.z-reader-subject-row .z-type-reader-title,
+	.z-reader-chrome__actions .z-btn-ghost,
+	.z-reader-subject-toolbar .z-btn-ghost {
+		text-box-trim: trim-both;
+		text-box-edge: cap alphabetic;
+	}
+
+	.z-reader-chrome__meta {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		column-gap: 1rem;
+		align-items: start;
+	}
+
+	.z-reader-chrome__from {
+		min-width: 0;
+	}
+
+	.z-reader-chrome__time {
+		justify-self: end;
+	}
+
+	/* Reader header toolbar: override fixed !h-9; keep default ghost padding for tap targets */
+	.z-reader-chrome__actions .z-btn-ghost.z-thread-toolbar-btn,
+	.z-reader-subject-toolbar .z-btn-ghost.z-thread-toolbar-btn {
+		height: auto !important;
+		min-height: 2.25rem !important;
+		padding-block: 0.5rem !important;
+		padding-inline: 0.75rem !important;
+		line-height: 1 !important;
+	}
+
+	.z-reader-message-head {
+		@apply border-b border-border/80 pb-3;
+	}
+
+	.z-reader-content {
+		@apply pt-4;
+	}
+
+	.z-reader-content--compact {
+		@apply pt-3;
+	}
+
+	.z-reader-attachments {
+		@apply w-full;
+	}
+
+	.z-reader-section-label {
+		@apply text-xs font-medium text-fg-subtle;
+	}
+
+	.z-reader-latest-badge {
+		@apply shrink-0 text-[11px] font-medium tracking-wide text-fg-subtle uppercase;
+	}
+
+	.z-reader-thread-meta {
+		@apply flex w-44 shrink-0 items-center justify-end gap-2 sm:w-48;
+	}
+
+	.z-reader-thread-toggle {
+		@apply flex w-full items-center gap-3 rounded-md text-left transition-colors hover:bg-surface-sunken/70;
+	}
+
+	.z-thread-toolbar-btn {
+		@apply !items-center gap-2 leading-none;
+	}
+
+	.z-thread-toolbar-btn :where(svg) {
+		@apply size-4 shrink-0;
+	}
+
+	.z-reader-column {
+		@apply w-full max-w-(--z-reader-measure);
+	}
+
+	.z-reader-body {
+		@apply w-full text-fg;
+	}
+
+	.z-email-body :where(p + p, p + ul, p + ol, ul + p, ol + p) {
+		margin-top: 0.75em;
+	}
+
+	.z-type-list-sender {
+		@apply truncate text-sm text-fg-muted;
+	}
+
+	.z-type-list-subject {
+		@apply truncate font-medium tracking-tight text-fg;
+		font-size: var(--z-list-text);
+	}
+
+	.z-type-list-subject--unread {
+		@apply font-semibold;
+	}
+
+	.z-type-list-preview {
+		@apply mt-0.5 truncate text-sm leading-snug text-fg-subtle;
+	}
+
+	.z-type-list-time {
+		@apply shrink-0 text-xs tabular-nums tracking-tight text-fg-subtle;
+	}
+
+	.z-email-body {
+		font-size: var(--z-reader-text);
+		line-height: 1.7;
+		overflow-wrap: anywhere;
+	}
+
+	.z-email-body--plain {
+		@apply py-1;
+	}
+
+	.z-email-body--html {
+		overflow-x: auto;
+	}
+
+	.z-email-body :where(a) {
+		@apply text-accent underline underline-offset-2 hover:text-accent-hover;
+	}
+
+	.z-email-body :where(img) {
+		max-width: 100%;
+		height: auto;
+	}
+
+	.z-email-body :where(table) {
+		max-width: 100%;
+	}
+
+	.z-email-body :where(blockquote) {
+		margin-top: 1rem;
+		margin-bottom: 0;
+		padding: 0 0 0 1rem;
+		border: 0;
+		border-left: 2px solid color-mix(in srgb, var(--z-border) 55%, transparent);
+		border-radius: 0;
+		background: transparent;
+		color: var(--z-fg-muted);
+	}
+
+	.z-email-body :where(blockquote blockquote) {
+		margin-top: 0.75rem;
+		padding-left: 0.75rem;
+		border-left-width: 1px;
+		border-left-color: color-mix(in srgb, var(--z-border) 35%, transparent);
+		color: var(--z-fg-subtle);
+	}
+
+	.z-email-body :where(blockquote blockquote blockquote) {
+		border-left-color: color-mix(in srgb, var(--z-border) 22%, transparent);
+	}
+
+	.z-email-body :where(pre, code) {
+		font-family: var(--font-mono);
+		@apply rounded-sm bg-surface-sunken/80 text-[0.9em];
+	}
+
+	.z-email-body :where(pre) {
+		@apply overflow-x-auto p-3;
+	}
+
+	.z-email-body :where(hr) {
+		@apply my-4 border-border;
+	}
+
+	.z-email-quote {
+		@apply text-sm leading-relaxed whitespace-pre-wrap;
+	}
+
+	/* HTML mail: inherit reader theme; inline colors stripped except on light email sections */
+	:root.dark .z-email-body--html {
+		color: var(--z-fg);
+	}
+
+	:root.dark .z-email-body--html :where(a) {
+		color: var(--z-accent);
+	}
+
+	:root.dark .z-email-body :where(blockquote) {
+		border-left-color: color-mix(in srgb, var(--z-border-strong) 40%, transparent);
+		color: var(--z-fg-subtle);
+	}
+
+	:root.dark .z-email-body :where(blockquote blockquote) {
+		border-left-color: color-mix(in srgb, var(--z-border) 28%, transparent);
+	}
+
+	:root.dark .z-email-body--html :where(blockquote a) {
+		color: var(--z-accent);
+	}
+
+	:root.dark .z-email-body--html [data-z-light-surface] {
+		color-scheme: light;
+		border-radius: 0.25rem;
+		isolation: isolate;
+	}
+
+	:root.dark .z-email-body--html [data-z-light-surface] :where(a) {
+		color: revert;
+	}
+}

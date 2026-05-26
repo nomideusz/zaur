@@ -1,0 +1,93 @@
+export interface JMAPIdentity {
+	id: string;
+	name?: string;
+	email: string;
+	replyTo?: { name?: string; email: string }[];
+}
+
+export interface JMAPMailbox {
+	id: string;
+	name: string;
+	parentId?: string | null;
+	role?: string | null;
+	totalEmails?: number;
+	unreadEmails?: number;
+	sortOrder?: number;
+}
+
+export interface JMAPEmailAddress {
+	name?: string;
+	email: string;
+}
+
+export interface JMAPEmailBodyPart {
+	partId?: string;
+	type?: string;
+}
+
+export interface JMAPEmail {
+	id: string;
+	threadId: string;
+	mailboxIds?: Record<string, boolean>;
+	keywords?: Record<string, boolean>;
+	size?: number;
+	receivedAt: string;
+	from?: JMAPEmailAddress[];
+	to?: JMAPEmailAddress[];
+	cc?: JMAPEmailAddress[];
+	bcc?: JMAPEmailAddress[];
+	subject?: string;
+	preview?: string;
+	textBody?: JMAPEmailBodyPart[];
+	htmlBody?: JMAPEmailBodyPart[];
+	bodyValues?: Record<string, { value: string; isEncodingProblem?: boolean; isTruncated?: boolean }>;
+	hasAttachment?: boolean;
+	bodyStructure?: JMAPBodyPart;
+}
+
+export interface JMAPBodyPart {
+	partId?: string;
+	blobId?: string;
+	name?: string;
+	type?: string;
+	size?: number;
+	disposition?: string;
+	subParts?: JMAPBodyPart[];
+}
+
+export interface JMAPSession {
+	apiUrl: string;
+	downloadUrl: string;
+	uploadUrl?: string;
+	eventSourceUrl?: string;
+	primaryAccounts?: Record<string, string>;
+	accounts?: Record<string, { name?: string; accountCapabilities?: Record<string, unknown> }>;
+	capabilities?: Record<string, unknown>;
+}
+
+export type JMAPMethodCall = [string, Record<string, unknown>, string];
+
+export interface JMAPResponse {
+	methodResponses: Array<[string, Record<string, unknown>, string]>;
+}
+
+export interface StateChange {
+	'@type': 'StateChange';
+	changed: Record<
+		string,
+		{
+			Email?: string;
+			Mailbox?: string;
+			Thread?: string;
+		}
+	>;
+}
+
+export interface JMAPChangesResult {
+	oldState: string;
+	newState: string;
+	hasMoreChanges: boolean;
+	created: string[];
+	updated: string[];
+	destroyed: string[];
+}
