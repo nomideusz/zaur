@@ -137,8 +137,18 @@
 
 	async function send() {
 		if (!auth.client || !auth.username) return;
-		const result = await compose.send(auth.client, auth.username, senderName);
-		if (result === 'sent') goto(settings.returnToInboxAfterSend ? '/mail/inbox' : '/mail/sent');
+		const destination = settings.returnToInboxAfterSend ? '/mail/inbox' : '/mail/sent';
+		const result = await compose.send(auth.client, auth.username, senderName, {
+			onUndo: () => {
+				const mode = compose.mode;
+				goto(mode === 'new' ? '/mail/compose' : `/mail/compose?mode=${mode}`);
+			},
+			onComplete: (outcome) => {
+				if (outcome === 'sent') goto(destination);
+				else if (outcome === 'queued') goto(settings.preferredMailHref());
+			}
+		});
+		if (result === 'pending' || result === 'sent') goto(destination);
 		else if (result === 'queued') goto(settings.preferredMailHref());
 	}
 

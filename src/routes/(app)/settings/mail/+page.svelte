@@ -137,6 +137,18 @@
 		</SettingsRow>
 
 		<SettingsRow
+			title="Undo send"
+			description="Wait a few seconds before delivering — tap Undo in the toast to cancel and restore the message"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.enableUndoSend}
+				onchange={(e) => settings.setEnableUndoSend(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow
 			title="Auto-load more messages"
 			description="Load older messages automatically when you scroll to the bottom of the list"
 		>

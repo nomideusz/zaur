@@ -5,13 +5,62 @@ import { validateAttachmentFile } from '$lib/attachments/upload';
 import { parseAddressList } from '$lib/utils/addresses';
 import { isOfflineError } from '$lib/utils/network';
 import { outbox } from '$lib/stores/outbox.svelte';
-import { settings } from '$lib/stores/settings.svelte';
-import { toast } from '$lib/stores/toast.svelte';
+import { settings, type ComposeFormat } from '$lib/stores/settings.svelte';
+import { toast, UNDO_SEND_DELAY_MS } from '$lib/stores/toast.svelte';
 import type { ComposeAttachment, StoredComposeAttachment } from '$lib/types/compose';
 import type { MessageDetail } from '$lib/types/mail';
 
 export type ComposeMode = 'new' | 'reply' | 'reply-all' | 'forward';
-export type ComposeSendResult = 'sent' | 'queued' | false;
+export type ComposeSendResult = 'sent' | 'pending' | 'queued' | false;
+
+export interface ComposeSendOptions {
+	onUndo?: () => void;
+	onComplete?: (result: 'sent' | 'queued') => void;
+}
+
+interface ComposeSnapshot {
+	to: string;
+	cc: string;
+	bcc: string;
+	subject: string;
+	body: string;
+	showCcBcc: boolean;
+	mode: ComposeMode;
+	jmapDraftId?: string;
+	attachments: ComposeAttachment[];
+}
+
+interface SendPayload {
+	recipients: string[];
+	cc: string[];
+	bcc: string[];
+	subject: string;
+	body: string;
+	toRaw: string;
+	ccRaw: string;
+	bccRaw: string;
+	draftId?: string;
+	attachments: EmailAttachmentInput[];
+	sendOptions: {
+		fromEmail: string;
+		fromName?: string;
+		cc?: string[];
+		bcc?: string[];
+		attachments?: EmailAttachmentInput[];
+		format: ComposeFormat;
+	};
+}
+
+interface PendingSend {
+	id: string;
+	timer: ReturnType<typeof setTimeout>;
+	snapshot: ComposeSnapshot;
+	payload: SendPayload;
+	client: JMAPClient;
+	fromEmail: string;
+	fromName?: string;
+	options?: ComposeSendOptions;
+}
 
 const AUTOSAVE_MS = 2000;
 const SERVER_DRAFT_MS = 5000;
@@ -43,6 +92,7 @@ class ComposeStore {
 
 	private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 	private serverDraftTimer: ReturnType<typeof setTimeout> | null = null;
+	private pendingSend: PendingSend | null = null;
 
 	get hasUploadingAttachments() {
 		return this.attachments.some((attachment) => attachment.uploading);
@@ -117,6 +167,20 @@ class ComposeStore {
 		this.bcc = '';
 		this.subject = '';
 		this.body = settings.composeBodyWithSignature();
+		this.showCcBcc = false;
+		this.mode = 'new';
+		this.jmapDraftId = undefined;
+		this.error = null;
+		this.draftSavedAt = null;
+		this.clearAttachments();
+	}
+
+	private clearComposeFields() {
+		this.to = '';
+		this.cc = '';
+		this.bcc = '';
+		this.subject = '';
+		this.body = '';
 		this.showCcBcc = false;
 		this.mode = 'new';
 		this.jmapDraftId = undefined;
@@ -285,25 +349,92 @@ class ComposeStore {
 	}
 
 	reset() {
+		this.cancelPendingSend();
 		if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
 		if (this.serverDraftTimer) clearTimeout(this.serverDraftTimer);
 		void this.clearLocalDraft();
-		this.to = '';
-		this.cc = '';
-		this.bcc = '';
-		this.subject = '';
-		this.body = '';
-		this.showCcBcc = false;
-		this.mode = 'new';
-		this.jmapDraftId = undefined;
+		this.clearComposeFields();
 		this.isSending = false;
 		this.isSavingDraft = false;
-		this.draftSavedAt = null;
-		this.error = null;
-		this.clearAttachments();
 	}
 
-	async send(client: JMAPClient, fromEmail: string, fromName?: string): Promise<ComposeSendResult> {
+	cancelPendingSend() {
+		if (!this.pendingSend) return;
+		clearTimeout(this.pendingSend.timer);
+		this.pendingSend = null;
+	}
+
+	private snapshotCompose(): ComposeSnapshot {
+		return {
+			to: this.to,
+			cc: this.cc,
+			bcc: this.bcc,
+			subject: this.subject,
+			body: this.body,
+			showCcBcc: this.showCcBcc,
+			mode: this.mode,
+			jmapDraftId: this.jmapDraftId,
+			attachments: this.attachments.map((attachment) => ({ ...attachment }))
+		};
+	}
+
+	private restoreSnapshot(snapshot: ComposeSnapshot) {
+		this.to = snapshot.to;
+		this.cc = snapshot.cc;
+		this.bcc = snapshot.bcc;
+		this.subject = snapshot.subject;
+		this.body = snapshot.body;
+		this.showCcBcc = snapshot.showCcBcc;
+		this.mode = snapshot.mode;
+		this.jmapDraftId = snapshot.jmapDraftId;
+		this.attachments = snapshot.attachments.map((attachment) => ({ ...attachment }));
+		this.error = null;
+		this.isSending = false;
+	}
+
+	private undoPendingSend() {
+		const pending = this.pendingSend;
+		if (!pending) return;
+
+		clearTimeout(pending.timer);
+		this.pendingSend = null;
+		this.restoreSnapshot(pending.snapshot);
+		pending.options?.onUndo?.();
+		toast.show('Send cancelled', 'info');
+	}
+
+	private async flushPendingSend() {
+		const pending = this.pendingSend;
+		if (!pending) return;
+
+		clearTimeout(pending.timer);
+		this.pendingSend = null;
+		await this.commitPendingSend(pending);
+	}
+
+	private async commitPendingSend(job: PendingSend) {
+		this.isSending = true;
+		try {
+			const result = await this.deliverPayload(job.client, job.payload, job.fromEmail, job.fromName);
+			if (result === 'sent' || result === 'queued') {
+				job.options?.onComplete?.(result);
+				return;
+			}
+
+			this.restoreSnapshot(job.snapshot);
+			job.options?.onUndo?.();
+			toast.show('Could not send message — restored your draft', 'error');
+		} finally {
+			this.isSending = false;
+		}
+	}
+
+	async send(
+		client: JMAPClient,
+		fromEmail: string,
+		fromName?: string,
+		options?: ComposeSendOptions
+	): Promise<ComposeSendResult> {
 		const recipients = parseAddressList(this.to);
 		if (!recipients.length) {
 			this.error = 'Enter at least one recipient';
@@ -320,58 +451,119 @@ class ComposeStore {
 			return false;
 		}
 
-		this.isSending = true;
-		this.error = null;
-
 		const cc = parseAddressList(this.cc);
 		const bcc = parseAddressList(this.bcc);
 		const draftId = this.jmapDraftId;
 		const attachments = this.readyAttachments();
 		const subject = this.subject.trim() || '(no subject)';
-		const sendOptions = {
-			fromEmail,
-			fromName: fromName?.trim() || undefined,
-			cc: cc.length ? cc : undefined,
-			bcc: bcc.length ? bcc : undefined,
-			attachments: attachments.length ? attachments : undefined,
-			format: settings.defaultComposeFormat
+		const payload: SendPayload = {
+			recipients,
+			cc,
+			bcc,
+			subject,
+			body: this.body,
+			toRaw: this.to,
+			ccRaw: this.cc,
+			bccRaw: this.bcc,
+			draftId,
+			attachments,
+			sendOptions: {
+				fromEmail,
+				fromName: fromName?.trim() || undefined,
+				cc: cc.length ? cc : undefined,
+				bcc: bcc.length ? bcc : undefined,
+				attachments: attachments.length ? attachments : undefined,
+				format: settings.defaultComposeFormat
+			}
 		};
 
-		try {
-			await client.sendEmail(recipients, subject, this.body, sendOptions);
+		if (!settings.enableUndoSend) {
+			this.isSending = true;
+			this.error = null;
+			try {
+				const result = await this.deliverPayload(client, payload, fromEmail, fromName);
+				if (result === 'sent' || result === 'queued') {
+					this.clearComposeFields();
+					void this.clearLocalDraft();
+					options?.onComplete?.(result);
+				}
+				return result;
+			} finally {
+				this.isSending = false;
+			}
+		}
 
-			if (draftId) {
+		await this.flushPendingSend();
+
+		this.isSending = true;
+		this.error = null;
+
+		const snapshot = this.snapshotCompose();
+		const jobId = crypto.randomUUID();
+		const timer = setTimeout(() => {
+			const pending = this.pendingSend;
+			if (!pending || pending.id !== jobId) return;
+			this.pendingSend = null;
+			void this.commitPendingSend(pending);
+		}, UNDO_SEND_DELAY_MS);
+
+		this.pendingSend = {
+			id: jobId,
+			timer,
+			snapshot,
+			payload,
+			client,
+			fromEmail,
+			fromName,
+			options
+		};
+
+		this.clearComposeFields();
+		void this.clearLocalDraft();
+		this.isSending = false;
+
+		toast.showUndo(`Sending "${subject}"…`, () => this.undoPendingSend());
+		return 'pending';
+	}
+
+	private async deliverPayload(
+		client: JMAPClient,
+		payload: SendPayload,
+		fromEmail: string,
+		fromName?: string
+	): Promise<ComposeSendResult> {
+		try {
+			await client.sendEmail(payload.recipients, payload.subject, payload.body, payload.sendOptions);
+
+			if (payload.draftId) {
 				try {
-					await client.destroyEmail(draftId);
+					await client.destroyEmail(payload.draftId);
 				} catch {
 					// Draft cleanup is best-effort
 				}
 			}
 
-			this.reset();
 			return 'sent';
 		} catch (error) {
 			if (browser && isOfflineError(error)) {
 				const { getAccountId, enqueueOutbox } = await import('$lib/db');
 				const accountId = getAccountId();
 				if (accountId) {
-					const subject = this.subject.trim() || '(no subject)';
 					await enqueueOutbox(accountId, {
-						to: this.to,
-						cc: this.cc,
-						bcc: this.bcc,
-						subject,
-						body: this.body,
+						to: payload.toRaw,
+						cc: payload.ccRaw,
+						bcc: payload.bccRaw,
+						subject: payload.subject,
+						body: payload.body,
 						fromEmail,
 						fromName: fromName?.trim() || undefined,
-						attachments: attachments.length ? attachments : undefined
+						attachments: payload.attachments.length ? payload.attachments : undefined
 					});
 					void import('$lib/sync/outbox-processor').then(({ outboxProcessor }) =>
 						outboxProcessor.processQueue()
 					);
 					void outbox.refresh();
-					this.reset();
-					toast.show(`"${subject}" queued — will send when back online`, 'info');
+					toast.show(`"${payload.subject}" queued — will send when back online`, 'info');
 					return 'queued';
 				}
 			}
@@ -380,8 +572,6 @@ class ComposeStore {
 			this.error = message;
 			toast.show(message, 'error');
 			return false;
-		} finally {
-			this.isSending = false;
 		}
 	}
 

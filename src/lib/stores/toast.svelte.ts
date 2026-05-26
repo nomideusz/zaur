@@ -16,7 +16,8 @@ export interface Toast {
 }
 
 const AUTO_DISMISS_MS = 5_000;
-const UNDO_DISMISS_MS = 8_000;
+export const UNDO_SEND_DELAY_MS = 8_000;
+const UNDO_DISMISS_MS = UNDO_SEND_DELAY_MS;
 const MAX_TOASTS = 4;
 
 class ToastStore {

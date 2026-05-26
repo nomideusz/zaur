@@ -183,6 +183,7 @@ const STORAGE = {
 	confirmBeforeDelete: 'zaur:confirm-before-delete',
 	confirmBeforeDiscardCompose: 'zaur:confirm-before-discard-compose',
 	returnToInboxAfterSend: 'zaur:return-to-inbox-after-send',
+	enableUndoSend: 'zaur:enable-undo-send',
 	skipHomeScreen: 'zaur:skip-home-screen',
 	readerTextSize: 'zaur:reader-text-size',
 	listTextSize: 'zaur:list-text-size',
@@ -1070,6 +1071,11 @@ function readReturnToInboxAfterSend(): boolean {
 	return localStorage.getItem(STORAGE.returnToInboxAfterSend) === 'true';
 }
 
+function readEnableUndoSend(): boolean {
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.enableUndoSend) !== 'false';
+}
+
 function readSkipHomeScreen(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.skipHomeScreen) === 'true';
@@ -1301,6 +1307,7 @@ class SettingsStore {
 	confirmBeforeDelete = $state(readConfirmBeforeDelete());
 	confirmBeforeDiscardCompose = $state(readConfirmBeforeDiscardCompose());
 	returnToInboxAfterSend = $state(readReturnToInboxAfterSend());
+	enableUndoSend = $state(readEnableUndoSend());
 	skipHomeScreen = $state(readSkipHomeScreen());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	listTextSize = $state<ListTextSize>(readListTextSize());
@@ -1485,6 +1492,7 @@ class SettingsStore {
 		this.confirmBeforeDelete = readConfirmBeforeDelete();
 		this.confirmBeforeDiscardCompose = readConfirmBeforeDiscardCompose();
 		this.returnToInboxAfterSend = readReturnToInboxAfterSend();
+		this.enableUndoSend = readEnableUndoSend();
 		this.skipHomeScreen = readSkipHomeScreen();
 		this.readerTextSize = readReaderTextSize();
 		this.listTextSize = readListTextSize();
@@ -2761,6 +2769,13 @@ class SettingsStore {
 		}
 	}
 
+	setEnableUndoSend(value: boolean) {
+		this.enableUndoSend = value;
+		if (browser) {
+			this.writeStorage(STORAGE.enableUndoSend, String(value));
+		}
+	}
+
 	setSkipHomeScreen(value: boolean) {
 		this.skipHomeScreen = value;
 		if (browser) {
@@ -3194,6 +3209,7 @@ class SettingsStore {
 		this.setConfirmBeforeDelete(true);
 		this.setConfirmBeforeDiscardCompose(true);
 		this.setReturnToInboxAfterSend(false);
+		this.setEnableUndoSend(true);
 		this.setHideMailShortcutsHelp(false);
 		this.setHideActionToasts(false);
 		this.setAutoLoadMore(false);

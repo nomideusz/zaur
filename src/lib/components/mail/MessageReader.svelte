@@ -141,14 +141,26 @@
 		compose.body = signature ? `${text}\n\n${signature}${quote}` : `${text}${quote}`;
 
 		try {
-			const result = await compose.send(auth.client, auth.username, senderName);
+			const result = await compose.send(auth.client, auth.username, senderName, {
+				onUndo: () => {
+					const idx = compose.body.search(quoteMarker);
+					quickReply = idx >= 0 ? compose.body.slice(0, idx).trimEnd() : compose.body.trim();
+				},
+				onComplete: (outcome) => {
+					if (outcome === 'sent') {
+						toast.show('Reply sent', 'success');
+						void mail.loadMessage(auth.client!, mailboxRouteId, latest.threadId);
+					} else if (outcome === 'queued') {
+						toast.show('Reply queued — will send when back online', 'info');
+					}
+				}
+			});
 			if (result === 'sent') {
 				quickReply = '';
 				toast.show('Reply sent', 'success');
 				void mail.loadMessage(auth.client, mailboxRouteId, latest.threadId);
-			} else if (result === 'queued') {
+			} else if (result === 'pending' || result === 'queued') {
 				quickReply = '';
-				toast.show('Reply queued — will send when back online', 'info');
 			}
 		} finally {
 			quickReplySending = false;
