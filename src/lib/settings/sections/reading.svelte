@@ -5,10 +5,10 @@
 	import { settings, type DefaultReplyMode, type ReaderTextSize } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Reading & replies" description="Text size, privacy, default reply, and quick reply.">
+<SettingsGroup title="Reading & replies" description="Text size, privacy, and reply behavior.">
 	<SettingsRow
 		title="Reading size"
-		description="Text size when reading and writing — HTML mail follows the reader theme in dark mode"
+		description="Text size when reading and writing"
 	>
 		<select
 			class="z-input w-auto"
@@ -23,7 +23,7 @@
 
 	<SettingsRow
 		title="Block external content"
-		description="Block remote images in HTML mail — you can still show them once per message"
+		description="Block remote images in HTML mail — you can still show them per message"
 	>
 		<input
 			type="checkbox"
@@ -50,23 +50,11 @@
 				onchange={(e) => settings.setHideExternalContentBanner(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
-
-		<SettingsRow
-			title="Compact blocked-images banner"
-			description="Smaller external images notice in the reading pane"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactExternalContentBanner}
-				onchange={(e) => settings.setCompactExternalContentBanner(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
 	</SettingsDepends>
 
 	<SettingsRow
 		title="Prefer plain text"
-		description="Show the plain-text version when available instead of formatted HTML"
+		description="Show plain text when available instead of HTML"
 	>
 		<input
 			type="checkbox"
@@ -78,7 +66,7 @@
 
 	<SettingsRow
 		title="Default reply action"
-		description="Primary reply button in the reading pane — r always replies, a always reply all"
+		description="Primary reply button — r replies, a reply all"
 	>
 		<select
 			class="z-input w-auto"
@@ -93,7 +81,7 @@
 
 	<SettingsRow
 		title="Show quick reply"
-		description="Reply box at the bottom of an open message — use Full reply for the compose panel"
+		description="Reply box at the bottom of an open message"
 	>
 		<input
 			type="checkbox"
@@ -111,7 +99,7 @@
 	>
 		<SettingsRow
 			title="Compact quick reply"
-			description="Single-line reply box with less padding at the bottom of the reading pane"
+			description="Single-line reply box with less padding"
 		>
 			<input
 				type="checkbox"
@@ -121,52 +109,10 @@
 			/>
 		</SettingsRow>
 	</SettingsDepends>
-</SettingsGroup>
 
-<SettingsGroup title="Reading pane layout" description="Padding and dividers in the reading pane." advanced>
-	<SettingsRow
-		title="Compact reader body"
-		description="Less padding around message content in the reading pane"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactReaderBody}
-			onchange={(e) => settings.setCompactReaderBody(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		title="Hide reader pane borders"
-		description="Remove divider lines under the subject title, banners, and between thread messages"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.hideReaderPaneBorders}
-			onchange={(e) => settings.setHideReaderPaneBorders(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-</SettingsGroup>
-
-<SettingsGroup title="Attachments" description="How files appear in the reading pane and compose." advanced>
-	<SettingsRow
-		title="Compact attachments"
-		description="Smaller attachment chips without the count label or file sizes — in reader and compose"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactAttachments}
-			onchange={(e) => settings.setCompactAttachments(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-</SettingsGroup>
-
-<SettingsGroup title="Message header" description="Sender, recipients, and avatars at the top of a message.">
 	<SettingsRow
 		title="Show contact actions"
-		description="Save contact and copy email links in the message header"
+		description="Save contact and copy email in the message header"
 	>
 		<input
 			type="checkbox"
@@ -175,10 +121,26 @@
 			onchange={(e) => settings.setShowReaderContactActions(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
+</SettingsGroup>
 
+<SettingsGroup title="Threads" description="How conversations expand and collapse.">
+	<SettingsRow
+		title="Expand all thread messages"
+		description="Show every message in a conversation expanded by default"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.expandAllThreadMessages}
+			onchange={(e) => settings.setExpandAllThreadMessages(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
+<SettingsGroup title="Thread display" description="Headers, timestamps, and collapsed messages." advanced>
 	<SettingsRow
 		title="Hide To and Cc lines"
-		description="Do not show recipient lists under the sender in the message header"
+		description="Do not show recipient lists under the sender"
 	>
 		<input
 			type="checkbox"
@@ -190,7 +152,7 @@
 
 	<SettingsRow
 		title="Hide sender email"
-		description="Show only the sender name in the message header — no email address line"
+		description="Show only the sender name in the message header"
 	>
 		<input
 			type="checkbox"
@@ -221,7 +183,7 @@
 
 	<SettingsRow
 		title="Compact subject title"
-		description="Smaller subject line and less padding above the message body"
+		description="Smaller subject line above the message body"
 	>
 		<input
 			type="checkbox"
@@ -230,90 +192,10 @@
 			onchange={(e) => settings.setCompactReaderHeader(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
-</SettingsGroup>
-
-<SettingsGroup title="Thread actions" description="Mark read, Reply, and ⋮ menu — in the app header on mobile, reader toolbar on desktop." advanced>
-	<SettingsRow
-		title="Icon-only thread actions"
-		description="Show Mark read and Reply as icons only in the thread toolbar"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.minimalReaderToolbar}
-			onchange={(e) => settings.setMinimalReaderToolbar(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsDepends
-		enabled={!settings.minimalReaderToolbar}
-		inactiveReason={settings.minimalReaderToolbar
-			? 'Thread actions are icon-only'
-			: 'Thread toolbar spacing'}
-	>
-		<SettingsRow
-			title="Compact thread actions"
-			description="Tighter spacing between buttons in the thread toolbar"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactReaderToolbar}
-				onchange={(e) => settings.setCompactReaderToolbar(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-	</SettingsDepends>
-</SettingsGroup>
-
-<SettingsGroup title="Move to folder" description="Folder picker in the ⋮ menu when moving messages." advanced>
-	<SettingsRow
-		title="Hide move menu labels"
-		description="Remove the “Move to” heading in folder move dropdowns"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.hideMoveMenuLabels}
-			onchange={(e) => settings.setHideMoveMenuLabels(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsDepends
-		enabled={!settings.hideMoveMenuLabels}
-		inactiveReason={settings.hideMoveMenuLabels
-			? 'Move menu labels are hidden'
-			: 'Move menu layout'}
-	>
-		<SettingsRow
-			title="Compact move menu"
-			description="Tighter spacing in folder move dropdowns"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.compactMoveMenu}
-				onchange={(e) => settings.setCompactMoveMenu(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-	</SettingsDepends>
-</SettingsGroup>
-
-<SettingsGroup title="Threads" description="How conversations expand and collapse.">
-	<SettingsRow
-		title="Expand all thread messages"
-		description="Show every message in a conversation expanded by default"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.expandAllThreadMessages}
-			onchange={(e) => settings.setExpandAllThreadMessages(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
 
 	<SettingsRow
 		title="Hide thread summary"
-		description="Do not show message count and expand/collapse controls under the subject"
+		description="Hide message count and expand/collapse controls under the subject"
 	>
 		<input
 			type="checkbox"
@@ -325,7 +207,7 @@
 
 	<SettingsRow
 		title="Hide reader timestamps"
-		description="Do not show received date and time on messages in the reading pane"
+		description="Do not show received date and time on messages"
 	>
 		<input
 			type="checkbox"
@@ -337,7 +219,7 @@
 
 	<SettingsRow
 		title="Hide collapsed thread previews"
-		description="Show only sender names on collapsed messages in a thread — no preview snippet"
+		description="Sender names only on collapsed messages — no preview snippet"
 	>
 		<input
 			type="checkbox"
@@ -360,10 +242,91 @@
 	</SettingsRow>
 </SettingsGroup>
 
+<SettingsGroup title="Toolbar & layout" description="Reading pane chrome and attachments." advanced>
+	<SettingsRow
+		title="Icon-only thread actions"
+		description="Mark read and Reply as icons only in the thread toolbar"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.minimalReaderToolbar}
+			onchange={(e) => settings.setMinimalReaderToolbar(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsDepends
+		enabled={!settings.minimalReaderToolbar}
+		inactiveReason={settings.minimalReaderToolbar
+			? 'Thread actions are icon-only'
+			: 'Thread toolbar spacing'}
+	>
+		<SettingsRow
+			title="Compact thread actions"
+			description="Tighter spacing between toolbar buttons"
+		>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.compactReaderToolbar}
+				onchange={(e) => settings.setCompactReaderToolbar(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsDepends>
+
+	<SettingsRow
+		title="Compact reader body"
+		description="Less padding around message content"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactReaderBody}
+			onchange={(e) => settings.setCompactReaderBody(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Hide reader pane borders"
+		description="Remove divider lines in the reading pane"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.hideReaderPaneBorders}
+			onchange={(e) => settings.setHideReaderPaneBorders(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Compact attachments"
+		description="Smaller attachment chips without file sizes"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactAttachments}
+			onchange={(e) => settings.setCompactAttachments(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Compact move menu"
+		description="Tighter spacing in folder move dropdowns"
+	>
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.compactMoveMenu}
+			onchange={(e) => settings.setCompactMoveMenu(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
 <SettingsGroup title="Empty reading pane" description="When no message is selected." advanced>
 	<SettingsRow
 		title="Hide empty reader prompts"
-		description="Leave the reading pane blank until a message is selected — no compose or settings nudges"
+		description="Leave the reading pane blank until a message is selected"
 	>
 		<input
 			type="checkbox"
@@ -381,7 +344,7 @@
 	>
 		<SettingsRow
 			title="Hide empty reader description"
-			description="Keep the empty reading pane title but remove the explanatory paragraph below it"
+			description="Title only — no explanatory paragraph"
 		>
 			<input
 				type="checkbox"
@@ -392,32 +355,8 @@
 		</SettingsRow>
 
 		<SettingsRow
-			title="Hide empty reader actions"
-			description="Remove Compose and settings buttons when no message is selected"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideEmptyReaderActions}
-				onchange={(e) => settings.setHideEmptyReaderActions(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
-			title="Hide empty reader icon"
-			description="Remove the mail icon above the empty reading pane title"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideEmptyReaderIcon}
-				onchange={(e) => settings.setHideEmptyReaderIcon(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
 			title="Compact empty reader"
-			description="Less padding and smaller text in the reading pane when no message is selected"
+			description="Less padding when no message is selected"
 		>
 			<input
 				type="checkbox"
@@ -429,66 +368,13 @@
 	</SettingsDepends>
 </SettingsGroup>
 
-<SettingsGroup title="Error & offline screens" description="When a message fails to load or you are offline." advanced>
-	<SettingsRow
-		title="Compact reader status"
-		description="Less padding on offline, not-found, and load-error screens in the reading pane"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactReaderStatus}
-			onchange={(e) => settings.setCompactReaderStatus(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		title="Compact reader inline error"
-		description="Smaller load-error banner above the message body when a thread fails to open"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactReaderInlineError}
-			onchange={(e) => settings.setCompactReaderInlineError(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		title="Hide reader status back button"
-		description="Remove the Back to list button on offline, not-found, and load-error screens"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.hideReaderStatusBackButton}
-			onchange={(e) => settings.setHideReaderStatusBackButton(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		title="Hide reader status message"
-		description="Show only the status heading on offline, not-found, and load-error screens — no detail text"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.hideReaderStatusMessage}
-			onchange={(e) => settings.setHideReaderStatusMessage(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-</SettingsGroup>
-
 <SettingsGroup title="Defaults">
-	<SettingsRow
-		title="Reset reading settings"
-		description="Restore reply, header, threads, attachments, and layout options on this page to their original value"
-	>
+	<SettingsRow title="Reset reading settings" description="Restore every option on this page">
 		<button
 			type="button"
 			class="z-btn-ghost text-sm"
 			onclick={() => {
-				if (confirm('Reset all reading settings to defaults?')) {
+				if (confirm('Reset reading settings to defaults?')) {
 					settings.resetReadingSettings();
 				}
 			}}

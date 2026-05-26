@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { ArrowLeft } from 'lucide-svelte';
+	import { ArrowLeft, PenSquare } from 'lucide-svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -39,6 +40,13 @@
 
 	{#if showFolderTitle}
 		<h2 class="z-type-pane-title hidden min-w-0 truncate md:block">{displayMailboxName}</h2>
+	{/if}
+
+	{#if ctx.showNewMessage}
+		<Button href="/mail/compose" class="hidden shrink-0 md:inline-flex">
+			<PenSquare class="size-5" aria-hidden="true" />
+			<span class={settings.compactHeaderActions ? 'sr-only sm:not-sr-only' : ''}>New message</span>
+		</Button>
 	{/if}
 
 	{#if ctx.mailboxRouteId && !threadId && !mail.hasSelection}

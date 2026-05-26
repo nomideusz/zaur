@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { settings } from '$lib/stores/settings.svelte';
 	import { isSettingsNavActive, type SettingsNavLink } from '$lib/settings/nav';
 	import { cn } from '$lib/utils/cn';
 
@@ -19,47 +18,34 @@
 	}
 </script>
 
-<nav class="space-y-4">
+<div class="space-y-4 pt-2">
 	{#each sections as section}
 		{@const sectionLinks = linksForSection(section.id)}
 		{#if sectionLinks.length > 0}
 			<div>
-				<p class="mb-1.5 px-3 text-xs font-semibold tracking-wide text-fg-subtle uppercase">
-					{section.label}
-				</p>
-				<div class="space-y-0.5">
+				<p class="z-type-label mb-1 px-2">{section.label}</p>
+				<ul class="space-y-0.5">
 					{#each sectionLinks as link (link.href)}
-						<a
-							href={link.href}
-							class={cn(
-								'flex min-h-11 items-center rounded-lg px-3 transition-all',
-								settings.compactSettingsNav ? 'py-2' : 'py-2.5',
-								isSettingsNavActive($page.url.pathname, link.href)
-									? 'bg-accent/10 shadow-sm'
-									: 'hover:bg-surface-sunken active:bg-surface-sunken'
-							)}
-							aria-current={isSettingsNavActive($page.url.pathname, link.href) ? 'page' : undefined}
-							onclick={onNavigate}
-						>
-							<div class="min-w-0 flex-1">
-								<span
-									class={cn(
-										'block text-sm',
-										isSettingsNavActive($page.url.pathname, link.href)
-											? 'font-semibold text-accent'
-											: 'font-medium text-fg'
-									)}
-								>
-									{link.label}
-								</span>
-								{#if !settings.hideSettingsNavHints}
-									<span class="block truncate text-xs text-fg-muted">{link.hint}</span>
-								{/if}
-							</div>
-						</a>
+						<li>
+							<a
+								href={link.href}
+								class={cn(
+									'block rounded-sm px-2 py-2 text-sm transition-colors',
+									isSettingsNavActive($page.url.pathname, link.href)
+										? 'z-surface-active'
+										: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
+								)}
+								aria-current={isSettingsNavActive($page.url.pathname, link.href)
+									? 'page'
+									: undefined}
+								onclick={onNavigate}
+							>
+								{link.label}
+							</a>
+						</li>
 					{/each}
-				</div>
+				</ul>
 			</div>
 		{/if}
 	{/each}
-</nav>
+</div>

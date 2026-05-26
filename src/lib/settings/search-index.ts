@@ -7,6 +7,12 @@ export type SettingsSearchEntry = {
 
 export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 	{
+		"id": "/settings/account-clear-local-cache",
+		"href": "/settings/account",
+		"title": "Clear local cache",
+		"description": ""
+	},
+	{
 		"id": "/settings/account-display-name",
 		"href": "/settings/account",
 		"title": "Display name",
@@ -19,21 +25,21 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/account-export-settings",
-		"href": "/settings/account",
-		"title": "Export settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/account-hide-field-hints",
-		"href": "/settings/account",
-		"title": "Hide field hints",
-		"description": ""
-	},
-	{
 		"id": "/settings/account-include-signature",
 		"href": "/settings/account",
 		"title": "Include signature",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-jmap-server",
+		"href": "/settings/account",
+		"title": "JMAP server",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-primary-address",
+		"href": "/settings/account",
+		"title": "Primary address",
 		"description": ""
 	},
 	{
@@ -43,15 +49,27 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/account-reset-you-settings",
+		"id": "/settings/account-reset-profile-settings",
 		"href": "/settings/account",
-		"title": "Reset you settings",
+		"title": "Reset profile settings",
 		"description": ""
 	},
 	{
-		"id": "/settings/account-sync-to-account",
+		"id": "/settings/account-save-to-account",
 		"href": "/settings/account",
-		"title": "Sync to account",
+		"title": "Save to account",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-session",
+		"href": "/settings/account",
+		"title": "Session",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-sign-out",
+		"href": "/settings/account",
+		"title": "Sign out",
 		"description": ""
 	},
 	{
@@ -61,81 +79,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/appearance-compact-folder-loading-skeleton",
-		"href": "/settings/appearance",
-		"title": "Compact folder loading skeleton",
-		"description": ""
-	},
-	{
-		"id": "/settings/appearance-compact-list-loading-skeleton",
-		"href": "/settings/appearance",
-		"title": "Compact list loading skeleton",
-		"description": ""
-	},
-	{
-		"id": "/settings/appearance-compact-reader-skeleton",
-		"href": "/settings/appearance",
-		"title": "Compact reader skeleton",
-		"description": ""
-	},
-	{
-		"id": "/settings/appearance-compact-settings-layout",
-		"href": "/settings/appearance",
-		"title": "Compact settings layout",
-		"description": ""
-	},
-	{
-		"id": "/settings/appearance-compact-settings-nav",
-		"href": "/settings/appearance",
-		"title": "Compact settings nav",
-		"description": ""
-	},
-	{
-		"id": "/settings/appearance-compact-settings-panel",
-		"href": "/settings/appearance",
-		"title": "Compact settings panel",
-		"description": ""
-	},
-	{
-		"id": "/settings/appearance-compact-settings-rows",
-		"href": "/settings/appearance",
-		"title": "Compact settings rows",
-		"description": ""
-	},
-	{
 		"id": "/settings/appearance-corner-style",
 		"href": "/settings/appearance",
 		"title": "Corner style",
-		"description": ""
-	},
-	{
-		"id": "/settings/appearance-hide-connecting-screen",
-		"href": "/settings/appearance",
-		"title": "Hide connecting screen",
-		"description": ""
-	},
-	{
-		"id": "/settings/appearance-hide-settings-back-link",
-		"href": "/settings/appearance",
-		"title": "Hide settings back link",
-		"description": ""
-	},
-	{
-		"id": "/settings/appearance-hide-settings-nav-hints",
-		"href": "/settings/appearance",
-		"title": "Hide settings nav hints",
-		"description": ""
-	},
-	{
-		"id": "/settings/appearance-hide-settings-page-title",
-		"href": "/settings/appearance",
-		"title": "Hide settings page title",
-		"description": ""
-	},
-	{
-		"id": "/settings/appearance-hide-settings-panel-descriptions",
-		"href": "/settings/appearance",
-		"title": "Hide settings panel descriptions",
 		"description": ""
 	},
 	{
@@ -151,9 +97,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/appearance-reset-look-feel",
+		"id": "/settings/appearance-reset-theme-settings",
 		"href": "/settings/appearance",
-		"title": "Reset look & feel",
+		"title": "Reset theme settings",
 		"description": ""
 	},
 	{
@@ -499,18 +445,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-compact-list-error-state",
-		"href": "/settings/inbox",
-		"title": "Compact list error state",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-compact-list-rows",
-		"href": "/settings/inbox",
-		"title": "Compact list rows",
-		"description": ""
-	},
-	{
 		"id": "/settings/inbox-compact-mobile-folder-picker",
 		"href": "/settings/inbox",
 		"title": "Compact mobile folder picker",
@@ -526,12 +460,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/inbox-enable-bulk-select",
 		"href": "/settings/inbox",
 		"title": "Enable bulk select",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-hide-active-message-indicator",
-		"href": "/settings/inbox",
-		"title": "Hide active message indicator",
 		"description": ""
 	},
 	{
@@ -553,21 +481,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-hide-list-error-retry",
-		"href": "/settings/inbox",
-		"title": "Hide list error retry",
-		"description": ""
-	},
-	{
 		"id": "/settings/inbox-hide-list-row-dividers",
 		"href": "/settings/inbox",
 		"title": "Hide list row dividers",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-hide-search-list-prefix",
-		"href": "/settings/inbox",
-		"title": "Hide search list prefix",
 		"description": ""
 	},
 	{
@@ -595,9 +511,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-reset-inbox-settings",
+		"id": "/settings/inbox-reset-inbox-list-settings",
 		"href": "/settings/inbox",
-		"title": "Reset inbox settings",
+		"title": "Reset inbox list settings",
 		"description": ""
 	},
 	{
@@ -649,39 +565,69 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/layout-compact-app-header",
+		"href": "/settings/layout",
+		"title": "Compact app header",
+		"description": ""
+	},
+	{
+		"id": "/settings/layout-compact-layout",
+		"href": "/settings/layout",
+		"title": "Compact layout",
+		"description": ""
+	},
+	{
+		"id": "/settings/layout-expand-list-until-opened",
+		"href": "/settings/layout",
+		"title": "Expand list until opened",
+		"description": ""
+	},
+	{
+		"id": "/settings/layout-hide-outbox-unless-failed",
+		"href": "/settings/layout",
+		"title": "Hide outbox unless failed",
+		"description": ""
+	},
+	{
+		"id": "/settings/layout-hide-pane-borders",
+		"href": "/settings/layout",
+		"title": "Hide pane borders",
+		"description": ""
+	},
+	{
+		"id": "/settings/layout-icon-only-thread-actions",
+		"href": "/settings/layout",
+		"title": "Icon-only thread actions",
+		"description": ""
+	},
+	{
+		"id": "/settings/layout-reset-layout-settings",
+		"href": "/settings/layout",
+		"title": "Reset layout settings",
+		"description": ""
+	},
+	{
+		"id": "/settings/layout-tool-icons-only",
+		"href": "/settings/layout",
+		"title": "Tool icons only",
+		"description": ""
+	},
+	{
 		"id": "/settings/mail-app-install",
 		"href": "/settings/mail",
 		"title": "App install",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-archive",
+		"id": "/settings/mail-archive-unread-delete",
 		"href": "/settings/mail",
-		"title": "Archive",
+		"title": "Archive / unread / delete",
 		"description": ""
 	},
 	{
 		"id": "/settings/mail-auto-load-more-messages",
 		"href": "/settings/mail",
 		"title": "Auto-load more messages",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-close-compose",
-		"href": "/settings/mail",
-		"title": "Close compose",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-compact-load-more",
-		"href": "/settings/mail",
-		"title": "Compact load more",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-compact-toasts",
-		"href": "/settings/mail",
-		"title": "Compact toasts",
 		"description": ""
 	},
 	{
@@ -703,27 +649,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-delete",
-		"href": "/settings/mail",
-		"title": "Delete",
-		"description": ""
-	},
-	{
 		"id": "/settings/mail-hide-action-toasts",
 		"href": "/settings/mail",
 		"title": "Hide action toasts",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-hide-keyboard-shortcuts-help",
-		"href": "/settings/mail",
-		"title": "Hide keyboard shortcuts help",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-hide-toast-icons",
-		"href": "/settings/mail",
-		"title": "Hide toast icons",
 		"description": ""
 	},
 	{
@@ -739,15 +667,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-mark-unread",
+		"id": "/settings/mail-next-previous-message",
 		"href": "/settings/mail",
-		"title": "Mark unread",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-next-message",
-		"href": "/settings/mail",
-		"title": "Next message",
+		"title": "Next / previous message",
 		"description": ""
 	},
 	{
@@ -757,33 +679,21 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-previous-message",
-		"href": "/settings/mail",
-		"title": "Previous message",
-		"description": ""
-	},
-	{
 		"id": "/settings/mail-push-notification-status",
 		"href": "/settings/mail",
 		"title": "Push notification status",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-reply",
+		"id": "/settings/mail-reply-reply-all",
 		"href": "/settings/mail",
-		"title": "Reply",
+		"title": "Reply / reply all",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-reply-all",
+		"id": "/settings/mail-reset-general-mail-settings",
 		"href": "/settings/mail",
-		"title": "Reply all",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-restore-mail-defaults",
-		"href": "/settings/mail",
-		"title": "Restore mail defaults",
+		"title": "Reset general mail settings",
 		"description": ""
 	},
 	{
@@ -799,27 +709,27 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-send-message",
+		"id": "/settings/mail-send-close-compose",
 		"href": "/settings/mail",
-		"title": "Send message",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-show-unread-count-in-tab-title",
-		"href": "/settings/mail",
-		"title": "Show unread count in tab title",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-show-unread-count-on-app-icon",
-		"href": "/settings/mail",
-		"title": "Show unread count on app icon",
+		"title": "Send / close compose",
 		"description": ""
 	},
 	{
 		"id": "/settings/mail-undo-send",
 		"href": "/settings/mail",
 		"title": "Undo send",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-unread-count-in-tab-title",
+		"href": "/settings/mail",
+		"title": "Unread count in tab title",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-unread-count-on-app-icon",
+		"href": "/settings/mail",
+		"title": "Unread count on app icon",
 		"description": ""
 	},
 	{
@@ -832,12 +742,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-compact-attachments",
 		"href": "/settings/reading",
 		"title": "Compact attachments",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-compact-blocked-images-banner",
-		"href": "/settings/reading",
-		"title": "Compact blocked-images banner",
 		"description": ""
 	},
 	{
@@ -877,18 +781,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-compact-reader-inline-error",
-		"href": "/settings/reading",
-		"title": "Compact reader inline error",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-compact-reader-status",
-		"href": "/settings/reading",
-		"title": "Compact reader status",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-compact-subject-title",
 		"href": "/settings/reading",
 		"title": "Compact subject title",
@@ -925,21 +817,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-hide-empty-reader-actions",
-		"href": "/settings/reading",
-		"title": "Hide empty reader actions",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-hide-empty-reader-description",
 		"href": "/settings/reading",
 		"title": "Hide empty reader description",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-hide-empty-reader-icon",
-		"href": "/settings/reading",
-		"title": "Hide empty reader icon",
 		"description": ""
 	},
 	{
@@ -949,27 +829,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-hide-move-menu-labels",
-		"href": "/settings/reading",
-		"title": "Hide move menu labels",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-hide-reader-pane-borders",
 		"href": "/settings/reading",
 		"title": "Hide reader pane borders",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-hide-reader-status-back-button",
-		"href": "/settings/reading",
-		"title": "Hide reader status back button",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-hide-reader-status-message",
-		"href": "/settings/reading",
-		"title": "Hide reader status message",
 		"description": ""
 	},
 	{
@@ -1033,207 +895,63 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/workspace-compact-account-menu",
-		"href": "/settings/workspace",
-		"title": "Compact account menu",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-account-menu-dropdown",
-		"href": "/settings/workspace",
-		"title": "Compact account menu dropdown",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-app-header",
-		"href": "/settings/workspace",
-		"title": "Compact app header",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-folder-badges",
-		"href": "/settings/workspace",
+		"id": "/settings/sidebar-compact-folder-badges",
+		"href": "/settings/sidebar",
 		"title": "Compact folder badges",
 		"description": ""
 	},
 	{
-		"id": "/settings/workspace-compact-folder-sidebar",
-		"href": "/settings/workspace",
+		"id": "/settings/sidebar-compact-folder-sidebar",
+		"href": "/settings/sidebar",
 		"title": "Compact folder sidebar",
 		"description": ""
 	},
 	{
-		"id": "/settings/workspace-compact-folder-tree",
-		"href": "/settings/workspace",
-		"title": "Compact folder tree",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-header-actions",
-		"href": "/settings/workspace",
-		"title": "Compact header actions",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-home-screen",
-		"href": "/settings/workspace",
-		"title": "Compact home screen",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-layout",
-		"href": "/settings/workspace",
-		"title": "Compact layout",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-offline-indicator",
-		"href": "/settings/workspace",
-		"title": "Compact offline indicator",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-outbox-menu",
-		"href": "/settings/workspace",
-		"title": "Compact outbox menu",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-search-dropdown",
-		"href": "/settings/workspace",
-		"title": "Compact search dropdown",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-search-field",
-		"href": "/settings/workspace",
-		"title": "Compact search field",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-sidebar-shortcuts",
-		"href": "/settings/workspace",
-		"title": "Compact sidebar shortcuts",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-compact-tool-switcher",
-		"href": "/settings/workspace",
-		"title": "Compact tool switcher",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-expand-list-until-opened",
-		"href": "/settings/workspace",
-		"title": "Expand list until opened",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-hide-app-title",
-		"href": "/settings/workspace",
-		"title": "Hide app title",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-hide-folder-icons",
-		"href": "/settings/workspace",
+		"id": "/settings/sidebar-hide-folder-icons",
+		"href": "/settings/sidebar",
 		"title": "Hide folder icons",
 		"description": ""
 	},
 	{
-		"id": "/settings/workspace-hide-home-card-descriptions",
-		"href": "/settings/workspace",
-		"title": "Hide home card descriptions",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-hide-home-screen-subtitle",
-		"href": "/settings/workspace",
-		"title": "Hide home screen subtitle",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-hide-offline-indicator",
-		"href": "/settings/workspace",
-		"title": "Hide offline indicator",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-hide-open-inbox-button",
-		"href": "/settings/workspace",
-		"title": "Hide open inbox button",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-hide-outbox-unless-failed",
-		"href": "/settings/workspace",
-		"title": "Hide outbox unless failed",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-hide-pane-borders",
-		"href": "/settings/workspace",
-		"title": "Hide pane borders",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-hide-search-dropdown-headers",
-		"href": "/settings/workspace",
-		"title": "Hide search dropdown headers",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-hide-sidebar-search",
-		"href": "/settings/workspace",
+		"id": "/settings/sidebar-hide-sidebar-search",
+		"href": "/settings/sidebar",
 		"title": "Hide sidebar search",
 		"description": ""
 	},
 	{
-		"id": "/settings/workspace-hide-sidebar-shortcuts",
-		"href": "/settings/workspace",
+		"id": "/settings/sidebar-hide-sidebar-shortcuts",
+		"href": "/settings/sidebar",
 		"title": "Hide sidebar shortcuts",
 		"description": ""
 	},
 	{
-		"id": "/settings/workspace-mail-only-navigation",
-		"href": "/settings/workspace",
+		"id": "/settings/sidebar-mail-only-navigation",
+		"href": "/settings/sidebar",
 		"title": "Mail-only navigation",
 		"description": ""
 	},
 	{
-		"id": "/settings/workspace-remember-last-mailbox",
-		"href": "/settings/workspace",
+		"id": "/settings/sidebar-remember-last-mailbox",
+		"href": "/settings/sidebar",
 		"title": "Remember last mailbox",
 		"description": ""
 	},
 	{
-		"id": "/settings/workspace-reset-workspace-settings",
-		"href": "/settings/workspace",
-		"title": "Reset workspace settings",
+		"id": "/settings/sidebar-reset-sidebar-settings",
+		"href": "/settings/sidebar",
+		"title": "Reset sidebar settings",
 		"description": ""
 	},
 	{
-		"id": "/settings/workspace-search-contact-suggestions",
-		"href": "/settings/workspace",
+		"id": "/settings/sidebar-search-contact-suggestions",
+		"href": "/settings/sidebar",
 		"title": "Search contact suggestions",
 		"description": ""
 	},
 	{
-		"id": "/settings/workspace-show-folder-unread-counts",
-		"href": "/settings/workspace",
+		"id": "/settings/sidebar-show-folder-unread-counts",
+		"href": "/settings/sidebar",
 		"title": "Show folder unread counts",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-skip-home-screen",
-		"href": "/settings/workspace",
-		"title": "Skip home screen",
-		"description": ""
-	},
-	{
-		"id": "/settings/workspace-tool-icons-only",
-		"href": "/settings/workspace",
-		"title": "Tool icons only",
 		"description": ""
 	}
 ];

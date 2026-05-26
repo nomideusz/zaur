@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/stores';
 	import { settings } from '$lib/stores/settings.svelte';
-	import { hiddenSettingsCountForPage } from '$lib/settings/page-stats';
 	import { cn } from '$lib/utils/cn';
 
 	let {
@@ -15,51 +13,35 @@
 		children: import('svelte').Snippet;
 		footer?: import('svelte').Snippet;
 	} = $props();
-
-	const hiddenCount = $derived(
-		settings.settingsDetailLevel === 'basic'
-			? hiddenSettingsCountForPage($page.url.pathname)
-			: 0
-	);
 </script>
 
-<div class={cn('z-panel rounded-2xl bg-surface-raised/95 shadow-sm', settings.compactSettingsPanel ? 'p-4 md:p-5' : 'p-5 md:p-7')}>
-	<div>
-		<h2 class={cn('font-semibold tracking-tight text-fg', settings.compactSettingsPanel ? 'text-base' : 'text-lg md:text-xl')}>
+<div class="w-full max-w-[42rem] min-w-0">
+	<header class={cn(settings.compactSettingsPanel ? 'mb-5' : 'mb-6')}>
+		<h2
+			class={cn(
+				'font-semibold tracking-tight text-fg',
+				settings.compactSettingsPanel ? 'text-lg' : 'text-xl'
+			)}
+		>
 			{title}
 		</h2>
 		{#if !settings.hideSettingsPanelDescriptions}
-			<p class="mt-1 max-w-3xl text-sm text-fg-muted">{description}</p>
-			{#if hiddenCount > 0}
-				<p class="mt-1.5 text-xs text-fg-muted">
-					{hiddenCount} more {hiddenCount === 1 ? 'option' : 'options'} in
-					<button
-						type="button"
-						class="rounded-sm text-accent underline-offset-2 hover:underline"
-						onclick={() => settings.setSettingsDetailLevel('advanced')}
-					>
-						All options
-					</button>.
-				</p>
-			{/if}
+			<p class="mt-1 max-w-prose text-sm text-fg-muted">{description}</p>
 		{/if}
-	</div>
-	<div
-		class={cn(
-			settings.compactSettingsPanel ? 'mt-4 space-y-6' : 'mt-6 space-y-8 md:mt-8 md:space-y-10',
-			settings.hideSettingsPanelDescriptions && (settings.compactSettingsPanel ? 'mt-3' : 'mt-4')
-		)}
-	>
+	</header>
+
+	<div class={cn(settings.compactSettingsPanel ? 'space-y-6' : 'space-y-8')}>
 		{@render children()}
 	</div>
+
 	{#if footer}
-		<div
+		<footer
 			class={cn(
-				settings.compactSettingsPanel ? 'mt-6 pt-4' : 'mt-8 pt-6',
+				settings.compactSettingsPanel ? 'mt-8 pt-5' : 'mt-10 pt-6',
 				!settings.hidePaneBorders && 'border-t border-border'
 			)}
 		>
 			{@render footer()}
-		</div>
+		</footer>
 	{/if}
 </div>

@@ -78,14 +78,13 @@ function countHiddenForSource(source) {
 
 const files = [
 	['src/lib/settings/sections/appearance.svelte', '/settings/appearance'],
+	['src/lib/settings/sections/workspace_layout.svelte', '/settings/layout'],
+	['src/lib/settings/sections/workspace_nav.svelte', '/settings/sidebar'],
 	['src/lib/settings/sections/inbox.svelte', '/settings/inbox'],
 	['src/lib/settings/sections/reading.svelte', '/settings/reading'],
 	['src/lib/settings/sections/compose.svelte', '/settings/compose'],
-	['src/lib/settings/sections/workspace_layout.svelte', '/settings/workspace'],
-	['src/lib/settings/sections/workspace_nav.svelte', '/settings/workspace'],
 	['src/lib/settings/sections/calendar.svelte', '/settings/calendar'],
 	['src/lib/settings/sections/contacts.svelte', '/settings/contacts'],
-	['src/lib/settings/sections/settings_ui.svelte', '/settings/appearance'],
 	['src/lib/settings/sections/data_reset.svelte', '/settings/data'],
 	['src/lib/settings/sections/data_backup.svelte', '/settings/data'],
 	['src/routes/(app)/settings/account/+page.svelte', '/settings/account'],

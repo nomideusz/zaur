@@ -132,10 +132,6 @@ const STORAGE = {
 	hideContactMessageCounts: 'zaur:hide-contact-message-counts',
 	compactListEmptyState: 'zaur:compact-list-empty-state',
 	compactListHeader: 'zaur:compact-list-header',
-	compactHomeScreen: 'zaur:compact-home-screen',
-	hideHomeScreenSubtitle: 'zaur:hide-home-screen-subtitle',
-	hideHomeCardDescriptions: 'zaur:hide-home-card-descriptions',
-	hideHomeOpenInboxButton: 'zaur:hide-home-open-inbox-button',
 	compactListLoadingSkeleton: 'zaur:compact-list-loading-skeleton',
 	compactMobileFolderPicker: 'zaur:compact-mobile-folder-picker',
 	compactReaderToolbar: 'zaur:compact-reader-toolbar',
@@ -192,7 +188,6 @@ const STORAGE = {
 	confirmBeforeDiscardCompose: 'zaur:confirm-before-discard-compose',
 	returnToInboxAfterSend: 'zaur:return-to-inbox-after-send',
 	enableUndoSend: 'zaur:enable-undo-send',
-	skipHomeScreen: 'zaur:skip-home-screen',
 	readerTextSize: 'zaur:reader-text-size',
 	listTextSize: 'zaur:list-text-size',
 	defaultReplyMode: 'zaur:default-reply-mode',
@@ -781,26 +776,6 @@ function readCompactListHeader(): boolean {
 	return localStorage.getItem(STORAGE.compactListHeader) === 'true';
 }
 
-function readCompactHomeScreen(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactHomeScreen) === 'true';
-}
-
-function readHideHomeScreenSubtitle(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideHomeScreenSubtitle) === 'true';
-}
-
-function readHideHomeCardDescriptions(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideHomeCardDescriptions) === 'true';
-}
-
-function readHideHomeOpenInboxButton(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideHomeOpenInboxButton) === 'true';
-}
-
 function readCompactListLoadingSkeleton(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactListLoadingSkeleton) === 'true';
@@ -1079,11 +1054,6 @@ function readEnableUndoSend(): boolean {
 	return localStorage.getItem(STORAGE.enableUndoSend) !== 'false';
 }
 
-function readSkipHomeScreen(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.skipHomeScreen) === 'true';
-}
-
 function readStoredTextSize(key: string): 'small' | 'normal' | 'large' {
 	if (!browser) return 'normal';
 	const stored = localStorage.getItem(key);
@@ -1251,10 +1221,6 @@ class SettingsStore {
 	hideContactMessageCounts = $state(readHideContactMessageCounts());
 	compactListEmptyState = $state(readCompactListEmptyState());
 	compactListHeader = $state(readCompactListHeader());
-	compactHomeScreen = $state(readCompactHomeScreen());
-	hideHomeScreenSubtitle = $state(readHideHomeScreenSubtitle());
-	hideHomeCardDescriptions = $state(readHideHomeCardDescriptions());
-	hideHomeOpenInboxButton = $state(readHideHomeOpenInboxButton());
 	compactListLoadingSkeleton = $state(readCompactListLoadingSkeleton());
 	compactMobileFolderPicker = $state(readCompactMobileFolderPicker());
 	compactReaderToolbar = $state(readCompactReaderToolbar());
@@ -1310,7 +1276,6 @@ class SettingsStore {
 	confirmBeforeDiscardCompose = $state(readConfirmBeforeDiscardCompose());
 	returnToInboxAfterSend = $state(readReturnToInboxAfterSend());
 	enableUndoSend = $state(readEnableUndoSend());
-	skipHomeScreen = $state(readSkipHomeScreen());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	listTextSize = $state<ListTextSize>(readListTextSize());
 	defaultReplyMode = $state<DefaultReplyMode>(readDefaultReplyMode());
@@ -1432,10 +1397,6 @@ class SettingsStore {
 		this.hideContactMessageCounts = readHideContactMessageCounts();
 		this.compactListEmptyState = readCompactListEmptyState();
 		this.compactListHeader = readCompactListHeader();
-		this.compactHomeScreen = readCompactHomeScreen();
-		this.hideHomeScreenSubtitle = readHideHomeScreenSubtitle();
-		this.hideHomeCardDescriptions = readHideHomeCardDescriptions();
-		this.hideHomeOpenInboxButton = readHideHomeOpenInboxButton();
 		this.compactListLoadingSkeleton = readCompactListLoadingSkeleton();
 		this.compactMobileFolderPicker = readCompactMobileFolderPicker();
 		this.compactReaderToolbar = readCompactReaderToolbar();
@@ -1494,7 +1455,6 @@ class SettingsStore {
 		this.confirmBeforeDiscardCompose = readConfirmBeforeDiscardCompose();
 		this.returnToInboxAfterSend = readReturnToInboxAfterSend();
 		this.enableUndoSend = readEnableUndoSend();
-		this.skipHomeScreen = readSkipHomeScreen();
 		this.readerTextSize = readReaderTextSize();
 		this.listTextSize = readListTextSize();
 		this.defaultReplyMode = readDefaultReplyMode();
@@ -2351,34 +2311,6 @@ class SettingsStore {
 		}
 	}
 
-	setCompactHomeScreen(value: boolean) {
-		this.compactHomeScreen = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactHomeScreen, String(value));
-		}
-	}
-
-	setHideHomeScreenSubtitle(value: boolean) {
-		this.hideHomeScreenSubtitle = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideHomeScreenSubtitle, String(value));
-		}
-	}
-
-	setHideHomeCardDescriptions(value: boolean) {
-		this.hideHomeCardDescriptions = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideHomeCardDescriptions, String(value));
-		}
-	}
-
-	setHideHomeOpenInboxButton(value: boolean) {
-		this.hideHomeOpenInboxButton = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideHomeOpenInboxButton, String(value));
-		}
-	}
-
 	setCompactListLoadingSkeleton(value: boolean) {
 		this.compactListLoadingSkeleton = value;
 		if (browser) {
@@ -2767,13 +2699,6 @@ class SettingsStore {
 		}
 	}
 
-	setSkipHomeScreen(value: boolean) {
-		this.skipHomeScreen = value;
-		if (browser) {
-			this.writeStorage(STORAGE.skipHomeScreen, String(value));
-		}
-	}
-
 	setReaderTextSize(value: ReaderTextSize) {
 		this.readerTextSize = value;
 		if (browser) {
@@ -2984,10 +2909,6 @@ class SettingsStore {
 		this.setHideContactMessageCounts(false);
 		this.setCompactListEmptyState(false);
 		this.setCompactListHeader(false);
-		this.setCompactHomeScreen(false);
-		this.setHideHomeScreenSubtitle(false);
-		this.setHideHomeCardDescriptions(false);
-		this.setHideHomeOpenInboxButton(false);
 		this.setCompactListLoadingSkeleton(false);
 		this.setCompactMobileFolderPicker(false);
 		this.setCompactReaderToolbar(false);
@@ -3035,7 +2956,6 @@ class SettingsStore {
 		this.setCompactReaderInlineError(false);
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(false);
-		this.setSkipHomeScreen(false);
 		this.setHideSidebarShortcuts(false);
 		this.setMailOnlyNavigation(false);
 		void import('$lib/stores/visual.svelte').then(({ visual }) => visual.resetToDefaults());
@@ -3055,7 +2975,6 @@ class SettingsStore {
 	}
 
 	applySimpleMode() {
-		this.setSkipHomeScreen(true);
 		this.setMailOnlyNavigation(true);
 		this.setShowAvatars(false);
 		this.setShowStarsInList(false);
@@ -3136,10 +3055,6 @@ class SettingsStore {
 		this.setHideContactMessageCounts(true);
 		this.setCompactListEmptyState(true);
 		this.setCompactListHeader(true);
-		this.setCompactHomeScreen(true);
-		this.setHideHomeScreenSubtitle(true);
-		this.setHideHomeCardDescriptions(true);
-		this.setHideHomeOpenInboxButton(true);
 		this.setCompactListLoadingSkeleton(true);
 		this.setCompactMobileFolderPicker(true);
 		this.setCompactReaderToolbar(true);
@@ -3304,11 +3219,6 @@ class SettingsStore {
 		this.setCompactUserMenuDropdown(false);
 		this.setExpandListUntilOpen(false);
 		this.setCompactFolderSidebarError(false);
-		this.setSkipHomeScreen(false);
-		this.setCompactHomeScreen(false);
-		this.setHideHomeScreenSubtitle(false);
-		this.setHideHomeCardDescriptions(false);
-		this.setHideHomeOpenInboxButton(false);
 		this.setRememberLastMailbox(false);
 		this.setHideSidebarShortcuts(false);
 		this.setCompactSidebarShortcuts(false);
@@ -3388,7 +3298,6 @@ class SettingsStore {
 			this.compactLayout,
 			this.hideSidebarShortcuts,
 			this.mailOnlyNavigation,
-			this.skipHomeScreen,
 			this.hideHeaderSearch,
 			this.hideOfflineIndicator,
 			this.hideComposeHints,
@@ -3478,10 +3387,6 @@ class SettingsStore {
 			this.hideContactMessageCounts,
 			this.compactListEmptyState,
 			this.compactListHeader,
-			this.compactHomeScreen,
-			this.hideHomeScreenSubtitle,
-			this.hideHomeCardDescriptions,
-			this.hideHomeOpenInboxButton,
 			this.compactListLoadingSkeleton,
 			this.compactMobileFolderPicker,
 			this.compactReaderToolbar,

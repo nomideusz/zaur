@@ -610,7 +610,7 @@
 	}
 
 	.z-reader-column {
-		@apply mx-auto w-full max-w-(--z-reader-measure);
+		@apply w-full max-w-(--z-reader-measure);
 	}
 
 	.z-reader-body {

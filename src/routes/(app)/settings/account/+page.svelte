@@ -8,8 +8,6 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { cn } from '$lib/utils/cn';
-
 	let clearingCache = $state(false);
 
 	async function clearLocalCache() {
@@ -34,7 +32,7 @@
 	<title>You · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel title="You" description="How you appear when sending mail, plus account and local data on this device.">
+<SettingsPanel title="You" description="Your name and signature, plus account details on this device.">
 	<SettingsGroup title="About you" description="Name and signature for outgoing messages.">
 		<SettingsField
 			title="Display name"
@@ -74,24 +72,10 @@
 		</SettingsRow>
 	</SettingsGroup>
 
-	<SettingsGroup title="This page" advanced>
-		<SettingsRow
-			title="Hide field hints"
-			description="Remove description text under profile fields and local data on this page"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.hideAccountFieldHints}
-				onchange={(e) => settings.setHideAccountFieldHints(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-	</SettingsGroup>
-
-	<SettingsGroup title="Preferences backup">
+	<SettingsGroup title="Sync" description="Preferences are stored on your mail account and cached in this browser.">
 		<SettingsRow
 			title="Refresh from account"
-			description="Load the latest preferences saved on your mail account"
+			description="Load the latest preferences from your mail account"
 		>
 			<button
 				type="button"
@@ -108,27 +92,19 @@
 			</button>
 		</SettingsRow>
 		<SettingsRow
-			title="Sync to account"
-			description="Save your current preferences to your mail account for use on other devices"
+			title="Save to account"
+			description="Push your current preferences to other devices"
 		>
 			<button type="button" class="z-btn-ghost text-sm" onclick={() => void settings.syncToAccount()}>
-				Sync now
-			</button>
-		</SettingsRow>
-		<SettingsRow
-			title="Export settings"
-			description="Download a JSON backup of your preferences — also under Backup & reset"
-		>
-			<button type="button" class="z-btn-ghost text-sm" onclick={() => settings.downloadLocalPreferences()}>
-				Export
+				Save
 			</button>
 		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Defaults">
 		<SettingsRow
-			title="Reset you settings"
-			description="Restore display name, signature, and field hints on this page to their original values"
+			title="Reset profile settings"
+			description="Restore display name and signature on this page"
 		>
 			<button
 				type="button"
@@ -144,61 +120,39 @@
 		</SettingsRow>
 	</SettingsGroup>
 
-	{#snippet footer()}
-		<h3 class="text-xs font-medium tracking-wide text-fg-subtle uppercase">Account details</h3>
-		<dl class="mt-4 space-y-4 text-sm">
-			<div
-				class={cn(
-					'flex justify-between gap-4 pb-3',
-					!settings.hidePaneBorders && 'border-b border-border'
-				)}
-			>
-				<dt class="text-fg-muted">Primary address</dt>
-				<dd class="font-medium text-fg">{auth.username ?? '—'}</dd>
-			</div>
-			<div
-				class={cn(
-					'flex justify-between gap-4 pb-3',
-					!settings.hidePaneBorders && 'border-b border-border'
-				)}
-			>
-				<dt class="text-fg-muted">JMAP server</dt>
-				<dd class="truncate font-medium text-fg">{auth.serverUrl ?? appConfig.jmapServerUrl}</dd>
-			</div>
-			<div class="flex justify-between gap-4">
-				<dt class="text-fg-muted">Session</dt>
-				<dd class="font-medium text-fg">{auth.isAuthenticated ? 'Active' : 'Signed out'}</dd>
-			</div>
-		</dl>
+	<SettingsGroup title="Account details" description="Server connection for this session.">
+		<SettingsRow title="Primary address">
+			<span class="text-sm font-medium text-fg">{auth.username ?? '—'}</span>
+		</SettingsRow>
+		<SettingsRow title="JMAP server">
+			<span class="max-w-[12rem] truncate text-sm font-medium text-fg sm:max-w-none">
+				{auth.serverUrl ?? appConfig.jmapServerUrl}
+			</span>
+		</SettingsRow>
+		<SettingsRow title="Session">
+			<span class="text-sm font-medium text-fg">{auth.isAuthenticated ? 'Active' : 'Signed out'}</span>
+		</SettingsRow>
+	</SettingsGroup>
 
-		<div
-			class={cn(
-				'mt-6 space-y-4',
-				settings.compactSettingsPanel ? 'pt-4' : 'pt-6',
-				!settings.hidePaneBorders && 'border-t border-border'
-			)}
-		>
-			<div>
-				<p class="text-sm font-medium text-fg">Local data</p>
-				{#if !settings.hideAccountFieldHints}
-					<p class="mt-0.5 text-xs text-fg-muted">
-						Remove cached messages and sync state from this browser. Your account on the server is
-						unchanged.
-					</p>
-				{/if}
-				<Button variant="ghost" class="mt-3" disabled={clearingCache} onclick={clearLocalCache}>
-					{clearingCache ? 'Clearing…' : 'Clear local cache'}
-				</Button>
-			</div>
-
+	<SettingsGroup
+		title="Local data"
+		description="Cached mail on this device — your account on the server is unchanged."
+	>
+		<SettingsRow title="Clear local cache" description="Remove downloaded messages and sync state from this browser">
+			<Button variant="ghost" class="text-sm" disabled={clearingCache} onclick={clearLocalCache}>
+				{clearingCache ? 'Clearing…' : 'Clear'}
+			</Button>
+		</SettingsRow>
+		<SettingsRow title="Sign out" description="Sign out of ZAUR Webmail on this device">
 			<Button
 				variant="ghost"
+				class="text-sm"
 				onclick={() => {
 					if (confirm('Sign out of ZAUR Webmail on this device?')) auth.logout();
 				}}
 			>
 				Sign out
 			</Button>
-		</div>
-	{/snippet}
+		</SettingsRow>
+	</SettingsGroup>
 </SettingsPanel>

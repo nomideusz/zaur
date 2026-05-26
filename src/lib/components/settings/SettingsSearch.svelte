@@ -71,15 +71,15 @@
 	<label class="sr-only" for="settings-search">Search settings</label>
 	<div class="relative">
 		<Search
-			class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-fg-subtle"
+			class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-fg-subtle"
 			aria-hidden="true"
 		/>
 		<input
 			id="settings-search"
 			bind:this={input}
 			type="search"
-			class="z-input w-full rounded-full border-transparent bg-surface-sunken/80 pl-9 shadow-none focus:bg-surface-raised md:max-w-xs"
-			placeholder="Search settings…"
+			class="z-chrome-field z-input w-full rounded-sm py-2 pr-3 pl-9 text-sm shadow-none"
+			placeholder="Search…"
 			autocomplete="off"
 			aria-controls={results.length ? resultsId : undefined}
 			oninput={onInput}
@@ -90,7 +90,7 @@
 	{#if results.length}
 		<ul
 			id={resultsId}
-			class="absolute top-full z-30 mt-2 max-h-72 w-full overflow-y-auto rounded-lg border border-border bg-surface-raised py-1.5 shadow-md md:max-w-xs"
+			class="z-overflow-menu absolute top-full z-30 mt-1.5 max-h-72 w-full py-1"
 			role="listbox"
 			aria-label="Settings search results"
 			onkeydown={onResultsKeydown}
@@ -99,14 +99,11 @@
 				<li role="option" aria-selected="false">
 					<button
 						type="button"
-						class={cn(
-							'block w-full px-3 py-2 text-left transition-colors hover:bg-surface-sunken',
-							'focus-visible:bg-surface-sunken focus-visible:outline-none'
-						)}
+						class="z-overflow-menu-item flex-col items-start gap-0 py-2"
 						onclick={() => selectEntry(entry)}
 					>
-						<span class="block text-sm font-medium text-fg">{entry.title}</span>
-						<span class="block truncate text-xs text-fg-muted">{entry.description}</span>
+						<span class="font-medium text-fg">{entry.title}</span>
+						<span class="truncate text-xs text-fg-muted">{entry.description}</span>
 					</button>
 				</li>
 			{/each}

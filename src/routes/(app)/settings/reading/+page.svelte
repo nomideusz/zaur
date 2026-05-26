@@ -4,12 +4,12 @@
 </script>
 
 <svelte:head>
-	<title>Reading · ZAUR Webmail</title>
+	<title>Mail · Reading · ZAUR Webmail</title>
 </svelte:head>
 
 <SettingsPanel
 	title="Reading"
-	description="Message content, reply actions, threads, attachments, and empty or error states in the reading pane."
+	description="Message content, replies, threads, and privacy in the reading pane."
 >
 	<ReadingSection />
 </SettingsPanel>

@@ -16,17 +16,15 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 
-	const homeHref = $derived(settings.skipHomeScreen ? settings.preferredMailHref() : '/');
+	const homeHref = $derived(settings.preferredMailHref());
 	const showOutbox = $derived(
 		!settings.hideOutboxUnlessFailed ||
 			outbox.items.some((item) => item.status === 'failed')
 	);
 	const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
+	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
 	const showMailContext = $derived(onMailRoute && shellHeader.mail !== null);
-	const showToolSwitcher = $derived(!onMailRoute);
-	const showComposeButton = $derived(
-		showMailContext && shellHeader.mail?.showNewMessage
-	);
+	const showToolSwitcher = $derived(!onMailRoute && !onSettingsRoute);
 	const showMobileMailSearch = $derived(
 		showMailContext && !settings.hideHeaderSearch
 	);
@@ -56,6 +54,10 @@
 
 	{#if showMailContext && shellHeader.mail}
 		<MailShellHeaderContext ctx={shellHeader.mail} />
+	{:else if onSettingsRoute}
+		<div class="flex min-w-0 flex-1 items-center">
+			<h2 class="z-type-pane-title hidden min-w-0 truncate md:block">Settings</h2>
+		</div>
 	{:else if !settings.hideHeaderSearch}
 		<div class="min-w-0 flex-1">
 			<GlobalSearch />
@@ -70,8 +72,8 @@
 			settings.compactAppHeader ? 'gap-1.5' : 'gap-2'
 		)}
 	>
-		{#if showComposeButton}
-			<Button href="/mail/compose" class="shrink-0">
+		{#if showMailContext && shellHeader.mail?.showNewMessage}
+			<Button href="/mail/compose" class="shrink-0 md:hidden">
 				<PenSquare class="size-5" aria-hidden="true" />
 				<span class={settings.compactHeaderActions ? 'sr-only sm:not-sr-only' : ''}>New message</span>
 			</Button>

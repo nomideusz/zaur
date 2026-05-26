@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { cn } from '$lib/utils/cn';
-	import { Calendar, Home, Mail, Users } from 'lucide-svelte';
+	import { Calendar, Mail, Users } from 'lucide-svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const tools = $derived([
@@ -26,9 +26,6 @@
 						active: (path: string) => path.startsWith('/contacts')
 					}
 				]
-			: []),
-		...(!settings.skipHomeScreen
-			? [{ href: '/', label: 'Home', icon: Home, active: (path: string) => path === '/' }]
 			: [])
 	]);
 </script>

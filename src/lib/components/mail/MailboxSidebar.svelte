@@ -1,8 +1,7 @@
 <script lang="ts">
-	import { Calendar, Settings, Users } from 'lucide-svelte';
-	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
 	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
+	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
 	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
 	import MailboxTreeItem from './MailboxTreeItem.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -85,54 +84,5 @@
 		{/if}
 	</nav>
 
-	{#if !settings.hideSidebarShortcuts}
-		<div
-			class={cn(
-				'shrink-0 space-y-0.5',
-				!settings.hidePaneBorders && 'border-t border-border/80',
-				settings.compactFolderSidebar ? 'p-1.5' : settings.compactSidebarShortcuts ? 'p-2' : 'p-2.5'
-			)}
-		>
-		<a
-			href="/contacts"
-			aria-current={$page.url.pathname.startsWith('/contacts') ? 'page' : undefined}
-			class={cn(
-				'flex items-center gap-2 rounded-sm px-3 text-sm transition-colors',
-				settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',
-				$page.url.pathname.startsWith('/contacts') ? 'z-surface-active' : 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
-			)}
-		>
-			<Users class="size-4 shrink-0" aria-hidden="true" />
-			Contacts
-		</a>
-		{#if !settings.mailOnlyNavigation && calendar.supported !== false}
-			<a
-				href="/calendar"
-				aria-current={$page.url.pathname.startsWith('/calendar') ? 'page' : undefined}
-				class={cn(
-					'flex items-center gap-2 rounded-sm px-3 text-sm transition-colors',
-					settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',
-					$page.url.pathname.startsWith('/calendar')
-						? 'z-surface-active'
-						: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
-				)}
-			>
-				<Calendar class="size-4 shrink-0" aria-hidden="true" />
-				Calendar
-			</a>
-		{/if}
-		<a
-			href="/settings/appearance"
-			aria-current={$page.url.pathname.startsWith('/settings') ? 'page' : undefined}
-			class={cn(
-				'flex items-center gap-2 rounded-sm px-3 text-sm transition-colors',
-				settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',
-				$page.url.pathname.startsWith('/settings') ? 'z-surface-active' : 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
-			)}
-		>
-			<Settings class="size-4 shrink-0" aria-hidden="true" />
-			Settings
-		</a>
-		</div>
-	{/if}
+	<AppSidebarShortcuts />
 </aside>

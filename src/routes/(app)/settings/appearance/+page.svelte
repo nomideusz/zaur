@@ -1,20 +1,12 @@
 <script lang="ts">
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
 	import AppearanceSection from '$lib/settings/sections/appearance.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
-
-	const simplificationCount = $derived(settings.simplificationCount());
 </script>
 
 <svelte:head>
-	<title>Look & feel · ZAUR Webmail</title>
+	<title>Theme · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel
-	title="Look & feel"
-	description="Accent color, corners, theme, motion, and loading states.{simplificationCount > 0
-		? ` ${simplificationCount} simplification${simplificationCount === 1 ? '' : 's'} active elsewhere.`
-		: ''}"
->
+<SettingsPanel title="Theme" description="Color mode, accent, and motion.">
 	<AppearanceSection />
 </SettingsPanel>

@@ -8,6 +8,9 @@ const BASIC_TITLE_OVERRIDES = new Set([
 	'Apply simple mode',
 	'Reset all display & layout settings',
 	'Reset look & feel',
+	'Reset theme settings',
+	'Reset layout settings',
+	'Reset sidebar settings',
 	'Reset inbox settings',
 	'Reset reading settings',
 	'Reset writing settings',
@@ -15,7 +18,9 @@ const BASIC_TITLE_OVERRIDES = new Set([
 	'Reset calendar settings',
 	'Reset contacts settings',
 	'Reset you settings',
+	'Reset profile settings',
 	'Restore mail defaults',
+	'Reset general mail settings',
 	'Export settings',
 	'Import settings'
 ]);

@@ -7,7 +7,6 @@
 	let {
 		title,
 		description,
-		advanced = false,
 		children
 	}: {
 		title: string;
@@ -19,12 +18,9 @@
 	let sectionRef = $state<HTMLElement | null>(null);
 	let hasRows = $state(true);
 
-	const visible = $derived(settings.settingsDetailLevel === 'advanced' || !advanced);
-
 	$effect(() => {
-		settings.settingsDetailLevel;
 		settingsSearch.query;
-		if (!sectionRef || !visible) {
+		if (!sectionRef) {
 			hasRows = false;
 			return;
 		}
@@ -35,14 +31,13 @@
 	});
 </script>
 
-{#if visible}
-	<section
+<section
 		bind:this={sectionRef}
-		class={cn(settings.compactSettingsRows ? 'space-y-3' : 'space-y-4', !hasRows && 'hidden')}
+		class={cn(!hasRows && 'hidden', settings.compactSettingsRows ? 'space-y-2' : 'space-y-3')}
 	>
 		{#if hasRows}
-			<div>
-				<h3 class="text-sm font-semibold tracking-tight text-fg">{title}</h3>
+			<div class={cn(!settings.hidePaneBorders && 'border-b border-border/80 pb-2')}>
+				<h3 class="text-sm font-semibold text-fg">{title}</h3>
 				{#if description && !settings.hideSettingsPanelDescriptions}
 					<p class="mt-0.5 text-xs text-fg-muted">{description}</p>
 				{/if}
@@ -50,11 +45,10 @@
 		{/if}
 		<div
 			class={cn(
-				'grid gap-3',
-				settings.compactSettingsRows ? 'lg:grid-cols-2 lg:gap-4' : 'lg:grid-cols-2 lg:gap-4 xl:gap-5'
+				'divide-y divide-border/80 rounded-sm border border-border/80 bg-surface-raised',
+				settings.hidePaneBorders && 'border-transparent bg-transparent'
 			)}
 		>
 			{@render children()}
 		</div>
-	</section>
-{/if}
+</section>

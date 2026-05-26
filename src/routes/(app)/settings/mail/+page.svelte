@@ -1,5 +1,4 @@
 <script lang="ts">
-	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
@@ -9,16 +8,19 @@
 </script>
 
 <svelte:head>
-	<title>Behavior · ZAUR Webmail</title>
+	<title>Mail · General · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel title="Behavior" description="Notifications, shortcuts, and what happens when you read or send mail.">
-	<SettingsGroup title="App & notifications" description="Install the app and manage background mail alerts.">
+<SettingsPanel
+	title="General"
+	description="Notifications, confirmations, and shortcuts."
+>
+	<SettingsGroup title="Notifications" description="Alerts and unread counts.">
 		<SettingsRow
 			title="App install"
 			description={pwa.isInstalled
 				? 'Running as an installed app on this device'
-				: 'Install for home-screen access, offline use, and reliable push delivery'}
+				: 'Install for home-screen access and reliable push delivery'}
 		>
 			{#if pwa.isInstalled}
 				<span class="text-xs font-medium text-green-700 dark:text-green-300">Installed</span>
@@ -33,16 +35,14 @@
 
 		<SettingsRow
 			title="Push notification status"
-			description="Background alerts when new mail arrives — separate from in-app toasts"
+			description="Background alerts when new mail arrives"
 		>
 			<PushNotificationStatus />
 		</SettingsRow>
-	</SettingsGroup>
 
-	<SettingsGroup title="While using mail" description="Everyday behavior in your inbox.">
 		<SettingsRow
 			title="Notify on new mail"
-			description="Toast and push notification when new mail arrives in Inbox, including when the app is closed"
+			description="Toast and push when new mail arrives in Inbox"
 		>
 			<input
 				type="checkbox"
@@ -53,8 +53,8 @@
 		</SettingsRow>
 
 		<SettingsRow
-			title="Show unread count on app icon"
-			description="Badge on the installed app icon with your Inbox unread count — Chrome and Edge on desktop and Android"
+			title="Unread count on app icon"
+			description="Badge on the installed app icon (Chrome and Edge)"
 		>
 			<input
 				type="checkbox"
@@ -65,8 +65,8 @@
 		</SettingsRow>
 
 		<SettingsRow
-			title="Show unread count in tab title"
-			description="Prefix the browser tab with the number of unread Inbox messages"
+			title="Unread count in tab title"
+			description="Prefix the browser tab with your Inbox unread count"
 		>
 			<input
 				type="checkbox"
@@ -75,7 +75,9 @@
 				onchange={(e) => settings.setShowUnreadInTitle(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+	</SettingsGroup>
 
+	<SettingsGroup title="Actions" description="What happens when you read, send, or delete mail.">
 		<SettingsRow
 			title="Mark as read when opened"
 			description="Automatically mark conversations read when you open them"
@@ -89,20 +91,8 @@
 		</SettingsRow>
 
 		<SettingsRow
-			title="Keyboard shortcuts"
-			description="Press c to compose and / to focus search while in mail"
-		>
-			<input
-				type="checkbox"
-				class="size-4 accent-accent"
-				checked={settings.enableKeyboardShortcuts}
-				onchange={(e) => settings.setEnableKeyboardShortcuts(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow
 			title="Confirm before delete"
-			description="Ask before moving messages to trash — permanent delete in Trash always asks"
+			description="Ask before moving messages to trash"
 		>
 			<input
 				type="checkbox"
@@ -126,7 +116,7 @@
 
 		<SettingsRow
 			title="Return to inbox after sending"
-			description="Go back to Inbox instead of Sent after a message is delivered"
+			description="Go back to Inbox instead of Sent after delivery"
 		>
 			<input
 				type="checkbox"
@@ -138,7 +128,7 @@
 
 		<SettingsRow
 			title="Undo send"
-			description="Wait a few seconds before delivering — tap Undo in the toast to cancel and restore the message"
+			description="Brief delay before sending so you can cancel from the toast"
 		>
 			<input
 				type="checkbox"
@@ -150,7 +140,7 @@
 
 		<SettingsRow
 			title="Auto-load more messages"
-			description="Load older messages automatically when you scroll to the bottom of the list"
+			description="Load older messages when you scroll to the bottom of the list"
 		>
 			<input
 				type="checkbox"
@@ -159,44 +149,6 @@
 				onchange={(e) => settings.setAutoLoadMore(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
-
-		<SettingsDepends
-			enabled={settings.autoLoadMore}
-			inactiveReason={settings.autoLoadMore
-				? 'Load-more area appearance'
-				: 'Only applies when auto-load is enabled — use Load more button otherwise'}
-		>
-			<SettingsRow
-				title="Compact load more"
-				description="Tighter spacing for the load-more area at the bottom of the message list"
-			>
-				<input
-					type="checkbox"
-					class="size-4 accent-accent"
-					checked={settings.compactLoadMore}
-					onchange={(e) => settings.setCompactLoadMore(e.currentTarget.checked)}
-				/>
-			</SettingsRow>
-		</SettingsDepends>
-
-		<SettingsDepends
-			enabled={settings.enableKeyboardShortcuts}
-			inactiveReason={settings.enableKeyboardShortcuts
-				? 'Shortcut help'
-				: 'Turn on keyboard shortcuts above to show help and references'}
-		>
-			<SettingsRow
-				title="Hide keyboard shortcuts help"
-				description="Remove the shortcut reference section at the bottom of Behavior settings"
-			>
-				<input
-					type="checkbox"
-					class="size-4 accent-accent"
-					checked={settings.hideMailShortcutsHelp}
-					onchange={(e) => settings.setHideMailShortcutsHelp(e.currentTarget.checked)}
-				/>
-			</SettingsRow>
-		</SettingsDepends>
 
 		<SettingsRow
 			title="Hide action toasts"
@@ -209,49 +161,53 @@
 				onchange={(e) => settings.setHideActionToasts(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
+	</SettingsGroup>
 
-		<SettingsDepends
-			enabled={!settings.hideActionToasts}
-			inactiveReason={settings.hideActionToasts
-				? 'Success and info toasts are hidden — errors still show'
-				: 'Toast appearance'}
+	<SettingsGroup title="Shortcuts">
+		<SettingsRow
+			title="Keyboard shortcuts"
+			description="Press c to compose, j/k to move between messages, and more"
 		>
-			<SettingsRow
-				title="Compact toasts"
-				description="Smaller notification popups in the bottom-right corner"
-			>
-				<input
-					type="checkbox"
-					class="size-4 accent-accent"
-					checked={settings.compactToasts}
-					onchange={(e) => settings.setCompactToasts(e.currentTarget.checked)}
-				/>
-			</SettingsRow>
+			<input
+				type="checkbox"
+				class="size-4 accent-accent"
+				checked={settings.enableKeyboardShortcuts}
+				onchange={(e) => settings.setEnableKeyboardShortcuts(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 
-			<SettingsRow
-				title="Hide toast icons"
-				description="Text-only notification popups — no success, error, or info icons"
-			>
-				<input
-					type="checkbox"
-					class="size-4 accent-accent"
-					checked={settings.hideToastIcons}
-					onchange={(e) => settings.setHideToastIcons(e.currentTarget.checked)}
-				/>
+		{#if settings.enableKeyboardShortcuts}
+			<SettingsRow title="Compose" description="Start a new message">
+				<span class="font-mono text-xs text-fg">c</span>
 			</SettingsRow>
-		</SettingsDepends>
+			<SettingsRow title="Search" description="Focus sidebar search">
+				<span class="font-mono text-xs text-fg">/</span>
+			</SettingsRow>
+			<SettingsRow title="Next / previous message">
+				<span class="font-mono text-xs text-fg">j · k</span>
+			</SettingsRow>
+			<SettingsRow title="Reply / reply all">
+				<span class="font-mono text-xs text-fg">r · a</span>
+			</SettingsRow>
+			<SettingsRow title="Archive / unread / delete">
+				<span class="font-mono text-xs text-fg">e · u · #</span>
+			</SettingsRow>
+			<SettingsRow title="Send / close compose">
+				<span class="font-mono text-xs text-fg">Ctrl+Enter · Esc</span>
+			</SettingsRow>
+		{/if}
 	</SettingsGroup>
 
 	<SettingsGroup title="Defaults">
 		<SettingsRow
-			title="Restore mail defaults"
-			description="Reset notifications, shortcuts, and confirmation options on this page"
+			title="Reset general mail settings"
+			description="Restore notifications, actions, and shortcuts on this page"
 		>
 			<button
 				type="button"
 				class="z-btn-ghost text-sm"
 				onclick={() => {
-					if (confirm('Reset all mail behavior settings to defaults?')) {
+					if (confirm('Reset general mail settings to defaults?')) {
 						settings.resetMailSettings();
 					}
 				}}
@@ -260,42 +216,4 @@
 			</button>
 		</SettingsRow>
 	</SettingsGroup>
-
-	{#if settings.enableKeyboardShortcuts && !settings.hideMailShortcutsHelp}
-	<SettingsGroup title="Keyboard shortcuts" description="Quick keys while viewing mail.">
-		<SettingsRow title="Compose" description="Start a new message from the mail view">
-			<span class="font-mono text-xs text-fg">c</span>
-		</SettingsRow>
-		<SettingsRow title="Search" description="Focus sidebar search on desktop (/ also works in mail)">
-			<span class="font-mono text-xs text-fg">/</span>
-		</SettingsRow>
-		<SettingsRow title="Next message" description="Move to the next message in the list">
-			<span class="font-mono text-xs text-fg">j</span>
-		</SettingsRow>
-		<SettingsRow title="Previous message" description="Move to the previous message in the list">
-			<span class="font-mono text-xs text-fg">k</span>
-		</SettingsRow>
-		<SettingsRow title="Reply" description="Reply to the open message">
-			<span class="font-mono text-xs text-fg">r</span>
-		</SettingsRow>
-		<SettingsRow title="Reply all" description="Reply all on the open thread">
-			<span class="font-mono text-xs text-fg">a</span>
-		</SettingsRow>
-		<SettingsRow title="Archive" description="Archive the open message">
-			<span class="font-mono text-xs text-fg">e</span>
-		</SettingsRow>
-		<SettingsRow title="Mark unread" description="Toggle read/unread on the open message">
-			<span class="font-mono text-xs text-fg">u</span>
-		</SettingsRow>
-		<SettingsRow title="Delete" description="Move the open message to trash — undo appears in the toast">
-			<span class="font-mono text-xs text-fg">#</span>
-		</SettingsRow>
-		<SettingsRow title="Send message" description="While writing in compose or quick reply">
-			<span class="font-mono text-xs text-fg">Ctrl+Enter</span>
-		</SettingsRow>
-		<SettingsRow title="Close compose" description="Dismiss the compose panel">
-			<span class="font-mono text-xs text-fg">Esc</span>
-		</SettingsRow>
-	</SettingsGroup>
-	{/if}
 </SettingsPanel>

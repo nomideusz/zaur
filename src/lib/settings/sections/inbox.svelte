@@ -23,7 +23,7 @@
 
 	<SettingsRow
 		title="List density"
-		description="Row height preset — turn off previews for a tighter list"
+		description="Row height — turn off previews for a tighter list"
 	>
 		<select
 			class="z-input w-auto"
@@ -45,20 +45,8 @@
 	</SettingsRow>
 
 	<SettingsRow
-		title="Compact list rows"
-		description="Extra vertical padding trim — stacks with list density"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactListRows}
-			onchange={(e) => settings.setCompactListRows(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
 		title="Show sender avatars"
-		description="Photos from Gravatar, Libravatar, Cravatar, or GitHub — otherwise initials"
+		description="Photos from Gravatar, Libravatar, or initials"
 	>
 		<input
 			type="checkbox"
@@ -154,7 +142,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Highlight unread messages" description="Bold subject and unread dots in the list gutter">
+	<SettingsRow title="Highlight unread messages" description="Bold subject and unread dots in the list">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -162,36 +150,15 @@
 			onchange={(e) => settings.setHighlightUnreadInList(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
-
-	<SettingsRow title="Hide list row dividers" description="Remove horizontal lines between messages">
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.hideListRowDividers}
-			onchange={(e) => settings.setHideListRowDividers(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		title="Hide active message indicator"
-		description="Remove the highlight on the open message in the list"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.hideListActiveIndicator}
-			onchange={(e) => settings.setHideListActiveIndicator(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup
 	title="Bulk selection"
-	description="Checkbox row above the list — Shift+click ranges, Ctrl+click to toggle. Bulk actions replace the row while selecting."
+	description="Checkbox row above the list — Shift+click ranges, Ctrl+click to toggle."
 >
 	<SettingsRow
 		title="Enable bulk select"
-		description="Master checkbox and menu (All, Read, Unread, None) above the message list"
+		description="Master checkbox and menu above the message list"
 	>
 		<input
 			type="checkbox"
@@ -230,10 +197,19 @@
 	</SettingsDepends>
 </SettingsGroup>
 
-<SettingsGroup title="Top bar & mobile" description="Folder title in the app header and mobile folder picker." advanced>
+<SettingsGroup title="List appearance" description="Dividers and header chrome." advanced>
+	<SettingsRow title="Hide list row dividers" description="Remove horizontal lines between messages">
+		<input
+			type="checkbox"
+			class="size-4 accent-accent"
+			checked={settings.hideListRowDividers}
+			onchange={(e) => settings.setHideListRowDividers(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
 	<SettingsRow
 		title="Hide folder title in app header"
-		description="Hide the folder name centered in the top bar on desktop — folders stay in the sidebar"
+		description="Hide the folder name in the top bar on desktop"
 	>
 		<input
 			type="checkbox"
@@ -256,24 +232,10 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Search results" description="How search results appear in the message list." advanced>
-	<SettingsRow
-		title="Hide search list prefix"
-		description="Show the query alone in the app header — no “Search:” prefix"
-	>
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.hideSearchListPrefix}
-			onchange={(e) => settings.setHideSearchListPrefix(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-</SettingsGroup>
-
-<SettingsGroup title="Empty & error states" description="When a folder is empty or the list fails to load." advanced>
+<SettingsGroup title="Empty folders" description="When a folder or search has no messages." advanced>
 	<SettingsRow
 		title="Hide empty list hints"
-		description="Primary empty message only — no icons or secondary hint text"
+		description="Primary empty message only — no icons or secondary text"
 	>
 		<input
 			type="checkbox"
@@ -285,7 +247,7 @@
 
 	<SettingsRow
 		title="Hide empty list actions"
-		description="Remove action buttons when a folder or search has no messages"
+		description="Remove action buttons when a folder has no messages"
 	>
 		<input
 			type="checkbox"
@@ -295,7 +257,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Compact empty list state" description="Less padding when a folder has no messages">
+	<SettingsRow title="Compact empty list state" description="Less padding when a folder is empty">
 		<input
 			type="checkbox"
 			class="size-4 accent-accent"
@@ -303,33 +265,15 @@
 			onchange={(e) => settings.setCompactListEmptyState(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
-
-	<SettingsRow title="Compact list error state" description="Less padding when the list fails to load">
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.compactListErrorState}
-			onchange={(e) => settings.setCompactListErrorState(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow title="Hide list error retry" description="Remove the Try again button on list load errors">
-		<input
-			type="checkbox"
-			class="size-4 accent-accent"
-			checked={settings.hideListErrorRetry}
-			onchange={(e) => settings.setHideListErrorRetry(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Defaults">
-	<SettingsRow title="Reset inbox settings" description="Restore every option on this page to its original value">
+	<SettingsRow title="Reset inbox list settings" description="Restore every option on this page">
 		<button
 			type="button"
 			class="z-btn-ghost text-sm"
 			onclick={() => {
-				if (confirm('Reset all inbox list settings to defaults?')) {
+				if (confirm('Reset inbox list settings to defaults?')) {
 					settings.resetInboxSettings();
 				}
 			}}

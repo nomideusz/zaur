@@ -1,9 +1,8 @@
 /** Route map and component tree — living reference for ZAUR webmail. */
 
 export const routeMap = {
-	root: '/',
+	root: '/mail/inbox',
 	login: '/login',
-	home: '/',
 	mail: {
 		inbox: '/mail/inbox',
 		mailbox: '/mail/[mailbox]',
@@ -13,17 +12,19 @@ export const routeMap = {
 	},
 	settings: {
 		root: '/settings',
-		appearance: '/settings/appearance',
+		account: '/settings/account',
+		mail: '/settings/mail',
 		inbox: '/settings/inbox',
 		reading: '/settings/reading',
+		appearance: '/settings/appearance',
+		layout: '/settings/layout',
+		sidebar: '/settings/sidebar',
 		compose: '/settings/compose',
-		workspace: '/settings/workspace',
-		mail: '/settings/mail',
-		account: '/settings/account',
-		contacts: '/settings/contacts',
 		calendar: '/settings/calendar',
+		contacts: '/settings/contacts',
 		data: '/settings/data',
-		/** Legacy alias — redirects to appearance */
+		/** Legacy — redirect */
+		workspace: '/settings/workspace',
 		display: '/settings/display'
 	},
 	calendar: '/calendar',
