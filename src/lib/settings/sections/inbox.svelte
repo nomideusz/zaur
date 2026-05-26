@@ -58,7 +58,7 @@
 
 	<SettingsRow
 		title="Show sender avatars"
-		description="Profile photos from Gravatar when available, otherwise initials"
+		description="Photos from Gravatar, Libravatar, Cravatar, or GitHub when available — otherwise initials"
 	>
 		<input
 			type="checkbox"

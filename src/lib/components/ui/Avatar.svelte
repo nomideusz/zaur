@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { cn } from '$lib/utils/cn';
-	import { gravatarUrl } from '$lib/utils/gravatar';
+	import { avatarUrlsForEmail } from '$lib/utils/avatar';
 
 	interface Props {
 		name: string;
@@ -10,7 +10,9 @@
 
 	let { name, email, class: className }: Props = $props();
 
-	let imageFailed = $state(false);
+	let providerIndex = $state(0);
+	let urls = $state<string[]>([]);
+	let exhausted = $state(false);
 
 	const initials = $derived(
 		name
@@ -20,12 +22,33 @@
 			.join('') || '?'
 	);
 
-	const src = $derived(gravatarUrl(email, 128));
+	const src = $derived(exhausted ? null : (urls[providerIndex] ?? null));
 
 	$effect(() => {
-		email;
-		imageFailed = false;
+		const currentEmail = email;
+		providerIndex = 0;
+		exhausted = false;
+		urls = [];
+
+		if (!currentEmail?.trim()) return;
+
+		let cancelled = false;
+		void avatarUrlsForEmail(currentEmail, 128).then((next) => {
+			if (!cancelled) urls = next;
+		});
+
+		return () => {
+			cancelled = true;
+		};
 	});
+
+	function handleError() {
+		if (providerIndex + 1 < urls.length) {
+			providerIndex += 1;
+			return;
+		}
+		exhausted = true;
+	}
 </script>
 
 <div
@@ -37,7 +60,7 @@
 	title={email ?? name}
 >
 	{initials}
-	{#if src && !imageFailed}
+	{#if src}
 		<img
 			{src}
 			alt=""
@@ -45,9 +68,7 @@
 			loading="lazy"
 			decoding="async"
 			referrerpolicy="no-referrer"
-			onerror={() => {
-				imageFailed = true;
-			}}
+			onerror={handleError}
 		/>
 	{/if}
 </div>
