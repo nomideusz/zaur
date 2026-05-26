@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { cn } from '$lib/utils/cn';
 	import { avatarUrlsForEmail } from '$lib/utils/avatar';
-	import { getCachedAvatarUrl, setCachedAvatarUrl } from '$lib/utils/avatar-cache';
+	import { getCachedAvatarUrl, resolveCachedAvatarUrl } from '$lib/utils/avatar-cache';
 
 	interface Props {
 		name: string;
@@ -11,9 +11,7 @@
 
 	let { name, email, class: className }: Props = $props();
 
-	let providerIndex = $state(0);
-	let urls = $state<string[]>([]);
-	let exhausted = $state(false);
+	let resolvedSrc = $state<string | null>(null);
 
 	const normalizedEmail = $derived(email?.trim().toLowerCase() ?? '');
 
@@ -25,51 +23,34 @@
 			.join('') || '?'
 	);
 
-	const src = $derived(exhausted ? null : (urls[providerIndex] ?? null));
-
 	$effect(() => {
 		const currentEmail = normalizedEmail;
+		let cancelled = false;
+
 		if (!currentEmail) {
-			providerIndex = 0;
-			exhausted = false;
-			urls = [];
+			resolvedSrc = null;
 			return;
 		}
 
 		const cached = getCachedAvatarUrl(currentEmail);
 		if (cached) {
-			urls = [cached];
-			providerIndex = 0;
-			exhausted = false;
+			resolvedSrc = cached;
 			return;
 		}
 
-		providerIndex = 0;
-		exhausted = false;
-		urls = [];
+		resolvedSrc = null;
 
-		let cancelled = false;
 		void avatarUrlsForEmail(currentEmail, 128).then((next) => {
-			if (!cancelled) urls = next;
+			if (cancelled) return;
+			void resolveCachedAvatarUrl(currentEmail, next).then((url) => {
+				if (!cancelled) resolvedSrc = url;
+			});
 		});
 
 		return () => {
 			cancelled = true;
 		};
 	});
-
-	function handleLoad(event: Event) {
-		const url = (event.currentTarget as HTMLImageElement).currentSrc;
-		if (normalizedEmail && url) setCachedAvatarUrl(normalizedEmail, url);
-	}
-
-	function handleError() {
-		if (providerIndex + 1 < urls.length) {
-			providerIndex += 1;
-			return;
-		}
-		exhausted = true;
-	}
 </script>
 
 <div
@@ -81,16 +62,14 @@
 	title={email ?? name}
 >
 	{initials}
-	{#if src}
+	{#if resolvedSrc}
 		<img
-			{src}
+			src={resolvedSrc}
 			alt=""
 			class="absolute inset-0 size-full object-cover"
 			loading="lazy"
 			decoding="async"
 			referrerpolicy="no-referrer"
-			onload={handleLoad}
-			onerror={handleError}
 		/>
 	{/if}
 </div>
