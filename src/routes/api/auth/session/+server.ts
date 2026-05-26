@@ -1,7 +1,7 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { createConnectedClient } from '$lib/server/jmap';
 import { findIdentityEmail } from '$lib/jmap/account';
-import { readSession } from '$lib/server/session';
+import { clearSession, readSession } from '$lib/server/session';
 
 export const GET: RequestHandler = async ({ cookies }) => {
 	const session = readSession(cookies);
@@ -22,6 +22,7 @@ export const GET: RequestHandler = async ({ cookies }) => {
 			displayName: primary?.name ?? primary?.email ?? session.username
 		});
 	} catch {
+		clearSession(cookies);
 		return json({ authenticated: false }, { status: 401 });
 	}
 };

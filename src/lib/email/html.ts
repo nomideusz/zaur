@@ -135,6 +135,78 @@ function integrateHtmlForDarkMode(root: ParentNode, darkMode: boolean) {
 	}
 }
 
+function blockExternalContentInDocument(root: ParentNode, allowExternal: boolean): boolean {
+	if (allowExternal) return false;
+
+	let blockedExternal = false;
+	for (const image of root.querySelectorAll('img')) {
+		const src = image.getAttribute('src');
+		if (src && isExternalUrl(src)) {
+			image.setAttribute('data-blocked-src', src);
+			image.removeAttribute('src');
+			image.setAttribute('alt', '[Image blocked]');
+			blockedExternal = true;
+		}
+	}
+
+	for (const element of root.querySelectorAll('[style]')) {
+		const style = element.getAttribute('style');
+		if (style && /url\s*\(/i.test(style)) {
+			element.setAttribute('style', style.replace(/url\s*\([^)]*\)/gi, 'none'));
+			blockedExternal = true;
+		}
+	}
+
+	return blockedExternal;
+}
+
+function hardenLinks(root: ParentNode) {
+	for (const link of root.querySelectorAll('a')) {
+		link.setAttribute('target', '_blank');
+		link.setAttribute('rel', 'noopener noreferrer');
+	}
+}
+
+function postProcessSanitizedHtml(
+	html: string,
+	options: { allowExternal: boolean; darkMode?: boolean }
+): { html: string; blockedExternal: boolean } {
+	if (!browser) {
+		return {
+			html: postProcessSanitizedHtmlString(html, options.allowExternal),
+			blockedExternal: !options.allowExternal && hasExternalContent(html)
+		};
+	}
+
+	const container = document.createElement('div');
+	container.innerHTML = html;
+	const blockedExternal = blockExternalContentInDocument(container, options.allowExternal);
+	hardenLinks(container);
+	const darkMode =
+		options.darkMode ??
+		(browser && document.documentElement.classList.contains('dark'));
+	integrateHtmlForDarkMode(container, darkMode);
+
+	return { html: container.innerHTML, blockedExternal };
+}
+
+function hasExternalContent(html: string): boolean {
+	return /<img\b[^>]*\bsrc\s*=\s*(['"]?)(?:https?:\/\/|\/\/)/i.test(html) || /url\s*\(/i.test(html);
+}
+
+function postProcessSanitizedHtmlString(html: string, allowExternal: boolean): string {
+	let next = html.replace(/<a\b/gi, '<a target="_blank" rel="noopener noreferrer"');
+	if (allowExternal) return next;
+
+	next = next.replace(/(<img\b[^>]*?)\s+src\s*=\s*(["']?)(https?:\/\/[^"'\s>]+|\/\/[^"'\s>]+)\2/gi, (_match, prefix, _quote, src) => {
+		return `${prefix} data-blocked-src="${escapeHtml(src)}" alt="[Image blocked]"`;
+	});
+	next = next.replace(/\sstyle\s*=\s*(["'])([^"']*url\s*\([^"']*)\1/gi, (_match, quote, style) => {
+		return ` style=${quote}${style.replace(/url\s*\([^)]*\)/gi, 'none')}${quote}`;
+	});
+	return next;
+}
+
 export function plainTextToSafeHtml(text: string): string {
 	const quoteIndex = text.search(/\n\n---\n(?:On .+ wrote:|Forwarded message:)/);
 	if (quoteIndex >= 0) {
@@ -185,49 +257,8 @@ export function prepareEmailHtml(
 	rawHtml: string,
 	options: { allowExternal: boolean; darkMode?: boolean }
 ): { html: string; blockedExternal: boolean } {
-	let blockedExternal = false;
-
-	DOMPurify.addHook('afterSanitizeAttributes', (node) => {
-		if (!options.allowExternal) {
-			if (node.tagName === 'IMG') {
-				const src = node.getAttribute('src');
-				if (src && isExternalUrl(src)) {
-					node.setAttribute('data-blocked-src', src);
-					node.removeAttribute('src');
-					node.setAttribute('alt', '[Image blocked]');
-					blockedExternal = true;
-				}
-			}
-			if (node.hasAttribute('style')) {
-				const style = node.getAttribute('style');
-				if (style && /url\s*\(/i.test(style)) {
-					node.setAttribute('style', style.replace(/url\s*\([^)]*\)/gi, 'none'));
-					blockedExternal = true;
-				}
-			}
-		}
-
-		if (node.tagName === 'A') {
-			node.setAttribute('target', '_blank');
-			node.setAttribute('rel', 'noopener noreferrer');
-		}
-	});
-
 	const html = DOMPurify.sanitize(rawHtml, EMAIL_SANITIZE_CONFIG);
-	DOMPurify.removeHook('afterSanitizeAttributes');
-
-	if (!browser) {
-		return { html, blockedExternal };
-	}
-
-	const container = document.createElement('div');
-	container.innerHTML = html;
-	const darkMode =
-		options.darkMode ??
-		(browser && document.documentElement.classList.contains('dark'));
-	integrateHtmlForDarkMode(container, darkMode);
-
-	return { html: container.innerHTML, blockedExternal };
+	return postProcessSanitizedHtml(html, options);
 }
 
 export function renderMessageBody(options: {

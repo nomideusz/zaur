@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type webpush from 'web-push';
 import { env } from '$env/dynamic/private';
+import { REMEMBERED_SESSION_MAX_AGE_SEC } from '$lib/server/session';
 
 export interface StoredPushSubscription {
 	id: string;
@@ -18,6 +19,7 @@ export interface StoredPushSubscription {
 type SubscriptionStore = Record<string, StoredPushSubscription>;
 
 const DEFAULT_STORE_PATH = path.join(process.cwd(), '.data', 'push-subscriptions.json');
+const MAX_RECORD_AGE_MS = REMEMBERED_SESSION_MAX_AGE_SEC * 1000;
 
 function getStorePath(): string {
 	return env.PUSH_SUBSCRIPTIONS_PATH?.trim() || DEFAULT_STORE_PATH;
@@ -45,12 +47,30 @@ export function subscriptionId(endpoint: string): string {
 
 export async function listPushSubscriptions(): Promise<StoredPushSubscription[]> {
 	const store = await readStore();
+	const now = Date.now();
+	let pruned = false;
+
+	for (const [id, record] of Object.entries(store)) {
+		if (isExpired(record, now)) {
+			delete store[id];
+			pruned = true;
+		}
+	}
+
+	if (pruned) await writeStore(store);
 	return Object.values(store);
 }
 
 export async function getPushSubscription(id: string): Promise<StoredPushSubscription | null> {
 	const store = await readStore();
-	return store[id] ?? null;
+	const record = store[id];
+	if (!record) return null;
+	if (isExpired(record)) {
+		delete store[id];
+		await writeStore(store);
+		return null;
+	}
+	return record;
 }
 
 export async function upsertPushSubscription(input: {
@@ -77,6 +97,12 @@ export async function upsertPushSubscription(input: {
 	store[id] = record;
 	await writeStore(store);
 	return record;
+}
+
+function isExpired(record: StoredPushSubscription, now = Date.now()): boolean {
+	const timestamp = Date.parse(record.updatedAt || record.createdAt);
+	if (!Number.isFinite(timestamp)) return true;
+	return now - timestamp > MAX_RECORD_AGE_MS;
 }
 
 export async function removePushSubscription(id: string): Promise<boolean> {

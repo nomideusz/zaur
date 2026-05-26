@@ -51,6 +51,7 @@
 	<link rel="apple-touch-icon" href="/pwa-192x192.png" />
 </svelte:head>
 
+<a href="#main-content" class="z-skip-link">Skip to main content</a>
 {@render children()}
 <ToastStack />
 <InstallPrompt />

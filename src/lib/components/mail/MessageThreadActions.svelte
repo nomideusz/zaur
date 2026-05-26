@@ -141,7 +141,7 @@
 </script>
 
 {#if latest}
-	<div class={cn('flex shrink-0 items-center', settings.compactReaderToolbar ? 'gap-0' : 'gap-0.5', className)}>
+	<div class={cn('flex min-w-0 shrink items-center', settings.compactReaderToolbar ? 'gap-0' : 'gap-0.5', className)}>
 		{#if isDraft}
 			<IconButton label="Edit draft" class="!p-1.5" onclick={editDraft}>
 				<Pencil class="size-3.5" />

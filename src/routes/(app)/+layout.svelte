@@ -53,7 +53,7 @@
 {:else if auth.isAuthenticated}
 	<div class="flex h-dvh flex-col overflow-hidden">
 		<AppHeader />
-		<main class="flex min-h-0 flex-1 flex-col overflow-hidden">
+		<main id="main-content" class="flex min-h-0 flex-1 flex-col overflow-hidden" tabindex="-1">
 			{@render children()}
 		</main>
 	</div>

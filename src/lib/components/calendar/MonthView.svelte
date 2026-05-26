@@ -211,8 +211,14 @@
 							</li>
 						{/each}
 						{#if !settings.hideCalendarMoreEventsLabel && dayEvents.length > maxEventsPerDay}
-							<li class="px-1 text-[10px] text-fg-subtle">
-								+{dayEvents.length - maxEventsPerDay} more
+							<li>
+								<button
+									type="button"
+									class="w-full rounded px-1 text-left text-[10px] text-fg-subtle hover:bg-surface-sunken hover:text-fg"
+									onclick={() => selectEvent(dayEvents[maxEventsPerDay].id)}
+								>
+									+{dayEvents.length - maxEventsPerDay} more
+								</button>
 							</li>
 						{/if}
 					</ul>

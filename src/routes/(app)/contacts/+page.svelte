@@ -220,6 +220,7 @@
 		{/if}
 
 		<label class="relative block">
+			<span class="sr-only">Search contacts</span>
 			<Search
 				class={cn(
 					'pointer-events-none absolute top-1/2 -translate-y-1/2 text-fg-subtle',

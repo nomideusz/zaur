@@ -82,6 +82,27 @@
 	--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 58%, transparent);
 }
 
+.z-skip-link {
+	position: fixed;
+	left: 0.75rem;
+	top: 0.75rem;
+	z-index: 100;
+	transform: translateY(-150%);
+	border-radius: var(--radius-md);
+	background: var(--z-accent);
+	color: var(--z-accent-fg);
+	padding: 0.5rem 0.75rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	transition: transform 120ms ease;
+}
+
+.z-skip-link:focus {
+	transform: translateY(0);
+	outline: 2px solid var(--z-accent-fg);
+	outline-offset: 2px;
+}
+
 /* Accent color presets */
 :root[data-accent='teal'] {
 	--z-accent: #0d9488;

@@ -87,6 +87,12 @@
 			toast.show(message, 'error');
 		}
 	}
+
+	function onBulkMoveMenuKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			moveOpen = false;
+		}
+	}
 </script>
 
 <svelte:window onclick={() => (moveOpen = false)} />
@@ -148,6 +154,9 @@
 					<IconButton
 						label="Move"
 						class="!p-1.5"
+						ariaExpanded={moveOpen}
+						ariaControls="bulk-move-menu"
+						ariaHaspopup="menu"
 						onclick={(e) => {
 							e.stopPropagation();
 							moveOpen = !moveOpen;
@@ -156,10 +165,13 @@
 						<FolderInput class="size-3.5" aria-hidden="true" />
 					</IconButton>
 					{#if moveOpen}
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
 						<div
+							id="bulk-move-menu"
+							role="menu"
+							tabindex="-1"
 							class="absolute left-0 z-20 mt-1 max-h-64 w-52 overflow-y-auto rounded-md border border-border bg-surface-raised py-1 shadow-md"
 							onpointerdown={(e) => e.stopPropagation()}
+							onkeydown={onBulkMoveMenuKeydown}
 						>
 							{#if !settings.hideMoveMenuLabels}
 								<p class={cn('px-3 text-xs font-medium text-fg-subtle', settings.compactMoveMenu ? 'py-1' : 'py-1.5')}>
@@ -177,6 +189,7 @@
 										moveOpen = false;
 										if (auth.client) void runBulk(() => mail.bulkMoveToMailbox(auth.client!, folder.id));
 									}}
+									role="menuitem"
 								>
 									{folder.name}
 								</button>
@@ -239,7 +252,12 @@
 		{/if}
 
 		{#if showThreadActions && mailboxRouteId}
-			<MessageThreadActions {thread} {mailboxRouteId} onMoved={onBulkAction} />
+			<MessageThreadActions
+				{thread}
+				{mailboxRouteId}
+				onMoved={onBulkAction}
+				class="max-w-[calc(100vw-6rem)] overflow-x-auto md:max-w-none md:overflow-visible"
+			/>
 		{/if}
 	{/if}
 
