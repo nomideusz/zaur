@@ -172,17 +172,11 @@ import X from '$lib/components/icons/X.svelte';
 	}
 
 	function close() {
-		const hasContent =
-			compose.to.trim() ||
-			compose.cc.trim() ||
-			compose.bcc.trim() ||
-			compose.subject.trim() ||
-			compose.body.trim() ||
-			compose.attachments.length;
+		const hasContent = !compose.isComposeEmpty;
 
 		if (hasContent && settings.confirmBeforeDiscardCompose && !confirm('Discard this message?')) return;
 
-		compose.reset();
+		void compose.discard(auth.client);
 		goto(settings.preferredMailHref());
 	}
 

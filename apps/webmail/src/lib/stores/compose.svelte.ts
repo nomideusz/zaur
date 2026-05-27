@@ -103,6 +103,21 @@ class ComposeStore {
 	private serverDraftTimer: ReturnType<typeof setTimeout> | null = null;
 	private pendingSend: PendingSend | null = null;
 
+	get isComposeEmpty() {
+		const bodyText = this.body.trim();
+		const signatureText = settings.useSignature ? settings.signature.trim() : '';
+		const isBodyEmpty = bodyText === '' || bodyText === signatureText;
+
+		return (
+			!this.to.trim() &&
+			!this.cc.trim() &&
+			!this.bcc.trim() &&
+			!this.subject.trim() &&
+			!this.attachments.length &&
+			isBodyEmpty
+		);
+	}
+
 	get hasUploadingAttachments() {
 		return this.attachments.some((attachment) => attachment.uploading);
 	}
@@ -374,6 +389,13 @@ class ComposeStore {
 	scheduleAutosave(client: JMAPClient | null, fromEmail: string, fromName?: string) {
 		if (!browser) return;
 
+		if (this.isComposeEmpty) {
+			if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
+			if (this.serverDraftTimer) clearTimeout(this.serverDraftTimer);
+			void this.persistLocalDraft();
+			return;
+		}
+
 		if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
 		this.autosaveTimer = setTimeout(() => {
 			void this.persistLocalDraft();
@@ -392,6 +414,26 @@ class ComposeStore {
 		if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
 		if (this.serverDraftTimer) clearTimeout(this.serverDraftTimer);
 		void this.clearLocalDraft();
+		this.clearComposeFields();
+		this.isSending = false;
+		this.isSavingDraft = false;
+	}
+
+	async discard(client: JMAPClient | null) {
+		this.cancelPendingSend();
+		if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
+		if (this.serverDraftTimer) clearTimeout(this.serverDraftTimer);
+
+		const draftId = this.jmapDraftId;
+		if (draftId && client) {
+			try {
+				await client.destroyEmail(draftId);
+			} catch {
+				// Best-effort
+			}
+		}
+
+		await this.clearLocalDraft();
 		this.clearComposeFields();
 		this.isSending = false;
 		this.isSavingDraft = false;
@@ -659,8 +701,18 @@ class ComposeStore {
 	private async persistLocalDraft() {
 		if (!browser) return;
 		if (this.mode !== 'new' && !this.attachments.length) return;
-		if (!this.to && !this.cc && !this.bcc && !this.subject && !this.body && !this.attachments.length) {
+		if (this.isComposeEmpty) {
 			await this.clearLocalDraft();
+			const draftId = this.jmapDraftId;
+			if (draftId) {
+				this.jmapDraftId = undefined;
+				this.draftSavedAt = null;
+				void import('$lib/stores/auth.svelte').then(({ auth }) => {
+					if (auth.client) {
+						void auth.client.destroyEmail(draftId).catch(() => {});
+					}
+				});
+			}
 			return;
 		}
 
@@ -693,6 +745,7 @@ class ComposeStore {
 	}
 
 	private async saveServerDraft(client: JMAPClient, fromEmail: string, fromName?: string) {
+		if (this.isComposeEmpty) return;
 		if (!this.to && !this.subject && !this.body) return;
 
 		this.isSavingDraft = true;

@@ -1042,7 +1042,7 @@ export class JMAPClient {
 			body: params.body,
 			format: params.format,
 			mailboxIds: { [draftsMailbox.id]: true },
-			keywords: { $draft: true },
+			keywords: { $draft: true, $seen: true },
 			attachments: params.attachments
 		});
 

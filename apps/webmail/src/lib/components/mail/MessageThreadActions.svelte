@@ -183,10 +183,25 @@ import Trash2 from '$lib/components/icons/Trash2.svelte';
 				<IconButton label="Edit draft" onclick={editDraft}>
 					<Pencil class="size-5" />
 				</IconButton>
+				<IconButton label={markReadLabel} onclick={toggleLatestRead}>
+					{#if latest.unread}
+						<MailOpen class="size-5" />
+					{:else}
+						<Mail class="size-5" />
+					{/if}
+				</IconButton>
 			{:else}
 				<Button variant="ghost" class={toolbarButtonClass} onclick={editDraft}>
 					<Pencil class="size-4" aria-hidden="true" />
 					Edit draft
+				</Button>
+				<Button variant="ghost" class={toolbarButtonClass} onclick={toggleLatestRead}>
+					{#if latest.unread}
+						<MailOpen class="size-4" aria-hidden="true" />
+					{:else}
+						<Mail class="size-4" aria-hidden="true" />
+					{/if}
+					{markReadLabel}
 				</Button>
 			{/if}
 			<Button class={toolbarButtonClass} onclick={() => void sendDraft()}>
@@ -207,6 +222,14 @@ import Trash2 from '$lib/components/icons/Trash2.svelte';
 					{deleteLabel}
 				</Button>
 			{/if}
+			<OverflowMenu label="More message actions" menuId="thread-actions-overflow-menu">
+				<OverflowMenuItem label={latest.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
+					{#snippet icon()}<Star class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+				{#if auth.client}
+					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
+				{/if}
+			</OverflowMenu>
 		{:else}
 			{#if settings.minimalReaderToolbar}
 				<IconButton label={markReadLabel} onclick={toggleLatestRead}>
