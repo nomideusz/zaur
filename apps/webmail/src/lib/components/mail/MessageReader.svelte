@@ -78,7 +78,8 @@ import Shield from '$lib/components/icons/Shield.svelte';
 			expandedIds = new Set(thread.map((message) => message.id));
 		} else {
 			const latestId = thread.at(-1)?.id;
-			expandedIds = latestId ? new Set([latestId]) : new Set();
+			const urlMessageId = $page.url.searchParams.get('messageId');
+			expandedIds = urlMessageId ? new Set([urlMessageId]) : (latestId ? new Set([latestId]) : new Set());
 		}
 	});
 

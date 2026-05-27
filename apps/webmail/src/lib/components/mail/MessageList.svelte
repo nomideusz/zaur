@@ -65,6 +65,9 @@ import Search from '$lib/components/icons/Search.svelte';
 		return `${$page.url.pathname}${$page.url.search}`;
 	});
 	const activeMessageId = $derived.by(() => {
+		const urlMessageId = $page.url.searchParams.get('messageId');
+		if (urlMessageId) return urlMessageId;
+
 		if (!activeThreadId) return null;
 		return (
 			messages.find((message) => message.threadId === activeThreadId)?.id ??
@@ -133,7 +136,12 @@ import Search from '$lib/components/icons/Search.svelte';
 
 	function messageHref(message: MessagePreview): string {
 		const href = `/mail/${message.mailboxId}/${message.threadId}`;
-		return searchReturnTo ? `${href}?returnTo=${encodeURIComponent(searchReturnTo)}` : href;
+		const searchParams = new URLSearchParams();
+		searchParams.set('messageId', message.id);
+		if (searchReturnTo) {
+			searchParams.set('returnTo', searchReturnTo);
+		}
+		return `${href}?${searchParams.toString()}`;
 	}
 
 	const listExpanded = $derived(expanded || mail.hasSelection);
@@ -254,7 +262,7 @@ import Search from '$lib/components/icons/Search.svelte';
 				<MessageListItem
 					{message}
 					href={messageHref(message)}
-					active={activeThreadId === message.threadId}
+					active={activeMessageId === message.id}
 					showCheckboxes={!!mailboxRouteId && settings.showBulkSelect && mail.hasSelection}
 					showListGutter={!!mailboxRouteId && settings.showBulkSelect}
 					selected={mailboxRouteId ? selectedIds.includes(message.id) : false}
