@@ -132,7 +132,6 @@ import Search from '$lib/components/icons/Search.svelte';
 	});
 
 	function messageHref(message: MessagePreview): string {
-		if (mailboxRouteId === 'drafts') return `/mail/compose?draft=${message.id}`;
 		const href = `/mail/${message.mailboxId}/${message.threadId}`;
 		return searchReturnTo ? `${href}?returnTo=${encodeURIComponent(searchReturnTo)}` : href;
 	}
