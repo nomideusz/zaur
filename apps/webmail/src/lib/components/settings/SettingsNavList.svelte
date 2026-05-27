@@ -24,7 +24,7 @@ import User from '$lib/components/icons/User.svelte';
 		onNavigate?: () => void;
 	} = $props();
 
-	const ICON_MAP: Record<SettingsNavIcon, typeof LucideIcon> = {
+	const ICON_MAP: Record<SettingsNavIcon, LucideIcon> = {
 		account: User,
 		general: SettingsIcon,
 		inbox: Inbox,
