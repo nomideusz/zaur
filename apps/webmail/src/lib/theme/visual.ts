@@ -1,4 +1,4 @@
-export type AccentColor = 'blue' | 'teal' | 'violet' | 'slate';
+export type AccentColor = 'charcoal' | 'blue' | 'teal' | 'violet' | 'slate';
 export type CornerStyle = 'default' | 'soft' | 'sharp';
 export type SurfaceStyle = 'default' | 'soft';
 
@@ -7,6 +7,7 @@ export const ACCENT_OPTIONS: ReadonlyArray<{
 	label: string;
 	swatch: string;
 }> = [
+	{ id: 'charcoal', label: 'Charcoal', swatch: '#2f3437' },
 	{ id: 'blue', label: 'Blue', swatch: '#2563eb' },
 	{ id: 'teal', label: 'Teal', swatch: '#0d9488' },
 	{ id: 'violet', label: 'Violet', swatch: '#7c3aed' },
@@ -31,9 +32,9 @@ const STORAGE = {
 } as const;
 
 export function readAccentColor(): AccentColor {
-	if (typeof localStorage === 'undefined') return 'blue';
+	if (typeof localStorage === 'undefined') return 'charcoal';
 	const value = localStorage.getItem(STORAGE.accentColor);
-	return value === 'teal' || value === 'violet' || value === 'slate' ? value : 'blue';
+	return value === 'charcoal' || value === 'blue' || value === 'teal' || value === 'violet' || value === 'slate' ? value : 'charcoal';
 }
 
 export function readCornerStyle(): CornerStyle {

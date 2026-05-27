@@ -8,7 +8,7 @@
 	<SettingsRow title="Week starts on Monday" description="Use Monday as the first column instead of Sunday">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.calendarWeekStartsOnMonday}
 			onchange={(e) => settings.setCalendarWeekStartsOnMonday(e.currentTarget.checked)}
 		/>
@@ -32,7 +32,7 @@
 	<SettingsRow title="Show event times" description="Display start time next to each event title">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={!settings.hideCalendarEventTimes}
 			onchange={(e) => settings.setHideCalendarEventTimes(!e.currentTarget.checked)}
 		/>

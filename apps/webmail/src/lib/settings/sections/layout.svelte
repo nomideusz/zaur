@@ -9,7 +9,7 @@
 	<SettingsRow title="Mail-only navigation" description="Hide Calendar and Contacts from the top bar and sidebar">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.mailOnlyNavigation}
 			onchange={(e) => settings.setMailOnlyNavigation(e.currentTarget.checked)}
 		/>
@@ -18,7 +18,7 @@
 	<SettingsRow title="Remember last mailbox" description="Open your last folder instead of Inbox when signing in">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.rememberLastMailbox}
 			onchange={(e) => settings.setRememberLastMailbox(e.currentTarget.checked)}
 		/>
@@ -29,7 +29,7 @@
 	<SettingsRow title="Show folder unread counts" description="Unread badges on folders">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.showFolderUnreadCounts}
 			onchange={(e) => settings.setShowFolderUnreadCounts(e.currentTarget.checked)}
 		/>
@@ -38,7 +38,7 @@
 	<SettingsRow title="Show folder icons" description="Display an icon beside each folder name">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={!settings.hideFolderIcons}
 			onchange={(e) => settings.setHideFolderIcons(!e.currentTarget.checked)}
 		/>
@@ -50,7 +50,7 @@
 	>
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.compactFolderSidebar}
 			onchange={(e) => settings.setCompactFolderSidebar(e.currentTarget.checked)}
 		/>
@@ -62,7 +62,7 @@
 	>
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={!settings.hideSidebarShortcuts}
 			onchange={(e) => settings.setHideSidebarShortcuts(!e.currentTarget.checked)}
 		/>
@@ -73,7 +73,7 @@
 	<SettingsRow title="Show sidebar search" description="Mobile search and / shortcut still work when off">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={!settings.hideHeaderSearch}
 			onchange={(e) => settings.setHideHeaderSearch(!e.currentTarget.checked)}
 		/>
@@ -100,7 +100,7 @@
 		<SettingsRow title="Contact suggestions in search" description="Contact matches while typing in sidebar search">
 			<input
 				type="checkbox"
-				class="size-4 accent-accent"
+				class="z-checkbox"
 				checked={settings.showSearchContactSuggestions}
 				onchange={(e) => settings.setShowSearchContactSuggestions(e.currentTarget.checked)}
 			/>
@@ -112,7 +112,7 @@
 	<SettingsRow title="Compact layout" description="Narrower sidebar and message list">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.compactLayout}
 			onchange={(e) => settings.setCompactLayout(e.currentTarget.checked)}
 		/>
@@ -124,7 +124,7 @@
 	>
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.expandListUntilOpen}
 			onchange={(e) => settings.setExpandListUntilOpen(e.currentTarget.checked)}
 		/>
@@ -133,7 +133,7 @@
 	<SettingsRow title="Show pane borders" description="Divider lines between sidebar, list, and reader">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={!settings.hidePaneBorders}
 			onchange={(e) => settings.setHidePaneBorders(!e.currentTarget.checked)}
 		/>
@@ -144,7 +144,7 @@
 	<SettingsRow title="Tool icons only" description="Hide Mail, Calendar, and Contacts labels in the top bar">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.toolIconsOnly}
 			onchange={(e) => settings.setToolIconsOnly(e.currentTarget.checked)}
 		/>
@@ -156,7 +156,7 @@
 	>
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.hideOutboxUnlessFailed}
 			onchange={(e) => settings.setHideOutboxUnlessFailed(e.currentTarget.checked)}
 		/>

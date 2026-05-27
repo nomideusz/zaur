@@ -32,7 +32,7 @@
 	<SettingsRow title="Show message preview" description="Second line under the subject in each row">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.showListPreview}
 			onchange={(e) => settings.setShowListPreview(e.currentTarget.checked)}
 		/>
@@ -43,7 +43,7 @@
 	<SettingsRow title="Sender avatars" description="Photo or initials beside each message">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.showAvatars}
 			onchange={(e) => settings.setShowAvatars(e.currentTarget.checked)}
 		/>
@@ -52,7 +52,7 @@
 	<SettingsRow title="Stars" description="Star icon beside starred messages">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.showStarsInList}
 			onchange={(e) => settings.setShowStarsInList(e.currentTarget.checked)}
 		/>
@@ -61,7 +61,7 @@
 	<SettingsRow title="Attachment icons" description="Paperclip beside messages with files">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.showAttachmentIcons}
 			onchange={(e) => settings.setShowAttachmentIcons(e.currentTarget.checked)}
 		/>
@@ -70,7 +70,7 @@
 	<SettingsRow title="Timestamps" description="Date or time on the right of each row">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.showListTimestamps}
 			onchange={(e) => settings.setShowListTimestamps(e.currentTarget.checked)}
 		/>
@@ -85,7 +85,7 @@
 		<SettingsRow title="Full dates" description="Full date and time instead of compact labels like Mon or May 25">
 			<input
 				type="checkbox"
-				class="size-4 accent-accent"
+				class="z-checkbox"
 				checked={settings.showFullDatesInList}
 				onchange={(e) => settings.setShowFullDatesInList(e.currentTarget.checked)}
 			/>
@@ -95,7 +95,7 @@
 	<SettingsRow title="Highlight unread" description="Bold subject and unread dots in the list">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.highlightUnreadInList}
 			onchange={(e) => settings.setHighlightUnreadInList(e.currentTarget.checked)}
 		/>
@@ -104,7 +104,7 @@
 	<SettingsRow title="Subject only" description="Hide the sender line, show only the subject">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.subjectOnlyList}
 			onchange={(e) => settings.setSubjectOnlyList(e.currentTarget.checked)}
 		/>
@@ -119,7 +119,7 @@
 		<SettingsRow title="Show sender email" description="Email address instead of display name">
 			<input
 				type="checkbox"
-				class="size-4 accent-accent"
+				class="z-checkbox"
 				checked={settings.showSenderEmailInList}
 				onchange={(e) => settings.setShowSenderEmailInList(e.currentTarget.checked)}
 			/>
@@ -131,7 +131,7 @@
 	<SettingsRow title="Enable bulk select" description="Master checkbox and menu above the message list">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.showBulkSelect}
 			onchange={(e) => settings.setShowBulkSelect(e.currentTarget.checked)}
 		/>

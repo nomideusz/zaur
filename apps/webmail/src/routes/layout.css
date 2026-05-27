@@ -111,6 +111,30 @@
 }
 
 /* Accent color presets */
+:root[data-accent='charcoal'] {
+	--z-accent: #2f3437;
+	--z-accent-hover: #111111;
+	--z-unread: #2f3437;
+}
+
+:root.dark[data-accent='charcoal'] {
+	--z-accent: #ededec;
+	--z-accent-hover: #ffffff;
+	--z-unread: #ededec;
+}
+
+:root[data-accent='blue'] {
+	--z-accent: #2563eb;
+	--z-accent-hover: #1d4ed8;
+	--z-unread: #2563eb;
+}
+
+:root.dark[data-accent='blue'] {
+	--z-accent: #3b82f6;
+	--z-accent-hover: #2563eb;
+	--z-unread: #60a5fa;
+}
+
 :root[data-accent='teal'] {
 	--z-accent: #0d9488;
 	--z-accent-hover: #0f766e;

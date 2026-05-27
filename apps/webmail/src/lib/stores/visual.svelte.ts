@@ -53,7 +53,7 @@ class VisualStore {
 	}
 
 	resetToDefaults() {
-		this.setAccentColor('blue');
+		this.setAccentColor('charcoal');
 		this.setCornerStyle('default');
 		this.setSurfaceStyle('default');
 	}

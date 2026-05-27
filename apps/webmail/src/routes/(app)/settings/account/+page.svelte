@@ -112,7 +112,7 @@
 		>
 			<input
 				type="checkbox"
-				class="size-4 accent-accent"
+				class="z-checkbox"
 				checked={settings.useSignature}
 				onchange={(e) => settings.setUseSignature(e.currentTarget.checked)}
 			/>

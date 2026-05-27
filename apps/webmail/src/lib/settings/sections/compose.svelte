@@ -64,7 +64,7 @@
 	<SettingsRow title="Show Cc/Bcc" description="Cc and Bcc rows in compose — reply-all still shows Cc when needed">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.showCcBccInCompose}
 			onchange={(e) => settings.setShowCcBccInCompose(e.currentTarget.checked)}
 		/>
@@ -73,7 +73,7 @@
 	<SettingsRow title="Contact suggestions" description="Autocomplete contacts while typing recipients">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.showComposeContactSuggestions}
 			onchange={(e) => settings.setShowComposeContactSuggestions(e.currentTarget.checked)}
 		/>
@@ -87,7 +87,7 @@
 	>
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.bccSelf}
 			onchange={(e) => settings.setBccSelf(e.currentTarget.checked)}
 		/>
@@ -99,7 +99,7 @@
 	>
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.autoArchiveOnReply}
 			onchange={(e) => settings.setAutoArchiveOnReply(e.currentTarget.checked)}
 		/>
@@ -110,7 +110,7 @@
 	<SettingsRow title="Hide compose hints" description="Remove tips like “Set display name”, “Add a signature”, and shortcut nudges">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.hideComposeHints}
 			onchange={(e) => settings.setHideComposeHints(e.currentTarget.checked)}
 		/>
@@ -119,7 +119,7 @@
 	<SettingsRow title="Collapse quoted text" description="Keep quoted reply content folded when composing">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.collapseQuotedInCompose}
 			onchange={(e) => settings.setCollapseQuotedInCompose(e.currentTarget.checked)}
 		/>

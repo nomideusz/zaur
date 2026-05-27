@@ -4,9 +4,7 @@ import { precacheAndRoute } from 'workbox-precaching';
 
 declare const self: ServiceWorkerGlobalScope;
 
-if (typeof self.__WB_MANIFEST !== 'undefined' && Array.isArray(self.__WB_MANIFEST)) {
-	precacheAndRoute(self.__WB_MANIFEST);
-}
+precacheAndRoute(self.__WB_MANIFEST);
 clientsClaim();
 
 interface PushPayload {

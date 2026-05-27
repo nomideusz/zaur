@@ -21,7 +21,7 @@
 	<SettingsRow title="Prefer plain text" description="Show plain text when available instead of HTML">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.preferPlainText}
 			onchange={(e) => settings.setPreferPlainText(e.currentTarget.checked)}
 		/>
@@ -30,7 +30,7 @@
 	<SettingsRow title="Expand all thread messages" description="Show every message in a conversation expanded by default">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.expandAllThreadMessages}
 			onchange={(e) => settings.setExpandAllThreadMessages(e.currentTarget.checked)}
 		/>
@@ -41,7 +41,7 @@
 	<SettingsRow title="Block external content" description="Block remote images in HTML mail — you can still show them per message">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.blockExternalContent}
 			onchange={(e) => settings.setBlockExternalContent(e.currentTarget.checked)}
 		/>
@@ -56,7 +56,7 @@
 		<SettingsRow title="Hide blocked-images banner" description="Do not show the external-content notice in the reader">
 			<input
 				type="checkbox"
-				class="size-4 accent-accent"
+				class="z-checkbox"
 				checked={settings.hideExternalContentBanner}
 				onchange={(e) => settings.setHideExternalContentBanner(e.currentTarget.checked)}
 			/>
@@ -69,7 +69,7 @@
 	>
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.warnExternalSenders}
 			onchange={(e) => settings.setWarnExternalSenders(e.currentTarget.checked)}
 		/>
@@ -91,7 +91,7 @@
 	<SettingsRow title="Quick reply" description="Reply box at the bottom of an open message">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.showQuickReply}
 			onchange={(e) => settings.setShowQuickReply(e.currentTarget.checked)}
 		/>
@@ -100,7 +100,7 @@
 	<SettingsRow title="Contact actions" description="Save contact and copy email in the message header">
 		<input
 			type="checkbox"
-			class="size-4 accent-accent"
+			class="z-checkbox"
 			checked={settings.showReaderContactActions}
 			onchange={(e) => settings.setShowReaderContactActions(e.currentTarget.checked)}
 		/>
