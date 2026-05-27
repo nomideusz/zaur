@@ -131,7 +131,8 @@ class ComposeStore {
 	}
 
 	startNew() {
-		void this.restoreLocalDraft();
+		this.resetComposeFields();
+		void this.clearLocalDraft();
 	}
 
 	private async restoreLocalDraft() {
