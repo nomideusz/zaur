@@ -22,7 +22,15 @@
 		if (to.url.searchParams.get('draft')) return;
 		const toMode = to.url.searchParams.get('mode');
 		if (toMode && toMode !== 'new') return;
-		if (from?.url.pathname === '/mail/compose') return;
+		
+		if (
+			from?.url.pathname === '/mail/compose' &&
+			from.url.searchParams.get('draft') === to.url.searchParams.get('draft') &&
+			from.url.searchParams.get('mode') === to.url.searchParams.get('mode')
+		) {
+			return;
+		}
+		
 		compose.startNew();
 	});
 
