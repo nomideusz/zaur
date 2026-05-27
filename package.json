@@ -10,6 +10,8 @@
     "build:dinosaurus": "pnpm --filter @zaur/dinosaurus build",
     "check:webmail": "pnpm --filter @zaur/webmail check",
     "test:webmail": "pnpm --filter @zaur/webmail test",
-    "test:domains": "pnpm --filter @zaur/domains test:e2e"
+    "test:domains": "pnpm --filter @zaur/domains test:e2e",
+    "deploy:webmail": "bash infra/deploy/caprover.sh webmail",
+    "deploy:register": "bash infra/deploy/caprover.sh register"
   }
 }

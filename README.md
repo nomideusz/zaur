@@ -64,6 +64,13 @@ infra/
 
 GitHub Actions deploy **webmail** and **domains** to CapRover on push to `main` when their paths change. Each build uses the monorepo root as Docker context (see app Dockerfiles).
 
+Local deploy (requires `caprover login`):
+
+```sh
+pnpm deploy:webmail
+pnpm deploy:register
+```
+
 Dinosaurus deploys separately on Railway (frontend + archive + navidrome).
 
 ## Migrating from standalone repos

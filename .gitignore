@@ -38,6 +38,7 @@ playwright-report/
 # CapRover deploy artifacts
 deploy.tar
 temporary-captain-to-deploy.tar
+captain-definition
 
 # Temporary scratch and app files
 scratch/

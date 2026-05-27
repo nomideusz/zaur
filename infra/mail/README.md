@@ -16,6 +16,18 @@ Stalwart runs as a **deployed binary**, not application source in this repo. Thi
 - **Registration:** `https://register.zaur.app`
 - **Webmail:** `https://webmail.zaur.app`
 
+## CapRover nginx (root redirect)
+
+The CapRover **`mail`** app has a custom nginx snippet so browsers hitting `https://mail.zaur.app/` go to webmail. Mail API paths are unchanged.
+
+```nginx
+location = / {
+    return 302 https://webmail.zaur.app/;
+}
+```
+
+Configured in CapRover → **mail** → **HTTP Settings** → **Edit Default Nginx Config** (insert before the catch-all `location /`). After edits on the VPS, restart captain: `docker service update --force captain-captain`.
+
 ## Adding config here
 
 When you version Stalwart settings, add files such as:
