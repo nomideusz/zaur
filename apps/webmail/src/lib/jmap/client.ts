@@ -1047,11 +1047,30 @@ export class JMAPClient {
 		});
 
 		if (params.jmapDraftId) {
+			const newDraftKey = `draft-update-${Date.now()}`;
 			const response = await this.request([
-				['Email/set', { accountId: this.accountId, update: { [params.jmapDraftId]: emailData } }, '0']
+				[
+					'Email/set',
+					{
+						accountId: this.accountId,
+						create: { [newDraftKey]: emailData }
+					},
+					'0'
+				],
+				[
+					'Email/set',
+					{
+						accountId: this.accountId,
+						destroy: [params.jmapDraftId]
+					},
+					'1'
+				]
 			]);
-			assertEmailSetSucceeded(response, 'Could not update draft');
-			return params.jmapDraftId;
+			const result = assertEmailSetSucceeded(response, 'Could not update draft');
+			const created = result.created as Record<string, { id?: string }> | undefined;
+			const createdId = created?.[newDraftKey]?.id;
+			if (!createdId) throw new Error('Draft update response missing id');
+			return createdId;
 		}
 
 		const response = await this.request([
