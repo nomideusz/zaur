@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Search } from 'lucide-svelte';
+	import Search from '$lib/components/icons/Search.svelte';
 	import { settingsSearch } from '$lib/settings/search-registry.svelte';
 	import { cn } from '$lib/utils/cn';
 

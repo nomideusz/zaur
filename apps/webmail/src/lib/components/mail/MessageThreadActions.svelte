@@ -1,18 +1,16 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import {
-		Archive,
-		Forward,
-		Mail,
-		MailOpen,
-		Pencil,
-		Reply,
-		ReplyAll,
-		Send,
-		Shield,
-		Star,
-		Trash2
-	} from 'lucide-svelte';
+	import Archive from '$lib/components/icons/Archive.svelte';
+import Forward from '$lib/components/icons/Forward.svelte';
+import Mail from '$lib/components/icons/Mail.svelte';
+import MailOpen from '$lib/components/icons/MailOpen.svelte';
+import Pencil from '$lib/components/icons/Pencil.svelte';
+import Reply from '$lib/components/icons/Reply.svelte';
+import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
+import Send from '$lib/components/icons/Send.svelte';
+import Shield from '$lib/components/icons/Shield.svelte';
+import Star from '$lib/components/icons/Star.svelte';
+import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';

@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { ChevronDown, LogOut, Moon, Settings, Sun, User } from 'lucide-svelte';
+	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
+import LogOut from '$lib/components/icons/LogOut.svelte';
+import Moon from '$lib/components/icons/Moon.svelte';
+import Settings from '$lib/components/icons/Settings.svelte';
+import Sun from '$lib/components/icons/Sun.svelte';
+import User from '$lib/components/icons/User.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';

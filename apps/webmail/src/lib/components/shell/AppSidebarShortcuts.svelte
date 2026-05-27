@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { Calendar, Mail, Settings, Users } from 'lucide-svelte';
+	import Calendar from '$lib/components/icons/Calendar.svelte';
+import Mail from '$lib/components/icons/Mail.svelte';
+import Settings from '$lib/components/icons/Settings.svelte';
+import Users from '$lib/components/icons/Users.svelte';
 	import { page } from '$app/stores';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';

@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { LoaderCircle, Paperclip, X } from 'lucide-svelte';
+	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
+import Paperclip from '$lib/components/icons/Paperclip.svelte';
+import X from '$lib/components/icons/X.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { formatAttachmentSize } from '$lib/attachments/upload';
 	import { compose } from '$lib/stores/compose.svelte';

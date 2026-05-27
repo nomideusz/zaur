@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PenSquare } from 'lucide-svelte';
+	import PenSquare from '$lib/components/icons/PenSquare.svelte';
 	import { frameSvg } from '@zaur/sprite';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { settings } from '$lib/stores/settings.svelte';

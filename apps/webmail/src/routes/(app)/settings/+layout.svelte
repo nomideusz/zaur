@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { browser } from '$app/environment';
-	import { ArrowLeft } from 'lucide-svelte';
+	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import SettingsSidebar from '$lib/components/settings/SettingsSidebar.svelte';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/settings/nav';

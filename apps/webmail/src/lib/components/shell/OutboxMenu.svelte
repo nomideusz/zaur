@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { Clock, Send, Trash2, X } from 'lucide-svelte';
+	import Clock from '$lib/components/icons/Clock.svelte';
+import Send from '$lib/components/icons/Send.svelte';
+import Trash2 from '$lib/components/icons/Trash2.svelte';
+import X from '$lib/components/icons/X.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { network } from '$lib/stores/network.svelte';

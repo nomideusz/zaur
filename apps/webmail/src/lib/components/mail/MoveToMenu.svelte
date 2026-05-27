@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { FolderInput } from 'lucide-svelte';
+	import FolderInput from '$lib/components/icons/FolderInput.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
 	import { mail } from '$lib/stores/mail.svelte';

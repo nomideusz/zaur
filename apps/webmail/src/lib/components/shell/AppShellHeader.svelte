@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { CalendarPlus, PenSquare, Search } from 'lucide-svelte';
+	import CalendarPlus from '$lib/components/icons/CalendarPlus.svelte';
+import PenSquare from '$lib/components/icons/PenSquare.svelte';
+import Search from '$lib/components/icons/Search.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import GlobalSearch from './GlobalSearch.svelte';
@@ -16,7 +18,6 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 
-	import ZaurSprite from '$lib/components/ui/ZaurSprite.svelte';
 
 	const homeHref = $derived(settings.preferredMailHref());
 	const showOutbox = $derived(
@@ -45,8 +46,7 @@
 			settings.compactAppHeader ? 'gap-2' : 'gap-3'
 		)}
 	>
-		<a href={homeHref} class="z-type-brand flex items-center gap-2 text-base text-fg transition-colors hover:text-fg-muted">
-			<ZaurSprite id="happy" scale={1} class="size-5" />
+		<a href={homeHref} class="z-type-brand text-base text-fg transition-colors hover:text-fg-muted">
 			<span class={settings.hideAppTitle ? 'sr-only' : ''}>ZAUR</span>
 		</a>
 

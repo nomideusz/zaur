@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { Download, Smartphone, X } from 'lucide-svelte';
+	import Download from '$lib/components/icons/Download.svelte';
+import Smartphone from '$lib/components/icons/Smartphone.svelte';
+import X from '$lib/components/icons/X.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { cn } from '$lib/utils/cn';

@@ -7,6 +7,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import PenSquare from '$lib/components/icons/PenSquare.svelte';
 	import { buildMailboxTree } from '$lib/utils/mailbox-tree';
 	import { cn } from '$lib/utils/cn';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -24,11 +25,15 @@
 >
 	<div
 		class={cn(
-			'relative z-20 shrink-0',
-			settings.compactFolderSidebarHeader ? 'px-3 py-2' : 'px-3 py-3',
+			'relative z-20 shrink-0 flex flex-col',
+			settings.compactFolderSidebarHeader ? 'gap-2 px-3 py-2' : 'gap-3 px-3 py-3',
 			!settings.hidePaneBorders && 'border-b border-border/80'
 		)}
 	>
+		<Button href="/mail/compose" class="z-btn-primary w-full gap-2">
+			<PenSquare class="size-4" />
+			<span>New message</span>
+		</Button>
 		<GlobalSearch placement="sidebar" />
 	</div>
 

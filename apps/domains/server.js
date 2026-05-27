@@ -51,7 +51,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(
   session({
     store: new FileStore({
-      path: process.env.SESSION_STORE_PATH || '/app/data/sessions',
+      path: process.env.SESSION_STORE_PATH || path.join(__dirname, '.data', 'sessions'),
       retries: 0,
     }),
     secret: process.env.SESSION_SECRET || 'dev-secret-change-me',

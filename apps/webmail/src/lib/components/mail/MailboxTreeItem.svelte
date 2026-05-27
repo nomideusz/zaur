@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { Archive, FileText, Inbox, Send, ShieldAlert, Trash2 } from 'lucide-svelte';
+	import Archive from '$lib/components/icons/Archive.svelte';
+import FileText from '$lib/components/icons/FileText.svelte';
+import Inbox from '$lib/components/icons/Inbox.svelte';
+import Send from '$lib/components/icons/Send.svelte';
+import ShieldAlert from '$lib/components/icons/ShieldAlert.svelte';
+import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import Self from './MailboxTreeItem.svelte';
 	import type { MailboxNode } from '$lib/utils/mailbox-tree';

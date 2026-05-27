@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Calendar } from 'lucide-svelte';
+	import Calendar from '$lib/components/icons/Calendar.svelte';
 	import CalendarSidebar from '$lib/components/calendar/CalendarSidebar.svelte';
 	import EventComposePanel from '$lib/components/calendar/EventComposePanel.svelte';
 	import EventPanel from '$lib/components/calendar/EventPanel.svelte';

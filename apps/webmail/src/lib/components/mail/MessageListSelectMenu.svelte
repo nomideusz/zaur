@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronDown } from 'lucide-svelte';
+	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 

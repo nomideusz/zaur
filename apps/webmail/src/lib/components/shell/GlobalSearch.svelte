@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Search, User } from 'lucide-svelte';
+	import Search from '$lib/components/icons/Search.svelte';
+import User from '$lib/components/icons/User.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import IconButton from '$lib/components/ui/IconButton.svelte';

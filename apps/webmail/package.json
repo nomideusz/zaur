@@ -40,7 +40,6 @@
 		"clsx": "^2.1.1",
 		"dexie": "^4.4.2",
 		"dompurify": "^3.4.5",
-		"lucide-svelte": "^1.0.1",
 		"rxdb": "^17.2.0",
 		"rxjs": "^7.8.2",
 		"web-push": "^3.6.7"

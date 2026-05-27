@@ -54,7 +54,7 @@ html {
 }
 
 body {
-  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', 'Adwaita Sans', Cantarell, Ubuntu, roboto, noto, helvetica, arial, sans-serif;
   background: var(--z-surface);
   color: var(--z-fg);
   line-height: 1.6;
@@ -100,8 +100,8 @@ a:hover {
 
 .logo {
   font-size: 1.125rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  letter-spacing: -0.04em;
   color: var(--z-fg);
   text-decoration: none;
   display: inline-flex;

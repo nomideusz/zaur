@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { WifiOff } from 'lucide-svelte';
+	import WifiOff from '$lib/components/icons/WifiOff.svelte';
 	import { network } from '$lib/stores/network.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';

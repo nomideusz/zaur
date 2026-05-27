@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Paperclip, Star } from 'lucide-svelte';
+	import Paperclip from '$lib/components/icons/Paperclip.svelte';
+import Star from '$lib/components/icons/Star.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { formatMessageListWhen } from '$lib/utils/dates';

@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
-	import { Paperclip, X } from 'lucide-svelte';
+	import Paperclip from '$lib/components/icons/Paperclip.svelte';
+import X from '$lib/components/icons/X.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import ComposeAttachments from '$lib/components/mail/ComposeAttachments.svelte';
 	import ComposeRecipientInput from '$lib/components/mail/ComposeRecipientInput.svelte';

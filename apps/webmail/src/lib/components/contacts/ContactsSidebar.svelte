@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Settings, UserPlus } from 'lucide-svelte';
+	import Settings from '$lib/components/icons/Settings.svelte';
+import UserPlus from '$lib/components/icons/UserPlus.svelte';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { settings } from '$lib/stores/settings.svelte';

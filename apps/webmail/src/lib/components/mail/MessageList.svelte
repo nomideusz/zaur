@@ -1,5 +1,9 @@
 <script lang="ts">
-	import { AlertCircle, LoaderCircle, Inbox, RefreshCw, Search } from 'lucide-svelte';
+	import AlertCircle from '$lib/components/icons/AlertCircle.svelte';
+import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
+import Inbox from '$lib/components/icons/Inbox.svelte';
+import RefreshCw from '$lib/components/icons/RefreshCw.svelte';
+import Search from '$lib/components/icons/Search.svelte';
 	import { frameSvg } from '@zaur/sprite';
 	import { page } from '$app/stores';
 	import Button from '$lib/components/ui/Button.svelte';

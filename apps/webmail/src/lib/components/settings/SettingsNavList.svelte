@@ -1,17 +1,15 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import {
-		Calendar,
-		Database,
-		Inbox,
-		LayoutTemplate,
-		Mail,
-		Palette,
-		PencilLine,
-		Settings as SettingsIcon,
-		User,
-		type Icon as LucideIcon
-	} from 'lucide-svelte';
+	import Calendar from '$lib/components/icons/Calendar.svelte';
+import Database from '$lib/components/icons/Database.svelte';
+import Inbox from '$lib/components/icons/Inbox.svelte';
+import LayoutTemplate from '$lib/components/icons/LayoutTemplate.svelte';
+import Mail from '$lib/components/icons/Mail.svelte';
+import Palette from '$lib/components/icons/Palette.svelte';
+import PencilLine from '$lib/components/icons/PencilLine.svelte';
+import SettingsIcon from '$lib/components/icons/Settings.svelte';
+import User from '$lib/components/icons/User.svelte';
+	type LucideIcon = any;
 	import { isSettingsNavActive, type SettingsNavIcon, type SettingsNavLink } from '$lib/settings/nav';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';

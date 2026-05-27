@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { Mail, Search, UserPlus, Users } from 'lucide-svelte';
+	import Mail from '$lib/components/icons/Mail.svelte';
+import Search from '$lib/components/icons/Search.svelte';
+import UserPlus from '$lib/components/icons/UserPlus.svelte';
+import Users from '$lib/components/icons/Users.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import ContactDetailEmpty from '$lib/components/contacts/ContactDetailEmpty.svelte';
 	import ContactDetailPanel from '$lib/components/contacts/ContactDetailPanel.svelte';

@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { Archive, Mail, MailOpen, Trash2 } from 'lucide-svelte';
+	import Archive from '$lib/components/icons/Archive.svelte';
+import Mail from '$lib/components/icons/Mail.svelte';
+import MailOpen from '$lib/components/icons/MailOpen.svelte';
+import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';

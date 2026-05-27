@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { Copy, Mail, Trash2, X } from 'lucide-svelte';
+	import Copy from '$lib/components/icons/Copy.svelte';
+import Mail from '$lib/components/icons/Mail.svelte';
+import Trash2 from '$lib/components/icons/Trash2.svelte';
+import X from '$lib/components/icons/X.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';

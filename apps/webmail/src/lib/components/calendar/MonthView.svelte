@@ -1,5 +1,9 @@
 <script lang="ts">
-	import { CalendarDays, ChevronLeft, ChevronRight, LoaderCircle, Plus } from 'lucide-svelte';
+	import CalendarDays from '$lib/components/icons/CalendarDays.svelte';
+import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
+import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
+import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
+import Plus from '$lib/components/icons/Plus.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';

@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { cn } from '$lib/utils/cn';
-	import { Calendar, Mail, Users } from 'lucide-svelte';
+	import Calendar from '$lib/components/icons/Calendar.svelte';
+import Mail from '$lib/components/icons/Mail.svelte';
+import Users from '$lib/components/icons/Users.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const tools = $derived([

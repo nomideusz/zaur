@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { MoreVertical } from 'lucide-svelte';
+	import MoreVertical from '$lib/components/icons/MoreVertical.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { OVERFLOW_MENU_CTX, type OverflowMenuContext } from '$lib/components/ui/overflow-menu-context';
 	import { cn } from '$lib/utils/cn';

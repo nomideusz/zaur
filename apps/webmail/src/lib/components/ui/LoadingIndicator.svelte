@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { LoaderCircle } from 'lucide-svelte';
+	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 

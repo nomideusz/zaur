@@ -1,5 +1,8 @@
 <script lang="ts">
-	import { CheckCircle2, Info, X, XCircle } from 'lucide-svelte';
+	import CheckCircle2 from '$lib/components/icons/CheckCircle2.svelte';
+import Info from '$lib/components/icons/Info.svelte';
+import X from '$lib/components/icons/X.svelte';
+import XCircle from '$lib/components/icons/XCircle.svelte';
 	import { cn } from '$lib/utils/cn';
 	import IconButton from './IconButton.svelte';
 	import { toast, type ToastVariant } from '$lib/stores/toast.svelte';
