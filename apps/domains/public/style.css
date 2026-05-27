@@ -110,6 +110,10 @@ body {
   transition: border-color 0.15s, box-shadow 0.15s;
 }
 
+.z-input:hover {
+  border-color: var(--z-border-strong);
+}
+
 .z-input:focus {
   outline: none;
   border-color: var(--z-accent);
@@ -124,7 +128,11 @@ body {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.15s, color 0.15s;
+  transition: background 0.15s, color 0.15s, transform 0.1s ease-out;
+}
+
+.btn:active {
+  transform: scale(0.97);
 }
 
 .btn-primary {
@@ -270,6 +278,12 @@ body {
   animation: fadeIn 0.35s ease-out;
 }
 
+.invites-table th,
+.invites-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--z-border);
+}
+
 .invites-table tbody tr:hover {
   background: var(--z-surface-sunken);
 }
@@ -320,10 +334,22 @@ body {
 .badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.2rem 0.55rem;
+  padding: 0.15rem 0.5rem;
   border-radius: 999px;
   font-size: 0.6875rem;
   font-weight: 600;
+  border: 1px solid color-mix(in srgb, currentColor 24%, transparent);
+  line-height: 1;
+}
+
+.badge::before {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  margin-right: 0.35rem;
+  background-color: currentColor;
 }
 
 .badge-unused {
