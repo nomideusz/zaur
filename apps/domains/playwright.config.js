@@ -25,7 +25,7 @@ module.exports = defineConfig({
     timeout: 15_000,
   },
   use: {
-    baseURL: process.env.DOMAINS_E2E_BASE_URL || 'https://domains.zaur.app',
+    baseURL: process.env.DOMAINS_E2E_BASE_URL || 'https://register.zaur.app',
     trace: 'retain-on-failure',
   },
   projects: [

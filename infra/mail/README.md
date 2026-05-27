@@ -13,7 +13,7 @@ Stalwart runs as a **deployed binary**, not application source in this repo. Thi
 ## Related URLs
 
 - **JMAP API:** `https://mail.zaur.app`
-- **Registration:** `https://domains.zaur.app`
+- **Registration:** `https://register.zaur.app`
 - **Webmail:** `https://webmail.zaur.app`
 
 ## Adding config here

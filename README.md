@@ -7,7 +7,7 @@ Monorepo for the Zaur email platform and its pixel dinosaur mascot.
 | App | Package | URL | Deploy |
 |-----|---------|-----|--------|
 | **Webmail** | `@zaur/webmail` | [webmail.zaur.app](https://webmail.zaur.app) | CapRover |
-| **Domains** | `@zaur/domains` | [domains.zaur.app](https://domains.zaur.app) | CapRover |
+| **Domains** | `@zaur/domains` | [register.zaur.app](https://register.zaur.app) | CapRover |
 | **Dinosaurus** | `@zaur/dinosaurus` | [dino.zaur.app](https://dino.zaur.app) | Railway |
 
 Mail server (`mail.zaur.app`) is Stalwart — config and ops notes live in [`infra/mail/`](infra/mail/).
