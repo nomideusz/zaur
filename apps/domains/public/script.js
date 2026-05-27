@@ -83,31 +83,31 @@ function validateLocalUsername(value) {
 
 function renderStatus(domainId, status) {
   if (status === 'checking') {
-    return '<span class="result-status checking"><span class="spinner"></span></span>';
+    return '<span class="result-status checking flex items-center"><span class="spinner dib"></span></span>';
   }
   if (status === 'available') {
-    return '<span class="result-status available">Available</span><button type="button" class="btn-register">Register</button>';
+    return '<span class="result-status available green fw6 f6">Available</span><button type="button" class="btn-register bg-blue white f7 pv1 ph3 br2 fw6 bn pointer ml3 hover-bg-dark-blue">Register</button>';
   }
   if (status === 'taken') {
-    return '<span class="result-status taken">Taken</span>';
+    return '<span class="result-status taken mid-gray f6">Taken</span>';
   }
   return '<span class="result-status pending">&nbsp;</span>';
 }
 
 function renderExtensionList() {
   if (!cachedDomains.length) {
-    resultsContainer.innerHTML = '<div class="results-empty">No domains available.</div>';
+    resultsContainer.innerHTML = '<div class="results-empty pv4 tc mid-gray">No domains available.</div>';
     return;
   }
 
   resultsContainer.innerHTML = `
-    <div class="results-header">Available domains</div>
-    <div class="results-list">${cachedDomains
+    <div class="results-header f7 fw6 ttu tracked gray mb2 pl1">Available domains</div>
+    <div class="results-list bg-white ba b--light-gray br3 shadow-1 overflow-hidden">${cachedDomains
       .map(
         (d) => `
-      <div class="result-row extension-row">
-        <span class="result-domain">
-          <span class="result-tld">@${escapeHtml(d.name)}</span>
+      <div class="result-row extension-row flex items-center justify-between pv3 ph4 bb b--light-gray">
+        <span class="result-domain f5 near-black">
+          <span class="result-tld gray">@${escapeHtml(d.name)}</span>
         </span>
       </div>`,
       )
@@ -116,13 +116,13 @@ function renderExtensionList() {
 
 function renderSearchResults(query, statuses) {
   if (!cachedDomains.length) {
-    resultsContainer.innerHTML = '<div class="results-empty">No domains available.</div>';
+    resultsContainer.innerHTML = '<div class="results-empty pv4 tc mid-gray">No domains available.</div>';
     return;
   }
 
   const safeQuery = escapeHtml(query);
 
-  resultsContainer.innerHTML = `<div class="results-list">${cachedDomains
+  resultsContainer.innerHTML = `<div class="results-list bg-white ba b--light-gray br3 shadow-1 overflow-hidden">${cachedDomains
     .map((d) => {
       const status = statuses.get(d.id) || 'pending';
       const isTaken = status === 'taken';
@@ -130,14 +130,14 @@ function renderSearchResults(query, statuses) {
       const isSelected = selectedResult?.domainId === d.id;
 
       return `
-        <div class="result-row ${isAvailable ? 'available' : ''} ${isTaken ? 'taken' : ''} ${isSelected ? 'selected' : ''}"
+        <div class="result-row flex items-center justify-between pv3 ph4 bb b--light-gray pointer ${isAvailable ? 'available' : ''} ${isTaken ? 'taken o-60' : ''} ${isSelected ? 'selected' : ''}"
              data-domain-id="${d.id}"
              data-domain="${escapeHtml(d.name)}"
              data-available="${isAvailable}">
-          <span class="result-domain ${isTaken ? 'taken-text' : ''}">
-            <span class="result-name">${safeQuery}</span><span class="result-tld">@${escapeHtml(d.name)}</span>
+          <span class="result-domain f5 near-black ${isTaken ? 'taken-text' : ''}">
+            <span class="result-name fw6">${safeQuery}</span><span class="result-tld gray">@${escapeHtml(d.name)}</span>
           </span>
-          <span class="result-action">${renderStatus(d.id, status)}</span>
+          <span class="result-action flex items-center g2">${renderStatus(d.id, status)}</span>
         </div>`;
     })
     .join('')}</div>`;

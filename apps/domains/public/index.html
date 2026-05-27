@@ -7,86 +7,89 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/tachyons.css">
   <link rel="stylesheet" href="/style.css">
 </head>
-<body>
-  <header class="site-header">
-    <div class="container header-inner">
-      <a href="/" class="logo">
+<body class="sans-serif bg-near-white near-black min-h-100 flex flex-column">
+  <header class="site-header bg-white bb b--light-gray sticky top-0 z-5">
+    <div class="container flex items-center justify-between h-100 g3">
+      <a href="/" class="logo flex items-center g2 near-black no-underline">
         <span>ZAUR</span>
       </a>
-      <nav class="tool-nav" aria-label="Tools">
-        <a href="/" class="tool-link is-active">Domains</a>
-        <a href="#" id="webmail-link" class="tool-link" target="_blank" rel="noopener">Mail</a>
+      <nav class="flex items-center g1" aria-label="Tools">
+        <a href="/" class="tool-link is-active bg-near-white near-black fw5 f6 pv2 ph3 br2 no-underline">Domains</a>
+        <a href="#" id="webmail-link" class="tool-link mid-gray hover-near-black f6 pv2 ph3 br2 no-underline" target="_blank" rel="noopener">Mail</a>
       </nav>
     </div>
   </header>
 
-  <main class="home-page">
+  <main class="flex-auto pv4 pv5-ns">
     <div class="container">
-      <div class="page-intro">
-        <h1>Claim your address</h1>
-        <p>Search for an available username across ZAUR domains.</p>
+      <div class="mw7 center mb4">
+        <h1 class="f3 f2-ns fw6 tracking-tight near-black mb2 mt0">Claim your address</h1>
+        <p class="f5 mid-gray mt0">Search for an available username across ZAUR domains.</p>
       </div>
 
-      <div class="search-box">
+      <div class="mw7 center mb4">
         <input
           type="text"
           id="username-input"
-          class="search-input z-input"
+          class="search-input z-input w-100 ba b--light-gray br3 bg-white near-black f3 pv3 ph4 outline-0"
           placeholder="Search usernames"
           autocomplete="off"
           spellcheck="false"
           autofocus
         >
-        <div class="validation-hint" id="validation-hint"></div>
+        <div class="validation-hint mt2 red f7 min-h-1" id="validation-hint"></div>
       </div>
 
-      <div id="results-container"></div>
+      <div id="results-container" class="mw7 center mb4"></div>
 
-      <div class="register-panel z-panel" id="register-panel">
-        <h2 id="selected-email-label">Create account</h2>
+      <div class="register-panel bg-white ba b--light-gray br3 shadow-1 pa4 mb4 mw7 center" id="register-panel">
+        <h2 id="selected-email-label" class="f4 fw6 near-black mt0 mb3">Create account</h2>
         <div class="notification error" id="form-error" role="alert"></div>
 
         <form id="register-form">
           <input type="hidden" id="selected-domain-id" name="domainId">
 
-          <div class="form-group">
-            <label for="invite-code">Invitation code</label>
-            <input type="text" id="invite-code" name="inviteCode" class="z-input" placeholder="zaur-XXXX-XXXX-XXXX" required>
+          <div class="mb3">
+            <label for="invite-code" class="db f7 fw5 mid-gray mb2">Invitation code</label>
+            <input type="text" id="invite-code" name="inviteCode" class="z-input w-100 ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0" placeholder="zaur-XXXX-XXXX-XXXX" required>
           </div>
 
-          <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" class="z-input" autocomplete="new-password" required>
-            <div class="strength-bar"><div class="strength-fill" id="strength-fill"></div></div>
-            <div class="strength-label" id="strength-label"></div>
+          <div class="mb3">
+            <label for="password" class="db f7 fw5 mid-gray mb2">Password</label>
+            <input type="password" id="password" name="password" class="z-input w-100 ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0" autocomplete="new-password" required>
+            <div class="strength-bar bg-light-gray br-pill overflow-hidden mt2" style="height: 4px;">
+              <div class="strength-fill h-100 br-pill" id="strength-fill"></div>
+            </div>
+            <div class="strength-label f7 gray mt1 min-h-1" id="strength-label"></div>
           </div>
 
-          <div class="form-group">
-            <label for="confirm-password">Confirm password</label>
-            <input type="password" id="confirm-password" name="confirmPassword" class="z-input" autocomplete="new-password" required>
+          <div class="mb3">
+            <label for="confirm-password" class="db f7 fw5 mid-gray mb2">Confirm password</label>
+            <input type="password" id="confirm-password" name="confirmPassword" class="z-input w-100 ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0" autocomplete="new-password" required>
           </div>
 
-          <div class="form-group">
-            <label for="captcha-answer">Security check</label>
-            <div class="captcha-row">
-              <span class="captcha-question" id="captcha-question">Loading…</span>
-              <input type="number" id="captcha-answer" name="captchaAnswer" class="z-input" inputmode="numeric" required>
+          <div class="mb4">
+            <label for="captcha-answer" class="db f7 fw5 mid-gray mb2">Security check</label>
+            <div class="flex flex-column flex-row-m items-stretch items-center-m g3">
+              <span class="captcha-question f4 fw6 near-black" id="captcha-question">Loading…</span>
+              <input type="number" id="captcha-answer" name="captchaAnswer" class="z-input w-100 w-auto-m ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0 flex-auto" inputmode="numeric" required>
             </div>
           </div>
 
-          <button type="submit" class="btn btn-primary" id="submit-btn">Create account</button>
+          <button type="submit" class="btn btn-primary w-100 bg-blue white hover-bg-dark-blue f6 pv2 ph3 br2 fw5 bn pointer" id="submit-btn">Create account</button>
         </form>
       </div>
     </div>
   </main>
 
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <span>&copy; 2026 ZAUR</span>
-      <div class="footer-links">
-        <a href="#" id="footer-webmail-link" target="_blank" rel="noopener">Mail</a>
+  <footer class="site-footer bg-white bt b--light-gray pv3 mt-auto">
+    <div class="container flex flex-column flex-row-m items-start items-center-m justify-between-m g2 g0-m">
+      <span class="gray f7">&copy; 2026 ZAUR</span>
+      <div class="flex g3">
+        <a href="#" id="footer-webmail-link" class="mid-gray hover-near-black f7 no-underline" target="_blank" rel="noopener">Mail</a>
       </div>
     </div>
   </footer>

@@ -278,10 +278,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!res.ok) throw new Error(data.error || 'Audit failed.');
 
       auditSummary.innerHTML = `
-        <div class="audit-card"><span>Stalwart</span><strong>${data.counts.stalwartAccounts}</strong></div>
-        <div class="audit-card"><span>Keycloak</span><strong>${data.counts.keycloakUsers}</strong></div>
-        <div class="audit-card"><span>Keycloak only</span><strong>${data.counts.keycloakOnly}</strong></div>
-        <div class="audit-card"><span>Stalwart only</span><strong>${data.counts.stalwartOnly}</strong></div>
+        <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Stalwart</span><strong class="f2 fw6 near-black lh-solid">${data.counts.stalwartAccounts}</strong></div>
+        <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Keycloak</span><strong class="f2 fw6 near-black lh-solid">${data.counts.keycloakUsers}</strong></div>
+        <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Keycloak only</span><strong class="f2 fw6 near-black lh-solid">${data.counts.keycloakOnly}</strong></div>
+        <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Stalwart only</span><strong class="f2 fw6 near-black lh-solid">${data.counts.stalwartOnly}</strong></div>
       `;
 
       auditResults.appendChild(renderAuditGroup('Keycloak only', data.keycloakOnly, 'keycloak'));
@@ -301,25 +301,25 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderAuditGroup(title, rows, cleanupTarget) {
     const section = document.createElement('section');
     section.className = 'audit-group';
-    section.innerHTML = `<h4>${escapeHtml(title)}</h4>`;
+    section.innerHTML = `<h4 class="f5 fw6 near-black mt3 mb2">${escapeHtml(title)}</h4>`;
 
     if (!rows.length) {
       const empty = document.createElement('p');
-      empty.className = 'audit-empty';
+      empty.className = 'audit-empty f6 mid-gray mt2 pl1';
       empty.textContent = 'No mismatches.';
       section.appendChild(empty);
       return section;
     }
 
     const list = document.createElement('div');
-    list.className = 'audit-list';
+    list.className = 'audit-list bg-white ba b--light-gray br3 shadow-1 overflow-hidden';
     rows.forEach((row) => {
       const email = row.email || row.username;
       const item = document.createElement('div');
-      item.className = 'audit-row';
+      item.className = 'audit-row flex items-center justify-between pv3 ph4 bb b--light-gray';
       item.innerHTML = `
-        <span>${escapeHtml(email)}</span>
-        <button type="button" class="btn btn-danger btn-sm">Delete from ${cleanupTarget}</button>
+        <span class="f6 near-black">${escapeHtml(email)}</span>
+        <button type="button" class="btn btn-danger btn-sm bg-washed-red red hover-bg-red hover-white bn pointer pv1 ph2 br2 f7 fw5 ml3">Delete from ${cleanupTarget}</button>
       `;
       item.querySelector('button').addEventListener('click', () => cleanupAccount(email, cleanupTarget));
       list.appendChild(item);
