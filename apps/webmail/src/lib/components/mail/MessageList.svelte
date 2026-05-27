@@ -266,6 +266,7 @@ import Search from '$lib/components/icons/Search.svelte';
 					showCheckboxes={!!mailboxRouteId && settings.showBulkSelect && mail.hasSelection}
 					showListGutter={!!mailboxRouteId && settings.showBulkSelect}
 					selected={mailboxRouteId ? selectedIds.includes(message.id) : false}
+					{mailboxRouteId}
 					onSelect={
 						mailboxRouteId
 							? (modifiers) =>

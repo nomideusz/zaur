@@ -100,6 +100,7 @@ export function mapEmailPreview(email: JMAPEmail, routeMailboxId: string): Messa
 		threadId: email.threadId,
 		mailboxId: routeMailboxId,
 		from: firstAddress(email.from),
+		to: mapAddresses(email.to),
 		subject: email.subject?.trim() || '(no subject)',
 		preview: email.preview?.trim() || '',
 		receivedAt: email.receivedAt,

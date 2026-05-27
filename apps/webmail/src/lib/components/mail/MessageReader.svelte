@@ -112,6 +112,39 @@ import Shield from '$lib/components/icons/Shield.svelte';
 		return name;
 	}
 
+	function isMe(email: string): boolean {
+		const cleanEmail = email.trim().toLowerCase();
+		if (auth.username && auth.username.trim().toLowerCase() === cleanEmail) {
+			return true;
+		}
+		return auth.identities.some((identity) => identity.email?.trim().toLowerCase() === cleanEmail);
+	}
+
+	function getPrimaryContact(message: MessageDetail) {
+		const isFromMe = isMe(message.from.email);
+		if (isFromMe && mailboxRouteId !== 'inbox' && message.to && message.to.length > 0) {
+			const recipient = message.to[0];
+			const name = recipient.name?.trim() || recipient.email;
+			return {
+				name,
+				email: recipient.email,
+				avatarName: recipient.name || recipient.email,
+				avatarEmail: recipient.email,
+				displayName: `To: ${name}`,
+				isMe: isMe(recipient.email)
+			};
+		}
+		const name = senderLabel(message);
+		return {
+			name: message.from.name,
+			email: message.from.email,
+			avatarName: message.from.name,
+			avatarEmail: message.from.email,
+			displayName: name,
+			isMe: isFromMe
+		};
+	}
+
 	function collapsedPreview(message: MessageDetail) {
 		const preview = message.preview?.trim();
 		if (preview) return preview;
@@ -153,11 +186,11 @@ import Shield from '$lib/components/icons/Shield.svelte';
 		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
 	}
 
-	function saveContact(message: MessageDetail) {
+	function saveContact(contact: { name: string; email: string }) {
 		const accountId = auth.client?.getAccountId();
 		if (!accountId) return;
-		recordContact(accountId, message.from.name, message.from.email);
-		toast.show(`${message.from.name} added to contacts`, 'success');
+		recordContact(accountId, contact.name, contact.email);
+		toast.show(`${contact.name} added to contacts`, 'success');
 	}
 
 	async function copyEmail(email: string) {
@@ -311,6 +344,7 @@ import Shield from '$lib/components/icons/Shield.svelte';
 			{/if}
 
 			{#each thread as message, index (message.id)}
+				{@const contact = getPrimaryContact(message)}
 				<section
 					class={cn(
 						index > 0 && !settings.hideReaderPaneBorders && 'border-t border-border/70',
@@ -358,8 +392,8 @@ import Shield from '$lib/components/icons/Shield.svelte';
 								<div class="z-reader-chrome__from flex items-start gap-3">
 									{#if settings.showAvatars}
 										<Avatar
-											name={message.from.name}
-											email={message.from.email}
+											name={contact.avatarName}
+											email={contact.avatarEmail}
 											class={cn(
 												settings.compactReaderAvatars ? 'size-8 text-xs' : 'size-9 text-sm'
 											)}
@@ -367,8 +401,8 @@ import Shield from '$lib/components/icons/Shield.svelte';
 									{/if}
 									<div class="min-w-0 flex-1">
 										<div class="flex items-center gap-1.5">
-											<p class="z-reader-from truncate">{senderLabel(message)}</p>
-											{#if isExternalSender(message.from.email)}
+											<p class="z-reader-from truncate">{contact.displayName}</p>
+											{#if isExternalSender(contact.email)}
 												<span
 													class="inline-flex shrink-0 items-center gap-1 rounded-sm border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200"
 													title="Sender is outside {userDomain}"
@@ -379,16 +413,16 @@ import Shield from '$lib/components/icons/Shield.svelte';
 											{/if}
 										</div>
 										{#if !settings.hideReaderSenderEmail}
-											{#if message.from.email !== senderLabel(message)}
+											{#if contact.email !== contact.displayName && !contact.isMe}
 												<button
 													type="button"
 													class="z-reader-meta mt-0.5 block max-w-full truncate text-left hover:text-accent hover:underline"
-													onclick={() => composeTo(message.from.email)}
+													onclick={() => composeTo(contact.email)}
 												>
-													{message.from.email}
+													{contact.email}
 												</button>
 											{:else}
-												<p class="z-reader-meta mt-0.5">{message.from.email}</p>
+												<p class="z-reader-meta mt-0.5">{contact.email}</p>
 											{/if}
 										{/if}
 										{#if !settings.hideReaderRecipients && (message.to.length || message.cc.length)}
@@ -410,14 +444,14 @@ import Shield from '$lib/components/icons/Shield.svelte';
 												<button
 													type="button"
 													class="text-xs font-medium text-accent hover:underline"
-													onclick={() => saveContact(message)}
+													onclick={() => saveContact(contact)}
 												>
 													Save contact
 												</button>
 												<button
 													type="button"
 													class="text-xs text-fg-subtle hover:text-accent hover:underline"
-													onclick={() => copyEmail(message.from.email)}
+													onclick={() => copyEmail(contact.email)}
 												>
 													Copy email
 												</button>
@@ -445,13 +479,13 @@ import Shield from '$lib/components/icons/Shield.svelte';
 										settings.compactCollapsedThreads ? 'py-2' : 'py-3'
 									)}
 									aria-expanded={true}
-									aria-label={`Collapse message from ${senderLabel(message)}`}
+									aria-label={`Collapse message from ${contact.displayName}`}
 									onclick={() => toggleMessage(message)}
 								>
 									{#if settings.showAvatars}
 										<Avatar
-											name={message.from.name}
-											email={message.from.email}
+											name={contact.avatarName}
+											email={contact.avatarEmail}
 											class={cn(
 												settings.compactReaderAvatars ? 'size-8 text-xs' : 'size-9 text-sm'
 											)}
@@ -459,7 +493,7 @@ import Shield from '$lib/components/icons/Shield.svelte';
 									{/if}
 									<div class="min-w-0 flex-1">
 										<div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
-											<span class="z-reader-from">{senderLabel(message)}</span>
+											<span class="z-reader-from">{contact.displayName}</span>
 											{#if message.id === latest?.id}
 												<span class="z-reader-latest-badge">Latest</span>
 											{/if}
@@ -486,14 +520,18 @@ import Shield from '$lib/components/icons/Shield.svelte';
 											(settings.compactReaderAvatars ? 'pl-11' : 'pl-12')
 									)}
 								>
-									{#if !settings.hideReaderSenderEmail && message.from.email !== senderLabel(message)}
-										<button
-											type="button"
-											class="z-reader-meta mt-0.5 block max-w-full truncate text-left hover:text-accent hover:underline"
-											onclick={() => composeTo(message.from.email)}
-										>
-											{message.from.email}
-										</button>
+									{#if !settings.hideReaderSenderEmail && contact.email !== contact.displayName}
+										{#if !contact.isMe}
+											<button
+												type="button"
+												class="z-reader-meta mt-0.5 block max-w-full truncate text-left hover:text-accent hover:underline"
+												onclick={() => composeTo(contact.email)}
+											>
+												{contact.email}
+											</button>
+										{:else}
+											<p class="z-reader-meta mt-0.5">{contact.email}</p>
+										{/if}
 									{/if}
 
 									{#if !settings.hideReaderRecipients && (message.to.length || message.cc.length)}
@@ -516,14 +554,14 @@ import Shield from '$lib/components/icons/Shield.svelte';
 											<button
 												type="button"
 												class="text-xs font-medium text-accent hover:underline"
-												onclick={() => saveContact(message)}
+												onclick={() => saveContact(contact)}
 											>
 												Save contact
 											</button>
 											<button
 												type="button"
 												class="text-xs text-fg-subtle hover:text-accent hover:underline"
-												onclick={() => copyEmail(message.from.email)}
+												onclick={() => copyEmail(contact.email)}
 											>
 												Copy email
 											</button>
@@ -566,15 +604,15 @@ import Shield from '$lib/components/icons/Shield.svelte';
 					>
 						{#if settings.showAvatars}
 							<Avatar
-								name={message.from.name}
-								email={message.from.email}
+								name={contact.avatarName}
+								email={contact.avatarEmail}
 								class={cn(settings.compactReaderAvatars ? 'size-7' : 'size-8')}
 							/>
 						{/if}
 						<div class="min-w-0 flex-1">
 							{#if !settings.hideCollapsedThreadPreviews && collapsedPreview(message)}
 								<p class={cn('truncate font-medium text-fg', settings.compactCollapsedThreads ? 'text-xs' : 'text-sm')}>
-									{senderLabel(message)}
+									{contact.displayName}
 								</p>
 								<p
 									class={cn(
@@ -586,7 +624,7 @@ import Shield from '$lib/components/icons/Shield.svelte';
 								</p>
 							{:else}
 								<p class={cn('truncate', settings.compactCollapsedThreads ? 'text-xs' : 'text-sm')}>
-									<span class="font-medium text-fg">{senderLabel(message)}</span>
+									<span class="font-medium text-fg">{contact.displayName}</span>
 								</p>
 							{/if}
 						</div>

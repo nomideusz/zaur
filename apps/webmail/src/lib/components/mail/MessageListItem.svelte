@@ -1,7 +1,8 @@
 <script lang="ts">
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
-import Star from '$lib/components/icons/Star.svelte';
+	import Star from '$lib/components/icons/Star.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
+	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { formatMessageListWhen } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
@@ -15,6 +16,7 @@ import Star from '$lib/components/icons/Star.svelte';
 		selected?: boolean;
 		showListGutter?: boolean;
 		onSelect?: (modifiers: { shift: boolean; ctrl: boolean }) => void;
+		mailboxRouteId?: string;
 	}
 
 	let {
@@ -24,14 +26,33 @@ import Star from '$lib/components/icons/Star.svelte';
 		showCheckboxes = false,
 		selected = false,
 		showListGutter = false,
-		onSelect
+		onSelect,
+		mailboxRouteId
 	}: Props = $props();
+
+	function isMe(email: string): boolean {
+		const cleanEmail = email.trim().toLowerCase();
+		if (auth.username && auth.username.trim().toLowerCase() === cleanEmail) {
+			return true;
+		}
+		return auth.identities.some((identity) => identity.email?.trim().toLowerCase() === cleanEmail);
+	}
+
+	const displayAsRecipient = $derived(
+		isMe(message.from.email) && mailboxRouteId !== 'inbox' && message.to && message.to.length > 0
+	);
+
+	const senderLabel = $derived.by(() => {
+		if (displayAsRecipient && message.to) {
+			const recipient = message.to[0];
+			const name = recipient.name?.trim() || recipient.email;
+			return `To: ${name}`;
+		}
+		return settings.showSenderEmailInList ? message.from.email || message.from.name : message.from.name;
+	});
 
 	const when = $derived(
 		formatMessageListWhen(message.receivedAt, settings.showFullDatesInList, settings.timeFormat)
-	);
-	const senderLabel = $derived(
-		settings.showSenderEmailInList ? message.from.email || message.from.name : message.from.name
 	);
 	const displaySubject = $derived(message.subject.trim() || '(no subject)');
 	const messageAriaLabel = $derived.by(() => {
@@ -120,10 +141,11 @@ import Star from '$lib/components/icons/Star.svelte';
 
 {#snippet avatar()}
 	{#if settings.showAvatars}
+		{@const avatarTarget = displayAsRecipient && message.to ? message.to[0] : message.from}
 		<div class="relative shrink-0">
 			<Avatar
-				name={message.from.name}
-				email={message.from.email}
+				name={avatarTarget.name}
+				email={avatarTarget.email}
 				class={cn('mt-0.5', settings.compactListAvatars ? 'size-7' : 'size-8')}
 			/>
 			{#if showAvatarUnreadBadge}

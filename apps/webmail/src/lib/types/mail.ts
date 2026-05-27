@@ -15,6 +15,7 @@ export interface MessagePreview {
 	threadId: string;
 	mailboxId: string;
 	from: { name: string; email: string };
+	to?: { name: string; email: string }[];
 	subject: string;
 	preview: string;
 	receivedAt: string;
