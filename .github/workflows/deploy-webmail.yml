@@ -44,4 +44,4 @@ jobs:
         with:
           server: https://captain.zaur.app
           app: webmail
-          token: ${{ secrets.CAPROVER_APP_TOKEN }}
+          token: ${{ secrets.CAPROVER_WEBMAIL_TOKEN }}
