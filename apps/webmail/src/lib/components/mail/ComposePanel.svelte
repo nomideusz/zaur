@@ -113,13 +113,14 @@ import X from '$lib/components/icons/X.svelte';
 	});
 
 	$effect(() => {
-		compose.to;
-		compose.cc;
-		compose.bcc;
-		compose.subject;
-		compose.body;
-		compose.attachments;
-		compose.scheduleAutosave(auth.client, auth.username ?? '', senderName);
+		compose.scheduleAutosave(auth.client, auth.username ?? '', senderName, {
+			to: compose.to,
+			cc: compose.cc,
+			bcc: compose.bcc,
+			subject: compose.subject,
+			body: compose.body,
+			attachments: compose.attachments
+		});
 	});
 
 	$effect(() => {

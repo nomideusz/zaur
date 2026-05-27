@@ -387,7 +387,12 @@ class ComposeStore {
 		this.openDraft(mapEmailDetail(email, 'drafts'));
 	}
 
-	scheduleAutosave(client: JMAPClient | null, fromEmail: string, fromName?: string) {
+	scheduleAutosave(
+		client: JMAPClient | null,
+		fromEmail: string,
+		fromName?: string,
+		_triggerState?: unknown
+	) {
 		if (!browser) return;
 
 		if (this.isComposeEmpty) {
