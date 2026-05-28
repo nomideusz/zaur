@@ -156,9 +156,37 @@ async function deleteUser(email) {
   return true;
 }
 
+async function getUserBearerToken(email, password) {
+  const params = new URLSearchParams();
+  params.append('client_id', 'webmail');
+  params.append('username', email.toLowerCase());
+  params.append('password', password);
+  params.append('grant_type', 'password');
+  params.append('scope', 'openid profile email');
+
+  const tokenUrl = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`;
+  const response = await fetch(tokenUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: params.toString(),
+  });
+
+  if (!response.ok) {
+    const errText = await response.text();
+    throw new Error(`Failed to obtain user token from Keycloak: ${response.status} ${errText}`);
+  }
+
+  const data = await response.json();
+  return data.access_token;
+}
+
 module.exports = {
   createUser,
   listUsers,
   deleteUser,
   findUserIdByEmail,
+  getUserBearerToken,
 };
+

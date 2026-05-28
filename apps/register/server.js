@@ -179,17 +179,22 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
     let keycloakCreated = false;
 
     try {
-      // Create Stalwart first so mail access can be verified before provisioning SSO.
+      // 1. Create Keycloak user first (since Stalwart relies on Keycloak for identity verification)
+      await keycloak.createUser(email, password);
+      keycloakCreated = true;
+
+      // 2. Create Stalwart account representation (without credentials, since it's an external directory)
       const account = await stalwart.createAccount(
         usernameValidation.username,
         domainId,
-        password,
       );
       accountId = account.accountId;
 
-      await stalwart.ensureStandardMailboxes(email, password);
-      await keycloak.createUser(email, password);
-      keycloakCreated = true;
+      // 3. Obtain Keycloak Bearer token for the new user
+      const userToken = await keycloak.getUserBearerToken(email, password);
+
+      // 4. Provision standard mailboxes in Stalwart using the user's Bearer token
+      await stalwart.ensureStandardMailboxes(email, userToken);
 
       if (!invites.markInviteAsUsed(inviteCode, email)) {
         throw new Error('Account was created, but the invitation code could not be marked as used.');

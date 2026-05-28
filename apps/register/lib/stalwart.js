@@ -269,7 +269,7 @@ async function findAccountByEmail(email) {
   return accounts.find((account) => account.email.toLowerCase() === normalized) || null;
 }
 
-async function createAccount(username, domainId, password) {
+async function createAccount(username, domainId) {
   const config = getConfig();
 
   const { body } = await jmapRequest([
@@ -283,12 +283,6 @@ async function createAccount(username, domainId, password) {
             domainId,
             locale: 'pl_PL',
             timeZone: 'Europe/Warsaw',
-            credentials: {
-              '0': {
-                '@type': 'Password',
-                secret: password,
-              },
-            },
             quotas: {
               maxDiskQuota: config.maxDiskQuota,
             },
@@ -348,11 +342,11 @@ async function deleteAccountByEmail(email) {
   return deleteAccount(account.id);
 }
 
-async function createUserJmapClient(email, password) {
+async function createUserJmapClient(email, token) {
   const serverUrl = process.env.MAIL_PUBLIC_URL || 'https://mail.zaur.app';
   const sessionResponse = await fetch(`${serverUrl.replace(/\/$/, '')}/.well-known/jmap`, {
     headers: {
-      Authorization: `Basic ${encodeBasicAuth(email, password)}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
@@ -370,7 +364,7 @@ async function createUserJmapClient(email, password) {
     apiUrl: session.apiUrl,
     accountId,
     headers: {
-      Authorization: `Basic ${encodeBasicAuth(email, password)}`,
+      Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
@@ -396,8 +390,8 @@ async function userJmapRequest(client, methodCalls) {
   return body;
 }
 
-async function ensureStandardMailboxes(email, password) {
-  const client = await createUserJmapClient(email, password);
+async function ensureStandardMailboxes(email, token) {
+  const client = await createUserJmapClient(email, token);
   const getBody = await userJmapRequest(client, [
     ['Mailbox/get', { accountId: client.accountId }, 'mailboxes'],
   ]);
