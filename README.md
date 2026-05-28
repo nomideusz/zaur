@@ -7,7 +7,7 @@ Monorepo for the Zaur email platform and its pixel dinosaur mascot.
 | App | Package | URL | Deploy |
 |-----|---------|-----|--------|
 | **Webmail** | `@zaur/webmail` | [webmail.zaur.app](https://webmail.zaur.app) | CapRover |
-| **Domains** | `@zaur/domains` | [register.zaur.app](https://register.zaur.app) | CapRover |
+| **Register** | `@zaur/register` | [register.zaur.app](https://register.zaur.app) | CapRover |
 | **Dinosaurus** | `@zaur/dinosaurus` | [dino.zaur.app](https://dino.zaur.app) | Railway |
 
 Mail server (`mail.zaur.app`) is Stalwart — config and ops notes live in [`infra/mail/`](infra/mail/).
@@ -29,7 +29,7 @@ pnpm install
 ```sh
 pnpm dev:webmail       # http://localhost:5173
 pnpm dev:dinosaurus    # http://localhost:5173 (vite)
-pnpm dev:domains       # http://localhost:3000
+pnpm dev:register       # http://localhost:3000
 ```
 
 Archive server (dinosaurus backend):
@@ -52,7 +52,7 @@ pnpm test:webmail
 apps/
   webmail/       SvelteKit JMAP client
   dinosaurus/    Zaur's world (Vite + archive server)
-  domains/       Stalwart account registration portal
+  register/      Stalwart account registration portal
 packages/
   sprite/        Shared Zaur pixel art
 infra/
@@ -62,7 +62,7 @@ infra/
 
 ## Deploy
 
-GitHub Actions deploy **webmail** and **domains** to CapRover on push to `main` when their paths change. Each build uses the monorepo root as Docker context (see app Dockerfiles).
+GitHub Actions deploy **webmail** and **register** to CapRover on push to `main` when their paths change. Each build uses the monorepo root as Docker context (see app Dockerfiles).
 
 Local deploy (requires `caprover login`):
 
@@ -79,6 +79,6 @@ This monorepo was assembled with `git subtree` from:
 
 - `nomideusz/webmail`
 - `nomideusz/dinosaurus`
-- `nomideusz/domains`
+- `nomideusz/register`
 
 History is preserved under each `apps/*` prefix. Point remotes at a new `zaur` repository when ready, then archive the old repos.

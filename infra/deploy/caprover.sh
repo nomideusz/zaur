@@ -18,8 +18,8 @@ webmail)
 	;;
 register)
 	CAPROVER_APP=register
-	DEF=infra/deploy/domains.captain-definition
-	TAR_PATHS=(pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc apps/domains)
+	DEF=infra/deploy/register.captain-definition
+	TAR_PATHS=(pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc apps/register)
 	;;
 esac
 

@@ -33,7 +33,7 @@ importers:
         specifier: ^0.91.1
         version: 0.91.1
 
-  apps/domains:
+  apps/register:
     dependencies:
       dotenv:
         specifier: ^16.4.7

@@ -1,16 +1,16 @@
-name: Deploy domains to CapRover
+name: Deploy register to CapRover
 
 on:
   push:
     branches: [main]
     paths:
-      - 'apps/domains/**'
+      - 'apps/register/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'package.json'
       - '.npmrc'
-      - 'infra/deploy/domains.captain-definition'
-      - '.github/workflows/deploy-domains.yml'
+      - 'infra/deploy/register.captain-definition'
+      - '.github/workflows/deploy-register.yml'
   workflow_dispatch:
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Prepare captain-definition
-        run: cp infra/deploy/domains.captain-definition captain-definition
+        run: cp infra/deploy/register.captain-definition captain-definition
 
       - name: Create deployment tarball
         uses: a7ul/tar-action@v1.1.0
@@ -34,7 +34,7 @@ jobs:
             pnpm-workspace.yaml
             package.json
             .npmrc
-            apps/domains/
+            apps/register/
           outPath: deploy.tar
 
       - name: Deploy to CapRover

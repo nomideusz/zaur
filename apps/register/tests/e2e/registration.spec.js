@@ -3,18 +3,18 @@ const { randomBytes } = require('node:crypto');
 const { existsSync } = require('node:fs');
 const { expect, test } = require('@playwright/test');
 
-const adminPassword = process.env.DOMAINS_ADMIN_PASSWORD;
+const adminPassword = process.env.REGISTER_ADMIN_PASSWORD;
 const mailAdminPassword = process.env.STALWART_RECOVERY_ADMIN_PASSWORD;
 const keycloakAdminUser = process.env.KEYCLOAK_ADMIN_USER;
 const keycloakAdminPassword = process.env.KEYCLOAK_ADMIN_PASSWORD;
 const keycloakRealm = process.env.KEYCLOAK_REALM || 'domains';
 const keycloakUrl = (process.env.KEYCLOAK_PUBLIC_URL || 'https://keycloak.zaur.app').replace(/\/$/, '');
-const domainId = process.env.DOMAINS_E2E_DOMAIN_ID || 'b';
-const domainName = process.env.DOMAINS_E2E_DOMAIN || 'zaur.app';
+const domainId = process.env.REGISTER_E2E_DOMAIN_ID || 'b';
+const domainName = process.env.REGISTER_E2E_DOMAIN || 'zaur.app';
 
 test.skip(
   !adminPassword || !mailAdminPassword || !keycloakAdminUser || !keycloakAdminPassword,
-  'Set domains/Stalwart/Keycloak E2E credentials in .env.e2e.local',
+  'Set register/Stalwart/Keycloak E2E credentials in .env.e2e.local',
 );
 
 function randomToken(prefix) {

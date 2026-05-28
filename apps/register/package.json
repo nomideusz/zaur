@@ -1,5 +1,5 @@
 {
-  "name": "@zaur/domains",
+  "name": "@zaur/register",
   "version": "1.0.0",
   "description": "Self-service email registration portal for Stalwart mail",
   "main": "server.js",
