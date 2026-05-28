@@ -164,23 +164,7 @@
 			</Button>
 		</form>
 
-		{#if auth.oauthConfig?.enabled}
-			<div class="my-5 flex items-center justify-between">
-				<hr class="w-full border-border" />
-				<span class="px-3 text-xs text-fg-subtle">or</span>
-				<hr class="w-full border-border" />
-			</div>
 
-			<Button
-				type="button"
-				variant="ghost"
-				class="w-full border border-border hover:bg-surface-sunken"
-				onclick={() => auth.loginWithSSO()}
-				disabled={auth.isLoading}
-			>
-				Sign in with SSO
-			</Button>
-		{/if}
 
 		<p class="mt-6 text-center text-xs text-fg-subtle">
 			<button type="button" class="text-accent hover:underline" onclick={() => theme.toggle()}>

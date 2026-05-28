@@ -56,6 +56,41 @@ export async function exchangeCodeForTokens(
 	return (await response.json()) as TokenResponse;
 }
 
+export async function exchangePasswordForTokens(
+	username: string,
+	password: string
+): Promise<TokenResponse> {
+	const clientId = env.OAUTH_CLIENT_ID || 'webmail';
+	const issuerUrl = env.OAUTH_ISSUER_URL;
+	if (!issuerUrl) {
+		throw new Error('OAUTH_ISSUER_URL is not configured');
+	}
+
+	const params = new URLSearchParams();
+	params.append('grant_type', 'password');
+	params.append('client_id', clientId);
+	params.append('username', username);
+	params.append('password', password);
+	params.append('scope', 'openid profile email');
+
+	const tokenUrl = `${issuerUrl.replace(/\/$/, '')}/protocol/openid-connect/token`;
+	console.log(`Exchanging password at: ${tokenUrl}`);
+	const response = await fetch(tokenUrl, {
+		method: 'POST',
+		headers: {
+			'Content-Type': 'application/x-www-form-urlencoded'
+		},
+		body: params.toString()
+	});
+
+	if (!response.ok) {
+		const errText = await response.text();
+		throw new Error(`OAuth password exchange failed (${response.status}): ${errText}`);
+	}
+
+	return (await response.json()) as TokenResponse;
+}
+
 export async function refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string } | null> {
 	const clientId = env.OAUTH_CLIENT_ID || 'webmail';
 	const issuerUrl = env.OAUTH_ISSUER_URL;

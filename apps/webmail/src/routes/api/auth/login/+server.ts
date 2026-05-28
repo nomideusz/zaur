@@ -4,6 +4,8 @@ import { createConnectedClient } from '$lib/server/jmap';
 import { classifyJmapError, loginErrorMessage } from '$lib/jmap/errors';
 import { findIdentityEmail, normalizeEmail } from '$lib/jmap/account';
 import { writeSession } from '$lib/server/session';
+import { env } from '$env/dynamic/private';
+import { exchangePasswordForTokens, decodeJwt } from '$lib/server/oauth';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
 	let body: { email?: string; password?: string; totp?: string; rememberMe?: boolean };
@@ -23,29 +25,62 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	const serverUrl = appConfig.jmapServerUrl;
 
 	try {
-		const client = await createConnectedClient({
-			serverUrl,
-			username: email,
-			password: effectivePassword
-		});
+		let client;
+		let sessionData;
+
+		if (env.OAUTH_ENABLED === 'true') {
+			// 1. Authenticate with Keycloak via ROPC
+			const tokens = await exchangePasswordForTokens(email, password);
+			if (!tokens.access_token) {
+				throw new Error('No access token returned from authorization server');
+			}
+
+			// 2. Decode token to verify email
+			const jwtPayload = decodeJwt(tokens.access_token);
+			const jwtEmail = normalizeEmail(jwtPayload?.email || jwtPayload?.preferred_username || '');
+
+			// 3. Connect to Stalwart JMAP via OIDC Bearer token
+			client = await createConnectedClient({
+				serverUrl,
+				username: jwtPayload?.preferred_username || jwtEmail || email,
+				accessToken: tokens.access_token,
+				refreshToken: tokens.refresh_token
+			});
+
+			sessionData = {
+				serverUrl,
+				username: jwtPayload?.preferred_username || jwtEmail || email,
+				accessToken: tokens.access_token,
+				refreshToken: tokens.refresh_token
+			};
+		} else {
+			// Fallback to direct JMAP authentication (Stalwart local user db)
+			client = await createConnectedClient({
+				serverUrl,
+				username: email,
+				password: effectivePassword
+			});
+
+			sessionData = {
+				serverUrl,
+				username: email,
+				password: effectivePassword
+			};
+		}
 
 		const identities = await client.getIdentities();
 		const primary = findIdentityEmail(identities, email) ?? identities[0];
 
 		writeSession(
 			cookies,
-			{
-				serverUrl,
-				username: email,
-				password: effectivePassword
-			},
+			sessionData,
 			{ remember: body.rememberMe === true }
 		);
 
 		return json({
 			serverUrl,
-			username: email,
-			displayName: primary?.name ?? primary?.email ?? email,
+			username: sessionData.username,
+			displayName: primary?.name ?? primary?.email ?? sessionData.username,
 			identities: identities.map((identity) => ({
 				id: identity.id,
 				name: identity.name,

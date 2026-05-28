@@ -38,7 +38,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		// 3. Connect to Stalwart JMAP via OIDC Bearer token to verify user account exists and retrieve identities
 		const client = await createConnectedClient({
 			serverUrl,
-			username: email,
+			username: jwtPayload?.preferred_username || email,
 			accessToken: tokens.access_token,
 			refreshToken: tokens.refresh_token
 		});
@@ -51,7 +51,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			cookies,
 			{
 				serverUrl,
-				username: email,
+				username: jwtPayload?.preferred_username || email,
 				accessToken: tokens.access_token,
 				refreshToken: tokens.refresh_token
 			},
