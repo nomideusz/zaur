@@ -436,7 +436,7 @@ app.get('/', (_req, res) => {
 });
 
 app.get('/register', (_req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'register.html'));
+  res.redirect('/');
 });
 
 app.get('/success', (_req, res) => {
