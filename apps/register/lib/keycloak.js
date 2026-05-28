@@ -36,9 +36,12 @@ async function createUser(email, password) {
   const token = await getAdminToken();
   const usersUrl = `${KEYCLOAK_URL}/admin/realms/${KEYCLOAK_REALM}/users`;
 
+  const usernamePart = email.split('@')[0];
   const userPayload = {
     username: email.toLowerCase(),
     email: email.toLowerCase(),
+    firstName: usernamePart,
+    lastName: 'User',
     enabled: true,
     emailVerified: true,
     credentials: [
@@ -164,7 +167,8 @@ async function getUserBearerToken(email, password) {
   params.append('grant_type', 'password');
   params.append('scope', 'openid profile email');
 
-  const tokenUrl = `${KEYCLOAK_URL}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`;
+  const publicUrl = process.env.KEYCLOAK_PUBLIC_URL || 'https://keycloak.zaur.app';
+  const tokenUrl = `${publicUrl.replace(/\/$/, '')}/realms/${KEYCLOAK_REALM}/protocol/openid-connect/token`;
   const response = await fetch(tokenUrl, {
     method: 'POST',
     headers: {
