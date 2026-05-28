@@ -42,11 +42,24 @@ class AuthStore {
 	displayName = $state<string | null>(null);
 	identities = $state<JMAPIdentity[]>([]);
 	client = $state<JMAPClient | null>(null);
+	oauthConfig = $state<{ enabled: boolean; clientId?: string; issuerUrl?: string } | null>(null);
 
 	async init() {
 		if (!browser) return;
+		await this.checkOauthConfig();
 		await this.restore();
 		this.isRestoring = false;
+	}
+
+	async checkOauthConfig() {
+		try {
+			const res = await fetch('/api/auth/config');
+			if (res.ok) {
+				this.oauthConfig = await res.json();
+			}
+		} catch (e) {
+			console.error('Failed to load OIDC config:', e);
+		}
 	}
 
 	private async bootstrapMail(client: JMAPClient) {
@@ -112,6 +125,102 @@ class AuthStore {
 			this.client?.disconnect();
 			this.client = null;
 			this.isAuthenticated = false;
+		} finally {
+			this.isLoading = false;
+		}
+	}
+
+	async loginWithSSO() {
+		this.isLoading = true;
+		this.error = null;
+		this.errorCode = null;
+
+		try {
+			if (!this.oauthConfig || !this.oauthConfig.enabled) {
+				throw new Error('SSO is not enabled on this server.');
+			}
+
+			const clientId = this.oauthConfig.clientId || 'webmail';
+			const issuerUrl = this.oauthConfig.issuerUrl;
+			if (!issuerUrl) {
+				throw new Error('SSO issuer URL is not configured.');
+			}
+
+			const verifier = generateRandomString(48);
+			sessionStorage.setItem('oauth_code_verifier', verifier);
+
+			const challenge = await generateChallengeOfVerifier(verifier);
+			const redirectUri = `${window.location.origin}/oauth/callback`;
+			const state = generateRandomString(16);
+
+			const authUrl = `${issuerUrl.replace(/\/$/, '')}/protocol/openid-connect/auth` +
+				`?response_type=code` +
+				`&client_id=${encodeURIComponent(clientId)}` +
+				`&redirect_uri=${encodeURIComponent(redirectUri)}` +
+				`&scope=openid+profile+email` +
+				`&code_challenge=${encodeURIComponent(challenge)}` +
+				`&code_challenge_method=S256` +
+				`&state=${encodeURIComponent(state)}`;
+
+			window.location.href = authUrl;
+		} catch (error) {
+			this.isLoading = false;
+			this.error = error instanceof Error ? error.message : 'Failed to redirect to SSO provider';
+		}
+	}
+
+	async completeOauthLogin(code: string) {
+		this.isLoading = true;
+		this.error = null;
+		this.errorCode = null;
+
+		try {
+			const codeVerifier = sessionStorage.getItem('oauth_code_verifier') || '';
+			sessionStorage.removeItem('oauth_code_verifier');
+
+			const redirectUri = `${window.location.origin}/oauth/callback`;
+
+			const response = await fetch('/api/auth/token', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ code, codeVerifier, redirectUri })
+			});
+
+			const payload = (await response.json()) as LoginResponse;
+
+			if (!response.ok) {
+				const code = payload.code ?? classifyJmapError(new Error(payload.error ?? ''));
+				this.errorCode = code;
+				this.error = payload.error ?? loginErrorMessage(code);
+				await goto('/login');
+				return;
+			}
+
+			const client = JMAPClient.createProxy();
+			await client.connect();
+			await this.openOfflineLayer(client);
+			await this.bootstrapMail(client);
+
+			this.client = client;
+			this.serverUrl = payload.serverUrl;
+			this.username = payload.username;
+			this.displayName = payload.displayName;
+			this.identities = payload.identities ?? [];
+			this.isAuthenticated = true;
+			settings.setUser(payload.username);
+			await settings.syncFromAccount();
+			this.startBackgroundSync(client, payload.username, payload.displayName);
+
+			await goto(settings.preferredMailHref());
+		} catch (error) {
+			console.error('OAuth complete failed:', error);
+			const code = classifyJmapError(error);
+			this.errorCode = code;
+			this.error = error instanceof Error ? error.message : 'SSO login failed';
+			this.client?.disconnect();
+			this.client = null;
+			this.isAuthenticated = false;
+			await goto('/login');
 		} finally {
 			this.isLoading = false;
 		}
@@ -257,3 +366,32 @@ class AuthStore {
 }
 
 export const auth = new AuthStore();
+
+function generateRandomString(length: number): string {
+	const array = new Uint8Array(length);
+	window.crypto.getRandomValues(array);
+	return Array.from(array, (dec) => dec.toString(16).padStart(2, '0')).join('').slice(0, length);
+}
+
+async function sha256(plain: string): Promise<ArrayBuffer> {
+	const encoder = new TextEncoder();
+	const data = encoder.encode(plain);
+	return window.crypto.subtle.digest('SHA-256', data);
+}
+
+function base64urlencode(a: ArrayBuffer): string {
+	const bytes = new Uint8Array(a);
+	let str = '';
+	for (let i = 0; i < bytes.byteLength; i++) {
+		str += String.fromCharCode(bytes[i]);
+	}
+	return btoa(str)
+		.replace(/\+/g, '-')
+		.replace(/\//g, '_')
+		.replace(/=/g, '');
+}
+
+async function generateChallengeOfVerifier(verifier: string): Promise<string> {
+	const hashed = await sha256(verifier);
+	return base64urlencode(hashed);
+}

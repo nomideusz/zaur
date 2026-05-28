@@ -111,19 +111,23 @@ export interface EmailQueryResult {
 export class JMAPClient {
 	private serverUrl: string;
 	private username: string;
-	private password: string;
+	private password?: string;
 	private authHeader: string;
 	private apiUrl = '';
 	private accountId = '';
 	private session: JMAPSession | null = null;
 	private readonly proxyMode: boolean;
 
-	constructor(serverUrl: string, username: string, password: string, proxyMode = false) {
+	constructor(serverUrl: string, username: string, passwordOrToken: string, proxyMode = false, isToken = false) {
 		this.serverUrl = serverUrl.replace(/\/$/, '');
 		this.username = username;
-		this.password = password;
+		this.password = isToken ? undefined : passwordOrToken;
 		this.proxyMode = proxyMode;
-		this.authHeader = proxyMode ? '' : `Basic ${btoa(`${username}:${password}`)}`;
+		this.authHeader = proxyMode
+			? ''
+			: isToken
+				? `Bearer ${passwordOrToken}`
+				: `Basic ${btoa(`${username}:${passwordOrToken}`)}`;
 	}
 
 	/** Browser client that routes JMAP through the server-side proxy. */

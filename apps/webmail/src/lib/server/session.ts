@@ -7,7 +7,10 @@ import { env } from '$env/dynamic/private';
 export interface SessionData {
 	serverUrl: string;
 	username: string;
-	password: string;
+	password?: string;
+	accessToken?: string;
+	refreshToken?: string;
+	id?: string;
 }
 
 export const COOKIE_NAME = 'zaur_session';
@@ -88,6 +91,7 @@ function createSessionRecord(data: SessionData, options?: { remember?: boolean; 
 	pruneExpiredSessions(store);
 
 	const id = randomBytes(32).toString('base64url');
+	data.id = id;
 	const now = new Date();
 	const record: StoredSessionRecord = {
 		id,
@@ -188,6 +192,18 @@ export function writeSession(
 	}
 
 	cookies.set(COOKIE_NAME, createSessionRecord(data, options), cookieOptions);
+}
+
+export function updateSessionData(id: string, data: SessionData, secret?: string): void {
+	const store = readSessionStore();
+	const record = store[id];
+	if (!record) return;
+
+	data.id = id;
+	record.sealedData = sealSession(data, secret);
+	record.updatedAt = new Date().toISOString();
+	store[id] = record;
+	writeSessionStore(store);
 }
 
 export function clearSession(cookies: Cookies): void {
