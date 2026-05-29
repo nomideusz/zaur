@@ -1,4 +1,8 @@
-const JMAP_CAPABILITIES = ['urn:ietf:params:jmap:core', 'urn:stalwart:jmap'];
+const JMAP_CAPABILITIES = [
+  'urn:ietf:params:jmap:core',
+  'urn:ietf:params:jmap:mail',
+  'urn:stalwart:jmap',
+];
 
 const DOMAIN_CACHE_TTL_MS = 5 * 60 * 1000;
 const STANDARD_MAILBOXES = [
@@ -100,10 +104,6 @@ function extractJmapError(response) {
   }
 
   return 'Account creation failed.';
-}
-
-function encodeBasicAuth(user, password) {
-  return Buffer.from(`${user}:${password}`).toString('base64');
 }
 
 function filterDomains(domains, allowlist) {
@@ -342,59 +342,9 @@ async function deleteAccountByEmail(email) {
   return deleteAccount(account.id);
 }
 
-async function createUserJmapClient(email, password) {
-  const serverUrl = process.env.MAIL_PUBLIC_URL || 'https://mail.zaur.app';
-  const authorization = `Basic ${encodeBasicAuth(email, password)}`;
-  const sessionResponse = await fetch(`${serverUrl.replace(/\/$/, '')}/.well-known/jmap`, {
-    headers: {
-      Authorization: authorization,
-    },
-  });
-
-  if (!sessionResponse.ok) {
-    throw new Error(`Could not open new mailbox session (${sessionResponse.status}).`);
-  }
-
-  const session = await sessionResponse.json();
-  const accountId = session.primaryAccounts?.['urn:ietf:params:jmap:mail'];
-  if (!accountId || !session.apiUrl) {
-    throw new Error('New account does not expose a mail-capable JMAP session.');
-  }
-
-  return {
-    apiUrl: session.apiUrl,
-    accountId,
-    headers: {
-      Authorization: authorization,
-      'Content-Type': 'application/json',
-      Accept: 'application/json',
-    },
-  };
-}
-
-async function userJmapRequest(client, methodCalls) {
-  const response = await fetch(client.apiUrl, {
-    method: 'POST',
-    headers: client.headers,
-    body: JSON.stringify({
-      using: ['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail'],
-      methodCalls,
-    }),
-  });
-
-  const body = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const detail = body.detail || body.title || response.statusText;
-    throw new Error(`JMAP mailbox provisioning failed (${response.status}): ${detail}`);
-  }
-
-  return body;
-}
-
-async function ensureStandardMailboxes(email, password) {
-  const client = await createUserJmapClient(email, password);
-  const getBody = await userJmapRequest(client, [
-    ['Mailbox/get', { accountId: client.accountId }, 'mailboxes'],
+async function ensureStandardMailboxes(accountId) {
+  const getBody = await jmapRequest([
+    ['Mailbox/get', { accountId, properties: ['id', 'name', 'role'] }, 'mailboxes'],
   ]);
   const mailboxResponse = getMethodResponse(getBody, 'mailboxes');
   const existing = Array.isArray(mailboxResponse?.list) ? mailboxResponse.list : [];
@@ -415,8 +365,8 @@ async function ensureStandardMailboxes(email, password) {
 
   if (!Object.keys(create).length) return [];
 
-  const setBody = await userJmapRequest(client, [
-    ['Mailbox/set', { accountId: client.accountId, create }, 'mailboxSet'],
+  const setBody = await jmapRequest([
+    ['Mailbox/set', { accountId, create }, 'mailboxSet'],
   ]);
   const setResponse = getMethodResponse(setBody, 'mailboxSet');
   if (setResponse?.notCreated && Object.keys(setResponse.notCreated).length) {

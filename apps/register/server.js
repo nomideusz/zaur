@@ -198,8 +198,9 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
       );
       accountId = account.accountId;
 
-      // 4. Provision standard mailboxes in Stalwart using the user's own credentials
-      await stalwart.ensureStandardMailboxes(email, password);
+      // 4. Provision standard mailboxes via admin JMAP (user password auth uses LLDAP,
+      //    which is unavailable while Logto OIDC is Stalwart's default Bearer directory)
+      await stalwart.ensureStandardMailboxes(accountId);
 
       if (!invites.markInviteAsUsed(inviteCode, email)) {
         throw new Error('Account was created, but the invitation code could not be marked as used.');

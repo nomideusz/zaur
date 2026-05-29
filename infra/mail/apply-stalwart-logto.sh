@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Wire Stalwart to Logto OIDC for JMAP Bearer auth (webmail passkeys).
-# Keeps LLDAP as the default password directory (IMAP/SMTP/app passwords).
+# Keeps LLDAP as the domain directory for password auth (IMAP/SMTP/register mailbox setup).
 #
 # Prerequisites:
 #   - stalwart-cli on PATH (or /root/.cargo/bin/stalwart-cli)
@@ -17,7 +17,6 @@ set -euo pipefail
 
 CLI="${STALWART_CLI:-/root/.cargo/bin/stalwart-cli}"
 LOGTO_ISSUER="${LOGTO_ISSUER:-https://auth.zaur.app/oidc}"
-LOGTO_AUDIENCE="${LOGTO_AUDIENCE:-https://mail.zaur.app/api}"
 LOGTO_DIR_DESC="${LOGTO_DIR_DESC:-Logto (auth.zaur.app)}"
 # Comma-separated domain names to attach to the Logto OIDC directory (Bearer/JMAP).
 OIDC_DOMAINS="${OIDC_DOMAINS:-zaur.app}"
@@ -37,7 +36,7 @@ if [[ -n "$existing_oidc" ]]; then
 		--field "issuerUrl=$LOGTO_ISSUER" \
 		--field claimUsername=email \
 		--field claimName=name \
-		--field "requireAudience=$LOGTO_AUDIENCE"
+		--field requireAudience=null
 else
 	echo "==> Creating Logto OIDC directory"
 	oidc_id="$("$CLI" create Directory/Oidc \
@@ -45,28 +44,26 @@ else
 		--field "issuerUrl=$LOGTO_ISSUER" \
 		--field claimUsername=email \
 		--field claimName=name \
-		--field "requireAudience=$LOGTO_AUDIENCE" \
+		--field requireAudience=null \
 		| awk '/Created Directory/ { print $3 }')"
 fi
 
 echo "==> OIDC directory id: $oidc_id"
-echo "==> Authentication stays on LLDAP (password / app-password clients)"
+# API-resource JWTs from Logto omit OIDC scope claims; don't require openid/email here.
+"$CLI" update Directory "$oidc_id" --json '{"requireScopes": {}}' >/dev/null
+echo "==> HTTP Bearer auth uses Logto OIDC as default directory"
+"$CLI" update Authentication --field "directoryId=$oidc_id"
 "$CLI" get Authentication | head -3
 
-IFS=',' read -ra DOMAINS <<< "$OIDC_DOMAINS"
-for domain_name in "${DOMAINS[@]}"; do
-	domain_name="${domain_name// /}"
-	[[ -z "$domain_name" ]] && continue
-	domain_id="$("$CLI" query Domain 2>/dev/null | awk -v d="$domain_name" '$0 ~ d { print $1; exit }')"
-	if [[ -z "$domain_id" ]]; then
-		echo "WARN: domain not found: $domain_name" >&2
-		continue
-	fi
-	echo "==> Domain $domain_name ($domain_id) → OIDC directory $oidc_id"
-	"$CLI" update Domain "$domain_id" --field "directoryId=$oidc_id"
-done
+# Domain directories stay on LLDAP for password/IMAP auth (register mailbox setup too).
+# Only the Authentication default switches to Logto for opaque Bearer tokens on HTTP/JMAP.
+echo "==> Skipping domain→OIDC remap (LLDAP remains on domains for password auth)"
 
 echo "==> Done. Verify:"
 echo "    $CLI query Directory"
 echo "    $CLI get Domain <id>   # Directory should show Logto"
-echo "    $CLI get Authentication # should still show LLDAP"
+echo "    $CLI get Authentication # default directory should be Logto OIDC (JMAP Bearer)"
+echo "    LLDAP directory remains for IMAP/SMTP password bind via domain routing"
+echo ""
+echo "==> Restart Stalwart so HTTP Bearer picks up the new default directory:"
+echo "    docker service update --force srv-captain--mail"

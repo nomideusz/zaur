@@ -90,20 +90,28 @@ async function findUserByEmail(email) {
   return users.find((user) => user.primaryEmail?.toLowerCase() === normalized) || null;
 }
 
+function logtoUsername(email) {
+  const normalized = email.toLowerCase();
+  const [local, domain] = normalized.split('@');
+  if (!local || !domain) return normalized.replace(/[^a-z0-9._-]/g, '_');
+  // Logto usernames are tenant-wide; include domain so user@a and user@b don't collide.
+  return `${local}__${domain.replace(/\./g, '-')}`;
+}
+
 async function createUser(email, password) {
   const normalized = email.toLowerCase();
-  const usernamePart = normalized.split('@')[0];
+  const username = logtoUsername(normalized);
 
   try {
     await managementRequest('POST', '/api/users', {
       primaryEmail: normalized,
-      username: usernamePart,
-      name: usernamePart,
+      username,
+      name: normalized.split('@')[0],
       password,
     });
     return true;
   } catch (err) {
-    if (/already exists|duplicate|409/i.test(err.message)) {
+    if (/already exists|duplicate|409|already in use/i.test(err.message)) {
       throw new Error('This email is already registered for sign-in.');
     }
     throw err;

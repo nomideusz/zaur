@@ -57,17 +57,9 @@ In Logto Console → **Applications** → Create application:
 | Redirect URI | `https://webmail.zaur.app/oauth/callback` |
 | Post sign-out redirect | `https://webmail.zaur.app` |
 
-Note the **App ID** and **App Secret**. Traditional web apps require the secret at the token endpoint (`invalid_client` without it).  
-Alternatively use a **Single-page app** (PKCE only, no secret) if you prefer a public client.
+Note the **App ID** and **App Secret**. Traditional web apps require the secret at the token endpoint (`invalid_client` without it).
 
-Logto issues **opaque** access tokens when no API resource is requested; Stalwart cannot use those for JMAP Bearer auth. Create an API resource in Logto Console → **API resources**:
-
-| Field | Value |
-|-------|-------|
-| Name | Stalwart JMAP |
-| API identifier | `https://mail.zaur.app/api` |
-
-Set webmail `OAUTH_RESOURCE=https://mail.zaur.app/api` so tokens are JWTs with an `email` claim. Set Stalwart OIDC **Required audience** to the same URI (`apply-stalwart-logto.sh` does this when `LOGTO_AUDIENCE` is set).
+**Do not set `OAUTH_RESOURCE`** for Stalwart. Logto API-resource JWTs (ES384) fail Stalwart validation and are rejected by `/oidc/me`. Use **opaque userinfo tokens** instead — Stalwart calls Logto’s userinfo endpoint to resolve `email`.
 
 Discovery: `https://auth.zaur.app/oidc/.well-known/openid-configuration`
 
@@ -78,8 +70,8 @@ OAUTH_ENABLED=true
 OAUTH_ISSUER_URL=https://auth.zaur.app/oidc
 OAUTH_CLIENT_ID=<logto-app-id>
 OAUTH_CLIENT_SECRET=<logto-app-secret>
-OAUTH_RESOURCE=https://mail.zaur.app/api
 OAUTH_SCOPES=openid profile email offline_access
+# Do NOT set OAUTH_RESOURCE — Stalwart needs opaque userinfo tokens from Logto
 # OAUTH_PASSWORD_FALLBACK=true   # dev only: local LDAP password form
 ```
 
@@ -100,7 +92,9 @@ Run on the CapRover host (or use the WebUI with the same values):
 | Username claim | `email` |
 | Required audience | *(unset — see below)* |
 | Domain `zaur.app` → Directory | Logto OIDC |
-| Authentication → Directory | **LLDAP** (unchanged) |
+| Authentication → Directory | **Logto OIDC** (HTTP Bearer / JMAP) |
+
+After changing the default directory, **restart the mail service** (`docker service update --force srv-captain--mail`) so running Stalwart reloads config. Without a restart, Bearer tokens still hit the old internal/LLDAP path and fail with “Failed to decode token”.
 
 Logto’s userinfo endpoint is `https://auth.zaur.app/oidc/me` (from discovery). Opaque access tokens (no API resource in the OAuth request) are validated via userinfo; JWT tokens need a matching `aud` if you set **Required audience**.
 

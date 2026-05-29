@@ -38,7 +38,11 @@ webmail JMAP   → mail.zaur.app  (Bearer access_token)
 Thunderbird    → mail.zaur.app  (app password → LLDAP bind)
 ```
 
-Requires **Stalwart 0.16.1+** so HTTP Bearer can use a **per-domain OIDC directory** (domain taken from the token `email` claim) while `Authentication.directoryId` remains LLDAP.
+Requires **Stalwart 0.16.1+**. Webmail uses **opaque** Logto access tokens (no `OAUTH_RESOURCE`); Stalwart validates them via Logto’s userinfo endpoint (`/oidc/me`). Set **Authentication → Directory** to the Logto OIDC directory and **restart mail** after changing it.
+
+```bash
+docker service update --force srv-captain--mail
+```
 
 ### Apply on the server
 
@@ -56,7 +60,8 @@ Or manually in **Settings → Authentication → Directories**:
 | Type | OpenID Connect |
 | Issuer URL | `https://auth.zaur.app/oidc` |
 | Username claim | `email` |
-| Required audience | *(empty — Logto webmail tokens are opaque or use Logto’s API resource `aud`)* |
+| Required audience | *(empty)* |
+| Authentication → Directory | **Logto OIDC** |
 
 Then **Settings → Domains → zaur.app → Directory** → select the Logto OIDC directory.  
 Leave **Settings → Authentication → General → Directory** on **LLDAP**.
