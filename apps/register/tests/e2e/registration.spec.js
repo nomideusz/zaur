@@ -155,7 +155,6 @@ test('registers a mailbox and cleans it up', async ({ request }) => {
         inviteEmail: invite.email,
         password,
         confirmPassword: password,
-        captchaAnswer: await captchaAnswer(request),
       },
     });
 

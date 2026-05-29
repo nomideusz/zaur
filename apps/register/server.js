@@ -186,9 +186,11 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
     return res.status(400).json({ error: passwordValidation.error });
   }
 
-  const captchaValidation = validateCaptchaAnswer(captchaAnswer, req.session.captchaAnswer);
-  if (!captchaValidation.valid) {
-    return res.status(400).json({ error: captchaValidation.error });
+  if (!recoveryEmail) {
+    const captchaValidation = validateCaptchaAnswer(captchaAnswer, req.session.captchaAnswer);
+    if (!captchaValidation.valid) {
+      return res.status(400).json({ error: captchaValidation.error });
+    }
   }
 
   if (!domainId) {

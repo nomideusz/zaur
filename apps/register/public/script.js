@@ -21,9 +21,12 @@ const registerContent = document.getElementById('register-content');
 const invitationBanner = document.getElementById('invitation-banner');
 const inviteTokenInput = document.getElementById('invite-token');
 const inviteEmailInput = document.getElementById('invite-email');
+const captchaSection = document.getElementById('captcha-section');
+const passwordHint = document.getElementById('password-hint');
 
 let requiresInvitation = false;
 let invitationReady = false;
+let hasMagicLinkInvitation = false;
 let inviteToken = '';
 let inviteEmail = '';
 let debounceTimer = null;
@@ -166,6 +169,15 @@ function renderSearchResults(query, statuses) {
   });
 }
 
+function applyInvitationUi() {
+  if (hasMagicLinkInvitation) {
+    if (captchaSection) captchaSection.style.display = 'none';
+    if (passwordHint) passwordHint.style.display = 'block';
+    const captchaInput = document.getElementById('captcha-answer');
+    if (captchaInput) captchaInput.required = false;
+  }
+}
+
 function selectDomain(row) {
   document.querySelectorAll('.result-row').forEach((r) => r.classList.remove('selected'));
   row.classList.add('selected');
@@ -179,7 +191,10 @@ function selectDomain(row) {
   selectedEmailLabel.textContent = `${currentUsername}@${selectedResult.domain}`;
   registerPanel.classList.add('visible');
   hideFormError();
-  loadCaptcha();
+  if (!hasMagicLinkInvitation) {
+    loadCaptcha();
+  }
+  applyInvitationUi();
   registerPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
@@ -293,7 +308,7 @@ registerForm.addEventListener('submit', async (e) => {
         inviteEmail: inviteEmailInput.value,
         password: passwordInput.value,
         confirmPassword: confirmPasswordInput.value,
-        captchaAnswer: document.getElementById('captcha-answer').value,
+        captchaAnswer: hasMagicLinkInvitation ? undefined : document.getElementById('captcha-answer').value,
       }),
     });
 
@@ -357,12 +372,14 @@ async function initInvitation() {
     }
 
     invitationReady = true;
+    hasMagicLinkInvitation = true;
     inviteTokenInput.value = inviteToken;
     inviteEmailInput.value = inviteEmail;
     invitationBanner.style.display = 'block';
-    invitationBanner.textContent = `Invited via ${inviteEmail}. Choose your new ZAUR address below.`;
+    invitationBanner.textContent = `Invitation verified for ${inviteEmail}. Pick your new address and mailbox password below.`;
     registerContent.style.display = '';
     invitationGate.style.display = 'none';
+    applyInvitationUi();
   } catch {
     registerContent.style.display = 'none';
     invitationGate.style.display = 'block';

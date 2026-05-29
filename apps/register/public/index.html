@@ -70,8 +70,11 @@
           <input type="hidden" id="invite-email" name="inviteEmail">
 
           <div class="mb3">
-            <label for="password" class="db f7 fw5 mid-gray mb2">Password</label>
+            <label for="password" class="db f7 fw5 mid-gray mb2">Mailbox password</label>
             <input type="password" id="password" name="password" class="z-input w-100 ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0" autocomplete="new-password" required>
+            <p class="f7 gray mt1 mb0" id="password-hint" style="display: none;">
+              Use this for IMAP and your first webmail sign-in. You’ll set up a passkey after registering.
+            </p>
             <div class="strength-bar bg-light-gray br-pill overflow-hidden mt2" style="height: 4px;">
               <div class="strength-fill h-100 br-pill" id="strength-fill"></div>
             </div>
@@ -83,7 +86,7 @@
             <input type="password" id="confirm-password" name="confirmPassword" class="z-input w-100 ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0" autocomplete="new-password" required>
           </div>
 
-          <div class="mb4">
+          <div class="mb4" id="captcha-section">
             <label for="captcha-answer" class="db f7 fw5 mid-gray mb2">Security check</label>
             <div class="flex flex-column flex-row-m items-stretch items-center-m g3">
               <span class="captcha-question f4 fw6 near-black" id="captcha-question">Loading…</span>
