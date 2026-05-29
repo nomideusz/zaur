@@ -60,6 +60,15 @@ In Logto Console → **Applications** → Create application:
 Note the **App ID** and **App Secret**. Traditional web apps require the secret at the token endpoint (`invalid_client` without it).  
 Alternatively use a **Single-page app** (PKCE only, no secret) if you prefer a public client.
 
+Logto issues **opaque** access tokens when no API resource is requested; Stalwart cannot use those for JMAP Bearer auth. Create an API resource in Logto Console → **API resources**:
+
+| Field | Value |
+|-------|-------|
+| Name | Stalwart JMAP |
+| API identifier | `https://mail.zaur.app/api` |
+
+Set webmail `OAUTH_RESOURCE=https://mail.zaur.app/api` so tokens are JWTs with an `email` claim. Set Stalwart OIDC **Required audience** to the same URI (`apply-stalwart-logto.sh` does this when `LOGTO_AUDIENCE` is set).
+
 Discovery: `https://auth.zaur.app/oidc/.well-known/openid-configuration`
 
 ## 3. Webmail env (CapRover `webmail` app)
@@ -69,6 +78,7 @@ OAUTH_ENABLED=true
 OAUTH_ISSUER_URL=https://auth.zaur.app/oidc
 OAUTH_CLIENT_ID=<logto-app-id>
 OAUTH_CLIENT_SECRET=<logto-app-secret>
+OAUTH_RESOURCE=https://mail.zaur.app/api
 OAUTH_SCOPES=openid profile email offline_access
 # OAUTH_PASSWORD_FALLBACK=true   # dev only: local LDAP password form
 ```

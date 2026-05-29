@@ -8,6 +8,17 @@ export interface TokenResponse {
 	expires_in: number;
 }
 
+function getOauthResource(): string | undefined {
+	return env.OAUTH_RESOURCE?.trim() || undefined;
+}
+
+function appendResourceParam(params: URLSearchParams) {
+	const resource = getOauthResource();
+	if (resource) {
+		params.append('resource', resource);
+	}
+}
+
 export function decodeJwt(token: string): any {
 	try {
 		const parts = token.split('.');
@@ -34,6 +45,7 @@ export async function exchangeCodeForTokens(
 	params.append('code', code);
 	params.append('redirect_uri', redirectUri);
 	params.append('code_verifier', codeVerifier);
+	appendResourceParam(params);
 
 	const clientSecret = env.OAUTH_CLIENT_SECRET?.trim();
 	const headers: Record<string, string> = {
@@ -74,6 +86,7 @@ export async function refreshAccessToken(
 	params.append('grant_type', 'refresh_token');
 	params.append('client_id', clientId);
 	params.append('refresh_token', refreshToken);
+	appendResourceParam(params);
 
 	const clientSecret = env.OAUTH_CLIENT_SECRET?.trim();
 	const headers: Record<string, string> = {
@@ -123,6 +136,7 @@ export async function buildAuthorizationUrl(input: {
 	params.append('state', input.state);
 	params.append('code_challenge', input.codeChallenge);
 	params.append('code_challenge_method', 'S256');
+	appendResourceParam(params);
 
 	if (input.loginHint?.trim()) {
 		params.append('login_hint', input.loginHint.trim());

@@ -17,6 +17,7 @@ set -euo pipefail
 
 CLI="${STALWART_CLI:-/root/.cargo/bin/stalwart-cli}"
 LOGTO_ISSUER="${LOGTO_ISSUER:-https://auth.zaur.app/oidc}"
+LOGTO_AUDIENCE="${LOGTO_AUDIENCE:-https://mail.zaur.app/api}"
 LOGTO_DIR_DESC="${LOGTO_DIR_DESC:-Logto (auth.zaur.app)}"
 # Comma-separated domain names to attach to the Logto OIDC directory (Bearer/JMAP).
 OIDC_DOMAINS="${OIDC_DOMAINS:-zaur.app}"
@@ -36,7 +37,7 @@ if [[ -n "$existing_oidc" ]]; then
 		--field "issuerUrl=$LOGTO_ISSUER" \
 		--field claimUsername=email \
 		--field claimName=name \
-		--field requireAudience=null
+		--field "requireAudience=$LOGTO_AUDIENCE"
 else
 	echo "==> Creating Logto OIDC directory"
 	oidc_id="$("$CLI" create Directory/Oidc \
@@ -44,7 +45,7 @@ else
 		--field "issuerUrl=$LOGTO_ISSUER" \
 		--field claimUsername=email \
 		--field claimName=name \
-		--field requireAudience=null \
+		--field "requireAudience=$LOGTO_AUDIENCE" \
 		| awk '/Created Directory/ { print $3 }')"
 fi
 
