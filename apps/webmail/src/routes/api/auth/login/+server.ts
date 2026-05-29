@@ -5,9 +5,33 @@ import { classifyJmapError, loginErrorMessage } from '$lib/jmap/errors';
 import { findIdentityEmail, normalizeEmail } from '$lib/jmap/account';
 import { writeSession } from '$lib/server/session';
 import { env } from '$env/dynamic/private';
-import { exchangePasswordForTokens, decodeJwt } from '$lib/server/oauth';
+import { isOauthEnabled } from '$lib/server/oidc-discovery';
+import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
+	const clientAddress = getClientAddress(request);
+	const limit = checkRateLimit({
+		key: `password-login:${clientAddress}`,
+		limit: 10,
+		windowMs: 15 * 60 * 1000
+	});
+	if (!limit.allowed) {
+		return json(
+			{ error: `Too many sign-in attempts. Try again in ${limit.retryAfterSec}s.` },
+			{ status: 429 }
+		);
+	}
+
+	if (isOauthEnabled() && env.OAUTH_PASSWORD_FALLBACK !== 'true') {
+		return json(
+			{
+				error: 'Password sign-in is disabled. Use your passkey instead.',
+				code: 'oauth_required'
+			},
+			{ status: 403 }
+		);
+	}
+
 	let body: { email?: string; password?: string; totp?: string; rememberMe?: boolean };
 	try {
 		body = await request.json();
@@ -25,57 +49,22 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	const serverUrl = appConfig.jmapServerUrl;
 
 	try {
-		let client;
-		let sessionData;
+		const client = await createConnectedClient({
+			serverUrl,
+			username: email,
+			password: effectivePassword
+		});
 
-		if (env.OAUTH_ENABLED === 'true') {
-			// 1. Authenticate with Keycloak via ROPC
-			const tokens = await exchangePasswordForTokens(email, password);
-			if (!tokens.access_token) {
-				throw new Error('No access token returned from authorization server');
-			}
-
-			// 2. Decode token to verify email
-			const jwtPayload = decodeJwt(tokens.access_token);
-			const jwtEmail = normalizeEmail(jwtPayload?.email || jwtPayload?.preferred_username || '');
-
-			// 3. Connect to Stalwart JMAP via OIDC Bearer token
-			client = await createConnectedClient({
-				serverUrl,
-				username: jwtPayload?.preferred_username || jwtEmail || email,
-				accessToken: tokens.access_token,
-				refreshToken: tokens.refresh_token
-			});
-
-			sessionData = {
-				serverUrl,
-				username: jwtPayload?.preferred_username || jwtEmail || email,
-				accessToken: tokens.access_token,
-				refreshToken: tokens.refresh_token
-			};
-		} else {
-			// Fallback to direct JMAP authentication (Stalwart local user db)
-			client = await createConnectedClient({
-				serverUrl,
-				username: email,
-				password: effectivePassword
-			});
-
-			sessionData = {
-				serverUrl,
-				username: email,
-				password: effectivePassword
-			};
-		}
+		const sessionData = {
+			serverUrl,
+			username: email,
+			password: effectivePassword
+		};
 
 		const identities = await client.getIdentities();
 		const primary = findIdentityEmail(identities, email) ?? identities[0];
 
-		writeSession(
-			cookies,
-			sessionData,
-			{ remember: body.rememberMe === true }
-		);
+		writeSession(cookies, sessionData, { remember: body.rememberMe === true });
 
 		return json({
 			serverUrl,

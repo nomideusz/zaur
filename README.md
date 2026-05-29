@@ -56,6 +56,7 @@ apps/
 packages/
   sprite/        Shared Zaur pixel art
 infra/
+  auth/          Zitadel + passkey-first webmail setup
   mail/          Stalwart ops notes
   deploy/        CapRover captain-definition templates
 ```

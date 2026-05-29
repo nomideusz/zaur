@@ -42,7 +42,15 @@ class AuthStore {
 	displayName = $state<string | null>(null);
 	identities = $state<JMAPIdentity[]>([]);
 	client = $state<JMAPClient | null>(null);
-	oauthConfig = $state<{ enabled: boolean; clientId?: string; issuerUrl?: string } | null>(null);
+	oauthConfig = $state<{
+		enabled: boolean;
+		passkeysFirst?: boolean;
+		passwordFallback?: boolean;
+		clientId?: string;
+		issuerUrl?: string;
+		authorizationEndpoint?: string;
+		error?: string;
+	} | null>(null);
 
 	async init() {
 		if (!browser) return;
@@ -130,60 +138,90 @@ class AuthStore {
 		}
 	}
 
-	async loginWithSSO() {
+	async loginWithPasskey(options?: {
+		rememberMe?: boolean;
+		redirectTo?: string;
+		loginHint?: string;
+	}) {
 		this.isLoading = true;
 		this.error = null;
 		this.errorCode = null;
 
 		try {
-			if (!this.oauthConfig || !this.oauthConfig.enabled) {
-				throw new Error('SSO is not enabled on this server.');
-			}
-
-			const clientId = this.oauthConfig.clientId || 'webmail';
-			const issuerUrl = this.oauthConfig.issuerUrl;
-			if (!issuerUrl) {
-				throw new Error('SSO issuer URL is not configured.');
+			if (!this.oauthConfig?.enabled) {
+				throw new Error('Passkey sign-in is not configured yet.');
 			}
 
 			const verifier = generateRandomString(48);
+			const state = generateRandomString(32);
+			const redirectUri = `${window.location.origin}/oauth/callback`;
+
 			sessionStorage.setItem('oauth_code_verifier', verifier);
+			sessionStorage.setItem('oauth_state', state);
+			sessionStorage.setItem('oauth_remember_me', String(options?.rememberMe === true));
+			if (options?.redirectTo) {
+				sessionStorage.setItem('oauth_redirect_to', options.redirectTo);
+			} else {
+				sessionStorage.removeItem('oauth_redirect_to');
+			}
 
 			const challenge = await generateChallengeOfVerifier(verifier);
-			const redirectUri = `${window.location.origin}/oauth/callback`;
-			const state = generateRandomString(16);
 
-			const authUrl = `${issuerUrl.replace(/\/$/, '')}/protocol/openid-connect/auth` +
-				`?response_type=code` +
-				`&client_id=${encodeURIComponent(clientId)}` +
-				`&redirect_uri=${encodeURIComponent(redirectUri)}` +
-				`&scope=openid+profile+email` +
-				`&code_challenge=${encodeURIComponent(challenge)}` +
-				`&code_challenge_method=S256` +
-				`&state=${encodeURIComponent(state)}`;
+			const response = await fetch('/api/auth/config', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					state,
+					codeChallenge: challenge,
+					redirectUri,
+					loginHint: options?.loginHint
+				})
+			});
 
-			window.location.href = authUrl;
+			if (!response.ok) {
+				const payload = (await response.json().catch(() => ({}))) as { error?: string };
+				throw new Error(payload.error ?? 'Could not start passkey sign-in.');
+			}
+
+			const { url } = (await response.json()) as { url: string };
+			window.location.href = url;
 		} catch (error) {
 			this.isLoading = false;
-			this.error = error instanceof Error ? error.message : 'Failed to redirect to SSO provider';
+			this.error = error instanceof Error ? error.message : 'Failed to start passkey sign-in';
 		}
 	}
 
-	async completeOauthLogin(code: string) {
+	/** @deprecated Use loginWithPasskey */
+	async loginWithSSO() {
+		return this.loginWithPasskey();
+	}
+
+	async completeOauthLogin(code: string, state?: string | null) {
 		this.isLoading = true;
 		this.error = null;
 		this.errorCode = null;
 
 		try {
+			const expectedState = sessionStorage.getItem('oauth_state');
+			if (!expectedState || !state || expectedState !== state) {
+				throw new Error('Sign-in session expired. Please try again.');
+			}
+
 			const codeVerifier = sessionStorage.getItem('oauth_code_verifier') || '';
+			const rememberMe = sessionStorage.getItem('oauth_remember_me') === 'true';
+			const redirectTo = sessionStorage.getItem('oauth_redirect_to') || undefined;
+
 			sessionStorage.removeItem('oauth_code_verifier');
+			sessionStorage.removeItem('oauth_state');
+			sessionStorage.removeItem('oauth_remember_me');
+			sessionStorage.removeItem('oauth_redirect_to');
 
 			const redirectUri = `${window.location.origin}/oauth/callback`;
 
 			const response = await fetch('/api/auth/token', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ code, codeVerifier, redirectUri })
+				body: JSON.stringify({ code, codeVerifier, redirectUri, rememberMe })
 			});
 
 			const payload = (await response.json()) as LoginResponse;
@@ -208,15 +246,18 @@ class AuthStore {
 			this.identities = payload.identities ?? [];
 			this.isAuthenticated = true;
 			settings.setUser(payload.username);
+			if (payload.username) {
+				saveRememberedLogin(payload.username, rememberMe);
+			}
 			await settings.syncFromAccount();
 			this.startBackgroundSync(client, payload.username, payload.displayName);
 
-			await goto(settings.preferredMailHref());
+			await goto(redirectTo ?? settings.preferredMailHref());
 		} catch (error) {
 			console.error('OAuth complete failed:', error);
 			const code = classifyJmapError(error);
 			this.errorCode = code;
-			this.error = error instanceof Error ? error.message : 'SSO login failed';
+			this.error = error instanceof Error ? error.message : 'Passkey sign-in failed';
 			this.client?.disconnect();
 			this.client = null;
 			this.isAuthenticated = false;

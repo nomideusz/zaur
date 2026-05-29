@@ -27,7 +27,7 @@
 		}
 
 		// Exchange code for session
-		await auth.completeOauthLogin(code);
+		await auth.completeOauthLogin(code, state);
 	});
 </script>
 
@@ -38,6 +38,6 @@
 <div class="flex min-h-dvh items-center justify-center px-4 py-10">
 	<div class="text-center space-y-4">
 		<div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
-		<p class="text-sm text-fg-muted font-medium">Signing in with Single Sign-On...</p>
+		<p class="text-sm text-fg-muted font-medium">Completing sign-in…</p>
 	</div>
 </div>

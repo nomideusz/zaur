@@ -1,4 +1,5 @@
 import { env } from '$env/dynamic/private';
+import { getOidcDiscovery } from '$lib/server/oidc-discovery';
 
 export interface TokenResponse {
 	access_token: string;
@@ -14,8 +15,7 @@ export function decodeJwt(token: string): any {
 		const payload = parts[1];
 		const decoded = Buffer.from(payload, 'base64url').toString('utf8');
 		return JSON.parse(decoded);
-	} catch (e) {
-		console.error('Failed to decode JWT:', e);
+	} catch {
 		return null;
 	}
 }
@@ -26,10 +26,7 @@ export async function exchangeCodeForTokens(
 	redirectUri: string
 ): Promise<TokenResponse> {
 	const clientId = env.OAUTH_CLIENT_ID || 'webmail';
-	const issuerUrl = env.OAUTH_ISSUER_URL;
-	if (!issuerUrl) {
-		throw new Error('OAUTH_ISSUER_URL is not configured');
-	}
+	const { token_endpoint: tokenUrl } = await getOidcDiscovery();
 
 	const params = new URLSearchParams();
 	params.append('grant_type', 'authorization_code');
@@ -38,8 +35,11 @@ export async function exchangeCodeForTokens(
 	params.append('redirect_uri', redirectUri);
 	params.append('code_verifier', codeVerifier);
 
-	const tokenUrl = `${issuerUrl.replace(/\/$/, '')}/protocol/openid-connect/token`;
-	console.log(`Exchanging code at: ${tokenUrl}`);
+	const clientSecret = env.OAUTH_CLIENT_SECRET?.trim();
+	if (clientSecret) {
+		params.append('client_secret', clientSecret);
+	}
+
 	const response = await fetch(tokenUrl, {
 		method: 'POST',
 		headers: {
@@ -56,52 +56,28 @@ export async function exchangeCodeForTokens(
 	return (await response.json()) as TokenResponse;
 }
 
-export async function exchangePasswordForTokens(
-	username: string,
-	password: string
-): Promise<TokenResponse> {
+export async function refreshAccessToken(
+	refreshToken: string
+): Promise<{ accessToken: string; refreshToken: string } | null> {
 	const clientId = env.OAUTH_CLIENT_ID || 'webmail';
-	const issuerUrl = env.OAUTH_ISSUER_URL;
-	if (!issuerUrl) {
-		throw new Error('OAUTH_ISSUER_URL is not configured');
+	let tokenUrl: string;
+
+	try {
+		({ token_endpoint: tokenUrl } = await getOidcDiscovery());
+	} catch {
+		return null;
 	}
-
-	const params = new URLSearchParams();
-	params.append('grant_type', 'password');
-	params.append('client_id', clientId);
-	params.append('username', username);
-	params.append('password', password);
-	params.append('scope', 'openid profile email');
-
-	const tokenUrl = `${issuerUrl.replace(/\/$/, '')}/protocol/openid-connect/token`;
-	console.log(`Exchanging password at: ${tokenUrl}`);
-	const response = await fetch(tokenUrl, {
-		method: 'POST',
-		headers: {
-			'Content-Type': 'application/x-www-form-urlencoded'
-		},
-		body: params.toString()
-	});
-
-	if (!response.ok) {
-		const errText = await response.text();
-		throw new Error(`OAuth password exchange failed (${response.status}): ${errText}`);
-	}
-
-	return (await response.json()) as TokenResponse;
-}
-
-export async function refreshAccessToken(refreshToken: string): Promise<{ accessToken: string; refreshToken: string } | null> {
-	const clientId = env.OAUTH_CLIENT_ID || 'webmail';
-	const issuerUrl = env.OAUTH_ISSUER_URL;
-	if (!issuerUrl) return null;
 
 	const params = new URLSearchParams();
 	params.append('grant_type', 'refresh_token');
 	params.append('client_id', clientId);
 	params.append('refresh_token', refreshToken);
 
-	const tokenUrl = `${issuerUrl.replace(/\/$/, '')}/protocol/openid-connect/token`;
+	const clientSecret = env.OAUTH_CLIENT_SECRET?.trim();
+	if (clientSecret) {
+		params.append('client_secret', clientSecret);
+	}
+
 	try {
 		const response = await fetch(tokenUrl, {
 			method: 'POST',
@@ -121,8 +97,33 @@ export async function refreshAccessToken(refreshToken: string): Promise<{ access
 			accessToken: data.access_token,
 			refreshToken: data.refresh_token || refreshToken
 		};
-	} catch (e) {
-		console.error('Error refreshing token:', e);
+	} catch (error) {
+		console.error('Error refreshing token:', error);
 		return null;
 	}
+}
+
+export async function buildAuthorizationUrl(input: {
+	redirectUri: string;
+	state: string;
+	codeChallenge: string;
+	loginHint?: string;
+}): Promise<string> {
+	const clientId = env.OAUTH_CLIENT_ID || 'webmail';
+	const { authorization_endpoint: authorizationEndpoint } = await getOidcDiscovery();
+
+	const params = new URLSearchParams();
+	params.append('response_type', 'code');
+	params.append('client_id', clientId);
+	params.append('redirect_uri', input.redirectUri);
+	params.append('scope', env.OAUTH_SCOPES?.trim() || 'openid profile email offline_access');
+	params.append('state', input.state);
+	params.append('code_challenge', input.codeChallenge);
+	params.append('code_challenge_method', 'S256');
+
+	if (input.loginHint?.trim()) {
+		params.append('login_hint', input.loginHint.trim());
+	}
+
+	return `${authorizationEndpoint}?${params.toString()}`;
 }
