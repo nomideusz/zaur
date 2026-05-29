@@ -29,6 +29,7 @@ interface LoginResponse {
 	identities?: JMAPIdentity[];
 	error?: string;
 	code?: LoginErrorCode;
+	redirectTo?: string;
 }
 
 class AuthStore {
@@ -205,25 +206,31 @@ class AuthStore {
 
 		try {
 			const expectedState = sessionStorage.getItem('oauth_state');
-			if (!expectedState || !state || expectedState !== state) {
-				throw new Error('Sign-in session expired. Please try again.');
-			}
+			const hasSessionFlow = Boolean(expectedState && state && expectedState === state);
 
 			const codeVerifier = sessionStorage.getItem('oauth_code_verifier') || '';
 			const rememberMe = sessionStorage.getItem('oauth_remember_me') === 'true';
 			const redirectTo = sessionStorage.getItem('oauth_redirect_to') || undefined;
 
-			sessionStorage.removeItem('oauth_code_verifier');
-			sessionStorage.removeItem('oauth_state');
-			sessionStorage.removeItem('oauth_remember_me');
-			sessionStorage.removeItem('oauth_redirect_to');
+			if (hasSessionFlow) {
+				sessionStorage.removeItem('oauth_code_verifier');
+				sessionStorage.removeItem('oauth_state');
+				sessionStorage.removeItem('oauth_remember_me');
+				sessionStorage.removeItem('oauth_redirect_to');
+			}
 
 			const redirectUri = `${window.location.origin}/oauth/callback`;
 
 			const response = await fetch('/api/auth/token', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ code, codeVerifier, redirectUri, rememberMe })
+				body: JSON.stringify({
+					code,
+					codeVerifier: hasSessionFlow ? codeVerifier : undefined,
+					redirectUri,
+					rememberMe: hasSessionFlow ? rememberMe : undefined,
+					state: state ?? undefined
+				})
 			});
 
 			const payload = (await response.json()) as LoginResponse;
@@ -254,7 +261,7 @@ class AuthStore {
 			await settings.syncFromAccount();
 			this.startBackgroundSync(client, payload.username, payload.displayName);
 
-			await goto(redirectTo ?? settings.preferredMailHref());
+			await goto(payload.redirectTo ?? redirectTo ?? settings.preferredMailHref());
 		} catch (error) {
 			console.error('OAuth complete failed:', error);
 			const code = classifyJmapError(error);

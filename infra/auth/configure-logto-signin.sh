@@ -54,8 +54,8 @@ PATCH='{
     "darkPrimaryColor": "#3B82F6"
   },
   "branding": {
-    "logoUrl": "https://webmail.zaur.app/favicon.png",
-    "darkLogoUrl": "https://webmail.zaur.app/favicon.png"
+    "logoUrl": "https://webmail.zaur.app/pwa-192x192.png",
+    "darkLogoUrl": "https://webmail.zaur.app/pwa-192x192.png"
   },
   "mfa": {
     "factors": ["WebAuthn"],

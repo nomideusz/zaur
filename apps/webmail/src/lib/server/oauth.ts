@@ -138,10 +138,11 @@ export async function buildAuthorizationUrl(input: {
 	params.append('code_challenge_method', 'S256');
 	appendResourceParam(params);
 
+	// Always start a fresh Logto interaction — avoids stale sessions tied to deleted OAuth apps.
+	params.append('prompt', 'login');
+
 	if (input.loginHint?.trim()) {
 		params.append('login_hint', input.loginHint.trim());
-		// Don't silently reuse another user's Logto session / passkey on a shared browser.
-		params.append('prompt', 'login');
 	}
 
 	return `${authorizationEndpoint}?${params.toString()}`;

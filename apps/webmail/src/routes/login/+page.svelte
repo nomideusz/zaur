@@ -43,7 +43,10 @@
 		oauthReady = true;
 
 		if (autoStart && urlEmail && auth.oauthConfig?.enabled && !auth.isAuthenticated) {
-			signInWithZaur();
+			window.location.href = `/login/start?${new URLSearchParams({
+				email: urlEmail,
+				...(rememberMe ? { remember: '1' } : {})
+			}).toString()}`;
 		}
 	});
 

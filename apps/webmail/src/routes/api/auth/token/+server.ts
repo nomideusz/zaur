@@ -5,6 +5,7 @@ import { classifyJmapError, loginErrorMessage } from '$lib/jmap/errors';
 import { findIdentityEmail, normalizeEmail } from '$lib/jmap/account';
 import { writeSession } from '$lib/server/session';
 import { exchangeCodeForTokens, decodeJwt } from '$lib/server/oauth';
+import { clearOauthFlowCookies, readOauthFlow } from '$lib/server/oauth-flow';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
@@ -26,6 +27,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		codeVerifier?: string;
 		redirectUri?: string;
 		rememberMe?: boolean;
+		state?: string;
 	};
 	try {
 		body = await request.json();
@@ -33,7 +35,17 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		return json({ error: 'Invalid request body' }, { status: 400 });
 	}
 
-	const { code, codeVerifier, redirectUri } = body;
+	const { code, redirectUri, state } = body;
+	let codeVerifier = body.codeVerifier;
+	let rememberMe = body.rememberMe === true;
+
+	const cookieFlow = readOauthFlow(cookies, state);
+	if (cookieFlow) {
+		codeVerifier = cookieFlow.codeVerifier;
+		rememberMe = cookieFlow.rememberMe;
+		clearOauthFlowCookies(cookies);
+	}
+
 	if (!code || !codeVerifier || !redirectUri) {
 		return json({ error: 'code, codeVerifier, and redirectUri are required' }, { status: 400 });
 	}
@@ -81,7 +93,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 				accessToken: tokens.access_token,
 				refreshToken: tokens.refresh_token
 			},
-			{ remember: body.rememberMe === true }
+			{ remember: rememberMe }
 		);
 
 		return json({
@@ -93,10 +105,22 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 				name: identity.name,
 				email: identity.email,
 				replyTo: identity.replyTo
-			}))
+			})),
+			redirectTo: cookieFlow?.redirectTo
 		});
 	} catch (error) {
 		console.error('[OAuth Login Error]:', error);
+		const raw = error instanceof Error ? error.message : '';
+		if (/invalid client|invalid_client|oidc\.invalid_client/i.test(raw)) {
+			return json(
+				{
+					error:
+						'Sign-in session is outdated. Clear cookies for auth.zaur.app and try again, or use a private window.',
+					code: 'oauth_stale_client'
+				},
+				{ status: 401 }
+			);
+		}
 		const code = classifyJmapError(error);
 		const message = error instanceof Error ? error.message : loginErrorMessage(code, serverUrl);
 		return json({ error: message, code }, { status: 401 });
