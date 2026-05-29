@@ -342,11 +342,12 @@ async function deleteAccountByEmail(email) {
   return deleteAccount(account.id);
 }
 
-async function createUserJmapClient(email, token) {
+async function createUserJmapClient(email, password) {
   const serverUrl = process.env.MAIL_PUBLIC_URL || 'https://mail.zaur.app';
+  const authorization = `Basic ${encodeBasicAuth(email, password)}`;
   const sessionResponse = await fetch(`${serverUrl.replace(/\/$/, '')}/.well-known/jmap`, {
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: authorization,
     },
   });
 
@@ -364,7 +365,7 @@ async function createUserJmapClient(email, token) {
     apiUrl: session.apiUrl,
     accountId,
     headers: {
-      Authorization: `Bearer ${token}`,
+      Authorization: authorization,
       'Content-Type': 'application/json',
       Accept: 'application/json',
     },
@@ -390,8 +391,8 @@ async function userJmapRequest(client, methodCalls) {
   return body;
 }
 
-async function ensureStandardMailboxes(email, token) {
-  const client = await createUserJmapClient(email, token);
+async function ensureStandardMailboxes(email, password) {
+  const client = await createUserJmapClient(email, password);
   const getBody = await userJmapRequest(client, [
     ['Mailbox/get', { accountId: client.accountId }, 'mailboxes'],
   ]);

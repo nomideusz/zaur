@@ -8,7 +8,7 @@ const rateLimit = require('express-rate-limit');
 
 const stalwart = require('./lib/stalwart');
 const invites = require('./lib/invites');
-const keycloak = require('./lib/keycloak');
+const directory = require('./lib/lldap');
 const {
   validateUsername,
   validatePassword,
@@ -176,36 +176,33 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
     }
 
     let accountId = null;
-    let keycloakCreated = false;
+    let directoryCreated = false;
 
     try {
-      // 1. Create Keycloak user first (since Stalwart relies on Keycloak for identity verification)
-      await keycloak.createUser(email, password);
-      keycloakCreated = true;
+      // 1. Create the LLDAP user (single source of truth for the password)
+      await directory.createUser(email, password);
+      directoryCreated = true;
 
-      // 2. Create Stalwart account representation (without credentials, since it's an external directory)
+      // 2. Create Stalwart account representation (credentials live in LLDAP)
       const account = await stalwart.createAccount(
         usernameValidation.username,
         domainId,
       );
       accountId = account.accountId;
 
-      // 3. Obtain Keycloak Bearer token for the new user
-      const userToken = await keycloak.getUserBearerToken(email, password);
-
-      // 4. Provision standard mailboxes in Stalwart using the user's Bearer token
-      await stalwart.ensureStandardMailboxes(email, userToken);
+      // 3. Provision standard mailboxes in Stalwart using the user's own credentials
+      await stalwart.ensureStandardMailboxes(email, password);
 
       if (!invites.markInviteAsUsed(inviteCode, email)) {
         throw new Error('Account was created, but the invitation code could not be marked as used.');
       }
     } catch (err) {
       const cleanupErrors = [];
-      if (keycloakCreated) {
+      if (directoryCreated) {
         try {
-          await keycloak.deleteUser(email);
+          await directory.deleteUser(email);
         } catch (cleanupErr) {
-          cleanupErrors.push(`Keycloak cleanup failed: ${cleanupErr.message}`);
+          cleanupErrors.push(`LLDAP cleanup failed: ${cleanupErr.message}`);
         }
       }
       if (accountId) {
@@ -302,28 +299,28 @@ app.post('/api/admin/invites/cleanup-pending', requireAdmin, (_req, res) => {
 });
 
 async function getProvisioningAudit() {
-  const [mailAccounts, keycloakUsers] = await Promise.all([
+  const [mailAccounts, directoryUsers] = await Promise.all([
     stalwart.listAccounts(),
-    keycloak.listUsers(),
+    directory.listUsers(),
   ]);
 
   const mailEmails = new Set(mailAccounts.map((account) => account.email.toLowerCase()));
   const aliasEmails = new Set(
     mailAccounts.flatMap((account) => account.aliases || []).map((alias) => alias.email.toLowerCase()),
   );
-  const keycloakEmails = new Set(keycloakUsers.map((user) => user.email.toLowerCase()));
+  const directoryEmails = new Set(directoryUsers.map((user) => user.email.toLowerCase()));
 
-  const keycloakOnly = keycloakUsers.filter((user) => !mailEmails.has(user.email) && !aliasEmails.has(user.email));
-  const stalwartOnly = mailAccounts.filter((account) => !keycloakEmails.has(account.email.toLowerCase()));
+  const directoryOnly = directoryUsers.filter((user) => !mailEmails.has(user.email) && !aliasEmails.has(user.email));
+  const stalwartOnly = mailAccounts.filter((account) => !directoryEmails.has(account.email.toLowerCase()));
 
   return {
     counts: {
       stalwartAccounts: mailAccounts.length,
-      keycloakUsers: keycloakUsers.length,
-      keycloakOnly: keycloakOnly.length,
+      directoryUsers: directoryUsers.length,
+      directoryOnly: directoryOnly.length,
       stalwartOnly: stalwartOnly.length,
     },
-    keycloakOnly,
+    directoryOnly,
     stalwartOnly,
   };
 }
@@ -345,14 +342,14 @@ app.post('/api/admin/cleanup-account', requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'Email is required.' });
   }
 
-  if (!['keycloak', 'stalwart', 'both'].includes(target)) {
-    return res.status(400).json({ error: 'Cleanup target must be keycloak, stalwart, or both.' });
+  if (!['directory', 'keycloak', 'stalwart', 'both'].includes(target)) {
+    return res.status(400).json({ error: 'Cleanup target must be directory, stalwart, or both.' });
   }
 
   try {
     const result = {};
-    if (target === 'keycloak' || target === 'both') {
-      result.keycloak = await keycloak.deleteUser(email);
+    if (target === 'directory' || target === 'keycloak' || target === 'both') {
+      result.directory = await directory.deleteUser(email);
     }
     if (target === 'stalwart' || target === 'both') {
       result.stalwart = await stalwart.deleteAccountByEmail(email);
