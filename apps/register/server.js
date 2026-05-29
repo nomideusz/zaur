@@ -362,16 +362,22 @@ app.post('/api/admin/invitations/send', requireAdmin, async (req, res) => {
     );
 
     let emailSent = false;
+    let emailError = null;
     if (inviteMail.isConfigured()) {
-      await inviteMail.sendInvitationEmail({
-        to: recoveryEmail,
-        magicLink: invitation.magicLink,
-        expiresAt: invitation.expiresAt,
-      });
-      emailSent = true;
+      try {
+        await inviteMail.sendInvitationEmail({
+          to: recoveryEmail,
+          magicLink: invitation.magicLink,
+          expiresAt: invitation.expiresAt,
+        });
+        emailSent = true;
+      } catch (err) {
+        emailError = err.message || 'Failed to send invitation email.';
+        console.error('POST /api/admin/invitations/send email:', emailError);
+      }
     }
 
-    res.json({ success: true, invitation, emailSent });
+    res.json({ success: true, invitation, emailSent, emailError });
   } catch (err) {
     console.error('POST /api/admin/invitations/send:', err.message);
     res.status(502).json({ error: err.message });

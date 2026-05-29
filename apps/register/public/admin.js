@@ -344,6 +344,8 @@ document.addEventListener('DOMContentLoaded', () => {
       if (res.ok) {
         if (data.emailSent) {
           generateSuccess.innerHTML = `Invitation email sent to <strong>${escapeHtml(data.invitation.recoveryEmail)}</strong>.`;
+        } else if (data.emailError) {
+          generateSuccess.innerHTML = `Invitation created for <strong>${escapeHtml(data.invitation.recoveryEmail)}</strong>, but email failed (${escapeHtml(data.emailError)}). Copy and send manually:<br><code>${escapeHtml(data.invitation.magicLink)}</code>`;
         } else {
           generateSuccess.innerHTML = `Link created for <strong>${escapeHtml(data.invitation.recoveryEmail)}</strong>. Copy and send manually:<br><code>${escapeHtml(data.invitation.magicLink)}</code>`;
         }

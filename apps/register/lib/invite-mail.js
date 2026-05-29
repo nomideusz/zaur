@@ -12,12 +12,21 @@ function getTransporter() {
   }
 
   if (!transporter) {
-    const port = Number.parseInt(process.env.INVITE_SMTP_PORT || '587', 10);
-    const secure = process.env.INVITE_SMTP_SECURE === 'true' || port === 465;
+    const host = process.env.INVITE_SMTP_HOST.trim();
+    const port = Number.parseInt(process.env.INVITE_SMTP_PORT || '465', 10);
+    const secure =
+      process.env.INVITE_SMTP_SECURE === 'true' ||
+      process.env.INVITE_SMTP_SECURE === '1' ||
+      port === 465;
+
     transporter = nodemailer.createTransport({
-      host: process.env.INVITE_SMTP_HOST.trim(),
+      host,
       port,
       secure,
+      requireTLS: !secure && port === 587,
+      connectionTimeout: 15_000,
+      greetingTimeout: 15_000,
+      socketTimeout: 30_000,
       auth:
         process.env.INVITE_SMTP_USER && process.env.INVITE_SMTP_PASSWORD
           ? {
@@ -25,6 +34,10 @@ function getTransporter() {
               pass: process.env.INVITE_SMTP_PASSWORD,
             }
           : undefined,
+      tls: {
+        servername: host,
+        minVersion: 'TLSv1.2',
+      },
     });
   }
 
