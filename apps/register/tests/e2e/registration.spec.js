@@ -28,13 +28,17 @@ async function adminLogin(request) {
   expect(response.ok()).toBeTruthy();
 }
 
-async function generateInvite(request) {
-  const response = await request.post('/api/admin/invites/generate', {
-    data: { count: 1 },
+async function createInvitation(request, recoveryEmail) {
+  const response = await request.post('/api/admin/invitations/send', {
+    data: { email: recoveryEmail, expiresInHours: 72 },
   });
   expect(response.ok()).toBeTruthy();
   const payload = await response.json();
-  return payload.codes[0];
+  const url = new URL(payload.invitation.magicLink);
+  return {
+    token: url.searchParams.get('token'),
+    email: url.searchParams.get('email'),
+  };
 }
 
 async function captchaAnswer(request) {
@@ -142,12 +146,13 @@ test('registers a mailbox and cleans it up', async ({ request }) => {
   const password = `T3mp-${randomBytes(18).toString('base64url')}`;
 
   try {
-    const inviteCode = await generateInvite(request);
+    const invite = await createInvitation(request, `${username}-recovery@example.com`);
     const registerResponse = await request.post('/api/register', {
       data: {
         username,
         domainId,
-        inviteCode,
+        inviteToken: invite.token,
+        inviteEmail: invite.email,
         password,
         confirmPassword: password,
         captchaAnswer: await captchaAnswer(request),

@@ -150,7 +150,7 @@ class AuthStore {
 
 		try {
 			if (!this.oauthConfig?.enabled) {
-				throw new Error('Passkey sign-in is not configured yet.');
+				throw new Error('Sign-in is not configured yet.');
 			}
 
 			const verifier = generateRandomString(48);
@@ -181,14 +181,14 @@ class AuthStore {
 
 			if (!response.ok) {
 				const payload = (await response.json().catch(() => ({}))) as { error?: string };
-				throw new Error(payload.error ?? 'Could not start passkey sign-in.');
+				throw new Error(payload.error ?? 'Could not start sign-in.');
 			}
 
 			const { url } = (await response.json()) as { url: string };
 			window.location.href = url;
 		} catch (error) {
 			this.isLoading = false;
-			this.error = error instanceof Error ? error.message : 'Failed to start passkey sign-in';
+			this.error = error instanceof Error ? error.message : 'Failed to start sign-in';
 		}
 	}
 

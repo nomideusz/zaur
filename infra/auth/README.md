@@ -45,7 +45,29 @@ Stale Zitadel CapRover apps (`auth-login`, `zitadel-db`) are removed by `caprove
 1. Open **https://auth-admin.zaur.app/console/welcome**
 2. Create the admin account (OSS allows one admin on first launch)
 3. **Sign-in experience** → enable **Passkey sign-in**
-4. **Multi-factor authentication** → enable **Passkeys (WebAuthn)** if you want MFA as well
+4. **Multi-factor authentication** → enable **Passkeys (WebAuthn)** with policy **Prompt at sign-in and sign-up** so new users enroll a passkey after their first password login
+5. Set sign-in identifier to **Email address** (password), not username — register creates users with email only; users sign in with the same email and password they chose at signup
+
+Or apply the same settings via Management API (recommended after redeploys):
+
+```bash
+export LOGTO_ENDPOINT=https://auth.zaur.app
+export LOGTO_M2M_CLIENT_ID=<register-m2m-app-id>
+export LOGTO_M2M_CLIENT_SECRET=<register-m2m-app-secret>
+export LOGTO_API_RESOURCE=https://default.logto.app/api
+./infra/auth/configure-logto-signin.sh
+```
+
+### Custom sign-in UI (BYUI)
+
+To replace Logto’s default sign-in page with a ZAUR-branded experience:
+
+1. Run `./infra/auth/configure-logto-signin.sh` for email sign-in + colors (works on OSS today).
+2. Optional: build the official [Logto experience](https://github.com/logto-io/logto/tree/master/packages/experience) package and deploy with `./infra/auth/deploy-logto-byui.sh`.
+
+**OSS note:** BYUI upload requires object storage configured in Logto (`storage.not_configured` without it). Until then, branding via `configure-logto-signin.sh` is the supported path on self-hosted Logto.
+
+After registration, users are redirected automatically from `register.zaur.app/success` to webmail → Logto (`?auto=1`) to sign in and enroll a passkey.
 
 ## 2. Webmail OIDC application
 
@@ -120,9 +142,29 @@ LOGTO_ENDPOINT=https://auth.zaur.app
 LOGTO_API_RESOURCE=https://default.logto.app/api
 LOGTO_M2M_CLIENT_ID=<m2m-app-id>
 LOGTO_M2M_CLIENT_SECRET=<m2m-app-secret>
+REGISTER_PUBLIC_URL=https://register.zaur.app
 ```
 
 Redeploy register after setting vars. Registration creates users in this order: **LLDAP → Logto → Stalwart**. If Logto vars are unset, signup still works (mailbox only) but webmail passkey login will fail until a Logto user exists.
+
+Logto users are created with **email + password only** (no internal username). The user’s **personal / recovery email** from the magic link is stored in Logto `customData.recoveryEmail` for future account recovery.
+
+### Invitation-only registration (magic links)
+
+When Logto M2M is configured, registration requires a **Logto one-time token** magic link:
+
+1. Admin → `register.zaur.app/admin` → enter email → **Send invitation**
+2. With SMTP configured (`INVITE_SMTP_*`), the link is emailed automatically; otherwise copy the link from the success message
+3. User opens the link, picks username + domain + password
+4. Success page auto-redirects to webmail → Logto for first sign-in + passkey setup
+
+CLI:
+
+```bash
+node apps/register/scripts/send-invitation.js user@gmail.com --hours 72
+```
+
+Set `REGISTRATION_OPEN=true` on the register app to bypass invitations in local dev.
 
 ## 6. Migrate existing users
 

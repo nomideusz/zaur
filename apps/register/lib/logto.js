@@ -98,40 +98,56 @@ async function findUserByEmail(email) {
   return users.find((user) => user.primaryEmail?.toLowerCase() === normalized) || null;
 }
 
-function logtoUsername(email) {
+async function createUser(email, password, options = {}) {
   const normalized = email.toLowerCase();
-  const [local, domain] = normalized.split('@');
-  const sanitize = (part) => part.replace(/[^a-z0-9_]/g, '_');
-  if (!local || !domain) {
-    const fallback = sanitize(normalized.replace('@', '_at_'));
-    return /^[a-z_]/i.test(fallback) ? fallback : `u_${fallback}`;
-  }
-  // Logto usernames must match /^[A-Z_a-z]\w*$/ (no hyphens/dots).
-  const candidate = `${sanitize(local)}_${sanitize(domain)}`;
-  return /^[a-z_]/i.test(candidate) ? candidate : `u_${candidate}`;
-}
-
-async function createUser(email, password) {
-  const normalized = email.toLowerCase();
-  const username = logtoUsername(normalized);
+  const recoveryEmail = options.recoveryEmail?.trim().toLowerCase();
+  const customData =
+    recoveryEmail && recoveryEmail !== normalized ? { recoveryEmail } : undefined;
 
   try {
     await managementRequest('POST', '/api/users', {
       primaryEmail: normalized,
-      username,
       name: normalized.split('@')[0],
       password,
+      ...(customData ? { customData } : {}),
     });
     return true;
   } catch (err) {
     if (/already exists|duplicate|409|already in use/i.test(err.message)) {
       throw new Error('This email is already registered for sign-in.');
     }
-    if (/username.*invalid|invalid_string/i.test(err.message)) {
-      throw new Error('Could not create sign-in account for this email address.');
-    }
     throw err;
   }
+}
+
+async function createOneTimeToken(email, expiresInSec = 72 * 3600) {
+  return managementRequest('POST', '/api/one-time-tokens', {
+    email: email.toLowerCase(),
+    expiresIn: expiresInSec,
+  });
+}
+
+async function verifyOneTimeToken(email, token) {
+  return managementRequest('POST', '/api/one-time-tokens/verify', {
+    email: email.toLowerCase(),
+    token: String(token).trim(),
+  });
+}
+
+async function listOneTimeTokens() {
+  const tokens = await managementRequest('GET', '/api/one-time-tokens?page=1&page_size=100');
+  return Array.isArray(tokens) ? tokens : [];
+}
+
+async function findOneTimeTokens(token) {
+  const cleanToken = String(token || '').trim();
+  const tokens = await listOneTimeTokens();
+  return tokens.filter((item) => item.token === cleanToken);
+}
+
+async function deleteOneTimeToken(id) {
+  await managementRequest('DELETE', `/api/one-time-tokens/${id}`);
+  return true;
 }
 
 async function deleteUser(email) {
@@ -146,4 +162,9 @@ module.exports = {
   createUser,
   deleteUser,
   findUserByEmail,
+  createOneTimeToken,
+  verifyOneTimeToken,
+  listOneTimeTokens,
+  findOneTimeTokens,
+  deleteOneTimeToken,
 };

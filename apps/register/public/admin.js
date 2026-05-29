@@ -11,13 +11,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const statRevoked = document.getElementById('stat-revoked');
 
   const generateForm = document.getElementById('generate-form');
-  const generateCount = document.getElementById('generate-count');
   const generateError = document.getElementById('generate-error');
   const generateSuccess = document.getElementById('generate-success');
 
   const tableFilter = document.getElementById('table-filter');
   const invitesTableBody = document.getElementById('invites-table-body');
-  const cleanupPendingBtn = document.getElementById('cleanup-pending-btn');
   const runAuditBtn = document.getElementById('run-audit-btn');
   const auditError = document.getElementById('audit-error');
   const auditSuccess = document.getElementById('audit-success');
@@ -26,7 +24,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
   let invitesList = [];
 
-  // Check current auth status
+  function showDashboard() {
+    loginContainer.style.display = 'none';
+    dashboardContainer.style.display = 'block';
+    logoutBtn.style.display = 'inline-block';
+    loadInvitations();
+    updateInviteEmailHint();
+  }
+
+  async function updateInviteEmailHint() {
+    const hint = document.getElementById('invite-email-hint');
+    if (!hint) return;
+    try {
+      const res = await fetch('/api/admin/status');
+      const data = await res.json();
+      hint.textContent = data.invitationEmailConfigured
+        ? 'Enter an email address and we’ll email a registration link.'
+        : 'Enter an email address to create a registration link (copy and send manually — SMTP not configured).';
+    } catch {
+      hint.textContent = 'Enter an email address to create a registration link.';
+    }
+  }
   async function checkAuthStatus() {
     try {
       const res = await fetch('/api/admin/status');
@@ -54,14 +72,6 @@ document.addEventListener('DOMContentLoaded', () => {
     logoutBtn.style.display = 'none';
   }
 
-  function showDashboard() {
-    loginContainer.style.display = 'none';
-    dashboardContainer.style.display = 'block';
-    logoutBtn.style.display = 'inline-block';
-    loadInvites();
-  }
-
-  // Handle Login
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     loginError.style.display = 'none';
@@ -98,138 +108,120 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Fetch and display invites
-  async function loadInvites() {
+  async function loadInvitations() {
     try {
-      const res = await fetch('/api/admin/invites');
+      const res = await fetch('/api/admin/invitations');
       if (!res.ok) {
         if (res.status === 401) {
           showLogin();
           return;
         }
-        throw new Error('Failed to load invites.');
+        throw new Error('Failed to load invitations.');
       }
       const data = await res.json();
-      invitesList = data.invites || [];
+      invitesList = data.invitations || [];
       renderStats();
       renderTable(invitesList);
     } catch (err) {
       console.error(err);
-      invitesTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--z-fg-muted); padding: 2rem;">Error loading invite codes.</td></tr>`;
+      invitesTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--z-fg-muted); padding: 2rem;">Error loading invitations.</td></tr>`;
     }
   }
 
   function renderStats() {
     const total = invitesList.length;
-    const unused = invitesList.filter(i => !i.used && !i.revoked && !i.pending).length;
-    const used = invitesList.filter(i => i.used).length;
-    const revoked = invitesList.filter(i => i.revoked).length;
+    const pending = invitesList.filter((item) => item.status === 'sent' || item.status === 'opened').length;
+    const registered = invitesList.filter((item) => item.status === 'registered').length;
+    const inactive = invitesList.filter((item) => ['expired', 'revoked'].includes(item.status)).length;
 
     statTotal.textContent = total;
-    statUnused.textContent = unused;
-    statUsed.textContent = used;
-    statRevoked.textContent = revoked;
+    statUnused.textContent = pending;
+    statUsed.textContent = registered;
+    statRevoked.textContent = inactive;
   }
 
   function renderTable(list) {
     if (list.length === 0) {
-      invitesTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--z-fg-muted); padding: 2rem;">No invite codes found.</td></tr>`;
+      invitesTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--z-fg-muted); padding: 2rem;">No invitations found.</td></tr>`;
       return;
     }
 
     invitesTableBody.innerHTML = '';
-    
-    // Sort invites: newest first
     const sortedList = [...list].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
-    sortedList.forEach(invite => {
+    sortedList.forEach((invite) => {
       const tr = document.createElement('tr');
-      
-      // Code Column with Copy Button
-      const tdCode = document.createElement('td');
-      tdCode.className = 'td-code';
-      tdCode.innerHTML = `
-        <span class="code-text">${escapeHtml(invite.code)}</span>
-        <button class="btn-copy" title="Copy code" data-code="${escapeHtml(invite.code)}">
+
+      const tdEmail = document.createElement('td');
+      tdEmail.className = 'td-code';
+      tdEmail.innerHTML = `
+        <span class="code-text">${escapeHtml(invite.recoveryEmail)}</span>
+        <button class="btn-copy" title="Copy magic link" data-link="${escapeHtml(buildMagicLink(invite))}">
           <svg class="icon-copy" viewBox="0 0 24 24" fill="currentColor"><path d="M7 6V3C7 2.44772 7.44772 2 8 2H20C20.5523 2 21 2.44772 21 3V17C21 17.5523 20.5523 18 20 18H17V21C17 21.5523 16.5523 22 16 22H4C3.44772 22 3 21.5523 3 21V7C3 6.44772 3.44772 6 4 6H7ZM9 6H15V8H9V6ZM17 6V16H19V4H9V6H17ZM5 8V20H15V8H5Z"/></svg>
         </button>
       `;
 
-      // Status Column
       const tdStatus = document.createElement('td');
-      let statusClass = 'badge-unused';
-      let statusText = 'Unused';
-      
-      if (invite.revoked) {
-        statusClass = 'badge-revoked';
-        statusText = 'Revoked';
-      } else if (invite.used) {
-        statusClass = 'badge-used';
-        statusText = 'Used';
-      } else if (invite.pending) {
-        statusClass = 'badge-pending';
-        statusText = 'Pending';
-      }
+      const statusClass = {
+        sent: 'badge-unused',
+        opened: 'badge-pending',
+        registered: 'badge-used',
+        expired: 'badge-revoked',
+        revoked: 'badge-revoked',
+      }[invite.status] || 'badge-unused';
+      tdStatus.innerHTML = `<span class="badge ${statusClass}">${escapeHtml(invite.status)}</span>`;
 
-      tdStatus.innerHTML = `<span class="badge ${statusClass}">${statusText}</span>`;
-
-      // Created At Column
       const tdCreated = document.createElement('td');
-      tdCreated.textContent = formatDate(invite.createdAt);
+      tdCreated.innerHTML = `
+        <div>${formatDate(invite.createdAt)}</div>
+        <div class="used-time">Expires ${formatDate(invite.expiresAt)}</div>
+      `;
 
-      // Used By Column
-      const tdUsed = document.createElement('td');
-      if (invite.used) {
-        tdUsed.innerHTML = `
-          <div class="used-email">${escapeHtml(invite.emailCreated)}</div>
-          <div class="used-time">${formatDate(invite.usedAt)}</div>
-        `;
-      } else if (invite.pending) {
-        tdUsed.innerHTML = `
-          <div class="used-email">${escapeHtml(invite.emailPending)}</div>
-          <div class="used-time">Reserved ${formatDate(invite.pendingAt)}</div>
+      const tdMailbox = document.createElement('td');
+      if (invite.mailboxEmail) {
+        tdMailbox.innerHTML = `
+          <div class="used-email">${escapeHtml(invite.mailboxEmail)}</div>
+          <div class="used-time">${formatDate(invite.consumedAt)}</div>
         `;
       } else {
-        tdUsed.textContent = '—';
-        tdUsed.style.color = 'var(--z-fg-muted)';
+        tdMailbox.textContent = '—';
+        tdMailbox.style.color = 'var(--z-fg-muted)';
       }
 
-      // Actions Column
       const tdActions = document.createElement('td');
-      if (!invite.used && !invite.revoked && !invite.pending) {
+      if (invite.status === 'sent') {
         const revokeBtn = document.createElement('button');
         revokeBtn.className = 'btn btn-danger btn-sm';
         revokeBtn.textContent = 'Revoke';
-        revokeBtn.addEventListener('click', () => revokeInvite(invite.code));
+        revokeBtn.addEventListener('click', () => revokeInvitation(invite.logtoTokenId));
         tdActions.appendChild(revokeBtn);
       } else {
         tdActions.textContent = '—';
         tdActions.style.color = 'var(--z-fg-muted)';
       }
 
-      tr.appendChild(tdCode);
+      tr.appendChild(tdEmail);
       tr.appendChild(tdStatus);
       tr.appendChild(tdCreated);
-      tr.appendChild(tdUsed);
+      tr.appendChild(tdMailbox);
       tr.appendChild(tdActions);
-
       invitesTableBody.appendChild(tr);
     });
 
-    // Attach copy event listeners
-    document.querySelectorAll('.btn-copy').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        const code = btn.getAttribute('data-code');
-        navigator.clipboard.writeText(code).then(() => {
-          // Visual feedback
-          const svg = btn.querySelector('svg');
+    document.querySelectorAll('.btn-copy').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const link = btn.getAttribute('data-link');
+        navigator.clipboard.writeText(link).then(() => {
           btn.classList.add('copied');
           setTimeout(() => btn.classList.remove('copied'), 1500);
-        }).catch(err => {
-          console.error('Could not copy text: ', err);
         });
       });
     });
+  }
+
+  function buildMagicLink(invite) {
+    const params = new URLSearchParams({ token: invite.token, email: invite.recoveryEmail });
+    return `${window.location.origin}/?${params.toString()}`;
   }
 
   // Filter Table
@@ -240,27 +232,13 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const filtered = invitesList.filter(invite => {
-      const codeMatch = invite.code.toLowerCase().includes(term);
-      const emailMatch = invite.emailCreated && invite.emailCreated.toLowerCase().includes(term);
-      return codeMatch || emailMatch;
+    const filtered = invitesList.filter((invite) => {
+      const recoveryMatch = invite.recoveryEmail?.toLowerCase().includes(term);
+      const mailboxMatch = invite.mailboxEmail && invite.mailboxEmail.toLowerCase().includes(term);
+      return recoveryMatch || mailboxMatch;
     });
 
     renderTable(filtered);
-  });
-
-  cleanupPendingBtn.addEventListener('click', async () => {
-    cleanupPendingBtn.disabled = true;
-    try {
-      const res = await fetch('/api/admin/invites/cleanup-pending', { method: 'POST' });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Cleanup failed.');
-      await loadInvites();
-    } catch (err) {
-      alert(err.message || 'Could not clean up stale pending invites.');
-    } finally {
-      cleanupPendingBtn.disabled = false;
-    }
   });
 
   runAuditBtn.addEventListener('click', () => runAudit());
@@ -345,59 +323,64 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Handle Generation
   generateForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     generateError.style.display = 'none';
     generateSuccess.style.display = 'none';
 
-    const count = parseInt(generateCount.value, 10);
+    const email = document.getElementById('invite-email').value.trim();
+    const expiresInHours = parseInt(document.getElementById('invite-expires').value, 10);
     const submitBtn = document.getElementById('generate-submit');
     submitBtn.disabled = true;
 
     try {
-      const res = await fetch('/api/admin/invites/generate', {
+      const res = await fetch('/api/admin/invitations/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ count })
+        body: JSON.stringify({ email, expiresInHours }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        generateSuccess.innerHTML = `Successfully generated <strong>${data.codes.length}</strong> code(s). <br>Newest code: <code>${data.codes[0]}</code>`;
+        if (data.emailSent) {
+          generateSuccess.innerHTML = `Invitation email sent to <strong>${escapeHtml(data.invitation.recoveryEmail)}</strong>.`;
+        } else {
+          generateSuccess.innerHTML = `Link created for <strong>${escapeHtml(data.invitation.recoveryEmail)}</strong>. Copy and send manually:<br><code>${escapeHtml(data.invitation.magicLink)}</code>`;
+        }
         generateSuccess.style.display = 'block';
-        loadInvites();
+        generateForm.reset();
+        document.getElementById('invite-expires').value = '72';
+        loadInvitations();
       } else {
-        showError(data.error || 'Failed to generate codes.', generateError);
+        showError(data.error || 'Failed to create invitation.', generateError);
       }
     } catch (err) {
-      showError('Network error generating codes.', generateError);
+      showError('Network error creating invitation.', generateError);
     } finally {
       submitBtn.disabled = false;
     }
   });
 
-  // Handle Revoke
-  async function revokeInvite(code) {
-    if (!confirm(`Are you sure you want to revoke invite code ${code}?`)) {
+  async function revokeInvitation(logtoTokenId) {
+    if (!confirm('Revoke this invitation link?')) {
       return;
     }
 
     try {
-      const res = await fetch('/api/admin/invites/revoke', {
+      const res = await fetch('/api/admin/invitations/revoke', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code })
+        body: JSON.stringify({ logtoTokenId }),
       });
 
       const data = await res.json();
       if (res.ok) {
-        loadInvites();
+        loadInvitations();
       } else {
-        alert(data.error || 'Failed to revoke code.');
+        alert(data.error || 'Failed to revoke invitation.');
       }
     } catch (err) {
-      alert('Network error revoking code.');
+      alert('Network error revoking invitation.');
     }
   }
 

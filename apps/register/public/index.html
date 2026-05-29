@@ -25,6 +25,16 @@
 
   <main class="flex-auto pv4 pv5-ns">
     <div class="container">
+      <div class="mw7 center mb4" id="invitation-gate" style="display: none;">
+        <div class="register-panel bg-white ba b--light-gray br3 shadow-1 pa4">
+          <h2 class="f4 fw6 near-black mt0 mb2">Invitation required</h2>
+          <p class="f6 mid-gray mt0 mb0" id="invitation-gate-message">
+            Registration is invite-only. Open the magic link sent to your personal email to continue.
+          </p>
+        </div>
+      </div>
+
+      <div id="register-content">
       <div class="mw7 center mb4">
         <h1 class="f3 f2-ns fw6 tracking-tight near-black mb2 mt0">Claim your address</h1>
         <p class="f5 mid-gray mt0">Search for an available username across ZAUR domains.</p>
@@ -47,15 +57,13 @@
 
       <div class="register-panel bg-white ba b--light-gray br3 shadow-1 pa4 mb4 mw7 center" id="register-panel">
         <h2 id="selected-email-label" class="f4 fw6 near-black mt0 mb3">Create account</h2>
+        <p class="f6 mid-gray mt0 mb3" id="invitation-banner" style="display: none;"></p>
         <div class="notification error" id="form-error" role="alert"></div>
 
         <form id="register-form">
           <input type="hidden" id="selected-domain-id" name="domainId">
-
-          <div class="mb3">
-            <label for="invite-code" class="db f7 fw5 mid-gray mb2">Invitation code</label>
-            <input type="text" id="invite-code" name="inviteCode" class="z-input w-100 ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0" placeholder="zaur-XXXX-XXXX-XXXX" required>
-          </div>
+          <input type="hidden" id="invite-token" name="inviteToken">
+          <input type="hidden" id="invite-email" name="inviteEmail">
 
           <div class="mb3">
             <label for="password" class="db f7 fw5 mid-gray mb2">Password</label>
@@ -81,6 +89,7 @@
 
           <button type="submit" class="btn btn-primary w-100 bg-blue white hover-bg-dark-blue f6 pv2 ph3 br2 fw5 bn pointer" id="submit-btn">Create account</button>
         </form>
+      </div>
       </div>
     </div>
   </main>

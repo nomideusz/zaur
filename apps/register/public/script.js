@@ -15,6 +15,17 @@ const strengthFill = document.getElementById('strength-fill');
 const strengthLabel = document.getElementById('strength-label');
 const submitBtn = document.getElementById('submit-btn');
 
+const invitationGate = document.getElementById('invitation-gate');
+const invitationGateMessage = document.getElementById('invitation-gate-message');
+const registerContent = document.getElementById('register-content');
+const invitationBanner = document.getElementById('invitation-banner');
+const inviteTokenInput = document.getElementById('invite-token');
+const inviteEmailInput = document.getElementById('invite-email');
+
+let requiresInvitation = false;
+let invitationReady = false;
+let inviteToken = '';
+let inviteEmail = '';
 let debounceTimer = null;
 let currentUsername = '';
 let selectedResult = null;
@@ -278,7 +289,8 @@ registerForm.addEventListener('submit', async (e) => {
       body: JSON.stringify({
         username: currentUsername,
         domainId: selectedResult.domainId,
-        inviteCode: document.getElementById('invite-code').value,
+        inviteToken: inviteTokenInput.value,
+        inviteEmail: inviteEmailInput.value,
         password: passwordInput.value,
         confirmPassword: confirmPasswordInput.value,
         captchaAnswer: document.getElementById('captcha-answer').value,
@@ -308,7 +320,63 @@ registerForm.addEventListener('submit', async (e) => {
   }
 });
 
+async function initInvitation() {
+  const params = new URLSearchParams(window.location.search);
+  inviteToken = params.get('token')?.trim() || '';
+  inviteEmail = params.get('email')?.trim() || '';
+
+  try {
+    const configRes = await fetch('/api/config');
+    const config = await configRes.json();
+    requiresInvitation = config.requiresInvitation === true;
+
+    if (!requiresInvitation) {
+      invitationReady = true;
+      registerContent.style.display = '';
+      invitationGate.style.display = 'none';
+      return;
+    }
+
+    if (!inviteToken || !inviteEmail) {
+      registerContent.style.display = 'none';
+      invitationGate.style.display = 'block';
+      return;
+    }
+
+    const verifyRes = await fetch(
+      `/api/invitation?${new URLSearchParams({ token: inviteToken, email: inviteEmail }).toString()}`,
+    );
+    const verifyData = await verifyRes.json();
+
+    if (!verifyRes.ok || !verifyData.valid) {
+      registerContent.style.display = 'none';
+      invitationGate.style.display = 'block';
+      invitationGateMessage.textContent =
+        verifyData.error || 'This invitation link is invalid or has expired.';
+      return;
+    }
+
+    invitationReady = true;
+    inviteTokenInput.value = inviteToken;
+    inviteEmailInput.value = inviteEmail;
+    invitationBanner.style.display = 'block';
+    invitationBanner.textContent = `Invited via ${inviteEmail}. Choose your new ZAUR address below.`;
+    registerContent.style.display = '';
+    invitationGate.style.display = 'none';
+  } catch {
+    registerContent.style.display = 'none';
+    invitationGate.style.display = 'block';
+    invitationGateMessage.textContent = 'Unable to verify invitation. Try again later.';
+  }
+}
+
 async function init() {
+  await initInvitation();
+  if (!invitationReady) {
+    resultsContainer.innerHTML = '';
+    return;
+  }
+
   resultsContainer.innerHTML = '<div class="results-empty">Loading domains…</div>';
 
   try {

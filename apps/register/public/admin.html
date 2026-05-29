@@ -39,38 +39,45 @@
 
       <div id="dashboard-container" class="dashboard-container" style="display: none;">
         <div class="page-intro mw7 center mb4">
-          <h1 class="f3 f2-ns fw6 tracking-tight near-black mb2 mt0">Invitation codes</h1>
-          <p class="f5 mid-gray mt0">Generate and manage registration codes.</p>
+          <h1 class="f3 f2-ns fw6 tracking-tight near-black mb2 mt0">Invitations</h1>
+          <p class="f5 mid-gray mt0">Send magic links to personal emails. Users choose their ZAUR address when they register.</p>
         </div>
 
         <div class="stats-row grid gtc2 gtc4-ns g3 mb4 mw7 center">
           <div class="stat-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1">
-            <span class="stat-label f7 fw6 ttu tracked gray">Total codes</span>
+            <span class="stat-label f7 fw6 ttu tracked gray">Total sent</span>
             <span class="stat-value f2 fw6 near-black lh-solid" id="stat-total">0</span>
           </div>
           <div class="stat-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1">
-            <span class="stat-label f7 fw6 ttu tracked gray">Unused</span>
+            <span class="stat-label f7 fw6 ttu tracked gray">Pending</span>
             <span class="stat-value f2 fw6 green lh-solid" id="stat-unused">0</span>
           </div>
           <div class="stat-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1">
-            <span class="stat-label f7 fw6 ttu tracked gray">Used</span>
+            <span class="stat-label f7 fw6 ttu tracked gray">Registered</span>
             <span class="stat-value f2 fw6 orange lh-solid" id="stat-used">0</span>
           </div>
           <div class="stat-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1">
-            <span class="stat-label f7 fw6 ttu tracked gray">Revoked</span>
+            <span class="stat-label f7 fw6 ttu tracked gray">Expired / revoked</span>
             <span class="stat-value f2 fw6 red lh-solid" id="stat-revoked">0</span>
           </div>
         </div>
 
         <div class="register-panel bg-white ba b--light-gray br3 shadow-1 pa4 mb4 mw7 center visible">
-          <h3 class="f4 fw6 near-black mt0 mb3">Generate codes</h3>
+          <h3 class="f4 fw6 near-black mt0 mb2">Send invitation</h3>
+          <p class="f6 mid-gray mt0 mb3" id="invite-email-hint">Enter an email address and we’ll send a registration link.</p>
           <div class="notification error" id="generate-error" role="alert" style="display: none;"></div>
           <div class="notification success" id="generate-success" role="alert" style="display: none;"></div>
-          <form id="generate-form" class="flex flex-column flex-row-m items-stretch items-end-m g3">
-            <div class="mb0-m flex-auto">
-              <input type="number" id="generate-count" name="count" class="z-input w-100 ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0" min="1" max="100" value="5" placeholder="Number of codes" required>
+          <form id="generate-form" class="flex flex-column g3">
+            <div>
+              <label for="invite-email" class="db f7 fw5 mid-gray mb2">Email address</label>
+              <input type="email" id="invite-email" name="email" class="z-input w-100 ba b--light-gray br2 bg-white near-black f6 pv3 ph3 outline-0" placeholder="user@gmail.com" autocomplete="email" required autofocus>
             </div>
-            <button type="submit" class="btn btn-primary bg-blue white hover-bg-dark-blue f6 pv2 ph3 br2 fw5 bn pointer" id="generate-submit">Generate</button>
+            <details class="f6 mid-gray">
+              <summary class="pointer mb2">Advanced options</summary>
+              <label for="invite-expires" class="db f7 fw5 mid-gray mb2">Link valid for (hours)</label>
+              <input type="number" id="invite-expires" name="expiresInHours" class="z-input w-100 ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0" min="1" max="720" value="72">
+            </details>
+            <button type="submit" class="btn btn-primary bg-blue white hover-bg-dark-blue f6 pv3 ph3 br2 fw5 bn pointer w-100" id="generate-submit">Send invitation</button>
           </form>
         </div>
 
@@ -90,21 +97,20 @@
 
         <div class="register-panel bg-white ba b--light-gray br3 shadow-1 pa4 mb4 mw7 center visible">
           <div class="flex items-center justify-between mb3 g2">
-            <h3 class="f4 fw6 near-black mt0 mb0">Manage codes</h3>
-            <button type="button" class="btn btn-ghost bg-near-white hover-bg-light-gray mid-gray hover-near-black f6 pv2 ph3 br2 ba b--light-gray pointer btn-sm" id="cleanup-pending-btn">Clear stale pending</button>
+            <h3 class="f4 fw6 near-black mt0 mb0">Sent invitations</h3>
           </div>
           <div class="mb3">
-            <input type="text" id="table-filter" class="search-input z-input w-100 ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0" placeholder="Filter codes or users…" autocomplete="off">
+            <input type="text" id="table-filter" class="search-input z-input w-100 ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0" placeholder="Filter by recovery or mailbox email…" autocomplete="off">
           </div>
 
           <div class="overflow-x-auto ba b--light-gray br3">
             <table class="invites-table collapse w-100 tl f6 bg-white" id="invites-table">
               <thead>
                 <tr class="bg-near-white">
-                  <th class="pv3 ph4 f7 fw6 ttu tracked gray bb b--light-gray">Code</th>
+                  <th class="pv3 ph4 f7 fw6 ttu tracked gray bb b--light-gray">Recovery email</th>
                   <th class="pv3 ph4 f7 fw6 ttu tracked gray bb b--light-gray">Status</th>
-                  <th class="pv3 ph4 f7 fw6 ttu tracked gray bb b--light-gray">Created</th>
-                  <th class="pv3 ph4 f7 fw6 ttu tracked gray bb b--light-gray">Used by</th>
+                  <th class="pv3 ph4 f7 fw6 ttu tracked gray bb b--light-gray">Sent</th>
+                  <th class="pv3 ph4 f7 fw6 ttu tracked gray bb b--light-gray">Mailbox</th>
                   <th class="pv3 ph4 f7 fw6 ttu tracked gray bb b--light-gray">Actions</th>
                 </tr>
               </thead>

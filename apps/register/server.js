@@ -7,7 +7,8 @@ const FileStore = require('session-file-store')(session);
 const rateLimit = require('express-rate-limit');
 
 const stalwart = require('./lib/stalwart');
-const invites = require('./lib/invites');
+const invitations = require('./lib/invitations');
+const inviteMail = require('./lib/invite-mail');
 const directory = require('./lib/lldap');
 const logto = require('./lib/logto');
 const {
@@ -95,7 +96,31 @@ app.get('/api/config', (_req, res) => {
   res.json({
     webmailUrl: process.env.WEBMAIL_URL || 'https://webmail.zaur.app',
     mailHost: process.env.MAIL_HOST || 'mail.zaur.app',
+    requiresInvitation: invitations.requiresInvitation(),
   });
+});
+
+app.get('/api/invitation', async (req, res) => {
+  const token = String(req.query.token || '').trim();
+  const email = String(req.query.email || '').trim();
+
+  if (!token || !email) {
+    return res.status(400).json({ valid: false, error: 'Invitation link is incomplete.' });
+  }
+
+  try {
+    const result = await invitations.validateInvitation(email, token);
+    if (!result.valid) {
+      return res.status(400).json(result);
+    }
+    return res.json({
+      valid: true,
+      recoveryEmail: email.toLowerCase(),
+    });
+  } catch (err) {
+    console.error('GET /api/invitation:', err.message);
+    return res.status(502).json({ valid: false, error: 'Unable to verify invitation.' });
+  }
 });
 
 app.get('/api/domains', async (_req, res) => {
@@ -130,11 +155,25 @@ app.post('/api/check-username', checkUsernameLimiter, async (req, res) => {
 });
 
 app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (req, res) => {
-  const { username, domainId, inviteCode, password, confirmPassword, captchaAnswer } = req.body;
+  const {
+    username,
+    domainId,
+    inviteToken,
+    inviteEmail,
+    password,
+    confirmPassword,
+    captchaAnswer,
+  } = req.body;
 
-  const inviteValidation = invites.validateInvite(inviteCode);
-  if (!inviteValidation.valid) {
-    return res.status(400).json({ error: inviteValidation.error });
+  let recoveryEmail = null;
+  if (invitations.requiresInvitation()) {
+    const token = String(inviteToken || '').trim();
+    const email = String(inviteEmail || '').trim();
+    const inviteValidation = await invitations.validateInvitation(email, token);
+    if (!inviteValidation.valid) {
+      return res.status(400).json({ error: inviteValidation.error });
+    }
+    recoveryEmail = email.toLowerCase();
   }
 
   const usernameValidation = validateUsername(username);
@@ -171,7 +210,9 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
       return res.status(409).json({ error: 'This email address is no longer available.' });
     }
 
-    const inviteReservation = invites.reserveInvite(inviteCode, email);
+    const inviteReservation = recoveryEmail
+      ? await invitations.validateInvitation(recoveryEmail, inviteToken)
+      : { valid: true };
     if (!inviteReservation.valid) {
       return res.status(409).json({ error: inviteReservation.error });
     }
@@ -187,7 +228,7 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
 
       // 2. Create matching Logto user for webmail passkey / OIDC sign-in
       if (logto.isConfigured()) {
-        await logto.createUser(email, password);
+        await logto.createUser(email, password, { recoveryEmail });
         logtoCreated = true;
       }
 
@@ -202,8 +243,12 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
       //    which is unavailable while Logto OIDC is Stalwart's default Bearer directory)
       await stalwart.ensureStandardMailboxes(accountId);
 
-      if (!invites.markInviteAsUsed(inviteCode, email)) {
-        throw new Error('Account was created, but the invitation code could not be marked as used.');
+      if (recoveryEmail) {
+        const consumed = await invitations.consumeInvitation(recoveryEmail, inviteToken);
+        if (!consumed.valid) {
+          throw new Error(consumed.error || 'Invitation could not be confirmed.');
+        }
+        invitations.markAuditMailbox(recoveryEmail, email);
       }
     } catch (err) {
       const cleanupErrors = [];
@@ -229,10 +274,6 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
         }
       }
 
-      if (!cleanupErrors.length) {
-        invites.releaseInviteReservation(inviteCode);
-      }
-
       if (cleanupErrors.length) {
         console.error('Registration cleanup errors:', cleanupErrors.join('; '));
       }
@@ -245,6 +286,7 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
     res.json({
       success: true,
       email,
+      recoveryEmail,
       webmailUrl: process.env.WEBMAIL_URL || 'https://webmail.zaur.app',
       mailHost: process.env.MAIL_HOST || 'mail.zaur.app',
     });
@@ -291,26 +333,62 @@ app.get('/api/admin/status', (req, res) => {
   const adminEnabled = !!process.env.ADMIN_PASSWORD;
   res.json({
     enabled: adminEnabled,
-    authenticated: adminEnabled && !!req.session.isAdmin
+    authenticated: adminEnabled && !!req.session.isAdmin,
+    invitationEmailConfigured: inviteMail.isConfigured(),
   });
 });
 
-app.get('/api/admin/invites', requireAdmin, (req, res) => {
+app.get('/api/admin/invitations', requireAdmin, async (_req, res) => {
   try {
-    invites.cleanupPendingReservations();
-    const list = invites.readInvites();
-    res.json({ invites: list });
+    const list = await invitations.listInvitations();
+    res.json({ invitations: list });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-app.post('/api/admin/invites/cleanup-pending', requireAdmin, (_req, res) => {
+app.post('/api/admin/invitations/send', requireAdmin, async (req, res) => {
+  const recoveryEmail = String(req.body.email || '').trim();
+  const expiresInHours = Number.parseInt(req.body.expiresInHours || '72', 10);
+
+  if (!invitations.isValidEmail(recoveryEmail)) {
+    return res.status(400).json({ error: 'A valid recovery email is required.' });
+  }
+
   try {
-    const changed = invites.cleanupPendingReservations();
-    res.json({ success: true, changed });
+    const invitation = await invitations.createInvitation(
+      recoveryEmail,
+      Math.max(3600, expiresInHours * 3600),
+    );
+
+    let emailSent = false;
+    if (inviteMail.isConfigured()) {
+      await inviteMail.sendInvitationEmail({
+        to: recoveryEmail,
+        magicLink: invitation.magicLink,
+        expiresAt: invitation.expiresAt,
+      });
+      emailSent = true;
+    }
+
+    res.json({ success: true, invitation, emailSent });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error('POST /api/admin/invitations/send:', err.message);
+    res.status(502).json({ error: err.message });
+  }
+});
+
+app.post('/api/admin/invitations/revoke', requireAdmin, async (req, res) => {
+  const logtoTokenId = String(req.body.logtoTokenId || '').trim();
+  if (!logtoTokenId) {
+    return res.status(400).json({ error: 'Invitation id is required.' });
+  }
+
+  try {
+    await invitations.revokeInvitation(logtoTokenId);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(502).json({ error: err.message });
   }
 });
 
@@ -379,69 +457,6 @@ app.post('/api/admin/cleanup-account', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error('POST /api/admin/cleanup-account:', err.message);
     res.status(502).json({ error: err.message });
-  }
-});
-
-app.post('/api/admin/invites/generate', requireAdmin, (req, res) => {
-  const count = parseInt(req.body.count || '1', 10);
-  if (isNaN(count) || count <= 0) {
-    return res.status(400).json({ error: 'Invalid count.' });
-  }
-
-  try {
-    const currentInvites = invites.readInvites();
-    const newCodes = [];
-
-    const generateRandomCode = () => {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-      const segment = () => Array.from({ length: 4 }, () => chars[Math.floor(Math.random() * chars.length)]).join('');
-      return `zaur-${segment()}-${segment()}-${segment()}`;
-    };
-
-    for (let i = 0; i < count; i++) {
-      const code = generateRandomCode();
-      const codeObj = {
-        code,
-        used: false,
-        usedAt: null,
-        emailCreated: null,
-        createdAt: new Date().toISOString(),
-        revoked: false,
-      };
-      currentInvites.push(codeObj);
-      newCodes.push(codeObj);
-    }
-
-    invites.writeInvites(currentInvites);
-    res.json({ success: true, codes: newCodes.map(c => c.code) });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-app.post('/api/admin/invites/revoke', requireAdmin, (req, res) => {
-  const { code } = req.body;
-  if (!code) {
-    return res.status(400).json({ error: 'Code is required.' });
-  }
-
-  try {
-    const list = invites.readInvites();
-    const found = list.find((c) => c.code === code.trim());
-
-    if (!found) {
-      return res.status(404).json({ error: 'Invite code not found.' });
-    }
-
-    if (found.used) {
-      return res.status(400).json({ error: 'Invite code has already been used and cannot be revoked.' });
-    }
-
-    found.revoked = true;
-    invites.writeInvites(list);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
   }
 });
 

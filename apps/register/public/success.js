@@ -13,12 +13,22 @@ async function init() {
 
     document.getElementById('webmail-url').href = webmailUrl;
     document.getElementById('webmail-url').textContent = webmailUrl;
-    document.getElementById('webmail-btn').href = `${webmailUrl}/login?email=${encodeURIComponent(email)}`;
     document.getElementById('header-webmail-link').href = webmailUrl;
     document.getElementById('imap-host').textContent = mailHost;
     document.getElementById('smtp-host').textContent = mailHost;
+
+    const loginParams = new URLSearchParams({ email, welcome: '1', auto: '1' });
+    const loginUrl = `${webmailUrl}/login?${loginParams.toString()}`;
+    document.getElementById('webmail-btn').href = loginUrl;
+
+    document.getElementById('redirect-status').textContent = 'Taking you to sign in…';
+    window.setTimeout(() => {
+      window.location.href = loginUrl;
+    }, 1200);
   } catch (err) {
     console.error('Failed to load register config:', err);
+    document.getElementById('redirect-status').textContent =
+      'Open mail below to sign in with your new address and password.';
   }
 }
 
