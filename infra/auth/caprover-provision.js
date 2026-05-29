@@ -4,9 +4,10 @@
  *   docker cp caprover-provision.js captain-captain:/captain/data/
  *   docker exec captain-captain node /captain/data/caprover-provision.js
  *
- * CapRover app `auth` → auth.zaur.app (Zitadel API + custom nginx for login UI)
- * CapRover app `auth-login` → internal (Zitadel Login v2)
- * CapRover app `zitadel-db` → internal (Postgres)
+ * CapRover apps:
+ *   auth-db     → Postgres for Logto
+ *   auth        → Logto OIDC + sign-in @ auth.zaur.app (port 3001)
+ *   auth-admin  → nginx proxy to Logto admin console @ auth-admin.zaur.app (port 3002)
  */
 const fs = require('fs');
 const crypto = require('crypto');
@@ -23,21 +24,16 @@ const um = UserManagerProvider.get('captain');
 um.datastore.setEncryptionSalt(salt);
 
 const NODE_ID = 'xad2vqynt8qz6mmq8t7ekq0j6';
-const DOMAIN = 'auth.zaur.app';
-const BOOTSTRAP_VOLUME = 'zitadel-bootstrap';
+const ENDPOINT = 'https://auth.zaur.app';
+const ADMIN_ENDPOINT = 'https://auth-admin.zaur.app';
+const AUTH_NGINX_PATH = '/captain/data/auth-caprover-nginx.ejs';
 
 function randomSecret(bytes = 24) {
 	return crypto.randomBytes(bytes).toString('base64url');
 }
 
-function masterKey() {
-	return crypto.randomBytes(16).toString('hex');
-}
-
 const secrets = {
-	postgresPassword: randomSecret(18),
-	zitadelMasterKey: masterKey(),
-	zitadelAdminPassword: 'ZaurIdp2026!'
+	postgresPassword: randomSecret(18)
 };
 
 const store = um.datastore.getAppsDataStore();
@@ -52,7 +48,16 @@ async function getAppOrNull(appName) {
 
 async function ensureApp(
 	appName,
-	{ hasPersistentData, notExposeAsWebApp, containerHttpPort, envVars, volumes, customNginxConfig = '' }
+	{
+		hasPersistentData,
+		notExposeAsWebApp,
+		containerHttpPort,
+		envVars,
+		volumes,
+		customNginxConfig = '',
+		websocketSupport = false,
+		forceSsl = false
+	}
 ) {
 	let current = await getAppOrNull(appName);
 	if (!current) {
@@ -78,15 +83,15 @@ async function ensureApp(
 		notExposeAsWebApp,
 		containerHttpPort,
 		current.httpAuth,
-		current.forceSsl || false,
+		forceSsl || current.forceSsl || false,
 		current.ports || [],
 		current.repoInfo || { repo: '', branch: '', user: '', password: '' },
 		um.authenticator,
-		customNginxConfig || current.customNginxConfig || '',
+		customNginxConfig,
 		current.redirectDomain || '',
 		current.preDeployFunction || '',
 		current.serviceUpdateOverride || '',
-		current.websocketSupport || false,
+		websocketSupport,
 		tokenConfig
 	);
 
@@ -95,84 +100,79 @@ async function ensureApp(
 	return updated.appDeployTokenConfig?.appDeployToken;
 }
 
-const SECRETS_PATH = '/captain/data/zaur-zitadel-secrets.json';
+const SECRETS_PATH = '/captain/data/zaur-auth-secrets.json';
 if (fs.existsSync(SECRETS_PATH)) {
 	const saved = JSON.parse(fs.readFileSync(SECRETS_PATH, 'utf8'));
 	if (saved.postgresPassword) secrets.postgresPassword = saved.postgresPassword;
-	if (saved.zitadelMasterKey) secrets.zitadelMasterKey = saved.zitadelMasterKey;
-	// Do not reuse admin password — must satisfy Zitadel complexity on first instance.
 	console.log('Reusing secrets from', SECRETS_PATH);
 }
 
+async function deleteAppIfExists(appName) {
+	const current = await getAppOrNull(appName);
+	if (!current) return;
+	console.log(`Deleting stale app ${appName}...`);
+	await store.deleteAppDefinition(appName);
+}
+
+const STALE_APPS = ['auth-login', 'zitadel-db'];
+
 (async () => {
-	const dbToken = await ensureApp('zitadel-db', {
+	for (const appName of STALE_APPS) {
+		await deleteAppIfExists(appName);
+	}
+
+	const dbToken = await ensureApp('auth-db', {
 		hasPersistentData: true,
 		notExposeAsWebApp: true,
 		containerHttpPort: 80,
-		volumes: [{ containerPath: '/var/lib/postgresql/data', volumeName: 'zitadel-db-data' }],
+		volumes: [{ containerPath: '/var/lib/postgresql/data', volumeName: 'auth-db-data' }],
 		envVars: [
 			{ key: 'POSTGRES_USER', value: 'postgres' },
 			{ key: 'POSTGRES_PASSWORD', value: secrets.postgresPassword },
-			{ key: 'POSTGRES_DB', value: 'zitadel' }
+			{ key: 'POSTGRES_DB', value: 'logto' }
 		]
 	});
 
-	const dsn = `postgresql://postgres:${encodeURIComponent(secrets.postgresPassword)}@srv-captain--zitadel-db:5432/zitadel?sslmode=disable`;
-	const loginBase = `https://${DOMAIN}/ui/v2/login`;
-	const adminLogin = `zitadel-admin@zitadel.${DOMAIN}`;
+	const dbUrl = `postgresql://postgres:${encodeURIComponent(secrets.postgresPassword)}@srv-captain--auth-db:5432/logto`;
+
+	const authNginxConfig = fs.existsSync(AUTH_NGINX_PATH)
+		? fs.readFileSync(AUTH_NGINX_PATH, 'utf8')
+		: '';
 
 	const authToken = await ensureApp('auth', {
-		hasPersistentData: true,
+		hasPersistentData: false,
 		notExposeAsWebApp: false,
-		containerHttpPort: 8080,
-		customNginxConfig: '',
-		volumes: [{ containerPath: '/zitadel/bootstrap', volumeName: BOOTSTRAP_VOLUME }],
+		containerHttpPort: 3001,
+		customNginxConfig: authNginxConfig,
+		websocketSupport: true,
+		forceSsl: false,
+		volumes: [],
 		envVars: [
-			{ key: 'ZITADEL_MASTERKEY', value: secrets.zitadelMasterKey },
-			{ key: 'ZITADEL_PORT', value: '8080' },
-			{ key: 'ZITADEL_EXTERNALDOMAIN', value: DOMAIN },
-			{ key: 'ZITADEL_EXTERNALPORT', value: '443' },
-			{ key: 'ZITADEL_EXTERNALSECURE', value: 'true' },
-			{ key: 'ZITADEL_TLS_ENABLED', value: 'false' },
-			{ key: 'ZITADEL_DATABASE_POSTGRES_DSN', value: dsn },
-			{ key: 'ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORDCHANGEREQUIRED', value: 'false' },
-			{ key: 'ZITADEL_FIRSTINSTANCE_ORG_HUMAN_USERNAME', value: 'zitadel-admin' },
-			{ key: 'ZITADEL_FIRSTINSTANCE_ORG_HUMAN_PASSWORD', value: secrets.zitadelAdminPassword },
-			{ key: 'ZITADEL_FIRSTINSTANCE_ORG_HUMAN_EMAIL_ADDRESS', value: adminLogin },
-			{ key: 'ZITADEL_FIRSTINSTANCE_ORG_HUMAN_EMAIL_VERIFIED', value: 'true' },
-			{ key: 'ZITADEL_FIRSTINSTANCE_LOGINCLIENTPATPATH', value: '/zitadel/bootstrap/login-client.pat' },
-			{
-				key: 'ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_USERNAME',
-				value: 'login-client'
-			},
-			{
-				key: 'ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_MACHINE_NAME',
-				value: 'Automatically Initialized IAM_LOGIN_CLIENT'
-			},
-			{
-				key: 'ZITADEL_FIRSTINSTANCE_ORG_LOGINCLIENT_PAT_EXPIRATIONDATE',
-				value: '2099-01-01T00:00:00Z'
-			},
-			{ key: 'ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_REQUIRED', value: 'true' },
-			{ key: 'ZITADEL_DEFAULTINSTANCE_FEATURES_LOGINV2_BASEURI', value: `${loginBase}/` },
-			{ key: 'ZITADEL_OIDC_DEFAULTLOGINURLV2', value: `${loginBase}/login?authRequest=` },
-			{ key: 'ZITADEL_OIDC_DEFAULTLOGOUTURLV2', value: `${loginBase}/logout?post_logout_redirect=` },
-			{ key: 'ZITADEL_SAML_DEFAULTLOGINURLV2', value: `${loginBase}/login?samlRequest=` },
-			{ key: 'ZITADEL_LOGSTORE_ACCESS_STDOUT_ENABLED', value: 'true' }
+			{ key: 'TRUST_PROXY_HEADER', value: '1' },
+			{ key: 'PORT', value: '3001' },
+			{ key: 'ADMIN_PORT', value: '3002' },
+			{ key: 'ENDPOINT', value: ENDPOINT },
+			{ key: 'ADMIN_ENDPOINT', value: ADMIN_ENDPOINT },
+			{ key: 'DB_URL', value: dbUrl }
 		]
 	});
 
-	const loginToken = await ensureApp('auth-login', {
+	// CapRover only sets hasPersistentData at register time; clear stale Zitadel volume metadata.
+	const authDef = await store.getAppDefinition('auth');
+	if (authDef.hasPersistentData || (authDef.volumes && authDef.volumes.length > 0)) {
+		authDef.hasPersistentData = false;
+		authDef.volumes = [];
+		await store.saveApp('auth', authDef);
+		console.log('Cleared stale Zitadel persistent volume from auth app');
+	}
+
+	const adminToken = await ensureApp('auth-admin', {
 		hasPersistentData: false,
-		notExposeAsWebApp: true,
-		containerHttpPort: 3000,
-		volumes: [{ containerPath: '/zitadel/bootstrap', volumeName: BOOTSTRAP_VOLUME }],
-		envVars: [
-			{ key: 'ZITADEL_API_URL', value: 'http://srv-captain--auth:8080' },
-			{ key: 'NEXT_PUBLIC_BASE_PATH', value: '/ui/v2/login' },
-			{ key: 'ZITADEL_SERVICE_USER_TOKEN_FILE', value: '/zitadel/bootstrap/login-client.pat' },
-			{ key: 'CUSTOM_REQUEST_HEADERS', value: `Host:${DOMAIN},X-Forwarded-Proto:https` }
-		]
+		notExposeAsWebApp: false,
+		containerHttpPort: 80,
+		websocketSupport: true,
+		forceSsl: false,
+		envVars: []
 	});
 
 	fs.writeFileSync(
@@ -180,10 +180,11 @@ if (fs.existsSync(SECRETS_PATH)) {
 		JSON.stringify(
 			{
 				...secrets,
-				adminLogin,
-				deployTokens: { 'zitadel-db': dbToken, auth: authToken, 'auth-login': loginToken },
-				dsn,
-				domain: DOMAIN
+				dbUrl,
+				endpoint: ENDPOINT,
+				adminEndpoint: ADMIN_ENDPOINT,
+				oidcIssuer: `${ENDPOINT}/oidc`,
+				deployTokens: { 'auth-db': dbToken, auth: authToken, 'auth-admin': adminToken }
 			},
 			null,
 			2
@@ -192,7 +193,14 @@ if (fs.existsSync(SECRETS_PATH)) {
 	);
 
 	console.log('Saved', SECRETS_PATH);
-	console.log(JSON.stringify({ dbToken, authToken, loginToken, domain: DOMAIN, adminLogin }, null, 2));
+	console.log(
+		JSON.stringify(
+			{ dbToken, authToken, adminToken, endpoint: ENDPOINT, adminEndpoint: ADMIN_ENDPOINT },
+			null,
+			2
+		)
+	);
+
 	process.exit(0);
 })().catch((err) => {
 	console.error(err);

@@ -1,6 +1,8 @@
-FROM ghcr.io/zitadel/zitadel:v4.13.0
+FROM svhd/logto:1.40.1
 
-EXPOSE 8080
+ENV TRUST_PROXY_HEADER=1
 
-# CapRover terminates TLS; ZITADEL_MASTERKEY and DSN come from env.
-CMD ["start-from-init", "--masterkeyFromEnv", "--tlsMode", "disabled"]
+EXPOSE 3001 3002
+
+ENTRYPOINT ["sh", "-c"]
+CMD ["npm run cli db seed -- --swe && CI=true npm run alteration deploy latest && cd packages/core && NODE_ENV=production node ."]

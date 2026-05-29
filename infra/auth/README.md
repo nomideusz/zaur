@@ -1,62 +1,72 @@
-# ZAUR identity (Zitadel + passkeys)
+# ZAUR identity (Logto + passkeys)
 
-Passkey-first sign-in for [webmail](https://webmail.zaur.app) uses **Zitadel** as the OIDC provider. Stalwart validates access tokens for JMAP; LLDAP remains the directory for mailbox passwords and app passwords (Thunderbird / Apple Mail).
+Passkey-first sign-in for [webmail](https://webmail.zaur.app) uses **Logto** as the OIDC provider. Stalwart validates access tokens for JMAP; LLDAP remains the directory for mailbox passwords and app passwords (Thunderbird / Apple Mail).
 
 ## Architecture
 
 ```
-Browser → webmail (PKCE) → Zitadel @ auth.zaur.app (passkeys)
+Browser → webmail (PKCE) → Logto @ auth.zaur.app (passkeys)
 webmail session → OIDC refresh token (encrypted, no mailbox password)
 webmail → Stalwart JMAP (Bearer access token)
 Thunderbird → Stalwart app password (later / settings UI)
 ```
 
-## 1. Deploy Zitadel on CapRover
+Logto runs as a single container (OIDC on port 3001, admin console on 3002). CapRover exposes:
 
-Use the upstream compose pack as reference: [Zitadel Docker Compose docs](https://zitadel.com/docs/self-hosting/deploy/compose).
+| App | URL | Purpose |
+|-----|-----|---------|
+| `auth` | `https://auth.zaur.app` | Logto OIDC + sign-in (do **not** open `/` or `/console` here) |
+| `auth-admin` | `https://auth-admin.zaur.app` | Admin console — **open `/console/welcome` here** |
+| `auth-db` | internal | Postgres 17 |
 
-Recommended CapRover apps:
+## Deploy on CapRover
 
-| App | Image | Notes |
-|-----|-------|-------|
-| `zitadel-db` | `postgres:17-alpine` | Persistent volume on `/var/lib/postgresql/data` |
-| `zitadel` | `ghcr.io/zitadel/zitadel:latest` | HTTP on 8080 behind CapRover HTTPS |
-
-Minimum env (adjust for production):
-
-```env
-ZITADEL_MASTERKEY=<32-character-secret>
-ZITADEL_EXTERNALDOMAIN=auth.zaur.app
-ZITADEL_EXTERNALSECURE=true
-ZITADEL_TLS_ENABLED=false
-ZITADEL_DATABASE_POSTGRES_HOST=srv-captain--zitadel-db
-ZITADEL_DATABASE_POSTGRES_PORT=5432
-ZITADEL_DATABASE_POSTGRES_DATABASE=zitadel
-ZITADEL_DATABASE_POSTGRES_USER_USERNAME=zitadel
-ZITADEL_DATABASE_POSTGRES_USER_PASSWORD=<db-password>
-ZITADEL_DATABASE_POSTGRES_USER_SSL_MODE=disable
+```bash
+./infra/deploy/reset-logto.sh    # wipe broken state (optional)
+./infra/deploy/deploy-logto.sh   # provision + deploy
 ```
 
-Point CapRover **zitadel** app to `https://auth.zaur.app`.
+Secrets are written to `/captain/data/zaur-auth-secrets.json` on the server.
 
-## 2. Zitadel console setup
+Reference: [Logto OSS deployment](https://docs.logto.io/logto-oss/deployment-and-configuration)
 
-1. Create project **ZAUR Mail**
-2. Add application **Webmail**:
-   - Type: **User Agent** (PKCE / public client)
-   - Redirect URI: `https://webmail.zaur.app/oauth/callback`
-   - Grant types: Authorization Code, Refresh Token
-   - Scopes: `openid`, `profile`, `email`, `offline_access`
-3. **Login policy** → enable passkeys, set **passkey allowed** / prefer passkey where available
-4. Note the **client ID** (e.g. `webmail`)
+## Troubleshooting: `logtoSsr is not defined` / CSP inline script blocked
+
+Logto’s admin app selects the console UI from `Host` + `X-Forwarded-Proto`. CapRover terminates TLS before `auth-admin` nginx, so the proxy must send `X-Forwarded-Proto: https` (not `$scheme`, which is `http` on the internal hop). Without it, port 3002 serves the sign-in experience SPA and `/console/welcome` shows a client-side **404 Not Found**.
+
+Use **https://auth-admin.zaur.app/** or **/console/welcome**. Hard-refresh after redeploy.
+
+If the console shows “Unauthorized. Please check credentials and its scope” on pages like Sign-in experience → Branding, upgrade Logto to **1.40+** (includes [PR #8869](https://github.com/logto-io/logto/pull/8869): OSS admin JWT validation reads signing keys from the DB instead of fetching JWKS over HTTP from `ADMIN_ENDPOINT`). Split-domain setups (`auth` + `auth-admin`) need this fix.
+
+Stale Zitadel CapRover apps (`auth-login`, `zitadel-db`) are removed by `caprover-provision.js`. Keep the `auth` app — it is Logto, not Zitadel.
+
+## 1. First-time admin setup
+
+1. Open **https://auth-admin.zaur.app/console/welcome**
+2. Create the admin account (OSS allows one admin on first launch)
+3. **Sign-in experience** → enable **Passkey sign-in**
+4. **Multi-factor authentication** → enable **Passkeys (WebAuthn)** if you want MFA as well
+
+## 2. Webmail OIDC application
+
+In Logto Console → **Applications** → Create application:
+
+| Field | Value |
+|-------|-------|
+| Type | Traditional web app (or SPA with PKCE) |
+| Redirect URI | `https://webmail.zaur.app/oauth/callback` |
+| Post sign-out redirect | `https://webmail.zaur.app` |
+
+Use **PKCE** (public client, no secret). Note the **App ID** (client ID).
+
+Discovery: `https://auth.zaur.app/oidc/.well-known/openid-configuration`
 
 ## 3. Webmail env (CapRover `webmail` app)
 
 ```env
 OAUTH_ENABLED=true
-OAUTH_ISSUER_URL=https://auth.zaur.app
-OAUTH_CLIENT_ID=<zitadel-client-id>
-# OAUTH_CLIENT_SECRET=   # only if using confidential client
+OAUTH_ISSUER_URL=https://auth.zaur.app/oidc
+OAUTH_CLIENT_ID=<logto-app-id>
 OAUTH_SCOPES=openid profile email offline_access
 # OAUTH_PASSWORD_FALLBACK=true   # dev only: local LDAP password form
 ```
@@ -65,30 +75,39 @@ Redeploy webmail after setting vars.
 
 ## 4. Stalwart OIDC directory
 
-In Stalwart → Settings → Authentication → Directories → Create:
+Run on the CapRover host (or use the WebUI with the same values):
+
+```bash
+./infra/mail/apply-stalwart-logto.sh
+```
 
 | Field | Value |
 |-------|-------|
 | Type | OpenID Connect |
-| Issuer URL | `https://auth.zaur.app` |
-| (or Userinfo URL) | From Zitadel discovery `userinfo_endpoint` |
+| Issuer URL | `https://auth.zaur.app/oidc` |
+| Username claim | `email` |
+| Required audience | *(unset — see below)* |
+| Domain `zaur.app` → Directory | Logto OIDC |
+| Authentication → Directory | **LLDAP** (unchanged) |
 
-Pre-create Stalwart accounts for each mailbox (register already does this). Tokens from Zitadel must map `email` / `preferred_username` to the mailbox address.
+Logto’s userinfo endpoint is `https://auth.zaur.app/oidc/me` (from discovery). Opaque access tokens (no API resource in the OAuth request) are validated via userinfo; JWT tokens need a matching `aud` if you set **Required audience**.
 
-See also [Stalwart OIDC docs](https://stalw.art/docs/auth/backend/oidc/).
+Pre-create Stalwart accounts for each mailbox (register already does this). Logto users must share the same **email** claim.
 
-## 5. Migrate existing users
+See [Stalwart OIDC docs](https://stalw.art/docs/auth/backend/oidc/) and [infra/mail/README.md](../mail/README.md).
+
+## 5. Register → Logto (phase 4)
+
+On signup, create a matching Logto user via the [Management API](https://docs.logto.io/docs/references/api/) (machine-to-machine app with `users:write`). Replace legacy Keycloak hooks in `apps/register/`.
+
+## 6. Migrate existing users
 
 For each LLDAP user:
 
-1. Create matching user in Zitadel (same email)
+1. Create matching user in Logto (same email)
 2. User visits webmail → **Continue with passkey** → enroll device
 3. LLDAP password stays for IMAP until they create a Stalwart **app password**
 
-## 6. Thunderbird / Apple Mail (phase 2)
-
-Not in scope for initial rollout. Users continue with mailbox password or app passwords from Stalwart self-service until webmail exposes “Create app password” in settings.
-
 ## Local development
 
-Without Zitadel, leave `OAUTH_ENABLED=false` — webmail uses the direct password form (LLDAP/Stalwart basic auth).
+Without Logto, leave `OAUTH_ENABLED=false` — webmail uses the direct password form (LLDAP/Stalwart basic auth).

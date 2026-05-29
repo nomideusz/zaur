@@ -1,0 +1,2 @@
+{"@type":"create","object":"Directory/Oidc","value":{"description":"Logto (auth.zaur.app)","issuerUrl":"https://auth.zaur.app/oidc","claimUsername":"email","claimName":"name","requireAudience":null}}
+{"@type":"update","object":"Domain","id":"REPLACE_WITH_zaur.app_DOMAIN_ID","value":{"directoryId":"#REPLACE_WITH_OIDC_DIRECTORY_ID"}}
