@@ -11,7 +11,8 @@
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test": "node --test --experimental-strip-types tests/*.test.ts",
-		"test:e2e": "playwright test"
+		"test:e2e": "playwright test",
+		"push:admin": "node scripts/push-admin.mjs"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.60.0",
