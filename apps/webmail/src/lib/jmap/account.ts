@@ -15,8 +15,17 @@ export function resolveMailAccountId(session: JMAPSession, username: string): st
 	const normalized = normalizeEmail(username);
 	const accounts = session.accounts ?? {};
 
+	if (session.username) {
+		const sessionUser = normalizeEmail(session.username);
+		if (sessionUser === normalized && session.primaryAccounts?.[MAIL_URN]) {
+			return session.primaryAccounts[MAIL_URN];
+		}
+	}
+
 	for (const [id, account] of Object.entries(accounts)) {
-		if (account.name?.toLowerCase() === normalized) return id;
+		const name = account.name?.toLowerCase();
+		if (name === normalized) return id;
+		if (name && !name.includes('@') && normalized.startsWith(`${name}@`)) return id;
 	}
 
 	const primary = session.primaryAccounts?.[MAIL_URN];

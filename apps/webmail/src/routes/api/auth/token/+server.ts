@@ -65,6 +65,11 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			refreshToken: tokens.refresh_token
 		});
 
+		const sessionUser = client.getSession()?.username;
+		if (sessionUser && normalizeEmail(sessionUser) !== normalizeEmail(email)) {
+			throw new Error('Signed-in mailbox does not match your account. Sign out and try again.');
+		}
+
 		const identities = await client.getIdentities();
 		const primary = findIdentityEmail(identities, email || username) ?? identities[0];
 

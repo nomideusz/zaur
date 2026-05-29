@@ -11,6 +11,7 @@
 	import ZaurSprite from '$lib/components/ui/ZaurSprite.svelte';
 
 	const remembered = loadRememberedLogin();
+	const urlEmail = $derived($page.url.searchParams.get('email')?.trim() ?? '');
 
 	let email = $state(remembered.email);
 	let password = $state('');
@@ -31,6 +32,9 @@
 	});
 
 	onMount(async () => {
+		if (urlEmail) {
+			email = urlEmail;
+		}
 		await auth.checkOauthConfig();
 		oauthReady = true;
 	});
@@ -79,7 +83,7 @@
 						disabled={auth.isLoading}
 					/>
 					<p class="mt-1 text-xs text-fg-subtle">
-						Optional — pre-fills your account on the sign-in screen.
+						Enter the address you registered — avoids signing into another account.
 					</p>
 				</div>
 

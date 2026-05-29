@@ -140,6 +140,8 @@ export async function buildAuthorizationUrl(input: {
 
 	if (input.loginHint?.trim()) {
 		params.append('login_hint', input.loginHint.trim());
+		// Don't silently reuse another user's Logto session / passkey on a shared browser.
+		params.append('prompt', 'login');
 	}
 
 	return `${authorizationEndpoint}?${params.toString()}`;

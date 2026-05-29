@@ -209,6 +209,10 @@ export class JMAPClient {
 			this.session = session;
 			this.apiUrl = session.apiUrl;
 
+			if (session.username) {
+				this.username = session.username;
+			}
+
 			const mailAccount = resolveMailAccountId(session, this.username);
 			this.accountId = mailAccount;
 

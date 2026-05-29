@@ -86,6 +86,7 @@ class AuthStore {
 		this.isLoading = true;
 		this.error = null;
 		this.errorCode = null;
+		this.resetMailState();
 
 		try {
 			const response = await fetch('/api/auth/login', {
@@ -200,6 +201,7 @@ class AuthStore {
 		this.isLoading = true;
 		this.error = null;
 		this.errorCode = null;
+		this.resetMailState();
 
 		try {
 			const expectedState = sessionStorage.getItem('oauth_state');
@@ -369,6 +371,19 @@ class AuthStore {
 			// Best-effort stale cookie cleanup
 		});
 		goto('/login');
+	}
+
+	private resetMailState() {
+		pushListener.stop();
+		this.stopBackgroundSync();
+		void this.closeOfflineLayer();
+		this.client?.disconnect();
+		this.client = null;
+		mail.reset();
+		compose.reset();
+		search.reset();
+		outbox.reset();
+		calendar.reset();
 	}
 
 	private async openOfflineLayer(client: JMAPClient) {

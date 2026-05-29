@@ -13,7 +13,7 @@ async function init() {
 
     document.getElementById('webmail-url').href = webmailUrl;
     document.getElementById('webmail-url').textContent = webmailUrl;
-    document.getElementById('webmail-btn').href = `${webmailUrl}/login?next=${encodeURIComponent('/')}`;
+    document.getElementById('webmail-btn').href = `${webmailUrl}/login?email=${encodeURIComponent(email)}`;
     document.getElementById('header-webmail-link').href = webmailUrl;
     document.getElementById('imap-host').textContent = mailHost;
     document.getElementById('smtp-host').textContent = mailHost;
