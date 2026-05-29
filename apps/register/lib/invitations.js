@@ -6,7 +6,7 @@ const AUDIT_FILE = process.env.INVITATIONS_AUDIT_PATH || '/app/data/invitations_
 const DEFAULT_EXPIRES_SEC = Number.parseInt(process.env.INVITATION_EXPIRES_SEC || `${72 * 3600}`, 10);
 
 function ensureAuditFile() {
-  const dir = path.dirname(Audit_FILE);
+  const dir = path.dirname(AUDIT_FILE);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
