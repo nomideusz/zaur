@@ -279,15 +279,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       auditSummary.innerHTML = `
         <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Stalwart</span><strong class="f2 fw6 near-black lh-solid">${data.counts.stalwartAccounts}</strong></div>
-        <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Keycloak</span><strong class="f2 fw6 near-black lh-solid">${data.counts.keycloakUsers}</strong></div>
-        <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Keycloak only</span><strong class="f2 fw6 near-black lh-solid">${data.counts.keycloakOnly}</strong></div>
+        <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Directory</span><strong class="f2 fw6 near-black lh-solid">${data.counts.directoryUsers}</strong></div>
+        <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Directory only</span><strong class="f2 fw6 near-black lh-solid">${data.counts.directoryOnly}</strong></div>
         <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Stalwart only</span><strong class="f2 fw6 near-black lh-solid">${data.counts.stalwartOnly}</strong></div>
       `;
 
-      auditResults.appendChild(renderAuditGroup('Keycloak only', data.keycloakOnly, 'keycloak'));
+      auditResults.appendChild(renderAuditGroup('Directory only', data.directoryOnly, 'directory'));
       auditResults.appendChild(renderAuditGroup('Stalwart only', data.stalwartOnly, 'stalwart'));
 
-      auditSuccess.textContent = data.counts.keycloakOnly || data.counts.stalwartOnly
+      auditSuccess.textContent = data.counts.directoryOnly || data.counts.stalwartOnly
         ? 'Audit completed. Review mismatches below before cleanup.'
         : 'Audit completed. No provisioning mismatches found.';
       auditSuccess.style.display = 'block';
