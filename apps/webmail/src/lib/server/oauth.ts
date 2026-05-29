@@ -36,15 +36,17 @@ export async function exchangeCodeForTokens(
 	params.append('code_verifier', codeVerifier);
 
 	const clientSecret = env.OAUTH_CLIENT_SECRET?.trim();
+	const headers: Record<string, string> = {
+		'Content-Type': 'application/x-www-form-urlencoded'
+	};
+	// Logto "Traditional web" apps require client authentication at the token endpoint.
 	if (clientSecret) {
-		params.append('client_secret', clientSecret);
+		headers.Authorization = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`;
 	}
 
 	const response = await fetch(tokenUrl, {
 		method: 'POST',
-		headers: {
-			'Content-Type': 'application/x-www-form-urlencoded'
-		},
+		headers,
 		body: params.toString()
 	});
 
@@ -74,16 +76,17 @@ export async function refreshAccessToken(
 	params.append('refresh_token', refreshToken);
 
 	const clientSecret = env.OAUTH_CLIENT_SECRET?.trim();
+	const headers: Record<string, string> = {
+		'Content-Type': 'application/x-www-form-urlencoded'
+	};
 	if (clientSecret) {
-		params.append('client_secret', clientSecret);
+		headers.Authorization = `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString('base64')}`;
 	}
 
 	try {
 		const response = await fetch(tokenUrl, {
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/x-www-form-urlencoded'
-			},
+			headers,
 			body: params.toString()
 		});
 

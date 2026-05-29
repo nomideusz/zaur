@@ -53,11 +53,12 @@ In Logto Console → **Applications** → Create application:
 
 | Field | Value |
 |-------|-------|
-| Type | Traditional web app (or SPA with PKCE) |
+| Type | **Traditional web** (recommended — token exchange runs server-side) |
 | Redirect URI | `https://webmail.zaur.app/oauth/callback` |
 | Post sign-out redirect | `https://webmail.zaur.app` |
 
-Use **PKCE** (public client, no secret). Note the **App ID** (client ID).
+Note the **App ID** and **App Secret**. Traditional web apps require the secret at the token endpoint (`invalid_client` without it).  
+Alternatively use a **Single-page app** (PKCE only, no secret) if you prefer a public client.
 
 Discovery: `https://auth.zaur.app/oidc/.well-known/openid-configuration`
 
@@ -67,6 +68,7 @@ Discovery: `https://auth.zaur.app/oidc/.well-known/openid-configuration`
 OAUTH_ENABLED=true
 OAUTH_ISSUER_URL=https://auth.zaur.app/oidc
 OAUTH_CLIENT_ID=<logto-app-id>
+OAUTH_CLIENT_SECRET=<logto-app-secret>
 OAUTH_SCOPES=openid profile email offline_access
 # OAUTH_PASSWORD_FALLBACK=true   # dev only: local LDAP password form
 ```
