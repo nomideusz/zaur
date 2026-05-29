@@ -67,7 +67,15 @@ async function managementRequest(method, path, body) {
 
   const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
+    const issueDetails = payload.data?.issues
+      ?.map((issue) => {
+        const path = issue.path?.length ? issue.path.join('.') : 'body';
+        return `${path}: ${issue.message || issue.code || 'invalid'}`;
+      })
+      .join('; ');
     const detail =
+      issueDetails ||
+      payload.details ||
       payload.message ||
       payload.error ||
       (Array.isArray(payload) ? payload.map((item) => item.message).join('; ') : null) ||
@@ -93,9 +101,14 @@ async function findUserByEmail(email) {
 function logtoUsername(email) {
   const normalized = email.toLowerCase();
   const [local, domain] = normalized.split('@');
-  if (!local || !domain) return normalized.replace(/[^a-z0-9._-]/g, '_');
-  // Logto usernames are tenant-wide; include domain so user@a and user@b don't collide.
-  return `${local}__${domain.replace(/\./g, '-')}`;
+  const sanitize = (part) => part.replace(/[^a-z0-9_]/g, '_');
+  if (!local || !domain) {
+    const fallback = sanitize(normalized.replace('@', '_at_'));
+    return /^[a-z_]/i.test(fallback) ? fallback : `u_${fallback}`;
+  }
+  // Logto usernames must match /^[A-Z_a-z]\w*$/ (no hyphens/dots).
+  const candidate = `${sanitize(local)}_${sanitize(domain)}`;
+  return /^[a-z_]/i.test(candidate) ? candidate : `u_${candidate}`;
 }
 
 async function createUser(email, password) {
@@ -113,6 +126,9 @@ async function createUser(email, password) {
   } catch (err) {
     if (/already exists|duplicate|409|already in use/i.test(err.message)) {
       throw new Error('This email is already registered for sign-in.');
+    }
+    if (/username.*invalid|invalid_string/i.test(err.message)) {
+      throw new Error('Could not create sign-in account for this email address.');
     }
     throw err;
   }
