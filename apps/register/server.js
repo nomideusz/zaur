@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 const stalwart = require('./lib/stalwart');
 const invites = require('./lib/invites');
 const directory = require('./lib/lldap');
+const logto = require('./lib/logto');
 const {
   validateUsername,
   validatePassword,
@@ -177,20 +178,27 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
 
     let accountId = null;
     let directoryCreated = false;
+    let logtoCreated = false;
 
     try {
-      // 1. Create the LLDAP user (single source of truth for the password)
+      // 1. Create the LLDAP user (single source of truth for the mailbox password)
       await directory.createUser(email, password);
       directoryCreated = true;
 
-      // 2. Create Stalwart account representation (credentials live in LLDAP)
+      // 2. Create matching Logto user for webmail passkey / OIDC sign-in
+      if (logto.isConfigured()) {
+        await logto.createUser(email, password);
+        logtoCreated = true;
+      }
+
+      // 3. Create Stalwart account representation (credentials live in LLDAP)
       const account = await stalwart.createAccount(
         usernameValidation.username,
         domainId,
       );
       accountId = account.accountId;
 
-      // 3. Provision standard mailboxes in Stalwart using the user's own credentials
+      // 4. Provision standard mailboxes in Stalwart using the user's own credentials
       await stalwart.ensureStandardMailboxes(email, password);
 
       if (!invites.markInviteAsUsed(inviteCode, email)) {
@@ -198,6 +206,13 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
       }
     } catch (err) {
       const cleanupErrors = [];
+      if (logtoCreated) {
+        try {
+          await logto.deleteUser(email);
+        } catch (cleanupErr) {
+          cleanupErrors.push(`Logto cleanup failed: ${cleanupErr.message}`);
+        }
+      }
       if (directoryCreated) {
         try {
           await directory.deleteUser(email);
@@ -342,16 +357,21 @@ app.post('/api/admin/cleanup-account', requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'Email is required.' });
   }
 
-  if (!['directory', 'keycloak', 'stalwart', 'both'].includes(target)) {
-    return res.status(400).json({ error: 'Cleanup target must be directory, stalwart, or both.' });
+  if (!['directory', 'logto', 'stalwart', 'both', 'all'].includes(target)) {
+    return res.status(400).json({
+      error: 'Cleanup target must be directory, logto, stalwart, both, or all.',
+    });
   }
 
   try {
     const result = {};
-    if (target === 'directory' || target === 'keycloak' || target === 'both') {
+    if (target === 'directory' || target === 'both' || target === 'all') {
       result.directory = await directory.deleteUser(email);
     }
-    if (target === 'stalwart' || target === 'both') {
+    if (target === 'logto' || target === 'all') {
+      result.logto = logto.isConfigured() ? await logto.deleteUser(email) : false;
+    }
+    if (target === 'stalwart' || target === 'both' || target === 'all') {
       result.stalwart = await stalwart.deleteAccountByEmail(email);
     }
     res.json({ success: true, result });

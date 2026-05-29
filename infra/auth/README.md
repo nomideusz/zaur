@@ -96,9 +96,27 @@ Pre-create Stalwart accounts for each mailbox (register already does this). Logt
 
 See [Stalwart OIDC docs](https://stalw.art/docs/auth/backend/oidc/) and [infra/mail/README.md](../mail/README.md).
 
-## 5. Register → Logto (phase 4)
+## 5. Register → Logto
 
-On signup, create a matching Logto user via the [Management API](https://docs.logto.io/docs/references/api/) (machine-to-machine app with `users:write`). Replace legacy Keycloak hooks in `apps/register/`.
+On signup, `apps/register` creates a matching Logto user via the [Management API](https://docs.logto.io/docs/references/api/).
+
+### M2M application (register service)
+
+1. Logto Console → **Applications** → **Machine-to-machine**
+2. Name it `register` (or similar)
+3. Assign the **Logto Management API access** role (or a custom role with `users:write`)
+4. Copy **App ID** and **App Secret**
+
+CapRover `register` app env:
+
+```env
+LOGTO_ENDPOINT=https://auth.zaur.app
+LOGTO_API_RESOURCE=https://default.logto.app/api
+LOGTO_M2M_CLIENT_ID=<m2m-app-id>
+LOGTO_M2M_CLIENT_SECRET=<m2m-app-secret>
+```
+
+Redeploy register after setting vars. Registration creates users in this order: **LLDAP → Logto → Stalwart**. If Logto vars are unset, signup still works (mailbox only) but webmail passkey login will fail until a Logto user exists.
 
 ## 6. Migrate existing users
 

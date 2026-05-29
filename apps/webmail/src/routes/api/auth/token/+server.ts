@@ -41,7 +41,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	const serverUrl = appConfig.jmapServerUrl;
 
 	try {
-		// Exchange authorization code for tokens from Zitadel (OIDC)
+		// Exchange authorization code for tokens from Logto (OIDC)
 		const tokens = await exchangeCodeForTokens(code, codeVerifier, redirectUri);
 		if (!tokens.access_token) {
 			throw new Error('No access token returned from authorization server');
