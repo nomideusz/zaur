@@ -18,8 +18,8 @@
   </header>
 
   <main class="z-site-main" id="main-content">
-    <div class="z-site-container--wide z-stack-lg" style="margin-inline: auto; padding-inline: 1rem;">
-      <div id="login-container" class="z-card z-card__body" style="max-width: 28rem; margin-inline: auto;">
+    <div class="z-admin-layout z-stack-lg">
+      <div id="login-container" class="z-card z-card__body z-admin-login">
         <h2 class="z-type-title" style="font-size: 1.125rem;">Admin sign in</h2>
         <div class="z-alert z-alert--error" id="login-error" role="alert"></div>
         <form id="login-form" class="z-mt-4">
@@ -32,12 +32,12 @@
       </div>
 
       <div id="dashboard-container" class="z-dashboard z-hidden">
-        <div class="z-page-intro" style="max-width: var(--z-measure); margin-inline: auto;">
+        <div class="z-page-intro">
           <h1 class="z-type-title">Invitations</h1>
           <p class="z-type-lead">Send magic links to personal emails. Users choose their ZAUR address when they register.</p>
         </div>
 
-        <div class="z-stat-grid z-mb-6" style="max-width: var(--z-measure); margin-inline: auto;">
+        <div class="z-stat-grid z-mb-6">
           <div class="z-card z-stat-card">
             <span class="z-type-label">Total sent</span>
             <span class="z-stat-card__value" id="stat-total">0</span>
@@ -56,7 +56,7 @@
           </div>
         </div>
 
-        <div class="z-stack-lg" style="max-width: var(--z-measure); margin-inline: auto;">
+        <div class="z-stack-lg">
           <div class="z-card z-card__body">
             <h3 class="z-type-title" style="font-size: 1.125rem;">Send invitation</h3>
             <p class="z-type-lead z-mb-4" id="invite-email-hint">Enter an email address and we’ll send a registration link.</p>

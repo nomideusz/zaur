@@ -72,9 +72,19 @@
 	padding-inline: 1rem;
 }
 
-.z-site-container--wide {
-	width: min(1100px, 92vw);
-}
+	.z-site-container--wide {
+		width: min(1100px, 92vw);
+	}
+
+	.z-admin-layout {
+		width: min(1100px, 92vw);
+		margin-inline: auto;
+		padding-inline: 1rem;
+	}
+
+	.z-admin-login {
+		max-width: 28rem;
+	}
 
 .z-site-footer {
 	margin-top: auto;
