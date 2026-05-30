@@ -2,7 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
-import X from '$lib/components/icons/X.svelte';
+	import X from '$lib/components/icons/X.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import ComposeAttachments from '$lib/components/mail/ComposeAttachments.svelte';
 	import ComposeRecipientInput from '$lib/components/mail/ComposeRecipientInput.svelte';
@@ -22,8 +22,17 @@ import X from '$lib/components/icons/X.svelte';
 	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
 	const senderEmail = $derived(auth.username ?? '');
 	const fieldLabelClass = $derived(
-		settings.hideComposeFieldLabels ? 'sr-only' : 'w-14 shrink-0 text-fg-subtle'
+		settings.hideComposeFieldLabels ? 'sr-only' : 'z-compose-field-label'
 	);
+	const composeFieldClass = $derived((field: 'to' | 'cc' | 'bcc') =>
+		cn(
+			'z-compose-field',
+			invalidRecipients.length > 0 &&
+				invalidAddressParts(compose[field]).length > 0 &&
+				'z-compose-field--invalid'
+		)
+	);
+	const composeErrorsId = 'compose-form-errors';
 	const composeBorderB = $derived(settings.hideComposePanelBorders ? '' : 'border-b border-border');
 	const composeBorderT = $derived(settings.hideComposePanelBorders ? '' : 'border-t border-border');
 	const hideBorders = $derived(settings.hideComposePanelBorders || settings.hidePaneBorders);
@@ -234,7 +243,7 @@ import X from '$lib/components/icons/X.svelte';
 		>
 			<div class={cn('shrink-0 space-y-1 bg-surface/40 p-2 sm:p-3', composeBorderB)}>
 				{#if !settings.hideComposeFromLine}
-				<div class="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-accent/20 sm:gap-3">
+				<div class="z-compose-field">
 					<span class={fieldLabelClass}>From</span>
 					<div class="min-w-0 flex-1">
 						<p class="truncate text-fg">
@@ -252,13 +261,16 @@ import X from '$lib/components/icons/X.svelte';
 				</div>
 				{/if}
 
-				<div class="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-accent/20 sm:gap-3">
-					<span class={fieldLabelClass}>To</span>
+				<div class={composeFieldClass('to')}>
+					<label class={fieldLabelClass} for="compose-to">To</label>
 					<ComposeRecipientInput
+						id="compose-to"
 						bind:inputElement={toInput}
 						value={compose.to}
 						placeholder="Name or email"
 						autocomplete="email"
+						invalid={invalidRecipients.length > 0 && invalidAddressParts(compose.to).length > 0}
+						ariaDescribedby={compose.error || invalidRecipients.length ? composeErrorsId : undefined}
 						oninput={(value) => (compose.to = value)}
 					/>
 					{#if settings.showCcBccInCompose && !compose.showCcBcc}
@@ -273,35 +285,42 @@ import X from '$lib/components/icons/X.svelte';
 				</div>
 
 				{#if compose.showCcBcc && (settings.showCcBccInCompose || compose.cc.trim() || compose.bcc.trim())}
-					<div class="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-accent/20 sm:gap-3">
-						<span class={fieldLabelClass}>Cc</span>
+					<div class={composeFieldClass('cc')}>
+						<label class={fieldLabelClass} for="compose-cc">Cc</label>
 						<ComposeRecipientInput
+							id="compose-cc"
 							value={compose.cc}
 							placeholder="Name or email"
 							autocomplete="email"
+							invalid={invalidRecipients.length > 0 && invalidAddressParts(compose.cc).length > 0}
+							ariaDescribedby={compose.error || invalidRecipients.length ? composeErrorsId : undefined}
 							oninput={(value) => (compose.cc = value)}
 						/>
 					</div>
-					<label class="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-accent/20 sm:gap-3">
-						<span class={fieldLabelClass}>Bcc</span>
+					<div class={composeFieldClass('bcc')}>
+						<label class={fieldLabelClass} for="compose-bcc">Bcc</label>
 						<ComposeRecipientInput
+							id="compose-bcc"
 							value={compose.bcc}
 							placeholder="Name or email"
 							autocomplete="email"
+							invalid={invalidRecipients.length > 0 && invalidAddressParts(compose.bcc).length > 0}
+							ariaDescribedby={compose.error || invalidRecipients.length ? composeErrorsId : undefined}
 							oninput={(value) => (compose.bcc = value)}
 						/>
-					</label>
+					</div>
 				{/if}
 
-				<label class="flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-accent/20 sm:gap-3">
-					<span class={fieldLabelClass}>Subject</span>
+				<div class="z-compose-field">
+					<label class={fieldLabelClass} for="compose-subject">Subject</label>
 					<input
+						id="compose-subject"
 						type="text"
-						class="min-w-0 flex-1 bg-transparent font-medium outline-none placeholder:font-normal placeholder:text-fg-subtle"
+						class="z-compose-field-input font-medium placeholder:font-normal"
 						placeholder="Add a subject"
 						bind:value={compose.subject}
 					/>
-				</label>
+				</div>
 			</div>
 
 			<div class="flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -325,7 +344,11 @@ import X from '$lib/components/icons/X.svelte';
 			<ComposeAttachments />
 
 			{#if compose.error || invalidRecipients.length}
-				<p class={cn('px-5 py-2 text-sm text-danger', composeBorderT)} role="alert">
+				<p
+					id={composeErrorsId}
+					class={cn('px-5 py-2 text-sm text-danger', composeBorderT)}
+					role="alert"
+				>
 					{compose.error ?? `Check recipient: ${invalidRecipients[0]}`}
 				</p>
 			{/if}

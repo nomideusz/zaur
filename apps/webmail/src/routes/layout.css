@@ -433,6 +433,31 @@
 		}
 	}
 
+	/* Compose chrome fields — raised rows, accent focus ring (Tachyons-scale spacing) */
+	.z-compose-field {
+		@apply flex items-center gap-2 rounded-md bg-surface-raised px-3 py-2 text-sm focus-within:ring-2 focus-within:ring-accent/20 sm:gap-3;
+	}
+
+	.z-compose-field-label {
+		@apply w-14 shrink-0 text-fg-subtle;
+	}
+
+	.z-compose-field--invalid {
+		@apply ring-1 ring-danger/30 focus-within:ring-danger/40;
+	}
+
+	.z-compose-field-input {
+		@apply min-w-0 flex-1 bg-transparent outline-none placeholder:text-fg-subtle;
+	}
+
+	.z-select--sm {
+		@apply h-8 w-auto max-w-[9rem] shrink-0 py-0 pl-2 text-xs;
+	}
+
+	.z-select--sm.z-select--compact {
+		@apply max-w-32;
+	}
+
 	.z-list-row {
 		min-height: var(--z-list-row);
 	}

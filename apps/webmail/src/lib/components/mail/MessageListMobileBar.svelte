@@ -4,8 +4,10 @@
 	import MailOpen from '$lib/components/icons/MailOpen.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import X from '$lib/components/icons/X.svelte';
+	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -23,6 +25,9 @@
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete' : 'Trash');
+	const moveTargets = $derived(
+		mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
+	);
 	const hasUnreadSelected = $derived(
 		mail.messages.some((message) => selectedIds.includes(message.id) && message.unread)
 	);
@@ -46,6 +51,11 @@
 		const permanent = currentMailbox?.role === 'trash';
 		if (!settings.confirmDeleteMessage(selectedIds.length, permanent)) return;
 		void runBulk(() => mail.bulkDelete(auth.client!, mailboxRouteId));
+	}
+
+	function handleBulkMove(targetRouteId: string) {
+		if (!auth.client) return;
+		void runBulk(() => mail.bulkMoveToMailbox(auth.client!, targetRouteId));
 	}
 </script>
 
@@ -93,6 +103,16 @@
 				<Archive class="size-4" aria-hidden="true" />
 				Archive
 			</Button>
+		{/if}
+		{#if moveTargets.length}
+			<OverflowMenu
+				label="Move selected messages"
+				menuId="bulk-move-mobile-menu"
+				placement="top"
+				menuClass="z-overflow-menu--list"
+			>
+				<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={handleBulkMove} />
+			</OverflowMenu>
 		{/if}
 		<Button variant="danger" class={cn('z-mail-list-mobile-bar__btn')} onclick={deleteSelected}>
 			<Trash2 class="size-4" aria-hidden="true" />

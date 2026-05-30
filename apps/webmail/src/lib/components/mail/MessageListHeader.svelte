@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Archive from '$lib/components/icons/Archive.svelte';
-import Mail from '$lib/components/icons/Mail.svelte';
-import MailOpen from '$lib/components/icons/MailOpen.svelte';
-import Trash2 from '$lib/components/icons/Trash2.svelte';
+	import Mail from '$lib/components/icons/Mail.svelte';
+	import MailOpen from '$lib/components/icons/MailOpen.svelte';
+	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
@@ -38,10 +38,7 @@ import Trash2 from '$lib/components/icons/Trash2.svelte';
 	);
 	const actionButtonClass = '!h-8 shrink-0 !px-2 !text-xs';
 	const moveSelectClass = $derived(
-		cn(
-			'z-input h-8 max-w-[9rem] shrink-0 truncate py-0 pl-2 pr-7 text-xs',
-			settings.compactListHeader && 'max-w-[8rem]'
-		)
+		cn('z-select z-select--sm truncate', settings.compactListHeader && 'z-select--compact')
 	);
 
 	async function runBulk(action: () => Promise<void>) {

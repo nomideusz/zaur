@@ -6,19 +6,25 @@
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
+		id?: string;
 		value: string;
 		placeholder?: string;
 		class?: string;
 		autocomplete?: string;
+		invalid?: boolean;
+		ariaDescribedby?: string;
 		inputElement?: HTMLInputElement | null;
 		oninput?: (value: string) => void;
 	}
 
 	let {
+		id,
 		value,
 		placeholder = '',
 		class: className,
 		autocomplete,
+		invalid = false,
+		ariaDescribedby,
 		inputElement = $bindable(null),
 		oninput
 	}: Props = $props();
@@ -69,10 +75,13 @@
 <div class="relative min-w-0 flex-1">
 	<input
 		bind:this={inputElement}
+		{id}
 		type="text"
-		class={cn('w-full bg-transparent outline-none placeholder:text-fg-subtle', className)}
+		class={cn('z-compose-field-input w-full', className)}
 		placeholder={placeholder}
 		autocomplete={autocomplete as HTMLInputElement['autocomplete']}
+		aria-invalid={invalid || undefined}
+		aria-describedby={ariaDescribedby}
 		{value}
 		onfocus={() => (open = true)}
 		onblur={() => setTimeout(() => (open = false), 120)}
