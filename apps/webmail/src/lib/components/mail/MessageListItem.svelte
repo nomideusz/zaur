@@ -1,6 +1,7 @@
 <script lang="ts">
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Star from '$lib/components/icons/Star.svelte';
+	import MessageListActiveActions from '$lib/components/mail/MessageListActiveActions.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import SwipeableListRow, { type SwipeAction } from '$lib/components/ui/SwipeableListRow.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -92,18 +93,28 @@
 	const showListGutter = $derived(bulkSelectEnabled && (selectionMode || active));
 	const showRowCheckbox = $derived(selectionMode || showActiveCheckbox);
 	const isCurrent = $derived(active || selected);
+	const showActiveCompact = $derived(active && !selectionMode);
 	const showAvatarUnreadBadge = $derived(
-		settings.highlightUnreadInList && message.unread && !showListGutter
+		settings.highlightUnreadInList && message.unread && !showListGutter && !showActiveCompact
 	);
 
 	const rowClass = $derived(
 		cn(
-			'z-list-row flex w-full items-start gap-3 px-4 transition-[background-color] duration-150 ease-out',
+			'z-list-row flex w-full gap-3 px-4 transition-[background-color] duration-150 ease-out',
+			showActiveCompact ? 'items-center' : 'items-start',
+			showActiveCompact && 'z-list-row--active-compact',
 			selectionMode && 'cursor-pointer',
 			!settings.hideListRowDividers && 'border-b border-border',
 			settings.compactListRows ? 'py-2' : 'py-2.5',
 			isCurrent && 'z-list-row--current',
 			!isCurrent && 'hover:bg-surface-sunken/60'
+		)
+	);
+
+	const activeSubjectClass = $derived(
+		cn(
+			'z-type-list-subject z-type-list-subject--active',
+			settings.highlightUnreadInList && message.unread && 'z-type-list-subject--unread'
 		)
 	);
 
@@ -250,6 +261,28 @@
 	{/if}
 {/snippet}
 
+{#snippet activeContent()}
+	<div class="z-list-text flex min-w-0 flex-1 items-center gap-2">
+		<div class="flex min-w-0 flex-1 items-center gap-1.5">
+			{#if settings.showStarsInList && message.starred}
+				<Star
+					class="size-3.5 shrink-0 fill-star text-star md:hidden"
+					aria-label="Starred"
+				/>
+			{/if}
+			<span class={activeSubjectClass}>
+				{displaySubject}
+			</span>
+			{#if settings.showAttachmentIcons && message.hasAttachment}
+				<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
+			{/if}
+		</div>
+		{#if settings.showListTimestamps}
+			<span class="z-type-list-time">{when}</span>
+		{/if}
+	</div>
+{/snippet}
+
 {#snippet content()}
 	{@render avatar()}
 	<div class="z-list-text min-w-0 flex-1">
@@ -323,18 +356,38 @@
 			data-hide-active-indicator={hideActiveIndicator || undefined}
 		>
 			{@render listMarker()}
-			<a
-				{href}
-				class="flex min-w-0 flex-1 items-start gap-3 text-inherit no-underline outline-none"
-				aria-current={active ? 'page' : undefined}
-				aria-label={messageAriaLabel}
-				title={messageAriaLabel}
-				style="view-transition-name: message-{message.id};"
-				onclick={handleSelect}
-				onkeydown={handleSelectKey}
-			>
-				{@render content()}
-			</a>
+			{#if showActiveCompact}
+				<a
+					{href}
+					class="flex min-w-0 flex-1 text-inherit no-underline outline-none"
+					aria-current="page"
+					aria-label={messageAriaLabel}
+					title={messageAriaLabel}
+					style="view-transition-name: message-{message.id};"
+					onclick={handleSelect}
+					onkeydown={handleSelectKey}
+				>
+					{@render activeContent()}
+				</a>
+				{#if mailboxRouteId}
+					<div class="max-md:hidden">
+						<MessageListActiveActions {message} {mailboxRouteId} />
+					</div>
+				{/if}
+			{:else}
+				<a
+					{href}
+					class="flex min-w-0 flex-1 items-start gap-3 text-inherit no-underline outline-none"
+					aria-current={active ? 'page' : undefined}
+					aria-label={messageAriaLabel}
+					title={messageAriaLabel}
+					style="view-transition-name: message-{message.id};"
+					onclick={handleSelect}
+					onkeydown={handleSelectKey}
+				>
+					{@render content()}
+				</a>
+			{/if}
 		</div>
 	{/if}
 {/snippet}

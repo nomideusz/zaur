@@ -1194,6 +1194,14 @@
 		@apply font-semibold;
 	}
 
+	.z-type-list-subject--active {
+		@apply text-base font-semibold tracking-tight;
+	}
+
+	.z-list-row--active-compact .z-list-row-gutter {
+		margin-top: 0;
+	}
+
 	.z-type-list-preview {
 		@apply mt-0.5 truncate text-sm leading-snug text-fg-subtle;
 	}
