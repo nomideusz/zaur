@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import MoreVertical from '$lib/components/icons/MoreVertical.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { OVERFLOW_MENU_CTX, type OverflowMenuContext } from '$lib/components/ui/overflow-menu-context';
@@ -9,7 +10,7 @@
 	interface Props {
 		label?: string;
 		menuId?: string;
-		placement?: 'bottom' | 'top';
+		placement?: 'bottom' | 'top' | 'auto';
 		class?: string;
 		menuClass?: string;
 		onOpenChange?: (open: boolean) => void;
@@ -28,14 +29,67 @@
 
 	let open = $state(false);
 	let root = $state<HTMLDivElement | null>(null);
+	let resolvedPlacement = $state<'bottom' | 'top'>('bottom');
+	let menuStyle = $state('');
+
+	const useFixedPlacement = $derived(placement === 'auto');
 
 	function setOpen(next: boolean) {
 		open = next;
 		onOpenChange?.(next);
+		if (!next) {
+			menuStyle = '';
+			resolvedPlacement = 'bottom';
+		}
 	}
 
 	function close() {
 		setOpen(false);
+	}
+
+	function updateAutoPosition() {
+		if (!browser || !root || placement !== 'auto') return;
+
+		const trigger = root.querySelector('button');
+		const menu = root.querySelector('[role="menu"]');
+		if (!trigger || !menu) return;
+
+		const rect = trigger.getBoundingClientRect();
+		const menuRect = menu.getBoundingClientRect();
+		const margin = 8;
+		const gap = 4;
+		const menuHeight = menuRect.height > 0 ? menuRect.height : 240;
+		const menuWidth = menuRect.width > 0 ? menuRect.width : 208;
+
+		const spaceBelow = window.innerHeight - rect.bottom - margin;
+		const spaceAbove = rect.top - margin;
+		const openDown = spaceBelow >= menuHeight || spaceBelow >= spaceAbove;
+		resolvedPlacement = openDown ? 'bottom' : 'top';
+
+		let top = openDown ? rect.bottom + gap : rect.top - menuHeight - gap;
+		top = Math.max(margin, Math.min(top, window.innerHeight - menuHeight - margin));
+
+		let left = rect.right - menuWidth;
+		left = Math.max(margin, Math.min(left, window.innerWidth - menuWidth - margin));
+
+		menuStyle = `top:${top}px;left:${left}px;width:${menuWidth}px;`;
+	}
+
+	function toggleOpen(event: MouseEvent) {
+		event.stopPropagation();
+		const next = !open;
+		if (!next) {
+			close();
+			return;
+		}
+
+		setOpen(true);
+		if (placement === 'auto') {
+			requestAnimationFrame(() => {
+				updateAutoPosition();
+				requestAnimationFrame(updateAutoPosition);
+			});
+		}
 	}
 
 	function handleWindowClick(event: MouseEvent) {
@@ -43,6 +97,18 @@
 		if (!(target instanceof Node) || root?.contains(target)) return;
 		close();
 	}
+
+	$effect(() => {
+		if (!open || placement !== 'auto' || !browser) return;
+
+		const onViewportChange = () => updateAutoPosition();
+		window.addEventListener('resize', onViewportChange);
+		window.addEventListener('scroll', onViewportChange, true);
+		return () => {
+			window.removeEventListener('resize', onViewportChange);
+			window.removeEventListener('scroll', onViewportChange, true);
+		};
+	});
 
 	setContext<OverflowMenuContext>(OVERFLOW_MENU_CTX, { close });
 </script>
@@ -56,10 +122,7 @@
 		ariaExpanded={open}
 		ariaControls={menuId}
 		ariaHaspopup="menu"
-		onclick={(event) => {
-			event.stopPropagation();
-			setOpen(!open);
-		}}
+		onclick={toggleOpen}
 	>
 		<MoreVertical class="size-5" aria-hidden="true" />
 	</IconButton>
@@ -72,9 +135,11 @@
 			tabindex="-1"
 			class={cn(
 				'z-overflow-menu',
-				placement === 'top' && 'z-overflow-menu--top',
+				useFixedPlacement && 'z-overflow-menu--fixed',
+				!useFixedPlacement && placement === 'top' && 'z-overflow-menu--top',
 				menuClass
 			)}
+			style={menuStyle}
 			onpointerdown={(event) => event.stopPropagation()}
 			onkeydown={(event) => {
 				if (event.key === 'Escape') close();

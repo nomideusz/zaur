@@ -68,7 +68,11 @@ import Trash2 from '$lib/components/icons/Trash2.svelte';
 		{/if}
 		<span class="flex-1 truncate">{node.name}</span>
 		{#if settings.showFolderUnreadCounts}
-			<Badge count={node.role === 'drafts' ? node.total : node.unread} />
+			<Badge
+				variant="muted"
+				count={node.role === 'drafts' ? node.total : node.unread}
+				class={isActive ? 'text-fg-muted' : undefined}
+			/>
 		{/if}
 	</a>
 

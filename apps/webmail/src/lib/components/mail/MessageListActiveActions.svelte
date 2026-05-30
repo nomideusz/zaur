@@ -122,7 +122,7 @@
 	<OverflowMenu
 		label="More message actions"
 		{menuId}
-		placement="top"
+		placement="auto"
 		menuClass="z-overflow-menu--list"
 		onOpenChange={onMenuOpenChange}
 	>

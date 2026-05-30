@@ -307,6 +307,13 @@
 		@apply bottom-full mb-1.5 mt-0;
 	}
 
+	.z-overflow-menu--fixed {
+		position: fixed;
+		right: auto;
+		bottom: auto;
+		margin: 0;
+	}
+
 	.z-overflow-menu--list {
 		@apply z-50 w-52 min-w-44 py-1;
 	}
