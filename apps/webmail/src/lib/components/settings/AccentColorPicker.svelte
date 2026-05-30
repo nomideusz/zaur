@@ -19,8 +19,10 @@
 			aria-label={option.label}
 			title={option.label}
 			class={cn(
-				'size-7 rounded-full border-2 transition-shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
-				value === option.id ? 'border-fg shadow-sm ring-2 ring-accent/30' : 'border-transparent hover:ring-2 hover:ring-border'
+				'size-7 rounded-full border-2 transition-[box-shadow,transform] duration-150 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
+				value === option.id
+					? 'border-fg ring-2 ring-accent/25'
+					: 'border-transparent hover:ring-2 hover:ring-border'
 			)}
 			style:background-color={option.swatch}
 			onclick={() => onchange(option.id)}

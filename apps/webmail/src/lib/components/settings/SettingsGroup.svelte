@@ -32,23 +32,32 @@
 </script>
 
 <section
-		bind:this={sectionRef}
-		class={cn(!hasRows && 'hidden', settings.compactSettingsRows ? 'space-y-2' : 'space-y-3')}
-	>
-		{#if hasRows}
-			<div class={cn(!settings.hidePaneBorders && 'border-b border-border/80 pb-2')}>
-				<h3 class="text-sm font-semibold text-fg">{title}</h3>
-				{#if description && !settings.hideSettingsPanelDescriptions}
-					<p class="mt-0.5 text-xs text-fg-muted">{description}</p>
-				{/if}
-			</div>
-		{/if}
+	bind:this={sectionRef}
+	class={cn(
+		'z-settings-section',
+		settings.compactSettingsRows && 'z-settings-section--compact',
+		!hasRows && 'hidden'
+	)}
+>
+	{#if hasRows}
 		<div
 			class={cn(
-				'divide-y divide-border/80 rounded-sm border border-border/80 bg-surface-raised',
-				settings.hidePaneBorders && 'border-transparent bg-transparent'
+				'z-settings-section-heading',
+				settings.hidePaneBorders && 'z-settings-section-heading--plain'
 			)}
 		>
-			{@render children()}
+			<h3 class="z-settings-section-title">{title}</h3>
+			{#if description && !settings.hideSettingsPanelDescriptions}
+				<p class="z-settings-section-lead">{description}</p>
+			{/if}
 		</div>
+	{/if}
+	<div
+		class={cn(
+			'z-settings-list',
+			settings.hidePaneBorders && 'z-settings-list--plain'
+		)}
+	>
+		{@render children()}
+	</div>
 </section>

@@ -24,7 +24,7 @@
 			!settings.hidePaneBorders && 'border-b border-border/80'
 		)}
 	>
-		<h1 class="px-2 text-base font-semibold text-fg">Settings</h1>
+		<h1 class="z-settings-sidebar-title">Settings</h1>
 		<div class={cn('mt-3', settings.compactFolderSidebarHeader ? 'mb-0' : 'mb-1')}>
 			<SettingsSearch />
 		</div>

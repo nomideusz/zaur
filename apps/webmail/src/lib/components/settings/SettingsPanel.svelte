@@ -15,30 +15,29 @@
 	} = $props();
 </script>
 
-<div class="w-full max-w-[42rem] min-w-0">
+<div class="z-settings-panel">
 	<header class={cn('max-md:hidden', settings.compactSettingsPanel ? 'mb-5' : 'mb-6')}>
-		<h2
-			class={cn(
-				'font-semibold tracking-tight text-fg',
-				settings.compactSettingsPanel ? 'text-lg' : 'text-xl'
-			)}
-		>
-			{title}
-		</h2>
+		<h2 class="z-settings-page-title">{title}</h2>
 		{#if !settings.hideSettingsPanelDescriptions}
-			<p class="mt-1 max-w-prose text-sm text-fg-muted max-md:mt-0 max-md:text-xs">{description}</p>
+			<p class="z-settings-page-lead">{description}</p>
 		{/if}
 	</header>
 
-	<div class={cn(settings.compactSettingsPanel ? 'space-y-6' : 'space-y-8')}>
+	<div
+		class={cn(
+			'z-settings-stack',
+			settings.compactSettingsPanel && 'z-settings-stack--compact'
+		)}
+	>
 		{@render children()}
 	</div>
 
 	{#if footer}
 		<footer
 			class={cn(
-				settings.compactSettingsPanel ? 'mt-8 pt-5' : 'mt-10 pt-6',
-				!settings.hidePaneBorders && 'border-t border-border'
+				'z-settings-panel-footer',
+				settings.compactSettingsPanel && 'z-settings-panel-footer--compact',
+				settings.hidePaneBorders && 'border-transparent'
 			)}
 		>
 			{@render footer()}

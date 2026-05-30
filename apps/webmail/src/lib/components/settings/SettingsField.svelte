@@ -36,15 +36,12 @@
 	<div
 		id={rowId}
 		data-settings-row
-		class={cn(
-			'scroll-mt-20 border-b border-border/80 px-4 py-3 last:border-b-0',
-			settings.compactSettingsRows && 'px-3 py-2.5'
-		)}
+		class={cn('z-settings-field scroll-mt-20', settings.compactSettingsRows && 'z-settings-field--compact')}
 	>
-		<p class="text-sm font-medium text-fg">{title}</p>
+		<p class="z-settings-field-label">{title}</p>
 		{#if description}
-			<p class="mt-0.5 text-xs text-fg-muted">{description}</p>
+			<p class="z-settings-field-desc">{description}</p>
 		{/if}
-		<div class="mt-2">{@render children()}</div>
+		<div class="z-settings-field-body">{@render children()}</div>
 	</div>
 {/if}

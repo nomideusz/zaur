@@ -92,12 +92,12 @@
 </script>
 
 <div class="flex max-w-sm flex-col items-end gap-2">
-	<span class={cn('text-right text-xs font-medium', toneClass)}>
+	<span class={cn('z-settings-row-desc text-right font-medium', toneClass)}>
 		{pushStatusLabel(pushStatus)}
 	</span>
 
 	{#if lastError}
-		<p class="text-right text-xs text-amber-700 dark:text-amber-300">{lastError}</p>
+		<p class="z-settings-row-desc text-right text-amber-700 dark:text-amber-300">{lastError}</p>
 	{/if}
 
 	<div class="flex flex-wrap items-center justify-end gap-2">
@@ -110,13 +110,13 @@
 				Enable push
 			</button>
 		{:else if pushStatus.state === 'denied'}
-			<span class="text-xs text-fg-subtle">Change in browser site settings</span>
+			<span class="z-settings-row-desc text-fg-subtle">Change in browser site settings</span>
 		{:else if pushStatus.state === 'service_worker_unavailable'}
 			<button type="button" class="z-btn-ghost text-sm" disabled={busy} onclick={() => void retryPush()}>
 				Retry
 			</button>
 		{:else if pushStatus.state === 'unsupported'}
-			<span class="text-xs text-fg-subtle">Use Chrome or Firefox for background push</span>
+			<span class="z-settings-row-desc text-fg-subtle">Use Chrome or Firefox for background push</span>
 		{/if}
 
 		{#if showInstall}

@@ -78,7 +78,7 @@
 			id="settings-search"
 			bind:this={input}
 			type="search"
-			class="z-chrome-field z-input w-full rounded-sm py-2 pr-3 pl-9 text-sm shadow-none"
+			class="z-settings-search-input"
 			placeholder="Search…"
 			autocomplete="off"
 			aria-controls={results.length ? resultsId : undefined}

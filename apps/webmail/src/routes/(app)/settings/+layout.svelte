@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { browser } from '$app/environment';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
+	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import SettingsSidebar from '$lib/components/settings/SettingsSidebar.svelte';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/settings/nav';
 	import { cn } from '$lib/utils/cn';
@@ -17,6 +18,7 @@
 	const activeLink = $derived(
 		links.find((link) => isSettingsNavActive($page.url.pathname, link.href)) ?? null
 	);
+	const mobileSectionLabel = $derived(activeLink?.label ?? 'Settings');
 
 	function navigateToSection(event: Event) {
 		const href = (event.currentTarget as HTMLSelectElement).value;
@@ -42,15 +44,15 @@
 				<div class="flex items-center gap-2 px-3 py-2">
 					<a
 						href="/settings"
-						class="inline-flex size-10 shrink-0 items-center justify-center rounded-md text-fg-muted transition-colors hover:bg-surface-sunken hover:text-fg"
+						class="inline-flex size-10 shrink-0 items-center justify-center rounded-sm text-fg-muted transition-colors hover:bg-surface-sunken hover:text-fg"
 						aria-label="All settings"
 					>
 						<ArrowLeft class="size-5" aria-hidden="true" />
 					</a>
-					<label class="min-w-0 flex-1">
-						<span class="sr-only">Settings section</span>
+					<label class="relative flex min-h-11 min-w-0 flex-1">
+						<span class="sr-only">Settings section, {mobileSectionLabel}</span>
 						<select
-							class="z-input w-full py-2 text-base"
+							class="absolute inset-0 z-[1] h-full w-full cursor-pointer opacity-0"
 							value={activeLink?.href ?? $page.url.pathname}
 							onchange={navigateToSection}
 						>
@@ -58,6 +60,10 @@
 								<option value={link.href}>{link.label}</option>
 							{/each}
 						</select>
+						<span class="z-settings-mobile-section-picker" aria-hidden="true">
+							<span class="min-w-0 flex-1 truncate">{mobileSectionLabel}</span>
+							<ChevronDown class="size-5 shrink-0 text-fg-subtle" aria-hidden="true" />
+						</span>
 					</label>
 				</div>
 			</header>
