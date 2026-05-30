@@ -17,7 +17,11 @@
 	);
 </script>
 
-<div class="z-mail-pane-body z-mail-pane-body--simple flex w-full flex-col">
+<div
+	class="z-mail-pane-body z-mail-pane-body--simple flex w-full flex-col {isThreadOpen
+		? 'z-mail-pane-body--thread-open'
+		: ''}"
+>
 	{#if !adaptiveSingleFocus}
 		{@render list()}
 	{/if}

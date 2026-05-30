@@ -430,6 +430,14 @@ class MailStore {
 		return this.openMessageInflight;
 	}
 
+	/** Abort a stuck or stale open-message fetch (e.g. when switching modes). */
+	cancelOpenMessage() {
+		this.openMessageGeneration++;
+		this.openMessageInflight = null;
+		this.openMessageInflightKey = null;
+		this.selectedLoading = false;
+	}
+
 	private waitForMessagesLoad(): Promise<void> {
 		if (!this.messagesLoading) return Promise.resolve();
 		return new Promise((resolve) => {

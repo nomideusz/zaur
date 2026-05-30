@@ -1413,6 +1413,24 @@
 		height: auto;
 	}
 
+	/* Mobile fullscreen thread — reader fills the pane (was collapsing to 0 height). */
+	.z-app-main--page-scroll .z-mail-pane--mobile-fullscreen .z-mail-pane-body--thread-open {
+		min-height: 0;
+		flex: 1 1 0;
+		overflow: hidden;
+	}
+
+	.z-app-main--page-scroll
+		.z-mail-pane--mobile-fullscreen
+		.z-mail-pane-body--thread-open
+		.z-mail-reader-pane {
+		display: flex;
+		min-height: 0;
+		flex: 1 1 0;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
 	.z-settings-panel {
 		width: 100%;
 		max-width: 30rem;

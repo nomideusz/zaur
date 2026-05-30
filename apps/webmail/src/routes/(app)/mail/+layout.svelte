@@ -25,6 +25,7 @@
 		readerFocus.set(false);
 		readerFocus.setClean(false);
 		mail.clearSelection();
+		mail.cancelOpenMessage();
 	});
 
 	onMount(() => {

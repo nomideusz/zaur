@@ -73,7 +73,8 @@
 			activeThreadId
 		)
 	);
-	const sectionMode = $derived(!!mailboxRouteId);
+	/** Sectioned inbox home only — thread/search routes use a flat list like Classic. */
+	const sectionMode = $derived(!!mailboxRouteId && !activeThreadId);
 	const mailHomeHref = $derived(settings.preferredMailHref());
 	const minimalChrome = $derived(!settings.showReaderListRail && !!activeThreadId);
 	const resolvedEmptyMessage = $derived(emptyMessage ?? defaultEmptyMessage(mailboxRouteId));
