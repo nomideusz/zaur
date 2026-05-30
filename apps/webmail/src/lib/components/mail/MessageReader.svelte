@@ -54,6 +54,8 @@
 	);
 	const readMinutes = $derived(Math.max(1, Math.round(totalWords / 220)));
 	const showReadTime = $derived(totalWords >= 200);
+	const mainPageHref = '/mail/inbox';
+	const mailboxHref = $derived(`/mail/${mailboxRouteId}`);
 
 	const nextUnread = $derived.by(() => {
 		const list = mail.messages;
@@ -326,7 +328,30 @@
 	{/if}
 
 	<div class="z-pane-scroll z-pane-scroll--mobile-reader min-h-0 flex-1 overflow-y-auto" bind:this={scrollPane}>
-		<div class={cn('z-reader-column', threadRowX)}>
+		<div
+			class={cn(
+				'z-reader-column',
+				threadRowX,
+				prefersMinimalReaderChrome && 'z-reader-column--aligned'
+			)}
+		>
+			<div
+				class={cn(
+					'sticky top-0 z-10 border-b border-border/60 bg-surface/95 text-xs text-fg-muted backdrop-blur-sm',
+					settings.compactReaderHeader ? 'pb-1 pt-1.5' : 'pb-2 pt-2'
+				)}
+			>
+				<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+					<a href={mainPageHref} class="font-medium text-accent underline underline-offset-2 hover:text-accent-hover">
+						Back to Inbox
+					</a>
+					{#if mailboxRouteId !== 'inbox'}
+						<a href={mailboxHref} class="text-accent underline underline-offset-2 hover:text-accent-hover">
+							Back to {mailboxRouteId}
+						</a>
+					{/if}
+				</div>
+			</div>
 			{#if thread.length > 1}
 				<div class={cn('pb-1 pt-3', settings.compactReaderHeader && 'pt-2.5', prefersMinimalReaderChrome && 'pt-2')}>
 					<div

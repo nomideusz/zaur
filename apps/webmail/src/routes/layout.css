@@ -41,6 +41,50 @@
 	--z-reader-text: 1rem;
 	--z-reader-leading: 1.7;
 	--z-reader-font: var(--font-sans);
+	/* Vertical rhythm tokens (desktop defaults). */
+	--z-space-reader-divider: 0.75rem;
+	--z-space-reader-content: 1.25rem;
+	--z-space-reader-content-compact: 1rem;
+	--z-space-reader-inline-subject: 1rem;
+	--z-space-reader-body-stack: 1em;
+	--z-space-reader-column-inline: 0rem;
+	--z-space-nav-top: 2.5rem;
+	--z-space-nav-bottom: 1rem;
+	--z-space-nav-label-top: 0.75rem;
+	--z-space-folder-sections-gap: 2.75rem;
+	--z-space-folder-sections-top: 1rem;
+	--z-space-folder-sections-bottom: 3rem;
+	--z-space-folder-head-bottom: 0.75rem;
+	--z-space-folder-footer-top: 0.5rem;
+	--z-space-folder-list-gap: 0.3125rem;
+	--z-space-folder-message-y: 0.1875rem;
+	--z-space-folder-message-leading: 1.62;
+	--z-space-mobile-reader-scroll-bottom: 0.75rem;
+	--z-main-page-text: 1.0625rem;
+	--z-main-page-muted-text: 1rem;
+	--z-main-page-title: 1.0625rem;
+}
+
+@media (max-width: 767px) {
+	:root {
+		--z-space-reader-divider: 0.625rem;
+		--z-space-reader-content: 1rem;
+		--z-space-reader-content-compact: 0.875rem;
+		--z-space-reader-inline-subject: 0.875rem;
+		--z-space-reader-column-inline: 0.25rem;
+		--z-space-nav-top: 1.5rem;
+		--z-space-nav-bottom: 0.75rem;
+		--z-space-nav-label-top: 0.625rem;
+		--z-space-folder-sections-gap: 1.75rem;
+		--z-space-folder-sections-top: 0.75rem;
+		--z-space-folder-sections-bottom: 2rem;
+		--z-space-folder-head-bottom: 0.375rem;
+		--z-space-folder-list-gap: 0.25rem;
+		--z-space-folder-message-y: 0.25rem;
+		--z-main-page-text: 1rem;
+		--z-main-page-muted-text: 0.9375rem;
+		--z-main-page-title: 1.125rem;
+	}
 }
 
 .z-skip-link {
@@ -732,7 +776,8 @@
 	}
 
 	.z-reader-chrome--bordered {
-		@apply border-b border-border/60 pb-2;
+		@apply border-b border-border/60;
+		padding-bottom: var(--z-space-reader-divider);
 	}
 
 	.z-reader-chrome__head,
@@ -788,15 +833,16 @@
 	}
 
 	.z-reader-message-head {
-		@apply border-b border-border/60 pb-2;
+		@apply border-b border-border/60;
+		padding-bottom: var(--z-space-reader-divider);
 	}
 
 	.z-reader-content {
-		@apply pt-4;
+		padding-top: var(--z-space-reader-content);
 	}
 
 	.z-reader-content--compact {
-		@apply pt-3;
+		padding-top: var(--z-space-reader-content-compact);
 	}
 
 	.z-reader-attachments {
@@ -839,6 +885,13 @@
 		@apply w-full max-w-(--z-reader-measure) md:mx-auto;
 		/* Anchor the em-based measure to the reading size so the line length is locked. */
 		font-size: var(--z-reader-text);
+		padding-inline: var(--z-space-reader-column-inline);
+	}
+
+	.z-reader-column--aligned {
+		/* Minimal mode keeps reader typography/measure aligned with the main list view. */
+		--z-reader-text: var(--z-list-text);
+		--z-reader-measure: 40em;
 	}
 
 	.z-reader-body {
@@ -848,15 +901,15 @@
 	}
 
 	.z-reader-inline-subject {
-		margin: 0 0 0.75rem;
+		margin: 0 0 var(--z-space-reader-inline-subject);
 		font-size: var(--z-reader-text);
 		line-height: var(--z-reader-leading);
 		@apply font-semibold text-fg;
 	}
 
 	@media (min-width: 1024px) {
-		.z-reader-body,
-		.z-reader-inline-subject {
+		.z-reader-column:not(.z-reader-column--aligned) .z-reader-body,
+		.z-reader-column:not(.z-reader-column--aligned) .z-reader-inline-subject {
 			font-size: calc(var(--z-reader-text) + 0.0625rem);
 		}
 	}
@@ -1320,12 +1373,12 @@
 
 	@media (max-width: 767px) {
 		.z-pane-scroll--mobile-reader {
-			padding-bottom: 0.5rem;
+			padding-bottom: var(--z-space-mobile-reader-scroll-bottom);
 		}
 	}
 
 	.z-email-body :where(p + p, p + ul, p + ol, ul + p, ol + p) {
-		margin-top: 0.75em;
+		margin-top: var(--z-space-reader-body-stack);
 	}
 
 	.z-type-list-sender {
@@ -1371,15 +1424,22 @@
 	}
 
 	.z-mail-text-nav {
-		@apply shrink-0 px-4 pb-2 pt-5;
+		@apply shrink-0 px-4;
+		padding-top: var(--z-space-nav-top);
+		padding-bottom: var(--z-space-nav-bottom);
 	}
 
 	.z-mail-text-nav__title {
-		@apply text-base font-semibold text-fg;
+		@apply font-semibold text-fg;
+		font-size: var(--z-main-page-title);
+		line-height: 1.45;
 	}
 
 	.z-mail-text-nav__label {
-		@apply mt-2 text-sm text-fg-muted;
+		@apply text-fg-subtle;
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+		margin-top: var(--z-space-nav-label-top);
 	}
 
 	.z-mail-text-nav__links {
@@ -1387,11 +1447,13 @@
 	}
 
 	.z-mail-text-nav__link {
-		@apply inline-flex items-baseline gap-1.5 text-sm text-fg underline underline-offset-2 decoration-fg/40 transition-colors hover:text-fg;
+		@apply inline-flex items-baseline gap-1.5 text-fg underline underline-offset-2 decoration-fg/30 transition-colors hover:text-fg;
+		font-size: var(--z-main-page-text);
+		line-height: 1.6;
 	}
 
 	.z-mail-text-nav__link--active {
-		@apply font-semibold decoration-fg/70;
+		@apply font-semibold decoration-fg/55;
 	}
 
 	.z-mail-text-nav__count {
@@ -1403,43 +1465,65 @@
 	}
 
 	.z-mail-folder-sections {
-		@apply flex flex-col gap-7 px-4 pb-8 pt-2;
+		@apply flex flex-col px-4;
+		gap: var(--z-space-folder-sections-gap);
+		padding-top: var(--z-space-folder-sections-top);
+		padding-bottom: var(--z-space-folder-sections-bottom);
 	}
 
 	.z-mail-folder-section__head {
-		@apply mb-1.5 flex items-center gap-3;
+		@apply flex items-center justify-between gap-3;
+		margin-bottom: var(--z-space-folder-head-bottom);
 	}
 
 	.z-mail-folder-section__title {
-		@apply text-sm font-semibold text-fg;
+		@apply font-semibold text-fg;
+		font-size: var(--z-main-page-text);
+		line-height: 1.55;
+	}
+
+	.z-mail-folder-section__count {
+		@apply shrink-0 tabular-nums text-fg-subtle;
+		font-size: 0.75rem;
+		line-height: 1.4;
+		opacity: 0.7;
 	}
 
 	.z-mail-folder-section__more {
-		@apply text-xs text-fg-muted underline underline-offset-2 decoration-fg/30 transition-colors hover:text-fg;
+		@apply text-fg-subtle underline underline-offset-2 decoration-fg/25 transition-colors hover:text-fg;
+		font-size: 0.875rem;
 	}
 
 	.z-mail-folder-section__empty {
-		@apply text-sm font-semibold text-fg;
+		@apply font-normal text-fg-muted;
+		font-size: var(--z-main-page-text);
+		line-height: 1.55;
 	}
 
 	.z-mail-folder-section__footer {
-		@apply mt-1.5;
+		margin-top: var(--z-space-folder-footer-top);
 	}
 
 	.z-mail-folder-section__list {
-		@apply flex flex-col gap-1.5;
+		@apply flex flex-col;
+		gap: var(--z-space-folder-list-gap);
 	}
 
 	.z-mail-folder-section__message {
-		@apply flex items-baseline justify-between gap-3 text-sm no-underline;
+		@apply flex items-baseline justify-between gap-3 no-underline;
+		font-size: var(--z-main-page-text);
+		padding-block: var(--z-space-folder-message-y);
+		line-height: var(--z-space-folder-message-leading);
 	}
 
 	.z-mail-folder-section__subject {
-		@apply min-w-0 flex-1 truncate text-fg underline underline-offset-2 decoration-fg/40;
+		@apply min-w-0 flex-1 truncate text-fg underline underline-offset-2 decoration-fg/30;
+		text-decoration-thickness: 1px;
 	}
 
 	.z-mail-folder-section__number {
 		@apply shrink-0 text-xs tabular-nums text-fg-subtle;
+		opacity: 0.55;
 	}
 
 	.z-list-line--sender {

@@ -208,8 +208,8 @@ const LIST_ROW_HEIGHT: Record<ListDensity, { preview: string; noPreview: string 
 };
 
 const READER_TEXT_SIZE: Record<ReaderTextSize, string> = {
-	small: '0.9375rem',
-	normal: '1.03125rem',
+	small: '1rem',
+	normal: '1.0625rem',
 	large: '1.1875rem'
 };
 
@@ -237,9 +237,9 @@ const READING_FONT: Record<ReadingTypeface, string> = {
 };
 
 const LIST_TEXT_SIZE: Record<ListTextSize, string> = {
-	small: '0.75rem',
-	normal: '0.875rem',
-	large: '1rem'
+	small: '1rem',
+	normal: '1rem',
+	large: '1.125rem'
 };
 
 function readBlockExternal(): boolean {
