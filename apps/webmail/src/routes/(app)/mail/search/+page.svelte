@@ -3,6 +3,7 @@
 	import MailPane from '$lib/components/mail/MailPane.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
 	import MessageReaderEmpty from '$lib/components/mail/MessageReaderEmpty.svelte';
+	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
 	import { mailCountLabel } from '$lib/mail/count-label';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -10,6 +11,9 @@
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const query = $derived($page.url.searchParams.get('q')?.trim() ?? '');
+	const shouldAutofocusSearch = $derived(
+		$page.url.searchParams.get('focus') === '1' || !query
+	);
 	const scopedMailboxId = $derived($page.url.searchParams.get('mailbox')?.trim() || null);
 	const scopedMailbox = $derived(
 		scopedMailboxId
@@ -51,7 +55,11 @@
 	messageCount={search.results.length}
 >
 	{#snippet list()}
-		<MessageList
+		<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:contents">
+			<div class="z-mail-mobile-search md:hidden">
+				<GlobalSearch placement="mobile" autofocus={shouldAutofocusSearch} />
+			</div>
+			<MessageList
 			messages={search.results}
 			{mailboxName}
 			expanded={settings.expandListUntilOpen}
@@ -70,6 +78,7 @@
 				if (auth.client && query) void search.search(auth.client, query, mail.mailboxes);
 			}}
 		/>
+		</div>
 	{/snippet}
 	{#snippet reader()}
 		{#if !settings.expandListUntilOpen}

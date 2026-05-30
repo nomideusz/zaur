@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
 	import { page } from '$app/stores';
 	import Calendar from '$lib/components/icons/Calendar.svelte';
 import Database from '$lib/components/icons/Database.svelte';
@@ -17,12 +18,16 @@ import User from '$lib/components/icons/User.svelte';
 	let {
 		links,
 		sections,
-		onNavigate
+		onNavigate,
+		variant = 'sidebar'
 	}: {
 		links: SettingsNavLink[];
 		sections: readonly { id: string; label: string }[];
 		onNavigate?: () => void;
+		variant?: 'sidebar' | 'mobile';
 	} = $props();
+
+	const isMobile = $derived(variant === 'mobile');
 
 	const ICON_MAP: Record<SettingsNavIcon, LucideIcon> = {
 		account: User,
@@ -41,22 +46,27 @@ import User from '$lib/components/icons/User.svelte';
 	}
 </script>
 
-<div class="space-y-4 pt-2">
+<div class={cn(isMobile ? 'space-y-5' : 'space-y-4 pt-2')}>
 	{#each sections as section}
 		{@const sectionLinks = linksForSection(section.id)}
 		{#if sectionLinks.length > 0}
 			<div>
-				<p class="z-type-label mb-1 px-2">{section.label}</p>
-				<ul class="space-y-0.5">
+				<p class={cn('z-type-label mb-1.5 px-2', isMobile && 'text-[11px]')}>{section.label}</p>
+				<ul class={cn(isMobile && 'overflow-hidden rounded-lg border border-border bg-surface-raised divide-y divide-border')}>
 					{#each sectionLinks as link (link.href)}
 						{@const Icon = ICON_MAP[link.icon]}
 						<li>
 							<a
 								href={link.href}
 								class={cn(
-									'flex items-center gap-2 rounded-sm px-2 py-2 text-sm transition-colors',
+									'flex items-center gap-3 transition-colors',
+									isMobile
+										? 'min-h-12 px-4 py-3 text-base'
+										: 'gap-2 rounded-sm px-2 py-2 text-sm',
 									isSettingsNavActive($page.url.pathname, link.href)
-										? 'z-surface-active'
+										? isMobile
+											? 'bg-accent/10 font-medium text-fg'
+											: 'z-surface-active'
 										: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
 								)}
 								aria-current={isSettingsNavActive($page.url.pathname, link.href)
@@ -64,10 +74,19 @@ import User from '$lib/components/icons/User.svelte';
 									: undefined}
 								onclick={onNavigate}
 							>
-								{#if !settings.compactSettingsNav}
-									<Icon class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+								{#if !settings.compactSettingsNav || isMobile}
+									<Icon
+										class={cn(
+											'shrink-0 text-fg-subtle',
+											isMobile ? 'size-5' : 'size-4'
+										)}
+										aria-hidden="true"
+									/>
 								{/if}
-								<span class="truncate">{link.label}</span>
+								<span class="min-w-0 flex-1 truncate">{link.label}</span>
+								{#if isMobile}
+									<ChevronRight class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+								{/if}
 							</a>
 						</li>
 					{/each}

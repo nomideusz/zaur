@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import Search from '$lib/components/icons/Search.svelte';
-import User from '$lib/components/icons/User.svelte';
+	import User from '$lib/components/icons/User.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
@@ -13,23 +13,35 @@ import User from '$lib/components/icons/User.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
-		placement?: 'shell' | 'sidebar';
+		placement?: 'shell' | 'sidebar' | 'mobile';
 		class?: string;
+		autofocus?: boolean;
 	}
 
-	let { placement = 'shell', class: className = '' }: Props = $props();
+	let { placement = 'shell', class: className = '', autofocus = false }: Props = $props();
 
 	let input = $state('');
 	let open = $state(false);
 	let searchInput = $state<HTMLInputElement | null>(null);
 	const isSidebar = $derived(placement === 'sidebar');
-	const dropdownId = $derived(isSidebar ? 'sidebar-search-suggestions' : 'global-search-suggestions');
-	const inputId = $derived(isSidebar ? 'sidebar-search' : 'global-search');
+	const isMobile = $derived(placement === 'mobile');
+	const dropdownId = $derived(
+		isSidebar ? 'sidebar-search-suggestions' : isMobile ? 'mobile-search-suggestions' : 'global-search-suggestions'
+	);
+	const inputId = $derived(
+		isSidebar ? 'sidebar-search' : isMobile ? 'mobile-search' : 'global-search'
+	);
 
 	$effect(() => {
 		if ($page.url.pathname === '/mail/search') {
 			input = $page.url.searchParams.get('q') ?? '';
 		}
+	});
+
+	$effect(() => {
+		if (!isMobile || !searchInput) return;
+		if (!autofocus && $page.url.searchParams.get('focus') !== '1') return;
+		requestAnimationFrame(() => searchInput?.focus());
 	});
 
 	const contactMatches = $derived.by(() => {
@@ -42,15 +54,23 @@ import User from '$lib/components/icons/User.svelte';
 	const showDropdown = $derived(open && input.trim().length > 0);
 
 	const placeholder = $derived.by(() => {
+		if (isMobile) {
+			return 'Search messages or contacts…';
+		}
 		if (isSidebar) {
 			return `Search…${settings.enableKeyboardShortcuts && !settings.hideComposeHints ? ' (/)' : ''}`;
 		}
 		return `Search messages or contacts…${settings.enableKeyboardShortcuts && !settings.hideComposeHints ? ' (/ to focus)' : ''}${!settings.hideComposeHints ? ` · ${searchOperatorHint()}` : ''}`;
 	});
 
+	function searchPageUrl(focus = false): string {
+		return focus ? '/mail/search?focus=1' : '/mail/search';
+	}
+
 	function currentMailboxIdFromPath(): string | null {
-		const match = $page.url.pathname.match(/^\/mail\/m\/([^/]+)/);
-		return match ? decodeURIComponent(match[1]) : null;
+		const match = $page.url.pathname.match(/^\/mail\/([^/]+)/);
+		if (!match || match[1] === 'search' || match[1] === 'compose') return null;
+		return decodeURIComponent(match[1]);
 	}
 
 	function submit() {
@@ -145,13 +165,13 @@ import User from '$lib/components/icons/User.svelte';
 			event.preventDefault();
 			if (!settings.hideHeaderSearch) {
 				if (focusVisibleMailSearch()) return;
-				if (searchInput) {
+				if (searchInput && !isMobile) {
 					searchInput.focus();
 					open = true;
 					return;
 				}
 			}
-			goto('/mail/search');
+			goto(searchPageUrl(true));
 		}
 
 		window.addEventListener('keydown', onKeydown);
@@ -159,22 +179,18 @@ import User from '$lib/components/icons/User.svelte';
 	});
 </script>
 
-{#if !isSidebar}
-	<IconButton
-		label="Search mail"
-		class={settings.hideHeaderSearch ? '' : 'md:hidden'}
-		onclick={() => goto('/mail/search')}
-	>
+{#if placement === 'shell' && !settings.hideHeaderSearch}
+	<IconButton label="Search mail" class="md:hidden" onclick={() => goto(searchPageUrl(true))}>
 		<Search class="size-4" />
 	</IconButton>
 {/if}
 
-{#if !settings.hideHeaderSearch}
+{#if !settings.hideHeaderSearch && (isSidebar || isMobile || placement === 'shell')}
 	<form
 		role="search"
 		class={cn(
 			'relative w-full min-w-0',
-			isSidebar ? className : cn('mx-auto hidden max-w-xl md:block', className)
+			isSidebar || isMobile ? className : cn('mx-auto hidden max-w-xl md:block', className)
 		)}
 		onsubmit={(e) => {
 			e.preventDefault();
@@ -185,18 +201,20 @@ import User from '$lib/components/icons/User.svelte';
 		<Search
 			class={cn(
 				'pointer-events-none absolute top-1/2 -translate-y-1/2 text-fg-subtle',
-				isSidebar ? 'left-2.5 size-3.5' : 'left-3 size-4'
+				isSidebar || isMobile ? 'left-2.5 size-3.5' : 'left-3 size-4'
 			)}
 		/>
 		<input
 			bind:this={searchInput}
 			id={inputId}
 			type="search"
-			data-zaur-mail-search={isSidebar ? '' : undefined}
+			data-zaur-mail-search={isSidebar || isMobile ? '' : undefined}
+			enterkeyhint="search"
+			inputmode="search"
 			{placeholder}
 			class={cn(
 				'z-input z-chrome-field w-full shadow-none',
-				isSidebar ? 'h-9 rounded-md pl-8 text-sm' : 'rounded-full pl-9'
+				isSidebar || isMobile ? 'h-10 rounded-md pl-8 text-base' : 'rounded-full pl-9'
 			)}
 			autocomplete="off"
 			bind:value={input}
@@ -213,7 +231,7 @@ import User from '$lib/components/icons/User.svelte';
 				tabindex="-1"
 				class={cn(
 					'absolute left-0 top-full z-50 mt-1.5 overflow-hidden rounded-lg border border-border bg-surface-raised py-1.5 shadow-md',
-					isSidebar ? 'right-0 min-w-[14rem]' : 'right-0'
+					isSidebar || isMobile ? 'right-0 min-w-[14rem]' : 'right-0'
 				)}
 				onkeydown={onMenuKeydown}
 			>

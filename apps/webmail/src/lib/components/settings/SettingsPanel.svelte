@@ -16,7 +16,7 @@
 </script>
 
 <div class="w-full max-w-[42rem] min-w-0">
-	<header class={cn(settings.compactSettingsPanel ? 'mb-5' : 'mb-6')}>
+	<header class={cn('max-md:hidden', settings.compactSettingsPanel ? 'mb-5' : 'mb-6')}>
 		<h2
 			class={cn(
 				'font-semibold tracking-tight text-fg',
@@ -26,7 +26,7 @@
 			{title}
 		</h2>
 		{#if !settings.hideSettingsPanelDescriptions}
-			<p class="mt-1 max-w-prose text-sm text-fg-muted">{description}</p>
+			<p class="mt-1 max-w-prose text-sm text-fg-muted max-md:mt-0 max-md:text-xs">{description}</p>
 		{/if}
 	</header>
 

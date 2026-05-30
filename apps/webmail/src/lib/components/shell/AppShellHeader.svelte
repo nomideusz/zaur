@@ -86,10 +86,9 @@ import Search from '$lib/components/icons/Search.svelte';
 		)}
 	>
 		{#if showMailContext && shellHeader.mail?.showNewMessage && !mobileReadingThread}
-			<Button href="/mail/compose" class="shrink-0 md:hidden">
+			<IconButton label="New message" class="md:hidden" onclick={() => goto('/mail/compose')}>
 				<PenSquare class="size-5" aria-hidden="true" />
-				<span class={settings.compactHeaderActions ? 'sr-only sm:not-sr-only' : ''}>New message</span>
-			</Button>
+			</IconButton>
 		{/if}
 
 		<OfflineIndicator />
@@ -131,7 +130,7 @@ import Search from '$lib/components/icons/Search.svelte';
 		{/if}
 
 		{#if showMobileMailSearch}
-			<IconButton label="Search mail" class="md:hidden" onclick={() => goto('/mail/search')}>
+			<IconButton label="Search mail" class="md:hidden" onclick={() => goto('/mail/search?focus=1')}>
 				<Search class="size-5" aria-hidden="true" />
 			</IconButton>
 		{/if}

@@ -39,17 +39,17 @@
 		id={rowId}
 		data-settings-row
 		class={cn(
-			'grid scroll-mt-20 items-center gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,1fr)_auto]',
+			'grid scroll-mt-20 grid-cols-[minmax(0,1fr)_auto] items-center gap-x-3 gap-y-0.5',
 			settings.compactSettingsRows ? 'px-3 py-2.5' : 'px-4 py-3',
 			'[&:has(:disabled)]:opacity-60'
 		)}
 	>
-		<div class="min-w-0">
+		<div class="min-w-0 py-0.5">
 			<p class="text-sm font-medium text-fg">{title}</p>
 			{#if description}
 				<p class="mt-0.5 text-xs leading-relaxed text-fg-muted">{description}</p>
 			{/if}
 		</div>
-		<div class="shrink-0 sm:justify-self-end">{@render children()}</div>
+		<div class="flex shrink-0 items-center justify-end self-center">{@render children()}</div>
 	</div>
 {/if}

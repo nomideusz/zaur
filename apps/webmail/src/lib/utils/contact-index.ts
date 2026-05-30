@@ -53,8 +53,10 @@ export function recordContact(accountId: string, name: string, email: string) {
 
 export function recordContacts(
 	accountId: string,
-	addresses: { name: string; email: string }[]
+	addresses: { name: string; email: string }[] | undefined | null
 ) {
+	if (!addresses?.length) return;
+
 	for (const address of addresses) {
 		recordContact(accountId, address.name, address.email);
 	}

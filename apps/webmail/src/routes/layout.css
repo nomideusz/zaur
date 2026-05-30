@@ -373,7 +373,7 @@
 	}
 
 	.z-checkbox {
-		@apply size-4 shrink-0 cursor-pointer appearance-none rounded-sm border border-border-strong bg-surface text-fg;
+		@apply size-5 shrink-0 cursor-pointer appearance-none rounded-sm border border-border-strong bg-surface text-fg md:size-4;
 		@apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
 		@apply disabled:cursor-not-allowed disabled:opacity-50;
 		background-position: center;
@@ -616,6 +616,14 @@
 
 	.z-mobile-reader-bar__icon-btn {
 		@apply !min-h-11 !min-w-11 shrink-0 rounded-md border border-border bg-surface;
+	}
+
+	.z-mail-mobile-search {
+		@apply shrink-0 border-b border-border/80 bg-surface px-3 py-2;
+	}
+
+	.z-settings-mobile-header {
+		background-color: var(--z-chrome);
 	}
 
 	@media (max-width: 767px) {

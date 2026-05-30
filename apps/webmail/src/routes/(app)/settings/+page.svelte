@@ -14,15 +14,18 @@
 
 <!-- Mobile settings index (desktop redirects to account via layout) -->
 <div class="flex min-h-full flex-col md:hidden">
-	<h1 class="text-xl font-semibold text-fg">Settings</h1>
+	<header class="sticky top-0 z-10 -mx-4 border-b border-border bg-surface px-4 pb-4 pt-1">
+		<h1 class="text-xl font-semibold text-fg">Settings</h1>
+		<div class="mt-3">
+			<SettingsSearch />
+		</div>
+	</header>
 
-	<div class="mb-6 mt-4">
-		<SettingsSearch />
-	</div>
-
-	<nav aria-label="Settings sections" class="min-h-0 flex-1">
-		<SettingsNavList {links} {sections} />
+	<nav aria-label="Settings sections" class="min-h-0 flex-1 pt-4">
+		<SettingsNavList {links} {sections} variant="mobile" />
 	</nav>
 
-	<AppSidebarShortcuts inSettings />
+	<div class="mt-6 border-t border-border pt-3">
+		<AppSidebarShortcuts inSettings />
+	</div>
 </div>

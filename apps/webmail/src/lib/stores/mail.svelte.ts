@@ -83,8 +83,10 @@ function indexMessagesContacts(messages: Array<MessagePreview | MessageDetail>) 
 
 		for (const message of messages) {
 			recordContact(accountId, message.from.name, message.from.email);
-			if ('to' in message) {
+			if (message.to?.length) {
 				recordContacts(accountId, message.to);
+			}
+			if ('cc' in message && message.cc?.length) {
 				recordContacts(accountId, message.cc);
 			}
 		}

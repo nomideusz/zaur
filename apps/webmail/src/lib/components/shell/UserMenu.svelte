@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-import LogOut from '$lib/components/icons/LogOut.svelte';
-import Moon from '$lib/components/icons/Moon.svelte';
-import Settings from '$lib/components/icons/Settings.svelte';
-import Sun from '$lib/components/icons/Sun.svelte';
-import User from '$lib/components/icons/User.svelte';
+	import LogOut from '$lib/components/icons/LogOut.svelte';
+	import Moon from '$lib/components/icons/Moon.svelte';
+	import Settings from '$lib/components/icons/Settings.svelte';
+	import Sun from '$lib/components/icons/Sun.svelte';
+	import User from '$lib/components/icons/User.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -18,6 +18,7 @@ import User from '$lib/components/icons/User.svelte';
 		name: settings.resolvedDisplayName(auth.displayName ?? auth.username),
 		email: auth.username ?? ''
 	});
+	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
 
 	function close() {
 		open = false;
@@ -62,36 +63,35 @@ import User from '$lib/components/icons/User.svelte';
 			onclick={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.key === 'Escape' && close()}
 		>
-			<div class={cn('px-3', !settings.hidePaneBorders && 'border-b border-border', settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2')}>
-				<p class={cn('truncate font-medium text-fg', settings.compactUserMenuDropdown ? 'text-xs' : 'text-sm')}>{user.name}</p>
+			<div
+				class={cn(
+					'px-3',
+					!settings.hidePaneBorders && 'border-b border-border',
+					settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2'
+				)}
+			>
+				<p
+					class={cn(
+						'truncate font-medium text-fg',
+						settings.compactUserMenuDropdown ? 'text-xs' : 'text-sm'
+					)}
+				>
+					{user.name}
+				</p>
 				<p class="truncate text-xs text-fg-muted">{user.email}</p>
 			</div>
 
 			<a
-				href="/settings/account"
+				href="/settings"
 				role="menuitem"
 				class={cn(
 					'flex items-center gap-2 px-3 text-sm text-fg hover:bg-surface-sunken',
 					settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2',
-					$page.url.pathname.startsWith('/settings/account') && 'z-surface-active'
+					onSettingsRoute && 'z-surface-active'
 				)}
 				onclick={close}
 			>
-				<User class="size-4 text-fg-muted" />
-				Account
-			</a>
-
-			<a
-				href="/settings/account"
-				role="menuitem"
-				class={cn(
-					'flex items-center gap-2 px-3 text-sm text-fg hover:bg-surface-sunken',
-					settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2',
-					$page.url.pathname.startsWith('/settings') && 'z-surface-active'
-				)}
-				onclick={close}
-			>
-				<Settings class="size-4 text-fg-muted" />
+				<Settings class="size-4 text-fg-muted" aria-hidden="true" />
 				Settings
 			</a>
 
@@ -108,10 +108,10 @@ import User from '$lib/components/icons/User.svelte';
 				}}
 			>
 				{#if theme.resolved === 'dark'}
-					<Sun class="size-4 text-fg-muted" />
+					<Sun class="size-4 text-fg-muted" aria-hidden="true" />
 					Light mode
 				{:else}
-					<Moon class="size-4 text-fg-muted" />
+					<Moon class="size-4 text-fg-muted" aria-hidden="true" />
 					Dark mode
 				{/if}
 			</button>
@@ -129,7 +129,7 @@ import User from '$lib/components/icons/User.svelte';
 				)}
 				onclick={() => auth.logout()}
 			>
-				<LogOut class="size-4 text-fg-muted" />
+				<LogOut class="size-4 text-fg-muted" aria-hidden="true" />
 				Sign out
 			</button>
 		</div>
