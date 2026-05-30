@@ -4,8 +4,12 @@
 	import { onMount } from 'svelte';
 	import MailKeyboardShortcuts from '$lib/components/mail/MailKeyboardShortcuts.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { readerFocus } from '$lib/stores/reader-focus.svelte';
 
 	let { children } = $props();
+
+	const isThreadOpen = $derived(!!$page.params.threadId);
+	const focusActive = $derived(readerFocus.active && isThreadOpen);
 
 	onMount(() => {
 		function onKeydown(event: KeyboardEvent) {
@@ -35,6 +39,9 @@
 
 <MailKeyboardShortcuts />
 
-<div class="relative flex min-h-0 flex-1 flex-row overflow-hidden">
+<div
+	class="relative flex min-h-0 flex-1 flex-row overflow-hidden"
+	class:z-reader-focus={focusActive}
+>
 	{@render children()}
 </div>

@@ -36,8 +36,11 @@
 :root {
 	--z-list-row: 4rem;
 	--z-list-text: 1rem;
-	--z-reader-measure: 40rem;
-	--z-reader-text: 1rem;
+	/* Measure is in em (relative to reading text) so line length stays ~constant in characters. */
+	--z-reader-measure: 34em;
+	--z-reader-text: 1.03125rem;
+	--z-reader-leading: 1.65;
+	--z-reader-font: var(--font-sans);
 }
 
 .z-skip-link {
@@ -799,13 +802,35 @@
 		@apply size-4 shrink-0;
 	}
 
+	.z-focus-toggle {
+		@apply min-h-9 items-center justify-center rounded-md px-2 text-fg-subtle transition-colors hover:bg-surface-sunken/70 hover:text-fg;
+	}
+
+	.z-focus-toggle[aria-pressed='true'] {
+		@apply bg-surface-sunken text-fg;
+	}
+
 	.z-reader-column {
 		@apply w-full max-w-(--z-reader-measure) md:mx-auto;
+		/* Anchor the em-based measure to the reading size so the line length is locked. */
+		font-size: var(--z-reader-text);
 	}
 
 	.z-reader-body {
 		@apply w-full text-fg;
-		line-height: 1.75;
+		font-family: var(--z-reader-font);
+		line-height: var(--z-reader-leading);
+	}
+
+	/* Focused reading: collapse the folder sidebar and slim the message list to a rail. */
+	@media (min-width: 768px) {
+		.z-reader-focus {
+			--width-list: 16rem;
+		}
+
+		.z-reader-focus aside[aria-label='Folders'] {
+			display: none;
+		}
 	}
 
 	.z-mobile-reader-bar {
@@ -1314,7 +1339,8 @@
 
 	.z-email-body {
 		font-size: var(--z-reader-text);
-		line-height: 1.75;
+		line-height: var(--z-reader-leading);
+		font-family: var(--z-reader-font);
 		overflow-wrap: anywhere;
 	}
 

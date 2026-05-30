@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { renderMessageBody } from '$lib/email/html';
+	import { readerFocus } from '$lib/stores/reader-focus.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
 
@@ -17,7 +18,8 @@
 			bodyText,
 			allowExternal,
 			darkMode: theme.resolved === 'dark',
-			preferPlainText: settings.preferPlainText
+			preferPlainText: settings.preferPlainText,
+			cleanView: readerFocus.clean
 		})
 	);
 </script>

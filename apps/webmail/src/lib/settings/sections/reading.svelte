@@ -3,7 +3,13 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
-	import { settings, type DefaultReplyMode, type ReaderTextSize } from '$lib/stores/settings.svelte';
+	import {
+		settings,
+		type DefaultReplyMode,
+		type ReaderTextSize,
+		type ReaderWidth,
+		type ReadingTypeface
+	} from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="Display" description="Text and threads.">
@@ -18,6 +24,56 @@
 			]}
 			onchange={(v) => settings.setReaderTextSize(v as ReaderTextSize)}
 			class="w-auto"
+		/>
+	</SettingsRow>
+
+	<SettingsRow title="Reading width" description="Line length — Comfortable ≈ 66 characters, Wide fits more per line">
+		<SettingsSelect
+			label="Reading width"
+			value={settings.readerWidth}
+			options={[
+				{ value: 'comfortable', label: 'Comfortable' },
+				{ value: 'wide', label: 'Wide' }
+			]}
+			onchange={(v) => settings.setReaderWidth(v as ReaderWidth)}
+			class="w-auto"
+		/>
+	</SettingsRow>
+
+	<SettingsRow title="Reading typeface" description="Font for the message body — serif can be easier for long-form reading">
+		<SettingsSelect
+			label="Reading typeface"
+			value={settings.readingTypeface}
+			options={[
+				{ value: 'sans', label: 'Sans-serif' },
+				{ value: 'serif', label: 'Serif' }
+			]}
+			onchange={(v) => settings.setReadingTypeface(v as ReadingTypeface)}
+			class="w-auto"
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Clean reading view"
+		description="Re-flow messy HTML mail into the app's typography (toggle per message with the Aa button)"
+	>
+		<input
+			type="checkbox"
+			class="z-checkbox"
+			checked={settings.readerCleanView}
+			onchange={(e) => settings.setReaderCleanView(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Open in focused view"
+		description="Hide the folder sidebar and slim the message list when you open a message"
+	>
+		<input
+			type="checkbox"
+			class="z-checkbox"
+			checked={settings.focusReadingDefault}
+			onchange={(e) => settings.setFocusReadingDefault(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
 

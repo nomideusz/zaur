@@ -17,6 +17,8 @@ import {
 
 export type ListDensity = 'comfortable' | 'compact';
 export type ReaderTextSize = 'small' | 'normal' | 'large';
+export type ReaderWidth = 'comfortable' | 'wide';
+export type ReadingTypeface = 'sans' | 'serif';
 export type CalendarMaxEventsPerDay = 2 | 3 | 5;
 export type LoadingIndicatorStyle = 'skeleton' | 'minimal' | 'spinner';
 export type ComposeLayout = 'drawer' | 'pane';
@@ -192,6 +194,10 @@ const STORAGE = {
 	returnToInboxAfterSend: 'zaur:return-to-inbox-after-send',
 	enableUndoSend: 'zaur:enable-undo-send',
 	readerTextSize: 'zaur:reader-text-size',
+	readerWidth: 'zaur:reader-width',
+	readingTypeface: 'zaur:reading-typeface',
+	readerCleanView: 'zaur:reader-clean-view',
+	focusReadingDefault: 'zaur:focus-reading-default',
 	listTextSize: 'zaur:list-text-size',
 	defaultReplyMode: 'zaur:default-reply-mode',
 	defaultComposeFormat: 'zaur:default-compose-format',
@@ -217,15 +223,32 @@ const LIST_ROW_HEIGHT: Record<ListDensity, { preview: string; noPreview: string 
 };
 
 const READER_TEXT_SIZE: Record<ReaderTextSize, string> = {
-	small: '0.875rem',
-	normal: '1rem',
-	large: '1.125rem'
+	small: '0.9375rem',
+	normal: '1.03125rem',
+	large: '1.1875rem'
 };
 
-const READER_MEASURE: Record<ReaderTextSize, string> = {
-	small: '36rem',
-	normal: '40rem',
-	large: '46rem'
+/** Leading scales inversely with size: smaller text wants more air, larger text less. */
+const READER_LEADING: Record<ReaderTextSize, string> = {
+	small: '1.7',
+	normal: '1.65',
+	large: '1.6'
+};
+
+/**
+ * Reading measure in `em` (relative to the reading text size) so the line length
+ * stays locked to a constant number of characters regardless of the chosen size.
+ * ~34em ≈ 66 characters, ~40em ≈ 78 characters.
+ */
+const READER_MEASURE: Record<ReaderWidth, string> = {
+	comfortable: '34em',
+	wide: '40em'
+};
+
+const READING_FONT: Record<ReadingTypeface, string> = {
+	sans: 'var(--font-sans)',
+	serif:
+		"'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, Charter, Georgia, Cambria, 'Times New Roman', serif"
 };
 
 const LIST_TEXT_SIZE: Record<ListTextSize, string> = {
@@ -1074,6 +1097,26 @@ function readReaderTextSize(): ReaderTextSize {
 	return readStoredTextSize(STORAGE.readerTextSize);
 }
 
+function readReaderWidth(): ReaderWidth {
+	if (!browser) return 'comfortable';
+	return localStorage.getItem(STORAGE.readerWidth) === 'wide' ? 'wide' : 'comfortable';
+}
+
+function readReadingTypeface(): ReadingTypeface {
+	if (!browser) return 'sans';
+	return localStorage.getItem(STORAGE.readingTypeface) === 'serif' ? 'serif' : 'sans';
+}
+
+function readReaderCleanView(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.readerCleanView) === 'true';
+}
+
+function readFocusReadingDefault(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.focusReadingDefault) === 'true';
+}
+
 function readListTextSize(): ListTextSize {
 	return readStoredTextSize(STORAGE.listTextSize);
 }
@@ -1320,6 +1363,10 @@ class SettingsStore {
 	returnToInboxAfterSend = $state(readReturnToInboxAfterSend());
 	enableUndoSend = $state(readEnableUndoSend());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
+	readerWidth = $state<ReaderWidth>(readReaderWidth());
+	readingTypeface = $state<ReadingTypeface>(readReadingTypeface());
+	readerCleanView = $state(readReaderCleanView());
+	focusReadingDefault = $state(readFocusReadingDefault());
 	listTextSize = $state<ListTextSize>(readListTextSize());
 	defaultReplyMode = $state<DefaultReplyMode>(readDefaultReplyMode());
 	defaultComposeFormat = $state<ComposeFormat>(readDefaultComposeFormat());
@@ -1505,6 +1552,10 @@ class SettingsStore {
 		this.returnToInboxAfterSend = readReturnToInboxAfterSend();
 		this.enableUndoSend = readEnableUndoSend();
 		this.readerTextSize = readReaderTextSize();
+		this.readerWidth = readReaderWidth();
+		this.readingTypeface = readReadingTypeface();
+		this.readerCleanView = readReaderCleanView();
+		this.focusReadingDefault = readFocusReadingDefault();
 		this.listTextSize = readListTextSize();
 		this.defaultReplyMode = readDefaultReplyMode();
 		this.defaultComposeFormat = readDefaultComposeFormat();
@@ -1520,6 +1571,8 @@ class SettingsStore {
 		this.searchScope = readSearchScope();
 		this.applyListLayout();
 		this.applyReaderTextSize(this.readerTextSize);
+		this.applyReaderWidth(this.readerWidth);
+		this.applyReadingTypeface(this.readingTypeface);
 		this.applyListTextSize(this.listTextSize);
 	}
 
@@ -2762,6 +2815,36 @@ class SettingsStore {
 		this.applyReaderTextSize(value);
 	}
 
+	setReaderWidth(value: ReaderWidth) {
+		this.readerWidth = value;
+		if (browser) {
+			this.writeStorage(STORAGE.readerWidth, value);
+		}
+		this.applyReaderWidth(value);
+	}
+
+	setReadingTypeface(value: ReadingTypeface) {
+		this.readingTypeface = value;
+		if (browser) {
+			this.writeStorage(STORAGE.readingTypeface, value);
+		}
+		this.applyReadingTypeface(value);
+	}
+
+	setReaderCleanView(value: boolean) {
+		this.readerCleanView = value;
+		if (browser) {
+			this.writeStorage(STORAGE.readerCleanView, String(value));
+		}
+	}
+
+	setFocusReadingDefault(value: boolean) {
+		this.focusReadingDefault = value;
+		if (browser) {
+			this.writeStorage(STORAGE.focusReadingDefault, String(value));
+		}
+	}
+
 	setListTextSize(value: ListTextSize) {
 		this.listTextSize = value;
 		if (browser) {
@@ -2923,6 +3006,10 @@ class SettingsStore {
 		this.setHideOfflineIndicator(false);
 		this.setExpandListUntilOpen(false);
 		this.setReaderTextSize('normal');
+		this.setReaderWidth('comfortable');
+		this.setReadingTypeface('sans');
+		this.setReaderCleanView(false);
+		this.setFocusReadingDefault(false);
 		this.setListTextSize('normal');
 		this.setDefaultReplyMode('reply');
 		this.setBlockExternalContent(true);
@@ -3251,6 +3338,10 @@ class SettingsStore {
 
 	resetReadingSettings() {
 		this.setReaderTextSize('normal');
+		this.setReaderWidth('comfortable');
+		this.setReadingTypeface('sans');
+		this.setReaderCleanView(false);
+		this.setFocusReadingDefault(false);
 		this.setBlockExternalContent(true);
 		this.setHideExternalContentBanner(false);
 		this.setWarnExternalSenders(true);
@@ -3618,7 +3709,17 @@ class SettingsStore {
 	private applyReaderTextSize(value: ReaderTextSize) {
 		if (!browser) return;
 		document.documentElement.style.setProperty('--z-reader-text', READER_TEXT_SIZE[value]);
+		document.documentElement.style.setProperty('--z-reader-leading', READER_LEADING[value]);
+	}
+
+	private applyReaderWidth(value: ReaderWidth) {
+		if (!browser) return;
 		document.documentElement.style.setProperty('--z-reader-measure', READER_MEASURE[value]);
+	}
+
+	private applyReadingTypeface(value: ReadingTypeface) {
+		if (!browser) return;
+		document.documentElement.style.setProperty('--z-reader-font', READING_FONT[value]);
 	}
 
 	private applyListTextSize(value: ListTextSize) {

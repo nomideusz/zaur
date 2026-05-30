@@ -9,8 +9,15 @@
 	import { mailCountLabel } from '$lib/mail/count-label';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { readerFocus } from '$lib/stores/reader-focus.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 
 	const { data } = $props();
+
+	$effect(() => {
+		readerFocus.set(settings.focusReadingDefault);
+		readerFocus.setClean(settings.readerCleanView);
+	});
 
 	const mailbox = $derived(mail.mailboxByRouteId(data.mailboxId));
 	const mailboxName = $derived(mailbox?.name ?? 'Inbox');

@@ -202,6 +202,9 @@
 			<SettingsRow title="Archive / unread / delete">
 				<span class="font-mono text-xs text-fg">e · u · #</span>
 			</SettingsRow>
+			<SettingsRow title="Focused reading" description="Hide other panes while reading — Esc exits">
+				<span class="font-mono text-xs text-fg">z</span>
+			</SettingsRow>
 			<SettingsRow title="Send / close compose">
 				<span class="font-mono text-xs text-fg">Ctrl+Enter · Esc</span>
 			</SettingsRow>

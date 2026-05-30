@@ -3,6 +3,8 @@
 	import Archive from '$lib/components/icons/Archive.svelte';
 	import Forward from '$lib/components/icons/Forward.svelte';
 	import Mail from '$lib/components/icons/Mail.svelte';
+	import Maximize from '$lib/components/icons/Maximize.svelte';
+	import Minimize from '$lib/components/icons/Minimize.svelte';
 	import MailOpen from '$lib/components/icons/MailOpen.svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
@@ -20,6 +22,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { readerFocus } from '$lib/stores/reader-focus.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { renderMessageBody } from '$lib/email/html';
@@ -178,6 +181,32 @@
 			className
 		)}
 	>
+		{#if readerHeader}
+			<button
+				type="button"
+				class="z-focus-toggle hidden shrink-0 font-semibold md:inline-flex"
+				aria-pressed={readerFocus.clean}
+				aria-label="Clean reading view"
+				title="Clean reading view — re-flow into the app's typography"
+				onclick={() => readerFocus.toggleClean()}
+			>
+				<span class="text-sm leading-none">Aa</span>
+			</button>
+			<button
+				type="button"
+				class="z-focus-toggle hidden shrink-0 md:inline-flex"
+				aria-pressed={readerFocus.active}
+				aria-label={readerFocus.active ? 'Exit focused reading' : 'Focused reading'}
+				title={readerFocus.active ? 'Exit focus (z)' : 'Focus reading (z)'}
+				onclick={() => readerFocus.toggle()}
+			>
+				{#if readerFocus.active}
+					<Minimize class="size-4" aria-hidden="true" />
+				{:else}
+					<Maximize class="size-4" aria-hidden="true" />
+				{/if}
+			</button>
+		{/if}
 		{#if isDraft}
 			{#if settings.minimalReaderToolbar}
 				<IconButton label="Edit draft" onclick={editDraft}>

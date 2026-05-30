@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { tick } from 'svelte';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
+	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
 	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
@@ -43,6 +44,34 @@
 
 	const latest = $derived(thread.at(-1));
 	const subject = $derived(latest?.subject ?? '(no subject)');
+
+	function wordCount(text: string | undefined): number {
+		if (!text) return 0;
+		return text.trim().split(/\s+/).filter(Boolean).length;
+	}
+	const totalWords = $derived(
+		thread.reduce((sum, message) => sum + wordCount(message.bodyText || message.preview), 0)
+	);
+	const readMinutes = $derived(Math.max(1, Math.round(totalWords / 220)));
+	const showReadTime = $derived(totalWords >= 200);
+
+	const nextUnread = $derived.by(() => {
+		const list = mail.messages;
+		const currentId = latest?.threadId;
+		if (!list.length) return null;
+		const startIndex = currentId
+			? list.findIndex((message) => message.threadId === currentId)
+			: -1;
+		for (let i = startIndex + 1; i < list.length; i++) {
+			if (list[i].unread) return list[i];
+		}
+		return null;
+	});
+
+	function openNextUnread() {
+		if (!nextUnread) return;
+		goto(`/mail/${mailboxRouteId}/${nextUnread.threadId}`);
+	}
 
 	const userDomain = $derived((auth.username ?? '').split('@')[1]?.toLowerCase() ?? '');
 	function isExternalSender(email: string): boolean {
@@ -314,6 +343,10 @@
 							{#if !settings.hideThreadSummary}
 								<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
 									<span>{thread.length} messages</span>
+									{#if showReadTime}
+										<span aria-hidden="true">·</span>
+										<span>~{readMinutes} min read</span>
+									{/if}
 									{#if collapsedCount > 0}
 										<button type="button" class="text-accent hover:underline" onclick={expandAll}>
 											Expand all
@@ -461,13 +494,20 @@
 									</div>
 								</div>
 
-								{#if !settings.hideReaderTimestamps}
-									<time
-										class="z-reader-chrome__time z-type-list-time whitespace-nowrap"
-										datetime={message.receivedAt}
-									>
-										{formatWhen(message.receivedAt)}
-									</time>
+								{#if !settings.hideReaderTimestamps || showReadTime}
+									<div class="z-reader-chrome__time flex flex-col items-end gap-0.5">
+										{#if !settings.hideReaderTimestamps}
+											<time
+												class="z-type-list-time whitespace-nowrap"
+												datetime={message.receivedAt}
+											>
+												{formatWhen(message.receivedAt)}
+											</time>
+										{/if}
+										{#if showReadTime}
+											<span class="text-xs whitespace-nowrap text-fg-subtle">~{readMinutes} min read</span>
+										{/if}
+									</div>
 								{/if}
 								</div>
 							</header>
@@ -641,6 +681,19 @@
 					{/if}
 				</section>
 			{/each}
+
+			{#if nextUnread}
+				<div class={cn('flex justify-center', settings.compactReaderBody ? 'py-4' : 'py-6')}>
+					<button
+						type="button"
+						class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium text-fg-muted transition-colors hover:border-border-strong hover:text-fg"
+						onclick={openNextUnread}
+					>
+						Next unread
+						<ChevronRight class="size-4" aria-hidden="true" />
+					</button>
+				</div>
+			{/if}
 		</div>
 	</div>
 
