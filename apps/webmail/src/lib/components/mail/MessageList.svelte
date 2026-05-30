@@ -147,7 +147,8 @@ import Search from '$lib/components/icons/Search.svelte';
 	}
 
 	const listExpanded = $derived(expanded || mail.hasSelection);
-	const showListHeader = $derived(!!mailboxRouteId && settings.showBulkSelect);
+	const bulkSelectEnabled = $derived(!!mailboxRouteId && settings.showBulkSelect);
+	const showListHeader = $derived(bulkSelectEnabled && mail.hasSelection);
 	const showMobileSelectionBar = $derived(
 		!!mailboxRouteId && mail.hasSelection && supportsMobileListGestures()
 	);
@@ -271,11 +272,10 @@ import Search from '$lib/components/icons/Search.svelte';
 					{message}
 					href={messageHref(message)}
 					active={activeMessageId === message.id}
-					showCheckboxes={!!mailboxRouteId && settings.showBulkSelect && mail.hasSelection}
-					showListGutter={!!mailboxRouteId && settings.showBulkSelect}
+					bulkSelectEnabled={bulkSelectEnabled}
 					selected={mailboxRouteId ? selectedIds.includes(message.id) : false}
 					{mailboxRouteId}
-					enableMobileGestures={!!mailboxRouteId && settings.showBulkSelect}
+					enableMobileGestures={bulkSelectEnabled}
 					onSelect={
 						mailboxRouteId
 							? (modifiers) =>

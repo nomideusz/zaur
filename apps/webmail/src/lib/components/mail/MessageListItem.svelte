@@ -16,9 +16,8 @@
 		message: MessagePreview;
 		active?: boolean;
 		href: string;
-		showCheckboxes?: boolean;
+		bulkSelectEnabled?: boolean;
 		selected?: boolean;
-		showListGutter?: boolean;
 		onSelect?: (modifiers: { shift: boolean; ctrl: boolean }) => void;
 		mailboxRouteId?: string;
 		enableMobileGestures?: boolean;
@@ -28,9 +27,8 @@
 		message,
 		active = false,
 		href,
-		showCheckboxes = false,
+		bulkSelectEnabled = false,
 		selected = false,
-		showListGutter = false,
 		onSelect,
 		mailboxRouteId,
 		enableMobileGestures = false
@@ -89,6 +87,10 @@
 	);
 
 	const hideActiveIndicator = $derived(settings.hideListActiveIndicator);
+	const selectionMode = $derived(mail.hasSelection);
+	const showActiveCheckbox = $derived(bulkSelectEnabled && active && !selectionMode);
+	const showListGutter = $derived(bulkSelectEnabled && (selectionMode || active));
+	const showRowCheckbox = $derived(selectionMode || showActiveCheckbox);
 	const isCurrent = $derived(active || selected);
 	const showAvatarUnreadBadge = $derived(
 		settings.highlightUnreadInList && message.unread && !showListGutter
@@ -97,7 +99,7 @@
 	const rowClass = $derived(
 		cn(
 			'z-list-row flex w-full items-start gap-3 px-4 transition-[background-color] duration-150 ease-out',
-			showCheckboxes && 'cursor-pointer',
+			selectionMode && 'cursor-pointer',
 			!settings.hideListRowDividers && 'border-b border-border',
 			settings.compactListRows ? 'py-2' : 'py-2.5',
 			isCurrent && 'z-list-row--current',
@@ -108,7 +110,7 @@
 	function handleSelect(event: MouseEvent) {
 		const shift = event.shiftKey;
 		const ctrl = event.ctrlKey || event.metaKey;
-		if (!showCheckboxes && !shift && !ctrl) return;
+		if (!selectionMode && !shift && !ctrl) return;
 		event.preventDefault();
 		onSelect?.({ shift, ctrl });
 	}
@@ -134,7 +136,14 @@
 	}
 
 	function handleCheckboxChange() {
-		onSelect?.({ shift: false, ctrl: false });
+		if (!bulkSelectEnabled) return;
+		if (selectionMode) {
+			onSelect?.({ shift: false, ctrl: false });
+			return;
+		}
+		if (active) {
+			mail.startSelection(message.id);
+		}
 	}
 
 	function handleLongPress() {
@@ -205,18 +214,19 @@
 
 {#snippet listMarker()}
 	{#if showListGutter}
-		<div class="mt-2.5 flex h-4 w-4 shrink-0 items-center justify-center">
-			{#if showCheckboxes}
+		<div class="z-list-row-gutter z-list-row-gutter--open">
+			{#if showRowCheckbox}
 				<input
 					type="checkbox"
 					class="z-checkbox shrink-0"
-					checked={selected}
-					onclick={(event) => event.stopPropagation()}
+					checked={selectionMode && selected}
+					onclick={(event) => {
+						event.stopPropagation();
+						event.preventDefault();
+					}}
 					onchange={handleCheckboxChange}
-					aria-label="Select {displaySubject}"
+					aria-label={selectionMode ? `Select ${displaySubject}` : `Select ${displaySubject} to enter selection mode`}
 				/>
-			{:else if message.unread}
-				<span class="size-2 rounded-full bg-unread" aria-label="Unread"></span>
 			{/if}
 		</div>
 	{/if}
@@ -294,7 +304,7 @@
 {/snippet}
 
 {#snippet rowInner()}
-	{#if showCheckboxes}
+	{#if selectionMode}
 		<div
 			class={rowClass}
 			data-hide-active-indicator={hideActiveIndicator || undefined}
