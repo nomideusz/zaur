@@ -13,6 +13,7 @@ import Search from '$lib/components/icons/Search.svelte';
 	import ToolSwitcher from './ToolSwitcher.svelte';
 	import UserMenu from './UserMenu.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
+	import { mail } from '$lib/stores/mail.svelte';
 	import { outbox } from '$lib/stores/outbox.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -26,10 +27,13 @@ import Search from '$lib/components/icons/Search.svelte';
 	);
 	const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
+	const mobileReadingThread = $derived(
+		onMailRoute && !!$page.params.threadId && !mail.hasSelection
+	);
 	const showMailContext = $derived(onMailRoute && shellHeader.mail !== null);
 	const showToolSwitcher = $derived(!onMailRoute && !onSettingsRoute);
 	const showMobileMailSearch = $derived(
-		showMailContext && !settings.hideHeaderSearch
+		showMailContext && !settings.hideHeaderSearch && !mobileReadingThread
 	);
 </script>
 
@@ -46,7 +50,13 @@ import Search from '$lib/components/icons/Search.svelte';
 			settings.compactAppHeader ? 'gap-2' : 'gap-3'
 		)}
 	>
-		<a href={homeHref} class="z-type-brand text-base text-fg transition-colors hover:text-fg-muted">
+		<a
+			href={homeHref}
+			class={cn(
+				'z-type-brand text-base text-fg transition-colors hover:text-fg-muted',
+				mobileReadingThread && 'max-md:sr-only'
+			)}
+		>
 			<span class={settings.hideAppTitle ? 'sr-only' : ''}>ZAUR</span>
 		</a>
 
@@ -75,7 +85,7 @@ import Search from '$lib/components/icons/Search.svelte';
 			settings.compactAppHeader ? 'gap-1.5' : 'gap-2'
 		)}
 	>
-		{#if showMailContext && shellHeader.mail?.showNewMessage}
+		{#if showMailContext && shellHeader.mail?.showNewMessage && !mobileReadingThread}
 			<Button href="/mail/compose" class="shrink-0 md:hidden">
 				<PenSquare class="size-5" aria-hidden="true" />
 				<span class={settings.compactHeaderActions ? 'sr-only sm:not-sr-only' : ''}>New message</span>

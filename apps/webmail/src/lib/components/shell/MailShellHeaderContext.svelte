@@ -2,9 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
-	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import type { MailHeaderContext } from '$lib/stores/shell-header.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -18,12 +16,9 @@
 
 	const threadId = $derived($page.params.threadId);
 	const thread = $derived(mail.selectedThread);
-	const showThreadActions = $derived(
-		!!threadId &&
-			!!ctx.mailboxRouteId &&
-			!mail.hasSelection &&
-			thread.length > 0 &&
-			!mail.selectedLoading
+	const threadSubject = $derived(thread.at(-1)?.subject ?? '(no subject)');
+	const mobileReadingThread = $derived(
+		!!threadId && !mail.hasSelection && thread.length > 0 && !mail.selectedLoading
 	);
 	const displayMailboxName = $derived(
 		ctx.mailboxName.startsWith('Search:') ? ctx.mailboxName.slice(8) : ctx.mailboxName
@@ -63,12 +58,7 @@
 		</label>
 	{/if}
 
-	{#if showThreadActions && ctx.mailboxRouteId}
-		<MessageThreadActions
-			{thread}
-			mailboxRouteId={ctx.mailboxRouteId}
-			onMoved={ctx.onBulkAction}
-			class="min-w-0 flex-1 overflow-x-auto md:hidden"
-		/>
+	{#if mobileReadingThread}
+		<h2 class="z-type-pane-title min-w-0 flex-1 truncate text-sm md:hidden">{threadSubject}</h2>
 	{/if}
 </div>

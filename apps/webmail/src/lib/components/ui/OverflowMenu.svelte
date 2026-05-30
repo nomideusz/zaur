@@ -9,11 +9,18 @@
 	interface Props {
 		label?: string;
 		menuId?: string;
+		placement?: 'bottom' | 'top';
 		class?: string;
 		children: Snippet;
 	}
 
-	let { label = 'More actions', menuId = 'overflow-menu', class: className = '', children }: Props = $props();
+	let {
+		label = 'More actions',
+		menuId = 'overflow-menu',
+		placement = 'bottom',
+		class: className = '',
+		children
+	}: Props = $props();
 
 	let open = $state(false);
 	let root = $state<HTMLDivElement | null>(null);
@@ -54,7 +61,7 @@
 			id={menuId}
 			role="menu"
 			tabindex="-1"
-			class="z-overflow-menu"
+			class={cn('z-overflow-menu', placement === 'top' && 'z-overflow-menu--top')}
 			onpointerdown={(event) => event.stopPropagation()}
 			onkeydown={(event) => {
 				if (event.key === 'Escape') close();

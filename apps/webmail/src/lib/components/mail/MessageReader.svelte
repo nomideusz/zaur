@@ -10,6 +10,7 @@ import Shield from '$lib/components/icons/Shield.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
 	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
+	import MessageReaderMobileBar from '$lib/components/mail/MessageReaderMobileBar.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -290,7 +291,7 @@ import Shield from '$lib/components/icons/Shield.svelte';
 		</div>
 	{/if}
 
-	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto" bind:this={scrollPane}>
+	<div class="z-pane-scroll z-pane-scroll--mobile-reader min-h-0 flex-1 overflow-y-auto" bind:this={scrollPane}>
 		<div class={cn('z-reader-column', threadRowX)}>
 			{#if thread.length > 1}
 				<div class={cn('pb-1 pt-3', settings.compactReaderHeader && 'pt-2.5')}>
@@ -646,7 +647,7 @@ import Shield from '$lib/components/icons/Shield.svelte';
 	{#if latest && auth.client && settings.showQuickReply && mailboxRouteId !== 'drafts'}
 		<footer
 			class={cn(
-				'shrink-0 bg-surface/80 pb-[max(1rem,env(safe-area-inset-bottom))]',
+				'hidden shrink-0 bg-surface/80 md:block',
 				!settings.hideReaderPaneBorders && 'border-t border-border/80',
 				settings.compactQuickReply ? 'py-2.5' : 'py-4'
 			)}
@@ -672,5 +673,16 @@ import Shield from '$lib/components/icons/Shield.svelte';
 				</div>
 			</div>
 		</footer>
+	{/if}
+
+	{#if latest}
+		<MessageReaderMobileBar
+			{thread}
+			{mailboxRouteId}
+			{onMoved}
+			bind:quickReply
+			{quickReplySending}
+			onSendQuickReply={sendQuickReply}
+		/>
 	{/if}
 </article>

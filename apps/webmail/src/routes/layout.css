@@ -351,6 +351,10 @@
 		@apply absolute right-0 z-20 mt-2 w-72 min-w-64 overflow-hidden rounded-lg border border-border bg-surface-raised py-2;
 	}
 
+	.z-overflow-menu--top {
+		@apply bottom-full mb-2 mt-0;
+	}
+
 	.z-overflow-menu-label {
 		@apply px-4 py-2 text-xs font-medium tracking-wide text-fg-subtle uppercase;
 	}
@@ -640,6 +644,33 @@
 
 	.z-reader-body {
 		@apply w-full text-fg;
+	}
+
+	.z-mobile-reader-bar {
+		@apply shrink-0 border-t border-border/80 bg-surface-raised/95 backdrop-blur-sm;
+		padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+	}
+
+	.z-mobile-reader-bar__compose {
+		@apply flex flex-col gap-2.5 border-b border-border/70 px-4 py-3;
+	}
+
+	.z-mobile-reader-bar__compose-head {
+		@apply flex items-center justify-between gap-2;
+	}
+
+	.z-mobile-reader-bar__actions {
+		@apply flex items-center gap-2 px-3 py-2.5;
+	}
+
+	.z-mobile-reader-bar__icon-btn {
+		@apply !min-h-11 !min-w-11 shrink-0 rounded-md border border-border bg-surface;
+	}
+
+	@media (max-width: 767px) {
+		.z-pane-scroll--mobile-reader {
+			padding-bottom: 0.5rem;
+		}
 	}
 
 	.z-email-body :where(p + p, p + ul, p + ol, ul + p, ol + p) {
