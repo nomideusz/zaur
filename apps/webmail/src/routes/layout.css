@@ -315,7 +315,11 @@
 	}
 
 	.z-overflow-menu--list {
-		@apply z-50 w-52 min-w-44 py-1;
+		@apply w-52 min-w-44 py-1;
+	}
+
+	.z-overflow-menu--fixed.z-overflow-menu--list {
+		z-index: 60;
 	}
 
 	.z-overflow-menu--list .z-overflow-menu-item {
@@ -595,6 +599,9 @@
 		background-color: var(--z-surface-raised);
 		touch-action: pan-y;
 		transition: transform 0.2s ease-out;
+	}
+
+	.z-swipe-row--interactive .z-swipe-row__foreground {
 		will-change: transform;
 	}
 

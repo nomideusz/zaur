@@ -210,7 +210,7 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class={cn('z-swipe-row', className)}
+	class={cn('z-swipe-row', hasSwipe && 'z-swipe-row--interactive', className)}
 	data-swipe-open={openSide ?? undefined}
 	onclickcapture={onClickCapture}
 >

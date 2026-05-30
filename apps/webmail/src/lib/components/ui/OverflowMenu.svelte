@@ -4,6 +4,7 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { OVERFLOW_MENU_CTX, type OverflowMenuContext } from '$lib/components/ui/overflow-menu-context';
 	import { cn } from '$lib/utils/cn';
+	import { portal } from '$lib/utils/portal';
 	import { setContext } from 'svelte';
 	import type { Snippet } from 'svelte';
 
@@ -29,6 +30,7 @@
 
 	let open = $state(false);
 	let root = $state<HTMLDivElement | null>(null);
+	let menuEl = $state<HTMLDivElement | null>(null);
 	let resolvedPlacement = $state<'bottom' | 'top'>('bottom');
 	let menuStyle = $state('');
 
@@ -59,17 +61,16 @@
 	}
 
 	function updateMenuPosition() {
-		if (!browser || !root) return;
+		if (!browser || !root || !menuEl) return;
 
 		const trigger = root.querySelector('button');
-		const menu = root.querySelector('[role="menu"]');
-		if (!trigger || !menu) return;
+		if (!trigger) return;
 
-		const nextPlacement = resolvePlacement(trigger, menu);
+		const nextPlacement = resolvePlacement(trigger, menuEl);
 		resolvedPlacement = nextPlacement;
 
 		const rect = trigger.getBoundingClientRect();
-		const menuRect = menu.getBoundingClientRect();
+		const menuRect = menuEl.getBoundingClientRect();
 		const menuHeight = menuRect.height || 240;
 		const menuWidth = menuRect.width || 208;
 		const margin = 8;
@@ -105,7 +106,8 @@
 
 	function handleWindowClick(event: MouseEvent) {
 		const target = event.target;
-		if (!(target instanceof Node) || root?.contains(target)) return;
+		if (!(target instanceof Node)) return;
+		if (root?.contains(target) || menuEl?.contains(target)) return;
 		close();
 	}
 
@@ -141,9 +143,11 @@
 	{#if open}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
+			bind:this={menuEl}
 			id={menuId}
 			role="menu"
 			tabindex="-1"
+			use:portal
 			class={cn('z-overflow-menu z-overflow-menu--fixed', menuClass)}
 			style={menuStyle}
 			onpointerdown={(event) => event.stopPropagation()}
