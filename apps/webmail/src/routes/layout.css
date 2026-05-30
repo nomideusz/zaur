@@ -1061,6 +1061,55 @@
 		}
 	}
 
+	.z-traditional-mail-content {
+		width: 100%;
+		min-width: 0;
+	}
+
+	@media (min-width: 1024px) {
+		.z-traditional-mail-content {
+			max-width: 72rem;
+			margin-inline: auto;
+		}
+	}
+
+	.z-mail-view-traditional .z-traditional-mail-pane {
+		background-color: transparent;
+	}
+
+	.z-traditional-mail-pane-header {
+		padding: 1.75rem 1rem 0;
+	}
+
+	@media (min-width: 768px) {
+		.z-traditional-mail-pane-header {
+			padding: 1.75rem 1.5rem 0;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.z-traditional-mail-pane-header {
+			padding: 1.75rem 2rem 0;
+		}
+	}
+
+	.z-mail-view-traditional .z-traditional-mail-split .z-mail-list--traditional {
+		width: var(--width-list);
+		min-width: var(--width-list);
+		max-width: var(--width-list);
+		flex: none;
+		flex-shrink: 0;
+		overflow: hidden;
+	}
+
+	.z-mail-view-traditional.z-reader-focus {
+		--width-list: 22rem;
+	}
+
+	.z-mail-view-traditional .z-mail-reader-pane {
+		display: flex;
+	}
+
 	.z-settings-panel {
 		width: 100%;
 		max-width: 30rem;
@@ -1386,7 +1435,7 @@
 	}
 
 	.z-type-list-subject {
-		@apply truncate font-medium text-fg underline underline-offset-2 decoration-fg/40;
+		@apply truncate font-medium text-fg;
 		font-size: var(--z-list-text);
 	}
 
@@ -1517,7 +1566,11 @@
 	}
 
 	.z-mail-folder-section__subject {
-		@apply min-w-0 flex-1 truncate text-fg underline underline-offset-2 decoration-fg/30;
+		@apply min-w-0 flex-1 truncate text-fg;
+	}
+
+	.z-mail-folder-section__subject--active {
+		@apply font-semibold underline underline-offset-2 decoration-fg/50;
 		text-decoration-thickness: 1px;
 	}
 

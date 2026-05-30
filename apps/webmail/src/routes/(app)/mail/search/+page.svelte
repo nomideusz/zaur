@@ -8,6 +8,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { search } from '$lib/stores/search.svelte';
+	import { usesExpandedMessageList } from '$lib/mail/view-mode';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const query = $derived($page.url.searchParams.get('q')?.trim() ?? '');
@@ -62,7 +63,7 @@
 			<MessageList
 			messages={search.results}
 			{mailboxName}
-			expanded={settings.focusLayoutMode === 'adaptive' && !settings.traditionalMailboxView}
+			expanded={usesExpandedMessageList(settings.mailViewMode)}
 			loading={search.loading}
 			loadingMore={search.loadingMore}
 			hasMore={search.hasMore}
@@ -81,7 +82,7 @@
 		</div>
 	{/snippet}
 	{#snippet reader()}
-		{#if settings.focusLayoutMode === 'classic'}
+		{#if settings.isTraditionalMailView}
 			<div class="z-mail-reader-pane">
 				<MessageReaderEmpty
 					title="Select a result"

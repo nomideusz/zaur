@@ -159,7 +159,7 @@ import { resolveMailboxRouteByShortcut } from '$lib/mail/folder-shortcuts';
 
 			if (
 				event.key === 'Escape' &&
-				settings.focusLayoutMode === 'adaptive' &&
+				settings.isSimpleMailView &&
 				ctx.threadId &&
 				!mail.hasSelection
 			) {

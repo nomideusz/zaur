@@ -10,7 +10,7 @@
 
 	let { children } = $props();
 const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
-const showAppHeader = $derived(!onMailRoute || settings.traditionalMailboxView);
+const showAppHeader = $derived(!onMailRoute || settings.isTraditionalMailView);
 
 	$effect(() => {
 		if (auth.isRestoring) return;

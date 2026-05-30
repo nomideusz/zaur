@@ -23,25 +23,31 @@
 	const mobileReadingThread = $derived(
 		onMailRoute && !!$page.params.threadId && !mail.hasSelection
 	);
-	const showMailContext = $derived(onMailRoute && shellHeader.mail !== null);
+	const showSimpleMailContext = $derived(
+		onMailRoute && shellHeader.mail !== null && settings.isSimpleMailView
+	);
+	const showTraditionalMailTitle = $derived(
+		onMailRoute && shellHeader.mail !== null && settings.isTraditionalMailView
+	);
 	const mobileListSelecting = $derived(
 		onMailRoute && !!shellHeader.mail?.mailboxRouteId && !$page.params.threadId && mail.hasSelection
 	);
 	const showMailPrimaryAction = $derived(
-		showMailContext &&
+		(showSimpleMailContext || showTraditionalMailTitle) &&
 			shellHeader.mail?.showNewMessage &&
 			!mobileReadingThread &&
 			!mobileListSelecting
 	);
 	const showMobileMailSearch = $derived(
-		showMailContext &&
+		showSimpleMailContext &&
 			!settings.hideHeaderSearch &&
 			!mobileReadingThread &&
 			!mobileListSelecting &&
 			!showMailPrimaryAction
 	);
 	const mobileMailListView = $derived(
-		onMailRoute &&
+		settings.isSimpleMailView &&
+			onMailRoute &&
 			!!shellHeader.mail?.mailboxRouteId &&
 			!$page.params.threadId &&
 			!mail.hasSelection
@@ -72,8 +78,10 @@
 		</a>
 	</div>
 
-	{#if showMailContext && shellHeader.mail}
+	{#if showSimpleMailContext && shellHeader.mail}
 		<MailShellHeaderContext ctx={shellHeader.mail} />
+	{:else if showTraditionalMailTitle}
+		<div class="min-w-0 flex-1" aria-hidden="true"></div>
 	{:else if onSettingsRoute}
 		<div class="flex min-w-0 flex-1 items-center">
 			<h2 class="z-type-pane-title hidden min-w-0 truncate md:block">Settings</h2>
@@ -100,7 +108,7 @@
 
 		<OfflineIndicator />
 
-		{#if !showMailContext}
+		{#if !showSimpleMailContext && !showTraditionalMailTitle}
 			{#if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false && !settings.hideCalendarNewEventButton}
 				{#if settings.compactHeaderActions}
 					<IconButton label="New event" onclick={() => calendar.openCompose()}>

@@ -18,6 +18,7 @@
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
 	import { getContext } from 'svelte';
+	import { usesAdaptiveReaderFocus } from '$lib/mail/view-mode';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -75,7 +76,9 @@
 		!isDraft && settings.showQuickReply && quickReplyOpen && !!auth.client
 	);
 	const minimalMobileActions = $derived(
-		settings.focusLayoutMode === 'adaptive' && !settings.showReaderListRail
+		usesAdaptiveReaderFocus(settings.mailViewMode, {
+			showReaderListRail: settings.showReaderListRail
+		})
 	);
 
 	async function withClient(action: (client: NonNullable<typeof auth.client>) => Promise<void>) {

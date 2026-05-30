@@ -19,6 +19,7 @@
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
 	import { getContext } from 'svelte';
+	import { usesAdaptiveReaderFocus } from '$lib/mail/view-mode';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -62,7 +63,9 @@
 	const allowExternal = $derived(!settings.blockExternalContent || pane?.showImagesOnce);
 	const minimalToolbar = $derived(
 		settings.minimalReaderToolbar ||
-			(settings.focusLayoutMode === 'adaptive' && !settings.showReaderListRail)
+			usesAdaptiveReaderFocus(settings.mailViewMode, {
+				showReaderListRail: settings.showReaderListRail
+			})
 	);
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>

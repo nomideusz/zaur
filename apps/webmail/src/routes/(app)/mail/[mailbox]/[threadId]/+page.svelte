@@ -59,7 +59,7 @@
 	messageCount={mail.messages.length}
 	onBulkAction={afterMove}
 	onBack={backToList}
-	fullScreenMobile
+	fullScreenMobile={settings.isSimpleMailView}
 >
 	{#snippet list()}
 		<MessageList

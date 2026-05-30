@@ -7,18 +7,6 @@
 </script>
 
 <SettingsGroup title="Density" description="How dense each row feels.">
-	<SettingsRow
-		title="Traditional mailbox view"
-		description="Use the classic message list instead of sectioned folders"
-	>
-		<input
-			type="checkbox"
-			class="z-checkbox"
-			checked={settings.traditionalMailboxView}
-			onchange={(e) => settings.setTraditionalMailboxView(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
 	<SettingsRow title="List density" description="Comfortable rows with more breathing room, or compact for more on screen">
 		<SettingsSelect
 			label="List density"

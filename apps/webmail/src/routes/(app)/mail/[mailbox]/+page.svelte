@@ -6,6 +6,7 @@
 	import { mailCountLabel } from '$lib/mail/count-label';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { usesExpandedMessageList } from '$lib/mail/view-mode';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const { data } = $props();
@@ -47,7 +48,7 @@
 			messages={mail.messages}
 			{mailboxName}
 			mailboxRouteId={data.mailboxId}
-			expanded={settings.focusLayoutMode === 'adaptive' && !settings.traditionalMailboxView}
+			expanded={usesExpandedMessageList(settings.mailViewMode)}
 			loading={mail.messagesLoading}
 			loadingMore={mail.messagesLoadingMore}
 			hasMore={mail.messagesHasMore}
@@ -62,9 +63,13 @@
 		/>
 	{/snippet}
 	{#snippet reader()}
-		{#if settings.focusLayoutMode === 'classic'}
+		{#if settings.isTraditionalMailView}
 			<div class="z-mail-reader-pane">
-				<MessageReaderEmpty />
+				<MessageReaderEmpty
+					hideTitle
+					description="Select a message from the list to read it here."
+					showSettings={false}
+				/>
 			</div>
 		{/if}
 	{/snippet}

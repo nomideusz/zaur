@@ -51,8 +51,9 @@ export const componentTree = {
 		ContactsLayout: ['ContactsSidebar', 'ContactsList', 'ContactDetailPanel | ContactDetailEmpty']
 	},
 	mail: {
-		MailLayout: ['MailboxSidebar', 'MailPane'],
-		MailPane: ['MessageList', 'MessageReader | MessageReaderEmpty'],
+		MailLayout: ['MailPane (SimpleMailLayout | TraditionalMailLayout)'],
+		SimpleMailLayout: ['MessageList (sectioned)', 'MessageReader | MessageReaderEmpty'],
+		TraditionalMailLayout: ['MailboxSidebar', 'MessageList', 'MessageReader | MessageReaderEmpty'],
 		MailboxSidebar: ['MailboxTree', 'MailboxItem'],
 		MessageList: ['MessageListItem'],
 		MessageReader: ['ReaderTitle', 'ReaderBody'],

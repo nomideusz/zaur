@@ -8,6 +8,7 @@ import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import type { MailHeaderContext } from '$lib/stores/shell-header.svelte';
+	import { isSimpleMailView } from '$lib/mail/view-mode';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	interface Props {
@@ -69,14 +70,14 @@ import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	});
 	const showDesktopCoreSwitcher = $derived(
 		!!mailboxRouteId &&
-			!settings.traditionalMailboxView &&
+			isSimpleMailView(settings.mailViewMode) &&
 			!mail.hasSelection &&
 			!mobileReadingThread &&
 			coreFolders.length > 0
 	);
 	const showDesktopMoreFolders = $derived(
 		!!mailboxRouteId &&
-			!settings.traditionalMailboxView &&
+			isSimpleMailView(settings.mailViewMode) &&
 			!mail.hasSelection &&
 			!mobileReadingThread &&
 			secondaryFolders.length > 0

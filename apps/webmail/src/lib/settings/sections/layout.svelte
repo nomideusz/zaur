@@ -2,8 +2,32 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
-	import { settings, type SearchScope } from '$lib/stores/settings.svelte';
+	import { MAIL_VIEW_MODE_LABELS } from '$lib/mail/view-mode';
+	import { settings, type MailViewMode, type SearchScope } from '$lib/stores/settings.svelte';
 </script>
+
+<SettingsGroup
+	title="Mail view"
+	description="Simple focuses on one folder at a time. Traditional shows the classic sidebar, list, and reader together."
+>
+	<SettingsRow
+		title="Mail view"
+		description="Switch between the new simple experience and the classic 3-pane layout"
+	>
+		<SettingsSelect
+			label="Mail view"
+			value={settings.mailViewMode}
+			options={(
+				['simple', 'traditional'] as const
+			).map((value) => ({
+				value,
+				label: MAIL_VIEW_MODE_LABELS[value]
+			}))}
+			onchange={(v) => settings.setMailViewMode(v as MailViewMode)}
+			class="w-auto"
+		/>
+	</SettingsRow>
+</SettingsGroup>
 
 <SettingsGroup title="Navigation" description="Where mail opens and how search behaves.">
 	<SettingsRow title="Remember last mailbox" description="Open your last folder instead of Inbox when signing in">

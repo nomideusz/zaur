@@ -13,6 +13,7 @@
 	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
 	import MessageReaderMobileBar from '$lib/components/mail/MessageReaderMobileBar.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
+	import { usesAdaptiveReaderFocus } from '$lib/mail/view-mode';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
@@ -95,7 +96,9 @@
 	);
 	const collapsedCount = $derived(Math.max(0, thread.length - expandedIds.size));
 	const prefersMinimalReaderChrome = $derived(
-		settings.focusLayoutMode === 'adaptive' && !settings.showReaderListRail
+		usesAdaptiveReaderFocus(settings.mailViewMode, {
+			showReaderListRail: settings.showReaderListRail
+		})
 	);
 	const threadRowX = $derived(
 		settings.compactCollapsedThreads || settings.compactReaderBody

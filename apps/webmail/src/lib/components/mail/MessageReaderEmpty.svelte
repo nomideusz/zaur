@@ -11,13 +11,15 @@
 		description?: string;
 		showCompose?: boolean;
 		showSettings?: boolean;
+		hideTitle?: boolean;
 	}
 
 	let {
 		title = 'Select a message',
 		description = 'Pick a conversation from the list, or start a new message when you are ready.',
 		showCompose = true,
-		showSettings = true
+		showSettings = true,
+		hideTitle = false
 	}: Props = $props();
 
 	const showComposeButton = $derived(showCompose && !settings.hideEmptyReaderPrompts && !settings.hideEmptyReaderActions);
@@ -39,9 +41,11 @@
 				</div>
 			{/if}
 			<div>
-				<h2 class={cn('font-semibold text-fg', settings.compactEmptyReader ? 'text-base' : 'text-lg')}>
-					{title}
-				</h2>
+				{#if !hideTitle}
+					<h2 class={cn('font-semibold text-fg', settings.compactEmptyReader ? 'text-base' : 'text-lg')}>
+						{title}
+					</h2>
+				{/if}
 				{#if !settings.hideEmptyReaderDescription}
 					<p
 						class={cn(

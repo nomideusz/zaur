@@ -5,7 +5,6 @@
 	import {
 		settings,
 		type DefaultReplyMode,
-		type FocusLayoutMode,
 		type ReaderTextSize,
 		type ReaderWidth
 	} from '$lib/stores/settings.svelte';
@@ -39,21 +38,6 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow
-		title="Reading layout"
-		description="Adaptive keeps one focused pane by default; Classic keeps the traditional split layout"
-	>
-		<SettingsSelect
-			label="Reading layout"
-			value={settings.focusLayoutMode}
-			options={[
-				{ value: 'adaptive', label: 'Adaptive (focused)' },
-				{ value: 'classic', label: 'Classic (split panes)' }
-			]}
-			onchange={(v) => settings.setFocusLayoutMode(v as FocusLayoutMode)}
-			class="w-auto"
-		/>
-	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Privacy & safety" description="Protect against tracking pixels and unfamiliar senders.">

@@ -15,6 +15,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { isTraditionalMailView, usesSectionedMessageList } from '$lib/mail/view-mode';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { getCachedMessagePreviews } from '$lib/db/recent-threads';
 	import type { MessagePreview } from '$lib/types/mail';
@@ -162,10 +163,13 @@ let readEverStorageKey = $state<string | null>(null);
 		return `${href}?${searchParams.toString()}`;
 	}
 
-	const listExpanded = $derived(expanded || mail.hasSelection);
-	const sectionMode = $derived(!!mailboxRouteId && !settings.traditionalMailboxView);
+	const traditionalView = $derived(isTraditionalMailView(settings.mailViewMode));
+	const listExpanded = $derived(!traditionalView && (expanded || mail.hasSelection));
+	const sectionMode = $derived(
+		!!mailboxRouteId && usesSectionedMessageList(settings.mailViewMode)
+	);
 	const bulkSelectEnabled = $derived(!!mailboxRouteId && settings.showBulkSelect);
-	const showListHeader = $derived(!sectionMode && bulkSelectEnabled && mail.hasSelection);
+	const showListHeader = $derived(!sectionMode && bulkSelectEnabled);
 	const showMobileSelectionBar = $derived(
 		!!mailboxRouteId && mail.hasSelection && supportsMobileListGestures()
 	);
@@ -469,13 +473,15 @@ let readEverStorageKey = $state<string | null>(null);
 
 <section
 	class={cn(
-		'z-mail-pane-surface flex min-h-0 min-w-0 flex-col overflow-hidden',
+		'z-mail-pane-surface flex min-h-0 min-w-0 flex-col',
+		'overflow-hidden',
 		listExpanded
 			? 'flex-1 md:mx-auto md:w-full md:max-w-2xl'
 			: 'w-full md:w-(--width-list) md:max-w-(--width-list) md:flex-none',
 		hideOnMobile ? (mail.hasSelection ? 'flex' : 'hidden md:flex') : 'flex',
 		!settings.hidePaneBorders && !listExpanded && 'border-r border-border',
-		showMobileSelectionBar && 'z-mail-list--selecting'
+		showMobileSelectionBar && 'z-mail-list--selecting',
+		traditionalView && 'z-mail-list--traditional'
 	)}
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
@@ -585,10 +591,12 @@ let readEverStorageKey = $state<string | null>(null);
 											<a
 												href={sectionMessageHref(message, section.routeId)}
 												class="z-mail-folder-section__message"
+												aria-current={activeMessageId === message.id ? 'page' : undefined}
 											>
 												<span
 													class={cn(
 														'z-mail-folder-section__subject',
+														activeMessageId === message.id && 'z-mail-folder-section__subject--active',
 														settings.highlightUnreadInList && message.unread && 'font-semibold'
 													)}
 												>

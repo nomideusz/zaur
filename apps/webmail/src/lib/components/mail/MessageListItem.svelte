@@ -4,6 +4,7 @@
 	import MessageListActiveActions from '$lib/components/mail/MessageListActiveActions.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import SwipeableListRow, { type SwipeAction } from '$lib/components/ui/SwipeableListRow.svelte';
+	import { isTraditionalMailView, usesAdaptiveReaderFocus } from '$lib/mail/view-mode';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -92,15 +93,19 @@
 	const hideActiveIndicator = $derived(settings.hideListActiveIndicator);
 	const selectionMode = $derived(mail.hasSelection);
 	const showActiveCheckbox = $derived(bulkSelectEnabled && active && !selectionMode);
-	const showListGutter = $derived(bulkSelectEnabled && (selectionMode || active));
+	const traditionalList = $derived(isTraditionalMailView(settings.mailViewMode));
+	/** Gutter for row checkboxes: all rows in selection mode, or the active row to enter it. */
+	const showListGutter = $derived(bulkSelectEnabled && (selectionMode || showActiveCheckbox));
 	const showRowCheckbox = $derived(selectionMode || showActiveCheckbox);
-	const isCurrent = $derived(active || selected);
-	const showActiveCompact = $derived(active && !selectionMode);
+	const isCurrent = $derived(active || (selected && selectionMode));
+	const showActiveCompact = $derived(active && !selectionMode && !traditionalList);
 	const showAvatarUnreadBadge = $derived(
 		settings.highlightUnreadInList && message.unread && !showListGutter && !showActiveCompact
 	);
 	const minimalListPresentation = $derived(
-		settings.focusLayoutMode === 'adaptive' && !settings.showReaderListRail
+		usesAdaptiveReaderFocus(settings.mailViewMode, {
+			showReaderListRail: settings.showReaderListRail
+		})
 	);
 	const showPreview = $derived(settings.showListPreview && !minimalListPresentation);
 

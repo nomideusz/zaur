@@ -3,6 +3,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
 	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
+	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
 	import OutboxMenu from '$lib/components/shell/OutboxMenu.svelte';
 	import MailboxTreeItem from './MailboxTreeItem.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -12,6 +13,13 @@
 	import { cn } from '$lib/utils/cn';
 	import { settings } from '$lib/stores/settings.svelte';
 
+	interface Props {
+		variant?: 'default' | 'settings';
+	}
+
+	let { variant = 'default' }: Props = $props();
+
+	const settingsStyle = $derived(variant === 'settings');
 	const tree = $derived(buildMailboxTree(mail.mailboxes));
 	let showSecondary = $state(false);
 	const primaryOrder = new Map([
@@ -74,7 +82,29 @@
 	style="view-transition-name: mail-sidebar;"
 	aria-label="Folders"
 >
-	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto p-2.5 pt-3">
+	{#if settingsStyle}
+		<div
+			class={cn(
+				'relative z-20 shrink-0',
+				'px-3 pt-3 pb-4',
+				!settings.hidePaneBorders && 'border-b border-border/80'
+			)}
+		>
+			<h1 class="z-settings-sidebar-title">Mail</h1>
+			{#if !settings.hideHeaderSearch}
+				<div class="mb-1 mt-3">
+					<GlobalSearch placement="sidebar" />
+				</div>
+			{/if}
+		</div>
+	{/if}
+
+	<nav
+		class={cn(
+			'z-pane-scroll min-h-0 flex-1 overflow-y-auto',
+			settingsStyle ? 'px-2 py-2.5' : 'p-2.5 pt-3'
+		)}
+	>
 		{#if mail.mailboxesLoading}
 			<LoadingIndicator label="Loading folders…" compact />
 		{:else if mail.mailboxesError}
@@ -93,7 +123,7 @@
 				{/if}
 			</div>
 		{:else}
-			<div class="px-1.5 pb-2">
+			<div class={cn(settingsStyle ? 'px-1.5' : 'px-1.5 pb-2')}>
 				<ul class="space-y-1">
 					{#each primaryItems as node (node.id)}
 						{@const href = `/mail/${node.id}`}

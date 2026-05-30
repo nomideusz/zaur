@@ -103,12 +103,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/appearance-loading-indicator",
-		"href": "/settings/appearance",
-		"title": "Loading indicator",
-		"description": ""
-	},
-	{
 		"id": "/settings/appearance-reduce-motion",
 		"href": "/settings/appearance",
 		"title": "Reduce motion",
@@ -229,12 +223,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-attachment-icons",
-		"href": "/settings/inbox",
-		"title": "Attachment icons",
-		"description": ""
-	},
-	{
 		"id": "/settings/inbox-enable-bulk-select",
 		"href": "/settings/inbox",
 		"title": "Enable bulk select",
@@ -265,33 +253,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-sender-avatars",
-		"href": "/settings/inbox",
-		"title": "Sender avatars",
-		"description": ""
-	},
-	{
 		"id": "/settings/inbox-show-message-preview",
 		"href": "/settings/inbox",
 		"title": "Show message preview",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-show-sender-email",
-		"href": "/settings/inbox",
-		"title": "Show sender email",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-stars",
-		"href": "/settings/inbox",
-		"title": "Stars",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-subject-only",
-		"href": "/settings/inbox",
-		"title": "Subject only",
 		"description": ""
 	},
 	{
@@ -301,33 +265,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/inbox-traditional-mailbox-view",
-		"href": "/settings/inbox",
-		"title": "Traditional mailbox view",
-		"description": ""
-	},
-	{
 		"id": "/settings/inbox-timestamps",
 		"href": "/settings/inbox",
 		"title": "Timestamps",
-		"description": ""
-	},
-	{
-		"id": "/settings/layout-compact-folder-sidebar",
-		"href": "/settings/layout",
-		"title": "Compact folder sidebar",
-		"description": ""
-	},
-	{
-		"id": "/settings/layout-compact-layout",
-		"href": "/settings/layout",
-		"title": "Compact layout",
-		"description": ""
-	},
-	{
-		"id": "/settings/layout-contact-suggestions-in-search",
-		"href": "/settings/layout",
-		"title": "Contact suggestions in search",
 		"description": ""
 	},
 	{
@@ -337,21 +277,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/layout-expand-list-until-opened",
+		"id": "/settings/layout-mail-view",
 		"href": "/settings/layout",
-		"title": "Expand list until opened",
-		"description": ""
-	},
-	{
-		"id": "/settings/layout-hide-outbox-unless-failed",
-		"href": "/settings/layout",
-		"title": "Hide outbox unless failed",
-		"description": ""
-	},
-	{
-		"id": "/settings/layout-mail-only-navigation",
-		"href": "/settings/layout",
-		"title": "Mail-only navigation",
+		"title": "Mail view",
 		"description": ""
 	},
 	{
@@ -367,12 +295,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/layout-show-folder-icons",
-		"href": "/settings/layout",
-		"title": "Show folder icons",
-		"description": ""
-	},
-	{
 		"id": "/settings/layout-show-folder-unread-counts",
 		"href": "/settings/layout",
 		"title": "Show folder unread counts",
@@ -382,24 +304,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/layout-show-pane-borders",
 		"href": "/settings/layout",
 		"title": "Show pane borders",
-		"description": ""
-	},
-	{
-		"id": "/settings/layout-show-sidebar-search",
-		"href": "/settings/layout",
-		"title": "Show sidebar search",
-		"description": ""
-	},
-	{
-		"id": "/settings/layout-show-sidebar-shortcuts",
-		"href": "/settings/layout",
-		"title": "Show sidebar shortcuts",
-		"description": ""
-	},
-	{
-		"id": "/settings/layout-tool-icons-only",
-		"href": "/settings/layout",
-		"title": "Tool icons only",
 		"description": ""
 	},
 	{
@@ -442,6 +346,18 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/mail-enable-keyboard-shortcuts",
 		"href": "/settings/mail",
 		"title": "Enable keyboard shortcuts",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-focus-mode-return-to-list",
+		"href": "/settings/mail",
+		"title": "Focus mode / return to list",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-go-to-folder",
+		"href": "/settings/mail",
+		"title": "Go to folder",
 		"description": ""
 	},
 	{
@@ -562,12 +478,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-reading-width",
 		"href": "/settings/reading",
 		"title": "Reading width",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-reading-layout",
-		"href": "/settings/reading",
-		"title": "Reading layout",
 		"description": ""
 	},
 	{
