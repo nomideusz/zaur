@@ -102,8 +102,7 @@
 
 	const rowClass = $derived(
 		cn(
-			'z-list-row flex w-full gap-3 px-4 transition-[background-color] duration-150 ease-out',
-			showActiveCompact ? 'items-center' : 'items-start',
+			'z-list-row flex w-full items-start gap-3 px-4 transition-[background-color] duration-150 ease-out',
 			showActiveCompact && 'z-list-row--active-compact',
 			selectionMode && 'cursor-pointer',
 			!settings.hideListRowDividers && 'border-b border-border',
@@ -268,30 +267,72 @@
 {/snippet}
 
 {#snippet activeContent()}
-	<div class="z-list-text flex min-w-0 flex-1 items-center gap-2">
-		<div class="flex min-w-0 flex-1 items-center gap-1.5">
-			{#if settings.showStarsInList && message.starred}
-				<Star
-					class="size-3.5 shrink-0 fill-star text-star md:hidden"
-					aria-label="Starred"
-				/>
+	<div class="z-list-text flex min-w-0 flex-1 flex-col overflow-hidden">
+		{#if settings.subjectOnlyList}
+			<div class="mt-0.5 flex min-w-0 items-center gap-1.5">
+				{#if settings.showStarsInList && message.starred}
+					<Star
+						class="size-3.5 shrink-0 fill-star text-star md:hidden"
+						aria-label="Starred"
+					/>
+				{/if}
+				<span class={activeSubjectClass}>
+					{displaySubject}
+				</span>
+				{#if settings.showAttachmentIcons && message.hasAttachment}
+					<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
+				{/if}
+			</div>
+			<div class="z-list-line--meta">
+				{#if settings.showListTimestamps}
+					<span class="z-type-list-time">{when}</span>
+				{/if}
+			</div>
+			{#if settings.showListPreview}
+				<div class="z-list-line--meta" aria-hidden="true"></div>
 			{/if}
-			<span class={activeSubjectClass}>
-				{displaySubject}
-			</span>
-			{#if settings.showAttachmentIcons && message.hasAttachment}
-				<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
+		{:else}
+			<div class="z-list-line--sender flex items-center justify-end">
+				{#if settings.showListTimestamps}
+					<span class="z-type-list-time">{when}</span>
+				{/if}
+			</div>
+			<div class="mt-0.5 flex min-w-0 items-center gap-1.5">
+				<span class={activeSubjectClass}>
+					{displaySubject}
+				</span>
+				{#if !settings.showListPreview}
+					{#if settings.showAttachmentIcons && message.hasAttachment}
+						<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
+					{/if}
+					{#if settings.showStarsInList && message.starred}
+						<Star
+							class="size-3.5 shrink-0 fill-star text-star md:hidden"
+							aria-label="Starred"
+						/>
+					{/if}
+				{/if}
+			</div>
+			{#if settings.showListPreview}
+				<div class="z-list-line--meta">
+					{#if settings.showAttachmentIcons && message.hasAttachment}
+						<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
+					{/if}
+					{#if settings.showStarsInList && message.starred}
+						<Star
+							class="size-3.5 shrink-0 fill-star text-star md:hidden"
+							aria-label="Starred"
+						/>
+					{/if}
+				</div>
 			{/if}
-		</div>
-		{#if settings.showListTimestamps}
-			<span class="z-type-list-time">{when}</span>
 		{/if}
 	</div>
 {/snippet}
 
 {#snippet content()}
 	{@render avatar()}
-	<div class="z-list-text min-w-0 flex-1">
+	<div class="z-list-text min-w-0 flex-1 overflow-hidden">
 		{#if settings.subjectOnlyList}
 			<div class="flex items-baseline justify-between gap-2">
 				<div class="mt-0.5 flex min-w-0 flex-1 items-center gap-1.5">
@@ -311,6 +352,8 @@
 			</div>
 			{#if settings.showListPreview && message.preview}
 				<p class="z-type-list-preview">{message.preview}</p>
+			{:else if settings.showListPreview}
+				<p class="z-type-list-preview invisible select-none" aria-hidden="true">&#8203;</p>
 			{/if}
 		{:else}
 			<div class="flex items-baseline justify-between gap-2">
@@ -334,6 +377,8 @@
 			</div>
 			{#if settings.showListPreview && message.preview}
 				<p class="z-type-list-preview">{message.preview}</p>
+			{:else if settings.showListPreview}
+				<p class="z-type-list-preview invisible select-none" aria-hidden="true">&#8203;</p>
 			{/if}
 		{/if}
 	</div>
@@ -363,29 +408,31 @@
 		>
 			{@render listMarker()}
 			{#if showActiveCompact}
-				<a
-					{href}
-					class="flex min-w-0 flex-1 text-inherit no-underline outline-none"
-					aria-current="page"
-					aria-label={messageAriaLabel}
-					title={messageAriaLabel}
-					style="view-transition-name: message-{message.id};"
-					onclick={handleSelect}
-					onkeydown={handleSelectKey}
-				>
-					{@render activeContent()}
-				</a>
-				{#if mailboxRouteId}
-					<div class="max-md:hidden">
-						<MessageListActiveActions
-							{message}
-							{mailboxRouteId}
-							onMenuOpenChange={(open) => {
-								listMenuOpen = open;
-							}}
-						/>
-					</div>
-				{/if}
+				<div class="flex min-w-0 flex-1 items-stretch gap-1 overflow-hidden">
+					<a
+						{href}
+						class="flex min-w-0 flex-1 overflow-hidden text-inherit no-underline outline-none"
+						aria-current="page"
+						aria-label={messageAriaLabel}
+						title={messageAriaLabel}
+						style="view-transition-name: message-{message.id};"
+						onclick={handleSelect}
+						onkeydown={handleSelectKey}
+					>
+						{@render activeContent()}
+					</a>
+					{#if mailboxRouteId}
+						<div class="max-md:hidden flex shrink-0 items-center self-center">
+							<MessageListActiveActions
+								{message}
+								{mailboxRouteId}
+								onMenuOpenChange={(open) => {
+									listMenuOpen = open;
+								}}
+							/>
+						</div>
+					{/if}
+				</div>
 			{:else}
 				<a
 					{href}

@@ -30,24 +30,22 @@
 	let open = $state(false);
 	let root = $state<HTMLDivElement | null>(null);
 	let resolvedPlacement = $state<'bottom' | 'top'>('bottom');
-	let menuStyle = $state('');
 
-	const useFixedPlacement = $derived(placement === 'auto');
+	const opensUp = $derived(
+		placement === 'top' || (placement === 'auto' && resolvedPlacement === 'top')
+	);
 
 	function setOpen(next: boolean) {
 		open = next;
 		onOpenChange?.(next);
-		if (!next) {
-			menuStyle = '';
-			resolvedPlacement = 'bottom';
-		}
+		if (!next) resolvedPlacement = 'bottom';
 	}
 
 	function close() {
 		setOpen(false);
 	}
 
-	function updateAutoPosition() {
+	function updateAutoPlacement() {
 		if (!browser || !root || placement !== 'auto') return;
 
 		const trigger = root.querySelector('button');
@@ -55,24 +53,12 @@
 		if (!trigger || !menu) return;
 
 		const rect = trigger.getBoundingClientRect();
-		const menuRect = menu.getBoundingClientRect();
+		const menuHeight = menu.getBoundingClientRect().height || 240;
 		const margin = 8;
-		const gap = 4;
-		const menuHeight = menuRect.height > 0 ? menuRect.height : 240;
-		const menuWidth = menuRect.width > 0 ? menuRect.width : 208;
-
 		const spaceBelow = window.innerHeight - rect.bottom - margin;
 		const spaceAbove = rect.top - margin;
-		const openDown = spaceBelow >= menuHeight || spaceBelow >= spaceAbove;
-		resolvedPlacement = openDown ? 'bottom' : 'top';
 
-		let top = openDown ? rect.bottom + gap : rect.top - menuHeight - gap;
-		top = Math.max(margin, Math.min(top, window.innerHeight - menuHeight - margin));
-
-		let left = rect.right - menuWidth;
-		left = Math.max(margin, Math.min(left, window.innerWidth - menuWidth - margin));
-
-		menuStyle = `top:${top}px;left:${left}px;width:${menuWidth}px;`;
+		resolvedPlacement = spaceBelow >= menuHeight || spaceBelow >= spaceAbove ? 'bottom' : 'top';
 	}
 
 	function toggleOpen(event: MouseEvent) {
@@ -86,8 +72,8 @@
 		setOpen(true);
 		if (placement === 'auto') {
 			requestAnimationFrame(() => {
-				updateAutoPosition();
-				requestAnimationFrame(updateAutoPosition);
+				updateAutoPlacement();
+				requestAnimationFrame(updateAutoPlacement);
 			});
 		}
 	}
@@ -101,7 +87,7 @@
 	$effect(() => {
 		if (!open || placement !== 'auto' || !browser) return;
 
-		const onViewportChange = () => updateAutoPosition();
+		const onViewportChange = () => updateAutoPlacement();
 		window.addEventListener('resize', onViewportChange);
 		window.addEventListener('scroll', onViewportChange, true);
 		return () => {
@@ -133,13 +119,7 @@
 			id={menuId}
 			role="menu"
 			tabindex="-1"
-			class={cn(
-				'z-overflow-menu',
-				useFixedPlacement && 'z-overflow-menu--fixed',
-				!useFixedPlacement && placement === 'top' && 'z-overflow-menu--top',
-				menuClass
-			)}
-			style={menuStyle}
+			class={cn('z-overflow-menu', opensUp && 'z-overflow-menu--top', menuClass)}
 			onpointerdown={(event) => event.stopPropagation()}
 			onkeydown={(event) => {
 				if (event.key === 'Escape') close();

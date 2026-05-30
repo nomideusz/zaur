@@ -31,7 +31,7 @@
 	const starLabel = $derived(message.starred ? 'Unstar' : 'Star');
 	const menuId = $derived(`message-list-actions-${message.id}`);
 
-	const iconButtonClass = '!min-h-8 !min-w-8 !p-1.5';
+	const iconButtonClass = '!min-h-7 !min-w-7 !p-1';
 
 	async function runAction(action: () => Promise<void>) {
 		if (!auth.client) return;

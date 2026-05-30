@@ -307,13 +307,6 @@
 		@apply bottom-full mb-1.5 mt-0;
 	}
 
-	.z-overflow-menu--fixed {
-		position: fixed;
-		right: auto;
-		bottom: auto;
-		margin: 0;
-	}
-
 	.z-overflow-menu--list {
 		@apply z-50 w-52 min-w-44 py-1;
 	}
@@ -1224,11 +1217,20 @@
 	}
 
 	.z-type-list-subject--active {
-		@apply text-base font-semibold tracking-tight;
+		@apply min-w-0 truncate font-semibold tracking-tight;
+		font-size: var(--z-list-text);
 	}
 
 	.z-list-row--active-compact .z-list-row-gutter {
-		margin-top: 0;
+		margin-top: 0.625rem;
+	}
+
+	.z-list-line--sender {
+		@apply h-5 shrink-0;
+	}
+
+	.z-list-line--meta {
+		@apply mt-0.5 flex h-5 shrink-0 items-center gap-1.5;
 	}
 
 	.z-type-list-preview {
