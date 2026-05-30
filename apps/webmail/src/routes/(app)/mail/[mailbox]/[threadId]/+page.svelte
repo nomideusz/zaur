@@ -11,6 +11,7 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { readerFocus } from '$lib/stores/reader-focus.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { webmailModeDefinition } from '$lib/modes/registry';
 
 	const { data } = $props();
 
@@ -23,6 +24,7 @@
 	const mailboxName = $derived(mailbox?.name ?? 'Inbox');
 	const thread = $derived(mail.selectedThread);
 	const latest = $derived(thread.at(-1));
+	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
 	const countLabel = $derived(
 		mailCountLabel(mail.messagesTotal, mail.messages.length, mailbox)
 	);
@@ -59,7 +61,7 @@
 	messageCount={mail.messages.length}
 	onBulkAction={afterMove}
 	onBack={backToList}
-	fullScreenMobile={settings.isSimpleMailView}
+	fullScreenMobile={activeMode.mail.useFullscreenMobileReader}
 >
 	{#snippet list()}
 		<MessageList

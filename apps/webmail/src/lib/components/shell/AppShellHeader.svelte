@@ -12,6 +12,7 @@
 	import UserMenu from './UserMenu.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { webmailModeDefinition } from '$lib/modes/registry';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -20,14 +21,15 @@
 	const homeHref = $derived(settings.preferredMailHref());
 	const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
+	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
 	const mobileReadingThread = $derived(
 		onMailRoute && !!$page.params.threadId && !mail.hasSelection
 	);
 	const showSimpleMailContext = $derived(
-		onMailRoute && shellHeader.mail !== null && settings.isSimpleMailView
+		onMailRoute && shellHeader.mail !== null && activeMode.id === 'simple'
 	);
 	const showTraditionalMailTitle = $derived(
-		onMailRoute && shellHeader.mail !== null && settings.isTraditionalMailView
+		onMailRoute && shellHeader.mail !== null && activeMode.id === 'traditional'
 	);
 	const mobileListSelecting = $derived(
 		onMailRoute && !!shellHeader.mail?.mailboxRouteId && !$page.params.threadId && mail.hasSelection
@@ -46,7 +48,7 @@
 			!showMailPrimaryAction
 	);
 	const mobileMailListView = $derived(
-		settings.isSimpleMailView &&
+		activeMode.id === 'simple' &&
 			onMailRoute &&
 			!!shellHeader.mail?.mailboxRouteId &&
 			!$page.params.threadId &&

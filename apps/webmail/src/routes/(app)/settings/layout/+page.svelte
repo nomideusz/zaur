@@ -1,15 +1,20 @@
 <script lang="ts">
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
 	import LayoutSection from '$lib/settings/sections/layout.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
+	import { webmailModeDefinition } from '$lib/modes/registry';
+
+	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
+	const title = $derived(activeMode.settingsViewLabel);
 </script>
 
 <svelte:head>
-	<title>Mail View · ZAUR Webmail</title>
+	<title>{title} · ZAUR Webmail</title>
 </svelte:head>
 
 <SettingsPanel
-	title="Mail View"
-	description="Choose how you view and navigate your mail."
+	{title}
+	description="Mode-specific navigation and layout options."
 >
 	<LayoutSection />
 </SettingsPanel>

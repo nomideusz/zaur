@@ -6,7 +6,7 @@
 	import { mailCountLabel } from '$lib/mail/count-label';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
-	import { usesExpandedMessageList } from '$lib/mail/view-mode';
+	import { webmailModeDefinition } from '$lib/modes/registry';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const { data } = $props();
@@ -16,6 +16,7 @@
 	const countLabel = $derived(
 		mailCountLabel(mail.messagesTotal, mail.messages.length, mailbox)
 	);
+	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
 
 	$effect(() => {
 		const client = auth.client;
@@ -48,7 +49,7 @@
 			messages={mail.messages}
 			{mailboxName}
 			mailboxRouteId={data.mailboxId}
-			expanded={usesExpandedMessageList(settings.mailViewMode)}
+			expanded={activeMode.mail.useExpandedMessageList}
 			loading={mail.messagesLoading}
 			loadingMore={mail.messagesLoadingMore}
 			hasMore={mail.messagesHasMore}
@@ -63,7 +64,7 @@
 		/>
 	{/snippet}
 	{#snippet reader()}
-		{#if settings.isTraditionalMailView}
+		{#if activeMode.mail.showEmptyReaderPane}
 			<div class="z-mail-reader-pane">
 				<MessageReaderEmpty
 					hideTitle

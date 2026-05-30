@@ -8,7 +8,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { search } from '$lib/stores/search.svelte';
-	import { usesExpandedMessageList } from '$lib/mail/view-mode';
+	import { webmailModeDefinition } from '$lib/modes/registry';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const query = $derived($page.url.searchParams.get('q')?.trim() ?? '');
@@ -30,6 +30,7 @@
 			: 'Search'
 	);
 	const countLabel = $derived(mailCountLabel(search.total, search.results.length, null));
+	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
 	const searchEmptyHint = $derived(
 		settings.hideListEmptyHints || query ? undefined : 'Try a sender, subject, or keyword from the message body.'
 	);
@@ -61,28 +62,28 @@
 				<GlobalSearch placement="mobile" autofocus={shouldAutofocusSearch} />
 			</div>
 			<MessageList
-			messages={search.results}
-			{mailboxName}
-			expanded={usesExpandedMessageList(settings.mailViewMode)}
-			loading={search.loading}
-			loadingMore={search.loadingMore}
-			hasMore={search.hasMore}
-			error={search.error}
-			total={search.total}
-			emptyMessage={query ? `No messages match “${query}”.` : 'Enter a search term to find messages.'}
-			emptyHint={searchEmptyHint}
-			emptyIcon="search"
-			onLoadMore={() => {
-				if (auth.client) void search.loadMore(auth.client, mail.mailboxes);
-			}}
-			onRetry={() => {
-				if (auth.client && query) void search.search(auth.client, query, mail.mailboxes);
-			}}
-		/>
+				messages={search.results}
+				{mailboxName}
+				expanded={activeMode.mail.useExpandedMessageList}
+				loading={search.loading}
+				loadingMore={search.loadingMore}
+				hasMore={search.hasMore}
+				error={search.error}
+				total={search.total}
+				emptyMessage={query ? `No messages match “${query}”.` : 'Enter a search term to find messages.'}
+				emptyHint={searchEmptyHint}
+				emptyIcon="search"
+				onLoadMore={() => {
+					if (auth.client) void search.loadMore(auth.client, mail.mailboxes);
+				}}
+				onRetry={() => {
+					if (auth.client && query) void search.search(auth.client, query, mail.mailboxes);
+				}}
+			/>
 		</div>
 	{/snippet}
 	{#snippet reader()}
-		{#if settings.isTraditionalMailView}
+		{#if activeMode.mail.showEmptyReaderPane}
 			<div class="z-mail-reader-pane">
 				<MessageReaderEmpty
 					title="Select a result"

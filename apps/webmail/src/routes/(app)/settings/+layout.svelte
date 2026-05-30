@@ -1,17 +1,18 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import { browser } from '$app/environment';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
 	import SettingsSidebar from '$lib/components/settings/SettingsSidebar.svelte';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/settings/nav';
 	import { cn } from '$lib/utils/cn';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { webmailModeDefinition } from '$lib/modes/registry';
 
 	let { children } = $props();
 
-	const links = $derived(settingsNavLinks());
+	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
+	const links = $derived(settingsNavLinks(activeMode.id));
 	const isSettingsIndex = $derived($page.url.pathname === '/settings');
 	const showMobileContent = $derived(!isSettingsIndex);
 
@@ -28,15 +29,13 @@
 		}
 	}
 
-	$effect(() => {
-		if (!browser || !isSettingsIndex) return;
-		if (window.matchMedia('(min-width: 768px)').matches) {
-			goto('/settings/account', { replaceState: true });
-		}
-	});
 </script>
 
-<div class="flex min-h-0 flex-1 flex-row overflow-hidden">
+<div
+	class="flex min-h-0 flex-1 flex-row overflow-hidden"
+	class:z-settings-mode-simple={activeMode.id === 'simple'}
+	class:z-settings-mode-classic={activeMode.id === 'traditional'}
+>
 	<SettingsSidebar />
 
 	<div class="z-mail-pane flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">

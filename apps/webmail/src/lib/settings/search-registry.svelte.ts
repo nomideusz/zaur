@@ -1,4 +1,6 @@
 import { browser } from '$app/environment';
+import type { MailViewMode } from '$lib/mail/view-mode';
+import { settings } from '$lib/stores/settings.svelte';
 import { SETTINGS_SEARCH_INDEX, type SettingsSearchEntry } from './search-index';
 
 export type { SettingsSearchEntry };
@@ -35,10 +37,15 @@ class SettingsSearchRegistry {
 		return haystack.includes(query);
 	}
 
+	matchesMode(entry: SettingsSearchEntry, mode: MailViewMode): boolean {
+		return !entry.modes || entry.modes.includes(mode);
+	}
+
 	filtered(): SettingsSearchEntry[] {
 		const q = this.query.trim().toLowerCase();
 		if (!q) return [];
 		return this.allEntries()
+			.filter((entry) => this.matchesMode(entry, settings.mailViewMode))
 			.filter((entry) => this.matches(entry, q))
 			.sort((a, b) => a.title.localeCompare(b.title))
 			.slice(0, 12);

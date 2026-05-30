@@ -6,11 +6,13 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { webmailModeDefinition } from '$lib/modes/registry';
 	import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
 
 	let { children } = $props();
-const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
-const showAppHeader = $derived(!onMailRoute || settings.isTraditionalMailView);
+	const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
+	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
+	const showAppHeader = $derived(!onMailRoute || activeMode.mail.showAppHeaderOnMailRoutes);
 
 	$effect(() => {
 		if (auth.isRestoring) return;

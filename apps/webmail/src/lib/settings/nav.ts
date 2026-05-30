@@ -1,4 +1,8 @@
+import type { MailViewMode } from '$lib/mail/view-mode';
+import { webmailModeDefinition } from '$lib/modes/registry';
+
 export type SettingsNavIcon =
+	| 'mode'
 	| 'account'
 	| 'general'
 	| 'inbox'
@@ -13,12 +17,20 @@ export type SettingsNavLink = {
 	href: string;
 	label: string;
 	icon: SettingsNavIcon;
-	section?: 'personal' | 'mail' | 'customize' | 'advanced';
+	section?: SettingsNavSectionId;
 };
 
-const ALL_LINKS: SettingsNavLink[] = [
+export type SettingsNavSectionId = 'experience' | 'personal' | 'mail' | 'customize' | 'advanced';
+
+const EXPERIENCE_LINK: SettingsNavLink = {
+	href: '/settings',
+	label: 'Experience',
+	icon: 'mode',
+	section: 'experience'
+};
+
+const COMMON_LINKS: SettingsNavLink[] = [
 	{ href: '/settings/account', label: 'Account', icon: 'account', section: 'personal' },
-	{ href: '/settings/layout', label: 'Mail view', icon: 'layout', section: 'mail' },
 	{ href: '/settings/mail', label: 'Mail settings', icon: 'general', section: 'mail' },
 	{ href: '/settings/appearance', label: 'Appearance', icon: 'appearance', section: 'customize' },
 	{ href: '/settings/calendar', label: 'Calendar', icon: 'calendar', section: 'customize' },
@@ -37,14 +49,25 @@ export const LEGACY_SETTINGS_PATHS = new Set([
 ]);
 
 export const SETTINGS_SECTIONS = [
+	{ id: 'experience', label: 'Mode' },
 	{ id: 'personal', label: 'Account' },
 	{ id: 'mail', label: 'Mail' },
 	{ id: 'customize', label: 'Interface' },
 	{ id: 'advanced', label: 'More' }
 ] as const;
 
-export function settingsNavLinks(): SettingsNavLink[] {
-	return ALL_LINKS;
+export function settingsNavLinks(mode: MailViewMode = 'simple'): SettingsNavLink[] {
+	return [
+		EXPERIENCE_LINK,
+		COMMON_LINKS[0],
+		{
+			href: '/settings/layout',
+			label: webmailModeDefinition(mode).settingsViewLabel,
+			icon: 'layout',
+			section: 'mail'
+		},
+		...COMMON_LINKS.slice(1)
+	];
 }
 
 export function isSettingsNavActive(pathname: string, href: string): boolean {

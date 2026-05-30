@@ -76,7 +76,15 @@ function countHiddenForSource(source) {
 	return hidden;
 }
 
+function modesForEntry(href, title) {
+	if (href !== '/settings/layout') return undefined;
+	if (title === 'Show list rail in reader') return ['simple'];
+	if (title === 'Show folder unread counts' || title === 'Show pane borders') return ['traditional'];
+	return undefined;
+}
+
 const files = [
+	['src/lib/settings/sections/experience.svelte', '/settings'],
 	['src/lib/settings/sections/appearance.svelte', '/settings/appearance'],
 	['src/lib/settings/sections/layout.svelte', '/settings/layout'],
 	['src/lib/settings/sections/calendar.svelte', '/settings/calendar'],
@@ -102,7 +110,8 @@ for (const [file, href] of files) {
 		const id = `${href}-${slug(title)}`;
 		if (seen.has(id)) continue;
 		seen.add(id);
-		entries.push({ id, href, title, description });
+		const modes = modesForEntry(href, title);
+		entries.push(modes ? { id, href, title, description, modes } : { id, href, title, description });
 	}
 }
 
@@ -113,6 +122,7 @@ const searchIndex = `export type SettingsSearchEntry = {
 	title: string;
 	description: string;
 	href: string;
+	modes?: ('simple' | 'traditional')[];
 };
 
 export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = ${JSON.stringify(entries, null, '\t')};

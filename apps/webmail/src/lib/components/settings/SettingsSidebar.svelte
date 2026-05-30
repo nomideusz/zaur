@@ -5,8 +5,10 @@
 	import { settingsNavLinks, SETTINGS_SECTIONS } from '$lib/settings/nav';
 	import { cn } from '$lib/utils/cn';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { webmailModeDefinition } from '$lib/modes/registry';
 
-	const links = $derived(settingsNavLinks());
+	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
+	const links = $derived(settingsNavLinks(activeMode.id));
 	const sections = SETTINGS_SECTIONS;
 </script>
 
@@ -25,6 +27,9 @@
 		)}
 	>
 		<h1 class="z-settings-sidebar-title">Settings</h1>
+		<p class="mt-1 px-2 text-xs text-fg-subtle">
+			{activeMode.label} mode
+		</p>
 		<div class="mb-1 mt-3">
 			<SettingsSearch />
 		</div>

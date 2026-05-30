@@ -1,10 +1,10 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
 	import { setContext } from 'svelte';
-	import SimpleMailLayout from '$lib/components/mail/layout/SimpleMailLayout.svelte';
-	import TraditionalMailLayout from '$lib/components/mail/layout/TraditionalMailLayout.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
-	import { isTraditionalMailView } from '$lib/mail/view-mode';
+	import ClassicMailSurface from '$lib/modes/classic/ClassicMailSurface.svelte';
+	import { webmailModeDefinition } from '$lib/modes/registry';
+	import SimpleMailSurface from '$lib/modes/simple/SimpleMailSurface.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -67,7 +67,7 @@
 		return () => shellHeader.clearMail(generation);
 	});
 
-	const traditional = $derived(isTraditionalMailView(settings.mailViewMode));
+	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
 </script>
 
 <div
@@ -77,9 +77,11 @@
 		className
 	)}
 >
-	{#if traditional}
-		<TraditionalMailLayout {list} {reader} {mailboxName} {onBack} />
-	{:else}
-		<SimpleMailLayout {list} {reader} />
-	{/if}
+	{#key activeMode.id}
+		{#if activeMode.id === 'traditional'}
+			<ClassicMailSurface {list} {reader} {mailboxName} {onBack} />
+		{:else}
+			<SimpleMailSurface {list} {reader} />
+		{/if}
+	{/key}
 </div>

@@ -1041,6 +1041,43 @@
 		margin-inline: auto;
 	}
 
+	.z-settings-mode-simple .z-settings-content {
+		max-width: 50rem;
+	}
+
+	.z-settings-mode-simple .z-settings-panel {
+		max-width: 46rem;
+	}
+
+	.z-settings-mode-simple .z-settings-page-title {
+		font-size: clamp(2rem, 4vw, 3.25rem);
+		font-weight: 650;
+		line-height: 0.98;
+		letter-spacing: -0.055em;
+	}
+
+	.z-settings-mode-simple .z-settings-page-lead,
+	.z-settings-mode-simple .z-settings-section-lead,
+	.z-settings-mode-simple .z-settings-row-desc,
+	.z-settings-mode-simple .z-settings-field-desc {
+		color: var(--z-fg-muted);
+	}
+
+	.z-settings-mode-simple .z-settings-stack {
+		display: flex;
+		gap: 2.75rem;
+	}
+
+	.z-settings-mode-simple .z-settings-list {
+		border-radius: 1rem;
+	}
+
+	.z-settings-mode-classic .z-settings-list,
+	.z-settings-mode-classic .z-settings-nav-link,
+	.z-settings-mode-classic .z-settings-search-input {
+		border-radius: 0;
+	}
+
 	@media (min-width: 1024px) {
 		.z-settings-content {
 			max-width: 72rem;

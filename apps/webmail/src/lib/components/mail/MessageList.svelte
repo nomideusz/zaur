@@ -15,7 +15,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { mail } from '$lib/stores/mail.svelte';
-	import { isTraditionalMailView, usesSectionedMessageList } from '$lib/mail/view-mode';
+	import { webmailModeDefinition } from '$lib/modes/registry';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { getCachedMessagePreviews } from '$lib/db/recent-threads';
 	import type { MessagePreview } from '$lib/types/mail';
@@ -163,10 +163,11 @@ let readEverStorageKey = $state<string | null>(null);
 		return `${href}?${searchParams.toString()}`;
 	}
 
-	const traditionalView = $derived(isTraditionalMailView(settings.mailViewMode));
+	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
+	const traditionalView = $derived(activeMode.id === 'traditional');
 	const listExpanded = $derived(!traditionalView && expanded);
 	const sectionMode = $derived(
-		!!mailboxRouteId && usesSectionedMessageList(settings.mailViewMode)
+		!!mailboxRouteId && activeMode.mail.useSectionedMessageList
 	);
 	const bulkSelectEnabled = $derived(!!mailboxRouteId && settings.showBulkSelect);
 	const showListHeader = $derived(!sectionMode && bulkSelectEnabled);

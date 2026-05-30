@@ -12,6 +12,7 @@ export const routeMap = {
 	},
 	settings: {
 		root: '/settings',
+		experience: '/settings',
 		account: '/settings/account',
 		mail: '/settings/mail',
 		inbox: '/settings/inbox',
@@ -51,9 +52,10 @@ export const componentTree = {
 		ContactsLayout: ['ContactsSidebar', 'ContactsList', 'ContactDetailPanel | ContactDetailEmpty']
 	},
 	mail: {
-		MailLayout: ['MailPane (SimpleMailLayout | TraditionalMailLayout)'],
+		MailModeRegistry: ['Simple mode', 'Classic mode'],
+		MailLayout: ['MailPane (SimpleMailSurface | ClassicMailSurface)'],
 		SimpleMailLayout: ['MessageList (sectioned)', 'MessageReader | MessageReaderEmpty'],
-		TraditionalMailLayout: ['MailboxSidebar', 'MessageList', 'MessageReader | MessageReaderEmpty'],
+		ClassicMailLayout: ['MailboxSidebar', 'MessageList', 'MessageReader | MessageReaderEmpty'],
 		MailboxSidebar: ['MailboxTree', 'MailboxItem'],
 		MessageList: ['MessageListItem'],
 		MessageReader: ['ReaderTitle', 'ReaderBody'],

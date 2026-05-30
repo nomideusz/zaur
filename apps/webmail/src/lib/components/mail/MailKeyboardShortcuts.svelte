@@ -9,7 +9,8 @@
 	import { search } from '$lib/stores/search.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-import { resolveMailboxRouteByShortcut } from '$lib/mail/folder-shortcuts';
+	import { resolveMailboxRouteByShortcut } from '$lib/mail/folder-shortcuts';
+	import { webmailModeDefinition } from '$lib/modes/registry';
 	import { isTypingTarget } from '$lib/utils/keyboard';
 	import type { MessagePreview } from '$lib/types/mail';
 
@@ -130,6 +131,7 @@ import { resolveMailboxRouteByShortcut } from '$lib/mail/folder-shortcuts';
 	}
 
 	onMount(() => {
+		const activeMode = () => webmailModeDefinition(settings.mailViewMode);
 		let pendingGotoPrefix = false;
 		let pendingGotoPrefixTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -159,7 +161,7 @@ import { resolveMailboxRouteByShortcut } from '$lib/mail/folder-shortcuts';
 
 			if (
 				event.key === 'Escape' &&
-				settings.isSimpleMailView &&
+				activeMode().mail.useAdaptiveReaderFocus &&
 				ctx.threadId &&
 				!mail.hasSelection
 			) {

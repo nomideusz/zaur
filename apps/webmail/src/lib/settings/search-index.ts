@@ -3,6 +3,7 @@ export type SettingsSearchEntry = {
 	title: string;
 	description: string;
 	href: string;
+	modes?: ('simple' | 'traditional')[];
 };
 
 export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
@@ -151,15 +152,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/layout-default-search-scope",
+		"id": "/settings/layout-current-mode",
 		"href": "/settings/layout",
-		"title": "Default search scope",
+		"title": "Current mode",
 		"description": ""
 	},
 	{
-		"id": "/settings/layout-mail-view",
+		"id": "/settings/layout-default-search-scope",
 		"href": "/settings/layout",
-		"title": "Mail view",
+		"title": "Default search scope",
 		"description": ""
 	},
 	{
@@ -178,19 +179,28 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/layout-show-folder-unread-counts",
 		"href": "/settings/layout",
 		"title": "Show folder unread counts",
-		"description": ""
+		"description": "",
+		"modes": [
+			"traditional"
+		]
 	},
 	{
 		"id": "/settings/layout-show-list-rail-in-reader",
 		"href": "/settings/layout",
 		"title": "Show list rail in reader",
-		"description": ""
+		"description": "",
+		"modes": [
+			"simple"
+		]
 	},
 	{
 		"id": "/settings/layout-show-pane-borders",
 		"href": "/settings/layout",
 		"title": "Show pane borders",
-		"description": ""
+		"description": "",
+		"modes": [
+			"traditional"
+		]
 	},
 	{
 		"id": "/settings/mail-always-bcc-me",

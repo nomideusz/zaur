@@ -30,6 +30,7 @@
 	const isMobile = $derived(variant === 'mobile');
 
 	const ICON_MAP: Record<SettingsNavIcon, LucideIcon> = {
+		mode: SettingsIcon,
 		account: User,
 		general: SettingsIcon,
 		inbox: Inbox,

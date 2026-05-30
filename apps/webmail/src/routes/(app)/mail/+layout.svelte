@@ -3,14 +3,26 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import MailKeyboardShortcuts from '$lib/components/mail/MailKeyboardShortcuts.svelte';
+	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { readerFocus } from '$lib/stores/reader-focus.svelte';
+	import { webmailModeDefinition } from '$lib/modes/registry';
 
 	let { children } = $props();
 
 	const isThreadOpen = $derived(!!$page.params.threadId);
-	const focusActive = $derived(settings.isSimpleMailView && readerFocus.active && isThreadOpen);
-	const adaptiveThreadOpen = $derived(settings.isSimpleMailView && isThreadOpen);
+	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
+	const focusActive = $derived(
+		activeMode.mail.useAdaptiveReaderFocus && readerFocus.active && isThreadOpen
+	);
+	const adaptiveThreadOpen = $derived(activeMode.mail.useAdaptiveReaderFocus && isThreadOpen);
+
+	$effect(() => {
+		activeMode.id;
+		readerFocus.set(false);
+		readerFocus.setClean(false);
+		mail.clearSelection();
+	});
 
 	onMount(() => {
 		function onKeydown(event: KeyboardEvent) {
@@ -40,12 +52,14 @@
 
 <MailKeyboardShortcuts />
 
-<div
-	class="relative flex min-h-0 flex-1 flex-row overflow-hidden"
-	class:z-mail-view-simple={settings.isSimpleMailView}
-	class:z-mail-view-traditional={settings.isTraditionalMailView}
-	class:z-reader-focus={focusActive}
-	class:z-layout-adaptive-thread={adaptiveThreadOpen}
->
-	{@render children()}
-</div>
+{#key activeMode.id}
+	<div
+		class="relative flex min-h-0 flex-1 flex-row overflow-hidden"
+		class:z-mail-view-simple={activeMode.id === 'simple'}
+		class:z-mail-view-traditional={activeMode.id === 'traditional'}
+		class:z-reader-focus={focusActive}
+		class:z-layout-adaptive-thread={adaptiveThreadOpen}
+	>
+		{@render children()}
+	</div>
+{/key}

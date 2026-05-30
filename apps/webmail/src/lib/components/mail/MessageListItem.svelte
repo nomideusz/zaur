@@ -4,7 +4,8 @@
 	import MessageListActiveActions from '$lib/components/mail/MessageListActiveActions.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import SwipeableListRow, { type SwipeAction } from '$lib/components/ui/SwipeableListRow.svelte';
-	import { isTraditionalMailView, usesAdaptiveReaderFocus } from '$lib/mail/view-mode';
+	import { usesAdaptiveReaderFocus } from '$lib/mail/view-mode';
+	import { webmailModeDefinition } from '$lib/modes/registry';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -91,9 +92,10 @@
 	);
 
 	const hideActiveIndicator = $derived(settings.hideListActiveIndicator);
+	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
 	const selectionMode = $derived(mail.hasSelection);
 	const showActiveCheckbox = $derived(bulkSelectEnabled && active && !selectionMode);
-	const traditionalList = $derived(isTraditionalMailView(settings.mailViewMode));
+	const traditionalList = $derived(activeMode.id === 'traditional');
 	/** Gutter for row checkboxes: all rows in selection mode, or the active row to enter it. */
 	const showListGutter = $derived(bulkSelectEnabled && (selectionMode || showActiveCheckbox));
 	const showRowCheckbox = $derived(selectionMode || showActiveCheckbox);
