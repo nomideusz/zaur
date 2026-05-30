@@ -1,6 +1,5 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { onDestroy } from 'svelte';
 	import { setContext } from 'svelte';
 	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
@@ -52,7 +51,7 @@
 	});
 
 	$effect(() => {
-		shellHeader.setMail({
+		const generation = shellHeader.setMail({
 			mailboxName,
 			countLabel,
 			mailboxRouteId,
@@ -63,10 +62,7 @@
 			onBack,
 			showNewMessage
 		});
-	});
-
-	onDestroy(() => {
-		shellHeader.clearMail();
+		return () => shellHeader.clearMail(generation);
 	});
 </script>
 

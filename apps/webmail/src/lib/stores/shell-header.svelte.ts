@@ -12,12 +12,16 @@ export type MailHeaderContext = {
 
 class ShellHeaderStore {
 	mail = $state<MailHeaderContext | null>(null);
+	#mailGeneration = 0;
 
-	setMail(ctx: MailHeaderContext) {
+	setMail(ctx: MailHeaderContext): number {
+		const generation = ++this.#mailGeneration;
 		this.mail = ctx;
+		return generation;
 	}
 
-	clearMail() {
+	clearMail(generation?: number) {
+		if (generation !== undefined && generation !== this.#mailGeneration) return;
 		this.mail = null;
 	}
 }
