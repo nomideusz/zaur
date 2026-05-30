@@ -11,6 +11,8 @@
 		menuId?: string;
 		placement?: 'bottom' | 'top';
 		class?: string;
+		menuClass?: string;
+		onOpenChange?: (open: boolean) => void;
 		children: Snippet;
 	}
 
@@ -19,14 +21,21 @@
 		menuId = 'overflow-menu',
 		placement = 'bottom',
 		class: className = '',
+		menuClass = '',
+		onOpenChange,
 		children
 	}: Props = $props();
 
 	let open = $state(false);
 	let root = $state<HTMLDivElement | null>(null);
 
+	function setOpen(next: boolean) {
+		open = next;
+		onOpenChange?.(next);
+	}
+
 	function close() {
-		open = false;
+		setOpen(false);
 	}
 
 	function handleWindowClick(event: MouseEvent) {
@@ -49,7 +58,7 @@
 		ariaHaspopup="menu"
 		onclick={(event) => {
 			event.stopPropagation();
-			open = !open;
+			setOpen(!open);
 		}}
 	>
 		<MoreVertical class="size-5" aria-hidden="true" />
@@ -61,7 +70,11 @@
 			id={menuId}
 			role="menu"
 			tabindex="-1"
-			class={cn('z-overflow-menu', placement === 'top' && 'z-overflow-menu--top')}
+			class={cn(
+				'z-overflow-menu',
+				placement === 'top' && 'z-overflow-menu--top',
+				menuClass
+			)}
 			onpointerdown={(event) => event.stopPropagation()}
 			onkeydown={(event) => {
 				if (event.key === 'Escape') close();

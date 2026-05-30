@@ -299,11 +299,28 @@
 	}
 
 	.z-overflow-menu {
-		@apply absolute right-0 z-20 mt-2 w-72 min-w-64 overflow-hidden rounded-lg border border-border bg-surface-raised py-2;
+		@apply absolute right-0 z-20 mt-2 w-72 min-w-64 overflow-hidden rounded-sm border border-border bg-surface-raised py-2;
+		box-shadow: var(--shadow-md);
 	}
 
 	.z-overflow-menu--top {
-		@apply bottom-full mb-2 mt-0;
+		@apply bottom-full mb-1.5 mt-0;
+	}
+
+	.z-overflow-menu--list {
+		@apply z-50 w-52 min-w-44 py-1;
+	}
+
+	.z-overflow-menu--list .z-overflow-menu-item {
+		@apply gap-2.5 px-3 py-2 text-sm;
+	}
+
+	.z-overflow-menu--list .z-overflow-menu-label {
+		@apply px-3 py-1.5 text-[11px];
+	}
+
+	.z-overflow-menu--list .z-overflow-menu-scroll {
+		@apply py-0.5;
 	}
 
 	.z-overflow-menu-label {
@@ -484,6 +501,11 @@
 		position: relative;
 		overflow: hidden;
 		background-color: var(--z-surface-raised);
+	}
+
+	.z-swipe-row--elevated {
+		overflow: visible;
+		z-index: 30;
 	}
 
 	.z-swipe-row__actions {

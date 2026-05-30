@@ -35,6 +35,8 @@
 		enableMobileGestures = false
 	}: Props = $props();
 
+	let listMenuOpen = $state(false);
+
 	const actionRouteId = $derived(mailboxRouteId ?? message.mailboxId);
 	const currentMailbox = $derived(mail.mailboxByRouteId(actionRouteId));
 	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
@@ -222,6 +224,10 @@
 			}
 		];
 	});
+
+	$effect(() => {
+		if (!showActiveCompact) listMenuOpen = false;
+	});
 </script>
 
 {#snippet listMarker()}
@@ -371,7 +377,13 @@
 				</a>
 				{#if mailboxRouteId}
 					<div class="max-md:hidden">
-						<MessageListActiveActions {message} {mailboxRouteId} />
+						<MessageListActiveActions
+							{message}
+							{mailboxRouteId}
+							onMenuOpenChange={(open) => {
+								listMenuOpen = open;
+							}}
+						/>
 					</div>
 				{/if}
 			{:else}
@@ -398,6 +410,7 @@
 	trailing={trailingSwipeActions}
 	longPressEnabled={!!onSelect && supportsMobileListGestures() && settings.showBulkSelect}
 	onLongPress={onSelect ? handleLongPress : undefined}
+	class={listMenuOpen ? 'z-swipe-row--elevated' : undefined}
 >
 	{@render rowInner()}
 </SwipeableListRow>

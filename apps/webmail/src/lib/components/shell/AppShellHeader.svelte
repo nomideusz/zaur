@@ -31,7 +31,7 @@ import Search from '$lib/components/icons/Search.svelte';
 		onMailRoute && !!$page.params.threadId && !mail.hasSelection
 	);
 	const showMailContext = $derived(onMailRoute && shellHeader.mail !== null);
-	const showToolSwitcher = $derived(!onSettingsRoute && (!onMailRoute || !mobileReadingThread));
+	const showToolSwitcher = $derived(!onSettingsRoute);
 	const mobileListSelecting = $derived(
 		onMailRoute && !!shellHeader.mail?.mailboxRouteId && !$page.params.threadId && mail.hasSelection
 	);
@@ -43,6 +43,9 @@ import Search from '$lib/components/icons/Search.svelte';
 			!!shellHeader.mail?.mailboxRouteId &&
 			!$page.params.threadId &&
 			!mail.hasSelection
+	);
+	const hideToolSwitcherOnMobile = $derived(
+		mobileReadingThread || mobileListSelecting || mobileMailListView
 	);
 </script>
 
@@ -70,7 +73,7 @@ import Search from '$lib/components/icons/Search.svelte';
 		</a>
 
 		{#if showToolSwitcher}
-			<div class={cn(mobileMailListView && 'max-md:hidden')}>
+			<div class={cn(hideToolSwitcherOnMobile && 'max-md:hidden')}>
 				<ToolSwitcher />
 			</div>
 		{/if}

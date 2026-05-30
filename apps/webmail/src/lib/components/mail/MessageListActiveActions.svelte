@@ -18,9 +18,10 @@
 	interface Props {
 		message: MessagePreview;
 		mailboxRouteId: string;
+		onMenuOpenChange?: (open: boolean) => void;
 	}
 
-	let { message, mailboxRouteId }: Props = $props();
+	let { message, mailboxRouteId, onMenuOpenChange }: Props = $props();
 
 	const actionRouteId = $derived(mailboxRouteId ?? message.mailboxId);
 	const currentMailbox = $derived(mail.mailboxByRouteId(actionRouteId));
@@ -118,7 +119,13 @@
 		<Trash2 class="size-4" aria-hidden="true" />
 	</IconButton>
 
-	<OverflowMenu label="More message actions" {menuId}>
+	<OverflowMenu
+		label="More message actions"
+		{menuId}
+		placement="top"
+		menuClass="z-overflow-menu--list"
+		onOpenChange={onMenuOpenChange}
+	>
 		{#if !settings.showStarsInList}
 			<OverflowMenuItem label={starLabel} onclick={toggleStar}>
 				{#snippet icon()}<Star class="size-5" aria-hidden="true" />{/snippet}
