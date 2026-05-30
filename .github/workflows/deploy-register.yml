@@ -21,23 +21,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Prepare captain-definition
-        run: cp infra/deploy/register.captain-definition captain-definition
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install workspace deps for CSS build
+        run: pnpm install --frozen-lockfile --filter @zaur/ui...
+
+      - name: Build register CSS
+        run: pnpm --filter @zaur/ui build:css
 
       - name: Create deployment tarball
-        uses: a7ul/tar-action@v1.1.0
-        with:
-          command: c
-          cwd: ./
-          files: |
-            captain-definition
-            pnpm-lock.yaml
-            pnpm-workspace.yaml
-            package.json
-            .npmrc
-            packages/ui/
-            apps/register/
-          outPath: deploy.tar
+        run: |
+          tar -cf deploy.tar \
+            --exclude=node_modules \
+            --exclude=.data \
+            --exclude=test-results \
+            --exclude=playwright-report \
+            -C apps/register .
 
       - name: Deploy to CapRover
         uses: caprover/deploy-from-github@v1.1.2

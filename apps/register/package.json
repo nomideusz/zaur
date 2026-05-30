@@ -4,8 +4,8 @@
   "description": "Self-service email registration portal for Stalwart mail",
   "main": "server.js",
   "scripts": {
-    "predev": "pnpm --filter @zaur/ui build:css",
-    "prestart": "pnpm --filter @zaur/ui build:css",
+    "predev": "node ../../packages/ui/scripts/build-css.mjs",
+    "prestart": "node ../../packages/ui/scripts/build-css.mjs",
     "start": "node server.js",
     "dev": "node --watch server.js",
     "test:e2e": "playwright test"
@@ -14,7 +14,6 @@
     "node": ">=20"
   },
   "dependencies": {
-    "@zaur/ui": "workspace:*",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "express-rate-limit": "^7.5.0",

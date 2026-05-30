@@ -65,7 +65,7 @@ infra/
 
 ## Deploy
 
-GitHub Actions deploy **webmail** and **register** to CapRover on push to `main` when their paths change. Each build uses the monorepo root as Docker context (see app Dockerfiles).
+GitHub Actions deploy **webmail** and **register** to CapRover on push to `main` when their paths change. Webmail uses the monorepo root as Docker context; **register** deploys a self-contained tarball of `apps/register/` (CSS is vendored into `public/zaur.css` at build time).
 
 Local deploy (requires `caprover login`):
 

@@ -491,12 +491,6 @@ app.get('/success', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'success.html'));
 });
 
-const uiCssPath = require.resolve('@zaur/ui/css/zaur.css');
-
-app.get('/zaur.css', (_req, res) => {
-  res.sendFile(uiCssPath);
-});
-
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((_req, res) => {

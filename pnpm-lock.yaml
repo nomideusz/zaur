@@ -35,12 +35,6 @@ importers:
 
   apps/register:
     dependencies:
-      '@zaur/sprite':
-        specifier: workspace:*
-        version: link:../../packages/sprite
-      '@zaur/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       dotenv:
         specifier: ^16.4.7
         version: 16.6.1
