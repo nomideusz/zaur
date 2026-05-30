@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { untrack } from 'svelte';
 	import MailPane from '$lib/components/mail/MailPane.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
 	import MessageReader from '$lib/components/mail/MessageReader.svelte';
@@ -41,10 +42,24 @@
 		backToList();
 	}
 
+	function retryOpenMessage() {
+		const client = auth.client;
+		if (!client) return;
+		void mail.loadMessage(client, data.mailboxId, data.threadId, {
+			messageId: $page.url.searchParams.get('messageId'),
+			force: true
+		});
+	}
+
 	$effect(() => {
 		const client = auth.client;
+		const mailboxId = data.mailboxId;
+		const threadId = data.threadId;
+		const messageId = $page.url.searchParams.get('messageId');
 		if (!client || auth.isRestoring) return;
-		void mail.loadMessage(client, data.mailboxId, data.threadId);
+		untrack(() => {
+			void mail.loadMessage(client, mailboxId, threadId, { messageId });
+		});
 	});
 </script>
 
@@ -84,7 +99,7 @@
 		/>
 	{/snippet}
 	{#snippet reader()}
-		{#if mail.selectedLoading}
+		{#if mail.selectedLoading && thread.length === 0}
 			<div class="z-mail-reader-pane">
 				<MessageReaderSkeleton />
 			</div>
@@ -97,6 +112,7 @@
 				<MessageReaderStatus
 					message={mail.selectedError ?? 'Message not found.'}
 					onBack={backToList}
+					onRetry={retryOpenMessage}
 				/>
 			</div>
 		{/if}

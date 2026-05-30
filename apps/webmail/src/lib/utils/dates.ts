@@ -118,6 +118,115 @@ export function formatMessageListWhen(
 	}).format(date);
 }
 
+/** Simple mail list — always includes time; adds date when not today. */
+export function formatSimpleMessageWhen(
+	iso: string,
+	timeFormat: TimeFormatPref = 'auto'
+): string {
+	const date = new Date(iso);
+	const timeOpts = timeStyleOptions(timeFormat);
+	const time = new Intl.DateTimeFormat(undefined, timeOpts).format(date);
+	const now = new Date();
+
+	if (isSameDay(date, now)) {
+		return time;
+	}
+
+	const weekAgo = new Date(now);
+	weekAgo.setDate(now.getDate() - 6);
+	if (date >= weekAgo) {
+		const day = new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(date);
+		return `${day} ${time}`;
+	}
+
+	if (date.getFullYear() === now.getFullYear()) {
+		const shortDate = new Intl.DateTimeFormat(undefined, {
+			month: 'short',
+			day: 'numeric'
+		}).format(date);
+		return `${shortDate} ${time}`;
+	}
+
+	const shortDate = new Intl.DateTimeFormat(undefined, {
+		month: 'short',
+		day: 'numeric',
+		year: 'numeric'
+	}).format(date);
+	return `${shortDate} ${time}`;
+}
+
+/** Local calendar day key for grouping (YYYY-MM-DD). */
+export function simpleMessageDayKey(iso: string): string {
+	const date = new Date(iso);
+	return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
+}
+
+/** Time only — for Simple list rows under a day heading. */
+export function formatSimpleMessageTime(
+	iso: string,
+	timeFormat: TimeFormatPref = 'auto'
+): string {
+	return new Intl.DateTimeFormat(undefined, timeStyleOptions(timeFormat)).format(new Date(iso));
+}
+
+/** Day section title in Simple mail (Today, Thursday, …). */
+export function formatSimpleDayHeading(iso: string): string {
+	const date = new Date(iso);
+	const now = new Date();
+
+	if (isSameDay(date, now)) return 'Today';
+
+	const yesterday = new Date(now);
+	yesterday.setDate(now.getDate() - 1);
+	if (isSameDay(date, yesterday)) return 'Yesterday';
+
+	const weekAgo = new Date(now);
+	weekAgo.setDate(now.getDate() - 6);
+	if (date >= weekAgo) {
+		return new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(date);
+	}
+
+	if (date.getFullYear() === now.getFullYear()) {
+		return new Intl.DateTimeFormat(undefined, {
+			weekday: 'long',
+			month: 'long',
+			day: 'numeric'
+		}).format(date);
+	}
+
+	return new Intl.DateTimeFormat(undefined, {
+		weekday: 'long',
+		month: 'long',
+		day: 'numeric',
+		year: 'numeric'
+	}).format(date);
+}
+
+/** Group messages by received day, newest days first. */
+export function groupMessagesByDay<T extends { receivedAt: string }>(
+	messages: T[]
+): { dayKey: string; heading: string; messages: T[] }[] {
+	const byDay = new Map<string, T[]>();
+
+	for (const message of messages) {
+		const key = simpleMessageDayKey(message.receivedAt);
+		const list = byDay.get(key);
+		if (list) list.push(message);
+		else byDay.set(key, [message]);
+	}
+
+	return [...byDay.keys()]
+		.sort((a, b) => b.localeCompare(a))
+		.map((dayKey) => {
+			const dayMessages = byDay.get(dayKey)!;
+			return {
+				dayKey,
+				heading: formatSimpleDayHeading(dayMessages[0].receivedAt),
+				messages: dayMessages
+			};
+		});
+}
+
 export function formatEventTime(event: { start: Date; end: Date; allDay: boolean }): string {
 	if (event.allDay) return 'All day';
 

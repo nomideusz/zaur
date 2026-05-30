@@ -68,11 +68,13 @@
 	});
 
 	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
+	const simplePageScroll = $derived(activeMode.id === 'simple');
 </script>
 
 <div
 	class={cn(
-		'z-mail-pane flex min-h-0 min-w-0 flex-1 flex-col',
+		'z-mail-pane flex min-w-0 flex-col',
+		simplePageScroll ? 'z-mail-pane--page-scroll w-full' : 'min-h-0 flex-1',
 		fullScreenMobile && 'z-mail-pane--mobile-fullscreen',
 		className
 	)}

@@ -10,15 +10,20 @@
 	interface Props {
 		message: string;
 		onBack?: () => void;
+		onRetry?: () => void;
 	}
 
-	let { message, onBack }: Props = $props();
+	let { message, onBack, onRetry }: Props = $props();
 
 	const isOffline = $derived(message.startsWith('Offline'));
 	const isNotFound = $derived(message.startsWith('Message not found'));
+	const isServerDown = $derived(
+		message.includes('502') || message.toLowerCase().includes('mail server unavailable')
+	);
 	const title = $derived.by(() => {
 		if (isNotFound) return 'This message is not available';
 		if (isOffline) return 'You are offline';
+		if (isServerDown) return 'Mail server unavailable';
 		return 'Message could not load';
 	});
 	const description = $derived.by(() => {
@@ -30,7 +35,7 @@
 
 <div
 	class={cn(
-		'z-mail-pane-surface min-h-0 flex-1 items-center justify-center text-center',
+		'z-mail-pane-surface flex min-h-0 flex-1 flex-col items-center justify-center text-center',
 		settings.compactReaderStatus ? 'gap-3 p-4' : 'gap-4 p-8'
 	)}
 >
@@ -55,10 +60,15 @@
 		{/if}
 	</div>
 
-	{#if onBack && !settings.hideReaderStatusBackButton}
-		<Button variant="ghost" onclick={onBack}>
-			<ArrowLeft class="size-4" aria-hidden="true" />
-			Back to list
-		</Button>
-	{/if}
+	<div class="flex flex-wrap items-center justify-center gap-2">
+		{#if onRetry}
+			<Button variant="primary" onclick={onRetry}>Try again</Button>
+		{/if}
+		{#if onBack && !settings.hideReaderStatusBackButton}
+			<Button variant="ghost" onclick={onBack}>
+				<ArrowLeft class="size-4" aria-hidden="true" />
+				Back to list
+			</Button>
+		{/if}
+	</div>
 </div>

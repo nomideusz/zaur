@@ -17,6 +17,9 @@
 		(!onMailRoute || activeMode.mail.showAppHeaderOnMailRoutes) &&
 			(!onSettingsRoute || activeMode.settings.showAppHeader)
 	);
+	const pageScrollOnMain = $derived(
+		activeMode.id === 'simple' && (onMailRoute || onSettingsRoute)
+	);
 
 	$effect(() => {
 		if (auth.isRestoring) return;
@@ -63,7 +66,13 @@
 		{#if showAppHeader}
 			<AppShellHeader />
 		{/if}
-		<main id="main-content" class="flex min-h-0 flex-1 flex-col overflow-hidden" tabindex="-1">
+		<main
+			id="main-content"
+			class="flex min-h-0 flex-1 flex-col {pageScrollOnMain
+				? 'z-app-main--page-scroll overflow-y-auto overflow-x-hidden'
+				: 'overflow-hidden'}"
+			tabindex="-1"
+		>
 			{@render children()}
 		</main>
 	</div>

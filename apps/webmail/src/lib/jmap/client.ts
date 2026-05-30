@@ -467,7 +467,21 @@ export class JMAPClient {
 				}
 				throw new Error('Unauthorized');
 			}
-			throw new Error(`Request failed: ${response.status} - ${responseText.slice(0, 200)}`);
+			let detail = responseText.slice(0, 300);
+			try {
+				const parsed = JSON.parse(responseText) as { error?: string };
+				if (typeof parsed.error === 'string' && parsed.error) {
+					detail = parsed.error;
+				}
+			} catch {
+				// Use raw response text
+			}
+			if (response.status === 502) {
+				throw new Error(
+					`Mail server unavailable (502). Check that your mail server is running and reachable. ${detail}`
+				);
+			}
+			throw new Error(`Request failed: ${response.status} — ${detail}`);
 		}
 
 		return JSON.parse(responseText) as JMAPResponse;

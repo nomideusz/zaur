@@ -57,7 +57,9 @@
 
 {#key activeMode.id}
 	<div
-		class="relative flex min-h-0 flex-1 flex-row overflow-hidden {activeMode.mailRootClass}"
+		class="relative flex flex-1 flex-row {activeMode.id === 'simple'
+			? 'min-h-0 overflow-visible'
+			: 'min-h-0 overflow-hidden'} {activeMode.mailRootClass}"
 		class:z-reader-focus={focusActive}
 		class:z-layout-adaptive-thread={adaptiveThreadOpen}
 	>

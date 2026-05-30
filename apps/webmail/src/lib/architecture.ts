@@ -59,6 +59,7 @@ export const modeArchitecture = {
 	values: ['simple', 'traditional'] as const,
 	uiLabels: { simple: 'Simple', traditional: 'Classic' } as const,
 	simple: {
+		contentShell: 'src/lib/modes/simple/simple-content-layout.ts',
 		mailLayout: 'src/lib/modes/simple/SimpleMailLayout.svelte',
 		readingSettings: 'src/lib/modes/simple/settings/reading.svelte',
 		settingsLayout: 'src/lib/modes/simple/SimpleSettingsLayout.svelte'

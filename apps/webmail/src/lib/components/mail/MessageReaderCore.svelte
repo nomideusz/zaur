@@ -13,6 +13,8 @@
 	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
 	import MessageReaderMobileBar from '$lib/components/mail/MessageReaderMobileBar.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
+	import { getWebmailModeContext } from '$lib/modes/context';
+	import { simpleContentPagePadClass } from '$lib/modes/simple/simple-content-layout';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
@@ -35,6 +37,8 @@
 	let { thread, mailboxRouteId, onMoved, minimalChrome = false }: Props = $props();
 
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
+	const mode = $derived(getWebmailModeContext());
+	const useSimpleContentShell = $derived(mode.id === 'simple');
 
 	let localShowImagesOnce = $state(false);
 	let expandedIds = $state<Set<string>>(new Set());
@@ -97,9 +101,11 @@
 	);
 	const collapsedCount = $derived(Math.max(0, thread.length - expandedIds.size));
 	const threadRowX = $derived(
-		settings.compactCollapsedThreads || settings.compactReaderBody
-			? 'px-4 md:px-5'
-			: 'px-4 md:px-6'
+		useSimpleContentShell
+			? ''
+			: settings.compactCollapsedThreads || settings.compactReaderBody
+				? 'px-4 md:px-5'
+				: 'px-4 md:px-6'
 	);
 
 	$effect(() => {
@@ -117,10 +123,19 @@
 		}
 	});
 
+	function messageScrollContainer(): HTMLElement | null {
+		if (!useSimpleContentShell || typeof document === 'undefined') return scrollPane;
+		const mobilePane = document.querySelector(
+			'.z-mail-pane--mobile-fullscreen .z-pane-scroll--mobile-reader'
+		);
+		if (mobilePane instanceof HTMLElement) return mobilePane;
+		return document.getElementById('main-content');
+	}
+
 	$effect(() => {
 		$page.params.threadId;
 		thread.map((m) => m.id).join(',');
-		const paneEl = scrollPane;
+		const paneEl = messageScrollContainer();
 		if (!paneEl || thread.length < 2) return;
 		void tick().then(() => {
 			paneEl.scrollTop = paneEl.scrollHeight;
@@ -260,7 +275,7 @@
 				onComplete: (outcome) => {
 					if (outcome === 'sent') {
 						toast.show('Reply sent', 'success');
-						void mail.loadMessage(auth.client!, mailboxRouteId, latest.threadId);
+						void mail.loadMessage(auth.client!, mailboxRouteId, latest.threadId, { force: true });
 					} else if (outcome === 'queued') {
 						toast.show('Reply queued — will send when back online', 'info');
 					}
@@ -268,7 +283,7 @@
 			});
 			if (result === 'sent') {
 				quickReply = '';
-				void mail.loadMessage(auth.client, mailboxRouteId, latest.threadId);
+				void mail.loadMessage(auth.client, mailboxRouteId, latest.threadId, { force: true });
 			} else if (result === 'pending' || result === 'queued') {
 				quickReply = '';
 			}
@@ -286,7 +301,10 @@
 </script>
 
 <article
-	class="z-mail-pane-surface min-h-0 flex-1 overflow-hidden"
+	class={cn(
+		'z-mail-pane-surface',
+		useSimpleContentShell ? 'z-mail-pane-surface--flow' : 'min-h-0 flex-1 overflow-hidden'
+	)}
 	style="view-transition-name: message-reader;"
 >
 	<h1 class="sr-only">{subject}</h1>
@@ -326,7 +344,20 @@
 		</div>
 	{/if}
 
-	<div class="z-pane-scroll z-pane-scroll--mobile-reader min-h-0 flex-1 overflow-y-auto" bind:this={scrollPane}>
+	<div
+		class={cn(
+			'z-pane-scroll z-pane-scroll--mobile-reader',
+			useSimpleContentShell
+				? 'z-pane-scroll--flow'
+				: 'min-h-0 flex-1 overflow-y-auto'
+		)}
+		bind:this={scrollPane}
+	>
+		<div
+			class={cn(
+				useSimpleContentShell && simpleContentPagePadClass(settings.compactSettingsLayout)
+			)}
+		>
 		<div
 			class={cn(
 				'z-reader-column',
@@ -714,6 +745,7 @@
 					</button>
 				</div>
 			{/if}
+		</div>
 		</div>
 	</div>
 

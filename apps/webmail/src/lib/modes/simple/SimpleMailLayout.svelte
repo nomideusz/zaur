@@ -17,11 +17,11 @@
 	);
 </script>
 
-<div class="z-mail-pane-body z-mail-pane-body--simple flex min-h-0 flex-1 overflow-hidden">
+<div class="z-mail-pane-body z-mail-pane-body--simple flex w-full flex-col">
 	{#if !adaptiveSingleFocus}
 		{@render list()}
 	{/if}
-	{#if !mail.hasSelection}
+	{#if isThreadOpen || !mail.hasSelection}
 		{@render reader()}
 	{/if}
 </div>

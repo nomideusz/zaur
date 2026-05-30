@@ -113,6 +113,9 @@ class MailStore {
 	selectedThreadId = $state<string | null>(null);
 	selectedLoading = $state(false);
 	selectedError = $state<string | null>(null);
+	private openMessageGeneration = 0;
+	private openMessageInflight: Promise<void> | null = null;
+	private openMessageInflightKey: string | null = null;
 
 	selectedMessageIds = $state<Set<string>>(new Set());
 	selectionAnchorId = $state<string | null>(null);
@@ -172,7 +175,11 @@ class MailStore {
 		}
 	}
 
-	async loadMessages(client: JMAPClient, routeMailboxId: string, options?: { force?: boolean }) {
+	async loadMessages(
+		client: JMAPClient,
+		routeMailboxId: string,
+		options?: { force?: boolean; preserveOpenThreadId?: string }
+	) {
 		if (
 			!options?.force &&
 			(this.messagesLoading ||
@@ -196,9 +203,11 @@ class MailStore {
 		this.clearSelection();
 		this.messagesLoading = true;
 		this.messagesError = null;
-		this.selectedThread = [];
-		this.selectedThreadId = null;
-		this.selectedError = null;
+		if (!options?.preserveOpenThreadId) {
+			this.selectedThread = [];
+			this.selectedThreadId = null;
+			this.selectedError = null;
+		}
 
 		const accountId = client.getAccountId();
 		if (browser) {
@@ -269,68 +278,134 @@ class MailStore {
 		}
 	}
 
-	async loadMessage(client: JMAPClient, routeMailboxId: string, threadId: string) {
+	async loadMessage(
+		client: JMAPClient,
+		routeMailboxId: string,
+		threadId: string,
+		options?: { messageId?: string | null; force?: boolean }
+	) {
+		const focusMessageId = options?.messageId?.trim() || null;
+		const inflightKey = `${routeMailboxId}:${threadId}:${focusMessageId ?? ''}`;
+
 		if (
+			!options?.force &&
 			this.selectedThreadId === threadId &&
 			this.currentMailboxRouteId === routeMailboxId &&
-			this.selectedThread.length &&
+			this.selectedThread.length > 0 &&
 			!this.selectedLoading
 		) {
 			return;
 		}
 
-		if (this.currentMailboxRouteId !== routeMailboxId || !this.messages.length) {
-			await this.loadMessages(client, routeMailboxId);
+		if (!options?.force && this.openMessageInflight && this.openMessageInflightKey === inflightKey) {
+			return this.openMessageInflight;
 		}
 
-		const listMatch = this.messages.find((m) => m.threadId === threadId);
-		if (!listMatch && !this.messages.some((m) => m.threadId === threadId)) {
-			// Thread may not be in current page — still try to load it
-		}
+		const generation = ++this.openMessageGeneration;
+		this.openMessageInflightKey = inflightKey;
 
-		this.selectedLoading = true;
-		this.selectedError = null;
-		this.selectedThreadId = threadId;
-		const accountId = client.getAccountId();
+		const run = async () => {
+			this.selectedLoading = true;
+			this.selectedError = null;
+			this.selectedThreadId = threadId;
+			this.selectedThread = [];
 
-		try {
-			const emails = await client.getThreadEmails(threadId);
-			if (!emails.length) {
-				this.selectedThread = [];
-				this.selectedError = 'Message not found';
-				return;
-			}
-
-			if (emails.every((email) => isAccountSettingsSubject(email.subject))) {
-				this.selectedThread = [];
-				this.selectedError =
-					'This message stores synced app settings and cannot be opened here. Use Settings → Backup to export or import preferences.';
-				return;
-			}
-
-			this.selectedThread = emails
-				.filter((email) => !isAccountSettingsSubject(email.subject))
-				.map((email) => mapEmailDetail(email, routeMailboxId));
-			indexMessagesContacts(this.selectedThread);
-
-			if (browser) {
-				try {
-					const { cacheThread } = await import('$lib/db');
-					await cacheThread(accountId, routeMailboxId, threadId, this.selectedThread);
-				} catch {
-					// Cache failures should not block reading
-				}
-
-				const attachments = this.selectedThread.flatMap((message) => message.attachments);
-				if (attachments.length) {
-					void import('$lib/attachments/download').then(({ prefetchAttachments }) =>
-						prefetchAttachments(attachments)
-					);
+			if (this.currentMailboxRouteId !== routeMailboxId || !this.messages.length) {
+				if (this.messagesLoading && this.currentMailboxRouteId === routeMailboxId) {
+					await this.waitForMessagesLoad();
+				} else {
+					await this.loadMessages(client, routeMailboxId, { preserveOpenThreadId: threadId });
 				}
 			}
 
-			if (settings.markAsReadOnOpen) {
-				const openedThreadId = threadId;
+			if (generation !== this.openMessageGeneration) return;
+
+			const accountId = client.getAccountId();
+			let resolvedThreadId = threadId;
+
+			try {
+				let emails: Awaited<ReturnType<JMAPClient['getThreadEmails']>> = [];
+
+				if (focusMessageId) {
+					const email = await client.getEmail(focusMessageId);
+					if (generation !== this.openMessageGeneration) return;
+					if (email) {
+						resolvedThreadId = email.threadId || threadId;
+						emails = await client.getThreadEmails(resolvedThreadId);
+						if (generation !== this.openMessageGeneration) return;
+						if (!emails.length) {
+							emails = [email];
+						}
+					}
+				}
+
+				if (!emails.length) {
+					emails = await client.getThreadEmails(threadId);
+					resolvedThreadId = threadId;
+					if (generation !== this.openMessageGeneration) return;
+				}
+
+				if (!emails.length) {
+					this.selectedThread = [];
+					this.selectedError = 'Message not found';
+					return;
+				}
+
+				if (emails.every((email) => isAccountSettingsSubject(email.subject))) {
+					this.selectedThread = [];
+					this.selectedError =
+						'This message stores synced app settings and cannot be opened here. Use Settings → Backup to export or import preferences.';
+					return;
+				}
+
+				this.selectedThreadId = resolvedThreadId;
+				this.selectedThread = emails
+					.filter((email) => !isAccountSettingsSubject(email.subject))
+					.map((email) => mapEmailDetail(email, routeMailboxId));
+				indexMessagesContacts(this.selectedThread);
+
+				if (browser) {
+					try {
+						const { cacheThread } = await import('$lib/db');
+						await cacheThread(accountId, routeMailboxId, resolvedThreadId, this.selectedThread);
+					} catch {
+						// Cache failures should not block reading
+					}
+
+					const attachments = this.selectedThread.flatMap((message) => message.attachments);
+					if (attachments.length) {
+						void import('$lib/attachments/download').then(({ prefetchAttachments }) =>
+							prefetchAttachments(attachments)
+						);
+					}
+				}
+			} catch (error) {
+				if (generation !== this.openMessageGeneration) return;
+				if (browser) {
+					const { getCachedThread } = await import('$lib/db');
+					const cached = await getCachedThread(accountId, resolvedThreadId);
+					if (cached?.length) {
+						this.selectedThreadId = resolvedThreadId;
+						this.selectedThread = cached;
+						this.selectedError = 'Offline — showing cached conversation';
+						return;
+					}
+				}
+				this.selectedThread = [];
+				this.selectedError = error instanceof Error ? error.message : 'Failed to load message';
+			} finally {
+				if (generation === this.openMessageGeneration) {
+					this.selectedLoading = false;
+				}
+			}
+
+			if (
+				generation === this.openMessageGeneration &&
+				settings.markAsReadOnOpen &&
+				this.selectedThreadId === resolvedThreadId &&
+				this.selectedThread.length
+			) {
+				const openedThreadId = resolvedThreadId;
 				const delay = settings.markAsReadDelay;
 				const doMark = async () => {
 					if (this.selectedThreadId !== openedThreadId) return;
@@ -341,24 +416,37 @@ class MailStore {
 				if (delay > 0) {
 					setTimeout(() => void doMark(), delay);
 				} else {
-					await doMark();
+					void doMark();
 				}
 			}
-		} catch (error) {
-			if (browser) {
-				const { getCachedThread } = await import('$lib/db');
-				const cached = await getCachedThread(accountId, threadId);
-				if (cached?.length) {
-					this.selectedThread = cached;
-					this.selectedError = 'Offline — showing cached conversation';
+		};
+
+		this.openMessageInflight = run().finally(() => {
+			if (this.openMessageInflightKey === inflightKey) {
+				this.openMessageInflight = null;
+				this.openMessageInflightKey = null;
+			}
+		});
+		return this.openMessageInflight;
+	}
+
+	private waitForMessagesLoad(): Promise<void> {
+		if (!this.messagesLoading) return Promise.resolve();
+		return new Promise((resolve) => {
+			const started = Date.now();
+			const tick = () => {
+				if (!this.messagesLoading) {
+					resolve();
 					return;
 				}
-			}
-			this.selectedThread = [];
-			this.selectedError = error instanceof Error ? error.message : 'Failed to load message';
-		} finally {
-			this.selectedLoading = false;
-		}
+				if (Date.now() - started > 30_000) {
+					resolve();
+					return;
+				}
+				setTimeout(tick, 50);
+			};
+			tick();
+		});
 	}
 
 	async markAsRead(client: JMAPClient, message: MessagePreview, read: boolean) {
@@ -1113,6 +1201,9 @@ class MailStore {
 		this.selectedThreadId = null;
 		this.selectedLoading = false;
 		this.selectedError = null;
+		this.openMessageGeneration++;
+		this.openMessageInflight = null;
+		this.openMessageInflightKey = null;
 		this.clearSelection();
 		this.pendingKeywords.clear();
 	}
