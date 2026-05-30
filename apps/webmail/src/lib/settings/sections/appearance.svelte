@@ -6,12 +6,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
 	import { visual } from '$lib/stores/visual.svelte';
-	import {
-		CORNER_OPTIONS,
-		SURFACE_OPTIONS,
-		type CornerStyle,
-		type SurfaceStyle
-	} from '$lib/theme/visual';
+
 
 	const themeModeOptions = [
 		{ value: 'system', label: 'System' },
@@ -45,28 +40,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Style" description="Corners and surface tone.">
-	<SettingsRow title="Corner style" description="Roundness of buttons and panels">
-		<SettingsSelect
-			label="Corner style"
-			value={visual.cornerStyle}
-			options={CORNER_OPTIONS.map((option) => ({ value: option.id, label: option.label }))}
-			onchange={(v) => visual.setCornerStyle(v as CornerStyle)}
-			class="w-auto"
-		/>
-	</SettingsRow>
 
-	<SettingsRow title="Surface tone" description="Softer backgrounds and borders">
-		<SettingsSelect
-			label="Surface tone"
-			value={visual.surfaceStyle}
-			options={SURFACE_OPTIONS.map((option) => ({ value: option.id, label: option.label }))}
-			onchange={(v) => visual.setSurfaceStyle(v as SurfaceStyle)}
-			class="w-auto"
-		/>
-	</SettingsRow>
-
-</SettingsGroup>
 
 <SettingsGroup title="Defaults">
 	<SettingsRow title="Reset theme settings" description="Restore theme, accent, and motion on this page">

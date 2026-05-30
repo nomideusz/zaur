@@ -18,12 +18,9 @@ export type SettingsNavLink = {
 
 const ALL_LINKS: SettingsNavLink[] = [
 	{ href: '/settings/account', label: 'Account', icon: 'account', section: 'personal' },
-	{ href: '/settings/mail', label: 'General', icon: 'general', section: 'mail' },
-	{ href: '/settings/inbox', label: 'Inbox', icon: 'inbox', section: 'mail' },
-	{ href: '/settings/reading', label: 'Reading', icon: 'reading', section: 'mail' },
-	{ href: '/settings/compose', label: 'Writing', icon: 'writing', section: 'mail' },
+	{ href: '/settings/layout', label: 'Mail view', icon: 'layout', section: 'mail' },
+	{ href: '/settings/mail', label: 'Mail settings', icon: 'general', section: 'mail' },
 	{ href: '/settings/appearance', label: 'Appearance', icon: 'appearance', section: 'customize' },
-	{ href: '/settings/layout', label: 'Layout', icon: 'layout', section: 'customize' },
 	{ href: '/settings/calendar', label: 'Calendar', icon: 'calendar', section: 'customize' },
 	{ href: '/settings/data', label: 'Backup & reset', icon: 'backup', section: 'advanced' }
 ];
@@ -33,7 +30,10 @@ export const LEGACY_SETTINGS_PATHS = new Set([
 	'/settings/workspace',
 	'/settings/display',
 	'/settings/sidebar',
-	'/settings/contacts'
+	'/settings/contacts',
+	'/settings/inbox',
+	'/settings/reading',
+	'/settings/compose'
 ]);
 
 export const SETTINGS_SECTIONS = [

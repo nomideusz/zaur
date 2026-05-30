@@ -46,9 +46,10 @@ class ToastStore {
 		this.timers.set(id, timer);
 	}
 
-	showUndo(message: string, undo: () => void | Promise<void>) {
+	showUndo(message: string, undo: () => void | Promise<void>, delayMs?: number) {
 		if (!browser) return;
-		this.showAction(message, 'success', { label: 'Undo', onClick: undo }, UNDO_DISMISS_MS, {
+		const dismissMs = delayMs !== undefined ? delayMs : settings.undoSendDelay;
+		this.showAction(message, 'success', { label: 'Undo', onClick: undo }, dismissMs, {
 			force: true
 		});
 	}

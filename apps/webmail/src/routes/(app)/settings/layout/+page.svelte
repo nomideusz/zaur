@@ -4,12 +4,12 @@
 </script>
 
 <svelte:head>
-	<title>Layout · ZAUR Webmail</title>
+	<title>Mail View · ZAUR Webmail</title>
 </svelte:head>
 
 <SettingsPanel
-	title="Layout"
-	description="Navigation, sidebar, panes, and the top bar."
+	title="Mail View"
+	description="Choose how you view and navigate your mail."
 >
 	<LayoutSection />
 </SettingsPanel>

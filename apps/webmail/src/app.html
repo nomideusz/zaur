@@ -18,10 +18,7 @@
 					if (dark) document.documentElement.classList.add('dark');
 					var accent = localStorage.getItem('zaur:accent-color');
 					if (accent) document.documentElement.dataset.accent = accent;
-					var corners = localStorage.getItem('zaur:corner-style');
-					if (corners) document.documentElement.dataset.corners = corners;
-					var surface = localStorage.getItem('zaur:surface-style');
-					if (surface) document.documentElement.dataset.surface = surface;
+
 					var listText = localStorage.getItem('zaur:list-text-size');
 					if (listText === 'large') {
 						document.documentElement.style.setProperty('--z-list-text', '1.125rem');

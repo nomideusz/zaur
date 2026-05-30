@@ -97,12 +97,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/appearance-corner-style",
-		"href": "/settings/appearance",
-		"title": "Corner style",
-		"description": ""
-	},
-	{
 		"id": "/settings/appearance-reduce-motion",
 		"href": "/settings/appearance",
 		"title": "Reduce motion",
@@ -112,12 +106,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/appearance-reset-theme-settings",
 		"href": "/settings/appearance",
 		"title": "Reset theme settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/appearance-surface-tone",
-		"href": "/settings/appearance",
-		"title": "Surface tone",
 		"description": ""
 	},
 	{
@@ -145,66 +133,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/compose-always-bcc-me",
-		"href": "/settings/compose",
-		"title": "Always Bcc me",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-auto-archive-after-reply",
-		"href": "/settings/compose",
-		"title": "Auto-archive after reply",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-collapse-quoted-text",
-		"href": "/settings/compose",
-		"title": "Collapse quoted text",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-compose-layout",
-		"href": "/settings/compose",
-		"title": "Compose layout",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-contact-suggestions",
-		"href": "/settings/compose",
-		"title": "Contact suggestions",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-default-format",
-		"href": "/settings/compose",
-		"title": "Default format",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-drawer-width",
-		"href": "/settings/compose",
-		"title": "Drawer width",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-hide-compose-hints",
-		"href": "/settings/compose",
-		"title": "Hide compose hints",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-reset-writing-settings",
-		"href": "/settings/compose",
-		"title": "Reset writing settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/compose-show-cc-bcc",
-		"href": "/settings/compose",
-		"title": "Show Cc/Bcc",
-		"description": ""
-	},
-	{
 		"id": "/settings/data-export-settings",
 		"href": "/settings/data",
 		"title": "Export settings",
@@ -220,54 +148,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/data-reset-all-display-layout-settings",
 		"href": "/settings/data",
 		"title": "Reset all display & layout settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-enable-bulk-select",
-		"href": "/settings/inbox",
-		"title": "Enable bulk select",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-full-dates",
-		"href": "/settings/inbox",
-		"title": "Full dates",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-highlight-unread",
-		"href": "/settings/inbox",
-		"title": "Highlight unread",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-list-density",
-		"href": "/settings/inbox",
-		"title": "List density",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-reset-inbox-settings",
-		"href": "/settings/inbox",
-		"title": "Reset inbox settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-show-message-preview",
-		"href": "/settings/inbox",
-		"title": "Show message preview",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-text-size",
-		"href": "/settings/inbox",
-		"title": "Text size",
-		"description": ""
-	},
-	{
-		"id": "/settings/inbox-timestamps",
-		"href": "/settings/inbox",
-		"title": "Timestamps",
 		"description": ""
 	},
 	{
@@ -301,9 +181,21 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/layout-show-list-rail-in-reader",
+		"href": "/settings/layout",
+		"title": "Show list rail in reader",
+		"description": ""
+	},
+	{
 		"id": "/settings/layout-show-pane-borders",
 		"href": "/settings/layout",
 		"title": "Show pane borders",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-always-bcc-me",
+		"href": "/settings/mail",
+		"title": "Always Bcc me",
 		"description": ""
 	},
 	{
@@ -319,9 +211,27 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/mail-auto-archive-after-reply",
+		"href": "/settings/mail",
+		"title": "Auto-archive after reply",
+		"description": ""
+	},
+	{
 		"id": "/settings/mail-auto-load-more-messages",
 		"href": "/settings/mail",
 		"title": "Auto-load more messages",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-block-external-content",
+		"href": "/settings/mail",
+		"title": "Block external content",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-collapse-quoted-text",
+		"href": "/settings/mail",
+		"title": "Collapse quoted text",
 		"description": ""
 	},
 	{
@@ -340,6 +250,24 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/mail-confirm-before-discarding-compose",
 		"href": "/settings/mail",
 		"title": "Confirm before discarding compose",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-contact-suggestions",
+		"href": "/settings/mail",
+		"title": "Contact suggestions",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-default-format",
+		"href": "/settings/mail",
+		"title": "Default format",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-default-reply-action",
+		"href": "/settings/mail",
+		"title": "Default reply action",
 		"description": ""
 	},
 	{
@@ -367,6 +295,18 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/mail-hide-compose-hints",
+		"href": "/settings/mail",
+		"title": "Hide compose hints",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-list-text-size",
+		"href": "/settings/mail",
+		"title": "List text size",
+		"description": ""
+	},
+	{
 		"id": "/settings/mail-mark-as-read-delay",
 		"href": "/settings/mail",
 		"title": "Mark-as-read delay",
@@ -385,15 +325,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-notify-on-new-mail",
-		"href": "/settings/mail",
-		"title": "Notify on new mail",
-		"description": ""
-	},
-	{
 		"id": "/settings/mail-push-notifications",
 		"href": "/settings/mail",
 		"title": "Push notifications",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-reading-text-size",
+		"href": "/settings/mail",
+		"title": "Reading text size",
 		"description": ""
 	},
 	{
@@ -415,21 +355,33 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-search",
-		"href": "/settings/mail",
-		"title": "Search",
-		"description": ""
-	},
-	{
 		"id": "/settings/mail-send-close-compose",
 		"href": "/settings/mail",
 		"title": "Send / close compose",
 		"description": ""
 	},
 	{
+		"id": "/settings/mail-show-cc-bcc",
+		"href": "/settings/mail",
+		"title": "Show Cc/Bcc",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-show-message-preview",
+		"href": "/settings/mail",
+		"title": "Show message preview",
+		"description": ""
+	},
+	{
 		"id": "/settings/mail-time-format",
 		"href": "/settings/mail",
 		"title": "Time format",
+		"description": ""
+	},
+	{
+		"id": "/settings/mail-timestamps",
+		"href": "/settings/mail",
+		"title": "Timestamps",
 		"description": ""
 	},
 	{
@@ -448,42 +400,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/mail-unread-count-on-app-icon",
 		"href": "/settings/mail",
 		"title": "Unread count on app icon",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-block-external-content",
-		"href": "/settings/reading",
-		"title": "Block external content",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-default-reply-action",
-		"href": "/settings/reading",
-		"title": "Default reply action",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-flag-external-senders",
-		"href": "/settings/reading",
-		"title": "Flag external senders",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-reading-size",
-		"href": "/settings/reading",
-		"title": "Reading size",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-reading-width",
-		"href": "/settings/reading",
-		"title": "Reading width",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-reset-reading-settings",
-		"href": "/settings/reading",
-		"title": "Reset reading settings",
 		"description": ""
 	}
 ];

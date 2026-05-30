@@ -5,16 +5,22 @@
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import PushNotificationStatus from '$lib/components/settings/PushNotificationStatus.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
+	import {
+		settings,
+		type ListTextSize,
+		type ReaderTextSize,
+		type DefaultReplyMode,
+		type ComposeFormat
+	} from '$lib/stores/settings.svelte';
 </script>
 
 <svelte:head>
-	<title>General · ZAUR Webmail</title>
+	<title>Mail Settings · ZAUR Webmail</title>
 </svelte:head>
 
 <SettingsPanel
-	title="General"
-	description="Notifications, behavior, and keyboard shortcuts."
+	title="Mail Settings"
+	description="Notifications, lists, reading, writing, and behavior."
 >
 	<SettingsGroup title="Notifications" description="Alerts and unread counts.">
 		<SettingsRow
@@ -34,17 +40,8 @@
 			{/if}
 		</SettingsRow>
 
-		<SettingsRow title="Push notifications" description="Background alerts when new mail arrives">
+		<SettingsRow title="Push notifications" description="Toast and push when new mail arrives in Inbox">
 			<PushNotificationStatus />
-		</SettingsRow>
-
-		<SettingsRow title="Notify on new mail" description="Toast and push when new mail arrives in Inbox">
-			<input
-				type="checkbox"
-				class="z-checkbox"
-				checked={settings.notifyOnNewMail}
-				onchange={(e) => settings.setNotifyOnNewMail(e.currentTarget.checked)}
-			/>
 		</SettingsRow>
 
 		<SettingsRow title="Unread count on app icon" description="Badge on the installed app icon (Chrome and Edge)">
@@ -62,6 +59,150 @@
 				class="z-checkbox"
 				checked={settings.showUnreadInTitle}
 				onchange={(e) => settings.setShowUnreadInTitle(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsGroup>
+
+	<SettingsGroup title="Inbox & reading" description="How the message list and open messages look.">
+		<SettingsRow title="List text size" description="Font size for sender, subject, and preview in list">
+			<SettingsSelect
+				label="List text size"
+				value={settings.listTextSize}
+				options={[
+					{ value: 'small', label: 'Small' },
+					{ value: 'normal', label: 'Normal' },
+					{ value: 'large', label: 'Large' }
+				]}
+				onchange={(v) => settings.setListTextSize(v as ListTextSize)}
+				class="w-auto"
+			/>
+		</SettingsRow>
+
+		<SettingsRow title="Show message preview" description="Second line under the subject in each list row">
+			<input
+				type="checkbox"
+				class="z-checkbox"
+				checked={settings.showListPreview}
+				onchange={(e) => settings.setShowListPreview(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow title="Timestamps" description="Whether and how timestamps appear on message list rows">
+			<SettingsSelect
+				label="Timestamps"
+				value={settings.listTimestampFormat}
+				options={[
+					{ value: 'hidden', label: 'Hidden' },
+					{ value: 'compact', label: 'Compact (Mon, May 25)' },
+					{ value: 'full', label: 'Detailed (Full date & time)' }
+				]}
+				onchange={(v) => settings.setListTimestampFormat(v as any)}
+				class="w-auto"
+			/>
+		</SettingsRow>
+
+		<SettingsRow title="Reading text size" description="Font size for the message body when reading">
+			<SettingsSelect
+				label="Reading text size"
+				value={settings.readerTextSize}
+				options={[
+					{ value: 'small', label: 'Small' },
+					{ value: 'normal', label: 'Normal' },
+					{ value: 'large', label: 'Large' }
+				]}
+				onchange={(v) => settings.setReaderTextSize(v as ReaderTextSize)}
+				class="w-auto"
+			/>
+		</SettingsRow>
+
+		<SettingsRow title="Block external content" description="Block remote images in HTML mail — you can still show them per message">
+			<input
+				type="checkbox"
+				class="z-checkbox"
+				checked={settings.blockExternalContent}
+				onchange={(e) => settings.setBlockExternalContent(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow title="Default reply action" description="Primary reply button — r replies, a reply all">
+			<SettingsSelect
+				label="Default reply action"
+				value={settings.defaultReplyMode}
+				options={[
+					{ value: 'reply', label: 'Reply' },
+					{ value: 'reply-all', label: 'Reply all' }
+				]}
+				onchange={(v) => settings.setDefaultReplyMode(v as DefaultReplyMode)}
+				class="w-auto"
+			/>
+		</SettingsRow>
+	</SettingsGroup>
+
+	<SettingsGroup title="Writing & sending" description="Composer fields and outgoing mail options.">
+		<SettingsRow title="Default format" description="Plain text or HTML when sending — compose box stays plain either way">
+			<SettingsSelect
+				label="Default format"
+				value={settings.defaultComposeFormat}
+				options={[
+					{ value: 'plain', label: 'Plain text' },
+					{ value: 'html', label: 'HTML' }
+				]}
+				onchange={(v) => settings.setDefaultComposeFormat(v as ComposeFormat)}
+				class="w-auto"
+			/>
+		</SettingsRow>
+
+		<SettingsRow title="Show Cc/Bcc" description="Cc and Bcc rows in compose — reply-all still shows Cc when needed">
+			<input
+				type="checkbox"
+				class="z-checkbox"
+				checked={settings.showCcBccInCompose}
+				onchange={(e) => settings.setShowCcBccInCompose(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow title="Contact suggestions" description="Autocomplete contacts while typing recipients">
+			<input
+				type="checkbox"
+				class="z-checkbox"
+				checked={settings.showComposeContactSuggestions}
+				onchange={(e) => settings.setShowComposeContactSuggestions(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow title="Always Bcc me" description="Add your own address to Bcc on every outgoing message">
+			<input
+				type="checkbox"
+				class="z-checkbox"
+				checked={settings.bccSelf}
+				onchange={(e) => settings.setBccSelf(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow title="Auto-archive after reply" description="Move the source conversation to Archive once a reply is sent">
+			<input
+				type="checkbox"
+				class="z-checkbox"
+				checked={settings.autoArchiveOnReply}
+				onchange={(e) => settings.setAutoArchiveOnReply(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow title="Collapse quoted text" description="Keep quoted reply content folded when composing">
+			<input
+				type="checkbox"
+				class="z-checkbox"
+				checked={settings.collapseQuotedInCompose}
+				onchange={(e) => settings.setCollapseQuotedInCompose(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+
+		<SettingsRow title="Hide compose hints" description="Remove tips like “Set display name”, “Add a signature”, and shortcut nudges">
+			<input
+				type="checkbox"
+				class="z-checkbox"
+				checked={settings.hideComposeHints}
+				onchange={(e) => settings.setHideComposeHints(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>
@@ -119,12 +260,23 @@
 			/>
 		</SettingsRow>
 
-		<SettingsRow title="Undo send" description="Brief delay before sending so you can cancel from the toast">
-			<input
-				type="checkbox"
-				class="z-checkbox"
-				checked={settings.enableUndoSend}
-				onchange={(e) => settings.setEnableUndoSend(e.currentTarget.checked)}
+		<SettingsRow title="Undo send" description="Delay before sending so you can cancel from the toast">
+			<SettingsSelect
+				label="Undo send delay"
+				value={String(settings.undoSendDelay)}
+				options={[
+					{ value: '0', label: 'Immediate (no delay)' },
+					{ value: '5000', label: '5 seconds' },
+					{ value: '10000', label: '10 seconds' },
+					{ value: '20000', label: '20 seconds' }
+				]}
+				onchange={(v) => {
+					const next = Number(v);
+					if (next === 0 || next === 5000 || next === 10000 || next === 20000) {
+						settings.setUndoSendDelay(next);
+					}
+				}}
+				class="w-auto"
 			/>
 		</SettingsRow>
 
@@ -189,9 +341,6 @@
 		{#if settings.enableKeyboardShortcuts}
 			<SettingsRow title="Compose" description="Start a new message">
 				<span class="font-mono text-xs text-fg">c</span>
-			</SettingsRow>
-			<SettingsRow title="Search" description="Focus sidebar search">
-				<span class="font-mono text-xs text-fg">/</span>
 			</SettingsRow>
 			<SettingsRow title="Go to folder" description="Press g then: i Inbox, s Sent, d Drafts, a Archive, t Trash, j Junk">
 				<span class="font-mono text-xs text-fg">g i · g s · g d · g a · g t · g j</span>

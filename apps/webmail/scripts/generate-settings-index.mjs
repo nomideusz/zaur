@@ -79,9 +79,6 @@ function countHiddenForSource(source) {
 const files = [
 	['src/lib/settings/sections/appearance.svelte', '/settings/appearance'],
 	['src/lib/settings/sections/layout.svelte', '/settings/layout'],
-	['src/lib/settings/sections/inbox.svelte', '/settings/inbox'],
-	['src/lib/settings/sections/reading.svelte', '/settings/reading'],
-	['src/lib/settings/sections/compose.svelte', '/settings/compose'],
 	['src/lib/settings/sections/calendar.svelte', '/settings/calendar'],
 	['src/lib/settings/sections/data_reset.svelte', '/settings/data'],
 	['src/lib/settings/sections/data_backup.svelte', '/settings/data'],

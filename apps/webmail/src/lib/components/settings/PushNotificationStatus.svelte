@@ -2,8 +2,6 @@
 	import { onMount } from 'svelte';
 	import {
 		getPushNotificationStatus,
-		pushStatusLabel,
-		pushStatusTone,
 		syncPushSubscription,
 		unsubscribeFromPushNotifications,
 		type PushNotificationStatus
@@ -11,7 +9,6 @@
 	import { ensureAppServiceWorkerReady, resetAppServiceWorker } from '$lib/utils/service-worker';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
-	import { cn } from '$lib/utils/cn';
 
 	let pushStatus = $state<PushNotificationStatus>({ state: 'prompt' });
 	let busy = $state(false);
@@ -91,49 +88,62 @@
 		}
 	}
 
-	const toneClass = $derived(
-		pushStatusTone(pushStatus) === 'success'
-			? 'text-green-700 dark:text-green-300'
-			: pushStatusTone(pushStatus) === 'warning'
-				? 'text-amber-700 dark:text-amber-300'
-				: 'text-fg-muted'
-	);
-
 	const showInstall = $derived(!pwa.isInstalled && (pwa.canInstall || pwa.showIosHint));
 </script>
 
-<div class="flex max-w-sm flex-col items-end gap-2">
-	<span class={cn('z-settings-row-desc text-right font-medium', toneClass)}>
-		{pushStatusLabel(pushStatus)}
-	</span>
+<div class="flex flex-col items-end gap-1">
+	<div class="flex items-center gap-2">
+		{#if busy}
+			<span class="text-xs text-fg-muted animate-pulse">Syncing...</span>
+		{:else if pushStatus.state === 'subscribed'}
+			<span class="text-xs font-medium text-green-700 dark:text-green-300">Active</span>
+		{/if}
+		<input
+			type="checkbox"
+			class="z-checkbox"
+			disabled={busy || pushStatus.state === 'unsupported' || pushStatus.state === 'server_disabled'}
+			checked={settings.notifyOnNewMail}
+			onchange={async (e) => {
+				if (e.currentTarget.checked) {
+					await enablePush();
+				} else {
+					await disablePush();
+				}
+			}}
+		/>
+	</div>
 
-	{#if lastError}
-		<p class="z-settings-row-desc text-right text-amber-700 dark:text-amber-300">{lastError}</p>
-	{/if}
-
-	<div class="flex flex-wrap items-center justify-end gap-2">
-		{#if pushStatus.state === 'subscribed'}
-			<button type="button" class="z-btn-ghost text-sm" disabled={busy} onclick={() => void disablePush()}>
-				Turn off push
-			</button>
-		{:else if pushStatus.state === 'prompt' || pushStatus.state === 'not_subscribed'}
-			<button type="button" class="z-btn-ghost text-sm" disabled={busy} onclick={() => void enablePush()}>
-				Enable push
-			</button>
-		{:else if pushStatus.state === 'denied'}
-			<span class="z-settings-row-desc text-fg-subtle">Change in browser site settings</span>
-		{:else if pushStatus.state === 'service_worker_unavailable'}
-			<button type="button" class="z-btn-ghost text-sm" disabled={busy} onclick={() => void retryPush()}>
+	{#if pushStatus.state === 'denied'}
+		<span class="text-xs text-amber-700 dark:text-amber-300">Blocked in browser settings</span>
+	{:else if pushStatus.state === 'unsupported'}
+		<span class="text-xs text-fg-subtle">Not supported in this browser</span>
+	{:else if pushStatus.state === 'server_disabled'}
+		<span class="text-xs text-fg-subtle font-medium">Not configured on server</span>
+	{:else if pushStatus.state === 'service_worker_unavailable'}
+		<div class="flex items-center gap-1.5">
+			<span class="text-xs text-amber-700 dark:text-amber-300">Service worker not ready</span>
+			<button
+				type="button"
+				class="text-xs underline text-fg-muted hover:text-fg"
+				disabled={busy}
+				onclick={() => void retryPush()}
+			>
 				Retry
 			</button>
-		{:else if pushStatus.state === 'unsupported'}
-			<span class="z-settings-row-desc text-fg-subtle">Use Chrome or Firefox for background push</span>
-		{/if}
+		</div>
+	{/if}
 
-		{#if showInstall}
-			<button type="button" class="z-btn-ghost text-sm" onclick={() => pwa.showInstallPromptAgain()}>
-				Install app
-			</button>
-		{/if}
-	</div>
+	{#if lastError}
+		<span class="text-xs text-amber-700 dark:text-amber-300">{lastError}</span>
+	{/if}
+
+	{#if showInstall && pushStatus.state !== 'unsupported' && pushStatus.state !== 'server_disabled'}
+		<button
+			type="button"
+			class="text-xs underline text-fg-muted hover:text-fg mt-0.5"
+			onclick={() => pwa.showInstallPromptAgain()}
+		>
+			Install app
+		</button>
+	{/if}
 </div>

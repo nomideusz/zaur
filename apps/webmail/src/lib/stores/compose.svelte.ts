@@ -601,7 +601,7 @@ class ComposeStore {
 			}
 		};
 
-		if (!settings.enableUndoSend) {
+		if (settings.undoSendDelay === 0) {
 			this.isSending = true;
 			this.error = null;
 			const archiveTarget = this.captureArchiveTarget();
@@ -632,7 +632,7 @@ class ComposeStore {
 			if (!pending || pending.id !== jobId) return;
 			this.pendingSend = null;
 			void this.commitPendingSend(pending);
-		}, UNDO_SEND_DELAY_MS);
+		}, settings.undoSendDelay);
 
 		this.pendingSend = {
 			id: jobId,
@@ -650,7 +650,7 @@ class ComposeStore {
 		void this.clearLocalDraft();
 		this.isSending = false;
 
-		toast.showUndo(`Sending "${subject}"…`, () => this.undoPendingSend());
+		toast.showUndo(`Sending "${subject}"…`, () => this.undoPendingSend(), settings.undoSendDelay);
 		return 'pending';
 	}
 

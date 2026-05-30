@@ -3,25 +3,17 @@ import { scheduleAccountSettingsPush } from '$lib/settings/account-sync';
 import {
 	applyVisualPreferences,
 	readAccentColor,
-	readCornerStyle,
-	readSurfaceStyle,
 	VISUAL_STORAGE,
-	type AccentColor,
-	type CornerStyle,
-	type SurfaceStyle
+	type AccentColor
 } from '$lib/theme/visual';
 
 class VisualStore {
 	accentColor = $state<AccentColor>(readAccentColor());
-	cornerStyle = $state<CornerStyle>(readCornerStyle());
-	surfaceStyle = $state<SurfaceStyle>(readSurfaceStyle());
 
 	init() {
 		if (!browser) return;
 
 		this.accentColor = readAccentColor();
-		this.cornerStyle = readCornerStyle();
-		this.surfaceStyle = readSurfaceStyle();
 		this.apply();
 	}
 
@@ -34,36 +26,14 @@ class VisualStore {
 		this.apply();
 	}
 
-	setCornerStyle(value: CornerStyle) {
-		this.cornerStyle = value;
-		if (browser) {
-			localStorage.setItem(VISUAL_STORAGE.cornerStyle, value);
-			scheduleAccountSettingsPush();
-		}
-		this.apply();
-	}
-
-	setSurfaceStyle(value: SurfaceStyle) {
-		this.surfaceStyle = value;
-		if (browser) {
-			localStorage.setItem(VISUAL_STORAGE.surfaceStyle, value);
-			scheduleAccountSettingsPush();
-		}
-		this.apply();
-	}
-
 	resetToDefaults() {
 		this.setAccentColor('charcoal');
-		this.setCornerStyle('default');
-		this.setSurfaceStyle('default');
 	}
 
 	private apply() {
 		if (!browser) return;
 		applyVisualPreferences(document.documentElement, {
-			accentColor: this.accentColor,
-			cornerStyle: this.cornerStyle,
-			surfaceStyle: this.surfaceStyle
+			accentColor: this.accentColor
 		});
 	}
 }

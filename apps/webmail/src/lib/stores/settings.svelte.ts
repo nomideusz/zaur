@@ -35,7 +35,9 @@ export type ComposeFormat = 'plain' | 'html';
 export type TimeFormat = 'auto' | '12h' | '24h';
 export type SearchScope = 'all' | 'current-folder';
 export type MarkAsReadDelay = 0 | 500 | 1000 | 2000;
+export type UndoSendDelay = 0 | 5000 | 10000 | 20000;
 export type FocusLayoutMode = 'adaptive' | 'classic';
+export type ListTimestampFormat = 'hidden' | 'compact' | 'full';
 
 const STORAGE = {
 	blockExternal: 'zaur:block-external',
@@ -49,6 +51,7 @@ const STORAGE = {
 	showAttachmentIcons: 'zaur:show-attachment-icons',
 	showMessageCounts: 'zaur:show-message-counts',
 	showFullDatesInList: 'zaur:show-full-dates-in-list',
+	listTimestampFormat: 'zaur:list-timestamp-format',
 	showSenderEmailInList: 'zaur:show-sender-email-in-list',
 	subjectOnlyList: 'zaur:subject-only-list',
 	showListTimestamps: 'zaur:show-list-timestamps',
@@ -186,6 +189,7 @@ const STORAGE = {
 	confirmBeforeDiscardCompose: 'zaur:confirm-before-discard-compose',
 	returnToInboxAfterSend: 'zaur:return-to-inbox-after-send',
 	enableUndoSend: 'zaur:enable-undo-send',
+	undoSendDelay: 'zaur:undo-send-delay',
 	readerTextSize: 'zaur:reader-text-size',
 	readerWidth: 'zaur:reader-width',
 	readingTypeface: 'zaur:reading-typeface',
@@ -303,6 +307,18 @@ function readShowMessageCounts(): boolean {
 function readShowFullDatesInList(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.showFullDatesInList) === 'true';
+}
+
+function readListTimestampFormat(): ListTimestampFormat {
+	if (!browser) return 'compact';
+	const stored = localStorage.getItem(STORAGE.listTimestampFormat);
+	if (stored === 'hidden' || stored === 'compact' || stored === 'full') {
+		return stored;
+	}
+	const showTimestamps = localStorage.getItem(STORAGE.showListTimestamps) !== 'false';
+	if (!showTimestamps) return 'hidden';
+	const showFull = localStorage.getItem(STORAGE.showFullDatesInList) === 'true';
+	return showFull ? 'full' : 'compact';
 }
 
 function readShowSenderEmailInList(): boolean {
@@ -515,9 +531,7 @@ function readComposeDrawerWidth(): ComposeDrawerWidth {
 }
 
 function readComposeLayout(): ComposeLayout {
-	if (!browser) return 'drawer';
-	const value = localStorage.getItem(STORAGE.composeLayout);
-	return value === 'pane' ? 'pane' : 'drawer';
+	return 'pane';
 }
 
 function readHideOutboxUnlessFailed(): boolean {
@@ -1011,6 +1025,21 @@ function readEnableUndoSend(): boolean {
 	return localStorage.getItem(STORAGE.enableUndoSend) !== 'false';
 }
 
+function readUndoSendDelay(): UndoSendDelay {
+	if (!browser) return 5000;
+	const stored = localStorage.getItem(STORAGE.undoSendDelay);
+	if (stored === null) {
+		const legacy = localStorage.getItem(STORAGE.enableUndoSend);
+		if (legacy === 'false') return 0;
+		return 5000;
+	}
+	const val = Number(stored);
+	if (val === 0 || val === 5000 || val === 10000 || val === 20000) {
+		return val as UndoSendDelay;
+	}
+	return 5000;
+}
+
 function readStoredTextSize(key: string): 'small' | 'normal' | 'large' {
 	if (!browser) return 'normal';
 	const stored = localStorage.getItem(key);
@@ -1101,8 +1130,7 @@ function readMarkAsReadDelay(): MarkAsReadDelay {
 }
 
 function readWarnExternalSenders(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.warnExternalSenders) !== 'false';
+	return false;
 }
 
 function readTimeFormat(): TimeFormat {
@@ -1138,11 +1166,16 @@ class SettingsStore {
 	showStarsInList = $state(readShowStarsInList());
 	showAttachmentIcons = $state(readShowAttachmentIcons());
 	showMessageCounts = $state(readShowMessageCounts());
-	showFullDatesInList = $state(readShowFullDatesInList());
+	listTimestampFormat = $state<ListTimestampFormat>(readListTimestampFormat());
+	get showFullDatesInList(): boolean {
+		return this.listTimestampFormat === 'full';
+	}
+	get showListTimestamps(): boolean {
+		return this.listTimestampFormat !== 'hidden';
+	}
 	showSenderEmailInList = $state(readShowSenderEmailInList());
 	subjectOnlyList = $state(readSubjectOnlyList());
-	showListTimestamps = $state(readShowListTimestamps());
-	highlightUnreadInList = $state(readHighlightUnreadInList());
+	highlightUnreadInList = true;
 	preferPlainText = $state(readPreferPlainText());
 	hideReaderRecipients = $state(readHideReaderRecipients());
 	toolIconsOnly = $state(readToolIconsOnly());
@@ -1153,7 +1186,7 @@ class SettingsStore {
 	hideEmptyReaderIcon = $state(readHideEmptyReaderIcon());
 	hideThreadSummary = $state(readHideThreadSummary());
 	showFolderUnreadCounts = $state(readShowFolderUnreadCounts());
-	showBulkSelect = $state(readShowBulkSelect());
+	showBulkSelect = true;
 	hideHeaderSearch = $state(readHideHeaderSearch());
 	hideOfflineIndicator = $state(readHideOfflineIndicator());
 	showQuickReply = $state(readShowQuickReply());
@@ -1179,7 +1212,7 @@ class SettingsStore {
 	hideComposeFromLine = $state(readHideComposeFromLine());
 	hideComposeFieldLabels = $state(readHideComposeFieldLabels());
 	composeDrawerWidth = $state<ComposeDrawerWidth>(readComposeDrawerWidth());
-	composeLayout = $state<ComposeLayout>(readComposeLayout());
+	composeLayout = 'pane';
 	hideOutboxUnlessFailed = $state(readHideOutboxUnlessFailed());
 	hideListActiveIndicator = $state(readHideListActiveIndicator());
 	compactListRows = $state(readCompactListRows());
@@ -1273,7 +1306,7 @@ class SettingsStore {
 	confirmBeforeDelete = $state(readConfirmBeforeDelete());
 	confirmBeforeDiscardCompose = $state(readConfirmBeforeDiscardCompose());
 	returnToInboxAfterSend = $state(readReturnToInboxAfterSend());
-	enableUndoSend = $state(readEnableUndoSend());
+	undoSendDelay = $state<UndoSendDelay>(readUndoSendDelay());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	readerWidth = $state<ReaderWidth>(readReaderWidth());
 	readingTypeface = $state<ReadingTypeface>(readReadingTypeface());
@@ -1289,7 +1322,7 @@ class SettingsStore {
 	bccSelf = $state(readBccSelf());
 	autoArchiveOnReply = $state(readAutoArchiveOnReply());
 	markAsReadDelay = $state<MarkAsReadDelay>(readMarkAsReadDelay());
-	warnExternalSenders = $state(readWarnExternalSenders());
+	warnExternalSenders = false;
 	timeFormat = $state<TimeFormat>(readTimeFormat());
 	searchScope = $state<SearchScope>(readSearchScope());
 	displayName = $state('');
@@ -1309,11 +1342,9 @@ class SettingsStore {
 		this.showStarsInList = readShowStarsInList();
 		this.showAttachmentIcons = readShowAttachmentIcons();
 		this.showMessageCounts = readShowMessageCounts();
-		this.showFullDatesInList = readShowFullDatesInList();
+		this.listTimestampFormat = readListTimestampFormat();
 		this.showSenderEmailInList = readShowSenderEmailInList();
 		this.subjectOnlyList = readSubjectOnlyList();
-		this.showListTimestamps = readShowListTimestamps();
-		this.highlightUnreadInList = readHighlightUnreadInList();
 		this.preferPlainText = readPreferPlainText();
 		this.hideReaderRecipients = readHideReaderRecipients();
 		this.toolIconsOnly = readToolIconsOnly();
@@ -1324,7 +1355,6 @@ class SettingsStore {
 		this.hideEmptyReaderIcon = readHideEmptyReaderIcon();
 		this.hideThreadSummary = readHideThreadSummary();
 		this.showFolderUnreadCounts = readShowFolderUnreadCounts();
-		this.showBulkSelect = readShowBulkSelect();
 		this.hideHeaderSearch = readHideHeaderSearch();
 		this.hideOfflineIndicator = readHideOfflineIndicator();
 		this.showQuickReply = readShowQuickReply();
@@ -1350,7 +1380,7 @@ class SettingsStore {
 		this.hideComposeFromLine = readHideComposeFromLine();
 		this.hideComposeFieldLabels = readHideComposeFieldLabels();
 		this.composeDrawerWidth = readComposeDrawerWidth();
-		this.composeLayout = readComposeLayout();
+		// Always pane
 		this.hideOutboxUnlessFailed = readHideOutboxUnlessFailed();
 		this.hideListActiveIndicator = readHideListActiveIndicator();
 		this.compactListRows = readCompactListRows();
@@ -1447,7 +1477,7 @@ class SettingsStore {
 		this.confirmBeforeDelete = readConfirmBeforeDelete();
 		this.confirmBeforeDiscardCompose = readConfirmBeforeDiscardCompose();
 		this.returnToInboxAfterSend = readReturnToInboxAfterSend();
-		this.enableUndoSend = readEnableUndoSend();
+		this.undoSendDelay = readUndoSendDelay();
 		this.readerTextSize = readReaderTextSize();
 		this.readerWidth = readReaderWidth();
 		this.readingTypeface = readReadingTypeface();
@@ -1463,7 +1493,7 @@ class SettingsStore {
 		this.bccSelf = readBccSelf();
 		this.autoArchiveOnReply = readAutoArchiveOnReply();
 		this.markAsReadDelay = readMarkAsReadDelay();
-		this.warnExternalSenders = readWarnExternalSenders();
+		// Always false
 		this.timeFormat = readTimeFormat();
 		this.searchScope = readSearchScope();
 		this.applyListLayout();
@@ -1634,9 +1664,13 @@ class SettingsStore {
 	}
 
 	setShowFullDatesInList(value: boolean) {
-		this.showFullDatesInList = value;
+		this.setListTimestampFormat(value ? 'full' : 'compact');
+	}
+
+	setListTimestampFormat(value: ListTimestampFormat) {
+		this.listTimestampFormat = value;
 		if (browser) {
-			this.writeStorage(STORAGE.showFullDatesInList, String(value));
+			this.writeStorage(STORAGE.listTimestampFormat, value);
 		}
 	}
 
@@ -1655,17 +1689,11 @@ class SettingsStore {
 	}
 
 	setShowListTimestamps(value: boolean) {
-		this.showListTimestamps = value;
-		if (browser) {
-			this.writeStorage(STORAGE.showListTimestamps, String(value));
-		}
+		this.setListTimestampFormat(value ? 'compact' : 'hidden');
 	}
 
 	setHighlightUnreadInList(value: boolean) {
-		this.highlightUnreadInList = value;
-		if (browser) {
-			this.writeStorage(STORAGE.highlightUnreadInList, String(value));
-		}
+		// Always true
 	}
 
 	setPreferPlainText(value: boolean) {
@@ -1739,10 +1767,7 @@ class SettingsStore {
 	}
 
 	setShowBulkSelect(value: boolean) {
-		this.showBulkSelect = value;
-		if (browser) {
-			this.writeStorage(STORAGE.showBulkSelect, String(value));
-		}
+		// Always true
 	}
 
 	setHideHeaderSearch(value: boolean) {
@@ -1929,10 +1954,7 @@ class SettingsStore {
 	}
 
 	setComposeLayout(value: ComposeLayout) {
-		this.composeLayout = value;
-		if (browser) {
-			this.writeStorage(STORAGE.composeLayout, value);
-		}
+		// Always pane
 	}
 
 	setHideOutboxUnlessFailed(value: boolean) {
@@ -2616,10 +2638,10 @@ class SettingsStore {
 		}
 	}
 
-	setEnableUndoSend(value: boolean) {
-		this.enableUndoSend = value;
+	setUndoSendDelay(value: UndoSendDelay) {
+		this.undoSendDelay = value;
 		if (browser) {
-			this.writeStorage(STORAGE.enableUndoSend, String(value));
+			this.writeStorage(STORAGE.undoSendDelay, String(value));
 		}
 	}
 
@@ -2751,10 +2773,7 @@ class SettingsStore {
 	}
 
 	setWarnExternalSenders(value: boolean) {
-		this.warnExternalSenders = value;
-		if (browser) {
-			this.writeStorage(STORAGE.warnExternalSenders, String(value));
-		}
+		// Always false
 	}
 
 	setTimeFormat(value: TimeFormat) {
@@ -2964,7 +2983,7 @@ class SettingsStore {
 		this.setConfirmBeforeDelete(true);
 		this.setConfirmBeforeDiscardCompose(true);
 		this.setReturnToInboxAfterSend(false);
-		this.setEnableUndoSend(true);
+		this.setUndoSendDelay(5000);
 		this.setHideActionToasts(false);
 		this.setAutoLoadMore(false);
 		this.setCompactLoadMore(false);
