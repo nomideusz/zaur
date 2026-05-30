@@ -2,6 +2,7 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
+	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import { settings, type SearchScope } from '$lib/stores/settings.svelte';
 </script>
 
@@ -83,14 +84,16 @@
 		title="Default search scope"
 		description="Start in the current folder when searching from a mailbox view, or always look everywhere"
 	>
-		<select
-			class="z-input w-auto"
+		<SettingsSelect
+			label="Default search scope"
 			value={settings.searchScope}
-			onchange={(e) => settings.setSearchScope(e.currentTarget.value as SearchScope)}
-		>
-			<option value="all">All mail</option>
-			<option value="current-folder">Current folder</option>
-		</select>
+			options={[
+				{ value: 'all', label: 'All mail' },
+				{ value: 'current-folder', label: 'Current folder' }
+			]}
+			onchange={(v) => settings.setSearchScope(v as SearchScope)}
+			class="w-auto"
+		/>
 	</SettingsRow>
 
 	<SettingsDepends

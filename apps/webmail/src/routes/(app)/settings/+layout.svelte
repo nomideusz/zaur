@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import { browser } from '$app/environment';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
-	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
+	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
 	import SettingsSidebar from '$lib/components/settings/SettingsSidebar.svelte';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/settings/nav';
 	import { cn } from '$lib/utils/cn';
@@ -18,10 +18,11 @@
 	const activeLink = $derived(
 		links.find((link) => isSettingsNavActive($page.url.pathname, link.href)) ?? null
 	);
-	const mobileSectionLabel = $derived(activeLink?.label ?? 'Settings');
+	const mobileSectionOptions = $derived(
+		links.map((link) => ({ value: link.href, label: link.label }))
+	);
 
-	function navigateToSection(event: Event) {
-		const href = (event.currentTarget as HTMLSelectElement).value;
+	function navigateToSection(href: string) {
 		if (href && href !== $page.url.pathname) {
 			void goto(href);
 		}
@@ -49,22 +50,12 @@
 					>
 						<ArrowLeft class="size-5" aria-hidden="true" />
 					</a>
-					<label class="relative flex min-h-11 min-w-0 flex-1">
-						<span class="sr-only">Settings section, {mobileSectionLabel}</span>
-						<select
-							class="absolute inset-0 z-[1] h-full w-full cursor-pointer opacity-0"
-							value={activeLink?.href ?? $page.url.pathname}
-							onchange={navigateToSection}
-						>
-							{#each links as link (link.href)}
-								<option value={link.href}>{link.label}</option>
-							{/each}
-						</select>
-						<span class="z-settings-mobile-section-picker" aria-hidden="true">
-							<span class="min-w-0 flex-1 truncate">{mobileSectionLabel}</span>
-							<ChevronDown class="size-5 shrink-0 text-fg-subtle" aria-hidden="true" />
-						</span>
-					</label>
+					<MobilePicker
+						label="Settings section"
+						value={activeLink?.href ?? $page.url.pathname}
+						options={mobileSectionOptions}
+						onchange={navigateToSection}
+					/>
 				</div>
 			</header>
 		{/if}

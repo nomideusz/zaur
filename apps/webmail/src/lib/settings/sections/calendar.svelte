@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
+	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import { settings, type CalendarMaxEventsPerDay } from '$lib/stores/settings.svelte';
 </script>
 
@@ -15,18 +16,18 @@
 	</SettingsRow>
 
 	<SettingsRow title="Events per day" description="How many event chips appear on a day before “+N more”">
-		<select
-			class="z-input w-auto"
+		<SettingsSelect
+			label="Events per day"
 			value={String(settings.calendarMaxEventsPerDay)}
-			onchange={(e) =>
-				settings.setCalendarMaxEventsPerDay(
-					Number(e.currentTarget.value) as CalendarMaxEventsPerDay
-				)}
-		>
-			<option value="2">2</option>
-			<option value="3">3</option>
-			<option value="5">5</option>
-		</select>
+			options={[
+				{ value: '2', label: '2' },
+				{ value: '3', label: '3' },
+				{ value: '5', label: '5' }
+			]}
+			onchange={(v) =>
+				settings.setCalendarMaxEventsPerDay(Number(v) as CalendarMaxEventsPerDay)}
+			class="w-auto"
+		/>
 	</SettingsRow>
 
 	<SettingsRow title="Show event times" description="Display start time next to each event title">

@@ -2,6 +2,7 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
+	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import PushNotificationStatus from '$lib/components/settings/PushNotificationStatus.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -80,21 +81,23 @@
 				title="Mark-as-read delay"
 				description="Wait briefly before marking a conversation read — useful when skimming"
 			>
-				<select
-					class="z-input text-sm"
+				<SettingsSelect
+					label="Mark-as-read delay"
 					value={String(settings.markAsReadDelay)}
-					onchange={(e) => {
-						const next = Number(e.currentTarget.value);
+					options={[
+						{ value: '0', label: 'Immediate' },
+						{ value: '500', label: '0.5 seconds' },
+						{ value: '1000', label: '1 second' },
+						{ value: '2000', label: '2 seconds' }
+					]}
+					onchange={(v) => {
+						const next = Number(v);
 						if (next === 0 || next === 500 || next === 1000 || next === 2000) {
 							settings.setMarkAsReadDelay(next);
 						}
 					}}
-				>
-					<option value="0">Immediate</option>
-					<option value="500">0.5 seconds</option>
-					<option value="1000">1 second</option>
-					<option value="2000">2 seconds</option>
-				</select>
+					class="w-auto"
+				/>
 			</SettingsRow>
 		{/if}
 
@@ -155,20 +158,21 @@
 
 	<SettingsGroup title="Dates & times" description="How timestamps appear in lists and the reader.">
 		<SettingsRow title="Time format" description="Pick 12-hour, 24-hour, or follow your operating system">
-			<select
-				class="z-input text-sm"
+			<SettingsSelect
+				label="Time format"
 				value={settings.timeFormat}
-				onchange={(e) => {
-					const value = e.currentTarget.value;
-					if (value === 'auto' || value === '12h' || value === '24h') {
-						settings.setTimeFormat(value);
+				options={[
+					{ value: 'auto', label: 'Match system' },
+					{ value: '12h', label: '12-hour (1:30 PM)' },
+					{ value: '24h', label: '24-hour (13:30)' }
+				]}
+				onchange={(v) => {
+					if (v === 'auto' || v === '12h' || v === '24h') {
+						settings.setTimeFormat(v);
 					}
 				}}
-			>
-				<option value="auto">Match system</option>
-				<option value="12h">12-hour (1:30 PM)</option>
-				<option value="24h">24-hour (13:30)</option>
-			</select>
+				class="w-auto"
+			/>
 		</SettingsRow>
 	</SettingsGroup>
 

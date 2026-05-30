@@ -2,6 +2,7 @@
 	import AccentColorPicker from '$lib/components/settings/AccentColorPicker.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
+	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import { settings, type LoadingIndicatorStyle } from '$lib/stores/settings.svelte';
 	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
 	import { visual } from '$lib/stores/visual.svelte';
@@ -11,21 +12,29 @@
 		type CornerStyle,
 		type SurfaceStyle
 	} from '$lib/theme/visual';
+
+	const themeModeOptions = [
+		{ value: 'system', label: 'System' },
+		{ value: 'light', label: 'Light' },
+		{ value: 'dark', label: 'Dark' }
+	];
+
+	const loadingIndicatorOptions = [
+		{ value: 'skeleton', label: 'Skeleton' },
+		{ value: 'minimal', label: 'Text only' },
+		{ value: 'spinner', label: 'Spinner' }
+	];
 </script>
 
 <SettingsGroup title="Theme" description="Color mode and accent.">
 	<SettingsRow title="Color mode" description="Also available in the account menu">
-		<select
-			class="z-input w-auto"
-			bind:value={
-				() => theme.mode,
-				(v) => theme.set(v as ThemeMode)
-			}
-		>
-			<option value="system">System</option>
-			<option value="light">Light</option>
-			<option value="dark">Dark</option>
-		</select>
+		<SettingsSelect
+			label="Color mode"
+			value={theme.mode}
+			options={themeModeOptions}
+			onchange={(v) => theme.set(v as ThemeMode)}
+			class="w-auto"
+		/>
 	</SettingsRow>
 
 	<SettingsRow title="Accent color" description="Buttons, links, and unread highlights">
@@ -44,40 +53,33 @@
 
 <SettingsGroup title="Style" description="Corners, surface tone, and loading.">
 	<SettingsRow title="Corner style" description="Roundness of buttons and panels">
-		<select
-			class="z-input w-auto"
+		<SettingsSelect
+			label="Corner style"
 			value={visual.cornerStyle}
-			onchange={(e) => visual.setCornerStyle(e.currentTarget.value as CornerStyle)}
-		>
-			{#each CORNER_OPTIONS as option (option.id)}
-				<option value={option.id}>{option.label}</option>
-			{/each}
-		</select>
+			options={CORNER_OPTIONS.map((option) => ({ value: option.id, label: option.label }))}
+			onchange={(v) => visual.setCornerStyle(v as CornerStyle)}
+			class="w-auto"
+		/>
 	</SettingsRow>
 
 	<SettingsRow title="Surface tone" description="Softer backgrounds and borders">
-		<select
-			class="z-input w-auto"
+		<SettingsSelect
+			label="Surface tone"
 			value={visual.surfaceStyle}
-			onchange={(e) => visual.setSurfaceStyle(e.currentTarget.value as SurfaceStyle)}
-		>
-			{#each SURFACE_OPTIONS as option (option.id)}
-				<option value={option.id}>{option.label}</option>
-			{/each}
-		</select>
+			options={SURFACE_OPTIONS.map((option) => ({ value: option.id, label: option.label }))}
+			onchange={(v) => visual.setSurfaceStyle(v as SurfaceStyle)}
+			class="w-auto"
+		/>
 	</SettingsRow>
 
 	<SettingsRow title="Loading indicator" description="Placeholder shown while content loads">
-		<select
-			class="z-input w-auto"
+		<SettingsSelect
+			label="Loading indicator"
 			value={settings.loadingIndicatorStyle}
-			onchange={(e) =>
-				settings.setLoadingIndicatorStyle(e.currentTarget.value as LoadingIndicatorStyle)}
-		>
-			<option value="skeleton">Skeleton</option>
-			<option value="minimal">Text only</option>
-			<option value="spinner">Spinner</option>
-		</select>
+			options={loadingIndicatorOptions}
+			onchange={(v) => settings.setLoadingIndicatorStyle(v as LoadingIndicatorStyle)}
+			class="w-auto"
+		/>
 	</SettingsRow>
 </SettingsGroup>
 

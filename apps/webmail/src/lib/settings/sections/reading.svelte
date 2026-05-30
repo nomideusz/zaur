@@ -2,20 +2,23 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
+	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import { settings, type DefaultReplyMode, type ReaderTextSize } from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="Display" description="Text and threads.">
 	<SettingsRow title="Reading size" description="Text size for the message body">
-		<select
-			class="z-input w-auto"
+		<SettingsSelect
+			label="Reading size"
 			value={settings.readerTextSize}
-			onchange={(e) => settings.setReaderTextSize(e.currentTarget.value as ReaderTextSize)}
-		>
-			<option value="small">Small</option>
-			<option value="normal">Normal</option>
-			<option value="large">Large</option>
-		</select>
+			options={[
+				{ value: 'small', label: 'Small' },
+				{ value: 'normal', label: 'Normal' },
+				{ value: 'large', label: 'Large' }
+			]}
+			onchange={(v) => settings.setReaderTextSize(v as ReaderTextSize)}
+			class="w-auto"
+		/>
 	</SettingsRow>
 
 	<SettingsRow title="Prefer plain text" description="Show plain text when available instead of HTML">
@@ -78,14 +81,16 @@
 
 <SettingsGroup title="Replies" description="Reply behavior and the quick reply box.">
 	<SettingsRow title="Default reply action" description="Primary reply button — r replies, a reply all">
-		<select
-			class="z-input w-auto"
+		<SettingsSelect
+			label="Default reply action"
 			value={settings.defaultReplyMode}
-			onchange={(e) => settings.setDefaultReplyMode(e.currentTarget.value as DefaultReplyMode)}
-		>
-			<option value="reply">Reply</option>
-			<option value="reply-all">Reply all</option>
-		</select>
+			options={[
+				{ value: 'reply', label: 'Reply' },
+				{ value: 'reply-all', label: 'Reply all' }
+			]}
+			onchange={(v) => settings.setDefaultReplyMode(v as DefaultReplyMode)}
+			class="w-auto"
+		/>
 	</SettingsRow>
 
 	<SettingsRow title="Quick reply" description="Reply box at the bottom of an open message">

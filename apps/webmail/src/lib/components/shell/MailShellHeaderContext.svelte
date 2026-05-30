@@ -2,8 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
-	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import type { MailHeaderContext } from '$lib/stores/shell-header.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -29,16 +29,14 @@
 		!!ctx.mailboxRouteId && !threadId && mail.hasSelection
 	);
 	const selectedCount = $derived(mail.selectedMessageIds.size);
-	const mobileFolderLabel = $derived.by(() => {
-		if (!ctx.mailboxRouteId) return displayMailboxName;
-		const folder = mail.mailboxByRouteId(ctx.mailboxRouteId);
-		if (!folder) return displayMailboxName;
-		const unread =
-			settings.showFolderUnreadCounts && folder.unread > 0 ? ` (${folder.unread})` : '';
-		return `${folder.name}${unread}`;
-	});
 	const showMobileFolderPicker = $derived(
 		!!ctx.mailboxRouteId && !threadId && !mail.hasSelection && !mobileListSelecting
+	);
+	const folderPickerOptions = $derived(
+		mail.mailboxes.map((folder) => ({
+			value: folder.id,
+			label: `${folder.name}${settings.showFolderUnreadCounts && folder.unread > 0 ? ` (${folder.unread})` : ''}`
+		}))
 	);
 </script>
 
@@ -67,32 +65,14 @@
 
 
 	{#if showMobileFolderPicker}
-		<label class="relative flex min-h-11 min-w-0 flex-1 md:hidden">
-			<span class="sr-only">Folder, {mobileFolderLabel}</span>
-			<select
-				class="absolute inset-0 z-[1] h-full w-full cursor-pointer opacity-0"
-				value={ctx.mailboxRouteId}
-				onchange={(e) => goto(`/mail/${e.currentTarget.value}`)}
-			>
-				{#each mail.mailboxes as folder (folder.id)}
-					<option value={folder.id}>
-						{folder.name}{settings.showFolderUnreadCounts && folder.unread > 0
-							? ` (${folder.unread})`
-							: ''}
-					</option>
-				{/each}
-			</select>
-			<span
-				class={cn(
-					'z-mobile-folder-picker',
-					settings.compactMobileFolderPicker && 'z-mobile-folder-picker--compact'
-				)}
-				aria-hidden="true"
-			>
-				<span class="min-w-0 flex-1 truncate">{mobileFolderLabel}</span>
-				<ChevronDown class="size-5 shrink-0 text-fg-subtle" aria-hidden="true" />
-			</span>
-		</label>
+		<MobilePicker
+			class="md:hidden"
+			label="Folder"
+			value={ctx.mailboxRouteId ?? ''}
+			options={folderPickerOptions}
+			compact={settings.compactMobileFolderPicker}
+			onchange={(id) => goto(`/mail/${id}`)}
+		/>
 	{/if}
 
 	{#if mobileReadingThread}

@@ -2,31 +2,36 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
+	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import { settings, type ListDensity, type ListTextSize } from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="Density" description="How dense each row feels.">
 	<SettingsRow title="List density" description="Comfortable rows with more breathing room, or compact for more on screen">
-		<select
-			class="z-input w-auto"
+		<SettingsSelect
+			label="List density"
 			value={settings.listDensity}
-			onchange={(e) => settings.setListDensity(e.currentTarget.value as ListDensity)}
-		>
-			<option value="comfortable">Comfortable</option>
-			<option value="compact">Compact</option>
-		</select>
+			options={[
+				{ value: 'comfortable', label: 'Comfortable' },
+				{ value: 'compact', label: 'Compact' }
+			]}
+			onchange={(v) => settings.setListDensity(v as ListDensity)}
+			class="w-auto"
+		/>
 	</SettingsRow>
 
 	<SettingsRow title="Text size" description="Font size for sender, subject, and preview">
-		<select
-			class="z-input w-auto"
+		<SettingsSelect
+			label="Text size"
 			value={settings.listTextSize}
-			onchange={(e) => settings.setListTextSize(e.currentTarget.value as ListTextSize)}
-		>
-			<option value="small">Small</option>
-			<option value="normal">Normal</option>
-			<option value="large">Large</option>
-		</select>
+			options={[
+				{ value: 'small', label: 'Small' },
+				{ value: 'normal', label: 'Normal' },
+				{ value: 'large', label: 'Large' }
+			]}
+			onchange={(v) => settings.setListTextSize(v as ListTextSize)}
+			class="w-auto"
+		/>
 	</SettingsRow>
 
 	<SettingsRow title="Show message preview" description="Second line under the subject in each row">

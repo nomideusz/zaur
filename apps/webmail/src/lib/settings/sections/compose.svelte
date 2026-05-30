@@ -2,6 +2,7 @@
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
+	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import {
 		settings,
 		type ComposeDrawerWidth,
@@ -15,28 +16,32 @@
 		title="Default format"
 		description="Plain text or HTML when sending — the compose box stays plain text either way"
 	>
-		<select
-			class="z-input w-auto"
+		<SettingsSelect
+			label="Default format"
 			value={settings.defaultComposeFormat}
-			onchange={(e) => settings.setDefaultComposeFormat(e.currentTarget.value as ComposeFormat)}
-		>
-			<option value="plain">Plain text</option>
-			<option value="html">HTML</option>
-		</select>
+			options={[
+				{ value: 'plain', label: 'Plain text' },
+				{ value: 'html', label: 'HTML' }
+			]}
+			onchange={(v) => settings.setDefaultComposeFormat(v as ComposeFormat)}
+			class="w-auto"
+		/>
 	</SettingsRow>
 
 	<SettingsRow
 		title="Compose layout"
 		description="Drawer slides in from the right; pane fills the reader column with the sidebar still visible"
 	>
-		<select
-			class="z-input w-auto"
+		<SettingsSelect
+			label="Compose layout"
 			value={settings.composeLayout}
-			onchange={(e) => settings.setComposeLayout(e.currentTarget.value as ComposeLayout)}
-		>
-			<option value="drawer">Drawer</option>
-			<option value="pane">Pane</option>
-		</select>
+			options={[
+				{ value: 'drawer', label: 'Drawer' },
+				{ value: 'pane', label: 'Pane' }
+			]}
+			onchange={(v) => settings.setComposeLayout(v as ComposeLayout)}
+			class="w-auto"
+		/>
 	</SettingsRow>
 
 	<SettingsDepends
@@ -46,16 +51,17 @@
 			: 'Only applies when the compose layout is set to drawer'}
 	>
 		<SettingsRow title="Drawer width" description="How wide the compose drawer is on desktop">
-			<select
-				class="z-input w-auto"
+			<SettingsSelect
+				label="Drawer width"
 				value={settings.composeDrawerWidth}
-				onchange={(e) =>
-					settings.setComposeDrawerWidth(e.currentTarget.value as ComposeDrawerWidth)}
-			>
-				<option value="narrow">Narrow</option>
-				<option value="default">Default</option>
-				<option value="wide">Wide</option>
-			</select>
+				options={[
+					{ value: 'narrow', label: 'Narrow' },
+					{ value: 'default', label: 'Default' },
+					{ value: 'wide', label: 'Wide' }
+				]}
+				onchange={(v) => settings.setComposeDrawerWidth(v as ComposeDrawerWidth)}
+				class="w-auto"
+			/>
 		</SettingsRow>
 	</SettingsDepends>
 </SettingsGroup>
