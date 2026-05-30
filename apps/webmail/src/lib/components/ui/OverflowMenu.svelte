@@ -30,27 +30,24 @@
 	let open = $state(false);
 	let root = $state<HTMLDivElement | null>(null);
 	let resolvedPlacement = $state<'bottom' | 'top'>('bottom');
-
-	const opensUp = $derived(
-		placement === 'top' || (placement === 'auto' && resolvedPlacement === 'top')
-	);
+	let menuStyle = $state('');
 
 	function setOpen(next: boolean) {
 		open = next;
 		onOpenChange?.(next);
-		if (!next) resolvedPlacement = 'bottom';
+		if (!next) {
+			resolvedPlacement = 'bottom';
+			menuStyle = '';
+		}
 	}
 
 	function close() {
 		setOpen(false);
 	}
 
-	function updateAutoPlacement() {
-		if (!browser || !root || placement !== 'auto') return;
-
-		const trigger = root.querySelector('button');
-		const menu = root.querySelector('[role="menu"]');
-		if (!trigger || !menu) return;
+	function resolvePlacement(trigger: HTMLElement, menu: HTMLElement) {
+		if (placement === 'top') return 'top' as const;
+		if (placement === 'bottom') return 'bottom' as const;
 
 		const rect = trigger.getBoundingClientRect();
 		const menuHeight = menu.getBoundingClientRect().height || 240;
@@ -58,7 +55,40 @@
 		const spaceBelow = window.innerHeight - rect.bottom - margin;
 		const spaceAbove = rect.top - margin;
 
-		resolvedPlacement = spaceBelow >= menuHeight || spaceBelow >= spaceAbove ? 'bottom' : 'top';
+		return spaceBelow >= menuHeight || spaceBelow >= spaceAbove ? ('bottom' as const) : ('top' as const);
+	}
+
+	function updateMenuPosition() {
+		if (!browser || !root) return;
+
+		const trigger = root.querySelector('button');
+		const menu = root.querySelector('[role="menu"]');
+		if (!trigger || !menu) return;
+
+		const nextPlacement = resolvePlacement(trigger, menu);
+		resolvedPlacement = nextPlacement;
+
+		const rect = trigger.getBoundingClientRect();
+		const menuRect = menu.getBoundingClientRect();
+		const menuHeight = menuRect.height || 240;
+		const menuWidth = menuRect.width || 208;
+		const margin = 8;
+
+		let top =
+			nextPlacement === 'top' ? rect.top - menuHeight - margin : rect.bottom + margin;
+		let left = rect.right - menuWidth;
+
+		left = Math.max(margin, Math.min(left, window.innerWidth - menuWidth - margin));
+		top = Math.max(margin, Math.min(top, window.innerHeight - menuHeight - margin));
+
+		menuStyle = `top:${top}px;left:${left}px;`;
+	}
+
+	function scheduleMenuPosition() {
+		requestAnimationFrame(() => {
+			updateMenuPosition();
+			requestAnimationFrame(updateMenuPosition);
+		});
 	}
 
 	function toggleOpen(event: MouseEvent) {
@@ -70,12 +100,7 @@
 		}
 
 		setOpen(true);
-		if (placement === 'auto') {
-			requestAnimationFrame(() => {
-				updateAutoPlacement();
-				requestAnimationFrame(updateAutoPlacement);
-			});
-		}
+		scheduleMenuPosition();
 	}
 
 	function handleWindowClick(event: MouseEvent) {
@@ -85,9 +110,9 @@
 	}
 
 	$effect(() => {
-		if (!open || placement !== 'auto' || !browser) return;
+		if (!open || !browser) return;
 
-		const onViewportChange = () => updateAutoPlacement();
+		const onViewportChange = () => updateMenuPosition();
 		window.addEventListener('resize', onViewportChange);
 		window.addEventListener('scroll', onViewportChange, true);
 		return () => {
@@ -119,7 +144,8 @@
 			id={menuId}
 			role="menu"
 			tabindex="-1"
-			class={cn('z-overflow-menu', opensUp && 'z-overflow-menu--top', menuClass)}
+			class={cn('z-overflow-menu z-overflow-menu--fixed', menuClass)}
+			style={menuStyle}
 			onpointerdown={(event) => event.stopPropagation()}
 			onkeydown={(event) => {
 				if (event.key === 'Escape') close();

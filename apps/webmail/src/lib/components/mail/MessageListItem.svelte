@@ -269,7 +269,7 @@
 {#snippet activeContent()}
 	<div class="z-list-text flex min-w-0 flex-1 flex-col overflow-hidden">
 		{#if settings.subjectOnlyList}
-			<div class="mt-0.5 flex min-w-0 items-center gap-1.5">
+			<div class="mt-0.5 flex min-w-0 flex-1 items-center gap-1.5">
 				{#if settings.showStarsInList && message.starred}
 					<Star
 						class="size-3.5 shrink-0 fill-star text-star md:hidden"
@@ -283,48 +283,26 @@
 					<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
 				{/if}
 			</div>
-			<div class="z-list-line--meta">
-				{#if settings.showListTimestamps}
-					<span class="z-type-list-time">{when}</span>
-				{/if}
-			</div>
 			{#if settings.showListPreview}
 				<div class="z-list-line--meta" aria-hidden="true"></div>
 			{/if}
 		{:else}
-			<div class="z-list-line--sender flex items-center justify-end">
-				{#if settings.showListTimestamps}
-					<span class="z-type-list-time">{when}</span>
-				{/if}
-			</div>
-			<div class="mt-0.5 flex min-w-0 items-center gap-1.5">
+			<div class="mt-0.5 flex min-w-0 flex-1 items-center gap-1.5">
 				<span class={activeSubjectClass}>
 					{displaySubject}
 				</span>
-				{#if !settings.showListPreview}
-					{#if settings.showAttachmentIcons && message.hasAttachment}
-						<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
-					{/if}
-					{#if settings.showStarsInList && message.starred}
-						<Star
-							class="size-3.5 shrink-0 fill-star text-star md:hidden"
-							aria-label="Starred"
-						/>
-					{/if}
+				{#if settings.showAttachmentIcons && message.hasAttachment}
+					<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
+				{/if}
+				{#if settings.showStarsInList && message.starred}
+					<Star
+						class="size-3.5 shrink-0 fill-star text-star md:hidden"
+						aria-label="Starred"
+					/>
 				{/if}
 			</div>
 			{#if settings.showListPreview}
-				<div class="z-list-line--meta">
-					{#if settings.showAttachmentIcons && message.hasAttachment}
-						<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
-					{/if}
-					{#if settings.showStarsInList && message.starred}
-						<Star
-							class="size-3.5 shrink-0 fill-star text-star md:hidden"
-							aria-label="Starred"
-						/>
-					{/if}
-				</div>
+				<div class="z-list-line--meta" aria-hidden="true"></div>
 			{/if}
 		{/if}
 	</div>
@@ -421,6 +399,9 @@
 					>
 						{@render activeContent()}
 					</a>
+					{#if settings.showListTimestamps}
+						<span class="z-type-list-time shrink-0 self-center md:hidden">{when}</span>
+					{/if}
 					{#if mailboxRouteId}
 						<div class="max-md:hidden flex shrink-0 items-center self-center">
 							<MessageListActiveActions

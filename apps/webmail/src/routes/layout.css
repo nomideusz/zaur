@@ -303,6 +303,13 @@
 		box-shadow: var(--shadow-md);
 	}
 
+	.z-overflow-menu--fixed {
+		position: fixed;
+		right: auto;
+		margin: 0;
+		z-index: 60;
+	}
+
 	.z-overflow-menu--top {
 		@apply bottom-full mb-1.5 mt-0;
 	}
