@@ -461,6 +461,11 @@
 		width: 1rem;
 		min-width: 1rem;
 		opacity: 1;
+		pointer-events: auto;
+	}
+
+	.z-list-row-gutter--open .z-checkbox {
+		pointer-events: auto;
 	}
 
 	.z-swipe-row {

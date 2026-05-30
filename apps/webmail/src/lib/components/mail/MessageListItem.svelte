@@ -135,7 +135,8 @@
 		rows[Math.max(0, Math.min(index + delta, rows.length - 1))]?.focus();
 	}
 
-	function handleCheckboxChange() {
+	function handleCheckboxClick(event: MouseEvent) {
+		event.stopPropagation();
 		if (!bulkSelectEnabled) return;
 		if (selectionMode) {
 			onSelect?.({ shift: false, ctrl: false });
@@ -218,13 +219,9 @@
 			{#if showRowCheckbox}
 				<input
 					type="checkbox"
-					class="z-checkbox shrink-0"
+					class="z-checkbox shrink-0 cursor-pointer"
 					checked={selectionMode && selected}
-					onclick={(event) => {
-						event.stopPropagation();
-						event.preventDefault();
-					}}
-					onchange={handleCheckboxChange}
+					onclick={handleCheckboxClick}
 					aria-label={selectionMode ? `Select ${displaySubject}` : `Select ${displaySubject} to enter selection mode`}
 				/>
 			{/if}
@@ -320,21 +317,25 @@
 			{@render content()}
 		</div>
 	{:else}
-		<a
-			{href}
+		<div
 			class={rowClass}
 			data-message-row
 			data-hide-active-indicator={hideActiveIndicator || undefined}
-			aria-current={active ? 'true' : undefined}
-			aria-label={messageAriaLabel}
-			title={messageAriaLabel}
-			style="view-transition-name: message-{message.id};"
-			onclick={handleSelect}
-			onkeydown={handleSelectKey}
 		>
 			{@render listMarker()}
-			{@render content()}
-		</a>
+			<a
+				{href}
+				class="flex min-w-0 flex-1 items-start gap-3 text-inherit no-underline outline-none"
+				aria-current={active ? 'page' : undefined}
+				aria-label={messageAriaLabel}
+				title={messageAriaLabel}
+				style="view-transition-name: message-{message.id};"
+				onclick={handleSelect}
+				onkeydown={handleSelectKey}
+			>
+				{@render content()}
+			</a>
+		</div>
 	{/if}
 {/snippet}
 
