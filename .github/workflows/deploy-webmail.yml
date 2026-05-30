@@ -6,6 +6,7 @@ on:
     paths:
       - 'apps/webmail/**'
       - 'packages/sprite/**'
+      - 'packages/ui/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'package.json'
@@ -35,6 +36,7 @@ jobs:
             pnpm-workspace.yaml
             package.json
             .npmrc
+            packages/ui/
             packages/sprite/
             apps/webmail/
           outPath: deploy.tar
