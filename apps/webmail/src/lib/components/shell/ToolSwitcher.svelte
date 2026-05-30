@@ -13,22 +13,18 @@ import Users from '$lib/components/icons/Users.svelte';
 			icon: Mail,
 			active: (path: string) => path.startsWith('/mail')
 		},
-		...(!settings.mailOnlyNavigation
-			? [
-					{
-						href: '/calendar',
-						label: 'Calendar',
-						icon: Calendar,
-						active: (path: string) => path.startsWith('/calendar')
-					},
-					{
-						href: '/contacts',
-						label: 'Contacts',
-						icon: Users,
-						active: (path: string) => path.startsWith('/contacts')
-					}
-				]
-			: [])
+		{
+			href: '/calendar',
+			label: 'Calendar',
+			icon: Calendar,
+			active: (path: string) => path.startsWith('/calendar')
+		},
+		{
+			href: '/contacts',
+			label: 'Contacts',
+			icon: Users,
+			active: (path: string) => path.startsWith('/contacts')
+		}
 	]);
 </script>
 

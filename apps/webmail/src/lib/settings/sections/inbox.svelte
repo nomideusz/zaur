@@ -44,34 +44,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Row contents" description="What appears in each list row.">
-	<SettingsRow title="Sender avatars" description="Photo or initials beside each message">
-		<input
-			type="checkbox"
-			class="z-checkbox"
-			checked={settings.showAvatars}
-			onchange={(e) => settings.setShowAvatars(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow title="Stars" description="Star icon beside starred messages">
-		<input
-			type="checkbox"
-			class="z-checkbox"
-			checked={settings.showStarsInList}
-			onchange={(e) => settings.setShowStarsInList(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow title="Attachment icons" description="Paperclip beside messages with files">
-		<input
-			type="checkbox"
-			class="z-checkbox"
-			checked={settings.showAttachmentIcons}
-			onchange={(e) => settings.setShowAttachmentIcons(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
+<SettingsGroup title="Row contents" description="Essential list row context.">
 	<SettingsRow title="Timestamps" description="Date or time on the right of each row">
 		<input
 			type="checkbox"
@@ -97,7 +70,7 @@
 		</SettingsRow>
 	</SettingsDepends>
 
-	<SettingsRow title="Highlight unread" description="Bold subject and unread dots in the list">
+	<SettingsRow title="Highlight unread" description="Bold subject for unread messages">
 		<input
 			type="checkbox"
 			class="z-checkbox"
@@ -105,31 +78,6 @@
 			onchange={(e) => settings.setHighlightUnreadInList(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
-
-	<SettingsRow title="Subject only" description="Hide the sender line, show only the subject">
-		<input
-			type="checkbox"
-			class="z-checkbox"
-			checked={settings.subjectOnlyList}
-			onchange={(e) => settings.setSubjectOnlyList(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsDepends
-		enabled={!settings.subjectOnlyList}
-		inactiveReason={settings.subjectOnlyList
-			? 'Sender line is hidden in subject-only mode'
-			: undefined}
-	>
-		<SettingsRow title="Show sender email" description="Email address instead of display name">
-			<input
-				type="checkbox"
-				class="z-checkbox"
-				checked={settings.showSenderEmailInList}
-				onchange={(e) => settings.setShowSenderEmailInList(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-	</SettingsDepends>
 </SettingsGroup>
 
 <SettingsGroup title="Bulk select" description="Checkbox row above the list — Shift+click selects ranges, Ctrl+click toggles.">

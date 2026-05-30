@@ -9,29 +9,21 @@
 	import GlobalSearch from './GlobalSearch.svelte';
 	import MailShellHeaderContext from './MailShellHeaderContext.svelte';
 	import OfflineIndicator from './OfflineIndicator.svelte';
-	import OutboxMenu from './OutboxMenu.svelte';
-	import ToolSwitcher from './ToolSwitcher.svelte';
 	import UserMenu from './UserMenu.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
-	import { outbox } from '$lib/stores/outbox.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 
 
 	const homeHref = $derived(settings.preferredMailHref());
-	const showOutbox = $derived(
-		!settings.hideOutboxUnlessFailed ||
-			outbox.items.some((item) => item.status === 'failed')
-	);
 	const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
 	const mobileReadingThread = $derived(
 		onMailRoute && !!$page.params.threadId && !mail.hasSelection
 	);
 	const showMailContext = $derived(onMailRoute && shellHeader.mail !== null);
-	const showToolSwitcher = $derived(!onSettingsRoute);
 	const mobileListSelecting = $derived(
 		onMailRoute && !!shellHeader.mail?.mailboxRouteId && !$page.params.threadId && mail.hasSelection
 	);
@@ -43,9 +35,6 @@
 			!!shellHeader.mail?.mailboxRouteId &&
 			!$page.params.threadId &&
 			!mail.hasSelection
-	);
-	const hideToolSwitcherOnMobile = $derived(
-		mobileReadingThread || mobileListSelecting || mobileMailListView
 	);
 </script>
 
@@ -71,12 +60,6 @@
 		>
 			<span class={settings.hideAppTitle ? 'sr-only' : ''}>ZAUR</span>
 		</a>
-
-		{#if showToolSwitcher}
-			<div class={cn(hideToolSwitcherOnMobile && 'max-md:hidden')}>
-				<ToolSwitcher />
-			</div>
-		{/if}
 	</div>
 
 	{#if showMailContext && shellHeader.mail}
@@ -106,10 +89,6 @@
 		{/if}
 
 		<OfflineIndicator />
-
-		{#if showOutbox}
-			<OutboxMenu />
-		{/if}
 
 		{#if !showMailContext}
 			{#if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false && !settings.hideCalendarNewEventButton}

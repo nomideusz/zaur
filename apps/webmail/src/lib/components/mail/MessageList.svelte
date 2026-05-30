@@ -160,7 +160,6 @@
 		listExpanded ? 'flex-1' : 'w-full md:w-(--width-list) md:max-w-(--width-list) md:flex-none',
 		hideOnMobile ? (mail.hasSelection ? 'flex' : 'hidden md:flex') : 'flex',
 		!settings.hidePaneBorders && !listExpanded && 'border-r border-border',
-		mail.hasSelection && 'bg-surface-raised/50',
 		showMobileSelectionBar && 'z-mail-list--selecting'
 	)}
 	style="view-transition-name: message-list;"
@@ -179,36 +178,7 @@
 		class={cn('z-pane-scroll min-h-0 flex-1 overflow-y-auto', showMobileSelectionBar && 'z-mail-list-scroll--with-bar')}
 	>
 		{#if loading}
-			{#if settings.loadingIndicatorStyle === 'skeleton'}
-			<div class="p-1.5" aria-busy="true" aria-label="Loading messages">
-				{#each Array(settings.compactListLoadingSkeleton ? 4 : 6) as _, index (index)}
-					<div
-						class={cn(
-							'z-list-row flex items-start gap-3 rounded-md px-3',
-							settings.compactListLoadingSkeleton ? 'py-2' : 'py-2.5'
-						)}
-					>
-						{#if settings.showAvatars}
-							<div class={cn('shrink-0 animate-pulse rounded-full bg-surface-sunken', settings.compactListAvatars ? 'mt-0.5 size-7' : 'mt-0.5 size-8')}></div>
-						{:else}
-							<div class="mt-2 size-2 shrink-0"></div>
-						{/if}
-						<div class="min-w-0 flex-1 space-y-2 py-1">
-							<div class="flex items-center justify-between gap-2">
-								<div class="h-3.5 w-28 animate-pulse rounded bg-surface-sunken"></div>
-								<div class="h-3 w-10 shrink-0 animate-pulse rounded bg-surface-sunken"></div>
-							</div>
-							<div class="h-3.5 w-4/5 animate-pulse rounded bg-surface-sunken"></div>
-							{#if settings.showListPreview}
-								<div class="h-3 w-full animate-pulse rounded bg-surface-sunken"></div>
-							{/if}
-						</div>
-					</div>
-				{/each}
-			</div>
-			{:else}
-				<LoadingIndicator label="Loading messages…" />
-			{/if}
+			<LoadingIndicator label="Loading messages…" />
 		{:else if error}
 			<div
 				class={cn(

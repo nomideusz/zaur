@@ -47,7 +47,7 @@
 			messages={mail.messages}
 			{mailboxName}
 			mailboxRouteId={data.mailboxId}
-			expanded={settings.expandListUntilOpen}
+			expanded={settings.focusLayoutMode === 'adaptive'}
 			loading={mail.messagesLoading}
 			loadingMore={mail.messagesLoadingMore}
 			hasMore={mail.messagesHasMore}
@@ -62,7 +62,7 @@
 		/>
 	{/snippet}
 	{#snippet reader()}
-		{#if !settings.expandListUntilOpen}
+		{#if settings.focusLayoutMode === 'classic'}
 			<div class="z-mail-reader-pane">
 				<MessageReaderEmpty />
 			</div>

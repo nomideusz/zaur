@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Calendar from '$lib/components/icons/Calendar.svelte';
-import Mail from '$lib/components/icons/Mail.svelte';
-import Settings from '$lib/components/icons/Settings.svelte';
-import Users from '$lib/components/icons/Users.svelte';
+	import Mail from '$lib/components/icons/Mail.svelte';
+	import Settings from '$lib/components/icons/Settings.svelte';
+	import Users from '$lib/components/icons/Users.svelte';
 	import { page } from '$app/stores';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -24,7 +24,7 @@ import Users from '$lib/components/icons/Users.svelte';
 						icon: Mail,
 						active: $page.url.pathname.startsWith('/mail')
 					},
-					...(!settings.mailOnlyNavigation && calendar.supported !== false
+					...(calendar.supported !== false
 						? [
 								{
 									href: '/calendar',
@@ -34,29 +34,21 @@ import Users from '$lib/components/icons/Users.svelte';
 								}
 							]
 						: []),
-					...(!settings.mailOnlyNavigation
-						? [
-								{
-									href: '/contacts',
-									label: 'Contacts',
-									icon: Users,
-									active: $page.url.pathname.startsWith('/contacts')
-								}
-							]
-						: [])
+					{
+						href: '/contacts',
+						label: 'Contacts',
+						icon: Users,
+						active: $page.url.pathname.startsWith('/contacts')
+					}
 				]
 			: [
-					...(!settings.mailOnlyNavigation
-						? [
-								{
-									href: '/contacts',
-									label: 'Contacts',
-									icon: Users,
-									active: $page.url.pathname.startsWith('/contacts')
-								}
-							]
-						: []),
-					...(!settings.mailOnlyNavigation && calendar.supported !== false
+					{
+						href: '/contacts',
+						label: 'Contacts',
+						icon: Users,
+						active: $page.url.pathname.startsWith('/contacts')
+					},
+					...(calendar.supported !== false
 						? [
 								{
 									href: '/calendar',
@@ -76,12 +68,12 @@ import Users from '$lib/components/icons/Users.svelte';
 	);
 </script>
 
-{#if !settings.hideSidebarShortcuts && items.length > 0}
+{#if items.length > 0}
 	<div
 		class={cn(
 			'shrink-0 space-y-0.5',
 			!settings.hidePaneBorders && 'border-t border-border/80',
-			settings.compactFolderSidebar ? 'p-1.5' : settings.compactSidebarShortcuts ? 'p-2' : 'p-2.5'
+			'p-2'
 		)}
 	>
 		{#each items as item (item.href)}
@@ -91,7 +83,7 @@ import Users from '$lib/components/icons/Users.svelte';
 				aria-current={item.active ? 'page' : undefined}
 				class={cn(
 					'flex items-center gap-2 rounded-sm px-3 text-sm transition-colors',
-					settings.compactSidebarShortcuts ? 'py-1.5' : 'py-2',
+					'py-2',
 					item.active
 						? 'z-surface-active'
 						: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'

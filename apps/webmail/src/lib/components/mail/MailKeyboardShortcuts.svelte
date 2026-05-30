@@ -133,6 +133,21 @@
 			if (!settings.enableKeyboardShortcuts) return;
 			if (isTypingTarget(event.target)) return;
 
+			const ctx = parseMailContext($page.url.pathname);
+			if (!ctx) return;
+
+			if (
+				event.key === 'Escape' &&
+				settings.focusLayoutMode === 'adaptive' &&
+				ctx.threadId &&
+				!mail.hasSelection
+			) {
+				event.preventDefault();
+				const routeId = ctx.mailboxRouteId ?? currentMessage()?.mailboxId ?? 'inbox';
+				goto(`/mail/${routeId}`);
+				return;
+			}
+
 			if (event.key === 'Escape' && readerFocus.active && !mail.hasSelection) {
 				event.preventDefault();
 				readerFocus.set(false);
@@ -146,9 +161,6 @@
 			}
 
 			if (event.metaKey || event.ctrlKey || event.altKey) return;
-
-			const ctx = parseMailContext($page.url.pathname);
-			if (!ctx) return;
 
 			const key = event.key;
 

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Clock from '$lib/components/icons/Clock.svelte';
-import Send from '$lib/components/icons/Send.svelte';
-import Trash2 from '$lib/components/icons/Trash2.svelte';
-import X from '$lib/components/icons/X.svelte';
+	import Send from '$lib/components/icons/Send.svelte';
+	import Trash2 from '$lib/components/icons/Trash2.svelte';
+	import X from '$lib/components/icons/X.svelte';
 	import Badge from '$lib/components/ui/Badge.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { network } from '$lib/stores/network.svelte';
@@ -10,6 +10,12 @@ import X from '$lib/components/icons/X.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 	import type { OutboxDoc } from '$lib/db/types';
+
+	interface Props {
+		display?: 'icon' | 'text';
+	}
+
+	let { display = 'icon' }: Props = $props();
 
 	let open = $state(false);
 
@@ -47,24 +53,46 @@ import X from '$lib/components/icons/X.svelte';
 <svelte:window onclick={() => (open = false)} />
 
 <div class="relative">
-	<IconButton
-		label={outboxLabel}
-		class="relative"
-		ariaExpanded={open}
-		ariaControls="outbox-menu"
-		ariaHaspopup="dialog"
-		onclick={(e) => {
-			e.stopPropagation();
-			open = !open;
-		}}
-	>
-		<Send class="size-4" />
-		{#if outbox.pendingCount}
-			<span class="absolute -right-0.5 -top-0.5">
-				<Badge count={outbox.pendingCount} />
-			</span>
-		{/if}
-	</IconButton>
+	{#if display === 'text'}
+		<button
+			type="button"
+			class={cn(
+				'z-btn-ghost h-9 w-full justify-between px-2 text-sm',
+				open && 'bg-surface-sunken/70 text-fg'
+			)}
+			aria-expanded={open}
+			aria-controls="outbox-menu"
+			aria-haspopup="dialog"
+			onclick={(e) => {
+				e.stopPropagation();
+				open = !open;
+			}}
+		>
+			<span class="truncate text-left">{outbox.pendingCount ? outboxLabel : 'Outbox'}</span>
+			{#if outbox.pendingCount}
+				<Badge count={outbox.pendingCount} variant="muted" class="ml-2 shrink-0" />
+			{/if}
+		</button>
+	{:else}
+		<IconButton
+			label={outboxLabel}
+			class="relative"
+			ariaExpanded={open}
+			ariaControls="outbox-menu"
+			ariaHaspopup="dialog"
+			onclick={(e) => {
+				e.stopPropagation();
+				open = !open;
+			}}
+		>
+			<Send class="size-4" />
+			{#if outbox.pendingCount}
+				<span class="absolute -right-0.5 -top-0.5">
+					<Badge count={outbox.pendingCount} />
+				</span>
+			{/if}
+		</IconButton>
+	{/if}
 
 	{#if open}
 		<div

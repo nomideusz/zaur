@@ -20,12 +20,12 @@
 	<div
 		class={cn(
 			'relative z-20 shrink-0',
-			settings.compactFolderSidebarHeader ? 'px-3 pt-2 pb-3' : 'px-3 pt-3 pb-4',
+			'px-3 pt-3 pb-4',
 			!settings.hidePaneBorders && 'border-b border-border/80'
 		)}
 	>
 		<h1 class="z-settings-sidebar-title">Settings</h1>
-		<div class={cn('mt-3', settings.compactFolderSidebarHeader ? 'mb-0' : 'mb-1')}>
+		<div class="mb-1 mt-3">
 			<SettingsSearch />
 		</div>
 	</div>
@@ -33,7 +33,7 @@
 	<nav
 		class={cn(
 			'z-pane-scroll min-h-0 flex-1 overflow-y-auto px-2',
-			settings.compactFolderSidebar ? 'py-1.5' : 'py-2.5'
+			'py-2.5'
 		)}
 		aria-label="Settings sections"
 	>

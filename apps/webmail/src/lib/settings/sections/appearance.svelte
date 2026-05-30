@@ -3,7 +3,7 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
-	import { settings, type LoadingIndicatorStyle } from '$lib/stores/settings.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
 	import { visual } from '$lib/stores/visual.svelte';
 	import {
@@ -17,12 +17,6 @@
 		{ value: 'system', label: 'System' },
 		{ value: 'light', label: 'Light' },
 		{ value: 'dark', label: 'Dark' }
-	];
-
-	const loadingIndicatorOptions = [
-		{ value: 'skeleton', label: 'Skeleton' },
-		{ value: 'minimal', label: 'Text only' },
-		{ value: 'spinner', label: 'Spinner' }
 	];
 </script>
 
@@ -51,7 +45,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Style" description="Corners, surface tone, and loading.">
+<SettingsGroup title="Style" description="Corners and surface tone.">
 	<SettingsRow title="Corner style" description="Roundness of buttons and panels">
 		<SettingsSelect
 			label="Corner style"
@@ -72,15 +66,6 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Loading indicator" description="Placeholder shown while content loads">
-		<SettingsSelect
-			label="Loading indicator"
-			value={settings.loadingIndicatorStyle}
-			options={loadingIndicatorOptions}
-			onchange={(v) => settings.setLoadingIndicatorStyle(v as LoadingIndicatorStyle)}
-			class="w-auto"
-		/>
-	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Defaults">

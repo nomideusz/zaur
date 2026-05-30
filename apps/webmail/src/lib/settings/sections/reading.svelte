@@ -6,6 +6,7 @@
 	import {
 		settings,
 		type DefaultReplyMode,
+		type FocusLayoutMode,
 		type ReaderTextSize,
 		type ReaderWidth,
 		type ReadingTypeface
@@ -66,16 +67,34 @@
 	</SettingsRow>
 
 	<SettingsRow
-		title="Open in focused view"
-		description="Hide the folder sidebar and slim the message list when you open a message"
+		title="Reading layout"
+		description="Adaptive keeps one focused pane by default; Classic keeps the traditional split layout"
 	>
-		<input
-			type="checkbox"
-			class="z-checkbox"
-			checked={settings.focusReadingDefault}
-			onchange={(e) => settings.setFocusReadingDefault(e.currentTarget.checked)}
+		<SettingsSelect
+			label="Reading layout"
+			value={settings.focusLayoutMode}
+			options={[
+				{ value: 'adaptive', label: 'Adaptive (focused)' },
+				{ value: 'classic', label: 'Classic (split panes)' }
+			]}
+			onchange={(v) => settings.setFocusLayoutMode(v as FocusLayoutMode)}
+			class="w-auto"
 		/>
 	</SettingsRow>
+
+	<SettingsDepends enabled={settings.focusLayoutMode === 'adaptive'}>
+		<SettingsRow
+			title="Show list beside open message"
+			description="Keep the thread list visible while reading (two-pane mode)"
+		>
+			<input
+				type="checkbox"
+				class="z-checkbox"
+				checked={settings.showReaderListRail}
+				onchange={(e) => settings.setShowReaderListRail(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
+	</SettingsDepends>
 
 	<SettingsRow title="Prefer plain text" description="Show plain text when available instead of HTML">
 		<input
@@ -92,6 +111,15 @@
 			class="z-checkbox"
 			checked={settings.expandAllThreadMessages}
 			onchange={(e) => settings.setExpandAllThreadMessages(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow title="Quick reply" description="Reply box at the bottom of an open message">
+		<input
+			type="checkbox"
+			class="z-checkbox"
+			checked={settings.showQuickReply}
+			onchange={(e) => settings.setShowQuickReply(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
 </SettingsGroup>
@@ -135,7 +163,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Replies" description="Reply behavior and the quick reply box.">
+<SettingsGroup title="Replies" description="Default reply behavior.">
 	<SettingsRow title="Default reply action" description="Primary reply button — r replies, a reply all">
 		<SettingsSelect
 			label="Default reply action"
@@ -146,24 +174,6 @@
 			]}
 			onchange={(v) => settings.setDefaultReplyMode(v as DefaultReplyMode)}
 			class="w-auto"
-		/>
-	</SettingsRow>
-
-	<SettingsRow title="Quick reply" description="Reply box at the bottom of an open message">
-		<input
-			type="checkbox"
-			class="z-checkbox"
-			checked={settings.showQuickReply}
-			onchange={(e) => settings.setShowQuickReply(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow title="Contact actions" description="Save contact and copy email in the message header">
-		<input
-			type="checkbox"
-			class="z-checkbox"
-			checked={settings.showReaderContactActions}
-			onchange={(e) => settings.setShowReaderContactActions(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
 </SettingsGroup>

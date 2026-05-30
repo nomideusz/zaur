@@ -62,7 +62,7 @@
 			<MessageList
 			messages={search.results}
 			{mailboxName}
-			expanded={settings.expandListUntilOpen}
+			expanded={settings.focusLayoutMode === 'adaptive'}
 			loading={search.loading}
 			loadingMore={search.loadingMore}
 			hasMore={search.hasMore}
@@ -81,7 +81,7 @@
 		</div>
 	{/snippet}
 	{#snippet reader()}
-		{#if !settings.expandListUntilOpen}
+		{#if settings.focusLayoutMode === 'classic'}
 			<div class="z-mail-reader-pane">
 				<MessageReaderEmpty
 					title="Select a result"

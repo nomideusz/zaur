@@ -10,6 +10,7 @@
 
 	const isThreadOpen = $derived(!!$page.params.threadId);
 	const focusActive = $derived(readerFocus.active && isThreadOpen);
+	const adaptiveThreadOpen = $derived(settings.focusLayoutMode === 'adaptive' && isThreadOpen);
 
 	onMount(() => {
 		function onKeydown(event: KeyboardEvent) {
@@ -42,6 +43,7 @@
 <div
 	class="relative flex min-h-0 flex-1 flex-row overflow-hidden"
 	class:z-reader-focus={focusActive}
+	class:z-layout-adaptive-thread={adaptiveThreadOpen}
 >
 	{@render children()}
 </div>

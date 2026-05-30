@@ -831,6 +831,11 @@
 		.z-reader-focus aside[aria-label='Folders'] {
 			display: none;
 		}
+
+		/* Adaptive thread view: always remove folder pane; list rail is optional. */
+		.z-layout-adaptive-thread aside[aria-label='Folders'] {
+			display: none;
+		}
 	}
 
 	.z-mobile-reader-bar {
@@ -1285,7 +1290,7 @@
 	}
 
 	.z-type-list-sender {
-		@apply truncate text-sm text-fg-muted;
+		@apply truncate text-xs text-fg-subtle;
 	}
 
 	.z-type-list-subject {
@@ -1307,7 +1312,13 @@
 	}
 
 	.z-list-row-actions {
-		@apply mt-0.5 flex h-5 w-full items-center justify-end gap-0.5;
+		@apply mt-0.5 flex h-5 w-full items-center justify-end gap-0.5 opacity-0 transition-opacity duration-150;
+	}
+
+	.z-list-row:hover .z-list-row-actions,
+	.z-list-row:focus-within .z-list-row-actions,
+	.z-list-row--current .z-list-row-actions {
+		opacity: 1;
 	}
 
 	.z-list-row-actions :where(button) {
@@ -1330,7 +1341,7 @@
 	}
 
 	.z-type-list-preview {
-		@apply mt-0.5 truncate text-sm leading-snug text-fg-subtle;
+		@apply mt-0.5 truncate text-xs leading-snug text-fg-subtle;
 	}
 
 	.z-type-list-time {

@@ -74,6 +74,9 @@
 	const showQuickReplyPanel = $derived(
 		!isDraft && settings.showQuickReply && quickReplyOpen && !!auth.client
 	);
+	const minimalMobileActions = $derived(
+		settings.focusLayoutMode === 'adaptive' && !settings.showReaderListRail
+	);
 
 	async function withClient(action: (client: NonNullable<typeof auth.client>) => Promise<void>) {
 		if (!auth.client || !latest) return;
@@ -271,15 +274,10 @@
 				<Button variant="ghost" class="min-h-11 flex-1" onclick={closeQuickReply}>Done</Button>
 			{:else}
 				<Button class="min-h-11 flex-1" onclick={openQuickReply}>
-					{#if settings.defaultReplyMode === 'reply-all'}
-						<ReplyAll class="size-4" aria-hidden="true" />
-					{:else}
-						<Reply class="size-4" aria-hidden="true" />
-					{/if}
 					{primaryReplyLabel}
 				</Button>
 
-				{#if canArchive}
+				{#if canArchive && !minimalMobileActions}
 					<IconButton
 						label="Archive"
 						class={cn('z-mobile-reader-bar__icon-btn', 'text-fg')}
@@ -303,9 +301,15 @@
 							{/if}
 						{/snippet}
 					</OverflowMenuItem>
-					<OverflowMenuItem label={latest.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
-						{#snippet icon()}<Star class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
+					{#if canArchive}
+						<OverflowMenuItem label="Archive" onclick={archiveMessage}>
+							{#snippet icon()}<Archive class="size-5" aria-hidden="true" />{/snippet}
+						</OverflowMenuItem>
+					{/if}
+					{#if auth.client}
+						<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
+					{/if}
+					<div class="mx-4 my-1 border-t border-border" role="separator"></div>
 					{#if settings.defaultReplyMode !== 'reply-all'}
 						<OverflowMenuItem label="Reply all" onclick={replyAll}>
 							{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
@@ -318,20 +322,10 @@
 					<OverflowMenuItem label="Forward" onclick={forward}>
 						{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
 					</OverflowMenuItem>
-					{#if !settings.showQuickReply}
-						<OverflowMenuItem label={primaryReplyLabel} onclick={primaryReply}>
-							{#snippet icon()}
-								{#if settings.defaultReplyMode === 'reply-all'}
-									<ReplyAll class="size-5" aria-hidden="true" />
-								{:else}
-									<Reply class="size-5" aria-hidden="true" />
-								{/if}
-							{/snippet}
-						</OverflowMenuItem>
-					{/if}
-					{#if auth.client}
-						<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
-					{/if}
+					<div class="mx-4 my-1 border-t border-border" role="separator"></div>
+					<OverflowMenuItem label={latest.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
+						{#snippet icon()}<Star class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
 					{#if hasBlockedExternal && !allowExternal && settings.hideExternalContentBanner}
 						<OverflowMenuItem label="Show external images" onclick={showImagesOnce}>
 							{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}

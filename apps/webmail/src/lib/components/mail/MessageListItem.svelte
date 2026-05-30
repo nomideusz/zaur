@@ -102,7 +102,7 @@
 
 	const rowClass = $derived(
 		cn(
-			'z-list-row flex w-full items-start gap-3 px-4 transition-[background-color] duration-150 ease-out',
+			'z-list-row group flex w-full items-start gap-3 px-4 transition-[background-color] duration-150 ease-out',
 			showActiveCompact && 'z-list-row--active-compact',
 			selectionMode && 'cursor-pointer',
 			!settings.hideListRowDividers && 'border-b border-border',
@@ -340,12 +340,20 @@
 				onkeydown={handleSelectKey}
 			>
 				<div class="flex items-baseline justify-between gap-2">
-					<span class="z-type-list-sender invisible select-none" aria-hidden="true">{senderLabel || '​'}</span>
+					<span class={activeSubjectClass}>{displaySubject}</span>
 					{#if settings.showListTimestamps}
 						<span class="z-type-list-time">{when}</span>
 					{/if}
 				</div>
-				{@render activeSubjectLine()}
+				<div class="mt-0.5 flex items-center gap-1.5">
+					<span class="z-type-list-sender">{senderLabel || 'Unknown sender'}</span>
+					{#if settings.showStarsInList && message.starred}
+						<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
+					{/if}
+					{#if settings.showAttachmentIcons && message.hasAttachment}
+						<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
+					{/if}
+				</div>
 			</a>
 			{#if settings.showListPreview || mailboxRouteId}
 				{@render activePreviewSlot()}
@@ -381,20 +389,18 @@
 			{/if}
 		{:else}
 			<div class="flex items-baseline justify-between gap-2">
-				<span class="z-type-list-sender">
-					{senderLabel}
-				</span>
+				<span class={subjectClass}>{displaySubject}</span>
 				{#if settings.showListTimestamps}
 					<span class="z-type-list-time">{when}</span>
 				{/if}
 			</div>
 			<div class="mt-0.5 flex items-center gap-1.5">
+				<span class="z-type-list-sender">
+					{senderLabel}
+				</span>
 				{#if settings.showStarsInList && message.starred}
 					<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 				{/if}
-				<span class={subjectClass}>
-					{displaySubject}
-				</span>
 				{#if settings.showAttachmentIcons && message.hasAttachment}
 					<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
 				{/if}

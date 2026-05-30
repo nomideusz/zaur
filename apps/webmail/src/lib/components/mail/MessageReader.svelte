@@ -92,6 +92,9 @@
 		)
 	);
 	const collapsedCount = $derived(Math.max(0, thread.length - expandedIds.size));
+	const prefersMinimalReaderChrome = $derived(
+		settings.focusLayoutMode === 'adaptive' && !settings.showReaderListRail
+	);
 	const threadRowX = $derived(
 		settings.compactCollapsedThreads || settings.compactReaderBody
 			? 'px-4 md:px-5'
@@ -323,11 +326,11 @@
 	<div class="z-pane-scroll z-pane-scroll--mobile-reader min-h-0 flex-1 overflow-y-auto" bind:this={scrollPane}>
 		<div class={cn('z-reader-column', threadRowX)}>
 			{#if thread.length > 1}
-				<div class={cn('pb-1 pt-3', settings.compactReaderHeader && 'pt-2.5')}>
+				<div class={cn('pb-1 pt-3', settings.compactReaderHeader && 'pt-2.5', prefersMinimalReaderChrome && 'pt-2')}>
 					<div
 						class={cn(
 							'z-reader-subject-row flex-col gap-2 sm:flex-row',
-							!settings.hideThreadSummary && 'sm:items-start'
+							!settings.hideThreadSummary && !prefersMinimalReaderChrome && 'sm:items-start'
 						)}
 					>
 						<div class="min-w-0 flex-1">
@@ -340,7 +343,7 @@
 								{subject}
 							</h1>
 
-							{#if !settings.hideThreadSummary}
+							{#if !settings.hideThreadSummary && !prefersMinimalReaderChrome}
 								<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
 									<span>{thread.length} messages</span>
 									{#if showReadTime}
@@ -441,7 +444,6 @@
 													class="inline-flex shrink-0 items-center gap-1 rounded-sm border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200"
 													title="Sender is outside {userDomain}"
 												>
-													<Shield class="size-3" aria-hidden="true" />
 													External
 												</span>
 											{/if}
@@ -494,7 +496,7 @@
 									</div>
 								</div>
 
-								{#if !settings.hideReaderTimestamps || showReadTime}
+								{#if (!settings.hideReaderTimestamps || showReadTime) && !prefersMinimalReaderChrome}
 									<div class="z-reader-chrome__time flex flex-col items-end gap-0.5">
 										{#if !settings.hideReaderTimestamps}
 											<time
@@ -535,22 +537,24 @@
 									<div class="min-w-0 flex-1">
 										<div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
 											<span class="z-reader-from">{contact.displayName}</span>
-											{#if message.id === latest?.id}
+											{#if message.id === latest?.id && !prefersMinimalReaderChrome}
 												<span class="z-reader-latest-badge">Latest</span>
 											{/if}
 										</div>
 									</div>
-									<div class="z-reader-thread-meta">
-										{#if !settings.hideReaderTimestamps}
-											<time
-												class="z-type-list-time whitespace-nowrap"
-												datetime={message.receivedAt}
-											>
-												{formatWhen(message.receivedAt)}
-											</time>
-										{/if}
-										<ChevronUp class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-									</div>
+									{#if !prefersMinimalReaderChrome}
+										<div class="z-reader-thread-meta">
+											{#if !settings.hideReaderTimestamps}
+												<time
+													class="z-type-list-time whitespace-nowrap"
+													datetime={message.receivedAt}
+												>
+													{formatWhen(message.receivedAt)}
+												</time>
+											{/if}
+											<ChevronUp class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+										</div>
+									{/if}
 								</button>
 
 							{#if !settings.hideReaderSenderEmail || (settings.showReaderContactActions) || (!settings.hideReaderRecipients && (message.to.length || message.cc.length))}
@@ -669,20 +673,22 @@
 								</p>
 							{/if}
 						</div>
-						<div class="z-reader-thread-meta">
-							{#if !settings.hideReaderTimestamps}
-								<span class="z-type-list-time whitespace-nowrap">{formatWhen(message.receivedAt)}</span>
-							{/if}
-							{#if thread.length > 1}
-								<ChevronDown class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-							{/if}
-						</div>
+						{#if !prefersMinimalReaderChrome}
+							<div class="z-reader-thread-meta">
+								{#if !settings.hideReaderTimestamps}
+									<span class="z-type-list-time whitespace-nowrap">{formatWhen(message.receivedAt)}</span>
+								{/if}
+								{#if thread.length > 1}
+									<ChevronDown class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+								{/if}
+							</div>
+						{/if}
 						</button>
 					{/if}
 				</section>
 			{/each}
 
-			{#if nextUnread}
+			{#if nextUnread && !prefersMinimalReaderChrome}
 				<div class={cn('flex justify-center', settings.compactReaderBody ? 'py-4' : 'py-6')}>
 					<button
 						type="button"
@@ -697,7 +703,7 @@
 		</div>
 	</div>
 
-	{#if latest && auth.client && settings.showQuickReply && mailboxRouteId !== 'drafts'}
+	{#if latest && auth.client && settings.showQuickReply && mailboxRouteId !== 'drafts' && !prefersMinimalReaderChrome}
 		<footer
 			class={cn(
 				'hidden shrink-0 bg-surface/80 md:block',

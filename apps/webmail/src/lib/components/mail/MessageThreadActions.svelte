@@ -60,6 +60,10 @@
 		)
 	);
 	const allowExternal = $derived(!settings.blockExternalContent || pane?.showImagesOnce);
+	const minimalToolbar = $derived(
+		settings.minimalReaderToolbar ||
+			(settings.focusLayoutMode === 'adaptive' && !settings.showReaderListRail)
+	);
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>
 			renderMessageBody({
@@ -181,7 +185,7 @@
 			className
 		)}
 	>
-		{#if readerHeader}
+		{#if readerHeader && !minimalToolbar}
 			<button
 				type="button"
 				class="z-focus-toggle hidden shrink-0 font-semibold md:inline-flex"
@@ -208,7 +212,7 @@
 			</button>
 		{/if}
 		{#if isDraft}
-			{#if settings.minimalReaderToolbar}
+			{#if minimalToolbar}
 				<IconButton label="Edit draft" onclick={editDraft}>
 					<Pencil class="size-5" />
 				</IconButton>
@@ -237,7 +241,7 @@
 				<Send class="size-4" aria-hidden="true" />
 				Send
 			</Button>
-			{#if settings.minimalReaderToolbar}
+			{#if minimalToolbar}
 				<IconButton
 					label={deleteLabel}
 					class="text-danger hover:bg-danger/10"
@@ -260,21 +264,10 @@
 				{/if}
 			</OverflowMenu>
 		{:else}
-			{#if settings.minimalReaderToolbar}
-				<IconButton label={markReadLabel} onclick={toggleLatestRead}>
-					{#if latest.unread}
-						<MailOpen class="size-5" />
-					{:else}
-						<Mail class="size-5" />
-					{/if}
-				</IconButton>
-				<IconButton label={primaryReplyLabel} onclick={primaryReply}>
-					{#if settings.defaultReplyMode === 'reply-all'}
-						<ReplyAll class="size-5" />
-					{:else}
-						<Reply class="size-5" />
-					{/if}
-				</IconButton>
+			{#if minimalToolbar}
+				<Button variant="ghost" class={toolbarButtonClass} onclick={primaryReply}>
+					{primaryReplyLabel}
+				</Button>
 			{:else}
 				<Button variant="ghost" class={toolbarButtonClass} onclick={toggleLatestRead}>
 					{#if latest.unread}
@@ -294,9 +287,24 @@
 				</Button>
 			{/if}
 			<OverflowMenu label="More message actions" menuId="thread-actions-overflow-menu">
-				<OverflowMenuItem label={latest.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
-					{#snippet icon()}<Star class="size-5" aria-hidden="true" />{/snippet}
+				<OverflowMenuItem label={markReadLabel} onclick={toggleLatestRead}>
+					{#snippet icon()}
+						{#if latest.unread}
+							<MailOpen class="size-5" aria-hidden="true" />
+						{:else}
+							<Mail class="size-5" aria-hidden="true" />
+						{/if}
+					{/snippet}
 				</OverflowMenuItem>
+				{#if mail.canArchiveFrom(currentMailbox)}
+					<OverflowMenuItem label="Archive" onclick={archiveMessage}>
+						{#snippet icon()}<Archive class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+				{/if}
+				{#if auth.client}
+					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
+				{/if}
+				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
 				{#if settings.defaultReplyMode !== 'reply-all'}
 					<OverflowMenuItem label="Reply all" onclick={replyAll}>
 						{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
@@ -309,14 +317,10 @@
 				<OverflowMenuItem label="Forward" onclick={forward}>
 					{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
 				</OverflowMenuItem>
-				{#if mail.canArchiveFrom(currentMailbox)}
-					<OverflowMenuItem label="Archive" onclick={archiveMessage}>
-						{#snippet icon()}<Archive class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
-				{/if}
-				{#if auth.client}
-					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
-				{/if}
+				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
+				<OverflowMenuItem label={latest.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
+					{#snippet icon()}<Star class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
 				{#if hasBlockedExternal && !allowExternal && settings.hideExternalContentBanner}
 					<OverflowMenuItem label="Show external images" onclick={showImagesOnce}>
 						{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}

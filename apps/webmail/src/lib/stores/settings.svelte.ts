@@ -20,7 +20,6 @@ export type ReaderTextSize = 'small' | 'normal' | 'large';
 export type ReaderWidth = 'comfortable' | 'wide';
 export type ReadingTypeface = 'sans' | 'serif';
 export type CalendarMaxEventsPerDay = 2 | 3 | 5;
-export type LoadingIndicatorStyle = 'skeleton' | 'minimal' | 'spinner';
 export type ComposeLayout = 'drawer' | 'pane';
 export type ComposeDrawerWidth = 'narrow' | 'default' | 'wide';
 export type DefaultReplyMode = 'reply' | 'reply-all';
@@ -29,13 +28,12 @@ export type ComposeFormat = 'plain' | 'html';
 export type TimeFormat = 'auto' | '12h' | '24h';
 export type SearchScope = 'all' | 'current-folder';
 export type MarkAsReadDelay = 0 | 500 | 1000 | 2000;
+export type FocusLayoutMode = 'adaptive' | 'classic';
 
 const STORAGE = {
 	blockExternal: 'zaur:block-external',
 	hideExternalContentBanner: 'zaur:hide-external-content-banner',
 	autoLoadMore: 'zaur:auto-load-more',
-	hideFolderSidebarHeader: 'zaur:hide-folder-sidebar-header',
-	hideFolderIcons: 'zaur:hide-folder-icons',
 	hideListHeader: 'zaur:hide-list-header',
 	listDensity: 'zaur:list-density',
 	showListPreview: 'zaur:show-list-preview',
@@ -64,7 +62,6 @@ const STORAGE = {
 	showQuickReply: 'zaur:show-quick-reply',
 	showReaderContactActions: 'zaur:show-reader-contact-actions',
 	expandAllThreadMessages: 'zaur:expand-all-thread-messages',
-	compactLayout: 'zaur:compact-layout',
 	hideComposeHints: 'zaur:hide-compose-hints',
 	showComposeContactSuggestions: 'zaur:show-compose-contact-suggestions',
 	showSearchContactSuggestions: 'zaur:show-search-contact-suggestions',
@@ -80,7 +77,6 @@ const STORAGE = {
 	hideCollapsedThreadPreviews: 'zaur:hide-collapsed-thread-previews',
 	hideSettingsNavHints: 'zaur:hide-settings-nav-hints',
 	hideSettingsPanelDescriptions: 'zaur:hide-settings-panel-descriptions',
-	compactFolderSidebar: 'zaur:compact-folder-sidebar',
 	compactAttachments: 'zaur:compact-attachments',
 	hideReaderSenderEmail: 'zaur:hide-reader-sender-email',
 	hideComposeFromLine: 'zaur:hide-compose-from-line',
@@ -90,13 +86,10 @@ const STORAGE = {
 	hideOutboxUnlessFailed: 'zaur:hide-outbox-unless-failed',
 	hideListActiveIndicator: 'zaur:hide-list-active-indicator',
 	compactListRows: 'zaur:compact-list-rows',
-	hideMailShortcutsHelp: 'zaur:hide-mail-shortcuts-help',
 	hideMoveMenuLabels: 'zaur:hide-move-menu-labels',
 	iconOnlyComposeAttach: 'zaur:icon-only-compose-attach',
 	compactReaderHeader: 'zaur:compact-reader-header',
 	compactReaderBody: 'zaur:compact-reader-body',
-	minimalLoadingStates: 'zaur:minimal-loading-states',
-	loadingIndicatorStyle: 'zaur:loading-indicator-style',
 	hideConnectingScreen: 'zaur:hide-connecting-screen',
 	compactToolSwitcher: 'zaur:compact-tool-switcher',
 	hideSearchDropdownHeaders: 'zaur:hide-search-dropdown-headers',
@@ -111,7 +104,6 @@ const STORAGE = {
 	iconOnlyComposeDiscard: 'zaur:icon-only-compose-discard',
 	compactComposeAttachments: 'zaur:compact-compose-attachments',
 	hideActionToasts: 'zaur:hide-action-toasts',
-	compactSidebarShortcuts: 'zaur:compact-sidebar-shortcuts',
 	compactToasts: 'zaur:compact-toasts',
 	hideToastIcons: 'zaur:hide-toast-icons',
 	compactLoadMore: 'zaur:compact-load-more',
@@ -137,7 +129,6 @@ const STORAGE = {
 	hideContactMessageCounts: 'zaur:hide-contact-message-counts',
 	compactListEmptyState: 'zaur:compact-list-empty-state',
 	compactListHeader: 'zaur:compact-list-header',
-	compactListLoadingSkeleton: 'zaur:compact-list-loading-skeleton',
 	compactMobileFolderPicker: 'zaur:compact-mobile-folder-picker',
 	compactReaderToolbar: 'zaur:compact-reader-toolbar',
 	compactListAvatars: 'zaur:compact-list-avatars',
@@ -146,13 +137,7 @@ const STORAGE = {
 	compactReaderStatus: 'zaur:compact-reader-status',
 	compactListErrorState: 'zaur:compact-list-error-state',
 	hideListErrorRetry: 'zaur:hide-list-error-retry',
-	compactReaderSkeleton: 'zaur:compact-reader-skeleton',
-	compactFolderBadges: 'zaur:compact-folder-badges',
-	compactFolderTree: 'zaur:compact-folder-tree',
-	compactFolderSidebarHeader: 'zaur:compact-folder-sidebar-header',
-	compactFolderLoadingSkeleton: 'zaur:compact-folder-loading-skeleton',
 	hideContactGroupLetters: 'zaur:hide-contact-group-letters',
-	compactFolderSidebarError: 'zaur:compact-folder-sidebar-error',
 	compactContactsAddForm: 'zaur:compact-contacts-add-form',
 	hideContactsPageSubtitle: 'zaur:hide-contacts-page-subtitle',
 	compactContactsSearch: 'zaur:compact-contacts-search',
@@ -185,9 +170,8 @@ const STORAGE = {
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
-	hideSidebarShortcuts: 'zaur:hide-sidebar-shortcuts',
-	expandListUntilOpen: 'zaur:expand-list-until-open',
-	mailOnlyNavigation: 'zaur:mail-only-navigation',
+	focusLayoutMode: 'zaur:focus-layout-mode',
+	showReaderListRail: 'zaur:show-reader-list-rail',
 	enableKeyboardShortcuts: 'zaur:enable-keyboard-shortcuts',
 	confirmBeforeDelete: 'zaur:confirm-before-delete',
 	confirmBeforeDiscardCompose: 'zaur:confirm-before-discard-compose',
@@ -272,16 +256,6 @@ function readAutoLoadMore(): boolean {
 	return localStorage.getItem(STORAGE.autoLoadMore) === 'true';
 }
 
-function readHideFolderSidebarHeader(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideFolderSidebarHeader) === 'true';
-}
-
-function readHideFolderIcons(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideFolderIcons) === 'true';
-}
-
 function readHideListHeader(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideListHeader) === 'true';
@@ -293,23 +267,23 @@ function readListDensity(): ListDensity {
 }
 
 function readShowListPreview(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.showListPreview) !== 'false';
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.showListPreview) === 'true';
 }
 
 function readShowAvatars(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.showAvatars) !== 'false';
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.showAvatars) === 'true';
 }
 
 function readShowStarsInList(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.showStarsInList) !== 'false';
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.showStarsInList) === 'true';
 }
 
 function readShowAttachmentIcons(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.showAttachmentIcons) !== 'false';
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.showAttachmentIcons) === 'true';
 }
 
 function readShowMessageCounts(): boolean {
@@ -328,8 +302,8 @@ function readShowSenderEmailInList(): boolean {
 }
 
 function readSubjectOnlyList(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.subjectOnlyList) === 'true';
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.subjectOnlyList) !== 'false';
 }
 
 function readShowListTimestamps(): boolean {
@@ -348,8 +322,8 @@ function readPreferPlainText(): boolean {
 }
 
 function readHideReaderRecipients(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideReaderRecipients) === 'true';
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.hideReaderRecipients) !== 'false';
 }
 
 function readToolIconsOnly(): boolean {
@@ -383,8 +357,8 @@ function readHideEmptyReaderIcon(): boolean {
 }
 
 function readHideThreadSummary(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideThreadSummary) === 'true';
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.hideThreadSummary) !== 'false';
 }
 
 function readShowFolderUnreadCounts(): boolean {
@@ -393,8 +367,8 @@ function readShowFolderUnreadCounts(): boolean {
 }
 
 function readShowBulkSelect(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.showBulkSelect) !== 'false';
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.showBulkSelect) === 'true';
 }
 
 function readHideHeaderSearch(): boolean {
@@ -408,23 +382,18 @@ function readHideOfflineIndicator(): boolean {
 }
 
 function readShowQuickReply(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.showQuickReply) !== 'false';
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.showQuickReply) === 'true';
 }
 
 function readShowReaderContactActions(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.showReaderContactActions) !== 'false';
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.showReaderContactActions) === 'true';
 }
 
 function readExpandAllThreadMessages(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.expandAllThreadMessages) === 'true';
-}
-
-function readCompactLayout(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactLayout) === 'true';
 }
 
 function readHideComposeHints(): boolean {
@@ -488,13 +457,13 @@ function readHideSelectionHints(): boolean {
 }
 
 function readHideReaderTimestamps(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideReaderTimestamps) === 'true';
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.hideReaderTimestamps) !== 'false';
 }
 
 function readHideCollapsedThreadPreviews(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideCollapsedThreadPreviews) === 'true';
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.hideCollapsedThreadPreviews) !== 'false';
 }
 
 function readHideSettingsNavHints(): boolean {
@@ -505,11 +474,6 @@ function readHideSettingsNavHints(): boolean {
 function readHideSettingsPanelDescriptions(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideSettingsPanelDescriptions) === 'true';
-}
-
-function readCompactFolderSidebar(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactFolderSidebar) === 'true';
 }
 
 function readCompactAttachments(): boolean {
@@ -562,11 +526,6 @@ function readCompactListRows(): boolean {
 	return localStorage.getItem(STORAGE.compactListRows) === 'true';
 }
 
-function readHideMailShortcutsHelp(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideMailShortcutsHelp) === 'true';
-}
-
 function readHideMoveMenuLabels(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideMoveMenuLabels) === 'true';
@@ -585,21 +544,6 @@ function readCompactReaderHeader(): boolean {
 function readCompactReaderBody(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactReaderBody) === 'true';
-}
-
-function readLoadingIndicatorStyle(): LoadingIndicatorStyle {
-	if (!browser) return 'skeleton';
-
-	const value = localStorage.getItem(STORAGE.loadingIndicatorStyle);
-	if (value === 'minimal' || value === 'spinner' || value === 'skeleton') {
-		return value;
-	}
-
-	if (localStorage.getItem(STORAGE.minimalLoadingStates) === 'true') {
-		return 'minimal';
-	}
-
-	return 'skeleton';
 }
 
 function readHideConnectingScreen(): boolean {
@@ -670,11 +614,6 @@ function readCompactComposeAttachments(): boolean {
 function readHideActionToasts(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideActionToasts) === 'true';
-}
-
-function readCompactSidebarShortcuts(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactSidebarShortcuts) === 'true';
 }
 
 function readCompactToasts(): boolean {
@@ -808,11 +747,6 @@ function readCompactListHeader(): boolean {
 	return localStorage.getItem(STORAGE.compactListHeader) === 'true';
 }
 
-function readCompactListLoadingSkeleton(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactListLoadingSkeleton) === 'true';
-}
-
 function readCompactMobileFolderPicker(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.compactMobileFolderPicker) === 'true';
@@ -853,39 +787,9 @@ function readHideListErrorRetry(): boolean {
 	return localStorage.getItem(STORAGE.hideListErrorRetry) === 'true';
 }
 
-function readCompactReaderSkeleton(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactReaderSkeleton) === 'true';
-}
-
-function readCompactFolderBadges(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactFolderBadges) === 'true';
-}
-
-function readCompactFolderTree(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactFolderTree) === 'true';
-}
-
-function readCompactFolderSidebarHeader(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactFolderSidebarHeader) === 'true';
-}
-
-function readCompactFolderLoadingSkeleton(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactFolderLoadingSkeleton) === 'true';
-}
-
 function readHideContactGroupLetters(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.hideContactGroupLetters) === 'true';
-}
-
-function readCompactFolderSidebarError(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactFolderSidebarError) === 'true';
 }
 
 function readCompactContactsAddForm(): boolean {
@@ -1042,23 +946,20 @@ function readLastMailbox(): string {
 }
 
 function readMinimalReaderToolbar(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.minimalReaderToolbar) === 'true';
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.minimalReaderToolbar) !== 'false';
 }
 
-function readHideSidebarShortcuts(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideSidebarShortcuts) === 'true';
+function readFocusLayoutMode(): FocusLayoutMode {
+	if (!browser) return 'adaptive';
+	const stored = localStorage.getItem(STORAGE.focusLayoutMode);
+	if (stored === 'adaptive' || stored === 'classic') return stored;
+	return 'adaptive';
 }
 
-function readExpandListUntilOpen(): boolean {
+function readShowReaderListRail(): boolean {
 	if (!browser) return false;
-	return localStorage.getItem(STORAGE.expandListUntilOpen) === 'true';
-}
-
-function readMailOnlyNavigation(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.mailOnlyNavigation) === 'true';
+	return localStorage.getItem(STORAGE.showReaderListRail) === 'true';
 }
 
 function readEnableKeyboardShortcuts(): boolean {
@@ -1108,13 +1009,13 @@ function readReadingTypeface(): ReadingTypeface {
 }
 
 function readReaderCleanView(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.readerCleanView) === 'true';
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.readerCleanView) !== 'false';
 }
 
 function readFocusReadingDefault(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.focusReadingDefault) === 'true';
+	if (!browser) return true;
+	return localStorage.getItem(STORAGE.focusReadingDefault) !== 'false';
 }
 
 function readListTextSize(): ListTextSize {
@@ -1204,8 +1105,6 @@ class SettingsStore {
 	blockExternalContent = $state(readBlockExternal());
 	hideExternalContentBanner = $state(readHideExternalContentBanner());
 	autoLoadMore = $state(readAutoLoadMore());
-	hideFolderSidebarHeader = $state(readHideFolderSidebarHeader());
-	hideFolderIcons = $state(readHideFolderIcons());
 	hideListHeader = $state(readHideListHeader());
 	listDensity = $state<ListDensity>(readListDensity());
 	showListPreview = $state(readShowListPreview());
@@ -1234,7 +1133,6 @@ class SettingsStore {
 	showQuickReply = $state(readShowQuickReply());
 	showReaderContactActions = $state(readShowReaderContactActions());
 	expandAllThreadMessages = $state(readExpandAllThreadMessages());
-	compactLayout = $state(readCompactLayout());
 	hideComposeHints = $state(readHideComposeHints());
 	showComposeContactSuggestions = $state(readShowComposeContactSuggestions());
 	showSearchContactSuggestions = $state(readShowSearchContactSuggestions());
@@ -1250,7 +1148,6 @@ class SettingsStore {
 	hideCollapsedThreadPreviews = $state(readHideCollapsedThreadPreviews());
 	hideSettingsNavHints = $state(readHideSettingsNavHints());
 	hideSettingsPanelDescriptions = $state(readHideSettingsPanelDescriptions());
-	compactFolderSidebar = $state(readCompactFolderSidebar());
 	compactAttachments = $state(readCompactAttachments());
 	hideReaderSenderEmail = $state(readHideReaderSenderEmail());
 	hideComposeFromLine = $state(readHideComposeFromLine());
@@ -1260,12 +1157,10 @@ class SettingsStore {
 	hideOutboxUnlessFailed = $state(readHideOutboxUnlessFailed());
 	hideListActiveIndicator = $state(readHideListActiveIndicator());
 	compactListRows = $state(readCompactListRows());
-	hideMailShortcutsHelp = $state(readHideMailShortcutsHelp());
 	hideMoveMenuLabels = $state(readHideMoveMenuLabels());
 	iconOnlyComposeAttach = $state(readIconOnlyComposeAttach());
 	compactReaderHeader = $state(readCompactReaderHeader());
 	compactReaderBody = $state(readCompactReaderBody());
-	loadingIndicatorStyle = $state<LoadingIndicatorStyle>(readLoadingIndicatorStyle());
 	hideConnectingScreen = $state(readHideConnectingScreen());
 	compactToolSwitcher = $state(readCompactToolSwitcher());
 	hideSearchDropdownHeaders = $state(readHideSearchDropdownHeaders());
@@ -1280,7 +1175,6 @@ class SettingsStore {
 	iconOnlyComposeDiscard = $state(readIconOnlyComposeDiscard());
 	compactComposeAttachments = $state(readCompactComposeAttachments());
 	hideActionToasts = $state(readHideActionToasts());
-	compactSidebarShortcuts = $state(readCompactSidebarShortcuts());
 	compactToasts = $state(readCompactToasts());
 	hideToastIcons = $state(readHideToastIcons());
 	compactLoadMore = $state(readCompactLoadMore());
@@ -1307,7 +1201,6 @@ class SettingsStore {
 	hideContactMessageCounts = $state(readHideContactMessageCounts());
 	compactListEmptyState = $state(readCompactListEmptyState());
 	compactListHeader = $state(readCompactListHeader());
-	compactListLoadingSkeleton = $state(readCompactListLoadingSkeleton());
 	compactMobileFolderPicker = $state(readCompactMobileFolderPicker());
 	compactReaderToolbar = $state(readCompactReaderToolbar());
 	compactListAvatars = $state(readCompactListAvatars());
@@ -1316,13 +1209,7 @@ class SettingsStore {
 	compactReaderStatus = $state(readCompactReaderStatus());
 	compactListErrorState = $state(readCompactListErrorState());
 	hideListErrorRetry = $state(readHideListErrorRetry());
-	compactReaderSkeleton = $state(readCompactReaderSkeleton());
-	compactFolderBadges = $state(readCompactFolderBadges());
-	compactFolderTree = $state(readCompactFolderTree());
-	compactFolderSidebarHeader = $state(readCompactFolderSidebarHeader());
-	compactFolderLoadingSkeleton = $state(readCompactFolderLoadingSkeleton());
 	hideContactGroupLetters = $state(readHideContactGroupLetters());
-	compactFolderSidebarError = $state(readCompactFolderSidebarError());
 	compactContactsAddForm = $state(readCompactContactsAddForm());
 	hideContactsPageSubtitle = $state(readHideContactsPageSubtitle());
 	compactContactsSearch = $state(readCompactContactsSearch());
@@ -1354,9 +1241,8 @@ class SettingsStore {
 	compactReaderInlineError = $state(readCompactReaderInlineError());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
-	hideSidebarShortcuts = $state(readHideSidebarShortcuts());
-	expandListUntilOpen = $state(readExpandListUntilOpen());
-	mailOnlyNavigation = $state(readMailOnlyNavigation());
+	focusLayoutMode = $state<FocusLayoutMode>(readFocusLayoutMode());
+	showReaderListRail = $state(readShowReaderListRail());
 	enableKeyboardShortcuts = $state(readEnableKeyboardShortcuts());
 	confirmBeforeDelete = $state(readConfirmBeforeDelete());
 	confirmBeforeDiscardCompose = $state(readConfirmBeforeDiscardCompose());
@@ -1390,8 +1276,6 @@ class SettingsStore {
 		this.blockExternalContent = readBlockExternal();
 		this.hideExternalContentBanner = readHideExternalContentBanner();
 		this.autoLoadMore = readAutoLoadMore();
-		this.hideFolderSidebarHeader = readHideFolderSidebarHeader();
-		this.hideFolderIcons = readHideFolderIcons();
 		this.hideListHeader = readHideListHeader();
 		this.listDensity = readListDensity();
 		this.showListPreview = readShowListPreview();
@@ -1420,7 +1304,6 @@ class SettingsStore {
 		this.showQuickReply = readShowQuickReply();
 		this.showReaderContactActions = readShowReaderContactActions();
 		this.expandAllThreadMessages = readExpandAllThreadMessages();
-		this.compactLayout = readCompactLayout();
 		this.hideComposeHints = readHideComposeHints();
 		this.showComposeContactSuggestions = readShowComposeContactSuggestions();
 		this.showSearchContactSuggestions = readShowSearchContactSuggestions();
@@ -1436,7 +1319,6 @@ class SettingsStore {
 		this.hideCollapsedThreadPreviews = readHideCollapsedThreadPreviews();
 		this.hideSettingsNavHints = readHideSettingsNavHints();
 		this.hideSettingsPanelDescriptions = readHideSettingsPanelDescriptions();
-		this.compactFolderSidebar = readCompactFolderSidebar();
 		this.compactAttachments = readCompactAttachments();
 		this.hideReaderSenderEmail = readHideReaderSenderEmail();
 		this.hideComposeFromLine = readHideComposeFromLine();
@@ -1446,12 +1328,10 @@ class SettingsStore {
 		this.hideOutboxUnlessFailed = readHideOutboxUnlessFailed();
 		this.hideListActiveIndicator = readHideListActiveIndicator();
 		this.compactListRows = readCompactListRows();
-		this.hideMailShortcutsHelp = readHideMailShortcutsHelp();
 		this.hideMoveMenuLabels = readHideMoveMenuLabels();
 		this.iconOnlyComposeAttach = readIconOnlyComposeAttach();
 		this.compactReaderHeader = readCompactReaderHeader();
 		this.compactReaderBody = readCompactReaderBody();
-		this.loadingIndicatorStyle = readLoadingIndicatorStyle();
 		this.hideConnectingScreen = readHideConnectingScreen();
 		this.compactToolSwitcher = readCompactToolSwitcher();
 		this.hideSearchDropdownHeaders = readHideSearchDropdownHeaders();
@@ -1466,7 +1346,6 @@ class SettingsStore {
 		this.iconOnlyComposeDiscard = readIconOnlyComposeDiscard();
 		this.compactComposeAttachments = readCompactComposeAttachments();
 		this.hideActionToasts = readHideActionToasts();
-		this.compactSidebarShortcuts = readCompactSidebarShortcuts();
 		this.compactToasts = readCompactToasts();
 		this.hideToastIcons = readHideToastIcons();
 		this.compactLoadMore = readCompactLoadMore();
@@ -1493,7 +1372,6 @@ class SettingsStore {
 		this.hideContactMessageCounts = readHideContactMessageCounts();
 		this.compactListEmptyState = readCompactListEmptyState();
 		this.compactListHeader = readCompactListHeader();
-		this.compactListLoadingSkeleton = readCompactListLoadingSkeleton();
 		this.compactMobileFolderPicker = readCompactMobileFolderPicker();
 		this.compactReaderToolbar = readCompactReaderToolbar();
 		this.compactListAvatars = readCompactListAvatars();
@@ -1502,13 +1380,7 @@ class SettingsStore {
 		this.compactReaderStatus = readCompactReaderStatus();
 		this.compactListErrorState = readCompactListErrorState();
 		this.hideListErrorRetry = readHideListErrorRetry();
-		this.compactReaderSkeleton = readCompactReaderSkeleton();
-		this.compactFolderBadges = readCompactFolderBadges();
-		this.compactFolderTree = readCompactFolderTree();
-		this.compactFolderSidebarHeader = readCompactFolderSidebarHeader();
-		this.compactFolderLoadingSkeleton = readCompactFolderLoadingSkeleton();
 		this.hideContactGroupLetters = readHideContactGroupLetters();
-		this.compactFolderSidebarError = readCompactFolderSidebarError();
 		this.compactContactsAddForm = readCompactContactsAddForm();
 		this.hideContactsPageSubtitle = readHideContactsPageSubtitle();
 		this.compactContactsSearch = readCompactContactsSearch();
@@ -1541,11 +1413,10 @@ class SettingsStore {
 		this.rememberLastMailbox = readRememberLastMailbox();
 		this.minimalReaderToolbar = readMinimalReaderToolbar();
 		this.applyReduceMotion();
-		this.hideSidebarShortcuts = readHideSidebarShortcuts();
 		this.applyLayoutWidth();
 		this.applyHeaderLayout();
-		this.expandListUntilOpen = readExpandListUntilOpen();
-		this.mailOnlyNavigation = readMailOnlyNavigation();
+		this.focusLayoutMode = readFocusLayoutMode();
+		this.showReaderListRail = readShowReaderListRail();
 		this.enableKeyboardShortcuts = readEnableKeyboardShortcuts();
 		this.confirmBeforeDelete = readConfirmBeforeDelete();
 		this.confirmBeforeDiscardCompose = readConfirmBeforeDiscardCompose();
@@ -1682,20 +1553,6 @@ class SettingsStore {
 		this.autoLoadMore = value;
 		if (browser) {
 			this.writeStorage(STORAGE.autoLoadMore, String(value));
-		}
-	}
-
-	setHideFolderSidebarHeader(value: boolean) {
-		this.hideFolderSidebarHeader = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideFolderSidebarHeader, String(value));
-		}
-	}
-
-	setHideFolderIcons(value: boolean) {
-		this.hideFolderIcons = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideFolderIcons, String(value));
 		}
 	}
 
@@ -1897,14 +1754,6 @@ class SettingsStore {
 		}
 	}
 
-	setCompactLayout(value: boolean) {
-		this.compactLayout = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactLayout, String(value));
-		}
-		this.applyLayoutWidth();
-	}
-
 	setHideComposeHints(value: boolean) {
 		this.hideComposeHints = value;
 		if (browser) {
@@ -2018,13 +1867,6 @@ class SettingsStore {
 		}
 	}
 
-	setCompactFolderSidebar(value: boolean) {
-		this.compactFolderSidebar = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactFolderSidebar, String(value));
-		}
-	}
-
 	setCompactAttachments(value: boolean) {
 		this.compactAttachments = value;
 		if (browser) {
@@ -2088,13 +1930,6 @@ class SettingsStore {
 		}
 	}
 
-	setHideMailShortcutsHelp(value: boolean) {
-		this.hideMailShortcutsHelp = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideMailShortcutsHelp, String(value));
-		}
-	}
-
 	setHideMoveMenuLabels(value: boolean) {
 		this.hideMoveMenuLabels = value;
 		if (browser) {
@@ -2120,14 +1955,6 @@ class SettingsStore {
 		this.compactReaderBody = value;
 		if (browser) {
 			this.writeStorage(STORAGE.compactReaderBody, String(value));
-		}
-	}
-
-	setLoadingIndicatorStyle(value: LoadingIndicatorStyle) {
-		this.loadingIndicatorStyle = value;
-		if (browser) {
-			this.writeStorage(STORAGE.loadingIndicatorStyle, value);
-			this.removeStorage(STORAGE.minimalLoadingStates);
 		}
 	}
 
@@ -2226,13 +2053,6 @@ class SettingsStore {
 		this.hideActionToasts = value;
 		if (browser) {
 			this.writeStorage(STORAGE.hideActionToasts, String(value));
-		}
-	}
-
-	setCompactSidebarShortcuts(value: boolean) {
-		this.compactSidebarShortcuts = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactSidebarShortcuts, String(value));
 		}
 	}
 
@@ -2419,13 +2239,6 @@ class SettingsStore {
 		}
 	}
 
-	setCompactListLoadingSkeleton(value: boolean) {
-		this.compactListLoadingSkeleton = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactListLoadingSkeleton, String(value));
-		}
-	}
-
 	setCompactMobileFolderPicker(value: boolean) {
 		this.compactMobileFolderPicker = value;
 		if (browser) {
@@ -2482,52 +2295,10 @@ class SettingsStore {
 		}
 	}
 
-	setCompactReaderSkeleton(value: boolean) {
-		this.compactReaderSkeleton = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactReaderSkeleton, String(value));
-		}
-	}
-
-	setCompactFolderBadges(value: boolean) {
-		this.compactFolderBadges = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactFolderBadges, String(value));
-		}
-	}
-
-	setCompactFolderTree(value: boolean) {
-		this.compactFolderTree = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactFolderTree, String(value));
-		}
-	}
-
-	setCompactFolderSidebarHeader(value: boolean) {
-		this.compactFolderSidebarHeader = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactFolderSidebarHeader, String(value));
-		}
-	}
-
-	setCompactFolderLoadingSkeleton(value: boolean) {
-		this.compactFolderLoadingSkeleton = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactFolderLoadingSkeleton, String(value));
-		}
-	}
-
 	setHideContactGroupLetters(value: boolean) {
 		this.hideContactGroupLetters = value;
 		if (browser) {
 			this.writeStorage(STORAGE.hideContactGroupLetters, String(value));
-		}
-	}
-
-	setCompactFolderSidebarError(value: boolean) {
-		this.compactFolderSidebarError = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactFolderSidebarError, String(value));
 		}
 	}
 
@@ -2751,24 +2522,17 @@ class SettingsStore {
 		}
 	}
 
-	setHideSidebarShortcuts(value: boolean) {
-		this.hideSidebarShortcuts = value;
+	setFocusLayoutMode(value: FocusLayoutMode) {
+		this.focusLayoutMode = value;
 		if (browser) {
-			this.writeStorage(STORAGE.hideSidebarShortcuts, String(value));
+			this.writeStorage(STORAGE.focusLayoutMode, value);
 		}
 	}
 
-	setExpandListUntilOpen(value: boolean) {
-		this.expandListUntilOpen = value;
+	setShowReaderListRail(value: boolean) {
+		this.showReaderListRail = value;
 		if (browser) {
-			this.writeStorage(STORAGE.expandListUntilOpen, String(value));
-		}
-	}
-
-	setMailOnlyNavigation(value: boolean) {
-		this.mailOnlyNavigation = value;
-		if (browser) {
-			this.writeStorage(STORAGE.mailOnlyNavigation, String(value));
+			this.writeStorage(STORAGE.showReaderListRail, String(value));
 		}
 	}
 
@@ -2981,47 +2745,43 @@ class SettingsStore {
 
 	resetDisplaySettings() {
 		this.setListDensity('comfortable');
-		this.setShowListPreview(true);
-		this.setShowAvatars(true);
-		this.setShowStarsInList(true);
-		this.setShowAttachmentIcons(true);
+		this.setShowListPreview(false);
+		this.setShowAvatars(false);
+		this.setShowStarsInList(false);
+		this.setShowAttachmentIcons(false);
 		this.setShowMessageCounts(true);
 		this.setShowFullDatesInList(false);
 		this.setShowSenderEmailInList(false);
-		this.setSubjectOnlyList(false);
+		this.setSubjectOnlyList(true);
 		this.setShowListTimestamps(true);
 		this.setHighlightUnreadInList(true);
 		this.setPreferPlainText(false);
-		this.setHideReaderRecipients(false);
+		this.setHideReaderRecipients(true);
 		this.setToolIconsOnly(false);
 		this.setCollapseQuotedInCompose(false);
 		this.setHideEmptyReaderPrompts(false);
 		this.setHideEmptyReaderDescription(false);
 		this.setHideEmptyReaderActions(false);
 		this.setHideEmptyReaderIcon(false);
-		this.setHideThreadSummary(false);
+		this.setHideThreadSummary(true);
 		this.setShowFolderUnreadCounts(true);
-		this.setShowBulkSelect(true);
+		this.setShowBulkSelect(false);
 		this.setHideHeaderSearch(false);
 		this.setHideOfflineIndicator(false);
-		this.setExpandListUntilOpen(false);
 		this.setReaderTextSize('normal');
 		this.setReaderWidth('comfortable');
 		this.setReadingTypeface('sans');
-		this.setReaderCleanView(false);
-		this.setFocusReadingDefault(false);
+		this.setReaderCleanView(true);
+		this.setFocusReadingDefault(true);
 		this.setListTextSize('normal');
 		this.setDefaultReplyMode('reply');
 		this.setBlockExternalContent(true);
 		this.setHideExternalContentBanner(false);
 		this.setAutoLoadMore(false);
-		this.setHideFolderSidebarHeader(false);
-		this.setHideFolderIcons(false);
 		this.setHideListHeader(false);
-		this.setShowQuickReply(true);
+		this.setShowQuickReply(false);
 		this.setExpandAllThreadMessages(false);
-		this.setShowReaderContactActions(true);
-		this.setCompactLayout(false);
+		this.setShowReaderContactActions(false);
 		this.setHideComposeHints(false);
 		this.setShowComposeContactSuggestions(true);
 		this.setShowSearchContactSuggestions(true);
@@ -3033,11 +2793,10 @@ class SettingsStore {
 		this.setHideListEmptyHints(false);
 		this.setHideListEmptyActions(false);
 		this.setHideSelectionHints(false);
-		this.setHideReaderTimestamps(false);
-		this.setHideCollapsedThreadPreviews(false);
+		this.setHideReaderTimestamps(true);
+		this.setHideCollapsedThreadPreviews(true);
 		this.setHideSettingsNavHints(false);
 		this.setHideSettingsPanelDescriptions(false);
-		this.setCompactFolderSidebar(false);
 		this.setCompactAttachments(false);
 		this.setHideReaderSenderEmail(false);
 		this.setHideComposeFromLine(false);
@@ -3047,12 +2806,10 @@ class SettingsStore {
 		this.setHideOutboxUnlessFailed(false);
 		this.setHideListActiveIndicator(false);
 		this.setCompactListRows(false);
-		this.setHideMailShortcutsHelp(false);
 		this.setHideMoveMenuLabels(false);
 		this.setIconOnlyComposeAttach(false);
 		this.setCompactReaderHeader(false);
 		this.setCompactReaderBody(false);
-		this.setLoadingIndicatorStyle('skeleton');
 		this.setHideConnectingScreen(false);
 		this.setCompactToolSwitcher(false);
 		this.setHideSearchDropdownHeaders(false);
@@ -3067,7 +2824,6 @@ class SettingsStore {
 		this.setIconOnlyComposeDiscard(false);
 		this.setCompactComposeAttachments(false);
 		this.setHideActionToasts(false);
-		this.setCompactSidebarShortcuts(false);
 		this.setCompactToasts(false);
 		this.setHideToastIcons(false);
 		this.setCompactLoadMore(false);
@@ -3093,7 +2849,6 @@ class SettingsStore {
 		this.setHideContactMessageCounts(false);
 		this.setCompactListEmptyState(false);
 		this.setCompactListHeader(false);
-		this.setCompactListLoadingSkeleton(false);
 		this.setCompactMobileFolderPicker(false);
 		this.setCompactReaderToolbar(false);
 		this.setCompactListAvatars(false);
@@ -3102,13 +2857,7 @@ class SettingsStore {
 		this.setCompactReaderStatus(false);
 		this.setCompactListErrorState(false);
 		this.setHideListErrorRetry(false);
-		this.setCompactReaderSkeleton(false);
-		this.setCompactFolderBadges(false);
-		this.setCompactFolderTree(false);
-		this.setCompactFolderSidebarHeader(false);
-		this.setCompactFolderLoadingSkeleton(false);
 		this.setHideContactGroupLetters(false);
-		this.setCompactFolderSidebarError(false);
 		this.setCompactContactsAddForm(false);
 		this.setHideContactsPageSubtitle(false);
 		this.setCompactContactsSearch(false);
@@ -3139,9 +2888,9 @@ class SettingsStore {
 		this.setHideCalendarPaneBorders(false);
 		this.setCompactReaderInlineError(false);
 		this.setRememberLastMailbox(false);
-		this.setMinimalReaderToolbar(false);
-		this.setHideSidebarShortcuts(false);
-		this.setMailOnlyNavigation(false);
+		this.setMinimalReaderToolbar(true);
+		this.setFocusLayoutMode('adaptive');
+		this.setShowReaderListRail(false);
 		void import('$lib/stores/visual.svelte').then(({ visual }) => visual.resetToDefaults());
 		void import('$lib/stores/theme.svelte').then(({ theme }) => theme.set('system'));
 	}
@@ -3150,22 +2899,15 @@ class SettingsStore {
 		void import('$lib/stores/visual.svelte').then(({ visual }) => visual.resetToDefaults());
 		void import('$lib/stores/theme.svelte').then(({ theme }) => theme.set('system'));
 		this.setReduceMotion(false);
-		this.setLoadingIndicatorStyle('skeleton');
-		this.setCompactListLoadingSkeleton(false);
-		this.setCompactReaderSkeleton(false);
-		this.setCompactFolderLoadingSkeleton(false);
-		this.setCompactFolderSidebarError(false);
 		this.setHideConnectingScreen(false);
 	}
 
 	applySimpleMode() {
-		this.setMailOnlyNavigation(true);
 		this.setShowAvatars(false);
 		this.setShowStarsInList(false);
 		this.setShowAttachmentIcons(false);
 		this.setShowListPreview(false);
 		this.setSubjectOnlyList(true);
-		this.setHideSidebarShortcuts(true);
 		this.setHideHeaderSearch(true);
 		this.setHideOfflineIndicator(true);
 		this.setShowBulkSelect(false);
@@ -3184,7 +2926,6 @@ class SettingsStore {
 		this.setHideCollapsedThreadPreviews(true);
 		this.setHideSettingsNavHints(true);
 		this.setHideSettingsPanelDescriptions(true);
-		this.setCompactFolderSidebar(true);
 		this.setCompactAttachments(true);
 		this.setHideReaderSenderEmail(true);
 		this.setHideComposeFromLine(true);
@@ -3193,12 +2934,10 @@ class SettingsStore {
 		this.setHideOutboxUnlessFailed(true);
 		this.setHideListActiveIndicator(true);
 		this.setCompactListRows(true);
-		this.setHideMailShortcutsHelp(true);
 		this.setHideMoveMenuLabels(true);
 		this.setIconOnlyComposeAttach(true);
 		this.setCompactReaderHeader(true);
 		this.setCompactReaderBody(true);
-		this.setLoadingIndicatorStyle('minimal');
 		this.setHideConnectingScreen(true);
 		this.setCompactToolSwitcher(true);
 		this.setHideSearchDropdownHeaders(true);
@@ -3213,7 +2952,6 @@ class SettingsStore {
 		this.setIconOnlyComposeDiscard(true);
 		this.setCompactComposeAttachments(true);
 		this.setHideActionToasts(true);
-		this.setCompactSidebarShortcuts(true);
 		this.setCompactToasts(true);
 		this.setHideToastIcons(true);
 		this.setCompactLoadMore(true);
@@ -3239,7 +2977,6 @@ class SettingsStore {
 		this.setHideContactMessageCounts(true);
 		this.setCompactListEmptyState(true);
 		this.setCompactListHeader(true);
-		this.setCompactListLoadingSkeleton(true);
 		this.setCompactMobileFolderPicker(true);
 		this.setCompactReaderToolbar(true);
 		this.setCompactListAvatars(true);
@@ -3248,13 +2985,7 @@ class SettingsStore {
 		this.setCompactReaderStatus(true);
 		this.setCompactListErrorState(true);
 		this.setHideListErrorRetry(true);
-		this.setCompactReaderSkeleton(true);
-		this.setCompactFolderBadges(true);
-		this.setCompactFolderTree(true);
-		this.setCompactFolderSidebarHeader(true);
-		this.setCompactFolderLoadingSkeleton(true);
 		this.setHideContactGroupLetters(true);
-		this.setCompactFolderSidebarError(true);
 		this.setCompactContactsAddForm(true);
 		this.setHideContactsPageSubtitle(true);
 		this.setCompactContactsSearch(true);
@@ -3269,9 +3000,9 @@ class SettingsStore {
 		this.setCompactReaderInlineError(true);
 		this.setRememberLastMailbox(true);
 		this.setMinimalReaderToolbar(true);
-		this.setExpandListUntilOpen(true);
+		this.setFocusLayoutMode('adaptive');
+		this.setShowReaderListRail(false);
 		this.setHighlightUnreadInList(false);
-		this.setCompactLayout(true);
 		this.setShowReaderContactActions(false);
 		this.setShowQuickReply(false);
 		this.setHideReaderRecipients(true);
@@ -3282,8 +3013,6 @@ class SettingsStore {
 		this.setHideEmptyReaderActions(true);
 		this.setHideEmptyReaderIcon(true);
 		this.setHideThreadSummary(true);
-		this.setHideFolderSidebarHeader(true);
-		this.setHideFolderIcons(true);
 		this.setHideListHeader(true);
 		this.setAutoLoadMore(true);
 	}
@@ -3299,7 +3028,6 @@ class SettingsStore {
 		this.setConfirmBeforeDiscardCompose(true);
 		this.setReturnToInboxAfterSend(false);
 		this.setEnableUndoSend(true);
-		this.setHideMailShortcutsHelp(false);
 		this.setHideActionToasts(false);
 		this.setAutoLoadMore(false);
 		this.setCompactLoadMore(false);
@@ -3308,21 +3036,21 @@ class SettingsStore {
 
 	resetInboxSettings() {
 		this.setListDensity('comfortable');
-		this.setShowListPreview(true);
-		this.setShowAvatars(true);
+		this.setShowListPreview(false);
+		this.setShowAvatars(false);
 		this.setCompactListAvatars(false);
-		this.setShowStarsInList(true);
-		this.setShowAttachmentIcons(true);
+		this.setShowStarsInList(false);
+		this.setShowAttachmentIcons(false);
 		this.setShowMessageCounts(true);
 		this.setShowFullDatesInList(false);
-		this.setSubjectOnlyList(false);
+		this.setSubjectOnlyList(true);
 		this.setShowSenderEmailInList(false);
 		this.setShowListTimestamps(true);
 		this.setHighlightUnreadInList(true);
 		this.setCompactListRows(false);
 		this.setHideListRowDividers(false);
 		this.setHideListActiveIndicator(false);
-		this.setShowBulkSelect(true);
+		this.setShowBulkSelect(false);
 		this.setHideSelectionHints(false);
 		this.setHideSearchListPrefix(false);
 		this.setHideListEmptyHints(false);
@@ -3340,8 +3068,10 @@ class SettingsStore {
 		this.setReaderTextSize('normal');
 		this.setReaderWidth('comfortable');
 		this.setReadingTypeface('sans');
-		this.setReaderCleanView(false);
-		this.setFocusReadingDefault(false);
+		this.setReaderCleanView(true);
+		this.setFocusReadingDefault(true);
+		this.setFocusLayoutMode('adaptive');
+		this.setShowReaderListRail(false);
 		this.setBlockExternalContent(true);
 		this.setHideExternalContentBanner(false);
 		this.setWarnExternalSenders(true);
@@ -3351,21 +3081,21 @@ class SettingsStore {
 		this.setCompactAttachments(false);
 		this.setHideReaderPaneBorders(false);
 		this.setDefaultReplyMode('reply');
-		this.setShowQuickReply(true);
+		this.setShowQuickReply(false);
 		this.setCompactQuickReply(false);
-		this.setShowReaderContactActions(true);
-		this.setHideReaderRecipients(false);
+		this.setShowReaderContactActions(false);
+		this.setHideReaderRecipients(true);
 		this.setHideReaderSenderEmail(false);
-		this.setMinimalReaderToolbar(false);
+		this.setMinimalReaderToolbar(true);
 		this.setCompactReaderToolbar(false);
 		this.setCompactReaderAvatars(false);
 		this.setCompactReaderHeader(false);
 		this.setHideMoveMenuLabels(false);
 		this.setCompactMoveMenu(false);
 		this.setExpandAllThreadMessages(false);
-		this.setHideThreadSummary(false);
-		this.setHideReaderTimestamps(false);
-		this.setHideCollapsedThreadPreviews(false);
+		this.setHideThreadSummary(true);
+		this.setHideReaderTimestamps(true);
+		this.setHideCollapsedThreadPreviews(true);
 		this.setCompactCollapsedThreads(false);
 		this.setHideEmptyReaderPrompts(false);
 		this.setHideEmptyReaderDescription(false);
@@ -3398,31 +3128,21 @@ class SettingsStore {
 	}
 
 	resetWorkspaceSettings() {
-		this.setCompactLayout(false);
 		this.setSearchScope('all');
-		this.setHideFolderSidebarHeader(false);
-		this.setCompactFolderSidebarHeader(false);
-		this.setHideFolderIcons(false);
-		this.setCompactFolderSidebar(false);
-		this.setCompactFolderTree(false);
 		this.setCompactHeaderActions(false);
 		this.setCompactAppHeader(false);
 		this.setHidePaneBorders(false);
 		this.setHideAppTitle(false);
 		this.setCompactUserMenu(false);
 		this.setCompactUserMenuDropdown(false);
-		this.setExpandListUntilOpen(false);
-		this.setCompactFolderSidebarError(false);
+		this.setFocusLayoutMode('adaptive');
+		this.setShowReaderListRail(false);
 		this.setRememberLastMailbox(false);
-		this.setHideSidebarShortcuts(false);
-		this.setCompactSidebarShortcuts(false);
-		this.setMailOnlyNavigation(false);
 		this.setHideHeaderSearch(false);
 		this.setShowSearchContactSuggestions(true);
 		this.setHideSearchDropdownHeaders(false);
 		this.setCompactSearchDropdown(false);
 		this.setShowFolderUnreadCounts(true);
-		this.setCompactFolderBadges(false);
 		this.setToolIconsOnly(false);
 		this.setCompactToolSwitcher(false);
 		this.setHideOfflineIndicator(false);
@@ -3488,10 +3208,8 @@ class SettingsStore {
 			!this.showListTimestamps,
 			!this.highlightUnreadInList,
 			!this.showBulkSelect,
-			this.expandListUntilOpen,
-			this.compactLayout,
-			this.hideSidebarShortcuts,
-			this.mailOnlyNavigation,
+			this.focusLayoutMode === 'classic',
+			this.showReaderListRail,
 			this.hideHeaderSearch,
 			this.hideOfflineIndicator,
 			this.hideComposeHints,
@@ -3505,8 +3223,6 @@ class SettingsStore {
 			this.hideEmptyReaderDescription,
 			this.hideEmptyReaderActions,
 			this.hideEmptyReaderIcon,
-			this.hideFolderSidebarHeader,
-			this.hideFolderIcons,
 			this.hideListHeader,
 			this.toolIconsOnly,
 			this.hideExternalContentBanner,
@@ -3526,7 +3242,6 @@ class SettingsStore {
 			this.hideCollapsedThreadPreviews,
 			this.hideSettingsNavHints,
 			this.hideSettingsPanelDescriptions,
-			this.compactFolderSidebar,
 			this.compactAttachments,
 			this.hideReaderSenderEmail,
 			this.hideComposeFromLine,
@@ -3535,12 +3250,10 @@ class SettingsStore {
 			this.hideOutboxUnlessFailed,
 			this.hideListActiveIndicator,
 			this.compactListRows,
-			this.hideMailShortcutsHelp,
 			this.hideMoveMenuLabels,
 			this.iconOnlyComposeAttach,
 			this.compactReaderHeader,
 			this.compactReaderBody,
-			this.loadingIndicatorStyle !== 'skeleton',
 			this.hideConnectingScreen,
 			this.compactToolSwitcher,
 			this.hideSearchDropdownHeaders,
@@ -3555,7 +3268,6 @@ class SettingsStore {
 			this.iconOnlyComposeDiscard,
 			this.compactComposeAttachments,
 			this.hideActionToasts,
-			this.compactSidebarShortcuts,
 			this.compactToasts,
 			this.hideToastIcons,
 			this.compactLoadMore,
@@ -3581,7 +3293,6 @@ class SettingsStore {
 			this.hideContactMessageCounts,
 			this.compactListEmptyState,
 			this.compactListHeader,
-			this.compactListLoadingSkeleton,
 			this.compactMobileFolderPicker,
 			this.compactReaderToolbar,
 			this.compactListAvatars,
@@ -3590,13 +3301,7 @@ class SettingsStore {
 			this.compactReaderStatus,
 			this.compactListErrorState,
 			this.hideListErrorRetry,
-			this.compactReaderSkeleton,
-			this.compactFolderBadges,
-			this.compactFolderTree,
-			this.compactFolderSidebarHeader,
-			this.compactFolderLoadingSkeleton,
 			this.hideContactGroupLetters,
-			this.compactFolderSidebarError,
 			this.compactContactsAddForm,
 			this.hideContactsPageSubtitle,
 			this.compactContactsSearch,
@@ -3690,8 +3395,8 @@ class SettingsStore {
 
 	private applyLayoutWidth() {
 		if (!browser) return;
-		document.documentElement.style.setProperty('--width-sidebar', this.compactLayout ? '12rem' : '15rem');
-		document.documentElement.style.setProperty('--width-list', this.compactLayout ? '18rem' : '22rem');
+		document.documentElement.style.setProperty('--width-sidebar', '15rem');
+		document.documentElement.style.setProperty('--width-list', '22rem');
 	}
 
 	private applyHeaderLayout() {
