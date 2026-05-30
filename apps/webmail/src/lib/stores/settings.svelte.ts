@@ -2819,14 +2819,14 @@ class SettingsStore {
 		}
 	}
 
-	setNotifyOnNewMail(value: boolean) {
+	setNotifyOnNewMail(value: boolean): Promise<boolean> | undefined {
 		this.notifyOnNewMail = value;
 		if (browser) {
 			this.writeStorage(STORAGE.notifyOnNewMail, String(value));
-			void syncPushSubscription(value);
 			if (value) {
 				void requestBrowserNotificationPermission();
 			}
+			return syncPushSubscription(value);
 		}
 	}
 

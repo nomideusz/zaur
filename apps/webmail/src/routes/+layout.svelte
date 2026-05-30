@@ -11,7 +11,7 @@
 	import { theme } from '$lib/stores/theme.svelte';
 	import { visual } from '$lib/stores/visual.svelte';
 	import { syncPushSubscription } from '$lib/utils/notifications';
-	import { registerAppServiceWorker } from '$lib/utils/service-worker';
+	import { ensureAppServiceWorkerReady } from '$lib/utils/service-worker';
 
 	let { children } = $props();
 
@@ -34,7 +34,7 @@
 		window.addEventListener('vite:preloadError', onPreloadError);
 
 		void (async () => {
-			await registerAppServiceWorker();
+			await ensureAppServiceWorkerReady();
 
 			if (settings.notifyOnNewMail) {
 				try {

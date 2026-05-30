@@ -8,6 +8,7 @@
 		unsubscribeFromPushNotifications,
 		type PushNotificationStatus
 	} from '$lib/utils/notifications';
+	import { ensureAppServiceWorkerReady, resetAppServiceWorker } from '$lib/utils/service-worker';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -35,17 +36,26 @@
 		busy = true;
 		lastError = null;
 		try {
+			await ensureAppServiceWorkerReady();
+
+			let ok: boolean;
 			if (!settings.notifyOnNewMail) {
-				settings.setNotifyOnNewMail(true);
+				ok = (await settings.setNotifyOnNewMail(true)) ?? false;
 			} else {
-				await syncPushSubscription(true);
+				ok = await syncPushSubscription(true);
 			}
+
+			if (!ok) {
+				await resetAppServiceWorker();
+				ok = await syncPushSubscription(true);
+			}
+
 			await refreshStatus();
 			if (pushStatus.state === 'denied') {
 				lastError = 'Notifications are blocked for this site in browser settings.';
 			} else if (pushStatus.state === 'unsupported') {
 				lastError = 'Background push needs Chrome or Firefox on desktop.';
-			} else if (pushStatus.state !== 'subscribed' && pushStatus.state !== 'prompt') {
+			} else if (!ok || (pushStatus.state !== 'subscribed' && pushStatus.state !== 'prompt')) {
 				lastError = 'Could not register push on this device.';
 			}
 		} finally {
@@ -72,6 +82,7 @@
 		busy = true;
 		lastError = null;
 		try {
+			await resetAppServiceWorker();
 			const ok = await syncPushSubscription(settings.notifyOnNewMail || true);
 			if (!ok) lastError = 'Service worker or push registration failed.';
 			await refreshStatus();

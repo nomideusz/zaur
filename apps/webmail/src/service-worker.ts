@@ -11,6 +11,10 @@ if (Array.isArray(precacheManifest)) {
 	precacheAndRoute(precacheManifest);
 }
 
+self.addEventListener('install', (event) => {
+	event.waitUntil(self.skipWaiting());
+});
+
 clientsClaim();
 
 interface PushPayload {

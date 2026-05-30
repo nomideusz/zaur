@@ -1,5 +1,8 @@
 import { browser } from '$app/environment';
-import { getAppServiceWorkerRegistration } from '$lib/utils/service-worker';
+import {
+	ensureAppServiceWorkerReady,
+	resetAppServiceWorker
+} from '$lib/utils/service-worker';
 
 export function canUseBrowserNotifications(): boolean {
 	return browser && 'Notification' in window;
@@ -38,7 +41,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 }
 
 async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration | null> {
-	return getAppServiceWorkerRegistration();
+	return ensureAppServiceWorkerReady();
 }
 
 export async function isPushSupported(): Promise<boolean> {
@@ -60,8 +63,12 @@ export async function subscribeToPushNotifications(): Promise<boolean> {
 	const permission = await requestBrowserNotificationPermission();
 	if (permission !== 'granted') return false;
 
-	const registration = await getServiceWorkerRegistration();
-	if (!registration) return false;
+	let registration = await getServiceWorkerRegistration();
+	if (!registration?.active) {
+		await resetAppServiceWorker();
+		registration = await getServiceWorkerRegistration();
+	}
+	if (!registration?.active) return false;
 
 	const response = await fetch('/api/push/vapid-public-key');
 	if (!response.ok) return false;
