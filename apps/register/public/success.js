@@ -20,7 +20,7 @@ async function init() {
     document.getElementById('smtp-host').textContent = mailHost;
 
     const loginParams = new URLSearchParams({ email, welcome: '1' });
-    const loginUrl = `${webmailUrl}/login/start?${loginParams.toString()}`;
+    const loginUrl = `${webmailUrl}/login?${loginParams.toString()}`;
     document.getElementById('webmail-btn').href = loginUrl;
 
     document.getElementById('redirect-status').textContent = 'Taking you to sign in…';

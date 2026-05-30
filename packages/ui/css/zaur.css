@@ -26,6 +26,8 @@
 	--z-success: #2d6a4f;
 	--z-warning: #956400;
 
+	--z-brand-mark: #2563eb;
+
 	--radius-sm: 0.25rem;
 	--radius-md: 0.5rem;
 	--radius-lg: 1rem;
@@ -66,6 +68,8 @@
 	--z-success: #52b788;
 	--z-warning: #d4a017;
 
+	--z-brand-mark: #3b82f6;
+
 	--z-scrollbar-thumb: color-mix(in srgb, var(--z-border-strong) 88%, transparent);
 	--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 58%, transparent);
 }
@@ -91,6 +95,8 @@
 		--z-star: #d4a017;
 		--z-success: #52b788;
 		--z-warning: #d4a017;
+
+	--z-brand-mark: #3b82f6;
 
 		--z-scrollbar-thumb: color-mix(in srgb, var(--z-border-strong) 88%, transparent);
 		--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 58%, transparent);
@@ -1114,7 +1120,10 @@ body {
 	height: 4.5rem;
 	margin-inline: auto;
 	margin-bottom: 1rem;
-	color: var(--z-accent);
+	border: 0;
+	background-color: var(--z-brand-mark);
+	mask: url('/zaur-mark.svg') center / contain no-repeat;
+	-webkit-mask: url('/zaur-mark.svg') center / contain no-repeat;
 }
 
 .z-register-brand {

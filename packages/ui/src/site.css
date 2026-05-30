@@ -524,7 +524,10 @@
 	height: 4.5rem;
 	margin-inline: auto;
 	margin-bottom: 1rem;
-	color: var(--z-accent);
+	border: 0;
+	background-color: var(--z-brand-mark);
+	mask: url('/zaur-mark.svg') center / contain no-repeat;
+	-webkit-mask: url('/zaur-mark.svg') center / contain no-repeat;
 }
 
 .z-register-brand {

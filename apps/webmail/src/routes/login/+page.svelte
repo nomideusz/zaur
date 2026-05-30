@@ -15,7 +15,6 @@
 	const isWelcome = $derived(
 		$page.url.searchParams.get('welcome') === '1' || urlEmail.length > 0
 	);
-	const autoStart = $derived($page.url.searchParams.get('auto') === '1');
 
 	let email = $state(remembered.email);
 	let password = $state('');
@@ -27,7 +26,10 @@
 		const next = $page.url.searchParams.get('next');
 		return next?.startsWith('/') && !next.startsWith('//') ? next : undefined;
 	});
+	const oauthEnabled = $derived(auth.oauthConfig?.enabled === true);
 	const passkeysFirst = $derived(auth.oauthConfig?.passkeysFirst === true);
+	const showPassword = $derived(!oauthEnabled || passkeysFirst);
+	const showPasskey = $derived(oauthEnabled && passkeysFirst);
 
 	$effect(() => {
 		if (!auth.isRestoring && auth.isAuthenticated) {
@@ -41,13 +43,6 @@
 		}
 		await auth.checkOauthConfig();
 		oauthReady = true;
-
-		if (autoStart && urlEmail && auth.oauthConfig?.enabled && !auth.isAuthenticated) {
-			window.location.href = `/login/start?${new URLSearchParams({
-				email: urlEmail,
-				...(rememberMe ? { remember: '1' } : {})
-			}).toString()}`;
-		}
 	});
 
 	function submitPassword(e: Event) {
@@ -55,7 +50,7 @@
 		void auth.login(email, password, undefined, rememberMe, nextPath);
 	}
 
-	function signInWithZaur() {
+	function signInWithPasskey() {
 		void auth.loginWithPasskey({
 			rememberMe,
 			redirectTo: nextPath,
@@ -80,64 +75,17 @@
 
 		{#if !oauthReady}
 			<p class="text-center text-sm text-fg-muted">Loading sign-in…</p>
-		{:else if passkeysFirst}
-			<div class="space-y-4">
+		{:else}
+			<form class="space-y-4" onsubmit={submitPassword}>
 				{#if isWelcome}
 					<div class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm text-fg">
 						<p class="font-medium">Welcome — almost done</p>
 						<p class="mt-1 text-fg-muted">
-							Use your new email and the password you just created. You’ll set up a passkey on the
-							next screen.
+							Sign in with the email and password you just created.
 						</p>
 					</div>
 				{/if}
 
-				<div>
-					<label for="email-hint" class="mb-1.5 block text-sm font-medium text-fg">Email</label>
-					<input
-						id="email-hint"
-						type="email"
-						class="z-input"
-						bind:value={email}
-						autocomplete="username webauthn"
-						placeholder="you@zaur.app"
-						disabled={auth.isLoading}
-					/>
-					{#if !isWelcome}
-						<p class="mt-1 text-xs text-fg-subtle">
-							Enter the address you registered — avoids signing into another account.
-						</p>
-					{/if}
-				</div>
-
-				<Button type="button" class="w-full" disabled={auth.isLoading} onclick={signInWithZaur}>
-					{auth.isLoading ? 'Redirecting…' : 'Sign in'}
-				</Button>
-
-				<p class="text-center text-xs text-fg-subtle">
-					{#if isWelcome}
-						Already have a passkey? You can use it on the next screen instead.
-					{:else}
-						Passkey or password sign-in is available on the next screen.
-					{/if}
-				</p>
-
-				<label class="flex cursor-pointer items-center gap-2 text-sm text-fg-muted">
-					<input
-						type="checkbox"
-						class="z-checkbox"
-						bind:checked={rememberMe}
-						disabled={auth.isLoading}
-					/>
-					Remember me
-				</label>
-
-				{#if auth.error}
-					<p class="text-sm text-danger" role="alert">{auth.error}</p>
-				{/if}
-			</div>
-		{:else}
-			<form class="space-y-4" onsubmit={submitPassword}>
 				<div>
 					<label for="email" class="mb-1.5 block text-sm font-medium text-fg">Email</label>
 					<input
@@ -145,24 +93,27 @@
 						type="email"
 						class="z-input"
 						bind:value={email}
-						autocomplete="username"
+						autocomplete={showPasskey ? 'username webauthn' : 'username'}
+						placeholder="you@zaur.app"
 						required
 						disabled={auth.isLoading}
 					/>
 				</div>
 
-				<div>
-					<label for="password" class="mb-1.5 block text-sm font-medium text-fg">Password</label>
-					<input
-						id="password"
-						type="password"
-						class="z-input"
-						bind:value={password}
-						autocomplete="current-password"
-						required
-						disabled={auth.isLoading}
-					/>
-				</div>
+				{#if showPassword}
+					<div>
+						<label for="password" class="mb-1.5 block text-sm font-medium text-fg">Password</label>
+						<input
+							id="password"
+							type="password"
+							class="z-input"
+							bind:value={password}
+							autocomplete="current-password"
+							required
+							disabled={auth.isLoading}
+						/>
+					</div>
+				{/if}
 
 				<label class="flex cursor-pointer items-center gap-2 text-sm text-fg-muted">
 					<input
@@ -178,9 +129,24 @@
 					<p class="text-sm text-danger" role="alert">{auth.error}</p>
 				{/if}
 
-				<Button type="submit" class="w-full" disabled={auth.isLoading || !canSubmitPassword}>
-					{auth.isLoading ? 'Signing in…' : 'Sign in'}
-				</Button>
+				<div class="space-y-2">
+					{#if showPassword}
+						<Button type="submit" class="w-full" disabled={auth.isLoading || !canSubmitPassword}>
+							{auth.isLoading ? 'Signing in…' : 'Sign in'}
+						</Button>
+					{/if}
+					{#if showPasskey}
+						<Button
+							type="button"
+							class="w-full"
+							variant={showPassword ? 'ghost' : 'default'}
+							disabled={auth.isLoading}
+							onclick={signInWithPasskey}
+						>
+							{auth.isLoading ? 'Redirecting…' : 'Sign in with passkey'}
+						</Button>
+					{/if}
+				</div>
 			</form>
 		{/if}
 
