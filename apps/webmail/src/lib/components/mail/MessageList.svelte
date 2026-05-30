@@ -10,6 +10,8 @@ import Search from '$lib/components/icons/Search.svelte';
 	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
 	import MessageListItem from './MessageListItem.svelte';
 	import MessageListHeader from './MessageListHeader.svelte';
+	import MessageListMobileBar from './MessageListMobileBar.svelte';
+	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import type { MessagePreview } from '$lib/types/mail';
@@ -146,6 +148,9 @@ import Search from '$lib/components/icons/Search.svelte';
 
 	const listExpanded = $derived(expanded || mail.hasSelection);
 	const showListHeader = $derived(!!mailboxRouteId && settings.showBulkSelect);
+	const showMobileSelectionBar = $derived(
+		!!mailboxRouteId && mail.hasSelection && supportsMobileListGestures()
+	);
 </script>
 
 <section
@@ -154,7 +159,8 @@ import Search from '$lib/components/icons/Search.svelte';
 		listExpanded ? 'flex-1' : 'w-full md:w-(--width-list) md:max-w-(--width-list) md:flex-none',
 		hideOnMobile ? (mail.hasSelection ? 'flex' : 'hidden md:flex') : 'flex',
 		!settings.hidePaneBorders && !listExpanded && 'border-r border-border',
-		mail.hasSelection && 'bg-surface-raised/50'
+		mail.hasSelection && 'bg-surface-raised/50',
+		showMobileSelectionBar && 'z-mail-list--selecting'
 	)}
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
@@ -168,7 +174,9 @@ import Search from '$lib/components/icons/Search.svelte';
 			/>
 		</div>
 	{/if}
-	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
+	<div
+		class={cn('z-pane-scroll min-h-0 flex-1 overflow-y-auto', showMobileSelectionBar && 'z-mail-list-scroll--with-bar')}
+	>
 		{#if loading}
 			{#if settings.loadingIndicatorStyle === 'skeleton'}
 			<div class="p-1.5" aria-busy="true" aria-label="Loading messages">
@@ -267,6 +275,7 @@ import Search from '$lib/components/icons/Search.svelte';
 					showListGutter={!!mailboxRouteId && settings.showBulkSelect}
 					selected={mailboxRouteId ? selectedIds.includes(message.id) : false}
 					{mailboxRouteId}
+					enableMobileGestures={!!mailboxRouteId && settings.showBulkSelect}
 					onSelect={
 						mailboxRouteId
 							? (modifiers) =>
@@ -316,4 +325,8 @@ import Search from '$lib/components/icons/Search.svelte';
 			{/if}
 		{/if}
 	</div>
+
+	{#if showMobileSelectionBar && mailboxRouteId}
+		<MessageListMobileBar {mailboxRouteId} {onBulkAction} />
+	{/if}
 </section>

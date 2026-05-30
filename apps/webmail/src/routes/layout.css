@@ -440,6 +440,99 @@
 		outline-offset: -2px;
 	}
 
+	.z-swipe-row {
+		position: relative;
+		overflow: hidden;
+		background-color: var(--z-surface-raised);
+	}
+
+	.z-swipe-row__actions {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		display: flex;
+		align-items: stretch;
+	}
+
+	.z-swipe-row__actions--leading {
+		left: 0;
+		justify-content: flex-start;
+	}
+
+	.z-swipe-row__actions--trailing {
+		right: 0;
+		justify-content: flex-end;
+	}
+
+	.z-swipe-row__action {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.125rem;
+		height: 100%;
+		padding: 0 0.25rem;
+		font-size: 0.625rem;
+		font-weight: 600;
+		line-height: 1.2;
+		color: white;
+	}
+
+	.z-swipe-row__action-label {
+		max-width: 4.25rem;
+		text-align: center;
+	}
+
+	.z-swipe-row__action--default {
+		background-color: var(--z-fg-muted);
+	}
+
+	.z-swipe-row__action--accent {
+		background-color: var(--z-accent);
+	}
+
+	.z-swipe-row__action--danger {
+		background-color: var(--z-danger);
+	}
+
+	.z-swipe-row__foreground {
+		position: relative;
+		z-index: 1;
+		background-color: var(--z-surface-raised);
+		touch-action: pan-y;
+		transition: transform 0.2s ease-out;
+		will-change: transform;
+	}
+
+	.z-swipe-row[data-swipe-open] .z-swipe-row__foreground {
+		transition: none;
+	}
+
+	.z-mail-list-mobile-bar {
+		@apply flex shrink-0 items-center gap-2 border-t border-border bg-surface-raised/95 px-3 py-2 backdrop-blur-sm;
+		padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+	}
+
+	.z-mail-list-mobile-bar__cancel {
+		@apply !min-h-10 !min-w-10 shrink-0;
+	}
+
+	.z-mail-list-mobile-bar__count {
+		@apply min-w-0 flex-1 truncate text-sm font-medium text-fg;
+	}
+
+	.z-mail-list-mobile-bar__actions {
+		@apply flex shrink-0 items-center gap-1 overflow-x-auto;
+	}
+
+	.z-mail-list-mobile-bar__btn {
+		@apply !h-9 shrink-0 !px-2.5 !text-xs;
+	}
+
+	.z-mail-list-scroll--with-bar {
+		padding-bottom: 0.25rem;
+	}
+
 	.z-surface-active {
 		background-color: var(--z-chrome-active);
 		@apply font-medium text-fg;

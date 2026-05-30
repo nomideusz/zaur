@@ -10,6 +10,8 @@ import Users from '$lib/components/icons/Users.svelte';
 	import ContactLetterRail from '$lib/components/contacts/ContactLetterRail.svelte';
 	import ContactsSidebar from '$lib/components/contacts/ContactsSidebar.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
+	import SwipeableListRow from '$lib/components/ui/SwipeableListRow.svelte';
+	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -307,32 +309,44 @@ import Users from '$lib/components/icons/Users.svelte';
 						<ul class={cn(!hideBorders && !settings.hideListRowDividers && 'divide-y divide-border')}>
 							{#each group as contact (contact.email)}
 								<li>
-									<button
-										type="button"
-										class={cn(
-											'z-list-row flex w-full items-center gap-3 px-4 text-left transition-colors hover:bg-surface-sunken/60',
-											settings.compactContactsList ? 'min-h-11 py-2' : 'py-2.5',
-											selectedEmail === contact.email && 'z-list-row--current'
-										)}
-										aria-current={selectedEmail === contact.email ? 'true' : undefined}
-										onclick={() => selectContact(contact.email)}
+									<SwipeableListRow
+										enabled={supportsMobileListGestures()}
+										trailing={[
+											{
+												id: 'delete',
+												label: 'Remove',
+												variant: 'danger',
+												onAction: () => deleteContact(contact.email)
+											}
+										]}
 									>
-										{#if settings.showAvatars}
-											<Avatar name={contact.name} email={contact.email} />
-										{/if}
-										<div class="min-w-0 flex-1">
-											<p class="truncate text-sm font-semibold tracking-tight text-fg">{contact.name}</p>
-											{#if !settings.hideContactsEmailLine}
-												<p class="truncate text-xs text-fg-muted">{contact.email}</p>
+										<button
+											type="button"
+											class={cn(
+												'z-list-row flex w-full items-center gap-3 px-4 text-left transition-colors hover:bg-surface-sunken/60',
+												settings.compactContactsList ? 'min-h-11 py-2' : 'py-2.5',
+												selectedEmail === contact.email && 'z-list-row--current'
+											)}
+											aria-current={selectedEmail === contact.email ? 'true' : undefined}
+											onclick={() => selectContact(contact.email)}
+										>
+											{#if settings.showAvatars}
+												<Avatar name={contact.name} email={contact.email} />
 											{/if}
-											{#if !settings.hideContactMessageCounts && contact.count > 1}
-												<p class="text-[11px] text-fg-subtle">{contact.count} messages</p>
+											<div class="min-w-0 flex-1">
+												<p class="truncate text-sm font-semibold tracking-tight text-fg">{contact.name}</p>
+												{#if !settings.hideContactsEmailLine}
+													<p class="truncate text-xs text-fg-muted">{contact.email}</p>
+												{/if}
+												{#if !settings.hideContactMessageCounts && contact.count > 1}
+													<p class="text-[11px] text-fg-subtle">{contact.count} messages</p>
+												{/if}
+											</div>
+											{#if !settings.hideContactsRowMailIcon}
+												<Mail class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
 											{/if}
-										</div>
-										{#if !settings.hideContactsRowMailIcon}
-											<Mail class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-										{/if}
-									</button>
+										</button>
+									</SwipeableListRow>
 								</li>
 							{/each}
 						</ul>

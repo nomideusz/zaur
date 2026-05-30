@@ -492,6 +492,20 @@ class MailStore {
 		this.bulkActionLoading = false;
 	}
 
+	/** Enter bulk-select mode from a touch long-press (mobile). */
+	startSelection(messageId: string) {
+		const index = this.messages.findIndex((message) => message.id === messageId);
+		if (index < 0) return;
+
+		if (this.selectedMessageIds.size > 0) {
+			this.toggleMessageSelection(messageId);
+			return;
+		}
+
+		this.selectedMessageIds = new Set([messageId]);
+		this.selectionAnchorId = messageId;
+	}
+
 	private applySelection(next: Set<string>, anchor: string | null) {
 		if (next.size === 0) {
 			this.clearSelection();

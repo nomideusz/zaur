@@ -2,10 +2,14 @@
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Star from '$lib/components/icons/Star.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
+	import SwipeableListRow, { type SwipeAction } from '$lib/components/ui/SwipeableListRow.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { toast } from '$lib/stores/toast.svelte';
 	import { formatMessageListWhen } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
+	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import type { MessagePreview } from '$lib/types/mail';
 
 	interface Props {
@@ -17,6 +21,7 @@
 		showListGutter?: boolean;
 		onSelect?: (modifiers: { shift: boolean; ctrl: boolean }) => void;
 		mailboxRouteId?: string;
+		enableMobileGestures?: boolean;
 	}
 
 	let {
@@ -27,8 +32,21 @@
 		selected = false,
 		showListGutter = false,
 		onSelect,
-		mailboxRouteId
+		mailboxRouteId,
+		enableMobileGestures = false
 	}: Props = $props();
+
+	const actionRouteId = $derived(mailboxRouteId ?? message.mailboxId);
+	const currentMailbox = $derived(mail.mailboxByRouteId(actionRouteId));
+	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
+	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete' : 'Delete');
+	const mobileGestures = $derived(
+		enableMobileGestures &&
+			supportsMobileListGestures() &&
+			!!onSelect &&
+			!!actionRouteId &&
+			!mail.hasSelection
+	);
 
 	function isMe(email: string): boolean {
 		const cleanEmail = email.trim().toLowerCase();
@@ -78,7 +96,7 @@
 
 	const rowClass = $derived(
 		cn(
-			'z-list-row flex items-start gap-3 px-4 transition-[background-color] duration-150 ease-out',
+			'z-list-row flex w-full items-start gap-3 px-4 transition-[background-color] duration-150 ease-out',
 			showCheckboxes && 'cursor-pointer',
 			!settings.hideListRowDividers && 'border-b border-border',
 			settings.compactListRows ? 'py-2' : 'py-2.5',
@@ -118,6 +136,71 @@
 	function handleCheckboxChange() {
 		onSelect?.({ shift: false, ctrl: false });
 	}
+
+	function handleLongPress() {
+		mail.startSelection(message.id);
+	}
+
+	async function runSwipeAction(action: () => Promise<void>) {
+		if (!auth.client) return;
+		try {
+			await action();
+		} catch (err) {
+			const text = err instanceof Error ? err.message : 'Action failed';
+			toast.show(text, 'error');
+		}
+	}
+
+	function swipeDelete() {
+		if (!auth.client || !actionRouteId) return;
+		const permanent = currentMailbox?.role === 'trash';
+		if (!settings.confirmDeleteMessage(1, permanent)) return;
+		void runSwipeAction(() => mail.deleteMessage(auth.client!, message, actionRouteId));
+	}
+
+	function swipeArchive() {
+		if (!auth.client) return;
+		void runSwipeAction(() => mail.moveMessage(auth.client!, message, 'archive'));
+	}
+
+	function swipeToggleRead() {
+		if (!auth.client) return;
+		void runSwipeAction(() => mail.markAsRead(auth.client!, message, message.unread));
+	}
+
+	const leadingSwipeActions = $derived.by((): SwipeAction[] => {
+		if (!mobileGestures) return [];
+		if (canArchive) {
+			return [
+				{
+					id: 'archive',
+					label: 'Archive',
+					variant: 'accent',
+					onAction: swipeArchive
+				}
+			];
+		}
+		return [
+			{
+				id: 'read',
+				label: message.unread ? 'Read' : 'Unread',
+				variant: 'default',
+				onAction: swipeToggleRead
+			}
+		];
+	});
+
+	const trailingSwipeActions = $derived.by((): SwipeAction[] => {
+		if (!mobileGestures) return [];
+		return [
+			{
+				id: 'delete',
+				label: deleteLabel,
+				variant: 'danger',
+				onAction: swipeDelete
+			}
+		];
+	});
 </script>
 
 {#snippet listMarker()}
@@ -210,35 +293,47 @@
 	</div>
 {/snippet}
 
-{#if showCheckboxes}
-	<div
-		class={rowClass}
-		data-hide-active-indicator={hideActiveIndicator || undefined}
-		role="button"
-		tabindex="0"
-		data-message-row
-		aria-label={messageAriaLabel}
-		title={messageAriaLabel}
-		onclick={handleSelect}
-		onkeydown={handleSelectKey}
-	>
-		{@render listMarker()}
-		{@render content()}
-	</div>
-{:else}
-	<a
-		{href}
-		class={rowClass}
-		data-message-row
-		data-hide-active-indicator={hideActiveIndicator || undefined}
-		aria-current={active ? 'true' : undefined}
-		aria-label={messageAriaLabel}
-		title={messageAriaLabel}
-		style="view-transition-name: message-{message.id};"
-		onclick={handleSelect}
-		onkeydown={handleSelectKey}
-	>
-		{@render listMarker()}
-		{@render content()}
-	</a>
-{/if}
+{#snippet rowInner()}
+	{#if showCheckboxes}
+		<div
+			class={rowClass}
+			data-hide-active-indicator={hideActiveIndicator || undefined}
+			role="button"
+			tabindex="0"
+			data-message-row
+			aria-label={messageAriaLabel}
+			title={messageAriaLabel}
+			onclick={handleSelect}
+			onkeydown={handleSelectKey}
+		>
+			{@render listMarker()}
+			{@render content()}
+		</div>
+	{:else}
+		<a
+			{href}
+			class={rowClass}
+			data-message-row
+			data-hide-active-indicator={hideActiveIndicator || undefined}
+			aria-current={active ? 'true' : undefined}
+			aria-label={messageAriaLabel}
+			title={messageAriaLabel}
+			style="view-transition-name: message-{message.id};"
+			onclick={handleSelect}
+			onkeydown={handleSelectKey}
+		>
+			{@render listMarker()}
+			{@render content()}
+		</a>
+	{/if}
+{/snippet}
+
+<SwipeableListRow
+	enabled={mobileGestures}
+	leading={leadingSwipeActions}
+	trailing={trailingSwipeActions}
+	longPressEnabled={!!onSelect && supportsMobileListGestures() && settings.showBulkSelect}
+	onLongPress={onSelect ? handleLongPress : undefined}
+>
+	{@render rowInner()}
+</SwipeableListRow>

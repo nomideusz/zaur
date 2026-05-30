@@ -32,8 +32,11 @@ import Search from '$lib/components/icons/Search.svelte';
 	);
 	const showMailContext = $derived(onMailRoute && shellHeader.mail !== null);
 	const showToolSwitcher = $derived(!onSettingsRoute && (!onMailRoute || !mobileReadingThread));
+	const mobileListSelecting = $derived(
+		onMailRoute && !!shellHeader.mail?.mailboxRouteId && !$page.params.threadId && mail.hasSelection
+	);
 	const showMobileMailSearch = $derived(
-		showMailContext && !settings.hideHeaderSearch && !mobileReadingThread
+		showMailContext && !settings.hideHeaderSearch && !mobileReadingThread && !mobileListSelecting
 	);
 </script>
 
@@ -85,7 +88,7 @@ import Search from '$lib/components/icons/Search.svelte';
 			settings.compactAppHeader ? 'gap-1.5' : 'gap-2'
 		)}
 	>
-		{#if showMailContext && shellHeader.mail?.showNewMessage && !mobileReadingThread}
+		{#if showMailContext && shellHeader.mail?.showNewMessage && !mobileReadingThread && !mobileListSelecting}
 			<IconButton label="New message" class="md:hidden" onclick={() => goto('/mail/compose')}>
 				<PenSquare class="size-5" aria-hidden="true" />
 			</IconButton>

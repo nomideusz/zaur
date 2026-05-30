@@ -11,6 +11,7 @@ import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { cn } from '$lib/utils/cn';
+	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 
 	interface Props {
 		mailboxRouteId?: string;
@@ -83,7 +84,7 @@ import Trash2 from '$lib/components/icons/Trash2.svelte';
 	</div>
 
 	{#if mail.hasSelection && !disabled}
-		<div class="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto">
+		<div class="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto max-md:hidden">
 			<span class="shrink-0 text-sm font-medium text-fg">{selectedIds.length} selected</span>
 			{#if hasUnreadSelected}
 				<Button
@@ -135,8 +136,13 @@ import Trash2 from '$lib/components/icons/Trash2.svelte';
 			</Button>
 		</div>
 	{:else if !settings.hideSelectionHints}
-		<p class="min-w-0 truncate text-xs text-fg-subtle">
+		<p class="min-w-0 truncate text-xs text-fg-subtle max-md:hidden">
 			Shift+click for a range · Ctrl+click to toggle
 		</p>
+		{#if supportsMobileListGestures()}
+			<p class="min-w-0 truncate text-xs text-fg-subtle md:hidden">
+				Hold to select · Swipe for actions
+			</p>
+		{/if}
 	{/if}
 </div>

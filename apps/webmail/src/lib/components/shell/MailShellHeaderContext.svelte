@@ -24,10 +24,25 @@
 		ctx.mailboxName.startsWith('Search:') ? ctx.mailboxName.slice(8) : ctx.mailboxName
 	);
 	const showFolderTitle = $derived(!mail.hasSelection && !settings.hideListHeader);
+	const mobileListSelecting = $derived(
+		!!ctx.mailboxRouteId && !threadId && mail.hasSelection
+	);
+	const selectedCount = $derived(mail.selectedMessageIds.size);
 </script>
 
 <div class="flex min-w-0 flex-1 items-center gap-2">
-	{#if ctx.onBack && threadId && !mail.hasSelection}
+	{#if mobileListSelecting}
+		<button
+			type="button"
+			class="shrink-0 text-sm font-medium text-accent md:hidden"
+			onclick={() => mail.clearSelection()}
+		>
+			Cancel
+		</button>
+		<h2 class="z-type-pane-title min-w-0 flex-1 truncate text-sm md:hidden">
+			{selectedCount} selected
+		</h2>
+	{:else if ctx.onBack && threadId && !mail.hasSelection}
 		<IconButton label="Back to list" class="md:hidden" onclick={ctx.onBack}>
 			<ArrowLeft class="size-5" />
 		</IconButton>
@@ -39,7 +54,7 @@
 
 
 
-	{#if ctx.mailboxRouteId && !threadId && !mail.hasSelection}
+	{#if ctx.mailboxRouteId && !threadId && !mail.hasSelection && !mobileListSelecting}
 		<label class="min-w-0 flex-1 md:hidden">
 			<span class="sr-only">Folder</span>
 			<select
