@@ -2,9 +2,15 @@
 import { clientsClaim } from 'workbox-core';
 import { precacheAndRoute } from 'workbox-precaching';
 
-declare const self: ServiceWorkerGlobalScope;
+declare const self: ServiceWorkerGlobalScope & {
+	__WB_MANIFEST?: Array<string | { url: string; revision?: string | null }>;
+};
 
-precacheAndRoute(self.__WB_MANIFEST);
+const precacheManifest = self.__WB_MANIFEST;
+if (Array.isArray(precacheManifest)) {
+	precacheAndRoute(precacheManifest);
+}
+
 clientsClaim();
 
 interface PushPayload {

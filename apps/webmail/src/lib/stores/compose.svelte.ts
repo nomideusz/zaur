@@ -103,7 +103,7 @@ class ComposeStore {
 	private serverDraftTimer: ReturnType<typeof setTimeout> | null = null;
 	private pendingSend: PendingSend | null = null;
 
-	get isComposeEmpty() {
+	isComposeEmpty = $derived.by(() => {
 		const bodyText = this.body.trim();
 		const signatureText = settings.useSignature ? settings.signature.trim() : '';
 		const isBodyEmpty = bodyText === '' || bodyText === signatureText;
@@ -116,19 +116,18 @@ class ComposeStore {
 			!this.attachments.length &&
 			isBodyEmpty
 		);
-	}
+	});
 
-	get hasUploadingAttachments() {
-		return this.attachments.some((attachment) => attachment.uploading);
-	}
+	hasUploadingAttachments = $derived.by(() =>
+		this.attachments.some((attachment) => attachment.uploading)
+	);
 
-	get canSend() {
-		return (
+	canSend = $derived.by(
+		() =>
 			!this.isSending &&
 			!this.hasUploadingAttachments &&
 			parseAddressList(this.to).length > 0
-		);
-	}
+	);
 
 	startNew() {
 		this.resetComposeFields();
