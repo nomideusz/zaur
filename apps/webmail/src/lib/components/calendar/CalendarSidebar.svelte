@@ -1,7 +1,6 @@
 <script lang="ts">
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
-import Settings from '$lib/components/icons/Settings.svelte';
-	import { page } from '$app/stores';
+	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -11,8 +10,8 @@ import Settings from '$lib/components/icons/Settings.svelte';
 
 <aside
 	class={cn(
-		'm-3 mr-0 flex min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden rounded-lg bg-surface-raised/90 shadow-sm',
-		!hideBorders && 'border border-border'
+		'z-mail-pane-surface flex min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden',
+		!hideBorders && 'border-r border-border'
 	)}
 	style="view-transition-name: calendar-sidebar;"
 	aria-label="Calendars"
@@ -76,20 +75,5 @@ import Settings from '$lib/components/icons/Settings.svelte';
 		{/if}
 	</nav>
 
-	{#if !settings.hideCalendarSidebarSettings}
-		<div class={cn('shrink-0 p-2', !hideBorders && 'border-t border-border/80')}>
-			<a
-				href="/settings/calendar"
-				class={cn(
-					'flex items-center gap-2 rounded-md px-3 py-2 text-sm transition-all',
-					$page.url.pathname.startsWith('/settings')
-						? 'bg-accent/10 font-semibold text-fg shadow-sm'
-						: 'text-fg-muted hover:bg-surface-sunken/80 hover:text-fg'
-				)}
-			>
-				<Settings class="size-4 shrink-0" aria-hidden="true" />
-				Settings
-			</a>
-		</div>
-	{/if}
+	<AppSidebarShortcuts />
 </aside>

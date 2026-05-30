@@ -107,10 +107,7 @@ import X from '$lib/components/icons/X.svelte';
 {/snippet}
 
 <aside
-	class={cn(
-		'm-3 hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-surface-raised/95 shadow-sm md:flex',
-		!hideBorders && 'border border-border'
-	)}
+	class="z-mail-pane-surface hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex"
 	style="view-transition-name: contact-detail;"
 	aria-label="Contact details"
 >

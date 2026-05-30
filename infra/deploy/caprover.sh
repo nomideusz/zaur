@@ -19,7 +19,7 @@ webmail)
 register)
 	CAPROVER_APP=register
 	DEF=infra/deploy/register.captain-definition
-	TAR_PATHS=(pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc apps/register)
+	TAR_PATHS=(pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc packages/ui apps/register)
 	;;
 esac
 

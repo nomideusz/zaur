@@ -31,7 +31,7 @@ import Search from '$lib/components/icons/Search.svelte';
 		onMailRoute && !!$page.params.threadId && !mail.hasSelection
 	);
 	const showMailContext = $derived(onMailRoute && shellHeader.mail !== null);
-	const showToolSwitcher = $derived(!onMailRoute && !onSettingsRoute);
+	const showToolSwitcher = $derived(!onSettingsRoute && (!onMailRoute || !mobileReadingThread));
 	const showMobileMailSearch = $derived(
 		showMailContext && !settings.hideHeaderSearch && !mobileReadingThread
 	);

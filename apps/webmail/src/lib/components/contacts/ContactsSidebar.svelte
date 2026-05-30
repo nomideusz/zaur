@@ -1,8 +1,7 @@
 <script lang="ts">
-	import Settings from '$lib/components/icons/Settings.svelte';
-import UserPlus from '$lib/components/icons/UserPlus.svelte';
-	import { page } from '$app/stores';
+	import UserPlus from '$lib/components/icons/UserPlus.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 
@@ -23,8 +22,8 @@ import UserPlus from '$lib/components/icons/UserPlus.svelte';
 
 <aside
 	class={cn(
-		'm-3 mr-0 hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden rounded-lg bg-surface-raised/90 shadow-sm md:flex',
-		!hideBorders && 'border border-border'
+		'z-mail-pane-surface hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden md:flex',
+		!hideBorders && 'border-r border-border'
 	)}
 	style="view-transition-name: contacts-sidebar;"
 	aria-label="Contacts navigation"
@@ -48,11 +47,11 @@ import UserPlus from '$lib/components/icons/UserPlus.svelte';
 				<button
 					type="button"
 					class={cn(
-						'flex w-full items-center justify-between rounded-lg px-3 text-sm transition-all',
+						'flex w-full items-center justify-between rounded-sm px-3 text-sm transition-colors',
 						settings.compactContactsPage ? 'min-h-9 py-2' : 'min-h-10 py-2.5',
 						selectedLetter === null
-							? 'bg-accent/10 font-semibold text-fg shadow-sm'
-							: 'text-fg-muted hover:bg-surface-sunken/80 hover:text-fg'
+							? 'z-surface-active font-medium'
+							: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
 					)}
 					onclick={() => onSelectLetter(null)}
 				>
@@ -78,20 +77,7 @@ import UserPlus from '$lib/components/icons/UserPlus.svelte';
 			<UserPlus class="size-4 shrink-0" aria-hidden="true" />
 			Add contact
 		</Button>
-		{#if !settings.hideContactsHeaderSettings}
-			<a
-				href="/settings/account"
-				class={cn(
-					'flex items-center gap-2 rounded-lg px-3 text-sm transition-all',
-					settings.compactContactsPage ? 'min-h-9 py-2' : 'min-h-10 py-2.5',
-					$page.url.pathname.startsWith('/settings')
-						? 'bg-accent/10 font-semibold text-fg shadow-sm'
-						: 'text-fg-muted hover:bg-surface-sunken/80 hover:text-fg'
-				)}
-			>
-				<Settings class="size-4 shrink-0" aria-hidden="true" />
-				Settings
-			</a>
-		{/if}
 	</div>
+
+	<AppSidebarShortcuts />
 </aside>

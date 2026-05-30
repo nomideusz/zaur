@@ -32,7 +32,7 @@ import Users from '$lib/components/icons/Users.svelte';
 	]);
 </script>
 
-<nav aria-label="Tools" class="flex items-center gap-1">
+<nav aria-label="Tools" class="ml-1 flex items-center gap-0.5 border-l border-border/70 pl-2">
 	{#each tools as tool}
 		{@const Icon = tool.icon}
 		{@const isActive = tool.active($page.url.pathname)}

@@ -167,9 +167,11 @@ import Users from '$lib/components/icons/Users.svelte';
 
 <section
 	class={cn(
-		'm-2 flex min-h-0 w-[calc(100%-1rem)] max-w-none flex-1 shrink-0 flex-col overflow-hidden rounded-lg bg-surface-raised/90 shadow-sm md:m-3 md:mr-0 md:w-(--width-list) md:max-w-(--width-list)',
-		!hideBorders && 'border border-border',
-		selectedEmail ? 'hidden md:flex' : 'flex'
+		'z-mail-pane-surface flex min-h-0 min-w-0 flex-col overflow-hidden',
+		selectedEmail
+			? 'hidden md:flex md:w-(--width-list) md:max-w-(--width-list) md:flex-none'
+			: 'flex flex-1',
+		!hideBorders && selectedEmail && 'md:border-r md:border-border'
 	)}
 	style="view-transition-name: contacts-list;"
 	aria-label="Contacts list"
@@ -204,8 +206,8 @@ import Users from '$lib/components/icons/Users.svelte';
 		{#if showAddForm}
 			<form
 				class={cn(
-					'grid border border-border bg-surface-raised shadow-sm sm:grid-cols-2',
-					settings.compactContactsAddForm ? 'mb-2 gap-2 rounded-lg p-3' : 'mb-3 gap-3 rounded-xl p-4'
+					'grid border-b border-border bg-surface-sunken/40 sm:grid-cols-2',
+					settings.compactContactsAddForm ? 'mb-2 gap-2 p-3' : 'mb-3 gap-3 p-4'
 				)}
 				onsubmit={addContact}
 			>
@@ -289,38 +291,28 @@ import Users from '$lib/components/icons/Users.svelte';
 
 		<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 		{#if contacts.length}
-			<div
-				class={cn(
-					settings.compactContactsList ? 'space-y-3 p-2' : 'space-y-4 p-3',
-					showLetterNav && 'md:pr-12'
-				)}
-			>
+			<div class={cn(showLetterNav && 'md:pr-12')}>
 				{#each groupedContacts as [letter, group] (letter)}
 					<section>
 						{#if !settings.hideContactGroupLetters}
 							<h3
 								class={cn(
-									'sticky top-0 z-[1] mb-1 bg-surface/95 px-2 py-1.5 font-semibold text-fg-muted backdrop-blur-sm',
-									settings.compactContactsList ? 'text-xs' : 'text-sm'
+									'sticky top-0 z-[1] bg-surface/95 px-4 py-1.5 font-medium uppercase tracking-wide text-fg-subtle backdrop-blur-sm',
+									settings.compactContactsList ? 'text-[10px]' : 'text-xs'
 								)}
 							>
 								{letter}
 							</h3>
 						{/if}
-						<ul
-							class={cn(
-								'overflow-hidden rounded-xl border border-border bg-surface-raised/90 shadow-sm',
-								!hideBorders && 'divide-y divide-border'
-							)}
-						>
+						<ul class={cn(!hideBorders && !settings.hideListRowDividers && 'divide-y divide-border')}>
 							{#each group as contact (contact.email)}
-								<li class="group relative">
+								<li>
 									<button
 										type="button"
 										class={cn(
-											'flex w-full items-center gap-3 text-left transition-all hover:bg-surface-sunken/80',
-											settings.compactContactsList ? 'min-h-11 px-3 py-2.5' : 'min-h-14 px-4 py-3.5',
-											selectedEmail === contact.email && 'bg-accent/10 shadow-sm'
+											'z-list-row flex w-full items-center gap-3 px-4 text-left transition-colors hover:bg-surface-sunken/60',
+											settings.compactContactsList ? 'min-h-11 py-2' : 'py-2.5',
+											selectedEmail === contact.email && 'z-list-row--current'
 										)}
 										aria-current={selectedEmail === contact.email ? 'true' : undefined}
 										onclick={() => selectContact(contact.email)}

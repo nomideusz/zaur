@@ -60,9 +60,12 @@ import Plus from '$lib/components/icons/Plus.svelte';
 <svelte:window onclick={() => (calendarsOpen = false)} onkeydown={onCalendarsKeydown} />
 
 <section
-	class={cn(
-		'm-2 flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden rounded-lg bg-surface-raised/95 shadow-sm md:m-3 md:mr-0',
-		!hideBorders && 'border border-border'
+		class={cn(
+		'z-mail-pane-surface flex min-h-0 min-w-0 flex-col overflow-hidden',
+		calendar.selectedEvent ? 'hidden md:flex md:flex-1' : 'flex flex-1',
+		!hideBorders &&
+			(calendar.selectedEvent || !settings.hideCalendarEmptyEventPanel) &&
+			'md:border-r md:border-border'
 	)}
 	style="view-transition-name: calendar-grid;"
 	aria-label="Month view"
