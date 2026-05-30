@@ -164,7 +164,7 @@ let readEverStorageKey = $state<string | null>(null);
 	}
 
 	const traditionalView = $derived(isTraditionalMailView(settings.mailViewMode));
-	const listExpanded = $derived(!traditionalView && (expanded || mail.hasSelection));
+	const listExpanded = $derived(!traditionalView && expanded);
 	const sectionMode = $derived(
 		!!mailboxRouteId && usesSectionedMessageList(settings.mailViewMode)
 	);
