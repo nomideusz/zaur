@@ -10,6 +10,7 @@
 		ariaExpanded?: boolean;
 		ariaControls?: string;
 		ariaHaspopup?: 'menu' | 'listbox' | 'dialog' | 'true';
+		ref?: HTMLButtonElement | null;
 	}
 
 	let {
@@ -19,11 +20,13 @@
 		onclick,
 		ariaExpanded,
 		ariaControls,
-		ariaHaspopup
+		ariaHaspopup,
+		ref = $bindable(null)
 	}: Props = $props();
 </script>
 
 <button
+	bind:this={ref}
 	type="button"
 	class={cn('z-btn-ghost min-h-10 min-w-10 cursor-pointer p-2.5', className)}
 	aria-label={label}

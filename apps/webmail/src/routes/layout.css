@@ -305,6 +305,8 @@
 
 	.z-overflow-menu--fixed {
 		position: fixed;
+		top: auto;
+		left: auto;
 		right: auto;
 		margin: 0;
 		z-index: 60;

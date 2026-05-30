@@ -266,28 +266,91 @@
 	{/if}
 {/snippet}
 
-{#snippet activeContent()}
-	<div class="z-list-text flex min-w-0 flex-1 flex-col overflow-hidden">
-		<div class="mt-0.5 flex min-w-0 flex-1 items-center gap-1.5">
-			{#if settings.subjectOnlyList && settings.showStarsInList && message.starred}
-				<Star
-					class="size-3.5 shrink-0 fill-star text-star md:hidden"
-					aria-label="Starred"
-				/>
-			{/if}
-			<span class={activeSubjectClass}>
-				{displaySubject}
-			</span>
-			{#if settings.showAttachmentIcons && message.hasAttachment}
-				<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
-			{/if}
-			{#if !settings.subjectOnlyList && settings.showStarsInList && message.starred}
-				<Star
-					class="size-3.5 shrink-0 fill-star text-star md:hidden"
-					aria-label="Starred"
-				/>
-			{/if}
+{#snippet activeSubjectLine()}
+	<div class="mt-0.5 flex items-center gap-1.5">
+		{#if settings.showStarsInList && message.starred}
+			<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
+		{/if}
+		<span class={activeSubjectClass}>{displaySubject}</span>
+		{#if settings.showAttachmentIcons && message.hasAttachment}
+			<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
+		{/if}
+	</div>
+{/snippet}
+
+{#snippet activePreviewSlot()}
+	{#if mailboxRouteId}
+		<div class="z-type-list-preview mt-0.5 flex items-center max-md:hidden">
+			<MessageListActiveActions
+				{message}
+				{mailboxRouteId}
+				onMenuOpenChange={(open) => {
+					listMenuOpen = open;
+				}}
+			/>
 		</div>
+	{/if}
+	{#if settings.showListPreview}
+		<p class="z-type-list-preview invisible select-none {mailboxRouteId ? 'md:hidden' : ''}" aria-hidden="true">
+			&#8203;
+		</p>
+	{/if}
+{/snippet}
+
+{#snippet activeContent()}
+	<div class="z-list-text min-w-0 flex-1 overflow-hidden">
+		{#if settings.subjectOnlyList}
+			<a
+				{href}
+				class="block text-inherit no-underline outline-none"
+				aria-current="page"
+				aria-label={messageAriaLabel}
+				title={messageAriaLabel}
+				style="view-transition-name: message-{message.id};"
+				onclick={handleSelect}
+				onkeydown={handleSelectKey}
+			>
+				<div class="flex items-baseline justify-between gap-2">
+					<div class="mt-0.5 flex min-w-0 flex-1 items-center gap-1.5">
+						{#if settings.showStarsInList && message.starred}
+							<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
+						{/if}
+						<span class={activeSubjectClass}>{displaySubject}</span>
+						{#if settings.showAttachmentIcons && message.hasAttachment}
+							<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
+						{/if}
+					</div>
+					{#if settings.showListTimestamps}
+						<span class="z-type-list-time">{when}</span>
+					{/if}
+				</div>
+			</a>
+			{#if settings.showListPreview || mailboxRouteId}
+				{@render activePreviewSlot()}
+			{/if}
+		{:else}
+			<a
+				{href}
+				class="block text-inherit no-underline outline-none"
+				aria-current="page"
+				aria-label={messageAriaLabel}
+				title={messageAriaLabel}
+				style="view-transition-name: message-{message.id};"
+				onclick={handleSelect}
+				onkeydown={handleSelectKey}
+			>
+				<div class="flex items-baseline justify-between gap-2">
+					<span class="z-type-list-sender invisible select-none" aria-hidden="true">{senderLabel || '​'}</span>
+					{#if settings.showListTimestamps}
+						<span class="z-type-list-time">{when}</span>
+					{/if}
+				</div>
+				{@render activeSubjectLine()}
+			</a>
+			{#if settings.showListPreview || mailboxRouteId}
+				{@render activePreviewSlot()}
+			{/if}
+		{/if}
 	</div>
 {/snippet}
 
@@ -369,35 +432,8 @@
 		>
 			{@render listMarker()}
 			{#if showActiveCompact}
-				<div class="flex min-w-0 flex-1 flex-col gap-0.5">
-					<a
-						{href}
-						class="flex min-w-0 items-center gap-2 overflow-hidden text-inherit no-underline outline-none"
-						aria-current="page"
-						aria-label={messageAriaLabel}
-						title={messageAriaLabel}
-						style="view-transition-name: message-{message.id};"
-						onclick={handleSelect}
-						onkeydown={handleSelectKey}
-					>
-						{@render activeContent()}
-						{#if settings.showListTimestamps}
-							<span class="z-type-list-time shrink-0 md:hidden">{when}</span>
-						{/if}
-					</a>
-					{#if mailboxRouteId}
-						<div class="z-list-line--meta max-md:hidden flex items-center">
-							<MessageListActiveActions
-								{message}
-								{mailboxRouteId}
-								onMenuOpenChange={(open) => {
-									listMenuOpen = open;
-								}}
-							/>
-						</div>
-					{:else if settings.showListPreview}
-						<div class="z-list-line--meta" aria-hidden="true"></div>
-					{/if}
+				<div class="flex min-w-0 flex-1 items-start gap-3">
+					{@render activeContent()}
 				</div>
 			{:else}
 				<a

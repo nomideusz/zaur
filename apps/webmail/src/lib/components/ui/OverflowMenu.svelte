@@ -30,6 +30,7 @@
 
 	let open = $state(false);
 	let root = $state<HTMLDivElement | null>(null);
+	let triggerEl = $state<HTMLButtonElement | null>(null);
 	let menuEl = $state<HTMLDivElement | null>(null);
 	let resolvedPlacement = $state<'bottom' | 'top'>('bottom');
 	let menuStyle = $state('');
@@ -61,33 +62,30 @@
 	}
 
 	function updateMenuPosition() {
-		if (!browser || !root || !menuEl) return;
+		if (!browser || !triggerEl || !menuEl) return;
 
-		const trigger = root.querySelector('button');
-		if (!trigger) return;
-
-		const nextPlacement = resolvePlacement(trigger, menuEl);
+		const nextPlacement = resolvePlacement(triggerEl, menuEl);
 		resolvedPlacement = nextPlacement;
 
-		const rect = trigger.getBoundingClientRect();
+		const rect = triggerEl.getBoundingClientRect();
 		const menuRect = menuEl.getBoundingClientRect();
 		const menuHeight = menuRect.height || 240;
-		const menuWidth = menuRect.width || 208;
+		const menuWidth = menuRect.width || menuEl.offsetWidth || 208;
 		const margin = 8;
 
 		let top =
 			nextPlacement === 'top' ? rect.top - menuHeight - margin : rect.bottom + margin;
-		let left = rect.right - menuWidth;
+		const right = Math.max(margin, window.innerWidth - rect.right);
 
-		left = Math.max(margin, Math.min(left, window.innerWidth - menuWidth - margin));
 		top = Math.max(margin, Math.min(top, window.innerHeight - menuHeight - margin));
 
-		menuStyle = `top:${top}px;left:${left}px;`;
+		menuStyle = `top:${top}px;right:${right}px;left:auto;`;
 	}
 
 	function scheduleMenuPosition() {
 		requestAnimationFrame(() => {
 			updateMenuPosition();
+			requestAnimationFrame(updateMenuPosition);
 			requestAnimationFrame(updateMenuPosition);
 		});
 	}
@@ -114,6 +112,8 @@
 	$effect(() => {
 		if (!open || !browser) return;
 
+		scheduleMenuPosition();
+
 		const onViewportChange = () => updateMenuPosition();
 		window.addEventListener('resize', onViewportChange);
 		window.addEventListener('scroll', onViewportChange, true);
@@ -130,6 +130,7 @@
 
 <div bind:this={root} class={cn('relative shrink-0', className)}>
 	<IconButton
+		bind:ref={triggerEl}
 		{label}
 		class="!min-h-8 !min-w-8 !p-1.5"
 		ariaExpanded={open}
