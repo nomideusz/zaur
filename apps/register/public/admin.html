@@ -17,9 +17,9 @@
     </div>
   </header>
 
-  <main class="z-site-main" id="main-content">
-    <div class="z-admin-layout z-stack-lg">
-      <div id="login-container" class="z-card z-card__body z-admin-login">
+  <main class="z-site-main z-admin-main--login" id="main-content">
+    <div id="login-container" class="z-admin-login-wrap">
+      <div class="z-card z-card__body">
         <h2 class="z-type-title" style="font-size: 1.125rem;">Admin sign in</h2>
         <div class="z-alert z-alert--error" id="login-error" role="alert"></div>
         <form id="login-form" class="z-mt-4">
@@ -30,89 +30,89 @@
           <button type="submit" class="z-btn-primary z-btn-block" id="login-submit">Sign in</button>
         </form>
       </div>
+    </div>
 
-      <div id="dashboard-container" class="z-dashboard z-hidden">
-        <div class="z-page-intro">
-          <h1 class="z-type-title">Invitations</h1>
-          <p class="z-type-lead">Send magic links to personal emails. Users choose their ZAUR address when they register.</p>
+    <div id="dashboard-container" class="z-admin-layout z-dashboard z-stack-lg z-hidden">
+      <div class="z-page-intro">
+        <h1 class="z-type-title">Invitations</h1>
+        <p class="z-type-lead">Send magic links to personal emails. Users choose their ZAUR address when they register.</p>
+      </div>
+
+      <div class="z-stat-grid z-mb-6">
+        <div class="z-card z-stat-card">
+          <span class="z-type-label">Total sent</span>
+          <span class="z-stat-card__value" id="stat-total">0</span>
+        </div>
+        <div class="z-card z-stat-card">
+          <span class="z-type-label">Pending</span>
+          <span class="z-stat-card__value z-stat-card__value--success" id="stat-unused">0</span>
+        </div>
+        <div class="z-card z-stat-card">
+          <span class="z-type-label">Registered</span>
+          <span class="z-stat-card__value z-stat-card__value--warning" id="stat-used">0</span>
+        </div>
+        <div class="z-card z-stat-card">
+          <span class="z-type-label">Expired / revoked</span>
+          <span class="z-stat-card__value z-stat-card__value--danger" id="stat-revoked">0</span>
+        </div>
+      </div>
+
+      <div class="z-stack-lg">
+        <div class="z-card z-card__body">
+          <h3 class="z-type-title" style="font-size: 1.125rem;">Send invitation</h3>
+          <p class="z-type-lead z-mb-4" id="invite-email-hint">Enter an email address and we’ll send a registration link.</p>
+          <div class="z-alert z-alert--error" id="generate-error" role="alert"></div>
+          <div class="z-alert z-alert--success" id="generate-success" role="alert"></div>
+          <form id="generate-form" class="z-stack">
+            <div class="z-field" style="margin-bottom: 0;">
+              <label for="invite-email" class="z-field-label">Email address</label>
+              <input type="email" id="invite-email" name="email" class="z-input" placeholder="user@gmail.com" autocomplete="email" required autofocus>
+            </div>
+            <details class="z-details">
+              <summary>Advanced options</summary>
+              <label for="invite-expires" class="z-field-label">Link valid for (hours)</label>
+              <input type="number" id="invite-expires" name="expiresInHours" class="z-input" min="1" max="720" value="72">
+            </details>
+            <button type="submit" class="z-btn-primary z-btn-block" id="generate-submit">Send invitation</button>
+          </form>
         </div>
 
-        <div class="z-stat-grid z-mb-6">
-          <div class="z-card z-stat-card">
-            <span class="z-type-label">Total sent</span>
-            <span class="z-stat-card__value" id="stat-total">0</span>
+        <div class="z-card z-card__body">
+          <div class="z-section-head z-mb-4">
+            <div>
+              <h3 class="z-type-title">Provisioning audit</h3>
+              <p class="z-type-lead">Find accounts that exist only in the directory or only in Stalwart.</p>
+            </div>
+            <button type="button" class="z-btn-ghost" id="run-audit-btn">Run audit</button>
           </div>
-          <div class="z-card z-stat-card">
-            <span class="z-type-label">Pending</span>
-            <span class="z-stat-card__value z-stat-card__value--success" id="stat-unused">0</span>
-          </div>
-          <div class="z-card z-stat-card">
-            <span class="z-type-label">Registered</span>
-            <span class="z-stat-card__value z-stat-card__value--warning" id="stat-used">0</span>
-          </div>
-          <div class="z-card z-stat-card">
-            <span class="z-type-label">Expired / revoked</span>
-            <span class="z-stat-card__value z-stat-card__value--danger" id="stat-revoked">0</span>
-          </div>
+          <div class="z-alert z-alert--error" id="audit-error" role="alert"></div>
+          <div class="z-alert z-alert--success" id="audit-success" role="alert"></div>
+          <div id="audit-summary" class="z-audit-grid"></div>
+          <div id="audit-results" class="z-audit-results"></div>
         </div>
 
-        <div class="z-stack-lg">
-          <div class="z-card z-card__body">
-            <h3 class="z-type-title" style="font-size: 1.125rem;">Send invitation</h3>
-            <p class="z-type-lead z-mb-4" id="invite-email-hint">Enter an email address and we’ll send a registration link.</p>
-            <div class="z-alert z-alert--error" id="generate-error" role="alert"></div>
-            <div class="z-alert z-alert--success" id="generate-success" role="alert"></div>
-            <form id="generate-form" class="z-stack">
-              <div class="z-field" style="margin-bottom: 0;">
-                <label for="invite-email" class="z-field-label">Email address</label>
-                <input type="email" id="invite-email" name="email" class="z-input" placeholder="user@gmail.com" autocomplete="email" required autofocus>
-              </div>
-              <details class="z-details">
-                <summary>Advanced options</summary>
-                <label for="invite-expires" class="z-field-label">Link valid for (hours)</label>
-                <input type="number" id="invite-expires" name="expiresInHours" class="z-input" min="1" max="720" value="72">
-              </details>
-              <button type="submit" class="z-btn-primary z-btn-block" id="generate-submit">Send invitation</button>
-            </form>
+        <div class="z-card z-card__body">
+          <h3 class="z-type-title z-mb-4">Sent invitations</h3>
+          <div class="z-field">
+            <input type="text" id="table-filter" class="z-input" placeholder="Filter by recovery or mailbox email…" autocomplete="off">
           </div>
-
-          <div class="z-card z-card__body">
-            <div class="z-section-head z-mb-4">
-              <div>
-                <h3 class="z-type-title">Provisioning audit</h3>
-                <p class="z-type-lead">Find accounts that exist only in the directory or only in Stalwart.</p>
-              </div>
-              <button type="button" class="z-btn-ghost" id="run-audit-btn">Run audit</button>
-            </div>
-            <div class="z-alert z-alert--error" id="audit-error" role="alert"></div>
-            <div class="z-alert z-alert--success" id="audit-success" role="alert"></div>
-            <div id="audit-summary" class="z-audit-grid"></div>
-            <div id="audit-results" class="z-audit-results"></div>
-          </div>
-
-          <div class="z-card z-card__body">
-            <h3 class="z-type-title z-mb-4">Sent invitations</h3>
-            <div class="z-field">
-              <input type="text" id="table-filter" class="z-input" placeholder="Filter by recovery or mailbox email…" autocomplete="off">
-            </div>
-            <div class="z-table-scroll">
-              <table class="z-table" id="invites-table">
-                <thead>
-                  <tr>
-                    <th>Recovery email</th>
-                    <th>Status</th>
-                    <th>Sent</th>
-                    <th>Mailbox</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="invites-table-body">
-                  <tr>
-                    <td colspan="5" class="z-text-center z-text-muted" style="padding: 1.5rem;">Loading invitations…</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+          <div class="z-table-scroll">
+            <table class="z-table" id="invites-table">
+              <thead>
+                <tr>
+                  <th>Recovery email</th>
+                  <th>Status</th>
+                  <th>Sent</th>
+                  <th>Mailbox</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="invites-table-body">
+                <tr>
+                  <td colspan="5" class="z-text-center z-text-muted" style="padding: 1.5rem;">Loading invitations…</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </div>
