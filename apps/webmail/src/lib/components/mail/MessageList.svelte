@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import AlertCircle from '$lib/components/icons/AlertCircle.svelte';
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import Inbox from '$lib/components/icons/Inbox.svelte';
@@ -11,9 +12,11 @@
 	import MessageListItem from './MessageListItem.svelte';
 	import MessageListHeader from './MessageListHeader.svelte';
 	import MessageListMobileBar from './MessageListMobileBar.svelte';
+	import { auth } from '$lib/stores/auth.svelte';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { getCachedMessagePreviews } from '$lib/db/recent-threads';
 	import type { MessagePreview } from '$lib/types/mail';
 	import { cn } from '$lib/utils/cn';
 
@@ -60,6 +63,7 @@
 	}: Props = $props();
 
 	let loadSentinel = $state<HTMLDivElement | null>(null);
+	let sectionMessagesByFolder = $state<Record<string, MessagePreview[]>>({});
 
 	const activeThreadId = $derived($page.params.threadId);
 	const searchReturnTo = $derived.by(() => {
@@ -147,17 +151,107 @@
 	}
 
 	const listExpanded = $derived(expanded || mail.hasSelection);
+	const sectionMode = $derived(!!mailboxRouteId && !settings.traditionalMailboxView);
 	const bulkSelectEnabled = $derived(!!mailboxRouteId && settings.showBulkSelect);
-	const showListHeader = $derived(bulkSelectEnabled && mail.hasSelection);
+	const showListHeader = $derived(!sectionMode && bulkSelectEnabled && mail.hasSelection);
 	const showMobileSelectionBar = $derived(
 		!!mailboxRouteId && mail.hasSelection && supportsMobileListGestures()
 	);
+	const sectionRoleOrder = new Map([
+		['inbox', 0],
+		['unread', 1],
+		['read', 2],
+		['sent', 1],
+		['drafts', 2]
+	]);
+	const orderedFolders = $derived.by(() =>
+		mail.mailboxes
+			.filter((folder) => folder.id !== 'unread' && folder.id !== 'read')
+			.sort((a, b) => {
+				const aRank = sectionRoleOrder.get(a.role ?? '') ?? 99;
+				const bRank = sectionRoleOrder.get(b.role ?? '') ?? 99;
+				return aRank - bRank || a.name.localeCompare(b.name);
+			})
+	);
+	const folderSections = $derived.by(() =>
+		[
+			{
+				id: 'unread',
+				name: 'Unread Messages',
+				routeId: mailboxRouteId ?? 'inbox',
+				messages: messages.filter((message) => message.unread).slice(0, 8)
+			},
+			{
+				id: 'read',
+				name: 'Read Messages',
+				routeId: mailboxRouteId ?? 'inbox',
+				messages: messages.filter((message) => !message.unread).slice(0, 8)
+			},
+			...orderedFolders.map((folder) => ({
+				id: folder.id,
+				name: folder.name,
+				routeId: folder.id,
+				messages: sectionMessagesByFolder[folder.id] ?? []
+			}))
+		]
+	);
+
+	$effect(() => {
+		sectionMode;
+		mailboxRouteId;
+		sectionMessagesByFolder = {};
+	});
+
+	$effect(() => {
+		const client = auth.client;
+		const routeId = mailboxRouteId;
+		const folders = orderedFolders;
+		const useSectionMode = sectionMode;
+		messages;
+
+		if (!useSectionMode || !client || !routeId || folders.length === 0) {
+			sectionMessagesByFolder = {};
+			return;
+		}
+
+		let cancelled = false;
+		const accountId = client.getAccountId();
+
+		void Promise.all(
+			folders.map(async (folder) => {
+				if (folder.id === routeId) return [folder.id, messages.slice(0, 8)] as const;
+				const cached = await getCachedMessagePreviews(accountId, folder.id, 8);
+				return [folder.id, cached] as const;
+			})
+		).then((entries) => {
+			if (cancelled) return;
+			sectionMessagesByFolder = Object.fromEntries(entries);
+		});
+
+		return () => {
+			cancelled = true;
+		};
+	});
+
+	function sectionMessageHref(message: MessagePreview, folderId: string): string {
+		const params = new URLSearchParams();
+		params.set('messageId', message.id);
+		return `/mail/${folderId}/${message.threadId}?${params.toString()}`;
+	}
+
+	function sectionEmptyText(sectionId: string): string {
+		if (sectionId === 'unread') return 'No new messages.';
+		if (sectionId === 'read') return 'No read messages yet.';
+		return 'No messages yet.';
+	}
 </script>
 
 <section
 	class={cn(
 		'z-mail-pane-surface flex min-h-0 min-w-0 flex-col overflow-hidden',
-		listExpanded ? 'flex-1' : 'w-full md:w-(--width-list) md:max-w-(--width-list) md:flex-none',
+		listExpanded
+			? 'flex-1 md:mx-auto md:w-full md:max-w-5xl'
+			: 'w-full md:w-(--width-list) md:max-w-(--width-list) md:flex-none',
 		hideOnMobile ? (mail.hasSelection ? 'flex' : 'hidden md:flex') : 'flex',
 		!settings.hidePaneBorders && !listExpanded && 'border-r border-border',
 		showMobileSelectionBar && 'z-mail-list--selecting'
@@ -165,6 +259,16 @@
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
+	{#if sectionMode && mailboxRouteId && !showMobileSelectionBar}
+		<div class="z-mail-text-nav">
+			<h1 class="z-mail-text-nav__title">ZAUR Mail</h1>
+			<p class="z-mail-text-nav__label">Folders</p>
+			<div class="z-mail-text-nav__links">
+				<a class="z-mail-text-nav__link" href="/settings/mail">Settings</a>
+			</div>
+		</div>
+	{/if}
+
 	{#if showListHeader}
 		<div class="relative z-10 shrink-0">
 			<MessageListHeader
@@ -200,7 +304,7 @@
 					</Button>
 				{/if}
 			</div>
-		{:else if messages.length === 0}
+		{:else if !sectionMode && messages.length === 0}
 			<div
 				class={cn(
 					'flex flex-col items-center text-center',
@@ -237,25 +341,67 @@
 				{/if}
 			</div>
 		{:else}
-			{#each messages as message (message.id)}
-				<MessageListItem
-					{message}
-					href={messageHref(message)}
-					active={activeMessageId === message.id}
-					bulkSelectEnabled={bulkSelectEnabled}
-					selected={mailboxRouteId ? selectedIds.includes(message.id) : false}
-					{mailboxRouteId}
-					enableMobileGestures={bulkSelectEnabled}
-					onSelect={
-						mailboxRouteId
-							? (modifiers) =>
-									mail.selectMessageAt(message.id, { ...modifiers, activeMessageId })
-							: undefined
-					}
-				/>
-			{/each}
+			{#if sectionMode}
+				<div class="z-mail-folder-sections">
+					{#each folderSections as section (section.id)}
+						<section class="z-mail-folder-section">
+							{#if section.messages.length === 0}
+								<p class="z-mail-folder-section__empty">{sectionEmptyText(section.id)}</p>
+							{:else}
+								<div class="z-mail-folder-section__head">
+									<h2 class="z-mail-folder-section__title">{section.name}</h2>
+								</div>
+								<ul class="z-mail-folder-section__list">
+									{#each section.messages as message, index (message.id)}
+										<li>
+											<a
+												href={sectionMessageHref(message, section.routeId)}
+												class="z-mail-folder-section__message"
+											>
+												<span class="z-mail-folder-section__subject">
+													{message.subject.trim() || '(no subject)'}
+												</span>
+												<span class="z-mail-folder-section__number">
+													{index + 1}
+												</span>
+											</a>
+										</li>
+									{/each}
+								</ul>
+								<div class="z-mail-folder-section__footer">
+									<button
+										type="button"
+										class="z-mail-folder-section__more"
+										onclick={() => goto(`/mail/${section.routeId}`)}
+									>
+										Show more
+									</button>
+								</div>
+							{/if}
+						</section>
+					{/each}
+				</div>
+			{:else}
+				{#each messages as message (message.id)}
+					<MessageListItem
+						{message}
+						href={messageHref(message)}
+						active={activeMessageId === message.id}
+						bulkSelectEnabled={bulkSelectEnabled}
+						selected={mailboxRouteId ? selectedIds.includes(message.id) : false}
+						{mailboxRouteId}
+						enableMobileGestures={bulkSelectEnabled}
+						onSelect={
+							mailboxRouteId
+								? (modifiers) =>
+										mail.selectMessageAt(message.id, { ...modifiers, activeMessageId })
+								: undefined
+						}
+					/>
+				{/each}
+			{/if}
 
-			{#if hasMore && onLoadMore}
+			{#if !sectionMode && hasMore && onLoadMore}
 				<div
 					class={cn(
 						'px-4',

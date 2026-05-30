@@ -171,6 +171,7 @@ const STORAGE = {
 	lastMailbox: 'zaur:last-mailbox',
 	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
 	focusLayoutMode: 'zaur:focus-layout-mode',
+	traditionalMailboxView: 'zaur:traditional-mailbox-view',
 	showReaderListRail: 'zaur:show-reader-list-rail',
 	enableKeyboardShortcuts: 'zaur:enable-keyboard-shortcuts',
 	confirmBeforeDelete: 'zaur:confirm-before-delete',
@@ -222,11 +223,11 @@ const READER_LEADING: Record<ReaderTextSize, string> = {
 /**
  * Reading measure in `em` (relative to the reading text size) so the line length
  * stays locked to a constant number of characters regardless of the chosen size.
- * ~34em ≈ 66 characters, ~40em ≈ 78 characters.
+ * ~40em ≈ 78 characters, ~46em ≈ 90 characters.
  */
 const READER_MEASURE: Record<ReaderWidth, string> = {
-	comfortable: '34em',
-	wide: '40em'
+	comfortable: '40em',
+	wide: '46em'
 };
 
 const READING_FONT: Record<ReadingTypeface, string> = {
@@ -957,6 +958,11 @@ function readFocusLayoutMode(): FocusLayoutMode {
 	return 'adaptive';
 }
 
+function readTraditionalMailboxView(): boolean {
+	if (!browser) return false;
+	return localStorage.getItem(STORAGE.traditionalMailboxView) === 'true';
+}
+
 function readShowReaderListRail(): boolean {
 	if (!browser) return false;
 	return localStorage.getItem(STORAGE.showReaderListRail) === 'true';
@@ -999,8 +1005,10 @@ function readReaderTextSize(): ReaderTextSize {
 }
 
 function readReaderWidth(): ReaderWidth {
-	if (!browser) return 'comfortable';
-	return localStorage.getItem(STORAGE.readerWidth) === 'wide' ? 'wide' : 'comfortable';
+	if (!browser) return 'wide';
+	const stored = localStorage.getItem(STORAGE.readerWidth);
+	if (stored === 'comfortable' || stored === 'wide') return stored;
+	return 'wide';
 }
 
 function readReadingTypeface(): ReadingTypeface {
@@ -1242,6 +1250,7 @@ class SettingsStore {
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	focusLayoutMode = $state<FocusLayoutMode>(readFocusLayoutMode());
+	traditionalMailboxView = $state(readTraditionalMailboxView());
 	showReaderListRail = $state(readShowReaderListRail());
 	enableKeyboardShortcuts = $state(readEnableKeyboardShortcuts());
 	confirmBeforeDelete = $state(readConfirmBeforeDelete());
@@ -2529,6 +2538,13 @@ class SettingsStore {
 		}
 	}
 
+	setTraditionalMailboxView(value: boolean) {
+		this.traditionalMailboxView = value;
+		if (browser) {
+			this.writeStorage(STORAGE.traditionalMailboxView, String(value));
+		}
+	}
+
 	setShowReaderListRail(value: boolean) {
 		this.showReaderListRail = value;
 		if (browser) {
@@ -2769,7 +2785,7 @@ class SettingsStore {
 		this.setHideHeaderSearch(false);
 		this.setHideOfflineIndicator(false);
 		this.setReaderTextSize('normal');
-		this.setReaderWidth('comfortable');
+		this.setReaderWidth('wide');
 		this.setReadingTypeface('sans');
 		this.setReaderCleanView(true);
 		this.setFocusReadingDefault(true);
@@ -2947,11 +2963,12 @@ class SettingsStore {
 		this.setHideListHeader(false);
 		this.setCompactListHeader(false);
 		this.setCompactMobileFolderPicker(false);
+		this.setTraditionalMailboxView(false);
 	}
 
 	resetReadingSettings() {
 		this.setReaderTextSize('normal');
-		this.setReaderWidth('comfortable');
+		this.setReaderWidth('wide');
 		this.setReadingTypeface('sans');
 		this.setReaderCleanView(true);
 		this.setFocusReadingDefault(true);

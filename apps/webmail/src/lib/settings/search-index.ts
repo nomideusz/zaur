@@ -301,6 +301,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/inbox-traditional-mailbox-view",
+		"href": "/settings/inbox",
+		"title": "Traditional mailbox view",
+		"description": ""
+	},
+	{
 		"id": "/settings/inbox-timestamps",
 		"href": "/settings/inbox",
 		"title": "Timestamps",
@@ -535,21 +541,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-contact-actions",
-		"href": "/settings/reading",
-		"title": "Contact actions",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-default-reply-action",
 		"href": "/settings/reading",
 		"title": "Default reply action",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-expand-all-thread-messages",
-		"href": "/settings/reading",
-		"title": "Expand all thread messages",
 		"description": ""
 	},
 	{
@@ -559,27 +553,21 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-hide-blocked-images-banner",
-		"href": "/settings/reading",
-		"title": "Hide blocked-images banner",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-prefer-plain-text",
-		"href": "/settings/reading",
-		"title": "Prefer plain text",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-quick-reply",
-		"href": "/settings/reading",
-		"title": "Quick reply",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-reading-size",
 		"href": "/settings/reading",
 		"title": "Reading size",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-reading-width",
+		"href": "/settings/reading",
+		"title": "Reading width",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-reading-layout",
+		"href": "/settings/reading",
+		"title": "Reading layout",
 		"description": ""
 	},
 	{

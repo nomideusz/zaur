@@ -109,7 +109,6 @@
 			'z-list-row group flex w-full items-start gap-3 px-4 transition-[background-color] duration-150 ease-out',
 			showActiveCompact && 'z-list-row--active-compact',
 			selectionMode && 'cursor-pointer',
-			!settings.hideListRowDividers && 'border-b border-border',
 			settings.compactListRows ? 'py-2' : 'py-2.5',
 			isCurrent && 'z-list-row--current',
 			!isCurrent && 'hover:bg-surface-sunken/60'

@@ -9,6 +9,7 @@
 	import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
 
 	let { children } = $props();
+const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
 
 	$effect(() => {
 		if (auth.isRestoring) return;
@@ -52,7 +53,9 @@
 	</div>
 {:else if auth.isAuthenticated}
 	<div class="flex h-dvh flex-col overflow-hidden">
-		<AppShellHeader />
+		{#if !onMailRoute}
+			<AppShellHeader />
+		{/if}
 		<main id="main-content" class="flex min-h-0 flex-1 flex-col overflow-hidden" tabindex="-1">
 			{@render children()}
 		</main>

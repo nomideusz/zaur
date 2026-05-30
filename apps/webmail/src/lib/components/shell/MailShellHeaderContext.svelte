@@ -4,6 +4,8 @@
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
+import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
+import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import type { MailHeaderContext } from '$lib/stores/shell-header.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -28,6 +30,51 @@
 	const showFolderTitle = $derived(!mail.hasSelection && !settings.hideListHeader);
 	const mobileListSelecting = $derived(
 		!!mailboxRouteId && !threadId && mail.hasSelection
+	);
+	const coreRoleOrder = new Map([
+		['inbox', 0],
+		['sent', 1],
+		['drafts', 2]
+	]);
+	const coreFolders = $derived.by(() =>
+		mail.mailboxes
+			.filter((folder) => coreRoleOrder.has(folder.role ?? ''))
+			.sort((a, b) => {
+				const aRank = coreRoleOrder.get(a.role ?? '') ?? 99;
+				const bRank = coreRoleOrder.get(b.role ?? '') ?? 99;
+				return aRank - bRank;
+			})
+	);
+	const secondaryRoleOrder = new Map([
+		['archive', 0],
+		['junk', 1],
+		['trash', 2]
+	]);
+	const secondaryFolders = $derived.by(() =>
+		mail.mailboxes
+			.filter((folder) => !coreRoleOrder.has(folder.role ?? ''))
+			.sort((a, b) => {
+				const aRank = secondaryRoleOrder.get(a.role ?? '') ?? 99;
+				const bRank = secondaryRoleOrder.get(b.role ?? '') ?? 99;
+				return aRank - bRank || a.name.localeCompare(b.name);
+			})
+	);
+	const activeCoreFolderId = $derived.by(() => {
+		if (!mailboxRouteId) return null;
+		return coreFolders.some((folder) => folder.id === mailboxRouteId) ? mailboxRouteId : null;
+	});
+	const activeSecondaryFolderId = $derived.by(() => {
+		if (!mailboxRouteId) return null;
+		return secondaryFolders.some((folder) => folder.id === mailboxRouteId) ? mailboxRouteId : null;
+	});
+	const showDesktopCoreSwitcher = $derived(
+		!!mailboxRouteId && !mail.hasSelection && !mobileReadingThread && coreFolders.length > 0
+	);
+	const showDesktopMoreFolders = $derived(
+		!!mailboxRouteId && !mail.hasSelection && !mobileReadingThread && secondaryFolders.length > 0
+	);
+	const showDesktopCurrentMailbox = $derived(
+		showFolderTitle && !!mailboxRouteId && !activeCoreFolderId && !mobileReadingThread
 	);
 	const selectedCount = $derived(mail.selectedMessageIds.size);
 	const showMobileFolderPicker = $derived(
@@ -60,8 +107,56 @@
 			</IconButton>
 		{/if}
 
-		{#if showFolderTitle}
-			<h2 class="z-type-pane-title hidden min-w-0 truncate md:block">{displayMailboxName}</h2>
+		{#if showDesktopCurrentMailbox}
+			<h2 class="z-type-pane-title z-mail-core-nav-current hidden min-w-0 truncate md:block">{displayMailboxName}</h2>
+		{/if}
+
+		{#if showDesktopCoreSwitcher}
+			<nav class="z-mail-core-nav hidden min-w-0 items-center md:flex" aria-label="Core folders">
+				{#each coreFolders as folder (folder.id)}
+					{@const isActive = folder.id === activeCoreFolderId}
+					{@const badgeCount = folder.role === 'inbox' ? folder.unread : 0}
+					<button
+						type="button"
+						class={isActive ? 'z-mail-core-nav-item z-mail-core-nav-item--active' : 'z-mail-core-nav-item'}
+						aria-current={isActive ? 'page' : undefined}
+						onclick={() => {
+							if (!isActive) goto(`/mail/${folder.id}`);
+						}}
+					>
+						<span>{folder.name}</span>
+						{#if settings.showFolderUnreadCounts && badgeCount > 0}
+							<span class={isActive ? 'ml-1.5 text-xs tabular-nums text-fg-muted' : 'ml-1.5 text-xs tabular-nums text-fg-subtle'}>
+								{badgeCount}
+							</span>
+						{/if}
+					</button>
+				{/each}
+				{#if showDesktopMoreFolders}
+					<OverflowMenu
+						class="hidden md:block"
+						label="More folders"
+						triggerText="More"
+						menuId="desktop-more-folders-menu"
+						triggerClass={activeSecondaryFolderId
+							? 'z-mail-core-nav-item z-mail-core-nav-item--active z-mail-core-nav-more'
+							: 'z-mail-core-nav-item z-mail-core-nav-more'}
+						menuClass="z-overflow-menu--list"
+					>
+						{#each secondaryFolders as folder (folder.id)}
+							{@const isActive = folder.id === activeSecondaryFolderId}
+							{@const badgeCount = folder.role === 'drafts' ? folder.total : folder.unread}
+							<OverflowMenuItem
+								label={`${folder.name}${
+									settings.showFolderUnreadCounts && badgeCount > 0 ? ` (${badgeCount})` : ''
+								}${isActive ? ' · Current' : ''}`}
+								disabled={isActive}
+								onclick={() => goto(`/mail/${folder.id}`)}
+							/>
+						{/each}
+					</OverflowMenu>
+				{/if}
+			</nav>
 		{/if}
 
 		{#if showMobileFolderPicker && mailboxRouteId}

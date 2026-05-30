@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
+import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import MoreVertical from '$lib/components/icons/MoreVertical.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { OVERFLOW_MENU_CTX, type OverflowMenuContext } from '$lib/components/ui/overflow-menu-context';
@@ -12,6 +13,7 @@
 		label?: string;
 		menuId?: string;
 		placement?: 'bottom' | 'top' | 'auto';
+		triggerText?: string;
 		class?: string;
 		menuClass?: string;
 		triggerClass?: string;
@@ -23,6 +25,7 @@
 		label = 'More actions',
 		menuId = 'overflow-menu',
 		placement = 'bottom',
+		triggerText = '',
 		class: className = '',
 		menuClass = '',
 		triggerClass = '',
@@ -131,17 +134,36 @@
 <svelte:window onclick={handleWindowClick} />
 
 <div bind:this={root} class={cn('relative shrink-0', className)}>
-	<IconButton
-		bind:ref={triggerEl}
-		{label}
-		class={cn('!min-h-8 !min-w-8 !p-1.5', triggerClass)}
-		ariaExpanded={open}
-		ariaControls={menuId}
-		ariaHaspopup="menu"
-		onclick={toggleOpen}
-	>
-		<MoreVertical class="size-5" aria-hidden="true" />
-	</IconButton>
+	{#if triggerText}
+		<button
+			bind:this={triggerEl}
+			type="button"
+			aria-label={label}
+			aria-expanded={open}
+			aria-controls={menuId}
+			aria-haspopup="menu"
+			class={cn(
+				'inline-flex min-h-8 items-center gap-1 rounded-sm px-2.5 py-1.5 text-sm text-fg-muted transition-colors hover:bg-surface-sunken/60 hover:text-fg',
+				triggerClass
+			)}
+			onclick={toggleOpen}
+		>
+			<span>{triggerText}</span>
+			<ChevronDown class="size-4" aria-hidden="true" />
+		</button>
+	{:else}
+		<IconButton
+			bind:ref={triggerEl}
+			{label}
+			class={cn('!min-h-8 !min-w-8 !p-1.5', triggerClass)}
+			ariaExpanded={open}
+			ariaControls={menuId}
+			ariaHaspopup="menu"
+			onclick={toggleOpen}
+		>
+			<MoreVertical class="size-5" aria-hidden="true" />
+		</IconButton>
+	{/if}
 
 	{#if open}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->

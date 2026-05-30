@@ -288,6 +288,8 @@
 	class="z-mail-pane-surface min-h-0 flex-1 overflow-hidden"
 	style="view-transition-name: message-reader;"
 >
+	<h1 class="sr-only">{subject}</h1>
+
 	{#if mail.selectedError}
 		<div
 			class={cn(
@@ -334,15 +336,6 @@
 						)}
 					>
 						<div class="min-w-0 flex-1">
-							<h1
-								class={cn(
-									'z-type-reader-title',
-									settings.compactReaderHeader && 'text-lg md:text-xl'
-								)}
-							>
-								{subject}
-							</h1>
-
 							{#if !settings.hideThreadSummary && !prefersMinimalReaderChrome}
 								<div class="mt-1 flex flex-wrap items-center gap-2 text-xs text-fg-subtle">
 									<span>{thread.length} messages</span>
@@ -382,6 +375,7 @@
 
 			{#each thread as message, index (message.id)}
 				{@const contact = getPrimaryContact(message)}
+				{@const showInlineSubject = thread.length === 1 || message.id === latest?.id}
 				<section
 					class={cn(
 						index > 0 && !settings.hideReaderPaneBorders && 'border-t border-border/70',
@@ -403,114 +397,104 @@
 						>
 						{#if thread.length === 1}
 							<header class="z-reader-chrome z-reader-chrome--bordered">
-								<div class="z-reader-chrome__head">
-									<h1
-										class={cn(
-											'z-type-reader-title min-w-0 flex-1',
-											settings.compactReaderHeader && 'text-lg md:text-xl'
-										)}
-									>
-										{subject}
-									</h1>
-
-									{#if !mail.hasSelection}
-										<div class="z-reader-chrome__actions hidden shrink-0 md:block">
-											<MessageThreadActions
-												{thread}
-												{mailboxRouteId}
-												{onMoved}
-												readerHeader
-											/>
-										</div>
-									{/if}
-								</div>
-
 								<div class="z-reader-chrome__meta">
-								<div class="z-reader-chrome__from flex items-start gap-3">
-									{#if settings.showAvatars}
-										<Avatar
-											name={contact.avatarName}
-											email={contact.avatarEmail}
-											class={cn(
-												settings.compactReaderAvatars ? 'size-8 text-xs' : 'size-9 text-sm'
-											)}
-										/>
-									{/if}
-									<div class="min-w-0 flex-1">
-										<div class="flex items-center gap-1.5">
-											<p class="z-reader-from truncate">{contact.displayName}</p>
-											{#if isExternalSender(contact.email)}
-												<span
-													class="inline-flex shrink-0 items-center gap-1 rounded-sm border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200"
-													title="Sender is outside {userDomain}"
-												>
-													External
-												</span>
+									<div class="z-reader-chrome__from flex items-start gap-3">
+										{#if settings.showAvatars}
+											<Avatar
+												name={contact.avatarName}
+												email={contact.avatarEmail}
+												class={cn(
+													settings.compactReaderAvatars ? 'size-8 text-xs' : 'size-9 text-sm'
+												)}
+											/>
+										{/if}
+										<div class="min-w-0 flex-1">
+											<div class="flex items-center gap-1.5">
+												<p class="z-reader-from truncate">{contact.displayName}</p>
+												{#if isExternalSender(contact.email)}
+													<span
+														class="inline-flex shrink-0 items-center gap-1 rounded-sm border border-amber-200 bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-amber-900 dark:border-amber-900 dark:bg-amber-950 dark:text-amber-200"
+														title="Sender is outside {userDomain}"
+													>
+														External
+													</span>
+												{/if}
+											</div>
+											{#if !settings.hideReaderSenderEmail}
+												{#if contact.email !== contact.displayName && !contact.isMe}
+													<button
+														type="button"
+														class="z-reader-meta mt-0.5 block max-w-full truncate text-left hover:text-accent hover:underline"
+														onclick={() => composeTo(contact.email)}
+													>
+														{contact.email}
+													</button>
+												{:else}
+													<p class="z-reader-meta mt-0.5">{contact.email}</p>
+												{/if}
+											{/if}
+											{#if !settings.hideReaderRecipients && (message.to.length || message.cc.length)}
+												<div class="z-reader-meta mt-1 space-y-0.5">
+													{#if message.to.length}
+														<p class="truncate">
+															To {message.to.map((addr) => addr.name || addr.email).join(', ')}
+														</p>
+													{/if}
+													{#if message.cc.length}
+														<p class="truncate">
+															Cc {message.cc.map((addr) => addr.name || addr.email).join(', ')}
+														</p>
+													{/if}
+												</div>
+											{/if}
+											{#if settings.showReaderContactActions}
+												<div class="mt-2 flex flex-wrap gap-x-3 gap-y-0.5">
+													<button
+														type="button"
+														class="text-xs font-medium text-accent hover:underline"
+														onclick={() => saveContact(contact)}
+													>
+														Save contact
+													</button>
+													<button
+														type="button"
+														class="text-xs text-fg-subtle hover:text-accent hover:underline"
+														onclick={() => copyEmail(contact.email)}
+													>
+														Copy email
+													</button>
+												</div>
 											{/if}
 										</div>
-										{#if !settings.hideReaderSenderEmail}
-											{#if contact.email !== contact.displayName && !contact.isMe}
-												<button
-													type="button"
-													class="z-reader-meta mt-0.5 block max-w-full truncate text-left hover:text-accent hover:underline"
-													onclick={() => composeTo(contact.email)}
-												>
-													{contact.email}
-												</button>
-											{:else}
-												<p class="z-reader-meta mt-0.5">{contact.email}</p>
-											{/if}
-										{/if}
-										{#if !settings.hideReaderRecipients && (message.to.length || message.cc.length)}
-											<div class="z-reader-meta mt-1 space-y-0.5">
-												{#if message.to.length}
-													<p class="truncate">
-														To {message.to.map((addr) => addr.name || addr.email).join(', ')}
-													</p>
-												{/if}
-												{#if message.cc.length}
-													<p class="truncate">
-														Cc {message.cc.map((addr) => addr.name || addr.email).join(', ')}
-													</p>
-												{/if}
-											</div>
-										{/if}
-										{#if settings.showReaderContactActions}
-											<div class="mt-2 flex flex-wrap gap-x-3 gap-y-0.5">
-												<button
-													type="button"
-													class="text-xs font-medium text-accent hover:underline"
-													onclick={() => saveContact(contact)}
-												>
-													Save contact
-												</button>
-												<button
-													type="button"
-													class="text-xs text-fg-subtle hover:text-accent hover:underline"
-													onclick={() => copyEmail(contact.email)}
-												>
-													Copy email
-												</button>
-											</div>
-										{/if}
 									</div>
-								</div>
 
-								{#if (!settings.hideReaderTimestamps || showReadTime) && !prefersMinimalReaderChrome}
-									<div class="z-reader-chrome__time flex flex-col items-end gap-0.5">
-										{#if !settings.hideReaderTimestamps}
-											<time
-												class="z-type-list-time whitespace-nowrap"
-												datetime={message.receivedAt}
-											>
-												{formatWhen(message.receivedAt)}
-											</time>
+									<div class="z-reader-chrome__aside">
+										{#if !mail.hasSelection}
+											<div class="z-reader-chrome__actions hidden shrink-0 md:block">
+												<MessageThreadActions
+													{thread}
+													{mailboxRouteId}
+													{onMoved}
+													readerHeader
+												/>
+											</div>
 										{/if}
-										{#if showReadTime}
-											<span class="text-xs whitespace-nowrap text-fg-subtle">~{readMinutes} min read</span>
+										{#if (!settings.hideReaderTimestamps || showReadTime) && !prefersMinimalReaderChrome}
+											<div class="z-reader-chrome__time flex flex-col items-end gap-0.5">
+												{#if !settings.hideReaderTimestamps}
+													<time
+														class="z-type-list-time whitespace-nowrap"
+														datetime={message.receivedAt}
+													>
+														{formatWhen(message.receivedAt)}
+													</time>
+												{/if}
+												{#if showReadTime}
+													<span class="text-xs whitespace-nowrap text-fg-subtle">~{readMinutes} min read</span>
+												{/if}
+											</div>
 										{/if}
 									</div>
-								{/if}
 								</div>
 							</header>
 						{:else}
@@ -623,6 +607,10 @@
 								settings.compactReaderBody && 'z-reader-content--compact'
 							)}
 						>
+							{#if showInlineSubject}
+								<p class="z-reader-inline-subject">{subject}</p>
+							{/if}
+
 							{#if message.attachments.length}
 								<div class={cn(settings.compactReaderBody ? 'mb-3' : 'mb-4')}>
 									<MessageAttachments attachments={message.attachments} />

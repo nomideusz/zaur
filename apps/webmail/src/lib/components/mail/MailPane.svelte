@@ -2,7 +2,6 @@
 	import { page } from '$app/stores';
 	import type { Snippet } from 'svelte';
 	import { setContext } from 'svelte';
-	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -75,8 +74,6 @@
 			!mail.hasSelection
 	);
 </script>
-
-<MailboxSidebar />
 
 <div
 	class={cn(

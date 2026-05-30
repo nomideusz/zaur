@@ -193,6 +193,9 @@
 			<SettingsRow title="Search" description="Focus sidebar search">
 				<span class="font-mono text-xs text-fg">/</span>
 			</SettingsRow>
+			<SettingsRow title="Go to folder" description="Press g then: i Inbox, s Sent, d Drafts, a Archive, t Trash, j Junk">
+				<span class="font-mono text-xs text-fg">g i · g s · g d · g a · g t · g j</span>
+			</SettingsRow>
 			<SettingsRow title="Next / previous message">
 				<span class="font-mono text-xs text-fg">j · k</span>
 			</SettingsRow>

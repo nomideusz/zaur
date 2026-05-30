@@ -9,6 +9,7 @@
 	import { search } from '$lib/stores/search.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+import { resolveMailboxRouteByShortcut } from '$lib/mail/folder-shortcuts';
 	import { isTypingTarget } from '$lib/utils/keyboard';
 	import type { MessagePreview } from '$lib/types/mail';
 
@@ -129,6 +130,26 @@
 	}
 
 	onMount(() => {
+		let pendingGotoPrefix = false;
+		let pendingGotoPrefixTimer: ReturnType<typeof setTimeout> | null = null;
+
+		function clearGotoPrefix() {
+			pendingGotoPrefix = false;
+			if (pendingGotoPrefixTimer) {
+				clearTimeout(pendingGotoPrefixTimer);
+				pendingGotoPrefixTimer = null;
+			}
+		}
+
+		function armGotoPrefix() {
+			pendingGotoPrefix = true;
+			if (pendingGotoPrefixTimer) clearTimeout(pendingGotoPrefixTimer);
+			pendingGotoPrefixTimer = setTimeout(() => {
+				pendingGotoPrefix = false;
+				pendingGotoPrefixTimer = null;
+			}, 1250);
+		}
+
 		function onKeydown(event: KeyboardEvent) {
 			if (!settings.enableKeyboardShortcuts) return;
 			if (isTypingTarget(event.target)) return;
@@ -157,12 +178,29 @@
 			if (event.key === 'Escape' && mail.hasSelection) {
 				event.preventDefault();
 				mail.clearSelection();
+				clearGotoPrefix();
 				return;
 			}
 
 			if (event.metaKey || event.ctrlKey || event.altKey) return;
 
 			const key = event.key;
+
+			if (pendingGotoPrefix) {
+				const targetRouteId = resolveMailboxRouteByShortcut(mail.mailboxes, key);
+				clearGotoPrefix();
+				if (targetRouteId) {
+					event.preventDefault();
+					goto(`/mail/${targetRouteId}`);
+					return;
+				}
+			}
+
+			if (key === 'g') {
+				event.preventDefault();
+				armGotoPrefix();
+				return;
+			}
 
 			if (key === 'j' || key === 'k') {
 				event.preventDefault();
@@ -229,6 +267,9 @@
 		}
 
 		window.addEventListener('keydown', onKeydown);
-		return () => window.removeEventListener('keydown', onKeydown);
+		return () => {
+			window.removeEventListener('keydown', onKeydown);
+			clearGotoPrefix();
+		};
 	});
 </script>
