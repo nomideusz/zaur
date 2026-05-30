@@ -17,6 +17,7 @@ const {
   validateCaptchaAnswer,
   generateCaptcha,
 } = require('./lib/validation');
+const { getSiteConfig } = require('./lib/site-config');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -94,10 +95,16 @@ const registerDailyLimiter = rateLimit({
 
 app.get('/api/config', (_req, res) => {
   res.json({
-    webmailUrl: process.env.WEBMAIL_URL || 'https://webmail.zaur.app',
-    mailHost: process.env.MAIL_HOST || 'mail.zaur.app',
+    ...getSiteConfig(),
     requiresInvitation: invitations.requiresInvitation(),
   });
+});
+
+app.get('/site-config.js', (_req, res) => {
+  const cfg = getSiteConfig();
+  res.type('application/javascript');
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.send(`window.ZAUR_SITE=${JSON.stringify(cfg)};`);
 });
 
 app.get('/api/invitation', async (req, res) => {

@@ -334,6 +334,46 @@ registerForm.addEventListener('submit', async (e) => {
   }
 });
 
+async function loadDomainTeaser() {
+  const list = document.getElementById('teaser-domains');
+  const sample = document.getElementById('teaser-sample');
+  if (!list) return;
+
+  try {
+    const res = await fetch('/api/domains');
+    const { domains } = await res.json();
+    if (!domains?.length) {
+      list.innerHTML =
+        '<li class="z-text-subtle" style="font-family: var(--font-mono); font-size: 0.8125rem;">No domains listed</li>';
+      return;
+    }
+
+    list.innerHTML = domains
+      .map((d) => `<li class="z-domain-teaser__item">@${escapeHtml(d.name)}</li>`)
+      .join('');
+
+    if (sample && domains[0]) {
+      sample.hidden = false;
+      sample.innerHTML = `<span class="z-domain-teaser__name">yourname</span><span class="z-domain-teaser__at">@${escapeHtml(domains[0].name)}</span>`;
+    }
+  } catch {
+    list.innerHTML =
+      '<li class="z-text-subtle" style="font-family: var(--font-mono); font-size: 0.8125rem;">Unavailable</li>';
+  }
+}
+
+function showInvitationGate(message) {
+  registerContent.classList.add('z-hidden');
+  invitationGate.classList.remove('z-hidden');
+  if (message) invitationGateMessage.textContent = message;
+  void loadDomainTeaser();
+}
+
+function showRegisterFlow() {
+  invitationGate.classList.add('z-hidden');
+  registerContent.classList.remove('z-hidden');
+}
+
 async function initInvitation() {
   const params = new URLSearchParams(window.location.search);
   inviteToken = params.get('token')?.trim() || '';
@@ -346,14 +386,12 @@ async function initInvitation() {
 
     if (!requiresInvitation) {
       invitationReady = true;
-      registerContent.classList.remove('z-hidden');
-      invitationGate.classList.add('z-hidden');
+      showRegisterFlow();
       return;
     }
 
     if (!inviteToken || !inviteEmail) {
-      registerContent.classList.add('z-hidden');
-      invitationGate.classList.remove('z-hidden');
+      showInvitationGate();
       return;
     }
 
@@ -363,10 +401,9 @@ async function initInvitation() {
     const verifyData = await verifyRes.json();
 
     if (!verifyRes.ok || !verifyData.valid) {
-      registerContent.classList.add('z-hidden');
-      invitationGate.classList.remove('z-hidden');
-      invitationGateMessage.textContent =
-        verifyData.error || 'This invitation link is invalid or has expired.';
+      showInvitationGate(
+        verifyData.error || 'This invitation link is invalid or has expired.',
+      );
       return;
     }
 
@@ -376,13 +413,10 @@ async function initInvitation() {
     inviteEmailInput.value = inviteEmail;
     invitationBanner.classList.remove('z-hidden');
     invitationBanner.textContent = `Invitation verified for ${inviteEmail}. Pick your new address and mailbox password below.`;
-    registerContent.classList.remove('z-hidden');
-    invitationGate.classList.add('z-hidden');
+    showRegisterFlow();
     applyInvitationUi();
   } catch {
-    registerContent.classList.add('z-hidden');
-    invitationGate.classList.remove('z-hidden');
-    invitationGateMessage.textContent = 'Unable to verify invitation. Try again later.';
+    showInvitationGate('Unable to verify invitation. Try again later.');
   }
 }
 
@@ -396,18 +430,9 @@ async function init() {
   resultsContainer.innerHTML = '<div class="z-results-empty">Loading domains…</div>';
 
   try {
-    const [configRes, domainsRes] = await Promise.all([
-      fetch('/api/config'),
-      fetch('/api/domains'),
-    ]);
-    const config = await configRes.json();
+    const domainsRes = await fetch('/api/domains');
     const { domains } = await domainsRes.json();
     cachedDomains = domains;
-
-    const webmailLink = document.getElementById('webmail-link');
-    const footerWebmail = document.getElementById('footer-webmail-link');
-    if (webmailLink) webmailLink.href = config.webmailUrl;
-    if (footerWebmail) footerWebmail.href = config.webmailUrl;
 
     const params = new URLSearchParams(window.location.search);
     const q = params.get('q');

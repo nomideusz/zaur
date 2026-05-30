@@ -35,6 +35,9 @@ importers:
 
   apps/register:
     dependencies:
+      '@zaur/sprite':
+        specifier: workspace:*
+        version: link:../../packages/sprite
       '@zaur/ui':
         specifier: workspace:*
         version: link:../../packages/ui
