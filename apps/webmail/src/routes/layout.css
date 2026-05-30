@@ -761,10 +761,32 @@
 	 * Settings UI — Tachyons-scale type (f3–f6), spacing (0.25–2rem), measure (~30em).
 	 * Flat surfaces, 1px borders (ba/bw1), minimal shadow.
 	 */
+	.z-settings-content {
+		margin-inline: auto;
+	}
+
+	@media (min-width: 1024px) {
+		.z-settings-content {
+			max-width: 72rem;
+		}
+	}
+
 	.z-settings-panel {
 		width: 100%;
 		max-width: 30rem;
 		min-width: 0;
+	}
+
+	@media (min-width: 768px) {
+		.z-settings-panel {
+			max-width: 40rem;
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.z-settings-panel {
+			max-width: none;
+		}
 	}
 
 	.z-settings-page-title {
@@ -777,7 +799,7 @@
 
 	.z-settings-page-lead {
 		margin-top: 0.25rem;
-		max-width: 30em;
+		max-width: 42rem;
 		font-size: 0.875rem;
 		line-height: 1.5;
 		color: var(--z-fg-muted);
@@ -791,6 +813,24 @@
 
 	.z-settings-stack--compact {
 		gap: 1.5rem;
+	}
+
+	@media (min-width: 1280px) {
+		.z-settings-stack {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			gap: 1.5rem 2rem;
+			align-items: start;
+		}
+
+		.z-settings-stack--compact {
+			gap: 1.25rem 1.5rem;
+		}
+
+		/* Form-heavy groups span the full width */
+		.z-settings-section:has(.z-settings-field) {
+			grid-column: 1 / -1;
+		}
 	}
 
 	.z-settings-section {
@@ -822,7 +862,7 @@
 
 	.z-settings-section-lead {
 		margin-top: 0.125rem;
-		max-width: 30em;
+		max-width: 42rem;
 		font-size: 0.875rem;
 		line-height: 1.5;
 		color: var(--z-fg-muted);
@@ -888,7 +928,6 @@
 
 	.z-settings-row-desc {
 		grid-column: 1;
-		max-width: 30em;
 		font-size: 0.875rem;
 		line-height: 1.5;
 		color: var(--z-fg-muted);
@@ -920,10 +959,20 @@
 
 	.z-settings-field-desc {
 		margin-top: 0.125rem;
-		max-width: 30em;
 		font-size: 0.875rem;
 		line-height: 1.5;
 		color: var(--z-fg-muted);
+	}
+
+	@media (min-width: 1280px) {
+		.z-settings-row {
+			column-gap: 2rem;
+		}
+
+		.z-settings-field-body .z-input,
+		.z-settings-field-body textarea.z-input {
+			max-width: 36rem;
+		}
 	}
 
 	.z-settings-field-body {

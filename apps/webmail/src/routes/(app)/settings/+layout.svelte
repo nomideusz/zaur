@@ -72,10 +72,10 @@
 		<div class="z-pane-scroll min-h-0 min-w-0 flex-1 overflow-y-auto">
 			<div
 				class={cn(
-					'w-full min-w-0',
+					'z-settings-content w-full min-w-0',
 					settings.compactSettingsLayout
 						? 'px-4 py-4 pb-[max(2rem,env(safe-area-inset-bottom))]'
-						: 'px-4 py-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] md:px-6 md:py-7'
+						: 'px-4 py-5 pb-[max(2.5rem,env(safe-area-inset-bottom))] md:px-6 md:py-7 lg:px-8 xl:px-10'
 				)}
 			>
 				{@render children()}

@@ -16,12 +16,14 @@ function resolveTheme(mode: ThemeMode): 'light' | 'dark' {
 }
 
 class ThemeStore {
-	theme = $state<ThemeMode>(readStoredTheme());
+	/** User preference: light, dark, or follow system. */
+	mode = $state<ThemeMode>(readStoredTheme());
+	/** Resolved appearance applied to the document. */
 	resolved = $state<'light' | 'dark'>(resolveTheme(readStoredTheme()));
 
 	private mediaQuery: MediaQueryList | null = null;
 	private onSystemChange = () => {
-		if (this.theme !== 'system') return;
+		if (this.mode !== 'system') return;
 		this.resolved = resolveTheme('system');
 		this.applyResolved();
 	};
@@ -29,8 +31,9 @@ class ThemeStore {
 	init() {
 		if (!browser) return;
 
-		this.theme = readStoredTheme();
-		this.resolved = resolveTheme(this.theme);
+		this.mode = readStoredTheme();
+		this.resolved = resolveTheme(this.mode);
+		this.mediaQuery?.removeEventListener('change', this.onSystemChange);
 		this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 		this.mediaQuery.addEventListener('change', this.onSystemChange);
 		this.applyResolved();
@@ -41,7 +44,7 @@ class ThemeStore {
 	}
 
 	set(value: ThemeMode) {
-		this.theme = value;
+		this.mode = value;
 		this.resolved = resolveTheme(value);
 		if (browser) {
 			localStorage.setItem('zaur-theme', value);

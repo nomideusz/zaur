@@ -17,8 +17,10 @@
 	<SettingsRow title="Color mode" description="Also available in the account menu">
 		<select
 			class="z-input w-auto"
-			value={theme.theme}
-			onchange={(e) => theme.set(e.currentTarget.value as ThemeMode)}
+			bind:value={
+				() => theme.mode,
+				(v) => theme.set(v as ThemeMode)
+			}
 		>
 			<option value="system">System</option>
 			<option value="light">Light</option>
