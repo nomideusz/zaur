@@ -31,7 +31,7 @@
 	<button
 		type="button"
 		class={cn(
-			'flex items-center rounded-md transition-colors hover:bg-surface-sunken',
+			'flex items-center rounded-sm transition-colors hover:bg-surface-sunken',
 			settings.compactUserMenu ? 'p-1' : 'gap-2 p-1.5'
 		)}
 		aria-label="Account menu"
@@ -59,8 +59,8 @@
 		<div
 			role="menu"
 			tabindex="-1"
-			class="absolute right-0 top-full z-50 mt-2 w-56 overflow-hidden rounded-lg border border-border bg-surface-raised py-1 shadow-md"
-			onclick={(e) => e.stopPropagation()}
+			class="z-overflow-menu z-overflow-menu--list w-56 min-w-0"
+			onpointerdown={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.key === 'Escape' && close()}
 		>
 			<div
@@ -84,53 +84,44 @@
 			<a
 				href="/settings"
 				role="menuitem"
-				class={cn(
-					'flex items-center gap-2 px-3 text-sm text-fg hover:bg-surface-sunken',
-					settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2',
-					onSettingsRoute && 'z-surface-active'
-				)}
+				class={cn('z-overflow-menu-item', onSettingsRoute && 'z-surface-active')}
 				onclick={close}
 			>
-				<Settings class="size-4 text-fg-muted" aria-hidden="true" />
-				Settings
+				<span class="flex size-5 shrink-0 items-center justify-center">
+					<Settings class="size-4 text-fg-muted" aria-hidden="true" />
+				</span>
+				<span class="truncate">Settings</span>
 			</a>
 
 			<button
 				type="button"
 				role="menuitem"
-				class={cn(
-					'flex w-full items-center gap-2 px-3 text-left text-sm text-fg hover:bg-surface-sunken',
-					settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2'
-				)}
+				class="z-overflow-menu-item"
 				onclick={() => {
 					theme.toggle();
 					close();
 				}}
 			>
-				{#if theme.resolved === 'dark'}
-					<Sun class="size-4 text-fg-muted" aria-hidden="true" />
-					Light mode
-				{:else}
-					<Moon class="size-4 text-fg-muted" aria-hidden="true" />
-					Dark mode
-				{/if}
+				<span class="flex size-5 shrink-0 items-center justify-center">
+					{#if theme.resolved === 'dark'}
+						<Sun class="size-4 text-fg-muted" aria-hidden="true" />
+					{:else}
+						<Moon class="size-4 text-fg-muted" aria-hidden="true" />
+					{/if}
+				</span>
+				<span class="truncate">{theme.resolved === 'dark' ? 'Light mode' : 'Dark mode'}</span>
 			</button>
-
-			{#if !settings.hidePaneBorders}
-				<hr class="my-1 border-border" />
-			{/if}
 
 			<button
 				type="button"
 				role="menuitem"
-				class={cn(
-					'flex w-full items-center gap-2 px-3 text-left text-sm text-fg hover:bg-surface-sunken',
-					settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2'
-				)}
+				class="z-overflow-menu-item"
 				onclick={() => auth.logout()}
 			>
-				<LogOut class="size-4 text-fg-muted" aria-hidden="true" />
-				Sign out
+				<span class="flex size-5 shrink-0 items-center justify-center">
+					<LogOut class="size-4 text-fg-muted" aria-hidden="true" />
+				</span>
+				<span class="truncate">Sign out</span>
 			</button>
 		</div>
 	{/if}
