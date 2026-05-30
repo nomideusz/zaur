@@ -373,7 +373,10 @@
 	}
 
 	.z-select {
-		@apply z-input cursor-pointer appearance-none bg-size-[1rem] bg-position-[right_0.65rem_center] bg-no-repeat pr-9;
+		@apply w-full cursor-pointer appearance-none rounded-sm border border-border bg-surface-raised px-3 py-2 pr-9 text-base text-fg placeholder:text-fg-subtle focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-border-strong md:text-sm;
+		background-size: 1rem;
+		background-position: right 0.65rem center;
+		background-repeat: no-repeat;
 		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236b7280' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 7.5 5 5 5-5'/%3E%3C/svg%3E");
 	}
 
@@ -1130,17 +1133,6 @@
 
 	.z-settings-nav-link--mobile.z-settings-nav-link--active {
 		background-color: color-mix(in srgb, var(--z-accent) 10%, transparent);
-	}
-
-	.z-mobile-folder-picker {
-		@apply z-mobile-picker-trigger;
-		min-height: 2.75rem;
-		padding-top: 0.5rem;
-		padding-bottom: 0.5rem;
-	}
-
-	.z-mobile-folder-picker--compact {
-		@apply z-mobile-picker-trigger--compact;
 	}
 
 	@media (max-width: 767px) {
