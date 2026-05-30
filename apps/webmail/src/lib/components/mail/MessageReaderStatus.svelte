@@ -1,8 +1,8 @@
 <script lang="ts">
 	import AlertCircle from '$lib/components/icons/AlertCircle.svelte';
-import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
-import MailX from '$lib/components/icons/MailX.svelte';
-import WifiOff from '$lib/components/icons/WifiOff.svelte';
+	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
+	import MailX from '$lib/components/icons/MailX.svelte';
+	import WifiOff from '$lib/components/icons/WifiOff.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';

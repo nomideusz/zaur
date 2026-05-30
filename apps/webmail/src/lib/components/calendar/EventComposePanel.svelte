@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import X from '$lib/components/icons/X.svelte';
+	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -35,6 +36,10 @@
 		return null;
 	});
 	const canSave = $derived(!calendar.composeSaving && !saveBlockedReason);
+	const composeHintId = 'event-compose-hint';
+	const calendarOptions = $derived(
+		calendar.calendars.map((item) => ({ value: item.id, label: item.name }))
+	);
 
 	function close() {
 		calendar.closeCompose();
@@ -96,11 +101,13 @@
 
 				<label class="block space-y-1.5">
 					<span class={fieldLabelClass}>Calendar</span>
-					<select class="z-input" bind:value={calendar.composeDraft.calendarId} required>
-						{#each calendar.calendars as item (item.id)}
-							<option value={item.id}>{item.name}</option>
-						{/each}
-					</select>
+					<SettingsSelect
+						label="Calendar"
+						value={calendar.composeDraft.calendarId}
+						options={calendarOptions}
+						class="w-full"
+						onchange={(value) => (calendar.composeDraft.calendarId = value)}
+					/>
 				</label>
 
 				<label class="flex items-center gap-2 rounded-md text-sm">
@@ -121,6 +128,7 @@
 								type="date"
 								class="z-input"
 								aria-invalid={timeRangeInvalid ? 'true' : undefined}
+								aria-describedby={timeRangeInvalid ? composeHintId : undefined}
 								bind:value={calendar.composeDraft.endDate}
 								required
 							/>
@@ -137,6 +145,7 @@
 									type="date"
 									class="z-input"
 									aria-invalid={timeRangeInvalid ? 'true' : undefined}
+									aria-describedby={timeRangeInvalid ? composeHintId : undefined}
 									bind:value={calendar.composeDraft.endDate}
 									required
 								/>
@@ -144,6 +153,7 @@
 									type="time"
 									class="z-input"
 									aria-invalid={timeRangeInvalid ? 'true' : undefined}
+									aria-describedby={timeRangeInvalid ? composeHintId : undefined}
 									bind:value={calendar.composeDraft.endTime}
 									required
 								/>
@@ -152,7 +162,10 @@
 					{/if}
 				</div>
 				{#if saveBlockedReason && !calendar.composeError}
-					<p class={cn('text-xs', timeRangeInvalid ? 'text-danger' : 'text-fg-subtle')}>
+					<p
+						id={composeHintId}
+						class={cn('text-xs', timeRangeInvalid ? 'text-danger' : 'text-fg-subtle')}
+					>
 						{saveBlockedReason}
 					</p>
 				{/if}

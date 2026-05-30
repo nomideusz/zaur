@@ -1,9 +1,9 @@
 <script lang="ts">
 	import CalendarDays from '$lib/components/icons/CalendarDays.svelte';
-import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
-import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
-import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
-import Plus from '$lib/components/icons/Plus.svelte';
+	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
+	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
+	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
+	import Plus from '$lib/components/icons/Plus.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -126,7 +126,7 @@ import Plus from '$lib/components/icons/Plus.svelte';
 					<li>
 						<label
 							class={cn(
-								'flex cursor-pointer items-center gap-2 rounded-md px-3 text-sm transition-all hover:bg-surface-sunken/80 focus-within:ring-2 focus-within:ring-accent/20',
+								'z-checkbox-row',
 								settings.compactCalendarSidebar ? 'py-1.5' : 'py-2',
 								calendar.isCalendarVisible(item.id) ? 'text-fg' : 'text-fg-muted'
 							)}

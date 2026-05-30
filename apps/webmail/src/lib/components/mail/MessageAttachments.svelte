@@ -1,8 +1,8 @@
 <script lang="ts">
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
-import FileText from '$lib/components/icons/FileText.svelte';
-import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
+	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
+	import FileText from '$lib/components/icons/FileText.svelte';
+	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import { downloadAttachment } from '$lib/attachments/download';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';

@@ -2,8 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import CalendarPlus from '$lib/components/icons/CalendarPlus.svelte';
-import PenSquare from '$lib/components/icons/PenSquare.svelte';
-import Search from '$lib/components/icons/Search.svelte';
+	import PenSquare from '$lib/components/icons/PenSquare.svelte';
+	import Search from '$lib/components/icons/Search.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import GlobalSearch from './GlobalSearch.svelte';

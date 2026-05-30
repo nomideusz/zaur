@@ -51,7 +51,7 @@
 					<li>
 						<label
 							class={cn(
-								'flex cursor-pointer items-center gap-2 rounded-md px-3 text-sm transition-all hover:bg-surface-sunken/80 focus-within:ring-2 focus-within:ring-accent/20',
+								'z-checkbox-row',
 								settings.compactCalendarSidebar ? 'py-1.5' : 'py-2',
 								calendar.isCalendarVisible(item.id) ? 'text-fg' : 'text-fg-muted'
 							)}

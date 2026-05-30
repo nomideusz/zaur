@@ -199,10 +199,7 @@
 	>
 		<label class="sr-only" for={inputId}>Search mail</label>
 		<Search
-			class={cn(
-				'pointer-events-none absolute top-1/2 -translate-y-1/2 text-fg-subtle',
-				isSidebar || isMobile ? 'left-2.5 size-3.5' : 'left-3 size-4'
-			)}
+			class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-subtle"
 		/>
 		<input
 			bind:this={searchInput}
@@ -213,8 +210,7 @@
 			inputmode="search"
 			{placeholder}
 			class={cn(
-				'z-input z-chrome-field w-full shadow-none',
-				isSidebar || isMobile ? 'h-10 rounded-md pl-8 text-base' : 'rounded-full pl-9'
+				isSidebar || isMobile ? 'z-sidebar-search-input' : 'z-input z-chrome-field w-full rounded-full pl-9 shadow-none'
 			)}
 			autocomplete="off"
 			bind:value={input}

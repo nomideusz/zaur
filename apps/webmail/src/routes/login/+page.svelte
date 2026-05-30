@@ -139,7 +139,7 @@
 						<Button
 							type="button"
 							class="w-full"
-							variant={showPassword ? 'ghost' : 'default'}
+							variant={showPassword ? 'ghost' : 'primary'}
 							disabled={auth.isLoading}
 							onclick={signInWithPasskey}
 						>

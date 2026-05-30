@@ -3,8 +3,8 @@
 	import { page } from '$app/stores';
 	import { tick } from 'svelte';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
-import Shield from '$lib/components/icons/Shield.svelte';
+	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
+	import Shield from '$lib/components/icons/Shield.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';

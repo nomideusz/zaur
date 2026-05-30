@@ -1,9 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import Mail from '$lib/components/icons/Mail.svelte';
-import Search from '$lib/components/icons/Search.svelte';
-import UserPlus from '$lib/components/icons/UserPlus.svelte';
-import Users from '$lib/components/icons/Users.svelte';
+	import Search from '$lib/components/icons/Search.svelte';
+	import UserPlus from '$lib/components/icons/UserPlus.svelte';
+	import Users from '$lib/components/icons/Users.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import ContactDetailEmpty from '$lib/components/contacts/ContactDetailEmpty.svelte';
 	import ContactDetailPanel from '$lib/components/contacts/ContactDetailPanel.svelte';
@@ -260,13 +260,17 @@ import Users from '$lib/components/icons/Users.svelte';
 			<span class="sr-only">Search contacts</span>
 			<Search
 				class={cn(
-					'pointer-events-none absolute top-1/2 -translate-y-1/2 text-fg-subtle',
-					settings.compactContactsSearch ? 'left-2.5 size-3.5' : 'left-3 size-4'
+					'pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-subtle'
 				)}
 			/>
 			<input
 				type="search"
-				class={cn('z-input w-full rounded-full border-transparent bg-surface-sunken/80 shadow-none focus:bg-surface-raised', settings.compactContactsSearch ? 'py-1.5 pl-8' : 'pl-9')}
+				enterkeyhint="search"
+				inputmode="search"
+				class={cn(
+					'z-sidebar-search-input',
+					settings.compactContactsSearch && 'h-9 py-1.5'
+				)}
 				placeholder="Search contacts…"
 				bind:value={query}
 			/>

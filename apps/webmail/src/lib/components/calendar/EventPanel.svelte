@@ -1,8 +1,8 @@
 <script lang="ts">
 	import MapPin from '$lib/components/icons/MapPin.svelte';
-import Pencil from '$lib/components/icons/Pencil.svelte';
-import Trash2 from '$lib/components/icons/Trash2.svelte';
-import X from '$lib/components/icons/X.svelte';
+	import Pencil from '$lib/components/icons/Pencil.svelte';
+	import Trash2 from '$lib/components/icons/Trash2.svelte';
+	import X from '$lib/components/icons/X.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
