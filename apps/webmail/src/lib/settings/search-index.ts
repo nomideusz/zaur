@@ -211,12 +211,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/data-apply-simple-mode",
-		"href": "/settings/data",
-		"title": "Apply simple mode",
-		"description": ""
-	},
-	{
 		"id": "/settings/data-export-settings",
 		"href": "/settings/data",
 		"title": "Export settings",

@@ -74,7 +74,8 @@ export async function resetAppServiceWorker(): Promise<ServiceWorkerRegistration
 export async function ensureAppServiceWorkerReady(): Promise<ServiceWorkerRegistration | null> {
 	if (!browser || !('serviceWorker' in navigator)) return null;
 
-	let registration = await navigator.serviceWorker.getRegistration(SW_SCOPE);
+	let registration: ServiceWorkerRegistration | null | undefined =
+		await navigator.serviceWorker.getRegistration(SW_SCOPE);
 	if (registration) {
 		const active = await waitForActiveWorker(registration);
 		if (active) return active;

@@ -99,6 +99,10 @@
 	const showAvatarUnreadBadge = $derived(
 		settings.highlightUnreadInList && message.unread && !showListGutter && !showActiveCompact
 	);
+	const minimalListPresentation = $derived(
+		settings.focusLayoutMode === 'adaptive' && !settings.showReaderListRail
+	);
+	const showPreview = $derived(settings.showListPreview && !minimalListPresentation);
 
 	const rowClass = $derived(
 		cn(
@@ -268,11 +272,11 @@
 
 {#snippet activeSubjectLine()}
 	<div class="mt-0.5 flex items-center gap-1.5">
-		{#if settings.showStarsInList && message.starred}
+		{#if !minimalListPresentation && settings.showStarsInList && message.starred}
 			<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 		{/if}
 		<span class={activeSubjectClass}>{displaySubject}</span>
-		{#if settings.showAttachmentIcons && message.hasAttachment}
+		{#if !minimalListPresentation && settings.showAttachmentIcons && message.hasAttachment}
 			<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
 		{/if}
 	</div>
@@ -290,7 +294,7 @@
 			/>
 		</div>
 	{/if}
-	{#if settings.showListPreview}
+	{#if showPreview}
 		<p class="z-type-list-preview invisible select-none {mailboxRouteId ? 'md:hidden' : ''}" aria-hidden="true">
 			&#8203;
 		</p>
@@ -312,11 +316,11 @@
 			>
 				<div class="flex items-baseline justify-between gap-2">
 					<div class="mt-0.5 flex min-w-0 flex-1 items-center gap-1.5">
-						{#if settings.showStarsInList && message.starred}
+						{#if !minimalListPresentation && settings.showStarsInList && message.starred}
 							<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 						{/if}
 						<span class={activeSubjectClass}>{displaySubject}</span>
-						{#if settings.showAttachmentIcons && message.hasAttachment}
+						{#if !minimalListPresentation && settings.showAttachmentIcons && message.hasAttachment}
 							<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
 						{/if}
 					</div>
@@ -325,7 +329,7 @@
 					{/if}
 				</div>
 			</a>
-			{#if settings.showListPreview || mailboxRouteId}
+			{#if showPreview || mailboxRouteId}
 				{@render activePreviewSlot()}
 			{/if}
 		{:else}
@@ -346,16 +350,18 @@
 					{/if}
 				</div>
 				<div class="mt-0.5 flex items-center gap-1.5">
-					<span class="z-type-list-sender">{senderLabel || 'Unknown sender'}</span>
-					{#if settings.showStarsInList && message.starred}
+					{#if !minimalListPresentation}
+						<span class="z-type-list-sender">{senderLabel || 'Unknown sender'}</span>
+					{/if}
+					{#if !minimalListPresentation && settings.showStarsInList && message.starred}
 						<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 					{/if}
-					{#if settings.showAttachmentIcons && message.hasAttachment}
+					{#if !minimalListPresentation && settings.showAttachmentIcons && message.hasAttachment}
 						<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
 					{/if}
 				</div>
 			</a>
-			{#if settings.showListPreview || mailboxRouteId}
+			{#if showPreview || mailboxRouteId}
 				{@render activePreviewSlot()}
 			{/if}
 		{/if}
@@ -368,13 +374,13 @@
 		{#if settings.subjectOnlyList}
 			<div class="flex items-baseline justify-between gap-2">
 				<div class="mt-0.5 flex min-w-0 flex-1 items-center gap-1.5">
-					{#if settings.showStarsInList && message.starred}
+					{#if !minimalListPresentation && settings.showStarsInList && message.starred}
 						<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 					{/if}
 					<span class={subjectClass}>
 						{displaySubject}
 					</span>
-					{#if settings.showAttachmentIcons && message.hasAttachment}
+					{#if !minimalListPresentation && settings.showAttachmentIcons && message.hasAttachment}
 						<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
 					{/if}
 				</div>
@@ -382,9 +388,9 @@
 					<span class="z-type-list-time">{when}</span>
 				{/if}
 			</div>
-			{#if settings.showListPreview && message.preview}
+			{#if showPreview && message.preview}
 				<p class="z-type-list-preview">{message.preview}</p>
-			{:else if settings.showListPreview}
+			{:else if showPreview}
 				<p class="z-type-list-preview invisible select-none" aria-hidden="true">&#8203;</p>
 			{/if}
 		{:else}
@@ -394,20 +400,22 @@
 					<span class="z-type-list-time">{when}</span>
 				{/if}
 			</div>
-			<div class="mt-0.5 flex items-center gap-1.5">
-				<span class="z-type-list-sender">
-					{senderLabel}
-				</span>
-				{#if settings.showStarsInList && message.starred}
-					<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
-				{/if}
-				{#if settings.showAttachmentIcons && message.hasAttachment}
-					<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
-				{/if}
-			</div>
-			{#if settings.showListPreview && message.preview}
+			{#if !minimalListPresentation}
+				<div class="mt-0.5 flex items-center gap-1.5">
+					<span class="z-type-list-sender">
+						{senderLabel}
+					</span>
+					{#if settings.showStarsInList && message.starred}
+						<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
+					{/if}
+					{#if settings.showAttachmentIcons && message.hasAttachment}
+						<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
+					{/if}
+				</div>
+			{/if}
+			{#if showPreview && message.preview}
 				<p class="z-type-list-preview">{message.preview}</p>
-			{:else if settings.showListPreview}
+			{:else if showPreview}
 				<p class="z-type-list-preview invisible select-none" aria-hidden="true">&#8203;</p>
 			{/if}
 		{/if}

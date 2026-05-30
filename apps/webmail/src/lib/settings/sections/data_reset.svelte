@@ -4,24 +4,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Reset" description="Restore defaults or simplify the layout in one step.">
-	<SettingsRow
-		title="Apply simple mode"
-		description="A minimal mail-only layout — you can still tweak individual options afterward"
-	>
-		<button
-			type="button"
-			class="z-btn-ghost text-sm"
-			onclick={() => {
-				if (confirm('Apply simple mode? This updates many display and navigation settings at once.')) {
-					settings.applySimpleMode();
-				}
-			}}
-		>
-			Apply
-		</button>
-	</SettingsRow>
-
+<SettingsGroup title="Reset" description="Restore display and layout defaults.">
 	<SettingsRow
 		title="Reset all display & layout settings"
 		description="Restore every display, layout, and navigation option — keeps notifications and shortcuts"

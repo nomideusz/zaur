@@ -27,8 +27,18 @@
 	const mobileListSelecting = $derived(
 		onMailRoute && !!shellHeader.mail?.mailboxRouteId && !$page.params.threadId && mail.hasSelection
 	);
+	const showMailPrimaryAction = $derived(
+		showMailContext &&
+			shellHeader.mail?.showNewMessage &&
+			!mobileReadingThread &&
+			!mobileListSelecting
+	);
 	const showMobileMailSearch = $derived(
-		showMailContext && !settings.hideHeaderSearch && !mobileReadingThread && !mobileListSelecting
+		showMailContext &&
+			!settings.hideHeaderSearch &&
+			!mobileReadingThread &&
+			!mobileListSelecting &&
+			!showMailPrimaryAction
 	);
 	const mobileMailListView = $derived(
 		onMailRoute &&
@@ -82,7 +92,7 @@
 			settings.compactAppHeader ? 'gap-1.5' : 'gap-2'
 		)}
 	>
-		{#if showMailContext && shellHeader.mail?.showNewMessage && !mobileReadingThread && !mobileListSelecting}
+		{#if showMailPrimaryAction}
 			<IconButton label="New message" class="md:hidden" onclick={() => goto('/mail/compose')}>
 				<PenSquare class="size-5" aria-hidden="true" />
 			</IconButton>

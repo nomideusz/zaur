@@ -5,7 +5,6 @@ const BASIC_TITLE_OVERRIDES = new Set([
 	'Compact layout',
 	'List density',
 	'Drawer width',
-	'Apply simple mode',
 	'Reset all display & layout settings',
 	'Reset theme settings',
 	'Reset layout settings',

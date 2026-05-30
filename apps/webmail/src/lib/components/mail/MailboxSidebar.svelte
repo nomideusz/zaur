@@ -74,17 +74,7 @@
 	style="view-transition-name: mail-sidebar;"
 	aria-label="Folders"
 >
-	<div
-		class={cn(
-			'relative z-20 shrink-0',
-			'px-3 py-3',
-			!settings.hidePaneBorders && 'border-b border-border/80'
-		)}
-	>
-		<p class="z-type-label">Mailboxes</p>
-	</div>
-
-	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto p-2.5">
+	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto p-2.5 pt-3">
 		{#if mail.mailboxesLoading}
 			<LoadingIndicator label="Loading folders…" compact />
 		{:else if mail.mailboxesError}
@@ -104,7 +94,6 @@
 			</div>
 		{:else}
 			<div class="px-1.5 pb-2">
-				<p class="z-type-label px-2 pb-1">Views</p>
 				<ul class="space-y-1">
 					{#each primaryItems as node (node.id)}
 						{@const href = `/mail/${node.id}`}
@@ -135,10 +124,9 @@
 
 			{#if secondaryNodes.length > 0}
 				<div class="px-1.5 pt-2">
-					<p class="z-type-label px-2 pb-1">Folders</p>
 					<button
 						type="button"
-						class="z-btn-ghost w-full justify-start text-xs text-fg-muted"
+						class="z-btn-ghost w-full justify-start px-2.5 text-xs text-fg-muted"
 						aria-expanded={showSecondary}
 						onclick={() => (showSecondary = !showSecondary)}
 					>

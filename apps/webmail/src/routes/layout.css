@@ -35,11 +35,11 @@
 
 :root {
 	--z-list-row: 4rem;
-	--z-list-text: 1rem;
+	--z-list-text: 0.96875rem;
 	/* Measure is in em (relative to reading text) so line length stays ~constant in characters. */
-	--z-reader-measure: 34em;
-	--z-reader-text: 1.03125rem;
-	--z-reader-leading: 1.65;
+	--z-reader-measure: 36em;
+	--z-reader-text: 1rem;
+	--z-reader-leading: 1.7;
 	--z-reader-font: var(--font-sans);
 }
 
@@ -694,16 +694,16 @@
 	}
 
 	.z-type-reader-title {
-		@apply m-0 p-0 text-xl font-semibold leading-none tracking-tight text-fg md:text-2xl;
+		@apply m-0 p-0 text-lg font-semibold leading-tight tracking-tight text-fg md:text-xl;
 	}
 
 	.z-reader-from {
 		font-size: var(--z-reader-text);
-		@apply font-semibold leading-snug tracking-tight text-fg;
+		@apply font-medium leading-snug tracking-tight text-fg;
 	}
 
 	.z-reader-meta {
-		@apply text-sm leading-snug text-fg-muted;
+		@apply text-[0.8125rem] leading-snug text-fg-muted;
 	}
 
 	.z-reader-chrome {
@@ -1290,11 +1290,11 @@
 	}
 
 	.z-type-list-sender {
-		@apply truncate text-xs text-fg-subtle;
+		@apply truncate text-[11px] text-fg-subtle;
 	}
 
 	.z-type-list-subject {
-		@apply truncate font-medium tracking-tight text-fg;
+		@apply truncate font-medium text-fg;
 		font-size: var(--z-list-text);
 	}
 
@@ -1303,7 +1303,7 @@
 	}
 
 	.z-type-list-subject--active {
-		@apply min-w-0 truncate font-semibold tracking-tight;
+		@apply min-w-0 truncate font-semibold;
 		font-size: var(--z-list-text);
 	}
 
@@ -1316,8 +1316,7 @@
 	}
 
 	.z-list-row:hover .z-list-row-actions,
-	.z-list-row:focus-within .z-list-row-actions,
-	.z-list-row--current .z-list-row-actions {
+	.z-list-row:focus-within .z-list-row-actions {
 		opacity: 1;
 	}
 
@@ -1341,11 +1340,11 @@
 	}
 
 	.z-type-list-preview {
-		@apply mt-0.5 truncate text-xs leading-snug text-fg-subtle;
+		@apply mt-0.5 truncate text-[11px] leading-snug text-fg-subtle;
 	}
 
 	.z-type-list-time {
-		@apply shrink-0 text-xs tabular-nums tracking-tight text-fg-subtle;
+		@apply shrink-0 text-[11px] tabular-nums text-fg-subtle;
 	}
 
 	.z-email-body {
