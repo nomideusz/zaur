@@ -217,15 +217,15 @@ const LIST_ROW_HEIGHT: Record<ListDensity, { preview: string; noPreview: string 
 };
 
 const READER_TEXT_SIZE: Record<ReaderTextSize, string> = {
-	small: '0.8125rem',
-	normal: '0.875rem',
-	large: '1rem'
+	small: '0.875rem',
+	normal: '1rem',
+	large: '1.125rem'
 };
 
 const READER_MEASURE: Record<ReaderTextSize, string> = {
-	small: '40rem',
-	normal: '42rem',
-	large: '48rem'
+	small: '36rem',
+	normal: '40rem',
+	large: '46rem'
 };
 
 const LIST_TEXT_SIZE: Record<ListTextSize, string> = {
