@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
+	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import type { MailHeaderContext } from '$lib/stores/shell-header.svelte';
@@ -28,6 +29,17 @@
 		!!ctx.mailboxRouteId && !threadId && mail.hasSelection
 	);
 	const selectedCount = $derived(mail.selectedMessageIds.size);
+	const mobileFolderLabel = $derived.by(() => {
+		if (!ctx.mailboxRouteId) return displayMailboxName;
+		const folder = mail.mailboxByRouteId(ctx.mailboxRouteId);
+		if (!folder) return displayMailboxName;
+		const unread =
+			settings.showFolderUnreadCounts && folder.unread > 0 ? ` (${folder.unread})` : '';
+		return `${folder.name}${unread}`;
+	});
+	const showMobileFolderPicker = $derived(
+		!!ctx.mailboxRouteId && !threadId && !mail.hasSelection && !mobileListSelecting
+	);
 </script>
 
 <div class="flex min-w-0 flex-1 items-center gap-2">
@@ -54,11 +66,11 @@
 
 
 
-	{#if ctx.mailboxRouteId && !threadId && !mail.hasSelection && !mobileListSelecting}
-		<label class="min-w-0 flex-1 md:hidden">
-			<span class="sr-only">Folder</span>
+	{#if showMobileFolderPicker}
+		<label class="relative flex min-h-11 min-w-0 flex-1 md:hidden">
+			<span class="sr-only">Folder, {mobileFolderLabel}</span>
 			<select
-				class={cn('z-input w-full', settings.compactMobileFolderPicker ? 'py-1' : 'py-1.5')}
+				class="absolute inset-0 z-[1] h-full w-full cursor-pointer opacity-0"
 				value={ctx.mailboxRouteId}
 				onchange={(e) => goto(`/mail/${e.currentTarget.value}`)}
 			>
@@ -70,6 +82,16 @@
 					</option>
 				{/each}
 			</select>
+			<span
+				class={cn(
+					'z-mobile-folder-picker',
+					settings.compactMobileFolderPicker && 'z-mobile-folder-picker--compact'
+				)}
+				aria-hidden="true"
+			>
+				<span class="min-w-0 flex-1 truncate">{mobileFolderLabel}</span>
+				<ChevronDown class="size-5 shrink-0 text-fg-subtle" aria-hidden="true" />
+			</span>
 		</label>
 	{/if}
 

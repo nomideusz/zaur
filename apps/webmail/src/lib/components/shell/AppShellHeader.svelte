@@ -38,6 +38,12 @@ import Search from '$lib/components/icons/Search.svelte';
 	const showMobileMailSearch = $derived(
 		showMailContext && !settings.hideHeaderSearch && !mobileReadingThread && !mobileListSelecting
 	);
+	const mobileMailListView = $derived(
+		onMailRoute &&
+			!!shellHeader.mail?.mailboxRouteId &&
+			!$page.params.threadId &&
+			!mail.hasSelection
+	);
 </script>
 
 <header
@@ -57,14 +63,16 @@ import Search from '$lib/components/icons/Search.svelte';
 			href={homeHref}
 			class={cn(
 				'z-type-brand text-base text-fg transition-colors hover:text-fg-muted',
-				mobileReadingThread && 'max-md:sr-only'
+				(mobileReadingThread || mobileMailListView) && 'max-md:sr-only'
 			)}
 		>
 			<span class={settings.hideAppTitle ? 'sr-only' : ''}>ZAUR</span>
 		</a>
 
 		{#if showToolSwitcher}
-			<ToolSwitcher />
+			<div class={cn(mobileMailListView && 'max-md:hidden')}>
+				<ToolSwitcher />
+			</div>
 		{/if}
 	</div>
 
