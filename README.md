@@ -17,6 +17,7 @@ Mail server (`mail.zaur.app`) is Stalwart — config and ops notes live in [`inf
 | Package | Purpose |
 |---------|---------|
 | `@zaur/sprite` | Zaur pixel sprite frames + SVG renderer (shared by webmail and dinosaurus) |
+| `@zaur/ui` | Shared design tokens, components CSS, and utilities (webmail + register) |
 
 ## Setup
 
@@ -55,6 +56,7 @@ apps/
   register/      Stalwart account registration portal
 packages/
   sprite/        Shared Zaur pixel art
+  ui/            Shared design system (tokens, CSS, cn utility)
 infra/
   auth/          Zitadel + passkey-first webmail setup
   mail/          Stalwart ops notes

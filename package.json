@@ -7,6 +7,7 @@
     "dev:dinosaurus": "pnpm --filter @zaur/dinosaurus dev",
     "dev:register": "pnpm --filter @zaur/register dev",
     "build:webmail": "pnpm --filter @zaur/webmail build",
+    "build:ui": "pnpm --filter @zaur/ui build:css",
     "build:dinosaurus": "pnpm --filter @zaur/dinosaurus build",
     "check:webmail": "pnpm --filter @zaur/webmail check",
     "test:webmail": "pnpm --filter @zaur/webmail test",

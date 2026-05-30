@@ -4,7 +4,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginForm = document.getElementById('login-form');
   const loginError = document.getElementById('login-error');
   const logoutBtn = document.getElementById('logout-btn');
-  
+
   const statTotal = document.getElementById('stat-total');
   const statUnused = document.getElementById('stat-unused');
   const statUsed = document.getElementById('stat-used');
@@ -25,9 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let invitesList = [];
 
   function showDashboard() {
-    loginContainer.style.display = 'none';
-    dashboardContainer.style.display = 'block';
-    logoutBtn.style.display = 'inline-block';
+    loginContainer.classList.add('z-hidden');
+    dashboardContainer.classList.remove('z-hidden');
+    logoutBtn.classList.remove('z-hidden');
     loadInvitations();
     updateInviteEmailHint();
   }
@@ -45,6 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
       hint.textContent = 'Enter an email address to create a registration link.';
     }
   }
+
   async function checkAuthStatus() {
     try {
       const res = await fetch('/api/admin/status');
@@ -61,28 +62,28 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         showLogin();
       }
-    } catch (err) {
+    } catch {
       showError('Failed to verify authentication status.', loginError);
     }
   }
 
   function showLogin() {
-    loginContainer.style.display = 'block';
-    dashboardContainer.style.display = 'none';
-    logoutBtn.style.display = 'none';
+    loginContainer.classList.remove('z-hidden');
+    dashboardContainer.classList.add('z-hidden');
+    logoutBtn.classList.add('z-hidden');
   }
 
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    loginError.style.display = 'none';
-    
+    hideAlert(loginError);
+
     const password = document.getElementById('admin-password').value;
 
     try {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password })
+        body: JSON.stringify({ password }),
       });
 
       const data = await res.json();
@@ -92,18 +93,17 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         showError(data.error || 'Authentication failed.', loginError);
       }
-    } catch (err) {
+    } catch {
       showError('Network error. Please try again.', loginError);
     }
   });
 
-  // Handle Logout
   logoutBtn.addEventListener('click', async (e) => {
     e.preventDefault();
     try {
       await fetch('/api/admin/logout', { method: 'POST' });
       showLogin();
-    } catch (err) {
+    } catch {
       alert('Failed to log out.');
     }
   });
@@ -124,7 +124,8 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTable(invitesList);
     } catch (err) {
       console.error(err);
-      invitesTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--z-fg-muted); padding: 2rem;">Error loading invitations.</td></tr>`;
+      invitesTableBody.innerHTML =
+        '<tr><td colspan="5" class="z-text-center z-text-muted" style="padding: 2rem;">Error loading invitations.</td></tr>';
     }
   }
 
@@ -142,7 +143,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderTable(list) {
     if (list.length === 0) {
-      invitesTableBody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--z-fg-muted); padding: 2rem;">No invitations found.</td></tr>`;
+      invitesTableBody.innerHTML =
+        '<tr><td colspan="5" class="z-text-center z-text-muted" style="padding: 2rem;">No invitations found.</td></tr>';
       return;
     }
 
@@ -153,51 +155,51 @@ document.addEventListener('DOMContentLoaded', () => {
       const tr = document.createElement('tr');
 
       const tdEmail = document.createElement('td');
-      tdEmail.className = 'td-code';
+      tdEmail.className = 'z-td-code';
       tdEmail.innerHTML = `
-        <span class="code-text">${escapeHtml(invite.recoveryEmail)}</span>
-        <button class="btn-copy" title="Copy magic link" data-link="${escapeHtml(buildMagicLink(invite))}">
-          <svg class="icon-copy" viewBox="0 0 24 24" fill="currentColor"><path d="M7 6V3C7 2.44772 7.44772 2 8 2H20C20.5523 2 21 2.44772 21 3V17C21 17.5523 20.5523 18 20 18H17V21C17 21.5523 16.5523 22 16 22H4C3.44772 22 3 21.5523 3 21V7C3 6.44772 3.44772 6 4 6H7ZM9 6H15V8H9V6ZM17 6V16H19V4H9V6H17ZM5 8V20H15V8H5Z"/></svg>
+        <span class="z-code-text">${escapeHtml(invite.recoveryEmail)}</span>
+        <button class="z-btn-copy" title="Copy magic link" data-link="${escapeHtml(buildMagicLink(invite))}">
+          <svg class="z-icon-copy" viewBox="0 0 24 24" fill="currentColor"><path d="M7 6V3C7 2.44772 7.44772 2 8 2H20C20.5523 2 21 2.44772 21 3V17C21 17.5523 20.5523 18 20 18H17V21C17 21.5523 16.5523 22 16 22H4C3.44772 22 3 21.5523 3 21V7C3 6.44772 3.44772 6 4 6H7ZM9 6H15V8H9V6ZM17 6V16H19V4H9V6H17ZM5 8V20H15V8H5Z"/></svg>
         </button>
       `;
 
       const tdStatus = document.createElement('td');
       const statusClass = {
-        sent: 'badge-unused',
-        opened: 'badge-pending',
-        registered: 'badge-used',
-        expired: 'badge-revoked',
-        revoked: 'badge-revoked',
-      }[invite.status] || 'badge-unused';
-      tdStatus.innerHTML = `<span class="badge ${statusClass}">${escapeHtml(invite.status)}</span>`;
+        sent: 'z-badge--success',
+        opened: 'z-badge--pending',
+        registered: 'z-badge--warning',
+        expired: 'z-badge--danger',
+        revoked: 'z-badge--danger',
+      }[invite.status] || 'z-badge--success';
+      tdStatus.innerHTML = `<span class="z-badge ${statusClass}">${escapeHtml(invite.status)}</span>`;
 
       const tdCreated = document.createElement('td');
       tdCreated.innerHTML = `
         <div>${formatDate(invite.createdAt)}</div>
-        <div class="used-time">Expires ${formatDate(invite.expiresAt)}</div>
+        <div class="z-used-meta">Expires ${formatDate(invite.expiresAt)}</div>
       `;
 
       const tdMailbox = document.createElement('td');
       if (invite.mailboxEmail) {
         tdMailbox.innerHTML = `
-          <div class="used-email">${escapeHtml(invite.mailboxEmail)}</div>
-          <div class="used-time">${formatDate(invite.consumedAt)}</div>
+          <div>${escapeHtml(invite.mailboxEmail)}</div>
+          <div class="z-used-meta">${formatDate(invite.consumedAt)}</div>
         `;
       } else {
         tdMailbox.textContent = '—';
-        tdMailbox.style.color = 'var(--z-fg-muted)';
+        tdMailbox.className = 'z-text-muted';
       }
 
       const tdActions = document.createElement('td');
       if (invite.status === 'sent') {
         const revokeBtn = document.createElement('button');
-        revokeBtn.className = 'btn btn-danger btn-sm';
+        revokeBtn.className = 'z-btn-danger z-btn-sm';
         revokeBtn.textContent = 'Revoke';
         revokeBtn.addEventListener('click', () => revokeInvitation(invite.logtoTokenId));
         tdActions.appendChild(revokeBtn);
       } else {
         tdActions.textContent = '—';
-        tdActions.style.color = 'var(--z-fg-muted)';
+        tdActions.className = 'z-text-muted';
       }
 
       tr.appendChild(tdEmail);
@@ -208,12 +210,12 @@ document.addEventListener('DOMContentLoaded', () => {
       invitesTableBody.appendChild(tr);
     });
 
-    document.querySelectorAll('.btn-copy').forEach((btn) => {
+    document.querySelectorAll('.z-btn-copy').forEach((btn) => {
       btn.addEventListener('click', () => {
         const link = btn.getAttribute('data-link');
         navigator.clipboard.writeText(link).then(() => {
-          btn.classList.add('copied');
-          setTimeout(() => btn.classList.remove('copied'), 1500);
+          btn.classList.add('is-copied');
+          setTimeout(() => btn.classList.remove('is-copied'), 1500);
         });
       });
     });
@@ -224,7 +226,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return `${window.location.origin}/?${params.toString()}`;
   }
 
-  // Filter Table
   tableFilter.addEventListener('input', (e) => {
     const term = e.target.value.toLowerCase().trim();
     if (!term) {
@@ -244,8 +245,8 @@ document.addEventListener('DOMContentLoaded', () => {
   runAuditBtn.addEventListener('click', () => runAudit());
 
   async function runAudit() {
-    auditError.style.display = 'none';
-    auditSuccess.style.display = 'none';
+    hideAlert(auditError);
+    hideAlert(auditSuccess);
     auditSummary.innerHTML = '';
     auditResults.innerHTML = '';
     runAuditBtn.disabled = true;
@@ -256,19 +257,20 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!res.ok) throw new Error(data.error || 'Audit failed.');
 
       auditSummary.innerHTML = `
-        <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Stalwart</span><strong class="f2 fw6 near-black lh-solid">${data.counts.stalwartAccounts}</strong></div>
-        <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Directory</span><strong class="f2 fw6 near-black lh-solid">${data.counts.directoryUsers}</strong></div>
-        <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Directory only</span><strong class="f2 fw6 near-black lh-solid">${data.counts.directoryOnly}</strong></div>
-        <div class="audit-card bg-white ba b--light-gray br3 shadow-1 pa3 flex flex-column g1"><span class="f7 fw6 ttu tracked gray">Stalwart only</span><strong class="f2 fw6 near-black lh-solid">${data.counts.stalwartOnly}</strong></div>
+        <div class="z-card z-stat-card"><span class="z-type-label">Stalwart</span><strong class="z-stat-card__value">${data.counts.stalwartAccounts}</strong></div>
+        <div class="z-card z-stat-card"><span class="z-type-label">Directory</span><strong class="z-stat-card__value">${data.counts.directoryUsers}</strong></div>
+        <div class="z-card z-stat-card"><span class="z-type-label">Directory only</span><strong class="z-stat-card__value">${data.counts.directoryOnly}</strong></div>
+        <div class="z-card z-stat-card"><span class="z-type-label">Stalwart only</span><strong class="z-stat-card__value">${data.counts.stalwartOnly}</strong></div>
       `;
 
       auditResults.appendChild(renderAuditGroup('Directory only', data.directoryOnly, 'directory'));
       auditResults.appendChild(renderAuditGroup('Stalwart only', data.stalwartOnly, 'stalwart'));
 
-      auditSuccess.textContent = data.counts.directoryOnly || data.counts.stalwartOnly
-        ? 'Audit completed. Review mismatches below before cleanup.'
-        : 'Audit completed. No provisioning mismatches found.';
-      auditSuccess.style.display = 'block';
+      auditSuccess.textContent =
+        data.counts.directoryOnly || data.counts.stalwartOnly
+          ? 'Audit completed. Review mismatches below before cleanup.'
+          : 'Audit completed. No provisioning mismatches found.';
+      auditSuccess.classList.add('is-visible');
     } catch (err) {
       showError(err.message || 'Audit failed.', auditError);
     } finally {
@@ -278,26 +280,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderAuditGroup(title, rows, cleanupTarget) {
     const section = document.createElement('section');
-    section.className = 'audit-group';
-    section.innerHTML = `<h4 class="f5 fw6 near-black mt3 mb2">${escapeHtml(title)}</h4>`;
+    section.innerHTML = `<h4 class="z-type-title" style="font-size: 1rem; margin: 0.75rem 0 0.5rem;">${escapeHtml(title)}</h4>`;
 
     if (!rows.length) {
       const empty = document.createElement('p');
-      empty.className = 'audit-empty f6 mid-gray mt2 pl1';
+      empty.className = 'z-audit-empty';
       empty.textContent = 'No mismatches.';
       section.appendChild(empty);
       return section;
     }
 
     const list = document.createElement('div');
-    list.className = 'audit-list bg-white ba b--light-gray br3 shadow-1 overflow-hidden';
+    list.className = 'z-card z-audit-list';
     rows.forEach((row) => {
       const email = row.email || row.username;
       const item = document.createElement('div');
-      item.className = 'audit-row flex items-center justify-between pv3 ph4 bb b--light-gray';
+      item.className = 'z-audit-row';
       item.innerHTML = `
-        <span class="f6 near-black">${escapeHtml(email)}</span>
-        <button type="button" class="btn btn-danger btn-sm bg-washed-red red hover-bg-red hover-white bn pointer pv1 ph2 br2 f7 fw5 ml3">Delete from ${cleanupTarget}</button>
+        <span>${escapeHtml(email)}</span>
+        <button type="button" class="z-btn-danger z-btn-sm">Delete from ${cleanupTarget}</button>
       `;
       item.querySelector('button').addEventListener('click', () => cleanupAccount(email, cleanupTarget));
       list.appendChild(item);
@@ -325,8 +326,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   generateForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    generateError.style.display = 'none';
-    generateSuccess.style.display = 'none';
+    hideAlert(generateError);
+    hideAlert(generateSuccess);
 
     const email = document.getElementById('invite-email').value.trim();
     const expiresInHours = parseInt(document.getElementById('invite-expires').value, 10);
@@ -349,14 +350,14 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
           generateSuccess.innerHTML = `Link created for <strong>${escapeHtml(data.invitation.recoveryEmail)}</strong>. Copy and send manually:<br><code>${escapeHtml(data.invitation.magicLink)}</code>`;
         }
-        generateSuccess.style.display = 'block';
+        generateSuccess.classList.add('is-visible');
         generateForm.reset();
         document.getElementById('invite-expires').value = '72';
         loadInvitations();
       } else {
         showError(data.error || 'Failed to create invitation.', generateError);
       }
-    } catch (err) {
+    } catch {
       showError('Network error creating invitation.', generateError);
     } finally {
       submitBtn.disabled = false;
@@ -381,15 +382,19 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         alert(data.error || 'Failed to revoke invitation.');
       }
-    } catch (err) {
+    } catch {
       alert('Network error revoking invitation.');
     }
   }
 
-  // Helpers
   function showError(msg, element) {
     element.textContent = msg;
-    element.style.display = 'block';
+    element.classList.add('is-visible');
+  }
+
+  function hideAlert(element) {
+    element.classList.remove('is-visible');
+    element.textContent = '';
   }
 
   function escapeHtml(str) {
@@ -411,10 +416,9 @@ document.addEventListener('DOMContentLoaded', () => {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit',
-      hour12: false
+      hour12: false,
     });
   }
 
-  // Run initialization
   checkAuthStatus();
 });

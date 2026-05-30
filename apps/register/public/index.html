@@ -4,109 +4,103 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Register · ZAUR</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/tachyons.css">
-  <link rel="stylesheet" href="/style.css">
+  <link rel="stylesheet" href="/zaur.css">
 </head>
-<body class="sans-serif bg-near-white near-black min-h-100 flex flex-column">
-  <header class="site-header bg-white bb b--light-gray sticky top-0 z-5">
-    <div class="container flex items-center justify-between h-100 g3">
-      <a href="/" class="logo flex items-center g2 near-black no-underline">
-        <span>ZAUR</span>
-      </a>
-      <nav class="flex items-center g1" aria-label="Tools">
-        <a href="/" class="tool-link is-active bg-near-white near-black fw5 f6 pv2 ph3 br2 no-underline">Register</a>
-        <a href="#" id="webmail-link" class="tool-link mid-gray hover-near-black f6 pv2 ph3 br2 no-underline" target="_blank" rel="noopener">Mail</a>
+<body class="z-site-shell">
+  <header class="z-site-header z-panel">
+    <div class="z-site-header__inner">
+      <a href="/" class="z-type-brand">ZAUR</a>
+      <nav class="z-site-nav" aria-label="Tools">
+        <a href="/" class="z-site-nav__link z-site-nav__link--active">Register</a>
+        <a href="#" id="webmail-link" class="z-site-nav__link" target="_blank" rel="noopener">Mail</a>
       </nav>
     </div>
   </header>
 
-  <main class="flex-auto pv4 pv5-ns">
-    <div class="container">
-      <div class="mw7 center mb4" id="invitation-gate" style="display: none;">
-        <div class="register-panel visible bg-white ba b--light-gray br3 shadow-1 pa4">
-          <h2 class="f4 fw6 near-black mt0 mb2">Invitation required</h2>
-          <p class="f6 mid-gray mt0 mb3" id="invitation-gate-message">
+  <main class="z-site-main" id="main-content">
+    <div class="z-site-container z-stack-lg">
+      <div class="z-invite-gate z-hidden" id="invitation-gate">
+        <div class="z-card z-card__body">
+          <h2 class="z-type-title" style="font-size: 1.125rem;">Invitation required</h2>
+          <p class="z-type-lead z-mt-4" id="invitation-gate-message">
             Registration is invite-only. Open the magic link sent to your personal email to continue.
           </p>
-          <p class="f6 mid-gray mt0 mb0">
+          <p class="z-type-lead">
             Admin: send invitations at
-            <a href="/admin" class="blue hover-dark-blue no-underline">register.zaur.app/admin</a>.
+            <a href="/admin" class="z-link">register.zaur.app/admin</a>.
           </p>
         </div>
       </div>
 
-      <div id="register-content">
-      <div class="mw7 center mb4">
-        <h1 class="f3 f2-ns fw6 tracking-tight near-black mb2 mt0">Claim your address</h1>
-        <p class="f5 mid-gray mt0">Search for an available username across ZAUR domains.</p>
-      </div>
+      <div id="register-content" class="z-stack-lg">
+        <div class="z-page-intro">
+          <h1 class="z-type-title">Claim your address</h1>
+          <p class="z-type-lead">Search for an available username across ZAUR domains.</p>
+        </div>
 
-      <div class="mw7 center mb4">
-        <input
-          type="text"
-          id="username-input"
-          class="search-input z-input w-100 ba b--light-gray br3 bg-white near-black f3 pv3 ph4 outline-0"
-          placeholder="Search usernames"
-          autocomplete="off"
-          spellcheck="false"
-          autofocus
-        >
-        <div class="validation-hint mt2 red f7 min-h-1" id="validation-hint"></div>
-      </div>
+        <div>
+          <input
+            type="text"
+            id="username-input"
+            class="z-input z-input--search"
+            placeholder="Search usernames"
+            autocomplete="off"
+            spellcheck="false"
+            autofocus
+          >
+          <div class="z-validation-hint" id="validation-hint"></div>
+        </div>
 
-      <div id="results-container" class="mw7 center mb4"></div>
+        <div id="results-container"></div>
 
-      <div class="register-panel bg-white ba b--light-gray br3 shadow-1 pa4 mb4 mw7 center" id="register-panel">
-        <h2 id="selected-email-label" class="f4 fw6 near-black mt0 mb3">Create account</h2>
-        <p class="f6 mid-gray mt0 mb3" id="invitation-banner" style="display: none;"></p>
-        <div class="notification error" id="form-error" role="alert"></div>
+        <div class="z-card z-panel-collapsible" id="register-panel">
+          <div class="z-card__body">
+            <h2 class="z-type-title" style="font-size: 1.125rem;" id="selected-email-label">Create account</h2>
+            <p class="z-type-lead z-hidden z-mb-4" id="invitation-banner"></p>
+            <div class="z-alert z-alert--error" id="form-error" role="alert"></div>
 
-        <form id="register-form">
-          <input type="hidden" id="selected-domain-id" name="domainId">
-          <input type="hidden" id="invite-token" name="inviteToken">
-          <input type="hidden" id="invite-email" name="inviteEmail">
+            <form id="register-form" class="z-mt-4">
+              <input type="hidden" id="selected-domain-id" name="domainId">
+              <input type="hidden" id="invite-token" name="inviteToken">
+              <input type="hidden" id="invite-email" name="inviteEmail">
 
-          <div class="mb3">
-            <label for="password" class="db f7 fw5 mid-gray mb2">Mailbox password</label>
-            <input type="password" id="password" name="password" class="z-input w-100 ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0" autocomplete="new-password" required>
-            <p class="f7 gray mt1 mb0" id="password-hint" style="display: none;">
-              Use this for IMAP and your first webmail sign-in. You’ll set up a passkey after registering.
-            </p>
-            <div class="strength-bar bg-light-gray br-pill overflow-hidden mt2" style="height: 4px;">
-              <div class="strength-fill h-100 br-pill" id="strength-fill"></div>
-            </div>
-            <div class="strength-label f7 gray mt1 min-h-1" id="strength-label"></div>
+              <div class="z-field">
+                <label for="password" class="z-field-label">Mailbox password</label>
+                <input type="password" id="password" name="password" class="z-input" autocomplete="new-password" required>
+                <p class="z-text-subtle z-hidden" style="font-size: 0.8125rem; margin-top: 0.25rem;" id="password-hint">
+                  Use this for IMAP and your first webmail sign-in. You’ll set up a passkey after registering.
+                </p>
+                <div class="z-strength-bar">
+                  <div class="z-strength-fill" id="strength-fill"></div>
+                </div>
+                <div class="z-strength-label" id="strength-label"></div>
+              </div>
+
+              <div class="z-field">
+                <label for="confirm-password" class="z-field-label">Confirm password</label>
+                <input type="password" id="confirm-password" name="confirmPassword" class="z-input" autocomplete="new-password" required>
+              </div>
+
+              <div class="z-field" id="captcha-section">
+                <label for="captcha-answer" class="z-field-label">Security check</label>
+                <div class="z-captcha-row">
+                  <span class="z-captcha-question" id="captcha-question">Loading…</span>
+                  <input type="number" id="captcha-answer" name="captchaAnswer" class="z-input" inputmode="numeric" required style="max-width: 8rem;">
+                </div>
+              </div>
+
+              <button type="submit" class="z-btn-primary z-btn-block" id="submit-btn">Create account</button>
+            </form>
           </div>
-
-          <div class="mb3">
-            <label for="confirm-password" class="db f7 fw5 mid-gray mb2">Confirm password</label>
-            <input type="password" id="confirm-password" name="confirmPassword" class="z-input w-100 ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0" autocomplete="new-password" required>
-          </div>
-
-          <div class="mb4" id="captcha-section">
-            <label for="captcha-answer" class="db f7 fw5 mid-gray mb2">Security check</label>
-            <div class="flex flex-column flex-row-m items-stretch items-center-m g3">
-              <span class="captcha-question f4 fw6 near-black" id="captcha-question">Loading…</span>
-              <input type="number" id="captcha-answer" name="captchaAnswer" class="z-input w-100 w-auto-m ba b--light-gray br2 bg-white near-black f6 pv2 ph3 outline-0 flex-auto" inputmode="numeric" required>
-            </div>
-          </div>
-
-          <button type="submit" class="btn btn-primary w-100 bg-blue white hover-bg-dark-blue f6 pv2 ph3 br2 fw5 bn pointer" id="submit-btn">Create account</button>
-        </form>
-      </div>
+        </div>
       </div>
     </div>
   </main>
 
-  <footer class="site-footer bg-white bt b--light-gray pv3 mt-auto">
-    <div class="container flex flex-column flex-row-m items-start items-center-m justify-between-m g2 g0-m">
-      <span class="gray f7">&copy; 2026 ZAUR</span>
-      <div class="flex g3">
-        <a href="#" id="footer-webmail-link" class="mid-gray hover-near-black f7 no-underline" target="_blank" rel="noopener">Mail</a>
-      </div>
+  <footer class="z-site-footer">
+    <div class="z-site-footer__inner">
+      <span>&copy; 2026 ZAUR</span>
+      <a href="#" id="footer-webmail-link" class="z-link-muted" target="_blank" rel="noopener">Mail</a>
     </div>
   </footer>
 

@@ -68,12 +68,11 @@ function updateStrengthBar() {
 
 function showFormError(message) {
   formError.textContent = message;
-  formError.classList.add('error');
-  formError.style.display = 'block';
+  formError.classList.add('is-visible');
 }
 
 function hideFormError() {
-  formError.style.display = 'none';
+  formError.classList.remove('is-visible');
   formError.textContent = '';
 }
 
@@ -97,31 +96,31 @@ function validateLocalUsername(value) {
 
 function renderStatus(domainId, status) {
   if (status === 'checking') {
-    return '<span class="result-status checking flex items-center"><span class="spinner dib"></span></span>';
+    return '<span class="z-result-status"><span class="z-spinner" aria-hidden="true"></span></span>';
   }
   if (status === 'available') {
-    return '<span class="result-status available green fw6 f6">Available</span><button type="button" class="btn-register bg-blue white f7 pv1 ph3 br2 fw6 bn pointer ml3 hover-bg-dark-blue">Register</button>';
+    return '<span class="z-result-status available">Available</span><button type="button" class="z-btn-register">Register</button>';
   }
   if (status === 'taken') {
-    return '<span class="result-status taken mid-gray f6">Taken</span>';
+    return '<span class="z-result-status taken">Taken</span>';
   }
-  return '<span class="result-status pending">&nbsp;</span>';
+  return '<span class="z-result-status">&nbsp;</span>';
 }
 
 function renderExtensionList() {
   if (!cachedDomains.length) {
-    resultsContainer.innerHTML = '<div class="results-empty pv4 tc mid-gray">No domains available.</div>';
+    resultsContainer.innerHTML = '<div class="z-results-empty">No domains available.</div>';
     return;
   }
 
   resultsContainer.innerHTML = `
-    <div class="results-header f7 fw6 ttu tracked gray mb2 pl1">Available domains</div>
-    <div class="results-list bg-white ba b--light-gray br3 shadow-1 overflow-hidden">${cachedDomains
+    <div class="z-results-header z-type-label">Available domains</div>
+    <div class="z-card z-results-list">${cachedDomains
       .map(
         (d) => `
-      <div class="result-row extension-row flex items-center justify-between pv3 ph4 bb b--light-gray">
-        <span class="result-domain f5 near-black">
-          <span class="result-tld gray">@${escapeHtml(d.name)}</span>
+      <div class="z-result-row extension-row">
+        <span class="z-result-domain">
+          <span class="z-result-tld">@${escapeHtml(d.name)}</span>
         </span>
       </div>`,
       )
@@ -130,13 +129,13 @@ function renderExtensionList() {
 
 function renderSearchResults(query, statuses) {
   if (!cachedDomains.length) {
-    resultsContainer.innerHTML = '<div class="results-empty pv4 tc mid-gray">No domains available.</div>';
+    resultsContainer.innerHTML = '<div class="z-results-empty">No domains available.</div>';
     return;
   }
 
   const safeQuery = escapeHtml(query);
 
-  resultsContainer.innerHTML = `<div class="results-list bg-white ba b--light-gray br3 shadow-1 overflow-hidden">${cachedDomains
+  resultsContainer.innerHTML = `<div class="z-card z-results-list">${cachedDomains
     .map((d) => {
       const status = statuses.get(d.id) || 'pending';
       const isTaken = status === 'taken';
@@ -144,25 +143,25 @@ function renderSearchResults(query, statuses) {
       const isSelected = selectedResult?.domainId === d.id;
 
       return `
-        <div class="result-row flex items-center justify-between pv3 ph4 bb b--light-gray pointer ${isAvailable ? 'available' : ''} ${isTaken ? 'taken o-60' : ''} ${isSelected ? 'selected' : ''}"
+        <div class="z-result-row ${isAvailable ? 'available' : ''} ${isTaken ? 'taken' : ''} ${isSelected ? 'selected' : ''}"
              data-domain-id="${d.id}"
              data-domain="${escapeHtml(d.name)}"
              data-available="${isAvailable}">
-          <span class="result-domain f5 near-black ${isTaken ? 'taken-text' : ''}">
-            <span class="result-name fw6">${safeQuery}</span><span class="result-tld gray">@${escapeHtml(d.name)}</span>
+          <span class="z-result-domain ${isTaken ? 'taken-text' : ''}">
+            <span class="z-result-name">${safeQuery}</span><span class="z-result-tld">@${escapeHtml(d.name)}</span>
           </span>
-          <span class="result-action flex items-center g2">${renderStatus(d.id, status)}</span>
+          <span class="z-result-action">${renderStatus(d.id, status)}</span>
         </div>`;
     })
     .join('')}</div>`;
 
-  document.querySelectorAll('.result-row.available').forEach((row) => {
+  document.querySelectorAll('.z-result-row.available').forEach((row) => {
     row.addEventListener('click', (e) => {
-      if (e.target.closest('.btn-register') || e.target === row) {
+      if (e.target.closest('.z-btn-register') || e.target === row) {
         selectDomain(row);
       }
     });
-    row.querySelector('.btn-register')?.addEventListener('click', (e) => {
+    row.querySelector('.z-btn-register')?.addEventListener('click', (e) => {
       e.stopPropagation();
       selectDomain(row);
     });
@@ -171,15 +170,15 @@ function renderSearchResults(query, statuses) {
 
 function applyInvitationUi() {
   if (hasMagicLinkInvitation) {
-    if (captchaSection) captchaSection.style.display = 'none';
-    if (passwordHint) passwordHint.style.display = 'block';
+    if (captchaSection) captchaSection.classList.add('z-hidden');
+    if (passwordHint) passwordHint.classList.remove('z-hidden');
     const captchaInput = document.getElementById('captcha-answer');
     if (captchaInput) captchaInput.required = false;
   }
 }
 
 function selectDomain(row) {
-  document.querySelectorAll('.result-row').forEach((r) => r.classList.remove('selected'));
+  document.querySelectorAll('.z-result-row').forEach((r) => r.classList.remove('selected'));
   row.classList.add('selected');
 
   selectedResult = {
@@ -189,7 +188,7 @@ function selectDomain(row) {
 
   selectedDomainId.value = selectedResult.domainId;
   selectedEmailLabel.textContent = `${currentUsername}@${selectedResult.domain}`;
-  registerPanel.classList.add('visible');
+  registerPanel.classList.add('is-visible');
   hideFormError();
   if (!hasMagicLinkInvitation) {
     loadCaptcha();
@@ -203,7 +202,7 @@ function updateView() {
   validationHint.textContent = hint;
 
   if (!username) {
-    registerPanel.classList.remove('visible');
+    registerPanel.classList.remove('is-visible');
     selectedResult = null;
     availabilityMap.clear();
     renderExtensionList();
@@ -224,7 +223,7 @@ function updateView() {
   renderSearchResults(username, statuses);
 
   if (!valid) {
-    registerPanel.classList.remove('visible');
+    registerPanel.classList.remove('is-visible');
     selectedResult = null;
     return;
   }
@@ -347,14 +346,14 @@ async function initInvitation() {
 
     if (!requiresInvitation) {
       invitationReady = true;
-      registerContent.style.display = '';
-      invitationGate.style.display = 'none';
+      registerContent.classList.remove('z-hidden');
+      invitationGate.classList.add('z-hidden');
       return;
     }
 
     if (!inviteToken || !inviteEmail) {
-      registerContent.style.display = 'none';
-      invitationGate.style.display = 'block';
+      registerContent.classList.add('z-hidden');
+      invitationGate.classList.remove('z-hidden');
       return;
     }
 
@@ -364,8 +363,8 @@ async function initInvitation() {
     const verifyData = await verifyRes.json();
 
     if (!verifyRes.ok || !verifyData.valid) {
-      registerContent.style.display = 'none';
-      invitationGate.style.display = 'block';
+      registerContent.classList.add('z-hidden');
+      invitationGate.classList.remove('z-hidden');
       invitationGateMessage.textContent =
         verifyData.error || 'This invitation link is invalid or has expired.';
       return;
@@ -375,14 +374,14 @@ async function initInvitation() {
     hasMagicLinkInvitation = true;
     inviteTokenInput.value = inviteToken;
     inviteEmailInput.value = inviteEmail;
-    invitationBanner.style.display = 'block';
+    invitationBanner.classList.remove('z-hidden');
     invitationBanner.textContent = `Invitation verified for ${inviteEmail}. Pick your new address and mailbox password below.`;
-    registerContent.style.display = '';
-    invitationGate.style.display = 'none';
+    registerContent.classList.remove('z-hidden');
+    invitationGate.classList.add('z-hidden');
     applyInvitationUi();
   } catch {
-    registerContent.style.display = 'none';
-    invitationGate.style.display = 'block';
+    registerContent.classList.add('z-hidden');
+    invitationGate.classList.remove('z-hidden');
     invitationGateMessage.textContent = 'Unable to verify invitation. Try again later.';
   }
 }
@@ -394,7 +393,7 @@ async function init() {
     return;
   }
 
-  resultsContainer.innerHTML = '<div class="results-empty">Loading domains…</div>';
+  resultsContainer.innerHTML = '<div class="z-results-empty">Loading domains…</div>';
 
   try {
     const [configRes, domainsRes] = await Promise.all([
@@ -419,7 +418,7 @@ async function init() {
       renderExtensionList();
     }
   } catch {
-    resultsContainer.innerHTML = '<div class="results-empty">Unable to load domains.</div>';
+    resultsContainer.innerHTML = '<div class="z-results-empty">Unable to load domains.</div>';
   }
 }
 

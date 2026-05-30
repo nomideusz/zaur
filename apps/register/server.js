@@ -31,8 +31,8 @@ app.use((req, res, next) => {
     [
       "default-src 'self'",
       "script-src 'self'",
-      "style-src 'self' https://fonts.googleapis.com",
-      "font-src 'self' https://fonts.gstatic.com",
+      "style-src 'self'",
+      "font-src 'self'",
       "img-src 'self' data:",
       "connect-src 'self'",
       "form-action 'self'",
@@ -482,6 +482,12 @@ app.get('/register', (_req, res) => {
 
 app.get('/success', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'success.html'));
+});
+
+const uiCssPath = require.resolve('@zaur/ui/css/zaur.css');
+
+app.get('/zaur.css', (_req, res) => {
+  res.sendFile(uiCssPath);
 });
 
 app.use(express.static(path.join(__dirname, 'public')));

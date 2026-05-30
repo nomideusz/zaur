@@ -38,6 +38,7 @@
 	},
 	"dependencies": {
 		"@zaur/sprite": "workspace:*",
+		"@zaur/ui": "workspace:*",
 		"clsx": "^2.1.1",
 		"dexie": "^4.4.2",
 		"dompurify": "^3.4.5",
