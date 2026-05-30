@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import AlertCircle from '$lib/components/icons/AlertCircle.svelte';
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import Inbox from '$lib/components/icons/Inbox.svelte';
@@ -64,6 +63,9 @@
 
 	let loadSentinel = $state<HTMLDivElement | null>(null);
 	let sectionMessagesByFolder = $state<Record<string, MessagePreview[]>>({});
+let sectionVisibleCounts = $state<Record<string, number>>({});
+let sectionHasMoreByFolder = $state<Record<string, boolean>>({});
+const SECTION_PAGE_SIZE = 8;
 
 	const activeThreadId = $derived($page.params.threadId);
 	const searchReturnTo = $derived.by(() => {
@@ -179,19 +181,26 @@
 				id: 'unread',
 				name: 'Unread Messages',
 				routeId: mailboxRouteId ?? 'inbox',
-				messages: messages.filter((message) => message.unread).slice(0, 8)
+				messages: messages
+					.filter((message) => message.unread)
+					.slice(0, sectionVisibleCounts.unread ?? SECTION_PAGE_SIZE)
 			},
 			{
 				id: 'read',
 				name: 'Read Messages',
 				routeId: mailboxRouteId ?? 'inbox',
-				messages: messages.filter((message) => !message.unread).slice(0, 8)
+				messages: messages
+					.filter((message) => !message.unread)
+					.slice(0, sectionVisibleCounts.read ?? SECTION_PAGE_SIZE)
 			},
 			...orderedFolders.map((folder) => ({
 				id: folder.id,
 				name: folder.name,
 				routeId: folder.id,
-				messages: sectionMessagesByFolder[folder.id] ?? []
+				messages: (sectionMessagesByFolder[folder.id] ?? []).slice(
+					0,
+					sectionVisibleCounts[folder.id] ?? SECTION_PAGE_SIZE
+				)
 			}))
 		]
 	);
@@ -200,6 +209,8 @@
 		sectionMode;
 		mailboxRouteId;
 		sectionMessagesByFolder = {};
+		sectionHasMoreByFolder = {};
+		sectionVisibleCounts = { unread: SECTION_PAGE_SIZE, read: SECTION_PAGE_SIZE };
 	});
 
 	$effect(() => {
@@ -219,13 +230,15 @@
 
 		void Promise.all(
 			folders.map(async (folder) => {
-				if (folder.id === routeId) return [folder.id, messages.slice(0, 8)] as const;
-				const cached = await getCachedMessagePreviews(accountId, folder.id, 8);
-				return [folder.id, cached] as const;
+				const requested = sectionVisibleCounts[folder.id] ?? SECTION_PAGE_SIZE;
+				if (folder.id === routeId) return [folder.id, messages.slice(0, requested), messages.length > requested] as const;
+				const cached = await getCachedMessagePreviews(accountId, folder.id, requested);
+				return [folder.id, cached, cached.length >= requested] as const;
 			})
 		).then((entries) => {
 			if (cancelled) return;
-			sectionMessagesByFolder = Object.fromEntries(entries);
+			sectionMessagesByFolder = Object.fromEntries(entries.map(([id, cached]) => [id, cached]));
+			sectionHasMoreByFolder = Object.fromEntries(entries.map(([id, _, hasMore]) => [id, hasMore]));
 		});
 
 		return () => {
@@ -243,6 +256,21 @@
 		if (sectionId === 'unread') return 'No new messages.';
 		if (sectionId === 'read') return 'No read messages yet.';
 		return 'No messages yet.';
+	}
+
+	function sectionCanShowMore(sectionId: string): boolean {
+		const visible = sectionVisibleCounts[sectionId] ?? SECTION_PAGE_SIZE;
+		if (sectionId === 'unread') return messages.filter((message) => message.unread).length > visible;
+		if (sectionId === 'read') return messages.filter((message) => !message.unread).length > visible;
+		const known = sectionMessagesByFolder[sectionId]?.length ?? 0;
+		return known > visible || !!sectionHasMoreByFolder[sectionId];
+	}
+
+	function revealMoreInSection(sectionId: string) {
+		sectionVisibleCounts = {
+			...sectionVisibleCounts,
+			[sectionId]: (sectionVisibleCounts[sectionId] ?? SECTION_PAGE_SIZE) + SECTION_PAGE_SIZE
+		};
 	}
 </script>
 
@@ -368,15 +396,17 @@
 										</li>
 									{/each}
 								</ul>
-								<div class="z-mail-folder-section__footer">
-									<button
-										type="button"
-										class="z-mail-folder-section__more"
-										onclick={() => goto(`/mail/${section.routeId}`)}
-									>
-										Show more
-									</button>
-								</div>
+								{#if sectionCanShowMore(section.id)}
+									<div class="z-mail-folder-section__footer">
+										<button
+											type="button"
+											class="z-mail-folder-section__more"
+											onclick={() => revealMoreInSection(section.id)}
+										>
+											Show more
+										</button>
+									</div>
+								{/if}
 							{/if}
 						</section>
 					{/each}
