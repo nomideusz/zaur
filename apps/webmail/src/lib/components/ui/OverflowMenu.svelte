@@ -14,6 +14,7 @@
 		placement?: 'bottom' | 'top' | 'auto';
 		class?: string;
 		menuClass?: string;
+		triggerClass?: string;
 		onOpenChange?: (open: boolean) => void;
 		children: Snippet;
 	}
@@ -24,6 +25,7 @@
 		placement = 'bottom',
 		class: className = '',
 		menuClass = '',
+		triggerClass = '',
 		onOpenChange,
 		children
 	}: Props = $props();
@@ -132,7 +134,7 @@
 	<IconButton
 		bind:ref={triggerEl}
 		{label}
-		class="!min-h-8 !min-w-8 !p-1.5"
+		class={cn('!min-h-8 !min-w-8 !p-1.5', triggerClass)}
 		ariaExpanded={open}
 		ariaControls={menuId}
 		ariaHaspopup="menu"

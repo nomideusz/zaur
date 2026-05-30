@@ -280,7 +280,7 @@
 
 {#snippet activePreviewSlot()}
 	{#if mailboxRouteId}
-		<div class="z-type-list-preview mt-0.5 flex items-center max-md:hidden">
+		<div class="z-list-row-actions max-md:hidden">
 			<MessageListActiveActions
 				{message}
 				{mailboxRouteId}

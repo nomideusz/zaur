@@ -31,7 +31,7 @@
 	const starLabel = $derived(message.starred ? 'Unstar' : 'Star');
 	const menuId = $derived(`message-list-actions-${message.id}`);
 
-	const iconButtonClass = '!min-h-7 !min-w-7 !p-1';
+	const iconButtonClass = '!min-h-5 !min-w-5 !p-0';
 
 	async function runAction(action: () => Promise<void>) {
 		if (!auth.client) return;
@@ -83,23 +83,23 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class="flex shrink-0 items-center gap-0.5"
+	class="flex shrink-0 items-center justify-end gap-0.5"
 	role="presentation"
 	onclick={stopRowActivation}
 	onkeydown={(event) => event.stopPropagation()}
 >
 	<IconButton label={markReadLabel} class={iconButtonClass} onclick={toggleRead}>
 		{#if message.unread}
-			<MailOpen class="size-4" aria-hidden="true" />
+			<MailOpen class="size-3.5" aria-hidden="true" />
 		{:else}
-			<Mail class="size-4" aria-hidden="true" />
+			<Mail class="size-3.5" aria-hidden="true" />
 		{/if}
 	</IconButton>
 
 	{#if settings.showStarsInList}
 		<IconButton label={starLabel} class={iconButtonClass} onclick={toggleStar}>
 			<Star
-				class={cn('size-4', message.starred && 'fill-star text-star')}
+				class={cn('size-3.5', message.starred && 'fill-star text-star')}
 				aria-hidden="true"
 			/>
 		</IconButton>
@@ -107,7 +107,7 @@
 
 	{#if canArchive}
 		<IconButton label="Archive" class={iconButtonClass} onclick={archive}>
-			<Archive class="size-4" aria-hidden="true" />
+			<Archive class="size-3.5" aria-hidden="true" />
 		</IconButton>
 	{/if}
 
@@ -116,7 +116,7 @@
 		class={cn(iconButtonClass, 'text-danger hover:bg-danger/10')}
 		onclick={deleteMessage}
 	>
-		<Trash2 class="size-4" aria-hidden="true" />
+		<Trash2 class="size-3.5" aria-hidden="true" />
 	</IconButton>
 
 	<OverflowMenu
@@ -124,6 +124,7 @@
 		{menuId}
 		placement="auto"
 		menuClass="z-overflow-menu--list"
+		triggerClass="!min-h-5 !min-w-5 !p-0"
 		onOpenChange={onMenuOpenChange}
 	>
 		{#if !settings.showStarsInList}

@@ -1281,6 +1281,21 @@
 		margin-top: 0.625rem;
 	}
 
+	.z-list-row-actions {
+		@apply mt-0.5 flex h-5 w-full items-center justify-end gap-0.5;
+	}
+
+	.z-list-row-actions :where(button) {
+		min-height: 1.25rem;
+		min-width: 1.25rem;
+		padding: 0;
+	}
+
+	.z-list-row-actions :where(svg) {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+
 	.z-list-line--sender {
 		@apply h-5 shrink-0;
 	}
