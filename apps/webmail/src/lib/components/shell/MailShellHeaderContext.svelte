@@ -68,10 +68,18 @@ import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 		return secondaryFolders.some((folder) => folder.id === mailboxRouteId) ? mailboxRouteId : null;
 	});
 	const showDesktopCoreSwitcher = $derived(
-		!!mailboxRouteId && !mail.hasSelection && !mobileReadingThread && coreFolders.length > 0
+		!!mailboxRouteId &&
+			!settings.traditionalMailboxView &&
+			!mail.hasSelection &&
+			!mobileReadingThread &&
+			coreFolders.length > 0
 	);
 	const showDesktopMoreFolders = $derived(
-		!!mailboxRouteId && !mail.hasSelection && !mobileReadingThread && secondaryFolders.length > 0
+		!!mailboxRouteId &&
+			!settings.traditionalMailboxView &&
+			!mail.hasSelection &&
+			!mobileReadingThread &&
+			secondaryFolders.length > 0
 	);
 	const showDesktopCurrentMailbox = $derived(
 		showFolderTitle && !!mailboxRouteId && !activeCoreFolderId && !mobileReadingThread

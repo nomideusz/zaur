@@ -62,7 +62,7 @@
 			<MessageList
 			messages={search.results}
 			{mailboxName}
-			expanded={settings.focusLayoutMode === 'adaptive'}
+			expanded={settings.focusLayoutMode === 'adaptive' && !settings.traditionalMailboxView}
 			loading={search.loading}
 			loadingMore={search.loadingMore}
 			hasMore={search.hasMore}

@@ -10,6 +10,7 @@
 
 	let { children } = $props();
 const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
+const showAppHeader = $derived(!onMailRoute || settings.traditionalMailboxView);
 
 	$effect(() => {
 		if (auth.isRestoring) return;
@@ -53,7 +54,7 @@ const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
 	</div>
 {:else if auth.isAuthenticated}
 	<div class="flex h-dvh flex-col overflow-hidden">
-		{#if !onMailRoute}
+		{#if showAppHeader}
 			<AppShellHeader />
 		{/if}
 		<main id="main-content" class="flex min-h-0 flex-1 flex-col overflow-hidden" tabindex="-1">

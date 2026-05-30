@@ -47,7 +47,7 @@
 			messages={mail.messages}
 			{mailboxName}
 			mailboxRouteId={data.mailboxId}
-			expanded={settings.focusLayoutMode === 'adaptive'}
+			expanded={settings.focusLayoutMode === 'adaptive' && !settings.traditionalMailboxView}
 			loading={mail.messagesLoading}
 			loadingMore={mail.messagesLoadingMore}
 			hasMore={mail.messagesHasMore}
