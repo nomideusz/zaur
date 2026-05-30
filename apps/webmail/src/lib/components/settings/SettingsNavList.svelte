@@ -52,7 +52,9 @@
 		{@const sectionLinks = linksForSection(section.id)}
 		{#if sectionLinks.length > 0}
 			<div>
-				<p class={cn('z-type-label z-settings-nav-section', isMobile && 'mb-2')}>{section.label}</p>
+				{#if section.label}
+					<p class={cn('z-type-label z-settings-nav-section', isMobile && 'mb-2')}>{section.label}</p>
+				{/if}
 				<ul class={cn(isMobile && 'z-settings-list')}>
 					{#each sectionLinks as link (link.href)}
 						{@const Icon = ICON_MAP[link.icon]}

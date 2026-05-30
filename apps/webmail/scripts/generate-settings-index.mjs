@@ -9,7 +9,7 @@ const BASIC_TITLE_OVERRIDES = new Set([
 	'Reset inbox settings',
 	'Reset reading settings',
 	'Reset writing settings',
-	'Reset workspace settings',
+	'Reset layout settings',
 	'Reset calendar settings',
 	'Reset contacts settings',
 	'Reset you settings',
@@ -76,22 +76,22 @@ function countHiddenForSource(source) {
 	return hidden;
 }
 
-function modesForEntry(href, title) {
-	if (href !== '/settings/layout') return undefined;
-	if (title === 'Show list rail in reader') return ['simple'];
-	if (title === 'Show folder unread counts' || title === 'Show pane borders') return ['traditional'];
+function modesForEntry(href, _title) {
+	if (href === '/settings/reading-simple-layout') return ['simple'];
+	if (href === '/settings/reading-classic-layout') return ['traditional'];
 	return undefined;
 }
 
 const files = [
 	['src/lib/settings/sections/experience.svelte', '/settings'],
 	['src/lib/settings/sections/appearance.svelte', '/settings/appearance'],
-	['src/lib/settings/sections/layout.svelte', '/settings/layout'],
-	['src/lib/settings/sections/calendar.svelte', '/settings/calendar'],
+	['src/lib/modes/simple/settings/reading.svelte', '/settings/reading-simple-layout'],
+	['src/lib/modes/classic/settings/reading.svelte', '/settings/reading-classic-layout'],
+	['src/lib/settings/sections/reading-core.svelte', '/settings/reading'],
+	['src/lib/settings/sections/writing.svelte', '/settings/writing'],
 	['src/lib/settings/sections/data_reset.svelte', '/settings/data'],
 	['src/lib/settings/sections/data_backup.svelte', '/settings/data'],
-	['src/routes/(app)/settings/account/+page.svelte', '/settings/account'],
-	['src/routes/(app)/settings/mail/+page.svelte', '/settings/mail']
+	['src/routes/(app)/settings/account/+page.svelte', '/settings/account']
 ];
 
 const entries = [];
@@ -100,18 +100,20 @@ const hiddenCounts = {};
 
 for (const [file, href] of files) {
 	const src = fs.readFileSync(file, 'utf8');
-	hiddenCounts[href] = (hiddenCounts[href] ?? 0) + countHiddenForSource(src);
+	const pageHref = href.startsWith('/settings/reading-') ? '/settings/reading' : href;
+	hiddenCounts[pageHref] = (hiddenCounts[pageHref] ?? 0) + countHiddenForSource(src);
 
 	const rowRe = /<(SettingsRow|SettingsField)\s+[^>]*title="([^"]+)"[^>]*(?:\s+description="([^"]*)")?/g;
 	let m;
 	while ((m = rowRe.exec(src)) !== null) {
 		const title = m[2];
 		const description = m[3] ?? '';
-		const id = `${href}-${slug(title)}`;
+		const publicHref = href.startsWith('/settings/reading-') ? '/settings/reading' : href;
+		const id = `${publicHref}-${slug(title)}`;
 		if (seen.has(id)) continue;
 		seen.add(id);
 		const modes = modesForEntry(href, title);
-		entries.push(modes ? { id, href, title, description, modes } : { id, href, title, description });
+		entries.push(modes ? { id, href: publicHref, title, description, modes } : { id, href: publicHref, title, description });
 	}
 }
 

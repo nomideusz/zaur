@@ -2595,6 +2595,21 @@ class SettingsStore {
 		this.writeStorage(STORAGE.traditionalMailboxView, String(legacy.traditionalMailboxView));
 	}
 
+	/** Persist a new mode and reload — avoids hot-swapping two product shells in one session. */
+	switchMailViewModeTo(value: MailViewMode, landingPath?: string) {
+		if (!browser || value === this.mailViewMode) return;
+
+		const legacy = legacyFlagsForMailViewMode(value);
+		this.writeStorage(STORAGE.mailViewMode, value);
+		this.writeStorage(STORAGE.focusLayoutMode, legacy.focusLayoutMode);
+		this.writeStorage(STORAGE.traditionalMailboxView, String(legacy.traditionalMailboxView));
+
+		void import('$lib/mail/switch-mode').then(({ mailViewModeSwitchLanding }) => {
+			const target = landingPath ?? mailViewModeSwitchLanding(window.location.pathname);
+			location.assign(target);
+		});
+	}
+
 	setFocusLayoutMode(value: FocusLayoutMode) {
 		this.setMailViewMode(value === 'adaptive' ? 'simple' : 'traditional');
 	}
@@ -3083,16 +3098,22 @@ class SettingsStore {
 		this.setCompactComposeSuggestions(false);
 	}
 
-	resetWorkspaceSettings() {
+	resetLayoutSettings() {
 		this.setSearchScope('all');
+		this.setShowReaderListRail(false);
+		this.setRememberLastMailbox(false);
+		this.setShowFolderUnreadCounts(true);
+		this.setHidePaneBorders(false);
+	}
+
+	resetWorkspaceSettings() {
+		this.resetLayoutSettings();
 		this.setCompactHeaderActions(false);
 		this.setCompactAppHeader(false);
 		this.setHidePaneBorders(false);
 		this.setHideAppTitle(false);
 		this.setCompactUserMenu(false);
 		this.setCompactUserMenuDropdown(false);
-		this.setMailViewMode('simple');
-		this.setShowReaderListRail(false);
 		this.setRememberLastMailbox(false);
 		this.setHideHeaderSearch(false);
 		this.setShowSearchContactSuggestions(true);

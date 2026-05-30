@@ -19,7 +19,6 @@
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
 	import { getContext } from 'svelte';
-	import { usesAdaptiveReaderFocus } from '$lib/mail/view-mode';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -35,13 +34,21 @@
 		thread: MessageDetail[];
 		mailboxRouteId: string;
 		onMoved?: () => void;
+		/** Simple mode: icon-first toolbar when reading with adaptive focus. */
+		minimalChrome?: boolean;
 		/** Reader pane header: avoid fixed button height so title can align with labels. */
 		readerHeader?: boolean;
 		class?: string;
 	}
 
-	let { thread, mailboxRouteId, onMoved, readerHeader = false, class: className = '' }: Props =
-		$props();
+	let {
+		thread,
+		mailboxRouteId,
+		onMoved,
+		minimalChrome = false,
+		readerHeader = false,
+		class: className = ''
+	}: Props = $props();
 
 	const pane = getContext<MailPaneContext>(MAIL_PANE_CTX);
 
@@ -61,12 +68,7 @@
 		)
 	);
 	const allowExternal = $derived(!settings.blockExternalContent || pane?.showImagesOnce);
-	const minimalToolbar = $derived(
-		settings.minimalReaderToolbar ||
-			usesAdaptiveReaderFocus(settings.mailViewMode, {
-				showReaderListRail: settings.showReaderListRail
-			})
-	);
+	const minimalToolbar = $derived(settings.minimalReaderToolbar || minimalChrome);
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>
 			renderMessageBody({

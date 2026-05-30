@@ -49,7 +49,6 @@
 			messages={mail.messages}
 			{mailboxName}
 			mailboxRouteId={data.mailboxId}
-			expanded={activeMode.mail.useExpandedMessageList}
 			loading={mail.messagesLoading}
 			loadingMore={mail.messagesLoadingMore}
 			hasMore={mail.messagesHasMore}

@@ -11,8 +11,12 @@
 
 	let { children } = $props();
 	const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
+	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
 	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
-	const showAppHeader = $derived(!onMailRoute || activeMode.mail.showAppHeaderOnMailRoutes);
+	const showAppHeader = $derived(
+		(!onMailRoute || activeMode.mail.showAppHeaderOnMailRoutes) &&
+			(!onSettingsRoute || activeMode.settings.showAppHeader)
+	);
 
 	$effect(() => {
 		if (auth.isRestoring) return;

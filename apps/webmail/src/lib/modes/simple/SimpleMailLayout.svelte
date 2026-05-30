@@ -3,7 +3,6 @@
 	import type { Snippet } from 'svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
-	import { usesAdaptiveReaderFocus } from '$lib/mail/view-mode';
 
 	interface Props {
 		list: Snippet;
@@ -14,11 +13,7 @@
 
 	const isThreadOpen = $derived(!!$page.params.threadId);
 	const adaptiveSingleFocus = $derived(
-		usesAdaptiveReaderFocus(settings.mailViewMode, {
-			showReaderListRail: settings.showReaderListRail
-		}) &&
-			isThreadOpen &&
-			!mail.hasSelection
+		!settings.showReaderListRail && isThreadOpen && !mail.hasSelection
 	);
 </script>
 

@@ -110,30 +110,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/calendar-events-per-day",
-		"href": "/settings/calendar",
-		"title": "Events per day",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-reset-calendar-settings",
-		"href": "/settings/calendar",
-		"title": "Reset calendar settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-show-event-times",
-		"href": "/settings/calendar",
-		"title": "Show event times",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-week-starts-on-monday",
-		"href": "/settings/calendar",
-		"title": "Week starts on Monday",
-		"description": ""
-	},
-	{
 		"id": "/settings/data-export-settings",
 		"href": "/settings/data",
 		"title": "Export settings",
@@ -152,32 +128,152 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/layout-current-mode",
-		"href": "/settings/layout",
-		"title": "Current mode",
+		"id": "/settings/reading-app-install",
+		"href": "/settings/reading",
+		"title": "App install",
 		"description": ""
 	},
 	{
-		"id": "/settings/layout-default-search-scope",
-		"href": "/settings/layout",
+		"id": "/settings/reading-archive-unread-delete",
+		"href": "/settings/reading",
+		"title": "Archive / unread / delete",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-auto-load-more-messages",
+		"href": "/settings/reading",
+		"title": "Auto-load more messages",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-block-external-content",
+		"href": "/settings/reading",
+		"title": "Block external content",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-compose",
+		"href": "/settings/reading",
+		"title": "Compose",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-confirm-before-delete",
+		"href": "/settings/reading",
+		"title": "Confirm before delete",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-default-search-scope",
+		"href": "/settings/reading",
 		"title": "Default search scope",
+		"description": "",
+		"modes": [
+			"simple"
+		]
+	},
+	{
+		"id": "/settings/reading-enable-keyboard-shortcuts",
+		"href": "/settings/reading",
+		"title": "Enable keyboard shortcuts",
 		"description": ""
 	},
 	{
-		"id": "/settings/layout-remember-last-mailbox",
-		"href": "/settings/layout",
+		"id": "/settings/reading-focus-mode-return-to-list",
+		"href": "/settings/reading",
+		"title": "Focus mode / return to list",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-go-to-folder",
+		"href": "/settings/reading",
+		"title": "Go to folder",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-hide-action-toasts",
+		"href": "/settings/reading",
+		"title": "Hide action toasts",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-list-text-size",
+		"href": "/settings/reading",
+		"title": "List text size",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-mark-as-read-delay",
+		"href": "/settings/reading",
+		"title": "Mark-as-read delay",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-mark-as-read-when-opened",
+		"href": "/settings/reading",
+		"title": "Mark as read when opened",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-next-previous-message",
+		"href": "/settings/reading",
+		"title": "Next / previous message",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-push-notifications",
+		"href": "/settings/reading",
+		"title": "Push notifications",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-reading-text-size",
+		"href": "/settings/reading",
+		"title": "Reading text size",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-remember-last-mailbox",
+		"href": "/settings/reading",
 		"title": "Remember last mailbox",
+		"description": "",
+		"modes": [
+			"simple"
+		]
+	},
+	{
+		"id": "/settings/reading-reply-reply-all",
+		"href": "/settings/reading",
+		"title": "Reply / reply all",
 		"description": ""
 	},
 	{
-		"id": "/settings/layout-reset-layout-settings",
-		"href": "/settings/layout",
+		"id": "/settings/reading-reset-layout-settings",
+		"href": "/settings/reading",
 		"title": "Reset layout settings",
+		"description": "",
+		"modes": [
+			"traditional"
+		]
+	},
+	{
+		"id": "/settings/reading-reset-reading-settings",
+		"href": "/settings/reading",
+		"title": "Reset reading settings",
+		"description": "",
+		"modes": [
+			"simple"
+		]
+	},
+	{
+		"id": "/settings/reading-send-close-compose",
+		"href": "/settings/reading",
+		"title": "Send / close compose",
 		"description": ""
 	},
 	{
-		"id": "/settings/layout-show-folder-unread-counts",
-		"href": "/settings/layout",
+		"id": "/settings/reading-show-folder-unread-counts",
+		"href": "/settings/reading",
 		"title": "Show folder unread counts",
 		"description": "",
 		"modes": [
@@ -185,8 +281,8 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		]
 	},
 	{
-		"id": "/settings/layout-show-list-rail-in-reader",
-		"href": "/settings/layout",
+		"id": "/settings/reading-show-list-rail-in-reader",
+		"href": "/settings/reading",
 		"title": "Show list rail in reader",
 		"description": "",
 		"modes": [
@@ -194,8 +290,14 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		]
 	},
 	{
-		"id": "/settings/layout-show-pane-borders",
-		"href": "/settings/layout",
+		"id": "/settings/reading-show-message-preview",
+		"href": "/settings/reading",
+		"title": "Show message preview",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-show-pane-borders",
+		"href": "/settings/reading",
 		"title": "Show pane borders",
 		"description": "",
 		"modes": [
@@ -203,213 +305,99 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		]
 	},
 	{
-		"id": "/settings/mail-always-bcc-me",
-		"href": "/settings/mail",
-		"title": "Always Bcc me",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-app-install",
-		"href": "/settings/mail",
-		"title": "App install",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-archive-unread-delete",
-		"href": "/settings/mail",
-		"title": "Archive / unread / delete",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-auto-archive-after-reply",
-		"href": "/settings/mail",
-		"title": "Auto-archive after reply",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-auto-load-more-messages",
-		"href": "/settings/mail",
-		"title": "Auto-load more messages",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-block-external-content",
-		"href": "/settings/mail",
-		"title": "Block external content",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-collapse-quoted-text",
-		"href": "/settings/mail",
-		"title": "Collapse quoted text",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-compose",
-		"href": "/settings/mail",
-		"title": "Compose",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-confirm-before-delete",
-		"href": "/settings/mail",
-		"title": "Confirm before delete",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-confirm-before-discarding-compose",
-		"href": "/settings/mail",
-		"title": "Confirm before discarding compose",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-contact-suggestions",
-		"href": "/settings/mail",
-		"title": "Contact suggestions",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-default-format",
-		"href": "/settings/mail",
-		"title": "Default format",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-default-reply-action",
-		"href": "/settings/mail",
-		"title": "Default reply action",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-enable-keyboard-shortcuts",
-		"href": "/settings/mail",
-		"title": "Enable keyboard shortcuts",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-focus-mode-return-to-list",
-		"href": "/settings/mail",
-		"title": "Focus mode / return to list",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-go-to-folder",
-		"href": "/settings/mail",
-		"title": "Go to folder",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-hide-action-toasts",
-		"href": "/settings/mail",
-		"title": "Hide action toasts",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-hide-compose-hints",
-		"href": "/settings/mail",
-		"title": "Hide compose hints",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-list-text-size",
-		"href": "/settings/mail",
-		"title": "List text size",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-mark-as-read-delay",
-		"href": "/settings/mail",
-		"title": "Mark-as-read delay",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-mark-as-read-when-opened",
-		"href": "/settings/mail",
-		"title": "Mark as read when opened",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-next-previous-message",
-		"href": "/settings/mail",
-		"title": "Next / previous message",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-push-notifications",
-		"href": "/settings/mail",
-		"title": "Push notifications",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-reading-text-size",
-		"href": "/settings/mail",
-		"title": "Reading text size",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-reply-reply-all",
-		"href": "/settings/mail",
-		"title": "Reply / reply all",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-reset-general-mail-settings",
-		"href": "/settings/mail",
-		"title": "Reset general mail settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-return-to-inbox-after-sending",
-		"href": "/settings/mail",
-		"title": "Return to inbox after sending",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-send-close-compose",
-		"href": "/settings/mail",
-		"title": "Send / close compose",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-show-cc-bcc",
-		"href": "/settings/mail",
-		"title": "Show Cc/Bcc",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-show-message-preview",
-		"href": "/settings/mail",
-		"title": "Show message preview",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-time-format",
-		"href": "/settings/mail",
+		"id": "/settings/reading-time-format",
+		"href": "/settings/reading",
 		"title": "Time format",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-timestamps",
-		"href": "/settings/mail",
+		"id": "/settings/reading-timestamps",
+		"href": "/settings/reading",
 		"title": "Timestamps",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-undo-send",
-		"href": "/settings/mail",
-		"title": "Undo send",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-unread-count-in-tab-title",
-		"href": "/settings/mail",
+		"id": "/settings/reading-unread-count-in-tab-title",
+		"href": "/settings/reading",
 		"title": "Unread count in tab title",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-unread-count-on-app-icon",
-		"href": "/settings/mail",
+		"id": "/settings/reading-unread-count-on-app-icon",
+		"href": "/settings/reading",
 		"title": "Unread count on app icon",
+		"description": ""
+	},
+	{
+		"id": "/settings/writing-always-bcc-me",
+		"href": "/settings/writing",
+		"title": "Always Bcc me",
+		"description": ""
+	},
+	{
+		"id": "/settings/writing-auto-archive-after-reply",
+		"href": "/settings/writing",
+		"title": "Auto-archive after reply",
+		"description": ""
+	},
+	{
+		"id": "/settings/writing-collapse-quoted-text",
+		"href": "/settings/writing",
+		"title": "Collapse quoted text",
+		"description": ""
+	},
+	{
+		"id": "/settings/writing-confirm-before-discarding-compose",
+		"href": "/settings/writing",
+		"title": "Confirm before discarding compose",
+		"description": ""
+	},
+	{
+		"id": "/settings/writing-contact-suggestions",
+		"href": "/settings/writing",
+		"title": "Contact suggestions",
+		"description": ""
+	},
+	{
+		"id": "/settings/writing-default-format",
+		"href": "/settings/writing",
+		"title": "Default format",
+		"description": ""
+	},
+	{
+		"id": "/settings/writing-default-reply-action",
+		"href": "/settings/writing",
+		"title": "Default reply action",
+		"description": ""
+	},
+	{
+		"id": "/settings/writing-hide-compose-hints",
+		"href": "/settings/writing",
+		"title": "Hide compose hints",
+		"description": ""
+	},
+	{
+		"id": "/settings/writing-reset-writing-settings",
+		"href": "/settings/writing",
+		"title": "Reset writing settings",
+		"description": ""
+	},
+	{
+		"id": "/settings/writing-return-to-inbox-after-sending",
+		"href": "/settings/writing",
+		"title": "Return to inbox after sending",
+		"description": ""
+	},
+	{
+		"id": "/settings/writing-show-cc-bcc",
+		"href": "/settings/writing",
+		"title": "Show Cc/Bcc",
+		"description": ""
+	},
+	{
+		"id": "/settings/writing-undo-send",
+		"href": "/settings/writing",
+		"title": "Undo send",
 		"description": ""
 	}
 ];

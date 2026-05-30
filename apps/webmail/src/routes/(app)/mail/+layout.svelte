@@ -6,12 +6,15 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { readerFocus } from '$lib/stores/reader-focus.svelte';
+	import { setWebmailModeContext } from '$lib/modes/context';
 	import { webmailModeDefinition } from '$lib/modes/registry';
 
 	let { children } = $props();
 
 	const isThreadOpen = $derived(!!$page.params.threadId);
 	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
+
+	setWebmailModeContext(() => webmailModeDefinition(settings.mailViewMode));
 	const focusActive = $derived(
 		activeMode.mail.useAdaptiveReaderFocus && readerFocus.active && isThreadOpen
 	);
@@ -54,9 +57,7 @@
 
 {#key activeMode.id}
 	<div
-		class="relative flex min-h-0 flex-1 flex-row overflow-hidden"
-		class:z-mail-view-simple={activeMode.id === 'simple'}
-		class:z-mail-view-traditional={activeMode.id === 'traditional'}
+		class="relative flex min-h-0 flex-1 flex-row overflow-hidden {activeMode.mailRootClass}"
 		class:z-reader-focus={focusActive}
 		class:z-layout-adaptive-thread={adaptiveThreadOpen}
 	>

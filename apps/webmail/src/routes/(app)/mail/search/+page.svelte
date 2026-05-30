@@ -64,7 +64,6 @@
 			<MessageList
 				messages={search.results}
 				{mailboxName}
-				expanded={activeMode.mail.useExpandedMessageList}
 				loading={search.loading}
 				loadingMore={search.loadingMore}
 				hasMore={search.hasMore}

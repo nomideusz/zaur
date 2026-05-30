@@ -14,22 +14,60 @@ export const routeMap = {
 		root: '/settings',
 		experience: '/settings',
 		account: '/settings/account',
-		mail: '/settings/mail',
-		inbox: '/settings/inbox',
 		reading: '/settings/reading',
-		compose: '/settings/compose',
-		appearance: '/settings/appearance',
+		writing: '/settings/writing',
 		layout: '/settings/layout',
-		calendar: '/settings/calendar',
+		appearance: '/settings/appearance',
 		data: '/settings/data',
 		/** Legacy — redirect */
+		mail: '/settings/mail',
 		workspace: '/settings/workspace',
+		calendar: '/settings/calendar',
+		inbox: '/settings/inbox',
+		compose: '/settings/compose',
 		display: '/settings/display',
 		sidebar: '/settings/sidebar',
 		contacts: '/settings/contacts'
 	},
 	calendar: '/calendar',
 	contacts: '/contacts'
+} as const;
+
+/**
+ * Webmail modes — two distinct product experiences sharing JMAP/sync only.
+ *
+ * | Layer            | Simple                          | Classic (stored as `traditional`) |
+ * |------------------|---------------------------------|-----------------------------------|
+ * | Design reference | Editorial one-column sites      | Utility-first dense layouts       |
+ * | Mail chrome      | Text nav, no app header         | App header + folder sidebar       |
+ * | List             | Sectioned inbox, expanded width | Fixed-width list column           |
+ * | Reader           | Adaptive single-focus           | Always-visible split pane         |
+ * | Settings UX        | Editorial flat lists, text nav  | Sidebar + cards + utility chrome  |
+ * | Mail CSS         | `.z-mail-view-simple`           | `.z-mail-view-traditional`        |
+ *
+ * Mode selection lives at `/settings` (Experience). Switching modes persists preference
+ * and reloads the app (`settings.switchMailViewModeTo`) — modes are session shells, not
+ * hot-swapped reactive toggles. Mail → `/mail/inbox`, Settings → `/settings`.
+ *
+ * Source of truth: `src/lib/modes/registry.ts`
+ */
+export const modeArchitecture = {
+	registry: 'src/lib/modes/registry.ts',
+	context: 'src/lib/modes/context.ts',
+	switchMode: 'src/lib/mail/switch-mode.ts',
+	storageKey: 'zaur:mail-view-mode',
+	values: ['simple', 'traditional'] as const,
+	uiLabels: { simple: 'Simple', traditional: 'Classic' } as const,
+	simple: {
+		mailLayout: 'src/lib/modes/simple/SimpleMailLayout.svelte',
+		readingSettings: 'src/lib/modes/simple/settings/reading.svelte',
+		settingsLayout: 'src/lib/modes/simple/SimpleSettingsLayout.svelte'
+	},
+	classic: {
+		mailLayout: 'src/lib/modes/classic/ClassicMailLayout.svelte',
+		readingSettings: 'src/lib/modes/classic/settings/reading.svelte',
+		settingsLayout: 'src/lib/modes/classic/ClassicSettingsLayout.svelte'
+	}
 } as const;
 
 export const componentTree = {
@@ -53,12 +91,17 @@ export const componentTree = {
 	},
 	mail: {
 		MailModeRegistry: ['Simple mode', 'Classic mode'],
-		MailLayout: ['MailPane (SimpleMailSurface | ClassicMailSurface)'],
-		SimpleMailLayout: ['MessageList (sectioned)', 'MessageReader | MessageReaderEmpty'],
-		ClassicMailLayout: ['MailboxSidebar', 'MessageList', 'MessageReader | MessageReaderEmpty'],
+		MailLayout: ['MailPane → SimpleMailSurface | ClassicMailSurface'],
+		SimpleMailLayout: ['SimpleMessageList (sectioned)', 'SimpleMessageReader | MessageReaderEmpty'],
+		ClassicMailLayout: ['MailboxSidebar', 'ClassicMessageList', 'ClassicMessageReader | MessageReaderEmpty'],
+		SimpleMessageReader: ['MessageReaderCore', 'minimalChrome'],
+		ClassicMessageReader: ['MessageReaderCore', 'full chrome'],
+		SimpleMessageList: ['sectioned inbox', 'text nav', 'editorial rows'],
+		ClassicMessageList: ['MessageListItem', 'bulk select header'],
+		MessageList: ['router → SimpleMessageList | ClassicMessageList'],
+		MessageReader: ['router → SimpleMessageReader | ClassicMessageReader'],
+		MessageReaderCore: ['thread body', 'quick reply', 'mobile bar'],
 		MailboxSidebar: ['MailboxTree', 'MailboxItem'],
-		MessageList: ['MessageListItem'],
-		MessageReader: ['ReaderTitle', 'ReaderBody'],
 		ComposePanel: ['ComposeHeader', 'ComposeFields', 'ComposeEditor']
 	},
 	ui: ['Button', 'IconButton', 'Badge', 'Avatar', 'ToastStack'],

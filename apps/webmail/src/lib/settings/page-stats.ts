@@ -3,11 +3,10 @@
 export const SETTINGS_PAGE_HIDDEN_COUNTS: Record<string, number> = {
 	"/settings": 0,
 	"/settings/appearance": 0,
-	"/settings/layout": 0,
-	"/settings/calendar": 0,
+	"/settings/reading": 1,
+	"/settings/writing": 1,
 	"/settings/data": 0,
-	"/settings/account": 0,
-	"/settings/mail": 2
+	"/settings/account": 0
 };
 
 export function hiddenSettingsCountForPage(pathname: string): number {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import TraditionalMailLayout from '$lib/components/mail/layout/TraditionalMailLayout.svelte';
+	import ClassicMailLayout from '$lib/modes/classic/ClassicMailLayout.svelte';
 
 	interface Props {
 		list: Snippet;
@@ -12,4 +12,4 @@
 	let { list, reader, mailboxName = 'Mail', onBack }: Props = $props();
 </script>
 
-<TraditionalMailLayout {list} {reader} {mailboxName} {onBack} />
+<ClassicMailLayout {list} {reader} {mailboxName} {onBack} />

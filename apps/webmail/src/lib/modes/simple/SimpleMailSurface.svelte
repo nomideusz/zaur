@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import SimpleMailLayout from '$lib/components/mail/layout/SimpleMailLayout.svelte';
+	import SimpleMailLayout from '$lib/modes/simple/SimpleMailLayout.svelte';
 
 	interface Props {
 		list: Snippet;

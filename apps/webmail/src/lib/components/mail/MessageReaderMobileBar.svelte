@@ -18,7 +18,6 @@
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
 	import { getContext } from 'svelte';
-	import { usesAdaptiveReaderFocus } from '$lib/mail/view-mode';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -33,6 +32,8 @@
 		thread: MessageDetail[];
 		mailboxRouteId: string;
 		onMoved?: () => void;
+		/** Simple mode: fewer primary mobile actions when reading with adaptive focus. */
+		minimalChrome?: boolean;
 		quickReply?: string;
 		quickReplySending?: boolean;
 		onQuickReplyChange?: (value: string) => void;
@@ -43,6 +44,7 @@
 		thread,
 		mailboxRouteId,
 		onMoved,
+		minimalChrome = false,
 		quickReply = $bindable(''),
 		quickReplySending = false,
 		onSendQuickReply
@@ -74,11 +76,6 @@
 	);
 	const showQuickReplyPanel = $derived(
 		!isDraft && settings.showQuickReply && quickReplyOpen && !!auth.client
-	);
-	const minimalMobileActions = $derived(
-		usesAdaptiveReaderFocus(settings.mailViewMode, {
-			showReaderListRail: settings.showReaderListRail
-		})
 	);
 
 	async function withClient(action: (client: NonNullable<typeof auth.client>) => Promise<void>) {
@@ -280,7 +277,7 @@
 					{primaryReplyLabel}
 				</Button>
 
-				{#if canArchive && !minimalMobileActions}
+				{#if canArchive && !minimalChrome}
 					<IconButton
 						label="Archive"
 						class={cn('z-mobile-reader-bar__icon-btn', 'text-fg')}

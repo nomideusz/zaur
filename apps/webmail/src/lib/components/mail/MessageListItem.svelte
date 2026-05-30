@@ -4,8 +4,6 @@
 	import MessageListActiveActions from '$lib/components/mail/MessageListActiveActions.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import SwipeableListRow, { type SwipeAction } from '$lib/components/ui/SwipeableListRow.svelte';
-	import { usesAdaptiveReaderFocus } from '$lib/mail/view-mode';
-	import { webmailModeDefinition } from '$lib/modes/registry';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -24,6 +22,10 @@
 		onSelect?: (modifiers: { shift: boolean; ctrl: boolean }) => void;
 		mailboxRouteId?: string;
 		enableMobileGestures?: boolean;
+		/** Classic mode: dense fixed-width list rows. */
+		classicRow?: boolean;
+		/** Simple mode: slim rail when reading with adaptive focus. */
+		minimalChrome?: boolean;
 	}
 
 	let {
@@ -34,7 +36,9 @@
 		selected = false,
 		onSelect,
 		mailboxRouteId,
-		enableMobileGestures = false
+		enableMobileGestures = false,
+		classicRow = false,
+		minimalChrome = false
 	}: Props = $props();
 
 	let listMenuOpen = $state(false);
@@ -92,24 +96,17 @@
 	);
 
 	const hideActiveIndicator = $derived(settings.hideListActiveIndicator);
-	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
 	const selectionMode = $derived(mail.hasSelection);
 	const showActiveCheckbox = $derived(bulkSelectEnabled && active && !selectionMode);
-	const traditionalList = $derived(activeMode.id === 'traditional');
 	/** Gutter for row checkboxes: all rows in selection mode, or the active row to enter it. */
 	const showListGutter = $derived(bulkSelectEnabled && (selectionMode || showActiveCheckbox));
 	const showRowCheckbox = $derived(selectionMode || showActiveCheckbox);
 	const isCurrent = $derived(active || (selected && selectionMode));
-	const showActiveCompact = $derived(active && !selectionMode && !traditionalList);
+	const showActiveCompact = $derived(active && !selectionMode && !classicRow);
 	const showAvatarUnreadBadge = $derived(
 		settings.highlightUnreadInList && message.unread && !showListGutter && !showActiveCompact
 	);
-	const minimalListPresentation = $derived(
-		usesAdaptiveReaderFocus(settings.mailViewMode, {
-			showReaderListRail: settings.showReaderListRail
-		})
-	);
-	const showPreview = $derived(settings.showListPreview && !minimalListPresentation);
+	const showPreview = $derived(settings.showListPreview && !minimalChrome);
 
 	const rowClass = $derived(
 		cn(
@@ -278,11 +275,11 @@
 
 {#snippet activeSubjectLine()}
 	<div class="mt-0.5 flex items-center gap-1.5">
-		{#if !minimalListPresentation && settings.showStarsInList && message.starred}
+		{#if !minimalChrome && settings.showStarsInList && message.starred}
 			<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 		{/if}
 		<span class={activeSubjectClass}>{displaySubject}</span>
-		{#if !minimalListPresentation && settings.showAttachmentIcons && message.hasAttachment}
+		{#if !minimalChrome && settings.showAttachmentIcons && message.hasAttachment}
 			<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
 		{/if}
 	</div>
@@ -322,11 +319,11 @@
 			>
 				<div class="flex items-baseline justify-between gap-2">
 					<div class="mt-0.5 flex min-w-0 flex-1 items-center gap-1.5">
-						{#if !minimalListPresentation && settings.showStarsInList && message.starred}
+						{#if !minimalChrome && settings.showStarsInList && message.starred}
 							<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 						{/if}
 						<span class={activeSubjectClass}>{displaySubject}</span>
-						{#if !minimalListPresentation && settings.showAttachmentIcons && message.hasAttachment}
+						{#if !minimalChrome && settings.showAttachmentIcons && message.hasAttachment}
 							<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
 						{/if}
 					</div>
@@ -356,13 +353,13 @@
 					{/if}
 				</div>
 				<div class="mt-0.5 flex items-center gap-1.5">
-					{#if !minimalListPresentation}
+					{#if !minimalChrome}
 						<span class="z-type-list-sender">{senderLabel || 'Unknown sender'}</span>
 					{/if}
-					{#if !minimalListPresentation && settings.showStarsInList && message.starred}
+					{#if !minimalChrome && settings.showStarsInList && message.starred}
 						<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 					{/if}
-					{#if !minimalListPresentation && settings.showAttachmentIcons && message.hasAttachment}
+					{#if !minimalChrome && settings.showAttachmentIcons && message.hasAttachment}
 						<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
 					{/if}
 				</div>
@@ -380,13 +377,13 @@
 		{#if settings.subjectOnlyList}
 			<div class="flex items-baseline justify-between gap-2">
 				<div class="mt-0.5 flex min-w-0 flex-1 items-center gap-1.5">
-					{#if !minimalListPresentation && settings.showStarsInList && message.starred}
+					{#if !minimalChrome && settings.showStarsInList && message.starred}
 						<Star class="size-3.5 shrink-0 fill-star text-star" aria-label="Starred" />
 					{/if}
 					<span class={subjectClass}>
 						{displaySubject}
 					</span>
-					{#if !minimalListPresentation && settings.showAttachmentIcons && message.hasAttachment}
+					{#if !minimalChrome && settings.showAttachmentIcons && message.hasAttachment}
 						<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-label="Has attachment" />
 					{/if}
 				</div>
@@ -406,7 +403,7 @@
 					<span class="z-type-list-time">{when}</span>
 				{/if}
 			</div>
-			{#if !minimalListPresentation}
+			{#if !minimalChrome}
 				<div class="mt-0.5 flex items-center gap-1.5">
 					<span class="z-type-list-sender">
 						{senderLabel}
