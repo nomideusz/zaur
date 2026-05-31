@@ -188,8 +188,9 @@
 	}
 
 	function folderSectionCollapsedByDefault(folder: Mailbox): boolean {
-		// All folders below inbox start collapsed — minimal list of folders only.
-		// Messages are revealed on demand via "Show messages".
+		// The open folder should list messages immediately.
+		if (mailboxRouteId && folder.id === mailboxRouteId) return false;
+		// Other folders on inbox home stay collapsed until expanded.
 		return true;
 	}
 
