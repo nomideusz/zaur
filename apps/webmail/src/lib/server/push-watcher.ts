@@ -1,4 +1,5 @@
 import type { JMAPEmail } from '$lib/jmap/types';
+import { mailThreadHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
 import { createConnectedClient } from '$lib/server/jmap';
 import { sendPushNotification } from '$lib/server/push-sender';
 import { isPushConfigured } from '$lib/server/push-config';
@@ -277,7 +278,9 @@ class SubscriptionWatcher {
 			await sendPushNotification(this.record, {
 				title: 'New mail',
 				body: `${from}: ${subject}`,
-				url: email.threadId ? `/mail/inbox/${email.threadId}` : '/',
+				url: email.threadId
+					? mailThreadHref(INBOX_MAILBOX_ROUTE_ID, email.threadId)
+					: '/',
 				unreadCount
 			});
 			return;

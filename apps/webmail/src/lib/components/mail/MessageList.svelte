@@ -88,8 +88,9 @@
 	const INBOX_SECTION_PAGE_SIZE = 8;
 	const FOLDER_SECTION_PAGE_SIZE = 3;
 	const NEW_SECTION_ID = 'new';
+	const IMPORTANT_SECTION_ID = 'important';
 	const READ_SECTION_ID = 'read';
-	const INBOX_SECTION_IDS = new Set([NEW_SECTION_ID, READ_SECTION_ID]);
+	const INBOX_SECTION_IDS = new Set([NEW_SECTION_ID, IMPORTANT_SECTION_ID, READ_SECTION_ID]);
 	const FOLDER_SECTION_SORT_BASE = 10;
 	const NEW_MESSAGE_WINDOW_MS = 1000 * 60 * 60 * 24;
 	const NEW_MESSAGE_SEEN_RETENTION_MS = 1000 * 60 * 60 * 24 * 45;
@@ -190,6 +191,8 @@
 	function folderSectionCollapsedByDefault(folder: Mailbox): boolean {
 		// The open folder should list messages immediately.
 		if (mailboxRouteId && folder.id === mailboxRouteId) return false;
+		// Important is a main-list section on inbox home.
+		if (isInboxHome && folder.role === 'important') return false;
 		// Other folders on inbox home stay collapsed until expanded.
 		return true;
 	}
@@ -278,8 +281,9 @@
 		messages.filter((message) => isNewUnreadMessage(message))
 	);
 	const readMessages = $derived.by(() =>
-		messages.filter((message) => !isNewUnreadMessage(message))
+		messages.filter((message) => !isNewUnreadMessage(message) && !message.important)
 	);
+	const importantMailbox = $derived(mail.importantMailbox());
 
 	$effect(() => {
 		if (!browser) return;
@@ -402,6 +406,8 @@
 					folder.total > 0 &&
 					folder.id !== 'unread' &&
 					folder.id !== 'read' &&
+					folder.id !== IMPORTANT_SECTION_ID &&
+					folder.role !== 'important' &&
 					(!mailboxRouteId || folder.id !== mailboxRouteId)
 			)
 			.sort((a, b) => {
@@ -439,20 +445,33 @@
 				});
 			}
 
-			// Folders below inbox are not shown in the main list (to avoid distraction).
-			// A minimal navigation row is rendered after the message list instead.
+			if (importantMailbox && importantMailbox.total > 0) {
+				const importantMessages = sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [];
+				sections.push({
+					id: IMPORTANT_SECTION_ID,
+					name: importantMailbox.name,
+					routeId: IMPORTANT_SECTION_ID,
+					messages: importantMessages.slice(
+						0,
+						sectionVisibleCounts[IMPORTANT_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
+					),
+					totalCount: importantMailbox.total,
+					sortOrder: 1,
+					showUnreadDot: importantMailbox.unread > 0
+				});
+			}
 
 			if (readMessages.length > 0) {
 				sections.push({
 					id: READ_SECTION_ID,
-					name: 'Emails',
+					name: 'E-mails',
 					routeId: mailboxRouteId ?? 'inbox',
 					messages: readMessages.slice(
 						0,
 						sectionVisibleCounts[READ_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
 					),
 					totalCount: readMessages.length,
-					sortOrder: 1,
+					sortOrder: 2,
 					showUnreadDot: false
 				});
 			}
@@ -484,6 +503,7 @@
 		sectionHasMoreByFolder = {};
 		const counts: Record<string, number> = {
 			[NEW_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
+			[IMPORTANT_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
 			[READ_SECTION_ID]: INBOX_SECTION_PAGE_SIZE
 		};
 		if (mailboxRouteId && mailboxRouteId !== 'inbox') {
@@ -491,7 +511,14 @@
 			counts[mailboxRouteId] = defaultSectionVisibleCount(mailboxRouteId, mailbox);
 		}
 		for (const folder of mail.mailboxes) {
-			if (folder.id === 'unread' || folder.id === 'read' || folder.id === mailboxRouteId) continue;
+			if (
+				folder.id === 'unread' ||
+				folder.id === 'read' ||
+				folder.id === mailboxRouteId ||
+				folder.id === IMPORTANT_SECTION_ID
+			) {
+				continue;
+			}
 			counts[folder.id] = defaultSectionVisibleCount(folder.id, folder);
 		}
 		sectionVisibleCounts = counts;
@@ -532,12 +559,22 @@
 		const client = auth.client;
 		const routeId = mailboxRouteId;
 		const folders = orderedFolders;
+		const important = importantMailbox;
 		const useSectionMode = sectionMode;
 		const inboxHome = isInboxHome;
 		messages;
 		sectionVisibleCounts;
 
-		if (!useSectionMode || !client || !routeId || !inboxHome || folders.length === 0) {
+		if (!useSectionMode || !client || !routeId || !inboxHome) {
+			sectionMessagesByFolder = {};
+			return;
+		}
+
+		const foldersToLoad = [
+			...(important && important.total > 0 ? [important] : []),
+			...folders.filter((folder) => folder.id !== important?.id)
+		];
+		if (foldersToLoad.length === 0) {
 			sectionMessagesByFolder = {};
 			return;
 		}
@@ -546,7 +583,7 @@
 		const accountId = client.getAccountId();
 
 		void Promise.all(
-			folders.map(async (folder) => {
+			foldersToLoad.map(async (folder) => {
 				const requested =
 					sectionVisibleCounts[folder.id] ??
 					(folderSectionCollapsedByDefault(folder) ? 0 : FOLDER_SECTION_PAGE_SIZE);
@@ -638,6 +675,12 @@
 	function sectionCanShowMore(sectionId: string): boolean {
 		const visible = sectionVisibleCounts[sectionId] ?? sectionPageSize(sectionId);
 		if (sectionId === NEW_SECTION_ID) return newUnreadMessages.length > visible;
+		if (sectionId === IMPORTANT_SECTION_ID) {
+			const folder = importantMailbox;
+			if (!folder) return false;
+			const known = sectionMessagesByFolder[IMPORTANT_SECTION_ID]?.length ?? 0;
+			return folder.total > visible || known > visible || !!sectionHasMoreByFolder[IMPORTANT_SECTION_ID];
+		}
 		if (sectionId === READ_SECTION_ID) {
 			return readMessages.length > visible || hasMore;
 		}

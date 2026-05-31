@@ -5,6 +5,7 @@ export const routeMap = {
 	login: '/login',
 	mail: {
 		inbox: '/',
+		inboxThread: '/mail/inbox/[threadId]',
 		mailbox: '/mail/[mailbox]',
 		thread: '/mail/[mailbox]/[threadId]',
 		compose: '/mail/compose',

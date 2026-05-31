@@ -5,7 +5,6 @@
 	import { appConfig } from '$lib/config';
 	import { loadRememberedLogin } from '$lib/auth/remember-login';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';

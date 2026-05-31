@@ -4,6 +4,7 @@
 	import Calendar from '$lib/components/icons/Calendar.svelte';
 import Mail from '$lib/components/icons/Mail.svelte';
 import Users from '$lib/components/icons/Users.svelte';
+	import { isMailPath } from '$lib/mail/routes';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const tools = $derived([
@@ -11,7 +12,7 @@ import Users from '$lib/components/icons/Users.svelte';
 			href: settings.preferredMailHref(),
 			label: 'Mail',
 			icon: Mail,
-			active: (path: string) => path.startsWith('/mail')
+			active: (path: string) => isMailPath(path)
 		},
 		{
 			href: '/calendar',
