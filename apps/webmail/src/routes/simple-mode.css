@@ -467,7 +467,7 @@
 	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__title {
 		@apply font-semibold text-fg;
 		min-width: 0;
-		font-size: var(--z-main-page-title);
+		font-size: var(--z-main-page-text);
 		line-height: 1.45;
 	}
 
@@ -511,6 +511,10 @@
 
 	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__actions {
 		margin-top: var(--z-space-nav-label-top);
+	}
+
+	.z-mail-view-simple .z-reader-subject-heading {
+		margin-top: 0.5rem;
 	}
 
 	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__footer {

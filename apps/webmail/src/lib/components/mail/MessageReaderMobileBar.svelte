@@ -25,6 +25,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { renderMessageBody } from '$lib/email/html';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
+	import { getWebmailModeContext } from '$lib/modes/context';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
 
@@ -77,6 +78,8 @@
 	const showQuickReplyPanel = $derived(
 		!isDraft && settings.showQuickReply && quickReplyOpen && !!auth.client
 	);
+	const mode = $derived(getWebmailModeContext());
+	const useSimpleContentShell = $derived(mode.id === 'simple');
 
 	async function withClient(action: (client: NonNullable<typeof auth.client>) => Promise<void>) {
 		if (!auth.client || !latest) return;
@@ -273,9 +276,11 @@
 			{:else if showQuickReplyPanel}
 				<Button variant="ghost" class="min-h-11 flex-1" onclick={closeQuickReply}>Done</Button>
 			{:else}
-				<Button class="min-h-11 flex-1" onclick={openQuickReply}>
-					{primaryReplyLabel}
-				</Button>
+				{#if !useSimpleContentShell}
+					<Button class="min-h-11 flex-1" onclick={openQuickReply}>
+						{primaryReplyLabel}
+					</Button>
+				{/if}
 
 				{#if canArchive && !minimalChrome}
 					<IconButton

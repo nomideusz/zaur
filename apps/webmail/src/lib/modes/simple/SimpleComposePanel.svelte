@@ -239,11 +239,9 @@
 <section class="z-simple-compose" aria-label="Compose message">
 	<div class={cn(simpleContentPagePadClass(), 'z-simple-compose__page')}>
 		<div class="z-mail-text-nav z-simple-compose__nav">
-			<div class="z-mail-text-nav__links">
-				<button type="button" class="z-mail-text-nav__link" onclick={close}>Back to mail</button>
-			</div>
+			<h1 class="sr-only">{composeTitle}</h1>
 			<div class="z-mail-text-nav__row">
-				<h1 class="sr-only">{composeTitle}</h1>
+				<button type="button" class="z-mail-text-nav__link" onclick={close}>Back to mail</button>
 				<button
 					type="submit"
 					form="simple-compose-form"

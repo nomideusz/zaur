@@ -382,24 +382,10 @@
 				threadRowX
 			)}
 		>
-			{#if useSimpleContentShell && hasBlockedExternal && !allowExternal && !settings.hideExternalContentBanner}
-				<div class="z-mail-simple-external-banner">
-					<Shield class="size-3.5 shrink-0" aria-hidden="true" />
-					<span>External images blocked.</span>
-					<button type="button" class="z-mail-simple-external-banner__action" onclick={showImagesOnce}>
-						Show once
-					</button>
-					<span class="z-mail-simple-external-banner__dot">·</span>
-					<a href="/settings/appearance" class="z-mail-simple-external-banner__action">Settings</a>
-				</div>
-			{/if}
 			{#if useSimpleContentShell}
 				<div class="z-mail-text-nav z-reader-sticky-nav">
-					<div class="z-mail-text-nav__links">
-						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
-					</div>
 					<div class="z-mail-text-nav__row">
-						<h1 class="z-mail-text-nav__title">{subject}</h1>
+						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
 						{#if !mail.hasSelection}
 							{#if isDraft && latest}
 								<a
@@ -415,7 +401,19 @@
 							{/if}
 						{/if}
 					</div>
+					<h1 class="z-mail-text-nav__title z-reader-subject-heading">{subject}</h1>
 				</div>
+				{#if hasBlockedExternal && !allowExternal && !settings.hideExternalContentBanner}
+					<div class="z-mail-simple-external-banner">
+						<Shield class="size-3.5 shrink-0" aria-hidden="true" />
+						<span>External images blocked.</span>
+						<button type="button" class="z-mail-simple-external-banner__action" onclick={showImagesOnce}>
+							Show once
+						</button>
+						<span class="z-mail-simple-external-banner__dot">·</span>
+						<a href="/settings/appearance" class="z-mail-simple-external-banner__action">Settings</a>
+					</div>
+				{/if}
 			{:else}
 				<div
 					class={cn(
@@ -833,7 +831,9 @@
 					{#if !settings.hideComposeHints}
 						<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter</span>
 					{/if}
-					<Button variant="ghost" class="!px-2 text-xs max-sm:flex-1" onclick={reply}>Full reply</Button>
+					{#if !useSimpleContentShell}
+						<Button variant="ghost" class="!px-2 text-xs max-sm:flex-1" onclick={reply}>Full reply</Button>
+					{/if}
 				</div>
 			</div>
 		</footer>
