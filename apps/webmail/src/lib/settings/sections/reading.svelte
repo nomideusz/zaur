@@ -1,5 +1,6 @@
 <script lang="ts">
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
+	import SettingsField from '$lib/components/settings/SettingsField.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
@@ -58,16 +59,8 @@
 
 <SettingsGroup
 	title="Inbox & folders"
-	description="How your message list looks and where you land when opening mail."
+	description="The editorial message list — subject, sender, and time on every row."
 >
-	<SettingsRow title="Show avatars" description="Sender photos in the message list">
-		<input
-			type="checkbox"
-			checked={settings.showAvatars}
-			onchange={(e) => settings.setShowAvatars(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
 	<SettingsRow
 		title="Show full email in list"
 		description="Display the sender's address instead of just their name"
@@ -110,11 +103,29 @@
 			class="w-auto"
 		/>
 	</SettingsRow>
+
+	<SettingsRow title="Time format" description="How timestamps appear in lists and the reader">
+		<SettingsSelect
+			label="Time format"
+			value={settings.timeFormat}
+			options={[
+				{ value: 'auto', label: 'Match system' },
+				{ value: '12h', label: '12-hour (1:30 PM)' },
+				{ value: '24h', label: '24-hour (13:30)' }
+			]}
+			onchange={(v) => {
+				if (v === 'auto' || v === '12h' || v === '24h') {
+					settings.setTimeFormat(v);
+				}
+			}}
+			class="w-auto"
+		/>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup
 	title="Message content"
-	description="Typography and how message bodies are shown on every screen size."
+	description="Typography and how message bodies are shown."
 >
 	<SettingsRow title="Reading text size" description="Font size for the message body">
 		<SettingsSelect
@@ -140,6 +151,30 @@
 			]}
 			onchange={(v) => settings.setReadingTypeface(v as ReadingTypeface)}
 			class="w-auto"
+		/>
+	</SettingsRow>
+
+	<SettingsRow title="Reading width" description="How wide the message body column is">
+		<SettingsSelect
+			label="Reading width"
+			value={settings.readerWidth}
+			options={[
+				{ value: 'comfortable', label: 'Comfortable' },
+				{ value: 'wide', label: 'Wide' }
+			]}
+			onchange={(v) => settings.setReaderWidth(v as ReaderWidth)}
+			class="w-auto"
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Show avatars"
+		description="Sender photos in the reader, compose suggestions, and contacts"
+	>
+		<input
+			type="checkbox"
+			checked={settings.showAvatars}
+			onchange={(e) => settings.setShowAvatars(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
 
@@ -175,33 +210,37 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Time format" description="12-hour, 24-hour, or match your operating system">
-		<SettingsSelect
-			label="Time format"
-			value={settings.timeFormat}
-			options={[
-				{ value: 'auto', label: 'Match system' },
-				{ value: '12h', label: '12-hour (1:30 PM)' },
-				{ value: '24h', label: '24-hour (13:30)' }
-			]}
-			onchange={(v) => {
-				if (v === 'auto' || v === '12h' || v === '24h') {
-					settings.setTimeFormat(v);
-				}
-			}}
-			class="w-auto"
+	<SettingsRow
+		title="Clean reading view"
+		description="Re-flow message bodies into the app's typography — toggle anytime with Aa on desktop"
+	>
+		<input
+			type="checkbox"
+			checked={settings.readerCleanView}
+			onchange={(e) => settings.setReaderCleanView(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup
 	title="Desktop layout"
-	description="On desktop, opening a message focuses the reader. On phone, it fills the screen."
+	description="On a wide screen, opening a message hides the list and centers the reader. Split view keeps the Classic side-by-side layout."
 	visibleOn="desktop"
 >
 	<SettingsRow
+		title="Focus reading when opened"
+		description="Collapse the folder sidebar when you open a message — press z to toggle"
+	>
+		<input
+			type="checkbox"
+			checked={settings.focusReadingDefault}
+			onchange={(e) => settings.setFocusReadingDefault(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
 		title="Keep list visible while reading"
-		description="Show a slim message list beside the reader instead of hiding it"
+		description="Show a slim message list beside the reader — the Classic split-pane layout"
 	>
 		<input
 			type="checkbox"
@@ -210,18 +249,30 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Reading width" description="How wide the message body column is">
-		<SettingsSelect
-			label="Reading width"
-			value={settings.readerWidth}
-			options={[
-				{ value: 'comfortable', label: 'Comfortable' },
-				{ value: 'wide', label: 'Wide' }
-			]}
-			onchange={(v) => settings.setReaderWidth(v as ReaderWidth)}
-			class="w-auto"
-		/>
-	</SettingsRow>
+	<SettingsDepends
+		enabled={!settings.showReaderListRail}
+		inactiveReason="Single-pane reading is off while split view is enabled."
+	>
+		<SettingsField
+			title="Single-pane reading"
+			description="With split view off, the list hides when you open a message so the reader fills the pane. Press Esc or use the back control to return."
+		>
+			<p class="z-settings-editorial-note">This is the default Simple layout.</p>
+		</SettingsField>
+	</SettingsDepends>
+</SettingsGroup>
+
+<SettingsGroup
+	title="Phone layout"
+	description="On a phone, mail always opens full screen."
+	visibleOn="mobile"
+>
+	<SettingsField
+		title="Opening a message"
+		description="The reader fills the screen and the list stays behind it. Use the back arrow in the header to return."
+	>
+		<p class="z-settings-editorial-note">Quick reply and the action bar sit at the bottom when enabled above.</p>
+	</SettingsField>
 </SettingsGroup>
 
 <SettingsGroup title="Actions" description="What happens when you read or delete mail.">

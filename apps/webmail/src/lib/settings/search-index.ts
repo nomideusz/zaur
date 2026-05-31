@@ -163,6 +163,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/reading-clean-reading-view",
+		"href": "/settings/reading",
+		"title": "Clean reading view",
+		"description": ""
+	},
+	{
 		"id": "/settings/reading-confirm-before-delete",
 		"href": "/settings/reading",
 		"title": "Confirm before delete",
@@ -187,6 +193,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/reading-focus-reading-when-opened",
+		"href": "/settings/reading",
+		"title": "Focus reading when opened",
+		"description": ""
+	},
+	{
 		"id": "/settings/reading-hide-action-toasts",
 		"href": "/settings/reading",
 		"title": "Hide action toasts",
@@ -208,6 +220,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-mark-as-read-when-opened",
 		"href": "/settings/reading",
 		"title": "Mark as read when opened",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-opening-a-message",
+		"href": "/settings/reading",
+		"title": "Opening a message",
 		"description": ""
 	},
 	{
@@ -268,6 +286,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-show-full-email-in-list",
 		"href": "/settings/reading",
 		"title": "Show full email in list",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-single-pane-reading",
+		"href": "/settings/reading",
+		"title": "Single-pane reading",
 		"description": ""
 	},
 	{
