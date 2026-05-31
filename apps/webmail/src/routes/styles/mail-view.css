@@ -82,8 +82,5 @@
 		:is(.z-mail-view, .z-settings-view) {
 			--z-space-nav-top: 0.25rem;
 			--z-space-nav-bottom: 0.25rem;
-			--z-space-folder-sections-top: 0.5rem;
-			--z-space-folder-sections-bottom: 0.5rem;
-			--z-space-folder-sections-gap: 0.75rem;
 		}
 	}

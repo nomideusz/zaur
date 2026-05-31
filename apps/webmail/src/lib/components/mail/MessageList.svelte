@@ -868,14 +868,12 @@
 				{onRetry}
 			/>
 		{:else if sectionMode}
-			<div class="flex flex-col gap-[var(--z-main-gap)] pt-[var(--z-main-gap)]">
+			<div class="z-mail-list-sections">
 				{#each folderSections as section, sectionIndex (section.id)}
 					{@const sectionDuplicateSubjects = duplicateSubjectKeys(section.messages)}
 					<section style:order={section.sortOrder} style:--section-index={sectionIndex}>
-						<div
-							class="mb-[var(--z-space-folder-head-bottom,0.625rem)] flex items-center justify-between gap-3"
-						>
-							<h2 class="inline-flex items-center gap-2 font-semibold text-fg z-type-page leading-[1.35]">
+						<div class="z-mail-list-section-head">
+							<h2 class="z-mail-list-section-title">
 								{#if section.showUnreadDot}
 									<span
 										class="size-[0.4375rem] shrink-0 rounded-full bg-unread"
@@ -887,14 +885,14 @@
 							<span class={listSectionCountClass(section.id)}>{section.totalCount}</span>
 						</div>
 						{#if section.messages.length > 0}
-							<ul class="flex flex-col gap-2.5">
+							<ul class="z-mail-list-section-messages">
 								{#each section.messages as message, index (message.id)}
 									{@render simpleMessageRow(message, section.routeId, index, section.messages, sectionDuplicateSubjects)}
 								{/each}
 							</ul>
 						{/if}
 						{#if sectionCanShowMore(section.id)}
-							<div class="mt-[var(--z-space-folder-footer-top)]">
+							<div class="z-mail-list-section-more">
 								<button type="button" class={listMoreClass} onclick={() => revealMoreInSection(section.id)}>
 									{sectionRevealLabel(section.id, section.totalCount)}
 								</button>
@@ -910,7 +908,7 @@
 
 			{#if isInboxHome && orderedFolders.length > 0}
 				<nav
-					class="z-type-page-muted mt-[var(--z-main-gap)]! flex flex-wrap items-center gap-x-3 gap-y-1 text-fg-muted"
+					class="z-mail-list-folders z-type-page-muted flex flex-wrap items-center gap-x-3 gap-y-1 text-fg-muted"
 					aria-label="Folders"
 				>
 					{#each orderedFolders as folder (folder.id)}

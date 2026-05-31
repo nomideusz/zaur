@@ -106,3 +106,43 @@
 		}
 	}
 
+	/* Inbox home + folder sections — vertical rhythm. */
+	.z-mail-view .z-mail-list-sections {
+		display: flex;
+		flex-direction: column;
+		gap: var(--z-main-gap);
+		padding-top: var(--z-main-gap);
+	}
+
+	.z-mail-view .z-mail-list-section-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		margin-bottom: var(--z-space-folder-head-bottom);
+	}
+
+	.z-mail-view .z-mail-list-section-title {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.5rem;
+		font-size: var(--z-main-page-text);
+		font-weight: 600;
+		line-height: 1.35;
+		color: var(--z-fg);
+	}
+
+	.z-mail-view .z-mail-list-section-messages {
+		display: flex;
+		flex-direction: column;
+		gap: 0.625rem;
+	}
+
+	.z-mail-view .z-mail-list-section-more {
+		margin-top: var(--z-space-folder-footer-top);
+	}
+
+	.z-mail-view .z-mail-list-folders {
+		margin-top: var(--z-main-gap);
+	}
+
