@@ -32,8 +32,8 @@
 
 	/** Editorial list row — shared Tailwind building blocks. */
 	const listMessageGroup = 'group/message';
-	const listMessageLinkClass = cn(listMessageGroup, 'block min-w-0 flex-1 no-underline');
-	const listMessageRowClass = 'z-mail-list-row flex items-start gap-3';
+	const listMessageLinkClass = cn(listMessageGroup, 'block min-w-0 no-underline');
+	const listMessageRowClass = 'z-mail-list-row';
 	const listMessageStackClass = 'flex min-w-0 flex-row items-start justify-between gap-4';
 	const listMessageLeadClass = 'flex min-w-0 flex-1 flex-col gap-0.5';
 	const listSubjectClass = cn(
@@ -756,7 +756,13 @@
 		/>
 	{/if}
 
-	<div class="z-mail-list-flow">
+	<div
+		class={cn(
+			'z-mail-list-flow',
+			bulkSelectEnabled && 'z-mail-list-flow--selectable',
+			mail.hasSelection && 'z-mail-list--selecting'
+		)}
+	>
 		{#snippet simpleMessageRow(
 			message: MessagePreview,
 			routeId: string,

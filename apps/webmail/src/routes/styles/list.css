@@ -89,9 +89,58 @@
 		color: var(--z-fg);
 	}
 
+	/* Bulk select — checkbox gutter sits left of the content column. */
+	.z-mail-view .z-content-shell .z-mail-list-flow--selectable {
+		--z-list-checkbox-gutter: 1.75rem;
+		margin-inline-start: calc(-1 * var(--z-list-checkbox-gutter));
+		padding-inline-start: var(--z-list-checkbox-gutter);
+		overflow: visible;
+	}
+
+	.z-mail-view .z-mail-list-row {
+		position: relative;
+	}
+
+	/* Invisible hit target so hover works over the left gutter. */
+	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row::before {
+		content: '';
+		position: absolute;
+		right: 100%;
+		width: var(--z-list-checkbox-gutter);
+		top: 0;
+		bottom: 0;
+	}
+
 	.z-mail-view .z-mail-list-row__checkbox {
-		margin-top: 0.35rem;
-		flex-shrink: 0;
+		position: absolute;
+		left: calc(-1 * var(--z-list-checkbox-gutter));
+		top: 0.35rem;
+		margin: 0;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	@media (hover: hover) {
+		.z-mail-view .z-mail-list-row:hover .z-mail-list-row__checkbox,
+		.z-mail-view .z-mail-list-row:focus-within .z-mail-list-row__checkbox {
+			opacity: 1;
+			pointer-events: auto;
+		}
+	}
+
+	.z-mail-view .z-mail-list--selecting .z-mail-list-row__checkbox,
+	.z-mail-view .z-mail-list-row__checkbox:checked,
+	.z-mail-view .z-mail-list-row__checkbox:focus-visible {
+		opacity: 1;
+		pointer-events: auto;
+	}
+
+	@media (hover: none) {
+		.z-mail-view .z-mail-list--selecting .z-mail-list-row__checkbox {
+			opacity: 1;
+			pointer-events: auto;
+		}
 	}
 
 	/* Mobile bulk actions — sticky footer inside the scrolling main column. */
