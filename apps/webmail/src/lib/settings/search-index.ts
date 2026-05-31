@@ -3,7 +3,6 @@ export type SettingsSearchEntry = {
 	title: string;
 	description: string;
 	href: string;
-	modes?: ('simple' | 'traditional')[];
 };
 
 export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [

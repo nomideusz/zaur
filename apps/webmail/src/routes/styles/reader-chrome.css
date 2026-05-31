@@ -60,15 +60,15 @@
 		height: auto;
 	}
 
-	.z-mail-view .z-mail-simple-external-banner {
+	.z-mail-view .z-mail-external-banner {
 		@apply mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border px-3 py-2 text-xs text-fg-muted;
 		background-color: var(--z-surface-sunken);
 	}
 
-	.z-mail-view .z-mail-simple-external-banner__action {
+	.z-mail-view .z-mail-external-banner__action {
 		@apply cursor-pointer font-semibold text-fg underline underline-offset-[0.2em] decoration-fg/25 hover:decoration-fg/50;
 	}
 
-	.z-mail-view .z-mail-simple-external-banner__dot {
+	.z-mail-view .z-mail-external-banner__dot {
 		@apply text-fg-subtle;
 	}

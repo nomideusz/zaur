@@ -23,16 +23,7 @@ export type SettingsNavLink = {
 export const MAIL_LAYOUT = {
 	mailRootClass: 'z-mail-view',
 	settingsRootClass: 'z-settings-view',
-	settings: {
-		useSidebar: false,
-		showAppHeader: false,
-		editorial: true
-	},
 	mail: {
-		showAppHeaderOnMailRoutes: false,
-		showEmptyReaderPane: false,
-		useSectionedMessageList: true,
-		useExpandedMessageList: true,
 		useAdaptiveReaderFocus: true,
 		useFullscreenMobileReader: true
 	}

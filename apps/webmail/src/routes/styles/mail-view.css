@@ -24,7 +24,7 @@
 
 	.z-app-main--page-scroll .z-mail-view,
 	.z-app-main--page-scroll .z-mail-pane--page-scroll,
-	.z-app-main--page-scroll .z-mail-pane-body--simple,
+	.z-app-main--page-scroll .z-mail-pane-body--flow,
 	.z-app-main--page-scroll .z-mail-pane-surface--flow,
 	.z-app-main--page-scroll .z-settings-page {
 		overflow: visible;

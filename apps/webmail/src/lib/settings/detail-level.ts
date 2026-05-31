@@ -2,12 +2,9 @@ export type SettingsDetailLevel = 'basic' | 'advanced';
 
 /** Titles that stay visible in basic mode even if they match advanced patterns. */
 const BASIC_TITLE_OVERRIDES = new Set([
-	'Compact layout',
-	'List density',
 	'Drawer width',
 	'Reset all display & layout settings',
 	'Reset theme settings',
-	'Reset layout settings',
 	'Reset inbox settings',
 	'Reset reading settings',
 	'Reset writing settings',

@@ -25,7 +25,6 @@
 	const mailboxName = $derived(mailbox?.name ?? 'Inbox');
 	const thread = $derived(mail.selectedThread);
 	const latest = $derived(thread.at(-1));
-	const activeMode = MAIL_LAYOUT;
 	const countLabel = $derived(
 		mailCountLabel(mail.messagesTotal, mail.messages.length, mailbox)
 	);
@@ -76,7 +75,7 @@
 	messageCount={mail.messages.length}
 	onBulkAction={afterMove}
 	onBack={backToList}
-	fullScreenMobile={activeMode.mail.useFullscreenMobileReader}
+	fullScreenMobile={MAIL_LAYOUT.mail.useFullscreenMobileReader}
 >
 	{#snippet list()}
 		<MessageList

@@ -35,15 +35,10 @@ class SettingsSearchRegistry {
 		return haystack.includes(query);
 	}
 
-	matchesMode(entry: SettingsSearchEntry): boolean {
-		return !entry.modes || entry.modes.includes('simple');
-	}
-
 	filtered(): SettingsSearchEntry[] {
 		const q = this.query.trim().toLowerCase();
 		if (!q) return [];
 		return this.allEntries()
-			.filter((entry) => this.matchesMode(entry))
 			.filter((entry) => this.matches(entry, q))
 			.sort((a, b) => a.title.localeCompare(b.title))
 			.slice(0, 12);

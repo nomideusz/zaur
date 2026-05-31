@@ -20,7 +20,7 @@
 <div class="z-settings-page {settingsRootClass}">
 	<div class={cn(settingsShellClass(), 'flex flex-col')}>
 		<SettingsTextNav isIndex={isSettingsIndex} />
-		<div class="z-settings-content z-settings-content--simple">
+		<div class="z-settings-content">
 			<h1 class="sr-only">Settings</h1>
 			{@render children()}
 		</div>

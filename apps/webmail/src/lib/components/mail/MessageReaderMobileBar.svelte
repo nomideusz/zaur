@@ -32,7 +32,7 @@
 		thread: MessageDetail[];
 		mailboxRouteId: string;
 		onMoved?: () => void;
-		/** Simple mode: fewer primary mobile actions when reading with adaptive focus. */
+		/** Fewer primary mobile actions when reading with adaptive focus. */
 		minimalChrome?: boolean;
 		quickReply?: string;
 		quickReplySending?: boolean;
@@ -77,7 +77,6 @@
 	const showQuickReplyPanel = $derived(
 		!isDraft && settings.showQuickReply && quickReplyOpen && !!auth.client
 	);
-	const useSimpleContentShell = true;
 
 	async function withClient(action: (client: NonNullable<typeof auth.client>) => Promise<void>) {
 		if (!auth.client || !latest) return;
@@ -274,11 +273,9 @@
 			{:else if showQuickReplyPanel}
 				<Button variant="ghost" class="min-h-11 flex-1" onclick={closeQuickReply}>Done</Button>
 			{:else}
-				{#if !useSimpleContentShell}
-					<Button class="min-h-11 flex-1" onclick={openQuickReply}>
-						{primaryReplyLabel}
-					</Button>
-				{/if}
+				<Button class="min-h-11 flex-1" onclick={openQuickReply}>
+					{primaryReplyLabel}
+				</Button>
 
 				{#if canArchive && !minimalChrome}
 					<IconButton

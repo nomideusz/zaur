@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { MAIL_LAYOUT } from '$lib/mail/config';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 
@@ -14,30 +13,13 @@
 		children: import('svelte').Snippet;
 		footer?: import('svelte').Snippet;
 	} = $props();
-
-	const editorial = MAIL_LAYOUT.settings.editorial;
 </script>
 
-<div
-	class={cn(
-		'z-settings-panel',
-		editorial && 'z-settings-panel--editorial w-full min-w-0 max-w-full'
-	)}
->
-	{#if !editorial}
-		<header class={cn('max-md:hidden', settings.compactSettingsPanel ? 'mb-5' : 'mb-6')}>
-			<h2 class="z-settings-page-title">{title}</h2>
-			{#if !settings.hideSettingsPanelDescriptions}
-				<p class="z-settings-page-lead">{description}</p>
-			{/if}
-		</header>
-	{/if}
-
+<div class="z-settings-panel w-full min-w-0 max-w-full">
 	<div
 		class={cn(
 			'z-settings-stack',
-			settings.compactSettingsPanel && 'z-settings-stack--compact',
-			editorial && 'z-settings-stack--editorial'
+			settings.compactSettingsPanel && 'z-settings-stack--compact'
 		)}
 	>
 		{@render children()}
@@ -48,8 +30,7 @@
 			class={cn(
 				'z-settings-panel-footer',
 				settings.compactSettingsPanel && 'z-settings-panel-footer--compact',
-				settings.hidePaneBorders && 'border-transparent',
-				editorial && 'z-settings-panel-footer--editorial'
+				settings.hidePaneBorders && 'border-transparent'
 			)}
 		>
 			{@render footer()}

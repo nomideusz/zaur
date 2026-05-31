@@ -10,12 +10,6 @@
 
 	let { children } = $props();
 
-	const isThreadOpen = $derived(!!$page.params.threadId);
-	const focusActive = $derived(
-		MAIL_LAYOUT.mail.useAdaptiveReaderFocus && readerFocus.active && isThreadOpen
-	);
-	const adaptiveThreadOpen = $derived(MAIL_LAYOUT.mail.useAdaptiveReaderFocus && isThreadOpen);
-
 	$effect(() => {
 		readerFocus.set(false);
 		readerFocus.setClean(false);
@@ -51,10 +45,6 @@
 
 <MailKeyboardShortcuts />
 
-<div
-	class="relative flex min-h-0 flex-1 flex-row overflow-visible {MAIL_LAYOUT.mailRootClass}"
-	class:z-reader-focus={focusActive}
-	class:z-layout-adaptive-thread={adaptiveThreadOpen}
->
+<div class="relative flex min-h-0 flex-1 flex-row overflow-visible {MAIL_LAYOUT.mailRootClass}">
 	{@render children()}
 </div>

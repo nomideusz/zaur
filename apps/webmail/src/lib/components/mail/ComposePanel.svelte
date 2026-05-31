@@ -268,10 +268,10 @@
 		>
 			<div class="z-compose__fields">
 				<div class={cn('z-compose__field', fieldInvalid('to') && 'z-compose__field--invalid')}>
-					<label class="z-compose__label" for="simple-compose-to">To</label>
+					<label class="z-compose__label" for="compose-to">To</label>
 					<div class="z-compose__control">
 						<ComposeRecipientInput
-							id="simple-compose-to"
+							id="compose-to"
 							bind:inputElement={toInput}
 							value={compose.to}
 							autocomplete="email"
@@ -296,10 +296,10 @@
 
 				{#if compose.showCcBcc && (settings.showCcBccInCompose || compose.cc.trim() || compose.bcc.trim())}
 					<div class={cn('z-compose__field', fieldInvalid('cc') && 'z-compose__field--invalid')}>
-						<label class="z-compose__label" for="simple-compose-cc">Cc</label>
+						<label class="z-compose__label" for="compose-cc">Cc</label>
 						<div class="z-compose__control">
 							<ComposeRecipientInput
-								id="simple-compose-cc"
+								id="compose-cc"
 								value={compose.cc}
 								autocomplete="email"
 								class="z-compose__input"
@@ -310,10 +310,10 @@
 						</div>
 					</div>
 					<div class={cn('z-compose__field', fieldInvalid('bcc') && 'z-compose__field--invalid')}>
-						<label class="z-compose__label" for="simple-compose-bcc">Bcc</label>
+						<label class="z-compose__label" for="compose-bcc">Bcc</label>
 						<div class="z-compose__control">
 							<ComposeRecipientInput
-								id="simple-compose-bcc"
+								id="compose-bcc"
 								value={compose.bcc}
 								autocomplete="email"
 								class="z-compose__input"
@@ -326,10 +326,10 @@
 				{/if}
 
 				<div class="z-compose__field z-compose__field--subject">
-					<label class="z-compose__label" for="simple-compose-subject">Subject</label>
+					<label class="z-compose__label" for="compose-subject">Subject</label>
 					<div class="z-compose__control">
 						<input
-							id="simple-compose-subject"
+							id="compose-subject"
 							type="text"
 							class="z-compose__input"
 							bind:value={compose.subject}
@@ -340,9 +340,9 @@
 
 			<div class="z-compose__write">
 				<div class="z-compose__message">
-					<label class="sr-only" for="simple-compose-body">Message</label>
+					<label class="sr-only" for="compose-body">Message</label>
 					<textarea
-						id="simple-compose-body"
+						id="compose-body"
 						bind:this={bodyInput}
 						class="z-compose__body"
 						value={messageBody}
@@ -356,9 +356,9 @@
 			{#if showSignature}
 				{#if configuredSignature || signatureBody}
 					<div class="z-compose__signature">
-						<label class="sr-only" for="simple-compose-signature">Signature</label>
+						<label class="sr-only" for="compose-signature">Signature</label>
 						<textarea
-							id="simple-compose-signature"
+							id="compose-signature"
 							class="z-compose__signature-input"
 							rows={Math.max(3, (signatureBody || configuredSignature).split('\n').length)}
 							value={signatureBody || configuredSignature}

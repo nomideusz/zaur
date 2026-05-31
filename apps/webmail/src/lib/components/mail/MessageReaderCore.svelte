@@ -3,7 +3,6 @@
 	import { page } from '$app/stores';
 	import { tick } from 'svelte';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
 	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
@@ -29,15 +28,13 @@
 		thread: MessageDetail[];
 		mailboxRouteId: string;
 		onMoved?: () => void;
-		/** Simple mode: editorial reading focus with reduced chrome. */
+		/** Reduced chrome when the list rail is hidden. */
 		minimalChrome?: boolean;
 	}
 
 	let { thread, mailboxRouteId, onMoved, minimalChrome = false }: Props = $props();
 
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
-	const useSimpleContentShell = true;
-
 	let localShowImagesOnce = $state(false);
 	let expandedIds = $state<Set<string>>(new Set());
 	let quickReply = $state('');
@@ -50,8 +47,6 @@
 	const subject = $derived(latest?.subject ?? '(no subject)');
 	const isDraft = $derived(mailboxRouteId === 'drafts');
 	const mailHomeHref = $derived(settings.preferredMailHref());
-	const mailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
-	const mailboxLabel = $derived(mailbox?.name ?? mailboxRouteId);
 	const primaryReplyLabel = $derived(
 		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
 	);
@@ -65,31 +60,6 @@
 	);
 	const readMinutes = $derived(Math.max(1, Math.round(totalWords / 220)));
 	const showReadTime = $derived(totalWords >= 200);
-	const mailboxHref = $derived(`/mail/${mailboxRouteId}`);
-
-	const nextUnread = $derived.by(() => {
-		const unread = mail.messages.filter((message) => message.unread);
-		if (!unread.length) return null;
-		const currentId = latest?.id ?? $page.url.searchParams.get('messageId');
-		if (!currentId) return unread[0];
-		const currentIndex = unread.findIndex((message) => message.id === currentId);
-		if (currentIndex === -1) return unread[0];
-		return unread[currentIndex + 1] ?? unread[0];
-	});
-
-	const unreadCount = $derived(mail.messages.filter((message) => message.unread).length);
-
-	const nextUnreadHref = $derived.by(() => {
-		if (!nextUnread) return null;
-		const params = new URLSearchParams();
-		params.set('messageId', nextUnread.id);
-		return `/mail/${mailboxRouteId}/${nextUnread.threadId}?${params.toString()}`;
-	});
-
-	function openNextUnread() {
-		if (!nextUnreadHref) return;
-		goto(nextUnreadHref);
-	}
 
 	const userDomain = $derived((auth.username ?? '').split('@')[1]?.toLowerCase() ?? '');
 	function isExternalSender(email: string): boolean {
@@ -110,13 +80,7 @@
 		)
 	);
 	const collapsedCount = $derived(Math.max(0, thread.length - expandedIds.size));
-	const threadRowX = $derived(
-		useSimpleContentShell
-			? ''
-			: settings.compactCollapsedThreads || settings.compactReaderBody
-				? 'px-4 md:px-5'
-				: 'px-4 md:px-6'
-	);
+	const threadRowX = '';
 
 	$effect(() => {
 		$page.params.threadId;
@@ -134,7 +98,7 @@
 	});
 
 	function messageScrollContainer(): HTMLElement | null {
-		if (!useSimpleContentShell || typeof document === 'undefined') return scrollPane;
+		if (typeof document === 'undefined') return scrollPane;
 		const mobilePane = document.querySelector(
 			'.z-mail-pane--mobile-fullscreen .z-pane-scroll--mobile-reader'
 		);
@@ -148,11 +112,7 @@
 		const paneEl = messageScrollContainer();
 		if (!paneEl) return;
 		void tick().then(() => {
-			if (useSimpleContentShell) {
-				paneEl.scrollTop = 0;
-			} else if (thread.length >= 2) {
-				paneEl.scrollTop = paneEl.scrollHeight;
-			}
+			paneEl.scrollTop = 0;
 		});
 	});
 
@@ -315,16 +275,9 @@
 </script>
 
 <article
-	class={cn(
-		'z-mail-pane-surface',
-		useSimpleContentShell ? 'z-mail-pane-surface--flow' : 'min-h-0 flex-1 overflow-hidden'
-	)}
+	class="z-mail-pane-surface z-mail-pane-surface--flow"
 	style="view-transition-name: message-reader;"
 >
-	{#if !useSimpleContentShell}
-		<h1 class="sr-only">{subject}</h1>
-	{/if}
-
 	{#if mail.selectedError}
 		<div
 			class={cn(
@@ -342,46 +295,10 @@
 		</div>
 	{/if}
 
-	{#if hasBlockedExternal && !allowExternal && !settings.hideExternalContentBanner && !useSimpleContentShell}
-		<div
-			class={cn(
-				'flex shrink-0 flex-wrap items-center bg-surface text-fg-muted md:px-6',
-				settings.compactExternalContentBanner ? 'gap-x-1.5 gap-y-1 px-3 py-1.5 text-[11px]' : 'gap-x-2 gap-y-1 px-4 py-2 text-xs',
-				!settings.hideReaderPaneBorders && 'border-b border-border/80'
-			)}
-		>
-			<Shield class={cn('shrink-0', settings.compactExternalContentBanner ? 'size-3' : 'size-3.5')} aria-hidden="true" />
-			<span>External images blocked.</span>
-			<button type="button" class="text-accent hover:underline" onclick={showImagesOnce}>
-				Show once
-			</button>
-			<span class="text-fg-subtle">·</span>
-			<a href="/settings/appearance" class="text-accent hover:underline">Settings</a>
-		</div>
-	{/if}
-
-	<div
-		class={cn(
-			'z-pane-scroll z-pane-scroll--mobile-reader',
-			useSimpleContentShell
-				? 'z-pane-scroll--flow'
-				: 'min-h-0 flex-1 overflow-y-auto'
-		)}
-		bind:this={scrollPane}
-	>
-		<div
-			class={cn(
-				useSimpleContentShell && contentPagePadClass()
-			)}
-		>
-		<div
-			class={cn(
-				'z-reader-column',
-				threadRowX
-			)}
-		>
-			{#if useSimpleContentShell}
-				<div class="z-mail-text-nav z-reader-sticky-nav">
+	<div class="z-pane-scroll z-pane-scroll--mobile-reader z-pane-scroll--flow" bind:this={scrollPane}>
+		<div class={contentPagePadClass()}>
+		<div class="z-reader-column">
+			<div class="z-mail-text-nav z-reader-sticky-nav">
 					<div class="z-mail-text-nav__row">
 						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
 						{#if !mail.hasSelection}
@@ -401,41 +318,16 @@
 					</div>
 				</div>
 				{#if hasBlockedExternal && !allowExternal && !settings.hideExternalContentBanner}
-					<div class="z-mail-simple-external-banner">
+					<div class="z-mail-external-banner">
 						<Shield class="size-3.5 shrink-0" aria-hidden="true" />
 						<span>External images blocked.</span>
-						<button type="button" class="z-mail-simple-external-banner__action" onclick={showImagesOnce}>
+						<button type="button" class="z-mail-external-banner__action" onclick={showImagesOnce}>
 							Show once
 						</button>
-						<span class="z-mail-simple-external-banner__dot">·</span>
-						<a href="/settings/appearance" class="z-mail-simple-external-banner__action">Settings</a>
+						<span class="z-mail-external-banner__dot">·</span>
+						<a href="/settings/appearance" class="z-mail-external-banner__action">Settings</a>
 					</div>
 				{/if}
-			{:else}
-				<div
-					class={cn(
-						'sticky top-0 z-10 border-b border-border/60 bg-surface/95 text-xs text-fg-muted backdrop-blur-sm',
-						settings.compactReaderHeader ? 'pb-1 pt-1.5' : 'pb-2 pt-2'
-					)}
-				>
-					<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-						<a
-							href={mailHomeHref}
-							class="font-medium text-accent underline underline-offset-2 hover:text-accent-hover"
-						>
-							Back to mail
-						</a>
-						{#if mailboxRouteId !== 'inbox'}
-							<a
-								href={mailboxHref}
-								class="text-accent underline underline-offset-2 hover:text-accent-hover"
-							>
-								Back to {mailboxLabel}
-							</a>
-						{/if}
-					</div>
-				</div>
-			{/if}
 			{#if thread.length > 1}
 				<div class={cn('pb-1 pt-3', settings.compactReaderHeader && 'pt-2.5', minimalChrome && 'pt-2')}>
 					<div
@@ -719,11 +611,7 @@
 							)}
 						>
 							{#if showInlineSubject}
-								{#if useSimpleContentShell}
-									<h1 class="z-reader-subject-heading">{subject}</h1>
-								{:else}
-									<p class="z-reader-inline-subject">{subject}</p>
-								{/if}
+								<h1 class="z-reader-subject-heading">{subject}</h1>
 							{/if}
 
 							{#if message.attachments.length}
@@ -791,18 +679,6 @@
 				</section>
 			{/each}
 
-			{#if nextUnread && !minimalChrome && !useSimpleContentShell}
-				<div class={cn('flex justify-center', settings.compactReaderBody ? 'py-4' : 'py-6')}>
-					<button
-						type="button"
-						class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-sm font-medium text-fg-muted transition-colors hover:border-border-strong hover:text-fg"
-						onclick={openNextUnread}
-					>
-						Next unread
-						<ChevronRight class="size-4" aria-hidden="true" />
-					</button>
-				</div>
-			{/if}
 		</div>
 		</div>
 	</div>
@@ -831,9 +707,6 @@
 					</Button>
 					{#if !settings.hideComposeHints}
 						<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter</span>
-					{/if}
-					{#if !useSimpleContentShell}
-						<Button variant="ghost" class="!px-2 text-xs max-sm:flex-1" onclick={reply}>Full reply</Button>
 					{/if}
 				</div>
 			</div>

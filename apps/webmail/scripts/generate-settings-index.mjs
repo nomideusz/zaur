@@ -1,9 +1,7 @@
 import fs from 'fs';
 
 const BASIC_TITLE_OVERRIDES = new Set([
-	'Compact layout',
-	'List density',
-	'Apply simple mode',
+	'Drawer width',
 	'Reset all display & layout settings',
 	'Reset look & feel',
 	'Reset inbox settings',
@@ -76,10 +74,6 @@ function countHiddenForSource(source) {
 	return hidden;
 }
 
-function modesForEntry(_href, _title) {
-	return undefined;
-}
-
 const files = [
 	['src/lib/settings/sections/appearance.svelte', '/settings/appearance'],
 	['src/lib/settings/sections/reading-layout.svelte', '/settings/reading'],
@@ -108,8 +102,7 @@ for (const [file, href] of files) {
 		const id = `${publicHref}-${slug(title)}`;
 		if (seen.has(id)) continue;
 		seen.add(id);
-		const modes = modesForEntry(href, title);
-		entries.push(modes ? { id, href: publicHref, title, description, modes } : { id, href: publicHref, title, description });
+		entries.push({ id, href: publicHref, title, description });
 	}
 }
 
@@ -120,7 +113,6 @@ const searchIndex = `export type SettingsSearchEntry = {
 	title: string;
 	description: string;
 	href: string;
-	modes?: ('simple' | 'traditional')[];
 };
 
 export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = ${JSON.stringify(entries, null, '\t')};

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { MAIL_LAYOUT } from '$lib/mail/config';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { observeVisibleSettingsRows } from '$lib/settings/observe-visible-rows';
 	import { settingsSearch } from '$lib/settings/search-registry.svelte';
@@ -19,8 +18,6 @@
 	let sectionRef = $state<HTMLElement | null>(null);
 	let hasRows = $state(true);
 
-	const editorial = MAIL_LAYOUT.settings.editorial;
-
 	$effect(() => {
 		settingsSearch.query;
 		if (!sectionRef) {
@@ -39,7 +36,6 @@
 	class={cn(
 		'z-settings-section',
 		settings.compactSettingsRows && 'z-settings-section--compact',
-		editorial && 'z-settings-section--editorial',
 		!hasRows && 'hidden'
 	)}
 >
@@ -47,21 +43,16 @@
 		<div
 			class={cn(
 				'z-settings-section-heading',
-				settings.hidePaneBorders && 'z-settings-section-heading--plain',
-				editorial && 'z-settings-section-heading--editorial'
+				settings.hidePaneBorders && 'z-settings-section-heading--plain'
 			)}
 		>
 			<h3 class="z-settings-section-title">{title}</h3>
-			{#if description && !settings.hideSettingsPanelDescriptions && !editorial}
-				<p class="z-settings-section-lead">{description}</p>
-			{/if}
 		</div>
 	{/if}
 	<div
 		class={cn(
 			'z-settings-list',
-			settings.hidePaneBorders && 'z-settings-list--plain',
-			editorial && 'z-settings-list--editorial'
+			settings.hidePaneBorders && 'z-settings-list--plain'
 		)}
 	>
 		{@render children()}

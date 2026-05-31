@@ -34,7 +34,7 @@
 		thread: MessageDetail[];
 		mailboxRouteId: string;
 		onMoved?: () => void;
-		/** Simple mode: icon-first toolbar when reading with adaptive focus. */
+		/** Icon-first toolbar when reading with adaptive focus. */
 		minimalChrome?: boolean;
 		/** Reader pane header: avoid fixed button height so title can align with labels. */
 		readerHeader?: boolean;

@@ -153,7 +153,6 @@
 	}
 
 	onMount(() => {
-		const activeMode = () => MAIL_LAYOUT;
 		let pendingGotoPrefix = false;
 		let pendingGotoPrefixTimer: ReturnType<typeof setTimeout> | null = null;
 
@@ -183,7 +182,7 @@
 
 			if (
 				event.key === 'Escape' &&
-				activeMode().mail.useAdaptiveReaderFocus &&
+				MAIL_LAYOUT.mail.useAdaptiveReaderFocus &&
 				ctx.threadId &&
 				!mail.hasSelection
 			) {

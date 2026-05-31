@@ -18,7 +18,7 @@
 </script>
 
 <div
-	class="z-mail-pane-body z-mail-pane-body--simple flex w-full flex-col {isThreadOpen
+	class="z-mail-pane-body z-mail-pane-body--flow flex w-full flex-col {isThreadOpen
 		? 'z-mail-pane-body--thread-open'
 		: ''}"
 >
