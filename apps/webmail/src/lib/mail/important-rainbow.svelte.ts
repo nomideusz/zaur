@@ -1,4 +1,5 @@
 import { browser } from '$app/environment';
+import { scheduleAccountSettingsPush } from '$lib/settings/account-sync';
 
 const STORAGE_KEY = 'zaur:important-rainbow-phases';
 
@@ -48,6 +49,11 @@ class ImportantRainbowStore {
 	pickedPhases = $state<Record<string, number>>({});
 
 	init() {
+		this.reload();
+	}
+
+	/** Re-read from localStorage (after account settings pull). */
+	reload() {
 		if (!browser) return;
 		this.pickedPhases = readStoredPhases();
 	}
@@ -79,6 +85,7 @@ class ImportantRainbowStore {
 
 		this.pickedPhases = { ...this.pickedPhases, [messageId]: phase };
 		writeStoredPhases(this.pickedPhases);
+		scheduleAccountSettingsPush();
 	}
 }
 

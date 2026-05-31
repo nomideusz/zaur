@@ -9,6 +9,7 @@ import {
 } from '$lib/settings/account-sync';
 import { accountSettingsSyncAtKey } from '$lib/settings/account-settings-types';
 import { purgeObsoleteSettings } from '$lib/settings/obsolete-keys';
+import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
 import { toast } from '$lib/stores/toast.svelte';
 import { migrateLegacyMailViewMode } from '$lib/mail/view-mode';
 import { INBOX_MAILBOX_ROUTE_ID, mailListHref } from '$lib/mail/routes';
@@ -409,6 +410,7 @@ class SettingsStore {
 		this.applyReaderTextSize(this.readerTextSize);
 		this.applyReaderWidth(this.readerWidth);
 		this.applyReadingTypeface(this.readingTypeface);
+		importantRainbow.reload();
 	}
 
 	setUser(email: string | null) {

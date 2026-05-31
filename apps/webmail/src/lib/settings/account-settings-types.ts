@@ -22,11 +22,7 @@ export function accountSettingsSyncAtKey(email: string): string {
 
 export const EMAIL_SCOPED_PREFIXES = ['zaur:display-name:', 'zaur:signature:', 'zaur:use-signature:'] as const;
 
-export const DEVICE_LOCAL_SYNC_KEYS = new Set([
-	'zaur:remember-me',
-	'zaur:remembered-email',
-	'zaur:important-rainbow-phases'
-]);
+export const DEVICE_LOCAL_SYNC_KEYS = new Set(['zaur:remember-me', 'zaur:remembered-email']);
 
 export function isOtherAccountsScopedKey(key: string, email: string): boolean {
 	for (const prefix of EMAIL_SCOPED_PREFIXES) {
