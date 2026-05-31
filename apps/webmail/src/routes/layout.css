@@ -1161,11 +1161,11 @@
 		min-width: 0;
 	}
 
-	/* Simple settings — full width, flush left (no centered column) */
+	/* Simple settings — centered measure column, matching the mail view */
 	.z-settings-mode-simple .z-simple-content,
 	.z-settings-mode-simple .z-settings-content {
-		max-width: none;
-		margin-inline: 0;
+		max-width: var(--z-simple-content-max-width);
+		margin-inline: auto;
 		width: 100%;
 		min-width: 0;
 	}
@@ -1187,6 +1187,15 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--z-space-folder-sections-gap);
+	}
+
+	/* Editorial settings stay single-column — override the wide-viewport 2-col grid. */
+	@media (min-width: 1280px) {
+		.z-settings-mode-simple .z-settings-stack,
+		.z-settings-stack--editorial {
+			display: flex;
+			grid-template-columns: none;
+		}
 	}
 
 	.z-settings-mode-simple .z-settings-list,
@@ -1216,6 +1225,12 @@
 	.z-settings-mode-simple .z-settings-field,
 	.z-settings-list--editorial .z-settings-field {
 		padding-inline: 0;
+	}
+
+	/* Editorial fields fill the measure column instead of the narrower form cap. */
+	.z-settings-mode-simple .z-settings-field-body .z-input,
+	.z-settings-mode-simple .z-settings-field-body textarea.z-input {
+		max-width: none;
 	}
 
 	.z-settings-mode-simple .z-settings-section-heading,
