@@ -96,6 +96,9 @@ class OutboxProcessor {
 					const subject = item.subject || '(no subject)';
 					await removeOutboxItem(item.id);
 					toast.show(`"${subject}" sent`, 'success');
+					void import('$lib/stores/mail.svelte').then(({ mail }) => {
+						void mail.refreshAfterSend(client);
+					});
 				} catch (error) {
 					const message = error instanceof Error ? error.message : 'Send failed';
 					if (isOfflineError(error)) {

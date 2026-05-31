@@ -13,12 +13,13 @@ export interface Toast {
 	message: string;
 	variant: ToastVariant;
 	action?: ToastAction;
+	durationMs: number;
 }
 
 const AUTO_DISMISS_MS = 5_000;
 export const UNDO_SEND_DELAY_MS = 8_000;
 const UNDO_DISMISS_MS = UNDO_SEND_DELAY_MS;
-const MAX_TOASTS = 4;
+const MAX_TOASTS = 2;
 
 class ToastStore {
 	toasts = $state<Toast[]>([]);
@@ -40,7 +41,10 @@ class ToastStore {
 		if (!options?.force && settings.hideActionToasts && variant !== 'error') return;
 
 		const id = crypto.randomUUID();
-		this.toasts = [{ id, message, variant, action }, ...this.toasts].slice(0, MAX_TOASTS);
+		this.toasts = [{ id, message, variant, action, durationMs: dismissMs }, ...this.toasts].slice(
+			0,
+			MAX_TOASTS
+		);
 
 		const timer = setTimeout(() => this.dismiss(id), dismissMs);
 		this.timers.set(id, timer);

@@ -3,7 +3,6 @@
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import InstallPrompt from '$lib/components/pwa/InstallPrompt.svelte';
-	import ToastStack from '$lib/components/ui/ToastStack.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { network } from '$lib/stores/network.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
@@ -64,5 +63,4 @@
 
 <a href="#main-content" class="z-skip-link">Skip to main content</a>
 {@render children()}
-<ToastStack />
 <InstallPrompt />

@@ -2,6 +2,7 @@
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import AppShellHeader from '$lib/components/shell/AppShellHeader.svelte';
+	import ToastStack from '$lib/components/ui/ToastStack.svelte';
 	import { pushListener } from '$lib/jmap/push-listener';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -56,7 +57,7 @@
 		<span class={settings.hideConnectingScreen ? 'sr-only' : ''}>Connecting…</span>
 	</div>
 {:else if auth.isAuthenticated}
-	<div class="flex h-dvh flex-col overflow-hidden">
+	<div class="relative flex h-dvh flex-col overflow-hidden">
 		{#if showAppHeader}
 			<AppShellHeader />
 		{/if}
@@ -69,5 +70,6 @@
 		>
 			{@render children()}
 		</main>
+		<ToastStack />
 	</div>
 {/if}

@@ -1070,6 +1070,23 @@ class MailStore {
 		}
 	}
 
+	/** Refresh folder totals (and drafts/sent lists) after sending a message. */
+	async refreshAfterSend(client: JMAPClient, options?: { removedDraftId?: string }) {
+		const removedDraftId = options?.removedDraftId;
+		if (removedDraftId && this.messages.some((message) => message.id === removedDraftId)) {
+			this.messages = this.messages.filter((message) => message.id !== removedDraftId);
+			this.messagesTotal = Math.max(0, this.messagesTotal - 1);
+			this.removeFromSelectedThread(removedDraftId);
+		}
+
+		await this.refreshMailboxes(client);
+
+		const routeId = this.currentMailboxRouteId;
+		if (routeId === 'drafts' || routeId === 'sent') {
+			await this.refreshMessages(client, routeId);
+		}
+	}
+
 	async refreshMessages(client: JMAPClient, routeMailboxId: string) {
 		const mailbox = this.mailboxByRouteId(routeMailboxId);
 		if (!mailbox?.jmapId) return;

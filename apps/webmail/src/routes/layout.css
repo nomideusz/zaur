@@ -16,4 +16,5 @@
 @import './styles/settings.css' layer(components);
 @import './styles/compose.css' layer(components);
 @import './styles/mail-view.css' layer(components);
+@import './styles/status-line.css' layer(components);
 @import './styles/motion.css';

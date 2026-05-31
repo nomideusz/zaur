@@ -1,0 +1,136 @@
+/* Editorial status line — container-aligned, typographic feedback. */
+
+@layer components {
+	.z-status-line {
+		position: absolute;
+		inset-inline: 0;
+		bottom: 0;
+		z-index: 40;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.375rem;
+		padding-inline: max(1rem, env(safe-area-inset-left)) max(1rem, env(safe-area-inset-right));
+		padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+		pointer-events: none;
+	}
+
+	.z-status-line__item {
+		position: relative;
+		width: min(var(--z-content-max-width), 100%);
+		overflow: hidden;
+		border-block-start: 1px solid var(--z-border);
+		background: color-mix(in srgb, var(--z-surface) 92%, transparent);
+		backdrop-filter: blur(10px);
+		pointer-events: auto;
+		animation: z-status-line-enter var(--z-motion-enter) var(--z-ease-out) both;
+	}
+
+	/* Faded shape as container — https://anthonyhobday.com/sideprojects/visualtechniques/techniques/other/faded-shape-as-container */
+	.z-status-line__item--timed {
+		border-block-start-color: color-mix(in srgb, var(--z-border) 65%, transparent);
+		background: color-mix(in srgb, var(--z-fg) 4%, var(--z-surface));
+		backdrop-filter: none;
+	}
+
+	.z-status-line__shape-fill {
+		position: absolute;
+		inset: 0;
+		z-index: 0;
+		background: color-mix(in srgb, var(--z-surface) 94%, transparent);
+		backdrop-filter: blur(10px);
+		border-block-start: 1px solid var(--z-border);
+		transform: scaleX(0);
+		transform-origin: left center;
+		animation: z-status-line-shape-fill linear forwards;
+	}
+
+	.z-status-line__item--compact .z-status-line__content {
+		padding-block: 0.5rem;
+	}
+
+	.z-status-line__content {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		justify-content: center;
+		gap: 0.375rem 0.75rem;
+		padding: 0.625rem 1rem;
+		text-align: center;
+	}
+
+	.z-status-line__message {
+		margin: 0;
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.45;
+		color: var(--z-fg-muted);
+	}
+
+	.z-status-line__item[data-variant='success'] .z-status-line__message {
+		color: var(--z-fg);
+	}
+
+	.z-status-line__item[data-variant='error'] .z-status-line__message {
+		color: var(--z-danger);
+	}
+
+	.z-status-line__action {
+		flex-shrink: 0;
+		border: 0;
+		background: transparent;
+		padding: 0;
+		font: inherit;
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.45;
+		color: var(--z-fg);
+		text-decoration: underline;
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 30%, transparent);
+		text-underline-offset: 0.15em;
+		cursor: pointer;
+		transition: text-decoration-color var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-status-line__action:hover {
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
+	}
+
+	.z-status-line__action:active {
+		transform: scale(0.98);
+	}
+
+	@keyframes z-status-line-enter {
+		from {
+			opacity: 0;
+			transform: translateY(0.375rem);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@keyframes z-status-line-shape-fill {
+		from {
+			transform: scaleX(0);
+		}
+		to {
+			transform: scaleX(1);
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.z-status-line__item {
+			animation: none;
+		}
+
+		.z-status-line__shape-fill {
+			display: none;
+		}
+
+		.z-status-line__item--timed {
+			background: color-mix(in srgb, var(--z-surface) 92%, transparent);
+		}
+	}
+}

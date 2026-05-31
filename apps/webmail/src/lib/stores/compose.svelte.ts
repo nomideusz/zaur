@@ -671,6 +671,10 @@ class ComposeStore {
 				}
 			}
 
+			void import('$lib/stores/mail.svelte').then(({ mail }) => {
+				void mail.refreshAfterSend(client, { removedDraftId: payload.draftId });
+			});
+
 			return 'sent';
 		} catch (error) {
 			if (browser && isOfflineError(error)) {
