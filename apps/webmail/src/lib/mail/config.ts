@@ -1,14 +1,28 @@
-import type { SettingsNavLink, SettingsNavSectionId, WebmailModeDefinition } from './types';
+export type SettingsNavSectionId =
+	| 'account'
+	| 'appearance'
+	| 'reading'
+	| 'writing'
+	| 'backup';
 
-/** Single webmail layout — editorial Simple mode. */
-export const WEBMAIL_MODE: WebmailModeDefinition = {
-	id: 'simple',
-	label: 'Simple',
-	tagline: 'Editorial, one-column reading',
-	description:
-		'Content-first mail inspired by editorial sites. Text navigation, sectioned inbox, adaptive reading focus — no sidebars or dense chrome.',
-	mailRootClass: 'z-mail-view-simple',
-	settingsRootClass: 'z-settings-mode-simple',
+export type SettingsNavIcon =
+	| 'account'
+	| 'appearance'
+	| 'reading'
+	| 'writing'
+	| 'backup';
+
+export type SettingsNavLink = {
+	href: string;
+	label: string;
+	icon: SettingsNavIcon;
+	section: SettingsNavSectionId;
+};
+
+/** Editorial mail + settings layout constants. */
+export const MAIL_LAYOUT = {
+	mailRootClass: 'z-mail-view',
+	settingsRootClass: 'z-settings-view',
 	settings: {
 		useSidebar: false,
 		showAppHeader: false,
@@ -16,18 +30,15 @@ export const WEBMAIL_MODE: WebmailModeDefinition = {
 	},
 	mail: {
 		showAppHeaderOnMailRoutes: false,
-		showMailboxSidebar: false,
 		showEmptyReaderPane: false,
 		useSectionedMessageList: true,
 		useExpandedMessageList: true,
-		useClassicSplitPanes: false,
 		useAdaptiveReaderFocus: true,
 		useFullscreenMobileReader: true
 	}
-};
+} as const;
 
 export const SETTINGS_SECTIONS: { id: SettingsNavSectionId; label: string }[] = [
-	{ id: 'experience', label: 'Mode' },
 	{ id: 'account', label: '' },
 	{ id: 'appearance', label: '' },
 	{ id: 'reading', label: '' },
@@ -56,10 +67,6 @@ export const LEGACY_SETTINGS_PATHS = new Set([
 	'/settings/calendar'
 ]);
 
-export function webmailModeDefinition(): WebmailModeDefinition {
-	return WEBMAIL_MODE;
-}
-
 export function settingsNavLinks(): SettingsNavLink[] {
 	return SETTINGS_NAV_LINKS;
 }
@@ -81,7 +88,7 @@ export function isSettingsNavActive(pathname: string, href: string): boolean {
 	return false;
 }
 
-export function settingsRedirectForMode(pathname: string): string | null {
+export function settingsRedirect(pathname: string): string | null {
 	if (pathname === '/settings') return '/settings/account';
 	if (pathname === '/settings/layout') return '/settings/reading';
 	if (pathname === '/settings/workspace') return '/settings/reading';
@@ -90,4 +97,8 @@ export function settingsRedirectForMode(pathname: string): string | null {
 	if (pathname === '/settings/inbox') return '/settings/reading';
 	if (pathname === '/settings/compose') return '/settings/writing';
 	return null;
+}
+
+export function usesAdaptiveReaderFocus(opts: { showReaderListRail: boolean }): boolean {
+	return MAIL_LAYOUT.mail.useAdaptiveReaderFocus && !opts.showReaderListRail;
 }

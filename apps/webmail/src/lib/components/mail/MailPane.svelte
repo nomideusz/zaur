@@ -2,7 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { setContext } from 'svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
-	import SimpleMailSurface from '$lib/modes/simple/SimpleMailSurface.svelte';
+	import MailLayout from '$lib/components/mail/MailLayout.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { cn } from '$lib/utils/cn';
 
@@ -73,5 +73,5 @@
 		className
 	)}
 >
-	<SimpleMailSurface {list} {reader} />
+	<MailLayout {list} {reader} />
 </div>

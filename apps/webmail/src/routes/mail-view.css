@@ -1,20 +1,20 @@
 /* Simple mode — editorial mail + settings (imported from layout.css).
- * Scope: .z-mail-view-simple (mail) and .z-settings-mode-simple (settings).
+ * Scope: .z-mail-view (mail) and .z-settings-view (settings).
  */
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) {
+	:is(.z-mail-view, .z-settings-view) {
 		--z-reader-font: var(--font-mono);
 		font-family: var(--font-mono) !important;
 		--z-simple-main-gap: 3rem;
 	}
 
 	@media (min-width: 768px) {
-		:is(.z-mail-view-simple, .z-settings-mode-simple) {
+		:is(.z-mail-view, .z-settings-view) {
 			--z-simple-main-gap: 4.5rem;
 		}
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) :is(input, button, textarea, select) {
+	:is(.z-mail-view, .z-settings-view) :is(input, button, textarea, select) {
 		font-family: var(--font-mono) !important;
 	}
 
@@ -23,7 +23,7 @@
 		overscroll-behavior-y: contain;
 	}
 
-	.z-app-main--page-scroll .z-mail-view-simple,
+	.z-app-main--page-scroll .z-mail-view,
 	.z-app-main--page-scroll .z-mail-pane--page-scroll,
 	.z-app-main--page-scroll .z-mail-pane-body--simple,
 	.z-app-main--page-scroll .z-mail-pane-surface--flow,
@@ -77,35 +77,35 @@
 		overflow-y: auto;
 		height: auto;
 	}
-	.z-mail-view-simple .z-mail-text-nav.z-reader-sticky-nav {
+	.z-mail-view .z-mail-text-nav.z-reader-sticky-nav {
 		padding-top: 0.5rem;
 		margin-bottom: var(--z-simple-main-gap);
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__links + .z-mail-text-nav__row {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__links + .z-mail-text-nav__row {
 		margin-top: var(--z-space-nav-label-top);
 	}
 
-	.z-mail-view-simple .z-reader-chrome--bordered,
-	.z-mail-view-simple .z-reader-message-head {
+	.z-mail-view .z-reader-chrome--bordered,
+	.z-mail-view .z-reader-message-head {
 		border-bottom: none;
 	}
 
-	.z-mail-view-simple .z-reader-meta {
+	.z-mail-view .z-reader-meta {
 		line-height: 1.5;
 	}
 
-	.z-mail-view-simple .z-reader-latest-badge,
-	.z-mail-view-simple .z-reader-section-label {
+	.z-mail-view .z-reader-latest-badge,
+	.z-mail-view .z-reader-section-label {
 		line-height: 1.45;
 	}
 
-	.z-mail-view-simple .z-type-list-time {
+	.z-mail-view .z-type-list-time {
 		line-height: 1.55;
 	}
 
-	.z-mail-view-simple .z-mail-pane-surface--flow > .shrink-0.text-xs,
-	.z-mail-view-simple .z-mail-pane-surface--flow > .shrink-0[class*='text-[11px]'] {
+	.z-mail-view .z-mail-pane-surface--flow > .shrink-0.text-xs,
+	.z-mail-view .z-mail-pane-surface--flow > .shrink-0[class*='text-[11px]'] {
 		line-height: 1.5;
 	}
 
@@ -118,23 +118,23 @@
 	}
 
 	/* Simple mode mail — centered measure column */
-	.z-mail-view-simple .z-simple-content {
-		max-width: var(--z-simple-content-max-width);
+	.z-mail-view .z-content-shell {
+		max-width: var(--z-content-shell-max-width);
 		margin-inline: auto;
 		width: 100%;
 		min-width: 0;
 	}
 
 	/* Simple settings — centered measure column, matching the mail view */
-	.z-settings-mode-simple .z-simple-content,
-	.z-settings-mode-simple .z-settings-content {
-		max-width: var(--z-simple-content-max-width);
+	.z-settings-view .z-content-shell,
+	.z-settings-view .z-settings-content {
+		max-width: var(--z-content-shell-max-width);
 		margin-inline: auto;
 		width: 100%;
 		min-width: 0;
 	}
 
-	.z-mail-view-simple .z-simple-content .z-reader-column {
+	.z-mail-view .z-content-shell .z-reader-column {
 		max-width: none;
 		margin-inline: 0;
 		width: 100%;
@@ -142,13 +142,13 @@
 	}
 
 	/* Simple settings — editorial flat lists, no cards or display headings */
-	.z-settings-mode-simple .z-settings-panel,
+	.z-settings-view .z-settings-panel,
 	.z-settings-panel--editorial {
 		max-width: 100%;
 		min-width: 0;
 	}
 
-	.z-settings-mode-simple .z-settings-stack,
+	.z-settings-view .z-settings-stack,
 	.z-settings-stack--editorial {
 		display: flex;
 		flex-direction: column;
@@ -158,14 +158,14 @@
 		min-width: 0;
 	}
 
-	.z-settings-mode-simple .z-settings-section,
+	.z-settings-view .z-settings-section,
 	.z-settings-section--editorial {
 		width: 100%;
 		max-width: 100%;
 		min-width: 0;
 	}
 
-	.z-settings-mode-simple .z-settings-list,
+	.z-settings-view .z-settings-list,
 	.z-settings-list--editorial {
 		width: 100%;
 		max-width: 100%;
@@ -176,13 +176,13 @@
 		background: transparent;
 	}
 
-	.z-settings-mode-simple .z-settings-list > :not([hidden]) ~ :not([hidden]),
+	.z-settings-view .z-settings-list > :not([hidden]) ~ :not([hidden]),
 	.z-settings-list--editorial > :not([hidden]) ~ :not([hidden]) {
 		border-top: none;
 	}
 
 	/* Full-width rows — label + description left, control right (all breakpoints) */
-	.z-settings-mode-simple .z-settings-row,
+	.z-settings-view .z-settings-row,
 	.z-settings-list--editorial .z-settings-row {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;
@@ -196,19 +196,19 @@
 		border-bottom: 1px solid var(--z-divider);
 	}
 
-	.z-settings-mode-simple .z-settings-row-label,
+	.z-settings-view .z-settings-row-label,
 	.z-settings-list--editorial .z-settings-row-label {
 		grid-column: 1;
 		grid-row: 1;
 	}
 
-	.z-settings-mode-simple .z-settings-row-desc,
+	.z-settings-view .z-settings-row-desc,
 	.z-settings-list--editorial .z-settings-row-desc {
 		grid-column: 1;
 		grid-row: 2;
 	}
 
-	.z-settings-mode-simple .z-settings-row-control,
+	.z-settings-view .z-settings-row-control,
 	.z-settings-list--editorial .z-settings-row-control {
 		grid-column: 2;
 		grid-row: 1 / span 2;
@@ -216,8 +216,8 @@
 		align-self: center;
 	}
 
-	.z-settings-mode-simple .z-settings-row-control .z-select,
-	.z-settings-mode-simple .z-settings-row-control .z-mobile-picker-trigger,
+	.z-settings-view .z-settings-row-control .z-select,
+	.z-settings-view .z-settings-row-control .z-mobile-picker-trigger,
 	.z-settings-list--editorial .z-settings-row-control .z-select,
 	.z-settings-list--editorial .z-settings-row-control .z-mobile-picker-trigger {
 		width: auto;
@@ -226,12 +226,12 @@
 
 	/* Simple View keeps inline controls — override the mobile stack in layout.css */
 	@media (max-width: 767px) {
-		.z-settings-mode-simple .z-settings-row,
+		.z-settings-view .z-settings-row,
 		.z-settings-list--editorial .z-settings-row {
 			grid-template-columns: minmax(0, 1fr) auto;
 		}
 
-		.z-settings-mode-simple .z-settings-row-control,
+		.z-settings-view .z-settings-row-control,
 		.z-settings-list--editorial .z-settings-row-control {
 			grid-column: 2;
 			grid-row: 1 / span 2;
@@ -239,8 +239,8 @@
 			align-self: center;
 		}
 
-		.z-settings-mode-simple .z-settings-row-control .z-select,
-		.z-settings-mode-simple .z-settings-row-control .z-mobile-picker-trigger,
+		.z-settings-view .z-settings-row-control .z-select,
+		.z-settings-view .z-settings-row-control .z-mobile-picker-trigger,
 		.z-settings-list--editorial .z-settings-row-control .z-select,
 		.z-settings-list--editorial .z-settings-row-control .z-mobile-picker-trigger {
 			width: auto;
@@ -250,7 +250,7 @@
 
 	@media (min-width: 1280px) {
 		.z-settings-content--simple .z-settings-stack,
-		.z-settings-page.z-settings-mode-simple .z-settings-stack,
+		.z-settings-page.z-settings-view .z-settings-stack,
 		.z-settings-stack.z-settings-stack--editorial {
 			display: flex;
 			flex-direction: column;
@@ -258,42 +258,42 @@
 		}
 	}
 
-	.z-settings-mode-simple .z-settings-list > :last-child.z-settings-row,
+	.z-settings-view .z-settings-list > :last-child.z-settings-row,
 	.z-settings-list--editorial > :last-child.z-settings-row {
 		border-bottom: none;
 	}
 
-	.z-settings-mode-simple .z-settings-field,
+	.z-settings-view .z-settings-field,
 	.z-settings-list--editorial .z-settings-field {
 		padding-inline: 0;
 	}
 
 	/* Editorial fields fill the measure column instead of the narrower form cap. */
-	.z-settings-mode-simple .z-settings-field-body .z-input,
-	.z-settings-mode-simple .z-settings-field-body textarea.z-input {
+	.z-settings-view .z-settings-field-body .z-input,
+	.z-settings-view .z-settings-field-body textarea.z-input {
 		max-width: none;
 	}
 
-	.z-settings-mode-simple .z-settings-section-heading,
+	.z-settings-view .z-settings-section-heading,
 	.z-settings-section-heading--editorial {
 		border-bottom: none;
 		padding-bottom: 0.25rem;
 	}
 
-	.z-settings-mode-simple .z-settings-section-title,
+	.z-settings-view .z-settings-section-title,
 	.z-settings-section--editorial .z-settings-section-title {
 		font-size: var(--z-main-page-text);
 		font-weight: 600;
 		line-height: 1.55;
 	}
 
-	.z-settings-mode-simple .z-settings-row-label {
+	.z-settings-view .z-settings-row-label {
 		font-size: var(--z-main-page-text);
 		font-weight: 500;
 	}
 
-	.z-settings-mode-simple .z-settings-row-desc,
-	.z-settings-mode-simple .z-settings-field-desc {
+	.z-settings-view .z-settings-row-desc,
+	.z-settings-view .z-settings-field-desc {
 		color: var(--z-fg-muted);
 	}
 
@@ -383,7 +383,7 @@
 		color: var(--z-fg-subtle);
 	}
 
-	.z-settings-mode-simple .z-settings-search-input {
+	.z-settings-view .z-settings-search-input {
 		border: none;
 		border-bottom: 1px solid var(--z-divider);
 		border-radius: 0;
@@ -392,12 +392,12 @@
 		font-size: 1rem;
 	}
 
-	.z-settings-mode-simple .z-settings-search-input:focus {
+	.z-settings-view .z-settings-search-input:focus {
 		border-bottom-color: var(--z-border-strong);
 		background: transparent;
 	}
 
-	.z-settings-mode-simple :where(.z-input, .z-select, .z-textarea) {
+	.z-settings-view :where(.z-input, .z-select, .z-textarea) {
 		font-size: 1rem;
 	}
 
@@ -405,11 +405,11 @@
 	 * Simple settings chrome rhythm (matches mail list / compose):
 	 * shell py + nav-top → first line · folder-sections-top → major step · nav-label-top → tight step
 	 */
-	.z-settings-mode-simple .z-settings-sticky-nav {
+	.z-settings-view .z-settings-sticky-nav {
 		position: static;
 	}
 
-	.z-settings-mode-simple .z-settings-section-nav {
+	.z-settings-view .z-settings-section-nav {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
@@ -418,23 +418,23 @@
 		margin-top: var(--z-space-folder-sections-top);
 	}
 
-	.z-settings-mode-simple .z-settings-nav-meta {
+	.z-settings-view .z-settings-nav-meta {
 		margin-top: var(--z-space-nav-label-top);
 	}
 
-	.z-settings-mode-simple .z-mail-text-nav--settings .z-mail-text-nav__search {
+	.z-settings-view .z-mail-text-nav--settings .z-mail-text-nav__search {
 		margin-top: var(--z-space-nav-label-top);
 		max-width: 28rem;
 	}
 
-	.z-settings-mode-simple .z-settings-content--simple {
+	.z-settings-view .z-settings-content--simple {
 		padding-top: var(--z-simple-main-gap);
 	}
 
-	.z-settings-mode-simple .z-settings-simple-index {
+	.z-settings-view .z-settings-simple-index {
 		padding-top: 0;
 	}
-	.z-mail-view-simple .z-mail-reader-pane {
+	.z-mail-view .z-mail-reader-pane {
 		display: flex;
 		min-height: auto;
 		overflow: visible;
@@ -442,14 +442,14 @@
 		height: auto;
 	}
 
-	.z-app-main--page-scroll .z-mail-view-simple .z-mail-reader-pane {
+	.z-app-main--page-scroll .z-mail-view .z-mail-reader-pane {
 		overflow: visible;
 		min-height: auto;
 		flex: none;
 		height: auto;
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__link:is(button) {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link:is(button) {
 		@apply cursor-pointer border-0 bg-transparent p-0;
 	}
 
@@ -458,36 +458,36 @@
 		height: 0.875rem;
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav {
 		@apply shrink-0;
 		padding-top: var(--z-space-nav-top);
 		padding-bottom: var(--z-space-nav-bottom);
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__title {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__title {
 		@apply font-semibold text-fg;
 		min-width: 0;
 		font-size: var(--z-main-page-text);
 		line-height: 1.45;
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__title a {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__title a {
 		@apply text-fg no-underline;
 		transition: opacity var(--z-motion-fast) var(--z-ease-standard);
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__title a:hover {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__title a:hover {
 		opacity: 0.72;
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__row {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__row {
 		display: flex;
 		align-items: baseline;
 		justify-content: space-between;
 		gap: 1rem;
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__action {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action {
 		@apply inline-flex shrink-0 cursor-pointer items-center font-semibold text-fg underline underline-offset-[0.2em] decoration-fg/45;
 		font-size: var(--z-main-page-text);
 		line-height: 1.55;
@@ -497,23 +497,23 @@
 			transform var(--z-motion-fast) var(--z-ease-out);
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__action:hover:not(:disabled) {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action:hover:not(:disabled) {
 		text-decoration-color: color-mix(in srgb, var(--z-fg) 70%, transparent);
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__action:active:not(:disabled) {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action:active:not(:disabled) {
 		transform: scale(0.98);
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__action:disabled {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action:disabled {
 		@apply cursor-not-allowed text-fg-subtle no-underline;
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__actions {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__actions {
 		margin-top: var(--z-space-nav-label-top);
 	}
 
-	.z-mail-view-simple .z-reader-subject-heading {
+	.z-mail-view .z-reader-subject-heading {
 		margin: 0 0 1rem;
 		font-size: var(--z-main-page-text);
 		line-height: var(--z-reader-leading);
@@ -521,25 +521,25 @@
 		@apply text-fg;
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__footer {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__footer {
 		margin-top: var(--z-space-folder-sections-gap);
 		padding-top: 1.5rem;
 		border-top: 1px solid var(--z-divider);
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__label {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__label {
 		@apply text-fg-subtle;
 		font-size: var(--z-main-page-muted-text);
 		line-height: 1.55;
 		margin-top: var(--z-space-nav-label-top);
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__links {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__links {
 		@apply flex flex-wrap items-center gap-x-4 gap-y-1.5;
 	}
 
 	/* Secondary link rows sit tight under a title row (compose back link, reader footer links). */
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__row + .z-mail-text-nav__links {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__row + .z-mail-text-nav__links {
 		margin-top: var(--z-space-nav-label-top);
 	}
 
@@ -547,7 +547,7 @@
 		max-width: 28rem;
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__link {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link {
 		@apply inline-flex items-baseline gap-1.5 text-fg underline underline-offset-2 decoration-fg/30;
 		font-size: var(--z-main-page-text);
 		line-height: 1.6;
@@ -557,47 +557,47 @@
 			transform var(--z-motion-fast) var(--z-ease-out);
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__link:hover {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link:hover {
 		@apply text-fg;
 		text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__link:active {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link:active {
 		transform: scale(0.985);
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__link--active {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link--active {
 		@apply font-semibold decoration-fg/55;
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__count {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__count {
 		@apply text-xs tabular-nums text-fg-subtle no-underline;
 		line-height: 1.55;
 	}
 
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__link--button {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link--button {
 		@apply !px-0 !py-0 !font-normal !text-fg !underline !underline-offset-2 !decoration-fg/40 hover:!bg-transparent;
 	}
 
-	.z-mail-view-simple .z-mail-folder-sections {
+	.z-mail-view .z-mail-folder-sections {
 		@apply flex flex-col;
 		gap: var(--z-simple-main-gap);
 		padding-top: var(--z-simple-main-gap);
 		padding-bottom: 0;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__head {
+	.z-mail-view .z-mail-folder-section__head {
 		@apply flex items-center justify-between gap-3;
 		margin-bottom: var(--z-list-head-gap, var(--z-space-folder-head-bottom));
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__title {
+	.z-mail-view .z-mail-folder-section__title {
 		@apply inline-flex items-center gap-2 font-semibold text-fg;
 		font-size: var(--z-list-title-size, var(--z-main-page-text));
 		line-height: 1.35;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__title--unread::before {
+	.z-mail-view .z-mail-folder-section__title--unread::before {
 		content: '';
 		width: 0.4375rem;
 		height: 0.4375rem;
@@ -606,15 +606,15 @@
 		flex-shrink: 0;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__more,
-	.z-mail-view-simple .z-mail-folder-section__subject,
-	.z-mail-view-simple .z-mail-folder-section__empty {
+	.z-mail-view .z-mail-folder-section__more,
+	.z-mail-view .z-mail-folder-section__subject,
+	.z-mail-view .z-mail-folder-section__empty {
 		font-size: var(--z-main-page-text);
 		line-height: var(--z-space-folder-message-leading);
 		@apply font-normal text-fg;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__count {
+	.z-mail-view .z-mail-folder-section__count {
 		font-size: var(--z-list-count-size, 0.9375rem);
 		line-height: 1.35;
 		@apply shrink-0 tabular-nums font-semibold text-fg no-underline;
@@ -627,7 +627,7 @@
 	 * Emphasis is carried by weight + the unread dot, never by size, so the column
 	 * reads as one calm, repeating unit (Hobday's homepage harmony).
 	 */
-	.z-mail-view-simple .z-mail-list-flow {
+	.z-mail-view .z-mail-list-flow {
 		--z-list-title-size: var(--z-main-page-text);
 		--z-list-count-size: 0.9375rem;
 		--z-list-subject-size: var(--z-main-page-text);
@@ -638,24 +638,24 @@
 	}
 
 	/* Day group — label + whitespace only (no rule lines). */
-	.z-mail-view-simple .z-mail-folder-section__day {
+	.z-mail-view .z-mail-folder-section__day {
 		@apply list-none;
 		padding-top: var(--z-list-day-pad-top, 1.5rem);
 		padding-bottom: 0.25rem;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__day:first-child {
+	.z-mail-view .z-mail-folder-section__day:first-child {
 		padding-top: 0.125rem;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__day-label {
+	.z-mail-view .z-mail-folder-section__day-label {
 		font-size: var(--z-list-day-size, 0.8125rem);
 		font-weight: 600;
 		line-height: 1.4;
 		color: var(--z-fg-muted);
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__more {
+	.z-mail-view .z-mail-folder-section__more {
 		@apply cursor-pointer underline underline-offset-2 decoration-fg/30;
 		transition:
 			color var(--z-motion-fast) var(--z-ease-standard),
@@ -663,48 +663,48 @@
 			transform var(--z-motion-fast) var(--z-ease-out);
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__more:hover {
+	.z-mail-view .z-mail-folder-section__more:hover {
 		text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__more:active {
+	.z-mail-view .z-mail-folder-section__more:active {
 		transform: scale(0.98);
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__empty {
+	.z-mail-view .z-mail-folder-section__empty {
 		line-height: 1.55;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__footer {
+	.z-mail-view .z-mail-folder-section__footer {
 		margin-top: var(--z-space-folder-footer-top);
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__list {
+	.z-mail-view .z-mail-folder-section__list {
 		@apply flex flex-col;
 		gap: var(--z-list-row-gap, 0.625rem);
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__item {
+	.z-mail-view .z-mail-folder-section__item {
 		@apply list-none;
 	}
 
 	/* Minimal folder navigation — appears only on inbox home, very low visual weight. */
-	.z-mail-view-simple .z-mail-simple-folder-nav {
+	.z-mail-view .z-mail-simple-folder-nav {
 		@apply flex flex-wrap items-center gap-x-3 gap-y-1 text-fg-muted;
 		margin-top: var(--z-simple-main-gap) !important;
 		font-size: var(--z-main-page-muted-text);
 		line-height: 1.55;
 	}
 
-	.z-mail-view-simple .z-mail-simple-main-footer {
+	.z-mail-view .z-mail-simple-main-footer {
 		margin-top: var(--z-simple-main-gap) !important;
 	}
 
-	.z-mail-view-simple .z-mail-simple-folder-nav__link {
+	.z-mail-view .z-mail-simple-folder-nav__link {
 		@apply inline-flex items-baseline gap-1.5 text-fg-muted no-underline transition-colors hover:text-fg;
 	}
 
-	.z-mail-view-simple .z-mail-simple-folder-nav__count {
+	.z-mail-view .z-mail-simple-folder-nav__count {
 		font-size: var(--z-list-count-size, 0.9375rem);
 		line-height: 1.35;
 		@apply tabular-nums font-semibold;
@@ -714,12 +714,12 @@
 	 * Message row — stacked titles (Hobday): largest subject, smaller meta below.
 	 * https://anthonyhobday.com/sideprojects/visualtechniques/techniques/text/stacked-titles
 	 */
-	.z-mail-view-simple .z-mail-folder-section__message {
+	.z-mail-view .z-mail-folder-section__message {
 		display: block;
 		@apply min-w-0 no-underline;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__message--selecting {
+	.z-mail-view .z-mail-folder-section__message--selecting {
 		display: flex;
 		width: 100%;
 		align-items: flex-start;
@@ -731,15 +731,15 @@
 		cursor: pointer;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__checkbox {
+	.z-mail-view .z-mail-folder-section__checkbox {
 		margin-top: 0.35rem;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__item--selected .z-mail-folder-section__subject {
+	.z-mail-view .z-mail-folder-section__item--selected .z-mail-folder-section__subject {
 		@apply text-accent;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__stack {
+	.z-mail-view .z-mail-folder-section__stack {
 		display: flex;
 		min-width: 0;
 		flex-direction: row;
@@ -748,7 +748,7 @@
 		gap: 1rem;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__lead {
+	.z-mail-view .z-mail-folder-section__lead {
 		display: flex;
 		min-width: 0;
 		flex: 1 1 auto;
@@ -756,7 +756,7 @@
 		gap: 0.125rem;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__subject {
+	.z-mail-view .z-mail-folder-section__subject {
 		@apply block min-w-0 font-normal text-fg underline underline-offset-[0.2em] decoration-fg/35;
 		font-size: var(--z-list-subject-size, var(--z-main-page-text));
 		line-height: 1.4;
@@ -767,60 +767,60 @@
 			text-decoration-color var(--z-motion-base) var(--z-ease-out);
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__subject--active {
+	.z-mail-view .z-mail-folder-section__subject--active {
 		@apply font-normal;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section--importance-read .z-mail-folder-section__subject,
-	.z-mail-view-simple .z-mail-folder-section__list--importance-read .z-mail-folder-section__subject {
+	.z-mail-view .z-mail-folder-section--importance-read .z-mail-folder-section__subject,
+	.z-mail-view .z-mail-folder-section__list--importance-read .z-mail-folder-section__subject {
 		@apply font-normal;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section--importance-new .z-mail-folder-section__subject,
-	.z-mail-view-simple .z-mail-folder-section__list--importance-new .z-mail-folder-section__subject {
+	.z-mail-view .z-mail-folder-section--importance-new .z-mail-folder-section__subject,
+	.z-mail-view .z-mail-folder-section__list--importance-new .z-mail-folder-section__subject {
 		@apply font-normal;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__when {
+	.z-mail-view .z-mail-folder-section__when {
 		font-size: var(--z-list-when-size, var(--z-list-subject-size, var(--z-main-page-text)));
 		line-height: 1.4;
 		@apply shrink-0 tabular-nums text-fg-muted no-underline;
 		padding-top: 0.05em;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__sender {
+	.z-mail-view .z-mail-folder-section__sender {
 		display: none;
 		font-size: var(--z-list-when-size, var(--z-list-subject-size, var(--z-main-page-text)));
 		line-height: 1.4;
 		color: var(--z-fg-muted);
 	}
 
-	.z-mail-view-simple .z-mail-folder-section__sender--duplicate {
+	.z-mail-view .z-mail-folder-section__sender--duplicate {
 		display: block;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section--importance-read .z-mail-folder-section__count {
+	.z-mail-view .z-mail-folder-section--importance-read .z-mail-folder-section__count {
 		@apply font-medium text-fg-muted;
 	}
 
 	@media (hover: hover) and (pointer: fine) {
-		.z-mail-view-simple .z-mail-folder-section__message:hover .z-mail-folder-section__subject,
-		.z-mail-view-simple .z-mail-folder-section__message:focus-visible .z-mail-folder-section__subject {
+		.z-mail-view .z-mail-folder-section__message:hover .z-mail-folder-section__subject,
+		.z-mail-view .z-mail-folder-section__message:focus-visible .z-mail-folder-section__subject {
 			text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
 		}
 
-		.z-mail-view-simple .z-mail-folder-section__message:hover .z-mail-folder-section__when,
-		.z-mail-view-simple .z-mail-folder-section__message:focus-visible .z-mail-folder-section__when {
+		.z-mail-view .z-mail-folder-section__message:hover .z-mail-folder-section__when,
+		.z-mail-view .z-mail-folder-section__message:focus-visible .z-mail-folder-section__when {
 			color: var(--z-fg);
 		}
 	}
 
 	/* Simple compose — editorial document page, no drawer chrome */
-	.z-mail-view-simple .z-simple-compose {
+	.z-mail-view .z-simple-compose {
 		@apply w-full min-w-0;
 	}
 
-	.z-mail-view-simple .z-simple-compose__page {
+	.z-mail-view .z-simple-compose__page {
 		display: flex;
 		flex-direction: column;
 		gap: 0;
@@ -840,7 +840,7 @@
 	}
 
 	@media (max-width: 767px) {
-		.z-mail-view-simple .z-simple-compose__page {
+		.z-mail-view .z-simple-compose__page {
 			--z-compose-field-y: 0.5625rem;
 			--z-compose-nav-to-form: var(--z-space-folder-sections-gap);
 			--z-compose-header-to-body: 1rem;
@@ -848,7 +848,7 @@
 	}
 
 	@media (min-width: 768px) {
-		.z-mail-view-simple .z-simple-compose__page {
+		.z-mail-view .z-simple-compose__page {
 			--z-compose-chrome-top: calc(
 				1.5rem + var(--z-space-nav-top) + var(--z-space-nav-bottom) + 1.6em +
 					var(--z-space-nav-label-top) + 1.55em + var(--z-compose-nav-to-form) + 4.25rem
@@ -860,7 +860,7 @@
 		}
 	}
 
-	.z-mail-view-simple .z-simple-compose__form {
+	.z-mail-view .z-simple-compose__form {
 		display: flex;
 		flex: 1;
 		flex-direction: column;
@@ -868,13 +868,13 @@
 		margin-top: var(--z-compose-nav-to-form);
 	}
 
-	.z-mail-view-simple .z-simple-compose__fields {
+	.z-mail-view .z-simple-compose__fields {
 		display: flex;
 		flex-direction: column;
 		flex-shrink: 0;
 	}
 
-	.z-mail-view-simple .z-simple-compose__field {
+	.z-mail-view .z-simple-compose__field {
 		display: grid;
 		grid-template-columns: 3.25rem minmax(0, 1fr);
 		gap: 0.75rem;
@@ -882,31 +882,31 @@
 		padding-block: var(--z-compose-field-y);
 	}
 
-	.z-mail-view-simple .z-simple-compose__field:not(:last-child) {
+	.z-mail-view .z-simple-compose__field:not(:last-child) {
 		border-bottom: 1px solid var(--z-divider);
 	}
 
-	.z-mail-view-simple .z-simple-compose__field--subject {
+	.z-mail-view .z-simple-compose__field--subject {
 		padding-bottom: var(--z-compose-field-y);
 		border-bottom: 1px solid var(--z-divider);
 	}
 
-	.z-mail-view-simple .z-simple-compose__field--invalid {
+	.z-mail-view .z-simple-compose__field--invalid {
 		background-color: color-mix(in srgb, var(--z-danger) 6%, transparent);
 	}
 
-	.z-mail-view-simple .z-simple-compose__label {
+	.z-mail-view .z-simple-compose__label {
 		@apply shrink-0 text-fg-subtle;
 		font-size: var(--z-main-page-muted-text);
 		line-height: 1.55;
 	}
 
-	.z-mail-view-simple .z-simple-compose__control {
+	.z-mail-view .z-simple-compose__control {
 		@apply flex min-w-0 items-baseline gap-3;
 	}
 
-	.z-mail-view-simple .z-simple-compose__input,
-	.z-mail-view-simple .z-simple-compose__input.z-compose-field-input {
+	.z-mail-view .z-simple-compose__input,
+	.z-mail-view .z-simple-compose__input.z-compose-field-input {
 		@apply w-full min-w-0 bg-transparent text-fg outline-none;
 		font-size: var(--z-main-page-text);
 		line-height: var(--z-space-folder-message-leading);
@@ -915,7 +915,7 @@
 		padding: 0;
 	}
 
-	.z-mail-view-simple .z-simple-compose__inline-link {
+	.z-mail-view .z-simple-compose__inline-link {
 		@apply shrink-0 text-fg underline underline-offset-2 decoration-fg/30;
 		font-size: 0.9375rem;
 		line-height: 1.55;
@@ -924,11 +924,11 @@
 			text-decoration-color var(--z-motion-base) var(--z-ease-out);
 	}
 
-	.z-mail-view-simple .z-simple-compose__inline-link:hover {
+	.z-mail-view .z-simple-compose__inline-link:hover {
 		text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
 	}
 
-	.z-mail-view-simple .z-simple-compose__write {
+	.z-mail-view .z-simple-compose__write {
 		display: flex;
 		flex: 1;
 		flex-direction: column;
@@ -940,14 +940,14 @@
 		min-width: 0;
 	}
 
-	.z-mail-view-simple .z-simple-compose__message {
+	.z-mail-view .z-simple-compose__message {
 		display: flex;
 		flex: 1;
 		flex-direction: column;
 		min-height: 0;
 	}
 
-	.z-mail-view-simple .z-simple-compose__body {
+	.z-mail-view .z-simple-compose__body {
 		@apply block w-full flex-1 bg-transparent text-fg outline-none;
 		width: 100%;
 		min-height: 0;
@@ -961,7 +961,7 @@
 		padding: 0;
 	}
 
-	.z-mail-view-simple .z-simple-compose__signature {
+	.z-mail-view .z-simple-compose__signature {
 		position: sticky;
 		bottom: calc(var(--z-compose-footer-clearance) + 0.25rem);
 		z-index: 15;
@@ -971,7 +971,7 @@
 		background-color: var(--z-surface);
 	}
 
-	.z-mail-view-simple .z-simple-compose__signature-input {
+	.z-mail-view .z-simple-compose__signature-input {
 		display: block;
 		width: 100%;
 		min-height: 4.5rem;
@@ -988,7 +988,7 @@
 		line-height: var(--z-reader-leading);
 	}
 
-	.z-mail-view-simple .z-simple-compose__signature-empty {
+	.z-mail-view .z-simple-compose__signature-empty {
 		position: sticky;
 		bottom: calc(var(--z-compose-footer-clearance) + 0.25rem);
 		z-index: 15;
@@ -1001,68 +1001,68 @@
 	}
 
 	@media (max-width: 767px) {
-		.z-mail-view-simple .z-simple-compose__body,
-		.z-mail-view-simple .z-simple-compose__signature-input {
+		.z-mail-view .z-simple-compose__body,
+		.z-mail-view .z-simple-compose__signature-input {
 			font-size: 1rem;
 		}
 	}
 
-	.z-mail-view-simple .z-simple-compose__quote {
+	.z-mail-view .z-simple-compose__quote {
 		margin-top: 1.25rem;
 		padding-top: 1rem;
 		border-top: 1px solid var(--z-divider);
 	}
 
-	.z-mail-view-simple .z-simple-compose__quote summary {
+	.z-mail-view .z-simple-compose__quote summary {
 		@apply cursor-pointer text-fg-muted;
 		font-size: 0.9375rem;
 		line-height: 1.55;
 	}
 
-	.z-mail-view-simple .z-simple-compose__quote pre {
+	.z-mail-view .z-simple-compose__quote pre {
 		@apply mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap text-fg-subtle;
 		font-size: 0.875rem;
 		line-height: 1.6;
 	}
 
-	.z-mail-view-simple .z-simple-compose__attachments {
+	.z-mail-view .z-simple-compose__attachments {
 		@apply mt-4 flex flex-col gap-2;
 	}
 
-	.z-mail-view-simple .z-simple-compose__attachment {
+	.z-mail-view .z-simple-compose__attachment {
 		@apply flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-fg;
 		font-size: var(--z-main-page-muted-text);
 		line-height: 1.55;
 	}
 
-	.z-mail-view-simple .z-simple-compose__attachment-icon {
+	.z-mail-view .z-simple-compose__attachment-icon {
 		@apply size-3.5 shrink-0 text-fg-subtle;
 	}
 
-	.z-mail-view-simple .z-simple-compose__attachment-name {
+	.z-mail-view .z-simple-compose__attachment-name {
 		@apply min-w-0 truncate;
 	}
 
-	.z-mail-view-simple .z-simple-compose__attachment-size,
-	.z-mail-view-simple .z-simple-compose__attachment-state {
+	.z-mail-view .z-simple-compose__attachment-size,
+	.z-mail-view .z-simple-compose__attachment-state {
 		@apply text-fg-subtle;
 	}
 
-	.z-mail-view-simple .z-simple-compose__attachment-state--error {
+	.z-mail-view .z-simple-compose__attachment-state--error {
 		@apply text-danger;
 	}
 
-	.z-mail-view-simple .z-simple-compose__attachment-remove {
+	.z-mail-view .z-simple-compose__attachment-remove {
 		@apply inline-flex shrink-0 items-center text-fg-subtle transition-colors hover:text-fg;
 	}
 
-	.z-mail-view-simple .z-simple-compose__error {
+	.z-mail-view .z-simple-compose__error {
 		@apply mt-4 text-danger;
 		font-size: var(--z-main-page-muted-text);
 		line-height: 1.55;
 	}
 
-	.z-mail-view-simple .z-simple-compose__footer {
+	.z-mail-view .z-simple-compose__footer {
 		position: fixed;
 		inset-inline: 0;
 		bottom: 0;
@@ -1072,30 +1072,30 @@
 		backdrop-filter: blur(8px);
 	}
 
-	.z-mail-view-simple .z-simple-compose__footer-inner {
-		max-width: var(--z-simple-content-max-width);
+	.z-mail-view .z-simple-compose__footer-inner {
+		max-width: var(--z-content-shell-max-width);
 		margin-inline: auto;
 		padding: 0.875rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
 	}
 
 	@media (min-width: 768px) {
-		.z-mail-view-simple .z-simple-compose__footer-inner {
+		.z-mail-view .z-simple-compose__footer-inner {
 			padding-inline: 1.5rem;
 			padding-bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px));
 		}
 	}
 
-	.z-mail-view-simple .z-simple-compose__send-row {
+	.z-mail-view .z-simple-compose__send-row {
 		@apply mt-2 flex items-baseline justify-between gap-x-4;
 	}
  
-	.z-mail-view-simple .z-simple-compose__send-hint {
+	.z-mail-view .z-simple-compose__send-hint {
 		@apply min-w-0 text-fg-subtle truncate;
 		font-size: 0.9375rem;
 		line-height: 1.55;
 	}
 
-	.z-mail-view-simple .z-simple-compose__send {
+	.z-mail-view .z-simple-compose__send {
 		@apply inline-flex cursor-pointer items-center font-semibold text-fg underline underline-offset-[0.2em] decoration-fg/45;
 		margin-left: auto;
 		font-size: var(--z-main-page-text);
@@ -1106,27 +1106,27 @@
 			transform var(--z-motion-fast) var(--z-ease-out);
 	}
 
-	.z-mail-view-simple .z-simple-compose__send:hover:not(:disabled),
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__action:hover:not(:disabled) {
+	.z-mail-view .z-simple-compose__send:hover:not(:disabled),
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action:hover:not(:disabled) {
 		text-decoration-color: color-mix(in srgb, var(--z-fg) 70%, transparent);
 	}
 
-	.z-mail-view-simple .z-simple-compose__send:active:not(:disabled),
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__action:active:not(:disabled) {
+	.z-mail-view .z-simple-compose__send:active:not(:disabled),
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action:active:not(:disabled) {
 		transform: scale(0.98);
 	}
 
-	.z-mail-view-simple .z-simple-compose__send:disabled,
-	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__action:disabled {
+	.z-mail-view .z-simple-compose__send:disabled,
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action:disabled {
 		@apply cursor-not-allowed text-fg-subtle no-underline;
 	}
 
-	.z-mail-view-simple .z-simple-compose .z-mail-text-nav__link {
+	.z-mail-view .z-simple-compose .z-mail-text-nav__link {
 		@apply cursor-pointer border-0 bg-transparent p-0;
 	}
 
 	@media (max-width: 767px) {
-		:is(.z-mail-view-simple, .z-settings-mode-simple) {
+		:is(.z-mail-view, .z-settings-view) {
 			--z-space-nav-top: 0.25rem;
 			--z-space-nav-bottom: 0.25rem;
 			--z-space-folder-sections-top: 0.5rem;
@@ -1134,21 +1134,21 @@
 			--z-space-folder-sections-gap: 0.75rem;
 		}
 
-		.z-mail-view-simple .z-mail-simple-folder-nav {
+		.z-mail-view .z-mail-simple-folder-nav {
 			margin-top: 1rem;
 		}
 	}
 
-	.z-mail-view-simple .z-mail-simple-external-banner {
+	.z-mail-view .z-mail-simple-external-banner {
 		@apply flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border px-3 py-2 text-xs text-fg-muted;
 		background-color: var(--z-surface-sunken);
 		margin-bottom: 1rem;
 	}
 
-	.z-mail-view-simple .z-mail-simple-external-banner__action {
+	.z-mail-view .z-mail-simple-external-banner__action {
 		@apply font-semibold text-fg underline underline-offset-[0.2em] decoration-fg/25 hover:decoration-fg/50 cursor-pointer;
 	}
 
-	.z-mail-view-simple .z-mail-simple-external-banner__dot {
+	.z-mail-view .z-mail-simple-external-banner__dot {
 		@apply text-fg-subtle;
 	}

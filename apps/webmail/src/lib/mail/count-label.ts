@@ -8,7 +8,6 @@ export function mailCountLabel(
 ): string {
 	const totalCount = total ?? messageCount;
 	const unread = mailbox?.unread ?? 0;
-	if (!settings.showFolderUnreadCounts) return String(totalCount);
 	if (unread > 0) return `${unread} unread · ${totalCount}`;
 	return String(totalCount);
 }

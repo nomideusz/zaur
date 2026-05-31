@@ -8,7 +8,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
-	import { simpleContentPagePadClass } from '$lib/modes/simple/simple-content-layout';
+	import { contentPagePadClass } from '$lib/mail/layout';
 	import { invalidAddressParts } from '$lib/utils/addresses';
 	import { cn } from '$lib/utils/cn';
 
@@ -238,7 +238,7 @@
 />
 
 <section class="z-simple-compose" aria-label="Compose message">
-	<div class={cn(simpleContentPagePadClass(), 'z-simple-compose__page')}>
+	<div class={cn(contentPagePadClass(), 'z-simple-compose__page')}>
 		<div class="z-mail-text-nav z-simple-compose__nav">
 			<h1 class="sr-only">{composeTitle}</h1>
 			<div class="z-mail-text-nav__row">

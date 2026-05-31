@@ -1,7 +1,7 @@
 <script lang="ts">
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
 	import ReadingCore from '$lib/settings/sections/reading-core.svelte';
-	import SimpleReadingLayout from '$lib/modes/simple/settings/reading.svelte';
+	import ReadingLayout from '$lib/settings/sections/reading-layout.svelte';
 </script>
 
 <svelte:head>
@@ -12,6 +12,6 @@
 	title="Reading"
 	description="Lists, reader, notifications, and navigation."
 >
-	<SimpleReadingLayout />
+	<ReadingLayout />
 	<ReadingCore />
 </SettingsPanel>

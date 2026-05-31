@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
-	import { isSettingsNavActive, settingsNavLinks } from '$lib/modes/registry';
+	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 

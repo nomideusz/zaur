@@ -1,5 +1,6 @@
 <script lang="ts">
-	import SimpleMessageReader from '$lib/modes/simple/SimpleMessageReader.svelte';
+	import MessageReaderCore from '$lib/components/mail/MessageReaderCore.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import type { MessageDetail } from '$lib/types/mail';
 
 	let {
@@ -11,6 +12,8 @@
 		mailboxRouteId: string;
 		onMoved?: () => void;
 	} = $props();
+
+	const minimalChrome = $derived(!settings.showReaderListRail);
 </script>
 
-<SimpleMessageReader {thread} {mailboxRouteId} {onMoved} />
+<MessageReaderCore {thread} {mailboxRouteId} {onMoved} {minimalChrome} />

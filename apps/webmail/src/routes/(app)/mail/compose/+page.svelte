@@ -1,5 +1,5 @@
 <script lang="ts">
-	import SimpleComposePanel from '$lib/modes/simple/SimpleComposePanel.svelte';
+	import ComposePanel from '$lib/components/mail/ComposePanel.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
 	import { afterNavigate } from '$app/navigation';
@@ -45,4 +45,4 @@
 	<title>Compose · ZAUR Webmail</title>
 </svelte:head>
 
-<SimpleComposePanel {mode} {initialTo} />
+<ComposePanel {mode} {initialTo} />

@@ -13,7 +13,7 @@
 	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
 	import MessageReaderMobileBar from '$lib/components/mail/MessageReaderMobileBar.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
-	import { simpleContentPagePadClass } from '$lib/modes/simple/simple-content-layout';
+	import { contentPagePadClass } from '$lib/mail/layout';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
@@ -371,7 +371,7 @@
 	>
 		<div
 			class={cn(
-				useSimpleContentShell && simpleContentPagePadClass()
+				useSimpleContentShell && contentPagePadClass()
 			)}
 		>
 		<div

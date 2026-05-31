@@ -6,7 +6,6 @@ import Database from '$lib/components/icons/Database.svelte';
 import Mail from '$lib/components/icons/Mail.svelte';
 import Palette from '$lib/components/icons/Palette.svelte';
 import PencilLine from '$lib/components/icons/PencilLine.svelte';
-import SettingsIcon from '$lib/components/icons/Settings.svelte';
 import User from '$lib/components/icons/User.svelte';
 	type LucideIcon = any;
 	import { isSettingsNavActive, type SettingsNavIcon, type SettingsNavLink } from '$lib/settings/nav';
@@ -28,7 +27,6 @@ import User from '$lib/components/icons/User.svelte';
 	const isMobile = $derived(variant === 'mobile');
 
 	const ICON_MAP: Record<SettingsNavIcon, LucideIcon> = {
-		mode: SettingsIcon,
 		account: User,
 		reading: Mail,
 		writing: PencilLine,

@@ -10,7 +10,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { resolveMailboxRouteByShortcut } from '$lib/mail/folder-shortcuts';
-	import { WEBMAIL_MODE } from '$lib/modes/registry';
+	import { MAIL_LAYOUT } from '$lib/mail/config';
 	import { isTypingTarget } from '$lib/utils/keyboard';
 	import type { MessagePreview } from '$lib/types/mail';
 
@@ -153,7 +153,7 @@
 	}
 
 	onMount(() => {
-		const activeMode = () => WEBMAIL_MODE;
+		const activeMode = () => MAIL_LAYOUT;
 		let pendingGotoPrefix = false;
 		let pendingGotoPrefixTimer: ReturnType<typeof setTimeout> | null = null;
 

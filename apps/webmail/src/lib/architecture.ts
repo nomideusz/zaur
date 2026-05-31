@@ -33,18 +33,17 @@ export const routeMap = {
 } as const;
 
 /**
- * Webmail layout — editorial Simple mode (single product shell).
+ * Webmail layout — editorial mail shell (single product layout).
  *
- * Source of truth: `src/lib/modes/registry.ts`
+ * Source of truth: `src/lib/mail/config.ts`
  */
 export const modeArchitecture = {
-	registry: 'src/lib/modes/registry.ts',
-	context: 'src/lib/modes/context.ts',
-	mailLayout: 'src/lib/modes/simple/SimpleMailLayout.svelte',
-	readingSettings: 'src/lib/modes/simple/settings/reading.svelte',
-	settingsLayout: 'src/lib/modes/simple/SimpleSettingsLayout.svelte',
-	contentShell: 'src/lib/modes/simple/simple-content-layout.ts',
-	compose: 'src/lib/modes/simple/SimpleComposePanel.svelte'
+	config: 'src/lib/mail/config.ts',
+	layout: 'src/lib/mail/layout.ts',
+	mailLayout: 'src/lib/components/mail/MailLayout.svelte',
+	readingSettings: 'src/lib/settings/sections/reading-layout.svelte',
+	settingsLayout: 'src/lib/components/settings/SettingsLayout.svelte',
+	compose: 'src/lib/components/mail/ComposePanel.svelte'
 } as const;
 
 export const componentTree = {
@@ -62,14 +61,12 @@ export const componentTree = {
 		ContactsLayout: ['ContactsSidebar', 'ContactsList', 'ContactDetailPanel | ContactDetailEmpty']
 	},
 	mail: {
-		MailLayout: ['MailPane → SimpleMailSurface'],
-		SimpleMailLayout: ['SimpleMessageList (sectioned)', 'SimpleMessageReader | MessageReaderEmpty'],
-		SimpleMessageReader: ['MessageReaderCore', 'minimalChrome'],
-		SimpleMessageList: ['sectioned inbox', 'text nav', 'editorial rows', 'bulk select'],
-		MessageList: ['SimpleMessageList'],
-		MessageReader: ['SimpleMessageReader'],
+		MailLayout: ['MailPane → MailLayout'],
+		MailLayoutBody: ['MessageList (sectioned)', 'MessageReader | MessageReaderEmpty'],
+		MessageReader: ['MessageReaderCore', 'minimalChrome'],
+		MessageList: ['sectioned inbox', 'text nav', 'editorial rows', 'bulk select'],
 		MessageReaderCore: ['thread body', 'quick reply', 'mobile bar'],
-		SimpleComposePanel: ['ComposeHeader', 'ComposeFields', 'ComposeEditor']
+		ComposePanel: ['ComposeHeader', 'ComposeFields', 'ComposeEditor']
 	},
 	ui: ['Button', 'IconButton', 'Badge', 'Avatar', 'ToastStack'],
 	jmap: {

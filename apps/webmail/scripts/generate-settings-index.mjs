@@ -82,7 +82,7 @@ function modesForEntry(_href, _title) {
 
 const files = [
 	['src/lib/settings/sections/appearance.svelte', '/settings/appearance'],
-	['src/lib/modes/simple/settings/reading.svelte', '/settings/reading'],
+	['src/lib/settings/sections/reading-layout.svelte', '/settings/reading'],
 	['src/lib/settings/sections/reading-core.svelte', '/settings/reading'],
 	['src/lib/settings/sections/writing.svelte', '/settings/writing'],
 	['src/lib/settings/sections/data_reset.svelte', '/settings/data'],

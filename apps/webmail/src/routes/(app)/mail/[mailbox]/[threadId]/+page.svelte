@@ -12,7 +12,7 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { readerFocus } from '$lib/stores/reader-focus.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
-	import { WEBMAIL_MODE } from '$lib/modes/registry';
+	import { MAIL_LAYOUT } from '$lib/mail/config';
 
 	const { data } = $props();
 
@@ -25,7 +25,7 @@
 	const mailboxName = $derived(mailbox?.name ?? 'Inbox');
 	const thread = $derived(mail.selectedThread);
 	const latest = $derived(thread.at(-1));
-	const activeMode = WEBMAIL_MODE;
+	const activeMode = MAIL_LAYOUT;
 	const countLabel = $derived(
 		mailCountLabel(mail.messagesTotal, mail.messages.length, mailbox)
 	);

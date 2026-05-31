@@ -1,6 +1,6 @@
 @import 'tailwindcss';
 @import '@zaur/ui/theme.css';
-@import './simple-mode.css' layer(components);
+@import './mail-view.css' layer(components);
 
 @theme {
 	--font-sans: -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', 'Adwaita Sans', Cantarell, Ubuntu, roboto, noto, helvetica, arial, sans-serif;
@@ -66,7 +66,7 @@
 	--z-main-page-muted-text: 1rem;
 	--z-main-page-title: 1.0625rem;
 	/* ~44rem ≈ 704px — Hobday-scale column, ~70 characters at body size. */
-	--z-simple-content-max-width: 44rem;
+	--z-content-max-width: 44rem;
 	/* Motion — fast, smooth, invisible until you notice them */
 	--z-motion-fast: 140ms;
 	--z-motion-base: 220ms;
@@ -1051,18 +1051,6 @@
 	}
 
 
-	.z-settings-mode-classic .z-settings-list,
-	.z-settings-mode-classic .z-settings-nav-link,
-	.z-settings-mode-classic .z-settings-search-input {
-		border-radius: 0;
-	}
-
-	@media (min-width: 1024px) {
-		.z-settings-mode-classic .z-settings-content {
-			max-width: 72rem;
-		}
-	}
-
 	/* Mobile fullscreen thread — reader fills the pane (was collapsing to 0 height). */
 	.z-app-main--page-scroll .z-mail-pane--mobile-fullscreen .z-mail-pane-body--thread-open {
 		min-height: 0;
@@ -1145,7 +1133,7 @@
 
 		/* Simple / editorial settings — single column (Writing’s 3 groups were spanning 2 cols) */
 		.z-settings-content--simple .z-settings-stack,
-		.z-settings-page.z-settings-mode-simple .z-settings-stack,
+		.z-settings-page.z-settings-view .z-settings-stack,
 		.z-settings-stack.z-settings-stack--editorial {
 			display: flex;
 			flex-direction: column;
@@ -1289,7 +1277,7 @@
 			column-gap: 2rem;
 		}
 
-		.z-settings-mode-simple .z-settings-row,
+		.z-settings-view .z-settings-row,
 		.z-settings-list--editorial .z-settings-row {
 			column-gap: 1rem;
 		}

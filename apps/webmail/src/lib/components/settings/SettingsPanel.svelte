@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { WEBMAIL_MODE } from '$lib/modes/registry';
+	import { MAIL_LAYOUT } from '$lib/mail/config';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 
@@ -15,7 +15,7 @@
 		footer?: import('svelte').Snippet;
 	} = $props();
 
-	const editorial = WEBMAIL_MODE.settings.editorial;
+	const editorial = MAIL_LAYOUT.settings.editorial;
 </script>
 
 <div

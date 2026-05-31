@@ -6,18 +6,15 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { readerFocus } from '$lib/stores/reader-focus.svelte';
-	import { setWebmailModeContext } from '$lib/modes/context';
-	import { WEBMAIL_MODE } from '$lib/modes/registry';
+	import { MAIL_LAYOUT } from '$lib/mail/config';
 
 	let { children } = $props();
 
 	const isThreadOpen = $derived(!!$page.params.threadId);
 	const focusActive = $derived(
-		WEBMAIL_MODE.mail.useAdaptiveReaderFocus && readerFocus.active && isThreadOpen
+		MAIL_LAYOUT.mail.useAdaptiveReaderFocus && readerFocus.active && isThreadOpen
 	);
-	const adaptiveThreadOpen = $derived(WEBMAIL_MODE.mail.useAdaptiveReaderFocus && isThreadOpen);
-
-	setWebmailModeContext();
+	const adaptiveThreadOpen = $derived(MAIL_LAYOUT.mail.useAdaptiveReaderFocus && isThreadOpen);
 
 	$effect(() => {
 		readerFocus.set(false);
@@ -55,7 +52,7 @@
 <MailKeyboardShortcuts />
 
 <div
-	class="relative flex min-h-0 flex-1 flex-row overflow-visible {WEBMAIL_MODE.mailRootClass}"
+	class="relative flex min-h-0 flex-1 flex-row overflow-visible {MAIL_LAYOUT.mailRootClass}"
 	class:z-reader-focus={focusActive}
 	class:z-layout-adaptive-thread={adaptiveThreadOpen}
 >
