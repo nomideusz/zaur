@@ -31,6 +31,7 @@
 	} from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
+	import { importantRainbowStyle } from '$lib/mail/important-rainbow';
 
 	/** Editorial list row — shared Tailwind building blocks. */
 	const listMessageGroup = 'group/message';
@@ -44,6 +45,7 @@
 		'transition-[color,text-decoration-color] duration-150',
 		'group-hover/message:decoration-fg/55 group-focus-visible/message:decoration-fg/55'
 	);
+	const listImportantSubjectClass = 'z-mail-list-subject--important';
 	const listWhenClass = cn(
 		'shrink-0 tabular-nums text-fg-muted no-underline z-type-page leading-[1.4] pt-[0.05em]',
 		'group-hover/message:text-fg group-focus-visible/message:text-fg'
@@ -874,7 +876,10 @@
 				>
 					<span class={listMessageStackClass}>
 						<span class={listMessageLeadClass}>
-							<span class={cn(listSubjectClass, 'list-subject')}>{subjectText}</span>
+							<span
+								class={cn(listSubjectClass, 'list-subject', message.important && listImportantSubjectClass)}
+								style={message.important ? importantRainbowStyle(message.id) : undefined}
+							>{subjectText}</span>
 							<span class={listSenderClass(showSenderDuplicate)}>{senderLabel}</span>
 						</span>
 						<time class={listWhenClass} datetime={message.receivedAt}>

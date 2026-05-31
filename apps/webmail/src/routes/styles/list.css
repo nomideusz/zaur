@@ -228,3 +228,111 @@
 		margin-top: var(--z-main-gap);
 	}
 
+	/*
+	 * Important subjects — per-message unicorn rainbow (hue + phase from message id).
+	 * System font, full Unicode; light/dark via --important-rainbow-* tokens.
+	 */
+	:root {
+		--important-rainbow-s: 78%;
+		--important-rainbow-l: 50%;
+		--important-rainbow-underline-l: 54%;
+	}
+
+	.dark {
+		--important-rainbow-s: 84%;
+		--important-rainbow-l: 74%;
+		--important-rainbow-underline-l: 78%;
+	}
+
+	.z-mail-list-subject--important {
+		font-weight: 600;
+		color: hsl(
+			calc(var(--important-hue, 0deg) + 300deg),
+			var(--important-rainbow-s),
+			var(--important-rainbow-l)
+		);
+		text-decoration-color: color-mix(
+			in srgb,
+			hsl(
+				calc(var(--important-hue, 0deg) + 300deg),
+				var(--important-rainbow-s),
+				var(--important-rainbow-underline-l)
+			)
+			42%,
+			transparent
+		);
+	}
+
+	@keyframes z-important-rainbow {
+		from {
+			background-position: var(--important-phase, 0%) 50%;
+		}
+
+		to {
+			background-position: calc(var(--important-phase, 0%) + 45%) 50%;
+		}
+	}
+
+	@supports ((background-clip: text) or (-webkit-background-clip: text)) {
+		.z-mail-list-subject--important {
+			--_h: var(--important-hue, 0deg);
+			background-image: linear-gradient(
+				90deg,
+				hsl(calc(var(--_h) + 0deg), var(--important-rainbow-s), var(--important-rainbow-l)) 0%,
+				hsl(calc(var(--_h) + 40deg), var(--important-rainbow-s), var(--important-rainbow-l)) 12%,
+				hsl(calc(var(--_h) + 80deg), var(--important-rainbow-s), var(--important-rainbow-l)) 24%,
+				hsl(calc(var(--_h) + 130deg), var(--important-rainbow-s), var(--important-rainbow-l)) 36%,
+				hsl(calc(var(--_h) + 180deg), var(--important-rainbow-s), var(--important-rainbow-l)) 48%,
+				hsl(calc(var(--_h) + 220deg), var(--important-rainbow-s), var(--important-rainbow-l)) 60%,
+				hsl(calc(var(--_h) + 260deg), var(--important-rainbow-s), var(--important-rainbow-l)) 72%,
+				hsl(calc(var(--_h) + 300deg), var(--important-rainbow-s), var(--important-rainbow-l)) 84%,
+				hsl(calc(var(--_h) + 340deg), var(--important-rainbow-s), var(--important-rainbow-l)) 100%
+			);
+			background-repeat: repeat;
+			background-size: 165% 100%;
+			background-position: var(--important-phase, 0%) 50%;
+			-webkit-background-clip: text;
+			background-clip: text;
+			-webkit-text-fill-color: transparent;
+			color: transparent;
+		}
+
+		@media (prefers-reduced-motion: no-preference) {
+			html:not(.z-reduce-motion) .z-mail-list-subject--important {
+				background-size: 250% 100%;
+				animation: z-important-rainbow 3s ease-in-out infinite alternate;
+				animation-play-state: paused;
+			}
+
+			html:not(.z-reduce-motion) .group\/message:hover .z-mail-list-subject--important,
+			html:not(.z-reduce-motion) .group\/message:focus-visible .z-mail-list-subject--important {
+				animation-play-state: running;
+			}
+		}
+
+		.group\/message:hover .z-mail-list-subject--important,
+		.group\/message:focus-visible .z-mail-list-subject--important {
+			text-decoration-color: color-mix(
+				in srgb,
+				hsl(
+					calc(var(--important-hue, 0deg) + 300deg),
+					var(--important-rainbow-s),
+					var(--important-rainbow-underline-l)
+				)
+				58%,
+				transparent
+			);
+		}
+	}
+
+	/* Bulk select — solid accent reads clearer than gradient. */
+	.z-mail-list--selecting .z-mail-list-subject--important {
+		animation: none;
+		background-size: 165% 100%;
+		background-position: var(--important-phase, 0%) 50%;
+		background-image: none;
+		-webkit-text-fill-color: unset;
+		color: var(--z-accent);
+		text-decoration-color: color-mix(in srgb, var(--z-accent) 45%, transparent);
+	}
+
