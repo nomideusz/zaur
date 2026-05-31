@@ -344,7 +344,7 @@
 		</div>
 	{/if}
 
-	{#if hasBlockedExternal && !allowExternal && !settings.hideExternalContentBanner}
+	{#if hasBlockedExternal && !allowExternal && !settings.hideExternalContentBanner && !useSimpleContentShell}
 		<div
 			class={cn(
 				'flex shrink-0 flex-wrap items-center bg-surface text-fg-muted md:px-6',
@@ -382,6 +382,17 @@
 				threadRowX
 			)}
 		>
+			{#if useSimpleContentShell && hasBlockedExternal && !allowExternal && !settings.hideExternalContentBanner}
+				<div class="z-mail-simple-external-banner">
+					<Shield class="size-3.5 shrink-0" aria-hidden="true" />
+					<span>External images blocked.</span>
+					<button type="button" class="z-mail-simple-external-banner__action" onclick={showImagesOnce}>
+						Show once
+					</button>
+					<span class="z-mail-simple-external-banner__dot">·</span>
+					<a href="/settings/appearance" class="z-mail-simple-external-banner__action">Settings</a>
+				</div>
+			{/if}
 			{#if useSimpleContentShell}
 				<div class="z-mail-text-nav z-reader-sticky-nav">
 					<div class="z-mail-text-nav__row">

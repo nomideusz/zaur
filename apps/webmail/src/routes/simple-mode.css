@@ -1095,3 +1095,17 @@
 			margin-top: 1rem;
 		}
 	}
+
+	.z-mail-view-simple .z-mail-simple-external-banner {
+		@apply flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border px-3 py-2 text-xs text-fg-muted;
+		background-color: var(--z-surface-sunken);
+		margin-bottom: 1rem;
+	}
+
+	.z-mail-view-simple .z-mail-simple-external-banner__action {
+		@apply font-semibold text-fg underline underline-offset-[0.2em] decoration-fg/25 hover:decoration-fg/50 cursor-pointer;
+	}
+
+	.z-mail-view-simple .z-mail-simple-external-banner__dot {
+		@apply text-fg-subtle;
+	}
