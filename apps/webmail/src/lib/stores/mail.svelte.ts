@@ -198,7 +198,6 @@ class MailStore {
 
 		this.currentMailboxRouteId = routeMailboxId;
 		this.clearSelection();
-		this.messagesLoading = true;
 		this.messagesError = null;
 		if (!options?.preserveOpenThreadId) {
 			this.selectedThread = [];
@@ -207,6 +206,7 @@ class MailStore {
 		}
 
 		const accountId = client.getAccountId();
+		let showedCache = false;
 		if (browser) {
 			const { getCachedMessagePreviews } = await import('$lib/db');
 			const cached = await getCachedMessagePreviews(accountId, routeMailboxId);
@@ -215,8 +215,14 @@ class MailStore {
 				this.messagesFromCache = true;
 				this.messagesHasMore = false;
 				indexMessagesContacts(cached);
+				showedCache = true;
+			} else {
+				this.messages = [];
 			}
+		} else {
+			this.messages = [];
 		}
+		this.messagesLoading = !showedCache && this.messages.length === 0;
 
 		try {
 			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0);
@@ -517,12 +523,30 @@ class MailStore {
 			this.patchThreadMessage(message.id, { important });
 		}
 
+		if (importantMailbox) {
+			const totalDelta = important ? messages.length : -messages.length;
+			let unreadDelta = 0;
+			for (const message of messages) {
+				if (message.unread) unreadDelta += important ? 1 : -1;
+			}
+			this.adjustMailboxCounts(importantMailbox.id, totalDelta, unreadDelta);
+		}
+
 		try {
 			await client.toggleImportant(ids, important, importantMailbox?.jmapId);
 			for (const id of ids) {
 				this.clearPendingKeyword(id, 'important');
 			}
+			void this.refreshMailboxes(client);
 		} catch (error) {
+			if (importantMailbox) {
+				const totalDelta = important ? -messages.length : messages.length;
+				let unreadDelta = 0;
+				for (const message of messages) {
+					if (message.unread) unreadDelta += important ? -1 : 1;
+				}
+				this.adjustMailboxCounts(importantMailbox.id, totalDelta, unreadDelta);
+			}
 			for (const message of messages) {
 				this.clearPendingKeyword(message.id, 'important');
 				this.patchMessage(message.id, { important: !important });
@@ -542,6 +566,8 @@ class MailStore {
 
 		await client.moveToMailbox(message.id, target.jmapId, sourceJmapId);
 		this.removeMessage(message);
+		this.adjustMailboxCounts(target.id, 1, message.unread ? 1 : 0);
+		void this.refreshMailboxes(client);
 
 		if (sourceJmapId) {
 			const label =
@@ -571,6 +597,8 @@ class MailStore {
 
 		await client.moveToMailbox(message.id, target.jmapId, sourceJmapId);
 		this.removeMessage(message);
+		this.adjustMailboxCounts(target.id, 1, message.unread ? 1 : 0);
+		void this.refreshMailboxes(client);
 
 		if (sourceJmapId) {
 			this.offerMoveUndo({
@@ -1197,6 +1225,7 @@ class MailStore {
 		if (message.unread) {
 			this.adjustUnreadCount(message.mailboxId, -1);
 		}
+		this.adjustMailboxCounts(message.mailboxId, -1);
 		this.messages = this.messages.filter((m) => m.id !== message.id);
 		this.messagesTotal = Math.max(0, this.messagesTotal - 1);
 		if (browser) {
@@ -1215,6 +1244,7 @@ class MailStore {
 			(a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
 		);
 		this.messagesTotal += 1;
+		this.adjustMailboxCounts(message.mailboxId, 1);
 		if (message.unread) {
 			this.adjustUnreadCount(message.mailboxId, 1);
 		}
@@ -1257,10 +1287,21 @@ class MailStore {
 	}
 
 	private adjustUnreadCount(routeId: string, delta: number) {
+		this.adjustMailboxCounts(routeId, 0, delta);
+	}
+
+	private adjustMailboxCounts(routeId: string, totalDelta: number, unreadDelta = 0) {
+		if (totalDelta === 0 && unreadDelta === 0) return;
 		this.mailboxes = this.mailboxes.map((mb) =>
-			mb.id === routeId ? { ...mb, unread: Math.max(0, mb.unread + delta) } : mb
+			mb.id === routeId
+				? {
+						...mb,
+						total: Math.max(0, mb.total + totalDelta),
+						unread: Math.max(0, mb.unread + unreadDelta)
+					}
+				: mb
 		);
-		applyUnreadPrefixToDocument();
+		if (unreadDelta !== 0) applyUnreadPrefixToDocument();
 	}
 
 	reset() {

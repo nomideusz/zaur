@@ -237,6 +237,22 @@
 		return FOLDER_SECTION_SORT_BASE + mailboxKindOrderForMailbox(folder);
 	}
 
+	function mergeMessagePreviews(
+		primary: MessagePreview[],
+		secondary: MessagePreview[]
+	): MessagePreview[] {
+		const seen = new Set<string>();
+		const merged: MessagePreview[] = [];
+		for (const message of [...primary, ...secondary]) {
+			if (seen.has(message.id)) continue;
+			seen.add(message.id);
+			merged.push(message);
+		}
+		return merged.sort(
+			(a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
+		);
+	}
+
 	function isMe(email: string): boolean {
 		const cleanEmail = email?.trim().toLowerCase();
 		if (!cleanEmail) return false;
@@ -283,6 +299,7 @@
 	const readMessages = $derived.by(() =>
 		messages.filter((message) => !isNewUnreadMessage(message) && !message.important)
 	);
+	const importantInboxMessages = $derived.by(() => messages.filter((message) => message.important));
 	const importantMailbox = $derived(mail.importantMailbox());
 
 	$effect(() => {
@@ -403,7 +420,9 @@
 		mail.mailboxes
 			.filter(
 				(folder) =>
-					folder.total > 0 &&
+					(folder.total > 0 ||
+						(sectionMessagesByFolder[folder.id]?.length ?? 0) > 0 ||
+						sectionHasMoreByFolder[folder.id]) &&
 					folder.id !== 'unread' &&
 					folder.id !== 'read' &&
 					folder.id !== IMPORTANT_SECTION_ID &&
@@ -445,20 +464,24 @@
 				});
 			}
 
-			if (importantMailbox && importantMailbox.total > 0) {
-				const importantMessages = sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [];
-				sections.push({
-					id: IMPORTANT_SECTION_ID,
-					name: importantMailbox.name,
-					routeId: IMPORTANT_SECTION_ID,
-					messages: importantMessages.slice(
-						0,
-						sectionVisibleCounts[IMPORTANT_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
-					),
-					totalCount: importantMailbox.total,
-					sortOrder: 1,
-					showUnreadDot: importantMailbox.unread > 0
-				});
+			if (importantMailbox) {
+				const loadedImportant = sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [];
+				const importantMessages = mergeMessagePreviews(loadedImportant, importantInboxMessages);
+				const importantTotal = Math.max(importantMailbox.total, importantMessages.length);
+				if (importantTotal > 0 || importantMessages.length > 0) {
+					sections.push({
+						id: IMPORTANT_SECTION_ID,
+						name: importantMailbox.name,
+						routeId: IMPORTANT_SECTION_ID,
+						messages: importantMessages.slice(
+							0,
+							sectionVisibleCounts[IMPORTANT_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
+						),
+						totalCount: importantTotal,
+						sortOrder: 1,
+						showUnreadDot: importantMailbox.unread > 0
+					});
+				}
 			}
 
 			if (readMessages.length > 0) {
@@ -496,11 +519,13 @@
 		);
 	});
 
+	let sectionLayoutKey = $state<string | null>(null);
+
 	$effect(() => {
-		sectionMode;
-		mailboxRouteId;
-		sectionMessagesByFolder = {};
-		sectionHasMoreByFolder = {};
+		const layoutKey = `${sectionMode}:${mailboxRouteId ?? ''}:${isInboxHome ? 'home' : 'folder'}`;
+		if (layoutKey === sectionLayoutKey) return;
+		sectionLayoutKey = layoutKey;
+
 		const counts: Record<string, number> = {
 			[NEW_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
 			[IMPORTANT_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
@@ -510,18 +535,22 @@
 			const mailbox = mail.mailboxByRouteId(mailboxRouteId);
 			counts[mailboxRouteId] = defaultSectionVisibleCount(mailboxRouteId, mailbox);
 		}
-		for (const folder of mail.mailboxes) {
-			if (
-				folder.id === 'unread' ||
-				folder.id === 'read' ||
-				folder.id === mailboxRouteId ||
-				folder.id === IMPORTANT_SECTION_ID
-			) {
-				continue;
-			}
-			counts[folder.id] = defaultSectionVisibleCount(folder.id, folder);
-		}
 		sectionVisibleCounts = counts;
+	});
+
+	$effect(() => {
+		if (!isInboxHome) return;
+
+		const folders = orderedFolders;
+		let changed = false;
+		const next = { ...sectionVisibleCounts };
+		for (const folder of folders) {
+			if (next[folder.id] === undefined) {
+				next[folder.id] = defaultSectionVisibleCount(folder.id, folder);
+				changed = true;
+			}
+		}
+		if (changed) sectionVisibleCounts = next;
 	});
 
 	async function loadOtherFolderPreviews(
@@ -555,27 +584,43 @@
 		}
 	}
 
+	const folderPreloadKey = $derived.by(() => {
+		if (!isInboxHome) return '';
+		const parts: string[] = [];
+		const important = importantMailbox;
+		if (important && (important.total > 0 || importantInboxMessages.length > 0)) {
+			parts.push(
+				`${IMPORTANT_SECTION_ID}:${sectionVisibleCounts[IMPORTANT_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE}`
+			);
+		}
+		for (const folder of orderedFolders) {
+			const visible =
+				sectionVisibleCounts[folder.id] ??
+				(folderSectionCollapsedByDefault(folder) ? 0 : FOLDER_SECTION_PAGE_SIZE);
+			parts.push(`${folder.id}:${visible}`);
+		}
+		return parts.join('|');
+	});
+
 	$effect(() => {
 		const client = auth.client;
 		const routeId = mailboxRouteId;
-		const folders = orderedFolders;
-		const important = importantMailbox;
 		const useSectionMode = sectionMode;
 		const inboxHome = isInboxHome;
-		messages;
-		sectionVisibleCounts;
+		const preloadKey = folderPreloadKey;
+		const important = importantMailbox;
+		const inboxImportantCount = importantInboxMessages.length;
 
 		if (!useSectionMode || !client || !routeId || !inboxHome) {
-			sectionMessagesByFolder = {};
 			return;
 		}
 
+		const folders = orderedFolders;
 		const foldersToLoad = [
-			...(important && important.total > 0 ? [important] : []),
+			...(important && (important.total > 0 || inboxImportantCount > 0) ? [important] : []),
 			...folders.filter((folder) => folder.id !== important?.id)
 		];
 		if (foldersToLoad.length === 0) {
-			sectionMessagesByFolder = {};
 			return;
 		}
 
@@ -603,10 +648,14 @@
 			})
 		).then((entries) => {
 			if (cancelled) return;
-			sectionMessagesByFolder = Object.fromEntries(entries.map(([id, cached]) => [id, cached]));
-			sectionHasMoreByFolder = Object.fromEntries(
-				entries.map(([id, _, hasMoreFolder]) => [id, hasMoreFolder])
-			);
+			sectionMessagesByFolder = {
+				...sectionMessagesByFolder,
+				...Object.fromEntries(entries.map(([id, cached]) => [id, cached]))
+			};
+			sectionHasMoreByFolder = {
+				...sectionHasMoreByFolder,
+				...Object.fromEntries(entries.map(([id, _, hasMoreFolder]) => [id, hasMoreFolder]))
+			};
 		});
 
 		return () => {
@@ -678,8 +727,10 @@
 		if (sectionId === IMPORTANT_SECTION_ID) {
 			const folder = importantMailbox;
 			if (!folder) return false;
-			const known = sectionMessagesByFolder[IMPORTANT_SECTION_ID]?.length ?? 0;
-			return folder.total > visible || known > visible || !!sectionHasMoreByFolder[IMPORTANT_SECTION_ID];
+			const loadedImportant = sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [];
+			const known = mergeMessagePreviews(loadedImportant, importantInboxMessages).length;
+			const total = Math.max(folder.total, known);
+			return total > visible || known > visible || !!sectionHasMoreByFolder[IMPORTANT_SECTION_ID];
 		}
 		if (sectionId === READ_SECTION_ID) {
 			return readMessages.length > visible || hasMore;
@@ -811,7 +862,7 @@
 			</li>
 		{/snippet}
 
-		{#if loading || error || showFlatEmpty}
+		{#if error || showFlatEmpty || (loading && messages.length === 0)}
 			<MessageListStatus
 				{loading}
 				{error}
