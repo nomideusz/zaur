@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import MailKeyboardShortcuts from '$lib/components/mail/MailKeyboardShortcuts.svelte';
+	import { parseMailContext } from '$lib/mail/routes';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { readerFocus } from '$lib/stores/reader-focus.svelte';
@@ -11,10 +12,14 @@
 	let { children } = $props();
 
 	$effect(() => {
+		const ctx = parseMailContext($page.url.pathname);
 		readerFocus.set(false);
 		readerFocus.setClean(false);
 		mail.clearSelection();
-		mail.cancelOpenMessage();
+		// Only clear an open thread on list/compose routes — not when entering a thread page.
+		if (!ctx?.threadId) {
+			mail.cancelOpenMessage();
+		}
 	});
 
 	onMount(() => {
