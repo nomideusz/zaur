@@ -45,7 +45,6 @@
 	});
 
 	const contactMatches = $derived.by(() => {
-		if (!settings.showSearchContactSuggestions) return [];
 		const query = input.trim();
 		if (query.length < 1) return [];
 		return listContacts(auth.client?.getAccountId() ?? null, query).slice(0, 4);
@@ -163,13 +162,11 @@
 			if (isTypingTarget(event.target)) return;
 
 			event.preventDefault();
-			if (!settings.hideHeaderSearch) {
-				if (focusVisibleMailSearch()) return;
-				if (searchInput && !isMobile) {
-					searchInput.focus();
-					open = true;
-					return;
-				}
+			if (focusVisibleMailSearch()) return;
+			if (searchInput && !isMobile) {
+				searchInput.focus();
+				open = true;
+				return;
 			}
 			goto(searchPageUrl(true));
 		}
@@ -179,13 +176,13 @@
 	});
 </script>
 
-{#if placement === 'shell' && !settings.hideHeaderSearch}
+{#if placement === 'shell'}
 	<IconButton label="Search mail" class="md:hidden" onclick={() => goto(searchPageUrl(true))}>
 		<Search class="size-4" />
 	</IconButton>
 {/if}
 
-{#if !settings.hideHeaderSearch && (isSidebar || isMobile || placement === 'shell')}
+{#if isSidebar || isMobile || placement === 'shell'}
 	<form
 		role="search"
 		class={cn(
@@ -234,34 +231,19 @@
 				<button
 					type="submit"
 					role="menuitem"
-					class={cn(
-						'flex w-full items-center gap-2 px-3 text-left text-sm hover:bg-surface-sunken',
-						settings.compactSearchDropdown ? 'py-1.5' : 'py-2'
-					)}
+					class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-sunken"
 				>
 					<Search class="size-4 text-fg-subtle" aria-hidden="true" />
 					Search mail for “{input.trim()}”
 				</button>
 
 				{#if contactMatches.length}
-					{#if !settings.hideSearchDropdownHeaders}
-						<p
-							class={cn(
-								'z-type-label px-3',
-								settings.compactSearchDropdown ? 'py-1' : 'py-1.5'
-							)}
-						>
-							Contacts
-						</p>
-					{/if}
+					<p class="z-type-label px-3 py-1.5">Contacts</p>
 					{#each contactMatches as contact (contact.email)}
 						<button
 							type="button"
 							role="menuitem"
-							class={cn(
-								'flex w-full items-center gap-2 px-3 text-left text-sm hover:bg-surface-sunken',
-								settings.compactSearchDropdown ? 'py-1.5' : 'py-2'
-							)}
+							class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-sunken"
 							onmousedown={(e) => e.preventDefault()}
 							onclick={() => composeTo(contact.email)}
 						>

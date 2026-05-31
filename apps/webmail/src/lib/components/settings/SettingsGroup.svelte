@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { settings } from '$lib/stores/settings.svelte';
 	import { observeVisibleSettingsRows } from '$lib/settings/observe-visible-rows';
 	import { settingsSearch } from '$lib/settings/search-registry.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -11,7 +10,6 @@
 	}: {
 		title: string;
 		description?: string;
-		advanced?: boolean;
 		children: import('svelte').Snippet;
 	} = $props();
 
@@ -33,28 +31,14 @@
 
 <section
 	bind:this={sectionRef}
-	class={cn(
-		'z-settings-section',
-		settings.compactSettingsRows && 'z-settings-section--compact',
-		!hasRows && 'hidden'
-	)}
+	class={cn('z-settings-section', !hasRows && 'hidden')}
 >
 	{#if hasRows}
-		<div
-			class={cn(
-				'z-settings-section-heading',
-				settings.hidePaneBorders && 'z-settings-section-heading--plain'
-			)}
-		>
+		<div class="z-settings-section-heading">
 			<h3 class="z-settings-section-title">{title}</h3>
 		</div>
 	{/if}
-	<div
-		class={cn(
-			'z-settings-list',
-			settings.hidePaneBorders && 'z-settings-list--plain'
-		)}
-	>
+	<div class="z-settings-list">
 		{@render children()}
 	</div>
 </section>

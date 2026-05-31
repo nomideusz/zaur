@@ -30,10 +30,7 @@
 <div class="relative">
 	<button
 		type="button"
-		class={cn(
-			'flex items-center rounded-sm transition-colors hover:bg-surface-sunken',
-			settings.compactUserMenu ? 'p-1' : 'gap-2 p-1.5'
-		)}
+		class="flex items-center gap-2 rounded-sm p-1.5 transition-colors hover:bg-surface-sunken"
 		aria-label="Account menu"
 		aria-expanded={open}
 		aria-haspopup="menu"
@@ -50,9 +47,7 @@
 				<User class="size-4" aria-hidden="true" />
 			</span>
 		{/if}
-		{#if !settings.compactUserMenu}
-			<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
-		{/if}
+		<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
 	</button>
 
 	{#if open}
@@ -63,19 +58,8 @@
 			onpointerdown={(e) => e.stopPropagation()}
 			onkeydown={(e) => e.key === 'Escape' && close()}
 		>
-			<div
-				class={cn(
-					'px-3',
-					!settings.hidePaneBorders && 'border-b border-border',
-					settings.compactUserMenuDropdown ? 'py-1.5' : 'py-2'
-				)}
-			>
-				<p
-					class={cn(
-						'truncate font-medium text-fg',
-						settings.compactUserMenuDropdown ? 'text-xs' : 'text-sm'
-					)}
-				>
+			<div class="border-b border-border px-3 py-2">
+				<p class="truncate text-sm font-medium text-fg">
 					{user.name}
 				</p>
 				<p class="truncate text-xs text-fg-muted">{user.email}</p>

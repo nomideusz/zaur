@@ -34,9 +34,7 @@
 		mailboxRouteId ? moveTargetMailboxes(mail.mailboxes, currentMailbox) : []
 	);
 	const actionButtonClass = '!h-8 shrink-0 !px-2 !text-xs';
-	const moveSelectClass = $derived(
-		cn('z-select z-select--sm truncate', settings.compactListHeader && 'z-select--compact')
-	);
+	const moveSelectClass = 'z-select z-select--sm truncate';
 
 	async function runBulk(action: () => Promise<void>, refreshList = false) {
 		if (!auth.client || mail.bulkActionLoading) return;
@@ -68,7 +66,6 @@
 <div
 	class={cn(
 		'z-mail-list-header',
-		settings.compactListHeader && 'z-mail-list-header--compact',
 		disabled && 'pointer-events-none opacity-60'
 	)}
 >

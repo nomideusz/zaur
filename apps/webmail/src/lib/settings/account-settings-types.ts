@@ -1,4 +1,6 @@
 /** Blob stored on the JMAP account (archive message or future WebmailSettings object). */
+import { isObsoleteSettingKey } from '$lib/settings/obsolete-keys';
+
 export type AccountSettingsBlob = {
 	version: number;
 	updatedAt: string;
@@ -45,6 +47,7 @@ export function sanitizeAccountSettings(
 			continue;
 		}
 		if (!key.startsWith('zaur:') && key !== 'zaur-theme') continue;
+		if (isObsoleteSettingKey(key)) continue;
 		if (normalizedEmail && isOtherAccountsScopedKey(key, normalizedEmail)) continue;
 		sanitized[key] = value;
 	}

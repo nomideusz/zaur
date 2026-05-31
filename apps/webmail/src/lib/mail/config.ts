@@ -3,6 +3,7 @@ export type SettingsNavSectionId =
 	| 'appearance'
 	| 'reading'
 	| 'writing'
+	| 'calendar'
 	| 'backup';
 
 export type SettingsNavIcon =
@@ -10,6 +11,7 @@ export type SettingsNavIcon =
 	| 'appearance'
 	| 'reading'
 	| 'writing'
+	| 'calendar'
 	| 'backup';
 
 export type SettingsNavLink = {
@@ -42,6 +44,7 @@ export const SETTINGS_NAV_LINKS: SettingsNavLink[] = [
 	{ href: '/settings/appearance', label: 'Appearance', icon: 'appearance', section: 'appearance' },
 	{ href: '/settings/reading', label: 'Reading', icon: 'reading', section: 'reading' },
 	{ href: '/settings/writing', label: 'Writing', icon: 'writing', section: 'writing' },
+	{ href: '/settings/calendar', label: 'Calendar', icon: 'calendar', section: 'calendar' },
 	{ href: '/settings/data', label: 'Backup & reset', icon: 'backup', section: 'backup' }
 ];
 
@@ -54,8 +57,7 @@ export const LEGACY_SETTINGS_PATHS = new Set([
 	'/settings/contacts',
 	'/settings/inbox',
 	'/settings/compose',
-	'/settings/layout',
-	'/settings/calendar'
+	'/settings/layout'
 ]);
 
 export function settingsNavLinks(): SettingsNavLink[] {
@@ -75,6 +77,9 @@ export function isSettingsNavActive(pathname: string, href: string): boolean {
 	}
 	if (href === '/settings/writing') {
 		return pathname === '/settings/compose';
+	}
+	if (href === '/settings/calendar') {
+		return pathname === '/settings/calendar';
 	}
 	return false;
 }

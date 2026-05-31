@@ -7,7 +7,6 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
 	import { formatEventTime } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 
@@ -18,8 +17,7 @@
 	const eventTitle = $derived(event?.title?.trim() || 'Untitled event');
 	const eventDescription = $derived(event?.description?.trim() ?? '');
 	const eventLocation = $derived(event?.location?.trim() ?? '');
-	const hideBorders = $derived(settings.hideCalendarPaneBorders || settings.hidePaneBorders);
-	const panelPadding = $derived(settings.compactCalendarEventPanel ? 'px-3 py-2.5' : 'px-4 py-3');
+	const panelPadding = 'px-4 py-3';
 
 	function deleteEvent() {
 		if (!auth.client || !event) return;
@@ -35,11 +33,7 @@
 
 {#snippet details(showClose: boolean)}
 	<header
-		class={cn(
-			'flex shrink-0 items-start justify-between gap-2 border-b',
-			panelPadding,
-			!hideBorders && 'border-border'
-		)}
+		class={cn('flex shrink-0 items-start justify-between gap-2 border-b border-border', panelPadding)}
 	>
 		<div class="min-w-0">
 			<h2 class="text-base font-semibold text-fg">{eventTitle}</h2>
@@ -53,10 +47,7 @@
 	</header>
 
 	<div
-		class={cn(
-			'z-pane-scroll min-h-0 flex-1 space-y-4 overflow-y-auto text-sm',
-			settings.compactCalendarEventPanel ? 'space-y-3 px-3 py-3' : 'px-4 py-4'
-		)}
+		class="z-pane-scroll min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm"
 	>
 		{#if eventCalendars.length}
 			<div>
@@ -94,11 +85,7 @@
 	</div>
 
 	<footer
-		class={cn(
-			'flex shrink-0 gap-2 border-t pb-[max(0.75rem,env(safe-area-inset-bottom))]',
-			panelPadding,
-			!hideBorders && 'border-border'
-		)}
+		class={cn('flex shrink-0 gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]', panelPadding)}
 	>
 		<Button variant="ghost" onclick={editEvent}>
 			<Pencil class="size-4" aria-hidden="true" />
@@ -122,10 +109,7 @@
 
 	<div class="z-mobile-sheet-backdrop md:hidden">
 		<div
-			class={cn(
-				'm-2 flex h-[calc(100%-1rem)] w-[calc(100%-1rem)] max-w-md flex-col overflow-hidden rounded-2xl bg-surface-raised shadow-md',
-				!hideBorders && 'border border-border'
-			)}
+			class="m-2 flex h-[calc(100%-1rem)] w-[calc(100%-1rem)] max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-md"
 		>
 			{@render details(true)}
 		</div>

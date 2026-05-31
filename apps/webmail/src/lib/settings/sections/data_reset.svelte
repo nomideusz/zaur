@@ -4,21 +4,17 @@
 	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Reset" description="Restore reading and navigation defaults.">
+<SettingsGroup title="Reset" description="Restore defaults without affecting your account profile.">
 	<SettingsRow
-		title="Reset all display & layout settings"
-		description="Restore reading focus, navigation, and search options — keeps notifications and shortcuts"
+		title="Reset all settings"
+		description="Restore appearance, reading, writing, and calendar options to defaults"
 	>
 		<button
 			type="button"
 			class="z-btn-ghost text-sm"
 			onclick={() => {
-				if (
-					confirm(
-						'Reset all display and layout settings to defaults? Mail behavior (notifications, shortcuts) is unchanged.'
-					)
-				) {
-					settings.resetDisplaySettings();
+				if (confirm('Reset all settings to defaults? Your display name and signature are unchanged.')) {
+					settings.resetAllSettings();
 				}
 			}}
 		>

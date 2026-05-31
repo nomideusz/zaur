@@ -42,7 +42,7 @@ export const modeArchitecture = {
 	config: 'src/lib/mail/config.ts',
 	layout: 'src/lib/mail/layout.ts',
 	mailLayout: 'src/lib/components/mail/MailLayout.svelte',
-	readingSettings: 'src/lib/settings/sections/reading-layout.svelte',
+	readingSettings: 'src/lib/settings/sections/reading.svelte',
 	settingsLayout: 'src/lib/components/settings/SettingsLayout.svelte',
 	compose: 'src/lib/components/mail/ComposePanel.svelte'
 } as const;

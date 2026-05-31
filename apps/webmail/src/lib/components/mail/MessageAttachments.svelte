@@ -4,9 +4,7 @@
 	import FileText from '$lib/components/icons/FileText.svelte';
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import { downloadAttachment } from '$lib/attachments/download';
-	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { cn } from '$lib/utils/cn';
 	import type { MessageAttachment } from '$lib/types/mail';
 
 	interface Props {
@@ -50,11 +48,7 @@
 	{#if canCollapse && !expanded}
 		<button
 			type="button"
-			class={cn(
-				'flex w-full items-center justify-between gap-3 rounded-md bg-surface text-left text-sm transition-colors hover:bg-surface-sunken',
-				settings.compactAttachments ? 'px-2.5 py-2' : 'px-3 py-2.5',
-				!settings.hideReaderPaneBorders && 'border border-border'
-			)}
+			class="flex w-full items-center justify-between gap-3 rounded-md border border-border bg-surface px-3 py-2.5 text-left text-sm transition-colors hover:bg-surface-sunken"
 			aria-expanded={false}
 			onclick={() => (expanded = true)}
 		>
@@ -83,21 +77,12 @@
 			{/if}
 		</div>
 
-		<ul
-			class={cn(
-				'overflow-hidden rounded-md bg-surface',
-				!settings.hideReaderPaneBorders && 'border border-border',
-				settings.compactAttachments ? 'divide-y divide-border/80' : 'divide-y divide-border'
-			)}
-		>
+		<ul class="divide-y divide-border overflow-hidden rounded-md border border-border bg-surface">
 			{#each attachments as attachment (attachment.blobId)}
 				<li>
 					<button
 						type="button"
-						class={cn(
-							'flex w-full min-w-0 items-center gap-3 text-left text-sm text-fg transition-colors hover:bg-surface-sunken disabled:opacity-60',
-							settings.compactAttachments ? 'px-2.5 py-2' : 'px-3 py-2.5'
-						)}
+						class="flex w-full min-w-0 items-center gap-3 px-3 py-2.5 text-left text-sm text-fg transition-colors hover:bg-surface-sunken disabled:opacity-60"
 						title={attachment.name}
 						disabled={downloadingId === attachment.blobId}
 						onclick={() => handleDownload(attachment)}

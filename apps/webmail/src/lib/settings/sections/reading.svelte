@@ -4,7 +4,13 @@
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import PushNotificationStatus from '$lib/components/settings/PushNotificationStatus.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
-	import { settings, type ReaderTextSize } from '$lib/stores/settings.svelte';
+	import {
+		settings,
+		type ReaderTextSize,
+		type ReaderWidth,
+		type ReadingTypeface,
+		type SearchScope
+	} from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="Notifications" description="Alerts and unread counts.">
@@ -32,7 +38,6 @@
 	<SettingsRow title="Unread count on app icon" description="Badge on the installed app icon (Chrome and Edge)">
 		<input
 			type="checkbox"
-
 			checked={settings.showUnreadAppBadge}
 			onchange={(e) => settings.setShowUnreadAppBadge(e.currentTarget.checked)}
 		/>
@@ -41,15 +46,59 @@
 	<SettingsRow title="Unread count in tab title" description="Prefix the browser tab with your Inbox unread count">
 		<input
 			type="checkbox"
-
 			checked={settings.showUnreadInTitle}
 			onchange={(e) => settings.setShowUnreadInTitle(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Inbox & reading" description="How open messages look.">
-	<SettingsRow title="Reading text size" description="Font size for the message body when reading">
+<SettingsGroup title="Message list" description="How conversations appear in your inbox and folders.">
+	<SettingsRow title="Show avatars" description="Display sender photos in the message list and reader">
+		<input
+			type="checkbox"
+			checked={settings.showAvatars}
+			onchange={(e) => settings.setShowAvatars(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Show full email in list"
+		description="Display the sender's full address instead of just their name"
+	>
+		<input
+			type="checkbox"
+			checked={settings.showSenderEmailInList}
+			onchange={(e) => settings.setShowSenderEmailInList(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow title="Auto-load more messages" description="Load older messages when you scroll to the bottom of the list">
+		<input
+			type="checkbox"
+			checked={settings.autoLoadMore}
+			onchange={(e) => settings.setAutoLoadMore(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Default search scope"
+		description="Start in the current folder when searching from a mailbox view, or always look everywhere"
+	>
+		<SettingsSelect
+			label="Default search scope"
+			value={settings.searchScope}
+			options={[
+				{ value: 'all', label: 'All mail' },
+				{ value: 'current-folder', label: 'Current folder' }
+			]}
+			onchange={(v) => settings.setSearchScope(v as SearchScope)}
+			class="w-auto"
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
+<SettingsGroup title="Reading" description="Typography and layout when viewing messages.">
+	<SettingsRow title="Reading text size" description="Font size for the message body">
 		<SettingsSelect
 			label="Reading text size"
 			value={settings.readerTextSize}
@@ -63,12 +112,98 @@
 		/>
 	</SettingsRow>
 
+	<SettingsRow title="Reading width" description="How wide the message body column is on desktop">
+		<SettingsSelect
+			label="Reading width"
+			value={settings.readerWidth}
+			options={[
+				{ value: 'comfortable', label: 'Comfortable' },
+				{ value: 'wide', label: 'Wide' }
+			]}
+			onchange={(v) => settings.setReaderWidth(v as ReaderWidth)}
+			class="w-auto"
+		/>
+	</SettingsRow>
+
+	<SettingsRow title="Reading typeface" description="Sans-serif or serif font for message bodies">
+		<SettingsSelect
+			label="Reading typeface"
+			value={settings.readingTypeface}
+			options={[
+				{ value: 'sans', label: 'Sans-serif' },
+				{ value: 'serif', label: 'Serif' }
+			]}
+			onchange={(v) => settings.setReadingTypeface(v as ReadingTypeface)}
+			class="w-auto"
+		/>
+	</SettingsRow>
+
+	<SettingsRow title="Prefer plain text" description="Show plain-text version when a message includes both HTML and plain text">
+		<input
+			type="checkbox"
+			checked={settings.preferPlainText}
+			onchange={(e) => settings.setPreferPlainText(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
 	<SettingsRow title="Block external content" description="Block remote images in HTML mail — you can still show them per message">
 		<input
 			type="checkbox"
-
 			checked={settings.blockExternalContent}
 			onchange={(e) => settings.setBlockExternalContent(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow title="Quick reply" description="Show an inline reply field at the bottom of the reader">
+		<input
+			type="checkbox"
+			checked={settings.showQuickReply}
+			onchange={(e) => settings.setShowQuickReply(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow title="Expand all thread messages" description="Open every message in a conversation instead of just the latest">
+		<input
+			type="checkbox"
+			checked={settings.expandAllThreadMessages}
+			onchange={(e) => settings.setExpandAllThreadMessages(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Show list rail in reader"
+		description="Keep a slim message list visible on the side when reading on desktop"
+	>
+		<input
+			type="checkbox"
+			checked={settings.showReaderListRail}
+			onchange={(e) => settings.setShowReaderListRail(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow title="Focus reading by default" description="Hide surrounding chrome when you open a message">
+		<input
+			type="checkbox"
+			checked={settings.focusReadingDefault}
+			onchange={(e) => settings.setFocusReadingDefault(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow title="Clean reader view" description="Reduce visual clutter in the message reader">
+		<input
+			type="checkbox"
+			checked={settings.readerCleanView}
+			onchange={(e) => settings.setReaderCleanView(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
+<SettingsGroup title="Navigation">
+	<SettingsRow title="Remember last mailbox" description="Open your last folder instead of Inbox when signing in">
+		<input
+			type="checkbox"
+			checked={settings.rememberLastMailbox}
+			onchange={(e) => settings.setRememberLastMailbox(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
 </SettingsGroup>
@@ -77,7 +212,6 @@
 	<SettingsRow title="Mark as read when opened" description="Automatically mark conversations read when you open them">
 		<input
 			type="checkbox"
-
 			checked={settings.markAsReadOnOpen}
 			onchange={(e) => settings.setMarkAsReadOnOpen(e.currentTarget.checked)}
 		/>
@@ -111,32 +245,21 @@
 	<SettingsRow title="Confirm before delete" description="Ask before moving messages to trash">
 		<input
 			type="checkbox"
-
 			checked={settings.confirmBeforeDelete}
 			onchange={(e) => settings.setConfirmBeforeDelete(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow title="Auto-load more messages" description="Load older messages when you scroll to the bottom of the list">
-		<input
-			type="checkbox"
-
-			checked={settings.autoLoadMore}
-			onchange={(e) => settings.setAutoLoadMore(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
 
 	<SettingsRow title="Hide action toasts" description="Suppress success and info notifications — errors still appear">
 		<input
 			type="checkbox"
-
 			checked={settings.hideActionToasts}
 			onchange={(e) => settings.setHideActionToasts(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Dates & times" description="How timestamps appear in lists and the reader.">
+<SettingsGroup title="Dates & times">
 	<SettingsRow title="Time format" description="Pick 12-hour, 24-hour, or follow your operating system">
 		<SettingsSelect
 			label="Time format"
@@ -160,7 +283,6 @@
 	<SettingsRow title="Enable keyboard shortcuts" description="Press c to compose, j/k to move between messages, n for next unread, and more">
 		<input
 			type="checkbox"
-
 			checked={settings.enableKeyboardShortcuts}
 			onchange={(e) => settings.setEnableKeyboardShortcuts(e.currentTarget.checked)}
 		/>
@@ -198,8 +320,7 @@
 			class="z-btn-ghost text-sm"
 			onclick={() => {
 				if (confirm('Reset reading settings to defaults?')) {
-					settings.resetMailSettings();
-					settings.resetLayoutSettings();
+					settings.resetReadingSettings();
 				}
 			}}
 		>

@@ -2,9 +2,7 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
-	import { settings } from '$lib/stores/settings.svelte';
 	import { settingsSearch, settingsSearchSlug } from '$lib/settings/search-registry.svelte';
-	import { cn } from '$lib/utils/cn';
 
 	let {
 		title,
@@ -36,7 +34,7 @@
 	<div
 		id={rowId}
 		data-settings-row
-		class={cn('z-settings-field scroll-mt-20', settings.compactSettingsRows && 'z-settings-field--compact')}
+		class="z-settings-field scroll-mt-20"
 	>
 		<p class="z-settings-field-label">{title}</p>
 		{#if description}

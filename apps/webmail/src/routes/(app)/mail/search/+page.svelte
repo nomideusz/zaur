@@ -7,7 +7,6 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { search } from '$lib/stores/search.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
 
 	const query = $derived($page.url.searchParams.get('q')?.trim() ?? '');
 	const shouldAutofocusSearch = $derived(
@@ -21,15 +20,11 @@
 	);
 	const scopeSuffix = $derived(scopedMailbox ? ` in ${scopedMailbox.name}` : '');
 	const mailboxName = $derived(
-		query
-			? settings.hideSearchListPrefix
-				? `${query}${scopeSuffix}`
-				: `Search: ${query}${scopeSuffix}`
-			: 'Search'
+		query ? `Search: ${query}${scopeSuffix}` : 'Search'
 	);
 	const countLabel = $derived(mailCountLabel(search.total, search.results.length, null));
 	const searchEmptyHint = $derived(
-		settings.hideListEmptyHints || query ? undefined : 'Try a sender, subject, or keyword from the message body.'
+		query ? undefined : 'Try a sender, subject, or keyword from the message body.'
 	);
 
 	$effect(() => {

@@ -39,7 +39,7 @@
 			class="z-btn-ghost text-sm"
 			onclick={() => {
 				if (confirm('Reset theme settings to defaults?')) {
-					settings.resetLookAndFeel();
+					settings.resetAppearanceSettings();
 				}
 			}}
 		>

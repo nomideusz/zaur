@@ -2,38 +2,19 @@
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
-
-	const hideBorders = $derived(settings.hideCalendarPaneBorders || settings.hidePaneBorders);
 </script>
 
 <aside
-	class={cn(
-		'z-mail-pane-surface flex min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden',
-		!hideBorders && 'border-r border-border'
-	)}
+	class="z-mail-pane-surface flex min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden border-r border-border"
 	style="view-transition-name: calendar-sidebar;"
 	aria-label="Calendars"
 >
-	{#if !settings.hideCalendarSidebarHeader}
-		<div
-			class={cn(
-				'shrink-0 border-b px-4',
-				settings.compactCalendarSidebar ? 'py-2' : 'py-3',
-				!hideBorders && 'border-border/80'
-			)}
-		>
-			<h2 class="z-type-label">Calendars</h2>
-		</div>
-	{/if}
+	<div class="shrink-0 border-b border-border/80 px-4 py-3">
+		<h2 class="z-type-label">Calendars</h2>
+	</div>
 
-	<nav
-		class={cn(
-			'z-pane-scroll min-h-0 flex-1 overflow-y-auto',
-			settings.compactCalendarSidebar ? 'p-1.5' : 'p-2.5'
-		)}
-	>
+	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto p-2.5">
 		{#if calendar.calendarsLoading}
 			<div class="flex items-center gap-2 px-3 py-4 text-sm text-fg-muted">
 				<span class="z-spinner size-4" aria-hidden="true">
@@ -51,8 +32,7 @@
 					<li>
 						<label
 							class={cn(
-								'z-checkbox-row',
-								settings.compactCalendarSidebar ? 'py-1.5' : 'py-2',
+								'z-checkbox-row py-2',
 								calendar.isCalendarVisible(item.id) ? 'text-fg' : 'text-fg-muted'
 							)}
 						>

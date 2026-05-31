@@ -19,7 +19,6 @@
 	const days = $derived(monthGrid(calendar.viewYear, calendar.viewMonth, weekStart));
 	const monthTitle = $derived(formatMonthTitle(calendar.viewYear, calendar.viewMonth));
 	const maxEventsPerDay = $derived(settings.calendarMaxEventsPerDay);
-	const hideBorders = $derived(settings.hideCalendarPaneBorders || settings.hidePaneBorders);
 
 	let calendarsOpen = $state(false);
 
@@ -63,30 +62,17 @@
 		class={cn(
 		'z-mail-pane-surface flex min-h-0 min-w-0 flex-col overflow-hidden',
 		calendar.selectedEvent ? 'hidden md:flex md:flex-1' : 'flex flex-1',
-		!hideBorders &&
-			(calendar.selectedEvent || !settings.hideCalendarEmptyEventPanel) &&
-			'md:border-r md:border-border'
+		'md:border-r md:border-border'
 	)}
 	style="view-transition-name: calendar-grid;"
 	aria-label="Month view"
 >
-	<div
-		class={cn(
-			'flex shrink-0 items-center justify-between gap-2 px-4',
-			settings.compactCalendarHeader ? 'h-10' : 'h-12',
-			!hideBorders && 'border-b border-border/80'
-		)}
-	>
+	<div class="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border/80 px-4">
 		<div class="flex items-center gap-1">
 			<IconButton label="Previous month" onclick={() => calendar.prevMonth()}>
 				<ChevronLeft class="size-4" />
 			</IconButton>
-			<h2
-				class={cn(
-					'min-w-36 text-center font-semibold text-fg',
-					settings.compactCalendarHeader ? 'text-xs' : 'text-sm'
-				)}
-			>
+			<h2 class="min-w-36 text-center text-sm font-semibold text-fg">
 				{monthTitle}
 			</h2>
 			<IconButton label="Next month" onclick={() => calendar.nextMonth()}>
@@ -115,19 +101,14 @@
 			role="group"
 			aria-label="Visible calendars"
 			tabindex="-1"
-			class={cn(
-				'z-pane-scroll max-h-48 shrink-0 overflow-y-auto border-b md:hidden',
-				settings.compactCalendarSidebar ? 'px-2 py-1' : 'px-2 py-2',
-				!hideBorders && 'border-border'
-			)}
+			class="z-pane-scroll max-h-48 shrink-0 overflow-y-auto border-b border-border px-2 py-2 md:hidden"
 		>
 			<ul class="space-y-0.5">
 				{#each calendar.calendars as item (item.id)}
 					<li>
 						<label
 							class={cn(
-								'z-checkbox-row',
-								settings.compactCalendarSidebar ? 'py-1.5' : 'py-2',
+								'z-checkbox-row py-2',
 								calendar.isCalendarVisible(item.id) ? 'text-fg' : 'text-fg-muted'
 							)}
 						>
@@ -150,19 +131,9 @@
 		</div>
 	{/if}
 
-	<div
-		class={cn(
-			'grid shrink-0 grid-cols-7 border-b bg-surface-sunken/50',
-			!hideBorders && 'border-border/80'
-		)}
-	>
+	<div class="grid shrink-0 grid-cols-7 border-b border-border/80 bg-surface-sunken/50">
 		{#each weekdays as weekday}
-			<div
-				class={cn(
-					'px-2 text-center text-xs font-medium text-fg-subtle',
-					settings.compactCalendarGrid ? 'py-1.5' : 'py-2'
-				)}
-			>
+			<div class="px-2 py-2 text-center text-xs font-medium text-fg-subtle">
 				{weekday}
 			</div>
 		{/each}
@@ -192,9 +163,7 @@
 				{@const dayEvents = calendar.eventsForDay(day)}
 				<div
 					class={cn(
-						'group p-1.5 transition-colors hover:bg-surface-sunken/40',
-						settings.compactCalendarGrid ? 'min-h-16 p-1' : 'min-h-24',
-						!hideBorders && 'border-b border-r border-border',
+						'group min-h-24 border-b border-r border-border p-1.5 transition-colors hover:bg-surface-sunken/40',
 						!inMonth && 'bg-surface-sunken/30 text-fg-subtle'
 					)}
 					aria-label={`${formatDayLabel(day)}, ${dayEvents.length} ${dayEvents.length === 1 ? 'event' : 'events'}`}
@@ -225,8 +194,7 @@
 								<button
 									type="button"
 									class={cn(
-										'flex w-full items-center gap-1 truncate rounded-md px-1 py-0.5 text-left leading-tight shadow-sm transition-all hover:-translate-y-px hover:opacity-90',
-										settings.compactCalendarGrid ? 'text-[10px]' : 'text-[11px]',
+										'flex w-full items-center gap-1 truncate rounded-md px-1 py-0.5 text-left text-[11px] leading-tight shadow-sm transition-all hover:-translate-y-px hover:opacity-90',
 										calendar.selectedEventId === event.id && 'ring-1 ring-accent/40'
 									)}
 									style:background-color={`color-mix(in srgb, ${eventColor(event)} 18%, transparent)`}
@@ -242,7 +210,7 @@
 								</button>
 							</li>
 						{/each}
-						{#if !settings.hideCalendarMoreEventsLabel && dayEvents.length > maxEventsPerDay}
+						{#if dayEvents.length > maxEventsPerDay}
 							<li>
 								<button
 									type="button"

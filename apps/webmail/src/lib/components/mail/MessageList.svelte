@@ -124,7 +124,7 @@
 	);
 	const showFlatEmpty = $derived(!sectionMode && !loading && !error && messages.length === 0);
 	const selectedIds = $derived([...mail.selectedMessageIds]);
-	const bulkSelectEnabled = $derived(!!mailboxRouteId && settings.showBulkSelect);
+	const bulkSelectEnabled = $derived(!!mailboxRouteId);
 	function flattenSectionsForSelection(
 		sections: { messages: MessagePreview[] }[]
 	): MessagePreview[] {
@@ -153,12 +153,6 @@
 		mail.setSelectionList(sectionMode ? bulkSelectionMessages : []);
 	});
 	const showBulkBar = $derived(bulkSelectEnabled && mail.hasSelection && !!mailboxRouteId);
-
-	$effect(() => {
-		if (!settings.showBulkSelect && mail.hasSelection) {
-			mail.clearSelection();
-		}
-	});
 
 	function clearLongPressTimer() {
 		if (longPressTimer) {

@@ -4,8 +4,6 @@
 	import MailX from '$lib/components/icons/MailX.svelte';
 	import WifiOff from '$lib/components/icons/WifiOff.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
-	import { cn } from '$lib/utils/cn';
 
 	interface Props {
 		message: string;
@@ -33,38 +31,31 @@
 	});
 </script>
 
-<div
-	class={cn(
-		'z-mail-pane-surface flex min-h-0 flex-1 flex-col items-center justify-center text-center',
-		settings.compactReaderStatus ? 'gap-3 p-4' : 'gap-4 p-8'
-	)}
->
-	<div class={cn('text-fg-subtle', settings.compactReaderStatus ? 'p-1' : 'p-2')}>
+<div class="z-mail-pane-surface flex min-h-0 flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
+	<div class="p-2 text-fg-subtle">
 		{#if isOffline}
-			<WifiOff class={cn(settings.compactReaderStatus ? 'size-6' : 'size-8')} aria-hidden="true" />
+			<WifiOff class="size-8" aria-hidden="true" />
 		{:else if isNotFound}
-			<MailX class={cn(settings.compactReaderStatus ? 'size-6' : 'size-8')} aria-hidden="true" />
+			<MailX class="size-8" aria-hidden="true" />
 		{:else}
-			<AlertCircle class={cn(settings.compactReaderStatus ? 'size-6' : 'size-8')} aria-hidden="true" />
+			<AlertCircle class="size-8" aria-hidden="true" />
 		{/if}
 	</div>
 
 	<div>
-		<h2 class={cn('font-semibold text-fg', settings.compactReaderStatus ? 'text-base' : 'text-lg')}>
+		<h2 class="text-lg font-semibold text-fg">
 			{title}
 		</h2>
-		{#if !settings.hideReaderStatusMessage}
-			<p class={cn('mx-auto mt-2 max-w-sm text-fg-muted', settings.compactReaderStatus ? 'text-xs' : 'text-sm')}>
-				{description}
-			</p>
-		{/if}
+		<p class="mx-auto mt-2 max-w-sm text-sm text-fg-muted">
+			{description}
+		</p>
 	</div>
 
 	<div class="flex flex-wrap items-center justify-center gap-2">
 		{#if onRetry}
 			<Button variant="primary" onclick={onRetry}>Try again</Button>
 		{/if}
-		{#if onBack && !settings.hideReaderStatusBackButton}
+		{#if onBack}
 			<Button variant="ghost" onclick={onBack}>
 				<ArrowLeft class="size-4" aria-hidden="true" />
 				Back to list

@@ -37,7 +37,7 @@ import Users from '$lib/components/icons/Users.svelte';
 			href={tool.href}
 			class={cn(
 				'flex items-center rounded-sm text-sm transition-colors',
-				settings.compactToolSwitcher ? 'gap-1.5 px-2 py-1' : 'gap-2 px-2.5 py-1.5',
+				'gap-2 px-2.5 py-1.5',
 				isActive
 					? 'font-medium text-fg underline decoration-fg/30 decoration-2 underline-offset-[0.35rem]'
 					: 'text-fg-muted hover:text-fg'
@@ -46,7 +46,7 @@ import Users from '$lib/components/icons/Users.svelte';
 			title={tool.label}
 		>
 			<Icon class="size-5" aria-hidden="true" />
-			<span class={settings.toolIconsOnly ? 'sr-only' : 'hidden sm:inline'}>{tool.label}</span>
+			<span class="hidden sm:inline">{tool.label}</span>
 		</a>
 	{/each}
 </nav>

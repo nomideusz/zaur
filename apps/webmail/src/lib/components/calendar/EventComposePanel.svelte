@@ -13,12 +13,9 @@
 	const submitLabel = $derived(
 		calendar.composeSaving ? (isEdit ? 'Saving…' : 'Creating…') : isEdit ? 'Save changes' : 'Create event'
 	);
-	const hideBorders = $derived(settings.hideCalendarPaneBorders || settings.hidePaneBorders);
-	const panelPadding = $derived(settings.compactCalendarCompose ? 'px-3 py-2.5' : 'px-4 py-3');
-	const fieldGap = $derived(settings.compactCalendarCompose ? 'space-y-3' : 'space-y-4');
-	const fieldLabelClass = $derived(
-		settings.hideCalendarComposeFieldLabels ? 'sr-only' : 'text-sm font-medium text-fg'
-	);
+	const panelPadding = 'px-4 py-3';
+	const fieldGap = 'space-y-4';
+	const fieldLabelClass = 'text-sm font-medium text-fg';
 	const composeStart = $derived.by(() => {
 		const draft = calendar.composeDraft;
 		return new Date(`${draft.startDate}T${draft.allDay ? '00:00' : draft.startTime}`);
@@ -56,17 +53,10 @@
 
 <div class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]">
 	<div
-		class={cn(
-			'z-panel flex h-full min-h-0 w-full max-w-lg flex-col overflow-hidden shadow-md',
-			!hideBorders && 'border-l'
-		)}
+		class="z-panel flex h-full min-h-0 w-full max-w-lg flex-col overflow-hidden border-l shadow-md"
 	>
 		<header
-			class={cn(
-				'flex shrink-0 items-center justify-between border-b',
-				panelPadding,
-				!hideBorders && 'border-border'
-			)}
+			class={cn('flex shrink-0 items-center justify-between border-b border-border', panelPadding)}
 		>
 			<h2 class="text-base font-semibold text-fg">{isEdit ? 'Edit event' : 'New event'}</h2>
 			<IconButton label="Close event" onclick={close}>
@@ -82,11 +72,7 @@
 			}}
 		>
 			<div
-				class={cn(
-					'z-pane-scroll min-h-0 flex-1 overflow-y-auto',
-					fieldGap,
-					settings.compactCalendarCompose ? 'px-3 py-3' : 'px-4 py-4'
-				)}
+				class={cn('z-pane-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4', fieldGap)}
 			>
 				<label class="block space-y-1.5">
 					<span class={fieldLabelClass}>Title</span>
@@ -191,24 +177,12 @@
 			</div>
 
 			{#if calendar.composeError}
-				<p
-					class={cn(
-						'border-t px-4 py-2 text-sm text-danger',
-						!hideBorders && 'border-border'
-					)}
-					role="alert"
-				>
+				<p class="border-t border-border px-4 py-2 text-sm text-danger" role="alert">
 					{calendar.composeError}
 				</p>
 			{/if}
 
-			<footer
-				class={cn(
-					'flex shrink-0 items-center justify-end gap-2 border-t pb-[max(0.75rem,env(safe-area-inset-bottom))]',
-					panelPadding,
-					!hideBorders && 'border-border'
-				)}
-			>
+			<footer class={cn('flex shrink-0 items-center justify-end gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]', panelPadding)}>
 				<Button variant="ghost" type="button" onclick={close}>Close</Button>
 				<Button type="submit" disabled={!canSave} title={saveBlockedReason ?? submitLabel}>
 					{submitLabel}

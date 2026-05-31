@@ -73,7 +73,7 @@
 	<div
 		class={cn(
 			'shrink-0 space-y-0.5',
-			!settings.hidePaneBorders && 'border-t border-border/80',
+			'border-t border-border/80',
 			'p-2'
 		)}
 	>

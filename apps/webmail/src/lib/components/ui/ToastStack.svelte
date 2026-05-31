@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { toast } from '$lib/stores/toast.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
 </script>
 
 <div class="z-status-line" aria-live="polite" aria-relevant="additions">
@@ -8,7 +7,6 @@
 		{@const isTimed = !!item.action}
 		<div
 			class="z-status-line__item"
-			class:z-status-line__item--compact={settings.compactToasts}
 			class:z-status-line__item--timed={isTimed}
 			data-variant={item.variant}
 			role="status"

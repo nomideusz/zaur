@@ -2,19 +2,15 @@
 	import { onMount } from 'svelte';
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
-	import { settings } from '$lib/stores/settings.svelte';
 	import { settingsSearch, settingsSearchSlug } from '$lib/settings/search-registry.svelte';
-	import { cn } from '$lib/utils/cn';
 
 	let {
 		title,
 		description,
-		advanced,
 		children
 	}: {
 		title: string;
 		description?: string;
-		advanced?: boolean;
 		children: import('svelte').Snippet;
 	} = $props();
 
@@ -38,7 +34,7 @@
 	<div
 		id={rowId}
 		data-settings-row
-		class={cn('z-settings-row scroll-mt-20', settings.compactSettingsRows && 'z-settings-row--compact')}
+		class="z-settings-row scroll-mt-20"
 	>
 		<p class="z-settings-row-label">{title}</p>
 		{#if description}

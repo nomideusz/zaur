@@ -3,8 +3,6 @@
 	import DinoZaur from '$lib/components/mail/DinoZaur.svelte';
 	import { frameSvg } from '@zaur/sprite';
 	import Button from '$lib/components/ui/Button.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
-	import { cn } from '$lib/utils/cn';
 
 	interface Props {
 		title?: string;
@@ -21,52 +19,32 @@
 		showSettings = true,
 		hideTitle = false
 	}: Props = $props();
-
-	const showComposeButton = $derived(showCompose && !settings.hideEmptyReaderPrompts && !settings.hideEmptyReaderActions);
-	const showSettingsButton = $derived(showSettings && !settings.hideEmptyReaderPrompts && !settings.hideEmptyReaderActions);
-	const showPrompts = $derived(!settings.hideEmptyReaderPrompts);
 </script>
 
 <div class="z-mail-pane-surface flex min-h-0 flex-1 flex-col overflow-hidden">
-	<div
-		class={cn(
-			'flex min-h-0 flex-1 flex-col items-center justify-center text-center',
-			settings.compactEmptyReader ? 'gap-3 p-4' : 'gap-4 p-8'
-		)}
-	>
-		{#if showPrompts}
-			{#if !settings.hideEmptyReaderIcon}
-				<div class="text-fg-subtle">
-					{@html frameSvg('look_up', { color: 'currentColor', scale: 2 })}
-				</div>
+	<div class="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
+		<div class="text-fg-subtle">
+			{@html frameSvg('look_up', { color: 'currentColor', scale: 2 })}
+		</div>
+		<div>
+			{#if !hideTitle}
+				<h2 class="text-lg font-semibold text-fg">
+					{title}
+				</h2>
 			{/if}
-			<div>
-				{#if !hideTitle}
-					<h2 class={cn('font-semibold text-fg', settings.compactEmptyReader ? 'text-base' : 'text-lg')}>
-						{title}
-					</h2>
-				{/if}
-				{#if !settings.hideEmptyReaderDescription}
-					<p
-						class={cn(
-							'mx-auto mt-2 max-w-sm text-fg-muted',
-							settings.compactEmptyReader ? 'text-xs' : 'text-sm'
-						)}
-					>
-						{description}
-					</p>
-				{/if}
-			</div>
-		{/if}
-		{#if showComposeButton || showSettingsButton}
+			<p class="mx-auto mt-2 max-w-sm text-sm text-fg-muted">
+				{description}
+			</p>
+		</div>
+		{#if showCompose || showSettings}
 			<div class="flex flex-wrap items-center justify-center gap-2">
-				{#if showComposeButton}
+				{#if showCompose}
 					<Button href="/mail/compose">
 						<PenSquare class="size-4" aria-hidden="true" />
 						New message
 					</Button>
 				{/if}
-				{#if showSettingsButton}
+				{#if showSettings}
 					<Button href="/settings/appearance" variant="ghost">Settings</Button>
 				{/if}
 			</div>

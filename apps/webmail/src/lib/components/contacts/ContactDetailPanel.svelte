@@ -24,28 +24,19 @@ import X from '$lib/components/icons/X.svelte';
 		onRemove: () => void;
 	} = $props();
 
-	const hideBorders = $derived(settings.hidePaneBorders);
-	const panelPadding = $derived(settings.compactContactsPage ? 'px-3 py-2.5' : 'px-4 py-3');
+	const panelPadding = 'px-4 py-3';
 	const displayName = $derived(contact.name.trim() || contact.email);
 </script>
 
 {#snippet details(showClose: boolean)}
-	<header
-		class={cn(
-			'flex shrink-0 items-start justify-between gap-2 border-b',
-			panelPadding,
-			!hideBorders && 'border-border'
-		)}
-	>
+	<header class={cn('flex shrink-0 items-start justify-between gap-2 border-b border-border', panelPadding)}>
 		<div class="flex min-w-0 items-start gap-3">
 			{#if settings.showAvatars}
 				<Avatar name={contact.name} email={contact.email} />
 			{/if}
 			<div class="min-w-0">
 				<h2 class="truncate text-base font-semibold text-fg">{displayName}</h2>
-				{#if !settings.hideContactsEmailLine}
-					<p class="mt-1 truncate text-sm text-fg-muted">{contact.email}</p>
-				{/if}
+				<p class="mt-1 truncate text-sm text-fg-muted">{contact.email}</p>
 			</div>
 		</div>
 		{#if showClose}
@@ -55,13 +46,8 @@ import X from '$lib/components/icons/X.svelte';
 		{/if}
 	</header>
 
-	<div
-		class={cn(
-			'z-pane-scroll min-h-0 flex-1 space-y-4 overflow-y-auto text-sm',
-			settings.compactContactsPage ? 'space-y-3 px-3 py-3' : 'px-4 py-4'
-		)}
-	>
-		{#if !settings.hideContactMessageCounts && contact.count > 0}
+	<div class="z-pane-scroll min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
+		{#if contact.count > 0}
 			<div>
 				<p class="text-xs font-medium uppercase tracking-wide text-fg-subtle">Activity</p>
 				<p class="mt-2 text-fg">
@@ -70,39 +56,24 @@ import X from '$lib/components/icons/X.svelte';
 			</div>
 		{/if}
 
-		{#if settings.hideContactsEmailLine}
-			<div>
-				<p class="text-xs font-medium uppercase tracking-wide text-fg-subtle">Email</p>
-				<p class="mt-2 break-all text-fg">{contact.email}</p>
-			</div>
-		{/if}
-
-		{#if contact.count === 0 && !settings.hideContactMessageCounts}
+		{#if contact.count === 0}
 			<p class="text-sm text-fg-muted">No indexed messages for this contact yet.</p>
 		{/if}
 	</div>
 
-	<footer
-		class={cn(
-			'flex shrink-0 flex-wrap gap-2 border-t pb-[max(0.75rem,env(safe-area-inset-bottom))]',
-			panelPadding,
-			!hideBorders && 'border-border'
-		)}
-	>
+	<footer class={cn('flex shrink-0 flex-wrap gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]', panelPadding)}>
 		<Button onclick={onCompose}>
 			<Mail class="size-4" aria-hidden="true" />
 			New message
 		</Button>
-		{#if !settings.hideContactsHoverActions}
-			<Button variant="ghost" onclick={onCopy}>
-				<Copy class="size-4" aria-hidden="true" />
-				Copy email
-			</Button>
-			<Button variant="danger" onclick={onRemove}>
-				<Trash2 class="size-4" aria-hidden="true" />
-				Remove
-			</Button>
-		{/if}
+		<Button variant="ghost" onclick={onCopy}>
+			<Copy class="size-4" aria-hidden="true" />
+			Copy email
+		</Button>
+		<Button variant="danger" onclick={onRemove}>
+			<Trash2 class="size-4" aria-hidden="true" />
+			Remove
+		</Button>
 	</footer>
 {/snippet}
 
@@ -115,9 +86,7 @@ import X from '$lib/components/icons/X.svelte';
 </aside>
 
 <div class="z-mobile-sheet-backdrop md:hidden">
-	<div
-		class={cn('m-2 flex h-[calc(100%-1rem)] w-[calc(100%-1rem)] max-w-md flex-col overflow-hidden rounded-2xl bg-surface-raised shadow-md', !hideBorders && 'border border-border')}
-	>
+	<div class="m-2 flex h-[calc(100%-1rem)] w-[calc(100%-1rem)] max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-md">
 		{@render details(true)}
 	</div>
 </div>

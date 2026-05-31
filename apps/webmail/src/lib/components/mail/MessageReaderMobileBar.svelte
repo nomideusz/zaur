@@ -336,7 +336,7 @@
 					<OverflowMenuItem label={latest.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
 						{#snippet icon()}<Star class="size-5" aria-hidden="true" />{/snippet}
 					</OverflowMenuItem>
-					{#if hasBlockedExternal && !allowExternal && settings.hideExternalContentBanner}
+					{#if hasBlockedExternal && !allowExternal}
 						<OverflowMenuItem label="Show external images" onclick={showImagesOnce}>
 							{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}
 						</OverflowMenuItem>

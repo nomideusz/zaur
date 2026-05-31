@@ -1,7 +1,4 @@
 <script lang="ts">
-	import { settings } from '$lib/stores/settings.svelte';
-	import { cn } from '$lib/utils/cn';
-
 	let {
 		title,
 		description,
@@ -16,23 +13,12 @@
 </script>
 
 <div class="z-settings-panel w-full min-w-0 max-w-full">
-	<div
-		class={cn(
-			'z-settings-stack',
-			settings.compactSettingsPanel && 'z-settings-stack--compact'
-		)}
-	>
+	<div class="z-settings-stack">
 		{@render children()}
 	</div>
 
 	{#if footer}
-		<footer
-			class={cn(
-				'z-settings-panel-footer',
-				settings.compactSettingsPanel && 'z-settings-panel-footer--compact',
-				settings.hidePaneBorders && 'border-transparent'
-			)}
-		>
+		<footer class="z-settings-panel-footer">
 			{@render footer()}
 		</footer>
 	{/if}

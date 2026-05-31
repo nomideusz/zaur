@@ -7,6 +7,7 @@ import {
 	sanitizeAccountSettings,
 	type AccountSettingsBlob
 } from '$lib/settings/account-settings-types';
+import { isObsoleteSettingKey } from '$lib/settings/obsolete-keys';
 
 const PUSH_DEBOUNCE_MS = 1500;
 
@@ -25,6 +26,7 @@ export function collectSyncableSettings(): Record<string, string> {
 			continue;
 		}
 		if (!key.startsWith('zaur:') && key !== 'zaur-theme') continue;
+		if (isObsoleteSettingKey(key)) continue;
 		if (syncAccountEmail && isOtherAccountsScopedKey(key, syncAccountEmail)) continue;
 
 		const value = localStorage.getItem(key);

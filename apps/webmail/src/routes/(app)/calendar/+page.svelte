@@ -48,7 +48,7 @@
 	<MonthView />
 	{#if calendar.selectedEvent}
 		<EventPanel />
-	{:else if !settings.hideCalendarEmptyEventPanel}
+	{:else}
 		<EventPanelEmpty />
 	{/if}
 {/if}

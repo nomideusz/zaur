@@ -388,11 +388,9 @@
 						<li class="z-type-page-muted flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-fg">
 							<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
 							<span class="min-w-0 truncate">{attachment.name}</span>
-							{#if !settings.compactAttachments}
-								<span class="text-fg-subtle">
-									({formatAttachmentSize(attachment.size)})
-								</span>
-							{/if}
+							<span class="text-fg-subtle">
+								({formatAttachmentSize(attachment.size)})
+							</span>
 							{#if attachment.uploading}
 								<span class="text-fg-subtle">Uploading…</span>
 							{:else if attachment.uploadError}

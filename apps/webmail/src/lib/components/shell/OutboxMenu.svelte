@@ -7,7 +7,6 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { network } from '$lib/stores/network.svelte';
 	import { outbox } from '$lib/stores/outbox.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 	import type { OutboxDoc } from '$lib/db/types';
 
@@ -105,14 +104,10 @@
 			onkeydown={onMenuKeydown}
 		>
 			<div
-				class={cn(
-					'flex items-center justify-between px-3',
-					settings.compactOutboxMenu ? 'py-1.5' : 'py-2',
-					!settings.hidePaneBorders && 'border-b border-border'
-				)}
+				class="flex items-center justify-between border-b border-border px-3 py-2"
 			>
 				<div>
-					<p class={cn('font-medium text-fg', settings.compactOutboxMenu ? 'text-xs' : 'text-sm')}>Outbox</p>
+					<p class="text-sm font-medium text-fg">Outbox</p>
 					{#if outbox.items.length}
 						<p class="text-xs text-fg-subtle">{outboxLabel.replace('Outbox: ', '')}</p>
 					{/if}
@@ -123,19 +118,13 @@
 			</div>
 
 			{#if !outbox.items.length}
-				<p class={cn('px-3 text-sm text-fg-muted', settings.compactOutboxMenu ? 'py-3' : 'py-4')}>
+				<p class="px-3 py-4 text-sm text-fg-muted">
 					No queued messages
 				</p>
 			{:else}
 				<ul class="max-h-72 overflow-y-auto py-1">
 					{#each outbox.items as item (item.id)}
-						<li
-							class={cn(
-								'px-3',
-								settings.compactOutboxMenu ? 'py-1.5' : 'py-2',
-								!settings.hidePaneBorders && 'border-b border-border last:border-b-0'
-							)}
-						>
+						<li class="border-b border-border px-3 py-2 last:border-b-0">
 							<div class="flex items-start justify-between gap-2">
 								<div class="min-w-0 flex-1">
 									<p class="truncate text-sm font-medium text-fg">
@@ -177,13 +166,7 @@
 			{/if}
 
 			{#if hasFailed || outbox.items.length}
-				<p
-					class={cn(
-						'px-3 text-xs text-fg-muted',
-						settings.compactOutboxMenu ? 'py-1.5' : 'py-2',
-						!settings.hidePaneBorders && 'border-t border-border'
-					)}
-				>
+				<p class="border-t border-border px-3 py-2 text-xs text-fg-muted">
 					{#if hasFailed}
 						Failed messages retry automatically when online. Use retry to send one now.
 					{:else if network.isOnline}

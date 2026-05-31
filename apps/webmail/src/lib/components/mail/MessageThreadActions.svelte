@@ -70,12 +70,11 @@
 	const toolbarButtonClass = $derived(
 		cn(
 			'z-thread-toolbar-btn shrink-0 !px-3 !text-sm',
-			readerHeader ? '!h-auto !min-h-9 leading-none' : '!h-9',
-			settings.compactReaderToolbar && '!px-2.5'
+			readerHeader ? '!h-auto !min-h-9 leading-none' : '!h-9'
 		)
 	);
 	const allowExternal = $derived(!settings.blockExternalContent || pane?.showImagesOnce);
-	const minimalToolbar = $derived(settings.minimalReaderToolbar || minimalChrome);
+	const minimalToolbar = true;
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>
 			renderMessageBody({
@@ -192,13 +191,7 @@
 		class={cn(
 			'flex min-w-0 shrink flex-wrap items-center',
 			readerHeader && 'z-reader-subject-toolbar items-baseline',
-			readerHeader
-				? settings.compactReaderToolbar
-					? 'gap-1'
-					: 'gap-1.5'
-				: settings.compactReaderToolbar
-					? 'gap-0'
-					: 'gap-1',
+			readerHeader ? 'gap-1.5' : 'gap-1',
 			className
 		)}
 	>
@@ -334,7 +327,7 @@
 				<OverflowMenuItem label={latest.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
 					{#snippet icon()}<Star class="size-5" aria-hidden="true" />{/snippet}
 				</OverflowMenuItem>
-				{#if hasBlockedExternal && !allowExternal && settings.hideExternalContentBanner}
+				{#if hasBlockedExternal && !allowExternal}
 					<OverflowMenuItem label="Show external images" onclick={showImagesOnce}>
 						{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}
 					</OverflowMenuItem>

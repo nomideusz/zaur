@@ -103,6 +103,30 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/calendar-events-per-day",
+		"href": "/settings/calendar",
+		"title": "Events per day",
+		"description": ""
+	},
+	{
+		"id": "/settings/calendar-reset-calendar-settings",
+		"href": "/settings/calendar",
+		"title": "Reset calendar settings",
+		"description": ""
+	},
+	{
+		"id": "/settings/calendar-show-event-times",
+		"href": "/settings/calendar",
+		"title": "Show event times",
+		"description": ""
+	},
+	{
+		"id": "/settings/calendar-week-starts-on-monday",
+		"href": "/settings/calendar",
+		"title": "Week starts on Monday",
+		"description": ""
+	},
+	{
 		"id": "/settings/data-export-settings",
 		"href": "/settings/data",
 		"title": "Export settings",
@@ -115,9 +139,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/data-reset-all-display-layout-settings",
+		"id": "/settings/data-reset-all-settings",
 		"href": "/settings/data",
-		"title": "Reset all display & layout settings",
+		"title": "Reset all settings",
 		"description": ""
 	},
 	{
@@ -145,6 +169,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/reading-clean-reader-view",
+		"href": "/settings/reading",
+		"title": "Clean reader view",
+		"description": ""
+	},
+	{
 		"id": "/settings/reading-compose",
 		"href": "/settings/reading",
 		"title": "Compose",
@@ -169,9 +199,21 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/reading-expand-all-thread-messages",
+		"href": "/settings/reading",
+		"title": "Expand all thread messages",
+		"description": ""
+	},
+	{
 		"id": "/settings/reading-focus-mode-return-to-list",
 		"href": "/settings/reading",
 		"title": "Focus mode / return to list",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-focus-reading-by-default",
+		"href": "/settings/reading",
+		"title": "Focus reading by default",
 		"description": ""
 	},
 	{
@@ -205,15 +247,39 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/reading-prefer-plain-text",
+		"href": "/settings/reading",
+		"title": "Prefer plain text",
+		"description": ""
+	},
+	{
 		"id": "/settings/reading-push-notifications",
 		"href": "/settings/reading",
 		"title": "Push notifications",
 		"description": ""
 	},
 	{
+		"id": "/settings/reading-quick-reply",
+		"href": "/settings/reading",
+		"title": "Quick reply",
+		"description": ""
+	},
+	{
 		"id": "/settings/reading-reading-text-size",
 		"href": "/settings/reading",
 		"title": "Reading text size",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-reading-typeface",
+		"href": "/settings/reading",
+		"title": "Reading typeface",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-reading-width",
+		"href": "/settings/reading",
+		"title": "Reading width",
 		"description": ""
 	},
 	{
@@ -238,6 +304,18 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-send-close-compose",
 		"href": "/settings/reading",
 		"title": "Send / close compose",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-show-avatars",
+		"href": "/settings/reading",
+		"title": "Show avatars",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-show-full-email-in-list",
+		"href": "/settings/reading",
+		"title": "Show full email in list",
 		"description": ""
 	},
 	{

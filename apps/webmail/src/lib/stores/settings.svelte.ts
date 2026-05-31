@@ -8,7 +8,7 @@ import {
 	isOtherAccountsScopedKey
 } from '$lib/settings/account-sync';
 import { accountSettingsSyncAtKey } from '$lib/settings/account-settings-types';
-import type { SettingsDetailLevel } from '$lib/settings/detail-level';
+import { purgeObsoleteSettings } from '$lib/settings/obsolete-keys';
 import { toast } from '$lib/stores/toast.svelte';
 import { migrateLegacyMailViewMode } from '$lib/mail/view-mode';
 import { INBOX_MAILBOX_ROUTE_ID, mailListHref } from '$lib/mail/routes';
@@ -30,131 +30,24 @@ export type UndoSendDelay = 0 | 5000 | 10000 | 20000;
 
 const STORAGE = {
 	blockExternal: 'zaur:block-external',
-	hideExternalContentBanner: 'zaur:hide-external-content-banner',
 	autoLoadMore: 'zaur:auto-load-more',
 	showAvatars: 'zaur:show-avatars',
 	showSenderEmailInList: 'zaur:show-sender-email-in-list',
 	preferPlainText: 'zaur:prefer-plain-text',
-	hideReaderRecipients: 'zaur:hide-reader-recipients',
-	toolIconsOnly: 'zaur:tool-icons-only',
 	collapseQuotedInCompose: 'zaur:collapse-quoted-in-compose',
-	hideEmptyReaderPrompts: 'zaur:hide-empty-reader-prompts',
-	hideEmptyReaderDescription: 'zaur:hide-empty-reader-description',
-	hideEmptyReaderActions: 'zaur:hide-empty-reader-actions',
-	hideEmptyReaderIcon: 'zaur:hide-empty-reader-icon',
-	hideThreadSummary: 'zaur:hide-thread-summary',
-	showBulkSelect: 'zaur:show-bulk-select',
-	hideHeaderSearch: 'zaur:hide-header-search',
-	hideOfflineIndicator: 'zaur:hide-offline-indicator',
 	showQuickReply: 'zaur:show-quick-reply',
-	showReaderContactActions: 'zaur:show-reader-contact-actions',
 	expandAllThreadMessages: 'zaur:expand-all-thread-messages',
 	hideComposeHints: 'zaur:hide-compose-hints',
 	showComposeContactSuggestions: 'zaur:show-compose-contact-suggestions',
-	showSearchContactSuggestions: 'zaur:show-search-contact-suggestions',
 	showCcBccInCompose: 'zaur:show-cc-bcc-in-compose',
 	reduceMotion: 'zaur:reduce-motion',
-	compactHeaderActions: 'zaur:compact-header-actions',
-	hideAppTitle: 'zaur:hide-app-title',
-	compactUserMenu: 'zaur:compact-user-menu',
-	hideListEmptyHints: 'zaur:hide-list-empty-hints',
-	hideListEmptyActions: 'zaur:hide-list-empty-actions',
-	hideSelectionHints: 'zaur:hide-selection-hints',
-	hideReaderTimestamps: 'zaur:hide-reader-timestamps',
-	hideCollapsedThreadPreviews: 'zaur:hide-collapsed-thread-previews',
-	hideSettingsNavHints: 'zaur:hide-settings-nav-hints',
-	hideSettingsPanelDescriptions: 'zaur:hide-settings-panel-descriptions',
-	compactAttachments: 'zaur:compact-attachments',
-	hideReaderSenderEmail: 'zaur:hide-reader-sender-email',
-	hideComposeFromLine: 'zaur:hide-compose-from-line',
-	hideComposeFieldLabels: 'zaur:hide-compose-field-labels',
-	hideOutboxUnlessFailed: 'zaur:hide-outbox-unless-failed',
-	hideMoveMenuLabels: 'zaur:hide-move-menu-labels',
-	iconOnlyComposeAttach: 'zaur:icon-only-compose-attach',
-	compactReaderHeader: 'zaur:compact-reader-header',
-	compactReaderBody: 'zaur:compact-reader-body',
-	hideConnectingScreen: 'zaur:hide-connecting-screen',
-	compactToolSwitcher: 'zaur:compact-tool-switcher',
-	hideSearchDropdownHeaders: 'zaur:hide-search-dropdown-headers',
-	hidePaneBorders: 'zaur:hide-pane-borders',
-	hideListRowDividers: 'zaur:hide-list-row-dividers',
-	hideReaderPaneBorders: 'zaur:hide-reader-pane-borders',
-	hideSearchListPrefix: 'zaur:hide-search-list-prefix',
-	compactMobileSearch: 'zaur:compact-mobile-search',
-	hideAccountFieldHints: 'zaur:hide-account-field-hints',
-	compactQuickReply: 'zaur:compact-quick-reply',
-	iconOnlyComposeDiscard: 'zaur:icon-only-compose-discard',
-	hideActionToasts: 'zaur:hide-action-toasts',
-	compactToasts: 'zaur:compact-toasts',
-	hideToastIcons: 'zaur:hide-toast-icons',
-	compactLoadMore: 'zaur:compact-load-more',
-	compactUserMenuDropdown: 'zaur:compact-user-menu-dropdown',
-	compactOutboxMenu: 'zaur:compact-outbox-menu',
-	compactSettingsRows: 'zaur:compact-settings-rows',
-	compactSettingsLayout: 'zaur:compact-settings-layout',
-	compactSettingsPanel: 'zaur:compact-settings-panel',
-	compactMoveMenu: 'zaur:compact-move-menu',
-	compactSearchDropdown: 'zaur:compact-search-dropdown',
-	compactComposeSuggestions: 'zaur:compact-compose-suggestions',
-	compactOfflineIndicator: 'zaur:compact-offline-indicator',
-	compactAppHeader: 'zaur:compact-app-header',
-	compactEmptyReader: 'zaur:compact-empty-reader',
-	compactSettingsNav: 'zaur:compact-settings-nav',
-	hideSettingsBackLink: 'zaur:hide-settings-back-link',
-	hideSettingsPageTitle: 'zaur:hide-settings-page-title',
-	hideReaderStatusBackButton: 'zaur:hide-reader-status-back-button',
-	hideReaderStatusMessage: 'zaur:hide-reader-status-message',
-	compactExternalContentBanner: 'zaur:compact-external-content-banner',
-	compactContactsPage: 'zaur:compact-contacts-page',
-	compactContactsList: 'zaur:compact-contacts-list',
-	hideContactMessageCounts: 'zaur:hide-contact-message-counts',
-	compactListEmptyState: 'zaur:compact-list-empty-state',
-	compactListHeader: 'zaur:compact-list-header',
-	compactReaderToolbar: 'zaur:compact-reader-toolbar',
-	compactReaderAvatars: 'zaur:compact-reader-avatars',
-	compactCollapsedThreads: 'zaur:compact-collapsed-threads',
-	compactReaderStatus: 'zaur:compact-reader-status',
-	compactListErrorState: 'zaur:compact-list-error-state',
-	hideListErrorRetry: 'zaur:hide-list-error-retry',
-	hideContactGroupLetters: 'zaur:hide-contact-group-letters',
-	compactContactsAddForm: 'zaur:compact-contacts-add-form',
-	hideContactsPageSubtitle: 'zaur:hide-contacts-page-subtitle',
-	compactContactsSearch: 'zaur:compact-contacts-search',
-	compactContactsEmptyState: 'zaur:compact-contacts-empty-state',
-	hideContactsHeaderSettings: 'zaur:hide-contacts-header-settings',
-	hideContactsComposeButton: 'zaur:hide-contacts-compose-button',
-	hideContactsEmptyHints: 'zaur:hide-contacts-empty-hints',
-	hideContactsEmptyActions: 'zaur:hide-contacts-empty-actions',
-	hideContactsHoverActions: 'zaur:hide-contacts-hover-actions',
-	hideContactsRowMailIcon: 'zaur:hide-contacts-row-mail-icon',
-	hideContactsEmailLine: 'zaur:hide-contacts-email-line',
-	compactCalendarGrid: 'zaur:compact-calendar-grid',
-	compactCalendarHeader: 'zaur:compact-calendar-header',
-	compactCalendarSidebar: 'zaur:compact-calendar-sidebar',
-	calendarWeekStartsOnMonday: 'zaur:calendar-week-starts-on-monday',
-	hideCalendarEventTimes: 'zaur:hide-calendar-event-times',
-	calendarMaxEventsPerDay: 'zaur:calendar-max-events-per-day',
-	hideCalendarMoreEventsLabel: 'zaur:hide-calendar-more-events-label',
-	hideCalendarSidebarHeader: 'zaur:hide-calendar-sidebar-header',
-	hideCalendarSidebarSettings: 'zaur:hide-calendar-sidebar-settings',
-	hideCalendarNewEventButton: 'zaur:hide-calendar-new-event-button',
-	iconOnlyCalendarNewEvent: 'zaur:icon-only-calendar-new-event',
-	compactCalendarEventPanel: 'zaur:compact-calendar-event-panel',
-	hideCalendarEmptyEventPanel: 'zaur:hide-calendar-empty-event-panel',
-	compactCalendarEmptyEventPanel: 'zaur:compact-calendar-empty-event-panel',
-	compactCalendarCompose: 'zaur:compact-calendar-compose',
-	hideCalendarComposeFieldLabels: 'zaur:hide-calendar-compose-field-labels',
-	hideCalendarPaneBorders: 'zaur:hide-calendar-pane-borders',
-	compactReaderInlineError: 'zaur:compact-reader-inline-error',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
-	minimalReaderToolbar: 'zaur:minimal-reader-toolbar',
 	showReaderListRail: 'zaur:show-reader-list-rail',
 	enableKeyboardShortcuts: 'zaur:enable-keyboard-shortcuts',
 	confirmBeforeDelete: 'zaur:confirm-before-delete',
 	confirmBeforeDiscardCompose: 'zaur:confirm-before-discard-compose',
 	returnToInboxAfterSend: 'zaur:return-to-inbox-after-send',
-	enableUndoSend: 'zaur:enable-undo-send',
 	undoSendDelay: 'zaur:undo-send-delay',
 	readerTextSize: 'zaur:reader-text-size',
 	readerWidth: 'zaur:reader-width',
@@ -171,12 +64,14 @@ const STORAGE = {
 	bccSelf: 'zaur:bcc-self',
 	autoArchiveOnReply: 'zaur:auto-archive-on-reply',
 	markAsReadDelay: 'zaur:mark-as-read-delay',
-	warnExternalSenders: 'zaur:warn-external-senders',
 	timeFormat: 'zaur:time-format',
 	searchScope: 'zaur:search-scope',
+	hideActionToasts: 'zaur:hide-action-toasts',
+	calendarWeekStartsOnMonday: 'zaur:calendar-week-starts-on-monday',
+	hideCalendarEventTimes: 'zaur:hide-calendar-event-times',
+	calendarMaxEventsPerDay: 'zaur:calendar-max-events-per-day',
 	displayName: (email: string) => `zaur:display-name:${email}`,
-	signature: (email: string) => `zaur:signature:${email}`,
-	settingsDetailLevel: 'zaur:settings-detail-level'
+	signature: (email: string) => `zaur:signature:${email}`
 } as const;
 
 const READER_TEXT_SIZE: Record<ReaderTextSize, string> = {
@@ -185,18 +80,12 @@ const READER_TEXT_SIZE: Record<ReaderTextSize, string> = {
 	large: '1.1875rem'
 };
 
-/** Leading scales inversely with size: smaller text wants more air, larger text less. */
 const READER_LEADING: Record<ReaderTextSize, string> = {
 	small: '1.7',
 	normal: '1.65',
 	large: '1.6'
 };
 
-/**
- * Reading measure in `em` (relative to the reading text size) so the line length
- * stays locked to a constant number of characters regardless of the chosen size.
- * ~40em ≈ 78 characters, ~46em ≈ 90 characters.
- */
 const READER_MEASURE: Record<ReaderWidth, string> = {
 	comfortable: '40em',
 	wide: '46em'
@@ -208,650 +97,90 @@ const READING_FONT: Record<ReadingTypeface, string> = {
 		"'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', Palatino, Charter, Georgia, Cambria, 'Times New Roman', serif"
 };
 
-function readBlockExternal(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.blockExternal) !== 'false';
+function readBool(key: string, defaultValue: boolean): boolean {
+	if (!browser) return defaultValue;
+	const stored = localStorage.getItem(key);
+	if (stored === null) return defaultValue;
+	return stored === 'true';
 }
 
-function readHideExternalContentBanner(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideExternalContentBanner) === 'true';
+function readBlockExternal(): boolean {
+	return readBool(STORAGE.blockExternal, true);
 }
 
 function readAutoLoadMore(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.autoLoadMore) === 'true';
+	return readBool(STORAGE.autoLoadMore, false);
 }
 
 function readShowAvatars(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.showAvatars) === 'true';
+	return readBool(STORAGE.showAvatars, false);
 }
 
 function readShowSenderEmailInList(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.showSenderEmailInList) === 'true';
+	return readBool(STORAGE.showSenderEmailInList, false);
 }
 
 function readPreferPlainText(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.preferPlainText) === 'true';
-}
-
-function readHideReaderRecipients(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.hideReaderRecipients) !== 'false';
-}
-
-function readToolIconsOnly(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.toolIconsOnly) === 'true';
+	return readBool(STORAGE.preferPlainText, false);
 }
 
 function readCollapseQuotedInCompose(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.collapseQuotedInCompose) === 'true';
-}
-
-function readHideEmptyReaderPrompts(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideEmptyReaderPrompts) === 'true';
-}
-
-function readHideEmptyReaderDescription(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideEmptyReaderDescription) === 'true';
-}
-
-function readHideEmptyReaderActions(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideEmptyReaderActions) === 'true';
-}
-
-function readHideEmptyReaderIcon(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideEmptyReaderIcon) === 'true';
-}
-
-function readHideThreadSummary(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.hideThreadSummary) !== 'false';
-}
-
-function readShowBulkSelect(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.showBulkSelect) === 'true';
-}
-
-function readHideHeaderSearch(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideHeaderSearch) === 'true';
-}
-
-function readHideOfflineIndicator(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideOfflineIndicator) === 'true';
+	return readBool(STORAGE.collapseQuotedInCompose, false);
 }
 
 function readShowQuickReply(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.showQuickReply) === 'true';
-}
-
-function readShowReaderContactActions(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.showReaderContactActions) === 'true';
+	return readBool(STORAGE.showQuickReply, false);
 }
 
 function readExpandAllThreadMessages(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.expandAllThreadMessages) === 'true';
+	return readBool(STORAGE.expandAllThreadMessages, false);
 }
 
 function readHideComposeHints(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideComposeHints) === 'true';
+	return readBool(STORAGE.hideComposeHints, false);
 }
 
 function readShowComposeContactSuggestions(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.showComposeContactSuggestions) !== 'false';
-}
-
-function readShowSearchContactSuggestions(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.showSearchContactSuggestions) !== 'false';
+	return readBool(STORAGE.showComposeContactSuggestions, true);
 }
 
 function readShowCcBccInCompose(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.showCcBccInCompose) !== 'false';
+	return readBool(STORAGE.showCcBccInCompose, true);
 }
 
 function readReduceMotion(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.reduceMotion) === 'true';
-}
-
-function readCompactHeaderActions(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactHeaderActions) === 'true';
+	return readBool(STORAGE.reduceMotion, false);
 }
 
 function readRememberLastMailbox(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.rememberLastMailbox) === 'true';
-}
-
-function readHideAppTitle(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideAppTitle) === 'true';
-}
-
-function readCompactUserMenu(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactUserMenu) === 'true';
-}
-
-function readHideListEmptyHints(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideListEmptyHints) === 'true';
-}
-
-function readHideListEmptyActions(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideListEmptyActions) === 'true';
-}
-
-function readHideSelectionHints(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideSelectionHints) === 'true';
-}
-
-function readHideReaderTimestamps(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.hideReaderTimestamps) !== 'false';
-}
-
-function readHideCollapsedThreadPreviews(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.hideCollapsedThreadPreviews) !== 'false';
-}
-
-function readHideSettingsNavHints(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideSettingsNavHints) === 'true';
-}
-
-function readHideSettingsPanelDescriptions(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideSettingsPanelDescriptions) === 'true';
-}
-
-function readCompactAttachments(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactAttachments) === 'true';
-}
-
-function readHideReaderSenderEmail(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideReaderSenderEmail) === 'true';
-}
-
-function readHideComposeFromLine(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideComposeFromLine) === 'true';
-}
-
-function readHideComposeFieldLabels(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideComposeFieldLabels) === 'true';
-}
-
-function readHideOutboxUnlessFailed(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideOutboxUnlessFailed) === 'true';
-}
-
-function readHideMoveMenuLabels(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideMoveMenuLabels) === 'true';
-}
-
-function readIconOnlyComposeAttach(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.iconOnlyComposeAttach) === 'true';
-}
-
-function readCompactReaderHeader(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactReaderHeader) === 'true';
-}
-
-function readCompactReaderBody(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactReaderBody) === 'true';
-}
-
-function readHideConnectingScreen(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideConnectingScreen) === 'true';
-}
-
-function readCompactToolSwitcher(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactToolSwitcher) === 'true';
-}
-
-function readHideSearchDropdownHeaders(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideSearchDropdownHeaders) === 'true';
-}
-
-function readHidePaneBorders(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hidePaneBorders) === 'true';
-}
-
-function readHideListRowDividers(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideListRowDividers) === 'true';
-}
-
-function readHideReaderPaneBorders(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideReaderPaneBorders) === 'true';
-}
-
-function readHideSearchListPrefix(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideSearchListPrefix) === 'true';
-}
-
-function readCompactMobileSearch(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactMobileSearch) === 'true';
-}
-
-function readHideAccountFieldHints(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideAccountFieldHints) === 'true';
-}
-
-function readCompactQuickReply(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactQuickReply) === 'true';
-}
-
-function readIconOnlyComposeDiscard(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.iconOnlyComposeDiscard) === 'true';
-}
-
-function readHideActionToasts(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideActionToasts) === 'true';
-}
-
-function readCompactToasts(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactToasts) === 'true';
-}
-
-function readHideToastIcons(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideToastIcons) === 'true';
-}
-
-function readCompactLoadMore(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactLoadMore) === 'true';
-}
-
-function readCompactUserMenuDropdown(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactUserMenuDropdown) === 'true';
-}
-
-function readCompactOutboxMenu(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactOutboxMenu) === 'true';
-}
-
-function readCompactSettingsRows(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactSettingsRows) === 'true';
-}
-
-function readCompactSettingsLayout(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactSettingsLayout) === 'true';
-}
-
-function readCompactSettingsPanel(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactSettingsPanel) === 'true';
-}
-
-function readCompactMoveMenu(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactMoveMenu) === 'true';
-}
-
-function readCompactSearchDropdown(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactSearchDropdown) === 'true';
-}
-
-function readCompactComposeSuggestions(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactComposeSuggestions) === 'true';
-}
-
-function readCompactOfflineIndicator(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactOfflineIndicator) === 'true';
-}
-
-function readCompactAppHeader(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactAppHeader) === 'true';
-}
-
-function readCompactEmptyReader(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactEmptyReader) === 'true';
-}
-
-function readSettingsDetailLevel(): SettingsDetailLevel {
-	if (!browser) return 'basic';
-	const stored = localStorage.getItem(STORAGE.settingsDetailLevel);
-	return stored === 'advanced' ? 'advanced' : 'basic';
-}
-
-function readCompactSettingsNav(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactSettingsNav) === 'true';
-}
-
-function readHideSettingsBackLink(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideSettingsBackLink) === 'true';
-}
-
-function readHideSettingsPageTitle(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideSettingsPageTitle) === 'true';
-}
-
-function readHideReaderStatusBackButton(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideReaderStatusBackButton) === 'true';
-}
-
-function readHideReaderStatusMessage(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideReaderStatusMessage) === 'true';
-}
-
-function readCompactExternalContentBanner(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactExternalContentBanner) === 'true';
-}
-
-function readCompactContactsPage(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactContactsPage) === 'true';
-}
-
-function readCompactContactsList(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactContactsList) === 'true';
-}
-
-function readHideContactMessageCounts(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideContactMessageCounts) === 'true';
-}
-
-function readCompactListEmptyState(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactListEmptyState) === 'true';
-}
-
-function readCompactListHeader(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactListHeader) === 'true';
-}
-
-function readCompactReaderToolbar(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactReaderToolbar) === 'true';
-}
-
-function readCompactReaderAvatars(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactReaderAvatars) === 'true';
-}
-
-function readCompactCollapsedThreads(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactCollapsedThreads) === 'true';
-}
-
-function readCompactReaderStatus(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactReaderStatus) === 'true';
-}
-
-function readCompactListErrorState(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactListErrorState) === 'true';
-}
-
-function readHideListErrorRetry(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideListErrorRetry) === 'true';
-}
-
-function readHideContactGroupLetters(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideContactGroupLetters) === 'true';
-}
-
-function readCompactContactsAddForm(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactContactsAddForm) === 'true';
-}
-
-function readHideContactsPageSubtitle(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideContactsPageSubtitle) === 'true';
-}
-
-function readCompactContactsSearch(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactContactsSearch) === 'true';
-}
-
-function readCompactContactsEmptyState(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactContactsEmptyState) === 'true';
-}
-
-function readHideContactsHeaderSettings(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideContactsHeaderSettings) === 'true';
-}
-
-function readHideContactsComposeButton(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideContactsComposeButton) === 'true';
-}
-
-function readHideContactsEmptyHints(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideContactsEmptyHints) === 'true';
-}
-
-function readHideContactsEmptyActions(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideContactsEmptyActions) === 'true';
-}
-
-function readHideContactsHoverActions(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideContactsHoverActions) === 'true';
-}
-
-function readHideContactsRowMailIcon(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideContactsRowMailIcon) === 'true';
-}
-
-function readHideContactsEmailLine(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideContactsEmailLine) === 'true';
-}
-
-function readCompactCalendarGrid(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactCalendarGrid) === 'true';
-}
-
-function readCompactCalendarHeader(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactCalendarHeader) === 'true';
-}
-
-function readCompactCalendarSidebar(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactCalendarSidebar) === 'true';
-}
-
-function readCalendarWeekStartsOnMonday(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.calendarWeekStartsOnMonday) === 'true';
-}
-
-function readHideCalendarEventTimes(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideCalendarEventTimes) === 'true';
-}
-
-function readCalendarMaxEventsPerDay(): CalendarMaxEventsPerDay {
-	if (!browser) return 3;
-	const value = localStorage.getItem(STORAGE.calendarMaxEventsPerDay);
-	if (value === '2' || value === '5') return Number(value) as CalendarMaxEventsPerDay;
-	return 3;
-}
-
-function readHideCalendarMoreEventsLabel(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideCalendarMoreEventsLabel) === 'true';
-}
-
-function readHideCalendarSidebarHeader(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideCalendarSidebarHeader) === 'true';
-}
-
-function readHideCalendarSidebarSettings(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideCalendarSidebarSettings) === 'true';
-}
-
-function readHideCalendarNewEventButton(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideCalendarNewEventButton) === 'true';
-}
-
-function readIconOnlyCalendarNewEvent(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.iconOnlyCalendarNewEvent) === 'true';
-}
-
-function readCompactCalendarEventPanel(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactCalendarEventPanel) === 'true';
-}
-
-function readHideCalendarEmptyEventPanel(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideCalendarEmptyEventPanel) === 'true';
-}
-
-function readCompactCalendarEmptyEventPanel(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactCalendarEmptyEventPanel) === 'true';
-}
-
-function readCompactCalendarCompose(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactCalendarCompose) === 'true';
-}
-
-function readHideCalendarComposeFieldLabels(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideCalendarComposeFieldLabels) === 'true';
-}
-
-function readHideCalendarPaneBorders(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.hideCalendarPaneBorders) === 'true';
-}
-
-function readCompactReaderInlineError(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.compactReaderInlineError) === 'true';
-}
-
-function readLastMailbox(): string {
-	if (!browser) return 'inbox';
-	const saved = localStorage.getItem(STORAGE.lastMailbox);
-	return saved?.trim() || 'inbox';
-}
-
-function readMinimalReaderToolbar(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.minimalReaderToolbar) !== 'false';
+	return readBool(STORAGE.rememberLastMailbox, false);
 }
 
 function readShowReaderListRail(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.showReaderListRail) === 'true';
+	return readBool(STORAGE.showReaderListRail, false);
 }
 
 function readEnableKeyboardShortcuts(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.enableKeyboardShortcuts) !== 'false';
+	return readBool(STORAGE.enableKeyboardShortcuts, true);
 }
 
 function readConfirmBeforeDelete(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.confirmBeforeDelete) !== 'false';
+	return readBool(STORAGE.confirmBeforeDelete, true);
 }
 
 function readConfirmBeforeDiscardCompose(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.confirmBeforeDiscardCompose) !== 'false';
+	return readBool(STORAGE.confirmBeforeDiscardCompose, true);
 }
 
 function readReturnToInboxAfterSend(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.returnToInboxAfterSend) === 'true';
-}
-
-function readEnableUndoSend(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.enableUndoSend) !== 'false';
+	return readBool(STORAGE.returnToInboxAfterSend, false);
 }
 
 function readUndoSendDelay(): UndoSendDelay {
 	if (!browser) return 5000;
 	const stored = localStorage.getItem(STORAGE.undoSendDelay);
 	if (stored === null) {
-		const legacy = localStorage.getItem(STORAGE.enableUndoSend);
+		const legacy = localStorage.getItem('zaur:enable-undo-send');
 		if (legacy === 'false') return 0;
 		return 5000;
 	}
@@ -862,15 +191,11 @@ function readUndoSendDelay(): UndoSendDelay {
 	return 5000;
 }
 
-function readStoredTextSize(key: string): 'small' | 'normal' | 'large' {
+function readReaderTextSize(): ReaderTextSize {
 	if (!browser) return 'normal';
-	const stored = localStorage.getItem(key);
+	const stored = localStorage.getItem(STORAGE.readerTextSize);
 	if (stored === 'small' || stored === 'large') return stored;
 	return 'normal';
-}
-
-function readReaderTextSize(): ReaderTextSize {
-	return readStoredTextSize(STORAGE.readerTextSize);
 }
 
 function readReaderWidth(): ReaderWidth {
@@ -886,13 +211,11 @@ function readReadingTypeface(): ReadingTypeface {
 }
 
 function readReaderCleanView(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.readerCleanView) !== 'false';
+	return readBool(STORAGE.readerCleanView, true);
 }
 
 function readFocusReadingDefault(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.focusReadingDefault) !== 'false';
+	return readBool(STORAGE.focusReadingDefault, true);
 }
 
 function readDefaultReplyMode(): DefaultReplyMode {
@@ -911,33 +234,27 @@ function readUseSignature(email: string | null): boolean {
 }
 
 function readMarkAsReadOnOpen(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.markAsReadOnOpen) !== 'false';
+	return readBool(STORAGE.markAsReadOnOpen, true);
 }
 
 function readShowUnreadInTitle(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.showUnreadInTitle) !== 'false';
+	return readBool(STORAGE.showUnreadInTitle, true);
 }
 
 function readShowUnreadAppBadge(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.showUnreadAppBadge) !== 'false';
+	return readBool(STORAGE.showUnreadAppBadge, true);
 }
 
 function readNotifyOnNewMail(): boolean {
-	if (!browser) return true;
-	return localStorage.getItem(STORAGE.notifyOnNewMail) !== 'false';
+	return readBool(STORAGE.notifyOnNewMail, true);
 }
 
 function readBccSelf(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.bccSelf) === 'true';
+	return readBool(STORAGE.bccSelf, false);
 }
 
 function readAutoArchiveOnReply(): boolean {
-	if (!browser) return false;
-	return localStorage.getItem(STORAGE.autoArchiveOnReply) === 'true';
+	return readBool(STORAGE.autoArchiveOnReply, false);
 }
 
 function readMarkAsReadDelay(): MarkAsReadDelay {
@@ -945,10 +262,6 @@ function readMarkAsReadDelay(): MarkAsReadDelay {
 	const value = Number(localStorage.getItem(STORAGE.markAsReadDelay));
 	if (value === 500 || value === 1000 || value === 2000) return value;
 	return 0;
-}
-
-function readWarnExternalSenders(): boolean {
-	return false;
 }
 
 function readTimeFormat(): TimeFormat {
@@ -963,6 +276,31 @@ function readSearchScope(): SearchScope {
 	return localStorage.getItem(STORAGE.searchScope) === 'current-folder' ? 'current-folder' : 'all';
 }
 
+function readHideActionToasts(): boolean {
+	return readBool(STORAGE.hideActionToasts, false);
+}
+
+function readCalendarWeekStartsOnMonday(): boolean {
+	return readBool(STORAGE.calendarWeekStartsOnMonday, false);
+}
+
+function readHideCalendarEventTimes(): boolean {
+	return readBool(STORAGE.hideCalendarEventTimes, false);
+}
+
+function readCalendarMaxEventsPerDay(): CalendarMaxEventsPerDay {
+	if (!browser) return 3;
+	const value = localStorage.getItem(STORAGE.calendarMaxEventsPerDay);
+	if (value === '2' || value === '5') return Number(value) as CalendarMaxEventsPerDay;
+	return 3;
+}
+
+function readLastMailbox(): string {
+	if (!browser) return 'inbox';
+	const saved = localStorage.getItem(STORAGE.lastMailbox);
+	return saved?.trim() || 'inbox';
+}
+
 function readDisplayName(email: string | null): string {
 	if (!browser || !email) return '';
 	return localStorage.getItem(STORAGE.displayName(email)) ?? '';
@@ -975,125 +313,18 @@ function readSignature(email: string | null): string {
 
 class SettingsStore {
 	blockExternalContent = $state(readBlockExternal());
-	hideExternalContentBanner = $state(readHideExternalContentBanner());
 	autoLoadMore = $state(readAutoLoadMore());
 	showAvatars = $state(readShowAvatars());
 	showSenderEmailInList = $state(readShowSenderEmailInList());
 	preferPlainText = $state(readPreferPlainText());
-	hideReaderRecipients = $state(readHideReaderRecipients());
-	toolIconsOnly = $state(readToolIconsOnly());
 	collapseQuotedInCompose = $state(readCollapseQuotedInCompose());
-	hideEmptyReaderPrompts = $state(readHideEmptyReaderPrompts());
-	hideEmptyReaderDescription = $state(readHideEmptyReaderDescription());
-	hideEmptyReaderActions = $state(readHideEmptyReaderActions());
-	hideEmptyReaderIcon = $state(readHideEmptyReaderIcon());
-	hideThreadSummary = $state(readHideThreadSummary());
-	showBulkSelect = true;
-	hideHeaderSearch = $state(readHideHeaderSearch());
-	hideOfflineIndicator = $state(readHideOfflineIndicator());
 	showQuickReply = $state(readShowQuickReply());
-	showReaderContactActions = $state(readShowReaderContactActions());
 	expandAllThreadMessages = $state(readExpandAllThreadMessages());
 	hideComposeHints = $state(readHideComposeHints());
 	showComposeContactSuggestions = $state(readShowComposeContactSuggestions());
-	showSearchContactSuggestions = $state(readShowSearchContactSuggestions());
 	showCcBccInCompose = $state(readShowCcBccInCompose());
 	reduceMotion = $state(readReduceMotion());
-	compactHeaderActions = $state(readCompactHeaderActions());
-	hideAppTitle = $state(readHideAppTitle());
-	compactUserMenu = $state(readCompactUserMenu());
-	hideListEmptyHints = $state(readHideListEmptyHints());
-	hideListEmptyActions = $state(readHideListEmptyActions());
-	hideSelectionHints = $state(readHideSelectionHints());
-	hideReaderTimestamps = $state(readHideReaderTimestamps());
-	hideCollapsedThreadPreviews = $state(readHideCollapsedThreadPreviews());
-	hideSettingsNavHints = $state(readHideSettingsNavHints());
-	hideSettingsPanelDescriptions = $state(readHideSettingsPanelDescriptions());
-	compactAttachments = $state(readCompactAttachments());
-	hideReaderSenderEmail = $state(readHideReaderSenderEmail());
-	hideComposeFromLine = $state(readHideComposeFromLine());
-	hideComposeFieldLabels = $state(readHideComposeFieldLabels());
-	hideOutboxUnlessFailed = $state(readHideOutboxUnlessFailed());
-	hideMoveMenuLabels = $state(readHideMoveMenuLabels());
-	iconOnlyComposeAttach = $state(readIconOnlyComposeAttach());
-	compactReaderHeader = $state(readCompactReaderHeader());
-	compactReaderBody = $state(readCompactReaderBody());
-	hideConnectingScreen = $state(readHideConnectingScreen());
-	compactToolSwitcher = $state(readCompactToolSwitcher());
-	hideSearchDropdownHeaders = $state(readHideSearchDropdownHeaders());
-	hidePaneBorders = $state(readHidePaneBorders());
-	hideListRowDividers = $state(readHideListRowDividers());
-	hideReaderPaneBorders = $state(readHideReaderPaneBorders());
-	hideSearchListPrefix = $state(readHideSearchListPrefix());
-	compactMobileSearch = $state(readCompactMobileSearch());
-	hideAccountFieldHints = $state(readHideAccountFieldHints());
-	compactQuickReply = $state(readCompactQuickReply());
-	iconOnlyComposeDiscard = $state(readIconOnlyComposeDiscard());
-	hideActionToasts = $state(readHideActionToasts());
-	compactToasts = $state(readCompactToasts());
-	hideToastIcons = $state(readHideToastIcons());
-	compactLoadMore = $state(readCompactLoadMore());
-	compactUserMenuDropdown = $state(readCompactUserMenuDropdown());
-	compactOutboxMenu = $state(readCompactOutboxMenu());
-	compactSettingsRows = $state(readCompactSettingsRows());
-	compactSettingsLayout = $state(readCompactSettingsLayout());
-	compactSettingsPanel = $state(readCompactSettingsPanel());
-	compactMoveMenu = $state(readCompactMoveMenu());
-	compactSearchDropdown = $state(readCompactSearchDropdown());
-	compactComposeSuggestions = $state(readCompactComposeSuggestions());
-	compactOfflineIndicator = $state(readCompactOfflineIndicator());
-	compactAppHeader = $state(readCompactAppHeader());
-	compactEmptyReader = $state(readCompactEmptyReader());
-	compactSettingsNav = $state(readCompactSettingsNav());
-	settingsDetailLevel = $state(readSettingsDetailLevel());
-	hideSettingsBackLink = $state(readHideSettingsBackLink());
-	hideSettingsPageTitle = $state(readHideSettingsPageTitle());
-	hideReaderStatusBackButton = $state(readHideReaderStatusBackButton());
-	hideReaderStatusMessage = $state(readHideReaderStatusMessage());
-	compactExternalContentBanner = $state(readCompactExternalContentBanner());
-	compactContactsPage = $state(readCompactContactsPage());
-	compactContactsList = $state(readCompactContactsList());
-	hideContactMessageCounts = $state(readHideContactMessageCounts());
-	compactListEmptyState = $state(readCompactListEmptyState());
-	compactListHeader = $state(readCompactListHeader());
-	compactReaderToolbar = $state(readCompactReaderToolbar());
-	compactReaderAvatars = $state(readCompactReaderAvatars());
-	compactCollapsedThreads = $state(readCompactCollapsedThreads());
-	compactReaderStatus = $state(readCompactReaderStatus());
-	compactListErrorState = $state(readCompactListErrorState());
-	hideListErrorRetry = $state(readHideListErrorRetry());
-	hideContactGroupLetters = $state(readHideContactGroupLetters());
-	compactContactsAddForm = $state(readCompactContactsAddForm());
-	hideContactsPageSubtitle = $state(readHideContactsPageSubtitle());
-	compactContactsSearch = $state(readCompactContactsSearch());
-	compactContactsEmptyState = $state(readCompactContactsEmptyState());
-	hideContactsHeaderSettings = $state(readHideContactsHeaderSettings());
-	hideContactsComposeButton = $state(readHideContactsComposeButton());
-	hideContactsEmptyHints = $state(readHideContactsEmptyHints());
-	hideContactsEmptyActions = $state(readHideContactsEmptyActions());
-	hideContactsHoverActions = $state(readHideContactsHoverActions());
-	hideContactsRowMailIcon = $state(readHideContactsRowMailIcon());
-	hideContactsEmailLine = $state(readHideContactsEmailLine());
-	compactCalendarGrid = $state(readCompactCalendarGrid());
-	compactCalendarHeader = $state(readCompactCalendarHeader());
-	compactCalendarSidebar = $state(readCompactCalendarSidebar());
-	calendarWeekStartsOnMonday = $state(readCalendarWeekStartsOnMonday());
-	hideCalendarEventTimes = $state(readHideCalendarEventTimes());
-	calendarMaxEventsPerDay = $state<CalendarMaxEventsPerDay>(readCalendarMaxEventsPerDay());
-	hideCalendarMoreEventsLabel = $state(readHideCalendarMoreEventsLabel());
-	hideCalendarSidebarHeader = $state(readHideCalendarSidebarHeader());
-	hideCalendarSidebarSettings = $state(readHideCalendarSidebarSettings());
-	hideCalendarNewEventButton = $state(readHideCalendarNewEventButton());
-	iconOnlyCalendarNewEvent = $state(readIconOnlyCalendarNewEvent());
-	compactCalendarEventPanel = $state(readCompactCalendarEventPanel());
-	hideCalendarEmptyEventPanel = $state(readHideCalendarEmptyEventPanel());
-	compactCalendarEmptyEventPanel = $state(readCompactCalendarEmptyEventPanel());
-	compactCalendarCompose = $state(readCompactCalendarCompose());
-	hideCalendarComposeFieldLabels = $state(readHideCalendarComposeFieldLabels());
-	hideCalendarPaneBorders = $state(readHideCalendarPaneBorders());
-	compactReaderInlineError = $state(readCompactReaderInlineError());
 	rememberLastMailbox = $state(readRememberLastMailbox());
-	minimalReaderToolbar = $state(readMinimalReaderToolbar());
 	showReaderListRail = $state(readShowReaderListRail());
 	enableKeyboardShortcuts = $state(readEnableKeyboardShortcuts());
 	confirmBeforeDelete = $state(readConfirmBeforeDelete());
@@ -1114,9 +345,12 @@ class SettingsStore {
 	bccSelf = $state(readBccSelf());
 	autoArchiveOnReply = $state(readAutoArchiveOnReply());
 	markAsReadDelay = $state<MarkAsReadDelay>(readMarkAsReadDelay());
-	warnExternalSenders = false;
 	timeFormat = $state<TimeFormat>(readTimeFormat());
 	searchScope = $state<SearchScope>(readSearchScope());
+	hideActionToasts = $state(readHideActionToasts());
+	calendarWeekStartsOnMonday = $state(readCalendarWeekStartsOnMonday());
+	hideCalendarEventTimes = $state(readHideCalendarEventTimes());
+	calendarMaxEventsPerDay = $state<CalendarMaxEventsPerDay>(readCalendarMaxEventsPerDay());
 	displayName = $state('');
 	signature = $state('');
 	useSignature = $state(true);
@@ -1124,129 +358,24 @@ class SettingsStore {
 	private userEmail: string | null = null;
 
 	init() {
-		if (browser) migrateLegacyMailViewMode();
+		if (browser) {
+			migrateLegacyMailViewMode();
+			purgeObsoleteSettings();
+		}
+
 		this.blockExternalContent = readBlockExternal();
-		this.hideExternalContentBanner = readHideExternalContentBanner();
 		this.autoLoadMore = readAutoLoadMore();
 		this.showAvatars = readShowAvatars();
 		this.showSenderEmailInList = readShowSenderEmailInList();
 		this.preferPlainText = readPreferPlainText();
-		this.hideReaderRecipients = readHideReaderRecipients();
-		this.toolIconsOnly = readToolIconsOnly();
 		this.collapseQuotedInCompose = readCollapseQuotedInCompose();
-		this.hideEmptyReaderPrompts = readHideEmptyReaderPrompts();
-		this.hideEmptyReaderDescription = readHideEmptyReaderDescription();
-		this.hideEmptyReaderActions = readHideEmptyReaderActions();
-		this.hideEmptyReaderIcon = readHideEmptyReaderIcon();
-		this.hideThreadSummary = readHideThreadSummary();
-		this.hideHeaderSearch = readHideHeaderSearch();
-		this.hideOfflineIndicator = readHideOfflineIndicator();
 		this.showQuickReply = readShowQuickReply();
-		this.showReaderContactActions = readShowReaderContactActions();
 		this.expandAllThreadMessages = readExpandAllThreadMessages();
 		this.hideComposeHints = readHideComposeHints();
 		this.showComposeContactSuggestions = readShowComposeContactSuggestions();
-		this.showSearchContactSuggestions = readShowSearchContactSuggestions();
 		this.showCcBccInCompose = readShowCcBccInCompose();
 		this.reduceMotion = readReduceMotion();
-		this.compactHeaderActions = readCompactHeaderActions();
-		this.hideAppTitle = readHideAppTitle();
-		this.compactUserMenu = readCompactUserMenu();
-		this.hideListEmptyHints = readHideListEmptyHints();
-		this.hideListEmptyActions = readHideListEmptyActions();
-		this.hideSelectionHints = readHideSelectionHints();
-		this.hideReaderTimestamps = readHideReaderTimestamps();
-		this.hideCollapsedThreadPreviews = readHideCollapsedThreadPreviews();
-		this.hideSettingsNavHints = readHideSettingsNavHints();
-		this.hideSettingsPanelDescriptions = readHideSettingsPanelDescriptions();
-		this.compactAttachments = readCompactAttachments();
-		this.hideReaderSenderEmail = readHideReaderSenderEmail();
-		this.hideComposeFromLine = readHideComposeFromLine();
-		this.hideComposeFieldLabels = readHideComposeFieldLabels();
-		this.hideOutboxUnlessFailed = readHideOutboxUnlessFailed();
-		this.hideMoveMenuLabels = readHideMoveMenuLabels();
-		this.iconOnlyComposeAttach = readIconOnlyComposeAttach();
-		this.compactReaderHeader = readCompactReaderHeader();
-		this.compactReaderBody = readCompactReaderBody();
-		this.hideConnectingScreen = readHideConnectingScreen();
-		this.compactToolSwitcher = readCompactToolSwitcher();
-		this.hideSearchDropdownHeaders = readHideSearchDropdownHeaders();
-		this.hidePaneBorders = readHidePaneBorders();
-		this.hideListRowDividers = readHideListRowDividers();
-		this.hideReaderPaneBorders = readHideReaderPaneBorders();
-		this.hideSearchListPrefix = readHideSearchListPrefix();
-		this.compactMobileSearch = readCompactMobileSearch();
-		this.hideAccountFieldHints = readHideAccountFieldHints();
-		this.compactQuickReply = readCompactQuickReply();
-		this.iconOnlyComposeDiscard = readIconOnlyComposeDiscard();
-		this.hideActionToasts = readHideActionToasts();
-		this.compactToasts = readCompactToasts();
-		this.hideToastIcons = readHideToastIcons();
-		this.compactLoadMore = readCompactLoadMore();
-		this.compactUserMenuDropdown = readCompactUserMenuDropdown();
-		this.compactOutboxMenu = readCompactOutboxMenu();
-		this.compactSettingsRows = readCompactSettingsRows();
-		this.compactSettingsLayout = readCompactSettingsLayout();
-		this.compactSettingsPanel = readCompactSettingsPanel();
-		this.compactMoveMenu = readCompactMoveMenu();
-		this.compactSearchDropdown = readCompactSearchDropdown();
-		this.compactComposeSuggestions = readCompactComposeSuggestions();
-		this.compactOfflineIndicator = readCompactOfflineIndicator();
-		this.compactAppHeader = readCompactAppHeader();
-		this.compactEmptyReader = readCompactEmptyReader();
-		this.compactSettingsNav = readCompactSettingsNav();
-		this.settingsDetailLevel = readSettingsDetailLevel();
-		this.hideSettingsBackLink = readHideSettingsBackLink();
-		this.hideSettingsPageTitle = readHideSettingsPageTitle();
-		this.hideReaderStatusBackButton = readHideReaderStatusBackButton();
-		this.hideReaderStatusMessage = readHideReaderStatusMessage();
-		this.compactExternalContentBanner = readCompactExternalContentBanner();
-		this.compactContactsPage = readCompactContactsPage();
-		this.compactContactsList = readCompactContactsList();
-		this.hideContactMessageCounts = readHideContactMessageCounts();
-		this.compactListEmptyState = readCompactListEmptyState();
-		this.compactListHeader = readCompactListHeader();
-		this.compactReaderToolbar = readCompactReaderToolbar();
-		this.compactReaderAvatars = readCompactReaderAvatars();
-		this.compactCollapsedThreads = readCompactCollapsedThreads();
-		this.compactReaderStatus = readCompactReaderStatus();
-		this.compactListErrorState = readCompactListErrorState();
-		this.hideListErrorRetry = readHideListErrorRetry();
-		this.hideContactGroupLetters = readHideContactGroupLetters();
-		this.compactContactsAddForm = readCompactContactsAddForm();
-		this.hideContactsPageSubtitle = readHideContactsPageSubtitle();
-		this.compactContactsSearch = readCompactContactsSearch();
-		this.compactContactsEmptyState = readCompactContactsEmptyState();
-		this.hideContactsHeaderSettings = readHideContactsHeaderSettings();
-		this.hideContactsComposeButton = readHideContactsComposeButton();
-		this.hideContactsEmptyHints = readHideContactsEmptyHints();
-		this.hideContactsEmptyActions = readHideContactsEmptyActions();
-		this.hideContactsHoverActions = readHideContactsHoverActions();
-		this.hideContactsRowMailIcon = readHideContactsRowMailIcon();
-		this.hideContactsEmailLine = readHideContactsEmailLine();
-		this.compactCalendarGrid = readCompactCalendarGrid();
-		this.compactCalendarHeader = readCompactCalendarHeader();
-		this.compactCalendarSidebar = readCompactCalendarSidebar();
-		this.calendarWeekStartsOnMonday = readCalendarWeekStartsOnMonday();
-		this.hideCalendarEventTimes = readHideCalendarEventTimes();
-		this.calendarMaxEventsPerDay = readCalendarMaxEventsPerDay();
-		this.hideCalendarMoreEventsLabel = readHideCalendarMoreEventsLabel();
-		this.hideCalendarSidebarHeader = readHideCalendarSidebarHeader();
-		this.hideCalendarSidebarSettings = readHideCalendarSidebarSettings();
-		this.hideCalendarNewEventButton = readHideCalendarNewEventButton();
-		this.iconOnlyCalendarNewEvent = readIconOnlyCalendarNewEvent();
-		this.compactCalendarEventPanel = readCompactCalendarEventPanel();
-		this.hideCalendarEmptyEventPanel = readHideCalendarEmptyEventPanel();
-		this.compactCalendarEmptyEventPanel = readCompactCalendarEmptyEventPanel();
-		this.compactCalendarCompose = readCompactCalendarCompose();
-		this.hideCalendarComposeFieldLabels = readHideCalendarComposeFieldLabels();
-		this.hideCalendarPaneBorders = readHideCalendarPaneBorders();
-		this.compactReaderInlineError = readCompactReaderInlineError();
 		this.rememberLastMailbox = readRememberLastMailbox();
-		this.minimalReaderToolbar = readMinimalReaderToolbar();
-		this.applyReduceMotion();
-		this.applyLayoutWidth();
-		this.applyHeaderLayout();
 		this.showReaderListRail = readShowReaderListRail();
 		this.enableKeyboardShortcuts = readEnableKeyboardShortcuts();
 		this.confirmBeforeDelete = readConfirmBeforeDelete();
@@ -1267,9 +396,16 @@ class SettingsStore {
 		this.bccSelf = readBccSelf();
 		this.autoArchiveOnReply = readAutoArchiveOnReply();
 		this.markAsReadDelay = readMarkAsReadDelay();
-		// Always false
 		this.timeFormat = readTimeFormat();
 		this.searchScope = readSearchScope();
+		this.hideActionToasts = readHideActionToasts();
+		this.calendarWeekStartsOnMonday = readCalendarWeekStartsOnMonday();
+		this.hideCalendarEventTimes = readHideCalendarEventTimes();
+		this.calendarMaxEventsPerDay = readCalendarMaxEventsPerDay();
+
+		this.applyReduceMotion();
+		this.applyLayoutWidth();
+		this.applyHeaderLayout();
 		this.applyReaderTextSize(this.readerTextSize);
 		this.applyReaderWidth(this.readerWidth);
 		this.applyReadingTypeface(this.readingTypeface);
@@ -1283,7 +419,6 @@ class SettingsStore {
 		this.useSignature = readUseSignature(email);
 	}
 
-	/** Prepend blank lines and signature before optional quoted reply/forward content. */
 	composeBodyWithSignature(suffix = ''): string {
 		if (!this.useSignature) return suffix;
 		const trimmed = this.signature.trim();
@@ -1312,7 +447,6 @@ class SettingsStore {
 		);
 	}
 
-	/** Load preferences from the signed-in JMAP account (newer copy wins). */
 	async syncFromAccount(): Promise<void> {
 		if (!this.userEmail) return;
 
@@ -1320,7 +454,6 @@ class SettingsStore {
 		if (result === 'applied') {
 			void import('$lib/stores/theme.svelte').then(({ theme }) => theme.init());
 		} else if (result === 'empty') {
-			// Only push when this account has synced from this device before.
 			if (browser && localStorage.getItem(accountSettingsSyncAtKey(this.userEmail))) {
 				scheduleAccountSettingsPush();
 			}
@@ -1363,839 +496,76 @@ class SettingsStore {
 
 	setBlockExternalContent(value: boolean) {
 		this.blockExternalContent = value;
-		if (browser) {
-			this.writeStorage(STORAGE.blockExternal, String(value));
-		}
-	}
-
-	setHideExternalContentBanner(value: boolean) {
-		this.hideExternalContentBanner = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideExternalContentBanner, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.blockExternal, String(value));
 	}
 
 	setAutoLoadMore(value: boolean) {
 		this.autoLoadMore = value;
-		if (browser) {
-			this.writeStorage(STORAGE.autoLoadMore, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.autoLoadMore, String(value));
 	}
 
 	setShowAvatars(value: boolean) {
 		this.showAvatars = value;
-		if (browser) {
-			this.writeStorage(STORAGE.showAvatars, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.showAvatars, String(value));
 	}
 
 	setShowSenderEmailInList(value: boolean) {
 		this.showSenderEmailInList = value;
-		if (browser) {
-			this.writeStorage(STORAGE.showSenderEmailInList, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.showSenderEmailInList, String(value));
 	}
 
 	setPreferPlainText(value: boolean) {
 		this.preferPlainText = value;
-		if (browser) {
-			this.writeStorage(STORAGE.preferPlainText, String(value));
-		}
-	}
-
-	setHideReaderRecipients(value: boolean) {
-		this.hideReaderRecipients = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideReaderRecipients, String(value));
-		}
-	}
-
-	setToolIconsOnly(value: boolean) {
-		this.toolIconsOnly = value;
-		if (browser) {
-			this.writeStorage(STORAGE.toolIconsOnly, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.preferPlainText, String(value));
 	}
 
 	setCollapseQuotedInCompose(value: boolean) {
 		this.collapseQuotedInCompose = value;
-		if (browser) {
-			this.writeStorage(STORAGE.collapseQuotedInCompose, String(value));
-		}
-	}
-
-	setHideEmptyReaderPrompts(value: boolean) {
-		this.hideEmptyReaderPrompts = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideEmptyReaderPrompts, String(value));
-		}
-	}
-
-	setHideEmptyReaderDescription(value: boolean) {
-		this.hideEmptyReaderDescription = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideEmptyReaderDescription, String(value));
-		}
-	}
-
-	setHideEmptyReaderActions(value: boolean) {
-		this.hideEmptyReaderActions = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideEmptyReaderActions, String(value));
-		}
-	}
-
-	setHideEmptyReaderIcon(value: boolean) {
-		this.hideEmptyReaderIcon = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideEmptyReaderIcon, String(value));
-		}
-	}
-
-	setHideThreadSummary(value: boolean) {
-		this.hideThreadSummary = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideThreadSummary, String(value));
-		}
-	}
-
-	setShowBulkSelect(value: boolean) {
-		// Always true
-	}
-
-	setHideHeaderSearch(value: boolean) {
-		this.hideHeaderSearch = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideHeaderSearch, String(value));
-		}
-	}
-
-	setHideOfflineIndicator(value: boolean) {
-		this.hideOfflineIndicator = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideOfflineIndicator, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.collapseQuotedInCompose, String(value));
 	}
 
 	setShowQuickReply(value: boolean) {
 		this.showQuickReply = value;
-		if (browser) {
-			this.writeStorage(STORAGE.showQuickReply, String(value));
-		}
-	}
-
-	setShowReaderContactActions(value: boolean) {
-		this.showReaderContactActions = value;
-		if (browser) {
-			this.writeStorage(STORAGE.showReaderContactActions, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.showQuickReply, String(value));
 	}
 
 	setExpandAllThreadMessages(value: boolean) {
 		this.expandAllThreadMessages = value;
-		if (browser) {
-			this.writeStorage(STORAGE.expandAllThreadMessages, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.expandAllThreadMessages, String(value));
 	}
 
 	setHideComposeHints(value: boolean) {
 		this.hideComposeHints = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideComposeHints, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.hideComposeHints, String(value));
 	}
 
 	setShowComposeContactSuggestions(value: boolean) {
 		this.showComposeContactSuggestions = value;
-		if (browser) {
-			this.writeStorage(STORAGE.showComposeContactSuggestions, String(value));
-		}
-	}
-
-	setShowSearchContactSuggestions(value: boolean) {
-		this.showSearchContactSuggestions = value;
-		if (browser) {
-			this.writeStorage(STORAGE.showSearchContactSuggestions, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.showComposeContactSuggestions, String(value));
 	}
 
 	setShowCcBccInCompose(value: boolean) {
 		this.showCcBccInCompose = value;
-		if (browser) {
-			this.writeStorage(STORAGE.showCcBccInCompose, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.showCcBccInCompose, String(value));
 	}
 
 	setReduceMotion(value: boolean) {
 		this.reduceMotion = value;
-		if (browser) {
-			this.writeStorage(STORAGE.reduceMotion, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.reduceMotion, String(value));
 		this.applyReduceMotion();
-	}
-
-	setCompactHeaderActions(value: boolean) {
-		this.compactHeaderActions = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactHeaderActions, String(value));
-		}
 	}
 
 	setRememberLastMailbox(value: boolean) {
 		this.rememberLastMailbox = value;
-		if (browser) {
-			this.writeStorage(STORAGE.rememberLastMailbox, String(value));
-		}
-	}
-
-	setHideAppTitle(value: boolean) {
-		this.hideAppTitle = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideAppTitle, String(value));
-		}
-	}
-
-	setCompactUserMenu(value: boolean) {
-		this.compactUserMenu = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactUserMenu, String(value));
-		}
-	}
-
-	setHideListEmptyHints(value: boolean) {
-		this.hideListEmptyHints = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideListEmptyHints, String(value));
-		}
-	}
-
-	setHideListEmptyActions(value: boolean) {
-		this.hideListEmptyActions = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideListEmptyActions, String(value));
-		}
-	}
-
-	setHideSelectionHints(value: boolean) {
-		this.hideSelectionHints = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideSelectionHints, String(value));
-		}
-	}
-
-	setHideReaderTimestamps(value: boolean) {
-		this.hideReaderTimestamps = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideReaderTimestamps, String(value));
-		}
-	}
-
-	setHideCollapsedThreadPreviews(value: boolean) {
-		this.hideCollapsedThreadPreviews = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideCollapsedThreadPreviews, String(value));
-		}
-	}
-
-	setHideSettingsNavHints(value: boolean) {
-		this.hideSettingsNavHints = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideSettingsNavHints, String(value));
-		}
-	}
-
-	setHideSettingsPanelDescriptions(value: boolean) {
-		this.hideSettingsPanelDescriptions = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideSettingsPanelDescriptions, String(value));
-		}
-	}
-
-	setCompactAttachments(value: boolean) {
-		this.compactAttachments = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactAttachments, String(value));
-		}
-	}
-
-	setHideReaderSenderEmail(value: boolean) {
-		this.hideReaderSenderEmail = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideReaderSenderEmail, String(value));
-		}
-	}
-
-	setHideComposeFromLine(value: boolean) {
-		this.hideComposeFromLine = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideComposeFromLine, String(value));
-		}
-	}
-
-	setHideComposeFieldLabels(value: boolean) {
-		this.hideComposeFieldLabels = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideComposeFieldLabels, String(value));
-		}
-	}
-
-	setHideOutboxUnlessFailed(value: boolean) {
-		this.hideOutboxUnlessFailed = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideOutboxUnlessFailed, String(value));
-		}
-	}
-
-	setHideMoveMenuLabels(value: boolean) {
-		this.hideMoveMenuLabels = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideMoveMenuLabels, String(value));
-		}
-	}
-
-	setIconOnlyComposeAttach(value: boolean) {
-		this.iconOnlyComposeAttach = value;
-		if (browser) {
-			this.writeStorage(STORAGE.iconOnlyComposeAttach, String(value));
-		}
-	}
-
-	setCompactReaderHeader(value: boolean) {
-		this.compactReaderHeader = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactReaderHeader, String(value));
-		}
-	}
-
-	setCompactReaderBody(value: boolean) {
-		this.compactReaderBody = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactReaderBody, String(value));
-		}
-	}
-
-	setHideConnectingScreen(value: boolean) {
-		this.hideConnectingScreen = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideConnectingScreen, String(value));
-		}
-	}
-
-	setCompactToolSwitcher(value: boolean) {
-		this.compactToolSwitcher = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactToolSwitcher, String(value));
-		}
-	}
-
-	setHideSearchDropdownHeaders(value: boolean) {
-		this.hideSearchDropdownHeaders = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideSearchDropdownHeaders, String(value));
-		}
-	}
-
-	setHidePaneBorders(value: boolean) {
-		this.hidePaneBorders = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hidePaneBorders, String(value));
-		}
-	}
-
-	setHideListRowDividers(value: boolean) {
-		this.hideListRowDividers = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideListRowDividers, String(value));
-		}
-	}
-
-	setHideReaderPaneBorders(value: boolean) {
-		this.hideReaderPaneBorders = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideReaderPaneBorders, String(value));
-		}
-	}
-
-	setHideSearchListPrefix(value: boolean) {
-		this.hideSearchListPrefix = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideSearchListPrefix, String(value));
-		}
-	}
-
-	setCompactMobileSearch(value: boolean) {
-		this.compactMobileSearch = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactMobileSearch, String(value));
-		}
-	}
-
-	setHideAccountFieldHints(value: boolean) {
-		this.hideAccountFieldHints = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideAccountFieldHints, String(value));
-		}
-	}
-
-	setCompactQuickReply(value: boolean) {
-		this.compactQuickReply = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactQuickReply, String(value));
-		}
-	}
-
-	setIconOnlyComposeDiscard(value: boolean) {
-		this.iconOnlyComposeDiscard = value;
-		if (browser) {
-			this.writeStorage(STORAGE.iconOnlyComposeDiscard, String(value));
-		}
-	}
-
-	setHideActionToasts(value: boolean) {
-		this.hideActionToasts = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideActionToasts, String(value));
-		}
-	}
-
-	setCompactToasts(value: boolean) {
-		this.compactToasts = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactToasts, String(value));
-		}
-	}
-
-	setHideToastIcons(value: boolean) {
-		this.hideToastIcons = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideToastIcons, String(value));
-		}
-	}
-
-	setCompactLoadMore(value: boolean) {
-		this.compactLoadMore = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactLoadMore, String(value));
-		}
-	}
-
-	setCompactUserMenuDropdown(value: boolean) {
-		this.compactUserMenuDropdown = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactUserMenuDropdown, String(value));
-		}
-	}
-
-	setCompactOutboxMenu(value: boolean) {
-		this.compactOutboxMenu = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactOutboxMenu, String(value));
-		}
-	}
-
-	setCompactSettingsRows(value: boolean) {
-		this.compactSettingsRows = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactSettingsRows, String(value));
-		}
-	}
-
-	setCompactSettingsLayout(value: boolean) {
-		this.compactSettingsLayout = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactSettingsLayout, String(value));
-		}
-	}
-
-	setCompactSettingsPanel(value: boolean) {
-		this.compactSettingsPanel = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactSettingsPanel, String(value));
-		}
-	}
-
-	setCompactMoveMenu(value: boolean) {
-		this.compactMoveMenu = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactMoveMenu, String(value));
-		}
-	}
-
-	setCompactSearchDropdown(value: boolean) {
-		this.compactSearchDropdown = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactSearchDropdown, String(value));
-		}
-	}
-
-	setCompactComposeSuggestions(value: boolean) {
-		this.compactComposeSuggestions = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactComposeSuggestions, String(value));
-		}
-	}
-
-	setCompactOfflineIndicator(value: boolean) {
-		this.compactOfflineIndicator = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactOfflineIndicator, String(value));
-		}
-	}
-
-	setCompactAppHeader(value: boolean) {
-		this.compactAppHeader = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactAppHeader, String(value));
-		}
-		this.applyHeaderLayout();
-	}
-
-	setCompactEmptyReader(value: boolean) {
-		this.compactEmptyReader = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactEmptyReader, String(value));
-		}
-	}
-
-	setCompactSettingsNav(value: boolean) {
-		this.compactSettingsNav = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactSettingsNav, String(value));
-		}
-	}
-
-	setSettingsDetailLevel(value: SettingsDetailLevel) {
-		this.settingsDetailLevel = value;
-		if (browser) {
-			this.writeStorage(STORAGE.settingsDetailLevel, value);
-		}
-	}
-
-	setHideSettingsBackLink(value: boolean) {
-		this.hideSettingsBackLink = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideSettingsBackLink, String(value));
-		}
-	}
-
-	setHideSettingsPageTitle(value: boolean) {
-		this.hideSettingsPageTitle = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideSettingsPageTitle, String(value));
-		}
-	}
-
-	setHideReaderStatusBackButton(value: boolean) {
-		this.hideReaderStatusBackButton = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideReaderStatusBackButton, String(value));
-		}
-	}
-
-	setHideReaderStatusMessage(value: boolean) {
-		this.hideReaderStatusMessage = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideReaderStatusMessage, String(value));
-		}
-	}
-
-	setCompactExternalContentBanner(value: boolean) {
-		this.compactExternalContentBanner = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactExternalContentBanner, String(value));
-		}
-	}
-
-	setCompactContactsPage(value: boolean) {
-		this.compactContactsPage = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactContactsPage, String(value));
-		}
-	}
-
-	setCompactContactsList(value: boolean) {
-		this.compactContactsList = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactContactsList, String(value));
-		}
-	}
-
-	setHideContactMessageCounts(value: boolean) {
-		this.hideContactMessageCounts = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideContactMessageCounts, String(value));
-		}
-	}
-
-	setCompactListEmptyState(value: boolean) {
-		this.compactListEmptyState = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactListEmptyState, String(value));
-		}
-	}
-
-	setCompactListHeader(value: boolean) {
-		this.compactListHeader = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactListHeader, String(value));
-		}
-	}
-
-	setCompactReaderToolbar(value: boolean) {
-		this.compactReaderToolbar = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactReaderToolbar, String(value));
-		}
-	}
-
-	setCompactReaderAvatars(value: boolean) {
-		this.compactReaderAvatars = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactReaderAvatars, String(value));
-		}
-	}
-
-	setCompactCollapsedThreads(value: boolean) {
-		this.compactCollapsedThreads = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactCollapsedThreads, String(value));
-		}
-	}
-
-	setCompactReaderStatus(value: boolean) {
-		this.compactReaderStatus = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactReaderStatus, String(value));
-		}
-	}
-
-	setCompactListErrorState(value: boolean) {
-		this.compactListErrorState = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactListErrorState, String(value));
-		}
-	}
-
-	setHideListErrorRetry(value: boolean) {
-		this.hideListErrorRetry = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideListErrorRetry, String(value));
-		}
-	}
-
-	setHideContactGroupLetters(value: boolean) {
-		this.hideContactGroupLetters = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideContactGroupLetters, String(value));
-		}
-	}
-
-	setCompactContactsAddForm(value: boolean) {
-		this.compactContactsAddForm = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactContactsAddForm, String(value));
-		}
-	}
-
-	setHideContactsPageSubtitle(value: boolean) {
-		this.hideContactsPageSubtitle = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideContactsPageSubtitle, String(value));
-		}
-	}
-
-	setCompactContactsSearch(value: boolean) {
-		this.compactContactsSearch = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactContactsSearch, String(value));
-		}
-	}
-
-	setCompactContactsEmptyState(value: boolean) {
-		this.compactContactsEmptyState = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactContactsEmptyState, String(value));
-		}
-	}
-
-	setHideContactsHeaderSettings(value: boolean) {
-		this.hideContactsHeaderSettings = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideContactsHeaderSettings, String(value));
-		}
-	}
-
-	setHideContactsComposeButton(value: boolean) {
-		this.hideContactsComposeButton = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideContactsComposeButton, String(value));
-		}
-	}
-
-	setHideContactsEmptyHints(value: boolean) {
-		this.hideContactsEmptyHints = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideContactsEmptyHints, String(value));
-		}
-	}
-
-	setHideContactsEmptyActions(value: boolean) {
-		this.hideContactsEmptyActions = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideContactsEmptyActions, String(value));
-		}
-	}
-
-	setHideContactsHoverActions(value: boolean) {
-		this.hideContactsHoverActions = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideContactsHoverActions, String(value));
-		}
-	}
-
-	setHideContactsRowMailIcon(value: boolean) {
-		this.hideContactsRowMailIcon = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideContactsRowMailIcon, String(value));
-		}
-	}
-
-	setHideContactsEmailLine(value: boolean) {
-		this.hideContactsEmailLine = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideContactsEmailLine, String(value));
-		}
-	}
-
-	setCompactCalendarGrid(value: boolean) {
-		this.compactCalendarGrid = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactCalendarGrid, String(value));
-		}
-	}
-
-	setCompactCalendarHeader(value: boolean) {
-		this.compactCalendarHeader = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactCalendarHeader, String(value));
-		}
-	}
-
-	setCompactCalendarSidebar(value: boolean) {
-		this.compactCalendarSidebar = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactCalendarSidebar, String(value));
-		}
-	}
-
-	setCalendarWeekStartsOnMonday(value: boolean) {
-		this.calendarWeekStartsOnMonday = value;
-		if (browser) {
-			this.writeStorage(STORAGE.calendarWeekStartsOnMonday, String(value));
-		}
-	}
-
-	setHideCalendarEventTimes(value: boolean) {
-		this.hideCalendarEventTimes = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideCalendarEventTimes, String(value));
-		}
-	}
-
-	setCalendarMaxEventsPerDay(value: CalendarMaxEventsPerDay) {
-		this.calendarMaxEventsPerDay = value;
-		if (browser) {
-			this.writeStorage(STORAGE.calendarMaxEventsPerDay, String(value));
-		}
-	}
-
-	setHideCalendarMoreEventsLabel(value: boolean) {
-		this.hideCalendarMoreEventsLabel = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideCalendarMoreEventsLabel, String(value));
-		}
-	}
-
-	setHideCalendarSidebarHeader(value: boolean) {
-		this.hideCalendarSidebarHeader = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideCalendarSidebarHeader, String(value));
-		}
-	}
-
-	setHideCalendarSidebarSettings(value: boolean) {
-		this.hideCalendarSidebarSettings = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideCalendarSidebarSettings, String(value));
-		}
-	}
-
-	setHideCalendarNewEventButton(value: boolean) {
-		this.hideCalendarNewEventButton = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideCalendarNewEventButton, String(value));
-		}
-	}
-
-	setIconOnlyCalendarNewEvent(value: boolean) {
-		this.iconOnlyCalendarNewEvent = value;
-		if (browser) {
-			this.writeStorage(STORAGE.iconOnlyCalendarNewEvent, String(value));
-		}
-	}
-
-	setCompactCalendarEventPanel(value: boolean) {
-		this.compactCalendarEventPanel = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactCalendarEventPanel, String(value));
-		}
-	}
-
-	setHideCalendarEmptyEventPanel(value: boolean) {
-		this.hideCalendarEmptyEventPanel = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideCalendarEmptyEventPanel, String(value));
-		}
-	}
-
-	setCompactCalendarEmptyEventPanel(value: boolean) {
-		this.compactCalendarEmptyEventPanel = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactCalendarEmptyEventPanel, String(value));
-		}
-	}
-
-	setCompactCalendarCompose(value: boolean) {
-		this.compactCalendarCompose = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactCalendarCompose, String(value));
-		}
-	}
-
-	setHideCalendarComposeFieldLabels(value: boolean) {
-		this.hideCalendarComposeFieldLabels = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideCalendarComposeFieldLabels, String(value));
-		}
-	}
-
-	setHideCalendarPaneBorders(value: boolean) {
-		this.hideCalendarPaneBorders = value;
-		if (browser) {
-			this.writeStorage(STORAGE.hideCalendarPaneBorders, String(value));
-		}
-	}
-
-	setCompactReaderInlineError(value: boolean) {
-		this.compactReaderInlineError = value;
-		if (browser) {
-			this.writeStorage(STORAGE.compactReaderInlineError, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.rememberLastMailbox, String(value));
 	}
 
 	setLastMailbox(routeId: string) {
-		if (!browser || !routeId.trim()) return;
-		this.writeStorage(STORAGE.lastMailbox, routeId.trim());
+		if (!browser) return;
+		const trimmed = routeId.trim();
+		if (trimmed) {
+			this.writeStorage(STORAGE.lastMailbox, trimmed);
+		}
 	}
 
 	preferredMailHref(): string {
@@ -2203,105 +573,72 @@ class SettingsStore {
 		return mailListHref(routeId);
 	}
 
-	setMinimalReaderToolbar(value: boolean) {
-		this.minimalReaderToolbar = value;
-		if (browser) {
-			this.writeStorage(STORAGE.minimalReaderToolbar, String(value));
-		}
-	}
-
 	setShowReaderListRail(value: boolean) {
 		this.showReaderListRail = value;
-		if (browser) {
-			this.writeStorage(STORAGE.showReaderListRail, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.showReaderListRail, String(value));
 	}
 
 	setEnableKeyboardShortcuts(value: boolean) {
 		this.enableKeyboardShortcuts = value;
-		if (browser) {
-			this.writeStorage(STORAGE.enableKeyboardShortcuts, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.enableKeyboardShortcuts, String(value));
 	}
 
 	setConfirmBeforeDelete(value: boolean) {
 		this.confirmBeforeDelete = value;
-		if (browser) {
-			this.writeStorage(STORAGE.confirmBeforeDelete, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.confirmBeforeDelete, String(value));
 	}
 
 	setConfirmBeforeDiscardCompose(value: boolean) {
 		this.confirmBeforeDiscardCompose = value;
-		if (browser) {
-			this.writeStorage(STORAGE.confirmBeforeDiscardCompose, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.confirmBeforeDiscardCompose, String(value));
 	}
 
 	setReturnToInboxAfterSend(value: boolean) {
 		this.returnToInboxAfterSend = value;
-		if (browser) {
-			this.writeStorage(STORAGE.returnToInboxAfterSend, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.returnToInboxAfterSend, String(value));
 	}
 
 	setUndoSendDelay(value: UndoSendDelay) {
 		this.undoSendDelay = value;
-		if (browser) {
-			this.writeStorage(STORAGE.undoSendDelay, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.undoSendDelay, String(value));
 	}
 
 	setReaderTextSize(value: ReaderTextSize) {
 		this.readerTextSize = value;
-		if (browser) {
-			this.writeStorage(STORAGE.readerTextSize, value);
-		}
+		if (browser) this.writeStorage(STORAGE.readerTextSize, value);
 		this.applyReaderTextSize(value);
 	}
 
 	setReaderWidth(value: ReaderWidth) {
 		this.readerWidth = value;
-		if (browser) {
-			this.writeStorage(STORAGE.readerWidth, value);
-		}
+		if (browser) this.writeStorage(STORAGE.readerWidth, value);
 		this.applyReaderWidth(value);
 	}
 
 	setReadingTypeface(value: ReadingTypeface) {
 		this.readingTypeface = value;
-		if (browser) {
-			this.writeStorage(STORAGE.readingTypeface, value);
-		}
+		if (browser) this.writeStorage(STORAGE.readingTypeface, value);
 		this.applyReadingTypeface(value);
 	}
 
 	setReaderCleanView(value: boolean) {
 		this.readerCleanView = value;
-		if (browser) {
-			this.writeStorage(STORAGE.readerCleanView, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.readerCleanView, String(value));
 	}
 
 	setFocusReadingDefault(value: boolean) {
 		this.focusReadingDefault = value;
-		if (browser) {
-			this.writeStorage(STORAGE.focusReadingDefault, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.focusReadingDefault, String(value));
 	}
 
 	setDefaultReplyMode(value: DefaultReplyMode) {
 		this.defaultReplyMode = value;
-		if (browser) {
-			this.writeStorage(STORAGE.defaultReplyMode, value);
-		}
+		if (browser) this.writeStorage(STORAGE.defaultReplyMode, value);
 	}
 
 	setDefaultComposeFormat(value: ComposeFormat) {
 		this.defaultComposeFormat = value;
-		if (browser) {
-			this.writeStorage(STORAGE.defaultComposeFormat, value);
-		}
+		if (browser) this.writeStorage(STORAGE.defaultComposeFormat, value);
 	}
 
 	setUseSignature(value: boolean) {
@@ -2312,17 +649,13 @@ class SettingsStore {
 
 	setMarkAsReadOnOpen(value: boolean) {
 		this.markAsReadOnOpen = value;
-		if (browser) {
-			this.writeStorage(STORAGE.markAsReadOnOpen, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.markAsReadOnOpen, String(value));
 	}
 
 	setShowUnreadInTitle(value: boolean) {
 		this.showUnreadInTitle = value;
 		if (browser) {
 			this.writeStorage(STORAGE.showUnreadInTitle, String(value));
-		}
-		if (browser) {
 			void import('$lib/utils/document-title').then(({ applyUnreadPrefixToDocument }) =>
 				applyUnreadPrefixToDocument()
 			);
@@ -2343,50 +676,54 @@ class SettingsStore {
 		this.notifyOnNewMail = value;
 		if (browser) {
 			this.writeStorage(STORAGE.notifyOnNewMail, String(value));
-			if (value) {
-				void requestBrowserNotificationPermission();
-			}
+			if (value) void requestBrowserNotificationPermission();
 			return syncPushSubscription(value);
 		}
 	}
 
 	setBccSelf(value: boolean) {
 		this.bccSelf = value;
-		if (browser) {
-			this.writeStorage(STORAGE.bccSelf, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.bccSelf, String(value));
 	}
 
 	setAutoArchiveOnReply(value: boolean) {
 		this.autoArchiveOnReply = value;
-		if (browser) {
-			this.writeStorage(STORAGE.autoArchiveOnReply, String(value));
-		}
+		if (browser) this.writeStorage(STORAGE.autoArchiveOnReply, String(value));
 	}
 
 	setMarkAsReadDelay(value: MarkAsReadDelay) {
 		this.markAsReadDelay = value;
-		if (browser) {
-			this.writeStorage(STORAGE.markAsReadDelay, String(value));
-		}
-	}
-
-	setWarnExternalSenders(value: boolean) {
-		// Always false
+		if (browser) this.writeStorage(STORAGE.markAsReadDelay, String(value));
 	}
 
 	setTimeFormat(value: TimeFormat) {
 		this.timeFormat = value;
-		if (browser) {
-			this.writeStorage(STORAGE.timeFormat, value);
-		}
+		if (browser) this.writeStorage(STORAGE.timeFormat, value);
 	}
 
 	setSearchScope(value: SearchScope) {
 		this.searchScope = value;
-		if (browser) {
-			this.writeStorage(STORAGE.searchScope, value);
-		}
+		if (browser) this.writeStorage(STORAGE.searchScope, value);
+	}
+
+	setHideActionToasts(value: boolean) {
+		this.hideActionToasts = value;
+		if (browser) this.writeStorage(STORAGE.hideActionToasts, String(value));
+	}
+
+	setCalendarWeekStartsOnMonday(value: boolean) {
+		this.calendarWeekStartsOnMonday = value;
+		if (browser) this.writeStorage(STORAGE.calendarWeekStartsOnMonday, String(value));
+	}
+
+	setHideCalendarEventTimes(value: boolean) {
+		this.hideCalendarEventTimes = value;
+		if (browser) this.writeStorage(STORAGE.hideCalendarEventTimes, String(value));
+	}
+
+	setCalendarMaxEventsPerDay(value: CalendarMaxEventsPerDay) {
+		this.calendarMaxEventsPerDay = value;
+		if (browser) this.writeStorage(STORAGE.calendarMaxEventsPerDay, String(value));
 	}
 
 	setDisplayName(value: string) {
@@ -2413,311 +750,76 @@ class SettingsStore {
 		}
 	}
 
-	resetDisplaySettings() {
-		this.setShowAvatars(false);
-		this.setShowSenderEmailInList(false);
-		this.setPreferPlainText(false);
-		this.setHideReaderRecipients(true);
-		this.setToolIconsOnly(false);
-		this.setCollapseQuotedInCompose(false);
-		this.setHideEmptyReaderPrompts(false);
-		this.setHideEmptyReaderDescription(false);
-		this.setHideEmptyReaderActions(false);
-		this.setHideEmptyReaderIcon(false);
-		this.setHideThreadSummary(true);
-		this.setShowBulkSelect(false);
-		this.setHideHeaderSearch(false);
-		this.setHideOfflineIndicator(false);
-		this.setReaderTextSize('normal');
-		this.setReaderWidth('wide');
-		this.setReadingTypeface('sans');
-		this.setReaderCleanView(true);
-		this.setFocusReadingDefault(true);
-		this.setDefaultReplyMode('reply');
-		this.setBlockExternalContent(true);
-		this.setHideExternalContentBanner(false);
-		this.setAutoLoadMore(false);
-		this.setShowQuickReply(false);
-		this.setExpandAllThreadMessages(false);
-		this.setShowReaderContactActions(false);
-		this.setHideComposeHints(false);
-		this.setShowComposeContactSuggestions(true);
-		this.setShowSearchContactSuggestions(true);
-		this.setShowCcBccInCompose(true);
-		this.setReduceMotion(false);
-		this.setCompactHeaderActions(false);
-		this.setHideAppTitle(false);
-		this.setCompactUserMenu(false);
-		this.setHideListEmptyHints(false);
-		this.setHideListEmptyActions(false);
-		this.setHideSelectionHints(false);
-		this.setHideReaderTimestamps(true);
-		this.setHideCollapsedThreadPreviews(true);
-		this.setHideSettingsNavHints(false);
-		this.setHideSettingsPanelDescriptions(false);
-		this.setCompactAttachments(false);
-		this.setHideReaderSenderEmail(false);
-		this.setHideComposeFromLine(false);
-		this.setHideComposeFieldLabels(false);
-		this.setHideOutboxUnlessFailed(false);
-		this.setHideMoveMenuLabels(false);
-		this.setIconOnlyComposeAttach(false);
-		this.setCompactReaderHeader(false);
-		this.setCompactReaderBody(false);
-		this.setHideConnectingScreen(false);
-		this.setCompactToolSwitcher(false);
-		this.setHideSearchDropdownHeaders(false);
-		this.setHidePaneBorders(false);
-		this.setHideListRowDividers(false);
-		this.setHideReaderPaneBorders(false);
-		this.setHideSearchListPrefix(false);
-		this.setCompactMobileSearch(false);
-		this.setHideAccountFieldHints(false);
-		this.setCompactQuickReply(false);
-		this.setIconOnlyComposeDiscard(false);
-		this.setHideActionToasts(false);
-		this.setCompactToasts(false);
-		this.setHideToastIcons(false);
-		this.setCompactLoadMore(false);
-		this.setCompactUserMenuDropdown(false);
-		this.setCompactOutboxMenu(false);
-		this.setCompactSettingsRows(false);
-		this.setCompactSettingsLayout(false);
-		this.setCompactSettingsPanel(false);
-		this.setCompactMoveMenu(false);
-		this.setCompactSearchDropdown(false);
-		this.setCompactComposeSuggestions(false);
-		this.setCompactOfflineIndicator(false);
-		this.setCompactAppHeader(false);
-		this.setCompactEmptyReader(false);
-		this.setCompactSettingsNav(false);
-		this.setHideSettingsBackLink(false);
-		this.setHideSettingsPageTitle(false);
-		this.setHideReaderStatusBackButton(false);
-		this.setHideReaderStatusMessage(false);
-		this.setCompactExternalContentBanner(false);
-		this.setCompactContactsPage(false);
-		this.setCompactContactsList(false);
-		this.setHideContactMessageCounts(false);
-		this.setCompactListEmptyState(false);
-		this.setCompactListHeader(false);
-		this.setCompactReaderToolbar(false);
-		this.setCompactReaderAvatars(false);
-		this.setCompactCollapsedThreads(false);
-		this.setCompactReaderStatus(false);
-		this.setCompactListErrorState(false);
-		this.setHideListErrorRetry(false);
-		this.setHideContactGroupLetters(false);
-		this.setCompactContactsAddForm(false);
-		this.setHideContactsPageSubtitle(false);
-		this.setCompactContactsSearch(false);
-		this.setCompactContactsEmptyState(false);
-		this.setHideContactsHeaderSettings(false);
-		this.setHideContactsComposeButton(false);
-		this.setHideContactsEmptyHints(false);
-		this.setHideContactsEmptyActions(false);
-		this.setHideContactsHoverActions(false);
-		this.setHideContactsRowMailIcon(false);
-		this.setHideContactsEmailLine(false);
-		this.setCompactCalendarGrid(false);
-		this.setCompactCalendarHeader(false);
-		this.setCompactCalendarSidebar(false);
-		this.setCalendarWeekStartsOnMonday(false);
-		this.setHideCalendarEventTimes(false);
-		this.setCalendarMaxEventsPerDay(3);
-		this.setHideCalendarMoreEventsLabel(false);
-		this.setHideCalendarSidebarHeader(false);
-		this.setHideCalendarSidebarSettings(false);
-		this.setHideCalendarNewEventButton(false);
-		this.setIconOnlyCalendarNewEvent(false);
-		this.setCompactCalendarEventPanel(false);
-		this.setHideCalendarEmptyEventPanel(false);
-		this.setCompactCalendarEmptyEventPanel(false);
-		this.setCompactCalendarCompose(false);
-		this.setHideCalendarComposeFieldLabels(false);
-		this.setHideCalendarPaneBorders(false);
-		this.setCompactReaderInlineError(false);
-		this.setRememberLastMailbox(false);
-		this.setMinimalReaderToolbar(true);
-		this.setShowReaderListRail(false);
-		void import('$lib/stores/theme.svelte').then(({ theme }) => theme.set('system'));
-	}
-
-	resetLookAndFeel() {
+	resetAppearanceSettings() {
 		void import('$lib/stores/theme.svelte').then(({ theme }) => theme.set('system'));
 		this.setReduceMotion(false);
-		this.setHideConnectingScreen(false);
-	}
-
-	resetMailSettings() {
-		this.setNotifyOnNewMail(true);
-		this.setShowUnreadInTitle(true);
-		this.setShowUnreadAppBadge(true);
-		this.setMarkAsReadOnOpen(true);
-		this.setMarkAsReadDelay(0);
-		this.setEnableKeyboardShortcuts(true);
-		this.setConfirmBeforeDelete(true);
-		this.setConfirmBeforeDiscardCompose(true);
-		this.setReturnToInboxAfterSend(false);
-		this.setUndoSendDelay(5000);
-		this.setHideActionToasts(false);
-		this.setAutoLoadMore(false);
-		this.setCompactLoadMore(false);
-		this.setTimeFormat('auto');
-	}
-
-	resetInboxSettings() {
-		this.setShowAvatars(false);
-		this.setShowSenderEmailInList(false);
-		this.setHideListRowDividers(false);
-		this.setShowBulkSelect(false);
-		this.setHideSelectionHints(false);
-		this.setHideSearchListPrefix(false);
-		this.setHideListEmptyHints(false);
-		this.setHideListEmptyActions(false);
-		this.setCompactListEmptyState(false);
-		this.setCompactListErrorState(false);
-		this.setHideListErrorRetry(false);
-		this.setCompactListHeader(false);
 	}
 
 	resetReadingSettings() {
+		this.setNotifyOnNewMail(true);
+		this.setShowUnreadInTitle(true);
+		this.setShowUnreadAppBadge(true);
+		this.setShowAvatars(false);
+		this.setShowSenderEmailInList(false);
+		this.setAutoLoadMore(false);
+		this.setSearchScope('all');
+		this.setShowReaderListRail(false);
+		this.setRememberLastMailbox(false);
 		this.setReaderTextSize('normal');
 		this.setReaderWidth('wide');
 		this.setReadingTypeface('sans');
 		this.setReaderCleanView(true);
 		this.setFocusReadingDefault(true);
-		this.setShowReaderListRail(false);
-		this.setBlockExternalContent(true);
-		this.setHideExternalContentBanner(false);
-		this.setWarnExternalSenders(true);
-		this.setCompactExternalContentBanner(false);
 		this.setPreferPlainText(false);
-		this.setCompactReaderBody(false);
-		this.setCompactAttachments(false);
-		this.setHideReaderPaneBorders(false);
-		this.setDefaultReplyMode('reply');
+		this.setBlockExternalContent(true);
 		this.setShowQuickReply(false);
-		this.setCompactQuickReply(false);
-		this.setShowReaderContactActions(false);
-		this.setHideReaderRecipients(true);
-		this.setHideReaderSenderEmail(false);
-		this.setMinimalReaderToolbar(true);
-		this.setCompactReaderToolbar(false);
-		this.setCompactReaderAvatars(false);
-		this.setCompactReaderHeader(false);
-		this.setHideMoveMenuLabels(false);
-		this.setCompactMoveMenu(false);
 		this.setExpandAllThreadMessages(false);
-		this.setHideThreadSummary(true);
-		this.setHideReaderTimestamps(true);
-		this.setHideCollapsedThreadPreviews(true);
-		this.setCompactCollapsedThreads(false);
-		this.setHideEmptyReaderPrompts(false);
-		this.setHideEmptyReaderDescription(false);
-		this.setHideEmptyReaderActions(false);
-		this.setHideEmptyReaderIcon(false);
-		this.setCompactEmptyReader(false);
-		this.setCompactReaderStatus(false);
-		this.setCompactReaderInlineError(false);
-		this.setHideReaderStatusBackButton(false);
-		this.setHideReaderStatusMessage(false);
+		this.setMarkAsReadOnOpen(true);
+		this.setMarkAsReadDelay(0);
+		this.setConfirmBeforeDelete(true);
+		this.setHideActionToasts(false);
+		this.setTimeFormat('auto');
+		this.setEnableKeyboardShortcuts(true);
 	}
 
-	resetComposeSettings() {
+	resetWritingSettings() {
 		this.setDefaultComposeFormat('plain');
+		this.setShowCcBccInCompose(true);
+		this.setShowComposeContactSuggestions(true);
 		this.setBccSelf(false);
 		this.setAutoArchiveOnReply(false);
-		this.setHideComposeHints(false);
 		this.setCollapseQuotedInCompose(false);
-		this.setShowCcBccInCompose(true);
-		this.setHideComposeFromLine(false);
-		this.setHideComposeFieldLabels(false);
-		this.setIconOnlyComposeAttach(false);
-		this.setIconOnlyComposeDiscard(false);
-		this.setShowComposeContactSuggestions(true);
-		this.setCompactComposeSuggestions(false);
-	}
-
-	resetLayoutSettings() {
-		this.setSearchScope('all');
-		this.setShowReaderListRail(false);
-		this.setRememberLastMailbox(false);
-		this.setHidePaneBorders(false);
-	}
-
-	resetWorkspaceSettings() {
-		this.resetLayoutSettings();
-		this.setCompactHeaderActions(false);
-		this.setCompactAppHeader(false);
-		this.setHidePaneBorders(false);
-		this.setHideAppTitle(false);
-		this.setCompactUserMenu(false);
-		this.setCompactUserMenuDropdown(false);
-		this.setRememberLastMailbox(false);
-		this.setHideHeaderSearch(false);
-		this.setShowSearchContactSuggestions(true);
-		this.setHideSearchDropdownHeaders(false);
-		this.setCompactSearchDropdown(false);
-		this.setToolIconsOnly(false);
-		this.setCompactToolSwitcher(false);
-		this.setHideOfflineIndicator(false);
-		this.setCompactOfflineIndicator(false);
-		this.setHideOutboxUnlessFailed(false);
-		this.setCompactOutboxMenu(false);
-		this.setCompactMobileSearch(false);
+		this.setHideComposeHints(false);
+		this.setDefaultReplyMode('reply');
+		this.setConfirmBeforeDiscardCompose(true);
+		this.setUndoSendDelay(5000);
+		this.setReturnToInboxAfterSend(false);
 	}
 
 	resetCalendarSettings() {
-		this.setCompactCalendarGrid(false);
-		this.setCompactCalendarHeader(false);
 		this.setCalendarWeekStartsOnMonday(false);
 		this.setCalendarMaxEventsPerDay(3);
 		this.setHideCalendarEventTimes(false);
-		this.setHideCalendarMoreEventsLabel(false);
-		this.setCompactCalendarSidebar(false);
-		this.setHideCalendarSidebarHeader(false);
-		this.setHideCalendarSidebarSettings(false);
-		this.setHideCalendarNewEventButton(false);
-		this.setIconOnlyCalendarNewEvent(false);
-		this.setCompactCalendarEventPanel(false);
-		this.setHideCalendarEmptyEventPanel(false);
-		this.setCompactCalendarEmptyEventPanel(false);
-		this.setCompactCalendarCompose(false);
-		this.setHideCalendarComposeFieldLabels(false);
-		this.setHideCalendarPaneBorders(false);
-	}
-
-	resetContactsSettings() {
-		this.setCompactContactsPage(false);
-		this.setCompactContactsList(false);
-		this.setCompactContactsSearch(false);
-		this.setCompactContactsAddForm(false);
-		this.setHideContactMessageCounts(false);
-		this.setHideContactGroupLetters(false);
-		this.setHideContactsEmailLine(false);
-		this.setHideContactsPageSubtitle(false);
-		this.setHideContactsHeaderSettings(false);
-		this.setHideContactsComposeButton(false);
-		this.setHideContactsHoverActions(false);
-		this.setHideContactsRowMailIcon(false);
-		this.setCompactContactsEmptyState(false);
-		this.setHideContactsEmptyHints(false);
-		this.setHideContactsEmptyActions(false);
 	}
 
 	resetAccountSettings() {
 		this.setDisplayName('');
 		this.setSignature('');
 		this.setUseSignature(true);
-		this.setHideAccountFieldHints(false);
+	}
+
+	resetAllSettings() {
+		this.resetAppearanceSettings();
+		this.resetReadingSettings();
+		this.resetWritingSettings();
+		this.resetCalendarSettings();
 	}
 
 	exportLocalPreferences(): string {
 		if (!browser) return '{}';
 
 		return JSON.stringify(
-			{ version: 1, exportedAt: new Date().toISOString(), settings: collectSyncableSettings() },
+			{ version: 2, exportedAt: new Date().toISOString(), settings: collectSyncableSettings() },
 			null,
 			2
 		);
@@ -2778,7 +880,7 @@ class SettingsStore {
 
 	private applyHeaderLayout() {
 		if (!browser) return;
-		document.documentElement.style.setProperty('--height-header', this.compactAppHeader ? '2.75rem' : '3.25rem');
+		document.documentElement.style.setProperty('--height-header', '3.25rem');
 	}
 
 	private applyReaderTextSize(value: ReaderTextSize) {

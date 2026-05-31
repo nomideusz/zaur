@@ -83,7 +83,7 @@
 	<SettingsGroup title="Identity" description="Name and signature for outgoing messages.">
 		<SettingsField
 			title="Display name"
-			description={settings.hideAccountFieldHints ? undefined : 'Shown when you send mail and in the header'}
+			description="Shown when you send mail and in the header"
 		>
 			<input
 				type="text"
@@ -96,7 +96,7 @@
 
 		<SettingsField
 			title="Signature"
-			description={settings.hideAccountFieldHints ? undefined : 'Appended to new messages, replies, and forwards'}
+			description="Appended to new messages, replies, and forwards"
 		>
 			<textarea
 				class="z-input min-h-24 resize-y"

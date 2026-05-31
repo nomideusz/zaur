@@ -69,7 +69,6 @@
 		selectedEmail ? contacts.find((contact) => contact.email === selectedEmail) ?? null : null
 	);
 
-	const hideBorders = $derived(settings.hidePaneBorders);
 	const listTitle = $derived(
 		query.trim()
 			? `Search: ${query.trim()}`
@@ -78,9 +77,7 @@
 				: 'All contacts'
 	);
 
-	const showLetterNav = $derived(
-		!query.trim() && !settings.hideContactGroupLetters && availableLetters.length > 0
-	);
+	const showLetterNav = $derived(!query.trim() && availableLetters.length > 0);
 	const newEmailInvalid = $derived(newEmail.trim() && invalidAddressParts(newEmail).length > 0);
 	const newEmailExists = $derived(
 		!!newEmail.trim() &&
@@ -173,18 +170,12 @@
 		selectedEmail
 			? 'hidden md:flex md:w-(--width-list) md:max-w-(--width-list) md:flex-none'
 			: 'flex flex-1',
-		!hideBorders && selectedEmail && 'md:border-r md:border-border'
+		selectedEmail && 'md:border-r md:border-border'
 	)}
 	style="view-transition-name: contacts-list;"
 	aria-label="Contacts list"
 >
-	<div
-		class={cn(
-			'flex shrink-0 flex-wrap items-center justify-between gap-2 px-4',
-			settings.compactContactsPage ? 'min-h-10 py-2' : 'min-h-12 py-2.5',
-			!hideBorders && 'border-b border-border/80'
-		)}
-	>
+	<div class="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border/80 px-4 py-2.5">
 		<h2 class="z-type-pane-title">{listTitle}</h2>
 		<IconButton
 			label="Add contact"
@@ -198,29 +189,17 @@
 		</IconButton>
 	</div>
 
-	<div
-		class={cn(
-			'flex shrink-0 flex-col gap-3 px-4',
-			settings.compactContactsPage ? 'py-2' : 'py-3',
-			!hideBorders && 'border-b border-border/80'
-		)}
-	>
+	<div class="flex shrink-0 flex-col gap-3 border-b border-border/80 px-4 py-3">
 		{#if showAddForm}
-			<form
-				class={cn(
-					'grid border-b border-border bg-surface-sunken/40 sm:grid-cols-2',
-					settings.compactContactsAddForm ? 'mb-2 gap-2 p-3' : 'mb-3 gap-3 p-4'
-				)}
-				onsubmit={addContact}
-			>
-				<label class={cn('block', settings.compactContactsAddForm ? 'text-xs' : 'text-sm')}>
-					<span class={cn('block text-fg-muted', settings.compactContactsAddForm ? 'mb-0.5' : 'mb-1')}>
+			<form class="mb-3 grid gap-3 border-b border-border bg-surface-sunken/40 p-4 sm:grid-cols-2" onsubmit={addContact}>
+				<label class="block text-sm">
+					<span class="mb-1 block text-fg-muted">
 						Name
 					</span>
 					<input type="text" class="z-input" placeholder="Jane Doe" autocomplete="name" bind:value={newName} />
 				</label>
-				<label class={cn('block', settings.compactContactsAddForm ? 'text-xs' : 'text-sm')}>
-					<span class={cn('block text-fg-muted', settings.compactContactsAddForm ? 'mb-0.5' : 'mb-1')}>
+				<label class="block text-sm">
+					<span class="mb-1 block text-fg-muted">
 						Email
 					</span>
 					<input
@@ -267,10 +246,7 @@
 				type="search"
 				enterkeyhint="search"
 				inputmode="search"
-				class={cn(
-					'z-sidebar-search-input',
-					settings.compactContactsSearch && 'h-9 py-1.5'
-				)}
+				class="z-sidebar-search-input"
 				placeholder="Search contacts…"
 				bind:value={query}
 			/>
@@ -300,17 +276,10 @@
 			<div class={cn(showLetterNav && 'md:pr-12')}>
 				{#each groupedContacts as [letter, group] (letter)}
 					<section>
-						{#if !settings.hideContactGroupLetters}
-							<h3
-								class={cn(
-									'sticky top-0 z-[1] bg-surface/95 px-4 py-1.5 font-medium uppercase tracking-wide text-fg-subtle backdrop-blur-sm',
-									settings.compactContactsList ? 'text-[10px]' : 'text-xs'
-								)}
-							>
-								{letter}
-							</h3>
-						{/if}
-						<ul class={cn(!hideBorders && !settings.hideListRowDividers && 'divide-y divide-border')}>
+						<h3 class="sticky top-0 z-[1] bg-surface/95 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-fg-subtle backdrop-blur-sm">
+							{letter}
+						</h3>
+						<ul class="divide-y divide-border">
 							{#each group as contact (contact.email)}
 								<li>
 									<SwipeableListRow
@@ -327,8 +296,7 @@
 										<button
 											type="button"
 											class={cn(
-												'z-list-row flex w-full items-center gap-3 px-4 text-left transition-colors hover:bg-surface-sunken/60',
-												settings.compactContactsList ? 'min-h-11 py-2' : 'py-2.5',
+												'z-list-row flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-sunken/60',
 												selectedEmail === contact.email && 'z-list-row--current'
 											)}
 											aria-current={selectedEmail === contact.email ? 'true' : undefined}
@@ -339,16 +307,12 @@
 											{/if}
 											<div class="min-w-0 flex-1">
 												<p class="truncate text-sm font-semibold tracking-tight text-fg">{contact.name}</p>
-												{#if !settings.hideContactsEmailLine}
-													<p class="truncate text-xs text-fg-muted">{contact.email}</p>
-												{/if}
-												{#if !settings.hideContactMessageCounts && contact.count > 1}
+												<p class="truncate text-xs text-fg-muted">{contact.email}</p>
+												{#if contact.count > 1}
 													<p class="text-[11px] text-fg-subtle">{contact.count} messages</p>
 												{/if}
 											</div>
-											{#if !settings.hideContactsRowMailIcon}
-												<Mail class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-											{/if}
+											<Mail class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
 										</button>
 									</SwipeableListRow>
 								</li>
@@ -358,27 +322,12 @@
 				{/each}
 			</div>
 		{:else}
-			<div
-				class={cn(
-					'flex flex-col items-center text-center',
-					settings.compactContactsEmptyState ? 'gap-2 px-4 py-8' : 'gap-3 px-4 py-12'
-				)}
-			>
-				<div
-					class={cn(
-						'rounded-full bg-accent/10 text-accent',
-						settings.compactContactsEmptyState ? 'p-2' : 'p-3'
-					)}
-				>
-					<Users
-						class={cn(
-							settings.compactContactsEmptyState ? 'size-5' : 'size-6'
-						)}
-						aria-hidden="true"
-					/>
+			<div class="flex flex-col items-center gap-3 px-4 py-12 text-center">
+				<div class="rounded-full bg-accent/10 p-3 text-accent">
+					<Users class="size-6" aria-hidden="true" />
 				</div>
 				<div>
-					<p class={cn('font-semibold text-fg', settings.compactContactsEmptyState ? 'text-xs' : 'text-sm')}>
+					<p class="text-sm font-semibold text-fg">
 						{#if query.trim()}
 							No contacts match your search
 						{:else if selectedLetter}
@@ -387,21 +336,17 @@
 							No contacts yet
 						{/if}
 					</p>
-					{#if !settings.hideContactsEmptyHints}
-						<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">
+					<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">
 							{#if query.trim()}
 								Try a different name or email address.
 							{:else}
 								Contacts appear as you send and receive mail, or add someone manually.
 							{/if}
 						</p>
-					{/if}
 				</div>
 				<div class="flex flex-wrap justify-center gap-2">
-					{#if !settings.hideContactsEmptyActions}
-						<Button variant="ghost" onclick={() => (showAddForm = true)}>Add contact</Button>
-						<Button href={settings.preferredMailHref()} variant="ghost">Open mail</Button>
-					{/if}
+					<Button variant="ghost" onclick={() => (showAddForm = true)}>Add contact</Button>
+					<Button href={settings.preferredMailHref()} variant="ghost">Open mail</Button>
 				</div>
 			</div>
 		{/if}
