@@ -5,6 +5,13 @@
 	:is(.z-mail-view-simple, .z-settings-mode-simple) {
 		--z-reader-font: var(--font-mono);
 		font-family: var(--font-mono) !important;
+		--z-simple-main-gap: 3rem;
+	}
+
+	@media (min-width: 768px) {
+		:is(.z-mail-view-simple, .z-settings-mode-simple) {
+			--z-simple-main-gap: 4.5rem;
+		}
 	}
 
 	:is(.z-mail-view-simple, .z-settings-mode-simple) :is(input, button, textarea, select) {
@@ -566,9 +573,9 @@
 
 	.z-mail-view-simple .z-mail-folder-sections {
 		@apply flex flex-col;
-		gap: calc(var(--z-space-folder-sections-top) * 1.5);
-		padding-top: var(--z-space-folder-sections-top);
-		padding-bottom: var(--z-space-folder-sections-bottom);
+		gap: var(--z-simple-main-gap);
+		padding-top: var(--z-simple-main-gap);
+		padding-bottom: 0;
 	}
 
 	.z-mail-view-simple .z-mail-folder-section__head {
@@ -675,9 +682,14 @@
 
 	/* Minimal folder navigation — appears only on inbox home, very low visual weight. */
 	.z-mail-view-simple .z-mail-simple-folder-nav {
-		@apply mt-8 flex flex-wrap items-center gap-x-3 gap-y-1 text-fg-muted;
+		@apply flex flex-wrap items-center gap-x-3 gap-y-1 text-fg-muted;
+		margin-top: var(--z-simple-main-gap) !important;
 		font-size: var(--z-main-page-muted-text);
 		line-height: 1.55;
+	}
+
+	.z-mail-view-simple .z-mail-simple-main-footer {
+		margin-top: var(--z-simple-main-gap) !important;
 	}
 
 	.z-mail-view-simple .z-mail-simple-folder-nav__link {
