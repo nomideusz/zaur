@@ -104,14 +104,30 @@
 	let readEverByMessageId = $state<Record<string, number>>({});
 	let readEverStorageKey = $state<string | null>(null);
 	let importantRainbowHoverId = $state<string | null>(null);
+	const importantRainbowLastPhase = $state<Record<string, number>>({});
+
+	function sampleImportantRainbow(messageId: string, row: HTMLElement) {
+		if (settings.reduceMotion) return;
+		const phase = importantRainbow.sampleFromRow(row, messageId);
+		if (phase !== null) {
+			importantRainbowLastPhase = { ...importantRainbowLastPhase, [messageId]: phase };
+		}
+	}
 
 	function persistImportantRainbowPick(messageId: string, row: HTMLElement) {
-		if (importantRainbowHoverId !== messageId) return;
-		importantRainbowHoverId = null;
 		if (settings.reduceMotion) return;
-		const subject = row.querySelector('.z-mail-list-subject--important');
-		if (subject instanceof HTMLElement) {
-			importantRainbow.pickFromElement(messageId, subject);
+
+		const fallback = importantRainbowLastPhase[messageId];
+		importantRainbow.pickFromRow(row, messageId, fallback);
+		const { [messageId]: _removed, ...rest } = importantRainbowLastPhase;
+		importantRainbowLastPhase = rest;
+		importantRainbowHoverId = null;
+	}
+
+	function handleRowPointerMove(messageId: string, event: PointerEvent, row: HTMLElement, important: boolean) {
+		handleRowLongPressMove(event);
+		if (important && importantRainbowHoverId === messageId) {
+			sampleImportantRainbow(messageId, row);
 		}
 	}
 
@@ -893,7 +909,8 @@
 						persistImportantRainbowPick(message.id, event.currentTarget);
 					}}
 					onpointerdown={(event) => handleRowLongPressStart(message.id, event)}
-					onpointermove={handleRowLongPressMove}
+					onpointermove={(event) =>
+						handleRowPointerMove(message.id, event, event.currentTarget, message.important)}
 					onpointerup={clearLongPressTimer}
 					onpointercancel={clearLongPressTimer}
 				>

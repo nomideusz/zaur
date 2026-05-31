@@ -302,6 +302,7 @@
 				background-size: 250% 100%;
 				animation: z-important-rainbow 3s ease-in-out infinite alternate;
 				animation-play-state: paused;
+				animation-fill-mode: both;
 			}
 
 			html:not(.z-reduce-motion) .z-mail-list-subject--important-picked {
