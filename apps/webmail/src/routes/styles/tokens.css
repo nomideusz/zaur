@@ -1,4 +1,4 @@
-/* Design tokens — spacing scale, measure (~44rem), motion, accent presets. */
+/* Design tokens — spacing scale, measure (~44rem), motion. */
 
 @theme {
 	--font-sans: -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', 'Adwaita Sans', Cantarell, Ubuntu, roboto, noto, helvetica, arial, sans-serif;
@@ -117,91 +117,7 @@
 	outline-offset: 2px;
 }
 
-/* Accent color presets */
-:root[data-accent='charcoal'] {
-	--z-accent: #2f3437;
-	--z-accent-hover: #111111;
-	--z-unread: #2f3437;
-}
-
-:root.dark[data-accent='charcoal'] {
-	--z-accent: #ededec;
-	--z-accent-hover: #f0f0ef;
-	--z-unread: #ededec;
-}
-
-:root[data-accent='blue'] {
-	--z-accent: #2563eb;
-	--z-accent-hover: #1d4ed8;
-	--z-unread: #2563eb;
-}
-
-:root.dark[data-accent='blue'] {
-	--z-accent: #3b82f6;
-	--z-accent-hover: #2563eb;
-	--z-unread: #60a5fa;
-}
-
-:root[data-accent='teal'] {
-	--z-accent: #0d9488;
-	--z-accent-hover: #0f766e;
-	--z-unread: #0d9488;
-}
-
-:root.dark[data-accent='teal'] {
-	--z-accent: #14b8a6;
-	--z-accent-hover: #0d9488;
-	--z-unread: #5eead4;
-}
-
-:root[data-accent='violet'] {
-	--z-accent: #7c3aed;
-	--z-accent-hover: #6d28d9;
-	--z-unread: #7c3aed;
-}
-
-:root.dark[data-accent='violet'] {
-	--z-accent: #8b5cf6;
-	--z-accent-hover: #7c3aed;
-	--z-unread: #c4b5fd;
-}
-
-:root[data-accent='slate'] {
-	--z-accent: #475569;
-	--z-accent-hover: #334155;
-	--z-unread: #475569;
-}
-
-:root.dark[data-accent='slate'] {
-	--z-accent: #64748b;
-	--z-accent-hover: #475569;
-	--z-unread: #94a3b8;
-}
-
-
-
 :root.dark {
 	--shadow-sm: none;
 	--shadow-md: none;
-}
-
-.z-skip-link {
-	position: fixed;
-	left: 0.75rem;
-	top: 0.75rem;
-	z-index: 100;
-	transform: translateY(-150%);
-	border-radius: var(--radius-md);
-	background: var(--z-accent);
-	color: var(--z-accent-fg);
-	padding: 0.5rem 0.75rem;
-	font-size: 0.875rem;
-	font-weight: 600;
-	transition: transform 120ms ease;
-}
-
-.z-skip-link:focus {
-	transform: translateY(0);
-	outline: 2px solid var(--z-accent-fg);
-	outline-offset: 2px;
 }

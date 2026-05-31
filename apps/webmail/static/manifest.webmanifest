@@ -2,7 +2,7 @@
   "name": "ZAUR Webmail",
   "short_name": "Zaur Mail",
   "description": "Fast, offline-capable webmail for ZAUR accounts.",
-  "theme_color": "#2563eb",
+  "theme_color": "#406bbf",
   "background_color": "#ffffff",
   "display": "standalone",
   "scope": "/",

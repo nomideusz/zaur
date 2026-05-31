@@ -14,19 +14,21 @@
 	--z-surface-sunken: #f7f6f3;
 	--z-border: #eaeaea;
 	--z-border-strong: #d8d8d8;
+	/* Dividers sit outside container + page brightness (Hobday border rule). */
+	--z-divider: var(--z-border-strong);
 	--z-fg: #2f3437;
 	--z-fg-muted: #787774;
 	--z-fg-subtle: #9b9a97;
-	--z-accent: #2f3437;
-	--z-accent-hover: #111111;
+	--z-accent: #406bbf;
+	--z-accent-hover: #355aad;
 	--z-accent-fg: #ffffff;
-	--z-unread: #2f3437;
+	--z-unread: #406bbf;
 	--z-star: #956400;
 	--z-danger: #9f2f2d;
 	--z-success: #2d6a4f;
 	--z-warning: #956400;
 
-	--z-brand-mark: #2563eb;
+	--z-brand-mark: #406bbf;
 
 	--radius-sm: 0.25rem;
 	--radius-md: 0.5rem;
@@ -57,18 +59,19 @@
 	--z-chrome-active: color-mix(in srgb, var(--z-surface) 86%, var(--z-fg) 14%);
 	--z-border: #2a2a2a;
 	--z-border-strong: #3a3a3a;
+	--z-divider: var(--z-border-strong);
 	--z-fg: #ededec;
 	--z-fg-muted: #a8a8a6;
 	--z-fg-subtle: #787774;
-	--z-accent: #ededec;
-	--z-accent-hover: #ffffff;
-	--z-accent-fg: #111111;
-	--z-unread: #ededec;
+	--z-accent: #406bbf;
+	--z-accent-hover: #5278c9;
+	--z-accent-fg: #ffffff;
+	--z-unread: #406bbf;
 	--z-star: #d4a017;
 	--z-success: #52b788;
 	--z-warning: #d4a017;
 
-	--z-brand-mark: #3b82f6;
+	--z-brand-mark: #406bbf;
 
 	--z-scrollbar-thumb: color-mix(in srgb, var(--z-border-strong) 88%, transparent);
 	--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 58%, transparent);
@@ -85,18 +88,19 @@
 		--z-chrome-active: color-mix(in srgb, var(--z-surface) 86%, var(--z-fg) 14%);
 		--z-border: #2a2a2a;
 		--z-border-strong: #3a3a3a;
+		--z-divider: var(--z-border-strong);
 		--z-fg: #ededec;
 		--z-fg-muted: #a8a8a6;
 		--z-fg-subtle: #787774;
-		--z-accent: #ededec;
-		--z-accent-hover: #ffffff;
-		--z-accent-fg: #111111;
-		--z-unread: #ededec;
+		--z-accent: #406bbf;
+		--z-accent-hover: #5278c9;
+		--z-accent-fg: #ffffff;
+		--z-unread: #406bbf;
 		--z-star: #d4a017;
 		--z-success: #52b788;
 		--z-warning: #d4a017;
 
-	--z-brand-mark: #3b82f6;
+		--z-brand-mark: #406bbf;
 
 		--z-scrollbar-thumb: color-mix(in srgb, var(--z-border-strong) 88%, transparent);
 		--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 58%, transparent);

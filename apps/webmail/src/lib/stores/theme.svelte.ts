@@ -37,6 +37,7 @@ class ThemeStore {
 		this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
 		this.mediaQuery.addEventListener('change', this.onSystemChange);
 		this.applyResolved();
+		this.clearLegacyAccentPreference();
 	}
 
 	toggle() {
@@ -56,6 +57,16 @@ class ThemeStore {
 	private applyResolved() {
 		if (!browser) return;
 		document.documentElement.classList.toggle('dark', this.resolved === 'dark');
+	}
+
+	private clearLegacyAccentPreference() {
+		if (!browser) return;
+		document.documentElement.removeAttribute('data-accent');
+		try {
+			localStorage.removeItem('zaur:accent-color');
+		} catch {
+			// Ignore storage errors in private mode.
+		}
 	}
 }
 

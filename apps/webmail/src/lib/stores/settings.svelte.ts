@@ -1319,7 +1319,6 @@ class SettingsStore {
 		const result = await pullAccountSettings(this.userEmail, () => this.init());
 		if (result === 'applied') {
 			void import('$lib/stores/theme.svelte').then(({ theme }) => theme.init());
-			void import('$lib/stores/visual.svelte').then(({ visual }) => visual.init());
 		} else if (result === 'empty') {
 			// Only push when this account has synced from this device before.
 			if (browser && localStorage.getItem(accountSettingsSyncAtKey(this.userEmail))) {
@@ -1335,7 +1334,6 @@ class SettingsStore {
 		const result = await pullAccountSettings(this.userEmail, () => this.init(), { force: true });
 		if (result === 'applied') {
 			void import('$lib/stores/theme.svelte').then(({ theme }) => theme.init());
-			void import('$lib/stores/visual.svelte').then(({ visual }) => visual.init());
 		}
 		return result === 'applied' || this.exportLocalPreferences() !== before;
 	}
@@ -2542,12 +2540,10 @@ class SettingsStore {
 		this.setRememberLastMailbox(false);
 		this.setMinimalReaderToolbar(true);
 		this.setShowReaderListRail(false);
-		void import('$lib/stores/visual.svelte').then(({ visual }) => visual.resetToDefaults());
 		void import('$lib/stores/theme.svelte').then(({ theme }) => theme.set('system'));
 	}
 
 	resetLookAndFeel() {
-		void import('$lib/stores/visual.svelte').then(({ visual }) => visual.resetToDefaults());
 		void import('$lib/stores/theme.svelte').then(({ theme }) => theme.set('system'));
 		this.setReduceMotion(false);
 		this.setHideConnectingScreen(false);
@@ -2750,7 +2746,6 @@ class SettingsStore {
 
 			this.init();
 			void import('$lib/stores/theme.svelte').then(({ theme }) => theme.init());
-			void import('$lib/stores/visual.svelte').then(({ visual }) => visual.init());
 			scheduleAccountSettingsPush();
 			return { ok: true };
 		} catch {

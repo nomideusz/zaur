@@ -4,7 +4,7 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="description" content="Fast, offline-capable webmail for ZAUR accounts." />
-		<meta name="theme-color" content="#2563eb" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#406bbf" media="(prefers-color-scheme: light)" />
 		<meta name="theme-color" content="#0f1419" media="(prefers-color-scheme: dark)" />
 		<meta name="text-scale" content="scale" />
 		<script>
@@ -16,8 +16,10 @@
 						(theme !== 'light' &&
 							window.matchMedia('(prefers-color-scheme: dark)').matches);
 					if (dark) document.documentElement.classList.add('dark');
-					var accent = localStorage.getItem('zaur:accent-color');
-					if (accent) document.documentElement.dataset.accent = accent;
+					document.documentElement.removeAttribute('data-accent');
+					try {
+						localStorage.removeItem('zaur:accent-color');
+					} catch (e) {}
 
 					var listText = localStorage.getItem('zaur:list-text-size');
 					if (listText === 'large') {

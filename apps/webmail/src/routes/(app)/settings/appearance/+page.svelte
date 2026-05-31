@@ -9,7 +9,7 @@
 
 <SettingsPanel
 	title="Appearance"
-	description="Theme, accent, motion, and visual style."
+	description="Theme, motion, and visual style."
 >
 	<AppearanceSection />
 </SettingsPanel>

@@ -85,12 +85,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/appearance-accent-color",
-		"href": "/settings/appearance",
-		"title": "Accent color",
-		"description": ""
-	},
-	{
 		"id": "/settings/appearance-color-mode",
 		"href": "/settings/appearance",
 		"title": "Color mode",

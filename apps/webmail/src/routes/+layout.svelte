@@ -8,7 +8,6 @@
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
-	import { visual } from '$lib/stores/visual.svelte';
 	import { syncPushSubscription } from '$lib/utils/notifications';
 	import { ensureAppServiceWorkerReady } from '$lib/utils/service-worker';
 
@@ -16,7 +15,6 @@
 
 	onMount(() => {
 		theme.init();
-		visual.init();
 		settings.init();
 		pwa.init();
 		void auth.init();
