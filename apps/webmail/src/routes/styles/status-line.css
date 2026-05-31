@@ -28,8 +28,8 @@
 
 	/* Faded shape as container — https://anthonyhobday.com/sideprojects/visualtechniques/techniques/other/faded-shape-as-container */
 	.z-status-line__item--timed {
-		border-block-start-color: color-mix(in srgb, var(--z-border) 65%, transparent);
-		background: color-mix(in srgb, var(--z-fg) 4%, var(--z-surface));
+		border-block-start-color: color-mix(in srgb, var(--z-accent) 22%, var(--z-border));
+		background: color-mix(in srgb, var(--z-accent) 10%, var(--z-surface));
 		backdrop-filter: none;
 	}
 
@@ -37,9 +37,8 @@
 		position: absolute;
 		inset: 0;
 		z-index: 0;
-		background: color-mix(in srgb, var(--z-surface) 94%, transparent);
-		backdrop-filter: blur(10px);
-		border-block-start: 1px solid var(--z-border);
+		background: color-mix(in srgb, var(--z-accent) 28%, var(--z-surface));
+		border-block-start: 1px solid color-mix(in srgb, var(--z-accent) 55%, transparent);
 		transform: scaleX(0);
 		transform-origin: left center;
 		animation: z-status-line-shape-fill linear forwards;
@@ -74,6 +73,15 @@
 
 	.z-status-line__item[data-variant='error'] .z-status-line__message {
 		color: var(--z-danger);
+	}
+
+	.z-status-line__item--timed .z-status-line__action {
+		color: var(--z-accent);
+		text-decoration-color: color-mix(in srgb, var(--z-accent) 35%, transparent);
+	}
+
+	.z-status-line__item--timed .z-status-line__action:hover {
+		text-decoration-color: color-mix(in srgb, var(--z-accent) 60%, transparent);
 	}
 
 	.z-status-line__action {
@@ -130,7 +138,7 @@
 		}
 
 		.z-status-line__item--timed {
-			background: color-mix(in srgb, var(--z-surface) 92%, transparent);
+			background: color-mix(in srgb, var(--z-accent) 10%, var(--z-surface));
 		}
 	}
 }
