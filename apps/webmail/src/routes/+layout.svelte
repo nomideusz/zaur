@@ -7,6 +7,7 @@
 	import { network } from '$lib/stores/network.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
 	import { syncPushSubscription } from '$lib/utils/notifications';
 	import { ensureAppServiceWorkerReady } from '$lib/utils/service-worker';
@@ -16,6 +17,7 @@
 	onMount(() => {
 		theme.init();
 		settings.init();
+		importantRainbow.init();
 		pwa.init();
 		void auth.init();
 		network.init(() => {

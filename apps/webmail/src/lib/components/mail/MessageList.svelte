@@ -31,7 +31,7 @@
 	} from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
-	import { importantRainbowStyle } from '$lib/mail/important-rainbow';
+	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
 
 	/** Editorial list row — shared Tailwind building blocks. */
 	const listMessageGroup = 'group/message';
@@ -103,6 +103,17 @@
 	let firstSeenStorageKey = $state<string | null>(null);
 	let readEverByMessageId = $state<Record<string, number>>({});
 	let readEverStorageKey = $state<string | null>(null);
+	let importantRainbowHoverId = $state<string | null>(null);
+
+	function persistImportantRainbowPick(messageId: string, row: HTMLElement) {
+		if (importantRainbowHoverId !== messageId) return;
+		importantRainbowHoverId = null;
+		if (settings.reduceMotion) return;
+		const subject = row.querySelector('.z-mail-list-subject--important');
+		if (subject instanceof HTMLElement) {
+			importantRainbow.pickFromElement(messageId, subject);
+		}
+	}
 
 	const activeThreadId = $derived($page.params.threadId);
 	const searchReturnTo = $derived.by(() => {
@@ -869,6 +880,18 @@
 					class={listMessageLinkClass}
 					aria-current={currentMessageId === message.id ? 'page' : undefined}
 					aria-label="{subjectText} — {senderLabel}, {timeLabel}"
+					onpointerenter={() => {
+						if (message.important) importantRainbowHoverId = message.id;
+					}}
+					onpointerleave={(event) => {
+						if (message.important) persistImportantRainbowPick(message.id, event.currentTarget);
+					}}
+					onfocusout={(event) => {
+						if (!message.important) return;
+						const next = event.relatedTarget;
+						if (next instanceof Node && event.currentTarget.contains(next)) return;
+						persistImportantRainbowPick(message.id, event.currentTarget);
+					}}
 					onpointerdown={(event) => handleRowLongPressStart(message.id, event)}
 					onpointermove={handleRowLongPressMove}
 					onpointerup={clearLongPressTimer}
@@ -877,8 +900,15 @@
 					<span class={listMessageStackClass}>
 						<span class={listMessageLeadClass}>
 							<span
-								class={cn(listSubjectClass, 'list-subject', message.important && listImportantSubjectClass)}
-								style={message.important ? importantRainbowStyle(message.id) : undefined}
+								class={cn(
+									listSubjectClass,
+									'list-subject',
+									message.important && listImportantSubjectClass,
+									message.important &&
+										importantRainbow.hasPicked(message.id) &&
+										'z-mail-list-subject--important-picked'
+								)}
+								style={message.important ? importantRainbow.cssVars(message.id) : undefined}
 							>{subjectText}</span>
 							<span class={listSenderClass(showSenderDuplicate)}>{senderLabel}</span>
 						</span>

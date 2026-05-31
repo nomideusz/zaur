@@ -304,8 +304,14 @@
 				animation-play-state: paused;
 			}
 
+			html:not(.z-reduce-motion) .z-mail-list-subject--important-picked {
+				animation: none;
+				background-position: var(--important-phase, 0%) 50%;
+			}
+
 			html:not(.z-reduce-motion) .group\/message:hover .z-mail-list-subject--important,
 			html:not(.z-reduce-motion) .group\/message:focus-visible .z-mail-list-subject--important {
+				animation: z-important-rainbow 3s ease-in-out infinite alternate;
 				animation-play-state: running;
 			}
 		}
