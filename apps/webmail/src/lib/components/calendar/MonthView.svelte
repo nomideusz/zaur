@@ -133,7 +133,7 @@
 						>
 							<input
 								type="checkbox"
-								class="z-checkbox"
+
 								checked={calendar.isCalendarVisible(item.id)}
 								onchange={() => calendar.toggleCalendar(item.id)}
 							/>

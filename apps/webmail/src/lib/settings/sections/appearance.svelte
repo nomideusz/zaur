@@ -33,7 +33,7 @@
 	<SettingsRow title="Reduce motion" description="Turn off page transitions and loading animations">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.reduceMotion}
 			onchange={(e) => settings.setReduceMotion(e.currentTarget.checked)}
 		/>

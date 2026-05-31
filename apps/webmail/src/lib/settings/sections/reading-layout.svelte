@@ -12,7 +12,7 @@
 	>
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.showReaderListRail}
 			onchange={(e) => settings.setShowReaderListRail(e.currentTarget.checked)}
 		/>
@@ -23,7 +23,7 @@
 	<SettingsRow title="Remember last mailbox" description="Open your last folder instead of Inbox when signing in">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.rememberLastMailbox}
 			onchange={(e) => settings.setRememberLastMailbox(e.currentTarget.checked)}
 		/>

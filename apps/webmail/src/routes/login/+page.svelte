@@ -118,7 +118,7 @@
 				<label class="flex cursor-pointer items-center gap-2 text-sm text-fg-muted">
 					<input
 						type="checkbox"
-						class="z-checkbox"
+
 						bind:checked={rememberMe}
 						disabled={auth.isLoading}
 					/>

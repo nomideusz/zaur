@@ -34,7 +34,7 @@
 	<SettingsRow title="Show Cc/Bcc" description="Cc and Bcc rows in compose — reply-all still shows Cc when needed">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.showCcBccInCompose}
 			onchange={(e) => settings.setShowCcBccInCompose(e.currentTarget.checked)}
 		/>
@@ -43,7 +43,7 @@
 	<SettingsRow title="Contact suggestions" description="Autocomplete contacts while typing recipients">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.showComposeContactSuggestions}
 			onchange={(e) => settings.setShowComposeContactSuggestions(e.currentTarget.checked)}
 		/>
@@ -52,7 +52,7 @@
 	<SettingsRow title="Always Bcc me" description="Add your own address to Bcc on every outgoing message">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.bccSelf}
 			onchange={(e) => settings.setBccSelf(e.currentTarget.checked)}
 		/>
@@ -61,7 +61,7 @@
 	<SettingsRow title="Auto-archive after reply" description="Move the source conversation to Archive once a reply is sent">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.autoArchiveOnReply}
 			onchange={(e) => settings.setAutoArchiveOnReply(e.currentTarget.checked)}
 		/>
@@ -70,7 +70,7 @@
 	<SettingsRow title="Collapse quoted text" description="Keep quoted reply content folded when composing">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.collapseQuotedInCompose}
 			onchange={(e) => settings.setCollapseQuotedInCompose(e.currentTarget.checked)}
 		/>
@@ -79,7 +79,7 @@
 	<SettingsRow title="Hide compose hints" description="Remove tips like “Set display name”, “Add a signature”, and shortcut nudges">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.hideComposeHints}
 			onchange={(e) => settings.setHideComposeHints(e.currentTarget.checked)}
 		/>
@@ -103,7 +103,7 @@
 	<SettingsRow title="Confirm before discarding compose" description="Ask when closing compose with unsent content">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.confirmBeforeDiscardCompose}
 			onchange={(e) => settings.setConfirmBeforeDiscardCompose(e.currentTarget.checked)}
 		/>
@@ -132,7 +132,7 @@
 	<SettingsRow title="Return to inbox after sending" description="Go back to Inbox instead of Sent after delivery">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.returnToInboxAfterSend}
 			onchange={(e) => settings.setReturnToInboxAfterSend(e.currentTarget.checked)}
 		/>

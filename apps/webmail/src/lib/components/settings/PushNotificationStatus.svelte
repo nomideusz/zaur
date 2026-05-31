@@ -100,7 +100,7 @@
 		{/if}
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			disabled={busy || pushStatus.state === 'unsupported' || pushStatus.state === 'server_disabled'}
 			checked={settings.notifyOnNewMail}
 			onchange={async (e) => {

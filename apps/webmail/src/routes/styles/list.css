@@ -89,6 +89,11 @@
 		color: var(--z-fg);
 	}
 
+	.z-mail-view .z-mail-list-row__checkbox {
+		margin-top: 0.35rem;
+		flex-shrink: 0;
+	}
+
 	/* Mobile bulk actions — sticky footer inside the scrolling main column. */
 	@media (max-width: 767px) {
 		.z-app-main--page-scroll .z-mail-view .z-mail-list-mobile-bar {

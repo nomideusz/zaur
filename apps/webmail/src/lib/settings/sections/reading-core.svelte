@@ -32,7 +32,7 @@
 	<SettingsRow title="Unread count on app icon" description="Badge on the installed app icon (Chrome and Edge)">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.showUnreadAppBadge}
 			onchange={(e) => settings.setShowUnreadAppBadge(e.currentTarget.checked)}
 		/>
@@ -41,7 +41,7 @@
 	<SettingsRow title="Unread count in tab title" description="Prefix the browser tab with your Inbox unread count">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.showUnreadInTitle}
 			onchange={(e) => settings.setShowUnreadInTitle(e.currentTarget.checked)}
 		/>
@@ -66,7 +66,7 @@
 	<SettingsRow title="Block external content" description="Block remote images in HTML mail — you can still show them per message">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.blockExternalContent}
 			onchange={(e) => settings.setBlockExternalContent(e.currentTarget.checked)}
 		/>
@@ -77,7 +77,7 @@
 	<SettingsRow title="Mark as read when opened" description="Automatically mark conversations read when you open them">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.markAsReadOnOpen}
 			onchange={(e) => settings.setMarkAsReadOnOpen(e.currentTarget.checked)}
 		/>
@@ -111,7 +111,7 @@
 	<SettingsRow title="Confirm before delete" description="Ask before moving messages to trash">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.confirmBeforeDelete}
 			onchange={(e) => settings.setConfirmBeforeDelete(e.currentTarget.checked)}
 		/>
@@ -120,7 +120,7 @@
 	<SettingsRow title="Auto-load more messages" description="Load older messages when you scroll to the bottom of the list">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.autoLoadMore}
 			onchange={(e) => settings.setAutoLoadMore(e.currentTarget.checked)}
 		/>
@@ -129,7 +129,7 @@
 	<SettingsRow title="Hide action toasts" description="Suppress success and info notifications — errors still appear">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.hideActionToasts}
 			onchange={(e) => settings.setHideActionToasts(e.currentTarget.checked)}
 		/>
@@ -160,7 +160,7 @@
 	<SettingsRow title="Enable keyboard shortcuts" description="Press c to compose, j/k to move between messages, n for next unread, and more">
 		<input
 			type="checkbox"
-			class="z-checkbox"
+
 			checked={settings.enableKeyboardShortcuts}
 			onchange={(e) => settings.setEnableKeyboardShortcuts(e.currentTarget.checked)}
 		/>

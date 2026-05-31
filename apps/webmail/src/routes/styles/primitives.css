@@ -171,26 +171,6 @@
 		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%239ca3af' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 7.5 5 5 5-5'/%3E%3C/svg%3E");
 	}
 
-	.z-checkbox {
-		@apply size-5 shrink-0 cursor-pointer appearance-none rounded-sm border border-border-strong bg-surface text-fg md:size-4;
-		@apply focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
-		@apply disabled:cursor-not-allowed disabled:opacity-50;
-		background-position: center;
-		background-repeat: no-repeat;
-		background-size: 0.75rem 0.75rem;
-	}
-
-	.z-checkbox[data-state='checked'],
-	.z-checkbox:checked {
-		@apply border-accent bg-accent;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5 6.5 11.5 12.5 4.5'/%3E%3C/svg%3E");
-	}
-
-	.z-checkbox[data-state='indeterminate'] {
-		@apply border-accent bg-accent;
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M4 8h8'/%3E%3C/svg%3E");
-	}
-
 	.z-compose-editor,
 	.z-input.z-compose-editor {
 		font-size: var(--z-reader-text);
@@ -285,7 +265,7 @@
 		pointer-events: auto;
 	}
 
-	.z-list-row-gutter--open .z-checkbox {
+	.z-list-row-gutter--open input[type='checkbox'] {
 		pointer-events: auto;
 	}
 

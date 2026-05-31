@@ -32,11 +32,8 @@
 
 	/** Editorial list row — shared Tailwind building blocks. */
 	const listMessageGroup = 'group/message';
-	const listMessageLinkClass = cn(listMessageGroup, 'block min-w-0 no-underline');
-	const listMessageSelectClass = cn(
-		listMessageGroup,
-		'flex w-full cursor-pointer items-start gap-3 border-0 bg-transparent p-0 text-left'
-	);
+	const listMessageLinkClass = cn(listMessageGroup, 'block min-w-0 flex-1 no-underline');
+	const listMessageRowClass = 'z-mail-list-row flex items-start gap-3';
 	const listMessageStackClass = 'flex min-w-0 flex-row items-start justify-between gap-4';
 	const listMessageLeadClass = 'flex min-w-0 flex-1 flex-col gap-0.5';
 	const listSubjectClass = cn(
@@ -126,7 +123,7 @@
 	const showFlatEmpty = $derived(!sectionMode && !loading && !error && messages.length === 0);
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const bulkSelectEnabled = $derived(!!mailboxRouteId && settings.showBulkSelect);
-	const showListHeader = $derived(bulkSelectEnabled);
+	const showListHeader = $derived(bulkSelectEnabled && mail.hasSelection);
 	const showMobileSelectionBar = $derived(
 		!!mailboxRouteId && mail.hasSelection && supportsMobileListGestures()
 	);
@@ -174,32 +171,21 @@
 		});
 	}
 
-	function handleRowPointerSelect(messageId: string, event: MouseEvent) {
-		handleRowSelect(messageId, {
-			shift: event.shiftKey,
-			ctrl: event.ctrlKey || event.metaKey
-		});
-	}
-
-	function handleRowLinkClick(messageId: string, event: MouseEvent) {
-		if (!bulkSelectEnabled) return;
-		const shift = event.shiftKey;
-		const ctrl = event.ctrlKey || event.metaKey;
-		if (!mail.hasSelection && !shift && !ctrl) return;
-		event.preventDefault();
-		handleRowPointerSelect(messageId, event);
-	}
-
 	function handleRowCheckboxClick(messageId: string, event: MouseEvent) {
-		event.preventDefault();
 		event.stopPropagation();
-		if (mail.hasSelection) {
-			handleRowPointerSelect(messageId, event);
-			return;
+		const ctrl = event.ctrlKey || event.metaKey;
+		if (event.shiftKey || ctrl) {
+			event.preventDefault();
+			handleRowSelect(messageId, { shift: event.shiftKey, ctrl });
 		}
-		if (currentMessageId === messageId) {
-			mail.startSelection(messageId);
-		}
+	}
+
+	function handleRowCheckboxChange(messageId: string, event: Event) {
+		event.stopPropagation();
+		const input = event.currentTarget as HTMLInputElement;
+		const isSelected = mail.selectedMessageIds.has(messageId);
+		if (input.checked === isSelected) return;
+		mail.toggleMessageSelection(messageId);
 	}
 
 	/** Matches ROLE_ORDER in mail.svelte.ts */
@@ -787,70 +773,38 @@
 				: baseTimeLabel}
 			{@const showSenderDuplicate = duplicateKeys.has(messageSubjectKey(message))}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
-			{@const showRowCheckbox =
-				bulkSelectEnabled && (mail.hasSelection || currentMessageId === message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
-			<li class={cn('list-none', rowSelected && '[&_.list-subject]:text-accent')}>
-				{#if mail.hasSelection && bulkSelectEnabled}
-					<button
-						type="button"
-						class={listMessageSelectClass}
-						aria-current={currentMessageId === message.id ? 'page' : undefined}
-						aria-pressed={rowSelected}
-						aria-label="{subjectText} — {senderLabel}, {timeLabel}"
-						onclick={(event) => handleRowPointerSelect(message.id, event)}
-					>
-						{#if showRowCheckbox}
-							<input
-								type="checkbox"
-								class="z-checkbox mt-[0.35rem] shrink-0"
-								checked={rowSelected}
-								tabindex="-1"
-								aria-hidden="true"
-							/>
-						{/if}
-						<span class={listMessageStackClass}>
-							<span class={listMessageLeadClass}>
-								<span class={cn(listSubjectClass, 'list-subject')}>{subjectText}</span>
-								<span class={listSenderClass(showSenderDuplicate)}>{senderLabel}</span>
-							</span>
-							<time class={listWhenClass} datetime={message.receivedAt}>
-								{timeLabel}
-							</time>
-						</span>
-					</button>
-				{:else}
-					<a
-						href={rowHref}
-						class={listMessageLinkClass}
-						aria-current={currentMessageId === message.id ? 'page' : undefined}
-						aria-label="{subjectText} — {senderLabel}, {timeLabel}"
-						onclick={(event) => handleRowLinkClick(message.id, event)}
-						onpointerdown={(event) => handleRowLongPressStart(message.id, event)}
-						onpointermove={handleRowLongPressMove}
-						onpointerup={clearLongPressTimer}
-						onpointercancel={clearLongPressTimer}
-					>
-						{#if showRowCheckbox}
-							<input
-								type="checkbox"
-								class="z-checkbox mt-[0.35rem] shrink-0"
-								checked={rowSelected}
-								aria-label={`Select ${subjectText}`}
-								onclick={(event) => handleRowCheckboxClick(message.id, event)}
-							/>
-						{/if}
-						<span class={listMessageStackClass}>
-							<span class={listMessageLeadClass}>
-								<span class={cn(listSubjectClass, 'list-subject')}>{subjectText}</span>
-								<span class={listSenderClass(showSenderDuplicate)}>{senderLabel}</span>
-							</span>
-							<time class={listWhenClass} datetime={message.receivedAt}>
-								{timeLabel}
-							</time>
-						</span>
-					</a>
+			<li class={cn('list-none', listMessageRowClass, rowSelected && '[&_.list-subject]:text-accent')}>
+				{#if bulkSelectEnabled}
+					<input
+						type="checkbox"
+						class="z-mail-list-row__checkbox"
+						checked={rowSelected}
+						aria-label={`Select ${subjectText}`}
+						onclick={(event) => handleRowCheckboxClick(message.id, event)}
+						onchange={(event) => handleRowCheckboxChange(message.id, event)}
+					/>
 				{/if}
+				<a
+					href={rowHref}
+					class={listMessageLinkClass}
+					aria-current={currentMessageId === message.id ? 'page' : undefined}
+					aria-label="{subjectText} — {senderLabel}, {timeLabel}"
+					onpointerdown={(event) => handleRowLongPressStart(message.id, event)}
+					onpointermove={handleRowLongPressMove}
+					onpointerup={clearLongPressTimer}
+					onpointercancel={clearLongPressTimer}
+				>
+					<span class={listMessageStackClass}>
+						<span class={listMessageLeadClass}>
+							<span class={cn(listSubjectClass, 'list-subject')}>{subjectText}</span>
+							<span class={listSenderClass(showSenderDuplicate)}>{senderLabel}</span>
+						</span>
+						<time class={listWhenClass} datetime={message.receivedAt}>
+							{timeLabel}
+						</time>
+					</span>
+				</a>
 			</li>
 		{/snippet}
 

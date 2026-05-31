@@ -10,7 +10,6 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { cn } from '$lib/utils/cn';
-	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 
 	interface Props {
 		mailboxRouteId?: string;
@@ -133,14 +132,5 @@
 				{deleteLabel}
 			</Button>
 		</div>
-	{:else if !settings.hideSelectionHints}
-		<p class="z-mail-list-header__hint truncate max-md:hidden">
-			Shift+click for a range · Ctrl+click to toggle
-		</p>
-		{#if supportsMobileListGestures()}
-			<p class="z-mail-list-header__hint truncate md:hidden">
-				Hold to select · Swipe for actions
-			</p>
-		{/if}
 	{/if}
 </div>

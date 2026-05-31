@@ -112,7 +112,7 @@
 		>
 			<input
 				type="checkbox"
-				class="z-checkbox"
+
 				checked={settings.useSignature}
 				onchange={(e) => settings.setUseSignature(e.currentTarget.checked)}
 			/>
