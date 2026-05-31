@@ -63,19 +63,6 @@
 	let firstSeenStorageKey = $state<string | null>(null);
 	let readEverByMessageId = $state<Record<string, number>>({});
 	let readEverStorageKey = $state<string | null>(null);
-	let motionReady = $state(false);
-
-	$effect(() => {
-		if (!browser) return;
-		mailboxRouteId;
-		loading;
-		motionReady = false;
-		if (loading) return;
-		const id = requestAnimationFrame(() => {
-			motionReady = true;
-		});
-		return () => cancelAnimationFrame(id);
-	});
 
 	const activeThreadId = $derived($page.params.threadId);
 	const searchReturnTo = $derived.by(() => {
@@ -98,13 +85,8 @@
 		emptyHint ?? (emptyMessage ? null : defaultEmptyHint(mailboxRouteId))
 	);
 	const showFlatEmpty = $derived(!sectionMode && !loading && !error && messages.length === 0);
-	const unreadMessages = $derived.by(() => messages.filter((message) => message.unread));
-	const unreadCount = $derived(unreadMessages.length);
 
 	/** Matches ROLE_ORDER in mail.svelte.ts */
-	const senderHintSkipRoles = new Set(['sent', 'drafts', 'archive', 'trash']);
-	const senderHintSkipRouteIds = new Set(['sent', 'drafts', 'archive', 'trash', 'outbox']);
-
 	const folderRoleOrder: Record<string, number> = {
 		inbox: 0,
 		drafts: 1,
@@ -130,8 +112,11 @@
 
 	function sectionRevealLabel(sectionId: string, totalCount: number): string {
 		const visible = sectionVisibleCounts[sectionId] ?? 0;
-		const hidden = Math.max(totalCount - visible, 0);
 		const revealBy = Math.max(1, sectionPageSize(sectionId));
+		let hidden = Math.max(totalCount - visible, 0);
+		if (sectionId === READ_SECTION_ID && hasMore && visible >= readMessages.length) {
+			hidden = Math.max(hidden, revealBy);
+		}
 		if (visible === 0) {
 			const firstRevealCount = Math.min(hidden, revealBy);
 			if (firstRevealCount > 0) {
@@ -566,12 +551,6 @@
 		return 'z-mail-folder-section__list--importance-unread';
 	}
 
-	function listRowShowsSender(routeId: string): boolean {
-		if (senderHintSkipRouteIds.has(routeId)) return false;
-		const role = mail.mailboxByRouteId(routeId)?.role;
-		return !role || !senderHintSkipRoles.has(role);
-	}
-
 	function listRowStartsNewDay(messages: MessagePreview[], index: number): boolean {
 		if (index === 0) return true;
 		return (
@@ -593,25 +572,24 @@
 		return sectionMessageHref(message, routeId);
 	}
 
-	const nextUnreadMessage = $derived.by(() => {
-		if (unreadMessages.length === 0) return null;
-		if (!currentMessageId) return unreadMessages[0];
-		const currentIndex = unreadMessages.findIndex((message) => message.id === currentMessageId);
-		if (currentIndex === -1) return unreadMessages[0];
-		const next = unreadMessages[currentIndex + 1];
-		if (next) return next;
-		return unreadMessages.slice(0, currentIndex)[0] ?? null;
-	});
+	function messageSubjectKey(message: MessagePreview): string {
+		return (message.subject.trim() || '(no subject)').toLowerCase();
+	}
 
-	const nextUnreadHref = $derived.by(() => {
-		if (!nextUnreadMessage) return null;
-		return listMessageHref(nextUnreadMessage, mailboxRouteId ?? nextUnreadMessage.mailboxId ?? 'inbox');
-	});
+	function duplicateSubjectKeys(messages: MessagePreview[]): Set<string> {
+		const counts = new Map<string, number>();
+		for (const message of messages) {
+			const key = messageSubjectKey(message);
+			counts.set(key, (counts.get(key) ?? 0) + 1);
+		}
+		const dupes = new Set<string>();
+		for (const [key, count] of counts) {
+			if (count > 1) dupes.add(key);
+		}
+		return dupes;
+	}
 
-	const nextUnreadLabel = $derived.by(() => {
-		if (!nextUnreadMessage) return null;
-		return unreadCount > 1 ? `Open next unread (${unreadCount})` : 'Open next unread';
-	});
+	const flatListDuplicateSubjects = $derived(duplicateSubjectKeys(messages));
 
 	function sectionCanShowMore(sectionId: string): boolean {
 		const visible = sectionVisibleCounts[sectionId] ?? sectionPageSize(sectionId);
@@ -676,20 +654,21 @@
 			titleHref={isInboxHome ? mailHomeHref : null}
 			actionHref="/mail/compose"
 			actionLabel="New message"
-			jumpHref={nextUnreadHref}
-			jumpLabel={nextUnreadLabel}
 			showBackToMail={!isInboxHome}
 			backHref={mailHomeHref}
 		/>
 	{/if}
 
 	<div class="z-mail-list-flow">
-		{#snippet simpleMessageRow(message: MessagePreview, routeId: string, showPreview = false)}
+		{#snippet simpleMessageRow(
+			message: MessagePreview,
+			routeId: string,
+			duplicateKeys: Set<string> = flatListDuplicateSubjects
+		)}
 			{@const senderLabel = simpleSenderLabel(message, routeId)}
 			{@const subjectText = message.subject.trim() || '(no subject)'}
 			{@const timeLabel = formatSimpleListWhen(message.receivedAt, settings.timeFormat)}
-			{@const showSender = listRowShowsSender(routeId)}
-			{@const previewText = showPreview && message.preview ? message.preview.trim() : ''}
+			{@const showSenderDuplicate = duplicateKeys.has(messageSubjectKey(message))}
 			<li class="z-mail-folder-section__item">
 				<a
 					href={listMessageHref(message, routeId)}
@@ -698,27 +677,28 @@
 					aria-label="{subjectText} — {senderLabel}, {timeLabel}"
 				>
 					<span class="z-mail-folder-section__stack">
-						<span
-							class={cn(
-								'z-mail-folder-section__subject',
-								currentMessageId === message.id && 'z-mail-folder-section__subject--active'
-							)}
-						>
-							{subjectText}
+						<span class="z-mail-folder-section__lead">
+							<span
+								class={cn(
+									'z-mail-folder-section__subject',
+									currentMessageId === message.id && 'z-mail-folder-section__subject--active'
+								)}
+							>
+								{subjectText}
+							</span>
+							<span
+								class={cn(
+									'z-mail-folder-section__sender',
+									showSenderDuplicate && 'z-mail-folder-section__sender--duplicate'
+								)}
+							>
+								{senderLabel}
+							</span>
 						</span>
-						<span class="z-mail-folder-section__meta">
-							{#if showSender}
-								<span class="z-mail-folder-section__sender">{senderLabel}</span>
-								<span class="z-mail-folder-section__meta-sep" aria-hidden="true">·</span>
-							{/if}
-							<time class="z-mail-folder-section__when" datetime={message.receivedAt}>
-								{timeLabel}
-							</time>
-						</span>
+						<time class="z-mail-folder-section__when" datetime={message.receivedAt}>
+							{timeLabel}
+						</time>
 					</span>
-					{#if previewText}
-						<span class="z-mail-folder-section__preview">{previewText}</span>
-					{/if}
 				</a>
 			</li>
 		{/snippet}
@@ -737,42 +717,29 @@
 				{onRetry}
 			/>
 		{:else if sectionMode}
-			<div
-				class={cn('z-mail-folder-sections', motionReady && 'z-mail-folder-sections--ready')}
-			>
+			<div class="z-mail-folder-sections">
 				{#each folderSections as section, sectionIndex (section.id)}
+					{@const sectionDuplicateSubjects = duplicateSubjectKeys(section.messages)}
 					<section
 						class={cn('z-mail-folder-section', sectionImportanceModifier(section.id))}
 						style:order={section.sortOrder}
 						style:--section-index={sectionIndex}
-						aria-label={INBOX_SECTION_IDS.has(section.id) ? section.name : undefined}
 					>
-						{#if !INBOX_SECTION_IDS.has(section.id)}
-							<div class="z-mail-folder-section__head">
-								<h2
-									class={cn(
-										'z-mail-folder-section__title',
-										section.showUnreadDot && 'z-mail-folder-section__title--unread'
-									)}
-								>
-									{section.name}
-								</h2>
-								<span class="z-mail-folder-section__count">{section.totalCount}</span>
-							</div>
-						{/if}
-						{#if section.messages.length > 0}
-							<ul
+						<div class="z-mail-folder-section__head">
+							<h2
 								class={cn(
-									'z-mail-folder-section__list',
-									motionReady && 'z-mail-folder-section__list--live'
+									'z-mail-folder-section__title',
+									section.showUnreadDot && 'z-mail-folder-section__title--unread'
 								)}
 							>
+								{section.name}
+							</h2>
+							<span class="z-mail-folder-section__count">{section.totalCount}</span>
+						</div>
+						{#if section.messages.length > 0}
+							<ul class="z-mail-folder-section__list">
 								{#each section.messages as message (message.id)}
-									{@render simpleMessageRow(
-										message,
-										section.routeId,
-										section.id === NEW_SECTION_ID || section.id === UNREAD_SECTION_ID
-									)}
+									{@render simpleMessageRow(message, section.routeId, sectionDuplicateSubjects)}
 								{/each}
 							</ul>
 						{/if}
@@ -799,7 +766,8 @@
 				<nav class="z-mail-simple-folder-nav" aria-label="Folders">
 					{#each orderedFolders as folder (folder.id)}
 						<a href={`/mail/${folder.id}`} class="z-mail-simple-folder-nav__link">
-							{simpleFolderSectionTitle(folder.role, folder.name)}
+							<span>{simpleFolderSectionTitle(folder.role, folder.name)}</span>
+							<span class="z-mail-simple-folder-nav__count">{folder.total}</span>
 						</a>
 					{/each}
 				</nav>
@@ -808,8 +776,7 @@
 			<ul
 				class={cn(
 					'z-mail-folder-section__list',
-					flatListImportanceModifier(mailboxRouteId ?? 'inbox'),
-					motionReady && 'z-mail-folder-section__list--live'
+					flatListImportanceModifier(mailboxRouteId ?? 'inbox')
 				)}
 			>
 				{#each messages as message (message.id)}

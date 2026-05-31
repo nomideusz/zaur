@@ -205,7 +205,7 @@
 </SettingsGroup>
 
 <SettingsGroup title="Shortcuts" description="Keyboard navigation.">
-	<SettingsRow title="Enable keyboard shortcuts" description="Press c to compose, j/k to move between messages, and more">
+	<SettingsRow title="Enable keyboard shortcuts" description="Press c to compose, j/k to move between messages, n for next unread, and more">
 		<input
 			type="checkbox"
 			class="z-checkbox"

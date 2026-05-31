@@ -70,21 +70,32 @@
 	const mailboxHref = $derived(`/mail/${mailboxRouteId}`);
 
 	const nextUnread = $derived.by(() => {
-		const list = mail.messages;
-		const currentId = latest?.threadId;
-		if (!list.length) return null;
-		const startIndex = currentId
-			? list.findIndex((message) => message.threadId === currentId)
-			: -1;
-		for (let i = startIndex + 1; i < list.length; i++) {
-			if (list[i].unread) return list[i];
-		}
-		return null;
+		const unread = mail.messages.filter((message) => message.unread);
+		if (!unread.length) return null;
+		const currentId = latest?.id ?? $page.url.searchParams.get('messageId');
+		if (!currentId) return unread[0];
+		const currentIndex = unread.findIndex((message) => message.id === currentId);
+		if (currentIndex === -1) return unread[0];
+		return unread[currentIndex + 1] ?? unread[0];
+	});
+
+	const unreadCount = $derived(mail.messages.filter((message) => message.unread).length);
+
+	const nextUnreadHref = $derived.by(() => {
+		if (!nextUnread) return null;
+		const params = new URLSearchParams();
+		params.set('messageId', nextUnread.id);
+		return `/mail/${mailboxRouteId}/${nextUnread.threadId}?${params.toString()}`;
+	});
+
+	const nextUnreadLabel = $derived.by(() => {
+		if (!nextUnread) return null;
+		return unreadCount > 1 ? `Open next unread (${unreadCount})` : 'Open next unread';
 	});
 
 	function openNextUnread() {
-		if (!nextUnread) return;
-		goto(`/mail/${mailboxRouteId}/${nextUnread.threadId}`);
+		if (!nextUnreadHref) return;
+		goto(nextUnreadHref);
 	}
 
 	const userDomain = $derived((auth.username ?? '').split('@')[1]?.toLowerCase() ?? '');
@@ -393,6 +404,9 @@
 					</div>
 					<div class="z-mail-text-nav__links">
 						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
+						{#if nextUnreadHref && nextUnreadLabel}
+							<a class="z-mail-text-nav__link" href={nextUnreadHref}>{nextUnreadLabel}</a>
+						{/if}
 						{#if mailboxRouteId !== 'inbox'}
 							<a class="z-mail-text-nav__link" href={mailboxHref}>{mailboxLabel}</a>
 						{/if}
@@ -775,7 +789,7 @@
 				</section>
 			{/each}
 
-			{#if nextUnread && !minimalChrome}
+			{#if nextUnread && !minimalChrome && !useSimpleContentShell}
 				<div class={cn('flex justify-center', settings.compactReaderBody ? 'py-4' : 'py-6')}>
 					<button
 						type="button"

@@ -64,7 +64,29 @@
 		if (!next) return;
 
 		const mailbox = ctx.kind === 'search' ? next.mailboxId : ctx.mailboxRouteId!;
-		goto(`/mail/${mailbox}/${next.threadId}`);
+		const params = new URLSearchParams();
+		params.set('messageId', next.id);
+		goto(`/mail/${mailbox}/${next.threadId}?${params.toString()}`);
+	}
+
+	function navigateNextUnread() {
+		const ctx = parseMailContext($page.url.pathname);
+		if (!ctx) return;
+
+		const unread = listMessages().filter((message) => message.unread);
+		if (!unread.length) return;
+
+		const current = currentMessage();
+		const currentIndex = current ? unread.findIndex((message) => message.id === current.id) : -1;
+		const next = unread[currentIndex + 1] ?? unread[0];
+		if (!next) return;
+
+		const mailbox = ctx.kind === 'search' ? next.mailboxId : ctx.mailboxRouteId ?? next.mailboxId;
+		if (!mailbox) return;
+
+		const params = new URLSearchParams();
+		params.set('messageId', next.id);
+		goto(`/mail/${mailbox}/${next.threadId}?${params.toString()}`);
 	}
 
 	async function withLatest(
@@ -207,6 +229,12 @@
 			if (key === 'j' || key === 'k') {
 				event.preventDefault();
 				navigateList(key === 'j' ? 1 : -1);
+				return;
+			}
+
+			if (key === 'n') {
+				event.preventDefault();
+				navigateNextUnread();
 				return;
 			}
 
