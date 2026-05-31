@@ -174,20 +174,27 @@
 		});
 	}
 
+	function handleRowPointerSelect(messageId: string, event: MouseEvent) {
+		handleRowSelect(messageId, {
+			shift: event.shiftKey,
+			ctrl: event.ctrlKey || event.metaKey
+		});
+	}
+
 	function handleRowLinkClick(messageId: string, event: MouseEvent) {
 		if (!bulkSelectEnabled) return;
 		const shift = event.shiftKey;
 		const ctrl = event.ctrlKey || event.metaKey;
 		if (!mail.hasSelection && !shift && !ctrl) return;
 		event.preventDefault();
-		handleRowSelect(messageId, { shift, ctrl });
+		handleRowPointerSelect(messageId, event);
 	}
 
 	function handleRowCheckboxClick(messageId: string, event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
 		if (mail.hasSelection) {
-			handleRowSelect(messageId);
+			handleRowPointerSelect(messageId, event);
 			return;
 		}
 		if (currentMessageId === messageId) {
@@ -791,7 +798,7 @@
 						aria-current={currentMessageId === message.id ? 'page' : undefined}
 						aria-pressed={rowSelected}
 						aria-label="{subjectText} — {senderLabel}, {timeLabel}"
-						onclick={() => handleRowSelect(message.id)}
+						onclick={(event) => handleRowPointerSelect(message.id, event)}
 					>
 						{#if showRowCheckbox}
 							<input

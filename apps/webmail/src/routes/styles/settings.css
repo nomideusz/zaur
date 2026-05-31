@@ -1,10 +1,11 @@
 /* Settings — flat editorial lists, measure column, text nav rhythm. */
 
 	.z-settings-content {
-		margin-inline: auto;
-		max-width: var(--z-content-max-width);
 		width: 100%;
 		min-width: 0;
+	}
+
+	.z-settings-body {
 		padding-top: var(--z-main-gap, 3rem);
 	}
 
@@ -211,7 +212,7 @@
 		align-items: center;
 		column-gap: 1rem;
 		row-gap: 0.375rem;
-		margin-top: var(--z-space-folder-sections-top);
+		margin-top: var(--z-space-nav-label-top);
 	}
 
 	.z-settings-nav-meta {

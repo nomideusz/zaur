@@ -19,10 +19,12 @@
 
 <div class="z-settings-page {settingsRootClass}">
 	<div class={cn(settingsShellClass(), 'flex flex-col')}>
-		<SettingsTextNav isIndex={isSettingsIndex} />
 		<div class="z-settings-content">
-			<h1 class="sr-only">Settings</h1>
-			{@render children()}
+			<SettingsTextNav isIndex={isSettingsIndex} />
+			<div class="z-settings-body">
+				<h1 class="sr-only">Settings</h1>
+				{@render children()}
+			</div>
 		</div>
 	</div>
 </div>

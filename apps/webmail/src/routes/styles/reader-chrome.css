@@ -23,7 +23,7 @@
 		line-height: 1.5;
 	}
 
-	.z-mail-view .z-content-shell {
+	:is(.z-mail-view, .z-settings-view) .z-content-shell {
 		max-width: var(--z-content-max-width);
 		margin-inline: auto;
 		width: 100%;
