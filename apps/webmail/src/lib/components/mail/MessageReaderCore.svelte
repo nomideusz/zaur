@@ -368,6 +368,7 @@
 			<div
 				class={cn(
 					'sticky top-0 z-10 border-b border-border/60 bg-surface/95 text-xs text-fg-muted backdrop-blur-sm',
+					useSimpleContentShell && 'z-reader-sticky-nav',
 					settings.compactReaderHeader ? 'pb-1 pt-1.5' : 'pb-2 pt-2'
 				)}
 			>

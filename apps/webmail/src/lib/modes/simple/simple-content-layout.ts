@@ -1,7 +1,7 @@
 import { cn } from '$lib/utils/cn';
 
-/** Max width shared by Simple mode mail list, reader, and settings. */
-export const SIMPLE_CONTENT_MAX_WIDTH = '50rem';
+/** Max width shared by Simple mode mail list, reader, and settings (~70 characters). */
+export const SIMPLE_CONTENT_MAX_WIDTH = '44rem';
 
 /** Centered column shell (width + horizontal inset live in layout.css). */
 export function simpleContentShellClass(): string {

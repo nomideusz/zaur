@@ -59,12 +59,19 @@
 	--z-space-folder-footer-top: 0.375rem;
 	--z-space-folder-list-gap: 0.125rem;
 	--z-space-folder-message-y: 0.125rem;
-	--z-space-folder-message-leading: 1.35;
+	--z-space-folder-message-leading: 1.55;
 	--z-space-mobile-reader-scroll-bottom: 0.75rem;
 	--z-main-page-text: 1.0625rem;
 	--z-main-page-muted-text: 1rem;
 	--z-main-page-title: 1.0625rem;
-	--z-simple-content-max-width: 50rem;
+	/* ~44rem ≈ 704px — Hobday-scale column, ~70 characters at body size. */
+	--z-simple-content-max-width: 44rem;
+	/* Motion — fast, smooth, invisible until you notice them */
+	--z-motion-fast: 140ms;
+	--z-motion-base: 220ms;
+	--z-motion-enter: 360ms;
+	--z-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+	--z-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 @media (max-width: 767px) {
@@ -119,7 +126,7 @@
 
 :root.dark[data-accent='charcoal'] {
 	--z-accent: #ededec;
-	--z-accent-hover: #ffffff;
+	--z-accent-hover: #f0f0ef;
 	--z-unread: #ededec;
 }
 
@@ -445,6 +452,18 @@
 	@keyframes z-spin {
 		to {
 			transform: rotate(360deg);
+		}
+	}
+
+	@keyframes z-simple-section-enter {
+		from {
+			opacity: 0;
+			transform: translateY(8px);
+		}
+
+		to {
+			opacity: 1;
+			transform: translateY(0);
 		}
 	}
 
@@ -779,7 +798,19 @@
 	}
 
 	.z-mail-core-nav-item {
-		@apply inline-flex items-center rounded-sm px-2 py-1.5 text-sm font-normal text-fg-muted transition-colors hover:bg-surface-sunken/50 hover:text-fg;
+		@apply inline-flex items-center rounded-sm px-2 py-1.5 text-sm font-normal text-fg-muted;
+		transition:
+			background-color var(--z-motion-fast) var(--z-ease-standard),
+			color var(--z-motion-fast) var(--z-ease-standard),
+			transform var(--z-motion-fast) var(--z-ease-out);
+	}
+
+	.z-mail-core-nav-item:hover {
+		@apply bg-surface-sunken/50 text-fg;
+	}
+
+	.z-mail-core-nav-item:active {
+		transform: scale(0.97);
 	}
 
 	.z-mail-core-nav-item--active {
@@ -924,6 +955,35 @@
 	.z-mail-view-simple .z-reader-column--aligned {
 		/* Minimal mode keeps reader typography aligned with the main list view. */
 		--z-reader-text: var(--z-list-text);
+	}
+
+	/* Simple reader — one divider under sticky nav, not stacked with message chrome. */
+	.z-mail-view-simple .z-reader-sticky-nav {
+		border-bottom-color: var(--z-divider);
+		line-height: 1.55;
+	}
+
+	.z-mail-view-simple .z-reader-chrome--bordered,
+	.z-mail-view-simple .z-reader-message-head {
+		border-bottom: none;
+	}
+
+	.z-mail-view-simple .z-reader-meta {
+		line-height: 1.5;
+	}
+
+	.z-mail-view-simple .z-reader-latest-badge,
+	.z-mail-view-simple .z-reader-section-label {
+		line-height: 1.45;
+	}
+
+	.z-mail-view-simple .z-type-list-time {
+		line-height: 1.55;
+	}
+
+	.z-mail-view-simple .z-mail-pane-surface--flow > .shrink-0.text-xs,
+	.z-mail-view-simple .z-mail-pane-surface--flow > .shrink-0[class*='text-[11px]'] {
+		line-height: 1.5;
 	}
 
 	.z-reader-body {
@@ -1139,7 +1199,7 @@
 	.z-settings-mode-simple .z-settings-row,
 	.z-settings-list--editorial .z-settings-row {
 		padding-inline: 0;
-		border-bottom: 1px solid color-mix(in srgb, var(--z-border) 65%, transparent);
+		border-bottom: 1px solid var(--z-divider);
 	}
 
 	.z-settings-mode-simple .z-settings-list > :last-child.z-settings-row,
@@ -1263,15 +1323,20 @@
 
 	.z-settings-mode-simple .z-settings-search-input {
 		border: none;
-		border-bottom: 1px solid var(--z-border);
+		border-bottom: 1px solid var(--z-divider);
 		border-radius: 0;
 		background: transparent;
 		padding-left: 2rem;
+		font-size: 1rem;
 	}
 
 	.z-settings-mode-simple .z-settings-search-input:focus {
 		border-bottom-color: var(--z-border-strong);
 		background: transparent;
+	}
+
+	.z-settings-mode-simple :where(.z-input, .z-select, .z-textarea) {
+		font-size: 1rem;
 	}
 
 	.z-settings-text-nav {
@@ -1310,7 +1375,7 @@
 		gap: var(--z-space-folder-sections-gap);
 		margin-top: 2.75rem;
 		padding-top: 2rem;
-		border-top: 1px solid var(--z-border);
+		border-top: 1px solid var(--z-divider);
 	}
 
 	.z-settings-hub-section__title {
@@ -1801,18 +1866,57 @@
 
 	.z-mail-view-simple .z-mail-text-nav__title {
 		@apply font-semibold text-fg;
+		min-width: 0;
 		font-size: var(--z-main-page-title);
 		line-height: 1.45;
 	}
 
 	.z-mail-view-simple .z-mail-text-nav__title a {
-		@apply text-fg no-underline transition-colors hover:text-fg;
+		@apply text-fg no-underline;
+		transition: opacity var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-mail-view-simple .z-mail-text-nav__title a:hover {
+		opacity: 0.72;
+	}
+
+	.z-mail-view-simple .z-mail-text-nav__row {
+		display: flex;
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.z-mail-view-simple .z-mail-text-nav__action {
+		@apply inline-flex shrink-0 cursor-pointer items-center font-semibold text-fg underline underline-offset-[0.2em] decoration-fg/45;
+		font-size: var(--z-main-page-text);
+		line-height: 1.55;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			text-decoration-color var(--z-motion-base) var(--z-ease-out),
+			transform var(--z-motion-fast) var(--z-ease-out);
+	}
+
+	.z-mail-view-simple .z-mail-text-nav__action:hover:not(:disabled) {
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 70%, transparent);
+	}
+
+	.z-mail-view-simple .z-mail-text-nav__action:active:not(:disabled) {
+		transform: scale(0.98);
+	}
+
+	.z-mail-view-simple .z-mail-text-nav__action:disabled {
+		@apply cursor-not-allowed text-fg-subtle no-underline;
+	}
+
+	.z-mail-view-simple .z-mail-text-nav__actions {
+		margin-top: var(--z-space-nav-label-top);
 	}
 
 	.z-mail-view-simple .z-mail-text-nav__footer {
 		margin-top: var(--z-space-folder-sections-gap);
 		padding-top: 1.5rem;
-		border-top: 1px solid color-mix(in srgb, var(--z-border) 65%, transparent);
+		border-top: 1px solid var(--z-divider);
 	}
 
 	.z-mail-view-simple .z-mail-text-nav__label {
@@ -1827,9 +1931,22 @@
 	}
 
 	.z-mail-view-simple .z-mail-text-nav__link {
-		@apply inline-flex items-baseline gap-1.5 text-fg underline underline-offset-2 decoration-fg/30 transition-colors hover:text-fg;
+		@apply inline-flex items-baseline gap-1.5 text-fg underline underline-offset-2 decoration-fg/30;
 		font-size: var(--z-main-page-text);
 		line-height: 1.6;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			text-decoration-color var(--z-motion-base) var(--z-ease-out),
+			transform var(--z-motion-fast) var(--z-ease-out);
+	}
+
+	.z-mail-view-simple .z-mail-text-nav__link:hover {
+		@apply text-fg;
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
+	}
+
+	.z-mail-view-simple .z-mail-text-nav__link:active {
+		transform: scale(0.985);
 	}
 
 	.z-mail-view-simple .z-mail-text-nav__link--active {
@@ -1838,6 +1955,7 @@
 
 	.z-mail-view-simple .z-mail-text-nav__count {
 		@apply text-xs tabular-nums text-fg-subtle no-underline;
+		line-height: 1.55;
 	}
 
 	.z-mail-view-simple .z-mail-text-nav__link--button {
@@ -1857,18 +1975,18 @@
 	}
 
 	.z-mail-view-simple .z-mail-folder-section__title {
-		@apply font-semibold text-fg;
+		@apply inline-flex items-center gap-2 font-semibold text-fg;
 		font-size: var(--z-main-page-text);
 		line-height: 1.55;
 	}
 
-	.z-mail-view-simple .z-mail-read-by-day {
-		@apply flex flex-col;
-		gap: var(--z-space-folder-list-gap);
-	}
-
-	.z-mail-view-simple .z-mail-folder-section--day .z-mail-folder-section__head {
-		margin-bottom: var(--z-space-folder-head-bottom);
+	.z-mail-view-simple .z-mail-folder-section__title--unread::before {
+		content: '';
+		width: 0.4375rem;
+		height: 0.4375rem;
+		border-radius: 50%;
+		background-color: var(--z-unread);
+		flex-shrink: 0;
 	}
 
 	.z-mail-view-simple .z-mail-folder-section__more,
@@ -1896,11 +2014,43 @@
 		font-size: 0.9375rem;
 		line-height: var(--z-space-folder-message-leading);
 		letter-spacing: -0.02em;
-		@apply w-[4.5rem] shrink-0 tabular-nums text-fg-muted no-underline;
+		@apply min-w-0 justify-self-end truncate text-right tabular-nums text-fg-muted no-underline;
+		transition: color var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.z-mail-view-simple .z-mail-folder-section__message:hover .z-mail-folder-section__time,
+		.z-mail-view-simple .z-mail-folder-section__message:focus-visible .z-mail-folder-section__time {
+			@apply text-fg;
+		}
 	}
 
 	.z-mail-view-simple .z-mail-folder-section__more {
-		@apply underline underline-offset-2 decoration-fg/30 transition-colors;
+		@apply cursor-pointer underline underline-offset-2 decoration-fg/30;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			text-decoration-color var(--z-motion-base) var(--z-ease-out),
+			transform var(--z-motion-fast) var(--z-ease-out);
+	}
+
+	.z-mail-view-simple .z-mail-folder-section__more:hover {
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
+	}
+
+	.z-mail-view-simple .z-mail-folder-section__more:active {
+		transform: scale(0.98);
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		html:not(.z-reduce-motion) .z-mail-view-simple .z-mail-folder-sections--ready .z-mail-folder-section {
+			animation: z-simple-section-enter var(--z-motion-enter) var(--z-ease-out) both;
+			animation-delay: calc(var(--section-index, 0) * 52ms);
+		}
+
+		html:not(.z-reduce-motion) .z-mail-view-simple .z-mail-text-nav__footer--ready {
+			animation: z-simple-section-enter var(--z-motion-enter) var(--z-ease-out) both;
+			animation-delay: calc(var(--section-count, 0) * 52ms + 72ms);
+		}
 	}
 
 	.z-mail-view-simple .z-mail-folder-section__empty {
@@ -1916,26 +2066,444 @@
 		gap: var(--z-space-folder-list-gap);
 	}
 
+	/* Message row — subject + date; sender hint to the left on hover/focus. */
+	.z-mail-view-simple .z-mail-folder-section__item {
+		@apply list-none;
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		html:not(.z-reduce-motion) .z-mail-view-simple .z-mail-folder-section__list--live .z-mail-folder-section__item {
+			transition:
+				opacity var(--z-motion-base) var(--z-ease-out),
+				transform var(--z-motion-base) var(--z-ease-out);
+
+			@starting-style {
+				opacity: 0;
+				transform: translateY(5px);
+			}
+		}
+	}
+
+	.z-mail-view-simple .z-mail-folder-section__list,
+	.z-mail-view-simple .z-mail-list-flow {
+		overflow: visible;
+	}
+
 	.z-mail-view-simple .z-mail-folder-section__message {
+		position: relative;
 		display: grid;
-		grid-template-columns: 4.5rem minmax(0, 1fr) minmax(0, 11rem);
+		grid-template-columns: minmax(0, 1fr) auto;
 		column-gap: 0.75rem;
 		align-items: baseline;
+		margin-inline: -0.375rem;
 		padding-block: var(--z-space-folder-message-y);
-		@apply no-underline;
+		padding-inline: 0.375rem;
+		border-radius: 0.25rem;
+		@apply min-w-0 no-underline;
+		transition:
+			background-color var(--z-motion-fast) var(--z-ease-standard),
+			transform var(--z-motion-fast) var(--z-ease-out);
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.z-mail-view-simple .z-mail-folder-section__message:hover {
+			background-color: color-mix(in srgb, var(--z-surface-sunken) 42%, transparent);
+		}
+	}
+
+	.z-mail-view-simple .z-mail-folder-section__message:active {
+		transform: scale(0.996);
+	}
+
+	.z-mail-view-simple .z-mail-folder-section__message:has(.z-mail-folder-section__subject--active) {
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 32%, transparent);
+	}
+
+	.z-mail-view-simple .z-mail-folder-section__message:has(.z-mail-folder-section__subject--active)::before {
+		content: '';
+		position: absolute;
+		left: 0;
+		top: 0.28em;
+		bottom: 0.28em;
+		width: 2px;
+		border-radius: 1px;
+		background-color: var(--z-accent);
+		opacity: 0.65;
+		transform-origin: center;
+		animation: z-simple-accent-in var(--z-motion-base) var(--z-ease-out) both;
+	}
+
+	@keyframes z-simple-accent-in {
+		from {
+			opacity: 0;
+			transform: scaleY(0.35);
+		}
+
+		to {
+			opacity: 0.65;
+			transform: scaleY(1);
+		}
+	}
+
+	.z-mail-view-simple .z-mail-folder-section__lead {
+		@apply relative min-w-0 overflow-visible;
 	}
 
 	.z-mail-view-simple .z-mail-folder-section__subject {
-		@apply min-w-0 truncate font-normal text-fg underline underline-offset-2 decoration-fg/30;
+		@apply relative z-0 min-w-0 truncate font-normal text-fg underline underline-offset-2 decoration-fg/30;
 		text-decoration-thickness: 1px;
-	}
-
-	.z-mail-view-simple .z-mail-folder-section__sender {
-		@apply min-w-0 truncate text-right font-normal text-fg-muted no-underline;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			text-decoration-color var(--z-motion-base) var(--z-ease-out);
 	}
 
 	.z-mail-view-simple .z-mail-folder-section__subject--active {
 		@apply font-semibold decoration-fg/55;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.z-mail-view-simple .z-mail-folder-section__message:hover .z-mail-folder-section__subject,
+		.z-mail-view-simple .z-mail-folder-section__message:focus-visible .z-mail-folder-section__subject {
+			text-decoration-color: color-mix(in srgb, var(--z-fg) 50%, transparent);
+		}
+	}
+
+	.z-mail-view-simple .z-mail-folder-section__sender-hint {
+		@apply pointer-events-none absolute top-0 z-10 max-w-none whitespace-nowrap text-right font-normal text-fg-muted;
+		right: 100%;
+		margin-right: 0.625rem;
+		font-size: var(--z-main-page-muted-text);
+		line-height: var(--z-space-folder-message-leading);
+		opacity: 0;
+		transform: translateX(6px);
+		transition:
+			opacity var(--z-motion-base) var(--z-ease-out),
+			transform var(--z-motion-base) var(--z-ease-out);
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.z-mail-view-simple .z-mail-folder-section__message:hover .z-mail-folder-section__sender-hint,
+		.z-mail-view-simple .z-mail-folder-section__message:focus-visible .z-mail-folder-section__sender-hint {
+			opacity: 1;
+			transform: translateX(0);
+		}
+	}
+
+	/* Simple compose — editorial document page, no drawer chrome */
+	.z-mail-view-simple .z-simple-compose {
+		@apply w-full min-w-0;
+	}
+
+	.z-mail-view-simple .z-simple-compose__page {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		min-height: calc(100dvh - 2rem);
+		--z-compose-footer-clearance: 6.25rem;
+		--z-compose-field-y: 0.625rem;
+		--z-compose-nav-to-form: 1.25rem;
+		--z-compose-header-to-body: 1.25rem;
+		--z-compose-chrome-top: calc(
+			1rem + var(--z-space-nav-top) + var(--z-space-nav-bottom) + 1.6em +
+				var(--z-space-nav-label-top) + 1.55em + var(--z-compose-nav-to-form) + 4.25rem
+		);
+		padding-bottom: calc(
+			var(--z-compose-footer-clearance) + 1rem + var(--z-space-nav-top) +
+				max(0px, env(safe-area-inset-bottom, 0px))
+		);
+	}
+
+	@media (max-width: 767px) {
+		.z-mail-view-simple .z-simple-compose__page {
+			--z-compose-field-y: 0.5625rem;
+			--z-compose-nav-to-form: 1rem;
+			--z-compose-header-to-body: 1rem;
+		}
+	}
+
+	@media (min-width: 768px) {
+		.z-mail-view-simple .z-simple-compose__page {
+			--z-compose-chrome-top: calc(
+				1.5rem + var(--z-space-nav-top) + var(--z-space-nav-bottom) + 1.6em +
+					var(--z-space-nav-label-top) + 1.55em + var(--z-compose-nav-to-form) + 4.25rem
+			);
+			padding-bottom: calc(
+				var(--z-compose-footer-clearance) + 1.5rem + var(--z-space-nav-top) +
+					env(safe-area-inset-bottom, 0px)
+			);
+		}
+	}
+
+	.z-mail-view-simple .z-simple-compose__status {
+		@apply text-fg-subtle;
+		margin-top: var(--z-space-nav-label-top);
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+		min-height: 1.55em;
+	}
+
+	.z-mail-view-simple .z-simple-compose__form {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-height: 0;
+		margin-top: var(--z-compose-nav-to-form);
+	}
+
+	.z-mail-view-simple .z-simple-compose__fields {
+		display: flex;
+		flex-direction: column;
+		flex-shrink: 0;
+	}
+
+	.z-mail-view-simple .z-simple-compose__field {
+		display: grid;
+		grid-template-columns: 3.25rem minmax(0, 1fr);
+		gap: 0.75rem;
+		align-items: baseline;
+		padding-block: var(--z-compose-field-y);
+	}
+
+	.z-mail-view-simple .z-simple-compose__field:not(:last-child) {
+		border-bottom: 1px solid var(--z-divider);
+	}
+
+	.z-mail-view-simple .z-simple-compose__field--subject {
+		padding-bottom: var(--z-compose-field-y);
+		border-bottom: 1px solid var(--z-divider);
+	}
+
+	.z-mail-view-simple .z-simple-compose__field--invalid {
+		background-color: color-mix(in srgb, var(--z-danger) 6%, transparent);
+	}
+
+	.z-mail-view-simple .z-simple-compose__label {
+		@apply shrink-0 text-fg-subtle;
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+	}
+
+	.z-mail-view-simple .z-simple-compose__control {
+		@apply flex min-w-0 items-baseline gap-3;
+	}
+
+	.z-mail-view-simple .z-simple-compose__input,
+	.z-mail-view-simple .z-simple-compose__input.z-compose-field-input {
+		@apply w-full min-w-0 bg-transparent text-fg outline-none;
+		font-size: var(--z-main-page-text);
+		line-height: var(--z-space-folder-message-leading);
+		border: none;
+		box-shadow: none;
+		padding: 0;
+	}
+
+	.z-mail-view-simple .z-simple-compose__inline-link {
+		@apply shrink-0 text-fg underline underline-offset-2 decoration-fg/30;
+		font-size: 0.9375rem;
+		line-height: 1.55;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			text-decoration-color var(--z-motion-base) var(--z-ease-out);
+	}
+
+	.z-mail-view-simple .z-simple-compose__inline-link:hover {
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
+	}
+
+	.z-mail-view-simple .z-simple-compose__write {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-height: max(
+			14rem,
+			calc(100dvh - var(--z-compose-chrome-top) - var(--z-compose-footer-clearance) - 3.5rem)
+		);
+		margin-top: var(--z-compose-header-to-body);
+		min-width: 0;
+	}
+
+	.z-mail-view-simple .z-simple-compose__message {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-height: 0;
+	}
+
+	.z-mail-view-simple .z-simple-compose__body {
+		@apply block w-full flex-1 bg-transparent text-fg outline-none;
+		width: 100%;
+		min-height: 0;
+		height: 100%;
+		overflow-y: auto;
+		resize: none;
+		font-family: var(--z-reader-font);
+		font-size: var(--z-reader-text);
+		line-height: var(--z-reader-leading);
+		border: none;
+		padding: 0;
+	}
+
+	.z-mail-view-simple .z-simple-compose__signature {
+		position: sticky;
+		bottom: calc(var(--z-compose-footer-clearance) + 0.25rem);
+		z-index: 15;
+		flex-shrink: 0;
+		margin-top: 0.75rem;
+		padding-block: 0.75rem;
+		background-color: var(--z-chrome);
+	}
+
+	.z-mail-view-simple .z-simple-compose__signature-input {
+		display: block;
+		width: 100%;
+		min-height: 4.5rem;
+		max-height: 10rem;
+		overflow-y: auto;
+		resize: none;
+		background: transparent;
+		border: none;
+		padding: 0;
+		outline: none;
+		color: var(--z-fg-muted);
+		font-family: var(--z-reader-font);
+		font-size: var(--z-reader-text);
+		line-height: var(--z-reader-leading);
+	}
+
+	.z-mail-view-simple .z-simple-compose__signature-empty {
+		position: sticky;
+		bottom: calc(var(--z-compose-footer-clearance) + 0.25rem);
+		z-index: 15;
+		flex-shrink: 0;
+		margin-top: 0.75rem;
+		padding-block: 0.75rem;
+		background-color: var(--z-chrome);
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+	}
+
+	@media (max-width: 767px) {
+		.z-mail-view-simple .z-simple-compose__body,
+		.z-mail-view-simple .z-simple-compose__signature-input {
+			font-size: 1rem;
+		}
+	}
+
+	.z-mail-view-simple .z-simple-compose__quote {
+		margin-top: 1.25rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--z-divider);
+	}
+
+	.z-mail-view-simple .z-simple-compose__quote summary {
+		@apply cursor-pointer text-fg-muted;
+		font-size: 0.9375rem;
+		line-height: 1.55;
+	}
+
+	.z-mail-view-simple .z-simple-compose__quote pre {
+		@apply mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap text-fg-subtle;
+		font-size: 0.875rem;
+		line-height: 1.6;
+	}
+
+	.z-mail-view-simple .z-simple-compose__attachments {
+		@apply mt-4 flex flex-col gap-2;
+	}
+
+	.z-mail-view-simple .z-simple-compose__attachment {
+		@apply flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-fg;
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+	}
+
+	.z-mail-view-simple .z-simple-compose__attachment-icon {
+		@apply size-3.5 shrink-0 text-fg-subtle;
+	}
+
+	.z-mail-view-simple .z-simple-compose__attachment-name {
+		@apply min-w-0 truncate;
+	}
+
+	.z-mail-view-simple .z-simple-compose__attachment-size,
+	.z-mail-view-simple .z-simple-compose__attachment-state {
+		@apply text-fg-subtle;
+	}
+
+	.z-mail-view-simple .z-simple-compose__attachment-state--error {
+		@apply text-danger;
+	}
+
+	.z-mail-view-simple .z-simple-compose__attachment-remove {
+		@apply inline-flex shrink-0 items-center text-fg-subtle transition-colors hover:text-fg;
+	}
+
+	.z-mail-view-simple .z-simple-compose__error {
+		@apply mt-4 text-danger;
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+	}
+
+	.z-mail-view-simple .z-simple-compose__footer {
+		position: fixed;
+		inset-inline: 0;
+		bottom: 0;
+		z-index: 20;
+		border-top: 1px solid var(--z-divider);
+		background-color: color-mix(in srgb, var(--z-chrome) 92%, transparent);
+		backdrop-filter: blur(8px);
+	}
+
+	.z-mail-view-simple .z-simple-compose__footer-inner {
+		max-width: var(--z-simple-content-max-width);
+		margin-inline: auto;
+		padding: 0.875rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	@media (min-width: 768px) {
+		.z-mail-view-simple .z-simple-compose__footer-inner {
+			padding-inline: 1.5rem;
+			padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+		}
+	}
+
+	.z-mail-view-simple .z-simple-compose__send-row {
+		@apply mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1;
+	}
+
+	.z-mail-view-simple .z-simple-compose__send-hint {
+		@apply min-w-0 text-fg-subtle;
+		font-size: 0.9375rem;
+		line-height: 1.55;
+	}
+
+	.z-mail-view-simple .z-simple-compose__send {
+		@apply inline-flex cursor-pointer items-center font-semibold text-fg underline underline-offset-[0.2em] decoration-fg/45;
+		font-size: var(--z-main-page-text);
+		line-height: 1.55;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			text-decoration-color var(--z-motion-base) var(--z-ease-out),
+			transform var(--z-motion-fast) var(--z-ease-out);
+	}
+
+	.z-mail-view-simple .z-simple-compose__send:hover:not(:disabled),
+	.z-mail-view-simple .z-mail-text-nav__action:hover:not(:disabled) {
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 70%, transparent);
+	}
+
+	.z-mail-view-simple .z-simple-compose__send:active:not(:disabled),
+	.z-mail-view-simple .z-mail-text-nav__action:active:not(:disabled) {
+		transform: scale(0.98);
+	}
+
+	.z-mail-view-simple .z-simple-compose__send:disabled,
+	.z-mail-view-simple .z-mail-text-nav__action:disabled {
+		@apply cursor-not-allowed text-fg-subtle no-underline;
+	}
+
+	.z-mail-view-simple .z-simple-compose .z-mail-text-nav__link {
+		@apply cursor-pointer border-0 bg-transparent p-0;
 	}
 
 	.z-list-line--sender {
@@ -2052,5 +2620,20 @@
 
 	:root.dark .z-email-body--html [data-z-light-surface] :where(a) {
 		color: revert;
+	}
+}
+
+@media (prefers-reduced-motion: no-preference) {
+	html:not(.z-reduce-motion) ::view-transition-group(message-list),
+	html:not(.z-reduce-motion) ::view-transition-group(message-reader) {
+		animation-duration: var(--z-motion-base);
+		animation-timing-function: var(--z-ease-out);
+	}
+
+	html:not(.z-reduce-motion) ::view-transition-old(message-list),
+	html:not(.z-reduce-motion) ::view-transition-new(message-list),
+	html:not(.z-reduce-motion) ::view-transition-old(message-reader),
+	html:not(.z-reduce-motion) ::view-transition-new(message-reader) {
+		animation-timing-function: var(--z-ease-out);
 	}
 }

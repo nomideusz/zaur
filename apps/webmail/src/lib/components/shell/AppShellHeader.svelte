@@ -103,9 +103,19 @@
 		)}
 	>
 		{#if showMailPrimaryAction}
-			<IconButton label="New message" class="md:hidden" onclick={() => goto('/mail/compose')}>
-				<PenSquare class="size-5" aria-hidden="true" />
-			</IconButton>
+			{#if settings.compactHeaderActions}
+				<IconButton label="New message" onclick={() => goto('/mail/compose')}>
+					<PenSquare class="size-5" aria-hidden="true" />
+				</IconButton>
+			{:else}
+				<IconButton label="New message" class="md:hidden" onclick={() => goto('/mail/compose')}>
+					<PenSquare class="size-5" aria-hidden="true" />
+				</IconButton>
+				<Button href="/mail/compose" class="hidden md:inline-flex">
+					<PenSquare class="size-5" aria-hidden="true" />
+					New message
+				</Button>
+			{/if}
 		{/if}
 
 		<OfflineIndicator />

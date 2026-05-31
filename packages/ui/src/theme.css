@@ -14,6 +14,8 @@
 	--z-surface-sunken: #f7f6f3;
 	--z-border: #eaeaea;
 	--z-border-strong: #d8d8d8;
+	/* Dividers sit outside container + page brightness (Hobday border rule). */
+	--z-divider: var(--z-border-strong);
 	--z-fg: #2f3437;
 	--z-fg-muted: #787774;
 	--z-fg-subtle: #9b9a97;
@@ -57,11 +59,12 @@
 	--z-chrome-active: color-mix(in srgb, var(--z-surface) 86%, var(--z-fg) 14%);
 	--z-border: #2a2a2a;
 	--z-border-strong: #3a3a3a;
+	--z-divider: var(--z-border-strong);
 	--z-fg: #ededec;
 	--z-fg-muted: #a8a8a6;
 	--z-fg-subtle: #787774;
 	--z-accent: #ededec;
-	--z-accent-hover: #ffffff;
+	--z-accent-hover: #f0f0ef;
 	--z-accent-fg: #111111;
 	--z-unread: #ededec;
 	--z-star: #d4a017;
@@ -85,11 +88,12 @@
 		--z-chrome-active: color-mix(in srgb, var(--z-surface) 86%, var(--z-fg) 14%);
 		--z-border: #2a2a2a;
 		--z-border-strong: #3a3a3a;
+		--z-divider: var(--z-border-strong);
 		--z-fg: #ededec;
 		--z-fg-muted: #a8a8a6;
 		--z-fg-subtle: #787774;
 		--z-accent: #ededec;
-		--z-accent-hover: #ffffff;
+		--z-accent-hover: #f0f0ef;
 		--z-accent-fg: #111111;
 		--z-unread: #ededec;
 		--z-star: #d4a017;

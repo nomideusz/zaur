@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
-	import MessageListItem from '$lib/components/mail/MessageListItem.svelte';
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
 	import type { MessageListProps } from '$lib/components/mail/message-list-props';
@@ -19,7 +18,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import type { Mailbox, MessagePreview } from '$lib/types/mail';
 	import { simpleContentPagePadClass } from '$lib/modes/simple/simple-content-layout';
-	import { formatSimpleMessageTime, groupMessagesByDay } from '$lib/utils/dates';
+	import { formatSimpleListWhen, simpleMessageDayKey } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 
 	let {
@@ -60,6 +59,19 @@
 	let firstSeenStorageKey = $state<string | null>(null);
 	let readEverByMessageId = $state<Record<string, number>>({});
 	let readEverStorageKey = $state<string | null>(null);
+	let motionReady = $state(false);
+
+	$effect(() => {
+		if (!browser) return;
+		mailboxRouteId;
+		loading;
+		motionReady = false;
+		if (loading) return;
+		const id = requestAnimationFrame(() => {
+			motionReady = true;
+		});
+		return () => cancelAnimationFrame(id);
+	});
 
 	const activeThreadId = $derived($page.params.threadId);
 	const searchReturnTo = $derived.by(() => {
@@ -73,10 +85,10 @@
 			activeThreadId
 		)
 	);
-	/** Sectioned inbox home only — thread/search routes use a flat list like Classic. */
+	/** Sectioned folder lists — thread/search use a flat editorial list. */
 	const sectionMode = $derived(!!mailboxRouteId && !activeThreadId);
+	const isInboxHome = $derived(sectionMode && mailboxRouteId === 'inbox');
 	const mailHomeHref = $derived(settings.preferredMailHref());
-	const minimalChrome = $derived(!settings.showReaderListRail && !!activeThreadId);
 	const resolvedEmptyMessage = $derived(emptyMessage ?? defaultEmptyMessage(mailboxRouteId));
 	const resolvedEmptyHint = $derived(
 		emptyHint ?? (emptyMessage ? null : defaultEmptyHint(mailboxRouteId))
@@ -93,8 +105,36 @@
 		trash: 5
 	};
 
+	const senderHintSkipRoles = new Set(['sent', 'drafts', 'archive', 'trash']);
+	const senderHintSkipRouteIds = new Set(['sent', 'drafts', 'archive', 'trash', 'outbox']);
+
+	function folderSectionCollapsedByDefault(folder: Mailbox): boolean {
+		if (folder.role === 'archive' || folder.role === 'trash') return true;
+		const id = folder.id.toLowerCase();
+		const name = folder.name.trim().toLowerCase();
+		if (id === 'outbox' || name === 'outbox') return true;
+		if (id === 'templates' || name === 'templates' || name === 'template') return true;
+		return false;
+	}
+
+	function defaultSectionVisibleCount(sectionId: string, folder?: Mailbox): number {
+		if (folder && folderSectionCollapsedByDefault(folder)) return 0;
+		if (INBOX_SECTION_IDS.has(sectionId)) return INBOX_SECTION_PAGE_SIZE;
+		if (mailboxRouteId && sectionId === mailboxRouteId) return INBOX_SECTION_PAGE_SIZE;
+		return FOLDER_SECTION_PAGE_SIZE;
+	}
+
+	function sectionRevealLabel(sectionId: string): string {
+		const visible = sectionVisibleCounts[sectionId] ?? 0;
+		return visible === 0 ? 'Show messages' : 'Show more';
+	}
+
 	function sectionPageSize(sectionId: string): number {
-		return INBOX_SECTION_IDS.has(sectionId) ? INBOX_SECTION_PAGE_SIZE : FOLDER_SECTION_PAGE_SIZE;
+		if (INBOX_SECTION_IDS.has(sectionId)) return INBOX_SECTION_PAGE_SIZE;
+		if (mailboxRouteId && sectionId === mailboxRouteId && !isInboxHome) {
+			return INBOX_SECTION_PAGE_SIZE;
+		}
+		return FOLDER_SECTION_PAGE_SIZE;
 	}
 
 	function simpleFolderSectionTitle(role: string | undefined, name: string): string {
@@ -296,49 +336,94 @@
 			messages: MessagePreview[];
 			totalCount: number;
 			sortOrder: number;
+			showUnreadDot: boolean;
 		}[] = [];
 
-		if (newUnreadMessages.length > 0) {
-			sections.push({
-				id: NEW_SECTION_ID,
-				name: 'New',
-				routeId: mailboxRouteId ?? 'inbox',
-				messages: newUnreadMessages.slice(
-					0,
-					sectionVisibleCounts[NEW_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
-				),
-				totalCount: newUnreadMessages.length,
-				sortOrder: 0
-			});
-		}
+		if (isInboxHome) {
+			if (newUnreadMessages.length > 0) {
+				sections.push({
+					id: NEW_SECTION_ID,
+					name: 'New',
+					routeId: mailboxRouteId ?? 'inbox',
+					messages: newUnreadMessages.slice(
+						0,
+						sectionVisibleCounts[NEW_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
+					),
+					totalCount: newUnreadMessages.length,
+					sortOrder: 0,
+					showUnreadDot: true
+				});
+			}
 
-		if (olderUnreadMessages.length > 0) {
-			sections.push({
-				id: UNREAD_SECTION_ID,
-				name: 'Unread',
-				routeId: mailboxRouteId ?? 'inbox',
-				messages: olderUnreadMessages.slice(
-					0,
-					sectionVisibleCounts[UNREAD_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
-				),
-				totalCount: olderUnreadMessages.length,
-				sortOrder: 1
-			});
-		}
+			if (olderUnreadMessages.length > 0) {
+				sections.push({
+					id: UNREAD_SECTION_ID,
+					name: 'Unread',
+					routeId: mailboxRouteId ?? 'inbox',
+					messages: olderUnreadMessages.slice(
+						0,
+						sectionVisibleCounts[UNREAD_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
+					),
+					totalCount: olderUnreadMessages.length,
+					sortOrder: 1,
+					showUnreadDot: true
+				});
+			}
 
-		for (const folder of orderedFolders) {
-			const knownCount = sectionMessagesByFolder[folder.id]?.length ?? 0;
-			if (knownCount === 0 && !sectionHasMoreByFolder[folder.id]) continue;
+			for (const folder of orderedFolders) {
+				const collapsed = folderSectionCollapsedByDefault(folder);
+				const knownCount = sectionMessagesByFolder[folder.id]?.length ?? 0;
+				if (
+					!collapsed &&
+					knownCount === 0 &&
+					!sectionHasMoreByFolder[folder.id] &&
+					folder.total === 0
+				) {
+					continue;
+				}
+				if (collapsed && folder.total === 0) continue;
 
-			const loaded = sectionMessagesByFolder[folder.id] ?? [];
-			const limit = sectionVisibleCounts[folder.id] ?? FOLDER_SECTION_PAGE_SIZE;
+				const loaded = sectionMessagesByFolder[folder.id] ?? [];
+				const limit =
+					sectionVisibleCounts[folder.id] ?? (collapsed ? 0 : FOLDER_SECTION_PAGE_SIZE);
+				sections.push({
+					id: folder.id,
+					name: simpleFolderSectionTitle(folder.role, folder.name),
+					routeId: folder.id,
+					messages: loaded.slice(0, limit),
+					totalCount: folder.total || loaded.length,
+					sortOrder: folderSectionSortOrder(folder),
+					showUnreadDot: folder.unread > 0
+				});
+			}
+
+			if (readMessages.length > 0) {
+				sections.push({
+					id: READ_SECTION_ID,
+					name: 'Read',
+					routeId: mailboxRouteId ?? 'inbox',
+					messages: readMessages.slice(
+						0,
+						sectionVisibleCounts[READ_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
+					),
+					totalCount: readMessages.length,
+					sortOrder: 2,
+					showUnreadDot: false
+				});
+			}
+		} else if (mailboxRouteId && messages.length > 0) {
+			const mailbox = mail.mailboxByRouteId(mailboxRouteId);
+			const collapsed = mailbox ? folderSectionCollapsedByDefault(mailbox) : false;
+			const limit =
+				sectionVisibleCounts[mailboxRouteId] ?? (collapsed ? 0 : INBOX_SECTION_PAGE_SIZE);
 			sections.push({
-				id: folder.id,
-				name: simpleFolderSectionTitle(folder.role, folder.name),
-				routeId: folder.id,
-				messages: loaded.slice(0, limit),
-				totalCount: loaded.length,
-				sortOrder: folderSectionSortOrder(folder)
+				id: mailboxRouteId,
+				name: simpleFolderSectionTitle(mailbox?.role, mailbox?.name ?? mailboxName),
+				routeId: mailboxRouteId,
+				messages: messages.slice(0, limit),
+				totalCount: mailbox?.total ?? messages.length,
+				sortOrder: 0,
+				showUnreadDot: (mailbox?.unread ?? 0) > 0
 			});
 		}
 
@@ -346,13 +431,6 @@
 			(a, b) => a.sortOrder - b.sortOrder || a.name.localeCompare(b.name)
 		);
 	});
-
-	const visibleReadCount = $derived(
-		sectionVisibleCounts[READ_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
-	);
-	const visibleReadMessages = $derived(readMessages.slice(0, visibleReadCount));
-	const readDayGroups = $derived(groupMessagesByDay(visibleReadMessages));
-	const readMailboxRouteId = $derived(mailboxRouteId ?? 'inbox');
 
 	$effect(() => {
 		sectionMode;
@@ -364,9 +442,13 @@
 			[UNREAD_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
 			[READ_SECTION_ID]: INBOX_SECTION_PAGE_SIZE
 		};
+		if (mailboxRouteId && mailboxRouteId !== 'inbox') {
+			const mailbox = mail.mailboxByRouteId(mailboxRouteId);
+			counts[mailboxRouteId] = defaultSectionVisibleCount(mailboxRouteId, mailbox);
+		}
 		for (const folder of mail.mailboxes) {
 			if (folder.id === 'unread' || folder.id === 'read' || folder.id === mailboxRouteId) continue;
-			counts[folder.id] = FOLDER_SECTION_PAGE_SIZE;
+			counts[folder.id] = defaultSectionVisibleCount(folder.id, folder);
 		}
 		sectionVisibleCounts = counts;
 	});
@@ -407,9 +489,11 @@
 		const routeId = mailboxRouteId;
 		const folders = orderedFolders;
 		const useSectionMode = sectionMode;
+		const inboxHome = isInboxHome;
 		messages;
+		sectionVisibleCounts;
 
-		if (!useSectionMode || !client || !routeId || folders.length === 0) {
+		if (!useSectionMode || !client || !routeId || !inboxHome || folders.length === 0) {
 			sectionMessagesByFolder = {};
 			return;
 		}
@@ -419,7 +503,12 @@
 
 		void Promise.all(
 			folders.map(async (folder) => {
-				const requested = sectionVisibleCounts[folder.id] ?? FOLDER_SECTION_PAGE_SIZE;
+				const requested =
+					sectionVisibleCounts[folder.id] ??
+					(folderSectionCollapsedByDefault(folder) ? 0 : FOLDER_SECTION_PAGE_SIZE);
+				if (requested === 0) {
+					return [folder.id, [] as MessagePreview[], folder.total > 0] as const;
+				}
 				if (folder.id === routeId) {
 					return [folder.id, messages.slice(0, requested), messages.length > requested] as const;
 				}
@@ -462,10 +551,31 @@
 		return () => observer.disconnect();
 	});
 
+	function listRowShowsWeekday(messages: MessagePreview[], index: number): boolean {
+		if (index === 0) return true;
+		return (
+			simpleMessageDayKey(messages[index].receivedAt) !==
+			simpleMessageDayKey(messages[index - 1].receivedAt)
+		);
+	}
+
+	function listRowShowsSenderHint(routeId: string): boolean {
+		if (senderHintSkipRouteIds.has(routeId)) return false;
+		const role = mail.mailboxByRouteId(routeId)?.role;
+		return !role || !senderHintSkipRoles.has(role);
+	}
+
 	function sectionMessageHref(message: MessagePreview, folderId: string): string {
 		const params = new URLSearchParams();
 		params.set('messageId', message.id);
 		return `/mail/${folderId}/${message.threadId}?${params.toString()}`;
+	}
+
+	function listMessageHref(message: MessagePreview, routeId: string): string {
+		if (searchReturnTo) {
+			return messageHref(message, searchReturnTo);
+		}
+		return sectionMessageHref(message, routeId);
 	}
 
 	function sectionCanShowMore(sectionId: string): boolean {
@@ -475,23 +585,42 @@
 		if (sectionId === READ_SECTION_ID) {
 			return readMessages.length > visible || hasMore;
 		}
+		if (!isInboxHome && sectionId === mailboxRouteId) {
+			const mailbox = mail.mailboxByRouteId(mailboxRouteId);
+			if (visible === 0 && mailbox && folderSectionCollapsedByDefault(mailbox)) {
+				return messages.length > 0 || hasMore;
+			}
+			return messages.length > visible || hasMore;
+		}
+		const folder = mail.mailboxByRouteId(sectionId);
+		if (visible === 0 && folder && folderSectionCollapsedByDefault(folder)) {
+			return (
+				folder.total > 0 ||
+				(sectionMessagesByFolder[sectionId]?.length ?? 0) > 0 ||
+				!!sectionHasMoreByFolder[sectionId]
+			);
+		}
 		const known = sectionMessagesByFolder[sectionId]?.length ?? 0;
 		return known > visible || !!sectionHasMoreByFolder[sectionId];
 	}
 
 	function revealMoreInSection(sectionId: string) {
 		const step = sectionPageSize(sectionId);
-		const nextVisible = (sectionVisibleCounts[sectionId] ?? step) + step;
+		const current = sectionVisibleCounts[sectionId] ?? 0;
+		const nextVisible = current === 0 ? step : current + step;
 		sectionVisibleCounts = {
 			...sectionVisibleCounts,
 			[sectionId]: nextVisible
 		};
-		if (
-			sectionId === READ_SECTION_ID &&
+		const shouldLoadMore =
 			hasMore &&
 			onLoadMore &&
-			nextVisible >= readMessages.length
-		) {
+			(sectionId === READ_SECTION_ID
+				? nextVisible >= readMessages.length
+				: !isInboxHome && sectionId === mailboxRouteId
+					? nextVisible >= messages.length
+					: false);
+		if (shouldLoadMore) {
 			onLoadMore();
 		}
 	}
@@ -508,13 +637,51 @@
 	<div class={cn(simpleContentPagePadClass(settings.compactSettingsLayout), 'flex flex-col')}>
 	{#if sectionMode && mailboxRouteId}
 		<div class="z-mail-text-nav">
-			<h1 class="z-mail-text-nav__title">
-				<a href={mailHomeHref}>ZAUR Mail</a>
-			</h1>
+			<div class="z-mail-text-nav__row">
+				<h1 class="z-mail-text-nav__title">
+					{#if isInboxHome}
+						<a href={mailHomeHref}>ZAUR Mail</a>
+					{:else}
+						{mailboxName}
+					{/if}
+				</h1>
+				<a class="z-mail-text-nav__action" href="/mail/compose">New message</a>
+			</div>
 		</div>
 	{/if}
 
 	<div class="z-mail-list-flow">
+		{#snippet simpleMessageRow(message: MessagePreview, routeId: string, showWeekday = false)}
+			{@const senderLabel = simpleSenderLabel(message, routeId)}
+			{@const subjectText = message.subject.trim() || '(no subject)'}
+			{@const showSenderHint = listRowShowsSenderHint(routeId)}
+			<li class="z-mail-folder-section__item">
+				<a
+					href={listMessageHref(message, routeId)}
+					class="z-mail-folder-section__message"
+					aria-current={currentMessageId === message.id ? 'page' : undefined}
+					aria-label="{subjectText}{showSenderHint ? ` — ${senderLabel}` : ''}"
+				>
+					<span class="z-mail-folder-section__lead">
+						{#if showSenderHint}
+							<span class="z-mail-folder-section__sender-hint" aria-hidden="true">{senderLabel}</span>
+						{/if}
+						<span
+							class={cn(
+								'z-mail-folder-section__subject',
+								currentMessageId === message.id && 'z-mail-folder-section__subject--active'
+							)}
+						>
+							{subjectText}
+						</span>
+					</span>
+					<time class="z-mail-folder-section__time" datetime={message.receivedAt}>
+						{formatSimpleListWhen(message.receivedAt, showWeekday, settings.timeFormat)}
+					</time>
+				</a>
+			</li>
+		{/snippet}
+
 		{#if loading || error || showFlatEmpty}
 			<MessageListStatus
 				{loading}
@@ -529,44 +696,42 @@
 				{onRetry}
 			/>
 		{:else if sectionMode}
-			{#snippet simpleMessageRow(message: MessagePreview, routeId: string)}
-				<a
-					href={sectionMessageHref(message, routeId)}
-					class="z-mail-folder-section__message"
-					aria-current={currentMessageId === message.id ? 'page' : undefined}
-					aria-label="{message.subject.trim() || '(no subject)'} — {simpleSenderLabel(message, routeId)}"
-				>
-					<time class="z-mail-folder-section__time" datetime={message.receivedAt}>
-						{formatSimpleMessageTime(message.receivedAt, settings.timeFormat)}
-					</time>
-					<span
-						class={cn(
-							'z-mail-folder-section__subject',
-							currentMessageId === message.id && 'z-mail-folder-section__subject--active'
-						)}
+			<div
+				class={cn('z-mail-folder-sections', motionReady && 'z-mail-folder-sections--ready')}
+			>
+				{#each folderSections as section, sectionIndex (section.id)}
+					<section
+						class="z-mail-folder-section"
+						style:order={section.sortOrder}
+						style:--section-index={sectionIndex}
 					>
-						{message.subject.trim() || '(no subject)'}
-					</span>
-					<span class="z-mail-folder-section__sender">
-						{simpleSenderLabel(message, routeId)}
-					</span>
-				</a>
-			{/snippet}
-
-			<div class="z-mail-folder-sections">
-				{#each folderSections as section (section.id)}
-					<section class="z-mail-folder-section" style:order={section.sortOrder}>
 						<div class="z-mail-folder-section__head">
-							<h2 class="z-mail-folder-section__title">{section.name}</h2>
+							<h2
+								class={cn(
+									'z-mail-folder-section__title',
+									section.showUnreadDot && 'z-mail-folder-section__title--unread'
+								)}
+							>
+								{section.name}
+							</h2>
 							<span class="z-mail-folder-section__count">{section.totalCount}</span>
 						</div>
-						<ul class="z-mail-folder-section__list">
-							{#each section.messages as message (message.id)}
-								<li>
-									{@render simpleMessageRow(message, section.routeId)}
-								</li>
-							{/each}
-						</ul>
+						{#if section.messages.length > 0}
+							<ul
+								class={cn(
+									'z-mail-folder-section__list',
+									motionReady && 'z-mail-folder-section__list--live'
+								)}
+							>
+								{#each section.messages as message, index (message.id)}
+									{@render simpleMessageRow(
+										message,
+										section.routeId,
+										listRowShowsWeekday(section.messages, index)
+									)}
+								{/each}
+							</ul>
+						{/if}
 						{#if sectionCanShowMore(section.id)}
 							<div class="z-mail-folder-section__footer">
 								<button
@@ -574,58 +739,50 @@
 									class="z-mail-folder-section__more"
 									onclick={() => revealMoreInSection(section.id)}
 								>
-									Show more
+									{sectionRevealLabel(section.id)}
 								</button>
 							</div>
 						{/if}
 					</section>
 				{/each}
 
-				{#if readDayGroups.length > 0}
-					<div class="z-mail-read-by-day" style:order="2">
-						{#each readDayGroups as dayGroup (dayGroup.dayKey)}
-							<section class="z-mail-folder-section z-mail-folder-section--day">
-								<div class="z-mail-folder-section__head">
-									<h2 class="z-mail-folder-section__title">{dayGroup.heading}</h2>
-								</div>
-								<ul class="z-mail-folder-section__list">
-									{#each dayGroup.messages as message (message.id)}
-										<li>
-											{@render simpleMessageRow(message, readMailboxRouteId)}
-										</li>
-									{/each}
-								</ul>
-							</section>
-						{/each}
-						{#if sectionCanShowMore(READ_SECTION_ID)}
-							<div class="z-mail-folder-section__footer">
-								<button
-									type="button"
-									class="z-mail-folder-section__more"
-									onclick={() => revealMoreInSection(READ_SECTION_ID)}
-								>
-									Show more
-								</button>
-							</div>
-						{/if}
-					</div>
-				{:else if folderSections.length === 0 && readDayGroups.length === 0}
-					<p class="z-mail-folder-section__empty">No messages yet.</p>
+				{#if folderSections.length === 0}
+					<p class="z-mail-folder-section__empty">{resolvedEmptyMessage}</p>
 				{/if}
 			</div>
-			<div class="z-mail-text-nav__footer">
-				<a class="z-mail-text-nav__link" href="/settings">Settings</a>
-			</div>
+			{#if isInboxHome}
+				<div
+					class={cn('z-mail-text-nav__footer', motionReady && 'z-mail-text-nav__footer--ready')}
+					style:--section-count={folderSections.length}
+				>
+					<a class="z-mail-text-nav__link" href="/settings">Settings</a>
+				</div>
+			{:else}
+				<div
+					class={cn('z-mail-text-nav__footer', motionReady && 'z-mail-text-nav__footer--ready')}
+					style:--section-count={folderSections.length}
+				>
+					<div class="z-mail-text-nav__links">
+						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
+						<a class="z-mail-text-nav__link" href="/settings">Settings</a>
+					</div>
+				</div>
+			{/if}
 		{:else}
-			{#each messages as message (message.id)}
-				<MessageListItem
-					{message}
-					href={messageHref(message, searchReturnTo)}
-					active={currentMessageId === message.id}
-					{minimalChrome}
-					{mailboxRouteId}
-				/>
-			{/each}
+			<ul
+				class={cn(
+					'z-mail-folder-section__list',
+					motionReady && 'z-mail-folder-section__list--live'
+				)}
+			>
+				{#each messages as message, index (message.id)}
+					{@render simpleMessageRow(
+						message,
+						mailboxRouteId ?? message.mailboxId,
+						listRowShowsWeekday(messages, index)
+					)}
+				{/each}
+			</ul>
 
 			<MessageListLoadMore
 				{hasMore}

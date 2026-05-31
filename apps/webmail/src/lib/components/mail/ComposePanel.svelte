@@ -277,6 +277,7 @@
 						<button
 							type="button"
 							class="shrink-0 text-xs text-accent hover:underline"
+							tabindex="-1"
 							onclick={() => (compose.showCcBcc = true)}
 						>
 							Cc/Bcc
