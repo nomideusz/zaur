@@ -12,7 +12,7 @@ export function simpleContentShellClass(): string {
 export function simpleContentPagePadClass(): string {
 	return cn(
 		simpleContentShellClass(),
-		'px-4 py-4 pb-[max(2rem,env(safe-area-inset-bottom))] md:px-6 md:py-6'
+		'px-4 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:px-6 md:py-6'
 	);
 }
 
@@ -20,6 +20,6 @@ export function simpleContentPagePadClass(): string {
 export function simpleSettingsShellClass(): string {
 	return cn(
 		simpleContentShellClass(),
-		'px-4 pt-4 pb-[max(2rem,env(safe-area-inset-bottom))] md:px-6 md:pt-6 md:pb-6'
+		'px-4 pt-1 pb-[max(0.5rem,env(safe-area-inset-bottom))] md:px-6 md:pt-6 md:pb-6'
 	);
 }

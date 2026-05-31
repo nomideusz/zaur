@@ -88,11 +88,6 @@
 		return `/mail/${mailboxRouteId}/${nextUnread.threadId}?${params.toString()}`;
 	});
 
-	const nextUnreadLabel = $derived.by(() => {
-		if (!nextUnread) return null;
-		return unreadCount > 1 ? `Open next unread (${unreadCount})` : 'Open next unread';
-	});
-
 	function openNextUnread() {
 		if (!nextUnreadHref) return;
 		goto(nextUnreadHref);
@@ -386,7 +381,7 @@
 			{#if useSimpleContentShell}
 				<div class="z-mail-text-nav z-reader-sticky-nav">
 					<div class="z-mail-text-nav__row">
-						<h1 class="z-mail-text-nav__title z-mail-text-nav__title--truncate">{subject}</h1>
+						<h1 class="z-mail-text-nav__title">{subject}</h1>
 						{#if !mail.hasSelection}
 							{#if isDraft && latest}
 								<a
@@ -404,11 +399,8 @@
 					</div>
 					<div class="z-mail-text-nav__links">
 						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
-						{#if nextUnreadHref && nextUnreadLabel}
-							<a class="z-mail-text-nav__link" href={nextUnreadHref}>{nextUnreadLabel}</a>
-						{/if}
-						{#if mailboxRouteId !== 'inbox'}
-							<a class="z-mail-text-nav__link" href={mailboxHref}>{mailboxLabel}</a>
+						{#if nextUnreadHref}
+							<a class="z-mail-text-nav__link" href={nextUnreadHref}>Open next unread</a>
 						{/if}
 						<a class="z-mail-text-nav__link" href="/settings">Settings</a>
 					</div>

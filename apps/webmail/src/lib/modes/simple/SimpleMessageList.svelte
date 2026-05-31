@@ -378,7 +378,7 @@
 			if (readMessages.length > 0) {
 				sections.push({
 					id: READ_SECTION_ID,
-					name: 'Read',
+					name: 'Inbox',
 					routeId: mailboxRouteId ?? 'inbox',
 					messages: readMessages.slice(
 						0,
@@ -656,6 +656,7 @@
 			actionLabel="New message"
 			showBackToMail={!isInboxHome}
 			backHref={mailHomeHref}
+			showSettings={false}
 		/>
 	{/if}
 
@@ -791,6 +792,9 @@
 				bind:loadSentinel
 			/>
 		{/if}
+	</div>
+	<div class="z-mail-text-nav__links mt-4 md:mt-8">
+		<a class="z-mail-text-nav__link" href="/settings">Settings</a>
 	</div>
 	</div>
 </section>
