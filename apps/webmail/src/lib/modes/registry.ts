@@ -89,7 +89,10 @@ export function webmailModeDefinition(mode: MailViewMode): WebmailModeDefinition
 	return WEBMAIL_MODES[mode];
 }
 
-export function settingsNavLinks(_mode: MailViewMode = 'simple'): SettingsNavLink[] {
+export function settingsNavLinks(mode: MailViewMode = 'simple'): SettingsNavLink[] {
+	if (mode === 'simple') {
+		return SETTINGS_NAV_LINKS.filter((link) => link.section !== 'experience');
+	}
 	return SETTINGS_NAV_LINKS;
 }
 
@@ -114,7 +117,8 @@ export function settingsPathAllowedForMode(_pathname: string, _mode: MailViewMod
 	return true;
 }
 
-export function settingsRedirectForMode(pathname: string, _mode: MailViewMode): string | null {
+export function settingsRedirectForMode(pathname: string, mode: MailViewMode): string | null {
+	if (mode === 'simple' && pathname === '/settings') return '/settings/account';
 	if (pathname === '/settings/layout') return '/settings/reading';
 	if (pathname === '/settings/workspace') return '/settings/reading';
 	if (pathname === '/settings/sidebar') return '/settings/reading';
