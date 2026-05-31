@@ -95,6 +95,17 @@
 		rebuildComposeBody(messageBody, value);
 	}
 
+	const titles: Record<ComposeMode, string> = {
+		new: 'New message',
+		reply: 'Reply',
+		'reply-all': 'Reply all',
+		forward: 'Forward'
+	};
+
+	const composeTitle = $derived(
+		compose.jmapDraftId ? 'Edit draft' : (titles[mode] ?? 'New message')
+	);
+
 	const draftStatus = $derived.by(() => {
 		if (compose.isSavingDraft) return 'Saving draft…';
 		if (compose.draftSavedAt) return 'Draft saved';
@@ -229,7 +240,7 @@
 	<div class={cn(simpleContentPagePadClass(settings.compactSettingsLayout), 'z-simple-compose__page')}>
 		<div class="z-mail-text-nav z-simple-compose__nav">
 			<div class="z-mail-text-nav__row">
-				<button type="button" class="z-mail-text-nav__link" onclick={close}>Back to mail</button>
+				<h1 class="z-mail-text-nav__title">{composeTitle}</h1>
 				<button
 					type="submit"
 					form="simple-compose-form"
@@ -240,9 +251,12 @@
 					{sendLabel}
 				</button>
 			</div>
-			{#if !settings.hideComposeHints}
-				<p class="z-simple-compose__status" aria-live="polite">{draftStatus ?? ''}</p>
+			{#if !settings.hideComposeHints && draftStatus}
+				<p class="z-mail-text-nav__label" aria-live="polite">{draftStatus}</p>
 			{/if}
+			<div class="z-mail-text-nav__links">
+				<button type="button" class="z-mail-text-nav__link" onclick={close}>Back to mail</button>
+			</div>
 		</div>
 
 		<form
@@ -409,6 +423,7 @@
 						Attach file
 					</button>
 					<button type="button" class="z-mail-text-nav__link" onclick={close}>Discard</button>
+					<a class="z-mail-text-nav__link" href="/settings">Settings</a>
 				</div>
 				<div class="z-simple-compose__send-row">
 					{#if !settings.hideComposeHints}

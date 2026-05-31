@@ -647,6 +647,12 @@
 				</h1>
 				<a class="z-mail-text-nav__action" href="/mail/compose">New message</a>
 			</div>
+			<div class="z-mail-text-nav__links">
+				{#if !isInboxHome}
+					<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
+				{/if}
+				<a class="z-mail-text-nav__link" href="/settings">Settings</a>
+			</div>
 		</div>
 	{/if}
 
@@ -664,16 +670,27 @@
 				>
 					<span class="z-mail-folder-section__lead">
 						{#if showSenderHint}
-							<span class="z-mail-folder-section__sender-hint" aria-hidden="true">{senderLabel}</span>
+							<span class="z-mail-folder-section__swap">
+								<span
+									class={cn(
+										'z-mail-folder-section__subject',
+										currentMessageId === message.id && 'z-mail-folder-section__subject--active'
+									)}
+								>
+									{subjectText}
+								</span>
+								<span class="z-mail-folder-section__sender" aria-hidden="true">{senderLabel}</span>
+							</span>
+						{:else}
+							<span
+								class={cn(
+									'z-mail-folder-section__subject',
+									currentMessageId === message.id && 'z-mail-folder-section__subject--active'
+								)}
+							>
+								{subjectText}
+							</span>
 						{/if}
-						<span
-							class={cn(
-								'z-mail-folder-section__subject',
-								currentMessageId === message.id && 'z-mail-folder-section__subject--active'
-							)}
-						>
-							{subjectText}
-						</span>
 					</span>
 					<time class="z-mail-folder-section__time" datetime={message.receivedAt}>
 						{formatSimpleListWhen(message.receivedAt, showWeekday, settings.timeFormat)}
@@ -750,24 +767,6 @@
 					<p class="z-mail-folder-section__empty">{resolvedEmptyMessage}</p>
 				{/if}
 			</div>
-			{#if isInboxHome}
-				<div
-					class={cn('z-mail-text-nav__footer', motionReady && 'z-mail-text-nav__footer--ready')}
-					style:--section-count={folderSections.length}
-				>
-					<a class="z-mail-text-nav__link" href="/settings">Settings</a>
-				</div>
-			{:else}
-				<div
-					class={cn('z-mail-text-nav__footer', motionReady && 'z-mail-text-nav__footer--ready')}
-					style:--section-count={folderSections.length}
-				>
-					<div class="z-mail-text-nav__links">
-						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
-						<a class="z-mail-text-nav__link" href="/settings">Settings</a>
-					</div>
-				</div>
-			{/if}
 		{:else}
 			<ul
 				class={cn(

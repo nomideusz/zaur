@@ -17,3 +17,13 @@ export function simpleContentPagePadClass(compact = false): string {
 			: 'px-4 py-4 pb-[max(2rem,env(safe-area-inset-bottom))] md:px-6 md:py-6'
 	);
 }
+
+/** Simple settings — vertical rhythm only; content spans the full column width. */
+export function simpleSettingsShellClass(compact = false): string {
+	return cn(
+		simpleContentShellClass(),
+		compact
+			? 'pt-3.5 pb-[max(1.75rem,env(safe-area-inset-bottom))]'
+			: 'pt-4 pb-[max(2rem,env(safe-area-inset-bottom))] md:pt-6 md:pb-6'
+	);
+}

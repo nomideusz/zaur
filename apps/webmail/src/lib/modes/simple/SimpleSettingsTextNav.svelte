@@ -1,45 +1,51 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
+	import { mailViewModeSwitchMessage } from '$lib/mail/switch-mode';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/modes/registry';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	let { isIndex = false }: { isIndex?: boolean } = $props();
 
-	const links = $derived(settingsNavLinks('simple'));
-	const activeLink = $derived(
-		links.find((link) => isSettingsNavActive($page.url.pathname, link.href)) ?? null
+	const sectionLinks = $derived(
+		settingsNavLinks('simple').filter((link) => link.href !== '/settings')
 	);
 	const mailHref = $derived(settings.preferredMailHref());
+
+	function switchToClassic() {
+		if (settings.mailViewMode === 'traditional') return;
+		if (!confirm(mailViewModeSwitchMessage('traditional'))) return;
+		settings.switchMailViewModeTo('traditional');
+	}
 </script>
 
-<header class="z-settings-text-nav shrink-0">
-	<h1 class="z-settings-text-nav__title">ZAUR Settings</h1>
-	<div class="z-settings-text-nav__links">
-		<a
-			class={cn('z-settings-text-nav__link', isIndex && 'z-settings-text-nav__link--active')}
-			href="/settings"
-			aria-current={isIndex ? 'page' : undefined}
-		>
-			Experience
-		</a>
-		<a
-			class={cn(
-				'z-settings-text-nav__link',
-				$page.url.pathname.startsWith('/mail') && 'z-settings-text-nav__link--active'
-			)}
-			href={mailHref}
-		>
-			Mail
-		</a>
-		{#if !isIndex && activeLink && activeLink.href !== '/settings'}
-			<span class="z-settings-text-nav__sep" aria-hidden="true">·</span>
-			<span class="z-settings-text-nav__current">{activeLink.label}</span>
-		{/if}
+<header
+	class="z-mail-text-nav z-mail-text-nav--settings z-settings-sticky-nav shrink-0"
+	aria-label="Settings"
+>
+	<div class="z-settings-nav-back">
+		<a class="z-mail-text-nav__link" href={mailHref}>Back to mail</a>
+	</div>
+	<nav class="z-settings-section-nav" aria-label="Settings sections">
+		{#each sectionLinks as link (link.href)}
+			{@const active = isSettingsNavActive($page.url.pathname, link.href)}
+			<a
+				href={link.href}
+				class={cn('z-mail-text-nav__link', active && 'z-mail-text-nav__link--active')}
+				aria-current={active ? 'page' : undefined}
+			>
+				{link.label}
+			</a>
+		{/each}
+	</nav>
+	<div class="z-settings-nav-meta">
+		<button type="button" class="z-mail-text-nav__link" onclick={switchToClassic}>
+			Switch to Classic
+		</button>
 	</div>
 	{#if isIndex}
-		<div class="z-settings-text-nav__search">
+		<div class="z-mail-text-nav__search">
 			<SettingsSearch />
 		</div>
 	{/if}

@@ -4,13 +4,16 @@
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
 
 	const editorial = $derived(getWebmailModeContext().settings.editorial);
+	const mode = $derived(getWebmailModeContext());
 </script>
 
 <svelte:head>
-	<title>Experience · ZAUR Webmail</title>
+	<title>{editorial && mode.id === 'simple' ? 'Settings' : 'Experience'} · ZAUR Webmail</title>
 </svelte:head>
 
-{#if editorial}
+{#if editorial && mode.id === 'simple'}
+	<!-- Simple settings index: search and mode switch live in the layout header. -->
+{:else if editorial}
 	<ExperienceSection />
 {:else}
 	<SettingsPanel

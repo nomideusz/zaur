@@ -50,6 +50,13 @@
 
 	const latest = $derived(thread.at(-1));
 	const subject = $derived(latest?.subject ?? '(no subject)');
+	const isDraft = $derived(mailboxRouteId === 'drafts');
+	const mailHomeHref = $derived(settings.preferredMailHref());
+	const mailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
+	const mailboxLabel = $derived(mailbox?.name ?? mailboxRouteId);
+	const primaryReplyLabel = $derived(
+		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
+	);
 
 	function wordCount(text: string | undefined): number {
 		if (!text) return 0;
@@ -60,7 +67,6 @@
 	);
 	const readMinutes = $derived(Math.max(1, Math.round(totalWords / 220)));
 	const showReadTime = $derived(totalWords >= 200);
-	const mainPageHref = '/mail/inbox';
 	const mailboxHref = $derived(`/mail/${mailboxRouteId}`);
 
 	const nextUnread = $derived.by(() => {
@@ -307,7 +313,9 @@
 	)}
 	style="view-transition-name: message-reader;"
 >
-	<h1 class="sr-only">{subject}</h1>
+	{#if !useSimpleContentShell}
+		<h1 class="sr-only">{subject}</h1>
+	{/if}
 
 	{#if mail.selectedError}
 		<div
@@ -365,24 +373,58 @@
 				minimalChrome && 'z-reader-column--aligned'
 			)}
 		>
-			<div
-				class={cn(
-					'sticky top-0 z-10 border-b border-border/60 bg-surface/95 text-xs text-fg-muted backdrop-blur-sm',
-					useSimpleContentShell && 'z-reader-sticky-nav',
-					settings.compactReaderHeader ? 'pb-1 pt-1.5' : 'pb-2 pt-2'
-				)}
-			>
-				<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
-					<a href={mainPageHref} class="font-medium text-accent underline underline-offset-2 hover:text-accent-hover">
-						Back to Inbox
-					</a>
-					{#if mailboxRouteId !== 'inbox'}
-						<a href={mailboxHref} class="text-accent underline underline-offset-2 hover:text-accent-hover">
-							Back to {mailboxRouteId}
-						</a>
-					{/if}
+			{#if useSimpleContentShell}
+				<div class="z-mail-text-nav z-reader-sticky-nav">
+					<div class="z-mail-text-nav__row">
+						<h1 class="z-mail-text-nav__title z-mail-text-nav__title--truncate">{subject}</h1>
+						{#if !mail.hasSelection}
+							{#if isDraft && latest}
+								<a
+									class="z-mail-text-nav__action"
+									href="/mail/compose?draft={latest.id}"
+								>
+									Edit draft
+								</a>
+							{:else if !isDraft}
+								<button type="button" class="z-mail-text-nav__action" onclick={reply}>
+									{primaryReplyLabel}
+								</button>
+							{/if}
+						{/if}
+					</div>
+					<div class="z-mail-text-nav__links">
+						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
+						{#if mailboxRouteId !== 'inbox'}
+							<a class="z-mail-text-nav__link" href={mailboxHref}>{mailboxLabel}</a>
+						{/if}
+						<a class="z-mail-text-nav__link" href="/settings">Settings</a>
+					</div>
 				</div>
-			</div>
+			{:else}
+				<div
+					class={cn(
+						'sticky top-0 z-10 border-b border-border/60 bg-surface/95 text-xs text-fg-muted backdrop-blur-sm',
+						settings.compactReaderHeader ? 'pb-1 pt-1.5' : 'pb-2 pt-2'
+					)}
+				>
+					<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
+						<a
+							href={mailHomeHref}
+							class="font-medium text-accent underline underline-offset-2 hover:text-accent-hover"
+						>
+							Back to mail
+						</a>
+						{#if mailboxRouteId !== 'inbox'}
+							<a
+								href={mailboxHref}
+								class="text-accent underline underline-offset-2 hover:text-accent-hover"
+							>
+								Back to {mailboxLabel}
+							</a>
+						{/if}
+					</div>
+				</div>
+			{/if}
 			{#if thread.length > 1}
 				<div class={cn('pb-1 pt-3', settings.compactReaderHeader && 'pt-2.5', minimalChrome && 'pt-2')}>
 					<div
@@ -665,7 +707,7 @@
 								settings.compactReaderBody && 'z-reader-content--compact'
 							)}
 						>
-							{#if showInlineSubject}
+							{#if showInlineSubject && !useSimpleContentShell}
 								<p class="z-reader-inline-subject">{subject}</p>
 							{/if}
 
