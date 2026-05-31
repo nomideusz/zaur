@@ -1,4 +1,4 @@
-import type { MailboxRole } from '$lib/types/mail';
+import type { Mailbox, MailboxRole } from '$lib/types/mail';
 
 /** Canonical folder kinds used for routes, sorting, and display. */
 export type MailboxKind =
@@ -122,4 +122,19 @@ export function mailboxKindOrderForMailbox(mailbox: {
 			? (mailbox.role as MailboxKind)
 			: resolveMailboxKind({ name: mailbox.name, role: mailbox.role });
 	return mailboxKindOrder(kind);
+}
+
+/** Folders offered in “Move to…” — excludes archive and Important (use Mark important). */
+const MOVE_TARGET_EXCLUDED_ROLES = new Set<MailboxRole>(['archive', 'important']);
+
+export function moveTargetMailboxes(
+	mailboxes: Mailbox[],
+	currentMailbox?: Pick<Mailbox, 'id'> | null
+): Mailbox[] {
+	return mailboxes.filter(
+		(mb) =>
+			mb.jmapId &&
+			mb.id !== currentMailbox?.id &&
+			(!mb.role || !MOVE_TARGET_EXCLUDED_ROLES.has(mb.role))
+	);
 }

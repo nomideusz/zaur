@@ -9,6 +9,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
+	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -27,9 +28,7 @@
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete' : 'Trash');
-	const moveTargets = $derived(
-		mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
-	);
+	const moveTargets = $derived(moveTargetMailboxes(mail.mailboxes, currentMailbox));
 	const hasNotImportantSelected = $derived(
 		mail.messages.some((message) => selectedIds.includes(message.id) && !message.important)
 	);
@@ -87,7 +86,7 @@
 				onclick={() => auth.client && runBulk(() => mail.bulkMarkAsImportant(auth.client!))}
 			>
 				<Important class="size-4" aria-hidden="true" />
-				<span class="max-sm:sr-only">Important</span>
+				<span class="max-sm:sr-only">Mark important</span>
 			</Button>
 		{/if}
 		{#if hasImportantSelected}
@@ -97,7 +96,7 @@
 				onclick={() => auth.client && runBulk(() => mail.bulkMarkAsNotImportant(auth.client!))}
 			>
 				<Important class="size-4 opacity-50" aria-hidden="true" />
-				<span class="max-sm:sr-only">Not important</span>
+				<span class="max-sm:sr-only">Remove important</span>
 			</Button>
 		{/if}
 		{#if canArchive}

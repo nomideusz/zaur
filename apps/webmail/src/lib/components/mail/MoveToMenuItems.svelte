@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
 	import { OVERFLOW_MENU_CTX, type OverflowMenuContext } from '$lib/components/ui/overflow-menu-context';
+	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { mail } from '$lib/stores/mail.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
 
 	interface Props {
 		currentMailboxRouteId: string;
@@ -14,11 +14,7 @@
 	const overflowMenu = getContext<OverflowMenuContext | undefined>(OVERFLOW_MENU_CTX);
 
 	const currentMailbox = $derived(mail.mailboxByRouteId(currentMailboxRouteId));
-	const options = $derived(
-		mail.mailboxes.filter(
-			(mb) => mb.jmapId && mb.id !== currentMailbox?.id && mb.role !== 'archive'
-		)
-	);
+	const options = $derived(moveTargetMailboxes(mail.mailboxes, currentMailbox));
 
 	function select(targetRouteId: string) {
 		onSelect(targetRouteId);

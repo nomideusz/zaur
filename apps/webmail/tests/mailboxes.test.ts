@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import {
 	mailboxDisplayName,
 	mailboxRouteId,
+	moveTargetMailboxes,
 	resolveMailboxKind
 } from '../src/lib/mail/mailboxes.ts';
 
@@ -34,5 +35,20 @@ describe('mailboxes', () => {
 		assert.equal(mailboxRouteId('mb-1', 'inbox'), 'inbox');
 		assert.equal(mailboxRouteId('mb-2', 'important'), 'important');
 		assert.equal(mailboxRouteId('mb-3', 'custom'), 'mb-3');
+	});
+
+	it('excludes archive and important from move targets', () => {
+		const mailboxes = [
+			{ id: 'inbox', jmapId: '1', name: 'Emails', role: 'inbox', unread: 0, total: 0 },
+			{ id: 'important', jmapId: '2', name: 'Important', role: 'important', unread: 0, total: 0 },
+			{ id: 'archive', jmapId: '3', name: 'Archive', role: 'archive', unread: 0, total: 0 },
+			{ id: 'sent', jmapId: '4', name: 'Sent', role: 'sent', unread: 0, total: 0 }
+		];
+
+		const targets = moveTargetMailboxes(mailboxes, mailboxes[0]);
+		assert.deepEqual(
+			targets.map((mb) => mb.id),
+			['sent']
+		);
 	});
 });

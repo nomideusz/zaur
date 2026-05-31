@@ -6,6 +6,7 @@
 	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -30,11 +31,7 @@
 		mail.messages.some((message) => selectedIds.includes(message.id) && message.important)
 	);
 	const moveTargets = $derived(
-		mailboxRouteId
-			? mail.mailboxes.filter(
-					(mb) => mb.jmapId && mb.id !== currentMailbox?.id && mb.role !== 'archive'
-				)
-			: []
+		mailboxRouteId ? moveTargetMailboxes(mail.mailboxes, currentMailbox) : []
 	);
 	const actionButtonClass = '!h-8 shrink-0 !px-2 !text-xs';
 	const moveSelectClass = $derived(
