@@ -2,6 +2,15 @@
  * Scope: .z-mail-view-simple (mail) and .z-settings-mode-simple (settings).
  */
 
+	:is(.z-mail-view-simple, .z-settings-mode-simple) {
+		--z-reader-font: var(--font-mono);
+		font-family: var(--font-mono) !important;
+	}
+
+	:is(.z-mail-view-simple, .z-settings-mode-simple) :is(input, button, textarea, select) {
+		font-family: var(--font-mono) !important;
+	}
+
 	/* Simple mail/settings — scroll the main column, not nested panes */
 	.z-app-main--page-scroll {
 		overscroll-behavior-y: contain;
