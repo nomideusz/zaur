@@ -1158,11 +1158,19 @@
 		margin-inline: auto;
 	}
 
-	/* Simple mode — one shared column for mail list, reader, and settings */
-	.z-mail-view-simple .z-simple-content,
-	.z-settings-mode-simple .z-simple-content {
+	/* Simple mode mail — centered measure column */
+	.z-mail-view-simple .z-simple-content {
 		max-width: var(--z-simple-content-max-width);
 		margin-inline: auto;
+		width: 100%;
+		min-width: 0;
+	}
+
+	/* Simple settings — full width, flush left (no centered column) */
+	.z-settings-mode-simple .z-simple-content,
+	.z-settings-mode-simple .z-settings-content {
+		max-width: none;
+		margin-inline: 0;
 		width: 100%;
 		min-width: 0;
 	}
