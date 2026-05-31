@@ -15,11 +15,13 @@
 	import { mapEmailPreview } from '$lib/jmap/map';
 	import { isAccountSettingsSubject } from '$lib/settings/account-settings-types';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { appConfig } from '$lib/config';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import type { Mailbox, MessagePreview } from '$lib/types/mail';
 	import MailTextNav from '$lib/components/mail/MailTextNav.svelte';
 	import { contentPagePadClass } from '$lib/mail/layout';
+	import { mailListHref, mailThreadHref } from '$lib/mail/routes';
 	import { mailboxKindOrderForMailbox } from '$lib/mail/mailboxes';
 	import {
 		formatSimpleListWhen,
@@ -396,6 +398,7 @@
 		mail.mailboxes
 			.filter(
 				(folder) =>
+					folder.total > 0 &&
 					folder.id !== 'unread' &&
 					folder.id !== 'read' &&
 					(!mailboxRouteId || folder.id !== mailboxRouteId)
@@ -602,7 +605,7 @@
 	function sectionMessageHref(message: MessagePreview, folderId: string): string {
 		const params = new URLSearchParams();
 		params.set('messageId', message.id);
-		return `/mail/${folderId}/${message.threadId}?${params.toString()}`;
+		return mailThreadHref(folderId, message.threadId, params);
 	}
 
 	function listMessageHref(message: MessagePreview, routeId: string): string {
@@ -695,7 +698,8 @@
 	>
 	{#if mailboxRouteId || !sectionMode}
 		<MailTextNav
-			title={isInboxHome ? 'Emails' : mailboxName}
+			title={isInboxHome ? appConfig.brandName : mailboxName}
+			titleBrand={isInboxHome}
 			titleHref={isInboxHome ? mailHomeHref : null}
 			actionHref="/mail/compose"
 			actionLabel="New message"
@@ -822,7 +826,7 @@
 				>
 					{#each orderedFolders as folder (folder.id)}
 						<a
-							href={`/mail/${folder.id}`}
+							href={mailListHref(folder.id)}
 							class="inline-flex items-baseline gap-1.5 text-fg-muted no-underline transition-colors hover:text-fg"
 						>
 							<span>{folder.name}</span>

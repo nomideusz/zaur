@@ -5,6 +5,7 @@
 	import { appConfig } from '$lib/config';
 	import { loadRememberedLogin } from '$lib/auth/remember-login';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
@@ -69,7 +70,7 @@
 			<div class="mb-4 flex justify-center text-accent">
 				<ZaurSprite id="happy" scale={5} />
 			</div>
-			<h1 class="z-type-brand text-2xl text-fg">ZAUR</h1>
+			<h1 class="z-type-brand text-2xl text-fg">{appConfig.brandName}</h1>
 			<p class="mt-2 text-sm text-fg-muted">Private, focused email</p>
 		</div>
 

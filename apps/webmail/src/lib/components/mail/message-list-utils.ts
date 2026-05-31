@@ -1,4 +1,5 @@
 import { mail } from '$lib/stores/mail.svelte';
+import { mailThreadHref } from '$lib/mail/routes';
 import type { MessageDetail, MessagePreview } from '$lib/types/mail';
 
 export function defaultEmptyMessage(mailboxRouteId: string | undefined): string {
@@ -47,13 +48,12 @@ export function messageHref(
 	message: MessagePreview,
 	searchReturnTo: string | null
 ): string {
-	const href = `/mail/${message.mailboxId}/${message.threadId}`;
 	const searchParams = new URLSearchParams();
 	searchParams.set('messageId', message.id);
 	if (searchReturnTo) {
 		searchParams.set('returnTo', searchReturnTo);
 	}
-	return `${href}?${searchParams.toString()}`;
+	return mailThreadHref(message.mailboxId, message.threadId, searchParams);
 }
 
 /** Message targeted by list/reader actions (keywords, move, delete) — not always the chronologically latest. */

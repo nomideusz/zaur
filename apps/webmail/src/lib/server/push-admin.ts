@@ -111,7 +111,7 @@ export async function sendTestPushNotifications(input?: {
 	const message: PushMessage = {
 		title: input?.title?.trim() || 'ZAUR push test',
 		body: input?.body?.trim() || 'If you see this, push delivery is working.',
-		url: '/mail/inbox',
+		url: '/',
 		tag: 'zaur-push-test'
 	};
 

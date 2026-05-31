@@ -36,11 +36,11 @@
 		mail.messages.some((message) => selectedIds.includes(message.id) && message.important)
 	);
 
-	async function runBulk(action: () => Promise<void>) {
+	async function runBulk(action: () => Promise<void>, refreshList = false) {
 		if (!auth.client || mail.bulkActionLoading) return;
 		try {
 			await action();
-			onBulkAction?.();
+			if (refreshList) onBulkAction?.();
 		} catch (err) {
 			const message = err instanceof Error ? err.message : 'Action failed';
 			toast.show(message, 'error');
@@ -51,12 +51,12 @@
 		if (!auth.client) return;
 		const permanent = currentMailbox?.role === 'trash';
 		if (!settings.confirmDeleteMessage(selectedIds.length, permanent)) return;
-		void runBulk(() => mail.bulkDelete(auth.client!, mailboxRouteId));
+		void runBulk(() => mail.bulkDelete(auth.client!, mailboxRouteId), true);
 	}
 
 	function handleBulkMove(targetRouteId: string) {
 		if (!auth.client) return;
-		void runBulk(() => mail.bulkMoveToMailbox(auth.client!, targetRouteId));
+		void runBulk(() => mail.bulkMoveToMailbox(auth.client!, targetRouteId), true);
 	}
 </script>
 
@@ -103,7 +103,7 @@
 			<Button
 				variant="ghost"
 				class="z-mail-list-bulk-bar__btn"
-				onclick={() => auth.client && runBulk(() => mail.bulkArchive(auth.client!))}
+				onclick={() => auth.client && runBulk(() => mail.bulkArchive(auth.client!), true)}
 			>
 				<Archive class="size-4" aria-hidden="true" />
 				<span class="max-sm:sr-only">Archive</span>

@@ -8,6 +8,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
 	import { contentPagePadClass } from '$lib/mail/layout';
 	import { invalidAddressParts } from '$lib/utils/addresses';
 	import { cn } from '$lib/utils/cn';
@@ -179,7 +180,9 @@
 
 	async function send() {
 		if (!auth.client || !auth.username) return;
-		const destination = settings.returnToInboxAfterSend ? '/mail/inbox' : '/mail/sent';
+		const destination = settings.returnToInboxAfterSend
+			? mailListHref(INBOX_MAILBOX_ROUTE_ID)
+			: mailListHref('sent');
 		const result = await compose.send(auth.client, auth.username, senderName, {
 			onUndo: () => {
 				const undoMode = compose.mode;

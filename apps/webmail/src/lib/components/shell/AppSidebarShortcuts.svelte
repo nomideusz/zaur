@@ -6,6 +6,7 @@
 	import { page } from '$app/stores';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { isMailPath } from '$lib/mail/routes';
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
@@ -22,7 +23,7 @@
 						href: settings.preferredMailHref(),
 						label: 'Mail',
 						icon: Mail,
-						active: $page.url.pathname.startsWith('/mail')
+						active: isMailPath($page.url.pathname)
 					},
 					...(calendar.supported !== false
 						? [

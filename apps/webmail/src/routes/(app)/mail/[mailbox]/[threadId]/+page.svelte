@@ -8,6 +8,7 @@
 	import MessageReaderSkeleton from '$lib/components/mail/MessageReaderSkeleton.svelte';
 	import MessageReaderStatus from '$lib/components/mail/MessageReaderStatus.svelte';
 	import { mailCountLabel } from '$lib/mail/count-label';
+	import { mailListHref } from '$lib/mail/routes';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { readerFocus } from '$lib/stores/reader-focus.svelte';
@@ -34,7 +35,7 @@
 	});
 
 	function backToList() {
-		goto(returnTo ?? `/mail/${data.mailboxId}`);
+		goto(returnTo ?? mailListHref(data.mailboxId));
 	}
 
 	function afterMove() {

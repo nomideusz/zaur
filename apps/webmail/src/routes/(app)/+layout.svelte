@@ -9,7 +9,7 @@
 	import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
 
 	let { children } = $props();
-	const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
+	const onMailRoute = $derived($page.url.pathname === '/' || $page.url.pathname.startsWith('/mail'));
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
 	const showAppHeader = $derived(!onMailRoute && !onSettingsRoute);
 	const pageScrollOnMain = $derived(onMailRoute || onSettingsRoute);

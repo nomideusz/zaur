@@ -25,6 +25,7 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { readerFocus } from '$lib/stores/reader-focus.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { renderMessageBody } from '$lib/email/html';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
@@ -129,7 +130,9 @@
 
 		compose.openDraft(latest);
 		const senderName = settings.resolvedDisplayName(auth.displayName ?? auth.username);
-		const destination = settings.returnToInboxAfterSend ? '/mail/inbox' : '/mail/sent';
+		const destination = settings.returnToInboxAfterSend
+			? mailListHref(INBOX_MAILBOX_ROUTE_ID)
+			: mailListHref('sent');
 		const result = await compose.send(auth.client, auth.username, senderName, {
 			onUndo: () => goto(`/mail/compose?draft=${latest.id}`),
 			onComplete: (outcome) => {

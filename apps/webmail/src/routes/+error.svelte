@@ -28,7 +28,7 @@
 		<p class="mt-2 text-sm text-fg-muted">{message}</p>
 		<div class="mt-6 flex flex-wrap justify-center gap-2">
 			<Button href={mailHref}>Open mail</Button>
-			<Button href="/mail/inbox" variant="ghost">Inbox</Button>
+			<Button href="/" variant="ghost">Emails</Button>
 		</div>
 	</div>
 </div>

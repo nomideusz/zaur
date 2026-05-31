@@ -1,10 +1,10 @@
 /** Route map and component tree — living reference for ZAUR webmail. */
 
 export const routeMap = {
-	root: '/mail/inbox',
+	root: '/',
 	login: '/login',
 	mail: {
-		inbox: '/mail/inbox',
+		inbox: '/',
 		mailbox: '/mail/[mailbox]',
 		thread: '/mail/[mailbox]/[threadId]',
 		compose: '/mail/compose',

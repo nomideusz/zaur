@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { settings } from '$lib/stores/settings.svelte';
+	import { cn } from '$lib/utils/cn';
 
 	let {
 		title,
 		titleHref = null,
+		titleBrand = false,
 		actionHref = null,
 		actionLabel = null,
 		showBackToMail = false,
@@ -13,6 +15,7 @@
 	}: {
 		title: string;
 		titleHref?: string | null;
+		titleBrand?: boolean;
 		actionHref?: string | null;
 		actionLabel?: string | null;
 		showBackToMail?: boolean;
@@ -36,7 +39,7 @@
 		</div>
 	{/if}
 	<div class="z-mail-text-nav__row">
-		<h1 class="z-mail-text-nav__title">
+		<h1 class={cn('z-mail-text-nav__title', titleBrand && 'z-type-brand')}>
 			{#if titleHref}
 				<a href={titleHref}>{title}</a>
 			{:else}

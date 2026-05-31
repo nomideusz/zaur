@@ -38,11 +38,11 @@
 		cn('z-select z-select--sm truncate', settings.compactListHeader && 'z-select--compact')
 	);
 
-	async function runBulk(action: () => Promise<void>) {
+	async function runBulk(action: () => Promise<void>, refreshList = false) {
 		if (!auth.client || mail.bulkActionLoading) return;
 		try {
 			await action();
-			onBulkAction?.();
+			if (refreshList) onBulkAction?.();
 		} catch (err) {
 			const message = err instanceof Error ? err.message : 'Bulk action failed';
 			toast.show(message, 'error');
@@ -53,14 +53,14 @@
 		if (!auth.client || !mailboxRouteId) return;
 		const permanent = currentMailbox?.role === 'trash';
 		if (!settings.confirmDeleteMessage(selectedIds.length, permanent)) return;
-		void runBulk(() => mail.bulkDelete(auth.client!, mailboxRouteId));
+		void runBulk(() => mail.bulkDelete(auth.client!, mailboxRouteId), true);
 	}
 
 	function handleMove(event: Event) {
 		const select = event.currentTarget as HTMLSelectElement;
 		const targetRouteId = select.value;
 		if (!targetRouteId || !auth.client) return;
-		void runBulk(() => mail.bulkMoveToMailbox(auth.client!, targetRouteId));
+		void runBulk(() => mail.bulkMoveToMailbox(auth.client!, targetRouteId), true);
 		select.value = '';
 	}
 </script>
@@ -104,7 +104,7 @@
 				<Button
 					variant="ghost"
 					class={actionButtonClass}
-					onclick={() => auth.client && runBulk(() => mail.bulkArchive(auth.client!))}
+					onclick={() => auth.client && runBulk(() => mail.bulkArchive(auth.client!), true)}
 				>
 					<Archive class="size-3.5" aria-hidden="true" />
 					Archive

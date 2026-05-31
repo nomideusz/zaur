@@ -1,63 +1,7 @@
 <script lang="ts">
-	import { untrack } from 'svelte';
-	import MailPane from '$lib/components/mail/MailPane.svelte';
-	import MessageList from '$lib/components/mail/MessageList.svelte';
-	import { mailCountLabel } from '$lib/mail/count-label';
-	import { auth } from '$lib/stores/auth.svelte';
-	import { mail } from '$lib/stores/mail.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
+	import MailboxListPage from '$lib/components/mail/MailboxListPage.svelte';
 
 	const { data } = $props();
-
-	const mailbox = $derived(mail.mailboxByRouteId(data.mailboxId));
-	const mailboxName = $derived(mailbox?.name ?? 'Emails');
-	const countLabel = $derived(
-		mailCountLabel(mail.messagesTotal, mail.messages.length, mailbox)
-	);
-
-	$effect(() => {
-		const client = auth.client;
-		const mailboxId = data.mailboxId;
-		if (!client || auth.isRestoring) return;
-		untrack(() => {
-			void mail.loadMessages(client, mailboxId);
-		});
-	});
-
-	$effect(() => {
-		settings.setLastMailbox(data.mailboxId);
-	});
 </script>
 
-<svelte:head>
-	<title>{mailboxName} · ZAUR Webmail</title>
-</svelte:head>
-
-<MailPane
-	{mailboxName}
-	{countLabel}
-	mailboxRouteId={data.mailboxId}
-	loading={mail.messagesLoading}
-	error={mail.messagesError}
-	messageCount={mail.messages.length}
->
-	{#snippet list()}
-		<MessageList
-			messages={mail.messages}
-			{mailboxName}
-			mailboxRouteId={data.mailboxId}
-			loading={mail.messagesLoading}
-			loadingMore={mail.messagesLoadingMore}
-			hasMore={mail.messagesHasMore}
-			error={mail.messagesError}
-			total={mail.messagesTotal}
-			onLoadMore={() => {
-				if (auth.client) void mail.loadMoreMessages(auth.client);
-			}}
-			onRetry={() => {
-				if (auth.client) void mail.loadMessages(auth.client, data.mailboxId, { force: true });
-			}}
-		/>
-	{/snippet}
-	{#snippet reader()}{/snippet}
-</MailPane>
+<MailboxListPage mailboxId={data.mailboxId} />

@@ -973,16 +973,26 @@ export class JMAPClient {
 		assertEmailSetSucceeded(response, 'Could not update star');
 	}
 
-	async toggleImportant(emailId: string, important: boolean): Promise<void> {
+	async toggleImportant(
+		emailIds: string[],
+		important: boolean,
+		importantMailboxId?: string
+	): Promise<void> {
+		if (!emailIds.length) return;
+
+		const update: Record<string, Record<string, unknown>> = {};
+		for (const emailId of emailIds) {
+			const patch: Record<string, unknown> = {
+				'keywords/$important': important ? true : null
+			};
+			if (importantMailboxId) {
+				patch[`mailboxIds/${importantMailboxId}`] = important ? true : null;
+			}
+			update[emailId] = patch;
+		}
+
 		const response = await this.request([
-			[
-				'Email/set',
-				{
-					accountId: this.accountId,
-					update: { [emailId]: { 'keywords/$important': important } }
-				},
-				'0'
-			]
+			['Email/set', { accountId: this.accountId, update }, '0']
 		]);
 		assertEmailSetSucceeded(response, 'Could not update important');
 	}

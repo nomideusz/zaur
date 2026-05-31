@@ -277,7 +277,7 @@ class SubscriptionWatcher {
 			await sendPushNotification(this.record, {
 				title: 'New mail',
 				body: `${from}: ${subject}`,
-				url: email.threadId ? `/mail/inbox/${email.threadId}` : '/mail/inbox',
+				url: email.threadId ? `/mail/inbox/${email.threadId}` : '/',
 				unreadCount
 			});
 			return;

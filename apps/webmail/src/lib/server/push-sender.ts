@@ -21,7 +21,7 @@ export async function sendPushNotification(
 			JSON.stringify({
 				title: message.title,
 				body: message.body,
-				url: message.url ?? '/mail/inbox',
+				url: message.url ?? '/',
 				tag: message.tag ?? 'zaur-new-mail',
 				unreadCount: message.unreadCount
 			})

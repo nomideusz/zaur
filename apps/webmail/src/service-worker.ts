@@ -38,7 +38,7 @@ self.addEventListener('push', (event) => {
 		tag: payload.tag ?? 'zaur-new-mail',
 		icon: '/pwa-192x192.png',
 		badge: '/pwa-192x192.png',
-		data: { url: payload.url ?? '/mail/inbox' }
+		data: { url: payload.url ?? '/' }
 	};
 
 	event.waitUntil(
@@ -68,13 +68,13 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 function safeNotificationUrl(url: string | undefined): string {
-	if (!url) return '/mail/inbox';
+	if (!url) return '/';
 	try {
 		const parsed = new URL(url, self.location.origin);
-		if (parsed.origin !== self.location.origin) return '/mail/inbox';
+		if (parsed.origin !== self.location.origin) return '/';
 		return `${parsed.pathname}${parsed.search}${parsed.hash}`;
 	} catch {
-		return '/mail/inbox';
+		return '/';
 	}
 }
 

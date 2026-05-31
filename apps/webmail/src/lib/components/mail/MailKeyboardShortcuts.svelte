@@ -11,24 +11,10 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { resolveMailboxRouteByShortcut } from '$lib/mail/folder-shortcuts';
 	import { MAIL_LAYOUT } from '$lib/mail/config';
+	import { mailListHref, mailThreadHref, parseMailContext } from '$lib/mail/routes';
 	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
 	import { isTypingTarget } from '$lib/utils/keyboard';
 	import type { MessagePreview } from '$lib/types/mail';
-
-	function parseMailContext(pathname: string) {
-		const parts = pathname.split('/').filter(Boolean);
-		if (parts[0] !== 'mail') return null;
-		if (parts[1] === 'compose') return null;
-
-		if (parts[1] === 'search') {
-			return { kind: 'search' as const, mailboxRouteId: null, threadId: parts[2] ?? null };
-		}
-
-		const mailboxRouteId = parts[1] ?? null;
-		const threadId = parts[2] ?? null;
-		if (!mailboxRouteId) return null;
-		return { kind: 'mailbox' as const, mailboxRouteId, threadId };
-	}
 
 	function listMessages(): MessagePreview[] {
 		const ctx = parseMailContext($page.url.pathname);
@@ -67,7 +53,7 @@
 		const mailbox = ctx.kind === 'search' ? next.mailboxId : ctx.mailboxRouteId!;
 		const params = new URLSearchParams();
 		params.set('messageId', next.id);
-		goto(`/mail/${mailbox}/${next.threadId}?${params.toString()}`);
+		goto(mailThreadHref(mailbox, next.threadId, params));
 	}
 
 	function navigateNextUnread() {
@@ -87,7 +73,7 @@
 
 		const params = new URLSearchParams();
 		params.set('messageId', next.id);
-		goto(`/mail/${mailbox}/${next.threadId}?${params.toString()}`);
+		goto(mailThreadHref(mailbox, next.threadId, params));
 	}
 
 	async function withLatest(
@@ -101,7 +87,7 @@
 			await action(message);
 			if (options?.leaveThread && ctx?.threadId) {
 				const routeId = ctx.mailboxRouteId ?? message.mailboxId;
-				goto(`/mail/${routeId}`);
+				goto(mailListHref(routeId));
 			}
 		} catch (error) {
 			toast.show(error instanceof Error ? error.message : 'Action failed', 'error');
@@ -189,7 +175,7 @@
 			) {
 				event.preventDefault();
 				const routeId = ctx.mailboxRouteId ?? currentMessage()?.mailboxId ?? 'inbox';
-				goto(`/mail/${routeId}`);
+				goto(mailListHref(routeId));
 				return;
 			}
 
@@ -215,7 +201,7 @@
 				clearGotoPrefix();
 				if (targetRouteId) {
 					event.preventDefault();
-					goto(`/mail/${targetRouteId}`);
+					goto(mailListHref(targetRouteId));
 					return;
 				}
 			}

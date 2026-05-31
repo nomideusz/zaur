@@ -11,6 +11,7 @@ import { accountSettingsSyncAtKey } from '$lib/settings/account-settings-types';
 import type { SettingsDetailLevel } from '$lib/settings/detail-level';
 import { toast } from '$lib/stores/toast.svelte';
 import { migrateLegacyMailViewMode } from '$lib/mail/view-mode';
+import { INBOX_MAILBOX_ROUTE_ID, mailListHref } from '$lib/mail/routes';
 import {
 	requestBrowserNotificationPermission,
 	syncPushSubscription
@@ -2200,8 +2201,8 @@ class SettingsStore {
 	}
 
 	preferredMailHref(): string {
-		if (!this.rememberLastMailbox) return '/mail/inbox';
-		return `/mail/${readLastMailbox()}`;
+		const routeId = this.rememberLastMailbox ? readLastMailbox() : INBOX_MAILBOX_ROUTE_ID;
+		return mailListHref(routeId);
 	}
 
 	setMinimalReaderToolbar(value: boolean) {

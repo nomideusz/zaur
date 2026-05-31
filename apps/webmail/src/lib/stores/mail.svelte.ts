@@ -498,18 +498,36 @@ class MailStore {
 	}
 
 	async toggleImportant(client: JMAPClient, message: MessagePreview) {
-		const next = !message.important;
-		this.setPendingKeyword(message.id, { important: next });
-		this.patchMessage(message.id, { important: next });
-		this.patchThreadMessage(message.id, { important: next });
+		await this.setMessagesImportant(client, [message], !message.important);
+	}
+
+	private async setMessagesImportant(
+		client: JMAPClient,
+		messages: MessagePreview[],
+		important: boolean
+	) {
+		if (!messages.length) return;
+
+		const importantMailbox = this.importantMailbox();
+		const ids = messages.map((message) => message.id);
+
+		for (const message of messages) {
+			this.setPendingKeyword(message.id, { important });
+			this.patchMessage(message.id, { important });
+			this.patchThreadMessage(message.id, { important });
+		}
 
 		try {
-			await client.toggleImportant(message.id, next);
-			this.clearPendingKeyword(message.id, 'important');
+			await client.toggleImportant(ids, important, importantMailbox?.jmapId);
+			for (const id of ids) {
+				this.clearPendingKeyword(id, 'important');
+			}
 		} catch (error) {
-			this.clearPendingKeyword(message.id, 'important');
-			this.patchMessage(message.id, { important: !next });
-			this.patchThreadMessage(message.id, { important: !next });
+			for (const message of messages) {
+				this.clearPendingKeyword(message.id, 'important');
+				this.patchMessage(message.id, { important: !important });
+				this.patchThreadMessage(message.id, { important: !important });
+			}
 			throw error;
 		}
 	}
@@ -788,10 +806,14 @@ class MailStore {
 
 		this.bulkActionLoading = true;
 		try {
-			for (const message of messages) {
-				await this.toggleImportant(client, message);
-			}
+			await this.setMessagesImportant(client, messages, true);
 			this.clearSelection();
+			toast.show(
+				messages.length === 1
+					? 'Marked important'
+					: `${messages.length} messages marked important`,
+				'success'
+			);
 		} finally {
 			this.bulkActionLoading = false;
 		}
@@ -803,10 +825,14 @@ class MailStore {
 
 		this.bulkActionLoading = true;
 		try {
-			for (const message of messages) {
-				await this.toggleImportant(client, message);
-			}
+			await this.setMessagesImportant(client, messages, false);
 			this.clearSelection();
+			toast.show(
+				messages.length === 1
+					? 'Removed important'
+					: `${messages.length} messages unmarked`,
+				'success'
+			);
 		} finally {
 			this.bulkActionLoading = false;
 		}
@@ -1076,6 +1102,10 @@ class MailStore {
 
 	archiveMailbox(): Mailbox | undefined {
 		return this.mailboxes.find((mb) => mb.role === 'archive' && mb.jmapId);
+	}
+
+	importantMailbox(): Mailbox | undefined {
+		return this.mailboxes.find((mb) => mb.role === 'important' && mb.jmapId);
 	}
 
 	canArchiveFrom(mailbox: Mailbox | null | undefined): boolean {

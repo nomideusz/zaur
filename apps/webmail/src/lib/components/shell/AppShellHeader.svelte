@@ -8,6 +8,7 @@
 	import GlobalSearch from './GlobalSearch.svelte';
 	import OfflineIndicator from './OfflineIndicator.svelte';
 	import UserMenu from './UserMenu.svelte';
+	import { appConfig } from '$lib/config';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -32,7 +33,7 @@
 			href={homeHref}
 			class="z-type-brand text-base text-fg transition-colors hover:text-fg-muted"
 		>
-			<span class={settings.hideAppTitle ? 'sr-only' : ''}>ZAUR</span>
+			<span class={settings.hideAppTitle ? 'sr-only' : ''}>{appConfig.brandName}</span>
 		</a>
 	</div>
 
