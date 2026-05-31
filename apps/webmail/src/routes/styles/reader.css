@@ -259,7 +259,7 @@
 	}
 
 	.z-email-body :where(pre, code) {
-		font-family: var(--font-mono);
+		font-family: var(--z-reader-font);
 		@apply rounded-sm bg-surface-sunken/80 text-[0.9em];
 	}
 

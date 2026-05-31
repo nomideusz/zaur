@@ -2,8 +2,6 @@
 
 
 	:is(.z-mail-view, .z-settings-view) {
-		--z-reader-font: var(--font-mono);
-		font-family: var(--font-mono) !important;
 		--z-main-gap: 3rem;
 	}
 
@@ -11,10 +9,6 @@
 		:is(.z-mail-view, .z-settings-view) {
 			--z-main-gap: 4.5rem;
 		}
-	}
-
-	:is(.z-mail-view, .z-settings-view) :is(input, button, textarea, select) {
-		font-family: var(--font-mono) !important;
 	}
 
 	/* Simple mail/settings — scroll the main column, not nested panes */

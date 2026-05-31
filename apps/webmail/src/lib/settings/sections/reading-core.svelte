@@ -168,25 +168,25 @@
 
 	{#if settings.enableKeyboardShortcuts}
 		<SettingsRow title="Compose" description="Start a new message">
-			<span class="font-mono text-xs text-fg">c</span>
+			<span class="font-sans text-xs text-fg">c</span>
 		</SettingsRow>
 		<SettingsRow title="Go to folder" description="Press g then: i Inbox, s Sent, d Drafts, a Archive, t Trash, j Junk">
-			<span class="font-mono text-xs text-fg">g i · g s · g d · g a · g t · g j</span>
+			<span class="font-sans text-xs text-fg">g i · g s · g d · g a · g t · g j</span>
 		</SettingsRow>
 		<SettingsRow title="Next / previous message">
-			<span class="font-mono text-xs text-fg">j · k</span>
+			<span class="font-sans text-xs text-fg">j · k</span>
 		</SettingsRow>
 		<SettingsRow title="Reply / reply all">
-			<span class="font-mono text-xs text-fg">r · a</span>
+			<span class="font-sans text-xs text-fg">r · a</span>
 		</SettingsRow>
 		<SettingsRow title="Archive / unread / delete">
-			<span class="font-mono text-xs text-fg">e · u · #</span>
+			<span class="font-sans text-xs text-fg">e · u · #</span>
 		</SettingsRow>
 		<SettingsRow title="Focus mode / return to list" description="z toggles focused reading; Esc returns to list">
-			<span class="font-mono text-xs text-fg">z · Esc</span>
+			<span class="font-sans text-xs text-fg">z · Esc</span>
 		</SettingsRow>
 		<SettingsRow title="Send / close compose">
-			<span class="font-mono text-xs text-fg">Ctrl+Enter · Esc</span>
+			<span class="font-sans text-xs text-fg">Ctrl+Enter · Esc</span>
 		</SettingsRow>
 	{/if}
 </SettingsGroup>
