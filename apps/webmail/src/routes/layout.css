@@ -8,7 +8,6 @@
 @import './styles/base.css' layer(base);
 @import './styles/primitives.css' layer(components);
 @import './styles/type.css' layer(components);
-@import './styles/gilbert.css' layer(components);
 @import './styles/text-nav.css' layer(components);
 @import './styles/shell.css' layer(components);
 @import './styles/list.css' layer(components);
