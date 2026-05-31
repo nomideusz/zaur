@@ -148,9 +148,13 @@
 		$page.params.threadId;
 		thread.map((m) => m.id).join(',');
 		const paneEl = messageScrollContainer();
-		if (!paneEl || thread.length < 2) return;
+		if (!paneEl) return;
 		void tick().then(() => {
-			paneEl.scrollTop = paneEl.scrollHeight;
+			if (useSimpleContentShell) {
+				paneEl.scrollTop = 0;
+			} else if (thread.length >= 2) {
+				paneEl.scrollTop = paneEl.scrollHeight;
+			}
 		});
 	});
 

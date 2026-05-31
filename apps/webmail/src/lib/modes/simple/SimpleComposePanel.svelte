@@ -240,7 +240,7 @@
 	<div class={cn(simpleContentPagePadClass(), 'z-simple-compose__page')}>
 		<div class="z-mail-text-nav z-simple-compose__nav">
 			<div class="z-mail-text-nav__row">
-				<h1 class="z-mail-text-nav__title">{composeTitle}</h1>
+				<h1 class="sr-only">{composeTitle}</h1>
 				<button
 					type="submit"
 					form="simple-compose-form"
@@ -279,6 +279,7 @@
 							class="z-simple-compose__input"
 							invalid={fieldInvalid('to')}
 							ariaDescribedby={compose.error || invalidRecipients.length ? composeErrorsId : undefined}
+							autofocus={mode === 'new' || mode === 'forward'}
 							oninput={(value) => (compose.to = value)}
 						/>
 						{#if settings.showCcBccInCompose && !compose.showCcBcc}
@@ -346,6 +347,7 @@
 						bind:this={bodyInput}
 						class="z-simple-compose__body"
 						value={messageBody}
+						autofocus={mode !== 'new' && mode !== 'forward'}
 						oninput={(event) => setMessageBody(event.currentTarget.value)}
 						onkeydown={onBodyKeydown}
 					></textarea>
@@ -423,7 +425,6 @@
 						Attach file
 					</button>
 					<button type="button" class="z-mail-text-nav__link" onclick={close}>Discard</button>
-					<a class="z-mail-text-nav__link" href="/settings">Settings</a>
 				</div>
 				<div class="z-simple-compose__send-row">
 					{#if !settings.hideComposeHints}

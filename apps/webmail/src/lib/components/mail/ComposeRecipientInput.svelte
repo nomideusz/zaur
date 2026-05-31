@@ -14,6 +14,7 @@
 		invalid?: boolean;
 		ariaDescribedby?: string;
 		inputElement?: HTMLInputElement | null;
+		autofocus?: boolean;
 		oninput?: (value: string) => void;
 	}
 
@@ -26,6 +27,7 @@
 		invalid = false,
 		ariaDescribedby,
 		inputElement = $bindable(null),
+		autofocus = false,
 		oninput
 	}: Props = $props();
 
@@ -83,6 +85,7 @@
 		aria-invalid={invalid || undefined}
 		aria-describedby={ariaDescribedby}
 		{value}
+		{autofocus}
 		onfocus={() => (open = true)}
 		onblur={() => setTimeout(() => (open = false), 120)}
 		oninput={(e) => {

@@ -380,11 +380,7 @@
 	 * shell py + nav-top → first line · folder-sections-top → major step · nav-label-top → tight step
 	 */
 	.z-settings-mode-simple .z-settings-sticky-nav {
-		position: sticky;
-		top: 0;
-		z-index: 20;
-		background-color: color-mix(in srgb, var(--z-chrome) 95%, transparent);
-		backdrop-filter: blur(8px);
+		position: static;
 	}
 
 	.z-settings-mode-simple .z-settings-section-nav {
@@ -551,9 +547,14 @@
 
 	.z-mail-view-simple .z-mail-folder-sections {
 		@apply flex flex-col;
-		gap: var(--z-space-folder-sections-gap);
+		gap: calc(var(--z-space-folder-sections-gap) / 2);
 		padding-top: var(--z-space-folder-sections-top);
 		padding-bottom: var(--z-space-folder-sections-bottom);
+	}
+
+	.z-mail-view-simple .z-mail-folder-section + .z-mail-folder-section {
+		border-top: 1px solid var(--z-divider);
+		padding-top: calc(var(--z-space-folder-sections-gap) / 2);
 	}
 
 	.z-mail-view-simple .z-mail-folder-section__head {
@@ -585,7 +586,6 @@
 	}
 
 	.z-mail-view-simple .z-mail-folder-section__count {
-		font-family: var(--font-mono);
 		font-size: var(--z-list-count-size, 0.9375rem);
 		line-height: 1.35;
 		@apply shrink-0 tabular-nums font-semibold text-fg no-underline;
@@ -655,6 +655,18 @@
 		gap: var(--z-list-row-gap, 0.625rem);
 	}
 
+	.z-mail-view-simple .z-mail-folder-section__day-header {
+		font-size: var(--z-main-page-muted-text, 0.8125rem);
+		line-height: 1.4;
+		@apply font-semibold text-fg-subtle;
+		margin-top: 0.5rem;
+		list-style: none;
+	}
+
+	.z-mail-view-simple .z-mail-folder-section__list > .z-mail-folder-section__day-header:first-child {
+		margin-top: 0;
+	}
+
 	.z-mail-view-simple .z-mail-folder-section__item {
 		@apply list-none;
 	}
@@ -671,7 +683,6 @@
 	}
 
 	.z-mail-view-simple .z-mail-simple-folder-nav__count {
-		font-family: var(--font-mono);
 		font-size: var(--z-list-count-size, 0.9375rem);
 		line-height: 1.35;
 		@apply tabular-nums font-semibold;
@@ -746,7 +757,6 @@
 		display: block;
 	}
 
-	.z-mail-view-simple .z-mail-folder-section--importance-read .z-mail-folder-section__title,
 	.z-mail-view-simple .z-mail-folder-section--importance-read .z-mail-folder-section__count {
 		@apply font-medium text-fg-muted;
 	}
@@ -916,7 +926,7 @@
 		flex-shrink: 0;
 		margin-top: 0.75rem;
 		padding-block: 0.75rem;
-		background-color: var(--z-chrome);
+		background-color: var(--z-surface);
 	}
 
 	.z-mail-view-simple .z-simple-compose__signature-input {
@@ -943,7 +953,7 @@
 		flex-shrink: 0;
 		margin-top: 0.75rem;
 		padding-block: 0.75rem;
-		background-color: var(--z-chrome);
+		background-color: var(--z-surface);
 		font-size: var(--z-main-page-muted-text);
 		line-height: 1.55;
 	}
@@ -1023,13 +1033,13 @@
 	.z-mail-view-simple .z-simple-compose__footer-inner {
 		max-width: var(--z-simple-content-max-width);
 		margin-inline: auto;
-		padding: 0.875rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+		padding: 0.875rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
 	}
 
 	@media (min-width: 768px) {
 		.z-mail-view-simple .z-simple-compose__footer-inner {
 			padding-inline: 1.5rem;
-			padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+			padding-bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px));
 		}
 	}
 

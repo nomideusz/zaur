@@ -664,12 +664,20 @@
 		{#snippet simpleMessageRow(
 			message: MessagePreview,
 			routeId: string,
+			index: number,
+			messagesList: MessagePreview[],
 			duplicateKeys: Set<string> = flatListDuplicateSubjects
 		)}
+			{@const isNewDay = index === 0 || simpleMessageDayKey(messagesList[index].receivedAt) !== simpleMessageDayKey(messagesList[index - 1].receivedAt)}
 			{@const senderLabel = simpleSenderLabel(message, routeId)}
 			{@const subjectText = message.subject.trim() || '(no subject)'}
-			{@const timeLabel = formatSimpleListWhen(message.receivedAt, settings.timeFormat)}
+			{@const timeLabel = formatSimpleListTime(message.receivedAt, settings.timeFormat)}
 			{@const showSenderDuplicate = duplicateKeys.has(messageSubjectKey(message))}
+			{#if isNewDay}
+				<li class="z-mail-folder-section__day-header">
+					{formatSimpleListDayHeading(message.receivedAt)}
+				</li>
+			{/if}
 			<li class="z-mail-folder-section__item">
 				<a
 					href={listMessageHref(message, routeId)}
@@ -739,8 +747,8 @@
 						</div>
 						{#if section.messages.length > 0}
 							<ul class="z-mail-folder-section__list">
-								{#each section.messages as message (message.id)}
-									{@render simpleMessageRow(message, section.routeId, sectionDuplicateSubjects)}
+								{#each section.messages as message, index (message.id)}
+									{@render simpleMessageRow(message, section.routeId, index, section.messages, sectionDuplicateSubjects)}
 								{/each}
 							</ul>
 						{/if}
@@ -780,8 +788,8 @@
 					flatListImportanceModifier(mailboxRouteId ?? 'inbox')
 				)}
 			>
-				{#each messages as message (message.id)}
-					{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId)}
+				{#each messages as message, index (message.id)}
+					{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId, index, messages)}
 				{/each}
 			</ul>
 
