@@ -731,23 +731,18 @@
 <section
 	class={cn(
 		'z-mail-pane-surface z-mail-pane-surface--flow flex w-full min-w-0 flex-col',
-		hideOnMobile ? (mail.hasSelection ? 'flex' : 'hidden md:flex') : 'flex',
-		showMobileSelectionBar && 'z-mail-list--selecting'
+		hideOnMobile ? (mail.hasSelection ? 'flex' : 'hidden md:flex') : 'flex'
 	)}
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
-	{#if showListHeader}
-		<div class="relative z-10 shrink-0">
-			<MessageListHeader
-				{mailboxRouteId}
-				{onBulkAction}
-				disabled={!!mailboxRouteId && (loading || !!error || !messages.length)}
-			/>
-		</div>
-	{/if}
-
-	<div class={cn(contentPagePadClass(), 'flex flex-col', showMobileSelectionBar && 'z-mail-list-scroll--with-bar')}>
+	<div
+		class={cn(
+			contentPagePadClass(),
+			'flex flex-col',
+			showMobileSelectionBar && 'z-mail-list-scroll--with-bar'
+		)}
+	>
 	{#if mailboxRouteId || !sectionMode}
 		<MailTextNav
 			title={isInboxHome ? 'ZAUR Mail' : mailboxName}
@@ -757,6 +752,14 @@
 			showBackToMail={!isInboxHome}
 			backHref={mailHomeHref}
 			showSettings={false}
+		/>
+	{/if}
+
+	{#if showListHeader}
+		<MessageListHeader
+			{mailboxRouteId}
+			{onBulkAction}
+			disabled={!!mailboxRouteId && (loading || !!error || !messages.length)}
 		/>
 	{/if}
 
@@ -944,8 +947,8 @@
 			Sign out
 		</button>
 	</div>
+		{#if showMobileSelectionBar && mailboxRouteId}
+			<MessageListMobileBar {mailboxRouteId} {onBulkAction} />
+		{/if}
 	</div>
-	{#if showMobileSelectionBar && mailboxRouteId}
-		<MessageListMobileBar {mailboxRouteId} {onBulkAction} />
-	{/if}
 </section>

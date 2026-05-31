@@ -51,3 +51,58 @@
 		height: 0.875rem;
 	}
 
+	/* Bulk select — editorial row inside the content shell (not full-width chrome). */
+	.z-mail-view .z-mail-list-header {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.5rem 0.75rem;
+		margin-top: var(--z-space-nav-label-top);
+		flex-shrink: 0;
+	}
+
+	.z-mail-view .z-mail-list-header--compact {
+		gap: 0.375rem 0.5rem;
+	}
+
+	.z-mail-view .z-mail-list-header__hint {
+		min-width: 0;
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+		color: var(--z-fg-subtle);
+	}
+
+	.z-mail-view .z-mail-list-header__selection {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		align-items: center;
+		gap: 0.5rem;
+		overflow-x: auto;
+	}
+
+	.z-mail-view .z-mail-list-header__count {
+		flex-shrink: 0;
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+		font-weight: 500;
+		color: var(--z-fg);
+	}
+
+	/* Mobile bulk actions — sticky footer inside the scrolling main column. */
+	@media (max-width: 767px) {
+		.z-app-main--page-scroll .z-mail-view .z-mail-list-mobile-bar {
+			position: sticky;
+			bottom: 0;
+			z-index: 20;
+			margin-top: 1rem;
+			margin-inline: -1rem;
+			width: calc(100% + 2rem);
+			border-top: 1px solid var(--z-border);
+			border-bottom: none;
+			background-color: color-mix(in srgb, var(--z-surface) 95%, transparent);
+			padding-inline: 1rem;
+			backdrop-filter: blur(8px);
+		}
+	}
+

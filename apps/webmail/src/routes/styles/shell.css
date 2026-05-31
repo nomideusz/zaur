@@ -22,7 +22,13 @@
 	}
 
 	.z-mail-list-scroll--with-bar {
-		padding-bottom: 0.25rem;
+		padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
+	}
+
+	@media (max-width: 767px) {
+		.z-mail-list-scroll--with-bar {
+			padding-bottom: max(3.75rem, calc(env(safe-area-inset-bottom) + 2.75rem));
+		}
 	}
 
 	.z-mobile-reader-bar {
