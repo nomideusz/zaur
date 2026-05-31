@@ -350,6 +350,16 @@
 		height: auto;
 	}
 
+	/*
+	 * Simple (page-scroll) panes flow inside the scrolling main, so they don't
+	 * fill the viewport. Inherit the page surface instead of painting chrome —
+	 * otherwise the raised white pane (light mode --z-chrome) leaves an off-white
+	 * --z-surface band above/below it. (No-op in dark mode where they're equal.)
+	 */
+	.z-app-main--page-scroll .z-mail-pane-surface--flow {
+		background-color: transparent;
+	}
+
 	.z-app-main--page-scroll .z-mail-pane--mobile-fullscreen {
 		overflow: hidden;
 		min-height: 0;
