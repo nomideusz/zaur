@@ -44,6 +44,7 @@
 		'transition-[color,text-decoration-color] duration-150',
 		'group-hover/message:decoration-fg/55 group-focus-visible/message:decoration-fg/55'
 	);
+	const listImportantSubjectClass = 'z-mail-list-subject--important';
 	const listWhenClass = cn(
 		'shrink-0 tabular-nums text-fg-muted no-underline z-type-page leading-[1.4] pt-[0.05em]',
 		'group-hover/message:text-fg group-focus-visible/message:text-fg'
@@ -874,7 +875,7 @@
 				>
 					<span class={listMessageStackClass}>
 						<span class={listMessageLeadClass}>
-							<span class={cn(listSubjectClass, 'list-subject')}>{subjectText}</span>
+							<span class={cn(listSubjectClass, 'list-subject', message.important && listImportantSubjectClass)}>{subjectText}</span>
 							<span class={listSenderClass(showSenderDuplicate)}>{senderLabel}</span>
 						</span>
 						<time class={listWhenClass} datetime={message.receivedAt}>
@@ -904,7 +905,12 @@
 					{@const sectionDuplicateSubjects = duplicateSubjectKeys(section.messages)}
 					<section style:order={section.sortOrder} style:--section-index={sectionIndex}>
 						<div class="z-mail-list-section-head">
-							<h2 class="z-mail-list-section-title">
+							<h2
+								class={cn(
+									'z-mail-list-section-title',
+									section.id === IMPORTANT_SECTION_ID && 'z-mail-list-section-title--important'
+								)}
+							>
 								{#if section.showUnreadDot}
 									<span
 										class="size-[0.4375rem] shrink-0 rounded-full bg-unread"

@@ -151,33 +151,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-archive-unread-delete",
-		"href": "/settings/reading",
-		"title": "Archive / unread / delete",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-auto-load-more-messages",
 		"href": "/settings/reading",
 		"title": "Auto-load more messages",
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-block-external-content",
+		"id": "/settings/reading-block-remote-images",
 		"href": "/settings/reading",
-		"title": "Block external content",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-clean-reader-view",
-		"href": "/settings/reading",
-		"title": "Clean reader view",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-compose",
-		"href": "/settings/reading",
-		"title": "Compose",
+		"title": "Block remote images",
 		"description": ""
 	},
 	{
@@ -205,27 +187,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-focus-mode-return-to-list",
-		"href": "/settings/reading",
-		"title": "Focus mode / return to list",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-focus-reading-by-default",
-		"href": "/settings/reading",
-		"title": "Focus reading by default",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-go-to-folder",
-		"href": "/settings/reading",
-		"title": "Go to folder",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-hide-action-toasts",
 		"href": "/settings/reading",
 		"title": "Hide action toasts",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-keep-list-visible-while-reading",
+		"href": "/settings/reading",
+		"title": "Keep list visible while reading",
 		"description": ""
 	},
 	{
@@ -238,12 +208,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-mark-as-read-when-opened",
 		"href": "/settings/reading",
 		"title": "Mark as read when opened",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-next-previous-message",
-		"href": "/settings/reading",
-		"title": "Next / previous message",
 		"description": ""
 	},
 	{
@@ -289,21 +253,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-reply-reply-all",
-		"href": "/settings/reading",
-		"title": "Reply / reply all",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-reset-reading-settings",
 		"href": "/settings/reading",
 		"title": "Reset reading settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-send-close-compose",
-		"href": "/settings/reading",
-		"title": "Send / close compose",
 		"description": ""
 	},
 	{
@@ -316,12 +268,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-show-full-email-in-list",
 		"href": "/settings/reading",
 		"title": "Show full email in list",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-show-list-rail-in-reader",
-		"href": "/settings/reading",
-		"title": "Show list rail in reader",
 		"description": ""
 	},
 	{

@@ -9,7 +9,7 @@
 
 <SettingsPanel
 	title="Reading"
-	description="Lists, reader, notifications, and navigation."
+	description="Lists, message content, alerts, and how mail behaves when you read it."
 >
 	<Reading />
 </SettingsPanel>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
@@ -13,7 +14,10 @@
 	} from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Notifications" description="Alerts and unread counts.">
+<SettingsGroup
+	title="Alerts"
+	description="Notifications and unread counts on this device."
+>
 	<SettingsRow
 		title="App install"
 		description={pwa.isInstalled
@@ -52,8 +56,11 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Message list" description="How conversations appear in your inbox and folders.">
-	<SettingsRow title="Show avatars" description="Display sender photos in the message list and reader">
+<SettingsGroup
+	title="Inbox & folders"
+	description="How your message list looks and where you land when opening mail."
+>
+	<SettingsRow title="Show avatars" description="Sender photos in the message list">
 		<input
 			type="checkbox"
 			checked={settings.showAvatars}
@@ -63,7 +70,7 @@
 
 	<SettingsRow
 		title="Show full email in list"
-		description="Display the sender's full address instead of just their name"
+		description="Display the sender's address instead of just their name"
 	>
 		<input
 			type="checkbox"
@@ -72,7 +79,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Auto-load more messages" description="Load older messages when you scroll to the bottom of the list">
+	<SettingsRow title="Auto-load more messages" description="Load older messages when you reach the bottom of a list">
 		<input
 			type="checkbox"
 			checked={settings.autoLoadMore}
@@ -80,9 +87,17 @@
 		/>
 	</SettingsRow>
 
+	<SettingsRow title="Remember last mailbox" description="Open your last folder instead of Inbox when signing in">
+		<input
+			type="checkbox"
+			checked={settings.rememberLastMailbox}
+			onchange={(e) => settings.setRememberLastMailbox(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
 	<SettingsRow
 		title="Default search scope"
-		description="Start in the current folder when searching from a mailbox view, or always look everywhere"
+		description="Search everywhere by default, or start in the folder you're viewing"
 	>
 		<SettingsSelect
 			label="Default search scope"
@@ -97,7 +112,10 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Reading" description="Typography and layout when viewing messages.">
+<SettingsGroup
+	title="Message content"
+	description="Typography and how message bodies are shown on every screen size."
+>
 	<SettingsRow title="Reading text size" description="Font size for the message body">
 		<SettingsSelect
 			label="Reading text size"
@@ -108,19 +126,6 @@
 				{ value: 'large', label: 'Large' }
 			]}
 			onchange={(v) => settings.setReaderTextSize(v as ReaderTextSize)}
-			class="w-auto"
-		/>
-	</SettingsRow>
-
-	<SettingsRow title="Reading width" description="How wide the message body column is on desktop">
-		<SettingsSelect
-			label="Reading width"
-			value={settings.readerWidth}
-			options={[
-				{ value: 'comfortable', label: 'Comfortable' },
-				{ value: 'wide', label: 'Wide' }
-			]}
-			onchange={(v) => settings.setReaderWidth(v as ReaderWidth)}
 			class="w-auto"
 		/>
 	</SettingsRow>
@@ -138,7 +143,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Prefer plain text" description="Show plain-text version when a message includes both HTML and plain text">
+	<SettingsRow title="Prefer plain text" description="Show plain text when a message includes both HTML and plain text">
 		<input
 			type="checkbox"
 			checked={settings.preferPlainText}
@@ -146,7 +151,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Block external content" description="Block remote images in HTML mail — you can still show them per message">
+	<SettingsRow title="Block remote images" description="Block images in HTML mail until you choose to show them">
 		<input
 			type="checkbox"
 			checked={settings.blockExternalContent}
@@ -154,15 +159,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Quick reply" description="Show an inline reply field at the bottom of the reader">
-		<input
-			type="checkbox"
-			checked={settings.showQuickReply}
-			onchange={(e) => settings.setShowQuickReply(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow title="Expand all thread messages" description="Open every message in a conversation instead of just the latest">
+	<SettingsRow title="Expand all thread messages" description="Open every message in a conversation, not just the latest">
 		<input
 			type="checkbox"
 			checked={settings.expandAllThreadMessages}
@@ -170,9 +167,41 @@
 		/>
 	</SettingsRow>
 
+	<SettingsRow title="Quick reply" description="Inline reply field at the bottom of the reader">
+		<input
+			type="checkbox"
+			checked={settings.showQuickReply}
+			onchange={(e) => settings.setShowQuickReply(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow title="Time format" description="12-hour, 24-hour, or match your operating system">
+		<SettingsSelect
+			label="Time format"
+			value={settings.timeFormat}
+			options={[
+				{ value: 'auto', label: 'Match system' },
+				{ value: '12h', label: '12-hour (1:30 PM)' },
+				{ value: '24h', label: '24-hour (13:30)' }
+			]}
+			onchange={(v) => {
+				if (v === 'auto' || v === '12h' || v === '24h') {
+					settings.setTimeFormat(v);
+				}
+			}}
+			class="w-auto"
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
+<SettingsGroup
+	title="Desktop layout"
+	description="On desktop, opening a message focuses the reader. On phone, it fills the screen."
+	visibleOn="desktop"
+>
 	<SettingsRow
-		title="Show list rail in reader"
-		description="Keep a slim message list visible on the side when reading on desktop"
+		title="Keep list visible while reading"
+		description="Show a slim message list beside the reader instead of hiding it"
 	>
 		<input
 			type="checkbox"
@@ -181,34 +210,21 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Focus reading by default" description="Hide surrounding chrome when you open a message">
-		<input
-			type="checkbox"
-			checked={settings.focusReadingDefault}
-			onchange={(e) => settings.setFocusReadingDefault(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow title="Clean reader view" description="Reduce visual clutter in the message reader">
-		<input
-			type="checkbox"
-			checked={settings.readerCleanView}
-			onchange={(e) => settings.setReaderCleanView(e.currentTarget.checked)}
+	<SettingsRow title="Reading width" description="How wide the message body column is">
+		<SettingsSelect
+			label="Reading width"
+			value={settings.readerWidth}
+			options={[
+				{ value: 'comfortable', label: 'Comfortable' },
+				{ value: 'wide', label: 'Wide' }
+			]}
+			onchange={(v) => settings.setReaderWidth(v as ReaderWidth)}
+			class="w-auto"
 		/>
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Navigation">
-	<SettingsRow title="Remember last mailbox" description="Open your last folder instead of Inbox when signing in">
-		<input
-			type="checkbox"
-			checked={settings.rememberLastMailbox}
-			onchange={(e) => settings.setRememberLastMailbox(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-</SettingsGroup>
-
-<SettingsGroup title="Behavior" description="What happens when you read or delete mail.">
+<SettingsGroup title="Actions" description="What happens when you read or delete mail.">
 	<SettingsRow title="Mark as read when opened" description="Automatically mark conversations read when you open them">
 		<input
 			type="checkbox"
@@ -217,10 +233,10 @@
 		/>
 	</SettingsRow>
 
-	{#if settings.markAsReadOnOpen}
+	<SettingsDepends enabled={settings.markAsReadOnOpen}>
 		<SettingsRow
 			title="Mark-as-read delay"
-			description="Wait briefly before marking a conversation read — useful when skimming"
+			description="Wait briefly before marking read — useful when skimming"
 		>
 			<SettingsSelect
 				label="Mark-as-read delay"
@@ -240,7 +256,7 @@
 				class="w-auto"
 			/>
 		</SettingsRow>
-	{/if}
+	</SettingsDepends>
 
 	<SettingsRow title="Confirm before delete" description="Ask before moving messages to trash">
 		<input
@@ -259,28 +275,12 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Dates & times">
-	<SettingsRow title="Time format" description="Pick 12-hour, 24-hour, or follow your operating system">
-		<SettingsSelect
-			label="Time format"
-			value={settings.timeFormat}
-			options={[
-				{ value: 'auto', label: 'Match system' },
-				{ value: '12h', label: '12-hour (1:30 PM)' },
-				{ value: '24h', label: '24-hour (13:30)' }
-			]}
-			onchange={(v) => {
-				if (v === 'auto' || v === '12h' || v === '24h') {
-					settings.setTimeFormat(v);
-				}
-			}}
-			class="w-auto"
-		/>
-	</SettingsRow>
-</SettingsGroup>
-
-<SettingsGroup title="Shortcuts" description="Keyboard navigation.">
-	<SettingsRow title="Enable keyboard shortcuts" description="Press c to compose, j/k to move between messages, n for next unread, and more">
+<SettingsGroup
+	title="Keyboard shortcuts"
+	description="Navigation and actions when using a keyboard."
+	visibleOn="desktop"
+>
+	<SettingsRow title="Enable keyboard shortcuts" description="Press c to compose, j/k to move between messages, and more">
 		<input
 			type="checkbox"
 			checked={settings.enableKeyboardShortcuts}
@@ -289,27 +289,36 @@
 	</SettingsRow>
 
 	{#if settings.enableKeyboardShortcuts}
-		<SettingsRow title="Compose" description="Start a new message">
-			<span class="font-sans text-xs text-fg">c</span>
-		</SettingsRow>
-		<SettingsRow title="Go to folder" description="Press g then: i Emails, s Sent, d Drafts, a Archive, t Trash, j Spam">
-			<span class="font-sans text-xs text-fg">g i · g s · g d · g a · g t · g j</span>
-		</SettingsRow>
-		<SettingsRow title="Next / previous message">
-			<span class="font-sans text-xs text-fg">j · k</span>
-		</SettingsRow>
-		<SettingsRow title="Reply / reply all">
-			<span class="font-sans text-xs text-fg">r · a</span>
-		</SettingsRow>
-		<SettingsRow title="Archive / unread / delete">
-			<span class="font-sans text-xs text-fg">e · u · #</span>
-		</SettingsRow>
-		<SettingsRow title="Focus mode / return to list" description="z toggles focused reading; Esc returns to list">
-			<span class="font-sans text-xs text-fg">z · Esc</span>
-		</SettingsRow>
-		<SettingsRow title="Send / close compose">
-			<span class="font-sans text-xs text-fg">Ctrl+Enter · Esc</span>
-		</SettingsRow>
+		<dl class="z-settings-shortcut-grid">
+			<div class="z-settings-shortcut-row">
+				<dt>Compose</dt>
+				<dd>c</dd>
+			</div>
+			<div class="z-settings-shortcut-row">
+				<dt>Go to folder</dt>
+				<dd>g i · g s · g d · g a · g t · g j</dd>
+			</div>
+			<div class="z-settings-shortcut-row">
+				<dt>Next / previous message</dt>
+				<dd>j · k</dd>
+			</div>
+			<div class="z-settings-shortcut-row">
+				<dt>Reply / reply all</dt>
+				<dd>r · a</dd>
+			</div>
+			<div class="z-settings-shortcut-row">
+				<dt>Archive / unread / delete</dt>
+				<dd>e · u · #</dd>
+			</div>
+			<div class="z-settings-shortcut-row">
+				<dt>Focus reading / return to list</dt>
+				<dd>z · Esc</dd>
+			</div>
+			<div class="z-settings-shortcut-row">
+				<dt>Send / close compose</dt>
+				<dd>Ctrl+Enter · Esc</dd>
+			</div>
+		</dl>
 	{/if}
 </SettingsGroup>
 
