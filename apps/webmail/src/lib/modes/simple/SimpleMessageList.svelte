@@ -805,6 +805,18 @@
 	</div>
 	<div class="z-mail-text-nav__links mt-4 md:mt-8">
 		<a class="z-mail-text-nav__link" href="/settings">Settings</a>
+		<span class="z-mail-text-nav__sep">·</span>
+		<button
+			type="button"
+			class="z-mail-text-nav__link"
+			onclick={() => {
+				if (confirm('Sign out of ZAUR Webmail on this device?')) {
+					auth.logout();
+				}
+			}}
+		>
+			Sign out
+		</button>
 	</div>
 	</div>
 </section>

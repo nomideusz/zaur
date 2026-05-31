@@ -395,6 +395,9 @@
 			{/if}
 			{#if useSimpleContentShell}
 				<div class="z-mail-text-nav z-reader-sticky-nav">
+					<div class="z-mail-text-nav__links">
+						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
+					</div>
 					<div class="z-mail-text-nav__row">
 						<h1 class="z-mail-text-nav__title">{subject}</h1>
 						{#if !mail.hasSelection}
@@ -411,13 +414,6 @@
 								</button>
 							{/if}
 						{/if}
-					</div>
-					<div class="z-mail-text-nav__links">
-						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
-						{#if nextUnreadHref}
-							<a class="z-mail-text-nav__link" href={nextUnreadHref}>Open next unread</a>
-						{/if}
-						<a class="z-mail-text-nav__link" href="/settings">Settings</a>
 					</div>
 				</div>
 			{:else}

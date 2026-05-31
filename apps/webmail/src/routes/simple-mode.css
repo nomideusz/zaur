@@ -37,10 +37,15 @@
 	}
 
 	.z-app-main--page-scroll .z-mail-pane--mobile-fullscreen {
+		top: 0;
 		overflow: hidden;
 		min-height: 0;
 		flex: 1 1 0;
 		height: auto;
+	}
+
+	.z-app-main--page-scroll .z-mobile-sheet-backdrop {
+		top: 0;
 	}
 
 	.z-app-main--page-scroll .z-mail-pane--mobile-fullscreen .z-mail-pane-surface--flow {
@@ -57,7 +62,12 @@
 		height: auto;
 	}
 	.z-mail-view-simple .z-mail-text-nav.z-reader-sticky-nav {
+		padding-top: 0.5rem;
 		margin-bottom: var(--z-space-folder-sections-gap);
+	}
+
+	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__links + .z-mail-text-nav__row {
+		margin-top: var(--z-space-nav-label-top);
 	}
 
 	.z-mail-view-simple .z-reader-chrome--bordered,
@@ -547,14 +557,9 @@
 
 	.z-mail-view-simple .z-mail-folder-sections {
 		@apply flex flex-col;
-		gap: calc(var(--z-space-folder-sections-gap) / 2);
+		gap: var(--z-space-folder-sections-top);
 		padding-top: var(--z-space-folder-sections-top);
 		padding-bottom: var(--z-space-folder-sections-bottom);
-	}
-
-	.z-mail-view-simple .z-mail-folder-section + .z-mail-folder-section {
-		border-top: 1px solid var(--z-divider);
-		padding-top: calc(var(--z-space-folder-sections-gap) / 2);
 	}
 
 	.z-mail-view-simple .z-mail-folder-section__head {
