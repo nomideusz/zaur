@@ -4,11 +4,14 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
+	import { getWebmailModeContext } from '$lib/modes/context';
 	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+
+	const isSimple = $derived(getWebmailModeContext().id === 'simple');
 
 	let clearingCache = $state(false);
 	let emptyingTrash = $state(false);
@@ -123,11 +126,13 @@
 		<SettingsRow title="Primary address">
 			<span class="text-sm font-medium text-fg">{auth.username ?? '—'}</span>
 		</SettingsRow>
-		<SettingsRow title="JMAP server">
-			<span class="max-w-[12rem] truncate text-sm font-medium text-fg sm:max-w-none">
-				{auth.serverUrl ?? appConfig.jmapServerUrl}
-			</span>
-		</SettingsRow>
+		{#if !isSimple}
+			<SettingsRow title="JMAP server">
+				<span class="max-w-[12rem] truncate text-sm font-medium text-fg sm:max-w-none">
+					{auth.serverUrl ?? appConfig.jmapServerUrl}
+				</span>
+			</SettingsRow>
+		{/if}
 		<SettingsRow title="Session">
 			<span class="text-sm font-medium text-fg">{auth.isAuthenticated ? 'Active' : 'Signed out'}</span>
 		</SettingsRow>

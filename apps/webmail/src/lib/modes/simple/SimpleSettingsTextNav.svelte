@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
-	import { mailViewModeSwitchMessage } from '$lib/mail/switch-mode';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/modes/registry';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -12,12 +11,6 @@
 		settingsNavLinks('simple').filter((link) => link.href !== '/settings')
 	);
 	const mailHref = $derived(settings.preferredMailHref());
-
-	function switchToClassic() {
-		if (settings.mailViewMode === 'traditional') return;
-		if (!confirm(mailViewModeSwitchMessage('traditional'))) return;
-		settings.switchMailViewModeTo('traditional');
-	}
 </script>
 
 <header
@@ -39,11 +32,6 @@
 			</a>
 		{/each}
 	</nav>
-	<div class="z-settings-nav-meta">
-		<button type="button" class="z-mail-text-nav__link" onclick={switchToClassic}>
-			Switch to Classic
-		</button>
-	</div>
 	{#if isIndex}
 		<div class="z-mail-text-nav__search">
 			<SettingsSearch />

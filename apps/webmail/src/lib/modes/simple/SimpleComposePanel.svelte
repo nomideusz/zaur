@@ -237,7 +237,7 @@
 />
 
 <section class="z-simple-compose" aria-label="Compose message">
-	<div class={cn(simpleContentPagePadClass(settings.compactSettingsLayout), 'z-simple-compose__page')}>
+	<div class={cn(simpleContentPagePadClass(), 'z-simple-compose__page')}>
 		<div class="z-mail-text-nav z-simple-compose__nav">
 			<div class="z-mail-text-nav__row">
 				<h1 class="z-mail-text-nav__title">{composeTitle}</h1>

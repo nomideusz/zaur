@@ -18,7 +18,7 @@
 </script>
 
 <div class="z-settings-page {settingsRootClass}">
-	<div class={cn(simpleSettingsShellClass(settings.compactSettingsLayout), 'flex flex-col')}>
+	<div class={cn(simpleSettingsShellClass(), 'flex flex-col')}>
 		<SimpleSettingsTextNav isIndex={isSettingsIndex} />
 		<div class="z-settings-content z-settings-content--simple">
 			<h1 class="sr-only">Settings</h1>

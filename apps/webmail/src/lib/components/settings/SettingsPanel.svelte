@@ -19,7 +19,12 @@
 	const editorial = $derived(mode.settings.editorial);
 </script>
 
-<div class={cn('z-settings-panel', editorial && 'z-settings-panel--editorial')}>
+<div
+	class={cn(
+		'z-settings-panel',
+		editorial && 'z-settings-panel--editorial w-full min-w-0 max-w-full'
+	)}
+>
 	{#if !editorial}
 		<header class={cn('max-md:hidden', settings.compactSettingsPanel ? 'mb-5' : 'mb-6')}>
 			<h2 class="z-settings-page-title">{title}</h2>

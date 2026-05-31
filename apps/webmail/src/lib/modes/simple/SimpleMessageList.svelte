@@ -17,6 +17,7 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import type { Mailbox, MessagePreview } from '$lib/types/mail';
+	import SimpleMailTextNav from '$lib/modes/simple/SimpleMailTextNav.svelte';
 	import { simpleContentPagePadClass } from '$lib/modes/simple/simple-content-layout';
 	import { formatSimpleListWhen, simpleMessageDayKey } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
@@ -634,26 +635,16 @@
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
-	<div class={cn(simpleContentPagePadClass(settings.compactSettingsLayout), 'flex flex-col')}>
-	{#if sectionMode && mailboxRouteId}
-		<div class="z-mail-text-nav">
-			<div class="z-mail-text-nav__row">
-				<h1 class="z-mail-text-nav__title">
-					{#if isInboxHome}
-						<a href={mailHomeHref}>ZAUR Mail</a>
-					{:else}
-						{mailboxName}
-					{/if}
-				</h1>
-				<a class="z-mail-text-nav__action" href="/mail/compose">New message</a>
-			</div>
-			<div class="z-mail-text-nav__links">
-				{#if !isInboxHome}
-					<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
-				{/if}
-				<a class="z-mail-text-nav__link" href="/settings">Settings</a>
-			</div>
-		</div>
+	<div class={cn(simpleContentPagePadClass(), 'flex flex-col')}>
+	{#if mailboxRouteId || !sectionMode}
+		<SimpleMailTextNav
+			title={isInboxHome ? 'ZAUR Mail' : mailboxName}
+			titleHref={isInboxHome ? mailHomeHref : null}
+			actionHref="/mail/compose"
+			actionLabel="New message"
+			showBackToMail={!isInboxHome}
+			backHref={mailHomeHref}
+		/>
 	{/if}
 
 	<div class="z-mail-list-flow">

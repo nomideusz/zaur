@@ -9,21 +9,17 @@ export function simpleContentShellClass(): string {
 }
 
 /** Page padding for Simple mode scroll regions (settings, mail list, reader). */
-export function simpleContentPagePadClass(compact = false): string {
+export function simpleContentPagePadClass(): string {
 	return cn(
 		simpleContentShellClass(),
-		compact
-			? 'px-4 py-3.5 pb-[max(1.75rem,env(safe-area-inset-bottom))]'
-			: 'px-4 py-4 pb-[max(2rem,env(safe-area-inset-bottom))] md:px-6 md:py-6'
+		'px-4 py-4 pb-[max(2rem,env(safe-area-inset-bottom))] md:px-6 md:py-6'
 	);
 }
 
 /** Simple settings — same width and insets as the mail list/reader/compose pages. */
-export function simpleSettingsShellClass(compact = false): string {
+export function simpleSettingsShellClass(): string {
 	return cn(
 		simpleContentShellClass(),
-		compact
-			? 'px-4 pt-3.5 pb-[max(1.75rem,env(safe-area-inset-bottom))]'
-			: 'px-4 pt-4 pb-[max(2rem,env(safe-area-inset-bottom))] md:px-6 md:pt-6 md:pb-6'
+		'px-4 pt-4 pb-[max(2rem,env(safe-area-inset-bottom))] md:px-6 md:pt-6 md:pb-6'
 	);
 }

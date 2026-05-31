@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getWebmailModeContext } from '$lib/modes/context';
+	import SimpleExperience from '$lib/modes/simple/settings/experience.svelte';
 	import ExperienceSection from '$lib/settings/sections/experience.svelte';
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
 
@@ -12,9 +13,9 @@
 </svelte:head>
 
 {#if editorial && mode.id === 'simple'}
-	<!-- Simple settings index: search and mode switch live in the layout header. -->
-{:else if editorial}
-	<ExperienceSection />
+	<div class="z-settings-simple-index">
+		<SimpleExperience />
+	</div>
 {:else}
 	<SettingsPanel
 		title="Experience"

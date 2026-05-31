@@ -363,7 +363,7 @@
 	>
 		<div
 			class={cn(
-				useSimpleContentShell && simpleContentPagePadClass(settings.compactSettingsLayout)
+				useSimpleContentShell && simpleContentPagePadClass()
 			)}
 		>
 		<div

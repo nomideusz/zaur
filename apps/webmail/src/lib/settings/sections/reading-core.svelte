@@ -214,7 +214,7 @@
 		/>
 	</SettingsRow>
 
-	{#if settings.enableKeyboardShortcuts}
+	{#if settings.enableKeyboardShortcuts && !isSimple}
 		<SettingsRow title="Compose" description="Start a new message">
 			<span class="font-mono text-xs text-fg">c</span>
 		</SettingsRow>
