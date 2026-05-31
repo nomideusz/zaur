@@ -158,14 +158,15 @@
 	});
 
 	$effect(() => {
-		mode;
-		queueMicrotask(() => {
-			if (mode === 'new' || mode === 'forward') {
-				toInput?.focus();
-			} else {
-				bodyInput?.focus();
-			}
-		});
+		if (toInput && (mode === 'new' || mode === 'forward')) {
+			toInput.focus();
+		}
+	});
+
+	$effect(() => {
+		if (bodyInput && mode !== 'new' && mode !== 'forward') {
+			bodyInput.focus();
+		}
 	});
 
 	onMount(() => {

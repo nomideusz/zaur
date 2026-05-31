@@ -401,7 +401,6 @@
 							{/if}
 						{/if}
 					</div>
-					<h1 class="z-mail-text-nav__title z-reader-subject-heading">{subject}</h1>
 				</div>
 				{#if hasBlockedExternal && !allowExternal && !settings.hideExternalContentBanner}
 					<div class="z-mail-simple-external-banner">
@@ -721,8 +720,12 @@
 								settings.compactReaderBody && 'z-reader-content--compact'
 							)}
 						>
-							{#if showInlineSubject && !useSimpleContentShell}
-								<p class="z-reader-inline-subject">{subject}</p>
+							{#if showInlineSubject}
+								{#if useSimpleContentShell}
+									<h1 class="z-reader-subject-heading">{subject}</h1>
+								{:else}
+									<p class="z-reader-inline-subject">{subject}</p>
+								{/if}
 							{/if}
 
 							{#if message.attachments.length}

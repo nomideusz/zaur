@@ -79,7 +79,7 @@
 	}
 	.z-mail-view-simple .z-mail-text-nav.z-reader-sticky-nav {
 		padding-top: 0.5rem;
-		margin-bottom: var(--z-space-folder-sections-gap);
+		margin-bottom: var(--z-simple-main-gap);
 	}
 
 	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__links + .z-mail-text-nav__row {
@@ -152,7 +152,7 @@
 	.z-settings-stack--editorial {
 		display: flex;
 		flex-direction: column;
-		gap: var(--z-space-folder-sections-gap);
+		gap: var(--z-simple-main-gap);
 		width: 100%;
 		max-width: 100%;
 		min-width: 0;
@@ -428,7 +428,7 @@
 	}
 
 	.z-settings-mode-simple .z-settings-content--simple {
-		padding-top: var(--z-space-folder-sections-top);
+		padding-top: var(--z-simple-main-gap);
 	}
 
 	.z-settings-mode-simple .z-settings-simple-index {
@@ -514,8 +514,11 @@
 	}
 
 	.z-mail-view-simple .z-reader-subject-heading {
-		margin-top: 0.5rem;
+		margin: 0 0 1rem;
+		font-size: var(--z-main-page-text);
+		line-height: var(--z-reader-leading);
 		font-weight: normal;
+		@apply text-fg;
 	}
 
 	:is(.z-mail-view-simple, .z-settings-mode-simple) .z-mail-text-nav__footer {
@@ -1063,11 +1066,11 @@
 	}
 
 	.z-mail-view-simple .z-simple-compose__send-row {
-		@apply mt-2 flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1;
+		@apply mt-2 flex items-baseline justify-between gap-x-4;
 	}
-
+ 
 	.z-mail-view-simple .z-simple-compose__send-hint {
-		@apply min-w-0 text-fg-subtle;
+		@apply min-w-0 text-fg-subtle truncate;
 		font-size: 0.9375rem;
 		line-height: 1.55;
 	}
