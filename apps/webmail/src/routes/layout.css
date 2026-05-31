@@ -1,12 +1,5 @@
 /*
  * ZAUR webmail styles — modular, composable layers (Tachyons-style).
- *
- * tokens → design variables
- * base → document defaults
- * primitives → single-purpose UI building blocks
- * shell / list / reader / settings → feature modules
- * mail-view → editorial mail + settings skin
- * motion → view transitions
  */
 @import 'tailwindcss';
 @import '@zaur/ui/theme.css';
@@ -15,9 +8,13 @@
 @import './styles/base.css' layer(base);
 @import './styles/primitives.css' layer(components);
 @import './styles/type.css' layer(components);
+@import './styles/text-nav.css' layer(components);
 @import './styles/shell.css' layer(components);
 @import './styles/list.css' layer(components);
+@import './styles/inbox-list.css' layer(components);
 @import './styles/reader.css' layer(components);
+@import './styles/reader-chrome.css' layer(components);
 @import './styles/settings.css' layer(components);
+@import './styles/compose.css' layer(components);
 @import './styles/mail-view.css' layer(components);
 @import './styles/motion.css';

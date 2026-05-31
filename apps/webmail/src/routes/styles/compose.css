@@ -1,0 +1,234 @@
+/* Compose — editorial document layout (scoped under .z-mail-view). */
+
+	/* Compose — editorial document layout. */
+	.z-mail-view .z-compose {
+		@apply w-full min-w-0;
+	}
+
+	.z-mail-view .z-compose__page {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		min-height: calc(100dvh - 2rem);
+		--z-compose-footer-clearance: 6.25rem;
+		--z-compose-field-y: 0.625rem;
+		--z-compose-nav-to-form: var(--z-space-folder-sections-gap);
+		--z-compose-header-to-body: 1.25rem;
+		--z-compose-chrome-top: calc(
+			1rem + var(--z-space-nav-top) + var(--z-space-nav-bottom) + 1.6em +
+				var(--z-space-nav-label-top) + 1.55em + var(--z-compose-nav-to-form) + 4.25rem
+		);
+		padding-bottom: calc(
+			var(--z-compose-footer-clearance) + 1rem + var(--z-space-nav-top) +
+				max(0px, env(safe-area-inset-bottom, 0px))
+		);
+	}
+
+	@media (max-width: 767px) {
+	.z-mail-view .z-compose__page {
+			--z-compose-field-y: 0.5625rem;
+			--z-compose-nav-to-form: var(--z-space-folder-sections-gap);
+			--z-compose-header-to-body: 1rem;
+		}
+	}
+
+	@media (min-width: 768px) {
+	.z-mail-view .z-compose__page {
+			--z-compose-chrome-top: calc(
+				1.5rem + var(--z-space-nav-top) + var(--z-space-nav-bottom) + 1.6em +
+					var(--z-space-nav-label-top) + 1.55em + var(--z-compose-nav-to-form) + 4.25rem
+			);
+			padding-bottom: calc(
+				var(--z-compose-footer-clearance) + 1.5rem + var(--z-space-nav-top) +
+					env(safe-area-inset-bottom, 0px)
+			);
+		}
+	}
+
+	.z-mail-view .z-compose__form {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-height: 0;
+		margin-top: var(--z-compose-nav-to-form);
+	}
+
+	.z-mail-view .z-compose__fields {
+		display: flex;
+		flex-direction: column;
+		flex-shrink: 0;
+	}
+
+	.z-mail-view .z-compose__field {
+		display: grid;
+		grid-template-columns: 3.25rem minmax(0, 1fr);
+		gap: 0.75rem;
+		align-items: baseline;
+		padding-block: var(--z-compose-field-y);
+	}
+
+	.z-mail-view .z-compose__field:not(:last-child) {
+		border-bottom: 1px solid var(--z-divider);
+	}
+
+	.z-mail-view .z-compose__field--subject {
+		padding-bottom: var(--z-compose-field-y);
+		border-bottom: 1px solid var(--z-divider);
+	}
+
+	.z-mail-view .z-compose__field--invalid {
+		background-color: color-mix(in srgb, var(--z-danger) 6%, transparent);
+	}
+
+	.z-mail-view .z-compose__label {
+		@apply shrink-0 text-fg-subtle;
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+	}
+
+	.z-mail-view .z-compose__control {
+		@apply flex min-w-0 items-baseline gap-3;
+	}
+
+	.z-mail-view .z-compose__input,
+	.z-mail-view .z-compose__input.z-compose-field-input {
+		@apply w-full min-w-0 bg-transparent text-fg outline-none;
+		font-size: var(--z-main-page-text);
+		line-height: var(--z-space-folder-message-leading);
+		border: none;
+		box-shadow: none;
+		padding: 0;
+	}
+
+	.z-mail-view .z-compose__inline-link {
+		@apply shrink-0 text-fg underline underline-offset-2 decoration-fg/30;
+		font-size: 0.9375rem;
+		line-height: 1.55;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			text-decoration-color var(--z-motion-base) var(--z-ease-out);
+	}
+
+	.z-mail-view .z-compose__inline-link:hover {
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
+	}
+
+	.z-mail-view .z-compose__write {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-height: max(
+			14rem,
+			calc(100dvh - var(--z-compose-chrome-top) - var(--z-compose-footer-clearance) - 3.5rem)
+		);
+		margin-top: var(--z-compose-header-to-body);
+		min-width: 0;
+	}
+
+	.z-mail-view .z-compose__message {
+		display: flex;
+		flex: 1;
+		flex-direction: column;
+		min-height: 0;
+	}
+
+	.z-mail-view .z-compose__body {
+		@apply block w-full flex-1 bg-transparent text-fg outline-none;
+		width: 100%;
+		min-height: 0;
+		height: 100%;
+		overflow-y: auto;
+		resize: none;
+		font-family: var(--z-reader-font);
+		font-size: var(--z-reader-text);
+		line-height: var(--z-reader-leading);
+		border: none;
+		padding: 0;
+	}
+
+	.z-mail-view .z-compose__signature {
+		position: sticky;
+		bottom: calc(var(--z-compose-footer-clearance) + 0.25rem);
+		z-index: 15;
+		flex-shrink: 0;
+		margin-top: 0.75rem;
+		padding-block: 0.75rem;
+		background-color: var(--z-surface);
+	}
+
+	.z-mail-view .z-compose__signature-input {
+		display: block;
+		width: 100%;
+		min-height: 4.5rem;
+		max-height: 10rem;
+		overflow-y: auto;
+		resize: none;
+		background: transparent;
+		border: none;
+		padding: 0;
+		outline: none;
+		color: var(--z-fg-muted);
+		font-family: var(--z-reader-font);
+		font-size: var(--z-reader-text);
+		line-height: var(--z-reader-leading);
+	}
+
+	.z-mail-view .z-compose__signature-empty {
+		position: sticky;
+		bottom: calc(var(--z-compose-footer-clearance) + 0.25rem);
+		z-index: 15;
+		flex-shrink: 0;
+		margin-top: 0.75rem;
+		padding-block: 0.75rem;
+		background-color: var(--z-surface);
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+	}
+
+	@media (max-width: 767px) {
+	.z-mail-view .z-compose__body,
+	.z-mail-view .z-compose__signature-input {
+			font-size: 1rem;
+		}
+	}
+
+	.z-mail-view .z-compose__quote {
+		margin-top: 1.25rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--z-divider);
+	}
+
+	.z-mail-view .z-compose__quote summary {
+		@apply cursor-pointer text-fg-muted;
+		font-size: 0.9375rem;
+		line-height: 1.55;
+	}
+
+	.z-mail-view .z-compose__quote pre {
+		@apply mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap text-fg-subtle;
+		font-size: 0.875rem;
+		line-height: 1.6;
+	}
+
+	.z-mail-view .z-compose__footer {
+		position: fixed;
+		inset-inline: 0;
+		bottom: 0;
+		z-index: 20;
+		border-top: 1px solid var(--z-divider);
+		background-color: color-mix(in srgb, var(--z-chrome) 92%, transparent);
+		backdrop-filter: blur(8px);
+	}
+
+	.z-mail-view .z-compose__footer-inner {
+		max-width: var(--z-content-max-width);
+		margin-inline: auto;
+		padding: 0.875rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	@media (min-width: 768px) {
+		.z-mail-view .z-compose__footer-inner {
+			padding-inline: 1.5rem;
+			padding-bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px));
+		}
+	}

@@ -46,7 +46,8 @@
 	}
 
 
-	.z-type-list-time {
-		@apply shrink-0 text-xs tabular-nums text-fg-muted;
+	.z-list-row-actions :where(svg) {
+		width: 0.875rem;
+		height: 0.875rem;
 	}
 

@@ -23,7 +23,7 @@
 	let toInput = $state<HTMLInputElement | null>(null);
 
 	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
-	const composeErrorsId = 'simple-compose-form-errors';
+	const composeErrorsId = 'compose-form-errors';
 	const mailHomeHref = $derived(settings.preferredMailHref());
 
 	const quoteMarker = /\n\n---\n/;
@@ -237,16 +237,16 @@
 	onchange={onFilesSelected}
 />
 
-<section class="z-simple-compose" aria-label="Compose message">
-	<div class={cn(contentPagePadClass(), 'z-simple-compose__page')}>
-		<div class="z-mail-text-nav z-simple-compose__nav">
+<section class="z-compose" aria-label="Compose message">
+	<div class={cn(contentPagePadClass(), 'z-compose__page')}>
+		<div class="z-mail-text-nav z-compose__nav">
 			<h1 class="sr-only">{composeTitle}</h1>
 			<div class="z-mail-text-nav__row">
 				<button type="button" class="z-mail-text-nav__link" onclick={close}>Back to mail</button>
 				<button
 					type="submit"
-					form="simple-compose-form"
-					class="z-mail-text-nav__action z-simple-compose__send"
+					form="compose-form"
+					class="z-mail-text-nav__action"
 					disabled={!compose.canSend || invalidRecipients.length > 0}
 					title={sendBlockedReason ?? 'Send message'}
 				>
@@ -259,23 +259,23 @@
 		</div>
 
 		<form
-			id="simple-compose-form"
-			class="z-simple-compose__form"
+			id="compose-form"
+			class="z-compose__form"
 			onsubmit={(event) => {
 				event.preventDefault();
 				void send();
 			}}
 		>
-			<div class="z-simple-compose__fields">
-				<div class={cn('z-simple-compose__field', fieldInvalid('to') && 'z-simple-compose__field--invalid')}>
-					<label class="z-simple-compose__label" for="simple-compose-to">To</label>
-					<div class="z-simple-compose__control">
+			<div class="z-compose__fields">
+				<div class={cn('z-compose__field', fieldInvalid('to') && 'z-compose__field--invalid')}>
+					<label class="z-compose__label" for="simple-compose-to">To</label>
+					<div class="z-compose__control">
 						<ComposeRecipientInput
 							id="simple-compose-to"
 							bind:inputElement={toInput}
 							value={compose.to}
 							autocomplete="email"
-							class="z-simple-compose__input"
+							class="z-compose__input"
 							invalid={fieldInvalid('to')}
 							ariaDescribedby={compose.error || invalidRecipients.length ? composeErrorsId : undefined}
 							autofocus={mode === 'new' || mode === 'forward'}
@@ -284,7 +284,7 @@
 						{#if settings.showCcBccInCompose && !compose.showCcBcc}
 							<button
 								type="button"
-								class="z-simple-compose__inline-link"
+								class="z-compose__inline-link"
 								tabindex="-1"
 								onclick={() => (compose.showCcBcc = true)}
 							>
@@ -295,28 +295,28 @@
 				</div>
 
 				{#if compose.showCcBcc && (settings.showCcBccInCompose || compose.cc.trim() || compose.bcc.trim())}
-					<div class={cn('z-simple-compose__field', fieldInvalid('cc') && 'z-simple-compose__field--invalid')}>
-						<label class="z-simple-compose__label" for="simple-compose-cc">Cc</label>
-						<div class="z-simple-compose__control">
+					<div class={cn('z-compose__field', fieldInvalid('cc') && 'z-compose__field--invalid')}>
+						<label class="z-compose__label" for="simple-compose-cc">Cc</label>
+						<div class="z-compose__control">
 							<ComposeRecipientInput
 								id="simple-compose-cc"
 								value={compose.cc}
 								autocomplete="email"
-								class="z-simple-compose__input"
+								class="z-compose__input"
 								invalid={fieldInvalid('cc')}
 								ariaDescribedby={compose.error || invalidRecipients.length ? composeErrorsId : undefined}
 								oninput={(value) => (compose.cc = value)}
 							/>
 						</div>
 					</div>
-					<div class={cn('z-simple-compose__field', fieldInvalid('bcc') && 'z-simple-compose__field--invalid')}>
-						<label class="z-simple-compose__label" for="simple-compose-bcc">Bcc</label>
-						<div class="z-simple-compose__control">
+					<div class={cn('z-compose__field', fieldInvalid('bcc') && 'z-compose__field--invalid')}>
+						<label class="z-compose__label" for="simple-compose-bcc">Bcc</label>
+						<div class="z-compose__control">
 							<ComposeRecipientInput
 								id="simple-compose-bcc"
 								value={compose.bcc}
 								autocomplete="email"
-								class="z-simple-compose__input"
+								class="z-compose__input"
 								invalid={fieldInvalid('bcc')}
 								ariaDescribedby={compose.error || invalidRecipients.length ? composeErrorsId : undefined}
 								oninput={(value) => (compose.bcc = value)}
@@ -325,26 +325,26 @@
 					</div>
 				{/if}
 
-				<div class="z-simple-compose__field z-simple-compose__field--subject">
-					<label class="z-simple-compose__label" for="simple-compose-subject">Subject</label>
-					<div class="z-simple-compose__control">
+				<div class="z-compose__field z-compose__field--subject">
+					<label class="z-compose__label" for="simple-compose-subject">Subject</label>
+					<div class="z-compose__control">
 						<input
 							id="simple-compose-subject"
 							type="text"
-							class="z-simple-compose__input"
+							class="z-compose__input"
 							bind:value={compose.subject}
 						/>
 					</div>
 				</div>
 			</div>
 
-			<div class="z-simple-compose__write">
-				<div class="z-simple-compose__message">
+			<div class="z-compose__write">
+				<div class="z-compose__message">
 					<label class="sr-only" for="simple-compose-body">Message</label>
 					<textarea
 						id="simple-compose-body"
 						bind:this={bodyInput}
-						class="z-simple-compose__body"
+						class="z-compose__body"
 						value={messageBody}
 						autofocus={mode !== 'new' && mode !== 'forward'}
 						oninput={(event) => setMessageBody(event.currentTarget.value)}
@@ -355,51 +355,49 @@
 
 			{#if showSignature}
 				{#if configuredSignature || signatureBody}
-					<div class="z-simple-compose__signature">
+					<div class="z-compose__signature">
 						<label class="sr-only" for="simple-compose-signature">Signature</label>
 						<textarea
 							id="simple-compose-signature"
-							class="z-simple-compose__signature-input"
+							class="z-compose__signature-input"
 							rows={Math.max(3, (signatureBody || configuredSignature).split('\n').length)}
 							value={signatureBody || configuredSignature}
 							oninput={(event) => setSignatureBody(event.currentTarget.value)}
 						></textarea>
 					</div>
 				{:else if !settings.hideComposeHints}
-					<p class="z-simple-compose__signature-empty">
+					<p class="z-compose__signature-empty">
 						<a href="/settings/account" class="z-mail-text-nav__link">Add a signature</a>
 					</p>
 				{/if}
 			{/if}
 
 			{#if quotedPart}
-				<details class="z-simple-compose__quote" open={!settings.collapseQuotedInCompose}>
+				<details class="z-compose__quote" open={!settings.collapseQuotedInCompose}>
 					<summary>Quoted message</summary>
 					<pre>{quotedPart.trim()}</pre>
 				</details>
 			{/if}
 
 			{#if compose.attachments.length}
-				<ul class="z-simple-compose__attachments" aria-label="Attachments">
+				<ul class="mt-4 flex flex-col gap-2" aria-label="Attachments">
 					{#each compose.attachments as attachment (attachment.id)}
-						<li class="z-simple-compose__attachment">
-							<Paperclip class="z-simple-compose__attachment-icon" aria-hidden="true" />
-							<span class="z-simple-compose__attachment-name">{attachment.name}</span>
+						<li class="z-type-page-muted flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-fg">
+							<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
+							<span class="min-w-0 truncate">{attachment.name}</span>
 							{#if !settings.compactAttachments}
-								<span class="z-simple-compose__attachment-size">
+								<span class="text-fg-subtle">
 									({formatAttachmentSize(attachment.size)})
 								</span>
 							{/if}
 							{#if attachment.uploading}
-								<span class="z-simple-compose__attachment-state">Uploading…</span>
+								<span class="text-fg-subtle">Uploading…</span>
 							{:else if attachment.uploadError}
-								<span class="z-simple-compose__attachment-state z-simple-compose__attachment-state--error">
-									Failed
-								</span>
+								<span class="text-danger">Failed</span>
 							{/if}
 							<button
 								type="button"
-								class="z-simple-compose__attachment-remove"
+								class="inline-flex shrink-0 items-center text-fg-subtle transition-colors hover:text-fg"
 								aria-label="Remove {attachment.name}"
 								onclick={() => compose.removeAttachment(attachment.id)}
 							>
@@ -411,30 +409,30 @@
 			{/if}
 
 			{#if compose.error || invalidRecipients.length}
-				<p id={composeErrorsId} class="z-simple-compose__error" role="alert">
+				<p id={composeErrorsId} class="z-type-page-muted mt-4 text-danger" role="alert">
 					{compose.error ?? `Check recipient: ${invalidRecipients[0]}`}
 				</p>
 			{/if}
 		</form>
 
-		<footer class="z-simple-compose__footer">
-			<div class="z-simple-compose__footer-inner">
+		<footer class="z-compose__footer">
+			<div class="z-compose__footer-inner">
 				<div class="z-mail-text-nav__links">
 					<button type="button" class="z-mail-text-nav__link" onclick={openFilePicker}>
 						Attach file
 					</button>
 					<button type="button" class="z-mail-text-nav__link" onclick={close}>Discard</button>
 				</div>
-				<div class="z-simple-compose__send-row">
+				<div class="mt-2 flex items-baseline justify-between gap-x-4">
 					{#if !settings.hideComposeHints}
-						<p class="z-simple-compose__send-hint">
+						<p class="min-w-0 truncate text-[0.9375rem] leading-snug text-fg-subtle">
 							{sendBlockedReason ?? 'Ctrl+Enter to send'}
 						</p>
 					{/if}
 					<button
 						type="submit"
-						form="simple-compose-form"
-						class="z-simple-compose__send"
+						form="compose-form"
+						class="z-mail-text-nav__action ml-auto"
 						disabled={!compose.canSend || invalidRecipients.length > 0}
 						title={sendBlockedReason ?? 'Send message'}
 					>

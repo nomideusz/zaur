@@ -1,0 +1,238 @@
+/* Sectioned inbox + flat folder lists. */
+
+	.z-mail-view .z-mail-folder-sections {
+		@apply flex flex-col;
+		gap: var(--z-main-gap);
+		padding-top: var(--z-main-gap);
+		padding-bottom: 0;
+	}
+
+	.z-mail-view .z-mail-folder-section__head {
+		@apply flex items-center justify-between gap-3;
+		margin-bottom: var(--z-list-head-gap, var(--z-space-folder-head-bottom));
+	}
+
+	.z-mail-view .z-mail-folder-section__title {
+		@apply inline-flex items-center gap-2 font-semibold text-fg;
+		font-size: var(--z-list-title-size, var(--z-main-page-text));
+		line-height: 1.35;
+	}
+
+	.z-mail-view .z-mail-folder-section__title--unread::before {
+		content: '';
+		width: 0.4375rem;
+		height: 0.4375rem;
+		border-radius: 50%;
+		background-color: var(--z-unread);
+		flex-shrink: 0;
+	}
+
+	.z-mail-view .z-mail-folder-section__more,
+	.z-mail-view .z-mail-folder-section__subject,
+	.z-mail-view .z-mail-folder-section__empty {
+		font-size: var(--z-main-page-text);
+		line-height: var(--z-space-folder-message-leading);
+		@apply font-normal text-fg;
+	}
+
+	.z-mail-view .z-mail-folder-section__count {
+		font-size: var(--z-list-count-size, 0.9375rem);
+		line-height: 1.35;
+		@apply shrink-0 tabular-nums font-semibold text-fg no-underline;
+	}
+
+	/*
+	 * One scale for every section. New, Unread, Read, and folder lists all share
+	 * the same type sizes and rhythm — set once on the shared ancestor so both the
+	 * sectioned inbox and the flat folder/thread lists inherit identical metrics.
+	 * Emphasis is carried by weight + the unread dot, never by size, so the column
+	 * reads as one calm, repeating unit (Hobday's homepage harmony).
+	 */
+	.z-mail-view .z-mail-list-flow {
+		--z-list-title-size: var(--z-main-page-text);
+		--z-list-count-size: 0.9375rem;
+		--z-list-subject-size: var(--z-main-page-text);
+		--z-list-when-size: var(--z-list-subject-size);
+		--z-list-day-size: 0.8125rem;
+		--z-list-row-gap: 0.625rem;
+		--z-list-head-gap: var(--z-list-row-gap);
+	}
+
+	/* Day group — label + whitespace only (no rule lines). */
+	.z-mail-view .z-mail-folder-section__day {
+		@apply list-none;
+		padding-top: var(--z-list-day-pad-top, 1.5rem);
+		padding-bottom: 0.25rem;
+	}
+
+	.z-mail-view .z-mail-folder-section__day:first-child {
+		padding-top: 0.125rem;
+	}
+
+	.z-mail-view .z-mail-folder-section__day-label {
+		font-size: var(--z-list-day-size, 0.8125rem);
+		font-weight: 600;
+		line-height: 1.4;
+		color: var(--z-fg-muted);
+	}
+
+	.z-mail-view .z-mail-folder-section__more {
+		@apply cursor-pointer underline underline-offset-2 decoration-fg/30;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			text-decoration-color var(--z-motion-base) var(--z-ease-out),
+			transform var(--z-motion-fast) var(--z-ease-out);
+	}
+
+	.z-mail-view .z-mail-folder-section__more:hover {
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
+	}
+
+	.z-mail-view .z-mail-folder-section__more:active {
+		transform: scale(0.98);
+	}
+
+	.z-mail-view .z-mail-folder-section__empty {
+		line-height: 1.55;
+	}
+
+	.z-mail-view .z-mail-folder-section__footer {
+		margin-top: var(--z-space-folder-footer-top);
+	}
+
+	.z-mail-view .z-mail-folder-section__list {
+		@apply flex flex-col;
+		gap: var(--z-list-row-gap, 0.625rem);
+	}
+
+	.z-mail-view .z-mail-folder-section__item {
+		@apply list-none;
+	}
+
+	/* Minimal folder navigation — appears only on inbox home, very low visual weight. */
+	.z-mail-view .z-mail-simple-folder-nav {
+		@apply flex flex-wrap items-center gap-x-3 gap-y-1 text-fg-muted;
+		margin-top: var(--z-main-gap) !important;
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+	}
+
+	.z-mail-view .z-mail-simple-main-footer {
+		margin-top: var(--z-main-gap) !important;
+	}
+
+	.z-mail-view .z-mail-simple-folder-nav__link {
+		@apply inline-flex items-baseline gap-1.5 text-fg-muted no-underline transition-colors hover:text-fg;
+	}
+
+	.z-mail-view .z-mail-simple-folder-nav__count {
+		font-size: var(--z-list-count-size, 0.9375rem);
+		line-height: 1.35;
+		@apply tabular-nums font-semibold;
+	}
+
+	/*
+	 * Message row — stacked titles (Hobday): largest subject, smaller meta below.
+	 * https://anthonyhobday.com/sideprojects/visualtechniques/techniques/text/stacked-titles
+	 */
+	.z-mail-view .z-mail-folder-section__message {
+		display: block;
+		@apply min-w-0 no-underline;
+	}
+
+	.z-mail-view .z-mail-folder-section__message--selecting {
+		display: flex;
+		width: 100%;
+		align-items: flex-start;
+		gap: 0.75rem;
+		border: 0;
+		background: transparent;
+		padding: 0;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.z-mail-view .z-mail-folder-section__checkbox {
+		margin-top: 0.35rem;
+	}
+
+	.z-mail-view .z-mail-folder-section__item--selected .z-mail-folder-section__subject {
+		@apply text-accent;
+	}
+
+	.z-mail-view .z-mail-folder-section__stack {
+		display: flex;
+		min-width: 0;
+		flex-direction: row;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+
+	.z-mail-view .z-mail-folder-section__lead {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		flex-direction: column;
+		gap: 0.125rem;
+	}
+
+	.z-mail-view .z-mail-folder-section__subject {
+		@apply block min-w-0 font-normal text-fg underline underline-offset-[0.2em] decoration-fg/35;
+		font-size: var(--z-list-subject-size, var(--z-main-page-text));
+		line-height: 1.4;
+		text-decoration-thickness: 1px;
+		overflow-wrap: anywhere;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			text-decoration-color var(--z-motion-base) var(--z-ease-out);
+	}
+
+	.z-mail-view .z-mail-folder-section__subject--active {
+		@apply font-normal;
+	}
+
+	.z-mail-view .z-mail-folder-section--importance-read .z-mail-folder-section__subject,
+	.z-mail-view .z-mail-folder-section__list--importance-read .z-mail-folder-section__subject {
+		@apply font-normal;
+	}
+
+	.z-mail-view .z-mail-folder-section--importance-new .z-mail-folder-section__subject,
+	.z-mail-view .z-mail-folder-section__list--importance-new .z-mail-folder-section__subject {
+		@apply font-normal;
+	}
+
+	.z-mail-view .z-mail-folder-section__when {
+		font-size: var(--z-list-when-size, var(--z-list-subject-size, var(--z-main-page-text)));
+		line-height: 1.4;
+		@apply shrink-0 tabular-nums text-fg-muted no-underline;
+		padding-top: 0.05em;
+	}
+
+	.z-mail-view .z-mail-folder-section__sender {
+		display: none;
+		font-size: var(--z-list-when-size, var(--z-list-subject-size, var(--z-main-page-text)));
+		line-height: 1.4;
+		color: var(--z-fg-muted);
+	}
+
+	.z-mail-view .z-mail-folder-section__sender--duplicate {
+		display: block;
+	}
+
+	.z-mail-view .z-mail-folder-section--importance-read .z-mail-folder-section__count {
+		@apply font-medium text-fg-muted;
+	}
+
+	@media (hover: hover) and (pointer: fine) {
+		.z-mail-view .z-mail-folder-section__message:hover .z-mail-folder-section__subject,
+		.z-mail-view .z-mail-folder-section__message:focus-visible .z-mail-folder-section__subject {
+			text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
+		}
+
+		.z-mail-view .z-mail-folder-section__message:hover .z-mail-folder-section__when,
+		.z-mail-view .z-mail-folder-section__message:focus-visible .z-mail-folder-section__when {
+			color: var(--z-fg);
+		}
+	}
+
