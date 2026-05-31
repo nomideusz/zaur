@@ -7,8 +7,8 @@
 
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const allSelected = $derived(
-		mail.messages.length > 0 &&
-			mail.messages.every((message) => selectedIds.includes(message.id))
+		mail.selectableMessageList.length > 0 &&
+			mail.selectableMessageList.every((message) => selectedIds.includes(message.id))
 	);
 	const someSelected = $derived(selectedIds.length > 0 && !allSelected);
 
@@ -33,7 +33,7 @@
 	class={className}
 	checked={allSelected}
 	aria-checked={allSelected ? 'true' : someSelected ? 'mixed' : 'false'}
-	disabled={!mail.messages.length || mail.messagesLoading}
+	disabled={!mail.selectableMessageList.length || mail.messagesLoading}
 	aria-label={allSelected ? 'Deselect all messages' : 'Select all messages'}
 	onchange={onChange}
 />

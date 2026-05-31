@@ -125,6 +125,33 @@
 	const showFlatEmpty = $derived(!sectionMode && !loading && !error && messages.length === 0);
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const bulkSelectEnabled = $derived(!!mailboxRouteId && settings.showBulkSelect);
+	function flattenSectionsForSelection(
+		sections: { messages: MessagePreview[] }[]
+	): MessagePreview[] {
+		const seen = new Set<string>();
+		const flattened: MessagePreview[] = [];
+		for (const section of sections) {
+			for (const message of section.messages) {
+				if (seen.has(message.id)) continue;
+				seen.add(message.id);
+				flattened.push(message);
+			}
+		}
+		return flattened;
+	}
+
+	const bulkSelectionMessages = $derived.by(() => {
+		if (!sectionMode) return messages;
+		return flattenSectionsForSelection(folderSections);
+	});
+
+	$effect(() => {
+		if (!bulkSelectEnabled) {
+			mail.setSelectionList([]);
+			return;
+		}
+		mail.setSelectionList(sectionMode ? bulkSelectionMessages : []);
+	});
 	const showBulkBar = $derived(bulkSelectEnabled && mail.hasSelection && !!mailboxRouteId);
 
 	$effect(() => {
@@ -294,7 +321,7 @@
 	}
 
 	const newUnreadMessages = $derived.by(() =>
-		messages.filter((message) => isNewUnreadMessage(message))
+		messages.filter((message) => isNewUnreadMessage(message) && !message.important)
 	);
 	const readMessages = $derived.by(() =>
 		messages.filter((message) => !isNewUnreadMessage(message) && !message.important)
@@ -465,7 +492,9 @@
 			}
 
 			if (importantMailbox) {
-				const loadedImportant = sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [];
+				const loadedImportant = (sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? []).filter(
+					(message) => !mail.wasRemovedFromView(message.id)
+				);
 				const importantMessages = mergeMessagePreviews(loadedImportant, importantInboxMessages);
 				const importantTotal = Math.max(importantMailbox.total, importantMessages.length);
 				if (importantTotal > 0 || importantMessages.length > 0) {

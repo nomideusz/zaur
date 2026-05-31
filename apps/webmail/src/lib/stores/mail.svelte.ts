@@ -116,6 +116,8 @@ class MailStore {
 
 	selectedMessageIds = $state<Set<string>>(new Set());
 	selectionAnchorId = $state<string | null>(null);
+	/** Visible list order for shift-range selection (sectioned inbox home, etc.). */
+	selectionList = $state<MessagePreview[]>([]);
 	bulkActionLoading = $state(false);
 
 	/** True when one or more list messages are checked. */
@@ -127,6 +129,9 @@ class MailStore {
 	private pendingKeywords = new Map<string, { starred?: boolean; unread?: boolean; important?: boolean }>();
 	/** Hidden settings-sync emails per mailbox JMAP id (excluded from folder totals). */
 	private hiddenSettingsPerMailbox = new Map<string, number>();
+	/** Message ids removed from the current view (archive/trash/move) until the list reloads. */
+	removedFromViewMessageIds = $state<Set<string>>(new Set());
+	private blockMailboxRefreshUntil = 0;
 	private lastFallbackRefreshAt = 0;
 
 	get selectedCount() {
@@ -134,7 +139,28 @@ class MailStore {
 	}
 
 	selectedMessages(): MessagePreview[] {
-		return this.messages.filter((message) => this.selectedMessageIds.has(message.id));
+		const byId = new Map<string, MessagePreview>();
+		for (const message of this.messages) byId.set(message.id, message);
+		for (const message of this.selectionList) byId.set(message.id, message);
+		return [...this.selectedMessageIds]
+			.map((id) => byId.get(id))
+			.filter((message): message is MessagePreview => !!message);
+	}
+
+	setSelectionList(messages: MessagePreview[]) {
+		this.selectionList = messages;
+	}
+
+	private selectableMessages(): MessagePreview[] {
+		return this.selectionList.length > 0 ? this.selectionList : this.messages;
+	}
+
+	get selectableMessageList(): MessagePreview[] {
+		return this.selectableMessages();
+	}
+
+	wasRemovedFromView(messageId: string): boolean {
+		return this.removedFromViewMessageIds.has(messageId);
 	}
 
 	async syncHiddenSettingsCounts(client: JMAPClient) {
@@ -199,6 +225,7 @@ class MailStore {
 		this.currentMailboxRouteId = routeMailboxId;
 		this.clearSelection();
 		this.messagesError = null;
+		this.removedFromViewMessageIds = new Set();
 		if (!options?.preserveOpenThreadId) {
 			this.selectedThread = [];
 			this.selectedThreadId = null;
@@ -537,7 +564,6 @@ class MailStore {
 			for (const id of ids) {
 				this.clearPendingKeyword(id, 'important');
 			}
-			void this.refreshMailboxes(client);
 		} catch (error) {
 			if (importantMailbox) {
 				const totalDelta = important ? -messages.length : messages.length;
@@ -560,14 +586,13 @@ class MailStore {
 		const target = this.mailboxes.find((mb) => mb.role === targetRole);
 		if (!target?.jmapId) throw new Error(`${targetRole ?? 'target'} folder not found`);
 
-		const sourceRouteId = message.mailboxId;
+		const sourceRouteId = this.currentMailboxRouteId ?? message.mailboxId;
 		const sourceJmapId = this.mailboxByRouteId(sourceRouteId)?.jmapId;
 		const snapshot = { ...message };
 
 		await client.moveToMailbox(message.id, target.jmapId, sourceJmapId);
-		this.removeMessage(message);
-		this.adjustMailboxCounts(target.id, 1, message.unread ? 1 : 0);
-		void this.refreshMailboxes(client);
+		this.applyMoveAwayCounts([message], sourceRouteId, target);
+		this.removeMessage(message, { skipCounts: true });
 
 		if (sourceJmapId) {
 			const label =
@@ -591,14 +616,13 @@ class MailStore {
 		const target = this.mailboxByRouteId(targetRouteId);
 		if (!target?.jmapId) throw new Error('Folder not found');
 
-		const sourceRouteId = message.mailboxId;
+		const sourceRouteId = this.currentMailboxRouteId ?? message.mailboxId;
 		const sourceJmapId = this.mailboxByRouteId(sourceRouteId)?.jmapId;
 		const snapshot = { ...message };
 
 		await client.moveToMailbox(message.id, target.jmapId, sourceJmapId);
-		this.removeMessage(message);
-		this.adjustMailboxCounts(target.id, 1, message.unread ? 1 : 0);
-		void this.refreshMailboxes(client);
+		this.applyMoveAwayCounts([message], sourceRouteId, target);
+		this.removeMessage(message, { skipCounts: true });
 
 		if (sourceJmapId) {
 			this.offerMoveUndo({
@@ -632,7 +656,8 @@ class MailStore {
 			return;
 		}
 
-		this.removeMessage(message);
+		this.applyMoveAwayCounts([message], routeMailboxId, trash);
+		this.removeMessage(message, { skipCounts: true });
 
 		if (sourceJmapId) {
 			this.offerMoveUndo({
@@ -651,10 +676,9 @@ class MailStore {
 		this.selectionAnchorId = null;
 		this.bulkActionLoading = false;
 	}
-
-	/** Enter bulk-select mode from a touch long-press (mobile). */
 	startSelection(messageId: string) {
-		const index = this.messages.findIndex((message) => message.id === messageId);
+		const list = this.selectableMessages();
+		const index = list.findIndex((message) => message.id === messageId);
 		if (index < 0) return;
 
 		if (this.selectedMessageIds.size > 0) {
@@ -680,7 +704,8 @@ class MailStore {
 		messageId: string,
 		options: { shift?: boolean; ctrl?: boolean; activeMessageId?: string | null } = {}
 	) {
-		const index = this.messages.findIndex((message) => message.id === messageId);
+		const list = this.selectableMessages();
+		const index = list.findIndex((message) => message.id === messageId);
 		if (index < 0) return;
 
 		const shift = options.shift ?? false;
@@ -705,7 +730,7 @@ class MailStore {
 
 		if (shift) {
 			const anchorId = anchor ?? options.activeMessageId ?? messageId;
-			const anchorIndex = this.messages.findIndex((message) => message.id === anchorId);
+			const anchorIndex = list.findIndex((message) => message.id === anchorId);
 			if (anchorIndex < 0) {
 				next.add(messageId);
 				anchor = messageId;
@@ -714,7 +739,7 @@ class MailStore {
 				const end = Math.max(anchorIndex, index);
 				if (!ctrl) next = new Set();
 				for (let i = start; i <= end; i++) {
-					next.add(this.messages[i].id);
+					next.add(list[i].id);
 				}
 			}
 		} else if (ctrl) {
@@ -738,8 +763,9 @@ class MailStore {
 	}
 
 	selectAllMessages() {
-		this.selectedMessageIds = new Set(this.messages.map((message) => message.id));
-		this.selectionAnchorId = this.messages[0]?.id ?? null;
+		const list = this.selectableMessages();
+		this.selectedMessageIds = new Set(list.map((message) => message.id));
+		this.selectionAnchorId = list[0]?.id ?? null;
 	}
 
 	selectMessagesByFilter(filter: 'all' | 'read' | 'unread' | 'none') {
@@ -748,7 +774,8 @@ class MailStore {
 			return;
 		}
 
-		const matching = this.messages.filter((message) => {
+		const list = this.selectableMessages();
+		const matching = list.filter((message) => {
 			if (filter === 'all') return true;
 			if (filter === 'read') return !message.unread;
 			return message.unread;
@@ -783,8 +810,9 @@ class MailStore {
 				archive.jmapId,
 				sourceJmapId
 			);
+			this.applyMoveAwayCounts(messages, sourceRouteId, archive);
 			for (const message of messages) {
-				this.removeMessage(message);
+				this.removeMessage(message, { skipCounts: true });
 			}
 			this.clearSelection();
 			if (sourceRouteId && sourceJmapId) {
@@ -823,8 +851,9 @@ class MailStore {
 				target.jmapId,
 				sourceJmapId
 			);
+			this.applyMoveAwayCounts(messages, sourceRouteId, target);
 			for (const message of messages) {
-				this.removeMessage(message);
+				this.removeMessage(message, { skipCounts: true });
 			}
 			this.clearSelection();
 		} finally {
@@ -884,14 +913,20 @@ class MailStore {
 		try {
 			if (currentMailbox?.role === 'trash') {
 				await client.destroyEmails(ids);
+				for (const message of messages) {
+					this.removeMessage(message);
+				}
 			} else if (trash?.jmapId) {
 				await client.moveEmailsToMailbox(ids, trash.jmapId, sourceJmapId);
+				this.applyMoveAwayCounts(messages, routeMailboxId, trash);
+				for (const message of messages) {
+					this.removeMessage(message, { skipCounts: true });
+				}
 			} else {
 				await client.destroyEmails(ids);
-			}
-
-			for (const message of messages) {
-				this.removeMessage(message);
+				for (const message of messages) {
+					this.removeMessage(message);
+				}
 			}
 			this.clearSelection();
 
@@ -1093,6 +1128,7 @@ class MailStore {
 	}
 
 	async refreshMailboxes(client: JMAPClient) {
+		if (Date.now() < this.blockMailboxRefreshUntil) return;
 		try {
 			await this.syncHiddenSettingsCounts(client);
 			const list = await client.getMailboxes();
@@ -1221,11 +1257,14 @@ class MailStore {
 		}
 	}
 
-	private removeMessage(message: MessagePreview) {
-		if (message.unread) {
-			this.adjustUnreadCount(message.mailboxId, -1);
+	private removeMessage(message: MessagePreview, options?: { skipCounts?: boolean }) {
+		if (!options?.skipCounts) {
+			if (message.unread) {
+				this.adjustUnreadCount(message.mailboxId, -1);
+			}
+			this.adjustMailboxCounts(message.mailboxId, -1);
 		}
-		this.adjustMailboxCounts(message.mailboxId, -1);
+		this.removedFromViewMessageIds = new Set([...this.removedFromViewMessageIds, message.id]);
 		this.messages = this.messages.filter((m) => m.id !== message.id);
 		this.messagesTotal = Math.max(0, this.messagesTotal - 1);
 		if (browser) {
@@ -1237,9 +1276,70 @@ class MailStore {
 		}
 	}
 
+	private clearRemovedFromView(messageId: string) {
+		if (!this.removedFromViewMessageIds.has(messageId)) return;
+		const next = new Set(this.removedFromViewMessageIds);
+		next.delete(messageId);
+		this.removedFromViewMessageIds = next;
+	}
+
+	private applyMoveAwayCounts(
+		messages: MessagePreview[],
+		sourceRouteId: string | null,
+		target?: Mailbox
+	) {
+		if (!messages.length) return;
+
+		const important = this.importantMailbox();
+		for (const message of messages) {
+			const unreadDelta = message.unread ? 1 : 0;
+			const seen = new Set<string>();
+
+			const decrement = (routeId: string, deltaUnread = 0) => {
+				if (!routeId || seen.has(routeId)) return;
+				seen.add(routeId);
+				this.adjustMailboxCounts(routeId, -1, deltaUnread);
+			};
+
+			decrement(message.mailboxId, unreadDelta);
+			if (sourceRouteId) decrement(sourceRouteId);
+			if (important && (message.important || message.mailboxId === important.id)) {
+				decrement(important.id);
+			}
+		}
+
+		if (target) {
+			const unreadInTarget = messages.filter((message) => message.unread).length;
+			this.adjustMailboxCounts(target.id, messages.length, unreadInTarget);
+		}
+	}
+
+	private applyMoveRestoreCounts(messages: MessagePreview[], sourceRouteId: string) {
+		if (!messages.length) return;
+
+		const important = this.importantMailbox();
+		for (const message of messages) {
+			const unreadDelta = message.unread ? 1 : 0;
+			const seen = new Set<string>();
+
+			const increment = (routeId: string, deltaUnread = 0) => {
+				if (!routeId || seen.has(routeId)) return;
+				seen.add(routeId);
+				this.adjustMailboxCounts(routeId, 1, deltaUnread);
+			};
+
+			increment(sourceRouteId, unreadDelta);
+			if (message.mailboxId !== sourceRouteId) increment(message.mailboxId);
+			if (important && (message.important || message.mailboxId === important.id)) {
+				increment(important.id);
+			}
+		}
+	}
+
 	restoreMessage(message: MessagePreview) {
 		if (this.messages.some((m) => m.id === message.id)) return;
 
+		this.clearRemovedFromView(message.id);
 		this.messages = [...this.messages, message].sort(
 			(a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
 		);
@@ -1274,12 +1374,24 @@ class MailStore {
 					params.sourceJmapId,
 					params.targetJmapId
 				);
+				const target = this.mailboxes.find((mb) => mb.jmapId === params.targetJmapId);
+				if (target) {
+					const unreadInTarget = snapshots.filter((message) => message.unread).length;
+					this.adjustMailboxCounts(target.id, -snapshots.length, -unreadInTarget);
+				}
 				if (this.currentMailboxRouteId === params.sourceRouteId) {
+					this.applyMoveRestoreCounts(snapshots, params.sourceRouteId);
 					for (const message of snapshots) {
-						this.restoreMessage(message);
+						this.clearRemovedFromView(message.id);
+						if (!this.messages.some((item) => item.id === message.id)) {
+							this.messages = [...this.messages, message].sort(
+								(a, b) =>
+									new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
+							);
+							this.messagesTotal += 1;
+						}
 					}
 				}
-				void this.refreshMailboxes(params.client);
 			} catch (error) {
 				toast.show(error instanceof Error ? error.message : 'Undo failed', 'error');
 			}
@@ -1292,6 +1404,9 @@ class MailStore {
 
 	private adjustMailboxCounts(routeId: string, totalDelta: number, unreadDelta = 0) {
 		if (totalDelta === 0 && unreadDelta === 0) return;
+		if (totalDelta !== 0 || unreadDelta !== 0) {
+			this.blockMailboxRefreshUntil = Date.now() + 8000;
+		}
 		this.mailboxes = this.mailboxes.map((mb) =>
 			mb.id === routeId
 				? {
@@ -1325,6 +1440,8 @@ class MailStore {
 		this.openMessageInflight = null;
 		this.openMessageInflightKey = null;
 		this.clearSelection();
+		this.selectionList = [];
+		this.removedFromViewMessageIds = new Set();
 		this.pendingKeywords.clear();
 	}
 }
