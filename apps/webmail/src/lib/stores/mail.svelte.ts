@@ -555,6 +555,7 @@ class MailStore {
 				snapshots: [snapshot],
 				sourceRouteId,
 				sourceJmapId,
+				targetJmapId: target.jmapId,
 				message: label
 			});
 		}
@@ -577,6 +578,7 @@ class MailStore {
 				snapshots: [snapshot],
 				sourceRouteId,
 				sourceJmapId,
+				targetJmapId: target.jmapId,
 				message: `Moved to ${target.name}`
 			});
 		}
@@ -610,6 +612,7 @@ class MailStore {
 				snapshots: [snapshot],
 				sourceRouteId: routeMailboxId,
 				sourceJmapId,
+				targetJmapId: trash.jmapId,
 				message: snapshot.subject ? `Moved “${snapshot.subject}” to trash` : 'Moved to trash'
 			});
 		}
@@ -762,6 +765,7 @@ class MailStore {
 					snapshots,
 					sourceRouteId,
 					sourceJmapId,
+					targetJmapId: archive.jmapId,
 					message:
 						snapshots.length === 1
 							? 'Message archived'
@@ -863,12 +867,13 @@ class MailStore {
 			}
 			this.clearSelection();
 
-			if (currentMailbox?.role !== 'trash' && sourceJmapId) {
+			if (currentMailbox?.role !== 'trash' && sourceJmapId && trash?.jmapId) {
 				this.offerMoveUndo({
 					client,
 					snapshots,
 					sourceRouteId: routeMailboxId,
 					sourceJmapId,
+					targetJmapId: trash.jmapId,
 					message:
 						snapshots.length === 1
 							? 'Moved to trash'
@@ -1228,20 +1233,23 @@ class MailStore {
 		snapshots: MessagePreview[];
 		sourceRouteId: string;
 		sourceJmapId: string;
+		targetJmapId: string;
 		message: string;
 	}) {
 		const snapshots = params.snapshots.map((message) => ({ ...message }));
-		toast.showUndo(params.message, async () => {
+		toast.showMoveUndo(params.message, async () => {
 			try {
 				await params.client.moveEmailsToMailbox(
 					snapshots.map((message) => message.id),
-					params.sourceJmapId
+					params.sourceJmapId,
+					params.targetJmapId
 				);
 				if (this.currentMailboxRouteId === params.sourceRouteId) {
 					for (const message of snapshots) {
 						this.restoreMessage(message);
 					}
 				}
+				void this.refreshMailboxes(params.client);
 			} catch (error) {
 				toast.show(error instanceof Error ? error.message : 'Undo failed', 'error');
 			}

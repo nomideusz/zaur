@@ -18,6 +18,8 @@ export interface Toast {
 
 const AUTO_DISMISS_MS = 5_000;
 export const UNDO_SEND_DELAY_MS = 8_000;
+/** Undo window for archive, trash, and folder moves — independent of send delay. */
+export const MOVE_UNDO_DELAY_MS = 8_000;
 const UNDO_DISMISS_MS = UNDO_SEND_DELAY_MS;
 const MAX_TOASTS = 2;
 
@@ -56,6 +58,17 @@ class ToastStore {
 		this.showAction(message, 'success', { label: 'Undo', onClick: undo }, dismissMs, {
 			force: true
 		});
+	}
+
+	showMoveUndo(message: string, undo: () => void | Promise<void>) {
+		if (!browser) return;
+		this.showAction(
+			message,
+			'success',
+			{ label: 'Undo', onClick: undo },
+			MOVE_UNDO_DELAY_MS,
+			{ force: true }
+		);
 	}
 
 	async runAction(id: string, action: ToastAction) {
