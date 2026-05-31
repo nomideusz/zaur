@@ -14,7 +14,15 @@ export function defaultEmptyMessage(mailboxRouteId: string | undefined): string 
 		case 'archive':
 			return 'Archive is clear';
 		case 'junk':
-			return 'No junk mail';
+			return 'No spam';
+		case 'important':
+			return 'Nothing marked important';
+		case 'scheduled':
+			return 'Nothing scheduled';
+		case 'memos':
+			return 'No memos yet';
+		case 'snoozed':
+			return 'Nothing snoozed';
 		default:
 			return 'Nothing here yet';
 	}
@@ -29,7 +37,7 @@ export function defaultEmptyHint(mailboxRouteId: string | undefined): string | n
 		case 'sent':
 			return 'Messages you send will be collected here for easy reference.';
 		case 'trash':
-			return 'Deleted messages will stay here until you empty them.';
+			return 'Deleted messages stay here until you empty Trash.';
 		default:
 			return null;
 	}

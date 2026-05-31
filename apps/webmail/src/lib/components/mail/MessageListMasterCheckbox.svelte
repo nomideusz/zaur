@@ -19,6 +19,7 @@
 	function onChange() {
 		if (allSelected || someSelected) {
 			mail.clearSelection();
+			input?.blur();
 			return;
 		}
 

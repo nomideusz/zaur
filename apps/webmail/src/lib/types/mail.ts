@@ -1,4 +1,15 @@
-export type MailboxRole = 'inbox' | 'drafts' | 'sent' | 'junk' | 'trash' | 'archive' | 'custom';
+export type MailboxRole =
+	| 'inbox'
+	| 'drafts'
+	| 'sent'
+	| 'junk'
+	| 'trash'
+	| 'archive'
+	| 'important'
+	| 'scheduled'
+	| 'memos'
+	| 'snoozed'
+	| 'custom';
 
 export interface Mailbox {
 	id: string;

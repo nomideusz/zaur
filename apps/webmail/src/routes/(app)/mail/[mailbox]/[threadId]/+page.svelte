@@ -22,7 +22,7 @@
 	});
 
 	const mailbox = $derived(mail.mailboxByRouteId(data.mailboxId));
-	const mailboxName = $derived(mailbox?.name ?? 'Inbox');
+	const mailboxName = $derived(mailbox?.name ?? 'Emails');
 	const thread = $derived(mail.selectedThread);
 	const latest = $derived(thread.at(-1));
 	const countLabel = $derived(

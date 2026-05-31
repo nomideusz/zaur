@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
-	import MessageListHeader from '$lib/components/mail/MessageListHeader.svelte';
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
 	import MessageListMobileBar from '$lib/components/mail/MessageListMobileBar.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
@@ -21,6 +20,7 @@
 	import type { Mailbox, MessagePreview } from '$lib/types/mail';
 	import MailTextNav from '$lib/components/mail/MailTextNav.svelte';
 	import { contentPagePadClass } from '$lib/mail/layout';
+	import { mailboxKindOrderForMailbox } from '$lib/mail/mailboxes';
 	import {
 		formatSimpleListWhen,
 		simpleMessageDayKey,
@@ -86,9 +86,8 @@
 	const INBOX_SECTION_PAGE_SIZE = 8;
 	const FOLDER_SECTION_PAGE_SIZE = 3;
 	const NEW_SECTION_ID = 'new';
-	const IMPORTANT_SECTION_ID = 'important';
 	const READ_SECTION_ID = 'read';
-	const INBOX_SECTION_IDS = new Set([NEW_SECTION_ID, IMPORTANT_SECTION_ID, READ_SECTION_ID]);
+	const INBOX_SECTION_IDS = new Set([NEW_SECTION_ID, READ_SECTION_ID]);
 	const FOLDER_SECTION_SORT_BASE = 10;
 	const NEW_MESSAGE_WINDOW_MS = 1000 * 60 * 60 * 24;
 	const NEW_MESSAGE_SEEN_RETENTION_MS = 1000 * 60 * 60 * 24 * 45;
@@ -123,10 +122,7 @@
 	const showFlatEmpty = $derived(!sectionMode && !loading && !error && messages.length === 0);
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const bulkSelectEnabled = $derived(!!mailboxRouteId && settings.showBulkSelect);
-	const showListHeader = $derived(bulkSelectEnabled && mail.hasSelection);
-	const showMobileSelectionBar = $derived(
-		!!mailboxRouteId && mail.hasSelection && supportsMobileListGestures()
-	);
+	const showBulkBar = $derived(bulkSelectEnabled && mail.hasSelection && !!mailboxRouteId);
 
 	$effect(() => {
 		if (!settings.showBulkSelect && mail.hasSelection) {
@@ -186,18 +182,8 @@
 		const isSelected = mail.selectedMessageIds.has(messageId);
 		if (input.checked === isSelected) return;
 		mail.toggleMessageSelection(messageId);
+		if (!input.checked) input.blur();
 	}
-
-	/** Matches ROLE_ORDER in mail.svelte.ts */
-	const folderRoleOrder: Record<string, number> = {
-		inbox: 0,
-		drafts: 1,
-		sent: 2,
-		archive: 3,
-		junk: 4,
-		trash: 5
-	};
-
 
 	function folderSectionCollapsedByDefault(folder: Mailbox): boolean {
 		// All folders below inbox start collapsed — minimal list of folders only.
@@ -241,17 +227,8 @@
 		return FOLDER_SECTION_PAGE_SIZE;
 	}
 
-	function simpleFolderSectionTitle(role: string | undefined, name: string): string {
-		if (role === 'drafts') return 'Drafts';
-		if (role === 'sent') return 'Sent';
-		if (role === 'archive') return 'Archive';
-		if (role === 'junk') return 'Spam';
-		if (role === 'trash') return 'Deleted';
-		return name;
-	}
-
 	function folderSectionSortOrder(folder: Mailbox): number {
-		return FOLDER_SECTION_SORT_BASE + (folderRoleOrder[folder.role ?? ''] ?? 99);
+		return FOLDER_SECTION_SORT_BASE + mailboxKindOrderForMailbox(folder);
 	}
 
 	function isMe(email: string): boolean {
@@ -297,11 +274,8 @@
 	const newUnreadMessages = $derived.by(() =>
 		messages.filter((message) => isNewUnreadMessage(message))
 	);
-	const importantMessages = $derived.by(() =>
-		messages.filter((message) => message.important && !isNewUnreadMessage(message))
-	);
 	const readMessages = $derived.by(() =>
-		messages.filter((message) => !message.important && !isNewUnreadMessage(message))
+		messages.filter((message) => !isNewUnreadMessage(message))
 	);
 
 	$effect(() => {
@@ -427,8 +401,8 @@
 					(!mailboxRouteId || folder.id !== mailboxRouteId)
 			)
 			.sort((a, b) => {
-				const aRank = folderRoleOrder[a.role ?? ''] ?? 99;
-				const bRank = folderRoleOrder[b.role ?? ''] ?? 99;
+				const aRank = mailboxKindOrderForMailbox(a);
+				const bRank = mailboxKindOrderForMailbox(b);
 				if (aRank !== bRank) return aRank - bRank;
 				return a.name.localeCompare(b.name);
 			})
@@ -461,35 +435,20 @@
 				});
 			}
 
-			if (importantMessages.length > 0) {
-				sections.push({
-					id: IMPORTANT_SECTION_ID,
-					name: 'Important',
-					routeId: mailboxRouteId ?? 'inbox',
-					messages: importantMessages.slice(
-						0,
-						sectionVisibleCounts[IMPORTANT_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
-					),
-					totalCount: importantMessages.length,
-					sortOrder: 1,
-					showUnreadDot: true
-				});
-			}
-
 			// Folders below inbox are not shown in the main list (to avoid distraction).
 			// A minimal navigation row is rendered after the message list instead.
 
 			if (readMessages.length > 0) {
 				sections.push({
 					id: READ_SECTION_ID,
-					name: 'Inbox',
+					name: 'Emails',
 					routeId: mailboxRouteId ?? 'inbox',
 					messages: readMessages.slice(
 						0,
 						sectionVisibleCounts[READ_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
 					),
 					totalCount: readMessages.length,
-					sortOrder: 2,
+					sortOrder: 1,
 					showUnreadDot: false
 				});
 			}
@@ -500,7 +459,7 @@
 				sectionVisibleCounts[mailboxRouteId] ?? (collapsed ? 0 : INBOX_SECTION_PAGE_SIZE);
 			sections.push({
 				id: mailboxRouteId,
-				name: simpleFolderSectionTitle(mailbox?.role, mailbox?.name ?? mailboxName),
+				name: mailbox?.name ?? mailboxName,
 				routeId: mailboxRouteId,
 				messages: messages.slice(0, limit),
 				totalCount: mailbox?.total ?? messages.length,
@@ -521,7 +480,6 @@
 		sectionHasMoreByFolder = {};
 		const counts: Record<string, number> = {
 			[NEW_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
-			[IMPORTANT_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
 			[READ_SECTION_ID]: INBOX_SECTION_PAGE_SIZE
 		};
 		if (mailboxRouteId && mailboxRouteId !== 'inbox') {
@@ -676,7 +634,6 @@
 	function sectionCanShowMore(sectionId: string): boolean {
 		const visible = sectionVisibleCounts[sectionId] ?? sectionPageSize(sectionId);
 		if (sectionId === NEW_SECTION_ID) return newUnreadMessages.length > visible;
-		if (sectionId === IMPORTANT_SECTION_ID) return importantMessages.length > visible;
 		if (sectionId === READ_SECTION_ID) {
 			return readMessages.length > visible || hasMore;
 		}
@@ -733,26 +690,18 @@
 		class={cn(
 			contentPagePadClass(),
 			'flex flex-col',
-			showMobileSelectionBar && 'z-mail-list-scroll--with-bar'
+			showBulkBar && 'z-mail-list-scroll--with-bar'
 		)}
 	>
 	{#if mailboxRouteId || !sectionMode}
 		<MailTextNav
-			title={isInboxHome ? 'ZAUR Mail' : mailboxName}
+			title={isInboxHome ? 'Emails' : mailboxName}
 			titleHref={isInboxHome ? mailHomeHref : null}
 			actionHref="/mail/compose"
 			actionLabel="New message"
 			showBackToMail={!isInboxHome}
 			backHref={mailHomeHref}
 			showSettings={false}
-		/>
-	{/if}
-
-	{#if showListHeader}
-		<MessageListHeader
-			{mailboxRouteId}
-			{onBulkAction}
-			disabled={!!mailboxRouteId && (loading || !!error || !messages.length)}
 		/>
 	{/if}
 
@@ -876,7 +825,7 @@
 							href={`/mail/${folder.id}`}
 							class="inline-flex items-baseline gap-1.5 text-fg-muted no-underline transition-colors hover:text-fg"
 						>
-							<span>{simpleFolderSectionTitle(folder.role, folder.name)}</span>
+							<span>{folder.name}</span>
 							<span class="z-type-list-count tabular-nums font-semibold">{folder.total}</span>
 						</a>
 					{/each}
@@ -912,8 +861,12 @@
 			Sign out
 		</button>
 	</div>
-		{#if showMobileSelectionBar && mailboxRouteId}
-			<MessageListMobileBar {mailboxRouteId} {onBulkAction} />
+		{#if showBulkBar && mailboxRouteId}
+			<MessageListMobileBar
+				mailboxRouteId={mailboxRouteId}
+				{onBulkAction}
+				disabled={loading || !!error || !messages.length}
+			/>
 		{/if}
 	</div>
 </section>

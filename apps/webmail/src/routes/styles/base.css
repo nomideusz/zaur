@@ -10,6 +10,12 @@
 		min-height: 100dvh;
 	}
 
+	/* Reserve scrollbar width so short → long pages don't shift layout. */
+	#main-content,
+	:where(.z-pane-scroll) {
+		scrollbar-gutter: stable;
+	}
+
 	* {
 		scrollbar-width: thin;
 		scrollbar-color: var(--z-scrollbar-thumb) var(--z-scrollbar-track);

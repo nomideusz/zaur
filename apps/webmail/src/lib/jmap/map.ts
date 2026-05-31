@@ -1,7 +1,18 @@
 import type { JMAPEmail, JMAPBodyPart } from '$lib/jmap/types';
 import type { Mailbox, MessageAttachment, MessageDetail, MessagePreview } from '$lib/types/mail';
 
-const ROLE_PRIORITY: Mailbox['role'][] = ['inbox', 'sent', 'archive', 'drafts', 'junk', 'trash'];
+const ROLE_PRIORITY: Mailbox['role'][] = [
+	'inbox',
+	'important',
+	'scheduled',
+	'snoozed',
+	'memos',
+	'sent',
+	'archive',
+	'drafts',
+	'junk',
+	'trash'
+];
 
 function firstAddress(addrs?: { name?: string; email: string }[]) {
 	const first = addrs?.[0];

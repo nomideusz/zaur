@@ -6,12 +6,16 @@ const JMAP_CAPABILITIES = [
 
 const DOMAIN_CACHE_TTL_MS = 5 * 60 * 1000;
 const STANDARD_MAILBOXES = [
-  { name: 'Inbox', role: 'inbox', sortOrder: 10 },
-  { name: 'Drafts', role: 'drafts', sortOrder: 20 },
-  { name: 'Sent Items', role: 'sent', sortOrder: 30 },
-  { name: 'Deleted Items', role: 'trash', sortOrder: 40 },
-  { name: 'Junk Mail', role: 'junk', sortOrder: 50 },
-  { name: 'Archive', role: 'archive', sortOrder: 60 },
+  { name: 'E-mails', role: 'inbox', sortOrder: 10 },
+  { name: 'Spam', role: 'junk', sortOrder: 20 },
+  { name: 'Drafts', role: 'drafts', sortOrder: 30 },
+  { name: 'Sent', role: 'sent', sortOrder: 40 },
+  { name: 'Archive', role: 'archive', sortOrder: 50 },
+  { name: 'Trash', role: 'trash', sortOrder: 60 },
+  { name: 'Important', role: null, sortOrder: 70 },
+  { name: 'Scheduled', role: null, sortOrder: 80 },
+  { name: 'Memos', role: null, sortOrder: 90 },
+  { name: 'Snoozed', role: null, sortOrder: 100 },
 ];
 
 let domainCache = { domains: null, expiresAt: 0 };
@@ -353,13 +357,15 @@ async function ensureStandardMailboxes(accountId) {
 
   const create = {};
   for (const mailbox of STANDARD_MAILBOXES) {
-    if (existingRoles.has(mailbox.role) || existingNames.has(mailbox.name.toLowerCase())) continue;
-    create[mailbox.role] = {
+    if (mailbox.role && existingRoles.has(mailbox.role)) continue;
+    if (existingNames.has(mailbox.name.toLowerCase())) continue;
+    const key = mailbox.role || mailbox.name.toLowerCase().replace(/\s+/g, '-');
+    create[key] = {
       name: mailbox.name,
       parentId: null,
-      role: mailbox.role,
       sortOrder: mailbox.sortOrder,
       isSubscribed: true,
+      ...(mailbox.role ? { role: mailbox.role } : {}),
     };
   }
 

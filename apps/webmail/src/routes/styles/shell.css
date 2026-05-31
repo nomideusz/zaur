@@ -1,34 +1,12 @@
 /* App shell — panes, scroll, mobile overlays. */
 
-	.z-mail-list-mobile-bar {
-		@apply flex shrink-0 items-center gap-2 border-t border-border bg-surface-raised/95 px-3 py-2 backdrop-blur-sm;
+	.z-mail-list-bulk-bar {
+		@apply flex shrink-0 flex-wrap items-center gap-2 border-t border-border bg-surface-raised/95 px-0 py-2 backdrop-blur-sm;
 		padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 	}
 
-	.z-mail-list-mobile-bar__cancel {
-		@apply !min-h-10 !min-w-10 shrink-0;
-	}
-
-	.z-mail-list-mobile-bar__count {
-		@apply min-w-0 flex-1 truncate text-sm font-medium text-fg;
-	}
-
-	.z-mail-list-mobile-bar__actions {
-		@apply flex shrink-0 items-center gap-1 overflow-x-auto;
-	}
-
-	.z-mail-list-mobile-bar__btn {
-		@apply !h-9 shrink-0 !px-2.5 !text-xs;
-	}
-
 	.z-mail-list-scroll--with-bar {
-		padding-bottom: max(0.25rem, env(safe-area-inset-bottom));
-	}
-
-	@media (max-width: 767px) {
-		.z-mail-list-scroll--with-bar {
-			padding-bottom: max(3.75rem, calc(env(safe-area-inset-bottom) + 2.75rem));
-		}
+		padding-bottom: max(3.75rem, calc(env(safe-area-inset-bottom) + 2.75rem));
 	}
 
 	.z-mobile-reader-bar {

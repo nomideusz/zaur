@@ -170,7 +170,7 @@
 		<SettingsRow title="Compose" description="Start a new message">
 			<span class="font-sans text-xs text-fg">c</span>
 		</SettingsRow>
-		<SettingsRow title="Go to folder" description="Press g then: i Inbox, s Sent, d Drafts, a Archive, t Trash, j Junk">
+		<SettingsRow title="Go to folder" description="Press g then: i Emails, s Sent, d Drafts, a Archive, t Trash, j Spam">
 			<span class="font-sans text-xs text-fg">g i · g s · g d · g a · g t · g j</span>
 		</SettingsRow>
 		<SettingsRow title="Next / previous message">

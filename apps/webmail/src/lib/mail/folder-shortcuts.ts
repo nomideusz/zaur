@@ -20,7 +20,9 @@ export function resolveMailboxRouteByShortcut(
 	if (!roles) return null;
 
 	for (const role of roles) {
-		const match = mailboxes.find((mailbox) => mailbox.role === role);
+		const match = mailboxes.find(
+			(mailbox) => mailbox.role === role || mailbox.id === role
+		);
 		if (match) return match.id;
 	}
 

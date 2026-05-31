@@ -3,6 +3,8 @@
 	import Important from '$lib/components/icons/Important.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import X from '$lib/components/icons/X.svelte';
+	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
+	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
@@ -15,10 +17,11 @@
 
 	interface Props {
 		mailboxRouteId: string;
+		disabled?: boolean;
 		onBulkAction?: () => void;
 	}
 
-	let { mailboxRouteId, onBulkAction }: Props = $props();
+	let { mailboxRouteId, disabled = false, onBulkAction }: Props = $props();
 
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
@@ -59,61 +62,65 @@
 </script>
 
 <nav
-	class="z-mail-list-mobile-bar md:hidden"
+	class={cn('z-mail-list-bulk-bar', disabled && 'pointer-events-none opacity-60')}
 	aria-label="Selected messages"
 >
-	<IconButton
-		label="Cancel selection"
-		class="z-mail-list-mobile-bar__cancel"
-		onclick={() => mail.clearSelection()}
-	>
-		<X class="size-5" aria-hidden="true" />
-	</IconButton>
+	<MessageListMasterCheckbox class="z-mail-list-bulk-bar__checkbox" />
+	<div class="z-mail-list-bulk-bar__select">
+		<MessageListSelectMenu {disabled} />
+		<IconButton
+			label="Cancel selection"
+			class="z-mail-list-bulk-bar__cancel"
+			onclick={() => mail.clearSelection()}
+		>
+			<X class="size-5" aria-hidden="true" />
+		</IconButton>
+	</div>
 
-	<span class="z-mail-list-mobile-bar__count">{selectedIds.length} selected</span>
+	<span class="z-mail-list-bulk-bar__count">{selectedIds.length} selected</span>
 
-	<div class="z-mail-list-mobile-bar__actions">
+	<div class="z-mail-list-bulk-bar__actions">
 		{#if hasNotImportantSelected}
 			<Button
 				variant="ghost"
-				class={cn('z-mail-list-mobile-bar__btn')}
+				class="z-mail-list-bulk-bar__btn"
 				onclick={() => auth.client && runBulk(() => mail.bulkMarkAsImportant(auth.client!))}
 			>
 				<Important class="size-4" aria-hidden="true" />
-				Important
+				<span class="max-sm:sr-only">Important</span>
 			</Button>
 		{/if}
 		{#if hasImportantSelected}
 			<Button
 				variant="ghost"
-				class={cn('z-mail-list-mobile-bar__btn')}
+				class="z-mail-list-bulk-bar__btn"
 				onclick={() => auth.client && runBulk(() => mail.bulkMarkAsNotImportant(auth.client!))}
 			>
 				<Important class="size-4 opacity-50" aria-hidden="true" />
-				Not important
+				<span class="max-sm:sr-only">Not important</span>
 			</Button>
 		{/if}
 		{#if canArchive}
 			<Button
 				variant="ghost"
-				class={cn('z-mail-list-mobile-bar__btn')}
+				class="z-mail-list-bulk-bar__btn"
 				onclick={() => auth.client && runBulk(() => mail.bulkArchive(auth.client!))}
 			>
 				<Archive class="size-4" aria-hidden="true" />
-				Archive
+				<span class="max-sm:sr-only">Archive</span>
 			</Button>
 		{/if}
 		{#if moveTargets.length}
 			<OverflowMenu
 				label="Move selected messages"
-				menuId="bulk-move-mobile-menu"
+				menuId="bulk-move-menu"
 				placement="top"
 				menuClass="z-overflow-menu--list"
 			>
 				<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={handleBulkMove} />
 			</OverflowMenu>
 		{/if}
-		<Button variant="danger" class={cn('z-mail-list-mobile-bar__btn')} onclick={deleteSelected}>
+		<Button variant="danger" class="z-mail-list-bulk-bar__btn" onclick={deleteSelected}>
 			<Trash2 class="size-4" aria-hidden="true" />
 			{deleteLabel}
 		</Button>

@@ -10,7 +10,7 @@
 	const { data } = $props();
 
 	const mailbox = $derived(mail.mailboxByRouteId(data.mailboxId));
-	const mailboxName = $derived(mailbox?.name ?? 'Inbox');
+	const mailboxName = $derived(mailbox?.name ?? 'Emails');
 	const countLabel = $derived(
 		mailCountLabel(mail.messagesTotal, mail.messages.length, mailbox)
 	);

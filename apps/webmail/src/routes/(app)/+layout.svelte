@@ -62,9 +62,9 @@
 		{/if}
 		<main
 			id="main-content"
-			class="flex min-h-0 flex-1 flex-col {pageScrollOnMain
-				? `z-app-main--page-scroll overflow-y-auto ${pageScrollOverflowX}`
-				: 'overflow-hidden'}"
+			class="flex min-h-0 flex-1 flex-col overflow-y-auto {pageScrollOverflowX} {pageScrollOnMain
+				? 'z-app-main--page-scroll'
+				: ''}"
 			tabindex="-1"
 		>
 			{@render children()}
