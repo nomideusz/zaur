@@ -2,10 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { setContext } from 'svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
-	import ClassicMailSurface from '$lib/modes/classic/ClassicMailSurface.svelte';
-	import { webmailModeDefinition } from '$lib/modes/registry';
 	import SimpleMailSurface from '$lib/modes/simple/SimpleMailSurface.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { cn } from '$lib/utils/cn';
 
@@ -66,24 +63,15 @@
 		});
 		return () => shellHeader.clearMail(generation);
 	});
-
-	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
-	const simplePageScroll = $derived(activeMode.id === 'simple');
 </script>
 
 <div
 	class={cn(
 		'z-mail-pane flex min-w-0 flex-col',
-		simplePageScroll ? 'z-mail-pane--page-scroll w-full' : 'min-h-0 flex-1',
+		'z-mail-pane--page-scroll w-full',
 		fullScreenMobile && 'z-mail-pane--mobile-fullscreen',
 		className
 	)}
 >
-	{#key activeMode.id}
-		{#if activeMode.id === 'traditional'}
-			<ClassicMailSurface {list} {reader} {mailboxName} {onBack} />
-		{:else}
-			<SimpleMailSurface {list} {reader} />
-		{/if}
-	{/key}
+	<SimpleMailSurface {list} {reader} />
 </div>

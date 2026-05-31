@@ -1,21 +1,19 @@
 import { getContext, setContext } from 'svelte';
+import { WEBMAIL_MODE } from './registry';
 import type { WebmailModeDefinition } from './types';
 
 const WEBMAIL_MODE_CONTEXT = Symbol('webmail-mode');
 
-/** Provide reactive access to the active mode from mail/settings shells. */
-export function setWebmailModeContext(getDefinition: () => WebmailModeDefinition): void {
-	setContext(WEBMAIL_MODE_CONTEXT, getDefinition);
+export function setWebmailModeContext(): void {
+	setContext(WEBMAIL_MODE_CONTEXT, () => WEBMAIL_MODE);
 }
 
-/** Read the active mode from a mode shell. */
 export function getWebmailModeContext(): WebmailModeDefinition {
-	const getDefinition = getContext<() => WebmailModeDefinition>(WEBMAIL_MODE_CONTEXT);
-	return getDefinition();
+	const getDefinition = getContext<(() => WebmailModeDefinition) | undefined>(WEBMAIL_MODE_CONTEXT);
+	return getDefinition?.() ?? WEBMAIL_MODE;
 }
 
-/** Read the active mode when optional (outside a mode shell). */
-export function tryGetWebmailModeContext(): WebmailModeDefinition | null {
+export function tryGetWebmailModeContext(): WebmailModeDefinition {
 	const getDefinition = getContext<(() => WebmailModeDefinition) | undefined>(WEBMAIL_MODE_CONTEXT);
-	return getDefinition ? getDefinition() : null;
+	return getDefinition?.() ?? WEBMAIL_MODE;
 }

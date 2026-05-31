@@ -167,10 +167,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-default-search-scope",
 		"href": "/settings/reading",
 		"title": "Default search scope",
-		"description": "",
-		"modes": [
-			"simple"
-		]
+		"description": ""
 	},
 	{
 		"id": "/settings/reading-enable-keyboard-shortcuts",
@@ -194,12 +191,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-hide-action-toasts",
 		"href": "/settings/reading",
 		"title": "Hide action toasts",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-list-text-size",
-		"href": "/settings/reading",
-		"title": "List text size",
 		"description": ""
 	},
 	{
@@ -236,10 +227,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-remember-last-mailbox",
 		"href": "/settings/reading",
 		"title": "Remember last mailbox",
-		"description": "",
-		"modes": [
-			"simple"
-		]
+		"description": ""
 	},
 	{
 		"id": "/settings/reading-reply-reply-all",
@@ -248,22 +236,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-reset-layout-settings",
-		"href": "/settings/reading",
-		"title": "Reset layout settings",
-		"description": "",
-		"modes": [
-			"traditional"
-		]
-	},
-	{
 		"id": "/settings/reading-reset-reading-settings",
 		"href": "/settings/reading",
 		"title": "Reset reading settings",
-		"description": "",
-		"modes": [
-			"simple"
-		]
+		"description": ""
 	},
 	{
 		"id": "/settings/reading-send-close-compose",
@@ -272,48 +248,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-show-folder-unread-counts",
-		"href": "/settings/reading",
-		"title": "Show folder unread counts",
-		"description": "",
-		"modes": [
-			"traditional"
-		]
-	},
-	{
 		"id": "/settings/reading-show-list-rail-in-reader",
 		"href": "/settings/reading",
 		"title": "Show list rail in reader",
-		"description": "",
-		"modes": [
-			"simple"
-		]
-	},
-	{
-		"id": "/settings/reading-show-message-preview",
-		"href": "/settings/reading",
-		"title": "Show message preview",
 		"description": ""
-	},
-	{
-		"id": "/settings/reading-show-pane-borders",
-		"href": "/settings/reading",
-		"title": "Show pane borders",
-		"description": "",
-		"modes": [
-			"traditional"
-		]
 	},
 	{
 		"id": "/settings/reading-time-format",
 		"href": "/settings/reading",
 		"title": "Time format",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-timestamps",
-		"href": "/settings/reading",
-		"title": "Timestamps",
 		"description": ""
 	},
 	{

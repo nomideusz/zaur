@@ -7,21 +7,19 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { readerFocus } from '$lib/stores/reader-focus.svelte';
 	import { setWebmailModeContext } from '$lib/modes/context';
-	import { webmailModeDefinition } from '$lib/modes/registry';
+	import { WEBMAIL_MODE } from '$lib/modes/registry';
 
 	let { children } = $props();
 
 	const isThreadOpen = $derived(!!$page.params.threadId);
-	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
-
-	setWebmailModeContext(() => webmailModeDefinition(settings.mailViewMode));
 	const focusActive = $derived(
-		activeMode.mail.useAdaptiveReaderFocus && readerFocus.active && isThreadOpen
+		WEBMAIL_MODE.mail.useAdaptiveReaderFocus && readerFocus.active && isThreadOpen
 	);
-	const adaptiveThreadOpen = $derived(activeMode.mail.useAdaptiveReaderFocus && isThreadOpen);
+	const adaptiveThreadOpen = $derived(WEBMAIL_MODE.mail.useAdaptiveReaderFocus && isThreadOpen);
+
+	setWebmailModeContext();
 
 	$effect(() => {
-		activeMode.id;
 		readerFocus.set(false);
 		readerFocus.setClean(false);
 		mail.clearSelection();
@@ -56,14 +54,10 @@
 
 <MailKeyboardShortcuts />
 
-{#key activeMode.id}
-	<div
-		class="relative flex flex-1 flex-row {activeMode.id === 'simple'
-			? 'min-h-0 overflow-visible'
-			: 'min-h-0 overflow-hidden'} {activeMode.mailRootClass}"
-		class:z-reader-focus={focusActive}
-		class:z-layout-adaptive-thread={adaptiveThreadOpen}
-	>
-		{@render children()}
-	</div>
-{/key}
+<div
+	class="relative flex min-h-0 flex-1 flex-row overflow-visible {WEBMAIL_MODE.mailRootClass}"
+	class:z-reader-focus={focusActive}
+	class:z-layout-adaptive-thread={adaptiveThreadOpen}
+>
+	{@render children()}
+</div>

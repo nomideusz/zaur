@@ -2,13 +2,11 @@
 	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
 	import SettingsNavList from '$lib/components/settings/SettingsNavList.svelte';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
-	import { settingsNavLinks, SETTINGS_SECTIONS } from '$lib/settings/nav';
+	import { settingsNavLinks, SETTINGS_SECTIONS, WEBMAIL_MODE } from '$lib/modes/registry';
 	import { cn } from '$lib/utils/cn';
 	import { settings } from '$lib/stores/settings.svelte';
-	import { webmailModeDefinition } from '$lib/modes/registry';
 
-	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
-	const links = $derived(settingsNavLinks(activeMode.id));
+	const links = $derived(settingsNavLinks());
 	const sections = SETTINGS_SECTIONS;
 </script>
 
@@ -28,7 +26,7 @@
 	>
 		<h1 class="z-settings-sidebar-title">Settings</h1>
 		<p class="mt-1 px-2 text-xs text-fg-subtle">
-			{activeMode.label} mode
+			{WEBMAIL_MODE.label}
 		</p>
 		<div class="mb-1 mt-3">
 			<SettingsSearch />

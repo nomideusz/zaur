@@ -10,11 +10,7 @@ import {
 import { accountSettingsSyncAtKey } from '$lib/settings/account-settings-types';
 import type { SettingsDetailLevel } from '$lib/settings/detail-level';
 import { toast } from '$lib/stores/toast.svelte';
-import {
-	legacyFlagsForMailViewMode,
-	mailViewModeFromLegacy,
-	type MailViewMode
-} from '$lib/mail/view-mode';
+import { migrateLegacyMailViewMode, MAIL_VIEW_MODE, type MailViewMode } from '$lib/mail/view-mode';
 import {
 	requestBrowserNotificationPermission,
 	syncPushSubscription
@@ -986,13 +982,8 @@ function readTraditionalMailboxView(): boolean {
 }
 
 function readMailViewMode(): MailViewMode {
-	if (!browser) return 'simple';
-	const stored = localStorage.getItem(STORAGE.mailViewMode);
-	if (stored === 'simple' || stored === 'traditional') return stored;
-	return mailViewModeFromLegacy({
-		traditionalMailboxView: readTraditionalMailboxView(),
-		focusLayoutMode: readFocusLayoutMode()
-	});
+	if (browser) migrateLegacyMailViewMode();
+	return MAIL_VIEW_MODE;
 }
 
 function readShowReaderListRail(): boolean {
@@ -1300,7 +1291,7 @@ class SettingsStore {
 	compactReaderInlineError = $state(readCompactReaderInlineError());
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	minimalReaderToolbar = $state(readMinimalReaderToolbar());
-	mailViewMode = $state<MailViewMode>(readMailViewMode());
+	mailViewMode = $state<MailViewMode>(MAIL_VIEW_MODE);
 	showReaderListRail = $state(readShowReaderListRail());
 	enableKeyboardShortcuts = $state(readEnableKeyboardShortcuts());
 	confirmBeforeDelete = $state(readConfirmBeforeDelete());
@@ -1332,6 +1323,7 @@ class SettingsStore {
 	private userEmail: string | null = null;
 
 	init() {
+		if (browser) migrateLegacyMailViewMode();
 		this.blockExternalContent = readBlockExternal();
 		this.hideExternalContentBanner = readHideExternalContentBanner();
 		this.autoLoadMore = readAutoLoadMore();
@@ -1471,7 +1463,7 @@ class SettingsStore {
 		this.applyReduceMotion();
 		this.applyLayoutWidth();
 		this.applyHeaderLayout();
-		this.mailViewMode = readMailViewMode();
+		this.mailViewMode = MAIL_VIEW_MODE;
 		this.showReaderListRail = readShowReaderListRail();
 		this.enableKeyboardShortcuts = readEnableKeyboardShortcuts();
 		this.confirmBeforeDelete = readConfirmBeforeDelete();
@@ -2570,52 +2562,29 @@ class SettingsStore {
 		}
 	}
 
-	get focusLayoutMode(): FocusLayoutMode {
-		return legacyFlagsForMailViewMode(this.mailViewMode).focusLayoutMode;
-	}
-
-	get traditionalMailboxView(): boolean {
-		return legacyFlagsForMailViewMode(this.mailViewMode).traditionalMailboxView;
-	}
-
 	get isSimpleMailView(): boolean {
-		return this.mailViewMode === 'simple';
+		return true;
 	}
 
-	get isTraditionalMailView(): boolean {
-		return this.mailViewMode === 'traditional';
-	}
-
-	setMailViewMode(value: MailViewMode) {
-		this.mailViewMode = value;
+	setMailViewMode(_value: MailViewMode) {
+		this.mailViewMode = MAIL_VIEW_MODE;
 		if (!browser) return;
-		const legacy = legacyFlagsForMailViewMode(value);
-		this.writeStorage(STORAGE.mailViewMode, value);
-		this.writeStorage(STORAGE.focusLayoutMode, legacy.focusLayoutMode);
-		this.writeStorage(STORAGE.traditionalMailboxView, String(legacy.traditionalMailboxView));
+		migrateLegacyMailViewMode();
+		this.writeStorage(STORAGE.mailViewMode, MAIL_VIEW_MODE);
+		this.writeStorage(STORAGE.focusLayoutMode, 'adaptive');
+		this.writeStorage(STORAGE.traditionalMailboxView, 'false');
 	}
 
-	/** Persist a new mode and reload — avoids hot-swapping two product shells in one session. */
-	switchMailViewModeTo(value: MailViewMode, landingPath?: string) {
-		if (!browser || value === this.mailViewMode) return;
-
-		const legacy = legacyFlagsForMailViewMode(value);
-		this.writeStorage(STORAGE.mailViewMode, value);
-		this.writeStorage(STORAGE.focusLayoutMode, legacy.focusLayoutMode);
-		this.writeStorage(STORAGE.traditionalMailboxView, String(legacy.traditionalMailboxView));
-
-		void import('$lib/mail/switch-mode').then(({ mailViewModeSwitchLanding }) => {
-			const target = landingPath ?? mailViewModeSwitchLanding(window.location.pathname);
-			location.assign(target);
-		});
+	switchMailViewModeTo(_value: MailViewMode, _landingPath?: string) {
+		// No-op — single layout mode.
 	}
 
-	setFocusLayoutMode(value: FocusLayoutMode) {
-		this.setMailViewMode(value === 'adaptive' ? 'simple' : 'traditional');
+	setFocusLayoutMode(_value: FocusLayoutMode) {
+		this.setMailViewMode(MAIL_VIEW_MODE);
 	}
 
-	setTraditionalMailboxView(value: boolean) {
-		this.setMailViewMode(value ? 'traditional' : 'simple');
+	setTraditionalMailboxView(_value: boolean) {
+		this.setMailViewMode(MAIL_VIEW_MODE);
 	}
 
 	setShowReaderListRail(value: boolean) {

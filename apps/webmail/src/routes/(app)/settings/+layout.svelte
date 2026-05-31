@@ -1,34 +1,23 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import ClassicSettingsLayout from '$lib/modes/classic/ClassicSettingsLayout.svelte';
 	import SimpleSettingsLayout from '$lib/modes/simple/SimpleSettingsLayout.svelte';
 	import { setWebmailModeContext } from '$lib/modes/context';
-	import { settingsRedirectForMode, webmailModeDefinition } from '$lib/modes/registry';
-	import { settings } from '$lib/stores/settings.svelte';
+	import { settingsRedirectForMode, WEBMAIL_MODE } from '$lib/modes/registry';
 
 	let { children } = $props();
 
-	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
-
-	setWebmailModeContext(() => webmailModeDefinition(settings.mailViewMode));
+	setWebmailModeContext();
 
 	$effect(() => {
 		const pathname = $page.url.pathname;
-		const mode = settings.mailViewMode;
-		const redirect = settingsRedirectForMode(pathname, mode);
+		const redirect = settingsRedirectForMode(pathname);
 		if (redirect && redirect !== pathname) {
 			void goto(redirect, { replaceState: true });
 		}
 	});
 </script>
 
-{#if activeMode.settings.useSidebar}
-	<ClassicSettingsLayout settingsRootClass={activeMode.settingsRootClass}>
-		{@render children()}
-	</ClassicSettingsLayout>
-{:else}
-	<SimpleSettingsLayout settingsRootClass={activeMode.settingsRootClass}>
-		{@render children()}
-	</SimpleSettingsLayout>
-{/if}
+<SimpleSettingsLayout settingsRootClass={WEBMAIL_MODE.settingsRootClass}>
+	{@render children()}
+</SimpleSettingsLayout>

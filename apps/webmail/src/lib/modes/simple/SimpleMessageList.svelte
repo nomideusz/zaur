@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
+	import MessageListHeader from '$lib/components/mail/MessageListHeader.svelte';
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
+	import MessageListMobileBar from '$lib/components/mail/MessageListMobileBar.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
 	import type { MessageListProps } from '$lib/components/mail/message-list-props';
 	import {
@@ -26,6 +28,7 @@
 		formatSimpleListDayHeading
 	} from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
+	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 
 	let {
 		messages,
@@ -42,10 +45,13 @@
 		emptyActionLabel,
 		hideOnMobile = false,
 		onLoadMore,
-		onRetry
+		onRetry,
+		onBulkAction
 	}: MessageListProps = $props();
 
 	let loadSentinel = $state<HTMLDivElement | null>(null);
+	let longPressTimer = $state<ReturnType<typeof setTimeout> | null>(null);
+	let longPressMessageId = $state<string | null>(null);
 	let sectionMessagesByFolder = $state<Record<string, MessagePreview[]>>({});
 	let sectionVisibleCounts = $state<Record<string, number>>({});
 	let sectionHasMoreByFolder = $state<Record<string, boolean>>({});
@@ -87,6 +93,76 @@
 		emptyHint ?? (emptyMessage ? null : defaultEmptyHint(mailboxRouteId))
 	);
 	const showFlatEmpty = $derived(!sectionMode && !loading && !error && messages.length === 0);
+	const selectedIds = $derived([...mail.selectedMessageIds]);
+	const bulkSelectEnabled = $derived(!!mailboxRouteId && settings.showBulkSelect);
+	const showListHeader = $derived(bulkSelectEnabled);
+	const showMobileSelectionBar = $derived(
+		!!mailboxRouteId && mail.hasSelection && supportsMobileListGestures()
+	);
+
+	$effect(() => {
+		if (!settings.showBulkSelect && mail.hasSelection) {
+			mail.clearSelection();
+		}
+	});
+
+	function clearLongPressTimer() {
+		if (longPressTimer) {
+			clearTimeout(longPressTimer);
+			longPressTimer = null;
+		}
+		longPressMessageId = null;
+	}
+
+	function handleRowLongPressStart(messageId: string, event: PointerEvent) {
+		if (!bulkSelectEnabled || !supportsMobileListGestures() || event.pointerType === 'mouse') {
+			return;
+		}
+		clearLongPressTimer();
+		longPressMessageId = messageId;
+		longPressTimer = setTimeout(() => {
+			mail.startSelection(messageId);
+			clearLongPressTimer();
+		}, 450);
+	}
+
+	function handleRowLongPressMove(event: PointerEvent) {
+		if (!longPressTimer) return;
+		if (Math.abs(event.movementX) > 10 || Math.abs(event.movementY) > 10) {
+			clearLongPressTimer();
+		}
+	}
+
+	function handleRowSelect(
+		messageId: string,
+		modifiers: { shift?: boolean; ctrl?: boolean } = {}
+	) {
+		mail.selectMessageAt(messageId, {
+			...modifiers,
+			activeMessageId: currentMessageId
+		});
+	}
+
+	function handleRowLinkClick(messageId: string, event: MouseEvent) {
+		if (!bulkSelectEnabled) return;
+		const shift = event.shiftKey;
+		const ctrl = event.ctrlKey || event.metaKey;
+		if (!mail.hasSelection && !shift && !ctrl) return;
+		event.preventDefault();
+		handleRowSelect(messageId, { shift, ctrl });
+	}
+
+	function handleRowCheckboxClick(messageId: string, event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		if (mail.hasSelection) {
+			handleRowSelect(messageId);
+			return;
+		}
+		if (currentMessageId === messageId) {
+			mail.startSelection(messageId);
+		}
+	}
 
 	/** Matches ROLE_ORDER in mail.svelte.ts */
 	const folderRoleOrder: Record<string, number> = {
@@ -644,12 +720,23 @@
 <section
 	class={cn(
 		'z-mail-pane-surface z-mail-pane-surface--flow flex w-full min-w-0 flex-col',
-		hideOnMobile ? (mail.hasSelection ? 'flex' : 'hidden md:flex') : 'flex'
+		hideOnMobile ? (mail.hasSelection ? 'flex' : 'hidden md:flex') : 'flex',
+		showMobileSelectionBar && 'z-mail-list--selecting'
 	)}
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
-	<div class={cn(simpleContentPagePadClass(), 'flex flex-col')}>
+	{#if showListHeader}
+		<div class="relative z-10 shrink-0">
+			<MessageListHeader
+				{mailboxRouteId}
+				{onBulkAction}
+				disabled={!!mailboxRouteId && (loading || !!error || !messages.length)}
+			/>
+		</div>
+	{/if}
+
+	<div class={cn(simpleContentPagePadClass(), 'flex flex-col', showMobileSelectionBar && 'z-mail-list-scroll--with-bar')}>
 	{#if mailboxRouteId || !sectionMode}
 		<SimpleMailTextNav
 			title={isInboxHome ? 'ZAUR Mail' : mailboxName}
@@ -678,37 +765,97 @@
 				? `${formatSimpleListDayHeading(message.receivedAt)} ${baseTimeLabel}`
 				: baseTimeLabel}
 			{@const showSenderDuplicate = duplicateKeys.has(messageSubjectKey(message))}
-			<li class="z-mail-folder-section__item">
-				<a
-					href={listMessageHref(message, routeId)}
-					class="z-mail-folder-section__message"
-					aria-current={currentMessageId === message.id ? 'page' : undefined}
-					aria-label="{subjectText} — {senderLabel}, {timeLabel}"
-				>
-					<span class="z-mail-folder-section__stack">
-						<span class="z-mail-folder-section__lead">
-							<span
-								class={cn(
-									'z-mail-folder-section__subject',
-									currentMessageId === message.id && 'z-mail-folder-section__subject--active'
-								)}
-							>
-								{subjectText}
+			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
+			{@const showRowCheckbox =
+				bulkSelectEnabled && (mail.hasSelection || currentMessageId === message.id)}
+			{@const rowHref = listMessageHref(message, routeId)}
+			<li
+				class={cn(
+					'z-mail-folder-section__item',
+					rowSelected && 'z-mail-folder-section__item--selected'
+				)}
+			>
+				{#if mail.hasSelection && bulkSelectEnabled}
+					<button
+						type="button"
+						class="z-mail-folder-section__message z-mail-folder-section__message--selecting"
+						aria-current={currentMessageId === message.id ? 'page' : undefined}
+						aria-pressed={rowSelected}
+						aria-label="{subjectText} — {senderLabel}, {timeLabel}"
+						onclick={() => handleRowSelect(message.id)}
+					>
+						{#if showRowCheckbox}
+							<input
+								type="checkbox"
+								class="z-checkbox z-mail-folder-section__checkbox shrink-0"
+								checked={rowSelected}
+								tabindex="-1"
+								aria-hidden="true"
+							/>
+						{/if}
+						<span class="z-mail-folder-section__stack">
+							<span class="z-mail-folder-section__lead">
+								<span class="z-mail-folder-section__subject">{subjectText}</span>
+								<span
+									class={cn(
+										'z-mail-folder-section__sender',
+										showSenderDuplicate && 'z-mail-folder-section__sender--duplicate'
+									)}
+								>
+									{senderLabel}
+								</span>
 							</span>
-							<span
-								class={cn(
-									'z-mail-folder-section__sender',
-									showSenderDuplicate && 'z-mail-folder-section__sender--duplicate'
-								)}
-							>
-								{senderLabel}
-							</span>
+							<time class="z-mail-folder-section__when" datetime={message.receivedAt}>
+								{timeLabel}
+							</time>
 						</span>
-						<time class="z-mail-folder-section__when" datetime={message.receivedAt}>
-							{timeLabel}
-						</time>
-					</span>
-				</a>
+					</button>
+				{:else}
+					<a
+						href={rowHref}
+						class="z-mail-folder-section__message"
+						aria-current={currentMessageId === message.id ? 'page' : undefined}
+						aria-label="{subjectText} — {senderLabel}, {timeLabel}"
+						onclick={(event) => handleRowLinkClick(message.id, event)}
+						onpointerdown={(event) => handleRowLongPressStart(message.id, event)}
+						onpointermove={handleRowLongPressMove}
+						onpointerup={clearLongPressTimer}
+						onpointercancel={clearLongPressTimer}
+					>
+						{#if showRowCheckbox}
+							<input
+								type="checkbox"
+								class="z-checkbox z-mail-folder-section__checkbox shrink-0"
+								checked={rowSelected}
+								aria-label={`Select ${subjectText}`}
+								onclick={(event) => handleRowCheckboxClick(message.id, event)}
+							/>
+						{/if}
+						<span class="z-mail-folder-section__stack">
+							<span class="z-mail-folder-section__lead">
+								<span
+									class={cn(
+										'z-mail-folder-section__subject',
+										currentMessageId === message.id && 'z-mail-folder-section__subject--active'
+									)}
+								>
+									{subjectText}
+								</span>
+								<span
+									class={cn(
+										'z-mail-folder-section__sender',
+										showSenderDuplicate && 'z-mail-folder-section__sender--duplicate'
+									)}
+								>
+									{senderLabel}
+								</span>
+							</span>
+							<time class="z-mail-folder-section__when" datetime={message.receivedAt}>
+								{timeLabel}
+							</time>
+						</span>
+					</a>
+				{/if}
 			</li>
 		{/snippet}
 
@@ -817,4 +964,7 @@
 		</button>
 	</div>
 	</div>
+	{#if showMobileSelectionBar && mailboxRouteId}
+		<MessageListMobileBar {mailboxRouteId} {onBulkAction} />
+	{/if}
 </section>

@@ -2,14 +2,11 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
-	import { getWebmailModeContext } from '$lib/modes/context';
 	import {
 		settings,
 		type DefaultReplyMode,
 		type ComposeFormat
 	} from '$lib/stores/settings.svelte';
-
-	const isSimple = $derived(getWebmailModeContext().id === 'simple');
 
 	function resetWritingSettings() {
 		settings.resetComposeSettings();
@@ -70,25 +67,23 @@
 		/>
 	</SettingsRow>
 
-	{#if !isSimple}
-		<SettingsRow title="Collapse quoted text" description="Keep quoted reply content folded when composing">
-			<input
-				type="checkbox"
-				class="z-checkbox"
-				checked={settings.collapseQuotedInCompose}
-				onchange={(e) => settings.setCollapseQuotedInCompose(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
+	<SettingsRow title="Collapse quoted text" description="Keep quoted reply content folded when composing">
+		<input
+			type="checkbox"
+			class="z-checkbox"
+			checked={settings.collapseQuotedInCompose}
+			onchange={(e) => settings.setCollapseQuotedInCompose(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 
-		<SettingsRow title="Hide compose hints" description="Remove tips like “Set display name”, “Add a signature”, and shortcut nudges">
-			<input
-				type="checkbox"
-				class="z-checkbox"
-				checked={settings.hideComposeHints}
-				onchange={(e) => settings.setHideComposeHints(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-	{/if}
+	<SettingsRow title="Hide compose hints" description="Remove tips like “Set display name”, “Add a signature”, and shortcut nudges">
+		<input
+			type="checkbox"
+			class="z-checkbox"
+			checked={settings.hideComposeHints}
+			onchange={(e) => settings.setHideComposeHints(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Behavior" description="What happens when you reply or send mail.">

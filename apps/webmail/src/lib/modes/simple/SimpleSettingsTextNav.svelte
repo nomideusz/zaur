@@ -3,21 +3,12 @@
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/modes/registry';
 	import { settings } from '$lib/stores/settings.svelte';
-	import { mailViewModeSwitchMessage } from '$lib/mail/switch-mode';
 	import { cn } from '$lib/utils/cn';
 
 	let { isIndex = false }: { isIndex?: boolean } = $props();
 
-	const sectionLinks = $derived(
-		settingsNavLinks('simple').filter((link) => link.href !== '/settings')
-	);
+	const sectionLinks = $derived(settingsNavLinks());
 	const mailHref = $derived(settings.preferredMailHref());
-
-	function switchToClassic() {
-		const targetMode = 'traditional';
-		if (!confirm(mailViewModeSwitchMessage(targetMode))) return;
-		settings.switchMailViewModeTo(targetMode);
-	}
 </script>
 
 <header
@@ -26,10 +17,6 @@
 >
 	<div class="z-mail-text-nav__links">
 		<a class="z-mail-text-nav__link" href={mailHref}>Back to mail</a>
-		<span class="z-mail-text-nav__sep">·</span>
-		<button type="button" class="z-mail-text-nav__link" onclick={switchToClassic}>
-			Switch to Classic
-		</button>
 	</div>
 	<nav class="z-settings-section-nav" aria-label="Settings sections">
 		{#each sectionLinks as link (link.href)}

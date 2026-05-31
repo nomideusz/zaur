@@ -2,11 +2,9 @@
 	import { untrack } from 'svelte';
 	import MailPane from '$lib/components/mail/MailPane.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
-	import MessageReaderEmpty from '$lib/components/mail/MessageReaderEmpty.svelte';
 	import { mailCountLabel } from '$lib/mail/count-label';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
-	import { webmailModeDefinition } from '$lib/modes/registry';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const { data } = $props();
@@ -16,7 +14,6 @@
 	const countLabel = $derived(
 		mailCountLabel(mail.messagesTotal, mail.messages.length, mailbox)
 	);
-	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
 
 	$effect(() => {
 		const client = auth.client;
@@ -62,15 +59,5 @@
 			}}
 		/>
 	{/snippet}
-	{#snippet reader()}
-		{#if activeMode.mail.showEmptyReaderPane}
-			<div class="z-mail-reader-pane">
-				<MessageReaderEmpty
-					hideTitle
-					description="Select a message from the list to read it here."
-					showSettings={false}
-				/>
-			</div>
-		{/if}
-	{/snippet}
+	{#snippet reader()}{/snippet}
 </MailPane>

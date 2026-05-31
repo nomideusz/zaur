@@ -3,17 +3,8 @@
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import PushNotificationStatus from '$lib/components/settings/PushNotificationStatus.svelte';
-	import { getWebmailModeContext } from '$lib/modes/context';
 	import { pwa } from '$lib/stores/pwa.svelte';
-	import {
-		settings,
-		type ListTextSize,
-		type ReaderTextSize
-	} from '$lib/stores/settings.svelte';
-
-	// Simple mode renders an editorial, fixed-size list (subject + sender + time),
-	// so list-density options below don't apply there.
-	const isSimple = $derived(getWebmailModeContext().id === 'simple');
+	import { settings, type ReaderTextSize } from '$lib/stores/settings.svelte';
 </script>
 
 <SettingsGroup title="Notifications" description="Alerts and unread counts.">
@@ -57,46 +48,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Inbox & reading" description="How the message list and open messages look.">
-	{#if !isSimple}
-		<SettingsRow title="List text size" description="Font size for sender, subject, and preview in list">
-			<SettingsSelect
-				label="List text size"
-				value={settings.listTextSize}
-				options={[
-					{ value: 'small', label: 'Small' },
-					{ value: 'normal', label: 'Normal' },
-					{ value: 'large', label: 'Large' }
-				]}
-				onchange={(v) => settings.setListTextSize(v as ListTextSize)}
-				class="w-auto"
-			/>
-		</SettingsRow>
-
-		<SettingsRow title="Show message preview" description="Second line under the subject in each list row">
-			<input
-				type="checkbox"
-				class="z-checkbox"
-				checked={settings.showListPreview}
-				onchange={(e) => settings.setShowListPreview(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-
-		<SettingsRow title="Timestamps" description="Whether and how timestamps appear on message list rows">
-			<SettingsSelect
-				label="Timestamps"
-				value={settings.listTimestampFormat}
-				options={[
-					{ value: 'hidden', label: 'Hidden' },
-					{ value: 'compact', label: 'Compact (Mon, May 25)' },
-					{ value: 'full', label: 'Detailed (Full date & time)' }
-				]}
-				onchange={(v) => settings.setListTimestampFormat(v as any)}
-				class="w-auto"
-			/>
-		</SettingsRow>
-	{/if}
-
+<SettingsGroup title="Inbox & reading" description="How open messages look.">
 	<SettingsRow title="Reading text size" description="Font size for the message body when reading">
 		<SettingsSelect
 			label="Reading text size"
@@ -214,7 +166,7 @@
 		/>
 	</SettingsRow>
 
-	{#if settings.enableKeyboardShortcuts && !isSimple}
+	{#if settings.enableKeyboardShortcuts}
 		<SettingsRow title="Compose" description="Start a new message">
 			<span class="font-mono text-xs text-fg">c</span>
 		</SettingsRow>
@@ -230,7 +182,7 @@
 		<SettingsRow title="Archive / unread / delete">
 			<span class="font-mono text-xs text-fg">e · u · #</span>
 		</SettingsRow>
-		<SettingsRow title="Focus mode / return to list" description="z toggles focused reading; Esc returns to list in adaptive layout">
+		<SettingsRow title="Focus mode / return to list" description="z toggles focused reading; Esc returns to list">
 			<span class="font-mono text-xs text-fg">z · Esc</span>
 		</SettingsRow>
 		<SettingsRow title="Send / close compose">
@@ -247,7 +199,7 @@
 			onclick={() => {
 				if (confirm('Reset reading settings to defaults?')) {
 					settings.resetMailSettings();
-					if (isSimple) settings.resetLayoutSettings();
+					settings.resetLayoutSettings();
 				}
 			}}
 		>

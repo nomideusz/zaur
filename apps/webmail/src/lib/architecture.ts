@@ -11,8 +11,7 @@ export const routeMap = {
 		search: '/mail/search'
 	},
 	settings: {
-		root: '/settings',
-		experience: '/settings',
+		root: '/settings/account',
 		account: '/settings/account',
 		reading: '/settings/reading',
 		writing: '/settings/writing',
@@ -34,55 +33,27 @@ export const routeMap = {
 } as const;
 
 /**
- * Webmail modes — two distinct product experiences sharing JMAP/sync only.
- *
- * | Layer            | Simple                          | Classic (stored as `traditional`) |
- * |------------------|---------------------------------|-----------------------------------|
- * | Design reference | Editorial one-column sites      | Utility-first dense layouts       |
- * | Mail chrome      | Text nav, no app header         | App header + folder sidebar       |
- * | List             | Sectioned inbox, expanded width | Fixed-width list column           |
- * | Reader           | Adaptive single-focus           | Always-visible split pane         |
- * | Settings UX        | Editorial flat lists, text nav  | Sidebar + cards + utility chrome  |
- * | Mail CSS         | `.z-mail-view-simple`           | `.z-mail-view-traditional`        |
- *
- * Mode selection lives at `/settings` (Experience). Switching modes persists preference
- * and reloads the app (`settings.switchMailViewModeTo`) — modes are session shells, not
- * hot-swapped reactive toggles. Mail → `/mail/inbox`, Settings → `/settings`.
+ * Webmail layout — editorial Simple mode (single product shell).
  *
  * Source of truth: `src/lib/modes/registry.ts`
  */
 export const modeArchitecture = {
 	registry: 'src/lib/modes/registry.ts',
 	context: 'src/lib/modes/context.ts',
-	switchMode: 'src/lib/mail/switch-mode.ts',
-	storageKey: 'zaur:mail-view-mode',
-	values: ['simple', 'traditional'] as const,
-	uiLabels: { simple: 'Simple', traditional: 'Classic' } as const,
-	simple: {
-		contentShell: 'src/lib/modes/simple/simple-content-layout.ts',
-		mailLayout: 'src/lib/modes/simple/SimpleMailLayout.svelte',
-		readingSettings: 'src/lib/modes/simple/settings/reading.svelte',
-		settingsLayout: 'src/lib/modes/simple/SimpleSettingsLayout.svelte'
-	},
-	classic: {
-		mailLayout: 'src/lib/modes/classic/ClassicMailLayout.svelte',
-		readingSettings: 'src/lib/modes/classic/settings/reading.svelte',
-		settingsLayout: 'src/lib/modes/classic/ClassicSettingsLayout.svelte'
-	}
+	mailLayout: 'src/lib/modes/simple/SimpleMailLayout.svelte',
+	readingSettings: 'src/lib/modes/simple/settings/reading.svelte',
+	settingsLayout: 'src/lib/modes/simple/SimpleSettingsLayout.svelte',
+	contentShell: 'src/lib/modes/simple/simple-content-layout.ts',
+	compose: 'src/lib/modes/simple/SimpleComposePanel.svelte'
 } as const;
 
 export const componentTree = {
 	shell: {
 		AppShellHeader: [
-			'ToolSwitcher',
-			'MailShellHeaderContext',
 			'GlobalSearch',
 			'OfflineIndicator',
-			'OutboxMenu',
-			'NewButton',
 			'UserMenu'
-		],
-		AppSidebar: 'settings navigation when in /settings'
+		]
 	},
 	calendar: {
 		CalendarLayout: ['CalendarSidebar', 'MonthView', 'EventPanel | EventPanelEmpty', 'EventComposePanel']
@@ -91,19 +62,14 @@ export const componentTree = {
 		ContactsLayout: ['ContactsSidebar', 'ContactsList', 'ContactDetailPanel | ContactDetailEmpty']
 	},
 	mail: {
-		MailModeRegistry: ['Simple mode', 'Classic mode'],
-		MailLayout: ['MailPane → SimpleMailSurface | ClassicMailSurface'],
+		MailLayout: ['MailPane → SimpleMailSurface'],
 		SimpleMailLayout: ['SimpleMessageList (sectioned)', 'SimpleMessageReader | MessageReaderEmpty'],
-		ClassicMailLayout: ['MailboxSidebar', 'ClassicMessageList', 'ClassicMessageReader | MessageReaderEmpty'],
 		SimpleMessageReader: ['MessageReaderCore', 'minimalChrome'],
-		ClassicMessageReader: ['MessageReaderCore', 'full chrome'],
-		SimpleMessageList: ['sectioned inbox', 'text nav', 'editorial rows'],
-		ClassicMessageList: ['MessageListItem', 'bulk select header'],
-		MessageList: ['router → SimpleMessageList | ClassicMessageList'],
-		MessageReader: ['router → SimpleMessageReader | ClassicMessageReader'],
+		SimpleMessageList: ['sectioned inbox', 'text nav', 'editorial rows', 'bulk select'],
+		MessageList: ['SimpleMessageList'],
+		MessageReader: ['SimpleMessageReader'],
 		MessageReaderCore: ['thread body', 'quick reply', 'mobile bar'],
-		MailboxSidebar: ['MailboxTree', 'MailboxItem'],
-		ComposePanel: ['ComposeHeader', 'ComposeFields', 'ComposeEditor']
+		SimpleComposePanel: ['ComposeHeader', 'ComposeFields', 'ComposeEditor']
 	},
 	ui: ['Button', 'IconButton', 'Badge', 'Avatar', 'ToastStack'],
 	jmap: {

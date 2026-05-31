@@ -2,13 +2,11 @@
 	import { page } from '$app/stores';
 	import MailPane from '$lib/components/mail/MailPane.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
-	import MessageReaderEmpty from '$lib/components/mail/MessageReaderEmpty.svelte';
 	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
 	import { mailCountLabel } from '$lib/mail/count-label';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { search } from '$lib/stores/search.svelte';
-	import { webmailModeDefinition } from '$lib/modes/registry';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const query = $derived($page.url.searchParams.get('q')?.trim() ?? '');
@@ -30,7 +28,6 @@
 			: 'Search'
 	);
 	const countLabel = $derived(mailCountLabel(search.total, search.results.length, null));
-	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
 	const searchEmptyHint = $derived(
 		settings.hideListEmptyHints || query ? undefined : 'Try a sender, subject, or keyword from the message body.'
 	);
@@ -81,16 +78,5 @@
 			/>
 		</div>
 	{/snippet}
-	{#snippet reader()}
-		{#if activeMode.mail.showEmptyReaderPane}
-			<div class="z-mail-reader-pane">
-				<MessageReaderEmpty
-					title="Select a result"
-					description="Choose a message from the search results to read it here."
-					showCompose={false}
-					showSettings={false}
-				/>
-			</div>
-		{/if}
-	{/snippet}
+	{#snippet reader()}{/snippet}
 </MailPane>

@@ -6,20 +6,13 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
-	import { webmailModeDefinition } from '$lib/modes/registry';
 	import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
 
 	let { children } = $props();
 	const onMailRoute = $derived($page.url.pathname.startsWith('/mail'));
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
-	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
-	const showAppHeader = $derived(
-		(!onMailRoute || activeMode.mail.showAppHeaderOnMailRoutes) &&
-			(!onSettingsRoute || activeMode.settings.showAppHeader)
-	);
-	const pageScrollOnMain = $derived(
-		activeMode.id === 'simple' && (onMailRoute || onSettingsRoute)
-	);
+	const showAppHeader = $derived(!onMailRoute && !onSettingsRoute);
+	const pageScrollOnMain = $derived(onMailRoute || onSettingsRoute);
 	const pageScrollOverflowX = 'overflow-x-hidden';
 
 	$effect(() => {

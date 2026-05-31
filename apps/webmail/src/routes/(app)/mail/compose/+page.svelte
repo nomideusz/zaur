@@ -1,16 +1,9 @@
 <script lang="ts">
-	import { afterNavigate } from '$app/navigation';
-	import { page } from '$app/stores';
-	import ComposePanel from '$lib/components/mail/ComposePanel.svelte';
-	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import SimpleComposePanel from '$lib/modes/simple/SimpleComposePanel.svelte';
-	import { webmailModeDefinition } from '$lib/modes/registry';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
-
-	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
-	const useSimpleCompose = $derived(activeMode.id === 'simple');
+	import { afterNavigate } from '$app/navigation';
+	import { page } from '$app/stores';
 
 	const COMPOSE_MODES = new Set<ComposeMode>(['new', 'reply', 'reply-all', 'forward']);
 
@@ -27,7 +20,7 @@
 		if (to.url.searchParams.get('draft')) return;
 		const toMode = to.url.searchParams.get('mode');
 		if (toMode && toMode !== 'new') return;
-		
+
 		if (
 			from?.url.pathname === '/mail/compose' &&
 			from.url.searchParams.get('draft') === to.url.searchParams.get('draft') &&
@@ -35,7 +28,7 @@
 		) {
 			return;
 		}
-		
+
 		compose.startNew();
 	});
 
@@ -52,12 +45,4 @@
 	<title>Compose · ZAUR Webmail</title>
 </svelte:head>
 
-{#if !useSimpleCompose && settings.composeLayout === 'pane'}
-	<MailboxSidebar />
-{/if}
-
-{#if useSimpleCompose}
-	<SimpleComposePanel {mode} {initialTo} />
-{:else}
-	<ComposePanel {mode} {initialTo} />
-{/if}
+<SimpleComposePanel {mode} {initialTo} />

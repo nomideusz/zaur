@@ -8,7 +8,6 @@ import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import type { MailHeaderContext } from '$lib/stores/shell-header.svelte';
-	import { webmailModeDefinition } from '$lib/modes/registry';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	interface Props {
@@ -21,7 +20,6 @@ import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	const thread = $derived(mail.selectedThread);
 	const threadSubject = $derived(thread.at(-1)?.subject ?? '(no subject)');
 	const mailboxRouteId = $derived(ctx?.mailboxRouteId);
-	const activeMode = $derived(webmailModeDefinition(settings.mailViewMode));
 	const mobileReadingThread = $derived(
 		!!threadId && !mail.hasSelection && thread.length > 0 && !mail.selectedLoading
 	);
@@ -71,14 +69,12 @@ import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	});
 	const showDesktopCoreSwitcher = $derived(
 		!!mailboxRouteId &&
-			activeMode.id === 'simple' &&
 			!mail.hasSelection &&
 			!mobileReadingThread &&
 			coreFolders.length > 0
 	);
 	const showDesktopMoreFolders = $derived(
 		!!mailboxRouteId &&
-			activeMode.id === 'simple' &&
 			!mail.hasSelection &&
 			!mobileReadingThread &&
 			secondaryFolders.length > 0

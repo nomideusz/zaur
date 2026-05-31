@@ -1,21 +1,15 @@
-import type { MailViewMode } from '$lib/mail/view-mode';
-
-export type WebmailMode = MailViewMode;
-
-export type SettingsNavIcon =
-	| 'mode'
-	| 'account'
-	| 'general'
-	| 'inbox'
-	| 'reading'
-	| 'writing'
-	| 'appearance'
-	| 'layout'
-	| 'calendar'
-	| 'backup';
+export type WebmailMode = 'simple';
 
 export type SettingsNavSectionId =
 	| 'experience'
+	| 'account'
+	| 'appearance'
+	| 'reading'
+	| 'writing'
+	| 'backup';
+
+export type SettingsNavIcon =
+	| 'mode'
 	| 'account'
 	| 'appearance'
 	| 'reading'
@@ -31,7 +25,7 @@ export type SettingsNavLink = {
 
 export type WebmailModeDefinition = {
 	id: WebmailMode;
-	label: 'Simple' | 'Classic';
+	label: 'Simple';
 	tagline: string;
 	description: string;
 	mailRootClass: string;

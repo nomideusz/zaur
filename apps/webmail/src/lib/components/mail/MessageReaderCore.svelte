@@ -13,7 +13,6 @@
 	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
 	import MessageReaderMobileBar from '$lib/components/mail/MessageReaderMobileBar.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
-	import { getWebmailModeContext } from '$lib/modes/context';
 	import { simpleContentPagePadClass } from '$lib/modes/simple/simple-content-layout';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -37,8 +36,7 @@
 	let { thread, mailboxRouteId, onMoved, minimalChrome = false }: Props = $props();
 
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
-	const mode = $derived(getWebmailModeContext());
-	const useSimpleContentShell = $derived(mode.id === 'simple');
+	const useSimpleContentShell = true;
 
 	let localShowImagesOnce = $state(false);
 	let expandedIds = $state<Set<string>>(new Set());

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { getWebmailModeContext } from '$lib/modes/context';
+	import { WEBMAIL_MODE } from '$lib/modes/registry';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { observeVisibleSettingsRows } from '$lib/settings/observe-visible-rows';
 	import { settingsSearch } from '$lib/settings/search-registry.svelte';
@@ -19,8 +19,7 @@
 	let sectionRef = $state<HTMLElement | null>(null);
 	let hasRows = $state(true);
 
-	const mode = $derived(getWebmailModeContext());
-	const editorial = $derived(mode.settings.editorial);
+	const editorial = WEBMAIL_MODE.settings.editorial;
 
 	$effect(() => {
 		settingsSearch.query;

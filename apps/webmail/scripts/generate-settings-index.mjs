@@ -76,17 +76,13 @@ function countHiddenForSource(source) {
 	return hidden;
 }
 
-function modesForEntry(href, _title) {
-	if (href === '/settings/reading-simple-layout') return ['simple'];
-	if (href === '/settings/reading-classic-layout') return ['traditional'];
+function modesForEntry(_href, _title) {
 	return undefined;
 }
 
 const files = [
-	['src/lib/settings/sections/experience.svelte', '/settings'],
 	['src/lib/settings/sections/appearance.svelte', '/settings/appearance'],
-	['src/lib/modes/simple/settings/reading.svelte', '/settings/reading-simple-layout'],
-	['src/lib/modes/classic/settings/reading.svelte', '/settings/reading-classic-layout'],
+	['src/lib/modes/simple/settings/reading.svelte', '/settings/reading'],
 	['src/lib/settings/sections/reading-core.svelte', '/settings/reading'],
 	['src/lib/settings/sections/writing.svelte', '/settings/writing'],
 	['src/lib/settings/sections/data_reset.svelte', '/settings/data'],
@@ -100,7 +96,7 @@ const hiddenCounts = {};
 
 for (const [file, href] of files) {
 	const src = fs.readFileSync(file, 'utf8');
-	const pageHref = href.startsWith('/settings/reading-') ? '/settings/reading' : href;
+	const pageHref = href;
 	hiddenCounts[pageHref] = (hiddenCounts[pageHref] ?? 0) + countHiddenForSource(src);
 
 	const rowRe = /<(SettingsRow|SettingsField)\s+[^>]*title="([^"]+)"[^>]*(?:\s+description="([^"]*)")?/g;
@@ -108,7 +104,7 @@ for (const [file, href] of files) {
 	while ((m = rowRe.exec(src)) !== null) {
 		const title = m[2];
 		const description = m[3] ?? '';
-		const publicHref = href.startsWith('/settings/reading-') ? '/settings/reading' : href;
+		const publicHref = href;
 		const id = `${publicHref}-${slug(title)}`;
 		if (seen.has(id)) continue;
 		seen.add(id);

@@ -1,58 +1,30 @@
-import type { MailViewMode } from '$lib/mail/view-mode';
 import type { SettingsNavLink, SettingsNavSectionId, WebmailModeDefinition } from './types';
 
-export const WEBMAIL_MODES: Record<MailViewMode, WebmailModeDefinition> = {
-	simple: {
-		id: 'simple',
-		label: 'Simple',
-		tagline: 'Editorial, one-column reading',
-		description:
-			'Content-first mail inspired by editorial sites. Text navigation, sectioned inbox, adaptive reading focus — no sidebars or dense chrome.',
-		mailRootClass: 'z-mail-view-simple',
-		settingsRootClass: 'z-settings-mode-simple',
-		settings: {
-			useSidebar: false,
-			showAppHeader: false,
-			editorial: true
-		},
-		mail: {
-			showAppHeaderOnMailRoutes: false,
-			showMailboxSidebar: false,
-			showEmptyReaderPane: false,
-			useSectionedMessageList: true,
-			useExpandedMessageList: true,
-			useClassicSplitPanes: false,
-			useAdaptiveReaderFocus: true,
-			useFullscreenMobileReader: true
-		}
+/** Single webmail layout — editorial Simple mode. */
+export const WEBMAIL_MODE: WebmailModeDefinition = {
+	id: 'simple',
+	label: 'Simple',
+	tagline: 'Editorial, one-column reading',
+	description:
+		'Content-first mail inspired by editorial sites. Text navigation, sectioned inbox, adaptive reading focus — no sidebars or dense chrome.',
+	mailRootClass: 'z-mail-view-simple',
+	settingsRootClass: 'z-settings-mode-simple',
+	settings: {
+		useSidebar: false,
+		showAppHeader: false,
+		editorial: true
 	},
-	traditional: {
-		id: 'traditional',
-		label: 'Classic',
-		tagline: 'Utility-dense three-pane mail',
-		description:
-			'Traditional desktop mail inspired by utility-first layouts. Folder sidebar, fixed list column, split panes, and square functional chrome.',
-		mailRootClass: 'z-mail-view-traditional',
-		settingsRootClass: 'z-settings-mode-classic',
-		settings: {
-			useSidebar: true,
-			showAppHeader: true,
-			editorial: false
-		},
-		mail: {
-			showAppHeaderOnMailRoutes: true,
-			showMailboxSidebar: true,
-			showEmptyReaderPane: true,
-			useSectionedMessageList: false,
-			useExpandedMessageList: false,
-			useClassicSplitPanes: true,
-			useAdaptiveReaderFocus: false,
-			useFullscreenMobileReader: false
-		}
+	mail: {
+		showAppHeaderOnMailRoutes: false,
+		showMailboxSidebar: false,
+		showEmptyReaderPane: false,
+		useSectionedMessageList: true,
+		useExpandedMessageList: true,
+		useClassicSplitPanes: false,
+		useAdaptiveReaderFocus: true,
+		useFullscreenMobileReader: true
 	}
 };
-
-export const WEBMAIL_MODE_LIST: WebmailModeDefinition[] = Object.values(WEBMAIL_MODES);
 
 export const SETTINGS_SECTIONS: { id: SettingsNavSectionId; label: string }[] = [
 	{ id: 'experience', label: 'Mode' },
@@ -64,7 +36,6 @@ export const SETTINGS_SECTIONS: { id: SettingsNavSectionId; label: string }[] = 
 ];
 
 export const SETTINGS_NAV_LINKS: SettingsNavLink[] = [
-	{ href: '/settings', label: 'Experience', icon: 'mode', section: 'experience' },
 	{ href: '/settings/account', label: 'Account', icon: 'account', section: 'account' },
 	{ href: '/settings/appearance', label: 'Appearance', icon: 'appearance', section: 'appearance' },
 	{ href: '/settings/reading', label: 'Reading', icon: 'reading', section: 'reading' },
@@ -85,14 +56,11 @@ export const LEGACY_SETTINGS_PATHS = new Set([
 	'/settings/calendar'
 ]);
 
-export function webmailModeDefinition(mode: MailViewMode): WebmailModeDefinition {
-	return WEBMAIL_MODES[mode];
+export function webmailModeDefinition(): WebmailModeDefinition {
+	return WEBMAIL_MODE;
 }
 
-export function settingsNavLinks(mode: MailViewMode = 'simple'): SettingsNavLink[] {
-	if (mode === 'simple') {
-		return SETTINGS_NAV_LINKS.filter((link) => link.section !== 'experience');
-	}
+export function settingsNavLinks(): SettingsNavLink[] {
 	return SETTINGS_NAV_LINKS;
 }
 
@@ -113,12 +81,8 @@ export function isSettingsNavActive(pathname: string, href: string): boolean {
 	return false;
 }
 
-export function settingsPathAllowedForMode(_pathname: string, _mode: MailViewMode): boolean {
-	return true;
-}
-
-export function settingsRedirectForMode(pathname: string, mode: MailViewMode): string | null {
-	if (mode === 'simple' && pathname === '/settings') return '/settings/account';
+export function settingsRedirectForMode(pathname: string): string | null {
+	if (pathname === '/settings') return '/settings/account';
 	if (pathname === '/settings/layout') return '/settings/reading';
 	if (pathname === '/settings/workspace') return '/settings/reading';
 	if (pathname === '/settings/sidebar') return '/settings/reading';
