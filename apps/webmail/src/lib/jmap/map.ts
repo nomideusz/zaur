@@ -106,6 +106,7 @@ export function mapEmailPreview(email: JMAPEmail, routeMailboxId: string): Messa
 		receivedAt: email.receivedAt,
 		unread: !email.keywords?.$seen,
 		starred: !!email.keywords?.$flagged,
+		important: !!email.keywords?.$important,
 		hasAttachment: !!email.hasAttachment
 	};
 }

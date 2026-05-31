@@ -22,6 +22,7 @@ function toDoc(accountId: string, message: MessagePreview, cachedAt: number): Re
 		receivedAt: message.receivedAt,
 		unread: message.unread,
 		starred: message.starred,
+		important: message.important,
 		hasAttachment: message.hasAttachment,
 		cachedAt
 	};
@@ -38,6 +39,7 @@ function toPreview(doc: RecentThreadDoc): MessagePreview {
 		receivedAt: doc.receivedAt,
 		unread: doc.unread,
 		starred: doc.starred,
+		important: doc.important ?? false,
 		hasAttachment: doc.hasAttachment
 	};
 }
@@ -88,7 +90,7 @@ export async function getCachedMessagePreviews(
 export async function patchCachedMessage(
 	accountId: string,
 	emailId: string,
-	patch: Partial<Pick<MessagePreview, 'unread' | 'starred'>>
+	patch: Partial<Pick<MessagePreview, 'unread' | 'starred' | 'important'>>
 ): Promise<void> {
 	const db = getMailDatabase();
 	if (!db) return;

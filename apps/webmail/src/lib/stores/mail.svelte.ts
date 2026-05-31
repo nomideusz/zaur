@@ -25,6 +25,7 @@ function messagePreviewEqual(a: MessagePreview, b: MessagePreview): boolean {
 		a.id === b.id &&
 		a.unread === b.unread &&
 		a.starred === b.starred &&
+		a.important === b.important &&
 		a.subject === b.subject &&
 		a.preview === b.preview &&
 		a.receivedAt === b.receivedAt &&
@@ -127,7 +128,7 @@ class MailStore {
 	}
 
 	/** In-flight keyword changes the server may not have echoed yet. */
-	private pendingKeywords = new Map<string, { starred?: boolean; unread?: boolean }>();
+	private pendingKeywords = new Map<string, { starred?: boolean; unread?: boolean; important?: boolean }>();
 	/** Hidden settings-sync emails per mailbox JMAP id (excluded from folder totals). */
 	private hiddenSettingsPerMailbox = new Map<string, number>();
 	private lastFallbackRefreshAt = 0;
@@ -499,6 +500,22 @@ class MailStore {
 		}
 	}
 
+	async toggleImportant(client: JMAPClient, message: MessagePreview) {
+		const next = !message.important;
+		this.setPendingKeyword(message.id, { important: next });
+		this.patchMessage(message.id, { important: next });
+		this.patchThreadMessage(message.id, { important: next });
+
+		try {
+			await client.toggleImportant(message.id, next);
+			this.clearPendingKeyword(message.id, 'important');
+		} catch {
+			this.clearPendingKeyword(message.id, 'important');
+			this.patchMessage(message.id, { important: !next });
+			this.patchThreadMessage(message.id, { important: !next });
+		}
+	}
+
 	async moveMessage(client: JMAPClient, message: MessagePreview, targetRole: Mailbox['role']) {
 		const target = this.mailboxes.find((mb) => mb.role === targetRole);
 		if (!target?.jmapId) throw new Error(`${targetRole ?? 'target'} folder not found`);
@@ -767,14 +784,14 @@ class MailStore {
 		}
 	}
 
-	async bulkMarkAsRead(client: JMAPClient) {
-		const messages = this.selectedMessages().filter((message) => message.unread);
+	async bulkMarkAsImportant(client: JMAPClient) {
+		const messages = this.selectedMessages().filter((message) => !message.important);
 		if (!messages.length) return;
 
 		this.bulkActionLoading = true;
 		try {
 			for (const message of messages) {
-				await this.markAsRead(client, message, true);
+				await this.toggleImportant(client, message);
 			}
 			this.clearSelection();
 		} finally {
@@ -782,14 +799,14 @@ class MailStore {
 		}
 	}
 
-	async bulkMarkAsUnread(client: JMAPClient) {
-		const messages = this.selectedMessages().filter((message) => !message.unread);
+	async bulkMarkAsNotImportant(client: JMAPClient) {
+		const messages = this.selectedMessages().filter((message) => message.important);
 		if (!messages.length) return;
 
 		this.bulkActionLoading = true;
 		try {
 			for (const message of messages) {
-				await this.markAsRead(client, message, false);
+				await this.toggleImportant(client, message);
 			}
 			this.clearSelection();
 		} finally {
@@ -1069,11 +1086,14 @@ class MailStore {
 		this.selectedThread = this.selectedThread.map((m) => (m.id === id ? { ...m, ...patch } : m));
 	}
 
-	private setPendingKeyword(id: string, patch: { starred?: boolean; unread?: boolean }) {
+	private setPendingKeyword(
+		id: string,
+		patch: { starred?: boolean; unread?: boolean; important?: boolean }
+	) {
 		this.pendingKeywords.set(id, { ...this.pendingKeywords.get(id), ...patch });
 	}
 
-	private clearPendingKeyword(id: string, key: 'starred' | 'unread') {
+	private clearPendingKeyword(id: string, key: 'starred' | 'unread' | 'important') {
 		const pending = this.pendingKeywords.get(id);
 		if (!pending) return;
 		delete pending[key];
@@ -1088,7 +1108,8 @@ class MailStore {
 		return {
 			...preview,
 			...(pending.starred !== undefined && { starred: pending.starred }),
-			...(pending.unread !== undefined && { unread: pending.unread })
+			...(pending.unread !== undefined && { unread: pending.unread }),
+			...(pending.important !== undefined && { important: pending.important })
 		};
 	}
 

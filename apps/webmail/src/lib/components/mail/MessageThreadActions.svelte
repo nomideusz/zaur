@@ -2,10 +2,9 @@
 	import { goto } from '$app/navigation';
 	import Archive from '$lib/components/icons/Archive.svelte';
 	import Forward from '$lib/components/icons/Forward.svelte';
-	import Mail from '$lib/components/icons/Mail.svelte';
+	import Important from '$lib/components/icons/Important.svelte';
 	import Maximize from '$lib/components/icons/Maximize.svelte';
 	import Minimize from '$lib/components/icons/Minimize.svelte';
-	import MailOpen from '$lib/components/icons/MailOpen.svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
@@ -56,7 +55,7 @@
 	const isDraft = $derived(mailboxRouteId === 'drafts');
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
-	const markReadLabel = $derived(latest?.unread ? 'Mark read' : 'Mark unread');
+	const markImportantLabel = $derived(latest?.important ? 'Remove important' : 'Mark important');
 	const primaryReplyLabel = $derived(
 		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
 	);
@@ -153,9 +152,9 @@
 		void mail.toggleStar(auth.client, latest);
 	}
 
-	function toggleLatestRead() {
+	function toggleImportant() {
 		if (!auth.client || !latest) return;
-		void mail.markAsRead(auth.client, latest, latest.unread);
+		void mail.toggleImportant(auth.client, latest);
 	}
 
 	function showImagesOnce() {
@@ -221,25 +220,20 @@
 				<IconButton label="Edit draft" onclick={editDraft}>
 					<Pencil class="size-5" />
 				</IconButton>
-				<IconButton label={markReadLabel} onclick={toggleLatestRead}>
-					{#if latest.unread}
-						<MailOpen class="size-5" />
-					{:else}
-						<Mail class="size-5" />
-					{/if}
+				<IconButton label={markImportantLabel} onclick={toggleImportant}>
+					<Important class={cn('size-5', latest.important && 'text-accent')} aria-hidden="true" />
 				</IconButton>
 			{:else}
 				<Button variant="ghost" class={toolbarButtonClass} onclick={editDraft}>
 					<Pencil class="size-4" aria-hidden="true" />
 					Edit draft
 				</Button>
-				<Button variant="ghost" class={toolbarButtonClass} onclick={toggleLatestRead}>
-					{#if latest.unread}
-						<MailOpen class="size-4" aria-hidden="true" />
-					{:else}
-						<Mail class="size-4" aria-hidden="true" />
-					{/if}
-					{markReadLabel}
+				<Button variant="ghost" class={toolbarButtonClass} onclick={toggleImportant}>
+					<Important
+						class={cn('size-4', latest.important && 'text-accent')}
+						aria-hidden="true"
+					/>
+					{markImportantLabel}
 				</Button>
 			{/if}
 			<Button class={toolbarButtonClass} onclick={() => void sendDraft()}>
@@ -274,13 +268,12 @@
 					{primaryReplyLabel}
 				</Button>
 			{:else}
-				<Button variant="ghost" class={toolbarButtonClass} onclick={toggleLatestRead}>
-					{#if latest.unread}
-						<MailOpen class="size-4" aria-hidden="true" />
-					{:else}
-						<Mail class="size-4" aria-hidden="true" />
-					{/if}
-					{markReadLabel}
+				<Button variant="ghost" class={toolbarButtonClass} onclick={toggleImportant}>
+					<Important
+						class={cn('size-4', latest.important && 'text-accent')}
+						aria-hidden="true"
+					/>
+					{markImportantLabel}
 				</Button>
 				<Button variant="ghost" class={toolbarButtonClass} onclick={primaryReply}>
 					{#if settings.defaultReplyMode === 'reply-all'}
@@ -292,13 +285,12 @@
 				</Button>
 			{/if}
 			<OverflowMenu label="More message actions" menuId="thread-actions-overflow-menu">
-				<OverflowMenuItem label={markReadLabel} onclick={toggleLatestRead}>
+				<OverflowMenuItem label={markImportantLabel} onclick={toggleImportant}>
 					{#snippet icon()}
-						{#if latest.unread}
-							<MailOpen class="size-5" aria-hidden="true" />
-						{:else}
-							<Mail class="size-5" aria-hidden="true" />
-						{/if}
+						<Important
+							class={cn('size-5', latest.important && 'text-accent')}
+							aria-hidden="true"
+						/>
 					{/snippet}
 				</OverflowMenuItem>
 				{#if mail.canArchiveFrom(currentMailbox)}

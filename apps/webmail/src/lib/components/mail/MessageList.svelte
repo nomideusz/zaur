@@ -89,9 +89,9 @@
 	const INBOX_SECTION_PAGE_SIZE = 8;
 	const FOLDER_SECTION_PAGE_SIZE = 3;
 	const NEW_SECTION_ID = 'new';
-	const UNREAD_SECTION_ID = 'unread';
+	const IMPORTANT_SECTION_ID = 'important';
 	const READ_SECTION_ID = 'read';
-	const INBOX_SECTION_IDS = new Set([NEW_SECTION_ID, UNREAD_SECTION_ID, READ_SECTION_ID]);
+	const INBOX_SECTION_IDS = new Set([NEW_SECTION_ID, IMPORTANT_SECTION_ID, READ_SECTION_ID]);
 	const FOLDER_SECTION_SORT_BASE = 10;
 	const NEW_MESSAGE_WINDOW_MS = 1000 * 60 * 60 * 24;
 	const NEW_MESSAGE_SEEN_RETENTION_MS = 1000 * 60 * 60 * 24 * 45;
@@ -304,10 +304,12 @@
 	const newUnreadMessages = $derived.by(() =>
 		messages.filter((message) => isNewUnreadMessage(message))
 	);
-	const olderUnreadMessages = $derived.by(() =>
-		messages.filter((message) => message.unread && !isNewUnreadMessage(message))
+	const importantMessages = $derived.by(() =>
+		messages.filter((message) => message.important && !isNewUnreadMessage(message))
 	);
-	const readMessages = $derived.by(() => messages.filter((message) => !message.unread));
+	const readMessages = $derived.by(() =>
+		messages.filter((message) => !message.important && !isNewUnreadMessage(message))
+	);
 
 	$effect(() => {
 		if (!browser) return;
@@ -466,16 +468,16 @@
 				});
 			}
 
-			if (olderUnreadMessages.length > 0) {
+			if (importantMessages.length > 0) {
 				sections.push({
-					id: UNREAD_SECTION_ID,
-					name: 'Unread',
+					id: IMPORTANT_SECTION_ID,
+					name: 'Important',
 					routeId: mailboxRouteId ?? 'inbox',
-					messages: olderUnreadMessages.slice(
+					messages: importantMessages.slice(
 						0,
-						sectionVisibleCounts[UNREAD_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
+						sectionVisibleCounts[IMPORTANT_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
 					),
-					totalCount: olderUnreadMessages.length,
+					totalCount: importantMessages.length,
 					sortOrder: 1,
 					showUnreadDot: true
 				});
@@ -526,7 +528,7 @@
 		sectionHasMoreByFolder = {};
 		const counts: Record<string, number> = {
 			[NEW_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
-			[UNREAD_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
+			[IMPORTANT_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
 			[READ_SECTION_ID]: INBOX_SECTION_PAGE_SIZE
 		};
 		if (mailboxRouteId && mailboxRouteId !== 'inbox') {
@@ -681,7 +683,7 @@
 	function sectionCanShowMore(sectionId: string): boolean {
 		const visible = sectionVisibleCounts[sectionId] ?? sectionPageSize(sectionId);
 		if (sectionId === NEW_SECTION_ID) return newUnreadMessages.length > visible;
-		if (sectionId === UNREAD_SECTION_ID) return olderUnreadMessages.length > visible;
+		if (sectionId === IMPORTANT_SECTION_ID) return importantMessages.length > visible;
 		if (sectionId === READ_SECTION_ID) {
 			return readMessages.length > visible || hasMore;
 		}

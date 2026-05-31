@@ -306,4 +306,3 @@
 	:root.dark .z-email-body--html [data-z-light-surface] :where(a) {
 		color: revert;
 	}
-}

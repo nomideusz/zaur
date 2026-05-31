@@ -273,7 +273,7 @@
 					event.preventDefault();
 					void withLatest((message) => {
 						if (!auth.client) return;
-						return mail.markAsRead(auth.client, message, !message.unread);
+						return mail.toggleImportant(auth.client, message);
 					});
 					break;
 				case '#':

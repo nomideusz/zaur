@@ -23,7 +23,7 @@ Live at [webmail.zaur.app](https://webmail.zaur.app).
 
 Look & feel includes accent presets (blue, teal, violet, slate), corner style (default, soft, sharp), surface tone, theme, motion, and loading indicator style.
 
-Keyboard shortcuts (when enabled): `c` compose, `/` search, `j`/`k` list navigation, `r` reply, `a` reply all, `e` archive, `u` toggle read, `#` trash, `Ctrl+Enter` send, `Esc` close compose.
+Keyboard shortcuts (when enabled): `c` compose, `/` search, `j`/`k` list navigation, `r` reply, `a` reply all, `e` archive, `u` toggle important, `#` trash, `Ctrl+Enter` send, `Esc` close compose.
 
 ## Requirements
 

@@ -2,8 +2,7 @@
 	import { goto } from '$app/navigation';
 	import Archive from '$lib/components/icons/Archive.svelte';
 	import Forward from '$lib/components/icons/Forward.svelte';
-	import Mail from '$lib/components/icons/Mail.svelte';
-	import MailOpen from '$lib/components/icons/MailOpen.svelte';
+	import Important from '$lib/components/icons/Important.svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
@@ -60,7 +59,7 @@
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
-	const markReadLabel = $derived(latest?.unread ? 'Mark read' : 'Mark unread');
+	const markImportantLabel = $derived(latest?.important ? 'Remove important' : 'Mark important');
 	const primaryReplyLabel = $derived(
 		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
 	);
@@ -152,9 +151,9 @@
 		void mail.toggleStar(auth.client, latest);
 	}
 
-	function toggleLatestRead() {
+	function toggleImportant() {
 		if (!auth.client || !latest) return;
-		void mail.markAsRead(auth.client, latest, latest.unread);
+		void mail.toggleImportant(auth.client, latest);
 	}
 
 	function showImagesOnce() {
@@ -250,13 +249,12 @@
 					menuId="mobile-thread-actions-menu"
 					placement="top"
 				>
-					<OverflowMenuItem label={markReadLabel} onclick={toggleLatestRead}>
+					<OverflowMenuItem label={markImportantLabel} onclick={toggleImportant}>
 						{#snippet icon()}
-							{#if latest.unread}
-								<MailOpen class="size-5" aria-hidden="true" />
-							{:else}
-								<Mail class="size-5" aria-hidden="true" />
-							{/if}
+							<Important
+								class={cn('size-5', latest.important && 'text-accent')}
+								aria-hidden="true"
+							/>
 						{/snippet}
 					</OverflowMenuItem>
 					<OverflowMenuItem label={latest.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
@@ -292,13 +290,12 @@
 					menuId="mobile-thread-actions-menu"
 					placement="top"
 				>
-					<OverflowMenuItem label={markReadLabel} onclick={toggleLatestRead}>
+					<OverflowMenuItem label={markImportantLabel} onclick={toggleImportant}>
 						{#snippet icon()}
-							{#if latest.unread}
-								<MailOpen class="size-5" aria-hidden="true" />
-							{:else}
-								<Mail class="size-5" aria-hidden="true" />
-							{/if}
+							<Important
+								class={cn('size-5', latest.important && 'text-accent')}
+								aria-hidden="true"
+							/>
 						{/snippet}
 					</OverflowMenuItem>
 					{#if canArchive}

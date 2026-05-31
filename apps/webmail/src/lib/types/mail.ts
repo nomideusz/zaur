@@ -21,6 +21,7 @@ export interface MessagePreview {
 	receivedAt: string;
 	unread: boolean;
 	starred: boolean;
+	important: boolean;
 	hasAttachment: boolean;
 }
 

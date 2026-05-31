@@ -1,7 +1,6 @@
 <script lang="ts">
 	import Archive from '$lib/components/icons/Archive.svelte';
-	import Mail from '$lib/components/icons/Mail.svelte';
-	import MailOpen from '$lib/components/icons/MailOpen.svelte';
+	import Important from '$lib/components/icons/Important.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
@@ -25,11 +24,11 @@
 	const currentMailbox = $derived(mailboxRouteId ? mail.mailboxByRouteId(mailboxRouteId) : null);
 	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
-	const hasUnreadSelected = $derived(
-		mail.messages.some((message) => selectedIds.includes(message.id) && message.unread)
+	const hasNotImportantSelected = $derived(
+		mail.messages.some((message) => selectedIds.includes(message.id) && !message.important)
 	);
-	const hasReadSelected = $derived(
-		mail.messages.some((message) => selectedIds.includes(message.id) && !message.unread)
+	const hasImportantSelected = $derived(
+		mail.messages.some((message) => selectedIds.includes(message.id) && message.important)
 	);
 	const moveTargets = $derived(
 		mailboxRouteId
@@ -83,24 +82,24 @@
 	{#if mail.hasSelection && !disabled}
 		<div class="flex min-w-0 flex-1 items-center gap-2 overflow-x-auto max-md:hidden">
 			<span class="shrink-0 text-sm font-medium text-fg">{selectedIds.length} selected</span>
-			{#if hasUnreadSelected}
+			{#if hasNotImportantSelected}
 				<Button
 					variant="ghost"
 					class={actionButtonClass}
-					onclick={() => auth.client && runBulk(() => mail.bulkMarkAsRead(auth.client!))}
+					onclick={() => auth.client && runBulk(() => mail.bulkMarkAsImportant(auth.client!))}
 				>
-					<MailOpen class="size-3.5" aria-hidden="true" />
-					Mark read
+					<Important class="size-3.5" aria-hidden="true" />
+					Mark important
 				</Button>
 			{/if}
-			{#if hasReadSelected}
+			{#if hasImportantSelected}
 				<Button
 					variant="ghost"
 					class={actionButtonClass}
-					onclick={() => auth.client && runBulk(() => mail.bulkMarkAsUnread(auth.client!))}
+					onclick={() => auth.client && runBulk(() => mail.bulkMarkAsNotImportant(auth.client!))}
 				>
-					<Mail class="size-3.5" aria-hidden="true" />
-					Mark unread
+					<Important class="size-3.5 opacity-50" aria-hidden="true" />
+					Remove important
 				</Button>
 			{/if}
 			{#if canArchive}

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import Archive from '$lib/components/icons/Archive.svelte';
-	import Mail from '$lib/components/icons/Mail.svelte';
-	import MailOpen from '$lib/components/icons/MailOpen.svelte';
+	import Important from '$lib/components/icons/Important.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
@@ -28,11 +27,11 @@
 	const moveTargets = $derived(
 		mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
 	);
-	const hasUnreadSelected = $derived(
-		mail.messages.some((message) => selectedIds.includes(message.id) && message.unread)
+	const hasNotImportantSelected = $derived(
+		mail.messages.some((message) => selectedIds.includes(message.id) && !message.important)
 	);
-	const hasReadSelected = $derived(
-		mail.messages.some((message) => selectedIds.includes(message.id) && !message.unread)
+	const hasImportantSelected = $derived(
+		mail.messages.some((message) => selectedIds.includes(message.id) && message.important)
 	);
 
 	async function runBulk(action: () => Promise<void>) {
@@ -74,24 +73,24 @@
 	<span class="z-mail-list-mobile-bar__count">{selectedIds.length} selected</span>
 
 	<div class="z-mail-list-mobile-bar__actions">
-		{#if hasUnreadSelected}
+		{#if hasNotImportantSelected}
 			<Button
 				variant="ghost"
 				class={cn('z-mail-list-mobile-bar__btn')}
-				onclick={() => auth.client && runBulk(() => mail.bulkMarkAsRead(auth.client!))}
+				onclick={() => auth.client && runBulk(() => mail.bulkMarkAsImportant(auth.client!))}
 			>
-				<MailOpen class="size-4" aria-hidden="true" />
-				Read
+				<Important class="size-4" aria-hidden="true" />
+				Important
 			</Button>
 		{/if}
-		{#if hasReadSelected}
+		{#if hasImportantSelected}
 			<Button
 				variant="ghost"
 				class={cn('z-mail-list-mobile-bar__btn')}
-				onclick={() => auth.client && runBulk(() => mail.bulkMarkAsUnread(auth.client!))}
+				onclick={() => auth.client && runBulk(() => mail.bulkMarkAsNotImportant(auth.client!))}
 			>
-				<Mail class="size-4" aria-hidden="true" />
-				Unread
+				<Important class="size-4 opacity-50" aria-hidden="true" />
+				Not important
 			</Button>
 		{/if}
 		{#if canArchive}
