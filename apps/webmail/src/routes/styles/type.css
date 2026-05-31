@@ -18,8 +18,7 @@
 		color: var(--z-fg-muted);
 	}
 
-	.z-type-page-title {
-		font-size: var(--z-main-page-title);
-		font-weight: 600;
-		line-height: 1.45;
+	.z-type-list-count {
+		font-size: 0.9375rem;
+		line-height: 1.35;
 	}

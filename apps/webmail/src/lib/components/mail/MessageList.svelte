@@ -30,6 +30,37 @@
 	import { cn } from '$lib/utils/cn';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 
+	/** Editorial list row — shared Tailwind building blocks. */
+	const listMessageGroup = 'group/message';
+	const listMessageLinkClass = cn(listMessageGroup, 'block min-w-0 no-underline');
+	const listMessageSelectClass = cn(
+		listMessageGroup,
+		'flex w-full cursor-pointer items-start gap-3 border-0 bg-transparent p-0 text-left'
+	);
+	const listMessageStackClass = 'flex min-w-0 flex-row items-start justify-between gap-4';
+	const listMessageLeadClass = 'flex min-w-0 flex-1 flex-col gap-0.5';
+	const listSubjectClass = cn(
+		'block min-w-0 font-normal text-fg underline underline-offset-[0.2em] decoration-fg/35 decoration-1',
+		'z-type-page leading-[1.4] [overflow-wrap:anywhere]',
+		'transition-[color,text-decoration-color] duration-150',
+		'group-hover/message:decoration-fg/55 group-focus-visible/message:decoration-fg/55'
+	);
+	const listWhenClass = cn(
+		'shrink-0 tabular-nums text-fg-muted no-underline z-type-page leading-[1.4] pt-[0.05em]',
+		'group-hover/message:text-fg group-focus-visible/message:text-fg'
+	);
+	const listSenderClass = (visible: boolean) =>
+		cn('hidden z-type-page leading-[1.4] text-fg-muted', visible && 'block');
+	const listSectionCountClass = (sectionId: string) =>
+		cn(
+			'z-type-list-count shrink-0 tabular-nums font-semibold text-fg',
+			sectionId === READ_SECTION_ID && 'font-medium text-fg-muted'
+		);
+	const listMoreClass = cn(
+		'z-type-page cursor-pointer font-normal text-fg underline underline-offset-2 decoration-fg/30',
+		'transition hover:decoration-fg/55 active:scale-[0.98]'
+	);
+
 	let {
 		messages,
 		mailboxName,
@@ -607,28 +638,6 @@
 		return () => observer.disconnect();
 	});
 
-	/** Stacked-titles tier: New (largest) → Unread → Read (smallest). */
-	function sectionImportanceModifier(sectionId: string): string {
-		switch (sectionId) {
-			case NEW_SECTION_ID:
-				return 'z-mail-folder-section--importance-new';
-			case UNREAD_SECTION_ID:
-				return 'z-mail-folder-section--importance-unread';
-			case READ_SECTION_ID:
-				return 'z-mail-folder-section--importance-read';
-			default:
-				return 'z-mail-folder-section--importance-unread';
-		}
-	}
-
-	function flatListImportanceModifier(routeId: string): string {
-		const role = mail.mailboxByRouteId(routeId)?.role;
-		if (role === 'archive' || role === 'trash') {
-			return 'z-mail-folder-section__list--importance-read';
-		}
-		return 'z-mail-folder-section__list--importance-unread';
-	}
-
 	function listRowStartsNewDay(messages: MessagePreview[], index: number): boolean {
 		if (index === 0) return true;
 		return (
@@ -769,16 +778,11 @@
 			{@const showRowCheckbox =
 				bulkSelectEnabled && (mail.hasSelection || currentMessageId === message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
-			<li
-				class={cn(
-					'z-mail-folder-section__item',
-					rowSelected && 'z-mail-folder-section__item--selected'
-				)}
-			>
+			<li class={cn('list-none', rowSelected && '[&_.list-subject]:text-accent')}>
 				{#if mail.hasSelection && bulkSelectEnabled}
 					<button
 						type="button"
-						class="z-mail-folder-section__message z-mail-folder-section__message--selecting"
+						class={listMessageSelectClass}
 						aria-current={currentMessageId === message.id ? 'page' : undefined}
 						aria-pressed={rowSelected}
 						aria-label="{subjectText} — {senderLabel}, {timeLabel}"
@@ -787,25 +791,18 @@
 						{#if showRowCheckbox}
 							<input
 								type="checkbox"
-								class="z-checkbox z-mail-folder-section__checkbox shrink-0"
+								class="z-checkbox mt-[0.35rem] shrink-0"
 								checked={rowSelected}
 								tabindex="-1"
 								aria-hidden="true"
 							/>
 						{/if}
-						<span class="z-mail-folder-section__stack">
-							<span class="z-mail-folder-section__lead">
-								<span class="z-mail-folder-section__subject">{subjectText}</span>
-								<span
-									class={cn(
-										'z-mail-folder-section__sender',
-										showSenderDuplicate && 'z-mail-folder-section__sender--duplicate'
-									)}
-								>
-									{senderLabel}
-								</span>
+						<span class={listMessageStackClass}>
+							<span class={listMessageLeadClass}>
+								<span class={cn(listSubjectClass, 'list-subject')}>{subjectText}</span>
+								<span class={listSenderClass(showSenderDuplicate)}>{senderLabel}</span>
 							</span>
-							<time class="z-mail-folder-section__when" datetime={message.receivedAt}>
+							<time class={listWhenClass} datetime={message.receivedAt}>
 								{timeLabel}
 							</time>
 						</span>
@@ -813,7 +810,7 @@
 				{:else}
 					<a
 						href={rowHref}
-						class="z-mail-folder-section__message"
+						class={listMessageLinkClass}
 						aria-current={currentMessageId === message.id ? 'page' : undefined}
 						aria-label="{subjectText} — {senderLabel}, {timeLabel}"
 						onclick={(event) => handleRowLinkClick(message.id, event)}
@@ -825,32 +822,18 @@
 						{#if showRowCheckbox}
 							<input
 								type="checkbox"
-								class="z-checkbox z-mail-folder-section__checkbox shrink-0"
+								class="z-checkbox mt-[0.35rem] shrink-0"
 								checked={rowSelected}
 								aria-label={`Select ${subjectText}`}
 								onclick={(event) => handleRowCheckboxClick(message.id, event)}
 							/>
 						{/if}
-						<span class="z-mail-folder-section__stack">
-							<span class="z-mail-folder-section__lead">
-								<span
-									class={cn(
-										'z-mail-folder-section__subject',
-										currentMessageId === message.id && 'z-mail-folder-section__subject--active'
-									)}
-								>
-									{subjectText}
-								</span>
-								<span
-									class={cn(
-										'z-mail-folder-section__sender',
-										showSenderDuplicate && 'z-mail-folder-section__sender--duplicate'
-									)}
-								>
-									{senderLabel}
-								</span>
+						<span class={listMessageStackClass}>
+							<span class={listMessageLeadClass}>
+								<span class={cn(listSubjectClass, 'list-subject')}>{subjectText}</span>
+								<span class={listSenderClass(showSenderDuplicate)}>{senderLabel}</span>
 							</span>
-							<time class="z-mail-folder-section__when" datetime={message.receivedAt}>
+							<time class={listWhenClass} datetime={message.receivedAt}>
 								{timeLabel}
 							</time>
 						</span>
@@ -873,39 +856,34 @@
 				{onRetry}
 			/>
 		{:else if sectionMode}
-			<div class="z-mail-folder-sections">
+			<div class="flex flex-col gap-[var(--z-main-gap)] pt-[var(--z-main-gap)]">
 				{#each folderSections as section, sectionIndex (section.id)}
 					{@const sectionDuplicateSubjects = duplicateSubjectKeys(section.messages)}
-					<section
-						class={cn('z-mail-folder-section', sectionImportanceModifier(section.id))}
-						style:order={section.sortOrder}
-						style:--section-index={sectionIndex}
-					>
-						<div class="z-mail-folder-section__head">
-							<h2
-								class={cn(
-									'z-mail-folder-section__title',
-									section.showUnreadDot && 'z-mail-folder-section__title--unread'
-								)}
-							>
+					<section style:order={section.sortOrder} style:--section-index={sectionIndex}>
+						<div
+							class="mb-[var(--z-space-folder-head-bottom,0.625rem)] flex items-center justify-between gap-3"
+						>
+							<h2 class="inline-flex items-center gap-2 font-semibold text-fg z-type-page leading-[1.35]">
+								{#if section.showUnreadDot}
+									<span
+										class="size-[0.4375rem] shrink-0 rounded-full bg-unread"
+										aria-hidden="true"
+									></span>
+								{/if}
 								{section.name}
 							</h2>
-							<span class="z-mail-folder-section__count">{section.totalCount}</span>
+							<span class={listSectionCountClass(section.id)}>{section.totalCount}</span>
 						</div>
 						{#if section.messages.length > 0}
-							<ul class="z-mail-folder-section__list">
+							<ul class="flex flex-col gap-2.5">
 								{#each section.messages as message, index (message.id)}
 									{@render simpleMessageRow(message, section.routeId, index, section.messages, sectionDuplicateSubjects)}
 								{/each}
 							</ul>
 						{/if}
 						{#if sectionCanShowMore(section.id)}
-							<div class="z-mail-folder-section__footer">
-								<button
-									type="button"
-									class="z-mail-folder-section__more"
-									onclick={() => revealMoreInSection(section.id)}
-								>
+							<div class="mt-[var(--z-space-folder-footer-top)]">
+								<button type="button" class={listMoreClass} onclick={() => revealMoreInSection(section.id)}>
 									{sectionRevealLabel(section.id, section.totalCount)}
 								</button>
 							</div>
@@ -914,27 +892,28 @@
 				{/each}
 
 				{#if folderSections.length === 0}
-					<p class="z-mail-folder-section__empty">{resolvedEmptyMessage}</p>
+					<p class="z-type-page leading-[1.55] font-normal text-fg">{resolvedEmptyMessage}</p>
 				{/if}
 			</div>
 
 			{#if isInboxHome && orderedFolders.length > 0}
-				<nav class="z-mail-simple-folder-nav" aria-label="Folders">
+				<nav
+					class="z-type-page-muted mt-[var(--z-main-gap)]! flex flex-wrap items-center gap-x-3 gap-y-1 text-fg-muted"
+					aria-label="Folders"
+				>
 					{#each orderedFolders as folder (folder.id)}
-						<a href={`/mail/${folder.id}`} class="z-mail-simple-folder-nav__link">
+						<a
+							href={`/mail/${folder.id}`}
+							class="inline-flex items-baseline gap-1.5 text-fg-muted no-underline transition-colors hover:text-fg"
+						>
 							<span>{simpleFolderSectionTitle(folder.role, folder.name)}</span>
-							<span class="z-mail-simple-folder-nav__count">{folder.total}</span>
+							<span class="z-type-list-count tabular-nums font-semibold">{folder.total}</span>
 						</a>
 					{/each}
 				</nav>
 			{/if}
 		{:else}
-			<ul
-				class={cn(
-					'z-mail-folder-section__list',
-					flatListImportanceModifier(mailboxRouteId ?? 'inbox')
-				)}
-			>
+			<ul class="flex flex-col gap-2.5">
 				{#each messages as message, index (message.id)}
 					{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId, index, messages)}
 				{/each}
@@ -948,7 +927,7 @@
 			/>
 		{/if}
 	</div>
-	<div class="z-mail-text-nav__links z-mail-simple-main-footer">
+	<div class="z-mail-text-nav__links mt-[var(--z-main-gap)]!">
 		<a class="z-mail-text-nav__link" href="/settings">Settings</a>
 		<span class="z-mail-text-nav__sep">·</span>
 		<button
