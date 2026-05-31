@@ -21,7 +21,9 @@
 	import { simpleContentPagePadClass } from '$lib/modes/simple/simple-content-layout';
 	import {
 		formatSimpleListWhen,
-		simpleMessageDayKey
+		simpleMessageDayKey,
+		formatSimpleListTime,
+		formatSimpleListDayHeading
 	} from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 
@@ -668,7 +670,7 @@
 			messagesList: MessagePreview[],
 			duplicateKeys: Set<string> = flatListDuplicateSubjects
 		)}
-			{@const isNewDay = index === 0 || simpleMessageDayKey(messagesList[index].receivedAt) !== simpleMessageDayKey(messagesList[index - 1].receivedAt)}
+			{@const isNewDay = listRowStartsNewDay(messagesList, index)}
 			{@const senderLabel = simpleSenderLabel(message, routeId)}
 			{@const subjectText = message.subject.trim() || '(no subject)'}
 			{@const timeLabel = formatSimpleListTime(message.receivedAt, settings.timeFormat)}

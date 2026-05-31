@@ -1055,6 +1055,7 @@
 
 	.z-mail-view-simple .z-simple-compose__send {
 		@apply inline-flex cursor-pointer items-center font-semibold text-fg underline underline-offset-[0.2em] decoration-fg/45;
+		margin-left: auto;
 		font-size: var(--z-main-page-text);
 		line-height: 1.55;
 		transition:
