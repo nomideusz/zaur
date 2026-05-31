@@ -72,7 +72,9 @@
 	.z-mail-view .z-content-shell .z-mail-list-bulk-bar__checkbox {
 		position: absolute;
 		left: calc(-1 * var(--z-list-checkbox-gutter));
-		top: 0.625rem;
+		/* Align with the first toolbar row (padding-top + half of 2.5rem controls). */
+		top: calc(0.5rem + 1.25rem);
+		translate: 0 -50%;
 		margin: 0;
 	}
 
