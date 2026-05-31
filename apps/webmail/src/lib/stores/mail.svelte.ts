@@ -293,6 +293,7 @@ class MailStore {
 			this.selectedThreadId === threadId &&
 			this.currentMailboxRouteId === routeMailboxId &&
 			this.selectedThread.length > 0 &&
+			this.selectedThread.every((message) => message.mailboxId === routeMailboxId) &&
 			!this.selectedLoading
 		) {
 			return;
@@ -509,10 +510,11 @@ class MailStore {
 		try {
 			await client.toggleImportant(message.id, next);
 			this.clearPendingKeyword(message.id, 'important');
-		} catch {
+		} catch (error) {
 			this.clearPendingKeyword(message.id, 'important');
 			this.patchMessage(message.id, { important: !next });
 			this.patchThreadMessage(message.id, { important: !next });
+			throw error;
 		}
 	}
 
@@ -1002,7 +1004,10 @@ class MailStore {
 	}
 
 	setSelectedThread(emails: JMAPEmail[], routeMailboxId: string) {
-		this.selectedThread = emails.map((email) => mapEmailDetail(email, routeMailboxId));
+		this.selectedThread = emails.map((email) => {
+			const detail = mapEmailDetail(email, routeMailboxId);
+			return { ...detail, ...this.applyPendingKeywords(email.id, detail) };
+		});
 		indexMessagesContacts(this.selectedThread);
 
 		if (browser && this.selectedThreadId && this.selectedThread.length) {
@@ -1152,12 +1157,6 @@ class MailStore {
 				if (!accountId) return;
 				return removeCachedMessage(accountId, message.id);
 			});
-		}
-		if (this.selectedThread.some((m) => m.id === message.id)) {
-			this.selectedThread = this.selectedThread.filter((m) => m.id !== message.id);
-			if (!this.selectedThread.length) {
-				this.selectedThreadId = null;
-			}
 		}
 	}
 

@@ -32,7 +32,9 @@
 	);
 	const moveTargets = $derived(
 		mailboxRouteId
-			? mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
+			? mail.mailboxes.filter(
+					(mb) => mb.jmapId && mb.id !== currentMailbox?.id && mb.role !== 'archive'
+				)
 			: []
 	);
 	const actionButtonClass = '!h-8 shrink-0 !px-2 !text-xs';

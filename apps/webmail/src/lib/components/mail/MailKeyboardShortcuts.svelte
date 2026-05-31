@@ -11,6 +11,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { resolveMailboxRouteByShortcut } from '$lib/mail/folder-shortcuts';
 	import { MAIL_LAYOUT } from '$lib/mail/config';
+	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
 	import { isTypingTarget } from '$lib/utils/keyboard';
 	import type { MessagePreview } from '$lib/types/mail';
 
@@ -271,9 +272,19 @@
 					break;
 				case 'u':
 					event.preventDefault();
-					void withLatest((message) => {
-						if (!auth.client) return;
-						return mail.toggleImportant(auth.client, message);
+					if (!auth.client) break;
+					const importantTarget =
+						mail.selectedThread.length > 0
+							? threadActionMessage(
+									mail.selectedThread,
+									$page.url.searchParams.get('messageId'),
+									mail.messages
+								)
+							: (currentMessage() ?? mail.selectedThread.at(-1));
+					if (!importantTarget) break;
+					void mail.toggleImportant(auth.client, importantTarget).catch((error) => {
+						const message = error instanceof Error ? error.message : 'Could not update important';
+						toast.show(message, 'error');
 					});
 					break;
 				case '#':

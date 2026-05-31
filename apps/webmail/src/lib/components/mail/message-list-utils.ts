@@ -1,5 +1,5 @@
 import { mail } from '$lib/stores/mail.svelte';
-import type { MessagePreview } from '$lib/types/mail';
+import type { MessageDetail, MessagePreview } from '$lib/types/mail';
 
 export function defaultEmptyMessage(mailboxRouteId: string | undefined): string {
 	switch (mailboxRouteId) {
@@ -46,6 +46,27 @@ export function messageHref(
 		searchParams.set('returnTo', searchReturnTo);
 	}
 	return `${href}?${searchParams.toString()}`;
+}
+
+/** Message targeted by list/reader actions (keywords, move, delete) — not always the chronologically latest. */
+export function threadActionMessage(
+	thread: MessageDetail[],
+	urlMessageId: string | null,
+	folderMessages: MessagePreview[]
+): MessageDetail | undefined {
+	if (!thread.length) return undefined;
+
+	if (urlMessageId) {
+		const focused = thread.find((message) => message.id === urlMessageId);
+		if (focused) return focused;
+	}
+
+	const inFolder = thread.filter((message) =>
+		folderMessages.some((listMessage) => listMessage.id === message.id)
+	);
+	if (inFolder.length) return inFolder.at(-1);
+
+	return thread.at(-1);
 }
 
 export function activeMessageId(

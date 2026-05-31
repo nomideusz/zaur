@@ -15,7 +15,9 @@
 
 	const currentMailbox = $derived(mail.mailboxByRouteId(currentMailboxRouteId));
 	const options = $derived(
-		mail.mailboxes.filter((mb) => mb.jmapId && mb.id !== currentMailbox?.id)
+		mail.mailboxes.filter(
+			(mb) => mb.jmapId && mb.id !== currentMailbox?.id && mb.role !== 'archive'
+		)
 	);
 
 	function select(targetRouteId: string) {

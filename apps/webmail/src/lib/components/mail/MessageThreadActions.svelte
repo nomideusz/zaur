@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import Archive from '$lib/components/icons/Archive.svelte';
 	import Forward from '$lib/components/icons/Forward.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
@@ -17,6 +18,7 @@
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
+	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
@@ -52,10 +54,15 @@
 	const pane = getContext<MailPaneContext>(MAIL_PANE_CTX);
 
 	const latest = $derived(thread.at(-1));
+	const actionMessage = $derived(
+		threadActionMessage(thread, $page.url.searchParams.get('messageId'), mail.messages)
+	);
 	const isDraft = $derived(mailboxRouteId === 'drafts');
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
-	const markImportantLabel = $derived(latest?.important ? 'Remove important' : 'Mark important');
+	const markImportantLabel = $derived(
+		actionMessage?.important ? 'Remove important' : 'Mark important'
+	);
 	const primaryReplyLabel = $derived(
 		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
 	);
@@ -79,7 +86,7 @@
 	);
 
 	async function withClient(action: (client: NonNullable<typeof auth.client>) => Promise<void>) {
-		if (!auth.client || !latest) return;
+		if (!auth.client || !actionMessage) return;
 		try {
 			await action(auth.client);
 			onMoved?.();
@@ -136,25 +143,28 @@
 	}
 
 	function archiveMessage() {
-		if (!latest) return;
-		void withClient((client) => mail.moveMessage(client, latest, 'archive'));
+		if (!actionMessage) return;
+		void withClient((client) => mail.moveMessage(client, actionMessage, 'archive'));
 	}
 
 	function deleteMessage() {
-		if (!latest) return;
+		if (!actionMessage) return;
 		const permanent = currentMailbox?.role === 'trash';
 		if (!settings.confirmDeleteMessage(1, permanent)) return;
-		void withClient((client) => mail.deleteMessage(client, latest, mailboxRouteId));
+		void withClient((client) => mail.deleteMessage(client, actionMessage, mailboxRouteId));
 	}
 
 	function toggleStar() {
-		if (!auth.client || !latest) return;
-		void mail.toggleStar(auth.client, latest);
+		if (!auth.client || !actionMessage) return;
+		void mail.toggleStar(auth.client, actionMessage);
 	}
 
 	function toggleImportant() {
-		if (!auth.client || !latest) return;
-		void mail.toggleImportant(auth.client, latest);
+		if (!auth.client || !actionMessage) return;
+		void mail.toggleImportant(auth.client, actionMessage).catch((error) => {
+			const message = error instanceof Error ? error.message : 'Could not update important';
+			toast.show(message, 'error');
+		});
 	}
 
 	function showImagesOnce() {
@@ -162,9 +172,9 @@
 	}
 
 	async function moveTo(targetRouteId: string) {
-		if (!auth.client || !latest) return;
+		if (!auth.client || !actionMessage) return;
 		try {
-			await mail.moveMessageToMailbox(auth.client, latest, targetRouteId);
+			await mail.moveMessageToMailbox(auth.client, actionMessage, targetRouteId);
 			onMoved?.();
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Could not move message';
@@ -221,7 +231,10 @@
 					<Pencil class="size-5" />
 				</IconButton>
 				<IconButton label={markImportantLabel} onclick={toggleImportant}>
-					<Important class={cn('size-5', latest.important && 'text-accent')} aria-hidden="true" />
+					<Important
+						class={cn('size-5', actionMessage?.important && 'text-accent')}
+						aria-hidden="true"
+					/>
 				</IconButton>
 			{:else}
 				<Button variant="ghost" class={toolbarButtonClass} onclick={editDraft}>
@@ -230,7 +243,7 @@
 				</Button>
 				<Button variant="ghost" class={toolbarButtonClass} onclick={toggleImportant}>
 					<Important
-						class={cn('size-4', latest.important && 'text-accent')}
+						class={cn('size-4', actionMessage?.important && 'text-accent')}
 						aria-hidden="true"
 					/>
 					{markImportantLabel}
@@ -270,7 +283,7 @@
 			{:else}
 				<Button variant="ghost" class={toolbarButtonClass} onclick={toggleImportant}>
 					<Important
-						class={cn('size-4', latest.important && 'text-accent')}
+						class={cn('size-4', actionMessage?.important && 'text-accent')}
 						aria-hidden="true"
 					/>
 					{markImportantLabel}
@@ -288,7 +301,7 @@
 				<OverflowMenuItem label={markImportantLabel} onclick={toggleImportant}>
 					{#snippet icon()}
 						<Important
-							class={cn('size-5', latest.important && 'text-accent')}
+							class={cn('size-5', actionMessage?.important && 'text-accent')}
 							aria-hidden="true"
 						/>
 					{/snippet}
