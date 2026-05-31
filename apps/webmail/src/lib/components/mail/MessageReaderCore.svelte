@@ -369,8 +369,7 @@
 		<div
 			class={cn(
 				'z-reader-column',
-				threadRowX,
-				minimalChrome && 'z-reader-column--aligned'
+				threadRowX
 			)}
 		>
 			{#if useSimpleContentShell}

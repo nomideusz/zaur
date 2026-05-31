@@ -952,11 +952,6 @@
 		padding-inline: var(--z-space-reader-column-inline);
 	}
 
-	.z-mail-view-simple .z-reader-column--aligned {
-		/* Minimal mode keeps reader typography aligned with the main list view. */
-		--z-reader-text: var(--z-list-text);
-	}
-
 	/* Simple reader — one divider under sticky nav, not stacked with message chrome. */
 	.z-mail-view-simple .z-mail-text-nav.z-reader-sticky-nav {
 		position: sticky;
@@ -1011,8 +1006,8 @@
 	}
 
 	@media (min-width: 1024px) {
-		.z-reader-column:not(.z-reader-column--aligned) .z-reader-body,
-		.z-reader-column:not(.z-reader-column--aligned) .z-reader-inline-subject {
+		.z-reader-column .z-reader-body,
+		.z-reader-column .z-reader-inline-subject {
 			font-size: calc(var(--z-reader-text) + 0.0625rem);
 		}
 	}
@@ -1192,14 +1187,6 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--z-space-folder-sections-gap);
-	}
-
-	@media (min-width: 1280px) {
-		.z-settings-mode-simple .z-settings-stack,
-		.z-settings-stack--editorial {
-			display: flex;
-			grid-template-columns: unset;
-		}
 	}
 
 	.z-settings-mode-simple .z-settings-list,

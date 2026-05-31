@@ -3,12 +3,17 @@
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import PushNotificationStatus from '$lib/components/settings/PushNotificationStatus.svelte';
+	import { getWebmailModeContext } from '$lib/modes/context';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import {
 		settings,
 		type ListTextSize,
 		type ReaderTextSize
 	} from '$lib/stores/settings.svelte';
+
+	// Simple mode renders an editorial, fixed-size list (subject + sender + time),
+	// so list-density options below don't apply there.
+	const isSimple = $derived(getWebmailModeContext().id === 'simple');
 </script>
 
 <SettingsGroup title="Notifications" description="Alerts and unread counts.">
@@ -53,42 +58,44 @@
 </SettingsGroup>
 
 <SettingsGroup title="Inbox & reading" description="How the message list and open messages look.">
-	<SettingsRow title="List text size" description="Font size for sender, subject, and preview in list">
-		<SettingsSelect
-			label="List text size"
-			value={settings.listTextSize}
-			options={[
-				{ value: 'small', label: 'Small' },
-				{ value: 'normal', label: 'Normal' },
-				{ value: 'large', label: 'Large' }
-			]}
-			onchange={(v) => settings.setListTextSize(v as ListTextSize)}
-			class="w-auto"
-		/>
-	</SettingsRow>
+	{#if !isSimple}
+		<SettingsRow title="List text size" description="Font size for sender, subject, and preview in list">
+			<SettingsSelect
+				label="List text size"
+				value={settings.listTextSize}
+				options={[
+					{ value: 'small', label: 'Small' },
+					{ value: 'normal', label: 'Normal' },
+					{ value: 'large', label: 'Large' }
+				]}
+				onchange={(v) => settings.setListTextSize(v as ListTextSize)}
+				class="w-auto"
+			/>
+		</SettingsRow>
 
-	<SettingsRow title="Show message preview" description="Second line under the subject in each list row">
-		<input
-			type="checkbox"
-			class="z-checkbox"
-			checked={settings.showListPreview}
-			onchange={(e) => settings.setShowListPreview(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
+		<SettingsRow title="Show message preview" description="Second line under the subject in each list row">
+			<input
+				type="checkbox"
+				class="z-checkbox"
+				checked={settings.showListPreview}
+				onchange={(e) => settings.setShowListPreview(e.currentTarget.checked)}
+			/>
+		</SettingsRow>
 
-	<SettingsRow title="Timestamps" description="Whether and how timestamps appear on message list rows">
-		<SettingsSelect
-			label="Timestamps"
-			value={settings.listTimestampFormat}
-			options={[
-				{ value: 'hidden', label: 'Hidden' },
-				{ value: 'compact', label: 'Compact (Mon, May 25)' },
-				{ value: 'full', label: 'Detailed (Full date & time)' }
-			]}
-			onchange={(v) => settings.setListTimestampFormat(v as any)}
-			class="w-auto"
-		/>
-	</SettingsRow>
+		<SettingsRow title="Timestamps" description="Whether and how timestamps appear on message list rows">
+			<SettingsSelect
+				label="Timestamps"
+				value={settings.listTimestampFormat}
+				options={[
+					{ value: 'hidden', label: 'Hidden' },
+					{ value: 'compact', label: 'Compact (Mon, May 25)' },
+					{ value: 'full', label: 'Detailed (Full date & time)' }
+				]}
+				onchange={(v) => settings.setListTimestampFormat(v as any)}
+				class="w-auto"
+			/>
+		</SettingsRow>
+	{/if}
 
 	<SettingsRow title="Reading text size" description="Font size for the message body when reading">
 		<SettingsSelect
@@ -233,13 +240,14 @@
 </SettingsGroup>
 
 <SettingsGroup title="Defaults">
-	<SettingsRow title="Reset reading settings" description="Restore notifications, lists, behavior, and shortcuts on this page">
+	<SettingsRow title="Reset reading settings" description="Restore every option on this page">
 		<button
 			type="button"
 			class="z-btn-ghost text-sm"
 			onclick={() => {
 				if (confirm('Reset reading settings to defaults?')) {
 					settings.resetMailSettings();
+					if (isSimple) settings.resetLayoutSettings();
 				}
 			}}
 		>

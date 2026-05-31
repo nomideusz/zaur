@@ -47,19 +47,3 @@
 		/>
 	</SettingsRow>
 </SettingsGroup>
-
-<SettingsGroup title="Defaults">
-	<SettingsRow title="Reset reading settings" description="Restore every option on this page">
-		<button
-			type="button"
-			class="z-btn-ghost text-sm"
-			onclick={() => {
-				if (confirm('Reset reading settings to defaults?')) {
-					settings.resetLayoutSettings();
-				}
-			}}
-		>
-			Reset
-		</button>
-	</SettingsRow>
-</SettingsGroup>
