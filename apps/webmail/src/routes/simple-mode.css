@@ -795,9 +795,12 @@
 	}
 
 	.z-mail-view-simple .z-mail-folder-section__subject {
-		@apply block min-w-0 truncate font-medium text-fg no-underline;
+		@apply block min-w-0 font-medium text-fg no-underline;
 		font-size: var(--z-list-subject-size, var(--z-main-page-text));
 		line-height: 1.4;
+		white-space: normal;
+		overflow-wrap: anywhere;
+		word-break: break-word;
 		transition:
 			color var(--z-motion-fast) var(--z-ease-standard),
 			text-decoration-color var(--z-motion-base) var(--z-ease-out);
