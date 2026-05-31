@@ -1,0 +1,14 @@
+@media (prefers-reduced-motion: no-preference) {
+	html:not(.z-reduce-motion) ::view-transition-group(message-list),
+	html:not(.z-reduce-motion) ::view-transition-group(message-reader) {
+		animation-duration: var(--z-motion-base);
+		animation-timing-function: var(--z-ease-out);
+	}
+
+	html:not(.z-reduce-motion) ::view-transition-old(message-list),
+	html:not(.z-reduce-motion) ::view-transition-new(message-list),
+	html:not(.z-reduce-motion) ::view-transition-old(message-reader),
+	html:not(.z-reduce-motion) ::view-transition-new(message-reader) {
+		animation-timing-function: var(--z-ease-out);
+	}
+}

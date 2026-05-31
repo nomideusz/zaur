@@ -1,0 +1,52 @@
+/* Message list typography and row actions. */
+
+	.z-type-list-sender {
+		@apply truncate text-xs text-fg-muted;
+	}
+
+	.z-type-list-subject {
+		@apply truncate font-medium text-fg;
+		font-size: var(--z-list-text);
+	}
+
+	.z-type-list-subject--unread {
+		@apply font-semibold;
+	}
+
+	.z-type-list-subject--active {
+		@apply min-w-0 truncate font-semibold underline underline-offset-2 decoration-fg/70;
+		font-size: var(--z-list-text);
+	}
+
+	.z-list-row--active-compact .z-list-row-gutter {
+		margin-top: 0.625rem;
+	}
+
+	.z-list-row-actions {
+		@apply mt-0.5 flex h-5 w-full items-center justify-end gap-0.5 opacity-0 transition-opacity duration-150;
+	}
+
+	.z-list-row:hover .z-list-row-actions,
+	.z-list-row:focus-within .z-list-row-actions {
+		opacity: 1;
+	}
+
+	.z-list-row-actions :where(button) {
+		min-height: 1.25rem;
+		min-width: 1.25rem;
+		padding: 0;
+	}
+
+	.z-list-line--sender {
+		@apply h-5 shrink-0;
+	}
+
+	.z-list-line--meta {
+		@apply mt-0.5 flex h-5 shrink-0 items-center gap-1.5;
+	}
+
+
+	.z-type-list-time {
+		@apply shrink-0 text-xs tabular-nums text-fg-muted;
+	}
+

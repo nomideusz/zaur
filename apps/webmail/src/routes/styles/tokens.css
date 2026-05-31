@@ -1,0 +1,206 @@
+/* Design tokens — spacing scale, measure (~44rem), motion, accent presets. */
+
+@theme {
+	--font-sans: -apple-system, BlinkMacSystemFont, 'avenir next', avenir, 'segoe ui', 'helvetica neue', 'Adwaita Sans', Cantarell, Ubuntu, roboto, noto, helvetica, arial, sans-serif;
+	--font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono',
+		monospace;
+
+	--color-surface: var(--z-surface);
+	--color-surface-raised: var(--z-surface-raised);
+	--color-surface-sunken: var(--z-surface-sunken);
+	--color-border: var(--z-border);
+	--color-border-strong: var(--z-border-strong);
+	--color-fg: var(--z-fg);
+	--color-fg-muted: var(--z-fg-muted);
+	--color-fg-subtle: var(--z-fg-subtle);
+	--color-accent: var(--z-accent);
+	--color-accent-hover: var(--z-accent-hover);
+	--color-accent-fg: var(--z-accent-fg);
+	--color-unread: var(--z-unread);
+	--color-star: var(--z-star);
+	--color-danger: var(--z-danger);
+
+	--radius-sm: 0.25rem;
+	--radius-md: 0.5rem;
+	--radius-lg: 1rem;
+
+	--shadow-sm: 0 1px 2px rgb(0 0 0 / 0.03);
+	--shadow-md: 0 4px 8px rgb(0 0 0 / 0.06);
+
+	--width-sidebar: 15rem;
+	--width-list: 22rem;
+	--height-header: 3.25rem;
+}
+
+:root {
+	--z-list-row: 4rem;
+	--z-list-text: 1rem;
+	/* Measure is in em (relative to reading text) so line length stays ~constant in characters. */
+	--z-reader-measure: 40em;
+	--z-reader-text: 1rem;
+	--z-reader-leading: 1.7;
+	--z-reader-font: var(--font-sans);
+	/* Vertical rhythm tokens (desktop defaults). */
+	--z-space-reader-divider: 0.75rem;
+	--z-space-reader-content: 1.25rem;
+	--z-space-reader-content-compact: 1rem;
+	--z-space-reader-inline-subject: 1rem;
+	--z-space-reader-body-stack: 1em;
+	--z-space-reader-column-inline: 0rem;
+	--z-space-nav-top: 2rem;
+	--z-space-nav-bottom: 0;
+	--z-space-nav-label-top: 0.75rem;
+	/* Major break: page chrome → content, and between content sections (3rem desktop, 2rem mobile). */
+	--z-space-folder-sections-gap: 3rem;
+	--z-space-folder-sections-top: var(--z-space-folder-sections-gap);
+	--z-space-folder-sections-bottom: 3rem;
+	--z-space-folder-head-bottom: 0;
+	--z-space-folder-footer-top: 0.375rem;
+	--z-space-folder-list-gap: 0.125rem;
+	--z-space-folder-message-y: 0.125rem;
+	--z-space-folder-message-leading: 1.55;
+	--z-space-mobile-reader-scroll-bottom: 0.75rem;
+	--z-main-page-text: 1.0625rem;
+	--z-main-page-muted-text: 1rem;
+	--z-main-page-title: 1.0625rem;
+	/* ~44rem ≈ 704px — Hobday-scale column, ~70 characters at body size. */
+	--z-content-max-width: 44rem;
+	/* Motion — fast, smooth, invisible until you notice them */
+	--z-motion-fast: 140ms;
+	--z-motion-base: 220ms;
+	--z-motion-enter: 360ms;
+	--z-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+	--z-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@media (max-width: 767px) {
+	:root {
+		--z-space-reader-divider: 0.625rem;
+		--z-space-reader-content: 1rem;
+		--z-space-reader-content-compact: 0.875rem;
+		--z-space-reader-inline-subject: 0.875rem;
+		--z-space-reader-column-inline: 0.25rem;
+		--z-space-nav-top: 1.25rem;
+		--z-space-nav-bottom: 0;
+		--z-space-nav-label-top: 0.625rem;
+		--z-space-folder-sections-gap: 2rem;
+		--z-space-folder-sections-top: var(--z-space-folder-sections-gap);
+		--z-space-folder-sections-bottom: 2rem;
+		--z-space-folder-head-bottom: 0;
+		--z-space-folder-list-gap: 0.0625rem;
+		--z-space-folder-message-y: 0.0625rem;
+		--z-main-page-text: 1rem;
+		--z-main-page-muted-text: 0.9375rem;
+		--z-main-page-title: 1.125rem;
+	}
+}
+
+.z-skip-link {
+	position: fixed;
+	left: 0.75rem;
+	top: 0.75rem;
+	z-index: 100;
+	transform: translateY(-150%);
+	border-radius: var(--radius-md);
+	background: var(--z-accent);
+	color: var(--z-accent-fg);
+	padding: 0.5rem 0.75rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	transition: transform 120ms ease;
+}
+
+.z-skip-link:focus {
+	transform: translateY(0);
+	outline: 2px solid var(--z-accent-fg);
+	outline-offset: 2px;
+}
+
+/* Accent color presets */
+:root[data-accent='charcoal'] {
+	--z-accent: #2f3437;
+	--z-accent-hover: #111111;
+	--z-unread: #2f3437;
+}
+
+:root.dark[data-accent='charcoal'] {
+	--z-accent: #ededec;
+	--z-accent-hover: #f0f0ef;
+	--z-unread: #ededec;
+}
+
+:root[data-accent='blue'] {
+	--z-accent: #2563eb;
+	--z-accent-hover: #1d4ed8;
+	--z-unread: #2563eb;
+}
+
+:root.dark[data-accent='blue'] {
+	--z-accent: #3b82f6;
+	--z-accent-hover: #2563eb;
+	--z-unread: #60a5fa;
+}
+
+:root[data-accent='teal'] {
+	--z-accent: #0d9488;
+	--z-accent-hover: #0f766e;
+	--z-unread: #0d9488;
+}
+
+:root.dark[data-accent='teal'] {
+	--z-accent: #14b8a6;
+	--z-accent-hover: #0d9488;
+	--z-unread: #5eead4;
+}
+
+:root[data-accent='violet'] {
+	--z-accent: #7c3aed;
+	--z-accent-hover: #6d28d9;
+	--z-unread: #7c3aed;
+}
+
+:root.dark[data-accent='violet'] {
+	--z-accent: #8b5cf6;
+	--z-accent-hover: #7c3aed;
+	--z-unread: #c4b5fd;
+}
+
+:root[data-accent='slate'] {
+	--z-accent: #475569;
+	--z-accent-hover: #334155;
+	--z-unread: #475569;
+}
+
+:root.dark[data-accent='slate'] {
+	--z-accent: #64748b;
+	--z-accent-hover: #475569;
+	--z-unread: #94a3b8;
+}
+
+
+
+:root.dark {
+	--shadow-sm: none;
+	--shadow-md: none;
+}
+
+.z-skip-link {
+	position: fixed;
+	left: 0.75rem;
+	top: 0.75rem;
+	z-index: 100;
+	transform: translateY(-150%);
+	border-radius: var(--radius-md);
+	background: var(--z-accent);
+	color: var(--z-accent-fg);
+	padding: 0.5rem 0.75rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	transition: transform 120ms ease;
+}
+
+.z-skip-link:focus {
+	transform: translateY(0);
+	outline: 2px solid var(--z-accent-fg);
+	outline-offset: 2px;
+}

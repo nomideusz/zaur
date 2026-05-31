@@ -1,0 +1,309 @@
+/* Reader chrome, typography, and HTML email body. */
+
+	.z-type-reader-title {
+		@apply m-0 p-0 text-lg font-semibold leading-tight tracking-tight text-fg md:text-xl;
+	}
+
+	.z-reader-from {
+		font-size: var(--z-reader-text);
+		@apply font-medium leading-snug tracking-tight text-fg;
+	}
+
+	.z-reader-meta {
+		@apply text-[0.8125rem] leading-snug text-fg-muted;
+	}
+
+	.z-reader-chrome {
+		@apply flex flex-col gap-2;
+	}
+
+	.z-reader-chrome--bordered {
+		@apply border-b border-border/60;
+		padding-bottom: var(--z-space-reader-divider);
+	}
+
+	.z-reader-chrome__head,
+	.z-reader-subject-row {
+		@apply flex min-w-0 items-baseline justify-between gap-4;
+	}
+
+	.z-reader-chrome__head:has(.z-reader-chrome__actions),
+	.z-reader-subject-row:has(.z-reader-subject-toolbar) {
+		flex-wrap: wrap;
+	}
+
+	.z-reader-chrome__actions {
+		@apply flex items-baseline;
+	}
+
+	/* Cap-height alignment between large subject and sm toolbar labels */
+	.z-reader-chrome__head .z-type-reader-title,
+	.z-reader-subject-row .z-type-reader-title,
+	.z-reader-chrome__actions .z-btn-ghost,
+	.z-reader-subject-toolbar .z-btn-ghost {
+		text-box-trim: trim-both;
+		text-box-edge: cap alphabetic;
+	}
+
+	.z-reader-chrome__meta {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		column-gap: 1rem;
+		align-items: start;
+	}
+
+	.z-reader-chrome__from {
+		min-width: 0;
+	}
+
+	.z-reader-chrome__time {
+		justify-self: end;
+	}
+
+	.z-reader-chrome__aside {
+		@apply flex flex-col items-end gap-1;
+	}
+
+	/* Reader header toolbar: override fixed !h-9; keep default ghost padding for tap targets */
+	.z-reader-chrome__actions .z-btn-ghost.z-thread-toolbar-btn,
+	.z-reader-subject-toolbar .z-btn-ghost.z-thread-toolbar-btn {
+		height: auto !important;
+		min-height: 2.25rem !important;
+		padding-block: 0.5rem !important;
+		padding-inline: 0.75rem !important;
+		line-height: 1 !important;
+	}
+
+	.z-reader-message-head {
+		@apply border-b border-border/60;
+		padding-bottom: var(--z-space-reader-divider);
+	}
+
+	.z-reader-content {
+		padding-top: var(--z-space-reader-content);
+	}
+
+	.z-reader-content--compact {
+		padding-top: var(--z-space-reader-content-compact);
+	}
+
+	.z-reader-attachments {
+		@apply w-full;
+	}
+
+	.z-reader-section-label {
+		@apply text-xs font-medium text-fg-subtle;
+	}
+
+	.z-reader-latest-badge {
+		@apply shrink-0 text-[11px] font-medium tracking-wide text-fg-subtle uppercase;
+	}
+
+	.z-reader-thread-meta {
+		@apply flex w-44 shrink-0 items-center justify-end gap-2 sm:w-48;
+	}
+
+	.z-reader-thread-toggle {
+		@apply flex w-full items-center gap-3 rounded-md text-left transition-colors hover:bg-surface-sunken/70;
+	}
+
+	.z-thread-toolbar-btn {
+		@apply !items-center gap-2 leading-none;
+	}
+
+	.z-thread-toolbar-btn :where(svg) {
+		@apply size-4 shrink-0;
+	}
+
+	.z-focus-toggle {
+		@apply min-h-9 items-center justify-center rounded-md px-2 text-fg-subtle transition-colors hover:bg-surface-sunken/70 hover:text-fg;
+	}
+
+	.z-focus-toggle[aria-pressed='true'] {
+		@apply bg-surface-sunken text-fg;
+	}
+
+	.z-reader-column {
+		@apply w-full max-w-(--z-reader-measure) md:mx-auto;
+		/* Anchor the em-based measure to the reading size so the line length is locked. */
+		font-size: var(--z-reader-text);
+		padding-inline: var(--z-space-reader-column-inline);
+	}
+
+	.z-reader-body {
+		@apply w-full text-fg;
+		font-family: var(--z-reader-font);
+		line-height: var(--z-reader-leading);
+	}
+
+	.z-reader-inline-subject {
+		margin: 0 0 var(--z-space-reader-inline-subject);
+		font-size: var(--z-reader-text);
+		line-height: var(--z-reader-leading);
+		@apply font-semibold text-fg;
+	}
+
+	@media (min-width: 1024px) {
+		.z-reader-column .z-reader-body,
+		.z-reader-column .z-reader-inline-subject {
+			font-size: calc(var(--z-reader-text) + 0.0625rem);
+		}
+	}
+
+	.z-email-body :where(p + p, p + ul, p + ol, ul + p, ol + p) {
+		margin-top: var(--z-space-reader-body-stack);
+	}
+
+	.z-type-list-sender {
+		@apply truncate text-xs text-fg-muted;
+	}
+
+	.z-type-list-subject {
+		@apply truncate font-medium text-fg;
+		font-size: var(--z-list-text);
+	}
+
+	.z-type-list-subject--unread {
+		@apply font-semibold;
+	}
+
+	.z-type-list-subject--active {
+		@apply min-w-0 truncate font-semibold underline underline-offset-2 decoration-fg/70;
+		font-size: var(--z-list-text);
+	}
+
+	.z-list-row--active-compact .z-list-row-gutter {
+		margin-top: 0.625rem;
+	}
+
+	.z-list-row-actions {
+		@apply mt-0.5 flex h-5 w-full items-center justify-end gap-0.5 opacity-0 transition-opacity duration-150;
+	}
+
+	.z-list-row:hover .z-list-row-actions,
+	.z-list-row:focus-within .z-list-row-actions {
+		opacity: 1;
+	}
+
+	.z-list-row-actions :where(button) {
+		min-height: 1.25rem;
+		min-width: 1.25rem;
+		padding: 0;
+	}
+
+	.z-list-line--sender {
+		@apply h-5 shrink-0;
+	}
+
+	.z-list-line--meta {
+		@apply mt-0.5 flex h-5 shrink-0 items-center gap-1.5;
+	}
+
+	.z-type-list-preview {
+		@apply mt-0.5 truncate text-xs leading-snug text-fg-muted;
+	}
+
+	.z-type-list-time {
+		@apply shrink-0 text-xs tabular-nums text-fg-muted;
+	}
+
+	.z-email-body {
+		font-size: var(--z-reader-text);
+		line-height: var(--z-reader-leading);
+		font-family: var(--z-reader-font);
+		overflow-wrap: anywhere;
+	}
+
+	.z-email-body--plain {
+		@apply py-1;
+	}
+
+	.z-email-body--html {
+		overflow-x: auto;
+	}
+
+	.z-email-body :where(a) {
+		@apply text-accent underline underline-offset-2 hover:text-accent-hover;
+	}
+
+	.z-email-body :where(img) {
+		max-width: 100%;
+		height: auto;
+	}
+
+	.z-email-body :where(table) {
+		max-width: 100%;
+	}
+
+	.z-email-body :where(blockquote) {
+		margin-top: 1rem;
+		margin-bottom: 0;
+		padding: 0 0 0 1rem;
+		border: 0;
+		border-left: 2px solid color-mix(in srgb, var(--z-border) 55%, transparent);
+		border-radius: 0;
+		background: transparent;
+		color: var(--z-fg-muted);
+	}
+
+	.z-email-body :where(blockquote blockquote) {
+		margin-top: 0.75rem;
+		padding-left: 0.75rem;
+		border-left-width: 1px;
+		border-left-color: color-mix(in srgb, var(--z-border) 35%, transparent);
+		color: var(--z-fg-subtle);
+	}
+
+	.z-email-body :where(blockquote blockquote blockquote) {
+		border-left-color: color-mix(in srgb, var(--z-border) 22%, transparent);
+	}
+
+	.z-email-body :where(pre, code) {
+		font-family: var(--font-mono);
+		@apply rounded-sm bg-surface-sunken/80 text-[0.9em];
+	}
+
+	.z-email-body :where(pre) {
+		@apply overflow-x-auto p-3;
+	}
+
+	.z-email-body :where(hr) {
+		@apply my-4 border-border;
+	}
+
+	.z-email-quote {
+		@apply text-sm leading-relaxed whitespace-pre-wrap;
+	}
+
+	/* HTML mail: inherit reader theme; inline colors stripped except on light email sections */
+	:root.dark .z-email-body--html {
+		color: var(--z-fg);
+	}
+
+	:root.dark .z-email-body--html :where(a) {
+		color: var(--z-accent);
+	}
+
+	:root.dark .z-email-body :where(blockquote) {
+		border-left-color: color-mix(in srgb, var(--z-border-strong) 40%, transparent);
+		color: var(--z-fg-subtle);
+	}
+
+	:root.dark .z-email-body :where(blockquote blockquote) {
+		border-left-color: color-mix(in srgb, var(--z-border) 28%, transparent);
+	}
+
+	:root.dark .z-email-body--html :where(blockquote a) {
+		color: var(--z-accent);
+	}
+
+	:root.dark .z-email-body--html [data-z-light-surface] {
+		color-scheme: light;
+		border-radius: 0.25rem;
+		isolation: isolate;
+	}
+
+	:root.dark .z-email-body--html [data-z-light-surface] :where(a) {
+		color: revert;
+	}
+}

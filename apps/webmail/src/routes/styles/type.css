@@ -1,0 +1,25 @@
+/* Composable typography + measure (Tachyons-style building blocks). */
+
+	.z-measure {
+		max-width: var(--z-content-max-width);
+		margin-inline: auto;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.z-type-page {
+		font-size: var(--z-main-page-text);
+		line-height: 1.55;
+	}
+
+	.z-type-page-muted {
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+		color: var(--z-fg-muted);
+	}
+
+	.z-type-page-title {
+		font-size: var(--z-main-page-title);
+		font-weight: 600;
+		line-height: 1.45;
+	}
