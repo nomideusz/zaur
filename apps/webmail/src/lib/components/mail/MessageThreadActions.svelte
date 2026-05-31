@@ -7,8 +7,6 @@
 	import Maximize from '$lib/components/icons/Maximize.svelte';
 	import Minimize from '$lib/components/icons/Minimize.svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
-	import Reply from '$lib/components/icons/Reply.svelte';
-	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
 	import Send from '$lib/components/icons/Send.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
 	import Star from '$lib/components/icons/Star.svelte';
@@ -64,9 +62,6 @@
 	const markImportantLabel = $derived(
 		actionMessage?.important ? 'Remove important' : 'Mark important'
 	);
-	const primaryReplyLabel = $derived(
-		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
-	);
 	const toolbarButtonClass = $derived(
 		cn(
 			'z-thread-toolbar-btn shrink-0 !px-3 !text-sm',
@@ -94,23 +89,6 @@
 			const message = error instanceof Error ? error.message : 'Action failed';
 			toast.show(message, 'error');
 		}
-	}
-
-	function reply() {
-		if (!latest) return;
-		compose.startReply(latest);
-		goto('/mail/compose?mode=reply');
-	}
-
-	function replyAll() {
-		if (!latest || !auth.username) return;
-		compose.startReplyAll(latest, thread, auth.username);
-		goto('/mail/compose?mode=reply-all');
-	}
-
-	function primaryReply() {
-		if (settings.defaultReplyMode === 'reply-all') replyAll();
-		else reply();
 	}
 
 	function forward() {
@@ -272,27 +250,6 @@
 				{/if}
 			</OverflowMenu>
 		{:else}
-			{#if minimalToolbar}
-				<Button variant="ghost" class={toolbarButtonClass} onclick={primaryReply}>
-					{primaryReplyLabel}
-				</Button>
-			{:else}
-				<Button variant="ghost" class={toolbarButtonClass} onclick={toggleImportant}>
-					<Important
-						class={cn('size-4', actionMessage?.important && 'text-accent')}
-						aria-hidden="true"
-					/>
-					{markImportantLabel}
-				</Button>
-				<Button variant="ghost" class={toolbarButtonClass} onclick={primaryReply}>
-					{#if settings.defaultReplyMode === 'reply-all'}
-						<ReplyAll class="size-4" aria-hidden="true" />
-					{:else}
-						<Reply class="size-4" aria-hidden="true" />
-					{/if}
-					{primaryReplyLabel}
-				</Button>
-			{/if}
 			<OverflowMenu label="More message actions" menuId="thread-actions-overflow-menu">
 				<OverflowMenuItem label={markImportantLabel} onclick={toggleImportant}>
 					{#snippet icon()}
@@ -311,15 +268,6 @@
 					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
 				{/if}
 				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-				{#if settings.defaultReplyMode !== 'reply-all'}
-					<OverflowMenuItem label="Reply all" onclick={replyAll}>
-						{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
-				{:else}
-					<OverflowMenuItem label="Reply" onclick={reply}>
-						{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
-				{/if}
 				<OverflowMenuItem label="Forward" onclick={forward}>
 					{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
 				</OverflowMenuItem>

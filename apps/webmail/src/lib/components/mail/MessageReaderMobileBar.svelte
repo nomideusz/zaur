@@ -5,8 +5,6 @@
 	import Forward from '$lib/components/icons/Forward.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
-	import Reply from '$lib/components/icons/Reply.svelte';
-	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
 	import Send from '$lib/components/icons/Send.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
 	import Star from '$lib/components/icons/Star.svelte';
@@ -37,6 +35,7 @@
 		/** Fewer primary mobile actions when reading with adaptive focus. */
 		minimalChrome?: boolean;
 		quickReply?: string;
+		quickReplyOpen?: boolean;
 		quickReplySending?: boolean;
 		onQuickReplyChange?: (value: string) => void;
 		onSendQuickReply?: () => void;
@@ -48,13 +47,13 @@
 		onMoved,
 		minimalChrome = false,
 		quickReply = $bindable(''),
+		quickReplyOpen = $bindable(false),
 		quickReplySending = false,
 		onSendQuickReply
 	}: Props = $props();
 
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
 
-	let quickReplyOpen = $state(false);
 	let quickReplyInput = $state<HTMLTextAreaElement | null>(null);
 
 	const latest = $derived(thread.at(-1));
@@ -85,6 +84,14 @@
 		!isDraft && settings.showQuickReply && quickReplyOpen && !!auth.client
 	);
 
+	$effect(() => {
+		if (!quickReplyOpen) return;
+		requestAnimationFrame(() => {
+			quickReplyInput?.focus();
+			quickReplyInput?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+		});
+	});
+
 	async function withClient(action: (client: NonNullable<typeof auth.client>) => Promise<void>) {
 		if (!auth.client || !actionMessage) return;
 		try {
@@ -94,23 +101,6 @@
 			const message = error instanceof Error ? error.message : 'Action failed';
 			toast.show(message, 'error');
 		}
-	}
-
-	function reply() {
-		if (!latest) return;
-		compose.startReply(latest);
-		goto('/mail/compose?mode=reply');
-	}
-
-	function replyAll() {
-		if (!latest || !auth.username) return;
-		compose.startReplyAll(latest, thread, auth.username);
-		goto('/mail/compose?mode=reply-all');
-	}
-
-	function primaryReply() {
-		if (settings.defaultReplyMode === 'reply-all') replyAll();
-		else reply();
 	}
 
 	function forward() {
@@ -184,20 +174,20 @@
 		}
 	}
 
-	function openQuickReply() {
-		if (settings.showQuickReply) {
-			quickReplyOpen = true;
-			requestAnimationFrame(() => {
-				quickReplyInput?.focus();
-				quickReplyInput?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-			});
-			return;
-		}
-		primaryReply();
-	}
-
 	function closeQuickReply() {
 		quickReplyOpen = false;
+	}
+
+	function openFullReply() {
+		if (!latest) return;
+		if (settings.defaultReplyMode === 'reply-all') {
+			if (!auth.username) return;
+			compose.startReplyAll(latest, thread, auth.username);
+			goto('/mail/compose?mode=reply-all');
+		} else {
+			compose.startReply(latest);
+			goto('/mail/compose?mode=reply');
+		}
 	}
 
 	function onQuickReplyKeydown(event: KeyboardEvent) {
@@ -242,7 +232,7 @@
 					>
 						{quickReplySending ? 'Sending…' : 'Send'}
 					</Button>
-					<Button variant="ghost" class="min-h-11 shrink-0" onclick={primaryReply}>Full reply</Button>
+					<Button variant="ghost" class="min-h-11 shrink-0" onclick={openFullReply}>Full reply</Button>
 				</div>
 			</div>
 		{/if}
@@ -284,10 +274,6 @@
 			{:else if showQuickReplyPanel}
 				<Button variant="ghost" class="min-h-11 flex-1" onclick={closeQuickReply}>Done</Button>
 			{:else}
-				<Button class="min-h-11 flex-1" onclick={openQuickReply}>
-					{primaryReplyLabel}
-				</Button>
-
 				{#if canArchive && !minimalChrome}
 					<IconButton
 						label="Archive"
@@ -320,15 +306,6 @@
 						<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
 					{/if}
 					<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-					{#if settings.defaultReplyMode !== 'reply-all'}
-						<OverflowMenuItem label="Reply all" onclick={replyAll}>
-							{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
-						</OverflowMenuItem>
-					{:else}
-						<OverflowMenuItem label="Reply" onclick={reply}>
-							{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
-						</OverflowMenuItem>
-					{/if}
 					<OverflowMenuItem label="Forward" onclick={forward}>
 						{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
 					</OverflowMenuItem>

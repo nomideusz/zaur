@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { tick } from 'svelte';
@@ -38,6 +39,7 @@
 	let expandedIds = $state<Set<string>>(new Set());
 	let quickReply = $state('');
 	let quickReplySending = $state(false);
+	let quickReplyOpen = $state(false);
 	let scrollPane = $state<HTMLDivElement | null>(null);
 
 	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
@@ -77,6 +79,7 @@
 		$page.params.threadId;
 		thread.map((m) => m.id).join(',');
 		settings.expandAllThreadMessages;
+		quickReplyOpen = false;
 		if (pane) pane.setShowImagesOnce(false);
 		else localShowImagesOnce = false;
 		if (settings.expandAllThreadMessages) {
@@ -169,6 +172,29 @@
 		goto('/mail/compose?mode=reply');
 	}
 
+	function replyAll() {
+		if (!latest || !auth.username) return;
+		compose.startReplyAll(latest, thread, auth.username);
+		goto('/mail/compose?mode=reply-all');
+	}
+
+	function primaryReply() {
+		if (settings.defaultReplyMode === 'reply-all') replyAll();
+		else reply();
+	}
+
+	function headerReply() {
+		if (
+			settings.showQuickReply &&
+			browser &&
+			window.matchMedia('(max-width: 767px)').matches
+		) {
+			quickReplyOpen = true;
+			return;
+		}
+		primaryReply();
+	}
+
 	function composeTo(email: string) {
 		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
 	}
@@ -254,7 +280,7 @@
 									Edit draft
 								</a>
 							{:else if !isDraft}
-								<button type="button" class="z-mail-text-nav__action" onclick={reply}>
+								<button type="button" class="z-mail-text-nav__action" onclick={headerReply}>
 									{primaryReplyLabel}
 								</button>
 							{/if}
@@ -482,6 +508,7 @@
 			{onMoved}
 			{minimalChrome}
 			bind:quickReply
+			bind:quickReplyOpen
 			{quickReplySending}
 			onSendQuickReply={sendQuickReply}
 		/>
