@@ -104,7 +104,7 @@
 	let readEverByMessageId = $state<Record<string, number>>({});
 	let readEverStorageKey = $state<string | null>(null);
 	let importantRainbowHoverId = $state<string | null>(null);
-	const importantRainbowLastPhase = $state<Record<string, number>>({});
+	let importantRainbowLastPhase = $state<Record<string, number>>({});
 
 	function sampleImportantRainbow(messageId: string, row: HTMLElement) {
 		if (settings.reduceMotion) return;
