@@ -673,13 +673,11 @@
 			{@const isNewDay = listRowStartsNewDay(messagesList, index)}
 			{@const senderLabel = simpleSenderLabel(message, routeId)}
 			{@const subjectText = message.subject.trim() || '(no subject)'}
-			{@const timeLabel = formatSimpleListTime(message.receivedAt, settings.timeFormat)}
+			{@const baseTimeLabel = formatSimpleListTime(message.receivedAt, settings.timeFormat)}
+			{@const timeLabel = isNewDay
+				? `${formatSimpleListDayHeading(message.receivedAt)} ${baseTimeLabel}`
+				: baseTimeLabel}
 			{@const showSenderDuplicate = duplicateKeys.has(messageSubjectKey(message))}
-			{#if isNewDay}
-				<li class="z-mail-folder-section__day-header">
-					{formatSimpleListDayHeading(message.receivedAt)}
-				</li>
-			{/if}
 			<li class="z-mail-folder-section__item">
 				<a
 					href={listMessageHref(message, routeId)}

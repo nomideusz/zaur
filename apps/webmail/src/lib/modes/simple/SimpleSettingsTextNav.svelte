@@ -17,7 +17,7 @@
 	class="z-mail-text-nav z-mail-text-nav--settings z-settings-sticky-nav shrink-0"
 	aria-label="Settings"
 >
-	<div class="z-settings-nav-back">
+	<div class="z-mail-text-nav__links">
 		<a class="z-mail-text-nav__link" href={mailHref}>Back to mail</a>
 	</div>
 	<nav class="z-settings-section-nav" aria-label="Settings sections">

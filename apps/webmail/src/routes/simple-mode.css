@@ -557,7 +557,7 @@
 
 	.z-mail-view-simple .z-mail-folder-sections {
 		@apply flex flex-col;
-		gap: var(--z-space-folder-sections-top);
+		gap: calc(var(--z-space-folder-sections-top) * 1.5);
 		padding-top: var(--z-space-folder-sections-top);
 		padding-bottom: var(--z-space-folder-sections-bottom);
 	}
@@ -658,18 +658,6 @@
 	.z-mail-view-simple .z-mail-folder-section__list {
 		@apply flex flex-col;
 		gap: var(--z-list-row-gap, 0.625rem);
-	}
-
-	.z-mail-view-simple .z-mail-folder-section__day-header {
-		font-size: var(--z-main-page-muted-text, 0.8125rem);
-		line-height: 1.4;
-		@apply font-semibold text-fg-subtle;
-		margin-top: 0.5rem;
-		list-style: none;
-	}
-
-	.z-mail-view-simple .z-mail-folder-section__list > .z-mail-folder-section__day-header:first-child {
-		margin-top: 0;
 	}
 
 	.z-mail-view-simple .z-mail-folder-section__item {

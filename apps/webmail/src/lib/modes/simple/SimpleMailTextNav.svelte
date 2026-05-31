@@ -25,6 +25,16 @@
 </script>
 
 <div class="z-mail-text-nav">
+	{#if showBackToMail || showSettings}
+		<div class="z-mail-text-nav__links">
+			{#if showBackToMail}
+				<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
+			{/if}
+			{#if showSettings}
+				<a class="z-mail-text-nav__link" href="/settings">Settings</a>
+			{/if}
+		</div>
+	{/if}
 	<div class="z-mail-text-nav__row">
 		<h1 class="z-mail-text-nav__title">
 			{#if titleHref}
@@ -40,12 +50,4 @@
 	{#if subtitle}
 		<p class="z-mail-text-nav__label">{subtitle}</p>
 	{/if}
-	<div class="z-mail-text-nav__links">
-		{#if showBackToMail}
-			<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
-		{/if}
-		{#if showSettings}
-			<a class="z-mail-text-nav__link" href="/settings">Settings</a>
-		{/if}
-	</div>
 </div>
