@@ -6,6 +6,8 @@
 		titleHref = null,
 		actionHref = null,
 		actionLabel = null,
+		jumpHref = null,
+		jumpLabel = null,
 		showBackToMail = false,
 		backHref = null,
 		showSettings = true,
@@ -15,6 +17,8 @@
 		titleHref?: string | null;
 		actionHref?: string | null;
 		actionLabel?: string | null;
+		jumpHref?: string | null;
+		jumpLabel?: string | null;
 		showBackToMail?: boolean;
 		backHref?: string | null;
 		showSettings?: boolean;
@@ -41,6 +45,9 @@
 		<p class="z-mail-text-nav__label">{subtitle}</p>
 	{/if}
 	<div class="z-mail-text-nav__links">
+		{#if jumpHref && jumpLabel}
+			<a class="z-mail-text-nav__link" href={jumpHref}>{jumpLabel}</a>
+		{/if}
 		{#if showBackToMail}
 			<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
 		{/if}

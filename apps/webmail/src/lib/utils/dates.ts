@@ -124,57 +124,88 @@ export function simpleMessageDayKey(iso: string): string {
 	return `${date.getFullYear()}-${pad2(date.getMonth() + 1)}-${pad2(date.getDate())}`;
 }
 
-/**
- * Simple list timestamp — full weekday on the first row of each day, time only after that.
- */
+/** Time only — Simple list row (day context uses a separate heading). */
+export function formatSimpleListTime(
+	iso: string,
+	timeFormat: TimeFormatPref = 'auto'
+): string {
+	return new Intl.DateTimeFormat(undefined, timeStyleOptions(timeFormat)).format(new Date(iso));
+}
+
+/** Combined weekday + time for Simple list rows (no separate day headings). */
 export function formatSimpleListWhen(
 	iso: string,
-	showWeekday: boolean,
 	timeFormat: TimeFormatPref = 'auto'
 ): string {
 	const date = new Date(iso);
-	const timeOpts = timeStyleOptions(timeFormat);
-	const time = new Intl.DateTimeFormat(undefined, timeOpts).format(date);
-
-	if (!showWeekday) {
-		return time;
-	}
-
-	const weekday = new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(date);
+	const time = new Intl.DateTimeFormat(undefined, timeStyleOptions(timeFormat)).format(date);
 	const now = new Date();
 
 	if (isSameDay(date, now)) {
-		return `${weekday} ${time}`;
+		return time;
+	}
+
+	const yesterday = new Date(now);
+	yesterday.setDate(now.getDate() - 1);
+	if (isSameDay(date, yesterday)) {
+		return `Yesterday ${time}`;
 	}
 
 	const weekAgo = new Date(now);
 	weekAgo.setDate(now.getDate() - 6);
 	if (date >= weekAgo) {
+		const weekday = new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(date);
 		return `${weekday} ${time}`;
 	}
 
 	if (date.getFullYear() === now.getFullYear()) {
-		const shortDate = new Intl.DateTimeFormat(undefined, {
-			month: 'short',
-			day: 'numeric'
-		}).format(date);
-		return `${weekday}, ${shortDate} ${time}`;
+		const md = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' }).format(date);
+		return `${md} ${time}`;
 	}
 
-	const shortDate = new Intl.DateTimeFormat(undefined, {
+	const mdy = new Intl.DateTimeFormat(undefined, {
 		month: 'short',
 		day: 'numeric',
 		year: 'numeric'
 	}).format(date);
-	return `${weekday}, ${shortDate} ${time}`;
+	return `${mdy} ${time}`;
 }
 
-/** Time only — for Simple list rows. */
-export function formatSimpleMessageTime(
-	iso: string,
-	timeFormat: TimeFormatPref = 'auto'
-): string {
-	return new Intl.DateTimeFormat(undefined, timeStyleOptions(timeFormat)).format(new Date(iso));
+/** Label for a day divider row in the Simple message list. */
+export function formatSimpleListDayHeading(iso: string): string {
+	const date = new Date(iso);
+	const now = new Date();
+
+	if (isSameDay(date, now)) {
+		return 'Today';
+	}
+
+	const yesterday = new Date(now);
+	yesterday.setDate(now.getDate() - 1);
+	if (isSameDay(date, yesterday)) {
+		return 'Yesterday';
+	}
+
+	const weekAgo = new Date(now);
+	weekAgo.setDate(now.getDate() - 6);
+	if (date >= weekAgo) {
+		return new Intl.DateTimeFormat(undefined, { weekday: 'long' }).format(date);
+	}
+
+	if (date.getFullYear() === now.getFullYear()) {
+		return new Intl.DateTimeFormat(undefined, {
+			weekday: 'long',
+			month: 'short',
+			day: 'numeric'
+		}).format(date);
+	}
+
+	return new Intl.DateTimeFormat(undefined, {
+		weekday: 'long',
+		month: 'short',
+		day: 'numeric',
+		year: 'numeric'
+	}).format(date);
 }
 
 export function formatEventTime(event: { start: Date; end: Date; allDay: boolean }): string {

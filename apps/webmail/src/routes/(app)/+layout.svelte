@@ -20,6 +20,7 @@
 	const pageScrollOnMain = $derived(
 		activeMode.id === 'simple' && (onMailRoute || onSettingsRoute)
 	);
+	const pageScrollOverflowX = 'overflow-x-hidden';
 
 	$effect(() => {
 		if (auth.isRestoring) return;
@@ -69,7 +70,7 @@
 		<main
 			id="main-content"
 			class="flex min-h-0 flex-1 flex-col {pageScrollOnMain
-				? 'z-app-main--page-scroll overflow-y-auto overflow-x-hidden'
+				? `z-app-main--page-scroll overflow-y-auto ${pageScrollOverflowX}`
 				: 'overflow-hidden'}"
 			tabindex="-1"
 		>
