@@ -317,7 +317,11 @@
 	}
 
 	.z-mail-list-subject--important {
-		text-decoration-line: none;
+		text-decoration-line: underline;
+		text-underline-offset: 0.2em;
+		text-decoration-thickness: 1px;
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 35%, transparent);
+		transition: text-decoration-color 150ms var(--z-ease-standard, ease);
 		color: hsl(
 			calc(var(--important-hue, 0deg) + 300deg),
 			var(--important-rainbow-s),
@@ -370,6 +374,11 @@
 
 		.z-mail-view .list-subject.z-mail-list-subject--important {
 			font-weight: normal;
+		}
+
+		.z-mail-view .group\/message:hover .list-subject.z-mail-list-subject--important,
+		.z-mail-view .group\/message:focus-visible .list-subject.z-mail-list-subject--important {
+			text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
 		}
 
 		/* Stable compositor layer — avoid 1–2px jump when hover adds transform. */
