@@ -23,7 +23,7 @@
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const currentMailbox = $derived(mailboxRouteId ? mail.mailboxByRouteId(mailboxRouteId) : null);
 	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
-	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
+	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
 	const hasNotImportantSelected = $derived(
 		mail.messages.some((message) => selectedIds.includes(message.id) && !message.important)
 	);

@@ -302,7 +302,7 @@
 					</div>
 				{/if}
 			{#if thread.length > 1 && !mail.hasSelection}
-				<div class={cn('pb-1 pt-3', minimalChrome && 'pt-2')}>
+				<div class={cn('flex w-full justify-end pb-1 pt-3', minimalChrome && 'pt-2')}>
 					<MessageThreadActions
 						{thread}
 						{mailboxRouteId}
@@ -345,16 +345,18 @@
 											<div class="flex items-center gap-1.5">
 												<p class="z-reader-from truncate">{contact.displayName}</p>
 											</div>
-											{#if contact.email !== contact.displayName && !contact.isMe}
-												<button
-													type="button"
-													class="z-reader-meta mt-0.5 block max-w-full truncate text-left hover:text-accent hover:underline"
-													onclick={() => composeTo(contact.email)}
-												>
-													{contact.email}
-												</button>
-											{:else}
-												<p class="z-reader-meta mt-0.5">{contact.email}</p>
+											{#if contact.email !== contact.displayName}
+												{#if !contact.isMe}
+													<button
+														type="button"
+														class="z-reader-meta mt-0.5 block max-w-full truncate text-left hover:text-accent hover:underline"
+														onclick={() => composeTo(contact.email)}
+													>
+														{contact.email}
+													</button>
+												{:else}
+													<p class="z-reader-meta mt-0.5">{contact.email}</p>
+												{/if}
 											{/if}
 										</div>
 									</div>

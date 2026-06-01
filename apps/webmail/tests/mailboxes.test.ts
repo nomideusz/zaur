@@ -37,18 +37,23 @@ describe('mailboxes', () => {
 		assert.equal(mailboxRouteId('mb-3', 'custom'), 'mb-3');
 	});
 
-	it('excludes archive and important from move targets', () => {
+	it('excludes inbox, archive, important, and unimplemented folders from move targets', () => {
 		const mailboxes = [
-			{ id: 'inbox', jmapId: '1', name: 'Emails', role: 'inbox', unread: 0, total: 0 },
-			{ id: 'important', jmapId: '2', name: 'Important', role: 'important', unread: 0, total: 0 },
-			{ id: 'archive', jmapId: '3', name: 'Archive', role: 'archive', unread: 0, total: 0 },
-			{ id: 'sent', jmapId: '4', name: 'Sent', role: 'sent', unread: 0, total: 0 }
+			{ id: 'inbox', jmapId: '1', name: 'Emails', role: 'inbox' as const, unread: 0, total: 0 },
+			{ id: 'important', jmapId: '2', name: 'Important', role: 'important' as const, unread: 0, total: 0 },
+			{ id: 'archive', jmapId: '3', name: 'Archive', role: 'archive' as const, unread: 0, total: 0 },
+			{ id: 'scheduled', jmapId: '5', name: 'Scheduled', role: 'scheduled' as const, unread: 0, total: 0 },
+			{ id: 'snoozed', jmapId: '6', name: 'Snoozed', role: 'snoozed' as const, unread: 0, total: 0 },
+			{ id: 'memos', jmapId: '7', name: 'Memos', role: 'memos' as const, unread: 0, total: 0 },
+			{ id: 'sent', jmapId: '4', name: 'Sent', role: 'sent' as const, unread: 0, total: 0 },
+			{ id: 'junk', jmapId: '8', name: 'Spam', role: 'junk' as const, unread: 0, total: 0 },
+			{ id: 'trash', jmapId: '9', name: 'Trash', role: 'trash' as const, unread: 0, total: 0 }
 		];
 
 		const targets = moveTargetMailboxes(mailboxes, mailboxes[0]);
 		assert.deepEqual(
 			targets.map((mb) => mb.id),
-			['sent']
+			['sent', 'junk']
 		);
 	});
 });

@@ -7,9 +7,10 @@
 	import Maximize from '$lib/components/icons/Maximize.svelte';
 	import Minimize from '$lib/components/icons/Minimize.svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
+	import Reply from '$lib/components/icons/Reply.svelte';
+	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
 	import Send from '$lib/components/icons/Send.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
-	import Star from '$lib/components/icons/Star.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
@@ -58,9 +59,9 @@
 	);
 	const isDraft = $derived(mailboxRouteId === 'drafts');
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
-	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
+	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
 	const markImportantLabel = $derived(
-		actionMessage?.important ? 'Remove important' : 'Mark important'
+		actionMessage?.important ? 'Unmark important' : 'Mark important'
 	);
 	const toolbarButtonClass = $derived(
 		cn(
@@ -89,6 +90,18 @@
 			const message = error instanceof Error ? error.message : 'Action failed';
 			toast.show(message, 'error');
 		}
+	}
+
+	function reply() {
+		if (!latest) return;
+		compose.startReply(latest);
+		goto('/mail/compose?mode=reply');
+	}
+
+	function replyAll() {
+		if (!latest || !auth.username) return;
+		compose.startReplyAll(latest, thread, auth.username);
+		goto('/mail/compose?mode=reply-all');
 	}
 
 	function forward() {
@@ -134,11 +147,6 @@
 		void withClient((client) => mail.deleteMessage(client, actionMessage, mailboxRouteId));
 	}
 
-	function toggleStar() {
-		if (!auth.client || !actionMessage) return;
-		void mail.toggleStar(auth.client, actionMessage);
-	}
-
 	function toggleImportant() {
 		if (!auth.client || !actionMessage) return;
 		void mail.toggleImportant(auth.client, actionMessage).catch((error) => {
@@ -168,7 +176,7 @@
 	<div
 		class={cn(
 			'flex min-w-0 shrink flex-wrap items-center',
-			readerHeader && 'z-reader-subject-toolbar items-baseline',
+			readerHeader && 'z-reader-subject-toolbar w-full justify-end',
 			readerHeader ? 'gap-1.5' : 'gap-1',
 			className
 		)}
@@ -242,15 +250,34 @@
 				</Button>
 			{/if}
 			<OverflowMenu label="More message actions" menuId="thread-actions-overflow-menu">
-				<OverflowMenuItem label={latest.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
-					{#snippet icon()}<Star class="size-5" aria-hidden="true" />{/snippet}
+				<OverflowMenuItem label={markImportantLabel} onclick={toggleImportant}>
+					{#snippet icon()}
+						<Important
+							class={cn('size-5', actionMessage?.important && 'text-accent')}
+							aria-hidden="true"
+						/>
+					{/snippet}
 				</OverflowMenuItem>
 				{#if auth.client}
 					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
 				{/if}
+				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
+				<OverflowMenuItem label={deleteLabel} danger onclick={deleteMessage}>
+					{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
 			</OverflowMenu>
 		{:else}
 			<OverflowMenu label="More message actions" menuId="thread-actions-overflow-menu">
+				<OverflowMenuItem label="Reply" onclick={reply}>
+					{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+				<OverflowMenuItem label="Reply all" onclick={replyAll}>
+					{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+				<OverflowMenuItem label="Forward" onclick={forward}>
+					{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
 				<OverflowMenuItem label={markImportantLabel} onclick={toggleImportant}>
 					{#snippet icon()}
 						<Important
@@ -267,14 +294,6 @@
 				{#if auth.client}
 					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
 				{/if}
-				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-				<OverflowMenuItem label="Forward" onclick={forward}>
-					{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
-				</OverflowMenuItem>
-				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-				<OverflowMenuItem label={latest.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
-					{#snippet icon()}<Star class="size-5" aria-hidden="true" />{/snippet}
-				</OverflowMenuItem>
 				{#if hasBlockedExternal && !allowExternal}
 					<OverflowMenuItem label="Show external images" onclick={showImagesOnce}>
 						{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}

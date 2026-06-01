@@ -5,9 +5,10 @@
 	import Forward from '$lib/components/icons/Forward.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
+	import Reply from '$lib/components/icons/Reply.svelte';
+	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
 	import Send from '$lib/components/icons/Send.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
-	import Star from '$lib/components/icons/Star.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -63,9 +64,9 @@
 	const isDraft = $derived(mailboxRouteId === 'drafts');
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
-	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Delete');
+	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
 	const markImportantLabel = $derived(
-		actionMessage?.important ? 'Remove important' : 'Mark important'
+		actionMessage?.important ? 'Unmark important' : 'Mark important'
 	);
 	const primaryReplyLabel = $derived(
 		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
@@ -101,6 +102,18 @@
 			const message = error instanceof Error ? error.message : 'Action failed';
 			toast.show(message, 'error');
 		}
+	}
+
+	function reply() {
+		if (!latest) return;
+		compose.startReply(latest);
+		goto('/mail/compose?mode=reply');
+	}
+
+	function replyAll() {
+		if (!latest || !auth.username) return;
+		compose.startReplyAll(latest, thread, auth.username);
+		goto('/mail/compose?mode=reply-all');
 	}
 
 	function forward() {
@@ -144,11 +157,6 @@
 		const permanent = currentMailbox?.role === 'trash';
 		if (!settings.confirmDeleteMessage(1, permanent)) return;
 		void withClient((client) => mail.deleteMessage(client, actionMessage, mailboxRouteId));
-	}
-
-	function toggleStar() {
-		if (!auth.client || !actionMessage) return;
-		void mail.toggleStar(auth.client, actionMessage);
 	}
 
 	function toggleImportant() {
@@ -260,9 +268,6 @@
 							/>
 						{/snippet}
 					</OverflowMenuItem>
-					<OverflowMenuItem label={latest.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
-						{#snippet icon()}<Star class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
 					{#if auth.client}
 						<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
 					{/if}
@@ -289,6 +294,16 @@
 					menuId="mobile-thread-actions-menu"
 					placement="top"
 				>
+					<OverflowMenuItem label="Reply" onclick={reply}>
+						{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+					<OverflowMenuItem label="Reply all" onclick={replyAll}>
+						{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+					<OverflowMenuItem label="Forward" onclick={forward}>
+						{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+					<div class="mx-4 my-1 border-t border-border" role="separator"></div>
 					<OverflowMenuItem label={markImportantLabel} onclick={toggleImportant}>
 						{#snippet icon()}
 							<Important
@@ -305,14 +320,6 @@
 					{#if auth.client}
 						<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
 					{/if}
-					<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-					<OverflowMenuItem label="Forward" onclick={forward}>
-						{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
-					<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-					<OverflowMenuItem label={latest.starred ? 'Unstar' : 'Star'} onclick={toggleStar}>
-						{#snippet icon()}<Star class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
 					{#if hasBlockedExternal && !allowExternal}
 						<OverflowMenuItem label="Show external images" onclick={showImagesOnce}>
 							{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}

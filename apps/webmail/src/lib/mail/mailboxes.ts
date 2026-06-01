@@ -124,8 +124,16 @@ export function mailboxKindOrderForMailbox(mailbox: {
 	return mailboxKindOrder(kind);
 }
 
-/** Folders offered in “Move to…” — excludes archive and Important (use Mark important). */
-const MOVE_TARGET_EXCLUDED_ROLES = new Set<MailboxRole>(['archive', 'important']);
+/** Folders offered in “Move to…” — use dedicated Trash / Archive / Important actions instead. */
+const MOVE_TARGET_EXCLUDED_ROLES = new Set<MailboxRole>([
+	'inbox',
+	'archive',
+	'important',
+	'scheduled',
+	'snoozed',
+	'memos',
+	'trash'
+]);
 
 export function moveTargetMailboxes(
 	mailboxes: Mailbox[],
