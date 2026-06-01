@@ -2,13 +2,11 @@
 	import { page } from '$app/stores';
 	import MailPane from '$lib/components/mail/MailPane.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
-	import MessageReaderEmpty from '$lib/components/mail/MessageReaderEmpty.svelte';
 	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
 	import { mailCountLabel } from '$lib/mail/count-label';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { search } from '$lib/stores/search.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
 
 	const query = $derived($page.url.searchParams.get('q')?.trim() ?? '');
 	const shouldAutofocusSearch = $derived(
@@ -75,16 +73,5 @@
 			/>
 		</div>
 	{/snippet}
-	{#snippet reader()}
-		{#if settings.showReaderListRail}
-			<div class="z-mail-reader-pane">
-				<MessageReaderEmpty
-					hideTitle
-					description="Select a search result to read it here."
-					showCompose={false}
-					showSettings={false}
-				/>
-			</div>
-		{/if}
-	{/snippet}
+	{#snippet reader()}{/snippet}
 </MailPane>

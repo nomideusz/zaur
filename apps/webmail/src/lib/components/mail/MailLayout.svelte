@@ -15,13 +15,12 @@
 	const adaptiveSingleFocus = $derived(
 		!settings.showReaderListRail && isThreadOpen && !mail.hasSelection
 	);
-	const splitLayout = $derived(settings.showReaderListRail && !mail.hasSelection);
 </script>
 
 <div
-	class="z-mail-pane-body z-mail-pane-body--flow flex w-full flex-col {splitLayout
-		? 'z-mail-pane-body--split'
-		: ''} {isThreadOpen ? 'z-mail-pane-body--thread-open' : ''}"
+	class="z-mail-pane-body z-mail-pane-body--flow flex w-full flex-col {isThreadOpen
+		? 'z-mail-pane-body--thread-open'
+		: ''}"
 >
 	{#if !adaptiveSingleFocus}
 		{@render list()}

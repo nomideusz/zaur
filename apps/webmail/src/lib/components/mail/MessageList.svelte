@@ -5,6 +5,7 @@
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
 	import MessageListMobileBar from '$lib/components/mail/MessageListMobileBar.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
+	import DinoZaur from '$lib/components/mail/DinoZaur.svelte';
 	import Palette from '$lib/components/icons/Palette.svelte';
 	import SwipeableListRow, {
 		type SwipeAction
@@ -1166,6 +1167,9 @@
 			/>
 		{/if}
 	</div>
+	{#if !loading && !error && !mail.hasSelection}
+		<DinoZaur />
+	{/if}
 	<div class="z-mail-text-nav__links mt-[var(--z-main-gap)]!">
 		<a class="z-mail-text-nav__link" href="/settings">Settings</a>
 		<span class="z-mail-text-nav__sep">·</span>

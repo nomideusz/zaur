@@ -1,5 +1,4 @@
 <script lang="ts">
-	import DinoZaur from '$lib/components/mail/DinoZaur.svelte';
 	import { frameSvg } from '@zaur/sprite';
 	import Button from '$lib/components/ui/Button.svelte';
 </script>
@@ -17,5 +16,4 @@
 		</p>
 		<Button href="/mail/compose" variant="ghost">New message</Button>
 	</div>
-	<DinoZaur />
 </div>
