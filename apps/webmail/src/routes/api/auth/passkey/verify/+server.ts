@@ -1,10 +1,14 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { completePasskeySignIn, type WebAuthnAssertionPayload } from '$lib/server/logto-experience';
+import {
+	completePasskeySignIn,
+	normalizeWebAuthnCredential,
+	passkeyErrorMessage
+} from '$lib/server/logto-experience';
 import { isOauthEnabled } from '$lib/server/oidc-discovery';
 import { clearPasskeyFlowCookies, readPasskeyFlow } from '$lib/server/oauth-flow';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 
-export const POST: RequestHandler = async ({ request, cookies }) => {
+export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	if (!isOauthEnabled()) {
 		return json({ error: 'Passkey sign-in is not configured.' }, { status: 503 });
 	}
@@ -27,30 +31,31 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		return json({ error: 'Passkey session expired. Try again.' }, { status: 400 });
 	}
 
-	let body: { credential?: WebAuthnAssertionPayload };
+	let body: { credential?: Record<string, unknown> };
 	try {
 		body = await request.json();
 	} catch {
 		return json({ error: 'Invalid request body' }, { status: 400 });
 	}
 
-	if (!body.credential?.id || !body.credential?.response) {
+	if (!body.credential) {
 		return json({ error: 'Missing passkey response.' }, { status: 400 });
 	}
 
 	try {
+		const payload = normalizeWebAuthnCredential(body.credential);
 		const { code, state } = await completePasskeySignIn({
 			logtoCookies: passkeyFlow.logtoCookies,
 			verificationId: passkeyFlow.verificationId,
-			payload: body.credential
+			discoverable: passkeyFlow.discoverable,
+			payload,
+			forwardedOrigin: url.origin
 		});
 		clearPasskeyFlowCookies(cookies);
 		return json({ code, state });
 	} catch (error) {
 		console.error('[passkey/verify]', error);
 		clearPasskeyFlowCookies(cookies);
-		const message =
-			error instanceof Error ? error.message : 'Passkey verification failed.';
-		return json({ error: message }, { status: 401 });
+		return json({ error: passkeyErrorMessage(error) }, { status: 401 });
 	}
 };

@@ -3,6 +3,8 @@ import { createHash, randomBytes } from 'node:crypto';
 import { getOidcDiscovery, getOidcIssuerUrl } from '$lib/server/oidc-discovery';
 import { buildAuthorizationUrl } from '$lib/server/oauth';
 
+const LOGTO_WEBAUTHN_TYPE = 'WebAuthn';
+
 function logtoOrigin(): string {
 	const issuer = getOidcIssuerUrl()?.replace(/\/$/, '') ?? '';
 	return issuer.replace(/\/oidc$/, '');
@@ -20,15 +22,24 @@ function challengeFromVerifier(verifier: string): string {
 	return createHash('sha256').update(verifier).digest('base64url');
 }
 
-function parseCookieHeader(header: string): Map<string, string> {
-	const jar = new Map<string, string>();
-	for (const part of header.split(';')) {
-		const trimmed = part.trim();
-		const eq = trimmed.indexOf('=');
-		if (eq <= 0) continue;
-		jar.set(trimmed.slice(0, eq), trimmed.slice(eq + 1));
-	}
-	return jar;
+export function encodeLogtoCookieJar(jar: Map<string, string>): string {
+	return Buffer.from(JSON.stringify(Object.fromEntries(jar)), 'utf8').toString('base64url');
+}
+
+export function decodeLogtoCookieJar(encoded: string): Map<string, string> {
+	const parsed = JSON.parse(Buffer.from(encoded, 'base64url').toString('utf8')) as Record<
+		string,
+		string
+	>;
+	return new Map(Object.entries(parsed));
+}
+
+function forwardedHeaders(forwardedOrigin: string): Record<string, string> {
+	const { host, protocol } = new URL(forwardedOrigin);
+	return {
+		'X-Forwarded-Host': host,
+		'X-Forwarded-Proto': protocol.replace(':', '')
+	};
 }
 
 function mergeSetCookies(jar: Map<string, string>, response: Response) {
@@ -53,11 +64,15 @@ function serializeCookies(jar: Map<string, string>): string {
 async function logtoFetch(
 	path: string,
 	jar: Map<string, string>,
+	forwardedOrigin: string,
 	init: RequestInit & { json?: unknown } = {}
 ): Promise<Response> {
 	const url = `${logtoOrigin()}${path.startsWith('/') ? path : `/${path}`}`;
 	const headers = new Headers(init.headers);
 	headers.set('Logto-App-Id', clientId());
+	for (const [key, value] of Object.entries(forwardedHeaders(forwardedOrigin))) {
+		headers.set(key, value);
+	}
 	const cookie = serializeCookies(jar);
 	if (cookie) headers.set('Cookie', cookie);
 	if (init.json !== undefined) {
@@ -74,14 +89,19 @@ async function logtoFetch(
 	return response;
 }
 
-async function bootstrapInteraction(jar: Map<string, string>, authUrl: string) {
+async function bootstrapInteraction(
+	jar: Map<string, string>,
+	authUrl: string,
+	forwardedOrigin: string
+) {
 	let url: string | null = authUrl;
 	for (let i = 0; i < 8 && url; i++) {
 		const response = await fetch(url, {
 			redirect: 'manual',
 			headers: {
 				Cookie: serializeCookies(jar),
-				'Logto-App-Id': clientId()
+				'Logto-App-Id': clientId(),
+				...forwardedHeaders(forwardedOrigin)
 			}
 		});
 		mergeSetCookies(jar, response);
@@ -102,19 +122,47 @@ async function readJson<T>(response: Response): Promise<T> {
 	const text = await response.text();
 	if (!response.ok) {
 		let message = text;
+		let code: string | undefined;
 		try {
-			const parsed = JSON.parse(text) as { message?: string; error_description?: string };
+			const parsed = JSON.parse(text) as {
+				message?: string;
+				error_description?: string;
+				code?: string;
+			};
+			code = parsed.code;
 			message = parsed.message ?? parsed.error_description ?? text;
 		} catch {
 			// keep raw text
 		}
-		throw new Error(message || `Logto request failed (${response.status})`);
+		const error = new Error(message || `Logto request failed (${response.status})`);
+		if (code) {
+			(error as Error & { code?: string }).code = code;
+		}
+		throw error;
 	}
 	return text ? (JSON.parse(text) as T) : ({} as T);
 }
 
+export function isNoPasskeyRegisteredError(error: unknown): boolean {
+	if (!(error instanceof Error)) return false;
+	const code = (error as Error & { code?: string }).code;
+	return (
+		code === 'session.mfa.webauthn_verification_not_found' ||
+		/WebAuthn verification not found/i.test(error.message)
+	);
+}
+
+export function passkeyErrorMessage(error: unknown): string {
+	if (isNoPasskeyRegisteredError(error)) {
+		return 'No passkey is registered for this account. Sign in with your password first, then add a passkey from Settings.';
+	}
+	if (error instanceof Error) return error.message;
+	return 'Passkey sign-in failed.';
+}
+
 export type PasskeyBeginResult = {
-	verificationId: string;
+	verificationId?: string;
+	discoverable: boolean;
 	authenticationOptions: Record<string, unknown>;
 	oauth: {
 		state: string;
@@ -124,26 +172,8 @@ export type PasskeyBeginResult = {
 	logtoCookies: string;
 };
 
-export async function beginPasskeySignIn(
-	email: string,
-	redirectUri: string
-): Promise<PasskeyBeginResult> {
-	await getOidcDiscovery();
-	const jar = new Map<string, string>();
-	const state = randomString(32);
-	const codeVerifier = randomString(48);
-	const codeChallenge = challengeFromVerifier(codeVerifier);
-
-	const authUrl = await buildAuthorizationUrl({
-		redirectUri,
-		state,
-		codeChallenge,
-		loginHint: email
-	});
-
-	await bootstrapInteraction(jar, authUrl);
-
-	await logtoFetch('/api/experience', jar, {
+async function initSignInInteraction(jar: Map<string, string>, forwardedOrigin: string) {
+	await logtoFetch('/api/experience', jar, forwardedOrigin, {
 		method: 'PUT',
 		json: { interactionEvent: 'SignIn' }
 	}).then(async (res) => {
@@ -151,26 +181,94 @@ export async function beginPasskeySignIn(
 			await readJson(res);
 		}
 	});
+}
 
-	const auth = await logtoFetch('/api/experience/verification/sign-in-passkey/authentication', jar, {
-		method: 'POST',
-		json: {
-			identifier: { type: 'email', value: email }
+export async function beginPasskeySignIn(input: {
+	email: string;
+	redirectUri: string;
+	forwardedOrigin: string;
+}): Promise<PasskeyBeginResult> {
+	await getOidcDiscovery();
+	const jar = new Map<string, string>();
+	const state = randomString(32);
+	const codeVerifier = randomString(48);
+	const codeChallenge = challengeFromVerifier(codeVerifier);
+
+	const authUrl = await buildAuthorizationUrl({
+		redirectUri: input.redirectUri,
+		state,
+		codeChallenge,
+		loginHint: input.email
+	});
+
+	await bootstrapInteraction(jar, authUrl, input.forwardedOrigin);
+
+	try {
+		await initSignInInteraction(jar, input.forwardedOrigin);
+
+		const auth = await logtoFetch(
+			'/api/experience/verification/sign-in-passkey/authentication',
+			jar,
+			input.forwardedOrigin,
+			{
+				method: 'POST',
+				json: {
+					identifier: { type: 'email', value: input.email }
+				}
+			}
+		).then((res) =>
+			readJson<{ verificationId: string; authenticationOptions: Record<string, unknown> }>(res)
+		);
+
+		return {
+			verificationId: auth.verificationId,
+			discoverable: false,
+			authenticationOptions: auth.authenticationOptions,
+			oauth: { state, codeVerifier, redirectUri: input.redirectUri },
+			logtoCookies: encodeLogtoCookieJar(jar)
+		};
+	} catch (error) {
+		if (!isNoPasskeyRegisteredError(error)) {
+			throw error;
 		}
-	}).then((res) =>
-		readJson<{ verificationId: string; authenticationOptions: Record<string, unknown> }>(res)
-	);
+		return beginDiscoverablePasskeySignIn({
+			jar,
+			state,
+			codeVerifier,
+			redirectUri: input.redirectUri,
+			forwardedOrigin: input.forwardedOrigin
+		});
+	}
+}
+
+async function beginDiscoverablePasskeySignIn(input: {
+	jar: Map<string, string>;
+	state: string;
+	codeVerifier: string;
+	redirectUri: string;
+	forwardedOrigin: string;
+}): Promise<PasskeyBeginResult> {
+	const auth = await logtoFetch(
+		'/api/experience/preflight/sign-in-passkey/authentication',
+		input.jar,
+		input.forwardedOrigin,
+		{ method: 'POST' }
+	).then((res) => readJson<{ authenticationOptions: Record<string, unknown> }>(res));
 
 	return {
-		verificationId: auth.verificationId,
+		discoverable: true,
 		authenticationOptions: auth.authenticationOptions,
-		oauth: { state, codeVerifier, redirectUri },
-		logtoCookies: serializeCookies(jar)
+		oauth: {
+			state: input.state,
+			codeVerifier: input.codeVerifier,
+			redirectUri: input.redirectUri
+		},
+		logtoCookies: encodeLogtoCookieJar(input.jar)
 	};
 }
 
 export type WebAuthnAssertionPayload = {
-	type: 'WebAuthn';
+	type: typeof LOGTO_WEBAUTHN_TYPE;
 	id: string;
 	rawId: string;
 	authenticatorAttachment?: string;
@@ -183,29 +281,65 @@ export type WebAuthnAssertionPayload = {
 	};
 };
 
+export function normalizeWebAuthnCredential(
+	credential: Record<string, unknown>
+): WebAuthnAssertionPayload {
+	const response = credential.response as WebAuthnAssertionPayload['response'] | undefined;
+	if (!credential.id || !response?.clientDataJSON) {
+		throw new Error('Missing passkey response.');
+	}
+
+	return {
+		type: LOGTO_WEBAUTHN_TYPE,
+		id: String(credential.id),
+		rawId: String(credential.rawId ?? credential.id),
+		authenticatorAttachment: credential.authenticatorAttachment as string | undefined,
+		clientExtensionResults:
+			(credential.clientExtensionResults as Record<string, unknown> | undefined) ?? {},
+		response: {
+			clientDataJSON: response.clientDataJSON,
+			authenticatorData: response.authenticatorData,
+			signature: response.signature,
+			userHandle: response.userHandle ?? null
+		}
+	};
+}
+
 export async function completePasskeySignIn(input: {
 	logtoCookies: string;
-	verificationId: string;
+	verificationId?: string;
+	discoverable: boolean;
 	payload: WebAuthnAssertionPayload;
+	forwardedOrigin: string;
 }): Promise<{ code: string; state: string }> {
-	const jar = parseCookieHeader(input.logtoCookies);
+	const jar = decodeLogtoCookieJar(input.logtoCookies);
 
-	await logtoFetch('/api/experience/verification/sign-in-passkey/authentication/verify', jar, {
-		method: 'POST',
-		json: {
-			verificationId: input.verificationId,
-			payload: input.payload
+	if (input.discoverable) {
+		await initSignInInteraction(jar, input.forwardedOrigin);
+	}
+
+	const verifyBody = input.discoverable
+		? { payload: input.payload }
+		: { verificationId: input.verificationId, payload: input.payload };
+
+	const verify = await logtoFetch(
+		'/api/experience/verification/sign-in-passkey/authentication/verify',
+		jar,
+		input.forwardedOrigin,
+		{
+			method: 'POST',
+			json: verifyBody
 		}
-	}).then((res) => readJson(res));
+	).then((res) => readJson<{ verificationId: string }>(res));
 
-	await logtoFetch('/api/experience/identification', jar, {
+	await logtoFetch('/api/experience/identification', jar, input.forwardedOrigin, {
 		method: 'POST',
-		json: { verificationId: input.verificationId }
+		json: { verificationId: verify.verificationId }
 	}).then(async (res) => {
 		if (!res.ok) await readJson(res);
 	});
 
-	const submit = await logtoFetch('/api/experience/submit', jar, {
+	const submit = await logtoFetch('/api/experience/submit', jar, input.forwardedOrigin, {
 		method: 'POST'
 	}).then((res) => readJson<{ redirectTo: string }>(res));
 

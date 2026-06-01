@@ -1,11 +1,12 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
-import { beginPasskeySignIn } from '$lib/server/logto-experience';
+import { beginPasskeySignIn, passkeyErrorMessage } from '$lib/server/logto-experience';
 import { isOauthEnabled } from '$lib/server/oidc-discovery';
 import {
 	clearPasskeyFlowCookies,
 	setOauthFlowCookies,
 	PASSKEY_LOGTO_COOKIE,
-	PASSKEY_VERIFICATION_COOKIE
+	PASSKEY_VERIFICATION_COOKIE,
+	PASSKEY_DISCOVERABLE_COOKIE
 } from '$lib/server/oauth-flow';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 
@@ -56,7 +57,11 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 		clearPasskeyFlowCookies(cookies);
 
 		const redirectUri = `${url.origin}/oauth/callback`;
-		const result = await beginPasskeySignIn(email, redirectUri);
+		const result = await beginPasskeySignIn({
+			email,
+			redirectUri,
+			forwardedOrigin: url.origin
+		});
 
 		setOauthFlowCookies(cookies, {
 			codeVerifier: result.oauth.codeVerifier,
@@ -65,16 +70,20 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 			redirectTo
 		});
 		cookies.set(PASSKEY_LOGTO_COOKIE, result.logtoCookies, passkeyCookieOpts);
-		cookies.set(PASSKEY_VERIFICATION_COOKIE, result.verificationId, passkeyCookieOpts);
+		cookies.set(PASSKEY_DISCOVERABLE_COOKIE, result.discoverable ? '1' : '0', passkeyCookieOpts);
+		if (result.verificationId) {
+			cookies.set(PASSKEY_VERIFICATION_COOKIE, result.verificationId, passkeyCookieOpts);
+		} else {
+			cookies.delete(PASSKEY_VERIFICATION_COOKIE, { path: '/' });
+		}
 
 		return json({
-			authenticationOptions: result.authenticationOptions
+			authenticationOptions: result.authenticationOptions,
+			discoverable: result.discoverable
 		});
 	} catch (error) {
 		console.error('[passkey/options]', error);
 		clearPasskeyFlowCookies(cookies);
-		const message =
-			error instanceof Error ? error.message : 'Could not start passkey sign-in.';
-		return json({ error: message }, { status: 502 });
+		return json({ error: passkeyErrorMessage(error) }, { status: 502 });
 	}
 };
