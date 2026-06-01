@@ -41,11 +41,11 @@
 	const listMessageLeadClass = 'flex min-w-0 flex-1 flex-col gap-0.5';
 	const listSubjectClass = (important: boolean) =>
 		cn(
-			'list-subject block min-w-0 z-type-page leading-[1.4] [overflow-wrap:anywhere]',
+			'list-subject z-type-page leading-[1.4] [overflow-wrap:anywhere]',
 			important
-				? 'min-w-0 font-semibold'
+				? 'inline-block max-w-full font-semibold align-top'
 				: cn(
-						'font-normal text-fg underline underline-offset-[0.2em] decoration-fg/35 decoration-1',
+						'block min-w-0 font-normal text-fg underline underline-offset-[0.2em] decoration-fg/35 decoration-1',
 						'transition-[color,text-decoration-color] duration-150',
 						'group-hover/message:decoration-fg/55 group-focus-visible/message:decoration-fg/55'
 					)

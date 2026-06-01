@@ -359,6 +359,16 @@
 			-webkit-text-fill-color: transparent;
 			color: transparent;
 		}
+
+		/* Shrink gradient box to subject text — block rows were painting a full-width bar. */
+		.z-mail-view .list-subject.z-mail-list-subject--important {
+			display: inline-block;
+			max-width: 100%;
+			width: fit-content;
+			vertical-align: top;
+			-webkit-box-decoration-break: clone;
+			box-decoration-break: clone;
+		}
 	}
 
 	/* Bulk select — solid accent reads clearer than gradient. */
