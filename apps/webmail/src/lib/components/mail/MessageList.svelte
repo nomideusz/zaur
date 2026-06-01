@@ -878,6 +878,7 @@
 				? `${formatSimpleListDayHeading(message.receivedAt)} ${baseTimeLabel}`
 				: baseTimeLabel}
 			{@const showSenderDuplicate = duplicateKeys.has(messageSubjectKey(message))}
+			{@const showNewDot = isInboxHome && isNewUnreadMessage(message)}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
 			<li class={cn('list-none', listMessageRowClass, rowSelected && '[&_.list-subject]:text-accent')}>
@@ -895,7 +896,7 @@
 					href={rowHref}
 					class={listMessageLinkClass}
 					aria-current={currentMessageId === message.id ? 'page' : undefined}
-					aria-label="{subjectText} — {senderLabel}, {timeLabel}"
+					aria-label="{showNewDot ? 'New. ' : ''}{subjectText} — {senderLabel}, {timeLabel}"
 					onpointerenter={() => {
 						if (message.important) importantRainbowHoverId = message.id;
 					}}
@@ -916,17 +917,22 @@
 				>
 					<span class={listMessageStackClass}>
 						<span class={listMessageLeadClass}>
-							<span
-								class={cn(
-									listSubjectClass,
-									'list-subject',
-									message.important && listImportantSubjectClass,
-									message.important &&
-										importantRainbow.hasPicked(message.id) &&
-										'z-mail-list-subject--important-picked'
-								)}
-								style={message.important ? importantRainbow.cssVars(message.id) : undefined}
-							>{subjectText}</span>
+							<span class="flex min-w-0 items-center gap-2">
+								{#if showNewDot}
+									<span class="z-mail-list-new-dot" aria-hidden="true"></span>
+								{/if}
+								<span
+									class={cn(
+										listSubjectClass,
+										'list-subject min-w-0',
+										message.important && listImportantSubjectClass,
+										message.important &&
+											importantRainbow.hasPicked(message.id) &&
+											'z-mail-list-subject--important-picked'
+									)}
+									style={message.important ? importantRainbow.cssVars(message.id) : undefined}
+								>{subjectText}</span>
+							</span>
 							<span class={listSenderClass(showSenderDuplicate)}>{senderLabel}</span>
 						</span>
 						<time class={listWhenClass} datetime={message.receivedAt}>
@@ -955,18 +961,20 @@
 				{#each folderSections as section, sectionIndex (section.id)}
 					{@const sectionDuplicateSubjects = duplicateSubjectKeys(section.messages)}
 					<section style:order={section.sortOrder} style:--section-index={sectionIndex}>
-						<div class="z-mail-list-section-head">
-							<h2 class="z-mail-list-section-title">
-								{#if section.showUnreadDot}
-									<span
-										class="size-[0.4375rem] shrink-0 rounded-full bg-unread"
-										aria-hidden="true"
-									></span>
-								{/if}
-								{section.name}
-							</h2>
-							<span class={listSectionCountClass(section.id)}>{section.totalCount}</span>
-						</div>
+						{#if !isInboxHome}
+							<div class="z-mail-list-section-head">
+								<h2 class="z-mail-list-section-title">
+									{#if section.showUnreadDot}
+										<span
+											class="size-[0.4375rem] shrink-0 rounded-full bg-unread"
+											aria-hidden="true"
+										></span>
+									{/if}
+									{section.name}
+								</h2>
+								<span class={listSectionCountClass(section.id)}>{section.totalCount}</span>
+							</div>
+						{/if}
 						{#if section.messages.length > 0}
 							<ul class="z-mail-list-section-messages">
 								{#each section.messages as message, index (message.id)}
