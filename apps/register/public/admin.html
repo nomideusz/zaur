@@ -18,18 +18,29 @@
     </div>
   </header>
 
-  <main class="z-site-main z-admin-main--login" id="main-content">
-    <div id="login-container" class="z-admin-login-wrap">
-      <div class="z-card z-card__body">
-        <h2 class="z-type-title" style="font-size: 1.125rem;">Admin sign in</h2>
-        <div class="z-alert z-alert--error" id="login-error" role="alert"></div>
-        <form id="login-form" class="z-mt-4">
-          <div class="z-field">
-            <label for="admin-password" class="z-field-label">Admin password</label>
-            <input type="password" id="admin-password" name="password" class="z-input" placeholder="Enter admin password" required>
+  <main class="z-site-main" id="main-content">
+    <div id="login-container" class="z-register-main">
+      <div class="z-register-wrap">
+        <div class="z-register-hero z-register-hero--compact">
+          <div class="z-register-sprite" aria-hidden="true">
+            <img src="/zaur-sprite-happy.svg" width="100" height="90" alt="">
           </div>
-          <button type="submit" class="z-btn-primary z-btn-block" id="login-submit">Sign in</button>
-        </form>
+          <h1 class="z-type-brand z-register-brand">ZAUR</h1>
+          <p class="z-register-tagline">Register admin</p>
+        </div>
+
+        <section class="z-register-section" style="margin-top: 0; padding-top: 0; border-top: none;">
+          <p class="z-type-label">Administration</p>
+          <h2 class="z-register-heading">Sign in</h2>
+          <div class="z-alert z-alert--error" id="login-error" role="alert"></div>
+          <form id="login-form" class="z-register-form-block">
+            <div class="z-field">
+              <label for="admin-password" class="z-field-label">Admin password</label>
+              <input type="password" id="admin-password" name="password" class="z-input" placeholder="Enter admin password" required>
+            </div>
+            <button type="submit" class="z-btn-primary z-btn-block" id="login-submit">Sign in</button>
+          </form>
+        </section>
       </div>
     </div>
 
@@ -40,27 +51,27 @@
       </div>
 
       <div class="z-stat-grid z-mb-6">
-        <div class="z-card z-stat-card">
+        <div class="z-stat-card">
           <span class="z-type-label">Total sent</span>
           <span class="z-stat-card__value" id="stat-total">0</span>
         </div>
-        <div class="z-card z-stat-card">
+        <div class="z-stat-card">
           <span class="z-type-label">Pending</span>
           <span class="z-stat-card__value z-stat-card__value--success" id="stat-unused">0</span>
         </div>
-        <div class="z-card z-stat-card">
+        <div class="z-stat-card">
           <span class="z-type-label">Registered</span>
           <span class="z-stat-card__value z-stat-card__value--warning" id="stat-used">0</span>
         </div>
-        <div class="z-card z-stat-card">
+        <div class="z-stat-card">
           <span class="z-type-label">Expired / revoked</span>
           <span class="z-stat-card__value z-stat-card__value--danger" id="stat-revoked">0</span>
         </div>
       </div>
 
       <div class="z-stack-lg">
-        <div class="z-card z-card__body">
-          <h3 class="z-type-title" style="font-size: 1.125rem;">Send invitation</h3>
+        <section class="z-admin-section">
+          <h3 class="z-register-heading">Send invitation</h3>
           <p class="z-type-lead z-mb-4" id="invite-email-hint">Enter an email address and we’ll send a registration link.</p>
           <div class="z-alert z-alert--error" id="generate-error" role="alert"></div>
           <div class="z-alert z-alert--success" id="generate-success" role="alert"></div>
@@ -76,12 +87,12 @@
             </details>
             <button type="submit" class="z-btn-primary z-btn-block" id="generate-submit">Send invitation</button>
           </form>
-        </div>
+        </section>
 
-        <div class="z-card z-card__body">
+        <section class="z-admin-section">
           <div class="z-section-head z-mb-4">
             <div>
-              <h3 class="z-type-title">Provisioning audit</h3>
+              <h3 class="z-register-heading">Provisioning audit</h3>
               <p class="z-type-lead">Find accounts that exist only in the directory or only in Stalwart.</p>
             </div>
             <button type="button" class="z-btn-ghost" id="run-audit-btn">Run audit</button>
@@ -90,10 +101,10 @@
           <div class="z-alert z-alert--success" id="audit-success" role="alert"></div>
           <div id="audit-summary" class="z-audit-grid"></div>
           <div id="audit-results" class="z-audit-results"></div>
-        </div>
+        </section>
 
-        <div class="z-card z-card__body">
-          <h3 class="z-type-title z-mb-4">Sent invitations</h3>
+        <section class="z-admin-section">
+          <h3 class="z-register-heading z-mb-4">Sent invitations</h3>
           <div class="z-field">
             <input type="text" id="table-filter" class="z-input" placeholder="Filter by recovery or mailbox email…" autocomplete="off">
           </div>
@@ -115,7 +126,7 @@
               </tbody>
             </table>
           </div>
-        </div>
+        </section>
       </div>
     </div>
   </main>
@@ -123,6 +134,7 @@
   <footer class="z-site-footer">
     <div class="z-site-footer__inner">
       <span>&copy; 2026 ZAUR</span>
+      <button type="button" class="z-theme-toggle" id="theme-toggle">Toggle theme</button>
     </div>
   </footer>
 

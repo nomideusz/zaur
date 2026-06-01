@@ -38,7 +38,9 @@
 	--shadow-md: 0 4px 16px rgb(0 0 0 / 0.06);
 
 	--height-header: 3.25rem;
-	--z-measure: 42rem;
+	/* ~44rem — same measure column as webmail */
+	--z-measure: 44rem;
+	--z-register-measure: 28rem;
 
 	--z-chrome: var(--z-surface-raised);
 	--z-chrome-active: var(--z-surface-sunken);

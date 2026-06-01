@@ -36,7 +36,13 @@ let checkAbortController = null;
 let cachedDomains = [];
 let availabilityMap = new Map();
 
-const STRENGTH_COLORS = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#16a34a'];
+const STRENGTH_COLORS = [
+  'var(--z-danger)',
+  'var(--z-warning)',
+  'var(--z-warning)',
+  'var(--z-success)',
+  'var(--z-success)',
+];
 
 function escapeHtml(str) {
   return str
@@ -115,7 +121,7 @@ function renderExtensionList() {
 
   resultsContainer.innerHTML = `
     <div class="z-results-header z-type-label">Available domains</div>
-    <div class="z-card z-results-list">${cachedDomains
+    <div class="z-register-list">${cachedDomains
       .map(
         (d) => `
       <div class="z-result-row extension-row">
@@ -135,7 +141,7 @@ function renderSearchResults(query, statuses) {
 
   const safeQuery = escapeHtml(query);
 
-  resultsContainer.innerHTML = `<div class="z-card z-results-list">${cachedDomains
+  resultsContainer.innerHTML = `<div class="z-register-list">${cachedDomains
     .map((d) => {
       const status = statuses.get(d.id) || 'pending';
       const isTaken = status === 'taken';
@@ -343,8 +349,7 @@ async function loadDomainTeaser() {
     const res = await fetch('/api/domains');
     const { domains } = await res.json();
     if (!domains?.length) {
-      list.innerHTML =
-        '<li class="z-text-subtle" style="font-family: var(--font-mono); font-size: 0.8125rem;">No domains listed</li>';
+      list.innerHTML = '<li class="z-domain-teaser__item z-text-subtle">No domains listed</li>';
       return;
     }
 
@@ -357,8 +362,7 @@ async function loadDomainTeaser() {
       sample.innerHTML = `<span class="z-domain-teaser__name">yourname</span><span class="z-domain-teaser__at">@${escapeHtml(domains[0].name)}</span>`;
     }
   } catch {
-    list.innerHTML =
-      '<li class="z-text-subtle" style="font-family: var(--font-mono); font-size: 0.8125rem;">Unavailable</li>';
+    list.innerHTML = '<li class="z-domain-teaser__item z-text-subtle">Unavailable</li>';
   }
 }
 
@@ -412,7 +416,7 @@ async function initInvitation() {
     inviteTokenInput.value = inviteToken;
     inviteEmailInput.value = inviteEmail;
     invitationBanner.classList.remove('z-hidden');
-    invitationBanner.textContent = `Invitation verified for ${inviteEmail}. Pick your new address and mailbox password below.`;
+    invitationBanner.innerHTML = `<span class="z-register-notice__title">Invitation verified</span>Registering as ${escapeHtml(inviteEmail)}. Pick your address and mailbox password below.`;
     showRegisterFlow();
     applyInvitationUi();
   } catch {

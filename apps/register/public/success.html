@@ -11,23 +11,28 @@
     <div class="z-site-header__inner">
       <a href="/" class="z-type-brand">ZAUR</a>
       <nav class="z-site-nav" aria-label="Tools">
-        <a href="/" class="z-site-nav__link z-site-nav__link--active">Register</a>
-        <a href="https://webmail.zaur.app/login" data-webmail-link class="z-site-nav__link">Mail</a>
+        <a href="/" class="z-site-nav__link">Register</a>
+        <a href="https://webmail.zaur.app/login" data-webmail-link class="z-site-nav__link z-site-nav__link--active" aria-current="page">Mail</a>
       </nav>
     </div>
   </header>
 
-  <main class="z-site-main z-site-main--center" id="main-content">
-    <div class="z-site-container">
-      <div class="z-success-icon" aria-hidden="true">✓</div>
-      <h1 class="z-type-title">Welcome aboard</h1>
-      <p class="z-type-lead">Your new email address is ready:</p>
-      <p class="z-success-email" id="success-email">—</p>
-      <p class="z-type-lead z-mb-6" id="redirect-status">Preparing sign-in…</p>
+  <main class="z-register-main" id="main-content">
+    <div class="z-register-wrap">
+      <div class="z-register-hero">
+        <div class="z-register-sprite" aria-hidden="true">
+          <img src="/zaur-sprite-happy.svg" width="100" height="90" alt="">
+        </div>
+        <h1 class="z-type-brand z-register-brand">Welcome aboard</h1>
+        <p class="z-register-tagline">Your new email address is ready</p>
+        <p class="z-success-email" id="success-email">—</p>
+        <p class="z-type-lead" id="redirect-status">Preparing sign-in…</p>
+      </div>
 
-      <div class="z-card z-card__body z-mb-6" style="text-align: left;">
-        <h2 class="z-type-title" style="font-size: 1rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--z-border); margin-bottom: 0.75rem;">Mail client settings</h2>
-        <table class="z-table">
+      <section class="z-register-section">
+        <p class="z-type-label">Mail client settings</p>
+        <h2 class="z-register-heading">Connect your apps</h2>
+        <table class="z-table z-settings-table">
           <tr>
             <td>Webmail</td>
             <td><a href="#" id="webmail-url" class="z-link" target="_blank" rel="noopener">—</a></td>
@@ -57,7 +62,7 @@
             <td>Your chosen password</td>
           </tr>
         </table>
-      </div>
+      </section>
 
       <div class="z-action-row">
         <a href="#" id="webmail-btn" class="z-btn-primary">Open mail now</a>
@@ -69,6 +74,7 @@
   <footer class="z-site-footer">
     <div class="z-site-footer__inner">
       <span>&copy; 2026 ZAUR</span>
+      <button type="button" class="z-theme-toggle" id="theme-toggle">Toggle theme</button>
     </div>
   </footer>
 

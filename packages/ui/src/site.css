@@ -27,31 +27,36 @@
 .z-site-nav {
 	display: flex;
 	align-items: center;
-	gap: 0.25rem;
+	gap: 0.125rem;
+	margin-left: 0.25rem;
+	padding-left: 0.75rem;
+	border-left: 1px solid color-mix(in srgb, var(--z-border) 70%, transparent);
 }
 
 .z-site-nav__link {
 	display: inline-flex;
 	align-items: center;
-	padding: 0.375rem 0.75rem;
-	border-radius: var(--radius-sm);
+	padding: 0.375rem 0.625rem;
 	font-size: 0.875rem;
 	font-weight: 500;
 	color: var(--z-fg-muted);
 	text-decoration: none;
 	transition:
-		background-color 150ms ease,
-		color 150ms ease;
+		color 150ms ease,
+		text-decoration-color 150ms ease;
 }
 
 .z-site-nav__link:hover {
 	color: var(--z-fg);
-	background-color: var(--z-surface-sunken);
 }
 
 .z-site-nav__link--active {
 	color: var(--z-fg);
-	background-color: var(--z-surface-sunken);
+	font-weight: 600;
+	text-decoration: underline;
+	text-underline-offset: 0.35rem;
+	text-decoration-thickness: 2px;
+	text-decoration-color: color-mix(in srgb, var(--z-fg) 30%, transparent);
 }
 
 .z-site-main {
@@ -128,15 +133,16 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	width: 4rem;
-	height: 4rem;
+	width: 3.5rem;
+	height: 3.5rem;
 	margin-inline: auto;
 	margin-bottom: 0.75rem;
-	border-radius: 999px;
-	background: color-mix(in srgb, var(--z-success) 14%, transparent);
+	border: 1px solid color-mix(in srgb, var(--z-success) 28%, transparent);
+	border-radius: var(--radius-md);
+	background: color-mix(in srgb, var(--z-success) 8%, transparent);
 	color: var(--z-success);
-	font-size: 1.75rem;
-	font-weight: 700;
+	font-size: 1.25rem;
+	font-weight: 600;
 }
 
 .z-success-email {
@@ -169,8 +175,7 @@
 
 .z-table-scroll {
 	overflow-x: auto;
-	border: 1px solid var(--z-border);
-	border-radius: var(--radius-md);
+	border-block: 1px solid var(--z-divider);
 }
 
 /* Register: domain search results */
@@ -214,8 +219,8 @@
 }
 
 .z-result-row.selected {
-	background: color-mix(in srgb, var(--z-accent) 8%, var(--z-surface-raised));
-	box-shadow: inset 3px 0 0 var(--z-accent);
+	background: color-mix(in srgb, var(--z-accent) 6%, transparent);
+	box-shadow: inset 2px 0 0 var(--z-accent);
 }
 
 .z-result-row.taken {
@@ -485,100 +490,153 @@
 	text-align: center;
 }
 
-/* Register — webmail login + Tachyons-inspired marketing */
+/* Register — editorial layout aligned with webmail login */
 
 .z-register-main {
+	flex: 1;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
-	padding-block: 2.5rem 3rem;
+	padding: 2.5rem 1rem 3rem;
+}
+
+.z-register-wrap {
+	width: 100%;
+	max-width: var(--z-register-measure);
+	min-width: 0;
 }
 
 .z-register-hero {
-	width: min(var(--z-measure), 92vw);
-	padding-inline: 1rem;
+	margin-bottom: 2rem;
 	text-align: center;
 }
 
 .z-register-hero--compact {
-	margin-bottom: 0.5rem;
+	margin-bottom: 1.5rem;
 }
 
-.z-register-hero--compact .z-register-mark {
-	width: 3.5rem;
-	height: 3.15rem;
-	margin-bottom: 0.75rem;
-}
-
-.z-register-hero--compact .z-type-brand {
-	font-size: 1.5rem;
-}
-
-.z-register-hero--compact .z-register-tagline {
-	margin-bottom: 0;
-}
-
-.z-register-mark {
-	display: block;
-	width: 5rem;
-	height: 4.5rem;
-	margin-inline: auto;
+.z-register-sprite {
+	display: flex;
+	justify-content: center;
 	margin-bottom: 1rem;
-	border: 0;
-	background-color: var(--z-brand-mark);
-	mask: url('/zaur-mark.svg') center / contain no-repeat;
-	-webkit-mask: url('/zaur-mark.svg') center / contain no-repeat;
+}
+
+.z-register-sprite svg {
+	display: block;
+	height: auto;
+	max-width: 100%;
 }
 
 .z-register-brand {
-	font-size: 1.75rem;
+	font-size: 1.5rem;
 	line-height: 1.1;
 }
 
 .z-register-tagline {
-	margin: 0.375rem 0 0;
+	margin: 0.5rem 0 0;
 	font-size: 0.875rem;
+	line-height: 1.5;
 	color: var(--z-fg-muted);
 }
 
-.z-register-panel {
+.z-register-heading {
+	margin: 0.375rem 0 0;
+	font-size: 1.0625rem;
+	font-weight: 600;
+	line-height: 1.45;
+	letter-spacing: -0.02em;
+	color: var(--z-fg);
+}
+
+.z-register-section {
 	margin-top: 2rem;
-	padding: 1.25rem 1.25rem 1.375rem;
-	border: 1px solid var(--z-border);
-	border-radius: var(--radius-md);
-	background: var(--z-surface-raised);
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--z-divider);
 	text-align: left;
 }
 
-.z-register-panel .z-type-title {
-	font-size: 1.25rem;
-	margin: 0.375rem 0 0.75rem;
+.z-register-section .z-type-lead {
+	margin-top: 0.5rem;
+	font-size: 0.875rem;
+	line-height: 1.55;
 }
 
-.z-register-panel .z-type-lead + .z-type-lead {
+.z-register-section .z-type-lead + .z-type-lead {
 	margin-top: 0.75rem;
 }
 
-.z-register-flow {
-	width: min(var(--z-measure), 92vw);
-	padding-inline: 1rem;
+.z-register-notice {
+	margin-top: 1rem;
+	padding: 0.625rem 0.75rem;
+	border: 1px solid color-mix(in srgb, var(--z-accent) 28%, transparent);
+	border-radius: var(--radius-md);
+	background: color-mix(in srgb, var(--z-accent) 5%, transparent);
+	font-size: 0.875rem;
+	line-height: 1.5;
+	color: var(--z-fg);
 }
 
-.z-register-flow__search {
+.z-register-notice strong,
+.z-register-notice .z-register-notice__title {
+	display: block;
+	font-weight: 600;
+}
+
+.z-register-form-block {
 	margin-top: 1.5rem;
 }
 
+.z-register-form-block .z-field:first-child {
+	margin-top: 0;
+}
+
 .z-register-aside {
-	margin-top: 1.25rem;
+	margin-top: 2rem;
 	font-size: 0.875rem;
+	line-height: 1.5;
 	color: var(--z-fg-muted);
 	text-align: center;
 }
 
+.z-theme-toggle {
+	border: 0;
+	background: none;
+	padding: 0;
+	font: inherit;
+	font-size: inherit;
+	color: var(--z-accent);
+	cursor: pointer;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.z-theme-toggle:hover {
+	color: var(--z-accent-hover);
+}
+
 .z-domain-teaser {
-	margin-top: 1.5rem;
-	padding-top: 1.25rem;
-	border-top: 1px solid var(--z-border);
+	margin-top: 1.25rem;
+}
+
+.z-register-list {
+	overflow: hidden;
+	border-block: 1px solid var(--z-divider);
+}
+
+.z-admin-section {
+	padding-block: 1.25rem;
+	border-top: 1px solid var(--z-divider);
+}
+
+.z-admin-section:first-child {
+	border-top: none;
+	padding-top: 0;
+}
+
+.z-stat-grid .z-stat-card {
+	border: 1px solid var(--z-border);
+	border-radius: var(--radius-sm);
+	background: var(--z-surface-raised);
 }
 
 .z-domain-teaser__list {

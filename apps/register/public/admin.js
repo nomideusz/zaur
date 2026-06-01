@@ -260,10 +260,10 @@ document.addEventListener('DOMContentLoaded', () => {
       if (!res.ok) throw new Error(data.error || 'Audit failed.');
 
       auditSummary.innerHTML = `
-        <div class="z-card z-stat-card"><span class="z-type-label">Stalwart</span><strong class="z-stat-card__value">${data.counts.stalwartAccounts}</strong></div>
-        <div class="z-card z-stat-card"><span class="z-type-label">Directory</span><strong class="z-stat-card__value">${data.counts.directoryUsers}</strong></div>
-        <div class="z-card z-stat-card"><span class="z-type-label">Directory only</span><strong class="z-stat-card__value">${data.counts.directoryOnly}</strong></div>
-        <div class="z-card z-stat-card"><span class="z-type-label">Stalwart only</span><strong class="z-stat-card__value">${data.counts.stalwartOnly}</strong></div>
+        <div class="z-stat-card"><span class="z-type-label">Stalwart</span><strong class="z-stat-card__value">${data.counts.stalwartAccounts}</strong></div>
+        <div class="z-stat-card"><span class="z-type-label">Directory</span><strong class="z-stat-card__value">${data.counts.directoryUsers}</strong></div>
+        <div class="z-stat-card"><span class="z-type-label">Directory only</span><strong class="z-stat-card__value">${data.counts.directoryOnly}</strong></div>
+        <div class="z-stat-card"><span class="z-type-label">Stalwart only</span><strong class="z-stat-card__value">${data.counts.stalwartOnly}</strong></div>
       `;
 
       auditResults.appendChild(renderAuditGroup('Directory only', data.directoryOnly, 'directory'));
@@ -294,7 +294,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const list = document.createElement('div');
-    list.className = 'z-card z-audit-list';
+    list.className = 'z-register-list z-audit-list';
     rows.forEach((row) => {
       const email = row.email || row.username;
       const item = document.createElement('div');
