@@ -47,11 +47,6 @@ PATCH='{
       }
     ]
   },
-  "signUp": {
-    "identifiers": ["Email"],
-    "password": false,
-    "verify": false
-  },
   "signInMode": "SignIn",
   "color": {
     "primaryColor": "#2563EB",
@@ -76,7 +71,7 @@ PATCH='{
   "unknownSessionRedirectUrl": "https://webmail.zaur.app/login"
 }'
 
-echo "==> PATCH /api/sign-in-exp (email sign-in, email-only sign-up profile, no forced passkey prompt)"
+echo "==> PATCH /api/sign-in-exp (email sign-in, no forced passkey prompt)"
 curl -sS -X PATCH \
 	-H "Authorization: Bearer $M2M_TOKEN" \
 	-H 'Content-Type: application/json' \
@@ -87,16 +82,22 @@ d = json.load(sys.stdin)
 if 'signIn' not in d:
     print(d, file=sys.stderr)
     raise SystemExit(1)
-print(json.dumps({'signIn': d['signIn'], 'signUp': d.get('signUp'), 'signInMode': d.get('signInMode'), 'mfa': d.get('mfa'), 'passkeySignIn': d.get('passkeySignIn')}, indent=2))
+print(json.dumps({'signIn': d['signIn'], 'signInMode': d.get('signInMode'), 'mfa': d.get('mfa'), 'passkeySignIn': d.get('passkeySignIn')}, indent=2))
 "
 
 echo "==> Backfill Logto usernames for email-only accounts (needed before passkey submit on older tenants)"
-curl -sS -H "Authorization: Bearer $M2M_TOKEN" \
-	"$LOGTO_ENDPOINT/api/users?page=1&page_size=100" | python3 - <<'PY' "$LOGTO_ENDPOINT" "$M2M_TOKEN"
-import json, re, sys, urllib.request
+LOGTO_ENDPOINT="$LOGTO_ENDPOINT" M2M_TOKEN="$M2M_TOKEN" python3 <<'PY'
+import json, os, re, sys, urllib.request
 
-endpoint, token = sys.argv[1], sys.argv[2]
-users = json.load(sys.stdin)
+endpoint = os.environ["LOGTO_ENDPOINT"].rstrip("/")
+token = os.environ["M2M_TOKEN"]
+req = urllib.request.Request(
+    f"{endpoint}/api/users?page=1&page_size=100",
+    headers={"Authorization": f"Bearer {token}"},
+)
+with urllib.request.urlopen(req) as resp:
+    users = json.load(resp)
+
 if not isinstance(users, list):
     print("skip backfill:", users)
     raise SystemExit(0)
@@ -113,14 +114,14 @@ for user in users:
         continue
     username = username_from_email(user["primaryEmail"])
     body = json.dumps({"username": username}).encode()
-    req = urllib.request.Request(
+    patch = urllib.request.Request(
         f"{endpoint}/api/users/{user['id']}",
         data=body,
         headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
         method="PATCH",
     )
     try:
-        with urllib.request.urlopen(req) as resp:
+        with urllib.request.urlopen(patch) as resp:
             resp.read()
         updated += 1
         print(f"  username {username} -> {user['primaryEmail']}")
