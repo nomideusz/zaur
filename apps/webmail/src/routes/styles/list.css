@@ -208,7 +208,8 @@
 			pointer-events: auto;
 		}
 
-		.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a) {
+		.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a),
+		.z-mail-view .z-mail-list--selecting .z-mail-list-row .z-mail-list-swipe-row {
 			flex: 1 1 auto;
 			min-width: 0;
 		}
@@ -227,12 +228,32 @@
 		flex: 1 1 auto;
 	}
 
+	.z-mail-view .z-mail-list-swipe-row.z-swipe-row,
+	.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground {
+		background-color: transparent;
+	}
+
+	.z-mail-list-row-meta {
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: flex-start;
+		justify-content: flex-end;
+		min-width: 3.25rem;
+		min-height: calc(var(--z-main-page-text) * 1.4 + 0.05em);
+		padding-top: 0.05em;
+		line-height: 1.4;
+	}
+
+	.z-mail-list-row-meta__time {
+		text-align: right;
+	}
+
 	.z-mail-list-color-cycle {
 		display: inline-flex;
-		align-items: center;
+		align-items: flex-start;
 		justify-content: center;
-		min-width: 2rem;
-		min-height: 1.4em;
+		width: 100%;
+		height: calc(var(--z-main-page-text) * 1.4);
 		padding: 0;
 		border: none;
 		background: transparent;
@@ -420,7 +441,8 @@
 
 	/* Touch / PWA — suppress iOS link callout and sticky hover on list rows. */
 	@media (hover: none), (pointer: coarse) {
-		.z-mail-view .z-mail-list-row > :where(a) {
+		.z-mail-view .z-mail-list-row :where(a),
+		.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground {
 			-webkit-touch-callout: none;
 			-webkit-user-select: none;
 			user-select: none;
@@ -428,7 +450,8 @@
 		}
 	}
 
-	html.z-standalone .z-mail-view .z-mail-list-row > :where(a) {
+	html.z-standalone .z-mail-view .z-mail-list-row :where(a),
+	html.z-standalone .z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground {
 		-webkit-touch-callout: none;
 		-webkit-user-select: none;
 		user-select: none;

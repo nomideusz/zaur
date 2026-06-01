@@ -63,9 +63,10 @@
 	);
 	const listImportantSubjectClass = 'z-mail-list-subject--important';
 	const listWhenClass = cn(
-		'shrink-0 tabular-nums text-fg-muted no-underline z-type-page leading-[1.4] pt-[0.05em]',
+		'shrink-0 tabular-nums text-fg-muted no-underline z-type-page leading-[1.4]',
 		'group-hover/message:text-fg group-focus-visible/message:text-fg'
 	);
+	const listRowMetaClass = cn(listWhenClass, 'z-mail-list-row-meta');
 	const listSenderClass = (visible: boolean) =>
 		cn('z-type-page leading-[1.4] text-fg-muted', visible ? 'block' : 'hidden');
 	const listSectionCountClass = (sectionId: string) =>
@@ -990,6 +991,7 @@
 					<a
 						href={rowHref}
 						class={listMessageLinkClass}
+						draggable={mobileRowGestures ? 'false' : undefined}
 						aria-current={currentMessageId === message.id ? 'page' : undefined}
 						aria-label="{showNewDot ? 'New. ' : ''}{subjectText} — {senderLabel}, {timeLabel}"
 						oncontextmenu={(event) => {
@@ -1042,21 +1044,23 @@
 								</span>
 								<span class={listSenderClass(showSender)}>{senderLabel}</span>
 							</span>
-							{#if showColorCycle}
-								<button
-									type="button"
-									class={cn(listWhenClass, 'z-mail-list-color-cycle')}
-									style={importantRainbow.cssVars(message.id)}
-									aria-label="Change important color"
-									onclick={(event) => cycleImportantColor(message.id, event)}
-								>
-									<Palette class="size-4" aria-hidden="true" />
-								</button>
-							{:else}
-								<time class={listWhenClass} datetime={message.receivedAt}>
-									{timeLabel}
-								</time>
-							{/if}
+							<span class={listRowMetaClass}>
+								{#if showColorCycle}
+									<button
+										type="button"
+										class="z-mail-list-color-cycle"
+										style={importantRainbow.cssVars(message.id)}
+										aria-label="Change important color"
+										onclick={(event) => cycleImportantColor(message.id, event)}
+									>
+										<Palette class="size-4" aria-hidden="true" />
+									</button>
+								{:else}
+									<time class="z-mail-list-row-meta__time" datetime={message.receivedAt}>
+										{timeLabel}
+									</time>
+								{/if}
+							</span>
 						</span>
 					</a>
 				{/snippet}

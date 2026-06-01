@@ -85,6 +85,11 @@
 		primary?.onAction();
 	}
 
+	function onContextMenu(event: Event) {
+		if (!hasSwipe && !longPressEnabled) return;
+		event.preventDefault();
+	}
+
 	function onPointerDown(event: PointerEvent) {
 		if (!hasSwipe && !longPressEnabled) return;
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
@@ -272,6 +277,7 @@
 	<div
 		class="z-swipe-row__foreground"
 		style={hasSwipe ? `transform: translate3d(${offset}px, 0, 0)` : undefined}
+		oncontextmenu={onContextMenu}
 		onpointerdown={onPointerDown}
 		onpointermove={onPointerMove}
 		onpointerup={onPointerUp}
