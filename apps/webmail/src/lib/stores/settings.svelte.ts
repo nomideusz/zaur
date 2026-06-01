@@ -34,6 +34,7 @@ const STORAGE = {
 	autoLoadMore: 'zaur:auto-load-more',
 	showAvatars: 'zaur:show-avatars',
 	showSenderEmailInList: 'zaur:show-sender-email-in-list',
+	showImportantColors: 'zaur:show-important-colors',
 	preferPlainText: 'zaur:prefer-plain-text',
 	collapseQuotedInCompose: 'zaur:collapse-quoted-in-compose',
 	showQuickReply: 'zaur:show-quick-reply',
@@ -119,6 +120,10 @@ function readShowAvatars(): boolean {
 
 function readShowSenderEmailInList(): boolean {
 	return readBool(STORAGE.showSenderEmailInList, false);
+}
+
+function readShowImportantColors(): boolean {
+	return readBool(STORAGE.showImportantColors, true);
 }
 
 function readPreferPlainText(): boolean {
@@ -317,6 +322,7 @@ class SettingsStore {
 	autoLoadMore = $state(readAutoLoadMore());
 	showAvatars = $state(readShowAvatars());
 	showSenderEmailInList = $state(readShowSenderEmailInList());
+	showImportantColors = $state(readShowImportantColors());
 	preferPlainText = $state(readPreferPlainText());
 	collapseQuotedInCompose = $state(readCollapseQuotedInCompose());
 	showQuickReply = $state(readShowQuickReply());
@@ -368,6 +374,7 @@ class SettingsStore {
 		this.autoLoadMore = readAutoLoadMore();
 		this.showAvatars = readShowAvatars();
 		this.showSenderEmailInList = readShowSenderEmailInList();
+		this.showImportantColors = readShowImportantColors();
 		this.preferPlainText = readPreferPlainText();
 		this.collapseQuotedInCompose = readCollapseQuotedInCompose();
 		this.showQuickReply = readShowQuickReply();
@@ -405,8 +412,6 @@ class SettingsStore {
 		this.calendarMaxEventsPerDay = readCalendarMaxEventsPerDay();
 
 		this.applyReduceMotion();
-		this.applyLayoutWidth();
-		this.applyHeaderLayout();
 		this.applyReaderTextSize(this.readerTextSize);
 		this.applyReaderWidth(this.readerWidth);
 		this.applyReadingTypeface(this.readingTypeface);
@@ -514,6 +519,11 @@ class SettingsStore {
 	setShowSenderEmailInList(value: boolean) {
 		this.showSenderEmailInList = value;
 		if (browser) this.writeStorage(STORAGE.showSenderEmailInList, String(value));
+	}
+
+	setShowImportantColors(value: boolean) {
+		this.showImportantColors = value;
+		if (browser) this.writeStorage(STORAGE.showImportantColors, String(value));
 	}
 
 	setPreferPlainText(value: boolean) {
@@ -763,6 +773,7 @@ class SettingsStore {
 		this.setShowUnreadAppBadge(true);
 		this.setShowAvatars(false);
 		this.setShowSenderEmailInList(false);
+		this.setShowImportantColors(true);
 		this.setAutoLoadMore(false);
 		this.setSearchScope('all');
 		this.setShowReaderListRail(false);
@@ -872,17 +883,6 @@ class SettingsStore {
 	private applyReduceMotion() {
 		if (!browser) return;
 		document.documentElement.classList.toggle('z-reduce-motion', this.reduceMotion);
-	}
-
-	private applyLayoutWidth() {
-		if (!browser) return;
-		document.documentElement.style.setProperty('--width-sidebar', '15rem');
-		document.documentElement.style.setProperty('--width-list', '22rem');
-	}
-
-	private applyHeaderLayout() {
-		if (!browser) return;
-		document.documentElement.style.setProperty('--height-header', '3.25rem');
 	}
 
 	private applyReaderTextSize(value: ReaderTextSize) {

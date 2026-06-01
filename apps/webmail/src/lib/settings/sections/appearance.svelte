@@ -23,7 +23,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Reduce motion" description="Turn off page transitions and loading animations">
+	<SettingsRow title="Reduce motion" description="Turn off page transitions, loading animations, and Important subject color cycling">
 		<input
 			type="checkbox"
 			checked={settings.reduceMotion}

@@ -25,7 +25,7 @@
 	import { renderMessageBody } from '$lib/email/html';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
 	import { createImportantRainbowTouchPick } from '$lib/mail/important-rainbow-touch';
-	import { shouldShowImportantRainbow } from '$lib/mail/mailboxes';
+	import { shouldPresentImportantColors } from '$lib/mail/mailboxes';
 	import { hasPreciseHover } from '$lib/utils/pointer-env';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
@@ -59,7 +59,10 @@
 	const subject = $derived(latest?.subject ?? '(no subject)');
 	const subjectImportant = $derived(
 		!!(actionMessage?.important ?? thread.some((message) => message.important)) &&
-			shouldShowImportantRainbow(mail.mailboxByRouteId(mailboxRouteId)?.role)
+			shouldPresentImportantColors(
+				mail.mailboxByRouteId(mailboxRouteId)?.role,
+				settings.showImportantColors
+			)
 	);
 	const subjectMessageId = $derived(subjectAnchorId ?? '');
 	const isDraft = $derived(mailboxRouteId === 'drafts');

@@ -8,6 +8,7 @@ import {
 	moveTargetMailboxes,
 	resolveMailboxKind,
 	shouldClearImportantOnMoveTo,
+	shouldPresentImportantColors,
 	shouldShowImportantRainbow
 } from '../src/lib/mail/mailboxes.ts';
 
@@ -83,5 +84,11 @@ describe('mailboxes', () => {
 		assert.equal(isExcludedFromImportantSection('archive'), false);
 		assert.equal(shouldShowImportantRainbow('trash'), false);
 		assert.equal(shouldShowImportantRainbow('inbox'), true);
+	});
+
+	it('respects the colorful Important subjects preference', () => {
+		assert.equal(shouldPresentImportantColors('inbox', true), true);
+		assert.equal(shouldPresentImportantColors('inbox', false), false);
+		assert.equal(shouldPresentImportantColors('trash', true), false);
 	});
 });

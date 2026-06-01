@@ -1,6 +1,5 @@
 <script lang="ts">
 	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
-	import SettingsField from '$lib/components/settings/SettingsField.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
@@ -69,6 +68,17 @@
 			type="checkbox"
 			checked={settings.showSenderEmailInList}
 			onchange={(e) => settings.setShowSenderEmailInList(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		title="Colorful Important subjects"
+		description="Rainbow gradient on Important message subjects — hover to pick a color on desktop"
+	>
+		<input
+			type="checkbox"
+			checked={settings.showImportantColors}
+			onchange={(e) => settings.setShowImportantColors(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
 
@@ -240,7 +250,7 @@
 
 	<SettingsRow
 		title="Keep list visible while reading"
-		description="Show a slim message list beside the reader — the Classic split-pane layout"
+		description="Show a slim message list beside the reader — the Classic split-pane layout. With this off, the list hides when you open a message (Simple layout)."
 	>
 		<input
 			type="checkbox"
@@ -248,31 +258,6 @@
 			onchange={(e) => settings.setShowReaderListRail(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
-
-	<SettingsDepends
-		enabled={!settings.showReaderListRail}
-		inactiveReason="Single-pane reading is off while split view is enabled."
-	>
-		<SettingsField
-			title="Single-pane reading"
-			description="With split view off, the list hides when you open a message so the reader fills the pane. Press Esc or use the back control to return."
-		>
-			<p class="z-settings-editorial-note">This is the default Simple layout.</p>
-		</SettingsField>
-	</SettingsDepends>
-</SettingsGroup>
-
-<SettingsGroup
-	title="Phone layout"
-	description="On a phone, mail always opens full screen."
-	visibleOn="mobile"
->
-	<SettingsField
-		title="Opening a message"
-		description="The reader fills the screen and the list stays behind it. Use the back arrow in the header to return."
-	>
-		<p class="z-settings-editorial-note">Quick reply and the action bar sit at the bottom when enabled above.</p>
-	</SettingsField>
 </SettingsGroup>
 
 <SettingsGroup title="Actions" description="What happens when you read or delete mail.">

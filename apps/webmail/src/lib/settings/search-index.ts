@@ -169,6 +169,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/reading-colorful-important-subjects",
+		"href": "/settings/reading",
+		"title": "Colorful Important subjects",
+		"description": ""
+	},
+	{
 		"id": "/settings/reading-confirm-before-delete",
 		"href": "/settings/reading",
 		"title": "Confirm before delete",
@@ -220,12 +226,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-mark-as-read-when-opened",
 		"href": "/settings/reading",
 		"title": "Mark as read when opened",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-opening-a-message",
-		"href": "/settings/reading",
-		"title": "Opening a message",
 		"description": ""
 	},
 	{
@@ -286,12 +286,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-show-full-email-in-list",
 		"href": "/settings/reading",
 		"title": "Show full email in list",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-single-pane-reading",
-		"href": "/settings/reading",
-		"title": "Single-pane reading",
 		"description": ""
 	},
 	{

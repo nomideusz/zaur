@@ -44,7 +44,7 @@
 	import {
 		canMarkImportantFromMailboxRole,
 		isExcludedFromImportantSection,
-		shouldShowImportantRainbow
+		shouldPresentImportantColors
 	} from '$lib/mail/mailboxes';
 
 	/** Editorial list row — shared Tailwind building blocks. */
@@ -416,7 +416,7 @@
 	function showImportantPresentation(message: MessagePreview, routeId: string): boolean {
 		if (!message.important) return false;
 		const viewRole = mail.mailboxByRouteId(routeId)?.role;
-		return shouldShowImportantRainbow(viewRole);
+		return shouldPresentImportantColors(viewRole, settings.showImportantColors);
 	}
 
 	function canPickImportantRainbow(routeId: string): boolean {

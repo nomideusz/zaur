@@ -163,9 +163,17 @@ export function shouldClearImportantOnMoveTo(role: MailboxRole | undefined | nul
 	return IMPORTANT_CLEAR_ON_MOVE_ROLES.has(role);
 }
 
-/** Rainbow styling and Important section surfacing — excluded in trash/spam views. */
+/** Rainbow styling — excluded in trash/spam/drafts views. */
 export function shouldShowImportantRainbow(role: MailboxRole | undefined | null): boolean {
 	return canMarkImportantFromMailboxRole(role);
+}
+
+/** Rainbow styling when the user has not turned off colorful Important subjects. */
+export function shouldPresentImportantColors(
+	role: MailboxRole | undefined | null,
+	showColors: boolean
+): boolean {
+	return showColors && shouldShowImportantRainbow(role);
 }
 
 export function isExcludedFromImportantSection(role: MailboxRole | undefined | null): boolean {
