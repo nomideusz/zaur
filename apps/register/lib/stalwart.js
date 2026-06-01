@@ -177,7 +177,10 @@ async function ensureDomainPasswordDirectory(domainId) {
   const { body } = await jmapRequest([['x:Domain/get', { ids: [domainId] }, 'domainGet']]);
   const getResponse = getMethodResponse(getBody, 'domainGet');
   const domain = getResponse?.list?.[0];
-  if (!domain || domain.directoryId === ldapDirectoryId) return true;
+  if (!domain) return false;
+  // Keep an explicit LLDAP directory on each domain so password auth never
+  // inherits the Logto OIDC default from Authentication.
+  if (domain.directoryId === ldapDirectoryId) return true;
 
   const { body: setBody } = await jmapRequest([
     ['x:Domain/set', { update: { [domainId]: { directoryId: ldapDirectoryId } } }, 'domainSet'],

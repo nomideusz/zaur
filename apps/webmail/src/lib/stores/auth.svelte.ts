@@ -46,6 +46,7 @@ class AuthStore {
 	oauthConfig = $state<{
 		enabled: boolean;
 		passwordFallback?: boolean;
+		passkeyEnabled?: boolean;
 		passkeyOnly?: boolean;
 		clientId?: string;
 		issuerUrl?: string;

@@ -113,9 +113,8 @@ Run on the CapRover host (or use the WebUI with the same values):
 | Issuer URL | `https://auth.zaur.app/oidc` |
 | Username claim | `email` |
 | Required audience | *(unset — see below)* |
-| Authentication → Directory | **LLDAP** (password / JMAP basic auth) |
-| All mail domains → Directory | **LLDAP** (register enforces this on signup) |
-| Logto OIDC directory | Provisioned for future Bearer/passkey — not the password auth directory |
+| Authentication → Directory | **Logto OIDC** (Bearer / passkey tokens) |
+| Every mail domain → Directory | **LLDAP** (password — must be explicit, never unset) |
 
 After changing directories, **restart the mail service** (`docker service update --force srv-captain--mail`) so running Stalwart reloads config.
 

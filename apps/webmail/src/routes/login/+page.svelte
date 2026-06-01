@@ -29,7 +29,7 @@
 	const oauthEnabled = $derived(auth.oauthConfig?.enabled === true);
 	const passwordFallback = $derived(auth.oauthConfig?.passwordFallback !== false);
 	const showPassword = $derived(!oauthEnabled || passwordFallback);
-	const showPasskey = $derived(oauthEnabled && !passwordFallback);
+	const showPasskey = $derived(oauthEnabled);
 
 	$effect(() => {
 		if (!auth.isRestoring && auth.isAuthenticated) {

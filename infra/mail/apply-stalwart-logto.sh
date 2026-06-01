@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
-# Wire Stalwart to Logto OIDC (for future Bearer/passkey) while keeping LLDAP as the
-# active auth directory for password sign-in on every mail domain.
+# Hybrid Stalwart auth for ZAUR:
+#   - Authentication default → Logto OIDC (JMAP Bearer / passkey tokens)
+#   - Every mail domain → LLDAP (password / JMAP basic auth)
+#
+# Domains must never use directoryId=null — they would inherit Logto and break passwords.
 #
 # Prerequisites:
 #   - stalwart-cli on PATH (or /root/.cargo/bin/stalwart-cli)
@@ -52,15 +55,15 @@ if [[ -z "$existing_ldap" ]]; then
 fi
 ldap_id="$existing_ldap"
 
-echo "==> OIDC directory id: $oidc_id (reserved for Bearer/passkey)"
-echo "==> LLDAP directory id: $ldap_id"
+echo "==> OIDC directory id: $oidc_id (Bearer / passkey via auth default)"
+echo "==> LLDAP directory id: $ldap_id (password on every domain)"
 "$CLI" update Directory "$oidc_id" --json '{"requireScopes": {}}' >/dev/null
 
-echo "==> Authentication default → LLDAP (password / JMAP basic auth)"
-"$CLI" update Authentication --field "directoryId=$ldap_id"
+echo "==> Authentication default → Logto OIDC (Bearer tokens)"
+"$CLI" update Authentication --field "directoryId=$oidc_id"
 "$CLI" get Authentication | head -3
 
-echo "==> All mail domains → LLDAP"
+echo "==> All mail domains → LLDAP (password — never leave directory unset)"
 while IFS= read -r domain_line; do
 	domain_id="${domain_line%% *}"
 	domain_name="${domain_line#* }"
@@ -69,8 +72,8 @@ while IFS= read -r domain_line; do
 done < <("$CLI" query Domain | tail -n +2)
 
 echo "==> Done. Verify:"
-echo "    $CLI get Authentication   # default directory = LLDAP"
-echo "    $CLI query Domain"
+echo "    $CLI get Authentication   # default directory = Logto OIDC"
+echo "    $CLI query Domain         # every domain = LLDAP"
 echo ""
 echo "==> Restart Stalwart so auth picks up directory changes:"
 echo "    docker service update --force srv-captain--mail"

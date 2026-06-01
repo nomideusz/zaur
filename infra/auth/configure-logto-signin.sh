@@ -64,8 +64,8 @@ PATCH='{
   },
   "passkeySignIn": {
     "enabled": true,
-    "showPasskeyButton": false,
-    "allowAutofill": false
+    "showPasskeyButton": true,
+    "allowAutofill": true
   },
   "forgotPasswordMethods": [],
   "unknownSessionRedirectUrl": "https://webmail.zaur.app/login"

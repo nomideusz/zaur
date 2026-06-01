@@ -18,6 +18,7 @@ export const GET: RequestHandler = async () => {
 		return json({
 			enabled: true,
 			passwordFallback,
+			passkeyEnabled: true,
 			passkeyOnly: !passwordFallback,
 			clientId: env.OAUTH_CLIENT_ID || 'webmail',
 			issuerUrl: discovery.issuer,
