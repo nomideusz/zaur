@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
+import { startAuthentication } from '@simplewebauthn/browser';
 import { appConfig } from '$lib/config';
 import { JMAPClient } from '$lib/jmap/client';
 import { classifyJmapError, loginErrorMessage, type LoginErrorCode } from '$lib/jmap/errors';
@@ -163,14 +164,51 @@ class AuthStore {
 				throw new Error('Enter your email address before signing in with a passkey.');
 			}
 
-			const params = new URLSearchParams({ email });
-			if (options?.rememberMe) params.set('remember', '1');
-			if (options?.redirectTo) params.set('next', options.redirectTo);
+			const optionsRes = await fetch('/api/auth/passkey/options', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					email,
+					rememberMe: options?.rememberMe,
+					redirectTo: options?.redirectTo
+				})
+			});
+			const optionsPayload = (await optionsRes.json()) as {
+				authenticationOptions?: Record<string, unknown>;
+				error?: string;
+			};
+			if (!optionsRes.ok || !optionsPayload.authenticationOptions) {
+				throw new Error(optionsPayload.error ?? 'Could not start passkey sign-in.');
+			}
 
-			window.location.href = `/login/start?${params.toString()}`;
+			let credential;
+			try {
+				credential = await startAuthentication({
+					optionsJSON: optionsPayload.authenticationOptions as Parameters<
+						typeof startAuthentication
+					>[0]['optionsJSON']
+				});
+			} catch (error) {
+				if (error instanceof Error && error.name === 'NotAllowedError') {
+					throw new Error('Passkey sign-in was cancelled.');
+				}
+				throw error;
+			}
+
+			const verifyRes = await fetch('/api/auth/passkey/verify', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ credential })
+			});
+			const verifyPayload = (await verifyRes.json()) as { code?: string; state?: string; error?: string };
+			if (!verifyRes.ok || !verifyPayload.code) {
+				throw new Error(verifyPayload.error ?? 'Passkey verification failed.');
+			}
+
+			await this.completeOauthLogin(verifyPayload.code, verifyPayload.state);
 		} catch (error) {
 			this.isLoading = false;
-			this.error = error instanceof Error ? error.message : 'Failed to start sign-in';
+			this.error = error instanceof Error ? error.message : 'Failed to sign in with passkey';
 		}
 	}
 

@@ -30,8 +30,7 @@
 	const oauthEnabled = $derived(auth.oauthConfig?.enabled === true);
 	const passwordFallback = $derived(auth.oauthConfig?.passwordFallback !== false);
 	const showPassword = $derived(!oauthEnabled || passwordFallback);
-	/** Passkey uses Logto — only offer it when password sign-in is disabled. */
-	const showPasskey = $derived(oauthEnabled && !passwordFallback);
+	const showPasskey = $derived(oauthEnabled && auth.oauthConfig?.passkeyEnabled !== false);
 
 	$effect(() => {
 		if (!auth.isRestoring && auth.isAuthenticated) {
@@ -157,11 +156,12 @@
 					{#if showPasskey}
 						<Button
 							type="button"
+							variant={showPassword ? 'ghost' : 'primary'}
 							class="w-full"
 							disabled={auth.isLoading || !email.trim().includes('@')}
 							onclick={signInWithPasskey}
 						>
-							{auth.isLoading ? 'Redirecting…' : 'Sign in with passkey'}
+							{auth.isLoading ? 'Waiting for passkey…' : 'Sign in with passkey'}
 						</Button>
 					{/if}
 				</div>

@@ -6,6 +6,8 @@ export const OAUTH_VERIFIER_COOKIE = 'oauth_code_verifier';
 export const OAUTH_STATE_COOKIE = 'oauth_state';
 export const OAUTH_REMEMBER_COOKIE = 'oauth_remember_me';
 export const OAUTH_REDIRECT_COOKIE = 'oauth_redirect_to';
+export const PASSKEY_LOGTO_COOKIE = 'passkey_logto_cookies';
+export const PASSKEY_VERIFICATION_COOKIE = 'passkey_verification_id';
 
 const OAUTH_FLOW_MAX_AGE_SEC = 10 * 60;
 
@@ -36,6 +38,38 @@ export function clearOauthFlowCookies(cookies: Cookies) {
 	}
 }
 
+export function clearPasskeyFlowCookies(cookies: Cookies) {
+	for (const name of [PASSKEY_LOGTO_COOKIE, PASSKEY_VERIFICATION_COOKIE]) {
+		cookies.delete(name, { path: '/' });
+	}
+}
+
+export function setOauthFlowCookies(
+	cookies: Cookies,
+	input: {
+		codeVerifier: string;
+		state: string;
+		rememberMe?: boolean;
+		redirectTo?: string;
+	}
+) {
+	cookies.set(OAUTH_VERIFIER_COOKIE, input.codeVerifier, cookieOpts);
+	cookies.set(OAUTH_STATE_COOKIE, input.state, cookieOpts);
+	cookies.set(OAUTH_REMEMBER_COOKIE, input.rememberMe ? '1' : '0', cookieOpts);
+	if (input.redirectTo) {
+		cookies.set(OAUTH_REDIRECT_COOKIE, input.redirectTo, cookieOpts);
+	} else {
+		cookies.delete(OAUTH_REDIRECT_COOKIE, { path: '/' });
+	}
+}
+
+export function readPasskeyFlow(cookies: Cookies) {
+	const logtoCookies = cookies.get(PASSKEY_LOGTO_COOKIE);
+	const verificationId = cookies.get(PASSKEY_VERIFICATION_COOKIE);
+	if (!logtoCookies || !verificationId) return null;
+	return { logtoCookies, verificationId };
+}
+
 export async function startOauthRedirect(input: {
 	cookies: Cookies;
 	redirectUri: string;
@@ -50,14 +84,12 @@ export async function startOauthRedirect(input: {
 	const verifier = randomString(48);
 	const state = randomString(32);
 
-	input.cookies.set(OAUTH_VERIFIER_COOKIE, verifier, cookieOpts);
-	input.cookies.set(OAUTH_STATE_COOKIE, state, cookieOpts);
-	input.cookies.set(OAUTH_REMEMBER_COOKIE, input.rememberMe ? '1' : '0', cookieOpts);
-	if (input.redirectTo) {
-		input.cookies.set(OAUTH_REDIRECT_COOKIE, input.redirectTo, cookieOpts);
-	} else {
-		input.cookies.delete(OAUTH_REDIRECT_COOKIE, { path: '/' });
-	}
+	setOauthFlowCookies(input.cookies, {
+		codeVerifier: verifier,
+		state,
+		rememberMe: input.rememberMe,
+		redirectTo: input.redirectTo
+	});
 
 	return buildAuthorizationUrl({
 		redirectUri: input.redirectUri,
