@@ -115,7 +115,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			return json(
 				{
 					error:
-						'Sign-in session is outdated. Clear cookies for auth.zaur.app and try again, or use a private window.',
+						'Logto rejected the webmail OAuth app. Check OAUTH_CLIENT_ID and OAUTH_CLIENT_SECRET on the webmail service, then clear cookies for auth.zaur.app and try again.',
 					code: 'oauth_stale_client'
 				},
 				{ status: 401 }

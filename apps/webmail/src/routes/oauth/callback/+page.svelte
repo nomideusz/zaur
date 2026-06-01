@@ -11,7 +11,10 @@
 		const errorDescription = $page.url.searchParams.get('error_description');
 
 		if (error || errorDescription) {
-			auth.error = errorDescription || error || 'OAuth login failed';
+			const detail = errorDescription || error || 'OAuth login failed';
+			auth.error = /invalid client/i.test(detail)
+				? 'Passkey sign-in is misconfigured (Logto OAuth app missing or outdated). Sign in with your password instead, or ask an admin to verify OAUTH_CLIENT_ID on webmail.'
+				: detail;
 			auth.isLoading = false;
 			const { goto } = await import('$app/navigation');
 			await goto('/login');

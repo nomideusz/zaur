@@ -133,8 +133,8 @@
 			</div>
 		{:else if phase === 'done'}
 			<div class="space-y-4 text-center">
-				<p class="text-sm text-fg">Passkey saved. You can sign in with it next time.</p>
-				<Button class="w-full" onclick={openMail}>Open mail</Button>
+				<p class="text-sm text-fg">Passkey saved. Sign in with passkey or your mailbox password.</p>
+				<Button class="w-full" onclick={openMail}>Continue to sign in</Button>
 			</div>
 		{:else}
 			<div class="space-y-4">

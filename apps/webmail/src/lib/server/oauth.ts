@@ -8,6 +8,14 @@ export interface TokenResponse {
 	expires_in: number;
 }
 
+function getOauthClientId(): string {
+	return (env.OAUTH_CLIENT_ID || 'webmail').trim();
+}
+
+function getOauthClientSecret(): string | undefined {
+	return env.OAUTH_CLIENT_SECRET?.trim() || undefined;
+}
+
 function getOauthResource(): string | undefined {
 	return env.OAUTH_RESOURCE?.trim() || undefined;
 }
@@ -36,7 +44,7 @@ export async function exchangeCodeForTokens(
 	codeVerifier: string,
 	redirectUri: string
 ): Promise<TokenResponse> {
-	const clientId = env.OAUTH_CLIENT_ID || 'webmail';
+	const clientId = getOauthClientId();
 	const { token_endpoint: tokenUrl } = await getOidcDiscovery();
 
 	const params = new URLSearchParams();
@@ -47,7 +55,7 @@ export async function exchangeCodeForTokens(
 	params.append('code_verifier', codeVerifier);
 	appendResourceParam(params);
 
-	const clientSecret = env.OAUTH_CLIENT_SECRET?.trim();
+	const clientSecret = getOauthClientSecret();
 	const headers: Record<string, string> = {
 		'Content-Type': 'application/x-www-form-urlencoded'
 	};
@@ -73,7 +81,7 @@ export async function exchangeCodeForTokens(
 export async function refreshAccessToken(
 	refreshToken: string
 ): Promise<{ accessToken: string; refreshToken: string } | null> {
-	const clientId = env.OAUTH_CLIENT_ID || 'webmail';
+	const clientId = getOauthClientId();
 	let tokenUrl: string;
 
 	try {
@@ -88,7 +96,7 @@ export async function refreshAccessToken(
 	params.append('refresh_token', refreshToken);
 	appendResourceParam(params);
 
-	const clientSecret = env.OAUTH_CLIENT_SECRET?.trim();
+	const clientSecret = getOauthClientSecret();
 	const headers: Record<string, string> = {
 		'Content-Type': 'application/x-www-form-urlencoded'
 	};
@@ -125,7 +133,7 @@ export async function buildAuthorizationUrl(input: {
 	codeChallenge: string;
 	loginHint?: string;
 }): Promise<string> {
-	const clientId = env.OAUTH_CLIENT_ID || 'webmail';
+	const clientId = getOauthClientId();
 	const { authorization_endpoint: authorizationEndpoint } = await getOidcDiscovery();
 
 	const params = new URLSearchParams();
