@@ -42,6 +42,8 @@ export async function startOauthRedirect(input: {
 	loginHint?: string;
 	oneTimeToken?: string;
 	directSignIn?: string;
+	firstScreen?: string;
+	identifier?: string;
 	rememberMe?: boolean;
 	redirectTo?: string;
 }): Promise<string> {
@@ -63,7 +65,9 @@ export async function startOauthRedirect(input: {
 		codeChallenge: challengeFromVerifier(verifier),
 		loginHint: input.loginHint,
 		oneTimeToken: input.oneTimeToken,
-		directSignIn: input.directSignIn
+		directSignIn: input.directSignIn,
+		firstScreen: input.firstScreen,
+		identifier: input.identifier
 	});
 }
 

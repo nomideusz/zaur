@@ -22,7 +22,8 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		cookies,
 		redirectUri,
 		loginHint: email,
-		directSignIn: 'passkey',
+		firstScreen: 'identifier:sign-in',
+		identifier: 'email',
 		rememberMe,
 		redirectTo
 	});

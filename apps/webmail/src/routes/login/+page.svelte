@@ -30,9 +30,8 @@
 	const oauthEnabled = $derived(auth.oauthConfig?.enabled === true);
 	const passwordFallback = $derived(auth.oauthConfig?.passwordFallback !== false);
 	const showPassword = $derived(!oauthEnabled || passwordFallback);
-	const showPasskey = $derived(oauthEnabled);
-	const passkeyEmail = $derived(email.trim().toLowerCase());
-	const canUsePasskey = $derived(passkeyEmail.includes('@'));
+	/** Passkey uses Logto — only offer it when password sign-in is disabled. */
+	const showPasskey = $derived(oauthEnabled && !passwordFallback);
 
 	$effect(() => {
 		if (!auth.isRestoring && auth.isAuthenticated) {
@@ -51,16 +50,20 @@
 		oauthReady = true;
 	});
 
-	function submitPassword(e: Event) {
+	function submitLogin(e: Event) {
 		e.preventDefault();
-		void auth.login(email, password, undefined, rememberMe, nextPath);
+		if (showPassword) {
+			void auth.login(email, password, undefined, rememberMe, nextPath);
+		} else if (showPasskey) {
+			signInWithPasskey();
+		}
 	}
 
 	function signInWithPasskey() {
 		void auth.loginWithPasskey({
 			rememberMe,
 			redirectTo: nextPath,
-			loginHint: passkeyEmail
+			loginHint: email.trim().toLowerCase()
 		});
 	}
 </script>
@@ -82,11 +85,11 @@
 		{#if !oauthReady}
 			<p class="text-center text-sm text-fg-muted">Loading sign-in…</p>
 		{:else}
-			<form class="space-y-4" onsubmit={submitPassword}>
-				{#if passkeyReady}
+			<form class="space-y-4" onsubmit={submitLogin}>
+				{#if passkeyReady && showPasskey}
 					<div class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm text-fg">
 						<p class="font-medium">Passkey ready</p>
-						<p class="mt-1 text-fg-muted">Use “Sign in with passkey” below, or your password.</p>
+						<p class="mt-1 text-fg-muted">Use “Sign in with passkey” below.</p>
 					</div>
 				{:else if isWelcome}
 					<div class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm text-fg">
@@ -104,7 +107,7 @@
 						type="email"
 						class="z-input"
 						bind:value={email}
-						autocomplete={showPasskey ? 'username webauthn' : 'username'}
+						autocomplete="username"
 						placeholder="you@zaur.app"
 						required
 						disabled={auth.isLoading}
@@ -155,15 +158,11 @@
 						<Button
 							type="button"
 							class="w-full"
-							variant={showPassword ? 'ghost' : 'primary'}
-							disabled={auth.isLoading || !canUsePasskey}
+							disabled={auth.isLoading || !email.trim().includes('@')}
 							onclick={signInWithPasskey}
 						>
 							{auth.isLoading ? 'Redirecting…' : 'Sign in with passkey'}
 						</Button>
-						{#if !canUsePasskey}
-							<p class="text-center text-xs text-fg-muted">Enter your email above to use a passkey.</p>
-						{/if}
 					{/if}
 				</div>
 			</form>
