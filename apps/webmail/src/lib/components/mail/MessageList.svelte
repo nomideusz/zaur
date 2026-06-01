@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
+	import { untrack } from 'svelte';
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
 	import MessageListMobileBar from '$lib/components/mail/MessageListMobileBar.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
@@ -39,17 +40,14 @@
 	const listMessageRowClass = 'z-mail-list-row';
 	const listMessageStackClass = 'flex min-w-0 flex-row items-start justify-between gap-4';
 	const listMessageLeadClass = 'flex min-w-0 flex-1 flex-col gap-0.5';
-	const listSubjectClass = (important: boolean) =>
-		cn(
-			'list-subject z-type-page leading-[1.4] [overflow-wrap:anywhere]',
-			important
-				? 'inline-block max-w-full font-semibold align-top'
-				: cn(
-						'block min-w-0 font-normal text-fg underline underline-offset-[0.2em] decoration-fg/35 decoration-1',
-						'transition-[color,text-decoration-color] duration-150',
-						'group-hover/message:decoration-fg/55 group-focus-visible/message:decoration-fg/55'
-					)
-		);
+	const listSubjectShellClass =
+		'list-subject block min-w-0 w-full z-type-page leading-[1.4] break-words';
+	const listSubjectPlainClass = cn(
+		listSubjectShellClass,
+		'font-normal text-fg underline underline-offset-[0.2em] decoration-fg/35 decoration-1',
+		'transition-[color,text-decoration-color] duration-150',
+		'group-hover/message:decoration-fg/55 group-focus-visible/message:decoration-fg/55'
+	);
 	const listImportantSubjectClass = 'z-mail-list-subject--important';
 	const listWhenClass = cn(
 		'shrink-0 tabular-nums text-fg-muted no-underline z-type-page leading-[1.4] pt-[0.05em]',
@@ -108,32 +106,14 @@
 	let firstSeenStorageKey = $state<string | null>(null);
 	let readEverByMessageId = $state<Record<string, number>>({});
 	let readEverStorageKey = $state<string | null>(null);
-	let importantRainbowHoverId = $state<string | null>(null);
-	let importantRainbowLastPhase = $state<Record<string, number>>({});
-
-	function sampleImportantRainbow(messageId: string, row: HTMLElement) {
-		if (settings.reduceMotion) return;
-		const phase = importantRainbow.sampleFromRow(row, messageId);
-		if (phase !== null) {
-			importantRainbowLastPhase = { ...importantRainbowLastPhase, [messageId]: phase };
-		}
-	}
 
 	function persistImportantRainbowPick(messageId: string, row: HTMLElement) {
 		if (settings.reduceMotion) return;
-
-		const fallback = importantRainbowLastPhase[messageId];
-		importantRainbow.pickFromRow(row, messageId, fallback);
-		const { [messageId]: _removed, ...rest } = importantRainbowLastPhase;
-		importantRainbowLastPhase = rest;
-		importantRainbowHoverId = null;
+		importantRainbow.pickFromRow(row, messageId);
 	}
 
-	function handleRowPointerMove(messageId: string, event: PointerEvent, row: HTMLElement, important: boolean) {
+	function handleRowPointerMove(event: PointerEvent) {
 		handleRowLongPressMove(event);
-		if (important && importantRainbowHoverId === messageId) {
-			sampleImportantRainbow(messageId, row);
-		}
 	}
 
 	const activeThreadId = $derived($page.params.threadId);
@@ -186,7 +166,8 @@
 
 	$effect(() => {
 		const next = !bulkSelectEnabled ? [] : sectionMode ? bulkSelectionMessages : [];
-		if (sameMessageIds(mail.selectionList, next)) return;
+		const current = untrack(() => mail.selectionList);
+		if (sameMessageIds(current, next)) return;
 		mail.setSelectionList(next);
 	});
 	const showBulkBar = $derived(bulkSelectEnabled && mail.hasSelection && !!mailboxRouteId);
@@ -889,13 +870,7 @@
 			{@const showNewDot = isInboxHome && isNewUnreadMessage(message)}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
-			<li
-				class={cn(
-					'list-none',
-					listMessageRowClass,
-					rowSelected && !message.important && '[&_.list-subject]:text-accent'
-				)}
-			>
+			<li class={cn('list-none', listMessageRowClass, rowSelected && !message.important && '[&_.list-subject]:text-accent')}>
 				{#if bulkSelectEnabled}
 					<input
 						type="checkbox"
@@ -911,9 +886,6 @@
 					class={listMessageLinkClass}
 					aria-current={currentMessageId === message.id ? 'page' : undefined}
 					aria-label="{showNewDot ? 'New. ' : ''}{subjectText} — {senderLabel}, {timeLabel}"
-					onpointerenter={() => {
-						if (message.important) importantRainbowHoverId = message.id;
-					}}
 					onpointerleave={(event) => {
 						if (message.important) persistImportantRainbowPick(message.id, event.currentTarget);
 					}}
@@ -924,27 +896,29 @@
 						persistImportantRainbowPick(message.id, event.currentTarget);
 					}}
 					onpointerdown={(event) => handleRowLongPressStart(message.id, event)}
-					onpointermove={(event) =>
-						handleRowPointerMove(message.id, event, event.currentTarget, message.important)}
+					onpointermove={handleRowPointerMove}
 					onpointerup={clearLongPressTimer}
 					onpointercancel={clearLongPressTimer}
 				>
 					<span class={listMessageStackClass}>
 						<span class={listMessageLeadClass}>
-							<span class="flex min-w-0 items-center gap-2">
+							<span class="flex min-w-0 w-full items-start gap-2">
 								{#if showNewDot}
 									<span class="z-mail-list-new-dot" aria-hidden="true"></span>
 								{/if}
-								<span
-									class={cn(
-										listSubjectClass(message.important),
-										message.important && listImportantSubjectClass,
-										message.important &&
+								{#if message.important}
+									<span
+										class={cn(
+											listSubjectShellClass,
+											listImportantSubjectClass,
 											importantRainbow.hasPicked(message.id) &&
-											'z-mail-list-subject--important-picked'
-									)}
-									style={message.important ? importantRainbow.cssVars(message.id) : undefined}
-								>{subjectText}</span>
+												'z-mail-list-subject--important-picked'
+										)}
+										style={importantRainbow.cssVars(message.id)}
+									>{subjectText}</span>
+								{:else}
+									<span class={listSubjectPlainClass}>{subjectText}</span>
+								{/if}
 							</span>
 							<span class={listSenderClass(showSenderDuplicate)}>{senderLabel}</span>
 						</span>

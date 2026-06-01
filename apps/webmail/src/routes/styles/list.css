@@ -280,6 +280,7 @@
 	:root {
 		--important-rainbow-s: 78%;
 		--important-rainbow-l: 50%;
+		--important-rainbow-band: var(--z-content-max-width);
 	}
 
 	.dark {
@@ -288,7 +289,6 @@
 	}
 
 	.z-mail-list-subject--important {
-		font-weight: 600;
 		text-decoration-line: none;
 		color: hsl(
 			calc(var(--important-hue, 0deg) + 300deg),
@@ -299,17 +299,19 @@
 
 	@keyframes z-important-rainbow {
 		from {
-			background-position: var(--important-phase, 0%) 50%;
+			background-position: calc(var(--important-phase-offset, 0) * 1rem) 50%;
 		}
 
 		to {
-			background-position: calc(var(--important-phase, 0%) + 45%) 50%;
+			background-position: calc((var(--important-phase-offset, 0) - 2.75) * 1rem) 50%;
 		}
 	}
 
 	@supports ((background-clip: text) or (-webkit-background-clip: text)) {
 		.z-mail-list-subject--important {
 			--_h: var(--important-hue, 0deg);
+			display: block;
+			min-width: 0;
 			background-image: linear-gradient(
 				90deg,
 				hsl(calc(var(--_h) + 0deg), var(--important-rainbow-s), var(--important-rainbow-l)) 0%,
@@ -322,13 +324,21 @@
 				hsl(calc(var(--_h) + 300deg), var(--important-rainbow-s), var(--important-rainbow-l)) 84%,
 				hsl(calc(var(--_h) + 340deg), var(--important-rainbow-s), var(--important-rainbow-l)) 100%
 			);
-			background-repeat: repeat;
-			background-size: 165% 100%;
-			background-position: var(--important-phase, 0%) 50%;
+			background-repeat: no-repeat;
+			background-size: var(--important-rainbow-band) 100%;
+			background-position: calc(var(--important-phase-offset, 0) * 1rem) 50%;
 			-webkit-background-clip: text;
 			background-clip: text;
 			-webkit-text-fill-color: transparent;
 			color: transparent;
+		}
+
+		.z-mail-view .z-reader-subject-heading.z-mail-list-subject--important {
+			font-weight: 600;
+		}
+
+		.z-mail-view .list-subject.z-mail-list-subject--important {
+			font-weight: normal;
 		}
 
 		@media (prefers-reduced-motion: no-preference) {
@@ -340,39 +350,22 @@
 
 			html:not(.z-reduce-motion) .z-mail-list-subject--important-picked {
 				animation: none;
-				background-position: var(--important-phase, 0%) 50%;
+				background-position: calc(var(--important-phase-offset, 0) * 1rem) 50%;
 			}
 
-			/* Subtle motion — animate on subject hover (or row keyboard focus), not whole-row hover. */
+			/* Animate only the hovered/focused subject — not via JS. */
 			html:not(.z-reduce-motion) .z-mail-list-subject--important:hover,
 			html:not(.z-reduce-motion) .group\/message:focus-visible .z-mail-list-subject--important {
 				animation: z-important-rainbow 3s ease-in-out infinite alternate;
 				animation-play-state: running;
 			}
 		}
-
-		/* List rows + reader heading — same gradient text (no underline / text-fg bleed). */
-		.z-mail-view
-			:is(.z-reader-subject-heading, .list-subject).z-mail-list-subject--important {
-			font-weight: 600;
-			text-decoration-line: none;
-			-webkit-text-fill-color: transparent;
-			color: transparent;
-		}
-
-		/* Shrink gradient box to subject text — block rows were painting a full-width bar. */
-		.z-mail-view .list-subject.z-mail-list-subject--important {
-			display: inline-block;
-			max-width: 100%;
-			width: fit-content;
-			vertical-align: top;
-			-webkit-box-decoration-break: clone;
-			box-decoration-break: clone;
-		}
 	}
 
-	/* Bulk select — solid accent reads clearer than gradient. */
-	.z-mail-view .z-mail-list--selecting .list-subject.z-mail-list-subject--important {
+	/* Bulk select — solid accent only on checked rows. */
+	.z-mail-view
+		.z-mail-list-row:has(.z-mail-list-row__checkbox:checked)
+		.z-mail-list-subject--important {
 		animation: none;
 		background-image: none;
 		background-size: unset;
@@ -380,6 +373,5 @@
 		-webkit-text-fill-color: unset;
 		color: var(--z-accent);
 		text-decoration-line: none;
-		text-decoration-color: color-mix(in srgb, var(--z-accent) 45%, transparent);
 	}
 

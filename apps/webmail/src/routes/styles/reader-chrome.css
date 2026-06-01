@@ -41,12 +41,8 @@
 		margin: 0 0 1rem;
 		font-size: var(--z-main-page-text);
 		line-height: 1.4;
-		font-weight: normal;
+		font-weight: 600;
 		@apply text-fg;
-	}
-
-	.z-mail-view .z-reader-subject-heading:not(.z-mail-list-subject--important) {
-		font-weight: 500;
 	}
 
 	.z-mail-view .z-mail-reader-pane {

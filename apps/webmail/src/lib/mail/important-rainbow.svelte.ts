@@ -4,7 +4,15 @@ import { scheduleAccountSettingsPush } from '$lib/settings/account-sync';
 const STORAGE_KEY = 'zaur:important-rainbow-phases';
 const RAINBOW_ANIMATION_NAME = 'z-important-rainbow';
 const RAINBOW_ANIMATION_MS = 3000;
-const RAINBOW_PHASE_SPAN = 45;
+/** Gradient band width — keep in sync with --important-rainbow-band (44rem). */
+const RAINBOW_BAND_REM = 44;
+/** Hover animation travel — stay non-positive so the left edge stays covered. */
+const RAINBOW_PHASE_SPAN_REM = 2.75;
+const RAINBOW_PHASE_MIN_REM = -(RAINBOW_BAND_REM * 0.5);
+
+function clampPhaseOffset(phase: number): number {
+	return Math.max(RAINBOW_PHASE_MIN_REM, Math.min(phase, 0));
+}
 
 /** Stable hash → per-message rainbow hue and default gradient phase. */
 function hashMessageId(id: string): number {
@@ -19,8 +27,18 @@ function defaultHue(messageId: string): number {
 	return hashMessageId(messageId) % 360;
 }
 
-function defaultPhase(messageId: string): number {
-	return 5 + (hashMessageId(messageId) % 61);
+function defaultPhaseOffset(messageId: string): number {
+	const span = RAINBOW_BAND_REM * 0.35;
+	return -Math.round(((hashMessageId(messageId) % Math.round(span * 10)) / 10) * 10) / 10;
+}
+
+/** Legacy values were % picks — remap to safe non-positive rem offsets. */
+function migrateLegacyPhase(value: number): number {
+	if (value <= 100) {
+		const rem = (value / 100) * RAINBOW_BAND_REM * 0.35;
+		return clampPhaseOffset(-Math.round(rem * 10) / 10);
+	}
+	return clampPhaseOffset(value);
 }
 
 function readStoredPhases(): Record<string, number> {
@@ -33,7 +51,7 @@ function readStoredPhases(): Record<string, number> {
 		const phases: Record<string, number> = {};
 		for (const [id, value] of Object.entries(parsed)) {
 			if (typeof value === 'number' && Number.isFinite(value)) {
-				phases[id] = value;
+				phases[id] = migrateLegacyPhase(value);
 			}
 		}
 		return phases;
@@ -47,42 +65,23 @@ function writeStoredPhases(phases: Record<string, number>) {
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(phases));
 }
 
-function parseLengthPx(value: string, elementWidth: number): number | null {
-	const trimmed = value.trim();
-	if (trimmed.endsWith('%')) {
-		return (elementWidth * parseFloat(trimmed)) / 100;
-	}
-	if (trimmed.endsWith('px')) {
-		return parseFloat(trimmed);
-	}
-	return null;
-}
-
-/** Read gradient X position as a percentage (handles px and % from getComputedStyle). */
+/** Read gradient X position as rem (absolute offset within the band). */
 export function readImportantRainbowPhase(subjectEl: HTMLElement): number | null {
 	if (!browser) return null;
 
 	const style = getComputedStyle(subjectEl);
 	const posX = style.backgroundPositionX || style.backgroundPosition.split(/\s+/)[0];
-	const width = subjectEl.clientWidth;
-	if (!width) return null;
 
-	if (posX.endsWith('%')) {
+	if (posX.endsWith('rem')) {
 		const phase = parseFloat(posX);
 		return Number.isFinite(phase) ? phase : null;
 	}
 
 	if (posX.endsWith('px')) {
-		const px = parseFloat(posX);
-		if (!Number.isFinite(px)) return null;
-
-		const sizeX = style.backgroundSizeX || style.backgroundSize.split(/\s+/)[0];
-		const bgWidth = parseLengthPx(sizeX, width);
-		if (bgWidth === null) return null;
-
-		const range = width - bgWidth;
-		if (Math.abs(range) < 0.5) return null;
-		return (px / range) * 100;
+		const rootSize = parseFloat(getComputedStyle(document.documentElement).fontSize);
+		if (!Number.isFinite(rootSize) || rootSize <= 0) return null;
+		const phase = parseFloat(posX) / rootSize;
+		return Number.isFinite(phase) ? Math.round(phase * 10) / 10 : null;
 	}
 
 	return null;
@@ -96,14 +95,14 @@ function readPhaseFromAnimation(subjectEl: HTMLElement, basePhase: number): numb
 
 		const t = Number(time) % (RAINBOW_ANIMATION_MS * 2);
 		const progress = t <= RAINBOW_ANIMATION_MS ? t / RAINBOW_ANIMATION_MS : 2 - t / RAINBOW_ANIMATION_MS;
-		return basePhase + progress * RAINBOW_PHASE_SPAN;
+		return Math.round((basePhase - progress * RAINBOW_PHASE_SPAN_REM) * 10) / 10;
 	}
 
 	return null;
 }
 
 class ImportantRainbowStore {
-	/** User-picked background-position X (percent) per message id. */
+	/** User-picked background-position X (rem) per message id. */
 	pickedPhases = $state<Record<string, number>>({});
 
 	init() {
@@ -121,13 +120,14 @@ class ImportantRainbowStore {
 	}
 
 	phaseFor(messageId: string): number {
-		return this.pickedPhases[messageId] ?? defaultPhase(messageId);
+		const phase = this.pickedPhases[messageId] ?? defaultPhaseOffset(messageId);
+		return clampPhaseOffset(phase);
 	}
 
 	cssVars(messageId: string): string {
 		const hue = defaultHue(messageId);
 		const phase = this.phaseFor(messageId);
-		return `--important-hue: ${hue}deg; --important-phase: ${phase}%`;
+		return `--important-hue: ${hue}deg; --important-phase-offset: ${phase}`;
 	}
 
 	/** Sample current gradient position from a list row (call on pointermove while hovering). */
@@ -146,22 +146,22 @@ class ImportantRainbowStore {
 	pickPhase(messageId: string, phase: number) {
 		if (!browser || !Number.isFinite(phase)) return;
 
-		const rounded = Math.round(phase * 10) / 10;
+		const rounded = clampPhaseOffset(Math.round(phase * 10) / 10);
+		if (this.pickedPhases[messageId] === rounded) return;
+
 		this.pickedPhases = { ...this.pickedPhases, [messageId]: rounded };
 		writeStoredPhases(this.pickedPhases);
 		scheduleAccountSettingsPush();
 	}
 
 	/** Save gradient position after hover — user-chosen color persists. */
-	pickFromRow(row: HTMLElement, messageId: string, fallbackPhase?: number) {
+	pickFromRow(row: HTMLElement, messageId: string) {
 		if (!browser) return;
 
 		const subject = row.querySelector('.z-mail-list-subject--important');
 		if (!(subject instanceof HTMLElement)) return;
 
-		const phase =
-			this.readPhase(subject, messageId) ??
-			(fallbackPhase !== undefined && Number.isFinite(fallbackPhase) ? fallbackPhase : null);
+		const phase = this.readPhase(subject, messageId);
 		if (phase === null) return;
 
 		this.pickPhase(messageId, phase);
