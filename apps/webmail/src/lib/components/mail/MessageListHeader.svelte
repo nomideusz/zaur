@@ -23,6 +23,7 @@
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const currentMailbox = $derived(mailboxRouteId ? mail.mailboxByRouteId(mailboxRouteId) : null);
 	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
+	const canMarkImportant = $derived(mail.canMarkImportantInMailbox(currentMailbox));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
 	const hasNotImportantSelected = $derived(
 		mail.messages.some((message) => selectedIds.includes(message.id) && !message.important)
@@ -77,7 +78,7 @@
 	{#if mail.hasSelection && !disabled}
 		<div class="z-mail-list-header__selection max-md:hidden">
 			<span class="z-mail-list-header__count">{selectedIds.length} selected</span>
-			{#if hasNotImportantSelected}
+			{#if hasNotImportantSelected && canMarkImportant}
 				<Button
 					variant="ghost"
 					class={actionButtonClass}

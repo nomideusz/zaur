@@ -24,6 +24,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { renderMessageBody } from '$lib/email/html';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
+	import { shouldShowImportantRainbow } from '$lib/mail/mailboxes';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
 
@@ -44,6 +45,7 @@
 	let quickReplySending = $state(false);
 	let quickReplyOpen = $state(false);
 	let scrollPane = $state<HTMLDivElement | null>(null);
+	let readerSubjectEl = $state<HTMLHeadingElement | null>(null);
 
 	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
 
@@ -54,7 +56,8 @@
 	const subjectAnchorId = $derived(actionMessage?.id ?? latest?.id);
 	const subject = $derived(latest?.subject ?? '(no subject)');
 	const subjectImportant = $derived(
-		!!(actionMessage?.important ?? thread.some((message) => message.important))
+		!!(actionMessage?.important ?? thread.some((message) => message.important)) &&
+			shouldShowImportantRainbow(mail.mailboxByRouteId(mailboxRouteId)?.role)
 	);
 	const subjectMessageId = $derived(subjectAnchorId ?? '');
 	const isDraft = $derived(mailboxRouteId === 'drafts');
@@ -225,6 +228,28 @@
 			void sendQuickReply();
 		}
 	}
+
+	function shouldPersistReaderRainbowPick(event: PointerEvent): boolean {
+		const related = event.relatedTarget;
+		if (related === null) return false;
+		if (related instanceof Node && !document.contains(related)) return false;
+		return true;
+	}
+
+	function persistReaderRainbowPick(event: PointerEvent) {
+		if (settings.reduceMotion || !subjectImportant || !subjectMessageId || !readerSubjectEl) {
+			return;
+		}
+		if (!shouldPersistReaderRainbowPick(event)) return;
+		importantRainbow.pickFromElement(readerSubjectEl, subjectMessageId);
+	}
+
+	function startReaderRainbowSample() {
+		if (settings.reduceMotion || !subjectImportant || !subjectMessageId || !readerSubjectEl) {
+			return;
+		}
+		importantRainbow.startHoverSample(readerSubjectEl, subjectMessageId);
+	}
 </script>
 
 <article
@@ -391,6 +416,7 @@
 						<div class="z-reader-content w-full">
 							{#if showInlineSubject}
 								<h1
+									bind:this={readerSubjectEl}
 									class={cn(
 										'z-reader-subject-heading',
 										subjectImportant && 'z-mail-list-subject--important',
@@ -402,6 +428,8 @@
 									style={subjectImportant && subjectMessageId
 										? importantRainbow.cssVars(subjectMessageId)
 										: undefined}
+									onpointerenter={startReaderRainbowSample}
+									onpointerleave={persistReaderRainbowPick}
 								>{subject}</h1>
 							{/if}
 

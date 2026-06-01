@@ -15,6 +15,7 @@
 	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { canMarkImportantFromMailboxRole } from '$lib/mail/mailboxes';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -54,9 +55,7 @@
 	const isDraft = $derived(mailboxRouteId === 'drafts');
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
-	const markImportantLabel = $derived(
-		actionMessage?.important ? 'Unmark important' : 'Mark important'
-	);
+	const canMarkImportant = $derived(canMarkImportantFromMailboxRole(currentMailbox?.role));
 	const allowExternal = $derived(!settings.blockExternalContent || pane?.showImagesOnce);
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>
@@ -182,14 +181,17 @@
 				<OverflowMenuItem label="Edit draft" onclick={editDraft}>
 					{#snippet icon()}<Pencil class="size-5" aria-hidden="true" />{/snippet}
 				</OverflowMenuItem>
-				<OverflowMenuItem label={markImportantLabel} onclick={toggleImportant}>
-					{#snippet icon()}
-						<Important
-							class={cn('size-5', actionMessage?.important && 'text-accent')}
-							aria-hidden="true"
-						/>
-					{/snippet}
-				</OverflowMenuItem>
+				{#if actionMessage?.important}
+					<OverflowMenuItem label="Unmark important" onclick={toggleImportant}>
+						{#snippet icon()}
+							<Important class="size-5 text-accent" aria-hidden="true" />
+						{/snippet}
+					</OverflowMenuItem>
+				{:else if canMarkImportant}
+					<OverflowMenuItem label="Mark important" onclick={toggleImportant}>
+						{#snippet icon()}<Important class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+				{/if}
 				{#if auth.client}
 					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
 				{/if}
@@ -215,14 +217,17 @@
 					{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
 				</OverflowMenuItem>
 				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-				<OverflowMenuItem label={markImportantLabel} onclick={toggleImportant}>
-					{#snippet icon()}
-						<Important
-							class={cn('size-5', actionMessage?.important && 'text-accent')}
-							aria-hidden="true"
-						/>
-					{/snippet}
-				</OverflowMenuItem>
+				{#if actionMessage?.important}
+					<OverflowMenuItem label="Unmark important" onclick={toggleImportant}>
+						{#snippet icon()}
+							<Important class="size-5 text-accent" aria-hidden="true" />
+						{/snippet}
+					</OverflowMenuItem>
+				{:else if canMarkImportant}
+					<OverflowMenuItem label="Mark important" onclick={toggleImportant}>
+						{#snippet icon()}<Important class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+				{/if}
 				{#if mail.canArchiveFrom(currentMailbox)}
 					<OverflowMenuItem label="Archive" onclick={archiveMessage}>
 						{#snippet icon()}<Archive class="size-5" aria-hidden="true" />{/snippet}

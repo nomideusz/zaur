@@ -146,3 +146,29 @@ export function moveTargetMailboxes(
 			(!mb.role || !MOVE_TARGET_EXCLUDED_ROLES.has(mb.role))
 	);
 }
+
+/** Trash, spam, and drafts cannot be marked Important. */
+const IMPORTANT_MARK_BLOCKED_ROLES = new Set<MailboxRole>(['trash', 'junk', 'drafts']);
+
+/** Trash and spam — Important is cleared when mail moves here. */
+const IMPORTANT_CLEAR_ON_MOVE_ROLES = new Set<MailboxRole>(['trash', 'junk']);
+
+export function canMarkImportantFromMailboxRole(role: MailboxRole | undefined | null): boolean {
+	if (!role) return true;
+	return !IMPORTANT_MARK_BLOCKED_ROLES.has(role);
+}
+
+export function shouldClearImportantOnMoveTo(role: MailboxRole | undefined | null): boolean {
+	if (!role) return false;
+	return IMPORTANT_CLEAR_ON_MOVE_ROLES.has(role);
+}
+
+/** Rainbow styling and Important section surfacing — excluded in trash/spam views. */
+export function shouldShowImportantRainbow(role: MailboxRole | undefined | null): boolean {
+	return canMarkImportantFromMailboxRole(role);
+}
+
+export function isExcludedFromImportantSection(role: MailboxRole | undefined | null): boolean {
+	if (!role) return false;
+	return IMPORTANT_CLEAR_ON_MOVE_ROLES.has(role);
+}

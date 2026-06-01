@@ -1,10 +1,14 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+	canMarkImportantFromMailboxRole,
+	isExcludedFromImportantSection,
 	mailboxDisplayName,
 	mailboxRouteId,
 	moveTargetMailboxes,
-	resolveMailboxKind
+	resolveMailboxKind,
+	shouldClearImportantOnMoveTo,
+	shouldShowImportantRainbow
 } from '../src/lib/mail/mailboxes.ts';
 
 describe('mailboxes', () => {
@@ -55,5 +59,29 @@ describe('mailboxes', () => {
 			targets.map((mb) => mb.id),
 			['sent', 'junk']
 		);
+	});
+
+	it('blocks marking important in trash, spam, and drafts', () => {
+		assert.equal(canMarkImportantFromMailboxRole('inbox'), true);
+		assert.equal(canMarkImportantFromMailboxRole('archive'), true);
+		assert.equal(canMarkImportantFromMailboxRole('sent'), true);
+		assert.equal(canMarkImportantFromMailboxRole('trash'), false);
+		assert.equal(canMarkImportantFromMailboxRole('junk'), false);
+		assert.equal(canMarkImportantFromMailboxRole('drafts'), false);
+	});
+
+	it('clears important when moving to trash or spam', () => {
+		assert.equal(shouldClearImportantOnMoveTo('trash'), true);
+		assert.equal(shouldClearImportantOnMoveTo('junk'), true);
+		assert.equal(shouldClearImportantOnMoveTo('archive'), false);
+		assert.equal(shouldClearImportantOnMoveTo('inbox'), false);
+	});
+
+	it('excludes trash and spam from important section surfacing', () => {
+		assert.equal(isExcludedFromImportantSection('trash'), true);
+		assert.equal(isExcludedFromImportantSection('junk'), true);
+		assert.equal(isExcludedFromImportantSection('archive'), false);
+		assert.equal(shouldShowImportantRainbow('trash'), false);
+		assert.equal(shouldShowImportantRainbow('inbox'), true);
 	});
 });

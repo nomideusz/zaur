@@ -33,6 +33,11 @@
 	import { cn } from '$lib/utils/cn';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
+	import {
+		canMarkImportantFromMailboxRole,
+		isExcludedFromImportantSection,
+		shouldShowImportantRainbow
+	} from '$lib/mail/mailboxes';
 
 	/** Editorial list row — shared Tailwind building blocks. */
 	const listMessageGroup = 'group/message';
@@ -357,7 +362,24 @@
 	const readMessages = $derived.by(() =>
 		messages.filter((message) => !isNewUnreadMessage(message) && !message.important)
 	);
-	const importantInboxMessages = $derived.by(() => messages.filter((message) => message.important));
+	function messageEligibleForImportantSection(message: MessagePreview): boolean {
+		const role = mail.mailboxByRouteId(message.mailboxId)?.role;
+		return !isExcludedFromImportantSection(role);
+	}
+
+	function showImportantPresentation(message: MessagePreview, routeId: string): boolean {
+		if (!message.important) return false;
+		const viewRole = mail.mailboxByRouteId(routeId)?.role;
+		return shouldShowImportantRainbow(viewRole);
+	}
+
+	function canPickImportantRainbow(routeId: string): boolean {
+		return canMarkImportantFromMailboxRole(mail.mailboxByRouteId(routeId)?.role);
+	}
+
+	const importantInboxMessages = $derived.by(() =>
+		messages.filter((message) => message.important && messageEligibleForImportantSection(message))
+	);
 	const importantMailbox = $derived(mail.importantMailbox());
 
 	$effect(() => {
@@ -523,9 +545,9 @@
 			}
 
 			if (importantMailbox) {
-				const loadedImportant = (sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? []).filter(
-					(message) => !mail.wasRemovedFromView(message.id)
-				);
+				const loadedImportant = (sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [])
+					.filter((message) => !mail.wasRemovedFromView(message.id))
+					.filter(messageEligibleForImportantSection);
 				const importantMessages = mergeMessagePreviews(loadedImportant, importantInboxMessages);
 				const importantTotal = Math.max(importantMailbox.total, importantMessages.length);
 				if (importantTotal > 0 || importantMessages.length > 0) {
@@ -912,11 +934,20 @@
 					class={listMessageLinkClass}
 					aria-current={currentMessageId === message.id ? 'page' : undefined}
 					aria-label="{showNewDot ? 'New. ' : ''}{subjectText} — {senderLabel}, {timeLabel}"
-					onpointerenter={() => {
-						if (message.important) importantRainbowHoverId = message.id;
+					onpointerenter={(event) => {
+						if (!showImportantPresentation(message, routeId)) return;
+						importantRainbowHoverId = message.id;
+						if (settings.reduceMotion || !canPickImportantRainbow(routeId)) return;
+						const subject = event.currentTarget.querySelector(
+							'.z-mail-list-subject--important'
+						);
+						if (subject instanceof HTMLElement) {
+							importantRainbow.startHoverSample(subject, message.id);
+						}
 					}}
 					onpointerleave={(event) => {
-						if (message.important) {
+						if (!showImportantPresentation(message, routeId)) return;
+						if (canPickImportantRainbow(routeId)) {
 							persistImportantRainbowPick(message.id, event.currentTarget, event);
 						}
 					}}
@@ -931,7 +962,7 @@
 								{#if showNewDot}
 									<span class="z-mail-list-new-dot" aria-hidden="true"></span>
 								{/if}
-								{#if message.important}
+								{#if showImportantPresentation(message, routeId)}
 									<span
 										class={cn(
 											listSubjectShellClass,

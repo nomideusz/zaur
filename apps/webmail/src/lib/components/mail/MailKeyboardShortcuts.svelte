@@ -10,6 +10,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { resolveMailboxRouteByShortcut } from '$lib/mail/folder-shortcuts';
+	import { canMarkImportantFromMailboxRole } from '$lib/mail/mailboxes';
 	import { MAIL_LAYOUT } from '$lib/mail/config';
 	import { mailListHref, mailThreadHref, parseMailContext } from '$lib/mail/routes';
 	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
@@ -268,6 +269,18 @@
 								)
 							: (currentMessage() ?? mail.selectedThread.at(-1));
 					if (!importantTarget) break;
+					{
+						const routeId =
+							parseMailContext($page.url.pathname)?.mailboxRouteId ??
+							importantTarget.mailboxId;
+						const mailbox = mail.mailboxByRouteId(routeId);
+						if (
+							!importantTarget.important &&
+							!canMarkImportantFromMailboxRole(mailbox?.role)
+						) {
+							break;
+						}
+					}
 					void mail.toggleImportant(auth.client, importantTarget).catch((error) => {
 						const message = error instanceof Error ? error.message : 'Could not update important';
 						toast.show(message, 'error');

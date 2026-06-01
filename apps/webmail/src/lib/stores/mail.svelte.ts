@@ -4,11 +4,13 @@ import { mapEmailDetail, mapEmailPreview } from '$lib/jmap/map';
 import type { JMAPEmail, JMAPMailbox } from '$lib/jmap/types';
 import { isAccountSettingsSubject } from '$lib/settings/account-settings-types';
 import {
+	canMarkImportantFromMailboxRole,
 	mailboxDisplayName,
 	mailboxKindOrderForMailbox,
 	mailboxRoleFromKind,
 	mailboxRouteId,
-	resolveMailboxKind
+	resolveMailboxKind,
+	shouldClearImportantOnMoveTo
 } from '$lib/mail/mailboxes';
 import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
 import { settings } from '$lib/stores/settings.svelte';
@@ -541,19 +543,29 @@ class MailStore {
 	) {
 		if (!messages.length) return;
 
-		const importantMailbox = this.importantMailbox();
-		const ids = messages.map((message) => message.id);
+		let targets = messages;
+		if (important) {
+			targets = messages.filter((message) =>
+				canMarkImportantFromMailboxRole(this.mailboxByRouteId(message.mailboxId)?.role)
+			);
+			if (!targets.length) {
+				throw new Error('Cannot mark messages in Trash, Spam, or Drafts as important');
+			}
+		}
 
-		for (const message of messages) {
+		const importantMailbox = this.importantMailbox();
+		const ids = targets.map((message) => message.id);
+
+		for (const message of targets) {
 			this.setPendingKeyword(message.id, { important });
 			this.patchMessage(message.id, { important });
 			this.patchThreadMessage(message.id, { important });
 		}
 
 		if (importantMailbox) {
-			const totalDelta = important ? messages.length : -messages.length;
+			const totalDelta = important ? targets.length : -targets.length;
 			let unreadDelta = 0;
-			for (const message of messages) {
+			for (const message of targets) {
 				if (message.unread) unreadDelta += important ? 1 : -1;
 			}
 			this.adjustMailboxCounts(importantMailbox.id, totalDelta, unreadDelta);
@@ -566,20 +578,31 @@ class MailStore {
 			}
 		} catch (error) {
 			if (importantMailbox) {
-				const totalDelta = important ? -messages.length : messages.length;
+				const totalDelta = important ? -targets.length : targets.length;
 				let unreadDelta = 0;
-				for (const message of messages) {
+				for (const message of targets) {
 					if (message.unread) unreadDelta += important ? -1 : 1;
 				}
 				this.adjustMailboxCounts(importantMailbox.id, totalDelta, unreadDelta);
 			}
-			for (const message of messages) {
+			for (const message of targets) {
 				this.clearPendingKeyword(message.id, 'important');
 				this.patchMessage(message.id, { important: !important });
 				this.patchThreadMessage(message.id, { important: !important });
 			}
 			throw error;
 		}
+	}
+
+	private async clearImportantBeforeMove(
+		client: JMAPClient,
+		messages: MessagePreview[],
+		target: Pick<Mailbox, 'role'>
+	) {
+		if (!shouldClearImportantOnMoveTo(target.role)) return;
+		const flagged = messages.filter((message) => message.important);
+		if (!flagged.length) return;
+		await this.setMessagesImportant(client, flagged, false);
 	}
 
 	async moveMessage(client: JMAPClient, message: MessagePreview, targetRole: Mailbox['role']) {
@@ -590,6 +613,7 @@ class MailStore {
 		const sourceJmapId = this.mailboxByRouteId(sourceRouteId)?.jmapId;
 		const snapshot = { ...message };
 
+		await this.clearImportantBeforeMove(client, [snapshot], target);
 		await client.moveToMailbox(message.id, target.jmapId, sourceJmapId);
 		this.applyMoveAwayCounts([message], sourceRouteId, target);
 		this.removeMessage(message, { skipCounts: true });
@@ -620,6 +644,7 @@ class MailStore {
 		const sourceJmapId = this.mailboxByRouteId(sourceRouteId)?.jmapId;
 		const snapshot = { ...message };
 
+		await this.clearImportantBeforeMove(client, [snapshot], target);
 		await client.moveToMailbox(message.id, target.jmapId, sourceJmapId);
 		this.applyMoveAwayCounts([message], sourceRouteId, target);
 		this.removeMessage(message, { skipCounts: true });
@@ -649,6 +674,7 @@ class MailStore {
 		}
 
 		if (trash?.jmapId) {
+			await this.clearImportantBeforeMove(client, [snapshot], trash);
 			await client.moveToMailbox(message.id, trash.jmapId, sourceJmapId);
 		} else {
 			await client.destroyEmail(message.id);
@@ -846,6 +872,7 @@ class MailStore {
 
 		this.bulkActionLoading = true;
 		try {
+			await this.clearImportantBeforeMove(client, messages, target);
 			await client.moveEmailsToMailbox(
 				messages.map((message) => message.id),
 				target.jmapId,
@@ -862,7 +889,11 @@ class MailStore {
 	}
 
 	async bulkMarkAsImportant(client: JMAPClient) {
-		const messages = this.selectedMessages().filter((message) => !message.important);
+		const messages = this.selectedMessages().filter(
+			(message) =>
+				!message.important &&
+				canMarkImportantFromMailboxRole(this.mailboxByRouteId(message.mailboxId)?.role)
+		);
 		if (!messages.length) return;
 
 		this.bulkActionLoading = true;
@@ -917,6 +948,7 @@ class MailStore {
 					this.removeMessage(message);
 				}
 			} else if (trash?.jmapId) {
+				await this.clearImportantBeforeMove(client, snapshots, trash);
 				await client.moveEmailsToMailbox(ids, trash.jmapId, sourceJmapId);
 				this.applyMoveAwayCounts(messages, routeMailboxId, trash);
 				for (const message of messages) {
@@ -1196,6 +1228,10 @@ class MailStore {
 
 	canArchiveFrom(mailbox: Mailbox | null | undefined): boolean {
 		return !!this.archiveMailbox() && mailbox?.role !== 'archive';
+	}
+
+	canMarkImportantInMailbox(mailbox: Mailbox | null | undefined): boolean {
+		return canMarkImportantFromMailboxRole(mailbox?.role);
 	}
 
 	private patchThreadMessage(id: string, patch: Partial<MessageDetail>) {

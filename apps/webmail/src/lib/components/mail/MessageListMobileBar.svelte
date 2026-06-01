@@ -27,6 +27,7 @@
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
+	const canMarkImportant = $derived(mail.canMarkImportantInMailbox(currentMailbox));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
 	const moveTargets = $derived(moveTargetMailboxes(mail.mailboxes, currentMailbox));
 	const hasNotImportantSelected = $derived(
@@ -79,7 +80,7 @@
 	<span class="z-mail-list-bulk-bar__count">{selectedIds.length} selected</span>
 
 	<div class="z-mail-list-bulk-bar__actions">
-		{#if hasNotImportantSelected}
+		{#if hasNotImportantSelected && canMarkImportant}
 			<Button
 				variant="ghost"
 				class="z-mail-list-bulk-bar__btn"
