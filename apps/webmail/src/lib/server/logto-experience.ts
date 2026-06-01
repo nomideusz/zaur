@@ -61,7 +61,7 @@ function serializeCookies(jar: Map<string, string>): string {
 	return [...jar.entries()].map(([k, v]) => `${k}=${v}`).join('; ');
 }
 
-async function logtoFetch(
+async function logtoExperienceFetch(
 	path: string,
 	jar: Map<string, string>,
 	forwardedOrigin: string,
@@ -89,19 +89,26 @@ async function logtoFetch(
 	return response;
 }
 
-async function bootstrapInteraction(
-	jar: Map<string, string>,
-	authUrl: string,
-	forwardedOrigin: string
-) {
+function resolveLogtoUrl(url: string, base?: string): string {
+	if (url.startsWith('http://') || url.startsWith('https://')) return url;
+	return new URL(url, base ?? `${logtoOrigin()}/`).href;
+}
+
+function urlHasAuthCode(url: string): boolean {
+	try {
+		return Boolean(new URL(url).searchParams.get('code'));
+	} catch {
+		return url.includes('code=');
+	}
+}
+
+async function bootstrapInteraction(jar: Map<string, string>, authUrl: string) {
 	let url: string | null = authUrl;
-	for (let i = 0; i < 8 && url; i++) {
+	for (let i = 0; i < 10 && url; i++) {
 		const response = await fetch(url, {
 			redirect: 'manual',
 			headers: {
-				Cookie: serializeCookies(jar),
-				'Logto-App-Id': clientId(),
-				...forwardedHeaders(forwardedOrigin)
+				Cookie: serializeCookies(jar)
 			}
 		});
 		mergeSetCookies(jar, response);
@@ -111,7 +118,7 @@ async function bootstrapInteraction(
 				url = null;
 				continue;
 			}
-			url = new URL(location, url).href;
+			url = resolveLogtoUrl(location, url);
 			continue;
 		}
 		break;
@@ -164,6 +171,9 @@ export function passkeyErrorMessage(error: unknown): string {
 		) {
 			return 'Your sign-in account needs a Logto profile update. Ask your admin to run ./infra/auth/configure-logto-signin.sh, then try again.';
 		}
+		if (/authorization callback URL after passkey/i.test(error.message)) {
+			return 'Passkey sign-in succeeded but the session could not be completed. Try again, or sign in with your password.';
+		}
 		return error.message;
 	}
 	return 'Passkey sign-in failed.';
@@ -182,7 +192,7 @@ export type PasskeyBeginResult = {
 };
 
 async function initSignInInteraction(jar: Map<string, string>, forwardedOrigin: string) {
-	await logtoFetch('/api/experience', jar, forwardedOrigin, {
+	await logtoExperienceFetch('/api/experience', jar, forwardedOrigin, {
 		method: 'PUT',
 		json: { interactionEvent: 'SignIn' }
 	}).then(async (res) => {
@@ -210,12 +220,12 @@ export async function beginPasskeySignIn(input: {
 		loginHint: input.email
 	});
 
-	await bootstrapInteraction(jar, authUrl, input.forwardedOrigin);
+	await bootstrapInteraction(jar, authUrl);
 
 	try {
 		await initSignInInteraction(jar, input.forwardedOrigin);
 
-		const auth = await logtoFetch(
+		const auth = await logtoExperienceFetch(
 			'/api/experience/verification/sign-in-passkey/authentication',
 			jar,
 			input.forwardedOrigin,
@@ -257,7 +267,7 @@ async function beginDiscoverablePasskeySignIn(input: {
 	redirectUri: string;
 	forwardedOrigin: string;
 }): Promise<PasskeyBeginResult> {
-	const auth = await logtoFetch(
+	const auth = await logtoExperienceFetch(
 		'/api/experience/preflight/sign-in-passkey/authentication',
 		input.jar,
 		input.forwardedOrigin,
@@ -331,7 +341,7 @@ export async function completePasskeySignIn(input: {
 		? { payload: input.payload }
 		: { verificationId: input.verificationId, payload: input.payload };
 
-	const verify = await logtoFetch(
+	const verify = await logtoExperienceFetch(
 		'/api/experience/verification/sign-in-passkey/authentication/verify',
 		jar,
 		input.forwardedOrigin,
@@ -341,14 +351,14 @@ export async function completePasskeySignIn(input: {
 		}
 	).then((res) => readJson<{ verificationId: string }>(res));
 
-	await logtoFetch('/api/experience/identification', jar, input.forwardedOrigin, {
+	await logtoExperienceFetch('/api/experience/identification', jar, input.forwardedOrigin, {
 		method: 'POST',
 		json: { verificationId: verify.verificationId }
 	}).then(async (res) => {
 		if (!res.ok) await readJson(res);
 	});
 
-	const submit = await logtoFetch('/api/experience/submit', jar, input.forwardedOrigin, {
+	const submit = await logtoExperienceFetch('/api/experience/submit', jar, input.forwardedOrigin, {
 		method: 'POST'
 	}).then((res) => readJson<{ redirectTo: string }>(res));
 
@@ -363,22 +373,34 @@ export async function completePasskeySignIn(input: {
 }
 
 async function followForAuthorizationCode(jar: Map<string, string>, startUrl: string): Promise<string> {
-	let url: string | null = startUrl;
-	for (let i = 0; i < 10 && url; i++) {
-		if (url.includes('code=')) return url;
+	let url: string | null = resolveLogtoUrl(startUrl);
+
+	for (let i = 0; i < 20 && url; i++) {
+		if (urlHasAuthCode(url)) return url;
+
 		const response = await fetch(url, {
 			redirect: 'manual',
-			headers: { Cookie: serializeCookies(jar) }
+			headers: {
+				Cookie: serializeCookies(jar),
+				Accept: 'text/html,application/xhtml+xml,application/json'
+			}
 		});
 		mergeSetCookies(jar, response);
+
+		if (response.url && urlHasAuthCode(response.url)) {
+			return response.url;
+		}
+
 		if (response.status >= 300 && response.status < 400) {
 			const location = response.headers.get('location');
 			if (!location) break;
-			url = new URL(location, url).href;
+			url = resolveLogtoUrl(location, url);
 			continue;
 		}
+
 		break;
 	}
+
 	throw new Error('Could not resolve authorization callback URL after passkey sign-in.');
 }
 
@@ -387,7 +409,7 @@ async function identifyWithVerificationId(
 	forwardedOrigin: string,
 	verificationId: string
 ) {
-	await logtoFetch('/api/experience/identification', jar, forwardedOrigin, {
+	await logtoExperienceFetch('/api/experience/identification', jar, forwardedOrigin, {
 		method: 'POST',
 		json: { verificationId }
 	}).then(async (res) => {
@@ -402,7 +424,7 @@ async function identifyWithOneTimeToken(
 	token: string
 ) {
 	await initSignInInteraction(jar, forwardedOrigin);
-	const tokenVerification = await logtoFetch(
+	const tokenVerification = await logtoExperienceFetch(
 		'/api/experience/verification/one-time-token/verify',
 		jar,
 		forwardedOrigin,
@@ -424,7 +446,7 @@ async function identifyWithPassword(
 	password: string
 ) {
 	await initSignInInteraction(jar, forwardedOrigin);
-	const passwordVerification = await logtoFetch(
+	const passwordVerification = await logtoExperienceFetch(
 		'/api/experience/verification/password',
 		jar,
 		forwardedOrigin,
@@ -475,7 +497,7 @@ export async function beginPasskeyRegistration(input: {
 		oneTimeToken: input.oneTimeToken
 	});
 
-	await bootstrapInteraction(jar, authUrl, input.forwardedOrigin);
+	await bootstrapInteraction(jar, authUrl);
 
 	if (input.oneTimeToken) {
 		await identifyWithOneTimeToken(jar, input.forwardedOrigin, input.email, input.oneTimeToken);
@@ -483,7 +505,7 @@ export async function beginPasskeyRegistration(input: {
 		await identifyWithPassword(jar, input.forwardedOrigin, input.email, input.password!);
 	}
 
-	const registration = await logtoFetch(
+	const registration = await logtoExperienceFetch(
 		'/api/experience/verification/web-authn/registration',
 		jar,
 		input.forwardedOrigin,
@@ -550,7 +572,7 @@ export async function completePasskeyRegistration(input: {
 }): Promise<{ code?: string; state?: string }> {
 	const jar = decodeLogtoCookieJar(input.logtoCookies);
 
-	const verify = await logtoFetch(
+	const verify = await logtoExperienceFetch(
 		'/api/experience/verification/web-authn/registration/verify',
 		jar,
 		input.forwardedOrigin,
@@ -563,14 +585,14 @@ export async function completePasskeyRegistration(input: {
 		}
 	).then((res) => readJson<{ verificationId: string }>(res));
 
-	await logtoFetch('/api/experience/profile/mfa/passkey', jar, input.forwardedOrigin, {
+	await logtoExperienceFetch('/api/experience/profile/mfa/passkey', jar, input.forwardedOrigin, {
 		method: 'POST',
 		json: { verificationId: verify.verificationId }
 	}).then(async (res) => {
 		if (!res.ok) await readJson(res);
 	});
 
-	const submit = await logtoFetch('/api/experience/submit', jar, input.forwardedOrigin, {
+	const submit = await logtoExperienceFetch('/api/experience/submit', jar, input.forwardedOrigin, {
 		method: 'POST'
 	}).then((res) => readJson<{ redirectTo?: string }>(res));
 
