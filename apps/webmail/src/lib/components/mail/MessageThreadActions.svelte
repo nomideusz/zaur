@@ -45,7 +45,7 @@
 		class: className = ''
 	}: Props = $props();
 
-	const pane = getContext<MailPaneContext>(MAIL_PANE_CTX);
+	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
 
 	const latest = $derived(thread.at(-1));
 	const actionMessage = $derived(

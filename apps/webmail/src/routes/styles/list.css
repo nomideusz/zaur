@@ -280,31 +280,20 @@
 	:root {
 		--important-rainbow-s: 78%;
 		--important-rainbow-l: 50%;
-		--important-rainbow-underline-l: 54%;
 	}
 
 	.dark {
 		--important-rainbow-s: 84%;
 		--important-rainbow-l: 74%;
-		--important-rainbow-underline-l: 78%;
 	}
 
 	.z-mail-list-subject--important {
 		font-weight: 600;
+		text-decoration-line: none;
 		color: hsl(
 			calc(var(--important-hue, 0deg) + 300deg),
 			var(--important-rainbow-s),
 			var(--important-rainbow-l)
-		);
-		text-decoration-color: color-mix(
-			in srgb,
-			hsl(
-				calc(var(--important-hue, 0deg) + 300deg),
-				var(--important-rainbow-s),
-				var(--important-rainbow-underline-l)
-			)
-			42%,
-			transparent
 		);
 	}
 
@@ -362,9 +351,11 @@
 			}
 		}
 
-		/* Reader heading uses text-fg by default — override when rainbow applies. */
-		.z-mail-view .z-reader-subject-heading.z-mail-list-subject--important {
+		/* List rows + reader heading — same gradient text (no underline / text-fg bleed). */
+		.z-mail-view
+			:is(.z-reader-subject-heading, .list-subject).z-mail-list-subject--important {
 			font-weight: 600;
+			text-decoration-line: none;
 			-webkit-text-fill-color: transparent;
 			color: transparent;
 		}

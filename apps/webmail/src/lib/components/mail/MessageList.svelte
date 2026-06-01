@@ -39,12 +39,17 @@
 	const listMessageRowClass = 'z-mail-list-row';
 	const listMessageStackClass = 'flex min-w-0 flex-row items-start justify-between gap-4';
 	const listMessageLeadClass = 'flex min-w-0 flex-1 flex-col gap-0.5';
-	const listSubjectClass = cn(
-		'block min-w-0 font-normal text-fg underline underline-offset-[0.2em] decoration-fg/35 decoration-1',
-		'z-type-page leading-[1.4] [overflow-wrap:anywhere]',
-		'transition-[color,text-decoration-color] duration-150',
-		'group-hover/message:decoration-fg/55 group-focus-visible/message:decoration-fg/55'
-	);
+	const listSubjectClass = (important: boolean) =>
+		cn(
+			'list-subject block min-w-0 z-type-page leading-[1.4] [overflow-wrap:anywhere]',
+			important
+				? 'min-w-0 font-semibold'
+				: cn(
+						'font-normal text-fg underline underline-offset-[0.2em] decoration-fg/35 decoration-1',
+						'transition-[color,text-decoration-color] duration-150',
+						'group-hover/message:decoration-fg/55 group-focus-visible/message:decoration-fg/55'
+					)
+		);
 	const listImportantSubjectClass = 'z-mail-list-subject--important';
 	const listWhenClass = cn(
 		'shrink-0 tabular-nums text-fg-muted no-underline z-type-page leading-[1.4] pt-[0.05em]',
@@ -174,12 +179,15 @@
 		return flattenSectionsForSelection(folderSections);
 	});
 
+	function sameMessageIds(a: MessagePreview[], b: MessagePreview[]): boolean {
+		if (a.length !== b.length) return false;
+		return a.every((message, index) => message.id === b[index]?.id);
+	}
+
 	$effect(() => {
-		if (!bulkSelectEnabled) {
-			mail.setSelectionList([]);
-			return;
-		}
-		mail.setSelectionList(sectionMode ? bulkSelectionMessages : []);
+		const next = !bulkSelectEnabled ? [] : sectionMode ? bulkSelectionMessages : [];
+		if (sameMessageIds(mail.selectionList, next)) return;
+		mail.setSelectionList(next);
 	});
 	const showBulkBar = $derived(bulkSelectEnabled && mail.hasSelection && !!mailboxRouteId);
 
@@ -881,7 +889,13 @@
 			{@const showNewDot = isInboxHome && isNewUnreadMessage(message)}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
-			<li class={cn('list-none', listMessageRowClass, rowSelected && '[&_.list-subject]:text-accent')}>
+			<li
+				class={cn(
+					'list-none',
+					listMessageRowClass,
+					rowSelected && !message.important && '[&_.list-subject]:text-accent'
+				)}
+			>
 				{#if bulkSelectEnabled}
 					<input
 						type="checkbox"
@@ -923,8 +937,7 @@
 								{/if}
 								<span
 									class={cn(
-										listSubjectClass,
-										'list-subject min-w-0',
+										listSubjectClass(message.important),
 										message.important && listImportantSubjectClass,
 										message.important &&
 											importantRainbow.hasPicked(message.id) &&

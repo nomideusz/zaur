@@ -82,7 +82,7 @@ export async function initMailDatabase(nextAccountId: string): Promise<MailDatab
 		database = await createRxDatabase({
 			name,
 			storage: getRxStorageDexie(),
-			multiInstance: false,
+			multiInstance: true,
 			eventReduce: true
 		});
 
@@ -109,7 +109,7 @@ export async function initMailDatabase(nextAccountId: string): Promise<MailDatab
 		const cleanDatabase = await createRxDatabase({
 			name,
 			storage: getRxStorageDexie(),
-			multiInstance: false,
+			multiInstance: true,
 			eventReduce: true
 		});
 

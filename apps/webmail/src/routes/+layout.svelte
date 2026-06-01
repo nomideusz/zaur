@@ -14,20 +14,36 @@
 
 	let { children } = $props();
 
+	const PRELOAD_RELOAD_KEY = 'zaur:vite-preload-reload-at';
+
 	onMount(() => {
 		theme.init();
 		settings.init();
 		importantRainbow.init();
 		pwa.init();
-		void auth.init();
+		void auth.init().finally(() => {
+			sessionStorage.removeItem(PRELOAD_RELOAD_KEY);
+		});
 		network.init(() => {
 			void import('$lib/sync/outbox-processor').then(({ outboxProcessor }) =>
 				outboxProcessor.processQueue()
 			);
 		});
 
+		const onPageHide = () => {
+			void import('$lib/db').then(({ closeMailDatabase }) => closeMailDatabase());
+		};
+		window.addEventListener('pagehide', onPageHide);
+
 		const onPreloadError = (event: Event) => {
 			event.preventDefault();
+			const last = Number(sessionStorage.getItem(PRELOAD_RELOAD_KEY) ?? 0);
+			const now = Date.now();
+			if (now - last < 10_000) {
+				console.warn('[zaur] Suppressed vite:preloadError reload loop');
+				return;
+			}
+			sessionStorage.setItem(PRELOAD_RELOAD_KEY, String(now));
 			window.location.reload();
 		};
 		window.addEventListener('vite:preloadError', onPreloadError);
@@ -47,6 +63,7 @@
 		const onUnauthorized = () => auth.handleUnauthorized();
 		window.addEventListener('zaur:unauthorized', onUnauthorized);
 		return () => {
+			window.removeEventListener('pagehide', onPageHide);
 			window.removeEventListener('vite:preloadError', onPreloadError);
 			window.removeEventListener('zaur:unauthorized', onUnauthorized);
 			network.stop();

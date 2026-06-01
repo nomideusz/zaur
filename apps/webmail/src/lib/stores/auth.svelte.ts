@@ -55,9 +55,12 @@ class AuthStore {
 
 	async init() {
 		if (!browser) return;
-		await this.checkOauthConfig();
-		await this.restore();
-		this.isRestoring = false;
+		try {
+			await this.checkOauthConfig();
+			await this.restore();
+		} finally {
+			this.isRestoring = false;
+		}
 	}
 
 	async checkOauthConfig() {
