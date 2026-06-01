@@ -9,6 +9,7 @@ export const OAUTH_REDIRECT_COOKIE = 'oauth_redirect_to';
 export const PASSKEY_LOGTO_COOKIE = 'passkey_logto_cookies';
 export const PASSKEY_VERIFICATION_COOKIE = 'passkey_verification_id';
 export const PASSKEY_DISCOVERABLE_COOKIE = 'passkey_discoverable';
+export const PASSKEY_FLOW_COOKIE = 'passkey_flow';
 
 const OAUTH_FLOW_MAX_AGE_SEC = 10 * 60;
 
@@ -43,7 +44,8 @@ export function clearPasskeyFlowCookies(cookies: Cookies) {
 	for (const name of [
 		PASSKEY_LOGTO_COOKIE,
 		PASSKEY_VERIFICATION_COOKIE,
-		PASSKEY_DISCOVERABLE_COOKIE
+		PASSKEY_DISCOVERABLE_COOKIE,
+		PASSKEY_FLOW_COOKIE
 	]) {
 		cookies.delete(name, { path: '/' });
 	}
@@ -72,11 +74,23 @@ export function readPasskeyFlow(cookies: Cookies) {
 	const logtoCookies = cookies.get(PASSKEY_LOGTO_COOKIE);
 	if (!logtoCookies) return null;
 
+	const flow = cookies.get(PASSKEY_FLOW_COOKIE);
+	if (flow === 'register') {
+		const verificationId = cookies.get(PASSKEY_VERIFICATION_COOKIE);
+		if (!verificationId) return null;
+		return { logtoCookies, verificationId, discoverable: false, flow: 'register' as const };
+	}
+
 	const discoverable = cookies.get(PASSKEY_DISCOVERABLE_COOKIE) === '1';
 	const verificationId = cookies.get(PASSKEY_VERIFICATION_COOKIE) ?? undefined;
 	if (!discoverable && !verificationId) return null;
 
-	return { logtoCookies, verificationId, discoverable };
+	return {
+		logtoCookies,
+		verificationId,
+		discoverable,
+		flow: 'signin' as const
+	};
 }
 
 export async function startOauthRedirect(input: {

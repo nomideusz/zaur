@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import SettingsField from '$lib/components/settings/SettingsField.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
@@ -13,6 +14,34 @@
 	let clearingCache = $state(false);
 	let emptyingTrash = $state(false);
 	let emptyingSpam = $state(false);
+	let passkeyPassword = $state('');
+	let passkeyLoading = $state(false);
+	let passkeyConfigured = $state<boolean | null>(null);
+
+	const oauthEnabled = $derived(auth.oauthConfig?.enabled === true);
+
+	onMount(async () => {
+		await auth.checkOauthConfig();
+	});
+
+	async function addPasskey() {
+		if (!auth.username || !passkeyPassword) return;
+		passkeyLoading = true;
+		try {
+			await auth.registerPasskey({
+				email: auth.username,
+				password: passkeyPassword
+			});
+			passkeyPassword = '';
+			passkeyConfigured = true;
+			toast.show('Passkey added. You can use it to sign in next time.', 'success');
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Passkey setup failed.';
+			toast.show(message, 'error');
+		} finally {
+			passkeyLoading = false;
+		}
+	}
 
 	const trashMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'trash'));
 	const junkMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'junk'));
@@ -129,6 +158,36 @@
 			</Button>
 		</SettingsRow>
 	</SettingsGroup>
+
+	{#if oauthEnabled}
+		<SettingsGroup title="Sign-in">
+			<SettingsField
+				title="Passkey"
+				description="Use Face ID, Touch ID, or your device PIN to sign in without your password."
+			>
+				<div class="flex w-full flex-col gap-2 sm:max-w-xs">
+					<input
+						type="password"
+						class="z-input"
+						bind:value={passkeyPassword}
+						autocomplete="current-password"
+						placeholder="Confirm password"
+						disabled={passkeyLoading}
+					/>
+					<Button
+						class="w-full"
+						disabled={passkeyLoading || !passkeyPassword.trim()}
+						onclick={() => void addPasskey()}
+					>
+						{passkeyLoading ? 'Waiting for passkey…' : 'Add passkey'}
+					</Button>
+					{#if passkeyConfigured}
+						<p class="text-xs text-fg-muted">Passkey added on this device.</p>
+					{/if}
+				</div>
+			</SettingsField>
+		</SettingsGroup>
+	{/if}
 
 	{#if auth.identities.length > 1}
 		<SettingsGroup title="Addresses">

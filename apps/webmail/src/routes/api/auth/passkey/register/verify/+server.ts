@@ -1,34 +1,34 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import {
-	completePasskeySignIn,
-	normalizeWebAuthnCredential,
+	completePasskeyRegistration,
+	normalizeWebAuthnRegistration,
 	passkeyErrorMessage
 } from '$lib/server/logto-experience';
 import { isOauthEnabled } from '$lib/server/oidc-discovery';
-import { clearPasskeyFlowCookies, readPasskeyFlow } from '$lib/server/oauth-flow';
+import { clearOauthFlowCookies, clearPasskeyFlowCookies, readPasskeyFlow } from '$lib/server/oauth-flow';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 
 export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	if (!isOauthEnabled()) {
-		return json({ error: 'Passkey sign-in is not configured.' }, { status: 503 });
+		return json({ error: 'Passkey setup is not configured.' }, { status: 503 });
 	}
 
 	const clientAddress = getClientAddress(request);
 	const limit = checkRateLimit({
-		key: `passkey-verify:${clientAddress}`,
-		limit: 20,
+		key: `passkey-register-verify:${clientAddress}`,
+		limit: 10,
 		windowMs: 15 * 60 * 1000
 	});
 	if (!limit.allowed) {
 		return json(
-			{ error: `Too many sign-in attempts. Try again in ${limit.retryAfterSec}s.` },
+			{ error: `Too many attempts. Try again in ${limit.retryAfterSec}s.` },
 			{ status: 429 }
 		);
 	}
 
 	const passkeyFlow = readPasskeyFlow(cookies);
-	if (!passkeyFlow || passkeyFlow.flow !== 'signin') {
-		return json({ error: 'Passkey session expired. Try again.' }, { status: 400 });
+	if (!passkeyFlow || passkeyFlow.flow !== 'register' || !passkeyFlow.verificationId) {
+		return json({ error: 'Passkey setup session expired. Try again.' }, { status: 400 });
 	}
 
 	let body: { credential?: Record<string, unknown> };
@@ -43,18 +43,18 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	}
 
 	try {
-		const payload = normalizeWebAuthnCredential(body.credential);
-		const { code, state } = await completePasskeySignIn({
+		const payload = normalizeWebAuthnRegistration(body.credential);
+		const result = await completePasskeyRegistration({
 			logtoCookies: passkeyFlow.logtoCookies,
 			verificationId: passkeyFlow.verificationId,
-			discoverable: passkeyFlow.discoverable,
 			payload,
 			forwardedOrigin: url.origin
 		});
 		clearPasskeyFlowCookies(cookies);
-		return json({ code, state });
+		clearOauthFlowCookies(cookies);
+		return json({ success: true, ...result });
 	} catch (error) {
-		console.error('[passkey/verify]', error);
+		console.error('[passkey/register/verify]', error);
 		clearPasskeyFlowCookies(cookies);
 		return json({ error: passkeyErrorMessage(error) }, { status: 401 });
 	}

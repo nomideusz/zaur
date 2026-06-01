@@ -154,7 +154,7 @@ export function isNoPasskeyRegisteredError(error: unknown): boolean {
 
 export function passkeyErrorMessage(error: unknown): string {
 	if (isNoPasskeyRegisteredError(error)) {
-		return 'No passkey is registered for this account. Sign in with your password first, then add a passkey from Settings.';
+		return 'No passkey is registered for this account. Sign in with your password, then add one from Settings → Account.';
 	}
 	if (error instanceof Error) return error.message;
 	return 'Passkey sign-in failed.';
@@ -371,4 +371,211 @@ async function followForAuthorizationCode(jar: Map<string, string>, startUrl: st
 		break;
 	}
 	throw new Error('Could not resolve authorization callback URL after passkey sign-in.');
+}
+
+async function identifyWithVerificationId(
+	jar: Map<string, string>,
+	forwardedOrigin: string,
+	verificationId: string
+) {
+	await logtoFetch('/api/experience/identification', jar, forwardedOrigin, {
+		method: 'POST',
+		json: { verificationId }
+	}).then(async (res) => {
+		if (!res.ok) await readJson(res);
+	});
+}
+
+async function identifyWithOneTimeToken(
+	jar: Map<string, string>,
+	forwardedOrigin: string,
+	email: string,
+	token: string
+) {
+	await initSignInInteraction(jar, forwardedOrigin);
+	const tokenVerification = await logtoFetch(
+		'/api/experience/verification/one-time-token/verify',
+		jar,
+		forwardedOrigin,
+		{
+			method: 'POST',
+			json: {
+				identifier: { type: 'email', value: email },
+				token
+			}
+		}
+	).then((res) => readJson<{ verificationId: string }>(res));
+	await identifyWithVerificationId(jar, forwardedOrigin, tokenVerification.verificationId);
+}
+
+async function identifyWithPassword(
+	jar: Map<string, string>,
+	forwardedOrigin: string,
+	email: string,
+	password: string
+) {
+	await initSignInInteraction(jar, forwardedOrigin);
+	const passwordVerification = await logtoFetch(
+		'/api/experience/verification/password',
+		jar,
+		forwardedOrigin,
+		{
+			method: 'POST',
+			json: {
+				identifier: { type: 'email', value: email },
+				password
+			}
+		}
+	).then((res) => readJson<{ verificationId: string }>(res));
+	await identifyWithVerificationId(jar, forwardedOrigin, passwordVerification.verificationId);
+}
+
+export type PasskeyRegisterBeginResult = {
+	registrationOptions: Record<string, unknown>;
+	oauth?: {
+		state: string;
+		codeVerifier: string;
+		redirectUri: string;
+	};
+	logtoCookies: string;
+	verificationId: string;
+};
+
+export async function beginPasskeyRegistration(input: {
+	email: string;
+	forwardedOrigin: string;
+	redirectUri: string;
+	oneTimeToken?: string;
+	password?: string;
+}): Promise<PasskeyRegisterBeginResult> {
+	if (!input.oneTimeToken && !input.password) {
+		throw new Error('Password or setup token is required.');
+	}
+
+	await getOidcDiscovery();
+	const jar = new Map<string, string>();
+	const state = randomString(32);
+	const codeVerifier = randomString(48);
+	const codeChallenge = challengeFromVerifier(codeVerifier);
+
+	const authUrl = await buildAuthorizationUrl({
+		redirectUri: input.redirectUri,
+		state,
+		codeChallenge,
+		loginHint: input.email,
+		oneTimeToken: input.oneTimeToken
+	});
+
+	await bootstrapInteraction(jar, authUrl, input.forwardedOrigin);
+
+	if (input.oneTimeToken) {
+		await identifyWithOneTimeToken(jar, input.forwardedOrigin, input.email, input.oneTimeToken);
+	} else {
+		await identifyWithPassword(jar, input.forwardedOrigin, input.email, input.password!);
+	}
+
+	const registration = await logtoFetch(
+		'/api/experience/verification/web-authn/registration',
+		jar,
+		input.forwardedOrigin,
+		{ method: 'POST' }
+	).then((res) =>
+		readJson<{ verificationId: string; registrationOptions: Record<string, unknown> }>(res)
+	);
+
+	return {
+		registrationOptions: registration.registrationOptions,
+		verificationId: registration.verificationId,
+		oauth: { state, codeVerifier, redirectUri: input.redirectUri },
+		logtoCookies: encodeLogtoCookieJar(jar)
+	};
+}
+
+export type WebAuthnRegistrationPayload = {
+	type: typeof LOGTO_WEBAUTHN_TYPE;
+	id: string;
+	rawId: string;
+	authenticatorAttachment?: string;
+	clientExtensionResults?: Record<string, unknown>;
+	response: {
+		clientDataJSON: string;
+		attestationObject: string;
+		authenticatorData?: string;
+		transports?: string[];
+		publicKeyAlgorithm?: number;
+		publicKey?: string;
+	};
+};
+
+export function normalizeWebAuthnRegistration(
+	credential: Record<string, unknown>
+): WebAuthnRegistrationPayload {
+	const response = credential.response as WebAuthnRegistrationPayload['response'] | undefined;
+	if (!credential.id || !response?.clientDataJSON || !response?.attestationObject) {
+		throw new Error('Missing passkey registration response.');
+	}
+
+	return {
+		type: LOGTO_WEBAUTHN_TYPE,
+		id: String(credential.id),
+		rawId: String(credential.rawId ?? credential.id),
+		authenticatorAttachment: credential.authenticatorAttachment as string | undefined,
+		clientExtensionResults:
+			(credential.clientExtensionResults as Record<string, unknown> | undefined) ?? {},
+		response: {
+			clientDataJSON: response.clientDataJSON,
+			attestationObject: response.attestationObject,
+			authenticatorData: response.authenticatorData,
+			transports: response.transports,
+			publicKeyAlgorithm: response.publicKeyAlgorithm,
+			publicKey: response.publicKey
+		}
+	};
+}
+
+export async function completePasskeyRegistration(input: {
+	logtoCookies: string;
+	verificationId: string;
+	payload: WebAuthnRegistrationPayload;
+	forwardedOrigin: string;
+}): Promise<{ code?: string; state?: string }> {
+	const jar = decodeLogtoCookieJar(input.logtoCookies);
+
+	const verify = await logtoFetch(
+		'/api/experience/verification/web-authn/registration/verify',
+		jar,
+		input.forwardedOrigin,
+		{
+			method: 'POST',
+			json: {
+				verificationId: input.verificationId,
+				payload: input.payload
+			}
+		}
+	).then((res) => readJson<{ verificationId: string }>(res));
+
+	await logtoFetch('/api/experience/profile/mfa/passkey', jar, input.forwardedOrigin, {
+		method: 'POST',
+		json: { verificationId: verify.verificationId }
+	}).then(async (res) => {
+		if (!res.ok) await readJson(res);
+	});
+
+	const submit = await logtoFetch('/api/experience/submit', jar, input.forwardedOrigin, {
+		method: 'POST'
+	}).then((res) => readJson<{ redirectTo?: string }>(res));
+
+	if (!submit.redirectTo) {
+		return {};
+	}
+
+	try {
+		const callbackUrl = await followForAuthorizationCode(jar, submit.redirectTo);
+		const parsed = new URL(callbackUrl);
+		const code = parsed.searchParams.get('code') ?? undefined;
+		const state = parsed.searchParams.get('state') ?? undefined;
+		return { code, state };
+	} catch {
+		return {};
+	}
 }

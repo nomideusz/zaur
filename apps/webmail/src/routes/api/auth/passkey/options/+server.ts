@@ -6,7 +6,8 @@ import {
 	setOauthFlowCookies,
 	PASSKEY_LOGTO_COOKIE,
 	PASSKEY_VERIFICATION_COOKIE,
-	PASSKEY_DISCOVERABLE_COOKIE
+	PASSKEY_DISCOVERABLE_COOKIE,
+	PASSKEY_FLOW_COOKIE
 } from '$lib/server/oauth-flow';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 
@@ -70,6 +71,7 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 			redirectTo
 		});
 		cookies.set(PASSKEY_LOGTO_COOKIE, result.logtoCookies, passkeyCookieOpts);
+		cookies.set(PASSKEY_FLOW_COOKIE, 'signin', passkeyCookieOpts);
 		cookies.set(PASSKEY_DISCOVERABLE_COOKIE, result.discoverable ? '1' : '0', passkeyCookieOpts);
 		if (result.verificationId) {
 			cookies.set(PASSKEY_VERIFICATION_COOKIE, result.verificationId, passkeyCookieOpts);

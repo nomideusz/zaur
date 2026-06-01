@@ -1,6 +1,6 @@
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
-import { startAuthentication } from '@simplewebauthn/browser';
+import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
 import { appConfig } from '$lib/config';
 import { JMAPClient } from '$lib/jmap/client';
 import { classifyJmapError, loginErrorMessage, type LoginErrorCode } from '$lib/jmap/errors';
@@ -215,6 +215,88 @@ class AuthStore {
 	/** @deprecated Use loginWithPasskey */
 	async loginWithSSO() {
 		return this.loginWithPasskey();
+	}
+
+	async registerPasskey(input: {
+		email: string;
+		password?: string;
+		token?: string;
+		rememberMe?: boolean;
+		redirectTo?: string;
+	}) {
+		this.isLoading = true;
+		this.error = null;
+
+		try {
+			if (!this.oauthConfig?.enabled) {
+				throw new Error('Passkey setup is not configured yet.');
+			}
+
+			const email = input.email.trim().toLowerCase();
+			if (!email.includes('@')) {
+				throw new Error('Enter a valid email address.');
+			}
+			if (!input.token && !input.password) {
+				throw new Error('Confirm your password to add a passkey.');
+			}
+
+			const optionsRes = await fetch('/api/auth/passkey/register/options', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					email,
+					password: input.password,
+					token: input.token,
+					rememberMe: input.rememberMe,
+					redirectTo: input.redirectTo
+				})
+			});
+			const optionsPayload = (await optionsRes.json()) as {
+				registrationOptions?: Record<string, unknown>;
+				error?: string;
+			};
+			if (!optionsRes.ok || !optionsPayload.registrationOptions) {
+				throw new Error(optionsPayload.error ?? 'Could not start passkey setup.');
+			}
+
+			let credential;
+			try {
+				credential = await startRegistration({
+					optionsJSON: optionsPayload.registrationOptions as Parameters<
+						typeof startRegistration
+					>[0]['optionsJSON']
+				});
+			} catch (error) {
+				if (error instanceof Error && error.name === 'NotAllowedError') {
+					throw new Error('Passkey setup was cancelled.');
+				}
+				throw error;
+			}
+
+			const verifyRes = await fetch('/api/auth/passkey/register/verify', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ credential })
+			});
+			const verifyPayload = (await verifyRes.json()) as {
+				success?: boolean;
+				code?: string;
+				state?: string;
+				error?: string;
+			};
+			if (!verifyRes.ok || !verifyPayload.success) {
+				throw new Error(verifyPayload.error ?? 'Passkey setup failed.');
+			}
+
+			if (verifyPayload.code) {
+				await this.completeOauthLogin(verifyPayload.code, verifyPayload.state);
+				return;
+			}
+		} catch (error) {
+			throw error instanceof Error ? error : new Error('Passkey setup failed.');
+		} finally {
+			this.isLoading = false;
+		}
 	}
 
 	async completeOauthLogin(code: string, state?: string | null) {

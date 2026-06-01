@@ -4,25 +4,48 @@
 	import { page } from '$app/stores';
 	import { appConfig } from '$lib/config';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { auth } from '$lib/stores/auth.svelte';
 	import ZaurSprite from '$lib/components/ui/ZaurSprite.svelte';
 
-	const email = $derived($page.url.searchParams.get('email')?.trim().toLowerCase() ?? '');
+	const urlEmail = $derived($page.url.searchParams.get('email')?.trim().toLowerCase() ?? '');
+	const urlToken = $derived($page.url.searchParams.get('token')?.trim() ?? '');
 
-	let phase = $state<'redirecting' | 'missing'>('redirecting');
+	let oauthReady = $state(false);
+	let done = $state(false);
+	let error = $state<string | null>(null);
+	let loading = $state(false);
 
-	onMount(() => {
-		const params = new URLSearchParams(window.location.search);
-		const token = params.get('token')?.trim() ?? '';
-		const address = params.get('email')?.trim().toLowerCase() ?? '';
+	onMount(async () => {
+		await auth.checkOauthConfig();
+		oauthReady = true;
 
-		if (!address || !token) {
-			phase = 'missing';
-			return;
+		if (urlEmail && urlToken) {
+			void createPasskey();
 		}
-
-		const startParams = new URLSearchParams({ email: address, token });
-		window.location.replace(`/setup-passkey/start?${startParams.toString()}`);
 	});
+
+	async function createPasskey() {
+		if (!urlEmail || !urlToken || loading || done) return;
+
+		loading = true;
+		error = null;
+		try {
+			await auth.registerPasskey({
+				email: urlEmail,
+				token: urlToken,
+				rememberMe: true,
+				redirectTo: '/mail/inbox'
+			});
+			done = true;
+			if (!auth.isAuthenticated) {
+				await goto(`/login?email=${encodeURIComponent(urlEmail)}&passkey_ready=1`);
+			}
+		} catch (err) {
+			error = err instanceof Error ? err.message : 'Passkey setup failed.';
+		} finally {
+			loading = false;
+		}
+	}
 </script>
 
 <svelte:head>
@@ -36,21 +59,46 @@
 				<ZaurSprite id="happy" scale={5} />
 			</div>
 			<h1 class="z-type-brand text-2xl text-fg">Set up a passkey</h1>
-			{#if email}
-				<p class="mt-3 text-sm font-medium text-fg">{email}</p>
+			{#if urlEmail}
+				<p class="mt-2 text-sm text-fg-muted">{urlEmail}</p>
 			{/if}
 		</div>
 
-		{#if phase === 'missing'}
+		{#if !oauthReady}
+			<p class="text-sm text-fg-muted">Loading…</p>
+		{:else if !urlEmail || !urlToken}
 			<p class="text-sm text-fg-muted">
-				This link is incomplete. Register again or open mail with your password.
+				This link is incomplete. Open mail and add a passkey from Settings after signing in.
 			</p>
 			<div class="mt-6">
 				<Button variant="ghost" onclick={() => goto('/login')}>Open sign in</Button>
 			</div>
+		{:else if done}
+			<p class="text-sm text-fg">
+				Passkey ready. You can sign in with Face ID, Touch ID, or your device PIN next time.
+			</p>
+			<div class="mt-6">
+				<Button class="w-full" onclick={() => goto(auth.isAuthenticated ? '/mail/inbox' : '/login')}>
+					{auth.isAuthenticated ? 'Open mail' : 'Sign in'}
+				</Button>
+			</div>
 		{:else}
-			<div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
-			<p class="mt-4 text-sm text-fg-muted">Redirecting to set up your passkey…</p>
+			<p class="text-sm text-fg-muted">
+				{loading
+					? 'Follow the prompt on this device…'
+					: 'Use Face ID, Touch ID, or your device PIN for faster sign-in.'}
+			</p>
+			{#if error}
+				<p class="mt-4 text-sm text-danger" role="alert">{error}</p>
+			{/if}
+			<div class="mt-6 space-y-2">
+				<Button class="w-full" disabled={loading} onclick={createPasskey}>
+					{loading ? 'Waiting for passkey…' : 'Create passkey'}
+				</Button>
+				<Button variant="ghost" class="w-full" disabled={loading} onclick={() => goto('/login')}>
+					Skip for now
+				</Button>
+			</div>
 		{/if}
 	</div>
 </div>
