@@ -12,6 +12,7 @@
 
 	const remembered = loadRememberedLogin();
 	const urlEmail = $derived($page.url.searchParams.get('email')?.trim() ?? '');
+	const urlRecovery = $derived($page.url.searchParams.get('recovery')?.trim() ?? '');
 	const isWelcome = $derived(
 		$page.url.searchParams.get('welcome') === '1' || urlEmail.length > 0
 	);
@@ -31,6 +32,15 @@
 	const passwordFallback = $derived(auth.oauthConfig?.passwordFallback !== false);
 	const showPassword = $derived(!oauthEnabled || passwordFallback);
 	const showPasskey = $derived(oauthEnabled && auth.oauthConfig?.passkeyEnabled !== false);
+	const forgotPasswordHref = $derived.by(() => {
+		const recovery = urlRecovery;
+		const trimmed = email.trim();
+		if (!recovery && !trimmed) return '/forgot-password';
+		const params = new URLSearchParams();
+		if (recovery) params.set('recovery', recovery);
+		else if (trimmed) params.set('email', trimmed);
+		return `/forgot-password?${params.toString()}`;
+	});
 
 	$effect(() => {
 		if (!auth.isRestoring && auth.isAuthenticated) {
@@ -126,7 +136,7 @@
 							disabled={auth.isLoading}
 						/>
 						<p class="mt-2 text-right">
-							<a href="/forgot-password" class="text-sm text-accent hover:underline">
+							<a href={forgotPasswordHref} class="text-sm text-accent hover:underline">
 								Forgot password?
 							</a>
 						</p>

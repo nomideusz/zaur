@@ -1,6 +1,7 @@
 async function init() {
   const params = new URLSearchParams(window.location.search);
   const email = params.get('email') || sessionStorage.getItem('registeredEmail') || '—';
+  const recoveryEmail = sessionStorage.getItem('registeredRecoveryEmail') || '';
 
   document.getElementById('success-email').textContent = email;
   document.getElementById('settings-username').textContent = email;
@@ -36,9 +37,24 @@ async function init() {
     document.getElementById('smtp-host').textContent = mailHost;
 
     const loginParams = new URLSearchParams({ email, welcome: '1' });
+    if (recoveryEmail) loginParams.set('recovery', recoveryEmail);
     const loginUrl = `${webmailUrl}/login?${loginParams.toString()}`;
     webmailBtn.href = loginUrl;
     skipBtn.href = loginUrl;
+
+    const forgotParams = new URLSearchParams();
+    if (recoveryEmail) {
+      forgotParams.set('recovery', recoveryEmail);
+    } else {
+      forgotParams.set('email', email);
+    }
+    const forgotLink = document.getElementById('forgot-password-link');
+    if (forgotLink) {
+      forgotLink.href = `${webmailUrl}/forgot-password?${forgotParams.toString()}`;
+      if (recoveryEmail) {
+        forgotLink.textContent = `Email reset link to ${recoveryEmail}`;
+      }
+    }
 
     const canSetupPasskey =
       cfg.passkeySetupEnabled &&
@@ -54,6 +70,8 @@ async function init() {
 			passkeyBtn.href = `${webmailUrl}/setup-passkey?${setupParams.toString()}`;
       statusEl.textContent = 'Optional: set up a passkey — no need to re-enter your email.';
       sessionStorage.removeItem('passkeySetup');
+    } else if (recoveryEmail) {
+      statusEl.textContent = `Open mail to sign in. Forgot your password? We can send a reset link to ${recoveryEmail}.`;
     } else {
       statusEl.textContent = 'Open mail below to sign in with your new address and password.';
     }

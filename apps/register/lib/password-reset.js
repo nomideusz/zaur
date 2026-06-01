@@ -96,40 +96,68 @@ async function resolveRecoveryEmail(mailboxEmail) {
   return normalized;
 }
 
+/** Accept mailbox or invitation (recovery) email; returns mailbox address if found. */
+async function resolveMailboxEmail(input) {
+  const normalized = normalizeEmail(input);
+  if (!isValidEmail(normalized)) return null;
+
+  if (await directory.findUserIdByEmail(normalized)) {
+    return normalized;
+  }
+
+  const fromAudit = invitations.findMailboxByRecoveryEmail(normalized);
+  if (fromAudit && (await directory.findUserIdByEmail(fromAudit))) {
+    return fromAudit;
+  }
+
+  if (logto.isConfigured()) {
+    try {
+      const fromLogto = await logto.findPrimaryEmailByRecoveryEmail(normalized);
+      if (fromLogto && (await directory.findUserIdByEmail(fromLogto))) {
+        return fromLogto;
+      }
+    } catch (err) {
+      console.error('resolveMailboxEmail logto:', err.message);
+    }
+  }
+
+  return null;
+}
+
 function isEnabled() {
   return inviteMail.isConfigured();
 }
 
-async function requestReset(mailboxEmail) {
+async function requestReset(emailInput) {
   if (!isEnabled()) {
     throw new Error('Password reset email is not configured.');
   }
 
-  const email = normalizeEmail(mailboxEmail);
+  const email = normalizeEmail(emailInput);
   if (!isValidEmail(email)) {
     return { ok: true, message: GENERIC_SUCCESS };
   }
 
-  const userId = await directory.findUserIdByEmail(email);
-  if (!userId) {
+  const mailboxEmail = await resolveMailboxEmail(email);
+  if (!mailboxEmail) {
     return { ok: true, message: GENERIC_SUCCESS };
   }
 
-  const recoveryEmail = await resolveRecoveryEmail(email);
+  const recoveryEmail = await resolveRecoveryEmail(mailboxEmail);
   const now = Date.now();
   const expiresAt = now + Math.max(900, DEFAULT_EXPIRES_SEC) * 1000;
   const token = generateToken();
 
   const tokens = readTokens();
   for (const item of tokens) {
-    if (normalizeEmail(item.mailboxEmail) === email && !item.usedAt && !item.revokedAt) {
+    if (normalizeEmail(item.mailboxEmail) === mailboxEmail && !item.usedAt && !item.revokedAt) {
       item.revokedAt = new Date(now).toISOString();
     }
   }
 
   tokens.unshift({
     token,
-    mailboxEmail: email,
+    mailboxEmail,
     recoveryEmail,
     createdAt: new Date(now).toISOString(),
     expiresAt: new Date(expiresAt).toISOString(),
@@ -140,12 +168,12 @@ async function requestReset(mailboxEmail) {
 
   const resetLink = `${WEBMAIL_URL}/forgot-password/reset?${new URLSearchParams({
     token,
-    email,
+    email: mailboxEmail,
   }).toString()}`;
 
   await inviteMail.sendPasswordResetEmail({
     to: recoveryEmail,
-    mailboxEmail: email,
+    mailboxEmail,
     resetLink,
     expiresAt,
   });

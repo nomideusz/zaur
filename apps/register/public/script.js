@@ -337,6 +337,11 @@ registerForm.addEventListener('submit', async (e) => {
     }
 
     sessionStorage.setItem('registeredEmail', data.email);
+    if (data.recoveryEmail) {
+      sessionStorage.setItem('registeredRecoveryEmail', data.recoveryEmail);
+    } else {
+      sessionStorage.removeItem('registeredRecoveryEmail');
+    }
     if (data.passkeySetup?.token) {
       sessionStorage.setItem(
         'passkeySetup',

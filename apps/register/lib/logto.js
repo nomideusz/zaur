@@ -186,6 +186,22 @@ async function getUserByEmail(email) {
   return managementRequest('GET', `/api/users/${user.id}`);
 }
 
+/** Resolve mailbox primaryEmail from invitation / recovery personal email. */
+async function findPrimaryEmailByRecoveryEmail(recoveryEmail) {
+  const normalized = recoveryEmail.toLowerCase();
+  for (let page = 1; page <= 5; page += 1) {
+    const query = new URLSearchParams({ page: String(page), page_size: '50' });
+    const users = await managementRequest('GET', `/api/users?${query.toString()}`);
+    if (!Array.isArray(users) || users.length === 0) break;
+    const match = users.find(
+      (user) => user.customData?.recoveryEmail?.toLowerCase() === normalized,
+    );
+    if (match?.primaryEmail) return match.primaryEmail.toLowerCase();
+    if (users.length < 50) break;
+  }
+  return null;
+}
+
 async function updatePassword(email, password) {
   const user = await findUserByEmail(email);
   if (!user?.id) {
@@ -208,6 +224,7 @@ module.exports = {
   deleteUser,
   findUserByEmail,
   getUserByEmail,
+  findPrimaryEmailByRecoveryEmail,
   updatePassword,
   createOneTimeToken,
   createPasskeySetupToken,

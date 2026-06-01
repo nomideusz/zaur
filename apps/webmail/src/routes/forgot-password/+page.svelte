@@ -4,7 +4,12 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import ZaurSprite from '$lib/components/ui/ZaurSprite.svelte';
 
-	const initialEmail = $derived($page.url.searchParams.get('email')?.trim() ?? '');
+	const initialEmail = $derived(
+		$page.url.searchParams.get('email')?.trim() ??
+			$page.url.searchParams.get('recovery')?.trim() ??
+			''
+	);
+	const usesRecoveryEmail = $derived(Boolean($page.url.searchParams.get('recovery')?.trim()));
 
 	let email = $state('');
 	let isLoading = $state(false);
@@ -57,7 +62,12 @@
 			</div>
 			<h1 class="z-type-brand text-2xl text-fg">Reset password</h1>
 			<p class="mt-2 text-sm text-fg-muted">
-				Enter your ZAUR email address. We will send instructions to your recovery email.
+				{#if usesRecoveryEmail}
+					We'll send reset instructions to this invitation email — the same address that received
+					your invite.
+				{:else}
+					Enter your ZAUR address or the personal email we invited you with.
+				{/if}
 			</p>
 		</div>
 
@@ -78,7 +88,7 @@
 						class="z-input"
 						bind:value={email}
 						autocomplete="username"
-						placeholder="you@zaur.app"
+						placeholder={usesRecoveryEmail ? 'you@gmail.com' : 'you@zaur.app or invitation email'}
 						required
 						disabled={isLoading}
 					/>
