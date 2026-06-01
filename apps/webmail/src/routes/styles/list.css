@@ -183,7 +183,7 @@
 		}
 	}
 
-	/* Mobile — keep checkboxes in the content column (gutter extends past px-4). */
+	/* Mobile — checkboxes live in-row only during bulk selection. */
 	@media (max-width: 767px) {
 		.z-mail-view .z-content-shell .z-mail-list-flow--selectable {
 			margin-inline-start: 0;
@@ -194,26 +194,21 @@
 			display: none;
 		}
 
-		.z-mail-view .z-mail-list-row {
+		.z-mail-view .z-mail-list--selecting .z-mail-list-row {
 			display: flex;
 			align-items: flex-start;
 			gap: 0.625rem;
 		}
 
-		.z-mail-view .z-mail-list-row__checkbox {
+		.z-mail-view .z-mail-list--selecting .z-mail-list-row__checkbox {
 			position: static;
 			flex-shrink: 0;
 			margin-top: 0.35rem;
-			display: none;
-		}
-
-		.z-mail-view .z-mail-list--selecting .z-mail-list-row__checkbox {
-			display: block;
 			opacity: 1;
 			pointer-events: auto;
 		}
 
-		.z-mail-view .z-mail-list-row > :where(a) {
+		.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a) {
 			flex: 1 1 auto;
 			min-width: 0;
 		}

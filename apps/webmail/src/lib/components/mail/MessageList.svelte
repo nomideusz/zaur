@@ -200,6 +200,10 @@
 		mail.setSelectionList(next);
 	});
 	const showBulkBar = $derived(bulkSelectEnabled && mail.hasSelection && !!mailboxRouteId);
+	/** Desktop: checkbox in DOM for gutter hover. Mobile: only once selection mode is active. */
+	const showRowCheckbox = $derived(
+		bulkSelectEnabled && (!supportsMobileListGestures() || mail.hasSelection)
+	);
 
 	function clearLongPressTimer() {
 		if (longPressTimer) {
@@ -930,7 +934,7 @@
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
 			<li class={cn('list-none', listMessageRowClass, rowSelected && !message.important && '[&_.list-subject]:text-accent')}>
-				{#if bulkSelectEnabled}
+				{#if showRowCheckbox}
 					<input
 						type="checkbox"
 						class="z-mail-list-row__checkbox"
