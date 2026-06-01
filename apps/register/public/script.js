@@ -15,7 +15,6 @@ const strengthFill = document.getElementById('strength-fill');
 const strengthLabel = document.getElementById('strength-label');
 const submitBtn = document.getElementById('submit-btn');
 
-const authCard = document.getElementById('auth-card');
 const invitationGate = document.getElementById('invitation-gate');
 const invitationGateMessage = document.getElementById('invitation-gate-message');
 const registerContent = document.getElementById('register-content');
@@ -121,17 +120,11 @@ function renderExtensionList() {
   }
 
   resultsContainer.innerHTML = `
-    <p class="z-results-header z-type-label">Available domains</p>
-    <div class="z-domain-list">${cachedDomains
-      .map(
-        (d) => `
-      <div class="z-result-row extension-row">
-        <span class="z-result-domain">
-          <span class="z-result-tld">@${escapeHtml(d.name)}</span>
-        </span>
-      </div>`,
-      )
-      .join('')}</div>`;
+    <p class="z-type-label z-domain-pick-label">Domains</p>
+    <ul class="z-domain-teaser__list">${cachedDomains
+      .map((d) => `<li class="z-domain-teaser__item">@${escapeHtml(d.name)}</li>`)
+      .join('')}</ul>
+    <p class="z-domain-teaser__hint">Type a username to check availability.</p>`;
 }
 
 function renderSearchResults(query, statuses) {
@@ -142,36 +135,29 @@ function renderSearchResults(query, statuses) {
 
   const safeQuery = escapeHtml(query);
 
-  resultsContainer.innerHTML = `<div class="z-domain-list">${cachedDomains
-    .map((d) => {
-      const status = statuses.get(d.id) || 'pending';
-      const isTaken = status === 'taken';
-      const isAvailable = status === 'available';
-      const isSelected = selectedResult?.domainId === d.id;
+  resultsContainer.innerHTML = `
+    <p class="z-type-label z-domain-pick-label">Pick your address</p>
+    <div class="z-domain-pick-grid">${cachedDomains
+      .map((d) => {
+        const status = statuses.get(d.id) || 'pending';
+        const isTaken = status === 'taken';
+        const isAvailable = status === 'available';
+        const isSelected = selectedResult?.domainId === d.id;
+        const tag = isAvailable ? 'button' : 'div';
 
-      return `
-        <div class="z-result-row ${isAvailable ? 'available' : ''} ${isTaken ? 'taken' : ''} ${isSelected ? 'selected' : ''}"
+        return `
+        <${tag} type="${isAvailable ? 'button' : undefined}" class="z-domain-option ${isAvailable ? 'available' : ''} ${isTaken ? 'taken' : ''} ${isSelected ? 'selected' : ''}"
              data-domain-id="${d.id}"
              data-domain="${escapeHtml(d.name)}"
-             data-available="${isAvailable}"
-             role="${isAvailable ? 'button' : 'presentation'}"
-             tabindex="${isAvailable ? '0' : '-1'}">
-          <span class="z-result-domain ${isTaken ? 'taken-text' : ''}">
-            <span class="z-result-name">${safeQuery}</span><span class="z-result-tld">@${escapeHtml(d.name)}</span>
-          </span>
-          <span class="z-result-action">${renderStatus(status, isSelected)}</span>
-        </div>`;
-    })
-    .join('')}</div>`;
+             data-available="${isAvailable}">
+          <span class="z-domain-option__addr"><span class="z-result-name">${safeQuery}</span><span class="z-result-tld">@${escapeHtml(d.name)}</span></span>
+          <span class="z-domain-option__status">${renderStatus(status, isSelected)}</span>
+        </${tag}>`;
+      })
+      .join('')}</div>`;
 
-  document.querySelectorAll('.z-result-row.available').forEach((row) => {
-    row.addEventListener('click', () => selectDomain(row));
-    row.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        selectDomain(row);
-      }
-    });
+  document.querySelectorAll('.z-domain-option.available').forEach((option) => {
+    option.addEventListener('click', () => selectDomain(option));
   });
 }
 
@@ -185,8 +171,9 @@ function applyInvitationUi() {
 }
 
 function selectDomain(row) {
-  document.querySelectorAll('.z-result-row').forEach((r) => r.classList.remove('selected'));
+  document.querySelectorAll('.z-domain-option').forEach((r) => r.classList.remove('selected'));
   row.classList.add('selected');
+  document.getElementById('register-panel-hint')?.classList.add('z-hidden');
 
   selectedResult = {
     domainId: row.dataset.domainId,
@@ -201,11 +188,14 @@ function selectDomain(row) {
     loadCaptcha();
   }
   applyInvitationUi();
-  if (window.matchMedia('(max-width: 767px)').matches) {
-    registerPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-  } else {
-    passwordInput.focus();
+  if (currentUsername) {
+    const statuses = new Map(
+      cachedDomains.map((d) => [d.id, availabilityMap.get(d.id) || 'pending']),
+    );
+    renderSearchResults(currentUsername, statuses);
   }
+  registerPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  passwordInput.focus();
 }
 
 function updateView() {
@@ -216,6 +206,7 @@ function updateView() {
     registerPanel.classList.remove('is-visible');
     selectedResult = null;
     availabilityMap.clear();
+    document.getElementById('register-panel-hint')?.classList.add('z-hidden');
     renderExtensionList();
     return;
   }
@@ -232,6 +223,13 @@ function updateView() {
   }
 
   renderSearchResults(username, statuses);
+
+  const panelHint = document.getElementById('register-panel-hint');
+  if (valid && !selectedResult) {
+    panelHint?.classList.remove('z-hidden');
+  } else {
+    panelHint?.classList.add('z-hidden');
+  }
 
   if (!valid) {
     registerPanel.classList.remove('is-visible');
@@ -387,7 +385,6 @@ async function loadDomainTeaser() {
 function showInvitationGate(message) {
   registerContent.classList.add('z-hidden');
   invitationGate.classList.remove('z-hidden');
-  authCard?.classList.remove('z-auth-card--register');
   if (message) invitationGateMessage.textContent = message;
   void loadDomainTeaser();
 }
@@ -395,7 +392,6 @@ function showInvitationGate(message) {
 function showRegisterFlow() {
   invitationGate.classList.add('z-hidden');
   registerContent.classList.remove('z-hidden');
-  authCard?.classList.add('z-auth-card--register');
 }
 
 async function initInvitation() {

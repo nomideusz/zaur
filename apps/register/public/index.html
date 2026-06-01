@@ -6,57 +6,67 @@
   <title>Register · ZAUR</title>
   <link rel="stylesheet" href="/zaur.css">
 </head>
-<body>
-  <div class="z-auth-page" id="main-content">
-    <div class="z-auth-card" id="auth-card">
-      <div class="z-hidden" id="invitation-gate">
-        <div class="z-auth-hero">
-          <div class="z-auth-sprite" aria-hidden="true">
-            <img src="/zaur-sprite-happy.svg" width="100" height="90" alt="">
+<body class="z-site-shell">
+  <header class="z-site-header z-panel">
+    <div class="z-site-header__inner">
+      <a href="/" class="z-type-brand">ZAUR</a>
+      <nav class="z-site-nav" aria-label="Tools">
+        <a href="/" class="z-site-nav__link z-site-nav__link--active" aria-current="page">Register</a>
+        <a href="#" data-webmail-link class="z-site-nav__link">Mail</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="z-site-main">
+    <div class="z-auth-page z-auth-page--in-shell" id="main-content">
+      <div class="z-auth-card" id="auth-card">
+        <div class="z-hidden" id="invitation-gate">
+          <div class="z-auth-hero">
+            <div class="z-auth-sprite" aria-hidden="true">
+              <img src="/zaur-sprite-happy.svg" width="100" height="90" alt="">
+            </div>
+            <h1 class="z-type-brand z-auth-brand">ZAUR</h1>
+            <p class="z-auth-tagline">Private, focused email</p>
           </div>
-          <h1 class="z-type-brand z-auth-brand">ZAUR</h1>
-          <p class="z-auth-tagline">Private, focused email</p>
-        </div>
 
-        <div class="z-callout">
-          <span class="z-callout__title">Invite only</span>
-          <p class="z-text-muted" style="margin: 0.375rem 0 0;" id="invitation-gate-message">
-            Registration is invite-only. Open the magic link sent to your personal email to continue.
-          </p>
-        </div>
-
-        <div class="z-domain-teaser" id="domain-teaser">
-          <p class="z-type-label">Available domains</p>
-          <ul class="z-domain-teaser__list" id="teaser-domains">
-            <li class="z-domain-teaser__item z-text-subtle">Loading…</li>
-          </ul>
-          <p class="z-domain-teaser__sample" id="teaser-sample" hidden>
-            <span class="z-domain-teaser__name">yourname</span><span class="z-domain-teaser__at">@zaur.app</span>
-          </p>
-          <p class="z-domain-teaser__hint">
-            Pick an address on any domain when you register with an invitation.
-          </p>
-        </div>
-
-        <p class="z-auth-aside">
-          Already have a mailbox?
-          <a data-webmail-link class="z-link">Sign in</a>
-        </p>
-      </div>
-
-      <div class="z-hidden" id="register-content">
-        <div class="z-auth-hero z-auth-hero--compact">
-          <div class="z-auth-sprite" aria-hidden="true">
-            <img src="/zaur-sprite-happy.svg" width="100" height="90" alt="">
+          <div class="z-callout">
+            <span class="z-callout__title">Invite only</span>
+            <p class="z-text-muted" style="margin: 0.375rem 0 0;" id="invitation-gate-message">
+              Registration is invite-only. Open the magic link sent to your personal email to continue.
+            </p>
           </div>
-          <h1 class="z-type-brand z-auth-brand">ZAUR</h1>
-          <p class="z-auth-tagline">Claim your address</p>
+
+          <div class="z-domain-teaser" id="domain-teaser">
+            <p class="z-type-label">Available domains</p>
+            <ul class="z-domain-teaser__list" id="teaser-domains">
+              <li class="z-domain-teaser__item z-text-subtle">Loading…</li>
+            </ul>
+            <p class="z-domain-teaser__sample" id="teaser-sample" hidden>
+              <span class="z-domain-teaser__name">yourname</span><span class="z-domain-teaser__at">@zaur.app</span>
+            </p>
+            <p class="z-domain-teaser__hint">
+              Pick an address on any domain when you register with an invitation.
+            </p>
+          </div>
+
+          <p class="z-auth-aside">
+            Already have a mailbox?
+            <a data-webmail-link class="z-link">Sign in</a>
+          </p>
         </div>
 
-        <div class="z-callout z-hidden" id="invitation-banner"></div>
+        <div class="z-hidden" id="register-content">
+          <div class="z-auth-hero z-auth-hero--compact">
+            <div class="z-auth-sprite" aria-hidden="true">
+              <img src="/zaur-sprite-happy.svg" width="100" height="90" alt="">
+            </div>
+            <h1 class="z-type-brand z-auth-brand">ZAUR</h1>
+            <p class="z-auth-tagline">Claim your address</p>
+          </div>
 
-        <div class="z-register-grid">
-          <div class="z-register-pick">
+          <div class="z-callout z-hidden" id="invitation-banner"></div>
+
+          <div class="z-register-flow">
             <p class="z-register-pick__title">Choose your address</p>
             <label for="username-input" class="sr-only">Username</label>
             <input
@@ -70,70 +80,72 @@
             >
             <div class="z-validation-hint" id="validation-hint"></div>
             <div id="results-container"></div>
-          </div>
 
-          <div class="z-register-side">
-            <div class="z-register-create-hint" id="register-panel-hint">
-              <p class="z-type-label">Mailbox password</p>
-              <p class="z-type-lead" style="margin-top: 0.5rem; font-size: 0.875rem;">
-                Select an available address on the left to set your password.
-              </p>
-            </div>
+            <p class="z-register-create-hint z-hidden" id="register-panel-hint">
+              Select an available address above to set your password.
+            </p>
 
             <section class="z-register-create z-panel-collapsible" id="register-panel">
-              <div class="z-callout" style="margin-bottom: 1rem;">
-                <span class="z-callout__title" id="selected-email-label">—</span>
-              </div>
+                <div class="z-callout" style="margin-bottom: 1rem;">
+                  <span class="z-callout__title" id="selected-email-label">—</span>
+                </div>
 
-              <div class="z-alert z-alert--error" id="form-error" role="alert"></div>
+                <div class="z-alert z-alert--error" id="form-error" role="alert"></div>
 
-              <form id="register-form" class="z-form-stack">
-                <input type="hidden" id="selected-domain-id" name="domainId">
-                <input type="hidden" id="invite-token" name="inviteToken">
-                <input type="hidden" id="invite-email" name="inviteEmail">
+                <form id="register-form" class="z-form-stack">
+                  <input type="hidden" id="selected-domain-id" name="domainId">
+                  <input type="hidden" id="invite-token" name="inviteToken">
+                  <input type="hidden" id="invite-email" name="inviteEmail">
 
-                <div class="z-field" style="margin-bottom: 0;">
-                  <label for="password" class="z-field-label">Mailbox password</label>
-                  <input type="password" id="password" name="password" class="z-input" autocomplete="new-password" required>
-                  <p class="z-text-subtle z-hidden" id="password-hint" style="font-size: 0.8125rem; margin-top: 0.25rem;">
-                    Use this for IMAP and webmail. You can add a passkey on the next screen.
-                  </p>
-                  <div class="z-strength-bar">
-                    <div class="z-strength-fill" id="strength-fill"></div>
+                  <div class="z-field" style="margin-bottom: 0;">
+                    <label for="password" class="z-field-label">Mailbox password</label>
+                    <input type="password" id="password" name="password" class="z-input" autocomplete="new-password" required>
+                    <p class="z-text-subtle z-hidden" id="password-hint" style="font-size: 0.8125rem; margin-top: 0.25rem;">
+                      Use this for IMAP and webmail. You can add a passkey on the next screen.
+                    </p>
+                    <div class="z-strength-bar">
+                      <div class="z-strength-fill" id="strength-fill"></div>
+                    </div>
+                    <div class="z-strength-label" id="strength-label"></div>
                   </div>
-                  <div class="z-strength-label" id="strength-label"></div>
-                </div>
 
-                <div class="z-field" style="margin-bottom: 0;">
-                  <label for="confirm-password" class="z-field-label">Confirm password</label>
-                  <input type="password" id="confirm-password" name="confirmPassword" class="z-input" autocomplete="new-password" required>
-                </div>
-
-                <div class="z-field" id="captcha-section" style="margin-bottom: 0;">
-                  <label for="captcha-answer" class="z-field-label">Security check</label>
-                  <div class="z-captcha-row">
-                    <span class="z-captcha-question" id="captcha-question">Loading…</span>
-                    <input type="number" id="captcha-answer" name="captchaAnswer" class="z-input" inputmode="numeric" required style="max-width: 8rem;">
+                  <div class="z-field" style="margin-bottom: 0;">
+                    <label for="confirm-password" class="z-field-label">Confirm password</label>
+                    <input type="password" id="confirm-password" name="confirmPassword" class="z-input" autocomplete="new-password" required>
                   </div>
-                </div>
 
-                <button type="submit" class="z-btn-primary z-btn-block" id="submit-btn">Create account</button>
-              </form>
+                  <div class="z-field" id="captcha-section" style="margin-bottom: 0;">
+                    <label for="captcha-answer" class="z-field-label">Security check</label>
+                    <div class="z-captcha-row">
+                      <span class="z-captcha-question" id="captcha-question">Loading…</span>
+                      <input type="number" id="captcha-answer" name="captchaAnswer" class="z-input" inputmode="numeric" required style="max-width: 8rem;">
+                    </div>
+                  </div>
+
+                  <button type="submit" class="z-btn-primary z-btn-block" id="submit-btn">Create account</button>
+                </form>
             </section>
           </div>
+
+          <p class="z-auth-aside">
+            Already have an address?
+            <a data-webmail-link class="z-link">Sign in</a>
+          </p>
         </div>
-
-        <p class="z-auth-aside">
-          Already have an address?
-          <a data-webmail-link class="z-link">Sign in</a>
-        </p>
       </div>
-
-      <p class="z-auth-footer">
-        <button type="button" class="z-theme-toggle" id="theme-toggle">Toggle theme</button>
-      </p>
     </div>
-  </div>
+  </main>
+
+  <footer class="z-site-footer">
+    <div class="z-site-footer__inner">
+      <span>&copy; 2026 ZAUR</span>
+      <span>
+        <a data-webmail-link class="z-link-muted">Sign in to mail</a>
+        <span aria-hidden="true"> · </span>
+        <button type="button" class="z-theme-toggle" id="theme-toggle">Toggle theme</button>
+      </span>
+    </div>
+  </footer>
 
   <script src="/site-config.js"></script>
   <script src="/site.js"></script>

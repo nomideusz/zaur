@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function showDashboard() {
     loginContainer.classList.add('z-hidden');
     dashboardContainer.classList.remove('z-hidden');
+    logoutBtn.classList.remove('z-hidden');
     loadInvitations();
     updateInviteEmailHint();
   }
@@ -69,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function showLogin() {
     loginContainer.classList.remove('z-hidden');
     dashboardContainer.classList.add('z-hidden');
+    logoutBtn.classList.add('z-hidden');
   }
 
   loginForm.addEventListener('submit', async (e) => {

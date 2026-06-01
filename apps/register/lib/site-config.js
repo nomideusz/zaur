@@ -8,7 +8,9 @@ function getSiteConfig() {
     webmailUrl,
     webmailLoginUrl: `${webmailUrl}/login`,
     mailHost: process.env.MAIL_HOST || 'mail.zaur.app',
-    registerUrl: normalizeUrl(process.env.REGISTER_PUBLIC_URL || ''),
+    registerUrl: normalizeUrl(
+      process.env.REGISTER_PUBLIC_URL || 'https://register.zaur.app',
+    ),
   };
 }
 

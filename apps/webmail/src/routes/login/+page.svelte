@@ -178,7 +178,12 @@
 			</form>
 		{/if}
 
-		<p class="mt-8 text-center text-xs text-fg-subtle">
+		<p class="mt-6 text-center text-sm text-fg-muted">
+			Need an address?
+			<a href={appConfig.registerUrl} class="text-accent hover:underline">Get your address</a>
+		</p>
+
+		<p class="mt-4 text-center text-xs text-fg-subtle">
 			<button type="button" class="text-accent hover:underline" onclick={() => theme.toggle()}>
 				Toggle {theme.resolved === 'dark' ? 'light' : 'dark'} mode
 			</button>

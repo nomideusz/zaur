@@ -6,8 +6,20 @@
   <title>Admin · ZAUR Register</title>
   <link rel="stylesheet" href="/zaur.css">
 </head>
-<body>
-  <div id="login-container" class="z-auth-page">
+<body class="z-site-shell">
+  <header class="z-site-header z-panel">
+    <div class="z-site-header__inner">
+      <a href="/" class="z-type-brand">ZAUR</a>
+      <nav class="z-site-nav" aria-label="Tools">
+        <a href="/" class="z-site-nav__link">Register</a>
+        <a href="#" data-webmail-link class="z-site-nav__link">Mail</a>
+        <a href="#" id="logout-btn" class="z-site-nav__link z-hidden">Logout</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="z-site-main">
+  <div id="login-container" class="z-auth-page z-auth-page--in-shell">
     <div class="z-auth-card">
       <div class="z-auth-hero z-auth-hero--compact">
         <div class="z-auth-sprite" aria-hidden="true">
@@ -32,20 +44,10 @@
         <a href="/" class="z-link">Back to register</a>
       </p>
 
-      <p class="z-auth-footer">
-        <button type="button" class="z-theme-toggle" id="theme-toggle">Toggle theme</button>
-      </p>
     </div>
   </div>
 
   <div id="dashboard-container" class="z-admin-shell z-dashboard z-hidden">
-    <header class="z-admin-topbar">
-      <a href="/" class="z-type-brand">ZAUR</a>
-      <nav aria-label="Admin" style="display: flex; align-items: center; gap: 0.75rem;">
-        <button type="button" class="z-theme-toggle" id="theme-toggle-admin">Toggle theme</button>
-        <a href="#" id="logout-btn" class="z-link-muted">Logout</a>
-      </nav>
-    </header>
 
     <div class="z-admin-content z-stack-lg">
       <div class="z-page-intro">
@@ -131,6 +133,14 @@
       </section>
     </div>
   </div>
+  </main>
+
+  <footer class="z-site-footer">
+    <div class="z-site-footer__inner">
+      <span>&copy; 2026 ZAUR</span>
+      <button type="button" class="z-theme-toggle" id="theme-toggle">Toggle theme</button>
+    </div>
+  </footer>
 
   <script src="/site-config.js"></script>
   <script src="/site.js"></script>
