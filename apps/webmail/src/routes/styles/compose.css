@@ -5,6 +5,22 @@
 		@apply w-full min-w-0;
 	}
 
+	.z-mail-view .z-compose__nav {
+		--z-compose-draft-status-height: calc(var(--z-space-nav-label-top) + 1.55em);
+	}
+
+	.z-mail-view .z-compose__draft-status {
+		@apply text-fg-subtle;
+		min-height: var(--z-compose-draft-status-height);
+		margin-top: var(--z-space-nav-label-top);
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+	}
+
+	.z-mail-view .z-compose__nav-send {
+		align-self: center;
+	}
+
 	.z-mail-view .z-compose__page {
 		display: flex;
 		flex-direction: column;
@@ -29,6 +45,7 @@
 			--z-compose-field-y: 0.5625rem;
 			--z-compose-nav-to-form: var(--z-space-folder-sections-gap);
 			--z-compose-header-to-body: 1rem;
+			--z-compose-footer-clearance: 4.25rem;
 		}
 	}
 
@@ -223,12 +240,36 @@
 	.z-mail-view .z-compose__footer-inner {
 		max-width: var(--z-content-max-width);
 		margin-inline: auto;
-		padding: 0.875rem 1rem calc(1.5rem + env(safe-area-inset-bottom, 0px));
+		padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	.z-mail-view .z-compose__footer-bar {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		min-height: 2.75rem;
+	}
+
+	.z-mail-view .z-compose__footer-send {
+		flex-shrink: 0;
+		align-self: center;
+	}
+
+	.z-mail-view .z-compose__footer-hint {
+		margin-top: 0.375rem;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: var(--z-main-page-muted-text);
+		line-height: 1.55;
+		color: var(--z-fg-subtle);
 	}
 
 	@media (min-width: 768px) {
 		.z-mail-view .z-compose__footer-inner {
 			padding-inline: 1.5rem;
-			padding-bottom: calc(1.75rem + env(safe-area-inset-bottom, 0px));
+			padding-block: 0.875rem calc(0.875rem + env(safe-area-inset-bottom, 0px));
 		}
 	}

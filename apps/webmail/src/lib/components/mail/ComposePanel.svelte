@@ -274,15 +274,17 @@
 				<button
 					type="submit"
 					form="compose-form"
-					class="z-mail-text-nav__action"
+					class="z-mail-text-nav__action z-compose__nav-send"
 					disabled={!compose.canSend || invalidRecipients.length > 0}
 					title={sendBlockedReason ?? 'Send message'}
 				>
 					{sendLabel}
 				</button>
 			</div>
-			{#if !settings.hideComposeHints && draftStatus}
-				<p class="z-mail-text-nav__label" aria-live="polite">{draftStatus}</p>
+			{#if !settings.hideComposeHints}
+				<p class="z-compose__draft-status" aria-live="polite">
+					{draftStatus ?? ''}
+				</p>
 			{/if}
 		</div>
 
@@ -442,28 +444,26 @@
 
 		<footer class="z-compose__footer">
 			<div class="z-compose__footer-inner">
-				<div class="z-mail-text-nav__links">
-					<button type="button" class="z-mail-text-nav__link" onclick={openFilePicker}>
-						Attach file
-					</button>
-					<button type="button" class="z-mail-text-nav__link" onclick={close}>Discard</button>
-				</div>
-				<div class="mt-2 flex items-baseline justify-between gap-x-4">
-					{#if !settings.hideComposeHints}
-						<p class="min-w-0 truncate text-[0.9375rem] leading-snug text-fg-subtle">
-							{sendBlockedReason ?? 'Ctrl+Enter to send'}
-						</p>
-					{/if}
+				<div class="z-compose__footer-bar">
+					<div class="z-mail-text-nav__links">
+						<button type="button" class="z-mail-text-nav__link" onclick={openFilePicker}>
+							Attach file
+						</button>
+						<button type="button" class="z-mail-text-nav__link" onclick={close}>Discard</button>
+					</div>
 					<button
 						type="submit"
 						form="compose-form"
-						class="z-mail-text-nav__action ml-auto"
+						class="z-mail-text-nav__action z-compose__footer-send"
 						disabled={!compose.canSend || invalidRecipients.length > 0}
 						title={sendBlockedReason ?? 'Send message'}
 					>
 						{sendLabel}
 					</button>
 				</div>
+				{#if !settings.hideComposeHints && sendBlockedReason}
+					<p class="z-compose__footer-hint" role="status">{sendBlockedReason}</p>
+				{/if}
 			</div>
 		</footer>
 	</div>
