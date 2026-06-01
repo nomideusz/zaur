@@ -7,7 +7,11 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		redirect(303, '/login');
 	}
 
-	const email = url.searchParams.get('email')?.trim();
+	const email = url.searchParams.get('email')?.trim().toLowerCase();
+	if (!email || !email.includes('@')) {
+		redirect(303, '/login?error=passkey_email');
+	}
+
 	const rememberMe = url.searchParams.get('remember') === '1';
 	const next = url.searchParams.get('next');
 	const redirectTo =
@@ -18,6 +22,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 		cookies,
 		redirectUri,
 		loginHint: email,
+		directSignIn: 'passkey',
 		rememberMe,
 		redirectTo
 	});

@@ -188,6 +188,8 @@ WEBMAIL_URL=https://webmail.zaur.app
 
 After registration, the success page links to **webmail** `/setup-passkey/start` with a short-lived Logto one-time token and `login_hint`. Logto verifies the token automatically (no email re-entry) and prompts for passkey creation on its sign-in experience, then returns to webmail via OAuth callback.
 
+Passkey **sign-in** from the webmail login page uses Logto’s [`direct_sign_in=passkey`](https://docs.logto.io/end-user-flows/authentication-parameters/direct-sign-in) parameter (via `/login/start`) so users land on `/direct/passkey` with their email prefilled instead of the generic sign-in form.
+
 Webmail env:
 
 ```env

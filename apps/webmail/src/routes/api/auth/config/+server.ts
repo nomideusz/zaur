@@ -57,6 +57,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		codeChallenge?: string;
 		redirectUri?: string;
 		loginHint?: string;
+		directSignIn?: string;
 	};
 	try {
 		body = await request.json();
@@ -64,7 +65,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		error(400, 'Invalid request body');
 	}
 
-	const { state, codeChallenge, redirectUri, loginHint } = body;
+	const { state, codeChallenge, redirectUri, loginHint, directSignIn } = body;
 	if (!state || !codeChallenge || !redirectUri) {
 		error(400, 'state, codeChallenge, and redirectUri are required');
 	}
@@ -74,7 +75,8 @@ export const POST: RequestHandler = async ({ request }) => {
 			state,
 			codeChallenge,
 			redirectUri,
-			loginHint
+			loginHint,
+			directSignIn
 		});
 		return json({ url });
 	} catch (err) {

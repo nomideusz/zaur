@@ -31,6 +31,8 @@
 	const passwordFallback = $derived(auth.oauthConfig?.passwordFallback !== false);
 	const showPassword = $derived(!oauthEnabled || passwordFallback);
 	const showPasskey = $derived(oauthEnabled);
+	const passkeyEmail = $derived(email.trim().toLowerCase());
+	const canUsePasskey = $derived(passkeyEmail.includes('@'));
 
 	$effect(() => {
 		if (!auth.isRestoring && auth.isAuthenticated) {
@@ -41,6 +43,9 @@
 	onMount(async () => {
 		if (urlEmail) {
 			email = urlEmail;
+		}
+		if ($page.url.searchParams.get('error') === 'passkey_email') {
+			auth.error = 'Enter your email address before signing in with a passkey.';
 		}
 		await auth.checkOauthConfig();
 		oauthReady = true;
@@ -55,7 +60,7 @@
 		void auth.loginWithPasskey({
 			rememberMe,
 			redirectTo: nextPath,
-			loginHint: email.trim() || undefined
+			loginHint: passkeyEmail
 		});
 	}
 </script>
@@ -151,11 +156,14 @@
 							type="button"
 							class="w-full"
 							variant={showPassword ? 'ghost' : 'primary'}
-							disabled={auth.isLoading}
+							disabled={auth.isLoading || !canUsePasskey}
 							onclick={signInWithPasskey}
 						>
 							{auth.isLoading ? 'Redirecting…' : 'Sign in with passkey'}
 						</Button>
+						{#if !canUsePasskey}
+							<p class="text-center text-xs text-fg-muted">Enter your email above to use a passkey.</p>
+						{/if}
 					{/if}
 				</div>
 			</form>

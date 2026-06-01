@@ -158,39 +158,16 @@ class AuthStore {
 				throw new Error('Sign-in is not configured yet.');
 			}
 
-			const verifier = generateRandomString(48);
-			const state = generateRandomString(32);
-			const redirectUri = `${window.location.origin}/oauth/callback`;
-
-			sessionStorage.setItem('oauth_code_verifier', verifier);
-			sessionStorage.setItem('oauth_state', state);
-			sessionStorage.setItem('oauth_remember_me', String(options?.rememberMe === true));
-			if (options?.redirectTo) {
-				sessionStorage.setItem('oauth_redirect_to', options.redirectTo);
-			} else {
-				sessionStorage.removeItem('oauth_redirect_to');
+			const email = options?.loginHint?.trim().toLowerCase();
+			if (!email || !email.includes('@')) {
+				throw new Error('Enter your email address before signing in with a passkey.');
 			}
 
-			const challenge = await generateChallengeOfVerifier(verifier);
+			const params = new URLSearchParams({ email });
+			if (options?.rememberMe) params.set('remember', '1');
+			if (options?.redirectTo) params.set('next', options.redirectTo);
 
-			const response = await fetch('/api/auth/config', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					state,
-					codeChallenge: challenge,
-					redirectUri,
-					loginHint: options?.loginHint
-				})
-			});
-
-			if (!response.ok) {
-				const payload = (await response.json().catch(() => ({}))) as { error?: string };
-				throw new Error(payload.error ?? 'Could not start sign-in.');
-			}
-
-			const { url } = (await response.json()) as { url: string };
-			window.location.href = url;
+			window.location.href = `/login/start?${params.toString()}`;
 		} catch (error) {
 			this.isLoading = false;
 			this.error = error instanceof Error ? error.message : 'Failed to start sign-in';
@@ -433,32 +410,3 @@ class AuthStore {
 }
 
 export const auth = new AuthStore();
-
-function generateRandomString(length: number): string {
-	const array = new Uint8Array(length);
-	window.crypto.getRandomValues(array);
-	return Array.from(array, (dec) => dec.toString(16).padStart(2, '0')).join('').slice(0, length);
-}
-
-async function sha256(plain: string): Promise<ArrayBuffer> {
-	const encoder = new TextEncoder();
-	const data = encoder.encode(plain);
-	return window.crypto.subtle.digest('SHA-256', data);
-}
-
-function base64urlencode(a: ArrayBuffer): string {
-	const bytes = new Uint8Array(a);
-	let str = '';
-	for (let i = 0; i < bytes.byteLength; i++) {
-		str += String.fromCharCode(bytes[i]);
-	}
-	return btoa(str)
-		.replace(/\+/g, '-')
-		.replace(/\//g, '_')
-		.replace(/=/g, '');
-}
-
-async function generateChallengeOfVerifier(verifier: string): Promise<string> {
-	const hashed = await sha256(verifier);
-	return base64urlencode(hashed);
-}

@@ -133,6 +133,8 @@ export async function buildAuthorizationUrl(input: {
 	codeChallenge: string;
 	loginHint?: string;
 	oneTimeToken?: string;
+	/** Logto-only: skip universal sign-in and open a direct flow (e.g. `passkey`). */
+	directSignIn?: string;
 }): Promise<string> {
 	const clientId = getOauthClientId();
 	const { authorization_endpoint: authorizationEndpoint } = await getOidcDiscovery();
@@ -157,6 +159,11 @@ export async function buildAuthorizationUrl(input: {
 
 	if (input.loginHint?.trim()) {
 		params.append('login_hint', input.loginHint.trim());
+	}
+
+	const directSignIn = input.directSignIn?.trim();
+	if (directSignIn) {
+		params.append('direct_sign_in', directSignIn);
 	}
 
 	return `${authorizationEndpoint}?${params.toString()}`;
