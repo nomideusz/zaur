@@ -1,6 +1,13 @@
 <script lang="ts">
 	interface Props extends svelteHTML.SVGAttributes<SVGSVGElement> {}
 	let { class: className = '', ...rest }: Props = $props();
+
+	/** Filled star when message is marked important (accent) or explicit fill class. */
+	const isFilled = $derived(
+		className.includes('text-accent') ||
+			className.includes('fill-') ||
+			(rest.fill && rest.fill !== 'none')
+	);
 </script>
 
 <svg
@@ -10,5 +17,15 @@
 	class={className}
 	{...rest}
 >
-	<path d="M4 15V3.99999C4 3.44771 4.44772 3 5 3H19C19.5523 3 20 3.44772 20 3.99999V15C20 15.5523 19.5523 16 19 16H12.003L8.00293 19.9991L9.00293 16H5C4.44772 16 4 15.5523 4 15ZM6 5V13H18V5H6Z"/>
+	{#if isFilled}
+		<!-- Remix: mail-star-fill -->
+		<path
+			d="M22 14.044C21.2389 13.6947 20.3922 13.5 19.5 13.5C16.1863 13.5 13.5 16.1863 13.5 19.5C13.5 20.018 13.5656 20.5206 13.689 21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H21C21.5523 3 22 3.44772 22 4V14.044ZM12.0606 11.6829L5.64722 6.2377L4.35278 7.7623L12.0731 14.3171L19.6544 7.75616L18.3456 6.24384L12.0606 11.6829ZM19.5 21.75L16.855 23.1406L17.3601 20.1953L15.2202 18.1094L18.1775 17.6797L19.5 15L20.8225 17.6797L23.7798 18.1094L21.6399 20.1953L22.145 23.1406L19.5 21.75Z"
+		/>
+	{:else}
+		<!-- Remix: mail-star-line -->
+		<path
+			d="M22 13H20V7.23792L12.0718 14.338L4 7.21594V19H14V21H3C2.44772 21 2 20.5523 2 20V4C2 3.44772 2.44772 3 3 3H21C21.5523 3 22 3.44772 22 4V13ZM4.51146 5L12.0619 11.662L19.501 5H4.51146ZM19.5 21.75L16.855 23.1406L17.3601 20.1953L15.2202 18.1094L18.1775 17.6797L19.5 15L20.8225 17.6797L23.7798 18.1094L21.6399 20.1953L22.145 23.1406L19.5 21.75Z"
+		/>
+	{/if}
 </svg>
