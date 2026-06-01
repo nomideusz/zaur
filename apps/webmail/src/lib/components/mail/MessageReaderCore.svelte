@@ -21,6 +21,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { renderMessageBody } from '$lib/email/html';
+	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
 
@@ -46,6 +47,8 @@
 
 	const latest = $derived(thread.at(-1));
 	const subject = $derived(latest?.subject ?? '(no subject)');
+	const subjectImportant = $derived(latest?.important ?? false);
+	const subjectMessageId = $derived(latest?.id ?? '');
 	const isDraft = $derived(mailboxRouteId === 'drafts');
 	const mailHomeHref = $derived(settings.preferredMailHref());
 	const primaryReplyLabel = $derived(
@@ -427,7 +430,19 @@
 
 						<div class="z-reader-content w-full">
 							{#if showInlineSubject}
-								<h1 class="z-reader-subject-heading">{subject}</h1>
+								<h1
+									class={cn(
+										'z-reader-subject-heading',
+										subjectImportant && 'z-mail-list-subject--important',
+										subjectImportant &&
+											subjectMessageId &&
+											importantRainbow.hasPicked(subjectMessageId) &&
+											'z-mail-list-subject--important-picked'
+									)}
+									style={subjectImportant && subjectMessageId
+										? importantRainbow.cssVars(subjectMessageId)
+										: undefined}
+								>{subject}</h1>
 							{/if}
 
 							{#if message.attachments.length}

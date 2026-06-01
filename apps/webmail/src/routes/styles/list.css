@@ -330,6 +330,13 @@
 				transparent
 			);
 		}
+
+		/* Reader heading uses text-fg by default — override when rainbow applies. */
+		.z-mail-view .z-reader-subject-heading.z-mail-list-subject--important {
+			font-weight: 600;
+			-webkit-text-fill-color: transparent;
+			color: transparent;
+		}
 	}
 
 	/* Bulk select — solid accent reads clearer than gradient. */
