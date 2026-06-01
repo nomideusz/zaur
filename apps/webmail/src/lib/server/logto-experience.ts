@@ -104,10 +104,14 @@ function applySetCookies(jar: CookieJar, headers: Headers): void {
 async function experienceRequest<T = unknown>(
 	jar: CookieJar,
 	path: string,
-	init: RequestInit = {}
+	init: RequestInit = {},
+	options?: { origin?: string }
 ): Promise<{ body: T; status: number }> {
 	const headers = new Headers(init.headers);
 	headers.set('Content-Type', 'application/json');
+	if (options?.origin) {
+		headers.set('Origin', options.origin);
+	}
 	const cookies = cookieHeader(jar);
 	if (cookies) {
 		headers.set('Cookie', cookies);
@@ -127,13 +131,21 @@ async function experienceRequest<T = unknown>(
 	};
 
 	if (!response.ok) {
-		const detail =
-			body.data?.message ||
-			body.message ||
-			body.code ||
-			body.data?.code ||
-			`Logto experience request failed (${response.status})`;
+		let detail = `Logto experience request failed (${response.status})`;
+		if (typeof body === 'object' && body) {
+			const record = body as Record<string, unknown>;
+			detail =
+				(typeof record.message === 'string' && record.message) ||
+				(typeof record.code === 'string' && record.code) ||
+				(typeof (record.data as { message?: string } | undefined)?.message === 'string' &&
+					(record.data as { message: string }).message) ||
+				detail;
+		}
 		throw new Error(detail);
+	}
+
+	if (response.status === 204) {
+		return { body: {} as T, status: response.status };
 	}
 
 	return { body, status: response.status };
@@ -159,7 +171,11 @@ export function unsealPasskeySetupSession(token: string | undefined): PasskeySet
 	return session;
 }
 
-export async function beginPasskeySetup(email: string, token: string): Promise<{
+export async function beginPasskeySetup(
+	email: string,
+	token: string,
+	options?: { origin?: string }
+): Promise<{
 	session: PasskeySetupSession;
 	registrationOptions: LogtoRegistrationOptions;
 }> {
@@ -171,10 +187,17 @@ export async function beginPasskeySetup(email: string, token: string): Promise<{
 
 	const jar: CookieJar = {};
 
-	await experienceRequest(jar, '/api/experience', {
-		method: 'PUT',
-		body: JSON.stringify({ interactionEvent: 'SignIn' })
-	});
+	const requestOptions = { origin: options?.origin };
+
+	await experienceRequest(
+		jar,
+		'/api/experience',
+		{
+			method: 'PUT',
+			body: JSON.stringify({ interactionEvent: 'SignIn' })
+		},
+		requestOptions
+	);
 
 	const verify = await experienceRequest<{ verificationId: string }>(
 		jar,
@@ -185,21 +208,32 @@ export async function beginPasskeySetup(email: string, token: string): Promise<{
 				identifier: { type: 'email', value: normalizedEmail },
 				token: cleanToken
 			})
-		}
+		},
+		requestOptions
 	);
 
-	await experienceRequest(jar, '/api/experience/identification', {
-		method: 'POST',
-		body: JSON.stringify({ verificationId: verify.body.verificationId })
-	});
+	await experienceRequest(
+		jar,
+		'/api/experience/identification',
+		{
+			method: 'POST',
+			body: JSON.stringify({ verificationId: verify.body.verificationId })
+		},
+		requestOptions
+	);
 
 	const registration = await experienceRequest<{
 		verificationId: string;
 		registrationOptions: LogtoRegistrationOptions;
-	}>(jar, '/api/experience/verification/web-authn/registration', {
-		method: 'POST',
-		body: JSON.stringify({})
-	});
+	}>(
+		jar,
+		'/api/experience/verification/web-authn/registration',
+		{
+			method: 'POST',
+			body: JSON.stringify({})
+		},
+		requestOptions
+	);
 
 	const session: PasskeySetupSession = {
 		logtoCookies: jar,
@@ -232,9 +266,11 @@ export interface WebAuthnRegistrationPayload {
 
 export async function finishPasskeySetup(
 	session: PasskeySetupSession,
-	payload: WebAuthnRegistrationPayload
+	payload: WebAuthnRegistrationPayload,
+	options?: { origin?: string }
 ): Promise<void> {
 	const jar = { ...session.logtoCookies };
+	const requestOptions = { origin: options?.origin };
 
 	const verified = await experienceRequest<{ verificationId: string }>(
 		jar,
@@ -245,13 +281,19 @@ export async function finishPasskeySetup(
 				verificationId: session.registrationVerificationId,
 				payload
 			})
-		}
+		},
+		requestOptions
 	);
 
-	await experienceRequest(jar, '/api/experience/profile/mfa/passkey', {
-		method: 'POST',
-		body: JSON.stringify({ verificationId: verified.body.verificationId })
-	});
+	await experienceRequest(
+		jar,
+		'/api/experience/profile/mfa/passkey',
+		{
+			method: 'POST',
+			body: JSON.stringify({ verificationId: verified.body.verificationId })
+		},
+		requestOptions
+	);
 }
 
 export { SETUP_MAX_AGE_SEC };

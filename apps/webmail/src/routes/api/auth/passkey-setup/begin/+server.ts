@@ -40,7 +40,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	try {
-		const { session, registrationOptions } = await beginPasskeySetup(email, token);
+		const origin = request.headers.get('origin') ?? undefined;
+		const { session, registrationOptions } = await beginPasskeySetup(email, token, { origin });
 		cookies.set(PASSKEY_SETUP_COOKIE, sealPasskeySetupSession(session), {
 			path: '/',
 			httpOnly: true,

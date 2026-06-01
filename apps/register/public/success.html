@@ -26,8 +26,20 @@
         <h1 class="z-type-brand z-register-brand">Welcome aboard</h1>
         <p class="z-register-tagline">Your new email address is ready</p>
         <p class="z-success-email" id="success-email">—</p>
-        <p class="z-type-lead" id="redirect-status">Preparing sign-in…</p>
+        <p class="z-type-lead" id="redirect-status">Your new email address is ready.</p>
       </div>
+
+      <section class="z-register-section z-hidden" id="passkey-section">
+        <p class="z-type-label">Webmail sign-in</p>
+        <h2 class="z-register-heading">Create a passkey</h2>
+        <p class="z-type-lead">
+          Use Face ID, Touch ID, or your device PIN to open webmail — no password needed next time.
+        </p>
+        <div class="z-action-row" style="margin-top: 1rem;">
+          <a href="#" id="passkey-btn" class="z-btn-primary">Create passkey</a>
+          <a href="#" id="skip-btn" class="z-btn-ghost">Skip for now</a>
+        </div>
+      </section>
 
       <section class="z-register-section">
         <p class="z-type-label">Mail client settings</p>
@@ -65,7 +77,7 @@
       </section>
 
       <div class="z-action-row">
-        <a href="#" id="webmail-btn" class="z-btn-primary">Open mail now</a>
+        <a href="#" id="webmail-btn" class="z-btn-primary">Open mail</a>
         <a href="/" class="z-btn-ghost">Back to register</a>
       </div>
     </div>

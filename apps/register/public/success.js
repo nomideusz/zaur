@@ -5,6 +5,22 @@ async function init() {
   document.getElementById('success-email').textContent = email;
   document.getElementById('settings-username').textContent = email;
 
+  const passkeySection = document.getElementById('passkey-section');
+  const passkeyBtn = document.getElementById('passkey-btn');
+  const skipBtn = document.getElementById('skip-btn');
+  const webmailBtn = document.getElementById('webmail-btn');
+  const statusEl = document.getElementById('redirect-status');
+
+  let passkeySetup = null;
+  try {
+    const stored = sessionStorage.getItem('passkeySetup');
+    if (stored) {
+      passkeySetup = JSON.parse(stored);
+    }
+  } catch {
+    passkeySetup = null;
+  }
+
   try {
     const cfg =
       window.ZAUR_SITE ||
@@ -21,18 +37,32 @@ async function init() {
 
     const loginParams = new URLSearchParams({ email, welcome: '1' });
     const loginUrl = `${webmailUrl}/login?${loginParams.toString()}`;
-    document.getElementById('webmail-btn').href = loginUrl;
+    webmailBtn.href = loginUrl;
+    skipBtn.href = loginUrl;
 
-    document.getElementById('redirect-status').textContent = 'Taking you to sign in…';
-    window.setTimeout(() => {
-      window.location.href = loginUrl;
-    }, 1200);
+    const canSetupPasskey =
+      cfg.passkeySetupEnabled &&
+      passkeySetup?.token &&
+      passkeySetup.email?.toLowerCase() === email.toLowerCase();
+
+    if (canSetupPasskey && passkeySection) {
+      passkeySection.classList.remove('z-hidden');
+      const setupParams = new URLSearchParams({
+        email,
+        token: passkeySetup.token,
+      });
+      passkeyBtn.href = `${webmailUrl}/setup-passkey?${setupParams.toString()}`;
+      statusEl.textContent = 'Optional: set up a passkey for faster webmail sign-in.';
+      sessionStorage.removeItem('passkeySetup');
+    } else {
+      statusEl.textContent = 'Open mail below to sign in with your new address and password.';
+    }
   } catch (err) {
     console.error('Failed to load register config:', err);
-    document.getElementById('redirect-status').textContent =
-      'Open mail below to sign in with your new address and password.';
+    statusEl.textContent = 'Open mail below to sign in with your new address and password.';
     const fallback = window.ZaurSite?.loginUrl(window.ZAUR_SITE) || 'https://webmail.zaur.app/login';
-    document.getElementById('webmail-btn').href = fallback;
+    webmailBtn.href = fallback;
+    skipBtn.href = fallback;
   }
 }
 

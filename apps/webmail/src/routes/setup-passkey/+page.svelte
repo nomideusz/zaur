@@ -12,47 +12,29 @@
 	} from '$lib/auth/webauthn';
 
 	const email = $derived($page.url.searchParams.get('email')?.trim().toLowerCase() ?? '');
-	const token = $derived($page.url.searchParams.get('token')?.trim() ?? '');
 
-	let phase = $state<'loading' | 'ready' | 'working' | 'done' | 'error' | 'missing'>('loading');
+	let setupToken = $state('');
+	let phase = $state<'ready' | 'working' | 'done' | 'error' | 'missing'>('ready');
 	let error = $state<string | null>(null);
 
-	onMount(async () => {
-		if (!email || !token) {
+	onMount(() => {
+		const params = new URLSearchParams(window.location.search);
+		const token = params.get('token')?.trim() ?? '';
+		const address = params.get('email')?.trim().toLowerCase() ?? '';
+		if (!address || !token) {
 			phase = 'missing';
 			return;
 		}
 
-		// Drop the one-time token from the address bar once read.
-		if (typeof history.replaceState === 'function') {
-			history.replaceState({}, '', `/setup-passkey?email=${encodeURIComponent(email)}`);
-		}
+		setupToken = token;
 
-		try {
-			const response = await fetch('/api/auth/passkey-setup/begin', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, token })
-			});
-			const payload = (await response.json()) as {
-				registrationOptions?: PublicKeyCreationOptionsJson;
-				error?: string;
-			};
-			if (!response.ok) {
-				throw new Error(payload.error ?? 'Unable to prepare passkey setup.');
-			}
-			if (!payload.registrationOptions) {
-				throw new Error('Passkey setup options were not returned.');
-			}
-			phase = 'ready';
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Unable to prepare passkey setup.';
-			phase = 'error';
+		if (typeof history.replaceState === 'function') {
+			history.replaceState({}, '', `/setup-passkey?email=${encodeURIComponent(address)}`);
 		}
 	});
 
 	async function createPasskey() {
-		if (phase !== 'ready') return;
+		if (!email || !setupToken || phase === 'working') return;
 		phase = 'working';
 		error = null;
 
@@ -60,14 +42,14 @@
 			const beginResponse = await fetch('/api/auth/passkey-setup/begin', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, token })
+				body: JSON.stringify({ email, token: setupToken })
 			});
 			const beginPayload = (await beginResponse.json()) as {
 				registrationOptions?: PublicKeyCreationOptionsJson;
 				error?: string;
 			};
 			if (!beginResponse.ok || !beginPayload.registrationOptions) {
-				throw new Error(beginPayload.error ?? 'Unable to restart passkey setup.');
+				throw new Error(beginPayload.error ?? 'Unable to start passkey setup.');
 			}
 
 			if (!window.PublicKeyCredential) {
@@ -129,14 +111,12 @@
 			{/if}
 		</div>
 
-		{#if phase === 'loading'}
-			<p class="text-center text-sm text-fg-muted">Preparing passkey setup…</p>
-		{:else if phase === 'missing'}
+		{#if phase === 'missing'}
 			<p class="text-center text-sm text-fg-muted">
 				This link is incomplete. Register again or open mail with your password.
 			</p>
 			<div class="mt-6 flex justify-center">
-				<Button variant="secondary" onclick={() => goto('/login')}>Open sign in</Button>
+				<Button variant="ghost" onclick={() => goto('/login')}>Open sign in</Button>
 			</div>
 		{:else if phase === 'ready' || phase === 'working'}
 			<div class="space-y-4">
@@ -159,8 +139,7 @@
 		{:else}
 			<div class="space-y-4">
 				<p class="text-sm text-danger">{error ?? 'Passkey setup failed.'}</p>
-				<Button class="w-full" onclick={createPasskey}>Try again</Button>
-				<Button class="w-full" variant="ghost" onclick={skipToMail}>Skip — open mail</Button>
+				<Button class="w-full" variant="ghost" onclick={skipToMail}>Open mail with password</Button>
 			</div>
 		{/if}
 	</div>

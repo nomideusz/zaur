@@ -332,6 +332,14 @@ registerForm.addEventListener('submit', async (e) => {
     }
 
     sessionStorage.setItem('registeredEmail', data.email);
+    if (data.passkeySetup?.token) {
+      sessionStorage.setItem(
+        'passkeySetup',
+        JSON.stringify({ email: data.email, token: data.passkeySetup.token }),
+      );
+    } else {
+      sessionStorage.removeItem('passkeySetup');
+    }
     window.location.href = `/success?email=${encodeURIComponent(data.email)}`;
   } catch {
     showFormError('Network error. Please try again.');

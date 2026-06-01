@@ -119,6 +119,7 @@ app.get('/api/config', (_req, res) => {
     ...getSiteConfig(),
     requiresInvitation: invitations.requiresInvitation(),
     passwordResetEnabled: passwordReset.isEnabled(),
+    passkeySetupEnabled: logto.isConfigured(),
   });
 });
 
@@ -314,10 +315,21 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
 
     delete req.session.captchaAnswer;
 
+    let passkeySetup = null;
+    if (logtoCreated) {
+      try {
+        passkeySetup = await logto.createPasskeySetupToken(email);
+      } catch (err) {
+        console.warn('Passkey setup token creation failed:', err.message);
+      }
+    }
+
     res.json({
       success: true,
       email,
       recoveryEmail,
+      passkeySetupEnabled: Boolean(passkeySetup?.token),
+      passkeySetup: passkeySetup?.token ? { token: passkeySetup.token } : null,
       webmailUrl: process.env.WEBMAIL_URL || 'https://webmail.zaur.app',
       mailHost: process.env.MAIL_HOST || 'mail.zaur.app',
     });

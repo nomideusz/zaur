@@ -131,11 +131,20 @@ async function createUser(email, password, options = {}) {
   }
 }
 
+const PASSKEY_SETUP_TOKEN_EXPIRES_SEC = Number.parseInt(
+  process.env.PASSKEY_SETUP_TOKEN_EXPIRES_SEC || '900',
+  10,
+);
+
 async function createOneTimeToken(email, expiresInSec = 72 * 3600) {
   return managementRequest('POST', '/api/one-time-tokens', {
     email: email.toLowerCase(),
     expiresIn: expiresInSec,
   });
+}
+
+async function createPasskeySetupToken(email) {
+  return createOneTimeToken(email, PASSKEY_SETUP_TOKEN_EXPIRES_SEC);
 }
 
 async function verifyOneTimeToken(email, token) {
@@ -191,6 +200,7 @@ module.exports = {
   getUserByEmail,
   updatePassword,
   createOneTimeToken,
+  createPasskeySetupToken,
   verifyOneTimeToken,
   listOneTimeTokens,
   findOneTimeTokens,

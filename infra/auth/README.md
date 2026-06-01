@@ -183,7 +183,10 @@ Register env (CapRover `register` app):
 WEBMAIL_URL=https://webmail.zaur.app
 # INVITE_SMTP_* (required for reset emails)
 # PASSWORD_RESET_TOKENS_PATH=/app/data/password_reset_tokens.json
+# PASSKEY_SETUP_TOKEN_EXPIRES_SEC=900
 ```
+
+After registration, the success page can link to **webmail** `/setup-passkey` with a short-lived Logto one-time token (no password re-entry). Webmail calls Logto’s Experience API to bind a passkey for sign-in.
 
 Webmail env:
 

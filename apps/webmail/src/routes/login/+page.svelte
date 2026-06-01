@@ -15,6 +15,7 @@
 	const isWelcome = $derived(
 		$page.url.searchParams.get('welcome') === '1' || urlEmail.length > 0
 	);
+	const passkeyReady = $derived($page.url.searchParams.get('passkey_ready') === '1');
 
 	let email = $state(remembered.email);
 	let password = $state('');
@@ -77,7 +78,12 @@
 			<p class="text-center text-sm text-fg-muted">Loading sign-in…</p>
 		{:else}
 			<form class="space-y-4" onsubmit={submitPassword}>
-				{#if isWelcome}
+				{#if passkeyReady}
+					<div class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm text-fg">
+						<p class="font-medium">Passkey ready</p>
+						<p class="mt-1 text-fg-muted">Use “Sign in with passkey” below, or your password.</p>
+					</div>
+				{:else if isWelcome}
 					<div class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm text-fg">
 						<p class="font-medium">Welcome — almost done</p>
 						<p class="mt-1 text-fg-muted">

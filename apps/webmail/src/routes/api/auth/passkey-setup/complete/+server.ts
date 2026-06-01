@@ -45,7 +45,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	try {
-		await finishPasskeySetup(session, body.payload);
+		const origin = request.headers.get('origin') ?? undefined;
+		await finishPasskeySetup(session, body.payload, { origin });
 		cookies.delete(PASSKEY_SETUP_COOKIE, { path: '/' });
 		return json({ success: true, email: session.email });
 	} catch (error) {
