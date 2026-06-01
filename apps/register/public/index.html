@@ -8,7 +8,7 @@
 </head>
 <body>
   <div class="z-auth-page" id="main-content">
-    <div class="z-auth-card">
+    <div class="z-auth-card" id="auth-card">
       <div class="z-hidden" id="invitation-gate">
         <div class="z-auth-hero">
           <div class="z-auth-sprite" aria-hidden="true">
@@ -55,9 +55,10 @@
 
         <div class="z-callout z-hidden" id="invitation-banner"></div>
 
-        <div class="z-form-stack">
-          <div>
-            <label for="username-input" class="z-field-label">Username</label>
+        <div class="z-register-grid">
+          <div class="z-register-pick">
+            <p class="z-register-pick__title">Choose your address</p>
+            <label for="username-input" class="sr-only">Username</label>
             <input
               type="text"
               id="username-input"
@@ -68,52 +69,59 @@
               autofocus
             >
             <div class="z-validation-hint" id="validation-hint"></div>
+            <div id="results-container"></div>
+          </div>
+
+          <div class="z-register-side">
+            <div class="z-register-create-hint" id="register-panel-hint">
+              <p class="z-type-label">Mailbox password</p>
+              <p class="z-type-lead" style="margin-top: 0.5rem; font-size: 0.875rem;">
+                Select an available address on the left to set your password.
+              </p>
+            </div>
+
+            <section class="z-register-create z-panel-collapsible" id="register-panel">
+              <div class="z-callout" style="margin-bottom: 1rem;">
+                <span class="z-callout__title" id="selected-email-label">—</span>
+              </div>
+
+              <div class="z-alert z-alert--error" id="form-error" role="alert"></div>
+
+              <form id="register-form" class="z-form-stack">
+                <input type="hidden" id="selected-domain-id" name="domainId">
+                <input type="hidden" id="invite-token" name="inviteToken">
+                <input type="hidden" id="invite-email" name="inviteEmail">
+
+                <div class="z-field" style="margin-bottom: 0;">
+                  <label for="password" class="z-field-label">Mailbox password</label>
+                  <input type="password" id="password" name="password" class="z-input" autocomplete="new-password" required>
+                  <p class="z-text-subtle z-hidden" id="password-hint" style="font-size: 0.8125rem; margin-top: 0.25rem;">
+                    Use this for IMAP and webmail. You can add a passkey on the next screen.
+                  </p>
+                  <div class="z-strength-bar">
+                    <div class="z-strength-fill" id="strength-fill"></div>
+                  </div>
+                  <div class="z-strength-label" id="strength-label"></div>
+                </div>
+
+                <div class="z-field" style="margin-bottom: 0;">
+                  <label for="confirm-password" class="z-field-label">Confirm password</label>
+                  <input type="password" id="confirm-password" name="confirmPassword" class="z-input" autocomplete="new-password" required>
+                </div>
+
+                <div class="z-field" id="captcha-section" style="margin-bottom: 0;">
+                  <label for="captcha-answer" class="z-field-label">Security check</label>
+                  <div class="z-captcha-row">
+                    <span class="z-captcha-question" id="captcha-question">Loading…</span>
+                    <input type="number" id="captcha-answer" name="captchaAnswer" class="z-input" inputmode="numeric" required style="max-width: 8rem;">
+                  </div>
+                </div>
+
+                <button type="submit" class="z-btn-primary z-btn-block" id="submit-btn">Create account</button>
+              </form>
+            </section>
           </div>
         </div>
-
-        <div id="results-container"></div>
-
-        <section class="z-section z-panel-collapsible" id="register-panel">
-          <div class="z-callout" style="margin-bottom: 1rem;">
-            <span class="z-callout__title" id="selected-email-label">—</span>
-            <p class="z-text-muted" style="margin: 0.25rem 0 0; font-size: 0.8125rem;">Create your mailbox password below.</p>
-          </div>
-
-          <div class="z-alert z-alert--error" id="form-error" role="alert"></div>
-
-          <form id="register-form" class="z-form-stack">
-            <input type="hidden" id="selected-domain-id" name="domainId">
-            <input type="hidden" id="invite-token" name="inviteToken">
-            <input type="hidden" id="invite-email" name="inviteEmail">
-
-            <div class="z-field" style="margin-bottom: 0;">
-              <label for="password" class="z-field-label">Mailbox password</label>
-              <input type="password" id="password" name="password" class="z-input" autocomplete="new-password" required>
-              <p class="z-text-subtle z-hidden" id="password-hint" style="font-size: 0.8125rem; margin-top: 0.25rem;">
-                Use this for IMAP and webmail. You can add a passkey on the next screen.
-              </p>
-              <div class="z-strength-bar">
-                <div class="z-strength-fill" id="strength-fill"></div>
-              </div>
-              <div class="z-strength-label" id="strength-label"></div>
-            </div>
-
-            <div class="z-field" style="margin-bottom: 0;">
-              <label for="confirm-password" class="z-field-label">Confirm password</label>
-              <input type="password" id="confirm-password" name="confirmPassword" class="z-input" autocomplete="new-password" required>
-            </div>
-
-            <div class="z-field" id="captcha-section" style="margin-bottom: 0;">
-              <label for="captcha-answer" class="z-field-label">Security check</label>
-              <div class="z-captcha-row">
-                <span class="z-captcha-question" id="captcha-question">Loading…</span>
-                <input type="number" id="captcha-answer" name="captchaAnswer" class="z-input" inputmode="numeric" required style="max-width: 8rem;">
-              </div>
-            </div>
-
-            <button type="submit" class="z-btn-primary z-btn-block" id="submit-btn">Create account</button>
-          </form>
-        </section>
 
         <p class="z-auth-aside">
           Already have an address?

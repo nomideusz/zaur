@@ -15,6 +15,7 @@ const strengthFill = document.getElementById('strength-fill');
 const strengthLabel = document.getElementById('strength-label');
 const submitBtn = document.getElementById('submit-btn');
 
+const authCard = document.getElementById('auth-card');
 const invitationGate = document.getElementById('invitation-gate');
 const invitationGateMessage = document.getElementById('invitation-gate-message');
 const registerContent = document.getElementById('register-content');
@@ -200,7 +201,11 @@ function selectDomain(row) {
     loadCaptcha();
   }
   applyInvitationUi();
-  registerPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  if (window.matchMedia('(max-width: 767px)').matches) {
+    registerPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  } else {
+    passwordInput.focus();
+  }
 }
 
 function updateView() {
@@ -377,6 +382,7 @@ async function loadDomainTeaser() {
 function showInvitationGate(message) {
   registerContent.classList.add('z-hidden');
   invitationGate.classList.remove('z-hidden');
+  authCard?.classList.remove('z-auth-card--register');
   if (message) invitationGateMessage.textContent = message;
   void loadDomainTeaser();
 }
@@ -384,6 +390,7 @@ function showInvitationGate(message) {
 function showRegisterFlow() {
   invitationGate.classList.add('z-hidden');
   registerContent.classList.remove('z-hidden');
+  authCard?.classList.add('z-auth-card--register');
 }
 
 async function initInvitation() {

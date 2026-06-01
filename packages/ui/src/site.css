@@ -14,6 +14,84 @@
 	min-width: 0;
 }
 
+.z-auth-card--register {
+	max-width: var(--z-register-flow-measure);
+}
+
+@media (min-width: 768px) {
+	.z-auth-page:has(#register-content:not(.z-hidden)) {
+		align-items: flex-start;
+		padding-block: 3rem;
+	}
+}
+
+/* Register flow — two columns on desktop */
+
+.z-register-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 1.5rem;
+	margin-top: 1.25rem;
+}
+
+@media (min-width: 768px) {
+	.z-register-grid {
+		display: grid;
+		grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+		gap: 2.5rem;
+		align-items: start;
+	}
+
+	.z-register-side {
+		border-left: 1px solid var(--z-divider);
+		padding-left: 2.5rem;
+	}
+
+	.z-register-create.is-visible {
+		position: sticky;
+		top: 2rem;
+	}
+}
+
+.z-register-pick__title {
+	margin: 0 0 0.75rem;
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--z-fg);
+}
+
+.z-register-create-hint {
+	display: none;
+}
+
+@media (min-width: 768px) {
+	.z-register-create-hint {
+		display: block;
+		padding: 1.5rem 0;
+		font-size: 0.875rem;
+		line-height: 1.55;
+		color: var(--z-fg-subtle);
+	}
+
+	.z-register-grid:has(#register-panel.is-visible) .z-register-create-hint {
+		display: none;
+	}
+}
+
+.z-register-create {
+	margin-top: 0;
+	padding-top: 0;
+	border-top: none;
+}
+
+@media (max-width: 767px) {
+	.z-register-create.is-visible {
+		margin-top: 0.5rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid var(--z-divider);
+	}
+}
+
 .z-auth-hero {
 	margin-bottom: 2rem;
 	text-align: center;
