@@ -21,6 +21,11 @@ export function isOauthEnabled(): boolean {
 	return env.OAUTH_ENABLED === 'true' && Boolean(getOidcIssuerUrl());
 }
 
+/** Password sign-in via LLDAP/Stalwart. Enabled by default when OAuth is on; set OAUTH_PASSWORD_FALLBACK=false for passkey-only. */
+export function isPasswordLoginEnabled(): boolean {
+	return env.OAUTH_PASSWORD_FALLBACK !== 'false';
+}
+
 export async function getOidcDiscovery(forceRefresh = false): Promise<OidcDiscoveryDocument> {
 	const issuerUrl = getOidcIssuerUrl();
 	if (!issuerUrl) {

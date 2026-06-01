@@ -3,8 +3,6 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { tick } from 'svelte';
-	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -273,11 +271,12 @@
 	{#if mail.selectedError}
 		<div
 			class={cn(
-				'shrink-0 border-b px-4 py-2 text-xs md:px-6',
+				'shrink-0 px-4 py-2 md:px-6',
 				mail.selectedError.startsWith('Offline')
-					? 'border-border bg-surface text-fg-muted'
-					: 'border-danger/20 bg-danger/5 text-danger'
+					? 'text-fg-muted'
+					: 'text-danger'
 			)}
+			style="font-size: var(--z-reader-text); line-height: var(--z-reader-leading);"
 		>
 			{mail.selectedError}
 		</div>
@@ -325,39 +324,31 @@
 						<a href="/settings/appearance" class="z-mail-external-banner__action">Settings</a>
 					</div>
 				{/if}
-			{#each thread as message, index (message.id)}
+			<div class="z-reader-thread-list">
+			{#each thread as message (message.id)}
 				{@const contact = readerPrimaryContact(message, mailboxRouteId, isMe)}
 				{@const showContactEmail = shouldShowContactEmail(contact.displayName, contact.email)}
 				{@const showInlineSubject = message.id === subjectAnchorId}
-				<section
-					class={cn(index > 0 && 'border-t border-border/70')}
-				>
+				<section class="z-reader-thread">
 					{#if isExpanded(message)}
-						<div
-							class={cn(
-								index === 0 ? 'pb-4 pt-1.5' : 'py-4'
-							)}
-						>
 						{#if thread.length === 1}
-							<header class="z-reader-chrome z-reader-chrome--bordered">
+							<header class="z-reader-chrome">
 								<div class="z-reader-chrome__meta">
 									<div class="z-reader-chrome__from flex items-start gap-3">
 										{#if settings.showAvatars}
 											<Avatar
 												name={contact.avatarName ?? contact.avatarEmail}
 												email={contact.avatarEmail}
-												class="size-9 text-sm"
+												class="size-9"
 											/>
 										{/if}
 										<div class="min-w-0 flex-1">
-											<div class="flex items-center gap-1.5">
-												<p class="z-reader-from truncate">{contact.displayName}</p>
-											</div>
+											<p class="z-reader-from truncate">{contact.displayName}</p>
 											{#if showContactEmail}
 												{#if !contact.isMe}
 													<button
 														type="button"
-														class="z-reader-meta mt-0.5 block max-w-full truncate text-left hover:text-accent hover:underline"
+														class="z-reader-link mt-0.5 block max-w-full truncate text-left"
 														onclick={() => composeTo(contact.email)}
 													>
 														{contact.email}
@@ -369,20 +360,16 @@
 										</div>
 									</div>
 
-									<div class="z-reader-chrome__aside">
-										{#if showReadTime && !minimalChrome}
-											<div class="z-reader-chrome__time flex flex-col items-end gap-0.5">
-												<span class="text-xs whitespace-nowrap text-fg-subtle">~{readMinutes} min read</span>
-											</div>
-										{/if}
-									</div>
+									{#if showReadTime && !minimalChrome}
+										<div class="z-reader-chrome__time">~{readMinutes} min</div>
+									{/if}
 								</div>
 							</header>
 						{:else}
 							<header class="z-reader-message-head">
 								<button
 									type="button"
-									class="z-reader-thread-toggle py-3"
+									class="z-reader-thread-toggle"
 									aria-expanded={true}
 									aria-label={`Collapse message from ${contact.displayName}`}
 									onclick={() => toggleMessage(message)}
@@ -391,7 +378,7 @@
 										<Avatar
 											name={contact.avatarName ?? contact.avatarEmail}
 											email={contact.avatarEmail}
-											class="size-9 text-sm"
+											class="size-9"
 										/>
 									{/if}
 									<div class="min-w-0 flex-1">
@@ -402,28 +389,22 @@
 											{/if}
 										</div>
 									</div>
-									{#if !minimalChrome}
-										<div class="z-reader-thread-meta">
-											<ChevronUp class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-										</div>
-									{/if}
 								</button>
-
-							{#if showContactEmail}
-								<div class={cn('min-w-0', settings.showAvatars && 'pl-12')}>
-									{#if !contact.isMe}
-										<button
-											type="button"
-											class="z-reader-meta mt-0.5 block max-w-full truncate text-left hover:text-accent hover:underline"
-											onclick={() => composeTo(contact.email)}
-										>
-											{contact.email}
-										</button>
-									{:else}
-										<p class="z-reader-meta mt-0.5">{contact.email}</p>
-									{/if}
-								</div>
-							{/if}
+								{#if showContactEmail}
+									<div class={cn('min-w-0', settings.showAvatars && 'pl-12')}>
+										{#if !contact.isMe}
+											<button
+												type="button"
+												class="z-reader-link mt-0.5 block max-w-full truncate text-left"
+												onclick={() => composeTo(contact.email)}
+											>
+												{contact.email}
+											</button>
+										{:else}
+											<p class="z-reader-meta mt-0.5">{contact.email}</p>
+										{/if}
+									</div>
+								{/if}
 							</header>
 						{/if}
 
@@ -471,45 +452,44 @@
 								/>
 							</div>
 						</div>
-					</div>
 					{:else}
 						<button
 							type="button"
-							class="z-reader-thread-toggle max-sm:items-start py-3"
+							class="z-reader-thread-toggle"
+							aria-expanded={false}
+							aria-label={`Expand message from ${contact.displayName}`}
 							onclick={() => toggleMessage(message)}
-					>
-						{#if settings.showAvatars}
-							<Avatar
-								name={contact.avatarName ?? contact.avatarEmail}
-								email={contact.avatarEmail}
-								class="size-8"
-							/>
-						{/if}
-						<div class="min-w-0 flex-1">
-							<p class="truncate text-sm">
-								<span class="font-medium text-fg">{contact.displayName}</span>
-							</p>
-						</div>
-						{#if !minimalChrome && thread.length > 1}
-							<div class="z-reader-thread-meta">
-								<ChevronDown class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+						>
+							{#if settings.showAvatars}
+								<Avatar
+									name={contact.avatarName ?? contact.avatarEmail}
+									email={contact.avatarEmail}
+									class="size-9"
+								/>
+							{/if}
+							<div class="min-w-0 flex-1">
+								<p class="z-reader-from truncate">{contact.displayName}</p>
+								{#if message.preview}
+									<p class="z-reader-meta mt-0.5 truncate">{message.preview}</p>
+								{/if}
 							</div>
-						{/if}
 						</button>
 					{/if}
 				</section>
 			{/each}
+			</div>
 
 		</div>
 		</div>
 	</div>
 
 	{#if latest && auth.client && settings.showQuickReply && mailboxRouteId !== 'drafts' && !minimalChrome}
-		<footer class="hidden shrink-0 border-t border-border/80 bg-surface/80 md:block">
+		<footer class="hidden shrink-0 pt-6 md:block">
 			<div class={cn(contentShellClass(), 'px-4 py-4 md:px-6')}>
 				<div class="z-reader-column flex flex-col gap-2 sm:flex-row">
 					<textarea
-						class="z-input z-compose-editor min-h-10 flex-1 resize-none py-2 leading-relaxed"
+						class="z-input z-compose-editor min-h-10 flex-1 resize-none py-2"
+						style="font-size: var(--z-reader-text); line-height: var(--z-reader-leading);"
 						rows={2}
 						placeholder="Write a quick reply…"
 						aria-label="Quick reply"
@@ -522,7 +502,7 @@
 							{quickReplySending ? 'Sending…' : 'Send'}
 						</Button>
 						{#if !settings.hideComposeHints}
-							<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter</span>
+							<span class="hidden text-fg-muted sm:inline" style="font-size: var(--z-reader-text);">Ctrl+Enter</span>
 						{/if}
 					</div>
 				</div>

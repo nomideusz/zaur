@@ -106,6 +106,8 @@ async function createUser(email, password, options = {}) {
 
   try {
     await managementRequest('POST', '/api/users', {
+      // Sign-in uses primaryEmail (full mailbox address). Logto username is a separate
+      // field (letters/digits/underscores only — no @) and is intentionally omitted.
       primaryEmail: normalized,
       name: normalized.split('@')[0],
       password,

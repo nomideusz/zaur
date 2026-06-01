@@ -4,8 +4,7 @@ import { createConnectedClient } from '$lib/server/jmap';
 import { classifyJmapError, loginErrorMessage } from '$lib/jmap/errors';
 import { findIdentityEmail, normalizeEmail } from '$lib/jmap/account';
 import { writeSession } from '$lib/server/session';
-import { env } from '$env/dynamic/private';
-import { isOauthEnabled } from '$lib/server/oidc-discovery';
+import { isOauthEnabled, isPasswordLoginEnabled } from '$lib/server/oidc-discovery';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
@@ -22,7 +21,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		);
 	}
 
-	if (isOauthEnabled() && env.OAUTH_PASSWORD_FALLBACK !== 'true') {
+	if (isOauthEnabled() && !isPasswordLoginEnabled()) {
 		return json(
 			{
 				error: 'Password sign-in is disabled. Use your passkey instead.',

@@ -45,8 +45,8 @@ class AuthStore {
 	client = $state<JMAPClient | null>(null);
 	oauthConfig = $state<{
 		enabled: boolean;
-		passkeysFirst?: boolean;
 		passwordFallback?: boolean;
+		passkeyOnly?: boolean;
 		clientId?: string;
 		issuerUrl?: string;
 		authorizationEndpoint?: string;

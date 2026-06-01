@@ -2,7 +2,7 @@
 # Configure Logto sign-in for ZAUR register → webmail flow:
 #   - Sign in with email + password (not internal usernames)
 #   - Sign-up disabled (register app creates users via Management API)
-#   - Prompt new users to enroll a passkey after first password sign-in
+#   - Passkeys optional (users can add later; webmail uses direct password sign-in)
 #
 # Prerequisites:
 #   LOGTO_ENDPOINT, LOGTO_M2M_CLIENT_ID, LOGTO_M2M_CLIENT_SECRET, LOGTO_API_RESOURCE
@@ -59,7 +59,7 @@ PATCH='{
   },
   "mfa": {
     "factors": ["WebAuthn"],
-    "policy": "PromptAtSignInAndSignUp",
+    "policy": "NoPrompt",
     "organizationRequiredMfaPolicy": "NoPrompt"
   }
 }'

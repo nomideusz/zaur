@@ -1,13 +1,13 @@
 # ZAUR identity (Logto + passkeys)
 
-Passkey-first sign-in for [webmail](https://webmail.zaur.app) uses **Logto** as the OIDC provider. Stalwart validates access tokens for JMAP; LLDAP remains the directory for mailbox passwords and app passwords (Thunderbird / Apple Mail).
+[Webmail](https://webmail.zaur.app) sign-in uses the **email + password** from registration (LLDAP/Stalwart). **Logto** provides optional passkey/OIDC sign-in. Stalwart validates Bearer tokens for OIDC sessions; LLDAP remains the directory for mailbox passwords and app passwords (Thunderbird / Apple Mail).
 
 ## Architecture
 
 ```
-Browser → webmail (PKCE) → Logto @ auth.zaur.app (passkeys)
-webmail session → OIDC refresh token (encrypted, no mailbox password)
-webmail → Stalwart JMAP (Bearer access token)
+Browser → webmail login form (email + password → LLDAP/Stalwart JMAP)
+Optional: webmail (PKCE) → Logto @ auth.zaur.app (passkeys)
+webmail session → encrypted cookie (password or OIDC refresh token)
 Thunderbird → Stalwart app password (later / settings UI)
 ```
 
@@ -44,9 +44,9 @@ Stale Zitadel CapRover apps (`auth-login`, `zitadel-db`) are removed by `caprove
 
 1. Open **https://auth-admin.zaur.app/console/welcome**
 2. Create the admin account (OSS allows one admin on first launch)
-3. **Sign-in experience** → enable **Passkey sign-in**
-4. **Multi-factor authentication** → enable **Passkeys (WebAuthn)** with policy **Prompt at sign-in and sign-up** so new users enroll a passkey after their first password login
-5. Set sign-in identifier to **Email address** (password), not username — register creates users with email only; users sign in with the same email and password they chose at signup
+3. **Sign-in experience** → enable **Passkey sign-in** (optional; users can add passkeys later)
+4. **Multi-factor authentication** → passkeys optional (`NoPrompt` policy recommended)
+5. Set sign-in identifier to **Email address** (password), **not username** — Logto’s internal username field cannot contain `@`; register creates users with `primaryEmail` only (e.g. `you@zaur.app`)
 
 Or apply the same settings via Management API (recommended after redeploys):
 
@@ -67,7 +67,7 @@ To replace Logto’s default sign-in page with a ZAUR-branded experience:
 
 **OSS note:** BYUI upload requires object storage configured in Logto (`storage.not_configured` without it). Until then, branding via `configure-logto-signin.sh` is the supported path on self-hosted Logto.
 
-After registration, users are redirected automatically from `register.zaur.app/success` to webmail → Logto (`?auto=1`) to sign in and enroll a passkey.
+After registration, users are redirected to webmail sign-in with the same **full email address** and password (no Logto redirect).
 
 ## 2. Webmail OIDC application
 
@@ -94,7 +94,7 @@ OAUTH_CLIENT_ID=<logto-app-id>
 OAUTH_CLIENT_SECRET=<logto-app-secret>
 OAUTH_SCOPES=openid profile email offline_access
 # Do NOT set OAUTH_RESOURCE — Stalwart needs opaque userinfo tokens from Logto
-# OAUTH_PASSWORD_FALLBACK=true   # dev only: local LDAP password form
+# OAUTH_PASSWORD_FALLBACK=false  # optional: passkey-only (default allows email+password)
 ```
 
 Redeploy webmail after setting vars.
@@ -156,7 +156,7 @@ When Logto M2M is configured, registration requires a **Logto one-time token** m
 1. Admin → `register.zaur.app/admin` → enter email → **Send invitation**
 2. With SMTP configured (`INVITE_SMTP_*`), the link is emailed automatically; otherwise copy the link from the success message
 3. User opens the link, picks username + domain + password
-4. Success page auto-redirects to webmail → Logto for first sign-in + passkey setup
+4. Success page auto-redirects to webmail sign-in (same email + password)
 
 CLI:
 

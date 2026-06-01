@@ -38,9 +38,9 @@
 	}
 
 	.z-mail-view .z-reader-subject-heading {
-		margin: 0 0 1rem;
-		font-size: var(--z-main-page-text);
-		line-height: 1.4;
+		margin: 0 0 0.75rem;
+		font-size: var(--z-reader-text);
+		line-height: var(--z-reader-leading);
 		font-weight: 600;
 		@apply text-fg;
 	}
@@ -61,9 +61,10 @@
 	}
 
 	.z-mail-view .z-mail-external-banner {
-		@apply flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border px-3 py-2 text-xs text-fg-muted;
-		background-color: var(--z-surface-sunken);
-		margin-bottom: 1rem;
+		@apply flex flex-wrap items-center gap-x-2 gap-y-1 text-fg-muted;
+		margin-bottom: 0.75rem;
+		font-size: var(--z-reader-text);
+		line-height: var(--z-reader-leading);
 	}
 
 	.z-mail-view .z-mail-external-banner__action {

@@ -1,6 +1,4 @@
 <script lang="ts">
-	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-	import ChevronUp from '$lib/components/icons/ChevronUp.svelte';
 	import FileText from '$lib/components/icons/FileText.svelte';
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import { downloadAttachment } from '$lib/attachments/download';
@@ -45,60 +43,41 @@
 </script>
 
 <section class="z-reader-attachments" aria-label={attachmentLabel(attachments.length)}>
-	{#if canCollapse && !expanded}
-		<button
-			type="button"
-			class="flex w-full items-center justify-between gap-3 rounded-md border border-border bg-surface px-3 py-2.5 text-left text-sm transition-colors hover:bg-surface-sunken"
-			aria-expanded={false}
-			onclick={() => (expanded = true)}
-		>
-			<span class="inline-flex min-w-0 items-center gap-2">
-				<FileText class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-				<span class="font-medium text-fg">{attachmentLabel(attachments.length)}</span>
-			</span>
-			<span class="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-accent">
-				Show all
-				<ChevronDown class="size-3.5" aria-hidden="true" />
-			</span>
-		</button>
-	{:else}
-		<div class="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
-			<p class="z-reader-section-label">{attachmentLabel(attachments.length)}</p>
-			{#if canCollapse}
-				<button
-					type="button"
-					class="inline-flex items-center gap-1 text-xs font-medium text-accent hover:underline"
-					aria-expanded={true}
-					onclick={() => (expanded = false)}
-				>
-					Hide
-					<ChevronUp class="size-3.5" aria-hidden="true" />
-				</button>
-			{/if}
-		</div>
+	<div class="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+		<p class="z-reader-section-label">{attachmentLabel(attachments.length)}</p>
+		{#if canCollapse}
+			<button
+				type="button"
+				class="z-reader-link"
+				aria-expanded={expanded}
+				onclick={() => (expanded = !expanded)}
+			>
+				{expanded ? 'Hide' : 'Show all'}
+			</button>
+		{/if}
+	</div>
 
-		<ul class="divide-y divide-border overflow-hidden rounded-md border border-border bg-surface">
+	{#if !canCollapse || expanded}
+		<ul class="z-reader-attachment-list">
 			{#each attachments as attachment (attachment.blobId)}
 				<li>
 					<button
 						type="button"
-						class="flex w-full min-w-0 items-center gap-3 px-3 py-2.5 text-left text-sm text-fg transition-colors hover:bg-surface-sunken disabled:opacity-60"
+						class="z-reader-attachment-item"
 						title={attachment.name}
 						disabled={downloadingId === attachment.blobId}
 						onclick={() => handleDownload(attachment)}
 					>
 						{#if downloadingId === attachment.blobId}
-							<span class="z-spinner size-4 shrink-0 text-fg-subtle" aria-hidden="true">
+							<span class="z-spinner size-4 shrink-0 text-fg-muted" aria-hidden="true">
 								<LoaderCircle class="size-full" />
 							</span>
 						{:else}
-							<FileText class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+							<FileText class="size-4 shrink-0 text-fg-muted" aria-hidden="true" />
 						{/if}
-						<span class="min-w-0 flex-1 truncate font-medium">{attachment.name}</span>
+						<span class="z-reader-attachment-name">{attachment.name}</span>
 						{#if attachment.size}
-							<span class="shrink-0 tabular-nums text-xs text-fg-subtle">
-								{formatSize(attachment.size)}
-							</span>
+							<span class="z-reader-attachment-size">{formatSize(attachment.size)}</span>
 						{/if}
 					</button>
 				</li>

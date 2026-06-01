@@ -1,24 +1,24 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import { buildAuthorizationUrl } from '$lib/server/oauth';
-import { getOidcDiscovery, isOauthEnabled } from '$lib/server/oidc-discovery';
+import { getOidcDiscovery, isOauthEnabled, isPasswordLoginEnabled } from '$lib/server/oidc-discovery';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 
 export const GET: RequestHandler = async () => {
 	if (!isOauthEnabled()) {
 		return json({
 			enabled: false,
-			passkeysFirst: false,
-			passwordFallback: env.OAUTH_PASSWORD_FALLBACK === 'true'
+			passwordFallback: true
 		});
 	}
 
 	try {
 		const discovery = await getOidcDiscovery();
+		const passwordFallback = isPasswordLoginEnabled();
 		return json({
 			enabled: true,
-			passkeysFirst: true,
-			passwordFallback: env.OAUTH_PASSWORD_FALLBACK === 'true',
+			passwordFallback,
+			passkeyOnly: !passwordFallback,
 			clientId: env.OAUTH_CLIENT_ID || 'webmail',
 			issuerUrl: discovery.issuer,
 			authorizationEndpoint: discovery.authorization_endpoint
@@ -28,7 +28,7 @@ export const GET: RequestHandler = async () => {
 		return json(
 			{
 				enabled: false,
-				passkeysFirst: false,
+				passwordFallback: true,
 				error: 'Identity provider is unavailable'
 			},
 			{ status: 503 }

@@ -27,9 +27,9 @@
 		return next?.startsWith('/') && !next.startsWith('//') ? next : undefined;
 	});
 	const oauthEnabled = $derived(auth.oauthConfig?.enabled === true);
-	const passkeysFirst = $derived(auth.oauthConfig?.passkeysFirst === true);
-	const showPassword = $derived(!oauthEnabled || passkeysFirst);
-	const showPasskey = $derived(oauthEnabled && passkeysFirst);
+	const passwordFallback = $derived(auth.oauthConfig?.passwordFallback !== false);
+	const showPassword = $derived(!oauthEnabled || passwordFallback);
+	const showPasskey = $derived(oauthEnabled && !passwordFallback);
 
 	$effect(() => {
 		if (!auth.isRestoring && auth.isAuthenticated) {
