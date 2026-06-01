@@ -106,9 +106,28 @@
 	let firstSeenStorageKey = $state<string | null>(null);
 	let readEverByMessageId = $state<Record<string, number>>({});
 	let readEverStorageKey = $state<string | null>(null);
+	/** Important row currently hovered — only that row may persist a rainbow pick. */
+	let importantRainbowHoverId = $state<string | null>(null);
 
-	function persistImportantRainbowPick(messageId: string, row: HTMLElement) {
+	$effect(() => {
+		void $page.url.pathname;
+		importantRainbowHoverId = null;
+	});
+
+	function shouldPersistRainbowPick(event: PointerEvent): boolean {
+		const row = event.currentTarget;
+		if (!(row instanceof HTMLElement) || !row.isConnected) return false;
+		const related = event.relatedTarget;
+		if (related === null) return false;
+		if (related instanceof Node && !document.contains(related)) return false;
+		return true;
+	}
+
+	function persistImportantRainbowPick(messageId: string, row: HTMLElement, event: PointerEvent) {
 		if (settings.reduceMotion) return;
+		if (!shouldPersistRainbowPick(event)) return;
+		if (importantRainbowHoverId !== messageId) return;
+		importantRainbowHoverId = null;
 		importantRainbow.pickFromRow(row, messageId);
 	}
 
@@ -656,7 +675,14 @@
 			return;
 		}
 
-		const folders = orderedFolders;
+		// Read orderedFolders WITHOUT tracking it. This effect writes
+		// sectionMessagesByFolder/sectionHasMoreByFolder, and orderedFolders is
+		// derived from both — tracking it here created an infinite load loop
+		// (write → orderedFolders re-derives → effect re-runs → write → …) that
+		// froze the tab on accounts with populated folders/Important messages.
+		// folderPreloadKey (a value-stable string) remains the real trigger and
+		// already captures genuine folder/visible-count changes.
+		const folders = untrack(() => orderedFolders);
 		const foldersToLoad = [
 			...(important && (important.total > 0 || inboxImportantCount > 0) ? [important] : []),
 			...folders.filter((folder) => folder.id !== important?.id)
@@ -886,14 +912,13 @@
 					class={listMessageLinkClass}
 					aria-current={currentMessageId === message.id ? 'page' : undefined}
 					aria-label="{showNewDot ? 'New. ' : ''}{subjectText} — {senderLabel}, {timeLabel}"
-					onpointerleave={(event) => {
-						if (message.important) persistImportantRainbowPick(message.id, event.currentTarget);
+					onpointerenter={() => {
+						if (message.important) importantRainbowHoverId = message.id;
 					}}
-					onfocusout={(event) => {
-						if (!message.important) return;
-						const next = event.relatedTarget;
-						if (next instanceof Node && event.currentTarget.contains(next)) return;
-						persistImportantRainbowPick(message.id, event.currentTarget);
+					onpointerleave={(event) => {
+						if (message.important) {
+							persistImportantRainbowPick(message.id, event.currentTarget, event);
+						}
 					}}
 					onpointerdown={(event) => handleRowLongPressStart(message.id, event)}
 					onpointermove={handleRowPointerMove}

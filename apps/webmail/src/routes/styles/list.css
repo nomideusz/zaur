@@ -281,6 +281,8 @@
 		--important-rainbow-s: 78%;
 		--important-rainbow-l: 50%;
 		--important-rainbow-band: var(--z-content-max-width);
+		/* Hover sweep distance (rem) — keep in sync with RAINBOW_PHASE_SPAN_REM in important-rainbow.svelte.ts */
+		--important-rainbow-travel: 12;
 	}
 
 	.dark {
@@ -303,7 +305,10 @@
 		}
 
 		to {
-			background-position: calc((var(--important-phase-offset, 0) - 2.75) * 1rem) 50%;
+			background-position: calc(
+					(var(--important-phase-offset, 0) - var(--important-rainbow-travel, 12)) * 1rem
+				)
+				50%;
 		}
 	}
 
@@ -342,22 +347,31 @@
 		}
 
 		@media (prefers-reduced-motion: no-preference) {
-			html:not(.z-reduce-motion) .z-mail-list-subject--important {
+			/*
+			 * List rows: animation always attached but paused so pointerleave can read
+			 * currentTime for color-picking. Running only on hover/focus.
+			 * Reader heading excluded — no animation there (perf while reading).
+			 */
+			html:not(.z-reduce-motion)
+				.list-subject.z-mail-list-subject--important:not(.z-reader-subject-heading) {
 				animation: z-important-rainbow 3s ease-in-out infinite alternate;
 				animation-play-state: paused;
 				animation-fill-mode: both;
 			}
 
+			html:not(.z-reduce-motion)
+				.list-subject.z-mail-list-subject--important:not(.z-reader-subject-heading):hover,
+			html:not(.z-reduce-motion)
+				.group\/message:focus-visible
+				.list-subject.z-mail-list-subject--important:not(.z-reader-subject-heading) {
+				animation-play-state: running;
+				will-change: background-position;
+				transform: translateZ(0);
+			}
+
 			html:not(.z-reduce-motion) .z-mail-list-subject--important-picked {
 				animation: none;
 				background-position: calc(var(--important-phase-offset, 0) * 1rem) 50%;
-			}
-
-			/* Animate only the hovered/focused subject — not via JS. */
-			html:not(.z-reduce-motion) .z-mail-list-subject--important:hover,
-			html:not(.z-reduce-motion) .group\/message:focus-visible .z-mail-list-subject--important {
-				animation: z-important-rainbow 3s ease-in-out infinite alternate;
-				animation-play-state: running;
 			}
 		}
 	}

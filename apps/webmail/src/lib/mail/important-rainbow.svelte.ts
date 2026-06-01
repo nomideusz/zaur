@@ -6,8 +6,8 @@ const RAINBOW_ANIMATION_NAME = 'z-important-rainbow';
 const RAINBOW_ANIMATION_MS = 3000;
 /** Gradient band width — keep in sync with --important-rainbow-band (44rem). */
 const RAINBOW_BAND_REM = 44;
-/** Hover animation travel — stay non-positive so the left edge stays covered. */
-const RAINBOW_PHASE_SPAN_REM = 2.75;
+/** Hover animation travel — keep in sync with --important-rainbow-travel in list.css. */
+const RAINBOW_PHASE_SPAN_REM = 12;
 const RAINBOW_PHASE_MIN_REM = -(RAINBOW_BAND_REM * 0.5);
 
 function clampPhaseOffset(phase: number): number {
@@ -87,6 +87,7 @@ export function readImportantRainbowPhase(subjectEl: HTMLElement): number | null
 	return null;
 }
 
+/** Sample live animation progress — computed background-position stays at the base phase while CSS animates. */
 function readPhaseFromAnimation(subjectEl: HTMLElement, basePhase: number): number | null {
 	for (const anim of subjectEl.getAnimations()) {
 		if (anim.animationName !== RAINBOW_ANIMATION_NAME) continue;
@@ -94,8 +95,11 @@ function readPhaseFromAnimation(subjectEl: HTMLElement, basePhase: number): numb
 		if (time === null) continue;
 
 		const t = Number(time) % (RAINBOW_ANIMATION_MS * 2);
-		const progress = t <= RAINBOW_ANIMATION_MS ? t / RAINBOW_ANIMATION_MS : 2 - t / RAINBOW_ANIMATION_MS;
-		return Math.round((basePhase - progress * RAINBOW_PHASE_SPAN_REM) * 10) / 10;
+		const progress =
+			t <= RAINBOW_ANIMATION_MS ? t / RAINBOW_ANIMATION_MS : 2 - t / RAINBOW_ANIMATION_MS;
+		return clampPhaseOffset(
+			Math.round((basePhase - progress * RAINBOW_PHASE_SPAN_REM) * 10) / 10
+		);
 	}
 
 	return null;
@@ -138,9 +142,13 @@ class ImportantRainbowStore {
 	}
 
 	readPhase(subjectEl: HTMLElement, messageId: string): number | null {
+		const basePhase = this.phaseFor(messageId);
+		const fromAnimation = readPhaseFromAnimation(subjectEl, basePhase);
+		if (fromAnimation !== null) return fromAnimation;
+
 		const fromStyle = readImportantRainbowPhase(subjectEl);
-		if (fromStyle !== null) return fromStyle;
-		return readPhaseFromAnimation(subjectEl, this.phaseFor(messageId));
+		if (fromStyle !== null) return clampPhaseOffset(fromStyle);
+		return basePhase;
 	}
 
 	pickPhase(messageId: string, phase: number) {
