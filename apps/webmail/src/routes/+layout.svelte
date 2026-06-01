@@ -76,6 +76,8 @@
 	<link rel="icon" href={favicon} />
 	<link rel="manifest" href="/manifest.webmanifest" />
 	<link rel="apple-touch-icon" href="/pwa-192x192.png" />
+	<meta name="apple-mobile-web-app-capable" content="yes" />
+	<meta name="mobile-web-app-capable" content="yes" />
 </svelte:head>
 
 <a href="#main-content" class="z-skip-link">Skip to main content</a>

@@ -2,6 +2,12 @@ import { mail } from '$lib/stores/mail.svelte';
 import { mailThreadHref } from '$lib/mail/routes';
 import type { MessageDetail, MessagePreview } from '$lib/types/mail';
 
+export {
+	collapseMessagesByThread,
+	indexMessagesByThreadId,
+	listThreadSenderLabel
+} from './thread-list-utils.ts';
+
 export function defaultEmptyMessage(mailboxRouteId: string | undefined): string {
 	switch (mailboxRouteId) {
 		case 'inbox':

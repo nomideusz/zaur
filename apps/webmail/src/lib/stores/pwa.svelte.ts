@@ -41,6 +41,7 @@ class PwaStore {
 
 	refreshInstalledState() {
 		this.isInstalled = isStandalone();
+		document.documentElement.classList.toggle('z-standalone', this.isInstalled);
 		if (this.isInstalled) {
 			this.canInstall = false;
 			this.showPrompt = false;
@@ -65,6 +66,7 @@ class PwaStore {
 
 	private onAppInstalled = () => {
 		this.isInstalled = true;
+		document.documentElement.classList.add('z-standalone');
 		this.canInstall = false;
 		this.showPrompt = false;
 		this.showIosHint = false;

@@ -8,8 +8,11 @@
 	import type { MessageListProps } from '$lib/components/mail/message-list-props';
 	import {
 		activeMessageId,
+		collapseMessagesByThread,
 		defaultEmptyHint,
 		defaultEmptyMessage,
+		indexMessagesByThreadId,
+		listThreadSenderLabel,
 		messageHref
 	} from '$lib/components/mail/message-list-utils';
 	import { cacheMessagePreviews, getCachedMessagePreviews } from '$lib/db/recent-threads';
@@ -31,7 +34,7 @@
 		formatSimpleListDayHeading
 	} from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
-	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
+	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
 	import {
 		canMarkImportantFromMailboxRole,
@@ -59,7 +62,7 @@
 		'group-hover/message:text-fg group-focus-visible/message:text-fg'
 	);
 	const listSenderClass = (visible: boolean) =>
-		cn('hidden z-type-page leading-[1.4] text-fg-muted', visible && 'block');
+		cn('z-type-page leading-[1.4] text-fg-muted', visible ? 'block' : 'hidden');
 	const listSectionCountClass = (sectionId: string) =>
 		cn(
 			'z-type-list-count shrink-0 tabular-nums font-semibold text-fg',
@@ -113,6 +116,8 @@
 	let readEverStorageKey = $state<string | null>(null);
 	/** Important row currently hovered — only that row may persist a rainbow pick. */
 	let importantRainbowHoverId = $state<string | null>(null);
+	/** After long-press bulk select, block the following link navigation. */
+	let suppressRowNavigationUntil = 0;
 
 	$effect(() => {
 		void $page.url.pathname;
@@ -129,7 +134,7 @@
 	}
 
 	function persistImportantRainbowPick(messageId: string, row: HTMLElement, event: PointerEvent) {
-		if (settings.reduceMotion) return;
+		if (settings.reduceMotion || !hasPreciseHover()) return;
 		if (!shouldPersistRainbowPick(event)) return;
 		if (importantRainbowHoverId !== messageId) return;
 		importantRainbowHoverId = null;
@@ -147,7 +152,7 @@
 	});
 	const currentMessageId = $derived(
 		activeMessageId(
-			messages,
+			listMessages,
 			$page.url.searchParams.get('messageId'),
 			activeThreadId
 		)
@@ -179,7 +184,7 @@
 	}
 
 	const bulkSelectionMessages = $derived.by(() => {
-		if (!sectionMode) return messages;
+		if (!sectionMode) return listMessages;
 		return flattenSectionsForSelection(folderSections);
 	});
 
@@ -212,6 +217,7 @@
 		longPressMessageId = messageId;
 		longPressTimer = setTimeout(() => {
 			mail.startSelection(messageId);
+			suppressRowNavigationUntil = Date.now() + 400;
 			clearLongPressTimer();
 		}, 450);
 	}
@@ -324,21 +330,21 @@
 	}
 
 	function simpleSenderLabel(message: MessagePreview, folderRouteId: string): string {
-		if (
-			isMe(message.from.email) &&
-			folderRouteId !== 'inbox' &&
-			message.to &&
-			message.to.length > 0
-		) {
-			const recipient = message.to[0];
-			return `To ${recipient.name?.trim() || recipient.email}`;
-		}
-		const name = message.from.name?.trim();
-		if (name) return name;
-		if (settings.showSenderEmailInList) return message.from.email?.trim() || 'Unknown';
-		const email = message.from.email?.trim();
-		if (!email) return 'Unknown';
-		return email.split('@')[0] ?? email;
+		const threadMessages = messagesByThreadId.get(message.threadId) ?? [message];
+		return listThreadSenderLabel(
+			threadMessages,
+			folderRouteId,
+			isMe,
+			settings.showSenderEmailInList
+		);
+	}
+
+	const messagesByThreadId = $derived(indexMessagesByThreadId(messages));
+	const listMessages = $derived(collapseMessagesByThread(messages));
+
+	function isNewUnreadListRow(message: MessagePreview): boolean {
+		const thread = messagesByThreadId.get(message.threadId) ?? [message];
+		return thread.some((entry) => isNewUnreadMessage(entry));
 	}
 
 	function firstSeenTimestamp(message: MessagePreview): number {
@@ -357,10 +363,10 @@
 	}
 
 	const newUnreadMessages = $derived.by(() =>
-		messages.filter((message) => isNewUnreadMessage(message) && !message.important)
+		listMessages.filter((message) => isNewUnreadListRow(message) && !message.important)
 	);
 	const readMessages = $derived.by(() =>
-		messages.filter((message) => !isNewUnreadMessage(message) && !message.important)
+		listMessages.filter((message) => !isNewUnreadListRow(message) && !message.important)
 	);
 	function messageEligibleForImportantSection(message: MessagePreview): boolean {
 		const role = mail.mailboxByRouteId(message.mailboxId)?.role;
@@ -378,7 +384,7 @@
 	}
 
 	const importantInboxMessages = $derived.by(() =>
-		messages.filter((message) => message.important && messageEligibleForImportantSection(message))
+		listMessages.filter((message) => message.important && messageEligibleForImportantSection(message))
 	);
 	const importantMailbox = $derived(mail.importantMailbox());
 
@@ -548,7 +554,9 @@
 				const loadedImportant = (sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [])
 					.filter((message) => !mail.wasRemovedFromView(message.id))
 					.filter(messageEligibleForImportantSection);
-				const importantMessages = mergeMessagePreviews(loadedImportant, importantInboxMessages);
+				const importantMessages = collapseMessagesByThread(
+					mergeMessagePreviews(loadedImportant, importantInboxMessages)
+				);
 				const importantTotal = Math.max(importantMailbox.total, importantMessages.length);
 				if (importantTotal > 0 || importantMessages.length > 0) {
 					sections.push({
@@ -589,8 +597,8 @@
 				id: mailboxRouteId,
 				name: mailbox?.name ?? mailboxName,
 				routeId: mailboxRouteId,
-				messages: messages.slice(0, limit),
-				totalCount: mailbox?.total ?? messages.length,
+				messages: collapseMessagesByThread(messages).slice(0, limit),
+				totalCount: mailbox?.total ?? listMessages.length,
 				sortOrder: 0,
 				showUnreadDot: (mailbox?.unread ?? 0) > 0
 			});
@@ -808,7 +816,7 @@
 		return dupes;
 	}
 
-	const flatListDuplicateSubjects = $derived(duplicateSubjectKeys(messages));
+	const flatListDuplicateSubjects = $derived(duplicateSubjectKeys(listMessages));
 
 	function sectionCanShowMore(sectionId: string): boolean {
 		const visible = sectionVisibleCounts[sectionId] ?? sectionPageSize(sectionId);
@@ -827,9 +835,9 @@
 		if (!isInboxHome && sectionId === mailboxRouteId) {
 			const mailbox = mail.mailboxByRouteId(mailboxRouteId);
 			if (visible === 0 && mailbox && folderSectionCollapsedByDefault(mailbox)) {
-				return messages.length > 0 || hasMore;
+				return listMessages.length > 0 || hasMore;
 			}
-			return messages.length > visible || hasMore;
+			return listMessages.length > visible || hasMore;
 		}
 		const folder = mail.mailboxByRouteId(sectionId);
 		if (visible === 0 && folder && folderSectionCollapsedByDefault(folder)) {
@@ -857,7 +865,7 @@
 			(sectionId === READ_SECTION_ID
 				? nextVisible >= readMessages.length
 				: !isInboxHome && sectionId === mailboxRouteId
-					? nextVisible >= messages.length
+					? nextVisible >= listMessages.length
 					: false);
 		if (shouldLoadMore) {
 			onLoadMore();
@@ -905,7 +913,8 @@
 			routeId: string,
 			index: number,
 			messagesList: MessagePreview[],
-			duplicateKeys: Set<string> = flatListDuplicateSubjects
+			duplicateKeys: Set<string> = flatListDuplicateSubjects,
+			listSectionId?: string
 		)}
 			{@const isNewDay = listRowStartsNewDay(messagesList, index)}
 			{@const senderLabel = simpleSenderLabel(message, routeId)}
@@ -915,7 +924,9 @@
 				? `${formatSimpleListDayHeading(message.receivedAt)} ${baseTimeLabel}`
 				: baseTimeLabel}
 			{@const showSenderDuplicate = duplicateKeys.has(messageSubjectKey(message))}
-			{@const showNewDot = isInboxHome && isNewUnreadMessage(message)}
+			{@const showSender =
+				showSenderDuplicate || (isInboxHome && listSectionId === NEW_SECTION_ID)}
+			{@const showNewDot = isInboxHome && isNewUnreadListRow(message)}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
 			<li class={cn('list-none', listMessageRowClass, rowSelected && !message.important && '[&_.list-subject]:text-accent')}>
@@ -934,8 +945,17 @@
 					class={listMessageLinkClass}
 					aria-current={currentMessageId === message.id ? 'page' : undefined}
 					aria-label="{showNewDot ? 'New. ' : ''}{subjectText} — {senderLabel}, {timeLabel}"
+					oncontextmenu={(event) => {
+						if (supportsMobileListGestures()) event.preventDefault();
+					}}
+					onclick={(event) => {
+						if (Date.now() < suppressRowNavigationUntil) {
+							event.preventDefault();
+						}
+					}}
 					onpointerenter={(event) => {
 						if (!showImportantPresentation(message, routeId)) return;
+						if (!hasPreciseHover()) return;
 						importantRainbowHoverId = message.id;
 						if (settings.reduceMotion || !canPickImportantRainbow(routeId)) return;
 						const subject = event.currentTarget.querySelector(
@@ -947,6 +967,7 @@
 					}}
 					onpointerleave={(event) => {
 						if (!showImportantPresentation(message, routeId)) return;
+						if (!hasPreciseHover()) return;
 						if (canPickImportantRainbow(routeId)) {
 							persistImportantRainbowPick(message.id, event.currentTarget, event);
 						}
@@ -976,7 +997,7 @@
 									<span class={listSubjectPlainClass}>{subjectText}</span>
 								{/if}
 							</span>
-							<span class={listSenderClass(showSenderDuplicate)}>{senderLabel}</span>
+							<span class={listSenderClass(showSender)}>{senderLabel}</span>
 						</span>
 						<time class={listWhenClass} datetime={message.receivedAt}>
 							{timeLabel}
@@ -1021,7 +1042,7 @@
 						{#if section.messages.length > 0}
 							<ul class="z-mail-list-section-messages">
 								{#each section.messages as message, index (message.id)}
-									{@render simpleMessageRow(message, section.routeId, index, section.messages, sectionDuplicateSubjects)}
+									{@render simpleMessageRow(message, section.routeId, index, section.messages, sectionDuplicateSubjects, section.id)}
 								{/each}
 							</ul>
 						{/if}
@@ -1058,8 +1079,8 @@
 			{/if}
 		{:else}
 			<ul class="flex flex-col gap-2.5">
-				{#each messages as message, index (message.id)}
-					{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId, index, messages)}
+				{#each listMessages as message, index (message.id)}
+					{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId, index, listMessages)}
 				{/each}
 			</ul>
 

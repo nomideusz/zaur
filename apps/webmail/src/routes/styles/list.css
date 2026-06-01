@@ -204,6 +204,13 @@
 			position: static;
 			flex-shrink: 0;
 			margin-top: 0.35rem;
+			display: none;
+		}
+
+		.z-mail-view .z-mail-list--selecting .z-mail-list-row__checkbox {
+			display: block;
+			opacity: 1;
+			pointer-events: auto;
 		}
 
 		.z-mail-view .z-mail-list-row > :where(a) {
@@ -238,6 +245,8 @@
 		height: 0.4375rem;
 		flex-shrink: 0;
 		border-radius: 9999px;
+		/* Vertically center on the subject’s first line (leading-[1.4] × page text size). */
+		margin-top: calc((var(--z-main-page-text) * 1.4 - 0.4375rem) / 2);
 		@apply bg-unread;
 	}
 
@@ -346,11 +355,16 @@
 			font-weight: normal;
 		}
 
+		/* Stable compositor layer — avoid 1–2px jump when hover adds transform. */
+		.z-mail-view .list-subject {
+			transform: translateZ(0);
+		}
+
 		@media (prefers-reduced-motion: no-preference) {
 			/*
 			 * All Important subjects (list rows, reader heading, every folder): animation
 			 * attached but paused so pointerleave can read currentTime for color-picking.
-			 * Running only on hover/focus.
+			 * Running only on hover/focus with a precise pointer (not touch).
 			 */
 			html:not(.z-reduce-motion) .z-mail-list-subject--important {
 				animation: z-important-rainbow 3s ease-in-out infinite alternate;
@@ -358,15 +372,35 @@
 				animation-fill-mode: both;
 			}
 
-			html:not(.z-reduce-motion) .z-mail-list-subject--important:hover,
-			html:not(.z-reduce-motion)
-				.group\/message:focus-visible
-				.z-mail-list-subject--important {
-				animation-play-state: running;
-				will-change: background-position;
-				transform: translateZ(0);
+			@media (hover: hover) and (pointer: fine) {
+				html:not(.z-reduce-motion) .z-mail-list-subject--important:hover,
+				html:not(.z-reduce-motion)
+					.group\/message:hover
+					.z-mail-list-subject--important,
+				html:not(.z-reduce-motion)
+					.group\/message:focus-visible
+					.z-mail-list-subject--important {
+					animation-play-state: running;
+					will-change: background-position;
+				}
 			}
 		}
+	}
+
+	/* Touch / PWA — suppress iOS link callout and sticky hover on list rows. */
+	@media (hover: none), (pointer: coarse) {
+		.z-mail-view .z-mail-list-row > :where(a) {
+			-webkit-touch-callout: none;
+			-webkit-user-select: none;
+			user-select: none;
+			touch-action: manipulation;
+		}
+	}
+
+	html.z-standalone .z-mail-view .z-mail-list-row > :where(a) {
+		-webkit-touch-callout: none;
+		-webkit-user-select: none;
+		user-select: none;
 	}
 
 	/* Bulk select — solid accent only on checked rows. */

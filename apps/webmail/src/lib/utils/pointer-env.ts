@@ -15,3 +15,9 @@ export function isMobileLayout(): boolean {
 export function supportsMobileListGestures(): boolean {
 	return isCoarsePointer() || isMobileLayout();
 }
+
+/** Desktop-style hover (mouse/trackpad). False on most phones/tablets. */
+export function hasPreciseHover(): boolean {
+	if (!browser) return true;
+	return window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+}

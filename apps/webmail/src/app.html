@@ -33,6 +33,15 @@
 					} else if (readerText === 'small') {
 						document.documentElement.style.setProperty('--z-reader-text', '1rem');
 					}
+					if (window.matchMedia('(pointer: coarse)').matches) {
+						document.documentElement.classList.add('z-coarse-pointer');
+					}
+					if (
+						window.matchMedia('(display-mode: standalone)').matches ||
+						window.navigator.standalone === true
+					) {
+						document.documentElement.classList.add('z-standalone');
+					}
 				} catch (e) {}
 			})();
 		</script>
