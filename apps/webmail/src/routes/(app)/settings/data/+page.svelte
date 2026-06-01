@@ -8,10 +8,7 @@
 	<title>Backup & reset · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel
-	title="Backup & reset"
-	description="Export your settings or restore display defaults."
->
+<SettingsPanel>
 	<DataResetSection />
 	<DataBackupSection />
 </SettingsPanel>

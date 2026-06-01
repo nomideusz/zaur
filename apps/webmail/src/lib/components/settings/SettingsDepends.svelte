@@ -5,11 +5,9 @@
 
 	let {
 		enabled = true,
-		inactiveReason,
 		children
 	}: {
 		enabled?: boolean;
-		inactiveReason?: string;
 		children: import('svelte').Snippet;
 	} = $props();
 
@@ -31,16 +29,6 @@
 
 <div bind:this={containerRef} class={cn(!hasRows && 'hidden')}>
 	<fieldset disabled={!enabled} class="min-w-0 border-0 p-0">
-		{#if inactiveReason && hasRows}
-			<p
-				class={cn(
-					'z-settings-depends-note',
-					!enabled && 'z-settings-depends-note--muted'
-				)}
-			>
-				{inactiveReason}
-			</p>
-		{/if}
 		<div class={cn('z-settings-sublist', !enabled && 'opacity-55')}>
 			{@render children()}
 		</div>

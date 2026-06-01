@@ -12,8 +12,8 @@
 	];
 </script>
 
-<SettingsGroup title="Theme" description="Color mode and motion.">
-	<SettingsRow title="Color mode" description="Also available in the account menu">
+<SettingsGroup title="Theme">
+	<SettingsRow title="Color mode">
 		<SettingsSelect
 			label="Color mode"
 			value={theme.mode}
@@ -23,7 +23,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Reduce motion" description="Turn off page transitions, loading animations, and Important subject color cycling">
+	<SettingsRow title="Reduce motion">
 		<input
 			type="checkbox"
 			checked={settings.reduceMotion}
@@ -33,10 +33,10 @@
 </SettingsGroup>
 
 <SettingsGroup title="Defaults">
-	<SettingsRow title="Reset theme settings" description="Restore color mode and motion on this page">
+	<SettingsRow title="Reset theme settings">
 		<button
 			type="button"
-			class="z-btn-ghost text-sm"
+			class="z-btn-ghost"
 			onclick={() => {
 				if (confirm('Reset theme settings to defaults?')) {
 					settings.resetAppearanceSettings();

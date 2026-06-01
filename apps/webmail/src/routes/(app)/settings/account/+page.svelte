@@ -76,15 +76,9 @@
 	<title>Account · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel
-	title="Account"
-	description="Your name and signature, and the account on this device."
->
-	<SettingsGroup title="Identity" description="Name and signature for outgoing messages.">
-		<SettingsField
-			title="Display name"
-			description="Shown when you send mail and in the header"
-		>
+<SettingsPanel>
+	<SettingsGroup title="Identity">
+		<SettingsField title="Display name">
 			<input
 				type="text"
 				class="z-input"
@@ -94,10 +88,7 @@
 			/>
 		</SettingsField>
 
-		<SettingsField
-			title="Signature"
-			description="Appended to new messages, replies, and forwards"
-		>
+		<SettingsField title="Signature">
 			<textarea
 				class="z-input min-h-24 resize-y"
 				value={settings.signature}
@@ -106,35 +97,30 @@
 			></textarea>
 		</SettingsField>
 
-		<SettingsRow
-			title="Include signature"
-			description="Append your signature to new messages, replies, and forwards"
-		>
+		<SettingsRow title="Include signature">
 			<input
 				type="checkbox"
-
 				checked={settings.useSignature}
 				onchange={(e) => settings.setUseSignature(e.currentTarget.checked)}
 			/>
 		</SettingsRow>
 	</SettingsGroup>
 
-	<SettingsGroup title="Account" description="Server connection for this session.">
+	<SettingsGroup title="Account">
 		<SettingsRow title="Primary address">
-			<span class="text-sm font-medium text-fg">{auth.username ?? '—'}</span>
+			<span class="font-medium text-fg">{auth.username ?? '—'}</span>
 		</SettingsRow>
 		<SettingsRow title="JMAP server">
-			<span class="max-w-[12rem] truncate text-sm font-medium text-fg sm:max-w-none">
+			<span class="max-w-[12rem] truncate font-medium text-fg sm:max-w-none">
 				{auth.serverUrl ?? appConfig.jmapServerUrl}
 			</span>
 		</SettingsRow>
 		<SettingsRow title="Session">
-			<span class="text-sm font-medium text-fg">{auth.isAuthenticated ? 'Active' : 'Signed out'}</span>
+			<span class="font-medium text-fg">{auth.isAuthenticated ? 'Active' : 'Signed out'}</span>
 		</SettingsRow>
-		<SettingsRow title="Sign out" description="Sign out of ZAUR Webmail on this device">
+		<SettingsRow title="Sign out">
 			<Button
 				variant="ghost"
-				class="text-sm"
 				onclick={() => {
 					if (confirm('Sign out of ZAUR Webmail on this device?')) auth.logout();
 				}}
@@ -145,16 +131,13 @@
 	</SettingsGroup>
 
 	{#if auth.identities.length > 1}
-		<SettingsGroup
-			title="Addresses"
-			description="Aliases configured on your mail account. Manage these on the server."
-		>
+		<SettingsGroup title="Addresses">
 			{#each auth.identities as identity (identity.id)}
 				<SettingsRow title={identity.name?.trim() || identity.email}>
-					<div class="flex flex-col items-end text-sm">
+					<div class="flex flex-col items-end">
 						<span class="font-medium text-fg">{identity.email}</span>
 						{#if identity.name?.trim() && identity.name !== identity.email}
-							<span class="text-xs text-fg-subtle">{identity.name}</span>
+							<span class="text-fg-muted">{identity.name}</span>
 						{/if}
 					</div>
 				</SettingsRow>
@@ -163,18 +146,11 @@
 	{/if}
 
 	{#if trashMailbox || junkMailbox}
-		<SettingsGroup
-			title="Mailbox cleanup"
-			description="Permanently delete every message in the selected folder. This cannot be undone."
-		>
+		<SettingsGroup title="Mailbox cleanup">
 			{#if trashMailbox}
-				<SettingsRow
-					title="Empty Trash"
-					description="Permanently delete every message in {trashMailbox.name}"
-				>
+				<SettingsRow title="Empty Trash">
 					<Button
 						variant="ghost"
-						class="text-sm"
 						disabled={emptyingTrash || !auth.client}
 						onclick={() => void emptyMailbox('trash')}
 					>
@@ -183,13 +159,9 @@
 				</SettingsRow>
 			{/if}
 			{#if junkMailbox}
-				<SettingsRow
-					title="Empty Spam"
-					description="Permanently delete every message in {junkMailbox.name}"
-				>
+				<SettingsRow title="Empty Spam">
 					<Button
 						variant="ghost"
-						class="text-sm"
 						disabled={emptyingSpam || !auth.client}
 						onclick={() => void emptyMailbox('junk')}
 					>
@@ -200,17 +172,11 @@
 		</SettingsGroup>
 	{/if}
 
-	<SettingsGroup
-		title="Sync"
-		description="Preferences are stored on your mail account and cached in this browser."
-	>
-		<SettingsRow
-			title="Refresh from account"
-			description="Load the latest preferences from your mail account"
-		>
+	<SettingsGroup title="Sync">
+		<SettingsRow title="Refresh from account">
 			<button
 				type="button"
-				class="z-btn-ghost text-sm"
+				class="z-btn-ghost"
 				onclick={async () => {
 					const changed = await settings.refreshFromAccount();
 					toast.show(
@@ -222,38 +188,26 @@
 				Refresh
 			</button>
 		</SettingsRow>
-		<SettingsRow
-			title="Save to account"
-			description="Push your current preferences to your other devices"
-		>
-			<button type="button" class="z-btn-ghost text-sm" onclick={() => void settings.syncToAccount()}>
+		<SettingsRow title="Save to account">
+			<button type="button" class="z-btn-ghost" onclick={() => void settings.syncToAccount()}>
 				Save
 			</button>
 		</SettingsRow>
 	</SettingsGroup>
 
-	<SettingsGroup
-		title="Local data"
-		description="Cached mail on this device — your account on the server is unchanged."
-	>
-		<SettingsRow
-			title="Clear local cache"
-			description="Remove downloaded messages and sync state from this browser"
-		>
-			<Button variant="ghost" class="text-sm" disabled={clearingCache} onclick={clearLocalCache}>
+	<SettingsGroup title="Local data">
+		<SettingsRow title="Clear local cache">
+			<Button variant="ghost" disabled={clearingCache} onclick={clearLocalCache}>
 				{clearingCache ? 'Clearing…' : 'Clear'}
 			</Button>
 		</SettingsRow>
 	</SettingsGroup>
 
 	<SettingsGroup title="Defaults">
-		<SettingsRow
-			title="Reset profile"
-			description="Restore display name and signature on this page"
-		>
+		<SettingsRow title="Reset profile">
 			<button
 				type="button"
-				class="z-btn-ghost text-sm"
+				class="z-btn-ghost"
 				onclick={() => {
 					if (confirm('Reset your profile to defaults?')) {
 						settings.resetAccountSettings();

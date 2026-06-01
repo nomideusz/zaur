@@ -7,6 +7,6 @@
 	<title>Writing · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel title="Writing" description="Compose, reply, and send behavior.">
+<SettingsPanel>
 	<WritingSection />
 </SettingsPanel>

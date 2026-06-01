@@ -49,11 +49,13 @@
 
 			await refreshStatus();
 			if (pushStatus.state === 'denied') {
-				lastError = 'Notifications are blocked for this site in browser settings.';
+				lastError = 'Blocked in browser settings';
 			} else if (pushStatus.state === 'unsupported') {
-				lastError = 'Background push needs Chrome or Firefox on desktop.';
+				lastError = 'Not supported in this browser';
+			} else if (pushStatus.state === 'server_disabled') {
+				lastError = 'Not configured on server';
 			} else if (!ok || (pushStatus.state !== 'subscribed' && pushStatus.state !== 'prompt')) {
-				lastError = 'Could not register push on this device.';
+				lastError = 'Could not register push';
 			}
 		} finally {
 			busy = false;
@@ -81,7 +83,7 @@
 		try {
 			await resetAppServiceWorker();
 			const ok = await syncPushSubscription(settings.notifyOnNewMail || true);
-			if (!ok) lastError = 'Service worker or push registration failed.';
+			if (!ok) lastError = 'Registration failed';
 			await refreshStatus();
 		} finally {
 			busy = false;
@@ -94,13 +96,12 @@
 <div class="flex flex-col items-end gap-1">
 	<div class="flex items-center gap-2">
 		{#if busy}
-			<span class="text-xs text-fg-muted animate-pulse">Syncing...</span>
+			<span class="text-fg-muted">Syncing…</span>
 		{:else if pushStatus.state === 'subscribed'}
-			<span class="text-xs font-medium text-green-700 dark:text-green-300">Active</span>
+			<span class="text-fg-muted">Active</span>
 		{/if}
 		<input
 			type="checkbox"
-
 			disabled={busy || pushStatus.state === 'unsupported' || pushStatus.state === 'server_disabled'}
 			checked={settings.notifyOnNewMail}
 			onchange={async (e) => {
@@ -114,17 +115,17 @@
 	</div>
 
 	{#if pushStatus.state === 'denied'}
-		<span class="text-xs text-amber-700 dark:text-amber-300">Blocked in browser settings</span>
+		<span class="text-fg-muted">Blocked in browser</span>
 	{:else if pushStatus.state === 'unsupported'}
-		<span class="text-xs text-fg-subtle">Not supported in this browser</span>
+		<span class="text-fg-muted">Not supported</span>
 	{:else if pushStatus.state === 'server_disabled'}
-		<span class="text-xs text-fg-subtle font-medium">Not configured on server</span>
+		<span class="text-fg-muted">Not on server</span>
 	{:else if pushStatus.state === 'service_worker_unavailable'}
 		<div class="flex items-center gap-1.5">
-			<span class="text-xs text-amber-700 dark:text-amber-300">Service worker not ready</span>
+			<span class="text-fg-muted">Not ready</span>
 			<button
 				type="button"
-				class="text-xs underline text-fg-muted hover:text-fg"
+				class="z-btn-ghost px-0"
 				disabled={busy}
 				onclick={() => void retryPush()}
 			>
@@ -134,15 +135,11 @@
 	{/if}
 
 	{#if lastError}
-		<span class="text-xs text-amber-700 dark:text-amber-300">{lastError}</span>
+		<span class="text-fg-muted">{lastError}</span>
 	{/if}
 
 	{#if showInstall && pushStatus.state !== 'unsupported' && pushStatus.state !== 'server_disabled'}
-		<button
-			type="button"
-			class="text-xs underline text-fg-muted hover:text-fg mt-0.5"
-			onclick={() => pwa.showInstallPromptAgain()}
-		>
+		<button type="button" class="z-btn-ghost px-0" onclick={() => pwa.showInstallPromptAgain()}>
 			Install app
 		</button>
 	{/if}

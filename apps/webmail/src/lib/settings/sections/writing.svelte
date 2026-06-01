@@ -9,8 +9,8 @@
 	} from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Compose" description="Fields and defaults in the message editor.">
-	<SettingsRow title="Default format" description="Plain text or HTML when sending — compose box stays plain either way">
+<SettingsGroup title="Compose">
+	<SettingsRow title="Default format">
 		<SettingsSelect
 			label="Default format"
 			value={settings.defaultComposeFormat}
@@ -23,7 +23,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Show Cc/Bcc" description="Cc and Bcc rows in compose — reply-all still shows Cc when needed">
+	<SettingsRow title="Show Cc/Bcc">
 		<input
 			type="checkbox"
 			checked={settings.showCcBccInCompose}
@@ -31,7 +31,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Contact suggestions" description="Autocomplete contacts while typing recipients">
+	<SettingsRow title="Contact suggestions">
 		<input
 			type="checkbox"
 			checked={settings.showComposeContactSuggestions}
@@ -39,7 +39,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Collapse quoted text" description="Keep quoted reply content folded when composing">
+	<SettingsRow title="Collapse quoted text">
 		<input
 			type="checkbox"
 			checked={settings.collapseQuotedInCompose}
@@ -47,7 +47,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Hide compose hints" description="Remove tips like “Set display name”, “Add a signature”, and shortcut nudges">
+	<SettingsRow title="Hide compose hints">
 		<input
 			type="checkbox"
 			checked={settings.hideComposeHints}
@@ -56,8 +56,8 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Sending" description="What happens when you send mail.">
-	<SettingsRow title="Always Bcc me" description="Add your own address to Bcc on every outgoing message">
+<SettingsGroup title="Sending">
+	<SettingsRow title="Always Bcc me">
 		<input
 			type="checkbox"
 			checked={settings.bccSelf}
@@ -65,7 +65,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Auto-archive after reply" description="Move the source conversation to Archive once a reply is sent">
+	<SettingsRow title="Auto-archive after reply">
 		<input
 			type="checkbox"
 			checked={settings.autoArchiveOnReply}
@@ -73,9 +73,9 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Default reply action" description="Primary reply button — r replies, a reply all">
+	<SettingsRow title="Default reply">
 		<SettingsSelect
-			label="Default reply action"
+			label="Default reply"
 			value={settings.defaultReplyMode}
 			options={[
 				{ value: 'reply', label: 'Reply' },
@@ -86,15 +86,15 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Undo send" description="Delay before sending so you can cancel from the toast">
+	<SettingsRow title="Undo send">
 		<SettingsSelect
-			label="Undo send delay"
+			label="Undo send"
 			value={String(settings.undoSendDelay)}
 			options={[
-				{ value: '0', label: 'Immediate (no delay)' },
-				{ value: '5000', label: '5 seconds' },
-				{ value: '10000', label: '10 seconds' },
-				{ value: '20000', label: '20 seconds' }
+				{ value: '0', label: 'Off' },
+				{ value: '5000', label: '5 s' },
+				{ value: '10000', label: '10 s' },
+				{ value: '20000', label: '20 s' }
 			]}
 			onchange={(v) => {
 				const next = Number(v);
@@ -106,7 +106,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Return to inbox after sending" description="Go back to Inbox instead of Sent after delivery">
+	<SettingsRow title="Return to inbox after send">
 		<input
 			type="checkbox"
 			checked={settings.returnToInboxAfterSend}
@@ -114,7 +114,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Confirm before discarding compose" description="Ask when closing compose with unsent content">
+	<SettingsRow title="Confirm before discard">
 		<input
 			type="checkbox"
 			checked={settings.confirmBeforeDiscardCompose}
@@ -124,10 +124,10 @@
 </SettingsGroup>
 
 <SettingsGroup title="Defaults">
-	<SettingsRow title="Reset writing settings" description="Restore every option on this page">
+	<SettingsRow title="Reset writing settings">
 		<button
 			type="button"
-			class="z-btn-ghost text-sm"
+			class="z-btn-ghost"
 			onclick={() => {
 				if (confirm('Reset writing settings to defaults?')) {
 					settings.resetWritingSettings();

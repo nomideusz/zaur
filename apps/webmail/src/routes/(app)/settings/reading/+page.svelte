@@ -7,9 +7,6 @@
 	<title>Reading · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel
-	title="Reading"
-	description="Lists, message bodies, alerts, and layout — tuned separately for desktop and phone."
->
+<SettingsPanel>
 	<Reading />
 </SettingsPanel>

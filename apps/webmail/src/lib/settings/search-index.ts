@@ -151,9 +151,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-auto-load-more-messages",
+		"id": "/settings/reading-auto-load-more",
 		"href": "/settings/reading",
-		"title": "Auto-load more messages",
+		"title": "Auto-load more",
 		"description": ""
 	},
 	{
@@ -181,21 +181,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-default-search-scope",
+		"id": "/settings/reading-enable-shortcuts",
 		"href": "/settings/reading",
-		"title": "Default search scope",
+		"title": "Enable shortcuts",
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-enable-keyboard-shortcuts",
+		"id": "/settings/reading-expand-all-threads",
 		"href": "/settings/reading",
-		"title": "Enable keyboard shortcuts",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-expand-all-thread-messages",
-		"href": "/settings/reading",
-		"title": "Expand all thread messages",
+		"title": "Expand all threads",
 		"description": ""
 	},
 	{
@@ -208,12 +202,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-hide-action-toasts",
 		"href": "/settings/reading",
 		"title": "Hide action toasts",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-keep-list-visible-while-reading",
-		"href": "/settings/reading",
-		"title": "Keep list visible while reading",
 		"description": ""
 	},
 	{
@@ -247,27 +235,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-reading-text-size",
-		"href": "/settings/reading",
-		"title": "Reading text size",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-reading-typeface",
-		"href": "/settings/reading",
-		"title": "Reading typeface",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-reading-width",
 		"href": "/settings/reading",
 		"title": "Reading width",
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-remember-last-mailbox",
+		"id": "/settings/reading-remember-last-folder",
 		"href": "/settings/reading",
-		"title": "Remember last mailbox",
+		"title": "Remember last folder",
 		"description": ""
 	},
 	{
@@ -277,15 +253,33 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/reading-search-scope",
+		"href": "/settings/reading",
+		"title": "Search scope",
+		"description": ""
+	},
+	{
 		"id": "/settings/reading-show-avatars",
 		"href": "/settings/reading",
 		"title": "Show avatars",
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-show-full-email-in-list",
+		"id": "/settings/reading-show-email-in-list",
 		"href": "/settings/reading",
-		"title": "Show full email in list",
+		"title": "Show email in list",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-split-view",
+		"href": "/settings/reading",
+		"title": "Split view",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-text-size",
+		"href": "/settings/reading",
+		"title": "Text size",
 		"description": ""
 	},
 	{
@@ -295,15 +289,21 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-unread-count-in-tab-title",
+		"id": "/settings/reading-typeface",
 		"href": "/settings/reading",
-		"title": "Unread count in tab title",
+		"title": "Typeface",
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-unread-count-on-app-icon",
+		"id": "/settings/reading-unread-in-tab-title",
 		"href": "/settings/reading",
-		"title": "Unread count on app icon",
+		"title": "Unread in tab title",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-unread-on-app-icon",
+		"href": "/settings/reading",
+		"title": "Unread on app icon",
 		"description": ""
 	},
 	{
@@ -325,9 +325,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/writing-confirm-before-discarding-compose",
+		"id": "/settings/writing-confirm-before-discard",
 		"href": "/settings/writing",
-		"title": "Confirm before discarding compose",
+		"title": "Confirm before discard",
 		"description": ""
 	},
 	{
@@ -343,9 +343,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/writing-default-reply-action",
+		"id": "/settings/writing-default-reply",
 		"href": "/settings/writing",
-		"title": "Default reply action",
+		"title": "Default reply",
 		"description": ""
 	},
 	{
@@ -361,9 +361,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/writing-return-to-inbox-after-sending",
+		"id": "/settings/writing-return-to-inbox-after-send",
 		"href": "/settings/writing",
-		"title": "Return to inbox after sending",
+		"title": "Return to inbox after send",
 		"description": ""
 	},
 	{

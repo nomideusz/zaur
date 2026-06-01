@@ -5,12 +5,10 @@
 
 	let {
 		title,
-		description,
 		visibleOn = 'all',
 		children
 	}: {
 		title: string;
-		description?: string;
 		/** Hide entire section on the wrong viewport — e.g. desktop-only layout options. */
 		visibleOn?: 'all' | 'desktop' | 'mobile';
 		children: import('svelte').Snippet;
@@ -44,9 +42,6 @@
 	{#if hasRows}
 		<div class="z-settings-section-heading">
 			<h3 class="z-settings-section-title">{title}</h3>
-			{#if description}
-				<p class="z-settings-section-lead">{description}</p>
-			{/if}
 		</div>
 	{/if}
 	<div class="z-settings-list">

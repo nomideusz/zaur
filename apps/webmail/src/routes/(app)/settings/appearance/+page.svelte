@@ -7,9 +7,6 @@
 	<title>Appearance · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel
-	title="Appearance"
-	description="Theme, motion, and visual style."
->
+<SettingsPanel>
 	<AppearanceSection />
 </SettingsPanel>

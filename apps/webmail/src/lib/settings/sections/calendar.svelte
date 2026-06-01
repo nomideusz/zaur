@@ -5,17 +5,16 @@
 	import { settings, type CalendarMaxEventsPerDay } from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Month view" description="Calendar grid behavior.">
-	<SettingsRow title="Week starts on Monday" description="Use Monday as the first column instead of Sunday">
+<SettingsGroup title="Month view">
+	<SettingsRow title="Week starts on Monday">
 		<input
 			type="checkbox"
-
 			checked={settings.calendarWeekStartsOnMonday}
 			onchange={(e) => settings.setCalendarWeekStartsOnMonday(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Events per day" description="How many event chips appear on a day before “+N more”">
+	<SettingsRow title="Events per day">
 		<SettingsSelect
 			label="Events per day"
 			value={String(settings.calendarMaxEventsPerDay)}
@@ -30,10 +29,9 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Show event times" description="Display start time next to each event title">
+	<SettingsRow title="Show event times">
 		<input
 			type="checkbox"
-
 			checked={!settings.hideCalendarEventTimes}
 			onchange={(e) => settings.setHideCalendarEventTimes(!e.currentTarget.checked)}
 		/>
@@ -41,10 +39,10 @@
 </SettingsGroup>
 
 <SettingsGroup title="Defaults">
-	<SettingsRow title="Reset calendar settings" description="Restore every option on this page">
+	<SettingsRow title="Reset calendar settings">
 		<button
 			type="button"
-			class="z-btn-ghost text-sm"
+			class="z-btn-ghost"
 			onclick={() => {
 				if (confirm('Reset calendar settings to defaults?')) {
 					settings.resetCalendarSettings();

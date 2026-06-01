@@ -7,9 +7,6 @@
 	<title>Calendar · ZAUR Webmail</title>
 </svelte:head>
 
-<SettingsPanel
-	title="Calendar"
-	description="Week start, events per day, and event display."
->
+<SettingsPanel>
 	<CalendarSection />
 </SettingsPanel>

@@ -99,11 +99,10 @@
 				<li role="option" aria-selected="false">
 					<button
 						type="button"
-						class="z-overflow-menu-item flex-col items-start gap-0 py-2"
+						class="z-overflow-menu-item"
 						onclick={() => selectEntry(entry)}
 					>
-						<span class="font-medium text-fg">{entry.title}</span>
-						<span class="truncate text-xs text-fg-muted">{entry.description}</span>
+						{entry.title}
 					</button>
 				</li>
 			{/each}

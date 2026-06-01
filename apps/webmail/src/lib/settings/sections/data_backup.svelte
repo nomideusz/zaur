@@ -23,24 +23,17 @@
 	}
 </script>
 
-<SettingsGroup title="Backup" description="Export or import your preferences.">
-		<SettingsRow
-			title="Export settings"
-			description="Download a JSON backup of your preferences on this device"
-		>
-			<button type="button" class="z-btn-ghost text-sm" onclick={() => settings.downloadLocalPreferences()}>
-				Export
-			</button>
-		</SettingsRow>
+<SettingsGroup title="Backup">
+	<SettingsRow title="Export settings">
+		<button type="button" class="z-btn-ghost" onclick={() => settings.downloadLocalPreferences()}>
+			Export
+		</button>
+	</SettingsRow>
 
-		<SettingsRow
-			title="Import settings"
-			description="Restore preferences from a previously exported JSON file"
-		>
-			<input bind:this={importInput} type="file" accept="application/json,.json" class="hidden" onchange={importPreferences} />
-			<button type="button" class="z-btn-ghost text-sm" onclick={() => importInput?.click()}>
-				Import
-			</button>
-		</SettingsRow>
-
+	<SettingsRow title="Import settings">
+		<input bind:this={importInput} type="file" accept="application/json,.json" class="hidden" onchange={importPreferences} />
+		<button type="button" class="z-btn-ghost" onclick={() => importInput?.click()}>
+			Import
+		</button>
+	</SettingsRow>
 </SettingsGroup>
