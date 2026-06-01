@@ -228,9 +228,16 @@
 		flex: 1 1 auto;
 	}
 
-	.z-mail-view .z-mail-list-swipe-row.z-swipe-row,
-	.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground {
+	.z-mail-view .z-mail-list-swipe-row.z-swipe-row {
 		background-color: transparent;
+	}
+
+	.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground {
+		background-color: var(--z-surface);
+	}
+
+	.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+		background-color: var(--z-surface);
 	}
 
 	.z-mail-list-row-meta {
