@@ -4,6 +4,7 @@ import type { EmailAttachmentInput } from '$lib/jmap/email-build';
 import { validateAttachmentFile } from '$lib/attachments/upload';
 import { invalidAddressParts, parseAddressList, formatAddressList } from '$lib/utils/addresses';
 import { mapEmailDetail } from '$lib/jmap/map';
+import { ensureBodyIncludesSignature, isComposeBodyEmpty } from '$lib/mail/compose-body';
 import { isOfflineError } from '$lib/utils/network';
 import { outbox } from '$lib/stores/outbox.svelte';
 import { settings, type ComposeFormat } from '$lib/stores/settings.svelte';
@@ -104,9 +105,10 @@ class ComposeStore {
 	private pendingSend: PendingSend | null = null;
 
 	isComposeEmpty = $derived.by(() => {
-		const bodyText = this.body.trim();
-		const signatureText = settings.useSignature ? settings.signature.trim() : '';
-		const isBodyEmpty = bodyText === '' || bodyText === signatureText;
+		const isBodyEmpty = isComposeBodyEmpty(this.body, {
+			useSignature: settings.useSignature,
+			signature: settings.signature
+		});
 
 		return (
 			!this.to.trim() &&
@@ -580,12 +582,17 @@ class ComposeStore {
 		const draftId = this.jmapDraftId;
 		const attachments = this.readyAttachments();
 		const subject = this.subject.trim() || '(no subject)';
+		const body = ensureBodyIncludesSignature(this.body, {
+			useSignature: settings.useSignature,
+			signature: settings.signature
+		});
+		this.body = body;
 		const payload: SendPayload = {
 			recipients,
 			cc,
 			bcc,
 			subject,
-			body: this.body,
+			body,
 			toRaw: this.to,
 			ccRaw: this.cc,
 			bccRaw: this.bcc,
@@ -765,7 +772,10 @@ class ComposeStore {
 				cc: parseAddressList(this.cc),
 				bcc: parseAddressList(this.bcc),
 				subject: this.subject.trim(),
-				body: this.body,
+				body: ensureBodyIncludesSignature(this.body, {
+					useSignature: settings.useSignature,
+					signature: settings.signature
+				}),
 				fromEmail,
 				fromName: fromName?.trim() || undefined,
 				attachments: this.readyAttachments(),

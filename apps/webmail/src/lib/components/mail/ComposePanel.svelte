@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import ComposeRecipientInput from '$lib/components/mail/ComposeRecipientInput.svelte';
@@ -11,6 +11,7 @@
 	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
 	import { contentPagePadClass } from '$lib/mail/layout';
 	import { invalidAddressParts } from '$lib/utils/addresses';
+	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
@@ -137,8 +138,15 @@
 	$effect(() => {
 		if (!showSignature || !configuredSignature) return;
 		const beforeQuote = bodyBeforeQuote;
-		if (beforeQuote.includes(configuredSignature)) return;
-		rebuildComposeBody(messageBody, configuredSignature);
+		const trimmed = beforeQuote.trimEnd();
+		if (
+			trimmed === configuredSignature ||
+			trimmed.endsWith(`\n\n${configuredSignature}`) ||
+			trimmed.endsWith(configuredSignature)
+		) {
+			return;
+		}
+		rebuildComposeBody(messageBody, signatureBody || configuredSignature);
 	});
 
 	$effect(() => {
@@ -158,19 +166,33 @@
 		});
 	});
 
-	$effect(() => {
-		if (toInput && (mode === 'new' || mode === 'forward')) {
-			toInput.focus();
+	function focusComposeTarget() {
+		if (mode === 'new' || mode === 'forward') {
+			toInput?.focus({ preventScroll: true });
+			return;
 		}
-	});
+		bodyInput?.focus({ preventScroll: true });
+	}
 
-	$effect(() => {
-		if (bodyInput && mode !== 'new' && mode !== 'forward') {
-			bodyInput.focus();
+	function handleComposeTouchStart(event: TouchEvent) {
+		if (!supportsMobileListGestures()) return;
+		const target = event.target;
+		if (
+			target instanceof HTMLElement &&
+			target.closest('input, textarea, button, select, a, summary')
+		) {
+			return;
 		}
-	});
+		focusComposeTarget();
+	}
 
 	onMount(() => {
+		void tick().then(() => {
+			if (!supportsMobileListGestures()) {
+				focusComposeTarget();
+			}
+		});
+
 		function onKeydown(event: KeyboardEvent) {
 			if (event.key === 'Escape') close();
 		}
@@ -180,6 +202,9 @@
 
 	async function send() {
 		if (!auth.client || !auth.username) return;
+		if (showSignature && configuredSignature) {
+			rebuildComposeBody(messageBody, signatureBody || configuredSignature);
+		}
 		const destination = settings.returnToInboxAfterSend
 			? mailListHref(INBOX_MAILBOX_ROUTE_ID)
 			: mailListHref('sent');
@@ -264,6 +289,7 @@
 		<form
 			id="compose-form"
 			class="z-compose__form"
+			ontouchstart={handleComposeTouchStart}
 			onsubmit={(event) => {
 				event.preventDefault();
 				void send();
@@ -281,7 +307,6 @@
 							class="z-compose__input"
 							invalid={fieldInvalid('to')}
 							ariaDescribedby={compose.error || invalidRecipients.length ? composeErrorsId : undefined}
-							autofocus={mode === 'new' || mode === 'forward'}
 							oninput={(value) => (compose.to = value)}
 						/>
 						{#if settings.showCcBccInCompose && !compose.showCcBcc}
@@ -349,7 +374,6 @@
 						bind:this={bodyInput}
 						class="z-compose__body"
 						value={messageBody}
-						autofocus={mode !== 'new' && mode !== 'forward'}
 						oninput={(event) => setMessageBody(event.currentTarget.value)}
 						onkeydown={onBodyKeydown}
 					></textarea>

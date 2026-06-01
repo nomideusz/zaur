@@ -67,7 +67,7 @@
 >
 	<MessageListMasterCheckbox class="z-mail-list-bulk-bar__checkbox" />
 	<div class="z-mail-list-bulk-bar__select">
-		<MessageListSelectMenu {disabled} />
+		<MessageListSelectMenu {disabled} placement="top" />
 		<IconButton
 			label="Cancel selection"
 			class="z-mail-list-bulk-bar__cancel"
@@ -114,7 +114,7 @@
 			<OverflowMenu
 				label="Move selected messages"
 				menuId="bulk-move-menu"
-				placement="top"
+				placement="auto"
 				menuClass="z-overflow-menu--list"
 			>
 				<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={handleBulkMove} />
@@ -122,7 +122,7 @@
 		{/if}
 		<Button variant="danger" class="z-mail-list-bulk-bar__btn" onclick={deleteSelected}>
 			<Trash2 class="size-4" aria-hidden="true" />
-			{deleteLabel}
+			<span class="max-sm:sr-only">{deleteLabel}</span>
 		</Button>
 	</div>
 </nav>

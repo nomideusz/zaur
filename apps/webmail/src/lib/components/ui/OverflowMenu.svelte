@@ -5,6 +5,7 @@ import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { OVERFLOW_MENU_CTX, type OverflowMenuContext } from '$lib/components/ui/overflow-menu-context';
 	import { cn } from '$lib/utils/cn';
+	import { overflowMenuFixedStyle, type OverflowMenuPlacement } from '$lib/utils/overflow-menu-position';
 	import { portal } from '$lib/utils/portal';
 	import { setContext } from 'svelte';
 	import type { Snippet } from 'svelte';
@@ -12,7 +13,7 @@ import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	interface Props {
 		label?: string;
 		menuId?: string;
-		placement?: 'bottom' | 'top' | 'auto';
+		placement?: OverflowMenuPlacement;
 		triggerText?: string;
 		class?: string;
 		menuClass?: string;
@@ -37,54 +38,21 @@ import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	let root = $state<HTMLDivElement | null>(null);
 	let triggerEl = $state<HTMLButtonElement | null>(null);
 	let menuEl = $state<HTMLDivElement | null>(null);
-	let resolvedPlacement = $state<'bottom' | 'top'>('bottom');
 	let menuStyle = $state('');
 
 	function setOpen(next: boolean) {
 		open = next;
 		onOpenChange?.(next);
-		if (!next) {
-			resolvedPlacement = 'bottom';
-			menuStyle = '';
-		}
+		if (!next) menuStyle = '';
 	}
 
 	function close() {
 		setOpen(false);
 	}
 
-	function resolvePlacement(trigger: HTMLElement, menu: HTMLElement) {
-		if (placement === 'top') return 'top' as const;
-		if (placement === 'bottom') return 'bottom' as const;
-
-		const rect = trigger.getBoundingClientRect();
-		const menuHeight = menu.getBoundingClientRect().height || 240;
-		const margin = 8;
-		const spaceBelow = window.innerHeight - rect.bottom - margin;
-		const spaceAbove = rect.top - margin;
-
-		return spaceBelow >= menuHeight || spaceBelow >= spaceAbove ? ('bottom' as const) : ('top' as const);
-	}
-
 	function updateMenuPosition() {
 		if (!browser || !triggerEl || !menuEl) return;
-
-		const nextPlacement = resolvePlacement(triggerEl, menuEl);
-		resolvedPlacement = nextPlacement;
-
-		const rect = triggerEl.getBoundingClientRect();
-		const menuRect = menuEl.getBoundingClientRect();
-		const menuHeight = menuRect.height || 240;
-		const menuWidth = menuRect.width || menuEl.offsetWidth || 208;
-		const margin = 8;
-
-		let top =
-			nextPlacement === 'top' ? rect.top - menuHeight - margin : rect.bottom + margin;
-		const right = Math.max(margin, window.innerWidth - rect.right);
-
-		top = Math.max(margin, Math.min(top, window.innerHeight - menuHeight - margin));
-
-		menuStyle = `top:${top}px;right:${right}px;left:auto;`;
+		menuStyle = overflowMenuFixedStyle(triggerEl, menuEl, placement);
 	}
 
 	function scheduleMenuPosition() {
