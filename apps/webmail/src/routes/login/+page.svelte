@@ -73,7 +73,7 @@
 	<div class="w-full max-w-sm">
 		<div class="mb-8 text-center">
 			<div class="mb-4 flex justify-center text-accent">
-				<ZaurSprite id="happy" scale={5} />
+				<ZaurSprite id="happy" scale={5} blinks />
 			</div>
 			<h1 class="z-type-brand text-2xl text-fg">{appConfig.brandName}</h1>
 			<p class="mt-2 text-sm text-fg-muted">Private, focused email</p>
