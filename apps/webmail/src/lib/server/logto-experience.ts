@@ -156,7 +156,16 @@ export function passkeyErrorMessage(error: unknown): string {
 	if (isNoPasskeyRegisteredError(error)) {
 		return 'No passkey is registered for this account. Sign in with your password, then add one from Settings → Account.';
 	}
-	if (error instanceof Error) return error.message;
+	if (error instanceof Error) {
+		const code = (error as Error & { code?: string }).code;
+		if (
+			code === 'user.missing_profile' ||
+			/additional info before signing-in/i.test(error.message)
+		) {
+			return 'Your sign-in account needs a Logto profile update. Ask your admin to run ./infra/auth/configure-logto-signin.sh, then try again.';
+		}
+		return error.message;
+	}
 	return 'Passkey sign-in failed.';
 }
 

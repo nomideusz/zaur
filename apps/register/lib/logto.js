@@ -98,6 +98,15 @@ async function findUserByEmail(email) {
   return users.find((user) => user.primaryEmail?.toLowerCase() === normalized) || null;
 }
 
+/** Logto usernames cannot contain `@`; derive a stable handle from the mailbox address. */
+function usernameFromEmail(email) {
+  const normalized = email.toLowerCase();
+  const [local, domain = 'mail'] = normalized.split('@');
+  const safeLocal = local.replace(/[^a-z0-9_]+/g, '_').replace(/^_|_$/g, '') || 'user';
+  const safeDomain = domain.replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '') || 'mail';
+  return `${safeLocal}_${safeDomain}`.slice(0, 128);
+}
+
 async function createUser(email, password, options = {}) {
   const normalized = email.toLowerCase();
   const recoveryEmail = options.recoveryEmail?.trim().toLowerCase();
@@ -107,6 +116,7 @@ async function createUser(email, password, options = {}) {
   try {
     const created = await managementRequest('POST', '/api/users', {
       primaryEmail: normalized,
+      username: usernameFromEmail(normalized),
       name: normalized.split('@')[0],
       ...(customData ? { customData } : {}),
     });
