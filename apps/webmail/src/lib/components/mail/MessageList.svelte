@@ -5,6 +5,10 @@
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
 	import MessageListMobileBar from '$lib/components/mail/MessageListMobileBar.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
+	import Palette from '$lib/components/icons/Palette.svelte';
+	import SwipeableListRow, {
+		type SwipeAction
+	} from '$lib/components/ui/SwipeableListRow.svelte';
 	import type { MessageListProps } from '$lib/components/mail/message-list-props';
 	import {
 		activeMessageId,
@@ -22,6 +26,7 @@
 	import { appConfig } from '$lib/config';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { toast } from '$lib/stores/toast.svelte';
 	import type { Mailbox, MessagePreview } from '$lib/types/mail';
 	import MailTextNav from '$lib/components/mail/MailTextNav.svelte';
 	import { contentPagePadClass } from '$lib/mail/layout';
@@ -36,7 +41,6 @@
 	import { cn } from '$lib/utils/cn';
 	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
-	import { createImportantRainbowTouchPick } from '$lib/mail/important-rainbow-touch';
 	import {
 		canMarkImportantFromMailboxRole,
 		isExcludedFromImportantSection,
@@ -94,8 +98,6 @@
 	}: MessageListProps = $props();
 
 	let loadSentinel = $state<HTMLDivElement | null>(null);
-	let longPressTimer = $state<ReturnType<typeof setTimeout> | null>(null);
-	let longPressMessageId = $state<string | null>(null);
 	let sectionMessagesByFolder = $state<Record<string, MessagePreview[]>>({});
 	let sectionVisibleCounts = $state<Record<string, number>>({});
 	let sectionHasMoreByFolder = $state<Record<string, boolean>>({});
@@ -117,15 +119,10 @@
 	let readEverStorageKey = $state<string | null>(null);
 	/** Important row currently hovered — only that row may persist a rainbow pick. */
 	let importantRainbowHoverId = $state<string | null>(null);
-	/** After long-press bulk select, block the following link navigation. */
+	/** After bulk-select long-press, block the following link navigation. */
 	let suppressRowNavigationUntil = 0;
 
-	const importantRainbowTouch = createImportantRainbowTouchPick({
-		canPick: () => !hasPreciseHover() && !settings.reduceMotion,
-		onCommitted: () => {
-			suppressRowNavigationUntil = Date.now() + 400;
-		}
-	});
+	const mobileRowGestures = $derived(supportsMobileListGestures());
 
 	$effect(() => {
 		void $page.url.pathname;
@@ -147,10 +144,6 @@
 		if (importantRainbowHoverId !== messageId) return;
 		importantRainbowHoverId = null;
 		importantRainbow.pickFromRow(row, messageId);
-	}
-
-	function handleRowPointerMove(event: PointerEvent) {
-		handleRowLongPressMove(event);
 	}
 
 	const activeThreadId = $derived($page.params.threadId);
@@ -213,32 +206,66 @@
 		bulkSelectEnabled && (!supportsMobileListGestures() || mail.hasSelection)
 	);
 
-	function clearLongPressTimer() {
-		if (longPressTimer) {
-			clearTimeout(longPressTimer);
-			longPressTimer = null;
-		}
-		longPressMessageId = null;
+	function handleMobileBulkLongPress(messageId: string) {
+		mail.startSelection(messageId);
+		suppressRowNavigationUntil = Date.now() + 400;
 	}
 
-	function handleRowLongPressStart(messageId: string, event: PointerEvent) {
-		if (!bulkSelectEnabled || !supportsMobileListGestures() || event.pointerType === 'mouse') {
-			return;
-		}
-		clearLongPressTimer();
-		longPressMessageId = messageId;
-		longPressTimer = setTimeout(() => {
-			mail.startSelection(messageId);
-			suppressRowNavigationUntil = Date.now() + 400;
-			clearLongPressTimer();
-		}, 450);
+	function listSwipeLeadingActions(message: MessagePreview, routeId: string): SwipeAction[] {
+		const mailbox = mail.mailboxByRouteId(routeId);
+		if (!mail.canArchiveFrom(mailbox)) return [];
+		return [
+			{
+				id: 'archive',
+				label: 'Archive',
+				variant: 'accent',
+				onAction: () => void swipeArchiveMessage(message, routeId)
+			}
+		];
 	}
 
-	function handleRowLongPressMove(event: PointerEvent) {
-		if (!longPressTimer) return;
-		if (Math.abs(event.movementX) > 10 || Math.abs(event.movementY) > 10) {
-			clearLongPressTimer();
+	function listSwipeTrailingActions(message: MessagePreview, routeId: string): SwipeAction[] {
+		const mailbox = mail.mailboxByRouteId(routeId);
+		const permanent = mailbox?.role === 'trash';
+		return [
+			{
+				id: 'delete',
+				label: permanent ? 'Delete' : 'Trash',
+				variant: 'danger',
+				onAction: () => void swipeDeleteMessage(message, routeId)
+			}
+		];
+	}
+
+	async function swipeArchiveMessage(message: MessagePreview, routeId: string) {
+		if (!auth.client) return;
+		try {
+			await mail.moveMessage(auth.client, message, 'archive');
+			onBulkAction?.();
+		} catch (err) {
+			const text = err instanceof Error ? err.message : 'Archive failed';
+			toast.show(text, 'error');
 		}
+	}
+
+	async function swipeDeleteMessage(message: MessagePreview, routeId: string) {
+		if (!auth.client) return;
+		const mailbox = mail.mailboxByRouteId(routeId);
+		const permanent = mailbox?.role === 'trash';
+		if (!settings.confirmDeleteMessage(1, permanent)) return;
+		try {
+			await mail.deleteMessage(auth.client, message, routeId);
+			onBulkAction?.();
+		} catch (err) {
+			const text = err instanceof Error ? err.message : 'Delete failed';
+			toast.show(text, 'error');
+		}
+	}
+
+	function cycleImportantColor(messageId: string, event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
+		importantRainbow.cyclePhase(messageId);
 	}
 
 	function handleRowSelect(
@@ -941,6 +968,13 @@
 			{@const showNewDot = isInboxHome && isNewUnreadListRow(message)}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
+			{@const showColorCycle =
+				mobileRowGestures &&
+				mail.hasSelection &&
+				showImportantPresentation(message, routeId) &&
+				canPickImportantRainbow(routeId)}
+			{@const swipeLeading = listSwipeLeadingActions(message, routeId)}
+			{@const swipeTrailing = listSwipeTrailingActions(message, routeId)}
 			<li class={cn('list-none', listMessageRowClass, rowSelected && !message.important && '[&_.list-subject]:text-accent')}>
 				{#if showRowCheckbox}
 					<input
@@ -952,78 +986,94 @@
 						onchange={(event) => handleRowCheckboxChange(message.id, event)}
 					/>
 				{/if}
-				<a
-					href={rowHref}
-					class={listMessageLinkClass}
-					aria-current={currentMessageId === message.id ? 'page' : undefined}
-					aria-label="{showNewDot ? 'New. ' : ''}{subjectText} — {senderLabel}, {timeLabel}"
-					oncontextmenu={(event) => {
-						if (supportsMobileListGestures()) event.preventDefault();
-					}}
-					onclick={(event) => {
-						if (Date.now() < suppressRowNavigationUntil) {
-							event.preventDefault();
-						}
-					}}
-					onpointerenter={(event) => {
-						if (!showImportantPresentation(message, routeId)) return;
-						if (!hasPreciseHover()) return;
-						importantRainbowHoverId = message.id;
-						if (settings.reduceMotion || !canPickImportantRainbow(routeId)) return;
-						const subject = event.currentTarget.querySelector(
-							'.z-mail-list-subject--important'
-						);
-						if (subject instanceof HTMLElement) {
-							importantRainbow.startHoverSample(subject, message.id);
-						}
-					}}
-					onpointerleave={(event) => {
-						if (!showImportantPresentation(message, routeId)) return;
-						if (!hasPreciseHover()) return;
-						if (canPickImportantRainbow(routeId)) {
-							persistImportantRainbowPick(message.id, event.currentTarget, event);
-						}
-					}}
-					onpointerdown={(event) => handleRowLongPressStart(message.id, event)}
-					onpointermove={handleRowPointerMove}
-					onpointerup={clearLongPressTimer}
-					onpointercancel={clearLongPressTimer}
-				>
-					<span class={listMessageStackClass}>
-						<span class={listMessageLeadClass}>
-							<span class="flex min-w-0 w-full items-start gap-2">
-								{#if showNewDot}
-									<span class="z-mail-list-new-dot" aria-hidden="true"></span>
-								{/if}
-								{#if showImportantPresentation(message, routeId)}
-									<span
-										class={cn(
-											listSubjectShellClass,
-											listImportantSubjectClass,
-											importantRainbow.hasPicked(message.id) &&
-												'z-mail-list-subject--important-picked'
-										)}
-										style={importantRainbow.cssVars(message.id)}
-										onpointerdown={(event) => {
-											if (!canPickImportantRainbow(routeId)) return;
-											importantRainbowTouch.onPointerDown(message.id, event);
-										}}
-										onpointermove={importantRainbowTouch.onPointerMove}
-										onpointerup={(event) =>
-											importantRainbowTouch.onPointerUp(message.id, event)}
-										onpointercancel={importantRainbowTouch.onPointerCancel}
-									>{subjectText}</span>
-								{:else}
-									<span class={listSubjectPlainClass}>{subjectText}</span>
-								{/if}
+				{#snippet rowLink()}
+					<a
+						href={rowHref}
+						class={listMessageLinkClass}
+						aria-current={currentMessageId === message.id ? 'page' : undefined}
+						aria-label="{showNewDot ? 'New. ' : ''}{subjectText} — {senderLabel}, {timeLabel}"
+						oncontextmenu={(event) => {
+							if (supportsMobileListGestures()) event.preventDefault();
+						}}
+						onclick={(event) => {
+							if (Date.now() < suppressRowNavigationUntil) {
+								event.preventDefault();
+							}
+						}}
+						onpointerenter={(event) => {
+							if (!showImportantPresentation(message, routeId)) return;
+							if (!hasPreciseHover()) return;
+							importantRainbowHoverId = message.id;
+							if (settings.reduceMotion || !canPickImportantRainbow(routeId)) return;
+							const subject = event.currentTarget.querySelector(
+								'.z-mail-list-subject--important'
+							);
+							if (subject instanceof HTMLElement) {
+								importantRainbow.startHoverSample(subject, message.id);
+							}
+						}}
+						onpointerleave={(event) => {
+							if (!showImportantPresentation(message, routeId)) return;
+							if (!hasPreciseHover()) return;
+							if (canPickImportantRainbow(routeId)) {
+								persistImportantRainbowPick(message.id, event.currentTarget, event);
+							}
+						}}
+					>
+						<span class={listMessageStackClass}>
+							<span class={listMessageLeadClass}>
+								<span class="flex min-w-0 w-full items-start gap-2">
+									{#if showNewDot}
+										<span class="z-mail-list-new-dot" aria-hidden="true"></span>
+									{/if}
+									{#if showImportantPresentation(message, routeId)}
+										<span
+											class={cn(
+												listSubjectShellClass,
+												listImportantSubjectClass,
+												importantRainbow.hasPicked(message.id) &&
+													'z-mail-list-subject--important-picked'
+											)}
+											style={importantRainbow.cssVars(message.id)}
+										>{subjectText}</span>
+									{:else}
+										<span class={listSubjectPlainClass}>{subjectText}</span>
+									{/if}
+								</span>
+								<span class={listSenderClass(showSender)}>{senderLabel}</span>
 							</span>
-							<span class={listSenderClass(showSender)}>{senderLabel}</span>
+							{#if showColorCycle}
+								<button
+									type="button"
+									class={cn(listWhenClass, 'z-mail-list-color-cycle')}
+									style={importantRainbow.cssVars(message.id)}
+									aria-label="Change important color"
+									onclick={(event) => cycleImportantColor(message.id, event)}
+								>
+									<Palette class="size-4" aria-hidden="true" />
+								</button>
+							{:else}
+								<time class={listWhenClass} datetime={message.receivedAt}>
+									{timeLabel}
+								</time>
+							{/if}
 						</span>
-						<time class={listWhenClass} datetime={message.receivedAt}>
-							{timeLabel}
-						</time>
-					</span>
-				</a>
+					</a>
+				{/snippet}
+				{#if mobileRowGestures}
+					<SwipeableListRow
+						class="z-mail-list-swipe-row"
+						enabled={!mail.hasSelection}
+						leading={swipeLeading}
+						trailing={swipeTrailing}
+						longPressEnabled={bulkSelectEnabled}
+						onLongPress={() => handleMobileBulkLongPress(message.id)}
+					>
+						{@render rowLink()}
+					</SwipeableListRow>
+				{:else}
+					{@render rowLink()}
+				{/if}
 			</li>
 		{/snippet}
 

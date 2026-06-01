@@ -222,6 +222,28 @@
 		}
 	}
 
+	.z-mail-view .z-mail-list-swipe-row {
+		min-width: 0;
+		flex: 1 1 auto;
+	}
+
+	.z-mail-list-color-cycle {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 2rem;
+		min-height: 1.4em;
+		padding: 0;
+		border: none;
+		background: transparent;
+		color: hsl(var(--important-hue, 0deg), var(--important-rainbow-s), var(--important-rainbow-l));
+		cursor: pointer;
+	}
+
+	.z-mail-list-color-cycle:active {
+		opacity: 0.7;
+	}
+
 	/* Bulk select — sticky footer inside the scrolling main column. */
 	.z-mail-list-scroll--with-bar {
 		padding-bottom: max(3.75rem, calc(env(safe-area-inset-bottom) + 2.75rem));

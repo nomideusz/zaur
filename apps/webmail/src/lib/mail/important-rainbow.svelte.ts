@@ -9,6 +9,7 @@ const RAINBOW_BAND_REM = 44;
 /** Hover animation travel — keep in sync with --important-rainbow-travel in list.css. */
 const RAINBOW_PHASE_SPAN_REM = 12;
 const RAINBOW_PHASE_MIN_REM = -(RAINBOW_BAND_REM * 0.5);
+const RAINBOW_CYCLE_STEP_REM = 2;
 const PHASE_PRECISION = 100;
 
 function clampPhaseOffset(phase: number): number {
@@ -297,6 +298,16 @@ class ImportantRainbowStore {
 		this.pickedPhases = { ...this.pickedPhases, [messageId]: rounded };
 		writeStoredPhases(this.pickedPhases);
 		scheduleAccountSettingsPush();
+	}
+
+	/** Touch / bulk-mode — step gradient phase to the next color stop. */
+	cyclePhase(messageId: string) {
+		const current = this.phaseFor(messageId);
+		let next = clampPhaseOffset(roundPhase(current - RAINBOW_CYCLE_STEP_REM));
+		if (next <= RAINBOW_PHASE_MIN_REM + 0.001) {
+			next = 0;
+		}
+		this.pickPhase(messageId, next);
 	}
 
 	/** Read live phase, freeze visual, persist pick — call on pointerleave. */
