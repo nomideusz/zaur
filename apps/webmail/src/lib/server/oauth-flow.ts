@@ -40,6 +40,7 @@ export async function startOauthRedirect(input: {
 	cookies: Cookies;
 	redirectUri: string;
 	loginHint?: string;
+	oneTimeToken?: string;
 	rememberMe?: boolean;
 	redirectTo?: string;
 }): Promise<string> {
@@ -59,7 +60,8 @@ export async function startOauthRedirect(input: {
 		redirectUri: input.redirectUri,
 		state,
 		codeChallenge: challengeFromVerifier(verifier),
-		loginHint: input.loginHint
+		loginHint: input.loginHint,
+		oneTimeToken: input.oneTimeToken
 	});
 }
 

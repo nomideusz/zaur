@@ -5,91 +5,24 @@
 	import { appConfig } from '$lib/config';
 	import Button from '$lib/components/ui/Button.svelte';
 	import ZaurSprite from '$lib/components/ui/ZaurSprite.svelte';
-	import {
-		credentialToRegistrationPayload,
-		toCreationOptions,
-		type PublicKeyCreationOptionsJson
-	} from '$lib/auth/webauthn';
 
 	const email = $derived($page.url.searchParams.get('email')?.trim().toLowerCase() ?? '');
 
-	let setupToken = $state('');
-	let phase = $state<'ready' | 'working' | 'done' | 'error' | 'missing'>('ready');
-	let error = $state<string | null>(null);
+	let phase = $state<'redirecting' | 'missing'>('redirecting');
 
 	onMount(() => {
 		const params = new URLSearchParams(window.location.search);
 		const token = params.get('token')?.trim() ?? '';
 		const address = params.get('email')?.trim().toLowerCase() ?? '';
+
 		if (!address || !token) {
 			phase = 'missing';
 			return;
 		}
 
-		setupToken = token;
-
-		if (typeof history.replaceState === 'function') {
-			history.replaceState({}, '', `/setup-passkey?email=${encodeURIComponent(address)}`);
-		}
+		const startParams = new URLSearchParams({ email: address, token });
+		window.location.replace(`/setup-passkey/start?${startParams.toString()}`);
 	});
-
-	async function createPasskey() {
-		if (!email || !setupToken || phase === 'working') return;
-		phase = 'working';
-		error = null;
-
-		try {
-			const beginResponse = await fetch('/api/auth/passkey-setup/begin', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email, token: setupToken })
-			});
-			const beginPayload = (await beginResponse.json()) as {
-				registrationOptions?: PublicKeyCreationOptionsJson;
-				error?: string;
-			};
-			if (!beginResponse.ok || !beginPayload.registrationOptions) {
-				throw new Error(beginPayload.error ?? 'Unable to start passkey setup.');
-			}
-
-			if (!window.PublicKeyCredential) {
-				throw new Error('This browser does not support passkeys.');
-			}
-
-			const credential = (await navigator.credentials.create({
-				publicKey: toCreationOptions(beginPayload.registrationOptions)
-			})) as PublicKeyCredential | null;
-
-			if (!credential) {
-				throw new Error('Passkey creation was cancelled.');
-			}
-
-			const completeResponse = await fetch('/api/auth/passkey-setup/complete', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ payload: credentialToRegistrationPayload(credential) })
-			});
-			const completePayload = (await completeResponse.json()) as { error?: string };
-			if (!completeResponse.ok) {
-				throw new Error(completePayload.error ?? 'Unable to save passkey.');
-			}
-
-			phase = 'done';
-		} catch (err) {
-			error = err instanceof Error ? err.message : 'Passkey setup failed.';
-			phase = 'error';
-		}
-	}
-
-	function openMail() {
-		const params = new URLSearchParams({ email, passkey_ready: '1' });
-		void goto(`/login?${params.toString()}`);
-	}
-
-	function skipToMail() {
-		const params = new URLSearchParams({ email, welcome: '1' });
-		void goto(`/login?${params.toString()}`);
-	}
 </script>
 
 <svelte:head>
@@ -97,50 +30,27 @@
 </svelte:head>
 
 <div class="flex min-h-dvh items-center justify-center px-4 py-10">
-	<div class="w-full max-w-sm">
-		<div class="mb-8 text-center">
+	<div class="w-full max-w-sm text-center">
+		<div class="mb-8">
 			<div class="mb-4 flex justify-center text-accent">
 				<ZaurSprite id="happy" scale={5} />
 			</div>
 			<h1 class="z-type-brand text-2xl text-fg">Set up a passkey</h1>
-			<p class="mt-2 text-sm text-fg-muted">
-				Sign in to webmail with Face ID, Touch ID, or your device PIN — no password needed.
-			</p>
 			{#if email}
 				<p class="mt-3 text-sm font-medium text-fg">{email}</p>
 			{/if}
 		</div>
 
 		{#if phase === 'missing'}
-			<p class="text-center text-sm text-fg-muted">
+			<p class="text-sm text-fg-muted">
 				This link is incomplete. Register again or open mail with your password.
 			</p>
-			<div class="mt-6 flex justify-center">
+			<div class="mt-6">
 				<Button variant="ghost" onclick={() => goto('/login')}>Open sign in</Button>
 			</div>
-		{:else if phase === 'ready' || phase === 'working'}
-			<div class="space-y-4">
-				<p class="text-sm text-fg-muted">
-					Your mailbox password still works for IMAP and as a backup. A passkey is only for signing
-					in to webmail.
-				</p>
-				<Button class="w-full" disabled={phase === 'working'} onclick={createPasskey}>
-					{phase === 'working' ? 'Waiting for device…' : 'Create passkey'}
-				</Button>
-				<Button class="w-full" variant="ghost" disabled={phase === 'working'} onclick={skipToMail}>
-					Skip for now
-				</Button>
-			</div>
-		{:else if phase === 'done'}
-			<div class="space-y-4 text-center">
-				<p class="text-sm text-fg">Passkey saved. Sign in with passkey or your mailbox password.</p>
-				<Button class="w-full" onclick={openMail}>Continue to sign in</Button>
-			</div>
 		{:else}
-			<div class="space-y-4">
-				<p class="text-sm text-danger">{error ?? 'Passkey setup failed.'}</p>
-				<Button class="w-full" variant="ghost" onclick={skipToMail}>Open mail with password</Button>
-			</div>
+			<div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
+			<p class="mt-4 text-sm text-fg-muted">Redirecting to set up your passkey…</p>
 		{/if}
 	</div>
 </div>

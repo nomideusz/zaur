@@ -51,8 +51,8 @@ async function init() {
         email,
         token: passkeySetup.token,
       });
-      passkeyBtn.href = `${webmailUrl}/setup-passkey?${setupParams.toString()}`;
-      statusEl.textContent = 'Optional: set up a passkey for faster webmail sign-in.';
+      passkeyBtn.href = `${webmailUrl}/setup-passkey/start?${setupParams.toString()}`;
+      statusEl.textContent = 'Optional: set up a passkey — no need to re-enter your email.';
       sessionStorage.removeItem('passkeySetup');
     } else {
       statusEl.textContent = 'Open mail below to sign in with your new address and password.';

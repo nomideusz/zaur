@@ -132,9 +132,11 @@ export async function buildAuthorizationUrl(input: {
 	state: string;
 	codeChallenge: string;
 	loginHint?: string;
+	oneTimeToken?: string;
 }): Promise<string> {
 	const clientId = getOauthClientId();
 	const { authorization_endpoint: authorizationEndpoint } = await getOidcDiscovery();
+	const oneTimeToken = input.oneTimeToken?.trim();
 
 	const params = new URLSearchParams();
 	params.append('response_type', 'code');
@@ -146,8 +148,12 @@ export async function buildAuthorizationUrl(input: {
 	params.append('code_challenge_method', 'S256');
 	appendResourceParam(params);
 
-	// Always start a fresh Logto interaction — avoids stale sessions tied to deleted OAuth apps.
-	params.append('prompt', 'login');
+	if (oneTimeToken) {
+		params.append('one_time_token', oneTimeToken);
+	} else {
+		// Fresh Logto interaction — avoids stale sessions tied to deleted OAuth apps.
+		params.append('prompt', 'login');
+	}
 
 	if (input.loginHint?.trim()) {
 		params.append('login_hint', input.loginHint.trim());

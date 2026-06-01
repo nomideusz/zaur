@@ -186,7 +186,7 @@ WEBMAIL_URL=https://webmail.zaur.app
 # PASSKEY_SETUP_TOKEN_EXPIRES_SEC=900
 ```
 
-After registration, the success page can link to **webmail** `/setup-passkey` with a short-lived Logto one-time token (no password re-entry). Webmail calls Logto’s Experience API to bind a passkey for sign-in.
+After registration, the success page links to **webmail** `/setup-passkey/start` with a short-lived Logto one-time token and `login_hint`. Logto verifies the token automatically (no email re-entry) and prompts for passkey creation on its sign-in experience, then returns to webmail via OAuth callback.
 
 Webmail env:
 
