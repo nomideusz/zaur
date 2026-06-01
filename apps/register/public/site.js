@@ -35,25 +35,27 @@
     const resolved = resolveTheme(mode);
     applyTheme(resolved);
 
-    const toggle = document.getElementById('theme-toggle');
-    if (toggle) {
+    const toggles = document.querySelectorAll('.z-theme-toggle');
+    toggles.forEach((toggle) => {
       toggle.textContent = `Toggle ${resolved === 'dark' ? 'light' : 'dark'} mode`;
       toggle.addEventListener('click', () => {
         const next = resolveTheme(readThemeMode()) === 'dark' ? 'light' : 'dark';
         localStorage.setItem(THEME_KEY, next);
         applyTheme(next);
-        toggle.textContent = `Toggle ${next === 'dark' ? 'light' : 'dark'} mode`;
+        toggles.forEach((el) => {
+          el.textContent = `Toggle ${next === 'dark' ? 'light' : 'dark'} mode`;
+        });
       });
-    }
+    });
 
     const media = window.matchMedia('(prefers-color-scheme: dark)');
     media.addEventListener('change', () => {
       if (readThemeMode() !== 'system') return;
       applyTheme(resolveTheme('system'));
-      if (toggle) {
+      toggles.forEach((toggle) => {
         const resolvedNow = resolveTheme('system');
         toggle.textContent = `Toggle ${resolvedNow === 'dark' ? 'light' : 'dark'} mode`;
-      }
+      });
     });
   }
 

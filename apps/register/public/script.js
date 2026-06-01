@@ -100,17 +100,17 @@ function validateLocalUsername(value) {
   return { valid: true, username: normalized };
 }
 
-function renderStatus(domainId, status) {
+function renderStatus(status, isSelected) {
   if (status === 'checking') {
     return '<span class="z-result-status"><span class="z-spinner" aria-hidden="true"></span></span>';
   }
   if (status === 'available') {
-    return '<span class="z-result-status available">Available</span><button type="button" class="z-btn-register">Register</button>';
+    return `<span class="z-result-status available">${isSelected ? 'Selected' : 'Available'}</span>`;
   }
   if (status === 'taken') {
     return '<span class="z-result-status taken">Taken</span>';
   }
-  return '<span class="z-result-status">&nbsp;</span>';
+  return '';
 }
 
 function renderExtensionList() {
@@ -120,8 +120,8 @@ function renderExtensionList() {
   }
 
   resultsContainer.innerHTML = `
-    <div class="z-results-header z-type-label">Available domains</div>
-    <div class="z-register-list">${cachedDomains
+    <p class="z-results-header z-type-label">Available domains</p>
+    <div class="z-domain-list">${cachedDomains
       .map(
         (d) => `
       <div class="z-result-row extension-row">
@@ -141,7 +141,7 @@ function renderSearchResults(query, statuses) {
 
   const safeQuery = escapeHtml(query);
 
-  resultsContainer.innerHTML = `<div class="z-register-list">${cachedDomains
+  resultsContainer.innerHTML = `<div class="z-domain-list">${cachedDomains
     .map((d) => {
       const status = statuses.get(d.id) || 'pending';
       const isTaken = status === 'taken';
@@ -152,24 +152,24 @@ function renderSearchResults(query, statuses) {
         <div class="z-result-row ${isAvailable ? 'available' : ''} ${isTaken ? 'taken' : ''} ${isSelected ? 'selected' : ''}"
              data-domain-id="${d.id}"
              data-domain="${escapeHtml(d.name)}"
-             data-available="${isAvailable}">
+             data-available="${isAvailable}"
+             role="${isAvailable ? 'button' : 'presentation'}"
+             tabindex="${isAvailable ? '0' : '-1'}">
           <span class="z-result-domain ${isTaken ? 'taken-text' : ''}">
             <span class="z-result-name">${safeQuery}</span><span class="z-result-tld">@${escapeHtml(d.name)}</span>
           </span>
-          <span class="z-result-action">${renderStatus(d.id, status)}</span>
+          <span class="z-result-action">${renderStatus(status, isSelected)}</span>
         </div>`;
     })
     .join('')}</div>`;
 
   document.querySelectorAll('.z-result-row.available').forEach((row) => {
-    row.addEventListener('click', (e) => {
-      if (e.target.closest('.z-btn-register') || e.target === row) {
+    row.addEventListener('click', () => selectDomain(row));
+    row.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
         selectDomain(row);
       }
-    });
-    row.querySelector('.z-btn-register')?.addEventListener('click', (e) => {
-      e.stopPropagation();
-      selectDomain(row);
     });
   });
 }
@@ -424,7 +424,7 @@ async function initInvitation() {
     inviteTokenInput.value = inviteToken;
     inviteEmailInput.value = inviteEmail;
     invitationBanner.classList.remove('z-hidden');
-    invitationBanner.innerHTML = `<span class="z-register-notice__title">Invitation verified</span>Registering as ${escapeHtml(inviteEmail)}. Pick your address and mailbox password below.`;
+    invitationBanner.innerHTML = `<span class="z-callout__title">Invitation verified</span><p class="z-text-muted" style="margin: 0.375rem 0 0;">Registering as ${escapeHtml(inviteEmail)}. Pick your address below.</p>`;
     showRegisterFlow();
     applyInvitationUi();
   } catch {

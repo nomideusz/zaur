@@ -21,15 +21,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const auditSuccess = document.getElementById('audit-success');
   const auditSummary = document.getElementById('audit-summary');
   const auditResults = document.getElementById('audit-results');
-  const mainContent = document.getElementById('main-content');
 
   let invitesList = [];
 
   function showDashboard() {
-    mainContent.classList.remove('z-admin-main--login');
     loginContainer.classList.add('z-hidden');
     dashboardContainer.classList.remove('z-hidden');
-    logoutBtn.classList.remove('z-hidden');
     loadInvitations();
     updateInviteEmailHint();
   }
@@ -70,10 +67,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function showLogin() {
-    mainContent.classList.add('z-admin-main--login');
     loginContainer.classList.remove('z-hidden');
     dashboardContainer.classList.add('z-hidden');
-    logoutBtn.classList.add('z-hidden');
   }
 
   loginForm.addEventListener('submit', async (e) => {
@@ -294,7 +289,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     const list = document.createElement('div');
-    list.className = 'z-register-list z-audit-list';
+    list.className = 'z-domain-list z-audit-list';
     rows.forEach((row) => {
       const email = row.email || row.username;
       const item = document.createElement('div');

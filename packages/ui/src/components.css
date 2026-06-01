@@ -137,12 +137,6 @@
 	box-shadow: 0 0 0 1px var(--z-border-strong);
 }
 
-.z-input--search {
-	font-size: 1.125rem;
-	padding: 0.875rem 1rem;
-	border-radius: var(--radius-md);
-}
-
 .z-card {
 	background-color: transparent;
 	border: none;
@@ -209,13 +203,14 @@
 }
 
 .z-link {
-	color: var(--z-fg);
-	text-decoration: underline;
-	text-underline-offset: 2px;
+	color: var(--z-accent);
+	text-decoration: none;
 }
 
 .z-link:hover {
 	color: var(--z-accent-hover);
+	text-decoration: underline;
+	text-underline-offset: 2px;
 }
 
 .z-link-muted {
