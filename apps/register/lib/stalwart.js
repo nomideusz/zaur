@@ -174,8 +174,8 @@ async function ensureDomainPasswordDirectory(domainId) {
   const ldapDirectoryId = await getLdapDirectoryId();
   if (!ldapDirectoryId) return false;
 
-  const { body } = await jmapRequest([['x:Domain/get', { ids: [domainId] }, 'domainGet']]);
-  const getResponse = getMethodResponse(getBody, 'domainGet');
+  const { body: domainGetBody } = await jmapRequest([['x:Domain/get', { ids: [domainId] }, 'domainGet']]);
+  const getResponse = getMethodResponse(domainGetBody, 'domainGet');
   const domain = getResponse?.list?.[0];
   if (!domain) return false;
   // Keep an explicit LLDAP directory on each domain so password auth never
@@ -393,10 +393,10 @@ async function deleteAccountByEmail(email) {
 }
 
 async function ensureStandardMailboxes(accountId) {
-  const getBody = await jmapRequest([
+  const { body: mailboxGetBody } = await jmapRequest([
     ['Mailbox/get', { accountId, properties: ['id', 'name', 'role'] }, 'mailboxes'],
   ]);
-  const mailboxResponse = getMethodResponse(getBody, 'mailboxes');
+  const mailboxResponse = getMethodResponse(mailboxGetBody, 'mailboxes');
   const existing = Array.isArray(mailboxResponse?.list) ? mailboxResponse.list : [];
   const existingRoles = new Set(existing.map((mailbox) => mailbox.role).filter(Boolean));
   const existingNames = new Set(existing.map((mailbox) => mailbox.name?.toLowerCase()).filter(Boolean));
@@ -417,10 +417,10 @@ async function ensureStandardMailboxes(accountId) {
 
   if (!Object.keys(create).length) return [];
 
-  const setBody = await jmapRequest([
+  const { body: mailboxSetBody } = await jmapRequest([
     ['Mailbox/set', { accountId, create }, 'mailboxSet'],
   ]);
-  const setResponse = getMethodResponse(setBody, 'mailboxSet');
+  const setResponse = getMethodResponse(mailboxSetBody, 'mailboxSet');
   if (setResponse?.notCreated && Object.keys(setResponse.notCreated).length) {
     throw new Error(extractJmapError(setResponse));
   }
