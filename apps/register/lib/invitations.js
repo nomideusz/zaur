@@ -112,6 +112,12 @@ function markAuditMailbox(recoveryEmail, mailboxEmail) {
   }
 }
 
+function findRecoveryEmailByMailbox(mailboxEmail) {
+  const normalized = normalizeEmail(mailboxEmail);
+  const entry = readAudit().find((item) => normalizeEmail(item.mailboxEmail) === normalized);
+  return entry?.recoveryEmail ? normalizeEmail(entry.recoveryEmail) : null;
+}
+
 async function createInvitation(recoveryEmail, expiresInSec = DEFAULT_EXPIRES_SEC) {
   const email = normalizeEmail(recoveryEmail);
   if (!isValidEmail(email)) {
@@ -196,5 +202,6 @@ module.exports = {
   listInvitations,
   revokeInvitation,
   markAuditMailbox,
+  findRecoveryEmailByMailbox,
   isValidEmail,
 };

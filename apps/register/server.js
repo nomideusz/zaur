@@ -9,6 +9,7 @@ const rateLimit = require('express-rate-limit');
 const stalwart = require('./lib/stalwart');
 const invitations = require('./lib/invitations');
 const inviteMail = require('./lib/invite-mail');
+const passwordReset = require('./lib/password-reset');
 const directory = require('./lib/lldap');
 const logto = require('./lib/logto');
 const {
@@ -93,10 +94,31 @@ const registerDailyLimiter = rateLimit({
   message: { error: 'Daily registration limit reached. Try again tomorrow.' },
 });
 
+const forgotPasswordIpLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many reset requests. Please wait a few minutes.' },
+});
+
+const forgotPasswordEmailLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 3,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => {
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    return email || req.ip;
+  },
+  message: { error: 'Too many reset requests for this address. Try again later.' },
+});
+
 app.get('/api/config', (_req, res) => {
   res.json({
     ...getSiteConfig(),
     requiresInvitation: invitations.requiresInvitation(),
+    passwordResetEnabled: passwordReset.isEnabled(),
   });
 });
 
@@ -404,6 +426,46 @@ app.post('/api/admin/invitations/revoke', requireAdmin, async (req, res) => {
     res.json({ success: true });
   } catch (err) {
     res.status(502).json({ error: err.message });
+  }
+});
+
+app.post('/api/forgot-password/request', forgotPasswordIpLimiter, forgotPasswordEmailLimiter, async (req, res) => {
+  const email = String(req.body.email || '').trim();
+
+  try {
+    const result = await passwordReset.requestReset(email);
+    res.json(result);
+  } catch (err) {
+    console.error('POST /api/forgot-password/request:', err.message);
+    res.status(502).json({ error: 'Unable to send reset instructions right now. Please try again later.' });
+  }
+});
+
+app.get('/api/forgot-password/verify', (req, res) => {
+  const email = String(req.query.email || '').trim();
+  const token = String(req.query.token || '').trim();
+  const result = passwordReset.verifyToken(email, token);
+  if (!result.valid) {
+    return res.status(400).json(result);
+  }
+  return res.json(result);
+});
+
+app.post('/api/forgot-password/reset', forgotPasswordIpLimiter, async (req, res) => {
+  const email = String(req.body.email || '').trim();
+  const token = String(req.body.token || '').trim();
+  const password = req.body.password;
+  const confirmPassword = req.body.confirmPassword;
+
+  try {
+    const result = await passwordReset.resetPassword(email, token, password, confirmPassword);
+    if (!result.valid) {
+      return res.status(400).json(result);
+    }
+    return res.json({ success: true, mailboxEmail: result.mailboxEmail });
+  } catch (err) {
+    console.error('POST /api/forgot-password/reset:', err.message);
+    return res.status(502).json({ error: err.message || 'Unable to reset password right now.' });
   }
 });
 

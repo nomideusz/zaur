@@ -84,7 +84,49 @@ async function sendInvitationEmail({ to, magicLink, expiresAt }) {
   return true;
 }
 
+async function sendPasswordResetEmail({ to, mailboxEmail, resetLink, expiresAt }) {
+  const from = process.env.INVITE_SMTP_FROM.trim();
+  const fromName = process.env.INVITE_SMTP_FROM_NAME?.trim() || 'ZAUR';
+  const expiresText = expiresAt
+    ? new Date(expiresAt).toLocaleString('en-US', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+      })
+    : 'soon';
+
+  const subject =
+    process.env.PASSWORD_RESET_EMAIL_SUBJECT?.trim() || 'Reset your ZAUR password';
+  const text = [
+    `We received a request to reset the password for ${mailboxEmail}.`,
+    '',
+    'Open this link to choose a new password:',
+    resetLink,
+    '',
+    `This link expires ${expiresText}.`,
+    '',
+    'If you did not request a password reset, you can ignore this email.',
+  ].join('\n');
+
+  const html = `
+    <p>We received a request to reset the password for <strong>${mailboxEmail}</strong>.</p>
+    <p><a href="${resetLink}">Choose a new password</a></p>
+    <p>This link expires ${expiresText}.</p>
+    <p style="color:#666;font-size:14px;">If you did not request a password reset, you can ignore this email.</p>
+  `.trim();
+
+  await getTransporter().sendMail({
+    from: `"${fromName}" <${from}>`,
+    to,
+    subject,
+    text,
+    html,
+  });
+
+  return true;
+}
+
 module.exports = {
   isConfigured,
   sendInvitationEmail,
+  sendPasswordResetEmail,
 };

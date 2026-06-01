@@ -113,10 +113,11 @@ Run on the CapRover host (or use the WebUI with the same values):
 | Issuer URL | `https://auth.zaur.app/oidc` |
 | Username claim | `email` |
 | Required audience | *(unset — see below)* |
-| Domain `zaur.app` → Directory | Logto OIDC |
-| Authentication → Directory | **Logto OIDC** (HTTP Bearer / JMAP) |
+| Authentication → Directory | **LLDAP** (password / JMAP basic auth) |
+| All mail domains → Directory | **LLDAP** (register enforces this on signup) |
+| Logto OIDC directory | Provisioned for future Bearer/passkey — not the password auth directory |
 
-After changing the default directory, **restart the mail service** (`docker service update --force srv-captain--mail`) so running Stalwart reloads config. Without a restart, Bearer tokens still hit the old internal/LLDAP path and fail with “Failed to decode token”.
+After changing directories, **restart the mail service** (`docker service update --force srv-captain--mail`) so running Stalwart reloads config.
 
 Logto’s userinfo endpoint is `https://auth.zaur.app/oidc/me` (from discovery). Opaque access tokens (no API resource in the OAuth request) are validated via userinfo; JWT tokens need a matching `aud` if you set **Required audience**.
 
@@ -166,7 +167,32 @@ node apps/register/scripts/send-invitation.js user@gmail.com --hours 72
 
 Set `REGISTRATION_OPEN=true` on the register app to bypass invitations in local dev.
 
-## 6. Migrate existing users
+## 7. Forgot password (webmail)
+
+Webmail links to `/forgot-password`. The register app handles reset tokens and email delivery (same `INVITE_SMTP_*` transport as invitations). A reset updates **both LLDAP and Logto** so webmail and OIDC stay in sync.
+
+Flow:
+
+1. User enters mailbox address on webmail → `POST /api/auth/forgot-password` (proxied to register)
+2. Register looks up the account in LLDAP and resolves a **recovery email** (Logto `customData.recoveryEmail`, invitations audit, or mailbox address as fallback)
+3. Email contains a link to `webmail.zaur.app/forgot-password/reset?token=…&email=…`
+4. New password is written to LLDAP + Logto
+
+Register env (CapRover `register` app):
+
+```env
+WEBMAIL_URL=https://webmail.zaur.app
+# INVITE_SMTP_* (required for reset emails)
+# PASSWORD_RESET_TOKENS_PATH=/app/data/password_reset_tokens.json
+```
+
+Webmail env:
+
+```env
+REGISTER_API_URL=https://register.zaur.app
+```
+
+## 8. Migrate existing users
 
 For each LLDAP user:
 

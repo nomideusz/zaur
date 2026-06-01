@@ -124,6 +124,15 @@ async function findUserIdByEmail(email) {
   return match?.id || null;
 }
 
+async function changePassword(email, password) {
+  const userId = await findUserIdByEmail(email);
+  if (!userId) {
+    throw new Error('Mailbox account not found.');
+  }
+  await setPassword(userId, password);
+  return true;
+}
+
 async function deleteUser(email) {
   const userId = await findUserIdByEmail(email);
   if (!userId) return false;
@@ -133,6 +142,7 @@ async function deleteUser(email) {
 
 module.exports = {
   createUser,
+  changePassword,
   listUsers,
   deleteUser,
   findUserIdByEmail,

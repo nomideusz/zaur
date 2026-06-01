@@ -61,10 +61,17 @@ PATCH='{
     "factors": ["WebAuthn"],
     "policy": "NoPrompt",
     "organizationRequiredMfaPolicy": "NoPrompt"
-  }
+  },
+  "passkeySignIn": {
+    "enabled": true,
+    "showPasskeyButton": false,
+    "allowAutofill": false
+  },
+  "forgotPasswordMethods": [],
+  "unknownSessionRedirectUrl": "https://webmail.zaur.app/login"
 }'
 
-echo "==> PATCH /api/sign-in-exp (email sign-in + passkey enrollment prompt)"
+echo "==> PATCH /api/sign-in-exp (email sign-in, no forced passkey prompt)"
 curl -sS -X PATCH \
 	-H "Authorization: Bearer $M2M_TOKEN" \
 	-H 'Content-Type: application/json' \
@@ -75,7 +82,7 @@ d = json.load(sys.stdin)
 if 'signIn' not in d:
     print(d, file=sys.stderr)
     raise SystemExit(1)
-print(json.dumps({'signIn': d['signIn'], 'signInMode': d.get('signInMode'), 'mfa': d.get('mfa')}, indent=2))
+print(json.dumps({'signIn': d['signIn'], 'signInMode': d.get('signInMode'), 'mfa': d.get('mfa'), 'passkeySignIn': d.get('passkeySignIn')}, indent=2))
 "
 
 echo "==> Done"

@@ -112,6 +112,11 @@
 							required
 							disabled={auth.isLoading}
 						/>
+						<p class="mt-2 text-right">
+							<a href="/forgot-password" class="text-sm text-accent hover:underline">
+								Forgot password?
+							</a>
+						</p>
 					</div>
 				{/if}
 

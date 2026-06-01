@@ -105,14 +105,23 @@ async function createUser(email, password, options = {}) {
     recoveryEmail && recoveryEmail !== normalized ? { recoveryEmail } : undefined;
 
   try {
-    await managementRequest('POST', '/api/users', {
-      // Sign-in uses primaryEmail (full mailbox address). Logto username is a separate
-      // field (letters/digits/underscores only — no @) and is intentionally omitted.
+    const created = await managementRequest('POST', '/api/users', {
       primaryEmail: normalized,
       name: normalized.split('@')[0],
-      password,
       ...(customData ? { customData } : {}),
     });
+
+    if (!created?.id) {
+      throw new Error('Logto user was created without an id.');
+    }
+
+    await managementRequest('PATCH', `/api/users/${created.id}/password`, { password });
+
+    const verified = await managementRequest('GET', `/api/users/${created.id}`);
+    if (!verified?.hasPassword) {
+      throw new Error('Logto password was not set for the new user.');
+    }
+
     return true;
   } catch (err) {
     if (/already exists|duplicate|409|already in use/i.test(err.message)) {
@@ -152,6 +161,21 @@ async function deleteOneTimeToken(id) {
   return true;
 }
 
+async function getUserByEmail(email) {
+  const user = await findUserByEmail(email);
+  if (!user?.id) return null;
+  return managementRequest('GET', `/api/users/${user.id}`);
+}
+
+async function updatePassword(email, password) {
+  const user = await findUserByEmail(email);
+  if (!user?.id) {
+    throw new Error('Sign-in account not found.');
+  }
+  await managementRequest('PATCH', `/api/users/${user.id}/password`, { password });
+  return true;
+}
+
 async function deleteUser(email) {
   const user = await findUserByEmail(email);
   if (!user?.id) return false;
@@ -164,6 +188,8 @@ module.exports = {
   createUser,
   deleteUser,
   findUserByEmail,
+  getUserByEmail,
+  updatePassword,
   createOneTimeToken,
   verifyOneTimeToken,
   listOneTimeTokens,
