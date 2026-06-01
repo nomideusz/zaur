@@ -107,6 +107,10 @@
 		margin-top: var(--z-space-nav-label-top);
 	}
 
+	.z-mail-view .z-mail-text-nav__row .z-mail-text-nav__actions {
+		margin-top: 0;
+	}
+
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__label {
 		@apply text-fg-subtle;
 		font-size: var(--z-main-page-muted-text);

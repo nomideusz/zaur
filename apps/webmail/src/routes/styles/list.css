@@ -344,7 +344,6 @@
 
 		@media (prefers-reduced-motion: no-preference) {
 			html:not(.z-reduce-motion) .z-mail-list-subject--important {
-				background-size: 250% 100%;
 				animation: z-important-rainbow 3s ease-in-out infinite alternate;
 				animation-play-state: paused;
 				animation-fill-mode: both;
@@ -355,25 +354,12 @@
 				background-position: var(--important-phase, 0%) 50%;
 			}
 
-			html:not(.z-reduce-motion) .group\/message:hover .z-mail-list-subject--important,
+			/* Subtle motion — animate on subject hover (or row keyboard focus), not whole-row hover. */
+			html:not(.z-reduce-motion) .z-mail-list-subject--important:hover,
 			html:not(.z-reduce-motion) .group\/message:focus-visible .z-mail-list-subject--important {
 				animation: z-important-rainbow 3s ease-in-out infinite alternate;
 				animation-play-state: running;
 			}
-		}
-
-		.group\/message:hover .z-mail-list-subject--important,
-		.group\/message:focus-visible .z-mail-list-subject--important {
-			text-decoration-color: color-mix(
-				in srgb,
-				hsl(
-					calc(var(--important-hue, 0deg) + 300deg),
-					var(--important-rainbow-s),
-					var(--important-rainbow-underline-l)
-				)
-				58%,
-				transparent
-			);
 		}
 
 		/* Reader heading uses text-fg by default — override when rainbow applies. */

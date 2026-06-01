@@ -1,31 +1,18 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
 	import Archive from '$lib/components/icons/Archive.svelte';
-	import Forward from '$lib/components/icons/Forward.svelte';
-	import Important from '$lib/components/icons/Important.svelte';
-	import Pencil from '$lib/components/icons/Pencil.svelte';
-	import Reply from '$lib/components/icons/Reply.svelte';
-	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
 	import Send from '$lib/components/icons/Send.svelte';
-	import Shield from '$lib/components/icons/Shield.svelte';
-	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
-	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
-	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
-	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
 	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
-	import { getContext } from 'svelte';
+	import { page } from '$app/stores';
 	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import { renderMessageBody } from '$lib/email/html';
-	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
 
@@ -38,7 +25,6 @@
 		quickReply?: string;
 		quickReplyOpen?: boolean;
 		quickReplySending?: boolean;
-		onQuickReplyChange?: (value: string) => void;
 		onSendQuickReply?: () => void;
 	}
 
@@ -53,8 +39,6 @@
 		onSendQuickReply
 	}: Props = $props();
 
-	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
-
 	let quickReplyInput = $state<HTMLTextAreaElement | null>(null);
 
 	const latest = $derived(thread.at(-1));
@@ -64,25 +48,16 @@
 	const isDraft = $derived(mailboxRouteId === 'drafts');
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
-	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
-	const markImportantLabel = $derived(
-		actionMessage?.important ? 'Unmark important' : 'Mark important'
-	);
 	const primaryReplyLabel = $derived(
 		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
 	);
-	const allowExternal = $derived(!settings.blockExternalContent || pane?.showImagesOnce);
-	const hasBlockedExternal = $derived(
-		thread.some((message) =>
-			renderMessageBody({
-				bodyHtml: message.bodyHtml,
-				bodyText: message.bodyText,
-				allowExternal: false
-			}).blockedExternal
-		)
-	);
 	const showQuickReplyPanel = $derived(
 		!isDraft && settings.showQuickReply && quickReplyOpen && !!auth.client
+	);
+	const showMobileBar = $derived(
+		!!latest &&
+			!mail.hasSelection &&
+			(isDraft || showQuickReplyPanel || (canArchive && !minimalChrome && !isDraft))
 	);
 
 	$effect(() => {
@@ -102,29 +77,6 @@
 			const message = error instanceof Error ? error.message : 'Action failed';
 			toast.show(message, 'error');
 		}
-	}
-
-	function reply() {
-		if (!latest) return;
-		compose.startReply(latest);
-		goto('/mail/compose?mode=reply');
-	}
-
-	function replyAll() {
-		if (!latest || !auth.username) return;
-		compose.startReplyAll(latest, thread, auth.username);
-		goto('/mail/compose?mode=reply-all');
-	}
-
-	function forward() {
-		if (!latest) return;
-		compose.startForward(latest);
-		goto('/mail/compose?mode=forward');
-	}
-
-	function editDraft() {
-		if (!latest) return;
-		goto(`/mail/compose?draft=${latest.id}`);
 	}
 
 	async function sendDraft() {
@@ -150,36 +102,6 @@
 	function archiveMessage() {
 		if (!actionMessage) return;
 		void withClient((client) => mail.moveMessage(client, actionMessage, 'archive'));
-	}
-
-	function deleteMessage() {
-		if (!actionMessage) return;
-		const permanent = currentMailbox?.role === 'trash';
-		if (!settings.confirmDeleteMessage(1, permanent)) return;
-		void withClient((client) => mail.deleteMessage(client, actionMessage, mailboxRouteId));
-	}
-
-	function toggleImportant() {
-		if (!auth.client || !actionMessage) return;
-		void mail.toggleImportant(auth.client, actionMessage).catch((error) => {
-			const message = error instanceof Error ? error.message : 'Could not update important';
-			toast.show(message, 'error');
-		});
-	}
-
-	function showImagesOnce() {
-		pane?.setShowImagesOnce(true);
-	}
-
-	async function moveTo(targetRouteId: string) {
-		if (!auth.client || !actionMessage) return;
-		try {
-			await mail.moveMessageToMailbox(auth.client, actionMessage, targetRouteId);
-			onMoved?.();
-		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Could not move message';
-			toast.show(message, 'error');
-		}
 	}
 
 	function closeQuickReply() {
@@ -211,7 +133,7 @@
 	}
 </script>
 
-{#if latest && !mail.hasSelection}
+{#if showMobileBar}
 	<div class="z-mobile-reader-bar md:hidden">
 		{#if showQuickReplyPanel}
 			<div class="z-mobile-reader-bar__compose">
@@ -247,89 +169,20 @@
 
 		<div class="z-mobile-reader-bar__actions">
 			{#if isDraft}
-				<Button class="min-h-11 flex-1" onclick={editDraft}>
-					<Pencil class="size-4" aria-hidden="true" />
-					Edit draft
-				</Button>
-				<Button class="min-h-11 flex-1" onclick={() => void sendDraft()}>
+				<Button class="min-h-11 w-full" onclick={() => void sendDraft()}>
 					<Send class="size-4" aria-hidden="true" />
 					Send
 				</Button>
-				<OverflowMenu
-					label="More message actions"
-					menuId="mobile-thread-actions-menu"
-					placement="top"
-				>
-					<OverflowMenuItem label={markImportantLabel} onclick={toggleImportant}>
-						{#snippet icon()}
-							<Important
-								class={cn('size-5', actionMessage?.important && 'text-accent')}
-								aria-hidden="true"
-							/>
-						{/snippet}
-					</OverflowMenuItem>
-					{#if auth.client}
-						<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
-					{/if}
-					<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-					<OverflowMenuItem label={deleteLabel} danger onclick={deleteMessage}>
-						{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
-				</OverflowMenu>
 			{:else if showQuickReplyPanel}
 				<Button variant="ghost" class="min-h-11 flex-1" onclick={closeQuickReply}>Done</Button>
-			{:else}
-				{#if canArchive && !minimalChrome}
-					<IconButton
-						label="Archive"
-						class={cn('z-mobile-reader-bar__icon-btn', 'text-fg')}
-						onclick={archiveMessage}
-					>
-						<Archive class="size-5" aria-hidden="true" />
-					</IconButton>
-				{/if}
-
-				<OverflowMenu
-					label="More message actions"
-					menuId="mobile-thread-actions-menu"
-					placement="top"
+			{:else if canArchive && !minimalChrome}
+				<IconButton
+					label="Archive"
+					class={cn('z-mobile-reader-bar__icon-btn', 'text-fg')}
+					onclick={archiveMessage}
 				>
-					<OverflowMenuItem label="Reply" onclick={reply}>
-						{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
-					<OverflowMenuItem label="Reply all" onclick={replyAll}>
-						{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
-					<OverflowMenuItem label="Forward" onclick={forward}>
-						{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
-					<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-					<OverflowMenuItem label={markImportantLabel} onclick={toggleImportant}>
-						{#snippet icon()}
-							<Important
-								class={cn('size-5', actionMessage?.important && 'text-accent')}
-								aria-hidden="true"
-							/>
-						{/snippet}
-					</OverflowMenuItem>
-					{#if canArchive}
-						<OverflowMenuItem label="Archive" onclick={archiveMessage}>
-							{#snippet icon()}<Archive class="size-5" aria-hidden="true" />{/snippet}
-						</OverflowMenuItem>
-					{/if}
-					{#if auth.client}
-						<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
-					{/if}
-					{#if hasBlockedExternal && !allowExternal}
-						<OverflowMenuItem label="Show external images" onclick={showImagesOnce}>
-							{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}
-						</OverflowMenuItem>
-					{/if}
-					<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-					<OverflowMenuItem label={deleteLabel} danger onclick={deleteMessage}>
-						{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
-				</OverflowMenu>
+					<Archive class="size-5" aria-hidden="true" />
+				</IconButton>
 			{/if}
 		</div>
 	</div>

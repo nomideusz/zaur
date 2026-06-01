@@ -23,7 +23,7 @@
 	}
 
 	.z-mobile-reader-bar__actions {
-		@apply flex items-center gap-2 px-3 py-2.5;
+		@apply flex items-center gap-2 px-4 py-2.5;
 	}
 
 	.z-mobile-reader-bar__icon-btn {

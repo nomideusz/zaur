@@ -13,7 +13,9 @@
 	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
 	import MessageReaderMobileBar from '$lib/components/mail/MessageReaderMobileBar.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
-	import { contentPagePadClass } from '$lib/mail/layout';
+	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
+	import { contentPagePadClass, contentShellClass } from '$lib/mail/layout';
+	import { readerPrimaryContact, shouldShowContactEmail } from '$lib/mail/reader-contact';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
@@ -46,9 +48,15 @@
 	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
 
 	const latest = $derived(thread.at(-1));
+	const actionMessage = $derived(
+		threadActionMessage(thread, $page.url.searchParams.get('messageId'), mail.messages)
+	);
+	const subjectAnchorId = $derived(actionMessage?.id ?? latest?.id);
 	const subject = $derived(latest?.subject ?? '(no subject)');
-	const subjectImportant = $derived(latest?.important ?? false);
-	const subjectMessageId = $derived(latest?.id ?? '');
+	const subjectImportant = $derived(
+		!!(actionMessage?.important ?? thread.some((message) => message.important))
+	);
+	const subjectMessageId = $derived(subjectAnchorId ?? '');
 	const isDraft = $derived(mailboxRouteId === 'drafts');
 	const mailHomeHref = $derived(settings.preferredMailHref());
 	const primaryReplyLabel = $derived(
@@ -113,44 +121,12 @@
 		});
 	});
 
-	function senderLabel(message: MessageDetail) {
-		const name = message.from.name?.trim();
-		const email = message.from.email;
-		if (!name || name === email) return email;
-		return name;
-	}
-
 	function isMe(email: string): boolean {
 		const cleanEmail = email.trim().toLowerCase();
 		if (auth.username && auth.username.trim().toLowerCase() === cleanEmail) {
 			return true;
 		}
 		return auth.identities.some((identity) => identity.email?.trim().toLowerCase() === cleanEmail);
-	}
-
-	function getPrimaryContact(message: MessageDetail) {
-		const isFromMe = isMe(message.from.email);
-		if (isFromMe && mailboxRouteId !== 'inbox' && message.to && message.to.length > 0) {
-			const recipient = message.to[0];
-			const name = recipient.name?.trim() || recipient.email;
-			return {
-				name,
-				email: recipient.email,
-				avatarName: recipient.name || recipient.email,
-				avatarEmail: recipient.email,
-				displayName: `To: ${name}`,
-				isMe: isMe(recipient.email)
-			};
-		}
-		const name = senderLabel(message);
-		return {
-			name: message.from.name,
-			email: message.from.email,
-			avatarName: message.from.name,
-			avatarEmail: message.from.email,
-			displayName: name,
-			isMe: isFromMe
-		};
 	}
 
 	function isExpanded(message: MessageDetail) {
@@ -274,19 +250,28 @@
 			<div class="z-mail-text-nav z-reader-sticky-nav">
 					<div class="z-mail-text-nav__row">
 						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
-						{#if !mail.hasSelection}
-							{#if isDraft && latest}
-								<a
-									class="z-mail-text-nav__action"
-									href="/mail/compose?draft={latest.id}"
-								>
-									Edit draft
-								</a>
-							{:else if !isDraft}
-								<button type="button" class="z-mail-text-nav__action" onclick={headerReply}>
-									{primaryReplyLabel}
-								</button>
-							{/if}
+						{#if !mail.hasSelection && latest}
+							<div class="z-mail-text-nav__actions flex shrink-0 items-center gap-1.5">
+								{#if isDraft}
+									<a
+										class="z-mail-text-nav__action"
+										href="/mail/compose?draft={latest.id}"
+									>
+										Edit draft
+									</a>
+								{:else}
+									<button type="button" class="z-mail-text-nav__action" onclick={headerReply}>
+										{primaryReplyLabel}
+									</button>
+								{/if}
+								<MessageThreadActions
+									{thread}
+									{mailboxRouteId}
+									{onMoved}
+									header
+									showDraftSend={isDraft}
+								/>
+							</div>
 						{/if}
 					</div>
 				</div>
@@ -301,28 +286,12 @@
 						<a href="/settings/appearance" class="z-mail-external-banner__action">Settings</a>
 					</div>
 				{/if}
-			{#if thread.length > 1 && !mail.hasSelection}
-				<div class={cn('flex w-full justify-end pb-1 pt-3', minimalChrome && 'pt-2')}>
-					<MessageThreadActions
-						{thread}
-						{mailboxRouteId}
-						{onMoved}
-						{minimalChrome}
-						readerHeader
-						class="hidden shrink-0 md:flex"
-					/>
-				</div>
-			{/if}
-
 			{#each thread as message, index (message.id)}
-				{@const contact = getPrimaryContact(message)}
-				{@const showInlineSubject = thread.length === 1 || message.id === latest?.id}
+				{@const contact = readerPrimaryContact(message, mailboxRouteId, isMe)}
+				{@const showContactEmail = shouldShowContactEmail(contact.displayName, contact.email)}
+				{@const showInlineSubject = message.id === subjectAnchorId}
 				<section
-					class={cn(
-						index > 0 && 'border-t border-border/70',
-						index === 0 && thread.length > 1 && 'pt-0.5',
-						index === 0 && thread.length === 1 && 'pt-3'
-					)}
+					class={cn(index > 0 && 'border-t border-border/70')}
 				>
 					{#if isExpanded(message)}
 						<div
@@ -336,7 +305,7 @@
 									<div class="z-reader-chrome__from flex items-start gap-3">
 										{#if settings.showAvatars}
 											<Avatar
-												name={contact.avatarName}
+												name={contact.avatarName ?? contact.avatarEmail}
 												email={contact.avatarEmail}
 												class="size-9 text-sm"
 											/>
@@ -345,7 +314,7 @@
 											<div class="flex items-center gap-1.5">
 												<p class="z-reader-from truncate">{contact.displayName}</p>
 											</div>
-											{#if contact.email !== contact.displayName}
+											{#if showContactEmail}
 												{#if !contact.isMe}
 													<button
 														type="button"
@@ -362,17 +331,6 @@
 									</div>
 
 									<div class="z-reader-chrome__aside">
-										{#if !mail.hasSelection}
-											<div class="z-reader-chrome__actions hidden shrink-0 md:block">
-												<MessageThreadActions
-													{thread}
-													{mailboxRouteId}
-													{onMoved}
-													{minimalChrome}
-													readerHeader
-												/>
-											</div>
-										{/if}
 										{#if showReadTime && !minimalChrome}
 											<div class="z-reader-chrome__time flex flex-col items-end gap-0.5">
 												<span class="text-xs whitespace-nowrap text-fg-subtle">~{readMinutes} min read</span>
@@ -392,7 +350,7 @@
 								>
 									{#if settings.showAvatars}
 										<Avatar
-											name={contact.avatarName}
+											name={contact.avatarName ?? contact.avatarEmail}
 											email={contact.avatarEmail}
 											class="size-9 text-sm"
 										/>
@@ -412,7 +370,7 @@
 									{/if}
 								</button>
 
-							{#if contact.email !== contact.displayName}
+							{#if showContactEmail}
 								<div class={cn('min-w-0', settings.showAvatars && 'pl-12')}>
 									{#if !contact.isMe}
 										<button
@@ -470,7 +428,7 @@
 					>
 						{#if settings.showAvatars}
 							<Avatar
-								name={contact.avatarName}
+								name={contact.avatarName ?? contact.avatarEmail}
 								email={contact.avatarEmail}
 								class="size-8"
 							/>
@@ -495,24 +453,26 @@
 	</div>
 
 	{#if latest && auth.client && settings.showQuickReply && mailboxRouteId !== 'drafts' && !minimalChrome}
-		<footer class="hidden shrink-0 border-t border-border/80 bg-surface/80 py-4 md:block">
-			<div class="z-reader-column flex flex-col gap-2 sm:flex-row">
-				<textarea
-					class="z-input z-compose-editor min-h-10 flex-1 resize-none py-2 leading-relaxed"
-					rows={2}
-					placeholder="Write a quick reply…"
-					aria-label="Quick reply"
-					bind:value={quickReply}
-					disabled={quickReplySending}
-					onkeydown={onQuickReplyKeydown}
-				></textarea>
-				<div class="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end sm:justify-start sm:gap-1">
-					<Button class="max-sm:flex-1" disabled={!quickReply.trim() || quickReplySending} onclick={sendQuickReply}>
-						{quickReplySending ? 'Sending…' : 'Send'}
-					</Button>
-					{#if !settings.hideComposeHints}
-						<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter</span>
-					{/if}
+		<footer class="hidden shrink-0 border-t border-border/80 bg-surface/80 md:block">
+			<div class={cn(contentShellClass(), 'px-4 py-4 md:px-6')}>
+				<div class="z-reader-column flex flex-col gap-2 sm:flex-row">
+					<textarea
+						class="z-input z-compose-editor min-h-10 flex-1 resize-none py-2 leading-relaxed"
+						rows={2}
+						placeholder="Write a quick reply…"
+						aria-label="Quick reply"
+						bind:value={quickReply}
+						disabled={quickReplySending}
+						onkeydown={onQuickReplyKeydown}
+					></textarea>
+					<div class="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end sm:justify-start sm:gap-1">
+						<Button class="max-sm:flex-1" disabled={!quickReply.trim() || quickReplySending} onclick={sendQuickReply}>
+							{quickReplySending ? 'Sending…' : 'Send'}
+						</Button>
+						{#if !settings.hideComposeHints}
+							<span class="hidden text-xs text-fg-subtle sm:inline">Ctrl+Enter</span>
+						{/if}
+					</div>
 				</div>
 			</div>
 		</footer>

@@ -40,9 +40,13 @@
 	.z-mail-view .z-reader-subject-heading {
 		margin: 0 0 1rem;
 		font-size: var(--z-main-page-text);
-		line-height: var(--z-reader-leading);
+		line-height: 1.4;
 		font-weight: normal;
 		@apply text-fg;
+	}
+
+	.z-mail-view .z-reader-subject-heading:not(.z-mail-list-subject--important) {
+		font-weight: 500;
 	}
 
 	.z-mail-view .z-mail-reader-pane {
@@ -61,8 +65,9 @@
 	}
 
 	.z-mail-view .z-mail-external-banner {
-		@apply mb-4 flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border px-3 py-2 text-xs text-fg-muted;
+		@apply flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg border border-border px-3 py-2 text-xs text-fg-muted;
 		background-color: var(--z-surface-sunken);
+		margin-bottom: 1rem;
 	}
 
 	.z-mail-view .z-mail-external-banner__action {

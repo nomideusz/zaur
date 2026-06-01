@@ -4,16 +4,11 @@
 	import Archive from '$lib/components/icons/Archive.svelte';
 	import Forward from '$lib/components/icons/Forward.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
-	import Maximize from '$lib/components/icons/Maximize.svelte';
-	import Minimize from '$lib/components/icons/Minimize.svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
-	import Send from '$lib/components/icons/Send.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
-	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
@@ -22,7 +17,6 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
-	import { readerFocus } from '$lib/stores/reader-focus.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -35,10 +29,10 @@
 		thread: MessageDetail[];
 		mailboxRouteId: string;
 		onMoved?: () => void;
-		/** Icon-first toolbar when reading with adaptive focus. */
-		minimalChrome?: boolean;
-		/** Reader pane header: avoid fixed button height so title can align with labels. */
-		readerHeader?: boolean;
+		/** Compact overflow trigger for the reader nav row. */
+		header?: boolean;
+		/** Show a Send action beside the overflow menu for drafts. */
+		showDraftSend?: boolean;
 		class?: string;
 	}
 
@@ -46,8 +40,8 @@
 		thread,
 		mailboxRouteId,
 		onMoved,
-		minimalChrome = false,
-		readerHeader = false,
+		header = false,
+		showDraftSend = false,
 		class: className = ''
 	}: Props = $props();
 
@@ -63,14 +57,7 @@
 	const markImportantLabel = $derived(
 		actionMessage?.important ? 'Unmark important' : 'Mark important'
 	);
-	const toolbarButtonClass = $derived(
-		cn(
-			'z-thread-toolbar-btn shrink-0 !px-3 !text-sm',
-			readerHeader ? '!h-auto !min-h-9 leading-none' : '!h-9'
-		)
-	);
 	const allowExternal = $derived(!settings.blockExternalContent || pane?.showImagesOnce);
-	const minimalToolbar = true;
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>
 			renderMessageBody({
@@ -175,81 +162,26 @@
 {#if latest}
 	<div
 		class={cn(
-			'flex min-w-0 shrink flex-wrap items-center',
-			readerHeader && 'z-reader-subject-toolbar w-full justify-end',
-			readerHeader ? 'gap-1.5' : 'gap-1',
+			'flex min-w-0 shrink-0 items-center',
+			header ? 'gap-1.5' : 'gap-1',
 			className
 		)}
 	>
-		{#if readerHeader && !minimalToolbar}
-			<button
-				type="button"
-				class="z-focus-toggle hidden shrink-0 font-semibold md:inline-flex"
-				aria-pressed={readerFocus.clean}
-				aria-label="Clean reading view"
-				title="Clean reading view — re-flow into the app's typography"
-				onclick={() => readerFocus.toggleClean()}
-			>
-				<span class="text-sm leading-none">Aa</span>
-			</button>
-			<button
-				type="button"
-				class="z-focus-toggle hidden shrink-0 md:inline-flex"
-				aria-pressed={readerFocus.active}
-				aria-label={readerFocus.active ? 'Exit focused reading' : 'Focused reading'}
-				title={readerFocus.active ? 'Exit focus (z)' : 'Focus reading (z)'}
-				onclick={() => readerFocus.toggle()}
-			>
-				{#if readerFocus.active}
-					<Minimize class="size-4" aria-hidden="true" />
-				{:else}
-					<Maximize class="size-4" aria-hidden="true" />
-				{/if}
+		{#if showDraftSend}
+			<button type="button" class="z-mail-text-nav__action hidden md:inline-flex" onclick={() => void sendDraft()}>
+				Send
 			</button>
 		{/if}
 		{#if isDraft}
-			{#if minimalToolbar}
-				<IconButton label="Edit draft" onclick={editDraft}>
-					<Pencil class="size-5" />
-				</IconButton>
-				<IconButton label={markImportantLabel} onclick={toggleImportant}>
-					<Important
-						class={cn('size-5', actionMessage?.important && 'text-accent')}
-						aria-hidden="true"
-					/>
-				</IconButton>
-			{:else}
-				<Button variant="ghost" class={toolbarButtonClass} onclick={editDraft}>
-					<Pencil class="size-4" aria-hidden="true" />
-					Edit draft
-				</Button>
-				<Button variant="ghost" class={toolbarButtonClass} onclick={toggleImportant}>
-					<Important
-						class={cn('size-4', actionMessage?.important && 'text-accent')}
-						aria-hidden="true"
-					/>
-					{markImportantLabel}
-				</Button>
-			{/if}
-			<Button class={toolbarButtonClass} onclick={() => void sendDraft()}>
-				<Send class="size-4" aria-hidden="true" />
-				Send
-			</Button>
-			{#if minimalToolbar}
-				<IconButton
-					label={deleteLabel}
-					class="text-danger hover:bg-danger/10"
-					onclick={deleteMessage}
-				>
-					<Trash2 class="size-5" />
-				</IconButton>
-			{:else}
-				<Button variant="danger" class={toolbarButtonClass} onclick={deleteMessage}>
-					<Trash2 class="size-4" aria-hidden="true" />
-					{deleteLabel}
-				</Button>
-			{/if}
-			<OverflowMenu label="More message actions" menuId="thread-actions-overflow-menu">
+			<OverflowMenu
+				label="More message actions"
+				menuId="reader-header-actions-menu"
+				placement={header ? 'bottom' : 'auto'}
+				triggerClass={header ? '!min-h-9 !min-w-9' : ''}
+			>
+				<OverflowMenuItem label="Edit draft" onclick={editDraft}>
+					{#snippet icon()}<Pencil class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
 				<OverflowMenuItem label={markImportantLabel} onclick={toggleImportant}>
 					{#snippet icon()}
 						<Important
@@ -267,7 +199,12 @@
 				</OverflowMenuItem>
 			</OverflowMenu>
 		{:else}
-			<OverflowMenu label="More message actions" menuId="thread-actions-overflow-menu">
+			<OverflowMenu
+				label="More message actions"
+				menuId="reader-header-actions-menu"
+				placement={header ? 'bottom' : 'auto'}
+				triggerClass={header ? '!min-h-9 !min-w-9' : ''}
+			>
 				<OverflowMenuItem label="Reply" onclick={reply}>
 					{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
 				</OverflowMenuItem>
