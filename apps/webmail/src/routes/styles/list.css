@@ -372,13 +372,14 @@
 	}
 
 	/* Bulk select — solid accent reads clearer than gradient. */
-	.z-mail-list--selecting .z-mail-list-subject--important {
+	.z-mail-view .z-mail-list--selecting .list-subject.z-mail-list-subject--important {
 		animation: none;
-		background-size: 165% 100%;
-		background-position: var(--important-phase, 0%) 50%;
 		background-image: none;
+		background-size: unset;
+		background-position: unset;
 		-webkit-text-fill-color: unset;
 		color: var(--z-accent);
+		text-decoration-line: none;
 		text-decoration-color: color-mix(in srgb, var(--z-accent) 45%, transparent);
 	}
 
