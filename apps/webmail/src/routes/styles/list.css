@@ -379,6 +379,11 @@
 					will-change: background-position;
 				}
 			}
+
+			html:not(.z-reduce-motion) .z-mail-list-subject--important-picking {
+				animation-play-state: running;
+				will-change: background-position;
+			}
 		}
 	}
 

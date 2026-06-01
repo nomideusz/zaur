@@ -24,7 +24,9 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { renderMessageBody } from '$lib/email/html';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
+	import { createImportantRainbowTouchPick } from '$lib/mail/important-rainbow-touch';
 	import { shouldShowImportantRainbow } from '$lib/mail/mailboxes';
+	import { hasPreciseHover } from '$lib/utils/pointer-env';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
 
@@ -237,7 +239,7 @@
 	}
 
 	function persistReaderRainbowPick(event: PointerEvent) {
-		if (settings.reduceMotion || !subjectImportant || !subjectMessageId || !readerSubjectEl) {
+		if (settings.reduceMotion || !hasPreciseHover() || !subjectImportant || !subjectMessageId || !readerSubjectEl) {
 			return;
 		}
 		if (!shouldPersistReaderRainbowPick(event)) return;
@@ -245,11 +247,20 @@
 	}
 
 	function startReaderRainbowSample() {
-		if (settings.reduceMotion || !subjectImportant || !subjectMessageId || !readerSubjectEl) {
+		if (settings.reduceMotion || !hasPreciseHover() || !subjectImportant || !subjectMessageId || !readerSubjectEl) {
 			return;
 		}
 		importantRainbow.startHoverSample(readerSubjectEl, subjectMessageId);
 	}
+
+	const readerRainbowTouch = createImportantRainbowTouchPick({
+		canPick: () =>
+			!hasPreciseHover() &&
+			!settings.reduceMotion &&
+			!!subjectImportant &&
+			!!subjectMessageId &&
+			!!readerSubjectEl
+	});
 </script>
 
 <article
@@ -430,6 +441,16 @@
 										: undefined}
 									onpointerenter={startReaderRainbowSample}
 									onpointerleave={persistReaderRainbowPick}
+									onpointerdown={(event) => {
+										if (!subjectMessageId) return;
+										readerRainbowTouch.onPointerDown(subjectMessageId, event);
+									}}
+									onpointermove={readerRainbowTouch.onPointerMove}
+									onpointerup={(event) => {
+										if (!subjectMessageId) return;
+										readerRainbowTouch.onPointerUp(subjectMessageId, event);
+									}}
+									onpointercancel={readerRainbowTouch.onPointerCancel}
 								>{subject}</h1>
 							{/if}
 

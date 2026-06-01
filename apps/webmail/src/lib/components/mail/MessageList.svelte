@@ -36,6 +36,7 @@
 	import { cn } from '$lib/utils/cn';
 	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
+	import { createImportantRainbowTouchPick } from '$lib/mail/important-rainbow-touch';
 	import {
 		canMarkImportantFromMailboxRole,
 		isExcludedFromImportantSection,
@@ -118,6 +119,13 @@
 	let importantRainbowHoverId = $state<string | null>(null);
 	/** After long-press bulk select, block the following link navigation. */
 	let suppressRowNavigationUntil = 0;
+
+	const importantRainbowTouch = createImportantRainbowTouchPick({
+		canPick: () => !hasPreciseHover() && !settings.reduceMotion,
+		onCommitted: () => {
+			suppressRowNavigationUntil = Date.now() + 400;
+		}
+	});
 
 	$effect(() => {
 		void $page.url.pathname;
@@ -996,6 +1004,14 @@
 												'z-mail-list-subject--important-picked'
 										)}
 										style={importantRainbow.cssVars(message.id)}
+										onpointerdown={(event) => {
+											if (!canPickImportantRainbow(routeId)) return;
+											importantRainbowTouch.onPointerDown(message.id, event);
+										}}
+										onpointermove={importantRainbowTouch.onPointerMove}
+										onpointerup={(event) =>
+											importantRainbowTouch.onPointerUp(message.id, event)}
+										onpointercancel={importantRainbowTouch.onPointerCancel}
 									>{subjectText}</span>
 								{:else}
 									<span class={listSubjectPlainClass}>{subjectText}</span>

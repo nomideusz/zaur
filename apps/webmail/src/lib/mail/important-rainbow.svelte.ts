@@ -220,6 +220,23 @@ class ImportantRainbowStore {
 		if (messageId) this.hoverSamplePhase.delete(messageId);
 	}
 
+	/** Press-and-hold on touch — animate while held, pick on release. */
+	startTouchPick(subjectEl: HTMLElement, messageId: string) {
+		if (!browser) return;
+		subjectEl.classList.add('z-mail-list-subject--important-picking');
+		this.startHoverSample(subjectEl, messageId);
+	}
+
+	finishTouchPick(subjectEl: HTMLElement, messageId: string) {
+		subjectEl.classList.remove('z-mail-list-subject--important-picking');
+		this.pickFromElement(subjectEl, messageId);
+	}
+
+	cancelTouchPick(subjectEl: HTMLElement, messageId: string) {
+		subjectEl.classList.remove('z-mail-list-subject--important-picking');
+		this.stopHoverSample(messageId);
+	}
+
 	/** Sample current gradient position from a list row (call on pointermove while hovering). */
 	sampleFromRow(row: HTMLElement, messageId: string): number | null {
 		const subject = row.querySelector('.z-mail-list-subject--important');
