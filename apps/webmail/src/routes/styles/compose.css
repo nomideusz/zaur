@@ -232,14 +232,19 @@
 		inset-inline: 0;
 		bottom: 0;
 		z-index: 20;
-		border-top: 1px solid var(--z-divider);
-		background-color: color-mix(in srgb, var(--z-chrome) 92%, transparent);
-		backdrop-filter: blur(8px);
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding-inline: 1rem;
+		pointer-events: none;
 	}
 
 	.z-mail-view .z-compose__footer-inner {
-		max-width: var(--z-content-max-width);
-		margin-inline: auto;
+		width: min(var(--z-content-max-width), 100%);
+		border-top: 1px solid var(--z-divider);
+		background-color: color-mix(in srgb, var(--z-chrome) 92%, transparent);
+		backdrop-filter: blur(8px);
+		pointer-events: auto;
 		padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
 	}
 
@@ -268,6 +273,10 @@
 	}
 
 	@media (min-width: 768px) {
+		.z-mail-view .z-compose__footer {
+			padding-inline: 1.5rem;
+		}
+
 		.z-mail-view .z-compose__footer-inner {
 			padding-inline: 1.5rem;
 			padding-block: 0.875rem calc(0.875rem + env(safe-area-inset-bottom, 0px));
