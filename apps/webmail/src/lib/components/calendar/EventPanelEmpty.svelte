@@ -1,4 +1,5 @@
 <script lang="ts">
+	import DinoZaur from '$lib/components/mail/DinoZaur.svelte';
 	import { frameSvg } from '@zaur/sprite';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
@@ -17,4 +18,5 @@
 		</p>
 		<Button variant="ghost" onclick={() => calendar.openCompose()}>New event</Button>
 	</div>
+	<DinoZaur />
 </div>

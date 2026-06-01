@@ -84,3 +84,23 @@
 			--z-space-nav-bottom: 0.25rem;
 		}
 	}
+
+	/* Split view — list column + reader pane side by side on desktop. */
+	@media (min-width: 768px) {
+		.z-mail-view .z-mail-pane-body--split {
+			flex-direction: row;
+			align-items: stretch;
+		}
+
+		.z-mail-view .z-mail-pane-body--split > .z-mail-pane-surface {
+			width: var(--width-list);
+			max-width: var(--width-list);
+			flex: none;
+		}
+
+		.z-mail-view .z-mail-pane-body--split > .z-mail-reader-pane {
+			flex: 1 1 0;
+			min-width: 0;
+			min-height: 20rem;
+		}
+	}
