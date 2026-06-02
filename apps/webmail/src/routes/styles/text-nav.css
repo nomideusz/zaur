@@ -65,7 +65,7 @@
 		@apply cursor-pointer border-0 bg-transparent p-0;
 	}
 
-	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link:hover {
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link:not(.z-mail-text-nav__link--here):hover {
 		@apply text-fg;
 		text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
 	}

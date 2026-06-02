@@ -26,7 +26,7 @@
 		LABEL_NOT_IMPORTANT
 	} from '$lib/mail/new-mail';
 	import { createImportantRainbowTouchPick } from '$lib/mail/important-rainbow-touch';
-	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
+	import { mailListBackHref, mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
 	import { hasPreciseHover } from '$lib/utils/pointer-env';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
@@ -70,7 +70,7 @@
 	const listHref = $derived.by(() => {
 		const returnTo = $page.url.searchParams.get('returnTo');
 		if (returnTo?.startsWith('/mail/search')) return returnTo;
-		return mailListHref(mailboxRouteId);
+		return mailListBackHref(mailboxRouteId);
 	});
 	const showNavImportant = $derived(
 		!triageLeaving &&

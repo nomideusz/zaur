@@ -577,6 +577,34 @@
 		text-decoration-color: color-mix(in srgb, var(--z-unread) 55%, transparent);
 	}
 
+	/* Normal (read, not important) — recede when New / Important need attention. */
+	.z-mail-list-section-messages--normal .list-subject {
+		color: color-mix(in srgb, var(--z-fg) 58%, transparent);
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 18%, transparent);
+		transition:
+			color 150ms var(--z-ease-standard, ease),
+			text-decoration-color 150ms var(--z-ease-standard, ease);
+	}
+
+	.z-mail-list-section-messages--normal .z-mail-list-row-meta {
+		color: color-mix(in srgb, var(--z-fg-muted) 72%, transparent);
+		transition: color 150ms var(--z-ease-standard, ease);
+	}
+
+	.z-mail-view .z-mail-list-section-messages--normal .group\/message:hover .list-subject,
+	.z-mail-view .z-mail-list-section-messages--normal .group\/message:focus-visible .list-subject {
+		color: var(--z-fg);
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 35%, transparent);
+	}
+
+	.z-mail-view .z-mail-list-section-messages--normal .group\/message:hover .z-mail-list-row-meta,
+	.z-mail-view
+		.z-mail-list-section-messages--normal
+		.group\/message:focus-visible
+		.z-mail-list-row-meta {
+		color: var(--z-fg-muted);
+	}
+
 	.z-mail-view .z-mail-list-section-head {
 		display: flex;
 		align-items: center;

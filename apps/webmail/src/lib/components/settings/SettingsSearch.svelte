@@ -69,9 +69,9 @@
 
 <div class="relative">
 	<label class="sr-only" for="settings-search">Search settings</label>
-	<div class="relative">
+	<div class="z-settings-search-field relative">
 		<Search
-			class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-fg-subtle"
+			class="pointer-events-none absolute top-1/2 left-[var(--z-settings-field-pad-x)] size-4 -translate-y-1/2 text-fg-subtle"
 			aria-hidden="true"
 		/>
 		<input

@@ -37,6 +37,14 @@ export function mailListHref(mailboxRouteId: string): string {
 	return `/mail/${encodeRouteSegment(mailboxRouteId)}`;
 }
 
+/** Back from a thread — Important on inbox home is a section, not a folder list. */
+export function mailListBackHref(mailboxRouteId: string): string {
+	if (mailboxRouteId === MAIL_ROUTE_SEGMENTS.important) {
+		return mailListHref(INBOX_MAILBOX_ROUTE_ID);
+	}
+	return mailListHref(mailboxRouteId);
+}
+
 export function mailThreadHref(
 	mailboxRouteId: string,
 	threadId: string,

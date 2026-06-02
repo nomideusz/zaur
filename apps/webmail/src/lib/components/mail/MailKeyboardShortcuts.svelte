@@ -10,7 +10,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { resolveMailboxRouteByShortcut } from '$lib/mail/folder-shortcuts';
 	import { canMarkImportantFromMailboxRole } from '$lib/mail/mailboxes';
-	import { mailListHref, mailThreadHref, parseMailContext } from '$lib/mail/routes';
+	import { mailListBackHref, mailListHref, mailThreadHref, parseMailContext } from '$lib/mail/routes';
 	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
 	import { isTypingTarget } from '$lib/utils/keyboard';
 	import type { MessagePreview } from '$lib/types/mail';
@@ -86,7 +86,7 @@
 			await action(message);
 			if (options?.leaveThread && ctx?.threadId) {
 				const routeId = ctx.mailboxRouteId ?? message.mailboxId;
-				goto(mailListHref(routeId));
+				goto(mailListBackHref(routeId));
 			}
 		} catch (error) {
 			toast.show(error instanceof Error ? error.message : 'Action failed', 'error');
@@ -169,7 +169,7 @@
 			if (event.key === 'Escape' && ctx.threadId && !mail.hasSelection) {
 				event.preventDefault();
 				const routeId = ctx.mailboxRouteId ?? currentMessage()?.mailboxId ?? 'inbox';
-				goto(mailListHref(routeId));
+				goto(mailListBackHref(routeId));
 				return;
 			}
 

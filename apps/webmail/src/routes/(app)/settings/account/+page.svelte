@@ -95,7 +95,7 @@
 
 	<SettingsField title="Signature">
 		<textarea
-			class="z-input min-h-24 resize-y"
+			class="z-input resize-y"
 			value={settings.signature}
 			placeholder="Best regards,&#10;Your name"
 			oninput={(e) => settings.setSignature(e.currentTarget.value)}

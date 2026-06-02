@@ -35,6 +35,7 @@ export function defaultEmptyMessage(mailboxRouteId: string | undefined): string 
 	}
 }
 
+
 export function defaultEmptyHint(mailboxRouteId: string | undefined): string | null {
 	switch (mailboxRouteId) {
 		case 'inbox':

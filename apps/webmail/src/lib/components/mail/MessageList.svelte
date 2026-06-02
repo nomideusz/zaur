@@ -49,6 +49,7 @@
 	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
 	import { LABEL_NOT_IMPORTANT } from '$lib/mail/new-mail';
+	import { inboxNormalSectionDefaultVisible, inboxImportantSectionCanShowMore } from '$lib/mail/inbox-list-sections';
 	import {
 		canMarkImportantFromMailboxRole,
 		isExcludedFromImportantSection,
@@ -163,7 +164,13 @@
 		return `${$page.url.pathname}${$page.url.search}`;
 	});
 	const messagesByThreadId = $derived(indexMessagesByThreadId(messages));
-	const listMessages = $derived(collapseMessagesByThread(messages));
+	const listMessages = $derived.by(() => {
+		const collapsed = collapseMessagesByThread(messages);
+		if (mailboxRouteId === IMPORTANT_SECTION_ID) {
+			return collapsed.filter((message) => message.important);
+		}
+		return collapsed;
+	});
 	const currentMessageId = $derived(
 		activeMessageId(
 			listMessages,
@@ -441,6 +448,22 @@
 		);
 	}
 
+	function listMessagePreview(message: MessagePreview): MessagePreview {
+		return mail.messages.find((entry) => entry.id === message.id) ?? message;
+	}
+
+	function inboxImportantListRows(): MessagePreview[] {
+		const loadedImportant = (sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [])
+			.filter((message) => !mail.wasRemovedFromView(message.id))
+			.map(listMessagePreview)
+			.filter((message) => message.important)
+			.filter((message) => !isNewUnreadListRow(message))
+			.filter(messageEligibleForImportantSection);
+		return collapseMessagesByThread(
+			mergeMessagePreviews(loadedImportant, importantInboxMessages)
+		);
+	}
+
 	function isMe(email: string): boolean {
 		const cleanEmail = email?.trim().toLowerCase();
 		if (!cleanEmail) return false;
@@ -500,7 +523,18 @@
 	);
 	const importantMailbox = $derived(mail.importantMailbox());
 
+	const inboxTriageLoad = $derived.by(() => ({
+		new: newUnreadMessages.length,
+		important: Math.max(importantMailbox?.total ?? 0, importantInboxMessages.length)
+	}));
 
+	const defaultReadSectionVisible = $derived(
+		inboxNormalSectionDefaultVisible(
+			inboxTriageLoad.new,
+			inboxTriageLoad.important,
+			INBOX_SECTION_PAGE_SIZE
+		)
+	);
 
 	const orderedFolders = $derived.by(() =>
 		mail.mailboxes
@@ -551,24 +585,17 @@
 			}
 
 			if (importantMailbox) {
-				const loadedImportant = (sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [])
-					.filter((message) => !mail.wasRemovedFromView(message.id))
-					.filter((message) => !isNewUnreadListRow(message))
-					.filter(messageEligibleForImportantSection);
-				const importantMessages = collapseMessagesByThread(
-					mergeMessagePreviews(loadedImportant, importantInboxMessages)
-				);
-				const importantTotal = Math.max(importantMailbox.total, importantMessages.length);
-				if (importantTotal > 0 || importantMessages.length > 0) {
+				const importantMessages = inboxImportantListRows();
+				if (importantMessages.length > 0) {
 					sections.push({
 						id: IMPORTANT_SECTION_ID,
 						name: importantMailbox.name,
-						routeId: IMPORTANT_SECTION_ID,
+						routeId: mailboxRouteId ?? 'inbox',
 						messages: importantMessages.slice(
 							0,
 							sectionVisibleCounts[IMPORTANT_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
 						),
-						totalCount: importantTotal,
+						totalCount: importantMessages.length,
 						sortOrder: 1,
 						showUnreadDot: importantMailbox.unread > 0
 					});
@@ -582,7 +609,7 @@
 					routeId: mailboxRouteId ?? 'inbox',
 					messages: readMessages.slice(
 						0,
-						sectionVisibleCounts[READ_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
+						sectionVisibleCounts[READ_SECTION_ID] ?? defaultReadSectionVisible
 					),
 					totalCount: readMessages.length,
 					sortOrder: 2,
@@ -620,7 +647,11 @@
 		const counts: Record<string, number> = {
 			[NEW_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
 			[IMPORTANT_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
-			[READ_SECTION_ID]: INBOX_SECTION_PAGE_SIZE
+			[READ_SECTION_ID]: inboxNormalSectionDefaultVisible(
+				inboxTriageLoad.new,
+				inboxTriageLoad.important,
+				INBOX_SECTION_PAGE_SIZE
+			)
 		};
 		if (mailboxRouteId && mailboxRouteId !== 'inbox') {
 			const mailbox = mail.mailboxByRouteId(mailboxRouteId);
@@ -654,7 +685,7 @@
 			(message) => !isAccountSettingsSubject(message.subject)
 		);
 		if (cached.length >= limit) {
-			return [cached.slice(0, limit), true];
+			return [cached.slice(0, limit), cached.length > limit || folder.total > limit];
 		}
 
 		if (!folder.jmapId) {
@@ -727,14 +758,20 @@
 
 		void Promise.all(
 			foldersToLoad.map(async (folder) => {
+				const sectionId =
+					folder.role === 'important' ? IMPORTANT_SECTION_ID : folder.id;
 				const requested =
-					sectionVisibleCounts[folder.id] ??
+					sectionVisibleCounts[sectionId] ??
 					(folderSectionCollapsedByDefault(folder) ? 0 : FOLDER_SECTION_PAGE_SIZE);
 				if (requested === 0) {
-					return [folder.id, [] as MessagePreview[], folder.total > 0] as const;
+					return [sectionId, [] as MessagePreview[], folder.total > 0] as const;
 				}
 				if (folder.id === routeId) {
-					return [folder.id, messages.slice(0, requested), messages.length > requested] as const;
+					return [
+						sectionId,
+						messages.slice(0, requested),
+						messages.length > requested
+					] as const;
 				}
 				const [previews, hasMoreFolder] = await loadOtherFolderPreviews(
 					client,
@@ -742,7 +779,7 @@
 					folder,
 					requested
 				);
-				return [folder.id, previews, hasMoreFolder] as const;
+				return [sectionId, previews, hasMoreFolder] as const;
 			})
 		).then((entries) => {
 			if (cancelled) return;
@@ -801,16 +838,29 @@
 
 	const flatListDuplicateSubjects = $derived(duplicateSubjectKeys(listMessages));
 
+	function importantSectionFetchLimit(): number {
+		return sectionVisibleCounts[IMPORTANT_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE;
+	}
+
 	function sectionCanShowMore(sectionId: string): boolean {
-		const visible = sectionVisibleCounts[sectionId] ?? sectionPageSize(sectionId);
+		const visible =
+			sectionVisibleCounts[sectionId] ??
+			(sectionId === READ_SECTION_ID && isInboxHome
+				? defaultReadSectionVisible
+				: sectionPageSize(sectionId));
 		if (sectionId === NEW_SECTION_ID) return newUnreadMessages.length > visible;
 		if (sectionId === IMPORTANT_SECTION_ID) {
-			const folder = importantMailbox;
-			if (!folder) return false;
-			const loadedImportant = sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [];
-			const known = mergeMessagePreviews(loadedImportant, importantInboxMessages).length;
-			const total = Math.max(folder.total, known);
-			return total > visible || known > visible || !!sectionHasMoreByFolder[IMPORTANT_SECTION_ID];
+			if (!importantMailbox) return false;
+			const rows = inboxImportantListRows();
+			const fetchLimit = importantSectionFetchLimit();
+			const folderPreviews = sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [];
+			return inboxImportantSectionCanShowMore(
+				rows.length,
+				visible,
+				folderPreviews.length,
+				fetchLimit,
+				!!sectionHasMoreByFolder[IMPORTANT_SECTION_ID]
+			);
 		}
 		if (sectionId === READ_SECTION_ID) {
 			return readMessages.length > visible || hasMore;
@@ -1064,7 +1114,8 @@
 						{#if section.messages.length > 0}
 							<ul class={cn(
 								'z-mail-list-section-messages',
-								section.id === NEW_SECTION_ID && 'z-mail-list-section-messages--new'
+								section.id === NEW_SECTION_ID && 'z-mail-list-section-messages--new',
+								section.id === READ_SECTION_ID && 'z-mail-list-section-messages--normal'
 							)}>
 								{#each section.messages as message, index (message.id)}
 									{@render simpleMessageRow(message, section.routeId, index, section.messages, sectionDuplicateSubjects, section.id)}

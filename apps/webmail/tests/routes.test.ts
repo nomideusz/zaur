@@ -3,6 +3,7 @@ import { describe, it } from 'node:test';
 import {
 	INBOX_MAILBOX_ROUTE_ID,
 	isMailPath,
+	mailListBackHref,
 	mailListHref,
 	mailThreadHref,
 	parseMailContext
@@ -12,6 +13,11 @@ describe('mail routes', () => {
 	it('maps inbox list to root', () => {
 		assert.equal(mailListHref(INBOX_MAILBOX_ROUTE_ID), '/');
 		assert.equal(mailListHref('sent'), '/mail/sent');
+	});
+
+	it('returns home when backing out of Important threads', () => {
+		assert.equal(mailListBackHref('important'), '/');
+		assert.equal(mailListBackHref('sent'), '/mail/sent');
 	});
 
 	it('builds inbox thread URLs under /mail/inbox', () => {
