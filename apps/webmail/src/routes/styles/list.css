@@ -328,14 +328,20 @@
 		padding-top: var(--z-main-gap);
 	}
 
-	.z-mail-list-new-dot {
-		width: 0.4375rem;
-		height: 0.4375rem;
-		flex-shrink: 0;
+	/* One-sided stroke for the New section container. Sits in the left gutter/outside margin. */
+	.z-mail-list-section-messages--new {
+		position: relative;
+	}
+
+	.z-mail-view .z-mail-list-section-messages--new::before {
+		content: '';
+		position: absolute;
+		left: -0.5rem; /* -8px in the gutter */
+		top: 0.125rem;
+		bottom: 0.125rem;
+		width: 3px;
+		background-color: var(--z-unread);
 		border-radius: 9999px;
-		/* Vertically center on the subject’s first line (leading-[1.4] × page text size). */
-		margin-top: calc((var(--z-main-page-text) * 1.4 - 0.4375rem) / 2);
-		@apply bg-unread;
 	}
 
 	.z-mail-view .z-mail-list-section-head {

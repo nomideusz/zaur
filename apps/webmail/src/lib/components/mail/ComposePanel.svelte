@@ -255,6 +255,18 @@
 	function fieldInvalid(field: 'to' | 'cc' | 'bcc'): boolean {
 		return invalidRecipients.length > 0 && invalidAddressParts(compose[field]).length > 0;
 	}
+
+	let isAddingSignatureInline = $state(false);
+	let newSignatureInline = $state('');
+
+	function saveSignatureInline() {
+		const signature = newSignatureInline.trim();
+		if (signature) {
+			settings.setSignature(signature);
+			rebuildComposeBody(messageBody, signature);
+		}
+		isAddingSignatureInline = false;
+	}
 </script>
 
 <input
@@ -270,21 +282,33 @@
 		<div class="z-mail-text-nav z-compose__nav">
 			<h1 class="sr-only">{composeTitle}</h1>
 			<div class="z-mail-text-nav__row">
-				<button type="button" class="z-mail-text-nav__link" onclick={close}>Back to mail</button>
-				<button
-					type="submit"
-					form="compose-form"
-					class="z-mail-text-nav__action z-compose__nav-send"
-					disabled={!compose.canSend || invalidRecipients.length > 0}
-					title={sendBlockedReason ?? 'Send message'}
-				>
-					{sendLabel}
-				</button>
+				<button type="button" class="z-mail-text-nav__link" onclick={close}>Discard</button>
+				<div class="z-mail-text-nav__links">
+					<button type="button" class="z-mail-text-nav__link" onclick={openFilePicker}>
+						Attach file
+					</button>
+					<button
+						type="submit"
+						form="compose-form"
+						class="z-mail-text-nav__action z-compose__nav-send"
+						disabled={!compose.canSend || invalidRecipients.length > 0}
+						title={sendBlockedReason ?? 'Send message'}
+					>
+						{sendLabel}
+					</button>
+				</div>
 			</div>
 			{#if !settings.hideComposeHints}
-				<p class="z-compose__draft-status" aria-live="polite">
-					{draftStatus ?? ''}
-				</p>
+				<div class="flex items-center justify-between gap-4 z-compose__draft-status">
+					<p aria-live="polite">
+						{draftStatus ?? ''}
+					</p>
+					{#if sendBlockedReason && compose.to.trim()}
+						<p class="text-fg-subtle" role="status">
+							{sendBlockedReason}
+						</p>
+					{/if}
+				</div>
 			{/if}
 		</div>
 
@@ -394,9 +418,40 @@
 							oninput={(event) => setSignatureBody(event.currentTarget.value)}
 						></textarea>
 					</div>
+				{:else if isAddingSignatureInline}
+					<div class="z-compose__signature">
+						<label class="sr-only" for="compose-signature-inline">New signature</label>
+						<textarea
+							id="compose-signature-inline"
+							class="z-compose__signature-input"
+							placeholder="Write your signature..."
+							bind:value={newSignatureInline}
+						></textarea>
+						<div class="flex gap-4 mt-2">
+							<button type="button" class="z-mail-text-nav__link" onclick={saveSignatureInline}>
+								Save signature
+							</button>
+							<button
+								type="button"
+								class="z-mail-text-nav__link text-fg-subtle"
+								onclick={() => (isAddingSignatureInline = false)}
+							>
+								Cancel
+							</button>
+						</div>
+					</div>
 				{:else if !settings.hideComposeHints}
 					<p class="z-compose__signature-empty">
-						<a href="/settings/account" class="z-mail-text-nav__link">Add a signature</a>
+						<button
+							type="button"
+							class="z-mail-text-nav__link"
+							onclick={() => {
+								isAddingSignatureInline = true;
+								newSignatureInline = '';
+							}}
+						>
+							Add a signature
+						</button>
 					</p>
 				{/if}
 			{/if}
@@ -409,22 +464,24 @@
 			{/if}
 
 			{#if compose.attachments.length}
-				<ul class="mt-4 flex flex-col gap-2" aria-label="Attachments">
+				<ul class="z-compose-attachment-list" aria-label="Attachments">
 					{#each compose.attachments as attachment (attachment.id)}
-						<li class="z-type-page-muted flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-fg">
-							<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
-							<span class="min-w-0 truncate">{attachment.name}</span>
-							<span class="text-fg-subtle">
-								({formatAttachmentSize(attachment.size)})
-							</span>
-							{#if attachment.uploading}
-								<span class="text-fg-subtle">Uploading…</span>
-							{:else if attachment.uploadError}
-								<span class="text-danger">Failed</span>
-							{/if}
+						<li class="z-compose-attachment-item">
+							<div class="flex min-w-0 flex-1 items-center gap-2">
+								<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
+								<span class="z-type-page-muted min-w-0 truncate text-fg font-medium">{attachment.name}</span>
+								<span class="z-type-page-muted shrink-0 text-fg-subtle">
+									({formatAttachmentSize(attachment.size)})
+								</span>
+								{#if attachment.uploading}
+									<span class="z-type-page-muted text-fg-subtle">Uploading…</span>
+								{:else if attachment.uploadError}
+									<span class="z-type-page-muted text-danger">Failed</span>
+								{/if}
+							</div>
 							<button
 								type="button"
-								class="inline-flex shrink-0 items-center text-fg-subtle transition-colors hover:text-fg"
+								class="inline-flex shrink-0 items-center text-fg-subtle transition-colors hover:text-fg ml-2"
 								aria-label="Remove {attachment.name}"
 								onclick={() => compose.removeAttachment(attachment.id)}
 							>
@@ -442,29 +499,6 @@
 			{/if}
 		</form>
 
-		<footer class="z-compose__footer">
-			<div class="z-compose__footer-inner">
-				<div class="z-compose__footer-bar">
-					<div class="z-mail-text-nav__links">
-						<button type="button" class="z-mail-text-nav__link" onclick={openFilePicker}>
-							Attach file
-						</button>
-						<button type="button" class="z-mail-text-nav__link" onclick={close}>Discard</button>
-					</div>
-					<button
-						type="submit"
-						form="compose-form"
-						class="z-mail-text-nav__action z-compose__footer-send"
-						disabled={!compose.canSend || invalidRecipients.length > 0}
-						title={sendBlockedReason ?? 'Send message'}
-					>
-						{sendLabel}
-					</button>
-				</div>
-				{#if !settings.hideComposeHints && sendBlockedReason}
-					<p class="z-compose__footer-hint" role="status">{sendBlockedReason}</p>
-				{/if}
-			</div>
-		</footer>
+
 	</div>
 </section>

@@ -404,7 +404,7 @@
 	}
 
 	const newUnreadMessages = $derived.by(() =>
-		listMessages.filter((message) => isNewUnreadListRow(message) && !message.important)
+		listMessages.filter((message) => isNewUnreadListRow(message))
 	);
 	const readMessages = $derived.by(() =>
 		listMessages.filter((message) => !isNewUnreadListRow(message) && !message.important)
@@ -425,7 +425,12 @@
 	}
 
 	const importantInboxMessages = $derived.by(() =>
-		listMessages.filter((message) => message.important && messageEligibleForImportantSection(message))
+		listMessages.filter(
+			(message) =>
+				message.important &&
+				!isNewUnreadListRow(message) &&
+				messageEligibleForImportantSection(message)
+		)
 	);
 	const importantMailbox = $derived(mail.importantMailbox());
 
@@ -594,6 +599,7 @@
 			if (importantMailbox) {
 				const loadedImportant = (sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [])
 					.filter((message) => !mail.wasRemovedFromView(message.id))
+					.filter((message) => !isNewUnreadListRow(message))
 					.filter(messageEligibleForImportantSection);
 				const importantMessages = collapseMessagesByThread(
 					mergeMessagePreviews(loadedImportant, importantInboxMessages)
@@ -1026,9 +1032,6 @@
 						<span class={listMessageStackClass}>
 							<span class={listMessageLeadClass}>
 								<span class="flex min-w-0 w-full items-start gap-2">
-									{#if showNewDot}
-										<span class="z-mail-list-new-dot" aria-hidden="true"></span>
-									{/if}
 									{#if showImportantPresentation(message, routeId)}
 										<span
 											class={cn(
@@ -1115,7 +1118,10 @@
 							</div>
 						{/if}
 						{#if section.messages.length > 0}
-							<ul class="z-mail-list-section-messages">
+							<ul class={cn(
+								'z-mail-list-section-messages',
+								section.id === NEW_SECTION_ID && 'z-mail-list-section-messages--new'
+							)}>
 								{#each section.messages as message, index (message.id)}
 									{@render simpleMessageRow(message, section.routeId, index, section.messages, sectionDuplicateSubjects, section.id)}
 								{/each}
