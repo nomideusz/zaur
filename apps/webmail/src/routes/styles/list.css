@@ -362,12 +362,6 @@
 		gap: max(0.5rem, var(--z-space-folder-message-y));
 	}
 
-	/* New section: one-sided stroke for the whole section block. */
-	.z-mail-view .z-mail-list-section--new .z-mail-list-section-messages {
-		padding-inline-start: 0.625rem;
-		border-inline-start: 3px solid color-mix(in srgb, var(--z-unread) 80%, transparent);
-	}
-
 	.z-mail-view .z-mail-list-section-more {
 		margin-top: var(--z-space-folder-footer-top);
 	}

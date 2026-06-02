@@ -1026,6 +1026,9 @@
 						<span class={listMessageStackClass}>
 							<span class={listMessageLeadClass}>
 								<span class="flex min-w-0 w-full items-start gap-2">
+									{#if showNewDot}
+										<span class="z-mail-list-new-dot" aria-hidden="true"></span>
+									{/if}
 									{#if showImportantPresentation(message, routeId)}
 										<span
 											class={cn(
@@ -1096,11 +1099,7 @@
 			<div class="z-mail-list-sections">
 				{#each folderSections as section, sectionIndex (section.id)}
 					{@const sectionDuplicateSubjects = duplicateSubjectKeys(section.messages)}
-					<section
-						class={section.id === NEW_SECTION_ID ? 'z-mail-list-section--new' : undefined}
-						style:order={section.sortOrder}
-						style:--section-index={sectionIndex}
-					>
+					<section style:order={section.sortOrder} style:--section-index={sectionIndex}>
 						{#if !isInboxHome}
 							<div class="z-mail-list-section-head">
 								<h2 class="z-mail-list-section-title">
