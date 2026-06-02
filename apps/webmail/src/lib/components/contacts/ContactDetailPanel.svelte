@@ -29,9 +29,8 @@ import X from '$lib/components/icons/X.svelte';
 {#snippet details(showClose: boolean)}
 	<header class={cn('flex shrink-0 items-start justify-between gap-2 border-b border-border', panelPadding)}>
 		<div class="min-w-0">
-				<h2 class="truncate text-base font-semibold text-fg">{displayName}</h2>
-				<p class="mt-1 truncate text-sm text-fg-muted">{contact.email}</p>
-			</div>
+			<h2 class="truncate text-base font-semibold text-fg">{displayName}</h2>
+			<p class="mt-1 truncate text-sm text-fg-muted">{contact.email}</p>
 		</div>
 		{#if showClose}
 			<IconButton label="Close contact" onclick={onClose}>
