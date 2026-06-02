@@ -7,6 +7,7 @@
 		bulkSelectionReadCount,
 		type BulkSelectionCounts
 	} from '$lib/components/mail/bulk-selection-label';
+	import { LABEL_NOT_IMPORTANT, LABEL_RESTORE_NEW } from '$lib/mail/new-mail';
 	import { mail } from '$lib/stores/mail.svelte';
 
 	interface Props {
@@ -59,12 +60,12 @@
 <div class="z-overflow-menu-scroll">
 	{#if counts.new > 0}
 		<button type="button" class="z-overflow-menu-item" role="menuitem" onclick={() => run(onDone)}>
-			{bulkAffectedLabel('Done', counts.new, selectedCount)}
+			{bulkAffectedLabel(LABEL_NOT_IMPORTANT, counts.new, selectedCount)}
 		</button>
 	{/if}
 	{#if readCount > 0}
 		<button type="button" class="z-overflow-menu-item" role="menuitem" onclick={() => run(onMarkNew)}>
-			{bulkAffectedLabel('Mark as new', readCount, selectedCount)}
+			{bulkAffectedLabel(LABEL_RESTORE_NEW, readCount, selectedCount)}
 		</button>
 	{/if}
 	{#if canMarkImportant && counts.notImportant > 0}

@@ -107,7 +107,7 @@
 			</div>
 		{:else if thread.length}
 			<div class="z-mail-reader-pane">
-				<MessageReader {thread} mailboxRouteId={mailboxId} onMoved={afterMove} />
+				<MessageReader {thread} mailboxRouteId={mailboxId} onMoved={afterMove} onBackToList={backToList} />
 			</div>
 		{:else}
 			<div class="z-mail-reader-pane">

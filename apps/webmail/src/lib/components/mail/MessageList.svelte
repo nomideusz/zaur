@@ -48,6 +48,7 @@
 	import { cn } from '$lib/utils/cn';
 	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
+	import { LABEL_CLEAR_NEW } from '$lib/mail/new-mail';
 	import {
 		canMarkImportantFromMailboxRole,
 		isExcludedFromImportantSection,
@@ -301,7 +302,7 @@
 			await mail.markMessageDone(auth.client, message);
 			onBulkAction?.();
 		} catch (err) {
-			const text = err instanceof Error ? err.message : 'Could not mark as done';
+			const text = err instanceof Error ? err.message : `Could not mark ${LABEL_CLEAR_NEW.toLowerCase()}`;
 			toast.show(text, 'error');
 		}
 	}

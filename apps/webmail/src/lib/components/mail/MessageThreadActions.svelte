@@ -11,6 +11,12 @@
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
 	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
+	import {
+		LABEL_CLEAR_NEW,
+		LABEL_MARK_IMPORTANT,
+		LABEL_NOT_IMPORTANT,
+		LABEL_RESTORE_NEW
+	} from '$lib/mail/new-mail';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { canMarkImportantFromMailboxRole } from '$lib/mail/mailboxes';
@@ -28,8 +34,10 @@
 		onMoved?: () => void;
 		/** Text-nav overflow trigger for the reader header row. */
 		header?: boolean;
-		/** Done / Mark as new live on the nav row — omit from the menu. */
-		hideTriageInMenu?: boolean;
+		/** When true, Important / Not important are on the nav row — omit from the menu. */
+		hideImportantTriageInMenu?: boolean;
+		/** When true, Not new is on the nav row — omit from the menu. Mark as new stays in More when read. */
+		hideClearNewInMenu?: boolean;
 		/** Reply mode promoted on the nav row — omit its duplicate from the menu. */
 		primaryReplyMode?: 'reply' | 'reply-all';
 	}
@@ -39,7 +47,8 @@
 		mailboxRouteId,
 		onMoved,
 		header = false,
-		hideTriageInMenu = false,
+		hideImportantTriageInMenu = false,
+		hideClearNewInMenu = false,
 		primaryReplyMode = 'reply'
 	}: Props = $props();
 
@@ -115,7 +124,7 @@
 		try {
 			await mail.markMessageDone(auth.client, actionMessage);
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Could not mark as done';
+			const message = error instanceof Error ? error.message : `Could not mark ${LABEL_CLEAR_NEW.toLowerCase()}`;
 			toast.show(message, 'error');
 		}
 	}
@@ -189,24 +198,28 @@
 			<OverflowMenuItem label="Forward" onclick={forward}>
 				{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
 			</OverflowMenuItem>
-			{#if !hideTriageInMenu}
+			{#if !hideClearNewInMenu}
 				{#if actionMessage?.unread}
-					<OverflowMenuItem label="Done" onclick={markDone} />
+					<OverflowMenuItem label={LABEL_CLEAR_NEW} onclick={markDone} />
 				{:else}
-					<OverflowMenuItem label="Mark as new" onclick={markNew} />
+					<OverflowMenuItem label={LABEL_RESTORE_NEW} onclick={markNew} />
 				{/if}
+			{:else if !actionMessage?.unread}
+				<OverflowMenuItem label={LABEL_RESTORE_NEW} onclick={markNew} />
 			{/if}
 			<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-			{#if actionMessage?.important}
-				<OverflowMenuItem label="Unmark important" onclick={toggleImportant}>
-					{#snippet icon()}
-						<Important class="size-5 text-accent" aria-hidden="true" />
-					{/snippet}
-				</OverflowMenuItem>
-			{:else if canMarkImportant}
-				<OverflowMenuItem label="Mark important" onclick={toggleImportant}>
-					{#snippet icon()}<Important class="size-5" aria-hidden="true" />{/snippet}
-				</OverflowMenuItem>
+			{#if !hideImportantTriageInMenu}
+				{#if actionMessage?.important}
+					<OverflowMenuItem label={LABEL_NOT_IMPORTANT} onclick={toggleImportant}>
+						{#snippet icon()}
+							<Important class="size-5 text-accent" aria-hidden="true" />
+						{/snippet}
+					</OverflowMenuItem>
+				{:else if canMarkImportant}
+					<OverflowMenuItem label={LABEL_MARK_IMPORTANT} onclick={toggleImportant}>
+						{#snippet icon()}<Important class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+				{/if}
 			{/if}
 			{#if auth.client}
 				<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />

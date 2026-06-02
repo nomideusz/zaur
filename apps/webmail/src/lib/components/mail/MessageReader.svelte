@@ -5,12 +5,14 @@
 	let {
 		thread,
 		mailboxRouteId,
-		onMoved
+		onMoved,
+		onBackToList
 	}: {
 		thread: MessageDetail[];
 		mailboxRouteId: string;
 		onMoved?: () => void;
+		onBackToList?: () => void;
 	} = $props();
 </script>
 
-<MessageReaderCore {thread} {mailboxRouteId} {onMoved} minimalChrome />
+<MessageReaderCore {thread} {mailboxRouteId} {onMoved} {onBackToList} minimalChrome />

@@ -1,4 +1,5 @@
 import type { Mailbox, MailboxRole, MessagePreview } from '../types/mail';
+import { LABEL_MARK_IMPORTANT, LABEL_NOT_IMPORTANT } from './new-mail.ts';
 
 export type ListSwipeActionVariant = 'default' | 'danger' | 'accent';
 
@@ -38,13 +39,13 @@ export function listSwipeLeadingActions(ctx: ListSwipeContext): ListSwipeAction[
 
 	if (isNew) {
 		if (canMarkImportant && !message.important) {
-			return [{ id: 'mark-important', label: 'Important', variant: 'accent' }];
+			return [{ id: 'mark-important', label: LABEL_MARK_IMPORTANT, variant: 'accent' }];
 		}
-		return [{ id: 'done', label: 'Done', variant: 'default' }];
+		return [{ id: 'done', label: LABEL_NOT_IMPORTANT, variant: 'default' }];
 	}
 
 	if (canMarkImportant && !message.important) {
-		return [{ id: 'mark-important', label: 'Important', variant: 'accent' }];
+		return [{ id: 'mark-important', label: LABEL_MARK_IMPORTANT, variant: 'accent' }];
 	}
 
 	return [];

@@ -229,10 +229,13 @@
 					break;
 				case 'd':
 					event.preventDefault();
-					void withLatest((message) => {
-						if (!auth.client || !message.unread) return;
-						return mail.markMessageDone(auth.client, message);
-					});
+					void withLatest(
+						(message) => {
+							if (!auth.client || !message.unread) return;
+							return mail.markMessageDone(auth.client, message);
+						},
+						{ leaveThread: true }
+					);
 					break;
 				case 'u':
 					event.preventDefault();
@@ -258,10 +261,10 @@
 							break;
 						}
 					}
-					void mail.toggleImportant(auth.client, importantTarget).catch((error) => {
-						const message = error instanceof Error ? error.message : 'Could not update important';
-						toast.show(message, 'error');
-					});
+					void withLatest(
+						(message) => mail.toggleImportant(auth.client!, message),
+						{ leaveThread: true }
+					);
 					break;
 				case '#':
 				case 'Delete':

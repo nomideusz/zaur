@@ -19,9 +19,14 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { renderMessageBody } from '$lib/email/html';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
+	import { canMarkImportantFromMailboxRole, shouldPresentImportantColors } from '$lib/mail/mailboxes';
+	import {
+		LABEL_CLEAR_NEW,
+		LABEL_MARK_IMPORTANT,
+		LABEL_NOT_IMPORTANT
+	} from '$lib/mail/new-mail';
 	import { createImportantRainbowTouchPick } from '$lib/mail/important-rainbow-touch';
 	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
-	import { shouldPresentImportantColors } from '$lib/mail/mailboxes';
 	import { hasPreciseHover } from '$lib/utils/pointer-env';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
@@ -30,17 +35,20 @@
 		thread: MessageDetail[];
 		mailboxRouteId: string;
 		onMoved?: () => void;
+		/** Return to the mailbox list after triage (Important / Not important). */
+		onBackToList?: () => void;
 		/** Reduced chrome when the list rail is hidden. */
 		minimalChrome?: boolean;
 	}
 
-	let { thread, mailboxRouteId, onMoved, minimalChrome = false }: Props = $props();
+	let { thread, mailboxRouteId, onMoved, onBackToList, minimalChrome = false }: Props = $props();
 
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
 	let localShowImagesOnce = $state(false);
 	let expandedIds = $state<Set<string>>(new Set());
 	let scrollPane = $state<HTMLDivElement | null>(null);
 	let readerSubjectEl = $state<HTMLHeadingElement | null>(null);
+	let triageLeaving = $state(false);
 
 	const latest = $derived(thread.at(-1));
 	const actionMessage = $derived(
@@ -57,7 +65,45 @@
 	);
 	const subjectMessageId = $derived(subjectAnchorId ?? '');
 	const isDraft = $derived(mailboxRouteId === 'drafts');
-	const mailHomeHref = $derived(settings.preferredMailHref());
+	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
+	const canMarkImportant = $derived(canMarkImportantFromMailboxRole(currentMailbox?.role));
+	const listHref = $derived.by(() => {
+		const returnTo = $page.url.searchParams.get('returnTo');
+		if (returnTo?.startsWith('/mail/search')) return returnTo;
+		return mailListHref(mailboxRouteId);
+	});
+	const showNavImportant = $derived(
+		!triageLeaving &&
+			!mail.hasSelection &&
+			!!latest &&
+			!isDraft &&
+			!!actionMessage &&
+			canMarkImportant &&
+			!actionMessage.important
+	);
+	const showNavNotImportant = $derived(
+		!triageLeaving &&
+			!mail.hasSelection &&
+			!!latest &&
+			!isDraft &&
+			!!actionMessage &&
+			canMarkImportant &&
+			(actionMessage.important || actionMessage.unread)
+	);
+	const showNavClearNew = $derived(
+		!triageLeaving &&
+			!mail.hasSelection &&
+			!!latest &&
+			!isDraft &&
+			!!actionMessage?.unread &&
+			!canMarkImportant
+	);
+	const hideImportantTriageInMenu = $derived(
+		triageLeaving || showNavImportant || showNavNotImportant
+	);
+	const hideClearNewInMenu = $derived(
+		triageLeaving || showNavClearNew || (showNavNotImportant && !!actionMessage?.unread)
+	);
 	const primaryReplyLabel = $derived(
 		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
 	);
@@ -88,6 +134,7 @@
 	$effect(() => {
 		$page.params.threadId;
 		thread.map((m) => m.id).join(',');
+		triageLeaving = false;
 		settings.expandAllThreadMessages;
 		if (pane) pane.setShowImagesOnce(false);
 		else localShowImagesOnce = false;
@@ -143,24 +190,51 @@
 		else localShowImagesOnce = true;
 	}
 
-	async function markDone() {
-		if (!auth.client || !actionMessage?.unread) return;
+	async function runTriageAction(
+		action: () => Promise<void>,
+		errorLabel: string
+	) {
+		if (triageLeaving) return;
+		triageLeaving = true;
+		onBackToList?.();
 		try {
-			await mail.markMessageDone(auth.client, actionMessage);
+			await action();
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Could not mark as done';
+			triageLeaving = false;
+			const message = error instanceof Error ? error.message : errorLabel;
 			toast.show(message, 'error');
 		}
 	}
 
-	async function markNew() {
-		if (!auth.client || !actionMessage || actionMessage.unread) return;
-		try {
-			await mail.markMessageNew(auth.client, actionMessage);
-		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Could not mark as new';
-			toast.show(message, 'error');
+	async function triageMarkImportant() {
+		if (!auth.client || !actionMessage || actionMessage.important) return;
+		await runTriageAction(
+			() => mail.toggleImportant(auth.client!, actionMessage),
+			`Could not mark ${LABEL_MARK_IMPORTANT.toLowerCase()}`
+		);
+	}
+
+	async function triageNotImportant() {
+		if (!auth.client || !actionMessage) return;
+		if (actionMessage.important) {
+			await runTriageAction(
+				() => mail.toggleImportant(auth.client!, actionMessage),
+				`Could not mark ${LABEL_NOT_IMPORTANT.toLowerCase()}`
+			);
+		} else if (actionMessage.unread) {
+			await runTriageAction(
+				() => mail.markMessageDone(auth.client!, actionMessage),
+				`Could not mark ${LABEL_NOT_IMPORTANT.toLowerCase()}`
+			);
 		}
+	}
+
+	async function triageClearNew() {
+		if (!auth.client || !actionMessage?.unread) return;
+		await runTriageAction(
+			() => mail.markMessageDone(auth.client!, actionMessage),
+			`Could not mark ${LABEL_CLEAR_NEW.toLowerCase()}`
+		);
 	}
 
 	function reply() {
@@ -258,21 +332,29 @@
 			<div class="z-mail-text-nav z-reader-sticky-nav">
 				<div class="z-mail-text-nav__row">
 					<div class="z-mail-text-nav__links min-w-0 shrink-0">
-						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
-						{#if !mail.hasSelection && latest && !isDraft}
-							{#if actionMessage?.unread}
-								<button type="button" class="z-mail-text-nav__link" onclick={() => void markDone()}>
-									Done
-								</button>
-							{:else}
-								<button
-									type="button"
-									class="z-mail-text-nav__link text-fg-subtle"
-									onclick={() => void markNew()}
-								>
-									Mark as new
-								</button>
-							{/if}
+						<a class="z-mail-text-nav__link" href={listHref}>Back to mail</a>
+						{#if showNavImportant}
+							<button
+								type="button"
+								class="z-mail-text-nav__link"
+								onclick={() => void triageMarkImportant()}
+							>
+								{LABEL_MARK_IMPORTANT}
+							</button>
+						{/if}
+						{#if showNavNotImportant}
+							<button
+								type="button"
+								class="z-mail-text-nav__link"
+								onclick={() => void triageNotImportant()}
+							>
+								{LABEL_NOT_IMPORTANT}
+							</button>
+						{/if}
+						{#if showNavClearNew}
+							<button type="button" class="z-mail-text-nav__link" onclick={() => void triageClearNew()}>
+								{LABEL_CLEAR_NEW}
+							</button>
 						{/if}
 					</div>
 					{#if !mail.hasSelection && latest}
@@ -298,7 +380,8 @@
 								{mailboxRouteId}
 								{onMoved}
 								header
-								hideTriageInMenu
+								{hideClearNewInMenu}
+								{hideImportantTriageInMenu}
 								primaryReplyMode={settings.defaultReplyMode}
 							/>
 						</div>
