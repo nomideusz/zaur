@@ -15,6 +15,8 @@ import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 		menuId?: string;
 		placement?: OverflowMenuPlacement;
 		triggerText?: string;
+		/** Match text-nav links — no chrome padding or text-sm. */
+		textTrigger?: boolean;
 		class?: string;
 		menuClass?: string;
 		triggerClass?: string;
@@ -27,6 +29,7 @@ import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 		menuId = 'overflow-menu',
 		placement = 'bottom',
 		triggerText = '',
+		textTrigger = false,
 		class: className = '',
 		menuClass = '',
 		triggerClass = '',
@@ -101,7 +104,7 @@ import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 
 <svelte:window onclick={handleWindowClick} />
 
-<div bind:this={root} class={cn('relative shrink-0', className)}>
+<div bind:this={root} class={cn(textTrigger ? 'contents' : cn('relative shrink-0', className))}>
 	{#if triggerText}
 		<button
 			bind:this={triggerEl}
@@ -111,13 +114,15 @@ import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 			aria-controls={menuId}
 			aria-haspopup="menu"
 			class={cn(
-				'inline-flex min-h-8 items-center gap-1 rounded-sm px-2.5 py-1.5 text-sm text-fg-muted transition-colors hover:bg-surface-sunken/60 hover:text-fg',
+				textTrigger
+					? 'inline-flex items-baseline gap-0.5 border-0 bg-transparent p-0'
+					: 'inline-flex min-h-8 items-center gap-1 rounded-sm px-2.5 py-1.5 text-sm text-fg-muted transition-colors hover:bg-surface-sunken/60 hover:text-fg',
 				triggerClass
 			)}
 			onclick={toggleOpen}
 		>
 			<span>{triggerText}</span>
-			<ChevronDown class="size-4" aria-hidden="true" />
+			<ChevronDown class={textTrigger ? 'size-3.5 shrink-0' : 'size-4'} aria-hidden="true" />
 		</button>
 	{:else}
 		<IconButton

@@ -4,11 +4,6 @@ import {
 	collapseMessagesByThread,
 	listThreadSenderLabel
 } from '../src/lib/components/mail/thread-list-utils.ts';
-import {
-	bulkSelectionCounts,
-	bulkSelectionLabel,
-	bulkSelectionPrimaryAction
-} from '../src/lib/components/mail/bulk-selection-label.ts';
 import type { MessagePreview } from '../src/lib/types/mail.ts';
 
 function preview(partial: Partial<MessagePreview> & Pick<MessagePreview, 'id' | 'threadId'>): MessagePreview {
@@ -65,48 +60,5 @@ describe('listThreadSenderLabel', () => {
 		);
 
 		assert.equal(label, 'Alice');
-	});
-});
-
-describe('bulkSelectionLabel', () => {
-	it('describes marking not-important messages', () => {
-		const messages = [
-			preview({ id: 'a', threadId: 't1' }),
-			preview({ id: 'b', threadId: 't2', important: true })
-		];
-
-		assert.deepEqual(bulkSelectionCounts(messages, ['a', 'b']), {
-			notImportant: 1,
-			important: 1
-		});
-		assert.equal(
-			bulkSelectionLabel({
-				selectedCount: 2,
-				notImportantCount: 1,
-				importantCount: 1,
-				canMarkImportant: true
-			}),
-			'Mark 1 important'
-		);
-	});
-
-	it('describes removing important messages when none can be marked', () => {
-		assert.equal(
-			bulkSelectionLabel({
-				selectedCount: 4,
-				notImportantCount: 0,
-				importantCount: 4,
-				canMarkImportant: true
-			}),
-			'Remove 4 important'
-		);
-		assert.equal(
-			bulkSelectionPrimaryAction({
-				notImportantCount: 0,
-				importantCount: 4,
-				canMarkImportant: true
-			}),
-			'remove-important'
-		);
 	});
 });

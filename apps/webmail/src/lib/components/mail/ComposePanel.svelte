@@ -194,7 +194,7 @@
 		});
 
 		function onKeydown(event: KeyboardEvent) {
-			if (event.key === 'Escape') close();
+			if (event.key === 'Escape') void saveDraftAndClose();
 		}
 		window.addEventListener('keydown', onKeydown);
 		return () => window.removeEventListener('keydown', onKeydown);
@@ -220,16 +220,25 @@
 		else if (result === 'queued') goto(mailHomeHref);
 	}
 
-	function close() {
-		const hasContent = !compose.isComposeEmpty;
+	async function saveDraftAndClose() {
+		await compose.saveDraftAndLeave(auth.client, auth.username ?? '', senderName);
+		goto(mailHomeHref);
+	}
 
-		if (hasContent && settings.confirmBeforeDiscardCompose && !confirm('Discard this message?')) {
+	async function discardAndClose() {
+		if (
+			!compose.isComposeEmpty &&
+			settings.confirmBeforeDiscardCompose &&
+			!confirm('Discard this message?')
+		) {
 			return;
 		}
 
-		void compose.discard(auth.client);
+		await compose.discard(auth.client);
 		goto(mailHomeHref);
 	}
+
+	const leaveLabel = $derived(compose.isComposeEmpty ? 'Close' : 'Save draft');
 
 	function openFilePicker() {
 		fileInput?.click();
@@ -278,9 +287,22 @@
 <section class="z-compose" aria-label="Compose message">
 	<div class={cn(contentPagePadClass(), 'z-compose__page')}>
 		<div class="z-mail-text-nav z-compose__nav">
-			<h1 class="sr-only">{composeTitle}</h1>
+			<p class="sr-only">{composeTitle}</p>
 			<div class="z-mail-text-nav__row">
-				<button type="button" class="z-mail-text-nav__link" onclick={close}>Discard</button>
+				<div class="flex min-w-0 shrink-0 items-center gap-2">
+					<button type="button" class="z-mail-text-nav__link" onclick={() => void saveDraftAndClose()}>
+						{leaveLabel}
+					</button>
+					{#if !compose.isComposeEmpty}
+						<button
+							type="button"
+							class="z-mail-text-nav__link text-fg-subtle"
+							onclick={() => void discardAndClose()}
+						>
+							Discard
+						</button>
+					{/if}
+				</div>
 				<div class="z-mail-text-nav__links">
 					<button type="button" class="z-mail-text-nav__link" onclick={openFilePicker}>
 						Attach file
@@ -408,7 +430,7 @@
 							</div>
 							<button
 								type="button"
-								class="inline-flex shrink-0 items-center text-fg-subtle transition-colors hover:text-fg ml-2"
+								class="z-icon-tap-target z-icon-tap-target--sm ml-2"
 								aria-label="Remove {attachment.name}"
 								onclick={() => compose.removeAttachment(attachment.id)}
 							>

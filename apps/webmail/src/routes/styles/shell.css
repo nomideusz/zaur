@@ -18,7 +18,7 @@
 	}
 
 	.z-mobile-reader-bar__icon-btn {
-		@apply !min-h-11 !min-w-11 shrink-0 rounded-md border border-border bg-surface;
+		@apply !min-h-11 !min-w-11 shrink-0 !rounded-md !border !border-border !bg-surface hover:!bg-surface-sunken;
 	}
 
 	.z-mobile-folder-picker {

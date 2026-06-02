@@ -25,7 +25,6 @@ export type DefaultReplyMode = 'reply' | 'reply-all';
 export type ComposeFormat = 'plain' | 'html';
 export type TimeFormat = 'auto' | '12h' | '24h';
 export type SearchScope = 'all' | 'current-folder';
-export type MarkAsReadDelay = 0 | 500 | 1000 | 2000;
 export type UndoSendDelay = 0 | 5000 | 10000 | 20000;
 
 const STORAGE = {
@@ -54,12 +53,10 @@ const STORAGE = {
 	defaultReplyMode: 'zaur:default-reply-mode',
 	defaultComposeFormat: 'zaur:default-compose-format',
 	useSignature: (email: string) => `zaur:use-signature:${email}`,
-	markAsReadOnOpen: 'zaur:mark-read-on-open',
 	showUnreadInTitle: 'zaur:show-unread-in-title',
 	showUnreadAppBadge: 'zaur:show-unread-app-badge',
 	notifyOnNewMail: 'zaur:notify-new-mail',
 	bccSelf: 'zaur:bcc-self',
-	markAsReadDelay: 'zaur:mark-as-read-delay',
 	timeFormat: 'zaur:time-format',
 	searchScope: 'zaur:search-scope',
 	hideActionToasts: 'zaur:hide-action-toasts',
@@ -209,10 +206,6 @@ function readUseSignature(email: string | null): boolean {
 	return localStorage.getItem(STORAGE.useSignature(email)) !== 'false';
 }
 
-function readMarkAsReadOnOpen(): boolean {
-	return readBool(STORAGE.markAsReadOnOpen, true);
-}
-
 function readShowUnreadInTitle(): boolean {
 	return readBool(STORAGE.showUnreadInTitle, true);
 }
@@ -227,13 +220,6 @@ function readNotifyOnNewMail(): boolean {
 
 function readBccSelf(): boolean {
 	return readBool(STORAGE.bccSelf, false);
-}
-
-function readMarkAsReadDelay(): MarkAsReadDelay {
-	if (!browser) return 0;
-	const value = Number(localStorage.getItem(STORAGE.markAsReadDelay));
-	if (value === 500 || value === 1000 || value === 2000) return value;
-	return 0;
 }
 
 function readTimeFormat(): TimeFormat {
@@ -307,12 +293,10 @@ class SettingsStore {
 	focusReadingDefault = $state(readFocusReadingDefault());
 	defaultReplyMode = $state<DefaultReplyMode>(readDefaultReplyMode());
 	defaultComposeFormat = $state<ComposeFormat>(readDefaultComposeFormat());
-	markAsReadOnOpen = $state(readMarkAsReadOnOpen());
 	showUnreadInTitle = $state(readShowUnreadInTitle());
 	showUnreadAppBadge = $state(readShowUnreadAppBadge());
 	notifyOnNewMail = $state(readNotifyOnNewMail());
 	bccSelf = $state(readBccSelf());
-	markAsReadDelay = $state<MarkAsReadDelay>(readMarkAsReadDelay());
 	timeFormat = $state<TimeFormat>(readTimeFormat());
 	searchScope = $state<SearchScope>(readSearchScope());
 	hideActionToasts = $state(readHideActionToasts());
@@ -354,12 +338,10 @@ class SettingsStore {
 		this.focusReadingDefault = readFocusReadingDefault();
 		this.defaultReplyMode = readDefaultReplyMode();
 		this.defaultComposeFormat = readDefaultComposeFormat();
-		this.markAsReadOnOpen = readMarkAsReadOnOpen();
 		this.showUnreadInTitle = readShowUnreadInTitle();
 		this.showUnreadAppBadge = readShowUnreadAppBadge();
 		this.notifyOnNewMail = readNotifyOnNewMail();
 		this.bccSelf = readBccSelf();
-		this.markAsReadDelay = readMarkAsReadDelay();
 		this.timeFormat = readTimeFormat();
 		this.searchScope = readSearchScope();
 		this.hideActionToasts = readHideActionToasts();
@@ -593,11 +575,6 @@ class SettingsStore {
 		this.writeStorage(STORAGE.useSignature(this.userEmail), String(value));
 	}
 
-	setMarkAsReadOnOpen(value: boolean) {
-		this.markAsReadOnOpen = value;
-		if (browser) this.writeStorage(STORAGE.markAsReadOnOpen, String(value));
-	}
-
 	setShowUnreadInTitle(value: boolean) {
 		this.showUnreadInTitle = value;
 		if (browser) {
@@ -630,11 +607,6 @@ class SettingsStore {
 	setBccSelf(value: boolean) {
 		this.bccSelf = value;
 		if (browser) this.writeStorage(STORAGE.bccSelf, String(value));
-	}
-
-	setMarkAsReadDelay(value: MarkAsReadDelay) {
-		this.markAsReadDelay = value;
-		if (browser) this.writeStorage(STORAGE.markAsReadDelay, String(value));
 	}
 
 	setTimeFormat(value: TimeFormat) {
@@ -709,7 +681,6 @@ class SettingsStore {
 		this.setPreferPlainText(false);
 		this.setBlockExternalContent(true);
 		this.setExpandAllThreadMessages(false);
-		this.setMarkAsReadOnOpen(true);
 		this.setConfirmBeforeDelete(true);
 		this.setHideActionToasts(false);
 		this.setTimeFormat('auto');

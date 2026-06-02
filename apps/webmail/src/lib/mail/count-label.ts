@@ -8,6 +8,6 @@ export function mailCountLabel(
 ): string {
 	const totalCount = total ?? messageCount;
 	const unread = mailbox?.unread ?? 0;
-	if (unread > 0) return `${unread} unread · ${totalCount}`;
+	if (unread > 0) return `${unread} new · ${totalCount}`;
 	return String(totalCount);
 }

@@ -130,6 +130,35 @@ class ComposeStore {
 		void this.clearLocalDraft();
 	}
 
+	async restoreOrStartNew() {
+		if (!browser) {
+			this.resetComposeFields();
+			return;
+		}
+
+		const { getAccountId, getComposeDraft } = await import('$lib/db');
+		const accountId = getAccountId();
+		if (!accountId) {
+			this.resetComposeFields();
+			return;
+		}
+
+		const draft = await getComposeDraft(accountId);
+		if (!draft) {
+			this.resetComposeFields();
+			return;
+		}
+
+		await this.restoreLocalDraft();
+	}
+
+	private cancelAutosaveTimers() {
+		if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
+		if (this.serverDraftTimer) clearTimeout(this.serverDraftTimer);
+		this.autosaveTimer = null;
+		this.serverDraftTimer = null;
+	}
+
 	private async restoreLocalDraft() {
 		if (!browser) return;
 
@@ -412,9 +441,41 @@ class ComposeStore {
 
 	reset() {
 		this.cancelPendingSend();
-		if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
-		if (this.serverDraftTimer) clearTimeout(this.serverDraftTimer);
+		this.cancelAutosaveTimers();
 		void this.clearLocalDraft();
+		this.clearComposeFields();
+		this.isSending = false;
+		this.isSavingDraft = false;
+	}
+
+	async saveDraft(client: JMAPClient | null, fromEmail: string, fromName?: string) {
+		if (this.isComposeEmpty) return;
+
+		await this.persistLocalDraft({ force: true });
+
+		if (client && fromEmail) {
+			await this.saveServerDraft(client, fromEmail, fromName);
+		}
+	}
+
+	async saveDraftAndLeave(client: JMAPClient | null, fromEmail: string, fromName?: string) {
+		this.cancelPendingSend();
+		this.cancelAutosaveTimers();
+
+		if (this.isComposeEmpty) {
+			await this.clearLocalDraft();
+			this.clearComposeFields();
+			this.isSending = false;
+			this.isSavingDraft = false;
+			return;
+		}
+
+		await this.saveDraft(client, fromEmail, fromName);
+
+		if (this.jmapDraftId) {
+			await this.clearLocalDraft();
+		}
+
 		this.clearComposeFields();
 		this.isSending = false;
 		this.isSavingDraft = false;
@@ -422,8 +483,7 @@ class ComposeStore {
 
 	async discard(client: JMAPClient | null) {
 		this.cancelPendingSend();
-		if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
-		if (this.serverDraftTimer) clearTimeout(this.serverDraftTimer);
+		this.cancelAutosaveTimers();
 
 		const draftId = this.jmapDraftId;
 		if (draftId && client) {
@@ -683,9 +743,9 @@ class ComposeStore {
 		}
 	}
 
-	private async persistLocalDraft() {
+	private async persistLocalDraft(options?: { force?: boolean }) {
 		if (!browser) return;
-		if (this.mode !== 'new' && !this.attachments.length) return;
+		if (!options?.force && this.mode !== 'new' && !this.attachments.length) return;
 		if (this.isComposeEmpty) {
 			await this.clearLocalDraft();
 			const draftId = this.jmapDraftId;
@@ -753,6 +813,9 @@ class ComposeStore {
 			this.jmapDraftId = id;
 			this.draftSavedAt = Date.now();
 			void this.persistLocalDraft();
+			void import('$lib/stores/mail.svelte').then(({ mail }) => {
+				void mail.refreshAfterSend(client);
+			});
 		} catch {
 			// Server draft save is best-effort
 		} finally {

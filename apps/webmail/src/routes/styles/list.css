@@ -53,14 +53,80 @@
 
 	.z-mail-list-bulk-bar {
 		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
+		flex-wrap: nowrap;
+		align-items: baseline;
 		gap: 0.5rem 0.75rem;
-		border-top: 1px solid var(--z-border);
-		background-color: color-mix(in srgb, var(--z-surface) 95%, transparent);
-		padding-top: 0.5rem;
-		padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-		backdrop-filter: blur(8px);
+		min-width: 0;
+	}
+
+	/* Bulk bar replaces list header — same row metrics as title + action. */
+	.z-mail-text-nav .z-mail-list-bulk-bar {
+		border: none;
+		background: transparent;
+		backdrop-filter: none;
+		padding: 0;
+		margin: 0;
+		flex-wrap: nowrap;
+		align-items: baseline;
+	}
+
+	.z-mail-list-bulk-bar__controls {
+		display: flex;
+		flex-shrink: 0;
+		align-items: baseline;
+		gap: 0.5rem;
+	}
+
+	.z-mail-list-bulk-bar__links {
+		flex-shrink: 0;
+		flex-wrap: nowrap;
+	}
+
+	.z-mail-list-bulk-bar__select-trigger {
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		color: var(--z-fg-muted);
+		cursor: pointer;
+		line-height: 1.45;
+	}
+
+	.z-mail-list-bulk-bar__select-trigger:hover {
+		color: var(--z-fg);
+	}
+
+	.z-mail-list-bulk-bar__select-trigger:focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: 2px;
+		border-radius: 0.125rem;
+	}
+
+	.z-mail-text-nav .z-mail-list-bulk-bar__controls .z-mail-text-nav__link {
+		flex-shrink: 0;
+	}
+
+	.z-mail-list-bulk-bar__summary {
+		min-width: 0;
+		flex: 1 1 auto;
+		margin: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: var(--z-main-page-text);
+		line-height: 1.45;
+	}
+
+	.z-mail-list-bulk-bar__headline {
+		font-weight: 600;
+		color: var(--z-fg);
+	}
+
+	.z-mail-list-bulk-bar__detail {
+		font-weight: 400;
+		color: var(--z-fg-muted);
 	}
 
 	.z-mail-view .z-content-shell .z-mail-list-bulk-bar {
@@ -72,45 +138,90 @@
 	.z-mail-view .z-content-shell .z-mail-list-bulk-bar__checkbox {
 		position: absolute;
 		left: calc(-1 * var(--z-list-checkbox-gutter));
-		top: 50%;
-		translate: 0 -50%;
+		top: 0.35rem;
+		translate: none;
 		margin: 0;
 	}
 
-	/* Bulk bar sits directly under the message list (not sticky). */
-	.z-mail-view .z-mail-list-bulk-bar--inline {
-		position: relative;
-		margin-top: var(--z-main-gap);
+	/* Bulk header shares list checkbox gutter on desktop; sticks while selecting. */
+	.z-mail-text-nav--bulk {
+		--z-list-checkbox-gutter: 1.25rem;
+		position: sticky;
+		top: 0;
+		z-index: 10;
+		margin-inline-start: calc(-1 * var(--z-list-checkbox-gutter));
+		padding-inline-start: var(--z-list-checkbox-gutter);
+		background-color: color-mix(in srgb, var(--z-surface) 95%, transparent);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
 	}
 
-	@media (max-width: 767px) {
-		.z-mail-view .z-mail-list-bulk-bar--inline {
-			min-height: 3.25rem;
-			align-items: center;
-			padding-top: 0.625rem;
-			padding-bottom: max(1rem, calc(env(safe-area-inset-bottom) + 0.75rem));
-			margin-bottom: max(0.75rem, env(safe-area-inset-bottom));
-		}
+	/* Folder / inbox list header — same row layout as compose; sticks while scrolling. */
+	.z-mail-view .z-mail-text-nav--list {
+		position: sticky;
+		top: 0;
+		z-index: 10;
+		background-color: color-mix(in srgb, var(--z-surface) 95%, transparent);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
 	}
 
-	.z-mail-list-bulk-bar__select {
+	.z-mail-list-nav-bar {
+		align-items: baseline;
+	}
+
+	.z-mail-list-nav-bar__lead {
 		display: flex;
 		flex-shrink: 0;
-		align-items: center;
-		gap: 0.125rem;
+		align-items: baseline;
+		gap: 0.5rem;
 	}
 
-	.z-mail-list-bulk-bar__cancel {
-		min-height: 2.5rem;
-		min-width: 2.5rem;
+	.z-mail-list-nav-bar__title-wrap--folder {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.z-mail-list-nav-bar__title-wrap--folder .z-mail-text-nav__title {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.z-mail-list-nav-bar__links {
+		flex-shrink: 0;
+		flex-wrap: nowrap;
+	}
+
+	/* Selecting — align every row checkbox; New section extra inset breaks the column. */
+	.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new {
+		padding-inline-start: 0;
+	}
+
+	.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new::before {
+		display: none;
+	}
+
+	.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new .z-mail-list-row__checkbox {
+		left: calc(-1 * var(--z-list-checkbox-gutter));
+	}
+
+	.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new .z-mail-list-row::before {
+		width: var(--z-list-checkbox-gutter);
+	}
+
+	.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a),
+	.z-mail-view .z-mail-list--selecting .z-mail-list-row .z-mail-list-swipe-row {
+		cursor: pointer;
+		user-select: none;
 	}
 
 	.z-mail-list-bulk-bar__count {
 		min-width: 0;
 		flex: 1 1 auto;
-		font-size: var(--z-main-page-muted-text);
-		line-height: 1.55;
-		font-weight: 500;
+		font-size: var(--z-main-page-text);
+		line-height: 1.45;
+		font-weight: 600;
 		color: var(--z-fg);
 	}
 
@@ -137,10 +248,10 @@
 
 	.z-mail-list-bulk-bar__actions {
 		display: flex;
+		flex: 0 0 auto;
 		flex-shrink: 0;
-		align-items: center;
-		gap: 0.25rem;
-		overflow-x: auto;
+		align-items: baseline;
+		gap: 1rem;
 	}
 
 	.z-mail-list-bulk-bar__btn {
@@ -148,6 +259,54 @@
 		flex-shrink: 0;
 		padding-inline: 0.625rem;
 		font-size: 0.75rem;
+	}
+
+	@media (max-width: 639px) {
+		.z-mail-list-bulk-bar__btn.z-btn-ghost {
+			min-width: 2.75rem;
+			justify-content: center;
+			padding-inline: 0.5rem;
+			border-radius: 0.375rem;
+			background-color: color-mix(in srgb, var(--z-surface-sunken) 40%, transparent);
+		}
+
+		.z-mail-text-nav .z-mail-list-bulk-bar__btn.z-btn-ghost {
+			min-width: 0;
+			padding-inline: 0;
+			border-radius: 0;
+			background: transparent;
+		}
+
+		.z-mail-list-bulk-bar__btn.z-btn-ghost:hover {
+			background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
+		}
+
+		.z-mail-text-nav .z-mail-list-bulk-bar__btn.z-btn-ghost:hover {
+			background: transparent;
+		}
+
+		.z-mail-list-bulk-bar__btn:not(.z-btn-ghost) {
+			min-width: 2.75rem;
+			justify-content: center;
+			padding-inline: 0.5rem;
+			border-radius: 0.375rem;
+			background-color: color-mix(in srgb, var(--z-danger) 12%, transparent);
+		}
+
+		.z-mail-text-nav .z-mail-list-bulk-bar__btn:not(.z-btn-ghost) {
+			min-width: 0;
+			padding-inline: 0;
+			border-radius: 0;
+			background: transparent;
+		}
+
+		.z-mail-list-bulk-bar__btn:not(.z-btn-ghost):hover {
+			background-color: color-mix(in srgb, var(--z-danger) 18%, transparent);
+		}
+
+		.z-mail-text-nav .z-mail-list-bulk-bar__btn:not(.z-btn-ghost):hover {
+			background: transparent;
+		}
 	}
 
 	@media (min-width: 640px) {
@@ -161,8 +320,13 @@
 	@media (max-width: 767px) {
 		.z-mail-view .z-mail-list-bulk-bar {
 			flex-wrap: nowrap;
-			align-items: center;
+			align-items: baseline;
 			gap: 0.375rem;
+		}
+
+		.z-mail-view .z-mail-list-bulk-bar__summary {
+			flex: 1 1 auto;
+			min-width: 0;
 		}
 
 		.z-mail-view .z-mail-list-bulk-bar__count {
@@ -174,17 +338,8 @@
 			white-space: nowrap;
 		}
 
-		.z-mail-view .z-mail-list-bulk-bar__actions {
-			flex: 1 1 auto;
-			min-width: 0;
-			justify-content: flex-end;
-			overflow-x: auto;
-			-webkit-overflow-scrolling: touch;
-			scrollbar-width: none;
-		}
-
-		.z-mail-view .z-mail-list-bulk-bar__actions::-webkit-scrollbar {
-			display: none;
+		.z-mail-view .z-mail-list-bulk-bar__links {
+			flex: 0 0 auto;
 		}
 	}
 
@@ -286,6 +441,17 @@
 			translate: none;
 			flex-shrink: 0;
 			margin: 0;
+			margin-top: 0.35rem;
+		}
+
+		.z-mail-text-nav--bulk {
+			margin-inline-start: 0;
+			padding-inline-start: 0;
+		}
+
+		.z-mail-list-bulk-bar__controls {
+			align-items: flex-start;
+			gap: 0.625rem;
 		}
 
 		/* Reset padding of the New section on mobile selecting view and hide its unread vertical stroke */
@@ -332,25 +498,30 @@
 
 	.z-mail-list-color-cycle {
 		display: inline-flex;
-		align-items: flex-start;
+		align-items: center;
 		justify-content: center;
-		width: 100%;
-		height: calc(var(--z-main-page-text) * 1.4);
-		padding: 0;
+		min-width: 1.75rem;
+		min-height: 1.75rem;
+		padding: 0.25rem;
 		border: none;
-		background: transparent;
+		border-radius: 0.375rem;
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 40%, transparent);
 		color: hsl(var(--important-hue, 0deg), var(--important-rainbow-s), var(--important-rainbow-l));
 		cursor: pointer;
+		transition: background-color 150ms ease;
+	}
+
+	.z-mail-list-color-cycle:hover {
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
 	}
 
 	.z-mail-list-color-cycle:active {
-		opacity: 0.7;
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 80%, transparent);
 	}
 
 	.z-mail-list-color-cycle:focus-visible {
 		outline: 2px solid var(--z-accent);
 		outline-offset: 2px;
-		border-radius: 0.25rem;
 	}
 
 	/* Inbox home + folder sections — vertical rhythm. */
@@ -418,6 +589,7 @@
 		display: inline-flex;
 		align-items: center;
 		gap: 0.5rem;
+		margin: 0;
 		font-size: var(--z-main-page-text);
 		font-weight: 600;
 		line-height: 1.35;

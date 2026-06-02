@@ -7,6 +7,12 @@
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
 	import DinoZaur from '$lib/components/mail/DinoZaur.svelte';
 	import Palette from '$lib/components/icons/Palette.svelte';
+	import {
+		listSwipeContext,
+		listSwipeLeadingActions,
+		listSwipeTrailingActions,
+		type ListSwipeAction
+	} from '$lib/mail/list-swipe-actions';
 	import SwipeableListRow, {
 		type SwipeAction
 	} from '$lib/components/ui/SwipeableListRow.svelte';
@@ -217,39 +223,85 @@
 		suppressRowNavigationUntil = Date.now() + 400;
 	}
 
-	function listSwipeLeadingActions(message: MessagePreview, routeId: string): SwipeAction[] {
+	function swipeContext(message: MessagePreview, routeId: string) {
 		const mailbox = mail.mailboxByRouteId(routeId);
-		if (!mail.canArchiveFrom(mailbox)) return [];
-		return [
-			{
-				id: 'archive',
-				label: 'Archive',
-				variant: 'accent',
-				onAction: () => void swipeArchiveMessage(message, routeId)
-			}
-		];
+		return listSwipeContext(message, mailbox, {
+			canMarkImportant: mail.canMarkImportantInMailbox(mailbox),
+			hasInbox: mail.mailboxes.some((mb) => mb.role === 'inbox' && mb.jmapId)
+		});
 	}
 
-	function listSwipeTrailingActions(message: MessagePreview, routeId: string): SwipeAction[] {
-		const mailbox = mail.mailboxByRouteId(routeId);
-		const permanent = mailbox?.role === 'trash';
-		return [
-			{
-				id: 'delete',
-				label: permanent ? 'Delete' : 'Trash',
-				variant: 'danger',
-				onAction: () => void swipeDeleteMessage(message, routeId)
-			}
-		];
+	function toSwipeActions(
+		actions: ListSwipeAction[],
+		message: MessagePreview,
+		routeId: string
+	): SwipeAction[] {
+		return actions.map((action) => ({
+			id: action.id,
+			label: action.label,
+			variant: action.variant,
+			onAction: () => void runSwipeAction(action.id, message, routeId)
+		}));
 	}
 
-	async function swipeArchiveMessage(message: MessagePreview, routeId: string) {
+	function listSwipeLeading(message: MessagePreview, routeId: string): SwipeAction[] {
+		return toSwipeActions(listSwipeLeadingActions(swipeContext(message, routeId)), message, routeId);
+	}
+
+	function listSwipeTrailing(message: MessagePreview, routeId: string): SwipeAction[] {
+		return toSwipeActions(
+			listSwipeTrailingActions(swipeContext(message, routeId)),
+			message,
+			routeId
+		);
+	}
+
+	async function runSwipeAction(actionId: string, message: MessagePreview, routeId: string) {
+		if (!auth.client) return;
+
+		switch (actionId) {
+			case 'move-inbox':
+				return swipeMoveToInbox(message, routeId);
+			case 'mark-important':
+				return swipeToggleImportant(message);
+			case 'done':
+				return swipeDone(message);
+			case 'trash':
+			case 'delete-forever':
+			case 'delete-draft':
+				return swipeDeleteMessage(message, routeId);
+		}
+	}
+
+	async function swipeMoveToInbox(message: MessagePreview, routeId: string) {
 		if (!auth.client) return;
 		try {
-			await mail.moveMessage(auth.client, message, 'archive');
+			await mail.moveMessage(auth.client, message, 'inbox');
 			onBulkAction?.();
 		} catch (err) {
-			const text = err instanceof Error ? err.message : 'Archive failed';
+			const text = err instanceof Error ? err.message : 'Move failed';
+			toast.show(text, 'error');
+		}
+	}
+
+	async function swipeToggleImportant(message: MessagePreview) {
+		if (!auth.client) return;
+		try {
+			await mail.toggleImportant(auth.client, message);
+			onBulkAction?.();
+		} catch (err) {
+			const text = err instanceof Error ? err.message : 'Could not update important';
+			toast.show(text, 'error');
+		}
+	}
+
+	async function swipeDone(message: MessagePreview) {
+		if (!auth.client) return;
+		try {
+			await mail.markMessageDone(auth.client, message);
+			onBulkAction?.();
+		} catch (err) {
+			const text = err instanceof Error ? err.message : 'Could not mark as done';
 			toast.show(text, 'error');
 		}
 	}
@@ -257,7 +309,7 @@
 	async function swipeDeleteMessage(message: MessagePreview, routeId: string) {
 		if (!auth.client) return;
 		const mailbox = mail.mailboxByRouteId(routeId);
-		const permanent = mailbox?.role === 'trash';
+		const permanent = mailbox?.role === 'trash' || mailbox?.role === 'drafts';
 		if (!settings.confirmDeleteMessage(1, permanent)) return;
 		try {
 			await mail.deleteMessage(auth.client, message, routeId);
@@ -303,6 +355,24 @@
 		if (input.checked === isSelected) return;
 		mail.toggleMessageSelection(messageId);
 		if (!input.checked) input.blur();
+	}
+
+	function handleRowLinkClick(messageId: string, event: MouseEvent) {
+		if (mail.hasSelection) {
+			event.preventDefault();
+			if (event.shiftKey || event.metaKey || event.ctrlKey) {
+				handleRowSelect(messageId, {
+					shift: event.shiftKey,
+					ctrl: event.metaKey || event.ctrlKey
+				});
+			} else {
+				mail.toggleMessageSelection(messageId);
+			}
+			return;
+		}
+		if (Date.now() < suppressRowNavigationUntil) {
+			event.preventDefault();
+		}
 	}
 
 	function folderSectionCollapsedByDefault(folder: Mailbox): boolean {
@@ -507,7 +577,7 @@
 			if (readMessages.length > 0) {
 				sections.push({
 					id: READ_SECTION_ID,
-					name: 'E-mails',
+					name: 'Normal',
 					routeId: mailboxRouteId ?? 'inbox',
 					messages: readMessages.slice(
 						0,
@@ -800,16 +870,25 @@
 		)}
 	>
 	{#if mailboxRouteId || !sectionMode}
-		<MailTextNav
-			title={isInboxHome ? appConfig.brandName : mailboxName}
-			titleBrand={isInboxHome}
-			titleHref={isInboxHome ? mailHomeHref : null}
-			actionHref="/mail/compose"
-			actionLabel="New message"
-			showBackToMail={!isInboxHome}
-			backHref={mailHomeHref}
-			showSettings={false}
-		/>
+		{#if showBulkBar && mailboxRouteId}
+			<MessageListMobileBar
+				mailboxRouteId={mailboxRouteId}
+				showNavLinks={!isInboxHome}
+				{onBulkAction}
+				disabled={loading || !!error || !messages.length}
+			/>
+		{:else}
+			<MailTextNav
+				title={isInboxHome ? appConfig.brandName : mailboxName}
+				titleBrand={isInboxHome}
+				titleHref={isInboxHome ? mailHomeHref : null}
+				actionHref="/mail/compose"
+				actionLabel="New message"
+				showBackToMail={!isInboxHome}
+				backHref={mailHomeHref}
+				showSettings={false}
+			/>
+		{/if}
 	{/if}
 
 	<div
@@ -846,8 +925,8 @@
 				mail.hasSelection &&
 				showImportantPresentation(message, routeId) &&
 				canPickImportantRainbow(routeId)}
-			{@const swipeLeading = listSwipeLeadingActions(message, routeId)}
-			{@const swipeTrailing = listSwipeTrailingActions(message, routeId)}
+			{@const swipeLeading = listSwipeLeading(message, routeId)}
+			{@const swipeTrailing = listSwipeTrailing(message, routeId)}
 			<li class={cn('list-none', listMessageRowClass, rowSelected && !message.important && '[&_.list-subject]:text-accent')}>
 				{#if showRowCheckbox}
 					<input
@@ -869,11 +948,7 @@
 						oncontextmenu={(event) => {
 							if (supportsMobileListGestures()) event.preventDefault();
 						}}
-						onclick={(event) => {
-							if (Date.now() < suppressRowNavigationUntil) {
-								event.preventDefault();
-							}
-						}}
+						onclick={(event) => handleRowLinkClick(message.id, event)}
 						onpointerenter={(event) => {
 							if (!showImportantPresentation(message, routeId)) return;
 							if (!hasPreciseHover()) return;
@@ -967,10 +1042,14 @@
 			<div class="z-mail-list-sections">
 				{#each folderSections as section, sectionIndex (section.id)}
 					{@const sectionDuplicateSubjects = duplicateSubjectKeys(section.messages)}
-					<section style:order={section.sortOrder} style:--section-index={sectionIndex}>
-						{#if !isInboxHome}
+					<section
+						style:order={section.sortOrder}
+						style:--section-index={sectionIndex}
+						aria-label={isInboxHome ? section.name : undefined}
+					>
+						{#if !isInboxHome && section.id !== mailboxRouteId}
 							<div class="z-mail-list-section-head">
-								<h2 class="z-mail-list-section-title">
+								<p class="z-mail-list-section-title">
 									{#if section.showUnreadDot}
 										<span
 											class="size-[0.4375rem] shrink-0 rounded-full bg-unread"
@@ -978,7 +1057,7 @@
 										></span>
 									{/if}
 									{section.name}
-								</h2>
+								</p>
 								<span class={listSectionCountClass(section.id)}>{section.totalCount}</span>
 							</div>
 						{/if}
@@ -1033,13 +1112,6 @@
 			<MessageListLoadMore {hasMore} {loadingMore} {onLoadMore} />
 		{/if}
 	</div>
-	{#if showBulkBar && mailboxRouteId}
-		<MessageListMobileBar
-			mailboxRouteId={mailboxRouteId}
-			{onBulkAction}
-			disabled={loading || !!error || !messages.length}
-		/>
-	{/if}
 	{#if !loading && !error && !mail.hasSelection}
 		<DinoZaur />
 	{/if}

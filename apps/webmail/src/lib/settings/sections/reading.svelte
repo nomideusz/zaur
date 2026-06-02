@@ -28,7 +28,7 @@
 		<PushNotificationStatus />
 	</SettingsRow>
 
-	<SettingsRow title="Unread on app icon">
+	<SettingsRow title="New count on app icon">
 		<input
 			type="checkbox"
 			checked={settings.showUnreadAppBadge}
@@ -36,7 +36,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Unread in tab title">
+	<SettingsRow title="New count in tab title">
 		<input
 			type="checkbox"
 			checked={settings.showUnreadInTitle}
@@ -151,14 +151,6 @@
 </SettingsGroup>
 
 <SettingsGroup title="Actions">
-	<SettingsRow title="Mark as read when opened">
-		<input
-			type="checkbox"
-			checked={settings.markAsReadOnOpen}
-			onchange={(e) => settings.setMarkAsReadOnOpen(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
 	<SettingsRow title="Confirm before delete">
 		<input
 			type="checkbox"
@@ -204,8 +196,12 @@
 				<dd>r · a</dd>
 			</div>
 			<div class="z-settings-shortcut-row">
-				<dt>Archive / unread / delete</dt>
-				<dd>e · u · #</dd>
+				<dt>Next new message</dt>
+				<dd>n</dd>
+			</div>
+			<div class="z-settings-shortcut-row">
+				<dt>Mark done / important / delete</dt>
+				<dd>d · u · #</dd>
 			</div>
 			<div class="z-settings-shortcut-row">
 				<dt>Send / close compose</dt>

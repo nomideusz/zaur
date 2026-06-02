@@ -41,7 +41,7 @@
 >
 	{#if hasRows}
 		<div class="z-settings-section-heading">
-			<h3 class="z-settings-section-title">{title}</h3>
+			<p class="z-settings-section-title">{title}</p>
 		</div>
 	{/if}
 	<div class="z-settings-list">

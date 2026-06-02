@@ -22,6 +22,7 @@
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__title {
 		@apply min-w-0 font-semibold text-fg;
+		margin: 0;
 		font-size: var(--z-main-page-text);
 		line-height: 1.45;
 	}
@@ -87,6 +88,16 @@
 		@apply !px-0 !py-0 !font-normal !text-fg !underline !underline-offset-2 !decoration-fg/40 hover:!bg-transparent;
 	}
 
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link--danger {
+		color: var(--z-danger);
+		text-decoration-color: color-mix(in srgb, var(--z-danger) 35%, transparent);
+	}
+
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link--danger:hover {
+		color: var(--z-danger);
+		text-decoration-color: color-mix(in srgb, var(--z-danger) 55%, transparent);
+	}
+
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action {
 		@apply inline-flex shrink-0 cursor-pointer items-center font-semibold text-fg underline underline-offset-[0.2em] decoration-fg/45;
 		font-size: var(--z-main-page-text);
@@ -113,6 +124,15 @@
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action:disabled {
 		@apply cursor-not-allowed text-fg-subtle no-underline;
+	}
+
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action--danger {
+		color: var(--z-danger);
+		text-decoration-color: color-mix(in srgb, var(--z-danger) 45%, transparent);
+	}
+
+	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action--danger:hover:not(:disabled) {
+		text-decoration-color: color-mix(in srgb, var(--z-danger) 70%, transparent);
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__actions {

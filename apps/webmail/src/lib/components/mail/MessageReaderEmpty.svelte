@@ -28,9 +28,9 @@
 		</div>
 		<div>
 			{#if !hideTitle}
-				<h2 class="text-lg font-semibold text-fg">
+				<p class="m-0 text-lg font-semibold text-fg">
 					{title}
-				</h2>
+				</p>
 			{/if}
 			<p class="mx-auto mt-2 max-w-sm text-sm text-fg-muted">
 				{description}

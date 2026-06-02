@@ -175,12 +175,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-mark-as-read-when-opened",
-		"href": "/settings/reading",
-		"title": "Mark as read when opened",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-prefer-plain-text",
 		"href": "/settings/reading",
 		"title": "Prefer plain text",
@@ -229,15 +223,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-unread-in-tab-title",
+		"id": "/settings/reading-new-in-tab-title",
 		"href": "/settings/reading",
-		"title": "Unread in tab title",
+		"title": "New count in tab title",
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-unread-on-app-icon",
+		"id": "/settings/reading-new-on-app-icon",
 		"href": "/settings/reading",
-		"title": "Unread on app icon",
+		"title": "New count on app icon",
 		"description": ""
 	},
 	{

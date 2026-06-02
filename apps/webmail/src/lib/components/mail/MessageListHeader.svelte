@@ -1,11 +1,9 @@
 <script lang="ts">
-	import Important from '$lib/components/icons/Important.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import MessageListBulkMoreMenu from '$lib/components/mail/MessageListBulkMoreMenu.svelte';
 	import {
 		bulkSelectionCounts,
-		bulkSelectionLabel,
-		bulkSelectionPrimaryAction
+		bulkSelectionSummary
 	} from '$lib/components/mail/bulk-selection-label';
 	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
@@ -27,38 +25,26 @@
 	let { mailboxRouteId, disabled = false, onBulkAction }: Props = $props();
 
 	const selectedIds = $derived([...mail.selectedMessageIds]);
+	const selectedCount = $derived(selectedIds.length);
+	const selectedMessages = $derived(mail.selectedMessages());
 	const currentMailbox = $derived(mailboxRouteId ? mail.mailboxByRouteId(mailboxRouteId) : null);
-	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
 	const canMarkImportant = $derived(mail.canMarkImportantInMailbox(currentMailbox));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
 	const moveTargets = $derived(
 		mailboxRouteId ? moveTargetMailboxes(mail.mailboxes, currentMailbox) : []
 	);
-	const selectionCounts = $derived(bulkSelectionCounts(mail.messages, selectedIds));
-	const hasNotImportantSelected = $derived(selectionCounts.notImportant > 0);
-	const hasImportantSelected = $derived(selectionCounts.important > 0);
-	const selectionLabel = $derived(
-		bulkSelectionLabel({
-			selectedCount: selectedIds.length,
-			notImportantCount: selectionCounts.notImportant,
-			importantCount: selectionCounts.important,
-			canMarkImportant
-		})
+	const selectionCounts = $derived(bulkSelectionCounts(selectedMessages, selectedIds));
+	const unresolvedCount = $derived(Math.max(0, selectedCount - selectedMessages.length));
+	const selectionSummary = $derived(
+		bulkSelectionSummary(selectedCount, selectionCounts, unresolvedCount)
 	);
-	const primaryAction = $derived(
-		bulkSelectionPrimaryAction({
-			notImportantCount: selectionCounts.notImportant,
-			importantCount: selectionCounts.important,
-			canMarkImportant
-		})
+	const hasMenuActions = $derived(
+		selectionCounts.new > 0 ||
+			selectionCounts.normal > 0 ||
+			(canMarkImportant &&
+				(selectionCounts.notImportant > 0 || selectionCounts.important > 0)) ||
+			moveTargets.length > 0
 	);
-	const showMarkImportantButton = $derived(
-		hasNotImportantSelected && canMarkImportant && primaryAction !== 'mark-important'
-	);
-	const showRemoveImportantButton = $derived(
-		hasImportantSelected && primaryAction !== 'remove-important'
-	);
-	const hasMoreBulkActions = $derived(canArchive || moveTargets.length > 0);
 	const actionButtonClass = '!h-8 shrink-0 !px-2 !text-xs';
 
 	async function runBulk(action: () => Promise<void>, refreshList = false) {
@@ -79,25 +65,9 @@
 		void runBulk(() => mail.bulkDelete(auth.client!, mailboxRouteId), true);
 	}
 
-	function archiveSelected() {
-		if (!auth.client) return;
-		void runBulk(() => mail.bulkArchive(auth.client!), true);
-	}
-
 	function handleBulkMove(targetRouteId: string) {
 		if (!auth.client) return;
 		void runBulk(() => mail.bulkMoveToMailbox(auth.client!, targetRouteId), true);
-	}
-
-	function runPrimaryAction() {
-		if (!auth.client) return;
-		if (primaryAction === 'mark-important') {
-			void runBulk(() => mail.bulkMarkAsImportant(auth.client!));
-			return;
-		}
-		if (primaryAction === 'remove-important') {
-			void runBulk(() => mail.bulkMarkAsNotImportant(auth.client!));
-		}
 	}
 </script>
 
@@ -114,54 +84,36 @@
 
 	{#if mail.hasSelection && !disabled}
 		<div class="z-mail-list-header__selection max-md:hidden">
-			{#if primaryAction}
-				<button
-					type="button"
-					class="z-mail-list-header__count z-mail-list-bulk-bar__count z-mail-list-bulk-bar__count--action"
-					onclick={runPrimaryAction}
-				>
-					{selectionLabel}
-				</button>
-			{:else}
-				<span class="z-mail-list-header__count">{selectionLabel}</span>
-			{/if}
-			{#if showMarkImportantButton}
-				<Button
-					variant="ghost"
-					class={actionButtonClass}
-					onclick={() => auth.client && runBulk(() => mail.bulkMarkAsImportant(auth.client!))}
-				>
-					<Important class="size-3.5" aria-hidden="true" />
-					Mark important
-				</Button>
-			{/if}
-			{#if showRemoveImportantButton}
-				<Button
-					variant="ghost"
-					class={actionButtonClass}
-					onclick={() => auth.client && runBulk(() => mail.bulkMarkAsNotImportant(auth.client!))}
-				>
-					<Important class="size-3.5 opacity-50" aria-hidden="true" />
-					Remove important
-				</Button>
-			{/if}
+			<p class="z-mail-list-bulk-bar__summary">
+				<span class="z-mail-list-bulk-bar__headline">{selectionSummary.headline}</span>
+				{#if selectionSummary.detail}
+					<span class="z-mail-list-bulk-bar__detail"> · {selectionSummary.detail}</span>
+				{/if}
+			</p>
 			<Button variant="danger" class={actionButtonClass} onclick={deleteSelected}>
 				<Trash2 class="size-3.5" aria-hidden="true" />
 				{deleteLabel}
 			</Button>
-			{#if hasMoreBulkActions && mailboxRouteId}
+			{#if hasMenuActions && mailboxRouteId}
 				<OverflowMenu
 					label="More actions"
 					menuId="bulk-more-menu-header"
 					placement="auto"
 					menuClass="z-overflow-menu--list"
-					triggerText="More"
-					triggerClass="!h-8 !px-2 !text-xs"
+					triggerText="Actions"
+					textTrigger
+					triggerClass="z-mail-text-nav__action"
 				>
 					<MessageListBulkMoreMenu
 						mailboxRouteId={mailboxRouteId}
-						{canArchive}
-						onArchive={archiveSelected}
+						selectedCount={selectedCount}
+						counts={selectionCounts}
+						{canMarkImportant}
+						onDone={() => auth.client && runBulk(() => mail.bulkMarkAsDone(auth.client!), true)}
+						onMarkNew={() => auth.client && runBulk(() => mail.bulkMarkAsNew(auth.client!), true)}
+						onMarkImportant={() => auth.client && runBulk(() => mail.bulkMarkAsImportant(auth.client!))}
+						onRemoveImportant={() =>
+							auth.client && runBulk(() => mail.bulkMarkAsNotImportant(auth.client!))}
 						onMove={handleBulkMove}
 					/>
 				</OverflowMenu>

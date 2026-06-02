@@ -149,8 +149,29 @@
 		@apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-sm px-3 py-1.5 text-sm font-medium text-fg-muted transition-colors hover:bg-surface-sunken hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
 	}
 
+	/* Icon-only actions — semi-transparent resting background as visible tap target. */
+	.z-btn-icon {
+		@apply inline-flex cursor-pointer items-center justify-center rounded-md bg-surface-sunken/40 text-fg-muted transition-colors hover:bg-surface-sunken/70 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:bg-surface-sunken/80;
+	}
+
+	.z-icon-tap-target {
+		@apply inline-flex shrink-0 items-center justify-center rounded-md bg-surface-sunken/40 text-fg-muted transition-colors hover:bg-surface-sunken/70 hover:text-fg active:bg-surface-sunken/80;
+	}
+
+	.z-icon-tap-target:focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: 2px;
+	}
+
+	.z-icon-tap-target--sm {
+		min-height: 1.75rem;
+		min-width: 1.75rem;
+		padding: 0.25rem;
+	}
+
 	.z-btn-primary svg,
 	.z-btn-ghost svg,
+	.z-btn-icon svg,
 	.z-overflow-menu-item svg {
 		opacity: 0.75;
 	}

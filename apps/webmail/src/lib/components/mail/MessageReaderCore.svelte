@@ -16,9 +16,11 @@
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { toast } from '$lib/stores/toast.svelte';
 	import { renderMessageBody } from '$lib/email/html';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
 	import { createImportantRainbowTouchPick } from '$lib/mail/important-rainbow-touch';
+	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
 	import { shouldPresentImportantColors } from '$lib/mail/mailboxes';
 	import { hasPreciseHover } from '$lib/utils/pointer-env';
 	import { cn } from '$lib/utils/cn';
@@ -141,6 +143,26 @@
 		else localShowImagesOnce = true;
 	}
 
+	async function markDone() {
+		if (!auth.client || !actionMessage?.unread) return;
+		try {
+			await mail.markMessageDone(auth.client, actionMessage);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Could not mark as done';
+			toast.show(message, 'error');
+		}
+	}
+
+	async function markNew() {
+		if (!auth.client || !actionMessage || actionMessage.unread) return;
+		try {
+			await mail.markMessageNew(auth.client, actionMessage);
+		} catch (error) {
+			const message = error instanceof Error ? error.message : 'Could not mark as new';
+			toast.show(message, 'error');
+		}
+	}
+
 	function reply() {
 		if (!latest) return;
 		compose.startReply(latest);
@@ -156,6 +178,24 @@
 	function primaryReply() {
 		if (settings.defaultReplyMode === 'reply-all') replyAll();
 		else reply();
+	}
+
+	async function sendDraft() {
+		if (!auth.client || !auth.username || !latest) return;
+
+		compose.openDraft(latest);
+		const senderName = settings.resolvedDisplayName(auth.displayName ?? auth.username);
+		const destination = mailListHref(INBOX_MAILBOX_ROUTE_ID);
+		const result = await compose.send(auth.client, auth.username, senderName, {
+			onUndo: () => goto(`/mail/compose?draft=${latest.id}`),
+			onComplete: (outcome) => {
+				if (outcome === 'sent') goto(destination);
+				else if (outcome === 'queued') goto(settings.preferredMailHref());
+			}
+		});
+		if (result === 'pending' || result === 'sent') goto(destination);
+		else if (result === 'queued') goto(settings.preferredMailHref());
+		else if (result === false) goto(`/mail/compose?draft=${latest.id}`);
 	}
 
 	function composeTo(email: string) {
@@ -216,33 +256,55 @@
 		<div class={contentPagePadClass()}>
 		<div class="z-reader-column">
 			<div class="z-mail-text-nav z-reader-sticky-nav">
-					<div class="z-mail-text-nav__row">
+				<div class="z-mail-text-nav__row">
+					<div class="flex min-w-0 shrink-0 items-center gap-2">
 						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
-						{#if !mail.hasSelection && latest}
-							<div class="z-mail-text-nav__actions flex shrink-0 items-center gap-1.5">
-								{#if isDraft}
-									<a
-										class="z-mail-text-nav__action"
-										href="/mail/compose?draft={latest.id}"
-									>
-										Edit draft
-									</a>
-								{:else}
-									<button type="button" class="z-mail-text-nav__action" onclick={primaryReply}>
-										{primaryReplyLabel}
-									</button>
-								{/if}
-								<MessageThreadActions
-									{thread}
-									{mailboxRouteId}
-									{onMoved}
-									header
-									showDraftSend={isDraft}
-								/>
-							</div>
+						{#if !mail.hasSelection && latest && !isDraft}
+							{#if actionMessage?.unread}
+								<button type="button" class="z-mail-text-nav__link" onclick={() => void markDone()}>
+									Done
+								</button>
+							{:else}
+								<button
+									type="button"
+									class="z-mail-text-nav__link text-fg-subtle"
+									onclick={() => void markNew()}
+								>
+									Mark as new
+								</button>
+							{/if}
 						{/if}
 					</div>
+					{#if !mail.hasSelection && latest}
+						<div class="z-mail-text-nav__links">
+							{#if isDraft}
+								<a class="z-mail-text-nav__link" href="/mail/compose?draft={latest.id}">
+									Edit draft
+								</a>
+								<button
+									type="button"
+									class="z-mail-text-nav__action hidden md:inline-flex"
+									onclick={() => void sendDraft()}
+								>
+									Send
+								</button>
+							{:else}
+								<button type="button" class="z-mail-text-nav__action" onclick={primaryReply}>
+									{primaryReplyLabel}
+								</button>
+							{/if}
+							<MessageThreadActions
+								{thread}
+								{mailboxRouteId}
+								{onMoved}
+								header
+								hideTriageInMenu
+								primaryReplyMode={settings.defaultReplyMode}
+							/>
+						</div>
+					{/if}
 				</div>
+			</div>
 				{#if hasBlockedExternal && !allowExternal}
 					<div class="z-mail-external-banner">
 						<Shield class="size-3.5 shrink-0" aria-hidden="true" />
@@ -326,7 +388,7 @@
 
 						<div class="z-reader-content w-full">
 							{#if showInlineSubject}
-								<h1
+								<p
 									bind:this={readerSubjectEl}
 									class={cn(
 										'z-reader-subject-heading',
@@ -351,7 +413,7 @@
 										readerRainbowTouch.onPointerUp(subjectMessageId, event);
 									}}
 									onpointercancel={readerRainbowTouch.onPointerCancel}
-								>{subject}</h1>
+								>{subject}</p>
 							{/if}
 
 							{#if message.attachments.length}

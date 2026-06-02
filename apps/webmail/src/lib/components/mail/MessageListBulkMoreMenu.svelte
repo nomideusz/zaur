@@ -2,23 +2,51 @@
 	import { getContext } from 'svelte';
 	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { OVERFLOW_MENU_CTX, type OverflowMenuContext } from '$lib/components/ui/overflow-menu-context';
+	import {
+		bulkAffectedLabel,
+		bulkSelectionReadCount,
+		type BulkSelectionCounts
+	} from '$lib/components/mail/bulk-selection-label';
 	import { mail } from '$lib/stores/mail.svelte';
 
 	interface Props {
 		mailboxRouteId: string;
-		canArchive: boolean;
-		onArchive: () => void;
+		selectedCount: number;
+		counts: BulkSelectionCounts;
+		canMarkImportant: boolean;
+		onDone: () => void;
+		onMarkNew: () => void;
+		onMarkImportant: () => void;
+		onRemoveImportant: () => void;
 		onMove: (targetRouteId: string) => void;
 	}
 
-	let { mailboxRouteId, canArchive, onArchive, onMove }: Props = $props();
+	let {
+		mailboxRouteId,
+		selectedCount,
+		counts,
+		canMarkImportant,
+		onDone,
+		onMarkNew,
+		onMarkImportant,
+		onRemoveImportant,
+		onMove
+	}: Props = $props();
 
 	const overflowMenu = getContext<OverflowMenuContext | undefined>(OVERFLOW_MENU_CTX);
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const moveTargets = $derived(moveTargetMailboxes(mail.mailboxes, currentMailbox));
+	const readCount = $derived(bulkSelectionReadCount(counts));
 
-	function archive() {
-		onArchive();
+	const showStateActions = $derived(
+		counts.new > 0 ||
+			readCount > 0 ||
+			(canMarkImportant && counts.notImportant > 0) ||
+			counts.important > 0
+	);
+
+	function run(action: () => void) {
+		action();
 		overflowMenu?.close();
 	}
 
@@ -29,10 +57,38 @@
 </script>
 
 <div class="z-overflow-menu-scroll">
-	{#if canArchive}
-		<button type="button" class="z-overflow-menu-item" role="menuitem" onclick={archive}>
-			Archive
+	{#if counts.new > 0}
+		<button type="button" class="z-overflow-menu-item" role="menuitem" onclick={() => run(onDone)}>
+			{bulkAffectedLabel('Done', counts.new, selectedCount)}
 		</button>
+	{/if}
+	{#if readCount > 0}
+		<button type="button" class="z-overflow-menu-item" role="menuitem" onclick={() => run(onMarkNew)}>
+			{bulkAffectedLabel('Mark as new', readCount, selectedCount)}
+		</button>
+	{/if}
+	{#if canMarkImportant && counts.notImportant > 0}
+		<button
+			type="button"
+			class="z-overflow-menu-item"
+			role="menuitem"
+			onclick={() => run(onMarkImportant)}
+		>
+			{bulkAffectedLabel('Mark important', counts.notImportant, selectedCount)}
+		</button>
+	{/if}
+	{#if counts.important > 0}
+		<button
+			type="button"
+			class="z-overflow-menu-item"
+			role="menuitem"
+			onclick={() => run(onRemoveImportant)}
+		>
+			{bulkAffectedLabel('Remove important', counts.important, selectedCount)}
+		</button>
+	{/if}
+	{#if showStateActions && moveTargets.length > 0}
+		<div class="mx-4 my-1 border-t border-border" role="separator"></div>
 	{/if}
 	{#each moveTargets as mailbox (mailbox.id)}
 		<button

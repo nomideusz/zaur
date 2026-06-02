@@ -55,16 +55,16 @@
 		goto(mailThreadHref(mailbox, next.threadId, params));
 	}
 
-	function navigateNextUnread() {
+	function navigateNextNew() {
 		const ctx = parseMailContext($page.url.pathname);
 		if (!ctx) return;
 
-		const unread = listMessages().filter((message) => message.unread);
-		if (!unread.length) return;
+		const newMessages = listMessages().filter((message) => message.unread);
+		if (!newMessages.length) return;
 
 		const current = currentMessage();
-		const currentIndex = current ? unread.findIndex((message) => message.id === current.id) : -1;
-		const next = unread[currentIndex + 1] ?? unread[0];
+		const currentIndex = current ? newMessages.findIndex((message) => message.id === current.id) : -1;
+		const next = newMessages[currentIndex + 1] ?? newMessages[0];
 		if (!next) return;
 
 		const mailbox = ctx.kind === 'search' ? next.mailboxId : ctx.mailboxRouteId ?? next.mailboxId;
@@ -208,7 +208,7 @@
 
 			if (key === 'n') {
 				event.preventDefault();
-				navigateNextUnread();
+				navigateNextNew();
 				return;
 			}
 
@@ -227,16 +227,12 @@
 					event.preventDefault();
 					void forwardSelectedMessage();
 					break;
-				case 'e':
-					if (!mail.archiveMailbox()) return;
+				case 'd':
 					event.preventDefault();
-					void withLatest(
-						(message) => {
-							if (!auth.client) return;
-							return mail.moveMessage(auth.client, message, 'archive');
-						},
-						{ leaveThread: true }
-					);
+					void withLatest((message) => {
+						if (!auth.client || !message.unread) return;
+						return mail.markMessageDone(auth.client, message);
+					});
 					break;
 				case 'u':
 					event.preventDefault();

@@ -5,6 +5,7 @@ export const OBSOLETE_SETTING_KEYS = new Set([
 	'zaur:show-reader-list-rail',
 	'zaur:focus-reading-default',
 	'zaur:mark-as-read-delay',
+	'zaur:mark-read-on-open',
 	'zaur:reader-width',
 	'zaur:show-avatars',
 	'zaur:show-quick-reply',

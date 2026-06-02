@@ -431,21 +431,6 @@ class MailStore {
 					this.selectedLoading = false;
 				}
 			}
-
-			if (
-				generation === this.openMessageGeneration &&
-				settings.markAsReadOnOpen &&
-				this.selectedThreadId === resolvedThreadId &&
-				this.selectedThread.length
-			) {
-				const openedThreadId = resolvedThreadId;
-				void (async () => {
-					if (this.selectedThreadId !== openedThreadId) return;
-					for (const message of this.selectedThread.filter((m) => m.unread)) {
-						await this.markAsRead(client, message, true);
-					}
-				})();
-			}
 		};
 
 		this.openMessageInflight = run().finally(() => {
@@ -484,7 +469,17 @@ class MailStore {
 		});
 	}
 
-	async markAsRead(client: JMAPClient, message: MessagePreview, read: boolean) {
+	async markMessageDone(client: JMAPClient, message: MessagePreview) {
+		if (!message.unread) return;
+		await this.markAsRead(client, message, true);
+	}
+
+	async markMessageNew(client: JMAPClient, message: MessagePreview) {
+		if (message.unread) return;
+		await this.markAsRead(client, message, false);
+	}
+
+	private async markAsRead(client: JMAPClient, message: MessagePreview, read: boolean) {
 		const previousUnread = message.unread;
 		this.setPendingKeyword(message.id, { unread: !read });
 		this.patchMessage(message.id, { unread: !read });
@@ -551,22 +546,48 @@ class MailStore {
 		const ids = targets.map((message) => message.id);
 
 		for (const message of targets) {
-			this.setPendingKeyword(message.id, { important });
-			this.patchMessage(message.id, { important });
-			this.patchThreadMessage(message.id, { important });
+			const clearsNew = important && message.unread;
+			this.setPendingKeyword(message.id, {
+				important,
+				...(clearsNew ? { unread: false } : {})
+			});
+			this.patchMessage(message.id, {
+				important,
+				...(clearsNew ? { unread: false } : {})
+			});
+			this.patchThreadMessage(message.id, {
+				important,
+				...(clearsNew ? { unread: false } : {})
+			});
+			if (clearsNew) {
+				this.adjustUnreadCount(message.mailboxId, -1);
+			}
 		}
 
 		if (importantMailbox) {
 			const totalDelta = important ? targets.length : -targets.length;
 			let unreadDelta = 0;
-			for (const message of targets) {
-				if (message.unread) unreadDelta += important ? 1 : -1;
+			if (important) {
+				// Marking important clears New — only already-normal messages count as unread there.
+				for (const message of targets) {
+					if (!message.unread) unreadDelta += 1;
+				}
+			} else {
+				for (const message of targets) {
+					if (message.unread) unreadDelta -= 1;
+				}
 			}
 			this.adjustMailboxCounts(importantMailbox.id, totalDelta, unreadDelta);
 		}
 
 		try {
 			await client.toggleImportant(ids, important, importantMailbox?.jmapId);
+			if (important) {
+				for (const message of targets) {
+					if (!message.unread) continue;
+					await this.markAsRead(client, message, true);
+				}
+			}
 			for (const id of ids) {
 				this.clearPendingKeyword(id, 'important');
 			}
@@ -575,14 +596,17 @@ class MailStore {
 				const totalDelta = important ? -targets.length : targets.length;
 				let unreadDelta = 0;
 				for (const message of targets) {
-					if (message.unread) unreadDelta += important ? -1 : 1;
+					if (message.unread) unreadDelta += important ? 1 : -1;
 				}
 				this.adjustMailboxCounts(importantMailbox.id, totalDelta, unreadDelta);
 			}
 			for (const message of targets) {
 				this.clearPendingKeyword(message.id, 'important');
-				this.patchMessage(message.id, { important: !important });
-				this.patchThreadMessage(message.id, { important: !important });
+				this.patchMessage(message.id, { important: !important, unread: message.unread });
+				this.patchThreadMessage(message.id, { important: !important, unread: message.unread });
+				if (important && message.unread) {
+					this.adjustUnreadCount(message.mailboxId, 1);
+				}
 			}
 			throw error;
 		}
@@ -661,7 +685,7 @@ class MailStore {
 		const snapshot = { ...message };
 		const sourceJmapId = currentMailbox?.jmapId;
 
-		if (currentMailbox?.role === 'trash') {
+		if (currentMailbox?.role === 'trash' || currentMailbox?.role === 'drafts') {
 			await client.destroyEmail(message.id);
 			this.removeMessage(message);
 			return;
@@ -788,7 +812,7 @@ class MailStore {
 		this.selectionAnchorId = list[0]?.id ?? null;
 	}
 
-	selectMessagesByFilter(filter: 'all' | 'read' | 'unread' | 'none') {
+	selectMessagesByFilter(filter: 'all' | 'normal' | 'new' | 'none') {
 		if (filter === 'none') {
 			this.clearSelection();
 			return;
@@ -797,7 +821,7 @@ class MailStore {
 		const list = this.selectableMessages();
 		const matching = list.filter((message) => {
 			if (filter === 'all') return true;
-			if (filter === 'read') return !message.unread;
+			if (filter === 'normal') return !message.unread;
 			return message.unread;
 		});
 
@@ -808,49 +832,6 @@ class MailStore {
 
 		this.selectedMessageIds = new Set(matching.map((message) => message.id));
 		this.selectionAnchorId = matching[0]?.id ?? null;
-	}
-
-	async bulkArchive(client: JMAPClient) {
-		const messages = this.selectedMessages();
-		if (!messages.length) return;
-
-		const archive = this.archiveMailbox();
-		if (!archive?.jmapId) throw new Error('Archive folder not found');
-
-		const sourceRouteId = this.currentMailboxRouteId;
-		const sourceJmapId = sourceRouteId
-			? this.mailboxByRouteId(sourceRouteId)?.jmapId
-			: undefined;
-		const snapshots = messages.map((message) => ({ ...message }));
-
-		this.bulkActionLoading = true;
-		try {
-			await client.moveEmailsToMailbox(
-				messages.map((message) => message.id),
-				archive.jmapId,
-				sourceJmapId
-			);
-			this.applyMoveAwayCounts(messages, sourceRouteId, archive);
-			for (const message of messages) {
-				this.removeMessage(message, { skipCounts: true });
-			}
-			this.clearSelection();
-			if (sourceRouteId && sourceJmapId) {
-				this.offerMoveUndo({
-					client,
-					snapshots,
-					sourceRouteId,
-					sourceJmapId,
-					targetJmapId: archive.jmapId,
-					message:
-						snapshots.length === 1
-							? 'Message archived'
-							: `${snapshots.length} messages archived`
-				});
-			}
-		} finally {
-			this.bulkActionLoading = false;
-		}
 	}
 
 	async bulkMoveToMailbox(client: JMAPClient, targetRouteId: string) {
@@ -877,6 +858,79 @@ class MailStore {
 				this.removeMessage(message, { skipCounts: true });
 			}
 			this.clearSelection();
+		} finally {
+			this.bulkActionLoading = false;
+		}
+	}
+
+	private async bulkSetNewState(client: JMAPClient, messages: MessagePreview[], read: boolean) {
+		// `read` = desired $seen; `message.unread` is !seen — only update rows still in the old state.
+		const targets = messages.filter((message) => message.unread === read);
+		if (!targets.length) return;
+
+		for (const message of targets) {
+			this.setPendingKeyword(message.id, { unread: !read });
+			this.patchMessage(message.id, { unread: !read });
+			this.patchThreadMessage(message.id, { unread: !read });
+			if (read) {
+				this.adjustUnreadCount(message.mailboxId, -1);
+			} else {
+				this.adjustUnreadCount(message.mailboxId, 1);
+			}
+		}
+
+		try {
+			await client.markManyAsRead(
+				targets.map((message) => message.id),
+				read
+			);
+			for (const message of targets) {
+				this.clearPendingKeyword(message.id, 'unread');
+			}
+		} catch (error) {
+			for (const message of targets) {
+				this.clearPendingKeyword(message.id, 'unread');
+				this.patchMessage(message.id, { unread: read });
+				this.patchThreadMessage(message.id, { unread: read });
+				if (read) {
+					this.adjustUnreadCount(message.mailboxId, 1);
+				} else {
+					this.adjustUnreadCount(message.mailboxId, -1);
+				}
+			}
+			throw error;
+		}
+	}
+
+	async bulkMarkAsDone(client: JMAPClient) {
+		const messages = this.selectedMessages().filter((message) => message.unread);
+		if (!messages.length) return;
+
+		this.bulkActionLoading = true;
+		try {
+			await this.bulkSetNewState(client, messages, true);
+			this.clearSelection();
+			toast.show(
+				messages.length === 1 ? 'Marked done' : `${messages.length} messages marked done`,
+				'success'
+			);
+		} finally {
+			this.bulkActionLoading = false;
+		}
+	}
+
+	async bulkMarkAsNew(client: JMAPClient) {
+		const messages = this.selectedMessages().filter((message) => !message.unread);
+		if (!messages.length) return;
+
+		this.bulkActionLoading = true;
+		try {
+			await this.bulkSetNewState(client, messages, false);
+			this.clearSelection();
+			toast.show(
+				messages.length === 1 ? 'Marked as new' : `${messages.length} messages marked as new`,
+				'success'
+			);
 		} finally {
 			this.bulkActionLoading = false;
 		}
@@ -1212,16 +1266,8 @@ class MailStore {
 		);
 	}
 
-	archiveMailbox(): Mailbox | undefined {
-		return this.mailboxes.find((mb) => mb.role === 'archive' && mb.jmapId);
-	}
-
 	importantMailbox(): Mailbox | undefined {
 		return this.mailboxes.find((mb) => mb.role === 'important' && mb.jmapId);
-	}
-
-	canArchiveFrom(mailbox: Mailbox | null | undefined): boolean {
-		return !!this.archiveMailbox() && mailbox?.role !== 'archive';
 	}
 
 	canMarkImportantInMailbox(mailbox: Mailbox | null | undefined): boolean {

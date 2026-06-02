@@ -9,9 +9,11 @@
 	interface Props {
 		disabled?: boolean;
 		placement?: OverflowMenuPlacement;
+		/** Inline text-nav height — for bulk header row. */
+		compact?: boolean;
 	}
 
-	let { disabled = false, placement = 'bottom' }: Props = $props();
+	let { disabled = false, placement = 'bottom', compact = false }: Props = $props();
 
 	let open = $state(false);
 	let root = $state<HTMLDivElement | null>(null);
@@ -21,7 +23,7 @@
 
 	const menuId = 'message-list-select-menu';
 
-	function choose(filter: 'all' | 'read' | 'unread' | 'none') {
+	function choose(filter: 'all' | 'normal' | 'new' | 'none') {
 		open = false;
 		menuStyle = '';
 		mail.selectMessagesByFilter(filter);
@@ -65,24 +67,46 @@
 <svelte:window onclick={handleWindowClick} />
 
 <div bind:this={root} class="relative shrink-0">
-	<IconButton
-		bind:ref={triggerEl}
-		label="Selection options"
-		class="!min-h-8 !min-w-8 !p-1.5"
-		ariaExpanded={open}
-		ariaControls={menuId}
-		ariaHaspopup="menu"
-		onclick={(event) => {
-			if (disabled) return;
-			event.stopPropagation();
-			const next = !open;
-			open = next;
-			if (next) scheduleMenuPosition();
-			else menuStyle = '';
-		}}
-	>
-		<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
-	</IconButton>
+	{#if compact}
+		<button
+			bind:this={triggerEl}
+			type="button"
+			class="z-mail-list-bulk-bar__select-trigger"
+			aria-label="Selection options"
+			aria-expanded={open}
+			aria-controls={menuId}
+			aria-haspopup="menu"
+			onclick={(event) => {
+				if (disabled) return;
+				event.stopPropagation();
+				const next = !open;
+				open = next;
+				if (next) scheduleMenuPosition();
+				else menuStyle = '';
+			}}
+		>
+			<ChevronDown class="size-3.5" aria-hidden="true" />
+		</button>
+	{:else}
+		<IconButton
+			bind:ref={triggerEl}
+			label="Selection options"
+			class="!min-h-8 !min-w-8 !p-1.5"
+			ariaExpanded={open}
+			ariaControls={menuId}
+			ariaHaspopup="menu"
+			onclick={(event) => {
+				if (disabled) return;
+				event.stopPropagation();
+				const next = !open;
+				open = next;
+				if (next) scheduleMenuPosition();
+				else menuStyle = '';
+			}}
+		>
+			<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
+		</IconButton>
+	{/if}
 
 	{#if open}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -105,11 +129,11 @@
 			<button type="button" role="menuitem" class="z-overflow-menu-item" onclick={() => choose('all')}>
 				All
 			</button>
-			<button type="button" role="menuitem" class="z-overflow-menu-item" onclick={() => choose('read')}>
-				Read
+			<button type="button" role="menuitem" class="z-overflow-menu-item" onclick={() => choose('normal')}>
+				Normal
 			</button>
-			<button type="button" role="menuitem" class="z-overflow-menu-item" onclick={() => choose('unread')}>
-				Unread
+			<button type="button" role="menuitem" class="z-overflow-menu-item" onclick={() => choose('new')}>
+				New
 			</button>
 			<button type="button" role="menuitem" class="z-overflow-menu-item" onclick={() => choose('none')}>
 				None

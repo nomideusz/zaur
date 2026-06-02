@@ -124,7 +124,7 @@ export function mailboxKindOrderForMailbox(mailbox: {
 	return mailboxKindOrder(kind);
 }
 
-/** Folders offered in “Move to…” — use dedicated Trash / Archive / Important actions instead. */
+/** Folders offered in “Move to…” — exclude system folders with dedicated actions. */
 const MOVE_TARGET_EXCLUDED_ROLES = new Set<MailboxRole>([
 	'inbox',
 	'archive',

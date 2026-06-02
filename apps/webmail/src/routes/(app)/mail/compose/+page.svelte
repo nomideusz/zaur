@@ -29,7 +29,7 @@
 			return;
 		}
 
-		compose.startNew();
+		void compose.restoreOrStartNew();
 	});
 
 	$effect(() => {

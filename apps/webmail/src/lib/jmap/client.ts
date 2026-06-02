@@ -946,15 +946,19 @@ export class JMAPClient {
 	}
 
 	async markAsRead(emailId: string, read = true): Promise<void> {
+		await this.markManyAsRead([emailId], read);
+	}
+
+	async markManyAsRead(emailIds: string[], read = true): Promise<void> {
+		if (!emailIds.length) return;
+
+		const update: Record<string, Record<string, unknown>> = {};
+		for (const emailId of emailIds) {
+			update[emailId] = { 'keywords/$seen': read ? true : null };
+		}
+
 		const response = await this.request([
-			[
-				'Email/set',
-				{
-					accountId: this.accountId,
-					update: { [emailId]: { 'keywords/$seen': read } }
-				},
-				'0'
-			]
+			['Email/set', { accountId: this.accountId, update }, '0']
 		]);
 		assertEmailSetSucceeded(response, 'Could not update read status');
 	}

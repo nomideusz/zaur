@@ -27,28 +27,37 @@
 	const mailHomeHref = $derived(backHref ?? settings.preferredMailHref());
 </script>
 
-<div class="z-mail-text-nav">
-	{#if showBackToMail || showSettings}
-		<div class="z-mail-text-nav__links">
-			{#if showBackToMail}
+<div class="z-mail-text-nav z-mail-text-nav--list shrink-0">
+	<div class="z-mail-text-nav__row z-mail-list-nav-bar">
+		{#if showBackToMail}
+			<div class="z-mail-list-nav-bar__lead">
 				<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
-			{/if}
-			{#if showSettings}
+			</div>
+		{/if}
+
+		<div
+			class={cn(
+				'z-mail-list-nav-bar__title-wrap min-w-0',
+				showBackToMail && 'z-mail-list-nav-bar__title-wrap--folder'
+			)}
+		>
+			<p class={cn('z-mail-text-nav__title', titleBrand && 'z-type-brand')}>
+				{#if titleHref}
+					<a href={titleHref}>{title}</a>
+				{:else}
+					{title}
+				{/if}
+			</p>
+		</div>
+
+		<div class="z-mail-text-nav__links z-mail-list-nav-bar__links">
+			{#if showSettings && !showBackToMail}
 				<a class="z-mail-text-nav__link" href="/settings">Settings</a>
 			{/if}
-		</div>
-	{/if}
-	<div class="z-mail-text-nav__row">
-		<h1 class={cn('z-mail-text-nav__title', titleBrand && 'z-type-brand')}>
-			{#if titleHref}
-				<a href={titleHref}>{title}</a>
-			{:else}
-				{title}
+			{#if actionHref && actionLabel}
+				<a class="z-mail-text-nav__action" href={actionHref}>{actionLabel}</a>
 			{/if}
-		</h1>
-		{#if actionHref && actionLabel}
-			<a class="z-mail-text-nav__action" href={actionHref}>{actionLabel}</a>
-		{/if}
+		</div>
 	</div>
 	{#if subtitle}
 		<p class="z-mail-text-nav__label">{subtitle}</p>
