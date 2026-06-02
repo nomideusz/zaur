@@ -281,6 +281,9 @@
 		importantRainbow.cyclePhase(messageId);
 	}
 
+	/** After shift/ctrl checkbox click, skip the stale change event. */
+	let modifierCheckboxClickIds = new Set<string>();
+
 	function handleRowSelect(
 		messageId: string,
 		modifiers: { shift?: boolean; ctrl?: boolean } = {}
@@ -296,12 +299,14 @@
 		const ctrl = event.ctrlKey || event.metaKey;
 		if (event.shiftKey || ctrl) {
 			event.preventDefault();
+			modifierCheckboxClickIds.add(messageId);
 			handleRowSelect(messageId, { shift: event.shiftKey, ctrl });
 		}
 	}
 
 	function handleRowCheckboxChange(messageId: string, event: Event) {
 		event.stopPropagation();
+		if (modifierCheckboxClickIds.delete(messageId)) return;
 		const input = event.currentTarget as HTMLInputElement;
 		const isSelected = mail.selectedMessageIds.has(messageId);
 		if (input.checked === isSelected) return;
