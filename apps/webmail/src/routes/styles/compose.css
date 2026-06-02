@@ -75,7 +75,8 @@
 		grid-template-columns: 3.25rem minmax(0, 1fr);
 		gap: 0.75rem;
 		align-items: center;
-		padding: 0.625rem 1rem;
+		padding-inline: 1rem;
+		padding-block: var(--z-compose-field-y);
 		background-color: var(--z-surface-raised);
 		border: 1px solid var(--z-border);
 		border-radius: var(--radius-md);
@@ -83,6 +84,12 @@
 			border-color var(--z-motion-fast) var(--z-ease-standard),
 			background-color var(--z-motion-fast) var(--z-ease-standard),
 			box-shadow var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	@media (min-width: 768px) {
+		.z-mail-view .z-compose__field {
+			padding-inline: 1.5rem;
+		}
 	}
 
 	.z-mail-view .z-compose__field:focus-within {
@@ -162,13 +169,16 @@
 		font-size: var(--z-reader-text);
 		line-height: var(--z-reader-leading);
 		border: none;
-		padding-inline: 1rem;
+		margin: 0;
+		padding-left: calc(1rem + 1px);
+		padding-right: 1rem;
 		padding-block: 0;
 	}
 
 	@media (min-width: 768px) {
 		.z-mail-view .z-compose__body {
-			padding-inline: 1.5rem;
+			padding-left: calc(1.5rem + 1px);
+			padding-right: 1.5rem;
 		}
 	}
 
@@ -191,7 +201,9 @@
 		resize: none;
 		background: transparent;
 		border: none;
-		padding-inline: 1rem;
+		margin: 0;
+		padding-left: calc(1rem + 1px);
+		padding-right: 1rem;
 		padding-block: 0;
 		outline: none;
 		color: var(--z-fg-muted);
@@ -206,7 +218,8 @@
 		z-index: 15;
 		flex-shrink: 0;
 		margin-top: 0.75rem;
-		padding-inline: 1rem;
+		padding-left: calc(1rem + 1px);
+		padding-right: 1rem;
 		padding-block: 0.75rem;
 		background-color: var(--z-surface);
 		font-size: var(--z-main-page-muted-text);
@@ -216,7 +229,8 @@
 	@media (min-width: 768px) {
 		.z-mail-view .z-compose__signature-input,
 		.z-mail-view .z-compose__signature-empty {
-			padding-inline: 1.5rem;
+			padding-left: calc(1.5rem + 1px);
+			padding-right: 1.5rem;
 		}
 	}
 
@@ -263,6 +277,7 @@
 		gap: 0.75rem;
 		padding: 0.5rem 1rem;
 		background-color: var(--z-surface-raised);
+		border: 1px solid var(--z-border);
 		border-radius: var(--radius-sm);
 		position: relative;
 		min-width: 0;

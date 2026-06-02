@@ -74,19 +74,24 @@
 	}
 
 	$effect(() => {
-		if (inputElement && value) {
-			inputElement.style.height = 'auto';
-			inputElement.style.height = inputElement.scrollHeight + 'px';
+		if (inputElement) {
+			if (value) {
+				inputElement.style.height = 'auto';
+				inputElement.style.height = inputElement.scrollHeight + 'px';
+			} else {
+				inputElement.style.height = '1.55em';
+			}
 		}
 	});
 </script>
-
+ 
 <div class="relative min-w-0 flex-1">
 	<textarea
 		bind:this={inputElement}
 		{id}
 		class={cn('z-compose-field-input w-full resize-none bg-transparent outline-none align-bottom', className)}
 		rows={1}
+		style="height: 1.55em; overflow: hidden;"
 		placeholder={placeholder}
 		autocomplete={autocomplete}
 		aria-invalid={invalid || undefined}

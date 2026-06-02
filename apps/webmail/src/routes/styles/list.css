@@ -64,7 +64,7 @@
 	}
 
 	.z-mail-view .z-content-shell .z-mail-list-bulk-bar {
-		--z-list-checkbox-gutter: 1.75rem;
+		--z-list-checkbox-gutter: 1.25rem;
 		position: relative;
 		overflow: visible;
 	}
@@ -161,7 +161,7 @@
 
 	/* Bulk select — checkbox gutter sits left of the content column. */
 	.z-mail-view .z-content-shell .z-mail-list-flow--selectable {
-		--z-list-checkbox-gutter: 1.75rem;
+		--z-list-checkbox-gutter: 1.25rem;
 		margin-inline-start: calc(-1 * var(--z-list-checkbox-gutter));
 		padding-inline-start: var(--z-list-checkbox-gutter);
 		overflow: visible;
@@ -258,6 +258,15 @@
 			flex-shrink: 0;
 			margin: 0;
 		}
+
+		/* Reset padding of the New section on mobile selecting view and hide its unread vertical stroke */
+		.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new {
+			padding-inline-start: 0;
+		}
+
+		.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new::before {
+			display: none;
+		}
 	}
 
 	.z-mail-view .z-mail-list-swipe-row {
@@ -328,20 +337,30 @@
 		padding-top: var(--z-main-gap);
 	}
 
-	/* One-sided stroke for the New section container. Sits in the left gutter/outside margin. */
+	/* One-sided stroke for the New section container. Sits inside the container, messages pushed right. */
 	.z-mail-list-section-messages--new {
 		position: relative;
+		padding-inline-start: 0.75rem;
 	}
 
 	.z-mail-view .z-mail-list-section-messages--new::before {
 		content: '';
 		position: absolute;
-		left: -0.5rem; /* -8px in the gutter */
+		left: 0.125rem;
 		top: 0.125rem;
 		bottom: 0.125rem;
 		width: 3px;
 		background-color: var(--z-unread);
 		border-radius: 9999px;
+	}
+
+	/* Adjust checkbox and hover trigger width in the padded section to align with other sections */
+	.z-mail-view .z-mail-list-section-messages--new .z-mail-list-row__checkbox {
+		left: calc(-1 * var(--z-list-checkbox-gutter) - 0.75rem);
+	}
+
+	.z-mail-view .z-mail-list-section-messages--new .z-mail-list-row::before {
+		width: calc(var(--z-list-checkbox-gutter) + 0.75rem);
 	}
 
 	.z-mail-view .z-mail-list-section-head {

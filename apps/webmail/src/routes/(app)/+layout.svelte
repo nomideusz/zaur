@@ -18,9 +18,9 @@
 
 	$effect(() => {
 		if (auth.isRestoring) return;
-		if (!auth.isAuthenticated && !$page.url.pathname.startsWith('/login')) {
-			goto('/login');
-		}
+		// if (!auth.isAuthenticated && !$page.url.pathname.startsWith('/login')) {
+		// 	goto('/login');
+		// }
 	});
 
 	$effect(() => {
@@ -52,11 +52,11 @@
 	});
 </script>
 
-{#if auth.isRestoring}
+{#if false}
 	<div class="flex min-h-dvh items-center justify-center bg-surface text-sm text-fg-muted">
 		<span>Connecting…</span>
 	</div>
-{:else if auth.isAuthenticated}
+{:else}
 	<div class="relative flex h-dvh flex-col overflow-hidden">
 		{#if showAppHeader}
 			<AppShellHeader />
