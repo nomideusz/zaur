@@ -22,6 +22,7 @@ export const routeMap = {
 		/** Legacy — redirect */
 		mail: '/settings/mail',
 		workspace: '/settings/workspace',
+		/** Legacy — redirect to /calendar */
 		calendar: '/settings/calendar',
 		inbox: '/settings/inbox',
 		compose: '/settings/compose',

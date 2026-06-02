@@ -28,7 +28,6 @@ const files = [
 	['src/lib/settings/sections/appearance.svelte', '/settings/appearance'],
 	['src/lib/settings/sections/reading.svelte', '/settings/reading'],
 	['src/lib/settings/sections/writing.svelte', '/settings/writing'],
-	['src/lib/settings/sections/calendar.svelte', '/settings/calendar'],
 	['src/lib/settings/sections/data_reset.svelte', '/settings/data'],
 	['src/lib/settings/sections/data_backup.svelte', '/settings/data'],
 	['src/routes/(app)/settings/account/+page.svelte', '/settings/account']

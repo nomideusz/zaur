@@ -43,6 +43,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/account-passkey",
+		"href": "/settings/account",
+		"title": "Passkey",
+		"description": ""
+	},
+	{
 		"id": "/settings/account-primary-address",
 		"href": "/settings/account",
 		"title": "Primary address",
@@ -100,30 +106,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/appearance-reset-theme-settings",
 		"href": "/settings/appearance",
 		"title": "Reset theme settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-events-per-day",
-		"href": "/settings/calendar",
-		"title": "Events per day",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-reset-calendar-settings",
-		"href": "/settings/calendar",
-		"title": "Reset calendar settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-show-event-times",
-		"href": "/settings/calendar",
-		"title": "Show event times",
-		"description": ""
-	},
-	{
-		"id": "/settings/calendar-week-starts-on-monday",
-		"href": "/settings/calendar",
-		"title": "Week starts on Monday",
 		"description": ""
 	},
 	{
