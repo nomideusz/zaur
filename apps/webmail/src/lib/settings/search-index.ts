@@ -7,9 +7,9 @@ export type SettingsSearchEntry = {
 
 export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 	{
-		"id": "/settings/account-clear-local-cache",
+		"id": "/settings/account-app-install",
 		"href": "/settings/account",
-		"title": "Clear local cache",
+		"title": "App install",
 		"description": ""
 	},
 	{
@@ -55,15 +55,15 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/account-refresh-from-account",
+		"id": "/settings/account-push-notifications",
 		"href": "/settings/account",
-		"title": "Refresh from account",
+		"title": "Push notifications",
 		"description": ""
 	},
 	{
-		"id": "/settings/account-reset-profile",
+		"id": "/settings/account-refresh-from-account",
 		"href": "/settings/account",
-		"title": "Reset profile",
+		"title": "Refresh from account",
 		"description": ""
 	},
 	{
@@ -103,9 +103,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/appearance-reset-theme-settings",
-		"href": "/settings/appearance",
-		"title": "Reset theme settings",
+		"id": "/settings/data-clear-local-cache",
+		"href": "/settings/data",
+		"title": "Clear local cache",
 		"description": ""
 	},
 	{
@@ -121,15 +121,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/data-reset-all-settings",
+		"id": "/settings/data-reset-preferences",
 		"href": "/settings/data",
-		"title": "Reset all settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-app-install",
-		"href": "/settings/reading",
-		"title": "App install",
+		"title": "Reset preferences",
 		"description": ""
 	},
 	{
@@ -175,27 +169,27 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/reading-new-count-in-tab-title",
+		"href": "/settings/reading",
+		"title": "New count in tab title",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-new-count-on-app-icon",
+		"href": "/settings/reading",
+		"title": "New count on app icon",
+		"description": ""
+	},
+	{
 		"id": "/settings/reading-prefer-plain-text",
 		"href": "/settings/reading",
 		"title": "Prefer plain text",
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-push-notifications",
-		"href": "/settings/reading",
-		"title": "Push notifications",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-remember-last-folder",
 		"href": "/settings/reading",
 		"title": "Remember last folder",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-reset-reading-settings",
-		"href": "/settings/reading",
-		"title": "Reset reading settings",
 		"description": ""
 	},
 	{
@@ -220,18 +214,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-typeface",
 		"href": "/settings/reading",
 		"title": "Typeface",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-new-in-tab-title",
-		"href": "/settings/reading",
-		"title": "New count in tab title",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-new-on-app-icon",
-		"href": "/settings/reading",
-		"title": "New count on app icon",
 		"description": ""
 	},
 	{
@@ -274,12 +256,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/writing-hide-compose-hints",
 		"href": "/settings/writing",
 		"title": "Hide compose hints",
-		"description": ""
-	},
-	{
-		"id": "/settings/writing-reset-writing-settings",
-		"href": "/settings/writing",
-		"title": "Reset writing settings",
 		"description": ""
 	},
 	{

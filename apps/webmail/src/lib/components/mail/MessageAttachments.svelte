@@ -1,6 +1,10 @@
 <script lang="ts">
 	import FileText from '$lib/components/icons/FileText.svelte';
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
+	import {
+		attachmentDisplayName,
+		attachmentIsOpaqueName
+	} from '$lib/attachments/display-name';
 	import { downloadAttachment } from '$lib/attachments/download';
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { MessageAttachment } from '$lib/types/mail';
@@ -43,7 +47,7 @@
 </script>
 
 <section class="z-reader-attachments" aria-label={attachmentLabel(attachments.length)}>
-	<div class="mb-2 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+	<div class="z-reader-attachments__head">
 		<p class="z-reader-section-label">{attachmentLabel(attachments.length)}</p>
 		{#if canCollapse}
 			<button
@@ -60,11 +64,14 @@
 	{#if !canCollapse || expanded}
 		<ul class="z-reader-attachment-list">
 			{#each attachments as attachment (attachment.blobId)}
+				{@const displayName = attachmentDisplayName(attachment.name, attachment.type)}
+				{@const opaqueName = attachmentIsOpaqueName(attachment.name)}
 				<li>
 					<button
 						type="button"
 						class="z-reader-attachment-item"
-						title={attachment.name}
+						title={opaqueName ? `${attachment.name} — download` : `Download ${attachment.name}`}
+						aria-label={`Download ${displayName}`}
 						disabled={downloadingId === attachment.blobId}
 						onclick={() => handleDownload(attachment)}
 					>
@@ -73,12 +80,17 @@
 								<LoaderCircle class="size-full" />
 							</span>
 						{:else}
-							<FileText class="size-4 shrink-0 text-fg-muted" aria-hidden="true" />
+							<FileText class="z-reader-attachment-icon" aria-hidden="true" />
 						{/if}
-						<span class="z-reader-attachment-name">{attachment.name}</span>
-						{#if attachment.size}
-							<span class="z-reader-attachment-size">{formatSize(attachment.size)}</span>
-						{/if}
+						<span class="z-reader-attachment-copy">
+							<span class="z-reader-attachment-name">{displayName}</span>
+							<span class="z-reader-attachment-meta">
+								{#if attachment.size}
+									<span class="z-reader-attachment-size">{formatSize(attachment.size)}</span>
+								{/if}
+								<span class="z-reader-attachment-action">Download</span>
+							</span>
+						</span>
 					</button>
 				</li>
 			{/each}

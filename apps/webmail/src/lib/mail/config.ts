@@ -1,16 +1,16 @@
 export type SettingsNavSectionId =
 	| 'account'
-	| 'appearance'
 	| 'reading'
 	| 'writing'
-	| 'backup';
+	| 'appearance'
+	| 'data';
 
 export type SettingsNavIcon =
 	| 'account'
-	| 'appearance'
 	| 'reading'
 	| 'writing'
-	| 'backup';
+	| 'appearance'
+	| 'data';
 
 export type SettingsNavLink = {
 	href: string;
@@ -30,23 +30,22 @@ export const MAIL_LAYOUT = {
 
 export const SETTINGS_SECTIONS: { id: SettingsNavSectionId; label: string }[] = [
 	{ id: 'account', label: '' },
-	{ id: 'appearance', label: '' },
 	{ id: 'reading', label: '' },
 	{ id: 'writing', label: '' },
-	{ id: 'backup', label: '' }
+	{ id: 'appearance', label: '' },
+	{ id: 'data', label: '' }
 ];
 
 export const SETTINGS_NAV_LINKS: SettingsNavLink[] = [
 	{ href: '/settings/account', label: 'Account', icon: 'account', section: 'account' },
-	{ href: '/settings/appearance', label: 'Appearance', icon: 'appearance', section: 'appearance' },
 	{ href: '/settings/reading', label: 'Reading', icon: 'reading', section: 'reading' },
 	{ href: '/settings/writing', label: 'Writing', icon: 'writing', section: 'writing' },
-	{ href: '/settings/data', label: 'Backup & reset', icon: 'backup', section: 'backup' }
+	{ href: '/settings/appearance', label: 'Appearance', icon: 'appearance', section: 'appearance' },
+	{ href: '/settings/data', label: 'Data', icon: 'data', section: 'data' }
 ];
 
 /** Paths merged into other settings pages — kept for redirects and search. */
 export const LEGACY_SETTINGS_PATHS = new Set([
-	'/settings/mail',
 	'/settings/workspace',
 	'/settings/display',
 	'/settings/sidebar',
@@ -54,7 +53,8 @@ export const LEGACY_SETTINGS_PATHS = new Set([
 	'/settings/inbox',
 	'/settings/compose',
 	'/settings/layout',
-	'/settings/calendar'
+	'/settings/calendar',
+	'/settings/mail'
 ]);
 
 export function settingsNavLinks(): SettingsNavLink[] {
@@ -68,8 +68,8 @@ export function isSettingsNavActive(pathname: string, href: string): boolean {
 			pathname === '/settings/layout' ||
 			pathname === '/settings/workspace' ||
 			pathname === '/settings/sidebar' ||
-			pathname === '/settings/mail' ||
-			pathname === '/settings/inbox'
+			pathname === '/settings/inbox' ||
+			pathname === '/settings/mail'
 		);
 	}
 	if (href === '/settings/writing') {
@@ -80,10 +80,10 @@ export function isSettingsNavActive(pathname: string, href: string): boolean {
 
 export function settingsRedirect(pathname: string): string | null {
 	if (pathname === '/settings') return '/settings/account';
+	if (pathname === '/settings/mail') return '/settings/reading';
 	if (pathname === '/settings/layout') return '/settings/reading';
 	if (pathname === '/settings/workspace') return '/settings/reading';
 	if (pathname === '/settings/sidebar') return '/settings/reading';
-	if (pathname === '/settings/mail') return '/settings/reading';
 	if (pathname === '/settings/inbox') return '/settings/reading';
 	if (pathname === '/settings/compose') return '/settings/writing';
 	if (pathname === '/settings/calendar') return '/calendar';

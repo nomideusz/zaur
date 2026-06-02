@@ -5,7 +5,6 @@
 	let {
 		title,
 		titleHref = null,
-		titleBrand = false,
 		actionHref = null,
 		actionLabel = null,
 		showBackToMail = false,
@@ -15,7 +14,6 @@
 	}: {
 		title: string;
 		titleHref?: string | null;
-		titleBrand?: boolean;
 		actionHref?: string | null;
 		actionLabel?: string | null;
 		showBackToMail?: boolean;
@@ -41,7 +39,7 @@
 				showBackToMail && 'z-mail-list-nav-bar__title-wrap--folder'
 			)}
 		>
-			<p class={cn('z-mail-text-nav__title', titleBrand && 'z-type-brand')}>
+			<p class="z-mail-text-nav__title">
 				{#if titleHref}
 					<a href={titleHref}>{title}</a>
 				{:else}

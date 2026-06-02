@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import MessageListBulkMoreMenu from '$lib/components/mail/MessageListBulkMoreMenu.svelte';
 	import {
 		bulkSelectionCounts,
@@ -7,7 +6,6 @@
 	} from '$lib/components/mail/bulk-selection-label';
 	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -45,7 +43,6 @@
 				(selectionCounts.notImportant > 0 || selectionCounts.important > 0)) ||
 			moveTargets.length > 0
 	);
-	const actionButtonClass = '!h-8 shrink-0 !px-2 !text-xs';
 
 	async function runBulk(action: () => Promise<void>, refreshList = false) {
 		if (!auth.client || mail.bulkActionLoading) return;
@@ -90,10 +87,13 @@
 					<span class="z-mail-list-bulk-bar__detail"> · {selectionSummary.detail}</span>
 				{/if}
 			</p>
-			<Button variant="danger" class={actionButtonClass} onclick={deleteSelected}>
-				<Trash2 class="size-3.5" aria-hidden="true" />
+			<button
+				type="button"
+				class="z-mail-text-nav__link z-mail-text-nav__link--danger"
+				onclick={deleteSelected}
+			>
 				{deleteLabel}
-			</Button>
+			</button>
 			{#if hasMenuActions && mailboxRouteId}
 				<OverflowMenu
 					label="More actions"
@@ -102,7 +102,7 @@
 					menuClass="z-overflow-menu--list"
 					triggerText="Actions"
 					textTrigger
-					triggerClass="z-mail-text-nav__action"
+					triggerClass="z-mail-text-nav__link"
 				>
 					<MessageListBulkMoreMenu
 						mailboxRouteId={mailboxRouteId}

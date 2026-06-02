@@ -1,25 +1,12 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
-	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
-	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	const sectionLinks = $derived(settingsNavLinks());
 	const mailHref = $derived(settings.preferredMailHref());
-	const currentSection = $derived(
-		sectionLinks.find((link) => isSettingsNavActive($page.url.pathname, link.href))
-	);
-	const currentSectionLabel = $derived(currentSection?.label ?? 'Settings');
-	const otherSections = $derived(
-		sectionLinks.filter((link) => !isSettingsNavActive($page.url.pathname, link.href))
-	);
-
-	function openSection(href: string) {
-		void goto(href);
-	}
+	const pathname = $derived($page.url.pathname);
 </script>
 
 <header
@@ -31,25 +18,17 @@
 			<a class="z-mail-text-nav__link" href={mailHref}>Back to mail</a>
 		</div>
 
-		<p class="z-mail-text-nav__title z-settings-nav-bar__title">{currentSectionLabel}</p>
-
-		<div class="z-mail-text-nav__links z-settings-nav-bar__links">
-			<OverflowMenu
-				label="Settings sections"
-				menuId="settings-sections-menu"
-				placement="bottom"
-				triggerText="Sections"
-				textTrigger
-				triggerClass="z-mail-text-nav__link"
-				menuClass="z-overflow-menu--list"
-			>
-				<div class="z-overflow-menu-scroll">
-					{#each otherSections as link (link.href)}
-						<OverflowMenuItem label={link.label} onclick={() => openSection(link.href)} />
-					{/each}
-				</div>
-			</OverflowMenu>
-		</div>
+		<nav class="z-mail-text-nav__links z-settings-nav-bar__links" aria-label="Settings sections">
+			{#each sectionLinks as link (link.href)}
+				{#if isSettingsNavActive(pathname, link.href)}
+					<span class="z-mail-text-nav__link z-mail-text-nav__link--here" aria-current="page">
+						{link.label}
+					</span>
+				{:else}
+					<a class="z-mail-text-nav__link" href={link.href}>{link.label}</a>
+				{/if}
+			{/each}
+		</nav>
 	</div>
 
 	<div class="z-mail-text-nav__search z-settings-nav-bar__search">

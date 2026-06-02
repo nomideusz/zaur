@@ -880,7 +880,6 @@
 		{:else}
 			<MailTextNav
 				title={isInboxHome ? appConfig.brandName : mailboxName}
-				titleBrand={isInboxHome}
 				titleHref={isInboxHome ? mailHomeHref : null}
 				actionHref="/mail/compose"
 				actionLabel="New message"

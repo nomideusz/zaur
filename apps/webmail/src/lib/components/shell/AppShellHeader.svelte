@@ -22,7 +22,7 @@
 	<div class="flex shrink-0 items-center gap-3">
 		<a
 			href={homeHref}
-			class="z-type-brand text-base text-fg transition-colors hover:text-fg-muted"
+			class="text-base text-fg transition-colors hover:text-fg-muted"
 		>
 			<span>{appConfig.brandName}</span>
 		</a>

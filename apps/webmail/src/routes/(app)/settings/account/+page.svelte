@@ -1,17 +1,16 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import Button from '$lib/components/ui/Button.svelte';
+	import PushNotificationStatus from '$lib/components/settings/PushNotificationStatus.svelte';
 	import SettingsField from '$lib/components/settings/SettingsField.svelte';
-	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
+	import { pwa } from '$lib/stores/pwa.svelte';
 	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 
-	let clearingCache = $state(false);
 	let emptyingTrash = $state(false);
 	let emptyingSpam = $state(false);
 	let passkeyPassword = $state('');
@@ -19,6 +18,8 @@
 	let passkeyConfigured = $state<boolean | null>(null);
 
 	const oauthEnabled = $derived(auth.oauthConfig?.enabled === true);
+	const trashMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'trash'));
+	const junkMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'junk'));
 
 	onMount(async () => {
 		await auth.checkOauthConfig();
@@ -43,26 +44,6 @@
 		}
 	}
 
-	const trashMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'trash'));
-	const junkMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'junk'));
-
-	async function clearLocalCache() {
-		if (
-			!confirm(
-				'Clear downloaded mail and sync state from this device? Your messages on the server are not affected.'
-			)
-		) {
-			return;
-		}
-
-		clearingCache = true;
-		try {
-			await auth.clearLocalCache();
-		} finally {
-			clearingCache = false;
-		}
-	}
-
 	async function emptyMailbox(role: 'trash' | 'junk') {
 		const mailbox = role === 'trash' ? trashMailbox : junkMailbox;
 		const client = auth.client;
@@ -71,11 +52,7 @@
 			return;
 		}
 		const label = role === 'trash' ? 'Trash' : 'Spam';
-		if (
-			!confirm(
-				`Permanently delete every message in ${label}? This cannot be undone.`
-			)
-		) {
+		if (!confirm(`Permanently delete every message in ${label}? This cannot be undone.`)) {
 			return;
 		}
 
@@ -106,175 +83,162 @@
 </svelte:head>
 
 <SettingsPanel>
-	<SettingsGroup title="Identity">
-		<SettingsField title="Display name">
-			<input
-				type="text"
-				class="z-input"
-				value={settings.displayName}
-				placeholder={auth.displayName ?? auth.username ?? 'Your name'}
-				oninput={(e) => settings.setDisplayName(e.currentTarget.value)}
-			/>
-		</SettingsField>
+	<SettingsField title="Display name">
+		<input
+			type="text"
+			class="z-input"
+			value={settings.displayName}
+			placeholder={auth.displayName ?? auth.username ?? 'Your name'}
+			oninput={(e) => settings.setDisplayName(e.currentTarget.value)}
+		/>
+	</SettingsField>
 
-		<SettingsField title="Signature">
-			<textarea
-				class="z-input min-h-24 resize-y"
-				value={settings.signature}
-				placeholder="Best regards,&#10;Your name"
-				oninput={(e) => settings.setSignature(e.currentTarget.value)}
-			></textarea>
-		</SettingsField>
+	<SettingsField title="Signature">
+		<textarea
+			class="z-input min-h-24 resize-y"
+			value={settings.signature}
+			placeholder="Best regards,&#10;Your name"
+			oninput={(e) => settings.setSignature(e.currentTarget.value)}
+		></textarea>
+	</SettingsField>
 
-		<SettingsRow title="Include signature">
-			<input
-				type="checkbox"
-				checked={settings.useSignature}
-				onchange={(e) => settings.setUseSignature(e.currentTarget.checked)}
-			/>
-		</SettingsRow>
-	</SettingsGroup>
+	<SettingsRow title="Include signature">
+		<input
+			type="checkbox"
+			checked={settings.useSignature}
+			onchange={(e) => settings.setUseSignature(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 
-	<SettingsGroup title="Account">
-		<SettingsRow title="Primary address">
-			<span class="font-medium text-fg">{auth.username ?? '—'}</span>
-		</SettingsRow>
-		<SettingsRow title="JMAP server">
-			<span class="max-w-[12rem] truncate font-medium text-fg sm:max-w-none">
-				{auth.serverUrl ?? appConfig.jmapServerUrl}
-			</span>
-		</SettingsRow>
-		<SettingsRow title="Session">
-			<span class="font-medium text-fg">{auth.isAuthenticated ? 'Active' : 'Signed out'}</span>
-		</SettingsRow>
-		<SettingsRow title="Sign out">
-			<Button
-				variant="ghost"
-				onclick={() => {
-					if (confirm('Sign out of ZAUR Webmail on this device?')) auth.logout();
-				}}
-			>
-				Sign out
-			</Button>
-		</SettingsRow>
-	</SettingsGroup>
+	<SettingsRow title="Primary address">
+		<span class="text-fg">{auth.username ?? '—'}</span>
+	</SettingsRow>
+
+	<SettingsRow title="JMAP server">
+		<span class="max-w-[12rem] truncate text-fg sm:max-w-none">
+			{auth.serverUrl ?? appConfig.jmapServerUrl}
+		</span>
+	</SettingsRow>
+
+	<SettingsRow title="Session">
+		<span class="text-fg">{auth.isAuthenticated ? 'Active' : 'Signed out'}</span>
+	</SettingsRow>
+
+	<SettingsRow title="App install">
+		{#if pwa.isInstalled}
+			<span class="text-fg-muted">Installed</span>
+		{:else if pwa.canInstall}
+			<button type="button" class="z-mail-text-nav__link" onclick={() => pwa.showInstallPromptAgain()}>
+				Install
+			</button>
+		{:else}
+			<span class="text-fg-muted">Use browser menu</span>
+		{/if}
+	</SettingsRow>
+
+	<SettingsRow title="Push notifications">
+		<PushNotificationStatus />
+	</SettingsRow>
 
 	{#if oauthEnabled}
-		<SettingsGroup title="Sign-in">
-			<SettingsField
-				title="Passkey"
-				description="Use Face ID, Touch ID, or your device PIN to sign in without your password."
-			>
-				<div class="flex w-full flex-col gap-2 sm:max-w-xs">
-					<input
-						type="password"
-						class="z-input"
-						bind:value={passkeyPassword}
-						autocomplete="current-password"
-						placeholder="Confirm password"
-						disabled={passkeyLoading}
-					/>
-					<Button
-						class="w-full"
-						disabled={passkeyLoading || !passkeyPassword.trim()}
-						onclick={() => void addPasskey()}
-					>
-						{passkeyLoading ? 'Waiting for passkey…' : 'Add passkey'}
-					</Button>
-					{#if passkeyConfigured}
-						<p class="text-xs text-fg-muted">Passkey added on this device.</p>
-					{/if}
-				</div>
-			</SettingsField>
-		</SettingsGroup>
+		<SettingsField
+			title="Passkey"
+			description="Use Face ID, Touch ID, or your device PIN to sign in without your password."
+		>
+			<div class="flex w-full flex-col gap-2 sm:max-w-xs">
+				<input
+					type="password"
+					class="z-input"
+					bind:value={passkeyPassword}
+					autocomplete="current-password"
+					placeholder="Confirm password"
+					disabled={passkeyLoading}
+				/>
+				<button
+					type="button"
+					class="z-mail-text-nav__link w-fit"
+					disabled={passkeyLoading || !passkeyPassword.trim()}
+					onclick={() => void addPasskey()}
+				>
+					{passkeyLoading ? 'Waiting for passkey…' : 'Add passkey'}
+				</button>
+				{#if passkeyConfigured}
+					<p class="text-fg-muted">Passkey added on this device.</p>
+				{/if}
+			</div>
+		</SettingsField>
 	{/if}
 
 	{#if auth.identities.length > 1}
-		<SettingsGroup title="Addresses">
-			{#each auth.identities as identity (identity.id)}
-				<SettingsRow title={identity.name?.trim() || identity.email}>
-					<div class="flex flex-col items-end">
-						<span class="font-medium text-fg">{identity.email}</span>
-						{#if identity.name?.trim() && identity.name !== identity.email}
-							<span class="text-fg-muted">{identity.name}</span>
-						{/if}
-					</div>
-				</SettingsRow>
-			{/each}
-		</SettingsGroup>
+		{#each auth.identities as identity (identity.id)}
+			<SettingsRow title={identity.name?.trim() || identity.email}>
+				<div class="flex flex-col items-end">
+					<span class="text-fg">{identity.email}</span>
+					{#if identity.name?.trim() && identity.name !== identity.email}
+						<span class="text-fg-muted">{identity.name}</span>
+					{/if}
+				</div>
+			</SettingsRow>
+		{/each}
 	{/if}
 
-	{#if trashMailbox || junkMailbox}
-		<SettingsGroup title="Mailbox cleanup">
-			{#if trashMailbox}
-				<SettingsRow title="Empty Trash">
-					<Button
-						variant="ghost"
-						disabled={emptyingTrash || !auth.client}
-						onclick={() => void emptyMailbox('trash')}
-					>
-						{emptyingTrash ? 'Emptying…' : 'Empty'}
-					</Button>
-				</SettingsRow>
-			{/if}
-			{#if junkMailbox}
-				<SettingsRow title="Empty Spam">
-					<Button
-						variant="ghost"
-						disabled={emptyingSpam || !auth.client}
-						onclick={() => void emptyMailbox('junk')}
-					>
-						{emptyingSpam ? 'Emptying…' : 'Empty'}
-					</Button>
-				</SettingsRow>
-			{/if}
-		</SettingsGroup>
+	{#if trashMailbox}
+		<SettingsRow title="Empty Trash">
+			<button
+				type="button"
+				class="z-mail-text-nav__link z-mail-text-nav__link--danger"
+				disabled={emptyingTrash || !auth.client}
+				onclick={() => void emptyMailbox('trash')}
+			>
+				{emptyingTrash ? 'Emptying…' : 'Empty'}
+			</button>
+		</SettingsRow>
 	{/if}
 
-	<SettingsGroup title="Sync">
-		<SettingsRow title="Refresh from account">
+	{#if junkMailbox}
+		<SettingsRow title="Empty Spam">
 			<button
 				type="button"
-				class="z-btn-ghost"
-				onclick={async () => {
-					const changed = await settings.refreshFromAccount();
-					toast.show(
-						changed ? 'Settings updated from your account' : 'Settings are already up to date',
-						changed ? 'success' : 'info'
-					);
-				}}
+				class="z-mail-text-nav__link z-mail-text-nav__link--danger"
+				disabled={emptyingSpam || !auth.client}
+				onclick={() => void emptyMailbox('junk')}
 			>
-				Refresh
+				{emptyingSpam ? 'Emptying…' : 'Empty'}
 			</button>
 		</SettingsRow>
-		<SettingsRow title="Save to account">
-			<button type="button" class="z-btn-ghost" onclick={() => void settings.syncToAccount()}>
-				Save
-			</button>
-		</SettingsRow>
-	</SettingsGroup>
+	{/if}
 
-	<SettingsGroup title="Local data">
-		<SettingsRow title="Clear local cache">
-			<Button variant="ghost" disabled={clearingCache} onclick={clearLocalCache}>
-				{clearingCache ? 'Clearing…' : 'Clear'}
-			</Button>
-		</SettingsRow>
-	</SettingsGroup>
+	<SettingsRow title="Refresh from account">
+		<button
+			type="button"
+			class="z-mail-text-nav__link"
+			onclick={async () => {
+				const changed = await settings.refreshFromAccount();
+				toast.show(
+					changed ? 'Settings updated from your account' : 'Settings are already up to date',
+					changed ? 'success' : 'info'
+				);
+			}}
+		>
+			Refresh
+		</button>
+	</SettingsRow>
 
-	<SettingsGroup title="Defaults">
-		<SettingsRow title="Reset profile">
-			<button
-				type="button"
-				class="z-btn-ghost"
-				onclick={() => {
-					if (confirm('Reset your profile to defaults?')) {
-						settings.resetAccountSettings();
-					}
-				}}
-			>
-				Reset
-			</button>
-		</SettingsRow>
-	</SettingsGroup>
+	<SettingsRow title="Save to account">
+		<button type="button" class="z-mail-text-nav__link" onclick={() => void settings.syncToAccount()}>
+			Save
+		</button>
+	</SettingsRow>
+
+	<SettingsRow title="Sign out">
+		<button
+			type="button"
+			class="z-mail-text-nav__link text-fg-subtle"
+			onclick={() => {
+				if (confirm('Sign out of ZAUR Webmail on this device?')) auth.logout();
+			}}
+		>
+			Sign out
+		</button>
+	</SettingsRow>
 </SettingsPanel>

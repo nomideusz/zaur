@@ -21,7 +21,7 @@
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__title {
-		@apply min-w-0 font-semibold text-fg;
+		@apply min-w-0 font-normal text-fg;
 		margin: 0;
 		font-size: var(--z-main-page-text);
 		line-height: 1.45;

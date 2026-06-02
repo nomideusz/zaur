@@ -1,6 +1,6 @@
 <script lang="ts">
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
-	import Reading from '$lib/settings/sections/reading.svelte';
+	import ReadingSection from '$lib/settings/sections/reading.svelte';
 </script>
 
 <svelte:head>
@@ -8,5 +8,5 @@
 </svelte:head>
 
 <SettingsPanel>
-	<Reading />
+	<ReadingSection />
 </SettingsPanel>

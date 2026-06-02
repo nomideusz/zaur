@@ -7,29 +7,11 @@ function slug(title) {
 		.replace(/^-|-$/g, '');
 }
 
-function parseGroups(source) {
-	const groups = [];
-	const groupRe = /<SettingsGroup([^>]*)>([\s\S]*?)<\/SettingsGroup>/g;
-	let match;
-	while ((match = groupRe.exec(source)) !== null) {
-		const body = match[2];
-		const rows = [];
-		const rowRe = /<(SettingsRow|SettingsField)[^>]*title="([^"]+)"/g;
-		let rowMatch;
-		while ((rowMatch = rowRe.exec(body)) !== null) {
-			rows.push(rowMatch[2]);
-		}
-		groups.push({ rows });
-	}
-	return groups;
-}
-
 const files = [
 	['src/lib/settings/sections/appearance.svelte', '/settings/appearance'],
 	['src/lib/settings/sections/reading.svelte', '/settings/reading'],
 	['src/lib/settings/sections/writing.svelte', '/settings/writing'],
-	['src/lib/settings/sections/data_reset.svelte', '/settings/data'],
-	['src/lib/settings/sections/data_backup.svelte', '/settings/data'],
+	['src/lib/settings/sections/data.svelte', '/settings/data'],
 	['src/routes/(app)/settings/account/+page.svelte', '/settings/account']
 ];
 

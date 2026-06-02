@@ -125,7 +125,7 @@
 			<span class="text-fg-muted">Not ready</span>
 			<button
 				type="button"
-				class="z-btn-ghost px-0"
+				class="z-mail-text-nav__link"
 				disabled={busy}
 				onclick={() => void retryPush()}
 			>
@@ -139,7 +139,7 @@
 	{/if}
 
 	{#if showInstall && pushStatus.state !== 'unsupported' && pushStatus.state !== 'server_disabled'}
-		<button type="button" class="z-btn-ghost px-0" onclick={() => pwa.showInstallPromptAgain()}>
+		<button type="button" class="z-mail-text-nav__link" onclick={() => pwa.showInstallPromptAgain()}>
 			Install app
 		</button>
 	{/if}

@@ -257,7 +257,7 @@
 		<div class="z-reader-column">
 			<div class="z-mail-text-nav z-reader-sticky-nav">
 				<div class="z-mail-text-nav__row">
-					<div class="flex min-w-0 shrink-0 items-center gap-2">
+					<div class="z-mail-text-nav__links min-w-0 shrink-0">
 						<a class="z-mail-text-nav__link" href={mailHomeHref}>Back to mail</a>
 						{#if !mail.hasSelection && latest && !isDraft}
 							{#if actionMessage?.unread}
@@ -309,11 +309,11 @@
 					<div class="z-mail-external-banner">
 						<Shield class="size-3.5 shrink-0" aria-hidden="true" />
 						<span>External images blocked.</span>
-						<button type="button" class="z-mail-external-banner__action" onclick={showImagesOnce}>
+						<button type="button" class="z-mail-text-nav__link" onclick={showImagesOnce}>
 							Show once
 						</button>
 						<span class="z-mail-external-banner__dot">·</span>
-						<a href="/settings/appearance" class="z-mail-external-banner__action">Settings</a>
+						<a href="/settings/appearance" class="z-mail-text-nav__link">Settings</a>
 					</div>
 				{/if}
 			<div class="z-reader-thread-list">
@@ -416,12 +416,6 @@
 								>{subject}</p>
 							{/if}
 
-							{#if message.attachments.length}
-								<div class="mb-4">
-									<MessageAttachments attachments={message.attachments} />
-								</div>
-							{/if}
-
 							<div class="z-reader-body">
 								<MessageBody
 									bodyHtml={message.bodyHtml}
@@ -429,6 +423,10 @@
 									{allowExternal}
 								/>
 							</div>
+
+							{#if message.attachments.length}
+								<MessageAttachments attachments={message.attachments} />
+							{/if}
 						</div>
 					{:else}
 						<button
