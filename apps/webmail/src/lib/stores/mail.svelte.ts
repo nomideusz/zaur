@@ -474,6 +474,20 @@ class MailStore {
 		await this.markAsRead(client, message, true);
 	}
 
+	/** File as normal — remove Important pin (if any) and clear New. */
+	async fileAsNotImportant(client: JMAPClient, message: MessagePreview) {
+		if (message.important) {
+			await this.setMessagesImportant(client, [message], false);
+		}
+		const current =
+			this.messages.find((entry) => entry.id === message.id) ??
+			this.selectedThread.find((entry) => entry.id === message.id) ??
+			message;
+		if (current.unread) {
+			await this.markMessageDone(client, current);
+		}
+	}
+
 	async markMessageNew(client: JMAPClient, message: MessagePreview) {
 		if (message.unread) return;
 		await this.markAsRead(client, message, false);
@@ -908,6 +922,10 @@ class MailStore {
 
 		this.bulkActionLoading = true;
 		try {
+			const important = messages.filter((message) => message.important);
+			if (important.length) {
+				await this.setMessagesImportant(client, important, false);
+			}
 			await this.bulkSetNewState(client, messages, true);
 			this.clearSelection();
 			toast.show(

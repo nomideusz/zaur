@@ -20,7 +20,7 @@ export const LABEL_NOT_IMPORTANT = 'Not important';
 /**
  * What clears New (sets $seen / unread=false). Opening a message does not.
  *
- * - Not important — file as normal (swipe, reader, keyboard)
+ * - Not important — file as normal: clear New and remove Important pin
  * - Important — acknowledged and pinned; leaves New queue
  * - Trash / delete — message removed
  * - Move to inbox — restore from trash/spam/archive (interop; does not clear New by itself)

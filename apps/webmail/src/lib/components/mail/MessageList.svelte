@@ -48,7 +48,7 @@
 	import { cn } from '$lib/utils/cn';
 	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
-	import { LABEL_CLEAR_NEW } from '$lib/mail/new-mail';
+	import { LABEL_NOT_IMPORTANT } from '$lib/mail/new-mail';
 	import {
 		canMarkImportantFromMailboxRole,
 		isExcludedFromImportantSection,
@@ -299,10 +299,10 @@
 	async function swipeDone(message: MessagePreview) {
 		if (!auth.client) return;
 		try {
-			await mail.markMessageDone(auth.client, message);
+			await mail.fileAsNotImportant(auth.client, message);
 			onBulkAction?.();
 		} catch (err) {
-			const text = err instanceof Error ? err.message : `Could not mark ${LABEL_CLEAR_NEW.toLowerCase()}`;
+			const text = err instanceof Error ? err.message : `Could not mark ${LABEL_NOT_IMPORTANT.toLowerCase()}`;
 			toast.show(text, 'error');
 		}
 	}

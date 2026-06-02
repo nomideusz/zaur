@@ -119,12 +119,16 @@
 		});
 	}
 
-	async function markDone() {
-		if (!auth.client || !actionMessage?.unread) return;
+	async function fileAsNotImportant() {
+		if (!auth.client || !actionMessage) return;
+		if (!actionMessage.important && !actionMessage.unread) return;
 		try {
-			await mail.markMessageDone(auth.client, actionMessage);
+			await mail.fileAsNotImportant(auth.client, actionMessage);
 		} catch (error) {
-			const message = error instanceof Error ? error.message : `Could not mark ${LABEL_CLEAR_NEW.toLowerCase()}`;
+			const message =
+				error instanceof Error
+					? error.message
+					: `Could not mark ${LABEL_NOT_IMPORTANT.toLowerCase()}`;
 			toast.show(message, 'error');
 		}
 	}
@@ -200,7 +204,7 @@
 			</OverflowMenuItem>
 			{#if !hideClearNewInMenu}
 				{#if actionMessage?.unread}
-					<OverflowMenuItem label={LABEL_CLEAR_NEW} onclick={markDone} />
+					<OverflowMenuItem label={LABEL_CLEAR_NEW} onclick={fileAsNotImportant} />
 				{:else}
 					<OverflowMenuItem label={LABEL_RESTORE_NEW} onclick={markNew} />
 				{/if}
@@ -210,7 +214,7 @@
 			<div class="mx-4 my-1 border-t border-border" role="separator"></div>
 			{#if !hideImportantTriageInMenu}
 				{#if actionMessage?.important}
-					<OverflowMenuItem label={LABEL_NOT_IMPORTANT} onclick={toggleImportant}>
+					<OverflowMenuItem label={LABEL_NOT_IMPORTANT} onclick={fileAsNotImportant}>
 						{#snippet icon()}
 							<Important class="size-5 text-accent" aria-hidden="true" />
 						{/snippet}

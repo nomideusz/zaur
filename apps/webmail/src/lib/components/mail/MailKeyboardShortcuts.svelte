@@ -232,7 +232,7 @@
 					void withLatest(
 						(message) => {
 							if (!auth.client || !message.unread) return;
-							return mail.markMessageDone(auth.client, message);
+							return mail.fileAsNotImportant(auth.client, message);
 						},
 						{ leaveThread: true }
 					);

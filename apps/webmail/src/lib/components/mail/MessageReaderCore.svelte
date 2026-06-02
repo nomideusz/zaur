@@ -216,17 +216,11 @@
 
 	async function triageNotImportant() {
 		if (!auth.client || !actionMessage) return;
-		if (actionMessage.important) {
-			await runTriageAction(
-				() => mail.toggleImportant(auth.client!, actionMessage),
-				`Could not mark ${LABEL_NOT_IMPORTANT.toLowerCase()}`
-			);
-		} else if (actionMessage.unread) {
-			await runTriageAction(
-				() => mail.markMessageDone(auth.client!, actionMessage),
-				`Could not mark ${LABEL_NOT_IMPORTANT.toLowerCase()}`
-			);
-		}
+		if (!actionMessage.important && !actionMessage.unread) return;
+		await runTriageAction(
+			() => mail.fileAsNotImportant(auth.client!, actionMessage),
+			`Could not mark ${LABEL_NOT_IMPORTANT.toLowerCase()}`
+		);
 	}
 
 	async function triageClearNew() {
