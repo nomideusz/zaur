@@ -978,7 +978,9 @@ class MailStore {
 	}
 
 	async bulkMarkAsNotImportant(client: JMAPClient) {
-		const messages = this.selectedMessages().filter((message) => message.important);
+		const messages = this.selectedMessages().filter(
+			(message) => message.important && !message.unread
+		);
 		if (!messages.length) return;
 
 		this.bulkActionLoading = true;

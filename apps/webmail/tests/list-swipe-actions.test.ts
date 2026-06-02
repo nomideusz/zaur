@@ -94,6 +94,17 @@ describe('list-swipe-actions', () => {
 		);
 	});
 
+	it('uses done for read important messages', () => {
+		assert.deepEqual(
+			listSwipeLeadingActions({
+				message: message({ important: true }),
+				mailbox: { role: 'inbox' },
+				...baseCtx
+			}).map((action) => action.id),
+			['done']
+		);
+	});
+
 	it('uses destructive trailing actions per folder', () => {
 		assert.deepEqual(
 			listSwipeTrailingActions({

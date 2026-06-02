@@ -231,7 +231,8 @@
 					event.preventDefault();
 					void withLatest(
 						(message) => {
-							if (!auth.client || !message.unread) return;
+							if (!auth.client) return;
+							if (!message.unread && !message.important) return;
 							return mail.fileAsNotImportant(auth.client, message);
 						},
 						{ leaveThread: true }

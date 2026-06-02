@@ -44,6 +44,10 @@ export function listSwipeLeadingActions(ctx: ListSwipeContext): ListSwipeAction[
 		return [{ id: 'done', label: LABEL_NOT_IMPORTANT, variant: 'default' }];
 	}
 
+	if (canMarkImportant && message.important) {
+		return [{ id: 'done', label: LABEL_NOT_IMPORTANT, variant: 'default' }];
+	}
+
 	if (canMarkImportant && !message.important) {
 		return [{ id: 'mark-important', label: LABEL_MARK_IMPORTANT, variant: 'accent' }];
 	}
