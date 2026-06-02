@@ -171,6 +171,13 @@
 		position: relative;
 	}
 
+	.z-mail-view .z-mail-list-row > :where(a):focus-visible,
+	.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a):focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: 2px;
+		border-radius: 0.25rem;
+	}
+
 	/* Invisible hit target so hover works over the left gutter. */
 	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row::before {
 		content: '';
@@ -302,6 +309,12 @@
 		opacity: 0.7;
 	}
 
+	.z-mail-list-color-cycle:focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: 2px;
+		border-radius: 0.25rem;
+	}
+
 	/* Bulk select — sticky footer inside the scrolling main column. */
 	.z-mail-list-scroll--with-bar {
 		padding-bottom: max(3.75rem, calc(env(safe-area-inset-bottom) + 2.75rem));
@@ -346,7 +359,13 @@
 	.z-mail-view .z-mail-list-section-messages {
 		display: flex;
 		flex-direction: column;
-		gap: 0.625rem;
+		gap: max(0.5rem, var(--z-space-folder-message-y));
+	}
+
+	/* New section: one-sided stroke for the whole section block. */
+	.z-mail-view .z-mail-list-section--new .z-mail-list-section-messages {
+		padding-inline-start: 0.625rem;
+		border-inline-start: 3px solid color-mix(in srgb, var(--z-unread) 80%, transparent);
 	}
 
 	.z-mail-view .z-mail-list-section-more {
@@ -355,6 +374,12 @@
 
 	.z-mail-view .z-mail-list-folders {
 		margin-top: var(--z-main-gap);
+	}
+
+	.z-mail-view .z-mail-list-folders :where(a):focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: 2px;
+		border-radius: 0.125rem;
 	}
 
 	/*
@@ -385,6 +410,10 @@
 			var(--important-rainbow-s),
 			var(--important-rainbow-l)
 		);
+	}
+
+	.z-mail-view .z-reader-subject-heading.z-mail-list-subject--important {
+		text-decoration-line: none;
 	}
 
 	@keyframes z-important-rainbow {

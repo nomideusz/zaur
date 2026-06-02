@@ -346,7 +346,7 @@
 	class="pointer-events-none relative hidden h-20 shrink-0 overflow-hidden md:block"
 	aria-hidden="true"
 >
-	<div class="absolute inset-x-6 bottom-3 border-t border-border/35"></div>
+	<div class="absolute inset-x-0 bottom-3 border-t border-border/35"></div>
 	{#if showSprite}
 		<div
 			class="absolute bottom-3 will-change-transform"
