@@ -22,7 +22,7 @@
 	let { mode = 'new', initialTo = '' }: Props = $props();
 	let fileInput = $state<HTMLInputElement | null>(null);
 	let bodyInput = $state<HTMLTextAreaElement | null>(null);
-	let toInput = $state<HTMLInputElement | null>(null);
+	let toInput = $state<HTMLTextAreaElement | null>(null);
 
 	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
 	const composeErrorsId = 'compose-form-errors';
@@ -392,6 +392,35 @@
 				</div>
 			</div>
 
+			{#if compose.attachments.length}
+				<ul class="z-compose-attachment-list" aria-label="Attachments">
+					{#each compose.attachments as attachment (attachment.id)}
+						<li class="z-compose-attachment-item">
+							<div class="flex min-w-0 flex-1 items-center gap-2">
+								<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
+								<span class="z-type-page-muted min-w-0 truncate text-fg font-medium">{attachment.name}</span>
+								<span class="z-type-page-muted shrink-0 text-fg-subtle">
+									({formatAttachmentSize(attachment.size)})
+								</span>
+								{#if attachment.uploading}
+									<span class="z-type-page-muted text-fg-subtle">Uploading…</span>
+								{:else if attachment.uploadError}
+									<span class="z-type-page-muted text-danger">Failed</span>
+								{/if}
+							</div>
+							<button
+								type="button"
+								class="inline-flex shrink-0 items-center text-fg-subtle transition-colors hover:text-fg ml-2"
+								aria-label="Remove {attachment.name}"
+								onclick={() => compose.removeAttachment(attachment.id)}
+							>
+								<X class="size-3.5" aria-hidden="true" />
+							</button>
+						</li>
+					{/each}
+				</ul>
+			{/if}
+
 			<div class="z-compose__write">
 				<div class="z-compose__message">
 					<label class="sr-only" for="compose-body">Message</label>
@@ -463,34 +492,7 @@
 				</details>
 			{/if}
 
-			{#if compose.attachments.length}
-				<ul class="z-compose-attachment-list" aria-label="Attachments">
-					{#each compose.attachments as attachment (attachment.id)}
-						<li class="z-compose-attachment-item">
-							<div class="flex min-w-0 flex-1 items-center gap-2">
-								<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
-								<span class="z-type-page-muted min-w-0 truncate text-fg font-medium">{attachment.name}</span>
-								<span class="z-type-page-muted shrink-0 text-fg-subtle">
-									({formatAttachmentSize(attachment.size)})
-								</span>
-								{#if attachment.uploading}
-									<span class="z-type-page-muted text-fg-subtle">Uploading…</span>
-								{:else if attachment.uploadError}
-									<span class="z-type-page-muted text-danger">Failed</span>
-								{/if}
-							</div>
-							<button
-								type="button"
-								class="inline-flex shrink-0 items-center text-fg-subtle transition-colors hover:text-fg ml-2"
-								aria-label="Remove {attachment.name}"
-								onclick={() => compose.removeAttachment(attachment.id)}
-							>
-								<X class="size-3.5" aria-hidden="true" />
-							</button>
-						</li>
-					{/each}
-				</ul>
-			{/if}
+
 
 			{#if compose.error || invalidRecipients.length}
 				<p id={composeErrorsId} class="z-type-page-muted mt-4 text-danger" role="alert">

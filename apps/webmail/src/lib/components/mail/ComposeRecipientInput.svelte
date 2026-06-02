@@ -13,7 +13,7 @@
 		autocomplete?: string;
 		invalid?: boolean;
 		ariaDescribedby?: string;
-		inputElement?: HTMLInputElement | null;
+		inputElement?: HTMLTextAreaElement | null;
 		autofocus?: boolean;
 		oninput?: (value: string) => void;
 	}
@@ -72,29 +72,37 @@
 			open = false;
 		}
 	}
+
+	$effect(() => {
+		if (inputElement && value) {
+			inputElement.style.height = 'auto';
+			inputElement.style.height = inputElement.scrollHeight + 'px';
+		}
+	});
 </script>
 
 <div class="relative min-w-0 flex-1">
-	<input
+	<textarea
 		bind:this={inputElement}
 		{id}
-		type="text"
-		class={cn('z-compose-field-input w-full', className)}
+		class={cn('z-compose-field-input w-full resize-none bg-transparent outline-none align-bottom', className)}
+		rows={1}
 		placeholder={placeholder}
-		autocomplete={autocomplete as HTMLInputElement['autocomplete']}
+		autocomplete={autocomplete}
 		aria-invalid={invalid || undefined}
 		aria-describedby={ariaDescribedby}
-		{value}
-		{autofocus}
+		value={value}
 		onfocus={() => (open = true)}
 		onblur={() => setTimeout(() => (open = false), 120)}
 		oninput={(e) => {
 			open = true;
 			activeIndex = 0;
 			emit(e.currentTarget.value);
+			e.currentTarget.style.height = 'auto';
+			e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
 		}}
 		onkeydown={onKeydown}
-	/>
+	></textarea>
 
 	{#if showSuggestions}
 		<ul

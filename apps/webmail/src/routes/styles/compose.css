@@ -162,7 +162,14 @@
 		font-size: var(--z-reader-text);
 		line-height: var(--z-reader-leading);
 		border: none;
-		padding: 0;
+		padding-inline: 1rem;
+		padding-block: 0;
+	}
+
+	@media (min-width: 768px) {
+		.z-mail-view .z-compose__body {
+			padding-inline: 1.5rem;
+		}
 	}
 
 	.z-mail-view .z-compose__signature {
@@ -184,7 +191,8 @@
 		resize: none;
 		background: transparent;
 		border: none;
-		padding: 0;
+		padding-inline: 1rem;
+		padding-block: 0;
 		outline: none;
 		color: var(--z-fg-muted);
 		font-family: var(--z-reader-font);
@@ -198,10 +206,18 @@
 		z-index: 15;
 		flex-shrink: 0;
 		margin-top: 0.75rem;
+		padding-inline: 1rem;
 		padding-block: 0.75rem;
 		background-color: var(--z-surface);
 		font-size: var(--z-main-page-muted-text);
 		line-height: 1.55;
+	}
+
+	@media (min-width: 768px) {
+		.z-mail-view .z-compose__signature-input,
+		.z-mail-view .z-compose__signature-empty {
+			padding-inline: 1.5rem;
+		}
 	}
 
 	@media (max-width: 767px) {
