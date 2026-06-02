@@ -121,15 +121,7 @@
 	const READ_SECTION_ID = 'read';
 	const INBOX_SECTION_IDS = new Set([NEW_SECTION_ID, IMPORTANT_SECTION_ID, READ_SECTION_ID]);
 	const FOLDER_SECTION_SORT_BASE = 10;
-	const NEW_MESSAGE_WINDOW_MS = 1000 * 60 * 60 * 24;
-	const NEW_MESSAGE_SEEN_RETENTION_MS = 1000 * 60 * 60 * 24 * 45;
-	const NEW_MESSAGE_SEEN_MAX_ENTRIES = 5000;
-	const NEW_MESSAGE_SEEN_STORAGE_PREFIX = 'zaur:new-message-first-seen:';
-	const READ_EVER_STORAGE_PREFIX = 'zaur:message-read-ever:';
-	let firstSeenByMessageId = $state<Record<string, number>>({});
-	let firstSeenStorageKey = $state<string | null>(null);
-	let readEverByMessageId = $state<Record<string, number>>({});
-	let readEverStorageKey = $state<string | null>(null);
+
 	/** Important row currently hovered — only that row may persist a rainbow pick. */
 	let importantRainbowHoverId = $state<string | null>(null);
 	/** After bulk-select long-press, block the following link navigation. */
@@ -164,6 +156,8 @@
 		if ($page.url.pathname !== '/mail/search') return null;
 		return `${$page.url.pathname}${$page.url.search}`;
 	});
+	const messagesByThreadId = $derived(indexMessagesByThreadId(messages));
+	const listMessages = $derived(collapseMessagesByThread(messages));
 	const currentMessageId = $derived(
 		activeMessageId(
 			listMessages,
@@ -294,9 +288,12 @@
 	function handleRowCheckboxClick(messageId: string, event: MouseEvent) {
 		event.stopPropagation();
 		const ctrl = event.ctrlKey || event.metaKey;
-		if (event.shiftKey || ctrl) {
+		const shift = event.shiftKey;
+		if (shift || ctrl) {
 			event.preventDefault();
-			handleRowSelect(messageId, { shift: event.shiftKey, ctrl });
+			setTimeout(() => {
+				handleRowSelect(messageId, { shift, ctrl });
+			}, 0);
 		}
 	}
 
@@ -391,27 +388,15 @@
 		);
 	}
 
-	const messagesByThreadId = $derived(indexMessagesByThreadId(messages));
-	const listMessages = $derived(collapseMessagesByThread(messages));
+
 
 	function isNewUnreadListRow(message: MessagePreview): boolean {
 		const thread = messagesByThreadId.get(message.threadId) ?? [message];
 		return thread.some((entry) => isNewUnreadMessage(entry));
 	}
 
-	function firstSeenTimestamp(message: MessagePreview): number {
-		const tracked = firstSeenByMessageId[message.id];
-		if (typeof tracked === 'number' && Number.isFinite(tracked)) return tracked;
-		const received = new Date(message.receivedAt).getTime();
-		if (!Number.isNaN(received)) return received;
-		return Date.now();
-	}
-
 	function isNewUnreadMessage(message: MessagePreview): boolean {
-		if (!message.unread) return false;
-		if (readEverByMessageId[message.id] !== undefined) return false;
-		const age = Date.now() - firstSeenTimestamp(message);
-		return age >= 0 && age <= NEW_MESSAGE_WINDOW_MS;
+		return message.unread;
 	}
 
 	const newUnreadMessages = $derived.by(() =>
@@ -445,119 +430,7 @@
 	);
 	const importantMailbox = $derived(mail.importantMailbox());
 
-	$effect(() => {
-		if (!browser) return;
-		const accountId = auth.client?.getAccountId() ?? 'local';
-		const key = `${NEW_MESSAGE_SEEN_STORAGE_PREFIX}${accountId}`;
-		if (firstSeenStorageKey === key) return;
 
-		firstSeenStorageKey = key;
-		try {
-			const raw = localStorage.getItem(key);
-			firstSeenByMessageId = raw ? (JSON.parse(raw) as Record<string, number>) : {};
-		} catch {
-			firstSeenByMessageId = {};
-		}
-	});
-
-	$effect(() => {
-		if (!browser) return;
-		const accountId = auth.client?.getAccountId() ?? 'local';
-		const key = `${READ_EVER_STORAGE_PREFIX}${accountId}`;
-		if (readEverStorageKey === key) return;
-
-		readEverStorageKey = key;
-		try {
-			const raw = localStorage.getItem(key);
-			readEverByMessageId = raw ? (JSON.parse(raw) as Record<string, number>) : {};
-		} catch {
-			readEverByMessageId = {};
-		}
-	});
-
-	$effect(() => {
-		if (!browser || !firstSeenStorageKey) return;
-
-		const now = Date.now();
-		const currentIds = new Set(messages.map((message) => message.id));
-		const next: Record<string, number> = { ...firstSeenByMessageId };
-		let changed = false;
-
-		for (const message of messages) {
-			if (next[message.id] === undefined) {
-				next[message.id] = now;
-				changed = true;
-			}
-		}
-
-		for (const [id, seenAt] of Object.entries(next)) {
-			if (!currentIds.has(id) && now - seenAt > NEW_MESSAGE_SEEN_RETENTION_MS) {
-				delete next[id];
-				changed = true;
-			}
-		}
-
-		const entries = Object.entries(next);
-		if (entries.length > NEW_MESSAGE_SEEN_MAX_ENTRIES) {
-			entries
-				.sort((a, b) => a[1] - b[1])
-				.slice(0, entries.length - NEW_MESSAGE_SEEN_MAX_ENTRIES)
-				.forEach(([id]) => {
-					delete next[id];
-					changed = true;
-				});
-		}
-
-		if (!changed) return;
-		firstSeenByMessageId = next;
-		try {
-			localStorage.setItem(firstSeenStorageKey, JSON.stringify(next));
-		} catch {
-			// Ignore storage quota/private mode errors.
-		}
-	});
-
-	$effect(() => {
-		if (!browser || !readEverStorageKey) return;
-
-		const now = Date.now();
-		const currentIds = new Set(messages.map((message) => message.id));
-		const next: Record<string, number> = { ...readEverByMessageId };
-		let changed = false;
-
-		for (const message of messages) {
-			if (!message.unread && next[message.id] === undefined) {
-				next[message.id] = now;
-				changed = true;
-			}
-		}
-
-		for (const [id, seenAt] of Object.entries(next)) {
-			if (!currentIds.has(id) && now - seenAt > NEW_MESSAGE_SEEN_RETENTION_MS) {
-				delete next[id];
-				changed = true;
-			}
-		}
-
-		const entries = Object.entries(next);
-		if (entries.length > NEW_MESSAGE_SEEN_MAX_ENTRIES) {
-			entries
-				.sort((a, b) => a[1] - b[1])
-				.slice(0, entries.length - NEW_MESSAGE_SEEN_MAX_ENTRIES)
-				.forEach(([id]) => {
-					delete next[id];
-					changed = true;
-				});
-		}
-
-		if (!changed) return;
-		readEverByMessageId = next;
-		try {
-			localStorage.setItem(readEverStorageKey, JSON.stringify(next));
-		} catch {
-			// Ignore storage quota/private mode errors.
-		}
-	});
 
 	const orderedFolders = $derived.by(() =>
 		mail.mailboxes
