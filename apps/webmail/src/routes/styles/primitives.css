@@ -350,10 +350,6 @@
 		padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 	}
 
-	.z-mail-list-scroll--with-bar {
-		padding-bottom: max(3.75rem, calc(env(safe-area-inset-bottom) + 2.75rem));
-	}
-
 	.z-surface-active {
 		background-color: var(--z-chrome-active);
 		@apply font-medium text-fg;

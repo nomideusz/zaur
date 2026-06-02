@@ -72,17 +72,25 @@
 	.z-mail-view .z-content-shell .z-mail-list-bulk-bar__checkbox {
 		position: absolute;
 		left: calc(-1 * var(--z-list-checkbox-gutter));
-		/* Align with the first toolbar row (padding-top + half of 2.5rem controls). */
-		top: calc(0.5rem + 1.25rem);
+		top: 50%;
 		translate: 0 -50%;
 		margin: 0;
 	}
 
-	.z-app-main--page-scroll .z-mail-view .z-mail-list-bulk-bar {
-		position: sticky;
-		bottom: 0;
-		z-index: 20;
-		margin-top: 1rem;
+	/* Bulk bar sits directly under the message list (not sticky). */
+	.z-mail-view .z-mail-list-bulk-bar--inline {
+		position: relative;
+		margin-top: var(--z-main-gap);
+	}
+
+	@media (max-width: 767px) {
+		.z-mail-view .z-mail-list-bulk-bar--inline {
+			min-height: 3.25rem;
+			align-items: center;
+			padding-top: 0.625rem;
+			padding-bottom: max(1rem, calc(env(safe-area-inset-bottom) + 0.75rem));
+			margin-bottom: max(0.75rem, env(safe-area-inset-bottom));
+		}
 	}
 
 	.z-mail-list-bulk-bar__select {
@@ -104,6 +112,27 @@
 		line-height: 1.55;
 		font-weight: 500;
 		color: var(--z-fg);
+	}
+
+	.z-mail-list-bulk-bar__count--action {
+		padding: 0;
+		border: none;
+		background: transparent;
+		text-align: left;
+		cursor: pointer;
+	}
+
+	.z-mail-list-bulk-bar__count--action:hover,
+	.z-mail-list-bulk-bar__count--action:focus-visible {
+		text-decoration: underline;
+		text-underline-offset: 0.15em;
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 35%, transparent);
+	}
+
+	.z-mail-list-bulk-bar__count--action:focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: 2px;
+		border-radius: 0.125rem;
 	}
 
 	.z-mail-list-bulk-bar__actions {
@@ -139,7 +168,7 @@
 		.z-mail-view .z-mail-list-bulk-bar__count {
 			flex: 0 1 auto;
 			min-width: 0;
-			max-width: 4.5rem;
+			max-width: 9.5rem;
 			overflow: hidden;
 			text-overflow: ellipsis;
 			white-space: nowrap;
@@ -324,11 +353,6 @@
 		border-radius: 0.25rem;
 	}
 
-	/* Bulk select — sticky footer inside the scrolling main column. */
-	.z-mail-list-scroll--with-bar {
-		padding-bottom: max(3.75rem, calc(env(safe-area-inset-bottom) + 2.75rem));
-	}
-
 	/* Inbox home + folder sections — vertical rhythm. */
 	.z-mail-view .z-mail-list-sections {
 		display: flex;
@@ -361,6 +385,25 @@
 
 	.z-mail-view .z-mail-list-section-messages--new .z-mail-list-row::before {
 		width: calc(var(--z-list-checkbox-gutter) + 0.75rem);
+	}
+
+	/* New (unread, first-day) rows — subtle unread tint on subject and time. */
+	.z-mail-list-subject--new,
+	.z-mail-list-meta--new {
+		color: color-mix(in srgb, var(--z-unread) 25%, var(--z-fg));
+		transition: color 150ms var(--z-ease-standard, ease);
+	}
+
+	.z-mail-list-subject--new {
+		text-decoration-color: color-mix(in srgb, var(--z-unread) 35%, transparent);
+		transition:
+			color 150ms var(--z-ease-standard, ease),
+			text-decoration-color 150ms var(--z-ease-standard, ease);
+	}
+
+	.z-mail-view .group\/message:hover .list-subject.z-mail-list-subject--new,
+	.z-mail-view .group\/message:focus-visible .list-subject.z-mail-list-subject--new {
+		text-decoration-color: color-mix(in srgb, var(--z-unread) 55%, transparent);
 	}
 
 	.z-mail-view .z-mail-list-section-head {

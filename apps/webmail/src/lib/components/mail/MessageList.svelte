@@ -56,18 +56,29 @@
 	const listMessageLeadClass = 'flex min-w-0 flex-1 flex-col gap-0.5';
 	const listSubjectShellClass =
 		'list-subject block min-w-0 w-full z-type-page leading-[1.4] break-words';
-	const listSubjectPlainClass = cn(
-		listSubjectShellClass,
-		'font-normal text-fg underline underline-offset-[0.2em] decoration-fg/35 decoration-1',
-		'transition-[color,text-decoration-color] duration-150',
-		'group-hover/message:decoration-fg/55 group-focus-visible/message:decoration-fg/55'
-	);
+	const listSubjectPlainClass = (isNew: boolean) =>
+		cn(
+			listSubjectShellClass,
+			'font-normal underline underline-offset-[0.2em] decoration-1',
+			'transition-[color,text-decoration-color] duration-150',
+			isNew
+				? 'z-mail-list-subject--new'
+				: cn(
+						'text-fg decoration-fg/35',
+						'group-hover/message:decoration-fg/55 group-focus-visible/message:decoration-fg/55'
+					)
+		);
 	const listImportantSubjectClass = 'z-mail-list-subject--important';
-	const listWhenClass = cn(
-		'shrink-0 tabular-nums text-fg-muted no-underline z-type-page leading-[1.4]',
-		'group-hover/message:text-fg group-focus-visible/message:text-fg'
-	);
-	const listRowMetaClass = cn(listWhenClass, 'z-mail-list-row-meta');
+	const listRowMetaClass = (isNew: boolean) =>
+		cn(
+			'shrink-0 tabular-nums no-underline z-type-page leading-[1.4] z-mail-list-row-meta',
+			isNew
+				? 'z-mail-list-meta--new'
+				: cn(
+						'text-fg-muted',
+						'group-hover/message:text-fg group-focus-visible/message:text-fg'
+					)
+		);
 	const listSenderClass = (visible: boolean) =>
 		cn('z-type-page leading-[1.4] text-fg-muted', visible ? 'block' : 'hidden');
 	const listSectionCountClass = (sectionId: string) =>
@@ -931,8 +942,7 @@
 	<div
 		class={cn(
 			contentPagePadClass(),
-			'flex flex-col',
-			showBulkBar && 'z-mail-list-scroll--with-bar'
+			'flex flex-col'
 		)}
 	>
 	{#if mailboxRouteId || !sectionMode}
@@ -973,7 +983,8 @@
 			{@const showSenderDuplicate = duplicateKeys.has(messageSubjectKey(message))}
 			{@const showSender =
 				showSenderDuplicate || (isInboxHome && listSectionId === NEW_SECTION_ID)}
-			{@const showNewDot = isInboxHome && isNewUnreadListRow(message)}
+			{@const isNewRow = isNewUnreadListRow(message)}
+			{@const showNewDot = isInboxHome && isNewRow}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
 			{@const showColorCycle =
@@ -1043,12 +1054,12 @@
 											style={importantRainbow.cssVars(message.id)}
 										>{subjectText}</span>
 									{:else}
-										<span class={listSubjectPlainClass}>{subjectText}</span>
+										<span class={listSubjectPlainClass(isNewRow)}>{subjectText}</span>
 									{/if}
 								</span>
 								<span class={listSenderClass(showSender)}>{senderLabel}</span>
 							</span>
-							<span class={listRowMetaClass}>
+							<span class={listRowMetaClass(isNewRow)}>
 								{#if showColorCycle}
 									<button
 										type="button"
@@ -1142,7 +1153,7 @@
 				{/if}
 			</div>
 
-			{#if isInboxHome && orderedFolders.length > 0}
+			{#if isInboxHome && orderedFolders.length > 0 && !showBulkBar}
 				<nav
 					class="z-mail-list-folders z-type-page-muted flex flex-wrap items-center gap-x-3 gap-y-1 text-fg-muted"
 					aria-label="Folders"
@@ -1173,9 +1184,17 @@
 			/>
 		{/if}
 	</div>
+	{#if showBulkBar && mailboxRouteId}
+		<MessageListMobileBar
+			mailboxRouteId={mailboxRouteId}
+			{onBulkAction}
+			disabled={loading || !!error || !messages.length}
+		/>
+	{/if}
 	{#if !loading && !error && !mail.hasSelection}
 		<DinoZaur />
 	{/if}
+	{#if !showBulkBar}
 	<div class="z-mail-text-nav__links mt-[var(--z-main-gap)]!">
 		<a class="z-mail-text-nav__link" href="/settings">Settings</a>
 		<span class="z-mail-text-nav__sep">·</span>
@@ -1191,12 +1210,6 @@
 			Sign out
 		</button>
 	</div>
-		{#if showBulkBar && mailboxRouteId}
-			<MessageListMobileBar
-				mailboxRouteId={mailboxRouteId}
-				{onBulkAction}
-				disabled={loading || !!error || !messages.length}
-			/>
-		{/if}
+	{/if}
 	</div>
 </section>

@@ -1,14 +1,5 @@
 /* App shell — panes, scroll, mobile overlays. */
 
-	.z-mail-list-bulk-bar {
-		@apply flex shrink-0 flex-wrap items-center gap-2 border-t border-border bg-surface-raised/95 px-0 py-2 backdrop-blur-sm;
-		padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
-	}
-
-	.z-mail-list-scroll--with-bar {
-		padding-bottom: max(3.75rem, calc(env(safe-area-inset-bottom) + 2.75rem));
-	}
-
 	.z-mobile-reader-bar {
 		@apply shrink-0 border-t border-border/80 bg-surface-raised/95 backdrop-blur-sm;
 		padding-bottom: max(0.75rem, env(safe-area-inset-bottom));

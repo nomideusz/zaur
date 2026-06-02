@@ -1,12 +1,18 @@
 <script lang="ts">
-	import Archive from '$lib/components/icons/Archive.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
+	import MessageListBulkMoreMenu from '$lib/components/mail/MessageListBulkMoreMenu.svelte';
+	import {
+		bulkSelectionCounts,
+		bulkSelectionLabel,
+		bulkSelectionPrimaryAction
+	} from '$lib/components/mail/bulk-selection-label';
 	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
-	import { auth } from '$lib/stores/auth.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
+	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -25,17 +31,35 @@
 	const canArchive = $derived(mail.canArchiveFrom(currentMailbox));
 	const canMarkImportant = $derived(mail.canMarkImportantInMailbox(currentMailbox));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
-	const hasNotImportantSelected = $derived(
-		mail.messages.some((message) => selectedIds.includes(message.id) && !message.important)
-	);
-	const hasImportantSelected = $derived(
-		mail.messages.some((message) => selectedIds.includes(message.id) && message.important)
-	);
 	const moveTargets = $derived(
 		mailboxRouteId ? moveTargetMailboxes(mail.mailboxes, currentMailbox) : []
 	);
+	const selectionCounts = $derived(bulkSelectionCounts(mail.messages, selectedIds));
+	const hasNotImportantSelected = $derived(selectionCounts.notImportant > 0);
+	const hasImportantSelected = $derived(selectionCounts.important > 0);
+	const selectionLabel = $derived(
+		bulkSelectionLabel({
+			selectedCount: selectedIds.length,
+			notImportantCount: selectionCounts.notImportant,
+			importantCount: selectionCounts.important,
+			canMarkImportant
+		})
+	);
+	const primaryAction = $derived(
+		bulkSelectionPrimaryAction({
+			notImportantCount: selectionCounts.notImportant,
+			importantCount: selectionCounts.important,
+			canMarkImportant
+		})
+	);
+	const showMarkImportantButton = $derived(
+		hasNotImportantSelected && canMarkImportant && primaryAction !== 'mark-important'
+	);
+	const showRemoveImportantButton = $derived(
+		hasImportantSelected && primaryAction !== 'remove-important'
+	);
+	const hasMoreBulkActions = $derived(canArchive || moveTargets.length > 0);
 	const actionButtonClass = '!h-8 shrink-0 !px-2 !text-xs';
-	const moveSelectClass = 'z-select z-select--sm truncate';
 
 	async function runBulk(action: () => Promise<void>, refreshList = false) {
 		if (!auth.client || mail.bulkActionLoading) return;
@@ -55,12 +79,25 @@
 		void runBulk(() => mail.bulkDelete(auth.client!, mailboxRouteId), true);
 	}
 
-	function handleMove(event: Event) {
-		const select = event.currentTarget as HTMLSelectElement;
-		const targetRouteId = select.value;
-		if (!targetRouteId || !auth.client) return;
+	function archiveSelected() {
+		if (!auth.client) return;
+		void runBulk(() => mail.bulkArchive(auth.client!), true);
+	}
+
+	function handleBulkMove(targetRouteId: string) {
+		if (!auth.client) return;
 		void runBulk(() => mail.bulkMoveToMailbox(auth.client!, targetRouteId), true);
-		select.value = '';
+	}
+
+	function runPrimaryAction() {
+		if (!auth.client) return;
+		if (primaryAction === 'mark-important') {
+			void runBulk(() => mail.bulkMarkAsImportant(auth.client!));
+			return;
+		}
+		if (primaryAction === 'remove-important') {
+			void runBulk(() => mail.bulkMarkAsNotImportant(auth.client!));
+		}
 	}
 </script>
 
@@ -77,8 +114,18 @@
 
 	{#if mail.hasSelection && !disabled}
 		<div class="z-mail-list-header__selection max-md:hidden">
-			<span class="z-mail-list-header__count">{selectedIds.length} selected</span>
-			{#if hasNotImportantSelected && canMarkImportant}
+			{#if primaryAction}
+				<button
+					type="button"
+					class="z-mail-list-header__count z-mail-list-bulk-bar__count z-mail-list-bulk-bar__count--action"
+					onclick={runPrimaryAction}
+				>
+					{selectionLabel}
+				</button>
+			{:else}
+				<span class="z-mail-list-header__count">{selectionLabel}</span>
+			{/if}
+			{#if showMarkImportantButton}
 				<Button
 					variant="ghost"
 					class={actionButtonClass}
@@ -88,7 +135,7 @@
 					Mark important
 				</Button>
 			{/if}
-			{#if hasImportantSelected}
+			{#if showRemoveImportantButton}
 				<Button
 					variant="ghost"
 					class={actionButtonClass}
@@ -98,34 +145,27 @@
 					Remove important
 				</Button>
 			{/if}
-			{#if canArchive}
-				<Button
-					variant="ghost"
-					class={actionButtonClass}
-					onclick={() => auth.client && runBulk(() => mail.bulkArchive(auth.client!), true)}
-				>
-					<Archive class="size-3.5" aria-hidden="true" />
-					Archive
-				</Button>
-			{/if}
-			{#if moveTargets.length}
-				<label class="sr-only" for="bulk-move-select">Move selected messages</label>
-				<select
-					id="bulk-move-select"
-					class={moveSelectClass}
-					value=""
-					onchange={handleMove}
-				>
-					<option value="" disabled>Move to…</option>
-					{#each moveTargets as mailbox (mailbox.id)}
-						<option value={mailbox.id}>{mailbox.name}</option>
-					{/each}
-				</select>
-			{/if}
 			<Button variant="danger" class={actionButtonClass} onclick={deleteSelected}>
 				<Trash2 class="size-3.5" aria-hidden="true" />
 				{deleteLabel}
 			</Button>
+			{#if hasMoreBulkActions && mailboxRouteId}
+				<OverflowMenu
+					label="More actions"
+					menuId="bulk-more-menu-header"
+					placement="auto"
+					menuClass="z-overflow-menu--list"
+					triggerText="More"
+					triggerClass="!h-8 !px-2 !text-xs"
+				>
+					<MessageListBulkMoreMenu
+						mailboxRouteId={mailboxRouteId}
+						{canArchive}
+						onArchive={archiveSelected}
+						onMove={handleBulkMove}
+					/>
+				</OverflowMenu>
+			{/if}
 		</div>
 	{/if}
 </div>
