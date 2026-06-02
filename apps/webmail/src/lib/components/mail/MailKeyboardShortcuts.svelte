@@ -5,13 +5,11 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
-	import { readerFocus } from '$lib/stores/reader-focus.svelte';
 	import { search } from '$lib/stores/search.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { resolveMailboxRouteByShortcut } from '$lib/mail/folder-shortcuts';
 	import { canMarkImportantFromMailboxRole } from '$lib/mail/mailboxes';
-	import { MAIL_LAYOUT } from '$lib/mail/config';
 	import { mailListHref, mailThreadHref, parseMailContext } from '$lib/mail/routes';
 	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
 	import { isTypingTarget } from '$lib/utils/keyboard';
@@ -168,21 +166,10 @@
 			const ctx = parseMailContext($page.url.pathname);
 			if (!ctx) return;
 
-			if (
-				event.key === 'Escape' &&
-				MAIL_LAYOUT.mail.useAdaptiveReaderFocus &&
-				ctx.threadId &&
-				!mail.hasSelection
-			) {
+			if (event.key === 'Escape' && ctx.threadId && !mail.hasSelection) {
 				event.preventDefault();
 				const routeId = ctx.mailboxRouteId ?? currentMessage()?.mailboxId ?? 'inbox';
 				goto(mailListHref(routeId));
-				return;
-			}
-
-			if (event.key === 'Escape' && readerFocus.active && !mail.hasSelection) {
-				event.preventDefault();
-				readerFocus.set(false);
 				return;
 			}
 
@@ -226,12 +213,6 @@
 			}
 
 			if (!ctx.threadId && key !== 'c') return;
-
-			if (key === 'z') {
-				event.preventDefault();
-				readerFocus.toggle();
-				return;
-			}
 
 			switch (key) {
 				case 'r':

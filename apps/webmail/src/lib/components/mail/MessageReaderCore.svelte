@@ -1,25 +1,21 @@
 <script lang="ts">
-	import { browser } from '$app/environment';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { tick } from 'svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
-	import Avatar from '$lib/components/ui/Avatar.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
 	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
 	import MessageReaderMobileBar from '$lib/components/mail/MessageReaderMobileBar.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
 	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
-	import { contentPagePadClass, contentShellClass } from '$lib/mail/layout';
+	import { contentPagePadClass } from '$lib/mail/layout';
 	import { readerPrimaryContact, shouldShowContactEmail } from '$lib/mail/reader-contact';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
-	import { toast } from '$lib/stores/toast.svelte';
 	import { renderMessageBody } from '$lib/email/html';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
 	import { createImportantRainbowTouchPick } from '$lib/mail/important-rainbow-touch';
@@ -41,13 +37,8 @@
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
 	let localShowImagesOnce = $state(false);
 	let expandedIds = $state<Set<string>>(new Set());
-	let quickReply = $state('');
-	let quickReplySending = $state(false);
-	let quickReplyOpen = $state(false);
 	let scrollPane = $state<HTMLDivElement | null>(null);
 	let readerSubjectEl = $state<HTMLHeadingElement | null>(null);
-
-	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
 
 	const latest = $derived(thread.at(-1));
 	const actionMessage = $derived(
@@ -96,7 +87,6 @@
 		$page.params.threadId;
 		thread.map((m) => m.id).join(',');
 		settings.expandAllThreadMessages;
-		quickReplyOpen = false;
 		if (pane) pane.setShowImagesOnce(false);
 		else localShowImagesOnce = false;
 		if (settings.expandAllThreadMessages) {
@@ -168,68 +158,8 @@
 		else reply();
 	}
 
-	function headerReply() {
-		if (
-			settings.showQuickReply &&
-			browser &&
-			window.matchMedia('(max-width: 767px)').matches
-		) {
-			quickReplyOpen = true;
-			return;
-		}
-		primaryReply();
-	}
-
 	function composeTo(email: string) {
 		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
-	}
-
-	async function sendQuickReply() {
-		if (!auth.client || !auth.username || !latest) return;
-
-		const text = quickReply.trim();
-		if (!text || quickReplySending) return;
-
-		quickReplySending = true;
-		compose.startReply(latest);
-
-		const quoteMarker = /\n\n---\n/;
-		const idx = compose.body.search(quoteMarker);
-		const quote = idx >= 0 ? compose.body.slice(idx) : '';
-		const signature = settings.composeBodyWithSignature('').trim();
-		compose.body = signature ? `${text}\n\n${signature}${quote}` : `${text}${quote}`;
-
-		try {
-			const result = await compose.send(auth.client, auth.username, senderName, {
-				onUndo: () => {
-					const idx = compose.body.search(quoteMarker);
-					quickReply = idx >= 0 ? compose.body.slice(0, idx).trimEnd() : compose.body.trim();
-				},
-				onComplete: (outcome) => {
-					if (outcome === 'sent') {
-						toast.show('Reply sent', 'success');
-						void mail.loadMessage(auth.client!, mailboxRouteId, latest.threadId, { force: true });
-					} else if (outcome === 'queued') {
-						toast.show('Reply queued — will send when back online', 'info');
-					}
-				}
-			});
-			if (result === 'sent') {
-				quickReply = '';
-				void mail.loadMessage(auth.client, mailboxRouteId, latest.threadId, { force: true });
-			} else if (result === 'pending' || result === 'queued') {
-				quickReply = '';
-			}
-		} finally {
-			quickReplySending = false;
-		}
-	}
-
-	function onQuickReplyKeydown(event: KeyboardEvent) {
-		if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
-			event.preventDefault();
-			void sendQuickReply();
-		}
 	}
 
 	function shouldPersistReaderRainbowPick(event: PointerEvent): boolean {
@@ -298,7 +228,7 @@
 										Edit draft
 									</a>
 								{:else}
-									<button type="button" class="z-mail-text-nav__action" onclick={headerReply}>
+									<button type="button" class="z-mail-text-nav__action" onclick={primaryReply}>
 										{primaryReplyLabel}
 									</button>
 								{/if}
@@ -334,15 +264,8 @@
 						{#if thread.length === 1}
 							<header class="z-reader-chrome">
 								<div class="z-reader-chrome__meta">
-									<div class="z-reader-chrome__from flex items-start gap-3">
-										{#if settings.showAvatars}
-											<Avatar
-												name={contact.avatarName ?? contact.avatarEmail}
-												email={contact.avatarEmail}
-												class="size-9"
-											/>
-										{/if}
-										<div class="min-w-0 flex-1">
+									<div class="z-reader-chrome__from">
+										<div class="min-w-0">
 											<p class="z-reader-from truncate">{contact.displayName}</p>
 											{#if showContactEmail}
 												{#if !contact.isMe}
@@ -374,13 +297,6 @@
 									aria-label={`Collapse message from ${contact.displayName}`}
 									onclick={() => toggleMessage(message)}
 								>
-									{#if settings.showAvatars}
-										<Avatar
-											name={contact.avatarName ?? contact.avatarEmail}
-											email={contact.avatarEmail}
-											class="size-9"
-										/>
-									{/if}
 									<div class="min-w-0 flex-1">
 										<div class="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
 											<span class="z-reader-from">{contact.displayName}</span>
@@ -391,7 +307,7 @@
 									</div>
 								</button>
 								{#if showContactEmail}
-									<div class={cn('min-w-0', settings.showAvatars && 'pl-12')}>
+									<div class="min-w-0">
 										{#if !contact.isMe}
 											<button
 												type="button"
@@ -460,13 +376,6 @@
 							aria-label={`Expand message from ${contact.displayName}`}
 							onclick={() => toggleMessage(message)}
 						>
-							{#if settings.showAvatars}
-								<Avatar
-									name={contact.avatarName ?? contact.avatarEmail}
-									email={contact.avatarEmail}
-									class="size-9"
-								/>
-							{/if}
 							<div class="min-w-0 flex-1">
 								<p class="z-reader-from truncate">{contact.displayName}</p>
 								{#if message.preview}
@@ -483,43 +392,7 @@
 		</div>
 	</div>
 
-	{#if latest && auth.client && settings.showQuickReply && mailboxRouteId !== 'drafts' && !minimalChrome}
-		<footer class="hidden shrink-0 pt-6 md:block">
-			<div class={cn(contentShellClass(), 'px-4 py-4 md:px-6')}>
-				<div class="z-reader-column flex flex-col gap-2 sm:flex-row">
-					<textarea
-						class="z-input z-compose-editor min-h-10 flex-1 resize-none py-2"
-						style="font-size: var(--z-reader-text); line-height: var(--z-reader-leading);"
-						rows={2}
-						placeholder="Write a quick reply…"
-						aria-label="Quick reply"
-						bind:value={quickReply}
-						disabled={quickReplySending}
-						onkeydown={onQuickReplyKeydown}
-					></textarea>
-					<div class="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end sm:justify-start sm:gap-1">
-						<Button class="max-sm:flex-1" disabled={!quickReply.trim() || quickReplySending} onclick={sendQuickReply}>
-							{quickReplySending ? 'Sending…' : 'Send'}
-						</Button>
-						{#if !settings.hideComposeHints}
-							<span class="hidden text-fg-muted sm:inline" style="font-size: var(--z-reader-text);">Ctrl+Enter</span>
-						{/if}
-					</div>
-				</div>
-			</div>
-		</footer>
-	{/if}
-
 	{#if latest}
-		<MessageReaderMobileBar
-			{thread}
-			{mailboxRouteId}
-			{onMoved}
-			{minimalChrome}
-			bind:quickReply
-			bind:quickReplyOpen
-			{quickReplySending}
-			onSendQuickReply={sendQuickReply}
-		/>
+		<MessageReaderMobileBar {thread} {mailboxRouteId} {onMoved} {minimalChrome} />
 	{/if}
 </article>

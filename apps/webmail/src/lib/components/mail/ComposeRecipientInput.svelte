@@ -1,5 +1,4 @@
 <script lang="ts">
-	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { listContacts } from '$lib/utils/contact-index';
@@ -125,9 +124,6 @@
 						onmousedown={(e) => e.preventDefault()}
 						onclick={() => pick(contact.email)}
 					>
-						{#if settings.showAvatars}
-							<Avatar name={contact.name} email={contact.email} class="size-6 text-[10px]" />
-						{/if}
 						<span class="min-w-0 truncate">
 							<span class="font-medium text-fg">{contact.name}</span>
 							<span class="ml-1 text-fg-muted">{contact.email}</span>

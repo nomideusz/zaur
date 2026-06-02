@@ -53,11 +53,6 @@ interface SendPayload {
 	};
 }
 
-interface ArchiveTarget {
-	emailId: string;
-	mailboxId?: string;
-}
-
 interface PendingSend {
 	id: string;
 	timer: ReturnType<typeof setTimeout>;
@@ -67,7 +62,6 @@ interface PendingSend {
 	fromEmail: string;
 	fromName?: string;
 	options?: ComposeSendOptions;
-	archiveTarget?: ArchiveTarget;
 }
 
 const AUTOSAVE_MS = 2000;
@@ -505,9 +499,6 @@ class ComposeStore {
 		try {
 			const result = await this.deliverPayload(job.client, job.payload, job.fromEmail, job.fromName);
 			if (result === 'sent' || result === 'queued') {
-				if (job.archiveTarget) {
-					void this.archiveSourceThread(job.client, job.archiveTarget);
-				}
 				job.options?.onComplete?.(result);
 				return;
 			}
@@ -517,24 +508,6 @@ class ComposeStore {
 			toast.show('Could not send message — restored your draft', 'error');
 		} finally {
 			this.isSending = false;
-		}
-	}
-
-	private captureArchiveTarget(): ArchiveTarget | undefined {
-		if (!settings.autoArchiveOnReply) return undefined;
-		if (this.mode !== 'reply' && this.mode !== 'reply-all') return undefined;
-		if (!this.sourceEmailId) return undefined;
-		return { emailId: this.sourceEmailId, mailboxId: this.sourceMailboxId };
-	}
-
-	private async archiveSourceThread(client: JMAPClient, target: ArchiveTarget) {
-		try {
-			const { mail } = await import('$lib/stores/mail.svelte');
-			const archive = mail.archiveMailbox();
-			if (!archive?.jmapId) return;
-			await client.moveToMailbox(target.emailId, archive.jmapId, target.mailboxId);
-		} catch {
-			// Auto-archive is best-effort; surfacing a failure here would be noisier than helpful.
 		}
 	}
 
@@ -611,13 +584,11 @@ class ComposeStore {
 		if (settings.undoSendDelay === 0) {
 			this.isSending = true;
 			this.error = null;
-			const archiveTarget = this.captureArchiveTarget();
 			try {
 				const result = await this.deliverPayload(client, payload, fromEmail, fromName);
 				if (result === 'sent' || result === 'queued') {
 					this.clearComposeFields();
 					void this.clearLocalDraft();
-					if (archiveTarget) void this.archiveSourceThread(client, archiveTarget);
 					options?.onComplete?.(result);
 				}
 				return result;
@@ -632,7 +603,6 @@ class ComposeStore {
 		this.error = null;
 
 		const snapshot = this.snapshotCompose();
-		const archiveTarget = this.captureArchiveTarget();
 		const jobId = crypto.randomUUID();
 		const timer = setTimeout(() => {
 			const pending = this.pendingSend;
@@ -649,8 +619,7 @@ class ComposeStore {
 			client,
 			fromEmail,
 			fromName,
-			options,
-			archiveTarget
+			options
 		};
 
 		this.clearComposeFields();

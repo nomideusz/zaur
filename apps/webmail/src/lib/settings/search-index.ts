@@ -133,12 +133,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-auto-load-more",
-		"href": "/settings/reading",
-		"title": "Auto-load more",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-block-remote-images",
 		"href": "/settings/reading",
 		"title": "Block remote images",
@@ -175,21 +169,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-focus-reading-when-opened",
-		"href": "/settings/reading",
-		"title": "Focus reading when opened",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-hide-action-toasts",
 		"href": "/settings/reading",
 		"title": "Hide action toasts",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-mark-as-read-delay",
-		"href": "/settings/reading",
-		"title": "Mark-as-read delay",
 		"description": ""
 	},
 	{
@@ -211,18 +193,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-quick-reply",
-		"href": "/settings/reading",
-		"title": "Quick reply",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-reading-width",
-		"href": "/settings/reading",
-		"title": "Reading width",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-remember-last-folder",
 		"href": "/settings/reading",
 		"title": "Remember last folder",
@@ -235,27 +205,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-search-scope",
-		"href": "/settings/reading",
-		"title": "Search scope",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-show-avatars",
-		"href": "/settings/reading",
-		"title": "Show avatars",
-		"description": ""
-	},
-	{
 		"id": "/settings/reading-show-email-in-list",
 		"href": "/settings/reading",
 		"title": "Show email in list",
-		"description": ""
-	},
-	{
-		"id": "/settings/reading-split-view",
-		"href": "/settings/reading",
-		"title": "Split view",
 		"description": ""
 	},
 	{
@@ -292,12 +244,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/writing-always-bcc-me",
 		"href": "/settings/writing",
 		"title": "Always Bcc me",
-		"description": ""
-	},
-	{
-		"id": "/settings/writing-auto-archive-after-reply",
-		"href": "/settings/writing",
-		"title": "Auto-archive after reply",
 		"description": ""
 	},
 	{
@@ -340,12 +286,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/writing-reset-writing-settings",
 		"href": "/settings/writing",
 		"title": "Reset writing settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/writing-return-to-inbox-after-send",
-		"href": "/settings/writing",
-		"title": "Return to inbox after send",
 		"description": ""
 	},
 	{

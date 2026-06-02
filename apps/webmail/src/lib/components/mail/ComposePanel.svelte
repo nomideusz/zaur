@@ -205,9 +205,7 @@
 		if (showSignature && configuredSignature) {
 			rebuildComposeBody(messageBody, signatureBody || configuredSignature);
 		}
-		const destination = settings.returnToInboxAfterSend
-			? mailListHref(INBOX_MAILBOX_ROUTE_ID)
-			: mailListHref('sent');
+		const destination = mailListHref(INBOX_MAILBOX_ROUTE_ID);
 		const result = await compose.send(auth.client, auth.username, senderName, {
 			onUndo: () => {
 				const undoMode = compose.mode;

@@ -19,7 +19,6 @@ import {
 } from '$lib/utils/notifications';
 
 export type ReaderTextSize = 'small' | 'normal' | 'large';
-export type ReaderWidth = 'comfortable' | 'wide';
 export type ReadingTypeface = 'sans' | 'serif';
 export type CalendarMaxEventsPerDay = 2 | 3 | 5;
 export type DefaultReplyMode = 'reply' | 'reply-all';
@@ -32,12 +31,10 @@ export type UndoSendDelay = 0 | 5000 | 10000 | 20000;
 const STORAGE = {
 	blockExternal: 'zaur:block-external',
 	autoLoadMore: 'zaur:auto-load-more',
-	showAvatars: 'zaur:show-avatars',
 	showSenderEmailInList: 'zaur:show-sender-email-in-list',
 	showImportantColors: 'zaur:show-important-colors',
 	preferPlainText: 'zaur:prefer-plain-text',
 	collapseQuotedInCompose: 'zaur:collapse-quoted-in-compose',
-	showQuickReply: 'zaur:show-quick-reply',
 	expandAllThreadMessages: 'zaur:expand-all-thread-messages',
 	hideComposeHints: 'zaur:hide-compose-hints',
 	showComposeContactSuggestions: 'zaur:show-compose-contact-suggestions',
@@ -49,10 +46,8 @@ const STORAGE = {
 	enableKeyboardShortcuts: 'zaur:enable-keyboard-shortcuts',
 	confirmBeforeDelete: 'zaur:confirm-before-delete',
 	confirmBeforeDiscardCompose: 'zaur:confirm-before-discard-compose',
-	returnToInboxAfterSend: 'zaur:return-to-inbox-after-send',
 	undoSendDelay: 'zaur:undo-send-delay',
 	readerTextSize: 'zaur:reader-text-size',
-	readerWidth: 'zaur:reader-width',
 	readingTypeface: 'zaur:reading-typeface',
 	readerCleanView: 'zaur:reader-clean-view',
 	focusReadingDefault: 'zaur:focus-reading-default',
@@ -64,7 +59,6 @@ const STORAGE = {
 	showUnreadAppBadge: 'zaur:show-unread-app-badge',
 	notifyOnNewMail: 'zaur:notify-new-mail',
 	bccSelf: 'zaur:bcc-self',
-	autoArchiveOnReply: 'zaur:auto-archive-on-reply',
 	markAsReadDelay: 'zaur:mark-as-read-delay',
 	timeFormat: 'zaur:time-format',
 	searchScope: 'zaur:search-scope',
@@ -88,11 +82,6 @@ const READER_LEADING: Record<ReaderTextSize, string> = {
 	large: '1.6'
 };
 
-const READER_MEASURE: Record<ReaderWidth, string> = {
-	comfortable: '40em',
-	wide: '46em'
-};
-
 const READING_FONT: Record<ReadingTypeface, string> = {
 	sans: 'var(--font-sans)',
 	serif:
@@ -114,10 +103,6 @@ function readAutoLoadMore(): boolean {
 	return readBool(STORAGE.autoLoadMore, false);
 }
 
-function readShowAvatars(): boolean {
-	return readBool(STORAGE.showAvatars, false);
-}
-
 function readShowSenderEmailInList(): boolean {
 	return readBool(STORAGE.showSenderEmailInList, false);
 }
@@ -132,10 +117,6 @@ function readPreferPlainText(): boolean {
 
 function readCollapseQuotedInCompose(): boolean {
 	return readBool(STORAGE.collapseQuotedInCompose, false);
-}
-
-function readShowQuickReply(): boolean {
-	return readBool(STORAGE.showQuickReply, false);
 }
 
 function readExpandAllThreadMessages(): boolean {
@@ -178,10 +159,6 @@ function readConfirmBeforeDiscardCompose(): boolean {
 	return readBool(STORAGE.confirmBeforeDiscardCompose, true);
 }
 
-function readReturnToInboxAfterSend(): boolean {
-	return readBool(STORAGE.returnToInboxAfterSend, false);
-}
-
 function readUndoSendDelay(): UndoSendDelay {
 	if (!browser) return 5000;
 	const stored = localStorage.getItem(STORAGE.undoSendDelay);
@@ -202,13 +179,6 @@ function readReaderTextSize(): ReaderTextSize {
 	const stored = localStorage.getItem(STORAGE.readerTextSize);
 	if (stored === 'small' || stored === 'large') return stored;
 	return 'normal';
-}
-
-function readReaderWidth(): ReaderWidth {
-	if (!browser) return 'wide';
-	const stored = localStorage.getItem(STORAGE.readerWidth);
-	if (stored === 'comfortable' || stored === 'wide') return stored;
-	return 'wide';
 }
 
 function readReadingTypeface(): ReadingTypeface {
@@ -257,10 +227,6 @@ function readNotifyOnNewMail(): boolean {
 
 function readBccSelf(): boolean {
 	return readBool(STORAGE.bccSelf, false);
-}
-
-function readAutoArchiveOnReply(): boolean {
-	return readBool(STORAGE.autoArchiveOnReply, false);
 }
 
 function readMarkAsReadDelay(): MarkAsReadDelay {
@@ -320,12 +286,10 @@ function readSignature(email: string | null): string {
 class SettingsStore {
 	blockExternalContent = $state(readBlockExternal());
 	autoLoadMore = $state(readAutoLoadMore());
-	showAvatars = $state(readShowAvatars());
 	showSenderEmailInList = $state(readShowSenderEmailInList());
 	showImportantColors = $state(readShowImportantColors());
 	preferPlainText = $state(readPreferPlainText());
 	collapseQuotedInCompose = $state(readCollapseQuotedInCompose());
-	showQuickReply = $state(readShowQuickReply());
 	expandAllThreadMessages = $state(readExpandAllThreadMessages());
 	hideComposeHints = $state(readHideComposeHints());
 	showComposeContactSuggestions = $state(readShowComposeContactSuggestions());
@@ -336,10 +300,8 @@ class SettingsStore {
 	enableKeyboardShortcuts = $state(readEnableKeyboardShortcuts());
 	confirmBeforeDelete = $state(readConfirmBeforeDelete());
 	confirmBeforeDiscardCompose = $state(readConfirmBeforeDiscardCompose());
-	returnToInboxAfterSend = $state(readReturnToInboxAfterSend());
 	undoSendDelay = $state<UndoSendDelay>(readUndoSendDelay());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
-	readerWidth = $state<ReaderWidth>(readReaderWidth());
 	readingTypeface = $state<ReadingTypeface>(readReadingTypeface());
 	readerCleanView = $state(readReaderCleanView());
 	focusReadingDefault = $state(readFocusReadingDefault());
@@ -350,7 +312,6 @@ class SettingsStore {
 	showUnreadAppBadge = $state(readShowUnreadAppBadge());
 	notifyOnNewMail = $state(readNotifyOnNewMail());
 	bccSelf = $state(readBccSelf());
-	autoArchiveOnReply = $state(readAutoArchiveOnReply());
 	markAsReadDelay = $state<MarkAsReadDelay>(readMarkAsReadDelay());
 	timeFormat = $state<TimeFormat>(readTimeFormat());
 	searchScope = $state<SearchScope>(readSearchScope());
@@ -372,12 +333,10 @@ class SettingsStore {
 
 		this.blockExternalContent = readBlockExternal();
 		this.autoLoadMore = readAutoLoadMore();
-		this.showAvatars = readShowAvatars();
 		this.showSenderEmailInList = readShowSenderEmailInList();
 		this.showImportantColors = readShowImportantColors();
 		this.preferPlainText = readPreferPlainText();
 		this.collapseQuotedInCompose = readCollapseQuotedInCompose();
-		this.showQuickReply = readShowQuickReply();
 		this.expandAllThreadMessages = readExpandAllThreadMessages();
 		this.hideComposeHints = readHideComposeHints();
 		this.showComposeContactSuggestions = readShowComposeContactSuggestions();
@@ -388,10 +347,8 @@ class SettingsStore {
 		this.enableKeyboardShortcuts = readEnableKeyboardShortcuts();
 		this.confirmBeforeDelete = readConfirmBeforeDelete();
 		this.confirmBeforeDiscardCompose = readConfirmBeforeDiscardCompose();
-		this.returnToInboxAfterSend = readReturnToInboxAfterSend();
 		this.undoSendDelay = readUndoSendDelay();
 		this.readerTextSize = readReaderTextSize();
-		this.readerWidth = readReaderWidth();
 		this.readingTypeface = readReadingTypeface();
 		this.readerCleanView = readReaderCleanView();
 		this.focusReadingDefault = readFocusReadingDefault();
@@ -402,7 +359,6 @@ class SettingsStore {
 		this.showUnreadAppBadge = readShowUnreadAppBadge();
 		this.notifyOnNewMail = readNotifyOnNewMail();
 		this.bccSelf = readBccSelf();
-		this.autoArchiveOnReply = readAutoArchiveOnReply();
 		this.markAsReadDelay = readMarkAsReadDelay();
 		this.timeFormat = readTimeFormat();
 		this.searchScope = readSearchScope();
@@ -413,7 +369,6 @@ class SettingsStore {
 
 		this.applyReduceMotion();
 		this.applyReaderTextSize(this.readerTextSize);
-		this.applyReaderWidth(this.readerWidth);
 		this.applyReadingTypeface(this.readingTypeface);
 		importantRainbow.reload();
 	}
@@ -511,11 +466,6 @@ class SettingsStore {
 		if (browser) this.writeStorage(STORAGE.autoLoadMore, String(value));
 	}
 
-	setShowAvatars(value: boolean) {
-		this.showAvatars = value;
-		if (browser) this.writeStorage(STORAGE.showAvatars, String(value));
-	}
-
 	setShowSenderEmailInList(value: boolean) {
 		this.showSenderEmailInList = value;
 		if (browser) this.writeStorage(STORAGE.showSenderEmailInList, String(value));
@@ -534,11 +484,6 @@ class SettingsStore {
 	setCollapseQuotedInCompose(value: boolean) {
 		this.collapseQuotedInCompose = value;
 		if (browser) this.writeStorage(STORAGE.collapseQuotedInCompose, String(value));
-	}
-
-	setShowQuickReply(value: boolean) {
-		this.showQuickReply = value;
-		if (browser) this.writeStorage(STORAGE.showQuickReply, String(value));
 	}
 
 	setExpandAllThreadMessages(value: boolean) {
@@ -605,11 +550,6 @@ class SettingsStore {
 		if (browser) this.writeStorage(STORAGE.confirmBeforeDiscardCompose, String(value));
 	}
 
-	setReturnToInboxAfterSend(value: boolean) {
-		this.returnToInboxAfterSend = value;
-		if (browser) this.writeStorage(STORAGE.returnToInboxAfterSend, String(value));
-	}
-
 	setUndoSendDelay(value: UndoSendDelay) {
 		this.undoSendDelay = value;
 		if (browser) this.writeStorage(STORAGE.undoSendDelay, String(value));
@@ -619,12 +559,6 @@ class SettingsStore {
 		this.readerTextSize = value;
 		if (browser) this.writeStorage(STORAGE.readerTextSize, value);
 		this.applyReaderTextSize(value);
-	}
-
-	setReaderWidth(value: ReaderWidth) {
-		this.readerWidth = value;
-		if (browser) this.writeStorage(STORAGE.readerWidth, value);
-		this.applyReaderWidth(value);
 	}
 
 	setReadingTypeface(value: ReadingTypeface) {
@@ -698,11 +632,6 @@ class SettingsStore {
 		if (browser) this.writeStorage(STORAGE.bccSelf, String(value));
 	}
 
-	setAutoArchiveOnReply(value: boolean) {
-		this.autoArchiveOnReply = value;
-		if (browser) this.writeStorage(STORAGE.autoArchiveOnReply, String(value));
-	}
-
 	setMarkAsReadDelay(value: MarkAsReadDelay) {
 		this.markAsReadDelay = value;
 		if (browser) this.writeStorage(STORAGE.markAsReadDelay, String(value));
@@ -771,24 +700,16 @@ class SettingsStore {
 		this.setNotifyOnNewMail(true);
 		this.setShowUnreadInTitle(true);
 		this.setShowUnreadAppBadge(true);
-		this.setShowAvatars(false);
 		this.setShowSenderEmailInList(false);
 		this.setShowImportantColors(true);
-		this.setAutoLoadMore(false);
-		this.setSearchScope('all');
-		this.setShowReaderListRail(false);
 		this.setRememberLastMailbox(false);
 		this.setReaderTextSize('normal');
-		this.setReaderWidth('wide');
 		this.setReadingTypeface('sans');
 		this.setReaderCleanView(true);
-		this.setFocusReadingDefault(true);
 		this.setPreferPlainText(false);
 		this.setBlockExternalContent(true);
-		this.setShowQuickReply(false);
 		this.setExpandAllThreadMessages(false);
 		this.setMarkAsReadOnOpen(true);
-		this.setMarkAsReadDelay(0);
 		this.setConfirmBeforeDelete(true);
 		this.setHideActionToasts(false);
 		this.setTimeFormat('auto');
@@ -800,13 +721,11 @@ class SettingsStore {
 		this.setShowCcBccInCompose(true);
 		this.setShowComposeContactSuggestions(true);
 		this.setBccSelf(false);
-		this.setAutoArchiveOnReply(false);
 		this.setCollapseQuotedInCompose(false);
 		this.setHideComposeHints(false);
 		this.setDefaultReplyMode('reply');
 		this.setConfirmBeforeDiscardCompose(true);
 		this.setUndoSendDelay(5000);
-		this.setReturnToInboxAfterSend(false);
 	}
 
 	resetCalendarSettings() {
@@ -889,11 +808,6 @@ class SettingsStore {
 		if (!browser) return;
 		document.documentElement.style.setProperty('--z-reader-text', READER_TEXT_SIZE[value]);
 		document.documentElement.style.setProperty('--z-reader-leading', READER_LEADING[value]);
-	}
-
-	private applyReaderWidth(value: ReaderWidth) {
-		if (!browser) return;
-		document.documentElement.style.setProperty('--z-reader-measure', READER_MEASURE[value]);
 	}
 
 	private applyReadingTypeface(value: ReadingTypeface) {

@@ -9,7 +9,6 @@
 	import ContactDetailPanel from '$lib/components/contacts/ContactDetailPanel.svelte';
 	import ContactLetterRail from '$lib/components/contacts/ContactLetterRail.svelte';
 	import ContactsSidebar from '$lib/components/contacts/ContactsSidebar.svelte';
-	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import SwipeableListRow from '$lib/components/ui/SwipeableListRow.svelte';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -302,9 +301,6 @@
 											aria-current={selectedEmail === contact.email ? 'true' : undefined}
 											onclick={() => selectContact(contact.email)}
 										>
-											{#if settings.showAvatars}
-												<Avatar name={contact.name} email={contact.email} />
-											{/if}
 											<div class="min-w-0 flex-1">
 												<p class="truncate text-sm font-semibold tracking-tight text-fg">{contact.name}</p>
 												<p class="truncate text-xs text-fg-muted">{contact.email}</p>

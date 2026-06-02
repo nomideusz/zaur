@@ -6,7 +6,6 @@
 	import Settings from '$lib/components/icons/Settings.svelte';
 	import Sun from '$lib/components/icons/Sun.svelte';
 	import User from '$lib/components/icons/User.svelte';
-	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
@@ -40,13 +39,9 @@
 			open = !open;
 		}}
 	>
-		{#if settings.showAvatars}
-			<Avatar name={user.name} email={user.email} />
-		{:else}
-			<span class="flex size-8 items-center justify-center rounded-full bg-surface-sunken text-fg-muted">
-				<User class="size-4" aria-hidden="true" />
-			</span>
-		{/if}
+		<span class="flex size-8 items-center justify-center rounded-full bg-surface-sunken text-fg-muted">
+			<User class="size-4" aria-hidden="true" />
+		</span>
 		<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
 	</button>
 

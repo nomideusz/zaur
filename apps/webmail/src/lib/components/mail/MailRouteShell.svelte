@@ -13,7 +13,6 @@
 
 	$effect(() => {
 		const ctx = parseMailContext($page.url.pathname);
-		readerFocus.set(false);
 		readerFocus.setClean(false);
 		mail.clearSelection();
 		// Only clear an open thread on list/compose routes — not when entering a thread page.

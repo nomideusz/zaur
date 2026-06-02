@@ -1,24 +1,9 @@
 /**
- * Transient focused-reading state. When active, the reading layout collapses the
- * folder sidebar and slims the message list so a single message can be read
- * without the surrounding panes competing for attention.
- *
- * This is intentionally session-only (not persisted): the persisted preference
- * `settings.focusReadingDefault` decides whether focus turns on automatically
- * when a thread is opened.
+ * Per-session reading chrome overrides, seeded from settings when a thread opens.
  */
 class ReaderFocusStore {
-	active = $state(false);
-	/** Per-session "clean reading view" override, seeded from settings when a thread opens. */
+	/** "Clean reading view" — strips noisy HTML chrome in the message body. */
 	clean = $state(false);
-
-	toggle() {
-		this.active = !this.active;
-	}
-
-	set(value: boolean) {
-		this.active = value;
-	}
 
 	toggleClean() {
 		this.clean = !this.clean;

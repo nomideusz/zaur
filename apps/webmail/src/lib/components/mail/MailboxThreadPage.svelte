@@ -23,7 +23,6 @@
 	let { mailboxId, threadId }: Props = $props();
 
 	$effect(() => {
-		readerFocus.set(settings.focusReadingDefault);
 		readerFocus.setClean(settings.readerCleanView);
 	});
 

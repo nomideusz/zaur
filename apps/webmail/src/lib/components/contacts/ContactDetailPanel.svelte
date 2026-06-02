@@ -3,10 +3,8 @@
 import Mail from '$lib/components/icons/Mail.svelte';
 import Trash2 from '$lib/components/icons/Trash2.svelte';
 import X from '$lib/components/icons/X.svelte';
-	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
 	import type { ContactEntry } from '$lib/utils/contact-index';
 	import { cn } from '$lib/utils/cn';
 
@@ -30,11 +28,7 @@ import X from '$lib/components/icons/X.svelte';
 
 {#snippet details(showClose: boolean)}
 	<header class={cn('flex shrink-0 items-start justify-between gap-2 border-b border-border', panelPadding)}>
-		<div class="flex min-w-0 items-start gap-3">
-			{#if settings.showAvatars}
-				<Avatar name={contact.name} email={contact.email} />
-			{/if}
-			<div class="min-w-0">
+		<div class="min-w-0">
 				<h2 class="truncate text-base font-semibold text-fg">{displayName}</h2>
 				<p class="mt-1 truncate text-sm text-fg-muted">{contact.email}</p>
 			</div>

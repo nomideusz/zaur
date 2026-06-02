@@ -65,14 +65,6 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Auto-archive after reply">
-		<input
-			type="checkbox"
-			checked={settings.autoArchiveOnReply}
-			onchange={(e) => settings.setAutoArchiveOnReply(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
 	<SettingsRow title="Default reply">
 		<SettingsSelect
 			label="Default reply"
@@ -103,14 +95,6 @@
 				}
 			}}
 			class="w-auto"
-		/>
-	</SettingsRow>
-
-	<SettingsRow title="Return to inbox after send">
-		<input
-			type="checkbox"
-			checked={settings.returnToInboxAfterSend}
-			onchange={(e) => settings.setReturnToInboxAfterSend(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
 

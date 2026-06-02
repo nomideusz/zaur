@@ -24,7 +24,6 @@ export const MAIL_LAYOUT = {
 	mailRootClass: 'z-mail-view',
 	settingsRootClass: 'z-settings-view',
 	mail: {
-		useAdaptiveReaderFocus: true,
 		useFullscreenMobileReader: true
 	}
 } as const;
@@ -89,8 +88,4 @@ export function settingsRedirect(pathname: string): string | null {
 	if (pathname === '/settings/compose') return '/settings/writing';
 	if (pathname === '/settings/calendar') return '/calendar';
 	return null;
-}
-
-export function usesAdaptiveReaderFocus(opts: { showReaderListRail: boolean }): boolean {
-	return MAIL_LAYOUT.mail.useAdaptiveReaderFocus && !opts.showReaderListRail;
 }

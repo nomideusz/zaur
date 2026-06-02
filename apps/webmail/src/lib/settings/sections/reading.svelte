@@ -1,5 +1,4 @@
 <script lang="ts">
-	import SettingsDepends from '$lib/components/settings/SettingsDepends.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
@@ -8,9 +7,7 @@
 	import {
 		settings,
 		type ReaderTextSize,
-		type ReaderWidth,
-		type ReadingTypeface,
-		type SearchScope
+		type ReadingTypeface
 	} from '$lib/stores/settings.svelte';
 </script>
 
@@ -65,32 +62,11 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Auto-load more">
-		<input
-			type="checkbox"
-			checked={settings.autoLoadMore}
-			onchange={(e) => settings.setAutoLoadMore(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
 	<SettingsRow title="Remember last folder">
 		<input
 			type="checkbox"
 			checked={settings.rememberLastMailbox}
 			onchange={(e) => settings.setRememberLastMailbox(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow title="Search scope">
-		<SettingsSelect
-			label="Search scope"
-			value={settings.searchScope}
-			options={[
-				{ value: 'all', label: 'All mail' },
-				{ value: 'current-folder', label: 'Current folder' }
-			]}
-			onchange={(v) => settings.setSearchScope(v as SearchScope)}
-			class="w-auto"
 		/>
 	</SettingsRow>
 
@@ -141,27 +117,6 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Reading width">
-		<SettingsSelect
-			label="Reading width"
-			value={settings.readerWidth}
-			options={[
-				{ value: 'comfortable', label: 'Comfortable' },
-				{ value: 'wide', label: 'Wide' }
-			]}
-			onchange={(v) => settings.setReaderWidth(v as ReaderWidth)}
-			class="w-auto"
-		/>
-	</SettingsRow>
-
-	<SettingsRow title="Show avatars">
-		<input
-			type="checkbox"
-			checked={settings.showAvatars}
-			onchange={(e) => settings.setShowAvatars(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
 	<SettingsRow title="Prefer plain text">
 		<input
 			type="checkbox"
@@ -186,37 +141,11 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Quick reply">
-		<input
-			type="checkbox"
-			checked={settings.showQuickReply}
-			onchange={(e) => settings.setShowQuickReply(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
 	<SettingsRow title="Clean reading view">
 		<input
 			type="checkbox"
 			checked={settings.readerCleanView}
 			onchange={(e) => settings.setReaderCleanView(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-</SettingsGroup>
-
-<SettingsGroup title="Desktop layout" visibleOn="desktop">
-	<SettingsRow title="Focus reading when opened">
-		<input
-			type="checkbox"
-			checked={settings.focusReadingDefault}
-			onchange={(e) => settings.setFocusReadingDefault(e.currentTarget.checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow title="Split view">
-		<input
-			type="checkbox"
-			checked={settings.showReaderListRail}
-			onchange={(e) => settings.setShowReaderListRail(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
 </SettingsGroup>
@@ -229,28 +158,6 @@
 			onchange={(e) => settings.setMarkAsReadOnOpen(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
-
-	<SettingsDepends enabled={settings.markAsReadOnOpen}>
-		<SettingsRow title="Mark-as-read delay">
-			<SettingsSelect
-				label="Mark-as-read delay"
-				value={String(settings.markAsReadDelay)}
-				options={[
-					{ value: '0', label: 'Immediate' },
-					{ value: '500', label: '0.5 s' },
-					{ value: '1000', label: '1 s' },
-					{ value: '2000', label: '2 s' }
-				]}
-				onchange={(v) => {
-					const next = Number(v);
-					if (next === 0 || next === 500 || next === 1000 || next === 2000) {
-						settings.setMarkAsReadDelay(next);
-					}
-				}}
-				class="w-auto"
-			/>
-		</SettingsRow>
-	</SettingsDepends>
 
 	<SettingsRow title="Confirm before delete">
 		<input
@@ -299,10 +206,6 @@
 			<div class="z-settings-shortcut-row">
 				<dt>Archive / unread / delete</dt>
 				<dd>e · u · #</dd>
-			</div>
-			<div class="z-settings-shortcut-row">
-				<dt>Focus reading / list</dt>
-				<dd>z · Esc</dd>
 			</div>
 			<div class="z-settings-shortcut-row">
 				<dt>Send / close compose</dt>

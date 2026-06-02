@@ -106,9 +106,7 @@
 
 		compose.openDraft(latest);
 		const senderName = settings.resolvedDisplayName(auth.displayName ?? auth.username);
-		const destination = settings.returnToInboxAfterSend
-			? mailListHref(INBOX_MAILBOX_ROUTE_ID)
-			: mailListHref('sent');
+		const destination = mailListHref(INBOX_MAILBOX_ROUTE_ID);
 		const result = await compose.send(auth.client, auth.username, senderName, {
 			onUndo: () => goto(`/mail/compose?draft=${latest.id}`),
 			onComplete: (outcome) => {

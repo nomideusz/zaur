@@ -35,8 +35,8 @@
 :root {
 	--z-list-row: 4rem;
 	--z-list-text: 1rem;
-	/* Measure is in em (relative to reading text) so line length stays ~constant in characters. */
-	--z-reader-measure: 40em;
+	/* Reader column width — matches the content shell. */
+	--z-reader-measure: 100%;
 	--z-reader-text: 1rem;
 	--z-reader-leading: 1.7;
 	--z-reader-font: var(--font-sans);

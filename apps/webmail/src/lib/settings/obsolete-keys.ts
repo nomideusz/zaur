@@ -1,5 +1,15 @@
 /** Legacy density / layout keys removed after Simple mode — purged on init and excluded from sync. */
 export const OBSOLETE_SETTING_KEYS = new Set([
+	'zaur:auto-load-more',
+	'zaur:search-scope',
+	'zaur:show-reader-list-rail',
+	'zaur:focus-reading-default',
+	'zaur:mark-as-read-delay',
+	'zaur:reader-width',
+	'zaur:show-avatars',
+	'zaur:show-quick-reply',
+	'zaur:auto-archive-on-reply',
+	'zaur:return-to-inbox-after-send',
 	'zaur:hide-external-content-banner',
 	'zaur:hide-reader-recipients',
 	'zaur:tool-icons-only',

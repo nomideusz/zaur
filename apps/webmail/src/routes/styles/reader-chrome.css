@@ -31,8 +31,8 @@
 	}
 
 	.z-mail-view .z-content-shell .z-reader-column {
-		max-width: none;
-		margin-inline: 0;
+		max-width: min(var(--z-reader-measure), 100%);
+		margin-inline: auto;
 		width: 100%;
 		padding-inline: 0;
 	}

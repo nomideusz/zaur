@@ -110,7 +110,6 @@
 		onBulkAction
 	}: MessageListProps = $props();
 
-	let loadSentinel = $state<HTMLDivElement | null>(null);
 	let sectionMessagesByFolder = $state<Record<string, MessagePreview[]>>({});
 	let sectionVisibleCounts = $state<Record<string, number>>({});
 	let sectionHasMoreByFolder = $state<Record<string, boolean>>({});
@@ -691,24 +690,6 @@
 		};
 	});
 
-	$effect(() => {
-		settings.autoLoadMore;
-		hasMore;
-		loadingMore;
-		const sentinel = loadSentinel;
-		const load = onLoadMore;
-		if (!settings.autoLoadMore || !hasMore || !load || !sentinel || sectionMode) return;
-
-		const observer = new IntersectionObserver(
-			(entries) => {
-				if (entries[0]?.isIntersecting && !loadingMore) load();
-			},
-			{ rootMargin: '240px' }
-		);
-		observer.observe(sentinel);
-		return () => observer.disconnect();
-	});
-
 	function listRowStartsNewDay(messages: MessagePreview[], index: number): boolean {
 		if (index === 0) return true;
 		return (
@@ -1049,12 +1030,7 @@
 				{/each}
 			</ul>
 
-			<MessageListLoadMore
-				{hasMore}
-				{loadingMore}
-				{onLoadMore}
-				bind:loadSentinel
-			/>
+			<MessageListLoadMore {hasMore} {loadingMore} {onLoadMore} />
 		{/if}
 	</div>
 	{#if showBulkBar && mailboxRouteId}
