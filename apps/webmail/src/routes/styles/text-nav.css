@@ -52,7 +52,7 @@
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link {
-		@apply inline-flex items-baseline gap-1.5 text-fg underline underline-offset-2 decoration-fg/30;
+		@apply inline-flex items-baseline gap-1.5 text-fg underline underline-offset-[3px] decoration-fg/25 decoration-1;
 		font-size: var(--z-main-page-text);
 		line-height: 1.6;
 		transition:
@@ -67,7 +67,7 @@
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link:not(.z-mail-text-nav__link--here):hover {
 		@apply text-fg;
-		text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
+		text-decoration-color: color-mix(in srgb, var(--z-fg) 50%, transparent);
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link:active {

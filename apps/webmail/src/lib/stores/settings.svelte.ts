@@ -68,9 +68,9 @@ const STORAGE = {
 } as const;
 
 const READER_TEXT_SIZE: Record<ReaderTextSize, string> = {
-	small: '1rem',
-	normal: '1.0625rem',
-	large: '1.1875rem'
+	small: '0.9375rem',
+	normal: '1rem',
+	large: '1.125rem'
 };
 
 const READER_LEADING: Record<ReaderTextSize, string> = {

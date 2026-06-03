@@ -20,6 +20,7 @@
 		width: min(var(--z-content-max-width), 100%);
 		overflow: hidden;
 		border-block-start: 1px solid var(--z-border);
+		border-radius: var(--radius-md) var(--radius-md) 0 0;
 		background: color-mix(in srgb, var(--z-surface) 92%, transparent);
 		backdrop-filter: blur(10px);
 		pointer-events: auto;

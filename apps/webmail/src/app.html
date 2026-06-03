@@ -4,7 +4,7 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="description" content="Fast, offline-capable webmail for ZAUR accounts." />
-		<meta name="theme-color" content="#406bbf" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#3b6abf" media="(prefers-color-scheme: light)" />
 		<meta name="theme-color" content="#0f1419" media="(prefers-color-scheme: dark)" />
 		<meta name="text-scale" content="scale" />
 		<script>
@@ -23,15 +23,15 @@
 
 					var listText = localStorage.getItem('zaur:list-text-size');
 					if (listText === 'large') {
-						document.documentElement.style.setProperty('--z-list-text', '1.125rem');
+						document.documentElement.style.setProperty('--z-list-text', '1.0625rem');
 					} else if (listText === 'small') {
-						document.documentElement.style.setProperty('--z-list-text', '1rem');
+						document.documentElement.style.setProperty('--z-list-text', '0.9375rem');
 					}
 					var readerText = localStorage.getItem('zaur:reader-text-size');
 					if (readerText === 'large') {
-						document.documentElement.style.setProperty('--z-reader-text', '1.1875rem');
+						document.documentElement.style.setProperty('--z-reader-text', '1.125rem');
 					} else if (readerText === 'small') {
-						document.documentElement.style.setProperty('--z-reader-text', '1rem');
+						document.documentElement.style.setProperty('--z-reader-text', '0.9375rem');
 					}
 					if (window.matchMedia('(pointer: coarse)').matches) {
 						document.documentElement.classList.add('z-coarse-pointer');

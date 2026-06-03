@@ -83,7 +83,7 @@
 		transition:
 			border-color var(--z-motion-fast) var(--z-ease-standard),
 			background-color var(--z-motion-fast) var(--z-ease-standard),
-			box-shadow var(--z-motion-fast) var(--z-ease-standard);
+			box-shadow var(--z-motion-base) var(--z-ease-standard);
 	}
 
 	@media (min-width: 768px) {

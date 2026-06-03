@@ -22,7 +22,7 @@
 	}
 
 	.z-mobile-folder-picker {
-		@apply pointer-events-none flex w-full min-w-0 items-center gap-2 rounded-sm border border-border bg-surface-raised px-3 py-2 text-left text-base font-medium text-fg;
+		@apply pointer-events-none flex w-full min-w-0 items-center gap-2 rounded-md border border-border bg-surface-raised px-3 py-2 text-left text-base font-medium text-fg;
 		min-height: 2.75rem;
 	}
 
@@ -49,7 +49,7 @@
 		align-items: center;
 		gap: 0.5rem;
 		border: 1px solid var(--z-border);
-		border-radius: 0.125rem;
+		border-radius: var(--radius-md);
 		background-color: var(--z-surface-raised);
 		padding: 0.5rem 0.75rem;
 		font-size: 1rem;
@@ -84,7 +84,7 @@
 		list-style: none;
 		overflow-y: auto;
 		border: 1px solid var(--z-border);
-		border-radius: 0.125rem;
+		border-radius: var(--radius-md);
 		background-color: var(--z-surface-raised);
 		padding: 0.25rem 0;
 		box-shadow: var(--shadow-md);

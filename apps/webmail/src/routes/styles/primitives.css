@@ -49,7 +49,7 @@
 	}
 
 	.z-overflow-menu {
-		@apply absolute right-0 z-20 mt-2 w-72 min-w-64 overflow-hidden rounded-md border border-border bg-surface-raised p-2;
+		@apply absolute right-0 z-20 mt-2 w-72 min-w-64 overflow-hidden rounded-lg border border-border bg-surface-raised p-2;
 		box-shadow: var(--shadow-md);
 	}
 
@@ -142,16 +142,17 @@
 	}
 
 	.z-btn-primary {
-		@apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-sm bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-colors hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.98];
+		@apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-all hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.97];
+		box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
 	}
 
 	.z-btn-ghost {
-		@apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-sm px-3 py-1.5 text-sm font-medium text-fg-muted transition-colors hover:bg-surface-sunken hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+		@apply inline-flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-fg-muted transition-all hover:bg-surface-sunken hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.98];
 	}
 
 	/* Icon-only actions — semi-transparent resting background as visible tap target. */
 	.z-btn-icon {
-		@apply inline-flex cursor-pointer items-center justify-center rounded-md bg-surface-sunken/40 text-fg-muted transition-colors hover:bg-surface-sunken/70 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:bg-surface-sunken/80;
+		@apply inline-flex cursor-pointer items-center justify-center rounded-lg bg-surface-sunken/40 text-fg-muted transition-all hover:bg-surface-sunken/70 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:bg-surface-sunken/80 active:scale-[0.96];
 	}
 
 	.z-icon-tap-target {
@@ -177,15 +178,17 @@
 	}
 
 	.z-input {
-		@apply w-full rounded-sm border border-border bg-surface-raised px-3 py-2 text-base text-fg placeholder:text-fg-subtle focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-border-strong md:text-sm;
+		@apply w-full rounded-md border border-border bg-surface-raised px-3 py-2 text-base text-fg placeholder:text-fg-subtle focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-border-strong md:text-sm;
+		transition: border-color var(--z-motion-fast) var(--z-ease-standard), box-shadow var(--z-motion-fast) var(--z-ease-standard);
 	}
 
 	.z-select {
-		@apply w-full cursor-pointer appearance-none rounded-sm border border-border bg-surface-raised px-3 py-2 pr-9 text-base text-fg placeholder:text-fg-subtle focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-border-strong md:text-sm;
+		@apply w-full cursor-pointer appearance-none rounded-md border border-border bg-surface-raised px-3 py-2 pr-9 text-base text-fg placeholder:text-fg-subtle focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-border-strong md:text-sm;
 		background-size: 1rem;
 		background-position: right 0.65rem center;
 		background-repeat: no-repeat;
 		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%236b7280' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 7.5 5 5 5-5'/%3E%3C/svg%3E");
+		transition: border-color var(--z-motion-fast) var(--z-ease-standard), box-shadow var(--z-motion-fast) var(--z-ease-standard);
 	}
 
 	:root.dark .z-select {
@@ -387,7 +390,7 @@
 
 	/* Sidebar / panel list search — matches GlobalSearch sidebar + mobile mail search */
 	.z-sidebar-search-input {
-		@apply h-10 w-full rounded-md border border-border/80 bg-surface-sunken/80 pl-9 py-2 text-base text-fg placeholder:text-fg-subtle shadow-none focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-border-strong md:text-sm;
+		@apply h-10 w-full rounded-lg border border-border/80 bg-surface-sunken/80 pl-9 py-2 text-base text-fg placeholder:text-fg-subtle shadow-none focus:border-border-strong focus:outline-none focus:ring-1 focus:ring-border-strong md:text-sm;
 	}
 
 	.z-sidebar-search-input:focus {
@@ -396,7 +399,7 @@
 	}
 
 	.z-checkbox-row {
-		@apply flex cursor-pointer items-center gap-2 rounded-md px-3 text-sm transition-all hover:bg-surface-sunken/80 focus-within:ring-2 focus-within:ring-accent/20;
+		@apply flex cursor-pointer items-center gap-2.5 rounded-lg px-3 text-sm transition-all hover:bg-surface-sunken/80 focus-within:ring-2 focus-within:ring-accent/20;
 	}
 
 	.z-list-text {

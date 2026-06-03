@@ -20,12 +20,12 @@
 	--color-star: var(--z-star);
 	--color-danger: var(--z-danger);
 
-	--radius-sm: 0.25rem;
-	--radius-md: 0.5rem;
+	--radius-sm: 0.375rem;
+	--radius-md: 0.625rem;
 	--radius-lg: 1rem;
 
-	--shadow-sm: 0 1px 2px rgb(0 0 0 / 0.03);
-	--shadow-md: 0 4px 8px rgb(0 0 0 / 0.06);
+	--shadow-sm: 0 1px 3px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.02);
+	--shadow-md: 0 4px 12px rgb(0 0 0 / 0.07), 0 1px 4px rgb(0 0 0 / 0.03);
 
 	--width-sidebar: 15rem;
 	--width-list: 22rem;
@@ -50,25 +50,25 @@
 	--z-space-nav-top: 2rem;
 	--z-space-nav-bottom: 0;
 	--z-space-nav-label-top: 0.75rem;
-	/* Major break: page chrome → content, and between content sections (3rem desktop, 2rem mobile). */
+	/* Major break: page chrome → content, and between content sections. */
 	--z-space-folder-sections-gap: 3rem;
 	--z-space-folder-sections-top: var(--z-space-folder-sections-gap);
 	--z-space-folder-sections-bottom: 3rem;
 	--z-space-folder-head-bottom: 1rem;
 	--z-space-folder-footer-top: 0.625rem;
-	--z-space-folder-list-gap: 0.125rem;
-	--z-space-folder-message-y: 0.125rem;
+	--z-space-folder-list-gap: 0.1875rem;
+	--z-space-folder-message-y: 0.1875rem;
 	--z-space-folder-message-leading: 1.55;
 	--z-space-mobile-reader-scroll-bottom: 0.75rem;
-	--z-main-page-text: 1.0625rem;
-	--z-main-page-muted-text: 1rem;
-	--z-main-page-title: 1.0625rem;
+	--z-main-page-text: 1rem;
+	--z-main-page-muted-text: 0.9375rem;
+	--z-main-page-title: 1rem;
 	/* ~44rem ≈ 704px — Hobday-scale column, ~70 characters at body size. */
 	--z-content-max-width: 44rem;
 	/* Motion — fast, smooth, invisible until you notice them */
-	--z-motion-fast: 140ms;
-	--z-motion-base: 220ms;
-	--z-motion-enter: 360ms;
+	--z-motion-fast: 150ms;
+	--z-motion-base: 240ms;
+	--z-motion-enter: 380ms;
 	--z-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 	--z-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -88,11 +88,11 @@
 		--z-space-folder-sections-bottom: 2rem;
 		--z-space-folder-head-bottom: 0.75rem;
 		--z-space-folder-footer-top: 0.5rem;
-		--z-space-folder-list-gap: 0.0625rem;
-		--z-space-folder-message-y: 0.0625rem;
+		--z-space-folder-list-gap: 0.125rem;
+		--z-space-folder-message-y: 0.125rem;
 		--z-main-page-text: 1rem;
-		--z-main-page-muted-text: 0.9375rem;
-		--z-main-page-title: 1.125rem;
+		--z-main-page-muted-text: 0.875rem;
+		--z-main-page-title: 1.0625rem;
 	}
 }
 

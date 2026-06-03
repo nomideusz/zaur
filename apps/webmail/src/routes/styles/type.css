@@ -9,16 +9,16 @@
 
 	.z-type-page {
 		font-size: var(--z-main-page-text);
-		line-height: 1.55;
+		line-height: 1.6;
 	}
 
 	.z-type-page-muted {
 		font-size: var(--z-main-page-muted-text);
-		line-height: 1.55;
+		line-height: 1.6;
 		color: var(--z-fg-muted);
 	}
 
 	.z-type-list-count {
-		font-size: 0.9375rem;
-		line-height: 1.35;
+		font-size: 0.875rem;
+		line-height: 1.4;
 	}

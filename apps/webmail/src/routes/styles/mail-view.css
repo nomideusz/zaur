@@ -2,12 +2,12 @@
 
 
 	:is(.z-mail-view, .z-settings-view) {
-		--z-main-gap: 3rem;
+		--z-main-gap: 2.75rem;
 	}
 
 	@media (min-width: 768px) {
 		:is(.z-mail-view, .z-settings-view) {
-			--z-main-gap: 4.5rem;
+			--z-main-gap: 3.5rem;
 		}
 	}
 

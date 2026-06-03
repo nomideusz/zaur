@@ -230,10 +230,11 @@
 
 	.z-reader-thread:hover {
 		border-color: var(--z-border-strong);
+		box-shadow: var(--shadow-sm);
 	}
 
 	.z-reader-thread--expanded {
-		padding: 1.5rem;
+		padding: 1.5rem 1.625rem;
 	}
 
 	.z-reader-thread--collapsed {

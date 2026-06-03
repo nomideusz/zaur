@@ -9,33 +9,33 @@
 	--font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas,
 		'DejaVu Sans Mono', monospace;
 
-	--z-surface: #fbfbfa;
+	--z-surface: #fafaf9;
 	--z-surface-raised: #ffffff;
-	--z-surface-sunken: #f7f6f3;
-	--z-border: #eaeaea;
-	--z-border-strong: #d8d8d8;
+	--z-surface-sunken: #f5f4f1;
+	--z-border: #e8e8e6;
+	--z-border-strong: #d5d5d2;
 	/* Dividers sit outside container + page brightness (Hobday border rule). */
 	--z-divider: var(--z-border-strong);
-	--z-fg: #2f3437;
-	--z-fg-muted: #787774;
+	--z-fg: #1a1d1f;
+	--z-fg-muted: #6b6b69;
 	--z-fg-subtle: #9b9a97;
-	--z-accent: #406bbf;
-	--z-accent-hover: #355aad;
+	--z-accent: #3b6abf;
+	--z-accent-hover: #2f59ad;
 	--z-accent-fg: #ffffff;
-	--z-unread: #406bbf;
+	--z-unread: #3b6abf;
 	--z-star: #956400;
-	--z-danger: #9f2f2d;
+	--z-danger: #c03734;
 	--z-success: #2d6a4f;
 	--z-warning: #956400;
 
-	--z-brand-mark: #406bbf;
+	--z-brand-mark: #3b6abf;
 
-	--radius-sm: 0.25rem;
-	--radius-md: 0.5rem;
+	--radius-sm: 0.375rem;
+	--radius-md: 0.625rem;
 	--radius-lg: 1rem;
 
-	--shadow-sm: 0 1px 2px rgb(0 0 0 / 0.03);
-	--shadow-md: 0 4px 16px rgb(0 0 0 / 0.06);
+	--shadow-sm: 0 1px 3px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.02);
+	--shadow-md: 0 4px 16px rgb(0 0 0 / 0.07), 0 1px 4px rgb(0 0 0 / 0.03);
 
 	--height-header: 3.25rem;
 	/* ~44rem — same measure column as webmail */
@@ -58,26 +58,26 @@
 :root.dark {
 	color-scheme: dark;
 
-	--z-surface: #111111;
-	--z-surface-raised: #1a1a1a;
+	--z-surface: #101010;
+	--z-surface-raised: #191919;
 	--z-surface-sunken: color-mix(in srgb, var(--z-surface) 92%, var(--z-fg) 8%);
 	--z-chrome: var(--z-surface);
 	--z-chrome-active: color-mix(in srgb, var(--z-surface) 86%, var(--z-fg) 14%);
-	--z-border: #2a2a2a;
-	--z-border-strong: #3a3a3a;
+	--z-border: #272727;
+	--z-border-strong: #383838;
 	--z-divider: var(--z-border-strong);
 	--z-fg: #ededec;
 	--z-fg-muted: #a8a8a6;
 	--z-fg-subtle: #787774;
-	--z-accent: #406bbf;
-	--z-accent-hover: #5278c9;
+	--z-accent: #4d78cc;
+	--z-accent-hover: #5e87d4;
 	--z-accent-fg: #ffffff;
-	--z-unread: #406bbf;
+	--z-unread: #4d78cc;
 	--z-star: #d4a017;
 	--z-success: #52b788;
 	--z-warning: #d4a017;
 
-	--z-brand-mark: #406bbf;
+	--z-brand-mark: #4d78cc;
 
 	--z-scrollbar-thumb: color-mix(in srgb, var(--z-border-strong) 88%, transparent);
 	--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 58%, transparent);
@@ -87,26 +87,26 @@
 	:root:not(.light) {
 		color-scheme: dark;
 
-		--z-surface: #111111;
-		--z-surface-raised: #1a1a1a;
+		--z-surface: #101010;
+		--z-surface-raised: #191919;
 		--z-surface-sunken: color-mix(in srgb, var(--z-surface) 92%, var(--z-fg) 8%);
 		--z-chrome: var(--z-surface);
 		--z-chrome-active: color-mix(in srgb, var(--z-surface) 86%, var(--z-fg) 14%);
-		--z-border: #2a2a2a;
-		--z-border-strong: #3a3a3a;
+		--z-border: #272727;
+		--z-border-strong: #383838;
 		--z-divider: var(--z-border-strong);
 		--z-fg: #ededec;
 		--z-fg-muted: #a8a8a6;
 		--z-fg-subtle: #787774;
-		--z-accent: #406bbf;
-		--z-accent-hover: #5278c9;
+		--z-accent: #4d78cc;
+		--z-accent-hover: #5e87d4;
 		--z-accent-fg: #ffffff;
-		--z-unread: #406bbf;
+		--z-unread: #4d78cc;
 		--z-star: #d4a017;
 		--z-success: #52b788;
 		--z-warning: #d4a017;
 
-		--z-brand-mark: #406bbf;
+		--z-brand-mark: #4d78cc;
 
 		--z-scrollbar-thumb: color-mix(in srgb, var(--z-border-strong) 88%, transparent);
 		--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 58%, transparent);
