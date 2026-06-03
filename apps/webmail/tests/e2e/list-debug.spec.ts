@@ -2,7 +2,7 @@ import { test } from '@playwright/test';
 
 test('debug list details', async ({ page }) => {
 	await page.setViewportSize({ width: 1024, height: 768 });
-	await page.goto('http://localhost:5174/mail/inbox');
+	await page.goto('/mail/inbox');
 	await page.waitForTimeout(1000);
 
 	console.log('--- DOM STRUCTURE ---');

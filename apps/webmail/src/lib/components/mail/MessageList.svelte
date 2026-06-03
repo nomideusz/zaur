@@ -606,11 +606,7 @@
 		const counts: Record<string, number> = {
 			[NEW_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
 			[IMPORTANT_SECTION_ID]: INBOX_SECTION_PAGE_SIZE,
-			[READ_SECTION_ID]: inboxNormalSectionDefaultVisible(
-				inboxTriageLoad.new,
-				inboxTriageLoad.important,
-				INBOX_SECTION_PAGE_SIZE
-			)
+			[READ_SECTION_ID]: defaultReadSectionVisible
 		};
 		if (mailboxRouteId && mailboxRouteId !== 'inbox') {
 			const mailbox = mail.mailboxByRouteId(mailboxRouteId);
@@ -893,9 +889,7 @@
 			{@const timeLabel = isNewDay
 				? `${formatSimpleListDayHeading(message.receivedAt)} ${baseTimeLabel}`
 				: baseTimeLabel}
-			{@const showSenderDuplicate = duplicateKeys.has(messageSubjectKey(message))}
-			{@const showSender =
-				showSenderDuplicate || (isInboxHome && listSectionId === NEW_SECTION_ID)}
+			{@const showSender = true}
 			{@const isNewRow = isNewUnreadListRow(message)}
 			{@const showNewDot = isInboxHome && isNewRow}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
@@ -911,6 +905,7 @@
 				class={cn('list-none', listMessageRowClass, rowSelected && !message.important && '[&_.list-subject]:text-accent')}
 				data-current={currentMessageId === message.id ? 'true' : undefined}
 				data-new={isNewRow ? 'true' : undefined}
+				data-selected={rowSelected ? 'true' : undefined}
 			>
 				{#if showRowCheckbox}
 					<input
@@ -1024,49 +1019,88 @@
 			/>
 		{:else if sectionMode}
 			<div class="z-mail-list-sections">
-				{#each folderSections as section, sectionIndex (section.id)}
-					{@const sectionDuplicateSubjects = duplicateSubjectKeys(section.messages)}
-					<section
-						style:order={section.sortOrder}
-						style:--section-index={sectionIndex}
-						aria-label={isInboxHome ? section.name : undefined}
-					>
-						{#if !isInboxHome && section.id !== mailboxRouteId}
-							<div class="z-mail-list-section-head">
-								<p class="z-mail-list-section-title">
-									{#if section.showUnreadDot}
-										<span
-											class="size-[0.4375rem] shrink-0 rounded-full bg-unread"
-											aria-hidden="true"
-										></span>
-									{/if}
-									{section.name}
-								</p>
-								<span class={listSectionCountClass(section.id)}>{section.totalCount}</span>
-							</div>
-						{/if}
-						{#if section.messages.length > 0}
-							<ul class={cn(
-								'z-mail-list-section-messages',
-								section.id === NEW_SECTION_ID && 'z-mail-list-section-messages--new',
-								section.id === READ_SECTION_ID && 'z-mail-list-section-messages--normal'
-							)}>
-								{#each section.messages as message, index (message.id)}
-									{@render simpleMessageRow(message, section.routeId, index, section.messages, sectionDuplicateSubjects, section.id)}
-								{/each}
-							</ul>
-						{/if}
-						{#if sectionCanShowMore(section.id)}
-							<div class="z-mail-list-section-more">
-								<button type="button" class={listMoreClass} onclick={() => revealMoreInSection(section.id)}>
-									{sectionRevealLabel(section.id, section.totalCount)}
-								</button>
-							</div>
-						{/if}
-					</section>
-				{/each}
+				{#if isInboxHome}
+					{@const visibleNew = newUnreadMessages.slice(0, sectionVisibleCounts[NEW_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE)}
+					{@const visibleRead = readMessages.slice(0, sectionVisibleCounts[READ_SECTION_ID] ?? defaultReadSectionVisible)}
+					{@const newDuplicateSubjects = duplicateSubjectKeys(visibleNew)}
+					{@const readDuplicateSubjects = duplicateSubjectKeys(visibleRead)}
+					{#if visibleNew.length > 0 || visibleRead.length > 0}
+						<ul class="z-mail-list-section-messages z-mail-list-section-messages--combined">
+							{#each visibleNew as message, index (message.id)}
+								{@render simpleMessageRow(message, mailboxRouteId ?? 'inbox', index, visibleNew, newDuplicateSubjects, NEW_SECTION_ID)}
+							{/each}
+							{#if sectionCanShowMore(NEW_SECTION_ID)}
+								<li class="z-mail-list-section-more-row">
+									<button type="button" class={listMoreClass} onclick={() => revealMoreInSection(NEW_SECTION_ID)}>
+										{sectionRevealLabel(NEW_SECTION_ID, newUnreadMessages.length)}
+									</button>
+								</li>
+							{/if}
+							{#if visibleNew.length > 0 && visibleRead.length > 0}
+								<li class="z-mail-list-squiggly-divider" aria-hidden="true">
+									<svg xmlns="http://www.w3.org/2000/svg" class="w-full h-3">
+										<pattern id="squiggly-pattern" width="12" height="12" patternUnits="userSpaceOnUse">
+											<path d="M0,6 Q3,-1 6,6 T12,6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+										</pattern>
+										<rect width="100%" height="12" fill="url(#squiggly-pattern)"/>
+									</svg>
+								</li>
+							{/if}
+							{#each visibleRead as message, index (message.id)}
+								{@render simpleMessageRow(message, mailboxRouteId ?? 'inbox', index, visibleRead, readDuplicateSubjects, READ_SECTION_ID)}
+							{/each}
+							{#if sectionCanShowMore(READ_SECTION_ID)}
+								<li class="z-mail-list-section-more-row">
+									<button type="button" class={listMoreClass} onclick={() => revealMoreInSection(READ_SECTION_ID)}>
+										{sectionRevealLabel(READ_SECTION_ID, readMessages.length)}
+									</button>
+								</li>
+							{/if}
+						</ul>
+					{:else}
+						<p class="z-type-page leading-[1.55] font-normal text-fg">{resolvedEmptyMessage}</p>
+					{/if}
+				{:else}
+					{#each folderSections as section, sectionIndex (section.id)}
+						{@const sectionDuplicateSubjects = duplicateSubjectKeys(section.messages)}
+						<section
+							style:order={section.sortOrder}
+							style:--section-index={sectionIndex}
+							aria-label={undefined}
+						>
+							{#if section.id !== mailboxRouteId}
+								<div class="z-mail-list-section-head">
+									<p class="z-mail-list-section-title">
+										{#if section.showUnreadDot}
+											<span
+												class="size-[0.4375rem] shrink-0 rounded-full bg-unread"
+												aria-hidden="true"
+											></span>
+										{/if}
+										{section.name}
+									</p>
+									<span class={listSectionCountClass(section.id)}>{section.totalCount}</span>
+								</div>
+							{/if}
+							{#if section.messages.length > 0}
+								<ul class="z-mail-list-section-messages">
+									{#each section.messages as message, index (message.id)}
+										{@render simpleMessageRow(message, section.routeId, index, section.messages, sectionDuplicateSubjects, section.id)}
+									{/each}
+								</ul>
+							{/if}
+							{#if sectionCanShowMore(section.id)}
+								<div class="z-mail-list-section-more">
+									<button type="button" class={listMoreClass} onclick={() => revealMoreInSection(section.id)}>
+										{sectionRevealLabel(section.id, section.totalCount)}
+									</button>
+								</div>
+							{/if}
+						</section>
+					{/each}
+				{/if}
 
-				{#if folderSections.length === 0}
+				{#if folderSections.length === 0 && !isInboxHome}
 					<p class="z-type-page leading-[1.55] font-normal text-fg">{resolvedEmptyMessage}</p>
 				{/if}
 			</div>

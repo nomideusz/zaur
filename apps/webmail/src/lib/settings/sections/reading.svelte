@@ -53,14 +53,6 @@
 	/>
 </SettingsRow>
 
-<SettingsRow title="Show email in list">
-	<input
-		type="checkbox"
-		checked={settings.showSenderEmailInList}
-		onchange={(e) => settings.setShowSenderEmailInList(e.currentTarget.checked)}
-	/>
-</SettingsRow>
-
 <SettingsRow title="Colorful Important subjects">
 	<input
 		type="checkbox"
