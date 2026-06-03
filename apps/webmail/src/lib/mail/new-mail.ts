@@ -9,7 +9,7 @@ export function isNewMessage(message: Pick<MessagePreview, 'unread'>): boolean {
 export const LABEL_CLEAR_NEW = 'Not new';
 
 /** Restores New — pairs with {@link LABEL_CLEAR_NEW}. */
-export const LABEL_RESTORE_NEW = 'Mark as new';
+export const LABEL_RESTORE_NEW = 'Unsee';
 
 /** Pin for follow-up — clears New when the message is still New. */
 export const LABEL_MARK_IMPORTANT = 'Important';
@@ -18,7 +18,7 @@ export const LABEL_MARK_IMPORTANT = 'Important';
 export const LABEL_NOT_IMPORTANT = 'Not important';
 
 /**
- * What clears New (sets $seen / unread=false). Opening a message does not.
+ * What clears New (sets $seen / unread=false). Opening a message does so automatically.
  *
  * - Not important — file as normal: clear New and remove Important pin
  * - Important — acknowledged and pinned; leaves New queue

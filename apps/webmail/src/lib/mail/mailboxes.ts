@@ -132,7 +132,10 @@ const MOVE_TARGET_EXCLUDED_ROLES = new Set<MailboxRole>([
 	'scheduled',
 	'snoozed',
 	'memos',
-	'trash'
+	'trash',
+	'sent',
+	'drafts',
+	'junk'
 ]);
 
 export function moveTargetMailboxes(

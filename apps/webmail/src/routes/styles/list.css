@@ -353,6 +353,44 @@
 
 	.z-mail-view .z-mail-list-row {
 		position: relative;
+		background-color: var(--z-surface-raised);
+		border: 1px solid var(--z-border);
+		border-radius: var(--radius-md);
+		transition: border-color var(--z-motion-fast) var(--z-ease-standard), box-shadow var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-mail-view .z-mail-list-row:hover {
+		border-color: var(--z-border-strong);
+	}
+
+	.z-mail-view .z-mail-list-row > :where(a),
+	.z-mail-view .z-mail-list-swipe-row,
+	.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground {
+		border-radius: calc(var(--radius-md) - 1px);
+	}
+
+	.z-mail-view .z-mail-list-row :where(a) {
+		padding: 0.875rem 1.25rem;
+	}
+
+	.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground,
+	.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+		background-color: var(--z-surface-raised);
+	}
+
+	.z-mail-view .z-mail-list-row[data-current="true"] {
+		border-color: var(--z-accent);
+		box-shadow: 0 0 0 1px var(--z-accent);
+		background-color: color-mix(in srgb, var(--z-accent) 4%, var(--z-surface-raised));
+	}
+
+	.z-mail-view .z-mail-list-row[data-current="true"] .z-swipe-row__foreground,
+	.z-mail-view .z-mail-list-row[data-current="true"] :where(a) {
+		background-color: transparent !important;
+	}
+
+	.z-mail-view .z-mail-list-row[data-new="true"] {
+		border-left: 3px solid var(--z-unread);
 	}
 
 	.z-mail-view .z-mail-list-row > :where(a):focus-visible,
@@ -474,11 +512,11 @@
 	}
 
 	.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground {
-		background-color: var(--z-surface);
+		background-color: var(--z-surface-raised);
 	}
 
 	.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
-		background-color: var(--z-surface);
+		background-color: var(--z-surface-raised);
 	}
 
 	.z-mail-list-row-meta {
@@ -535,27 +573,20 @@
 	/* One-sided stroke for the New section container. Sits inside the container, messages pushed right. */
 	.z-mail-list-section-messages--new {
 		position: relative;
-		padding-inline-start: 0.75rem;
+		padding-inline-start: 0;
 	}
 
 	.z-mail-view .z-mail-list-section-messages--new::before {
-		content: '';
-		position: absolute;
-		left: 0.125rem;
-		top: 0.125rem;
-		bottom: 0.125rem;
-		width: 3px;
-		background-color: var(--z-unread);
-		border-radius: 9999px;
+		display: none;
 	}
 
 	/* Adjust checkbox and hover trigger width in the padded section to align with other sections */
 	.z-mail-view .z-mail-list-section-messages--new .z-mail-list-row__checkbox {
-		left: calc(-1 * var(--z-list-checkbox-gutter) - 0.75rem);
+		left: calc(-1 * var(--z-list-checkbox-gutter));
 	}
 
 	.z-mail-view .z-mail-list-section-messages--new .z-mail-list-row::before {
-		width: calc(var(--z-list-checkbox-gutter) + 0.75rem);
+		width: var(--z-list-checkbox-gutter);
 	}
 
 	/* New (unread, first-day) rows — subtle unread tint on subject and time. */
@@ -627,7 +658,7 @@
 	.z-mail-view .z-mail-list-section-messages {
 		display: flex;
 		flex-direction: column;
-		gap: max(0.5rem, var(--z-space-folder-message-y));
+		gap: 0.75rem;
 	}
 
 	.z-mail-view .z-mail-list-section-more {

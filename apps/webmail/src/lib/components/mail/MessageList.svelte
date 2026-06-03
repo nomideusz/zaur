@@ -79,7 +79,7 @@
 	const listImportantSubjectClass = 'z-mail-list-subject--important';
 	const listRowMetaClass = (isNew: boolean) =>
 		cn(
-			'shrink-0 tabular-nums no-underline z-type-page leading-[1.4] z-mail-list-row-meta',
+			'shrink-0 tabular-nums no-underline text-xs leading-[1.4] z-mail-list-row-meta',
 			isNew
 				? 'z-mail-list-meta--new'
 				: cn(
@@ -87,8 +87,12 @@
 						'group-hover/message:text-fg group-focus-visible/message:text-fg'
 					)
 		);
-	const listSenderClass = (visible: boolean) =>
-		cn('z-type-page leading-[1.4] text-fg-muted', visible ? 'block' : 'hidden');
+	const listSenderClass = (visible: boolean, isNew: boolean) =>
+		cn(
+			'z-type-page leading-[1.4]',
+			isNew ? 'font-semibold text-fg' : 'font-medium text-fg-muted',
+			visible ? 'block' : 'hidden'
+		);
 	const listSectionCountClass = (sectionId: string) =>
 		cn(
 			'z-type-list-count shrink-0 tabular-nums font-semibold text-fg',
@@ -452,17 +456,7 @@
 		return mail.messages.find((entry) => entry.id === message.id) ?? message;
 	}
 
-	function inboxImportantListRows(): MessagePreview[] {
-		const loadedImportant = (sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [])
-			.filter((message) => !mail.wasRemovedFromView(message.id))
-			.map(listMessagePreview)
-			.filter((message) => message.important)
-			.filter((message) => !isNewUnreadListRow(message))
-			.filter(messageEligibleForImportantSection);
-		return collapseMessagesByThread(
-			mergeMessagePreviews(loadedImportant, importantInboxMessages)
-		);
-	}
+
 
 	function isMe(email: string): boolean {
 		const cleanEmail = email?.trim().toLowerCase();
@@ -496,7 +490,7 @@
 		listMessages.filter((message) => isNewUnreadListRow(message))
 	);
 	const readMessages = $derived.by(() =>
-		listMessages.filter((message) => !isNewUnreadListRow(message) && !message.important)
+		listMessages.filter((message) => !isNewUnreadListRow(message))
 	);
 	function messageEligibleForImportantSection(message: MessagePreview): boolean {
 		const role = mail.mailboxByRouteId(message.mailboxId)?.role;
@@ -513,25 +507,10 @@
 		return canMarkImportantFromMailboxRole(mail.mailboxByRouteId(routeId)?.role);
 	}
 
-	const importantInboxMessages = $derived.by(() =>
-		listMessages.filter(
-			(message) =>
-				message.important &&
-				!isNewUnreadListRow(message) &&
-				messageEligibleForImportantSection(message)
-		)
-	);
-	const importantMailbox = $derived(mail.importantMailbox());
-
-	const inboxTriageLoad = $derived.by(() => ({
-		new: newUnreadMessages.length,
-		important: Math.max(importantMailbox?.total ?? 0, importantInboxMessages.length)
-	}));
-
 	const defaultReadSectionVisible = $derived(
 		inboxNormalSectionDefaultVisible(
-			inboxTriageLoad.new,
-			inboxTriageLoad.important,
+			newUnreadMessages.length,
+			0,
 			INBOX_SECTION_PAGE_SIZE
 		)
 	);
@@ -545,8 +524,6 @@
 						sectionHasMoreByFolder[folder.id]) &&
 					folder.id !== 'unread' &&
 					folder.id !== 'read' &&
-					folder.id !== IMPORTANT_SECTION_ID &&
-					folder.role !== 'important' &&
 					(!mailboxRouteId || folder.id !== mailboxRouteId)
 			)
 			.sort((a, b) => {
@@ -584,24 +561,6 @@
 				});
 			}
 
-			if (importantMailbox) {
-				const importantMessages = inboxImportantListRows();
-				if (importantMessages.length > 0) {
-					sections.push({
-						id: IMPORTANT_SECTION_ID,
-						name: importantMailbox.name,
-						routeId: mailboxRouteId ?? 'inbox',
-						messages: importantMessages.slice(
-							0,
-							sectionVisibleCounts[IMPORTANT_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE
-						),
-						totalCount: importantMessages.length,
-						sortOrder: 1,
-						showUnreadDot: importantMailbox.unread > 0
-					});
-				}
-			}
-
 			if (readMessages.length > 0) {
 				sections.push({
 					id: READ_SECTION_ID,
@@ -612,7 +571,7 @@
 						sectionVisibleCounts[READ_SECTION_ID] ?? defaultReadSectionVisible
 					),
 					totalCount: readMessages.length,
-					sortOrder: 2,
+					sortOrder: 1,
 					showUnreadDot: false
 				});
 			}
@@ -709,12 +668,6 @@
 	const folderPreloadKey = $derived.by(() => {
 		if (!isInboxHome) return '';
 		const parts: string[] = [];
-		const important = importantMailbox;
-		if (important && (important.total > 0 || importantInboxMessages.length > 0)) {
-			parts.push(
-				`${IMPORTANT_SECTION_ID}:${sectionVisibleCounts[IMPORTANT_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE}`
-			);
-		}
 		for (const folder of orderedFolders) {
 			const visible =
 				sectionVisibleCounts[folder.id] ??
@@ -730,8 +683,6 @@
 		const useSectionMode = sectionMode;
 		const inboxHome = isInboxHome;
 		const preloadKey = folderPreloadKey;
-		const important = importantMailbox;
-		const inboxImportantCount = importantInboxMessages.length;
 
 		if (!useSectionMode || !client || !routeId || !inboxHome) {
 			return;
@@ -745,10 +696,7 @@
 		// folderPreloadKey (a value-stable string) remains the real trigger and
 		// already captures genuine folder/visible-count changes.
 		const folders = untrack(() => orderedFolders);
-		const foldersToLoad = [
-			...(important && (important.total > 0 || inboxImportantCount > 0) ? [important] : []),
-			...folders.filter((folder) => folder.id !== important?.id)
-		];
+		const foldersToLoad = folders;
 		if (foldersToLoad.length === 0) {
 			return;
 		}
@@ -758,8 +706,7 @@
 
 		void Promise.all(
 			foldersToLoad.map(async (folder) => {
-				const sectionId =
-					folder.role === 'important' ? IMPORTANT_SECTION_ID : folder.id;
+				const sectionId = folder.id;
 				const requested =
 					sectionVisibleCounts[sectionId] ??
 					(folderSectionCollapsedByDefault(folder) ? 0 : FOLDER_SECTION_PAGE_SIZE);
@@ -838,10 +785,6 @@
 
 	const flatListDuplicateSubjects = $derived(duplicateSubjectKeys(listMessages));
 
-	function importantSectionFetchLimit(): number {
-		return sectionVisibleCounts[IMPORTANT_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE;
-	}
-
 	function sectionCanShowMore(sectionId: string): boolean {
 		const visible =
 			sectionVisibleCounts[sectionId] ??
@@ -849,19 +792,6 @@
 				? defaultReadSectionVisible
 				: sectionPageSize(sectionId));
 		if (sectionId === NEW_SECTION_ID) return newUnreadMessages.length > visible;
-		if (sectionId === IMPORTANT_SECTION_ID) {
-			if (!importantMailbox) return false;
-			const rows = inboxImportantListRows();
-			const fetchLimit = importantSectionFetchLimit();
-			const folderPreviews = sectionMessagesByFolder[IMPORTANT_SECTION_ID] ?? [];
-			return inboxImportantSectionCanShowMore(
-				rows.length,
-				visible,
-				folderPreviews.length,
-				fetchLimit,
-				!!sectionHasMoreByFolder[IMPORTANT_SECTION_ID]
-			);
-		}
 		if (sectionId === READ_SECTION_ID) {
 			return readMessages.length > visible || hasMore;
 		}
@@ -977,7 +907,11 @@
 				canPickImportantRainbow(routeId)}
 			{@const swipeLeading = listSwipeLeading(message, routeId)}
 			{@const swipeTrailing = listSwipeTrailing(message, routeId)}
-			<li class={cn('list-none', listMessageRowClass, rowSelected && !message.important && '[&_.list-subject]:text-accent')}>
+			<li
+				class={cn('list-none', listMessageRowClass, rowSelected && !message.important && '[&_.list-subject]:text-accent')}
+				data-current={currentMessageId === message.id ? 'true' : undefined}
+				data-new={isNewRow ? 'true' : undefined}
+			>
 				{#if showRowCheckbox}
 					<input
 						type="checkbox"
@@ -1021,6 +955,7 @@
 					>
 						<span class={listMessageStackClass}>
 							<span class={listMessageLeadClass}>
+								<span class={listSenderClass(showSender, isNewRow)}>{senderLabel}</span>
 								<span class="flex min-w-0 w-full items-start gap-2">
 									{#if showImportantPresentation(message, routeId)}
 										<span
@@ -1036,7 +971,6 @@
 										<span class={listSubjectPlainClass(isNewRow)}>{subjectText}</span>
 									{/if}
 								</span>
-								<span class={listSenderClass(showSender)}>{senderLabel}</span>
 							</span>
 							<span class={listRowMetaClass(isNewRow)}>
 								{#if showColorCycle}
@@ -1154,7 +1088,7 @@
 				</nav>
 			{/if}
 		{:else}
-			<ul class="flex flex-col gap-2.5">
+			<ul class="flex flex-col gap-3">
 				{#each listMessages as message, index (message.id)}
 					{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId, index, listMessages)}
 				{/each}

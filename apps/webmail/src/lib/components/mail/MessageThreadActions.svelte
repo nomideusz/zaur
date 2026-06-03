@@ -34,10 +34,6 @@
 		onMoved?: () => void;
 		/** Text-nav overflow trigger for the reader header row. */
 		header?: boolean;
-		/** When true, Important / Not important are on the nav row — omit from the menu. */
-		hideImportantTriageInMenu?: boolean;
-		/** When true, Not new is on the nav row — omit from the menu. Mark as new stays in More when read. */
-		hideClearNewInMenu?: boolean;
 		/** Reply mode promoted on the nav row — omit its duplicate from the menu. */
 		primaryReplyMode?: 'reply' | 'reply-all';
 	}
@@ -47,8 +43,6 @@
 		mailboxRouteId,
 		onMoved,
 		header = false,
-		hideImportantTriageInMenu = false,
-		hideClearNewInMenu = false,
 		primaryReplyMode = 'reply'
 	}: Props = $props();
 
@@ -157,6 +151,19 @@
 			toast.show(message, 'error');
 		}
 	}
+
+	async function toggleSpam() {
+		if (!auth.client || !actionMessage) return;
+		const toJunk = currentMailbox?.role !== 'junk';
+		try {
+			await mail.moveMessageToMailbox(auth.client, actionMessage, toJunk ? 'junk' : 'inbox');
+			onMoved?.();
+		} catch (error) {
+			const label = toJunk ? 'mark as spam' : 'restore message';
+			const message = error instanceof Error ? error.message : `Could not ${label}`;
+			toast.show(message, 'error');
+		}
+	}
 </script>
 
 {#if latest}
@@ -189,39 +196,44 @@
 				{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
 			</OverflowMenuItem>
 		{:else}
-			{#if showReplyInMenu}
-				<OverflowMenuItem label="Reply" onclick={reply}>
-					{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
-				</OverflowMenuItem>
-			{/if}
-			{#if showReplyAllInMenu}
-				<OverflowMenuItem label="Reply all" onclick={replyAll}>
-					{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
-				</OverflowMenuItem>
-			{/if}
-			<OverflowMenuItem label="Forward" onclick={forward}>
-				{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
-			</OverflowMenuItem>
-			{#if !hideClearNewInMenu}
-				{#if actionMessage?.unread}
-					<OverflowMenuItem label={LABEL_CLEAR_NEW} onclick={fileAsNotImportant} />
-				{:else}
-					<OverflowMenuItem label={LABEL_RESTORE_NEW} onclick={markNew} />
+			{#if thread.length > 1}
+				{#if showReplyInMenu}
+					<OverflowMenuItem label="Reply" onclick={reply}>
+						{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
 				{/if}
-			{:else if !actionMessage?.unread}
-				<OverflowMenuItem label={LABEL_RESTORE_NEW} onclick={markNew} />
+				{#if showReplyAllInMenu}
+					<OverflowMenuItem label="Reply all" onclick={replyAll}>
+						{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+				{/if}
+				<OverflowMenuItem label="Forward" onclick={forward}>
+					{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+			{/if}
+			{#if actionMessage?.unread}
+				<OverflowMenuItem label={LABEL_CLEAR_NEW} onclick={fileAsNotImportant} />
 			{/if}
 			<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-			{#if !hideImportantTriageInMenu}
-				{#if actionMessage?.important}
-					<OverflowMenuItem label={LABEL_NOT_IMPORTANT} onclick={fileAsNotImportant}>
-						{#snippet icon()}
-							<Important class="size-5 text-accent" aria-hidden="true" />
-						{/snippet}
+			{#if actionMessage?.important}
+				<OverflowMenuItem label={LABEL_NOT_IMPORTANT} onclick={fileAsNotImportant}>
+					{#snippet icon()}
+						<Important class="size-5 text-accent" aria-hidden="true" />
+					{/snippet}
+				</OverflowMenuItem>
+			{:else if canMarkImportant}
+				<OverflowMenuItem label={LABEL_MARK_IMPORTANT} onclick={toggleImportant}>
+					{#snippet icon()}<Important class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+			{/if}
+			{#if auth.client && !isDraft && mailboxRouteId !== 'trash'}
+				{#if currentMailbox?.role === 'junk'}
+					<OverflowMenuItem label="Not spam" onclick={toggleSpam}>
+						{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}
 					</OverflowMenuItem>
-				{:else if canMarkImportant}
-					<OverflowMenuItem label={LABEL_MARK_IMPORTANT} onclick={toggleImportant}>
-						{#snippet icon()}<Important class="size-5" aria-hidden="true" />{/snippet}
+				{:else}
+					<OverflowMenuItem label="Mark Spam" onclick={toggleSpam}>
+						{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}
 					</OverflowMenuItem>
 				{/if}
 			{/if}

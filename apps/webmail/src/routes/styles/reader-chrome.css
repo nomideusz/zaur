@@ -38,9 +38,7 @@
 	}
 
 	.z-mail-view .z-reader-subject-heading {
-		margin: 0 0 var(--z-space-reader-inline-subject);
-		font-size: var(--z-reader-text);
-		line-height: var(--z-reader-leading);
+		margin: 0;
 		font-weight: 600;
 		@apply text-fg;
 	}

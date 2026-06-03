@@ -58,7 +58,7 @@ describe('mailboxes', () => {
 		const targets = moveTargetMailboxes(mailboxes, mailboxes[0]);
 		assert.deepEqual(
 			targets.map((mb) => mb.id),
-			['sent', 'junk']
+			[]
 		);
 	});
 
