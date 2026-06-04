@@ -361,7 +361,8 @@
 		transition: transform 0.2s ease-out;
 	}
 
-	.z-swipe-row--interactive .z-swipe-row__foreground {
+	.z-swipe-row--interactive.z-swipe-row--dragging .z-swipe-row__foreground,
+	.z-swipe-row--interactive[data-swipe-open] .z-swipe-row__foreground {
 		will-change: transform;
 	}
 

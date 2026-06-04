@@ -45,8 +45,8 @@
 
 	let offset = $state(0);
 	let openSide = $state<'leading' | 'trailing' | null>(null);
-	let dragging = false;
-	let swipeActive = false;
+	let dragging = $state(false);
+	let swipeActive = $state(false);
 	let pointerId: number | null = null;
 	let startX = 0;
 	let startY = 0;
@@ -215,7 +215,13 @@
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
-	class={cn('z-swipe-row', hasSwipe && 'z-swipe-row--interactive', className)}
+	class={cn(
+		'z-swipe-row',
+		hasSwipe && 'z-swipe-row--interactive',
+		openSide && 'z-swipe-row--elevated',
+		swipeActive && 'z-swipe-row--dragging',
+		className
+	)}
 	data-swipe-open={openSide ?? undefined}
 	onclickcapture={onClickCapture}
 >

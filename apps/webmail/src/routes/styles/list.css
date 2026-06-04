@@ -422,13 +422,6 @@
 		background-color: color-mix(in srgb, var(--z-accent) 4%, var(--z-surface-raised));
 	}
 
-	.z-mail-view .z-mail-list-row[data-current="true"] .z-swipe-row__foreground,
-	.z-mail-view .z-mail-list-row[data-current="true"] :where(a) {
-		background-color: transparent !important;
-	}
-
-
-
 	.z-mail-view .z-mail-list-row > :where(a):focus-visible,
 	.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a):focus-visible {
 		outline: 2px solid var(--z-accent);
@@ -714,6 +707,12 @@
 		transition: background-color var(--z-motion-fast) var(--z-ease-standard);
 	}
 
+	/* Swipe rows need an opaque foreground so action buttons stay hidden when closed. */
+	.z-mail-view .z-mail-list-section-messages .z-mail-list-swipe-row .z-swipe-row__foreground,
+	.z-mail-view .z-mail-list-section-messages .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+		background-color: var(--z-surface-raised);
+	}
+
 	.z-mail-view .z-mail-list-section-messages .z-mail-list-row:not(:last-child) {
 		border-bottom: 1px solid var(--z-border);
 	}
@@ -912,6 +911,32 @@
 			-webkit-user-select: none;
 			user-select: none;
 			touch-action: manipulation;
+		}
+
+		.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground,
+		.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+			background-color: var(--z-surface-raised);
+		}
+
+		.z-mail-view .z-mail-list-row:hover .z-mail-list-swipe-row .z-swipe-row__foreground,
+		.z-mail-view .z-mail-list-row:hover .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+			background-color: var(--z-surface-raised) !important;
+		}
+
+		.z-mail-view .z-mail-list-row[data-current="true"] {
+			position: relative;
+			z-index: 2;
+			isolation: isolate;
+		}
+
+		.z-mail-view .z-mail-list-row[data-current="true"] .z-mail-list-swipe-row .z-swipe-row__foreground,
+		.z-mail-view .z-mail-list-row[data-current="true"] .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+			background-color: color-mix(in srgb, var(--z-accent) 4%, var(--z-surface-raised)) !important;
+		}
+
+		.z-mail-view .z-mail-list-row[data-selected="true"] .z-mail-list-swipe-row .z-swipe-row__foreground,
+		.z-mail-view .z-mail-list-row[data-selected="true"] .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+			background-color: color-mix(in srgb, var(--z-accent) 6%, var(--z-surface-raised)) !important;
 		}
 	}
 
