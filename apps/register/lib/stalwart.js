@@ -170,20 +170,15 @@ async function getLdapDirectoryId() {
   return cachedLdapDirectoryId;
 }
 
-async function ensureDomainPasswordDirectory(domainId) {
-  const ldapDirectoryId = await getLdapDirectoryId();
-  if (!ldapDirectoryId) return false;
-
+async function ensureDomainInternalDirectory(domainId) {
   const { body: domainGetBody } = await jmapRequest([['x:Domain/get', { ids: [domainId] }, 'domainGet']]);
   const getResponse = getMethodResponse(domainGetBody, 'domainGet');
   const domain = getResponse?.list?.[0];
   if (!domain) return false;
-  // Keep an explicit LLDAP directory on each domain so password auth never
-  // inherits the Logto OIDC default from Authentication.
-  if (domain.directoryId === ldapDirectoryId) return true;
+  if (domain.directoryId === null) return true;
 
   const { body: setBody } = await jmapRequest([
-    ['x:Domain/set', { update: { [domainId]: { directoryId: ldapDirectoryId } } }, 'domainSet'],
+    ['x:Domain/set', { update: { [domainId]: { directoryId: null } } }, 'domainSet'],
   ]);
   const setResponse = getMethodResponse(setBody, 'domainSet');
   if (setResponse?.notUpdated?.[domainId]) {
@@ -317,8 +312,8 @@ async function findAccountByEmail(email) {
   return accounts.find((account) => account.email.toLowerCase() === normalized) || null;
 }
 
-async function createAccount(username, domainId) {
-  await ensureDomainPasswordDirectory(domainId);
+async function createAccount(username, domainId, password) {
+  await ensureDomainInternalDirectory(domainId);
 
   const config = getConfig();
 
@@ -341,6 +336,12 @@ async function createAccount(username, domainId) {
             encryptionAtRest: { '@type': 'Disabled' },
             aliases: {},
             memberGroupIds: {},
+            credentials: {
+              "0": {
+                "secret": password,
+                "@type": "Password"
+              }
+            }
           },
         },
       },
@@ -427,6 +428,38 @@ async function ensureStandardMailboxes(accountId) {
   return Object.keys(setResponse?.created || {});
 }
 
+async function changePassword(email, password) {
+  const account = await findAccountByEmail(email);
+  if (!account) {
+    throw new Error('Account not found in Stalwart.');
+  }
+
+  const { body } = await jmapRequest([
+    [
+      'x:Account/set',
+      {
+        update: {
+          [account.id]: {
+            credentials: {
+              "0": {
+                "secret": password,
+                "@type": "Password"
+              }
+            }
+          }
+        }
+      },
+      'changePassword',
+    ],
+  ]);
+
+  const response = getMethodResponse(body, 'changePassword');
+  if (response?.notUpdated?.[account.id]) {
+    throw new Error(extractJmapError(response));
+  }
+  return true;
+}
+
 module.exports = {
   listDomains,
   listAccounts,
@@ -436,6 +469,7 @@ module.exports = {
   deleteAccount,
   deleteAccountByEmail,
   ensureStandardMailboxes,
+  changePassword,
   clearDomainCache: () => {
     domainCache = { domains: null, expiresAt: 0 };
   },

@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const directory = require('./lldap');
+const stalwart = require('./stalwart');
 const logto = require('./logto');
 const invitations = require('./invitations');
 const inviteMail = require('./invite-mail');
@@ -101,19 +101,19 @@ async function resolveMailboxEmail(input) {
   const normalized = normalizeEmail(input);
   if (!isValidEmail(normalized)) return null;
 
-  if (await directory.findUserIdByEmail(normalized)) {
+  if (await stalwart.findAccountByEmail(normalized)) {
     return normalized;
   }
 
   const fromAudit = invitations.findMailboxByRecoveryEmail(normalized);
-  if (fromAudit && (await directory.findUserIdByEmail(fromAudit))) {
+  if (fromAudit && (await stalwart.findAccountByEmail(fromAudit))) {
     return fromAudit;
   }
 
   if (logto.isConfigured()) {
     try {
       const fromLogto = await logto.findPrimaryEmailByRecoveryEmail(normalized);
-      if (fromLogto && (await directory.findUserIdByEmail(fromLogto))) {
+      if (fromLogto && (await stalwart.findAccountByEmail(fromLogto))) {
         return fromLogto;
       }
     } catch (err) {
@@ -201,7 +201,7 @@ async function resetPassword(mailboxEmail, token, password, confirmPassword) {
   }
 
   const email = normalizeEmail(entry.mailboxEmail);
-  await directory.changePassword(email, password);
+  await stalwart.changePassword(email, password);
 
   if (logto.isConfigured()) {
     try {
