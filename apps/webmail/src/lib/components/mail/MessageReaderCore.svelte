@@ -136,11 +136,12 @@
 		return true;
 	}
 
-	function resetReaderRainbow(event: PointerEvent) {
+	function persistReaderRainbowPick(event: PointerEvent) {
 		if (settings.reduceMotion || !hasPreciseHover() || !subjectImportant || !subjectMessageId || !readerSubjectEl) {
 			return;
 		}
-		importantRainbow.resetFromElement(readerSubjectEl, subjectMessageId);
+		if (!shouldPersistReaderRainbowPick(event)) return;
+		importantRainbow.pickFromElement(readerSubjectEl, subjectMessageId);
 	}
 
 	function startReaderRainbowSample() {
@@ -185,7 +186,7 @@
 			)}
 			style={subjectImportant && subjectMessageId ? importantRainbow.cssVars(subjectMessageId) : undefined}
 			onpointerenter={startReaderRainbowSample}
-			onpointerleave={resetReaderRainbow}
+			onpointerleave={persistReaderRainbowPick}
 			onpointerdown={(event) => {
 				if (!subjectMessageId) return;
 				readerRainbowTouch.onPointerDown(subjectMessageId, event);

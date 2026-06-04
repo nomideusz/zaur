@@ -8,7 +8,6 @@
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import Palette from '$lib/components/icons/Palette.svelte';
-	import Important from '$lib/components/icons/Important.svelte';
 	import {
 		listSwipeContext,
 		listSwipeLeadingActions,
@@ -99,34 +98,10 @@
 
 	/** Important row currently hovered — only that row may persist a rainbow pick. */
 	let importantRainbowHoverId = $state<string | null>(null);
-	/** Active color picker menu message ID. */
-	let activeColorPickerId = $state<string | null>(null);
 	/** After bulk-select long-press, block the following link navigation. */
 	let suppressRowNavigationUntil = 0;
 
 	const mobileRowGestures = $derived(supportsMobileListGestures());
-
-	const CURATED_PHASES = [
-		{ name: 'Red/Coral', phase: 0, previewGradient: 'linear-gradient(135deg, oklch(0.55 0.17 25) 0%, oklch(0.55 0.17 340) 100%)' },
-		{ name: 'Gold/Orange', phase: -8.8, previewGradient: 'linear-gradient(135deg, oklch(0.55 0.17 80) 0%, oklch(0.55 0.17 45) 100%)' },
-		{ name: 'Emerald/Green', phase: -17.6, previewGradient: 'linear-gradient(135deg, oklch(0.52 0.14 140) 0%, oklch(0.52 0.14 180) 100%)' },
-		{ name: 'Teal/Blue', phase: -26.4, previewGradient: 'linear-gradient(135deg, oklch(0.53 0.16 220) 0%, oklch(0.53 0.16 180) 100%)' },
-		{ name: 'Lavender/Purple', phase: -33.0, previewGradient: 'linear-gradient(135deg, oklch(0.55 0.17 280) 0%, oklch(0.55 0.17 320) 100%)' },
-		{ name: 'Full Rainbow', phase: -4.0, previewGradient: 'linear-gradient(135deg, oklch(0.55 0.17 0) 0%, oklch(0.55 0.17 120) 50%, oklch(0.55 0.17 240) 100%)' }
-	];
-
-	async function toggleMessageImportant(message: MessagePreview, event: MouseEvent) {
-		event.stopPropagation();
-		event.preventDefault();
-		if (!auth.client) return;
-		try {
-			await mail.toggleImportant(auth.client, message);
-			onBulkAction?.();
-		} catch (err) {
-			const text = err instanceof Error ? err.message : 'Could not update important';
-			toast.show(text, 'error');
-		}
-	}
 
 	$effect(() => {
 		void $page.url.pathname;
@@ -856,40 +831,24 @@
 				data-selected={rowSelected ? 'true' : undefined}
 			>
 				{#if showRowCheckbox}
-					<div class="z-mail-list-row-left-controls flex items-center gap-2.5 shrink-0" style="margin-top: 0.875rem;">
-						<div class="relative flex items-center justify-center size-5 shrink-0">
-							<input
-								type="checkbox"
-								class={cn('z-mail-list-row__checkbox absolute m-0', rowSelected && 'z-mail-list-row__checkbox--on')}
-								checked={rowSelected}
-								aria-checked={rowSelected}
-								aria-label={`Select ${subjectText}`}
-								onclick={(event) => handleRowCheckboxClick(message.id, event)}
-							/>
-							{#if !rowSelected && (message.hasAttachment || message.replied)}
-								<span class="z-mail-list-row__indicator absolute flex items-center justify-center gap-0.5 text-fg-subtle transition-opacity duration-150 pointer-events-none">
-									{#if message.replied}
-										<Reply class="size-3.5" aria-hidden="true" />
-									{/if}
-									{#if message.hasAttachment}
-										<Paperclip class="size-3.5" aria-hidden="true" />
-									{/if}
-								</span>
-							{/if}
-						</div>
-						{#if !mobileRowGestures}
-							<button
-								type="button"
-								class={cn(
-									'z-mail-list-row__star relative flex items-center justify-center size-5 shrink-0 transition-all duration-150 cursor-pointer',
-									message.important ? 'z-mail-list-row__star--active text-accent' : 'text-fg-subtle/30 hover:text-accent hover:scale-110'
-								)}
-								onclick={(event) => toggleMessageImportant(message, event)}
-								aria-label={message.important ? 'Remove important marker' : 'Mark important'}
-								style={message.important ? importantRainbow.cssVars(message.id) : undefined}
-							>
-								<Important class="size-4.5" />
-							</button>
+					<div class="relative flex items-center justify-center size-5 shrink-0" style="margin-top: 0.875rem;">
+						<input
+							type="checkbox"
+							class={cn('z-mail-list-row__checkbox absolute m-0', rowSelected && 'z-mail-list-row__checkbox--on')}
+							checked={rowSelected}
+							aria-checked={rowSelected}
+							aria-label={`Select ${subjectText}`}
+							onclick={(event) => handleRowCheckboxClick(message.id, event)}
+						/>
+						{#if !rowSelected && (message.hasAttachment || message.replied)}
+							<span class="z-mail-list-row__indicator absolute flex items-center justify-center gap-0.5 text-fg-subtle transition-opacity duration-150 pointer-events-none">
+								{#if message.replied}
+									<Reply class="size-3.5" aria-hidden="true" />
+								{/if}
+								{#if message.hasAttachment}
+									<Paperclip class="size-3.5" aria-hidden="true" />
+								{/if}
+							</span>
 						{/if}
 					</div>
 				{/if}
@@ -919,17 +878,13 @@
 						onpointerleave={(event) => {
 							if (!subjectImportant) return;
 							if (!hasPreciseHover()) return;
-							importantRainbowHoverId = null;
-							const subject = event.currentTarget.querySelector(
-								'.z-mail-list-subject--important'
-							);
-							if (subject instanceof HTMLElement) {
-								importantRainbow.resetFromElement(subject, message.id);
+							if (canPickImportantRainbow(routeId)) {
+								persistImportantRainbowPick(message.id, event.currentTarget, event);
 							}
 						}}
 					>
 						<div class="min-w-0 flex-1">
-							<div class="flex items-baseline justify-between gap-2 relative">
+							<div class="flex items-baseline justify-between gap-2">
 								<p class={listSenderClass(isUnread)}>{senderLabel}</p>
 								{#if showColorCycle}
 									<button
@@ -942,73 +897,12 @@
 										<Palette class="size-4" aria-hidden="true" />
 									</button>
 								{:else}
-									<div class="flex items-center gap-1.5 shrink-0">
-										{#if subjectImportant && !mobileRowGestures}
-											<button
-												type="button"
-												class="z-mail-list-row-palette opacity-0 group-hover/message:opacity-100 hover:text-accent text-fg-subtle p-0.5 transition-all cursor-pointer"
-												aria-label="Choose highlight color"
-												onclick={(event) => {
-													event.stopPropagation();
-													event.preventDefault();
-													activeColorPickerId = activeColorPickerId === message.id ? null : message.id;
-												}}
-											>
-												<Palette class="size-4" aria-hidden="true" />
-											</button>
-										{/if}
-										<time class={listTimeClass} datetime={message.receivedAt}>
-											{timeLabel}
-										</time>
-									</div>
-								{/if}
-
-								{#if activeColorPickerId === message.id}
-									<div
-										class="fixed inset-0 z-40 bg-transparent"
-										onclick={(event) => {
-											event.stopPropagation();
-											event.preventDefault();
-											activeColorPickerId = null;
-										}}
-									></div>
-									<div
-										class="absolute right-0 top-6 z-50 flex items-center gap-1.5 rounded-lg border border-border bg-surface-raised p-1.5 shadow-lg"
-										onclick={(event) => event.stopPropagation()}
-									>
-										{#each CURATED_PHASES as { name, phase, previewGradient }}
-											<button
-												type="button"
-												class="size-5 rounded-full border border-border/80 hover:scale-115 hover:border-fg transition-all cursor-pointer"
-												style="background: {previewGradient}"
-												title={name}
-												aria-label={`Select ${name}`}
-												onpointerenter={() => {
-													const subject = document.getElementById(`subject-${message.id}`);
-													if (subject instanceof HTMLElement) {
-														importantRainbow.commitPhaseVisual(subject, message.id, phase);
-													}
-												}}
-												onpointerleave={() => {
-													const subject = document.getElementById(`subject-${message.id}`);
-													if (subject instanceof HTMLElement) {
-														const saved = importantRainbow.phaseFor(message.id);
-														importantRainbow.commitPhaseVisual(subject, message.id, saved);
-													}
-												}}
-												onclick={(event) => {
-													event.stopPropagation();
-													event.preventDefault();
-													importantRainbow.pickPhase(message.id, phase);
-													activeColorPickerId = null;
-												}}
-											></button>
-										{/each}
-									</div>
+									<time class={listTimeClass} datetime={message.receivedAt}>
+										{timeLabel}
+									</time>
 								{/if}
 							</div>
 							<p
-								id="subject-{message.id}"
 								class={cn(
 									listSubjectClass(isUnread, subjectImportant),
 									subjectImportant &&
