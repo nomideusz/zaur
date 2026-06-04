@@ -62,6 +62,7 @@ packages/
 infra/
   auth/          Zitadel + passkey-first webmail setup
   mail/          Stalwart ops notes
+  listenbrainz-ingest/  LB recommendations → mediacms-ingest → Navidrome
   deploy/        CapRover captain-definition templates
 ```
 
