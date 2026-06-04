@@ -544,29 +544,34 @@
 		background-color: var(--z-accent);
 	}
 
-	/* Important rows — per-message hue spine on the row (no star affordance). */
-	.z-mail-view .z-mail-list-row--important::before {
-		content: '';
-		position: absolute;
-		left: 0;
-		top: 0.35rem;
-		bottom: 0.35rem;
+	/* Important rows — hue spine + chip (no star affordance). */
+	.z-mail-view .z-mail-list-row--important {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.5rem;
+	}
+
+	.z-mail-view .z-mail-list-important-spine {
 		width: 4px;
+		align-self: stretch;
+		min-height: 2.75rem;
+		margin-block: 0.2rem;
 		border-radius: 0 3px 3px 0;
 		background: oklch(
 			var(--important-rainbow-l),
-			calc(var(--important-rainbow-c) + 0.08),
+			calc(var(--important-rainbow-c) + 0.12),
 			calc(var(--important-hue, 0deg) + 200deg)
 		);
 		box-shadow: 0 0 0.5rem
 			oklch(
 				var(--important-rainbow-l),
 				var(--important-rainbow-c),
-				calc(var(--important-hue, 0deg) + 200deg) / 0.35
+				calc(var(--important-hue, 0deg) + 200deg) / 0.45
 			);
-		opacity: 1;
-		pointer-events: none;
-		z-index: 1;
+	}
+
+	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row--important {
+		gap: 0.75rem;
 	}
 
 	/* Selected Row background highlight inside sections and flat list */
@@ -648,8 +653,8 @@
 
 	.z-mail-view .z-mail-list-color-cycle__swatch {
 		display: block;
-		width: 0.75rem;
-		height: 0.75rem;
+		width: 0.875rem;
+		height: 0.875rem;
 		border-radius: 999px;
 		background: oklch(
 			var(--important-rainbow-l),

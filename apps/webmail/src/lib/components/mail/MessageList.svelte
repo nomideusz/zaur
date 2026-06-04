@@ -873,7 +873,15 @@
 				style={importantChrome ? importantRainbow.cssVars(message.id) : undefined}
 				data-current={isCurrent ? 'true' : undefined}
 				data-selected={rowSelected ? 'true' : undefined}
+				data-important={importantChrome ? 'true' : undefined}
 			>
+				{#if importantChrome}
+					<span
+						class="z-mail-list-important-spine shrink-0"
+						style={importantRainbow.cssVars(message.id)}
+						aria-hidden="true"
+					></span>
+				{/if}
 				{#if showRowCheckbox}
 					<div class="relative flex items-center justify-center size-5 shrink-0" style="margin-top: 0.875rem;">
 						<input
