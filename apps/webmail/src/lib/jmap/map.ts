@@ -1,3 +1,4 @@
+import { extractInlineImages, rewriteInlineCidImages } from '$lib/email/inline-images';
 import type { JMAPEmail, JMAPBodyPart } from '$lib/jmap/types';
 import type { Mailbox, MessageAttachment, MessageDetail, MessagePreview } from '$lib/types/mail';
 
@@ -124,12 +125,15 @@ export function mapEmailPreview(email: JMAPEmail, routeMailboxId: string): Messa
 }
 
 export function mapEmailDetail(email: JMAPEmail, routeMailboxId: string): MessageDetail {
+	const inlineImages = extractInlineImages(email.bodyStructure);
+	const rawHtml = extractBodyHtml(email);
+
 	return {
 		...mapEmailPreview(email, routeMailboxId),
 		to: mapAddresses(email.to),
 		cc: mapAddresses(email.cc),
 		bcc: mapAddresses(email.bcc),
-		bodyHtml: extractBodyHtml(email),
+		bodyHtml: rawHtml ? rewriteInlineCidImages(rawHtml, inlineImages) : undefined,
 		bodyText: extractBodyText(email),
 		attachments: extractAttachments(email.bodyStructure)
 	};

@@ -52,6 +52,7 @@ export interface JMAPBodyPart {
 	type?: string;
 	size?: number;
 	disposition?: string;
+	cid?: string;
 	subParts?: JMAPBodyPart[];
 }
 

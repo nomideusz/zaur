@@ -19,7 +19,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		"default-src 'self'",
 		"script-src 'self' 'unsafe-inline'",
 		"style-src 'self' 'unsafe-inline'",
-		"img-src 'self' data: blob:",
+		"img-src 'self' data: blob: https: http:",
 		"font-src 'self'",
 		`connect-src ${connectSrc}`,
 		"frame-ancestors 'none'",
