@@ -141,16 +141,77 @@
 		transform: none;
 	}
 
-	/* Bulk header sticks while selecting, aligns with the list container. */
-	.z-mail-text-nav--bulk {
+	/* Bulk selection header — same chrome as folder title row. */
+	.z-mail-view .z-mail-list-bulk-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		min-height: 3rem;
+		min-width: 0;
+		padding: 0.625rem 1rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
 		position: sticky;
 		top: 0;
 		z-index: 10;
-		margin-inline-start: 0;
-		padding-inline-start: 0;
 		background-color: color-mix(in srgb, var(--z-surface) 95%, transparent);
 		backdrop-filter: blur(8px);
 		-webkit-backdrop-filter: blur(8px);
+	}
+
+	.z-mail-view .z-mail-list-bulk-header__lead {
+		display: flex;
+		min-width: 0;
+		flex: 1;
+		align-items: center;
+		gap: 0.375rem;
+	}
+
+	.z-mail-view .z-mail-list-bulk-header__summary {
+		min-width: 0;
+		flex: 1;
+		margin: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.875rem;
+		line-height: 1.4;
+	}
+
+	.z-mail-view .z-mail-list-bulk-header__headline {
+		font-weight: 600;
+		color: var(--z-fg);
+	}
+
+	.z-mail-view .z-mail-list-bulk-header__detail {
+		font-weight: 400;
+		color: var(--z-fg-muted);
+	}
+
+	.z-mail-view .z-mail-list-bulk-header__actions {
+		display: flex;
+		flex-shrink: 0;
+		align-items: center;
+		gap: 0.125rem;
+	}
+
+	.z-mail-view .z-mail-list-bulk-header__danger {
+		color: var(--z-danger);
+	}
+
+	.z-mail-view .z-mail-list-bulk-header__danger:hover {
+		color: var(--z-danger);
+		background-color: color-mix(in srgb, var(--z-danger) 10%, transparent);
+	}
+
+	.z-mail-view .z-mail-list-bulk-header__checkbox {
+		position: static;
+		left: auto;
+		top: auto;
+		transform: none;
+		opacity: 1;
+		pointer-events: auto;
+		flex-shrink: 0;
 	}
 
 	/* Folder / inbox list header — same row layout as compose; sticks while scrolling. */
@@ -418,9 +479,10 @@
 		position: absolute;
 		left: 1.25rem;
 		top: 50%;
+		z-index: 2;
 		transform: translateY(-50%);
 		opacity: 0;
-		pointer-events: none;
+		pointer-events: auto;
 		transition: opacity var(--z-motion-fast) var(--z-ease-standard),
 					border-color var(--z-motion-fast) var(--z-ease-standard),
 					background-color var(--z-motion-fast) var(--z-ease-standard);
@@ -436,7 +498,6 @@
 		.z-mail-view .z-mail-list-row:hover .z-mail-list-row__checkbox,
 		.z-mail-view .z-mail-list-row:focus-within .z-mail-list-row__checkbox {
 			opacity: 1;
-			pointer-events: auto;
 		}
 	}
 
@@ -444,24 +505,25 @@
 	.z-mail-view .z-mail-list-row__checkbox:checked,
 	.z-mail-view .z-mail-list-row__checkbox:focus-visible {
 		opacity: 1;
-		pointer-events: auto;
 	}
 
 	@media (hover: none) {
 		.z-mail-view .z-mail-list--selecting .z-mail-list-row__checkbox {
 			opacity: 1;
-			pointer-events: auto;
 		}
 	}
 
+	.z-mail-view .z-mail-list-row__checkbox--on,
 	.z-mail-view .z-mail-list-row__checkbox:checked,
-	.z-mail-list-bulk-bar__checkbox:checked {
+	.z-mail-view .z-mail-list-bulk-header__checkbox:checked {
 		background-color: var(--z-accent);
 		border-color: var(--z-accent);
+		opacity: 1;
 	}
 
+	.z-mail-view .z-mail-list-row__checkbox--on::after,
 	.z-mail-view .z-mail-list-row__checkbox:checked::after,
-	.z-mail-list-bulk-bar__checkbox:checked::after {
+	.z-mail-view .z-mail-list-bulk-header__checkbox:checked::after {
 		content: '';
 		display: block;
 		width: 0.3125rem;
@@ -471,21 +533,18 @@
 		transform: rotate(45deg) translate(-0.5px, -1px);
 	}
 
-	.z-mail-view .z-mail-list-row__checkbox:indeterminate,
-	.z-mail-list-bulk-bar__checkbox:indeterminate {
-		background-color: var(--z-accent);
+	.z-mail-view .z-mail-list-bulk-header__checkbox:indeterminate {
+		background-color: var(--z-surface-raised);
 		border-color: var(--z-accent);
 		opacity: 1;
-		pointer-events: auto;
 	}
 
-	.z-mail-view .z-mail-list-row__checkbox:indeterminate::after,
-	.z-mail-list-bulk-bar__checkbox:indeterminate::after {
+	.z-mail-view .z-mail-list-bulk-header__checkbox:indeterminate::after {
 		content: '';
 		display: block;
 		width: 0.5rem;
 		height: 2px;
-		background-color: var(--z-surface);
+		background-color: var(--z-accent);
 	}
 
 	/* Selected Row background highlight inside sections and flat list */
@@ -501,60 +560,47 @@
 		background-color: color-mix(in srgb, var(--z-accent) 10%, var(--z-surface-raised)) !important;
 	}
 
-	/* Mobile — checkboxes live in-row only during bulk selection. */
+	/* Bulk selection — checkbox column aligned with header. */
+	.z-mail-view .z-mail-list--selecting .z-mail-list-flow--selectable .z-mail-list-row::before {
+		display: none;
+	}
+
+	.z-mail-view .z-mail-list--selecting .z-mail-list-row {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		padding-inline: 1rem;
+	}
+
+	.z-mail-view .z-mail-list--selecting .z-mail-list-row__checkbox {
+		position: static;
+		flex-shrink: 0;
+		margin-top: 0.875rem;
+		transform: none;
+		opacity: 1;
+		pointer-events: auto;
+	}
+
+	.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a),
+	.z-mail-view .z-mail-list--selecting .z-mail-list-row .z-mail-list-swipe-row {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a),
+	.z-mail-view .z-mail-list--selecting .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+		padding-left: 1rem !important;
+	}
+
 	@media (max-width: 767px) {
 		.z-mail-view .z-mail-list-body .z-mail-list-flow--selectable {
 			margin-inline-start: 0;
 			padding-inline-start: 0;
 		}
 
-		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row::before {
-			display: none;
-		}
-
-		.z-mail-view .z-mail-list--selecting .z-mail-list-row {
-			display: flex;
-			align-items: flex-start;
-			gap: 0.625rem;
-		}
-
-		.z-mail-view .z-mail-list--selecting .z-mail-list-row__checkbox {
-			position: static;
-			flex-shrink: 0;
-			margin-top: 0.35rem;
-			opacity: 1;
-			pointer-events: auto;
-		}
-
-		.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a),
-		.z-mail-view .z-mail-list--selecting .z-mail-list-row .z-mail-list-swipe-row {
-			flex: 1 1 auto;
-			min-width: 0;
-		}
-
-		.z-mail-view .z-mail-list-body .z-mail-list-bulk-bar__checkbox {
-			position: static;
-			top: auto;
-			translate: none;
-			flex-shrink: 0;
-			margin: 0;
-			margin-top: 0.35rem;
-		}
-
-		.z-mail-text-nav--bulk {
-			margin-inline-start: 0;
-			padding-inline-start: 0;
-		}
-
-		.z-mail-list-bulk-bar__controls {
-			align-items: flex-start;
-			gap: 0.625rem;
-			padding-left: 0 !important;
-		}
-
 		.z-mail-view .z-mail-list-row > :where(a),
 		.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
-			padding-left: 1.25rem !important;
+			padding-left: 1rem !important;
 		}
 
 		/* Reset padding of the New section on mobile selecting view and hide its unread vertical stroke */

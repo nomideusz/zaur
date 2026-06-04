@@ -16,13 +16,13 @@
 		if (input) input.indeterminate = someSelected;
 	});
 
-	function onChange() {
+	function handleClick(event: MouseEvent) {
+		event.preventDefault();
 		if (allSelected || someSelected) {
 			mail.clearSelection();
 			input?.blur();
 			return;
 		}
-
 		mail.selectAllMessages();
 	}
 </script>
@@ -34,6 +34,6 @@
 	checked={allSelected}
 	aria-checked={allSelected ? 'true' : someSelected ? 'mixed' : 'false'}
 	disabled={!mail.selectableMessageList.length || mail.messagesLoading}
-	aria-label={allSelected ? 'Deselect all messages' : 'Select all messages'}
-	onchange={onChange}
+	aria-label={allSelected || someSelected ? 'Deselect all messages' : 'Select all messages'}
+	onclick={handleClick}
 />

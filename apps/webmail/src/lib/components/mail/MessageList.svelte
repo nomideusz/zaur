@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import { untrack } from 'svelte';
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
-	import MessageListMobileBar from '$lib/components/mail/MessageListMobileBar.svelte';
+	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Palette from '$lib/components/icons/Palette.svelte';
@@ -292,24 +292,17 @@
 	}
 
 	function handleRowCheckboxClick(messageId: string, event: MouseEvent) {
+		event.preventDefault();
 		event.stopPropagation();
 		const ctrl = event.ctrlKey || event.metaKey;
 		const shift = event.shiftKey;
 		if (shift || ctrl) {
-			event.preventDefault();
 			setTimeout(() => {
 				handleRowSelect(messageId, { shift, ctrl });
 			}, 0);
+			return;
 		}
-	}
-
-	function handleRowCheckboxChange(messageId: string, event: Event) {
-		event.stopPropagation();
-		const input = event.currentTarget as HTMLInputElement;
-		const isSelected = mail.selectedMessageIds.has(messageId);
-		if (input.checked === isSelected) return;
 		mail.toggleMessageSelection(messageId);
-		if (!input.checked) input.blur();
 	}
 
 	function handleRowLinkClick(messageId: string, event: MouseEvent) {
@@ -785,9 +778,8 @@
 >
 	{#if mailboxRouteId || !sectionMode}
 		{#if showBulkBar && mailboxRouteId}
-			<MessageListMobileBar
-				mailboxRouteId={mailboxRouteId}
-				showNavLinks={!isInboxHome}
+			<MessageListBulkHeader
+				{mailboxRouteId}
 				{onBulkAction}
 				disabled={loading || !!error || !messages.length}
 			/>
@@ -836,11 +828,11 @@
 				{#if showRowCheckbox}
 					<input
 						type="checkbox"
-						class="z-mail-list-row__checkbox"
+						class={cn('z-mail-list-row__checkbox', rowSelected && 'z-mail-list-row__checkbox--on')}
 						checked={rowSelected}
+						aria-checked={rowSelected}
 						aria-label={`Select ${subjectText}`}
 						onclick={(event) => handleRowCheckboxClick(message.id, event)}
-						onchange={(event) => handleRowCheckboxChange(message.id, event)}
 					/>
 				{/if}
 				{#snippet rowLink()}
