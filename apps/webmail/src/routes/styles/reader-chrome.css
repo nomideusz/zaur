@@ -34,17 +34,36 @@
 		@apply flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden;
 	}
 
-	.z-mail-view .z-reader-surface {
-		width: 100%;
-		max-width: var(--z-reader-measure);
-		min-width: 0;
-		font-size: var(--z-reader-text);
-		border-inline-end: 1px solid color-mix(in srgb, var(--z-border) 45%, transparent);
-		@apply bg-surface;
+	/* Reader pane: centered reading card on wide screens. */
+	.z-mail-view .z-mail-pane-surface--reader {
+		@apply bg-surface-sunken/35;
 	}
 
-	.z-mail-view .z-mail-pane-surface:has(.z-reader-surface) {
-		@apply bg-surface-sunken/30;
+	.z-mail-view .z-reader-card {
+		width: min(100%, var(--z-reader-measure));
+		max-width: var(--z-reader-measure);
+		min-width: 0;
+		align-self: center;
+		font-size: var(--z-reader-text);
+		@apply flex min-h-0 flex-1 flex-col overflow-hidden bg-surface;
+	}
+
+	@media (min-width: 768px) {
+		.z-mail-view .z-mail-pane-surface--reader {
+			@apply items-center px-6 py-5;
+		}
+
+		.z-mail-view .z-reader-card {
+			max-height: 100%;
+			border: 1px solid color-mix(in srgb, var(--z-border) 70%, transparent);
+			border-radius: var(--radius-lg);
+			box-shadow: var(--shadow-sm);
+		}
+
+		.z-mail-view .z-reader-header {
+			border-start-start-radius: var(--radius-lg);
+			border-start-end-radius: var(--radius-lg);
+		}
 	}
 
 	.z-mail-view .z-mail-external-banner {

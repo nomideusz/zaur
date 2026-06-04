@@ -162,10 +162,10 @@
 </script>
 
 <article
-	class="z-mail-pane-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+	class="z-mail-pane-surface z-mail-pane-surface--reader flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
 	style="view-transition-name: message-reader;"
 >
-	<div class="z-reader-surface flex min-h-0 w-full max-w-(--z-reader-measure) flex-1 flex-col overflow-hidden">
+	<div class="z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 	<header class="z-reader-header flex shrink-0 items-center gap-2 border-b border-border/80 px-4 py-2.5 min-w-0">
 		<a
 			href={listHref}
