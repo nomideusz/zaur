@@ -19,18 +19,20 @@
 		position: relative;
 		width: min(var(--z-content-max-width), 100%);
 		overflow: hidden;
-		border-block-start: 1px solid var(--z-border);
-		border-radius: var(--radius-md) var(--radius-md) 0 0;
-		background: color-mix(in srgb, var(--z-surface) 92%, transparent);
-		backdrop-filter: blur(10px);
+		border: 1px solid var(--z-border-strong);
+		border-radius: var(--radius-lg);
+		background: color-mix(in srgb, var(--z-surface-raised) 85%, transparent);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		box-shadow: var(--shadow-md);
 		pointer-events: auto;
 		animation: z-status-line-enter var(--z-motion-enter) var(--z-ease-out) both;
 	}
 
 	/* Faded shape as container — https://anthonyhobday.com/sideprojects/visualtechniques/techniques/other/faded-shape-as-container */
 	.z-status-line__item--timed {
-		border-block-start-color: color-mix(in srgb, var(--z-accent) 22%, var(--z-border));
-		background: color-mix(in srgb, var(--z-accent) 10%, var(--z-surface));
+		border-color: color-mix(in srgb, var(--z-accent) 22%, var(--z-border-strong));
+		background: color-mix(in srgb, var(--z-accent) 8%, var(--z-surface-raised));
 		backdrop-filter: none;
 	}
 
@@ -40,7 +42,6 @@
 		z-index: 0;
 		pointer-events: none;
 		background: color-mix(in srgb, var(--z-accent) 28%, var(--z-surface));
-		border-block-start: 1px solid color-mix(in srgb, var(--z-accent) 55%, transparent);
 		transform: scaleX(0);
 		transform-origin: left center;
 		animation: z-status-line-shape-fill linear forwards;

@@ -83,10 +83,10 @@
 				href={item.href}
 				aria-current={item.active ? 'page' : undefined}
 				class={cn(
-					'flex items-center gap-2 rounded-sm px-3 text-sm transition-colors',
+					'flex items-center gap-2 rounded-md px-3 text-sm transition-colors',
 					'py-2',
 					item.active
-						? 'z-surface-active'
+						? 'z-surface-active font-medium'
 						: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
 				)}
 			>

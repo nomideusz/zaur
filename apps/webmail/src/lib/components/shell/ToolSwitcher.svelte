@@ -29,23 +29,22 @@ import Users from '$lib/components/icons/Users.svelte';
 	]);
 </script>
 
-<nav aria-label="Tools" class="ml-1 flex items-center gap-0.5 border-l border-border/70 pl-2">
+<nav aria-label="Tools" class="flex items-center gap-1 bg-surface-sunken/60 p-1 rounded-lg border border-border/40">
 	{#each tools as tool}
 		{@const Icon = tool.icon}
 		{@const isActive = tool.active($page.url.pathname)}
 		<a
 			href={tool.href}
 			class={cn(
-				'flex items-center rounded-sm text-sm transition-colors',
-				'gap-2 px-2.5 py-1.5',
+				'flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-semibold tracking-tight transition-all',
 				isActive
-					? 'font-medium text-fg underline decoration-fg/30 decoration-2 underline-offset-[0.35rem]'
-					: 'text-fg-muted hover:text-fg'
+					? 'bg-surface-raised text-accent shadow-sm border border-border/40'
+					: 'text-fg-muted hover:bg-surface-raised/40 hover:text-fg'
 			)}
 			aria-current={isActive ? 'page' : undefined}
 			title={tool.label}
 		>
-			<Icon class="size-5" aria-hidden="true" />
+			<Icon class="size-4" aria-hidden="true" />
 			<span class="hidden sm:inline">{tool.label}</span>
 		</a>
 	{/each}

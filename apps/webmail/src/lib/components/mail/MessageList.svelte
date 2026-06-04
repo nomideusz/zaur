@@ -1136,6 +1136,10 @@
 	{/if}
 	{#if !showBulkBar}
 	<div class="z-mail-text-nav__links mt-[var(--z-main-gap)]!">
+		<a class="z-mail-text-nav__link" href="/calendar">Calendar</a>
+		<span class="z-mail-text-nav__sep">·</span>
+		<a class="z-mail-text-nav__link" href="/contacts">Contacts</a>
+		<span class="z-mail-text-nav__sep">·</span>
 		<a class="z-mail-text-nav__link" href="/settings">Settings</a>
 		<span class="z-mail-text-nav__sep">·</span>
 		<button

@@ -49,6 +49,10 @@
 		</div>
 
 		<div class="z-mail-text-nav__links z-mail-list-nav-bar__links">
+			{#if !showBackToMail}
+				<a class="z-mail-text-nav__link" href="/calendar">Calendar</a>
+				<a class="z-mail-text-nav__link" href="/contacts">Contacts</a>
+			{/if}
 			{#if showSettings && !showBackToMail}
 				<a class="z-mail-text-nav__link" href="/settings">Settings</a>
 			{/if}

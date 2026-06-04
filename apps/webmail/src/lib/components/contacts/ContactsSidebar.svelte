@@ -33,7 +33,7 @@
 				<button
 					type="button"
 					class={cn(
-						'flex min-h-10 w-full items-center justify-between rounded-sm px-3 py-2.5 text-sm transition-colors',
+						'flex min-h-10 w-full items-center justify-between rounded-md px-3 py-2.5 text-sm transition-colors',
 						selectedLetter === null
 							? 'z-surface-active font-medium'
 							: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'

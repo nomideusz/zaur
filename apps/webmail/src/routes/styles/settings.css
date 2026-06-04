@@ -293,22 +293,24 @@
 	}
 
 	.z-settings-view .z-mail-text-nav__link--here {
-		display: inline;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		box-decoration-break: clone;
 		-webkit-box-decoration-break: clone;
 		cursor: default;
-		font-weight: 400;
-		line-height: inherit;
+		font-weight: 500;
+		line-height: 1;
 		text-decoration: none;
 		color: var(--z-fg);
-		background-color: color-mix(in srgb, var(--z-fg) 9%, transparent);
-		padding: 0 0.2em;
-		border-radius: 0;
+		background-color: color-mix(in srgb, var(--z-fg) 8%, transparent);
+		padding: 0.25rem 0.5rem;
+		border-radius: var(--radius-sm);
 	}
 
 	.z-settings-view .z-mail-text-nav__link--here:hover {
 		color: var(--z-fg);
-		background-color: color-mix(in srgb, var(--z-fg) 9%, transparent);
+		background-color: color-mix(in srgb, var(--z-fg) 8%, transparent);
 	}
 
 	.z-settings-nav-bar__search {

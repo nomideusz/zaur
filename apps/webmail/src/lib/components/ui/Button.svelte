@@ -33,7 +33,7 @@
 			variant === 'primary' && 'z-btn-primary',
 			variant === 'ghost' && 'z-btn-ghost',
 			variant === 'danger' &&
-				'inline-flex items-center justify-center gap-2 rounded-sm px-3 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger',
+				'inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium text-danger transition-colors hover:bg-danger/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-danger',
 			disabled && 'pointer-events-none opacity-50',
 			className
 		)

@@ -7,6 +7,7 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import GlobalSearch from './GlobalSearch.svelte';
 	import OfflineIndicator from './OfflineIndicator.svelte';
+	import ToolSwitcher from './ToolSwitcher.svelte';
 	import UserMenu from './UserMenu.svelte';
 	import { appConfig } from '$lib/config';
 	import { calendar } from '$lib/stores/calendar.svelte';
@@ -16,16 +17,17 @@
 </script>
 
 <header
-	class="z-panel relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 px-4"
+	class="relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-4 backdrop-blur-md"
 	style="view-transition-name: app-header;"
 >
 	<div class="flex shrink-0 items-center gap-3">
 		<a
 			href={homeHref}
-			class="text-base text-fg transition-colors hover:text-fg-muted"
+			class="text-base text-fg transition-colors hover:opacity-80"
 		>
-			<span>{appConfig.brandName}</span>
+			<span class="font-extrabold tracking-tight text-accent lowercase text-lg">{appConfig.brandName}</span>
 		</a>
+		<ToolSwitcher />
 	</div>
 
 	<div class="min-w-0 flex-1">

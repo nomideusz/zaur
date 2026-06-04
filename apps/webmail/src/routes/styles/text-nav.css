@@ -21,10 +21,10 @@
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__title {
-		@apply min-w-0 font-normal text-fg;
+		@apply min-w-0 font-extrabold tracking-tight text-accent lowercase;
 		margin: 0;
-		font-size: var(--z-main-page-text);
-		line-height: 1.45;
+		font-size: 1.25rem;
+		line-height: 1.35;
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__title a {
@@ -52,7 +52,7 @@
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link {
-		@apply inline-flex items-baseline gap-1.5 text-fg underline underline-offset-[3px] decoration-fg/25 decoration-1;
+		@apply inline-flex items-baseline gap-1.5 text-fg no-underline;
 		font-size: var(--z-main-page-text);
 		line-height: 1.6;
 		transition:
@@ -66,8 +66,7 @@
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link:not(.z-mail-text-nav__link--here):hover {
-		@apply text-fg;
-		text-decoration-color: color-mix(in srgb, var(--z-fg) 50%, transparent);
+		@apply text-fg underline underline-offset-4 decoration-fg/30 decoration-1;
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link:active {
@@ -81,7 +80,7 @@
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link--active {
-		@apply font-semibold decoration-fg/55;
+		@apply font-semibold underline underline-offset-4 decoration-fg/55;
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link--button {
@@ -99,7 +98,7 @@
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action {
-		@apply inline-flex shrink-0 cursor-pointer items-center font-semibold text-fg underline underline-offset-[0.2em] decoration-fg/45;
+		@apply inline-flex shrink-0 cursor-pointer items-center font-semibold text-accent no-underline;
 		font-size: var(--z-main-page-text);
 		line-height: 1.55;
 		transition:
@@ -109,7 +108,7 @@
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action:hover:not(:disabled) {
-		text-decoration-color: color-mix(in srgb, var(--z-fg) 70%, transparent);
+		@apply text-accent-hover underline underline-offset-4 decoration-accent/40;
 	}
 
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__action:active:not(:disabled) {

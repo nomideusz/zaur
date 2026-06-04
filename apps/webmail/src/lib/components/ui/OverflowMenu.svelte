@@ -116,7 +116,7 @@ import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 			class={cn(
 				textTrigger
 					? 'inline-flex items-baseline gap-0.5 border-0 bg-transparent p-0'
-					: 'inline-flex min-h-8 items-center gap-1 rounded-sm px-2.5 py-1.5 text-sm text-fg-muted transition-colors hover:bg-surface-sunken/60 hover:text-fg',
+					: 'inline-flex min-h-8 items-center gap-1 rounded-md px-2.5 py-1.5 text-sm text-fg-muted transition-colors hover:bg-surface-sunken/60 hover:text-fg',
 				triggerClass
 			)}
 			onclick={toggleOpen}

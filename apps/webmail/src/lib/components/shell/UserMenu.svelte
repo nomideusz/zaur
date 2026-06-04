@@ -29,7 +29,7 @@
 <div class="relative">
 	<button
 		type="button"
-		class="flex items-center gap-2 rounded-sm p-1.5 transition-colors hover:bg-surface-sunken"
+		class="flex items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-surface-sunken/80 border border-transparent hover:border-border/40"
 		aria-label="Account menu"
 		aria-expanded={open}
 		aria-haspopup="menu"
