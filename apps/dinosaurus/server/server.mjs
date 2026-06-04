@@ -474,7 +474,10 @@ async function readJson(req) {
 // from /radio/stream/<id> which proxies the actual bytes from Navidrome
 // (with a Range header pass-through so the browser can seek).
 
-const NAVIDROME_URL = (process.env.NAVIDROME_URL ?? "").replace(/\/$/, "");
+const NAVIDROME_URL = (process.env.NAVIDROME_URL ?? "https://music.zaur.app").replace(
+  /\/$/,
+  ""
+);
 const NAVIDROME_USER = process.env.NAVIDROME_USER ?? "";
 const NAVIDROME_PASSWORD = process.env.NAVIDROME_PASSWORD ?? "";
 const NAVIDROME_CONFIGURED = !!(NAVIDROME_URL && NAVIDROME_USER && NAVIDROME_PASSWORD);

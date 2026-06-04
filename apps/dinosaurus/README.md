@@ -13,8 +13,9 @@ needs stay server-side. Production runs as three Railway services:
 - `dinosaurus-archive`: an in-memory 24-hour shared archive plus an
   authoritative WebSocket realtime endpoint and the radio proxy, served
   from `server/server.mjs`.
-- `dinosaurus-navidrome`: a custom Navidrome + Syncthing image
-  (`navidrome/Dockerfile`) that hosts the music library on a shared volume.
+- `music` ([music.zaur.app](https://music.zaur.app)): a custom Navidrome +
+  Syncthing image (`navidrome/Dockerfile`) that hosts the music library on a
+  shared volume.
 
 ## Quick start
 
@@ -54,8 +55,9 @@ Archive runtime variables:
 - `ARCHIVE_PERSIST_PATH`: optional snapshot path (e.g. `/data/bins.json` on a
   Railway volume) so the 24-hour archive survives redeploys. Unset = in-memory
   only.
-- `NAVIDROME_URL`, `NAVIDROME_USER`, `NAVIDROME_PASSWORD`: credentials for the
-  radio. Unset disables `/radio/*`.
+- `NAVIDROME_URL` (default `https://music.zaur.app`), `NAVIDROME_USER`,
+  `NAVIDROME_PASSWORD`: credentials for the radio. User and password must be
+  set for `/radio/*`; URL alone is not enough.
 - `ADMIN_TOKEN`: shared secret for `/admin/refresh-playlists`. Empty disables
   admin endpoints entirely.
 - `PLAYLIST_SYNC_INTERVAL_MS`: how often the archive auto-syncs the `all`

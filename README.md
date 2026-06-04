@@ -9,6 +9,7 @@ Monorepo for the Zaur email platform and its pixel dinosaur mascot.
 | **Webmail** | `@zaur/webmail` | [webmail.zaur.app](https://webmail.zaur.app) | CapRover |
 | **Register** | `@zaur/register` | [register.zaur.app](https://register.zaur.app) | CapRover |
 | **Dinosaurus** | `@zaur/dinosaurus` | [dino.zaur.app](https://dino.zaur.app) | Railway |
+| **Music** | Navidrome (dinosaurus radio) | [music.zaur.app](https://music.zaur.app) | CapRover |
 
 Mail server (`mail.zaur.app`) is Stalwart — config and ops notes live in [`infra/mail/`](infra/mail/).
 
@@ -74,7 +75,8 @@ pnpm deploy:webmail
 pnpm deploy:register
 ```
 
-Dinosaurus deploys separately on Railway (frontend + archive + navidrome).
+Dinosaurus deploys separately on Railway (frontend + archive). Navidrome for
+the dino radio lives at `music.zaur.app` on CapRover (`infra/deploy/music.captain-definition`).
 
 ## Migrating from standalone repos
 
