@@ -2,7 +2,6 @@ const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
-const directory = require('./lldap');
 const logto = require('./logto');
 const invitations = require('./invitations');
 const inviteMail = require('./invite-mail');
@@ -101,24 +100,22 @@ async function resolveMailboxEmail(input) {
   const normalized = normalizeEmail(input);
   if (!isValidEmail(normalized)) return null;
 
-  if (await directory.findUserIdByEmail(normalized)) {
+  if (await logto.findUserByEmail(normalized)) {
     return normalized;
   }
 
   const fromAudit = invitations.findMailboxByRecoveryEmail(normalized);
-  if (fromAudit && (await directory.findUserIdByEmail(fromAudit))) {
+  if (fromAudit && (await logto.findUserByEmail(fromAudit))) {
     return fromAudit;
   }
 
-  if (logto.isConfigured()) {
-    try {
-      const fromLogto = await logto.findPrimaryEmailByRecoveryEmail(normalized);
-      if (fromLogto && (await directory.findUserIdByEmail(fromLogto))) {
-        return fromLogto;
-      }
-    } catch (err) {
-      console.error('resolveMailboxEmail logto:', err.message);
+  try {
+    const fromLogto = await logto.findPrimaryEmailByRecoveryEmail(normalized);
+    if (fromLogto && (await logto.findUserByEmail(fromLogto))) {
+      return fromLogto;
     }
+  } catch (err) {
+    console.error('resolveMailboxEmail logto:', err.message);
   }
 
   return null;
@@ -201,16 +198,7 @@ async function resetPassword(mailboxEmail, token, password, confirmPassword) {
   }
 
   const email = normalizeEmail(entry.mailboxEmail);
-  await directory.changePassword(email, password);
-
-  if (logto.isConfigured()) {
-    try {
-      await logto.updatePassword(email, password);
-    } catch (err) {
-      console.error('resetPassword logto:', err.message);
-      throw new Error('Password was updated for mail, but sign-in sync failed. Contact support.');
-    }
-  }
+  await logto.updatePassword(email, password);
 
   const tokens = readTokens();
   const stored = tokens.find((item) => item.token === entry.token);

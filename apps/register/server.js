@@ -10,7 +10,7 @@ const stalwart = require('./lib/stalwart');
 const invitations = require('./lib/invitations');
 const inviteMail = require('./lib/invite-mail');
 const passwordReset = require('./lib/password-reset');
-const directory = require('./lib/lldap');
+
 const logto = require('./lib/logto');
 const {
   validateUsername,
@@ -250,29 +250,21 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
     }
 
     let accountId = null;
-    let directoryCreated = false;
     let logtoCreated = false;
 
     try {
-      // 1. Create the LLDAP user (single source of truth for the mailbox password)
-      await directory.createUser(email, password);
-      directoryCreated = true;
+      // 1. Create Logto user (single source of truth for identity & auth)
+      await logto.createUser(email, password, { recoveryEmail });
+      logtoCreated = true;
 
-      // 2. Create matching Logto user for webmail passkey / OIDC sign-in
-      if (logto.isConfigured()) {
-        await logto.createUser(email, password, { recoveryEmail });
-        logtoCreated = true;
-      }
-
-      // 3. Create Stalwart account representation (credentials live in LLDAP)
+      // 2. Create Stalwart account representation
       const account = await stalwart.createAccount(
         usernameValidation.username,
         domainId,
       );
       accountId = account.accountId;
 
-      // 4. Provision standard mailboxes via admin JMAP (user password auth uses LLDAP,
-      //    which is unavailable while Logto OIDC is Stalwart's default Bearer directory)
+      // 3. Provision standard mailboxes via admin JMAP
       await stalwart.ensureStandardMailboxes(accountId);
 
       if (recoveryEmail) {
@@ -289,13 +281,6 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
           await logto.deleteUser(email);
         } catch (cleanupErr) {
           cleanupErrors.push(`Logto cleanup failed: ${cleanupErr.message}`);
-        }
-      }
-      if (directoryCreated) {
-        try {
-          await directory.deleteUser(email);
-        } catch (cleanupErr) {
-          cleanupErrors.push(`LLDAP cleanup failed: ${cleanupErr.message}`);
         }
       }
       if (accountId) {
@@ -482,28 +467,28 @@ app.post('/api/forgot-password/reset', forgotPasswordIpLimiter, async (req, res)
 });
 
 async function getProvisioningAudit() {
-  const [mailAccounts, directoryUsers] = await Promise.all([
+  const [mailAccounts, logtoUsers] = await Promise.all([
     stalwart.listAccounts(),
-    directory.listUsers(),
+    logto.listUsers(),
   ]);
 
   const mailEmails = new Set(mailAccounts.map((account) => account.email.toLowerCase()));
   const aliasEmails = new Set(
     mailAccounts.flatMap((account) => account.aliases || []).map((alias) => alias.email.toLowerCase()),
   );
-  const directoryEmails = new Set(directoryUsers.map((user) => user.email.toLowerCase()));
+  const logtoEmails = new Set(logtoUsers.map((user) => user.email.toLowerCase()));
 
-  const directoryOnly = directoryUsers.filter((user) => !mailEmails.has(user.email) && !aliasEmails.has(user.email));
-  const stalwartOnly = mailAccounts.filter((account) => !directoryEmails.has(account.email.toLowerCase()));
+  const logtoOnly = logtoUsers.filter((user) => !mailEmails.has(user.email) && !aliasEmails.has(user.email));
+  const stalwartOnly = mailAccounts.filter((account) => !logtoEmails.has(account.email.toLowerCase()));
 
   return {
     counts: {
       stalwartAccounts: mailAccounts.length,
-      directoryUsers: directoryUsers.length,
-      directoryOnly: directoryOnly.length,
+      logtoUsers: logtoUsers.length,
+      logtoOnly: logtoOnly.length,
       stalwartOnly: stalwartOnly.length,
     },
-    directoryOnly,
+    logtoOnly,
     stalwartOnly,
   };
 }
@@ -527,17 +512,14 @@ app.post('/api/admin/cleanup-account', requireAdmin, async (req, res) => {
 
   if (!['directory', 'logto', 'stalwart', 'both', 'all'].includes(target)) {
     return res.status(400).json({
-      error: 'Cleanup target must be directory, logto, stalwart, both, or all.',
+      error: 'Cleanup target must be logto, stalwart, both, or all.',
     });
   }
 
   try {
     const result = {};
-    if (target === 'directory' || target === 'both' || target === 'all') {
-      result.directory = await directory.deleteUser(email);
-    }
-    if (target === 'logto' || target === 'all') {
-      result.logto = logto.isConfigured() ? await logto.deleteUser(email) : false;
+    if (target === 'directory' || target === 'logto' || target === 'both' || target === 'all') {
+      result.logto = await logto.deleteUser(email);
     }
     if (target === 'stalwart' || target === 'both' || target === 'all') {
       result.stalwart = await stalwart.deleteAccountByEmail(email);

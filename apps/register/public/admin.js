@@ -258,16 +258,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       auditSummary.innerHTML = `
         <div class="z-stat-card"><span class="z-type-label">Stalwart</span><strong class="z-stat-card__value">${data.counts.stalwartAccounts}</strong></div>
-        <div class="z-stat-card"><span class="z-type-label">Directory</span><strong class="z-stat-card__value">${data.counts.directoryUsers}</strong></div>
-        <div class="z-stat-card"><span class="z-type-label">Directory only</span><strong class="z-stat-card__value">${data.counts.directoryOnly}</strong></div>
+        <div class="z-stat-card"><span class="z-type-label">Logto</span><strong class="z-stat-card__value">${data.counts.logtoUsers}</strong></div>
+        <div class="z-stat-card"><span class="z-type-label">Logto only</span><strong class="z-stat-card__value">${data.counts.logtoOnly}</strong></div>
         <div class="z-stat-card"><span class="z-type-label">Stalwart only</span><strong class="z-stat-card__value">${data.counts.stalwartOnly}</strong></div>
       `;
 
-      auditResults.appendChild(renderAuditGroup('Directory only', data.directoryOnly, 'directory'));
+      auditResults.appendChild(renderAuditGroup('Logto only', data.logtoOnly, 'logto'));
       auditResults.appendChild(renderAuditGroup('Stalwart only', data.stalwartOnly, 'stalwart'));
 
       auditSuccess.textContent =
-        data.counts.directoryOnly || data.counts.stalwartOnly
+        data.counts.logtoOnly || data.counts.stalwartOnly
           ? 'Audit completed. Review mismatches below before cleanup.'
           : 'Audit completed. No provisioning mismatches found.';
       auditSuccess.classList.add('is-visible');
