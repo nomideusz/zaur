@@ -95,8 +95,9 @@ echo "==> SQL directory id:  $sql_id"
 "$CLI" update Directory "$oidc_id" --json '{"requireScopes": {}}' >/dev/null
 
 # Set secure, non-permanent IP ban durations in Security config (1 hour in milliseconds)
-echo "==> Configuring Security IP ban durations to 1 hour"
-"$CLI" update Security --field authBanPeriod=3600000 --field abuseBanPeriod=3600000 --field loiterBanPeriod=3600000 --field scanBanPeriod=3600000
+# Disable authBanRate to prevent active devices with stale credentials from triggering immediate lockouts.
+echo "==> Configuring Security IP ban settings"
+"$CLI" update Security --field authBanRate=null --field authBanPeriod=3600000 --field abuseBanPeriod=3600000 --field loiterBanPeriod=3600000 --field scanBanPeriod=3600000
 
 
 # 3. Set global default authentication to OIDC
