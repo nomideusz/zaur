@@ -176,6 +176,8 @@ async function requestReset(emailInput) {
     mailboxEmail,
     resetLink,
     expiresAt,
+  }).catch((err) => {
+    throw new Error(`Failed to send reset email to ${recoveryEmail}: ${err.message}`);
   });
 
   return { ok: true, message: GENERIC_SUCCESS };

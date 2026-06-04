@@ -437,7 +437,7 @@ app.post('/api/forgot-password/request', forgotPasswordIpLimiter, forgotPassword
     const result = await passwordReset.requestReset(email);
     res.json(result);
   } catch (err) {
-    console.error('POST /api/forgot-password/request:', err.message);
+    console.error('POST /api/forgot-password/request:', err.stack || err.message);
     res.status(502).json({ error: 'Unable to send reset instructions right now. Please try again later.' });
   }
 });
@@ -519,10 +519,22 @@ app.get('/api/admin/overview', requireAdmin, async (_req, res) => {
     const accounts = await stalwart.listAccounts();
     const invitationsList = await invitations.listInvitations();
 
+    let smtpStatus = { configured: inviteMail.isConfigured(), ok: null, error: null };
+    if (smtpStatus.configured) {
+      try {
+        await inviteMail.verifySmtp();
+        smtpStatus.ok = true;
+      } catch (err) {
+        smtpStatus.ok = false;
+        smtpStatus.error = err.message;
+      }
+    }
+
     res.json({
       registrationOpen: process.env.REGISTRATION_OPEN === 'true',
       requiresInvitation: invitations.requiresInvitation(),
       invitationEmailConfigured: inviteMail.isConfigured(),
+      smtpStatus,
       passwordResetEnabled: passwordReset.isEnabled(),
       logtoConfigured: logto.isConfigured(),
       stalwartConfigured: Boolean(process.env.STALWART_URL),

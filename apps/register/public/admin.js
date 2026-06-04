@@ -150,9 +150,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
       pills.push({
         label: data.invitationEmailConfigured ? 'SMTP configured' : 'Manual invite links',
-        ok: data.invitationEmailConfigured,
-        warn: !data.invitationEmailConfigured,
+        ok: data.invitationEmailConfigured && data.smtpStatus?.ok !== false,
+        warn: data.invitationEmailConfigured && data.smtpStatus?.ok === false,
+        off: !data.invitationEmailConfigured,
       });
+      if (data.smtpStatus?.ok === false && data.smtpStatus.error) {
+        const detail = String(data.smtpStatus.error);
+        pills.push({
+          label: `SMTP: ${detail.length > 100 ? `${detail.slice(0, 100)}…` : detail}`,
+          warn: true,
+        });
+      }
       pills.push({
         label: data.logtoConfigured ? 'Logto connected' : 'Logto off',
         ok: data.logtoConfigured,

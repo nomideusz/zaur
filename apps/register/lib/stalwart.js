@@ -319,6 +319,45 @@ async function listAccounts() {
 
 async function findAccountByEmail(email) {
   const normalized = email.toLowerCase();
+
+  try {
+    const { rows } = await pool.query(
+      `SELECT a.name AS email
+       FROM accounts a
+       WHERE LOWER(a.name) = $1
+          OR EXISTS (
+            SELECT 1 FROM emails e
+            WHERE e.name = a.name AND LOWER(e.address) = $1
+          )
+       LIMIT 1`,
+      [normalized],
+    );
+
+    if (rows.length > 0) {
+      const accountEmail = rows[0].email.toLowerCase();
+      const [name, domainName] = accountEmail.split('@');
+
+      try {
+        const accounts = await listAccounts();
+        const match = accounts.find((account) => account.email.toLowerCase() === accountEmail);
+        if (match) return match;
+      } catch (err) {
+        console.error('findAccountByEmail jmap enrich:', err.message);
+      }
+
+      return {
+        id: null,
+        name: name || accountEmail,
+        domainId: null,
+        domain: domainName || null,
+        email: accountEmail,
+        aliases: [],
+      };
+    }
+  } catch (err) {
+    console.error('findAccountByEmail pg:', err.message);
+  }
+
   const accounts = await listAccounts();
   return accounts.find((account) => account.email.toLowerCase() === normalized) || null;
 }
