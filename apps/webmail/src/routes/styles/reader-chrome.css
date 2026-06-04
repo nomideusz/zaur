@@ -67,13 +67,25 @@
 	}
 
 	@media (min-width: 118rem) {
-		.z-mail-view .z-mail-pane-surface--reader {
+		.z-mail-view .z-mail-pane-surface--reader:not(.z-mail-pane-surface--compose) {
 			padding-left: 0;
 		}
 
-		.z-mail-view .z-reader-card {
+		.z-mail-view .z-mail-pane-surface--reader:not(.z-mail-pane-surface--compose) .z-reader-card {
 			align-self: flex-start;
 			margin-left: calc(50vw - var(--width-sidebar) - var(--width-list) - var(--z-reader-measure) / 2);
+		}
+	}
+
+	/* Compose is full-width (no list); align card center with shell search (viewport-centered). */
+	@media (min-width: 72rem) {
+		.z-mail-view .z-mail-pane-surface--compose {
+			@apply items-stretch;
+		}
+
+		.z-mail-view .z-mail-pane-surface--compose .z-reader-card {
+			align-self: flex-start;
+			margin-inline: calc(50vw - var(--z-reader-measure) / 2 - var(--width-sidebar)) auto;
 		}
 	}
 

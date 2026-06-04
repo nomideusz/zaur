@@ -290,7 +290,7 @@
 />
 
 <section
-	class="z-mail-pane-surface z-mail-pane-surface--reader flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+	class="z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
 	style="view-transition-name: compose-panel;"
 	aria-label="Compose message"
 >
