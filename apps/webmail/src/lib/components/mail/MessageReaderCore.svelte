@@ -136,19 +136,51 @@
 		return true;
 	}
 
+	let readerRainbowTimeout: ReturnType<typeof setTimeout> | null = null;
+	let readerSamplingRainbow = false;
+
+	$effect(() => {
+		return () => {
+			if (readerRainbowTimeout) {
+				clearTimeout(readerRainbowTimeout);
+				readerRainbowTimeout = null;
+			}
+		};
+	});
+
 	function persistReaderRainbowPick(event: PointerEvent) {
-		if (settings.reduceMotion || !hasPreciseHover() || !subjectImportant || !subjectMessageId || !readerSubjectEl) {
-			return;
+		if (readerRainbowTimeout) {
+			clearTimeout(readerRainbowTimeout);
+			readerRainbowTimeout = null;
 		}
-		if (!shouldPersistReaderRainbowPick(event)) return;
-		importantRainbow.pickFromElement(readerSubjectEl, subjectMessageId);
+
+		if (readerSamplingRainbow) {
+			readerSamplingRainbow = false;
+			if (settings.reduceMotion || !hasPreciseHover() || !subjectImportant || !subjectMessageId || !readerSubjectEl) {
+				return;
+			}
+			if (!shouldPersistReaderRainbowPick(event)) return;
+			importantRainbow.pickFromElement(readerSubjectEl, subjectMessageId);
+		} else {
+			// Restore saved color visual
+			if (subjectMessageId && readerSubjectEl) {
+				importantRainbow.resetFromElement(readerSubjectEl, subjectMessageId);
+			}
+		}
 	}
 
 	function startReaderRainbowSample() {
 		if (settings.reduceMotion || !hasPreciseHover() || !subjectImportant || !subjectMessageId || !readerSubjectEl) {
 			return;
 		}
-		importantRainbow.startHoverSample(readerSubjectEl, subjectMessageId);
+		if (readerRainbowTimeout) clearTimeout(readerRainbowTimeout);
+		readerSamplingRainbow = false;
+
+		readerRainbowTimeout = setTimeout(() => {
+			if (!readerSubjectEl || !subjectMessageId) return;
+			readerSamplingRainbow = true;
+			importantRainbow.startHoverSample(readerSubjectEl, subjectMessageId);
+		}, 300);
 	}
 
 	const readerRainbowTouch = createImportantRainbowTouchPick({

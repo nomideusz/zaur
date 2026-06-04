@@ -101,11 +101,18 @@
 	/** After bulk-select long-press, block the following link navigation. */
 	let suppressRowNavigationUntil = 0;
 
+	let rainbowHoverTimeout: ReturnType<typeof setTimeout> | null = null;
+	let isSamplingRainbow = false;
+
 	const mobileRowGestures = $derived(supportsMobileListGestures());
 
 	$effect(() => {
 		void $page.url.pathname;
 		importantRainbowHoverId = null;
+		if (rainbowHoverTimeout) {
+			clearTimeout(rainbowHoverTimeout);
+			rainbowHoverTimeout = null;
+		}
 	});
 
 	function shouldPersistRainbowPick(event: PointerEvent): boolean {
@@ -123,6 +130,42 @@
 		if (importantRainbowHoverId !== messageId) return;
 		importantRainbowHoverId = null;
 		importantRainbow.pickFromRow(row, messageId);
+	}
+
+	function handleRainbowPointerEnter(messageId: string, currentTarget: HTMLElement) {
+		if (settings.reduceMotion || !hasPreciseHover()) return;
+		if (rainbowHoverTimeout) clearTimeout(rainbowHoverTimeout);
+		isSamplingRainbow = false;
+
+		rainbowHoverTimeout = setTimeout(() => {
+			if (!currentTarget.isConnected) return;
+			const subject = currentTarget.querySelector('.z-mail-list-subject--important');
+			if (subject instanceof HTMLElement) {
+				isSamplingRainbow = true;
+				importantRainbowHoverId = messageId;
+				importantRainbow.startHoverSample(subject, messageId);
+			}
+		}, 300);
+	}
+
+	function handleRainbowPointerLeave(messageId: string, currentTarget: HTMLElement, event: PointerEvent, routeId: string) {
+		if (rainbowHoverTimeout) {
+			clearTimeout(rainbowHoverTimeout);
+			rainbowHoverTimeout = null;
+		}
+
+		if (isSamplingRainbow) {
+			isSamplingRainbow = false;
+			if (canPickImportantRainbow(routeId)) {
+				persistImportantRainbowPick(messageId, currentTarget, event);
+			}
+		} else {
+			// Restore saved color phase visual
+			const subject = currentTarget.querySelector('.z-mail-list-subject--important');
+			if (subject instanceof HTMLElement) {
+				importantRainbow.resetFromElement(subject, messageId);
+			}
+		}
 	}
 
 	const activeThreadId = $derived($page.params.threadId);
@@ -865,22 +908,11 @@
 						onclick={(event) => handleRowLinkClick(message.id, event)}
 						onpointerenter={(event) => {
 							if (!subjectImportant) return;
-							if (!hasPreciseHover()) return;
-							importantRainbowHoverId = message.id;
-							if (settings.reduceMotion || !canPickImportantRainbow(routeId)) return;
-							const subject = event.currentTarget.querySelector(
-								'.z-mail-list-subject--important'
-							);
-							if (subject instanceof HTMLElement) {
-								importantRainbow.startHoverSample(subject, message.id);
-							}
+							handleRainbowPointerEnter(message.id, event.currentTarget);
 						}}
 						onpointerleave={(event) => {
 							if (!subjectImportant) return;
-							if (!hasPreciseHover()) return;
-							if (canPickImportantRainbow(routeId)) {
-								persistImportantRainbowPick(message.id, event.currentTarget, event);
-							}
+							handleRainbowPointerLeave(message.id, event.currentTarget, event, routeId);
 						}}
 					>
 						<div class="min-w-0 flex-1">

@@ -332,6 +332,23 @@ class ImportantRainbowStore {
 
 		this.pickFromElement(subject, messageId);
 	}
+
+	/** Restore visually saved color phase. */
+	resetFromElement(subjectEl: HTMLElement, messageId: string) {
+		if (!browser) return;
+		this.stopHoverSample(messageId);
+		const saved = this.phaseFor(messageId);
+		this.commitPhaseVisual(subjectEl, messageId, saved);
+	}
+
+	/** Restore visually saved color phase from list row. */
+	resetFromRow(row: HTMLElement, messageId: string) {
+		if (!browser) return;
+		const subject = row.querySelector('.z-mail-list-subject--important');
+		if (subject instanceof HTMLElement) {
+			this.resetFromElement(subject, messageId);
+		}
+	}
 }
 
 export const importantRainbow = new ImportantRainbowStore();
