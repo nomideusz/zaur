@@ -11,7 +11,7 @@
 	import ToolSwitcher from './ToolSwitcher.svelte';
 	import UserMenu from './UserMenu.svelte';
 	import { appConfig } from '$lib/config';
-	import { isMailPath } from '$lib/mail/routes';
+	import { INBOX_MAILBOX_ROUTE_ID, isMailPath, mailListHref } from '$lib/mail/routes';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
@@ -19,6 +19,10 @@
 	import { cn } from '$lib/utils/cn';
 
 	const homeHref = $derived(settings.preferredMailHref());
+	const inboxHref = mailListHref(INBOX_MAILBOX_ROUTE_ID);
+	const onInboxList = $derived(
+		$page.url.pathname === '/' || $page.url.pathname === '/mail/inbox'
+	);
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
 	const onMailRoute = $derived($page.url.pathname === '/' || isMailPath($page.url.pathname));
 	const mailCtx = $derived(shellHeader.mail);
@@ -33,12 +37,17 @@
 			$page.url.pathname.startsWith('/mail')) &&
 			!$page.url.pathname.startsWith('/mail/compose')
 	);
+
+	function handleMobileInboxHome(event: MouseEvent) {
+		mail.clearSelection();
+		if (onInboxList) event.preventDefault();
+	}
 </script>
 
 <header
 	class={cn(
-		'z-app-shell-header relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-4 backdrop-blur-md max-md:gap-1.5 max-md:px-3',
-		showMobileBulkHeader && 'z-app-shell-header--bulk max-md:overflow-visible'
+		'z-app-shell-header relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-4 backdrop-blur-md max-md:gap-1 max-md:px-3',
+		showMobileBulkHeader && 'z-app-shell-header--bulk'
 	)}
 	style="view-transition-name: app-header;"
 >
@@ -52,40 +61,65 @@
 		<ToolSwitcher />
 	</div>
 
+	<a
+		href={inboxHref}
+		class="z-app-shell-header__home relative z-10 shrink-0 md:hidden"
+		aria-label="Inbox"
+		onclick={handleMobileInboxHome}
+	>
+		<span class="font-extrabold tracking-tight text-accent lowercase">{appConfig.brandName}</span>
+	</a>
+
 	{#if showMobileBulkHeader && mailCtx?.mailboxRouteId}
-		<div class="z-app-shell-header__bulk relative z-10 min-w-0 w-full flex-1 md:hidden">
+		<div class="z-app-shell-header__bulk relative z-10 min-w-0 flex-1 md:hidden">
 			<MessageListBulkHeader
+				surface="shell"
 				mailboxRouteId={mailCtx.mailboxRouteId}
 				disabled={mailCtx.loading || !!mailCtx.error || mailCtx.messageCount === 0}
 				onBulkAction={mailCtx.onBulkAction}
 			/>
 		</div>
-	{:else if showMobileMailboxTitle && mailCtx}
-		<p class="z-app-shell-header__mail-title relative z-10 min-w-0 flex-1 truncate md:hidden">
-			{mailCtx.mailboxName}
-		</p>
+	{:else}
+		<div
+			class={cn(
+				'relative z-10 flex min-w-0 flex-1 items-center gap-2 max-md:gap-1.5',
+				showMobileMailboxTitle && 'md:flex-none md:flex-initial'
+			)}
+		>
+			{#if showMobileMailboxTitle && mailCtx}
+				<div class="z-app-shell-header__mail-head min-w-0 flex-1 md:hidden">
+					<p class="z-app-shell-header__mail-title truncate">{mailCtx.mailboxName}</p>
+					{#if mailCtx.countLabel}
+						<p class="z-app-shell-header__mail-meta truncate">{mailCtx.countLabel}</p>
+					{/if}
+				</div>
+			{/if}
+
+			<div
+				class={cn(
+					'min-w-0 flex-1 pointer-events-none',
+					showMobileBulkHeader && 'max-md:hidden',
+					showMobileMailboxTitle && 'max-md:flex-none max-md:flex-initial'
+				)}
+			>
+				{#if !hideShellSearch}
+					<div class="pointer-events-auto">
+						<GlobalSearch />
+					</div>
+				{/if}
+			</div>
+		</div>
 	{/if}
 
 	<div
 		class={cn(
-			'relative z-0 min-w-0 flex-1 pointer-events-none',
+			'relative z-10 flex shrink-0 items-center gap-1.5 md:w-64 md:justify-end md:gap-2',
 			showMobileBulkHeader && 'max-md:hidden'
 		)}
 	>
-		{#if !hideShellSearch}
-			<div class="pointer-events-auto">
-				<GlobalSearch />
-			</div>
-		{/if}
-	</div>
-
-	<div
-		class={cn(
-			'flex shrink-0 items-center gap-2 md:w-64 md:justify-end',
-			showMobileBulkHeader && 'max-md:hidden'
-		)}
-	>
-		<OfflineIndicator class="max-md:hidden" />
+		<div class="max-md:hidden">
+			<OfflineIndicator />
+		</div>
 
 		{#if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false}
 			<Button onclick={() => calendar.openCompose()} class="hidden md:inline-flex">

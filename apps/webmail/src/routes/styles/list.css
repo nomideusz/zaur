@@ -179,8 +179,30 @@
 	}
 
 	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__headline {
-		font-weight: 600;
+		font-weight: 400;
 		color: var(--z-fg);
+	}
+
+	.z-mail-list-bulk-header--shell {
+		align-items: baseline;
+		justify-content: space-between;
+		gap: 0.75rem;
+	}
+
+	.z-mail-list-bulk-header__summary--shell {
+		min-width: 0;
+		flex: 1 1 auto;
+		margin: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		text-align: center;
+		font-size: 0.8125rem;
+		line-height: 1.4;
+	}
+
+	.z-mail-list-bulk-header__shell-links {
+		flex-wrap: nowrap;
 	}
 
 	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__detail {
@@ -494,13 +516,6 @@
 	.z-mail-view .z-mail-list-row__checkbox:focus-visible {
 		opacity: 1;
 		pointer-events: auto;
-	}
-
-	@media (hover: none) {
-		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row__checkbox {
-			opacity: 1;
-			pointer-events: auto;
-		}
 	}
 
 	.z-mail-view .z-mail-list-row__checkbox--on,

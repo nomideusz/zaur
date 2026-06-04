@@ -23,9 +23,11 @@
 		mailboxRouteId: string;
 		disabled?: boolean;
 		onBulkAction?: () => void;
+		/** Mobile app shell — text-nav links instead of checkbox/icon chrome. */
+		surface?: 'pane' | 'shell';
 	}
 
-	let { mailboxRouteId, disabled = false, onBulkAction }: Props = $props();
+	let { mailboxRouteId, disabled = false, onBulkAction, surface = 'pane' }: Props = $props();
 
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const selectedCount = $derived(selectedIds.length);
@@ -86,63 +88,140 @@
 	}
 </script>
 
-<div
-	class={cn(
-		'z-mail-list-bulk-header w-full min-w-0',
-		disabled && 'pointer-events-none opacity-60'
-	)}
-	role="group"
-	aria-label="Selected messages"
->
-	<div class="z-mail-list-bulk-header__lead">
-		<MessageListMasterCheckbox class="z-mail-list-bulk-header__checkbox" />
-		<MessageListSelectMenu {disabled} placement="bottom" />
+{#if surface === 'shell'}
+	<div
+		class={cn(
+			'z-mail-list-bulk-header z-mail-list-bulk-header--shell z-mail-text-nav__row w-full min-w-0',
+			disabled && 'pointer-events-none opacity-60'
+		)}
+		role="group"
+		aria-label="Selected messages"
+	>
+		<button type="button" class="z-mail-text-nav__link shrink-0" onclick={clearSelection}>
+			Cancel
+		</button>
+
 		{#if selectedCount > 0}
-			<p class="z-mail-list-bulk-header__summary" aria-live="polite">
+			<p class="z-mail-list-bulk-header__summary z-mail-list-bulk-header__summary--shell" aria-live="polite">
 				<span class="z-mail-list-bulk-header__headline">{headline}</span>
 				{#if detail}
 					<span class="z-mail-list-bulk-header__detail"> · {detail}</span>
 				{/if}
 			</p>
+
+			<nav class="z-mail-text-nav__links z-mail-list-bulk-header__shell-links shrink-0" aria-label="Bulk actions">
+				<button
+					type="button"
+					class="z-mail-text-nav__link z-mail-text-nav__link--danger"
+					onclick={deleteSelected}
+				>
+					{deleteLabel}
+				</button>
+				<OverflowMenu
+					label="Bulk actions"
+					menuId="bulk-actions-menu-mobile"
+					placement="bottom"
+					textTrigger
+					triggerText="Actions"
+					triggerClass="z-mail-text-nav__link"
+				>
+					<div class="z-overflow-menu-scroll">
+						<button
+							type="button"
+							class="z-overflow-menu-item"
+							role="menuitem"
+							onclick={() => mail.selectMessagesByFilter('all')}
+						>
+							Select all
+						</button>
+						<button
+							type="button"
+							class="z-overflow-menu-item"
+							role="menuitem"
+							onclick={() => mail.selectMessagesByFilter('none')}
+						>
+							Deselect all
+						</button>
+						{#if hasMenuActions}
+							<div class="mx-4 my-1 border-t border-border" role="separator"></div>
+							<MessageListBulkMoreMenu
+								{mailboxRouteId}
+								{selectedCount}
+								counts={selectionCounts}
+								{canMarkImportant}
+								onDone={() => auth.client && runBulk(() => mail.bulkMarkAsDone(auth.client!), true)}
+								onMarkNew={() => auth.client && runBulk(() => mail.bulkMarkAsNew(auth.client!), true)}
+								onMarkImportant={() =>
+									auth.client && runBulk(() => mail.bulkMarkAsImportant(auth.client!))}
+								onRemoveImportant={() =>
+									auth.client && runBulk(() => mail.bulkMarkAsNotImportant(auth.client!))}
+								onMove={handleBulkMove}
+							/>
+						{/if}
+					</div>
+				</OverflowMenu>
+			</nav>
 		{/if}
 	</div>
-
-	{#if selectedCount > 0}
-		<div class="z-mail-list-bulk-header__actions">
-			<Button variant="ghost" class="z-mail-list-bulk-header__danger hidden sm:inline-flex" onclick={deleteSelected}>
-				<Trash2 class="size-4" aria-hidden="true" />
-				{deleteLabel}
-			</Button>
-			<IconButton
-				label={deleteLabel}
-				class="z-mail-list-bulk-header__danger sm:hidden"
-				onclick={deleteSelected}
-			>
-				<Trash2 class="size-5" aria-hidden="true" />
-			</IconButton>
-			{#if hasMenuActions}
-				<OverflowMenu label="Bulk actions" menuId="bulk-actions-menu" placement="bottom">
-					<MessageListBulkMoreMenu
-						{mailboxRouteId}
-						{selectedCount}
-						counts={selectionCounts}
-						{canMarkImportant}
-						onDone={() => auth.client && runBulk(() => mail.bulkMarkAsDone(auth.client!), true)}
-						onMarkNew={() => auth.client && runBulk(() => mail.bulkMarkAsNew(auth.client!), true)}
-						onMarkImportant={() => auth.client && runBulk(() => mail.bulkMarkAsImportant(auth.client!))}
-						onRemoveImportant={() =>
-							auth.client && runBulk(() => mail.bulkMarkAsNotImportant(auth.client!))}
-						onMove={handleBulkMove}
-					/>
-				</OverflowMenu>
+{:else}
+	<div
+		class={cn(
+			'z-mail-list-bulk-header w-full min-w-0',
+			disabled && 'pointer-events-none opacity-60'
+		)}
+		role="group"
+		aria-label="Selected messages"
+	>
+		<div class="z-mail-list-bulk-header__lead">
+			<MessageListMasterCheckbox class="z-mail-list-bulk-header__checkbox" />
+			<MessageListSelectMenu {disabled} placement="bottom" />
+			{#if selectedCount > 0}
+				<p class="z-mail-list-bulk-header__summary" aria-live="polite">
+					<span class="z-mail-list-bulk-header__headline">{headline}</span>
+					{#if detail}
+						<span class="z-mail-list-bulk-header__detail"> · {detail}</span>
+					{/if}
+				</p>
 			{/if}
-			<IconButton
-				label="Clear selection"
-				class="!min-h-8 !min-w-8 !p-1.5"
-				onclick={clearSelection}
-			>
-				<X class="size-4" aria-hidden="true" />
-			</IconButton>
 		</div>
-	{/if}
-</div>
+
+		{#if selectedCount > 0}
+			<div class="z-mail-list-bulk-header__actions">
+				<Button variant="ghost" class="z-mail-list-bulk-header__danger hidden sm:inline-flex" onclick={deleteSelected}>
+					<Trash2 class="size-4" aria-hidden="true" />
+					{deleteLabel}
+				</Button>
+				<IconButton
+					label={deleteLabel}
+					class="z-mail-list-bulk-header__danger sm:hidden"
+					onclick={deleteSelected}
+				>
+					<Trash2 class="size-5" aria-hidden="true" />
+				</IconButton>
+				{#if hasMenuActions}
+					<OverflowMenu label="Bulk actions" menuId="bulk-actions-menu" placement="bottom">
+						<MessageListBulkMoreMenu
+							{mailboxRouteId}
+							{selectedCount}
+							counts={selectionCounts}
+							{canMarkImportant}
+							onDone={() => auth.client && runBulk(() => mail.bulkMarkAsDone(auth.client!), true)}
+							onMarkNew={() => auth.client && runBulk(() => mail.bulkMarkAsNew(auth.client!), true)}
+							onMarkImportant={() => auth.client && runBulk(() => mail.bulkMarkAsImportant(auth.client!))}
+							onRemoveImportant={() =>
+								auth.client && runBulk(() => mail.bulkMarkAsNotImportant(auth.client!))}
+							onMove={handleBulkMove}
+						/>
+					</OverflowMenu>
+				{/if}
+				<IconButton
+					label="Clear selection"
+					class="!min-h-8 !min-w-8 !p-1.5"
+					onclick={clearSelection}
+				>
+					<X class="size-4" aria-hidden="true" />
+				</IconButton>
+			</div>
+		{/if}
+	</div>
+{/if}

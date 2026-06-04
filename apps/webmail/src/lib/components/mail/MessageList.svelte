@@ -211,8 +211,11 @@
 		mail.setSelectionList(next);
 	});
 	const showBulkBar = $derived(bulkSelectEnabled && mail.hasSelection && !!mailboxRouteId);
-	/** Checkbox column is always in the layout when bulk select is available (avoids jump on enter). */
-	const showRowCheckbox = $derived(bulkSelectEnabled);
+	/** Desktop: reserve checkbox column (revealed on hover). Mobile: only while selecting (enter via long-press). */
+	const listSelectMode = $derived(
+		bulkSelectEnabled && (!mobileRowGestures || mail.hasSelection)
+	);
+	const showRowCheckbox = $derived(listSelectMode);
 
 	function handleMobileBulkLongPress(messageId: string) {
 		mail.startSelection(messageId);
@@ -836,7 +839,7 @@
 	<div
 		class={cn(
 			'z-mail-list-flow',
-			bulkSelectEnabled && 'z-mail-list-flow--selectable',
+			listSelectMode && 'z-mail-list-flow--selectable',
 			mail.hasSelection && 'z-mail-list--selecting'
 		)}
 	>
