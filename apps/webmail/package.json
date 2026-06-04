@@ -37,6 +37,7 @@
 		"workbox-window": "^7.4.1"
 	},
 	"dependencies": {
+		"@nomideusz/svelte-calendar": "link:../../../asini/packages/svelte-calendar",
 		"@simplewebauthn/browser": "^13.3.0",
 		"@simplewebauthn/server": "^13.3.1",
 		"@zaur/sprite": "workspace:*",

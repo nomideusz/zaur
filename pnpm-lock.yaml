@@ -66,6 +66,9 @@ importers:
 
   apps/webmail:
     dependencies:
+      '@nomideusz/svelte-calendar':
+        specifier: link:../../../asini/packages/svelte-calendar
+        version: link:../../../asini/packages/svelte-calendar
       '@simplewebauthn/browser':
         specifier: ^13.3.0
         version: 13.3.0
