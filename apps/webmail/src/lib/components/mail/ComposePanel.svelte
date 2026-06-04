@@ -113,15 +113,7 @@
 		return null;
 	});
 
-	let toBlurred = $state(false);
-	let ccBlurred = $state(false);
-	let bccBlurred = $state(false);
 	let sendAttempted = $state(false);
-
-	const showToError = $derived(sendAttempted || toBlurred);
-	const showCcError = $derived(sendAttempted || ccBlurred);
-	const showBccError = $derived(sendAttempted || bccBlurred);
-	const showAnyError = $derived(sendAttempted || toBlurred || ccBlurred || bccBlurred);
 
 	const invalidRecipients = $derived([
 		...invalidAddressParts(compose.to),
@@ -273,8 +265,7 @@
 	}
 
 	function fieldInvalid(field: 'to' | 'cc' | 'bcc'): boolean {
-		const showErr = field === 'to' ? showToError : field === 'cc' ? showCcError : showBccError;
-		return showErr && invalidAddressParts(compose[field]).length > 0;
+		return sendAttempted && invalidAddressParts(compose[field]).length > 0;
 	}
 
 	let isAddingSignatureInline = $state(false);
@@ -369,9 +360,11 @@
 							autocomplete="email"
 							class="z-compose__input"
 							invalid={fieldInvalid('to')}
-							ariaDescribedby={compose.error || (showAnyError && invalidRecipients.length) ? composeErrorsId : undefined}
-							oninput={(value) => (compose.to = value)}
-							onblur={() => (toBlurred = true)}
+							ariaDescribedby={compose.error || (sendAttempted && invalidRecipients.length) ? composeErrorsId : undefined}
+							oninput={(value) => {
+								compose.to = value;
+								sendAttempted = false;
+							}}
 						/>
 						{#if settings.showCcBccInCompose && !compose.showCcBcc}
 							<button
@@ -396,9 +389,11 @@
 								autocomplete="email"
 								class="z-compose__input"
 								invalid={fieldInvalid('cc')}
-								ariaDescribedby={compose.error || (showAnyError && invalidRecipients.length) ? composeErrorsId : undefined}
-								oninput={(value) => (compose.cc = value)}
-								onblur={() => (ccBlurred = true)}
+								ariaDescribedby={compose.error || (sendAttempted && invalidRecipients.length) ? composeErrorsId : undefined}
+								oninput={(value) => {
+									compose.cc = value;
+									sendAttempted = false;
+								}}
 							/>
 						</div>
 					</div>
@@ -411,9 +406,11 @@
 								autocomplete="email"
 								class="z-compose__input"
 								invalid={fieldInvalid('bcc')}
-								ariaDescribedby={compose.error || (showAnyError && invalidRecipients.length) ? composeErrorsId : undefined}
-								oninput={(value) => (compose.bcc = value)}
-								onblur={() => (bccBlurred = true)}
+								ariaDescribedby={compose.error || (sendAttempted && invalidRecipients.length) ? composeErrorsId : undefined}
+								oninput={(value) => {
+									compose.bcc = value;
+									sendAttempted = false;
+								}}
 							/>
 						</div>
 					</div>
@@ -531,7 +528,7 @@
 
 
 
-		{#if compose.error || (showAnyError && invalidRecipients.length)}
+		{#if compose.error || (sendAttempted && invalidRecipients.length)}
 			<p id={composeErrorsId} class="shrink-0 px-4 py-2 text-sm text-danger" role="alert">
 				{compose.error ?? `Check recipient: ${invalidRecipients[0]}`}
 			</p>
