@@ -20,7 +20,7 @@ webmail)
 	CAPROVER_APP=webmail
 	cp infra/deploy/webmail.captain-definition captain-definition
 	tar -cf deploy.tar captain-definition \
-		pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc packages/ui packages/sprite apps/webmail
+		pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc packages/ui packages/sprite packages/svelte-calendar apps/webmail
 	;;
 register)
 	CAPROVER_APP=register
