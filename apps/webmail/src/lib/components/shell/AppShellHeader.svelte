@@ -81,10 +81,7 @@
 		</div>
 	{:else}
 		<div
-			class={cn(
-				'relative z-10 flex min-w-0 flex-1 items-center gap-2 max-md:gap-1.5',
-				showMobileMailboxTitle && 'md:flex-none md:flex-initial'
-			)}
+			class="relative z-10 flex min-w-0 flex-1 items-center gap-2 max-md:gap-1.5"
 		>
 			{#if showMobileMailboxTitle && mailCtx}
 				<p class="z-app-shell-header__mail-title min-w-0 flex-1 truncate md:hidden">
