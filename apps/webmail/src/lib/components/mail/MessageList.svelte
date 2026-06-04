@@ -168,10 +168,8 @@
 		mail.setSelectionList(next);
 	});
 	const showBulkBar = $derived(bulkSelectEnabled && mail.hasSelection && !!mailboxRouteId);
-	/** Desktop: checkbox in DOM for gutter hover. Mobile: only once selection mode is active. */
-	const showRowCheckbox = $derived(
-		bulkSelectEnabled && (!supportsMobileListGestures() || mail.hasSelection)
-	);
+	/** Checkbox column is always in the layout when bulk select is available (avoids jump on enter). */
+	const showRowCheckbox = $derived(bulkSelectEnabled);
 
 	function handleMobileBulkLongPress(messageId: string) {
 		mail.startSelection(messageId);
@@ -777,17 +775,19 @@
 	aria-label="{mailboxName} messages"
 >
 	{#if mailboxRouteId || !sectionMode}
-		{#if showBulkBar && mailboxRouteId}
-			<MessageListBulkHeader
-				{mailboxRouteId}
-				{onBulkAction}
-				disabled={loading || !!error || !messages.length}
-			/>
-		{:else}
-			<div class="flex min-h-12 shrink-0 items-center border-b border-border/80 px-4 py-2.5">
-				<h2 class="z-type-pane-title">{mailboxName}</h2>
-			</div>
-		{/if}
+		<header
+			class="z-mail-list-pane-header flex h-12 shrink-0 items-center overflow-hidden border-b border-border/80 px-4"
+		>
+			{#if showBulkBar && mailboxRouteId}
+				<MessageListBulkHeader
+					{mailboxRouteId}
+					{onBulkAction}
+					disabled={loading || !!error || !messages.length}
+				/>
+			{:else}
+				<h2 class="z-type-pane-title min-w-0 truncate">{mailboxName}</h2>
+			{/if}
+		</header>
 	{/if}
 
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">

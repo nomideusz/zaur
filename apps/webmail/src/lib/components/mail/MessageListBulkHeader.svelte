@@ -86,11 +86,12 @@
 	}
 </script>
 
-<header
+<div
 	class={cn(
-		'z-mail-list-bulk-header',
+		'z-mail-list-bulk-header w-full min-w-0',
 		disabled && 'pointer-events-none opacity-60'
 	)}
+	role="group"
 	aria-label="Selected messages"
 >
 	<div class="z-mail-list-bulk-header__lead">
@@ -136,4 +137,4 @@
 			<X class="size-5" aria-hidden="true" />
 		</IconButton>
 	</div>
-</header>
+</div>

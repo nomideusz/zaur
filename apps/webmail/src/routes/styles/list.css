@@ -141,22 +141,22 @@
 		transform: none;
 	}
 
-	/* Bulk selection header — same chrome as folder title row. */
-	.z-mail-view .z-mail-list-bulk-header {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.75rem;
-		min-height: 3rem;
-		min-width: 0;
-		padding: 0.625rem 1rem;
-		border-bottom: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
+	/* List pane header — fixed height for folder title ↔ bulk toolbar swap. */
+	.z-mail-view .z-mail-list-pane-header {
 		position: sticky;
 		top: 0;
 		z-index: 10;
 		background-color: color-mix(in srgb, var(--z-surface) 95%, transparent);
 		backdrop-filter: blur(8px);
 		-webkit-backdrop-filter: blur(8px);
+	}
+
+	.z-mail-view .z-mail-list-bulk-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		min-width: 0;
 	}
 
 	.z-mail-view .z-mail-list-bulk-header__lead {
@@ -249,23 +249,6 @@
 	.z-mail-list-nav-bar__links {
 		flex-shrink: 0;
 		flex-wrap: nowrap;
-	}
-
-	/* Selecting — align every row checkbox; New section extra inset breaks the column. */
-	.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new {
-		padding-inline-start: 0;
-	}
-
-	.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new::before {
-		display: none;
-	}
-
-	.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new .z-mail-list-row__checkbox {
-		left: calc(-1 * var(--z-list-checkbox-gutter));
-	}
-
-	.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new .z-mail-list-row::before {
-		width: var(--z-list-checkbox-gutter);
 	}
 
 	.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a),
@@ -447,14 +430,23 @@
 		border-radius: 0.25rem;
 	}
 
-	/* Invisible hit target so hover works over the left gutter. */
-	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row::before {
-		content: '';
-		position: absolute;
-		right: 100%;
-		width: var(--z-list-checkbox-gutter);
-		top: 0;
-		bottom: 0;
+	/* Selectable lists — stable flex row; checkbox column always reserved. */
+	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row {
+		display: flex;
+		align-items: flex-start;
+		gap: 0.75rem;
+		padding-inline: 1rem;
+	}
+
+	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row > :where(a),
+	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row .z-mail-list-swipe-row {
+		flex: 1 1 auto;
+		min-width: 0;
+	}
+
+	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row > :where(a),
+	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+		padding-left: 1rem !important;
 	}
 
 	.z-mail-view .z-mail-list-row__checkbox,
@@ -475,41 +467,38 @@
 					background-color var(--z-motion-fast) var(--z-ease-standard);
 	}
 
-	.z-mail-view .z-mail-list-row__checkbox {
-		position: absolute;
-		left: 1.25rem;
-		top: 50%;
-		z-index: 2;
-		transform: translateY(-50%);
+	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row__checkbox {
+		position: static;
+		flex-shrink: 0;
+		margin-top: 0.875rem;
+		transform: none;
 		opacity: 0;
-		pointer-events: auto;
+		pointer-events: none;
 		transition: opacity var(--z-motion-fast) var(--z-ease-standard),
 					border-color var(--z-motion-fast) var(--z-ease-standard),
 					background-color var(--z-motion-fast) var(--z-ease-standard);
 	}
 
-	/* Desktop inline left checkbox space for row links */
-	.z-mail-view .z-mail-list-row > :where(a),
-	.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
-		padding-left: 3.25rem !important;
-	}
-
 	@media (hover: hover) {
-		.z-mail-view .z-mail-list-row:hover .z-mail-list-row__checkbox,
-		.z-mail-view .z-mail-list-row:focus-within .z-mail-list-row__checkbox {
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row:hover .z-mail-list-row__checkbox,
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row:focus-within .z-mail-list-row__checkbox {
 			opacity: 1;
+			pointer-events: auto;
 		}
 	}
 
 	.z-mail-view .z-mail-list--selecting .z-mail-list-row__checkbox,
+	.z-mail-view .z-mail-list-row__checkbox--on,
 	.z-mail-view .z-mail-list-row__checkbox:checked,
 	.z-mail-view .z-mail-list-row__checkbox:focus-visible {
 		opacity: 1;
+		pointer-events: auto;
 	}
 
 	@media (hover: none) {
-		.z-mail-view .z-mail-list--selecting .z-mail-list-row__checkbox {
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row__checkbox {
 			opacity: 1;
+			pointer-events: auto;
 		}
 	}
 
@@ -560,47 +549,10 @@
 		background-color: color-mix(in srgb, var(--z-accent) 10%, var(--z-surface-raised)) !important;
 	}
 
-	/* Bulk selection — checkbox column aligned with header. */
-	.z-mail-view .z-mail-list--selecting .z-mail-list-flow--selectable .z-mail-list-row::before {
-		display: none;
-	}
-
-	.z-mail-view .z-mail-list--selecting .z-mail-list-row {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.75rem;
-		padding-inline: 1rem;
-	}
-
-	.z-mail-view .z-mail-list--selecting .z-mail-list-row__checkbox {
-		position: static;
-		flex-shrink: 0;
-		margin-top: 0.875rem;
-		transform: none;
-		opacity: 1;
-		pointer-events: auto;
-	}
-
-	.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a),
-	.z-mail-view .z-mail-list--selecting .z-mail-list-row .z-mail-list-swipe-row {
-		flex: 1 1 auto;
-		min-width: 0;
-	}
-
-	.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a),
-	.z-mail-view .z-mail-list--selecting .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
-		padding-left: 1rem !important;
-	}
-
 	@media (max-width: 767px) {
 		.z-mail-view .z-mail-list-body .z-mail-list-flow--selectable {
 			margin-inline-start: 0;
 			padding-inline-start: 0;
-		}
-
-		.z-mail-view .z-mail-list-row > :where(a),
-		.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
-			padding-left: 1rem !important;
 		}
 
 		/* Reset padding of the New section on mobile selecting view and hide its unread vertical stroke */
@@ -689,15 +641,6 @@
 
 	.z-mail-view .z-mail-list-section-messages--new::before {
 		display: none;
-	}
-
-	/* Adjust checkbox and hover trigger width in the padded section to align with other sections */
-	.z-mail-view .z-mail-list-section-messages--new .z-mail-list-row__checkbox {
-		left: calc(-1 * var(--z-list-checkbox-gutter));
-	}
-
-	.z-mail-view .z-mail-list-section-messages--new .z-mail-list-row::before {
-		width: var(--z-list-checkbox-gutter);
 	}
 
 	/* New (unread, first-day) rows — subtle unread tint on subject and time. */
