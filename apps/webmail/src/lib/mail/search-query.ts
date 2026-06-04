@@ -3,7 +3,7 @@
 export type JmapEmailFilter = Record<string, unknown>;
 
 const OPERATOR_PATTERN =
-	/^(from|to|cc|subject|has|after|before):(?:"([^"]*)"|(\S+))$/i;
+	/^(from|to|cc|subject|has|after|before|is):(?:"([^"]*)"|(\S+))$/i;
 
 export function parseSearchQuery(input: string): { filter: JmapEmailFilter; terms: string[] } {
 	const trimmed = input.trim();
@@ -23,7 +23,7 @@ export function parseSearchQuery(input: string): { filter: JmapEmailFilter; term
 
 		const key = match[1].toLowerCase();
 		const value = (match[2] ?? match[3] ?? '').trim();
-		if (!value && key !== 'has') {
+		if (!value && key !== 'has' && key !== 'is') {
 			textTerms.push(token);
 			continue;
 		}
@@ -48,6 +48,21 @@ export function parseSearchQuery(input: string): { filter: JmapEmailFilter; term
 					textTerms.push(token);
 				}
 				break;
+			case 'is': {
+				const lowerVal = value.toLowerCase();
+				if (lowerVal === 'unread') {
+					filters.push({ notKeyword: '$seen' });
+				} else if (lowerVal === 'read') {
+					filters.push({ hasKeyword: '$seen' });
+				} else if (lowerVal === 'starred' || lowerVal === 'flagged') {
+					filters.push({ hasKeyword: '$flagged' });
+				} else if (lowerVal === 'unstarred' || lowerVal === 'unflagged') {
+					filters.push({ notKeyword: '$flagged' });
+				} else {
+					textTerms.push(token);
+				}
+				break;
+			}
 			case 'after':
 				filters.push({ after: parseSearchDate(value, 'start') });
 				break;
@@ -83,5 +98,5 @@ function parseSearchDate(value: string, edge: 'start' | 'end'): string {
 }
 
 export function searchOperatorHint(): string {
-	return 'from: · to: · subject: · has:attachment · after: · before:';
+	return 'from: · to: · subject: · has:attachment · is:unread · after: · before:';
 }
