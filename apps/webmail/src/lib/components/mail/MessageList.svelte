@@ -477,8 +477,13 @@
 		return !isExcludedFromImportantSection(role);
 	}
 
-	function showImportantPresentation(message: MessagePreview, routeId: string): boolean {
+	function showImportantChrome(message: MessagePreview, routeId: string): boolean {
 		if (!message.important) return false;
+		return canPickImportantRainbow(routeId);
+	}
+
+	function showImportantPresentation(message: MessagePreview, routeId: string): boolean {
+		if (!showImportantChrome(message, routeId)) return false;
 		const viewRole = mail.mailboxByRouteId(routeId)?.role;
 		return shouldPresentImportantColors(viewRole, settings.showImportantColors);
 	}
@@ -855,17 +860,17 @@
 				settings.timeFormat
 			)}
 			{@const isUnread = message.unread}
+			{@const importantChrome = showImportantChrome(message, routeId)}
 			{@const subjectImportant = showImportantPresentation(message, routeId)}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
 			{@const isCurrent = currentMessageId === message.id}
-			{@const showColorChip =
-				subjectImportant && canPickImportantRainbow(routeId)}
+			{@const showColorChip = importantChrome}
 			{@const swipeLeading = listSwipeLeading(message, routeId)}
 			{@const swipeTrailing = listSwipeTrailing(message, routeId)}
 			<li
-				class={cn('z-mail-list-row list-none', subjectImportant && 'z-mail-list-row--important')}
-				style={subjectImportant ? importantRainbow.cssVars(message.id) : undefined}
+				class={cn('z-mail-list-row list-none', importantChrome && 'z-mail-list-row--important')}
+				style={importantChrome ? importantRainbow.cssVars(message.id) : undefined}
 				data-current={isCurrent ? 'true' : undefined}
 				data-selected={rowSelected ? 'true' : undefined}
 			>
@@ -909,6 +914,7 @@
 										<button
 											type="button"
 											class="z-mail-list-color-cycle"
+											style={importantRainbow.cssVars(message.id)}
 											aria-label="Cycle important color"
 											title="Cycle color"
 											onclick={(event) => cycleImportantColor(message.id, event)}
