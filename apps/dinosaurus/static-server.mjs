@@ -1,4 +1,4 @@
-// Serves the built `dist/` directory for production hosts (Railway, etc.).
+// Serves the built `dist/` directory for production hosts (CapRover, etc.).
 // Single-page app routing: any path that doesn't resolve to a real file
 // falls back to index.html. Cache headers favour long-lived hashed assets
 // and a no-cache HTML shell so deploys take effect immediately.

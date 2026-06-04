@@ -13,6 +13,9 @@
     "test:webmail": "pnpm --filter @zaur/webmail test",
     "test:register": "pnpm --filter @zaur/register test:e2e",
     "deploy:webmail": "bash infra/deploy/caprover.sh webmail",
-    "deploy:register": "bash infra/deploy/caprover.sh register"
+    "deploy:register": "bash infra/deploy/caprover.sh register",
+    "deploy:dino": "bash infra/deploy/caprover.sh dino",
+    "deploy:dino-archive": "bash infra/deploy/caprover.sh dino-archive",
+    "deploy:music": "bash infra/deploy/caprover.sh music"
   }
 }

@@ -12,7 +12,7 @@ RUN pnpm install --frozen-lockfile --filter @zaur/dinosaurus...
 COPY packages/sprite ./packages/sprite
 COPY apps/dinosaurus ./apps/dinosaurus
 
-ARG VITE_ARCHIVE_URL
+ARG VITE_ARCHIVE_URL=https://dino-archive.zaur.app
 ENV VITE_ARCHIVE_URL=$VITE_ARCHIVE_URL
 
 RUN pnpm --filter @zaur/dinosaurus build

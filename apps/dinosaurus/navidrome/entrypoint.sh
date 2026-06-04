@@ -10,8 +10,7 @@
 #   :$ND_PORT (default 4533) — Navidrome web UI + Subsonic API
 #   :8384                    — Syncthing GUI (set up via env on first run)
 #   :22000 TCP/UDP           — Syncthing peer sync (works through Syncthing's
-#                              global relay network; we don't need a public
-#                              port on Railway for it)
+#                              global relay network; no public port required)
 
 set -e
 
@@ -31,7 +30,7 @@ ST_HOME="$ND_DATAFOLDER/syncthing"
 if [ ! -f "$ST_HOME/config.xml" ]; then
   if [ -z "$SYNCTHING_PASSWORD" ]; then
     echo "[entrypoint] FATAL: SYNCTHING_PASSWORD env var is required on first boot." >&2
-    echo "[entrypoint] Set it on the Railway service and redeploy." >&2
+    echo "[entrypoint] Set it on the CapRover app and redeploy." >&2
     exit 1
   fi
   echo "[entrypoint] Generating initial Syncthing config at $ST_HOME"

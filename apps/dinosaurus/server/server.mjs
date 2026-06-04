@@ -30,7 +30,7 @@ const ARCHIVE_TTL_MS = 24 * 60 * 60 * 1000;
 const MAX_PER_KIND = 1000;
 /**
  * Optional disk path for snapshotting the bins between restarts. When set
- * (e.g. /data/bins.json on a Railway volume), the server loads from it on
+ * (e.g. /data/bins.json on a CapRover volume), the server loads from it on
  * boot and writes back periodically + on shutdown so a redeploy doesn't
  * wipe the 24-hour archive. Unset = original in-memory-only behavior.
  */
@@ -113,7 +113,7 @@ function prune() {
 // ── Disk snapshot persistence ────────────────────────────────────────────
 //
 // Bins live in memory. To survive a redeploy we periodically serialise them
-// to a JSON file (typically on a Railway volume) and reload on the next
+// to a JSON file (typically on a CapRover volume) and reload on the next
 // boot. Atomic via tmp-file + rename so a crash mid-write can't corrupt the
 // snapshot. A dirty flag avoids needless writes when nothing has changed.
 
@@ -1555,8 +1555,8 @@ loadArchiveFromDisk();
 
 if (ARCHIVE_PERSIST_PATH) {
   setInterval(() => saveArchiveToDisk(), ARCHIVE_PERSIST_INTERVAL_MS).unref?.();
-  // Railway sends SIGTERM ~10s before forcibly killing the container on a
-  // redeploy; flush synchronously so the next boot picks up the latest state.
+  // CapRover sends SIGTERM before stopping the container on a redeploy; flush
+  // synchronously so the next boot picks up the latest state.
   let shuttingDown = false;
   const shutdown = (signal) => {
     if (shuttingDown) return;

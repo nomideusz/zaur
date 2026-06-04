@@ -7,12 +7,14 @@ over, grab each one, and drag it down to the matching category bin at the
 bottom of the page.
 
 Built with **Vite + TypeScript**, no bundled images, and any API keys it
-needs stay server-side. Production runs as three Railway services:
+needs stay server-side. Production runs as three CapRover apps on the Contabo
+VPS:
 
-- `dinosaurus-frontend`: the static Vite app served by `static-server.mjs`.
-- `dinosaurus-archive`: an in-memory 24-hour shared archive plus an
-  authoritative WebSocket realtime endpoint and the radio proxy, served
-  from `server/server.mjs`.
+- `dino` ([dino.zaur.app](https://dino.zaur.app)): the static Vite app served
+  by `static-server.mjs`.
+- `dino-archive` ([dino-archive.zaur.app](https://dino-archive.zaur.app)): an
+  in-memory 24-hour shared archive plus an authoritative WebSocket realtime
+  endpoint and the radio proxy, served from `server/server.mjs`.
 - `music` ([music.zaur.app](https://music.zaur.app)): a custom Navidrome +
   Syncthing image (`navidrome/Dockerfile`) that hosts the music library on a
   shared volume.
@@ -44,17 +46,17 @@ pnpm start     # http://localhost:8080
 Frontend build-time variable:
 
 - `VITE_ARCHIVE_URL`: public base URL for the archive service. In production
-  this is `https://dinosaurus-archive-production.up.railway.app`.
+  this is `https://dino-archive.zaur.app`.
 
 Archive runtime variables:
 
-- `PORT`: HTTP port. Railway sets this automatically.
+- `PORT`: HTTP port. CapRover sets this automatically.
 - `ALLOWED_ORIGINS`: comma-separated browser origins allowed to call
   `/archive` and `/events`, for example
   `https://dino.zaur.app,http://localhost:5173,http://localhost:5174,http://localhost:4173`.
 - `ARCHIVE_PERSIST_PATH`: optional snapshot path (e.g. `/data/bins.json` on a
-  Railway volume) so the 24-hour archive survives redeploys. Unset = in-memory
-  only.
+  CapRover persistent volume) so the 24-hour archive survives redeploys. Unset
+  = in-memory only.
 - `NAVIDROME_URL` (default `https://music.zaur.app`), `NAVIDROME_USER`,
   `NAVIDROME_PASSWORD`: credentials for the radio. User and password must be
   set for `/radio/*`; URL alone is not enough.
@@ -83,7 +85,7 @@ Archive runtime variables:
 Navidrome service runtime variables (the bundled image):
 
 - `ND_PORT`, `ND_MUSICFOLDER`, `ND_DATAFOLDER`: standard Navidrome — all paths
-  live on the shared Railway volume.
+  live on the shared CapRover volume.
 - `SYNCTHING_USER` (default `admin`), `SYNCTHING_PASSWORD`: required on first
   boot to seed the Syncthing GUI on `:8384` with bcrypted credentials.
 
@@ -199,6 +201,20 @@ const messages = new MessageWorld(stage, [
 
 That's the whole extension surface — dino will start sorting Mars weather on
 his own, mixed in with everything else.
+
+## Deploy
+
+Production runs on CapRover (`captain.zaur.app` on the Contabo VPS). From the
+monorepo root (requires `caprover login`):
+
+```bash
+pnpm deploy:dino           # frontend → dino.zaur.app
+pnpm deploy:dino-archive   # API → dino-archive.zaur.app
+pnpm deploy:music          # Navidrome → music.zaur.app
+```
+
+Captain definitions: `infra/deploy/dino*.captain-definition`,
+`infra/deploy/music.captain-definition`.
 
 ## Credits
 

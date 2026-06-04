@@ -157,7 +157,7 @@ interface RadioPreferences {
   pace: RadioPace;
 }
 const ARCHIVE_API_URL =
-  (import.meta.env.VITE_ARCHIVE_URL ?? "https://dinosaurus-archive-production.up.railway.app").replace(/\/$/, "");
+  (import.meta.env.VITE_ARCHIVE_URL ?? "https://dino-archive.zaur.app").replace(/\/$/, "");
 
 export class MessageWorld {
   private readonly stage: HTMLElement;

@@ -9,8 +9,7 @@ export interface RadioPick {
 }
 
 const ARCHIVE_API_URL = (
-  import.meta.env.VITE_ARCHIVE_URL ??
-  "https://dinosaurus-archive-production.up.railway.app"
+  import.meta.env.VITE_ARCHIVE_URL ?? "https://dino-archive.zaur.app"
 ).replace(/\/$/, "");
 
 const RADIO_FOLDER: Record<RadioChannel, string> = {
