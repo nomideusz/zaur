@@ -94,6 +94,11 @@ echo "==> SQL directory id:  $sql_id"
 # Ensure scopes are correct for OIDC
 "$CLI" update Directory "$oidc_id" --json '{"requireScopes": {}}' >/dev/null
 
+# Set secure, non-permanent IP ban durations in Security config (1 hour in milliseconds)
+echo "==> Configuring Security IP ban durations to 1 hour"
+"$CLI" update Security --field authBanPeriod=3600000 --field abuseBanPeriod=3600000 --field loiterBanPeriod=3600000 --field scanBanPeriod=3600000
+
+
 # 3. Set global default authentication to OIDC
 echo "==> Authentication default → Logto OIDC (Bearer tokens)"
 "$CLI" update Authentication --field "directoryId=$oidc_id"
