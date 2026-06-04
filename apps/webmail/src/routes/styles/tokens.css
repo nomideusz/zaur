@@ -27,8 +27,8 @@
 	--shadow-sm: 0 1px 3px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.02);
 	--shadow-md: 0 4px 12px rgb(0 0 0 / 0.07), 0 1px 4px rgb(0 0 0 / 0.03);
 
-	--width-sidebar: 15rem;
-	--width-list: 22rem;
+	--width-sidebar: 13.5rem;
+	--width-list: 25rem;
 	--height-header: 3.25rem;
 }
 

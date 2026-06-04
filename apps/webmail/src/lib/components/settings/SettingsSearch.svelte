@@ -90,7 +90,7 @@
 	{#if results.length}
 		<ul
 			id={resultsId}
-			class="z-overflow-menu absolute top-full z-30 mt-1.5 max-h-72 w-full py-1 overflow-y-auto"
+			class="absolute top-full right-0 left-0 z-30 mt-1.5 max-h-72 overflow-y-auto rounded-lg border border-border bg-surface-raised py-1 shadow-md"
 			role="listbox"
 			aria-label="Settings search results"
 			onkeydown={onResultsKeydown}

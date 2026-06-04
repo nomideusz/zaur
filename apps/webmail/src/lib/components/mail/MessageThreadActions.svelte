@@ -23,7 +23,7 @@
 	import { INBOX_MAILBOX_ROUTE_ID, mailListHref } from '$lib/mail/routes';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
-	import { canMarkImportantFromMailboxRole } from '$lib/mail/mailboxes';
+	import { canMarkImportantFromMailboxRole, moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -50,6 +50,10 @@
 	);
 	const isDraft = $derived(mailboxRouteId === 'drafts');
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
+	const draftMoveTargets = $derived(
+		isDraft ? moveTargetMailboxes(mail.mailboxes, currentMailbox) : []
+	);
+	const showDraftOverflowMenu = $derived(isDraft && draftMoveTargets.length > 0);
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
 	const canMarkImportant = $derived(canMarkImportantFromMailboxRole(currentMailbox?.role));
 	const allowExternal = $derived(!settings.blockExternalContent || pane?.showImagesOnce);
@@ -191,11 +195,17 @@
 {#if latest}
 	<div class="z-reader-toolbar flex shrink-0 items-center gap-1">
 		{#if isDraft}
-			<Button variant="ghost" class="hidden sm:inline-flex" href="/mail/compose?draft={latest.id}">
-				<Pencil class="size-4" aria-hidden="true" />
-				Edit
-			</Button>
-			<Button onclick={() => void sendDraft()}>
+			<div class="flex items-center gap-1">
+				<Button variant="ghost" href="/mail/compose?draft={latest.id}">
+					<Pencil class="size-4" aria-hidden="true" />
+					Edit
+				</Button>
+				<Button variant="ghost" class="z-mail-list-bulk-header__danger" onclick={deleteMessage}>
+					<Trash2 class="size-4" aria-hidden="true" />
+					{deleteLabel}
+				</Button>
+			</div>
+			<Button class="ms-4" onclick={() => void sendDraft()}>
 				<Send class="size-4" aria-hidden="true" />
 				Send
 			</Button>
@@ -210,33 +220,13 @@
 			</Button>
 		{/if}
 
-		<OverflowMenu label="Message actions" menuId="reader-actions-menu" placement="bottom">
-			{#if isDraft}
-				<OverflowMenuItem
-					label="Edit draft"
-					onclick={() => goto(`/mail/compose?draft=${latest.id}`)}
-				>
-					{#snippet icon()}<Pencil class="size-5" aria-hidden="true" />{/snippet}
-				</OverflowMenuItem>
-				{#if actionMessage?.important}
-					<OverflowMenuItem label="Unmark important" onclick={toggleImportant}>
-						{#snippet icon()}
-							<Important class="size-5 text-accent" aria-hidden="true" />
-						{/snippet}
-					</OverflowMenuItem>
-				{:else if canMarkImportant}
-					<OverflowMenuItem label="Mark important" onclick={toggleImportant}>
-						{#snippet icon()}<Important class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
-				{/if}
-				{#if auth.client}
-					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
-				{/if}
-				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-				<OverflowMenuItem label={deleteLabel} danger onclick={deleteMessage}>
-					{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
-				</OverflowMenuItem>
-			{:else}
+		{#if !isDraft || showDraftOverflowMenu}
+			<OverflowMenu label="Message actions" menuId="reader-actions-menu" placement="bottom">
+				{#if isDraft}
+					{#if auth.client}
+						<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
+					{/if}
+				{:else}
 				{#if showReplyInMenu}
 					<OverflowMenuItem label="Reply" onclick={reply}>
 						{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
@@ -290,7 +280,8 @@
 				<OverflowMenuItem label={deleteLabel} danger onclick={deleteMessage}>
 					{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
 				</OverflowMenuItem>
-			{/if}
-		</OverflowMenu>
+				{/if}
+			</OverflowMenu>
+		{/if}
 	</div>
 {/if}
