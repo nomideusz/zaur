@@ -63,6 +63,7 @@ infra/
   auth/          Zitadel + passkey-first webmail setup
   mail/          Stalwart ops notes
   listenbrainz-ingest/  LB recommendations → mediacms-ingest → Navidrome
+  mediacms-ingest/   MediaCMS mirror upload, retention, tmp prune scripts
   deploy/        CapRover captain-definition templates
 ```
 
