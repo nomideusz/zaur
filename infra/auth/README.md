@@ -182,18 +182,14 @@ Register env (CapRover `register` app):
 ```env
 WEBMAIL_URL=https://webmail.zaur.app
 # INVITE_SMTP_* (required for reset emails)
-# CapRover: use internal mail host for reliable delivery from the register container:
-# INVITE_SMTP_HOST=srv-captain--mail
-# INVITE_SMTP_PORT=25
-# INVITE_SMTP_INTERNAL=true
-# INVITE_SMTP_FROM=invites@zaur.app
-# Or authenticated submission via public host:
+# CapRover: use public SMTP submission (srv-captain--mail has no SMTP on port 25):
 # INVITE_SMTP_HOST=mail.zaur.app
 # INVITE_SMTP_PORT=465
 # INVITE_SMTP_SECURE=true
 # INVITE_SMTP_TLS_SERVERNAME=mail.zaur.app
-# INVITE_SMTP_USER=invites@zaur.app
+# INVITE_SMTP_USER=noreply@zaur.app
 # INVITE_SMTP_PASSWORD=…
+# INVITE_SMTP_FROM=noreply@zaur.app
 # PASSWORD_RESET_TOKENS_PATH=/app/data/password_reset_tokens.json
 # PASSKEY_SETUP_TOKEN_EXPIRES_SEC=900
 ```

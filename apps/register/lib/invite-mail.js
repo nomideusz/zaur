@@ -24,9 +24,7 @@ function getSmtpOptions() {
   }
 
   const host = process.env.INVITE_SMTP_HOST.trim();
-  const internalRelay =
-    process.env.INVITE_SMTP_INTERNAL === 'true' ||
-    (process.env.INVITE_SMTP_INTERNAL !== 'false' && isInternalRelayHost(host) && !process.env.INVITE_SMTP_USER);
+  const internalRelay = process.env.INVITE_SMTP_INTERNAL === 'true';
 
   if (internalRelay) {
     const port = Number.parseInt(process.env.INVITE_SMTP_PORT || '25', 10);
@@ -83,6 +81,17 @@ function formatSmtpError(err) {
   if (err.responseCode) parts.push(`response=${err.responseCode}`);
   if (err.response) parts.push(String(err.response).trim());
   if (err.command) parts.push(`command=${err.command}`);
+
+  const host = process.env.INVITE_SMTP_HOST?.trim() || '';
+  if (
+    err.code === 'ETIMEDOUT' &&
+    (host.includes('srv-captain--') || process.env.INVITE_SMTP_INTERNAL === 'true')
+  ) {
+    parts.push(
+      'hint=CapRover does not expose SMTP on srv-captain--mail; use mail.zaur.app:465 with INVITE_SMTP_USER/PASSWORD instead',
+    );
+  }
+
   return parts.join('; ');
 }
 
