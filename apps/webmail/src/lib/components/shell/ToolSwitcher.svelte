@@ -2,8 +2,8 @@
 	import { page } from '$app/stores';
 	import { cn } from '$lib/utils/cn';
 	import Calendar from '$lib/components/icons/Calendar.svelte';
-import Mail from '$lib/components/icons/Mail.svelte';
-import Users from '$lib/components/icons/Users.svelte';
+	import Mail from '$lib/components/icons/Mail.svelte';
+	import Users from '$lib/components/icons/Users.svelte';
 	import { isMailPath } from '$lib/mail/routes';
 	import { settings } from '$lib/stores/settings.svelte';
 
@@ -29,7 +29,10 @@ import Users from '$lib/components/icons/Users.svelte';
 	]);
 </script>
 
-<nav aria-label="Tools" class="flex items-center gap-1 bg-surface-sunken/60 p-1 rounded-lg border border-border/40">
+<nav
+	aria-label="Tools"
+	class="relative z-10 flex shrink-0 items-center gap-1 rounded-lg border border-border/40 bg-surface-sunken/60 p-1"
+>
 	{#each tools as tool}
 		{@const Icon = tool.icon}
 		{@const isActive = tool.active($page.url.pathname)}

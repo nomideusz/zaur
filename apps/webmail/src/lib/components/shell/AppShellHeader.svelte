@@ -20,19 +20,22 @@
 	class="relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-4 backdrop-blur-md"
 	style="view-transition-name: app-header;"
 >
-	<div class="flex shrink-0 items-center gap-3 md:w-64">
+	<div class="relative z-10 flex min-w-0 shrink-0 items-center gap-3">
 		<a
 			href={homeHref}
-			class="text-base text-fg transition-colors hover:opacity-80"
+			class="shrink-0 text-base text-fg transition-colors hover:opacity-80"
 		>
 			<span class="font-extrabold tracking-tight text-accent lowercase text-lg">{appConfig.brandName}</span>
 		</a>
 		<ToolSwitcher />
 	</div>
 
-	<div class="min-w-0 flex-1">
+	<!-- Pass clicks through empty flex space so tool tabs are not blocked when they overflow. -->
+	<div class="relative z-0 min-w-0 flex-1 pointer-events-none">
 		{#if !$page.url.pathname.startsWith('/settings')}
-			<GlobalSearch />
+			<div class="pointer-events-auto">
+				<GlobalSearch />
+			</div>
 		{/if}
 	</div>
 

@@ -7,7 +7,6 @@
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
-	import Palette from '$lib/components/icons/Palette.svelte';
 	import {
 		listSwipeContext,
 		listSwipeLeadingActions,
@@ -860,15 +859,13 @@
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
 			{@const isCurrent = currentMessageId === message.id}
-			{@const showColorCycle =
-				mobileRowGestures &&
-				mail.hasSelection &&
-				subjectImportant &&
-				canPickImportantRainbow(routeId)}
+			{@const showColorChip =
+				subjectImportant && canPickImportantRainbow(routeId)}
 			{@const swipeLeading = listSwipeLeading(message, routeId)}
 			{@const swipeTrailing = listSwipeTrailing(message, routeId)}
 			<li
-				class="z-mail-list-row list-none"
+				class={cn('z-mail-list-row list-none', subjectImportant && 'z-mail-list-row--important')}
+				style={subjectImportant ? importantRainbow.cssVars(message.id) : undefined}
 				data-current={isCurrent ? 'true' : undefined}
 				data-selected={rowSelected ? 'true' : undefined}
 			>
@@ -882,16 +879,6 @@
 							aria-label={`Select ${subjectText}`}
 							onclick={(event) => handleRowCheckboxClick(message.id, event, rowSelected)}
 						/>
-						{#if !rowSelected && (message.hasAttachment || message.replied)}
-							<span class="z-mail-list-row__indicator absolute flex items-center justify-center gap-0.5 text-fg-subtle transition-opacity duration-150 pointer-events-none">
-								{#if message.replied}
-									<Reply class="size-3.5" aria-hidden="true" />
-								{/if}
-								{#if message.hasAttachment}
-									<Paperclip class="size-3.5" aria-hidden="true" />
-								{/if}
-							</span>
-						{/if}
 					</div>
 				{/if}
 				{#snippet rowLink()}
@@ -917,24 +904,26 @@
 						<div class="min-w-0 flex-1">
 							<div class="flex items-baseline justify-between gap-2">
 								<p class={listSenderClass(isUnread)}>{senderLabel}</p>
-								{#if showColorCycle}
-									<button
-										type="button"
-										class="z-mail-list-color-cycle"
-										style={importantRainbow.cssVars(message.id)}
-										aria-label="Change important color"
-										onclick={(event) => cycleImportantColor(message.id, event)}
-									>
-										<Palette class="size-4" aria-hidden="true" />
-									</button>
-								{:else}
+								<div class="flex shrink-0 items-center gap-1.5">
+									{#if showColorChip}
+										<button
+											type="button"
+											class="z-mail-list-color-cycle"
+											aria-label="Cycle important color"
+											title="Cycle color"
+											onclick={(event) => cycleImportantColor(message.id, event)}
+										>
+											<span class="z-mail-list-color-cycle__swatch" aria-hidden="true"></span>
+										</button>
+									{/if}
 									<time class={listTimeClass} datetime={message.receivedAt}>
 										{timeLabel}
 									</time>
-								{/if}
+								</div>
 							</div>
 							<p
 								class={cn(
+									'list-subject',
 									listSubjectClass(isUnread, subjectImportant),
 									subjectImportant &&
 										importantRainbow.hasPicked(message.id) &&
@@ -948,7 +937,7 @@
 								<p class={listPreviewClass}>{message.preview}</p>
 							{/if}
 						</div>
-						{#if !showRowCheckbox && (message.hasAttachment || message.replied)}
+						{#if message.hasAttachment || message.replied}
 							<div class="flex items-center gap-1 shrink-0 text-fg-subtle">
 								{#if message.replied}
 									<Reply class="mt-0.5 size-4" aria-hidden="true" />
