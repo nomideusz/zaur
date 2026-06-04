@@ -5,7 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const loginError = document.getElementById('login-error');
   const logoutBtn = document.getElementById('logout-btn');
 
-  const statTotal = document.getElementById('stat-total');
+  const overviewStatus = document.getElementById('overview-status');
+  const statMailboxes = document.getElementById('stat-mailboxes');
+  const statDomains = document.getElementById('stat-domains');
+  const statInvitesPending = document.getElementById('stat-invites-pending');
+  const statInvitesTotal = document.getElementById('stat-invites-total');
+
   const statUnused = document.getElementById('stat-unused');
   const statUsed = document.getElementById('stat-used');
   const statRevoked = document.getElementById('stat-revoked');
@@ -13,6 +18,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const generateForm = document.getElementById('generate-form');
   const generateError = document.getElementById('generate-error');
   const generateSuccess = document.getElementById('generate-success');
+
+  const lookupForm = document.getElementById('lookup-form');
+  const lookupError = document.getElementById('lookup-error');
+  const lookupResult = document.getElementById('lookup-result');
+
+  const mailboxesFilter = document.getElementById('mailboxes-filter');
+  const mailboxesTableBody = document.getElementById('mailboxes-table-body');
+  const mailboxesError = document.getElementById('mailboxes-error');
+  const refreshMailboxesBtn = document.getElementById('refresh-mailboxes-btn');
 
   const tableFilter = document.getElementById('table-filter');
   const invitesTableBody = document.getElementById('invites-table-body');
@@ -23,12 +37,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const auditResults = document.getElementById('audit-results');
 
   let invitesList = [];
+  let mailboxesList = [];
 
   function showDashboard() {
     loginContainer.classList.add('z-hidden');
     dashboardContainer.classList.remove('z-hidden');
     logoutBtn.classList.remove('z-hidden');
+    loadOverview();
     loadInvitations();
+    loadMailboxes();
     updateInviteEmailHint();
   }
 
@@ -39,10 +56,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/api/admin/status');
       const data = await res.json();
       hint.textContent = data.invitationEmailConfigured
-        ? 'Enter an email address and we’ll email a registration link.'
-        : 'Enter an email address to create a registration link (copy and send manually — SMTP not configured).';
+        ? 'Enter a personal email and we’ll send a registration magic link.'
+        : 'Enter a personal email to create a link (copy and send manually — SMTP not configured).';
     } catch {
-      hint.textContent = 'Enter an email address to create a registration link.';
+      hint.textContent = 'Enter a personal email to create a registration link.';
     }
   }
 
@@ -108,6 +125,63 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
+  async function loadOverview() {
+    try {
+      const res = await fetch('/api/admin/overview');
+      if (!res.ok) {
+        if (res.status === 401) showLogin();
+        return;
+      }
+
+      const data = await res.json();
+      statMailboxes.textContent = data.counts?.mailboxes ?? '—';
+      statDomains.textContent = data.counts?.domains ?? '—';
+      statInvitesPending.textContent = data.counts?.invitationsPending ?? '—';
+      statInvitesTotal.textContent = data.counts?.invitations ?? '—';
+
+      const pills = [];
+      if (data.registrationOpen) {
+        pills.push({ label: 'Registration open', ok: true });
+      } else if (data.requiresInvitation) {
+        pills.push({ label: 'Invite only', ok: true });
+      } else {
+        pills.push({ label: 'Registration closed', warn: true });
+      }
+
+      pills.push({
+        label: data.invitationEmailConfigured ? 'SMTP configured' : 'Manual invite links',
+        ok: data.invitationEmailConfigured,
+        warn: !data.invitationEmailConfigured,
+      });
+      pills.push({
+        label: data.logtoConfigured ? 'Logto connected' : 'Logto off',
+        ok: data.logtoConfigured,
+        off: !data.logtoConfigured,
+      });
+      pills.push({
+        label: data.stalwartConfigured ? 'Stalwart connected' : 'Stalwart off',
+        ok: data.stalwartConfigured,
+        off: !data.stalwartConfigured,
+      });
+
+      if (data.domains?.length) {
+        pills.push({
+          label: `Domains: ${data.domains.map((d) => `@${d.name}`).join(', ')}`,
+          ok: true,
+        });
+      }
+
+      overviewStatus.innerHTML = pills
+        .map((pill) => {
+          const cls = pill.ok ? 'is-ok' : pill.warn ? 'is-warn' : pill.off ? 'is-off' : '';
+          return `<span class="z-status-pill ${cls}">${escapeHtml(pill.label)}</span>`;
+        })
+        .join('');
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
   async function loadInvitations() {
     try {
       const res = await fetch('/api/admin/invitations');
@@ -120,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const data = await res.json();
       invitesList = data.invitations || [];
-      renderStats();
+      renderInviteStats();
       renderTable(invitesList);
     } catch (err) {
       console.error(err);
@@ -129,16 +203,169 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  function renderStats() {
-    const total = invitesList.length;
+  function renderInviteStats() {
     const pending = invitesList.filter((item) => item.status === 'sent' || item.status === 'opened').length;
     const registered = invitesList.filter((item) => item.status === 'registered').length;
     const inactive = invitesList.filter((item) => ['expired', 'revoked'].includes(item.status)).length;
 
-    statTotal.textContent = total;
     statUnused.textContent = pending;
     statUsed.textContent = registered;
     statRevoked.textContent = inactive;
+  }
+
+  async function loadMailboxes() {
+    hideAlert(mailboxesError);
+    mailboxesTableBody.innerHTML =
+      '<tr><td colspan="3" class="z-text-center z-text-muted" style="padding: 1.5rem;">Loading mailboxes…</td></tr>';
+
+    try {
+      const res = await fetch('/api/admin/accounts');
+      if (!res.ok) {
+        if (res.status === 401) {
+          showLogin();
+          return;
+        }
+        throw new Error('Failed to load mailboxes.');
+      }
+      const data = await res.json();
+      mailboxesList = data.accounts || [];
+      renderMailboxes(mailboxesList);
+    } catch (err) {
+      console.error(err);
+      showError(err.message || 'Failed to load mailboxes.', mailboxesError);
+      mailboxesTableBody.innerHTML =
+        '<tr><td colspan="3" class="z-text-center z-text-muted" style="padding: 2rem;">Error loading mailboxes.</td></tr>';
+    }
+  }
+
+  function renderMailboxes(list) {
+    if (list.length === 0) {
+      mailboxesTableBody.innerHTML =
+        '<tr><td colspan="3" class="z-text-center z-text-muted" style="padding: 2rem;">No mailboxes found.</td></tr>';
+      return;
+    }
+
+    mailboxesTableBody.innerHTML = list
+      .map(
+        (account) => `
+      <tr>
+        <td class="z-td-code"><span class="z-code-text">${escapeHtml(account.email)}</span></td>
+        <td>@${escapeHtml(account.domain || '—')}</td>
+        <td>
+          <button type="button" class="z-btn-ghost z-btn-sm" data-lookup-email="${escapeHtml(account.email)}">Look up</button>
+          <button type="button" class="z-btn-danger z-btn-sm" data-delete-email="${escapeHtml(account.email)}">Delete all</button>
+        </td>
+      </tr>`,
+      )
+      .join('');
+
+    mailboxesTableBody.querySelectorAll('[data-lookup-email]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.getElementById('lookup-email').value = btn.dataset.lookupEmail;
+        lookupForm.requestSubmit();
+        lookupForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      });
+    });
+
+    mailboxesTableBody.querySelectorAll('[data-delete-email]').forEach((btn) => {
+      btn.addEventListener('click', () => deleteAccount(btn.dataset.deleteEmail, 'all'));
+    });
+  }
+
+  mailboxesFilter.addEventListener('input', (e) => {
+    const term = e.target.value.toLowerCase().trim();
+    if (!term) {
+      renderMailboxes(mailboxesList);
+      return;
+    }
+    renderMailboxes(mailboxesList.filter((account) => account.email.toLowerCase().includes(term)));
+  });
+
+  refreshMailboxesBtn.addEventListener('click', () => {
+    loadMailboxes();
+    loadOverview();
+  });
+
+  lookupForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    hideAlert(lookupError);
+    lookupResult.classList.add('z-hidden');
+    lookupResult.innerHTML = '';
+
+    const email = document.getElementById('lookup-email').value.trim().toLowerCase();
+    const submitBtn = document.getElementById('lookup-submit');
+    submitBtn.disabled = true;
+
+    try {
+      const res = await fetch(`/api/admin/account?${new URLSearchParams({ email })}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Lookup failed.');
+
+      lookupResult.innerHTML = `
+        <div class="z-account-lookup-row">
+          <span class="z-account-lookup-label">Stalwart</span>
+          <span>${data.stalwart ? escapeHtml(email) : 'Not found'}</span>
+        </div>
+        <div class="z-account-lookup-row">
+          <span class="z-account-lookup-label">Logto</span>
+          <span>${data.logto ? 'Present' : 'Not found'}</span>
+        </div>
+        <div class="z-account-lookup-row">
+          <span class="z-account-lookup-label">Recovery</span>
+          <span>${data.recoveryEmail ? escapeHtml(data.recoveryEmail) : '—'}</span>
+        </div>
+        <div class="z-inline-actions">
+          ${
+            data.stalwart
+              ? '<button type="button" class="z-btn-danger z-btn-sm" data-cleanup="stalwart">Delete Stalwart</button>'
+              : ''
+          }
+          ${
+            data.logto
+              ? '<button type="button" class="z-btn-danger z-btn-sm" data-cleanup="logto">Delete Logto</button>'
+              : ''
+          }
+          ${
+            data.stalwart || data.logto
+              ? '<button type="button" class="z-btn-danger z-btn-sm" data-cleanup="all">Delete all</button>'
+              : ''
+          }
+        </div>`;
+
+      lookupResult.querySelectorAll('[data-cleanup]').forEach((btn) => {
+        btn.addEventListener('click', () => deleteAccount(email, btn.dataset.cleanup));
+      });
+
+      lookupResult.classList.remove('z-hidden');
+    } catch (err) {
+      showError(err.message || 'Lookup failed.', lookupError);
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+
+  async function deleteAccount(email, target) {
+    const label = target === 'all' ? 'Stalwart and Logto' : target;
+    if (!confirm(`Delete ${email} from ${label}? This cannot be undone.`)) return;
+
+    try {
+      const res = await fetch('/api/admin/cleanup-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, target }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Delete failed.');
+
+      await loadMailboxes();
+      await loadOverview();
+      if (document.getElementById('lookup-email')?.value.trim().toLowerCase() === email) {
+        lookupForm.requestSubmit();
+      }
+      await runAudit();
+    } catch (err) {
+      showError(err.message || 'Delete failed.', lookupError);
+    }
   }
 
   function renderTable(list) {
@@ -191,12 +418,22 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const tdActions = document.createElement('td');
-      if (invite.status === 'sent') {
+      if (invite.status === 'sent' || invite.status === 'opened') {
         const revokeBtn = document.createElement('button');
         revokeBtn.className = 'z-btn-danger z-btn-sm';
         revokeBtn.textContent = 'Revoke';
         revokeBtn.addEventListener('click', () => revokeInvitation(invite.logtoTokenId));
         tdActions.appendChild(revokeBtn);
+      } else if (invite.mailboxEmail) {
+        const lookupBtn = document.createElement('button');
+        lookupBtn.className = 'z-btn-ghost z-btn-sm';
+        lookupBtn.textContent = 'Look up';
+        lookupBtn.addEventListener('click', () => {
+          document.getElementById('lookup-email').value = invite.mailboxEmail;
+          lookupForm.requestSubmit();
+          lookupForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        });
+        tdActions.appendChild(lookupBtn);
       } else {
         tdActions.textContent = '—';
         tdActions.className = 'z-text-muted';
@@ -258,16 +495,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       auditSummary.innerHTML = `
         <div class="z-stat-card"><span class="z-type-label">Stalwart</span><strong class="z-stat-card__value">${data.counts.stalwartAccounts}</strong></div>
-        <div class="z-stat-card"><span class="z-type-label">Directory</span><strong class="z-stat-card__value">${data.counts.directoryUsers}</strong></div>
-        <div class="z-stat-card"><span class="z-type-label">Directory only</span><strong class="z-stat-card__value">${data.counts.directoryOnly}</strong></div>
+        <div class="z-stat-card"><span class="z-type-label">Logto</span><strong class="z-stat-card__value">${data.counts.logtoUsers}</strong></div>
+        <div class="z-stat-card"><span class="z-type-label">Logto only</span><strong class="z-stat-card__value">${data.counts.logtoOnly}</strong></div>
         <div class="z-stat-card"><span class="z-type-label">Stalwart only</span><strong class="z-stat-card__value">${data.counts.stalwartOnly}</strong></div>
       `;
 
-      auditResults.appendChild(renderAuditGroup('Directory only', data.directoryOnly, 'directory'));
+      auditResults.appendChild(renderAuditGroup('Logto only', data.logtoOnly, 'logto'));
       auditResults.appendChild(renderAuditGroup('Stalwart only', data.stalwartOnly, 'stalwart'));
 
       auditSuccess.textContent =
-        data.counts.directoryOnly || data.counts.stalwartOnly
+        data.counts.logtoOnly || data.counts.stalwartOnly
           ? 'Audit completed. Review mismatches below before cleanup.'
           : 'Audit completed. No provisioning mismatches found.';
       auditSuccess.classList.add('is-visible');
@@ -308,20 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function cleanupAccount(email, target) {
-    if (!confirm(`Delete ${email} from ${target}? This cannot be undone.`)) return;
-
-    try {
-      const res = await fetch('/api/admin/cleanup-account', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, target }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Cleanup failed.');
-      await runAudit();
-    } catch (err) {
-      showError(err.message || 'Cleanup failed.', auditError);
-    }
+    await deleteAccount(email, target === 'logto' ? 'logto' : 'stalwart');
   }
 
   generateForm.addEventListener('submit', async (e) => {
@@ -354,6 +578,7 @@ document.addEventListener('DOMContentLoaded', () => {
         generateForm.reset();
         document.getElementById('invite-expires').value = '72';
         loadInvitations();
+        loadOverview();
       } else {
         showError(data.error || 'Failed to create invitation.', generateError);
       }
@@ -379,6 +604,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const data = await res.json();
       if (res.ok) {
         loadInvitations();
+        loadOverview();
       } else {
         alert(data.error || 'Failed to revoke invitation.');
       }

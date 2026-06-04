@@ -40,6 +40,7 @@
 	--height-header: 3.25rem;
 	/* ~44rem — same measure column as webmail */
 	--z-measure: 44rem;
+	--z-measure-wide: 72rem;
 	/* Same column width as webmail login (max-w-sm) */
 	--z-auth-measure: 24rem;
 	--z-register-measure: var(--z-auth-measure);

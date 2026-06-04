@@ -472,18 +472,135 @@ app.post('/api/forgot-password/reset', forgotPasswordIpLimiter, async (req, res)
 
 async function getProvisioningAudit() {
   const mailAccounts = await stalwart.listAccounts();
+  const mailByEmail = new Map(mailAccounts.map((account) => [account.email.toLowerCase(), account]));
+
+  let logtoUsers = [];
+  if (logto.isConfigured()) {
+    try {
+      logtoUsers = await logto.listUsers();
+    } catch (err) {
+      console.error('getProvisioningAudit logto:', err.message);
+    }
+  }
+
+  const logtoByEmail = new Map(
+    logtoUsers
+      .filter((user) => user.primaryEmail)
+      .map((user) => [user.primaryEmail.toLowerCase(), user]),
+  );
+
+  const stalwartOnly = mailAccounts.filter((account) => !logtoByEmail.has(account.email.toLowerCase()));
+  const logtoOnly = [...logtoByEmail.entries()]
+    .filter(([email]) => !mailByEmail.has(email))
+    .map(([email, user]) => ({
+      email,
+      username: user.username || email,
+    }));
 
   return {
     counts: {
       stalwartAccounts: mailAccounts.length,
-      directoryUsers: 0,
-      directoryOnly: 0,
-      stalwartOnly: 0,
+      logtoUsers: logtoByEmail.size,
+      logtoOnly: logtoOnly.length,
+      stalwartOnly: stalwartOnly.length,
     },
-    directoryOnly: [],
-    stalwartOnly: [],
+    logtoOnly,
+    stalwartOnly: stalwartOnly.map((account) => ({
+      email: account.email,
+      username: account.name,
+      accountId: account.id,
+    })),
   };
 }
+
+app.get('/api/admin/overview', requireAdmin, async (_req, res) => {
+  try {
+    const domains = await stalwart.listDomains();
+    const accounts = await stalwart.listAccounts();
+    const invitationsList = await invitations.listInvitations();
+
+    res.json({
+      registrationOpen: process.env.REGISTRATION_OPEN === 'true',
+      requiresInvitation: invitations.requiresInvitation(),
+      invitationEmailConfigured: inviteMail.isConfigured(),
+      passwordResetEnabled: passwordReset.isEnabled(),
+      logtoConfigured: logto.isConfigured(),
+      stalwartConfigured: Boolean(process.env.STALWART_URL),
+      domains: domains.map((domain) => ({ id: domain.id, name: domain.name })),
+      counts: {
+        mailboxes: accounts.length,
+        domains: domains.length,
+        invitations: invitationsList.length,
+        invitationsPending: invitationsList.filter((item) =>
+          ['sent', 'opened'].includes(item.status),
+        ).length,
+      },
+      ...getSiteConfig(),
+    });
+  } catch (err) {
+    console.error('GET /api/admin/overview:', err.message);
+    res.status(502).json({ error: 'Unable to load admin overview.' });
+  }
+});
+
+app.get('/api/admin/accounts', requireAdmin, async (req, res) => {
+  const query = String(req.query.q || '').trim().toLowerCase();
+
+  try {
+    let accounts = await stalwart.listAccounts();
+    if (query) {
+      accounts = accounts.filter((account) => account.email.toLowerCase().includes(query));
+    }
+
+    accounts.sort((a, b) => a.email.localeCompare(b.email));
+
+    res.json({
+      accounts: accounts.map((account) => ({
+        id: account.id,
+        email: account.email,
+        username: account.name,
+        domain: account.domain,
+      })),
+    });
+  } catch (err) {
+    console.error('GET /api/admin/accounts:', err.message);
+    res.status(502).json({ error: 'Unable to list mailboxes.' });
+  }
+});
+
+app.get('/api/admin/account', requireAdmin, async (req, res) => {
+  const email = String(req.query.email || '').trim().toLowerCase();
+  if (!email || !email.includes('@')) {
+    return res.status(400).json({ error: 'A valid mailbox email is required.' });
+  }
+
+  try {
+    const stalwartAccount = await stalwart.findAccountByEmail(email);
+    let logtoUser = null;
+    if (logto.isConfigured()) {
+      logtoUser = await logto.findUserByEmail(email);
+    }
+
+    const recoveryEmail = invitations.findRecoveryEmailByMailbox(email);
+
+    res.json({
+      email,
+      stalwart: stalwartAccount
+        ? { id: stalwartAccount.id, username: stalwartAccount.name, domain: stalwartAccount.domain }
+        : null,
+      logto: logtoUser
+        ? {
+            id: logtoUser.id,
+            recoveryEmail: logtoUser.customData?.recoveryEmail?.toLowerCase() || null,
+          }
+        : null,
+      recoveryEmail: recoveryEmail || logtoUser?.customData?.recoveryEmail?.toLowerCase() || null,
+    });
+  } catch (err) {
+    console.error('GET /api/admin/account:', err.message);
+    res.status(502).json({ error: 'Unable to look up account.' });
+  }
+});
 
 app.get('/api/admin/audit', requireAdmin, async (_req, res) => {
   try {

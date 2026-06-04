@@ -218,12 +218,28 @@ async function deleteUser(email) {
   return true;
 }
 
+async function listUsers() {
+  if (!isConfigured()) return [];
+
+  const all = [];
+  for (let page = 1; page <= 50; page += 1) {
+    const query = new URLSearchParams({ page: String(page), page_size: '100' });
+    const users = await managementRequest('GET', `/api/users?${query.toString()}`);
+    if (!Array.isArray(users) || users.length === 0) break;
+    all.push(...users);
+    if (users.length < 100) break;
+  }
+
+  return all;
+}
+
 module.exports = {
   isConfigured,
   createUser,
   deleteUser,
   findUserByEmail,
   getUserByEmail,
+  listUsers,
   findPrimaryEmailByRecoveryEmail,
   updatePassword,
   createOneTimeToken,
