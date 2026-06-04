@@ -4,6 +4,18 @@
 		@apply w-full min-w-0;
 	}
 
+	.z-mail-view .z-compose__back-btn {
+		@apply inline-flex cursor-pointer items-center justify-center rounded-md p-1.5 text-fg-muted transition-colors hover:text-fg hover:bg-surface-sunken focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent;
+	}
+
+	.z-mail-view .z-compose__back-btn svg {
+		opacity: 0.6;
+	}
+
+	.z-mail-view .z-compose__title {
+		@apply text-base font-semibold text-fg;
+	}
+
 	.z-mail-view .z-compose__form {
 		display: flex;
 		flex: 1;
@@ -82,10 +94,8 @@
 	.z-mail-view .z-compose__signature-input {
 		display: block;
 		width: 100%;
-		min-height: 4rem;
-		max-height: 8rem;
-		overflow-y: auto;
-		resize: vertical;
+		overflow: hidden;
+		resize: none;
 		background: transparent;
 		border: none;
 		margin: 0;

@@ -15,6 +15,7 @@
 		inputElement?: HTMLTextAreaElement | null;
 		autofocus?: boolean;
 		oninput?: (value: string) => void;
+		onfocus?: () => void;
 		onblur?: (event: FocusEvent) => void;
 	}
 
@@ -29,6 +30,7 @@
 		inputElement = $bindable(null),
 		autofocus = false,
 		oninput,
+		onfocus,
 		onblur
 	}: Props = $props();
 
@@ -98,7 +100,10 @@
 		aria-invalid={invalid || undefined}
 		aria-describedby={ariaDescribedby}
 		value={value}
-		onfocus={() => (open = true)}
+		onfocus={() => {
+			open = true;
+			onfocus?.();
+		}}
 		onblur={(e) => {
 			setTimeout(() => (open = false), 120);
 			onblur?.(e);

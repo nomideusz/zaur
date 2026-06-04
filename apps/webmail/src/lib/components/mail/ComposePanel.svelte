@@ -114,6 +114,7 @@
 	});
 
 	let sendAttempted = $state(false);
+	let recipientFocused = $state(false);
 
 	const invalidRecipients = $derived([
 		...invalidAddressParts(compose.to),
@@ -243,7 +244,6 @@
 		goto(mailHomeHref);
 	}
 
-	const leaveLabel = $derived(compose.isComposeEmpty ? 'Close' : 'Save draft');
 
 	function openFilePicker() {
 		fileInput?.click();
@@ -299,12 +299,11 @@
 			<div class="flex flex-wrap items-center justify-between gap-4 min-w-0">
 				<!-- Left: Close & Title -->
 				<div class="flex items-center gap-3 min-w-0">
-					<Button type="button" variant="ghost" class="shrink-0" onclick={() => void saveDraftAndClose()}>
+					<button type="button" class="z-compose__back-btn shrink-0" aria-label="Save draft and go back" onclick={() => void saveDraftAndClose()}>
 						<ArrowLeft class="size-4" aria-hidden="true" />
-						{leaveLabel}
-					</Button>
+					</button>
 					<div class="flex items-baseline gap-2 min-w-0">
-						<h1 class="z-type-pane-title truncate">{composeTitle}</h1>
+						<h1 class="z-compose__title truncate">{composeTitle}</h1>
 						{#if draftStatus}
 							<span class="text-xs text-fg-subtle shrink-0" aria-live="polite">({draftStatus.toLowerCase()})</span>
 						{/if}
@@ -333,7 +332,7 @@
 				</div>
 			</div>
 
-			{#if !settings.hideComposeHints && sendBlockedReason && compose.to.trim()}
+			{#if !settings.hideComposeHints && sendBlockedReason && compose.to.trim() && !recipientFocused}
 				<div class="text-xs text-danger" role="status">
 					{sendBlockedReason}
 				</div>
@@ -365,6 +364,8 @@
 								compose.to = value;
 								sendAttempted = false;
 							}}
+							onfocus={() => (recipientFocused = true)}
+							onblur={() => (recipientFocused = false)}
 						/>
 						{#if settings.showCcBccInCompose && !compose.showCcBcc}
 							<button
@@ -394,6 +395,8 @@
 									compose.cc = value;
 									sendAttempted = false;
 								}}
+								onfocus={() => (recipientFocused = true)}
+								onblur={() => (recipientFocused = false)}
 							/>
 						</div>
 					</div>
@@ -411,6 +414,8 @@
 									compose.bcc = value;
 									sendAttempted = false;
 								}}
+								onfocus={() => (recipientFocused = true)}
+								onblur={() => (recipientFocused = false)}
 							/>
 						</div>
 					</div>
@@ -464,7 +469,6 @@
 				id="compose-body"
 				bind:this={bodyInput}
 				class="z-compose__body min-h-0 flex-1 resize-none"
-				placeholder="Write your message…"
 				value={messageBody}
 				oninput={(event) => setMessageBody(event.currentTarget.value)}
 				onkeydown={onBodyKeydown}
@@ -478,7 +482,7 @@
 						<textarea
 							id="compose-signature"
 							class="z-compose__signature-input"
-							rows={Math.max(3, (signatureBody || configuredSignature).split('\n').length)}
+							rows={Math.max(2, (signatureBody || configuredSignature).split('\n').length + 1)}
 							value={signatureBody || configuredSignature}
 							oninput={(event) => setSignatureBody(event.currentTarget.value)}
 						></textarea>

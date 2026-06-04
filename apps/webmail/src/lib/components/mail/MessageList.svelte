@@ -776,19 +776,23 @@
 	aria-label="{mailboxName} messages"
 >
 	{#if mailboxRouteId || !sectionMode}
-		<header
-			class="z-mail-list-pane-header flex h-12 shrink-0 items-center overflow-hidden border-b border-border/80 px-4"
-		>
-			{#if showBulkBar && mailboxRouteId}
+		{#if showBulkBar && mailboxRouteId}
+			<header
+				class="z-mail-list-pane-header flex h-12 shrink-0 items-center overflow-hidden border-b border-border/80 px-4"
+			>
 				<MessageListBulkHeader
 					{mailboxRouteId}
 					{onBulkAction}
 					disabled={loading || !!error || !messages.length}
 				/>
-			{:else}
+			</header>
+		{:else}
+			<header
+				class="z-mail-list-pane-header flex h-12 shrink-0 items-center overflow-hidden border-b border-border/80 px-4 md:hidden"
+			>
 				<h2 class="z-type-pane-title min-w-0 truncate">{mailboxName}</h2>
-			{/if}
-		</header>
+			</header>
+		{/if}
 	{/if}
 
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
