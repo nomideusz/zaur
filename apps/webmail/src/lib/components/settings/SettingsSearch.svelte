@@ -71,7 +71,7 @@
 	<label class="sr-only" for="settings-search">Search settings</label>
 	<div class="z-settings-search-field relative">
 		<Search
-			class="pointer-events-none absolute top-1/2 left-[var(--z-settings-field-pad-x)] size-4 -translate-y-1/2 text-fg-subtle"
+			class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-subtle"
 			aria-hidden="true"
 		/>
 		<input
@@ -79,7 +79,7 @@
 			bind:this={input}
 			type="search"
 			class="z-settings-search-input"
-			placeholder="Search…"
+			placeholder="Search settings…"
 			autocomplete="off"
 			aria-controls={results.length ? resultsId : undefined}
 			oninput={onInput}
@@ -90,7 +90,7 @@
 	{#if results.length}
 		<ul
 			id={resultsId}
-			class="z-overflow-menu absolute top-full z-30 mt-1.5 max-h-72 w-full py-1"
+			class="z-overflow-menu absolute top-full z-30 mt-1.5 max-h-72 w-full py-1 overflow-y-auto"
 			role="listbox"
 			aria-label="Settings search results"
 			onkeydown={onResultsKeydown}

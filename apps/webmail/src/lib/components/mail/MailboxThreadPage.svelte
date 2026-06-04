@@ -59,8 +59,10 @@
 		const client = auth.client;
 		const messageId = $page.url.searchParams.get('messageId');
 		if (!client || auth.isRestoring) return;
+		const mId = mailboxId;
+		const tId = threadId;
 		untrack(() => {
-			void mail.loadMessage(client, mailboxId, threadId, { messageId });
+			void mail.loadMessage(client, mId, tId, { messageId });
 		});
 	});
 </script>

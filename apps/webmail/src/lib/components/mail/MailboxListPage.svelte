@@ -23,8 +23,9 @@
 	$effect(() => {
 		const client = auth.client;
 		if (!client || auth.isRestoring) return;
+		const id = mailboxId;
 		untrack(() => {
-			void mail.loadMessages(client, mailboxId);
+			void mail.loadMessages(client, id);
 		});
 	});
 

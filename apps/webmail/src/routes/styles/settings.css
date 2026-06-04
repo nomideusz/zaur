@@ -38,12 +38,23 @@
 
 	.z-settings-list,
 	.z-settings-stack,
-	.z-settings-section,
 	.z-settings-sublist {
 		display: flex;
 		flex-direction: column;
 		gap: var(--z-settings-stack-gap);
 		width: 100%;
+	}
+
+	.z-settings-section {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		width: 100%;
+		border: 1px solid var(--z-border);
+		border-radius: var(--radius-lg);
+		background-color: var(--z-surface-raised);
+		overflow: hidden;
+		box-shadow: var(--shadow-sm);
 	}
 
 	.z-settings-section.z-settings-section--desktop {
@@ -61,30 +72,54 @@
 	}
 
 	.z-settings-section-heading {
-		margin-bottom: var(--z-space-folder-head-bottom);
+		background-color: var(--z-surface-sunken);
+		padding: 0.875rem 1.25rem;
+		border-bottom: 1px solid var(--z-border);
+		margin-bottom: 0;
 	}
 
 	.z-settings-section-title {
 		margin: 0;
-		font-size: var(--z-main-page-text);
-		font-weight: 600;
+		font-size: 0.75rem;
+		font-weight: 700;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 		line-height: 1.35;
-		color: var(--z-fg);
+		color: var(--z-fg-muted);
+	}
+
+	.z-settings-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		width: 100%;
 	}
 
 	.z-settings-row {
 		display: grid;
 		grid-template-columns: minmax(0, 1fr) auto;
 		align-items: center;
+		padding: 1.25rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--z-border) 40%, transparent);
 		column-gap: var(--z-settings-row-column-gap);
-		row-gap: var(--z-space-folder-list-gap);
+		row-gap: 0.25rem;
+		transition: background-color var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-settings-row:last-child {
+		border-bottom: none;
+	}
+
+	.z-settings-row:hover {
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 20%, transparent);
 	}
 
 	@media (max-width: 767px) {
 		.z-settings-row {
 			grid-template-columns: minmax(0, 1fr);
-			row-gap: var(--z-settings-row-row-gap);
+			row-gap: 0.5rem;
 			align-items: start;
+			padding: 1rem;
 		}
 
 		.z-settings-row-control {
@@ -92,6 +127,7 @@
 			grid-row: auto;
 			justify-content: flex-start;
 			width: 100%;
+			margin-top: 0.25rem;
 		}
 
 		.z-settings-row-control .z-select,
@@ -110,7 +146,7 @@
 		grid-row: 1;
 		margin: 0;
 		font-size: var(--z-main-page-text);
-		font-weight: 400;
+		font-weight: 500;
 		line-height: var(--z-space-folder-message-leading);
 		color: var(--z-fg);
 	}
@@ -149,14 +185,26 @@
 		display: flex;
 		flex-direction: column;
 		gap: var(--z-settings-field-gap);
+		padding: 1.25rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--z-border) 40%, transparent);
+	}
+
+	.z-settings-field:last-child {
+		border-bottom: none;
+	}
+
+	@media (max-width: 767px) {
+		.z-settings-field {
+			padding: 1rem;
+		}
 	}
 
 	.z-settings-field-label {
 		margin: 0;
-		font-size: var(--z-main-page-muted-text);
-		font-weight: 400;
+		font-size: var(--z-main-page-text);
+		font-weight: 500;
 		line-height: var(--z-space-folder-message-leading);
-		color: var(--z-fg-subtle);
+		color: var(--z-fg);
 	}
 
 	.z-settings-field-desc {
@@ -164,6 +212,56 @@
 		font-size: var(--z-main-page-muted-text);
 		line-height: var(--z-space-folder-message-leading);
 		color: var(--z-fg-muted);
+	}
+
+	/* Custom Checkboxes inside settings */
+	.z-settings-view input[type="checkbox"] {
+		appearance: none;
+		-webkit-appearance: none;
+		position: relative;
+		display: inline-block;
+		width: 1.125rem;
+		height: 1.125rem;
+		border: 1px solid var(--z-border-strong);
+		border-radius: 0.25rem;
+		background-color: var(--z-surface-raised);
+		outline: none;
+		cursor: pointer;
+		vertical-align: middle;
+		transition: border-color var(--z-motion-fast) var(--z-ease-standard),
+					background-color var(--z-motion-fast) var(--z-ease-standard),
+					box-shadow var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-settings-view input[type="checkbox"]:hover:not(:disabled) {
+		border-color: var(--z-accent);
+	}
+
+	.z-settings-view input[type="checkbox"]:focus-visible {
+		border-color: var(--z-accent);
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--z-accent) 20%, transparent);
+	}
+
+	.z-settings-view input[type="checkbox"]:checked {
+		background-color: var(--z-accent);
+		border-color: var(--z-accent);
+	}
+
+	.z-settings-view input[type="checkbox"]:checked::after {
+		content: "";
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		width: 0.5rem;
+		height: 0.3125rem;
+		border-left: 2px solid var(--z-surface-raised);
+		border-bottom: 2px solid var(--z-surface-raised);
+		transform: translate(-50%, -60%) rotate(-45deg);
+	}
+
+	.z-settings-view input[type="checkbox"]:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
 	}
 
 	.z-settings-field-body {
@@ -233,32 +331,36 @@
 	}
 
 	.z-settings-search-field {
-		border: 1px solid var(--z-border);
+		position: relative;
+		display: flex;
+		align-items: center;
+		width: 100%;
+		height: 2.25rem;
+		border: 1px solid var(--z-border-strong);
 		border-radius: var(--radius-md);
-		background-color: var(--z-surface-raised);
-		padding-inline: var(--z-settings-field-pad-x);
-		padding-block: var(--z-settings-field-pad-y);
-		transition:
-			border-color var(--z-motion-fast) var(--z-ease-standard),
-			box-shadow var(--z-motion-fast) var(--z-ease-standard);
+		background-color: var(--z-surface-sunken);
+		padding-inline: 0.75rem;
+		transition: border-color var(--z-motion-fast) var(--z-ease-standard),
+					background-color var(--z-motion-fast) var(--z-ease-standard),
+					box-shadow var(--z-motion-fast) var(--z-ease-standard);
 	}
 
 	.z-settings-search-field:focus-within {
+		background-color: var(--z-surface-raised);
 		border-color: var(--z-accent);
 		box-shadow: 0 0 0 1px var(--z-accent);
 	}
 
 	.z-settings-search-input {
 		width: 100%;
+		height: 100%;
 		border: none;
-		border-radius: 0;
 		background: transparent;
-		padding: 0 0 0 1.75rem;
-		font-size: var(--z-main-page-text);
-		line-height: var(--z-space-folder-message-leading);
+		padding: 0 0 0 1.5rem;
+		font-size: 0.875rem;
 		color: var(--z-fg);
-		box-shadow: none;
 		outline: none;
+		box-shadow: none;
 	}
 
 	.z-settings-search-field .z-settings-search-input:focus {
@@ -350,4 +452,14 @@
 	.z-settings-shortcut-grid dd,
 	.z-settings-shortcut-keys {
 		text-align: right;
+	}
+
+	.z-settings-stack {
+		gap: 1.5rem;
+	}
+
+	@media (max-width: 767px) {
+		.z-settings-stack {
+			gap: 1rem;
+		}
 	}

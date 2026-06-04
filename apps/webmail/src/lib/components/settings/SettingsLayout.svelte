@@ -38,12 +38,15 @@
 <div class="z-settings-page {settingsRootClass} flex h-full w-full flex-row overflow-hidden bg-surface">
 	<!-- Settings Sidebar Navigation (Desktop only) -->
 	<aside
-		class="z-mail-pane-surface hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden border-r border-border md:flex"
+		class="z-mail-pane-surface hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-visible border-r border-border z-10 md:flex"
 		style="view-transition-name: settings-sidebar;"
 		aria-label="Settings navigation"
 	>
 		<div class="shrink-0 border-b border-border/80 px-4 py-3">
 			<h2 class="z-type-label">Settings</h2>
+		</div>
+		<div class="px-3 pt-3 pb-2 shrink-0">
+			<SettingsSearch />
 		</div>
 
 		<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto p-2.5">
@@ -79,7 +82,7 @@
 	<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 		<!-- Mobile Header Navigation (Mobile only) -->
 		<header
-			class="z-mail-text-nav z-mail-text-nav--settings z-settings-sticky-nav shrink-0 border-b border-border/60 px-4 py-2.5 md:hidden"
+			class="z-mail-text-nav z-mail-text-nav--settings z-settings-sticky-nav shrink-0 border-b border-border/60 px-4 pt-2.5 pb-2 md:hidden"
 			aria-label="Mobile settings navigation"
 		>
 			<div class="z-mail-text-nav__row z-settings-nav-bar flex items-center justify-between gap-4">
@@ -98,17 +101,17 @@
 					{/each}
 				</nav>
 			</div>
+			<!-- Search settings input in sticky header -->
+			<div class="mt-2.5">
+				<SettingsSearch />
+			</div>
 		</header>
 
 		<!-- Scrollable settings body -->
 		<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 			<div class={cn(settingsShellClass(), 'flex flex-col')}>
 				<div class="z-settings-content">
-					<!-- Search field shown at the top of content on both desktop and mobile -->
-					<div class="z-mail-text-nav__search z-settings-nav-bar__search mt-0 mb-6">
-						<SettingsSearch />
-					</div>
-					<div class="z-settings-body pt-0">
+					<div class="z-settings-body pt-3 md:pt-0">
 						{@render children()}
 					</div>
 				</div>

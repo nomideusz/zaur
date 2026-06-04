@@ -66,6 +66,17 @@
 		}
 	}
 
+	@media (min-width: 118rem) {
+		.z-mail-view .z-mail-pane-surface--reader {
+			padding-left: 0;
+		}
+
+		.z-mail-view .z-reader-card {
+			align-self: flex-start;
+			margin-left: calc(50vw - var(--width-sidebar) - var(--width-list) - var(--z-reader-measure) / 2);
+		}
+	}
+
 	.z-mail-view .z-mail-external-banner {
 		@apply flex flex-wrap items-center gap-x-2 gap-y-1 text-fg-muted;
 		margin-bottom: var(--z-space-reader-content);

@@ -20,7 +20,7 @@
 	class="relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-4 backdrop-blur-md"
 	style="view-transition-name: app-header;"
 >
-	<div class="flex shrink-0 items-center gap-3">
+	<div class="flex shrink-0 items-center gap-3 md:w-64">
 		<a
 			href={homeHref}
 			class="text-base text-fg transition-colors hover:opacity-80"
@@ -31,10 +31,12 @@
 	</div>
 
 	<div class="min-w-0 flex-1">
-		<GlobalSearch />
+		{#if !$page.url.pathname.startsWith('/settings')}
+			<GlobalSearch />
+		{/if}
 	</div>
 
-	<div class="flex shrink-0 items-center gap-2">
+	<div class="flex shrink-0 items-center gap-2 md:w-64 md:justify-end">
 		<OfflineIndicator />
 
 		{#if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false}

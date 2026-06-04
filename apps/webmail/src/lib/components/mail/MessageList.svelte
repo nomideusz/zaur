@@ -333,7 +333,7 @@
 		});
 	}
 
-	function handleRowCheckboxClick(messageId: string, event: MouseEvent) {
+	function handleRowCheckboxClick(messageId: string, event: MouseEvent, wasSelected: boolean) {
 		event.preventDefault();
 		event.stopPropagation();
 		const ctrl = event.ctrlKey || event.metaKey;
@@ -345,6 +345,9 @@
 			return;
 		}
 		mail.toggleMessageSelection(messageId);
+		if (wasSelected && event.currentTarget instanceof HTMLElement) {
+			event.currentTarget.blur();
+		}
 	}
 
 	function handleRowLinkClick(messageId: string, event: MouseEvent) {
@@ -819,23 +822,19 @@
 	aria-label="{mailboxName} messages"
 >
 	{#if mailboxRouteId || !sectionMode}
-		{#if showBulkBar && mailboxRouteId}
-			<header
-				class="z-mail-list-pane-header flex h-12 shrink-0 items-center overflow-hidden border-b border-border/80 px-4"
-			>
+		<header
+			class="z-mail-list-pane-header flex h-12 shrink-0 items-center overflow-hidden border-b border-border/80 px-4"
+		>
+			{#if mailboxRouteId}
 				<MessageListBulkHeader
 					{mailboxRouteId}
 					{onBulkAction}
 					disabled={loading || !!error || !messages.length}
 				/>
-			</header>
-		{:else}
-			<header
-				class="z-mail-list-pane-header flex h-12 shrink-0 items-center overflow-hidden border-b border-border/80 px-4 md:hidden"
-			>
+			{:else}
 				<h2 class="z-type-pane-title min-w-0 truncate">{mailboxName}</h2>
-			</header>
-		{/if}
+			{/if}
+		</header>
 	{/if}
 
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
@@ -881,7 +880,7 @@
 							checked={rowSelected}
 							aria-checked={rowSelected}
 							aria-label={`Select ${subjectText}`}
-							onclick={(event) => handleRowCheckboxClick(message.id, event)}
+							onclick={(event) => handleRowCheckboxClick(message.id, event, rowSelected)}
 						/>
 						{#if !rowSelected && (message.hasAttachment || message.replied)}
 							<span class="z-mail-list-row__indicator absolute flex items-center justify-center gap-0.5 text-fg-subtle transition-opacity duration-150 pointer-events-none">
