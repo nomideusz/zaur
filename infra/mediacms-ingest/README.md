@@ -11,9 +11,10 @@ live only on the VPS until migrated here.
 
 | Script | Role |
 |--------|------|
-| `upload.sh` | POST video to MediaCMS; **truncates title to 100 chars**; deletes local files on 201 |
+| `upload.sh` | POST video to MediaCMS; truncates title; **reassigns owner to channel user** |
 | `cleanup.sh` | API retention — keep `KEEP_PER_CHANNEL` (default 10) newest videos per channel |
 | `prune-tmp.sh` | Delete staging files in `/data/state/tmp` older than `PRUNE_DAYS` (default 7) |
+| `reassign-channel-owners.py` | One-off: move existing uploads from `nom` → per-channel users |
 | `crontab` | Full supercronic schedule |
 
 Related: `infra/listenbrainz-ingest/lb-ingest.sh` → audio queue → storage-vps.
@@ -39,6 +40,9 @@ ssh contabo 'cd /srv/mediacms-ingest && docker compose restart ingest'
 ## Manual ops
 
 ```sh
+# Fix existing videos still owned by nom (run on VPS)
+ssh contabo 'docker exec -i mediacms-web-1 python3 -' < infra/mediacms-ingest/reassign-channel-owners.py
+
 # Run MediaCMS retention now
 docker exec mediacms-ingest /scripts/cleanup.sh
 

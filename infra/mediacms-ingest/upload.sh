@@ -2,6 +2,9 @@
 # Uploads one video file (with sidecar .info.json) to MediaCMS via the REST API,
 # tagging it with the channel name so cleanup can find it later. Deletes local
 # files on success.
+#
+# MediaCMS always sets the API token user as owner on POST. We reassign to a
+# per-channel user (username = chan_tag) immediately after upload.
 set -u
 
 file="$1"
@@ -37,6 +40,72 @@ desc_full=$(printf '%s\n\nSource: %s\nChannel: %s\nUploaded: %s' "$description" 
 # Tag with the channel slug so cleanup can group videos. Slugify: lowercase,
 # spaces->dashes, drop non-alnum.
 chan_tag=$(printf '%s' "$uploader" | tr '[:upper:]' '[:lower:]' | tr ' ' '-' | tr -cd 'a-z0-9-')
+if [ -n "$chan_tag" ]; then
+    tags_field="$chan_tag,youtube-mirror"
+else
+    tags_field="youtube-mirror"
+fi
+
+mc_api() {
+    curl -sS --max-time 120 \
+        -H "Authorization: Token $MEDIACMS_TOKEN" \
+        "$@"
+}
+
+ensure_channel_user() {
+    local username="$1"
+    local display_name="$2"
+    local body code
+
+    [ -n "$username" ] || return 1
+
+    body=$(mc_api "${MEDIACMS_URL%/}/api/v1/users/$username")
+    if printf '%s' "$body" | jq -e '.username' >/dev/null 2>&1; then
+        return 0
+    fi
+    if ! printf '%s' "$body" | grep -q 'user does not exist'; then
+        echo "[upload]   warn: user lookup failed for $username: $(printf '%s' "$body" | head -c 120)"
+        return 1
+    fi
+
+    local email="${username}@local.invalid"
+    local password
+    password=$(openssl rand -hex 16)
+    code=$(mc_api -o /dev/null -w "%{http_code}" \
+        -X POST "${MEDIACMS_URL%/}/api/v1/users" \
+        -H "Content-Type: application/json" \
+        -d "$(jq -nc \
+            --arg u "$username" \
+            --arg n "${display_name:-$username}" \
+            --arg e "$email" \
+            --arg p "$password" \
+            '{username:$u,name:$n,email:$e,password:$p}')")
+    if [ "$code" = "201" ]; then
+        echo "[upload]   created channel user $username"
+        return 0
+    fi
+    echo "[upload]   warn: could not create user $username (http=$code)"
+    return 1
+}
+
+assign_channel_owner() {
+    local media_token="$1"
+    local owner="$2"
+    local code body
+
+    [ -n "$media_token" ] && [ -n "$owner" ] || return 1
+
+    body=$(mc_api -X POST "${MEDIACMS_URL%/}/api/v1/media/user/bulk_actions" \
+        -H "Content-Type: application/json" \
+        -d "$(jq -nc --arg t "$media_token" --arg o "$owner" \
+            '{media_ids:[$t],action:"change_owner",owner:$o}')")
+    if printf '%s' "$body" | grep -q 'Owner changed'; then
+        echo "[upload]   owner → $owner"
+        return 0
+    fi
+    echo "[upload]   warn: change_owner failed: $(printf '%s' "$body" | head -c 200)"
+    return 1
+}
 
 echo "[upload] $title  (chan=$chan_tag id=$video_id $(du -h "$file" | awk '{print $1}'))"
 
@@ -52,12 +121,17 @@ http_code=$(curl -sS -o "$resp" -w "%{http_code}" --max-time 1800 \
     -F "media_file=@$clean" \
     -F "title=$title" \
     -F "description=$desc_full" \
-    -F "tags=$chan_tag,youtube-mirror")
+    -F "tags=$tags_field")
 rm -f "$clean"
 
 if [ "$http_code" = "201" ]; then
-    token=$(jq -r '.friendly_token // "?"' "$resp")
-    echo "[upload]   ok  friendly_token=$token"
+    friendly_token=$(jq -r '.friendly_token // ""' "$resp")
+    echo "[upload]   ok  friendly_token=$friendly_token"
+
+    if [ -n "$chan_tag" ] && [ -n "$friendly_token" ]; then
+        ensure_channel_user "$chan_tag" "$uploader" || true
+        assign_channel_owner "$friendly_token" "$chan_tag" || true
+    fi
 
     rm -f "$resp" "$file" "$info" "$thumb" "$base.webp" "$base.png"
     # cleanup empty parent dir (the per-uploader subdir yt-dlp made)
