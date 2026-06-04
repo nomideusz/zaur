@@ -1,3 +1,14 @@
+const { Pool } = require('pg');
+const bcrypt = require('bcryptjs');
+
+const pool = new Pool({
+  host: process.env.PG_HOST || 'srv-captain--auth-db',
+  port: parseInt(process.env.PG_PORT || '5432', 10),
+  database: process.env.PG_DATABASE || 'stalwart_auth',
+  user: process.env.PG_USER || 'postgres',
+  password: process.env.PG_PASSWORD || 'SE3sGjIeN-tl3BHcNBWog4Qx',
+});
+
 const JMAP_CAPABILITIES = [
   'urn:ietf:params:jmap:core',
   'urn:ietf:params:jmap:mail',
@@ -336,12 +347,7 @@ async function createAccount(username, domainId, password) {
             encryptionAtRest: { '@type': 'Disabled' },
             aliases: {},
             memberGroupIds: {},
-            credentials: {
-              "0": {
-                "secret": password,
-                "@type": "Password"
-              }
-            }
+            credentials: {}
           },
         },
       },
@@ -364,11 +370,45 @@ async function createAccount(username, domainId, password) {
   const domain = domains.find((d) => d.id === domainId);
   const email = created.emailAddress || `${username}@${domain?.name || 'unknown'}`;
 
+  // Hash password using bcryptjs and write user credentials directly to PostgreSQL
+  const hash = await bcrypt.hash(password, 10);
+  await pool.query(
+    'INSERT INTO accounts (name, secret, description, type, active) VALUES ($1, $2, $3, $4, $5)',
+    [email, hash, email, 'individual', true]
+  );
+  await pool.query(
+    'INSERT INTO emails (name, address) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+    [email, email]
+  );
+
   return { email, accountId: created.id };
 }
 
 async function deleteAccount(accountId) {
   if (!accountId) return false;
+
+  // Resolve email address from metadata before deleting account
+  let email = null;
+  try {
+    const { body: getBody } = await jmapRequest([
+      [
+        'x:Account/get',
+        {
+          ids: [accountId],
+          properties: ['name', 'domainId', 'emailAddress'],
+        },
+        'getAccount',
+      ],
+    ]);
+    const account = getMethodResponse(getBody, 'getAccount')?.list?.[0];
+    if (account) {
+      const domains = await listDomains();
+      const domain = domains.find((d) => d.id === account.domainId);
+      email = account.emailAddress || `${account.name}@${domain?.name || 'unknown'}`;
+    }
+  } catch (err) {
+    console.error('Failed to resolve account email for DB deletion:', err.message);
+  }
 
   const { body } = await jmapRequest([
     [
@@ -384,6 +424,12 @@ async function deleteAccount(accountId) {
   if (response?.notDestroyed?.[accountId]) {
     throw new Error(extractJmapError(response));
   }
+
+  if (email) {
+    // Delete user from PostgreSQL (cascades to emails and group_members)
+    await pool.query('DELETE FROM accounts WHERE name = $1', [email]);
+  }
+
   return response?.destroyed?.includes(accountId) ?? false;
 }
 
@@ -434,29 +480,25 @@ async function changePassword(email, password) {
     throw new Error('Account not found in Stalwart.');
   }
 
-  const { body } = await jmapRequest([
-    [
-      'x:Account/set',
-      {
-        update: {
-          [account.id]: {
-            credentials: {
-              "0": {
-                "secret": password,
-                "@type": "Password"
-              }
-            }
-          }
-        }
-      },
-      'changePassword',
-    ],
-  ]);
+  // Update the secret directly in PostgreSQL database using bcryptjs
+  const hash = await bcrypt.hash(password, 10);
+  const res = await pool.query(
+    'UPDATE accounts SET secret = $1 WHERE name = $2',
+    [hash, email]
+  );
 
-  const response = getMethodResponse(body, 'changePassword');
-  if (response?.notUpdated?.[account.id]) {
-    throw new Error(extractJmapError(response));
+  if (res.rowCount === 0) {
+    // If user exists in Stalwart but not in DB, insert them
+    await pool.query(
+      'INSERT INTO accounts (name, secret, description, type, active) VALUES ($1, $2, $3, $4, $5)',
+      [email, hash, email, 'individual', true]
+    );
+    await pool.query(
+      'INSERT INTO emails (name, address) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+      [email, email]
+    );
   }
+
   return true;
 }
 
