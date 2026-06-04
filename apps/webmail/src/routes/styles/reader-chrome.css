@@ -34,6 +34,19 @@
 		@apply flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden;
 	}
 
+	.z-mail-view .z-reader-surface {
+		width: 100%;
+		max-width: var(--z-reader-measure);
+		min-width: 0;
+		font-size: var(--z-reader-text);
+		border-inline-end: 1px solid color-mix(in srgb, var(--z-border) 45%, transparent);
+		@apply bg-surface;
+	}
+
+	.z-mail-view .z-mail-pane-surface:has(.z-reader-surface) {
+		@apply bg-surface-sunken/30;
+	}
+
 	.z-mail-view .z-mail-external-banner {
 		@apply flex flex-wrap items-center gap-x-2 gap-y-1 text-fg-muted;
 		margin-bottom: var(--z-space-reader-content);

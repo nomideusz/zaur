@@ -9,7 +9,7 @@ export function isNewMessage(message: Pick<MessagePreview, 'unread'>): boolean {
 export const LABEL_CLEAR_NEW = 'Not new';
 
 /** Restores New — pairs with {@link LABEL_CLEAR_NEW}. */
-export const LABEL_RESTORE_NEW = 'Unsee';
+export const LABEL_RESTORE_NEW = 'Mark as unread';
 
 /** Pin for follow-up — clears New when the message is still New. */
 export const LABEL_MARK_IMPORTANT = 'Important';

@@ -3,12 +3,7 @@
 	import { page } from '$app/stores';
 	import { tick } from 'svelte';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
-	import Pencil from '$lib/components/icons/Pencil.svelte';
-	import Reply from '$lib/components/icons/Reply.svelte';
-	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
-	import Send from '$lib/components/icons/Send.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
 	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
@@ -17,17 +12,14 @@
 	import { readerPrimaryContact, shouldShowContactEmail } from '$lib/mail/reader-contact';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
-	import { compose } from '$lib/stores/compose.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
-	import { toast } from '$lib/stores/toast.svelte';
 	import { renderMessageBody } from '$lib/email/html';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
 	import { shouldPresentImportantColors } from '$lib/mail/mailboxes';
-	import { LABEL_RESTORE_NEW } from '$lib/mail/new-mail';
 	import { formatMessageListWhen } from '$lib/utils/dates';
 	import { createImportantRainbowTouchPick } from '$lib/mail/important-rainbow-touch';
-	import { mailListBackHref, mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
+	import { mailListBackHref } from '$lib/mail/routes';
 	import { hasPreciseHover } from '$lib/utils/pointer-env';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
@@ -62,16 +54,11 @@
 			)
 	);
 	const subjectMessageId = $derived(subjectAnchorId ?? '');
-	const isDraft = $derived(mailboxRouteId === 'drafts');
 	const listHref = $derived.by(() => {
 		const returnTo = $page.url.searchParams.get('returnTo');
 		if (returnTo?.startsWith('/mail/search')) return returnTo;
 		return mailListBackHref(mailboxRouteId);
 	});
-	const primaryReplyLabel = $derived(
-		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
-	);
-
 	const allowExternal = $derived(
 		!settings.blockExternalContent || (pane?.showImagesOnce ?? localShowImagesOnce)
 	);
@@ -138,54 +125,8 @@
 		else localShowImagesOnce = true;
 	}
 
-	function reply() {
-		if (!latest) return;
-		compose.startReply(latest);
-		goto('/mail/compose?mode=reply');
-	}
-
-	function replyAll() {
-		if (!latest || !auth.username) return;
-		compose.startReplyAll(latest, thread, auth.username);
-		goto('/mail/compose?mode=reply-all');
-	}
-
-	function primaryReply() {
-		if (settings.defaultReplyMode === 'reply-all') replyAll();
-		else reply();
-	}
-
-	async function sendDraft() {
-		if (!auth.client || !auth.username || !latest) return;
-
-		compose.openDraft(latest);
-		const senderName = settings.resolvedDisplayName(auth.displayName ?? auth.username);
-		const destination = mailListHref(INBOX_MAILBOX_ROUTE_ID);
-		const result = await compose.send(auth.client, auth.username, senderName, {
-			onUndo: () => goto(`/mail/compose?draft=${latest.id}`),
-			onComplete: (outcome) => {
-				if (outcome === 'sent') goto(destination);
-				else if (outcome === 'queued') goto(settings.preferredMailHref());
-			}
-		});
-		if (result === 'pending' || result === 'sent') goto(destination);
-		else if (result === 'queued') goto(settings.preferredMailHref());
-		else if (result === false) goto(`/mail/compose?draft=${latest.id}`);
-	}
-
 	function composeTo(email: string) {
 		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
-	}
-
-	async function triageUnsee() {
-		if (!auth.client || !actionMessage || actionMessage.unread) return;
-		onBackToList?.();
-		try {
-			await mail.markMessageNew(auth.client, actionMessage);
-		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Could not mark as unread';
-			toast.show(message, 'error');
-		}
 	}
 
 	function shouldPersistReaderRainbowPick(event: PointerEvent): boolean {
@@ -224,61 +165,19 @@
 	class="z-mail-pane-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
 	style="view-transition-name: message-reader;"
 >
-	<header class="flex shrink-0 flex-col gap-2 border-b border-border/80 px-4 py-2.5">
-		<div class="flex min-w-0 flex-wrap items-center justify-between gap-2">
-			<div class="flex min-w-0 flex-wrap items-center gap-2">
-				<a
-					href={listHref}
-					class="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted no-underline transition-colors hover:text-fg"
-				>
-					<ArrowLeft class="size-4 shrink-0" aria-hidden="true" />
-					<span>Back</span>
-				</a>
-				{#if actionMessage && !actionMessage.unread}
-					<button
-						type="button"
-						class="text-sm font-medium text-fg-muted transition-colors hover:text-fg"
-						onclick={() => void triageUnsee()}
-					>
-						{LABEL_RESTORE_NEW}
-					</button>
-				{/if}
-			</div>
-			{#if !mail.hasSelection && latest}
-				<div class="flex shrink-0 flex-wrap items-center gap-2">
-					{#if isDraft}
-						<Button variant="ghost" href="/mail/compose?draft={latest.id}">
-							<Pencil class="size-4" aria-hidden="true" />
-							Edit draft
-						</Button>
-						<Button onclick={() => void sendDraft()}>
-							<Send class="size-4" aria-hidden="true" />
-							Send
-						</Button>
-					{:else}
-						<Button onclick={primaryReply}>
-							{#if settings.defaultReplyMode === 'reply-all'}
-								<ReplyAll class="size-4" aria-hidden="true" />
-							{:else}
-								<Reply class="size-4" aria-hidden="true" />
-							{/if}
-							{primaryReplyLabel}
-						</Button>
-					{/if}
-					<MessageThreadActions
-						{thread}
-						{mailboxRouteId}
-						{onMoved}
-						header
-						primaryReplyMode={settings.defaultReplyMode}
-					/>
-				</div>
-			{/if}
-		</div>
+	<div class="z-reader-surface flex min-h-0 w-full max-w-(--z-reader-measure) flex-1 flex-col overflow-hidden">
+	<header class="z-reader-header flex shrink-0 items-center gap-2 border-b border-border/80 px-4 py-2.5 min-w-0">
+		<a
+			href={listHref}
+			class="z-btn-icon min-h-10 min-w-10 shrink-0 p-2.5 text-fg-muted no-underline transition-colors hover:text-fg md:hidden"
+			aria-label="Back to list"
+		>
+			<ArrowLeft class="size-5" aria-hidden="true" />
+		</a>
 		<h1
 			bind:this={readerSubjectEl}
 			class={cn(
-				'truncate text-base font-semibold text-fg',
+				'min-w-0 flex-1 truncate text-base font-semibold text-fg',
 				subjectImportant && 'z-mail-list-subject--important',
 				subjectImportant &&
 					subjectMessageId &&
@@ -301,6 +200,9 @@
 		>
 			{subject}
 		</h1>
+		{#if !mail.hasSelection && latest}
+			<MessageThreadActions {thread} {mailboxRouteId} {onMoved} {onBackToList} />
+		{/if}
 	</header>
 
 	{#if mail.selectedError}
@@ -417,6 +319,7 @@
 				</section>
 			{/each}
 		</div>
+	</div>
 	</div>
 
 </article>

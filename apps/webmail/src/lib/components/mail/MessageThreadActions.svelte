@@ -3,10 +3,13 @@
 	import { page } from '$app/stores';
 	import Forward from '$lib/components/icons/Forward.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
+	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
+	import Send from '$lib/components/icons/Send.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
@@ -17,6 +20,7 @@
 		LABEL_NOT_IMPORTANT,
 		LABEL_RESTORE_NEW
 	} from '$lib/mail/new-mail';
+	import { INBOX_MAILBOX_ROUTE_ID, mailListHref } from '$lib/mail/routes';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { canMarkImportantFromMailboxRole } from '$lib/mail/mailboxes';
@@ -32,19 +36,11 @@
 		thread: MessageDetail[];
 		mailboxRouteId: string;
 		onMoved?: () => void;
-		/** Text-nav overflow trigger for the reader header row. */
-		header?: boolean;
-		/** Reply mode promoted on the nav row — omit its duplicate from the menu. */
-		primaryReplyMode?: 'reply' | 'reply-all';
+		/** Navigate to the list after marking unread (Important triage). */
+		onBackToList?: () => void;
 	}
 
-	let {
-		thread,
-		mailboxRouteId,
-		onMoved,
-		header = false,
-		primaryReplyMode = 'reply'
-	}: Props = $props();
+	let { thread, mailboxRouteId, onMoved, onBackToList }: Props = $props();
 
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
 
@@ -66,6 +62,8 @@
 			}).blockedExternal
 		)
 	);
+	const primaryReplyMode = $derived(settings.defaultReplyMode);
+	const primaryReplyLabel = $derived(primaryReplyMode === 'reply-all' ? 'Reply all' : 'Reply');
 	const showReplyInMenu = $derived(primaryReplyMode !== 'reply');
 	const showReplyAllInMenu = $derived(primaryReplyMode !== 'reply-all');
 
@@ -98,6 +96,29 @@
 		goto('/mail/compose?mode=forward');
 	}
 
+	function primaryReply() {
+		if (primaryReplyMode === 'reply-all') replyAll();
+		else reply();
+	}
+
+	async function sendDraft() {
+		if (!auth.client || !auth.username || !latest) return;
+
+		compose.openDraft(latest);
+		const senderName = settings.resolvedDisplayName(auth.displayName ?? auth.username);
+		const destination = mailListHref(INBOX_MAILBOX_ROUTE_ID);
+		const result = await compose.send(auth.client, auth.username, senderName, {
+			onUndo: () => goto(`/mail/compose?draft=${latest.id}`),
+			onComplete: (outcome) => {
+				if (outcome === 'sent') goto(destination);
+				else if (outcome === 'queued') goto(settings.preferredMailHref());
+			}
+		});
+		if (result === 'pending' || result === 'sent') goto(destination);
+		else if (result === 'queued') goto(settings.preferredMailHref());
+		else if (result === false) goto(`/mail/compose?draft=${latest.id}`);
+	}
+
 	function deleteMessage() {
 		if (!actionMessage) return;
 		const permanent = currentMailbox?.role === 'trash';
@@ -127,12 +148,13 @@
 		}
 	}
 
-	async function markNew() {
+	async function markUnread() {
 		if (!auth.client || !actionMessage || actionMessage.unread) return;
+		onBackToList?.();
 		try {
 			await mail.markMessageNew(auth.client, actionMessage);
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Could not mark as new';
+			const message = error instanceof Error ? error.message : 'Could not mark as unread';
 			toast.show(message, 'error');
 		}
 	}
@@ -167,86 +189,108 @@
 </script>
 
 {#if latest}
-	<OverflowMenu
-		label="More message actions"
-		menuId="reader-header-actions-menu"
-		placement={header ? 'bottom' : 'auto'}
-		triggerText={header ? 'More' : ''}
-		textTrigger={header}
-		triggerClass={header ? 'z-mail-text-nav__link' : ''}
-		menuClass={header ? 'z-overflow-menu--list' : ''}
-	>
+	<div class="z-reader-toolbar flex shrink-0 items-center gap-1">
 		{#if isDraft}
-			{#if actionMessage?.important}
-				<OverflowMenuItem label="Unmark important" onclick={toggleImportant}>
-					{#snippet icon()}
-						<Important class="size-5 text-accent" aria-hidden="true" />
-					{/snippet}
-				</OverflowMenuItem>
-			{:else if canMarkImportant}
-				<OverflowMenuItem label="Mark important" onclick={toggleImportant}>
-					{#snippet icon()}<Important class="size-5" aria-hidden="true" />{/snippet}
-				</OverflowMenuItem>
-			{/if}
-			{#if auth.client}
-				<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
-			{/if}
-			<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-			<OverflowMenuItem label={deleteLabel} danger onclick={deleteMessage}>
-				{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
-			</OverflowMenuItem>
+			<Button variant="ghost" class="hidden sm:inline-flex" href="/mail/compose?draft={latest.id}">
+				<Pencil class="size-4" aria-hidden="true" />
+				Edit
+			</Button>
+			<Button onclick={() => void sendDraft()}>
+				<Send class="size-4" aria-hidden="true" />
+				Send
+			</Button>
 		{:else}
-			{#if showReplyInMenu}
-				<OverflowMenuItem label="Reply" onclick={reply}>
-					{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
-				</OverflowMenuItem>
-			{/if}
-			{#if showReplyAllInMenu}
-				<OverflowMenuItem label="Reply all" onclick={replyAll}>
-					{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
-				</OverflowMenuItem>
-			{/if}
-			<OverflowMenuItem label="Forward" onclick={forward}>
-				{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
-			</OverflowMenuItem>
-			{#if actionMessage?.unread}
-				<OverflowMenuItem label={LABEL_CLEAR_NEW} onclick={fileAsNotImportant} />
-			{/if}
-			<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-			{#if actionMessage?.important}
-				<OverflowMenuItem label={LABEL_NOT_IMPORTANT} onclick={fileAsNotImportant}>
-					{#snippet icon()}
-						<Important class="size-5 text-accent" aria-hidden="true" />
-					{/snippet}
-				</OverflowMenuItem>
-			{:else if canMarkImportant}
-				<OverflowMenuItem label={LABEL_MARK_IMPORTANT} onclick={toggleImportant}>
-					{#snippet icon()}<Important class="size-5" aria-hidden="true" />{/snippet}
-				</OverflowMenuItem>
-			{/if}
-			{#if auth.client && !isDraft && mailboxRouteId !== 'trash'}
-				{#if currentMailbox?.role === 'junk'}
-					<OverflowMenuItem label="Not spam" onclick={toggleSpam}>
-						{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
+			<Button onclick={primaryReply}>
+				{#if primaryReplyMode === 'reply-all'}
+					<ReplyAll class="size-4" aria-hidden="true" />
 				{:else}
-					<OverflowMenuItem label="Mark Spam" onclick={toggleSpam}>
+					<Reply class="size-4" aria-hidden="true" />
+				{/if}
+				{primaryReplyLabel}
+			</Button>
+		{/if}
+
+		<OverflowMenu label="Message actions" menuId="reader-actions-menu" placement="bottom">
+			{#if isDraft}
+				<OverflowMenuItem
+					label="Edit draft"
+					onclick={() => goto(`/mail/compose?draft=${latest.id}`)}
+				>
+					{#snippet icon()}<Pencil class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+				{#if actionMessage?.important}
+					<OverflowMenuItem label="Unmark important" onclick={toggleImportant}>
+						{#snippet icon()}
+							<Important class="size-5 text-accent" aria-hidden="true" />
+						{/snippet}
+					</OverflowMenuItem>
+				{:else if canMarkImportant}
+					<OverflowMenuItem label="Mark important" onclick={toggleImportant}>
+						{#snippet icon()}<Important class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+				{/if}
+				{#if auth.client}
+					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
+				{/if}
+				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
+				<OverflowMenuItem label={deleteLabel} danger onclick={deleteMessage}>
+					{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+			{:else}
+				{#if showReplyInMenu}
+					<OverflowMenuItem label="Reply" onclick={reply}>
+						{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+				{/if}
+				{#if showReplyAllInMenu}
+					<OverflowMenuItem label="Reply all" onclick={replyAll}>
+						{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+				{/if}
+				<OverflowMenuItem label="Forward" onclick={forward}>
+					{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+				{#if actionMessage?.unread}
+					<OverflowMenuItem label={LABEL_CLEAR_NEW} onclick={fileAsNotImportant} />
+				{:else if actionMessage}
+					<OverflowMenuItem label={LABEL_RESTORE_NEW} onclick={() => void markUnread()} />
+				{/if}
+				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
+				{#if actionMessage?.important}
+					<OverflowMenuItem label={LABEL_NOT_IMPORTANT} onclick={fileAsNotImportant}>
+						{#snippet icon()}
+							<Important class="size-5 text-accent" aria-hidden="true" />
+						{/snippet}
+					</OverflowMenuItem>
+				{:else if canMarkImportant}
+					<OverflowMenuItem label={LABEL_MARK_IMPORTANT} onclick={toggleImportant}>
+						{#snippet icon()}<Important class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+				{/if}
+				{#if auth.client && mailboxRouteId !== 'trash'}
+					{#if currentMailbox?.role === 'junk'}
+						<OverflowMenuItem label="Not spam" onclick={toggleSpam}>
+							{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}
+						</OverflowMenuItem>
+					{:else}
+						<OverflowMenuItem label="Mark spam" onclick={toggleSpam}>
+							{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}
+						</OverflowMenuItem>
+					{/if}
+				{/if}
+				{#if auth.client}
+					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
+				{/if}
+				{#if hasBlockedExternal && !allowExternal}
+					<OverflowMenuItem label="Show external images" onclick={showImagesOnce}>
 						{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}
 					</OverflowMenuItem>
 				{/if}
-			{/if}
-			{#if auth.client}
-				<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
-			{/if}
-			{#if hasBlockedExternal && !allowExternal}
-				<OverflowMenuItem label="Show external images" onclick={showImagesOnce}>
-					{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}
+				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
+				<OverflowMenuItem label={deleteLabel} danger onclick={deleteMessage}>
+					{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
 				</OverflowMenuItem>
 			{/if}
-			<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-			<OverflowMenuItem label={deleteLabel} danger onclick={deleteMessage}>
-				{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
-			</OverflowMenuItem>
-		{/if}
-	</OverflowMenu>
+		</OverflowMenu>
+	</div>
 {/if}

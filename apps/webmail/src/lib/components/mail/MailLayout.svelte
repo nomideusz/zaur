@@ -18,10 +18,8 @@
 	<section
 		class={cn(
 			'flex min-h-0 min-w-0 flex-col overflow-hidden',
-			isThreadOpen
-				? 'hidden md:flex md:w-(--width-list) md:max-w-(--width-list) md:flex-none'
-				: 'flex flex-1',
-			isThreadOpen && 'md:border-r md:border-border'
+			isThreadOpen ? 'hidden md:flex' : 'flex flex-1',
+			'md:w-(--width-list) md:max-w-(--width-list) md:flex-none md:border-r md:border-border'
 		)}
 		aria-label="Message list"
 	>
