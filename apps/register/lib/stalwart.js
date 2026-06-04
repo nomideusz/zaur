@@ -150,6 +150,49 @@ async function listDomains(forceRefresh = false) {
   return domains;
 }
 
+let cachedLdapDirectoryId = null;
+
+async function getLdapDirectoryId() {
+  if (cachedLdapDirectoryId) return cachedLdapDirectoryId;
+
+  const { body } = await jmapRequest([['x:Directory/query', {}, 'directoryQuery']]);
+  const query = getMethodResponse(body, 'directoryQuery');
+  if (!query?.ids?.length) return null;
+
+  const { body: getBody } = await jmapRequest([
+    ['x:Directory/get', { ids: query.ids }, 'directoryGet'],
+  ]);
+  const getResponse = getMethodResponse(getBody, 'directoryGet');
+  const directories = getResponse?.list || [];
+  const list = Array.isArray(directories) ? directories : Object.values(directories);
+  const ldap = list.find((entry) => entry['@type'] === 'Ldap');
+  cachedLdapDirectoryId = ldap?.id || null;
+  return cachedLdapDirectoryId;
+}
+
+async function ensureDomainPasswordDirectory(domainId) {
+  const ldapDirectoryId = await getLdapDirectoryId();
+  if (!ldapDirectoryId) return false;
+
+  const { body: domainGetBody } = await jmapRequest([['x:Domain/get', { ids: [domainId] }, 'domainGet']]);
+  const getResponse = getMethodResponse(domainGetBody, 'domainGet');
+  const domain = getResponse?.list?.[0];
+  if (!domain) return false;
+  // Keep an explicit LLDAP directory on each domain so password auth never
+  // inherits the Logto OIDC default from Authentication.
+  if (domain.directoryId === ldapDirectoryId) return true;
+
+  const { body: setBody } = await jmapRequest([
+    ['x:Domain/set', { update: { [domainId]: { directoryId: ldapDirectoryId } } }, 'domainSet'],
+  ]);
+  const setResponse = getMethodResponse(setBody, 'domainSet');
+  if (setResponse?.notUpdated?.[domainId]) {
+    throw new Error(extractJmapError(setResponse));
+  }
+
+  domainCache.expiresAt = 0;
+  return true;
+}
 
 async function isUsernameAvailable(username, domainId) {
   const { body } = await jmapRequest([
@@ -275,6 +318,7 @@ async function findAccountByEmail(email) {
 }
 
 async function createAccount(username, domainId) {
+  await ensureDomainPasswordDirectory(domainId);
 
   const config = getConfig();
 

@@ -218,34 +218,6 @@ async function deleteUser(email) {
   return true;
 }
 
-async function listUsers() {
-  const allUsers = [];
-  for (let page = 1; page <= 50; page += 1) {
-    const query = new URLSearchParams({ page: String(page), page_size: '50' });
-    const users = await managementRequest('GET', `/api/users?${query.toString()}`);
-    if (!Array.isArray(users) || users.length === 0) break;
-    allUsers.push(...users);
-    if (users.length < 50) break;
-  }
-  return allUsers
-    .filter((user) => user.primaryEmail || user.id)
-    .map((user) => ({
-      id: user.id,
-      username: user.username || user.id,
-      email: (user.primaryEmail || '').toLowerCase(),
-      enabled: !user.isSuspended,
-    }));
-}
-
-async function findUserIdByEmail(email) {
-  const user = await findUserByEmail(email);
-  return user?.id || null;
-}
-
-async function changePassword(email, password) {
-  return updatePassword(email, password);
-}
-
 module.exports = {
   isConfigured,
   createUser,
@@ -254,9 +226,6 @@ module.exports = {
   getUserByEmail,
   findPrimaryEmailByRecoveryEmail,
   updatePassword,
-  changePassword,
-  listUsers,
-  findUserIdByEmail,
   createOneTimeToken,
   createPasskeySetupToken,
   verifyOneTimeToken,
