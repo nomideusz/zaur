@@ -161,35 +161,51 @@ async function listDomains(forceRefresh = false) {
   return domains;
 }
 
-let cachedLdapDirectoryId = null;
+let cachedPostgresDirectoryId = null;
 
-async function getLdapDirectoryId() {
-  if (cachedLdapDirectoryId) return cachedLdapDirectoryId;
+async function getPostgresDirectoryId() {
+  if (process.env.STALWART_PG_DIRECTORY_ID) {
+    return process.env.STALWART_PG_DIRECTORY_ID;
+  }
+
+  if (cachedPostgresDirectoryId) return cachedPostgresDirectoryId;
 
   const { body } = await jmapRequest([['x:Directory/query', {}, 'directoryQuery']]);
   const query = getMethodResponse(body, 'directoryQuery');
   if (!query?.ids?.length) return null;
 
   const { body: getBody } = await jmapRequest([
-    ['x:Directory/get', { ids: query.ids }, 'directoryGet'],
+    ['x:Directory/get', { ids: query.ids, properties: ['id', 'description', 'type'] }, 'directoryGet'],
   ]);
   const getResponse = getMethodResponse(getBody, 'directoryGet');
   const directories = getResponse?.list || [];
   const list = Array.isArray(directories) ? directories : Object.values(directories);
-  const ldap = list.find((entry) => entry['@type'] === 'Ldap');
-  cachedLdapDirectoryId = ldap?.id || null;
-  return cachedLdapDirectoryId;
+  const sql = list.find(
+    (entry) =>
+      entry.type === 'Sql' ||
+      entry['@type'] === 'Sql' ||
+      /postgres/i.test(entry.description || ''),
+  );
+  cachedPostgresDirectoryId = sql?.id || null;
+  return cachedPostgresDirectoryId;
 }
 
-async function ensureDomainInternalDirectory(domainId) {
-  const { body: domainGetBody } = await jmapRequest([['x:Domain/get', { ids: [domainId] }, 'domainGet']]);
+async function ensureDomainPostgresDirectory(domainId) {
+  const postgresDirectoryId = await getPostgresDirectoryId();
+  if (!postgresDirectoryId) {
+    throw new Error('PostgreSQL auth directory is not configured in Stalwart.');
+  }
+
+  const { body: domainGetBody } = await jmapRequest([
+    ['x:Domain/get', { ids: [domainId], properties: ['directoryId'] }, 'domainGet'],
+  ]);
   const getResponse = getMethodResponse(domainGetBody, 'domainGet');
   const domain = getResponse?.list?.[0];
   if (!domain) return false;
-  if (domain.directoryId === null) return true;
+  if (domain.directoryId === postgresDirectoryId) return true;
 
   const { body: setBody } = await jmapRequest([
-    ['x:Domain/set', { update: { [domainId]: { directoryId: null } } }, 'domainSet'],
+    ['x:Domain/set', { update: { [domainId]: { directoryId: postgresDirectoryId } } }, 'domainSet'],
   ]);
   const setResponse = getMethodResponse(setBody, 'domainSet');
   if (setResponse?.notUpdated?.[domainId]) {
@@ -363,7 +379,7 @@ async function findAccountByEmail(email) {
 }
 
 async function createAccount(username, domainId, password) {
-  await ensureDomainInternalDirectory(domainId);
+  await ensureDomainPostgresDirectory(domainId);
 
   const config = getConfig();
 
