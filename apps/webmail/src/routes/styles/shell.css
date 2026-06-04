@@ -27,11 +27,17 @@
 		border-radius: 0.125rem;
 	}
 
-	.z-app-shell-header__mail-head {
-		display: flex;
-		min-width: 0;
-		flex-direction: column;
-		gap: 0.0625rem;
+	.z-app-shell-header__home-mark {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		min-width: 1.25rem;
+		font-size: 1.125rem;
+		font-weight: 800;
+		line-height: 1;
+		letter-spacing: -0.03em;
+		color: var(--z-accent);
+		text-transform: lowercase;
 	}
 
 	.z-app-shell-header__mail-title {
@@ -43,10 +49,7 @@
 	}
 
 	.z-app-shell-header__mail-meta {
-		margin: 0;
-		font-size: 0.75rem;
 		font-weight: 400;
-		line-height: 1.25;
 		color: var(--z-fg-muted);
 	}
 

@@ -67,7 +67,7 @@
 		aria-label="Inbox"
 		onclick={handleMobileInboxHome}
 	>
-		<span class="font-extrabold tracking-tight text-accent lowercase">{appConfig.brandName}</span>
+		<span class="z-app-shell-header__home-mark">{appConfig.brandName.slice(0, 1).toLowerCase()}</span>
 	</a>
 
 	{#if showMobileBulkHeader && mailCtx?.mailboxRouteId}
@@ -87,12 +87,9 @@
 			)}
 		>
 			{#if showMobileMailboxTitle && mailCtx}
-				<div class="z-app-shell-header__mail-head min-w-0 flex-1 md:hidden">
-					<p class="z-app-shell-header__mail-title truncate">{mailCtx.mailboxName}</p>
-					{#if mailCtx.countLabel}
-						<p class="z-app-shell-header__mail-meta truncate">{mailCtx.countLabel}</p>
-					{/if}
-				</div>
+				<p class="z-app-shell-header__mail-title min-w-0 flex-1 truncate md:hidden">
+					{mailCtx.mailboxName}{#if mailCtx.countLabel}<span class="z-app-shell-header__mail-meta"> · {mailCtx.countLabel}</span>{/if}
+				</p>
 			{/if}
 
 			<div
