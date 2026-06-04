@@ -92,7 +92,7 @@
 		rows={1}
 		style="height: 1.55em; overflow: hidden;"
 		placeholder={placeholder}
-		autocomplete={autocomplete}
+		autocomplete={autocomplete as any}
 		aria-invalid={invalid || undefined}
 		aria-describedby={ariaDescribedby}
 		value={value}
@@ -110,7 +110,7 @@
 
 	{#if showSuggestions}
 		<ul
-			class="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-lg border border-border bg-surface-raised py-1.5 shadow-md"
+			class="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-md border border-border bg-surface-raised py-1.5 shadow-md"
 			role="listbox"
 		>
 			{#each suggestions as contact, index (contact.email)}

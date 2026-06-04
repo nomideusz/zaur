@@ -184,7 +184,7 @@ class AuthStore {
 			let credential;
 			try {
 				credential = await startAuthentication({
-					optionsJSON: optionsPayload.authenticationOptions as Parameters<
+					optionsJSON: optionsPayload.authenticationOptions as unknown as Parameters<
 						typeof startAuthentication
 					>[0]['optionsJSON']
 				});
@@ -262,7 +262,7 @@ class AuthStore {
 			let credential;
 			try {
 				credential = await startRegistration({
-					optionsJSON: optionsPayload.registrationOptions as Parameters<
+					optionsJSON: optionsPayload.registrationOptions as unknown as Parameters<
 						typeof startRegistration
 					>[0]['optionsJSON']
 				});

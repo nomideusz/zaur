@@ -118,7 +118,7 @@ export function readImportantRainbowPhase(subjectEl: HTMLElement): number | null
 }
 
 function hasRainbowAnimation(subjectEl: HTMLElement): boolean {
-	return subjectEl.getAnimations().some((anim) => anim.animationName === RAINBOW_ANIMATION_NAME);
+	return subjectEl.getAnimations().some((anim) => (anim as CSSAnimation).animationName === RAINBOW_ANIMATION_NAME);
 }
 
 /** Re-bind CSS animation after a prior WAAPI cancel() left the element without one. */
@@ -139,7 +139,7 @@ function clearInlineBackgroundPosition(subjectEl: HTMLElement) {
 /** Fallback when computed style does not expose the interpolated position (matches ease-in-out alternate). */
 function readPhaseFromAnimation(subjectEl: HTMLElement, basePhase: number): number | null {
 	for (const anim of subjectEl.getAnimations()) {
-		if (anim.animationName !== RAINBOW_ANIMATION_NAME) continue;
+		if ((anim as CSSAnimation).animationName !== RAINBOW_ANIMATION_NAME) continue;
 		const time = anim.currentTime;
 		if (time === null) continue;
 
@@ -255,7 +255,7 @@ class ImportantRainbowStore {
 		clearInlineBackgroundPosition(subjectEl);
 
 		for (const anim of subjectEl.getAnimations()) {
-			if (anim.animationName !== RAINBOW_ANIMATION_NAME) continue;
+			if ((anim as CSSAnimation).animationName !== RAINBOW_ANIMATION_NAME) continue;
 			anim.currentTime = 0;
 		}
 	}

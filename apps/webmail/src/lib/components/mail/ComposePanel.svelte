@@ -435,7 +435,7 @@
 			</ul>
 		{/if}
 
-		<div class="z-compose__write flex min-h-0 flex-1 flex-col px-4 py-3">
+		<div class="z-compose__write flex min-h-0 flex-1 flex-col px-4" style="padding-block: var(--z-space-reader-content-compact);">
 			<label class="sr-only" for="compose-body">Message</label>
 			<textarea
 				id="compose-body"

@@ -14,6 +14,7 @@
 		ariaDescribedby?: string;
 		children: Snippet;
 		onclick?: (e: MouseEvent) => void;
+		form?: string;
 	}
 
 	let {
@@ -25,7 +26,8 @@
 		title,
 		ariaDescribedby,
 		children,
-		onclick
+		onclick,
+		form
 	}: Props = $props();
 
 	const classes = $derived(
@@ -45,7 +47,7 @@
 		{@render children()}
 	</a>
 {:else}
-	<button {type} class={classes} {disabled} {title} aria-describedby={ariaDescribedby} {onclick}>
+	<button {type} class={classes} {disabled} {title} aria-describedby={ariaDescribedby} {onclick} {form}>
 		{@render children()}
 	</button>
 {/if}

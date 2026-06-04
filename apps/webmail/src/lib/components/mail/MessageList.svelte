@@ -37,7 +37,7 @@
 	import type { Mailbox, MessagePreview } from '$lib/types/mail';
 	import { mailThreadHref } from '$lib/mail/routes';
 	import { mailboxKindOrderForMailbox } from '$lib/mail/mailboxes';
-	import { formatMessageListWhen } from '$lib/utils/dates';
+	import { formatMessageListWhen, simpleMessageDayKey } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';

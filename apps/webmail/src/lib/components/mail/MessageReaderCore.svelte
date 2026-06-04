@@ -177,7 +177,7 @@
 		<h1
 			bind:this={readerSubjectEl}
 			class={cn(
-				'min-w-0 flex-1 truncate text-base font-semibold text-fg',
+				'z-type-reader-title min-w-0 flex-1 truncate',
 				subjectImportant && 'z-mail-list-subject--important',
 				subjectImportant &&
 					subjectMessageId &&
@@ -221,14 +221,14 @@
 		bind:this={scrollPane}
 	>
 		{#if hasBlockedExternal && !allowExternal}
-			<div class="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-border/80 px-4 py-2 text-xs text-fg-muted">
+			<div class="z-mail-external-banner border-b border-border/80 px-4 py-2 text-xs">
 				<Shield class="size-3.5 shrink-0" aria-hidden="true" />
 				<span>External images blocked.</span>
-				<button type="button" class="font-medium text-fg hover:underline" onclick={showImagesOnce}>
+				<button type="button" class="z-mail-external-banner__action" onclick={showImagesOnce}>
 					Show once
 				</button>
-				<span aria-hidden="true">·</span>
-				<a href="/settings/appearance" class="font-medium text-fg hover:underline">Settings</a>
+				<span class="z-mail-external-banner__dot" aria-hidden="true">·</span>
+				<a href="/settings/appearance" class="z-mail-external-banner__action">Settings</a>
 			</div>
 		{/if}
 
@@ -245,28 +245,28 @@
 					)}
 				>
 					{#if thread.length === 1 || isExpanded(message)}
-						<div class="px-4 py-4">
-							<div class="flex items-start justify-between gap-3">
-								<div class="min-w-0 flex-1">
-									<p class="truncate text-sm font-semibold text-fg">{contact.displayName}</p>
+						<div class="px-4" style="padding-block: var(--z-space-reader-content);">
+							<div class="z-reader-chrome__meta">
+								<div class="z-reader-chrome__from">
+									<p class="z-reader-from truncate">{contact.displayName}</p>
 									{#if showContactEmail}
 										{#if !contact.isMe}
 											<button
 												type="button"
-												class="mt-0.5 block max-w-full truncate text-left text-xs text-fg-muted hover:text-fg"
+												class="z-reader-meta mt-0.5 block max-w-full truncate text-left hover:text-fg"
 												onclick={() => composeTo(contact.email)}
 											>
 												{contact.email}
 											</button>
 										{:else}
-											<p class="mt-0.5 truncate text-xs text-fg-muted">{contact.email}</p>
+											<p class="z-reader-meta mt-0.5 truncate">{contact.email}</p>
 										{/if}
 									{/if}
 								</div>
 								{#if thread.length > 1}
 									<button
 										type="button"
-										class="shrink-0 text-right text-xs text-fg-subtle hover:text-fg"
+										class="z-reader-chrome__time shrink-0 text-right hover:text-fg"
 										onclick={() => toggleMessage(message)}
 									>
 										<time datetime={message.receivedAt}>
@@ -274,13 +274,13 @@
 										</time>
 									</button>
 								{:else}
-									<time class="shrink-0 text-xs tabular-nums text-fg-subtle" datetime={message.receivedAt}>
+									<time class="z-reader-chrome__time shrink-0 tabular-nums" datetime={message.receivedAt}>
 										{formatMessageListWhen(message.receivedAt, true, settings.timeFormat)}
 									</time>
 								{/if}
 							</div>
 
-							<div class="z-reader-body mt-4 text-sm leading-relaxed text-fg">
+							<div class="z-reader-body mt-4">
 								<MessageBody
 									bodyHtml={message.bodyHtml}
 									bodyText={message.bodyText}
@@ -298,7 +298,8 @@
 					{:else}
 						<button
 							type="button"
-							class="z-reader-thread-toggle flex w-full px-4 py-3 text-left transition-colors hover:bg-surface-sunken/60"
+							class="z-reader-thread-toggle flex w-full px-4 text-left transition-colors hover:bg-surface-sunken/60"
+							style="padding-block: var(--z-space-reader-content-compact);"
 							aria-expanded={false}
 							aria-label={`Expand message from ${contact.displayName}`}
 							onclick={() => toggleMessage(message)}
