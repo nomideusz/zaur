@@ -825,16 +825,59 @@
 	 * System font, full Unicode; light/dark via --important-rainbow-* tokens.
 	 */
 	:root {
-		--important-rainbow-s: 78%;
-		--important-rainbow-l: 50%;
+		--important-rainbow-l: 0.48;
+		--important-rainbow-c: 0.17;
 		--important-rainbow-band: var(--z-content-max-width);
 		/* Hover sweep distance (rem) — keep in sync with RAINBOW_PHASE_SPAN_REM in important-rainbow.svelte.ts */
 		--important-rainbow-travel: 12;
 	}
 
 	.dark {
-		--important-rainbow-s: 84%;
-		--important-rainbow-l: 74%;
+		--important-rainbow-l: 0.80;
+		--important-rainbow-c: 0.15;
+	}
+
+	.z-mail-list-row-left-controls {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		flex-shrink: 0;
+	}
+
+	.z-mail-list-row__star {
+		outline: none;
+		border: none;
+		background: transparent;
+		padding: 0;
+		color: var(--z-fg-subtle);
+		opacity: 0.3;
+		cursor: pointer;
+		transition: opacity var(--z-motion-fast) var(--z-ease-standard),
+					transform var(--z-motion-fast) var(--z-ease-standard),
+					color var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-mail-list-row__star:hover {
+		opacity: 1;
+		transform: scale(1.1);
+	}
+
+	.z-mail-list-row__star--active {
+		--_star-h: calc(var(--important-hue, 0deg) - (var(--important-phase-offset, 0) / 44) * 360deg);
+		color: oklch(var(--important-rainbow-l) var(--important-rainbow-c) var(--_star-h)) !important;
+		fill: oklch(var(--important-rainbow-l) var(--important-rainbow-c) var(--_star-h)) !important;
+		opacity: 1 !important;
+	}
+
+	.z-mail-list-row-palette {
+		opacity: 0;
+		cursor: pointer;
+		transition: opacity var(--z-motion-fast) var(--z-ease-standard),
+					color var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-mail-list-row:hover .z-mail-list-row-palette {
+		opacity: 1;
 	}
 
 	.z-mail-list-subject--important {
@@ -843,10 +886,10 @@
 		text-decoration-thickness: 1px;
 		text-decoration-color: color-mix(in srgb, var(--z-fg) 35%, transparent);
 		transition: text-decoration-color 150ms var(--z-ease-standard, ease);
-		color: hsl(
-			calc(var(--important-hue, 0deg) + 300deg),
-			var(--important-rainbow-s),
-			var(--important-rainbow-l)
+		color: oklch(
+			var(--important-rainbow-l),
+			var(--important-rainbow-c),
+			calc(var(--important-hue, 0deg) + 300deg)
 		);
 	}
 
@@ -874,15 +917,15 @@
 			min-width: 0;
 			background-image: linear-gradient(
 				90deg,
-				hsl(calc(var(--_h) + 0deg), var(--important-rainbow-s), var(--important-rainbow-l)) 0%,
-				hsl(calc(var(--_h) + 40deg), var(--important-rainbow-s), var(--important-rainbow-l)) 12%,
-				hsl(calc(var(--_h) + 80deg), var(--important-rainbow-s), var(--important-rainbow-l)) 24%,
-				hsl(calc(var(--_h) + 130deg), var(--important-rainbow-s), var(--important-rainbow-l)) 36%,
-				hsl(calc(var(--_h) + 180deg), var(--important-rainbow-s), var(--important-rainbow-l)) 48%,
-				hsl(calc(var(--_h) + 220deg), var(--important-rainbow-s), var(--important-rainbow-l)) 60%,
-				hsl(calc(var(--_h) + 260deg), var(--important-rainbow-s), var(--important-rainbow-l)) 72%,
-				hsl(calc(var(--_h) + 300deg), var(--important-rainbow-s), var(--important-rainbow-l)) 84%,
-				hsl(calc(var(--_h) + 340deg), var(--important-rainbow-s), var(--important-rainbow-l)) 100%
+				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 0deg)) 0%,
+				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 40deg)) 12%,
+				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 80deg)) 24%,
+				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 130deg)) 36%,
+				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 180deg)) 48%,
+				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 220deg)) 60%,
+				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 260deg)) 72%,
+				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 300deg)) 84%,
+				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 340deg)) 100%
 			);
 			background-repeat: no-repeat;
 			background-size: var(--important-rainbow-band) 100%;

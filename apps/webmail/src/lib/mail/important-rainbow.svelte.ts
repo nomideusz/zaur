@@ -187,7 +187,8 @@ class ImportantRainbowStore {
 	}
 
 	cssVars(messageId: string): string {
-		const hue = defaultHue(messageId);
+		const picked = this.hasPicked(messageId);
+		const hue = picked ? 0 : defaultHue(messageId);
 		const phase = this.phaseFor(messageId);
 		return `--important-hue: ${hue}deg; --important-phase-offset: ${phase}`;
 	}
@@ -248,7 +249,8 @@ class ImportantRainbowStore {
 	/** Apply phase to the element immediately so unhover never flashes the old base offset. */
 	commitPhaseVisual(subjectEl: HTMLElement, messageId: string, phase: number) {
 		const rounded = clampPhaseOffset(roundPhase(phase));
-		const hue = defaultHue(messageId);
+		const picked = this.hasPicked(messageId);
+		const hue = picked ? 0 : defaultHue(messageId);
 
 		subjectEl.style.setProperty('--important-hue', `${hue}deg`);
 		subjectEl.style.setProperty('--important-phase-offset', String(rounded));
@@ -331,6 +333,23 @@ class ImportantRainbowStore {
 		if (!(subject instanceof HTMLElement)) return;
 
 		this.pickFromElement(subject, messageId);
+	}
+
+	/** Restore the visually saved phase on pointerleave. */
+	resetFromElement(subjectEl: HTMLElement, messageId: string) {
+		if (!browser) return;
+		this.stopHoverSample(messageId);
+		const saved = this.phaseFor(messageId);
+		this.commitPhaseVisual(subjectEl, messageId, saved);
+	}
+
+	/** Restore the visually saved phase on pointerleave from list row. */
+	resetFromRow(row: HTMLElement, messageId: string) {
+		if (!browser) return;
+		const subject = row.querySelector('.z-mail-list-subject--important');
+		if (subject instanceof HTMLElement) {
+			this.resetFromElement(subject, messageId);
+		}
 	}
 }
 
