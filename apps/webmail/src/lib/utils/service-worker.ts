@@ -48,7 +48,8 @@ export async function registerAppServiceWorker(): Promise<ServiceWorkerRegistrat
 
 	try {
 		const registration = await navigator.serviceWorker.register(SW_URL, {
-			scope: SW_SCOPE
+			scope: SW_SCOPE,
+			type: import.meta.env.DEV ? 'module' : 'classic'
 		});
 
 		const active = await waitForActiveWorker(registration);

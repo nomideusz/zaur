@@ -17,6 +17,7 @@ function preview(partial: Partial<MessagePreview> & Pick<MessagePreview, 'id' | 
 		starred: false,
 		important: false,
 		hasAttachment: false,
+		replied: false,
 		...partial
 	};
 }

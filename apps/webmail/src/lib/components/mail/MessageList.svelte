@@ -6,6 +6,7 @@
 	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
+	import Reply from '$lib/components/icons/Reply.svelte';
 	import Palette from '$lib/components/icons/Palette.svelte';
 	import {
 		listSwipeContext,
@@ -51,7 +52,7 @@
 
 	const listRowLinkClass = (current: boolean) =>
 		cn(
-			'z-list-row flex w-full min-w-0 items-start gap-3 px-4 py-2.5 text-left no-underline transition-colors hover:bg-surface-sunken/60',
+			'z-list-row flex w-full min-w-0 items-start gap-3 px-4 py-2.5 text-left no-underline transition-colors',
 			current && 'z-list-row--current'
 		);
 	const listSenderClass = (unread: boolean) =>
@@ -826,14 +827,26 @@
 				data-selected={rowSelected ? 'true' : undefined}
 			>
 				{#if showRowCheckbox}
-					<input
-						type="checkbox"
-						class={cn('z-mail-list-row__checkbox', rowSelected && 'z-mail-list-row__checkbox--on')}
-						checked={rowSelected}
-						aria-checked={rowSelected}
-						aria-label={`Select ${subjectText}`}
-						onclick={(event) => handleRowCheckboxClick(message.id, event)}
-					/>
+					<div class="relative flex items-center justify-center size-5 shrink-0" style="margin-top: 0.875rem;">
+						<input
+							type="checkbox"
+							class={cn('z-mail-list-row__checkbox absolute m-0', rowSelected && 'z-mail-list-row__checkbox--on')}
+							checked={rowSelected}
+							aria-checked={rowSelected}
+							aria-label={`Select ${subjectText}`}
+							onclick={(event) => handleRowCheckboxClick(message.id, event)}
+						/>
+						{#if !rowSelected && (message.hasAttachment || message.replied)}
+							<span class="z-mail-list-row__indicator absolute flex items-center justify-center gap-0.5 text-fg-subtle transition-opacity duration-150 pointer-events-none">
+								{#if message.replied}
+									<Reply class="size-3.5" aria-hidden="true" />
+								{/if}
+								{#if message.hasAttachment}
+									<Paperclip class="size-3.5" aria-hidden="true" />
+								{/if}
+							</span>
+						{/if}
+					</div>
 				{/if}
 				{#snippet rowLink()}
 					<a
@@ -900,8 +913,15 @@
 								<p class={listPreviewClass}>{message.preview}</p>
 							{/if}
 						</div>
-						{#if message.hasAttachment}
-							<Paperclip class="mt-0.5 size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+						{#if !showRowCheckbox && (message.hasAttachment || message.replied)}
+							<div class="flex items-center gap-1 shrink-0 text-fg-subtle">
+								{#if message.replied}
+									<Reply class="mt-0.5 size-4" aria-hidden="true" />
+								{/if}
+								{#if message.hasAttachment}
+									<Paperclip class="mt-0.5 size-4" aria-hidden="true" />
+								{/if}
+							</div>
 						{/if}
 					</a>
 				{/snippet}

@@ -34,6 +34,7 @@ export interface MessagePreview {
 	starred: boolean;
 	important: boolean;
 	hasAttachment: boolean;
+	replied?: boolean;
 }
 
 export interface MessageDetail extends MessagePreview {

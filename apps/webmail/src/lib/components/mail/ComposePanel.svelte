@@ -3,6 +3,7 @@
 	import { onMount, tick } from 'svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import X from '$lib/components/icons/X.svelte';
+	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import ComposeRecipientInput from '$lib/components/mail/ComposeRecipientInput.svelte';
 	import { formatAttachmentSize } from '$lib/attachments/upload';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -104,15 +105,23 @@
 		forward: 'Forward'
 	};
 
-	const composeTitle = $derived(
-		compose.jmapDraftId ? 'Edit draft' : (titles[mode] ?? 'New message')
-	);
+	const composeTitle = $derived(titles[mode] ?? 'New message');
 
 	const draftStatus = $derived.by(() => {
 		if (compose.isSavingDraft) return 'Saving draft…';
 		if (compose.draftSavedAt) return 'Draft saved';
 		return null;
 	});
+
+	let toBlurred = $state(false);
+	let ccBlurred = $state(false);
+	let bccBlurred = $state(false);
+	let sendAttempted = $state(false);
+
+	const showToError = $derived(sendAttempted || toBlurred);
+	const showCcError = $derived(sendAttempted || ccBlurred);
+	const showBccError = $derived(sendAttempted || bccBlurred);
+	const showAnyError = $derived(sendAttempted || toBlurred || ccBlurred || bccBlurred);
 
 	const invalidRecipients = $derived([
 		...invalidAddressParts(compose.to),
@@ -202,6 +211,10 @@
 
 	async function send() {
 		if (!auth.client || !auth.username) return;
+		if (invalidRecipients.length > 0 || !compose.canSend) {
+			sendAttempted = true;
+			return;
+		}
 		if (showSignature && configuredSignature) {
 			rebuildComposeBody(messageBody, signatureBody || configuredSignature);
 		}
@@ -260,7 +273,8 @@
 	}
 
 	function fieldInvalid(field: 'to' | 'cc' | 'bcc'): boolean {
-		return invalidRecipients.length > 0 && invalidAddressParts(compose[field]).length > 0;
+		const showErr = field === 'to' ? showToError : field === 'cc' ? showCcError : showBccError;
+		return showErr && invalidAddressParts(compose[field]).length > 0;
 	}
 
 	let isAddingSignatureInline = $state(false);
@@ -285,46 +299,55 @@
 />
 
 <section
-	class="z-compose z-mail-pane-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+	class="z-mail-pane-surface z-mail-pane-surface--reader flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+	style="view-transition-name: compose-panel;"
 	aria-label="Compose message"
 >
-	<header class="flex shrink-0 flex-col gap-1 border-b border-border/80 px-4 py-2.5">
-		<div class="flex flex-wrap items-center justify-between gap-2">
-			<div class="flex flex-wrap items-center gap-2">
-				<Button type="button" variant="ghost" onclick={() => void saveDraftAndClose()}>
-					{leaveLabel}
-				</Button>
-				{#if !compose.isComposeEmpty}
-					<Button type="button" variant="ghost" onclick={() => void discardAndClose()}>
-						Discard
+	<div class="z-compose z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+		<header class="flex shrink-0 flex-col gap-2 border-b border-border/80 px-4 py-2.5">
+			<div class="flex flex-wrap items-center justify-between gap-4 min-w-0">
+				<!-- Left: Close & Title -->
+				<div class="flex items-center gap-3 min-w-0">
+					<Button type="button" variant="ghost" class="shrink-0" onclick={() => void saveDraftAndClose()}>
+						<ArrowLeft class="size-4" aria-hidden="true" />
+						{leaveLabel}
 					</Button>
-				{/if}
+					<div class="flex items-baseline gap-2 min-w-0">
+						<h1 class="z-type-pane-title truncate">{composeTitle}</h1>
+						{#if draftStatus}
+							<span class="text-xs text-fg-subtle shrink-0" aria-live="polite">({draftStatus.toLowerCase()})</span>
+						{/if}
+					</div>
+				</div>
+
+				<!-- Right: Actions -->
+				<div class="flex items-center gap-2 shrink-0">
+					{#if !compose.isComposeEmpty}
+						<Button type="button" variant="ghost" onclick={() => void discardAndClose()}>
+							Discard
+						</Button>
+					{/if}
+					<Button type="button" variant="ghost" onclick={openFilePicker}>
+						<Paperclip class="size-4" aria-hidden="true" />
+						Attach
+					</Button>
+					<Button
+						type="submit"
+						form="compose-form"
+						disabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
+						title={sendBlockedReason ?? 'Send message'}
+					>
+						{sendLabel}
+					</Button>
+				</div>
 			</div>
-			<div class="flex shrink-0 flex-wrap items-center gap-2">
-				<Button type="button" variant="ghost" onclick={openFilePicker}>
-					<Paperclip class="size-4" aria-hidden="true" />
-					Attach
-				</Button>
-				<Button
-					type="submit"
-					form="compose-form"
-					disabled={!compose.canSend || invalidRecipients.length > 0}
-					title={sendBlockedReason ?? 'Send message'}
-				>
-					{sendLabel}
-				</Button>
-			</div>
-		</div>
-		<h1 class="z-type-pane-title">{composeTitle}</h1>
-		{#if !settings.hideComposeHints && (draftStatus || (sendBlockedReason && compose.to.trim()))}
-			<div class="flex flex-wrap items-center justify-between gap-2 text-xs text-fg-muted">
-				<p aria-live="polite">{draftStatus ?? ''}</p>
-				{#if sendBlockedReason && compose.to.trim()}
-					<p role="status">{sendBlockedReason}</p>
-				{/if}
-			</div>
-		{/if}
-	</header>
+
+			{#if !settings.hideComposeHints && sendBlockedReason && compose.to.trim()}
+				<div class="text-xs text-danger" role="status">
+					{sendBlockedReason}
+				</div>
+			{/if}
+		</header>
 
 	<form
 		id="compose-form"
@@ -346,8 +369,9 @@
 							autocomplete="email"
 							class="z-compose__input"
 							invalid={fieldInvalid('to')}
-							ariaDescribedby={compose.error || invalidRecipients.length ? composeErrorsId : undefined}
+							ariaDescribedby={compose.error || (showAnyError && invalidRecipients.length) ? composeErrorsId : undefined}
 							oninput={(value) => (compose.to = value)}
+							onblur={() => (toBlurred = true)}
 						/>
 						{#if settings.showCcBccInCompose && !compose.showCcBcc}
 							<button
@@ -372,8 +396,9 @@
 								autocomplete="email"
 								class="z-compose__input"
 								invalid={fieldInvalid('cc')}
-								ariaDescribedby={compose.error || invalidRecipients.length ? composeErrorsId : undefined}
+								ariaDescribedby={compose.error || (showAnyError && invalidRecipients.length) ? composeErrorsId : undefined}
 								oninput={(value) => (compose.cc = value)}
+								onblur={() => (ccBlurred = true)}
 							/>
 						</div>
 					</div>
@@ -386,8 +411,9 @@
 								autocomplete="email"
 								class="z-compose__input"
 								invalid={fieldInvalid('bcc')}
-								ariaDescribedby={compose.error || invalidRecipients.length ? composeErrorsId : undefined}
+								ariaDescribedby={compose.error || (showAnyError && invalidRecipients.length) ? composeErrorsId : undefined}
 								oninput={(value) => (compose.bcc = value)}
+								onblur={() => (bccBlurred = true)}
 							/>
 						</div>
 					</div>
@@ -505,10 +531,11 @@
 
 
 
-		{#if compose.error || invalidRecipients.length}
+		{#if compose.error || (showAnyError && invalidRecipients.length)}
 			<p id={composeErrorsId} class="shrink-0 px-4 py-2 text-sm text-danger" role="alert">
 				{compose.error ?? `Check recipient: ${invalidRecipients[0]}`}
 			</p>
 		{/if}
 	</form>
+	</div>
 </section>

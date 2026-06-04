@@ -118,7 +118,8 @@ export function mapEmailPreview(email: JMAPEmail, routeMailboxId: string): Messa
 		unread: !email.keywords?.$seen,
 		starred: !!email.keywords?.$flagged,
 		important: !!email.keywords?.$important,
-		hasAttachment: !!email.hasAttachment
+		hasAttachment: !!email.hasAttachment,
+		replied: !!email.keywords?.$answered
 	};
 }
 

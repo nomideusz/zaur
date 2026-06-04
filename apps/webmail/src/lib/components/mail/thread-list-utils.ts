@@ -44,7 +44,8 @@ export function collapseMessagesByThread(messages: MessagePreview[]): MessagePre
 			unread: group.some((message) => message.unread),
 			important: group.some((message) => message.important),
 			starred: group.some((message) => message.starred),
-			hasAttachment: group.some((message) => message.hasAttachment)
+			hasAttachment: group.some((message) => message.hasAttachment),
+			replied: group.some((message) => message.replied)
 		});
 	}
 

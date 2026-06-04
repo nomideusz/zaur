@@ -57,6 +57,7 @@ class ThemeStore {
 	private applyResolved() {
 		if (!browser) return;
 		document.documentElement.classList.toggle('dark', this.resolved === 'dark');
+		document.documentElement.classList.toggle('light', this.resolved === 'light');
 	}
 
 	private clearLegacyAccentPreference() {

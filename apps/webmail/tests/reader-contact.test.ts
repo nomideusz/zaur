@@ -26,6 +26,7 @@ function message(overrides: Partial<MessageDetail> = {}): MessageDetail {
 		important: false,
 		starred: false,
 		hasAttachment: false,
+		replied: false,
 		...overrides
 	};
 }

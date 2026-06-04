@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
+	import { parseMailContext, mailListHref } from '$lib/mail/routes';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { cn } from '$lib/utils/cn';
 
@@ -23,7 +24,8 @@
 			});
 	});
 
-	const mailboxRouteId = $derived($page.params.mailbox ?? null);
+	const mailCtx = $derived(parseMailContext($page.url.pathname));
+	const currentMailboxRouteId = $derived(mailCtx?.mailboxRouteId ?? null);
 </script>
 
 <aside
@@ -39,8 +41,8 @@
 	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto p-2.5">
 		<ul class="space-y-0.5">
 			{#each primaryItems as item (item.id)}
-				{@const href = `/mail/${item.id}`}
-				{@const isActive = mailboxRouteId === item.id || $page.url.pathname.startsWith(href)}
+				{@const href = mailListHref(item.id)}
+				{@const isActive = currentMailboxRouteId === item.id}
 				{@const badgeCount = item.role === 'drafts' ? item.total : item.unread}
 				<li>
 					<a

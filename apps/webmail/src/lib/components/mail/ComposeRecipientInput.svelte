@@ -15,6 +15,7 @@
 		inputElement?: HTMLTextAreaElement | null;
 		autofocus?: boolean;
 		oninput?: (value: string) => void;
+		onblur?: (event: FocusEvent) => void;
 	}
 
 	let {
@@ -27,7 +28,8 @@
 		ariaDescribedby,
 		inputElement = $bindable(null),
 		autofocus = false,
-		oninput
+		oninput,
+		onblur
 	}: Props = $props();
 
 	let open = $state(false);
@@ -97,7 +99,10 @@
 		aria-describedby={ariaDescribedby}
 		value={value}
 		onfocus={() => (open = true)}
-		onblur={() => setTimeout(() => (open = false), 120)}
+		onblur={(e) => {
+			setTimeout(() => (open = false), 120);
+			onblur?.(e);
+		}}
 		oninput={(e) => {
 			open = true;
 			activeIndex = 0;
@@ -110,7 +115,7 @@
 
 	{#if showSuggestions}
 		<ul
-			class="absolute left-0 right-0 top-full z-20 mt-2 overflow-hidden rounded-md border border-border bg-surface-raised py-1.5 shadow-md"
+			class="absolute left-0 top-full z-20 mt-2 w-full max-w-md overflow-hidden rounded-md border border-border bg-surface-raised py-1.5 shadow-md"
 			role="listbox"
 		>
 			{#each suggestions as contact, index (contact.email)}
@@ -126,7 +131,9 @@
 					>
 						<span class="min-w-0 truncate">
 							<span class="font-medium text-fg">{contact.name}</span>
-							<span class="ml-1 text-fg-muted">{contact.email}</span>
+							{#if contact.name.trim().toLowerCase() !== contact.email.trim().toLowerCase()}
+								<span class="ml-1 text-fg-muted">{contact.email}</span>
+							{/if}
 						</span>
 					</button>
 				</li>

@@ -83,6 +83,7 @@ export const recentThreadSchema: RxJsonSchema<RecentThreadDoc> = {
 		starred: { type: 'boolean' },
 		important: { type: 'boolean' },
 		hasAttachment: { type: 'boolean' },
+		replied: { type: 'boolean' },
 		cachedAt: { type: 'number', minimum: 0, maximum: 9_000_000_000_000, multipleOf: 1 }
 	},
 	required: [

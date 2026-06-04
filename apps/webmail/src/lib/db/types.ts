@@ -50,6 +50,7 @@ export interface RecentThreadDoc {
 	starred: boolean;
 	important?: boolean;
 	hasAttachment: boolean;
+	replied?: boolean;
 	cachedAt: number;
 }
 

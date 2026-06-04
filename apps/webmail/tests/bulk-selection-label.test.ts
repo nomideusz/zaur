@@ -21,6 +21,7 @@ function preview(
 		starred: false,
 		important: false,
 		hasAttachment: false,
+		replied: false,
 		...partial
 	};
 }

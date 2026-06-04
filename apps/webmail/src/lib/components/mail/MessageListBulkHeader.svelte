@@ -133,8 +133,12 @@
 				/>
 			</OverflowMenu>
 		{/if}
-		<IconButton label="Clear selection" onclick={clearSelection}>
-			<X class="size-5" aria-hidden="true" />
+		<IconButton
+			label="Clear selection"
+			class="!min-h-8 !min-w-8 !p-1.5"
+			onclick={clearSelection}
+		>
+			<X class="size-4" aria-hidden="true" />
 		</IconButton>
 	</div>
 </div>

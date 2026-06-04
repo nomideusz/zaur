@@ -24,6 +24,7 @@ function toDoc(accountId: string, message: MessagePreview, cachedAt: number): Re
 		starred: message.starred,
 		important: message.important,
 		hasAttachment: message.hasAttachment,
+		replied: message.replied,
 		cachedAt
 	};
 }
@@ -40,7 +41,8 @@ function toPreview(doc: RecentThreadDoc): MessagePreview {
 		unread: doc.unread,
 		starred: doc.starred,
 		important: doc.important ?? false,
-		hasAttachment: doc.hasAttachment
+		hasAttachment: doc.hasAttachment,
+		replied: doc.replied
 	};
 }
 

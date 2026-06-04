@@ -18,6 +18,7 @@ const message = (overrides: Partial<MessagePreview> = {}): MessagePreview => ({
 	starred: false,
 	important: false,
 	hasAttachment: false,
+	replied: false,
 	...overrides
 });
 

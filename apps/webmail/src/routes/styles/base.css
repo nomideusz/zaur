@@ -13,8 +13,7 @@
 	}
 
 	/* Reserve scrollbar width so short → long pages don't shift layout. */
-	#main-content,
-	:where(.z-pane-scroll) {
+	#main-content {
 		scrollbar-gutter: stable;
 	}
 
