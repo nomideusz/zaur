@@ -102,21 +102,15 @@
 	{/snippet}
 	{#snippet reader()}
 		{#if mail.selectedLoading && thread.length === 0}
-			<div class="z-mail-reader-pane">
-				<MessageReaderSkeleton />
-			</div>
+			<MessageReaderSkeleton />
 		{:else if thread.length}
-			<div class="z-mail-reader-pane">
-				<MessageReader {thread} mailboxRouteId={mailboxId} onMoved={afterMove} onBackToList={backToList} />
-			</div>
+			<MessageReader {thread} mailboxRouteId={mailboxId} onMoved={afterMove} onBackToList={backToList} />
 		{:else}
-			<div class="z-mail-reader-pane">
-				<MessageReaderStatus
-					message={mail.selectedError ?? 'Message not found.'}
-					onBack={backToList}
-					onRetry={retryOpenMessage}
-				/>
-			</div>
+			<MessageReaderStatus
+				message={mail.selectedError ?? 'Message not found.'}
+				onBack={backToList}
+				onRetry={retryOpenMessage}
+			/>
 		{/if}
 	{/snippet}
 </MailPane>

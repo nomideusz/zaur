@@ -66,7 +66,7 @@ export const componentTree = {
 	mail: {
 		MailLayout: ['MailPane → MailLayout'],
 		MailLayoutBody: ['MessageList (sectioned)', 'MessageReader | MessageReaderEmpty'],
-		MessageReader: ['MessageReaderCore', 'minimalChrome'],
+		MessageReader: ['MessageReaderCore'],
 		MessageList: ['sectioned inbox', 'text nav', 'editorial rows', 'bulk select'],
 		MessageReaderCore: ['thread body', 'mobile bar'],
 		ComposePanel: ['ComposeHeader', 'ComposeFields', 'ComposeEditor']

@@ -9,9 +9,9 @@
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
-	import { contentPagePadClass } from '$lib/mail/layout';
 	import { invalidAddressParts } from '$lib/utils/addresses';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
@@ -284,64 +284,58 @@
 	onchange={onFilesSelected}
 />
 
-<section class="z-compose" aria-label="Compose message">
-	<div class={cn(contentPagePadClass(), 'z-compose__page')}>
-		<div class="z-mail-text-nav z-compose__nav">
-			<p class="sr-only">{composeTitle}</p>
-			<div class="z-mail-text-nav__row">
-				<div class="flex min-w-0 shrink-0 items-center gap-2">
-					<button type="button" class="z-mail-text-nav__link" onclick={() => void saveDraftAndClose()}>
-						{leaveLabel}
-					</button>
-					{#if !compose.isComposeEmpty}
-						<button
-							type="button"
-							class="z-mail-text-nav__link text-fg-subtle"
-							onclick={() => void discardAndClose()}
-						>
-							Discard
-						</button>
-					{/if}
-				</div>
-				<div class="z-mail-text-nav__links">
-					<button type="button" class="z-mail-text-nav__link" onclick={openFilePicker}>
-						Attach file
-					</button>
-					<button
-						type="submit"
-						form="compose-form"
-						class="z-mail-text-nav__action z-compose__nav-send"
-						disabled={!compose.canSend || invalidRecipients.length > 0}
-						title={sendBlockedReason ?? 'Send message'}
-					>
-						{sendLabel}
-					</button>
-				</div>
+<section
+	class="z-compose z-mail-pane-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+	aria-label="Compose message"
+>
+	<header class="flex shrink-0 flex-col gap-1 border-b border-border/80 px-4 py-2.5">
+		<div class="flex flex-wrap items-center justify-between gap-2">
+			<div class="flex flex-wrap items-center gap-2">
+				<Button type="button" variant="ghost" onclick={() => void saveDraftAndClose()}>
+					{leaveLabel}
+				</Button>
+				{#if !compose.isComposeEmpty}
+					<Button type="button" variant="ghost" onclick={() => void discardAndClose()}>
+						Discard
+					</Button>
+				{/if}
 			</div>
-			{#if !settings.hideComposeHints}
-				<div class="flex items-center justify-between gap-4 z-compose__draft-status">
-					<p aria-live="polite">
-						{draftStatus ?? ''}
-					</p>
-					{#if sendBlockedReason && compose.to.trim()}
-						<p class="text-fg-subtle" role="status">
-							{sendBlockedReason}
-						</p>
-					{/if}
-				</div>
-			{/if}
+			<div class="flex shrink-0 flex-wrap items-center gap-2">
+				<Button type="button" variant="ghost" onclick={openFilePicker}>
+					<Paperclip class="size-4" aria-hidden="true" />
+					Attach
+				</Button>
+				<Button
+					type="submit"
+					form="compose-form"
+					disabled={!compose.canSend || invalidRecipients.length > 0}
+					title={sendBlockedReason ?? 'Send message'}
+				>
+					{sendLabel}
+				</Button>
+			</div>
 		</div>
+		<h1 class="z-type-pane-title">{composeTitle}</h1>
+		{#if !settings.hideComposeHints && (draftStatus || (sendBlockedReason && compose.to.trim()))}
+			<div class="flex flex-wrap items-center justify-between gap-2 text-xs text-fg-muted">
+				<p aria-live="polite">{draftStatus ?? ''}</p>
+				{#if sendBlockedReason && compose.to.trim()}
+					<p role="status">{sendBlockedReason}</p>
+				{/if}
+			</div>
+		{/if}
+	</header>
 
-		<form
-			id="compose-form"
-			class="z-compose__form"
-			ontouchstart={handleComposeTouchStart}
-			onsubmit={(event) => {
-				event.preventDefault();
-				void send();
-			}}
-		>
-			<div class="z-compose__fields">
+	<form
+		id="compose-form"
+		class="z-compose__form flex min-h-0 flex-1 flex-col overflow-hidden"
+		ontouchstart={handleComposeTouchStart}
+		onsubmit={(event) => {
+			event.preventDefault();
+			void send();
+		}}
+	>
+		<div class="z-compose__fields shrink-0 divide-y divide-border border-b border-border">
 				<div class={cn('z-compose__field', fieldInvalid('to') && 'z-compose__field--invalid')}>
 					<label class="z-compose__label" for="compose-to">To</label>
 					<div class="z-compose__control">
@@ -412,48 +406,47 @@
 				</div>
 			</div>
 
-			{#if compose.attachments.length}
-				<ul class="z-compose-attachment-list" aria-label="Attachments">
-					{#each compose.attachments as attachment (attachment.id)}
-						<li class="z-compose-attachment-item">
-							<div class="flex min-w-0 flex-1 items-center gap-2">
-								<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
-								<span class="z-type-page-muted min-w-0 truncate text-fg font-medium">{attachment.name}</span>
-								<span class="z-type-page-muted shrink-0 text-fg-subtle">
-									({formatAttachmentSize(attachment.size)})
-								</span>
-								{#if attachment.uploading}
-									<span class="z-type-page-muted text-fg-subtle">Uploading…</span>
-								{:else if attachment.uploadError}
-									<span class="z-type-page-muted text-danger">Failed</span>
-								{/if}
-							</div>
-							<button
-								type="button"
-								class="z-icon-tap-target z-icon-tap-target--sm ml-2"
-								aria-label="Remove {attachment.name}"
-								onclick={() => compose.removeAttachment(attachment.id)}
-							>
-								<X class="size-3.5" aria-hidden="true" />
-							</button>
-						</li>
-					{/each}
-				</ul>
-			{/if}
+		{#if compose.attachments.length}
+			<ul class="z-compose-attachment-list shrink-0 border-b border-border" aria-label="Attachments">
+				{#each compose.attachments as attachment (attachment.id)}
+					<li class="z-compose-attachment-item">
+						<div class="flex min-w-0 flex-1 items-center gap-2 text-sm">
+							<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
+							<span class="min-w-0 truncate font-medium text-fg">{attachment.name}</span>
+							<span class="shrink-0 text-xs text-fg-subtle">
+								({formatAttachmentSize(attachment.size)})
+							</span>
+							{#if attachment.uploading}
+								<span class="text-xs text-fg-subtle">Uploading…</span>
+							{:else if attachment.uploadError}
+								<span class="text-xs text-danger">Failed</span>
+							{/if}
+						</div>
+						<button
+							type="button"
+							class="z-icon-tap-target z-icon-tap-target--sm"
+							aria-label="Remove {attachment.name}"
+							onclick={() => compose.removeAttachment(attachment.id)}
+						>
+							<X class="size-3.5" aria-hidden="true" />
+						</button>
+					</li>
+				{/each}
+			</ul>
+		{/if}
 
-			<div class="z-compose__write">
-				<div class="z-compose__message">
-					<label class="sr-only" for="compose-body">Message</label>
-					<textarea
-						id="compose-body"
-						bind:this={bodyInput}
-						class="z-compose__body"
-						value={messageBody}
-						oninput={(event) => setMessageBody(event.currentTarget.value)}
-						onkeydown={onBodyKeydown}
-					></textarea>
-				</div>
-			</div>
+		<div class="z-compose__write flex min-h-0 flex-1 flex-col px-4 py-3">
+			<label class="sr-only" for="compose-body">Message</label>
+			<textarea
+				id="compose-body"
+				bind:this={bodyInput}
+				class="z-compose__body min-h-0 flex-1 resize-none"
+				placeholder="Write your message…"
+				value={messageBody}
+				oninput={(event) => setMessageBody(event.currentTarget.value)}
+				onkeydown={onBodyKeydown}
+			></textarea>
+		</div>
 
 			{#if showSignature}
 				{#if configuredSignature || signatureBody}
@@ -476,31 +469,29 @@
 							placeholder="Write your signature..."
 							bind:value={newSignatureInline}
 						></textarea>
-						<div class="flex gap-4 mt-2">
-							<button type="button" class="z-mail-text-nav__link" onclick={saveSignatureInline}>
-								Save signature
-							</button>
-							<button
+						<div class="mt-2 flex gap-2">
+							<Button type="button" variant="ghost" onclick={saveSignatureInline}>Save signature</Button>
+							<Button
 								type="button"
-								class="z-mail-text-nav__link text-fg-subtle"
+								variant="ghost"
 								onclick={() => (isAddingSignatureInline = false)}
 							>
 								Cancel
-							</button>
+							</Button>
 						</div>
 					</div>
 				{:else if !settings.hideComposeHints}
 					<p class="z-compose__signature-empty">
-						<button
+						<Button
 							type="button"
-							class="z-mail-text-nav__link"
+							variant="ghost"
 							onclick={() => {
 								isAddingSignatureInline = true;
 								newSignatureInline = '';
 							}}
 						>
 							Add a signature
-						</button>
+						</Button>
 					</p>
 				{/if}
 			{/if}
@@ -514,13 +505,10 @@
 
 
 
-			{#if compose.error || invalidRecipients.length}
-				<p id={composeErrorsId} class="z-type-page-muted mt-4 text-danger" role="alert">
-					{compose.error ?? `Check recipient: ${invalidRecipients[0]}`}
-				</p>
-			{/if}
-		</form>
-
-
-	</div>
+		{#if compose.error || invalidRecipients.length}
+			<p id={composeErrorsId} class="shrink-0 px-4 py-2 text-sm text-danger" role="alert">
+				{compose.error ?? `Check recipient: ${invalidRecipients[0]}`}
+			</p>
+		{/if}
+	</form>
 </section>

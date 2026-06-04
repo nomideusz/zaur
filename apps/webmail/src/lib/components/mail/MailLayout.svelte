@@ -13,11 +13,11 @@
 	const isThreadOpen = $derived(!!$page.params.threadId);
 </script>
 
-<div class="flex min-h-0 flex-1 flex-row overflow-hidden">
+<div class="z-mail-layout flex min-h-0 flex-1 flex-row overflow-hidden">
 	<!-- List Pane -->
 	<section
 		class={cn(
-			'z-mail-pane-surface flex min-h-0 min-w-0 flex-col overflow-hidden',
+			'flex min-h-0 min-w-0 flex-col overflow-hidden',
 			isThreadOpen
 				? 'hidden md:flex md:w-(--width-list) md:max-w-(--width-list) md:flex-none'
 				: 'flex flex-1',

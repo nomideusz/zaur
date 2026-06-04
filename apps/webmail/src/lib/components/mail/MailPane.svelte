@@ -67,8 +67,7 @@
 
 <div
 	class={cn(
-		'z-mail-pane flex min-w-0 flex-col',
-		'z-mail-pane--page-scroll w-full',
+		'z-mail-pane flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
 		fullScreenMobile && 'z-mail-pane--mobile-fullscreen',
 		className
 	)}

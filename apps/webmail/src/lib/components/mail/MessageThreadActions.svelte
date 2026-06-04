@@ -196,21 +196,19 @@
 				{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
 			</OverflowMenuItem>
 		{:else}
-			{#if thread.length > 1}
-				{#if showReplyInMenu}
-					<OverflowMenuItem label="Reply" onclick={reply}>
-						{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
-				{/if}
-				{#if showReplyAllInMenu}
-					<OverflowMenuItem label="Reply all" onclick={replyAll}>
-						{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
-				{/if}
-				<OverflowMenuItem label="Forward" onclick={forward}>
-					{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
+			{#if showReplyInMenu}
+				<OverflowMenuItem label="Reply" onclick={reply}>
+					{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
 				</OverflowMenuItem>
 			{/if}
+			{#if showReplyAllInMenu}
+				<OverflowMenuItem label="Reply all" onclick={replyAll}>
+					{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+			{/if}
+			<OverflowMenuItem label="Forward" onclick={forward}>
+				{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
+			</OverflowMenuItem>
 			{#if actionMessage?.unread}
 				<OverflowMenuItem label={LABEL_CLEAR_NEW} onclick={fileAsNotImportant} />
 			{/if}

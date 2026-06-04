@@ -1,58 +1,7 @@
-/* Compose — editorial document layout (scoped under .z-mail-view). */
+/* Compose — standard mail form in the list/reader pane layout. */
 
-	/* Compose — editorial document layout. */
 	.z-mail-view .z-compose {
 		@apply w-full min-w-0;
-	}
-
-	.z-mail-view .z-compose__nav {
-		--z-compose-draft-status-height: calc(var(--z-space-nav-label-top) + 1.55em);
-	}
-
-	.z-mail-view .z-compose__draft-status {
-		@apply text-fg-subtle;
-		min-height: var(--z-compose-draft-status-height);
-		margin-top: var(--z-space-nav-label-top);
-		font-size: var(--z-main-page-muted-text);
-		line-height: 1.55;
-	}
-
-	.z-mail-view .z-compose__nav-send {
-		align-self: center;
-	}
-
-	.z-mail-view .z-compose__page {
-		display: flex;
-		flex-direction: column;
-		gap: 0;
-		min-height: calc(100dvh - 2rem);
-		--z-compose-field-y: 0.625rem;
-		--z-compose-nav-to-form: var(--z-space-folder-sections-gap);
-		--z-compose-header-to-body: 1.25rem;
-		--z-compose-chrome-top: calc(
-			1rem + var(--z-space-nav-top) + var(--z-space-nav-bottom) + 1.6em +
-				var(--z-space-nav-label-top) + 1.55em + var(--z-compose-nav-to-form) + 4.25rem
-		);
-		padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
-	}
-
-	@media (max-width: 767px) {
-	.z-mail-view .z-compose__page {
-			--z-compose-field-y: 0.5625rem;
-			--z-compose-nav-to-form: var(--z-space-folder-sections-gap);
-			--z-compose-header-to-body: 1rem;
-			padding-bottom: calc(1.5rem + max(0px, env(safe-area-inset-bottom, 0px)));
-		}
-	}
-
-	@media (min-width: 768px) {
-	.z-mail-view .z-compose__page {
-			--z-compose-chrome-top: calc(
-				1.5rem + var(--z-space-nav-top) + var(--z-space-nav-bottom) + 1.6em +
-					var(--z-space-nav-label-top) + 1.55em + var(--z-compose-nav-to-form) + 4.25rem
-			);
-			padding-bottom: calc(2rem + env(safe-area-inset-bottom, 0px));
-		}
 	}
 
 	.z-mail-view .z-compose__form {
@@ -60,151 +9,87 @@
 		flex: 1;
 		flex-direction: column;
 		min-height: 0;
-		margin-top: var(--z-compose-nav-to-form);
 	}
 
 	.z-mail-view .z-compose__fields {
 		display: flex;
 		flex-direction: column;
-		gap: 0.75rem;
-		flex-shrink: 0;
 	}
 
 	.z-mail-view .z-compose__field {
-		display: grid;
-		grid-template-columns: 3.25rem minmax(0, 1fr);
-		gap: 0.75rem;
+		display: flex;
+		flex-direction: row;
 		align-items: center;
-		padding-inline: 1rem;
-		padding-block: var(--z-compose-field-y);
-		background-color: var(--z-surface-raised);
-		border: 1px solid var(--z-border);
-		border-radius: var(--radius-md);
-		transition:
-			border-color var(--z-motion-fast) var(--z-ease-standard),
-			background-color var(--z-motion-fast) var(--z-ease-standard),
-			box-shadow var(--z-motion-base) var(--z-ease-standard);
-	}
-
-	@media (min-width: 768px) {
-		.z-mail-view .z-compose__field {
-			padding-inline: 1.5rem;
-		}
-	}
-
-	.z-mail-view .z-compose__field:focus-within {
-		border-color: var(--z-accent);
-		box-shadow: 0 0 0 1px var(--z-accent);
+		gap: 0.75rem;
+		padding: 0.5rem 1rem;
+		background-color: transparent;
+		border: none;
+		border-radius: 0;
 	}
 
 	.z-mail-view .z-compose__field--invalid {
-		border-color: var(--z-danger);
-		background-color: color-mix(in srgb, var(--z-danger) 4%, var(--z-surface-raised));
-	}
-
-	.z-mail-view .z-compose__field--invalid:focus-within {
-		box-shadow: 0 0 0 1px var(--z-danger);
+		background-color: color-mix(in srgb, var(--z-danger) 6%, transparent);
 	}
 
 	.z-mail-view .z-compose__label {
-		@apply shrink-0 text-fg-subtle;
-		font-size: var(--z-main-page-muted-text);
-		line-height: 1.55;
+		@apply w-14 shrink-0 text-sm text-fg-muted;
 	}
 
 	.z-mail-view .z-compose__control {
-		@apply flex min-w-0 items-baseline gap-3;
+		@apply flex min-w-0 flex-1 items-center gap-2;
 	}
 
 	.z-mail-view .z-compose__input,
 	.z-mail-view .z-compose__input.z-compose-field-input {
-		@apply w-full min-w-0 bg-transparent text-fg outline-none;
-		font-size: var(--z-main-page-text);
-		line-height: var(--z-space-folder-message-leading);
+		@apply w-full min-w-0 bg-transparent text-sm text-fg outline-none;
 		border: none;
 		box-shadow: none;
 		padding: 0;
 	}
 
 	.z-mail-view .z-compose__inline-link {
-		@apply shrink-0 text-fg underline underline-offset-2 decoration-fg/30;
-		font-size: 0.9375rem;
-		line-height: 1.55;
-		transition:
-			color var(--z-motion-fast) var(--z-ease-standard),
-			text-decoration-color var(--z-motion-base) var(--z-ease-out);
-	}
-
-	.z-mail-view .z-compose__inline-link:hover {
-		text-decoration-color: color-mix(in srgb, var(--z-fg) 55%, transparent);
+		@apply shrink-0 text-sm font-medium text-accent no-underline hover:underline;
 	}
 
 	.z-mail-view .z-compose__write {
 		display: flex;
 		flex: 1;
 		flex-direction: column;
-		min-height: max(
-			14rem,
-			calc(100dvh - var(--z-compose-chrome-top) - 1.5rem)
-		);
-		margin-top: var(--z-compose-header-to-body);
+		min-height: 0;
 		min-width: 0;
 	}
 
-	.z-mail-view .z-compose__message {
-		display: flex;
-		flex: 1;
-		flex-direction: column;
-		min-height: 0;
-	}
-
 	.z-mail-view .z-compose__body {
-		@apply block w-full flex-1 bg-transparent text-fg outline-none;
-		width: 100%;
-		min-height: 0;
-		height: 100%;
-		overflow-y: auto;
-		resize: none;
+		@apply block w-full min-h-[12rem] flex-1 resize-none bg-transparent text-sm leading-relaxed text-fg outline-none;
 		font-family: var(--z-reader-font);
-		font-size: var(--z-reader-text);
-		line-height: var(--z-reader-leading);
 		border: none;
 		margin: 0;
-		padding-left: calc(1rem + 1px);
-		padding-right: 1rem;
-		padding-block: 0;
+		padding: 0;
 	}
 
-	@media (min-width: 768px) {
+	@media (max-width: 767px) {
 		.z-mail-view .z-compose__body {
-			padding-left: calc(1.5rem + 1px);
-			padding-right: 1.5rem;
+			font-size: 1rem;
 		}
 	}
 
 	.z-mail-view .z-compose__signature {
-		position: sticky;
-		bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-		z-index: 15;
 		flex-shrink: 0;
-		margin-top: 0.75rem;
-		padding-block: 0.75rem;
-		background-color: var(--z-surface);
+		border-top: 1px solid var(--z-border);
+		padding: 0.75rem 1rem;
 	}
 
 	.z-mail-view .z-compose__signature-input {
 		display: block;
 		width: 100%;
-		min-height: 4.5rem;
-		max-height: 10rem;
+		min-height: 4rem;
+		max-height: 8rem;
 		overflow-y: auto;
-		resize: none;
+		resize: vertical;
 		background: transparent;
 		border: none;
 		margin: 0;
-		padding-left: calc(1rem + 1px);
-		padding-right: 1rem;
-		padding-block: 0;
+		padding: 0;
 		outline: none;
 		color: var(--z-fg-muted);
 		font-family: var(--z-reader-font);
@@ -213,61 +98,32 @@
 	}
 
 	.z-mail-view .z-compose__signature-empty {
-		position: sticky;
-		bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-		z-index: 15;
 		flex-shrink: 0;
-		margin-top: 0.75rem;
-		padding-left: calc(1rem + 1px);
-		padding-right: 1rem;
-		padding-block: 0.75rem;
-		background-color: var(--z-surface);
-		font-size: var(--z-main-page-muted-text);
-		line-height: 1.55;
-	}
-
-	@media (min-width: 768px) {
-		.z-mail-view .z-compose__signature-input,
-		.z-mail-view .z-compose__signature-empty {
-			padding-left: calc(1.5rem + 1px);
-			padding-right: 1.5rem;
-		}
-	}
-
-	@media (max-width: 767px) {
-	.z-mail-view .z-compose__body,
-	.z-mail-view .z-compose__signature-input {
-			font-size: 1rem;
-		}
+		border-top: 1px solid var(--z-border);
+		padding: 0.75rem 1rem;
+		font-size: 0.875rem;
+		color: var(--z-fg-muted);
 	}
 
 	.z-mail-view .z-compose__quote {
-		margin-top: 1.25rem;
-		padding-top: 1rem;
-		border-top: 1px solid var(--z-divider);
+		flex-shrink: 0;
+		margin: 0;
+		padding: 0.75rem 1rem;
+		border-top: 1px solid var(--z-border);
 	}
 
 	.z-mail-view .z-compose__quote summary {
-		@apply cursor-pointer text-fg-muted;
-		font-size: 0.9375rem;
-		line-height: 1.55;
+		@apply cursor-pointer text-sm text-fg-muted;
 	}
 
 	.z-mail-view .z-compose__quote pre {
-		@apply mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap text-fg-subtle;
-		font-size: 0.875rem;
-		line-height: 1.6;
+		@apply mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap text-xs text-fg-subtle;
+		line-height: 1.5;
 	}
 
-
-
-	/* Attachment list in compose page using a one-sided stroke indicator */
 	.z-mail-view .z-compose-attachment-list {
 		display: flex;
 		flex-direction: column;
-		gap: 0.5rem;
-		margin-top: 1rem;
-		width: 100%;
 	}
 
 	.z-mail-view .z-compose-attachment-item {
@@ -276,28 +132,10 @@
 		justify-content: space-between;
 		gap: 0.75rem;
 		padding: 0.5rem 1rem;
-		background-color: var(--z-surface-raised);
-		border: 1px solid var(--z-border);
-		border-radius: var(--radius-sm);
-		position: relative;
+		border-bottom: 1px solid var(--z-border);
 		min-width: 0;
 	}
 
-	@media (min-width: 768px) {
-		.z-mail-view .z-compose-attachment-item {
-			padding: 0.5rem 1.5rem;
-		}
-	}
-
-	/* One-sided stroke indicator on the left of each attachment card */
-	.z-mail-view .z-compose-attachment-item::before {
-		content: '';
-		position: absolute;
-		left: 0;
-		top: 0;
-		bottom: 0;
-		width: 3px;
-		background-color: var(--z-accent);
-		border-top-left-radius: var(--radius-sm);
-		border-bottom-left-radius: var(--radius-sm);
+	.z-mail-view .z-compose-attachment-item:last-child {
+		border-bottom: none;
 	}

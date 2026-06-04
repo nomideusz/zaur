@@ -1,6 +1,5 @@
 <script lang="ts">
 	import PenSquare from '$lib/components/icons/PenSquare.svelte';
-	import DinoZaur from '$lib/components/mail/DinoZaur.svelte';
 	import { frameSvg } from '@zaur/sprite';
 	import Button from '$lib/components/ui/Button.svelte';
 
@@ -50,5 +49,4 @@
 			</div>
 		{/if}
 	</div>
-	<DinoZaur />
 </div>

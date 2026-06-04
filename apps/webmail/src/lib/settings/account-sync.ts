@@ -8,6 +8,7 @@ import {
 	type AccountSettingsBlob
 } from '$lib/settings/account-settings-types';
 import { isObsoleteSettingKey } from '$lib/settings/obsolete-keys';
+import { loadSettings, saveSettings } from '../../routes/settings.remote.js';
 
 const PUSH_DEBOUNCE_MS = 1500;
 
@@ -69,15 +70,24 @@ async function pushAccountSettings(options?: { quiet?: boolean }): Promise<boole
 	};
 
 	try {
-		const response = await fetch('/api/settings', {
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({ ...blob, baseUpdatedAt })
-		});
+		const payload = await saveSettings({ blob, baseUpdatedAt });
 
-		if (response.ok) {
-			const payload = (await response.json()) as { updatedAt?: string };
-			markSyncedAt(email, payload.updatedAt ?? updatedAt);
+		if (payload && 'conflict' in payload && payload.conflict) {
+			if (payload.remote?.settings) {
+				markSyncedAt(email, payload.remote.updatedAt);
+				const applied = await pullAccountSettings(email, () => {}, { force: true });
+				if (applied === 'applied') {
+					scheduleAccountSettingsPush();
+				}
+			}
+			if (!options?.quiet) {
+				toast.show('Settings changed elsewhere. Pulled the latest copy and will retry.', 'info');
+			}
+			return false;
+		}
+
+		if (payload && 'updatedAt' in payload) {
+			markSyncedAt(email, payload.updatedAt);
 			void import('$lib/stores/auth.svelte').then(({ auth }) => {
 				if (!auth.client) return;
 				void import('$lib/stores/mail.svelte').then(({ mail }) => {
@@ -87,19 +97,7 @@ async function pushAccountSettings(options?: { quiet?: boolean }): Promise<boole
 			return true;
 		}
 
-		const payload = (await response.json().catch(() => null)) as { error?: string; remote?: AccountSettingsBlob } | null;
-		if (response.status === 409 && payload?.remote?.settings) {
-			markSyncedAt(email, payload.remote.updatedAt);
-			const applied = await pullAccountSettings(email, () => {}, { force: true });
-			if (applied === 'applied') {
-				scheduleAccountSettingsPush();
-			}
-			if (!options?.quiet) {
-				toast.show('Settings changed elsewhere. Pulled the latest copy and will retry.', 'info');
-			}
-			return false;
-		}
-		const message = payload?.error ?? `Could not save settings (${response.status})`;
+		const message = 'Could not save settings';
 		console.warn('Account settings sync failed:', message);
 		if (!options?.quiet && navigator.onLine) {
 			toast.show(message, 'error');
@@ -136,15 +134,7 @@ export async function pullAccountSettings(
 	const normalizedEmail = email.trim().toLowerCase();
 
 	try {
-		const response = await fetch('/api/settings');
-		if (response.status === 401) return 'empty';
-		if (!response.ok) {
-			console.warn('Account settings pull failed:', response.status);
-			return 'unchanged';
-		}
-
-		const payload = (await response.json()) as { settings: AccountSettingsBlob | null };
-		const remote = payload.settings;
+		const remote = await loadSettings();
 		if (!remote?.settings) return 'empty';
 
 		const syncAtKey = accountSettingsSyncAtKey(normalizedEmail);

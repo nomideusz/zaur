@@ -15,4 +15,4 @@
 	} = $props();
 </script>
 
-<MessageReaderCore {thread} {mailboxRouteId} {onMoved} {onBackToList} minimalChrome />
+<MessageReaderCore {thread} {mailboxRouteId} {onMoved} {onBackToList} />

@@ -2,6 +2,7 @@
 	import { untrack } from 'svelte';
 	import MailPane from '$lib/components/mail/MailPane.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
+	import MessageReaderEmpty from '$lib/components/mail/MessageReaderEmpty.svelte';
 	import { mailCountLabel } from '$lib/mail/count-label';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -62,5 +63,7 @@
 			}}
 		/>
 	{/snippet}
-	{#snippet reader()}{/snippet}
+	{#snippet reader()}
+		<MessageReaderEmpty />
+	{/snippet}
 </MailPane>

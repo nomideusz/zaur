@@ -120,36 +120,25 @@
 		min-width: 0;
 		align-items: flex-start;
 		gap: 0.75rem;
-		padding: 0.625rem 0.875rem;
+		padding: 0.5rem 0;
 		text-align: left;
-		font-size: var(--z-reader-text);
+		font-size: 0.875rem;
 		line-height: 1.45;
 		color: var(--z-fg);
-		background-color: var(--z-surface-raised);
-		border: 1px solid var(--z-border);
-		border-radius: var(--radius-sm);
-		position: relative;
+		background-color: transparent;
+		border: none;
+		border-bottom: 1px solid var(--z-border);
+		border-radius: 0;
 		cursor: pointer;
-		transition:
-			background-color var(--z-motion-fast) var(--z-ease-standard),
-			border-color var(--z-motion-fast) var(--z-ease-standard);
+		transition: background-color var(--z-motion-fast) var(--z-ease-standard);
 	}
 
 	.z-reader-attachment-item::before {
-		content: '';
-		position: absolute;
-		left: 0;
-		top: 0;
-		bottom: 0;
-		width: 3px;
-		background-color: var(--z-accent);
-		border-top-left-radius: var(--radius-sm);
-		border-bottom-left-radius: var(--radius-sm);
+		display: none;
 	}
 
 	.z-reader-attachment-item:hover:not(:disabled) {
-		background-color: color-mix(in srgb, var(--z-surface-sunken) 55%, var(--z-surface-raised));
-		border-color: var(--z-border-strong);
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 60%, transparent);
 	}
 
 	.z-reader-attachment-item:focus-visible {
@@ -217,32 +206,18 @@
 	.z-reader-thread-list {
 		display: flex;
 		flex-direction: column;
-		gap: 1.25rem;
 	}
 
 	.z-reader-thread {
-		background-color: var(--z-surface-raised);
-		border: 1px solid var(--z-border);
-		border-radius: var(--radius-md);
-		transition: border-color var(--z-motion-fast) var(--z-ease-standard),
-		            box-shadow var(--z-motion-fast) var(--z-ease-standard);
-	}
-
-	.z-reader-thread:hover {
-		border-color: var(--z-border-strong);
-		box-shadow: var(--shadow-sm);
+		background-color: transparent;
 	}
 
 	.z-reader-thread--expanded {
-		padding: 1.5rem 1.625rem;
+		padding: 0;
 	}
 
 	.z-reader-thread--collapsed {
 		padding: 0;
-	}
-
-	.z-reader-thread--collapsed .z-reader-thread-toggle {
-		padding: 0.875rem 1.25rem;
 	}
 
 	.z-reader-thread-toggle {

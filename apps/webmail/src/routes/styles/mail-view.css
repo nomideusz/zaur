@@ -70,10 +70,6 @@
 		overflow-y: auto;
 		height: auto;
 	}
-	.z-mail-view .z-mail-text-nav.z-reader-sticky-nav {
-		margin-bottom: var(--z-main-gap);
-	}
-
 	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__links + .z-mail-text-nav__row {
 		margin-top: var(--z-space-nav-label-top);
 	}

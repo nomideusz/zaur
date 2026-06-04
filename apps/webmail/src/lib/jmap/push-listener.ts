@@ -1,5 +1,6 @@
 import type { JMAPClient } from './client';
 import type { StateChange } from './types';
+import { getJmapEvents } from '../../routes/events.remote.js';
 
 const POLL_INTERVAL_MS = 20_000;
 const SSE_STALE_MS = 90_000;
@@ -12,7 +13,7 @@ const STATE_METHODS = [
 export class PushListener {
 	private pollInterval: ReturnType<typeof setInterval> | null = null;
 	private staleTimer: ReturnType<typeof setTimeout> | null = null;
-	private eventSource: EventSource | null = null;
+	private isRunning = false;
 	private states: Record<string, string> = {};
 	private callback: ((change: StateChange) => void) | null = null;
 	private client: JMAPClient | null = null;
@@ -26,7 +27,7 @@ export class PushListener {
 
 		this.startPolling(client);
 
-		if (typeof EventSource !== 'undefined') {
+		if (typeof window !== 'undefined') {
 			this.startEventSource(onChange);
 		}
 
@@ -67,50 +68,41 @@ export class PushListener {
 	}
 
 	private startEventSource(onChange: (change: StateChange) => void) {
-		this.eventSource = new EventSource('/api/jmap/events');
+		this.isRunning = true;
+		this.resetStaleTimer();
 
-		this.eventSource.onopen = () => {
-			this.resetStaleTimer();
-		};
-
-		this.eventSource.onmessage = (event) => {
-			this.resetStaleTimer();
+		void (async () => {
 			try {
-				const data = JSON.parse(event.data) as StateChange;
-				if (data['@type'] === 'StateChange') {
-					this.trackIncomingStates(data);
-					onChange(data);
+				for await (const change of getJmapEvents()) {
+					if (!this.isRunning) break;
+					this.resetStaleTimer();
+					this.trackIncomingStates(change);
+					onChange(change);
 				}
-			} catch {
-				// Ignore malformed events and comment keepalives
+			} catch (err) {
+				console.warn('JMAP event stream error:', err);
+				this.stopEventSource();
+				if (this.client && this.callback) {
+					setTimeout(() => {
+						if (this.client && this.callback && !this.isRunning) {
+							this.startEventSource(this.callback);
+						}
+					}, 5_000);
+				}
 			}
-		};
-
-		this.eventSource.onerror = () => {
-			this.stopEventSource();
-			if (typeof EventSource !== 'undefined' && this.client && this.callback) {
-				setTimeout(() => {
-					if (this.client && this.callback && !this.eventSource) {
-						this.startEventSource(this.callback);
-					}
-				}, 5_000);
-			}
-		};
+		})();
 	}
 
 	private stopEventSource() {
+		this.isRunning = false;
 		this.clearStaleTimer();
-		if (this.eventSource) {
-			this.eventSource.close();
-			this.eventSource = null;
-		}
 	}
 
 	private resetStaleTimer() {
 		this.clearStaleTimer();
 		this.staleTimer = setTimeout(() => {
 			this.stopEventSource();
-			if (this.client && this.callback && typeof EventSource !== 'undefined') {
+			if (this.client && this.callback && typeof window !== 'undefined') {
 				this.startEventSource(this.callback);
 			}
 		}, SSE_STALE_MS);

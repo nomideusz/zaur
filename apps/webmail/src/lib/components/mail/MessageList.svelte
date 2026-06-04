@@ -5,7 +5,7 @@
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
 	import MessageListMobileBar from '$lib/components/mail/MessageListMobileBar.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
-	import DinoZaur from '$lib/components/mail/DinoZaur.svelte';
+	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Palette from '$lib/components/icons/Palette.svelte';
 	import {
 		listSwipeContext,
@@ -35,15 +35,9 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { Mailbox, MessagePreview } from '$lib/types/mail';
-	import { contentPagePadClass } from '$lib/mail/layout';
 	import { mailThreadHref } from '$lib/mail/routes';
 	import { mailboxKindOrderForMailbox } from '$lib/mail/mailboxes';
-	import {
-		formatSimpleListWhen,
-		simpleMessageDayKey,
-		formatSimpleListTime,
-		formatSimpleListDayHeading
-	} from '$lib/utils/dates';
+	import { formatMessageListWhen } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
@@ -55,52 +49,21 @@
 		shouldPresentImportantColors
 	} from '$lib/mail/mailboxes';
 
-	/** Editorial list row — shared Tailwind building blocks. */
-	const listMessageGroup = 'group/message';
-	const listMessageLinkClass = cn(listMessageGroup, 'block min-w-0 no-underline');
-	const listMessageRowClass = 'z-mail-list-row';
-	const listMessageStackClass = 'flex min-w-0 flex-row items-start justify-between gap-4';
-	const listMessageLeadClass = 'flex min-w-0 flex-1 flex-col gap-0.5';
-	const listSubjectShellClass =
-		'list-subject block min-w-0 w-full z-type-page leading-[1.4] break-words';
-	const listSubjectPlainClass = (isNew: boolean) =>
+	const listRowLinkClass = (current: boolean) =>
 		cn(
-			listSubjectShellClass,
-			'font-normal underline underline-offset-[0.2em] decoration-1',
-			'transition-[color,text-decoration-color] duration-150',
-			isNew
-				? 'z-mail-list-subject--new'
-				: cn(
-						'text-fg decoration-fg/35',
-						'group-hover/message:decoration-fg/55 group-focus-visible/message:decoration-fg/55'
-					)
+			'z-list-row flex w-full min-w-0 items-start gap-3 px-4 py-2.5 text-left no-underline transition-colors hover:bg-surface-sunken/60',
+			current && 'z-list-row--current'
 		);
-	const listImportantSubjectClass = 'z-mail-list-subject--important';
-	const listRowMetaClass = (isNew: boolean) =>
+	const listSenderClass = (unread: boolean) =>
+		cn('min-w-0 truncate text-sm', unread ? 'font-semibold text-fg' : 'font-medium text-fg-muted');
+	const listSubjectClass = (unread: boolean, important: boolean) =>
 		cn(
-			'shrink-0 tabular-nums no-underline text-xs leading-[1.4] z-mail-list-row-meta',
-			isNew
-				? 'z-mail-list-meta--new'
-				: cn(
-						'text-fg-muted',
-						'group-hover/message:text-fg group-focus-visible/message:text-fg'
-					)
+			'min-w-0 truncate text-sm',
+			important && 'z-mail-list-subject--important font-semibold',
+			!important && (unread ? 'font-semibold text-fg' : 'font-medium text-fg')
 		);
-	const listSenderClass = (visible: boolean, isNew: boolean) =>
-		cn(
-			'z-type-page leading-[1.4]',
-			isNew ? 'font-semibold text-fg' : 'font-medium text-fg-muted',
-			visible ? 'block' : 'hidden'
-		);
-	const listSectionCountClass = (sectionId: string) =>
-		cn(
-			'z-type-list-count shrink-0 tabular-nums font-semibold text-fg',
-			sectionId === READ_SECTION_ID && 'font-medium text-fg-muted'
-		);
-	const listMoreClass = cn(
-		'z-type-page cursor-pointer font-normal text-fg underline underline-offset-2 decoration-fg/30',
-		'transition hover:decoration-fg/55 active:scale-[0.98]'
-	);
+	const listPreviewClass = 'min-w-0 truncate text-xs text-fg-muted';
+	const listTimeClass = 'shrink-0 text-xs tabular-nums text-fg-subtle';
 
 	let {
 		messages,
@@ -181,10 +144,9 @@
 			activeThreadId
 		)
 	);
-	/** Sectioned folder lists — thread/search use a flat editorial list. */
+	/** Mailbox/search list (flat rows); thread view uses search flat mode. */
 	const sectionMode = $derived(!!mailboxRouteId && !activeThreadId);
 	const isInboxHome = $derived(sectionMode && mailboxRouteId === 'inbox');
-	const mailHomeHref = $derived(settings.preferredMailHref());
 	const resolvedEmptyMessage = $derived(emptyMessage ?? defaultEmptyMessage(mailboxRouteId));
 	const resolvedEmptyHint = $derived(
 		emptyHint ?? (emptyMessage ? null : defaultEmptyHint(mailboxRouteId))
@@ -192,25 +154,7 @@
 	const showFlatEmpty = $derived(!sectionMode && !loading && !error && messages.length === 0);
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const bulkSelectEnabled = $derived(!!mailboxRouteId);
-	function flattenSectionsForSelection(
-		sections: { messages: MessagePreview[] }[]
-	): MessagePreview[] {
-		const seen = new Set<string>();
-		const flattened: MessagePreview[] = [];
-		for (const section of sections) {
-			for (const message of section.messages) {
-				if (seen.has(message.id)) continue;
-				seen.add(message.id);
-				flattened.push(message);
-			}
-		}
-		return flattened;
-	}
-
-	const bulkSelectionMessages = $derived.by(() => {
-		if (!sectionMode) return listMessages;
-		return flattenSectionsForSelection(folderSections);
-	});
+	const bulkSelectionMessages = $derived(listMessages);
 
 	function sameMessageIds(a: MessagePreview[], b: MessagePreview[]): boolean {
 		if (a.length !== b.length) return false;
@@ -833,7 +777,7 @@
 
 <section
 	class={cn(
-		'z-mail-pane-surface z-mail-pane-surface--flow flex w-full min-w-0 flex-col overflow-hidden',
+		'z-mail-pane-surface flex min-h-0 min-w-0 flex-col overflow-hidden',
 		hideOnMobile ? (mail.hasSelection ? 'flex' : 'hidden md:flex') : 'flex'
 	)}
 	style="view-transition-name: message-list;"
@@ -848,36 +792,14 @@
 				disabled={loading || !!error || !messages.length}
 			/>
 		{:else}
-			<div class="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border/80 px-4 py-2.5">
+			<div class="flex min-h-12 shrink-0 items-center border-b border-border/80 px-4 py-2.5">
 				<h2 class="z-type-pane-title">{mailboxName}</h2>
-				<div class="flex items-center gap-2">
-					{#if !isInboxHome}
-						<a
-							href={mailHomeHref}
-							class="text-xs font-semibold text-fg-muted no-underline transition-colors hover:text-fg"
-						>
-							Back
-						</a>
-						<span class="text-fg-subtle text-xs" aria-hidden="true">·</span>
-					{/if}
-					<a
-						href="/mail/compose"
-						class="text-xs font-semibold text-accent no-underline transition-colors hover:text-accent-hover"
-					>
-						New message
-					</a>
-				</div>
 			</div>
 		{/if}
 	{/if}
 
 	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
-		<div
-			class={cn(
-				contentPagePadClass(),
-				'flex flex-col'
-			)}
-		>
+		<div class="z-mail-list-body flex w-full min-w-0 flex-col">
 
 	<div
 		class={cn(
@@ -886,37 +808,29 @@
 			mail.hasSelection && 'z-mail-list--selecting'
 		)}
 	>
-		{#snippet simpleMessageRow(
-			message: MessagePreview,
-			routeId: string,
-			index: number,
-			messagesList: MessagePreview[],
-			duplicateKeys: Set<string> = flatListDuplicateSubjects,
-			listSectionId?: string
-		)}
-			{@const isNewDay = listRowStartsNewDay(messagesList, index)}
+		{#snippet simpleMessageRow(message: MessagePreview, routeId: string)}
 			{@const senderLabel = simpleSenderLabel(message, routeId)}
 			{@const subjectText = message.subject.trim() || '(no subject)'}
-			{@const baseTimeLabel = formatSimpleListTime(message.receivedAt, settings.timeFormat)}
-			{@const timeLabel = isNewDay
-				? `${formatSimpleListDayHeading(message.receivedAt)} ${baseTimeLabel}`
-				: baseTimeLabel}
-			{@const showSender = true}
-			{@const isNewRow = isNewUnreadListRow(message)}
-			{@const showNewDot = isInboxHome && isNewRow}
+			{@const timeLabel = formatMessageListWhen(
+				message.receivedAt,
+				false,
+				settings.timeFormat
+			)}
+			{@const isUnread = message.unread}
+			{@const subjectImportant = showImportantPresentation(message, routeId)}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
+			{@const isCurrent = currentMessageId === message.id}
 			{@const showColorCycle =
 				mobileRowGestures &&
 				mail.hasSelection &&
-				showImportantPresentation(message, routeId) &&
+				subjectImportant &&
 				canPickImportantRainbow(routeId)}
 			{@const swipeLeading = listSwipeLeading(message, routeId)}
 			{@const swipeTrailing = listSwipeTrailing(message, routeId)}
 			<li
-				class={cn('list-none', listMessageRowClass, rowSelected && !message.important && '[&_.list-subject]:text-accent')}
-				data-current={currentMessageId === message.id ? 'true' : undefined}
-				data-new={isNewRow ? 'true' : undefined}
+				class="z-mail-list-row list-none"
+				data-current={isCurrent ? 'true' : undefined}
 				data-selected={rowSelected ? 'true' : undefined}
 			>
 				{#if showRowCheckbox}
@@ -932,16 +846,16 @@
 				{#snippet rowLink()}
 					<a
 						href={rowHref}
-						class={listMessageLinkClass}
+						class={listRowLinkClass(isCurrent)}
 						draggable={mobileRowGestures ? 'false' : undefined}
-						aria-current={currentMessageId === message.id ? 'page' : undefined}
-						aria-label="{showNewDot ? 'New. ' : ''}{subjectText} — {senderLabel}, {timeLabel}"
+						aria-current={isCurrent ? 'page' : undefined}
+						aria-label="{isUnread ? 'Unread. ' : ''}{subjectText} — {senderLabel}, {timeLabel}"
 						oncontextmenu={(event) => {
 							if (supportsMobileListGestures()) event.preventDefault();
 						}}
 						onclick={(event) => handleRowLinkClick(message.id, event)}
 						onpointerenter={(event) => {
-							if (!showImportantPresentation(message, routeId)) return;
+							if (!subjectImportant) return;
 							if (!hasPreciseHover()) return;
 							importantRainbowHoverId = message.id;
 							if (settings.reduceMotion || !canPickImportantRainbow(routeId)) return;
@@ -953,33 +867,16 @@
 							}
 						}}
 						onpointerleave={(event) => {
-							if (!showImportantPresentation(message, routeId)) return;
+							if (!subjectImportant) return;
 							if (!hasPreciseHover()) return;
 							if (canPickImportantRainbow(routeId)) {
 								persistImportantRainbowPick(message.id, event.currentTarget, event);
 							}
 						}}
 					>
-						<span class={listMessageStackClass}>
-							<span class={listMessageLeadClass}>
-								<span class={listSenderClass(showSender, isNewRow)}>{senderLabel}</span>
-								<span class="flex min-w-0 w-full items-start gap-2">
-									{#if showImportantPresentation(message, routeId)}
-										<span
-											class={cn(
-												listSubjectShellClass,
-												listImportantSubjectClass,
-												importantRainbow.hasPicked(message.id) &&
-													'z-mail-list-subject--important-picked'
-											)}
-											style={importantRainbow.cssVars(message.id)}
-										>{subjectText}</span>
-									{:else}
-										<span class={listSubjectPlainClass(isNewRow)}>{subjectText}</span>
-									{/if}
-								</span>
-							</span>
-							<span class={listRowMetaClass(isNewRow)}>
+						<div class="min-w-0 flex-1">
+							<div class="flex items-baseline justify-between gap-2">
+								<p class={listSenderClass(isUnread)}>{senderLabel}</p>
 								{#if showColorCycle}
 									<button
 										type="button"
@@ -991,12 +888,29 @@
 										<Palette class="size-4" aria-hidden="true" />
 									</button>
 								{:else}
-									<time class="z-mail-list-row-meta__time" datetime={message.receivedAt}>
+									<time class={listTimeClass} datetime={message.receivedAt}>
 										{timeLabel}
 									</time>
 								{/if}
-							</span>
-						</span>
+							</div>
+							<p
+								class={cn(
+									listSubjectClass(isUnread, subjectImportant),
+									subjectImportant &&
+										importantRainbow.hasPicked(message.id) &&
+										'z-mail-list-subject--important-picked'
+								)}
+								style={subjectImportant ? importantRainbow.cssVars(message.id) : undefined}
+							>
+								{subjectText}
+							</p>
+							{#if message.preview.trim()}
+								<p class={listPreviewClass}>{message.preview}</p>
+							{/if}
+						</div>
+						{#if message.hasAttachment}
+							<Paperclip class="mt-0.5 size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+						{/if}
 					</a>
 				{/snippet}
 				{#if mobileRowGestures}
@@ -1030,106 +944,25 @@
 				{onRetry}
 			/>
 		{:else if sectionMode}
-			<div class="z-mail-list-sections">
-				{#if isInboxHome}
-					{@const visibleNew = newUnreadMessages.slice(0, sectionVisibleCounts[NEW_SECTION_ID] ?? INBOX_SECTION_PAGE_SIZE)}
-					{@const visibleRead = readMessages.slice(0, sectionVisibleCounts[READ_SECTION_ID] ?? defaultReadSectionVisible)}
-					{@const newDuplicateSubjects = duplicateSubjectKeys(visibleNew)}
-					{@const readDuplicateSubjects = duplicateSubjectKeys(visibleRead)}
-					{#if visibleNew.length > 0 || visibleRead.length > 0}
-						<ul class="z-mail-list-section-messages z-mail-list-section-messages--combined">
-							{#each visibleNew as message, index (message.id)}
-								{@render simpleMessageRow(message, mailboxRouteId ?? 'inbox', index, visibleNew, newDuplicateSubjects, NEW_SECTION_ID)}
-							{/each}
-							{#if sectionCanShowMore(NEW_SECTION_ID)}
-								<li class="z-mail-list-section-more-row">
-									<button type="button" class={listMoreClass} onclick={() => revealMoreInSection(NEW_SECTION_ID)}>
-										{sectionRevealLabel(NEW_SECTION_ID, newUnreadMessages.length)}
-									</button>
-								</li>
-							{/if}
-							{#if visibleNew.length > 0 && visibleRead.length > 0}
-								<li class="z-mail-list-squiggly-divider" aria-hidden="true">
-									<svg xmlns="http://www.w3.org/2000/svg" class="w-full h-3">
-										<pattern id="squiggly-pattern" width="12" height="12" patternUnits="userSpaceOnUse">
-											<path d="M0,6 Q3,-1 6,6 T12,6" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-										</pattern>
-										<rect width="100%" height="12" fill="url(#squiggly-pattern)"/>
-									</svg>
-								</li>
-							{/if}
-							{#each visibleRead as message, index (message.id)}
-								{@render simpleMessageRow(message, mailboxRouteId ?? 'inbox', index, visibleRead, readDuplicateSubjects, READ_SECTION_ID)}
-							{/each}
-							{#if sectionCanShowMore(READ_SECTION_ID)}
-								<li class="z-mail-list-section-more-row">
-									<button type="button" class={listMoreClass} onclick={() => revealMoreInSection(READ_SECTION_ID)}>
-										{sectionRevealLabel(READ_SECTION_ID, readMessages.length)}
-									</button>
-								</li>
-							{/if}
-						</ul>
-					{:else}
-						<p class="z-type-page leading-[1.55] font-normal text-fg">{resolvedEmptyMessage}</p>
-					{/if}
-				{:else}
-					{#each folderSections as section, sectionIndex (section.id)}
-						{@const sectionDuplicateSubjects = duplicateSubjectKeys(section.messages)}
-						<section
-							style:order={section.sortOrder}
-							style:--section-index={sectionIndex}
-							aria-label={undefined}
-						>
-							{#if section.id !== mailboxRouteId}
-								<div class="z-mail-list-section-head">
-									<p class="z-mail-list-section-title">
-										{#if section.showUnreadDot}
-											<span
-												class="size-[0.4375rem] shrink-0 rounded-full bg-unread"
-												aria-hidden="true"
-											></span>
-										{/if}
-										{section.name}
-									</p>
-									<span class={listSectionCountClass(section.id)}>{section.totalCount}</span>
-								</div>
-							{/if}
-							{#if section.messages.length > 0}
-								<ul class="z-mail-list-section-messages">
-									{#each section.messages as message, index (message.id)}
-										{@render simpleMessageRow(message, section.routeId, index, section.messages, sectionDuplicateSubjects, section.id)}
-									{/each}
-								</ul>
-							{/if}
-							{#if sectionCanShowMore(section.id)}
-								<div class="z-mail-list-section-more">
-									<button type="button" class={listMoreClass} onclick={() => revealMoreInSection(section.id)}>
-										{sectionRevealLabel(section.id, section.totalCount)}
-									</button>
-								</div>
-							{/if}
-						</section>
+			{#if listMessages.length > 0}
+				<ul class="divide-y divide-border">
+					{#each listMessages as message (message.id)}
+						{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId)}
 					{/each}
-				{/if}
-
-				{#if folderSections.length === 0 && !isInboxHome}
-					<p class="z-type-page leading-[1.55] font-normal text-fg">{resolvedEmptyMessage}</p>
-				{/if}
-			</div>
-
+				</ul>
+				<MessageListLoadMore {hasMore} {loadingMore} {onLoadMore} />
+			{:else}
+				<p class="px-4 py-8 text-sm text-fg-muted">{resolvedEmptyMessage}</p>
+			{/if}
 		{:else}
-			<ul class="flex flex-col gap-3">
-				{#each listMessages as message, index (message.id)}
-					{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId, index, listMessages)}
+			<ul class="divide-y divide-border">
+				{#each listMessages as message (message.id)}
+					{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId)}
 				{/each}
 			</ul>
-
 			<MessageListLoadMore {hasMore} {loadingMore} {onLoadMore} />
 		{/if}
 	</div>
-	{#if !loading && !error && !mail.hasSelection}
-		<DinoZaur />
-	{/if}
 		</div>
 	</div>
 </section>

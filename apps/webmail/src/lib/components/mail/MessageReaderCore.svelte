@@ -3,8 +3,6 @@
 	import { page } from '$app/stores';
 	import { tick } from 'svelte';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
-	import Forward from '$lib/components/icons/Forward.svelte';
-	import Mail from '$lib/components/icons/Mail.svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
@@ -14,10 +12,8 @@
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
 	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
-	import MessageReaderMobileBar from '$lib/components/mail/MessageReaderMobileBar.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
 	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
-	import { contentPagePadClass } from '$lib/mail/layout';
 	import { readerPrimaryContact, shouldShowContactEmail } from '$lib/mail/reader-contact';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -42,11 +38,9 @@
 		onMoved?: () => void;
 		/** Return to the mailbox list after triage (Important / Not important). */
 		onBackToList?: () => void;
-		/** Reduced chrome when the list rail is hidden. */
-		minimalChrome?: boolean;
 	}
 
-	let { thread, mailboxRouteId, onMoved, onBackToList, minimalChrome = false }: Props = $props();
+	let { thread, mailboxRouteId, onMoved, onBackToList }: Props = $props();
 
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
 	let localShowImagesOnce = $state(false);
@@ -78,16 +72,6 @@
 		settings.defaultReplyMode === 'reply-all' ? 'Reply all' : 'Reply'
 	);
 
-	function wordCount(text: string | undefined): number {
-		if (!text) return 0;
-		return text.trim().split(/\s+/).filter(Boolean).length;
-	}
-	const totalWords = $derived(
-		thread.reduce((sum, message) => sum + wordCount(message.bodyText || message.preview), 0)
-	);
-	const readMinutes = $derived(Math.max(1, Math.round(totalWords / 220)));
-	const showReadTime = $derived(totalWords >= 200);
-
 	const allowExternal = $derived(
 		!settings.blockExternalContent || (pane?.showImagesOnce ?? localShowImagesOnce)
 	);
@@ -117,12 +101,7 @@
 	});
 
 	function messageScrollContainer(): HTMLElement | null {
-		if (typeof document === 'undefined') return scrollPane;
-		const mobilePane = document.querySelector(
-			'.z-mail-pane--mobile-fullscreen .z-pane-scroll--mobile-reader'
-		);
-		if (mobilePane instanceof HTMLElement) return mobilePane;
-		return document.getElementById('main-content');
+		return scrollPane;
 	}
 
 	$effect(() => {
@@ -169,12 +148,6 @@
 		if (!latest || !auth.username) return;
 		compose.startReplyAll(latest, thread, auth.username);
 		goto('/mail/compose?mode=reply-all');
-	}
-
-	function forward() {
-		if (!latest) return;
-		compose.startForward(latest);
-		goto('/mail/compose?mode=forward');
 	}
 
 	function primaryReply() {
@@ -248,249 +221,164 @@
 </script>
 
 <article
-	class="z-mail-pane-surface z-mail-pane-surface--flow"
+	class="z-mail-pane-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
 	style="view-transition-name: message-reader;"
 >
-	{#if mail.selectedError}
-		<div
-			class={cn(
-				'shrink-0 px-4 py-2 md:px-6',
-				mail.selectedError.startsWith('Offline')
-					? 'text-fg-muted'
-					: 'text-danger'
-			)}
-			style="font-size: var(--z-reader-text); line-height: var(--z-reader-leading);"
-		>
-			{mail.selectedError}
-		</div>
-	{/if}
-
-	<div class="z-pane-scroll z-pane-scroll--mobile-reader z-pane-scroll--flow" bind:this={scrollPane}>
-		<div class={contentPagePadClass()}>
-		<div class="z-reader-column">
-			<div class="z-mail-text-nav z-reader-sticky-nav">
-				<div class="z-mail-text-nav__row">
-					<div class="z-mail-text-nav__links min-w-0 shrink-0 flex items-center">
-						<a class="z-mail-text-nav__link inline-flex items-center gap-1.5" href={listHref}>
-							<ArrowLeft class="size-4 shrink-0" aria-hidden="true" />
-							<span>Back</span>
-						</a>
-						{#if actionMessage && !actionMessage.unread}
-							<button
-								type="button"
-								class="z-mail-text-nav__link inline-flex items-center gap-1.5 ml-4"
-								onclick={() => void triageUnsee()}
-							>
-								<Mail class="size-4 shrink-0" aria-hidden="true" />
-								<span>{LABEL_RESTORE_NEW}</span>
-							</button>
-						{/if}
-					</div>
-					{#if !mail.hasSelection && latest}
-						<div class="z-mail-text-nav__links flex items-center">
-							{#if isDraft}
-								<a
-									class="z-mail-text-nav__link inline-flex items-center gap-1.5"
-									href="/mail/compose?draft={latest.id}"
-								>
-									<Pencil class="size-4 shrink-0" aria-hidden="true" />
-									<span>Edit draft</span>
-								</a>
-								<button
-									type="button"
-									class="z-mail-text-nav__action hidden md:inline-flex items-center gap-1.5"
-									onclick={() => void sendDraft()}
-								>
-									<Send class="size-4 shrink-0" aria-hidden="true" />
-									<span>Send</span>
-								</button>
-							{:else if thread.length > 1}
-								<button
-									type="button"
-									class="z-mail-text-nav__action inline-flex items-center gap-1.5"
-									onclick={primaryReply}
-								>
-									{#if settings.defaultReplyMode === 'reply-all'}
-										<ReplyAll class="size-4 shrink-0" aria-hidden="true" />
-									{:else}
-										<Reply class="size-4 shrink-0" aria-hidden="true" />
-									{/if}
-									<span>{primaryReplyLabel}</span>
-								</button>
-							{/if}
-							<MessageThreadActions
-								{thread}
-								{mailboxRouteId}
-								{onMoved}
-								header
-								primaryReplyMode={settings.defaultReplyMode}
-							/>
-						</div>
-					{/if}
-				</div>
-			</div>
-				{#if hasBlockedExternal && !allowExternal}
-					<div class="z-mail-external-banner">
-						<Shield class="size-3.5 shrink-0" aria-hidden="true" />
-						<span>External images blocked.</span>
-						<button type="button" class="z-mail-text-nav__link" onclick={showImagesOnce}>
-							Show once
-						</button>
-						<span class="z-mail-external-banner__dot">·</span>
-						<a href="/settings/appearance" class="z-mail-text-nav__link">Settings</a>
-					</div>
-				{/if}
-
-			{#if thread.length > 1}
-				<div class="z-reader-subject-row mb-6">
-					<h1
-						bind:this={readerSubjectEl}
-						class={cn(
-							'z-type-reader-title z-reader-subject-heading',
-							subjectImportant && 'z-mail-list-subject--important',
-							subjectImportant &&
-								subjectMessageId &&
-								importantRainbow.hasPicked(subjectMessageId) &&
-								'z-mail-list-subject--important-picked'
-						)}
-						style={subjectImportant && subjectMessageId
-							? importantRainbow.cssVars(subjectMessageId)
-							: undefined}
-						onpointerenter={startReaderRainbowSample}
-						onpointerleave={persistReaderRainbowPick}
-						onpointerdown={(event) => {
-							if (!subjectMessageId) return;
-							readerRainbowTouch.onPointerDown(subjectMessageId, event);
-						}}
-						onpointermove={readerRainbowTouch.onPointerMove}
-						onpointerup={(event) => {
-							if (!subjectMessageId) return;
-							readerRainbowTouch.onPointerUp(subjectMessageId, event);
-						}}
-						onpointercancel={readerRainbowTouch.onPointerCancel}
+	<header class="flex shrink-0 flex-col gap-2 border-b border-border/80 px-4 py-2.5">
+		<div class="flex min-w-0 flex-wrap items-center justify-between gap-2">
+			<div class="flex min-w-0 flex-wrap items-center gap-2">
+				<a
+					href={listHref}
+					class="inline-flex items-center gap-1.5 text-sm font-medium text-fg-muted no-underline transition-colors hover:text-fg"
+				>
+					<ArrowLeft class="size-4 shrink-0" aria-hidden="true" />
+					<span>Back</span>
+				</a>
+				{#if actionMessage && !actionMessage.unread}
+					<button
+						type="button"
+						class="text-sm font-medium text-fg-muted transition-colors hover:text-fg"
+						onclick={() => void triageUnsee()}
 					>
-						{subject}
-					</h1>
+						{LABEL_RESTORE_NEW}
+					</button>
+				{/if}
+			</div>
+			{#if !mail.hasSelection && latest}
+				<div class="flex shrink-0 flex-wrap items-center gap-2">
+					{#if isDraft}
+						<Button variant="ghost" href="/mail/compose?draft={latest.id}">
+							<Pencil class="size-4" aria-hidden="true" />
+							Edit draft
+						</Button>
+						<Button onclick={() => void sendDraft()}>
+							<Send class="size-4" aria-hidden="true" />
+							Send
+						</Button>
+					{:else}
+						<Button onclick={primaryReply}>
+							{#if settings.defaultReplyMode === 'reply-all'}
+								<ReplyAll class="size-4" aria-hidden="true" />
+							{:else}
+								<Reply class="size-4" aria-hidden="true" />
+							{/if}
+							{primaryReplyLabel}
+						</Button>
+					{/if}
+					<MessageThreadActions
+						{thread}
+						{mailboxRouteId}
+						{onMoved}
+						header
+						primaryReplyMode={settings.defaultReplyMode}
+					/>
 				</div>
 			{/if}
+		</div>
+		<h1
+			bind:this={readerSubjectEl}
+			class={cn(
+				'truncate text-base font-semibold text-fg',
+				subjectImportant && 'z-mail-list-subject--important',
+				subjectImportant &&
+					subjectMessageId &&
+					importantRainbow.hasPicked(subjectMessageId) &&
+					'z-mail-list-subject--important-picked'
+			)}
+			style={subjectImportant && subjectMessageId ? importantRainbow.cssVars(subjectMessageId) : undefined}
+			onpointerenter={startReaderRainbowSample}
+			onpointerleave={persistReaderRainbowPick}
+			onpointerdown={(event) => {
+				if (!subjectMessageId) return;
+				readerRainbowTouch.onPointerDown(subjectMessageId, event);
+			}}
+			onpointermove={readerRainbowTouch.onPointerMove}
+			onpointerup={(event) => {
+				if (!subjectMessageId) return;
+				readerRainbowTouch.onPointerUp(subjectMessageId, event);
+			}}
+			onpointercancel={readerRainbowTouch.onPointerCancel}
+		>
+			{subject}
+		</h1>
+	</header>
 
-			<div class="z-reader-thread-list">
+	{#if mail.selectedError}
+		<p
+			class={cn(
+				'shrink-0 px-4 py-2 text-sm',
+				mail.selectedError.startsWith('Offline') ? 'text-fg-muted' : 'text-danger'
+			)}
+		>
+			{mail.selectedError}
+		</p>
+	{/if}
+
+	<div
+		class="z-pane-scroll z-pane-scroll--mobile-reader min-h-0 flex-1 overflow-y-auto"
+		bind:this={scrollPane}
+	>
+		{#if hasBlockedExternal && !allowExternal}
+			<div class="flex flex-wrap items-center gap-x-2 gap-y-1 border-b border-border/80 px-4 py-2 text-xs text-fg-muted">
+				<Shield class="size-3.5 shrink-0" aria-hidden="true" />
+				<span>External images blocked.</span>
+				<button type="button" class="font-medium text-fg hover:underline" onclick={showImagesOnce}>
+					Show once
+				</button>
+				<span aria-hidden="true">·</span>
+				<a href="/settings/appearance" class="font-medium text-fg hover:underline">Settings</a>
+			</div>
+		{/if}
+
+		<div class="z-reader-thread-list divide-y divide-border">
 			{#each thread as message (message.id)}
 				{@const contact = readerPrimaryContact(message, mailboxRouteId, isMe)}
 				{@const showContactEmail = shouldShowContactEmail(contact.displayName, contact.email)}
-				<section class={cn('z-reader-thread', (thread.length === 1 || isExpanded(message)) ? 'z-reader-thread--expanded' : 'z-reader-thread--collapsed')}>
+				<section
+					class={cn(
+						'z-reader-thread',
+						thread.length === 1 || isExpanded(message)
+							? 'z-reader-thread--expanded'
+							: 'z-reader-thread--collapsed'
+					)}
+				>
 					{#if thread.length === 1 || isExpanded(message)}
-						{#if thread.length === 1}
-							<header class="z-reader-chrome">
-								<div class="z-reader-chrome__meta">
-									<div class="z-reader-chrome__from">
-										<div class="min-w-0">
-											<p class="z-reader-from truncate">{contact.displayName}</p>
-											{#if showContactEmail}
-												{#if !contact.isMe}
-													<button
-														type="button"
-														class="z-reader-link mt-0.5 block max-w-full truncate text-left"
-														onclick={() => composeTo(contact.email)}
-													>
-														{contact.email}
-													</button>
-												{:else}
-													<p class="z-reader-meta mt-0.5">{contact.email}</p>
-												{/if}
-											{/if}
-										</div>
-									</div>
-
-									<div class="z-reader-chrome__aside">
-										<time class="z-reader-meta text-xs block" datetime={message.receivedAt}>
-											{formatMessageListWhen(message.receivedAt, true, settings.timeFormat)}
-										</time>
-										{#if showReadTime && !minimalChrome}
-											<div class="z-reader-chrome__time text-xs">~{readMinutes} min</div>
-										{/if}
-									</div>
-								</div>
-							</header>
-							<div class="z-reader-subject-row mt-4 mb-6">
-								<h1
-									bind:this={readerSubjectEl}
-									class={cn(
-										'z-type-reader-title z-reader-subject-heading !m-0',
-										subjectImportant && 'z-mail-list-subject--important',
-										subjectImportant &&
-											subjectMessageId &&
-											importantRainbow.hasPicked(subjectMessageId) &&
-											'z-mail-list-subject--important-picked'
-									)}
-									style={subjectImportant && subjectMessageId
-										? importantRainbow.cssVars(subjectMessageId)
-										: undefined}
-									onpointerenter={startReaderRainbowSample}
-									onpointerleave={persistReaderRainbowPick}
-									onpointerdown={(event) => {
-										if (!subjectMessageId) return;
-										readerRainbowTouch.onPointerDown(subjectMessageId, event);
-									}}
-									onpointermove={readerRainbowTouch.onPointerMove}
-									onpointerup={(event) => {
-										if (!subjectMessageId) return;
-										readerRainbowTouch.onPointerUp(subjectMessageId, event);
-									}}
-									onpointercancel={readerRainbowTouch.onPointerCancel}
-								>
-									{subject}
-								</h1>
-							</div>
-						{:else}
-							<header class="z-reader-message-head">
-								<div class="z-reader-chrome__meta">
-									<div class="z-reader-chrome__from">
-										<div class="min-w-0">
+						<div class="px-4 py-4">
+							<div class="flex items-start justify-between gap-3">
+								<div class="min-w-0 flex-1">
+									<p class="truncate text-sm font-semibold text-fg">{contact.displayName}</p>
+									{#if showContactEmail}
+										{#if !contact.isMe}
 											<button
 												type="button"
-												class="z-reader-from truncate text-left block w-full hover:underline decoration-fg/20"
-												onclick={() => toggleMessage(message)}
-												aria-expanded={true}
-												aria-label={`Collapse message from ${contact.displayName}`}
+												class="mt-0.5 block max-w-full truncate text-left text-xs text-fg-muted hover:text-fg"
+												onclick={() => composeTo(contact.email)}
 											>
-												{contact.displayName}
+												{contact.email}
 											</button>
-											{#if showContactEmail}
-												{#if !contact.isMe}
-													<button
-														type="button"
-														class="z-reader-link mt-0.5 block max-w-full truncate text-left"
-														onclick={() => composeTo(contact.email)}
-													>
-														{contact.email}
-													</button>
-												{:else}
-													<p class="z-reader-meta mt-0.5">{contact.email}</p>
-												{/if}
-											{/if}
-										</div>
-									</div>
-
+										{:else}
+											<p class="mt-0.5 truncate text-xs text-fg-muted">{contact.email}</p>
+										{/if}
+									{/if}
+								</div>
+								{#if thread.length > 1}
 									<button
 										type="button"
-										class="z-reader-chrome__aside text-right hover:underline decoration-fg/20"
+										class="shrink-0 text-right text-xs text-fg-subtle hover:text-fg"
 										onclick={() => toggleMessage(message)}
-										aria-label="Collapse message"
 									>
-										<time class="z-reader-meta text-xs block" datetime={message.receivedAt}>
+										<time datetime={message.receivedAt}>
 											{formatMessageListWhen(message.receivedAt, true, settings.timeFormat)}
 										</time>
-										{#if message.id === latest?.id && !minimalChrome}
-											<span class="z-reader-latest-badge mt-0.5">Latest</span>
-										{/if}
 									</button>
-								</div>
-							</header>
-						{/if}
+								{:else}
+									<time class="shrink-0 text-xs tabular-nums text-fg-subtle" datetime={message.receivedAt}>
+										{formatMessageListWhen(message.receivedAt, true, settings.timeFormat)}
+									</time>
+								{/if}
+							</div>
 
-						<div class="z-reader-content w-full">
-							<div class="z-reader-body">
+							<div class="z-reader-body mt-4 text-sm leading-relaxed text-fg">
 								<MessageBody
 									bodyHtml={message.bodyHtml}
 									bodyText={message.bodyText}
@@ -499,56 +387,36 @@
 							</div>
 
 							{#if message.attachments.length}
-								<MessageAttachments attachments={message.attachments} />
-							{/if}
-
-							{#if thread.length === 1 && !isDraft}
-								<div class="z-reader-bottom-actions mt-8 pt-6 border-t border-border flex items-center gap-3">
-									<Button onclick={reply}>
-										<Reply class="size-4" aria-hidden="true" />
-										<span>Reply</span>
-									</Button>
-									<Button variant="ghost" onclick={replyAll}>
-										<ReplyAll class="size-4" aria-hidden="true" />
-										<span>Reply all</span>
-									</Button>
-									<Button variant="ghost" onclick={forward}>
-										<Forward class="size-4" aria-hidden="true" />
-										<span>Forward</span>
-									</Button>
+								<div class="mt-4">
+									<MessageAttachments attachments={message.attachments} />
 								</div>
 							{/if}
+
 						</div>
 					{:else}
 						<button
 							type="button"
-							class="z-reader-thread-toggle"
+							class="z-reader-thread-toggle flex w-full px-4 py-3 text-left transition-colors hover:bg-surface-sunken/60"
 							aria-expanded={false}
 							aria-label={`Expand message from ${contact.displayName}`}
 							onclick={() => toggleMessage(message)}
 						>
 							<div class="min-w-0 flex-1">
-								<div class="flex items-baseline justify-between gap-4">
-									<p class="z-reader-from truncate">{contact.displayName}</p>
-									<time class="z-reader-meta text-xs tabular-nums shrink-0" datetime={message.receivedAt}>
+								<div class="flex items-baseline justify-between gap-3">
+									<p class="truncate text-sm font-medium text-fg">{contact.displayName}</p>
+									<time class="shrink-0 text-xs tabular-nums text-fg-subtle" datetime={message.receivedAt}>
 										{formatMessageListWhen(message.receivedAt, false, settings.timeFormat)}
 									</time>
 								</div>
-								{#if message.preview}
-									<p class="z-reader-meta mt-0.5 truncate pr-8">{message.preview}</p>
+								{#if message.preview.trim()}
+									<p class="mt-0.5 truncate text-xs text-fg-muted">{message.preview}</p>
 								{/if}
 							</div>
 						</button>
 					{/if}
 				</section>
 			{/each}
-			</div>
-
-		</div>
 		</div>
 	</div>
 
-	{#if latest}
-		<MessageReaderMobileBar {thread} {mailboxRouteId} {onMoved} {minimalChrome} />
-	{/if}
 </article>

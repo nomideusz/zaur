@@ -50,7 +50,9 @@
 
 <MailKeyboardShortcuts />
 
-<div class="relative flex min-h-0 flex-1 flex-row overflow-visible {MAIL_LAYOUT.mailRootClass}">
-	<MailboxSidebar />
+<div class="relative flex min-h-0 flex-1 flex-row overflow-hidden {MAIL_LAYOUT.mailRootClass}">
+	<div class="hidden md:contents">
+		<MailboxSidebar />
+	</div>
 	{@render children()}
 </div>
