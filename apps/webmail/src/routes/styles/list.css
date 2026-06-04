@@ -544,36 +544,6 @@
 		background-color: var(--z-accent);
 	}
 
-	/* Important rows — hue spine + chip (no star affordance). */
-	.z-mail-view .z-mail-list-row--important {
-		display: flex;
-		align-items: flex-start;
-		gap: 0.5rem;
-	}
-
-	.z-mail-view .z-mail-list-important-spine {
-		width: 4px;
-		align-self: stretch;
-		min-height: 2.75rem;
-		margin-block: 0.2rem;
-		border-radius: 0 3px 3px 0;
-		background: oklch(
-			var(--important-rainbow-l),
-			calc(var(--important-rainbow-c) + 0.12),
-			calc(var(--important-hue, 0deg) + 200deg)
-		);
-		box-shadow: 0 0 0.5rem
-			oklch(
-				var(--important-rainbow-l),
-				var(--important-rainbow-c),
-				calc(var(--important-hue, 0deg) + 200deg) / 0.45
-			);
-	}
-
-	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row--important {
-		gap: 0.75rem;
-	}
-
 	/* Selected Row background highlight inside sections and flat list */
 	.z-mail-view .z-mail-list-row[data-selected="true"],
 	.z-mail-view .z-mail-list-row[data-selected="true"] .z-swipe-row__foreground,
@@ -633,55 +603,6 @@
 
 	.z-mail-list-row-meta__time {
 		text-align: right;
-	}
-
-	.z-mail-view .z-mail-list-color-cycle {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		min-width: 1.5rem;
-		min-height: 1.5rem;
-		padding: 0;
-		border: none;
-		border-radius: 999px;
-		background: color-mix(in srgb, var(--z-surface-sunken) 50%, transparent);
-		cursor: pointer;
-		transition:
-			transform 150ms var(--z-ease-standard),
-			background-color 150ms var(--z-ease-standard);
-	}
-
-	.z-mail-view .z-mail-list-color-cycle__swatch {
-		display: block;
-		width: 0.875rem;
-		height: 0.875rem;
-		border-radius: 999px;
-		background: oklch(
-			var(--important-rainbow-l),
-			calc(var(--important-rainbow-c) + 0.1),
-			calc(var(--important-hue, 0deg) + 300deg)
-		);
-		box-shadow:
-			0 0 0 1px color-mix(in srgb, var(--z-border) 70%, transparent),
-			0 0 0.5rem oklch(
-				var(--important-rainbow-l),
-				var(--important-rainbow-c),
-				calc(var(--important-hue, 0deg) + 300deg) / 0.55
-			);
-	}
-
-	.z-mail-view .z-mail-list-color-cycle:hover {
-		transform: scale(1.12);
-		background-color: color-mix(in srgb, var(--z-surface-sunken) 85%, transparent);
-	}
-
-	.z-mail-view .z-mail-list-color-cycle:active {
-		transform: scale(0.95);
-	}
-
-	.z-mail-view .z-mail-list-color-cycle:focus-visible {
-		outline: 2px solid var(--z-accent);
-		outline-offset: 2px;
 	}
 
 	/* Inbox home + folder sections — full-bleed in the list pane. */

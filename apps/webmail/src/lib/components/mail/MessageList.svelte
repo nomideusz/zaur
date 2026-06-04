@@ -316,12 +316,6 @@
 		}
 	}
 
-	function cycleImportantColor(messageId: string, event: MouseEvent) {
-		event.preventDefault();
-		event.stopPropagation();
-		importantRainbow.cyclePhase(messageId);
-	}
-
 	function handleRowSelect(
 		messageId: string,
 		modifiers: { shift?: boolean; ctrl?: boolean } = {}
@@ -477,13 +471,8 @@
 		return !isExcludedFromImportantSection(role);
 	}
 
-	function showImportantChrome(message: MessagePreview, routeId: string): boolean {
-		if (!message.important) return false;
-		return canPickImportantRainbow(routeId);
-	}
-
 	function showImportantPresentation(message: MessagePreview, routeId: string): boolean {
-		if (!showImportantChrome(message, routeId)) return false;
+		if (!message.important || !canPickImportantRainbow(routeId)) return false;
 		const viewRole = mail.mailboxByRouteId(routeId)?.role;
 		return shouldPresentImportantColors(viewRole, settings.showImportantColors);
 	}
@@ -860,28 +849,17 @@
 				settings.timeFormat
 			)}
 			{@const isUnread = message.unread}
-			{@const importantChrome = showImportantChrome(message, routeId)}
 			{@const subjectImportant = showImportantPresentation(message, routeId)}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
 			{@const isCurrent = currentMessageId === message.id}
-			{@const showColorChip = importantChrome}
 			{@const swipeLeading = listSwipeLeading(message, routeId)}
 			{@const swipeTrailing = listSwipeTrailing(message, routeId)}
 			<li
-				class={cn('z-mail-list-row list-none', importantChrome && 'z-mail-list-row--important')}
-				style={importantChrome ? importantRainbow.cssVars(message.id) : undefined}
+				class="z-mail-list-row list-none"
 				data-current={isCurrent ? 'true' : undefined}
 				data-selected={rowSelected ? 'true' : undefined}
-				data-important={importantChrome ? 'true' : undefined}
 			>
-				{#if importantChrome}
-					<span
-						class="z-mail-list-important-spine shrink-0"
-						style={importantRainbow.cssVars(message.id)}
-						aria-hidden="true"
-					></span>
-				{/if}
 				{#if showRowCheckbox}
 					<div class="relative flex items-center justify-center size-5 shrink-0" style="margin-top: 0.875rem;">
 						<input
@@ -917,23 +895,9 @@
 						<div class="min-w-0 flex-1">
 							<div class="flex items-baseline justify-between gap-2">
 								<p class={listSenderClass(isUnread)}>{senderLabel}</p>
-								<div class="flex shrink-0 items-center gap-1.5">
-									{#if showColorChip}
-										<button
-											type="button"
-											class="z-mail-list-color-cycle"
-											style={importantRainbow.cssVars(message.id)}
-											aria-label="Cycle important color"
-											title="Cycle color"
-											onclick={(event) => cycleImportantColor(message.id, event)}
-										>
-											<span class="z-mail-list-color-cycle__swatch" aria-hidden="true"></span>
-										</button>
-									{/if}
-									<time class={listTimeClass} datetime={message.receivedAt}>
-										{timeLabel}
-									</time>
-								</div>
+								<time class={listTimeClass} datetime={message.receivedAt}>
+									{timeLabel}
+								</time>
 							</div>
 							<p
 								class={cn(
