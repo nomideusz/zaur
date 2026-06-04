@@ -12,7 +12,7 @@
 	let { children } = $props();
 	const onMailRoute = $derived($page.url.pathname === '/' || $page.url.pathname.startsWith('/mail'));
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
-	const showAppHeader = $derived(!onSettingsRoute);
+	const showAppHeader = true;
 	const pageScrollOnMain = false;
 	const pageScrollOverflowX = 'overflow-x-hidden';
 
