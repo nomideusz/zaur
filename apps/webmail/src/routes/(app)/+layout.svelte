@@ -12,8 +12,8 @@
 	let { children } = $props();
 	const onMailRoute = $derived($page.url.pathname === '/' || $page.url.pathname.startsWith('/mail'));
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
-	const showAppHeader = $derived(!onMailRoute && !onSettingsRoute);
-	const pageScrollOnMain = $derived(onMailRoute || onSettingsRoute);
+	const showAppHeader = $derived(!onSettingsRoute);
+	const pageScrollOnMain = $derived(onSettingsRoute);
 	const pageScrollOverflowX = 'overflow-x-hidden';
 
 	$effect(() => {

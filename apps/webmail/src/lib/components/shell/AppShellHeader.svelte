@@ -45,7 +45,7 @@
 				<CalendarPlus class="size-5" aria-hidden="true" />
 				New event
 			</Button>
-		{:else if $page.url.pathname.startsWith('/contacts')}
+		{:else if ($page.url.pathname.startsWith('/contacts') || $page.url.pathname === '/' || $page.url.pathname.startsWith('/mail')) && !$page.url.pathname.startsWith('/mail/compose')}
 			<IconButton label="New message" class="sm:hidden" onclick={() => goto('/mail/compose')}>
 				<PenSquare class="size-5" aria-hidden="true" />
 			</IconButton>

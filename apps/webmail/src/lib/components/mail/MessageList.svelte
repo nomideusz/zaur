@@ -35,9 +35,8 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { Mailbox, MessagePreview } from '$lib/types/mail';
-	import MailTextNav from '$lib/components/mail/MailTextNav.svelte';
 	import { contentPagePadClass } from '$lib/mail/layout';
-	import { mailListHref, mailThreadHref } from '$lib/mail/routes';
+	import { mailThreadHref } from '$lib/mail/routes';
 	import { mailboxKindOrderForMailbox } from '$lib/mail/mailboxes';
 	import {
 		formatSimpleListWhen,
@@ -834,18 +833,12 @@
 
 <section
 	class={cn(
-		'z-mail-pane-surface z-mail-pane-surface--flow flex w-full min-w-0 flex-col',
+		'z-mail-pane-surface z-mail-pane-surface--flow flex w-full min-w-0 flex-col overflow-hidden',
 		hideOnMobile ? (mail.hasSelection ? 'flex' : 'hidden md:flex') : 'flex'
 	)}
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
-	<div
-		class={cn(
-			contentPagePadClass(),
-			'flex flex-col'
-		)}
-	>
 	{#if mailboxRouteId || !sectionMode}
 		{#if showBulkBar && mailboxRouteId}
 			<MessageListMobileBar
@@ -855,17 +848,36 @@
 				disabled={loading || !!error || !messages.length}
 			/>
 		{:else}
-			<MailTextNav
-				title={isInboxHome ? appConfig.brandName : mailboxName}
-				titleHref={isInboxHome ? mailHomeHref : null}
-				actionHref="/mail/compose"
-				actionLabel="New message"
-				showBackToMail={!isInboxHome}
-				backHref={mailHomeHref}
-				showSettings={false}
-			/>
+			<div class="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border/80 px-4 py-2.5">
+				<h2 class="z-type-pane-title">{mailboxName}</h2>
+				<div class="flex items-center gap-2">
+					{#if !isInboxHome}
+						<a
+							href={mailHomeHref}
+							class="text-xs font-semibold text-fg-muted no-underline transition-colors hover:text-fg"
+						>
+							Back
+						</a>
+						<span class="text-fg-subtle text-xs" aria-hidden="true">·</span>
+					{/if}
+					<a
+						href="/mail/compose"
+						class="text-xs font-semibold text-accent no-underline transition-colors hover:text-accent-hover"
+					>
+						New message
+					</a>
+				</div>
+			</div>
 		{/if}
 	{/if}
+
+	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
+		<div
+			class={cn(
+				contentPagePadClass(),
+				'flex flex-col'
+			)}
+		>
 
 	<div
 		class={cn(
@@ -1105,22 +1117,6 @@
 				{/if}
 			</div>
 
-			{#if isInboxHome && orderedFolders.length > 0 && !showBulkBar}
-				<nav
-					class="z-mail-list-folders z-type-page-muted flex flex-wrap items-center gap-x-3 gap-y-1 text-fg-muted"
-					aria-label="Folders"
-				>
-					{#each orderedFolders as folder (folder.id)}
-						<a
-							href={mailListHref(folder.id)}
-							class="inline-flex items-baseline gap-1.5 text-fg-muted no-underline transition-colors hover:text-fg"
-						>
-							<span>{folder.name}</span>
-							<span class="z-type-list-count tabular-nums font-semibold">{folder.total}</span>
-						</a>
-					{/each}
-				</nav>
-			{/if}
 		{:else}
 			<ul class="flex flex-col gap-3">
 				{#each listMessages as message, index (message.id)}
@@ -1134,26 +1130,6 @@
 	{#if !loading && !error && !mail.hasSelection}
 		<DinoZaur />
 	{/if}
-	{#if !showBulkBar}
-	<div class="z-mail-text-nav__links mt-[var(--z-main-gap)]!">
-		<a class="z-mail-text-nav__link" href="/calendar">Calendar</a>
-		<span class="z-mail-text-nav__sep">·</span>
-		<a class="z-mail-text-nav__link" href="/contacts">Contacts</a>
-		<span class="z-mail-text-nav__sep">·</span>
-		<a class="z-mail-text-nav__link" href="/settings">Settings</a>
-		<span class="z-mail-text-nav__sep">·</span>
-		<button
-			type="button"
-			class="z-mail-text-nav__link"
-			onclick={() => {
-				if (confirm('Sign out of ZAUR Webmail on this device?')) {
-					auth.logout();
-				}
-			}}
-		>
-			Sign out
-		</button>
-	</div>
-	{/if}
+		</div>
 	</div>
 </section>

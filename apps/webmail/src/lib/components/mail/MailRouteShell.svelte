@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import MailKeyboardShortcuts from '$lib/components/mail/MailKeyboardShortcuts.svelte';
+	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import { parseMailContext } from '$lib/mail/routes';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -50,5 +51,6 @@
 <MailKeyboardShortcuts />
 
 <div class="relative flex min-h-0 flex-1 flex-row overflow-visible {MAIL_LAYOUT.mailRootClass}">
+	<MailboxSidebar />
 	{@render children()}
 </div>
