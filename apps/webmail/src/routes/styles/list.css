@@ -151,7 +151,7 @@
 		-webkit-backdrop-filter: blur(8px);
 	}
 
-	.z-mail-view .z-mail-list-bulk-header {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
@@ -159,7 +159,7 @@
 		min-width: 0;
 	}
 
-	.z-mail-view .z-mail-list-bulk-header__lead {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__lead {
 		display: flex;
 		min-width: 0;
 		flex: 1;
@@ -167,7 +167,7 @@
 		gap: 0.375rem;
 	}
 
-	.z-mail-view .z-mail-list-bulk-header__summary {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__summary {
 		min-width: 0;
 		flex: 1;
 		margin: 0;
@@ -178,33 +178,33 @@
 		line-height: 1.4;
 	}
 
-	.z-mail-view .z-mail-list-bulk-header__headline {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__headline {
 		font-weight: 600;
 		color: var(--z-fg);
 	}
 
-	.z-mail-view .z-mail-list-bulk-header__detail {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__detail {
 		font-weight: 400;
 		color: var(--z-fg-muted);
 	}
 
-	.z-mail-view .z-mail-list-bulk-header__actions {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__actions {
 		display: flex;
 		flex-shrink: 0;
 		align-items: center;
 		gap: 0.125rem;
 	}
 
-	.z-mail-view .z-mail-list-bulk-header__danger {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__danger {
 		color: var(--z-danger);
 	}
 
-	.z-mail-view .z-mail-list-bulk-header__danger:hover {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__danger:hover {
 		color: var(--z-danger);
 		background-color: color-mix(in srgb, var(--z-danger) 10%, transparent);
 	}
 
-	.z-mail-view .z-mail-list-bulk-header__checkbox {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__checkbox {
 		position: static;
 		left: auto;
 		top: auto;
@@ -451,7 +451,7 @@
 
 	.z-mail-view .z-mail-list-row__checkbox,
 	.z-mail-list-bulk-bar__checkbox,
-	.z-mail-view .z-mail-list-bulk-header__checkbox {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__checkbox {
 		appearance: none;
 		-webkit-appearance: none;
 		width: 1.125rem;
@@ -505,7 +505,7 @@
 
 	.z-mail-view .z-mail-list-row__checkbox--on,
 	.z-mail-view .z-mail-list-row__checkbox:checked,
-	.z-mail-view .z-mail-list-bulk-header__checkbox:checked {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__checkbox:checked {
 		background-color: var(--z-accent);
 		border-color: var(--z-accent);
 		opacity: 1;
@@ -513,7 +513,7 @@
 
 	.z-mail-view .z-mail-list-row__checkbox--on::after,
 	.z-mail-view .z-mail-list-row__checkbox:checked::after,
-	.z-mail-view .z-mail-list-bulk-header__checkbox:checked::after {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__checkbox:checked::after {
 		content: '';
 		display: block;
 		width: 0.3125rem;
@@ -523,13 +523,13 @@
 		transform: rotate(45deg) translate(-0.5px, -1px);
 	}
 
-	.z-mail-view .z-mail-list-bulk-header__checkbox:indeterminate {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__checkbox:indeterminate {
 		background-color: var(--z-surface-raised);
 		border-color: var(--z-accent);
 		opacity: 1;
 	}
 
-	.z-mail-view .z-mail-list-bulk-header__checkbox:indeterminate::after {
+	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__checkbox:indeterminate::after {
 		content: '';
 		display: block;
 		width: 0.5rem;

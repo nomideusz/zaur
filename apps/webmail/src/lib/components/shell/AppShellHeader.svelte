@@ -36,7 +36,10 @@
 </script>
 
 <header
-	class="z-app-shell-header relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-4 backdrop-blur-md max-md:gap-1.5 max-md:px-3"
+	class={cn(
+		'z-app-shell-header relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-4 backdrop-blur-md max-md:gap-1.5 max-md:px-3',
+		showMobileBulkHeader && 'z-app-shell-header--bulk max-md:overflow-visible'
+	)}
 	style="view-transition-name: app-header;"
 >
 	<div class="relative z-10 hidden min-w-0 shrink-0 items-center gap-3 md:flex">
@@ -50,7 +53,7 @@
 	</div>
 
 	{#if showMobileBulkHeader && mailCtx?.mailboxRouteId}
-		<div class="relative z-10 min-w-0 flex-1 md:hidden">
+		<div class="z-app-shell-header__bulk relative z-10 min-w-0 w-full flex-1 md:hidden">
 			<MessageListBulkHeader
 				mailboxRouteId={mailCtx.mailboxRouteId}
 				disabled={mailCtx.loading || !!mailCtx.error || mailCtx.messageCount === 0}
@@ -76,7 +79,12 @@
 		{/if}
 	</div>
 
-	<div class="flex shrink-0 items-center gap-2 md:w-64 md:justify-end">
+	<div
+		class={cn(
+			'flex shrink-0 items-center gap-2 md:w-64 md:justify-end',
+			showMobileBulkHeader && 'max-md:hidden'
+		)}
+	>
 		<OfflineIndicator class="max-md:hidden" />
 
 		{#if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false}
