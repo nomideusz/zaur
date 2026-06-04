@@ -1,4 +1,4 @@
-const USERNAME_REGEX = /^[a-z0-9][a-z0-9._-]{1,28}[a-z0-9]$/;
+const USERNAME_REGEX = /^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/;
 
 const usernameInput = document.getElementById('username-input');
 const validationHint = document.getElementById('validation-hint');
@@ -9,11 +9,12 @@ const selectedDomainId = document.getElementById('selected-domain-id');
 const selectedEmailLabel = document.getElementById('selected-email-label');
 const formError = document.getElementById('form-error');
 const captchaQuestion = document.getElementById('captcha-question');
-const passwordInput = document.getElementById('password');
+const passwordInput = document.getElementById('new-password');
 const confirmPasswordInput = document.getElementById('confirm-password');
 const strengthFill = document.getElementById('strength-fill');
 const strengthLabel = document.getElementById('strength-label');
 const submitBtn = document.getElementById('submit-btn');
+const loginEmailInput = document.getElementById('login-email');
 
 const invitationGate = document.getElementById('invitation-gate');
 const invitationGateMessage = document.getElementById('invitation-gate-message');
@@ -87,8 +88,8 @@ function validateLocalUsername(value) {
   if (!normalized) {
     return { valid: false, hint: '', username: '' };
   }
-  if (normalized.length < 3) {
-    return { valid: false, hint: '', username: normalized };
+  if (normalized.length > 30) {
+    return { valid: false, hint: 'Maximum 30 characters.', username: normalized };
   }
   if (!USERNAME_REGEX.test(normalized)) {
     return {
@@ -170,6 +171,19 @@ function applyInvitationUi() {
   }
 }
 
+function syncSelectedEmail() {
+  if (!selectedResult || !currentUsername) return;
+  const email = `${currentUsername}@${selectedResult.domain}`;
+  selectedEmailLabel.textContent = email;
+  if (loginEmailInput) loginEmailInput.value = email;
+}
+
+function configureFormForPasswordManagers() {
+  const loginUrl = window.ZaurSite?.loginUrl(window.ZAUR_SITE) || 'https://webmail.zaur.app/login';
+  registerForm.action = loginUrl;
+  registerForm.method = 'post';
+}
+
 function selectDomain(row) {
   document.querySelectorAll('.z-domain-option').forEach((r) => r.classList.remove('selected'));
   row.classList.add('selected');
@@ -181,7 +195,7 @@ function selectDomain(row) {
   };
 
   selectedDomainId.value = selectedResult.domainId;
-  selectedEmailLabel.textContent = `${currentUsername}@${selectedResult.domain}`;
+  syncSelectedEmail();
   registerPanel.classList.add('is-visible');
   hideFormError();
   if (!hasMagicLinkInvitation) {
@@ -212,6 +226,7 @@ function updateView() {
   }
 
   currentUsername = username;
+  if (selectedResult) syncSelectedEmail();
 
   const statuses = new Map();
   for (const d of cachedDomains) {
@@ -441,6 +456,7 @@ async function initInvitation() {
 }
 
 async function init() {
+  configureFormForPasswordManagers();
   await initInvitation();
   if (!invitationReady) {
     resultsContainer.innerHTML = '';

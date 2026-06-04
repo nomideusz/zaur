@@ -92,14 +92,24 @@
 
                 <div class="z-alert z-alert--error" id="form-error" role="alert"></div>
 
-                <form id="register-form" class="z-form-stack">
+                <form id="register-form" class="z-form-stack" method="post">
                   <input type="hidden" id="selected-domain-id" name="domainId">
                   <input type="hidden" id="invite-token" name="inviteToken">
                   <input type="hidden" id="invite-email" name="inviteEmail">
+                  <input
+                    type="email"
+                    id="login-email"
+                    name="username"
+                    class="sr-only"
+                    autocomplete="username"
+                    tabindex="-1"
+                    aria-hidden="true"
+                    readonly
+                  >
 
                   <div class="z-field" style="margin-bottom: 0;">
-                    <label for="password" class="z-field-label">Mailbox password</label>
-                    <input type="password" id="password" name="password" class="z-input" autocomplete="new-password" required>
+                    <label for="new-password" class="z-field-label">Mailbox password</label>
+                    <input type="password" id="new-password" name="password" class="z-input" autocomplete="new-password" required>
                     <p class="z-text-subtle z-hidden" id="password-hint" style="font-size: 0.8125rem; margin-top: 0.25rem;">
                       Use this for IMAP and webmail. You can add a passkey on the next screen.
                     </p>

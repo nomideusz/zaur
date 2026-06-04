@@ -1,4 +1,4 @@
-const USERNAME_REGEX = /^[a-z0-9][a-z0-9._-]{1,28}[a-z0-9]$/;
+const USERNAME_REGEX = /^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/;
 
 const RESERVED_USERNAMES = new Set([
   'admin',
@@ -27,8 +27,8 @@ function validateUsername(username) {
 
   const normalized = username.toLowerCase().trim();
 
-  if (normalized.length < 3 || normalized.length > 30) {
-    return { valid: false, error: 'Username must be 3–30 characters.' };
+  if (normalized.length < 1 || normalized.length > 30) {
+    return { valid: false, error: 'Username must be 1–30 characters.' };
   }
 
   if (RESERVED_USERNAMES.has(normalized)) {

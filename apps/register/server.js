@@ -19,6 +19,8 @@ const {
 } = require('./lib/validation');
 const { getSiteConfig } = require('./lib/site-config');
 
+const siteConfig = getSiteConfig();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
@@ -36,7 +38,7 @@ app.use((req, res, next) => {
       "font-src 'self'",
       "img-src 'self' data:",
       "connect-src 'self'",
-      "form-action 'self'",
+      `form-action 'self' ${siteConfig.webmailLoginUrl}`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
       "object-src 'none'",
