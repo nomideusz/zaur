@@ -51,11 +51,11 @@ function getConfig() {
 function buildAuthHeaders(config) {
   const headers = { 'Content-Type': 'application/json', Accept: 'application/json' };
 
-  if (config.token) {
-    headers.Authorization = `Bearer ${config.token}`;
-  } else {
+  if (config.user && config.password) {
     const encoded = Buffer.from(`${config.user}:${config.password}`).toString('base64');
     headers.Authorization = `Basic ${encoded}`;
+  } else if (config.token) {
+    headers.Authorization = `Bearer ${config.token}`;
   }
 
   return headers;
