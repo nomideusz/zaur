@@ -2,8 +2,6 @@ FROM node:22-alpine
 
 WORKDIR /app
 
-RUN apk add --no-cache openldap-clients
-
 COPY package.json ./
 RUN npm install --omit=dev --ignore-scripts
 

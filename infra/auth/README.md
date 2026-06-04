@@ -1,14 +1,14 @@
 # ZAUR identity (Logto + passkeys)
 
-[Webmail](https://webmail.zaur.app) sign-in uses the **email + password** from registration (LLDAP/Stalwart). **Logto** provides optional passkey/OIDC sign-in. Stalwart validates Bearer tokens for OIDC sessions; LLDAP remains the directory for mailbox passwords and app passwords (Thunderbird / Apple Mail).
+[Webmail](https://webmail.zaur.app) sign-in uses the **email + password** stored in Stalwart’s PostgreSQL auth database. **Logto** provides optional passkey/OIDC sign-in. Stalwart validates Bearer tokens for OIDC sessions; PostgreSQL remains the directory for mailbox passwords and SMTP/IMAP login.
 
 ## Architecture
 
 ```
-Browser → webmail login form (email + password → LLDAP/Stalwart JMAP)
+Browser → webmail login form (email + password → Stalwart JMAP / PostgreSQL)
 Optional: webmail (PKCE) → Logto @ auth.zaur.app (passkeys)
 webmail session → encrypted cookie (password or OIDC refresh token)
-Thunderbird → Stalwart app password (later / settings UI)
+Thunderbird → mail.zaur.app (mailbox password or app password)
 ```
 
 Logto runs as a single container (OIDC on port 3001, admin console on 3002). CapRover exposes:
@@ -17,7 +17,7 @@ Logto runs as a single container (OIDC on port 3001, admin console on 3002). Cap
 |-----|-----|---------|
 | `auth` | `https://auth.zaur.app` | Logto OIDC + sign-in (do **not** open `/` or `/console` here) |
 | `auth-admin` | `https://auth-admin.zaur.app` | Admin console — **open `/console/welcome` here** |
-| `auth-db` | internal | Postgres 17 |
+| `auth-db` | internal | Postgres 17 (`stalwart_auth` + Logto DB) |
 
 ## Deploy on CapRover
 
@@ -99,34 +99,29 @@ OAUTH_SCOPES=openid profile email offline_access
 
 Redeploy webmail after setting vars.
 
-## 4. Stalwart OIDC directory
+## 4. Stalwart directories (Logto + PostgreSQL)
 
-Run on the CapRover host (or use the WebUI with the same values):
+Run on the CapRover host:
 
 ```bash
-./infra/mail/apply-stalwart-logto.sh
+./infra/mail/apply-stalwart-postgres.sh
+docker service update --force srv-captain--mail
 ```
 
-| Field | Value |
-|-------|-------|
-| Type | OpenID Connect |
-| Issuer URL | `https://auth.zaur.app/oidc` |
-| Username claim | `email` |
-| Required audience | *(unset — see below)* |
+| Setting | Directory |
+|---------|-----------|
 | Authentication → Directory | **Logto OIDC** (Bearer / passkey tokens) |
-| Every mail domain → Directory | **LLDAP** (password — must be explicit, never unset) |
+| Every mail domain → Directory | **PostgreSQL Auth** (password — must be explicit, never unset) |
 
-After changing directories, **restart the mail service** (`docker service update --force srv-captain--mail`) so running Stalwart reloads config.
-
-Logto’s userinfo endpoint is `https://auth.zaur.app/oidc/me` (from discovery). Opaque access tokens (no API resource in the OAuth request) are validated via userinfo; JWT tokens need a matching `aud` if you set **Required audience**.
+Logto’s userinfo endpoint is `https://auth.zaur.app/oidc/me` (from discovery). Opaque access tokens (no API resource in the OAuth request) are validated via userinfo.
 
 Pre-create Stalwart accounts for each mailbox (register already does this). Logto users must share the same **email** claim.
 
 See [Stalwart OIDC docs](https://stalw.art/docs/auth/backend/oidc/) and [infra/mail/README.md](../mail/README.md).
 
-## 5. Register → Logto
+## 5. Register → Logto + Stalwart
 
-On signup, `apps/register` creates a matching Logto user via the [Management API](https://docs.logto.io/docs/references/api/).
+On signup, `apps/register` creates a Stalwart account, writes the bcrypt password to PostgreSQL, and creates a matching Logto user via the [Management API](https://docs.logto.io/docs/references/api/).
 
 ### M2M application (register service)
 
@@ -143,9 +138,13 @@ LOGTO_API_RESOURCE=https://default.logto.app/api
 LOGTO_M2M_CLIENT_ID=<m2m-app-id>
 LOGTO_M2M_CLIENT_SECRET=<m2m-app-secret>
 REGISTER_PUBLIC_URL=https://register.zaur.app
+PG_HOST=srv-captain--auth-db
+PG_DATABASE=stalwart_auth
+PG_USER=postgres
+PG_PASSWORD=…
 ```
 
-Redeploy register after setting vars. Registration creates users in this order: **LLDAP → Logto → Stalwart**. If Logto vars are unset, signup still works (mailbox only) but webmail passkey login will fail until a Logto user exists.
+Redeploy register after setting vars. Registration order: **Logto → Stalwart account → PostgreSQL password hash**. If Logto vars are unset, signup still works (mailbox only) but webmail passkey login will fail until a Logto user exists.
 
 Logto users are created with **email + password only** (no internal username). The user’s **personal / recovery email** from the magic link is stored in Logto `customData.recoveryEmail` for future account recovery.
 
@@ -168,21 +167,20 @@ Set `REGISTRATION_OPEN=true` on the register app to bypass invitations in local 
 
 ## 7. Forgot password (webmail)
 
-Webmail links to `/forgot-password`. The register app handles reset tokens and email delivery (same `INVITE_SMTP_*` transport as invitations). A reset updates **both LLDAP and Logto** so webmail and OIDC stay in sync.
+Webmail links to `/forgot-password`. The register app handles reset tokens and email delivery (same `INVITE_SMTP_*` transport as invitations). A reset updates **both PostgreSQL and Logto** so mail and OIDC stay in sync.
 
 Flow:
 
 1. User enters mailbox address on webmail → `POST /api/auth/forgot-password` (proxied to register)
-2. Register looks up the account in LLDAP and resolves a **recovery email** (Logto `customData.recoveryEmail`, invitations audit, or mailbox address as fallback)
+2. Register resolves the mailbox in Stalwart/PostgreSQL and a **recovery email** (Logto `customData.recoveryEmail`, invitations audit, or mailbox address as fallback)
 3. Email contains a link to `webmail.zaur.app/forgot-password/reset?token=…&email=…`
-4. New password is written to LLDAP + Logto
+4. New password is written to PostgreSQL + Logto
 
 Register env (CapRover `register` app):
 
 ```env
 WEBMAIL_URL=https://webmail.zaur.app
 # INVITE_SMTP_* (required for reset emails)
-# CapRover: use public SMTP submission (srv-captain--mail has no SMTP on port 25):
 # INVITE_SMTP_HOST=mail.zaur.app
 # INVITE_SMTP_PORT=465
 # INVITE_SMTP_SECURE=true
@@ -206,12 +204,11 @@ REGISTER_API_URL=https://register.zaur.app
 
 ## 8. Migrate existing users
 
-For each LLDAP user:
+For each mailbox without a Logto user:
 
-1. Create matching user in Logto (same email)
+1. Create matching user in Logto (same email) — or have the user register via the normal flow
 2. User visits webmail → **Continue with passkey** → enroll device
-3. LLDAP password stays for IMAP until they create a Stalwart **app password**
 
 ## Local development
 
-Without Logto, leave `OAUTH_ENABLED=false` — webmail uses the direct password form (LLDAP/Stalwart basic auth).
+Without Logto, leave `OAUTH_ENABLED=false` — webmail uses the direct password form (Stalwart basic auth via PostgreSQL).

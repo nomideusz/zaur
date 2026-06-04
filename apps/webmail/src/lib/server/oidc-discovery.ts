@@ -21,7 +21,7 @@ export function isOauthEnabled(): boolean {
 	return env.OAUTH_ENABLED === 'true' && Boolean(getOidcIssuerUrl());
 }
 
-/** Password sign-in via LLDAP/Stalwart. Enabled by default when OAuth is on; set OAUTH_PASSWORD_FALLBACK=false for passkey-only. */
+/** Password sign-in via Stalwart (PostgreSQL SQL directory). Enabled by default when OAuth is on; set OAUTH_PASSWORD_FALLBACK=false for passkey-only. */
 export function isPasswordLoginEnabled(): boolean {
 	return env.OAUTH_PASSWORD_FALLBACK !== 'false';
 }

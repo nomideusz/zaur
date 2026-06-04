@@ -28,29 +28,35 @@ location = / {
 
 Configured in CapRover → **mail** → **HTTP Settings** → **Edit Default Nginx Config** (insert before the catch-all `location /`). After edits on the VPS, restart captain: `docker service update --force captain-captain`.
 
-## Stalwart ↔ Logto (OIDC Bearer for webmail)
+## Stalwart auth (Logto OIDC + PostgreSQL)
 
-Webmail sends Logto **access tokens** to Stalwart JMAP (`Authorization: Bearer …`). Stalwart validates them against Logto; **LLDAP stays the password directory** for IMAP/SMTP and app passwords.
+Hybrid auth: **Logto** for Bearer/passkey JMAP sessions; **PostgreSQL** (`stalwart_auth` on `auth-db`) for mailbox passwords (JMAP basic auth, IMAP, SMTP submission).
 
 ```
-webmail (PKCE) → Logto @ auth.zaur.app
-webmail JMAP   → mail.zaur.app  (Bearer access_token)
-Thunderbird    → mail.zaur.app  (app password → LLDAP bind)
+webmail (PKCE)     → Logto @ auth.zaur.app
+webmail JMAP       → mail.zaur.app  (Bearer access_token → Logto OIDC directory)
+webmail password   → mail.zaur.app  (basic auth → PostgreSQL SQL directory)
+Thunderbird / SMTP → mail.zaur.app  (login → PostgreSQL SQL directory)
+register signup    → Stalwart account + bcrypt hash in PostgreSQL + Logto user
 ```
 
-Requires **Stalwart 0.16.1+**. Webmail uses **opaque** Logto access tokens (no `OAUTH_RESOURCE`); Stalwart validates them via Logto’s userinfo endpoint (`/oidc/me`). Set **Authentication → Directory** to the Logto OIDC directory and **restart mail** after changing it.
+Requires **Stalwart 0.16.1+**. Webmail uses **opaque** Logto access tokens (no `OAUTH_RESOURCE`); Stalwart validates them via Logto’s userinfo endpoint (`/oidc/me`).
 
-```bash
-docker service update --force srv-captain--mail
-```
+| Setting | Directory |
+|---------|-----------|
+| **Authentication → Directory** (global default) | **Logto OIDC** |
+| **Each mail domain → Directory** | **PostgreSQL Auth** |
+
+Domains must **never** inherit the Logto OIDC directory — password login would break.
 
 ### Apply on the server
 
 ```bash
 export STALWART_URL=https://mail.zaur.app
 export STALWART_USER=admin
-export STALWART_PASSWORD='…'   # recovery admin or management account
-./infra/mail/apply-stalwart-logto.sh
+export STALWART_PASSWORD='…'
+./infra/mail/apply-stalwart-postgres.sh
+docker service update --force srv-captain--mail
 ```
 
 Or manually in **Settings → Authentication → Directories**:
@@ -61,26 +67,14 @@ Or manually in **Settings → Authentication → Directories**:
 | Issuer URL | `https://auth.zaur.app/oidc` |
 | Username claim | `email` |
 | Required audience | *(empty)* |
-| Authentication → Directory | **Logto OIDC** |
-
-Then **Settings → Domains → zaur.app → Directory** → select the Logto OIDC directory.  
-Leave **Settings → Authentication → General → Directory** on **LLDAP**.
 
 Accounts must **already exist in Stalwart** (register creates them). Logto users must use the **same email**; OIDC does not auto-provision mailboxes ([Stalwart OIDC docs](https://stalw.art/docs/auth/backend/oidc/)).
-
-### Logto checklist
-
-1. Webmail app with redirect `https://webmail.zaur.app/oauth/callback` (PKCE, no secret).
-2. Scopes: `openid profile email offline_access`.
-3. Each mailbox has a Logto user with matching primary email (register → Logto hook is phase 4).
-
-Optional: create API resource `https://mail.zaur.app/api` as **default API** and set Stalwart **Required audience** to that URI if you want JWT offline validation instead of userinfo.
 
 ## Adding config here
 
 When you version Stalwart settings, add files such as:
 
-- `apply-stalwart-logto.sh` — idempotent CLI wiring for Logto OIDC
+- `apply-stalwart-postgres.sh` — idempotent CLI wiring for Logto OIDC + PostgreSQL
 - `stalwart-logto-oidc.ndjson` — declarative apply template (`stalwart-cli apply --file …`)
 - `upgrade.md` — version bump checklist
 - `backup.md` — backup/restore procedure
