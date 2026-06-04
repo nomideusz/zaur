@@ -1,5 +1,19 @@
 /* App shell — panes, scroll, mobile overlays. */
 
+	@media (max-width: 767px) {
+		:root {
+			--height-header: 2.75rem;
+		}
+	}
+
+	.z-app-shell-header__mail-title {
+		margin: 0;
+		font-size: 0.875rem;
+		font-weight: 600;
+		line-height: 1.25;
+		color: var(--z-fg);
+	}
+
 	.z-mobile-reader-bar {
 		@apply shrink-0 border-t border-border/80 bg-surface-raised/95 backdrop-blur-sm;
 		padding-bottom: max(0.75rem, env(safe-area-inset-bottom));

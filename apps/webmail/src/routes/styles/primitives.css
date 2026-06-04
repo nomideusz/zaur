@@ -300,7 +300,6 @@
 	}
 
 	.z-swipe-row--elevated {
-		overflow: visible;
 		z-index: 30;
 	}
 
@@ -364,6 +363,16 @@
 	.z-swipe-row--interactive.z-swipe-row--dragging .z-swipe-row__foreground,
 	.z-swipe-row--interactive[data-swipe-open] .z-swipe-row__foreground {
 		will-change: transform;
+	}
+
+	.z-swipe-row--interactive:not([data-swipe-open]):not(.z-swipe-row--dragging) .z-swipe-row__foreground {
+		transition: none;
+	}
+
+	.z-swipe-row--interactive:not([data-swipe-open]):not(.z-swipe-row--dragging) .z-swipe-row__actions {
+		opacity: 0;
+		visibility: hidden;
+		pointer-events: none;
 	}
 
 	.z-swipe-row[data-swipe-open] .z-swipe-row__foreground {

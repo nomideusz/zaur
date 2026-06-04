@@ -816,7 +816,7 @@
 >
 	{#if mailboxRouteId || !sectionMode}
 		<header
-			class="z-mail-list-pane-header flex h-12 shrink-0 items-center overflow-hidden border-b border-border/80 px-4"
+			class="z-mail-list-pane-header hidden h-12 shrink-0 items-center overflow-hidden border-b border-border/80 px-4 md:flex"
 		>
 			{#if mailboxRouteId}
 				<MessageListBulkHeader

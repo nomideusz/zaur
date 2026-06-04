@@ -923,10 +923,8 @@
 			background-color: var(--z-surface-raised) !important;
 		}
 
-		.z-mail-view .z-mail-list-row[data-current="true"] {
-			position: relative;
-			z-index: 2;
-			isolation: isolate;
+		.z-mail-view .z-mail-list-swipe-row {
+			contain: paint;
 		}
 
 		.z-mail-view .z-mail-list-row[data-current="true"] .z-mail-list-swipe-row .z-swipe-row__foreground,

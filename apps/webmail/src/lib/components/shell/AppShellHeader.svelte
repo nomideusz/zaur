@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import CalendarPlus from '$lib/components/icons/CalendarPlus.svelte';
 	import PenSquare from '$lib/components/icons/PenSquare.svelte';
+	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import GlobalSearch from './GlobalSearch.svelte';
@@ -10,17 +11,35 @@
 	import ToolSwitcher from './ToolSwitcher.svelte';
 	import UserMenu from './UserMenu.svelte';
 	import { appConfig } from '$lib/config';
+	import { isMailPath } from '$lib/mail/routes';
 	import { calendar } from '$lib/stores/calendar.svelte';
+	import { mail } from '$lib/stores/mail.svelte';
+	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { cn } from '$lib/utils/cn';
 
 	const homeHref = $derived(settings.preferredMailHref());
+	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
+	const onMailRoute = $derived($page.url.pathname === '/' || isMailPath($page.url.pathname));
+	const mailCtx = $derived(shellHeader.mail);
+	const showMobileBulkHeader = $derived(
+		onMailRoute && mail.hasSelection && !!mailCtx?.mailboxRouteId
+	);
+	const showMobileMailboxTitle = $derived(onMailRoute && mailCtx && !mail.hasSelection);
+	const hideShellSearch = $derived(onSettingsRoute || showMobileBulkHeader);
+	const showComposeAction = $derived(
+		($page.url.pathname.startsWith('/contacts') ||
+			$page.url.pathname === '/' ||
+			$page.url.pathname.startsWith('/mail')) &&
+			!$page.url.pathname.startsWith('/mail/compose')
+	);
 </script>
 
 <header
-	class="relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-4 backdrop-blur-md"
+	class="z-app-shell-header relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-4 backdrop-blur-md max-md:gap-1.5 max-md:px-3"
 	style="view-transition-name: app-header;"
 >
-	<div class="relative z-10 flex min-w-0 shrink-0 items-center gap-3">
+	<div class="relative z-10 hidden min-w-0 shrink-0 items-center gap-3 md:flex">
 		<a
 			href={homeHref}
 			class="shrink-0 text-base text-fg transition-colors hover:opacity-80"
@@ -30,9 +49,27 @@
 		<ToolSwitcher />
 	</div>
 
-	<!-- Pass clicks through empty flex space so tool tabs are not blocked when they overflow. -->
-	<div class="relative z-0 min-w-0 flex-1 pointer-events-none">
-		{#if !$page.url.pathname.startsWith('/settings')}
+	{#if showMobileBulkHeader && mailCtx?.mailboxRouteId}
+		<div class="relative z-10 min-w-0 flex-1 md:hidden">
+			<MessageListBulkHeader
+				mailboxRouteId={mailCtx.mailboxRouteId}
+				disabled={mailCtx.loading || !!mailCtx.error || mailCtx.messageCount === 0}
+				onBulkAction={mailCtx.onBulkAction}
+			/>
+		</div>
+	{:else if showMobileMailboxTitle && mailCtx}
+		<p class="z-app-shell-header__mail-title relative z-10 min-w-0 flex-1 truncate md:hidden">
+			{mailCtx.mailboxName}
+		</p>
+	{/if}
+
+	<div
+		class={cn(
+			'relative z-0 min-w-0 flex-1 pointer-events-none',
+			showMobileBulkHeader && 'max-md:hidden'
+		)}
+	>
+		{#if !hideShellSearch}
 			<div class="pointer-events-auto">
 				<GlobalSearch />
 			</div>
@@ -40,21 +77,18 @@
 	</div>
 
 	<div class="flex shrink-0 items-center gap-2 md:w-64 md:justify-end">
-		<OfflineIndicator />
+		<OfflineIndicator class="max-md:hidden" />
 
 		{#if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false}
-			<IconButton label="New event" class="sm:hidden" onclick={() => calendar.openCompose()}>
-				<CalendarPlus class="size-5" aria-hidden="true" />
-			</IconButton>
-			<Button onclick={() => calendar.openCompose()} class="hidden sm:inline-flex">
+			<Button onclick={() => calendar.openCompose()} class="hidden md:inline-flex">
 				<CalendarPlus class="size-5" aria-hidden="true" />
 				New event
 			</Button>
-		{:else if ($page.url.pathname.startsWith('/contacts') || $page.url.pathname === '/' || $page.url.pathname.startsWith('/mail')) && !$page.url.pathname.startsWith('/mail/compose')}
-			<IconButton label="New message" class="sm:hidden" onclick={() => goto('/mail/compose')}>
+		{:else if showComposeAction}
+			<IconButton label="New message" class="md:hidden" onclick={() => goto('/mail/compose')}>
 				<PenSquare class="size-5" aria-hidden="true" />
 			</IconButton>
-			<Button href="/mail/compose" class="hidden sm:inline-flex">
+			<Button href="/mail/compose" class="hidden md:inline-flex">
 				<PenSquare class="size-5" aria-hidden="true" />
 				New message
 			</Button>
