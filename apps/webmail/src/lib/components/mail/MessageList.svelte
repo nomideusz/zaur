@@ -69,7 +69,7 @@
 			important && 'z-mail-list-subject--important font-semibold',
 			!important && (unread ? 'font-semibold text-fg' : 'font-medium text-fg')
 		);
-	const listPreviewClass = 'min-w-0 truncate text-xs text-fg-muted';
+
 	const listTimeClass = 'shrink-0 text-xs tabular-nums text-fg-subtle';
 
 	const primaryOrder = new Map([
@@ -1038,9 +1038,7 @@
 							>
 								{subjectText}
 							</p>
-							{#if message.preview.trim()}
-								<p class={listPreviewClass}>{message.preview}</p>
-							{/if}
+
 						</div>
 						{#if message.hasAttachment || message.replied}
 							<div class="flex items-center gap-1 shrink-0 text-fg-subtle">
