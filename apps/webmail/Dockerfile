@@ -21,6 +21,7 @@ ARG PUBLIC_APP_NAME=ZAUR Webmail
 ENV PUBLIC_JMAP_SERVER_URL=$PUBLIC_JMAP_SERVER_URL
 ENV PUBLIC_APP_NAME=$PUBLIC_APP_NAME
 
+RUN pnpm --filter @nomideusz/svelte-calendar package
 RUN pnpm --filter @zaur/webmail build
 RUN pnpm --filter @zaur/webmail --prod deploy /out --legacy
 
