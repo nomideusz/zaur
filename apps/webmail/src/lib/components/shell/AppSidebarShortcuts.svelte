@@ -12,9 +12,10 @@
 	interface Props {
 		/** When true, omit Settings and put Mail first (settings sidebar). */
 		inSettings?: boolean;
+		hideApps?: boolean;
 	}
 
-	let { inSettings = false }: Props = $props();
+	let { inSettings = false, hideApps = false }: Props = $props();
 
 	const items = $derived(
 		inSettings
@@ -25,7 +26,7 @@
 						icon: Mail,
 						active: isMailPath($page.url.pathname)
 					},
-					...(calendar.supported !== false
+					...(!hideApps && calendar.supported !== false
 						? [
 								{
 									href: '/calendar',
@@ -35,21 +36,29 @@
 								}
 							]
 						: []),
-					{
-						href: '/contacts',
-						label: 'Contacts',
-						icon: Users,
-						active: $page.url.pathname.startsWith('/contacts')
-					}
+					...(!hideApps
+						? [
+								{
+									href: '/contacts',
+									label: 'Contacts',
+									icon: Users,
+									active: $page.url.pathname.startsWith('/contacts')
+								}
+							]
+						: [])
 				]
 			: [
-					{
-						href: '/contacts',
-						label: 'Contacts',
-						icon: Users,
-						active: $page.url.pathname.startsWith('/contacts')
-					},
-					...(calendar.supported !== false
+					...(!hideApps
+						? [
+								{
+									href: '/contacts',
+									label: 'Contacts',
+									icon: Users,
+									active: $page.url.pathname.startsWith('/contacts')
+								}
+							]
+						: []),
+					...(!hideApps && calendar.supported !== false
 						? [
 								{
 									href: '/calendar',

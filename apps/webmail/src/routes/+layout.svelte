@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { onNavigate } from '$app/navigation';
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import InstallPrompt from '$lib/components/pwa/InstallPrompt.svelte';
@@ -15,6 +16,36 @@
 	let { children } = $props();
 
 	const PRELOAD_RELOAD_KEY = 'zaur:vite-preload-reload-at';
+
+	onNavigate((navigation) => {
+		if (!document.startViewTransition) return;
+
+		const fromPath = navigation.from?.url.pathname ?? '';
+		const toPath = navigation.to?.url.pathname ?? '';
+		const fromParts = fromPath.split('/').filter(Boolean);
+		const toParts = toPath.split('/').filter(Boolean);
+		
+		let direction = 'forward';
+		if (fromParts.length > toParts.length) {
+			direction = 'backward';
+		} else if (fromParts.length === toParts.length) {
+			direction = 'fade';
+		}
+
+		document.documentElement.classList.add(`z-nav-${direction}`);
+		['forward', 'backward', 'fade'].forEach((dir) => {
+			if (dir !== direction) {
+				document.documentElement.classList.remove(`z-nav-${dir}`);
+			}
+		});
+
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
+	});
 
 	onMount(() => {
 		theme.init();

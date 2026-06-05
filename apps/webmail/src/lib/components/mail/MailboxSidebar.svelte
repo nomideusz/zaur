@@ -5,6 +5,13 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { cn } from '$lib/utils/cn';
 
+	interface Props {
+		class?: string;
+		isMobile?: boolean;
+	}
+
+	let { class: className = '', isMobile = false }: Props = $props();
+
 	const primaryOrder = new Map([
 		['inbox', 0],
 		['drafts', 1],
@@ -29,7 +36,10 @@
 </script>
 
 <aside
-	class="z-mail-pane-surface hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden border-r border-border md:flex"
+	class={cn(
+		'z-mail-pane-surface min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-hidden border-r border-border',
+		className
+	)}
 	style="view-transition-name: mail-sidebar;"
 	aria-label="Mail navigation"
 >
@@ -67,5 +77,5 @@
 		</ul>
 	</nav>
 
-	<AppSidebarShortcuts />
+	<AppSidebarShortcuts hideApps={isMobile} />
 </aside>

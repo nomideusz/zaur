@@ -12,3 +12,52 @@
 		animation-timing-function: var(--z-ease-out);
 	}
 }
+
+/* Mobile sliding transitions for message list / reader navigation */
+@media (max-width: 767px) {
+	html.z-nav-forward::view-transition-old(message-list) {
+		animation: 250ms var(--z-ease-out) both;
+		animation-name: slide-to-left;
+	}
+	html.z-nav-forward::view-transition-new(message-reader) {
+		animation: 250ms var(--z-ease-out) both;
+		animation-name: slide-from-right;
+	}
+
+	html.z-nav-backward::view-transition-old(message-reader) {
+		animation: 250ms var(--z-ease-out) both;
+		animation-name: slide-to-right;
+	}
+	html.z-nav-backward::view-transition-new(message-list) {
+		animation: 250ms var(--z-ease-out) both;
+		animation-name: slide-from-left;
+	}
+
+	html.z-nav-forward::view-transition-group(message-list),
+	html.z-nav-forward::view-transition-group(message-reader),
+	html.z-nav-backward::view-transition-group(message-list),
+	html.z-nav-backward::view-transition-group(message-reader) {
+		animation: none !important;
+	}
+}
+
+@keyframes slide-to-left {
+	to {
+		transform: translateX(-100%);
+	}
+}
+@keyframes slide-from-right {
+	from {
+		transform: translateX(100%);
+	}
+}
+@keyframes slide-to-right {
+	to {
+		transform: translateX(100%);
+	}
+}
+@keyframes slide-from-left {
+	from {
+		transform: translateX(-100%);
+	}
+}

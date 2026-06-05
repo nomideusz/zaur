@@ -12,6 +12,7 @@ export type MailHeaderContext = {
 
 class ShellHeaderStore {
 	mail = $state<MailHeaderContext | null>(null);
+	isMobileDrawerOpen = $state(false);
 	#mailGeneration = 0;
 
 	setMail(ctx: MailHeaderContext): number {

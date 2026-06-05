@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import CalendarPlus from '$lib/components/icons/CalendarPlus.svelte';
 	import PenSquare from '$lib/components/icons/PenSquare.svelte';
+	import Menu from '$lib/components/icons/Menu.svelte';
 	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
@@ -61,14 +62,16 @@
 		<ToolSwitcher />
 	</div>
 
-	<a
-		href={inboxHref}
-		class="z-app-shell-header__home relative z-10 shrink-0 md:hidden"
-		aria-label="Inbox"
-		onclick={handleMobileInboxHome}
+	<button
+		type="button"
+		class="z-app-shell-header__home relative z-10 flex size-9 shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-surface-sunken/80 transition-colors md:hidden"
+		aria-label="Open menu"
+		onclick={() => {
+			shellHeader.isMobileDrawerOpen = true;
+		}}
 	>
-		<span class="z-app-shell-header__home-mark">{appConfig.brandName.slice(0, 1).toLowerCase()}</span>
-	</a>
+		<Menu class="size-5" aria-hidden="true" />
+	</button>
 
 	{#if showShellBulkHeader && mailCtx?.mailboxRouteId}
 		<div class="z-app-shell-header__bulk relative z-10 min-w-0 flex-1 md:hidden">
