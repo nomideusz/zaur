@@ -7,6 +7,7 @@ on:
       - 'apps/webmail/**'
       - 'packages/sprite/**'
       - 'packages/ui/**'
+      - 'packages/svelte-calendar/**'
       - 'pnpm-lock.yaml'
       - 'pnpm-workspace.yaml'
       - 'package.json'
@@ -38,6 +39,7 @@ jobs:
             .npmrc
             packages/ui/
             packages/sprite/
+            packages/svelte-calendar/
             apps/webmail/
           outPath: deploy.tar
 
