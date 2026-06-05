@@ -37,6 +37,7 @@ class CalendarStore {
 	viewMonth = $state(new Date().getMonth());
 
 	selectedEventId = $state<string | null>(null);
+	refreshCounter = $state(0);
 
 	composeOpen = $state(false);
 	composeMode = $state<EventComposeMode>('create');
@@ -136,8 +137,10 @@ class CalendarStore {
 				timeZone: localTimeZone()
 			});
 			this.events = events.map(mapCalendarEvent);
+			this.refreshCounter++;
 		} catch (error) {
 			this.events = [];
+			this.refreshCounter++;
 			this.error = error instanceof Error ? error.message : 'Failed to load events';
 		} finally {
 			this.eventsLoading = false;
@@ -337,6 +340,7 @@ class CalendarStore {
 				this.selectedEventId = null;
 			}
 			this.events = this.events.filter((item) => item.id !== event.id);
+			this.refreshCounter++;
 			toast.show(`"${event.title}" deleted`, 'success');
 			return true;
 		} catch (error) {
@@ -373,6 +377,7 @@ class CalendarStore {
 	reset() {
 		this.calendars = [];
 		this.events = [];
+		this.refreshCounter = 0;
 		this.hiddenCalendarIds = new Set();
 		this.viewYear = new Date().getFullYear();
 		this.viewMonth = new Date().getMonth();

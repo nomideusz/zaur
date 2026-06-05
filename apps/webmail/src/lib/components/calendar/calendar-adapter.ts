@@ -22,6 +22,13 @@ export class ZaurCalendarAdapter implements CalendarAdapter {
 				before: range.end.toISOString()
 			});
 
+			const mappedEvents = events.map(mapCalendarEvent);
+			const currentEventsMap = new Map(calendar.events.map((ev) => [ev.id, ev]));
+			for (const ev of mappedEvents) {
+				currentEventsMap.set(ev.id, ev);
+			}
+			calendar.events = Array.from(currentEventsMap.values());
+
 			for (const rawEv of events) {
 				const event = mapCalendarEvent(rawEv);
 				const calendarId = event.calendarIds[0];
