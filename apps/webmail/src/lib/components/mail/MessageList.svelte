@@ -235,7 +235,7 @@
 	const resolvedEmptyHint = $derived(
 		emptyHint ?? (emptyMessage ? null : defaultEmptyHint(mailboxRouteId))
 	);
-	const showFlatEmpty = $derived(!sectionMode && !loading && !error && messages.length === 0);
+	const showFlatEmpty = $derived(!loading && !error && messages.length === 0);
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const bulkSelectEnabled = $derived(!!mailboxRouteId);
 	const bulkSelectionMessages = $derived(filteredListMessages);
@@ -956,12 +956,12 @@
 		</header>
 	{/if}
 
-	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
-		<div class="z-mail-list-body flex w-full min-w-0 flex-col">
+	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto flex flex-col">
+		<div class="z-mail-list-body flex-1 flex w-full min-w-0 flex-col min-h-full">
 
 	<div
 		class={cn(
-			'z-mail-list-flow',
+			'z-mail-list-flow flex-1 flex flex-col min-h-full',
 			listSelectMode && 'z-mail-list-flow--selectable',
 			mail.hasSelection && 'z-mail-list--selecting'
 		)}

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import AlertCircle from '$lib/components/icons/AlertCircle.svelte';
 	import RefreshCw from '$lib/components/icons/RefreshCw.svelte';
-	import { frameSvg } from '@zaur/sprite';
+	import { frameSvg, type FrameId } from '@zaur/sprite';
 	import Button from '$lib/components/ui/Button.svelte';
 	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
 
@@ -28,6 +28,72 @@
 		mailboxRouteId?: string;
 		onRetry?: () => void;
 	} = $props();
+
+	// Easter egg state
+	let isZaurAlive = $state(false);
+	let activeFrame = $state<FrameId>('sleep');
+	let facing = $state<'left' | 'right'>('right');
+	let xOffset = $state(0);
+
+	let walkDirection = 1; // 1 = right, -1 = left
+	let animState = 'walk'; // 'walk', 'confused', 'blink'
+	let stateTicks = 0;
+
+	$effect(() => {
+		if (empty) {
+			// 5% chance Zaur is alive (rare easter egg)
+			isZaurAlive = Math.random() < 0.05;
+			
+			if (isZaurAlive) {
+				activeFrame = 'walk_a';
+				animState = 'walk';
+				walkDirection = 1;
+				facing = 'right';
+				xOffset = 0;
+
+				const interval = setInterval(() => {
+					if (animState === 'walk') {
+						activeFrame = activeFrame === 'walk_a' ? 'walk_b' : 'walk_a';
+						xOffset += walkDirection * 12;
+						
+						if (walkDirection === 1 && xOffset >= 180) {
+							animState = 'confused';
+							activeFrame = 'surprise';
+							stateTicks = 4;
+						} else if (walkDirection === -1 && xOffset <= 0) {
+							animState = 'blink';
+							activeFrame = 'blink';
+							stateTicks = 3;
+						}
+					} else if (animState === 'confused') {
+						stateTicks--;
+						if (stateTicks === 2) {
+							activeFrame = 'look_up';
+						}
+						if (stateTicks <= 0) {
+							walkDirection = -1;
+							facing = 'left';
+							animState = 'walk';
+							activeFrame = 'walk_a';
+						}
+					} else if (animState === 'blink') {
+						stateTicks--;
+						if (stateTicks === 1) {
+							activeFrame = 'idle';
+						}
+						if (stateTicks <= 0) {
+							walkDirection = 1;
+							facing = 'right';
+							animState = 'walk';
+							activeFrame = 'walk_a';
+						}
+					}
+				}, 250);
+
+				return () => clearInterval(interval);
+			}
+		}
+	});
 </script>
 
 {#if loading}
@@ -49,10 +115,19 @@
 		{/if}
 	</div>
 {:else if empty}
-	<div class="flex flex-col items-center gap-4 px-6 py-16 text-center">
+	<div class="flex-1 flex flex-col items-center justify-center gap-4 px-6 py-16 text-center min-h-[350px] animate-fade-in">
 		{#if emptyIcon !== 'none'}
-			<div class="text-fg-subtle">
-				{#if emptyIcon === 'search'}
+			<div class="text-fg-subtle select-none">
+				{#if isZaurAlive}
+					<div class="relative w-[240px] h-[36px] overflow-hidden mb-2 mx-auto border-b border-border/30">
+						<div
+							class="absolute bottom-0 transition-transform duration-250 ease-linear"
+							style="transform: translateX({xOffset}px);"
+						>
+							{@html frameSvg(activeFrame, { color: 'currentColor', scale: 2, facing })}
+						</div>
+					</div>
+				{:else if emptyIcon === 'search'}
 					{@html frameSvg('sad', { color: 'currentColor', scale: 2 })}
 				{:else}
 					{@html frameSvg('sleep', { color: 'currentColor', scale: 2 })}
