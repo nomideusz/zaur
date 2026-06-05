@@ -100,11 +100,11 @@
 
 {#if event}
 	<aside
-		class="z-mail-pane-surface hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex"
+		class="z-mail-pane-surface hidden min-h-0 min-w-0 shrink-0 flex-col overflow-hidden md:flex md:w-(--width-list) md:max-w-(--width-list)"
 		style="view-transition-name: calendar-event;"
 		aria-label="Event details"
 	>
-		{@render details(false)}
+		{@render details(true)}
 	</aside>
 
 	<div class="z-mobile-sheet-backdrop md:hidden">

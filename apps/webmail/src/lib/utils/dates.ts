@@ -64,6 +64,47 @@ export function isSameMonth(date: Date, year: number, month: number): boolean {
 	return date.getFullYear() === year && date.getMonth() === month;
 }
 
+export function addDays(date: Date, days: number): Date {
+	const next = new Date(date);
+	next.setDate(next.getDate() + days);
+	return next;
+}
+
+export function startOfWeek(date: Date, weekStart: WeekStart = 'sunday'): Date {
+	const start = new Date(date);
+	const offset = weekStart === 'monday' ? (start.getDay() + 6) % 7 : start.getDay();
+	start.setDate(start.getDate() - offset);
+	start.setHours(0, 0, 0, 0);
+	return start;
+}
+
+export function weekDays(date: Date, weekStart: WeekStart = 'sunday'): Date[] {
+	const start = startOfWeek(date, weekStart);
+	return Array.from({ length: 7 }, (_, index) => addDays(start, index));
+}
+
+export function formatWeekRange(anchor: Date, weekStart: WeekStart = 'sunday'): string {
+	const days = weekDays(anchor, weekStart);
+	const start = days[0];
+	const end = days[6];
+	const sameMonth = start.getMonth() === end.getMonth();
+	const sameYear = start.getFullYear() === end.getFullYear();
+
+	const startLabel = new Intl.DateTimeFormat(undefined, {
+		month: sameMonth ? undefined : 'short',
+		day: 'numeric',
+		year: sameYear ? undefined : 'numeric'
+	}).format(start);
+
+	const endLabel = new Intl.DateTimeFormat(undefined, {
+		month: 'short',
+		day: 'numeric',
+		year: 'numeric'
+	}).format(end);
+
+	return `${startLabel} – ${endLabel}`;
+}
+
 export function parseIsoDuration(duration: string): number {
 	const match =
 		/^P(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+(?:\.\d+)?)S)?)?$/i.exec(duration);

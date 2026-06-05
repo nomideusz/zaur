@@ -17,8 +17,10 @@
 		activeDate?: Date;
 		ondateselect?: (date: Date) => void;
 		showHeader?: boolean;
+		/** Nested inside day/week split layout — no outer pane chrome. */
+		embedded?: boolean;
 	}
-	let { activeDate, ondateselect, showHeader = true }: Props = $props();
+	let { activeDate, ondateselect, showHeader = true, embedded = false }: Props = $props();
 
 	const today = new Date();
 	const weekStart = $derived(settings.calendarWeekStartsOnMonday ? 'monday' : 'sunday');
@@ -66,12 +68,11 @@
 <svelte:window onclick={() => (calendarsOpen = false)} onkeydown={onCalendarsKeydown} />
 
 <section
-		class={cn(
-		'z-mail-pane-surface flex min-h-0 min-w-0 flex-col overflow-hidden',
-		calendar.selectedEvent ? 'hidden md:flex md:flex-1' : 'flex flex-1',
-		'md:border-r md:border-border'
+	class={cn(
+		'flex min-h-0 min-w-0 flex-col overflow-hidden',
+		embedded ? 'flex-1' : 'z-mail-pane-surface flex-1'
 	)}
-	style="view-transition-name: calendar-grid;"
+	style={embedded ? undefined : 'view-transition-name: calendar-grid;'}
 	aria-label="Month view"
 >
 	{#if showHeader}

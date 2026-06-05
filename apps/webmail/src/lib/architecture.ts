@@ -58,7 +58,7 @@ export const componentTree = {
 		]
 	},
 	calendar: {
-		CalendarLayout: ['CalendarSidebar', 'MonthView', 'EventPanel | EventPanelEmpty', 'EventComposePanel']
+		CalendarLayout: ['CalendarSidebar', 'LibCalendar | AgendaWeekNav', 'EventPanel', 'EventComposePanel']
 	},
 	contacts: {
 		ContactsLayout: ['ContactsSidebar', 'ContactsList', 'ContactDetailPanel | ContactDetailEmpty']
