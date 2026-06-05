@@ -8,6 +8,7 @@ export interface DraftDoc {
 	bcc: string;
 	subject: string;
 	body: string;
+	bodyHtml?: string;
 	mode: ComposeMode;
 	jmapDraftId?: string;
 	attachmentsJson?: string;

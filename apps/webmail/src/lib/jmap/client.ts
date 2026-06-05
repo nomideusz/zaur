@@ -1119,6 +1119,7 @@ export class JMAPClient {
 		bcc?: string[];
 		subject: string;
 		body: string;
+		bodyHtml?: string;
 		fromEmail: string;
 		fromName?: string;
 		attachments?: EmailAttachmentInput[];
@@ -1136,7 +1137,8 @@ export class JMAPClient {
 			cc: params.cc,
 			bcc: params.bcc,
 			subject: params.subject,
-			body: params.body,
+			bodyText: params.body,
+			bodyHtml: params.bodyHtml,
 			format: params.format,
 			mailboxIds: { [draftsMailbox.id]: true },
 			keywords: { $draft: true, $seen: true },
@@ -1214,6 +1216,7 @@ export class JMAPClient {
 			fromName?: string;
 			attachments?: EmailAttachmentInput[];
 			format?: ComposeFormat;
+			bodyHtml?: string;
 		}
 	): Promise<void> {
 		const mailboxes = await this.getMailboxes();
@@ -1240,7 +1243,8 @@ export class JMAPClient {
 			cc: options?.cc,
 			bcc: options?.bcc,
 			subject,
-			body,
+			bodyText: body,
+			bodyHtml: options?.bodyHtml,
 			format: options?.format,
 			mailboxIds: { [holdingMailboxId]: true },
 			keywords: { $draft: true },

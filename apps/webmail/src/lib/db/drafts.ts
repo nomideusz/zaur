@@ -12,6 +12,7 @@ export interface DraftSnapshot {
 	bcc: string;
 	subject: string;
 	body: string;
+	bodyHtml?: string;
 	mode: ComposeMode;
 	jmapDraftId?: string;
 	attachments?: StoredComposeAttachment[];
@@ -35,6 +36,7 @@ function toSnapshot(doc: DraftDoc): DraftSnapshot {
 		bcc: doc.bcc,
 		subject: doc.subject,
 		body: doc.body,
+		bodyHtml: doc.bodyHtml,
 		mode: doc.mode,
 		jmapDraftId: doc.jmapDraftId,
 		attachments: parseAttachments(doc.attachmentsJson),
@@ -69,6 +71,7 @@ export async function saveComposeDraft(
 		bcc: draft.bcc,
 		subject: draft.subject,
 		body: draft.body,
+		bodyHtml: draft.bodyHtml,
 		mode: draft.mode,
 		jmapDraftId: draft.jmapDraftId,
 		attachmentsJson: draft.attachments?.length ? JSON.stringify(draft.attachments) : undefined,

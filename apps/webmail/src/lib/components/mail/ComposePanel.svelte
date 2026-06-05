@@ -10,6 +10,8 @@
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
+	import RichTextEditor from '$lib/components/mail/RichTextEditor.svelte';
+	import { plainTextToSafeHtml } from '$lib/email/html';
 	import { invalidAddressParts } from '$lib/utils/addresses';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -115,6 +117,7 @@
 
 	let sendAttempted = $state(false);
 	let recipientFocused = $state(false);
+	let isRichText = $state(settings.defaultComposeFormat === 'html');
 
 	const invalidRecipients = $derived([
 		...invalidAddressParts(compose.to),
@@ -317,6 +320,18 @@
 							Discard
 						</Button>
 					{/if}
+					<Button
+						type="button"
+						variant="ghost"
+						onclick={() => {
+							isRichText = !isRichText;
+							if (isRichText && !compose.bodyHtml) {
+								compose.bodyHtml = plainTextToSafeHtml(compose.body);
+							}
+						}}
+					>
+						{isRichText ? 'Plain text' : 'Rich text'}
+					</Button>
 					<Button type="button" variant="ghost" onclick={openFilePicker}>
 						<Paperclip class="size-4" aria-hidden="true" />
 						Attach
@@ -465,17 +480,27 @@
 
 		<div class="z-compose__write flex min-h-0 flex-1 flex-col px-4" style="padding-block: var(--z-space-reader-content-compact);">
 			<label class="sr-only" for="compose-body">Message</label>
-			<textarea
-				id="compose-body"
-				bind:this={bodyInput}
-				class="z-compose__body min-h-0 flex-1 resize-none"
-				value={messageBody}
-				oninput={(event) => setMessageBody(event.currentTarget.value)}
-				onkeydown={onBodyKeydown}
-			></textarea>
+			{#if isRichText}
+				<RichTextEditor
+					bind:htmlValue={compose.bodyHtml}
+					bind:textValue={compose.body}
+					onchange={() => {
+						sendAttempted = false;
+					}}
+				/>
+			{:else}
+				<textarea
+					id="compose-body"
+					bind:this={bodyInput}
+					class="z-compose__body min-h-0 flex-1 resize-none"
+					value={messageBody}
+					oninput={(event) => setMessageBody(event.currentTarget.value)}
+					onkeydown={onBodyKeydown}
+				></textarea>
+			{/if}
 		</div>
 
-			{#if showSignature}
+			{#if showSignature && !isRichText}
 				{#if configuredSignature || signatureBody}
 					<div class="z-compose__signature">
 						<label class="sr-only" for="compose-signature">Signature</label>
@@ -523,7 +548,7 @@
 				{/if}
 			{/if}
 
-			{#if quotedPart}
+			{#if quotedPart && !isRichText}
 				<details class="z-compose__quote" open={!settings.collapseQuotedInCompose}>
 					<summary>Quoted message</summary>
 					<pre>{quotedPart.trim()}</pre>

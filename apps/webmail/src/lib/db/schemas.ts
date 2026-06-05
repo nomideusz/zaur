@@ -3,7 +3,7 @@ import type { DraftDoc, OutboxDoc, RecentThreadDoc, SyncStateDoc, ThreadCacheDoc
 
 export const draftSchema: RxJsonSchema<DraftDoc> = {
 	title: 'draft',
-	version: 0,
+	version: 1,
 	primaryKey: 'id',
 	type: 'object',
 	properties: {
@@ -14,6 +14,7 @@ export const draftSchema: RxJsonSchema<DraftDoc> = {
 		bcc: { type: 'string' },
 		subject: { type: 'string' },
 		body: { type: 'string' },
+		bodyHtml: { type: 'string' },
 		mode: { type: 'string', maxLength: 16 },
 		jmapDraftId: { type: 'string', maxLength: 128 },
 		attachmentsJson: { type: 'string' },

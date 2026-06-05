@@ -5,6 +5,8 @@ export interface EmailAttachmentInput {
 	name: string;
 	type: string;
 	size: number;
+	cid?: string;
+	disposition?: string;
 }
 
 export type ComposeFormat = 'plain' | 'html';
@@ -16,7 +18,8 @@ export interface EmailCreateInput {
 	cc?: string[];
 	bcc?: string[];
 	subject: string;
-	body: string;
+	bodyText: string;
+	bodyHtml?: string;
 	format?: ComposeFormat;
 	mailboxIds: Record<string, boolean>;
 	keywords?: Record<string, boolean>;
@@ -35,17 +38,17 @@ export function buildEmailCreateData(input: EmailCreateInput): Record<string, un
 		subject: input.subject,
 		mailboxIds: input.mailboxIds,
 		...(input.keywords ? { keywords: input.keywords } : {}),
-		...(input.format === 'html'
+		...(input.bodyHtml || input.format === 'html'
 			? {
 					bodyValues: {
-						'1': { value: input.body },
-						'2': { value: plainTextToSafeHtml(input.body) }
+						'1': { value: input.bodyText },
+						'2': { value: input.bodyHtml || plainTextToSafeHtml(input.bodyText) }
 					},
 					textBody: [{ partId: '1', type: 'text/plain' }],
 					htmlBody: [{ partId: '2', type: 'text/html' }]
 				}
 			: {
-					bodyValues: { '1': { value: input.body } },
+					bodyValues: { '1': { value: input.bodyText } },
 					textBody: [{ partId: '1', type: 'text/plain' }]
 				})
 	};
@@ -57,8 +60,10 @@ export function buildEmailCreateData(input: EmailCreateInput): Record<string, un
 		name: attachment.name,
 		blobId: attachment.blobId,
 		size: attachment.size,
-		disposition: 'attachment'
+		...(attachment.cid ? { cid: attachment.cid } : {}),
+		disposition: attachment.disposition || 'attachment'
 	}));
 
 	return data;
 }
+

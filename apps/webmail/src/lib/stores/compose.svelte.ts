@@ -5,6 +5,7 @@ import { validateAttachmentFile } from '$lib/attachments/upload';
 import { invalidAddressParts, parseAddressList, formatAddressList } from '$lib/utils/addresses';
 import { mapEmailDetail } from '$lib/jmap/map';
 import { ensureBodyIncludesSignature, isComposeBodyEmpty } from '$lib/mail/compose-body';
+import { plainTextToSafeHtml } from '$lib/email/html';
 import { isOfflineError } from '$lib/utils/network';
 import { outbox } from '$lib/stores/outbox.svelte';
 import { settings, type ComposeFormat } from '$lib/stores/settings.svelte';
@@ -26,6 +27,7 @@ interface ComposeSnapshot {
 	bcc: string;
 	subject: string;
 	body: string;
+	bodyHtml?: string;
 	showCcBcc: boolean;
 	mode: ComposeMode;
 	jmapDraftId?: string;
@@ -38,6 +40,7 @@ interface SendPayload {
 	bcc: string[];
 	subject: string;
 	body: string;
+	bodyHtml?: string;
 	toRaw: string;
 	ccRaw: string;
 	bccRaw: string;
@@ -50,6 +53,7 @@ interface SendPayload {
 		bcc?: string[];
 		attachments?: EmailAttachmentInput[];
 		format: ComposeFormat;
+		bodyHtml?: string;
 	};
 }
 
@@ -83,6 +87,7 @@ class ComposeStore {
 	bcc = $state('');
 	subject = $state('');
 	body = $state('');
+	bodyHtml = $state('');
 	showCcBcc = $state(false);
 	mode = $state<ComposeMode>('new');
 	jmapDraftId = $state<string | undefined>(undefined);
@@ -102,7 +107,7 @@ class ComposeStore {
 		const isBodyEmpty = isComposeBodyEmpty(this.body, {
 			useSignature: settings.useSignature,
 			signature: settings.signature
-		});
+		}) && !this.bodyHtml.trim();
 
 		return (
 			!this.to.trim() &&
@@ -180,6 +185,7 @@ class ComposeStore {
 		this.bcc = draft.bcc;
 		this.subject = draft.subject;
 		this.body = draft.body;
+		this.bodyHtml = draft.bodyHtml ?? '';
 		this.jmapDraftId = draft.jmapDraftId;
 		this.showCcBcc = !!(draft.cc || draft.bcc);
 		this.mode = draft.mode;
@@ -216,6 +222,8 @@ class ComposeStore {
 		this.bcc = '';
 		this.subject = '';
 		this.body = settings.composeBodyWithSignature();
+		const sigHtml = settings.useSignature && settings.signature.trim() ? `<p>-- <br>${plainTextToSafeHtml(settings.signature.trim())}</p>` : '';
+		this.bodyHtml = sigHtml;
 		this.showCcBcc = false;
 		this.mode = 'new';
 		this.jmapDraftId = undefined;
@@ -232,6 +240,7 @@ class ComposeStore {
 		this.bcc = '';
 		this.subject = '';
 		this.body = '';
+		this.bodyHtml = '';
 		this.showCcBcc = false;
 		this.mode = 'new';
 		this.jmapDraftId = undefined;
@@ -322,6 +331,9 @@ class ComposeStore {
 		this.body = settings.composeBodyWithSignature(
 			`\n\n---\nOn ${when}, ${message.from.name} wrote:\n${message.bodyText}`
 		);
+		const quotedHtml = message.bodyHtml || plainTextToSafeHtml(message.bodyText);
+		const sigHtml = settings.useSignature && settings.signature.trim() ? `<p>-- <br>${plainTextToSafeHtml(settings.signature.trim())}</p>` : '';
+		this.bodyHtml = `<p><br></p><p><br></p>${sigHtml}<blockquote class="z-email-quote">On ${when}, ${message.from.name} wrote:<br>${quotedHtml}</blockquote>`;
 		this.jmapDraftId = undefined;
 		this.error = null;
 		this.draftSavedAt = null;
@@ -364,6 +376,9 @@ class ComposeStore {
 		this.body = settings.composeBodyWithSignature(
 			`\n\n---\nOn ${when}, ${message.from.name} wrote:\n${message.bodyText}`
 		);
+		const quotedHtml = message.bodyHtml || plainTextToSafeHtml(message.bodyText);
+		const sigHtml = settings.useSignature && settings.signature.trim() ? `<p>-- <br>${plainTextToSafeHtml(settings.signature.trim())}</p>` : '';
+		this.bodyHtml = `<p><br></p><p><br></p>${sigHtml}<blockquote class="z-email-quote">On ${when}, ${message.from.name} wrote:<br>${quotedHtml}</blockquote>`;
 		this.jmapDraftId = undefined;
 		this.error = null;
 		this.draftSavedAt = null;
@@ -373,6 +388,11 @@ class ComposeStore {
 	}
 
 	startForward(message: MessageDetail) {
+		const when = new Intl.DateTimeFormat(undefined, {
+			dateStyle: 'medium',
+			timeStyle: 'short'
+		}).format(new Date(message.receivedAt));
+
 		this.mode = 'forward';
 		this.to = '';
 		this.cc = '';
@@ -382,6 +402,13 @@ class ComposeStore {
 		this.body = settings.composeBodyWithSignature(
 			`\n\n---\nForwarded message:\n${quoteHeader(message)}\n\n${message.bodyText}`
 		);
+		const quotedHtml = message.bodyHtml || plainTextToSafeHtml(message.bodyText);
+		const headerHtml = `<strong>Forwarded message:</strong><br>` +
+			`From: ${message.from.name} &lt;${message.from.email}&gt;<br>` +
+			`Date: ${when}<br>` +
+			`Subject: ${message.subject}<br>`;
+		const sigHtml = settings.useSignature && settings.signature.trim() ? `<p>-- <br>${plainTextToSafeHtml(settings.signature.trim())}</p>` : '';
+		this.bodyHtml = `<p><br></p><p><br></p>${sigHtml}<blockquote class="z-email-quote">${headerHtml}<br>${quotedHtml}</blockquote>`;
 		this.jmapDraftId = undefined;
 		this.error = null;
 		this.draftSavedAt = null;
@@ -398,6 +425,7 @@ class ComposeStore {
 		this.showCcBcc = !!(this.cc || this.bcc);
 		this.subject = message.subject === '(no subject)' ? '' : message.subject;
 		this.body = message.bodyText || '';
+		this.bodyHtml = message.bodyHtml || '';
 		this.jmapDraftId = message.id;
 		this.error = null;
 		this.draftSavedAt = null;
@@ -513,6 +541,7 @@ class ComposeStore {
 			bcc: this.bcc,
 			subject: this.subject,
 			body: this.body,
+			bodyHtml: this.bodyHtml,
 			showCcBcc: this.showCcBcc,
 			mode: this.mode,
 			jmapDraftId: this.jmapDraftId,
@@ -526,6 +555,7 @@ class ComposeStore {
 		this.bcc = snapshot.bcc;
 		this.subject = snapshot.subject;
 		this.body = snapshot.body;
+		this.bodyHtml = snapshot.bodyHtml ?? '';
 		this.showCcBcc = snapshot.showCcBcc;
 		this.mode = snapshot.mode;
 		this.jmapDraftId = snapshot.jmapDraftId;
@@ -626,6 +656,7 @@ class ComposeStore {
 			bcc,
 			subject,
 			body,
+			bodyHtml: this.bodyHtml || undefined,
 			toRaw: this.to,
 			ccRaw: this.cc,
 			bccRaw: this.bcc,
@@ -637,7 +668,8 @@ class ComposeStore {
 				cc: cc.length ? cc : undefined,
 				bcc: bcc.length ? bcc : undefined,
 				attachments: attachments.length ? attachments : undefined,
-				format: settings.defaultComposeFormat
+				format: settings.defaultComposeFormat,
+				bodyHtml: this.bodyHtml || undefined
 			}
 		};
 
@@ -773,6 +805,7 @@ class ComposeStore {
 			bcc: this.bcc,
 			subject: this.subject,
 			body: this.body,
+			bodyHtml: this.bodyHtml,
 			mode: this.mode,
 			jmapDraftId: this.jmapDraftId,
 			attachments: storedAttachments.length ? storedAttachments : undefined,
@@ -805,6 +838,7 @@ class ComposeStore {
 					useSignature: settings.useSignature,
 					signature: settings.signature
 				}),
+				bodyHtml: this.bodyHtml || undefined,
 				fromEmail,
 				fromName: fromName?.trim() || undefined,
 				attachments: this.readyAttachments(),
