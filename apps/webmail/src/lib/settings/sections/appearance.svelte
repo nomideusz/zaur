@@ -2,6 +2,7 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
+	import IOSToggle from '$lib/components/ui/IOSToggle.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
 
@@ -24,10 +25,9 @@
 	</SettingsRow>
 
 	<SettingsRow title="Reduce motion">
-		<input
-			type="checkbox"
+		<IOSToggle
 			checked={settings.reduceMotion}
-			onchange={(e) => settings.setReduceMotion(e.currentTarget.checked)}
+			onchange={(checked) => settings.setReduceMotion(checked)}
 		/>
 	</SettingsRow>
 </SettingsGroup>

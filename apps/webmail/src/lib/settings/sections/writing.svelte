@@ -2,6 +2,7 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
+	import IOSToggle from '$lib/components/ui/IOSToggle.svelte';
 	import {
 		settings,
 		type DefaultReplyMode,
@@ -59,50 +60,44 @@
 
 <SettingsGroup title="Compose Behavior">
 	<SettingsRow title="Show Cc/Bcc">
-		<input
-			type="checkbox"
+		<IOSToggle
 			checked={settings.showCcBccInCompose}
-			onchange={(e) => settings.setShowCcBccInCompose(e.currentTarget.checked)}
+			onchange={(checked) => settings.setShowCcBccInCompose(checked)}
 		/>
 	</SettingsRow>
 
 	<SettingsRow title="Contact suggestions">
-		<input
-			type="checkbox"
+		<IOSToggle
 			checked={settings.showComposeContactSuggestions}
-			onchange={(e) => settings.setShowComposeContactSuggestions(e.currentTarget.checked)}
+			onchange={(checked) => settings.setShowComposeContactSuggestions(checked)}
 		/>
 	</SettingsRow>
 
 	<SettingsRow title="Collapse quoted text">
-		<input
-			type="checkbox"
+		<IOSToggle
 			checked={settings.collapseQuotedInCompose}
-			onchange={(e) => settings.setCollapseQuotedInCompose(e.currentTarget.checked)}
+			onchange={(checked) => settings.setCollapseQuotedInCompose(checked)}
 		/>
 	</SettingsRow>
 
 	<SettingsRow title="Hide compose hints">
-		<input
-			type="checkbox"
+		<IOSToggle
 			checked={settings.hideComposeHints}
-			onchange={(e) => settings.setHideComposeHints(e.currentTarget.checked)}
+			onchange={(checked) => settings.setHideComposeHints(checked)}
 		/>
 	</SettingsRow>
 
 	<SettingsRow title="Always Bcc me">
-		<input
-			type="checkbox"
+		<IOSToggle
 			checked={settings.bccSelf}
-			onchange={(e) => settings.setBccSelf(e.currentTarget.checked)}
+			onchange={(checked) => settings.setBccSelf(checked)}
 		/>
 	</SettingsRow>
 
 	<SettingsRow title="Confirm before discard">
-		<input
-			type="checkbox"
+		<IOSToggle
 			checked={settings.confirmBeforeDiscardCompose}
-			onchange={(e) => settings.setConfirmBeforeDiscardCompose(e.currentTarget.checked)}
+			onchange={(checked) => settings.setConfirmBeforeDiscardCompose(checked)}
 		/>
 	</SettingsRow>
 </SettingsGroup>

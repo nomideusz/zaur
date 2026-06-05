@@ -11,17 +11,14 @@ function triggerDownload(blob: Blob, filename: string) {
 	URL.revokeObjectURL(url);
 }
 
-export async function downloadAttachment(attachment: MessageAttachment): Promise<void> {
-	if (!browser) return;
-
+export async function getAttachmentBlob(attachment: MessageAttachment): Promise<Blob> {
 	const { getAccountId, getCachedAttachmentBlob, cacheAttachmentBlob } = await import('$lib/db');
 	const accountId = getAccountId();
 
 	if (accountId) {
 		const cached = await getCachedAttachmentBlob(accountId, attachment.blobId);
 		if (cached) {
-			triggerDownload(cached, attachment.name);
-			return;
+			return cached;
 		}
 	}
 
@@ -50,17 +47,22 @@ export async function downloadAttachment(attachment: MessageAttachment): Promise
 			);
 		}
 
-		triggerDownload(blob, attachment.name);
+		return blob;
 	} catch (error) {
 		if (accountId && isOfflineError(error)) {
 			const cached = await getCachedAttachmentBlob(accountId, attachment.blobId);
 			if (cached) {
-				triggerDownload(cached, attachment.name);
-				return;
+				return cached;
 			}
 		}
 		throw error;
 	}
+}
+
+export async function downloadAttachment(attachment: MessageAttachment): Promise<void> {
+	if (!browser) return;
+	const blob = await getAttachmentBlob(attachment);
+	triggerDownload(blob, attachment.name);
 }
 
 export async function prefetchAttachments(attachments: MessageAttachment[]): Promise<void> {

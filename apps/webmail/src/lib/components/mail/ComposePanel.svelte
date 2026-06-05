@@ -282,6 +282,26 @@
 		}
 		isAddingSignatureInline = false;
 	}
+
+	let dragCounter = $state(0);
+	const isDragActive = $derived(dragCounter > 0);
+
+	function handleDragEnter(event: DragEvent) {
+		event.preventDefault();
+		dragCounter++;
+	}
+
+	function handleDragLeave(event: DragEvent) {
+		event.preventDefault();
+		dragCounter--;
+	}
+
+	function handleDrop(event: DragEvent) {
+		event.preventDefault();
+		dragCounter = 0;
+		if (!event.dataTransfer?.files?.length || !auth.client) return;
+		void compose.addAttachments(auth.client, event.dataTransfer.files);
+	}
 </script>
 
 <input
@@ -293,9 +313,13 @@
 />
 
 <section
-	class="z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+	class="z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden relative"
 	style="view-transition-name: compose-panel;"
 	aria-label="Compose message"
+	ondragenter={handleDragEnter}
+	ondragover={(e) => e.preventDefault()}
+	ondragleave={handleDragLeave}
+	ondrop={handleDrop}
 >
 	<div class="z-compose z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 		<header class="flex shrink-0 flex-col gap-2 border-b border-border/80 px-4 py-2.5">
@@ -564,4 +588,15 @@
 		{/if}
 	</form>
 	</div>
+
+	{#if isDragActive}
+		<div class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-accent/10 border-2 border-dashed border-accent m-3 rounded-xl pointer-events-none backdrop-blur-xs transition-all">
+			<div class="p-6 bg-surface border border-border rounded-xl shadow-2xl flex flex-col items-center gap-3 animate-pulse">
+				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="size-8 text-accent">
+					<path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+				</svg>
+				<span class="text-sm font-semibold text-fg">Drop files here to attach</span>
+			</div>
+		</div>
+	{/if}
 </section>
