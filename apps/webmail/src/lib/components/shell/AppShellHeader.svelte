@@ -62,16 +62,14 @@
 		<ToolSwitcher />
 	</div>
 
-	<button
-		type="button"
-		class="z-app-shell-header__home relative z-10 flex size-9 shrink-0 items-center justify-center rounded-md text-fg-muted hover:bg-surface-sunken/80 transition-colors md:hidden"
-		aria-label="Open menu"
-		onclick={() => {
-			shellHeader.isMobileDrawerOpen = true;
-		}}
+	<a
+		href={inboxHref}
+		class="z-app-shell-header__home relative z-10 shrink-0 md:hidden"
+		aria-label="Inbox"
+		onclick={handleMobileInboxHome}
 	>
-		<Menu class="size-5" aria-hidden="true" />
-	</button>
+		<span class="z-app-shell-header__home-mark">{appConfig.brandName.slice(0, 1).toLowerCase()}</span>
+	</a>
 
 	{#if showShellBulkHeader && mailCtx?.mailboxRouteId}
 		<div class="z-app-shell-header__bulk relative z-10 min-w-0 flex-1 md:hidden">

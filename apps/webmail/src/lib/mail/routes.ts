@@ -33,7 +33,12 @@ function encodeRouteSegment(value: string): string {
 }
 
 export function mailListHref(mailboxRouteId: string): string {
-	if (mailboxRouteId === INBOX_MAILBOX_ROUTE_ID) return '/';
+	if (mailboxRouteId === INBOX_MAILBOX_ROUTE_ID) {
+		if (typeof window !== 'undefined' && window.innerWidth < 768) {
+			return '/mail/inbox';
+		}
+		return '/';
+	}
 	return `/mail/${encodeRouteSegment(mailboxRouteId)}`;
 }
 

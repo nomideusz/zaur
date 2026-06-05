@@ -7,6 +7,7 @@
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
+	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 	import {
 		listSwipeContext,
 		listSwipeLeadingActions,
@@ -844,23 +845,63 @@
 	{#if mailboxRouteId || !sectionMode}
 		<header
 			class={cn(
-				'z-mail-list-pane-header flex h-12 shrink-0 items-center overflow-hidden border-b border-border/80 px-4',
+				'z-mail-list-pane-header flex h-14 shrink-0 items-center justify-between overflow-hidden border-b border-border/80 px-4 gap-3',
 				mail.hasSelection && 'hidden md:flex'
 			)}
 		>
-			{#if mailboxRouteId}
-				<MessageListBulkHeader
-					{mailboxRouteId}
-					{onBulkAction}
-					disabled={loading || !!error || !messages.length}
-					showReadFilter={sectionMode}
-					{readFilter}
-					onReadFilterChange={(filter) => {
-						readFilter = filter;
-					}}
-				/>
-			{:else}
-				<h2 class="z-type-pane-title min-w-0 truncate">{mailboxName}</h2>
+			<!-- Mobile Back to Folders Button & Mailbox Name -->
+			<div class="flex items-center gap-2 md:hidden min-w-0">
+				<a
+					href="/"
+					class="flex items-center text-accent hover:opacity-80 transition-opacity no-underline shrink-0"
+					aria-label="Back to folders"
+				>
+					<ChevronLeft class="size-6" />
+				</a>
+				<span class="text-base font-bold text-fg truncate">
+					{mailboxName}
+				</span>
+			</div>
+
+			<!-- Desktop Bulk Header or Fallback controls -->
+			<div class="hidden md:flex flex-1 min-w-0">
+				{#if mailboxRouteId}
+					<MessageListBulkHeader
+						{mailboxRouteId}
+						{onBulkAction}
+						disabled={loading || !!error || !messages.length}
+						showReadFilter={sectionMode}
+						{readFilter}
+						onReadFilterChange={(filter) => {
+							readFilter = filter;
+						}}
+					/>
+				{:else}
+					<h2 class="z-type-pane-title min-w-0 truncate">{mailboxName}</h2>
+				{/if}
+			</div>
+
+			<!-- Mobile Filter controls on the right (Only necessary stuff!) -->
+			{#if mailboxRouteId && !mail.hasSelection}
+				<div class="flex items-center gap-1.5 md:hidden shrink-0">
+					{#each ['all', 'unread', 'starred'] as opt}
+						{@const isActive = readFilter === opt}
+						<button
+							type="button"
+							class={cn(
+								'rounded-full px-2.5 py-1 text-xs font-semibold transition-colors',
+								isActive
+									? 'bg-accent/10 text-accent'
+									: 'text-fg-muted hover:text-fg'
+							)}
+							onclick={() => {
+								readFilter = opt as any;
+							}}
+						>
+							{opt.charAt(0).toUpperCase() + opt.slice(1)}
+						</button>
+					{/each}
+				</div>
 			{/if}
 		</header>
 	{/if}
