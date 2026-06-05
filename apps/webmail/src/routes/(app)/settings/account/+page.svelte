@@ -141,10 +141,7 @@
 	</SettingsRow>
 
 	{#if oauthEnabled}
-		<SettingsField
-			title="Passkey"
-			description="Use Face ID, Touch ID, or your device PIN to sign in without your password."
-		>
+		<SettingsField title="Passkey">
 			<div class="flex w-full flex-col gap-2 sm:max-w-xs">
 				<input
 					type="password"

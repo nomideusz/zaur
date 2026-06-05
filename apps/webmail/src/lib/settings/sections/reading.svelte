@@ -107,10 +107,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow
-		title="Show delivery address"
-		description="Display which of your addresses received or sent the message."
-	>
+	<SettingsRow title="Show delivery address">
 		<input
 			type="checkbox"
 			checked={settings.showDeliveredToInReader}
@@ -151,7 +148,9 @@
 			onchange={(e) => settings.setShowUnreadInTitle(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
+</SettingsGroup>
 
+<SettingsGroup title="Shortcuts">
 	<SettingsRow title="Enable shortcuts">
 		<input
 			type="checkbox"
@@ -159,39 +158,43 @@
 			onchange={(e) => settings.setEnableKeyboardShortcuts(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
-</SettingsGroup>
 
-{#if settings.enableKeyboardShortcuts}
-	<SettingsGroup title="Keyboard Shortcuts Map">
-		<div class="z-settings-shortcut-grid">
-			<div class="z-settings-shortcut-row">
-				<p class="z-settings-shortcut-label">Compose</p>
-				<p class="z-settings-shortcut-keys">c</p>
-			</div>
-			<div class="z-settings-shortcut-row">
-				<p class="z-settings-shortcut-label">Go to folder</p>
-				<p class="z-settings-shortcut-keys">g i · g s · g d · g a · g t · g j</p>
-			</div>
-			<div class="z-settings-shortcut-row">
-				<p class="z-settings-shortcut-label">Next / previous</p>
-				<p class="z-settings-shortcut-keys">j · k</p>
-			</div>
-			<div class="z-settings-shortcut-row">
-				<p class="z-settings-shortcut-label">Reply / reply all</p>
-				<p class="z-settings-shortcut-keys">r · a</p>
-			</div>
-			<div class="z-settings-shortcut-row">
-				<p class="z-settings-shortcut-label">Next new message</p>
-				<p class="z-settings-shortcut-keys">n</p>
-			</div>
-			<div class="z-settings-shortcut-row">
-				<p class="z-settings-shortcut-label">Not important / Important / delete</p>
-				<p class="z-settings-shortcut-keys">d · u · #</p>
-			</div>
-			<div class="z-settings-shortcut-row">
-				<p class="z-settings-shortcut-label">Send / close compose</p>
-				<p class="z-settings-shortcut-keys">Ctrl+Enter · Esc</p>
-			</div>
+	<div class="z-settings-shortcut-grid">
+		<div class="z-settings-shortcut-row">
+			<p class="z-settings-shortcut-label">Compose</p>
+			<p class="z-settings-shortcut-keys">c</p>
 		</div>
-	</SettingsGroup>
-{/if}
+		<div class="z-settings-shortcut-row">
+			<p class="z-settings-shortcut-label">Focus search</p>
+			<p class="z-settings-shortcut-keys">/</p>
+		</div>
+		<div class="z-settings-shortcut-row">
+			<p class="z-settings-shortcut-label">Go to folder</p>
+			<p class="z-settings-shortcut-keys">g i · g s · g d · g a · g t · g j</p>
+		</div>
+		<div class="z-settings-shortcut-row">
+			<p class="z-settings-shortcut-label">Next / previous</p>
+			<p class="z-settings-shortcut-keys">j · k</p>
+		</div>
+		<div class="z-settings-shortcut-row">
+			<p class="z-settings-shortcut-label">Next new message</p>
+			<p class="z-settings-shortcut-keys">n</p>
+		</div>
+		<div class="z-settings-shortcut-row">
+			<p class="z-settings-shortcut-label">Reply / reply all / forward</p>
+			<p class="z-settings-shortcut-keys">r · a · f</p>
+		</div>
+		<div class="z-settings-shortcut-row">
+			<p class="z-settings-shortcut-label">Not important / Important / delete</p>
+			<p class="z-settings-shortcut-keys">d · u · #</p>
+		</div>
+		<div class="z-settings-shortcut-row">
+			<p class="z-settings-shortcut-label">Back / close compose</p>
+			<p class="z-settings-shortcut-keys">Esc</p>
+		</div>
+		<div class="z-settings-shortcut-row">
+			<p class="z-settings-shortcut-label">Send</p>
+			<p class="z-settings-shortcut-keys">Ctrl+Enter</p>
+		</div>
+	</div>
+</SettingsGroup>

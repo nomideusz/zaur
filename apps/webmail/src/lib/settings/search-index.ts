@@ -193,9 +193,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-show-email-in-list",
+		"id": "/settings/reading-show-delivery-address",
 		"href": "/settings/reading",
-		"title": "Show email in list",
+		"title": "Show delivery address",
 		"description": ""
 	},
 	{
