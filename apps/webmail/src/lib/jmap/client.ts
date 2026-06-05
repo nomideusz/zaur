@@ -18,6 +18,21 @@ import type {
 } from './calendar-types';
 import { browser } from '$app/environment';
 
+interface CachedSessionData {
+	session: JMAPSession;
+	apiUrl: string;
+	accountId: string;
+	username: string;
+}
+
+interface CachedSessionEntry {
+	data: CachedSessionData;
+	timestamp: number;
+}
+
+const SESSION_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+const sessionCache = new Map<string, CachedSessionEntry>();
+
 const CALENDARS_URN = 'urn:ietf:params:jmap:calendars';
 const CALENDAR_USING = ['urn:ietf:params:jmap:core', CALENDARS_URN] as const;
 
@@ -192,12 +207,24 @@ export class JMAPClient {
 		}
 
 		const sessionUrl = `${this.serverUrl}/.well-known/jmap`;
+		const cacheKey = `${this.serverUrl}|${this.authHeader}`;
+		const cached = sessionCache.get(cacheKey);
+		const now = Date.now();
+
+		if (cached && (now - cached.timestamp < SESSION_CACHE_TTL_MS)) {
+			this.session = cached.data.session;
+			this.apiUrl = cached.data.apiUrl;
+			this.accountId = cached.data.accountId;
+			this.username = cached.data.username;
+			return;
+		}
 
 		try {
 			const sessionResponse = await this.authenticatedFetch(sessionUrl, { method: 'GET' });
 
 			if (!sessionResponse.ok) {
 				if (sessionResponse.status === 401) {
+					sessionCache.delete(cacheKey);
 					throw new Error('Invalid username or password');
 				}
 				throw new Error(`Failed to get session: ${sessionResponse.status}`);
@@ -219,6 +246,16 @@ export class JMAPClient {
 			if (!this.accountId) {
 				throw new Error('No mail account found in session');
 			}
+
+			sessionCache.set(cacheKey, {
+				data: {
+					session,
+					apiUrl: this.apiUrl,
+					accountId: this.accountId,
+					username: this.username
+				},
+				timestamp: Date.now()
+			});
 		} catch (error) {
 			if (
 				error instanceof TypeError &&

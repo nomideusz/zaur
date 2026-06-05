@@ -4,6 +4,7 @@
 	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
 	import { Calendar as LibCalendar, auto } from '@nomideusz/svelte-calendar';
 	import CalendarSidebar from '$lib/components/calendar/CalendarSidebar.svelte';
+	import MonthView from '$lib/components/calendar/MonthView.svelte';
 	import EventComposePanel from '$lib/components/calendar/EventComposePanel.svelte';
 	import EventPanel from '$lib/components/calendar/EventPanel.svelte';
 	import EventPanelEmpty from '$lib/components/calendar/EventPanelEmpty.svelte';
@@ -14,9 +15,22 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { ZaurCalendarAdapter } from '$lib/components/calendar/calendar-adapter';
 	import { cn } from '$lib/utils/cn';
+	import { untrack } from 'svelte';
 
-	let activeView = $state<'week-planner' | 'day-planner' | 'week-agenda' | 'day-agenda'>('week-planner');
+	let activeView = $state<'week-planner' | 'day-planner' | 'week-agenda' | 'day-agenda' | 'month'>('week-planner');
 	let currentDate = $state<Date>(new Date());
+	let isWide = $state(false);
+
+	$effect(() => {
+		const mediaQuery = window.matchMedia('(min-width: 1200px)');
+		isWide = mediaQuery.matches;
+
+		const handler = (e: MediaQueryListEvent) => {
+			isWide = e.matches;
+		};
+		mediaQuery.addEventListener('change', handler);
+		return () => mediaQuery.removeEventListener('change', handler);
+	});
 
 	$effect(() => {
 		const client = auth.client;
@@ -31,6 +45,21 @@
 		void calendar.ensureCalendars(client);
 	});
 
+	$effect(() => {
+		const client = auth.client;
+		if (!client || auth.isRestoring) return;
+
+		const year = calendar.viewYear;
+		const month = calendar.viewMonth;
+
+		const needsMonthLoad = activeView === 'month' || (isWide && activeView.startsWith('day'));
+		if (needsMonthLoad) {
+			untrack(() => {
+				void calendar.loadMonth(client, { preserveSelection: true });
+			});
+		}
+	});
+
 	// Derive svelte-calendar adapter reactively when visibility filter, refreshCounter, or client changes
 	const calAdapter = $derived.by(() => {
 		const client = auth.client;
@@ -39,6 +68,7 @@
 		// Access reactively so the adapter is re-instantiated and svelte-calendar reloads when filters change
 		calendar.hiddenCalendarIds;
 		calendar.refreshCounter;
+
 
 		return new ZaurCalendarAdapter(client);
 	});
@@ -60,13 +90,25 @@
 	});
 
 	function prev() {
-		const days = activeView.startsWith('day') ? 1 : 7;
-		currentDate = new Date(currentDate.getTime() - days * 24 * 60 * 60 * 1000);
+		if (activeView === 'month') {
+			const d = new Date(currentDate);
+			d.setMonth(d.getMonth() - 1);
+			currentDate = d;
+		} else {
+			const days = activeView.startsWith('day') ? 1 : 7;
+			currentDate = new Date(currentDate.getTime() - days * 24 * 60 * 60 * 1000);
+		}
 	}
 
 	function next() {
-		const days = activeView.startsWith('day') ? 1 : 7;
-		currentDate = new Date(currentDate.getTime() + days * 24 * 60 * 60 * 1000);
+		if (activeView === 'month') {
+			const d = new Date(currentDate);
+			d.setMonth(d.getMonth() + 1);
+			currentDate = d;
+		} else {
+			const days = activeView.startsWith('day') ? 1 : 7;
+			currentDate = new Date(currentDate.getTime() + days * 24 * 60 * 60 * 1000);
+		}
 	}
 
 	function goToday() {
@@ -80,7 +122,7 @@
 	}
 
 	function handleViewChange(viewId: string) {
-		const validViews = ['week-planner', 'day-planner', 'week-agenda', 'day-agenda'];
+		const validViews = ['week-planner', 'day-planner', 'week-agenda', 'day-agenda', 'month'];
 		if (validViews.includes(viewId) && activeView !== viewId) {
 			activeView = viewId as typeof activeView;
 		}
@@ -142,6 +184,18 @@
 						type="button"
 						class={cn(
 							'rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150',
+							activeView === 'month'
+								? 'bg-surface-raised text-fg shadow-sm font-semibold'
+								: 'text-fg-muted hover:text-fg'
+						)}
+						onclick={() => activeView = 'month'}
+					>
+						Month
+					</button>
+					<button
+						type="button"
+						class={cn(
+							'rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150',
 							activeView === 'week-planner'
 								? 'bg-surface-raised text-fg shadow-sm font-semibold'
 								: 'text-fg-muted hover:text-fg'
@@ -191,18 +245,184 @@
 		</div>
 
 		{#if calAdapter}
-			<LibCalendar
-				adapter={calAdapter}
-				view={activeView}
-				currentDate={currentDate}
-				theme={auto}
-				showModePills={false}
-				showNavigation={false}
-				oneventclick={(evt) => calendar.selectEvent(evt.id)}
-				oneventcreate={(range) => calendar.openCompose(range.start)}
-				ondatechange={handleDateChange}
-				onviewchange={handleViewChange}
-			/>
+			{#if isWide}
+				{#if activeView === 'month'}
+					<div class="flex flex-1 min-h-0 min-w-0 flex-row divide-x divide-border">
+						<div class="flex-[3] min-h-0 min-w-0 flex flex-col">
+							<MonthView
+								activeDate={currentDate}
+								ondateselect={handleDateChange}
+								showHeader={false}
+							/>
+						</div>
+						<div class="flex-[1] min-h-0 min-w-0 flex flex-col bg-surface-sunken/10">
+							<div class="flex h-12 shrink-0 items-center px-4 border-b border-border/80 bg-surface/50">
+								<h3 class="text-xs font-semibold uppercase tracking-wider text-fg-subtle">Day Agenda</h3>
+							</div>
+							<div class="flex-1 min-h-0 overflow-y-auto">
+								<LibCalendar
+									adapter={calAdapter}
+									view="day-agenda"
+									currentDate={currentDate}
+									initialDate={currentDate}
+									theme={auto}
+									showModePills={false}
+									showNavigation={false}
+									oneventclick={(evt) => calendar.selectEvent(evt.id)}
+									oneventcreate={(range) => calendar.openCompose(range.start)}
+									ondatechange={handleDateChange}
+								/>
+							</div>
+						</div>
+					</div>
+				{:else if activeView === 'day-planner'}
+					<div class="flex flex-1 min-h-0 min-w-0 flex-row divide-x divide-border">
+						<div class="flex-[2] min-h-0 min-w-0 flex flex-col border-r border-border">
+							<MonthView
+								activeDate={currentDate}
+								ondateselect={handleDateChange}
+								showHeader={true}
+							/>
+						</div>
+						<div class="flex-[3] min-h-0 min-w-0 flex flex-col">
+							<LibCalendar
+								adapter={calAdapter}
+								view="day-planner"
+								currentDate={currentDate}
+								initialDate={currentDate}
+								theme={auto}
+								showModePills={false}
+								showNavigation={false}
+								oneventclick={(evt) => calendar.selectEvent(evt.id)}
+								oneventcreate={(range) => calendar.openCompose(range.start)}
+								ondatechange={handleDateChange}
+								onviewchange={handleViewChange}
+							/>
+						</div>
+					</div>
+				{:else if activeView === 'day-agenda'}
+					<div class="flex flex-1 min-h-0 min-w-0 flex-row divide-x divide-border">
+						<div class="flex-[2] min-h-0 min-w-0 flex flex-col border-r border-border">
+							<MonthView
+								activeDate={currentDate}
+								ondateselect={handleDateChange}
+								showHeader={true}
+							/>
+						</div>
+						<div class="flex-[3] min-h-0 min-w-0 flex flex-col">
+							<LibCalendar
+								adapter={calAdapter}
+								view="day-agenda"
+								currentDate={currentDate}
+								initialDate={currentDate}
+								theme={auto}
+								showModePills={false}
+								showNavigation={false}
+								oneventclick={(evt) => calendar.selectEvent(evt.id)}
+								oneventcreate={(range) => calendar.openCompose(range.start)}
+								ondatechange={handleDateChange}
+								onviewchange={handleViewChange}
+							/>
+						</div>
+					</div>
+				{:else if activeView === 'week-planner'}
+					<div class="flex flex-1 min-h-0 min-w-0 flex-row divide-x divide-border">
+						<div class="flex-[3] min-h-0 min-w-0 flex flex-col">
+							<LibCalendar
+								adapter={calAdapter}
+								view="week-planner"
+								currentDate={currentDate}
+								initialDate={currentDate}
+								theme={auto}
+								showModePills={false}
+								showNavigation={false}
+								oneventclick={(evt) => calendar.selectEvent(evt.id)}
+								oneventcreate={(range) => calendar.openCompose(range.start)}
+								ondatechange={handleDateChange}
+								onviewchange={handleViewChange}
+							/>
+						</div>
+						<div class="flex-[1.2] min-h-0 min-w-0 flex flex-col bg-surface-sunken/10">
+							<div class="flex h-12 shrink-0 items-center px-4 border-b border-border/80 bg-surface/50">
+								<h3 class="text-xs font-semibold uppercase tracking-wider text-fg-subtle">Week Agenda</h3>
+							</div>
+							<div class="flex-1 min-h-0 overflow-y-auto">
+								<LibCalendar
+									adapter={calAdapter}
+									view="week-agenda"
+									currentDate={currentDate}
+									initialDate={currentDate}
+									theme={auto}
+									showModePills={false}
+									showNavigation={false}
+									oneventclick={(evt) => calendar.selectEvent(evt.id)}
+									oneventcreate={(range) => calendar.openCompose(range.start)}
+									ondatechange={handleDateChange}
+								/>
+							</div>
+						</div>
+					</div>
+				{:else if activeView === 'week-agenda'}
+					<div class="flex flex-1 min-h-0 min-w-0 flex-row divide-x divide-border">
+						<div class="flex-[3] min-h-0 min-w-0 flex flex-col">
+							<LibCalendar
+								adapter={calAdapter}
+								view="week-planner"
+								currentDate={currentDate}
+								initialDate={currentDate}
+								theme={auto}
+								showModePills={false}
+								showNavigation={false}
+								oneventclick={(evt) => calendar.selectEvent(evt.id)}
+								oneventcreate={(range) => calendar.openCompose(range.start)}
+								ondatechange={handleDateChange}
+								onviewchange={handleViewChange}
+							/>
+						</div>
+						<div class="flex-[1.2] min-h-0 min-w-0 flex flex-col bg-surface-sunken/10">
+							<div class="flex h-12 shrink-0 items-center px-4 border-b border-border/80 bg-surface/50">
+								<h3 class="text-xs font-semibold uppercase tracking-wider text-fg-subtle">Week Agenda</h3>
+							</div>
+							<div class="flex-1 min-h-0 overflow-y-auto">
+								<LibCalendar
+									adapter={calAdapter}
+									view="week-agenda"
+									currentDate={currentDate}
+									initialDate={currentDate}
+									theme={auto}
+									showModePills={false}
+									showNavigation={false}
+									oneventclick={(evt) => calendar.selectEvent(evt.id)}
+									oneventcreate={(range) => calendar.openCompose(range.start)}
+									ondatechange={handleDateChange}
+								/>
+							</div>
+						</div>
+					</div>
+				{/if}
+			{:else}
+				{#if activeView === 'month'}
+					<MonthView
+						activeDate={currentDate}
+						ondateselect={handleDateChange}
+						showHeader={true}
+					/>
+				{:else}
+					<LibCalendar
+						adapter={calAdapter}
+						view={activeView}
+						currentDate={currentDate}
+						initialDate={currentDate}
+						theme={auto}
+						showModePills={false}
+						showNavigation={false}
+						oneventclick={(evt) => calendar.selectEvent(evt.id)}
+						oneventcreate={(range) => calendar.openCompose(range.start)}
+						ondatechange={handleDateChange}
+						onviewchange={handleViewChange}
+					/>
+				{/if}
+			{/if}
 		{/if}
 	</section>
 	{#if calendar.selectedEvent}

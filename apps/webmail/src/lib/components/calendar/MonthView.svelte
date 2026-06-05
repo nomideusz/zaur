@@ -13,6 +13,13 @@
 	import { formatMonthTitle, isSameDay, isSameMonth, monthGrid, weekdayLabels } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 
+	interface Props {
+		activeDate?: Date;
+		ondateselect?: (date: Date) => void;
+		showHeader?: boolean;
+	}
+	let { activeDate, ondateselect, showHeader = true }: Props = $props();
+
 	const today = new Date();
 	const weekStart = $derived(settings.calendarWeekStartsOnMonday ? 'monday' : 'sunday');
 	const weekdays = $derived(weekdayLabels(weekStart));
@@ -67,33 +74,35 @@
 	style="view-transition-name: calendar-grid;"
 	aria-label="Month view"
 >
-	<div class="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border/80 px-4">
-		<div class="flex items-center gap-1">
-			<IconButton label="Previous month" onclick={() => calendar.prevMonth()}>
-				<ChevronLeft class="size-4" />
-			</IconButton>
-			<h2 class="min-w-36 text-center text-sm font-semibold text-fg">
-				{monthTitle}
-			</h2>
-			<IconButton label="Next month" onclick={() => calendar.nextMonth()}>
-				<ChevronRight class="size-4" />
+	{#if showHeader}
+		<div class="flex h-12 shrink-0 items-center justify-between gap-2 border-b border-border/80 px-4">
+			<div class="flex items-center gap-1">
+				<IconButton label="Previous month" onclick={() => calendar.prevMonth()}>
+					<ChevronLeft class="size-4" />
+				</IconButton>
+				<h2 class="min-w-36 text-center text-sm font-semibold text-fg">
+					{monthTitle}
+				</h2>
+				<IconButton label="Next month" onclick={() => calendar.nextMonth()}>
+					<ChevronRight class="size-4" />
+				</IconButton>
+			</div>
+			<Button variant="ghost" onclick={() => calendar.goToToday()}>Today</Button>
+			<IconButton
+				label="Show calendars"
+				class="md:hidden"
+				ariaExpanded={calendarsOpen}
+				ariaControls="mobile-calendar-list"
+				ariaHaspopup="true"
+				onclick={(e) => {
+					e.stopPropagation();
+					calendarsOpen = !calendarsOpen;
+				}}
+			>
+				<CalendarDays class="size-4" aria-hidden="true" />
 			</IconButton>
 		</div>
-		<Button variant="ghost" onclick={() => calendar.goToToday()}>Today</Button>
-		<IconButton
-			label="Show calendars"
-			class="md:hidden"
-			ariaExpanded={calendarsOpen}
-			ariaControls="mobile-calendar-list"
-			ariaHaspopup="true"
-			onclick={(e) => {
-				e.stopPropagation();
-				calendarsOpen = !calendarsOpen;
-			}}
-		>
-			<CalendarDays class="size-4" aria-hidden="true" />
-		</IconButton>
-	</div>
+	{/if}
 
 	{#if calendarsOpen && calendar.calendars.length}
 		<div
@@ -162,11 +171,21 @@
 				{@const isToday = isSameDay(day, today)}
 				{@const dayEvents = calendar.eventsForDay(day)}
 				<div
+					role="button"
+					tabindex="0"
 					class={cn(
-						'group min-h-24 border-b border-r border-border p-1.5 transition-colors hover:bg-surface-sunken/40',
-						!inMonth && 'bg-surface-sunken/30 text-fg-subtle'
+						'group min-h-24 border-b border-r border-border p-1.5 transition-colors hover:bg-surface-sunken/40 text-left focus:outline-none focus:bg-surface-sunken/20',
+						!inMonth && 'bg-surface-sunken/30 text-fg-subtle',
+						activeDate && isSameDay(day, activeDate) && 'bg-accent/10 border-accent/30 ring-1 ring-accent/30 shadow-inner'
 					)}
 					aria-label={`${formatDayLabel(day)}, ${dayEvents.length} ${dayEvents.length === 1 ? 'event' : 'events'}`}
+					onclick={() => ondateselect?.(day)}
+					onkeydown={(e) => {
+						if (e.key === 'Enter' || e.key === ' ') {
+							e.preventDefault();
+							ondateselect?.(day);
+						}
+					}}
 				>
 					<div class="mb-1 flex items-center justify-between gap-1">
 						<button
@@ -174,14 +193,15 @@
 							class="rounded p-0.5 text-fg-subtle opacity-0 transition-all hover:bg-surface-raised hover:text-fg group-hover:opacity-100 focus:opacity-100"
 							class:opacity-100={inMonth}
 							aria-label="Create event on {day.toLocaleDateString()}"
-							onclick={() => createOnDay(day)}
+							onclick={(e) => { e.stopPropagation(); createOnDay(day); }}
 						>
 							<Plus class="size-3.5" />
 						</button>
 						<span
 							class={cn(
-								'inline-flex size-6 items-center justify-center rounded-full text-xs',
-								isToday && 'bg-accent font-medium text-accent-fg'
+								'inline-flex size-6 items-center justify-center rounded-full text-xs transition-colors',
+								isToday && 'bg-accent font-medium text-accent-fg',
+								!isToday && activeDate && isSameDay(day, activeDate) && 'text-accent font-semibold ring-1 ring-accent'
 							)}
 						>
 							{day.getDate()}
@@ -201,7 +221,7 @@
 									style:color={eventColor(event)}
 									aria-label={eventLabel(event)}
 									aria-current={calendar.selectedEventId === event.id ? 'true' : undefined}
-									onclick={() => selectEvent(event.id)}
+									onclick={(e) => { e.stopPropagation(); selectEvent(event.id); }}
 								>
 									{#if formatChipTime(event)}
 										<span class="shrink-0 opacity-80">{formatChipTime(event)}</span>
@@ -216,7 +236,7 @@
 									type="button"
 									class="w-full rounded px-1 text-left text-[10px] text-fg-subtle hover:bg-surface-sunken hover:text-fg"
 									aria-label={`Show ${dayEvents.length - maxEventsPerDay} more events on ${formatDayLabel(day)}`}
-									onclick={() => selectEvent(dayEvents[maxEventsPerDay].id)}
+									onclick={(e) => { e.stopPropagation(); selectEvent(dayEvents[maxEventsPerDay].id); }}
 								>
 									+{dayEvents.length - maxEventsPerDay} more
 								</button>

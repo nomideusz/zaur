@@ -85,7 +85,7 @@ export function createCalendar(options: HeadlessCalendarOptions): HeadlessCalend
 	} = options;
 
 	// ── Create engine ────────────────────────────────────
-	const store = createEventStore(adapter);
+	const store = createEventStore(() => options.adapter);
 	const viewState = createViewState({
 		view: options.view ?? 'week-planner',
 		mondayStart: initialMondayStart,
@@ -108,6 +108,7 @@ export function createCalendar(options: HeadlessCalendarOptions): HeadlessCalend
 
 	// ── Load events reactively ───────────────────────────
 	$effect(() => {
+		options.adapter;
 		const { start, end } = viewState.range;
 		store.load({ start, end });
 	});

@@ -137,10 +137,8 @@ class CalendarStore {
 				timeZone: localTimeZone()
 			});
 			this.events = events.map(mapCalendarEvent);
-			this.refreshCounter++;
 		} catch (error) {
 			this.events = [];
-			this.refreshCounter++;
 			this.error = error instanceof Error ? error.message : 'Failed to load events';
 		} finally {
 			this.eventsLoading = false;
@@ -283,6 +281,7 @@ class CalendarStore {
 
 		await this.loadMonth(client, { preserveSelection: true });
 		this.selectedEventId = eventId;
+		this.refreshCounter++;
 	}
 
 	async saveCompose(client: JMAPClient): Promise<boolean> {
