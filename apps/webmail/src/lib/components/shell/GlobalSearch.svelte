@@ -369,7 +369,7 @@
 		role="search"
 		class={cn(
 			'relative w-full min-w-0',
-			isSidebar || isMobile ? className : cn('mx-auto hidden max-w-xl md:block', className)
+			isSidebar || isMobile ? className : cn('hidden w-full md:block', className)
 		)}
 		onsubmit={(e) => {
 			e.preventDefault();

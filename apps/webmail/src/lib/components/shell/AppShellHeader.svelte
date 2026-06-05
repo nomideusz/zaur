@@ -46,12 +46,12 @@
 
 <header
 	class={cn(
-		'z-app-shell-header relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-4 backdrop-blur-md max-md:gap-1 max-md:px-3',
+		'z-app-shell-header relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-4 backdrop-blur-md max-md:gap-1 max-md:px-3 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-3',
 		showShellBulkHeader && 'max-md:z-app-shell-header--bulk'
 	)}
 	style="view-transition-name: app-header;"
 >
-	<div class="relative z-10 hidden min-w-0 shrink-0 items-center gap-3 md:flex">
+	<div class="relative z-10 hidden min-w-0 shrink-0 items-center gap-3 md:col-start-1 md:justify-self-start md:flex">
 		<a
 			href={homeHref}
 			class="shrink-0 text-base text-fg transition-colors hover:opacity-80"
@@ -83,7 +83,7 @@
 
 	<div
 		class={cn(
-			'relative z-10 flex min-w-0 flex-1 items-center gap-2 max-md:gap-1.5',
+			'relative z-10 flex min-w-0 flex-1 items-center gap-2 max-md:gap-1.5 md:col-start-2 md:w-full md:max-w-xl md:flex-none md:justify-self-center',
 			showShellBulkHeader && 'max-md:hidden'
 		)}
 	>
@@ -95,7 +95,7 @@
 
 		<div
 			class={cn(
-				'min-w-0 flex-1 pointer-events-none',
+				'min-w-0 flex-1 pointer-events-none md:w-full',
 				showMobileMailboxTitle && 'max-md:flex-none max-md:flex-initial'
 			)}
 		>
@@ -109,7 +109,7 @@
 
 	<div
 		class={cn(
-			'relative z-10 flex shrink-0 items-center gap-1.5 md:w-64 md:justify-end md:gap-2',
+			'relative z-10 flex shrink-0 items-center gap-1.5 md:col-start-3 md:w-auto md:justify-self-end md:gap-2',
 			showShellBulkHeader && 'max-md:hidden'
 		)}
 	>
