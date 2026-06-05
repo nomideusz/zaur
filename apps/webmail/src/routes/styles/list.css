@@ -112,30 +112,21 @@
 		flex-shrink: 0;
 	}
 
+	/* Selection mode — count stays full width; actions absorb leftover squeeze. */
+	.z-mail-list-bulk-bar:has(.z-mail-list-bulk-bar__summary) {
+		display: grid;
+		grid-template-columns: auto max-content minmax(0, 1fr);
+		align-items: center;
+		gap: 0.5rem 0.75rem;
+	}
+
 	.z-mail-list-bulk-bar__summary {
-		display: flex;
-		min-width: 0;
-		flex: 1 1 auto;
-		align-items: baseline;
 		margin: 0;
-		overflow: hidden;
-		font-size: var(--z-main-page-text);
-		line-height: 1.45;
-	}
-
-	.z-mail-list-bulk-bar__headline {
-		flex-shrink: 0;
-		font-weight: 400;
-		color: var(--z-fg);
-	}
-
-	.z-mail-list-bulk-bar__detail {
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
 		white-space: nowrap;
+		font-size: var(--z-main-page-text);
 		font-weight: 400;
-		color: var(--z-fg-muted);
+		line-height: 1.45;
+		color: var(--z-fg);
 	}
 
 	.z-mail-view .z-mail-list-body .z-mail-list-bulk-bar {
@@ -167,9 +158,9 @@
 		padding: 0;
 	}
 
-	.z-mail-view .z-mail-list-pane-header .z-mail-list-bulk-bar__summary {
+	.z-mail-view .z-mail-list-pane-header .z-mail-list-bulk-bar__links {
+		justify-self: end;
 		min-width: 0;
-		flex: 1 1 0;
 	}
 
 	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header {
@@ -188,70 +179,31 @@
 		gap: 0.375rem;
 	}
 
-	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__summary {
-		display: flex;
-		min-width: 0;
-		flex: 1;
-		align-items: baseline;
-		margin: 0;
-		overflow: hidden;
-		font-size: 0.875rem;
-		line-height: 1.4;
-	}
-
-	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__summary .z-mail-list-bulk-header__headline {
-		flex-shrink: 0;
-	}
-
-	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__summary .z-mail-list-bulk-header__detail {
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-	}
-
-	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__headline {
-		font-weight: 400;
-		color: var(--z-fg);
-	}
-
 	.z-mail-list-bulk-header--shell {
-		align-items: baseline;
-		justify-content: space-between;
+		display: grid;
+		grid-template-columns: auto max-content minmax(0, 1fr);
+		align-items: center;
 		gap: 0.75rem;
 	}
 
 	.z-mail-list-bulk-header__summary--shell {
-		display: flex;
-		min-width: 0;
-		flex: 1 1 0;
-		align-items: baseline;
-		justify-content: center;
 		margin: 0;
-		overflow: hidden;
+		white-space: nowrap;
 		text-align: center;
 		font-size: 0.8125rem;
+		font-weight: 400;
 		line-height: 1.4;
-	}
-
-	.z-mail-list-bulk-header__summary--shell .z-mail-list-bulk-header__headline {
-		flex-shrink: 0;
-	}
-
-	.z-mail-list-bulk-header__summary--shell .z-mail-list-bulk-header__detail {
-		min-width: 0;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
+		color: var(--z-fg);
 	}
 
 	.z-mail-list-bulk-header__shell-links {
+		justify-self: end;
+		min-width: 0;
 		flex-wrap: nowrap;
 	}
 
-	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__detail {
-		font-weight: 400;
-		color: var(--z-fg-muted);
+	.z-mail-list-bulk-bar:has(.z-mail-list-bulk-bar__summary) .z-mail-list-bulk-bar__links :where(button) {
+		padding-inline: 0.5rem;
 	}
 
 	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__checkbox,
@@ -414,11 +366,6 @@
 			flex-wrap: nowrap;
 			align-items: center;
 			gap: 0.375rem;
-		}
-
-		.z-mail-view .z-mail-list-bulk-bar__summary {
-			flex: 1 1 0;
-			min-width: 0;
 		}
 
 		.z-mail-view .z-mail-list-pane-header .z-mail-list-bulk-bar__links :where(button) {
@@ -601,14 +548,12 @@
 
 	/* Selected Row background highlight inside sections and flat list */
 	.z-mail-view .z-mail-list-row[data-selected="true"],
-	.z-mail-view .z-mail-list-row[data-selected="true"] .z-swipe-row__foreground,
-	.z-mail-view .z-mail-list-row[data-selected="true"] .z-swipe-row__foreground > :where(a) {
+	.z-mail-view .z-mail-list-row[data-selected="true"] .z-swipe-row__foreground {
 		background-color: color-mix(in srgb, var(--z-accent) 6%, var(--z-surface-raised)) !important;
 	}
 
 	.z-mail-view .z-mail-list-row[data-selected="true"]:hover,
-	.z-mail-view .z-mail-list-row[data-selected="true"]:hover .z-swipe-row__foreground,
-	.z-mail-view .z-mail-list-row[data-selected="true"]:hover .z-swipe-row__foreground > :where(a) {
+	.z-mail-view .z-mail-list-row[data-selected="true"]:hover .z-swipe-row__foreground {
 		background-color: color-mix(in srgb, var(--z-accent) 10%, var(--z-surface-raised)) !important;
 	}
 
@@ -818,16 +763,13 @@
 	/* Hover & Selected Row backgrounds */
 	.z-mail-view .z-mail-list-row:hover,
 	.z-mail-view .z-mail-list-row:hover .z-swipe-row__foreground,
-	.z-mail-view .z-mail-list-row:hover .z-swipe-row__foreground > :where(a),
 	.z-mail-view .z-mail-list-row:focus-within,
-	.z-mail-view .z-mail-list-row:focus-within .z-swipe-row__foreground,
-	.z-mail-view .z-mail-list-row:focus-within .z-swipe-row__foreground > :where(a) {
+	.z-mail-view .z-mail-list-row:focus-within .z-swipe-row__foreground {
 		background-color: color-mix(in srgb, var(--z-surface-sunken) 60%, transparent) !important;
 	}
 
 	.z-mail-view .z-mail-list-row[data-current="true"],
-	.z-mail-view .z-mail-list-row[data-current="true"] .z-swipe-row__foreground,
-	.z-mail-view .z-mail-list-row[data-current="true"] .z-swipe-row__foreground > :where(a) {
+	.z-mail-view .z-mail-list-row[data-current="true"] .z-swipe-row__foreground {
 		background-color: color-mix(in srgb, var(--z-accent) 4%, var(--z-surface-raised)) !important;
 	}
 

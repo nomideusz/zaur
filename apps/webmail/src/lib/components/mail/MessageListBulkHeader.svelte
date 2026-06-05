@@ -73,8 +73,8 @@
 				? '1 selected'
 				: `${selectedCount} selected`
 	);
-	const detail = $derived(
-		selectedCount > 0 && selectionSummary.detail ? selectionSummary.detail : null
+	const summaryTitle = $derived(
+		selectionSummary.detail ? `${headline} · ${selectionSummary.detail}` : headline
 	);
 	const hasMenuActions = $derived(
 		selectionCounts.new > 0 ||
@@ -171,12 +171,9 @@
 			<p
 				class="z-mail-list-bulk-header__summary z-mail-list-bulk-header__summary--shell"
 				aria-live="polite"
-				title={detail ? `${headline} · ${detail}` : headline}
+				title={summaryTitle}
 			>
-				<span class="z-mail-list-bulk-header__headline">{headline}</span>
-				{#if detail}
-					<span class="z-mail-list-bulk-header__detail"> · {detail}</span>
-				{/if}
+				{headline}
 			</p>
 
 			<nav class="z-mail-list-bulk-bar__links shrink-0" aria-label="Bulk actions">
@@ -241,11 +238,8 @@
 		</div>
 
 		{#if showSelectionBar}
-			<p class="z-mail-list-bulk-bar__summary" aria-live="polite" title={detail ? `${headline} · ${detail}` : headline}>
-				<span class="z-mail-list-bulk-bar__headline">{headline}</span>
-				{#if detail}
-					<span class="z-mail-list-bulk-bar__detail"> · {detail}</span>
-				{/if}
+			<p class="z-mail-list-bulk-bar__summary" aria-live="polite" title={summaryTitle}>
+				{headline}
 			</p>
 
 			<nav class="z-mail-list-bulk-bar__links" aria-label="Bulk actions">

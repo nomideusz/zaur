@@ -13,7 +13,10 @@
 	const someSelected = $derived(selectedIds.length > 0 && !allSelected);
 
 	$effect(() => {
-		if (input) input.indeterminate = someSelected;
+		if (!input) return;
+		// Keep DOM in sync when selection clears via Cancel, Escape, bulk actions, etc.
+		input.checked = allSelected;
+		input.indeterminate = someSelected;
 	});
 
 	function handleClick(event: MouseEvent) {
@@ -31,7 +34,6 @@
 	bind:this={input}
 	type="checkbox"
 	class={className}
-	checked={allSelected}
 	aria-checked={allSelected ? 'true' : someSelected ? 'mixed' : 'false'}
 	disabled={!mail.selectableMessageList.length || mail.messagesLoading}
 	aria-label={allSelected || someSelected ? 'Deselect all messages' : 'Select all messages'}
