@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { cn } from '$lib/utils/cn';
 	import { overflowMenuFixedStyle, type OverflowMenuPlacement } from '$lib/utils/overflow-menu-position';
 	import { portal } from '$lib/utils/portal';
 
@@ -65,13 +65,17 @@
 <svelte:window onclick={handleWindowClick} />
 
 <div bind:this={root} class="relative shrink-0">
-	<IconButton
-		bind:ref={triggerEl}
-		label="Selection options"
-		class="!min-h-8 !min-w-8 !p-1.5"
-		ariaExpanded={open}
-		ariaControls={menuId}
-		ariaHaspopup="menu"
+	<button
+		bind:this={triggerEl}
+		type="button"
+		aria-label="Selection options"
+		aria-expanded={open}
+		aria-controls={menuId}
+		aria-haspopup="menu"
+		class={cn(
+			'inline-flex min-h-8 items-center justify-center rounded-md px-2 py-1.5 text-fg-muted transition-colors hover:bg-surface-sunken/60 hover:text-fg disabled:cursor-not-allowed disabled:opacity-60'
+		)}
+		{disabled}
 		onclick={(event) => {
 			if (disabled) return;
 			event.stopPropagation();
@@ -81,8 +85,8 @@
 			else menuStyle = '';
 		}}
 	>
-		<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
-	</IconButton>
+		<ChevronDown class="size-4 shrink-0" aria-hidden="true" />
+	</button>
 
 	{#if open}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->

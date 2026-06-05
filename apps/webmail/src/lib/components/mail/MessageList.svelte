@@ -16,7 +16,10 @@
 	import SwipeableListRow, {
 		type SwipeAction
 	} from '$lib/components/ui/SwipeableListRow.svelte';
-	import type { MessageListProps } from '$lib/components/mail/message-list-props';
+	import type {
+		MessageListProps,
+		MessageListReadFilter
+	} from '$lib/components/mail/message-list-props';
 	import {
 		activeMessageId,
 		collapseMessagesByThread,
@@ -99,6 +102,7 @@
 	let importantRainbowHoverId = $state<string | null>(null);
 	/** After bulk-select long-press, block the following link navigation. */
 	let suppressRowNavigationUntil = 0;
+	let readFilter = $state<MessageListReadFilter>('all');
 
 	let rainbowHoverTimeout: ReturnType<typeof setTimeout> | null = null;
 	let isSamplingRainbow = false;
@@ -108,6 +112,7 @@
 	$effect(() => {
 		void $page.url.pathname;
 		importantRainbowHoverId = null;
+		readFilter = 'all';
 		if (rainbowHoverTimeout) {
 			clearTimeout(rainbowHoverTimeout);
 			rainbowHoverTimeout = null;
@@ -180,6 +185,15 @@
 		}
 		return collapsed;
 	});
+	const filteredListMessages = $derived.by(() => {
+		if (readFilter === 'unread') {
+			return listMessages.filter((message) => isNewUnreadListRow(message));
+		}
+		if (readFilter === 'read') {
+			return listMessages.filter((message) => !isNewUnreadListRow(message));
+		}
+		return listMessages;
+	});
 	const currentMessageId = $derived(
 		activeMessageId(
 			listMessages,
@@ -197,7 +211,18 @@
 	const showFlatEmpty = $derived(!sectionMode && !loading && !error && messages.length === 0);
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const bulkSelectEnabled = $derived(!!mailboxRouteId);
-	const bulkSelectionMessages = $derived(listMessages);
+	const bulkSelectionMessages = $derived(filteredListMessages);
+	const showFilteredEmpty = $derived(
+		sectionMode &&
+			readFilter !== 'all' &&
+			!loading &&
+			!error &&
+			listMessages.length > 0 &&
+			filteredListMessages.length === 0
+	);
+	const filteredEmptyMessage = $derived(
+		readFilter === 'unread' ? 'No unread messages.' : 'No read messages.'
+	);
 
 	function sameMessageIds(a: MessagePreview[], b: MessagePreview[]): boolean {
 		if (a.length !== b.length) return false;
@@ -210,7 +235,6 @@
 		if (sameMessageIds(current, next)) return;
 		mail.setSelectionList(next);
 	});
-	const showBulkBar = $derived(bulkSelectEnabled && mail.hasSelection && !!mailboxRouteId);
 	/** Desktop: reserve checkbox column (revealed on hover). Mobile: only while selecting (enter via long-press). */
 	const listSelectMode = $derived(
 		bulkSelectEnabled && (!mobileRowGestures || mail.hasSelection)
@@ -756,7 +780,7 @@
 		return dupes;
 	}
 
-	const flatListDuplicateSubjects = $derived(duplicateSubjectKeys(listMessages));
+	const flatListDuplicateSubjects = $derived(duplicateSubjectKeys(filteredListMessages));
 
 	function sectionCanShowMore(sectionId: string): boolean {
 		const visible =
@@ -819,13 +843,21 @@
 >
 	{#if mailboxRouteId || !sectionMode}
 		<header
-			class="z-mail-list-pane-header hidden h-12 shrink-0 items-center overflow-hidden border-b border-border/80 px-4 md:flex"
+			class={cn(
+				'z-mail-list-pane-header flex h-12 shrink-0 items-center overflow-hidden border-b border-border/80 px-4',
+				mail.hasSelection && 'hidden md:flex'
+			)}
 		>
 			{#if mailboxRouteId}
 				<MessageListBulkHeader
 					{mailboxRouteId}
 					{onBulkAction}
 					disabled={loading || !!error || !messages.length}
+					showReadFilter={sectionMode}
+					{readFilter}
+					onReadFilterChange={(filter) => {
+						readFilter = filter;
+					}}
 				/>
 			{:else}
 				<h2 class="z-type-pane-title min-w-0 truncate">{mailboxName}</h2>
@@ -961,9 +993,11 @@
 				{onRetry}
 			/>
 		{:else if sectionMode}
-			{#if listMessages.length > 0}
+			{#if showFilteredEmpty}
+				<p class="px-4 py-8 text-sm text-fg-muted">{filteredEmptyMessage}</p>
+			{:else if filteredListMessages.length > 0}
 				<ul class="divide-y divide-border">
-					{#each listMessages as message (message.id)}
+					{#each filteredListMessages as message (message.id)}
 						{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId)}
 					{/each}
 				</ul>
@@ -973,7 +1007,7 @@
 			{/if}
 		{:else}
 			<ul class="divide-y divide-border">
-				{#each listMessages as message (message.id)}
+				{#each filteredListMessages as message (message.id)}
 					{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId)}
 				{/each}
 			</ul>

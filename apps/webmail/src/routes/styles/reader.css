@@ -410,8 +410,8 @@
 		@apply text-sm leading-relaxed whitespace-pre-wrap;
 	}
 
-	/* HTML mail: inherit reader theme; inline colors stripped except on light email sections */
-	:root.dark .z-email-body--html {
+	/* Reader body text in dark mode — light surfaces override below for HTML cards. */
+	:root.dark .z-email-body {
 		color: var(--z-fg);
 	}
 
@@ -434,10 +434,16 @@
 
 	:root.dark .z-email-body--html [data-z-light-surface] {
 		color-scheme: light;
+		color: #1a1a1a;
 		border-radius: 0.25rem;
 		isolation: isolate;
 	}
 
 	:root.dark .z-email-body--html [data-z-light-surface] :where(a) {
-		color: revert;
+		color: var(--z-accent);
+	}
+
+	:root.dark .z-email-body--html [data-z-light-surface] :where(blockquote) {
+		color: #4a4a4a;
+		border-left-color: color-mix(in srgb, #1a1a1a 18%, transparent);
 	}

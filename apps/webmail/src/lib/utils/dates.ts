@@ -29,6 +29,19 @@ export function monthRange(year: number, month: number): { after: string; before
 	return { after, before };
 }
 
+/** Local date-time string for JMAP CalendarEvent/query bounds (no UTC offset). */
+export function formatJmapQueryBound(date: Date): string {
+	return `${toDateInputValue(date)}T${pad2(date.getHours())}:${pad2(date.getMinutes())}:${pad2(date.getSeconds())}`;
+}
+
+/** Inclusive last calendar day for an all-day event (JMAP end is exclusive midnight). */
+export function allDayInclusiveEnd(start: Date, end: Date): Date {
+	if (end.getTime() > start.getTime()) {
+		return new Date(end.getTime() - 1);
+	}
+	return start;
+}
+
 /** Six-week grid covering the month. */
 export function monthGrid(year: number, month: number, weekStart: WeekStart = 'sunday'): Date[] {
 	const firstOfMonth = new Date(year, month, 1);

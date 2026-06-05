@@ -165,26 +165,38 @@ function isDarkTextColor(value: string): boolean {
 	return relativeLuminance(rgb) < 0.42;
 }
 
+/** Light text on explicit light email sections — strip so dark readable text shows. */
+function isLightTextColor(value: string): boolean {
+	const rgb = parseCssColor(value);
+	if (!rgb) return false;
+	return relativeLuminance(rgb) > 0.58;
+}
+
 /** Light card/section backgrounds inside HTML mail — keep and preserve their text colors. */
 function isLightBackgroundColor(value: string): boolean {
 	const rgb = parseCssColor(value);
 	if (!rgb) return false;
-	return relativeLuminance(rgb) > 0.82;
+	return relativeLuminance(rgb) > 0.74;
 }
 
-function elementHasLightBackground(element: HTMLElement): boolean {
+function elementBackgroundColor(element: HTMLElement): string | null {
 	const bgcolor = element.getAttribute('bgcolor');
-	if (bgcolor && isLightBackgroundColor(bgcolor)) return true;
+	if (bgcolor) return bgcolor;
 
 	const style = element.getAttribute('style');
-	if (!style) return false;
+	if (!style) return null;
 
 	for (const rule of style.split(';')) {
 		const trimmed = rule.trim();
 		const match = trimmed.match(/^(background(?:-color)?)\s*:\s*(.+)$/i);
-		if (match && isLightBackgroundColor(match[2])) return true;
+		if (match) return match[2].trim();
 	}
-	return false;
+	return null;
+}
+
+function elementHasLightBackground(element: HTMLElement): boolean {
+	const background = elementBackgroundColor(element);
+	return background ? isLightBackgroundColor(background) : false;
 }
 
 function isWithinLightSurface(element: Element, root: ParentNode): boolean {
@@ -229,9 +241,9 @@ function stripLightBackground(node: Element) {
 	else node.removeAttribute('style');
 }
 
-function stripDarkTextColor(node: Element) {
+function stripTextColor(node: Element, shouldStrip: (value: string) => boolean) {
 	const color = node.getAttribute('color');
-	if (color && isDarkTextColor(color)) {
+	if (color && shouldStrip(color)) {
 		node.removeAttribute('color');
 	}
 
@@ -247,7 +259,7 @@ function stripDarkTextColor(node: Element) {
 			if (!match) return true;
 			const value = match[1].trim();
 			if (value === 'inherit' || value === 'initial' || value === 'unset') return true;
-			return !isDarkTextColor(value);
+			return !shouldStrip(value);
 		})
 		.join(';')
 		.trim();
@@ -256,9 +268,24 @@ function stripDarkTextColor(node: Element) {
 	else node.removeAttribute('style');
 }
 
+function stripDarkTextColor(node: Element) {
+	stripTextColor(node, isDarkTextColor);
+}
+
+function stripLightTextColor(node: Element) {
+	stripTextColor(node, isLightTextColor);
+}
+
 function normalizeEmailBlockquotes(root: ParentNode) {
 	for (const blockquote of root.querySelectorAll('blockquote')) {
 		blockquote.classList.add('z-email-quote');
+	}
+}
+
+function stripLightSurfaceTextColors(surface: Element) {
+	stripLightTextColor(surface);
+	for (const element of surface.querySelectorAll('*')) {
+		stripLightTextColor(element);
 	}
 }
 
@@ -267,8 +294,13 @@ function integrateHtmlForDarkMode(root: ParentNode, darkMode: boolean) {
 
 	markLightSurfaces(root);
 
+	for (const surface of root.querySelectorAll('[data-z-light-surface]')) {
+		stripLightSurfaceTextColors(surface);
+	}
+
 	for (const blockquote of root.querySelectorAll('blockquote')) {
 		if (!(blockquote instanceof HTMLElement)) continue;
+		if (isWithinLightSurface(blockquote, root)) continue;
 		stripLightBackground(blockquote);
 		stripDarkTextColor(blockquote);
 		for (const element of blockquote.querySelectorAll('*')) {

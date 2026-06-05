@@ -7,8 +7,15 @@ export interface JMAPCalendar {
 	sortOrder?: number;
 }
 
+import type { JmapRecurrenceRule } from './recurrence';
+
 export interface JMAPCalendarEvent {
 	id: string;
+	/** Present when `id` is a server-expanded recurrence instance. */
+	baseEventId?: string | null;
+	recurrenceId?: string | null;
+	recurrenceRule?: JmapRecurrenceRule | null;
+	recurrenceRules?: JmapRecurrenceRule[] | null;
 	calendarIds?: Record<string, boolean>;
 	title?: string;
 	description?: string;

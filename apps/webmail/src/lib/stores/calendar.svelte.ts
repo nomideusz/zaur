@@ -1,11 +1,12 @@
 import type { JMAPClient } from '$lib/jmap/client';
 import { mapCalendar, mapCalendarEvent } from '$lib/jmap/calendar-map';
-import type { Calendar, CalendarEvent } from '$lib/types/calendar';
+import { expandRecurringEventInRange, recurrenceRuleFor, type EventRepeat } from '$lib/jmap/recurrence';
+import { isSyntheticCalendarError, type Calendar, type CalendarEvent } from '$lib/types/calendar';
 import { toast } from '$lib/stores/toast.svelte';
 import {
+	allDayInclusiveEnd,
 	defaultEventTimes,
 	durationBetween,
-	isSameDay,
 	localTimeZone,
 	monthRange,
 	pad2,
@@ -20,6 +21,7 @@ export interface EventComposeDraft {
 	calendarId: string;
 	title: string;
 	allDay: boolean;
+	repeat: EventRepeat;
 	startDate: string;
 	startTime: string;
 	endDate: string;
@@ -61,6 +63,7 @@ class CalendarStore {
 			calendarId,
 			title: '',
 			allDay: false,
+			repeat: 'none',
 			startDate: toDateInputValue(start),
 			startTime: `${pad2(start.getHours())}:${pad2(start.getMinutes())}`,
 			endDate: toDateInputValue(end),
@@ -71,14 +74,17 @@ class CalendarStore {
 	}
 
 	private draftFromEvent(event: CalendarEvent): EventComposeDraft {
+		const inclusiveEnd = event.allDay ? allDayInclusiveEnd(event.start, event.end) : event.end;
+
 		return {
 			calendarId: event.calendarIds[0] ?? this.defaultCalendarId() ?? '',
 			title: event.title === '(No title)' ? '' : event.title,
 			allDay: event.allDay,
+			repeat: 'none',
 			startDate: toDateInputValue(event.start),
 			startTime: `${pad2(event.start.getHours())}:${pad2(event.start.getMinutes())}`,
-			endDate: toDateInputValue(event.end),
-			endTime: `${pad2(event.end.getHours())}:${pad2(event.end.getMinutes())}`,
+			endDate: toDateInputValue(inclusiveEnd),
+			endTime: `${pad2(inclusiveEnd.getHours())}:${pad2(inclusiveEnd.getMinutes())}`,
 			location: event.location ?? '',
 			description: event.description ?? ''
 		};
@@ -162,9 +168,18 @@ class CalendarStore {
 	}
 
 	eventsForDay(day: Date): CalendarEvent[] {
-		return this.visibleEvents
-			.filter((event) => isSameDay(event.start, day))
-			.sort((a, b) => a.start.getTime() - b.start.getTime());
+		const dayStart = new Date(day);
+		dayStart.setHours(0, 0, 0, 0);
+		const dayEnd = new Date(dayStart);
+		dayEnd.setDate(dayEnd.getDate() + 1);
+		const range = { start: dayStart, end: dayEnd };
+
+		const expanded: CalendarEvent[] = [];
+		for (const event of this.visibleEvents) {
+			expanded.push(...expandRecurringEventInRange(event, range));
+		}
+
+		return expanded.sort((a, b) => a.start.getTime() - b.start.getTime());
 	}
 
 	isCalendarVisible(id: string): boolean {
@@ -176,6 +191,7 @@ class CalendarStore {
 		if (next.has(id)) next.delete(id);
 		else next.add(id);
 		this.hiddenCalendarIds = next;
+		this.refreshCounter++;
 
 		if (this.selectedEventId) {
 			const selected = this.events.find((event) => event.id === this.selectedEventId);
@@ -186,10 +202,22 @@ class CalendarStore {
 	}
 
 	selectEvent(id: string | null) {
-		this.selectedEventId = id;
+		if (!id) {
+			this.selectedEventId = null;
+			return;
+		}
+
+		if (this.composeOpen && this.composeMode === 'create') {
+			this.closeCompose();
+		}
+
+		// Client-expanded recurrence instances use `${masterId}~${recurrenceId}`.
+		const masterId = id.includes('~') ? id.slice(0, id.indexOf('~')) : id;
+		this.selectedEventId = masterId;
 	}
 
 	openCompose(day?: Date) {
+		this.selectedEventId = null;
 		this.composeMode = 'create';
 		this.composeEventId = null;
 		this.composePreviousCalendarIds = [];
@@ -241,8 +269,9 @@ class CalendarStore {
 		if (!this.composeDraft.calendarId) return { ok: false, error: 'Choose a calendar' };
 
 		const { start, end } = this.composeRange();
-		if (end.getTime() <= start.getTime()) {
-			return { ok: false, error: 'End must be after start' };
+		const allDay = this.composeDraft.allDay;
+		if (allDay ? end.getTime() < start.getTime() : end.getTime() <= start.getTime()) {
+			return { ok: false, error: allDay ? 'End date must be on or after start' : 'End must be after start' };
 		}
 
 		return { ok: true, title, start, end };
@@ -260,7 +289,8 @@ class CalendarStore {
 			timeZone: localTimeZone(),
 			showWithoutTime: allDay,
 			description: this.composeDraft.description.trim() || undefined,
-			location: this.composeDraft.location.trim() || undefined
+			location: this.composeDraft.location.trim() || undefined,
+			recurrenceRule: recurrenceRuleFor(this.composeDraft.repeat)
 		};
 	}
 
@@ -312,8 +342,9 @@ class CalendarStore {
 			await this.afterSave(client, validated.title, validated.start, id, 'create');
 			return true;
 		} catch (error) {
-			const message =
-				error instanceof Error
+			const message = isSyntheticCalendarError(error)
+				? "Recurring events can't be edited individually on this server yet."
+				: error instanceof Error
 					? error.message
 					: this.composeMode === 'edit'
 						? 'Failed to update event'
@@ -331,22 +362,36 @@ class CalendarStore {
 	}
 
 	async deleteEvent(client: JMAPClient, event: CalendarEvent): Promise<boolean> {
-		if (!confirm(`Delete "${event.title}"?`)) return false;
+		if (!confirm(`Delete "${event.title}"? This cannot be undone.`)) return false;
 
 		try {
 			await client.destroyCalendarEvent(event.id);
 			if (this.selectedEventId === event.id) {
 				this.selectedEventId = null;
 			}
+			if (this.composeEventId === event.id) {
+				this.closeCompose();
+			}
 			this.events = this.events.filter((item) => item.id !== event.id);
 			this.refreshCounter++;
 			toast.show(`"${event.title}" deleted`, 'success');
 			return true;
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Failed to delete event';
+			const message = isSyntheticCalendarError(error)
+				? "Recurring events can't be deleted individually on this server yet."
+				: error instanceof Error
+					? error.message
+					: 'Failed to delete event';
 			toast.show(message, 'error');
 			return false;
 		}
+	}
+
+	async deleteComposeEvent(client: JMAPClient): Promise<boolean> {
+		if (!this.composeEventId) return false;
+		const event = this.events.find((item) => item.id === this.composeEventId);
+		if (!event) return false;
+		return this.deleteEvent(client, event);
 	}
 
 	goToToday() {

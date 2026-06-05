@@ -442,7 +442,7 @@
 	function onPointerDown(e: PointerEvent) {
 		if (e.button !== 0) return;
 		if (!readOnly) return; // drag-to-scroll only in read-only mode
-		if ((e.target as HTMLElement).closest('.fs-event')) return;
+		if ((e.target as HTMLElement).closest('.fs-event, .fs-ad, .fs-allday')) return;
 		dragStartX = e.clientX;
 		dragScrollStart = el.scrollLeft;
 		window.addEventListener('pointermove', onScrollMove);
@@ -477,10 +477,14 @@
 			return hour >= slot.start && hour < slot.end;
 		});
 	}
+	function stopEventClick(e: Event) {
+		e.stopPropagation();
+	}
+
 	function handleTrackClick(e: MouseEvent) {
 		if (wasDragging) { wasDragging = false; return; }
 		if (!oneventcreate || readOnly) return;
-		if ((e.target as HTMLElement).closest('.fs-event')) return;
+		if ((e.target as HTMLElement).closest('.fs-event, .fs-ad, .fs-allday, .fs-ev')) return;
 
 		const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
 		const clickX = e.clientX - rect.left + el.scrollLeft;
@@ -657,6 +661,7 @@
 					tabindex="0"
 					aria-label="{p.ev.title}{p.ev.status === 'cancelled' ? ' (cancelled)' : ''}{p.ev.status === 'tentative' ? ' (tentative)' : ''}{p.ev.status === 'full' ? ' (full)' : ''}{p.ev.status === 'limited' ? ' (limited)' : ''}{p.isCurrent ? ` (${L.inProgress})` : ''}{p.isNext ? ` (${L.upNext})` : ''}"
 					onpointerdown={(e) => onEventPointerDown(e, p.ev)}
+					onclick={stopEventClick}
 					onpointerenter={() => oneventhover?.(p.ev)}
 					onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); oneventclick?.(p.ev); } }}
 				>
@@ -701,7 +706,7 @@
 					role="button"
 					tabindex="0"
 					aria-label="{seg.ev.title}{seg.totalDays > 1 ? `, ${L.dayNOfTotal(seg.dayIndex, seg.totalDays)}` : `, ${L.allDay}`}"
-					onclick={() => oneventclick?.(seg.ev)}
+					onclick={(e) => { e.stopPropagation(); oneventclick?.(seg.ev); }}
 					onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); oneventclick?.(seg.ev); } }}
 				>
 					<span class="fs-ad-dot" aria-hidden="true"></span>

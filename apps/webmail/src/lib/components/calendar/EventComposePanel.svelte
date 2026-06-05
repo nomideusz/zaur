@@ -1,12 +1,13 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import { EVENT_REPEAT_OPTIONS } from '$lib/jmap/recurrence';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	const isEdit = $derived(calendar.composeMode === 'edit');
@@ -24,12 +25,21 @@
 		const draft = calendar.composeDraft;
 		return new Date(`${draft.endDate}T${draft.allDay ? '00:00' : draft.endTime}`);
 	});
-	const timeRangeInvalid = $derived(composeEnd.getTime() <= composeStart.getTime());
+	const timeRangeInvalid = $derived.by(() => {
+		if (calendar.composeDraft.allDay) {
+			return composeEnd.getTime() < composeStart.getTime();
+		}
+		return composeEnd.getTime() <= composeStart.getTime();
+	});
 	const saveBlockedReason = $derived.by(() => {
 		if (calendar.composeSaving) return isEdit ? 'Saving changes…' : 'Creating event…';
 		if (!calendar.composeDraft.title.trim()) return 'Add a title to save this event.';
 		if (!calendar.composeDraft.calendarId) return 'Choose a calendar.';
-		if (timeRangeInvalid) return 'End must be after start.';
+		if (timeRangeInvalid) {
+			return calendar.composeDraft.allDay
+				? 'End date must be on or after start.'
+				: 'End must be after start.';
+		}
 		return null;
 	});
 	const canSave = $derived(!calendar.composeSaving && !saveBlockedReason);
@@ -40,6 +50,11 @@
 
 	function close() {
 		calendar.closeCompose();
+	}
+
+	function deleteEvent() {
+		if (!auth.client || !isEdit) return;
+		void calendar.deleteComposeEvent(auth.client);
 	}
 
 	onMount(() => {
@@ -100,6 +115,25 @@
 					<input type="checkbox" bind:checked={calendar.composeDraft.allDay} />
 					<span class="text-fg">All day</span>
 				</label>
+
+				{#if !isEdit}
+					<label class="block space-y-1.5">
+						<span class={fieldLabelClass}>Repeat</span>
+						<SettingsSelect
+							label="Repeat"
+							value={calendar.composeDraft.repeat}
+							options={EVENT_REPEAT_OPTIONS}
+							class="w-full"
+							onchange={(value) =>
+								(calendar.composeDraft.repeat = value as typeof calendar.composeDraft.repeat)}
+						/>
+						{#if calendar.composeDraft.repeat !== 'none'}
+							<p class="text-xs text-fg-muted">
+								Individual occurrences can't be moved on this server yet.
+							</p>
+						{/if}
+					</label>
+				{/if}
 
 				<div class="grid gap-3 sm:grid-cols-2">
 					<label class="block space-y-1.5">
@@ -182,11 +216,25 @@
 				</p>
 			{/if}
 
-			<footer class={cn('flex shrink-0 items-center justify-end gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]', panelPadding)}>
-				<Button variant="ghost" type="button" onclick={close}>Close</Button>
-				<Button type="submit" disabled={!canSave} title={saveBlockedReason ?? submitLabel}>
-					{submitLabel}
-				</Button>
+			<footer
+				class={cn(
+					'flex shrink-0 items-center gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+					panelPadding,
+					isEdit ? 'justify-between' : 'justify-end'
+				)}
+			>
+				{#if isEdit}
+					<Button variant="danger" type="button" onclick={deleteEvent}>
+						<Trash2 class="size-4" aria-hidden="true" />
+						Delete
+					</Button>
+				{/if}
+				<div class="flex items-center gap-2">
+					<Button variant="ghost" type="button" onclick={close}>Close</Button>
+					<Button type="submit" disabled={!canSave} title={saveBlockedReason ?? submitLabel}>
+						{submitLabel}
+					</Button>
+				</div>
 			</footer>
 		</form>
 	</div>

@@ -38,6 +38,8 @@ const CALENDAR_USING = ['urn:ietf:params:jmap:core', CALENDARS_URN] as const;
 
 const CALENDAR_EVENT_PROPERTIES = [
 	'id',
+	'baseEventId',
+	'recurrenceId',
 	'calendarIds',
 	'title',
 	'description',
@@ -47,7 +49,9 @@ const CALENDAR_EVENT_PROPERTIES = [
 	'showWithoutTime',
 	'utcStart',
 	'utcEnd',
-	'locations'
+	'locations',
+	'recurrenceRule',
+	'recurrenceRules'
 ] as const;
 
 const EMAIL_LIST_PROPERTIES = [
@@ -569,7 +573,7 @@ export class JMAPClient {
 				{
 					accountId,
 					filter,
-					expandRecurrences: true,
+					expandRecurrences: false,
 					timeZone: params.timeZone ?? 'Etc/UTC',
 					limit: 500
 				},
@@ -634,6 +638,7 @@ export class JMAPClient {
 			description?: string;
 			location?: string;
 			previousCalendarIds?: string[];
+			recurrenceRule?: { '@type': 'RecurrenceRule'; frequency: string };
 		},
 		mode: 'create' | 'update'
 	): Record<string, unknown> {
@@ -673,6 +678,10 @@ export class JMAPClient {
 			eventData.locations = null;
 		}
 
+		if (input.recurrenceRule) {
+			eventData.recurrenceRule = input.recurrenceRule;
+		}
+
 		return eventData;
 	}
 
@@ -685,6 +694,7 @@ export class JMAPClient {
 		showWithoutTime: boolean;
 		description?: string;
 		location?: string;
+		recurrenceRule?: { '@type': 'RecurrenceRule'; frequency: string };
 	}): Promise<string> {
 		if (!this.hasCalendars()) throw new Error('Calendars not supported');
 

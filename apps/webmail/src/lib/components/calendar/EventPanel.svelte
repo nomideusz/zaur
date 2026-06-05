@@ -21,7 +21,6 @@
 
 	function deleteEvent() {
 		if (!auth.client || !event) return;
-		if (!confirm(`Delete “${eventTitle}”? This cannot be undone.`)) return;
 		void calendar.deleteEvent(auth.client, event);
 	}
 

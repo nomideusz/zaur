@@ -278,9 +278,13 @@
 		});
 	}
 
+	function stopEventClick(e: Event) {
+		e.stopPropagation();
+	}
+
 	function handleDayCellClick(ms: number, e: Event) {
 		const target = e.target as HTMLElement;
-		if (target.closest('.wg-ev')) return;
+		if (target.closest('.wg-cell-events, .wg-allday, .wg-ev, .wg-ad')) return;
 		if (readOnly || !oneventcreate) return;
 		// Check disabled dates
 		if (disabledSet.has(ms)) return;
@@ -505,6 +509,7 @@
 												tabindex="0"
 												aria-label="{seg.ev.title}{seg.totalDays > 1 ? `, ${L.dayNOfTotal(seg.dayIndex, seg.totalDays)}` : `, ${L.allDay}`}"
 												onpointerdown={(e) => onEventPointerDown(e, seg.ev)}
+												onclick={stopEventClick}
 												onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); oneventclick?.(seg.ev); } }}
 											>
 												{@render allDaySegmentContent(seg)}
@@ -543,6 +548,7 @@
 											tabindex="0"
 											aria-label="{ev.title}{ev.status === 'cancelled' ? ` (cancelled)` : ''}{ev.status === 'tentative' ? ` (tentative)` : ''}{ev.status === 'full' ? ` (full)` : ''}{ev.status === 'limited' ? ` (limited)` : ''}{ev.start.getTime() <= clock.tick && ev.end.getTime() > clock.tick ? ` (${L.inProgress})` : ''}"
 											onpointerdown={(e) => onEventPointerDown(e, ev)}
+											onclick={stopEventClick}
 											onpointerenter={() => oneventhover?.(ev)}
 											onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); oneventclick?.(ev); } }}
 										>

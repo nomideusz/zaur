@@ -2,6 +2,7 @@
 	import ZaurCalendarIcon from '$lib/components/icons/Calendar.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
+	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import { Calendar as LibCalendar, auto } from '@nomideusz/svelte-calendar';
 	import AgendaWeekNav from '$lib/components/calendar/AgendaWeekNav.svelte';
 	import CalendarSidebar from '$lib/components/calendar/CalendarSidebar.svelte';
@@ -28,6 +29,17 @@
 	let activeView = $state<CalendarTab>('week');
 	let currentDate = $state<Date>(new Date());
 	let isWide = $state(false);
+	let blockCreateUntil = 0;
+
+	function handleEventClick(evt: { id: string }) {
+		blockCreateUntil = performance.now() + 300;
+		calendar.selectEvent(evt.id);
+	}
+
+	function handleEventCreate(range: { start: Date }) {
+		if (performance.now() < blockCreateUntil) return;
+		calendar.openCompose(range.start);
+	}
 
 	const plannerCalendarProps = $derived({
 		currentDate,
@@ -35,8 +47,8 @@
 		theme: auto,
 		showModePills: false,
 		showNavigation: false,
-		oneventclick: (evt: { id: string }) => calendar.selectEvent(evt.id),
-		oneventcreate: (range: { start: Date }) => calendar.openCompose(range.start),
+		oneventclick: handleEventClick,
+		oneventcreate: handleEventCreate,
 		ondatechange: handlePlannerDateChange
 	});
 
@@ -46,8 +58,8 @@
 		theme: auto,
 		showModePills: false,
 		showNavigation: false,
-		oneventclick: (evt: { id: string }) => calendar.selectEvent(evt.id),
-		oneventcreate: (range: { start: Date }) => calendar.openCompose(range.start),
+		oneventclick: handleEventClick,
+		oneventcreate: handleEventCreate,
 		ondatechange: handleAgendaDayChange
 	});
 
@@ -90,14 +102,15 @@
 		});
 	});
 
-	const calAdapter = $derived.by(() => {
+	let calAdapter = $state<ZaurCalendarAdapter | null>(null);
+
+	$effect(() => {
 		const client = auth.client;
-		if (!client) return null;
-
-		calendar.hiddenCalendarIds;
-		calendar.refreshCounter;
-
-		return new ZaurCalendarAdapter(client);
+		if (!client || auth.isRestoring) {
+			calAdapter = null;
+			return;
+		}
+		calAdapter = new ZaurCalendarAdapter(client);
 	});
 
 	const headerTitle = $derived.by(() => {
@@ -144,6 +157,13 @@
 
 	function selectAgendaDay(day: Date) {
 		currentDate = day;
+	}
+
+	function deleteSelectedEvent() {
+		const event = calendar.selectedEvent;
+		const client = auth.client;
+		if (!event || !client) return;
+		void calendar.deleteEvent(client, event);
 	}
 </script>
 
@@ -198,6 +218,16 @@
 			{/if}
 
 			<div class="flex items-center gap-3">
+				{#if calendar.selectedEvent}
+					<IconButton
+						label="Delete event"
+						class="text-danger hover:bg-danger/10"
+						onclick={deleteSelectedEvent}
+					>
+						<Trash2 class="size-4" />
+					</IconButton>
+					<div class="h-4 w-px bg-border/80" aria-hidden="true"></div>
+				{/if}
 				<Button variant="ghost" onclick={goToday}>Today</Button>
 
 				<div class="h-4 w-px bg-border/80" aria-hidden="true"></div>
@@ -222,7 +252,7 @@
 		</div>
 
 		{#if calAdapter}
-			{#key activeView}
+			{#key `${activeView}-${calendar.refreshCounter}`}
 				{#if activeView === 'week'}
 					<div class="flex min-h-0 min-w-0 flex-1 flex-col">
 						<LibCalendar
