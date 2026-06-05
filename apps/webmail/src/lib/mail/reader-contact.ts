@@ -39,8 +39,6 @@ export function shouldShowContactEmail(displayName: string, email: string): bool
 export interface ReaderPrimaryContact {
 	name: string | undefined;
 	email: string;
-	avatarName: string | undefined;
-	avatarEmail: string;
 	displayName: string;
 	isMe: boolean;
 }
@@ -57,8 +55,6 @@ export function readerPrimaryContact(
 		return {
 			name,
 			email: recipient.email,
-			avatarName: recipient.name || recipient.email,
-			avatarEmail: recipient.email,
 			displayName: `To ${name}`,
 			isMe: isMe(recipient.email)
 		};
@@ -67,8 +63,6 @@ export function readerPrimaryContact(
 	return {
 		name: message.from.name,
 		email: message.from.email,
-		avatarName: message.from.name,
-		avatarEmail: message.from.email,
 		displayName,
 		isMe: fromIsMe
 	};

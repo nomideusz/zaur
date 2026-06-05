@@ -135,7 +135,8 @@ export function purgeObsoleteSettings(): void {
 	const keys: string[] = [];
 	for (let i = 0; i < localStorage.length; i++) {
 		const key = localStorage.key(i);
-		if (key && isObsoleteSettingKey(key)) keys.push(key);
+		if (!key) continue;
+		if (isObsoleteSettingKey(key) || key.startsWith('zaur:avatar-cache:')) keys.push(key);
 	}
 	for (const key of keys) localStorage.removeItem(key);
 }

@@ -212,11 +212,11 @@ function readUseSignature(email: string | null): boolean {
 }
 
 function readShowUnreadInTitle(): boolean {
-	return readBool(STORAGE.showUnreadInTitle, true);
+	return readBool(STORAGE.showUnreadInTitle, false);
 }
 
 function readShowUnreadAppBadge(): boolean {
-	return readBool(STORAGE.showUnreadAppBadge, true);
+	return readBool(STORAGE.showUnreadAppBadge, false);
 }
 
 function readNotifyOnNewMail(): boolean {
@@ -682,8 +682,8 @@ class SettingsStore {
 
 	resetReadingSettings() {
 		this.setNotifyOnNewMail(true);
-		this.setShowUnreadInTitle(true);
-		this.setShowUnreadAppBadge(true);
+		this.setShowUnreadInTitle(false);
+		this.setShowUnreadAppBadge(false);
 		this.setShowSenderEmailInList(false);
 		this.setShowImportantColors(true);
 		this.setRememberLastMailbox(false);
