@@ -237,6 +237,10 @@
 	);
 	const showFlatEmpty = $derived(!loading && !error && messages.length === 0);
 	const selectedIds = $derived([...mail.selectedMessageIds]);
+	const allVisibleSelected = $derived(
+		filteredListMessages.length > 0 &&
+			filteredListMessages.every((message) => selectedIds.includes(message.id))
+	);
 	const bulkSelectEnabled = $derived(!!mailboxRouteId);
 	const bulkSelectionMessages = $derived(filteredListMessages);
 	const showFilteredEmpty = $derived(
@@ -405,6 +409,8 @@
 					shift: event.shiftKey,
 					ctrl: event.metaKey || event.ctrlKey
 				});
+			} else if (allVisibleSelected) {
+				mail.clearSelection();
 			} else {
 				mail.toggleMessageSelection(messageId);
 			}
@@ -1086,7 +1092,7 @@
 			{#if showFilteredEmpty}
 				<p class="px-4 py-8 text-sm text-fg-muted">{filteredEmptyMessage}</p>
 			{:else if filteredListMessages.length > 0}
-				<ul class="divide-y divide-border">
+				<ul class="z-mail-list-cards">
 					{#each filteredListMessages as message (message.id)}
 						{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId)}
 					{/each}
@@ -1096,7 +1102,7 @@
 				<p class="px-4 py-8 text-sm text-fg-muted">{resolvedEmptyMessage}</p>
 			{/if}
 		{:else}
-			<ul class="divide-y divide-border">
+			<ul class="z-mail-list-cards">
 				{#each filteredListMessages as message (message.id)}
 					{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId)}
 				{/each}

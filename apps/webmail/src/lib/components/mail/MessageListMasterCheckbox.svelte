@@ -18,14 +18,18 @@
 		input.indeterminate = someSelected;
 	});
 
-	function handleChange(event: Event) {
+	function handleClick(event: MouseEvent) {
 		event.stopPropagation();
+		event.preventDefault();
 		const list = mail.selectableMessageList;
 		if (!list.length) return;
 
-		const selected = mail.selectedMessageIds;
-		const everySelected = list.every((message) => selected.has(message.id));
-		mail.selectMessagesByFilter(everySelected ? 'none' : 'all');
+		if (mail.selectedMessageIds.size > 0) {
+			mail.clearSelection();
+			return;
+		}
+
+		mail.selectMessagesByFilter('all');
 	}
 </script>
 
@@ -36,5 +40,5 @@
 	aria-checked={allSelected ? 'true' : someSelected ? 'mixed' : 'false'}
 	disabled={!mail.selectableMessageList.length || mail.messagesLoading}
 	aria-label={allSelected || someSelected ? 'Deselect all messages' : 'Select all messages'}
-	onchange={handleChange}
+	onclick={handleClick}
 />
