@@ -212,7 +212,7 @@
 		<h1
 			bind:this={readerSubjectEl}
 			class={cn(
-				'z-type-reader-title min-w-0 flex-1 truncate',
+				'z-type-reader-title min-w-0 flex-1 break-words',
 				subjectImportant && 'z-mail-list-subject--important',
 				subjectImportant &&
 					subjectMessageId &&

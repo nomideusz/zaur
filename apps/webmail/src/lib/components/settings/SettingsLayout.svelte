@@ -1,7 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
 	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
+	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
+	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { settingsShellClass } from '$lib/mail/layout';
@@ -25,6 +28,13 @@
 	const sectionLinks = $derived(settingsNavLinks());
 	const mailHref = $derived(settings.preferredMailHref());
 	const pathname = $derived($page.url.pathname);
+
+	const settingsOptions = $derived(
+		sectionLinks.map((link) => ({
+			value: link.href,
+			label: link.label
+		}))
+	);
 
 	const iconMap = {
 		account: User,
@@ -82,28 +92,27 @@
 	<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 		<!-- Mobile Header Navigation (Mobile only) -->
 		<header
-			class="z-mail-text-nav z-mail-text-nav--settings z-settings-sticky-nav shrink-0 border-b border-border/60 px-4 pt-2.5 pb-2 md:hidden"
+			class="z-mail-list-pane-header flex h-14 shrink-0 items-center justify-between overflow-hidden border-b border-border/80 px-4 gap-3 md:hidden animate-fade-in"
 			aria-label="Mobile settings navigation"
 		>
-			<div class="z-mail-text-nav__row z-settings-nav-bar flex items-center justify-between gap-4">
-				<div class="z-settings-nav-bar__lead">
-					<a class="z-mail-text-nav__link font-medium" href={mailHref}>Back</a>
-				</div>
-				<nav class="z-mail-text-nav__links z-settings-nav-bar__links" aria-label="Settings sections">
-					{#each sectionLinks as link (link.href)}
-						{#if isSettingsNavActive(pathname, link.href)}
-							<span class="z-mail-text-nav__link z-mail-text-nav__link--here" aria-current="page">
-								{link.label}
-							</span>
-						{:else}
-							<a class="z-mail-text-nav__link" href={link.href}>{link.label}</a>
-						{/if}
-					{/each}
-				</nav>
-			</div>
-			<!-- Search settings input in sticky header -->
-			<div class="mt-2.5">
-				<SettingsSearch />
+			<div class="flex items-center gap-2 min-w-0">
+				<a
+					href={mailHref}
+					class="flex items-center text-accent hover:opacity-80 transition-opacity no-underline shrink-0"
+					aria-label="Back to mail"
+				>
+					<ChevronLeft class="size-6" />
+				</a>
+				<MobilePicker
+					label="Settings"
+					value={pathname}
+					options={settingsOptions}
+					onchange={(val) => {
+						goto(val);
+					}}
+					compact={true}
+					class="w-44 flex-initial"
+				/>
 			</div>
 		</header>
 

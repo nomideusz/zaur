@@ -8,6 +8,9 @@
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
+	import Settings from '$lib/components/icons/Settings.svelte';
+	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
+	import { goto } from '$app/navigation';
 	import {
 		listSwipeContext,
 		listSwipeLeadingActions,
@@ -39,7 +42,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { Mailbox, MessagePreview } from '$lib/types/mail';
-	import { mailThreadHref } from '$lib/mail/routes';
+	import { mailThreadHref, mailListHref } from '$lib/mail/routes';
 	import { mailboxKindOrderForMailbox } from '$lib/mail/mailboxes';
 	import { formatMessageListWhen, simpleMessageDayKey } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
@@ -68,6 +71,29 @@
 		);
 	const listPreviewClass = 'min-w-0 truncate text-xs text-fg-muted';
 	const listTimeClass = 'shrink-0 text-xs tabular-nums text-fg-subtle';
+
+	const primaryOrder = new Map([
+		['inbox', 0],
+		['drafts', 1],
+		['sent', 2],
+		['archive', 3],
+		['junk', 4],
+		['trash', 5]
+	]);
+
+	const mailboxOptions = $derived(
+		[...mail.mailboxes]
+			.filter((mb) => primaryOrder.has(mb.role ?? ''))
+			.sort((a, b) => {
+				const aRank = primaryOrder.get(a.role ?? '') ?? 99;
+				const bRank = primaryOrder.get(b.role ?? '') ?? 99;
+				return aRank - bRank || a.name.localeCompare(b.name);
+			})
+			.map((mb) => ({
+				value: mb.id,
+				label: mb.name + (mb.unread > 0 ? ` (${mb.unread})` : '')
+			}))
+	);
 
 	let {
 		messages,
@@ -844,27 +870,9 @@
 >
 	{#if mailboxRouteId || !sectionMode}
 		<header
-			class={cn(
-				'z-mail-list-pane-header flex h-14 shrink-0 items-center justify-between overflow-hidden border-b border-border/80 px-4 gap-3',
-				mail.hasSelection && 'hidden md:flex'
-			)}
+			class="z-mail-list-pane-header flex h-14 shrink-0 items-center justify-between overflow-hidden border-b border-border/80 px-4 gap-3"
 		>
-			<!-- Mobile Back to Folders Button & Mailbox Name -->
-			<div class="flex items-center gap-2 md:hidden min-w-0">
-				<a
-					href="/"
-					class="flex items-center text-accent hover:opacity-80 transition-opacity no-underline shrink-0"
-					aria-label="Back to folders"
-				>
-					<ChevronLeft class="size-6" />
-				</a>
-				<span class="text-base font-bold text-fg truncate">
-					{mailboxName}
-				</span>
-			</div>
-
-			<!-- Desktop Bulk Header or Fallback controls -->
-			<div class="hidden md:flex flex-1 min-w-0">
+			{#if mail.hasSelection}
 				{#if mailboxRouteId}
 					<MessageListBulkHeader
 						{mailboxRouteId}
@@ -879,29 +887,71 @@
 				{:else}
 					<h2 class="z-type-pane-title min-w-0 truncate">{mailboxName}</h2>
 				{/if}
-			</div>
-
-			<!-- Mobile Filter controls on the right (Only necessary stuff!) -->
-			{#if mailboxRouteId && !mail.hasSelection}
-				<div class="flex items-center gap-1.5 md:hidden shrink-0">
-					{#each ['all', 'unread', 'starred'] as opt}
-						{@const isActive = readFilter === opt}
-						<button
-							type="button"
-							class={cn(
-								'rounded-full px-2.5 py-1 text-xs font-semibold transition-colors',
-								isActive
-									? 'bg-accent/10 text-accent'
-									: 'text-fg-muted hover:text-fg'
-							)}
-							onclick={() => {
-								readFilter = opt as any;
-							}}
-						>
-							{opt.charAt(0).toUpperCase() + opt.slice(1)}
-						</button>
-					{/each}
+			{:else}
+				<!-- Mobile Folder Picker -->
+				<div class="flex items-center gap-1.5 md:hidden min-w-0">
+					<MobilePicker
+						label="Mailbox"
+						value={mailboxRouteId || 'inbox'}
+						options={mailboxOptions}
+						onchange={(val) => {
+							goto(mailListHref(val));
+						}}
+						compact={true}
+						class="w-36 flex-initial"
+					/>
 				</div>
+
+				<!-- Desktop Bulk Header or Fallback controls -->
+				<div class="hidden md:flex flex-1 min-w-0">
+					{#if mailboxRouteId}
+						<MessageListBulkHeader
+							{mailboxRouteId}
+							{onBulkAction}
+							disabled={loading || !!error || !messages.length}
+							showReadFilter={sectionMode}
+							{readFilter}
+							onReadFilterChange={(filter) => {
+								readFilter = filter;
+							}}
+						/>
+					{:else}
+						<h2 class="z-type-pane-title min-w-0 truncate">{mailboxName}</h2>
+					{/if}
+				</div>
+
+				<!-- Mobile Filters & Settings Button -->
+				{#if mailboxRouteId}
+					<div class="flex items-center gap-1.5 md:hidden shrink-0">
+						{#each ['all', 'unread', 'starred'] as opt}
+							{@const isActive = readFilter === opt}
+							<button
+								type="button"
+								class={cn(
+									'rounded-full px-2 py-0.5 text-xs font-semibold transition-colors',
+									isActive
+										? 'bg-accent/10 text-accent font-semibold'
+										: 'text-fg-muted hover:text-fg'
+								)}
+								onclick={() => {
+									readFilter = opt as any;
+								}}
+							>
+								{opt.charAt(0).toUpperCase() + opt.slice(1)}
+							</button>
+						{/each}
+						
+						<div class="h-4 w-px bg-border/80 mx-1 shrink-0"></div>
+
+						<a
+							href="/settings"
+							class="flex size-7 items-center justify-center rounded-full text-fg-muted hover:text-fg hover:bg-surface-sunken transition-colors shrink-0"
+							aria-label="Settings"
+						>
+							<Settings class="size-4" />
+						</a>
+					</div>
+				{/if}
 			{/if}
 		</header>
 	{/if}
