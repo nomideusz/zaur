@@ -45,7 +45,7 @@ describe('userOwnedAddresses', () => {
 describe('readerDeliveredTo', () => {
 	const owned = userOwnedAddresses('me@example.com', [{ email: 'alias@example.com' }]);
 
-	it('returns To line for inbound mail delivered to an owned address', () => {
+	it('returns To line for inbound mail delivered to owned addresses', () => {
 		assert.deepEqual(
 			readerDeliveredTo(
 				message({
@@ -71,15 +71,55 @@ describe('readerDeliveredTo', () => {
 		);
 	});
 
-	it('returns null when no owned address matches', () => {
+	it('returns null when no owned or local catch-all address matches', () => {
 		assert.equal(
 			readerDeliveredTo(
 				message({
-					to: [{ name: '', email: 'friend@example.com' }]
+					to: [{ name: '', email: 'friend@other.com' }]
 				}),
 				owned
 			),
 			null
+		);
+	});
+
+	it('returns To line for catch-all mail addressed to an unknown local address', () => {
+		assert.deepEqual(
+			readerDeliveredTo(
+				message({
+					to: [{ name: '', email: 'sales@example.com' }]
+				}),
+				owned
+			),
+			{ prefix: 'To', addresses: 'sales@example.com' }
+		);
+	});
+
+	it('shows catch-all local addresses before owned addresses', () => {
+		assert.deepEqual(
+			readerDeliveredTo(
+				message({
+					to: [
+						{ name: '', email: 'sales@example.com' },
+						{ name: '', email: 'me@example.com' }
+					]
+				}),
+				owned
+			),
+			{ prefix: 'To', addresses: 'sales@example.com, me@example.com' }
+		);
+	});
+
+	it('collects multiple unknown local addresses', () => {
+		assert.deepEqual(
+			readerDeliveredTo(
+				message({
+					to: [{ name: '', email: 'sales@example.com' }],
+					cc: [{ name: '', email: 'support@example.com' }]
+				}),
+				owned
+			),
+			{ prefix: 'To', addresses: 'sales@example.com, support@example.com' }
 		);
 	});
 });

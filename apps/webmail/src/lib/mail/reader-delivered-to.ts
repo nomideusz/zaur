@@ -9,6 +9,13 @@ function normalizeEmail(email: string): string {
 	return email.trim().toLowerCase();
 }
 
+function emailDomain(email: string): string | null {
+	const normalized = normalizeEmail(email);
+	const at = normalized.lastIndexOf('@');
+	if (at < 0) return null;
+	return normalized.slice(at + 1);
+}
+
 export function userOwnedAddresses(
 	username: string | null | undefined,
 	identities: readonly { email?: string | null }[]
@@ -21,6 +28,47 @@ export function userOwnedAddresses(
 		if (email) owned.add(normalizeEmail(email));
 	}
 	return owned;
+}
+
+function ownedDomains(ownedAddresses: Set<string>): Set<string> {
+	const domains = new Set<string>();
+	for (const email of ownedAddresses) {
+		const domain = emailDomain(email);
+		if (domain) domains.add(domain);
+	}
+	return domains;
+}
+
+function collectRecipientEmails(message: MessageDetail): string[] {
+	const emails: string[] = [];
+	const seen = new Set<string>();
+	for (const recipients of [message.to, message.cc, message.bcc]) {
+		for (const recipient of recipients ?? []) {
+			const email = recipient.email?.trim();
+			if (!email) continue;
+			const key = normalizeEmail(email);
+			if (seen.has(key)) continue;
+			seen.add(key);
+			emails.push(email);
+		}
+	}
+	return emails;
+}
+
+function matchRecipients(
+	message: MessageDetail,
+	ownedAddresses: Set<string>,
+	predicate: (email: string, key: string) => boolean
+): string[] {
+	const matches: string[] = [];
+	const seen = new Set<string>();
+	for (const email of collectRecipientEmails(message)) {
+		const key = normalizeEmail(email);
+		if (seen.has(key) || !predicate(email, key)) continue;
+		seen.add(key);
+		matches.push(email);
+	}
+	return matches;
 }
 
 export function readerDeliveredTo(
@@ -36,19 +84,22 @@ export function readerDeliveredTo(
 		return { prefix: 'From', addresses: fromEmail };
 	}
 
-	const matches: string[] = [];
-	const seen = new Set<string>();
-	for (const recipients of [message.to, message.cc, message.bcc]) {
-		for (const recipient of recipients ?? []) {
-			const email = recipient.email?.trim();
-			if (!email) continue;
-			const key = normalizeEmail(email);
-			if (!ownedAddresses.has(key) || seen.has(key)) continue;
-			seen.add(key);
-			matches.push(email);
-		}
+	const domains = ownedDomains(ownedAddresses);
+	const ownedMatches = matchRecipients(
+		message,
+		ownedAddresses,
+		(_email, key) => ownedAddresses.has(key)
+	);
+	const catchAllMatches = matchRecipients(message, ownedAddresses, (email, key) => {
+		if (ownedAddresses.has(key)) return false;
+		const domain = emailDomain(email);
+		return !!domain && domains.has(domain);
+	});
+
+	const addresses = [...catchAllMatches, ...ownedMatches];
+	if (addresses.length) {
+		return { prefix: 'To', addresses: addresses.join(', ') };
 	}
 
-	if (!matches.length) return null;
-	return { prefix: 'To', addresses: matches.join(', ') };
+	return null;
 }
