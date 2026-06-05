@@ -263,11 +263,7 @@
 		} else {
 			const bottomRemaining = el.scrollHeight - el.clientHeight - el.scrollTop;
 			if (bottomRemaining < EDGE_PX) {
-				extending = true;
 				bufferAfter += EXTEND_BY;
-				tick().then(() => {
-					extending = false;
-				});
 			}
 		}
 	}

@@ -136,14 +136,14 @@ export function createAgenda(options: AgendaOptions): HeadlessAgenda {
 		? options.adapter as () => CalendarAdapter
 		: () => options.adapter as CalendarAdapter;
 
-	const store = createEventStore(resolveAdapter);
+	const store = $derived(createEventStore(resolveAdapter()));
 	const clock = createClock();
 
 	// ── Focus date (reactive, writable) ──
 	let focusDayMs = $state(sod(initialDate?.getTime() ?? Date.now()));
 
+	// ── Load events for focus date range ──
 	$effect(() => {
-		resolveAdapter();
 		const start = new Date(focusDayMs);
 		const end = new Date(focusDayMs + lookahead * DAY_MS);
 		store.load({ start, end });

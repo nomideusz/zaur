@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.6.7 — 2026-06-05
+
+### Fixed
+- **Standalone install (pnpm 11+)** — sync now ships `pnpm-workspace.yaml` with `allowBuilds` for esbuild so `pnpm install` succeeds locally and in CI (republish; 0.6.6 did not reach npm).
+
+## 0.6.6 — 2026-06-05
+
+### Fixed
+- **Day planner event labels** — restore vertical text in the day filmstrip view (`writing-mode: vertical-rl`) so titles read along the lane height; text fitting uses swapped width/height limits for vertical layout.
+
+### Changed
+- Demo site defaults to **Day Planner** view so the day filmstrip layout is shown first.
+
 ## 0.6.5 — 2026-04-25
 
 ### Added

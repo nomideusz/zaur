@@ -76,7 +76,7 @@
 		showModePills: true,
 		showNavigation: true,
 		equalDays: false,
-		activeView: "week-planner",
+		activeView: "day-planner",
 		locale: "en-US",
 		showDates: true,
 		calendarPreset: "auto",

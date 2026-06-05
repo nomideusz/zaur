@@ -242,7 +242,7 @@
 	const effectiveTheme = $derived(theme === auto && autoTheme !== false ? probedTheme : theme);
 
 	// ── Create reactive state ──
-	const store: EventStore = createEventStore(() => adapter);
+	const store: EventStore = $derived(createEventStore(adapter));
 	const viewState: ViewState = createViewState(untrack(() => ({
 		view: activeViewId ?? views[0]?.id,
 		mondayStart,
@@ -373,7 +373,6 @@
 
 	// ── Load events when effective range changes ──
 	$effect(() => {
-		adapter;
 		const range = viewLoadRange ?? viewState.range;
 		store.load({ start: range.start, end: range.end });
 	});

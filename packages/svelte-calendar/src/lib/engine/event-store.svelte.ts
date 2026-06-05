@@ -50,10 +50,7 @@ export interface EventStore {
 /**
  * Create a reactive event store backed by a CalendarAdapter.
  */
-export function createEventStore(adapterOrGetter: CalendarAdapter | (() => CalendarAdapter)): EventStore {
-	const getAdapter = () => typeof adapterOrGetter === 'function' ? adapterOrGetter() : adapterOrGetter;
-	let lastAdapter = getAdapter();
-
+export function createEventStore(adapter: CalendarAdapter): EventStore {
 	let eventMap = new SvelteMap<string, TimelineEvent>();
 	let loading = $state(false);
 	let error = $state<string | null>(null);
@@ -70,11 +67,11 @@ export function createEventStore(adapterOrGetter: CalendarAdapter | (() => Calen
 		eventMap.delete(id);
 	}
 
-	// ── Public API ──
 	function upsertEvent(ev: TimelineEvent): void {
 		eventMap.set(ev.id, ev);
 	}
 
+	// ── Public API ──
 	return {
 		get events() {
 			return eventArray;
@@ -87,15 +84,10 @@ export function createEventStore(adapterOrGetter: CalendarAdapter | (() => Calen
 		},
 
 		async load(range: DateRange) {
-			const currentAdapter = getAdapter();
-			if (currentAdapter !== lastAdapter) {
-				lastAdapter = currentAdapter;
-				eventMap.clear();
-			}
 			loading = true;
 			error = null;
 			try {
-				const fetched = await currentAdapter.fetchEvents(range);
+				const fetched = await adapter.fetchEvents(range);
 				// Merge: upsert fetched, don't blow away events outside this range
 				for (const ev of fetched) {
 					upsertEvent(ev);
@@ -122,12 +114,11 @@ export function createEventStore(adapterOrGetter: CalendarAdapter | (() => Calen
 		},
 
 		async add(eventData: Omit<TimelineEvent, 'id'>): Promise<TimelineEvent> {
-			const currentAdapter = getAdapter();
-			if (!currentAdapter.createEvent) throw new Error('Adapter is read-only: createEvent not implemented');
+			if (!adapter.createEvent) throw new Error('Adapter is read-only: createEvent not implemented');
 			loading = true;
 			error = null;
 			try {
-				const created = await currentAdapter.createEvent(eventData);
+				const created = await adapter.createEvent(eventData);
 				upsertEvent(created);
 				return created;
 			} catch (e) {
@@ -139,12 +130,11 @@ export function createEventStore(adapterOrGetter: CalendarAdapter | (() => Calen
 		},
 
 		async update(id: string, patch: Partial<TimelineEvent>): Promise<void> {
-			const currentAdapter = getAdapter();
-			if (!currentAdapter.updateEvent) throw new Error('Adapter is read-only: updateEvent not implemented');
+			if (!adapter.updateEvent) throw new Error('Adapter is read-only: updateEvent not implemented');
 			loading = true;
 			error = null;
 			try {
-				const updated = await currentAdapter.updateEvent(id, patch);
+				const updated = await adapter.updateEvent(id, patch);
 				upsertEvent(updated);
 			} catch (e) {
 				error = e instanceof Error ? e.message : String(e);
@@ -155,12 +145,11 @@ export function createEventStore(adapterOrGetter: CalendarAdapter | (() => Calen
 		},
 
 		async remove(id: string): Promise<void> {
-			const currentAdapter = getAdapter();
-			if (!currentAdapter.deleteEvent) throw new Error('Adapter is read-only: deleteEvent not implemented');
+			if (!adapter.deleteEvent) throw new Error('Adapter is read-only: deleteEvent not implemented');
 			loading = true;
 			error = null;
 			try {
-				await currentAdapter.deleteEvent(id);
+				await adapter.deleteEvent(id);
 				removeEvent(id);
 			} catch (e) {
 				error = e instanceof Error ? e.message : String(e);
