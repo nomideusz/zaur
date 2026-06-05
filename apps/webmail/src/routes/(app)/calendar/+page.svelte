@@ -1,6 +1,6 @@
 <script lang="ts">
 	import ZaurCalendarIcon from '$lib/components/icons/Calendar.svelte';
-	import { Calendar as LibCalendar, createMemoryAdapter, auto } from '@nomideusz/svelte-calendar';
+	import { Calendar as LibCalendar, auto } from '@nomideusz/svelte-calendar';
 	import CalendarSidebar from '$lib/components/calendar/CalendarSidebar.svelte';
 	import EventComposePanel from '$lib/components/calendar/EventComposePanel.svelte';
 	import EventPanel from '$lib/components/calendar/EventPanel.svelte';
@@ -10,7 +10,7 @@
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { formatMonthTitle } from '$lib/utils/dates';
-	import { mapJmapToTimelineEvents } from '$lib/components/calendar/calendar-adapter';
+	import { ZaurCalendarAdapter } from '$lib/components/calendar/calendar-adapter';
 	import { cn } from '$lib/utils/cn';
 
 	const monthTitle = $derived(formatMonthTitle(calendar.viewYear, calendar.viewMonth));
@@ -24,12 +24,17 @@
 		void calendar.loadMonth(client);
 	});
 
-	// Derive svelte-calendar adapter reactively when events or visibility filter changes
-	const visibleEvents = $derived(
-		calendar.events.filter((e) => !calendar.hiddenCalendarIds.has(e.calendarIds[0]))
-	);
-	const timelineEvents = $derived(mapJmapToTimelineEvents(visibleEvents, calendar.calendars));
-	const calAdapter = $derived(createMemoryAdapter(timelineEvents));
+	// Derive svelte-calendar adapter reactively when visibility filter, events, or client changes
+	const calAdapter = $derived.by(() => {
+		const client = auth.client;
+		if (!client) return null;
+
+		// Access reactively so the adapter is re-instantiated and svelte-calendar reloads when filters change
+		calendar.hiddenCalendarIds;
+		calendar.events;
+
+		return new ZaurCalendarAdapter(client);
+	});
 </script>
 
 <svelte:head>
@@ -63,14 +68,16 @@
 		style="view-transition-name: calendar-grid;"
 		aria-label="Calendar view"
 	>
-		<LibCalendar
-			adapter={calAdapter}
-			view="week-planner"
-			theme={auto}
-			oneventclick={(evt) => calendar.selectEvent(evt.id)}
-			oneventcreate={(range) => calendar.openCompose(range.start)}
-			height="auto"
-		/>
+		{#if calAdapter}
+			<LibCalendar
+				adapter={calAdapter}
+				view="week-planner"
+				theme={auto}
+				oneventclick={(evt) => calendar.selectEvent(evt.id)}
+				oneventcreate={(range) => calendar.openCompose(range.start)}
+				height="auto"
+			/>
+		{/if}
 	</section>
 	{#if calendar.selectedEvent}
 		<EventPanel />
