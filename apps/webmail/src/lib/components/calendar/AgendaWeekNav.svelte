@@ -1,7 +1,4 @@
 <script lang="ts">
-	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
-	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
-	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import type { CalendarEvent } from '$lib/types/calendar';
@@ -11,11 +8,9 @@
 	interface Props {
 		selectedDay: Date;
 		onSelectDay: (day: Date) => void;
-		onPrevWeek: () => void;
-		onNextWeek: () => void;
 	}
 
-	let { selectedDay, onSelectDay, onPrevWeek, onNextWeek }: Props = $props();
+	let { selectedDay, onSelectDay }: Props = $props();
 
 	const today = new Date();
 	const weekStart = $derived(settings.calendarWeekStartsOnMonday ? 'monday' : 'sunday');
@@ -38,16 +33,10 @@
 </script>
 
 <nav class="flex min-h-0 flex-col" aria-label="Week overview">
-	<div class="flex h-10 shrink-0 items-center justify-between gap-1 border-b border-border/80 bg-surface/50 px-2">
-		<IconButton label="Previous week" onclick={onPrevWeek}>
-			<ChevronLeft class="size-4" />
-		</IconButton>
-		<p class="min-w-0 truncate text-center text-[11px] font-semibold tracking-wide text-fg-subtle uppercase">
-			{weekLabel}
+	<div class="flex h-10 shrink-0 items-center border-b border-border/80 bg-surface/50 px-4">
+		<p class="min-w-0 truncate text-[11px] font-semibold tracking-wide text-fg-subtle uppercase">
+			Week · {weekLabel}
 		</p>
-		<IconButton label="Next week" onclick={onNextWeek}>
-			<ChevronRight class="size-4" />
-		</IconButton>
 	</div>
 
 	<ul class="z-pane-scroll min-h-0 flex-1 space-y-0.5 overflow-y-auto p-2">

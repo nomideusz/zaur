@@ -101,6 +101,7 @@
 	});
 
 	const headerTitle = $derived.by(() => {
+		if (activeView === 'week') return 'Week';
 		if (activeView === 'day' || activeView === 'agendas') {
 			return currentDate.toLocaleDateString(undefined, {
 				weekday: 'long',
@@ -115,19 +116,13 @@
 		});
 	});
 
+	const showDateNav = $derived(activeView === 'day' || activeView === 'agendas');
+
 	function prev() {
-		if (activeView === 'week') {
-			currentDate = addDays(currentDate, -7);
-			return;
-		}
 		currentDate = addDays(currentDate, -1);
 	}
 
 	function next() {
-		if (activeView === 'week') {
-			currentDate = addDays(currentDate, 7);
-			return;
-		}
 		currentDate = addDays(currentDate, 1);
 	}
 
@@ -149,14 +144,6 @@
 
 	function selectAgendaDay(day: Date) {
 		currentDate = day;
-	}
-
-	function prevAgendaWeek() {
-		currentDate = addDays(currentDate, -7);
-	}
-
-	function nextAgendaWeek() {
-		currentDate = addDays(currentDate, 7);
 	}
 </script>
 
@@ -190,24 +177,25 @@
 		style="view-transition-name: calendar-grid;"
 		aria-label="Calendar view"
 	>
-		<div class="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border/80 px-4 py-2">
-			<div class="flex items-center gap-1">
-				<IconButton
-					label={activeView === 'week' ? 'Previous week' : 'Previous day'}
-					onclick={prev}
-				>
-					<ChevronLeft class="size-4" />
-				</IconButton>
-				<h2 class="min-w-36 text-center text-sm font-semibold text-fg">
-					{headerTitle}
-				</h2>
-				<IconButton
-					label={activeView === 'week' ? 'Next week' : 'Next day'}
-					onclick={next}
-				>
-					<ChevronRight class="size-4" />
-				</IconButton>
-			</div>
+		<div
+			class={cn(
+				'flex min-h-12 shrink-0 flex-wrap items-center gap-2 border-b border-border/80 px-4 py-2',
+				showDateNav ? 'justify-between' : 'justify-end'
+			)}
+		>
+			{#if showDateNav}
+				<div class="flex items-center gap-1">
+					<IconButton label="Previous day" onclick={prev}>
+						<ChevronLeft class="size-4" />
+					</IconButton>
+					<h2 class="min-w-36 text-center text-sm font-semibold text-fg">
+						{headerTitle}
+					</h2>
+					<IconButton label="Next day" onclick={next}>
+						<ChevronRight class="size-4" />
+					</IconButton>
+				</div>
+			{/if}
 
 			<div class="flex items-center gap-3">
 				<Button variant="ghost" onclick={goToday}>Today</Button>
@@ -264,26 +252,14 @@
 								isWide ? 'w-72 max-w-[20rem] shrink-0' : 'max-h-[42%] shrink-0'
 							)}
 						>
-							<AgendaWeekNav
-								selectedDay={currentDate}
-								onSelectDay={selectAgendaDay}
-								onPrevWeek={prevAgendaWeek}
-								onNextWeek={nextAgendaWeek}
-							/>
+							<AgendaWeekNav selectedDay={currentDate} onSelectDay={selectAgendaDay} />
 						</div>
-						<div class="flex min-h-0 min-w-0 flex-1 flex-col">
-							<div class="flex h-10 shrink-0 items-center border-b border-border/80 bg-surface/50 px-4">
-								<h3 class="text-xs font-semibold tracking-wider text-fg-subtle uppercase">
-									Day schedule
-								</h3>
-							</div>
-							<div class="min-h-0 flex-1 overflow-hidden">
-								<LibCalendar
-									adapter={calAdapter}
-									view="day-agenda"
-									{...dayAgendaProps}
-								/>
-							</div>
+						<div class="min-h-0 flex-1 overflow-hidden">
+							<LibCalendar
+								adapter={calAdapter}
+								view="day-agenda"
+								{...dayAgendaProps}
+							/>
 						</div>
 					</div>
 				{/if}
@@ -304,5 +280,13 @@
 		height: 100% !important;
 		border: none !important;
 		border-radius: 0 !important;
+	}
+
+	/* Shell header owns date navigation — hide duplicate labels/controls inside LibCalendar. */
+	:global(.cal .fs-date-label),
+	:global(.cal .ag-date-label),
+	:global(.cal .fs-nav),
+	:global(.cal .ag-nav) {
+		display: none !important;
 	}
 </style>
