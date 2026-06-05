@@ -186,9 +186,9 @@
 	onchange={onImageSelect}
 />
 
-<div class="z-rich-editor flex flex-col min-h-0 flex-1 border border-border/80 rounded-md bg-surface-raised overflow-hidden">
+<div class="z-rich-editor flex flex-col min-h-0 flex-1 bg-transparent">
 	<!-- Toolbar -->
-	<div class="z-rich-editor__toolbar flex flex-wrap gap-1 border-b border-border/80 p-2 bg-surface-raised">
+	<div class="z-rich-editor__toolbar flex flex-wrap gap-1 border-b border-border/80 pb-2 bg-transparent">
 		<button
 			type="button"
 			class="z-rich-editor__btn"
@@ -269,7 +269,7 @@
 	</div>
 
 	<!-- Editor body -->
-	<div bind:this={element} class="z-rich-editor__wrapper flex-1 overflow-y-auto px-4 py-3 bg-transparent"></div>
+	<div bind:this={element} class="z-rich-editor__wrapper flex-1 overflow-y-auto pt-3 bg-transparent"></div>
 </div>
 
 <style>
@@ -280,7 +280,7 @@
 
 	.z-rich-editor__toolbar {
 		border-color: var(--z-border, rgba(0,0,0,0.1));
-		box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+		box-shadow: none;
 	}
 
 	.z-rich-editor__btn {
