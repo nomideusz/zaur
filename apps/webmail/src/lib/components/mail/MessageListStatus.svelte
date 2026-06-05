@@ -134,16 +134,5 @@
 				{/if}
 			</div>
 		{/if}
-		<div>
-			<p class="text-sm font-semibold text-fg">{emptyMessage}</p>
-			{#if emptyHint}
-				<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">{emptyHint}</p>
-			{/if}
-		</div>
-		{#if emptyActionHref && emptyActionLabel}
-			<Button href={emptyActionHref} variant="ghost" class="text-sm">{emptyActionLabel}</Button>
-		{:else if mailboxRouteId === 'inbox' || mailboxRouteId === 'drafts'}
-			<Button href="/mail/compose" variant="ghost" class="text-sm">New message</Button>
-		{/if}
 	</div>
 {/if}
