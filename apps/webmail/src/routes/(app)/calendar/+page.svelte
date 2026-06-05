@@ -27,6 +27,8 @@
 			calendar.viewYear = currentDate.getFullYear();
 			calendar.viewMonth = currentDate.getMonth();
 		}
+
+		void calendar.ensureCalendars(client);
 	});
 
 	// Derive svelte-calendar adapter reactively when visibility filter, refreshCounter, or client changes
