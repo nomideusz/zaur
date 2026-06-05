@@ -49,6 +49,7 @@ const STORAGE = {
 	readerTextSize: 'zaur:reader-text-size',
 	readingTypeface: 'zaur:reading-typeface',
 	readerCleanView: 'zaur:reader-clean-view',
+	showDeliveredToInReader: 'zaur:show-delivered-to-in-reader',
 	focusReadingDefault: 'zaur:focus-reading-default',
 	defaultReplyMode: 'zaur:default-reply-mode',
 	defaultComposeFormat: 'zaur:default-compose-format',
@@ -187,6 +188,10 @@ function readReaderCleanView(): boolean {
 	return readBool(STORAGE.readerCleanView, true);
 }
 
+function readShowDeliveredToInReader(): boolean {
+	return readBool(STORAGE.showDeliveredToInReader, false);
+}
+
 function readFocusReadingDefault(): boolean {
 	return readBool(STORAGE.focusReadingDefault, true);
 }
@@ -290,6 +295,7 @@ class SettingsStore {
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	readingTypeface = $state<ReadingTypeface>(readReadingTypeface());
 	readerCleanView = $state(readReaderCleanView());
+	showDeliveredToInReader = $state(readShowDeliveredToInReader());
 	focusReadingDefault = $state(readFocusReadingDefault());
 	defaultReplyMode = $state<DefaultReplyMode>(readDefaultReplyMode());
 	defaultComposeFormat = $state<ComposeFormat>(readDefaultComposeFormat());
@@ -335,6 +341,7 @@ class SettingsStore {
 		this.readerTextSize = readReaderTextSize();
 		this.readingTypeface = readReadingTypeface();
 		this.readerCleanView = readReaderCleanView();
+		this.showDeliveredToInReader = readShowDeliveredToInReader();
 		this.focusReadingDefault = readFocusReadingDefault();
 		this.defaultReplyMode = readDefaultReplyMode();
 		this.defaultComposeFormat = readDefaultComposeFormat();
@@ -554,6 +561,11 @@ class SettingsStore {
 		if (browser) this.writeStorage(STORAGE.readerCleanView, String(value));
 	}
 
+	setShowDeliveredToInReader(value: boolean) {
+		this.showDeliveredToInReader = value;
+		if (browser) this.writeStorage(STORAGE.showDeliveredToInReader, String(value));
+	}
+
 	setFocusReadingDefault(value: boolean) {
 		this.focusReadingDefault = value;
 		if (browser) this.writeStorage(STORAGE.focusReadingDefault, String(value));
@@ -678,6 +690,7 @@ class SettingsStore {
 		this.setReaderTextSize('normal');
 		this.setReadingTypeface('sans');
 		this.setReaderCleanView(true);
+		this.setShowDeliveredToInReader(false);
 		this.setPreferPlainText(false);
 		this.setBlockExternalContent(true);
 		this.setExpandAllThreadMessages(false);

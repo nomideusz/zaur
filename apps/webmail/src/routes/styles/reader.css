@@ -26,6 +26,12 @@
 		@apply text-fg-muted;
 	}
 
+	.z-reader-delivered-to {
+		font-size: 0.8125rem;
+		line-height: 1.45;
+		@apply text-fg-subtle;
+	}
+
 	.z-reader-chrome {
 		@apply flex flex-col gap-2;
 	}

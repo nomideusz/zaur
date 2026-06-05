@@ -106,6 +106,17 @@
 			onchange={(e) => settings.setReaderCleanView(e.currentTarget.checked)}
 		/>
 	</SettingsRow>
+
+	<SettingsRow
+		title="Show delivery address"
+		description="Display which of your addresses received or sent the message."
+	>
+		<input
+			type="checkbox"
+			checked={settings.showDeliveredToInReader}
+			onchange={(e) => settings.setShowDeliveredToInReader(e.currentTarget.checked)}
+		/>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="System & Badges">

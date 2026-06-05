@@ -10,6 +10,7 @@
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
 	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
 	import { readerPrimaryContact, shouldShowContactEmail } from '$lib/mail/reader-contact';
+	import { readerDeliveredTo, userOwnedAddresses } from '$lib/mail/reader-delivered-to';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -62,6 +63,8 @@
 	const allowExternal = $derived(
 		!settings.blockExternalContent || (pane?.showImagesOnce ?? localShowImagesOnce)
 	);
+	const ownedAddresses = $derived(userOwnedAddresses(auth.username, auth.identities));
+
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>
 			renderMessageBody({
@@ -276,6 +279,9 @@
 			{#each thread as message (message.id)}
 				{@const contact = readerPrimaryContact(message, mailboxRouteId, isMe)}
 				{@const showContactEmail = shouldShowContactEmail(contact.displayName, contact.email)}
+				{@const deliveredTo = settings.showDeliveredToInReader
+					? readerDeliveredTo(message, ownedAddresses)
+					: null}
 				<section
 					class={cn(
 						'z-reader-thread',
@@ -301,6 +307,11 @@
 										{:else}
 											<p class="z-reader-meta mt-0.5 truncate">{contact.email}</p>
 										{/if}
+									{/if}
+									{#if deliveredTo}
+										<p class="z-reader-delivered-to mt-0.5 truncate" title="{deliveredTo.prefix} {deliveredTo.addresses}">
+											{deliveredTo.prefix} {deliveredTo.addresses}
+										</p>
 									{/if}
 								</div>
 								{#if thread.length > 1}
