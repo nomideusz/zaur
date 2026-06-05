@@ -26,11 +26,11 @@
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
 	const onMailRoute = $derived($page.url.pathname === '/' || isMailPath($page.url.pathname));
 	const mailCtx = $derived(shellHeader.mail);
-	const showMobileBulkHeader = $derived(
+	const showShellBulkHeader = $derived(
 		onMailRoute && mail.hasSelection && !!mailCtx?.mailboxRouteId
 	);
 	const showMobileMailboxTitle = $derived(onMailRoute && mailCtx && !mail.hasSelection);
-	const hideShellSearch = $derived(onSettingsRoute || showMobileBulkHeader);
+	const hideShellSearch = $derived(onSettingsRoute);
 	const showComposeAction = $derived(
 		($page.url.pathname.startsWith('/contacts') ||
 			$page.url.pathname === '/' ||
@@ -47,7 +47,7 @@
 <header
 	class={cn(
 		'z-app-shell-header relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-4 backdrop-blur-md max-md:gap-1 max-md:px-3',
-		showMobileBulkHeader && 'z-app-shell-header--bulk'
+		showShellBulkHeader && 'max-md:z-app-shell-header--bulk'
 	)}
 	style="view-transition-name: app-header;"
 >
@@ -70,7 +70,7 @@
 		<span class="z-app-shell-header__home-mark">{appConfig.brandName.slice(0, 1).toLowerCase()}</span>
 	</a>
 
-	{#if showMobileBulkHeader && mailCtx?.mailboxRouteId}
+	{#if showShellBulkHeader && mailCtx?.mailboxRouteId}
 		<div class="z-app-shell-header__bulk relative z-10 min-w-0 flex-1 md:hidden">
 			<MessageListBulkHeader
 				surface="shell"
@@ -79,36 +79,38 @@
 				onBulkAction={mailCtx.onBulkAction}
 			/>
 		</div>
-	{:else}
-		<div
-			class="relative z-10 flex min-w-0 flex-1 items-center gap-2 max-md:gap-1.5"
-		>
-			{#if showMobileMailboxTitle && mailCtx}
-				<p class="z-app-shell-header__mail-title min-w-0 flex-1 truncate md:hidden">
-					{mailCtx.mailboxName}{#if mailCtx.countLabel}<span class="z-app-shell-header__mail-meta"> · {mailCtx.countLabel}</span>{/if}
-				</p>
-			{/if}
-
-			<div
-				class={cn(
-					'min-w-0 flex-1 pointer-events-none',
-					showMobileBulkHeader && 'max-md:hidden',
-					showMobileMailboxTitle && 'max-md:flex-none max-md:flex-initial'
-				)}
-			>
-				{#if !hideShellSearch}
-					<div class="pointer-events-auto">
-						<GlobalSearch />
-					</div>
-				{/if}
-			</div>
-		</div>
 	{/if}
 
 	<div
 		class={cn(
+			'relative z-10 flex min-w-0 flex-1 items-center gap-2 max-md:gap-1.5',
+			showShellBulkHeader && 'max-md:hidden'
+		)}
+	>
+		{#if showMobileMailboxTitle && mailCtx}
+			<p class="z-app-shell-header__mail-title min-w-0 flex-1 truncate md:hidden">
+				{mailCtx.mailboxName}{#if mailCtx.countLabel}<span class="z-app-shell-header__mail-meta"> · {mailCtx.countLabel}</span>{/if}
+			</p>
+		{/if}
+
+		<div
+			class={cn(
+				'min-w-0 flex-1 pointer-events-none',
+				showMobileMailboxTitle && 'max-md:flex-none max-md:flex-initial'
+			)}
+		>
+			{#if !hideShellSearch}
+				<div class="pointer-events-auto">
+					<GlobalSearch />
+				</div>
+			{/if}
+		</div>
+	</div>
+
+	<div
+		class={cn(
 			'relative z-10 flex shrink-0 items-center gap-1.5 md:w-64 md:justify-end md:gap-2',
-			showMobileBulkHeader && 'max-md:hidden'
+			showShellBulkHeader && 'max-md:hidden'
 		)}
 	>
 		<div class="max-md:hidden">

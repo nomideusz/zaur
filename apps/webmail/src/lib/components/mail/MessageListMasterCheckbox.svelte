@@ -14,19 +14,18 @@
 
 	$effect(() => {
 		if (!input) return;
-		// Keep DOM in sync when selection clears via Cancel, Escape, bulk actions, etc.
 		input.checked = allSelected;
 		input.indeterminate = someSelected;
 	});
 
-	function handleClick(event: MouseEvent) {
-		event.preventDefault();
-		if (allSelected || someSelected) {
-			mail.clearSelection();
-			input?.blur();
-			return;
-		}
-		mail.selectAllMessages();
+	function handleChange(event: Event) {
+		event.stopPropagation();
+		const list = mail.selectableMessageList;
+		if (!list.length) return;
+
+		const selected = mail.selectedMessageIds;
+		const everySelected = list.every((message) => selected.has(message.id));
+		mail.selectMessagesByFilter(everySelected ? 'none' : 'all');
 	}
 </script>
 
@@ -37,5 +36,5 @@
 	aria-checked={allSelected ? 'true' : someSelected ? 'mixed' : 'false'}
 	disabled={!mail.selectableMessageList.length || mail.messagesLoading}
 	aria-label={allSelected || someSelected ? 'Deselect all messages' : 'Select all messages'}
-	onclick={handleClick}
+	onchange={handleChange}
 />

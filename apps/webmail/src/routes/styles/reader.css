@@ -1,5 +1,15 @@
 /* Reader chrome, typography, and HTML email body. */
 
+	/* Keep subject row height stable when reply/actions hide (e.g. bulk select). */
+	.z-reader-header {
+		align-items: center;
+		min-height: 3.75rem;
+	}
+
+	.z-reader-toolbar {
+		min-height: 2.25rem;
+	}
+
 	.z-type-reader-title {
 		@apply m-0 p-0 text-lg font-semibold leading-tight tracking-tight text-fg md:text-xl;
 	}

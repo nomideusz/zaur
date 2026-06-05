@@ -911,6 +911,7 @@
 					<a
 						href={rowHref}
 						class={listRowLinkClass(isCurrent)}
+						data-hide-active-indicator
 						draggable={mobileRowGestures ? 'false' : undefined}
 						aria-current={isCurrent ? 'page' : undefined}
 						aria-label="{isUnread ? 'Unread. ' : ''}{subjectText} — {senderLabel}, {timeLabel}"

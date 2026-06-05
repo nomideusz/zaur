@@ -232,8 +232,16 @@
 		>
 			{subject}
 		</h1>
-		{#if !mail.hasSelection && latest}
-			<MessageThreadActions {thread} {mailboxRouteId} {onMoved} {onBackToList} />
+		{#if latest}
+			<div
+				class={cn(
+					'shrink-0',
+					mail.hasSelection && 'pointer-events-none invisible'
+				)}
+				aria-hidden={mail.hasSelection ? 'true' : undefined}
+			>
+				<MessageThreadActions {thread} {mailboxRouteId} {onMoved} {onBackToList} />
+			</div>
 		{/if}
 	</header>
 
