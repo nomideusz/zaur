@@ -228,8 +228,8 @@
 	{#if hasSwipe}
 		<div
 			class="z-swipe-row__actions z-swipe-row__actions--leading"
-			style="width: {leadingWidth}px"
-			aria-hidden={leadingWidth === 0}
+			style="width: {leadingWidth}px; display: {offset > 0 || openSide === 'leading' ? 'flex' : 'none'};"
+			aria-hidden={leadingWidth === 0 || (offset <= 0 && openSide !== 'leading')}
 		>
 			{#each leading as action (action.id)}
 				<button
@@ -254,8 +254,8 @@
 		</div>
 		<div
 			class="z-swipe-row__actions z-swipe-row__actions--trailing"
-			style="width: {trailingWidth}px"
-			aria-hidden={trailingWidth === 0}
+			style="width: {trailingWidth}px; display: {offset < 0 || openSide === 'trailing' ? 'flex' : 'none'};"
+			aria-hidden={trailingWidth === 0 || (offset >= 0 && openSide !== 'trailing')}
 		>
 			{#each trailing as action (action.id)}
 				<button
