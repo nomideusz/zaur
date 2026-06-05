@@ -2,6 +2,7 @@
 	import PenSquare from '$lib/components/icons/PenSquare.svelte';
 	import { frameSvg } from '@zaur/sprite';
 	import Button from '$lib/components/ui/Button.svelte';
+	import { mail } from '$lib/stores/mail.svelte';
 
 	interface Props {
 		title?: string;
@@ -18,13 +19,17 @@
 		showSettings = true,
 		hideTitle = false
 	}: Props = $props();
+
+	const showZaur = $derived(mail.messages.length > 0);
 </script>
 
 <div class="z-mail-pane-surface flex min-h-0 flex-1 flex-col overflow-hidden">
 	<div class="flex min-h-0 flex-1 flex-col items-center justify-center gap-4 p-8 text-center">
-		<div class="text-fg-subtle">
-			{@html frameSvg('look_up', { color: 'currentColor', scale: 2 })}
-		</div>
+		{#if showZaur}
+			<div class="text-fg-subtle">
+				{@html frameSvg('look_up', { color: 'currentColor', scale: 2 })}
+			</div>
+		{/if}
 		<div>
 			{#if !hideTitle}
 				<p class="m-0 text-lg font-semibold text-fg">
