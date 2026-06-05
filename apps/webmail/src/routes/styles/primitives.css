@@ -38,10 +38,23 @@
 
 	.z-pane-scroll {
 		overscroll-behavior-y: contain;
+		scrollbar-width: thin;
+		scrollbar-color: var(--z-scrollbar-thumb) var(--z-scrollbar-track);
 	}
 
-	.z-pane-scroll:hover {
-		scrollbar-color: var(--z-scrollbar-thumb-hover) var(--z-scrollbar-track);
+	.z-pane-scroll::-webkit-scrollbar {
+		width: 5px;
+		height: 5px;
+	}
+
+	.z-pane-scroll::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.z-pane-scroll::-webkit-scrollbar-thumb {
+		background-color: var(--z-scrollbar-thumb);
+		border-radius: 9999px;
+		border: none;
 	}
 
 	.z-pane-scroll:hover::-webkit-scrollbar-thumb {
@@ -101,10 +114,23 @@
 	.z-overflow-menu-scroll {
 		@apply max-h-[min(50vh,20rem)] overflow-y-auto overscroll-contain py-1;
 		overscroll-behavior-y: contain;
+		scrollbar-width: thin;
+		scrollbar-color: var(--z-scrollbar-thumb) var(--z-scrollbar-track);
 	}
 
-	.z-overflow-menu-scroll:hover {
-		scrollbar-color: var(--z-scrollbar-thumb-hover) var(--z-scrollbar-track);
+	.z-overflow-menu-scroll::-webkit-scrollbar {
+		width: 5px;
+		height: 5px;
+	}
+
+	.z-overflow-menu-scroll::-webkit-scrollbar-track {
+		background: transparent;
+	}
+
+	.z-overflow-menu-scroll::-webkit-scrollbar-thumb {
+		background-color: var(--z-scrollbar-thumb);
+		border-radius: 9999px;
+		border: none;
 	}
 
 	.z-overflow-menu-scroll:hover::-webkit-scrollbar-thumb {
