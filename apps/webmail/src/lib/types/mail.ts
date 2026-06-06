@@ -51,4 +51,6 @@ export interface MessageAttachment {
 	name: string;
 	type: string;
 	size: number;
+	cid?: string;
+	disposition?: string;
 }

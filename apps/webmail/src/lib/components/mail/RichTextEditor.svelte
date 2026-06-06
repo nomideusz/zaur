@@ -7,6 +7,11 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import {
+		inlineHtmlForDisplay,
+		inlineHtmlForStorage,
+		inlineImageDownloadUrl
+	} from '$lib/email/inline-images';
 
 	interface Props {
 		htmlValue: string;
@@ -28,6 +33,32 @@
 	let isOrderedList = $state(false);
 	let isBlockquote = $state(false);
 	let isLink = $state(false);
+
+	function inlineAttachmentSources() {
+		return compose.attachments
+			.filter((attachment): attachment is typeof attachment & { blobId: string } => !!attachment.blobId)
+			.map((attachment) => ({
+				blobId: attachment.blobId,
+				name: attachment.name,
+				type: attachment.type,
+				cid: attachment.cid,
+				disposition: attachment.disposition
+			}));
+	}
+
+	function editorHtml(html: string): string {
+		return inlineHtmlForDisplay(html, inlineAttachmentSources());
+	}
+
+	function storedHtml(html: string): string {
+		return inlineHtmlForStorage(
+			html,
+			inlineAttachmentSources().map((attachment) => ({
+				blobId: attachment.blobId,
+				cid: attachment.cid
+			}))
+		);
+	}
 
 	function updateActiveStates() {
 		if (!editor) return;
@@ -69,14 +100,19 @@
 					}
 				];
 
-				// Swap local preview URL with cid:blobId in document
+				// Keep blob URLs out of persisted HTML; show a CSP-safe preview in the editor.
+				const displayUrl = inlineImageDownloadUrl({
+					blobId,
+					name: file.name,
+					type: file.type || 'application/octet-stream'
+				});
 				if (editor) {
 					const { state, dispatch } = editor.view;
 					state.doc.descendants((node, pos) => {
 						if (node.type.name === 'image' && node.attrs.src === localUrl) {
 							const transaction = state.tr.setNodeMarkup(pos, undefined, {
 								...node.attrs,
-								src: `cid:${blobId}`
+								src: displayUrl
 							});
 							dispatch(transaction);
 							return false; // Stop traversal
@@ -129,7 +165,7 @@
 		editor = new Editor({
 			element,
 			extensions: [
-				StarterKit,
+				StarterKit.configure({ link: false }),
 				Link.configure({
 					openOnClick: false,
 					HTMLAttributes: {
@@ -139,7 +175,7 @@
 				}),
 				Image
 			],
-			content: htmlValue,
+			content: editorHtml(htmlValue),
 			editorProps: {
 				attributes: {
 					class: 'z-rich-editor__editable outline-none min-h-[12rem] flex-1 text-sm leading-relaxed'
@@ -162,9 +198,10 @@
 				}
 			},
 			onUpdate: ({ editor }) => {
-				htmlValue = editor.getHTML();
+				const html = storedHtml(editor.getHTML());
+				htmlValue = html;
 				textValue = editor.getText();
-				onchange?.(htmlValue, textValue);
+				onchange?.(html, textValue);
 				updateActiveStates();
 			},
 			onSelectionUpdate: () => {

@@ -212,7 +212,9 @@ class ComposeStore {
 			type: attachment.type,
 			size: attachment.size,
 			blobId: attachment.blobId,
-			uploading: false
+			uploading: false,
+			...(attachment.cid ? { cid: attachment.cid } : {}),
+			...(attachment.disposition ? { disposition: attachment.disposition } : {})
 		}));
 	}
 
@@ -258,12 +260,21 @@ class ComposeStore {
 				name: attachment.name,
 				type: attachment.type,
 				size: attachment.size,
-				blobId: attachment.blobId
+				blobId: attachment.blobId,
+				...(attachment.cid ? { cid: attachment.cid } : {}),
+				...(attachment.disposition ? { disposition: attachment.disposition } : {})
 			}));
 	}
 
 	private readyAttachments(): EmailAttachmentInput[] {
-		return this.storedAttachments();
+		return this.storedAttachments().map((attachment) => ({
+			blobId: attachment.blobId,
+			name: attachment.name,
+			type: attachment.type,
+			size: attachment.size,
+			...(attachment.cid ? { cid: attachment.cid } : {}),
+			...(attachment.disposition ? { disposition: attachment.disposition } : {})
+		}));
 	}
 
 	async addAttachments(client: JMAPClient, files: FileList | File[]) {

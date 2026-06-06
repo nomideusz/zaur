@@ -10,7 +10,18 @@ function normalizeCid(value: string): string {
 	return value.replace(/^<|>$/g, '').trim().toLowerCase();
 }
 
-function inlineImageName(part: JMAPBodyPart): string {
+function registerInlineImage(
+	map: Map<string, InlineImagePart>,
+	entry: InlineImagePart,
+	...keys: Array<string | undefined>
+): void {
+	for (const key of keys) {
+		if (!key?.trim()) continue;
+		map.set(normalizeCid(key), entry);
+	}
+}
+
+export function inlineImageName(part: JMAPBodyPart): string {
 	if (part.name?.trim()) return part.name.trim();
 	const ext = part.type?.split('/')[1]?.split(';')[0]?.trim();
 	return ext ? `inline.${ext}` : 'inline.bin';
@@ -34,10 +45,35 @@ export function extractInlineImages(bodyStructure?: JMAPBodyPart): Map<string, I
 			name: inlineImageName(part),
 			type: part.type
 		};
-		map.set(normalizeCid(cid), entry);
+		registerInlineImage(map, entry, cid, part.blobId);
 	}
 
 	walk(bodyStructure);
+	return map;
+}
+
+export type InlineAttachmentSource = {
+	blobId: string;
+	name: string;
+	type: string;
+	cid?: string;
+	disposition?: string;
+};
+
+/** Build a cid lookup map from compose/outbox attachment metadata. */
+export function buildInlineImageMapFromAttachments(
+	attachments: InlineAttachmentSource[]
+): Map<string, InlineImagePart> {
+	const map = new Map<string, InlineImagePart>();
+	for (const attachment of attachments) {
+		if (!attachment.blobId || !attachment.type.startsWith('image/')) continue;
+		const entry: InlineImagePart = {
+			blobId: attachment.blobId,
+			name: attachment.name.trim() || inlineImageName({ type: attachment.type }),
+			type: attachment.type
+		};
+		registerInlineImage(map, entry, attachment.cid, attachment.blobId);
+	}
 	return map;
 }
 
@@ -49,6 +85,33 @@ export function inlineImageDownloadUrl(part: InlineImagePart): string {
 		inline: '1'
 	});
 	return `/api/jmap/download?${params.toString()}`;
+}
+
+/** Rewrite same-origin download URLs back to `cid:` for outbound HTML. */
+export function rewriteInlineDownloadUrlsToCid(
+	html: string,
+	attachments: Array<{ blobId: string; cid?: string }>
+): string {
+	if (!html.trim() || !attachments.length) return html;
+
+	const cidByBlobId = new Map(
+		attachments.map((attachment) => [attachment.blobId, attachment.cid?.trim() || attachment.blobId])
+	);
+
+	return html.replace(
+		/(<img\b[^>]*?\ssrc\s*=\s*(["']))(\/api\/jmap\/download\?[^"']+)(\2)/gi,
+		(match, prefix: string, quote: string, url: string) => {
+			try {
+				const blobId = new URL(url, 'https://webmail.local').searchParams.get('blobId');
+				if (!blobId) return match;
+				const cid = cidByBlobId.get(blobId);
+				if (!cid) return match;
+				return `${prefix}cid:${cid}${quote}`;
+			} catch {
+				return match;
+			}
+		}
+	);
 }
 
 /** Rewrite `cid:` image sources to same-origin JMAP blob URLs (safe under default CSP). */
@@ -63,4 +126,19 @@ export function rewriteInlineCidImages(html: string, inlineImages: Map<string, I
 			return `${prefix}${inlineImageDownloadUrl(part)}${quote}`;
 		}
 	);
+}
+
+/** Prefer download URLs in editors/readers; keep `cid:` in stored/sent HTML. */
+export function inlineHtmlForDisplay(
+	html: string,
+	attachments: InlineAttachmentSource[] = []
+): string {
+	return rewriteInlineCidImages(html, buildInlineImageMapFromAttachments(attachments));
+}
+
+export function inlineHtmlForStorage(
+	html: string,
+	attachments: Array<{ blobId: string; cid?: string }> = []
+): string {
+	return rewriteInlineDownloadUrlsToCid(html, attachments);
 }

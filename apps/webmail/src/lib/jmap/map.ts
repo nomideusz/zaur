@@ -1,4 +1,4 @@
-import { extractInlineImages, rewriteInlineCidImages } from '$lib/email/inline-images';
+import { extractInlineImages, inlineImageName, rewriteInlineCidImages } from '$lib/email/inline-images';
 import type { JMAPEmail, JMAPBodyPart } from '$lib/jmap/types';
 import type { Mailbox, MessageAttachment, MessageDetail, MessagePreview } from '$lib/types/mail';
 
@@ -67,17 +67,29 @@ export function extractAttachments(bodyStructure?: JMAPBodyPart): MessageAttachm
 	function walk(part: JMAPBodyPart) {
 		if (part.subParts?.length) {
 			for (const sub of part.subParts) walk(sub);
+		}
+
+		if (!part.blobId || !part.type) return;
+
+		if (part.type.startsWith('image/') && part.disposition === 'inline') {
+			attachments.push({
+				blobId: part.blobId,
+				name: part.name?.trim() || inlineImageName(part),
+				type: part.type,
+				size: part.size ?? 0,
+				...(part.cid ? { cid: part.cid.replace(/^<|>$/g, '') } : {}),
+				disposition: 'inline'
+			});
 			return;
 		}
 
 		const isAttachment =
 			part.disposition === 'attachment' ||
 			(!!part.name &&
-				!!part.blobId &&
 				part.type !== 'text/plain' &&
 				part.type !== 'text/html');
 
-		if (isAttachment && part.blobId && part.name) {
+		if (isAttachment && part.name) {
 			attachments.push({
 				blobId: part.blobId,
 				name: part.name,
