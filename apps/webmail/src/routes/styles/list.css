@@ -376,8 +376,8 @@
 			height: 2.25rem;
 			min-height: 2.25rem;
 			line-height: 1;
-			padding-top: calc((2.25rem - 1em) / 2 + 2px);
-			padding-bottom: calc((2.25rem - 1em) / 2 - 2px);
+			padding-top: calc((2.25rem - 1em) / 2 + 1px);
+			padding-bottom: calc((2.25rem - 1em) / 2 - 1px);
 		}
 
 		:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header .z-mail-list-pane-header__filter {
@@ -412,7 +412,7 @@
 			min-height: 2.25rem;
 			min-width: 2.25rem;
 			padding: 0;
-			padding-top: 2px;
+			padding-top: 1px;
 			padding-bottom: 0;
 			box-sizing: border-box;
 		}
