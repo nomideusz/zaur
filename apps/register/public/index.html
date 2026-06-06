@@ -31,7 +31,7 @@
 
           <div class="z-callout">
             <span class="z-callout__title">Invite only</span>
-            <p class="z-text-muted" style="margin: 0.375rem 0 0;" id="invitation-gate-message">
+            <p class="z-text-muted z-callout__body" id="invitation-gate-message">
               Registration is invite-only. Open the magic link sent to your personal email to continue.
             </p>
           </div>
@@ -86,7 +86,7 @@
             </p>
 
             <section class="z-register-create z-panel-collapsible" id="register-panel">
-                <div class="z-callout" style="margin-bottom: 1rem;">
+                <div class="z-callout z-mb-4">
                   <span class="z-callout__title" id="selected-email-label">—</span>
                 </div>
 
@@ -107,28 +107,28 @@
                     readonly
                   >
 
-                  <div class="z-field" style="margin-bottom: 0;">
+                  <div class="z-field z-field--flush">
                     <label for="new-password" class="z-field-label">Mailbox password</label>
                     <input type="password" id="new-password" name="password" class="z-input" autocomplete="new-password" required>
-                    <p class="z-text-subtle z-hidden" id="password-hint" style="font-size: 0.8125rem; margin-top: 0.25rem;">
+                    <p class="z-text-subtle z-text-hint z-hidden" id="password-hint">
                       Use this for IMAP and webmail. You can add a passkey on the next screen.
                     </p>
                     <div class="z-strength-bar">
-                      <div class="z-strength-fill" id="strength-fill"></div>
+                      <div class="z-strength-fill" id="strength-fill" data-score="0"></div>
                     </div>
                     <div class="z-strength-label" id="strength-label"></div>
                   </div>
 
-                  <div class="z-field" style="margin-bottom: 0;">
+                  <div class="z-field z-field--flush">
                     <label for="confirm-password" class="z-field-label">Confirm password</label>
                     <input type="password" id="confirm-password" name="confirmPassword" class="z-input" autocomplete="new-password" required>
                   </div>
 
-                  <div class="z-field" id="captcha-section" style="margin-bottom: 0;">
+                  <div class="z-field z-field--flush" id="captcha-section">
                     <label for="captcha-answer" class="z-field-label">Security check</label>
                     <div class="z-captcha-row">
                       <span class="z-captcha-question" id="captcha-question">Loading…</span>
-                      <input type="number" id="captcha-answer" name="captchaAnswer" class="z-input" inputmode="numeric" required style="max-width: 8rem;">
+                      <input type="number" id="captcha-answer" name="captchaAnswer" class="z-input z-input--narrow" inputmode="numeric" required>
                     </div>
                   </div>
 

@@ -897,6 +897,61 @@ button.z-domain-option.available:hover {
 	font-weight: 600;
 }
 
+.z-callout__body {
+	margin: 0.375rem 0 0;
+}
+
+.z-field--flush {
+	margin-bottom: 0;
+}
+
+.z-text-hint {
+	font-size: 0.8125rem;
+	margin-top: 0.25rem;
+}
+
+.z-input--narrow {
+	max-width: 8rem;
+}
+
+.z-section-title {
+	margin: 0;
+	font-size: 1.0625rem;
+	font-weight: 600;
+}
+
+.z-section-title--spaced {
+	margin: 0.375rem 0 0;
+}
+
+.z-lead-sm {
+	margin-top: 0.5rem;
+	font-size: 0.875rem;
+}
+
+.z-table--spaced {
+	margin-top: 1rem;
+}
+
+.z-stat-grid--compact {
+	margin-bottom: 1rem;
+	padding-bottom: 0;
+	border-bottom: none;
+}
+
+.z-table-empty {
+	padding: 1.5rem;
+}
+
+.z-table-empty--lg {
+	padding: 2rem;
+}
+
+.z-admin-subtitle {
+	margin: 0.75rem 0 0.5rem;
+	font-size: 1rem;
+}
+
 .z-form-stack {
 	display: flex;
 	flex-direction: column;
@@ -1080,9 +1135,35 @@ button.z-domain-option.available:hover {
 	height: 100%;
 	width: 0;
 	border-radius: 999px;
+	background: var(--z-border);
 	transition:
 		width 0.3s ease,
 		background 0.3s ease;
+}
+
+.z-strength-fill[data-score='0'] {
+	width: 0%;
+	background-color: var(--z-danger);
+}
+
+.z-strength-fill[data-score='1'] {
+	width: 25%;
+	background-color: var(--z-warning);
+}
+
+.z-strength-fill[data-score='2'] {
+	width: 50%;
+	background-color: var(--z-warning);
+}
+
+.z-strength-fill[data-score='3'] {
+	width: 75%;
+	background-color: var(--z-success);
+}
+
+.z-strength-fill[data-score='4'] {
+	width: 100%;
+	background-color: var(--z-success);
 }
 
 .z-strength-label {

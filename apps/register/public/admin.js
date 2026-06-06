@@ -207,7 +207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.error(err);
       invitesTableBody.innerHTML =
-        '<tr><td colspan="5" class="z-text-center z-text-muted" style="padding: 2rem;">Error loading invitations.</td></tr>';
+        '<tr><td colspan="5" class="z-text-center z-text-muted z-table-empty--lg">Error loading invitations.</td></tr>';
     }
   }
 
@@ -224,7 +224,7 @@ document.addEventListener('DOMContentLoaded', () => {
   async function loadMailboxes() {
     hideAlert(mailboxesError);
     mailboxesTableBody.innerHTML =
-      '<tr><td colspan="3" class="z-text-center z-text-muted" style="padding: 1.5rem;">Loading mailboxes…</td></tr>';
+      '<tr><td colspan="3" class="z-text-center z-text-muted z-table-empty">Loading mailboxes…</td></tr>';
 
     try {
       const res = await fetch('/api/admin/accounts');
@@ -242,14 +242,14 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(err);
       showError(err.message || 'Failed to load mailboxes.', mailboxesError);
       mailboxesTableBody.innerHTML =
-        '<tr><td colspan="3" class="z-text-center z-text-muted" style="padding: 2rem;">Error loading mailboxes.</td></tr>';
+        '<tr><td colspan="3" class="z-text-center z-text-muted z-table-empty--lg">Error loading mailboxes.</td></tr>';
     }
   }
 
   function renderMailboxes(list) {
     if (list.length === 0) {
       mailboxesTableBody.innerHTML =
-        '<tr><td colspan="3" class="z-text-center z-text-muted" style="padding: 2rem;">No mailboxes found.</td></tr>';
+        '<tr><td colspan="3" class="z-text-center z-text-muted z-table-empty--lg">No mailboxes found.</td></tr>';
       return;
     }
 
@@ -379,7 +379,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function renderTable(list) {
     if (list.length === 0) {
       invitesTableBody.innerHTML =
-        '<tr><td colspan="5" class="z-text-center z-text-muted" style="padding: 2rem;">No invitations found.</td></tr>';
+        '<tr><td colspan="5" class="z-text-center z-text-muted z-table-empty--lg">No invitations found.</td></tr>';
       return;
     }
 
@@ -525,7 +525,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function renderAuditGroup(title, rows, cleanupTarget) {
     const section = document.createElement('section');
-    section.innerHTML = `<h4 class="z-type-title" style="font-size: 1rem; margin: 0.75rem 0 0.5rem;">${escapeHtml(title)}</h4>`;
+    section.innerHTML = `<h4 class="z-type-title z-admin-subtitle">${escapeHtml(title)}</h4>`;
 
     if (!rows.length) {
       const empty = document.createElement('p');

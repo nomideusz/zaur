@@ -80,8 +80,8 @@
 
       <div class="z-admin-split">
         <section class="z-admin-section">
-          <h2 class="z-auth-brand" style="font-size: 1.0625rem; font-weight: 600; margin: 0;">Send invitation</h2>
-          <p class="z-type-lead z-mb-4" id="invite-email-hint" style="margin-top: 0.5rem; font-size: 0.875rem;">Enter a personal email to send a registration magic link.</p>
+          <h2 class="z-auth-brand z-section-title">Send invitation</h2>
+          <p class="z-type-lead z-mb-4 z-lead-sm" id="invite-email-hint">Enter a personal email to send a registration magic link.</p>
           <div class="z-alert z-alert--error" id="generate-error" role="alert"></div>
           <div class="z-alert z-alert--success" id="generate-success" role="alert"></div>
           <form id="generate-form" class="z-stack">
@@ -99,8 +99,8 @@
         </section>
 
         <section class="z-admin-section">
-          <h2 class="z-auth-brand" style="font-size: 1.0625rem; font-weight: 600; margin: 0;">Account lookup</h2>
-          <p class="z-type-lead z-mb-4" style="margin-top: 0.5rem; font-size: 0.875rem;">Find a mailbox across Stalwart and Logto, then delete if needed.</p>
+          <h2 class="z-auth-brand z-section-title">Account lookup</h2>
+          <p class="z-type-lead z-mb-4 z-lead-sm">Find a mailbox across Stalwart and Logto, then delete if needed.</p>
           <div class="z-alert z-alert--error" id="lookup-error" role="alert"></div>
           <form id="lookup-form" class="z-stack">
             <div>
@@ -116,8 +116,8 @@
       <section class="z-admin-section">
         <div class="z-section-head z-mb-4">
           <div>
-            <h2 class="z-auth-brand" style="font-size: 1.0625rem; font-weight: 600; margin: 0;">Mailboxes</h2>
-            <p class="z-type-lead" style="margin-top: 0.375rem; font-size: 0.875rem;">All Stalwart accounts on enabled registration domains.</p>
+            <h2 class="z-auth-brand z-section-title">Mailboxes</h2>
+            <p class="z-type-lead z-lead-sm">All Stalwart accounts on enabled registration domains.</p>
           </div>
           <button type="button" class="z-btn-ghost" id="refresh-mailboxes-btn">Refresh</button>
         </div>
@@ -136,7 +136,7 @@
             </thead>
             <tbody id="mailboxes-table-body">
               <tr>
-                <td colspan="3" class="z-text-center z-text-muted" style="padding: 1.5rem;">Loading mailboxes…</td>
+                <td colspan="3" class="z-text-center z-text-muted z-table-empty">Loading mailboxes…</td>
               </tr>
             </tbody>
           </table>
@@ -144,8 +144,8 @@
       </section>
 
       <section class="z-admin-section">
-        <h2 class="z-auth-brand z-mb-4" style="font-size: 1.0625rem; font-weight: 600; margin: 0;">Sent invitations</h2>
-        <div class="z-stat-grid" style="margin-bottom: 1rem; padding-bottom: 0; border-bottom: none;">
+        <h2 class="z-auth-brand z-mb-4 z-section-title">Sent invitations</h2>
+        <div class="z-stat-grid z-stat-grid--compact">
           <div class="z-stat-card">
             <span class="z-type-label">Pending</span>
             <span class="z-stat-card__value z-stat-card__value--success" id="stat-unused">0</span>
@@ -175,7 +175,7 @@
             </thead>
             <tbody id="invites-table-body">
               <tr>
-                <td colspan="5" class="z-text-center z-text-muted" style="padding: 1.5rem;">Loading invitations…</td>
+                <td colspan="5" class="z-text-center z-text-muted z-table-empty">Loading invitations…</td>
               </tr>
             </tbody>
           </table>
@@ -185,8 +185,8 @@
       <section class="z-admin-section">
         <div class="z-section-head z-mb-4">
           <div>
-            <h2 class="z-auth-brand" style="font-size: 1.0625rem; font-weight: 600; margin: 0;">Provisioning audit</h2>
-            <p class="z-type-lead" style="margin-top: 0.375rem; font-size: 0.875rem;">Find accounts that exist only in Stalwart or only in Logto.</p>
+            <h2 class="z-auth-brand z-section-title">Provisioning audit</h2>
+            <p class="z-type-lead z-lead-sm">Find accounts that exist only in Stalwart or only in Logto.</p>
           </div>
           <button type="button" class="z-btn-ghost" id="run-audit-btn">Run audit</button>
         </div>

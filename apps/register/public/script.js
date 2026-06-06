@@ -37,13 +37,7 @@ let checkAbortController = null;
 let cachedDomains = [];
 let availabilityMap = new Map();
 
-const STRENGTH_COLORS = [
-  'var(--z-danger)',
-  'var(--z-warning)',
-  'var(--z-warning)',
-  'var(--z-success)',
-  'var(--z-success)',
-];
+const STRENGTH_LABELS = ['Weak', 'Fair', 'Good', 'Strong', 'Very strong'];
 
 function escapeHtml(str) {
   return str
@@ -61,15 +55,13 @@ function getPasswordStrength(password) {
   if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score++;
   if (/\d/.test(password)) score++;
   if (/[^a-zA-Z0-9]/.test(password)) score++;
-  const labels = ['Weak', 'Fair', 'Good', 'Strong', 'Very strong'];
+  const labels = STRENGTH_LABELS;
   return { score: Math.min(score, 4), label: labels[Math.min(score, 4)] };
 }
 
 function updateStrengthBar() {
   const { score, label } = getPasswordStrength(passwordInput.value);
-  const pct = (score / 4) * 100;
-  strengthFill.style.width = `${pct}%`;
-  strengthFill.style.background = STRENGTH_COLORS[score];
+  strengthFill.dataset.score = passwordInput.value ? String(score) : '0';
   strengthLabel.textContent = passwordInput.value ? label : '';
 }
 
@@ -447,7 +439,7 @@ async function initInvitation() {
     inviteTokenInput.value = inviteToken;
     inviteEmailInput.value = inviteEmail;
     invitationBanner.classList.remove('z-hidden');
-    invitationBanner.innerHTML = `<span class="z-callout__title">Invitation verified</span><p class="z-text-muted" style="margin: 0.375rem 0 0;">Registering as ${escapeHtml(inviteEmail)}. Pick your address below.</p>`;
+    invitationBanner.innerHTML = `<span class="z-callout__title">Invitation verified</span><p class="z-text-muted z-callout__body">Registering as ${escapeHtml(inviteEmail)}. Pick your address below.</p>`;
     showRegisterFlow();
     applyInvitationUi();
   } catch {
