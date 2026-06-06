@@ -1,5 +1,6 @@
 import { browser } from '$app/environment';
-import { createRxDatabase, removeRxDatabase, type RxCollection, type RxDatabase } from 'rxdb';
+import { addRxPlugin, createRxDatabase, removeRxDatabase, type RxCollection, type RxDatabase } from 'rxdb/plugins/core';
+import { RxDBMigrationSchemaPlugin } from 'rxdb/plugins/migration-schema';
 import { getRxStorageDexie } from 'rxdb/plugins/storage-dexie';
 import {
 	draftSchema,
@@ -28,13 +29,29 @@ export type MailDatabase = RxDatabase & {
 };
 
 const COLLECTIONS = {
-	drafts: { schema: draftSchema },
+	drafts: {
+		schema: draftSchema,
+		migrationStrategies: {
+			1: (oldDoc: DraftDoc) => ({
+				...oldDoc,
+				bodyHtml: oldDoc.bodyHtml ?? ''
+			})
+		}
+	},
 	outbox: { schema: outboxSchema },
 	recentThreads: { schema: recentThreadSchema },
 	syncState: { schema: syncStateSchema },
 	threadCache: { schema: threadCacheSchema },
 	attachmentBlobs: { schema: attachmentBlobSchema }
 } as const;
+
+let pluginsRegistered = false;
+
+function ensureRxdbPlugins(): void {
+	if (pluginsRegistered) return;
+	addRxPlugin(RxDBMigrationSchemaPlugin);
+	pluginsRegistered = true;
+}
 
 let db: MailDatabase | null = null;
 let accountId: string | null = null;
@@ -69,6 +86,8 @@ export function getMailDatabase(): MailDatabase | null {
 
 export async function initMailDatabase(nextAccountId: string): Promise<MailDatabase | null> {
 	if (!browser) return null;
+
+	ensureRxdbPlugins();
 
 	if (db && accountId === nextAccountId) {
 		return db;
