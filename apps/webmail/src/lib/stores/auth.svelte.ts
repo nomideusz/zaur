@@ -380,8 +380,6 @@ class AuthStore {
 	async restore() {
 		try {
 			const response = await fetch('/api/auth/session');
-			if (!response.ok) return;
-
 			const payload = (await response.json()) as SessionResponse;
 			if (!payload.authenticated || !payload.username) return;
 

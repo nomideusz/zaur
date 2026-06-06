@@ -148,16 +148,30 @@
 		}
 	}
 
+	function toolbarMouseDown(event: MouseEvent) {
+		// Keep the editor selection when clicking toolbar buttons.
+		event.preventDefault();
+	}
+
 	function toggleLink() {
 		if (!editor) return;
 		if (editor.isActive('link')) {
-			editor.chain().focus().unsetLink().run();
+			editor.chain().focus().extendMarkRange('link').unsetLink().run();
+			updateActiveStates();
 			return;
 		}
-		const url = prompt('Enter link URL:');
-		if (url) {
-			editor.chain().focus().setLink({ href: url }).run();
-		}
+		const previousUrl = editor.getAttributes('link').href as string | undefined;
+		const { from, to } = editor.state.selection;
+		const url = prompt('Enter link URL:', previousUrl || 'https://');
+		if (!url) return;
+		editor
+			.chain()
+			.focus()
+			.setTextSelection({ from, to })
+			.extendMarkRange('link')
+			.toggleLink({ href: url })
+			.run();
+		updateActiveStates();
 	}
 
 	onMount(() => {
@@ -166,7 +180,7 @@
 			element,
 			extensions: [
 				StarterKit.configure({ link: false }),
-				Link.configure({
+				Link.extend({ keepOnSplit: true }).configure({
 					openOnClick: false,
 					HTMLAttributes: {
 						target: '_blank',
@@ -230,6 +244,7 @@
 			type="button"
 			class="z-rich-editor__btn"
 			class:z-rich-editor__btn--active={isBold}
+			onmousedown={toolbarMouseDown}
 			onclick={() => { editor?.chain().focus().toggleBold().run(); updateActiveStates(); }}
 			title="Bold"
 		>
@@ -239,6 +254,7 @@
 			type="button"
 			class="z-rich-editor__btn"
 			class:z-rich-editor__btn--active={isItalic}
+			onmousedown={toolbarMouseDown}
 			onclick={() => { editor?.chain().focus().toggleItalic().run(); updateActiveStates(); }}
 			title="Italic"
 		>
@@ -248,6 +264,7 @@
 			type="button"
 			class="z-rich-editor__btn"
 			class:z-rich-editor__btn--active={isStrike}
+			onmousedown={toolbarMouseDown}
 			onclick={() => { editor?.chain().focus().toggleStrike().run(); updateActiveStates(); }}
 			title="Strikethrough"
 		>
@@ -260,6 +277,7 @@
 			type="button"
 			class="z-rich-editor__btn"
 			class:z-rich-editor__btn--active={isBulletList}
+			onmousedown={toolbarMouseDown}
 			onclick={() => { editor?.chain().focus().toggleBulletList().run(); updateActiveStates(); }}
 			title="Bullet List"
 		>
@@ -269,6 +287,7 @@
 			type="button"
 			class="z-rich-editor__btn"
 			class:z-rich-editor__btn--active={isOrderedList}
+			onmousedown={toolbarMouseDown}
 			onclick={() => { editor?.chain().focus().toggleOrderedList().run(); updateActiveStates(); }}
 			title="Numbered List"
 		>
@@ -278,6 +297,7 @@
 			type="button"
 			class="z-rich-editor__btn"
 			class:z-rich-editor__btn--active={isBlockquote}
+			onmousedown={toolbarMouseDown}
 			onclick={() => { editor?.chain().focus().toggleBlockquote().run(); updateActiveStates(); }}
 			title="Blockquote"
 		>
@@ -290,6 +310,7 @@
 			type="button"
 			class="z-rich-editor__btn"
 			class:z-rich-editor__btn--active={isLink}
+			onmousedown={toolbarMouseDown}
 			onclick={toggleLink}
 			title="Link"
 		>
@@ -298,6 +319,7 @@
 		<button
 			type="button"
 			class="z-rich-editor__btn"
+			onmousedown={toolbarMouseDown}
 			onclick={() => fileInput?.click()}
 			title="Insert Image"
 		>

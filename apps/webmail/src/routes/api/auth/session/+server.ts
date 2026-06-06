@@ -6,7 +6,8 @@ import { clearSession, readSession } from '$lib/server/session';
 export const GET: RequestHandler = async ({ cookies }) => {
 	const session = readSession(cookies);
 	if (!session) {
-		return json({ authenticated: false }, { status: 401 });
+		// 200 (not 401): this endpoint is a session probe, not an auth challenge.
+		return json({ authenticated: false });
 	}
 
 	try {
@@ -29,6 +30,6 @@ export const GET: RequestHandler = async ({ cookies }) => {
 		});
 	} catch {
 		clearSession(cookies);
-		return json({ authenticated: false }, { status: 401 });
+		return json({ authenticated: false });
 	}
 };

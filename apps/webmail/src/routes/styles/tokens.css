@@ -35,6 +35,8 @@
 :root {
 	--z-list-row: 4rem;
 	--z-list-text: 1rem;
+	--z-mail-list-row-text: 0.875rem;
+	--z-mail-list-row-meta-text: 0.75rem;
 	/* Reader column width — comfortable line length (~80–90 characters). */
 	--z-reader-measure: 85ch;
 	--z-reader-text: 1rem;
@@ -93,6 +95,8 @@
 		--z-main-page-text: 1rem;
 		--z-main-page-muted-text: 0.875rem;
 		--z-main-page-title: 1.0625rem;
+		--z-mail-list-row-text: 0.9375rem;
+		--z-mail-list-row-meta-text: 0.8125rem;
 	}
 }
 

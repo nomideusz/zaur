@@ -62,15 +62,18 @@
 			current && 'z-list-row--current'
 		);
 	const listSenderClass = (unread: boolean) =>
-		cn('min-w-0 truncate text-sm', unread ? 'font-semibold text-fg' : 'font-medium text-fg-muted');
+		cn(
+			'list-sender min-w-0 truncate',
+			unread ? 'font-semibold text-fg' : 'font-medium text-fg-muted'
+		);
 	const listSubjectClass = (unread: boolean, important: boolean) =>
 		cn(
-			'min-w-0 truncate text-sm',
+			'list-subject min-w-0 truncate',
 			important && 'z-mail-list-subject--important font-semibold',
 			!important && (unread ? 'font-semibold text-fg' : 'font-medium text-fg')
 		);
 
-	const listTimeClass = 'shrink-0 text-xs tabular-nums text-fg-subtle';
+	const listTimeClass = 'list-time shrink-0 tabular-nums text-fg-subtle';
 
 	const primaryOrder = new Map([
 		['inbox', 0],
@@ -129,6 +132,10 @@
 	let importantRainbowHoverId = $state<string | null>(null);
 	/** After bulk-select long-press, block the following link navigation. */
 	let suppressRowNavigationUntil = 0;
+	/** Touch rainbow pick in progress after bulk long-press on an important row. */
+	let mobileImportantRainbowPick = $state<{ messageId: string; subjectEl: HTMLElement } | null>(
+		null
+	);
 	let readFilter = $state<MessageListReadFilter>('all');
 
 	let rainbowHoverTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -140,6 +147,7 @@
 		void $page.url.pathname;
 		importantRainbowHoverId = null;
 		readFilter = 'all';
+		cancelMobileImportantRainbowPick();
 		if (rainbowHoverTimeout) {
 			clearTimeout(rainbowHoverTimeout);
 			rainbowHoverTimeout = null;
@@ -272,9 +280,50 @@
 	);
 	const showRowCheckbox = $derived(listSelectMode);
 
-	function handleMobileBulkLongPress(messageId: string) {
-		mail.startSelection(messageId);
+	function handleMobileBulkLongPress(
+		message: MessagePreview,
+		routeId: string,
+		event: PointerEvent
+	) {
+		mail.startSelection(message.id);
 		suppressRowNavigationUntil = Date.now() + 400;
+		startMobileImportantRainbowPick(message, routeId, event);
+	}
+
+	function startMobileImportantRainbowPick(
+		message: MessagePreview,
+		routeId: string,
+		event: PointerEvent
+	) {
+		if (
+			settings.reduceMotion ||
+			hasPreciseHover() ||
+			!showImportantPresentation(message, routeId)
+		) {
+			return;
+		}
+
+		const row = event.currentTarget;
+		if (!(row instanceof HTMLElement)) return;
+		const subject = row.querySelector('.z-mail-list-subject--important');
+		if (!(subject instanceof HTMLElement)) return;
+
+		mobileImportantRainbowPick = { messageId: message.id, subjectEl: subject };
+		importantRainbow.startTouchPick(subject, message.id);
+	}
+
+	function finishMobileImportantRainbowPick() {
+		const pick = mobileImportantRainbowPick;
+		mobileImportantRainbowPick = null;
+		if (!pick) return;
+		importantRainbow.finishTouchPick(pick.subjectEl, pick.messageId);
+	}
+
+	function cancelMobileImportantRainbowPick() {
+		const pick = mobileImportantRainbowPick;
+		mobileImportantRainbowPick = null;
+		if (!pick) return;
+		importantRainbow.cancelTouchPick(pick.subjectEl, pick.messageId);
 	}
 
 	function swipeContext(message: MessagePreview, routeId: string) {
@@ -1065,7 +1114,9 @@
 						leading={swipeLeading}
 						trailing={swipeTrailing}
 						longPressEnabled={bulkSelectEnabled}
-						onLongPress={() => handleMobileBulkLongPress(message.id)}
+						onLongPress={(event) => handleMobileBulkLongPress(message, routeId, event)}
+						onLongPressEnd={() => finishMobileImportantRainbowPick()}
+						onLongPressCancel={() => cancelMobileImportantRainbowPick()}
 					>
 						{@render rowLink()}
 					</SwipeableListRow>

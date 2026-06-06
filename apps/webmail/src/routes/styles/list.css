@@ -427,6 +427,15 @@
 		background-color: transparent;
 	}
 
+	.z-mail-view .z-mail-list-row .list-sender,
+	.z-mail-view .z-mail-list-row .list-subject {
+		font-size: var(--z-mail-list-row-text);
+	}
+
+	.z-mail-view .z-mail-list-row .list-time {
+		font-size: var(--z-mail-list-row-meta-text);
+	}
+
 	/* Row <li> owns list backgrounds; avoid z-list-row--current chrome-active on the link. */
 	.z-mail-view .z-mail-list-row :where(a).z-list-row--current {
 		background-color: transparent;

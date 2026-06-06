@@ -28,7 +28,9 @@
 		leading?: SwipeAction[];
 		trailing?: SwipeAction[];
 		longPressEnabled?: boolean;
-		onLongPress?: () => void;
+		onLongPress?: (event: PointerEvent) => void;
+		onLongPressEnd?: (event: PointerEvent) => void;
+		onLongPressCancel?: (event: PointerEvent) => void;
 		class?: string;
 		children: Snippet;
 	}
@@ -39,6 +41,8 @@
 		trailing = [],
 		longPressEnabled = false,
 		onLongPress,
+		onLongPressEnd,
+		onLongPressCancel,
 		class: className = '',
 		children
 	}: Props = $props();
@@ -108,10 +112,11 @@
 		}
 
 		if (longPressEnabled && onLongPress && event.pointerType !== 'mouse') {
+			const longPressEvent = event;
 			longPressTimer = setTimeout(() => {
 				longPressFired = true;
 				suppressClick = true;
-				onLongPress();
+				onLongPress(longPressEvent);
 				if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
 					navigator.vibrate(12);
 				}
@@ -125,6 +130,9 @@
 		if (longPressTimer && (moveX > 10 || moveY > 10)) {
 			clearTimeout(longPressTimer);
 			longPressTimer = null;
+		}
+		if (longPressFired && !swipeActive && (moveX > 10 || moveY > 10)) {
+			cancelLongPress(event);
 		}
 		if (!dragging || event.pointerId !== pointerId) return;
 
@@ -146,11 +154,28 @@
 		offset = next;
 	}
 
+	function finishLongPress(event: PointerEvent) {
+		if (!longPressFired) return;
+		longPressFired = false;
+		onLongPressEnd?.(event);
+	}
+
+	function cancelLongPress(event: PointerEvent) {
+		if (longPressTimer) {
+			clearTimeout(longPressTimer);
+			longPressTimer = null;
+		}
+		if (!longPressFired) return;
+		longPressFired = false;
+		onLongPressCancel?.(event);
+	}
+
 	function onPointerUp(event: PointerEvent) {
 		if (longPressTimer) {
 			clearTimeout(longPressTimer);
 			longPressTimer = null;
 		}
+		finishLongPress(event);
 		if (!dragging || event.pointerId !== pointerId) return;
 
 		dragging = false;
@@ -179,10 +204,7 @@
 	}
 
 	function onPointerCancel(event: PointerEvent) {
-		if (longPressTimer) {
-			clearTimeout(longPressTimer);
-			longPressTimer = null;
-		}
+		cancelLongPress(event);
 		if (event.pointerId !== pointerId) return;
 		dragging = false;
 		pointerId = null;
