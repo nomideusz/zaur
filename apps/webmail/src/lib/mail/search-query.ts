@@ -50,10 +50,12 @@ export function parseSearchQuery(input: string): { filter: JmapEmailFilter; term
 				break;
 			case 'is': {
 				const lowerVal = value.toLowerCase();
-				if (lowerVal === 'unread') {
+				if (lowerVal === 'unread' || lowerVal === 'unseen') {
 					filters.push({ notKeyword: '$seen' });
-				} else if (lowerVal === 'read') {
+				} else if (lowerVal === 'read' || lowerVal === 'seen') {
 					filters.push({ hasKeyword: '$seen' });
+				} else if (lowerVal === 'important') {
+					filters.push({ hasKeyword: '$important' });
 				} else if (lowerVal === 'starred' || lowerVal === 'flagged') {
 					filters.push({ hasKeyword: '$flagged' });
 				} else if (lowerVal === 'unstarred' || lowerVal === 'unflagged') {
@@ -98,5 +100,5 @@ function parseSearchDate(value: string, edge: 'start' | 'end'): string {
 }
 
 export function searchOperatorHint(): string {
-	return 'from: · to: · subject: · has:attachment · is:unread · after: · before:';
+	return 'from: · to: · subject: · has:attachment · is:unseen · is:important · after: · before:';
 }

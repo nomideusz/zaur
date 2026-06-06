@@ -7,7 +7,7 @@
 		bulkSelectionReadCount,
 		type BulkSelectionCounts
 	} from '$lib/components/mail/bulk-selection-label';
-	import { LABEL_NOT_IMPORTANT, LABEL_RESTORE_NEW } from '$lib/mail/new-mail';
+	import { LABEL_MARK_IMPORTANT, LABEL_NOT_IMPORTANT, LABEL_REMOVE_IMPORTANT, LABEL_RESTORE_NEW } from '$lib/mail/new-mail';
 	import { mail } from '$lib/stores/mail.svelte';
 
 	interface Props {
@@ -75,7 +75,7 @@
 			role="menuitem"
 			onclick={() => run(onMarkImportant)}
 		>
-			{bulkAffectedLabel('Mark important', counts.notImportant, selectedCount)}
+			{bulkAffectedLabel(LABEL_MARK_IMPORTANT, counts.notImportant, selectedCount)}
 		</button>
 	{/if}
 	{#if counts.important > 0}
@@ -85,7 +85,7 @@
 			role="menuitem"
 			onclick={() => run(onRemoveImportant)}
 		>
-			{bulkAffectedLabel('Remove important', counts.important, selectedCount)}
+			{bulkAffectedLabel(LABEL_REMOVE_IMPORTANT, counts.important, selectedCount)}
 		</button>
 	{/if}
 	{#if showStateActions && moveTargets.length > 0}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
+	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { cn } from '$lib/utils/cn';
 	import { overflowMenuFixedStyle, type OverflowMenuPlacement } from '$lib/utils/overflow-menu-position';
@@ -113,7 +114,7 @@
 				Normal
 			</button>
 			<button type="button" role="menuitem" class="z-overflow-menu-item" onclick={() => choose('new')}>
-				New
+				{LABEL_UNSEEN}
 			</button>
 			<button type="button" role="menuitem" class="z-overflow-menu-item" onclick={() => choose('none')}>
 				None

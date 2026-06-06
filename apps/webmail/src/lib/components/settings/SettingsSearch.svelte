@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import Search from '$lib/components/icons/Search.svelte';
 	import { settingsSearch } from '$lib/settings/search-registry.svelte';
+	import { goto } from '$lib/utils/navigation';
 	import { cn } from '$lib/utils/cn';
 
 	let input = $state<HTMLInputElement | null>(null);

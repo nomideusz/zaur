@@ -24,7 +24,7 @@
 		const toPath = navigation.to?.url.pathname ?? '';
 		const fromParts = fromPath.split('/').filter(Boolean);
 		const toParts = toPath.split('/').filter(Boolean);
-		
+
 		let direction = 'forward';
 		if (fromParts.length > toParts.length) {
 			direction = 'backward';
@@ -42,7 +42,11 @@
 		return new Promise((resolve) => {
 			document.startViewTransition(async () => {
 				resolve();
-				await navigation.complete;
+				try {
+					await navigation.complete;
+				} catch {
+					// A newer navigation superseded this one — normal when clicking quickly.
+				}
 			});
 		});
 	});

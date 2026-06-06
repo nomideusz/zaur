@@ -48,7 +48,12 @@
 	import { cn } from '$lib/utils/cn';
 	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
-	import { LABEL_NOT_IMPORTANT } from '$lib/mail/new-mail';
+	import {
+		LABEL_MARK_IMPORTANT,
+		LABEL_NOT_IMPORTANT,
+		LABEL_SEEN,
+		LABEL_UNSEEN
+	} from '$lib/mail/new-mail';
 	import { inboxNormalSectionDefaultVisible, inboxImportantSectionCanShowMore } from '$lib/mail/inbox-list-sections';
 	import {
 		canMarkImportantFromMailboxRole,
@@ -227,6 +232,9 @@
 		if (readFilter === 'read') {
 			return listMessages.filter((message) => !isNewUnreadListRow(message));
 		}
+		if (readFilter === 'important') {
+			return listMessages.filter((message) => message.important);
+		}
 		return listMessages;
 	});
 	const currentMessageId = $derived(
@@ -260,8 +268,18 @@
 			filteredListMessages.length === 0
 	);
 	const filteredEmptyMessage = $derived(
-		readFilter === 'unread' ? 'No unread messages.' : 'No read messages.'
+		readFilter === 'unread'
+			? 'No unseen messages.'
+			: readFilter === 'important'
+				? 'No important messages.'
+				: 'No seen messages.'
 	);
+
+	const mobileListFilters: { id: MessageListReadFilter; label: string }[] = [
+		{ id: 'all', label: 'All' },
+		{ id: 'unread', label: LABEL_UNSEEN },
+		{ id: 'important', label: LABEL_MARK_IMPORTANT }
+	];
 
 	function sameMessageIds(a: MessagePreview[], b: MessagePreview[]): boolean {
 		if (a.length !== b.length) return false;
@@ -632,7 +650,7 @@
 			if (newUnreadMessages.length > 0) {
 				sections.push({
 					id: NEW_SECTION_ID,
-					name: 'New',
+					name: LABEL_UNSEEN,
 					routeId: mailboxRouteId ?? 'inbox',
 					messages: newUnreadMessages.slice(
 						0,
@@ -978,8 +996,8 @@
 				<!-- Mobile Filters & Settings Button -->
 				{#if mailboxRouteId}
 					<div class="flex items-center gap-1.5 md:hidden shrink-0">
-						{#each ['all', 'unread', 'starred'] as opt}
-							{@const isActive = readFilter === opt}
+						{#each mobileListFilters as opt (opt.id)}
+							{@const isActive = readFilter === opt.id}
 							<button
 								type="button"
 								class={cn(
@@ -989,10 +1007,10 @@
 										: 'text-fg-muted hover:text-fg'
 								)}
 								onclick={() => {
-									readFilter = opt as any;
+									readFilter = opt.id;
 								}}
 							>
-								{opt.charAt(0).toUpperCase() + opt.slice(1)}
+								{opt.label}
 							</button>
 						{/each}
 						
@@ -1060,7 +1078,7 @@
 						data-hide-active-indicator
 						draggable={mobileRowGestures ? 'false' : undefined}
 						aria-current={isCurrent ? 'page' : undefined}
-						aria-label="{isUnread ? 'Unread. ' : ''}{subjectText} — {senderLabel}, {timeLabel}"
+						aria-label="{isUnread ? `${LABEL_UNSEEN}. ` : ''}{subjectText} — {senderLabel}, {timeLabel}"
 						oncontextmenu={(event) => {
 							if (supportsMobileListGestures()) event.preventDefault();
 						}}

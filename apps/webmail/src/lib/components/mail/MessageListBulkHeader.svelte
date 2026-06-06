@@ -10,6 +10,7 @@
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
+	import { LABEL_SEEN, LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -38,8 +39,8 @@
 	}: Props = $props();
 
 	const readFilterOptions: { id: Exclude<MessageListReadFilter, 'all'>; label: string }[] = [
-		{ id: 'unread', label: 'Unread' },
-		{ id: 'read', label: 'Read' }
+		{ id: 'unread', label: LABEL_UNSEEN },
+		{ id: 'read', label: LABEL_SEEN }
 	];
 
 	const bulkBarPillClass =
@@ -206,7 +207,7 @@
 			<MessageListSelectMenu {disabled} placement="bottom" />
 		</div>
 
-		<nav class="z-mail-list-bulk-bar__links" aria-label="Filter by read status">
+		<nav class="z-mail-list-bulk-bar__links" aria-label="Filter by seen status">
 			{#each readFilterOptions as option (option.id)}
 				<button
 					type="button"

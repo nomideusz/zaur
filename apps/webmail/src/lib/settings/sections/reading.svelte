@@ -125,14 +125,14 @@
     />
   </SettingsRow>
 
-  <SettingsRow title="New count on app icon">
+  <SettingsRow title="Unseen count on app icon">
     <IOSToggle
       checked={settings.showUnreadAppBadge}
       onchange={(checked) => settings.setShowUnreadAppBadge(checked)}
     />
   </SettingsRow>
 
-  <SettingsRow title="New count in tab title">
+  <SettingsRow title="Unseen count in tab title">
     <IOSToggle
       checked={settings.showUnreadInTitle}
       onchange={(checked) => settings.setShowUnreadInTitle(checked)}
@@ -166,7 +166,7 @@
       <p class="z-settings-shortcut-keys">j · k</p>
     </div>
     <div class="z-settings-shortcut-row">
-      <p class="z-settings-shortcut-label">Next new message</p>
+      <p class="z-settings-shortcut-label">Next unseen message</p>
       <p class="z-settings-shortcut-keys">n</p>
     </div>
     <div class="z-settings-shortcut-row">

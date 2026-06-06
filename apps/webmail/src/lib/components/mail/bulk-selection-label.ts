@@ -1,4 +1,5 @@
 import type { MessagePreview } from '$lib/types/mail';
+import { LABEL_UNSEEN } from '../../mail/new-mail.ts';
 
 /** Inbox buckets — mutually exclusive; sum to selection size. */
 export type BulkSelectionCounts = {
@@ -46,7 +47,7 @@ export function bulkSelectionSummary(
 
 	const categorized = counts.new + counts.important + counts.normal;
 	const parts: string[] = [];
-	if (counts.new > 0) parts.push(`${counts.new} new`);
+	if (counts.new > 0) parts.push(`${counts.new} ${LABEL_UNSEEN.toLowerCase()}`);
 	if (counts.important > 0) parts.push(`${counts.important} important`);
 	if (counts.normal > 0) parts.push(`${counts.normal} normal`);
 	if (unresolved > 0) parts.push(`${unresolved} unavailable`);

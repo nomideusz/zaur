@@ -18,7 +18,8 @@
 		LABEL_CLEAR_NEW,
 		LABEL_MARK_IMPORTANT,
 		LABEL_NOT_IMPORTANT,
-		LABEL_RESTORE_NEW
+		LABEL_RESTORE_NEW,
+		LABEL_UNSEE
 	} from '$lib/mail/new-mail';
 	import { INBOX_MAILBOX_ROUTE_ID, mailListHref } from '$lib/mail/routes';
 	import { getContext } from 'svelte';
@@ -158,7 +159,7 @@
 		try {
 			await mail.markMessageNew(auth.client, actionMessage);
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Could not mark as unread';
+			const message = error instanceof Error ? error.message : `Could not ${LABEL_UNSEE.toLowerCase()}`;
 			toast.show(message, 'error');
 		}
 	}

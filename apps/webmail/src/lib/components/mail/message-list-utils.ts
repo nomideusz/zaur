@@ -39,7 +39,7 @@ export function defaultEmptyMessage(mailboxRouteId: string | undefined): string 
 export function defaultEmptyHint(mailboxRouteId: string | undefined): string | null {
 	switch (mailboxRouteId) {
 		case 'inbox':
-			return 'New messages will appear here as soon as they arrive.';
+			return 'Unseen messages will appear here as soon as they arrive.';
 		case 'drafts':
 			return 'Start a message and it will be saved here automatically.';
 		case 'sent':

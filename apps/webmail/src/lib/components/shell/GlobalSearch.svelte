@@ -6,6 +6,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -441,12 +442,12 @@
 						role="menuitem"
 						class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-surface-sunken"
 						onclick={() => {
-							input = 'is:unread';
+							input = 'is:unseen';
 							searchInput?.focus();
 						}}
 					>
 						<span class="inline-flex size-4.5 items-center justify-center rounded bg-surface-sunken border border-border text-[11px]">✉️</span>
-						<span>Unread messages</span>
+						<span>{LABEL_UNSEEN} messages</span>
 					</button>
 					{#if auth.username}
 						<button

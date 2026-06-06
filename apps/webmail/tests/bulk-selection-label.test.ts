@@ -44,7 +44,7 @@ describe('bulkSelectionSummary', () => {
 		assert.equal(counts.new + counts.important + counts.normal, 3);
 		assert.deepEqual(bulkSelectionSummary(3, counts), {
 			headline: '3 selected',
-			detail: '1 new · 1 important · 1 normal'
+			detail: '1 unseen · 1 important · 1 normal'
 		});
 	});
 
@@ -64,13 +64,13 @@ describe('bulkSelectionSummary', () => {
 		});
 		assert.deepEqual(bulkSelectionSummary(3, counts), {
 			headline: '3 selected',
-			detail: '1 new · 1 important · 1 normal'
+			detail: '1 unseen · 1 important · 1 normal'
 		});
 	});
 
 	it('uses a single-state headline when the selection is homogeneous', () => {
 		assert.deepEqual(bulkSelectionSummary(4, { new: 4, normal: 0, important: 0, notImportant: 4 }), {
-			headline: '4 new',
+			headline: '4 unseen',
 			detail: null
 		});
 		assert.deepEqual(
@@ -87,7 +87,7 @@ describe('bulkSelectionSummary', () => {
 			bulkSelectionSummary(9, { new: 1, important: 2, normal: 4, notImportant: 7 }, 2),
 			{
 				headline: '9 selected',
-				detail: '1 new · 2 important · 4 normal · 2 unavailable'
+				detail: '1 unseen · 2 important · 4 normal · 2 unavailable'
 			}
 		);
 	});

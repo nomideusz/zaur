@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
 	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
@@ -8,6 +7,7 @@
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { settingsShellClass } from '$lib/mail/layout';
+	import { goto } from '$lib/utils/navigation';
 	import { cn } from '$lib/utils/cn';
 	import type { Snippet } from 'svelte';
 
@@ -108,6 +108,7 @@
 					value={pathname}
 					options={settingsOptions}
 					onchange={(val) => {
+						if (val === pathname) return;
 						goto(val);
 					}}
 					compact={true}

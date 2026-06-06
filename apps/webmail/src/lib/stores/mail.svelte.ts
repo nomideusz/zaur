@@ -12,6 +12,7 @@ import {
 	resolveMailboxKind,
 	shouldClearImportantOnMoveTo
 } from '$lib/mail/mailboxes';
+import { LABEL_UNSEE } from '$lib/mail/new-mail';
 import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
 import { settings } from '$lib/stores/settings.svelte';
 import { toast } from '$lib/stores/toast.svelte';
@@ -952,7 +953,7 @@ class MailStore {
 			await this.bulkSetNewState(client, messages, false);
 			this.clearSelection();
 			toast.show(
-				messages.length === 1 ? 'Marked as new' : `${messages.length} messages marked as new`,
+				messages.length === 1 ? LABEL_UNSEE : `${messages.length} messages unseen`,
 				'success'
 			);
 		} finally {
@@ -1187,15 +1188,15 @@ class MailStore {
 			const message = `New mail from ${from}: ${subject}`;
 			toast.showAction(message, 'info', undefined, 5_000, { force: true });
 			if (!document.hasFocus()) {
-				showBrowserNotification('New mail', `${from}: ${subject}`);
+				showBrowserNotification('Unseen mail', `${from}: ${subject}`);
 			}
 			return;
 		}
 
-		const message = `${notifiable.length} new messages in Inbox`;
+		const message = `${notifiable.length} unseen messages in Inbox`;
 		toast.showAction(message, 'info', undefined, 5_000, { force: true });
 		if (!document.hasFocus()) {
-			showBrowserNotification('New mail', message);
+			showBrowserNotification('Unseen mail', message);
 		}
 	}
 

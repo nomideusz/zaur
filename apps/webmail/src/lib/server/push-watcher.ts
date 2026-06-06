@@ -288,7 +288,7 @@ class SubscriptionWatcher {
 
 		await sendPushNotification(this.record, {
 			title: 'New mail',
-			body: `${emails.length} new messages in Inbox`,
+			body: `${emails.length} unseen messages in Inbox`,
 			unreadCount
 		});
 	}
