@@ -1,9 +1,9 @@
 import type { JMAPClient } from './client';
 import type { StateChange } from './types';
-import { getJmapEvents } from '../../routes/events.remote.js';
 
 const POLL_INTERVAL_MS = 20_000;
 const SSE_STALE_MS = 90_000;
+const SSE_RECONNECT_MS = 5_000;
 
 const STATE_METHODS = [
 	['Mailbox/get', 'Mailbox'],
@@ -18,6 +18,7 @@ export class PushListener {
 	private callback: ((change: StateChange) => void) | null = null;
 	private client: JMAPClient | null = null;
 	private onVisibilityChange: (() => void) | null = null;
+	private streamAbort: AbortController | null = null;
 
 	start(client: JMAPClient, onChange: (change: StateChange) => void) {
 		this.stop();
@@ -71,15 +72,53 @@ export class PushListener {
 		this.isRunning = true;
 		this.resetStaleTimer();
 
+		const abort = new AbortController();
+		this.streamAbort = abort;
+
 		void (async () => {
 			try {
-				for await (const change of getJmapEvents()) {
-					if (!this.isRunning) break;
-					this.resetStaleTimer();
-					this.trackIncomingStates(change);
-					onChange(change);
+				const response = await fetch('/api/jmap/events', { signal: abort.signal });
+				if (!response.ok || !response.body) {
+					throw { status: response.status, body: await response.text().catch(() => '') };
+				}
+
+				const reader = response.body.getReader();
+				const decoder = new TextDecoder();
+				let buffer = '';
+
+				while (this.isRunning && !abort.signal.aborted) {
+					const { done, value } = await reader.read();
+					if (done) break;
+
+					buffer += decoder.decode(value, { stream: true });
+					const lines = buffer.split('\n');
+					buffer = lines.pop() ?? '';
+
+					for (const line of lines) {
+						const trimmed = line.trim();
+						if (!trimmed || trimmed.startsWith(':')) {
+							this.resetStaleTimer();
+							continue;
+						}
+						if (!trimmed.startsWith('data:')) continue;
+
+						this.resetStaleTimer();
+						const dataStr = trimmed.slice(5).trim();
+						if (!dataStr) continue;
+
+						try {
+							const data = JSON.parse(dataStr) as StateChange;
+							if (data?.['@type'] === 'StateChange') {
+								this.trackIncomingStates(data);
+								onChange(data);
+							}
+						} catch {
+							// Ping or other non-JSON keepalive
+						}
+					}
 				}
 			} catch (err) {
+				if (abort.signal.aborted) return;
 				console.warn('JMAP event stream error:', err);
 				this.stopEventSource();
 				if (this.client && this.callback) {
@@ -87,7 +126,7 @@ export class PushListener {
 						if (this.client && this.callback && !this.isRunning) {
 							this.startEventSource(this.callback);
 						}
-					}, 5_000);
+					}, SSE_RECONNECT_MS);
 				}
 			}
 		})();
@@ -95,6 +134,8 @@ export class PushListener {
 
 	private stopEventSource() {
 		this.isRunning = false;
+		this.streamAbort?.abort();
+		this.streamAbort = null;
 		this.clearStaleTimer();
 	}
 

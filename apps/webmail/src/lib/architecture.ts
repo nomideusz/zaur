@@ -88,7 +88,7 @@ export const componentTree = {
 			'WebmailSettings/get+set when server supports https://zaur.app/jmap/webmail-settings/v1',
 			'fallback: private archive Email with subject __zaur_webmail_settings_v1__'
 		],
-		pushListener: ['EventSource via /api/jmap/events', 'polling fallback'],
+		pushListener: ['SSE via GET /api/jmap/events', 'polling fallback'],
 		syncEngine: ['incremental Email/Mailbox sync', 'syncState in RxDB']
 	},
 	db: {
