@@ -536,21 +536,22 @@ async function changePassword(email, password) {
   }
 
   // Update the secret directly in PostgreSQL database using bcryptjs
+  const canonicalEmail = account.email.toLowerCase();
   const hash = await bcrypt.hash(password, 10);
   const res = await pool.query(
     'UPDATE accounts SET secret = $1 WHERE name = $2',
-    [hash, email]
+    [hash, canonicalEmail]
   );
 
   if (res.rowCount === 0) {
     // If user exists in Stalwart but not in DB, insert them
     await pool.query(
       'INSERT INTO accounts (name, secret, description, type, active) VALUES ($1, $2, $3, $4, $5)',
-      [email, hash, email, 'individual', true]
+      [canonicalEmail, hash, canonicalEmail, 'individual', true]
     );
     await pool.query(
       'INSERT INTO emails (name, address) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-      [email, email]
+      [canonicalEmail, canonicalEmail]
     );
   }
 

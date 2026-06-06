@@ -30,9 +30,9 @@
 
 	$effect(() => {
 		if (auth.isRestoring) return;
-		// if (!auth.isAuthenticated && !$page.url.pathname.startsWith('/login')) {
-		// 	goto('/login');
-		// }
+		if (!auth.isAuthenticated && !$page.url.pathname.startsWith('/login')) {
+			goto('/login');
+		}
 	});
 
 	$effect(() => {

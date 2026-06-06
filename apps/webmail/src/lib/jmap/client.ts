@@ -31,6 +31,14 @@ interface CachedSessionEntry {
 }
 
 const SESSION_CACHE_TTL_MS = 15 * 60 * 1000; // 15 minutes
+
+function basicAuthHeader(username: string, password: string): string {
+	const credentials = `${username}:${password}`;
+	if (typeof Buffer !== 'undefined') {
+		return `Basic ${Buffer.from(credentials, 'utf8').toString('base64')}`;
+	}
+	return `Basic ${btoa(credentials)}`;
+}
 const sessionCache = new Map<string, CachedSessionEntry>();
 
 const CALENDARS_URN = 'urn:ietf:params:jmap:calendars';
@@ -146,7 +154,7 @@ export class JMAPClient {
 			? ''
 			: isToken
 				? `Bearer ${passwordOrToken}`
-				: `Basic ${btoa(`${username}:${passwordOrToken}`)}`;
+				: basicAuthHeader(username, passwordOrToken);
 	}
 
 	/** Browser client that routes JMAP through the server-side proxy. */
