@@ -8,13 +8,51 @@ import {
 	type AccountSettingsBlob
 } from '$lib/settings/account-settings-types';
 import { isObsoleteSettingKey } from '$lib/settings/obsolete-keys';
-import { loadSettings, saveSettings } from '../../routes/settings.remote.js';
 
 const PUSH_DEBOUNCE_MS = 1500;
 
 let pushTimer: ReturnType<typeof setTimeout> | null = null;
 let pushInFlight = false;
 let syncAccountEmail: string | null = null;
+
+async function fetchAccountSettings(): Promise<AccountSettingsBlob | null> {
+	const response = await fetch('/api/settings');
+	if (response.status === 401) {
+		throw { status: 401 as const };
+	}
+	if (!response.ok) {
+		throw new Error(`Could not load settings (${response.status})`);
+	}
+	return (await response.json()) as AccountSettingsBlob | null;
+}
+
+async function saveAccountSettingsRemote(
+	blob: AccountSettingsBlob,
+	baseUpdatedAt?: string
+): Promise<
+	| { conflict: true; remote: AccountSettingsBlob }
+	| { conflict: false; updatedAt: string }
+	| null
+> {
+	const response = await fetch('/api/settings', {
+		method: 'PUT',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ blob, baseUpdatedAt })
+	});
+	if (response.status === 401) {
+		throw { status: 401 as const };
+	}
+	if (!response.ok) {
+		throw new Error(`Could not save settings (${response.status})`);
+	}
+	return (await response.json()) as
+		| { conflict: true; remote: AccountSettingsBlob }
+		| { conflict: false; updatedAt: string };
+}
+
+function isAuthSyncError(error: unknown): error is { status: 401 } {
+	return typeof error === 'object' && error !== null && 'status' in error && (error as { status?: number }).status === 401;
+}
 
 /** Keys synced to the JMAP account (device-local-only keys are omitted). */
 export function collectSyncableSettings(): Record<string, string> {
@@ -70,9 +108,16 @@ async function pushAccountSettings(options?: { quiet?: boolean }): Promise<boole
 	};
 
 	try {
-		const payload = await saveSettings({ blob, baseUpdatedAt });
+		const payload = await saveAccountSettingsRemote(blob, baseUpdatedAt);
+		if (!payload) {
+			const message = 'Could not save settings';
+			if (!options?.quiet && navigator.onLine) {
+				toast.show(message, 'error');
+			}
+			return false;
+		}
 
-		if (payload && 'conflict' in payload && payload.conflict) {
+		if ('conflict' in payload && payload.conflict) {
 			if (payload.remote?.settings) {
 				markSyncedAt(email, payload.remote.updatedAt);
 				const applied = await pullAccountSettings(email, () => {}, { force: true });
@@ -86,7 +131,7 @@ async function pushAccountSettings(options?: { quiet?: boolean }): Promise<boole
 			return false;
 		}
 
-		if (payload && 'updatedAt' in payload) {
+		if ('updatedAt' in payload) {
 			markSyncedAt(email, payload.updatedAt);
 			void import('$lib/stores/auth.svelte').then(({ auth }) => {
 				if (!auth.client) return;
@@ -98,14 +143,20 @@ async function pushAccountSettings(options?: { quiet?: boolean }): Promise<boole
 		}
 
 		const message = 'Could not save settings';
-		console.warn('Account settings sync failed:', message);
 		if (!options?.quiet && navigator.onLine) {
 			toast.show(message, 'error');
 		}
 		return false;
 	} catch (error) {
+		if (isAuthSyncError(error)) {
+			if (!options?.quiet && navigator.onLine) {
+				toast.show('Sign in again to sync settings to your account', 'info');
+			}
+			return false;
+		}
+
 		const message = error instanceof Error ? error.message : 'Could not save settings';
-		console.warn('Account settings sync failed:', error);
+		console.warn('Account settings sync failed:', message);
 		if (!options?.quiet && navigator.onLine) {
 			toast.show(message, 'error');
 		}
@@ -134,7 +185,7 @@ export async function pullAccountSettings(
 	const normalizedEmail = email.trim().toLowerCase();
 
 	try {
-		const remote = await loadSettings();
+		const remote = await fetchAccountSettings();
 		if (!remote?.settings) return 'empty';
 
 		const syncAtKey = accountSettingsSyncAtKey(normalizedEmail);

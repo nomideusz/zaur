@@ -26,7 +26,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 	}
 
 	try {
-		const client = await createConnectedClient(session);
+		const client = await createConnectedClient(session, cookies);
 		const response = await client.downloadBlob(blobId, name, type);
 
 		if (!response.ok) {

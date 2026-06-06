@@ -22,7 +22,7 @@ export const GET: RequestHandler = async ({ cookies }) => {
 	}
 
 	try {
-		const client = await createConnectedClient(session);
+		const client = await createConnectedClient(session, cookies);
 		const jmapSession = client.getSession();
 		if (!jmapSession) {
 			return json({ error: 'No JMAP session' }, { status: 502 });

@@ -11,7 +11,7 @@ export const GET: RequestHandler = async ({ cookies }) => {
 	}
 
 	try {
-		const client = await createConnectedClient(session);
+		const client = await createConnectedClient(session, cookies);
 		const identities = await client.getIdentities();
 		const primary =
 			findIdentityEmail(identities, session.username) ?? identities[0];

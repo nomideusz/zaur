@@ -20,7 +20,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	try {
-		const client = await createConnectedClient(session);
+		const client = await createConnectedClient(session, cookies);
 		const result = await client.uploadBlob(data, type);
 		return json(result);
 	} catch (err) {

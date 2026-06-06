@@ -12,7 +12,7 @@ export const GET: RequestHandler = async ({ cookies, request }) => {
 
 	let client;
 	try {
-		client = await createConnectedClient(session);
+		client = await createConnectedClient(session, cookies);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : 'JMAP connection failed';
 		return new Response(message, { status: 502 });

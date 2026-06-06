@@ -1,8 +1,13 @@
 import { JMAPClient } from '$lib/jmap/client';
+import type { Cookies } from '@sveltejs/kit';
 import type { SessionData } from './session';
+import { syncSessionCookie } from './session';
 import { decodeJwt, refreshAccessToken } from './oauth';
 
-export async function createConnectedClient(session: SessionData): Promise<JMAPClient> {
+export async function createConnectedClient(
+	session: SessionData,
+	cookies?: Cookies
+): Promise<JMAPClient> {
 	if (session.accessToken && session.refreshToken) {
 		const payload = decodeJwt(session.accessToken);
 		const now = Math.floor(Date.now() / 1000);
@@ -15,8 +20,11 @@ export async function createConnectedClient(session: SessionData): Promise<JMAPC
 				if (session.id) {
 					const { updateSessionData } = await import('./session');
 					updateSessionData(session.id, session);
-					console.log('[Token Refresh] Token refreshed and session updated successfully.');
 				}
+				if (cookies) {
+					syncSessionCookie(cookies, session, { remember: true });
+				}
+				console.log('[Token Refresh] Token refreshed and session updated successfully.');
 			} else {
 				throw new Error('Unauthorized: Refresh token expired');
 			}

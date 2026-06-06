@@ -729,6 +729,7 @@ class SettingsStore {
 		this.resetReadingSettings();
 		this.resetWritingSettings();
 		this.resetCalendarSettings();
+		void pushAccountSettingsNow();
 	}
 
 	exportLocalPreferences(): string {

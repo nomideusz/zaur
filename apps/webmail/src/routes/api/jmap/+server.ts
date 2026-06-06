@@ -21,7 +21,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	try {
-		const client = await createConnectedClient(session);
+		const client = await createConnectedClient(session, cookies);
 		const response = await client.request(body.methodCalls, body.using);
 		return json(response satisfies JMAPResponse);
 	} catch (error) {

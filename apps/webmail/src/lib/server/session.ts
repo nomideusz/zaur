@@ -172,10 +172,23 @@ export function unsealSession(token: string, secret?: string): SessionData | nul
 export function readSession(cookies: Cookies, secret?: string): SessionData | null {
 	const token = cookies.get(COOKIE_NAME);
 	if (!token) return null;
-	return readSessionById(token, secret);
+
+	const direct = unsealSession(token, secret);
+	if (direct) {
+		if (direct.id) readSessionById(direct.id, secret);
+		return direct;
+	}
+
+	const legacy = readSessionById(token, secret);
+	if (legacy) {
+		syncSessionCookie(cookies, legacy, { remember: true });
+		return legacy;
+	}
+
+	return null;
 }
 
-export function writeSession(
+export function syncSessionCookie(
 	cookies: Cookies,
 	data: SessionData,
 	options?: { remember?: boolean; secret?: string }
@@ -191,7 +204,16 @@ export function writeSession(
 		cookieOptions.maxAge = REMEMBERED_SESSION_MAX_AGE_SEC;
 	}
 
-	cookies.set(COOKIE_NAME, createSessionRecord(data, options), cookieOptions);
+	cookies.set(COOKIE_NAME, sealSession(data, options?.secret), cookieOptions);
+}
+
+export function writeSession(
+	cookies: Cookies,
+	data: SessionData,
+	options?: { remember?: boolean; secret?: string }
+): void {
+	createSessionRecord(data, options);
+	syncSessionCookie(cookies, data, options);
 }
 
 export function updateSessionData(id: string, data: SessionData, secret?: string): void {
@@ -207,6 +229,10 @@ export function updateSessionData(id: string, data: SessionData, secret?: string
 }
 
 export function clearSession(cookies: Cookies): void {
-	removeSessionRecord(cookies.get(COOKIE_NAME));
+	const token = cookies.get(COOKIE_NAME);
+	if (token) {
+		const data = unsealSession(token) ?? readSessionById(token);
+		removeSessionRecord(data?.id ?? token);
+	}
 	cookies.delete(COOKIE_NAME, { path: '/' });
 }
