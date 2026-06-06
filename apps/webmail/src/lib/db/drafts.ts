@@ -6,6 +6,25 @@ import type { StoredComposeAttachment } from '$lib/types/compose';
 const LOCAL_DRAFT_KEY = 'zaur:compose-draft';
 const COMPOSE_DRAFT_ID = 'compose';
 
+let composeDraftWriteQueue: Promise<void> = Promise.resolve();
+
+function withComposeDraftLock<T>(fn: () => Promise<T>): Promise<T> {
+	const run = composeDraftWriteQueue.then(fn, fn);
+	composeDraftWriteQueue = run.then(
+		() => undefined,
+		() => undefined
+	);
+	return run;
+}
+
+function isRxConflict(error: unknown): boolean {
+	if (!error || typeof error !== 'object') return false;
+	const record = error as { code?: string; status?: number; message?: string };
+	if (record.code === 'CONFLICT' || record.status === 409) return true;
+	const message = record.message ?? (error instanceof Error ? error.message : String(error));
+	return message.includes('CONFLICT');
+}
+
 export interface DraftSnapshot {
 	to: string;
 	cc: string;
@@ -56,36 +75,50 @@ export async function saveComposeDraft(
 	accountId: string,
 	draft: Omit<DraftSnapshot, 'updatedAt'> & { updatedAt?: number }
 ): Promise<void> {
-	const db = getMailDatabase();
-	if (!db) return;
+	return withComposeDraftLock(async () => {
+		const db = getMailDatabase();
+		if (!db) return;
 
-	const now = draft.updatedAt ?? Date.now();
-	const id = `${accountId}:${COMPOSE_DRAFT_ID}`;
-	const existing = await db.drafts.findOne({ selector: { id } }).exec();
+		const now = draft.updatedAt ?? Date.now();
+		const id = `${accountId}:${COMPOSE_DRAFT_ID}`;
+		const existing = await db.drafts.findOne({ selector: { id } }).exec();
 
-	await db.drafts.upsert({
-		id,
-		accountId,
-		to: draft.to,
-		cc: draft.cc,
-		bcc: draft.bcc,
-		subject: draft.subject,
-		body: draft.body,
-		bodyHtml: draft.bodyHtml,
-		mode: draft.mode,
-		jmapDraftId: draft.jmapDraftId,
-		attachmentsJson: draft.attachments?.length ? JSON.stringify(draft.attachments) : undefined,
-		updatedAt: now,
-		createdAt: existing?.createdAt ?? now
+		await db.drafts.upsert({
+			id,
+			accountId,
+			to: draft.to,
+			cc: draft.cc,
+			bcc: draft.bcc,
+			subject: draft.subject,
+			body: draft.body,
+			bodyHtml: draft.bodyHtml,
+			mode: draft.mode,
+			jmapDraftId: draft.jmapDraftId,
+			attachmentsJson: draft.attachments?.length ? JSON.stringify(draft.attachments) : undefined,
+			updatedAt: now,
+			createdAt: existing?.createdAt ?? now
+		});
 	});
 }
 
 export async function clearComposeDraft(accountId: string): Promise<void> {
-	const db = getMailDatabase();
-	if (!db) return;
+	return withComposeDraftLock(async () => {
+		const db = getMailDatabase();
+		if (!db) return;
 
-	const doc = await db.drafts.findOne({ selector: { id: `${accountId}:${COMPOSE_DRAFT_ID}` } }).exec();
-	if (doc) await doc.remove();
+		const id = `${accountId}:${COMPOSE_DRAFT_ID}`;
+		const doc = await db.drafts.findOne({ selector: { id } }).exec();
+		if (!doc) return;
+
+		try {
+			await doc.remove();
+		} catch (error) {
+			if (!isRxConflict(error)) throw error;
+			const remaining = await db.drafts.findOne({ selector: { id } }).exec();
+			if (!remaining) return;
+			throw error;
+		}
+	});
 }
 
 /** One-time migration from legacy localStorage compose draft. */

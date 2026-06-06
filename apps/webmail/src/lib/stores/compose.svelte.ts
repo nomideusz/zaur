@@ -480,6 +480,10 @@ class ComposeStore {
 		this.openDraft(mapEmailDetail(email, 'drafts'));
 	}
 
+	private shouldSkipDraftAutosave(): boolean {
+		return this.isSending || !!this.pendingSend;
+	}
+
 	scheduleAutosave(
 		client: JMAPClient | null,
 		fromEmail: string,
@@ -491,7 +495,9 @@ class ComposeStore {
 		if (this.isComposeEmpty) {
 			if (this.autosaveTimer) clearTimeout(this.autosaveTimer);
 			if (this.serverDraftTimer) clearTimeout(this.serverDraftTimer);
-			void this.persistLocalDraft();
+			if (!this.shouldSkipDraftAutosave()) {
+				void this.persistLocalDraft();
+			}
 			return;
 		}
 
@@ -714,6 +720,8 @@ class ComposeStore {
 			}
 		};
 
+		this.cancelAutosaveTimers();
+
 		if (settings.undoSendDelay === 0) {
 			this.isSending = true;
 			this.error = null;
@@ -721,7 +729,7 @@ class ComposeStore {
 				const result = await this.deliverPayload(client, payload, fromEmail, fromName);
 				if (result === 'sent' || result === 'queued') {
 					this.clearComposeFields();
-					void this.clearLocalDraft();
+					await this.clearLocalDraft();
 					options?.onComplete?.(result);
 				}
 				return result;
@@ -756,7 +764,7 @@ class ComposeStore {
 		};
 
 		this.clearComposeFields();
-		void this.clearLocalDraft();
+		await this.clearLocalDraft();
 		this.isSending = false;
 
 		toast.showUndo(`Sending "${subject}"…`, () => this.undoPendingSend(), settings.undoSendDelay);
@@ -818,6 +826,7 @@ class ComposeStore {
 
 	private async persistLocalDraft(options?: { force?: boolean }) {
 		if (!browser) return;
+		if (!options?.force && this.shouldSkipDraftAutosave()) return;
 		if (!options?.force && this.mode !== 'new' && !this.attachments.length) return;
 		if (this.isComposeEmpty) {
 			await this.clearLocalDraft();
@@ -864,6 +873,7 @@ class ComposeStore {
 	}
 
 	private async saveServerDraft(client: JMAPClient, fromEmail: string, fromName?: string) {
+		if (this.shouldSkipDraftAutosave()) return;
 		if (this.isComposeEmpty) return;
 		if (!this.to && !this.subject && !this.body) return;
 
@@ -885,6 +895,7 @@ class ComposeStore {
 				attachments: this.readyAttachments(),
 				format: settings.defaultComposeFormat
 			});
+			if (this.shouldSkipDraftAutosave() || this.isComposeEmpty) return;
 			this.jmapDraftId = id;
 			this.draftSavedAt = Date.now();
 			void this.persistLocalDraft();
