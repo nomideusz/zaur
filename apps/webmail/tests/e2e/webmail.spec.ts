@@ -34,7 +34,7 @@ test('sends a message to itself and finds it through search', async ({ page }) =
 	await page.goto('/mail/compose');
 	await expect(page.getByRole('heading', { name: 'New message' })).toBeVisible();
 	await page.getByPlaceholder('recipient@example.com').fill(email!);
-	await page.getByPlaceholder('Subject (optional)').fill(subject);
+	await page.getByPlaceholder('Subject').fill(subject);
 	await page.getByPlaceholder('Write your message…').fill(`Smoke test body for ${subject}`);
 	await page.getByRole('button', { name: 'Send' }).click();
 	await expect(page).toHaveURL(/\/mail\/sent/, { timeout: 30_000 });

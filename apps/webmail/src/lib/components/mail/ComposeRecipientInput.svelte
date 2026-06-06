@@ -76,25 +76,34 @@
 		}
 	}
 
+	function fieldLeadingPx(element: HTMLTextAreaElement) {
+		const leading = getComputedStyle(element).lineHeight;
+		const parsed = Number.parseFloat(leading);
+		return Number.isFinite(parsed) ? parsed : element.offsetHeight;
+	}
+
+	function syncInputHeight(element: HTMLTextAreaElement) {
+		const minHeight = fieldLeadingPx(element);
+		element.style.height = 'auto';
+		element.style.height = `${Math.max(element.scrollHeight, minHeight)}px`;
+	}
+
 	$effect(() => {
-		if (inputElement) {
-			if (value) {
-				inputElement.style.height = 'auto';
-				inputElement.style.height = inputElement.scrollHeight + 'px';
-			} else {
-				inputElement.style.height = '1.55em';
-			}
+		if (!inputElement) return;
+		if (value) {
+			syncInputHeight(inputElement);
+		} else {
+			inputElement.style.height = '';
 		}
 	});
 </script>
  
-<div class="relative min-w-0 flex-1">
+<div class="relative min-w-0">
 	<textarea
 		bind:this={inputElement}
 		{id}
-		class={cn('z-compose-field-input w-full resize-none bg-transparent outline-none align-bottom', className)}
+		class={cn('z-compose-field-input w-full resize-none overflow-hidden', className)}
 		rows={1}
-		style="height: 1.55em; overflow: hidden;"
 		placeholder={placeholder}
 		autocomplete={autocomplete as any}
 		aria-invalid={invalid || undefined}
@@ -112,8 +121,7 @@
 			open = true;
 			activeIndex = 0;
 			emit(e.currentTarget.value);
-			e.currentTarget.style.height = 'auto';
-			e.currentTarget.style.height = e.currentTarget.scrollHeight + 'px';
+			syncInputHeight(e.currentTarget);
 		}}
 		onkeydown={onKeydown}
 	></textarea>

@@ -117,7 +117,17 @@
 
 	let sendAttempted = $state(false);
 	let recipientFocused = $state(false);
+	let toFocused = $state(false);
+	let ccFocused = $state(false);
+	let bccFocused = $state(false);
 	let isRichText = $state(settings.defaultComposeFormat === 'html');
+
+	const showToPrefix = $derived(toFocused);
+	const showCcPrefix = $derived(ccFocused);
+	const showBccPrefix = $derived(bccFocused);
+	const toPlaceholder = $derived(showToPrefix ? '' : 'Recipients');
+	const ccPlaceholder = $derived(showCcPrefix ? '' : 'Cc');
+	const bccPlaceholder = $derived(showBccPrefix ? '' : 'Bcc');
 
 	const invalidRecipients = $derived([
 		...invalidAddressParts(compose.to),
@@ -323,15 +333,15 @@
 >
 	<div class="z-compose z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 		<header class="z-compose__header flex shrink-0 flex-col border-b border-border/80">
-			<div class="z-compose__header-bar flex flex-wrap items-center justify-between gap-2 px-4 py-2 min-w-0">
+			<div class="z-compose__header-bar flex flex-wrap items-center justify-between gap-2 px-4 py-2 min-w-0 max-md:flex-nowrap">
 				<!-- Left: Back -->
-				<div class="flex min-w-0 items-center gap-2">
+				<div class="z-compose__header-leading">
 					<button type="button" class="z-compose__back-btn shrink-0" aria-label="Save draft and go back" onclick={() => void saveDraftAndClose()}>
 						<ArrowLeft class="size-4" aria-hidden="true" />
 					</button>
 					<h1 class="sr-only">{composeTitle}</h1>
 					{#if draftStatus}
-						<span class="text-xs text-fg-subtle shrink-0" aria-live="polite">{draftStatus}</span>
+						<span class="z-compose__draft-status truncate" aria-live="polite">{draftStatus}</span>
 					{/if}
 				</div>
 
@@ -381,19 +391,8 @@
 				</div>
 			</div>
 
-			<div class="z-compose__header-subject md:hidden">
-				<input
-					id="compose-subject-mobile"
-					type="text"
-					class="z-compose__input z-compose__input--header-subject"
-					placeholder="Subject (optional)"
-					autocomplete="off"
-					bind:value={compose.subject}
-				/>
-			</div>
-
 			{#if !settings.hideComposeHints && sendBlockedReason && compose.to.trim() && !recipientFocused}
-				<div class="px-4 pb-2 text-xs text-danger md:px-4 md:pb-2.5" role="status">
+				<div class="hidden px-4 pb-2 text-xs text-danger md:block md:px-4 md:pb-2.5" role="status">
 					{sendBlockedReason}
 				</div>
 			{/if}
@@ -410,89 +409,106 @@
 	>
 		<div class="z-compose__fields shrink-0 divide-y divide-border border-b border-border">
 				<div class={cn('z-compose__field', fieldInvalid('to') && 'z-compose__field--invalid')}>
-					<label class="z-compose__label" for="compose-to">To</label>
-					<div class="z-compose__control">
-						<ComposeRecipientInput
-							id="compose-to"
-							bind:inputElement={toInput}
-							value={compose.to}
-							autocomplete="email"
-							class="z-compose__input"
-							invalid={fieldInvalid('to')}
-							ariaDescribedby={compose.error || (sendAttempted && invalidRecipients.length) ? composeErrorsId : undefined}
-							oninput={(value) => {
-								compose.to = value;
-								sendAttempted = false;
-							}}
-							onfocus={() => (recipientFocused = true)}
-							onblur={() => (recipientFocused = false)}
-						/>
-						{#if settings.showCcBccInCompose && !compose.showCcBcc}
-							<button
-								type="button"
-								class="z-compose__inline-link"
-								tabindex="-1"
-								onclick={() => (compose.showCcBcc = true)}
-							>
-								Cc/Bcc
-							</button>
-						{/if}
-					</div>
+					<label class="sr-only" for="compose-to">To</label>
+					<span class="z-compose__prefix" aria-hidden={!showToPrefix}>{showToPrefix ? 'To' : ''}</span>
+					<ComposeRecipientInput
+						id="compose-to"
+						bind:inputElement={toInput}
+						value={compose.to}
+						placeholder={toPlaceholder}
+						autocomplete="email"
+						class="z-compose__input"
+						invalid={fieldInvalid('to')}
+						ariaDescribedby={compose.error || (sendAttempted && invalidRecipients.length) ? composeErrorsId : undefined}
+						oninput={(value) => {
+							compose.to = value;
+							sendAttempted = false;
+						}}
+						onfocus={() => {
+							toFocused = true;
+							recipientFocused = true;
+						}}
+						onblur={() => {
+							toFocused = false;
+							recipientFocused = false;
+						}}
+					/>
+					{#if settings.showCcBccInCompose && !compose.showCcBcc}
+						<button
+							type="button"
+							class="z-compose__suffix-link"
+							tabindex="-1"
+							onclick={() => (compose.showCcBcc = true)}
+						>
+							Cc/Bcc
+						</button>
+					{/if}
 				</div>
 
 				{#if compose.showCcBcc && (settings.showCcBccInCompose || compose.cc.trim() || compose.bcc.trim())}
 					<div class={cn('z-compose__field', fieldInvalid('cc') && 'z-compose__field--invalid')}>
-						<label class="z-compose__label" for="compose-cc">Cc</label>
-						<div class="z-compose__control">
-							<ComposeRecipientInput
-								id="compose-cc"
-								value={compose.cc}
-								autocomplete="email"
-								class="z-compose__input"
-								invalid={fieldInvalid('cc')}
-								ariaDescribedby={compose.error || (sendAttempted && invalidRecipients.length) ? composeErrorsId : undefined}
-								oninput={(value) => {
-									compose.cc = value;
-									sendAttempted = false;
-								}}
-								onfocus={() => (recipientFocused = true)}
-								onblur={() => (recipientFocused = false)}
-							/>
-						</div>
+						<label class="sr-only" for="compose-cc">Cc</label>
+						<span class="z-compose__prefix" aria-hidden={!showCcPrefix}>{showCcPrefix ? 'Cc' : ''}</span>
+						<ComposeRecipientInput
+							id="compose-cc"
+							value={compose.cc}
+							placeholder={ccPlaceholder}
+							autocomplete="email"
+							class="z-compose__input"
+							invalid={fieldInvalid('cc')}
+							ariaDescribedby={compose.error || (sendAttempted && invalidRecipients.length) ? composeErrorsId : undefined}
+							oninput={(value) => {
+								compose.cc = value;
+								sendAttempted = false;
+							}}
+							onfocus={() => {
+								ccFocused = true;
+								recipientFocused = true;
+							}}
+							onblur={() => {
+								ccFocused = false;
+								recipientFocused = false;
+							}}
+						/>
 					</div>
 					<div class={cn('z-compose__field', fieldInvalid('bcc') && 'z-compose__field--invalid')}>
-						<label class="z-compose__label" for="compose-bcc">Bcc</label>
-						<div class="z-compose__control">
-							<ComposeRecipientInput
-								id="compose-bcc"
-								value={compose.bcc}
-								autocomplete="email"
-								class="z-compose__input"
-								invalid={fieldInvalid('bcc')}
-								ariaDescribedby={compose.error || (sendAttempted && invalidRecipients.length) ? composeErrorsId : undefined}
-								oninput={(value) => {
-									compose.bcc = value;
-									sendAttempted = false;
-								}}
-								onfocus={() => (recipientFocused = true)}
-								onblur={() => (recipientFocused = false)}
-							/>
-						</div>
+						<label class="sr-only" for="compose-bcc">Bcc</label>
+						<span class="z-compose__prefix" aria-hidden={!showBccPrefix}>{showBccPrefix ? 'Bcc' : ''}</span>
+						<ComposeRecipientInput
+							id="compose-bcc"
+							value={compose.bcc}
+							placeholder={bccPlaceholder}
+							autocomplete="email"
+							class="z-compose__input"
+							invalid={fieldInvalid('bcc')}
+							ariaDescribedby={compose.error || (sendAttempted && invalidRecipients.length) ? composeErrorsId : undefined}
+							oninput={(value) => {
+								compose.bcc = value;
+								sendAttempted = false;
+							}}
+							onfocus={() => {
+								bccFocused = true;
+								recipientFocused = true;
+							}}
+							onblur={() => {
+								bccFocused = false;
+								recipientFocused = false;
+							}}
+						/>
 					</div>
 				{/if}
 
-				<div class="z-compose__field z-compose__field--subject hidden md:flex">
-					<label class="z-compose__label" for="compose-subject">Subject</label>
-					<div class="z-compose__control">
-						<input
-							id="compose-subject"
-							type="text"
-							class="z-compose__input"
-							placeholder="Subject (optional)"
-							autocomplete="off"
-							bind:value={compose.subject}
-						/>
-					</div>
+				<div class="z-compose__field z-compose__field--subject">
+					<label class="sr-only" for="compose-subject">Subject</label>
+					<span class="z-compose__prefix z-compose__prefix--empty" aria-hidden="true"></span>
+					<input
+						id="compose-subject"
+						type="text"
+						class="z-compose__input"
+						placeholder="Subject"
+						autocomplete="off"
+						bind:value={compose.subject}
+					/>
 				</div>
 			</div>
 
