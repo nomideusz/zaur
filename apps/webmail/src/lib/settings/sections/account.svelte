@@ -16,14 +16,32 @@
 	let emptyingSpam = $state(false);
 	let passkeyPassword = $state('');
 	let passkeyLoading = $state(false);
-	let passkeyConfigured = $state<boolean | null>(null);
+	let passkeyRegistered = $state<boolean | null>(null);
+	let passkeyStatusLoading = $state(false);
 
 	const oauthEnabled = $derived(auth.oauthConfig?.enabled === true);
 	const trashMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'trash'));
 	const junkMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'junk'));
 
+	async function loadPasskeyStatus() {
+		if (!oauthEnabled || !auth.username) return;
+		passkeyStatusLoading = true;
+		try {
+			const res = await fetch('/api/auth/passkey/status');
+			if (res.ok) {
+				const payload = (await res.json()) as { registered?: boolean };
+				passkeyRegistered = payload.registered === true;
+			}
+		} catch {
+			// Non-critical — keep add-passkey UI available.
+		} finally {
+			passkeyStatusLoading = false;
+		}
+	}
+
 	onMount(async () => {
 		await auth.checkOauthConfig();
+		await loadPasskeyStatus();
 	});
 
 	async function addPasskey() {
@@ -35,7 +53,8 @@
 				password: passkeyPassword
 			});
 			passkeyPassword = '';
-			passkeyConfigured = true;
+			passkeyRegistered = true;
+			void loadPasskeyStatus();
 			toast.show('Passkey added. You can use it to sign in next time.', 'success');
 		} catch (error) {
 			const message = error instanceof Error ? error.message : 'Passkey setup failed.';
@@ -158,6 +177,12 @@
 	<SettingsGroup title="Security">
 		<SettingsField title="Passkey">
 			<div class="flex w-full flex-col gap-2 sm:max-w-xs">
+				{#if passkeyStatusLoading}
+					<p class="text-fg-muted">Checking passkey status…</p>
+				{:else if passkeyRegistered}
+					<p class="text-fg">Passkey registered for this account.</p>
+					<p class="text-fg-muted">You can sign in with a passkey from the login page.</p>
+				{/if}
 				<input
 					type="password"
 					class="z-input"
@@ -172,11 +197,12 @@
 					disabled={passkeyLoading || !passkeyPassword.trim()}
 					onclick={() => void addPasskey()}
 				>
-					{passkeyLoading ? 'Waiting for passkey…' : 'Add passkey'}
+					{passkeyLoading
+						? 'Waiting for passkey…'
+						: passkeyRegistered
+							? 'Add another passkey'
+							: 'Add passkey'}
 				</button>
-				{#if passkeyConfigured}
-					<p class="text-fg-muted">Passkey added on this device.</p>
-				{/if}
 			</div>
 		</SettingsField>
 	</SettingsGroup>

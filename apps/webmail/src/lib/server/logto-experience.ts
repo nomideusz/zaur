@@ -202,6 +202,16 @@ async function initSignInInteraction(jar: Map<string, string>, forwardedOrigin: 
 	});
 }
 
+/** Whether the Logto account has at least one passkey for this email (no WebAuthn prompt). */
+export async function checkRegisteredPasskey(input: {
+	email: string;
+	redirectUri: string;
+	forwardedOrigin: string;
+}): Promise<boolean> {
+	const result = await beginPasskeySignIn(input);
+	return !result.discoverable;
+}
+
 export async function beginPasskeySignIn(input: {
 	email: string;
 	redirectUri: string;
