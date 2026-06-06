@@ -14,6 +14,20 @@
 		@apply m-0 p-0 text-lg font-semibold leading-tight tracking-tight text-fg md:text-xl;
 	}
 
+	@media (max-width: 767px) {
+		.z-type-reader-title {
+			font-size: 1rem;
+			font-weight: 600;
+			line-height: 1.35;
+		}
+
+		.z-reader-header {
+			min-height: 0;
+			align-items: flex-start;
+			padding-block: 0.625rem;
+		}
+	}
+
 	.z-reader-from {
 		font-size: var(--z-reader-text);
 		line-height: var(--z-reader-leading);

@@ -13,7 +13,43 @@
 	}
 
 	.z-mail-view .z-compose__title {
-		@apply text-base font-semibold text-fg;
+		@apply text-base text-fg;
+	}
+
+	.z-mail-view .z-compose__header-subject {
+		padding: 0 1rem 0.625rem;
+	}
+
+	.z-mail-view .z-compose__input--header-subject {
+		font-size: 1rem;
+		font-weight: 400;
+		line-height: 1.35;
+	}
+
+	.z-mail-view .z-compose__input--header-subject::placeholder {
+		color: var(--z-fg-subtle);
+		font-weight: 400;
+	}
+
+	@media (max-width: 767px) {
+		.z-mail-view .z-compose__title {
+			font-size: 0.875rem;
+			font-weight: 500;
+			color: var(--z-fg-muted);
+		}
+
+		.z-mail-view .z-compose__field {
+			gap: 0.625rem;
+			padding-block: 0.375rem;
+		}
+
+		.z-mail-view .z-compose__body,
+		.z-mail-view .z-compose__input,
+		.z-mail-view .z-compose__input.z-compose-field-input,
+		.z-mail-view .z-compose-field-input {
+			font-size: 1rem;
+			line-height: 1.4;
+		}
 	}
 
 	.z-mail-view .z-compose__form {
@@ -77,15 +113,6 @@
 		border: none;
 		margin: 0;
 		padding: 0;
-	}
-
-	@media (max-width: 767px) {
-		.z-mail-view .z-compose__body,
-		.z-mail-view .z-compose__input,
-		.z-mail-view .z-compose__input.z-compose-field-input,
-		.z-mail-view .z-compose-field-input {
-			font-size: 1rem;
-		}
 	}
 
 	.z-mail-view .z-compose__signature {

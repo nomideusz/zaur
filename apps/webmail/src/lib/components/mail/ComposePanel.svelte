@@ -322,14 +322,14 @@
 	ondrop={handleDrop}
 >
 	<div class="z-compose z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-		<header class="flex shrink-0 flex-col gap-2 border-b border-border/80 px-4 py-2.5">
-			<div class="flex flex-wrap items-center justify-between gap-4 min-w-0">
+		<header class="z-compose__header flex shrink-0 flex-col border-b border-border/80">
+			<div class="z-compose__header-bar flex flex-wrap items-center justify-between gap-2 px-4 py-2 min-w-0">
 				<!-- Left: Close & Title -->
-				<div class="flex items-center gap-3 min-w-0">
+				<div class="flex items-center gap-2 min-w-0">
 					<button type="button" class="z-compose__back-btn shrink-0" aria-label="Save draft and go back" onclick={() => void saveDraftAndClose()}>
 						<ArrowLeft class="size-4" aria-hidden="true" />
 					</button>
-					<div class="flex items-baseline gap-2 min-w-0">
+					<div class="flex min-w-0 items-baseline gap-2">
 						<h1 class="z-compose__title truncate">{composeTitle}</h1>
 						{#if draftStatus}
 							<span class="text-xs text-fg-subtle shrink-0" aria-live="polite">({draftStatus.toLowerCase()})</span>
@@ -338,7 +338,7 @@
 				</div>
 
 				<!-- Right: Actions -->
-				<div class="flex items-center gap-2 shrink-0">
+				<div class="flex items-center gap-1 shrink-0 md:gap-2">
 					{#if !compose.isComposeEmpty}
 						<Button type="button" variant="ghost" onclick={() => void discardAndClose()}>
 							Discard
@@ -359,9 +359,18 @@
 					>
 						{isRichText ? 'Plain text' : 'Rich text'}
 					</Button>
-					<Button type="button" variant="ghost" onclick={openFilePicker}>
+					<Button type="button" variant="ghost" class="max-md:hidden" onclick={openFilePicker}>
 						<Paperclip class="size-4" aria-hidden="true" />
 						Attach
+					</Button>
+					<Button
+						type="button"
+						variant="ghost"
+						class="md:hidden"
+						title="Attach file"
+						onclick={openFilePicker}
+					>
+						<Paperclip class="size-4" aria-hidden="true" />
 					</Button>
 					<Button
 						type="submit"
@@ -374,8 +383,19 @@
 				</div>
 			</div>
 
+			<div class="z-compose__header-subject md:hidden">
+				<input
+					id="compose-subject-mobile"
+					type="text"
+					class="z-compose__input z-compose__input--header-subject"
+					placeholder="Subject (optional)"
+					autocomplete="off"
+					bind:value={compose.subject}
+				/>
+			</div>
+
 			{#if !settings.hideComposeHints && sendBlockedReason && compose.to.trim() && !recipientFocused}
-				<div class="text-xs text-danger" role="status">
+				<div class="px-4 pb-2 text-xs text-danger md:px-4 md:pb-2.5" role="status">
 					{sendBlockedReason}
 				</div>
 			{/if}
@@ -463,13 +483,15 @@
 					</div>
 				{/if}
 
-				<div class="z-compose__field z-compose__field--subject">
+				<div class="z-compose__field z-compose__field--subject hidden md:flex">
 					<label class="z-compose__label" for="compose-subject">Subject</label>
 					<div class="z-compose__control">
 						<input
 							id="compose-subject"
 							type="text"
 							class="z-compose__input"
+							placeholder="Subject (optional)"
+							autocomplete="off"
 							bind:value={compose.subject}
 						/>
 					</div>
