@@ -61,7 +61,7 @@
 			</div>
 
 			<a
-				href="/settings"
+				href="/settings/account"
 				role="menuitem"
 				class={cn('z-overflow-menu-item', onSettingsRoute && 'z-surface-active')}
 				onclick={close}

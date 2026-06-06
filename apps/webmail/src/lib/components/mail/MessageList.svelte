@@ -1017,7 +1017,7 @@
 						<div class="h-4 w-px bg-border/80 mx-1 shrink-0"></div>
 
 						<a
-							href="/settings"
+							href="/settings/account"
 							class="flex size-7 items-center justify-center rounded-full text-fg-muted hover:text-fg hover:bg-surface-sunken transition-colors shrink-0"
 							aria-label="Settings"
 						>

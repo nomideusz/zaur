@@ -1,1 +1,1 @@
-<!-- /settings redirects in +layout.server.ts -->
+<!-- Redirects to /settings/account in +page.server.ts -->
