@@ -7,6 +7,7 @@
 		type PushNotificationStatus
 	} from '$lib/utils/notifications';
 	import { ensureAppServiceWorkerReady, resetAppServiceWorker } from '$lib/utils/service-worker';
+	import IOSToggle from '$lib/components/ui/IOSToggle.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 
@@ -100,12 +101,11 @@
 		{:else if pushStatus.state === 'subscribed'}
 			<span class="text-fg-muted">Active</span>
 		{/if}
-		<input
-			type="checkbox"
-			disabled={busy || pushStatus.state === 'unsupported' || pushStatus.state === 'server_disabled'}
+		<IOSToggle
 			checked={settings.notifyOnNewMail}
-			onchange={async (e) => {
-				if (e.currentTarget.checked) {
+			disabled={busy || pushStatus.state === 'unsupported' || pushStatus.state === 'server_disabled'}
+			onchange={async (checked) => {
+				if (checked) {
 					await enablePush();
 				} else {
 					await disablePush();
