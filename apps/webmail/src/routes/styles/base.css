@@ -81,26 +81,4 @@
 	html.z-reduce-motion [style*='view-transition-name'] {
 		view-transition-name: none !important;
 	}
-
-	/*
-	 * iOS Safari zooms the page when focusing inputs below 16px.
-	 * Use at least 1rem on narrow viewports (keeps desktop density via .z-input md:text-sm).
-	 */
-	@media (max-width: 767px) {
-		input:not(
-				[type='checkbox'],
-				[type='radio'],
-				[type='range'],
-				[type='file'],
-				[type='hidden'],
-				[type='color'],
-				[type='button'],
-				[type='submit'],
-				[type='reset']
-			),
-		textarea,
-		select {
-			font-size: 1rem;
-		}
-	}
 }

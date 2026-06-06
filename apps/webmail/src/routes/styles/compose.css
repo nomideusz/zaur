@@ -80,7 +80,10 @@
 	}
 
 	@media (max-width: 767px) {
-		.z-mail-view .z-compose__body {
+		.z-mail-view .z-compose__body,
+		.z-mail-view .z-compose__input,
+		.z-mail-view .z-compose__input.z-compose-field-input,
+		.z-mail-view .z-compose-field-input {
 			font-size: 1rem;
 		}
 	}

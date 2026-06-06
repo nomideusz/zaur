@@ -18,3 +18,27 @@
 @import './styles/mail-view.css' layer(components);
 @import './styles/status-line.css' layer(components);
 @import './styles/motion.css';
+
+/*
+ * iOS Safari zooms when focusing fields below 16px. Component-layer rules (e.g. compose
+ * text-sm, .z-input md:text-sm) override @layer(base), so enforce 16px here — unlayered,
+ * after imports — on phones, touch tablets, and other coarse-pointer devices.
+ */
+@media (max-width: 767px), ((hover: none) and (pointer: coarse)) {
+	input:not(
+			[type='checkbox'],
+			[type='radio'],
+			[type='range'],
+			[type='file'],
+			[type='hidden'],
+			[type='color'],
+			[type='button'],
+			[type='submit'],
+			[type='reset']
+		),
+	textarea,
+	select,
+	[contenteditable='true'] {
+		font-size: 1rem !important;
+	}
+}
