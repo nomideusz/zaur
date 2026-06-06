@@ -324,17 +324,15 @@
 	<div class="z-compose z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 		<header class="z-compose__header flex shrink-0 flex-col border-b border-border/80">
 			<div class="z-compose__header-bar flex flex-wrap items-center justify-between gap-2 px-4 py-2 min-w-0">
-				<!-- Left: Close & Title -->
-				<div class="flex items-center gap-2 min-w-0">
+				<!-- Left: Back -->
+				<div class="flex min-w-0 items-center gap-2">
 					<button type="button" class="z-compose__back-btn shrink-0" aria-label="Save draft and go back" onclick={() => void saveDraftAndClose()}>
 						<ArrowLeft class="size-4" aria-hidden="true" />
 					</button>
-					<div class="flex min-w-0 items-baseline gap-2">
-						<h1 class="z-compose__title truncate">{composeTitle}</h1>
-						{#if draftStatus}
-							<span class="text-xs text-fg-subtle shrink-0" aria-live="polite">({draftStatus.toLowerCase()})</span>
-						{/if}
-					</div>
+					<h1 class="sr-only">{composeTitle}</h1>
+					{#if draftStatus}
+						<span class="text-xs text-fg-subtle shrink-0" aria-live="polite">{draftStatus}</span>
+					{/if}
 				</div>
 
 				<!-- Right: Actions -->

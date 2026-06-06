@@ -141,7 +141,7 @@
 	}
 
 	/* List pane header — fixed height for folder title ↔ bulk toolbar swap. */
-	.z-mail-view .z-mail-list-pane-header {
+	:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header {
 		position: sticky;
 		top: 0;
 		z-index: 10;
@@ -362,6 +362,66 @@
 	}
 
 	@media (max-width: 767px) {
+		:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header {
+			align-items: center;
+		}
+
+		/*
+		 * Header labels (All, Unseen, Emails, settings sections) — cap-height type reads
+		 * high when mathematically centered; asymmetric vertical padding nudges to optical middle.
+		 */
+		:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header .z-mail-list-pane-header__filter,
+		.z-mail-view .z-mail-list-pane-header .z-mobile-picker-trigger--compact {
+			box-sizing: border-box;
+			height: 2.25rem;
+			min-height: 2.25rem;
+			line-height: 1;
+			padding-top: calc((2.25rem - 1em) / 2 + 2px);
+			padding-bottom: calc((2.25rem - 1em) / 2 - 2px);
+		}
+
+		:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header .z-mail-list-pane-header__filter {
+			display: inline-flex;
+			align-items: center;
+			justify-content: center;
+			min-width: 2.25rem;
+			padding-inline: 0.625rem;
+			font-size: 0.75rem;
+			font-weight: 600;
+		}
+
+		.z-mail-view .z-mail-list-pane-header .z-mobile-picker-trigger--compact {
+			display: inline-flex;
+			align-items: center;
+			padding-inline: 0.5rem;
+			font-size: 0.8125rem;
+			font-weight: 500;
+			gap: 0.25rem;
+		}
+
+		.z-mail-view .z-mail-list-pane-header .z-mobile-picker-trigger__label {
+			line-height: 1;
+		}
+
+		:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header .z-icon-tap-target,
+		:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header .z-btn-icon {
+			display: inline-grid;
+			place-items: center;
+			height: 2.25rem;
+			width: 2.25rem;
+			min-height: 2.25rem;
+			min-width: 2.25rem;
+			padding: 0;
+			padding-top: 2px;
+			padding-bottom: 0;
+			box-sizing: border-box;
+		}
+
+		:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header .z-icon-tap-target svg,
+		:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header .z-btn-icon svg {
+			display: block;
+		}
+
 		.z-mail-view .z-mail-list-bulk-bar {
 			flex-wrap: nowrap;
 			align-items: center;

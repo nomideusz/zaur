@@ -8,7 +8,9 @@
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
+	import PenSquare from '$lib/components/icons/PenSquare.svelte';
 	import Settings from '$lib/components/icons/Settings.svelte';
+	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
 	import { goto } from '$app/navigation';
 	import {
@@ -49,7 +51,6 @@
 	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
 	import {
-		LABEL_MARK_IMPORTANT,
 		LABEL_NOT_IMPORTANT,
 		LABEL_SEEN,
 		LABEL_UNSEEN
@@ -277,8 +278,7 @@
 
 	const mobileListFilters: { id: MessageListReadFilter; label: string }[] = [
 		{ id: 'all', label: 'All' },
-		{ id: 'unread', label: LABEL_UNSEEN },
-		{ id: 'important', label: LABEL_MARK_IMPORTANT }
+		{ id: 'unread', label: LABEL_UNSEEN }
 	];
 
 	function sameMessageIds(a: MessagePreview[], b: MessagePreview[]): boolean {
@@ -993,18 +993,18 @@
 					{/if}
 				</div>
 
-				<!-- Mobile Filters & Settings Button -->
-				{#if mailboxRouteId}
-					<div class="flex items-center gap-1.5 md:hidden shrink-0">
+				<!-- Mobile Filters, Settings & Compose -->
+				<div class="flex items-center gap-1.5 md:hidden shrink-0">
+					{#if mailboxRouteId}
 						{#each mobileListFilters as opt (opt.id)}
 							{@const isActive = readFilter === opt.id}
 							<button
 								type="button"
 								class={cn(
-									'rounded-full px-2 py-0.5 text-xs font-semibold transition-colors',
+									'z-mail-list-pane-header__filter rounded-md transition-colors',
 									isActive
-										? 'bg-accent/10 text-accent font-semibold'
-										: 'text-fg-muted hover:text-fg'
+										? 'bg-accent/10 text-accent'
+										: 'z-tap-target-bg text-fg-muted hover:text-fg'
 								)}
 								onclick={() => {
 									readFilter = opt.id;
@@ -1013,18 +1013,22 @@
 								{opt.label}
 							</button>
 						{/each}
-						
-						<div class="h-4 w-px bg-border/80 mx-1 shrink-0"></div>
+
+						<div class="mx-1 h-4 w-px shrink-0 self-center bg-border/80" role="separator"></div>
 
 						<a
 							href="/settings/account"
-							class="flex size-7 items-center justify-center rounded-full text-fg-muted hover:text-fg hover:bg-surface-sunken transition-colors shrink-0"
+							class="z-icon-tap-target rounded-full shrink-0"
 							aria-label="Settings"
 						>
 							<Settings class="size-4" />
 						</a>
-					</div>
-				{/if}
+					{/if}
+
+					<IconButton label="New message" class="rounded-full" onclick={() => goto('/mail/compose')}>
+						<PenSquare class="size-4" aria-hidden="true" />
+					</IconButton>
+				</div>
 			{/if}
 		</header>
 	{/if}

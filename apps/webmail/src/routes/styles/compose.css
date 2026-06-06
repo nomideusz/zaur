@@ -12,10 +12,6 @@
 		opacity: 0.6;
 	}
 
-	.z-mail-view .z-compose__title {
-		@apply text-base text-fg;
-	}
-
 	.z-mail-view .z-compose__header-subject {
 		padding: 0 1rem 0.625rem;
 	}
@@ -32,12 +28,6 @@
 	}
 
 	@media (max-width: 767px) {
-		.z-mail-view .z-compose__title {
-			font-size: 0.875rem;
-			font-weight: 500;
-			color: var(--z-fg-muted);
-		}
-
 		.z-mail-view .z-compose__field {
 			gap: 0.625rem;
 			padding-block: 0.375rem;

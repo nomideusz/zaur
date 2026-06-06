@@ -102,9 +102,13 @@
 		aria-controls={open ? menuId : undefined}
 		onclick={toggleOpen}
 	>
-		<span class="min-w-0 flex-1 truncate text-left">{selectedLabel}</span>
+		<span class="z-mobile-picker-trigger__label min-w-0 flex-1 truncate text-left">{selectedLabel}</span>
 		<ChevronDown
-			class={cn('size-5 shrink-0 text-fg-subtle transition-transform duration-150', open && 'rotate-180')}
+			class={cn(
+				'shrink-0 text-fg-subtle transition-transform duration-150',
+				compact ? 'size-4' : 'size-5',
+				open && 'rotate-180'
+			)}
 			aria-hidden="true"
 		/>
 	</button>
@@ -113,7 +117,7 @@
 		<ul
 			id={menuId}
 			role="listbox"
-			class="z-mobile-picker-menu"
+			class={cn('z-mobile-picker-menu', compact && 'z-mobile-picker-menu--compact')}
 			style={menuStyle}
 			aria-label={label}
 		>

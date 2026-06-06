@@ -3,11 +3,9 @@
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
 	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
-	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { settingsShellClass } from '$lib/mail/layout';
-	import { goto } from '$lib/utils/navigation';
 	import { cn } from '$lib/utils/cn';
 	import type { Snippet } from 'svelte';
 
@@ -28,13 +26,6 @@
 	const sectionLinks = $derived(settingsNavLinks());
 	const mailHref = $derived(settings.preferredMailHref());
 	const pathname = $derived($page.url.pathname);
-
-	const settingsOptions = $derived(
-		sectionLinks.map((link) => ({
-			value: link.href,
-			label: link.label
-		}))
-	);
 
 	const iconMap = {
 		account: User,
@@ -92,29 +83,37 @@
 	<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 		<!-- Mobile Header Navigation (Mobile only) -->
 		<header
-			class="z-mail-list-pane-header flex h-14 shrink-0 items-center justify-between overflow-hidden border-b border-border/80 px-4 gap-3 md:hidden animate-fade-in"
+			class="z-mail-list-pane-header flex h-14 shrink-0 items-center gap-2 overflow-hidden border-b border-border/80 px-4 md:hidden animate-fade-in"
 			aria-label="Mobile settings navigation"
 		>
-			<div class="flex items-center gap-2 min-w-0">
-				<a
-					href={mailHref}
-					class="flex items-center text-accent hover:opacity-80 transition-opacity no-underline shrink-0"
-					aria-label="Back to mail"
-				>
-					<ChevronLeft class="size-6" />
-				</a>
-				<MobilePicker
-					label="Settings"
-					value={pathname}
-					options={settingsOptions}
-					onchange={(val) => {
-						if (val === pathname) return;
-						goto(val);
-					}}
-					compact={true}
-					class="w-44 flex-initial"
-				/>
-			</div>
+			<a
+				href={mailHref}
+				class="z-icon-tap-target rounded-full shrink-0 text-accent"
+				aria-label="Back to mail"
+			>
+				<ChevronLeft class="size-5" aria-hidden="true" />
+			</a>
+
+			<nav
+				class="z-settings-mobile-nav flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto"
+				aria-label="Settings sections"
+			>
+				{#each sectionLinks as link (link.href)}
+					{@const isActive = isSettingsNavActive(pathname, link.href)}
+					<a
+						href={link.href}
+						class={cn(
+							'z-mail-list-pane-header__filter shrink-0 rounded-md transition-colors no-underline',
+							isActive
+								? 'bg-accent/10 text-accent'
+								: 'z-tap-target-bg text-fg-muted hover:text-fg'
+						)}
+						aria-current={isActive ? 'page' : undefined}
+					>
+						{link.label}
+					</a>
+				{/each}
+			</nav>
 		</header>
 
 		<!-- Scrollable settings body -->

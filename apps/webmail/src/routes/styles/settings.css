@@ -19,6 +19,16 @@
 		.z-settings-view {
 			--z-settings-field-pad-y: 0.5625rem;
 		}
+
+		.z-settings-mobile-nav {
+			scrollbar-width: none;
+			-ms-overflow-style: none;
+			-webkit-overflow-scrolling: touch;
+		}
+
+		.z-settings-mobile-nav::-webkit-scrollbar {
+			display: none;
+		}
 	}
 
 	.z-settings-content {

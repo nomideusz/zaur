@@ -176,13 +176,37 @@
 		@apply inline-flex cursor-pointer items-center gap-2 rounded-md px-3 py-1.5 text-sm font-medium text-fg-muted transition-all hover:bg-surface-sunken hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.98];
 	}
 
-	/* Icon-only actions — semi-transparent resting background as visible tap target. */
+	/*
+	 * Resting semi-transparent fill — visible before press so the affordance reads
+	 * larger than the glyph (https://anthonyhobday.com/sideprojects/visualtechniques/techniques/background/semi-transparent-background-as-tap-target).
+	 */
+	.z-tap-target-bg {
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 52%, transparent);
+	}
+
+	.z-tap-target-bg:hover {
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 62%, transparent);
+	}
+
 	.z-btn-icon {
-		@apply inline-flex cursor-pointer items-center justify-center rounded-lg bg-surface-sunken/40 text-fg-muted transition-all hover:bg-surface-sunken/70 hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:bg-surface-sunken/80 active:scale-[0.96];
+		@apply inline-flex cursor-pointer items-center justify-center rounded-lg text-fg-muted transition-all hover:text-fg focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.96];
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 52%, transparent);
+	}
+
+	.z-btn-icon:hover {
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 62%, transparent);
 	}
 
 	.z-icon-tap-target {
-		@apply inline-flex shrink-0 items-center justify-center rounded-md bg-surface-sunken/40 text-fg-muted transition-colors hover:bg-surface-sunken/70 hover:text-fg active:bg-surface-sunken/80;
+		@apply inline-flex shrink-0 items-center justify-center rounded-md text-fg-muted transition-colors hover:text-fg;
+		min-height: 2.25rem;
+		min-width: 2.25rem;
+		padding: 0.4375rem;
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 52%, transparent);
+	}
+
+	.z-icon-tap-target:hover {
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 62%, transparent);
 	}
 
 	.z-icon-tap-target:focus-visible {
