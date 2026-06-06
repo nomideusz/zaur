@@ -24,8 +24,10 @@
     toggleViewMode: () => void;
   }
 
+  export type PdfDocumentSource = string | Blob | ArrayBuffer | Uint8Array;
+
   export interface PdfViewerRootProps {
-    src: string;
+    src: PdfDocumentSource;
     children?: Snippet;
     class?: string;
     initialPage?: number;
@@ -120,6 +122,16 @@
 
   setContext('pdfViewerContext', context);
 
+  async function pdfDocumentParams(source: PdfDocumentSource) {
+    if (typeof source === 'string') {
+      return { url: source };
+    }
+    if (source instanceof Blob) {
+      return { data: await source.arrayBuffer() };
+    }
+    return { data: source };
+  }
+
   onMount(async () => {
     try {
       loading = true;
@@ -133,8 +145,7 @@
         import.meta.url
       ).toString();
 
-      // Load the PDF document
-      const loadingTask = pdfjsLib.getDocument({ url: src });
+      const loadingTask = pdfjsLib.getDocument(await pdfDocumentParams(src));
       const doc = await loadingTask.promise;
       
       pdf = doc;

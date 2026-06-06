@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onDestroy } from 'svelte';
 	import FileText from '$lib/components/icons/FileText.svelte';
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import Download from '$lib/components/icons/Download.svelte';
@@ -27,7 +26,7 @@
 	let expanded = $state(false);
 
 	let activePreviewAttachment = $state<MessageAttachment | null>(null);
-	let previewUrl = $state<string | null>(null);
+	let previewBlob = $state<Blob | null>(null);
 
 	const canCollapse = $derived(attachments.length > COLLAPSE_THRESHOLD);
 
@@ -51,10 +50,7 @@
 		try {
 			if (isPdf) {
 				const blob = await getAttachmentBlob(attachment);
-				if (previewUrl) {
-					URL.revokeObjectURL(previewUrl);
-				}
-				previewUrl = URL.createObjectURL(blob);
+				previewBlob = blob;
 				activePreviewAttachment = attachment;
 			} else {
 				await downloadAttachment(attachment);
@@ -77,10 +73,7 @@
 	}
 
 	function closePreview() {
-		if (previewUrl) {
-			URL.revokeObjectURL(previewUrl);
-			previewUrl = null;
-		}
+		previewBlob = null;
 		activePreviewAttachment = null;
 	}
 
@@ -90,11 +83,6 @@
 		}
 	}
 
-	onDestroy(() => {
-		if (previewUrl) {
-			URL.revokeObjectURL(previewUrl);
-		}
-	});
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
@@ -152,7 +140,7 @@
 	{/if}
 </section>
 
-{#if activePreviewAttachment && previewUrl}
+{#if activePreviewAttachment && previewBlob}
 	<!-- Backdrop wrapper -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -167,7 +155,7 @@
 			onpointerdown={(e) => e.stopPropagation()}
 		>
 			<PdfViewer.Root
-				src={previewUrl}
+				src={previewBlob}
 				class="w-full h-full bg-surface border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden"
 			>
 				<!-- Top Header bar -->
