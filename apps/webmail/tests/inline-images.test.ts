@@ -54,6 +54,15 @@ describe('inline email images', () => {
 		);
 	});
 
+	it('rewrites compose blob-id cids without attachment metadata', () => {
+		const blobId = 'ecticj3tvioorrtakcwtw9ex0k9dex73kk09hfytrc91ebuo0mvg1mos37g0cbq';
+		const html = `<img src="cid:${blobId}" alt="inline">`;
+		const rewritten = inlineHtmlForDisplay(html);
+
+		assert.match(rewritten, /src="\/api\/jmap\/download\?/);
+		assert.doesNotMatch(rewritten, /cid:/);
+	});
+
 	it('leaves unknown cid sources unchanged', () => {
 		const html = '<img src="cid:missing@example">';
 		assert.equal(rewriteInlineCidImages(html, new Map()), html);

@@ -6,6 +6,7 @@ import { invalidAddressParts, parseAddressList, formatAddressList } from '$lib/u
 import { mapEmailDetail } from '$lib/jmap/map';
 import { ensureBodyIncludesSignature, isComposeBodyEmpty } from '$lib/mail/compose-body';
 import { plainTextToSafeHtml } from '$lib/email/html';
+import { extractInlineCidsFromHtml } from '$lib/email/inline-images';
 import { isOfflineError } from '$lib/utils/network';
 import { outbox } from '$lib/stores/outbox.svelte';
 import { settings, type ComposeFormat } from '$lib/stores/settings.svelte';
@@ -197,8 +198,37 @@ class ComposeStore {
 			type: attachment.type,
 			size: attachment.size,
 			blobId: attachment.blobId,
-			uploading: false
+			uploading: false,
+			...(attachment.cid ? { cid: attachment.cid } : {}),
+			...(attachment.disposition ? { disposition: attachment.disposition } : {})
 		}));
+		this.ensureInlineAttachmentsFromHtml(this.bodyHtml);
+	}
+
+	ensureInlineAttachmentsFromHtml(html?: string) {
+		if (!html?.trim()) return;
+
+		for (const cid of extractInlineCidsFromHtml(html)) {
+			if (!/^[a-z0-9]{16,}$/i.test(cid)) continue;
+			const exists = this.attachments.some(
+				(attachment) => attachment.blobId === cid || attachment.cid === cid
+			);
+			if (exists) continue;
+
+			this.attachments = [
+				...this.attachments,
+				{
+					id: crypto.randomUUID(),
+					name: 'inline.png',
+					type: 'image/png',
+					size: 0,
+					blobId: cid,
+					uploading: false,
+					cid,
+					disposition: 'inline'
+				}
+			];
+		}
 	}
 
 	private clearAttachments() {

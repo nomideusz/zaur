@@ -77,6 +77,27 @@ export function buildInlineImageMapFromAttachments(
 	return map;
 }
 
+function inlinePartFromCidFallback(rawCid: string): InlineImagePart | undefined {
+	const cid = rawCid.replace(/^<|>$/g, '').trim();
+	if (!cid) return undefined;
+	// Compose stores JMAP blob IDs directly as Content-IDs.
+	if (/^[a-z0-9]{16,}$/i.test(cid)) {
+		return { blobId: cid, name: 'inline.png', type: 'image/png' };
+	}
+	return undefined;
+}
+
+export function extractInlineCidsFromHtml(html: string): string[] {
+	if (!html.trim()) return [];
+	const cids = new Set<string>();
+	const pattern = /\bsrc\s*=\s*(["'])cid:([^"']+)\1/gi;
+	for (const match of html.matchAll(pattern)) {
+		const cid = match[2]?.replace(/^<|>$/g, '').trim();
+		if (cid) cids.add(cid);
+	}
+	return [...cids];
+}
+
 export function inlineImageDownloadUrl(part: InlineImagePart): string {
 	const params = new URLSearchParams({
 		blobId: part.blobId,
@@ -116,12 +137,12 @@ export function rewriteInlineDownloadUrlsToCid(
 
 /** Rewrite `cid:` image sources to same-origin JMAP blob URLs (safe under default CSP). */
 export function rewriteInlineCidImages(html: string, inlineImages: Map<string, InlineImagePart>): string {
-	if (!html.trim() || inlineImages.size === 0) return html;
+	if (!html.trim()) return html;
 
 	return html.replace(
 		/(<img\b[^>]*?\ssrc\s*=\s*(["']))cid:([^"']+)\2/gi,
 		(match, prefix: string, quote: string, rawCid: string) => {
-			const part = inlineImages.get(normalizeCid(rawCid));
+			const part = inlineImages.get(normalizeCid(rawCid)) ?? inlinePartFromCidFallback(rawCid);
 			if (!part) return match;
 			return `${prefix}${inlineImageDownloadUrl(part)}${quote}`;
 		}
@@ -133,7 +154,12 @@ export function inlineHtmlForDisplay(
 	html: string,
 	attachments: InlineAttachmentSource[] = []
 ): string {
-	return rewriteInlineCidImages(html, buildInlineImageMapFromAttachments(attachments));
+	const map = buildInlineImageMapFromAttachments(attachments);
+	for (const cid of extractInlineCidsFromHtml(html)) {
+		const fallback = inlinePartFromCidFallback(cid);
+		if (fallback) registerInlineImage(map, fallback, cid);
+	}
+	return rewriteInlineCidImages(html, map);
 }
 
 export function inlineHtmlForStorage(

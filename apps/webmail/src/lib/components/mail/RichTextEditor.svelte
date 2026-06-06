@@ -251,7 +251,7 @@
 			onclick={() => { editor?.chain().focus().toggleStrike().run(); updateActiveStates(); }}
 			title="Strikethrough"
 		>
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><path d="M16 6A5 5 0 0 0 8 9h8a5 5 0 0 1-8 3"/></svg>
+			<span class="z-rich-editor__format-letter z-rich-editor__format-letter--strike" aria-hidden="true">S</span>
 		</button>
 
 		<div class="z-rich-editor__divider"></div>
@@ -343,6 +343,21 @@
 	.z-rich-editor__btn--active {
 		background-color: var(--z-active, rgba(0,0,0,0.1));
 		color: var(--z-accent, #0076ff);
+	}
+
+	.z-rich-editor__format-letter {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 16px;
+		height: 16px;
+		font: 700 13px/1 Georgia, 'Times New Roman', serif;
+		color: currentColor;
+	}
+
+	.z-rich-editor__format-letter--strike {
+		text-decoration: line-through;
+		text-decoration-thickness: 1.5px;
 	}
 
 	.z-rich-editor__divider {

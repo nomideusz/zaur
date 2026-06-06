@@ -349,8 +349,11 @@
 						variant="ghost"
 						onclick={() => {
 							isRichText = !isRichText;
-							if (isRichText && !compose.bodyHtml) {
-								compose.bodyHtml = plainTextToSafeHtml(compose.body);
+							if (isRichText) {
+								if (!compose.bodyHtml) {
+									compose.bodyHtml = plainTextToSafeHtml(compose.body);
+								}
+								compose.ensureInlineAttachmentsFromHtml(compose.bodyHtml);
 							}
 						}}
 					>
