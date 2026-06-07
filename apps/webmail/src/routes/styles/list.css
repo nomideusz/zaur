@@ -912,12 +912,14 @@
 	}
 
 	/*
-	 * Important subjects — per-message unicorn rainbow (hue + phase from message id).
+	 * Important subjects — per-message aurora gradient (hue + phase from message id).
 	 * System font, full Unicode; light/dark via --important-rainbow-* tokens.
+	 * X travel + keyframe fractions — keep in sync with important-rainbow.svelte.ts.
 	 */
 	:root {
 		--important-rainbow-l: 0.48;
 		--important-rainbow-c: 0.17;
+		--important-rainbow-c-vivid: 0.26;
 		--important-rainbow-band: var(--z-content-max-width);
 		/* Hover sweep distance (rem) — keep in sync with RAINBOW_PHASE_SPAN_REM in important-rainbow.svelte.ts */
 		--important-rainbow-travel: 12;
@@ -926,6 +928,7 @@
 	.dark {
 		--important-rainbow-l: 0.80;
 		--important-rainbow-c: 0.15;
+		--important-rainbow-c-vivid: 0.24;
 	}
 
 	.z-mail-list-subject--important {
@@ -946,11 +949,32 @@
 	}
 
 	@keyframes z-important-rainbow {
-		from {
+		0% {
 			background-position: calc(var(--important-phase-offset, 0) * 1rem) 50%;
 		}
 
-		to {
+		25% {
+			background-position: calc(
+					(var(--important-phase-offset, 0) - var(--important-rainbow-travel, 12) * 0.25) * 1rem
+				)
+				100%;
+		}
+
+		50% {
+			background-position: calc(
+					(var(--important-phase-offset, 0) - var(--important-rainbow-travel, 12) * 0.5) * 1rem
+				)
+				50%;
+		}
+
+		75% {
+			background-position: calc(
+					(var(--important-phase-offset, 0) - var(--important-rainbow-travel, 12) * 0.75) * 1rem
+				)
+				0%;
+		}
+
+		100% {
 			background-position: calc(
 					(var(--important-phase-offset, 0) - var(--important-rainbow-travel, 12)) * 1rem
 				)
@@ -964,20 +988,20 @@
 			display: block;
 			min-width: 0;
 			background-image: linear-gradient(
-				90deg,
-				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 0deg)) 0%,
-				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 40deg)) 12%,
-				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 80deg)) 24%,
-				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 130deg)) 36%,
-				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 180deg)) 48%,
-				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 220deg)) 60%,
-				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 260deg)) 72%,
-				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 300deg)) 84%,
-				oklch(var(--important-rainbow-l) var(--important-rainbow-c) calc(var(--_h) + 340deg)) 100%
+				135deg,
+				oklch(var(--important-rainbow-l) var(--important-rainbow-c-vivid) calc(var(--_h) + 0deg)),
+				oklch(var(--important-rainbow-l) calc(var(--important-rainbow-c-vivid) * 1.08) calc(var(--_h) + 45deg)),
+				oklch(var(--important-rainbow-l) var(--important-rainbow-c-vivid) calc(var(--_h) + 90deg)),
+				oklch(var(--important-rainbow-l) calc(var(--important-rainbow-c-vivid) * 1.05) calc(var(--_h) + 150deg)),
+				oklch(var(--important-rainbow-l) calc(var(--important-rainbow-c-vivid) * 1.1) calc(var(--_h) + 210deg)),
+				oklch(var(--important-rainbow-l) var(--important-rainbow-c-vivid) calc(var(--_h) + 270deg)),
+				oklch(var(--important-rainbow-l) calc(var(--important-rainbow-c-vivid) * 1.06) calc(var(--_h) + 330deg)),
+				oklch(var(--important-rainbow-l) var(--important-rainbow-c-vivid) calc(var(--_h) + 0deg))
 			);
 			background-repeat: no-repeat;
-			background-size: var(--important-rainbow-band) 100%;
-			background-position: calc(var(--important-phase-offset, 0) * 1rem) 50%;
+			background-size: var(--important-rainbow-band) 160%;
+			background-position: calc(var(--important-phase-offset, 0) * 1rem)
+				var(--important-phase-offset-y, 50%);
 			-webkit-background-clip: text;
 			background-clip: text;
 			-webkit-text-fill-color: transparent;
@@ -1002,6 +1026,13 @@
 			transform: translateZ(0);
 		}
 
+		/* Picked colors — freeze while idle; animation resumes while sampling (see --important-picking). */
+		.z-mail-list-subject--important-picked:not(.z-mail-list-subject--important-picking) {
+			animation: none !important;
+			background-position: calc(var(--important-phase-offset, 0) * 1rem)
+				var(--important-phase-offset-y, 50%);
+		}
+
 		@media (prefers-reduced-motion: no-preference) {
 			/*
 			 * All Important subjects (list rows, reader heading, every folder): animation
@@ -1009,7 +1040,7 @@
 			 * Running only on hover/focus with a precise pointer (not touch).
 			 */
 			html:not(.z-reduce-motion) .z-mail-list-subject--important {
-				animation: z-important-rainbow 3s ease-in-out infinite alternate;
+				animation: z-important-rainbow 8s ease-in-out infinite alternate;
 				animation-play-state: paused;
 				animation-fill-mode: both;
 			}
@@ -1023,6 +1054,17 @@
 					.group\/message:focus-visible
 					.z-mail-list-subject--important {
 					animation-play-state: running;
+					will-change: background-position;
+				}
+
+				html:not(.z-reduce-motion)
+					.group\/message:hover
+					.z-mail-list-subject--important-picked,
+				html:not(.z-reduce-motion)
+					.group\/message:focus-visible
+					.z-mail-list-subject--important-picked {
+					animation: z-important-rainbow 8s ease-in-out infinite alternate !important;
+					animation-play-state: running !important;
 					will-change: background-position;
 				}
 			}

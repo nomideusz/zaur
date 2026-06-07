@@ -500,7 +500,6 @@
 
 				<div class="z-compose__field z-compose__field--subject">
 					<label class="sr-only" for="compose-subject">Subject</label>
-					<span class="z-compose__prefix z-compose__prefix--empty" aria-hidden="true"></span>
 					<input
 						id="compose-subject"
 						type="text"

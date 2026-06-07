@@ -64,7 +64,7 @@
 
 	const listRowLinkClass = (current: boolean) =>
 		cn(
-			'z-list-row flex w-full min-w-0 items-start gap-3 px-4 py-2.5 text-left no-underline transition-colors',
+			'group/message z-list-row flex w-full min-w-0 items-start gap-3 px-4 py-2.5 text-left no-underline transition-colors',
 			current && 'z-list-row--current'
 		);
 	const listSenderClass = (unread: boolean) =>
