@@ -208,11 +208,6 @@
 		if (readFilter === 'unread') {
 			return listMessages.filter((message) => isNewUnreadListRow(message));
 		}
-		if (readFilter === 'new') {
-			return listMessages.filter(
-				(message) => isNewUnreadListRow(message) && !message.important
-			);
-		}
 		if (readFilter === 'read') {
 			return listMessages.filter((message) => !isNewUnreadListRow(message));
 		}
@@ -254,11 +249,9 @@
 	const filteredEmptyMessage = $derived(
 		readFilter === 'unread'
 			? 'No unseen messages.'
-			: readFilter === 'new'
-				? 'No new messages.'
-				: readFilter === 'important'
-					? 'No important messages.'
-					: 'No seen messages.'
+			: readFilter === 'important'
+				? 'No important messages.'
+				: 'No seen messages.'
 	);
 
 	const listToolbarDisabled = $derived(loading || !!error || !messages.length);

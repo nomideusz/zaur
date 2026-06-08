@@ -29,6 +29,14 @@
 			overflow: visible;
 		}
 
+		.z-app-shell-header--mail-list:has(.z-mail-list-bulk-header--shell) {
+			padding-inline: 0;
+		}
+
+		.z-app-shell-header--mail-list .z-mail-list-bulk-header--shell {
+			min-height: var(--height-header);
+		}
+
 		.z-app-shell-header__center .z-mail-list-toolbar {
 			justify-content: center;
 		}

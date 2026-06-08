@@ -191,7 +191,7 @@
 </script>
 
 {#if latest}
-	<div class="z-reader-toolbar flex shrink-0 items-center gap-4">
+	<div class="z-reader-toolbar flex min-w-0 shrink-0 items-center justify-end gap-3">
 		{#if isDraft}
 			<a href="/mail/compose?draft={latest.id}" class="z-mail-text-nav__link">Edit</a>
 			<button
@@ -201,14 +201,19 @@
 			>
 				{deleteLabel}
 			</button>
-			<button type="button" class="z-mail-text-nav__action" onclick={() => void sendDraft()}>
-				Send
-			</button>
-		{:else}
-			<button type="button" class="z-mail-text-nav__action" onclick={primaryReply}>
-				{primaryReplyLabel}
-			</button>
 		{/if}
+
+		<div class="z-header-action-zone">
+			{#if isDraft}
+				<button type="button" class="z-mail-text-nav__action" onclick={() => void sendDraft()}>
+					Send
+				</button>
+			{:else}
+				<button type="button" class="z-mail-text-nav__action" onclick={primaryReply}>
+					{primaryReplyLabel}
+				</button>
+			{/if}
+		</div>
 
 		{#if !isDraft || showDraftOverflowMenu}
 			<OverflowMenu

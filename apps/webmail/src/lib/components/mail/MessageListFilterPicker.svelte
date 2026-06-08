@@ -16,8 +16,7 @@
 	const options: { value: MessageListReadFilter; label: string }[] = [
 		{ value: 'all', label: 'All' },
 		{ value: 'unread', label: LABEL_UNSEEN },
-		{ value: 'important', label: LABEL_MARK_IMPORTANT },
-		{ value: 'new', label: 'New' }
+		{ value: 'important', label: LABEL_MARK_IMPORTANT }
 	];
 </script>
 

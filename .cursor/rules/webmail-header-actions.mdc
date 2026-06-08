@@ -8,23 +8,24 @@ alwaysApply: false
 
 Each header row (app shell, `.z-mail-text-nav__row`, settings nav bar) may have **at most one primary action**.
 
-## Primary action (top-right)
+## Primary action (local header, trailing edge)
 
-The main outcome for the screen is a **simple accent link** in the header’s end column — same pattern as **Reply**, **Send**, and **New message**.
+The main outcome lives in a **`.z-header-action-zone`** at the trailing edge of the **pane header** that owns the action — not the far app-shell corner on wide desktop.
 
 | Requirement | Detail |
 |-------------|--------|
-| **Class** | `.z-mail-text-nav__action` |
+| **Class** | `.z-mail-text-nav__action` inside `.z-header-action-zone` |
 | **Element** | `<a>` for navigation, `<button>` for in-place actions (Send, Reply) |
 | **Look** | Semibold accent text, no button chrome, no icon — label only |
 | **Hover** | Accent underline |
-| **Placement** | Top-right of the header row (`.z-app-shell-header__end` or `.z-mail-text-nav__actions`) |
+| **Zone** | Left border + padding isolates the action from filters / secondary links |
 
 Examples:
-- **Inbox (app shell)**: **New** / **New message** (link → compose)
-- **Reader**: **Reply** or **Reply all** (button)
-- **Compose**: **Send** (button)
-- **Draft reader**: **Send** (button)
+- **Inbox list (desktop)**: filters left · **New message** in list-pane header zone
+- **Inbox (mobile shell)**: **New** link in app shell end
+- **Reader**: secondary links · **Reply** / **Send** zone · More
+- **Compose**: Discard / Attach · **Send** zone
+- **Search (no list toolbar)**: **New message** stays in app shell end
 
 Do **not** use `Button`, filled pills, or icon+label buttons for the primary header action.
 
@@ -42,10 +43,12 @@ Do **not** use `Button`, filled pills, or icon+label buttons for the primary hea
 ## Layout pattern
 
 ```
-[ secondary links / pickers … ]     [ title — normal weight ]     [ primary __action ]
+[ secondary links / filters … ]  |  [ primary __action in .z-header-action-zone ]
 ```
 
-Bulk select bar (mobile shell): Cancel (icon) · count · Select · Trash · More — not a primary action row.
+On mobile shell only, inbox **New** may sit in `.z-app-shell-header__end` when the list toolbar is in the shell center.
+
+Bulk select bar (mobile shell): checkbox · Select · count · Cancel · Trash · Actions (Unsee only) — text links like reader/compose, not icon buttons.
 
 ## Do not
 
@@ -57,6 +60,7 @@ Bulk select bar (mobile shell): Cancel (icon) · count · Select · Trash · Mor
 
 ## When adding a header
 
-1. Pick the single primary outcome → `.z-mail-text-nav__action` in the end column
+1. Pick the single primary outcome → `.z-mail-text-nav__action` inside `.z-header-action-zone` on the owning pane header
 2. Demote everything else → `__link`, `IconButton`, or overflow menu
 3. Keep the title/logo at normal weight
+4. On wide desktop, avoid placing mail actions in `.z-app-shell-header__end` when the list/reader/compose pane already has a header row

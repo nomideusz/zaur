@@ -234,9 +234,11 @@
 				</IconButton>
 			{/if}
 			<a href="/mail/compose" class="z-mail-text-nav__action shrink-0 md:hidden">New</a>
-			<a href="/mail/compose" class="z-mail-text-nav__action hidden shrink-0 md:inline-flex">
-				New message
-			</a>
+			{#if !mailListToolbarActive}
+				<a href="/mail/compose" class="z-mail-text-nav__action hidden shrink-0 md:inline-flex">
+					New message
+				</a>
+			{/if}
 		{:else if onContactsRoute && pageCtx?.primaryAction?.kind === 'button'}
 			{@const action = pageCtx.primaryAction}
 			{@const ActionIcon = action.icon ?? UserPlus}

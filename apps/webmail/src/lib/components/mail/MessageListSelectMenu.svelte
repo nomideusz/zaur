@@ -9,17 +9,10 @@
 	interface Props {
 		disabled?: boolean;
 		placement?: OverflowMenuPlacement;
-		/** Compact text trigger for mobile shell bulk bar. */
-		showLabel?: boolean;
-		triggerClass?: string;
+		class?: string;
 	}
 
-	let {
-		disabled = false,
-		placement = 'bottom',
-		showLabel = false,
-		triggerClass = ''
-	}: Props = $props();
+	let { disabled = false, placement = 'bottom', class: className = '' }: Props = $props();
 
 	let open = $state(false);
 	const side = $derived(placement === 'top' ? 'top' : 'bottom');
@@ -35,18 +28,10 @@
 	<DropdownMenu.Trigger
 		aria-label="Selection options"
 		aria-controls={menuId}
-		class={cn(
-			showLabel
-				? 'inline-flex min-h-8 items-center gap-0.5 rounded-md px-1.5 py-1 text-sm font-medium text-fg-muted transition-colors hover:text-fg disabled:cursor-not-allowed disabled:opacity-60'
-				: 'inline-flex min-h-8 items-center justify-center rounded-md px-2 py-1.5 text-fg-muted transition-colors hover:bg-surface-sunken/60 hover:text-fg disabled:cursor-not-allowed disabled:opacity-60',
-			triggerClass
-		)}
+		class={cn('z-mail-list-select-trigger', className)}
 		{disabled}
 	>
-		{#if showLabel}
-			<span>Select</span>
-		{/if}
-		<ChevronDown class="size-3.5 shrink-0" aria-hidden="true" />
+		<ChevronDown class="size-4 shrink-0" aria-hidden="true" />
 	</DropdownMenu.Trigger>
 
 	<DropdownMenu.Portal>

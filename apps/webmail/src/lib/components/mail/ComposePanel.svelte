@@ -403,15 +403,17 @@
 						wrapDisabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
 					>
 						{#snippet trigger({ props })}
-							<button
-								{...props}
-								type="submit"
-								form="compose-form"
-								class="z-mail-text-nav__action"
-								disabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
-							>
-								{sendLabel}
-							</button>
+							<div class="z-header-action-zone">
+								<button
+									{...props}
+									type="submit"
+									form="compose-form"
+									class="z-mail-text-nav__action"
+									disabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
+								>
+									{sendLabel}
+								</button>
+							</div>
 						{/snippet}
 					</TooltipWrap>
 				</div>
