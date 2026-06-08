@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { onNavigate } from '$app/navigation';
-	import { configure } from 'svelte-realtime/client';
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import InstallPrompt from '$lib/components/pwa/InstallPrompt.svelte';
@@ -15,8 +14,6 @@
 	import { ensureAppServiceWorkerReady } from '$lib/utils/service-worker';
 
 	let { children } = $props();
-
-	configure({ auth: true });
 
 	const PRELOAD_RELOAD_KEY = 'zaur:vite-preload-reload-at';
 

@@ -1,10 +1,6 @@
-FROM node:22-trixie-slim AS builder
+FROM node:22-alpine AS builder
 
 WORKDIR /app
-
-RUN apt-get update && \
-	apt-get install -y --no-install-recommends git ca-certificates && \
-	rm -rf /var/lib/apt/lists/*
 
 RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
 
@@ -29,7 +25,7 @@ RUN pnpm --filter @nomideusz/svelte-calendar package
 RUN pnpm --filter @zaur/webmail build
 RUN pnpm --filter @zaur/webmail --prod deploy /out --legacy
 
-FROM node:22-trixie-slim AS runner
+FROM node:22-alpine AS runner
 
 WORKDIR /app
 
@@ -39,8 +35,8 @@ ENV HOST=0.0.0.0
 ENV BODY_SIZE_LIMIT=50M
 ENV PUSH_SUBSCRIPTIONS_PATH=/app/.data/push-subscriptions.json
 
-RUN groupadd --system --gid 1001 nodejs && \
-	useradd --system --uid 1001 --gid nodejs --home-dir /app --shell /usr/sbin/nologin sveltekit && \
+RUN addgroup --system --gid 1001 nodejs && \
+	adduser --system --uid 1001 sveltekit && \
 	mkdir -p /app/.data && \
 	chown -R sveltekit:nodejs /app/.data
 
