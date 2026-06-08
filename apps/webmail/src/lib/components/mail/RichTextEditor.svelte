@@ -5,6 +5,15 @@
 	import StarterKit from '@tiptap/starter-kit';
 	import Link from '@tiptap/extension-link';
 	import Image from '@tiptap/extension-image';
+	import RiBold from 'svelte-remixicon/RiBold.svelte';
+	import RiDoubleQuotesL from 'svelte-remixicon/RiDoubleQuotesL.svelte';
+	import RiFormatClear from 'svelte-remixicon/RiFormatClear.svelte';
+	import RiImageLine from 'svelte-remixicon/RiImageLine.svelte';
+	import RiItalic from 'svelte-remixicon/RiItalic.svelte';
+	import RiLink from 'svelte-remixicon/RiLink.svelte';
+	import RiListOrdered from 'svelte-remixicon/RiListOrdered.svelte';
+	import RiListUnordered from 'svelte-remixicon/RiListUnordered.svelte';
+	import RiStrikethrough from 'svelte-remixicon/RiStrikethrough.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose } from '$lib/stores/compose.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -285,13 +294,13 @@
 			aria-label="Text style"
 		>
 		<Toolbar.GroupItem value="bold" class="z-rich-editor__btn" aria-label="Bold" title="Bold">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 12a4 4 0 0 0 0-8H6v8h8Z"/><path d="M15 20a4 4 0 0 0 0-8H6v8h9Z"/></svg>
+			<RiBold size="18" />
 		</Toolbar.GroupItem>
 		<Toolbar.GroupItem value="italic" class="z-rich-editor__btn" aria-label="Italic" title="Italic">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
+			<RiItalic size="18" />
 		</Toolbar.GroupItem>
 		<Toolbar.GroupItem value="strike" class="z-rich-editor__btn" aria-label="Strikethrough" title="Strikethrough">
-			<span class="z-rich-editor__format-letter z-rich-editor__format-letter--strike" aria-hidden="true">S</span>
+			<RiStrikethrough size="18" />
 		</Toolbar.GroupItem>
 		</Toolbar.Group>
 
@@ -305,13 +314,13 @@
 			aria-label="Paragraph style"
 		>
 		<Toolbar.GroupItem value="bulletList" class="z-rich-editor__btn" aria-label="Bullet list" title="Bullet list">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+			<RiListUnordered size="18" />
 		</Toolbar.GroupItem>
 		<Toolbar.GroupItem value="orderedList" class="z-rich-editor__btn" aria-label="Numbered list" title="Numbered list">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1Zm0 12H3a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1Zm0-6H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1Z"/></svg>
+			<RiListOrdered size="18" />
 		</Toolbar.GroupItem>
 		<Toolbar.GroupItem value="blockquote" class="z-rich-editor__btn" aria-label="Quote" title="Quote">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+			<RiDoubleQuotesL size="18" />
 		</Toolbar.GroupItem>
 		</Toolbar.Group>
 
@@ -323,13 +332,13 @@
 			aria-label="Link"
 			title="Link"
 		>
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+			<RiLink size="18" />
 		</Toolbar.Button>
 		<Toolbar.Button class="z-rich-editor__btn" onclick={() => fileInput?.click()} aria-label="Insert image" title="Insert image">
-			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+			<RiImageLine size="18" />
 		</Toolbar.Button>
 		<Toolbar.Button class="z-rich-editor__btn" onclick={clearFormatting} aria-label="Clear formatting" title="Clear formatting">
-			<span class="z-rich-editor__format-letter" aria-hidden="true">Tx</span>
+			<RiFormatClear size="18" />
 		</Toolbar.Button>
 	</Toolbar.Root>
 
@@ -384,21 +393,6 @@
 	:global(.z-rich-editor__btn--active) {
 		background-color: var(--z-active, rgba(0,0,0,0.1));
 		color: var(--z-accent, #0076ff);
-	}
-
-	.z-rich-editor__format-letter {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 16px;
-		height: 16px;
-		font: 700 13px/1 Georgia, 'Times New Roman', serif;
-		color: currentColor;
-	}
-
-	.z-rich-editor__format-letter--strike {
-		text-decoration: line-through;
-		text-decoration-thickness: 1.5px;
 	}
 
 	:global(.z-rich-editor__divider) {
