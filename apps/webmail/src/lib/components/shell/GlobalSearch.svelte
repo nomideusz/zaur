@@ -325,11 +325,15 @@
 	}
 
 	function handleWindowClick(event: MouseEvent) {
+		// The advanced dialog is a portaled modal that manages its own dismissal
+		// (overlay click / Escape / Cancel). Leave it alone here so the click that
+		// opened it — whose target is already detached from the dropdown — can't
+		// immediately close it again.
+		if (showAdvanced) return;
 		const target = event.target;
 		if (!(target instanceof Node)) return;
 		if (formContainer && formContainer.contains(target)) return;
 		open = false;
-		showAdvanced = false;
 	}
 
 	onMount(() => {
