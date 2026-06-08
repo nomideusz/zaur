@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { DropdownMenu } from 'bits-ui';
 	import { getContext, type Snippet } from 'svelte';
 	import { OVERFLOW_MENU_CTX, type OverflowMenuContext } from '$lib/components/ui/overflow-menu-context';
 	import { cn } from '$lib/utils/cn';
@@ -22,12 +23,11 @@
 	}
 </script>
 
-<button
-	type="button"
-	role="menuitem"
+<DropdownMenu.Item
 	class={cn('z-overflow-menu-item', danger && 'z-overflow-menu-item--danger')}
 	{disabled}
-	onclick={select}
+	textValue={label}
+	onSelect={select}
 >
 	{#if icon}
 		<span class="flex size-5 shrink-0 items-center justify-center">
@@ -35,4 +35,4 @@
 		</span>
 	{/if}
 	<span class="truncate">{label}</span>
-</button>
+</DropdownMenu.Item>

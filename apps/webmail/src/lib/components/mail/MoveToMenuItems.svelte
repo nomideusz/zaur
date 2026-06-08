@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { DropdownMenu } from 'bits-ui';
 	import { getContext } from 'svelte';
 	import { OVERFLOW_MENU_CTX, type OverflowMenuContext } from '$lib/components/ui/overflow-menu-context';
 	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
@@ -25,14 +26,13 @@
 {#if options.length}
 	<div class="z-overflow-menu-scroll">
 		{#each options as mailbox (mailbox.id)}
-			<button
-				type="button"
+			<DropdownMenu.Item
 				class="z-overflow-menu-item"
-				onclick={() => select(mailbox.id)}
-				role="menuitem"
+				textValue={`Move to ${mailbox.name}`}
+				onSelect={() => select(mailbox.id)}
 			>
 				<span class="truncate">Move to {mailbox.name}</span>
-			</button>
+			</DropdownMenu.Item>
 		{/each}
 	</div>
 {/if}

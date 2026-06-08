@@ -69,10 +69,6 @@
 	{/if}
 
 	<div class={cn('flex shrink-0 items-center gap-4', surface === 'pane' && 'max-md:hidden')}>
-		{#if surface === 'pane'}
-			<a href="/mail/compose" class="z-mail-text-nav__action">New message</a>
-		{/if}
-
 		<OverflowMenu
 			label="More mail actions"
 			menuId="mail-list-toolbar-menu-{surface}"
