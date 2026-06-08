@@ -661,7 +661,7 @@
 						<Checkbox
 							checked={advHasAttachment}
 							label="Has attachment"
-							class="flex cursor-pointer items-center gap-2 text-fg-muted transition-colors hover:text-fg"
+							class="z-checkbox-row px-0 py-1.5 text-fg-muted transition-colors hover:text-fg"
 							onchange={(checked) => {
 								advHasAttachment = checked === true;
 							}}
