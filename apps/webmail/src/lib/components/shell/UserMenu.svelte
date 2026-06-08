@@ -1,9 +1,7 @@
 <script lang="ts">
-	import { page } from '$app/stores';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import LogOut from '$lib/components/icons/LogOut.svelte';
 	import Moon from '$lib/components/icons/Moon.svelte';
-	import Settings from '$lib/components/icons/Settings.svelte';
 	import Sun from '$lib/components/icons/Sun.svelte';
 	import User from '$lib/components/icons/User.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -23,7 +21,6 @@
 		name: settings.resolvedDisplayName(auth.displayName ?? auth.username),
 		email: auth.username ?? ''
 	});
-	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
 
 	function close() {
 		open = false;
@@ -75,18 +72,6 @@
 				</p>
 				<p class="truncate text-xs text-fg-muted">{user.email}</p>
 			</div>
-
-			<a
-				href={compact ? '/settings' : '/settings/account'}
-				role="menuitem"
-				class={cn('z-overflow-menu-item', onSettingsRoute && 'z-surface-active')}
-				onclick={close}
-			>
-				<span class="flex size-5 shrink-0 items-center justify-center">
-					<Settings class="size-4 text-fg-muted" aria-hidden="true" />
-				</span>
-				<span class="truncate">Settings</span>
-			</a>
 
 			<button
 				type="button"

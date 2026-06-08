@@ -4,14 +4,11 @@
 	import { tick, untrack } from 'svelte';
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
 	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
+	import MessageListToolbar from '$lib/components/mail/MessageListToolbar.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
-	import PenSquare from '$lib/components/icons/PenSquare.svelte';
-	import Settings from '$lib/components/icons/Settings.svelte';
-	import IconButton from '$lib/components/ui/IconButton.svelte';
-	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
 	import { goto } from '$app/navigation';
 	import {
 		listSwipeContext,
@@ -41,6 +38,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { appConfig } from '$lib/config';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { Mailbox, MessagePreview } from '$lib/types/mail';
@@ -80,29 +78,6 @@
 		);
 
 	const listTimeClass = 'list-time shrink-0 tabular-nums text-fg-subtle';
-
-	const primaryOrder = new Map([
-		['inbox', 0],
-		['drafts', 1],
-		['sent', 2],
-		['archive', 3],
-		['junk', 4],
-		['trash', 5]
-	]);
-
-	const mailboxOptions = $derived(
-		[...mail.mailboxes]
-			.filter((mb) => primaryOrder.has(mb.role ?? ''))
-			.sort((a, b) => {
-				const aRank = primaryOrder.get(a.role ?? '') ?? 99;
-				const bRank = primaryOrder.get(b.role ?? '') ?? 99;
-				return aRank - bRank || a.name.localeCompare(b.name);
-			})
-			.map((mb) => ({
-				value: mb.id,
-				label: mb.name + (mb.unread > 0 ? ` (${mb.unread})` : '')
-			}))
-	);
 
 	let {
 		messages,
@@ -278,10 +253,24 @@
 				: 'No seen messages.'
 	);
 
-	const mobileListFilters: { id: MessageListReadFilter; label: string }[] = [
-		{ id: 'all', label: 'All' },
-		{ id: 'unread', label: LABEL_UNSEEN }
-	];
+	const listToolbarDisabled = $derived(loading || !!error || !messages.length);
+
+	$effect(() => {
+		if (!sectionMode || !mailboxRouteId || mail.hasSelection) {
+			shellHeader.clearMailListToolbar();
+			return;
+		}
+
+		const generation = shellHeader.setMailListToolbar({
+			mailboxRouteId,
+			readFilter,
+			onReadFilterChange: (filter) => {
+				readFilter = filter;
+			},
+			disabled: listToolbarDisabled
+		});
+		return () => shellHeader.clearMailListToolbar(generation);
+	});
 
 	function sameMessageIds(a: MessagePreview[], b: MessagePreview[]): boolean {
 		if (a.length !== b.length) return false;
@@ -975,99 +964,29 @@
 >
 	{#if mailboxRouteId || !sectionMode}
 		<header
-			class="z-mail-list-pane-header flex h-14 shrink-0 items-center justify-between overflow-hidden border-b border-border/80 gap-3"
+			class="z-mail-list-pane-header hidden h-14 w-full shrink-0 items-center overflow-hidden border-b border-border/80 bg-surface md:flex"
 		>
-			{#if mail.hasSelection}
-				{#if mailboxRouteId}
-					<MessageListBulkHeader
-						{mailboxRouteId}
-						{onBulkAction}
-						disabled={loading || !!error || !messages.length}
-						showReadFilter={sectionMode}
-						{readFilter}
-						onReadFilterChange={(filter) => {
-							readFilter = filter;
-						}}
-					/>
-				{:else}
-					<h2 class="z-type-pane-title min-w-0 truncate">{mailboxName}</h2>
-				{/if}
+			{#if mail.hasSelection && mailboxRouteId}
+				<MessageListBulkHeader
+					class="w-full min-w-0"
+					surface="pane"
+					{mailboxRouteId}
+					{onBulkAction}
+					disabled={listToolbarDisabled}
+				/>
+			{:else if sectionMode && mailboxRouteId}
+				<MessageListToolbar
+					class="w-full min-w-0"
+					surface="pane"
+					{mailboxRouteId}
+					{readFilter}
+					onReadFilterChange={(filter) => {
+						readFilter = filter;
+					}}
+					disabled={listToolbarDisabled}
+				/>
 			{:else}
-				<!-- Mobile Folder Picker -->
-				<div class="flex items-center gap-1.5 md:hidden min-w-0">
-					<MobilePicker
-						label="Mailbox"
-						value={mailboxRouteId || 'inbox'}
-						options={mailboxOptions}
-						onchange={(val) => {
-							goto(mailListHref(val));
-						}}
-						compact={true}
-						class="w-36 flex-initial"
-					/>
-				</div>
-
-				<!-- Desktop Bulk Header or Fallback controls -->
-				<div class="hidden md:flex flex-1 min-w-0">
-					{#if mailboxRouteId}
-						<MessageListBulkHeader
-							{mailboxRouteId}
-							{onBulkAction}
-							disabled={loading || !!error || !messages.length}
-							showReadFilter={sectionMode}
-							{readFilter}
-							onReadFilterChange={(filter) => {
-								readFilter = filter;
-							}}
-						/>
-					{:else}
-						<h2 class="z-type-pane-title min-w-0 truncate">{mailboxName}</h2>
-					{/if}
-				</div>
-
-				<!-- Mobile Filters, Settings & Compose -->
-				<div class="flex items-center gap-1.5 md:hidden shrink-0">
-					{#if mailboxRouteId}
-						{#each mobileListFilters as opt (opt.id)}
-							{@const isActive = readFilter === opt.id}
-							<button
-								type="button"
-								class={cn(
-									'z-mail-list-pane-header__filter rounded-md transition-colors',
-									isActive
-										? 'bg-accent/10 text-accent'
-										: 'z-tap-target-bg text-fg-muted hover:text-fg'
-								)}
-								onclick={() => {
-									readFilter = opt.id;
-								}}
-							>
-								{opt.label}
-							</button>
-						{/each}
-
-						<div class="mx-1 h-4 w-px shrink-0 self-center bg-border/80" role="separator"></div>
-
-						<a
-							href="/settings"
-							class="z-icon-tap-target rounded-full shrink-0 md:hidden"
-							aria-label="Settings"
-						>
-							<Settings class="size-4" />
-						</a>
-						<a
-							href="/settings/account"
-							class="z-icon-tap-target hidden rounded-full shrink-0 md:inline-flex"
-							aria-label="Settings"
-						>
-							<Settings class="size-4" />
-						</a>
-					{/if}
-
-					<IconButton label="New message" class="rounded-full" onclick={() => goto('/mail/compose')}>
-						<PenSquare class="size-4" aria-hidden="true" />
-					</IconButton>
-				</div>
+				<h2 class="z-type-pane-title min-w-0 truncate px-4">{mailboxName}</h2>
 			{/if}
 		</header>
 	{/if}

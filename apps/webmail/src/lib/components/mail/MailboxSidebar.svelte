@@ -1,16 +1,14 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
 	import { parseMailContext, mailListHref } from '$lib/mail/routes';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
 		class?: string;
-		isMobile?: boolean;
 	}
 
-	let { class: className = '', isMobile = false }: Props = $props();
+	let { class: className = '' }: Props = $props();
 
 	const primaryOrder = new Map([
 		['inbox', 0],
@@ -76,6 +74,4 @@
 			{/each}
 		</ul>
 	</nav>
-
-	<AppSidebarShortcuts hideApps={isMobile} />
 </aside>

@@ -1,7 +1,6 @@
 <script lang="ts">
 	import UserPlus from '$lib/components/icons/UserPlus.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	let {
@@ -53,6 +52,4 @@
 			Add contact
 		</Button>
 	</div>
-
-	<AppSidebarShortcuts />
 </aside>

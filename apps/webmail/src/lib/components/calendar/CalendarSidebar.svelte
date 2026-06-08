@@ -1,6 +1,5 @@
 <script lang="ts">
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
-	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { cn } from '$lib/utils/cn';
 </script>
@@ -54,6 +53,4 @@
 			</ul>
 		{/if}
 	</nav>
-
-	<AppSidebarShortcuts />
 </aside>

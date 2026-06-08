@@ -5,12 +5,10 @@
 		bulkSelectionReadCount,
 		bulkSelectionSummary
 	} from '$lib/components/mail/bulk-selection-label';
-	import type { MessageListReadFilter } from '$lib/components/mail/message-list-props';
 	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
-	import { LABEL_SEEN, LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -23,9 +21,7 @@
 		onBulkAction?: () => void;
 		/** Mobile app shell — text-nav links instead of checkbox/icon chrome. */
 		surface?: 'pane' | 'shell';
-		showReadFilter?: boolean;
-		readFilter?: MessageListReadFilter;
-		onReadFilterChange?: (filter: MessageListReadFilter) => void;
+		class?: string;
 	}
 
 	let {
@@ -33,15 +29,8 @@
 		disabled = false,
 		onBulkAction,
 		surface = 'pane',
-		showReadFilter = false,
-		readFilter = 'all',
-		onReadFilterChange
+		class: className = ''
 	}: Props = $props();
-
-	const readFilterOptions: { id: Exclude<MessageListReadFilter, 'all'>; label: string }[] = [
-		{ id: 'unread', label: LABEL_UNSEEN },
-		{ id: 'read', label: LABEL_SEEN }
-	];
 
 	const bulkBarPillClass =
 		'rounded-md px-3 py-1.5 text-sm font-medium transition-colors';
@@ -84,7 +73,6 @@
 				(selectionCounts.notImportant > 0 || selectionCounts.important > 0)) ||
 			moveTargets.length > 0
 	);
-	const showFilterBar = $derived(surface === 'pane' && showReadFilter && selectedCount === 0);
 	const showSelectionBar = $derived(selectedCount > 0);
 
 	async function runBulk(action: () => Promise<void>, refreshList = false) {
@@ -113,11 +101,6 @@
 	function clearSelection() {
 		mail.clearSelection();
 	}
-
-	function toggleReadFilter(next: Exclude<MessageListReadFilter, 'all'>) {
-		const resolved: MessageListReadFilter = readFilter === next ? 'all' : next;
-		onReadFilterChange?.(resolved);
-	}
 </script>
 
 {#snippet bulkActionsMenu()}
@@ -140,7 +123,8 @@
 	<nav
 		class={cn(
 			'z-mail-list-bulk-bar z-mail-list-bulk-header--shell w-full min-w-0 items-center',
-			disabled && 'pointer-events-none opacity-60'
+			disabled && 'pointer-events-none opacity-60',
+			className
 		)}
 		aria-label="Selected messages"
 	>
@@ -176,44 +160,12 @@
 			</nav>
 		{/if}
 	</nav>
-{:else if showFilterBar}
-	<nav
-		class={cn(
-			'z-mail-list-bulk-bar w-full min-w-0 items-center',
-			disabled && 'pointer-events-none opacity-60'
-		)}
-		aria-label="Message list"
-	>
-		<div class="z-mail-list-bulk-bar__controls">
-			<div class="z-mail-list-checkbox-col">
-				<MessageListMasterCheckbox class="z-mail-list-bulk-bar__checkbox" />
-			</div>
-			<MessageListSelectMenu {disabled} placement="bottom" />
-		</div>
-
-		<nav class="z-mail-list-bulk-bar__links" aria-label="Filter by seen status">
-			{#each readFilterOptions as option (option.id)}
-				<button
-					type="button"
-					class={cn(
-						bulkBarPillClass,
-						readFilter === option.id
-							? 'z-surface-active font-semibold text-fg'
-							: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
-					)}
-					aria-pressed={readFilter === option.id}
-					onclick={() => toggleReadFilter(option.id)}
-				>
-					{option.label}
-				</button>
-			{/each}
-		</nav>
-	</nav>
 {:else}
 	<nav
 		class={cn(
 			'z-mail-list-bulk-bar w-full min-w-0 items-center',
-			disabled && 'pointer-events-none opacity-60'
+			disabled && 'pointer-events-none opacity-60',
+			className
 		)}
 		aria-label="Selected messages"
 	>

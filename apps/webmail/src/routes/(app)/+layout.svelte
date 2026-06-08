@@ -2,6 +2,7 @@
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import AppShellHeader from '$lib/components/shell/AppShellHeader.svelte';
+	import AppMobileNav from '$lib/components/shell/AppMobileNav.svelte';
 	import ToastStack from '$lib/components/ui/ToastStack.svelte';
 	import { pushListener } from '$lib/jmap/push-listener';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -24,7 +25,7 @@
 		return () => window.removeEventListener('resize', checkMobile);
 	});
 
-	const showAppHeader = $derived(!isMobile);
+	const showAppHeader = $derived(true);
 	const pageScrollOnMain = false;
 	const pageScrollOverflowX = 'overflow-x-hidden';
 
@@ -82,6 +83,9 @@
 		>
 			{@render children()}
 		</main>
+		{#if isMobile}
+			<AppMobileNav />
+		{/if}
 		<ToastStack />
 	</div>
 {/if}

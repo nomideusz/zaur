@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
-	import SettingsMobileChrome from '$lib/components/settings/SettingsMobileChrome.svelte';
 	import { SETTINGS_NAV_ICON_MAP } from '$lib/components/settings/settings-nav-icons';
-	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
 	import { settingsShellClass } from '$lib/mail/layout';
 	import { cn } from '$lib/utils/cn';
@@ -55,17 +53,13 @@
 							<span class="truncate">{link.label}</span>
 						</a>
 					</li>
-				{/each}
-			</ul>
-		</nav>
-
-		<AppSidebarShortcuts inSettings={true} />
-	</aside>
+			{/each}
+		</ul>
+	</nav>
+</aside>
 
 	<!-- Main content -->
 	<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-		<SettingsMobileChrome />
-
 		<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 			<div class={cn(settingsShellClass(), 'flex min-h-full flex-col')}>
 				<div class="z-settings-content flex-1">
@@ -75,9 +69,5 @@
 				</div>
 			</div>
 		</div>
-
-		<footer class="z-settings-mobile-footer shrink-0 md:hidden" aria-label="Apps">
-			<AppSidebarShortcuts inSettings={true} />
-		</footer>
 	</div>
 </div>

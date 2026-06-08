@@ -15,6 +15,7 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { invalidAddressParts, parseAddressList } from '$lib/utils/addresses';
 	import { cn } from '$lib/utils/cn';
 	import { listContacts, recordContact, removeContact, type ContactEntry } from '$lib/utils/contact-index';
@@ -145,6 +146,22 @@
 			selectedEmail = null;
 		}
 	});
+
+	$effect(() => {
+		const generation = shellHeader.setPage({
+			title: listTitle,
+			primaryAction: {
+				kind: 'button',
+				label: 'Add contact',
+				icon: UserPlus,
+				onclick: () => {
+					showAddForm = true;
+					selectedEmail = null;
+				}
+			}
+		});
+		return () => shellHeader.clearPage(generation);
+	});
 </script>
 
 <svelte:head>
@@ -174,18 +191,8 @@
 	style="view-transition-name: contacts-list;"
 	aria-label="Contacts list"
 >
-	<div class="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border/80 px-4 py-2.5">
-		<h2 class="z-type-pane-title">{listTitle}</h2>
-		<IconButton
-			label="Add contact"
-			class="md:hidden"
-			onclick={() => {
-				showAddForm = true;
-				selectedEmail = null;
-			}}
-		>
-			<UserPlus class="size-4" aria-hidden="true" />
-		</IconButton>
+	<div class="z-pane-header hidden h-14 w-full shrink-0 items-center overflow-hidden border-b border-border/80 bg-surface px-4 md:flex">
+		<h2 class="z-type-pane-title min-w-0 truncate">{listTitle}</h2>
 	</div>
 
 	<div class="flex shrink-0 flex-col gap-3 border-b border-border/80 px-4 py-3">

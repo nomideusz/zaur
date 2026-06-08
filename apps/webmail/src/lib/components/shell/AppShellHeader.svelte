@@ -3,16 +3,20 @@
 	import { page } from '$app/stores';
 	import CalendarPlus from '$lib/components/icons/CalendarPlus.svelte';
 	import PenSquare from '$lib/components/icons/PenSquare.svelte';
-	import Menu from '$lib/components/icons/Menu.svelte';
+	import UserPlus from '$lib/components/icons/UserPlus.svelte';
 	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
+	import MessageListToolbar from '$lib/components/mail/MessageListToolbar.svelte';
+	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
+	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
+	import OfflineIndicator from '$lib/components/shell/OfflineIndicator.svelte';
+	import ToolSwitcher from '$lib/components/shell/ToolSwitcher.svelte';
+	import UserMenu from '$lib/components/shell/UserMenu.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
-	import GlobalSearch from './GlobalSearch.svelte';
-	import OfflineIndicator from './OfflineIndicator.svelte';
-	import ToolSwitcher from './ToolSwitcher.svelte';
-	import UserMenu from './UserMenu.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
+	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
 	import { appConfig } from '$lib/config';
-	import { INBOX_MAILBOX_ROUTE_ID, isMailPath, mailListHref } from '$lib/mail/routes';
+	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
+	import { isMailPath, mailListHref, parseMailContext } from '$lib/mail/routes';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
@@ -20,119 +24,207 @@
 	import { cn } from '$lib/utils/cn';
 
 	const homeHref = $derived(settings.preferredMailHref());
-	const inboxHref = mailListHref(INBOX_MAILBOX_ROUTE_ID);
-	const onInboxList = $derived(
-		$page.url.pathname === '/' || $page.url.pathname === '/mail/inbox'
-	);
-	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
-	const onMailRoute = $derived($page.url.pathname === '/' || isMailPath($page.url.pathname));
+	const pathname = $derived($page.url.pathname);
+	const onSettingsRoute = $derived(pathname.startsWith('/settings'));
+	const onMailRoute = $derived(pathname === '/' || isMailPath(pathname));
+	const onContactsRoute = $derived(pathname.startsWith('/contacts'));
+	const onCalendarRoute = $derived(pathname.startsWith('/calendar'));
+	const onMailCompose = $derived(pathname.startsWith('/mail/compose'));
 	const mailCtx = $derived(shellHeader.mail);
-	const showShellBulkHeader = $derived(
-		onMailRoute && mail.hasSelection && !!mailCtx?.mailboxRouteId
-	);
-	const showMobileMailboxTitle = $derived(onMailRoute && mailCtx && !mail.hasSelection);
-	const hideShellSearch = $derived(onSettingsRoute);
-	const showComposeAction = $derived(
-		($page.url.pathname.startsWith('/contacts') ||
-			$page.url.pathname === '/' ||
-			$page.url.pathname.startsWith('/mail')) &&
-			!$page.url.pathname.startsWith('/mail/compose')
+	const mailListToolbar = $derived(shellHeader.mailListToolbar);
+	const pageCtx = $derived(shellHeader.page);
+	const isSettingsHome = $derived(/^\/settings\/?$/.test(pathname));
+
+	const mailBulkActive = $derived(
+		onMailRoute && !onMailCompose && mail.hasSelection && !!mailCtx?.mailboxRouteId
 	);
 
-	function handleMobileInboxHome(event: MouseEvent) {
-		mail.clearSelection();
-		if (onInboxList) event.preventDefault();
+	/** Mail list toolbar/bulk: shell on mobile, list pane on desktop. */
+	const mailListChromeActive = $derived(
+		onMailRoute && !onMailCompose && (mailBulkActive || !!mailListToolbar)
+	);
+
+	const showComposeAction = $derived(
+		onMailRoute && !onMailCompose && !mailListChromeActive
+	);
+
+	const sectionLinks = $derived(settingsNavLinks());
+	const activeSettingsSection = $derived(
+		sectionLinks.find((link) => isSettingsNavActive(pathname, link.href)) ?? sectionLinks[0]
+	);
+	const settingsSectionOptions = $derived(
+		sectionLinks.map((link) => ({ value: link.href, label: link.label }))
+	);
+
+	const primaryOrder = new Map([
+		['inbox', 0],
+		['drafts', 1],
+		['sent', 2],
+		['archive', 3],
+		['junk', 4],
+		['trash', 5]
+	]);
+
+	const mailboxOptions = $derived(
+		[...mail.mailboxes]
+			.filter((mb) => primaryOrder.has(mb.role ?? ''))
+			.sort((a, b) => {
+				const aRank = primaryOrder.get(a.role ?? '') ?? 99;
+				const bRank = primaryOrder.get(b.role ?? '') ?? 99;
+				return aRank - bRank || a.name.localeCompare(b.name);
+			})
+			.map((mb) => ({
+				value: mb.id,
+				label: mb.name + (mb.unread > 0 ? ` (${mb.unread})` : '')
+			}))
+	);
+
+	const mailRouteId = $derived(parseMailContext(pathname)?.mailboxRouteId ?? 'inbox');
+
+	function onSettingsSectionChange(href: string) {
+		if (href !== pathname) void goto(href);
 	}
+
+	function onMailboxChange(routeId: string) {
+		if (routeId !== mailRouteId) void goto(mailListHref(routeId));
+	}
+
+	const hideMobileAppChrome = $derived(mailListChromeActive);
 </script>
 
 <header
 	class={cn(
-		'z-app-shell-header relative z-40 flex h-(--height-header) shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-4 backdrop-blur-md max-md:gap-1 max-md:px-3 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-3',
-		showShellBulkHeader && 'max-md:z-app-shell-header--bulk'
+		'z-app-shell-header relative z-40 flex h-(--height-header) w-full shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/95 px-3 backdrop-blur-md md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-3 md:px-4',
+		mailListChromeActive && 'z-app-shell-header--mail-list'
 	)}
 	style="view-transition-name: app-header;"
 >
-	<div class="relative z-10 hidden min-w-0 shrink-0 items-center gap-3 md:col-start-1 md:justify-self-start md:flex">
-		<a
-			href={homeHref}
-			class="shrink-0 text-base text-fg transition-colors hover:opacity-80"
-		>
-			<span class="font-extrabold tracking-tight text-accent lowercase text-lg">{appConfig.brandName}</span>
-		</a>
-		<ToolSwitcher />
-	</div>
-
-	<a
-		href={inboxHref}
-		class="z-app-shell-header__home relative z-10 shrink-0 md:hidden"
-		aria-label="Inbox"
-		onclick={handleMobileInboxHome}
-	>
-		<span class="z-app-shell-header__home-mark">{appConfig.brandName.slice(0, 1).toLowerCase()}</span>
-	</a>
-
-	{#if showShellBulkHeader && mailCtx?.mailboxRouteId}
-		<div class="z-app-shell-header__bulk relative z-10 min-w-0 flex-1 md:hidden">
-			<MessageListBulkHeader
-				surface="shell"
-				mailboxRouteId={mailCtx.mailboxRouteId}
-				disabled={mailCtx.loading || !!mailCtx.error || mailCtx.messageCount === 0}
-				onBulkAction={mailCtx.onBulkAction}
-			/>
+	{#if mailListChromeActive}
+		<div class="relative z-10 min-w-0 flex-1 md:hidden">
+			{#if mailBulkActive && mailCtx?.mailboxRouteId}
+				<MessageListBulkHeader
+					surface="shell"
+					mailboxRouteId={mailCtx.mailboxRouteId}
+					disabled={mailCtx.loading || !!mailCtx.error || mailCtx.messageCount === 0}
+					onBulkAction={mailCtx.onBulkAction}
+				/>
+			{:else if mailListToolbar}
+				<MessageListToolbar
+					surface="shell"
+					mailboxRouteId={mailListToolbar.mailboxRouteId}
+					readFilter={mailListToolbar.readFilter}
+					onReadFilterChange={mailListToolbar.onReadFilterChange}
+					disabled={mailListToolbar.disabled}
+				/>
+			{/if}
 		</div>
 	{/if}
 
 	<div
 		class={cn(
-			'relative z-10 flex min-w-0 flex-1 items-center gap-2 max-md:gap-1.5 md:col-start-2 md:w-full md:max-w-xl md:flex-none md:justify-self-center',
-			showShellBulkHeader && 'max-md:hidden'
+			'z-app-shell-header__start relative z-10 flex min-w-0 shrink-0 items-center gap-2 md:col-start-1 md:justify-self-start md:gap-3',
+			hideMobileAppChrome && 'max-md:hidden'
 		)}
 	>
-		{#if showMobileMailboxTitle && mailCtx}
-			<p class="z-app-shell-header__mail-title min-w-0 flex-1 truncate md:hidden">
-				{mailCtx.mailboxName}{#if mailCtx.countLabel}<span class="z-app-shell-header__mail-meta"> · {mailCtx.countLabel}</span>{/if}
-			</p>
-		{/if}
-
-		<div
-			class={cn(
-				'min-w-0 flex-1 pointer-events-none md:w-full',
-				showMobileMailboxTitle && 'max-md:flex-none max-md:flex-initial'
-			)}
+		<a
+			href={homeHref}
+			class="hidden shrink-0 text-base text-fg transition-opacity hover:opacity-80 md:inline-flex"
 		>
-			{#if !hideShellSearch}
-				<div class="pointer-events-auto">
-					<GlobalSearch />
-				</div>
-			{/if}
+			<span class="text-lg font-extrabold lowercase tracking-tight text-accent">
+				{appConfig.brandName}
+			</span>
+		</a>
+
+		<div class="hidden md:block">
+			<ToolSwitcher />
 		</div>
+
+		{#if onSettingsRoute}
+			{#if isSettingsHome}
+				<h1 class="z-app-shell-header__title md:hidden">Settings</h1>
+			{:else}
+				<MobilePicker
+					label="Settings section"
+					value={activeSettingsSection?.href ?? '/settings/account'}
+					options={settingsSectionOptions}
+					onchange={onSettingsSectionChange}
+					compact={true}
+					class="min-w-0 max-w-[11rem] md:hidden"
+				/>
+			{/if}
+		{:else if onMailRoute && !mailListChromeActive}
+			<MobilePicker
+				label="Mailbox"
+				value={mailRouteId}
+				options={mailboxOptions}
+				onchange={onMailboxChange}
+				compact={true}
+				class="min-w-0 max-w-[10rem] md:hidden"
+			/>
+		{:else if onContactsRoute && pageCtx?.title}
+			<h1 class="z-app-shell-header__title min-w-0 truncate md:hidden">{pageCtx.title}</h1>
+		{:else if onCalendarRoute}
+			<h1 class="z-app-shell-header__title md:hidden">Calendar</h1>
+		{/if}
 	</div>
 
 	<div
 		class={cn(
-			'relative z-10 flex shrink-0 items-center gap-1.5 md:col-start-3 md:w-auto md:justify-self-end md:gap-2',
-			showShellBulkHeader && 'max-md:hidden'
+			'z-app-shell-header__center relative z-10 min-w-0 flex-1 md:col-start-2 md:w-full md:max-w-xl md:flex-none md:justify-self-center',
+			hideMobileAppChrome && 'max-md:hidden'
+		)}
+	>
+		{#if onSettingsRoute}
+			<div class="md:hidden">
+				<SettingsSearch />
+			</div>
+		{:else if !onCalendarRoute}
+			<div class="w-full min-w-0">
+				<GlobalSearch />
+			</div>
+		{/if}
+	</div>
+
+	<div
+		class={cn(
+			'z-app-shell-header__end relative z-10 flex shrink-0 items-center gap-1 md:col-start-3 md:justify-self-end md:gap-2',
+			hideMobileAppChrome && 'max-md:hidden'
 		)}
 	>
 		<div class="max-md:hidden">
 			<OfflineIndicator />
 		</div>
 
-		{#if $page.url.pathname.startsWith('/calendar') && calendar.supported !== false}
+		{#if onCalendarRoute && calendar.supported !== false}
+			<IconButton
+				label="New event"
+				class="md:hidden"
+				onclick={() => calendar.openCompose()}
+			>
+				<CalendarPlus class="size-4" aria-hidden="true" />
+			</IconButton>
 			<Button onclick={() => calendar.openCompose()} class="hidden md:inline-flex">
-				<CalendarPlus class="size-5" aria-hidden="true" />
+				<CalendarPlus class="size-4" aria-hidden="true" />
 				New event
 			</Button>
 		{:else if showComposeAction}
 			<IconButton label="New message" class="md:hidden" onclick={() => goto('/mail/compose')}>
-				<PenSquare class="size-5" aria-hidden="true" />
+				<PenSquare class="size-4" aria-hidden="true" />
 			</IconButton>
 			<Button href="/mail/compose" class="hidden md:inline-flex">
-				<PenSquare class="size-5" aria-hidden="true" />
+				<PenSquare class="size-4" aria-hidden="true" />
 				New message
 			</Button>
+		{:else if onContactsRoute && pageCtx?.primaryAction?.kind === 'button'}
+			{@const action = pageCtx.primaryAction}
+			{@const ActionIcon = action.icon ?? UserPlus}
+			<IconButton label={action.label} class="md:hidden" onclick={action.onclick}>
+				<ActionIcon class="size-4" aria-hidden="true" />
+			</IconButton>
 		{/if}
 
-		<UserMenu />
+		<div class="hidden md:block">
+			<UserMenu />
+		</div>
 	</div>
 </header>
