@@ -975,7 +975,7 @@
 >
 	{#if mailboxRouteId || !sectionMode}
 		<header
-			class="z-mail-list-pane-header flex h-14 shrink-0 items-center justify-between overflow-hidden border-b border-border/80 px-4 gap-3"
+			class="z-mail-list-pane-header flex h-14 shrink-0 items-center justify-between overflow-hidden border-b border-border/80 gap-3"
 		>
 			{#if mail.hasSelection}
 				{#if mailboxRouteId}

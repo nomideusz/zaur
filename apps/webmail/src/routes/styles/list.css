@@ -75,7 +75,6 @@
 		flex: 0 0 auto;
 		align-items: center;
 		gap: var(--z-mail-list-checkbox-gap, 0.625rem);
-		padding-left: 0;
 	}
 
 	.z-mail-list-bulk-bar__links {
@@ -143,11 +142,12 @@
 		top: 0;
 		z-index: 10;
 		background-color: var(--z-chrome);
+		padding-inline: 1rem;
 	}
 
-	/* Bulk master checkbox — line up with row checkbox column below. */
+	/* Bulk master checkbox — header flush left; bulk bar mirrors list cards padding. */
 	.z-mail-view .z-mail-list-pane-header:has(.z-mail-list-bulk-bar__controls) {
-		padding-inline-start: var(--z-mail-list-checkbox-inset);
+		padding-inline-start: 0;
 	}
 
 	.z-mail-view .z-mail-list-checkbox-col {
@@ -172,6 +172,15 @@
 		backdrop-filter: none;
 		-webkit-backdrop-filter: none;
 		padding: 0;
+	}
+
+	/* After bulk bar chrome reset — mirror list cards + row checkbox inset. */
+	.z-mail-view .z-mail-list-pane-header .z-mail-list-bulk-bar:has(.z-mail-list-bulk-bar__controls) {
+		padding-inline-start: var(--z-mail-list-cards-pad-x);
+	}
+
+	.z-mail-view .z-mail-list-pane-header .z-mail-list-bulk-bar__controls {
+		padding-inline-start: var(--z-mail-list-row-pad-x);
 	}
 
 	.z-mail-view .z-mail-list-pane-header .z-mail-list-bulk-bar__links {
