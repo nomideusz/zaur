@@ -1049,8 +1049,15 @@
 						<div class="mx-1 h-4 w-px shrink-0 self-center bg-border/80" role="separator"></div>
 
 						<a
+							href="/settings"
+							class="z-icon-tap-target rounded-full shrink-0 md:hidden"
+							aria-label="Settings"
+						>
+							<Settings class="size-4" />
+						</a>
+						<a
 							href="/settings/account"
-							class="z-icon-tap-target rounded-full shrink-0"
+							class="z-icon-tap-target hidden rounded-full shrink-0 md:inline-flex"
 							aria-label="Settings"
 						>
 							<Settings class="size-4" />

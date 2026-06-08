@@ -1,16 +1,6 @@
-export type SettingsNavSectionId =
-	| 'account'
-	| 'reading'
-	| 'writing'
-	| 'appearance'
-	| 'data';
+export type SettingsNavSectionId = 'account' | 'mail' | 'general';
 
-export type SettingsNavIcon =
-	| 'account'
-	| 'reading'
-	| 'writing'
-	| 'appearance'
-	| 'data';
+export type SettingsNavIcon = 'account' | 'mail' | 'general';
 
 export type SettingsNavLink = {
 	href: string;
@@ -29,23 +19,23 @@ export const MAIL_LAYOUT = {
 } as const;
 
 export const SETTINGS_SECTIONS: { id: SettingsNavSectionId; label: string }[] = [
-	{ id: 'account', label: '' },
-	{ id: 'reading', label: '' },
-	{ id: 'writing', label: '' },
-	{ id: 'appearance', label: '' },
-	{ id: 'data', label: '' }
+	{ id: 'account', label: 'Account' },
+	{ id: 'mail', label: 'Mail' },
+	{ id: 'general', label: 'General' }
 ];
 
 export const SETTINGS_NAV_LINKS: SettingsNavLink[] = [
 	{ href: '/settings/account', label: 'Account', icon: 'account', section: 'account' },
-	{ href: '/settings/reading', label: 'Reading', icon: 'reading', section: 'reading' },
-	{ href: '/settings/writing', label: 'Writing', icon: 'writing', section: 'writing' },
-	{ href: '/settings/appearance', label: 'Appearance', icon: 'appearance', section: 'appearance' },
-	{ href: '/settings/data', label: 'Data', icon: 'data', section: 'data' }
+	{ href: '/settings/mail', label: 'Mail', icon: 'mail', section: 'mail' },
+	{ href: '/settings/general', label: 'General', icon: 'general', section: 'general' }
 ];
 
-/** Paths merged into other settings pages — kept for redirects and search. */
+/** Paths merged into consolidated settings pages — kept for redirects and search. */
 export const LEGACY_SETTINGS_PATHS = new Set([
+	'/settings/reading',
+	'/settings/writing',
+	'/settings/appearance',
+	'/settings/data',
 	'/settings/workspace',
 	'/settings/display',
 	'/settings/sidebar',
@@ -53,8 +43,7 @@ export const LEGACY_SETTINGS_PATHS = new Set([
 	'/settings/inbox',
 	'/settings/compose',
 	'/settings/layout',
-	'/settings/calendar',
-	'/settings/mail'
+	'/settings/calendar'
 ]);
 
 export function settingsNavLinks(): SettingsNavLink[] {
@@ -63,29 +52,38 @@ export function settingsNavLinks(): SettingsNavLink[] {
 
 export function isSettingsNavActive(pathname: string, href: string): boolean {
 	if (pathname === href) return true;
-	if (href === '/settings/reading') {
+	if (href === '/settings/mail') {
 		return (
+			pathname === '/settings/reading' ||
+			pathname === '/settings/writing' ||
 			pathname === '/settings/layout' ||
 			pathname === '/settings/workspace' ||
 			pathname === '/settings/sidebar' ||
 			pathname === '/settings/inbox' ||
-			pathname === '/settings/mail'
+			pathname === '/settings/compose'
 		);
 	}
-	if (href === '/settings/writing') {
-		return pathname === '/settings/compose';
+	if (href === '/settings/general') {
+		return (
+			pathname === '/settings/appearance' ||
+			pathname === '/settings/data' ||
+			pathname === '/settings/display'
+		);
 	}
 	return false;
 }
 
 export function settingsRedirect(pathname: string): string | null {
 	if (pathname === '/settings') return '/settings/account';
-	if (pathname === '/settings/mail') return '/settings/reading';
-	if (pathname === '/settings/layout') return '/settings/reading';
-	if (pathname === '/settings/workspace') return '/settings/reading';
-	if (pathname === '/settings/sidebar') return '/settings/reading';
-	if (pathname === '/settings/inbox') return '/settings/reading';
-	if (pathname === '/settings/compose') return '/settings/writing';
+	if (pathname === '/settings/reading' || pathname === '/settings/writing') return '/settings/mail';
+	if (pathname === '/settings/appearance' || pathname === '/settings/data') return '/settings/general';
+	if (pathname === '/settings/mail') return null;
+	if (pathname === '/settings/layout') return '/settings/mail';
+	if (pathname === '/settings/workspace') return '/settings/mail';
+	if (pathname === '/settings/sidebar') return '/settings/mail';
+	if (pathname === '/settings/inbox') return '/settings/mail';
+	if (pathname === '/settings/compose') return '/settings/mail';
+	if (pathname === '/settings/display') return '/settings/general';
 	if (pathname === '/settings/calendar') return '/calendar';
 	return null;
 }

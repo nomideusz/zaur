@@ -11,6 +11,12 @@
 	import { theme } from '$lib/stores/theme.svelte';
 	import { cn } from '$lib/utils/cn';
 
+	let {
+		compact = false
+	}: {
+		compact?: boolean;
+	} = $props();
+
 	let open = $state(false);
 
 	const user = $derived({
@@ -29,7 +35,10 @@
 <div class="relative">
 	<button
 		type="button"
-		class="flex items-center gap-2 rounded-md p-1.5 transition-colors hover:bg-surface-sunken/80 border border-transparent hover:border-border/40"
+		class={cn(
+			'rounded-md border border-transparent transition-colors hover:border-border/40 hover:bg-surface-sunken/80',
+			compact ? 'z-icon-tap-target p-0' : 'flex items-center gap-2 p-1.5'
+		)}
 		aria-label="Account menu"
 		aria-expanded={open}
 		aria-haspopup="menu"
@@ -39,10 +48,17 @@
 			open = !open;
 		}}
 	>
-		<span class="flex size-8 items-center justify-center rounded-full bg-surface-sunken text-fg-muted">
+		<span
+			class={cn(
+				'flex items-center justify-center rounded-full bg-surface-sunken text-fg-muted',
+				compact ? 'size-9' : 'size-8'
+			)}
+		>
 			<User class="size-4" aria-hidden="true" />
 		</span>
-		<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
+		{#if !compact}
+			<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
+		{/if}
 	</button>
 
 	{#if open}
@@ -61,7 +77,7 @@
 			</div>
 
 			<a
-				href="/settings/account"
+				href={compact ? '/settings' : '/settings/account'}
 				role="menuitem"
 				class={cn('z-overflow-menu-item', onSettingsRoute && 'z-surface-active')}
 				onclick={close}

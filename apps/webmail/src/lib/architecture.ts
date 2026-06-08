@@ -14,12 +14,14 @@ export const routeMap = {
 	settings: {
 		root: '/settings/account',
 		account: '/settings/account',
+		mail: '/settings/mail',
+		general: '/settings/general',
+		/** Legacy — redirect to /settings/mail */
 		reading: '/settings/reading',
 		writing: '/settings/writing',
+		/** Legacy — redirect to /settings/general */
 		appearance: '/settings/appearance',
 		data: '/settings/data',
-		/** Legacy — redirect to /settings/reading */
-		mail: '/settings/mail',
 		layout: '/settings/layout',
 		workspace: '/settings/workspace',
 		/** Legacy — redirect to /calendar */

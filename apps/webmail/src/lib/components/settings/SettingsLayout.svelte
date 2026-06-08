@@ -1,19 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
+	import SettingsMobileChrome from '$lib/components/settings/SettingsMobileChrome.svelte';
+	import { SETTINGS_NAV_ICON_MAP } from '$lib/components/settings/settings-nav-icons';
 	import AppSidebarShortcuts from '$lib/components/shell/AppSidebarShortcuts.svelte';
-	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
-	import { settings } from '$lib/stores/settings.svelte';
 	import { settingsShellClass } from '$lib/mail/layout';
 	import { cn } from '$lib/utils/cn';
 	import type { Snippet } from 'svelte';
-
-	import User from '$lib/components/icons/User.svelte';
-	import MailOpen from '$lib/components/icons/MailOpen.svelte';
-	import PencilLine from '$lib/components/icons/PencilLine.svelte';
-	import Palette from '$lib/components/icons/Palette.svelte';
-	import Database from '$lib/components/icons/Database.svelte';
 
 	let {
 		children,
@@ -24,20 +18,11 @@
 	} = $props();
 
 	const sectionLinks = $derived(settingsNavLinks());
-	const mailHref = $derived(settings.preferredMailHref());
 	const pathname = $derived($page.url.pathname);
-
-	const iconMap = {
-		account: User,
-		reading: MailOpen,
-		writing: PencilLine,
-		appearance: Palette,
-		data: Database
-	};
 </script>
 
 <div class="z-settings-page {settingsRootClass} flex h-full w-full flex-row overflow-hidden bg-surface">
-	<!-- Settings Sidebar Navigation (Desktop only) -->
+	<!-- Desktop sidebar -->
 	<aside
 		class="z-mail-pane-surface hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-visible border-r border-border z-10 md:flex"
 		style="view-transition-name: settings-sidebar;"
@@ -54,7 +39,7 @@
 			<ul class="space-y-0.5">
 				{#each sectionLinks as link (link.href)}
 					{@const isActive = isSettingsNavActive(pathname, link.href)}
-					{@const Icon = iconMap[link.icon]}
+					{@const Icon = SETTINGS_NAV_ICON_MAP[link.icon]}
 					<li>
 						<a
 							href={link.href}
@@ -66,9 +51,7 @@
 							)}
 							aria-current={isActive ? 'page' : undefined}
 						>
-							{#if Icon}
-								<Icon class="size-4 shrink-0 opacity-75" aria-hidden="true" />
-							{/if}
+							<Icon class="size-4 shrink-0 opacity-75" aria-hidden="true" />
 							<span class="truncate">{link.label}</span>
 						</a>
 					</li>
@@ -79,52 +62,22 @@
 		<AppSidebarShortcuts inSettings={true} />
 	</aside>
 
-	<!-- Main Settings Content Area -->
+	<!-- Main content -->
 	<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-		<!-- Mobile Header Navigation (Mobile only) -->
-		<header
-			class="z-mail-list-pane-header flex h-14 shrink-0 items-center gap-2 overflow-hidden border-b border-border/80 px-4 md:hidden animate-fade-in"
-			aria-label="Mobile settings navigation"
-		>
-			<a
-				href={mailHref}
-				class="z-icon-tap-target rounded-full shrink-0 text-accent"
-				aria-label="Back to mail"
-			>
-				<ChevronLeft class="size-5" aria-hidden="true" />
-			</a>
+		<SettingsMobileChrome />
 
-			<nav
-				class="z-settings-mobile-nav flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto"
-				aria-label="Settings sections"
-			>
-				{#each sectionLinks as link (link.href)}
-					{@const isActive = isSettingsNavActive(pathname, link.href)}
-					<a
-						href={link.href}
-						class={cn(
-							'z-mail-list-pane-header__filter shrink-0 rounded-md transition-colors no-underline',
-							isActive
-								? 'bg-accent/10 text-accent'
-								: 'z-tap-target-bg text-fg-muted hover:text-fg'
-						)}
-						aria-current={isActive ? 'page' : undefined}
-					>
-						{link.label}
-					</a>
-				{/each}
-			</nav>
-		</header>
-
-		<!-- Scrollable settings body -->
 		<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
-			<div class={cn(settingsShellClass(), 'flex flex-col')}>
-				<div class="z-settings-content">
-					<div class="z-settings-body pt-3 md:pt-0">
+			<div class={cn(settingsShellClass(), 'flex min-h-full flex-col')}>
+				<div class="z-settings-content flex-1">
+					<div class="z-settings-body">
 						{@render children()}
 					</div>
 				</div>
 			</div>
 		</div>
+
+		<footer class="z-settings-mobile-footer shrink-0 md:hidden" aria-label="Apps">
+			<AppSidebarShortcuts inSettings={true} />
+		</footer>
 	</div>
 </div>

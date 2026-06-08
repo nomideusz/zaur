@@ -107,10 +107,15 @@
 	}
 
 	.z-settings-mobile-header {
-		position: relative;
-		z-index: 30;
+		position: sticky;
+		top: 0;
+		z-index: 10;
 		overflow: visible;
 		background-color: var(--z-chrome);
+	}
+
+	.z-settings-mobile-header__search .z-settings-search-field {
+		height: 2.5rem;
 	}
 
 	.z-mobile-picker-trigger {
@@ -195,13 +200,6 @@
 		background-color: var(--z-chrome-active);
 		font-weight: 500;
 	}
-
-	.z-settings-mobile-index-head {
-		margin-bottom: 1rem;
-		padding-bottom: 1rem;
-		border-bottom: 1px solid var(--z-border);
-	}
-
 
 	/* Mobile fullscreen thread — list/reader split fills the overlay pane. */
 	.z-mail-pane--mobile-fullscreen .z-mail-layout {
