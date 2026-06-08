@@ -69,10 +69,6 @@
 		.z-app-shell-header__bulk .z-mail-list-bulk-header__summary--shell {
 			font-size: 0.8125rem;
 		}
-
-		.z-app-shell-header__bulk .z-mail-list-bulk-header__shell-links {
-			gap: 0.75rem;
-		}
 	}
 
 	.z-mobile-reader-bar {

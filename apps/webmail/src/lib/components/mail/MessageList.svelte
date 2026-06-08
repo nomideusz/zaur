@@ -301,17 +301,17 @@
 	function handleMobileBulkLongPress(
 		message: MessagePreview,
 		routeId: string,
-		event: PointerEvent
+		row: HTMLElement
 	) {
 		mail.startSelection(message.id);
 		suppressRowNavigationUntil = Date.now() + 400;
-		startMobileImportantRainbowPick(message, routeId, event);
+		startMobileImportantRainbowPick(message, routeId, row);
 	}
 
 	function startMobileImportantRainbowPick(
 		message: MessagePreview,
 		routeId: string,
-		event: PointerEvent
+		row: HTMLElement
 	) {
 		if (
 			settings.reduceMotion ||
@@ -321,8 +321,6 @@
 			return;
 		}
 
-		const row = event.currentTarget;
-		if (!(row instanceof HTMLElement)) return;
 		const subject = row.querySelector('.z-mail-list-subject--important');
 		if (!(subject instanceof HTMLElement)) return;
 
@@ -452,16 +450,19 @@
 	}
 
 	function handleRowCheckboxClick(messageId: string, event: MouseEvent, wasSelected: boolean) {
-		event.preventDefault();
 		event.stopPropagation();
 		const ctrl = event.ctrlKey || event.metaKey;
 		const shift = event.shiftKey;
 		if (shift || ctrl) {
+			event.preventDefault();
 			setTimeout(() => {
 				handleRowSelect(messageId, { shift, ctrl });
 			}, 0);
 			return;
 		}
+		// Let the native toggle stand: the checkbox is controlled via `checked={rowSelected}`,
+		// and preventing default makes the browser's canceled-activation revert race Svelte's
+		// cached set_checked, leaving the box stuck after "Select all" → deselect.
 		mail.toggleMessageSelection(messageId);
 		if (wasSelected && event.currentTarget instanceof HTMLElement) {
 			event.currentTarget.blur();
@@ -1136,7 +1137,7 @@
 						leading={swipeLeading}
 						trailing={swipeTrailing}
 						longPressEnabled={bulkSelectEnabled}
-						onLongPress={(event) => handleMobileBulkLongPress(message, routeId, event)}
+						onLongPress={(_event, target) => handleMobileBulkLongPress(message, routeId, target)}
 						onLongPressEnd={() => finishMobileImportantRainbowPick()}
 						onLongPressCancel={() => cancelMobileImportantRainbowPick()}
 					>

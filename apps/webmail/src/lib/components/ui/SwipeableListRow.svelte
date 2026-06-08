@@ -28,7 +28,7 @@
 		leading?: SwipeAction[];
 		trailing?: SwipeAction[];
 		longPressEnabled?: boolean;
-		onLongPress?: (event: PointerEvent) => void;
+		onLongPress?: (event: PointerEvent, target: HTMLElement) => void;
 		onLongPressEnd?: (event: PointerEvent) => void;
 		onLongPressCancel?: (event: PointerEvent) => void;
 		class?: string;
@@ -113,10 +113,12 @@
 
 		if (longPressEnabled && onLongPress && event.pointerType !== 'mouse') {
 			const longPressEvent = event;
+			// Capture the element now — `currentTarget` is null once the deferred timer fires.
+			const longPressTarget = event.currentTarget as HTMLElement;
 			longPressTimer = setTimeout(() => {
 				longPressFired = true;
 				suppressClick = true;
-				onLongPress(longPressEvent);
+				onLongPress(longPressEvent, longPressTarget);
 				if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
 					navigator.vibrate(12);
 				}

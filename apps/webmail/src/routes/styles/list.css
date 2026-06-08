@@ -112,16 +112,19 @@
 		flex-shrink: 0;
 	}
 
-	/* Selection mode — count stays full width; actions absorb leftover squeeze. */
+	/* Selection mode — count shrinks/truncates before actions; actions stay pinned right. */
 	.z-mail-list-bulk-bar:has(.z-mail-list-bulk-bar__summary) {
 		display: grid;
-		grid-template-columns: auto max-content minmax(0, 1fr);
+		grid-template-columns: auto minmax(0, max-content) minmax(0, 1fr);
 		align-items: center;
 		gap: 0.5rem 0.75rem;
 	}
 
 	.z-mail-list-bulk-bar__summary {
 		margin: 0;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
 		white-space: nowrap;
 		font-size: var(--z-main-page-text);
 		font-weight: 400;
@@ -179,27 +182,25 @@
 		gap: 0.375rem;
 	}
 
+	/* Mobile shell — Cancel left, count centered in the slack, actions pinned right. */
 	.z-mail-list-bulk-header--shell {
 		display: grid;
-		grid-template-columns: auto max-content minmax(0, 1fr);
+		grid-template-columns: auto minmax(0, 1fr) auto;
 		align-items: center;
 		gap: 0.75rem;
 	}
 
 	.z-mail-list-bulk-header__summary--shell {
 		margin: 0;
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
 		white-space: nowrap;
 		text-align: center;
 		font-size: 0.8125rem;
 		font-weight: 400;
 		line-height: 1.4;
 		color: var(--z-fg);
-	}
-
-	.z-mail-list-bulk-header__shell-links {
-		justify-self: end;
-		min-width: 0;
-		flex-wrap: nowrap;
 	}
 
 	.z-mail-list-bulk-bar:has(.z-mail-list-bulk-bar__summary) .z-mail-list-bulk-bar__links :where(button) {
