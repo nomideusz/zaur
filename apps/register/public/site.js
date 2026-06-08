@@ -1,6 +1,5 @@
 (function () {
   const FALLBACK_LOGIN = 'https://webmail.zaur.app/login';
-  const THEME_KEY = 'zaur-theme';
 
   function loginUrl(cfg) {
     return cfg?.webmailLoginUrl || FALLBACK_LOGIN;
@@ -13,50 +12,16 @@
     });
   }
 
-  function readThemeMode() {
-    const saved = localStorage.getItem(THEME_KEY);
-    if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
-    return 'system';
-  }
-
-  function resolveTheme(mode) {
-    if (mode === 'dark') return 'dark';
-    if (mode === 'light') return 'light';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  }
-
-  function applyTheme(resolved) {
-    document.documentElement.classList.toggle('dark', resolved === 'dark');
-    document.documentElement.classList.toggle('light', resolved === 'light');
-  }
-
   function initTheme() {
-    const mode = readThemeMode();
-    const resolved = resolveTheme(mode);
-    applyTheme(resolved);
-
-    const toggles = document.querySelectorAll('.z-theme-toggle');
-    toggles.forEach((toggle) => {
-      toggle.textContent = `Toggle ${resolved === 'dark' ? 'light' : 'dark'} mode`;
-      toggle.addEventListener('click', () => {
-        const next = resolveTheme(readThemeMode()) === 'dark' ? 'light' : 'dark';
-        localStorage.setItem(THEME_KEY, next);
-        applyTheme(next);
-        toggles.forEach((el) => {
-          el.textContent = `Toggle ${next === 'dark' ? 'light' : 'dark'} mode`;
-        });
-      });
-    });
-
-    const media = window.matchMedia('(prefers-color-scheme: dark)');
-    media.addEventListener('change', () => {
-      if (readThemeMode() !== 'system') return;
-      applyTheme(resolveTheme('system'));
-      toggles.forEach((toggle) => {
-        const resolvedNow = resolveTheme('system');
-        toggle.textContent = `Toggle ${resolvedNow === 'dark' ? 'light' : 'dark'} mode`;
-      });
-    });
+    const seed = window.ZaurCircadianSeed;
+    if (!seed) return;
+    const mode = seed.readMode();
+    if (mode === 'circadian') {
+      seed.tickCircadian();
+      seed.startCircadianLoop();
+      return;
+    }
+    seed.applyFixed(document.documentElement, mode);
   }
 
   function getConfig() {

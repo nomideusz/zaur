@@ -4,13 +4,10 @@
 	import { DropdownMenu } from 'bits-ui';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import LogOut from '$lib/components/icons/LogOut.svelte';
-	import Moon from '$lib/components/icons/Moon.svelte';
 	import Settings from '$lib/components/icons/Settings.svelte';
-	import Sun from '$lib/components/icons/Sun.svelte';
 	import User from '$lib/components/icons/User.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
-	import { theme } from '$lib/stores/theme.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	let {
@@ -75,23 +72,6 @@
 					<Settings class="size-4 text-fg-muted" aria-hidden="true" />
 				</span>
 				<span class="truncate">Settings</span>
-			</DropdownMenu.Item>
-
-			<DropdownMenu.Item
-				class="z-overflow-menu-item"
-				textValue={theme.resolved === 'dark' ? 'Light mode' : 'Dark mode'}
-				onSelect={() => {
-					theme.toggle();
-				}}
-			>
-				<span class="flex size-5 shrink-0 items-center justify-center">
-					{#if theme.resolved === 'dark'}
-						<Sun class="size-4 text-fg-muted" aria-hidden="true" />
-					{:else}
-						<Moon class="size-4 text-fg-muted" aria-hidden="true" />
-					{/if}
-				</span>
-				<span class="truncate">{theme.resolved === 'dark' ? 'Light mode' : 'Dark mode'}</span>
 			</DropdownMenu.Item>
 
 			<DropdownMenu.Item

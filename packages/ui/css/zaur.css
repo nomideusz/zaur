@@ -115,6 +115,116 @@
 }
 
 
+/**
+ * Circadian layer — maps animated primitives to existing --z-* tokens.
+ * Active when html[data-theme="circadian"].
+ *
+ * JS sets --z-c-s-* (surface) and --z-c-f-* (foreground) every ~60s.
+ * CSS transitions handle the imperceptible drift between ticks.
+ */
+
+@property --z-c-s-h {
+	syntax: '<number>';
+	inherits: true;
+	initial-value: 60;
+}
+
+@property --z-c-s-s {
+	syntax: '<percentage>';
+	inherits: true;
+	initial-value: 11%;
+}
+
+@property --z-c-s-l {
+	syntax: '<percentage>';
+	inherits: true;
+	initial-value: 98%;
+}
+
+@property --z-c-f-h {
+	syntax: '<number>';
+	inherits: true;
+	initial-value: 210;
+}
+
+@property --z-c-f-s {
+	syntax: '<percentage>';
+	inherits: true;
+	initial-value: 10%;
+}
+
+@property --z-c-f-l {
+	syntax: '<percentage>';
+	inherits: true;
+	initial-value: 11%;
+}
+
+:root[data-theme='circadian'] {
+	color-scheme: light dark;
+
+	transition:
+		--z-c-s-h 45m linear,
+		--z-c-s-s 45m linear,
+		--z-c-s-l 45m linear,
+		--z-c-f-h 45m linear,
+		--z-c-f-s 45m linear,
+		--z-c-f-l 45m linear;
+
+	--z-surface: hsl(var(--z-c-s-h) var(--z-c-s-s) var(--z-c-s-l));
+	--z-fg: hsl(var(--z-c-f-h) var(--z-c-f-s) var(--z-c-f-l));
+
+	--z-surface-raised: color-mix(in srgb, var(--z-surface) 88%, white);
+	--z-surface-sunken: color-mix(in srgb, var(--z-surface) 92%, var(--z-fg) 8%);
+	--z-chrome: var(--z-surface-raised);
+	--z-chrome-active: var(--z-surface-sunken);
+
+	--z-border: color-mix(in srgb, var(--z-surface) 78%, var(--z-fg) 22%);
+	--z-border-strong: color-mix(in srgb, var(--z-surface) 68%, var(--z-fg) 32%);
+	--z-divider: var(--z-border-strong);
+
+	--z-fg-muted: color-mix(in srgb, var(--z-fg) 62%, var(--z-surface) 38%);
+	--z-fg-subtle: color-mix(in srgb, var(--z-fg) 38%, var(--z-surface) 62%);
+
+	/* Accent stays brand-stable; only hover lightens slightly at night. */
+	--z-accent: #3b6abf;
+	--z-accent-hover: color-mix(in srgb, var(--z-accent) 85%, white);
+	--z-accent-fg: #ffffff;
+	--z-unread: var(--z-accent);
+	--z-star: #956400;
+	--z-danger: #c03734;
+	--z-success: #2d6a4f;
+	--z-warning: #956400;
+	--z-brand-mark: var(--z-accent);
+
+	--z-scrollbar-thumb: color-mix(in srgb, var(--z-border-strong) 72%, transparent);
+	--z-scrollbar-thumb-hover: color-mix(in srgb, var(--z-fg-subtle) 68%, transparent);
+
+	--shadow-sm: 0 1px 3px rgb(0 0 0 / 0.04), 0 1px 2px rgb(0 0 0 / 0.02);
+	--shadow-md: 0 4px 16px rgb(0 0 0 / 0.07), 0 1px 4px rgb(0 0 0 / 0.03);
+}
+
+:root[data-theme='circadian'][data-circadian-dark] {
+	--z-accent: #4d78cc;
+	--z-accent-hover: #5e87d4;
+	--z-unread: var(--z-accent);
+	--z-brand-mark: var(--z-accent);
+	--z-star: #d4a017;
+	--z-success: #52b788;
+	--z-warning: #d4a017;
+	--z-chrome: var(--z-surface);
+	--z-chrome-active: color-mix(in srgb, var(--z-surface) 86%, var(--z-fg) 14%);
+	--z-surface-raised: color-mix(in srgb, var(--z-surface) 90%, var(--z-fg) 10%);
+	--shadow-sm: none;
+	--shadow-md: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root[data-theme='circadian'] {
+		transition: none;
+	}
+}
+
+
 *,
 *::before,
 *::after {

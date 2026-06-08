@@ -7,16 +7,16 @@
 	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
 
 	const themeModeOptions = [
-		{ value: 'system', label: 'System' },
-		{ value: 'light', label: 'Light' },
-		{ value: 'dark', label: 'Dark' }
+		{ value: 'circadian', label: 'Automatic' },
+		{ value: 'light', label: 'Fixed light' },
+		{ value: 'dark', label: 'Fixed dark' }
 	];
 </script>
 
 <SettingsGroup title="Theme & Motion">
-	<SettingsRow title="Color mode">
+	<SettingsRow title="Appearance" description="Automatic adjusts subtly through the day.">
 		<SettingsSelect
-			label="Color mode"
+			label="Appearance"
 			value={theme.mode}
 			options={themeModeOptions}
 			onchange={(v) => theme.set(v as ThemeMode)}

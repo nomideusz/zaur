@@ -15,8 +15,8 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 	{
 		"id": "/settings/general-color-mode",
 		"href": "/settings/general",
-		"title": "Color mode",
-		"description": ""
+		"title": "Appearance",
+		"description": "Automatic, fixed light, or fixed dark"
 	},
 	{
 		"id": "/settings/general-export-settings",
@@ -69,8 +69,8 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 	{
 		"id": "/settings/mail-colorful-important-subjects",
 		"href": "/settings/mail",
-		"title": "Colorful Important subjects",
-		"description": ""
+		"title": "Marker highlights on Important",
+		"description": "Soft highlighter stroke on pinned subjects"
 	},
 	{
 		"id": "/settings/mail-confirm-before-delete",

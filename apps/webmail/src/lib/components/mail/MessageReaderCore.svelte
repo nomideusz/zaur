@@ -16,10 +16,11 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { renderMessageBody } from '$lib/email/html';
-	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
+	import { importantMarker } from '$lib/mail/important-marker.svelte';
+	import ImportantSubjectHighlight from '$lib/components/mail/ImportantSubjectHighlight.svelte';
 	import { shouldPresentImportantColors } from '$lib/mail/mailboxes';
 	import { formatMessageListWhen } from '$lib/utils/dates';
-	import { createImportantRainbowTouchPick } from '$lib/mail/important-rainbow-touch';
+	import { createImportantMarkerTouchPick } from '$lib/mail/important-marker-touch';
 	import { mailListBackHref } from '$lib/mail/routes';
 	import { hasPreciseHover } from '$lib/utils/pointer-env';
 	import { cn } from '$lib/utils/cn';
@@ -140,7 +141,7 @@
 	}
 
 	let readerRainbowTimeout: ReturnType<typeof setTimeout> | null = null;
-	let readerSamplingRainbow = false;
+	let readerSamplingRainbow = $state(false);
 
 	$effect(() => {
 		return () => {
@@ -163,11 +164,11 @@
 				return;
 			}
 			if (!shouldPersistReaderRainbowPick(event)) return;
-			importantRainbow.pickFromElement(readerSubjectEl, subjectMessageId);
+			importantMarker.pickFromElement(readerSubjectEl, subjectMessageId);
 		} else {
 			// Restore saved color visual
 			if (subjectMessageId && readerSubjectEl) {
-				importantRainbow.resetFromElement(readerSubjectEl, subjectMessageId);
+				importantMarker.resetFromElement(readerSubjectEl, subjectMessageId);
 			}
 		}
 	}
@@ -182,11 +183,11 @@
 		readerRainbowTimeout = setTimeout(() => {
 			if (!readerSubjectEl || !subjectMessageId) return;
 			readerSamplingRainbow = true;
-			importantRainbow.startHoverSample(readerSubjectEl, subjectMessageId);
+			importantMarker.startHoverSample(readerSubjectEl, subjectMessageId);
 		}, 300);
 	}
 
-	const readerRainbowTouch = createImportantRainbowTouchPick({
+	const readerMarkerTouch = createImportantMarkerTouchPick({
 		canPick: () =>
 			!hasPreciseHover() &&
 			!settings.reduceMotion &&
@@ -211,29 +212,31 @@
 		</a>
 		<h1
 			bind:this={readerSubjectEl}
-			class={cn(
-				'z-type-reader-title min-w-0 flex-1 break-words',
-				subjectImportant && 'z-mail-list-subject--important',
-				subjectImportant &&
-					subjectMessageId &&
-					importantRainbow.hasPicked(subjectMessageId) &&
-					'z-mail-list-subject--important-picked'
-			)}
-			style={subjectImportant && subjectMessageId ? importantRainbow.cssVars(subjectMessageId) : undefined}
+			class="z-type-reader-title min-w-0 flex-1 break-words"
 			onpointerenter={startReaderRainbowSample}
 			onpointerleave={persistReaderRainbowPick}
 			onpointerdown={(event) => {
 				if (!subjectMessageId) return;
-				readerRainbowTouch.onPointerDown(subjectMessageId, event);
+				readerMarkerTouch.onPointerDown(subjectMessageId, event);
 			}}
-			onpointermove={readerRainbowTouch.onPointerMove}
+			onpointermove={readerMarkerTouch.onPointerMove}
 			onpointerup={(event) => {
 				if (!subjectMessageId) return;
-				readerRainbowTouch.onPointerUp(subjectMessageId, event);
+				readerMarkerTouch.onPointerUp(subjectMessageId, event);
 			}}
-			onpointercancel={readerRainbowTouch.onPointerCancel}
+			onpointercancel={readerMarkerTouch.onPointerCancel}
 		>
-			{subject}
+			{#if subjectImportant && subjectMessageId}
+				<ImportantSubjectHighlight
+					messageId={subjectMessageId}
+					picking={readerSamplingRainbow}
+					animate={!settings.reduceMotion}
+				>
+					{subject}
+				</ImportantSubjectHighlight>
+			{:else}
+				{subject}
+			{/if}
 		</h1>
 		{#if latest}
 			<div

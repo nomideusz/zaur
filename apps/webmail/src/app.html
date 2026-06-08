@@ -4,22 +4,13 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="description" content="Fast, offline-capable webmail for ZAUR accounts." />
-		<meta name="theme-color" content="#3b6abf" media="(prefers-color-scheme: light)" />
-		<meta name="theme-color" content="#0f1419" media="(prefers-color-scheme: dark)" />
+		<meta name="theme-color" content="#fafaf9" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#101010" media="(prefers-color-scheme: dark)" />
 		<meta name="text-scale" content="scale" />
+		<script src="/circadian-seed.js"></script>
 		<script>
 			(function () {
 				try {
-					var theme = localStorage.getItem('zaur-theme');
-					var dark =
-						theme === 'dark' ||
-						(theme !== 'light' &&
-							window.matchMedia('(prefers-color-scheme: dark)').matches);
-					if (dark) {
-						document.documentElement.classList.add('dark');
-					} else {
-						document.documentElement.classList.add('light');
-					}
 					document.documentElement.removeAttribute('data-accent');
 					try {
 						localStorage.removeItem('zaur:accent-color');

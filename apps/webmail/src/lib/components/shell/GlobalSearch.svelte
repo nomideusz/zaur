@@ -5,10 +5,9 @@
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { Dialog, Command } from 'bits-ui';
+	import { Command } from 'bits-ui';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
-	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -292,7 +291,7 @@
 		if (!showAdvanced) {
 			populateAdvancedFromInput(input);
 			showAdvanced = true;
-			open = false;
+			open = true;
 		} else {
 			showAdvanced = false;
 		}
@@ -325,15 +324,19 @@
 	}
 
 	function handleWindowClick(event: MouseEvent) {
-		// The advanced dialog is a portaled modal that manages its own dismissal
-		// (overlay click / Escape / Cancel). Leave it alone here so the click that
-		// opened it — whose target is already detached from the dropdown — can't
-		// immediately close it again.
-		if (showAdvanced) return;
 		const target = event.target;
 		if (!(target instanceof Node)) return;
+		// Selecting a suggestion item unmounts the dropdown, detaching the clicked
+		// element before this bubbles up. Such a target is no longer in the document,
+		// so treat it as an internal click — otherwise opening the advanced panel from
+		// the dropdown would immediately close it again.
+		if (!target.isConnected) return;
+		// The suggestions dropdown and the advanced panel both live inside the form,
+		// so a click within either won't match here and they stay open. Native <select>
+		// popups don't surface as page clicks, so the panel survives changing them.
 		if (formContainer && formContainer.contains(target)) return;
 		open = false;
+		showAdvanced = false;
 	}
 
 	onMount(() => {
@@ -375,7 +378,8 @@
 		)}
 		onsubmit={(e) => {
 			e.preventDefault();
-			submit();
+			if (showAdvanced) submitAdvanced();
+			else submit();
 		}}
 	>
 		<label class="sr-only" for={inputId}>Search mail</label>
@@ -418,18 +422,24 @@
 			</TooltipWrap>
 		{/if}
 
-		{#if showDropdown}
-			<Command.Root
-				bind:this={commandRoot}
-				id={dropdownId}
-				shouldFilter={false}
+		{#if open}
+			<div
 				class={cn(
 					'absolute left-0 top-full z-50 mt-1.5 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-md',
 					isSidebar || isMobile ? 'right-0 min-w-[14rem]' : 'right-0'
 				)}
-				aria-label="Search suggestions"
 			>
-				<Command.List class="max-h-[min(50vh,20rem)] overflow-y-auto py-1.5">
+				{#if showAdvanced}
+					{@render advancedPanel()}
+				{:else}
+					<Command.Root
+						bind:this={commandRoot}
+						id={dropdownId}
+						shouldFilter={false}
+						class="w-full"
+						aria-label="Search suggestions"
+					>
+						<Command.List class="max-h-[min(50vh,20rem)] overflow-y-auto py-1.5">
 					<Command.Viewport>
 						{#if input.trim().length === 0}
 							<Command.Group>
@@ -516,7 +526,7 @@
 									onSelect={() => {
 										populateAdvancedFromInput(input);
 										showAdvanced = true;
-										open = false;
+										open = true;
 									}}
 								>
 									Advanced Search Options
@@ -557,158 +567,141 @@
 							{/if}
 						{/if}
 					</Command.Viewport>
-				</Command.List>
-			</Command.Root>
+						</Command.List>
+					</Command.Root>
+				{/if}
+			</div>
 		{/if}
+
+		{#snippet advancedPanel()}
+			<div
+				class="flex max-h-[min(75vh,34rem)] flex-col overflow-hidden text-sm"
+				role="dialog"
+				tabindex="-1"
+				aria-label="Advanced search"
+				onkeydown={(event) => {
+					if (event.key === 'Escape') {
+						showAdvanced = false;
+						searchInput?.focus();
+					}
+				}}
+			>
+				<div class="flex items-center justify-between border-b border-border px-3 py-2">
+					<span class="font-semibold text-fg">Advanced search</span>
+					<button
+						type="button"
+						class="cursor-pointer text-xs text-fg-subtle transition-colors hover:text-fg"
+						onclick={clearAdvanced}
+					>
+						Clear all
+					</button>
+				</div>
+
+				<div class="flex flex-col gap-3 overflow-y-auto p-3">
+					<label class="flex flex-col gap-1">
+						<span class="text-xs font-medium text-fg-muted">Search in</span>
+						<select class="z-select" bind:value={advMailboxId}>
+							{#each mailboxOptions as option (option.value)}
+								<option value={option.value}>{option.label}</option>
+							{/each}
+						</select>
+					</label>
+
+					<label class="flex flex-col gap-1">
+						<span class="text-xs font-medium text-fg-muted">From</span>
+						<input
+							type="text"
+							class="z-input"
+							placeholder="Sender's name or email"
+							bind:value={advFrom}
+						/>
+					</label>
+
+					<label class="flex flex-col gap-1">
+						<span class="text-xs font-medium text-fg-muted">To</span>
+						<input
+							type="text"
+							class="z-input"
+							placeholder="Recipient's name or email"
+							bind:value={advTo}
+						/>
+					</label>
+
+					<label class="flex flex-col gap-1">
+						<span class="text-xs font-medium text-fg-muted">Subject</span>
+						<input
+							type="text"
+							class="z-input"
+							placeholder="Subject line contains"
+							bind:value={advSubject}
+						/>
+					</label>
+
+					<label class="flex flex-col gap-1">
+						<span class="text-xs font-medium text-fg-muted">Keywords / Body</span>
+						<input
+							type="text"
+							class="z-input"
+							placeholder="Has the words"
+							bind:value={advText}
+						/>
+					</label>
+
+					<div class="grid grid-cols-2 gap-3">
+						<label class="flex flex-col gap-1">
+							<span class="text-xs font-medium text-fg-muted">Date range</span>
+							<select class="z-select" bind:value={advDateRange}>
+								{#each dateRangeOptions as option (option.value)}
+									<option value={option.value}>{option.label}</option>
+								{/each}
+							</select>
+						</label>
+
+						<div class="flex items-end pb-1">
+							<Checkbox
+								checked={advHasAttachment}
+								label="Has attachment"
+								class="z-checkbox-row px-0 py-1.5 text-fg-muted transition-colors hover:text-fg"
+								onchange={(checked) => {
+									advHasAttachment = checked === true;
+								}}
+							>
+								<span class="text-xs font-medium">Has attachment</span>
+							</Checkbox>
+						</div>
+					</div>
+
+					{#if advDateRange === 'custom'}
+						<div class="grid grid-cols-2 gap-3 border-t border-border/50 pt-2">
+							<label class="flex flex-col gap-1">
+								<span class="text-xs font-medium text-fg-muted">After date</span>
+								<input type="date" class="z-input" bind:value={advAfterDate} />
+							</label>
+							<label class="flex flex-col gap-1">
+								<span class="text-xs font-medium text-fg-muted">Before date</span>
+								<input type="date" class="z-input" bind:value={advBeforeDate} />
+							</label>
+						</div>
+					{/if}
+				</div>
+
+				<div class="flex items-center justify-end gap-2 border-t border-border px-3 py-2">
+					<button
+						type="button"
+						class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-fg transition-colors hover:bg-surface-sunken"
+						onclick={() => {
+							showAdvanced = false;
+							searchInput?.focus();
+						}}
+					>
+						Cancel
+					</button>
+					<button type="button" class="z-btn-primary px-4 py-1.5 text-xs" onclick={submitAdvanced}>
+						Search
+					</button>
+				</div>
+			</div>
+		{/snippet}
 	</form>
 {/if}
 
-<Dialog.Root
-	bind:open={showAdvanced}
-	onOpenChange={(open) => {
-		if (!open) searchInput?.focus();
-	}}
->
-	<Dialog.Portal>
-		<Dialog.Overlay class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
-		<Dialog.Content
-			class="fixed left-1/2 top-1/2 z-50 flex max-h-[min(90vh,40rem)] w-[calc(100%-2rem)] max-w-[30rem] -translate-x-1/2 -translate-y-1/2 flex-col gap-3.5 overflow-hidden rounded-xl border border-border bg-surface-raised p-4 text-sm text-fg shadow-lg outline-none"
-		>
-			<div class="flex items-center justify-between border-b border-border pb-2">
-				<Dialog.Title class="text-sm font-semibold text-fg">Advanced Search Options</Dialog.Title>
-				<button
-					type="button"
-					class="cursor-pointer text-xs text-fg-subtle transition-colors hover:text-fg"
-					onclick={clearAdvanced}
-				>
-					Clear all
-				</button>
-			</div>
-
-			<div class="flex max-h-[60vh] flex-col gap-3 overflow-y-auto pr-1">
-				<div class="flex flex-col gap-1">
-					<span class="text-xs font-medium text-fg-muted">Search in</span>
-					<SettingsSelect
-						label="Search in"
-						value={advMailboxId}
-						options={mailboxOptions}
-						onchange={(value) => {
-							advMailboxId = value;
-						}}
-						class="w-full"
-					/>
-				</div>
-
-				<div class="flex flex-col gap-1">
-					<label class="text-xs font-medium text-fg-muted" for="adv-from">From</label>
-					<input
-						id="adv-from"
-						type="text"
-						class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
-						placeholder="Sender's name or email"
-						bind:value={advFrom}
-					/>
-				</div>
-
-				<div class="flex flex-col gap-1">
-					<label class="text-xs font-medium text-fg-muted" for="adv-to">To</label>
-					<input
-						id="adv-to"
-						type="text"
-						class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
-						placeholder="Recipient's name or email"
-						bind:value={advTo}
-					/>
-				</div>
-
-				<div class="flex flex-col gap-1">
-					<label class="text-xs font-medium text-fg-muted" for="adv-subject">Subject</label>
-					<input
-						id="adv-subject"
-						type="text"
-						class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
-						placeholder="Subject line contains"
-						bind:value={advSubject}
-					/>
-				</div>
-
-				<div class="flex flex-col gap-1">
-					<label class="text-xs font-medium text-fg-muted" for="adv-text">Keywords / Body</label>
-					<input
-						id="adv-text"
-						type="text"
-						class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
-						placeholder="Has the words"
-						bind:value={advText}
-					/>
-				</div>
-
-				<div class="grid grid-cols-2 gap-3">
-					<div class="flex flex-col gap-1">
-						<span class="text-xs font-medium text-fg-muted">Date range</span>
-						<SettingsSelect
-							label="Date range"
-							value={advDateRange}
-							options={dateRangeOptions}
-							onchange={(value) => {
-								advDateRange = value;
-							}}
-							class="w-full"
-						/>
-					</div>
-
-					<div class="flex items-end pb-1.5">
-						<Checkbox
-							checked={advHasAttachment}
-							label="Has attachment"
-							class="z-checkbox-row px-0 py-1.5 text-fg-muted transition-colors hover:text-fg"
-							onchange={(checked) => {
-								advHasAttachment = checked === true;
-							}}
-						>
-							<span class="text-xs font-medium">Has attachment</span>
-						</Checkbox>
-					</div>
-				</div>
-
-				{#if advDateRange === 'custom'}
-					<div class="mt-1 grid grid-cols-2 gap-3 border-t border-border/50 pt-2">
-						<div class="flex flex-col gap-1">
-							<label class="text-xs font-medium text-fg-muted" for="adv-after">After Date</label>
-							<input
-								id="adv-after"
-								type="date"
-								class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
-								bind:value={advAfterDate}
-							/>
-						</div>
-						<div class="flex flex-col gap-1">
-							<label class="text-xs font-medium text-fg-muted" for="adv-before">Before Date</label>
-							<input
-								id="adv-before"
-								type="date"
-								class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
-								bind:value={advBeforeDate}
-							/>
-						</div>
-					</div>
-				{/if}
-			</div>
-
-			<div class="mt-1 flex items-center justify-end gap-2 border-t border-border pt-3">
-				<Dialog.Close
-					class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-fg transition-colors hover:bg-surface-sunken"
-				>
-					Cancel
-				</Dialog.Close>
-				<button
-					type="button"
-					class="cursor-pointer rounded-md bg-accent px-4 py-1.5 text-xs font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
-					onclick={submitAdvanced}
-				>
-					Search
-				</button>
-			</div>
-		</Dialog.Content>
-	</Dialog.Portal>
-</Dialog.Root>

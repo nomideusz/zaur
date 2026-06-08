@@ -1,9 +1,12 @@
-import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
+import { importantMarker } from '$lib/mail/important-marker.svelte';
 
-export const IMPORTANT_RAINBOW_TOUCH_HOLD_MS = 320;
+export const IMPORTANT_MARKER_TOUCH_HOLD_MS = 320;
+/** @deprecated Use IMPORTANT_MARKER_TOUCH_HOLD_MS */
+export const IMPORTANT_RAINBOW_TOUCH_HOLD_MS = IMPORTANT_MARKER_TOUCH_HOLD_MS;
+
 const MOVE_CANCEL_PX = 10;
 
-export function createImportantRainbowTouchPick(options: {
+export function createImportantMarkerTouchPick(options: {
 	canPick: () => boolean;
 	onCommitted?: () => void;
 }) {
@@ -37,8 +40,8 @@ export function createImportantRainbowTouchPick(options: {
 			timer = setTimeout(() => {
 				if (!pending || pending.messageId !== messageId) return;
 				active = true;
-				importantRainbow.startTouchPick(el, messageId);
-			}, IMPORTANT_RAINBOW_TOUCH_HOLD_MS);
+				importantMarker.startTouchPick(el, messageId);
+			}, IMPORTANT_MARKER_TOUCH_HOLD_MS);
 		},
 
 		onPointerMove(event: PointerEvent) {
@@ -48,7 +51,7 @@ export function createImportantRainbowTouchPick(options: {
 				Math.abs(event.movementY) > MOVE_CANCEL_PX
 			) {
 				if (active && pending) {
-					importantRainbow.cancelTouchPick(pending.el, pending.messageId);
+					importantMarker.cancelTouchPick(pending.el, pending.messageId);
 				}
 				reset();
 			}
@@ -64,7 +67,7 @@ export function createImportantRainbowTouchPick(options: {
 			if (wasActive) {
 				event.preventDefault();
 				event.stopPropagation();
-				importantRainbow.finishTouchPick(el, messageId);
+				importantMarker.finishTouchPick(el, messageId);
 				options.onCommitted?.();
 			}
 
@@ -73,9 +76,12 @@ export function createImportantRainbowTouchPick(options: {
 
 		onPointerCancel() {
 			if (active && pending) {
-				importantRainbow.cancelTouchPick(pending.el, pending.messageId);
+				importantMarker.cancelTouchPick(pending.el, pending.messageId);
 			}
 			reset();
 		}
 	};
 }
+
+/** @deprecated Use createImportantMarkerTouchPick */
+export const createImportantRainbowTouchPick = createImportantMarkerTouchPick;

@@ -47,11 +47,11 @@
   {/if}
 
   <span
-    class="relative block h-6 w-11 shrink-0 rounded-full border border-border/70 bg-surface-sunken transition-colors duration-200 group-data-[state=checked]:border-accent group-data-[state=checked]:bg-accent"
+    class="relative flex h-6 w-11 shrink-0 items-center rounded-full border border-border/70 bg-surface-sunken px-1 transition-colors duration-200 group-data-[state=checked]:border-accent group-data-[state=checked]:bg-accent"
     aria-hidden="true"
   >
     <Switch.Thumb
-      class="absolute left-1 top-1 block h-4 w-4 rounded-full bg-white shadow-sm transition-transform duration-200 data-[state=checked]:translate-x-5"
+      class="block h-4 w-4 shrink-0 rounded-full bg-white shadow-sm transition-transform duration-200 data-[state=checked]:translate-x-5"
     />
   </span>
 </Switch.Root>

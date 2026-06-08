@@ -48,7 +48,8 @@
 	import { formatMessageListWhen, simpleMessageDayKey } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
-	import { importantRainbow } from '$lib/mail/important-rainbow.svelte';
+	import { importantMarker } from '$lib/mail/important-marker.svelte';
+	import ImportantSubjectHighlight from '$lib/components/mail/ImportantSubjectHighlight.svelte';
 	import {
 		LABEL_NOT_IMPORTANT,
 		LABEL_SEEN,
@@ -71,11 +72,10 @@
 			'list-sender min-w-0 truncate',
 			unread ? 'font-semibold text-fg' : 'font-medium text-fg-muted'
 		);
-	const listSubjectClass = (unread: boolean, important: boolean) =>
+	const listSubjectClass = (unread: boolean) =>
 		cn(
 			'list-subject min-w-0 truncate',
-			important && 'z-mail-list-subject--important font-semibold',
-			!important && (unread ? 'font-semibold text-fg' : 'font-medium text-fg')
+			unread ? 'font-semibold text-fg' : 'font-medium text-fg'
 		);
 
 	const listTimeClass = 'list-time shrink-0 tabular-nums text-fg-subtle';
@@ -111,7 +111,7 @@
 	const FOLDER_SECTION_SORT_BASE = 10;
 
 	/** Important row currently hovered — only that row may persist a rainbow pick. */
-	let importantRainbowHoverId = $state<string | null>(null);
+	let importantMarkerHoverId = $state<string | null>(null);
 	/** After bulk-select long-press, block the following link navigation. */
 	let suppressRowNavigationUntil = 0;
 	/** Touch rainbow pick in progress after bulk long-press on an important row. */
@@ -123,13 +123,13 @@
 	let readFilter = $state<MessageListReadFilter>('all');
 
 	let rainbowHoverTimeout: ReturnType<typeof setTimeout> | null = null;
-	let isSamplingRainbow = false;
+	let isSamplingRainbow = $state(false);
 
 	const mobileRowGestures = $derived(supportsMobileListGestures());
 
 	$effect(() => {
 		void $page.url.pathname;
-		importantRainbowHoverId = null;
+		importantMarkerHoverId = null;
 		readFilter = 'all';
 		cancelMobileImportantRainbowPick();
 		if (rainbowHoverTimeout) {
@@ -150,9 +150,9 @@
 	function persistImportantRainbowPick(messageId: string, row: HTMLElement, event: PointerEvent) {
 		if (settings.reduceMotion || !hasPreciseHover()) return;
 		if (!shouldPersistRainbowPick(event)) return;
-		if (importantRainbowHoverId !== messageId) return;
-		importantRainbowHoverId = null;
-		importantRainbow.pickFromRow(row, messageId);
+		if (importantMarkerHoverId !== messageId) return;
+		importantMarkerHoverId = null;
+		importantMarker.pickFromRow(row, messageId);
 	}
 
 	function handleRainbowPointerEnter(messageId: string, currentTarget: HTMLElement) {
@@ -162,11 +162,11 @@
 
 		rainbowHoverTimeout = setTimeout(() => {
 			if (!currentTarget.isConnected) return;
-			const subject = currentTarget.querySelector('.z-mail-list-subject--important');
+			const subject = currentTarget.querySelector('[data-important-subject]');
 			if (subject instanceof HTMLElement) {
 				isSamplingRainbow = true;
-				importantRainbowHoverId = messageId;
-				importantRainbow.startHoverSample(subject, messageId);
+				importantMarkerHoverId = messageId;
+				importantMarker.startHoverSample(subject, messageId);
 			}
 		}, 300);
 	}
@@ -184,9 +184,9 @@
 			}
 		} else {
 			// Restore saved color phase visual
-			const subject = currentTarget.querySelector('.z-mail-list-subject--important');
+			const subject = currentTarget.querySelector('[data-important-subject]');
 			if (subject instanceof HTMLElement) {
-				importantRainbow.resetFromElement(subject, messageId);
+				importantMarker.resetFromElement(subject, messageId);
 			}
 		}
 	}
@@ -296,7 +296,7 @@
 		const row = document.querySelector(
 			`.z-mail-list-row[data-message-id="${CSS.escape(messageId)}"]`
 		);
-		const subject = row?.querySelector('.z-mail-list-subject--important');
+		const subject = row?.querySelector('[data-important-subject]');
 		return subject instanceof HTMLElement ? subject : null;
 	}
 
@@ -344,7 +344,7 @@
 		}
 
 		mobileImportantRainbowPick = { messageId: message.id, subjectEl: subject, started: true };
-		importantRainbow.startTouchPick(subject, message.id);
+		importantMarker.startTouchPick(subject, message.id);
 	}
 
 	function finishMobileImportantRainbowPick() {
@@ -353,7 +353,7 @@
 		if (!pick?.started) return;
 		const subject = resolveImportantRainbowSubject(pick.messageId, pick.subjectEl);
 		if (!subject) return;
-		importantRainbow.finishTouchPick(subject, pick.messageId);
+		importantMarker.finishTouchPick(subject, pick.messageId);
 	}
 
 	function cancelMobileImportantRainbowPick() {
@@ -362,7 +362,7 @@
 		if (!pick?.started) return;
 		const subject = resolveImportantRainbowSubject(pick.messageId, pick.subjectEl);
 		if (!subject) return;
-		importantRainbow.cancelTouchPick(subject, pick.messageId);
+		importantMarker.cancelTouchPick(subject, pick.messageId);
 	}
 
 	function swipeContext(message: MessagePreview, routeId: string) {
@@ -1062,17 +1062,18 @@
 									{timeLabel}
 								</time>
 							</div>
-							<p
-								class={cn(
-									'list-subject',
-									listSubjectClass(isUnread, subjectImportant),
-									subjectImportant &&
-										importantRainbow.hasPicked(message.id) &&
-										'z-mail-list-subject--important-picked'
-								)}
-								style={subjectImportant ? importantRainbow.cssVars(message.id) : undefined}
-							>
-								{subjectText}
+							<p class={listSubjectClass(isUnread)}>
+								{#if subjectImportant}
+									<ImportantSubjectHighlight
+										messageId={message.id}
+										picking={importantMarkerHoverId === message.id && isSamplingRainbow}
+										animate={!settings.reduceMotion}
+									>
+										{subjectText}
+									</ImportantSubjectHighlight>
+								{:else}
+									{subjectText}
+								{/if}
 							</p>
 
 						</div>

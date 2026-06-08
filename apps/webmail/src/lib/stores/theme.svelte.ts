@@ -1,63 +1,69 @@
 import { browser } from '$app/environment';
 import { scheduleAccountSettingsPush } from '$lib/settings/account-sync';
+import {
+	isCircadianDark,
+	sampleCircadian,
+	startCircadian,
+	stopCircadianTheme
+} from '@zaur/ui/circadian';
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = 'circadian' | 'light' | 'dark';
 
 function readStoredTheme(): ThemeMode {
-	if (!browser) return 'system';
+	if (!browser) return 'circadian';
 	const saved = localStorage.getItem('zaur-theme');
-	if (saved === 'light' || saved === 'dark' || saved === 'system') return saved;
-	return 'system';
-}
-
-function resolveTheme(mode: ThemeMode): 'light' | 'dark' {
-	if (!browser || mode !== 'system') return mode === 'dark' ? 'dark' : 'light';
-	return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+	if (saved === 'circadian' || saved === 'light' || saved === 'dark') return saved;
+	if (saved === 'system') return 'circadian';
+	return 'circadian';
 }
 
 class ThemeStore {
-	/** User preference: light, dark, or follow system. */
+	/** User preference: automatic (circadian), fixed light, or fixed dark. */
 	mode = $state<ThemeMode>(readStoredTheme());
-	/** Resolved appearance applied to the document. */
-	resolved = $state<'light' | 'dark'>(resolveTheme(readStoredTheme()));
+	/** Resolved appearance for email rendering and UI that needs a binary light/dark. */
+	resolved = $state<'light' | 'dark'>('light');
 
-	private mediaQuery: MediaQueryList | null = null;
-	private onSystemChange = () => {
-		if (this.mode !== 'system') return;
-		this.resolved = resolveTheme('system');
-		this.applyResolved();
-	};
+	private stopCircadian: (() => void) | null = null;
 
 	init() {
 		if (!browser) return;
-
 		this.mode = readStoredTheme();
-		this.resolved = resolveTheme(this.mode);
-		this.mediaQuery?.removeEventListener('change', this.onSystemChange);
-		this.mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-		this.mediaQuery.addEventListener('change', this.onSystemChange);
-		this.applyResolved();
+		this.applyMode();
 		this.clearLegacyAccentPreference();
-	}
-
-	toggle() {
-		this.set(this.resolved === 'light' ? 'dark' : 'light');
 	}
 
 	set(value: ThemeMode) {
 		this.mode = value;
-		this.resolved = resolveTheme(value);
 		if (browser) {
 			localStorage.setItem('zaur-theme', value);
 			scheduleAccountSettingsPush();
 		}
-		this.applyResolved();
+		this.applyMode();
 	}
 
-	private applyResolved() {
+	private applyMode() {
 		if (!browser) return;
-		document.documentElement.classList.toggle('dark', this.resolved === 'dark');
-		document.documentElement.classList.toggle('light', this.resolved === 'light');
+
+		this.stopCircadian?.();
+		this.stopCircadian = null;
+
+		const el = document.documentElement;
+
+		if (this.mode === 'circadian') {
+			this.stopCircadian = startCircadian({
+				onTick: (sample) => {
+					this.resolved = isCircadianDark(sample) ? 'dark' : 'light';
+				}
+			});
+			const sample = sampleCircadian();
+			this.resolved = isCircadianDark(sample) ? 'dark' : 'light';
+			return;
+		}
+
+		stopCircadianTheme(el);
+		this.resolved = this.mode === 'dark' ? 'dark' : 'light';
+		el.classList.toggle('dark', this.resolved === 'dark');
+		el.classList.toggle('light', this.resolved === 'light');
 	}
 
 	private clearLegacyAccentPreference() {

@@ -3,6 +3,7 @@
  */
 @import 'tailwindcss';
 @import '@zaur/ui/theme.css';
+@import '@zaur/ui/circadian.css';
 
 @import './styles/tokens.css';
 @import './styles/base.css' layer(base);

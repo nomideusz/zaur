@@ -58,7 +58,7 @@
 </SettingsGroup>
 
 <SettingsGroup title="Inbox & Colors">
-  <SettingsRow title="Colorful Important subjects">
+  <SettingsRow title="Marker highlights on Important">
     <IOSToggle
       checked={settings.showImportantColors}
       onchange={(checked) => settings.setShowImportantColors(checked)}
