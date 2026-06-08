@@ -52,12 +52,13 @@
 
 	<DropdownMenu.Portal>
 		<DropdownMenu.Content
+			side="bottom"
 			align="end"
 			sideOffset={8}
-			collisionPadding={8}
+			collisionPadding={12}
 			sticky="always"
 			updatePositionStrategy="always"
-			class="z-overflow-menu z-overflow-menu--fixed z-overflow-menu--list w-56 max-w-[calc(100vw-1rem)] min-w-0"
+			class="z-overflow-menu z-overflow-menu--fixed z-overflow-menu--list w-56 min-w-56 max-w-[calc(100vw-1rem)]"
 		>
 			<div class="border-b border-border px-3 py-2">
 				<p class="truncate text-sm font-medium text-fg">

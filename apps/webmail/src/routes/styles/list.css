@@ -652,6 +652,7 @@
 	.z-mail-view .z-mail-list--selecting .z-mail-list-row__checkbox,
 	.z-mail-view .z-mail-list-row__checkbox--on,
 	.z-mail-view .z-mail-list-row__checkbox:checked,
+	.z-mail-view .z-mail-list-row__checkbox[data-state='checked'],
 	.z-mail-view .z-mail-list-row__checkbox:focus-visible {
 		opacity: 1;
 		pointer-events: auto;
@@ -659,6 +660,8 @@
 
 	.z-mail-view .z-mail-list-row__checkbox--on,
 	.z-mail-view .z-mail-list-row__checkbox:checked,
+	.z-mail-view .z-mail-list-row__checkbox[data-state='checked'],
+	:is(.z-mail-view, .z-app-shell-header) :is(.z-mail-list-bulk-header__checkbox, .z-mail-list-bulk-bar__checkbox)[data-state='checked'],
 	:is(.z-mail-view, .z-app-shell-header) :is(.z-mail-list-bulk-header__checkbox, .z-mail-list-bulk-bar__checkbox):checked {
 		background-color: var(--z-accent);
 		border-color: var(--z-accent);
@@ -667,6 +670,8 @@
 
 	.z-mail-view .z-mail-list-row__checkbox--on::after,
 	.z-mail-view .z-mail-list-row__checkbox:checked::after,
+	.z-mail-view .z-mail-list-row__checkbox[data-state='checked']::after,
+	:is(.z-mail-view, .z-app-shell-header) :is(.z-mail-list-bulk-header__checkbox, .z-mail-list-bulk-bar__checkbox)[data-state='checked']::after,
 	:is(.z-mail-view, .z-app-shell-header) :is(.z-mail-list-bulk-header__checkbox, .z-mail-list-bulk-bar__checkbox):checked::after {
 		content: '';
 		display: block;
@@ -677,12 +682,14 @@
 		transform: rotate(45deg) translate(-0.5px, -1px);
 	}
 
+	:is(.z-mail-view, .z-app-shell-header) :is(.z-mail-list-bulk-header__checkbox, .z-mail-list-bulk-bar__checkbox)[data-state='indeterminate'],
 	:is(.z-mail-view, .z-app-shell-header) :is(.z-mail-list-bulk-header__checkbox, .z-mail-list-bulk-bar__checkbox):indeterminate {
 		background-color: var(--z-surface-raised);
 		border-color: var(--z-accent);
 		opacity: 1;
 	}
 
+	:is(.z-mail-view, .z-app-shell-header) :is(.z-mail-list-bulk-header__checkbox, .z-mail-list-bulk-bar__checkbox)[data-state='indeterminate']::after,
 	:is(.z-mail-view, .z-app-shell-header) :is(.z-mail-list-bulk-header__checkbox, .z-mail-list-bulk-bar__checkbox):indeterminate::after {
 		content: '';
 		display: block;

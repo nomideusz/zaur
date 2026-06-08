@@ -12,6 +12,7 @@
 		label?: string;
 		menuId?: string;
 		placement?: OverflowMenuPlacement;
+		align?: 'start' | 'center' | 'end';
 		triggerText?: string;
 		/** Match text-nav links — no chrome padding or text-sm. */
 		textTrigger?: boolean;
@@ -26,6 +27,7 @@
 		label = 'More actions',
 		menuId = 'overflow-menu',
 		placement = 'bottom',
+		align = 'end',
 		triggerText = '',
 		textTrigger = false,
 		class: className = '',
@@ -79,12 +81,12 @@
 			<DropdownMenu.Content
 				id={menuId}
 				{side}
-				align="end"
+				{align}
 				sideOffset={8}
-				collisionPadding={8}
+				collisionPadding={12}
 				sticky="always"
 				updatePositionStrategy="always"
-				class={cn('z-overflow-menu z-overflow-menu--fixed', menuClass)}
+				class={cn('z-overflow-menu z-overflow-menu--fixed w-72 min-w-64 max-w-[calc(100vw-1rem)]', menuClass)}
 				onpointerdown={(event) => event.stopPropagation()}
 			>
 				{@render children()}

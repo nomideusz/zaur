@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Popover } from 'bits-ui';
 	import Clock from '$lib/components/icons/Clock.svelte';
 	import Send from '$lib/components/icons/Send.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
@@ -42,47 +43,27 @@
 		return item.to.split(',')[0]?.trim() || 'No recipient';
 	}
 
-	function onMenuKeydown(event: KeyboardEvent) {
-		if (event.key === 'Escape') {
-			open = false;
-		}
-	}
 </script>
 
-<svelte:window onclick={() => (open = false)} />
-
-<div class="relative">
+<Popover.Root bind:open>
 	{#if display === 'text'}
-		<button
-			type="button"
+		<Popover.Trigger
 			class={cn(
 				'z-btn-ghost h-9 w-full justify-between px-2 text-sm',
 				open && 'bg-surface-sunken/70 text-fg'
 			)}
-			aria-expanded={open}
 			aria-controls="outbox-menu"
-			aria-haspopup="dialog"
-			onclick={(e) => {
-				e.stopPropagation();
-				open = !open;
-			}}
 		>
 			<span class="truncate text-left">{outbox.pendingCount ? outboxLabel : 'Outbox'}</span>
 			{#if outbox.pendingCount}
 				<Badge count={outbox.pendingCount} variant="muted" class="ml-2 shrink-0" />
 			{/if}
-		</button>
+		</Popover.Trigger>
 	{:else}
-		<IconButton
-			label={outboxLabel}
-			class="relative"
-			ariaExpanded={open}
-			ariaControls="outbox-menu"
-			ariaHaspopup="dialog"
-			onclick={(e) => {
-				e.stopPropagation();
-				open = !open;
-			}}
+		<Popover.Trigger
+			aria-label={outboxLabel}
+			aria-controls="outbox-menu"
+			class={cn('z-btn-icon relative min-h-10 min-w-10 p-2.5', open && 'bg-surface-sunken/70 text-fg')}
 		>
 			<Send class="size-4" />
 			{#if outbox.pendingCount}
@@ -90,18 +71,20 @@
 					<Badge count={outbox.pendingCount} />
 				</span>
 			{/if}
-		</IconButton>
+		</Popover.Trigger>
 	{/if}
 
-	{#if open}
-		<div
+	<Popover.Portal>
+		<Popover.Content
 			id="outbox-menu"
-			role="dialog"
 			aria-label="Outbox"
-			tabindex="-1"
-			class="absolute right-0 z-30 mt-1 w-[min(20rem,calc(100vw-1rem))] rounded-md border border-border bg-surface-raised shadow-md"
+			align="end"
+			sideOffset={8}
+			collisionPadding={8}
+			sticky="always"
+			updatePositionStrategy="always"
+			class="z-50 w-[min(20rem,calc(100vw-1rem))] rounded-md border border-border bg-surface-raised shadow-md"
 			onpointerdown={(e) => e.stopPropagation()}
-			onkeydown={onMenuKeydown}
 		>
 			<div
 				class="flex items-center justify-between border-b border-border px-3 py-2"
@@ -176,6 +159,6 @@
 					{/if}
 				</p>
 			{/if}
-		</div>
-	{/if}
-</div>
+		</Popover.Content>
+	</Popover.Portal>
+</Popover.Root>

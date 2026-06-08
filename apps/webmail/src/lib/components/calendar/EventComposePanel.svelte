@@ -4,6 +4,7 @@
 	import X from '$lib/components/icons/X.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { EVENT_REPEAT_OPTIONS } from '$lib/jmap/recurrence';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -111,10 +112,16 @@
 					/>
 				</label>
 
-				<label class="flex items-center gap-2 rounded-md text-sm">
-					<input type="checkbox" bind:checked={calendar.composeDraft.allDay} />
+				<Checkbox
+					checked={calendar.composeDraft.allDay}
+					label="All day"
+					class="inline-flex cursor-pointer items-center gap-2 rounded-md text-sm"
+					onchange={(checked) => {
+						calendar.composeDraft.allDay = checked === true;
+					}}
+				>
 					<span class="text-fg">All day</span>
-				</label>
+				</Checkbox>
 
 				{#if !isEdit}
 					<label class="block space-y-1.5">

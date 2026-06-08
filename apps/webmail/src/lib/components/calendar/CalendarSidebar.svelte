@@ -1,5 +1,6 @@
 <script lang="ts">
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { cn } from '$lib/utils/cn';
 </script>
@@ -29,25 +30,22 @@
 			<ul class="space-y-0.5">
 				{#each calendar.calendars as item (item.id)}
 					<li>
-						<label
+						<Checkbox
+							checked={calendar.isCalendarVisible(item.id)}
+							label={`Show ${item.name} calendar`}
+							onchange={() => calendar.toggleCalendar(item.id)}
 							class={cn(
-								'z-checkbox-row py-2',
+								'z-checkbox-row w-full py-2 text-left',
 								calendar.isCalendarVisible(item.id) ? 'text-fg' : 'text-fg-muted'
 							)}
 						>
-							<input
-								type="checkbox"
-
-								checked={calendar.isCalendarVisible(item.id)}
-								onchange={() => calendar.toggleCalendar(item.id)}
-							/>
 							<span
 								class="size-2.5 shrink-0 rounded-full"
 								style:background-color={item.color}
 								aria-hidden="true"
 							></span>
 							<span class="truncate">{item.name}</span>
-						</label>
+						</Checkbox>
 					</li>
 				{/each}
 			</ul>

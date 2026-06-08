@@ -67,7 +67,7 @@ node scripts/generate-settings-index.mjs
 
 ## Deploy
 
-The app uses `@sveltejs/adapter-node` and ships with a multi-stage Dockerfile. Set `SESSION_SECRET` in your runtime environment.
+The app uses `svelte-adapter-uws` and ships with a multi-stage Dockerfile. Set `SESSION_SECRET` in your runtime environment.
 
 ```sh
 docker build -t zaur-webmail .

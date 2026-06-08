@@ -5,6 +5,7 @@
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import Plus from '$lib/components/icons/Plus.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
@@ -116,25 +117,22 @@
 			<ul class="space-y-0.5">
 				{#each calendar.calendars as item (item.id)}
 					<li>
-						<label
+						<Checkbox
+							checked={calendar.isCalendarVisible(item.id)}
+							label={`Show ${item.name} calendar`}
+							onchange={() => calendar.toggleCalendar(item.id)}
 							class={cn(
-								'z-checkbox-row py-2',
+								'z-checkbox-row w-full py-2 text-left',
 								calendar.isCalendarVisible(item.id) ? 'text-fg' : 'text-fg-muted'
 							)}
 						>
-							<input
-								type="checkbox"
-
-								checked={calendar.isCalendarVisible(item.id)}
-								onchange={() => calendar.toggleCalendar(item.id)}
-							/>
 							<span
 								class="size-2.5 shrink-0 rounded-full"
 								style:background-color={item.color}
 								aria-hidden="true"
 							></span>
 							<span class="truncate">{item.name}</span>
-						</label>
+						</Checkbox>
 					</li>
 				{/each}
 			</ul>

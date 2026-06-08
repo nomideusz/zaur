@@ -5,6 +5,7 @@
 	import { appConfig } from '$lib/config';
 	import { loadRememberedLogin } from '$lib/auth/remember-login';
 	import Button from '$lib/components/ui/Button.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
@@ -143,15 +144,17 @@
 					</div>
 				{/if}
 
-				<label class="flex cursor-pointer items-center gap-2 text-sm text-fg-muted">
-					<input
-						type="checkbox"
-
-						bind:checked={rememberMe}
-						disabled={auth.isLoading}
-					/>
+				<Checkbox
+					checked={rememberMe}
+					disabled={auth.isLoading}
+					label="Remember me"
+					class="flex cursor-pointer items-center gap-2 text-sm text-fg-muted"
+					onchange={(checked) => {
+						rememberMe = checked === true;
+					}}
+				>
 					Remember me
-				</label>
+				</Checkbox>
 
 				{#if auth.error}
 					<p class="text-sm text-danger" role="alert">{auth.error}</p>

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Dialog } from 'bits-ui';
 	import FileText from '$lib/components/icons/FileText.svelte';
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import Download from '$lib/components/icons/Download.svelte';
@@ -10,7 +11,6 @@
 	import { downloadAttachment, getAttachmentBlob } from '$lib/attachments/download';
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { MessageAttachment } from '$lib/types/mail';
-	import { portal } from '$lib/utils/portal';
 	import { PdfViewer } from '$lib/components/ui/pdf-viewer';
 
 	interface Props {
@@ -27,6 +27,7 @@
 
 	let activePreviewAttachment = $state<MessageAttachment | null>(null);
 	let previewBlob = $state<Blob | null>(null);
+	let previewOpen = $state(false);
 
 	const canCollapse = $derived(attachments.length > COLLAPSE_THRESHOLD);
 
@@ -52,6 +53,7 @@
 				const blob = await getAttachmentBlob(attachment);
 				previewBlob = blob;
 				activePreviewAttachment = attachment;
+				previewOpen = true;
 			} else {
 				await downloadAttachment(attachment);
 			}
@@ -73,19 +75,11 @@
 	}
 
 	function closePreview() {
+		previewOpen = false;
 		previewBlob = null;
 		activePreviewAttachment = null;
 	}
-
-	function handleKeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape' && activePreviewAttachment) {
-			closePreview();
-		}
-	}
-
 </script>
-
-<svelte:window onkeydown={handleKeydown} />
 
 <section class="z-reader-attachments" aria-label={attachmentLabel(attachments.length)}>
 	<div class="z-reader-attachments__head">
@@ -140,20 +134,17 @@
 	{/if}
 </section>
 
-{#if activePreviewAttachment && previewBlob}
-	<!-- Backdrop wrapper -->
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<div
-		use:portal
-		class="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-md p-4 md:p-8"
-		onpointerdown={closePreview}
-	>
-		<!-- Modal wrapper container that stops event propagation -->
-		<div
-			class="w-full max-w-5xl h-[90vh] flex flex-col"
-			onpointerdown={(e) => e.stopPropagation()}
-		>
+<Dialog.Root
+	open={previewOpen && !!activePreviewAttachment && !!previewBlob}
+	onOpenChange={(open) => {
+		if (!open) closePreview();
+	}}
+>
+	<Dialog.Portal>
+		<Dialog.Overlay class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md" />
+		<Dialog.Content class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+			{#if activePreviewAttachment && previewBlob}
+				<div class="flex h-[90vh] w-full max-w-5xl flex-col">
 			<PdfViewer.Root
 				src={previewBlob}
 				class="w-full h-full bg-surface border border-border rounded-xl shadow-2xl flex flex-col overflow-hidden"
@@ -164,9 +155,9 @@
 						<span class="px-2 py-0.5 text-xs font-bold bg-danger/10 text-danger border border-danger/20 rounded uppercase tracking-wider select-none shrink-0">
 							PDF
 						</span>
-						<h3 class="text-sm font-semibold text-fg truncate" title={activePreviewAttachment.name}>
+						<Dialog.Title class="text-sm font-semibold text-fg truncate" title={activePreviewAttachment.name}>
 							{activePreviewAttachment.name}
-						</h3>
+						</Dialog.Title>
 					</div>
 
 					<!-- Desktop Toolbar placement -->
@@ -207,6 +198,8 @@
 					<PdfViewer.Renderer />
 				</div>
 			</PdfViewer.Root>
-		</div>
-	</div>
-{/if}
+				</div>
+			{/if}
+		</Dialog.Content>
+	</Dialog.Portal>
+</Dialog.Root>

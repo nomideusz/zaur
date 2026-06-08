@@ -63,12 +63,15 @@
 
 	<Select.Portal>
 		<Select.Content
-			class={cn(
-				'z-mobile-picker-menu w-[var(--bits-select-anchor-width)] min-w-[var(--bits-select-anchor-width)] max-h-[min(var(--bits-select-content-available-height),17.5rem)]',
-				compact && 'z-mobile-picker-menu--compact'
-			)}
 			sideOffset={4}
 			align="start"
+			collisionPadding={12}
+			sticky="always"
+			updatePositionStrategy="always"
+			class={cn(
+				'z-mobile-picker-menu w-[var(--bits-select-anchor-width)] min-w-[var(--bits-select-anchor-width)] max-h-[min(var(--bits-select-content-available-height),17.5rem)] max-w-[calc(100vw-1rem)]',
+				compact && 'z-mobile-picker-menu--compact'
+			)}
 		>
 			<Select.Viewport>
 				{#each options as option (option.value)}

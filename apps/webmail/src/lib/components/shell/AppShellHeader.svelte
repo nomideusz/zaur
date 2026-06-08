@@ -7,6 +7,7 @@
 	import UserPlus from '$lib/components/icons/UserPlus.svelte';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
 	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
+	import LiveSessionPresence from '$lib/components/shell/LiveSessionPresence.svelte';
 	import OfflineIndicator from '$lib/components/shell/OfflineIndicator.svelte';
 	import ToolSwitcher from '$lib/components/shell/ToolSwitcher.svelte';
 	import UserMenu from '$lib/components/shell/UserMenu.svelte';
@@ -207,6 +208,10 @@
 	>
 		<div class="max-md:hidden">
 			<OfflineIndicator />
+		</div>
+
+		<div class="max-md:hidden">
+			<LiveSessionPresence />
 		</div>
 
 		{#if onCalendarRoute && calendar.supported !== false}

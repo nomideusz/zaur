@@ -5,6 +5,7 @@
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -638,14 +639,16 @@
 						</div>
 
 						<div class="flex items-end pb-1.5">
-							<label class="flex items-center gap-2 cursor-pointer select-none text-fg-muted hover:text-fg transition-colors">
-								<input
-									type="checkbox"
-									class="rounded border-border bg-surface-sunken text-accent focus:ring-accent focus:ring-offset-surface-raised"
-									bind:checked={advHasAttachment}
-								/>
+							<Checkbox
+								checked={advHasAttachment}
+								label="Has attachment"
+								class="flex cursor-pointer items-center gap-2 text-fg-muted transition-colors hover:text-fg"
+								onchange={(checked) => {
+									advHasAttachment = checked === true;
+								}}
+							>
 								<span class="text-xs font-medium">Has attachment</span>
-							</label>
+							</Checkbox>
 						</div>
 					</div>
 

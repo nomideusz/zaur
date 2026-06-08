@@ -41,19 +41,27 @@
 			{side}
 			align="start"
 			sideOffset={8}
-			collisionPadding={8}
+			collisionPadding={12}
 			sticky="always"
 			updatePositionStrategy="always"
-			class="z-overflow-menu z-overflow-menu--fixed w-40 min-w-0 py-1"
+			class="z-overflow-menu z-overflow-menu--fixed w-40 min-w-40 max-w-[calc(100vw-1rem)] py-1"
 			onpointerdown={(event) => event.stopPropagation()}
 		>
 			<DropdownMenu.Item class="z-overflow-menu-item" textValue="All" onSelect={() => choose('all')}>
 				All
 			</DropdownMenu.Item>
-			<DropdownMenu.Item class="z-overflow-menu-item" textValue="Normal" onSelect={() => choose('normal')}>
+			<DropdownMenu.Item
+				class="z-overflow-menu-item"
+				textValue="Normal"
+				onSelect={() => choose('normal')}
+			>
 				Normal
 			</DropdownMenu.Item>
-			<DropdownMenu.Item class="z-overflow-menu-item" textValue={LABEL_UNSEEN} onSelect={() => choose('new')}>
+			<DropdownMenu.Item
+				class="z-overflow-menu-item"
+				textValue={LABEL_UNSEEN}
+				onSelect={() => choose('new')}
+			>
 				{LABEL_UNSEEN}
 			</DropdownMenu.Item>
 			<DropdownMenu.Item class="z-overflow-menu-item" textValue="None" onSelect={() => choose('none')}>

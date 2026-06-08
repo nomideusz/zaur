@@ -73,6 +73,7 @@
 			label="More mail actions"
 			menuId="mail-list-toolbar-menu-{surface}"
 			placement="bottom"
+			align={surface === 'shell' ? 'center' : 'end'}
 			textTrigger
 			triggerText={surface === 'shell' ? currentFilterLabel : 'More'}
 			triggerClass="z-mail-text-nav__link"

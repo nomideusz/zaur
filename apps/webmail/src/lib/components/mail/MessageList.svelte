@@ -19,6 +19,7 @@
 	import SwipeableListRow, {
 		type SwipeAction
 	} from '$lib/components/ui/SwipeableListRow.svelte';
+	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import type {
 		MessageListProps,
 		MessageListReadFilter
@@ -1023,12 +1024,10 @@
 			>
 				{#if showRowCheckbox}
 					<div class="z-mail-list-checkbox-col z-mail-list-checkbox-col--row">
-						<input
-							type="checkbox"
+						<Checkbox
 							class={cn('z-mail-list-row__checkbox absolute m-0', rowSelected && 'z-mail-list-row__checkbox--on')}
 							checked={rowSelected}
-							aria-checked={rowSelected}
-							aria-label={`Select ${subjectText}`}
+							label={`Select ${subjectText}`}
 							onclick={(event) => handleRowCheckboxClick(message.id, event, rowSelected)}
 						/>
 					</div>

@@ -162,9 +162,10 @@
 	}
 
 	.z-mobile-picker-menu {
-		position: fixed;
+		position: relative;
 		z-index: 60;
 		margin: 0;
+		max-width: calc(100vw - 1rem);
 		list-style: none;
 		overflow-y: auto;
 		border: 1px solid var(--z-border);
