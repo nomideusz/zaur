@@ -122,9 +122,9 @@
 	let bccFocused = $state(false);
 	let isRichText = $state(settings.defaultComposeFormat === 'html');
 
-	const showToPrefix = $derived(toFocused);
-	const showCcPrefix = $derived(ccFocused);
-	const showBccPrefix = $derived(bccFocused);
+	const showToPrefix = $derived(toFocused && !compose.to.trim());
+	const showCcPrefix = $derived(ccFocused && !compose.cc.trim());
+	const showBccPrefix = $derived(bccFocused && !compose.bcc.trim());
 	const toPlaceholder = $derived(showToPrefix ? '' : 'Recipients');
 	const ccPlaceholder = $derived(showCcPrefix ? '' : 'Cc');
 	const bccPlaceholder = $derived(showBccPrefix ? '' : 'Bcc');
