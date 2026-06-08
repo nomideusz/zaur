@@ -22,8 +22,13 @@ export interface ActiveSession {
 	connectedAt: string;
 }
 
+interface SessionEntry {
+	session: ActiveSession;
+	connections: Set<string>;
+}
+
 const TOPIC = 'webmail:active-sessions';
-const sessions = new Map<string, ActiveSession>();
+const sessions = new Map<string, SessionEntry>();
 
 function requireUser(ctx: LiveContext): LiveUser {
 	if (!ctx.user?.username) {
@@ -32,20 +37,26 @@ function requireUser(ctx: LiveContext): LiveUser {
 	return ctx.user;
 }
 
-function sessionKey(ctx: LiveContext, user: LiveUser): string {
+function sessionKey(user: LiveUser): string {
+	return user.sessionId;
+}
+
+function connectionKey(ctx: LiveContext, user: LiveUser): string {
 	return `${user.sessionId}:${ctx.requestId ?? 'connection'}`;
 }
 
 function upsertSession(ctx: LiveContext): ActiveSession {
 	const user = requireUser(ctx);
-	const key = sessionKey(ctx, user);
+	const key = sessionKey(user);
 	const existing = sessions.get(key);
 	const session = {
 		key,
 		username: user.username,
-		connectedAt: existing?.connectedAt ?? new Date().toISOString()
+		connectedAt: existing?.session.connectedAt ?? new Date().toISOString()
 	};
-	sessions.set(key, session);
+	const connections = existing?.connections ?? new Set<string>();
+	connections.add(connectionKey(ctx, user));
+	sessions.set(key, { session, connections });
 	return session;
 }
 
@@ -58,13 +69,19 @@ export const activeSessions = live.stream(
 	async (ctx: LiveContext) => {
 		const session = upsertSession(ctx);
 		ctx.publish(TOPIC, 'join', session);
-		return [...sessions.values()];
+		return [...sessions.values()].map((entry) => entry.session);
 	},
 	{
 		merge: 'presence',
 		onUnsubscribe(ctx: LiveContext, topic: string) {
 			const user = requireUser(ctx);
-			const key = sessionKey(ctx, user);
+			const key = sessionKey(user);
+			const entry = sessions.get(key);
+			if (!entry) return;
+
+			entry.connections.delete(connectionKey(ctx, user));
+			if (entry.connections.size > 0) return;
+
 			sessions.delete(key);
 			ctx.publish(topic, 'leave', { key });
 		}
