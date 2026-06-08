@@ -4,7 +4,6 @@
 	import Search from '$lib/components/icons/Search.svelte';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import CalendarPlus from '$lib/components/icons/CalendarPlus.svelte';
-	import PenSquare from '$lib/components/icons/PenSquare.svelte';
 	import UserPlus from '$lib/components/icons/UserPlus.svelte';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
 	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
@@ -14,7 +13,6 @@
 	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
 	import MessageListToolbar from '$lib/components/mail/MessageListToolbar.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
 	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
 	import { appConfig } from '$lib/config';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
@@ -218,10 +216,13 @@
 			>
 				<CalendarPlus class="size-4" aria-hidden="true" />
 			</IconButton>
-			<Button onclick={() => calendar.openCompose()} class="hidden md:inline-flex">
-				<CalendarPlus class="size-4" aria-hidden="true" />
+			<button
+				type="button"
+				class="z-mail-text-nav__action hidden md:inline-flex"
+				onclick={() => calendar.openCompose()}
+			>
 				New event
-			</Button>
+			</button>
 		{:else if showComposeAction}
 			{#if mailListToolbarActive}
 				<IconButton
@@ -232,18 +233,10 @@
 					<Search class="size-4" aria-hidden="true" />
 				</IconButton>
 			{/if}
-			<Button
-				href="/mail/compose"
-				class="min-h-10 shrink-0 px-3 text-sm md:hidden"
-				title="New message"
-			>
-				<PenSquare class="size-4" aria-hidden="true" />
-				New
-			</Button>
-			<Button href="/mail/compose" class="hidden md:inline-flex">
-				<PenSquare class="size-4" aria-hidden="true" />
+			<a href="/mail/compose" class="z-mail-text-nav__action shrink-0 md:hidden">New</a>
+			<a href="/mail/compose" class="z-mail-text-nav__action hidden shrink-0 md:inline-flex">
 				New message
-			</Button>
+			</a>
 		{:else if onContactsRoute && pageCtx?.primaryAction?.kind === 'button'}
 			{@const action = pageCtx.primaryAction}
 			{@const ActionIcon = action.icon ?? UserPlus}

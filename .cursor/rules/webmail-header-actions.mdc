@@ -1,45 +1,62 @@
 ---
-description: Webmail header hierarchy — one strong action, normal-weight titles and brand
+description: Webmail header hierarchy — one primary link action top-right, normal-weight titles
 globs: apps/webmail/**/*
 alwaysApply: false
 ---
 
 # Header action hierarchy
 
-Each header row (app shell, `.z-mail-text-nav__row`, settings nav bar) may have **at most one strong action**.
+Each header row (app shell, `.z-mail-text-nav__row`, settings nav bar) may have **at most one primary action**.
 
-## Strong vs secondary
+## Primary action (top-right)
+
+The main outcome for the screen is a **simple accent link** in the header’s end column — same pattern as **Reply**, **Send**, and **New message**.
+
+| Requirement | Detail |
+|-------------|--------|
+| **Class** | `.z-mail-text-nav__action` |
+| **Element** | `<a>` for navigation, `<button>` for in-place actions (Send, Reply) |
+| **Look** | Semibold accent text, no button chrome, no icon — label only |
+| **Hover** | Accent underline |
+| **Placement** | Top-right of the header row (`.z-app-shell-header__end` or `.z-mail-text-nav__actions`) |
+
+Examples:
+- **Inbox (app shell)**: **New** / **New message** (link → compose)
+- **Reader**: **Reply** or **Reply all** (button)
+- **Compose**: **Send** (button)
+- **Draft reader**: **Send** (button)
+
+Do **not** use `Button`, filled pills, or icon+label buttons for the primary header action.
+
+## Secondary actions
 
 | Role | Class / pattern | Weight |
 |------|-----------------|--------|
-| **Strong action** (max 1) | `.z-mail-text-nav__action` or one primary `Button` in app shell | semibold |
-| Secondary actions | `.z-mail-text-nav__link` | normal |
+| Secondary links | `.z-mail-text-nav__link` | normal |
 | Destructive secondary | `.z-mail-text-nav__link--danger` | normal |
 | Overflow / More / Actions | `textTrigger` + `.z-mail-text-nav__link` | normal |
+| Utility icons (search, etc.) | `IconButton` | — |
 | Title / folder name | `.z-mail-text-nav__title` | normal — never bold |
 | Brand / logo | plain text in shell — **not** `.z-type-brand` | normal |
 
 ## Layout pattern
 
 ```
-[ secondary links … ]     [ title — normal weight ]     [ optional __action ]
+[ secondary links / pickers … ]     [ title — normal weight ]     [ primary __action ]
 ```
 
-Examples:
-- **Inbox list**: Settings (link) · **New message** (action)
-- **Reader**: Back · Done (link) · **Reply** (action) · More (link)
-- **Compose**: Close · Discard (link) · **Send** (action)
-- **Bulk bar**: Cancel (link) · summary (normal) · Trash (link--danger) · Actions (link)
+Bulk select bar (mobile shell): Cancel (icon) · count · Select · Trash · More — not a primary action row.
 
 ## Do not
 
 - Put `font-semibold` / `font-bold` on titles, logos, or summary text in headers
 - Use `.z-type-brand` in app shell or text-nav titles (reserve for auth/marketing pages)
 - Style overflow triggers with `.z-mail-text-nav__action`
-- Add a second strong action (e.g. Trash button + Actions both semibold)
+- Add a second primary action (e.g. Trash + Send both as `__action`)
+- Use `Button` variant primary/ghost for the header’s main CTA
 
 ## When adding a header
 
-1. Pick the single primary outcome → `__action`
-2. Demote everything else → `__link` (or `__link--danger` for delete)
+1. Pick the single primary outcome → `.z-mail-text-nav__action` in the end column
+2. Demote everything else → `__link`, `IconButton`, or overflow menu
 3. Keep the title/logo at normal weight
