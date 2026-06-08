@@ -1,10 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import PenSquare from '$lib/components/icons/PenSquare.svelte';
 	import Search from '$lib/components/icons/Search.svelte';
 	import type { MessageListReadFilter } from '$lib/components/mail/message-list-props';
-	import Button from '$lib/components/ui/Button.svelte';
-	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import { LABEL_MARK_IMPORTANT, LABEL_UNSEEN } from '$lib/mail/new-mail';
@@ -30,9 +27,6 @@
 		surface = 'pane',
 		class: className = ''
 	}: Props = $props();
-
-	const filterPillClass =
-		'rounded-md px-2.5 py-1 text-xs font-semibold transition-colors md:px-3 md:py-1.5 md:text-sm';
 
 	const listFilters: { id: MessageListReadFilter; label: string }[] = [
 		{ id: 'all', label: 'All' },
@@ -70,22 +64,17 @@
 
 <nav
 	class={cn(
-		'z-mail-list-toolbar flex w-full min-w-0 items-center gap-2',
+		'z-mail-list-toolbar flex w-full min-w-0 items-center gap-3',
 		disabled && 'pointer-events-none opacity-60',
 		className
 	)}
 	aria-label="Message list"
 >
-	<div class="flex min-w-0 items-center gap-1" aria-label="Filter messages">
+	<div class="z-segmented min-w-0" role="group" aria-label="Filter messages">
 		{#each listFilters as option (option.id)}
 			<button
 				type="button"
-				class={cn(
-					filterPillClass,
-					readFilter === option.id
-						? 'bg-accent/10 text-accent'
-						: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
-				)}
+				class={cn('z-segmented__item', readFilter === option.id && 'z-segmented__item--active')}
 				aria-pressed={readFilter === option.id}
 				onclick={() => onReadFilterChange(option.id)}
 			>
@@ -96,32 +85,19 @@
 
 	<div class="min-w-0 flex-1" aria-hidden="true"></div>
 
-	{#if surface === 'shell'}
-		<button
-			type="button"
-			class="z-mail-list-toolbar__compose shrink-0"
-			aria-label="New message"
-			title="New message"
-			onclick={() => goto('/mail/compose')}
-		>
-			<PenSquare class="size-5" aria-hidden="true" />
-		</button>
-	{:else}
-		<Button href="/mail/compose" class="hidden shrink-0 sm:inline-flex">
-			<PenSquare class="size-4" aria-hidden="true" />
-			New message
-		</Button>
-		<IconButton label="New message" class="shrink-0 sm:hidden" onclick={() => goto('/mail/compose')}>
-			<PenSquare class="size-4" aria-hidden="true" />
-		</IconButton>
-	{/if}
+	<div class="flex shrink-0 items-center gap-4 max-md:hidden">
+		{#if surface === 'pane'}
+			<a href="/mail/compose" class="z-mail-text-nav__action">New message</a>
+		{/if}
 
-	<OverflowMenu
-		label="More mail actions"
-		menuId="mail-list-toolbar-menu-{surface}"
-		placement="bottom"
-		class="shrink-0"
-	>
+		<OverflowMenu
+			label="More mail actions"
+			menuId="mail-list-toolbar-menu-{surface}"
+			placement="bottom"
+			textTrigger
+			triggerText="More"
+			triggerClass="z-mail-text-nav__link"
+		>
 		{#if surface === 'shell'}
 			<p class="z-type-label px-3 py-1.5 text-[10px] uppercase tracking-wider text-fg-muted">
 				Mailbox
@@ -153,5 +129,6 @@
 			<div class="my-1 border-t border-border/80" role="separator"></div>
 			<OverflowMenuItem label="Show seen only" onclick={() => onReadFilterChange('read')} />
 		{/if}
-	</OverflowMenu>
+		</OverflowMenu>
+	</div>
 </nav>

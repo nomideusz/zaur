@@ -32,16 +32,10 @@
 		class: className = ''
 	}: Props = $props();
 
-	const bulkBarPillClass =
-		'rounded-md px-3 py-1.5 text-sm font-medium transition-colors';
-	const bulkBarActionClass = cn(
-		bulkBarPillClass,
-		'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
-	);
-	const bulkBarDangerClass = cn(
-		bulkBarPillClass,
-		'text-danger hover:bg-surface-sunken/60'
-	);
+	const bulkLinkBase =
+		'cursor-pointer px-1 py-1.5 text-sm font-medium transition-colors hover:underline hover:underline-offset-4';
+	const bulkBarActionClass = cn(bulkLinkBase, 'text-fg-muted hover:text-fg hover:decoration-fg/30');
+	const bulkBarDangerClass = cn(bulkLinkBase, 'text-danger hover:decoration-danger/40');
 
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const selectedCount = $derived(selectedIds.length);

@@ -964,7 +964,7 @@
 >
 	{#if mailboxRouteId || !sectionMode}
 		<header
-			class="z-mail-list-pane-header hidden h-14 w-full shrink-0 items-center overflow-hidden border-b border-border/80 bg-surface md:flex"
+			class="z-mail-list-pane-header flex h-14 w-full shrink-0 items-center overflow-hidden border-b border-border/80 bg-surface"
 		>
 			{#if mail.hasSelection && mailboxRouteId}
 				<MessageListBulkHeader

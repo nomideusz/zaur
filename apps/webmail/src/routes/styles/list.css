@@ -81,7 +81,7 @@
 		display: flex;
 		flex-shrink: 0;
 		align-items: center;
-		gap: 0.125rem;
+		gap: 0.75rem;
 		flex-wrap: nowrap;
 	}
 
@@ -153,35 +153,6 @@
 
 	.z-mail-view .z-mail-list-pane-header .z-mail-list-toolbar {
 		padding-inline: 1rem;
-	}
-
-	.z-mail-list-toolbar__compose {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 2.5rem;
-		height: 2.5rem;
-		border-radius: 9999px;
-		border: none;
-		background-color: var(--z-accent);
-		color: var(--z-accent-fg);
-		box-shadow: 0 1px 2px color-mix(in srgb, var(--z-accent) 35%, transparent);
-		transition:
-			background-color 150ms ease,
-			transform 150ms ease;
-	}
-
-	.z-mail-list-toolbar__compose:hover {
-		background-color: var(--z-accent-hover);
-	}
-
-	.z-mail-list-toolbar__compose:active {
-		transform: scale(0.96);
-	}
-
-	.z-mail-list-toolbar__compose:focus-visible {
-		outline: 2px solid var(--z-accent);
-		outline-offset: 2px;
 	}
 
 	/* Bulk master checkbox — header flush left; bulk bar mirrors list cards padding. */
@@ -279,9 +250,9 @@
 		position: sticky;
 		top: 0;
 		z-index: 10;
-		background-color: color-mix(in srgb, var(--z-surface) 95%, transparent);
-		backdrop-filter: blur(8px);
-		-webkit-backdrop-filter: blur(8px);
+		background-color: color-mix(in srgb, var(--z-surface) 80%, transparent);
+		backdrop-filter: saturate(180%) blur(16px);
+		-webkit-backdrop-filter: saturate(180%) blur(16px);
 	}
 
 	.z-mail-list-nav-bar {

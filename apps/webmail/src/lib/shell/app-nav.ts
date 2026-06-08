@@ -1,7 +1,6 @@
 import type { Component } from 'svelte';
 import Calendar from '$lib/components/icons/Calendar.svelte';
 import Mail from '$lib/components/icons/Mail.svelte';
-import Settings from '$lib/components/icons/Settings.svelte';
 import Users from '$lib/components/icons/Users.svelte';
 import { isMailPath } from '$lib/mail/routes';
 import { calendar } from '$lib/stores/calendar.svelte';
@@ -17,9 +16,10 @@ export type AppNavItem = {
 
 /**
  * Single source of truth for top-level app navigation (Mail, Contacts,
- * Calendar, Settings). Consumed by the desktop header switcher and the mobile
- * bottom nav so both stay in sync. Call inside a reactive context — it reads
- * the calendar/settings stores.
+ * Calendar). Consumed by the desktop header switcher and the mobile bottom nav
+ * so both stay in sync. Settings is intentionally excluded — it lives in the
+ * account/avatar menu, not the app switcher. Call inside a reactive context —
+ * it reads the calendar/settings stores.
  */
 export function appNavItems(): AppNavItem[] {
 	return [
@@ -47,13 +47,6 @@ export function appNavItems(): AppNavItem[] {
 						isActive: (path: string) => path.startsWith('/calendar')
 					}
 				]
-			: []),
-		{
-			id: 'settings',
-			href: '/settings/account',
-			label: 'Settings',
-			icon: Settings,
-			isActive: (path) => path.startsWith('/settings')
-		}
+			: [])
 	];
 }

@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import CalendarPlus from '$lib/components/icons/CalendarPlus.svelte';
 	import PenSquare from '$lib/components/icons/PenSquare.svelte';
 	import UserPlus from '$lib/components/icons/UserPlus.svelte';
-	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
-	import MessageListToolbar from '$lib/components/mail/MessageListToolbar.svelte';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
 	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
 	import OfflineIndicator from '$lib/components/shell/OfflineIndicator.svelte';
@@ -39,11 +38,12 @@
 		onMailRoute && !onMailCompose && mail.hasSelection && !!mailCtx?.mailboxRouteId
 	);
 
-	/** Mail list toolbar/bulk: shell on mobile, list pane on desktop. */
+	/** Folder list/bulk chrome lives in the list pane (both mobile + desktop). */
 	const mailListChromeActive = $derived(
 		onMailRoute && !onMailCompose && (mailBulkActive || !!mailListToolbar)
 	);
 
+	/** Desktop-only header compose; mobile uses the floating compose button. */
 	const showComposeAction = $derived(
 		onMailRoute && !onMailCompose && !mailListChromeActive
 	);
@@ -88,43 +88,17 @@
 	function onMailboxChange(routeId: string) {
 		if (routeId !== mailRouteId) void goto(mailListHref(routeId));
 	}
-
-	const hideMobileAppChrome = $derived(mailListChromeActive);
 </script>
 
 <header
 	class={cn(
-		'z-app-shell-header relative z-40 flex h-(--height-header) w-full shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/95 px-3 backdrop-blur-md md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-3 md:px-4',
+		'z-app-shell-header relative z-40 flex h-(--height-header) w-full shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-3 backdrop-blur-xl backdrop-saturate-150 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-3 md:px-4',
 		mailListChromeActive && 'z-app-shell-header--mail-list'
 	)}
 	style="view-transition-name: app-header;"
 >
-	{#if mailListChromeActive}
-		<div class="relative z-10 min-w-0 flex-1 md:hidden">
-			{#if mailBulkActive && mailCtx?.mailboxRouteId}
-				<MessageListBulkHeader
-					surface="shell"
-					mailboxRouteId={mailCtx.mailboxRouteId}
-					disabled={mailCtx.loading || !!mailCtx.error || mailCtx.messageCount === 0}
-					onBulkAction={mailCtx.onBulkAction}
-				/>
-			{:else if mailListToolbar}
-				<MessageListToolbar
-					surface="shell"
-					mailboxRouteId={mailListToolbar.mailboxRouteId}
-					readFilter={mailListToolbar.readFilter}
-					onReadFilterChange={mailListToolbar.onReadFilterChange}
-					disabled={mailListToolbar.disabled}
-				/>
-			{/if}
-		</div>
-	{/if}
-
 	<div
-		class={cn(
-			'z-app-shell-header__start relative z-10 flex min-w-0 shrink-0 items-center gap-2 md:col-start-1 md:justify-self-start md:gap-3',
-			hideMobileAppChrome && 'max-md:hidden'
-		)}
+		class="z-app-shell-header__start relative z-10 flex min-w-0 shrink-0 items-center gap-2 md:col-start-1 md:justify-self-start md:gap-3"
 	>
 		<a
 			href={homeHref}
@@ -140,6 +114,13 @@
 		</div>
 
 		{#if onSettingsRoute}
+			<a
+				href={homeHref}
+				class="z-btn-icon min-h-10 min-w-10 shrink-0 p-2.5 text-fg-muted no-underline transition-colors hover:text-fg md:hidden"
+				aria-label="Back to mail"
+			>
+				<ArrowLeft class="size-5" aria-hidden="true" />
+			</a>
 			{#if isSettingsHome}
 				<h1 class="z-app-shell-header__title md:hidden">Settings</h1>
 			{:else}
@@ -152,7 +133,7 @@
 					class="min-w-0 max-w-[11rem] md:hidden"
 				/>
 			{/if}
-		{:else if onMailRoute && !mailListChromeActive}
+		{:else if onMailRoute && !onMailCompose}
 			<MobilePicker
 				label="Mailbox"
 				value={mailRouteId}
@@ -169,10 +150,7 @@
 	</div>
 
 	<div
-		class={cn(
-			'z-app-shell-header__center relative z-10 min-w-0 flex-1 md:col-start-2 md:w-full md:max-w-xl md:flex-none md:justify-self-center',
-			hideMobileAppChrome && 'max-md:hidden'
-		)}
+		class="z-app-shell-header__center relative z-10 min-w-0 flex-1 md:col-start-2 md:w-full md:max-w-xl md:flex-none md:justify-self-center"
 	>
 		{#if onSettingsRoute}
 			<div class="md:hidden">
@@ -186,10 +164,7 @@
 	</div>
 
 	<div
-		class={cn(
-			'z-app-shell-header__end relative z-10 flex shrink-0 items-center gap-1 md:col-start-3 md:justify-self-end md:gap-2',
-			hideMobileAppChrome && 'max-md:hidden'
-		)}
+		class="z-app-shell-header__end relative z-10 flex shrink-0 items-center gap-1 md:col-start-3 md:justify-self-end md:gap-2"
 	>
 		<div class="max-md:hidden">
 			<OfflineIndicator />
@@ -208,9 +183,6 @@
 				New event
 			</Button>
 		{:else if showComposeAction}
-			<IconButton label="New message" class="md:hidden" onclick={() => goto('/mail/compose')}>
-				<PenSquare class="size-4" aria-hidden="true" />
-			</IconButton>
 			<Button href="/mail/compose" class="hidden md:inline-flex">
 				<PenSquare class="size-4" aria-hidden="true" />
 				New message
@@ -223,6 +195,9 @@
 			</IconButton>
 		{/if}
 
+		<div class="md:hidden">
+			<UserMenu compact />
+		</div>
 		<div class="hidden md:block">
 			<UserMenu />
 		</div>

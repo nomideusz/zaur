@@ -346,15 +346,19 @@
 				</div>
 
 				<!-- Right: Actions -->
-				<div class="flex items-center gap-1 shrink-0 md:gap-2">
+				<div class="flex items-center gap-3 shrink-0 md:gap-4">
 					{#if !compose.isComposeEmpty}
-						<Button type="button" variant="ghost" onclick={() => void discardAndClose()}>
+						<button
+							type="button"
+							class="z-mail-text-nav__link z-mail-text-nav__link--danger"
+							onclick={() => void discardAndClose()}
+						>
 							Discard
-						</Button>
+						</button>
 					{/if}
-					<Button
+					<button
 						type="button"
-						variant="ghost"
+						class="z-mail-text-nav__link"
 						onclick={() => {
 							isRichText = !isRichText;
 							if (isRichText) {
@@ -366,28 +370,32 @@
 						}}
 					>
 						{isRichText ? 'Plain text' : 'Rich text'}
-					</Button>
-					<Button type="button" variant="ghost" class="max-md:hidden" onclick={openFilePicker}>
-						<Paperclip class="size-4" aria-hidden="true" />
-						Attach
-					</Button>
-					<Button
+					</button>
+					<button
 						type="button"
-						variant="ghost"
-						class="md:hidden"
+						class="z-mail-text-nav__link max-md:hidden"
+						onclick={openFilePicker}
+					>
+						Attach
+					</button>
+					<button
+						type="button"
+						class="z-compose__back-btn shrink-0 md:hidden"
 						title="Attach file"
+						aria-label="Attach file"
 						onclick={openFilePicker}
 					>
 						<Paperclip class="size-4" aria-hidden="true" />
-					</Button>
-					<Button
+					</button>
+					<button
 						type="submit"
 						form="compose-form"
+						class="z-mail-text-nav__action"
 						disabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
 						title={sendBlockedReason ?? 'Send message'}
 					>
 						{sendLabel}
-					</Button>
+					</button>
 				</div>
 			</div>
 

@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import MailComposeFab from '$lib/components/mail/MailComposeFab.svelte';
 	import MailKeyboardShortcuts from '$lib/components/mail/MailKeyboardShortcuts.svelte';
 	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import { parseMailContext } from '$lib/mail/routes';
@@ -11,6 +12,12 @@
 	import { MAIL_LAYOUT } from '$lib/mail/config';
 
 	let { children } = $props();
+
+	/** Mobile compose button: show on list views, not in a thread/compose or while selecting. */
+	const showComposeFab = $derived.by(() => {
+		const ctx = parseMailContext($page.url.pathname);
+		return !!ctx && ctx.threadId === null && !mail.hasSelection;
+	});
 
 	$effect(() => {
 		const ctx = parseMailContext($page.url.pathname);
@@ -56,3 +63,7 @@
 	</div>
 	{@render children()}
 </div>
+
+{#if showComposeFab}
+	<MailComposeFab />
+{/if}

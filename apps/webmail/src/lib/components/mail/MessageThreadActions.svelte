@@ -3,13 +3,10 @@
 	import { page } from '$app/stores';
 	import Forward from '$lib/components/icons/Forward.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
-	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
-	import Send from '$lib/components/icons/Send.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
-	import Button from '$lib/components/ui/Button.svelte';
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
@@ -194,35 +191,34 @@
 </script>
 
 {#if latest}
-	<div class="z-reader-toolbar flex shrink-0 items-center gap-1">
+	<div class="z-reader-toolbar flex shrink-0 items-center gap-4">
 		{#if isDraft}
-			<div class="flex items-center gap-1">
-				<Button variant="ghost" href="/mail/compose?draft={latest.id}">
-					<Pencil class="size-4" aria-hidden="true" />
-					Edit
-				</Button>
-				<Button variant="ghost" class="z-mail-list-bulk-header__danger" onclick={deleteMessage}>
-					<Trash2 class="size-4" aria-hidden="true" />
-					{deleteLabel}
-				</Button>
-			</div>
-			<Button class="ms-4" onclick={() => void sendDraft()}>
-				<Send class="size-4" aria-hidden="true" />
+			<a href="/mail/compose?draft={latest.id}" class="z-mail-text-nav__link">Edit</a>
+			<button
+				type="button"
+				class="z-mail-text-nav__link z-mail-text-nav__link--danger"
+				onclick={deleteMessage}
+			>
+				{deleteLabel}
+			</button>
+			<button type="button" class="z-mail-text-nav__action" onclick={() => void sendDraft()}>
 				Send
-			</Button>
+			</button>
 		{:else}
-			<Button onclick={primaryReply}>
-				{#if primaryReplyMode === 'reply-all'}
-					<ReplyAll class="size-4" aria-hidden="true" />
-				{:else}
-					<Reply class="size-4" aria-hidden="true" />
-				{/if}
+			<button type="button" class="z-mail-text-nav__action" onclick={primaryReply}>
 				{primaryReplyLabel}
-			</Button>
+			</button>
 		{/if}
 
 		{#if !isDraft || showDraftOverflowMenu}
-			<OverflowMenu label="Message actions" menuId="reader-actions-menu" placement="bottom">
+			<OverflowMenu
+				label="Message actions"
+				menuId="reader-actions-menu"
+				placement="bottom"
+				textTrigger
+				triggerText="More"
+				triggerClass="z-mail-text-nav__link"
+			>
 				{#if isDraft}
 					{#if auth.client}
 						<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
