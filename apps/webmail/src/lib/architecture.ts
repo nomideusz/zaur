@@ -73,7 +73,7 @@ export const componentTree = {
 		MessageReaderCore: ['thread body', 'mobile bar'],
 		ComposePanel: ['ComposeHeader', 'ComposeFields', 'ComposeEditor']
 	},
-	ui: ['Button', 'IconButton', 'Badge', 'ToastStack'],
+	ui: ['Button', 'IconButton', 'Badge', 'ConfirmDialog', 'TooltipWrap', 'ToastStack'],
 	jmap: {
 		client: [
 			'JmapClient.connect',

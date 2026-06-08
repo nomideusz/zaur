@@ -598,3 +598,8 @@
 		@apply truncate text-sm font-medium text-fg;
 	}
 
+	.z-tooltip {
+		@apply z-[70] max-w-xs rounded-md border border-border bg-surface-raised px-2.5 py-1.5 text-xs font-medium text-fg shadow-md;
+		pointer-events: none;
+	}
+

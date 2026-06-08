@@ -450,7 +450,7 @@
 		if (!auth.client) return;
 		const mailbox = mail.mailboxByRouteId(routeId);
 		const permanent = mailbox?.role === 'trash' || mailbox?.role === 'drafts';
-		if (!settings.confirmDeleteMessage(1, permanent)) return;
+		if (!(await settings.confirmDeleteMessage(1, permanent))) return;
 		try {
 			await mail.deleteMessage(auth.client, message, routeId);
 			onBulkAction?.();

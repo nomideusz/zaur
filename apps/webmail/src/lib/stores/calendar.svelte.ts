@@ -362,7 +362,17 @@ class CalendarStore {
 	}
 
 	async deleteEvent(client: JMAPClient, event: CalendarEvent): Promise<boolean> {
-		if (!confirm(`Delete "${event.title}"? This cannot be undone.`)) return false;
+		const { confirm: askConfirm } = await import('$lib/stores/confirm.svelte');
+		if (
+			!(await askConfirm.ask({
+				title: 'Delete event?',
+				description: `Delete "${event.title}"? This cannot be undone.`,
+				confirmLabel: 'Delete',
+				tone: 'danger'
+			}))
+		) {
+			return false;
+		}
 
 		try {
 			await client.destroyCalendarEvent(event.id);

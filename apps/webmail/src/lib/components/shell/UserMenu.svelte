@@ -35,7 +35,6 @@
 			compact ? 'z-icon-tap-target p-0' : 'flex items-center gap-2 p-1.5'
 		)}
 		aria-label="Account menu"
-		title="Account menu"
 	>
 		<span
 			class={cn(

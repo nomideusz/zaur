@@ -10,6 +10,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 
 	let emptyingTrash = $state(false);
@@ -72,7 +73,14 @@
 			return;
 		}
 		const label = role === 'trash' ? 'Trash' : 'Spam';
-		if (!confirm(`Permanently delete every message in ${label}? This cannot be undone.`)) {
+		if (
+			!(await confirm.ask({
+				title: `Empty ${label}?`,
+				description: `Permanently delete every message in ${label}? This cannot be undone.`,
+				confirmLabel: `Empty ${label}`,
+				tone: 'danger'
+			}))
+		) {
 			return;
 		}
 
@@ -265,8 +273,17 @@
 		<button
 			type="button"
 			class="z-mail-text-nav__link text-fg-subtle"
-			onclick={() => {
-				if (confirm('Sign out of ZAUR Webmail on this device?')) auth.logout();
+			onclick={async () => {
+				if (
+					await confirm.ask({
+						title: 'Sign out?',
+						description: 'Sign out of ZAUR Webmail on this device?',
+						confirmLabel: 'Sign out',
+						tone: 'danger'
+					})
+				) {
+					auth.logout();
+				}
 			}}
 		>
 			Sign out

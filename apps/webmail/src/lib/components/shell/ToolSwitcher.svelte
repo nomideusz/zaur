@@ -18,7 +18,6 @@
 				isActive ? 'bg-accent/10 text-accent' : 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
 			)}
 			aria-current={isActive ? 'page' : undefined}
-			title={tool.label}
 		>
 			<Icon class="size-3.5 shrink-0 opacity-80" aria-hidden="true" />
 			<span>{tool.label}</span>

@@ -135,8 +135,18 @@
 									{/if}
 									<IconButton
 										label="Discard queued message"
-										onclick={() => {
-											if (confirm('Discard this queued message?')) outbox.discard(item.id);
+										onclick={async () => {
+											const { confirm: askConfirm } = await import('$lib/stores/confirm.svelte');
+											if (
+												await askConfirm.ask({
+													title: 'Discard queued message?',
+													description: 'Discard this queued message?',
+													confirmLabel: 'Discard',
+													tone: 'danger'
+												})
+											) {
+												outbox.discard(item.id);
+											}
 										}}
 									>
 										<Trash2 class="size-4" />

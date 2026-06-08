@@ -384,18 +384,27 @@ class SettingsStore {
 		return fromFallback || 'User';
 	}
 
-	confirmDeleteMessage(count: number, permanent: boolean): boolean {
+	async confirmDeleteMessage(count: number, permanent: boolean): Promise<boolean> {
+		const { confirm: askConfirm } = await import('$lib/stores/confirm.svelte');
 		if (permanent) {
-			return confirm(
-				count === 1
-					? 'Permanently delete this message? This cannot be undone.'
-					: `Permanently delete ${count} messages? This cannot be undone.`
-			);
+			return askConfirm.ask({
+				title: 'Delete permanently?',
+				description:
+					count === 1
+						? 'Permanently delete this message? This cannot be undone.'
+						: `Permanently delete ${count} messages? This cannot be undone.`,
+				confirmLabel: 'Delete',
+				tone: 'danger'
+			});
 		}
 		if (!this.confirmBeforeDelete) return true;
-		return confirm(
-			count === 1 ? 'Move this message to trash?' : `Move ${count} messages to trash?`
-		);
+		return askConfirm.ask({
+			title: 'Move to trash?',
+			description:
+				count === 1 ? 'Move this message to trash?' : `Move ${count} messages to trash?`,
+			confirmLabel: 'Move to trash',
+			tone: 'danger'
+		});
 	}
 
 	async syncFromAccount(): Promise<void> {

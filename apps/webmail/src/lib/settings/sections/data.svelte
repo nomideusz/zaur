@@ -3,6 +3,7 @@
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 
 	let importInput = $state<HTMLInputElement | null>(null);
@@ -26,9 +27,13 @@
 
 	async function clearLocalCache() {
 		if (
-			!confirm(
-				'Clear downloaded mail and sync state from this device? Your messages on the server are not affected.'
-			)
+			!(await confirm.ask({
+				title: 'Clear local cache?',
+				description:
+					'Clear downloaded mail and sync state from this device? Your messages on the server are not affected.',
+				confirmLabel: 'Clear cache',
+				tone: 'danger'
+			}))
 		) {
 			return;
 		}
@@ -41,11 +46,15 @@
 		}
 	}
 
-	function resetPreferences() {
+	async function resetPreferences() {
 		if (
-			!confirm(
-				'Reset mail and display preferences to defaults? Your display name and signature are unchanged.'
-			)
+			!(await confirm.ask({
+				title: 'Reset preferences?',
+				description:
+					'Reset mail and display preferences to defaults? Your display name and signature are unchanged.',
+				confirmLabel: 'Reset',
+				tone: 'danger'
+			}))
 		) {
 			return;
 		}
@@ -82,7 +91,7 @@
 	</SettingsRow>
 
 	<SettingsRow title="Reset preferences">
-		<button type="button" class="z-mail-text-nav__link text-fg-subtle" onclick={resetPreferences}>
+		<button type="button" class="z-mail-text-nav__link text-fg-subtle" onclick={() => void resetPreferences()}>
 			Reset
 		</button>
 	</SettingsRow>

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
@@ -25,16 +26,20 @@
 	}: Props = $props();
 </script>
 
-<button
-	bind:this={ref}
-	type="button"
-	class={cn('z-btn-icon min-h-10 min-w-10 p-2.5', className)}
-	aria-label={label}
-	aria-expanded={ariaExpanded}
-	aria-controls={ariaControls}
-	aria-haspopup={ariaHaspopup}
-	title={label}
-	{onclick}
->
-	{@render children()}
-</button>
+<TooltipWrap {label}>
+	{#snippet trigger({ props })}
+		<button
+			{...props}
+			bind:this={ref}
+			type="button"
+			class={cn('z-btn-icon min-h-10 min-w-10 p-2.5', className)}
+			aria-label={label}
+			aria-expanded={ariaExpanded}
+			aria-controls={ariaControls}
+			aria-haspopup={ariaHaspopup}
+			{onclick}
+		>
+			{@render children()}
+		</button>
+	{/snippet}
+</TooltipWrap>

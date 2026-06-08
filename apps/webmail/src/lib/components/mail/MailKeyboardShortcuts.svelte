@@ -271,13 +271,13 @@
 				case 'Delete':
 					event.preventDefault();
 					void withLatest(
-						(message) => {
+						async (message) => {
 							if (!auth.client) return;
 							const routeId =
 								parseMailContext($page.url.pathname)?.mailboxRouteId ?? message.mailboxId;
 							const mailbox = mail.mailboxByRouteId(routeId);
 							const permanent = mailbox?.role === 'trash';
-							if (!settings.confirmDeleteMessage(1, permanent)) return;
+							if (!(await settings.confirmDeleteMessage(1, permanent))) return;
 							return mail.deleteMessage(auth.client, message, routeId);
 						},
 						{ leaveThread: true }

@@ -121,10 +121,10 @@
 		else if (result === false) goto(`/mail/compose?draft=${latest.id}`);
 	}
 
-	function deleteMessage() {
+	async function deleteMessage() {
 		if (!actionMessage) return;
 		const permanent = currentMailbox?.role === 'trash';
-		if (!settings.confirmDeleteMessage(1, permanent)) return;
+		if (!(await settings.confirmDeleteMessage(1, permanent))) return;
 		void withClient((client) => mail.deleteMessage(client, actionMessage, mailboxRouteId));
 	}
 

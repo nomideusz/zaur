@@ -12,6 +12,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { MessageAttachment } from '$lib/types/mail';
 	import { PdfViewer } from '$lib/components/ui/pdf-viewer';
+	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 
 	interface Props {
 		attachments: MessageAttachment[];
@@ -102,32 +103,41 @@
 				{@const displayName = attachmentDisplayName(attachment.name, attachment.type)}
 				{@const opaqueName = attachmentIsOpaqueName(attachment.name)}
 				{@const isPdf = isPdfAttachment(attachment)}
+				{@const attachmentHint = isPdf
+					? `Preview ${attachment.name}`
+					: opaqueName
+						? `${attachment.name} — download`
+						: `Download ${attachment.name}`}
 				<li>
-					<button
-						type="button"
-						class="z-reader-attachment-item"
-						title={isPdf ? `Preview ${attachment.name}` : (opaqueName ? `${attachment.name} — download` : `Download ${attachment.name}`)}
-						aria-label={isPdf ? `Preview ${displayName}` : `Download ${displayName}`}
-						disabled={downloadingId === attachment.blobId}
-						onclick={() => handleAttachmentClick(attachment)}
-					>
-						{#if downloadingId === attachment.blobId}
-							<span class="z-spinner size-4 shrink-0 text-fg-muted" aria-hidden="true">
-								<LoaderCircle class="size-full" />
-							</span>
-						{:else}
-							<FileText class="z-reader-attachment-icon" aria-hidden="true" />
-						{/if}
-						<span class="z-reader-attachment-copy">
-							<span class="z-reader-attachment-name">{displayName}</span>
-							<span class="z-reader-attachment-meta">
-								{#if attachment.size}
-									<span class="z-reader-attachment-size">{formatSize(attachment.size)}</span>
+					<TooltipWrap label={attachmentHint} wrapDisabled={downloadingId === attachment.blobId}>
+						{#snippet trigger({ props })}
+							<button
+								{...props}
+								type="button"
+								class="z-reader-attachment-item"
+								aria-label={isPdf ? `Preview ${displayName}` : `Download ${displayName}`}
+								disabled={downloadingId === attachment.blobId}
+								onclick={() => handleAttachmentClick(attachment)}
+							>
+								{#if downloadingId === attachment.blobId}
+									<span class="z-spinner size-4 shrink-0 text-fg-muted" aria-hidden="true">
+										<LoaderCircle class="size-full" />
+									</span>
+								{:else}
+									<FileText class="z-reader-attachment-icon" aria-hidden="true" />
 								{/if}
-								<span class="z-reader-attachment-action">{isPdf ? 'Preview' : 'Download'}</span>
-							</span>
-						</span>
-					</button>
+								<span class="z-reader-attachment-copy">
+									<span class="z-reader-attachment-name">{displayName}</span>
+									<span class="z-reader-attachment-meta">
+										{#if attachment.size}
+											<span class="z-reader-attachment-size">{formatSize(attachment.size)}</span>
+										{/if}
+										<span class="z-reader-attachment-action">{isPdf ? 'Preview' : 'Download'}</span>
+									</span>
+								</span>
+							</button>
+						{/snippet}
+					</TooltipWrap>
 				</li>
 			{/each}
 		</ul>
@@ -155,9 +165,13 @@
 						<span class="px-2 py-0.5 text-xs font-bold bg-danger/10 text-danger border border-danger/20 rounded uppercase tracking-wider select-none shrink-0">
 							PDF
 						</span>
-						<Dialog.Title class="text-sm font-semibold text-fg truncate" title={activePreviewAttachment.name}>
-							{activePreviewAttachment.name}
-						</Dialog.Title>
+						<TooltipWrap label={activePreviewAttachment?.name ?? 'PDF'}>
+							{#snippet trigger({ props })}
+								<Dialog.Title {...props} class="truncate text-sm font-semibold text-fg">
+									{activePreviewAttachment?.name}
+								</Dialog.Title>
+							{/snippet}
+						</TooltipWrap>
 					</div>
 
 					<!-- Desktop Toolbar placement -->
@@ -166,25 +180,33 @@
 					</div>
 
 					<div class="flex items-center gap-2 shrink-0">
-						<button
-							type="button"
-							onclick={() => activePreviewAttachment && handleDownload(activePreviewAttachment)}
-							class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-surface border border-border/60 text-fg transition-colors hover:bg-surface-raised cursor-pointer"
-							title="Download PDF"
-							aria-label="Download PDF"
-						>
-							<Download class="size-4.5" />
-						</button>
-						
-						<button
-							type="button"
-							onclick={closePreview}
-							class="inline-flex h-8 w-8 items-center justify-center rounded-md bg-surface border border-border/60 text-fg transition-colors hover:bg-surface-raised cursor-pointer"
-							title="Close Preview"
-							aria-label="Close Preview"
-						>
-							<X class="size-4.5" />
-						</button>
+						<TooltipWrap label="Download PDF">
+							{#snippet trigger({ props })}
+								<button
+									{...props}
+									type="button"
+									onclick={() => activePreviewAttachment && handleDownload(activePreviewAttachment)}
+									class="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-surface text-fg transition-colors hover:bg-surface-raised"
+									aria-label="Download PDF"
+								>
+									<Download class="size-4.5" />
+								</button>
+							{/snippet}
+						</TooltipWrap>
+
+						<TooltipWrap label="Close preview">
+							{#snippet trigger({ props })}
+								<button
+									{...props}
+									type="button"
+									onclick={closePreview}
+									class="inline-flex h-8 w-8 cursor-pointer items-center justify-center rounded-md border border-border/60 bg-surface text-fg transition-colors hover:bg-surface-raised"
+									aria-label="Close preview"
+								>
+									<X class="size-4.5" />
+								</button>
+							{/snippet}
+						</TooltipWrap>
 					</div>
 				</div>
 

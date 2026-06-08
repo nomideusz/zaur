@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import AppMobileNav from '$lib/components/shell/AppMobileNav.svelte';
 	import AppShellHeader from '$lib/components/shell/AppShellHeader.svelte';
+	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import ToastStack from '$lib/components/ui/ToastStack.svelte';
 	import { pushListener } from '$lib/jmap/push-listener';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -85,6 +86,7 @@
 		{#if showMobileAppNav}
 			<AppMobileNav />
 		{/if}
+		<ConfirmDialog />
 		<ToastStack />
 	</div>
 {/if}

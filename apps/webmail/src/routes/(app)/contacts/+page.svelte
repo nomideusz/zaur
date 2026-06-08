@@ -4,6 +4,7 @@
 	import Search from '$lib/components/icons/Search.svelte';
 	import UserPlus from '$lib/components/icons/UserPlus.svelte';
 	import Users from '$lib/components/icons/Users.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import ContactDetailEmpty from '$lib/components/contacts/ContactDetailEmpty.svelte';
 	import ContactDetailPanel from '$lib/components/contacts/ContactDetailPanel.svelte';
@@ -122,9 +123,19 @@
 		refresh++;
 	}
 
-	function deleteContact(email: string) {
+	async function deleteContact(email: string) {
 		const accountId = auth.client?.getAccountId();
-		if (!accountId || !confirm(`Remove ${email} from contacts?`)) return;
+		if (!accountId) return;
+		if (
+			!(await confirm.ask({
+				title: 'Remove contact?',
+				description: `Remove ${email} from contacts?`,
+				confirmLabel: 'Remove',
+				tone: 'danger'
+			}))
+		) {
+			return;
+		}
 		removeContact(accountId, email);
 		if (selectedEmail === email) selectedEmail = null;
 		refresh++;

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
 	import { Separator, Toolbar } from 'bits-ui';
+	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { Editor } from '@tiptap/core';
 	import StarterKit from '@tiptap/starter-kit';
 	import Link from '@tiptap/extension-link';
@@ -293,15 +294,27 @@
 			class="z-rich-editor__group"
 			aria-label="Text style"
 		>
-		<Toolbar.GroupItem value="bold" class="z-rich-editor__btn" aria-label="Bold" title="Bold">
-			<RiBold size="18" />
-		</Toolbar.GroupItem>
-		<Toolbar.GroupItem value="italic" class="z-rich-editor__btn" aria-label="Italic" title="Italic">
-			<RiItalic size="18" />
-		</Toolbar.GroupItem>
-		<Toolbar.GroupItem value="strike" class="z-rich-editor__btn" aria-label="Strikethrough" title="Strikethrough">
-			<RiStrikethrough size="18" />
-		</Toolbar.GroupItem>
+		<TooltipWrap label="Bold">
+			{#snippet trigger({ props })}
+				<Toolbar.GroupItem value="bold" class="z-rich-editor__btn" aria-label="Bold" {...props}>
+					<RiBold size="18" />
+				</Toolbar.GroupItem>
+			{/snippet}
+		</TooltipWrap>
+		<TooltipWrap label="Italic">
+			{#snippet trigger({ props })}
+				<Toolbar.GroupItem value="italic" class="z-rich-editor__btn" aria-label="Italic" {...props}>
+					<RiItalic size="18" />
+				</Toolbar.GroupItem>
+			{/snippet}
+		</TooltipWrap>
+		<TooltipWrap label="Strikethrough">
+			{#snippet trigger({ props })}
+				<Toolbar.GroupItem value="strike" class="z-rich-editor__btn" aria-label="Strikethrough" {...props}>
+					<RiStrikethrough size="18" />
+				</Toolbar.GroupItem>
+			{/snippet}
+		</TooltipWrap>
 		</Toolbar.Group>
 
 		<Separator.Root class="z-rich-editor__divider" />
@@ -313,33 +326,67 @@
 			class="z-rich-editor__group"
 			aria-label="Paragraph style"
 		>
-		<Toolbar.GroupItem value="bulletList" class="z-rich-editor__btn" aria-label="Bullet list" title="Bullet list">
-			<RiListUnordered size="18" />
-		</Toolbar.GroupItem>
-		<Toolbar.GroupItem value="orderedList" class="z-rich-editor__btn" aria-label="Numbered list" title="Numbered list">
-			<RiListOrdered size="18" />
-		</Toolbar.GroupItem>
-		<Toolbar.GroupItem value="blockquote" class="z-rich-editor__btn" aria-label="Quote" title="Quote">
-			<RiDoubleQuotesL size="18" />
-		</Toolbar.GroupItem>
+		<TooltipWrap label="Bullet list">
+			{#snippet trigger({ props })}
+				<Toolbar.GroupItem value="bulletList" class="z-rich-editor__btn" aria-label="Bullet list" {...props}>
+					<RiListUnordered size="18" />
+				</Toolbar.GroupItem>
+			{/snippet}
+		</TooltipWrap>
+		<TooltipWrap label="Numbered list">
+			{#snippet trigger({ props })}
+				<Toolbar.GroupItem value="orderedList" class="z-rich-editor__btn" aria-label="Numbered list" {...props}>
+					<RiListOrdered size="18" />
+				</Toolbar.GroupItem>
+			{/snippet}
+		</TooltipWrap>
+		<TooltipWrap label="Quote">
+			{#snippet trigger({ props })}
+				<Toolbar.GroupItem value="blockquote" class="z-rich-editor__btn" aria-label="Quote" {...props}>
+					<RiDoubleQuotesL size="18" />
+				</Toolbar.GroupItem>
+			{/snippet}
+		</TooltipWrap>
 		</Toolbar.Group>
 
 		<Separator.Root class="z-rich-editor__divider" />
 
-		<Toolbar.Button
-			class={isLink ? 'z-rich-editor__btn z-rich-editor__btn--active' : 'z-rich-editor__btn'}
-			onclick={toggleLink}
-			aria-label="Link"
-			title="Link"
-		>
-			<RiLink size="18" />
-		</Toolbar.Button>
-		<Toolbar.Button class="z-rich-editor__btn" onclick={() => fileInput?.click()} aria-label="Insert image" title="Insert image">
-			<RiImageLine size="18" />
-		</Toolbar.Button>
-		<Toolbar.Button class="z-rich-editor__btn" onclick={clearFormatting} aria-label="Clear formatting" title="Clear formatting">
-			<RiFormatClear size="18" />
-		</Toolbar.Button>
+		<TooltipWrap label="Link">
+			{#snippet trigger({ props })}
+				<Toolbar.Button
+					class={isLink ? 'z-rich-editor__btn z-rich-editor__btn--active' : 'z-rich-editor__btn'}
+					onclick={toggleLink}
+					aria-label="Link"
+					{...props}
+				>
+					<RiLink size="18" />
+				</Toolbar.Button>
+			{/snippet}
+		</TooltipWrap>
+		<TooltipWrap label="Insert image">
+			{#snippet trigger({ props })}
+				<Toolbar.Button
+					class="z-rich-editor__btn"
+					onclick={() => fileInput?.click()}
+					aria-label="Insert image"
+					{...props}
+				>
+					<RiImageLine size="18" />
+				</Toolbar.Button>
+			{/snippet}
+		</TooltipWrap>
+		<TooltipWrap label="Clear formatting">
+			{#snippet trigger({ props })}
+				<Toolbar.Button
+					class="z-rich-editor__btn"
+					onclick={clearFormatting}
+					aria-label="Clear formatting"
+					{...props}
+				>
+					<RiFormatClear size="18" />
+				</Toolbar.Button>
+			{/snippet}
+		</TooltipWrap>
 	</Toolbar.Root>
 
 	<!-- Editor body -->

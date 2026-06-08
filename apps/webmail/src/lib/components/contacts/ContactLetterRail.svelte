@@ -1,4 +1,5 @@
 <script lang="ts">
+	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	let {
@@ -58,15 +59,20 @@
 				class="pointer-events-auto z-pane-scroll flex max-h-full flex-col items-center gap-0.5 overflow-y-auto rounded-xl border border-border/80 bg-surface-raised/90 px-0.5 py-1 shadow-sm backdrop-blur-sm"
 			>
 				{#each letters as letter (letter)}
-					<button
-						type="button"
-						class={letterButtonClass(selectedLetter === letter)}
-						aria-current={selectedLetter === letter ? 'true' : undefined}
-						title={`Jump to ${letter}`}
-						onclick={() => onSelectLetter(selectedLetter === letter ? null : letter)}
-					>
-						{letter}
-					</button>
+					<TooltipWrap label={`Jump to ${letter}`} side="left">
+						{#snippet trigger({ props })}
+							<button
+								{...props}
+								type="button"
+								class={letterButtonClass(selectedLetter === letter)}
+								aria-current={selectedLetter === letter ? 'true' : undefined}
+								aria-label={`Jump to ${letter}`}
+								onclick={() => onSelectLetter(selectedLetter === letter ? null : letter)}
+							>
+								{letter}
+							</button>
+						{/snippet}
+					</TooltipWrap>
 				{/each}
 			</div>
 		</nav>

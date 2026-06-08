@@ -80,10 +80,10 @@
 		}
 	}
 
-	function deleteSelected() {
+	async function deleteSelected() {
 		if (!auth.client) return;
 		const permanent = currentMailbox?.role === 'trash';
-		if (!settings.confirmDeleteMessage(selectedCount, permanent)) return;
+		if (!(await settings.confirmDeleteMessage(selectedCount, permanent))) return;
 		void runBulk(() => mail.bulkDelete(auth.client!, mailboxRouteId), true);
 	}
 

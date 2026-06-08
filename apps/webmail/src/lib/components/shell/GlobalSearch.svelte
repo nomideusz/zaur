@@ -5,8 +5,10 @@
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
+	import { Dialog } from 'bits-ui';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -403,14 +405,19 @@
 		/>
 
 		{#if placement === 'shell' || isMobile}
-			<button
-				type="button"
-				class="absolute top-1/2 right-3 size-7 -translate-y-1/2 flex items-center justify-center rounded-full hover:bg-surface-sunken text-fg-subtle hover:text-fg transition-colors z-20 cursor-pointer"
-				onclick={toggleAdvanced}
-				title="Show advanced search options"
-			>
-				<ChevronDown class={cn('size-4 transition-transform duration-200', showAdvanced && 'rotate-180')} />
-			</button>
+			<TooltipWrap label="Show advanced search options" side="bottom">
+				{#snippet trigger({ props })}
+					<button
+						{...props}
+						type="button"
+						class="absolute top-1/2 right-3 z-20 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-fg-subtle transition-colors hover:bg-surface-sunken hover:text-fg"
+						onclick={toggleAdvanced}
+						aria-label="Show advanced search options"
+					>
+						<ChevronDown class={cn('size-4 transition-transform duration-200', showAdvanced && 'rotate-180')} />
+					</button>
+				{/snippet}
+			</TooltipWrap>
 		{/if}
 
 		{#if showDropdown}
@@ -533,166 +540,160 @@
 				{/if}
 			</div>
 		{/if}
+	</form>
+{/if}
 
-		{#if showAdvanced}
-			<div
-				role="dialog"
-				aria-label="Advanced search options"
-				tabindex="-1"
-				class={cn(
-					'absolute top-full z-50 mt-2 w-full max-w-[30rem] overflow-hidden rounded-xl border border-border bg-surface-raised p-4 shadow-lg text-sm text-fg flex flex-col gap-3.5',
-					isSidebar || isMobile ? 'right-0 left-0' : 'right-0'
-				)}
-				onkeydown={(e) => {
-					if (e.key === 'Escape') {
-						showAdvanced = false;
-						searchInput?.focus();
-					}
-				}}
-			>
-				<div class="flex items-center justify-between border-b border-border pb-2">
-					<span class="font-semibold text-fg text-sm">Advanced Search Options</span>
-					<button
-						type="button"
-						class="text-fg-subtle hover:text-fg text-xs transition-colors cursor-pointer"
-						onclick={clearAdvanced}
+<Dialog.Root
+	bind:open={showAdvanced}
+	onOpenChange={(open) => {
+		if (!open) searchInput?.focus();
+	}}
+>
+	<Dialog.Portal>
+		<Dialog.Overlay class="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm" />
+		<Dialog.Content
+			class="fixed left-1/2 top-1/2 z-50 flex max-h-[min(90vh,40rem)] w-[calc(100%-2rem)] max-w-[30rem] -translate-x-1/2 -translate-y-1/2 flex-col gap-3.5 overflow-hidden rounded-xl border border-border bg-surface-raised p-4 text-sm text-fg shadow-lg outline-none"
+		>
+			<div class="flex items-center justify-between border-b border-border pb-2">
+				<Dialog.Title class="text-sm font-semibold text-fg">Advanced Search Options</Dialog.Title>
+				<button
+					type="button"
+					class="cursor-pointer text-xs text-fg-subtle transition-colors hover:text-fg"
+					onclick={clearAdvanced}
+				>
+					Clear all
+				</button>
+			</div>
+
+			<div class="flex max-h-[60vh] flex-col gap-3 overflow-y-auto pr-1">
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-fg-muted" for="adv-mailbox">Search in</label>
+					<select
+						id="adv-mailbox"
+						class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
+						bind:value={advMailboxId}
 					>
-						Clear all
-					</button>
+						<option value="">All Mailboxes</option>
+						{#each mail.mailboxes as mb}
+							<option value={mb.jmapId || mb.id}>{mb.name}</option>
+						{/each}
+					</select>
 				</div>
 
-				<div class="flex flex-col gap-3 max-h-[60vh] overflow-y-auto pr-1">
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-fg-muted" for="adv-from">From</label>
+					<input
+						id="adv-from"
+						type="text"
+						class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
+						placeholder="Sender's name or email"
+						bind:value={advFrom}
+					/>
+				</div>
+
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-fg-muted" for="adv-to">To</label>
+					<input
+						id="adv-to"
+						type="text"
+						class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
+						placeholder="Recipient's name or email"
+						bind:value={advTo}
+					/>
+				</div>
+
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-fg-muted" for="adv-subject">Subject</label>
+					<input
+						id="adv-subject"
+						type="text"
+						class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
+						placeholder="Subject line contains"
+						bind:value={advSubject}
+					/>
+				</div>
+
+				<div class="flex flex-col gap-1">
+					<label class="text-xs font-medium text-fg-muted" for="adv-text">Keywords / Body</label>
+					<input
+						id="adv-text"
+						type="text"
+						class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
+						placeholder="Has the words"
+						bind:value={advText}
+					/>
+				</div>
+
+				<div class="grid grid-cols-2 gap-3">
 					<div class="flex flex-col gap-1">
-						<label class="text-xs font-medium text-fg-muted" for="adv-mailbox">Search in</label>
+						<label class="text-xs font-medium text-fg-muted" for="adv-daterange">Date range</label>
 						<select
-							id="adv-mailbox"
-							class="z-input w-full bg-surface-sunken rounded-md border border-border px-3 py-1.5 focus:border-border-strong focus:outline-none"
-							bind:value={advMailboxId}
+							id="adv-daterange"
+							class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
+							bind:value={advDateRange}
 						>
-							<option value="">All Mailboxes</option>
-							{#each mail.mailboxes as mb}
-								<option value={mb.jmapId || mb.id}>{mb.name}</option>
-							{/each}
+							<option value="any">Any time</option>
+							<option value="1d">Last 24 hours</option>
+							<option value="7d">Last 7 days</option>
+							<option value="30d">Last 30 days</option>
+							<option value="90d">Last 90 days</option>
+							<option value="1y">Last year</option>
+							<option value="custom">Custom range…</option>
 						</select>
 					</div>
 
-					<div class="flex flex-col gap-1">
-						<label class="text-xs font-medium text-fg-muted" for="adv-from">From</label>
-						<input
-							id="adv-from"
-							type="text"
-							class="z-input w-full bg-surface-sunken rounded-md border border-border px-3 py-1.5 focus:border-border-strong focus:outline-none"
-							placeholder="Sender's name or email"
-							bind:value={advFrom}
-						/>
+					<div class="flex items-end pb-1.5">
+						<Checkbox
+							checked={advHasAttachment}
+							label="Has attachment"
+							class="flex cursor-pointer items-center gap-2 text-fg-muted transition-colors hover:text-fg"
+							onchange={(checked) => {
+								advHasAttachment = checked === true;
+							}}
+						>
+							<span class="text-xs font-medium">Has attachment</span>
+						</Checkbox>
 					</div>
+				</div>
 
-					<div class="flex flex-col gap-1">
-						<label class="text-xs font-medium text-fg-muted" for="adv-to">To</label>
-						<input
-							id="adv-to"
-							type="text"
-							class="z-input w-full bg-surface-sunken rounded-md border border-border px-3 py-1.5 focus:border-border-strong focus:outline-none"
-							placeholder="Recipient's name or email"
-							bind:value={advTo}
-						/>
-					</div>
-
-					<div class="flex flex-col gap-1">
-						<label class="text-xs font-medium text-fg-muted" for="adv-subject">Subject</label>
-						<input
-							id="adv-subject"
-							type="text"
-							class="z-input w-full bg-surface-sunken rounded-md border border-border px-3 py-1.5 focus:border-border-strong focus:outline-none"
-							placeholder="Subject line contains"
-							bind:value={advSubject}
-						/>
-					</div>
-
-					<div class="flex flex-col gap-1">
-						<label class="text-xs font-medium text-fg-muted" for="adv-text">Keywords / Body</label>
-						<input
-							id="adv-text"
-							type="text"
-							class="z-input w-full bg-surface-sunken rounded-md border border-border px-3 py-1.5 focus:border-border-strong focus:outline-none"
-							placeholder="Has the words"
-							bind:value={advText}
-						/>
-					</div>
-
-					<div class="grid grid-cols-2 gap-3">
+				{#if advDateRange === 'custom'}
+					<div class="mt-1 grid grid-cols-2 gap-3 border-t border-border/50 pt-2">
 						<div class="flex flex-col gap-1">
-							<label class="text-xs font-medium text-fg-muted" for="adv-daterange">Date range</label>
-							<select
-								id="adv-daterange"
-								class="z-input w-full bg-surface-sunken rounded-md border border-border px-3 py-1.5 focus:border-border-strong focus:outline-none"
-								bind:value={advDateRange}
-							>
-								<option value="any">Any time</option>
-								<option value="1d">Last 24 hours</option>
-								<option value="7d">Last 7 days</option>
-								<option value="30d">Last 30 days</option>
-								<option value="90d">Last 90 days</option>
-								<option value="1y">Last year</option>
-								<option value="custom">Custom range…</option>
-							</select>
+							<label class="text-xs font-medium text-fg-muted" for="adv-after">After Date</label>
+							<input
+								id="adv-after"
+								type="date"
+								class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
+								bind:value={advAfterDate}
+							/>
 						</div>
-
-						<div class="flex items-end pb-1.5">
-							<Checkbox
-								checked={advHasAttachment}
-								label="Has attachment"
-								class="flex cursor-pointer items-center gap-2 text-fg-muted transition-colors hover:text-fg"
-								onchange={(checked) => {
-									advHasAttachment = checked === true;
-								}}
-							>
-								<span class="text-xs font-medium">Has attachment</span>
-							</Checkbox>
+						<div class="flex flex-col gap-1">
+							<label class="text-xs font-medium text-fg-muted" for="adv-before">Before Date</label>
+							<input
+								id="adv-before"
+								type="date"
+								class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
+								bind:value={advBeforeDate}
+							/>
 						</div>
 					</div>
-
-					{#if advDateRange === 'custom'}
-						<div class="grid grid-cols-2 gap-3 border-t border-border/50 pt-2 mt-1">
-							<div class="flex flex-col gap-1">
-								<label class="text-xs font-medium text-fg-muted" for="adv-after">After Date</label>
-								<input
-									id="adv-after"
-									type="date"
-									class="z-input w-full bg-surface-sunken rounded-md border border-border px-3 py-1.5 focus:border-border-strong focus:outline-none"
-									bind:value={advAfterDate}
-								/>
-							</div>
-							<div class="flex flex-col gap-1">
-								<label class="text-xs font-medium text-fg-muted" for="adv-before">Before Date</label>
-								<input
-									id="adv-before"
-									type="date"
-									class="z-input w-full bg-surface-sunken rounded-md border border-border px-3 py-1.5 focus:border-border-strong focus:outline-none"
-									bind:value={advBeforeDate}
-								/>
-							</div>
-						</div>
-					{/if}
-				</div>
-
-				<div class="flex items-center justify-end gap-2 border-t border-border pt-3 mt-1">
-					<button
-						type="button"
-						class="px-3 py-1.5 text-xs font-medium rounded-md hover:bg-surface-sunken text-fg transition-colors cursor-pointer"
-						onclick={() => (showAdvanced = false)}
-					>
-						Cancel
-					</button>
-					<button
-						type="button"
-						class="px-4 py-1.5 text-xs font-semibold rounded-md bg-accent text-accent-fg hover:bg-accent-hover transition-colors shadow-sm cursor-pointer"
-						onclick={submitAdvanced}
-					>
-						Search
-					</button>
-				</div>
+				{/if}
 			</div>
-		{/if}
-	</form>
-{/if}
+
+			<div class="mt-1 flex items-center justify-end gap-2 border-t border-border pt-3">
+				<Dialog.Close
+					class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-fg transition-colors hover:bg-surface-sunken"
+				>
+					Cancel
+				</Dialog.Close>
+				<button
+					type="button"
+					class="cursor-pointer rounded-md bg-accent px-4 py-1.5 text-xs font-semibold text-accent-fg shadow-sm transition-colors hover:bg-accent-hover"
+					onclick={submitAdvanced}
+				>
+					Search
+				</button>
+			</div>
+		</Dialog.Content>
+	</Dialog.Portal>
+</Dialog.Root>

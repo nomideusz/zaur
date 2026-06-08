@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
+	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	type Variant = 'primary' | 'ghost' | 'danger';
@@ -40,14 +41,44 @@
 			className
 		)
 	);
+
+	const tooltipLabel = $derived(title ?? '');
 </script>
 
-{#if href}
-	<a {href} class={classes} aria-disabled={disabled} {title} aria-describedby={ariaDescribedby}>
+{#if tooltipLabel}
+	<TooltipWrap label={tooltipLabel} wrapDisabled={disabled}>
+		{#snippet trigger({ props })}
+			{#if href}
+				<a
+					{...props}
+					{href}
+					class={classes}
+					aria-disabled={disabled}
+					aria-describedby={ariaDescribedby}
+				>
+					{@render children()}
+				</a>
+			{:else}
+				<button
+					{...props}
+					{type}
+					class={classes}
+					{disabled}
+					aria-describedby={ariaDescribedby}
+					{onclick}
+					{form}
+				>
+					{@render children()}
+				</button>
+			{/if}
+		{/snippet}
+	</TooltipWrap>
+{:else if href}
+	<a {href} class={classes} aria-disabled={disabled} aria-describedby={ariaDescribedby}>
 		{@render children()}
 	</a>
 {:else}
-	<button {type} class={classes} {disabled} {title} aria-describedby={ariaDescribedby} {onclick} {form}>
+	<button {type} class={classes} {disabled} aria-describedby={ariaDescribedby} {onclick} {form}>
 		{@render children()}
 	</button>
 {/if}

@@ -15,6 +15,7 @@
 	import { invalidAddressParts } from '$lib/utils/addresses';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import Button from '$lib/components/ui/Button.svelte';
+	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
@@ -245,12 +246,18 @@
 	}
 
 	async function discardAndClose() {
-		if (
-			!compose.isComposeEmpty &&
-			settings.confirmBeforeDiscardCompose &&
-			!confirm('Discard this message?')
-		) {
-			return;
+		if (!compose.isComposeEmpty && settings.confirmBeforeDiscardCompose) {
+			const { confirm: askConfirm } = await import('$lib/stores/confirm.svelte');
+			if (
+				!(await askConfirm.ask({
+					title: 'Discard draft?',
+					description: 'Discard this message?',
+					confirmLabel: 'Discard',
+					tone: 'danger'
+				}))
+			) {
+				return;
+			}
 		}
 
 		await compose.discard(auth.client);
@@ -378,24 +385,35 @@
 					>
 						Attach
 					</button>
-					<button
-						type="button"
-						class="z-compose__back-btn shrink-0 md:hidden"
-						title="Attach file"
-						aria-label="Attach file"
-						onclick={openFilePicker}
+					<TooltipWrap label="Attach file">
+						{#snippet trigger({ props })}
+							<button
+								{...props}
+								type="button"
+								class="z-compose__back-btn shrink-0 md:hidden"
+								aria-label="Attach file"
+								onclick={openFilePicker}
+							>
+								<Paperclip class="size-4" aria-hidden="true" />
+							</button>
+						{/snippet}
+					</TooltipWrap>
+					<TooltipWrap
+						label={sendBlockedReason ?? 'Send message'}
+						wrapDisabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
 					>
-						<Paperclip class="size-4" aria-hidden="true" />
-					</button>
-					<button
-						type="submit"
-						form="compose-form"
-						class="z-mail-text-nav__action"
-						disabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
-						title={sendBlockedReason ?? 'Send message'}
-					>
-						{sendLabel}
-					</button>
+						{#snippet trigger({ props })}
+							<button
+								{...props}
+								type="submit"
+								form="compose-form"
+								class="z-mail-text-nav__action"
+								disabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
+							>
+								{sendLabel}
+							</button>
+						{/snippet}
+					</TooltipWrap>
 				</div>
 			</div>
 
