@@ -1,9 +1,19 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import Settings from '$lib/components/icons/Settings.svelte';
 	import { appNavItems } from '$lib/shell/app-nav';
 	import { cn } from '$lib/utils/cn';
 
-	const items = $derived(appNavItems());
+	const items = $derived([
+		...appNavItems(),
+		{
+			id: 'settings',
+			href: '/settings/account',
+			label: 'Settings',
+			icon: Settings,
+			isActive: (path: string) => path.startsWith('/settings')
+		}
+	]);
 	const pathname = $derived($page.url.pathname);
 </script>
 

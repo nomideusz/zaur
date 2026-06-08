@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import { DropdownMenu } from 'bits-ui';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import LogOut from '$lib/components/icons/LogOut.svelte';
 	import Moon from '$lib/components/icons/Moon.svelte';
@@ -24,29 +26,16 @@
 		email: auth.username ?? ''
 	});
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
-
-	function close() {
-		open = false;
-	}
 </script>
 
-<svelte:window onclick={close} />
-
-<div class="relative">
-	<button
-		type="button"
+<DropdownMenu.Root bind:open>
+	<DropdownMenu.Trigger
 		class={cn(
 			'rounded-md border border-transparent transition-colors hover:border-border/40 hover:bg-surface-sunken/80',
 			compact ? 'z-icon-tap-target p-0' : 'flex items-center gap-2 p-1.5'
 		)}
 		aria-label="Account menu"
-		aria-expanded={open}
-		aria-haspopup="menu"
 		title="Account menu"
-		onclick={(e) => {
-			e.stopPropagation();
-			open = !open;
-		}}
 	>
 		<span
 			class={cn(
@@ -59,15 +48,16 @@
 		{#if !compact}
 			<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
 		{/if}
-	</button>
+	</DropdownMenu.Trigger>
 
-	{#if open}
-		<div
-			role="menu"
-			tabindex="-1"
-			class="z-overflow-menu z-overflow-menu--list w-56 min-w-0"
-			onpointerdown={(e) => e.stopPropagation()}
-			onkeydown={(e) => e.key === 'Escape' && close()}
+	<DropdownMenu.Portal>
+		<DropdownMenu.Content
+			align="end"
+			sideOffset={8}
+			collisionPadding={8}
+			sticky="always"
+			updatePositionStrategy="always"
+			class="z-overflow-menu z-overflow-menu--fixed z-overflow-menu--list w-56 max-w-[calc(100vw-1rem)] min-w-0"
 		>
 			<div class="border-b border-border px-3 py-2">
 				<p class="truncate text-sm font-medium text-fg">
@@ -76,26 +66,22 @@
 				<p class="truncate text-xs text-fg-muted">{user.email}</p>
 			</div>
 
-			<a
-				href="/settings/account"
-				role="menuitem"
+			<DropdownMenu.Item
 				class={cn('z-overflow-menu-item', onSettingsRoute && 'z-surface-active')}
-				aria-current={onSettingsRoute ? 'page' : undefined}
-				onclick={close}
+				textValue="Settings"
+				onSelect={() => goto('/settings/account')}
 			>
 				<span class="flex size-5 shrink-0 items-center justify-center">
 					<Settings class="size-4 text-fg-muted" aria-hidden="true" />
 				</span>
 				<span class="truncate">Settings</span>
-			</a>
+			</DropdownMenu.Item>
 
-			<button
-				type="button"
-				role="menuitem"
+			<DropdownMenu.Item
 				class="z-overflow-menu-item"
-				onclick={() => {
+				textValue={theme.resolved === 'dark' ? 'Light mode' : 'Dark mode'}
+				onSelect={() => {
 					theme.toggle();
-					close();
 				}}
 			>
 				<span class="flex size-5 shrink-0 items-center justify-center">
@@ -106,19 +92,18 @@
 					{/if}
 				</span>
 				<span class="truncate">{theme.resolved === 'dark' ? 'Light mode' : 'Dark mode'}</span>
-			</button>
+			</DropdownMenu.Item>
 
-			<button
-				type="button"
-				role="menuitem"
+			<DropdownMenu.Item
 				class="z-overflow-menu-item"
-				onclick={() => auth.logout()}
+				textValue="Sign out"
+				onSelect={() => auth.logout()}
 			>
 				<span class="flex size-5 shrink-0 items-center justify-center">
 					<LogOut class="size-4 text-fg-muted" aria-hidden="true" />
 				</span>
 				<span class="truncate">Sign out</span>
-			</button>
-		</div>
-	{/if}
-</div>
+			</DropdownMenu.Item>
+		</DropdownMenu.Content>
+	</DropdownMenu.Portal>
+</DropdownMenu.Root>

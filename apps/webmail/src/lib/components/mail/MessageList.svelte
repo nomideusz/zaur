@@ -964,7 +964,7 @@
 >
 	{#if mailboxRouteId || !sectionMode}
 		<header
-			class="z-mail-list-pane-header flex h-14 w-full shrink-0 items-center overflow-hidden border-b border-border/80 bg-surface"
+			class="z-mail-list-pane-header hidden h-14 w-full shrink-0 items-center overflow-hidden border-b border-border/80 bg-surface md:flex"
 		>
 			{#if mail.hasSelection && mailboxRouteId}
 				<MessageListBulkHeader
@@ -978,7 +978,6 @@
 				<MessageListToolbar
 					class="w-full min-w-0"
 					surface="pane"
-					{mailboxRouteId}
 					{readFilter}
 					onReadFilterChange={(filter) => {
 						readFilter = filter;

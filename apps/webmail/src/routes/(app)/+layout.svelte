@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import AppMobileNav from '$lib/components/shell/AppMobileNav.svelte';
 	import AppShellHeader from '$lib/components/shell/AppShellHeader.svelte';
 	import ToastStack from '$lib/components/ui/ToastStack.svelte';
 	import { pushListener } from '$lib/jmap/push-listener';
@@ -12,8 +13,16 @@
 	let { children } = $props();
 	const onMailRoute = $derived($page.url.pathname === '/' || $page.url.pathname.startsWith('/mail'));
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
+	const onCalendarRoute = $derived($page.url.pathname.startsWith('/calendar'));
+	const onMailCompose = $derived($page.url.pathname.startsWith('/mail/compose'));
+	const onMailSearch = $derived($page.url.pathname.startsWith('/mail/search'));
+	const onMailThreadRoute = $derived(/^\/mail\/[^/]+\/[^/]+/.test($page.url.pathname));
 
 	const showAppHeader = $derived(true);
+	const routeOwnsMobileHeader = $derived(
+		onMailCompose || onMailSearch || onMailThreadRoute || onCalendarRoute
+	);
+	const showMobileAppNav = $derived(!onSettingsRoute && !onMailCompose && !onMailThreadRoute);
 	const pageScrollOnMain = false;
 	const pageScrollOverflowX = 'overflow-x-hidden';
 
@@ -60,7 +69,9 @@
 {:else}
 	<div class="relative flex h-dvh flex-col overflow-hidden">
 		{#if showAppHeader}
-			<AppShellHeader />
+			<div class={routeOwnsMobileHeader ? 'contents max-md:hidden' : 'contents'}>
+				<AppShellHeader />
+			</div>
 		{/if}
 		<main
 			id="main-content"
@@ -71,6 +82,9 @@
 		>
 			{@render children()}
 		</main>
+		{#if showMobileAppNav}
+			<AppMobileNav />
+		{/if}
 		<ToastStack />
 	</div>
 {/if}

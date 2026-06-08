@@ -10,6 +10,8 @@
 	import OfflineIndicator from '$lib/components/shell/OfflineIndicator.svelte';
 	import ToolSwitcher from '$lib/components/shell/ToolSwitcher.svelte';
 	import UserMenu from '$lib/components/shell/UserMenu.svelte';
+	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
+	import MessageListToolbar from '$lib/components/mail/MessageListToolbar.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
@@ -42,10 +44,13 @@
 	const mailListChromeActive = $derived(
 		onMailRoute && !onMailCompose && (mailBulkActive || !!mailListToolbar)
 	);
+	const mailListToolbarActive = $derived(
+		onMailRoute && !onMailCompose && !mailBulkActive && !!mailListToolbar
+	);
 
-	/** Desktop-only header compose; mobile uses the floating compose button. */
+	/** Mail primary action lives in the app header; bulk mode owns the row. */
 	const showComposeAction = $derived(
-		onMailRoute && !onMailCompose && !mailListChromeActive
+		onMailRoute && !onMailCompose && !mailBulkActive
 	);
 
 	const sectionLinks = $derived(settingsNavLinks());
@@ -97,8 +102,23 @@
 	)}
 	style="view-transition-name: app-header;"
 >
+	{#if mailBulkActive && mailCtx?.mailboxRouteId}
+		<div class="relative z-10 w-full min-w-0 md:hidden">
+			<MessageListBulkHeader
+				class="w-full min-w-0"
+				surface="shell"
+				mailboxRouteId={mailCtx.mailboxRouteId}
+				onBulkAction={mailCtx.onBulkAction}
+				disabled={mailCtx.loading || !!mailCtx.error || mailCtx.messageCount === 0}
+			/>
+		</div>
+	{/if}
+
 	<div
-		class="z-app-shell-header__start relative z-10 flex min-w-0 shrink-0 items-center gap-2 md:col-start-1 md:justify-self-start md:gap-3"
+		class={cn(
+			'z-app-shell-header__start relative z-10 flex min-w-0 shrink-0 items-center gap-2 md:col-start-1 md:justify-self-start md:gap-3',
+			mailBulkActive && 'max-md:hidden'
+		)}
 	>
 		<a
 			href={homeHref}
@@ -150,11 +170,27 @@
 	</div>
 
 	<div
-		class="z-app-shell-header__center relative z-10 min-w-0 flex-1 md:col-start-2 md:w-full md:max-w-xl md:flex-none md:justify-self-center"
+		class={cn(
+			'z-app-shell-header__center relative z-10 min-w-0 flex-1 md:col-start-2 md:w-full md:max-w-xl md:flex-none md:justify-self-center',
+			mailBulkActive && 'max-md:hidden'
+		)}
 	>
 		{#if onSettingsRoute}
 			<div class="md:hidden">
 				<SettingsSearch />
+			</div>
+		{:else if mailListToolbarActive && mailListToolbar}
+			<div class="md:hidden">
+				<MessageListToolbar
+					class="w-full min-w-0"
+					surface="shell"
+					readFilter={mailListToolbar.readFilter}
+					onReadFilterChange={mailListToolbar.onReadFilterChange}
+					disabled={mailListToolbar.disabled}
+				/>
+			</div>
+			<div class="hidden w-full min-w-0 md:block">
+				<GlobalSearch />
 			</div>
 		{:else if !onCalendarRoute}
 			<div class="w-full min-w-0">
@@ -164,7 +200,10 @@
 	</div>
 
 	<div
-		class="z-app-shell-header__end relative z-10 flex shrink-0 items-center gap-1 md:col-start-3 md:justify-self-end md:gap-2"
+		class={cn(
+			'z-app-shell-header__end relative z-10 flex shrink-0 items-center gap-1 md:col-start-3 md:justify-self-end md:gap-2',
+			mailBulkActive && 'max-md:hidden'
+		)}
 	>
 		<div class="max-md:hidden">
 			<OfflineIndicator />
@@ -183,6 +222,14 @@
 				New event
 			</Button>
 		{:else if showComposeAction}
+			<Button
+				href="/mail/compose"
+				class="min-h-10 shrink-0 px-3 text-sm md:hidden"
+				title="New message"
+			>
+				<PenSquare class="size-4" aria-hidden="true" />
+				New
+			</Button>
 			<Button href="/mail/compose" class="hidden md:inline-flex">
 				<PenSquare class="size-4" aria-hidden="true" />
 				New message
@@ -195,9 +242,6 @@
 			</IconButton>
 		{/if}
 
-		<div class="md:hidden">
-			<UserMenu compact />
-		</div>
 		<div class="hidden md:block">
 			<UserMenu />
 		</div>

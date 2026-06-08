@@ -535,6 +535,9 @@
 
 		{#if showAdvanced}
 			<div
+				role="dialog"
+				aria-label="Advanced search options"
+				tabindex="-1"
 				class={cn(
 					'absolute top-full z-50 mt-2 w-full max-w-[30rem] overflow-hidden rounded-xl border border-border bg-surface-raised p-4 shadow-lg text-sm text-fg flex flex-col gap-3.5',
 					isSidebar || isMobile ? 'right-0 left-0' : 'right-0'

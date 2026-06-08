@@ -5,12 +5,10 @@
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import { LABEL_MARK_IMPORTANT, LABEL_UNSEEN } from '$lib/mail/new-mail';
-	import { mailListHref } from '$lib/mail/routes';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
-		mailboxRouteId: string;
 		readFilter: MessageListReadFilter;
 		onReadFilterChange: (filter: MessageListReadFilter) => void;
 		disabled?: boolean;
@@ -20,7 +18,6 @@
 	}
 
 	let {
-		mailboxRouteId,
 		readFilter,
 		onReadFilterChange,
 		disabled = false,
@@ -34,27 +31,8 @@
 		{ id: 'important', label: LABEL_MARK_IMPORTANT }
 	];
 
-	const primaryOrder = new Map([
-		['inbox', 0],
-		['drafts', 1],
-		['sent', 2],
-		['archive', 3],
-		['junk', 4],
-		['trash', 5]
-	]);
-
-	const mailboxMenuItems = $derived(
-		[...mail.mailboxes]
-			.filter((mb) => primaryOrder.has(mb.role ?? ''))
-			.sort((a, b) => {
-				const aRank = primaryOrder.get(a.role ?? '') ?? 99;
-				const bRank = primaryOrder.get(b.role ?? '') ?? 99;
-				return aRank - bRank || a.name.localeCompare(b.name);
-			})
-			.map((mb) => ({
-				id: mb.id,
-				label: mb.name + (mb.unread > 0 ? ` (${mb.unread})` : '')
-			}))
+	const currentFilterLabel = $derived(
+		listFilters.find((option) => option.id === readFilter)?.label ?? 'Filter'
 	);
 
 	function selectMessages(filter: 'all' | 'normal' | 'new' | 'none') {
@@ -65,27 +43,32 @@
 <nav
 	class={cn(
 		'z-mail-list-toolbar flex w-full min-w-0 items-center gap-3',
+		surface === 'shell' && 'justify-center',
 		disabled && 'pointer-events-none opacity-60',
 		className
 	)}
 	aria-label="Message list"
 >
-	<div class="z-segmented min-w-0" role="group" aria-label="Filter messages">
-		{#each listFilters as option (option.id)}
-			<button
-				type="button"
-				class={cn('z-segmented__item', readFilter === option.id && 'z-segmented__item--active')}
-				aria-pressed={readFilter === option.id}
-				onclick={() => onReadFilterChange(option.id)}
-			>
-				{option.label}
-			</button>
-		{/each}
-	</div>
+	{#if surface === 'pane'}
+		<div class="z-segmented min-w-0" role="group" aria-label="Filter messages">
+			{#each listFilters as option (option.id)}
+				<button
+					type="button"
+					class={cn('z-segmented__item', readFilter === option.id && 'z-segmented__item--active')}
+					aria-pressed={readFilter === option.id}
+					onclick={() => onReadFilterChange(option.id)}
+				>
+					{option.label}
+				</button>
+			{/each}
+		</div>
+	{/if}
 
-	<div class="min-w-0 flex-1" aria-hidden="true"></div>
+	{#if surface === 'pane'}
+		<div class="min-w-0 flex-1" aria-hidden="true"></div>
+	{/if}
 
-	<div class="flex shrink-0 items-center gap-4 max-md:hidden">
+	<div class={cn('flex shrink-0 items-center gap-4', surface === 'pane' && 'max-md:hidden')}>
 		{#if surface === 'pane'}
 			<a href="/mail/compose" class="z-mail-text-nav__action">New message</a>
 		{/if}
@@ -95,19 +78,19 @@
 			menuId="mail-list-toolbar-menu-{surface}"
 			placement="bottom"
 			textTrigger
-			triggerText="More"
+			triggerText={surface === 'shell' ? currentFilterLabel : 'More'}
 			triggerClass="z-mail-text-nav__link"
+			menuClass={surface === 'shell' ? 'w-56 min-w-52 max-w-[calc(100vw-1rem)]' : ''}
 		>
 		{#if surface === 'shell'}
 			<p class="z-type-label px-3 py-1.5 text-[10px] uppercase tracking-wider text-fg-muted">
-				Mailbox
+				Filter
 			</p>
-			{#each mailboxMenuItems as item (item.id)}
+			{#each listFilters as option (option.id)}
 				<OverflowMenuItem
-					label={item.label}
-					onclick={() => {
-						if (item.id !== mailboxRouteId) void goto(mailListHref(item.id));
-					}}
+					label={option.id === readFilter ? `${option.label} (current)` : option.label}
+					onclick={() => onReadFilterChange(option.id)}
+					disabled={option.id === readFilter}
 				/>
 			{/each}
 			<div class="my-1 border-t border-border/80" role="separator"></div>
