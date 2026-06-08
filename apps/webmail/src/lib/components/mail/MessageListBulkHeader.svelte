@@ -127,6 +127,7 @@
 		counts={selectionCounts}
 		{canMarkImportant}
 		onDone={() => auth.client && runBulk(() => mail.bulkMarkAsDone(auth.client!), true)}
+		onMarkSeen={() => auth.client && runBulk(() => mail.bulkMarkAsSeen(auth.client!), true)}
 		onMarkNew={() => auth.client && runBulk(() => mail.bulkMarkAsNew(auth.client!), true)}
 		onMarkImportant={() => auth.client && runBulk(() => mail.bulkMarkAsImportant(auth.client!))}
 		onRemoveImportant={() =>

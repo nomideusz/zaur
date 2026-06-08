@@ -12,7 +12,7 @@ import {
 	resolveMailboxKind,
 	shouldClearImportantOnMoveTo
 } from '$lib/mail/mailboxes';
-import { LABEL_UNSEE } from '$lib/mail/new-mail';
+import { LABEL_MARK_SEEN, LABEL_UNSEE } from '$lib/mail/new-mail';
 import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
 import { settings } from '$lib/stores/settings.svelte';
 import { toast } from '$lib/stores/toast.svelte';
@@ -920,6 +920,25 @@ class MailStore {
 				}
 			}
 			throw error;
+		}
+	}
+
+	async bulkMarkAsSeen(client: JMAPClient) {
+		const messages = this.selectedMessages().filter((message) => message.unread);
+		if (!messages.length) return;
+
+		this.bulkActionLoading = true;
+		try {
+			await this.bulkSetNewState(client, messages, true);
+			this.clearSelection();
+			toast.show(
+				messages.length === 1
+					? LABEL_MARK_SEEN
+					: `${messages.length} messages marked seen`,
+				'success'
+			);
+		} finally {
+			this.bulkActionLoading = false;
 		}
 	}
 
