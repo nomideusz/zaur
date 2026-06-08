@@ -48,7 +48,11 @@
 	import { formatMessageListWhen, simpleMessageDayKey } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
-	import { importantMarker } from '$lib/mail/important-marker.svelte';
+	import {
+		importantMarker,
+		IMPORTANT_MARKER_HOVER_DELAY_MS,
+		shouldCommitImportantMarkerPick
+	} from '$lib/mail/important-marker.svelte';
 	import ImportantSubjectHighlight from '$lib/components/mail/ImportantSubjectHighlight.svelte';
 	import {
 		LABEL_NOT_IMPORTANT,
@@ -72,9 +76,10 @@
 			'list-sender min-w-0 truncate',
 			unread ? 'font-semibold text-fg' : 'font-medium text-fg-muted'
 		);
-	const listSubjectClass = (unread: boolean) =>
+	const listSubjectClass = (unread: boolean, important = false) =>
 		cn(
-			'list-subject min-w-0 truncate',
+			'list-subject min-w-0',
+			important ? 'overflow-visible' : 'truncate',
 			unread ? 'font-semibold text-fg' : 'font-medium text-fg'
 		);
 
@@ -124,6 +129,7 @@
 
 	let rainbowHoverTimeout: ReturnType<typeof setTimeout> | null = null;
 	let isSamplingRainbow = $state(false);
+	let importantMarkerSampleStartedAt = 0;
 
 	const mobileRowGestures = $derived(supportsMobileListGestures());
 
@@ -147,18 +153,34 @@
 		return true;
 	}
 
-	function persistImportantRainbowPick(messageId: string, row: HTMLElement, event: PointerEvent) {
-		if (settings.reduceMotion || !hasPreciseHover()) return;
-		if (!shouldPersistRainbowPick(event)) return;
-		if (importantMarkerHoverId !== messageId) return;
+	function finishImportantMarkerHover(
+		messageId: string,
+		row: HTMLElement,
+		routeId: string,
+		commitPick: boolean
+	) {
+		if (isSamplingRainbow) {
+			isSamplingRainbow = false;
+			importantMarker.stopHoverSample(messageId);
+			if (
+				commitPick &&
+				canPickImportantRainbow(routeId) &&
+				shouldCommitImportantMarkerPick(importantMarkerSampleStartedAt)
+			) {
+				importantMarker.pickFromRow(row, messageId);
+			} else {
+				importantMarker.resetFromRow(row, messageId);
+			}
+		}
 		importantMarkerHoverId = null;
-		importantMarker.pickFromRow(row, messageId);
+		importantMarkerSampleStartedAt = 0;
 	}
 
 	function handleRainbowPointerEnter(messageId: string, currentTarget: HTMLElement) {
 		if (settings.reduceMotion || !hasPreciseHover()) return;
 		if (rainbowHoverTimeout) clearTimeout(rainbowHoverTimeout);
 		isSamplingRainbow = false;
+		importantMarkerSampleStartedAt = 0;
 
 		rainbowHoverTimeout = setTimeout(() => {
 			if (!currentTarget.isConnected) return;
@@ -166,9 +188,10 @@
 			if (subject instanceof HTMLElement) {
 				isSamplingRainbow = true;
 				importantMarkerHoverId = messageId;
+				importantMarkerSampleStartedAt = Date.now();
 				importantMarker.startHoverSample(subject, messageId);
 			}
-		}, 300);
+		}, IMPORTANT_MARKER_HOVER_DELAY_MS);
 	}
 
 	function handleRainbowPointerLeave(messageId: string, currentTarget: HTMLElement, event: PointerEvent, routeId: string) {
@@ -178,16 +201,17 @@
 		}
 
 		if (isSamplingRainbow) {
-			isSamplingRainbow = false;
-			if (canPickImportantRainbow(routeId)) {
-				persistImportantRainbowPick(messageId, currentTarget, event);
+			if (!shouldPersistRainbowPick(event)) {
+				finishImportantMarkerHover(messageId, currentTarget, routeId, false);
+				return;
 			}
-		} else {
-			// Restore saved color phase visual
-			const subject = currentTarget.querySelector('[data-important-subject]');
-			if (subject instanceof HTMLElement) {
-				importantMarker.resetFromElement(subject, messageId);
-			}
+			finishImportantMarkerHover(messageId, currentTarget, routeId, true);
+			return;
+		}
+
+		const subject = currentTarget.querySelector('[data-important-subject]');
+		if (subject instanceof HTMLElement) {
+			importantMarker.resetFromElement(subject, messageId);
 		}
 	}
 
@@ -1062,15 +1086,17 @@
 									{timeLabel}
 								</time>
 							</div>
-							<p class={listSubjectClass(isUnread)}>
+							<p class={listSubjectClass(isUnread, subjectImportant)}>
 								{#if subjectImportant}
-									<ImportantSubjectHighlight
-										messageId={message.id}
-										picking={importantMarkerHoverId === message.id && isSamplingRainbow}
-										animate={!settings.reduceMotion}
-									>
-										{subjectText}
-									</ImportantSubjectHighlight>
+									{#key message.id}
+										<ImportantSubjectHighlight
+											messageId={message.id}
+											picking={importantMarkerHoverId === message.id && isSamplingRainbow}
+											animate={!settings.reduceMotion}
+										>
+											{subjectText}
+										</ImportantSubjectHighlight>
+									{/key}
 								{:else}
 									{subjectText}
 								{/if}

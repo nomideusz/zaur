@@ -827,6 +827,11 @@
 		border-radius: 0.125rem;
 	}
 
+	/* rough-notation SVG — decorative only; never intercept row clicks. */
+	.z-mail-view svg.rough-annotation {
+		pointer-events: none !important;
+	}
+
 	/* Touch / PWA — suppress iOS link callout and sticky hover on list rows. */
 	@media (hover: none), (pointer: coarse) {
 		.z-mail-view .z-mail-list-row :where(a),

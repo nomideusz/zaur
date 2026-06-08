@@ -6,6 +6,15 @@ const STORAGE_KEY = 'zaur:important-marker-picks';
 const LEGACY_STORAGE_KEY = 'zaur:important-rainbow-phases';
 const PICK_CYCLE_MS = 110;
 
+/** Wait before hue cycling starts — avoids accidental picks when scanning the list. */
+export const IMPORTANT_MARKER_HOVER_DELAY_MS = 550;
+/** Minimum time cycling before pointer-leave commits a pick. */
+export const IMPORTANT_MARKER_PICK_DWELL_MS = 800;
+
+export function shouldCommitImportantMarkerPick(sampleStartedAt: number): boolean {
+	return sampleStartedAt > 0 && Date.now() - sampleStartedAt >= IMPORTANT_MARKER_PICK_DWELL_MS;
+}
+
 type MarkerPick = { hueShift: number };
 
 function clampHueShift(shift: number): number {

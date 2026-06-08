@@ -572,10 +572,23 @@ class MailStore {
 				important,
 				...(clearsNew ? { unread: false } : {})
 			});
-			this.patchMessage(message.id, {
-				important,
-				...(clearsNew ? { unread: false } : {})
-			});
+		}
+
+		this.patchMessages(
+			targets.map((message) => {
+				const clearsNew = important && message.unread;
+				return {
+					id: message.id,
+					patch: {
+						important,
+						...(clearsNew ? { unread: false } : {})
+					}
+				};
+			})
+		);
+
+		for (const message of targets) {
+			const clearsNew = important && message.unread;
 			this.patchThreadMessage(message.id, {
 				important,
 				...(clearsNew ? { unread: false } : {})
@@ -1369,12 +1382,23 @@ class MailStore {
 	}
 
 	private patchMessage(id: string, patch: Partial<MessagePreview>) {
-		this.messages = this.messages.map((m) => (m.id === id ? { ...m, ...patch } : m));
+		this.patchMessages([{ id, patch }]);
+	}
+
+	private patchMessages(updates: { id: string; patch: Partial<MessagePreview> }[]) {
+		if (!updates.length) return;
+		const byId = new Map(updates.map(({ id, patch }) => [id, patch]));
+		this.messages = this.messages.map((m) => {
+			const patch = byId.get(m.id);
+			return patch ? { ...m, ...patch } : m;
+		});
 		if (browser) {
 			void import('$lib/db').then(({ getAccountId, patchCachedMessage }) => {
 				const accountId = getAccountId();
 				if (!accountId) return;
-				return patchCachedMessage(accountId, id, patch);
+				for (const { id, patch } of updates) {
+					void patchCachedMessage(accountId, id, patch);
+				}
 			});
 		}
 	}

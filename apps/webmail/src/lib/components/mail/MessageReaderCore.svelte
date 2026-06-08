@@ -16,7 +16,11 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { renderMessageBody } from '$lib/email/html';
-	import { importantMarker } from '$lib/mail/important-marker.svelte';
+	import {
+		importantMarker,
+		IMPORTANT_MARKER_HOVER_DELAY_MS,
+		shouldCommitImportantMarkerPick
+	} from '$lib/mail/important-marker.svelte';
 	import ImportantSubjectHighlight from '$lib/components/mail/ImportantSubjectHighlight.svelte';
 	import { shouldPresentImportantColors } from '$lib/mail/mailboxes';
 	import { formatMessageListWhen } from '$lib/utils/dates';
@@ -142,6 +146,7 @@
 
 	let readerRainbowTimeout: ReturnType<typeof setTimeout> | null = null;
 	let readerSamplingRainbow = $state(false);
+	let readerMarkerSampleStartedAt = 0;
 
 	$effect(() => {
 		return () => {
@@ -158,19 +163,34 @@
 			readerRainbowTimeout = null;
 		}
 
-		if (readerSamplingRainbow) {
-			readerSamplingRainbow = false;
-			if (settings.reduceMotion || !hasPreciseHover() || !subjectImportant || !subjectMessageId || !readerSubjectEl) {
-				return;
-			}
-			if (!shouldPersistReaderRainbowPick(event)) return;
-			importantMarker.pickFromElement(readerSubjectEl, subjectMessageId);
-		} else {
-			// Restore saved color visual
+		if (!readerSamplingRainbow) {
 			if (subjectMessageId && readerSubjectEl) {
 				importantMarker.resetFromElement(readerSubjectEl, subjectMessageId);
 			}
+			return;
 		}
+
+		readerSamplingRainbow = false;
+		if (
+			!settings.reduceMotion &&
+			hasPreciseHover() &&
+			subjectImportant &&
+			subjectMessageId &&
+			readerSubjectEl &&
+			shouldPersistReaderRainbowPick(event)
+		) {
+			importantMarker.stopHoverSample(subjectMessageId);
+			if (shouldCommitImportantMarkerPick(readerMarkerSampleStartedAt)) {
+				importantMarker.pickFromElement(readerSubjectEl, subjectMessageId);
+			} else {
+				importantMarker.resetFromElement(readerSubjectEl, subjectMessageId);
+			}
+		} else if (subjectMessageId && readerSubjectEl) {
+			importantMarker.stopHoverSample(subjectMessageId);
+			importantMarker.resetFromElement(readerSubjectEl, subjectMessageId);
+		}
+
+		readerMarkerSampleStartedAt = 0;
 	}
 
 	function startReaderRainbowSample() {
@@ -179,12 +199,14 @@
 		}
 		if (readerRainbowTimeout) clearTimeout(readerRainbowTimeout);
 		readerSamplingRainbow = false;
+		readerMarkerSampleStartedAt = 0;
 
 		readerRainbowTimeout = setTimeout(() => {
 			if (!readerSubjectEl || !subjectMessageId) return;
 			readerSamplingRainbow = true;
+			readerMarkerSampleStartedAt = Date.now();
 			importantMarker.startHoverSample(readerSubjectEl, subjectMessageId);
-		}, 300);
+		}, IMPORTANT_MARKER_HOVER_DELAY_MS);
 	}
 
 	const readerMarkerTouch = createImportantMarkerTouchPick({
