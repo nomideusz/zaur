@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
-	import { untrack } from 'svelte';
+	import { tick, untrack } from 'svelte';
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
 	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
@@ -139,9 +139,11 @@
 	/** After bulk-select long-press, block the following link navigation. */
 	let suppressRowNavigationUntil = 0;
 	/** Touch rainbow pick in progress after bulk long-press on an important row. */
-	let mobileImportantRainbowPick = $state<{ messageId: string; subjectEl: HTMLElement } | null>(
-		null
-	);
+	let mobileImportantRainbowPick = $state<{
+		messageId: string;
+		subjectEl: HTMLElement | null;
+		started: boolean;
+	} | null>(null);
 	let readFilter = $state<MessageListReadFilter>('all');
 
 	let rainbowHoverTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -298,48 +300,77 @@
 	);
 	const showRowCheckbox = $derived(listSelectMode);
 
-	function handleMobileBulkLongPress(
+	function findImportantListSubject(messageId: string): HTMLElement | null {
+		const row = document.querySelector(
+			`.z-mail-list-row[data-message-id="${CSS.escape(messageId)}"]`
+		);
+		const subject = row?.querySelector('.z-mail-list-subject--important');
+		return subject instanceof HTMLElement ? subject : null;
+	}
+
+	function resolveImportantRainbowSubject(
+		messageId: string,
+		subjectEl: HTMLElement | null | undefined
+	): HTMLElement | null {
+		if (subjectEl?.isConnected) return subjectEl;
+		return findImportantListSubject(messageId);
+	}
+
+	function canStartMobileImportantRainbowPick(
+		message: MessagePreview,
+		routeId: string
+	): boolean {
+		return (
+			!settings.reduceMotion &&
+			!hasPreciseHover() &&
+			showImportantPresentation(message, routeId)
+		);
+	}
+
+	async function handleMobileBulkLongPress(
 		message: MessagePreview,
 		routeId: string,
-		row: HTMLElement
+		_row: HTMLElement
 	) {
 		mail.startSelection(message.id);
 		suppressRowNavigationUntil = Date.now() + 400;
-		startMobileImportantRainbowPick(message, routeId, row);
-	}
 
-	function startMobileImportantRainbowPick(
-		message: MessagePreview,
-		routeId: string,
-		row: HTMLElement
-	) {
-		if (
-			settings.reduceMotion ||
-			hasPreciseHover() ||
-			!showImportantPresentation(message, routeId)
-		) {
+		if (!canStartMobileImportantRainbowPick(message, routeId)) return;
+
+		// Bulk select inserts the checkbox and re-renders the row — wait so we
+		// attach the rainbow pick to the live subject, not a detached node.
+		mobileImportantRainbowPick = { messageId: message.id, subjectEl: null, started: false };
+		await tick();
+
+		const pick = mobileImportantRainbowPick;
+		if (!pick || pick.messageId !== message.id) return;
+
+		const subject = findImportantListSubject(message.id);
+		if (!subject) {
+			mobileImportantRainbowPick = null;
 			return;
 		}
 
-		const subject = row.querySelector('.z-mail-list-subject--important');
-		if (!(subject instanceof HTMLElement)) return;
-
-		mobileImportantRainbowPick = { messageId: message.id, subjectEl: subject };
+		mobileImportantRainbowPick = { messageId: message.id, subjectEl: subject, started: true };
 		importantRainbow.startTouchPick(subject, message.id);
 	}
 
 	function finishMobileImportantRainbowPick() {
 		const pick = mobileImportantRainbowPick;
 		mobileImportantRainbowPick = null;
-		if (!pick) return;
-		importantRainbow.finishTouchPick(pick.subjectEl, pick.messageId);
+		if (!pick?.started) return;
+		const subject = resolveImportantRainbowSubject(pick.messageId, pick.subjectEl);
+		if (!subject) return;
+		importantRainbow.finishTouchPick(subject, pick.messageId);
 	}
 
 	function cancelMobileImportantRainbowPick() {
 		const pick = mobileImportantRainbowPick;
 		mobileImportantRainbowPick = null;
-		if (!pick) return;
-		importantRainbow.cancelTouchPick(pick.subjectEl, pick.messageId);
+		if (!pick?.started) return;
+		const subject = resolveImportantRainbowSubject(pick.messageId, pick.subjectEl);
+		if (!subject) return;
+		importantRainbow.cancelTouchPick(subject, pick.messageId);
 	}
 
 	function swipeContext(message: MessagePreview, routeId: string) {
@@ -1061,11 +1092,12 @@
 			{@const swipeTrailing = listSwipeTrailing(message, routeId)}
 			<li
 				class="z-mail-list-row list-none"
+				data-message-id={message.id}
 				data-current={isCurrent ? 'true' : undefined}
 				data-selected={rowSelected ? 'true' : undefined}
 			>
 				{#if showRowCheckbox}
-					<div class="relative flex items-center justify-center size-5 shrink-0" style="margin-top: 0.875rem;">
+					<div class="z-mail-list-checkbox-col z-mail-list-checkbox-col--row">
 						<input
 							type="checkbox"
 							class={cn('z-mail-list-row__checkbox absolute m-0', rowSelected && 'z-mail-list-row__checkbox--on')}

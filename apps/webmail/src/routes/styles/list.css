@@ -54,7 +54,7 @@
 	.z-mail-list-bulk-bar {
 		display: flex;
 		flex-wrap: nowrap;
-		align-items: baseline;
+		align-items: center;
 		gap: 0.5rem 0.75rem;
 		min-width: 0;
 	}
@@ -74,7 +74,7 @@
 		display: flex;
 		flex: 0 0 auto;
 		align-items: center;
-		gap: 0.375rem;
+		gap: var(--z-mail-list-checkbox-gap, 0.625rem);
 		padding-left: 0;
 	}
 
@@ -137,18 +137,31 @@
 		overflow: visible;
 	}
 
-	.z-mail-view .z-mail-list-body .z-mail-list-bulk-bar__checkbox {
-		position: static;
-		margin: 0;
-		transform: none;
-	}
-
 	/* List pane header — fixed height for folder title ↔ bulk toolbar swap. */
 	:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header {
 		position: sticky;
 		top: 0;
 		z-index: 10;
 		background-color: var(--z-chrome);
+	}
+
+	/* Bulk master checkbox — line up with row checkbox column below. */
+	.z-mail-view .z-mail-list-pane-header:has(.z-mail-list-bulk-bar__controls) {
+		padding-inline-start: var(--z-mail-list-checkbox-inset);
+	}
+
+	.z-mail-view .z-mail-list-checkbox-col {
+		position: relative;
+		display: flex;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		width: var(--z-mail-list-checkbox-col);
+		height: var(--z-mail-list-checkbox-col);
+	}
+
+	.z-mail-view .z-mail-list-checkbox-col--row {
+		margin-top: 0.875rem;
 	}
 
 	.z-mail-view .z-mail-list-pane-header .z-mail-list-bulk-bar,
@@ -209,10 +222,6 @@
 
 	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__checkbox,
 	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-bar__checkbox {
-		position: static;
-		left: auto;
-		top: auto;
-		transform: none;
 		opacity: 1;
 		pointer-events: auto;
 		flex-shrink: 0;
@@ -447,6 +456,17 @@
 		}
 	}
 
+	/* Shared checkbox column metrics — header + list rows read the same tokens. */
+	.z-mail-view {
+		--z-mail-list-cards-pad-x: 0.625rem;
+		--z-mail-list-row-pad-x: 0.75rem;
+		--z-mail-list-checkbox-col: 1.25rem;
+		--z-mail-list-checkbox-gap: 0.625rem;
+		--z-mail-list-checkbox-inset: calc(
+			var(--z-mail-list-cards-pad-x) + var(--z-mail-list-row-pad-x)
+		);
+	}
+
 	/* Bulk select — checkboxes live inside the row on desktop, no negative margin shifting. */
 	.z-mail-view .z-mail-list-body .z-mail-list-flow--selectable {
 		margin-inline-start: 0;
@@ -459,7 +479,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.375rem;
-		padding: 0.375rem 0.625rem 0.625rem;
+		padding: 0.375rem var(--z-mail-list-cards-pad-x) 0.625rem;
 	}
 
 	.z-mail-view .z-mail-list-row {
@@ -550,8 +570,8 @@
 	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row {
 		display: flex;
 		align-items: flex-start;
-		gap: 0.625rem;
-		padding-inline: 0.75rem;
+		gap: var(--z-mail-list-checkbox-gap);
+		padding-inline: var(--z-mail-list-row-pad-x);
 	}
 
 	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row > :where(a),
@@ -589,11 +609,13 @@
 					background-color var(--z-motion-fast) var(--z-ease-standard);
 	}
 
-	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row__checkbox {
+	.z-mail-view .z-mail-list-checkbox-col :is(.z-mail-list-row__checkbox, .z-mail-list-bulk-bar__checkbox) {
 		position: absolute;
-		flex-shrink: 0;
-		margin-top: 0;
-		transform: none;
+		inset: 0;
+		margin: auto;
+	}
+
+	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row__checkbox {
 		opacity: 0;
 		pointer-events: none;
 		transition: opacity var(--z-motion-fast) var(--z-ease-standard),

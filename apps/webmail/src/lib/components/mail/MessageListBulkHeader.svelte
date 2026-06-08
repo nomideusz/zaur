@@ -121,39 +121,18 @@
 </script>
 
 {#snippet bulkActionsMenu()}
-	<div class="z-overflow-menu-scroll">
-		<button
-			type="button"
-			class="z-overflow-menu-item"
-			role="menuitem"
-			onclick={() => mail.selectMessagesByFilter('all')}
-		>
-			Select all
-		</button>
-		<button
-			type="button"
-			class="z-overflow-menu-item"
-			role="menuitem"
-			onclick={() => mail.selectMessagesByFilter('none')}
-		>
-			Deselect all
-		</button>
-		{#if hasMenuActions}
-			<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-			<MessageListBulkMoreMenu
-				{mailboxRouteId}
-				{selectedCount}
-				counts={selectionCounts}
-				{canMarkImportant}
-				onDone={() => auth.client && runBulk(() => mail.bulkMarkAsDone(auth.client!), true)}
-				onMarkNew={() => auth.client && runBulk(() => mail.bulkMarkAsNew(auth.client!), true)}
-				onMarkImportant={() => auth.client && runBulk(() => mail.bulkMarkAsImportant(auth.client!))}
-				onRemoveImportant={() =>
-					auth.client && runBulk(() => mail.bulkMarkAsNotImportant(auth.client!))}
-				onMove={handleBulkMove}
-			/>
-		{/if}
-	</div>
+	<MessageListBulkMoreMenu
+		{mailboxRouteId}
+		{selectedCount}
+		counts={selectionCounts}
+		{canMarkImportant}
+		onDone={() => auth.client && runBulk(() => mail.bulkMarkAsDone(auth.client!), true)}
+		onMarkNew={() => auth.client && runBulk(() => mail.bulkMarkAsNew(auth.client!), true)}
+		onMarkImportant={() => auth.client && runBulk(() => mail.bulkMarkAsImportant(auth.client!))}
+		onRemoveImportant={() =>
+			auth.client && runBulk(() => mail.bulkMarkAsNotImportant(auth.client!))}
+		onMove={handleBulkMove}
+	/>
 {/snippet}
 
 {#if surface === 'shell'}
@@ -181,16 +160,18 @@
 				<button type="button" class={bulkBarDangerClass} onclick={deleteSelected}>
 					{deleteLabel}
 				</button>
-				<OverflowMenu
-					label="Bulk actions"
-					menuId="bulk-actions-menu-mobile"
-					placement="bottom"
-					textTrigger
-					triggerText="Actions"
-					triggerClass={bulkBarActionClass}
-				>
-					{@render bulkActionsMenu()}
-				</OverflowMenu>
+				{#if hasMenuActions}
+					<OverflowMenu
+						label="Bulk actions"
+						menuId="bulk-actions-menu-mobile"
+						placement="bottom"
+						textTrigger
+						triggerText="Actions"
+						triggerClass={bulkBarActionClass}
+					>
+						{@render bulkActionsMenu()}
+					</OverflowMenu>
+				{/if}
 			</nav>
 		{/if}
 	</nav>
@@ -203,7 +184,9 @@
 		aria-label="Message list"
 	>
 		<div class="z-mail-list-bulk-bar__controls">
-			<MessageListMasterCheckbox class="z-mail-list-bulk-bar__checkbox" />
+			<div class="z-mail-list-checkbox-col">
+				<MessageListMasterCheckbox class="z-mail-list-bulk-bar__checkbox" />
+			</div>
 			<MessageListSelectMenu {disabled} placement="bottom" />
 		</div>
 
@@ -234,7 +217,9 @@
 		aria-label="Selected messages"
 	>
 		<div class="z-mail-list-bulk-bar__controls">
-			<MessageListMasterCheckbox class="z-mail-list-bulk-bar__checkbox" />
+			<div class="z-mail-list-checkbox-col">
+				<MessageListMasterCheckbox class="z-mail-list-bulk-bar__checkbox" />
+			</div>
 			<MessageListSelectMenu {disabled} placement="bottom" />
 		</div>
 
