@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
+	import { Separator, Toolbar } from 'bits-ui';
 	import { Editor } from '@tiptap/core';
 	import StarterKit from '@tiptap/starter-kit';
 	import Link from '@tiptap/extension-link';
@@ -33,6 +34,15 @@
 	let isOrderedList = $state(false);
 	let isBlockquote = $state(false);
 	let isLink = $state(false);
+
+	const textFormats = $derived([
+		...(isBold ? ['bold'] : []),
+		...(isItalic ? ['italic'] : []),
+		...(isStrike ? ['strike'] : [])
+	]);
+	const paragraphFormat = $derived(
+		isBulletList ? 'bulletList' : isOrderedList ? 'orderedList' : isBlockquote ? 'blockquote' : ''
+	);
 
 	function inlineAttachmentSources() {
 		return compose.attachments
@@ -153,6 +163,34 @@
 		event.preventDefault();
 	}
 
+	function setTextFormats(next: string[]) {
+		if (!editor) return;
+		const chain = editor.chain().focus();
+		if (next.includes('bold') !== isBold) chain.toggleBold();
+		if (next.includes('italic') !== isItalic) chain.toggleItalic();
+		if (next.includes('strike') !== isStrike) chain.toggleStrike();
+		chain.run();
+		updateActiveStates();
+	}
+
+	function setParagraphFormat(next: string) {
+		if (!editor) return;
+		const chain = editor.chain().focus();
+		if (next === 'bulletList') chain.toggleBulletList();
+		else if (next === 'orderedList') chain.toggleOrderedList();
+		else if (next === 'blockquote') chain.toggleBlockquote();
+		else if (isBulletList) chain.toggleBulletList();
+		else if (isOrderedList) chain.toggleOrderedList();
+		else if (isBlockquote) chain.toggleBlockquote();
+		chain.run();
+		updateActiveStates();
+	}
+
+	function clearFormatting() {
+		editor?.chain().focus().unsetAllMarks().clearNodes().run();
+		updateActiveStates();
+	}
+
 	function toggleLink() {
 		if (!editor) return;
 		if (editor.isActive('link')) {
@@ -238,94 +276,62 @@
 />
 
 <div class="z-rich-editor flex flex-col min-h-0 flex-1 bg-transparent">
-	<!-- Toolbar -->
-	<div class="z-rich-editor__toolbar flex flex-wrap gap-1 border-b border-border/80 pb-2 bg-transparent">
-		<button
-			type="button"
-			class="z-rich-editor__btn"
-			class:z-rich-editor__btn--active={isBold}
-			onmousedown={toolbarMouseDown}
-			onclick={() => { editor?.chain().focus().toggleBold().run(); updateActiveStates(); }}
-			title="Bold"
+	<Toolbar.Root class="z-rich-editor__toolbar" aria-label="Rich text formatting" onmousedown={toolbarMouseDown}>
+		<Toolbar.Group
+			type="multiple"
+			value={textFormats}
+			onValueChange={setTextFormats}
+			class="z-rich-editor__group"
+			aria-label="Text style"
 		>
+		<Toolbar.GroupItem value="bold" class="z-rich-editor__btn" aria-label="Bold" title="Bold">
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 12a4 4 0 0 0 0-8H6v8h8Z"/><path d="M15 20a4 4 0 0 0 0-8H6v8h9Z"/></svg>
-		</button>
-		<button
-			type="button"
-			class="z-rich-editor__btn"
-			class:z-rich-editor__btn--active={isItalic}
-			onmousedown={toolbarMouseDown}
-			onclick={() => { editor?.chain().focus().toggleItalic().run(); updateActiveStates(); }}
-			title="Italic"
-		>
+		</Toolbar.GroupItem>
+		<Toolbar.GroupItem value="italic" class="z-rich-editor__btn" aria-label="Italic" title="Italic">
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></svg>
-		</button>
-		<button
-			type="button"
-			class="z-rich-editor__btn"
-			class:z-rich-editor__btn--active={isStrike}
-			onmousedown={toolbarMouseDown}
-			onclick={() => { editor?.chain().focus().toggleStrike().run(); updateActiveStates(); }}
-			title="Strikethrough"
-		>
+		</Toolbar.GroupItem>
+		<Toolbar.GroupItem value="strike" class="z-rich-editor__btn" aria-label="Strikethrough" title="Strikethrough">
 			<span class="z-rich-editor__format-letter z-rich-editor__format-letter--strike" aria-hidden="true">S</span>
-		</button>
+		</Toolbar.GroupItem>
+		</Toolbar.Group>
 
-		<div class="z-rich-editor__divider"></div>
+		<Separator.Root class="z-rich-editor__divider" />
 
-		<button
-			type="button"
-			class="z-rich-editor__btn"
-			class:z-rich-editor__btn--active={isBulletList}
-			onmousedown={toolbarMouseDown}
-			onclick={() => { editor?.chain().focus().toggleBulletList().run(); updateActiveStates(); }}
-			title="Bullet List"
+		<Toolbar.Group
+			type="single"
+			value={paragraphFormat}
+			onValueChange={setParagraphFormat}
+			class="z-rich-editor__group"
+			aria-label="Paragraph style"
 		>
+		<Toolbar.GroupItem value="bulletList" class="z-rich-editor__btn" aria-label="Bullet list" title="Bullet list">
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
-		</button>
-		<button
-			type="button"
-			class="z-rich-editor__btn"
-			class:z-rich-editor__btn--active={isOrderedList}
-			onmousedown={toolbarMouseDown}
-			onclick={() => { editor?.chain().focus().toggleOrderedList().run(); updateActiveStates(); }}
-			title="Numbered List"
-		>
+		</Toolbar.GroupItem>
+		<Toolbar.GroupItem value="orderedList" class="z-rich-editor__btn" aria-label="Numbered list" title="Numbered list">
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1Zm0 12H3a1 1 0 0 1-1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1Zm0-6H3a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v1a1 1 0 0 1-1 1Z"/></svg>
-		</button>
-		<button
-			type="button"
-			class="z-rich-editor__btn"
-			class:z-rich-editor__btn--active={isBlockquote}
-			onmousedown={toolbarMouseDown}
-			onclick={() => { editor?.chain().focus().toggleBlockquote().run(); updateActiveStates(); }}
-			title="Blockquote"
-		>
+		</Toolbar.GroupItem>
+		<Toolbar.GroupItem value="blockquote" class="z-rich-editor__btn" aria-label="Quote" title="Quote">
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-		</button>
+		</Toolbar.GroupItem>
+		</Toolbar.Group>
 
-		<div class="z-rich-editor__divider"></div>
+		<Separator.Root class="z-rich-editor__divider" />
 
-		<button
-			type="button"
-			class="z-rich-editor__btn"
-			class:z-rich-editor__btn--active={isLink}
-			onmousedown={toolbarMouseDown}
+		<Toolbar.Button
+			class={isLink ? 'z-rich-editor__btn z-rich-editor__btn--active' : 'z-rich-editor__btn'}
 			onclick={toggleLink}
+			aria-label="Link"
 			title="Link"
 		>
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-		</button>
-		<button
-			type="button"
-			class="z-rich-editor__btn"
-			onmousedown={toolbarMouseDown}
-			onclick={() => fileInput?.click()}
-			title="Insert Image"
-		>
+		</Toolbar.Button>
+		<Toolbar.Button class="z-rich-editor__btn" onclick={() => fileInput?.click()} aria-label="Insert image" title="Insert image">
 			<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-		</button>
-	</div>
+		</Toolbar.Button>
+		<Toolbar.Button class="z-rich-editor__btn" onclick={clearFormatting} aria-label="Clear formatting" title="Clear formatting">
+			<span class="z-rich-editor__format-letter" aria-hidden="true">Tx</span>
+		</Toolbar.Button>
+	</Toolbar.Root>
 
 	<!-- Editor body -->
 	<div bind:this={element} class="z-rich-editor__wrapper flex-1 overflow-y-auto pt-3 bg-transparent"></div>
@@ -337,12 +343,24 @@
 		color: var(--z-fg, #000);
 	}
 
-	.z-rich-editor__toolbar {
+	:global(.z-rich-editor__toolbar) {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.25rem;
+		padding-bottom: 0.5rem;
+		border-bottom: 1px solid var(--z-border, rgba(0,0,0,0.1));
 		border-color: var(--z-border, rgba(0,0,0,0.1));
 		box-shadow: none;
 	}
 
-	.z-rich-editor__btn {
+	:global(.z-rich-editor__group) {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.125rem;
+	}
+
+	:global(.z-rich-editor__btn) {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -357,12 +375,13 @@
 		transition: background-color var(--z-motion-fast, 150ms) var(--z-ease-standard, ease), color var(--z-motion-fast, 150ms) var(--z-ease-standard, ease);
 	}
 
-	.z-rich-editor__btn:hover {
+	:global(.z-rich-editor__btn:hover) {
 		background-color: var(--z-hover, rgba(0,0,0,0.05));
 		color: var(--z-fg, #000);
 	}
 
-	.z-rich-editor__btn--active {
+	:global(.z-rich-editor__btn[data-state='on']),
+	:global(.z-rich-editor__btn--active) {
 		background-color: var(--z-active, rgba(0,0,0,0.1));
 		color: var(--z-accent, #0076ff);
 	}
@@ -382,7 +401,7 @@
 		text-decoration-thickness: 1.5px;
 	}
 
-	.z-rich-editor__divider {
+	:global(.z-rich-editor__divider) {
 		width: 1px;
 		height: 18px;
 		background-color: var(--z-border, rgba(0,0,0,0.1));
