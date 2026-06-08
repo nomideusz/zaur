@@ -477,3 +477,52 @@
 		color: #4a4a4a;
 		border-left-color: color-mix(in srgb, #1a1a1a 18%, transparent);
 	}
+
+	/*
+	 * Light-authored email with no background of its own — render the whole body on a light
+	 * card so logos, buttons and author colors read as designed instead of clashing with the
+	 * dark reader. Authored colors are preserved (no dark-mode stripping in this branch).
+	 */
+	:root.dark .z-email-body--light {
+		color-scheme: light;
+		background-color: #ffffff;
+		color: #1a1a1a;
+		border-radius: 0.5rem;
+		padding: clamp(0.75rem, 3vw, 1.25rem);
+		isolation: isolate;
+	}
+
+	:root.dark .z-email-body--light :where(a) {
+		color: #1d4ed8;
+	}
+
+	:root.dark .z-email-body--light :where(blockquote) {
+		color: #4a4a4a;
+		border-left-color: color-mix(in srgb, #1a1a1a 18%, transparent);
+	}
+
+	:root.dark .z-email-body--light :where(pre, code) {
+		background-color: color-mix(in srgb, #1a1a1a 6%, transparent);
+		color: #1a1a1a;
+	}
+
+	:root.dark .z-email-body--light :where(hr) {
+		border-color: color-mix(in srgb, #1a1a1a 12%, transparent);
+	}
+
+	/*
+	 * Mobile — neutralize fixed pixel widths so HTML emails reflow to the screen instead of
+	 * forcing horizontal scroll. overflow-x:auto on .z-email-body--html stays as a safety net
+	 * for content that genuinely cannot shrink (wide images, <pre>, hard-coded layout tables).
+	 */
+	@media (max-width: 767px) {
+		.z-email-body--html :where(table, td, th, tr, div, p, span, ul, ol, blockquote) {
+			max-width: 100% !important;
+			min-width: 0 !important;
+		}
+
+		.z-email-body--html :where(img) {
+			max-width: 100% !important;
+			height: auto !important;
+		}
+	}

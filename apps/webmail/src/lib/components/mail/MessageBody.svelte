@@ -28,6 +28,7 @@
 	class="z-email-body w-full"
 	class:z-email-body--html={rendered.isHtml}
 	class:z-email-body--plain={!rendered.isHtml}
+	class:z-email-body--light={rendered.lightSurface}
 	class:whitespace-pre-wrap={!rendered.isHtml}
 >
 	{@html rendered.html}

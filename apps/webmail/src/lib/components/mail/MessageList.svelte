@@ -257,7 +257,9 @@
 	const listToolbarDisabled = $derived(loading || !!error || !messages.length);
 
 	$effect(() => {
-		if (!sectionMode || !mailboxRouteId || mail.hasSelection) {
+		// The list pane keeps its filter toolbar while a thread is open in the reader, so this
+		// is gated on having a mailbox (not on sectionMode, which drops out once a thread opens).
+		if (!mailboxRouteId || mail.hasSelection) {
 			shellHeader.clearMailListToolbar();
 			return;
 		}
@@ -975,7 +977,7 @@
 					{onBulkAction}
 					disabled={listToolbarDisabled}
 				/>
-			{:else if sectionMode && mailboxRouteId}
+			{:else if mailboxRouteId}
 				<MessageListToolbar
 					class="w-full min-w-0"
 					surface="pane"

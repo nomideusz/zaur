@@ -131,6 +131,7 @@
 	}
 
 	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__action--danger:hover:not(:disabled) {
+		color: var(--z-danger);
 		text-decoration-color: color-mix(in srgb, var(--z-danger) 70%, transparent);
 	}
 
@@ -139,11 +140,13 @@
 		display: inline-flex;
 		flex-shrink: 0;
 		align-items: center;
-		padding-inline: 0.875rem 0.125rem;
-		border-left: 1px solid color-mix(in srgb, var(--z-border) 55%, transparent);
+		margin-left: 0.375rem;
+		padding-inline: 1.125rem 0.125rem;
+		border-left: 1px solid color-mix(in srgb, var(--z-border) 90%, transparent);
 	}
 
 	.z-header-action-zone:first-child {
+		margin-left: 0;
 		border-left: none;
 		padding-left: 0.125rem;
 	}

@@ -107,12 +107,12 @@
 
 	.z-mail-list-bulk-bar__links {
 		display: flex;
-		flex-shrink: 1;
+		flex-shrink: 0;
 		min-width: 0;
 		align-items: baseline;
 		justify-content: flex-end;
 		gap: 0.75rem;
-		flex-wrap: wrap;
+		flex-wrap: nowrap;
 		margin-left: auto;
 	}
 

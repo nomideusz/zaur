@@ -6,6 +6,8 @@
 	import { bulkSelectionCounts } from '$lib/components/mail/bulk-selection-label';
 	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
+	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
+	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import { canMarkImportantFromMailboxRole } from '$lib/mail/mailboxes';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -31,7 +33,6 @@
 	}: Props = $props();
 
 	const linkClass = 'z-mail-text-nav__link';
-	const dangerLinkClass = 'z-mail-text-nav__link z-mail-text-nav__link--danger';
 
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const selectedCount = $derived(selectedIds.length);
@@ -48,6 +49,19 @@
 			deleteLabel
 		})
 	);
+
+	/** Contextual mark/flag actions — shown inline when few, collapsed into a menu when many. */
+	const markActionIds = new Set<BulkBarActionId>([
+		'unsee',
+		'mark-seen',
+		'important',
+		'not-important'
+	]);
+	const markActions = $derived(actions.filter((action) => markActionIds.has(action.id)));
+	const trashAction = $derived(actions.find((action) => action.id === 'trash'));
+	/** Keep the bar on a single line: only inline a couple of marks, otherwise use the menu. */
+	const collapseMarks = $derived(markActions.length > 2);
+	const summaryLabel = $derived(`${selectedCount} selected`);
 
 	async function runBulk(action: () => Promise<void>, refreshList = false) {
 		if (!auth.client || mail.bulkActionLoading) return;
@@ -109,15 +123,44 @@
 		<MessageListSelectMenu {disabled} />
 	</div>
 
+	<p class="z-mail-list-bulk-bar__summary" aria-live="polite">{summaryLabel}</p>
+
 	<div class="z-mail-list-bulk-bar__links">
-		{#each actions as action (action.id)}
+		{#if collapseMarks}
+			<OverflowMenu
+				label="Mark selected messages"
+				menuId="bulk-mark-menu"
+				placement="bottom"
+				align="end"
+				textTrigger
+				triggerText="More"
+				triggerClass={linkClass}
+				menuClass="w-56 min-w-48"
+			>
+				{#each markActions as action (action.id)}
+					<OverflowMenuItem label={action.label} onclick={() => runAction(action.id)} />
+				{/each}
+			</OverflowMenu>
+		{:else}
+			{#each markActions as action (action.id)}
+				<button type="button" class={linkClass} onclick={() => runAction(action.id)}>
+					{action.label}
+				</button>
+			{/each}
+		{/if}
+
+		<button type="button" class={linkClass} onclick={() => runAction('cancel')}>Cancel</button>
+	</div>
+
+	{#if trashAction}
+		<div class="z-header-action-zone">
 			<button
 				type="button"
-				class={action.variant === 'danger' ? dangerLinkClass : linkClass}
-				onclick={() => runAction(action.id)}
+				class="z-mail-text-nav__action z-mail-text-nav__action--danger"
+				onclick={() => runAction('trash')}
 			>
-				{action.label}
+				{trashAction.label}
 			</button>
-		{/each}
-	</div>
+		</div>
+	{/if}
 </nav>

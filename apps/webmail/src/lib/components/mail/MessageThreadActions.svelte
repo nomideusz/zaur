@@ -203,18 +203,6 @@
 			</button>
 		{/if}
 
-		<div class="z-header-action-zone">
-			{#if isDraft}
-				<button type="button" class="z-mail-text-nav__action" onclick={() => void sendDraft()}>
-					Send
-				</button>
-			{:else}
-				<button type="button" class="z-mail-text-nav__action" onclick={primaryReply}>
-					{primaryReplyLabel}
-				</button>
-			{/if}
-		</div>
-
 		{#if !isDraft || showDraftOverflowMenu}
 			<OverflowMenu
 				label="Message actions"
@@ -285,5 +273,17 @@
 				{/if}
 			</OverflowMenu>
 		{/if}
+
+		<div class="z-header-action-zone">
+			{#if isDraft}
+				<button type="button" class="z-mail-text-nav__action" onclick={() => void sendDraft()}>
+					Send
+				</button>
+			{:else}
+				<button type="button" class="z-mail-text-nav__action" onclick={primaryReply}>
+					{primaryReplyLabel}
+				</button>
+			{/if}
+		</div>
 	</div>
 {/if}

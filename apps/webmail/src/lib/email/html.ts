@@ -216,6 +216,32 @@ function markLightSurfaces(root: ParentNode) {
 	}
 }
 
+/** Backgrounds the email author clearly intends as a dark page/canvas. */
+function isDarkBackgroundColor(value: string): boolean {
+	const rgb = parseCssColor(value);
+	if (!rgb) return false;
+	return relativeLuminance(rgb) < 0.3;
+}
+
+/** Structural wrappers that typically carry the email's page background. */
+const PAGE_BACKGROUND_SELECTOR = 'body, table, tbody, tr, td, center, section, article, div';
+
+/**
+ * True when the email declares a dark page background — i.e. it was authored for dark.
+ * The first structural wrapper with an explicit background sets the page intent; emails
+ * with no declared background (the common case) are treated as light-authored.
+ */
+function emailIsDarkAuthored(root: ParentNode): boolean {
+	for (const element of root.querySelectorAll(PAGE_BACKGROUND_SELECTOR)) {
+		if (!(element instanceof HTMLElement)) continue;
+		const background = elementBackgroundColor(element);
+		if (!background) continue;
+		if (!parseCssColor(background)) continue;
+		return isDarkBackgroundColor(background);
+	}
+	return false;
+}
+
 function stripLightBackground(node: Element) {
 	const bgcolor = node.getAttribute('bgcolor');
 	if (bgcolor && isLightBackgroundColor(bgcolor)) {
@@ -486,11 +512,12 @@ function wrapHtmlQuotedReplies(root: HTMLElement) {
 function postProcessSanitizedHtml(
 	html: string,
 	options: { allowExternal: boolean; darkMode?: boolean; cleanView?: boolean }
-): { html: string; blockedExternal: boolean } {
+): { html: string; blockedExternal: boolean; lightSurface: boolean } {
 	if (!browser) {
 		return {
 			html: postProcessSanitizedHtmlString(html, options.allowExternal),
-			blockedExternal: !options.allowExternal && hasExternalContent(html)
+			blockedExternal: !options.allowExternal && hasExternalContent(html),
+			lightSurface: false
 		};
 	}
 
@@ -504,9 +531,23 @@ function postProcessSanitizedHtml(
 	const darkMode =
 		options.darkMode ??
 		(browser && document.documentElement.classList.contains('dark'));
-	integrateHtmlForDarkMode(container, darkMode);
 
-	return { html: container.innerHTML, blockedExternal };
+	let lightSurface = false;
+	if (darkMode && !options.cleanView) {
+		// A light-authored email with no light background of its own would otherwise render
+		// theme text + dark logos/buttons straight onto the dark reader. Show it as a light
+		// card instead, keeping the author's colors exactly as designed for light backgrounds.
+		markLightSurfaces(container);
+		const hasLightSurface = !!container.querySelector('[data-z-light-surface]');
+		lightSurface = !hasLightSurface && !emailIsDarkAuthored(container);
+		if (!lightSurface) {
+			integrateHtmlForDarkMode(container, true);
+		}
+	} else if (darkMode) {
+		integrateHtmlForDarkMode(container, true);
+	}
+
+	return { html: container.innerHTML, blockedExternal, lightSurface };
 }
 
 function hasExternalContent(html: string): boolean {
@@ -589,7 +630,7 @@ function formatPlainSegment(text: string, skipLinkify = false): string {
 export function prepareEmailHtml(
 	rawHtml: string,
 	options: { allowExternal: boolean; darkMode?: boolean; cleanView?: boolean }
-): { html: string; blockedExternal: boolean } {
+): { html: string; blockedExternal: boolean; lightSurface: boolean } {
 	const html = DOMPurify.sanitize(rawHtml, EMAIL_SANITIZE_CONFIG);
 	return postProcessSanitizedHtml(html, options);
 }
@@ -601,12 +642,13 @@ export function renderMessageBody(options: {
 	darkMode?: boolean;
 	preferPlainText?: boolean;
 	cleanView?: boolean;
-}): { html: string; blockedExternal: boolean; isHtml: boolean } {
+}): { html: string; blockedExternal: boolean; isHtml: boolean; lightSurface: boolean } {
 	if (options.preferPlainText && options.bodyText.trim()) {
 		return {
 			html: plainTextToSafeHtml(options.bodyText),
 			blockedExternal: false,
-			isHtml: false
+			isHtml: false,
+			lightSurface: false
 		};
 	}
 
@@ -623,7 +665,8 @@ export function renderMessageBody(options: {
 			return {
 				html: plainTextToSafeHtml(options.bodyText),
 				blockedExternal: prepared.blockedExternal,
-				isHtml: false
+				isHtml: false,
+				lightSurface: false
 			};
 		}
 		return { ...prepared, isHtml: true };
@@ -632,6 +675,7 @@ export function renderMessageBody(options: {
 	return {
 		html: plainTextToSafeHtml(options.bodyText),
 		blockedExternal: false,
-		isHtml: false
+		isHtml: false,
+		lightSurface: false
 	};
 }

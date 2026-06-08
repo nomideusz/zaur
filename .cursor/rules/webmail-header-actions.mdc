@@ -20,11 +20,13 @@ The main outcome lives in a **`.z-header-action-zone`** at the trailing edge of 
 | **Hover** | Accent underline |
 | **Zone** | Left border + padding isolates the action from filters / secondary links |
 
+The primary action is **always the trailing (rightmost) element** of its header row, after every secondary link and overflow trigger, so it stands out.
+
 Examples:
-- **Inbox list (desktop)**: filters left · **New message** in list-pane header zone
+- **Inbox list (desktop)**: filters left (All · Unseen · Important) · **New message** in list-pane header zone
 - **Inbox (mobile shell)**: **New** link in app shell end
-- **Reader**: secondary links · **Reply** / **Send** zone · More
-- **Compose**: Discard / Attach · **Send** zone
+- **Reader**: secondary links · More · **Reply** / **Send** zone (trailing)
+- **Compose**: Discard / Rich text / Attach · **Send** zone (trailing)
 - **Search (no list toolbar)**: **New message** stays in app shell end
 
 Do **not** use `Button`, filled pills, or icon+label buttons for the primary header action.
@@ -48,7 +50,7 @@ Do **not** use `Button`, filled pills, or icon+label buttons for the primary hea
 
 On mobile shell only, inbox **New** may sit in `.z-app-shell-header__end` when the list toolbar is in the shell center.
 
-Bulk select bar (mobile shell): checkbox · Select · count · Cancel · Trash · Actions (Unsee only) — text links like reader/compose, not icon buttons.
+Bulk select bar (one row, never wraps): `[✓ master][▾ select]` · `N selected` (flex-1) · mark links (`Unsee` / `Mark seen` / `Important` / `Not important`, collapsed into a **More** overflow menu when more than two apply) · `Cancel` · separated **Trash** primary in `.z-header-action-zone` (`.z-mail-text-nav__action--danger`, trailing/standout). Text links like reader/compose, not icon buttons.
 
 ## Do not
 
