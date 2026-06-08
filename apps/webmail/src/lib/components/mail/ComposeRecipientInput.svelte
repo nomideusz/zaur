@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Command } from 'bits-ui';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { listContacts } from '$lib/utils/contact-index';
@@ -35,7 +36,7 @@
 	}: Props = $props();
 
 	let open = $state(false);
-	let activeIndex = $state(0);
+	let commandRoot = $state<ReturnType<typeof Command.Root> | null>(null);
 
 	const partial = $derived(value.split(/[,;]/).pop()?.trim() ?? '');
 	const prefix = $derived(
@@ -56,7 +57,6 @@
 	function pick(email: string) {
 		emit(`${prefix}${email}`);
 		open = false;
-		activeIndex = 0;
 	}
 
 	function onKeydown(event: KeyboardEvent) {
@@ -64,13 +64,10 @@
 
 		if (event.key === 'ArrowDown') {
 			event.preventDefault();
-			activeIndex = (activeIndex + 1) % suggestions.length;
-		} else if (event.key === 'ArrowUp') {
-			event.preventDefault();
-			activeIndex = (activeIndex - 1 + suggestions.length) % suggestions.length;
-		} else if (event.key === 'Enter' && suggestions[activeIndex]) {
-			event.preventDefault();
-			pick(suggestions[activeIndex].email);
+			const items = commandRoot?.getValidItems();
+			if (!items?.length) return;
+		commandRoot?.updateSelectedToIndex(0);
+		items[0]?.focus();
 		} else if (event.key === 'Escape') {
 			open = false;
 		}
@@ -97,7 +94,7 @@
 		}
 	});
 </script>
- 
+
 <div class="relative min-w-0">
 	<textarea
 		bind:this={inputElement}
@@ -108,6 +105,7 @@
 		autocomplete={autocomplete as any}
 		aria-invalid={invalid || undefined}
 		aria-describedby={ariaDescribedby}
+		aria-controls={showSuggestions ? `${id}-suggestions` : undefined}
 		value={value}
 		onfocus={() => {
 			open = true;
@@ -119,7 +117,6 @@
 		}}
 		oninput={(e) => {
 			open = true;
-			activeIndex = 0;
 			emit(e.currentTarget.value);
 			syncInputHeight(e.currentTarget);
 		}}
@@ -127,30 +124,33 @@
 	></textarea>
 
 	{#if showSuggestions}
-		<ul
-			class="absolute left-0 top-full z-20 mt-2 w-full max-w-md overflow-hidden rounded-md border border-border bg-surface-raised py-1.5 shadow-md"
-			role="listbox"
+		<Command.Root
+			bind:this={commandRoot}
+			id={id ? `${id}-suggestions` : undefined}
+			shouldFilter={false}
+			class="absolute left-0 top-full z-20 mt-2 w-full max-w-md overflow-hidden rounded-md border border-border bg-surface-raised shadow-md"
+			aria-label="Contact suggestions"
 		>
-			{#each suggestions as contact, index (contact.email)}
-				<li role="option" aria-selected={index === activeIndex}>
-					<button
-						type="button"
-						class={cn(
-							'flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-surface-sunken',
-							index === activeIndex && 'bg-surface-sunken'
-						)}
-						onmousedown={(e) => e.preventDefault()}
-						onclick={() => pick(contact.email)}
-					>
-						<span class="min-w-0 truncate">
-							<span class="font-medium text-fg">{contact.name}</span>
-							{#if contact.name.trim().toLowerCase() !== contact.email.trim().toLowerCase()}
-								<span class="ml-1 text-fg-muted">{contact.email}</span>
-							{/if}
-						</span>
-					</button>
-				</li>
-			{/each}
-		</ul>
+			<Command.List class="max-h-64 overflow-y-auto py-1.5">
+				<Command.Viewport>
+					{#each suggestions as contact (contact.email)}
+						<Command.Item
+							value={contact.email}
+							keywords={[contact.name, contact.email]}
+							class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
+							onSelect={() => pick(contact.email)}
+							onmousedown={(e) => e.preventDefault()}
+						>
+							<span class="min-w-0 truncate">
+								<span class="font-medium text-fg">{contact.name}</span>
+								{#if contact.name.trim().toLowerCase() !== contact.email.trim().toLowerCase()}
+									<span class="ml-1 text-fg-muted">{contact.email}</span>
+								{/if}
+							</span>
+						</Command.Item>
+					{/each}
+				</Command.Viewport>
+			</Command.List>
+		</Command.Root>
 	{/if}
 </div>

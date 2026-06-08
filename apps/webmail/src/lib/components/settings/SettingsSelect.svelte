@@ -5,6 +5,7 @@
 	export interface SettingsSelectOption {
 		value: string;
 		label: string;
+		disabled?: boolean;
 	}
 
 	interface Props {
@@ -19,23 +20,12 @@
 </script>
 
 <div class="z-settings-select min-w-0">
-	<div class="md:hidden">
-		<MobilePicker
-			{label}
-			{value}
-			{options}
-			{onchange}
-			compact
-			class={cn('max-md:w-full max-md:max-w-none', className)}
-		/>
-	</div>
-	<select
-		class={cn('z-select hidden w-auto md:block', className)}
+	<MobilePicker
+		{label}
 		{value}
-		onchange={(e) => onchange(e.currentTarget.value)}
-	>
-		{#each options as option (option.value)}
-			<option value={option.value}>{option.label}</option>
-		{/each}
-	</select>
+		{options}
+		{onchange}
+		variant="field"
+		class={cn('w-auto max-md:w-full max-md:max-w-none', className)}
+	/>
 </div>

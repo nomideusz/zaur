@@ -6,6 +6,7 @@
 	export interface MobilePickerOption {
 		value: string;
 		label: string;
+		disabled?: boolean;
 	}
 
 	interface Props {
@@ -14,6 +15,8 @@
 		options: MobilePickerOption[];
 		onchange: (value: string) => void;
 		compact?: boolean;
+		/** `field` matches settings/desktop select styling; `compact` for shell headers. */
+		variant?: 'compact' | 'field';
 		class?: string;
 	}
 
@@ -23,14 +26,13 @@
 		options,
 		onchange,
 		compact = false,
+		variant = compact ? 'compact' : 'field',
 		class: className = ''
 	}: Props = $props();
 
 	let open = $state(false);
 
-	const selectedLabel = $derived(
-		options.find((option) => option.value === value)?.label ?? label
-	);
+	const isCompact = $derived(variant === 'compact');
 
 	function handleValueChange(nextValue: string) {
 		if (!nextValue) return;
@@ -42,19 +44,22 @@
 <Select.Root
 	type="single"
 	items={options}
-	value={value as never}
+	{value}
 	bind:open
-	onValueChange={handleValueChange as never}
+	onValueChange={handleValueChange}
 >
 	<Select.Trigger
-		class={cn('z-mobile-picker-trigger', compact && 'z-mobile-picker-trigger--compact', className)}
+		class={cn(
+			isCompact ? 'z-mobile-picker-trigger z-mobile-picker-trigger--compact' : 'z-select-trigger',
+			className
+		)}
 		aria-label={label}
 	>
-		<span class="z-mobile-picker-trigger__label min-w-0 flex-1 truncate text-left">{selectedLabel}</span>
+		<Select.Value placeholder={label} class="min-w-0 flex-1 truncate text-left" />
 		<ChevronDown
 			class={cn(
 				'shrink-0 text-fg-subtle transition-transform duration-150',
-				compact ? 'size-4' : 'size-5',
+				isCompact ? 'size-4' : 'size-4',
 				open && 'rotate-180'
 			)}
 			aria-hidden="true"
@@ -70,7 +75,7 @@
 			updatePositionStrategy="always"
 			class={cn(
 				'z-mobile-picker-menu w-[var(--bits-select-anchor-width)] min-w-[var(--bits-select-anchor-width)] max-h-[min(var(--bits-select-content-available-height),17.5rem)] max-w-[calc(100vw-1rem)]',
-				compact && 'z-mobile-picker-menu--compact'
+				isCompact && 'z-mobile-picker-menu--compact'
 			)}
 		>
 			<Select.Viewport>
@@ -78,12 +83,18 @@
 					<Select.Item
 						value={option.value}
 						label={option.label}
+						disabled={option.disabled}
 						class={cn(
-							'z-mobile-picker-option data-highlighted:bg-surface-sunken',
+							'z-mobile-picker-option data-highlighted:bg-surface-sunken data-disabled:opacity-50',
 							option.value === value && 'z-mobile-picker-option--active'
 						)}
 					>
-						{option.label}
+						{#snippet children({ selected })}
+							<span class="min-w-0 truncate">{option.label}</span>
+							{#if selected}
+								<span class="sr-only">Selected</span>
+							{/if}
+						{/snippet}
 					</Select.Item>
 				{/each}
 			</Select.Viewport>

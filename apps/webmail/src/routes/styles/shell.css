@@ -28,6 +28,19 @@
 		.z-app-shell-header--mail-list {
 			overflow: visible;
 		}
+
+		.z-app-shell-header__center .z-mail-list-toolbar {
+			justify-content: center;
+		}
+
+		.z-app-shell-header__center .z-mail-list-pane-header__filter {
+			box-sizing: border-box;
+			height: 2.25rem;
+			min-height: 2.25rem;
+			max-width: 9.5rem;
+			font-size: 0.8125rem;
+			font-weight: 600;
+		}
 	}
 
 	.z-mobile-reader-bar {

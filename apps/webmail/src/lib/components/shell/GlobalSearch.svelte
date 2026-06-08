@@ -5,9 +5,10 @@
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { Dialog } from 'bits-ui';
+	import { Dialog, Command } from 'bits-ui';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -29,6 +30,7 @@
 	let open = $state(false);
 	let searchInput = $state<HTMLInputElement | null>(null);
 	let formContainer = $state<HTMLFormElement | null>(null);
+	let commandRoot = $state<ReturnType<typeof Command.Root> | null>(null);
 
 	const isSidebar = $derived(placement === 'sidebar');
 	const isMobile = $derived(placement === 'mobile');
@@ -106,21 +108,35 @@
 		goto(`/mail/search?${params.toString()}`);
 	}
 
+	const dateRangeOptions = [
+		{ value: 'any', label: 'Any time' },
+		{ value: '1d', label: 'Last 24 hours' },
+		{ value: '7d', label: 'Last 7 days' },
+		{ value: '30d', label: 'Last 30 days' },
+		{ value: '90d', label: 'Last 90 days' },
+		{ value: '1y', label: 'Last year' },
+		{ value: 'custom', label: 'Custom range…' }
+	];
+
+	const mailboxOptions = $derived([
+		{ value: '', label: 'All Mailboxes' },
+		...mail.mailboxes.map((mb) => ({
+			value: mb.jmapId || mb.id,
+			label: mb.name
+		}))
+	]);
+
+	function focusFirstSuggestion() {
+		const items = commandRoot?.getValidItems();
+		if (!items?.length) return;
+		commandRoot?.updateSelectedToIndex(0);
+		items[0]?.focus();
+	}
+
 	function composeTo(email: string) {
 		open = false;
 		input = '';
 		goto(`/mail/compose?to=${encodeURIComponent(email)}`);
-	}
-
-	function menuItems(): HTMLButtonElement[] {
-		const menu = document.getElementById(dropdownId);
-		return menu ? Array.from(menu.querySelectorAll<HTMLButtonElement>('button[role="menuitem"]')) : [];
-	}
-
-	function focusMenuItem(index: number) {
-		const items = menuItems();
-		if (!items.length) return;
-		items[Math.max(0, Math.min(index, items.length - 1))]?.focus();
 	}
 
 	function onSearchKeydown(event: KeyboardEvent) {
@@ -130,29 +146,7 @@
 			searchInput?.blur();
 		} else if (event.key === 'ArrowDown' && showDropdown) {
 			event.preventDefault();
-			focusMenuItem(0);
-		}
-	}
-
-	function onMenuKeydown(event: KeyboardEvent) {
-		const items = menuItems();
-		const currentIndex = items.findIndex((item) => item === document.activeElement);
-		if (event.key === 'Escape') {
-			event.preventDefault();
-			open = false;
-			searchInput?.focus();
-		} else if (event.key === 'ArrowDown') {
-			event.preventDefault();
-			focusMenuItem((currentIndex + 1) % items.length);
-		} else if (event.key === 'ArrowUp') {
-			event.preventDefault();
-			focusMenuItem((currentIndex - 1 + items.length) % items.length);
-		} else if (event.key === 'Home') {
-			event.preventDefault();
-			focusMenuItem(0);
-		} else if (event.key === 'End') {
-			event.preventDefault();
-			focusMenuItem(items.length - 1);
+			focusFirstSuggestion();
 		}
 	}
 
@@ -421,124 +415,146 @@
 		{/if}
 
 		{#if showDropdown}
-			<div
+			<Command.Root
+				bind:this={commandRoot}
 				id={dropdownId}
-				role="menu"
-				tabindex="-1"
+				shouldFilter={false}
 				class={cn(
-					'absolute left-0 top-full z-50 mt-1.5 overflow-hidden rounded-lg border border-border bg-surface-raised py-1.5 shadow-md',
+					'absolute left-0 top-full z-50 mt-1.5 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-md',
 					isSidebar || isMobile ? 'right-0 min-w-[14rem]' : 'right-0'
 				)}
-				onkeydown={onMenuKeydown}
+				aria-label="Search suggestions"
 			>
-				{#if input.trim().length === 0}
-					<p class="z-type-label px-3 py-1 text-fg-muted font-bold text-[10px] uppercase tracking-wider">Quick Filters</p>
-					<button
-						type="button"
-						role="menuitem"
-						class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-surface-sunken"
-						onclick={() => {
-							input = 'has:attachment';
-							searchInput?.focus();
-						}}
-					>
-						<span class="inline-flex size-4.5 items-center justify-center rounded bg-surface-sunken border border-border text-[11px]">📎</span>
-						<span>Has attachment</span>
-					</button>
-					<button
-						type="button"
-						role="menuitem"
-						class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-surface-sunken"
-						onclick={() => {
-							input = 'is:unseen';
-							searchInput?.focus();
-						}}
-					>
-						<span class="inline-flex size-4.5 items-center justify-center rounded bg-surface-sunken border border-border text-[11px]">✉️</span>
-						<span>{LABEL_UNSEEN} messages</span>
-					</button>
-					{#if auth.username}
-						<button
-							type="button"
-							role="menuitem"
-							class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-surface-sunken"
-							onclick={() => {
-								input = `from:${auth.username}`;
-								searchInput?.focus();
-							}}
-						>
-							<span class="inline-flex size-4.5 items-center justify-center rounded bg-surface-sunken border border-border text-[11px]">👤</span>
-							<span>Sent by me</span>
-						</button>
-					{/if}
-					<button
-						type="button"
-						role="menuitem"
-						class="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm hover:bg-surface-sunken"
-						onclick={() => {
-							const now = new Date();
-							now.setDate(now.getDate() - 7);
-							const dateStr = now.toISOString().split('T')[0];
-							input = `after:${dateStr}`;
-							searchInput?.focus();
-						}}
-					>
-						<span class="inline-flex size-4.5 items-center justify-center rounded bg-surface-sunken border border-border text-[11px]">📅</span>
-						<span>Received in last 7 days</span>
-					</button>
+				<Command.List class="max-h-[min(50vh,20rem)] overflow-y-auto py-1.5">
+					<Command.Viewport>
+						{#if input.trim().length === 0}
+							<Command.Group>
+								<Command.GroupHeading class="z-type-label px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-fg-muted">
+									Quick Filters
+								</Command.GroupHeading>
+								<Command.GroupItems>
+									<Command.Item
+										value="filter-attachment"
+										keywords={['attachment', 'has']}
+										class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
+										onSelect={() => {
+											input = 'has:attachment';
+											searchInput?.focus();
+										}}
+									>
+										<span class="inline-flex size-4.5 items-center justify-center rounded border border-border bg-surface-sunken text-[11px]">📎</span>
+										<span>Has attachment</span>
+									</Command.Item>
+									<Command.Item
+										value="filter-unseen"
+										keywords={['unseen', 'new', 'unread']}
+										class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
+										onSelect={() => {
+											input = 'is:unseen';
+											searchInput?.focus();
+										}}
+									>
+										<span class="inline-flex size-4.5 items-center justify-center rounded border border-border bg-surface-sunken text-[11px]">✉️</span>
+										<span>{LABEL_UNSEEN} messages</span>
+									</Command.Item>
+									{#if auth.username}
+										<Command.Item
+											value="filter-from-me"
+											keywords={['from', 'me', 'sent']}
+											class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
+											onSelect={() => {
+												input = `from:${auth.username}`;
+												searchInput?.focus();
+											}}
+										>
+											<span class="inline-flex size-4.5 items-center justify-center rounded border border-border bg-surface-sunken text-[11px]">👤</span>
+											<span>Sent by me</span>
+										</Command.Item>
+									{/if}
+									<Command.Item
+										value="filter-recent"
+										keywords={['recent', 'week', 'days']}
+										class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
+										onSelect={() => {
+											const now = new Date();
+											now.setDate(now.getDate() - 7);
+											input = `after:${now.toISOString().split('T')[0]}`;
+											searchInput?.focus();
+										}}
+									>
+										<span class="inline-flex size-4.5 items-center justify-center rounded border border-border bg-surface-sunken text-[11px]">📅</span>
+										<span>Received in last 7 days</span>
+									</Command.Item>
+								</Command.GroupItems>
+							</Command.Group>
 
-					<div class="h-px bg-border my-1"></div>
-					<p class="z-type-label px-3 py-1 text-fg-muted font-bold text-[10px] uppercase tracking-wider">Search Hints</p>
-					<div class="px-3 py-1 text-xs text-fg-subtle leading-relaxed flex flex-col gap-1">
-						<div>Search operators supported:</div>
-						<div class="font-mono bg-surface-sunken/60 px-1.5 py-0.5 rounded border border-border/50 text-[10px] select-all">
-							from:sender@example.com
-						</div>
-						<div class="font-mono bg-surface-sunken/60 px-1.5 py-0.5 rounded border border-border/50 text-[10px] select-all">
-							subject:"meeting report"
-						</div>
-					</div>
-					{#if placement === 'shell' || isMobile}
-						<div class="h-px bg-border my-1"></div>
-						<button
-							type="button"
-							role="menuitem"
-							class="flex w-full items-center justify-center gap-1 px-3 py-1.5 text-center text-xs text-accent hover:bg-surface-sunken font-semibold transition-colors"
-							onclick={(e) => toggleAdvanced(e)}
-						>
-							Advanced Search Options
-						</button>
-					{/if}
-				{:else}
-					<button
-						type="submit"
-						role="menuitem"
-						class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-sunken"
-					>
-						<Search class="size-4 text-fg-subtle" aria-hidden="true" />
-						Search mail for “{input.trim()}”
-					</button>
+							<Command.Separator class="mx-2 my-1 h-px bg-border" forceMount />
 
-					{#if contactMatches.length}
-						<p class="z-type-label px-3 py-1.5">Contacts</p>
-						{#each contactMatches as contact (contact.email)}
-							<button
-								type="button"
-								role="menuitem"
-								class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-surface-sunken"
-								onmousedown={(e) => e.preventDefault()}
-								onclick={() => composeTo(contact.email)}
+							<div class="px-3 py-1">
+								<p class="z-type-label py-1 text-[10px] font-bold uppercase tracking-wider text-fg-muted">Search Hints</p>
+								<div class="flex flex-col gap-1 py-1 text-xs leading-relaxed text-fg-subtle">
+									<div>Search operators supported:</div>
+									<div class="select-all rounded border border-border/50 bg-surface-sunken/60 px-1.5 py-0.5 font-mono text-[10px]">
+										from:sender@example.com
+									</div>
+									<div class="select-all rounded border border-border/50 bg-surface-sunken/60 px-1.5 py-0.5 font-mono text-[10px]">
+										subject:"meeting report"
+									</div>
+								</div>
+							</div>
+
+							{#if placement === 'shell' || isMobile}
+								<Command.Separator class="mx-2 my-1 h-px bg-border" forceMount />
+								<Command.Item
+									value="advanced-search"
+									keywords={['advanced', 'options']}
+									class="flex w-full cursor-pointer select-none items-center justify-center gap-1 px-3 py-1.5 text-center text-xs font-semibold text-accent outline-none transition-colors data-selected:bg-surface-sunken hover:bg-surface-sunken"
+									onSelect={() => {
+										populateAdvancedFromInput(input);
+										showAdvanced = true;
+										open = false;
+									}}
+								>
+									Advanced Search Options
+								</Command.Item>
+							{/if}
+						{:else}
+							<Command.Item
+								value="search-submit"
+								keywords={[input.trim()]}
+								class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
+								onSelect={submit}
 							>
-								<User class="size-4 text-fg-subtle" aria-hidden="true" />
-								<span class="min-w-0 truncate">
-									<span class="text-fg">{contact.name}</span>
-									<span class="ml-1 text-fg-muted">{contact.email}</span>
-								</span>
-							</button>
-						{/each}
-					{/if}
-				{/if}
-			</div>
+								<Search class="size-4 text-fg-subtle" aria-hidden="true" />
+								Search mail for “{input.trim()}”
+							</Command.Item>
+
+							{#if contactMatches.length}
+								<Command.Group>
+									<Command.GroupHeading class="z-type-label px-3 py-1.5 text-fg-muted">Contacts</Command.GroupHeading>
+									<Command.GroupItems>
+										{#each contactMatches as contact (contact.email)}
+											<Command.Item
+												value={`contact-${contact.email}`}
+												keywords={[contact.name, contact.email]}
+												class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
+												onSelect={() => composeTo(contact.email)}
+												onmousedown={(e) => e.preventDefault()}
+											>
+												<User class="size-4 text-fg-subtle" aria-hidden="true" />
+												<span class="min-w-0 truncate">
+													<span class="text-fg">{contact.name}</span>
+													<span class="ml-1 text-fg-muted">{contact.email}</span>
+												</span>
+											</Command.Item>
+										{/each}
+									</Command.GroupItems>
+								</Command.Group>
+							{/if}
+						{/if}
+					</Command.Viewport>
+				</Command.List>
+			</Command.Root>
 		{/if}
 	</form>
 {/if}
@@ -567,17 +583,16 @@
 
 			<div class="flex max-h-[60vh] flex-col gap-3 overflow-y-auto pr-1">
 				<div class="flex flex-col gap-1">
-					<label class="text-xs font-medium text-fg-muted" for="adv-mailbox">Search in</label>
-					<select
-						id="adv-mailbox"
-						class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
-						bind:value={advMailboxId}
-					>
-						<option value="">All Mailboxes</option>
-						{#each mail.mailboxes as mb}
-							<option value={mb.jmapId || mb.id}>{mb.name}</option>
-						{/each}
-					</select>
+					<span class="text-xs font-medium text-fg-muted">Search in</span>
+					<SettingsSelect
+						label="Search in"
+						value={advMailboxId}
+						options={mailboxOptions}
+						onchange={(value) => {
+							advMailboxId = value;
+						}}
+						class="w-full"
+					/>
 				</div>
 
 				<div class="flex flex-col gap-1">
@@ -626,20 +641,16 @@
 
 				<div class="grid grid-cols-2 gap-3">
 					<div class="flex flex-col gap-1">
-						<label class="text-xs font-medium text-fg-muted" for="adv-daterange">Date range</label>
-						<select
-							id="adv-daterange"
-							class="z-input w-full rounded-md border border-border bg-surface-sunken px-3 py-1.5 focus:border-border-strong focus:outline-none"
-							bind:value={advDateRange}
-						>
-							<option value="any">Any time</option>
-							<option value="1d">Last 24 hours</option>
-							<option value="7d">Last 7 days</option>
-							<option value="30d">Last 30 days</option>
-							<option value="90d">Last 90 days</option>
-							<option value="1y">Last year</option>
-							<option value="custom">Custom range…</option>
-						</select>
+						<span class="text-xs font-medium text-fg-muted">Date range</span>
+						<SettingsSelect
+							label="Date range"
+							value={advDateRange}
+							options={dateRangeOptions}
+							onchange={(value) => {
+								advDateRange = value;
+							}}
+							class="w-full"
+						/>
 					</div>
 
 					<div class="flex items-end pb-1.5">

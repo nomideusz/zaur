@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import Search from '$lib/components/icons/Search.svelte';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import CalendarPlus from '$lib/components/icons/CalendarPlus.svelte';
 	import PenSquare from '$lib/components/icons/PenSquare.svelte';
@@ -222,6 +223,15 @@
 				New event
 			</Button>
 		{:else if showComposeAction}
+			{#if mailListToolbarActive}
+				<IconButton
+					label="Search mail"
+					class="md:hidden"
+					onclick={() => goto('/mail/search?focus=1')}
+				>
+					<Search class="size-4" aria-hidden="true" />
+				</IconButton>
+			{/if}
 			<Button
 				href="/mail/compose"
 				class="min-h-10 shrink-0 px-3 text-sm md:hidden"

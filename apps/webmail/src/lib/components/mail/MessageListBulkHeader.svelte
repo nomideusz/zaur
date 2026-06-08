@@ -7,7 +7,10 @@
 	} from '$lib/components/mail/bulk-selection-label';
 	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
+	import Trash2 from '$lib/components/icons/Trash2.svelte';
+	import X from '$lib/components/icons/X.svelte';
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
+	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -19,7 +22,7 @@
 		mailboxRouteId: string;
 		disabled?: boolean;
 		onBulkAction?: () => void;
-		/** Mobile app shell — text-nav links instead of checkbox/icon chrome. */
+		/** Mobile app shell — compact icon row instead of desktop bulk bar. */
 		surface?: 'pane' | 'shell';
 		class?: string;
 	}
@@ -116,42 +119,50 @@
 {#if surface === 'shell'}
 	<nav
 		class={cn(
-			'z-mail-list-bulk-bar z-mail-list-bulk-header--shell w-full min-w-0 items-center',
+			'z-mail-list-bulk-bar z-mail-list-bulk-header--shell w-full min-w-0 items-center gap-1',
 			disabled && 'pointer-events-none opacity-60',
 			className
 		)}
 		aria-label="Selected messages"
 	>
-		<button type="button" class={cn(bulkBarActionClass, 'shrink-0')} onclick={clearSelection}>
-			Cancel
-		</button>
+		<IconButton
+			label="Cancel selection"
+			class="z-mail-list-bulk-header__cancel shrink-0"
+			onclick={clearSelection}
+		>
+			<X class="size-4" aria-hidden="true" />
+		</IconButton>
 
 		{#if showSelectionBar}
 			<p
-				class="z-mail-list-bulk-header__summary z-mail-list-bulk-header__summary--shell"
+				class="z-mail-list-bulk-header__summary z-mail-list-bulk-header__summary--shell min-w-0 flex-1"
 				aria-live="polite"
 				title={summaryTitle}
 			>
 				{headline}
 			</p>
 
-			<nav class="z-mail-list-bulk-bar__links shrink-0" aria-label="Bulk actions">
-				<button type="button" class={bulkBarDangerClass} onclick={deleteSelected}>
-					{deleteLabel}
-				</button>
+			<div class="z-mail-list-bulk-header__actions flex shrink-0 items-center gap-0.5">
+				<MessageListSelectMenu {disabled} showLabel triggerClass="z-mail-list-bulk-header__select" />
+				<IconButton
+					label={deleteLabel}
+					class="z-mail-list-bulk-header__danger shrink-0"
+					onclick={deleteSelected}
+				>
+					<Trash2 class="size-4" aria-hidden="true" />
+				</IconButton>
 				{#if hasMenuActions}
 					<OverflowMenu
 						label="Bulk actions"
 						menuId="bulk-actions-menu-mobile"
 						placement="bottom"
-						textTrigger
-						triggerText="Actions"
-						triggerClass={bulkBarActionClass}
+						align="end"
+						triggerClass="z-mail-list-bulk-header__more min-h-8 min-w-8 p-1.5"
 					>
 						{@render bulkActionsMenu()}
 					</OverflowMenu>
 				{/if}
-			</nav>
+			</div>
 		{/if}
 	</nav>
 {:else}

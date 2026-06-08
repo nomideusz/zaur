@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
+	import { DropdownMenu } from 'bits-ui';
 	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { OVERFLOW_MENU_CTX, type OverflowMenuContext } from '$lib/components/ui/overflow-menu-context';
 	import {
@@ -67,49 +68,58 @@
 
 <div class="z-overflow-menu-scroll">
 	{#if counts.new > 0}
-		<button type="button" class="z-overflow-menu-item" role="menuitem" onclick={() => run(onMarkSeen)}>
+		<DropdownMenu.Item
+			class="z-overflow-menu-item"
+			textValue={LABEL_MARK_SEEN}
+			onSelect={() => run(onMarkSeen)}
+		>
 			{bulkAffectedLabel(LABEL_MARK_SEEN, counts.new, selectedCount)}
-		</button>
-		<button type="button" class="z-overflow-menu-item" role="menuitem" onclick={() => run(onDone)}>
+		</DropdownMenu.Item>
+		<DropdownMenu.Item
+			class="z-overflow-menu-item"
+			textValue={LABEL_NOT_IMPORTANT}
+			onSelect={() => run(onDone)}
+		>
 			{bulkAffectedLabel(LABEL_NOT_IMPORTANT, counts.new, selectedCount)}
-		</button>
+		</DropdownMenu.Item>
 	{/if}
 	{#if readCount > 0}
-		<button type="button" class="z-overflow-menu-item" role="menuitem" onclick={() => run(onMarkNew)}>
+		<DropdownMenu.Item
+			class="z-overflow-menu-item"
+			textValue={LABEL_RESTORE_NEW}
+			onSelect={() => run(onMarkNew)}
+		>
 			{bulkAffectedLabel(LABEL_RESTORE_NEW, readCount, selectedCount)}
-		</button>
+		</DropdownMenu.Item>
 	{/if}
 	{#if canMarkImportant && counts.notImportant > 0}
-		<button
-			type="button"
+		<DropdownMenu.Item
 			class="z-overflow-menu-item"
-			role="menuitem"
-			onclick={() => run(onMarkImportant)}
+			textValue={LABEL_MARK_IMPORTANT}
+			onSelect={() => run(onMarkImportant)}
 		>
 			{bulkAffectedLabel(LABEL_MARK_IMPORTANT, counts.notImportant, selectedCount)}
-		</button>
+		</DropdownMenu.Item>
 	{/if}
 	{#if counts.important > 0}
-		<button
-			type="button"
+		<DropdownMenu.Item
 			class="z-overflow-menu-item"
-			role="menuitem"
-			onclick={() => run(onRemoveImportant)}
+			textValue={LABEL_REMOVE_IMPORTANT}
+			onSelect={() => run(onRemoveImportant)}
 		>
 			{bulkAffectedLabel(LABEL_REMOVE_IMPORTANT, counts.important, selectedCount)}
-		</button>
+		</DropdownMenu.Item>
 	{/if}
 	{#if showStateActions && moveTargets.length > 0}
-		<div class="mx-4 my-1 border-t border-border" role="separator"></div>
+		<DropdownMenu.Separator class="mx-2 my-1 h-px bg-border" />
 	{/if}
 	{#each moveTargets as mailbox (mailbox.id)}
-		<button
-			type="button"
+		<DropdownMenu.Item
 			class="z-overflow-menu-item"
-			role="menuitem"
-			onclick={() => moveTo(mailbox.id)}
+			textValue={`Move to ${mailbox.name}`}
+			onSelect={() => moveTo(mailbox.id)}
 		>
 			<span class="truncate">Move to {mailbox.name}</span>
-		</button>
+		</DropdownMenu.Item>
 	{/each}
 </div>

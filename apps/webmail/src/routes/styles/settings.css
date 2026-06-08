@@ -214,6 +214,7 @@
 		}
 
 		.z-settings-row-control .z-select,
+		.z-settings-row-control .z-select-trigger,
 		.z-settings-row-control .z-mobile-picker-trigger,
 		.z-settings-row-control .z-settings-select {
 			width: 100%;
@@ -259,6 +260,7 @@
 	}
 
 	.z-settings-row-control .z-select,
+	.z-settings-row-control .z-select-trigger,
 	.z-settings-row-control .z-mobile-picker-trigger {
 		width: auto;
 		max-width: none;
@@ -395,6 +397,7 @@
 	}
 
 	.z-settings-view .z-select,
+	.z-settings-view .z-select-trigger,
 	.z-settings-view .z-mobile-picker-trigger {
 		border-radius: var(--radius-md);
 		font-size: var(--z-main-page-text);
@@ -405,6 +408,7 @@
 	}
 
 	.z-settings-view .z-select:focus,
+	.z-settings-view .z-select-trigger:focus-visible,
 	.z-settings-view .z-mobile-picker-trigger:focus-visible {
 		border-color: var(--z-accent);
 		box-shadow: 0 0 0 1px var(--z-accent);

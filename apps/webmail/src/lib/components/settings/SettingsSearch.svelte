@@ -1,10 +1,11 @@
 <script lang="ts">
+	import { Command } from 'bits-ui';
 	import Search from '$lib/components/icons/Search.svelte';
 	import { settingsSearch } from '$lib/settings/search-registry.svelte';
 	import { goto } from '$lib/utils/navigation';
-	import { cn } from '$lib/utils/cn';
 
 	let input = $state<HTMLInputElement | null>(null);
+	let commandRoot = $state<ReturnType<typeof Command.Root> | null>(null);
 	const resultsId = 'settings-search-results';
 
 	const results = $derived(settingsSearch.filtered());
@@ -22,15 +23,11 @@
 		settingsSearch.setQuery((e.currentTarget as HTMLInputElement).value);
 	}
 
-	function resultButtons(): HTMLButtonElement[] {
-		const list = document.getElementById(resultsId);
-		return list ? Array.from(list.querySelectorAll<HTMLButtonElement>('button')) : [];
-	}
-
-	function focusResult(index: number) {
-		const buttons = resultButtons();
-		if (!buttons.length) return;
-		buttons[Math.max(0, Math.min(index, buttons.length - 1))]?.focus();
+	function focusFirstResult() {
+		const items = commandRoot?.getValidItems();
+		if (!items?.length) return;
+		commandRoot?.updateSelectedToIndex(0);
+		items[0]?.focus();
 	}
 
 	function onKeydown(e: KeyboardEvent) {
@@ -40,29 +37,7 @@
 			input?.blur();
 		} else if (e.key === 'ArrowDown' && results.length) {
 			e.preventDefault();
-			focusResult(0);
-		}
-	}
-
-	function onResultsKeydown(e: KeyboardEvent) {
-		const buttons = resultButtons();
-		const currentIndex = buttons.findIndex((button) => button === document.activeElement);
-		if (e.key === 'Escape') {
-			settingsSearch.setQuery('');
-			if (input) input.value = '';
-			input?.focus();
-		} else if (e.key === 'ArrowDown') {
-			e.preventDefault();
-			focusResult((currentIndex + 1) % buttons.length);
-		} else if (e.key === 'ArrowUp') {
-			e.preventDefault();
-			focusResult((currentIndex - 1 + buttons.length) % buttons.length);
-		} else if (e.key === 'Home') {
-			e.preventDefault();
-			focusResult(0);
-		} else if (e.key === 'End') {
-			e.preventDefault();
-			focusResult(buttons.length - 1);
+			focusFirstResult();
 		}
 	}
 </script>
@@ -88,24 +63,27 @@
 	</div>
 
 	{#if results.length}
-		<ul
+		<Command.Root
+			bind:this={commandRoot}
 			id={resultsId}
-			class="absolute top-full right-0 left-0 z-30 mt-1.5 max-h-72 overflow-y-auto rounded-lg border border-border bg-surface-raised py-1 shadow-md"
-			role="listbox"
+			shouldFilter={false}
+			class="absolute top-full right-0 left-0 z-30 mt-1.5 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-md"
 			aria-label="Settings search results"
-			onkeydown={onResultsKeydown}
 		>
-			{#each results as entry (entry.id + entry.href)}
-				<li role="option" aria-selected="false">
-					<button
-						type="button"
-						class="z-overflow-menu-item"
-						onclick={() => selectEntry(entry)}
-					>
-						{entry.title}
-					</button>
-				</li>
-			{/each}
-		</ul>
+			<Command.List class="max-h-72 overflow-y-auto py-1">
+				<Command.Viewport>
+					{#each results as entry (entry.id + entry.href)}
+						<Command.Item
+							value={`${entry.id}-${entry.href}`}
+							keywords={[entry.title, entry.description ?? '']}
+							class="z-overflow-menu-item data-selected:bg-surface-sunken"
+							onSelect={() => selectEntry(entry)}
+						>
+							{entry.title}
+						</Command.Item>
+					{/each}
+				</Command.Viewport>
+			</Command.List>
+		</Command.Root>
 	{/if}
 </div>
