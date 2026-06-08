@@ -249,13 +249,14 @@
 			onpointercancel={readerMarkerTouch.onPointerCancel}
 		>
 			{#if subjectImportant && subjectMessageId}
-				<ImportantSubjectHighlight
-					messageId={subjectMessageId}
-					picking={readerSamplingRainbow}
-					animate={!settings.reduceMotion}
-				>
-					{subject}
-				</ImportantSubjectHighlight>
+				{#key importantMarker.highlightInstanceKey(subjectMessageId)}
+					<ImportantSubjectHighlight
+						messageId={subjectMessageId}
+						instanceKey={importantMarker.highlightInstanceKey(subjectMessageId)}
+					>
+						{subject}
+					</ImportantSubjectHighlight>
+				{/key}
 			{:else}
 				{subject}
 			{/if}

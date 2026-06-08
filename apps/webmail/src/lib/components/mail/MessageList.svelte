@@ -1088,11 +1088,10 @@
 							</div>
 							<p class={listSubjectClass(isUnread, subjectImportant)}>
 								{#if subjectImportant}
-									{#key message.id}
+									{#key importantMarker.highlightInstanceKey(message.id)}
 										<ImportantSubjectHighlight
 											messageId={message.id}
-											picking={importantMarkerHoverId === message.id && isSamplingRainbow}
-											animate={!settings.reduceMotion}
+											instanceKey={importantMarker.highlightInstanceKey(message.id)}
 										>
 											{subjectText}
 										</ImportantSubjectHighlight>
@@ -1147,26 +1146,17 @@
 				{mailboxRouteId}
 				{onRetry}
 			/>
-		{:else if sectionMode}
-			{#if showFilteredEmpty}
-				<p class="px-4 py-8 text-sm text-fg-muted">{filteredEmptyMessage}</p>
-			{:else if filteredListMessages.length > 0}
-				<ul class="z-mail-list-cards">
-					{#each filteredListMessages as message (message.id)}
-						{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId)}
-					{/each}
-				</ul>
-				<MessageListLoadMore {hasMore} {loadingMore} {onLoadMore} />
-			{:else}
-				<p class="px-4 py-8 text-sm text-fg-muted">{resolvedEmptyMessage}</p>
-			{/if}
-		{:else}
+		{:else if sectionMode && showFilteredEmpty}
+			<p class="px-4 py-8 text-sm text-fg-muted">{filteredEmptyMessage}</p>
+		{:else if filteredListMessages.length > 0}
 			<ul class="z-mail-list-cards">
 				{#each filteredListMessages as message (message.id)}
 					{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId)}
 				{/each}
 			</ul>
 			<MessageListLoadMore {hasMore} {loadingMore} {onLoadMore} />
+		{:else if sectionMode}
+			<p class="px-4 py-8 text-sm text-fg-muted">{resolvedEmptyMessage}</p>
 		{/if}
 	</div>
 		</div>

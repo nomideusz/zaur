@@ -4,12 +4,15 @@ import { markerHighlightColor } from '$lib/mail/important-marker-colors';
 
 const STORAGE_KEY = 'zaur:important-marker-picks';
 const LEGACY_STORAGE_KEY = 'zaur:important-rainbow-phases';
-const PICK_CYCLE_MS = 110;
+const SHOWN_STORAGE_KEY = 'zaur:important-marker-shown';
+/** Hue step interval while hover-sampling — slow enough to browse, not strobe. */
+const PICK_CYCLE_MS = 420;
+const PICK_HUE_STEP = 4;
 
 /** Wait before hue cycling starts — avoids accidental picks when scanning the list. */
 export const IMPORTANT_MARKER_HOVER_DELAY_MS = 550;
 /** Minimum time cycling before pointer-leave commits a pick. */
-export const IMPORTANT_MARKER_PICK_DWELL_MS = 800;
+export const IMPORTANT_MARKER_PICK_DWELL_MS = 900;
 
 export function shouldCommitImportantMarkerPick(sampleStartedAt: number): boolean {
 	return sampleStartedAt > 0 && Date.now() - sampleStartedAt >= IMPORTANT_MARKER_PICK_DWELL_MS;
@@ -80,6 +83,24 @@ function writeStoredPicks(picks: Record<string, MarkerPick>) {
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(picks));
 }
 
+function readShownHighlightIds(): Set<string> {
+	if (!browser) return new Set();
+	try {
+		const raw = sessionStorage.getItem(SHOWN_STORAGE_KEY);
+		if (!raw) return new Set();
+		const parsed = JSON.parse(raw) as unknown;
+		if (!Array.isArray(parsed)) return new Set();
+		return new Set(parsed.filter((id): id is string => typeof id === 'string'));
+	} catch {
+		return new Set();
+	}
+}
+
+function writeShownHighlightIds(ids: Set<string>) {
+	if (!browser) return;
+	sessionStorage.setItem(SHOWN_STORAGE_KEY, JSON.stringify([...ids]));
+}
+
 function picksEqual(a: MarkerPick, b: MarkerPick): boolean {
 	return a.hueShift === b.hueShift;
 }
@@ -98,8 +119,13 @@ class ImportantMarkerStore {
 
 	private hoverSamplePick = new Map<string, MarkerPick>();
 	private pickInterval: ReturnType<typeof setInterval> | null = null;
+	private shownHighlightIds = new Set<string>();
+	private introHighlightIds = new Set<string>();
+	/** Bumped when a message is newly marked Important — forces a fresh highlight + intro. */
+	introGeneration = $state<Record<string, number>>({});
 
 	init() {
+		this.shownHighlightIds = readShownHighlightIds();
 		this.reload();
 	}
 
@@ -112,8 +138,41 @@ class ImportantMarkerStore {
 		return hashMessageId(messageId) % 360;
 	}
 
+	/** Stable rough-notation seed — same message always gets the same marker shape. */
+	notationSeed(messageId: string): number {
+		return hashMessageId(messageId);
+	}
+
 	hasPicked(messageId: string): boolean {
 		return this.picked[messageId] !== undefined;
+	}
+
+	markForIntroAnimation(messageId: string) {
+		this.introHighlightIds.add(messageId);
+		this.introGeneration = {
+			...this.introGeneration,
+			[messageId]: (this.introGeneration[messageId] ?? 0) + 1
+		};
+	}
+
+	shouldIntroAnimate(messageId: string): boolean {
+		return this.introHighlightIds.has(messageId);
+	}
+
+	/** Stable list/reader key — only changes when a message is newly marked Important. */
+	highlightInstanceKey(messageId: string): string {
+		return `${messageId}:${this.introGeneration[messageId] ?? 0}`;
+	}
+
+	completeIntroAnimation(messageId: string) {
+		this.introHighlightIds.delete(messageId);
+		this.markHighlightShown(messageId);
+	}
+
+	markHighlightShown(messageId: string) {
+		if (this.shownHighlightIds.has(messageId)) return;
+		this.shownHighlightIds.add(messageId);
+		writeShownHighlightIds(this.shownHighlightIds);
 	}
 
 	pickFor(messageId: string): MarkerPick {
@@ -141,7 +200,7 @@ class ImportantMarkerStore {
 		this.pickingShift = this.pickFor(messageId).hueShift;
 
 		this.pickInterval = setInterval(() => {
-			this.pickingShift = clampHueShift(this.pickingShift >= 57 ? 0 : this.pickingShift + 3);
+			this.pickingShift = clampHueShift(this.pickingShift >= 56 ? 0 : this.pickingShift + PICK_HUE_STEP);
 			this.hoverSamplePick.set(messageId, { hueShift: this.pickingShift });
 		}, PICK_CYCLE_MS);
 	}

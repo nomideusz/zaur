@@ -12,6 +12,7 @@ import {
 	resolveMailboxKind,
 	shouldClearImportantOnMoveTo
 } from '$lib/mail/mailboxes';
+import { importantMarker } from '$lib/mail/important-marker.svelte';
 import { LABEL_MARK_SEEN, LABEL_UNSEE } from '$lib/mail/new-mail';
 import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
 import { settings } from '$lib/stores/settings.svelte';
@@ -572,6 +573,9 @@ class MailStore {
 				important,
 				...(clearsNew ? { unread: false } : {})
 			});
+			if (important) {
+				importantMarker.markForIntroAnimation(message.id);
+			}
 		}
 
 		this.patchMessages(
