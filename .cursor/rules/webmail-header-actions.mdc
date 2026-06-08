@@ -24,7 +24,7 @@ The primary action is **always the trailing (rightmost) element** of its header 
 
 Examples:
 - **Inbox list (desktop)**: filters left (All · Unseen · Important) · **New message** in list-pane header zone
-- **Inbox (mobile shell)**: **New** link in app shell end
+- **Inbox (mobile shell)**: single row — folder picker (start) · segmented read filter fills the center · **Search** icon │ **New** link (end)
 - **Reader**: secondary links · More · **Reply** / **Send** zone (trailing)
 - **Compose**: Discard / Rich text / Attach · **Send** zone (trailing)
 - **Search (no list toolbar)**: **New message** stays in app shell end
@@ -48,7 +48,7 @@ Do **not** use `Button`, filled pills, or icon+label buttons for the primary hea
 [ secondary links / filters … ]  |  [ primary __action in .z-header-action-zone ]
 ```
 
-On mobile shell only, inbox **New** may sit in `.z-app-shell-header__end` when the list toolbar is in the shell center.
+On mobile shell only, inbox **New** sits in `.z-app-shell-header__end` (alongside the **Search** icon, separated by `.z-app-shell-header__divider`); the read filter is the segmented control filling `.z-app-shell-header__center`.
 
 Bulk select bar (one row, never wraps): `[✓ master][▾ select]` · `N selected` (flex-1) · mark links (`Unsee` / `Mark seen` / `Important` / `Not important`, collapsed into a **More** overflow menu when more than two apply) · `Cancel` · separated **Trash** primary in `.z-header-action-zone` (`.z-mail-text-nav__action--danger`, trailing/standout). Text links like reader/compose, not icon buttons.
 

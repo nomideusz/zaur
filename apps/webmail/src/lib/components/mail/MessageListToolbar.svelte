@@ -1,5 +1,4 @@
 <script lang="ts">
-	import MessageListFilterPicker from '$lib/components/mail/MessageListFilterPicker.svelte';
 	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
 	import type { MessageListReadFilter } from '$lib/components/mail/message-list-props';
@@ -10,8 +9,8 @@
 		readFilter: MessageListReadFilter;
 		onReadFilterChange: (filter: MessageListReadFilter) => void;
 		disabled?: boolean;
-		/** Shell header on mobile vs list pane on desktop. */
-		surface?: 'shell' | 'pane';
+		/** Slim segmented filter bar on mobile vs full list pane toolbar on desktop. */
+		surface?: 'mobile' | 'pane';
 		class?: string;
 	}
 
@@ -33,18 +32,28 @@
 <nav
 	class={cn(
 		'z-mail-list-toolbar flex w-full min-w-0 items-center',
-		surface === 'shell' && 'justify-center',
 		disabled && 'pointer-events-none opacity-60',
 		className
 	)}
 	aria-label="Message list filters"
 >
-	{#if surface === 'shell'}
-		<MessageListFilterPicker
-			value={readFilter}
-			onchange={onReadFilterChange}
-			{disabled}
-		/>
+	{#if surface === 'mobile'}
+		<div
+			class="z-segmented z-segmented--block"
+			role="group"
+			aria-label="Filter messages"
+		>
+			{#each listFilters as option (option.id)}
+				<button
+					type="button"
+					class={cn('z-segmented__item', readFilter === option.id && 'z-segmented__item--active')}
+					aria-pressed={readFilter === option.id}
+					onclick={() => onReadFilterChange(option.id)}
+				>
+					{option.label}
+				</button>
+			{/each}
+		</div>
 	{:else}
 		<div class="z-mail-list-toolbar__selectors">
 			<div class="z-mail-list-checkbox-col">

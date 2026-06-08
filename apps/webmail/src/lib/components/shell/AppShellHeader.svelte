@@ -96,7 +96,8 @@
 
 <header
 	class={cn(
-		'z-app-shell-header relative z-40 flex h-(--height-header) w-full shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 px-3 backdrop-blur-xl backdrop-saturate-150 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-3 md:px-4',
+		'z-app-shell-header relative z-40 flex h-(--height-header) w-full shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 backdrop-blur-xl backdrop-saturate-150 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-3 md:px-4',
+		mailBulkActive ? 'px-0' : 'px-3',
 		mailListChromeActive && 'z-app-shell-header--mail-list'
 	)}
 	style="view-transition-name: app-header;"
@@ -179,10 +180,11 @@
 				<SettingsSearch />
 			</div>
 		{:else if mailListToolbarActive && mailListToolbar}
+			<!-- Mobile: segmented read filter fills the row between folder + actions. -->
 			<div class="md:hidden">
 				<MessageListToolbar
 					class="w-full min-w-0"
-					surface="shell"
+					surface="mobile"
 					readFilter={mailListToolbar.readFilter}
 					onReadFilterChange={mailListToolbar.onReadFilterChange}
 					disabled={mailListToolbar.disabled}
@@ -232,6 +234,7 @@
 				>
 					<Search class="size-4" aria-hidden="true" />
 				</IconButton>
+				<span class="z-app-shell-header__divider md:hidden" aria-hidden="true"></span>
 			{/if}
 			<a href="/mail/compose" class="z-mail-text-nav__action shrink-0 md:hidden">New</a>
 			{#if !mailListToolbarActive}

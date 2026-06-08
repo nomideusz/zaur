@@ -465,6 +465,18 @@
 		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
 	}
 
+	/* Full-width variant — items split the track evenly (mobile filter bar). */
+	.z-segmented--block {
+		display: flex;
+		width: 100%;
+	}
+
+	.z-segmented--block .z-segmented__item {
+		flex: 1 1 0;
+		min-width: 0;
+		text-align: center;
+	}
+
 	.z-segmented__item {
 		appearance: none;
 		border: 0;

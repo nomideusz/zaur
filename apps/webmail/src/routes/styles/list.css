@@ -222,6 +222,12 @@
 		gap: var(--z-mail-list-checkbox-gap, 0.625rem);
 	}
 
+	/* Mobile shell: keep the selection count intact; it shouldn't be the part that truncates. */
+	.z-app-shell-header .z-mail-list-bulk-bar__summary {
+		flex: 0 1 auto;
+		white-space: nowrap;
+	}
+
 	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-bar__checkbox {
 		opacity: 1;
 		pointer-events: auto;
@@ -280,33 +286,19 @@
 		 * Header labels (All, Unseen, Emails, settings sections) — cap-height type reads
 		 * high when mathematically centered; asymmetric vertical padding nudges to optical middle.
 		 */
-		:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header .z-mail-list-pane-header__filter,
 		.z-mail-view .z-mail-list-pane-header .z-mobile-picker-trigger--compact {
 			box-sizing: border-box;
+			display: inline-flex;
+			align-items: center;
+			gap: 0.25rem;
 			height: 2.25rem;
 			min-height: 2.25rem;
 			line-height: 1;
+			padding-inline: 0.5rem;
 			padding-top: calc((2.25rem - 1em) / 2 + 1px);
 			padding-bottom: calc((2.25rem - 1em) / 2 - 1px);
-		}
-
-		:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header .z-mail-list-pane-header__filter {
-			display: inline-flex;
-			align-items: center;
-			justify-content: center;
-			min-width: 2.25rem;
-			padding-inline: 0.625rem;
-			font-size: 0.75rem;
-			font-weight: 600;
-		}
-
-		.z-mail-view .z-mail-list-pane-header .z-mobile-picker-trigger--compact {
-			display: inline-flex;
-			align-items: center;
-			padding-inline: 0.5rem;
 			font-size: 0.8125rem;
 			font-weight: 500;
-			gap: 0.25rem;
 		}
 
 		.z-mail-view .z-mail-list-pane-header .z-mobile-picker-trigger__label {

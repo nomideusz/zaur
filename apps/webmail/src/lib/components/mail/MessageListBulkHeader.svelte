@@ -59,8 +59,11 @@
 	]);
 	const markActions = $derived(actions.filter((action) => markActionIds.has(action.id)));
 	const trashAction = $derived(actions.find((action) => action.id === 'trash'));
-	/** Keep the bar on a single line: only inline a couple of marks, otherwise use the menu. */
-	const collapseMarks = $derived(markActions.length > 2);
+	/**
+	 * Keep the bar on a single line. The mobile shell is far narrower than the desktop
+	 * pane, so it folds marks into the menu sooner (>1) to leave room for the count + Trash.
+	 */
+	const collapseMarks = $derived(markActions.length > (surface === 'shell' ? 1 : 2));
 	const summaryLabel = $derived(`${selectedCount} selected`);
 
 	async function runBulk(action: () => Promise<void>, refreshList = false) {

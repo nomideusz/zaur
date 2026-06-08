@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import MailPane from '$lib/components/mail/MailPane.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
 	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
@@ -7,6 +8,9 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { search } from '$lib/stores/search.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
+
+	const backHref = $derived(settings.preferredMailHref());
 
 	const query = $derived($page.url.searchParams.get('q')?.trim() ?? '');
 	const shouldAutofocusSearch = $derived(
@@ -50,9 +54,18 @@
 >
 	{#snippet list()}
 		<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:contents">
-			<div class="z-mail-mobile-search md:hidden">
+		<div class="z-mail-mobile-search flex items-center gap-2 md:hidden">
+			<a
+				href={backHref}
+				class="z-btn-icon min-h-10 min-w-10 shrink-0 p-2.5 text-fg-muted no-underline transition-colors hover:text-fg"
+				aria-label="Back to mail"
+			>
+				<ArrowLeft class="size-5" aria-hidden="true" />
+			</a>
+			<div class="min-w-0 flex-1">
 				<GlobalSearch placement="mobile" autofocus={shouldAutofocusSearch} />
 			</div>
+		</div>
 			<MessageList
 				messages={search.results}
 				{mailboxName}
