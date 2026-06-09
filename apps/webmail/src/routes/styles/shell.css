@@ -34,6 +34,11 @@
 		.z-app-shell-header--mail-list .z-mail-list-bulk-header--shell {
 			min-height: var(--height-header);
 		}
+
+		/* Align nav + New with text inside list row cards. */
+		.z-app-shell-header--mail-list.z-app-shell-header--mobile-mail-nav {
+			padding-inline: var(--z-mail-list-content-inset);
+		}
 	}
 
 	/* Separates the Search utility icon from the New primary action in the header end. */

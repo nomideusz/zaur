@@ -126,7 +126,7 @@ export const PRIMARY_SIDEBAR_MAILBOX_ROLES = [
 
 export type PrimarySidebarMailboxRole = (typeof PRIMARY_SIDEBAR_MAILBOX_ROLES)[number];
 
-const PRIMARY_SIDEBAR_ROLE_ORDER = new Map(
+const PRIMARY_SIDEBAR_ROLE_ORDER = new Map<MailboxRole, number>(
 	PRIMARY_SIDEBAR_MAILBOX_ROLES.map((role, index) => [role, index])
 );
 

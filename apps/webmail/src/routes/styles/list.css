@@ -334,10 +334,14 @@
 	:is(.z-mail-view, .z-app-shell-header--mail-list) {
 		--z-mail-list-cards-pad-x: 0.625rem;
 		--z-mail-list-row-pad-x: 0.75rem;
+		--z-mail-list-row-link-pad-x: 0.875rem;
 		--z-mail-list-checkbox-col: 1.25rem;
 		--z-mail-list-checkbox-gap: 0.625rem;
 		--z-mail-list-checkbox-inset: calc(
 			var(--z-mail-list-cards-pad-x) + var(--z-mail-list-row-pad-x)
+		);
+		--z-mail-list-content-inset: calc(
+			var(--z-mail-list-cards-pad-x) + var(--z-mail-list-row-link-pad-x)
 		);
 	}
 
@@ -384,7 +388,7 @@
 
 	.z-mail-view .z-mail-list-row :where(a).z-list-row {
 		min-height: 3.25rem;
-		padding: 0.625rem 0.875rem;
+		padding: 0.625rem var(--z-mail-list-row-link-pad-x);
 		background-color: transparent;
 	}
 

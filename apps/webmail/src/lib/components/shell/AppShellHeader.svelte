@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { page } from '$app/stores';
-	import Search from '$lib/components/icons/Search.svelte';
+	import { page } from '$app/state';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import CalendarPlus from '$lib/components/icons/CalendarPlus.svelte';
 	import UserPlus from '$lib/components/icons/UserPlus.svelte';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
 	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
+	import MobileMailShellNav from '$lib/components/shell/MobileMailShellNav.svelte';
 	import OfflineIndicator from '$lib/components/shell/OfflineIndicator.svelte';
 	import ToolSwitcher from '$lib/components/shell/ToolSwitcher.svelte';
 	import UserMenu from '$lib/components/shell/UserMenu.svelte';
@@ -15,11 +15,7 @@
 	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
 	import { appConfig } from '$lib/config';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
-	import { isMailPath, mailListHref, parseMailContext } from '$lib/mail/routes';
-	import {
-		isPrimarySidebarMailbox,
-		primarySidebarMailboxRank
-	} from '$lib/mail/mailboxes';
+	import { isMailPath } from '$lib/mail/routes';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
@@ -27,7 +23,7 @@
 	import { cn } from '$lib/utils/cn';
 
 	const homeHref = $derived(settings.preferredMailHref());
-	const pathname = $derived($page.url.pathname);
+	const pathname = $derived(page.url.pathname);
 	const onSettingsRoute = $derived(pathname.startsWith('/settings'));
 	const onMailRoute = $derived(pathname === '/' || isMailPath(pathname));
 	const onContactsRoute = $derived(pathname.startsWith('/contacts'));
@@ -46,8 +42,9 @@
 	const mailListChromeActive = $derived(
 		onMailRoute && !onMailCompose && (mailBulkActive || !!mailListToolbar)
 	);
-	const mailListToolbarActive = $derived(
-		onMailRoute && !onMailCompose && !mailBulkActive && !!mailListToolbar
+
+	const mobileMailNavActive = $derived(
+		onMailRoute && !onMailCompose && !mailBulkActive
 	);
 
 	/** Mail primary action lives in the app header; bulk mode owns the row. */
@@ -63,36 +60,17 @@
 		sectionLinks.map((link) => ({ value: link.href, label: link.label }))
 	);
 
-	const mailboxOptions = $derived(
-		[...mail.mailboxes]
-			.filter((mb) => isPrimarySidebarMailbox(mb.role))
-			.sort((a, b) => {
-				const aRank = primarySidebarMailboxRank(a.role);
-				const bRank = primarySidebarMailboxRank(b.role);
-				return aRank - bRank || a.name.localeCompare(b.name);
-			})
-			.map((mb) => ({
-				value: mb.id,
-				label: mb.name + (mb.unread > 0 ? ` (${mb.unread})` : '')
-			}))
-	);
-
-	const mailRouteId = $derived(parseMailContext(pathname)?.mailboxRouteId ?? 'inbox');
-
 	function onSettingsSectionChange(href: string) {
 		if (href !== pathname) void goto(href);
-	}
-
-	function onMailboxChange(routeId: string) {
-		if (routeId !== mailRouteId) void goto(mailListHref(routeId));
 	}
 </script>
 
 <header
 	class={cn(
 		'z-app-shell-header relative z-40 flex h-(--height-header) w-full shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 backdrop-blur-xl backdrop-saturate-150 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-3 md:px-4',
-		mailBulkActive ? 'px-0' : 'px-3',
-		mailListChromeActive && 'z-app-shell-header--mail-list'
+		mailBulkActive ? 'px-0' : !mobileMailNavActive ? 'px-3' : '',
+		mailListChromeActive && 'z-app-shell-header--mail-list',
+		mobileMailNavActive && 'z-app-shell-header--mobile-mail-nav'
 	)}
 	style="view-transition-name: app-header;"
 >
@@ -111,7 +89,8 @@
 	<div
 		class={cn(
 			'z-app-shell-header__start relative z-10 flex min-w-0 shrink-0 items-center gap-2 md:col-start-1 md:justify-self-start md:gap-3',
-			mailBulkActive && 'max-md:hidden'
+			mailBulkActive && 'max-md:hidden',
+			mobileMailNavActive && 'max-md:min-w-0 max-md:flex-1'
 		)}
 	>
 		<a
@@ -147,15 +126,8 @@
 					class="min-w-0 max-w-[11rem] md:hidden"
 				/>
 			{/if}
-		{:else if onMailRoute && !onMailCompose}
-			<MobilePicker
-				label="Mailbox"
-				value={mailRouteId}
-				options={mailboxOptions}
-				onchange={onMailboxChange}
-				compact={true}
-				class="min-w-0 max-w-[10rem] md:hidden"
-			/>
+		{:else if mobileMailNavActive}
+			<MobileMailShellNav />
 		{:else if onContactsRoute && pageCtx?.title}
 			<h1 class="z-app-shell-header__title min-w-0 truncate md:hidden">{pageCtx.title}</h1>
 		{:else if onCalendarRoute}
@@ -166,12 +138,17 @@
 	<div
 		class={cn(
 			'z-app-shell-header__center relative z-10 min-w-0 flex-1 md:col-start-2 md:w-full md:max-w-xl md:flex-none md:justify-self-center',
-			mailBulkActive && 'max-md:hidden'
+			mailBulkActive && 'max-md:hidden',
+			mobileMailNavActive && 'max-md:hidden'
 		)}
 	>
 		{#if onSettingsRoute}
 			<div class="md:hidden">
 				<SettingsSearch />
+			</div>
+		{:else if mobileMailNavActive}
+			<div class="hidden w-full min-w-0 md:block">
+				<GlobalSearch />
 			</div>
 		{:else if !onCalendarRoute}
 			<div class="w-full min-w-0">
@@ -206,22 +183,10 @@
 				New event
 			</button>
 		{:else if showComposeAction}
-			{#if mailListToolbarActive}
-				<IconButton
-					label="Search mail"
-					class="md:hidden"
-					onclick={() => goto('/mail/search?focus=1')}
-				>
-					<Search class="size-4" aria-hidden="true" />
-				</IconButton>
-				<span class="z-app-shell-header__divider md:hidden" aria-hidden="true"></span>
-			{/if}
-			<a href="/mail/compose" class="z-mail-text-nav__action shrink-0 md:hidden">New</a>
-			{#if !mailListToolbarActive}
-				<a href="/mail/compose" class="z-mail-text-nav__action hidden shrink-0 md:inline-flex">
-					New message
-				</a>
-			{/if}
+			<a href="/mail/compose" class="z-mail-text-nav__action shrink-0 md:inline-flex">
+				<span class="md:hidden">New</span>
+				<span class="hidden md:inline">New message</span>
+			</a>
 		{:else if onContactsRoute && pageCtx?.primaryAction?.kind === 'button'}
 			{@const action = pageCtx.primaryAction}
 			{@const ActionIcon = action.icon ?? UserPlus}
