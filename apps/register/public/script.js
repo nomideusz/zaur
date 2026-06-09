@@ -24,7 +24,7 @@ const invitationBanner = document.getElementById('invitation-banner');
 const inviteTokenInput = document.getElementById('invite-token');
 const inviteEmailInput = document.getElementById('invite-email');
 const captchaSection = document.getElementById('captcha-section');
-const passwordHint = document.getElementById('password-hint');
+const registerTagline = document.getElementById('register-tagline');
 
 let requiresInvitation = false;
 let invitationReady = false;
@@ -37,6 +37,8 @@ let selectedResult = null;
 let checkAbortController = null;
 let cachedDomains = [];
 let availabilityMap = new Map();
+let mountedListUsername = '';
+const DOMAIN_LIST_SCROLL_THRESHOLD = 8;
 
 const STRENGTH_LABELS = ['Weak', 'Fair', 'Good', 'Strong', 'Very strong'];
 
@@ -107,7 +109,137 @@ function renderStatus(status, isSelected) {
   return '';
 }
 
+function sortedDomains() {
+  return [...cachedDomains].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function syncDomainListScroll() {
+  const list = resultsContainer.querySelector('.z-domain-pick-list');
+  if (!list) return;
+  list.classList.toggle(
+    'z-domain-pick-list--scroll',
+    cachedDomains.length > DOMAIN_LIST_SCROLL_THRESHOLD,
+  );
+}
+
+function updateDomainPickLabel(statuses) {
+  const label = resultsContainer.querySelector('.z-domain-pick-label');
+  if (!label) return;
+  const availableCount = cachedDomains.filter((d) => statuses.get(d.id) === 'available').length;
+  label.textContent = availableCount
+    ? `Addresses · ${availableCount} available`
+    : 'Addresses';
+}
+
+function domainOptionMarkup(d, query, status, isSelected) {
+  const isTaken = status === 'taken';
+  const isAvailable = status === 'available';
+  const safeQuery = escapeHtml(query);
+  const tag = isAvailable ? 'button' : 'div';
+
+  return `
+    <${tag} type="${isAvailable ? 'button' : undefined}" role="${isAvailable ? 'option' : 'presentation'}" aria-selected="${isSelected ? 'true' : 'false'}" class="z-domain-option ${isAvailable ? 'available' : ''} ${isTaken ? 'taken' : ''} ${isSelected ? 'selected' : ''}"
+         data-domain-id="${d.id}"
+         data-domain="${escapeHtml(d.name)}"
+         data-available="${isAvailable}">
+      <span class="z-domain-option__addr"><span class="z-result-name">${safeQuery}</span><span class="z-result-tld">@${escapeHtml(d.name)}</span></span>
+      <span class="z-domain-option__status">${renderStatus(status, isSelected)}</span>
+    </${tag}>`;
+}
+
+function bindDomainOptions(root = resultsContainer) {
+  root.querySelectorAll('.z-domain-option.available').forEach((option) => {
+    if (option.dataset.bound === 'true') return;
+    option.dataset.bound = 'true';
+    option.addEventListener('click', () => selectDomain(option));
+  });
+}
+
+function updateDomainOptionElement(option, query, status, isSelected) {
+  const isTaken = status === 'taken';
+  const isAvailable = status === 'available';
+  const wasAvailable = option.classList.contains('available');
+  const nameEl = option.querySelector('.z-result-name');
+  const statusEl = option.querySelector('.z-domain-option__status');
+
+  if (nameEl) nameEl.textContent = query;
+  if (statusEl) statusEl.innerHTML = renderStatus(status, isSelected);
+
+  option.classList.toggle('available', isAvailable);
+  option.classList.toggle('taken', isTaken);
+  option.classList.toggle('selected', isSelected);
+  option.dataset.available = String(isAvailable);
+  option.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+
+  if (isAvailable && !wasAvailable) {
+    const replacement = document.createElement('button');
+    replacement.type = 'button';
+    replacement.className = option.className;
+    replacement.dataset.domainId = option.dataset.domainId;
+    replacement.dataset.domain = option.dataset.domain;
+    replacement.dataset.available = 'true';
+    replacement.setAttribute('role', 'option');
+    replacement.setAttribute('aria-selected', isSelected ? 'true' : 'false');
+    replacement.innerHTML = option.innerHTML;
+    option.replaceWith(replacement);
+    replacement.dataset.bound = 'true';
+    replacement.addEventListener('click', () => selectDomain(replacement));
+    return replacement;
+  }
+
+  if (!isAvailable && wasAvailable) {
+    const replacement = document.createElement('div');
+    replacement.className = option.className;
+    replacement.dataset.domainId = option.dataset.domainId;
+    replacement.dataset.domain = option.dataset.domain;
+    replacement.dataset.available = 'false';
+    replacement.setAttribute('role', 'presentation');
+    replacement.setAttribute('aria-selected', 'false');
+    replacement.innerHTML = option.innerHTML;
+    option.replaceWith(replacement);
+    return replacement;
+  }
+
+  return option;
+}
+
+function mountDomainList(query, statuses) {
+  const domains = sortedDomains();
+  resultsContainer.innerHTML = `
+    <p class="z-type-label z-domain-pick-label"></p>
+    <div class="z-domain-pick-list" role="listbox" aria-label="Available addresses">${domains
+      .map((d) => {
+        const status = statuses.get(d.id) || 'pending';
+        const isSelected = selectedResult?.domainId === d.id;
+        return domainOptionMarkup(d, query, status, isSelected);
+      })
+      .join('')}</div>`;
+  mountedListUsername = query;
+  updateDomainPickLabel(statuses);
+  syncDomainListScroll();
+  bindDomainOptions();
+}
+
+function patchDomainList(query, statuses) {
+  const list = resultsContainer.querySelector('.z-domain-pick-list');
+  if (!list) {
+    mountDomainList(query, statuses);
+    return;
+  }
+
+  updateDomainPickLabel(statuses);
+
+  for (const domain of sortedDomains()) {
+    const status = statuses.get(domain.id) || 'pending';
+    const isSelected = selectedResult?.domainId === domain.id;
+    let option = list.querySelector(`[data-domain-id="${domain.id}"]`);
+    if (!option) continue;
+    option = updateDomainOptionElement(option, query, status, isSelected);
+  }
+}
+
 function renderExtensionList() {
+  mountedListUsername = '';
   if (!cachedDomains.length) {
     resultsContainer.innerHTML = '<div class="z-results-empty">No domains available.</div>';
     return;
@@ -117,66 +249,30 @@ function renderExtensionList() {
     <p class="z-type-label z-domain-pick-label">Domains</p>
     <ul class="z-domain-teaser__list">${cachedDomains
       .map((d) => `<li class="z-domain-teaser__item">@${escapeHtml(d.name)}</li>`)
-      .join('')}</ul>
-    <p class="z-domain-teaser__hint">Type a username to check availability.</p>`;
-}
-
-function sortDomainsForDisplay(statuses) {
-  return [...cachedDomains].sort((a, b) => {
-    const statusA = statuses.get(a.id) || 'pending';
-    const statusB = statuses.get(b.id) || 'pending';
-    const rank = (status) => {
-      if (status === 'available') return 0;
-      if (status === 'checking') return 1;
-      if (status === 'pending') return 2;
-      return 3;
-    };
-    const diff = rank(statusA) - rank(statusB);
-    if (diff !== 0) return diff;
-    return a.name.localeCompare(b.name);
-  });
+      .join('')}</ul>`;
 }
 
 function renderSearchResults(query, statuses) {
   if (!cachedDomains.length) {
+    mountedListUsername = '';
     resultsContainer.innerHTML = '<div class="z-results-empty">No domains available.</div>';
     return;
   }
 
-  const safeQuery = escapeHtml(query);
-  const domains = sortDomainsForDisplay(statuses);
-  const availableCount = domains.filter((d) => statuses.get(d.id) === 'available').length;
+  if (!resultsContainer.querySelector('.z-domain-pick-list')) {
+    mountDomainList(query, statuses);
+    return;
+  }
 
-  resultsContainer.innerHTML = `
-    <p class="z-type-label z-domain-pick-label">Pick your address${availableCount ? ` · ${availableCount} available` : ''}</p>
-    <div class="z-domain-pick-list" role="listbox" aria-label="Available addresses">${domains
-      .map((d) => {
-        const status = statuses.get(d.id) || 'pending';
-        const isTaken = status === 'taken';
-        const isAvailable = status === 'available';
-        const isSelected = selectedResult?.domainId === d.id;
-        const tag = isAvailable ? 'button' : 'div';
-
-        return `
-        <${tag} type="${isAvailable ? 'button' : undefined}" role="${isAvailable ? 'option' : 'presentation'}" aria-selected="${isSelected ? 'true' : 'false'}" class="z-domain-option ${isAvailable ? 'available' : ''} ${isTaken ? 'taken' : ''} ${isSelected ? 'selected' : ''}"
-             data-domain-id="${d.id}"
-             data-domain="${escapeHtml(d.name)}"
-             data-available="${isAvailable}">
-          <span class="z-domain-option__addr"><span class="z-result-name">${safeQuery}</span><span class="z-result-tld">@${escapeHtml(d.name)}</span></span>
-          <span class="z-domain-option__status">${renderStatus(status, isSelected)}</span>
-        </${tag}>`;
-      })
-      .join('')}</div>`;
-
-  document.querySelectorAll('.z-domain-option.available').forEach((option) => {
-    option.addEventListener('click', () => selectDomain(option));
-  });
+  mountedListUsername = query;
+  patchDomainList(query, statuses);
 }
 
 function applyInvitationUi() {
   if (hasMagicLinkInvitation) {
+    registerContent.classList.add('has-invitation');
+    if (registerTagline) registerTagline.classList.add('z-hidden');
     if (captchaSection) captchaSection.classList.add('z-hidden');
-    if (passwordHint) passwordHint.classList.remove('z-hidden');
     const captchaInput = document.getElementById('captcha-answer');
     if (captchaInput) captchaInput.required = false;
   }
@@ -198,7 +294,6 @@ function configureFormForPasswordManagers() {
 function selectDomain(row) {
   document.querySelectorAll('.z-domain-option').forEach((r) => r.classList.remove('selected'));
   row.classList.add('selected');
-  document.getElementById('register-panel-hint')?.classList.add('z-hidden');
 
   selectedResult = {
     domainId: row.dataset.domainId,
@@ -219,7 +314,7 @@ function selectDomain(row) {
     const statuses = new Map(
       cachedDomains.map((d) => [d.id, availabilityMap.get(d.id) || 'pending']),
     );
-    renderSearchResults(currentUsername, statuses);
+    patchDomainList(currentUsername, statuses);
   }
   if (window.matchMedia('(max-width: 767px)').matches) {
     registerPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
@@ -239,8 +334,8 @@ function updateView() {
     registerPanel.classList.remove('is-visible');
     selectedResult = null;
     availabilityMap.clear();
+    mountedListUsername = '';
     syncSplitState(false);
-    document.getElementById('register-panel-hint')?.classList.add('z-hidden');
     renderExtensionList();
     return;
   }
@@ -259,13 +354,6 @@ function updateView() {
   }
 
   renderSearchResults(username, statuses);
-
-  const panelHint = document.getElementById('register-panel-hint');
-  if (valid && !selectedResult) {
-    panelHint?.classList.remove('z-hidden');
-  } else {
-    panelHint?.classList.add('z-hidden');
-  }
 
   if (!valid) {
     registerPanel.classList.remove('is-visible');
@@ -468,7 +556,7 @@ async function initInvitation() {
     inviteTokenInput.value = inviteToken;
     inviteEmailInput.value = inviteEmail;
     invitationBanner.classList.remove('z-hidden');
-    invitationBanner.innerHTML = `<span class="z-callout__title">Invitation verified</span><p class="z-text-muted z-callout__body">Registering as ${escapeHtml(inviteEmail)}. Pick your address below.</p>`;
+    invitationBanner.innerHTML = `<span class="z-invite-status__badge">Invited</span><span class="z-invite-status__email">${escapeHtml(inviteEmail)}</span>`;
     showRegisterFlow();
     applyInvitationUi();
   } catch {

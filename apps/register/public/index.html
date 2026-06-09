@@ -64,12 +64,12 @@
               </div>
               <div class="z-auth-hero__copy">
                 <h1 class="z-type-brand z-auth-brand">ZAUR</h1>
-                <p class="z-auth-tagline">Claim your address</p>
+                <p class="z-auth-tagline" id="register-tagline">Claim your address</p>
               </div>
             </div>
           </div>
 
-          <div class="z-callout z-hidden" id="invitation-banner"></div>
+          <div class="z-invite-status z-hidden" id="invitation-banner" role="status"></div>
 
           <div class="z-register-flow">
             <div class="z-register-split" id="register-split">
@@ -80,7 +80,6 @@
                     type="text"
                     id="username-input"
                     class="z-label-input__field"
-                    placeholder="yourname"
                     autocomplete="off"
                     spellcheck="false"
                     autofocus
@@ -89,20 +88,14 @@
                 </div>
                 <div class="z-validation-hint" id="validation-hint"></div>
                 <div id="results-container"></div>
-                <p class="z-register-create-hint z-hidden" id="register-panel-hint">
-                  Select an available address to set your password.
-                </p>
               </section>
 
               <section class="z-register-create z-panel-collapsible" id="register-panel" aria-labelledby="register-create-heading">
                 <h2 class="z-register-create__heading" id="register-create-heading">Set password</h2>
-                <p class="z-register-create__idle" id="register-panel-idle">
-                  Pick an available address on the left to continue.
-                </p>
+                <p class="z-register-create__idle" id="register-panel-idle" aria-hidden="true"></p>
 
                 <div class="z-register-create__body">
                   <div class="z-selected-address">
-                    <span class="z-type-label">Your address</span>
                     <p class="z-selected-address__email" id="selected-email-label">—</p>
                   </div>
 
@@ -135,9 +128,6 @@
                         >
                         <label for="new-password" class="z-label-input__label">Mailbox password</label>
                       </div>
-                      <p class="z-text-subtle z-text-hint z-hidden" id="password-hint">
-                        Use this for IMAP and webmail. You can add a passkey on the next screen.
-                      </p>
                       <div class="z-strength-bar">
                         <div class="z-strength-fill" id="strength-fill" data-score="0"></div>
                       </div>
@@ -200,6 +190,7 @@
 
   <script src="/site-config.js"></script>
   <script src="/site.js"></script>
+  <script src="/sprite-blink.js"></script>
   <script src="/label-input.js"></script>
   <script src="/script.js"></script>
 </body>
