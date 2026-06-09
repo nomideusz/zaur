@@ -149,6 +149,9 @@ class ImportantMarkerStore {
 
 	markForIntroAnimation(messageId: string) {
 		this.introHighlightIds.add(messageId);
+		// Allow a fresh intro when re-marking Important in the same session.
+		this.shownHighlightIds.delete(messageId);
+		writeShownHighlightIds(this.shownHighlightIds);
 		this.introGeneration = {
 			...this.introGeneration,
 			[messageId]: (this.introGeneration[messageId] ?? 0) + 1
@@ -156,7 +159,7 @@ class ImportantMarkerStore {
 	}
 
 	shouldIntroAnimate(messageId: string): boolean {
-		return this.introHighlightIds.has(messageId);
+		return this.introHighlightIds.has(messageId) && !this.shownHighlightIds.has(messageId);
 	}
 
 	/** Stable list/reader key — only changes when a message is newly marked Important. */

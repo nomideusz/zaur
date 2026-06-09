@@ -4,15 +4,35 @@
  */
 (function () {
 	var KEY = 'zaur-theme';
+	// Keep in sync with circadian/keyframes.ts
 	var FRAMES = [
-		{ hour: 0, surface: { h: 40, s: 4, l: 6 }, fg: { h: 40, s: 5, l: 93 } },
-		{ hour: 6, surface: { h: 48, s: 16, l: 97 }, fg: { h: 210, s: 10, l: 12 } },
+		{ hour: 0, surface: { h: 40, s: 5, l: 7 }, fg: { h: 40, s: 6, l: 92 } },
+		{ hour: 5.5, surface: { h: 40, s: 6, l: 8 }, fg: { h: 40, s: 6, l: 92 } },
+		{ hour: 7, surface: { h: 44, s: 16, l: 96 }, fg: { h: 215, s: 11, l: 13 } },
 		{ hour: 9, surface: { h: 42, s: 11, l: 98 }, fg: { h: 210, s: 10, l: 11 } },
 		{ hour: 13, surface: { h: 60, s: 11, l: 98 }, fg: { h: 210, s: 10, l: 11 } },
-		{ hour: 18, surface: { h: 38, s: 14, l: 93 }, fg: { h: 35, s: 8, l: 13 } },
-		{ hour: 21, surface: { h: 35, s: 8, l: 14 }, fg: { h: 40, s: 7, l: 91 } },
-		{ hour: 24, surface: { h: 40, s: 4, l: 6 }, fg: { h: 40, s: 5, l: 93 } }
+		{ hour: 17, surface: { h: 40, s: 13, l: 96 }, fg: { h: 30, s: 9, l: 12 } },
+		{ hour: 19.5, surface: { h: 34, s: 12, l: 90 }, fg: { h: 30, s: 9, l: 14 } },
+		{ hour: 21, surface: { h: 34, s: 9, l: 12 }, fg: { h: 40, s: 7, l: 91 } },
+		{ hour: 24, surface: { h: 40, s: 5, l: 7 }, fg: { h: 40, s: 6, l: 92 } }
 	];
+
+	// Keep in sync with circadian/interpolate.ts
+	var DARK_SURFACE_L = 50;
+	var MIN_CONTRAST_L = 62;
+
+	function clamp(value, min, max) {
+		return Math.min(max, Math.max(min, value));
+	}
+
+	function guardContrast(surface, fg) {
+		if (surface.l < DARK_SURFACE_L) {
+			fg.l = clamp(Math.max(fg.l, surface.l + MIN_CONTRAST_L), 0, 100);
+		} else {
+			fg.l = clamp(Math.min(fg.l, surface.l - MIN_CONTRAST_L), 0, 100);
+		}
+		return fg;
+	}
 
 	function readMode() {
 		try {
@@ -53,9 +73,10 @@
 		}
 		var span = to.hour - from.hour;
 		var localT = span > 0 ? (hour - from.hour) / span : 0;
+		var surface = lerpTriple(from.surface, to.surface, localT);
 		return {
-			surface: lerpTriple(from.surface, to.surface, localT),
-			fg: lerpTriple(from.fg, to.fg, localT)
+			surface: surface,
+			fg: guardContrast(surface, lerpTriple(from.fg, to.fg, localT))
 		};
 	}
 
@@ -68,7 +89,7 @@
 		el.style.setProperty('--z-c-f-h', String(sample.fg.h));
 		el.style.setProperty('--z-c-f-s', sample.fg.s + '%');
 		el.style.setProperty('--z-c-f-l', sample.fg.l + '%');
-		var dark = sample.surface.l < 42;
+		var dark = sample.surface.l < DARK_SURFACE_L;
 		el.style.colorScheme = dark ? 'dark' : 'light';
 		if (dark) el.dataset.circadianDark = '';
 		else delete el.dataset.circadianDark;

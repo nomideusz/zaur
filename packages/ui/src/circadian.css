@@ -45,13 +45,19 @@
 :root[data-theme='circadian'] {
 	color-scheme: light dark;
 
+	/*
+	 * Short, gentle transitions. JS resamples every ~60s; per-tick drift during
+	 * the day is sub-perceptual either way. A long transition would smear the
+	 * dawn/dusk light↔dark flip through low-contrast mid-gray, so keep it brief
+	 * — the swap reads as a quick, deliberate cross-dissolve instead.
+	 */
 	transition:
-		--z-c-s-h 45m linear,
-		--z-c-s-s 45m linear,
-		--z-c-s-l 45m linear,
-		--z-c-f-h 45m linear,
-		--z-c-f-s 45m linear,
-		--z-c-f-l 45m linear;
+		--z-c-s-h 1.5s linear,
+		--z-c-s-s 1.5s linear,
+		--z-c-s-l 1.5s linear,
+		--z-c-f-h 1.5s linear,
+		--z-c-f-s 1.5s linear,
+		--z-c-f-l 1.5s linear;
 
 	--z-surface: hsl(var(--z-c-s-h) var(--z-c-s-s) var(--z-c-s-l));
 	--z-fg: hsl(var(--z-c-f-h) var(--z-c-f-s) var(--z-c-f-l));
@@ -97,6 +103,18 @@
 	--z-chrome: var(--z-surface);
 	--z-chrome-active: color-mix(in srgb, var(--z-surface) 86%, var(--z-fg) 14%);
 	--z-surface-raised: color-mix(in srgb, var(--z-surface) 90%, var(--z-fg) 10%);
+
+	/*
+	 * Night secondary text. The default mixes fg *toward* the surface, which on
+	 * a dark surface drags muted/subtle down into near-invisibility. On dark
+	 * backgrounds, bias hard toward fg so secondary text stays legible
+	 * (mirrors the fixed dark theme's contrast).
+	 */
+	--z-fg-muted: color-mix(in srgb, var(--z-fg) 80%, var(--z-surface) 20%);
+	--z-fg-subtle: color-mix(in srgb, var(--z-fg) 62%, var(--z-surface) 38%);
+	--z-border: color-mix(in srgb, var(--z-surface) 72%, var(--z-fg) 28%);
+	--z-border-strong: color-mix(in srgb, var(--z-surface) 60%, var(--z-fg) 40%);
+
 	--shadow-sm: none;
 	--shadow-md: none;
 }

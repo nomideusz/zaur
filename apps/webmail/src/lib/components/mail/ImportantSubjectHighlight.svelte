@@ -113,6 +113,8 @@
 				ann.show();
 
 				if (intro) {
+					// Mark shown at start so pagination/unmount mid-animation does not replay.
+					importantMarker.markHighlightShown(id);
 					introTimer = setTimeout(
 						() => importantMarker.completeIntroAnimation(id),
 						config.animationDuration
@@ -126,7 +128,13 @@
 		return () => {
 			cancelled = true;
 			cancelAnimationFrame(frameId);
-			if (introTimer) clearTimeout(introTimer);
+			if (introTimer) {
+				clearTimeout(introTimer);
+				importantMarker.completeIntroAnimation(id);
+			} else if (importantMarker.shouldIntroAnimate(id)) {
+				// Unmount before rAF (e.g. fast page flip) — do not leave intro queued.
+				importantMarker.completeIntroAnimation(id);
+			}
 		};
 	});
 

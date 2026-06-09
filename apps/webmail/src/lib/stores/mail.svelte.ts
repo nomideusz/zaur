@@ -573,7 +573,7 @@ class MailStore {
 				important,
 				...(clearsNew ? { unread: false } : {})
 			});
-			if (important) {
+			if (important && !message.important) {
 				importantMarker.markForIntroAnimation(message.id);
 			}
 		}
