@@ -35,9 +35,38 @@ function clamp(value: number, min: number, max: number): number {
 }
 
 /** Lightness below which the surface is treated as dark (light text wins). */
-const DARK_SURFACE_L = 50;
+const DARK_SURFACE_L = 58;
 /** Minimum lightness gap kept between surface and foreground (readability floor). */
-const MIN_CONTRAST_L = 62;
+const MIN_CONTRAST_L = 70;
+/** Surface band where secondary UI and accents collapse — snap to a pole instead. */
+const DEAD_ZONE_MIN = 25;
+const DEAD_ZONE_MAX = 70;
+
+/**
+ * Commit surface to a readable light/dark extreme when linear interpolation
+ * lands in the mid-lightness mud band (dusk/dawn). Stable day/night holds
+ * never enter this range.
+ */
+function guardSurface(
+	surface: CircadianKeyframe['surface'],
+	hour: number
+): CircadianKeyframe['surface'] {
+	const { l } = surface;
+	if (l < DEAD_ZONE_MIN || l > DEAD_ZONE_MAX) return surface;
+
+	const dusk = hour >= 19.5 && hour < 21;
+	const dawn = hour >= 5.5 && hour < 7;
+	const night = hour >= 21 || hour < 5.5;
+
+	if (dusk || night) {
+		return { ...surface, h: 40, s: Math.max(surface.s, 5), l: 10 };
+	}
+	if (dawn) {
+		return { ...surface, s: Math.max(surface.s, 11), l: 97 };
+	}
+	// Daytime hold — bias light if we somehow land mid-band.
+	return { ...surface, s: Math.max(surface.s, 11), l: 97 };
+}
 
 /**
  * Force the foreground to stay readable against the surface.
@@ -53,11 +82,19 @@ function guardContrast(
 	fg: CircadianKeyframe['surface']
 ): CircadianKeyframe['surface'] {
 	if (surface.l < DARK_SURFACE_L) {
-		// Dark surface → light text.
-		return { ...fg, l: clamp(Math.max(fg.l, surface.l + MIN_CONTRAST_L), 0, 100) };
+		// Dark surface → light text with enough chroma to stay crisp on warm stone.
+		return {
+			...fg,
+			s: Math.max(fg.s, 8),
+			l: clamp(Math.max(fg.l, surface.l + MIN_CONTRAST_L), 78, 96)
+		};
 	}
 	// Light surface → dark text.
-	return { ...fg, l: clamp(Math.min(fg.l, surface.l - MIN_CONTRAST_L), 0, 100) };
+	return {
+		...fg,
+		s: Math.max(fg.s, 10),
+		l: clamp(Math.min(fg.l, surface.l - MIN_CONTRAST_L), 4, 22)
+	};
 }
 
 /** Fraction of the local day elapsed [0, 1). */
@@ -86,7 +123,10 @@ export function sampleCircadian(date = new Date()): CircadianSample {
 	const span = to.hour - from.hour;
 	const localT = span > 0 ? (hour - from.hour) / span : 0;
 
-	const surface = lerpTriple(from.surface, to.surface, localT);
+	const surface = guardSurface(
+		lerpTriple(from.surface, to.surface, localT),
+		hour
+	);
 	const fg = guardContrast(surface, lerpTriple(from.fg, to.fg, localT));
 
 	return {

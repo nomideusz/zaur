@@ -6,30 +6,49 @@
 	var KEY = 'zaur-theme';
 	// Keep in sync with circadian/keyframes.ts
 	var FRAMES = [
-		{ hour: 0, surface: { h: 40, s: 5, l: 7 }, fg: { h: 40, s: 6, l: 92 } },
-		{ hour: 5.5, surface: { h: 40, s: 6, l: 8 }, fg: { h: 40, s: 6, l: 92 } },
+		{ hour: 0, surface: { h: 40, s: 5, l: 10 }, fg: { h: 40, s: 8, l: 93 } },
+		{ hour: 5.5, surface: { h: 40, s: 6, l: 10 }, fg: { h: 40, s: 8, l: 93 } },
 		{ hour: 7, surface: { h: 44, s: 16, l: 96 }, fg: { h: 215, s: 11, l: 13 } },
 		{ hour: 9, surface: { h: 42, s: 11, l: 98 }, fg: { h: 210, s: 10, l: 11 } },
 		{ hour: 13, surface: { h: 60, s: 11, l: 98 }, fg: { h: 210, s: 10, l: 11 } },
 		{ hour: 17, surface: { h: 40, s: 13, l: 96 }, fg: { h: 30, s: 9, l: 12 } },
 		{ hour: 19.5, surface: { h: 34, s: 12, l: 90 }, fg: { h: 30, s: 9, l: 14 } },
-		{ hour: 21, surface: { h: 34, s: 9, l: 12 }, fg: { h: 40, s: 7, l: 91 } },
-		{ hour: 24, surface: { h: 40, s: 5, l: 7 }, fg: { h: 40, s: 6, l: 92 } }
+		{ hour: 21, surface: { h: 34, s: 9, l: 10 }, fg: { h: 40, s: 8, l: 93 } },
+		{ hour: 24, surface: { h: 40, s: 5, l: 10 }, fg: { h: 40, s: 8, l: 93 } }
 	];
 
 	// Keep in sync with circadian/interpolate.ts
-	var DARK_SURFACE_L = 50;
-	var MIN_CONTRAST_L = 62;
+	var DARK_SURFACE_L = 58;
+	var MIN_CONTRAST_L = 70;
+	var DEAD_ZONE_MIN = 25;
+	var DEAD_ZONE_MAX = 70;
 
 	function clamp(value, min, max) {
 		return Math.min(max, Math.max(min, value));
 	}
 
+	function guardSurface(surface, hour) {
+		var l = surface.l;
+		if (l < DEAD_ZONE_MIN || l > DEAD_ZONE_MAX) return surface;
+		var dusk = hour >= 19.5 && hour < 21;
+		var dawn = hour >= 5.5 && hour < 7;
+		var night = hour >= 21 || hour < 5.5;
+		if (dusk || night) {
+			return { h: 40, s: Math.max(surface.s, 5), l: 10 };
+		}
+		if (dawn) {
+			return { s: Math.max(surface.s, 11), l: 97 };
+		}
+		return { s: Math.max(surface.s, 11), l: 97 };
+	}
+
 	function guardContrast(surface, fg) {
 		if (surface.l < DARK_SURFACE_L) {
-			fg.l = clamp(Math.max(fg.l, surface.l + MIN_CONTRAST_L), 0, 100);
+			fg.s = Math.max(fg.s, 8);
+			fg.l = clamp(Math.max(fg.l, surface.l + MIN_CONTRAST_L), 78, 96);
 		} else {
-			fg.l = clamp(Math.min(fg.l, surface.l - MIN_CONTRAST_L), 0, 100);
+			fg.s = Math.max(fg.s, 10);
+			fg.l = clamp(Math.min(fg.l, surface.l - MIN_CONTRAST_L), 4, 22);
 		}
 		return fg;
 	}
@@ -73,7 +92,7 @@
 		}
 		var span = to.hour - from.hour;
 		var localT = span > 0 ? (hour - from.hour) / span : 0;
-		var surface = lerpTriple(from.surface, to.surface, localT);
+		var surface = guardSurface(lerpTriple(from.surface, to.surface, localT), hour);
 		return {
 			surface: surface,
 			fg: guardContrast(surface, lerpTriple(from.fg, to.fg, localT))

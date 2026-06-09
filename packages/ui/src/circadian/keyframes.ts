@@ -30,15 +30,15 @@ export const CIRCADIAN_KEYFRAMES: readonly CircadianKeyframe[] = [
 	{
 		hour: 0,
 		label: 'midnight',
-		surface: { h: 40, s: 5, l: 7 },
-		fg: { h: 40, s: 6, l: 92 }
+		surface: { h: 40, s: 5, l: 10 },
+		fg: { h: 40, s: 8, l: 93 }
 	},
 	{
 		hour: 5.5,
 		label: 'night',
 		// Hold dark through the small hours so dawn can ramp quickly.
-		surface: { h: 40, s: 6, l: 8 },
-		fg: { h: 40, s: 6, l: 92 }
+		surface: { h: 40, s: 6, l: 10 },
+		fg: { h: 40, s: 8, l: 93 }
 	},
 	{
 		hour: 7,
@@ -75,13 +75,13 @@ export const CIRCADIAN_KEYFRAMES: readonly CircadianKeyframe[] = [
 	{
 		hour: 21,
 		label: 'evening',
-		surface: { h: 34, s: 9, l: 12 },
-		fg: { h: 40, s: 7, l: 91 }
+		surface: { h: 34, s: 9, l: 10 },
+		fg: { h: 40, s: 8, l: 93 }
 	},
 	{
 		hour: 24,
 		label: 'midnight',
-		surface: { h: 40, s: 5, l: 7 },
-		fg: { h: 40, s: 6, l: 92 }
+		surface: { h: 40, s: 5, l: 10 },
+		fg: { h: 40, s: 8, l: 93 }
 	}
 ] as const;

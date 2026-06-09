@@ -45,19 +45,9 @@
 :root[data-theme='circadian'] {
 	color-scheme: light dark;
 
-	/*
-	 * Short, gentle transitions. JS resamples every ~60s; per-tick drift during
-	 * the day is sub-perceptual either way. A long transition would smear the
-	 * dawn/dusk light↔dark flip through low-contrast mid-gray, so keep it brief
-	 * — the swap reads as a quick, deliberate cross-dissolve instead.
-	 */
-	transition:
-		--z-c-s-h 1.5s linear,
-		--z-c-s-s 1.5s linear,
-		--z-c-s-l 1.5s linear,
-		--z-c-f-h 1.5s linear,
-		--z-c-f-s 1.5s linear,
-		--z-c-f-l 1.5s linear;
+	/* Snap instantly — JS resamples every ~60s. CSS transitions smear dusk/dawn
+	   through unreadable mid-lightness even when sampled values are safe. */
+	transition: none;
 
 	--z-surface: hsl(var(--z-c-s-h) var(--z-c-s-s) var(--z-c-s-l));
 	--z-fg: hsl(var(--z-c-f-h) var(--z-c-f-s) var(--z-c-f-l));
@@ -67,12 +57,12 @@
 	--z-chrome: var(--z-surface-raised);
 	--z-chrome-active: var(--z-surface-sunken);
 
-	--z-border: color-mix(in srgb, var(--z-surface) 78%, var(--z-fg) 22%);
-	--z-border-strong: color-mix(in srgb, var(--z-surface) 68%, var(--z-fg) 32%);
+	--z-border: color-mix(in srgb, var(--z-surface) 75%, var(--z-fg) 25%);
+	--z-border-strong: color-mix(in srgb, var(--z-surface) 65%, var(--z-fg) 35%);
 	--z-divider: var(--z-border-strong);
 
-	--z-fg-muted: color-mix(in srgb, var(--z-fg) 62%, var(--z-surface) 38%);
-	--z-fg-subtle: color-mix(in srgb, var(--z-fg) 38%, var(--z-surface) 62%);
+	--z-fg-muted: color-mix(in srgb, var(--z-fg) 72%, var(--z-surface) 28%);
+	--z-fg-subtle: color-mix(in srgb, var(--z-fg) 52%, var(--z-surface) 48%);
 
 	/* Accent stays brand-stable; only hover lightens slightly at night. */
 	--z-accent: #3b6abf;
@@ -93,16 +83,16 @@
 }
 
 :root[data-theme='circadian'][data-circadian-dark] {
-	--z-accent: #4d78cc;
-	--z-accent-hover: #5e87d4;
+	--z-accent: #6a9de8;
+	--z-accent-hover: #7aa8eb;
 	--z-unread: var(--z-accent);
 	--z-brand-mark: var(--z-accent);
-	--z-star: #d4a017;
-	--z-success: #52b788;
-	--z-warning: #d4a017;
+	--z-star: #e0b030;
+	--z-success: #5ec492;
+	--z-warning: #e0b030;
 	--z-chrome: var(--z-surface);
-	--z-chrome-active: color-mix(in srgb, var(--z-surface) 86%, var(--z-fg) 14%);
-	--z-surface-raised: color-mix(in srgb, var(--z-surface) 90%, var(--z-fg) 10%);
+	--z-chrome-active: color-mix(in srgb, var(--z-surface) 84%, var(--z-fg) 16%);
+	--z-surface-raised: color-mix(in srgb, var(--z-surface) 88%, var(--z-fg) 12%);
 
 	/*
 	 * Night secondary text. The default mixes fg *toward* the surface, which on
@@ -110,10 +100,10 @@
 	 * backgrounds, bias hard toward fg so secondary text stays legible
 	 * (mirrors the fixed dark theme's contrast).
 	 */
-	--z-fg-muted: color-mix(in srgb, var(--z-fg) 80%, var(--z-surface) 20%);
-	--z-fg-subtle: color-mix(in srgb, var(--z-fg) 62%, var(--z-surface) 38%);
-	--z-border: color-mix(in srgb, var(--z-surface) 72%, var(--z-fg) 28%);
-	--z-border-strong: color-mix(in srgb, var(--z-surface) 60%, var(--z-fg) 40%);
+	--z-fg-muted: color-mix(in srgb, var(--z-fg) 88%, var(--z-surface) 12%);
+	--z-fg-subtle: color-mix(in srgb, var(--z-fg) 74%, var(--z-surface) 26%);
+	--z-border: color-mix(in srgb, var(--z-surface) 68%, var(--z-fg) 32%);
+	--z-border-strong: color-mix(in srgb, var(--z-surface) 55%, var(--z-fg) 45%);
 
 	--shadow-sm: none;
 	--shadow-md: none;
