@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
-	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
+	import CommandMenu, {
+		type CommandMenuGroup
+	} from '$lib/components/ui/CommandMenu.svelte';
 	import LogOut from '$lib/components/icons/LogOut.svelte';
 	import Search from '$lib/components/icons/Search.svelte';
 	import {
@@ -61,7 +62,60 @@
 	function mailboxMenuLabel(name: string, unread: number): string {
 		return unread > 0 ? `${name} (${unread})` : name;
 	}
+
+	const moreMenuGroups = $derived.by((): CommandMenuGroup[] => {
+		const groups: CommandMenuGroup[] = [
+			{
+				items: [
+					{
+						value: 'search-mail',
+						label: onSearchRoute ? 'Search (current)' : 'Search',
+						keywords: ['search', 'find', 'query', 'mail'],
+						disabled: onSearchRoute,
+						onSelect: goSearch,
+						icon: searchIcon
+					}
+				]
+			}
+		];
+
+		if (moreMailboxes.length > 0) {
+			groups.push({
+				heading: 'Mailboxes',
+				items: moreMailboxes.map((mailbox) => ({
+					value: `mailbox-${mailbox.id}`,
+					label: mailboxMenuLabel(mailbox.name, mailbox.unread),
+					keywords: [mailbox.name, mailbox.role ?? ''],
+					onSelect: () => goMailbox(mailbox.id)
+				}))
+			});
+		}
+
+		groups.push({
+			heading: 'Account',
+			items: [
+				{
+					value: 'sign-out',
+					label: 'Sign out',
+					keywords: ['logout', 'sign out', 'exit'],
+					danger: true,
+					onSelect: () => auth.logout(),
+					icon: signOutIcon
+				}
+			]
+		});
+
+		return groups;
+	});
 </script>
+
+{#snippet searchIcon()}
+	<Search class="size-5" aria-hidden="true" />
+{/snippet}
+
+{#snippet signOutIcon()}
+	<LogOut class="size-5" aria-hidden="true" />
+{/snippet}
 
 <nav
 	class="flex min-w-0 items-center gap-3 md:hidden"
@@ -83,36 +137,12 @@
 			{LABEL_MARK_IMPORTANT}
 		</a>
 	{/if}
-	<OverflowMenu
+	<CommandMenu
 		label="More mail options"
 		menuId="mobile-mail-more-menu"
-		textTrigger
 		triggerText="More"
 		triggerClass="z-mail-text-nav__link"
-	>
-		<OverflowMenuItem
-			label={onSearchRoute ? 'Search (current)' : 'Search'}
-			disabled={onSearchRoute}
-			onclick={goSearch}
-		>
-			{#snippet icon()}
-				<Search class="size-5" aria-hidden="true" />
-			{/snippet}
-		</OverflowMenuItem>
-		{#if moreMailboxes.length > 0}
-			<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-		{/if}
-		{#each moreMailboxes as mailbox (mailbox.id)}
-			<OverflowMenuItem
-				label={mailboxMenuLabel(mailbox.name, mailbox.unread)}
-				onclick={() => goMailbox(mailbox.id)}
-			/>
-		{/each}
-		<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-		<OverflowMenuItem label="Sign out" onclick={() => auth.logout()}>
-			{#snippet icon()}
-				<LogOut class="size-5" aria-hidden="true" />
-			{/snippet}
-		</OverflowMenuItem>
-	</OverflowMenu>
+		placeholder="Search mail options…"
+		groups={moreMenuGroups}
+	/>
 </nav>
