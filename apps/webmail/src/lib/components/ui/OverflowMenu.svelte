@@ -14,6 +14,8 @@
 		placement?: OverflowMenuPlacement;
 		align?: 'start' | 'center' | 'end';
 		triggerText?: string;
+		/** Icon trigger with a screen-reader-only label below the `sm` breakpoint. */
+		iconTriggerLabel?: string;
 		/** Match text-nav links — no chrome padding or text-sm. */
 		textTrigger?: boolean;
 		class?: string;
@@ -29,6 +31,7 @@
 		placement = 'bottom',
 		align = 'end',
 		triggerText = '',
+		iconTriggerLabel = '',
 		textTrigger = false,
 		class: className = '',
 		menuClass = '',
@@ -71,9 +74,17 @@
 			<DropdownMenu.Trigger
 				aria-label={label}
 				aria-controls={menuId}
-				class={cn('z-btn-icon min-h-8 min-w-8 p-1.5', triggerClass)}
+				class={cn(
+					iconTriggerLabel
+						? 'inline-flex items-center gap-1.5'
+						: 'z-btn-icon min-h-8 min-w-8 p-1.5',
+					triggerClass
+				)}
 			>
-				<MoreVertical class="size-5" aria-hidden="true" />
+				<MoreVertical class={iconTriggerLabel ? 'size-4' : 'size-5'} aria-hidden="true" />
+				{#if iconTriggerLabel}
+					<span class="max-sm:sr-only">{iconTriggerLabel}</span>
+				{/if}
 			</DropdownMenu.Trigger>
 		{/if}
 

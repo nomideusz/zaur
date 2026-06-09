@@ -178,7 +178,8 @@
 	}
 
 	.z-mail-view .z-mail-list-pane-header:has(.z-mail-list-toolbar),
-	.z-mail-view .z-mail-list-pane-header:has(.z-mail-list-bulk-bar) {
+	.z-mail-view .z-mail-list-pane-header:has(.z-mail-list-bulk-bar),
+	.z-mail-view .z-mail-list-pane-header:has(.z-mail-list-bulk-selectors) {
 		padding-inline: 0;
 	}
 
@@ -209,7 +210,8 @@
 		height: var(--z-mail-list-checkbox-col, 1.25rem);
 	}
 
-	.z-mail-view .z-mail-list-pane-header .z-mail-list-bulk-bar {
+	.z-mail-view .z-mail-list-pane-header .z-mail-list-bulk-bar,
+	.z-mail-view .z-mail-list-pane-header .z-mail-list-bulk-selectors {
 		width: 100%;
 	}
 

@@ -61,6 +61,23 @@
 		background-color: var(--z-scrollbar-thumb-hover);
 	}
 
+	/* @shark/menu — Svelte port; content/items reuse overflow-menu surface tokens. */
+	.z-menu-trigger {
+		@apply inline-flex items-center;
+	}
+
+	.z-menu-content {
+		@apply p-1;
+	}
+
+	.z-menu-item {
+		@apply gap-2 px-2.5 py-1.5;
+	}
+
+	.z-menu-separator {
+		@apply bg-border;
+	}
+
 	.z-overflow-menu {
 		@apply overflow-hidden rounded-lg border border-border bg-surface-raised p-2;
 		box-shadow: var(--shadow-md);
@@ -447,9 +464,48 @@
 		transition: none;
 	}
 
-	.z-mail-list-bulk-bar {
-		@apply flex shrink-0 flex-wrap items-center gap-2 border-t border-border bg-surface-raised/95 py-2 backdrop-blur-sm;
-		padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
+	/* @shark/action-bar — port of Shark UI registry (bulk table example). */
+	.z-action-bar-positioner--inline {
+		border-top: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
+		background-color: var(--z-surface-raised);
+		padding-top: 0.5rem;
+		padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
+	}
+
+	.z-action-bar-positioner--inline .z-action-bar-content {
+		box-shadow: none;
+	}
+
+	.z-action-bar-content {
+		--z-action-bar-space: 0.5rem;
+		display: flex;
+		width: fit-content;
+		max-width: min(100%, 42rem);
+		align-items: center;
+		gap: 0.25rem;
+		border-radius: var(--radius-lg);
+		border: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
+		background-color: var(--z-surface-raised);
+		padding: calc(var(--z-action-bar-space) + 2px);
+		color: var(--z-fg);
+		box-shadow: var(--shadow-md);
+	}
+
+	.z-action-bar-body :is(.z-action-bar-separator) {
+		height: 0.5rem;
+	}
+
+	.z-action-bar-body :is(.z-btn-ghost, .z-action-bar-close) {
+		color: var(--z-fg);
+	}
+
+	.z-mail-list-bulk-selectors {
+		display: flex;
+		width: 100%;
+		min-width: 0;
+		align-items: center;
+		gap: var(--z-mail-list-checkbox-gap, 0.625rem);
+		padding-inline: var(--z-mail-list-checkbox-inset, 1.375rem);
 	}
 
 	.z-surface-active {
@@ -517,6 +573,44 @@
 	.z-segmented__item:focus-visible {
 		outline: 2px solid var(--z-accent);
 		outline-offset: 2px;
+	}
+
+	/* @shark/segment-group — horizontal folder rail (mobile mail header). */
+	.z-segment-group-scroll {
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.z-segment-group-scroll::-webkit-scrollbar {
+		display: none;
+	}
+
+	.z-segment-group--rail {
+		padding: 0;
+		border: 0;
+		background: transparent;
+	}
+
+	.z-segment-group__indicator--accent {
+		background-color: color-mix(in srgb, var(--z-accent) 42%, transparent);
+		box-shadow: none;
+	}
+
+	:root.dark .z-segment-group__indicator--accent {
+		background-color: color-mix(in srgb, var(--z-accent) 55%, transparent);
+	}
+
+	.z-mail-folder-segments .z-segment-group__item:focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: 2px;
+		border-radius: var(--radius-sm);
+	}
+
+	.z-segment-group--underline .z-segment-group__item:focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: 2px;
+		border-radius: var(--radius-sm);
 	}
 
 	.z-chrome-field {

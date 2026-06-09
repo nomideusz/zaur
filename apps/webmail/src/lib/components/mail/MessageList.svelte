@@ -3,7 +3,7 @@
 	import { page } from '$app/stores';
 	import { untrack } from 'svelte';
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
-	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
+	import MessageListBulkActionBar from '$lib/components/mail/MessageListBulkActionBar.svelte';
 	import MessageListToolbar from '$lib/components/mail/MessageListToolbar.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
@@ -893,15 +893,7 @@
 		<header
 			class="z-mail-list-pane-header hidden h-14 w-full shrink-0 items-center overflow-hidden border-b border-border/80 bg-surface md:flex"
 		>
-			{#if mail.hasSelection && mailboxRouteId}
-				<MessageListBulkHeader
-					class="w-full min-w-0"
-					surface="pane"
-					{mailboxRouteId}
-					{onBulkAction}
-					disabled={listToolbarDisabled}
-				/>
-			{:else if mailboxRouteId}
+			{#if mailboxRouteId}
 				<MessageListToolbar
 					class="w-full min-w-0"
 					disabled={listToolbarDisabled}
@@ -912,9 +904,9 @@
 		</header>
 	{/if}
 
-	<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto flex flex-col">
-		<div class="z-mail-list-body flex-1 flex w-full min-w-0 flex-col min-h-full">
-
+	{#snippet listScroll()}
+		<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto flex flex-col">
+			<div class="z-mail-list-body flex-1 flex w-full min-w-0 flex-col min-h-full">
 	<div
 		class={cn(
 			'z-mail-list-flow flex-1 flex flex-col min-h-full',
@@ -1074,6 +1066,21 @@
 			<p class="px-4 py-8 text-sm text-fg-muted">{resolvedEmptyMessage}</p>
 		{/if}
 	</div>
+			</div>
 		</div>
-	</div>
+	{/snippet}
+
+	{#if mailboxRouteId}
+		<MessageListBulkActionBar
+			{mailboxRouteId}
+			{onBulkAction}
+			disabled={listToolbarDisabled}
+		>
+			{#snippet children()}
+				{@render listScroll()}
+			{/snippet}
+		</MessageListBulkActionBar>
+	{:else}
+		{@render listScroll()}
+	{/if}
 </section>

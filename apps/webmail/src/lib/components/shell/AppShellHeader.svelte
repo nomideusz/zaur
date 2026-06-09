@@ -1,9 +1,6 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import Search from '$lib/components/icons/Search.svelte';
 	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
-	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MobileCalendarShellNav from '$lib/components/shell/MobileCalendarShellNav.svelte';
 	import MobileContactsShellNav from '$lib/components/shell/MobileContactsShellNav.svelte';
 	import MobileMailShellNav from '$lib/components/shell/MobileMailShellNav.svelte';
@@ -11,10 +8,11 @@
 	import OfflineIndicator from '$lib/components/shell/OfflineIndicator.svelte';
 	import ToolSwitcher from '$lib/components/shell/ToolSwitcher.svelte';
 	import UserMenu from '$lib/components/shell/UserMenu.svelte';
-	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
 	import { appConfig } from '$lib/config';
 	import { isMailPath } from '$lib/mail/routes';
 	import { calendar } from '$lib/stores/calendar.svelte';
+	import MessageListBulkSelectors from '$lib/components/mail/MessageListBulkSelectors.svelte';
+	import { Separator } from '$lib/components/ui/separator';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -30,13 +28,13 @@
 	const onMailSearch = $derived(pathname.startsWith('/mail/search'));
 	const mailCtx = $derived(shellHeader.mail);
 	const mailListToolbar = $derived(shellHeader.mailListToolbar);
-	const pageCtx = $derived(shellHeader.page);
 
 	const mailBulkActive = $derived(
 		onMailRoute && !onMailCompose && mail.hasSelection && !!mailCtx?.mailboxRouteId
 	);
+	const pageCtx = $derived(shellHeader.page);
 
-	/** Folder list/bulk chrome lives in the list pane (both mobile + desktop). */
+	/** Folder list / bulk chrome lives in the list pane (both mobile + desktop). */
 	const mailListChromeActive = $derived(
 		onMailRoute && !onMailCompose && (mailBulkActive || !!mailListToolbar)
 	);
@@ -74,13 +72,19 @@
 >
 	{#if mailBulkActive && mailCtx?.mailboxRouteId}
 		<div class="relative z-10 w-full min-w-0 md:hidden">
-			<MessageListBulkHeader
-				class="w-full min-w-0"
-				surface="shell"
-				mailboxRouteId={mailCtx.mailboxRouteId}
-				onBulkAction={mailCtx.onBulkAction}
-				disabled={mailCtx.loading || !!mailCtx.error || mailCtx.messageCount === 0}
-			/>
+			<nav
+				class={cn(
+					'z-mail-list-bulk-selectors w-full min-w-0',
+					(mailCtx.loading || !!mailCtx.error || mailCtx.messageCount === 0) &&
+						'pointer-events-none opacity-60'
+				)}
+				aria-label="Selected messages"
+			>
+				<MessageListBulkSelectors
+					surface="shell"
+					disabled={mailCtx.loading || !!mailCtx.error || mailCtx.messageCount === 0}
+				/>
+			</nav>
 		</div>
 	{/if}
 
@@ -88,7 +92,8 @@
 		class={cn(
 			'z-app-shell-header__start relative z-10 flex min-w-0 shrink-0 items-center gap-2 md:col-start-1 md:justify-self-start md:gap-3',
 			mailBulkActive && 'max-md:hidden',
-			mobileShellNavActive && 'max-md:min-w-0 max-md:flex-1'
+			onMailShellNav && 'max-md:hidden',
+			mobileShellNavActive && !onMailShellNav && 'max-md:min-w-0 max-md:flex-1'
 		)}
 	>
 		<a
@@ -104,9 +109,7 @@
 			<ToolSwitcher />
 		</div>
 
-		{#if onMailShellNav}
-			<MobileMailShellNav />
-		{:else if onContactsRoute && mobileShellNavActive}
+		{#if onContactsRoute && mobileShellNavActive}
 			<MobileContactsShellNav />
 		{:else if onCalendarRoute && mobileShellNavActive}
 			<MobileCalendarShellNav />
@@ -119,9 +122,13 @@
 		class={cn(
 			'z-app-shell-header__center relative z-10 min-w-0 flex-1 md:col-start-2 md:w-full md:max-w-xl md:flex-none md:justify-self-center',
 			mailBulkActive && 'max-md:hidden',
-			mobileShellNavActive && 'max-md:hidden'
+			onMailShellNav && 'max-md:flex max-md:min-w-0 max-md:flex-1',
+			mobileShellNavActive && !onMailShellNav && 'max-md:hidden'
 		)}
 	>
+		{#if onMailShellNav}
+			<MobileMailShellNav />
+		{/if}
 		{#if mobileShellNavActive}
 			<div class="hidden w-full min-w-0 md:block">
 				<GlobalSearch />
@@ -153,18 +160,16 @@
 				<span class="hidden md:inline">New event</span>
 			</button>
 		{:else if showComposeAction}
-			<IconButton
-				label="Search mail"
-				class="shrink-0 md:hidden"
-				onclick={() => goto('/mail/search?focus=1')}
-			>
-				<Search class="size-4" />
-			</IconButton>
-			<span class="z-app-shell-header__divider md:hidden" aria-hidden="true"></span>
-			<a href="/mail/compose" class="z-mail-text-nav__action shrink-0 md:inline-flex">
-				<span class="md:hidden">New</span>
-				<span class="hidden md:inline">New message</span>
-			</a>
+			<div class="flex items-center max-md:translate-y-0.5 md:contents">
+				<Separator orientation="vertical" class="h-5 max-md:ml-0.5 md:hidden" />
+				<a
+					href="/mail/compose"
+					class="z-mail-text-nav__action max-md:-translate-y-0.5 max-md:pl-1.5 shrink-0 md:inline-flex"
+				>
+					<span class="md:hidden">New</span>
+					<span class="hidden md:inline">New message</span>
+				</a>
+			</div>
 		{:else if showContactsAction && pagePrimaryAction?.kind === 'button'}
 			{@const action = pagePrimaryAction}
 			<button
