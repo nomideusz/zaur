@@ -5,7 +5,6 @@
 		type CommandMenuGroup
 	} from '$lib/components/ui/CommandMenu.svelte';
 	import LogOut from '$lib/components/icons/LogOut.svelte';
-	import Search from '$lib/components/icons/Search.svelte';
 	import {
 		isPrimarySidebarMailbox,
 		primarySidebarMailboxRank
@@ -26,7 +25,6 @@
 	const mailRouteId = $derived(
 		mailCtx?.kind === 'mailbox' ? (mailCtx.mailboxRouteId ?? INBOX_MAILBOX_ROUTE_ID) : null
 	);
-	const onSearchRoute = $derived(pathname.startsWith('/mail/search'));
 	const hasImportantMailbox = $derived(
 		mail.mailboxes.some((mb) => mb.role === 'important')
 	);
@@ -55,29 +53,12 @@
 		if (href !== pathname) void goto(href);
 	}
 
-	function goSearch() {
-		void goto('/mail/search?focus=1');
-	}
-
 	function mailboxMenuLabel(name: string, unread: number): string {
 		return unread > 0 ? `${name} (${unread})` : name;
 	}
 
 	const moreMenuGroups = $derived.by((): CommandMenuGroup[] => {
-		const groups: CommandMenuGroup[] = [
-			{
-				items: [
-					{
-						value: 'search-mail',
-						label: onSearchRoute ? 'Search (current)' : 'Search',
-						keywords: ['search', 'find', 'query', 'mail'],
-						disabled: onSearchRoute,
-						onSelect: goSearch,
-						icon: searchIcon
-					}
-				]
-			}
-		];
+		const groups: CommandMenuGroup[] = [];
 
 		if (moreMailboxes.length > 0) {
 			groups.push({
@@ -109,10 +90,6 @@
 	});
 </script>
 
-{#snippet searchIcon()}
-	<Search class="size-5" aria-hidden="true" />
-{/snippet}
-
 {#snippet signOutIcon()}
 	<LogOut class="size-5" aria-hidden="true" />
 {/snippet}
@@ -142,7 +119,6 @@
 		menuId="mobile-mail-more-menu"
 		triggerText="More"
 		triggerClass="z-mail-text-nav__link"
-		placeholder="Search mail options…"
 		groups={moreMenuGroups}
 	/>
 </nav>

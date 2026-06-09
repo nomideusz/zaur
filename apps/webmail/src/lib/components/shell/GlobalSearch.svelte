@@ -33,6 +33,7 @@
 
 	const isSidebar = $derived(placement === 'sidebar');
 	const isMobile = $derived(placement === 'mobile');
+	const isSimpleSearch = $derived(isMobile);
 	const dropdownId = $derived(
 		isSidebar ? 'sidebar-search-suggestions' : isMobile ? 'mobile-search-suggestions' : 'global-search-suggestions'
 	);
@@ -70,11 +71,11 @@
 		return listContacts(auth.client?.getAccountId() ?? null, query).slice(0, 4);
 	});
 
-	const showDropdown = $derived(open && !showAdvanced);
+	const showDropdown = $derived(!isSimpleSearch && open && !showAdvanced);
 
 	const placeholder = $derived.by(() => {
 		if (isMobile) {
-			return 'Search messages or contacts…';
+			return 'Search messages…';
 		}
 		if (isSidebar) {
 			return `Search…${settings.enableKeyboardShortcuts && !settings.hideComposeHints ? ' (/)' : ''}`;
@@ -99,7 +100,7 @@
 		showAdvanced = false;
 
 		const params = new URLSearchParams({ q: query });
-		if (settings.searchScope === 'current-folder') {
+		if (!isSimpleSearch && settings.searchScope === 'current-folder') {
 			const routeId = currentMailboxIdFromPath();
 			const mailbox = routeId ? mail.mailboxByRouteId(routeId) : null;
 			if (mailbox?.jmapId) params.set('mailbox', mailbox.jmapId);
@@ -395,18 +396,20 @@
 			inputmode="search"
 			{placeholder}
 			class={cn(
-				isSidebar || isMobile ? 'z-sidebar-search-input pr-10' : 'z-input z-chrome-field w-full rounded-full pl-9 pr-10 shadow-none'
+				isSidebar || isMobile
+					? cn('z-sidebar-search-input', isSimpleSearch ? 'pr-3' : 'pr-10')
+					: 'z-input z-chrome-field w-full rounded-full pl-9 pr-10 shadow-none'
 			)}
 			autocomplete="off"
 			bind:value={input}
 			aria-controls={showDropdown ? dropdownId : undefined}
 			onfocus={() => {
-				if (!showAdvanced) open = true;
+				if (!isSimpleSearch && !showAdvanced) open = true;
 			}}
 			onkeydown={onSearchKeydown}
 		/>
 
-		{#if placement === 'shell' || isMobile}
+		{#if (placement === 'shell' || isMobile) && !isSimpleSearch}
 			<TooltipWrap label="Show advanced search options" side="bottom">
 				{#snippet trigger({ props })}
 					<button

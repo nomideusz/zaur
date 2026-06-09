@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Command, Popover } from 'bits-ui';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
-	import Search from '$lib/components/icons/Search.svelte';
 	import { cn } from '$lib/utils/cn';
 	import type { Snippet } from 'svelte';
 
@@ -36,7 +35,7 @@
 		menuId = 'command-menu',
 		triggerText,
 		triggerClass = '',
-		placeholder = 'Search…',
+		placeholder = 'Filter…',
 		emptyText = 'No results found.',
 		align = 'start',
 		groups
@@ -91,15 +90,11 @@
 			onpointerdown={(event) => event.stopPropagation()}
 		>
 			<Command.Root {label} loop class="flex w-full flex-col overflow-hidden">
-				<div class="relative border-b border-border">
-					<Search
-						class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-subtle"
-						aria-hidden="true"
-					/>
+				<div class="border-b border-border">
 					<Command.Input
 						bind:value={search}
 						{placeholder}
-						class="h-10 w-full bg-transparent pr-3 pl-9 text-sm text-fg outline-none placeholder:text-fg-subtle"
+						class="h-10 w-full bg-transparent px-3 text-sm text-fg outline-none placeholder:text-fg-subtle"
 					/>
 				</div>
 

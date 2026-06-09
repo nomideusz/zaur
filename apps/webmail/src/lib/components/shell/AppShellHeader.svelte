@@ -1,6 +1,9 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import Search from '$lib/components/icons/Search.svelte';
 	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
+	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MobileCalendarShellNav from '$lib/components/shell/MobileCalendarShellNav.svelte';
 	import MobileContactsShellNav from '$lib/components/shell/MobileContactsShellNav.svelte';
 	import MobileMailShellNav from '$lib/components/shell/MobileMailShellNav.svelte';
@@ -150,6 +153,14 @@
 				<span class="hidden md:inline">New event</span>
 			</button>
 		{:else if showComposeAction}
+			<IconButton
+				label="Search mail"
+				class="shrink-0 md:hidden"
+				onclick={() => goto('/mail/search?focus=1')}
+			>
+				<Search class="size-4" />
+			</IconButton>
+			<span class="z-app-shell-header__divider md:hidden" aria-hidden="true"></span>
 			<a href="/mail/compose" class="z-mail-text-nav__action shrink-0 md:inline-flex">
 				<span class="md:hidden">New</span>
 				<span class="hidden md:inline">New message</span>
