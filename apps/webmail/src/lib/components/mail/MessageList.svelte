@@ -1037,6 +1037,7 @@
 						enabled={!mail.hasSelection}
 						leading={swipeLeading}
 						trailing={swipeTrailing}
+						springSnap={!settings.reduceMotion}
 						longPressEnabled={bulkSelectEnabled}
 						longPressExempt={isImportantSubjectTouchTarget}
 						onLongPress={() => handleMobileBulkLongPress(message)}

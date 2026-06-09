@@ -2,6 +2,7 @@
 	import type { Snippet } from 'svelte';
 	import { onDestroy } from 'svelte';
 	import { cn } from '$lib/utils/cn';
+	import { animateSpringScalar } from '$lib/utils/swipe-row-spring';
 	import {
 		SWIPE_ACTION_WIDTH,
 		clampSwipeOffset,
@@ -28,6 +29,8 @@
 		leading?: SwipeAction[];
 		trailing?: SwipeAction[];
 		longPressEnabled?: boolean;
+		/** Spring snap on release; off when reduce motion is enabled. */
+		springSnap?: boolean;
 		/** When true, long-press selection is skipped (e.g. important-subject color pick). */
 		longPressExempt?: (event: PointerEvent) => boolean;
 		onLongPress?: (event: PointerEvent, target: HTMLElement) => void;
@@ -42,6 +45,7 @@
 		leading = [],
 		trailing = [],
 		longPressEnabled = false,
+		springSnap = true,
 		longPressExempt,
 		onLongPress,
 		onLongPressEnd,
@@ -54,20 +58,32 @@
 	let openSide = $state<'leading' | 'trailing' | null>(null);
 	let dragging = $state(false);
 	let swipeActive = $state(false);
+	let snapping = $state(false);
 	let pointerId: number | null = null;
+	let foregroundEl: HTMLElement | null = null;
 	let startX = 0;
 	let startY = 0;
 	let startOffset = 0;
-	const SWIPE_LOCK_PX = 10;
+	let axisLock: 'x' | 'y' | null = null;
+	const AXIS_LOCK_PX = 6;
+	const AXIS_DOMINANCE = 1.15;
 	let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 	let longPressFired = false;
 	let suppressClick = false;
+	let cancelSpring: (() => void) | null = null;
 
 	const leadingWidth = $derived(swipeRevealWidth(leading.length));
 	const trailingWidth = $derived(swipeRevealWidth(trailing.length));
 	const hasSwipe = $derived(enabled && (leadingWidth > 0 || trailingWidth > 0));
 
+	function stopSpring() {
+		cancelSpring?.();
+		cancelSpring = null;
+		snapping = false;
+	}
+
 	function closeRow() {
+		stopSpring();
 		offset = 0;
 		openSide = null;
 	}
@@ -76,12 +92,36 @@
 		registerSwipeRow(closeRow);
 	}
 
+	function animateOffset(target: number, onComplete?: () => void) {
+		stopSpring();
+		if (!springSnap || target === offset) {
+			offset = target;
+			onComplete?.();
+			return;
+		}
+
+		snapping = true;
+		const from = offset;
+		cancelSpring = animateSpringScalar(from, target, {
+			onUpdate: (value) => {
+				offset = value;
+			},
+			onComplete: () => {
+				snapping = false;
+				offset = target;
+				cancelSpring = null;
+				onComplete?.();
+			}
+		});
+	}
+
 	function applySnap(nextOffset: number) {
 		const snapped = snapSwipeOffset(nextOffset, leadingWidth, trailingWidth);
-		offset = snapped.offset;
-		openSide = snapped.side;
-		if (snapped.side) registerOpen();
-		else unregisterSwipeRow(closeRow);
+		animateOffset(snapped.offset, () => {
+			openSide = snapped.side;
+			if (snapped.side) registerOpen();
+			else unregisterSwipeRow(closeRow);
+		});
 	}
 
 	function commitPrimary(side: 'leading' | 'trailing') {
@@ -90,6 +130,36 @@
 		closeRow();
 		closeActiveSwipeRow();
 		primary?.onAction();
+	}
+
+	function resetDragState() {
+		dragging = false;
+		swipeActive = false;
+		axisLock = null;
+		pointerId = null;
+	}
+
+	function releaseCapturedPointer(event: PointerEvent) {
+		if (!foregroundEl) return;
+		try {
+			if (foregroundEl.hasPointerCapture(event.pointerId)) {
+				foregroundEl.releasePointerCapture(event.pointerId);
+			}
+		} catch {
+			// capture may already be released
+		}
+	}
+
+	function lockHorizontalSwipe(event: PointerEvent) {
+		axisLock = 'x';
+		swipeActive = true;
+		if (!foregroundEl) return;
+		try {
+			foregroundEl.setPointerCapture(event.pointerId);
+		} catch {
+			// Pointer capture may fail on some browsers for non-primary pointers.
+		}
+		event.preventDefault();
 	}
 
 	function onContextMenu(event: Event) {
@@ -101,8 +171,10 @@
 		if (!hasSwipe && !longPressEnabled) return;
 		if (event.pointerType === 'mouse' && event.button !== 0) return;
 
+		stopSpring();
 		longPressFired = false;
 		suppressClick = false;
+		axisLock = null;
 		startX = event.clientX;
 		startY = event.clientY;
 
@@ -121,7 +193,6 @@
 			!longPressExempt?.(event)
 		) {
 			const longPressEvent = event;
-			// Capture the element now — `currentTarget` is null once the deferred timer fires.
 			const longPressTarget = event.currentTarget as HTMLElement;
 			longPressTimer = setTimeout(() => {
 				longPressFired = true;
@@ -147,21 +218,23 @@
 		if (!dragging || event.pointerId !== pointerId) return;
 
 		if (!swipeActive && hasSwipe) {
-			if (moveX < SWIPE_LOCK_PX && moveY < SWIPE_LOCK_PX) return;
-			if (moveY > moveX) {
-				dragging = false;
-				pointerId = null;
+			if (moveX < AXIS_LOCK_PX && moveY < AXIS_LOCK_PX) return;
+
+			if (moveX >= moveY * AXIS_DOMINANCE) {
+				lockHorizontalSwipe(event);
+			} else if (moveY >= moveX * AXIS_DOMINANCE) {
+				resetDragState();
+				return;
+			} else {
 				return;
 			}
-			swipeActive = true;
-			(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
 		}
 
-		if (!swipeActive) return;
+		if (!swipeActive || axisLock !== 'x') return;
 
+		event.preventDefault();
 		const delta = event.clientX - startX;
-		const next = clampSwipeOffset(startOffset + delta, leadingWidth, trailingWidth);
-		offset = next;
+		offset = clampSwipeOffset(startOffset + delta, leadingWidth, trailingWidth);
 	}
 
 	function finishLongPress(event: PointerEvent) {
@@ -188,18 +261,11 @@
 		finishLongPress(event);
 		if (!dragging || event.pointerId !== pointerId) return;
 
-		dragging = false;
-		pointerId = null;
-		if (swipeActive) {
-			try {
-				(event.currentTarget as HTMLElement).releasePointerCapture(event.pointerId);
-			} catch {
-				// capture may already be released
-			}
-		}
-		swipeActive = false;
+		const wasSwipe = swipeActive;
+		if (wasSwipe) releaseCapturedPointer(event);
+		resetDragState();
 
-		if (!hasSwipe || offset === startOffset && !openSide) return;
+		if (!hasSwipe || (!wasSwipe && offset === startOffset && !openSide)) return;
 
 		if (offset > 0 && shouldCommitSwipeAction(offset, leadingWidth)) {
 			commitPrimary('leading');
@@ -216,8 +282,8 @@
 	function onPointerCancel(event: PointerEvent) {
 		cancelLongPress(event);
 		if (event.pointerId !== pointerId) return;
-		dragging = false;
-		pointerId = null;
+		releaseCapturedPointer(event);
+		resetDragState();
 		applySnap(offset);
 	}
 
@@ -230,6 +296,7 @@
 
 	onDestroy(() => {
 		if (longPressTimer) clearTimeout(longPressTimer);
+		stopSpring();
 		unregisterSwipeRow(closeRow);
 	});
 
@@ -251,7 +318,7 @@
 		'z-swipe-row',
 		hasSwipe && 'z-swipe-row--interactive',
 		openSide && 'z-swipe-row--elevated',
-		swipeActive && 'z-swipe-row--dragging',
+		(swipeActive || snapping) && 'z-swipe-row--dragging',
 		className
 	)}
 	data-swipe-open={openSide ?? undefined}
@@ -313,6 +380,7 @@
 	{/if}
 
 	<div
+		bind:this={foregroundEl}
 		class="z-swipe-row__foreground"
 		style={hasSwipe ? `transform: translate3d(${offset}px, 0, 0)` : undefined}
 		oncontextmenu={onContextMenu}

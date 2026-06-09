@@ -893,7 +893,11 @@
 			-webkit-touch-callout: none;
 			-webkit-user-select: none;
 			user-select: none;
-			touch-action: manipulation;
+			touch-action: pan-y;
+		}
+
+		.z-mail-view .z-mail-list-swipe-row.z-swipe-row--dragging .z-swipe-row__foreground {
+			touch-action: none;
 		}
 
 		.z-mail-view .z-mail-list-swipe-row .z-swipe-row__foreground {
