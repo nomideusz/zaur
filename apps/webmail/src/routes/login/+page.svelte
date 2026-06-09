@@ -132,13 +132,10 @@
 			{/if}
 
 			<Checkbox
-				checked={rememberMe}
+				bind:checked={rememberMe}
 				disabled={auth.isLoading}
 				label="Remember me"
-				class="flex cursor-pointer items-center gap-2 text-sm text-fg-muted"
-				onchange={(checked) => {
-					rememberMe = checked === true;
-				}}
+				class="w-full py-0.5 text-sm text-fg-muted"
 			>
 				Remember me
 			</Checkbox>

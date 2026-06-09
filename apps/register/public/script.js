@@ -16,6 +16,7 @@ const strengthLabel = document.getElementById('strength-label');
 const submitBtn = document.getElementById('submit-btn');
 const loginEmailInput = document.getElementById('login-email');
 
+const registerSplit = document.getElementById('register-split');
 const invitationGate = document.getElementById('invitation-gate');
 const invitationGateMessage = document.getElementById('invitation-gate-message');
 const registerContent = document.getElementById('register-content');
@@ -120,6 +121,22 @@ function renderExtensionList() {
     <p class="z-domain-teaser__hint">Type a username to check availability.</p>`;
 }
 
+function sortDomainsForDisplay(statuses) {
+  return [...cachedDomains].sort((a, b) => {
+    const statusA = statuses.get(a.id) || 'pending';
+    const statusB = statuses.get(b.id) || 'pending';
+    const rank = (status) => {
+      if (status === 'available') return 0;
+      if (status === 'checking') return 1;
+      if (status === 'pending') return 2;
+      return 3;
+    };
+    const diff = rank(statusA) - rank(statusB);
+    if (diff !== 0) return diff;
+    return a.name.localeCompare(b.name);
+  });
+}
+
 function renderSearchResults(query, statuses) {
   if (!cachedDomains.length) {
     resultsContainer.innerHTML = '<div class="z-results-empty">No domains available.</div>';
@@ -127,10 +144,12 @@ function renderSearchResults(query, statuses) {
   }
 
   const safeQuery = escapeHtml(query);
+  const domains = sortDomainsForDisplay(statuses);
+  const availableCount = domains.filter((d) => statuses.get(d.id) === 'available').length;
 
   resultsContainer.innerHTML = `
-    <p class="z-type-label z-domain-pick-label">Pick your address</p>
-    <div class="z-domain-pick-grid">${cachedDomains
+    <p class="z-type-label z-domain-pick-label">Pick your address${availableCount ? ` · ${availableCount} available` : ''}</p>
+    <div class="z-domain-pick-list" role="listbox" aria-label="Available addresses">${domains
       .map((d) => {
         const status = statuses.get(d.id) || 'pending';
         const isTaken = status === 'taken';
@@ -139,7 +158,7 @@ function renderSearchResults(query, statuses) {
         const tag = isAvailable ? 'button' : 'div';
 
         return `
-        <${tag} type="${isAvailable ? 'button' : undefined}" class="z-domain-option ${isAvailable ? 'available' : ''} ${isTaken ? 'taken' : ''} ${isSelected ? 'selected' : ''}"
+        <${tag} type="${isAvailable ? 'button' : undefined}" role="${isAvailable ? 'option' : 'presentation'}" aria-selected="${isSelected ? 'true' : 'false'}" class="z-domain-option ${isAvailable ? 'available' : ''} ${isTaken ? 'taken' : ''} ${isSelected ? 'selected' : ''}"
              data-domain-id="${d.id}"
              data-domain="${escapeHtml(d.name)}"
              data-available="${isAvailable}">
@@ -202,8 +221,14 @@ function selectDomain(row) {
     );
     renderSearchResults(currentUsername, statuses);
   }
-  registerPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  if (window.matchMedia('(max-width: 767px)').matches) {
+    registerPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
   passwordInput.focus();
+}
+
+function syncSplitState(hasUsername) {
+  registerSplit?.classList.toggle('has-username', hasUsername);
 }
 
 function updateView() {
@@ -214,12 +239,14 @@ function updateView() {
     registerPanel.classList.remove('is-visible');
     selectedResult = null;
     availabilityMap.clear();
+    syncSplitState(false);
     document.getElementById('register-panel-hint')?.classList.add('z-hidden');
     renderExtensionList();
     return;
   }
 
   currentUsername = username;
+  syncSplitState(valid);
   if (selectedResult) syncSelectedEmail();
 
   const statuses = new Map();

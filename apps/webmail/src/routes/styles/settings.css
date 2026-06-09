@@ -169,7 +169,7 @@
 		align-items: center;
 		padding: 0.625rem 1rem;
 		border-bottom: none;
-		column-gap: var(--z-settings-row-column-gap);
+		column-gap: 0.75rem;
 		row-gap: 0.25rem;
 		transition: background-color var(--z-motion-fast) var(--z-ease-standard);
 	}
@@ -178,47 +178,36 @@
 		border-bottom: none;
 	}
 
-	/* Toggle: title + switch on one line; switch at trailing edge. */
-	.z-settings-row--toggle {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		column-gap: 0.75rem;
-		row-gap: 0.25rem;
-	}
-
-	.z-settings-row--toggle .z-settings-row-label {
-		flex: 1 1 8rem;
-		min-width: 0;
-	}
-
+	/* Toggle: fixed-width switch column, aligned across rows. */
 	.z-settings-row--toggle .z-settings-row-control {
-		flex: 0 0 auto;
-		margin-left: auto;
+		justify-content: flex-end;
+		min-width: 2.75rem;
 	}
 
-	/* Action / info: title left, control or value right. */
-	.z-settings-row--action,
-	.z-settings-row--info {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: center;
-		justify-content: space-between;
-		column-gap: 0.75rem;
-		row-gap: 0.25rem;
+	.z-settings-row--toggle .z-settings-row-control .z-switch {
+		width: 2.75rem;
+		max-width: 2.75rem;
+		flex-shrink: 0;
 	}
 
-	.z-settings-row--action .z-settings-row-label,
-	.z-settings-row--info .z-settings-row-label {
-		flex: 1 1 8rem;
-		min-width: 0;
-	}
-
+	/* Action / info / menu: same 2-col grid — control sits in a shared trailing column. */
 	.z-settings-row--action .z-settings-row-control,
-	.z-settings-row--info .z-settings-row-control {
-		flex: 0 0 auto;
-		margin-left: auto;
+	.z-settings-row--info .z-settings-row-control,
+	.z-settings-row--menu .z-settings-row-control {
+		justify-content: flex-end;
 		text-align: right;
+	}
+
+	.z-settings-row--menu .z-settings-row-control .z-select-trigger,
+	.z-settings-row--menu .z-settings-row-control .z-mobile-picker-trigger {
+		width: auto;
+		min-width: 5.5rem;
+		max-width: 11rem;
+		justify-content: space-between;
+	}
+
+	.z-settings-row--action .z-settings-row-control .z-mail-text-nav__link {
+		white-space: nowrap;
 	}
 
 	.z-settings-row:hover {
@@ -575,38 +564,16 @@
 		}
 
 		.z-settings-row-desc {
-			grid-column: 1 / -1;
+			grid-column: 1;
 		}
 
-		.z-settings-row-control {
-			grid-column: 2;
-			grid-row: 1;
-			width: auto;
-			margin-top: 0;
-			justify-content: flex-end;
-			align-self: center;
-		}
-
-		.z-settings-row:has(.z-settings-row-desc) .z-settings-row-control {
-			align-self: start;
-		}
-
+		/* Menu + description: stack value under copy on small screens. */
 		.z-settings-row--menu:has(.z-settings-row-desc) {
-			display: grid;
 			grid-template-columns: minmax(0, 1fr);
 			align-items: start;
 		}
 
-		.z-settings-row--menu,
-		.z-settings-row:has(.z-settings-select, .z-select, .z-mobile-picker-trigger, textarea, .z-input) {
-			display: grid;
-			grid-template-columns: minmax(0, 1fr);
-			align-items: start;
-		}
-
-		.z-settings-row--menu .z-settings-row-control,
-		.z-settings-row:has(.z-settings-select, .z-select, .z-mobile-picker-trigger, textarea, .z-input)
-			.z-settings-row-control {
+		.z-settings-row--menu:has(.z-settings-row-desc) .z-settings-row-control {
 			grid-column: 1;
 			grid-row: auto;
 			width: 100%;
@@ -614,39 +581,10 @@
 			justify-content: flex-start;
 		}
 
-		.z-settings-row--menu .z-settings-row-control .z-settings-select,
-		.z-settings-row:has(.z-settings-select, .z-select, .z-mobile-picker-trigger, textarea, .z-input)
-			.z-settings-row-control .z-settings-select {
+		.z-settings-row--menu:has(.z-settings-row-desc) .z-settings-row-control .z-select-trigger,
+		.z-settings-row--menu:has(.z-settings-row-desc) .z-settings-row-control .z-mobile-picker-trigger {
 			width: 100%;
-		}
-
-		.z-settings-row--menu .z-settings-row-control .z-select,
-		.z-settings-row--menu .z-settings-row-control .z-select-trigger,
-		.z-settings-row--menu .z-settings-row-control .z-mobile-picker-trigger,
-		.z-settings-row:has(.z-settings-select, .z-select, .z-mobile-picker-trigger, textarea, .z-input)
-			.z-settings-row-control .z-select,
-		.z-settings-row:has(.z-settings-select, .z-select, .z-mobile-picker-trigger, textarea, .z-input)
-			.z-settings-row-control .z-select-trigger,
-		.z-settings-row:has(.z-settings-select, .z-select, .z-mobile-picker-trigger, textarea, .z-input)
-			.z-settings-row-control .z-mobile-picker-trigger {
-			width: 100%;
-		}
-
-		.z-settings-row--menu .z-settings-row-desc,
-		.z-settings-row:has(.z-settings-select, .z-select, .z-mobile-picker-trigger, textarea, .z-input)
-			.z-settings-row-desc {
-			grid-column: 1;
-		}
-
-		.z-settings-row--toggle .z-settings-row-control,
-		.z-settings-row--action .z-settings-row-control,
-		.z-settings-row--info .z-settings-row-control {
-			grid-column: unset;
-			grid-row: unset;
-			width: auto;
-			margin-top: 0;
-			margin-left: auto;
-			justify-content: flex-end;
+			max-width: none;
 		}
 
 		.z-settings-section .z-settings-list {

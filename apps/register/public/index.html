@@ -19,8 +19,8 @@
   </header>
 
   <main class="z-site-main">
-    <div class="z-auth-page z-auth-page--in-shell" id="main-content">
-      <div class="z-auth-card" id="auth-card">
+    <div class="z-auth-page z-auth-page--in-shell z-auth-page--register" id="main-content">
+      <div class="z-auth-card z-auth-card--register" id="auth-card">
         <div class="z-hidden" id="invitation-gate">
           <div class="z-auth-hero">
             <div class="z-auth-sprite" aria-hidden="true">
@@ -57,112 +57,127 @@
         </div>
 
         <div class="z-hidden" id="register-content">
-          <div class="z-auth-hero z-auth-hero--compact">
-            <div class="z-auth-sprite" aria-hidden="true">
-              <img src="/zaur-sprite-happy.svg" width="100" height="90" alt="">
+          <div class="z-auth-hero z-auth-hero--compact z-auth-hero--register">
+            <div class="z-auth-hero__row">
+              <div class="z-auth-sprite" aria-hidden="true">
+                <img src="/zaur-sprite-happy.svg" width="72" height="65" alt="">
+              </div>
+              <div class="z-auth-hero__copy">
+                <h1 class="z-type-brand z-auth-brand">ZAUR</h1>
+                <p class="z-auth-tagline">Claim your address</p>
+              </div>
             </div>
-            <h1 class="z-type-brand z-auth-brand">ZAUR</h1>
-            <p class="z-auth-tagline">Claim your address</p>
           </div>
 
           <div class="z-callout z-hidden" id="invitation-banner"></div>
 
           <div class="z-register-flow">
-            <div class="z-label-input z-label-input--primary">
-              <input
-                type="text"
-                id="username-input"
-                class="z-label-input__field"
-                placeholder="yourname"
-                autocomplete="off"
-                spellcheck="false"
-                autofocus
-              >
-              <label for="username-input" class="z-label-input__label">Choose your address</label>
-            </div>
-            <div class="z-validation-hint" id="validation-hint"></div>
-            <div id="results-container"></div>
-
-            <p class="z-register-create-hint z-hidden" id="register-panel-hint">
-              Select an available address above to set your password.
-            </p>
-
-            <section class="z-register-create z-panel-collapsible" id="register-panel">
-                <div class="z-selected-address z-mb-4">
-                  <span class="z-type-label">Your address</span>
-                  <p class="z-selected-address__email" id="selected-email-label">—</p>
-                </div>
-
-                <div class="z-alert z-alert--error" id="form-error" role="alert"></div>
-
-                <form id="register-form" class="z-form-stack" method="post">
-                  <input type="hidden" id="selected-domain-id" name="domainId">
-                  <input type="hidden" id="invite-token" name="inviteToken">
-                  <input type="hidden" id="invite-email" name="inviteEmail">
+            <div class="z-register-split" id="register-split">
+              <section class="z-register-pick" aria-labelledby="register-pick-heading">
+                <h2 class="sr-only" id="register-pick-heading">Choose your address</h2>
+                <div class="z-label-input z-label-input--primary">
                   <input
-                    type="email"
-                    id="login-email"
-                    name="username"
-                    class="sr-only"
-                    autocomplete="username"
-                    tabindex="-1"
-                    aria-hidden="true"
-                    readonly
+                    type="text"
+                    id="username-input"
+                    class="z-label-input__field"
+                    placeholder="yourname"
+                    autocomplete="off"
+                    spellcheck="false"
+                    autofocus
                   >
+                  <label for="username-input" class="z-label-input__label">Username</label>
+                </div>
+                <div class="z-validation-hint" id="validation-hint"></div>
+                <div id="results-container"></div>
+                <p class="z-register-create-hint z-hidden" id="register-panel-hint">
+                  Select an available address to set your password.
+                </p>
+              </section>
 
-                  <div class="z-field-stack">
+              <section class="z-register-create z-panel-collapsible" id="register-panel" aria-labelledby="register-create-heading">
+                <h2 class="z-register-create__heading" id="register-create-heading">Set password</h2>
+                <p class="z-register-create__idle" id="register-panel-idle">
+                  Pick an available address on the left to continue.
+                </p>
+
+                <div class="z-register-create__body">
+                  <div class="z-selected-address">
+                    <span class="z-type-label">Your address</span>
+                    <p class="z-selected-address__email" id="selected-email-label">—</p>
+                  </div>
+
+                  <div class="z-alert z-alert--error" id="form-error" role="alert"></div>
+
+                  <form id="register-form" class="z-form-stack" method="post">
+                    <input type="hidden" id="selected-domain-id" name="domainId">
+                    <input type="hidden" id="invite-token" name="inviteToken">
+                    <input type="hidden" id="invite-email" name="inviteEmail">
+                    <input
+                      type="email"
+                      id="login-email"
+                      name="username"
+                      class="sr-only"
+                      autocomplete="username"
+                      tabindex="-1"
+                      aria-hidden="true"
+                      readonly
+                    >
+
+                    <div class="z-field-stack">
+                      <div class="z-label-input z-label-input--primary z-label-input--password">
+                        <input
+                          type="password"
+                          id="new-password"
+                          name="password"
+                          class="z-label-input__field"
+                          autocomplete="new-password"
+                          required
+                        >
+                        <label for="new-password" class="z-label-input__label">Mailbox password</label>
+                      </div>
+                      <p class="z-text-subtle z-text-hint z-hidden" id="password-hint">
+                        Use this for IMAP and webmail. You can add a passkey on the next screen.
+                      </p>
+                      <div class="z-strength-bar">
+                        <div class="z-strength-fill" id="strength-fill" data-score="0"></div>
+                      </div>
+                      <div class="z-strength-label" id="strength-label"></div>
+                    </div>
+
                     <div class="z-label-input z-label-input--primary z-label-input--password">
                       <input
                         type="password"
-                        id="new-password"
-                        name="password"
+                        id="confirm-password"
+                        name="confirmPassword"
                         class="z-label-input__field"
                         autocomplete="new-password"
                         required
                       >
-                      <label for="new-password" class="z-label-input__label">Mailbox password</label>
+                      <label for="confirm-password" class="z-label-input__label">Confirm password</label>
                     </div>
-                    <p class="z-text-subtle z-text-hint z-hidden" id="password-hint">
-                      Use this for IMAP and webmail. You can add a passkey on the next screen.
-                    </p>
-                    <div class="z-strength-bar">
-                      <div class="z-strength-fill" id="strength-fill" data-score="0"></div>
-                    </div>
-                    <div class="z-strength-label" id="strength-label"></div>
-                  </div>
 
-                  <div class="z-label-input z-label-input--primary z-label-input--password">
-                    <input
-                      type="password"
-                      id="confirm-password"
-                      name="confirmPassword"
-                      class="z-label-input__field"
-                      autocomplete="new-password"
-                      required
-                    >
-                    <label for="confirm-password" class="z-label-input__label">Confirm password</label>
-                  </div>
-
-                  <div class="z-field-stack" id="captcha-section">
-                    <div class="z-captcha-row">
-                      <span class="z-captcha-question" id="captcha-question">Loading…</span>
-                      <div class="z-label-input z-label-input--primary z-label-input--compact">
-                        <input
-                          type="number"
-                          id="captcha-answer"
-                          name="captchaAnswer"
-                          class="z-label-input__field"
-                          inputmode="numeric"
-                          required
-                        >
-                        <label for="captcha-answer" class="z-label-input__label">Answer</label>
+                    <div class="z-field-stack" id="captcha-section">
+                      <div class="z-captcha-row">
+                        <span class="z-captcha-question" id="captcha-question">Loading…</span>
+                        <div class="z-label-input z-label-input--primary z-label-input--compact">
+                          <input
+                            type="number"
+                            id="captcha-answer"
+                            name="captchaAnswer"
+                            class="z-label-input__field"
+                            inputmode="numeric"
+                            required
+                          >
+                          <label for="captcha-answer" class="z-label-input__label">Answer</label>
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  <button type="submit" class="z-btn-primary z-btn-block z-btn-lg" id="submit-btn">Create account</button>
-                </form>
-            </section>
+                    <button type="submit" class="z-btn-primary z-btn-block z-btn-lg" id="submit-btn">Create account</button>
+                  </form>
+                </div>
+              </section>
+            </div>
           </div>
 
           <p class="z-auth-aside">

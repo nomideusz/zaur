@@ -31,7 +31,7 @@
 	indeterminate={checked === 'indeterminate'}
 	{disabled}
 	aria-label={label}
-	class={children ? className : cn('z-checkbox', className)}
+	class={children ? cn('z-checkbox-row', className) : cn('z-checkbox', className)}
 	onCheckedChange={(next) => {
 		// When onchange is provided the parent owns checked state — avoid double toggles.
 		if (onchange) onchange(next);
