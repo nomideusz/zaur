@@ -26,6 +26,6 @@
 		{options}
 		{onchange}
 		variant="field"
-		class={cn('w-auto max-md:w-full max-md:max-w-none', className)}
+		class={cn('w-full', className)}
 	/>
 </div>

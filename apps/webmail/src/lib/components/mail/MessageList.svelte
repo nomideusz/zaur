@@ -78,7 +78,8 @@
 	const listSubjectClass = (unread: boolean, important = false) =>
 		cn(
 			'list-subject min-w-0',
-			important ? 'overflow-visible' : 'truncate',
+			'max-md:line-clamp-2 max-md:overflow-hidden',
+			important ? 'md:overflow-visible' : 'md:truncate',
 			unread ? 'font-semibold text-fg' : 'font-medium text-fg'
 		);
 
@@ -1036,13 +1037,8 @@
 							handleRainbowPointerLeave(message.id, event.currentTarget, event, routeId);
 						}}
 					>
-						<div class="min-w-0 flex-1">
-							<div class="flex items-baseline justify-between gap-2">
-								<p class={listSenderClass(isUnread)}>{senderLabel}</p>
-								<time class={listTimeClass} datetime={message.receivedAt}>
-									{timeLabel}
-								</time>
-							</div>
+						<div class="z-mail-list-row-copy min-w-0 flex-1">
+							<p class={listSenderClass(isUnread)}>{senderLabel}</p>
 							<p class={listSubjectClass(isUnread, subjectImportant)}>
 								{#if subjectImportant}
 									{#key importantMarker.highlightInstanceKey(message.id)}
@@ -1058,7 +1054,9 @@
 									{subjectText}
 								{/if}
 							</p>
-
+							<time class={listTimeClass} datetime={message.receivedAt}>
+								{timeLabel}
+							</time>
 						</div>
 						{#if message.hasAttachment || message.replied}
 							<div class="flex items-center gap-1 shrink-0 text-fg-subtle">

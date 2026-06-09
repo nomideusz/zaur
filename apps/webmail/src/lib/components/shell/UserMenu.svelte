@@ -56,34 +56,36 @@
 			updatePositionStrategy="always"
 			class="z-overflow-menu z-overflow-menu--fixed z-overflow-menu--list w-56 min-w-56 max-w-[calc(100vw-1rem)]"
 		>
-			<div class="border-b border-border px-3 py-2">
+			<div class="border-b border-border px-3 py-2.5">
 				<p class="truncate text-sm font-medium text-fg">
 					{user.name}
 				</p>
-				<p class="truncate text-xs text-fg-muted">{user.email}</p>
+				<p class="mt-0.5 truncate text-xs text-fg-muted">{user.email}</p>
 			</div>
 
-			<DropdownMenu.Item
-				class={cn('z-overflow-menu-item', onSettingsRoute && 'z-surface-active')}
-				textValue="Settings"
-				onSelect={() => goto('/settings/account')}
-			>
-				<span class="flex size-5 shrink-0 items-center justify-center">
-					<Settings class="size-4 text-fg-muted" aria-hidden="true" />
-				</span>
-				<span class="truncate">Settings</span>
-			</DropdownMenu.Item>
+			<div class="flex flex-col gap-1 p-1">
+				<DropdownMenu.Item
+					class={cn('z-overflow-menu-item', onSettingsRoute && 'z-surface-active')}
+					textValue="Settings"
+					onSelect={() => goto('/settings/account')}
+				>
+					<span class="flex size-5 shrink-0 items-center justify-center">
+						<Settings class="size-4 text-fg-muted" aria-hidden="true" />
+					</span>
+					<span class="truncate">Settings</span>
+				</DropdownMenu.Item>
 
-			<DropdownMenu.Item
-				class="z-overflow-menu-item"
-				textValue="Sign out"
-				onSelect={() => auth.logout()}
-			>
-				<span class="flex size-5 shrink-0 items-center justify-center">
-					<LogOut class="size-4 text-fg-muted" aria-hidden="true" />
-				</span>
-				<span class="truncate">Sign out</span>
-			</DropdownMenu.Item>
+				<DropdownMenu.Item
+					class="z-overflow-menu-item"
+					textValue="Sign out"
+					onSelect={() => auth.logout()}
+				>
+					<span class="flex size-5 shrink-0 items-center justify-center">
+						<LogOut class="size-4 text-fg-muted" aria-hidden="true" />
+					</span>
+					<span class="truncate">Sign out</span>
+				</DropdownMenu.Item>
+			</div>
 		</DropdownMenu.Content>
 	</DropdownMenu.Portal>
 </DropdownMenu.Root>

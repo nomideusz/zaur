@@ -20,7 +20,6 @@
 			value={theme.mode}
 			options={themeModeOptions}
 			onchange={(v) => theme.set(v as ThemeMode)}
-			class="w-auto"
 		/>
 	</SettingsRow>
 

@@ -392,13 +392,58 @@
 		background-color: transparent;
 	}
 
-	.z-mail-view .z-mail-list-row .list-sender,
-	.z-mail-view .z-mail-list-row .list-subject {
+	.z-mail-list-row-copy {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-rows: auto auto;
+		column-gap: 0.5rem;
+		row-gap: 0.125rem;
+		align-items: start;
+	}
+
+	.z-mail-view .z-mail-list-row .list-sender {
+		grid-column: 1;
+		grid-row: 1;
 		font-size: var(--z-mail-list-row-text);
 	}
 
+	.z-mail-view .z-mail-list-row .list-subject {
+		grid-column: 1 / -1;
+		grid-row: 2;
+		font-size: var(--z-mail-list-row-text);
+		line-height: 1.35;
+	}
+
 	.z-mail-view .z-mail-list-row .list-time {
+		grid-column: 2;
+		grid-row: 1;
+		justify-self: end;
 		font-size: var(--z-mail-list-row-meta-text);
+	}
+
+	@media (max-width: 767px) {
+		.z-mail-list-row-copy {
+			grid-template-columns: minmax(0, 1fr);
+			grid-template-rows: auto auto;
+		}
+
+		.z-mail-view .z-mail-list-row .list-sender {
+			grid-column: 1;
+			grid-row: 1;
+			padding-inline-end: 3.25rem;
+		}
+
+		.z-mail-view .z-mail-list-row .list-time {
+			grid-column: 1;
+			grid-row: 1;
+			justify-self: end;
+			align-self: start;
+		}
+
+		.z-mail-view .z-mail-list-row .list-subject {
+			grid-column: 1;
+			grid-row: 2;
+		}
 	}
 
 	/* Row <li> owns list backgrounds; avoid z-list-row--current chrome-active on the link. */

@@ -20,7 +20,6 @@
 				{ value: 'html', label: 'HTML' }
 			]}
 			onchange={(v) => settings.setDefaultComposeFormat(v as ComposeFormat)}
-			class="w-auto"
 		/>
 	</SettingsRow>
 
@@ -33,7 +32,6 @@
 				{ value: 'reply-all', label: 'Reply all' }
 			]}
 			onchange={(v) => settings.setDefaultReplyMode(v as DefaultReplyMode)}
-			class="w-auto"
 		/>
 	</SettingsRow>
 
@@ -53,7 +51,6 @@
 					settings.setUndoSendDelay(next);
 				}
 			}}
-			class="w-auto"
 		/>
 	</SettingsRow>
 </SettingsGroup>

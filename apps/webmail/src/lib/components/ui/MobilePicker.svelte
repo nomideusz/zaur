@@ -65,7 +65,10 @@
 		aria-labelledby={a11y?.labelId}
 		aria-describedby={a11y?.descId}
 	>
-		<Select.Value placeholder={label} class="min-w-0 flex-1 truncate text-left" />
+		<Select.Value
+			placeholder={label}
+			class={cn('min-w-0 flex-1 text-left', isCompact ? 'truncate' : 'whitespace-nowrap')}
+		/>
 		<ChevronDown
 			class={cn(
 				'shrink-0 text-fg-subtle transition-transform duration-150',

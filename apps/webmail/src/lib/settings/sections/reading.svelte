@@ -41,7 +41,6 @@
 					settings.setTimeFormat(v);
 				}
 			}}
-			class="w-auto"
 		/>
 	</SettingsRow>
 
@@ -55,7 +54,6 @@
 				{ value: 'large', label: 'Large' }
 			]}
 			onchange={(v) => settings.setReaderTextSize(v as ReaderTextSize)}
-			class="w-auto"
 		/>
 	</SettingsRow>
 
@@ -68,7 +66,6 @@
 				{ value: 'serif', label: 'Serif' }
 			]}
 			onchange={(v) => settings.setReadingTypeface(v as ReadingTypeface)}
-			class="w-auto"
 		/>
 	</SettingsRow>
 </SettingsGroup>
