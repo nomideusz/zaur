@@ -31,7 +31,7 @@
 
 	// Easter egg state
 	let isZaurAlive = $state(false);
-	let activeFrame = $state<FrameId>('sleep');
+	let activeFrame = $state<FrameId>('walk_a');
 	let facing = $state<'left' | 'right'>('right');
 	let xOffset = $state(0);
 
@@ -115,24 +115,30 @@
 		{/if}
 	</div>
 {:else if empty}
-	<div class="flex-1 flex flex-col items-center justify-center gap-4 px-6 py-16 text-center min-h-[350px] animate-fade-in">
-		{#if emptyIcon !== 'none'}
-			<div class="text-fg-subtle select-none">
-				{#if isZaurAlive}
-					<div class="relative w-[240px] h-[36px] overflow-hidden mb-2 mx-auto border-b border-border/30">
-						<div
-							class="absolute bottom-0 transition-transform duration-250 ease-linear"
-							style="transform: translateX({xOffset}px);"
-						>
-							{@html frameSvg(activeFrame, { color: 'currentColor', scale: 2, facing })}
-						</div>
-					</div>
-				{:else if emptyIcon === 'search'}
-					{@html frameSvg('sad', { color: 'currentColor', scale: 2 })}
-				{:else}
-					{@html frameSvg('sleep', { color: 'currentColor', scale: 2 })}
-				{/if}
+	<div class="flex min-h-[350px] flex-1 flex-col items-center justify-center gap-3 px-6 py-16 text-center">
+		{#if emptyIcon !== 'none' && isZaurAlive}
+			<div
+				class="relative mx-auto mb-1 h-9 w-60 overflow-hidden border-b border-border/30 text-fg-subtle select-none"
+			>
+				<div
+					class="absolute bottom-0 transition-transform duration-250 ease-linear"
+					style="transform: translateX({xOffset}px);"
+				>
+					{@html frameSvg(activeFrame, { color: 'currentColor', scale: 2, facing })}
+				</div>
 			</div>
+		{/if}
+		<p class="text-sm font-medium text-fg">{emptyMessage}</p>
+		{#if emptyHint}
+			<p class="mx-auto max-w-sm text-sm leading-relaxed text-fg-muted">{emptyHint}</p>
+		{/if}
+		{#if emptyActionHref && emptyActionLabel}
+			<a
+				href={emptyActionHref}
+				class="text-sm font-medium text-accent underline-offset-2 hover:underline"
+			>
+				{emptyActionLabel}
+			</a>
 		{/if}
 	</div>
 {/if}
