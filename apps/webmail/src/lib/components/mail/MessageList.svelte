@@ -52,8 +52,7 @@
 		IMPORTANT_MARKER_HOVER_DELAY_MS,
 		shouldCommitImportantMarkerPick
 	} from '$lib/mail/important-marker.svelte';
-	import { createImportantMarkerTouchPick } from '$lib/mail/important-marker-touch';
-	import ImportantSubjectHighlight from '$lib/components/mail/ImportantSubjectHighlight.svelte';
+	import ImportantListSubject from '$lib/components/mail/ImportantListSubject.svelte';
 	import {
 		LABEL_NOT_IMPORTANT,
 		LABEL_SEEN,
@@ -126,17 +125,9 @@
 
 	const mobileRowGestures = $derived(supportsMobileListGestures());
 
-	const listMarkerTouch = createImportantMarkerTouchPick({
-		canPick: () => !settings.reduceMotion && !hasPreciseHover(),
-		onCommitted: () => {
-			suppressRowNavigationUntil = Date.now() + 450;
-		}
-	});
-
 	$effect(() => {
 		void $page.url.pathname;
 		importantMarkerHoverId = null;
-		listMarkerTouch.onPointerCancel();
 		if (rainbowHoverTimeout) {
 			clearTimeout(rainbowHoverTimeout);
 			rainbowHoverTimeout = null;
@@ -291,7 +282,24 @@
 
 	function isImportantSubjectTouchTarget(event: PointerEvent): boolean {
 		const target = event.target;
-		return target instanceof Element && target.closest('.z-important-subject-touch') !== null;
+		return (
+			target instanceof Element &&
+			(target.closest('.z-important-list-subject') !== null ||
+				target.closest('.z-important-color-chip') !== null)
+		);
+	}
+
+	function openListMessage(messageId: string, href: string) {
+		if (mail.hasSelection) {
+			mail.toggleMessageSelection(messageId);
+			return;
+		}
+		if (Date.now() < suppressRowNavigationUntil) return;
+		void goto(href);
+	}
+
+	function suppressListNavigationBriefly() {
+		suppressRowNavigationUntil = Date.now() + 450;
 	}
 
 	function swipeContext(message: MessagePreview, routeId: string) {
@@ -932,6 +940,11 @@
 			)}
 			{@const isUnread = message.unread}
 			{@const subjectImportant = showImportantPresentation(message, routeId)}
+			{@const mobileImportantPick =
+				subjectImportant &&
+				mobileRowGestures &&
+				canPickImportantRainbow(routeId) &&
+				!settings.reduceMotion}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
 			{@const rowHref = listMessageHref(message, routeId)}
 			{@const isCurrent = currentMessageId === message.id}
@@ -955,81 +968,98 @@
 					</div>
 				{/if}
 				{#snippet rowLink()}
-					<a
-						href={rowHref}
-						class={listRowLinkClass(isCurrent)}
-						data-hide-active-indicator
-						draggable={mobileRowGestures ? 'false' : undefined}
-						aria-current={isCurrent ? 'page' : undefined}
-						aria-label="{isUnread ? `${LABEL_UNSEEN}. ` : ''}{subjectText} — {senderLabel}, {timeLabel}"
-						oncontextmenu={(event) => {
-							if (supportsMobileListGestures()) event.preventDefault();
-						}}
-						onclick={(event) => handleRowLinkClick(message.id, event)}
-						onpointerenter={(event) => {
-							if (!subjectImportant) return;
-							handleRainbowPointerEnter(message.id, event.currentTarget);
-						}}
-						onpointerleave={(event) => {
-							if (!subjectImportant) return;
-							handleRainbowPointerLeave(message.id, event.currentTarget, event, routeId);
-						}}
-					>
-						<div class="z-mail-list-row-copy min-w-0 flex-1">
-							<p class={listSenderClass(isUnread)}>{senderLabel}</p>
-							<p
-								class={cn(
-									listSubjectClass(isUnread, subjectImportant),
-									subjectImportant &&
-										mobileRowGestures &&
-										canPickImportantRainbow(routeId) &&
-										'z-important-subject-touch'
-								)}
-								onpointerdowncapture={(event) => {
-									if (!subjectImportant || !canPickImportantRainbow(routeId)) return;
-									event.stopPropagation();
-								}}
-								onpointerdown={(event) => {
-									if (!subjectImportant || !canPickImportantRainbow(routeId)) return;
-									event.stopPropagation();
-									listMarkerTouch.onPointerDown(message.id, event);
-								}}
-								onpointermove={listMarkerTouch.onPointerMove}
-								onpointerup={(event) => {
-									if (!subjectImportant || !canPickImportantRainbow(routeId)) return;
-									listMarkerTouch.onPointerUp(message.id, event);
-								}}
-								onpointercancel={listMarkerTouch.onPointerCancel}
+					{#if mobileImportantPick}
+						<div
+							class={cn(listRowLinkClass(isCurrent), 'z-mail-list-row-split !gap-0 !py-0')}
+							data-hide-active-indicator
+						>
+							<a
+								href={rowHref}
+								class="group/message z-list-row flex w-full min-w-0 items-start gap-3 px-4 pt-2.5 pb-1 text-left no-underline transition-colors"
+								draggable="false"
+								aria-current={isCurrent ? 'page' : undefined}
+								aria-label="{isUnread ? `${LABEL_UNSEEN}. ` : ''}{subjectText} — {senderLabel}, {timeLabel}"
+								oncontextmenu={(event) => event.preventDefault()}
+								onclick={(event) => handleRowLinkClick(message.id, event)}
 							>
-								{#if subjectImportant}
-									{#key importantMarker.highlightInstanceKey(message.id)}
-										<ImportantSubjectHighlight
-											messageId={message.id}
-											instanceKey={importantMarker.highlightInstanceKey(message.id)}
-											surface="list"
-										>
-											{subjectText}
-										</ImportantSubjectHighlight>
-									{/key}
-								{:else}
+								<div class="z-mail-list-row-copy min-w-0 flex-1">
+									<p class={listSenderClass(isUnread)}>{senderLabel}</p>
+									<time class={listTimeClass} datetime={message.receivedAt}>
+										{timeLabel}
+									</time>
+								</div>
+								{#if message.hasAttachment || message.replied}
+									<div class="flex items-center gap-1 shrink-0 text-fg-subtle">
+										{#if message.replied}
+											<Reply class="mt-0.5 size-4" aria-hidden="true" />
+										{/if}
+										{#if message.hasAttachment}
+											<Paperclip class="mt-0.5 size-4" aria-hidden="true" />
+										{/if}
+									</div>
+								{/if}
+							</a>
+							<div class="w-full px-4 pb-2.5">
+								<ImportantListSubject
+									messageId={message.id}
 									{subjectText}
-								{/if}
-							</p>
-							<time class={listTimeClass} datetime={message.receivedAt}>
-								{timeLabel}
-							</time>
-						</div>
-						{#if message.hasAttachment || message.replied}
-							<div class="flex items-center gap-1 shrink-0 text-fg-subtle">
-								{#if message.replied}
-									<Reply class="mt-0.5 size-4" aria-hidden="true" />
-								{/if}
-								{#if message.hasAttachment}
-									<Paperclip class="mt-0.5 size-4" aria-hidden="true" />
-								{/if}
+									unread={isUnread}
+									important={subjectImportant}
+									mobilePick
+									subjectClass={listSubjectClass(isUnread, subjectImportant)}
+									onOpen={() => openListMessage(message.id, rowHref)}
+									onPickCommitted={suppressListNavigationBriefly}
+								/>
 							</div>
-						{/if}
-					</a>
+						</div>
+					{:else}
+						<a
+							href={rowHref}
+							class={listRowLinkClass(isCurrent)}
+							data-hide-active-indicator
+							draggable={mobileRowGestures ? 'false' : undefined}
+							aria-current={isCurrent ? 'page' : undefined}
+							aria-label="{isUnread ? `${LABEL_UNSEEN}. ` : ''}{subjectText} — {senderLabel}, {timeLabel}"
+							oncontextmenu={(event) => {
+								if (supportsMobileListGestures()) event.preventDefault();
+							}}
+							onclick={(event) => handleRowLinkClick(message.id, event)}
+							onpointerenter={(event) => {
+								if (!subjectImportant) return;
+								handleRainbowPointerEnter(message.id, event.currentTarget);
+							}}
+							onpointerleave={(event) => {
+								if (!subjectImportant) return;
+								handleRainbowPointerLeave(message.id, event.currentTarget, event, routeId);
+							}}
+						>
+							<div class="z-mail-list-row-copy min-w-0 flex-1">
+								<p class={listSenderClass(isUnread)}>{senderLabel}</p>
+								<ImportantListSubject
+									messageId={message.id}
+									{subjectText}
+									unread={isUnread}
+									important={subjectImportant}
+									mobilePick={false}
+									subjectClass={listSubjectClass(isUnread, subjectImportant)}
+									onOpen={() => openListMessage(message.id, rowHref)}
+								/>
+								<time class={listTimeClass} datetime={message.receivedAt}>
+									{timeLabel}
+								</time>
+							</div>
+							{#if message.hasAttachment || message.replied}
+								<div class="flex items-center gap-1 shrink-0 text-fg-subtle">
+									{#if message.replied}
+										<Reply class="mt-0.5 size-4" aria-hidden="true" />
+									{/if}
+									{#if message.hasAttachment}
+										<Paperclip class="mt-0.5 size-4" aria-hidden="true" />
+									{/if}
+								</div>
+							{/if}
+						</a>
+					{/if}
 				{/snippet}
 				{#if mobileRowGestures}
 					<SwipeableListRow

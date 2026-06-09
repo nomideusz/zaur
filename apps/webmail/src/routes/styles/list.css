@@ -429,6 +429,42 @@
 		pointer-events: none;
 	}
 
+	.z-important-list-subject {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.z-important-color-chip {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		margin-top: -0.125rem;
+		border: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
+		border-radius: var(--radius-md);
+		background-color: var(--z-surface);
+		transition:
+			border-color var(--z-motion-fast) var(--z-ease-standard),
+			background-color var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-important-color-chip:active {
+		background-color: var(--z-surface-sunken);
+	}
+
+	.z-important-color-chip__swatch {
+		width: 0.875rem;
+		height: 0.875rem;
+		border-radius: 999px;
+		box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--z-fg) 12%, transparent);
+	}
+
+	.z-mail-list-row-split {
+		width: 100%;
+		min-width: 0;
+	}
+
 	@media (max-width: 767px) {
 		.z-mail-list-row-copy {
 			grid-template-columns: minmax(0, 1fr);
@@ -520,8 +556,13 @@
 	}
 
 	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row > :where(a),
-	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a),
+	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground > .z-mail-list-row-split {
 		padding: 0.625rem 0.875rem 0.625rem 0 !important;
+	}
+
+	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row-split :where(a, .z-important-list-subject) {
+		padding-inline: 0 !important;
 	}
 
 	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row,
