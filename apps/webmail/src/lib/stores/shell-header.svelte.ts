@@ -1,5 +1,4 @@
 import type { Component } from 'svelte';
-import type { MessageListReadFilter } from '$lib/components/mail/message-list-props';
 
 export type MailHeaderContext = {
 	mailboxName: string;
@@ -15,8 +14,6 @@ export type MailHeaderContext = {
 
 export type MailListToolbarContext = {
 	mailboxRouteId: string;
-	readFilter: MessageListReadFilter;
-	onReadFilterChange: (filter: MessageListReadFilter) => void;
 	disabled: boolean;
 };
 

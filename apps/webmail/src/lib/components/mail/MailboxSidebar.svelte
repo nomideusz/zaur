@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { parseMailContext, mailListHref } from '$lib/mail/routes';
+	import {
+		isPrimarySidebarMailbox,
+		primarySidebarMailboxRank
+	} from '$lib/mail/mailboxes';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { cn } from '$lib/utils/cn';
 
@@ -10,21 +14,12 @@
 
 	let { class: className = '' }: Props = $props();
 
-	const primaryOrder = new Map([
-		['inbox', 0],
-		['drafts', 1],
-		['sent', 2],
-		['archive', 3],
-		['junk', 4],
-		['trash', 5]
-	]);
-
 	const primaryItems = $derived.by(() => {
 		return [...mail.mailboxes]
-			.filter((mb) => primaryOrder.has(mb.role ?? ''))
+			.filter((mb) => isPrimarySidebarMailbox(mb.role))
 			.sort((a, b) => {
-				const aRank = primaryOrder.get(a.role ?? '') ?? 99;
-				const bRank = primaryOrder.get(b.role ?? '') ?? 99;
+				const aRank = primarySidebarMailboxRank(a.role);
+				const bRank = primarySidebarMailboxRank(b.role);
 				return aRank - bRank || a.name.localeCompare(b.name);
 			});
 	});

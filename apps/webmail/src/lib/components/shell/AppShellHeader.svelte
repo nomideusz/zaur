@@ -11,12 +11,15 @@
 	import ToolSwitcher from '$lib/components/shell/ToolSwitcher.svelte';
 	import UserMenu from '$lib/components/shell/UserMenu.svelte';
 	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
-	import MessageListToolbar from '$lib/components/mail/MessageListToolbar.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
 	import { appConfig } from '$lib/config';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
 	import { isMailPath, mailListHref, parseMailContext } from '$lib/mail/routes';
+	import {
+		isPrimarySidebarMailbox,
+		primarySidebarMailboxRank
+	} from '$lib/mail/mailboxes';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
@@ -60,21 +63,12 @@
 		sectionLinks.map((link) => ({ value: link.href, label: link.label }))
 	);
 
-	const primaryOrder = new Map([
-		['inbox', 0],
-		['drafts', 1],
-		['sent', 2],
-		['archive', 3],
-		['junk', 4],
-		['trash', 5]
-	]);
-
 	const mailboxOptions = $derived(
 		[...mail.mailboxes]
-			.filter((mb) => primaryOrder.has(mb.role ?? ''))
+			.filter((mb) => isPrimarySidebarMailbox(mb.role))
 			.sort((a, b) => {
-				const aRank = primaryOrder.get(a.role ?? '') ?? 99;
-				const bRank = primaryOrder.get(b.role ?? '') ?? 99;
+				const aRank = primarySidebarMailboxRank(a.role);
+				const bRank = primarySidebarMailboxRank(b.role);
 				return aRank - bRank || a.name.localeCompare(b.name);
 			})
 			.map((mb) => ({
@@ -178,20 +172,6 @@
 		{#if onSettingsRoute}
 			<div class="md:hidden">
 				<SettingsSearch />
-			</div>
-		{:else if mailListToolbarActive && mailListToolbar}
-			<!-- Mobile: segmented read filter fills the row between folder + actions. -->
-			<div class="md:hidden">
-				<MessageListToolbar
-					class="w-full min-w-0"
-					surface="mobile"
-					readFilter={mailListToolbar.readFilter}
-					onReadFilterChange={mailListToolbar.onReadFilterChange}
-					disabled={mailListToolbar.disabled}
-				/>
-			</div>
-			<div class="hidden w-full min-w-0 md:block">
-				<GlobalSearch />
 			</div>
 		{:else if !onCalendarRoute}
 			<div class="w-full min-w-0">

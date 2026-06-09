@@ -3,9 +3,11 @@ import { describe, it } from 'node:test';
 import {
 	canMarkImportantFromMailboxRole,
 	isExcludedFromImportantSection,
+	isPrimarySidebarMailbox,
 	mailboxDisplayName,
 	mailboxRouteId,
 	moveTargetMailboxes,
+	primarySidebarMailboxRank,
 	resolveMailboxKind,
 	shouldClearImportantOnMoveTo,
 	shouldPresentImportantColors,
@@ -76,6 +78,14 @@ describe('mailboxes', () => {
 		assert.equal(shouldClearImportantOnMoveTo('junk'), true);
 		assert.equal(shouldClearImportantOnMoveTo('archive'), false);
 		assert.equal(shouldClearImportantOnMoveTo('inbox'), false);
+	});
+
+	it('orders primary sidebar mailboxes with Important under Inbox', () => {
+		assert.equal(primarySidebarMailboxRank('inbox'), 0);
+		assert.equal(primarySidebarMailboxRank('important'), 1);
+		assert.equal(primarySidebarMailboxRank('drafts'), 2);
+		assert.equal(isPrimarySidebarMailbox('important'), true);
+		assert.equal(isPrimarySidebarMailbox('scheduled'), false);
 	});
 
 	it('excludes trash and spam from important section surfacing', () => {

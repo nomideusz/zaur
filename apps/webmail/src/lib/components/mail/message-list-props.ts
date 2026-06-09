@@ -1,7 +1,5 @@
 import type { MessagePreview } from '$lib/types/mail';
 
-export type MessageListReadFilter = 'all' | 'unread' | 'read' | 'important';
-
 export type MessageListProps = {
 	messages: MessagePreview[];
 	mailboxName: string;

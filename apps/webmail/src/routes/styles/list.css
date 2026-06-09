@@ -187,11 +187,6 @@
 		padding-inline: var(--z-mail-list-checkbox-inset, 1.375rem);
 	}
 
-	.z-mail-view .z-mail-list-pane-header .z-mail-list-toolbar .z-segmented {
-		flex: 0 0 auto;
-		width: auto;
-	}
-
 	.z-mail-view .z-mail-list-pane-header .z-mail-list-toolbar .z-mail-list-toolbar__selectors,
 	.z-mail-list-bulk-bar__selectors {
 		display: flex;

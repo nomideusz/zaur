@@ -113,6 +113,34 @@ export function mailboxKindOrder(kind: MailboxKind | undefined): number {
 	return MAILBOX_KIND_ORDER[kind] ?? MAILBOX_KIND_ORDER.custom;
 }
 
+/** Roles shown in the mail sidebar and mobile mailbox picker, in display order. */
+export const PRIMARY_SIDEBAR_MAILBOX_ROLES = [
+	'inbox',
+	'important',
+	'drafts',
+	'sent',
+	'archive',
+	'junk',
+	'trash'
+] as const satisfies readonly MailboxRole[];
+
+export type PrimarySidebarMailboxRole = (typeof PRIMARY_SIDEBAR_MAILBOX_ROLES)[number];
+
+const PRIMARY_SIDEBAR_ROLE_ORDER = new Map(
+	PRIMARY_SIDEBAR_MAILBOX_ROLES.map((role, index) => [role, index])
+);
+
+export function isPrimarySidebarMailbox(
+	role: MailboxRole | undefined
+): role is PrimarySidebarMailboxRole {
+	return !!role && PRIMARY_SIDEBAR_ROLE_ORDER.has(role);
+}
+
+export function primarySidebarMailboxRank(role: MailboxRole | undefined): number {
+	if (!role) return 99;
+	return PRIMARY_SIDEBAR_ROLE_ORDER.get(role) ?? 99;
+}
+
 export function mailboxKindOrderForMailbox(mailbox: {
 	name: string;
 	role?: MailboxRole;

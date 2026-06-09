@@ -21,8 +21,7 @@
 	} from '$lib/components/ui/SwipeableListRow.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import type {
-		MessageListProps,
-		MessageListReadFilter
+		MessageListProps
 	} from '$lib/components/mail/message-list-props';
 	import {
 		activeMessageId,
@@ -125,7 +124,6 @@
 		subjectEl: HTMLElement | null;
 		started: boolean;
 	} | null>(null);
-	let readFilter = $state<MessageListReadFilter>('all');
 
 	let rainbowHoverTimeout: ReturnType<typeof setTimeout> | null = null;
 	let isSamplingRainbow = $state(false);
@@ -136,7 +134,6 @@
 	$effect(() => {
 		void $page.url.pathname;
 		importantMarkerHoverId = null;
-		readFilter = 'all';
 		cancelMobileImportantRainbowPick();
 		if (rainbowHoverTimeout) {
 			clearTimeout(rainbowHoverTimeout);
@@ -228,18 +225,6 @@
 		}
 		return collapsed;
 	});
-	const filteredListMessages = $derived.by(() => {
-		if (readFilter === 'unread') {
-			return listMessages.filter((message) => isNewUnreadListRow(message));
-		}
-		if (readFilter === 'read') {
-			return listMessages.filter((message) => !isNewUnreadListRow(message));
-		}
-		if (readFilter === 'important') {
-			return listMessages.filter((message) => message.important);
-		}
-		return listMessages;
-	});
 	const currentMessageId = $derived(
 		activeMessageId(
 			listMessages,
@@ -257,26 +242,11 @@
 	const showFlatEmpty = $derived(!loading && !error && messages.length === 0);
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const allVisibleSelected = $derived(
-		filteredListMessages.length > 0 &&
-			filteredListMessages.every((message) => selectedIds.includes(message.id))
+		listMessages.length > 0 &&
+			listMessages.every((message) => selectedIds.includes(message.id))
 	);
 	const bulkSelectEnabled = $derived(!!mailboxRouteId);
-	const bulkSelectionMessages = $derived(filteredListMessages);
-	const showFilteredEmpty = $derived(
-		sectionMode &&
-			readFilter !== 'all' &&
-			!loading &&
-			!error &&
-			listMessages.length > 0 &&
-			filteredListMessages.length === 0
-	);
-	const filteredEmptyMessage = $derived(
-		readFilter === 'unread'
-			? 'No unseen messages.'
-			: readFilter === 'important'
-				? 'No important messages.'
-				: 'No seen messages.'
-	);
+	const bulkSelectionMessages = $derived(listMessages);
 
 	const listToolbarDisabled = $derived(loading || !!error || !messages.length);
 
@@ -290,10 +260,6 @@
 
 		const generation = shellHeader.setMailListToolbar({
 			mailboxRouteId,
-			readFilter,
-			onReadFilterChange: (filter) => {
-				readFilter = filter;
-			},
 			disabled: listToolbarDisabled
 		});
 		return () => shellHeader.clearMailListToolbar(generation);
@@ -923,7 +889,7 @@
 		return dupes;
 	}
 
-	const flatListDuplicateSubjects = $derived(duplicateSubjectKeys(filteredListMessages));
+	const flatListDuplicateSubjects = $derived(duplicateSubjectKeys(listMessages));
 
 	function sectionCanShowMore(sectionId: string): boolean {
 		const visible =
@@ -999,11 +965,6 @@
 			{:else if mailboxRouteId}
 				<MessageListToolbar
 					class="w-full min-w-0"
-					surface="pane"
-					{readFilter}
-					onReadFilterChange={(filter) => {
-						readFilter = filter;
-					}}
 					disabled={listToolbarDisabled}
 				/>
 			{:else}
@@ -1143,11 +1104,9 @@
 				{mailboxRouteId}
 				{onRetry}
 			/>
-		{:else if sectionMode && showFilteredEmpty}
-			<p class="px-4 py-8 text-sm text-fg-muted">{filteredEmptyMessage}</p>
-		{:else if filteredListMessages.length > 0}
+		{:else if listMessages.length > 0}
 			<ul class="z-mail-list-cards">
-				{#each filteredListMessages as message (message.id)}
+				{#each listMessages as message (message.id)}
 					{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId)}
 				{/each}
 			</ul>
