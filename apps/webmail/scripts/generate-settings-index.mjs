@@ -21,7 +21,7 @@ const seen = new Set();
 for (const [file, href] of files) {
 	const src = fs.readFileSync(file, 'utf8');
 
-	const rowRe = /<(SettingsRow|SettingsField)\s+[^>]*title="([^"]+)"[^>]*(?:\s+description="([^"]*)")?/g;
+	const rowRe = /<(SettingsRow|SettingsField|SettingsFormToggle)\s+[^>]*title="([^"]+)"[^>]*(?:\s+description="([^"]*)")?/g;
 	let m;
 	while ((m = rowRe.exec(src)) !== null) {
 		const title = m[2];

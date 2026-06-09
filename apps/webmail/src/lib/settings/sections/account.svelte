@@ -2,6 +2,8 @@
 	import { onMount } from 'svelte';
 	import PushNotificationStatus from '$lib/components/settings/PushNotificationStatus.svelte';
 	import SettingsField from '$lib/components/settings/SettingsField.svelte';
+	import SettingsFormGroup from '$lib/components/settings/SettingsFormGroup.svelte';
+	import SettingsFormToggle from '$lib/components/settings/SettingsFormToggle.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
@@ -161,8 +163,8 @@
 	}
 </script>
 
-<SettingsGroup title="Profile">
-	<SettingsField title="Display name">
+<SettingsFormGroup title="Profile" description="How you appear when you send mail.">
+	<SettingsField title="Display name" description="Shown to recipients on messages you send.">
 		{#snippet children({ id })}
 			<input
 				{id}
@@ -175,11 +177,12 @@
 		{/snippet}
 	</SettingsField>
 
-	<SettingsField title="Signature">
+	<SettingsField title="Signature" description="Appended to the bottom of new messages.">
 		{#snippet children({ id })}
 			<textarea
 				{id}
 				class="z-input resize-y"
+				rows={4}
 				value={settings.signature}
 				placeholder="Best regards,&#10;Your name"
 				oninput={(e) => settings.setSignature(e.currentTarget.value)}
@@ -187,13 +190,13 @@
 		{/snippet}
 	</SettingsField>
 
-	<SettingsRow kind="toggle" title="Include signature">
+	<SettingsFormToggle title="Include signature" description="Add your signature when composing.">
 		<Switch
 			checked={settings.useSignature}
 			onchange={(checked) => settings.setUseSignature(checked)}
 		/>
-	</SettingsRow>
-</SettingsGroup>
+	</SettingsFormToggle>
+</SettingsFormGroup>
 
 <SettingsGroup title="Account">
 	<SettingsRow kind="info" title="Primary address">
