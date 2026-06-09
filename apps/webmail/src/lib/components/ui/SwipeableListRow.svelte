@@ -28,6 +28,8 @@
 		leading?: SwipeAction[];
 		trailing?: SwipeAction[];
 		longPressEnabled?: boolean;
+		/** When true, long-press selection is skipped (e.g. important-subject color pick). */
+		longPressExempt?: (event: PointerEvent) => boolean;
 		onLongPress?: (event: PointerEvent, target: HTMLElement) => void;
 		onLongPressEnd?: (event: PointerEvent) => void;
 		onLongPressCancel?: (event: PointerEvent) => void;
@@ -40,6 +42,7 @@
 		leading = [],
 		trailing = [],
 		longPressEnabled = false,
+		longPressExempt,
 		onLongPress,
 		onLongPressEnd,
 		onLongPressCancel,
@@ -111,7 +114,12 @@
 			startOffset = offset;
 		}
 
-		if (longPressEnabled && onLongPress && event.pointerType !== 'mouse') {
+		if (
+			longPressEnabled &&
+			onLongPress &&
+			event.pointerType !== 'mouse' &&
+			!longPressExempt?.(event)
+		) {
 			const longPressEvent = event;
 			// Capture the element now — `currentTarget` is null once the deferred timer fires.
 			const longPressTarget = event.currentTarget as HTMLElement;

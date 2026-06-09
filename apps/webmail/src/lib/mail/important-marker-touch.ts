@@ -27,6 +27,15 @@ export function createImportantMarkerTouchPick(options: {
 		active = false;
 	}
 
+	function releaseCapture(el: HTMLElement, pointerId?: number) {
+		if (pointerId == null) return;
+		try {
+			if (el.hasPointerCapture(pointerId)) el.releasePointerCapture(pointerId);
+		} catch {
+			// capture may already be released
+		}
+	}
+
 	return {
 		onPointerDown(messageId: string, event: PointerEvent) {
 			if (!options.canPick()) return;
@@ -37,6 +46,11 @@ export function createImportantMarkerTouchPick(options: {
 			clearTimer();
 			pending = { messageId, el };
 			active = false;
+			try {
+				el.setPointerCapture(event.pointerId);
+			} catch {
+				// Pointer capture may fail on some browsers for non-primary pointers.
+			}
 			timer = setTimeout(() => {
 				if (!pending || pending.messageId !== messageId) return;
 				active = true;
@@ -63,6 +77,7 @@ export function createImportantMarkerTouchPick(options: {
 
 			const wasActive = active && pending?.messageId === messageId;
 			clearTimer();
+			releaseCapture(el, event.pointerId);
 
 			if (wasActive) {
 				event.preventDefault();
@@ -74,7 +89,8 @@ export function createImportantMarkerTouchPick(options: {
 			reset();
 		},
 
-		onPointerCancel() {
+		onPointerCancel(event?: PointerEvent) {
+			if (pending) releaseCapture(pending.el, event?.pointerId);
 			if (active && pending) {
 				importantMarker.cancelTouchPick(pending.el, pending.messageId);
 			}

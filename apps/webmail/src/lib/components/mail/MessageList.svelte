@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
-	import { tick, untrack } from 'svelte';
+	import { untrack } from 'svelte';
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
 	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
 	import MessageListToolbar from '$lib/components/mail/MessageListToolbar.svelte';
@@ -52,6 +52,7 @@
 		IMPORTANT_MARKER_HOVER_DELAY_MS,
 		shouldCommitImportantMarkerPick
 	} from '$lib/mail/important-marker.svelte';
+	import { createImportantMarkerTouchPick } from '$lib/mail/important-marker-touch';
 	import ImportantSubjectHighlight from '$lib/components/mail/ImportantSubjectHighlight.svelte';
 	import {
 		LABEL_NOT_IMPORTANT,
@@ -119,23 +120,23 @@
 	let importantMarkerHoverId = $state<string | null>(null);
 	/** After bulk-select long-press, block the following link navigation. */
 	let suppressRowNavigationUntil = 0;
-	/** Touch rainbow pick in progress after bulk long-press on an important row. */
-	let mobileImportantRainbowPick = $state<{
-		messageId: string;
-		subjectEl: HTMLElement | null;
-		started: boolean;
-	} | null>(null);
-
 	let rainbowHoverTimeout: ReturnType<typeof setTimeout> | null = null;
 	let isSamplingRainbow = $state(false);
 	let importantMarkerSampleStartedAt = 0;
 
 	const mobileRowGestures = $derived(supportsMobileListGestures());
 
+	const listMarkerTouch = createImportantMarkerTouchPick({
+		canPick: () => !settings.reduceMotion && !hasPreciseHover(),
+		onCommitted: () => {
+			suppressRowNavigationUntil = Date.now() + 450;
+		}
+	});
+
 	$effect(() => {
 		void $page.url.pathname;
 		importantMarkerHoverId = null;
-		cancelMobileImportantRainbowPick();
+		listMarkerTouch.onPointerCancel();
 		if (rainbowHoverTimeout) {
 			clearTimeout(rainbowHoverTimeout);
 			rainbowHoverTimeout = null;
@@ -283,77 +284,14 @@
 	);
 	const showRowCheckbox = $derived(listSelectMode);
 
-	function findImportantListSubject(messageId: string): HTMLElement | null {
-		const row = document.querySelector(
-			`.z-mail-list-row[data-message-id="${CSS.escape(messageId)}"]`
-		);
-		const subject = row?.querySelector('[data-important-subject]');
-		return subject instanceof HTMLElement ? subject : null;
-	}
-
-	function resolveImportantRainbowSubject(
-		messageId: string,
-		subjectEl: HTMLElement | null | undefined
-	): HTMLElement | null {
-		if (subjectEl?.isConnected) return subjectEl;
-		return findImportantListSubject(messageId);
-	}
-
-	function canStartMobileImportantRainbowPick(
-		message: MessagePreview,
-		routeId: string
-	): boolean {
-		return (
-			!settings.reduceMotion &&
-			!hasPreciseHover() &&
-			showImportantPresentation(message, routeId)
-		);
-	}
-
-	async function handleMobileBulkLongPress(
-		message: MessagePreview,
-		routeId: string,
-		_row: HTMLElement
-	) {
+	function handleMobileBulkLongPress(message: MessagePreview) {
 		mail.startSelection(message.id);
 		suppressRowNavigationUntil = Date.now() + 400;
-
-		if (!canStartMobileImportantRainbowPick(message, routeId)) return;
-
-		// Bulk select inserts the checkbox and re-renders the row — wait so we
-		// attach the rainbow pick to the live subject, not a detached node.
-		mobileImportantRainbowPick = { messageId: message.id, subjectEl: null, started: false };
-		await tick();
-
-		const pick = mobileImportantRainbowPick;
-		if (!pick || pick.messageId !== message.id) return;
-
-		const subject = findImportantListSubject(message.id);
-		if (!subject) {
-			mobileImportantRainbowPick = null;
-			return;
-		}
-
-		mobileImportantRainbowPick = { messageId: message.id, subjectEl: subject, started: true };
-		importantMarker.startTouchPick(subject, message.id);
 	}
 
-	function finishMobileImportantRainbowPick() {
-		const pick = mobileImportantRainbowPick;
-		mobileImportantRainbowPick = null;
-		if (!pick?.started) return;
-		const subject = resolveImportantRainbowSubject(pick.messageId, pick.subjectEl);
-		if (!subject) return;
-		importantMarker.finishTouchPick(subject, pick.messageId);
-	}
-
-	function cancelMobileImportantRainbowPick() {
-		const pick = mobileImportantRainbowPick;
-		mobileImportantRainbowPick = null;
-		if (!pick?.started) return;
-		const subject = resolveImportantRainbowSubject(pick.messageId, pick.subjectEl);
-		if (!subject) return;
-		importantMarker.cancelTouchPick(subject, pick.messageId);
+	function isImportantSubjectTouchTarget(event: PointerEvent): boolean {
+		const target = event.target;
+		return target instanceof Element && target.closest('.z-important-subject-touch') !== null;
 	}
 
 	function swipeContext(message: MessagePreview, routeId: string) {
@@ -1039,7 +977,30 @@
 					>
 						<div class="z-mail-list-row-copy min-w-0 flex-1">
 							<p class={listSenderClass(isUnread)}>{senderLabel}</p>
-							<p class={listSubjectClass(isUnread, subjectImportant)}>
+							<p
+								class={cn(
+									listSubjectClass(isUnread, subjectImportant),
+									subjectImportant &&
+										mobileRowGestures &&
+										canPickImportantRainbow(routeId) &&
+										'z-important-subject-touch'
+								)}
+								onpointerdowncapture={(event) => {
+									if (!subjectImportant || !canPickImportantRainbow(routeId)) return;
+									event.stopPropagation();
+								}}
+								onpointerdown={(event) => {
+									if (!subjectImportant || !canPickImportantRainbow(routeId)) return;
+									event.stopPropagation();
+									listMarkerTouch.onPointerDown(message.id, event);
+								}}
+								onpointermove={listMarkerTouch.onPointerMove}
+								onpointerup={(event) => {
+									if (!subjectImportant || !canPickImportantRainbow(routeId)) return;
+									listMarkerTouch.onPointerUp(message.id, event);
+								}}
+								onpointercancel={listMarkerTouch.onPointerCancel}
+							>
 								{#if subjectImportant}
 									{#key importantMarker.highlightInstanceKey(message.id)}
 										<ImportantSubjectHighlight
@@ -1077,9 +1038,8 @@
 						leading={swipeLeading}
 						trailing={swipeTrailing}
 						longPressEnabled={bulkSelectEnabled}
-						onLongPress={(_event, target) => handleMobileBulkLongPress(message, routeId, target)}
-						onLongPressEnd={() => finishMobileImportantRainbowPick()}
-						onLongPressCancel={() => cancelMobileImportantRainbowPick()}
+						longPressExempt={isImportantSubjectTouchTarget}
+						onLongPress={() => handleMobileBulkLongPress(message)}
 					>
 						{@render rowLink()}
 					</SwipeableListRow>

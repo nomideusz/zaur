@@ -48,9 +48,9 @@
 			type: 'highlight' as const,
 			color: currentColor,
 			animate: intro,
-			padding: 5,
-			strokeWidth: 1.5,
-			iterations: 2,
+			padding: 4,
+			strokeWidth: 1.25,
+			iterations: 1,
 			multiline: true,
 			animationDuration: intro ? 700 : 0
 		};
