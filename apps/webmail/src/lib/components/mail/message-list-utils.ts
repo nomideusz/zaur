@@ -44,8 +44,6 @@ export function defaultEmptyHint(mailboxRouteId: string | undefined): string | n
 			return 'Start a message and it will be saved here automatically.';
 		case 'sent':
 			return 'Messages you send will be collected here for easy reference.';
-		case 'trash':
-			return 'Deleted messages stay here until you empty Trash.';
 		default:
 			return null;
 	}

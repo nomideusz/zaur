@@ -1319,9 +1319,15 @@ body {
 
 .z-domain-pick-grid {
 	display: grid;
-	grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr));
-	gap: 0.5rem;
-	margin-top: 0.375rem;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 0.375rem;
+	margin-top: 0.5rem;
+}
+
+@media (max-width: 479px) {
+	.z-domain-pick-grid {
+		grid-template-columns: 1fr;
+	}
 }
 
 .z-domain-pick-list {
@@ -1332,12 +1338,6 @@ body {
 	border-radius: var(--radius-md);
 	background: var(--z-surface);
 	overflow: hidden;
-}
-
-.z-domain-pick-list--scroll {
-	max-height: min(18rem, 50vh);
-	overflow-y: auto;
-	overscroll-behavior: contain;
 }
 
 .z-domain-option {
@@ -1366,13 +1366,21 @@ body {
 }
 
 .z-domain-pick-grid .z-domain-option {
-	flex-direction: column;
-	align-items: flex-start;
-	gap: 0.375rem;
-	padding: 0.75rem 0.875rem;
+	flex-direction: row;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 0.625rem;
 	border: 1px solid var(--z-border);
 	border-radius: var(--radius-md);
 	background: var(--z-surface);
+}
+
+.z-domain-pick-grid .z-domain-option__addr {
+	font-size: 0.75rem;
+}
+
+.z-domain-pick-grid .z-domain-option__status {
+	font-size: 0.6875rem;
 }
 
 button.z-domain-option.available {

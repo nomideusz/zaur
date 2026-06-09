@@ -38,7 +38,6 @@ let checkAbortController = null;
 let cachedDomains = [];
 let availabilityMap = new Map();
 let mountedListUsername = '';
-const DOMAIN_LIST_SCROLL_THRESHOLD = 8;
 
 const STRENGTH_LABELS = ['Weak', 'Fair', 'Good', 'Strong', 'Very strong'];
 
@@ -111,15 +110,6 @@ function renderStatus(status, isSelected) {
 
 function sortedDomains() {
   return [...cachedDomains].sort((a, b) => a.name.localeCompare(b.name));
-}
-
-function syncDomainListScroll() {
-  const list = resultsContainer.querySelector('.z-domain-pick-list');
-  if (!list) return;
-  list.classList.toggle(
-    'z-domain-pick-list--scroll',
-    cachedDomains.length > DOMAIN_LIST_SCROLL_THRESHOLD,
-  );
 }
 
 function updateDomainPickLabel(statuses) {
@@ -207,7 +197,7 @@ function mountDomainList(query, statuses) {
   const domains = sortedDomains();
   resultsContainer.innerHTML = `
     <p class="z-type-label z-domain-pick-label"></p>
-    <div class="z-domain-pick-list" role="listbox" aria-label="Available addresses">${domains
+    <div class="z-domain-pick-grid z-domain-pick" role="listbox" aria-label="Available addresses">${domains
       .map((d) => {
         const status = statuses.get(d.id) || 'pending';
         const isSelected = selectedResult?.domainId === d.id;
@@ -216,12 +206,11 @@ function mountDomainList(query, statuses) {
       .join('')}</div>`;
   mountedListUsername = query;
   updateDomainPickLabel(statuses);
-  syncDomainListScroll();
   bindDomainOptions();
 }
 
 function patchDomainList(query, statuses) {
-  const list = resultsContainer.querySelector('.z-domain-pick-list');
+  const list = resultsContainer.querySelector('.z-domain-pick');
   if (!list) {
     mountDomainList(query, statuses);
     return;
@@ -259,7 +248,7 @@ function renderSearchResults(query, statuses) {
     return;
   }
 
-  if (!resultsContainer.querySelector('.z-domain-pick-list')) {
+  if (!resultsContainer.querySelector('.z-domain-pick')) {
     mountDomainList(query, statuses);
     return;
   }
