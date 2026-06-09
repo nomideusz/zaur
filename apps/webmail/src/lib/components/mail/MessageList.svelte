@@ -1092,6 +1092,7 @@
 										<ImportantSubjectHighlight
 											messageId={message.id}
 											instanceKey={importantMarker.highlightInstanceKey(message.id)}
+											surface="list"
 										>
 											{subjectText}
 										</ImportantSubjectHighlight>

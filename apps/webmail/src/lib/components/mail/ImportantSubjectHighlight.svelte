@@ -2,7 +2,7 @@
 	import { browser } from '$app/environment';
 	import { tick, untrack } from 'svelte';
 	import { annotate } from 'rough-notation';
-	import { importantMarker } from '$lib/mail/important-marker.svelte';
+	import { importantMarker, type ImportantIntroSurface } from '$lib/mail/important-marker.svelte';
 	import { IMPORTANT_MARKER_TEXT, markerHighlightColor } from '$lib/mail/important-marker-colors';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -17,11 +17,13 @@
 		messageId: string;
 		/** From importantMarker.highlightInstanceKey — bumps when newly marked Important. */
 		instanceKey: string;
+		/** Where this highlight renders — intro plays once per surface per mark. */
+		surface: ImportantIntroSurface;
 		class?: string;
 		children?: import('svelte').Snippet;
 	}
 
-	let { messageId, instanceKey, class: className = '', children }: Props = $props();
+	let { messageId, instanceKey, surface, class: className = '', children }: Props = $props();
 
 	let target = $state<HTMLElement | null>(null);
 	let annotation = $state<RoughAnnotation | null>(null);
@@ -89,10 +91,12 @@
 		void instanceKey;
 		const el = target;
 		const id = messageId;
+		const where = surface;
 
 		let cancelled = false;
 		let frameId = 0;
 		let introTimer: ReturnType<typeof setTimeout> | null = null;
+		let introStarted = false;
 
 		void (async () => {
 			await tick();
@@ -105,7 +109,7 @@
 				const intro =
 					!sampling &&
 					!settings.reduceMotion &&
-					importantMarker.shouldIntroAnimate(id);
+					importantMarker.shouldIntroAnimate(id, where);
 				const config = annotationConfig(startColor, intro);
 				const ann = annotate(el, config);
 				applyStableSeed(ann, id);
@@ -113,14 +117,15 @@
 				ann.show();
 
 				if (intro) {
-					// Mark shown at start so pagination/unmount mid-animation does not replay.
-					importantMarker.markHighlightShown(id);
+					introStarted = true;
+					// Mark this surface at start so list pagination does not replay.
+					importantMarker.markIntroShown(id, where);
 					introTimer = setTimeout(
-						() => importantMarker.completeIntroAnimation(id),
+						() => importantMarker.completeIntroAnimation(id, where),
 						config.animationDuration
 					);
 				} else {
-					importantMarker.markHighlightShown(id);
+					importantMarker.markIntroShown(id, where);
 				}
 			});
 		})();
@@ -130,10 +135,9 @@
 			cancelAnimationFrame(frameId);
 			if (introTimer) {
 				clearTimeout(introTimer);
-				importantMarker.completeIntroAnimation(id);
-			} else if (importantMarker.shouldIntroAnimate(id)) {
-				// Unmount before rAF (e.g. fast page flip) — do not leave intro queued.
-				importantMarker.completeIntroAnimation(id);
+				importantMarker.completeIntroAnimation(id, where);
+			} else if (introStarted) {
+				importantMarker.completeIntroAnimation(id, where);
 			}
 		};
 	});

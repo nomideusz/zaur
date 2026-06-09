@@ -9,6 +9,12 @@ const SHOWN_STORAGE_KEY = 'zaur:important-marker-shown';
 const PICK_CYCLE_MS = 420;
 const PICK_HUE_STEP = 4;
 
+export type ImportantIntroSurface = 'list' | 'reader';
+
+function introShownKey(messageId: string, generation: number, surface: ImportantIntroSurface): string {
+	return `${messageId}:${generation}:${surface}`;
+}
+
 /** Wait before hue cycling starts — avoids accidental picks when scanning the list. */
 export const IMPORTANT_MARKER_HOVER_DELAY_MS = 550;
 /** Minimum time cycling before pointer-leave commits a pick. */
@@ -83,22 +89,22 @@ function writeStoredPicks(picks: Record<string, MarkerPick>) {
 	localStorage.setItem(STORAGE_KEY, JSON.stringify(picks));
 }
 
-function readShownHighlightIds(): Set<string> {
+function readIntroShownKeys(): Set<string> {
 	if (!browser) return new Set();
 	try {
 		const raw = sessionStorage.getItem(SHOWN_STORAGE_KEY);
 		if (!raw) return new Set();
 		const parsed = JSON.parse(raw) as unknown;
 		if (!Array.isArray(parsed)) return new Set();
-		return new Set(parsed.filter((id): id is string => typeof id === 'string'));
+		return new Set(parsed.filter((key): key is string => typeof key === 'string'));
 	} catch {
 		return new Set();
 	}
 }
 
-function writeShownHighlightIds(ids: Set<string>) {
+function writeIntroShownKeys(keys: Set<string>) {
 	if (!browser) return;
-	sessionStorage.setItem(SHOWN_STORAGE_KEY, JSON.stringify([...ids]));
+	sessionStorage.setItem(SHOWN_STORAGE_KEY, JSON.stringify([...keys]));
 }
 
 function picksEqual(a: MarkerPick, b: MarkerPick): boolean {
@@ -119,13 +125,13 @@ class ImportantMarkerStore {
 
 	private hoverSamplePick = new Map<string, MarkerPick>();
 	private pickInterval: ReturnType<typeof setInterval> | null = null;
-	private shownHighlightIds = new Set<string>();
-	private introHighlightIds = new Set<string>();
+	/** `${messageId}:${generation}:${surface}` keys that already played the intro draw. */
+	private introShownKeys = new Set<string>();
 	/** Bumped when a message is newly marked Important — forces a fresh highlight + intro. */
 	introGeneration = $state<Record<string, number>>({});
 
 	init() {
-		this.shownHighlightIds = readShownHighlightIds();
+		this.introShownKeys = readIntroShownKeys();
 		this.reload();
 	}
 
@@ -147,35 +153,57 @@ class ImportantMarkerStore {
 		return this.picked[messageId] !== undefined;
 	}
 
-	markForIntroAnimation(messageId: string) {
-		this.introHighlightIds.add(messageId);
-		// Allow a fresh intro when re-marking Important in the same session.
-		this.shownHighlightIds.delete(messageId);
-		writeShownHighlightIds(this.shownHighlightIds);
+	markForIntroAnimation(
+		messageId: string,
+		options: { introInReader?: boolean } = {}
+	) {
 		this.introGeneration = {
 			...this.introGeneration,
 			[messageId]: (this.introGeneration[messageId] ?? 0) + 1
 		};
+		// Bulk marks animate in the list only — opening each message should stay static.
+		if (options.introInReader === false) {
+			this.markIntroShown(messageId, 'reader');
+		}
 	}
 
-	shouldIntroAnimate(messageId: string): boolean {
-		return this.introHighlightIds.has(messageId) && !this.shownHighlightIds.has(messageId);
+	private introGenerationFor(messageId: string): number {
+		return this.introGeneration[messageId] ?? 0;
+	}
+
+	private hasIntroShown(messageId: string, surface: ImportantIntroSurface): boolean {
+		const gen = this.introGenerationFor(messageId);
+		if (gen === 0) return true;
+		return this.introShownKeys.has(introShownKey(messageId, gen, surface));
+	}
+
+	shouldIntroAnimate(messageId: string, surface: ImportantIntroSurface): boolean {
+		const gen = this.introGenerationFor(messageId);
+		if (gen === 0) return false;
+		return !this.hasIntroShown(messageId, surface);
 	}
 
 	/** Stable list/reader key — only changes when a message is newly marked Important. */
 	highlightInstanceKey(messageId: string): string {
-		return `${messageId}:${this.introGeneration[messageId] ?? 0}`;
+		return `${messageId}:${this.introGenerationFor(messageId)}`;
 	}
 
-	completeIntroAnimation(messageId: string) {
-		this.introHighlightIds.delete(messageId);
-		this.markHighlightShown(messageId);
+	markIntroShown(messageId: string, surface: ImportantIntroSurface) {
+		const gen = this.introGenerationFor(messageId);
+		if (gen === 0) return;
+		const key = introShownKey(messageId, gen, surface);
+		if (this.introShownKeys.has(key)) return;
+		this.introShownKeys.add(key);
+		writeIntroShownKeys(this.introShownKeys);
 	}
 
+	completeIntroAnimation(messageId: string, surface: ImportantIntroSurface) {
+		this.markIntroShown(messageId, surface);
+	}
+
+	/** @deprecated Use markIntroShown */
 	markHighlightShown(messageId: string) {
-		if (this.shownHighlightIds.has(messageId)) return;
-		this.shownHighlightIds.add(messageId);
-		writeShownHighlightIds(this.shownHighlightIds);
+		this.markIntroShown(messageId, 'list');
 	}
 
 	pickFor(messageId: string): MarkerPick {

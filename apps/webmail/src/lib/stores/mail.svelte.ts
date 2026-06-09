@@ -566,6 +566,10 @@ class MailStore {
 
 		const importantMailbox = this.importantMailbox();
 		const ids = targets.map((message) => message.id);
+		const newlyImportant = important
+			? targets.filter((message) => !message.important)
+			: [];
+		const introInReader = newlyImportant.length === 1;
 
 		for (const message of targets) {
 			const clearsNew = important && message.unread;
@@ -574,7 +578,7 @@ class MailStore {
 				...(clearsNew ? { unread: false } : {})
 			});
 			if (important && !message.important) {
-				importantMarker.markForIntroAnimation(message.id);
+				importantMarker.markForIntroAnimation(message.id, { introInReader });
 			}
 		}
 
