@@ -5,7 +5,6 @@
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import LogOut from '$lib/components/icons/LogOut.svelte';
 	import Search from '$lib/components/icons/Search.svelte';
-	import Settings from '$lib/components/icons/Settings.svelte';
 	import {
 		isPrimarySidebarMailbox,
 		primarySidebarMailboxRank
@@ -110,11 +109,6 @@
 			/>
 		{/each}
 		<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-		<OverflowMenuItem label="Settings" onclick={() => goto('/settings/account')}>
-			{#snippet icon()}
-				<Settings class="size-5" aria-hidden="true" />
-			{/snippet}
-		</OverflowMenuItem>
 		<OverflowMenuItem label="Sign out" onclick={() => auth.logout()}>
 			{#snippet icon()}
 				<LogOut class="size-5" aria-hidden="true" />

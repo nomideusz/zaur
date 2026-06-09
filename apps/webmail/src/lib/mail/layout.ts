@@ -16,7 +16,10 @@ export function contentPagePadClass(): string {
 	);
 }
 
-/** Settings shell — same width and insets as mail pages. */
+/** Settings shell — horizontal inset from settings.css on mobile; desktop matches mail pages. */
 export function settingsShellClass(): string {
-	return contentPagePadClass();
+	return cn(
+		contentShellClass(),
+		'pt-0 pb-0 md:px-6 md:py-6'
+	);
 }

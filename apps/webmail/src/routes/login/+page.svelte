@@ -4,11 +4,12 @@
 	import { page } from '$app/stores';
 	import { appConfig } from '$lib/config';
 	import { loadRememberedLogin } from '$lib/auth/remember-login';
+	import AuthPage from '$lib/components/auth/AuthPage.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
+	import LabelInput from '$lib/components/ui/LabelInput.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
-	import ZaurSprite from '$lib/components/ui/ZaurSprite.svelte';
 
 	const remembered = loadRememberedLogin();
 	const urlEmail = $derived($page.url.searchParams.get('email')?.trim() ?? '');
@@ -81,108 +82,98 @@
 	<title>Sign in · {appConfig.appName}</title>
 </svelte:head>
 
-<div class="flex min-h-dvh items-center justify-center px-4 py-10">
-	<div class="w-full max-w-sm">
-		<div class="mb-8 text-center">
-			<div class="mb-4 flex justify-center text-accent">
-				<ZaurSprite id="happy" scale={5} blinks />
-			</div>
-			<h1 class="z-type-brand text-2xl text-fg">{appConfig.brandName}</h1>
-			<p class="mt-2 text-sm text-fg-muted">Private, focused email</p>
-		</div>
+<AuthPage title={appConfig.brandName} tagline="Private, focused email">
+	{#if !oauthReady}
+		<p class="z-auth-tagline text-center">Loading sign-in…</p>
+	{:else}
+		<form class="z-form-stack" onsubmit={submitLogin}>
+			{#if passkeyReady && showPasskey}
+				<div class="z-callout">
+					<span class="z-callout__title">Passkey ready</span>
+					<p class="z-callout__body">Use “Sign in with passkey” below.</p>
+				</div>
+			{:else if isWelcome}
+				<div class="z-callout">
+					<span class="z-callout__title">Welcome — almost done</span>
+					<p class="z-callout__body">
+						Sign in with the email and password you just created.
+					</p>
+				</div>
+			{/if}
 
-		{#if !oauthReady}
-			<p class="text-center text-sm text-fg-muted">Loading sign-in…</p>
-		{:else}
-			<form class="space-y-4" onsubmit={submitLogin}>
-				{#if passkeyReady && showPasskey}
-					<div class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm text-fg">
-						<p class="font-medium">Passkey ready</p>
-						<p class="mt-1 text-fg-muted">Use “Sign in with passkey” below.</p>
-					</div>
-				{:else if isWelcome}
-					<div class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm text-fg">
-						<p class="font-medium">Welcome — almost done</p>
-						<p class="mt-1 text-fg-muted">
-							Sign in with the email and password you just created.
-						</p>
-					</div>
-				{/if}
+			<LabelInput
+				id="email"
+				label="Email"
+				type="email"
+				bind:value={email}
+				placeholder="you@zaur.app"
+				autocomplete="username"
+				required
+				disabled={auth.isLoading}
+			/>
 
-				<div>
-					<label for="email" class="mb-1.5 block text-sm font-medium text-fg">Email</label>
-					<input
-						id="email"
-						type="email"
-						class="z-input"
-						bind:value={email}
-						autocomplete="username"
-						placeholder="you@zaur.app"
+			{#if showPassword}
+				<div class="z-field-stack">
+					<LabelInput
+						id="password"
+						label="Password"
+						type="password"
+						bind:value={password}
+						autocomplete="current-password"
 						required
 						disabled={auth.isLoading}
 					/>
+					<p class="text-right">
+						<a href={forgotPasswordHref} class="text-sm text-accent hover:underline">
+							Forgot password?
+						</a>
+					</p>
 				</div>
+			{/if}
 
+			<Checkbox
+				checked={rememberMe}
+				disabled={auth.isLoading}
+				label="Remember me"
+				class="flex cursor-pointer items-center gap-2 text-sm text-fg-muted"
+				onchange={(checked) => {
+					rememberMe = checked === true;
+				}}
+			>
+				Remember me
+			</Checkbox>
+
+			{#if auth.error}
+				<p class="text-sm text-danger" role="alert">{auth.error}</p>
+			{/if}
+
+			<div class="z-field-stack">
 				{#if showPassword}
-					<div>
-						<label for="password" class="mb-1.5 block text-sm font-medium text-fg">Password</label>
-						<input
-							id="password"
-							type="password"
-							class="z-input"
-							bind:value={password}
-							autocomplete="current-password"
-							required
-							disabled={auth.isLoading}
-						/>
-						<p class="mt-2 text-right">
-							<a href={forgotPasswordHref} class="text-sm text-accent hover:underline">
-								Forgot password?
-							</a>
-						</p>
-					</div>
+					<Button
+						type="submit"
+						class="z-btn-lg w-full"
+						disabled={auth.isLoading || !canSubmitPassword}
+					>
+						{auth.isLoading ? 'Signing in…' : 'Sign in'}
+					</Button>
 				{/if}
-
-				<Checkbox
-					checked={rememberMe}
-					disabled={auth.isLoading}
-					label="Remember me"
-					class="flex cursor-pointer items-center gap-2 text-sm text-fg-muted"
-					onchange={(checked) => {
-						rememberMe = checked === true;
-					}}
-				>
-					Remember me
-				</Checkbox>
-
-				{#if auth.error}
-					<p class="text-sm text-danger" role="alert">{auth.error}</p>
+				{#if showPasskey}
+					<Button
+						type="button"
+						variant={showPassword ? 'ghost' : 'primary'}
+						class={showPassword ? 'w-full' : 'z-btn-lg w-full'}
+						disabled={auth.isLoading || !email.trim().includes('@')}
+						onclick={signInWithPasskey}
+					>
+						{auth.isLoading ? 'Waiting for passkey…' : 'Sign in with passkey'}
+					</Button>
 				{/if}
+			</div>
+		</form>
+	{/if}
 
-				<div class="space-y-2">
-					{#if showPassword}
-						<Button type="submit" class="w-full" disabled={auth.isLoading || !canSubmitPassword}>
-							{auth.isLoading ? 'Signing in…' : 'Sign in'}
-						</Button>
-					{/if}
-					{#if showPasskey}
-						<Button
-							type="button"
-							variant={showPassword ? 'ghost' : 'primary'}
-							class="w-full"
-							disabled={auth.isLoading || !email.trim().includes('@')}
-							onclick={signInWithPasskey}
-						>
-							{auth.isLoading ? 'Waiting for passkey…' : 'Sign in with passkey'}
-						</Button>
-					{/if}
-				</div>
-			</form>
-		{/if}
-
-		<p class="mt-6 text-center text-sm text-fg-muted">
-			Need an address?
-			<a href={appConfig.registerUrl} class="text-accent hover:underline">Get your address</a>
-		</p>
-	</div>
-</div>
+	{#snippet footer()}
+		Need an address?
+		<a href={appConfig.registerUrl} class="text-accent hover:underline">Get your address</a>
+	{/snippet}
+</AuthPage>

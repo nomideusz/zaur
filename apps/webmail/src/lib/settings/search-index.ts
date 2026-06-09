@@ -7,183 +7,267 @@ export type SettingsSearchEntry = {
 
 export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 	{
-		"id": "/settings/general-clear-local-cache",
-		"href": "/settings/general",
+		"id": "/settings/account-app-install",
+		"href": "/settings/account",
+		"title": "App install",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-appearance",
+		"href": "/settings/account",
+		"title": "Appearance",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-clear-local-cache",
+		"href": "/settings/account",
 		"title": "Clear local cache",
 		"description": ""
 	},
 	{
-		"id": "/settings/general-color-mode",
-		"href": "/settings/general",
-		"title": "Appearance",
-		"description": "Automatic, fixed light, or fixed dark"
-	},
-	{
-		"id": "/settings/general-export-settings",
-		"href": "/settings/general",
-		"title": "Export settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/general-import-settings",
-		"href": "/settings/general",
-		"title": "Import settings",
-		"description": ""
-	},
-	{
-		"id": "/settings/general-reduce-motion",
-		"href": "/settings/general",
-		"title": "Reduce motion",
-		"description": ""
-	},
-	{
-		"id": "/settings/general-reset-preferences",
-		"href": "/settings/general",
-		"title": "Reset preferences",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-always-bcc-me",
-		"href": "/settings/mail",
-		"title": "Always Bcc me",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-block-remote-images",
-		"href": "/settings/mail",
-		"title": "Block remote images",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-clean-reading-view",
-		"href": "/settings/mail",
-		"title": "Clean reading view",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-collapse-quoted-text",
-		"href": "/settings/mail",
-		"title": "Collapse quoted text",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-colorful-important-subjects",
-		"href": "/settings/mail",
-		"title": "Marker highlights on Important",
-		"description": "Soft highlighter stroke on pinned subjects"
-	},
-	{
-		"id": "/settings/mail-confirm-before-delete",
-		"href": "/settings/mail",
+		"id": "/settings/account-confirm-before-delete",
+		"href": "/settings/account",
 		"title": "Confirm before delete",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-confirm-before-discard",
-		"href": "/settings/mail",
-		"title": "Confirm before discard",
+		"id": "/settings/account-display-name",
+		"href": "/settings/account",
+		"title": "Display name",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-contact-suggestions",
-		"href": "/settings/mail",
-		"title": "Contact suggestions",
+		"id": "/settings/account-empty-spam",
+		"href": "/settings/account",
+		"title": "Empty Spam",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-default-format",
-		"href": "/settings/mail",
-		"title": "Default format",
+		"id": "/settings/account-empty-trash",
+		"href": "/settings/account",
+		"title": "Empty Trash",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-default-reply",
-		"href": "/settings/mail",
-		"title": "Default reply",
+		"id": "/settings/account-export-settings",
+		"href": "/settings/account",
+		"title": "Export settings",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-enable-shortcuts",
-		"href": "/settings/mail",
-		"title": "Enable shortcuts",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-expand-all-threads",
-		"href": "/settings/mail",
-		"title": "Expand all threads",
-		"description": ""
-	},
-	{
-		"id": "/settings/mail-hide-action-toasts",
-		"href": "/settings/mail",
+		"id": "/settings/account-hide-action-toasts",
+		"href": "/settings/account",
 		"title": "Hide action toasts",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-hide-compose-hints",
-		"href": "/settings/mail",
-		"title": "Hide compose hints",
+		"id": "/settings/account-import-settings",
+		"href": "/settings/account",
+		"title": "Import settings",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-prefer-plain-text",
-		"href": "/settings/mail",
-		"title": "Prefer plain text",
+		"id": "/settings/account-include-signature",
+		"href": "/settings/account",
+		"title": "Include signature",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-remember-last-folder",
-		"href": "/settings/mail",
-		"title": "Remember last folder",
+		"id": "/settings/account-jmap-server",
+		"href": "/settings/account",
+		"title": "JMAP server",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-show-cc-bcc",
-		"href": "/settings/mail",
-		"title": "Show Cc/Bcc",
+		"id": "/settings/account-passkey",
+		"href": "/settings/account",
+		"title": "Passkey",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-show-delivery-address",
-		"href": "/settings/mail",
-		"title": "Show delivery address",
+		"id": "/settings/account-primary-address",
+		"href": "/settings/account",
+		"title": "Primary address",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-text-size",
-		"href": "/settings/mail",
-		"title": "Text size",
+		"id": "/settings/account-push-notifications",
+		"href": "/settings/account",
+		"title": "Push notifications",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-time-format",
-		"href": "/settings/mail",
-		"title": "Time format",
+		"id": "/settings/account-reduce-motion",
+		"href": "/settings/account",
+		"title": "Reduce motion",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-typeface",
-		"href": "/settings/mail",
-		"title": "Typeface",
+		"id": "/settings/account-refresh-from-account",
+		"href": "/settings/account",
+		"title": "Refresh from account",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-undo-send",
-		"href": "/settings/mail",
-		"title": "Undo send",
+		"id": "/settings/account-reset-preferences",
+		"href": "/settings/account",
+		"title": "Reset preferences",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-unseen-count-in-tab-title",
-		"href": "/settings/mail",
+		"id": "/settings/account-save-to-account",
+		"href": "/settings/account",
+		"title": "Save to account",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-session",
+		"href": "/settings/account",
+		"title": "Session",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-sign-out",
+		"href": "/settings/account",
+		"title": "Sign out",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-signature",
+		"href": "/settings/account",
+		"title": "Signature",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-unseen-count-in-tab-title",
+		"href": "/settings/account",
 		"title": "Unseen count in tab title",
 		"description": ""
 	},
 	{
-		"id": "/settings/mail-unseen-count-on-app-icon",
-		"href": "/settings/mail",
+		"id": "/settings/account-unseen-count-on-app-icon",
+		"href": "/settings/account",
 		"title": "Unseen count on app icon",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-always-bcc-me",
+		"href": "/settings/compose",
+		"title": "Always Bcc me",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-collapse-quoted-text",
+		"href": "/settings/compose",
+		"title": "Collapse quoted text",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-confirm-before-discard",
+		"href": "/settings/compose",
+		"title": "Confirm before discard",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-contact-suggestions",
+		"href": "/settings/compose",
+		"title": "Contact suggestions",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-default-format",
+		"href": "/settings/compose",
+		"title": "Default format",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-default-reply",
+		"href": "/settings/compose",
+		"title": "Default reply",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-hide-compose-hints",
+		"href": "/settings/compose",
+		"title": "Hide compose hints",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-show-cc-bcc",
+		"href": "/settings/compose",
+		"title": "Show Cc/Bcc",
+		"description": ""
+	},
+	{
+		"id": "/settings/compose-undo-send",
+		"href": "/settings/compose",
+		"title": "Undo send",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-block-remote-images",
+		"href": "/settings/reading",
+		"title": "Block remote images",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-clean-reading-view",
+		"href": "/settings/reading",
+		"title": "Clean reading view",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-expand-all-threads",
+		"href": "/settings/reading",
+		"title": "Expand all threads",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-marker-highlights-on-important",
+		"href": "/settings/reading",
+		"title": "Marker highlights on Important",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-prefer-plain-text",
+		"href": "/settings/reading",
+		"title": "Prefer plain text",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-remember-last-folder",
+		"href": "/settings/reading",
+		"title": "Remember last folder",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-show-delivery-address",
+		"href": "/settings/reading",
+		"title": "Show delivery address",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-text-size",
+		"href": "/settings/reading",
+		"title": "Text size",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-time-format",
+		"href": "/settings/reading",
+		"title": "Time format",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-typeface",
+		"href": "/settings/reading",
+		"title": "Typeface",
+		"description": ""
+	},
+	{
+		"id": "/settings/shortcuts-enable-shortcuts",
+		"href": "/settings/shortcuts",
+		"title": "Enable shortcuts",
 		"description": ""
 	}
 ];

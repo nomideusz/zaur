@@ -1,20 +1,15 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
-	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
-	import CalendarPlus from '$lib/components/icons/CalendarPlus.svelte';
-	import UserPlus from '$lib/components/icons/UserPlus.svelte';
-	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
 	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
+	import MobileCalendarShellNav from '$lib/components/shell/MobileCalendarShellNav.svelte';
+	import MobileContactsShellNav from '$lib/components/shell/MobileContactsShellNav.svelte';
 	import MobileMailShellNav from '$lib/components/shell/MobileMailShellNav.svelte';
+	import MobileSettingsShellNav from '$lib/components/shell/MobileSettingsShellNav.svelte';
 	import OfflineIndicator from '$lib/components/shell/OfflineIndicator.svelte';
 	import ToolSwitcher from '$lib/components/shell/ToolSwitcher.svelte';
 	import UserMenu from '$lib/components/shell/UserMenu.svelte';
 	import MessageListBulkHeader from '$lib/components/mail/MessageListBulkHeader.svelte';
-	import IconButton from '$lib/components/ui/IconButton.svelte';
-	import MobilePicker from '$lib/components/ui/MobilePicker.svelte';
 	import { appConfig } from '$lib/config';
-	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
 	import { isMailPath } from '$lib/mail/routes';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -29,10 +24,10 @@
 	const onContactsRoute = $derived(pathname.startsWith('/contacts'));
 	const onCalendarRoute = $derived(pathname.startsWith('/calendar'));
 	const onMailCompose = $derived(pathname.startsWith('/mail/compose'));
+	const onMailSearch = $derived(pathname.startsWith('/mail/search'));
 	const mailCtx = $derived(shellHeader.mail);
 	const mailListToolbar = $derived(shellHeader.mailListToolbar);
 	const pageCtx = $derived(shellHeader.page);
-	const isSettingsHome = $derived(/^\/settings\/?$/.test(pathname));
 
 	const mailBulkActive = $derived(
 		onMailRoute && !onMailCompose && mail.hasSelection && !!mailCtx?.mailboxRouteId
@@ -43,34 +38,34 @@
 		onMailRoute && !onMailCompose && (mailBulkActive || !!mailListToolbar)
 	);
 
-	const mobileMailNavActive = $derived(
-		onMailRoute && !onMailCompose && !mailBulkActive
+	const mobileShellNavActive = $derived(
+		(onMailRoute || onContactsRoute || onCalendarRoute || onSettingsRoute) &&
+			!onMailCompose &&
+			!onMailSearch &&
+			!mailBulkActive
 	);
+
+	const onMailShellNav = $derived(onMailRoute && mobileShellNavActive);
 
 	/** Mail primary action lives in the app header; bulk mode owns the row. */
-	const showComposeAction = $derived(
-		onMailRoute && !onMailCompose && !mailBulkActive
+	const showComposeAction = $derived(onMailShellNav);
+
+	const showCalendarAction = $derived(
+		onCalendarRoute && mobileShellNavActive && calendar.supported !== false
 	);
 
-	const sectionLinks = $derived(settingsNavLinks());
-	const activeSettingsSection = $derived(
-		sectionLinks.find((link) => isSettingsNavActive(pathname, link.href)) ?? sectionLinks[0]
+	const pagePrimaryAction = $derived(pageCtx?.primaryAction);
+	const showContactsAction = $derived(
+		onContactsRoute && mobileShellNavActive && !!pagePrimaryAction
 	);
-	const settingsSectionOptions = $derived(
-		sectionLinks.map((link) => ({ value: link.href, label: link.label }))
-	);
-
-	function onSettingsSectionChange(href: string) {
-		if (href !== pathname) void goto(href);
-	}
 </script>
 
 <header
 	class={cn(
 		'z-app-shell-header relative z-40 flex h-(--height-header) w-full shrink-0 items-center gap-2 border-b border-border/50 bg-surface-raised/80 backdrop-blur-xl backdrop-saturate-150 md:grid md:grid-cols-[1fr_auto_1fr] md:items-center md:gap-3 md:px-4',
-		mailBulkActive ? 'px-0' : !mobileMailNavActive ? 'px-3' : '',
+		mailBulkActive ? 'px-0' : !mobileShellNavActive ? 'px-3' : '',
 		mailListChromeActive && 'z-app-shell-header--mail-list',
-		mobileMailNavActive && 'z-app-shell-header--mobile-mail-nav'
+		mobileShellNavActive && 'z-app-shell-header--mobile-app-nav'
 	)}
 	style="view-transition-name: app-header;"
 >
@@ -90,7 +85,7 @@
 		class={cn(
 			'z-app-shell-header__start relative z-10 flex min-w-0 shrink-0 items-center gap-2 md:col-start-1 md:justify-self-start md:gap-3',
 			mailBulkActive && 'max-md:hidden',
-			mobileMailNavActive && 'max-md:min-w-0 max-md:flex-1'
+			mobileShellNavActive && 'max-md:min-w-0 max-md:flex-1'
 		)}
 	>
 		<a
@@ -106,32 +101,14 @@
 			<ToolSwitcher />
 		</div>
 
-		{#if onSettingsRoute}
-			<a
-				href={homeHref}
-				class="z-btn-icon min-h-10 min-w-10 shrink-0 p-2.5 text-fg-muted no-underline transition-colors hover:text-fg md:hidden"
-				aria-label="Back to mail"
-			>
-				<ArrowLeft class="size-5" aria-hidden="true" />
-			</a>
-			{#if isSettingsHome}
-				<h1 class="z-app-shell-header__title md:hidden">Settings</h1>
-			{:else}
-				<MobilePicker
-					label="Settings section"
-					value={activeSettingsSection?.href ?? '/settings/account'}
-					options={settingsSectionOptions}
-					onchange={onSettingsSectionChange}
-					compact={true}
-					class="min-w-0 max-w-[11rem] md:hidden"
-				/>
-			{/if}
-		{:else if mobileMailNavActive}
+		{#if onMailShellNav}
 			<MobileMailShellNav />
-		{:else if onContactsRoute && pageCtx?.title}
-			<h1 class="z-app-shell-header__title min-w-0 truncate md:hidden">{pageCtx.title}</h1>
-		{:else if onCalendarRoute}
-			<h1 class="z-app-shell-header__title md:hidden">Calendar</h1>
+		{:else if onContactsRoute && mobileShellNavActive}
+			<MobileContactsShellNav />
+		{:else if onCalendarRoute && mobileShellNavActive}
+			<MobileCalendarShellNav />
+		{:else if onSettingsRoute && mobileShellNavActive}
+			<MobileSettingsShellNav />
 		{/if}
 	</div>
 
@@ -139,14 +116,10 @@
 		class={cn(
 			'z-app-shell-header__center relative z-10 min-w-0 flex-1 md:col-start-2 md:w-full md:max-w-xl md:flex-none md:justify-self-center',
 			mailBulkActive && 'max-md:hidden',
-			mobileMailNavActive && 'max-md:hidden'
+			mobileShellNavActive && 'max-md:hidden'
 		)}
 	>
-		{#if onSettingsRoute}
-			<div class="md:hidden">
-				<SettingsSearch />
-			</div>
-		{:else if mobileMailNavActive}
+		{#if mobileShellNavActive}
 			<div class="hidden w-full min-w-0 md:block">
 				<GlobalSearch />
 			</div>
@@ -167,32 +140,34 @@
 			<OfflineIndicator />
 		</div>
 
-		{#if onCalendarRoute && calendar.supported !== false}
-			<IconButton
-				label="New event"
-				class="md:hidden"
-				onclick={() => calendar.openCompose()}
-			>
-				<CalendarPlus class="size-4" aria-hidden="true" />
-			</IconButton>
+		{#if showCalendarAction}
 			<button
 				type="button"
-				class="z-mail-text-nav__action hidden md:inline-flex"
+				class="z-mail-text-nav__action shrink-0 md:inline-flex"
 				onclick={() => calendar.openCompose()}
 			>
-				New event
+				<span class="md:hidden">New</span>
+				<span class="hidden md:inline">New event</span>
 			</button>
 		{:else if showComposeAction}
 			<a href="/mail/compose" class="z-mail-text-nav__action shrink-0 md:inline-flex">
 				<span class="md:hidden">New</span>
 				<span class="hidden md:inline">New message</span>
 			</a>
-		{:else if onContactsRoute && pageCtx?.primaryAction?.kind === 'button'}
-			{@const action = pageCtx.primaryAction}
-			{@const ActionIcon = action.icon ?? UserPlus}
-			<IconButton label={action.label} class="md:hidden" onclick={action.onclick}>
-				<ActionIcon class="size-4" aria-hidden="true" />
-			</IconButton>
+		{:else if showContactsAction && pagePrimaryAction?.kind === 'button'}
+			{@const action = pagePrimaryAction}
+			<button
+				type="button"
+				class="z-mail-text-nav__action shrink-0"
+				onclick={action.onclick}
+			>
+				{action.label}
+			</button>
+		{:else if showContactsAction && pagePrimaryAction?.kind === 'link'}
+			{@const action = pagePrimaryAction}
+			<a href={action.href} class="z-mail-text-nav__action shrink-0">
+				{action.label}
+			</a>
 		{/if}
 
 		<div class="hidden md:block">

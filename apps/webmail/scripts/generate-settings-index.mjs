@@ -8,11 +8,11 @@ function slug(title) {
 }
 
 const files = [
-	['src/lib/settings/sections/reading.svelte', '/settings/mail'],
-	['src/lib/settings/sections/writing.svelte', '/settings/mail'],
-	['src/lib/settings/sections/appearance.svelte', '/settings/general'],
-	['src/lib/settings/sections/data.svelte', '/settings/general'],
-	['src/routes/(app)/settings/account/+page.svelte', '/settings/account']
+	['src/lib/settings/sections/appearance.svelte', '/settings/account'],
+	['src/lib/settings/sections/account.svelte', '/settings/account'],
+	['src/lib/settings/sections/reading.svelte', '/settings/reading'],
+	['src/lib/settings/sections/writing.svelte', '/settings/compose'],
+	['src/lib/settings/sections/shortcuts.svelte', '/settings/shortcuts']
 ];
 
 const entries = [];

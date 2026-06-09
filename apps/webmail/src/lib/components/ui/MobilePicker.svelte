@@ -1,6 +1,11 @@
 <script lang="ts">
+	import { getContext } from 'svelte';
 	import { Select } from 'bits-ui';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
+	import {
+		SETTINGS_A11Y,
+		type SettingsA11yContext
+	} from '$lib/components/settings/settings-control-context';
 	import { cn } from '$lib/utils/cn';
 
 	export interface MobilePickerOption {
@@ -34,6 +39,8 @@
 
 	const isCompact = $derived(variant === 'compact');
 
+	const a11y = getContext<SettingsA11yContext | undefined>(SETTINGS_A11Y);
+
 	function handleValueChange(nextValue: string) {
 		if (!nextValue) return;
 		open = false;
@@ -49,11 +56,14 @@
 	onValueChange={handleValueChange}
 >
 	<Select.Trigger
+		id={a11y?.controlId}
 		class={cn(
 			isCompact ? 'z-mobile-picker-trigger z-mobile-picker-trigger--compact' : 'z-select-trigger',
 			className
 		)}
-		aria-label={label}
+		aria-label={!a11y?.labelId && label ? label : undefined}
+		aria-labelledby={a11y?.labelId}
+		aria-describedby={a11y?.descId}
 	>
 		<Select.Value placeholder={label} class="min-w-0 flex-1 truncate text-left" />
 		<ChevronDown

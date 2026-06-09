@@ -3,9 +3,9 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { appConfig } from '$lib/config';
+	import AuthPage from '$lib/components/auth/AuthPage.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
-	import ZaurSprite from '$lib/components/ui/ZaurSprite.svelte';
 
 	const urlEmail = $derived($page.url.searchParams.get('email')?.trim().toLowerCase() ?? '');
 	const urlToken = $derived($page.url.searchParams.get('token')?.trim() ?? '');
@@ -52,53 +52,46 @@
 	<title>Set up passkey · {appConfig.appName}</title>
 </svelte:head>
 
-<div class="flex min-h-dvh items-center justify-center px-4 py-10">
-	<div class="w-full max-w-sm text-center">
-		<div class="mb-8">
-			<div class="mb-4 flex justify-center text-accent">
-				<ZaurSprite id="happy" scale={5} />
-			</div>
-			<h1 class="z-type-brand text-2xl text-fg">Set up a passkey</h1>
-			{#if urlEmail}
-				<p class="mt-2 text-sm text-fg-muted">{urlEmail}</p>
-			{/if}
-		</div>
-
-		{#if !oauthReady}
-			<p class="text-sm text-fg-muted">Loading…</p>
-		{:else if !urlEmail || !urlToken}
-			<p class="text-sm text-fg-muted">
+<AuthPage title="Set up a passkey" tagline={urlEmail || undefined}>
+	{#if !oauthReady}
+		<p class="z-auth-tagline text-center">Loading…</p>
+	{:else if !urlEmail || !urlToken}
+		<div class="z-form-stack">
+			<p class="z-auth-tagline text-center">
 				This link is incomplete. Open mail and add a passkey from Settings after signing in.
 			</p>
-			<div class="mt-6">
-				<Button variant="ghost" onclick={() => goto('/login')}>Open sign in</Button>
+			<Button variant="ghost" class="w-full" onclick={() => goto('/login')}>Open sign in</Button>
+		</div>
+	{:else if done}
+		<div class="z-form-stack">
+			<div class="z-callout">
+				<p>
+					Passkey ready. You can sign in with Face ID, Touch ID, or your device PIN next time.
+				</p>
 			</div>
-		{:else if done}
-			<p class="text-sm text-fg">
-				Passkey ready. You can sign in with Face ID, Touch ID, or your device PIN next time.
-			</p>
-			<div class="mt-6">
-				<Button class="w-full" onclick={() => goto(auth.isAuthenticated ? '/mail/inbox' : '/login')}>
-					{auth.isAuthenticated ? 'Open mail' : 'Sign in'}
-				</Button>
-			</div>
-		{:else}
-			<p class="text-sm text-fg-muted">
+			<Button
+				class="z-btn-lg w-full"
+				onclick={() => goto(auth.isAuthenticated ? '/mail/inbox' : '/login')}
+			>
+				{auth.isAuthenticated ? 'Open mail' : 'Sign in'}
+			</Button>
+		</div>
+	{:else}
+		<div class="z-form-stack">
+			<p class="z-auth-tagline text-center">
 				{loading
 					? 'Follow the prompt on this device…'
 					: 'Use Face ID, Touch ID, or your device PIN for faster sign-in.'}
 			</p>
 			{#if error}
-				<p class="mt-4 text-sm text-danger" role="alert">{error}</p>
+				<p class="text-sm text-danger" role="alert">{error}</p>
 			{/if}
-			<div class="mt-6 space-y-2">
-				<Button class="w-full" disabled={loading} onclick={createPasskey}>
-					{loading ? 'Waiting for passkey…' : 'Create passkey'}
-				</Button>
-				<Button variant="ghost" class="w-full" disabled={loading} onclick={() => goto('/login')}>
-					Skip for now
-				</Button>
-			</div>
-		{/if}
-	</div>
-</div>
+			<Button class="z-btn-lg w-full" disabled={loading} onclick={createPasskey}>
+				{loading ? 'Waiting for passkey…' : 'Create passkey'}
+			</Button>
+			<Button variant="ghost" class="w-full" disabled={loading} onclick={() => goto('/login')}>
+				Skip for now
+			</Button>
+		</div>
+	{/if}
+</AuthPage>

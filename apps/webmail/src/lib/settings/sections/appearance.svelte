@@ -2,7 +2,7 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
-	import IOSToggle from '$lib/components/ui/IOSToggle.svelte';
+	import Switch from '$lib/components/ui/Switch.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme, type ThemeMode } from '$lib/stores/theme.svelte';
 
@@ -14,7 +14,7 @@
 </script>
 
 <SettingsGroup title="Theme & Motion">
-	<SettingsRow title="Appearance" description="Automatic adjusts subtly through the day.">
+	<SettingsRow kind="menu" title="Appearance" description="Automatic adjusts subtly through the day.">
 		<SettingsSelect
 			label="Appearance"
 			value={theme.mode}
@@ -24,8 +24,8 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Reduce motion">
-		<IOSToggle
+	<SettingsRow kind="toggle" title="Reduce motion">
+		<Switch
 			checked={settings.reduceMotion}
 			onchange={(checked) => settings.setReduceMotion(checked)}
 		/>

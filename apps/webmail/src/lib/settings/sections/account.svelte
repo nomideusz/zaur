@@ -4,7 +4,7 @@
 	import SettingsField from '$lib/components/settings/SettingsField.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import IOSToggle from '$lib/components/ui/IOSToggle.svelte';
+	import Switch from '$lib/components/ui/Switch.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -19,6 +19,8 @@
 	let passkeyLoading = $state(false);
 	let passkeyRegistered = $state<boolean | null>(null);
 	let passkeyStatusLoading = $state(false);
+	let importInput = $state<HTMLInputElement | null>(null);
+	let clearingCache = $state(false);
 
 	const oauthEnabled = $derived(auth.oauthConfig?.enabled === true);
 	const trashMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'trash'));
@@ -104,30 +106,89 @@
 			else emptyingSpam = false;
 		}
 	}
+
+	function importPreferences(event: Event) {
+		const input = event.currentTarget as HTMLInputElement;
+		const file = input.files?.[0];
+		if (!file) return;
+
+		void file.text().then((text) => {
+			const result = settings.importLocalPreferences(text);
+			if (result.ok) {
+				toast.show('Settings imported', 'success');
+			} else {
+				toast.show(result.error, 'error');
+			}
+			input.value = '';
+		});
+	}
+
+	async function clearLocalCache() {
+		if (
+			!(await confirm.ask({
+				title: 'Clear local cache?',
+				description:
+					'Clear downloaded mail and sync state from this device? Your messages on the server are not affected.',
+				confirmLabel: 'Clear cache',
+				tone: 'danger'
+			}))
+		) {
+			return;
+		}
+
+		clearingCache = true;
+		try {
+			await auth.clearLocalCache();
+		} finally {
+			clearingCache = false;
+		}
+	}
+
+	async function resetPreferences() {
+		if (
+			!(await confirm.ask({
+				title: 'Reset preferences?',
+				description:
+					'Reset mail and display preferences to defaults? Your display name and signature are unchanged.',
+				confirmLabel: 'Reset',
+				tone: 'danger'
+			}))
+		) {
+			return;
+		}
+		settings.resetAllSettings();
+		toast.show('Preferences reset', 'success');
+	}
 </script>
 
 <SettingsGroup title="Profile">
 	<SettingsField title="Display name">
-		<input
-			type="text"
-			class="z-input"
-			value={settings.displayName}
-			placeholder={auth.displayName ?? auth.username ?? 'Your name'}
-			oninput={(e) => settings.setDisplayName(e.currentTarget.value)}
-		/>
+		{#snippet children({ id })}
+			<input
+				{id}
+				type="text"
+				class="z-input"
+				value={settings.displayName}
+				placeholder={auth.displayName ?? auth.username ?? 'Your name'}
+				oninput={(e) => settings.setDisplayName(e.currentTarget.value)}
+			/>
+		{/snippet}
 	</SettingsField>
 
 	<SettingsField title="Signature">
-		<textarea
-			class="z-input resize-y"
-			value={settings.signature}
-			placeholder="Best regards,&#10;Your name"
-			oninput={(e) => settings.setSignature(e.currentTarget.value)}
-		></textarea>
+		{#snippet children({ id })}
+			<textarea
+				{id}
+				class="z-input resize-y"
+				value={settings.signature}
+				placeholder="Best regards,&#10;Your name"
+				oninput={(e) => settings.setSignature(e.currentTarget.value)}
+			></textarea>
+		{/snippet}
 	</SettingsField>
 
-	<SettingsRow title="Include signature">
-		<IOSToggle
+	<SettingsRow kind="toggle" title="Include signature">
+		<Switch
 			checked={settings.useSignature}
 			onchange={(checked) => settings.setUseSignature(checked)}
 		/>
@@ -135,23 +196,23 @@
 </SettingsGroup>
 
 <SettingsGroup title="Account">
-	<SettingsRow title="Primary address">
+	<SettingsRow kind="info" title="Primary address">
 		<span class="text-fg">{auth.username ?? '—'}</span>
 	</SettingsRow>
 
-	<SettingsRow title="JMAP server">
+	<SettingsRow kind="info" title="JMAP server">
 		<span class="max-w-[12rem] truncate text-fg sm:max-w-none">
 			{auth.serverUrl ?? appConfig.jmapServerUrl}
 		</span>
 	</SettingsRow>
 
-	<SettingsRow title="Session">
+	<SettingsRow kind="info" title="Session">
 		<span class="text-fg">{auth.isAuthenticated ? 'Active' : 'Signed out'}</span>
 	</SettingsRow>
 
 	{#if auth.identities.length > 1}
 		{#each auth.identities as identity (identity.id)}
-			<SettingsRow title={identity.name?.trim() || identity.email}>
+			<SettingsRow kind="info" title={identity.name?.trim() || identity.email}>
 				<div class="flex flex-col items-end">
 					<span class="text-fg">{identity.email}</span>
 					{#if identity.name?.trim() && identity.name !== identity.email}
@@ -163,8 +224,38 @@
 	{/if}
 </SettingsGroup>
 
+<SettingsGroup title="Notifications & Actions">
+	<SettingsRow kind="toggle" title="Confirm before delete">
+		<Switch
+			checked={settings.confirmBeforeDelete}
+			onchange={(checked) => settings.setConfirmBeforeDelete(checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow kind="toggle" title="Hide action toasts">
+		<Switch
+			checked={settings.hideActionToasts}
+			onchange={(checked) => settings.setHideActionToasts(checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow kind="toggle" title="Unseen count on app icon">
+		<Switch
+			checked={settings.showUnreadAppBadge}
+			onchange={(checked) => settings.setShowUnreadAppBadge(checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow kind="toggle" title="Unseen count in tab title">
+		<Switch
+			checked={settings.showUnreadInTitle}
+			onchange={(checked) => settings.setShowUnreadInTitle(checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
 <SettingsGroup title="Device">
-	<SettingsRow title="App install">
+	<SettingsRow kind="action" title="App install">
 		{#if pwa.isInstalled}
 			<span class="text-fg-muted">Installed</span>
 		{:else if pwa.canInstall}
@@ -176,7 +267,7 @@
 		{/if}
 	</SettingsRow>
 
-	<SettingsRow title="Push notifications">
+	<SettingsRow kind="toggle" title="Push notifications">
 		<PushNotificationStatus />
 	</SettingsRow>
 </SettingsGroup>
@@ -184,34 +275,37 @@
 {#if oauthEnabled}
 	<SettingsGroup title="Security">
 		<SettingsField title="Passkey">
-			<div class="flex w-full flex-col gap-2 sm:max-w-xs">
-				{#if passkeyStatusLoading}
-					<p class="text-fg-muted">Checking passkey status…</p>
-				{:else if passkeyRegistered}
-					<p class="text-fg">Passkey registered for this account.</p>
-					<p class="text-fg-muted">You can sign in with a passkey from the login page.</p>
-				{/if}
-				<input
-					type="password"
-					class="z-input"
-					bind:value={passkeyPassword}
-					autocomplete="current-password"
-					placeholder="Confirm password"
-					disabled={passkeyLoading}
-				/>
-				<button
-					type="button"
-					class="z-mail-text-nav__link w-fit"
-					disabled={passkeyLoading || !passkeyPassword.trim()}
-					onclick={() => void addPasskey()}
-				>
-					{passkeyLoading
-						? 'Waiting for passkey…'
-						: passkeyRegistered
-							? 'Add another passkey'
-							: 'Add passkey'}
-				</button>
-			</div>
+			{#snippet children({ id })}
+				<div class="flex w-full flex-col gap-2 sm:max-w-xs">
+					{#if passkeyStatusLoading}
+						<p class="text-fg-muted">Checking passkey status…</p>
+					{:else if passkeyRegistered}
+						<p class="text-fg">Passkey registered for this account.</p>
+						<p class="text-fg-muted">You can sign in with a passkey from the login page.</p>
+					{/if}
+					<input
+						{id}
+						type="password"
+						class="z-input"
+						bind:value={passkeyPassword}
+						autocomplete="current-password"
+						placeholder="Confirm password"
+						disabled={passkeyLoading}
+					/>
+					<button
+						type="button"
+						class="z-mail-text-nav__link w-fit"
+						disabled={passkeyLoading || !passkeyPassword.trim()}
+						onclick={() => void addPasskey()}
+					>
+						{passkeyLoading
+							? 'Waiting for passkey…'
+							: passkeyRegistered
+								? 'Add another passkey'
+								: 'Add passkey'}
+					</button>
+				</div>
+			{/snippet}
 		</SettingsField>
 	</SettingsGroup>
 {/if}
@@ -219,7 +313,7 @@
 {#if trashMailbox || junkMailbox}
 	<SettingsGroup title="Mailbox">
 		{#if trashMailbox}
-			<SettingsRow title="Empty Trash">
+			<SettingsRow kind="action" title="Empty Trash">
 				<button
 					type="button"
 					class="z-mail-text-nav__link z-mail-text-nav__link--danger"
@@ -232,7 +326,7 @@
 		{/if}
 
 		{#if junkMailbox}
-			<SettingsRow title="Empty Spam">
+			<SettingsRow kind="action" title="Empty Spam">
 				<button
 					type="button"
 					class="z-mail-text-nav__link z-mail-text-nav__link--danger"
@@ -246,8 +340,8 @@
 	</SettingsGroup>
 {/if}
 
-<SettingsGroup title="Sync & Sign out">
-	<SettingsRow title="Refresh from account">
+<SettingsGroup title="Sync & data">
+	<SettingsRow kind="action" title="Refresh from account">
 		<button
 			type="button"
 			class="z-mail-text-nav__link"
@@ -263,13 +357,43 @@
 		</button>
 	</SettingsRow>
 
-	<SettingsRow title="Save to account">
+	<SettingsRow kind="action" title="Save to account">
 		<button type="button" class="z-mail-text-nav__link" onclick={() => void settings.syncToAccount()}>
 			Save
 		</button>
 	</SettingsRow>
 
-	<SettingsRow title="Sign out">
+	<SettingsRow kind="action" title="Export settings">
+		<button type="button" class="z-mail-text-nav__link" onclick={() => settings.downloadLocalPreferences()}>
+			Export
+		</button>
+	</SettingsRow>
+
+	<SettingsRow kind="action" title="Import settings">
+		<input bind:this={importInput} type="file" accept="application/json,.json" class="hidden" onchange={importPreferences} />
+		<button type="button" class="z-mail-text-nav__link" onclick={() => importInput?.click()}>
+			Import
+		</button>
+	</SettingsRow>
+
+	<SettingsRow kind="action" title="Clear local cache">
+		<button
+			type="button"
+			class="z-mail-text-nav__link"
+			disabled={clearingCache}
+			onclick={() => void clearLocalCache()}
+		>
+			{clearingCache ? 'Clearing…' : 'Clear'}
+		</button>
+	</SettingsRow>
+
+	<SettingsRow kind="action" title="Reset preferences">
+		<button type="button" class="z-mail-text-nav__link text-fg-subtle" onclick={() => void resetPreferences()}>
+			Reset
+		</button>
+	</SettingsRow>
+
+	<SettingsRow kind="action" title="Sign out">
 		<button
 			type="button"
 			class="z-mail-text-nav__link text-fg-subtle"

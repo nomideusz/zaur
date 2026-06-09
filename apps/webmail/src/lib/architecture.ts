@@ -14,23 +14,29 @@ export const routeMap = {
 	settings: {
 		root: '/settings/account',
 		account: '/settings/account',
-		mail: '/settings/mail',
-		general: '/settings/general',
-		/** Legacy — redirect to /settings/mail */
 		reading: '/settings/reading',
-		writing: '/settings/writing',
-		/** Legacy — redirect to /settings/general */
+		writing: '/settings/compose',
+		shortcuts: '/settings/shortcuts',
+		/** Legacy — redirect to /settings/reading */
+		inbox: '/settings/inbox',
+		/** Legacy — redirect to /settings/reading */
+		mail: '/settings/mail',
+		/** Legacy — redirect to /settings/compose */
+		compose: '/settings/writing',
 		appearance: '/settings/appearance',
 		data: '/settings/data',
+		/** Legacy — redirect to /settings/account */
+		general: '/settings/general',
+		/** Legacy — redirect to /settings/reading */
 		layout: '/settings/layout',
+		/** Legacy — redirect to /settings/reading */
 		workspace: '/settings/workspace',
-		/** Legacy — redirect to /calendar */
-		calendar: '/settings/calendar',
-		inbox: '/settings/inbox',
-		compose: '/settings/compose',
-		display: '/settings/display',
 		sidebar: '/settings/sidebar',
-		contacts: '/settings/contacts'
+		/** Legacy — redirect to /settings/account */
+		contacts: '/settings/contacts',
+		display: '/settings/display',
+		/** Legacy — redirect to /calendar */
+		calendar: '/settings/calendar'
 	},
 	calendar: '/calendar',
 	contacts: '/contacts'
@@ -46,7 +52,8 @@ export const modeArchitecture = {
 	layout: 'src/lib/mail/layout.ts',
 	mailLayout: 'src/lib/components/mail/MailLayout.svelte',
 	readingSettings: 'src/lib/settings/sections/reading.svelte',
-	writingSettings: 'src/lib/settings/sections/writing.svelte',
+	composeSettings: 'src/lib/settings/sections/writing.svelte',
+	shortcutsSettings: 'src/lib/settings/sections/shortcuts.svelte',
 	settingsLayout: 'src/lib/components/settings/SettingsLayout.svelte',
 	compose: 'src/lib/components/mail/ComposePanel.svelte'
 } as const;

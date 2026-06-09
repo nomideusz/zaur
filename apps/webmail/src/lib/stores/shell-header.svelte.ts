@@ -21,9 +21,19 @@ export type ShellPrimaryAction =
 	| { kind: 'button'; label: string; onclick: () => void; icon?: Component }
 	| { kind: 'link'; href: string; label: string; icon?: Component };
 
+export type ShellContactsNavContext = {
+	selectedLetter: string | null;
+	query: string;
+	letters: string[];
+	onShowAll: () => void;
+	onSelectLetter: (letter: string | null) => void;
+	onFocusSearch: () => void;
+};
+
 export type ShellPageContext = {
 	title?: string;
 	primaryAction?: ShellPrimaryAction;
+	contactsNav?: ShellContactsNavContext;
 };
 
 class ShellHeaderStore {

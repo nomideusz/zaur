@@ -36,7 +36,12 @@
 		}
 
 		/* Align nav + New with text inside list row cards. */
-		.z-app-shell-header--mail-list.z-app-shell-header--mobile-mail-nav {
+		.z-app-shell-header--mobile-app-nav {
+			padding-inline: max(1rem, env(safe-area-inset-left, 0px))
+				max(1rem, env(safe-area-inset-right, 0px));
+		}
+
+		.z-app-shell-header--mail-list.z-app-shell-header--mobile-app-nav {
 			padding-inline: var(--z-mail-list-content-inset);
 		}
 	}

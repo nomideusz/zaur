@@ -190,6 +190,8 @@ function selectDomain(row) {
   syncSelectedEmail();
   registerPanel.classList.add('is-visible');
   hideFormError();
+  window.ZaurLabelInput?.init(registerPanel);
+  window.ZaurLabelInput?.syncAll(registerPanel);
   if (!hasMagicLinkInvitation) {
     loadCaptcha();
   }
@@ -467,6 +469,7 @@ async function init() {
     if (q) {
       usernameInput.value = q;
       updateView();
+      window.ZaurLabelInput?.syncAll();
     } else {
       renderExtensionList();
     }

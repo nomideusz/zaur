@@ -17,6 +17,8 @@ import {
 
 export type EventComposeMode = 'create' | 'edit';
 
+export type CalendarViewTab = 'week' | 'day' | 'agendas';
+
 export interface EventComposeDraft {
 	calendarId: string;
 	title: string;
@@ -37,6 +39,7 @@ class CalendarStore {
 
 	viewYear = $state(new Date().getFullYear());
 	viewMonth = $state(new Date().getMonth());
+	activeView = $state<CalendarViewTab>('week');
 
 	selectedEventId = $state<string | null>(null);
 	refreshCounter = $state(0);

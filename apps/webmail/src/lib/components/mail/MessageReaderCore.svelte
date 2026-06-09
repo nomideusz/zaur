@@ -298,7 +298,7 @@
 					Show once
 				</button>
 				<span class="z-mail-external-banner__dot" aria-hidden="true">·</span>
-				<a href="/settings/general" class="z-mail-external-banner__action">Settings</a>
+				<a href="/settings/account" class="z-mail-external-banner__action">Settings</a>
 			</div>
 		{/if}
 

@@ -34,11 +34,19 @@
       <div class="z-form-stack">
         <div class="z-alert z-alert--error" id="login-error" role="alert"></div>
         <form id="login-form" class="z-form-stack">
-          <div>
-            <label for="admin-password" class="z-field-label">Admin password</label>
-            <input type="password" id="admin-password" name="password" class="z-input" placeholder="Enter admin password" required autofocus>
+          <div class="z-label-input z-label-input--primary z-label-input--password">
+            <input
+              type="password"
+              id="admin-password"
+              name="password"
+              class="z-label-input__field"
+              autocomplete="current-password"
+              required
+              autofocus
+            >
+            <label for="admin-password" class="z-label-input__label">Admin password</label>
           </div>
-          <button type="submit" class="z-btn-primary z-btn-block" id="login-submit">Sign in</button>
+          <button type="submit" class="z-btn-primary z-btn-block z-btn-lg" id="login-submit">Sign in</button>
         </form>
       </div>
 
@@ -208,6 +216,7 @@
 
   <script src="/site-config.js"></script>
   <script src="/site.js"></script>
+  <script src="/label-input.js"></script>
   <script src="/admin.js"></script>
 </body>
 </html>

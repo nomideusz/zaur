@@ -60,6 +60,9 @@
 
 	<!-- Main content -->
 	<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+		<div class="z-settings-mobile-toolbar shrink-0 border-b border-border/80 py-2.5 md:hidden">
+			<SettingsSearch />
+		</div>
 		<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
 			<div class={cn(settingsShellClass(), 'flex min-h-full flex-col')}>
 				<div class="z-settings-content flex-1">

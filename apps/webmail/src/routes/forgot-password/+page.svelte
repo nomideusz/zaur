@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { appConfig } from '$lib/config';
+	import AuthPage from '$lib/components/auth/AuthPage.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import ZaurSprite from '$lib/components/ui/ZaurSprite.svelte';
+	import LabelInput from '$lib/components/ui/LabelInput.svelte';
 
 	const initialEmail = $derived(
 		$page.url.searchParams.get('email')?.trim() ??
@@ -54,58 +55,45 @@
 	<title>Forgot password · {appConfig.appName}</title>
 </svelte:head>
 
-<div class="flex min-h-dvh items-center justify-center px-4 py-10">
-	<div class="w-full max-w-sm">
-		<div class="mb-8 text-center">
-			<div class="mb-4 flex justify-center text-accent">
-				<ZaurSprite id="idle" scale={5} />
+<AuthPage
+	title="Reset password"
+	sprite="idle"
+	blinks={false}
+	tagline={usesRecoveryEmail
+		? "We'll send reset instructions to this invitation email — the same address that received your invite."
+		: 'Enter your ZAUR address or the personal email we invited you with.'}
+>
+	{#if submitted}
+		<div class="z-form-stack">
+			<div class="z-callout">
+				<p>{message}</p>
 			</div>
-			<h1 class="z-type-brand text-2xl text-fg">Reset password</h1>
-			<p class="mt-2 text-sm text-fg-muted">
-				{#if usesRecoveryEmail}
-					We'll send reset instructions to this invitation email — the same address that received
-					your invite.
-				{:else}
-					Enter your ZAUR address or the personal email we invited you with.
-				{/if}
-			</p>
+			<a href="/login" class="block text-center text-sm text-accent hover:underline">Back to sign in</a>
 		</div>
+	{:else}
+		<form class="z-form-stack" onsubmit={submit}>
+			<LabelInput
+				id="email"
+				label="Email"
+				type="email"
+				bind:value={email}
+				placeholder={usesRecoveryEmail ? 'you@gmail.com' : 'you@zaur.app or invitation email'}
+				autocomplete="username"
+				required
+				disabled={isLoading}
+			/>
 
-		{#if submitted}
-			<div class="space-y-4">
-				<div class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm text-fg">
-					<p>{message}</p>
-				</div>
-				<a href="/login" class="block text-center text-sm text-accent hover:underline">Back to sign in</a>
-			</div>
-		{:else}
-			<form class="space-y-4" onsubmit={submit}>
-				<div>
-					<label for="email" class="mb-1.5 block text-sm font-medium text-fg">Email</label>
-					<input
-						id="email"
-						type="email"
-						class="z-input"
-						bind:value={email}
-						autocomplete="username"
-						placeholder={usesRecoveryEmail ? 'you@gmail.com' : 'you@zaur.app or invitation email'}
-						required
-						disabled={isLoading}
-					/>
-				</div>
+			{#if error}
+				<p class="text-sm text-danger" role="alert">{error}</p>
+			{/if}
 
-				{#if error}
-					<p class="text-sm text-danger" role="alert">{error}</p>
-				{/if}
+			<Button type="submit" class="z-btn-lg w-full" disabled={isLoading || !email.trim()}>
+				{isLoading ? 'Sending…' : 'Send reset link'}
+			</Button>
+		</form>
+	{/if}
 
-				<Button type="submit" class="w-full" disabled={isLoading || !email.trim()}>
-					{isLoading ? 'Sending…' : 'Send reset link'}
-				</Button>
-			</form>
-
-			<p class="mt-6 text-center text-sm text-fg-muted">
-				<a href="/login" class="text-accent hover:underline">Back to sign in</a>
-			</p>
-		{/if}
-	</div>
-</div>
+	{#snippet footer()}
+		<a href="/login" class="text-accent hover:underline">Back to sign in</a>
+	{/snippet}
+</AuthPage>

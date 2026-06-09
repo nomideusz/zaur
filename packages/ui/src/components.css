@@ -101,6 +101,11 @@
 	width: 100%;
 }
 
+.z-btn-lg {
+	padding: 0.625rem 1rem;
+	font-size: 0.9375rem;
+}
+
 .z-input {
 	display: block;
 	width: 100%;

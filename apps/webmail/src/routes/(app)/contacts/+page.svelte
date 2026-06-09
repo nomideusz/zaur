@@ -22,6 +22,7 @@
 	import { listContacts, recordContact, removeContact, type ContactEntry } from '$lib/utils/contact-index';
 
 	let query = $state('');
+	let searchInput = $state<HTMLInputElement | null>(null);
 	let refresh = $state(0);
 	let showAddForm = $state(false);
 	let newName = $state('');
@@ -158,17 +159,30 @@
 		}
 	});
 
+	function showAllContacts() {
+		query = '';
+		selectLetter(null);
+	}
+
 	$effect(() => {
 		const generation = shellHeader.setPage({
 			title: listTitle,
 			primaryAction: {
 				kind: 'button',
-				label: 'Add contact',
+				label: 'Add',
 				icon: UserPlus,
 				onclick: () => {
 					showAddForm = true;
 					selectedEmail = null;
 				}
+			},
+			contactsNav: {
+				selectedLetter,
+				query,
+				letters: availableLetters,
+				onShowAll: showAllContacts,
+				onSelectLetter: selectLetter,
+				onFocusSearch: () => searchInput?.focus()
 			}
 		});
 		return () => shellHeader.clearPage(generation);
@@ -265,6 +279,7 @@
 				inputmode="search"
 				class="z-sidebar-search-input"
 				placeholder="Search contacts…"
+				bind:this={searchInput}
 				bind:value={query}
 			/>
 		</label>

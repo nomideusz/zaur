@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { appConfig } from '$lib/config';
+	import AuthPage from '$lib/components/auth/AuthPage.svelte';
 
 	onMount(async () => {
 		const code = $page.url.searchParams.get('code');
@@ -29,7 +30,6 @@
 			return;
 		}
 
-		// Exchange code for session
 		await auth.completeOauthLogin(code, state);
 	});
 </script>
@@ -38,9 +38,11 @@
 	<title>Authenticating · {appConfig.appName}</title>
 </svelte:head>
 
-<div class="flex min-h-dvh items-center justify-center px-4 py-10">
-	<div class="text-center space-y-4">
-		<div class="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-accent"></div>
-		<p class="text-sm text-fg-muted font-medium">Completing sign-in…</p>
+<AuthPage title={appConfig.brandName} tagline="Completing sign-in…" sprite="idle" blinks={false}>
+	<div class="flex justify-center py-2">
+		<div
+			class="inline-block h-8 w-8 animate-spin rounded-full border-2 border-border border-t-accent"
+			aria-hidden="true"
+		></div>
 	</div>
-</div>
+</AuthPage>

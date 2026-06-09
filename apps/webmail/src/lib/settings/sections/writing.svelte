@@ -2,7 +2,7 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
-	import IOSToggle from '$lib/components/ui/IOSToggle.svelte';
+	import Switch from '$lib/components/ui/Switch.svelte';
 	import {
 		settings,
 		type DefaultReplyMode,
@@ -11,7 +11,7 @@
 </script>
 
 <SettingsGroup title="Format & Send Delay">
-	<SettingsRow title="Default format">
+	<SettingsRow kind="menu" title="Default format">
 		<SettingsSelect
 			label="Default format"
 			value={settings.defaultComposeFormat}
@@ -24,7 +24,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Default reply">
+	<SettingsRow kind="menu" title="Default reply">
 		<SettingsSelect
 			label="Default reply"
 			value={settings.defaultReplyMode}
@@ -37,7 +37,7 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Undo send">
+	<SettingsRow kind="menu" title="Undo send">
 		<SettingsSelect
 			label="Undo send"
 			value={String(settings.undoSendDelay)}
@@ -58,44 +58,44 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Compose Behavior">
-	<SettingsRow title="Show Cc/Bcc">
-		<IOSToggle
+<SettingsGroup title="Writing Behavior">
+	<SettingsRow kind="toggle" title="Show Cc/Bcc">
+		<Switch
 			checked={settings.showCcBccInCompose}
 			onchange={(checked) => settings.setShowCcBccInCompose(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Contact suggestions">
-		<IOSToggle
+	<SettingsRow kind="toggle" title="Contact suggestions">
+		<Switch
 			checked={settings.showComposeContactSuggestions}
 			onchange={(checked) => settings.setShowComposeContactSuggestions(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Collapse quoted text">
-		<IOSToggle
+	<SettingsRow kind="toggle" title="Collapse quoted text">
+		<Switch
 			checked={settings.collapseQuotedInCompose}
 			onchange={(checked) => settings.setCollapseQuotedInCompose(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Hide compose hints">
-		<IOSToggle
+	<SettingsRow kind="toggle" title="Hide compose hints">
+		<Switch
 			checked={settings.hideComposeHints}
 			onchange={(checked) => settings.setHideComposeHints(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Always Bcc me">
-		<IOSToggle
+	<SettingsRow kind="toggle" title="Always Bcc me">
+		<Switch
 			checked={settings.bccSelf}
 			onchange={(checked) => settings.setBccSelf(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow title="Confirm before discard">
-		<IOSToggle
+	<SettingsRow kind="toggle" title="Confirm before discard">
+		<Switch
 			checked={settings.confirmBeforeDiscardCompose}
 			onchange={(checked) => settings.setConfirmBeforeDiscardCompose(checked)}
 		/>

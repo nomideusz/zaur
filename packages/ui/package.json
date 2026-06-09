@@ -9,6 +9,8 @@
     "./circadian.css": "./src/circadian.css",
     "./css/zaur.css": "./css/zaur.css",
     "./theme.css": "./src/theme.css",
+    "./auth.css": "./src/auth.css",
+    "./label-input.css": "./src/label-input.css",
     "./cn": "./src/cn.ts"
   },
   "scripts": {

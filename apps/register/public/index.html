@@ -68,17 +68,18 @@
           <div class="z-callout z-hidden" id="invitation-banner"></div>
 
           <div class="z-register-flow">
-            <p class="z-register-pick__title">Choose your address</p>
-            <label for="username-input" class="sr-only">Username</label>
-            <input
-              type="text"
-              id="username-input"
-              class="z-input"
-              placeholder="yourname"
-              autocomplete="off"
-              spellcheck="false"
-              autofocus
-            >
+            <div class="z-label-input z-label-input--primary">
+              <input
+                type="text"
+                id="username-input"
+                class="z-label-input__field"
+                placeholder="yourname"
+                autocomplete="off"
+                spellcheck="false"
+                autofocus
+              >
+              <label for="username-input" class="z-label-input__label">Choose your address</label>
+            </div>
             <div class="z-validation-hint" id="validation-hint"></div>
             <div id="results-container"></div>
 
@@ -87,8 +88,9 @@
             </p>
 
             <section class="z-register-create z-panel-collapsible" id="register-panel">
-                <div class="z-callout z-mb-4">
-                  <span class="z-callout__title" id="selected-email-label">—</span>
+                <div class="z-selected-address z-mb-4">
+                  <span class="z-type-label">Your address</span>
+                  <p class="z-selected-address__email" id="selected-email-label">—</p>
                 </div>
 
                 <div class="z-alert z-alert--error" id="form-error" role="alert"></div>
@@ -108,9 +110,18 @@
                     readonly
                   >
 
-                  <div class="z-field z-field--flush">
-                    <label for="new-password" class="z-field-label">Mailbox password</label>
-                    <input type="password" id="new-password" name="password" class="z-input" autocomplete="new-password" required>
+                  <div class="z-field-stack">
+                    <div class="z-label-input z-label-input--primary z-label-input--password">
+                      <input
+                        type="password"
+                        id="new-password"
+                        name="password"
+                        class="z-label-input__field"
+                        autocomplete="new-password"
+                        required
+                      >
+                      <label for="new-password" class="z-label-input__label">Mailbox password</label>
+                    </div>
                     <p class="z-text-subtle z-text-hint z-hidden" id="password-hint">
                       Use this for IMAP and webmail. You can add a passkey on the next screen.
                     </p>
@@ -120,20 +131,36 @@
                     <div class="z-strength-label" id="strength-label"></div>
                   </div>
 
-                  <div class="z-field z-field--flush">
-                    <label for="confirm-password" class="z-field-label">Confirm password</label>
-                    <input type="password" id="confirm-password" name="confirmPassword" class="z-input" autocomplete="new-password" required>
+                  <div class="z-label-input z-label-input--primary z-label-input--password">
+                    <input
+                      type="password"
+                      id="confirm-password"
+                      name="confirmPassword"
+                      class="z-label-input__field"
+                      autocomplete="new-password"
+                      required
+                    >
+                    <label for="confirm-password" class="z-label-input__label">Confirm password</label>
                   </div>
 
-                  <div class="z-field z-field--flush" id="captcha-section">
-                    <label for="captcha-answer" class="z-field-label">Security check</label>
+                  <div class="z-field-stack" id="captcha-section">
                     <div class="z-captcha-row">
                       <span class="z-captcha-question" id="captcha-question">Loading…</span>
-                      <input type="number" id="captcha-answer" name="captchaAnswer" class="z-input z-input--narrow" inputmode="numeric" required>
+                      <div class="z-label-input z-label-input--primary z-label-input--compact">
+                        <input
+                          type="number"
+                          id="captcha-answer"
+                          name="captchaAnswer"
+                          class="z-label-input__field"
+                          inputmode="numeric"
+                          required
+                        >
+                        <label for="captcha-answer" class="z-label-input__label">Answer</label>
+                      </div>
                     </div>
                   </div>
 
-                  <button type="submit" class="z-btn-primary z-btn-block" id="submit-btn">Create account</button>
+                  <button type="submit" class="z-btn-primary z-btn-block z-btn-lg" id="submit-btn">Create account</button>
                 </form>
             </section>
           </div>
@@ -158,6 +185,7 @@
 
   <script src="/site-config.js"></script>
   <script src="/site.js"></script>
+  <script src="/label-input.js"></script>
   <script src="/script.js"></script>
 </body>
 </html>

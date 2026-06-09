@@ -18,15 +18,11 @@
 	import { addDays } from '$lib/utils/dates';
 	import { untrack } from 'svelte';
 
-	type CalendarTab = 'week' | 'day' | 'agendas';
-
-	const tabs: { id: CalendarTab; label: string }[] = [
+	const tabs = [
 		{ id: 'week', label: 'Week' },
 		{ id: 'day', label: 'Day' },
 		{ id: 'agendas', label: 'Agendas' }
-	];
-
-	let activeView = $state<CalendarTab>('week');
+	] as const;
 	let currentDate = $state<Date>(new Date());
 	let isWide = $state(false);
 	let blockCreateUntil = 0;
@@ -88,7 +84,7 @@
 
 	$effect(() => {
 		const client = auth.client;
-		if (!client || auth.isRestoring || activeView !== 'agendas') return;
+		if (!client || auth.isRestoring || calendar.activeView !== 'agendas') return;
 
 		const year = currentDate.getFullYear();
 		const month = currentDate.getMonth();
@@ -114,8 +110,8 @@
 	});
 
 	const headerTitle = $derived.by(() => {
-		if (activeView === 'week') return 'Week';
-		if (activeView === 'day' || activeView === 'agendas') {
+		if (calendar.activeView === 'week') return 'Week';
+		if (calendar.activeView === 'day' || calendar.activeView === 'agendas') {
 			return currentDate.toLocaleDateString(undefined, {
 				weekday: 'long',
 				month: 'short',
@@ -129,7 +125,7 @@
 		});
 	});
 
-	const showDateNav = $derived(activeView === 'day' || activeView === 'agendas');
+	const showDateNav = $derived(calendar.activeView === 'day' || calendar.activeView === 'agendas');
 
 	function prev() {
 		currentDate = addDays(currentDate, -1);
@@ -232,17 +228,17 @@
 
 				<div class="h-4 w-px bg-border/80" aria-hidden="true"></div>
 
-				<div class="flex items-center rounded-lg border border-border/50 bg-surface-sunken/60 p-0.5">
+				<div class="hidden items-center rounded-lg border border-border/50 bg-surface-sunken/60 p-0.5 md:flex">
 					{#each tabs as tab (tab.id)}
 						<button
 							type="button"
 							class={cn(
 								'rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150',
-								activeView === tab.id
+								calendar.activeView === tab.id
 									? 'bg-surface-raised font-semibold text-fg shadow-sm'
 									: 'text-fg-muted hover:text-fg'
 							)}
-							onclick={() => (activeView = tab.id)}
+							onclick={() => (calendar.activeView = tab.id)}
 						>
 							{tab.label}
 						</button>
@@ -252,8 +248,8 @@
 		</div>
 
 		{#if calAdapter}
-			{#key `${activeView}-${calendar.refreshCounter}`}
-				{#if activeView === 'week'}
+			{#key `${calendar.activeView}-${calendar.refreshCounter}`}
+				{#if calendar.activeView === 'week'}
 					<div class="flex min-h-0 min-w-0 flex-1 flex-col">
 						<LibCalendar
 							adapter={calAdapter}
@@ -261,7 +257,7 @@
 							{...plannerCalendarProps}
 						/>
 					</div>
-				{:else if activeView === 'day'}
+				{:else if calendar.activeView === 'day'}
 					<div class="flex min-h-0 min-w-0 flex-1 flex-col">
 						<LibCalendar
 							adapter={calAdapter}

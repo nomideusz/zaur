@@ -20,6 +20,9 @@
 @import './styles/status-line.css' layer(components);
 @import './styles/motion.css';
 
+@import '@zaur/ui/auth.css' layer(components);
+@import '@zaur/ui/label-input.css' layer(components);
+
 /*
  * iOS Safari zooms when focusing fields below 16px. Component-layer rules (e.g. compose
  * text-sm, .z-input md:text-sm) override @layer(base), so enforce 16px here — unlayered,

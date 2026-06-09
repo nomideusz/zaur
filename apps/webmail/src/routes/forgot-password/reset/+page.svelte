@@ -3,8 +3,9 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { appConfig } from '$lib/config';
+	import AuthPage from '$lib/components/auth/AuthPage.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import ZaurSprite from '$lib/components/ui/ZaurSprite.svelte';
+	import LabelInput from '$lib/components/ui/LabelInput.svelte';
 
 	const token = $derived($page.url.searchParams.get('token')?.trim() ?? '');
 	const email = $derived($page.url.searchParams.get('email')?.trim() ?? '');
@@ -78,79 +79,59 @@
 	<title>Choose new password · {appConfig.appName}</title>
 </svelte:head>
 
-<div class="flex min-h-dvh items-center justify-center px-4 py-10">
-	<div class="w-full max-w-sm">
-		<div class="mb-8 text-center">
-			<div class="mb-4 flex justify-center text-accent">
-				<ZaurSprite id="happy" scale={5} />
+<AuthPage title="Choose a new password" tagline={email || undefined}>
+	{#if !ready}
+		<p class="z-auth-tagline text-center">Verifying reset link…</p>
+	{:else if done}
+		<div class="z-form-stack">
+			<div class="z-callout">
+				<span class="z-callout__title">Password updated</span>
+				<p class="z-callout__body">You can sign in with your new password now.</p>
 			</div>
-			<h1 class="z-type-brand text-2xl text-fg">Choose a new password</h1>
-			{#if email}
-				<p class="mt-2 text-sm text-fg-muted">{email}</p>
-			{/if}
+			<Button type="button" class="z-btn-lg w-full" onclick={goToLogin}>Sign in</Button>
 		</div>
+	{:else if !valid}
+		<div class="z-form-stack">
+			<p class="text-sm text-danger" role="alert">{verifyError}</p>
+			<a href="/forgot-password" class="block text-center text-sm text-accent hover:underline">
+				Request a new reset link
+			</a>
+		</div>
+	{:else}
+		<form class="z-form-stack" onsubmit={submit}>
+			<LabelInput
+				id="password"
+				label="New password"
+				type="password"
+				bind:value={password}
+				autocomplete="new-password"
+				minlength={8}
+				required
+				disabled={isLoading}
+			/>
 
-		{#if !ready}
-			<p class="text-center text-sm text-fg-muted">Verifying reset link…</p>
-		{:else if done}
-			<div class="space-y-4">
-				<div class="rounded-lg border border-accent/30 bg-accent/5 px-3 py-2.5 text-sm text-fg">
-					<p class="font-medium">Password updated</p>
-					<p class="mt-1 text-fg-muted">You can sign in with your new password now.</p>
-				</div>
-				<Button type="button" class="w-full" onclick={goToLogin}>Sign in</Button>
-			</div>
-		{:else if !valid}
-			<div class="space-y-4">
-				<p class="text-sm text-danger" role="alert">{verifyError}</p>
-				<a href="/forgot-password" class="block text-center text-sm text-accent hover:underline">
-					Request a new reset link
-				</a>
-			</div>
-		{:else}
-			<form class="space-y-4" onsubmit={submit}>
-				<div>
-					<label for="password" class="mb-1.5 block text-sm font-medium text-fg">New password</label>
-					<input
-						id="password"
-						type="password"
-						class="z-input"
-						bind:value={password}
-						autocomplete="new-password"
-						minlength="8"
-						required
-						disabled={isLoading}
-					/>
-				</div>
+			<LabelInput
+				id="confirm-password"
+				label="Confirm password"
+				type="password"
+				bind:value={confirmPassword}
+				autocomplete="new-password"
+				minlength={8}
+				required
+				disabled={isLoading}
+			/>
 
-				<div>
-					<label for="confirm-password" class="mb-1.5 block text-sm font-medium text-fg">
-						Confirm password
-					</label>
-					<input
-						id="confirm-password"
-						type="password"
-						class="z-input"
-						bind:value={confirmPassword}
-						autocomplete="new-password"
-						minlength="8"
-						required
-						disabled={isLoading}
-					/>
-				</div>
+			{#if password && confirmPassword && password !== confirmPassword}
+				<p class="text-sm text-danger">Passwords do not match.</p>
+			{/if}
 
-				{#if password && confirmPassword && password !== confirmPassword}
-					<p class="text-sm text-danger">Passwords do not match.</p>
-				{/if}
+			{#if submitError}
+				<p class="text-sm text-danger" role="alert">{submitError}</p>
+			{/if}
 
-				{#if submitError}
-					<p class="text-sm text-danger" role="alert">{submitError}</p>
-				{/if}
-
-				<Button type="submit" class="w-full" disabled={isLoading || !canSubmit}>
-					{isLoading ? 'Saving…' : 'Update password'}
-				</Button>
-			</form>
-		{/if}
-	</div>
-</div>
+			<Button type="submit" class="z-btn-lg w-full" disabled={isLoading || !canSubmit}>
+				{isLoading ? 'Saving…' : 'Update password'}
+			</Button>
+		</form>
+	{/if}
+</AuthPage>

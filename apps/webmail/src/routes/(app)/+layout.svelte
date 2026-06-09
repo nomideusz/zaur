@@ -13,17 +13,15 @@
 
 	let { children } = $props();
 	const onMailRoute = $derived($page.url.pathname === '/' || $page.url.pathname.startsWith('/mail'));
-	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
-	const onCalendarRoute = $derived($page.url.pathname.startsWith('/calendar'));
 	const onMailCompose = $derived($page.url.pathname.startsWith('/mail/compose'));
 	const onMailSearch = $derived($page.url.pathname.startsWith('/mail/search'));
 	const onMailThreadRoute = $derived(/^\/mail\/[^/]+\/[^/]+/.test($page.url.pathname));
 
 	const showAppHeader = $derived(true);
 	const routeOwnsMobileHeader = $derived(
-		onMailCompose || onMailSearch || onMailThreadRoute || onCalendarRoute
+		onMailCompose || onMailSearch || onMailThreadRoute
 	);
-	const showMobileAppNav = $derived(!onSettingsRoute && !onMailCompose && !onMailThreadRoute);
+	const showMobileAppNav = $derived(!onMailCompose && !onMailThreadRoute);
 	const pageScrollOnMain = false;
 	const pageScrollOverflowX = 'overflow-x-hidden';
 
