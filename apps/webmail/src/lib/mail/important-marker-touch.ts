@@ -4,7 +4,7 @@ export const IMPORTANT_MARKER_TOUCH_HOLD_MS = 320;
 /** @deprecated Use IMPORTANT_MARKER_TOUCH_HOLD_MS */
 export const IMPORTANT_RAINBOW_TOUCH_HOLD_MS = IMPORTANT_MARKER_TOUCH_HOLD_MS;
 
-const MOVE_CANCEL_PX = 14;
+const MOVE_CANCEL_PX = 10;
 
 export function createImportantMarkerTouchPick(options: {
 	canPick: () => boolean;
@@ -13,9 +13,6 @@ export function createImportantMarkerTouchPick(options: {
 	let timer: ReturnType<typeof setTimeout> | null = null;
 	let pending: { messageId: string; el: HTMLElement } | null = null;
 	let active = false;
-	let suppressClick = false;
-	let startX = 0;
-	let startY = 0;
 
 	function clearTimer() {
 		if (timer) {
@@ -39,23 +36,14 @@ export function createImportantMarkerTouchPick(options: {
 		}
 	}
 
-	function movedTooFar(event: PointerEvent): boolean {
-		return (
-			Math.hypot(event.clientX - startX, event.clientY - startY) > MOVE_CANCEL_PX
-		);
-	}
-
 	return {
 		onPointerDown(messageId: string, event: PointerEvent) {
 			if (!options.canPick()) return;
 			const el = event.currentTarget;
 			if (!(el instanceof HTMLElement)) return;
 
-			suppressClick = false;
 			event.stopPropagation();
 			clearTimer();
-			startX = event.clientX;
-			startY = event.clientY;
 			pending = { messageId, el };
 			active = false;
 			try {
@@ -66,26 +54,26 @@ export function createImportantMarkerTouchPick(options: {
 			timer = setTimeout(() => {
 				if (!pending || pending.messageId !== messageId) return;
 				active = true;
-				suppressClick = true;
 				importantMarker.startTouchPick(el, messageId);
-				if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-					navigator.vibrate(10);
-				}
 			}, IMPORTANT_MARKER_TOUCH_HOLD_MS);
 		},
 
 		onPointerMove(event: PointerEvent) {
 			if (!timer && !active) return;
-			if (!movedTooFar(event)) return;
-			if (active && pending) {
-				importantMarker.cancelTouchPick(pending.el, pending.messageId);
+			if (
+				Math.abs(event.movementX) > MOVE_CANCEL_PX ||
+				Math.abs(event.movementY) > MOVE_CANCEL_PX
+			) {
+				if (active && pending) {
+					importantMarker.cancelTouchPick(pending.el, pending.messageId);
+				}
+				reset();
 			}
-			reset();
 		},
 
-		onPointerUp(messageId: string, event: PointerEvent): boolean {
+		onPointerUp(messageId: string, event: PointerEvent) {
 			const el = event.currentTarget;
-			if (!(el instanceof HTMLElement)) return false;
+			if (!(el instanceof HTMLElement)) return;
 
 			const wasActive = active && pending?.messageId === messageId;
 			clearTimer();
@@ -94,15 +82,11 @@ export function createImportantMarkerTouchPick(options: {
 			if (wasActive) {
 				event.preventDefault();
 				event.stopPropagation();
-				suppressClick = true;
 				importantMarker.finishTouchPick(el, messageId);
 				options.onCommitted?.();
-				reset();
-				return true;
 			}
 
 			reset();
-			return false;
 		},
 
 		onPointerCancel(event?: PointerEvent) {
@@ -111,12 +95,6 @@ export function createImportantMarkerTouchPick(options: {
 				importantMarker.cancelTouchPick(pending.el, pending.messageId);
 			}
 			reset();
-		},
-
-		consumeSuppressedClick(): boolean {
-			if (!suppressClick) return false;
-			suppressClick = false;
-			return true;
 		}
 	};
 }
