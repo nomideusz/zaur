@@ -33,8 +33,9 @@
 	aria-label={label}
 	class={children ? className : cn('z-checkbox', className)}
 	onCheckedChange={(next) => {
-		checked = next;
-		onchange?.(next);
+		// When onchange is provided the parent owns checked state — avoid double toggles.
+		if (onchange) onchange(next);
+		else checked = next;
 	}}
 	{onclick}
 >

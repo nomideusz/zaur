@@ -161,6 +161,11 @@ class ImportantMarkerStore {
 			...this.introGeneration,
 			[messageId]: (this.introGeneration[messageId] ?? 0) + 1
 		};
+		// Fresh generation — drop stale session keys so intro can play again.
+		for (const key of [...this.introShownKeys]) {
+			if (key.startsWith(`${messageId}:`)) this.introShownKeys.delete(key);
+		}
+		writeIntroShownKeys(this.introShownKeys);
 		// Bulk marks animate in the list only — opening each message should stay static.
 		if (options.introInReader === false) {
 			this.markIntroShown(messageId, 'reader');

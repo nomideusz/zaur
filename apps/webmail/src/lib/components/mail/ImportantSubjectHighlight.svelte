@@ -124,8 +124,6 @@
 						() => importantMarker.completeIntroAnimation(id, where),
 						config.animationDuration
 					);
-				} else {
-					importantMarker.markIntroShown(id, where);
 				}
 			});
 		})();
@@ -155,7 +153,7 @@
 </script>
 
 <!-- Positioning context for rough-notation SVG (inserted as sibling before the target span). -->
-<span class="relative inline max-w-full">
+<span class="pointer-events-none relative inline max-w-full">
 	<span
 		bind:this={target}
 		data-important-subject={messageId}

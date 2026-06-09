@@ -496,24 +496,19 @@
 		});
 	}
 
-	function handleRowCheckboxClick(messageId: string, event: MouseEvent, wasSelected: boolean) {
+	function handleRowCheckboxChange(messageId: string) {
+		mail.toggleMessageSelection(messageId);
+	}
+
+	function handleRowCheckboxClick(messageId: string, event: MouseEvent) {
 		event.stopPropagation();
 		const ctrl = event.ctrlKey || event.metaKey;
 		const shift = event.shiftKey;
-		if (shift || ctrl) {
-			event.preventDefault();
-			setTimeout(() => {
-				handleRowSelect(messageId, { shift, ctrl });
-			}, 0);
-			return;
-		}
-		// Let the native toggle stand: the checkbox is controlled via `checked={rowSelected}`,
-		// and preventing default makes the browser's canceled-activation revert race Svelte's
-		// cached set_checked, leaving the box stuck after "Select all" → deselect.
-		mail.toggleMessageSelection(messageId);
-		if (wasSelected && event.currentTarget instanceof HTMLElement) {
-			event.currentTarget.blur();
-		}
+		if (!shift && !ctrl) return;
+		event.preventDefault();
+		setTimeout(() => {
+			handleRowSelect(messageId, { shift, ctrl });
+		}, 0);
 	}
 
 	function handleRowLinkClick(messageId: string, event: MouseEvent) {
@@ -1054,7 +1049,8 @@
 							class={cn('z-mail-list-row__checkbox absolute m-0', rowSelected && 'z-mail-list-row__checkbox--on')}
 							checked={rowSelected}
 							label={`Select ${subjectText}`}
-							onclick={(event) => handleRowCheckboxClick(message.id, event, rowSelected)}
+							onchange={() => handleRowCheckboxChange(message.id)}
+							onclick={(event) => handleRowCheckboxClick(message.id, event)}
 						/>
 					</div>
 				{/if}

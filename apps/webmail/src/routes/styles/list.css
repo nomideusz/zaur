@@ -347,6 +347,8 @@
 	}
 
 	.z-mail-view .z-mail-list-checkbox-col--row {
+		position: relative;
+		z-index: 3;
 		margin-top: 0.875rem;
 	}
 
