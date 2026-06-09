@@ -23,7 +23,7 @@
 
 		.z-reader-header {
 			min-height: 0;
-			align-items: flex-start;
+			align-items: center;
 			padding-block: 0.625rem;
 		}
 	}
@@ -309,10 +309,10 @@
 	}
 
 	.z-reader-inline-subject {
-		margin: 0 0 var(--z-space-reader-inline-subject);
+		margin: var(--z-space-reader-inline-subject) 0 0;
 		font-size: var(--z-reader-text);
 		line-height: var(--z-reader-leading);
-		@apply font-semibold text-fg;
+		@apply break-words font-semibold text-fg;
 	}
 
 	.z-email-body :where(p + p, p + ul, p + ol, ul + p, ol + p) {

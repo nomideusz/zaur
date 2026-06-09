@@ -26,7 +26,7 @@
 	import { formatMessageListWhen } from '$lib/utils/dates';
 	import { createImportantMarkerTouchPick } from '$lib/mail/important-marker-touch';
 	import { mailListBackHref } from '$lib/mail/routes';
-	import { hasPreciseHover } from '$lib/utils/pointer-env';
+	import { hasPreciseHover, isMobileLayout } from '$lib/utils/pointer-env';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
 
@@ -45,6 +45,12 @@
 	let expandedIds = $state<Set<string>>(new Set());
 	let scrollPane = $state<HTMLDivElement | null>(null);
 	let readerSubjectEl = $state<HTMLHeadingElement | null>(null);
+	let readerSubjectElMobile = $state<HTMLHeadingElement | null>(null);
+
+	function getReaderSubjectEl(): HTMLHeadingElement | null {
+		if (typeof window === 'undefined') return readerSubjectEl ?? readerSubjectElMobile;
+		return isMobileLayout() ? readerSubjectElMobile : readerSubjectEl;
+	}
 
 	const latest = $derived(thread.at(-1));
 	const actionMessage = $derived(
@@ -163,9 +169,11 @@
 			readerRainbowTimeout = null;
 		}
 
+		const subjectEl = getReaderSubjectEl();
+
 		if (!readerSamplingRainbow) {
-			if (subjectMessageId && readerSubjectEl) {
-				importantMarker.resetFromElement(readerSubjectEl, subjectMessageId);
+			if (subjectMessageId && subjectEl) {
+				importantMarker.resetFromElement(subjectEl, subjectMessageId);
 			}
 			return;
 		}
@@ -176,25 +184,26 @@
 			hasPreciseHover() &&
 			subjectImportant &&
 			subjectMessageId &&
-			readerSubjectEl &&
+			subjectEl &&
 			shouldPersistReaderRainbowPick(event)
 		) {
 			importantMarker.stopHoverSample(subjectMessageId);
 			if (shouldCommitImportantMarkerPick(readerMarkerSampleStartedAt)) {
-				importantMarker.pickFromElement(readerSubjectEl, subjectMessageId);
+				importantMarker.pickFromElement(subjectEl, subjectMessageId);
 			} else {
-				importantMarker.resetFromElement(readerSubjectEl, subjectMessageId);
+				importantMarker.resetFromElement(subjectEl, subjectMessageId);
 			}
-		} else if (subjectMessageId && readerSubjectEl) {
+		} else if (subjectMessageId && subjectEl) {
 			importantMarker.stopHoverSample(subjectMessageId);
-			importantMarker.resetFromElement(readerSubjectEl, subjectMessageId);
+			importantMarker.resetFromElement(subjectEl, subjectMessageId);
 		}
 
 		readerMarkerSampleStartedAt = 0;
 	}
 
 	function startReaderRainbowSample() {
-		if (settings.reduceMotion || !hasPreciseHover() || !subjectImportant || !subjectMessageId || !readerSubjectEl) {
+		const subjectEl = getReaderSubjectEl();
+		if (settings.reduceMotion || !hasPreciseHover() || !subjectImportant || !subjectMessageId || !subjectEl) {
 			return;
 		}
 		if (readerRainbowTimeout) clearTimeout(readerRainbowTimeout);
@@ -202,10 +211,11 @@
 		readerMarkerSampleStartedAt = 0;
 
 		readerRainbowTimeout = setTimeout(() => {
-			if (!readerSubjectEl || !subjectMessageId) return;
+			const el = getReaderSubjectEl();
+			if (!el || !subjectMessageId) return;
 			readerSamplingRainbow = true;
 			readerMarkerSampleStartedAt = Date.now();
-			importantMarker.startHoverSample(readerSubjectEl, subjectMessageId);
+			importantMarker.startHoverSample(el, subjectMessageId);
 		}, IMPORTANT_MARKER_HOVER_DELAY_MS);
 	}
 
@@ -215,9 +225,67 @@
 			!settings.reduceMotion &&
 			!!subjectImportant &&
 			!!subjectMessageId &&
-			!!readerSubjectEl
+			!!getReaderSubjectEl()
 	});
 </script>
+
+{#snippet readerSubjectContent()}
+	{#if subjectImportant && subjectMessageId}
+		{#key importantMarker.highlightInstanceKey(subjectMessageId)}
+			<ImportantSubjectHighlight
+				messageId={subjectMessageId}
+				instanceKey={importantMarker.highlightInstanceKey(subjectMessageId)}
+				surface="reader"
+			>
+				{subject}
+			</ImportantSubjectHighlight>
+		{/key}
+	{:else}
+		{subject}
+	{/if}
+{/snippet}
+
+{#snippet readerSubjectDesktop()}
+	<h1
+		bind:this={readerSubjectEl}
+		class="z-type-reader-title hidden min-w-0 flex-1 break-words md:block"
+		onpointerenter={startReaderRainbowSample}
+		onpointerleave={persistReaderRainbowPick}
+		onpointerdown={(event) => {
+			if (!subjectMessageId) return;
+			readerMarkerTouch.onPointerDown(subjectMessageId, event);
+		}}
+		onpointermove={readerMarkerTouch.onPointerMove}
+		onpointerup={(event) => {
+			if (!subjectMessageId) return;
+			readerMarkerTouch.onPointerUp(subjectMessageId, event);
+		}}
+		onpointercancel={readerMarkerTouch.onPointerCancel}
+	>
+		{@render readerSubjectContent()}
+	</h1>
+{/snippet}
+
+{#snippet readerSubjectMobile()}
+	<h1
+		bind:this={readerSubjectElMobile}
+		class="z-reader-inline-subject md:hidden"
+		onpointerenter={startReaderRainbowSample}
+		onpointerleave={persistReaderRainbowPick}
+		onpointerdown={(event) => {
+			if (!subjectMessageId) return;
+			readerMarkerTouch.onPointerDown(subjectMessageId, event);
+		}}
+		onpointermove={readerMarkerTouch.onPointerMove}
+		onpointerup={(event) => {
+			if (!subjectMessageId) return;
+			readerMarkerTouch.onPointerUp(subjectMessageId, event);
+		}}
+		onpointercancel={readerMarkerTouch.onPointerCancel}
+	>
+		{@render readerSubjectContent()}
+	</h1>
+{/snippet}
 
 <article
 	class="z-mail-pane-surface z-mail-pane-surface--reader flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
@@ -232,36 +300,8 @@
 		>
 			<ArrowLeft class="size-5" aria-hidden="true" />
 		</a>
-		<h1
-			bind:this={readerSubjectEl}
-			class="z-type-reader-title min-w-0 flex-1 break-words"
-			onpointerenter={startReaderRainbowSample}
-			onpointerleave={persistReaderRainbowPick}
-			onpointerdown={(event) => {
-				if (!subjectMessageId) return;
-				readerMarkerTouch.onPointerDown(subjectMessageId, event);
-			}}
-			onpointermove={readerMarkerTouch.onPointerMove}
-			onpointerup={(event) => {
-				if (!subjectMessageId) return;
-				readerMarkerTouch.onPointerUp(subjectMessageId, event);
-			}}
-			onpointercancel={readerMarkerTouch.onPointerCancel}
-		>
-			{#if subjectImportant && subjectMessageId}
-				{#key importantMarker.highlightInstanceKey(subjectMessageId)}
-					<ImportantSubjectHighlight
-						messageId={subjectMessageId}
-						instanceKey={importantMarker.highlightInstanceKey(subjectMessageId)}
-						surface="reader"
-					>
-						{subject}
-					</ImportantSubjectHighlight>
-				{/key}
-			{:else}
-				{subject}
-			{/if}
-		</h1>
+		{@render readerSubjectDesktop()}
+		<div class="min-w-0 flex-1 md:hidden" aria-hidden="true"></div>
 		{#if latest}
 			<div
 				class={cn(
@@ -357,6 +397,10 @@
 									</time>
 								{/if}
 							</div>
+
+							{#if message.id === latest?.id}
+								{@render readerSubjectMobile()}
+							{/if}
 
 							<div class="z-reader-body mt-4">
 								<MessageBody
