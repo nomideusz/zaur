@@ -415,6 +415,14 @@ class AuthStore {
 			await this.openOfflineLayer(this.client);
 			await this.bootstrapMail(this.client);
 			this.startBackgroundSync(this.client, this.username, this.displayName ?? undefined);
+			if (this.client) {
+				pushListener.start(this.client, (change) => {
+					const accountChanges = change.changed[this.client!.getAccountId()];
+					if (accountChanges) {
+						void mail.handlePushChange(this.client!, accountChanges);
+					}
+				});
+			}
 			toast.show('Local mail cache cleared. Sync will rebuild from the server.', 'success');
 			return true;
 		} catch {

@@ -130,9 +130,20 @@ class SyncEngine {
 			const changedIds = [...new Set([...created, ...updated])];
 			const emails = changedIds.length ? await client.getEmailsByIds(changedIds) : [];
 
-			await mail.applyEmailSync(client, emails, destroyed);
-			mail.notifyNewMail(created, emails);
-			await setSyncState(accountId, 'Email', latestState);
+			const applied = await mail.applyEmailSync(client, emails, destroyed);
+			if (applied) {
+				mail.notifyNewMail(created, emails);
+				await setSyncState(accountId, 'Email', latestState);
+				return;
+			}
+
+			const routeId = mail.currentMailboxRouteId;
+			if (routeId) {
+				await mail.refreshMessages(client, routeId);
+				mail.notifyNewMail(created, emails);
+				await setSyncState(accountId, 'Email', latestState);
+			}
+			// No open mailbox yet — leave sync state unchanged so the next push/poll retries.
 		} catch (error) {
 			if (isStateTooOldError(error)) {
 				await this.fallbackEmailRefresh(client, newState);

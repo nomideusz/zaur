@@ -137,6 +137,8 @@ class MailStore {
 	removedFromViewMessageIds = $state<Set<string>>(new Set());
 	private blockMailboxRefreshUntil = 0;
 	private lastFallbackRefreshAt = 0;
+	/** Bumped when push sync mutates the open message list (guards loadMessages overwrites). */
+	private messagesSyncRevision = 0;
 
 	get selectedCount() {
 		return this.selectedMessageIds.size;
@@ -216,17 +218,17 @@ class MailStore {
 			return;
 		}
 
+		this.currentMailboxRouteId = routeMailboxId;
+
 		const mailbox = this.mailboxByRouteId(routeMailboxId);
 		if (!mailbox?.jmapId) {
 			this.messages = [];
 			this.messagesError = 'Folder not found';
 			this.messagesHasMore = false;
 			this.messagesLoadSettledForRouteId = routeMailboxId;
-			this.currentMailboxRouteId = routeMailboxId;
 			return;
 		}
 
-		this.currentMailboxRouteId = routeMailboxId;
 		this.clearSelection();
 		this.messagesError = null;
 		this.removedFromViewMessageIds = new Set();
@@ -255,9 +257,15 @@ class MailStore {
 		}
 		this.messagesLoading = !showedCache && this.messages.length === 0;
 
+		const syncRevisionAtStart = this.messagesSyncRevision;
+
 		try {
 			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0);
-			this.messages = mapVisiblePreviews(emails, routeMailboxId);
+			const previews = mapVisiblePreviews(emails, routeMailboxId);
+			this.messages =
+				syncRevisionAtStart !== this.messagesSyncRevision
+					? this.mergeQueryWithSyncedMessages(previews)
+					: previews;
 			this.messagesTotal = this.visibleMailboxTotal(mailbox.jmapId, total);
 			this.messagesHasMore = hasMore;
 			this.messagesFromCache = false;
@@ -1111,12 +1119,31 @@ class MailStore {
 		}
 	}
 
-	async applyEmailSync(client: JMAPClient, emails: JMAPEmail[], destroyed: string[]) {
+	private mergeQueryWithSyncedMessages(queryPreviews: MessagePreview[]): MessagePreview[] {
+		const currentById = new Map(this.messages.map((message) => [message.id, message]));
+		const queryIds = new Set(queryPreviews.map((message) => message.id));
+		const merged = queryPreviews.map((message) => currentById.get(message.id) ?? message);
+
+		for (const message of this.messages) {
+			if (!queryIds.has(message.id)) merged.push(message);
+		}
+
+		merged.sort(
+			(a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
+		);
+		return merged;
+	}
+
+	async applyEmailSync(
+		client: JMAPClient,
+		emails: JMAPEmail[],
+		destroyed: string[]
+	): Promise<boolean> {
 		const routeId = this.currentMailboxRouteId;
-		if (!routeId) return;
+		if (!routeId) return false;
 
 		const mailbox = this.mailboxByRouteId(routeId);
-		if (!mailbox?.jmapId) return;
+		if (!mailbox?.jmapId) return false;
 
 		const onlyHiddenChanges =
 			emails.length > 0 &&
@@ -1125,7 +1152,7 @@ class MailStore {
 
 		if (onlyHiddenChanges) {
 			void this.refreshMailboxes(client);
-			return;
+			return true;
 		}
 
 		const accountId = client.getAccountId();
@@ -1167,10 +1194,11 @@ class MailStore {
 		next.sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
 
 		if (totalDelta === 0 && messagePreviewsEqual(this.messages, next)) {
-			return;
+			return true;
 		}
 
 		this.messages = next;
+		this.messagesSyncRevision += 1;
 		this.messagesTotal = Math.max(0, this.messagesTotal + totalDelta);
 		this.messagesFromCache = false;
 
@@ -1199,6 +1227,8 @@ class MailStore {
 				}
 			}
 		}
+
+		return true;
 	}
 
 	notifyNewMail(created: string[], emails: JMAPEmail[]) {
@@ -1597,6 +1627,7 @@ class MailStore {
 		this.selectionList = [];
 		this.removedFromViewMessageIds = new Set();
 		this.pendingKeywords.clear();
+		this.messagesSyncRevision = 0;
 	}
 }
 

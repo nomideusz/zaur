@@ -24,7 +24,8 @@ export class PushListener {
 		this.stop();
 		this.client = client;
 		this.callback = onChange;
-		void this.syncStates(client);
+
+		void this.bootstrapSync(client);
 
 		this.startPolling(client);
 
@@ -40,6 +41,11 @@ export class PushListener {
 			};
 			document.addEventListener('visibilitychange', this.onVisibilityChange);
 		}
+	}
+
+	private async bootstrapSync(client: JMAPClient) {
+		await this.syncStates(client);
+		await this.check(client);
 	}
 
 	stop() {
