@@ -255,7 +255,7 @@ class ComposeStore {
 		this.subject = '';
 		this.body = settings.composeBodyWithSignature();
 		const sigHtml = settings.useSignature && settings.signature.trim() ? `<p>-- <br>${plainTextToSafeHtml(settings.signature.trim())}</p>` : '';
-		this.bodyHtml = sigHtml;
+		this.bodyHtml = settings.defaultComposeFormat === 'html' ? sigHtml : '';
 		this.showCcBcc = false;
 		this.mode = 'new';
 		this.jmapDraftId = undefined;
@@ -374,7 +374,10 @@ class ComposeStore {
 		);
 		const quotedHtml = message.bodyHtml || plainTextToSafeHtml(message.bodyText);
 		const sigHtml = settings.useSignature && settings.signature.trim() ? `<p>-- <br>${plainTextToSafeHtml(settings.signature.trim())}</p>` : '';
-		this.bodyHtml = `<p><br></p><p><br></p>${sigHtml}<blockquote class="z-email-quote">On ${when}, ${message.from.name} wrote:<br>${quotedHtml}</blockquote>`;
+		this.bodyHtml =
+			settings.defaultComposeFormat === 'html'
+				? `<p><br></p><p><br></p>${sigHtml}<blockquote class="z-email-quote">On ${when}, ${message.from.name} wrote:<br>${quotedHtml}</blockquote>`
+				: '';
 		this.jmapDraftId = undefined;
 		this.error = null;
 		this.draftSavedAt = null;
@@ -419,7 +422,10 @@ class ComposeStore {
 		);
 		const quotedHtml = message.bodyHtml || plainTextToSafeHtml(message.bodyText);
 		const sigHtml = settings.useSignature && settings.signature.trim() ? `<p>-- <br>${plainTextToSafeHtml(settings.signature.trim())}</p>` : '';
-		this.bodyHtml = `<p><br></p><p><br></p>${sigHtml}<blockquote class="z-email-quote">On ${when}, ${message.from.name} wrote:<br>${quotedHtml}</blockquote>`;
+		this.bodyHtml =
+			settings.defaultComposeFormat === 'html'
+				? `<p><br></p><p><br></p>${sigHtml}<blockquote class="z-email-quote">On ${when}, ${message.from.name} wrote:<br>${quotedHtml}</blockquote>`
+				: '';
 		this.jmapDraftId = undefined;
 		this.error = null;
 		this.draftSavedAt = null;
@@ -449,7 +455,10 @@ class ComposeStore {
 			`Date: ${when}<br>` +
 			`Subject: ${message.subject}<br>`;
 		const sigHtml = settings.useSignature && settings.signature.trim() ? `<p>-- <br>${plainTextToSafeHtml(settings.signature.trim())}</p>` : '';
-		this.bodyHtml = `<p><br></p><p><br></p>${sigHtml}<blockquote class="z-email-quote">${headerHtml}<br>${quotedHtml}</blockquote>`;
+		this.bodyHtml =
+			settings.defaultComposeFormat === 'html'
+				? `<p><br></p><p><br></p>${sigHtml}<blockquote class="z-email-quote">${headerHtml}<br>${quotedHtml}</blockquote>`
+				: '';
 		this.jmapDraftId = undefined;
 		this.error = null;
 		this.draftSavedAt = null;
@@ -703,7 +712,7 @@ class ComposeStore {
 			bcc,
 			subject,
 			body,
-			bodyHtml: this.bodyHtml || undefined,
+			bodyHtml: settings.defaultComposeFormat === 'html' ? this.bodyHtml || undefined : undefined,
 			toRaw: this.to,
 			ccRaw: this.cc,
 			bccRaw: this.bcc,
@@ -716,7 +725,8 @@ class ComposeStore {
 				bcc: bcc.length ? bcc : undefined,
 				attachments: attachments.length ? attachments : undefined,
 				format: settings.defaultComposeFormat,
-				bodyHtml: this.bodyHtml || undefined
+				bodyHtml:
+					settings.defaultComposeFormat === 'html' ? this.bodyHtml || undefined : undefined
 			}
 		};
 
@@ -889,7 +899,8 @@ class ComposeStore {
 					useSignature: settings.useSignature,
 					signature: settings.signature
 				}),
-				bodyHtml: this.bodyHtml || undefined,
+				bodyHtml:
+					settings.defaultComposeFormat === 'html' ? this.bodyHtml || undefined : undefined,
 				fromEmail,
 				fromName: fromName?.trim() || undefined,
 				attachments: this.readyAttachments(),

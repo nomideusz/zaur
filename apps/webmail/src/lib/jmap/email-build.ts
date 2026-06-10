@@ -38,7 +38,7 @@ export function buildEmailCreateData(input: EmailCreateInput): Record<string, un
 		subject: input.subject,
 		mailboxIds: input.mailboxIds,
 		...(input.keywords ? { keywords: input.keywords } : {}),
-		...(input.bodyHtml || input.format === 'html'
+		...(input.format === 'html'
 			? {
 					bodyValues: {
 						'1': { value: input.bodyText },

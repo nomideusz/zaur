@@ -95,10 +95,12 @@
 
 	function setMessageBody(value: string) {
 		rebuildComposeBody(value, signatureBody);
+		if (!isRichText) compose.bodyHtml = '';
 	}
 
 	function setSignatureBody(value: string) {
 		rebuildComposeBody(messageBody, value);
+		if (!isRichText) compose.bodyHtml = '';
 	}
 
 	const titles: Record<ComposeMode, string> = {
