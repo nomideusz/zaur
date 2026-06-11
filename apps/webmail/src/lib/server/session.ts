@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Cookies } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
@@ -62,7 +62,10 @@ function readSessionStore(): SessionStore {
 function writeSessionStore(store: SessionStore): void {
 	const storePath = getSessionStorePath();
 	mkdirSync(path.dirname(storePath), { recursive: true });
-	writeFileSync(storePath, JSON.stringify(store, null, 2), 'utf8');
+	// Write-then-rename so a crash or concurrent reader never sees a truncated file.
+	const tmpPath = `${storePath}.${randomBytes(6).toString('hex')}.tmp`;
+	writeFileSync(tmpPath, JSON.stringify(store, null, 2), 'utf8');
+	renameSync(tmpPath, storePath);
 }
 
 function isExpired(record: StoredSessionRecord, now = Date.now()): boolean {

@@ -5,5 +5,9 @@ node_modules
 .env
 .env.*
 !.env.example
+.data
+build
+test-results
+playwright-report
 *.md
 deploy.tar

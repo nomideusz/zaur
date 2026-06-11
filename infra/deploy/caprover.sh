@@ -19,7 +19,16 @@ case "$APP" in
 webmail)
 	CAPROVER_APP=webmail
 	cp infra/deploy/webmail.captain-definition captain-definition
-	tar -cf deploy.tar captain-definition \
+	tar -cf deploy.tar \
+		--exclude=node_modules \
+		--exclude=.env \
+		--exclude='.env.*' \
+		--exclude=.data \
+		--exclude=.svelte-kit \
+		--exclude=test-results \
+		--exclude=playwright-report \
+		--exclude=apps/webmail/build \
+		captain-definition \
 		pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc packages/ui packages/sprite packages/svelte-calendar apps/webmail
 	;;
 register)

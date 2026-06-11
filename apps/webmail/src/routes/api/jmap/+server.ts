@@ -26,7 +26,14 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		return json(response satisfies JMAPResponse);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : 'JMAP request failed';
-		const status = message.includes('401') || message.includes('Unauthorized') ? 401 : 502;
-		return json({ error: message }, { status });
+		const unauthorized = message.includes('401') || message.includes('Unauthorized');
+		if (!unauthorized) {
+			console.error('[api/jmap] Upstream request failed:', error);
+		}
+		// Don't echo upstream error details to the client.
+		return json(
+			{ error: unauthorized ? 'Unauthorized' : 'JMAP request failed' },
+			{ status: unauthorized ? 401 : 502 }
+		);
 	}
 };

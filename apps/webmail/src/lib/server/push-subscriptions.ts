@@ -1,5 +1,5 @@
-import { createHash } from 'node:crypto';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { createHash, randomBytes } from 'node:crypto';
+import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type webpush from 'web-push';
 import { env } from '$env/dynamic/private';
@@ -38,7 +38,10 @@ async function readStore(): Promise<SubscriptionStore> {
 async function writeStore(store: SubscriptionStore): Promise<void> {
 	const storePath = getStorePath();
 	await mkdir(path.dirname(storePath), { recursive: true });
-	await writeFile(storePath, JSON.stringify(store, null, 2), 'utf8');
+	// Write-then-rename so a crash or concurrent reader never sees a truncated file.
+	const tmpPath = `${storePath}.${randomBytes(6).toString('hex')}.tmp`;
+	await writeFile(tmpPath, JSON.stringify(store, null, 2), 'utf8');
+	await rename(tmpPath, storePath);
 }
 
 export function subscriptionId(endpoint: string): string {

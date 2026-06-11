@@ -9,11 +9,14 @@ export interface PushMessage {
 	unreadCount?: number;
 }
 
+/** `gone` means the push service rejected the endpoint permanently and the subscription was deleted. */
+export type PushSendResult = 'sent' | 'failed' | 'gone';
+
 export async function sendPushNotification(
 	record: StoredPushSubscription,
 	message: PushMessage
-): Promise<boolean> {
-	if (!isPushConfigured() || !configureWebPush()) return false;
+): Promise<PushSendResult> {
+	if (!isPushConfigured() || !configureWebPush()) return 'failed';
 
 	try {
 		await webpush.sendNotification(
@@ -26,7 +29,7 @@ export async function sendPushNotification(
 				unreadCount: message.unreadCount
 			})
 		);
-		return true;
+		return 'sent';
 	} catch (error) {
 		const statusCode =
 			typeof error === 'object' &&
@@ -38,9 +41,11 @@ export async function sendPushNotification(
 
 		if (statusCode === 404 || statusCode === 410) {
 			await removePushSubscription(record.id);
+			console.warn('[push] Subscription gone, removed:', record.id);
+			return 'gone';
 		}
 
 		console.warn('[push] Failed to deliver notification:', error);
-		return false;
+		return 'failed';
 	}
 }

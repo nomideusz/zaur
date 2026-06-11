@@ -1,15 +1,29 @@
-import type { Handle } from '@sveltejs/kit';
+import type { Handle, ServerInit } from '@sveltejs/kit';
+import { building } from '$app/environment';
 import { env } from '$env/dynamic/private';
 import { pushWatcher } from '$lib/server/push-watcher';
 
-let pushWatcherStarted = false;
+export const init: ServerInit = async () => {
+	if (building) return;
 
-export const handle: Handle = async ({ event, resolve }) => {
-	if (!pushWatcherStarted) {
-		pushWatcherStarted = true;
-		void pushWatcher.start();
+	if (process.env.NODE_ENV === 'production') {
+		const secret = env.SESSION_SECRET?.trim() ?? '';
+		if (secret.length < 32) {
+			throw new Error(
+				'SESSION_SECRET must be set to a random string of at least 32 characters in production'
+			);
+		}
 	}
 
+	void pushWatcher.start();
+
+	// adapter-node emits this after it stops accepting connections (SIGTERM/SIGINT).
+	process.on('sveltekit:shutdown', () => {
+		pushWatcher.stop();
+	});
+};
+
+export const handle: Handle = async ({ event, resolve }) => {
 	const response = await resolve(event);
 
 	const authOrigin = env.OAUTH_ISSUER_URL?.trim().replace(/\/$/, '') ?? '';
@@ -19,7 +33,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 		"default-src 'self'",
 		"script-src 'self' 'unsafe-inline'",
 		"style-src 'self' 'unsafe-inline'",
-		"img-src 'self' data: blob: https: http:",
+		"img-src 'self' data: blob: https:",
 		"font-src 'self'",
 		`connect-src ${connectSrc}`,
 		"frame-ancestors 'none'",

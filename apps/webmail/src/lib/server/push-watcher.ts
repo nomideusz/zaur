@@ -29,6 +29,12 @@ class PushWatcher {
 		await this.syncWatchers();
 	}
 
+	stop(): void {
+		for (const watcher of this.watchers.values()) watcher.stop();
+		this.watchers.clear();
+		this.started = false;
+	}
+
 	private async syncWatchers(): Promise<void> {
 		const records = await listPushSubscriptions();
 		const activeIds = new Set(records.map((record) => record.id));
@@ -271,11 +277,12 @@ class SubscriptionWatcher {
 	) {
 		const unreadCount = await this.getInboxUnreadCount(client, inboxId);
 
+		let result;
 		if (emails.length === 1) {
 			const email = emails[0];
 			const from = email.from?.[0]?.name?.trim() || email.from?.[0]?.email || 'Someone';
 			const subject = email.subject?.trim() || '(no subject)';
-			await sendPushNotification(this.record, {
+			result = await sendPushNotification(this.record, {
 				title: 'New mail',
 				body: `${from}: ${subject}`,
 				url: email.threadId
@@ -283,14 +290,16 @@ class SubscriptionWatcher {
 					: '/',
 				unreadCount
 			});
-			return;
+		} else {
+			result = await sendPushNotification(this.record, {
+				title: 'New mail',
+				body: `${emails.length} unseen messages in Inbox`,
+				unreadCount
+			});
 		}
 
-		await sendPushNotification(this.record, {
-			title: 'New mail',
-			body: `${emails.length} unseen messages in Inbox`,
-			unreadCount
-		});
+		// The subscription record was deleted by the sender; stop watching it.
+		if (result === 'gone') this.onInvalid();
 	}
 }
 

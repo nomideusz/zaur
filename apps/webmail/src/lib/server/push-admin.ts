@@ -118,12 +118,13 @@ export async function sendTestPushNotifications(input?: {
 	const results: PushTestResult[] = [];
 
 	for (const record of targets) {
-		const ok = await sendPushNotification(record, message);
+		const result = await sendPushNotification(record, message);
+		const ok = result === 'sent';
 		results.push({
 			id: record.id,
 			username: record.username,
 			ok,
-			error: ok ? undefined : 'Delivery failed'
+			error: ok ? undefined : result === 'gone' ? 'Subscription expired' : 'Delivery failed'
 		});
 	}
 
