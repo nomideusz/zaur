@@ -46,6 +46,28 @@
 		}
 	}
 
+	/* Static "you are here" pill for leaf screens (compose, reader) — same look
+	   as the checked segment in the mobile folder rail, so every mobile header
+	   marks the current page the same way. */
+	.z-mobile-page-pill {
+		display: inline-block;
+		max-width: 12rem;
+		padding: 0.375rem 0.625rem;
+		border-radius: var(--radius-md);
+		background-color: color-mix(in srgb, var(--z-accent) 42%, transparent);
+		font-size: 0.875rem;
+		font-weight: 600;
+		line-height: 1.25rem;
+		color: var(--z-fg);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	:root:is(.dark, [data-circadian-dark]) .z-mobile-page-pill {
+		background-color: color-mix(in srgb, var(--z-accent) 55%, transparent);
+	}
+
 	/* Separates the Search utility icon from the New primary action in the header end. */
 	.z-app-shell-header__divider {
 		width: 1px;

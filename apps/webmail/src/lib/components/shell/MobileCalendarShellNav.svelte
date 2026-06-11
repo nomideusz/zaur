@@ -1,35 +1,33 @@
 <script lang="ts">
 	import { calendar, type CalendarViewTab } from '$lib/stores/calendar.svelte';
-	import { cn } from '$lib/utils/cn';
+	import {
+		SegmentGroup,
+		SegmentGroupItem,
+		SegmentGroupItemText
+	} from '$lib/components/ui/segment-group';
 
 	const tabs: { id: CalendarViewTab; label: string }[] = [
 		{ id: 'week', label: 'Week' },
 		{ id: 'day', label: 'Day' },
 		{ id: 'agendas', label: 'Agendas' }
 	];
-
-	function navLinkClass(active: boolean): string {
-		return cn('z-mail-text-nav__link shrink-0', active && 'z-mail-text-nav__link--active');
-	}
-
-	function selectView(id: CalendarViewTab) {
-		calendar.activeView = id;
-	}
 </script>
 
-<nav
-	class="flex min-w-0 items-center gap-3 md:hidden"
-	aria-label="Calendar navigation"
->
-	{#each tabs as tab (tab.id)}
-		{@const isActive = calendar.activeView === tab.id}
-		<button
-			type="button"
-			class={navLinkClass(isActive)}
-			aria-current={isActive ? 'page' : undefined}
-			onclick={() => selectView(tab.id)}
-		>
-			{tab.label}
-		</button>
-	{/each}
+<nav class="min-w-0 md:hidden" aria-label="Calendar navigation">
+	<SegmentGroup
+		value={calendar.activeView}
+		track={false}
+		indicatorClass="z-segment-group__indicator--accent rounded-md"
+		class="rounded-lg px-0.5"
+		onValueChange={(value) => (calendar.activeView = value as CalendarViewTab)}
+	>
+		{#each tabs as tab (tab.id)}
+			<SegmentGroupItem
+				value={tab.id}
+				class="px-2.5 py-1.5 text-sm font-medium text-fg-muted data-[state=checked]:font-semibold data-[state=checked]:text-fg"
+			>
+				<SegmentGroupItemText>{tab.label}</SegmentGroupItemText>
+			</SegmentGroupItem>
+		{/each}
+	</SegmentGroup>
 </nav>

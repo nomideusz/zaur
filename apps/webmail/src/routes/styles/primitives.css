@@ -272,7 +272,7 @@
 		transition: border-color var(--z-motion-fast) var(--z-ease-standard), box-shadow var(--z-motion-fast) var(--z-ease-standard);
 	}
 
-	:root.dark .z-select {
+	:root:is(.dark, [data-circadian-dark]) .z-select {
 		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%239ca3af' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m5 7.5 5 5 5-5'/%3E%3C/svg%3E");
 	}
 
@@ -337,7 +337,7 @@
 		background-color: var(--z-chrome-active);
 	}
 
-	:root.dark .z-list-row--current:not([data-hide-active-indicator])::before {
+	:root:is(.dark, [data-circadian-dark]) .z-list-row--current:not([data-hide-active-indicator])::before {
 		background-color: var(--z-fg-muted);
 	}
 
@@ -565,7 +565,7 @@
 		box-shadow: var(--shadow-sm);
 	}
 
-	:root.dark .z-segmented__item--active {
+	:root:is(.dark, [data-circadian-dark]) .z-segmented__item--active {
 		border: 1px solid color-mix(in srgb, var(--z-border-strong) 70%, transparent);
 		padding: calc(0.25rem - 1px) calc(0.6875rem - 1px);
 	}
@@ -597,7 +597,7 @@
 		box-shadow: none;
 	}
 
-	:root.dark .z-segment-group__indicator--accent {
+	:root:is(.dark, [data-circadian-dark]) .z-segment-group__indicator--accent {
 		background-color: color-mix(in srgb, var(--z-accent) 55%, transparent);
 	}
 

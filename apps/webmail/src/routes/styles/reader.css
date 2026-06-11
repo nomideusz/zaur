@@ -441,39 +441,39 @@
 	}
 
 	/* Reader body text in dark mode — light surfaces override below for HTML cards. */
-	:root.dark .z-email-body {
+	:root:is(.dark, [data-circadian-dark]) .z-email-body {
 		color: var(--z-fg);
 	}
 
-	:root.dark .z-email-body--html :where(a) {
+	:root:is(.dark, [data-circadian-dark]) .z-email-body--html :where(a) {
 		color: var(--z-accent);
 	}
 
-	:root.dark .z-email-body :where(blockquote) {
+	:root:is(.dark, [data-circadian-dark]) .z-email-body :where(blockquote) {
 		border-left-color: color-mix(in srgb, var(--z-border-strong) 40%, transparent);
 		color: var(--z-fg-subtle);
 	}
 
-	:root.dark .z-email-body :where(blockquote blockquote) {
+	:root:is(.dark, [data-circadian-dark]) .z-email-body :where(blockquote blockquote) {
 		border-left-color: color-mix(in srgb, var(--z-border) 28%, transparent);
 	}
 
-	:root.dark .z-email-body--html :where(blockquote a) {
+	:root:is(.dark, [data-circadian-dark]) .z-email-body--html :where(blockquote a) {
 		color: var(--z-accent);
 	}
 
-	:root.dark .z-email-body--html [data-z-light-surface] {
+	:root:is(.dark, [data-circadian-dark]) .z-email-body--html [data-z-light-surface] {
 		color-scheme: light;
 		color: #1a1a1a;
 		border-radius: 0.25rem;
 		isolation: isolate;
 	}
 
-	:root.dark .z-email-body--html [data-z-light-surface] :where(a) {
+	:root:is(.dark, [data-circadian-dark]) .z-email-body--html [data-z-light-surface] :where(a) {
 		color: var(--z-accent);
 	}
 
-	:root.dark .z-email-body--html [data-z-light-surface] :where(blockquote) {
+	:root:is(.dark, [data-circadian-dark]) .z-email-body--html [data-z-light-surface] :where(blockquote) {
 		color: #4a4a4a;
 		border-left-color: color-mix(in srgb, #1a1a1a 18%, transparent);
 	}
@@ -483,7 +483,7 @@
 	 * card so logos, buttons and author colors read as designed instead of clashing with the
 	 * dark reader. Authored colors are preserved (no dark-mode stripping in this branch).
 	 */
-	:root.dark .z-email-body--light {
+	:root:is(.dark, [data-circadian-dark]) .z-email-body--light {
 		color-scheme: light;
 		background-color: #ffffff;
 		color: #1a1a1a;
@@ -492,21 +492,21 @@
 		isolation: isolate;
 	}
 
-	:root.dark .z-email-body--light :where(a) {
+	:root:is(.dark, [data-circadian-dark]) .z-email-body--light :where(a) {
 		color: #1d4ed8;
 	}
 
-	:root.dark .z-email-body--light :where(blockquote) {
+	:root:is(.dark, [data-circadian-dark]) .z-email-body--light :where(blockquote) {
 		color: #4a4a4a;
 		border-left-color: color-mix(in srgb, #1a1a1a 18%, transparent);
 	}
 
-	:root.dark .z-email-body--light :where(pre, code) {
+	:root:is(.dark, [data-circadian-dark]) .z-email-body--light :where(pre, code) {
 		background-color: color-mix(in srgb, #1a1a1a 6%, transparent);
 		color: #1a1a1a;
 	}
 
-	:root.dark .z-email-body--light :where(hr) {
+	:root:is(.dark, [data-circadian-dark]) .z-email-body--light :where(hr) {
 		border-color: color-mix(in srgb, #1a1a1a 12%, transparent);
 	}
 

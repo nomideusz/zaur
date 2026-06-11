@@ -3,51 +3,69 @@
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
-	import { cn } from '$lib/utils/cn';
+	import {
+		SegmentGroup,
+		SegmentGroupItem,
+		SegmentGroupItemText
+	} from '$lib/components/ui/segment-group';
 
 	const contactsNav = $derived(shellHeader.page?.contactsNav);
-
-	function navLinkClass(active: boolean): string {
-		return cn('z-mail-text-nav__link shrink-0', active && 'z-mail-text-nav__link--active');
-	}
 
 	const allActive = $derived(
 		!!contactsNav && contactsNav.selectedLetter === null && !contactsNav.query.trim()
 	);
+	const activeValue = $derived(
+		allActive ? 'all' : (contactsNav?.selectedLetter ?? undefined)
+	);
+
+	const segmentItemClass =
+		'px-2.5 py-1.5 text-sm font-medium text-fg-muted data-[state=checked]:font-semibold data-[state=checked]:text-fg';
 </script>
 
 {#if contactsNav}
+	{@const nav = contactsNav}
 	<nav
-		class="flex min-w-0 items-center gap-3 md:hidden"
+		class="flex min-w-0 items-center gap-1 md:hidden"
 		aria-label="Contacts navigation"
 	>
-		<button
-			type="button"
-			class={navLinkClass(allActive)}
-			aria-current={allActive ? 'page' : undefined}
-			onclick={contactsNav.onShowAll}
+		<SegmentGroup
+			value={activeValue}
+			track={false}
+			indicatorClass="z-segment-group__indicator--accent rounded-md"
+			class="rounded-lg px-0.5"
+			onValueChange={(value) => {
+				if (value === 'all') nav.onShowAll();
+				else nav.onSelectLetter(value);
+			}}
 		>
-			All
-		</button>
+			<SegmentGroupItem value="all" class={segmentItemClass}>
+				<SegmentGroupItemText>All</SegmentGroupItemText>
+			</SegmentGroupItem>
+			{#if nav.selectedLetter}
+				<SegmentGroupItem value={nav.selectedLetter} class={segmentItemClass}>
+					<SegmentGroupItemText>{nav.selectedLetter}</SegmentGroupItemText>
+				</SegmentGroupItem>
+			{/if}
+		</SegmentGroup>
 		<OverflowMenu
 			label="More contact filters"
 			menuId="mobile-contacts-more-menu"
 			textTrigger
 			triggerText="More"
-			triggerClass="z-mail-text-nav__link"
+			triggerClass="px-2.5 py-1.5 text-sm font-medium text-fg-muted transition-colors hover:text-fg"
 		>
-			<OverflowMenuItem label="Search contacts" onclick={contactsNav.onFocusSearch}>
+			<OverflowMenuItem label="Search contacts" onclick={nav.onFocusSearch}>
 				{#snippet icon()}
 					<Search class="size-5" aria-hidden="true" />
 				{/snippet}
 			</OverflowMenuItem>
-			{#if contactsNav.letters.length > 0}
+			{#if nav.letters.length > 0}
 				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
-				<OverflowMenuItem label="All contacts" onclick={contactsNav.onShowAll} />
-				{#each contactsNav.letters as letter (letter)}
+				<OverflowMenuItem label="All contacts" onclick={nav.onShowAll} />
+				{#each nav.letters as letter (letter)}
 					<OverflowMenuItem
 						label={letter}
-						onclick={() => contactsNav.onSelectLetter(letter)}
+						onclick={() => nav.onSelectLetter(letter)}
 					/>
 				{/each}
 			{/if}
