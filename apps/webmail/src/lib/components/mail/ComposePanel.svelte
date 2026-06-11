@@ -280,6 +280,7 @@
 	}
 
 	function onBodyKeydown(event: KeyboardEvent) {
+		if (!settings.enableKeyboardShortcuts) return;
 		if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
 			event.preventDefault();
 			void send();

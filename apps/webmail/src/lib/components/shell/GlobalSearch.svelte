@@ -87,12 +87,6 @@
 		return focus ? '/mail/search?focus=1' : '/mail/search';
 	}
 
-	function currentMailboxIdFromPath(): string | null {
-		const match = $page.url.pathname.match(/^\/mail\/([^/]+)/);
-		if (!match || match[1] === 'search' || match[1] === 'compose') return null;
-		return decodeURIComponent(match[1]);
-	}
-
 	function submit() {
 		const query = input.trim();
 		if (!query) return;
@@ -100,11 +94,6 @@
 		showAdvanced = false;
 
 		const params = new URLSearchParams({ q: query });
-		if (!isSimpleSearch && settings.searchScope === 'current-folder') {
-			const routeId = currentMailboxIdFromPath();
-			const mailbox = routeId ? mail.mailboxByRouteId(routeId) : null;
-			if (mailbox?.jmapId) params.set('mailbox', mailbox.jmapId);
-		}
 		goto(`/mail/search?${params.toString()}`);
 	}
 

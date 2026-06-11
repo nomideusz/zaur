@@ -24,6 +24,13 @@
 			onchange={(checked) => settings.setRememberLastMailbox(checked)}
 		/>
 	</SettingsRow>
+
+	<SettingsRow kind="toggle" title="Show sender email address">
+		<Switch
+			checked={settings.showSenderEmailInList}
+			onchange={(checked) => settings.setShowSenderEmailInList(checked)}
+		/>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Format & Sizing">

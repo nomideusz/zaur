@@ -10,20 +10,18 @@ Live at [webmail.zaur.app](https://webmail.zaur.app).
 - **Contacts** — built from mail history, manual add, search integration
 - **Calendar** — month view, create and edit events
 - **Offline** — cached threads and an outbox queue for sending when back online
-- **Settings** — synced preferences across devices (JMAP account blob), Essential vs All options modes, settings search, per-page resets, and export/import
+- **Settings** — synced preferences across devices (JMAP account blob), settings search, and export/import
 
 ### Settings overview
 
-| Section | Pages |
+| Page | Contents |
 | --- | --- |
-| **Personal** | You (name, signature, include signature toggle, export) |
-| **Behavior** | Notifications, keyboard shortcuts, read/send confirmations |
-| **Customize** | Look & feel (accent color, corner style, surface tone, theme), Inbox, Reading, Writing, Workspace, Calendar, Contacts |
-| **More** | Backup & reset (All options only) |
+| **Account** | Profile (name, signature), appearance (theme, reduce motion), notifications & actions, calendar, device (app install), security, mailbox, sync & data (export/import, clear cache, reset preferences) |
+| **Reading** | Inbox & folders, time format, text size, typeface, message rendering (plain text, remote images, threads, clean view) |
+| **Writing** | Compose format, reply mode, Cc/Bcc, contact suggestions, signature, confirmations, undo send delay |
+| **Shortcuts** | Keyboard shortcuts toggle and reference (desktop only) |
 
-Look & feel includes accent presets (blue, teal, violet, slate), corner style (default, soft, sharp), surface tone, theme, motion, and loading indicator style.
-
-Keyboard shortcuts (when enabled): `c` compose, `/` search, `j`/`k` list navigation, `r` reply, `a` reply all, `e` archive, `u` toggle important, `#` trash, `Ctrl+Enter` send, `Esc` close compose.
+Keyboard shortcuts (when enabled): `c` compose, `/` search, `g` then `i`/`s`/`d`/`a`/`t`/`j` go to folder, `j`/`k` next/previous, `n` next unseen, `r` reply, `a` reply all, `f` forward, `d` not important, `u` toggle important, `#` trash, `Ctrl+Enter` send, `Esc` back/close compose.
 
 ## Requirements
 

@@ -6,12 +6,13 @@
 	import SettingsFormToggle from '$lib/components/settings/SettingsFormToggle.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
+	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
+	import { settings, type CalendarMaxEventsPerDay } from '$lib/stores/settings.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 
@@ -253,6 +254,39 @@
 		<Switch
 			checked={settings.showUnreadInTitle}
 			onchange={(checked) => settings.setShowUnreadInTitle(checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>
+
+<SettingsGroup title="Calendar">
+	<SettingsRow kind="toggle" title="Week starts on Monday">
+		<Switch
+			checked={settings.calendarWeekStartsOnMonday}
+			onchange={(checked) => settings.setCalendarWeekStartsOnMonday(checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow kind="toggle" title="Hide event times">
+		<Switch
+			checked={settings.hideCalendarEventTimes}
+			onchange={(checked) => settings.setHideCalendarEventTimes(checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow kind="menu" title="Events per day in month view">
+		<SettingsSelect
+			label="Events per day in month view"
+			value={String(settings.calendarMaxEventsPerDay)}
+			options={[
+				{ value: '2', label: '2' },
+				{ value: '3', label: '3' },
+				{ value: '5', label: '5' }
+			]}
+			onchange={(v) => {
+				if (v === '2' || v === '3' || v === '5') {
+					settings.setCalendarMaxEventsPerDay(Number(v) as CalendarMaxEventsPerDay);
+				}
+			}}
 		/>
 	</SettingsRow>
 </SettingsGroup>

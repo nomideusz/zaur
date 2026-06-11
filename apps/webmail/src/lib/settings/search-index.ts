@@ -49,6 +49,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/account-events-per-day-in-month-view",
+		"href": "/settings/account",
+		"title": "Events per day in month view",
+		"description": ""
+	},
+	{
 		"id": "/settings/account-export-settings",
 		"href": "/settings/account",
 		"title": "Export settings",
@@ -58,6 +64,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/account-hide-action-toasts",
 		"href": "/settings/account",
 		"title": "Hide action toasts",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-hide-event-times",
+		"href": "/settings/account",
+		"title": "Hide event times",
 		"description": ""
 	},
 	{
@@ -148,6 +160,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/account-unseen-count-on-app-icon",
 		"href": "/settings/account",
 		"title": "Unseen count on app icon",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-week-starts-on-monday",
+		"href": "/settings/account",
+		"title": "Week starts on Monday",
 		"description": ""
 	},
 	{
@@ -244,6 +262,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-show-delivery-address",
 		"href": "/settings/reading",
 		"title": "Show delivery address",
+		"description": ""
+	},
+	{
+		"id": "/settings/reading-show-sender-email-address",
+		"href": "/settings/reading",
+		"title": "Show sender email address",
 		"description": ""
 	},
 	{

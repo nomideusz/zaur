@@ -24,12 +24,10 @@ export type CalendarMaxEventsPerDay = 2 | 3 | 5;
 export type DefaultReplyMode = 'reply' | 'reply-all';
 export type ComposeFormat = 'plain' | 'html';
 export type TimeFormat = 'auto' | '12h' | '24h';
-export type SearchScope = 'all' | 'current-folder';
 export type UndoSendDelay = 0 | 5000 | 10000 | 20000;
 
 const STORAGE = {
 	blockExternal: 'zaur:block-external',
-	autoLoadMore: 'zaur:auto-load-more',
 	showSenderEmailInList: 'zaur:show-sender-email-in-list',
 	showImportantColors: 'zaur:show-important-colors',
 	preferPlainText: 'zaur:prefer-plain-text',
@@ -41,7 +39,6 @@ const STORAGE = {
 	reduceMotion: 'zaur:reduce-motion',
 	rememberLastMailbox: 'zaur:remember-last-mailbox',
 	lastMailbox: 'zaur:last-mailbox',
-	showReaderListRail: 'zaur:show-reader-list-rail',
 	enableKeyboardShortcuts: 'zaur:enable-keyboard-shortcuts',
 	confirmBeforeDelete: 'zaur:confirm-before-delete',
 	confirmBeforeDiscardCompose: 'zaur:confirm-before-discard-compose',
@@ -50,7 +47,6 @@ const STORAGE = {
 	readingTypeface: 'zaur:reading-typeface',
 	readerCleanView: 'zaur:reader-clean-view',
 	showDeliveredToInReader: 'zaur:show-delivered-to-in-reader',
-	focusReadingDefault: 'zaur:focus-reading-default',
 	defaultReplyMode: 'zaur:default-reply-mode',
 	defaultComposeFormat: 'zaur:default-compose-format',
 	useSignature: (email: string) => `zaur:use-signature:${email}`,
@@ -59,7 +55,6 @@ const STORAGE = {
 	notifyOnNewMail: 'zaur:notify-new-mail',
 	bccSelf: 'zaur:bcc-self',
 	timeFormat: 'zaur:time-format',
-	searchScope: 'zaur:search-scope',
 	hideActionToasts: 'zaur:hide-action-toasts',
 	calendarWeekStartsOnMonday: 'zaur:calendar-week-starts-on-monday',
 	hideCalendarEventTimes: 'zaur:hide-calendar-event-times',
@@ -95,10 +90,6 @@ function readBool(key: string, defaultValue: boolean): boolean {
 
 function readBlockExternal(): boolean {
 	return readBool(STORAGE.blockExternal, true);
-}
-
-function readAutoLoadMore(): boolean {
-	return readBool(STORAGE.autoLoadMore, false);
 }
 
 function readShowSenderEmailInList(): boolean {
@@ -139,10 +130,6 @@ function readReduceMotion(): boolean {
 
 function readRememberLastMailbox(): boolean {
 	return readBool(STORAGE.rememberLastMailbox, false);
-}
-
-function readShowReaderListRail(): boolean {
-	return readBool(STORAGE.showReaderListRail, false);
 }
 
 function readEnableKeyboardShortcuts(): boolean {
@@ -192,10 +179,6 @@ function readShowDeliveredToInReader(): boolean {
 	return readBool(STORAGE.showDeliveredToInReader, false);
 }
 
-function readFocusReadingDefault(): boolean {
-	return readBool(STORAGE.focusReadingDefault, true);
-}
-
 function readDefaultReplyMode(): DefaultReplyMode {
 	if (!browser) return 'reply';
 	return localStorage.getItem(STORAGE.defaultReplyMode) === 'reply-all' ? 'reply-all' : 'reply';
@@ -232,11 +215,6 @@ function readTimeFormat(): TimeFormat {
 	const value = localStorage.getItem(STORAGE.timeFormat);
 	if (value === '12h' || value === '24h') return value;
 	return 'auto';
-}
-
-function readSearchScope(): SearchScope {
-	if (!browser) return 'all';
-	return localStorage.getItem(STORAGE.searchScope) === 'current-folder' ? 'current-folder' : 'all';
 }
 
 function readHideActionToasts(): boolean {
@@ -276,7 +254,6 @@ function readSignature(email: string | null): string {
 
 class SettingsStore {
 	blockExternalContent = $state(readBlockExternal());
-	autoLoadMore = $state(readAutoLoadMore());
 	showSenderEmailInList = $state(readShowSenderEmailInList());
 	showImportantColors = $state(readShowImportantColors());
 	preferPlainText = $state(readPreferPlainText());
@@ -287,7 +264,6 @@ class SettingsStore {
 	showCcBccInCompose = $state(readShowCcBccInCompose());
 	reduceMotion = $state(readReduceMotion());
 	rememberLastMailbox = $state(readRememberLastMailbox());
-	showReaderListRail = $state(readShowReaderListRail());
 	enableKeyboardShortcuts = $state(readEnableKeyboardShortcuts());
 	confirmBeforeDelete = $state(readConfirmBeforeDelete());
 	confirmBeforeDiscardCompose = $state(readConfirmBeforeDiscardCompose());
@@ -296,7 +272,6 @@ class SettingsStore {
 	readingTypeface = $state<ReadingTypeface>(readReadingTypeface());
 	readerCleanView = $state(readReaderCleanView());
 	showDeliveredToInReader = $state(readShowDeliveredToInReader());
-	focusReadingDefault = $state(readFocusReadingDefault());
 	defaultReplyMode = $state<DefaultReplyMode>(readDefaultReplyMode());
 	defaultComposeFormat = $state<ComposeFormat>(readDefaultComposeFormat());
 	showUnreadInTitle = $state(readShowUnreadInTitle());
@@ -304,7 +279,6 @@ class SettingsStore {
 	notifyOnNewMail = $state(readNotifyOnNewMail());
 	bccSelf = $state(readBccSelf());
 	timeFormat = $state<TimeFormat>(readTimeFormat());
-	searchScope = $state<SearchScope>(readSearchScope());
 	hideActionToasts = $state(readHideActionToasts());
 	calendarWeekStartsOnMonday = $state(readCalendarWeekStartsOnMonday());
 	hideCalendarEventTimes = $state(readHideCalendarEventTimes());
@@ -322,7 +296,6 @@ class SettingsStore {
 		}
 
 		this.blockExternalContent = readBlockExternal();
-		this.autoLoadMore = readAutoLoadMore();
 		this.showSenderEmailInList = readShowSenderEmailInList();
 		this.showImportantColors = readShowImportantColors();
 		this.preferPlainText = readPreferPlainText();
@@ -333,7 +306,6 @@ class SettingsStore {
 		this.showCcBccInCompose = readShowCcBccInCompose();
 		this.reduceMotion = readReduceMotion();
 		this.rememberLastMailbox = readRememberLastMailbox();
-		this.showReaderListRail = readShowReaderListRail();
 		this.enableKeyboardShortcuts = readEnableKeyboardShortcuts();
 		this.confirmBeforeDelete = readConfirmBeforeDelete();
 		this.confirmBeforeDiscardCompose = readConfirmBeforeDiscardCompose();
@@ -342,7 +314,6 @@ class SettingsStore {
 		this.readingTypeface = readReadingTypeface();
 		this.readerCleanView = readReaderCleanView();
 		this.showDeliveredToInReader = readShowDeliveredToInReader();
-		this.focusReadingDefault = readFocusReadingDefault();
 		this.defaultReplyMode = readDefaultReplyMode();
 		this.defaultComposeFormat = readDefaultComposeFormat();
 		this.showUnreadInTitle = readShowUnreadInTitle();
@@ -350,7 +321,6 @@ class SettingsStore {
 		this.notifyOnNewMail = readNotifyOnNewMail();
 		this.bccSelf = readBccSelf();
 		this.timeFormat = readTimeFormat();
-		this.searchScope = readSearchScope();
 		this.hideActionToasts = readHideActionToasts();
 		this.calendarWeekStartsOnMonday = readCalendarWeekStartsOnMonday();
 		this.hideCalendarEventTimes = readHideCalendarEventTimes();
@@ -459,11 +429,6 @@ class SettingsStore {
 		if (browser) this.writeStorage(STORAGE.blockExternal, String(value));
 	}
 
-	setAutoLoadMore(value: boolean) {
-		this.autoLoadMore = value;
-		if (browser) this.writeStorage(STORAGE.autoLoadMore, String(value));
-	}
-
 	setShowSenderEmailInList(value: boolean) {
 		this.showSenderEmailInList = value;
 		if (browser) this.writeStorage(STORAGE.showSenderEmailInList, String(value));
@@ -528,11 +493,6 @@ class SettingsStore {
 		return mailListHref(routeId);
 	}
 
-	setShowReaderListRail(value: boolean) {
-		this.showReaderListRail = value;
-		if (browser) this.writeStorage(STORAGE.showReaderListRail, String(value));
-	}
-
 	setEnableKeyboardShortcuts(value: boolean) {
 		this.enableKeyboardShortcuts = value;
 		if (browser) this.writeStorage(STORAGE.enableKeyboardShortcuts, String(value));
@@ -573,11 +533,6 @@ class SettingsStore {
 	setShowDeliveredToInReader(value: boolean) {
 		this.showDeliveredToInReader = value;
 		if (browser) this.writeStorage(STORAGE.showDeliveredToInReader, String(value));
-	}
-
-	setFocusReadingDefault(value: boolean) {
-		this.focusReadingDefault = value;
-		if (browser) this.writeStorage(STORAGE.focusReadingDefault, String(value));
 	}
 
 	setDefaultReplyMode(value: DefaultReplyMode) {
@@ -633,11 +588,6 @@ class SettingsStore {
 	setTimeFormat(value: TimeFormat) {
 		this.timeFormat = value;
 		if (browser) this.writeStorage(STORAGE.timeFormat, value);
-	}
-
-	setSearchScope(value: SearchScope) {
-		this.searchScope = value;
-		if (browser) this.writeStorage(STORAGE.searchScope, value);
 	}
 
 	setHideActionToasts(value: boolean) {
