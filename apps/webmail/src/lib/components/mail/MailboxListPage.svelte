@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
+	import { page } from '$app/stores';
 	import MailPane from '$lib/components/mail/MailPane.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
 	import MessageReaderEmpty from '$lib/components/mail/MessageReaderEmpty.svelte';
@@ -14,6 +15,7 @@
 
 	let { mailboxId }: Props = $props();
 
+	const unseenOnly = $derived($page.url.searchParams.get('filter') === 'unseen');
 	const mailbox = $derived(mail.mailboxByRouteId(mailboxId));
 	const mailboxName = $derived(mailbox?.name ?? 'Emails');
 	const countLabel = $derived(
@@ -24,8 +26,9 @@
 		const client = auth.client;
 		if (!client || auth.isRestoring) return;
 		const id = mailboxId;
+		const unseen = unseenOnly;
 		untrack(() => {
-			void mail.loadMessages(client, id);
+			void mail.loadMessages(client, id, { unseenOnly: unseen });
 		});
 	});
 
@@ -51,16 +54,20 @@
 			messages={mail.messages}
 			{mailboxName}
 			mailboxRouteId={mailboxId}
+			{unseenOnly}
 			loading={mail.messagesLoading}
 			loadingMore={mail.messagesLoadingMore}
 			hasMore={mail.messagesHasMore}
 			error={mail.messagesError}
 			total={mail.messagesTotal}
+			emptyMessage={unseenOnly ? 'Nothing unseen' : undefined}
+			emptyHint={unseenOnly ? 'You are all caught up.' : undefined}
 			onLoadMore={() => {
 				if (auth.client) void mail.loadMoreMessages(auth.client);
 			}}
 			onRetry={() => {
-				if (auth.client) void mail.loadMessages(auth.client, mailboxId, { force: true });
+				if (auth.client)
+					void mail.loadMessages(auth.client, mailboxId, { force: true, unseenOnly });
 			}}
 		/>
 	{/snippet}

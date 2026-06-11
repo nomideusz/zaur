@@ -17,8 +17,8 @@ describe('bulkBarActions', () => {
 		);
 		assert.equal(actions[0]?.label, 'Unsee (4)');
 		assert.equal(actions[1]?.label, 'Mark seen (2)');
-		assert.equal(actions[2]?.label, 'Important (5)');
-		assert.equal(actions[3]?.label, 'Not important (1)');
+		assert.equal(actions[2]?.label, 'Highlight (5)');
+		assert.equal(actions[3]?.label, 'Not highlighted (1)');
 	});
 
 	it('omits actions that would not affect the current selection', () => {

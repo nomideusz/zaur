@@ -21,7 +21,7 @@ export const MAILBOX_DISPLAY_NAMES: Record<Exclude<MailboxKind, 'custom'>, strin
 	archive: 'Archive',
 	junk: 'Spam',
 	trash: 'Trash',
-	important: 'Important',
+	important: 'Highlights',
 	scheduled: 'Scheduled',
 	memos: 'Memos',
 	snoozed: 'Snoozed'

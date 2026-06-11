@@ -93,8 +93,8 @@ describe('bulkSelectionSummary', () => {
 	});
 
 	it('labels partial bulk actions with affected counts', () => {
-		assert.equal(bulkAffectedLabel('Not important', 2, 3), 'Not important (2)');
-		assert.equal(bulkAffectedLabel('Not important', 3, 3), 'Not important');
+		assert.equal(bulkAffectedLabel('Not highlighted', 2, 3), 'Not highlighted (2)');
+		assert.equal(bulkAffectedLabel('Not highlighted', 3, 3), 'Not highlighted');
 		assert.equal(bulkSelectionReadCount({ new: 1, important: 1, normal: 1, notImportant: 2 }), 2);
 	});
 });

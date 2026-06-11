@@ -125,6 +125,31 @@
 		@apply cursor-not-allowed text-fg-subtle no-underline;
 	}
 
+	/* Primary "New" actions — accent-tinted pill so they read as the page's main button. */
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__action--pill {
+		padding: 0.25rem 0.75rem;
+		border-radius: var(--radius-md);
+		background-color: color-mix(in srgb, var(--z-accent) 12%, transparent);
+		line-height: 1.45;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			background-color var(--z-motion-fast) var(--z-ease-standard),
+			transform var(--z-motion-fast) var(--z-ease-out);
+	}
+
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__action--pill:hover:not(:disabled) {
+		background-color: color-mix(in srgb, var(--z-accent) 20%, transparent);
+		text-decoration: none;
+	}
+
+	:root:is(.dark, [data-circadian-dark]) .z-mail-text-nav__action--pill {
+		background-color: color-mix(in srgb, var(--z-accent) 22%, transparent);
+	}
+
+	:root:is(.dark, [data-circadian-dark]) .z-mail-text-nav__action--pill:hover:not(:disabled) {
+		background-color: color-mix(in srgb, var(--z-accent) 30%, transparent);
+	}
+
 	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__action--danger {
 		color: var(--z-danger);
 		text-decoration-color: color-mix(in srgb, var(--z-danger) 45%, transparent);

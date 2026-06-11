@@ -23,7 +23,7 @@ export function defaultEmptyMessage(mailboxRouteId: string | undefined): string 
 		case 'junk':
 			return 'No spam';
 		case 'important':
-			return 'Nothing marked important';
+			return 'Nothing highlighted';
 		case 'scheduled':
 			return 'Nothing scheduled';
 		case 'memos':

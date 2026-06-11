@@ -145,7 +145,7 @@
 			const message =
 				error instanceof Error
 					? error.message
-					: `Could not mark ${LABEL_NOT_IMPORTANT.toLowerCase()}`;
+					: 'Could not update highlight';
 			toast.show(message, 'error');
 		}
 	}

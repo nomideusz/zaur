@@ -241,9 +241,9 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
-		"id": "/settings/reading-marker-highlights-on-important",
+		"id": "/settings/reading-marker-colors-on-highlighted",
 		"href": "/settings/reading",
-		"title": "Marker highlights on Important",
+		"title": "Marker colors on Highlighted",
 		"description": ""
 	},
 	{

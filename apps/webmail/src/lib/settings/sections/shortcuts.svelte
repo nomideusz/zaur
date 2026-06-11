@@ -39,7 +39,7 @@
 			<p class="z-settings-shortcut-keys">r · a · f</p>
 		</div>
 		<div class="z-settings-shortcut-row">
-			<p class="z-settings-shortcut-label">Not important / Important / delete</p>
+			<p class="z-settings-shortcut-label">Not highlighted / Highlight / delete</p>
 			<p class="z-settings-shortcut-keys">d · u · #</p>
 		</div>
 		<div class="z-settings-shortcut-row">

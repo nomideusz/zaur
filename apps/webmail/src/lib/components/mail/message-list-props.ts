@@ -4,6 +4,8 @@ export type MessageListProps = {
 	messages: MessagePreview[];
 	mailboxName: string;
 	mailboxRouteId?: string;
+	/** Header "Unseen" filter — list shows only unread; home folder sections hidden. */
+	unseenOnly?: boolean;
 	loading?: boolean;
 	loadingMore?: boolean;
 	hasMore?: boolean;

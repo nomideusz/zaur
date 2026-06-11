@@ -720,6 +720,22 @@
 		display: none;
 	}
 
+	/* Unseen marker dot — leads the sender line on every unread row. */
+	.z-mail-list-unread-dot {
+		display: inline-block;
+		width: 0.4375rem;
+		height: 0.4375rem;
+		margin-right: 0.375rem;
+		border-radius: 9999px;
+		background-color: var(--z-unread);
+		vertical-align: 0.0625rem;
+	}
+
+	/* Swipe rows paint an opaque foreground — carry the unseen tint through. */
+	.z-mail-view .z-mail-list-row[data-unread] .z-swipe-row__foreground {
+		background-color: color-mix(in srgb, var(--z-unread) 6%, var(--z-surface-raised));
+	}
+
 	/* New (unread, first-day) rows — subtle unread tint on subject and time. */
 	.z-mail-list-subject--new,
 	.z-mail-list-meta--new {
@@ -804,6 +820,11 @@
 		box-shadow: var(--shadow-sm);
 		background-color: var(--z-surface-raised);
 		transition: background-color var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	/* Unseen rows — faint unread tint on the card so they pop while scanning. */
+	.z-mail-view .z-mail-list-section-messages .z-mail-list-row[data-unread] {
+		background-color: color-mix(in srgb, var(--z-unread) 6%, var(--z-surface-raised));
 	}
 
 	.z-mail-view .z-mail-list-section-messages .z-mail-list-row[data-current="true"] {

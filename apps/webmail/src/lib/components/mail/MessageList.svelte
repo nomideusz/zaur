@@ -54,11 +54,7 @@
 	} from '$lib/mail/important-marker.svelte';
 	import { createImportantMarkerTouchPick } from '$lib/mail/important-marker-touch';
 	import ImportantSubjectHighlight from '$lib/components/mail/ImportantSubjectHighlight.svelte';
-	import {
-		LABEL_NOT_IMPORTANT,
-		LABEL_SEEN,
-		LABEL_UNSEEN
-	} from '$lib/mail/new-mail';
+	import { LABEL_SEEN, LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import { inboxNormalSectionDefaultVisible, inboxImportantSectionCanShowMore } from '$lib/mail/inbox-list-sections';
 	import {
 		canMarkImportantFromMailboxRole,
@@ -90,6 +86,8 @@
 		messages,
 		mailboxName,
 		mailboxRouteId,
+		unseenOnly = false,
+		total,
 		loading = false,
 		loadingMore = false,
 		hasMore = false,
@@ -236,7 +234,8 @@
 	);
 	/** Mailbox/search list (flat rows); thread view uses search flat mode. */
 	const sectionMode = $derived(!!mailboxRouteId && !activeThreadId);
-	const isInboxHome = $derived(sectionMode && mailboxRouteId === 'inbox');
+	/** The Unseen filter flattens the home view to a single filtered section. */
+	const isInboxHome = $derived(sectionMode && mailboxRouteId === 'inbox' && !unseenOnly);
 	const resolvedEmptyMessage = $derived(emptyMessage ?? defaultEmptyMessage(mailboxRouteId));
 	const resolvedEmptyHint = $derived(
 		emptyHint ?? (emptyMessage ? null : defaultEmptyHint(mailboxRouteId))
@@ -372,7 +371,7 @@
 			await mail.fileAsNotImportant(auth.client, message);
 			onBulkAction?.();
 		} catch (err) {
-			const text = err instanceof Error ? err.message : `Could not mark ${LABEL_NOT_IMPORTANT.toLowerCase()}`;
+			const text = err instanceof Error ? err.message : 'Could not update highlight';
 			toast.show(text, 'error');
 		}
 	}
@@ -626,15 +625,18 @@
 			}
 		} else if (mailboxRouteId && messages.length > 0) {
 			const mailbox = mail.mailboxByRouteId(mailboxRouteId);
-			const collapsed = mailbox ? folderSectionCollapsedByDefault(mailbox) : false;
+			const collapsed =
+				!unseenOnly && mailbox ? folderSectionCollapsedByDefault(mailbox) : false;
 			const limit =
 				sectionVisibleCounts[mailboxRouteId] ?? (collapsed ? 0 : INBOX_SECTION_PAGE_SIZE);
 			sections.push({
 				id: mailboxRouteId,
-				name: mailbox?.name ?? mailboxName,
+				name: unseenOnly ? LABEL_UNSEEN : (mailbox?.name ?? mailboxName),
 				routeId: mailboxRouteId,
 				messages: collapseMessagesByThread(messages).slice(0, limit),
-				totalCount: mailbox?.total ?? listMessages.length,
+				totalCount: unseenOnly
+					? (total ?? listMessages.length)
+					: (mailbox?.total ?? listMessages.length),
 				sortOrder: 0,
 				showUnreadDot: (mailbox?.unread ?? 0) > 0
 			});
@@ -934,6 +936,7 @@
 				data-message-id={message.id}
 				data-current={isCurrent ? 'true' : undefined}
 				data-selected={rowSelected ? 'true' : undefined}
+				data-unread={isUnread ? 'true' : undefined}
 			>
 				{#if showRowCheckbox}
 					<div class="z-mail-list-checkbox-col z-mail-list-checkbox-col--row">
@@ -968,7 +971,7 @@
 						}}
 					>
 						<div class="z-mail-list-row-copy min-w-0 flex-1">
-							<p class={listSenderClass(isUnread)}>{senderLabel}</p>
+							<p class={listSenderClass(isUnread)}>{#if isUnread}<span class="z-mail-list-unread-dot" aria-hidden="true"></span>{/if}{senderLabel}</p>
 							<p
 								class={cn(
 									listSubjectClass(isUnread, subjectImportant),

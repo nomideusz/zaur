@@ -860,13 +860,21 @@ export class JMAPClient {
 		return (first[1].list as JMAPIdentity[]) ?? [];
 	}
 
-	async queryEmails(mailboxId: string, limit = 50, position = 0): Promise<EmailQueryResult> {
+	async queryEmails(
+		mailboxId: string,
+		limit = 50,
+		position = 0,
+		options?: { unseenOnly?: boolean }
+	): Promise<EmailQueryResult> {
+		const filter = options?.unseenOnly
+			? { inMailbox: mailboxId, notKeyword: '$seen' }
+			: { inMailbox: mailboxId };
 		const response = await this.request([
 			[
 				'Email/query',
 				{
 					accountId: this.accountId,
-					filter: { inMailbox: mailboxId },
+					filter,
 					sort: [{ property: 'receivedAt', isAscending: false }],
 					limit,
 					position
@@ -1053,7 +1061,7 @@ export class JMAPClient {
 		const response = await this.request([
 			['Email/set', { accountId: this.accountId, update }, '0']
 		]);
-		assertEmailSetSucceeded(response, 'Could not update important');
+		assertEmailSetSucceeded(response, 'Could not update highlight');
 	}
 
 	async moveToMailbox(emailId: string, mailboxId: string, sourceMailboxId?: string): Promise<void> {

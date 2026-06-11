@@ -153,7 +153,7 @@
 		{#if showCalendarAction}
 			<button
 				type="button"
-				class="z-mail-text-nav__action shrink-0 md:inline-flex"
+				class="z-mail-text-nav__action z-mail-text-nav__action--pill shrink-0 md:inline-flex"
 				onclick={() => calendar.openCompose()}
 			>
 				<span class="md:hidden">New</span>
@@ -164,7 +164,7 @@
 				<Separator orientation="vertical" class="h-5 max-md:ml-0.5 md:hidden" />
 				<a
 					href="/mail/compose"
-					class="z-mail-text-nav__action max-md:-translate-y-0.5 max-md:pl-1.5 shrink-0 md:inline-flex"
+					class="z-mail-text-nav__action z-mail-text-nav__action--pill max-md:-translate-y-0.5 shrink-0 md:inline-flex"
 				>
 					<span class="md:hidden">New</span>
 					<span class="hidden md:inline">New message</span>
@@ -174,14 +174,14 @@
 			{@const action = pagePrimaryAction}
 			<button
 				type="button"
-				class="z-mail-text-nav__action shrink-0"
+				class="z-mail-text-nav__action z-mail-text-nav__action--pill shrink-0"
 				onclick={action.onclick}
 			>
 				{action.label}
 			</button>
 		{:else if showContactsAction && pagePrimaryAction?.kind === 'link'}
 			{@const action = pagePrimaryAction}
-			<a href={action.href} class="z-mail-text-nav__action shrink-0">
+			<a href={action.href} class="z-mail-text-nav__action z-mail-text-nav__action--pill shrink-0">
 				{action.label}
 			</a>
 		{/if}

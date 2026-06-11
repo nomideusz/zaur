@@ -11,7 +11,7 @@
 </script>
 
 <SettingsGroup title="Inbox & Folders">
-	<SettingsRow kind="toggle" title="Marker highlights on Important">
+	<SettingsRow kind="toggle" title="Marker colors on Highlighted">
 		<Switch
 			checked={settings.showImportantColors}
 			onchange={(checked) => settings.setShowImportantColors(checked)}

@@ -34,7 +34,7 @@ describe('mailboxes', () => {
 		assert.equal(mailboxDisplayName('inbox'), 'Emails');
 		assert.equal(mailboxDisplayName('junk'), 'Spam');
 		assert.equal(mailboxDisplayName('trash'), 'Trash');
-		assert.equal(mailboxDisplayName('important'), 'Important');
+		assert.equal(mailboxDisplayName('important'), 'Highlights');
 		assert.equal(mailboxDisplayName('custom', 'Work'), 'Work');
 	});
 

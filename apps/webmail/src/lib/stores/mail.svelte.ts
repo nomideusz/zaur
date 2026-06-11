@@ -106,6 +106,8 @@ class MailStore {
 	messagesTotal = $state(0);
 	messagesHasMore = $state(false);
 	messagesFromCache = $state(false);
+	/** Unseen-only header filter — list queries exclude $seen while set. */
+	messagesUnseenOnly = $state(false);
 	currentMailboxRouteId = $state<string | null>(null);
 	/** Last mailbox route id whose message list fetch finished (including empty folders). */
 	messagesLoadSettledForRouteId = $state<string | null>(null);
@@ -207,10 +209,12 @@ class MailStore {
 	async loadMessages(
 		client: JMAPClient,
 		routeMailboxId: string,
-		options?: { force?: boolean; preserveOpenThreadId?: string }
+		options?: { force?: boolean; preserveOpenThreadId?: string; unseenOnly?: boolean }
 	) {
+		const unseenOnly = options?.unseenOnly ?? false;
 		if (
 			!options?.force &&
+			this.messagesUnseenOnly === unseenOnly &&
 			(this.messagesLoading ||
 				(this.messagesLoadSettledForRouteId === routeMailboxId &&
 					this.currentMailboxRouteId === routeMailboxId))
@@ -219,6 +223,7 @@ class MailStore {
 		}
 
 		this.currentMailboxRouteId = routeMailboxId;
+		this.messagesUnseenOnly = unseenOnly;
 
 		const mailbox = this.mailboxByRouteId(routeMailboxId);
 		if (!mailbox?.jmapId) {
@@ -240,7 +245,8 @@ class MailStore {
 
 		const accountId = client.getAccountId();
 		let showedCache = false;
-		if (browser) {
+		// The preview cache holds the unfiltered list — skip it while the Unseen filter is on.
+		if (browser && !unseenOnly) {
 			const { getCachedMessagePreviews } = await import('$lib/db');
 			const cached = await getCachedMessagePreviews(accountId, routeMailboxId);
 			if (cached.length) {
@@ -260,7 +266,9 @@ class MailStore {
 		const syncRevisionAtStart = this.messagesSyncRevision;
 
 		try {
-			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0);
+			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0, {
+				unseenOnly
+			});
 			const previews = mapVisiblePreviews(emails, routeMailboxId);
 			this.messages =
 				syncRevisionAtStart !== this.messagesSyncRevision
@@ -272,7 +280,7 @@ class MailStore {
 			this.messagesError = null;
 			indexMessagesContacts(this.messages);
 
-			if (browser) {
+			if (browser && !unseenOnly) {
 				const { cacheMessagePreviews } = await import('$lib/db');
 				await cacheMessagePreviews(accountId, routeMailboxId, this.messages);
 			}
@@ -302,14 +310,16 @@ class MailStore {
 		this.messagesLoadingMore = true;
 		try {
 			const position = this.messages.length;
-			const { emails, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, position);
+			const { emails, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, position, {
+				unseenOnly: this.messagesUnseenOnly
+			});
 			const previews = mapVisiblePreviews(emails, routeMailboxId);
 			this.messages = [...this.messages, ...previews];
 			this.messagesHasMore = hasMore;
 			this.messagesFromCache = false;
 			indexMessagesContacts(previews);
 
-			if (browser) {
+			if (browser && !this.messagesUnseenOnly) {
 				const { cacheMessagePreviews } = await import('$lib/db');
 				await cacheMessagePreviews(client.getAccountId(), routeMailboxId, previews);
 			}
@@ -568,7 +578,7 @@ class MailStore {
 				canMarkImportantFromMailboxRole(this.mailboxByRouteId(message.mailboxId)?.role)
 			);
 			if (!targets.length) {
-				throw new Error('Cannot mark messages in Trash, Spam, or Drafts as important');
+				throw new Error('Messages in Trash, Spam, or Drafts cannot be highlighted');
 			}
 		}
 
@@ -1023,8 +1033,8 @@ class MailStore {
 			this.clearSelection();
 			toast.show(
 				messages.length === 1
-					? 'Marked important'
-					: `${messages.length} messages marked important`,
+					? 'Highlighted'
+					: `${messages.length} messages highlighted`,
 				'success'
 			);
 		} finally {
@@ -1044,7 +1054,7 @@ class MailStore {
 			this.clearSelection();
 			toast.show(
 				messages.length === 1
-					? 'Removed important'
+					? 'Highlight removed'
 					: `${messages.length} messages unmarked`,
 				'success'
 			);
@@ -1338,13 +1348,15 @@ class MailStore {
 		if (!mailbox?.jmapId) return;
 
 		try {
-			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0);
+			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0, {
+				unseenOnly: this.messagesUnseenOnly
+			});
 			const previews = mapVisiblePreviews(emails, routeMailboxId);
 			if (!messagePreviewsEqual(this.messages, previews)) {
 				this.messages = previews;
 				this.messagesFromCache = false;
 
-				if (browser) {
+				if (browser && !this.messagesUnseenOnly) {
 					const { cacheMessagePreviews } = await import('$lib/db');
 					await cacheMessagePreviews(client.getAccountId(), routeMailboxId, previews);
 				}
