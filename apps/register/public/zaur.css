@@ -1005,12 +1005,6 @@ body {
 	color: var(--z-fg-muted);
 }
 
-.z-btn-lg {
-	padding: 0.625rem 1rem;
-	font-size: 0.9375rem;
-}
-
-
 /* Site shell — register.zaur.app ↔ webmail cross-nav */
 
 .z-site-shell {
@@ -1817,44 +1811,15 @@ button.z-domain-option.available:hover {
 	font-size: 0.875rem;
 }
 
-.z-stat-grid {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
+.z-admin-shell .z-stat-grid {
 	gap: 1rem 1.5rem;
 	margin-bottom: 1.5rem;
 	padding-bottom: 1.5rem;
 	border-bottom: 1px solid var(--z-divider);
 }
 
-@media (min-width: 640px) {
-	.z-stat-grid {
-		grid-template-columns: repeat(4, minmax(0, 1fr));
-	}
-}
-
-.z-stat-card {
-	display: flex;
-	flex-direction: column;
-	gap: 0.25rem;
-}
-
-.z-stat-card__value {
+.z-admin-shell .z-stat-card__value {
 	font-size: 1.5rem;
-	font-weight: 600;
-	line-height: 1;
-	color: var(--z-fg);
-}
-
-.z-stat-card__value--success {
-	color: var(--z-success);
-}
-
-.z-stat-card__value--warning {
-	color: var(--z-warning);
-}
-
-.z-stat-card__value--danger {
-	color: var(--z-danger);
 }
 
 .z-admin-section {

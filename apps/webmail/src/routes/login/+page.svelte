@@ -124,7 +124,7 @@
 						disabled={auth.isLoading}
 					/>
 					<p class="text-right">
-						<a href={forgotPasswordHref} class="text-sm text-accent hover:underline">
+						<a href={forgotPasswordHref} class="z-link text-sm">
 							Forgot password?
 						</a>
 					</p>
@@ -171,6 +171,6 @@
 
 	{#snippet footer()}
 		Need an address?
-		<a href={appConfig.registerUrl} class="text-accent hover:underline">Get your address</a>
+		<a href={appConfig.registerUrl} class="z-link">Get your address</a>
 	{/snippet}
 </AuthPage>

@@ -120,3 +120,24 @@
 	padding: 0.625rem 1rem;
 	font-size: 0.9375rem;
 }
+
+.z-link {
+	color: var(--z-accent);
+	text-decoration: none;
+}
+
+.z-link:hover {
+	color: var(--z-accent-hover);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.z-link-muted {
+	color: var(--z-fg-muted);
+	text-decoration: none;
+}
+
+.z-link-muted:hover {
+	color: var(--z-fg);
+	text-decoration: underline;
+}

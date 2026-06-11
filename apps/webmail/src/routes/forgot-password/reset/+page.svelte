@@ -93,7 +93,7 @@
 	{:else if !valid}
 		<div class="z-form-stack">
 			<p class="text-sm text-danger" role="alert">{verifyError}</p>
-			<a href="/forgot-password" class="block text-center text-sm text-accent hover:underline">
+			<a href="/forgot-password" class="z-link block text-center text-sm">
 				Request a new reset link
 			</a>
 		</div>

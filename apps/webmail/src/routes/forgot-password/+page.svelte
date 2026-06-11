@@ -68,7 +68,7 @@
 			<div class="z-callout">
 				<p>{message}</p>
 			</div>
-			<a href="/login" class="block text-center text-sm text-accent hover:underline">Back to sign in</a>
+			<a href="/login" class="z-link block text-center text-sm">Back to sign in</a>
 		</div>
 	{:else}
 		<form class="z-form-stack" onsubmit={submit}>
@@ -94,6 +94,6 @@
 	{/if}
 
 	{#snippet footer()}
-		<a href="/login" class="text-accent hover:underline">Back to sign in</a>
+		<a href="/login" class="z-link">Back to sign in</a>
 	{/snippet}
 </AuthPage>
