@@ -71,7 +71,6 @@
 		if (returnTo?.startsWith('/mail/search')) return returnTo;
 		return mailListBackHref(mailboxRouteId);
 	});
-	const mailboxLabel = $derived(mail.mailboxByRouteId(mailboxRouteId)?.name ?? 'Mail');
 	const allowExternal = $derived(
 		!settings.blockExternalContent || (pane?.showImagesOnce ?? localShowImagesOnce)
 	);
@@ -301,7 +300,6 @@
 		>
 			<ArrowLeft class="size-5" aria-hidden="true" />
 		</a>
-		<span class="z-mobile-page-pill shrink-0 md:hidden" aria-hidden="true">{mailboxLabel}</span>
 		{@render readerSubjectDesktop()}
 		<div class="min-w-0 flex-1 md:hidden" aria-hidden="true"></div>
 		{#if latest}

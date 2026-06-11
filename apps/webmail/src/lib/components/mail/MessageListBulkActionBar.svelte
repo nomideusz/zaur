@@ -44,11 +44,20 @@
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
 	const selectionCounts = $derived(bulkSelectionCounts(selectedMessages, selectedIds));
 	const canMarkImportant = $derived(canMarkImportantFromMailboxRole(currentMailbox?.role));
+	const junkMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'junk'));
+	const canMarkSpam = $derived(
+		!!junkMailbox &&
+			currentMailbox?.role !== 'junk' &&
+			currentMailbox?.role !== 'trash' &&
+			currentMailbox?.role !== 'drafts' &&
+			currentMailbox?.role !== 'sent'
+	);
 	const actions = $derived(
 		bulkBarActions({
 			counts: selectionCounts,
 			selectedCount,
 			canMarkImportant,
+			canMarkSpam,
 			deleteLabel
 		})
 	);
@@ -57,7 +66,8 @@
 		'unsee',
 		'mark-seen',
 		'important',
-		'not-important'
+		'not-important',
+		'spam'
 	]);
 	const markActions = $derived(actions.filter((action) => markActionIds.has(action.id)));
 	const collapseMarks = $derived(markActions.length > 2);
@@ -100,6 +110,19 @@
 			case 'not-important':
 				void runBulk(() => mail.bulkMarkAsNotImportant(auth.client!), true);
 				break;
+			case 'spam': {
+				const target = junkMailbox;
+				if (!target) break;
+				const count = selectedCount;
+				void runBulk(async () => {
+					await mail.bulkMoveToMailbox(auth.client!, target.id);
+					toast.show(
+						count === 1 ? 'Moved to Spam' : `${count} messages moved to Spam`,
+						'success'
+					);
+				}, true);
+				break;
+			}
 			case 'trash':
 				void deleteSelected();
 				break;

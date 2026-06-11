@@ -9,7 +9,7 @@
 	const tabs: { id: CalendarViewTab; label: string }[] = [
 		{ id: 'week', label: 'Week' },
 		{ id: 'day', label: 'Day' },
-		{ id: 'agendas', label: 'Agendas' }
+		{ id: 'agendas', label: 'Agenda' }
 	];
 </script>
 

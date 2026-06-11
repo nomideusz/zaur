@@ -35,6 +35,22 @@ describe('bulkBarActions', () => {
 		);
 	});
 
+	it('offers Mark spam ahead of delete when eligible', () => {
+		const actions = bulkBarActions({
+			counts: { new: 1, important: 0, normal: 0, notImportant: 1 },
+			selectedCount: 1,
+			canMarkImportant: true,
+			canMarkSpam: true,
+			deleteLabel: 'Trash'
+		});
+
+		assert.deepEqual(
+			actions.map((action) => action.id),
+			['mark-seen', 'important', 'spam', 'trash', 'cancel']
+		);
+		assert.equal(actions[2]?.label, 'Mark spam');
+	});
+
 	it('skips important actions in trash', () => {
 		const actions = bulkBarActions({
 			counts: { new: 0, important: 2, normal: 1, notImportant: 1 },

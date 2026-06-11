@@ -350,7 +350,6 @@
 						<ArrowLeft class="size-4" aria-hidden="true" />
 					</button>
 					<h1 class="sr-only">{composeTitle}</h1>
-					<span class="z-mobile-page-pill shrink-0 md:hidden" aria-hidden="true">{composeTitle}</span>
 					{#if draftStatus}
 						<span class="z-compose__draft-status truncate" aria-live="polite">{draftStatus}</span>
 					{/if}

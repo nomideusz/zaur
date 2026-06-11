@@ -15,6 +15,7 @@ export type BulkBarActionId =
 	| 'mark-seen'
 	| 'important'
 	| 'not-important'
+	| 'spam'
 	| 'trash'
 	| 'cancel';
 
@@ -28,9 +29,11 @@ export function bulkBarActions(options: {
 	counts: BulkSelectionCounts;
 	selectedCount: number;
 	canMarkImportant: boolean;
+	/** Spam folder exists and the current view isn't Spam/Trash/Drafts/Sent. */
+	canMarkSpam?: boolean;
 	deleteLabel: string;
 }): BulkBarAction[] {
-	const { counts, selectedCount, canMarkImportant, deleteLabel } = options;
+	const { counts, selectedCount, canMarkImportant, canMarkSpam = false, deleteLabel } = options;
 	const readCount = bulkSelectionReadCount(counts);
 	const actions: BulkBarAction[] = [];
 
@@ -64,6 +67,10 @@ export function bulkBarActions(options: {
 			label: bulkAffectedLabel(LABEL_NOT_IMPORTANT, counts.important, selectedCount),
 			variant: 'link'
 		});
+	}
+
+	if (canMarkSpam) {
+		actions.push({ id: 'spam', label: 'Mark spam', variant: 'link' });
 	}
 
 	actions.push({ id: 'trash', label: deleteLabel, variant: 'danger' });

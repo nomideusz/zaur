@@ -21,7 +21,7 @@
 	const tabs = [
 		{ id: 'week', label: 'Week' },
 		{ id: 'day', label: 'Day' },
-		{ id: 'agendas', label: 'Agendas' }
+		{ id: 'agendas', label: 'Agenda' }
 	] as const;
 	let currentDate = $state<Date>(new Date());
 	let isWide = $state(false);
@@ -266,20 +266,15 @@
 						/>
 					</div>
 				{:else}
-					<div
-						class={cn(
-							'flex min-h-0 min-w-0 flex-1 divide-border bg-surface-sunken/10',
-							isWide ? 'flex-row divide-x' : 'flex-col divide-y'
-						)}
-					>
-						<div
-							class={cn(
-								'flex min-h-0 min-w-0 flex-col',
-								isWide ? 'w-72 max-w-[20rem] shrink-0' : 'max-h-[42%] shrink-0'
-							)}
-						>
-							<AgendaWeekNav selectedDay={currentDate} onSelectDay={selectAgendaDay} />
-						</div>
+					<div class="flex min-h-0 min-w-0 flex-1 flex-row divide-x divide-border bg-surface-sunken/10">
+						{#if isWide}
+							<!-- Week overview is a desktop-only side column — stacked with the
+							     day agenda it crowds small screens; the header date nav covers
+							     day switching there. -->
+							<div class="flex min-h-0 w-72 max-w-[20rem] min-w-0 shrink-0 flex-col">
+								<AgendaWeekNav selectedDay={currentDate} onSelectDay={selectAgendaDay} />
+							</div>
+						{/if}
 						<div class="min-h-0 flex-1 overflow-hidden">
 							<LibCalendar
 								adapter={calAdapter}
