@@ -88,9 +88,9 @@
 	}
 
 	@media (min-width: 768px) {
-		.z-settings-section {
-			border: 1px solid var(--z-border);
-			border-radius: var(--radius-lg);
+		/* Card chrome lives on the list, like mail rows: raised, rounded, shadow, no border. */
+		.z-settings-section .z-settings-list {
+			border-radius: var(--radius-md);
 			background-color: var(--z-surface-raised);
 			overflow: hidden;
 			box-shadow: var(--shadow-sm);
@@ -104,25 +104,9 @@
 			display: none;
 		}
 
-		.z-settings-section-heading {
-			background-color: var(--z-surface-sunken);
-			padding: 0.875rem 1.25rem;
-			border-bottom: 1px solid var(--z-border);
-		}
-
-		.z-settings-row {
-			padding: 1.25rem;
-		}
-
-		.z-settings-field {
-			padding: 1.25rem;
-		}
-
-		.z-settings-shortcut-grid {
-			padding: 0 1.25rem 1.25rem;
-		}
 	}
 
+	/* Plain head above the card — mirrors .z-mail-list-section-head. */
 	.z-settings-section-heading {
 		padding: 0.625rem 1rem 0.25rem;
 		background-color: transparent;
@@ -130,14 +114,20 @@
 		margin-bottom: 0;
 	}
 
+	@media (min-width: 768px) {
+		.z-settings-section-heading {
+			padding: 0 1rem;
+			margin-bottom: 0.625rem;
+		}
+	}
+
+	/* Matches .z-mail-list-section-title — settings heads read like mail section heads. */
 	.z-settings-section-title {
 		margin: 0;
-		font-size: 0.6875rem;
+		font-size: var(--z-main-page-text);
 		font-weight: 600;
-		text-transform: uppercase;
-		letter-spacing: 0.04em;
 		line-height: 1.35;
-		color: var(--z-fg-muted);
+		color: var(--z-fg);
 	}
 
 	/* Form panels — Appwrite-style intro + fields (Profile, etc.). */
@@ -261,14 +251,6 @@
 
 		.z-settings-form-section .z-settings-field-body :where(.z-input, textarea.z-input) {
 			max-width: 28rem;
-		}
-	}
-
-	@media (min-width: 768px) {
-		.z-settings-section-title {
-			font-size: 0.75rem;
-			font-weight: 700;
-			letter-spacing: 0.05em;
 		}
 	}
 
@@ -414,9 +396,15 @@
 	.z-settings-field-label {
 		margin: 0;
 		font-size: var(--z-main-page-text);
-		font-weight: 500;
+		font-weight: 400;
 		line-height: var(--z-space-folder-message-leading);
 		color: var(--z-fg);
+	}
+
+	@media (min-width: 768px) {
+		.z-settings-field-label {
+			font-weight: 500;
+		}
 	}
 
 	.z-settings-field-desc {
@@ -521,7 +509,7 @@
 		border: none;
 		background: transparent;
 		padding: 0 0 0 1.5rem;
-		font-size: 0.875rem;
+		font-size: var(--z-main-page-muted-text);
 		color: var(--z-fg);
 		outline: none;
 		box-shadow: none;
@@ -624,7 +612,7 @@
 
 	@media (min-width: 768px) {
 		.z-settings-stack {
-			gap: 1.5rem;
+			gap: 2rem;
 		}
 	}
 
@@ -651,14 +639,16 @@
 			padding-top: 0;
 		}
 
-		.z-settings-section-heading,
+		/* Rows sit inside raised cards — same inline inset as mail rows (px-4). */
 		.z-settings-row,
 		.z-settings-field,
 		.z-settings-shortcut-grid {
-			padding-inline: 0;
+			padding-inline: 1rem;
 		}
 
+		/* Head sits above the card, aligned with its edge. */
 		.z-settings-section-heading {
+			padding-inline: 0;
 			padding-block: 1rem 0.375rem;
 		}
 
@@ -668,24 +658,6 @@
 
 		.z-settings-form-section .z-settings-form-fields > * + * {
 			border-top: 1px solid color-mix(in srgb, var(--z-border) 55%, transparent);
-		}
-
-		.z-settings-form-section .z-settings-field,
-		.z-settings-form-section .z-settings-form-toggle {
-			padding-inline: 0;
-		}
-
-		.z-settings-form-section :where(.z-input:not(.z-settings-search-input), textarea.z-input) {
-			border: 1px solid var(--z-border);
-			border-radius: var(--radius-md);
-			background-color: var(--z-surface);
-			padding-inline: var(--z-settings-field-pad-x);
-			padding-block: var(--z-settings-field-pad-y);
-		}
-
-		.z-settings-form-section :where(.z-input:not(.z-settings-search-input), textarea.z-input):focus {
-			border-color: var(--z-accent);
-			box-shadow: 0 0 0 1px var(--z-accent);
 		}
 
 		.z-settings-section:first-child .z-settings-section-heading,
@@ -714,7 +686,7 @@
 		}
 
 		.z-settings-mobile-index-link {
-			padding-inline: 0;
+			padding-inline: 1rem;
 			padding-block: 0.875rem;
 		}
 
@@ -740,7 +712,7 @@
 			grid-column: 1;
 			grid-row: auto;
 			width: 100%;
-			margin-top: 0.375rem;
+			margin-top: 0.5rem;
 			justify-content: flex-start;
 		}
 
@@ -752,48 +724,29 @@
 		}
 
 		.z-settings-section .z-settings-list {
-			border-radius: var(--radius-lg);
+			border-radius: var(--radius-md);
 			background-color: var(--z-surface-raised);
 			overflow: hidden;
+			box-shadow: var(--shadow-sm);
 		}
 
 		.z-settings-mobile-index-list {
-			border-radius: var(--radius-lg);
+			border-radius: var(--radius-md);
 			background-color: var(--z-surface-raised);
 			overflow: hidden;
+			box-shadow: var(--shadow-sm);
 		}
 
 		.z-settings-mobile-index-list > * + * {
 			border-top: 1px solid color-mix(in srgb, var(--z-border) 55%, transparent);
 		}
 
-		.z-settings-view :where(.z-input:not(.z-settings-search-input), textarea.z-input, .z-textarea) {
-			border: none;
-			border-radius: 0;
-			background-color: transparent;
-			padding-inline: 0;
-			box-shadow: none;
-		}
-
-		.z-settings-view :where(.z-input:not(.z-settings-search-input), textarea.z-input, .z-textarea):focus {
-			border: none;
-			box-shadow: none;
-		}
-
+		/* Fields keep their full chrome but recess against the raised card. */
+		.z-settings-view :where(.z-input:not(.z-settings-search-input), textarea.z-input, .z-textarea),
 		.z-settings-view .z-select,
 		.z-settings-view .z-select-trigger,
 		.z-settings-view .z-mobile-picker-trigger {
-			border: none;
-			border-radius: 0;
-			background-color: transparent;
-			box-shadow: none;
-		}
-
-		.z-settings-view .z-select:focus,
-		.z-settings-view .z-select-trigger:focus-visible,
-		.z-settings-view .z-mobile-picker-trigger:focus-visible {
-			border: none;
-			box-shadow: none;
+			background-color: var(--z-surface);
 		}
 
 		.z-settings-shortcut-grid {

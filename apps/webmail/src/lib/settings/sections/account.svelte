@@ -425,7 +425,11 @@
 	</SettingsRow>
 
 	<SettingsRow kind="action" title="Reset preferences">
-		<button type="button" class="z-mail-text-nav__link text-fg-subtle" onclick={() => void resetPreferences()}>
+		<button
+			type="button"
+			class="z-mail-text-nav__link z-mail-text-nav__link--danger"
+			onclick={() => void resetPreferences()}
+		>
 			Reset
 		</button>
 	</SettingsRow>
@@ -433,7 +437,7 @@
 	<SettingsRow kind="action" title="Sign out">
 		<button
 			type="button"
-			class="z-mail-text-nav__link text-fg-subtle"
+			class="z-mail-text-nav__link z-mail-text-nav__link--danger"
 			onclick={async () => {
 				if (
 					await confirm.ask({

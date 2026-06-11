@@ -10,7 +10,7 @@
  * background spends as little time as possible at washed-out mid lightness.
  *
  * Hour map (local time):
- *   0–5.5   night (held dark)
+ *   0–5.5   night (held dark, deepest around 3.5h)
  *   5.5–7   sunrise ramp
  *   7–17    day (matches current :root light tokens)
  *   17–19.5 early evening (held light)
@@ -32,6 +32,13 @@ export const CIRCADIAN_KEYFRAMES: readonly CircadianKeyframe[] = [
 		label: 'midnight',
 		surface: { h: 40, s: 5, l: 10 },
 		fg: { h: 40, s: 8, l: 93 }
+	},
+	{
+		hour: 3.5,
+		label: 'deep night',
+		// The darkest point of the cycle — slightly deeper than the evening hold.
+		surface: { h: 38, s: 5, l: 9 },
+		fg: { h: 40, s: 8, l: 92 }
 	},
 	{
 		hour: 5.5,

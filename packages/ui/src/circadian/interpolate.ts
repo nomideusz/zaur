@@ -38,34 +38,29 @@ function clamp(value: number, min: number, max: number): number {
 const DARK_SURFACE_L = 58;
 /** Minimum lightness gap kept between surface and foreground (readability floor). */
 const MIN_CONTRAST_L = 70;
-/** Surface band where secondary UI and accents collapse — snap to a pole instead. */
+/** Surface band where secondary UI and accents collapse — clamp to a boundary instead. */
 const DEAD_ZONE_MIN = 25;
 const DEAD_ZONE_MAX = 70;
+const DEAD_ZONE_MID = (DEAD_ZONE_MIN + DEAD_ZONE_MAX) / 2;
 
 /**
- * Commit surface to a readable light/dark extreme when linear interpolation
- * lands in the mid-lightness mud band (dusk/dawn). Stable day/night holds
- * never enter this range.
+ * Keep the surface out of the mid-lightness mud band (dusk/dawn) by clamping
+ * to the *nearest* band boundary. This keeps lightness monotonic through a
+ * ramp: the light side eases down to the boundary, holds, makes one clean
+ * crossover step, then continues on the dark side — instead of snapping to an
+ * extreme and bouncing back as the raw value re-enters the safe range.
+ * Stable day/night holds never enter this range, so this is a no-op there.
  */
-function guardSurface(
-	surface: CircadianKeyframe['surface'],
-	hour: number
-): CircadianKeyframe['surface'] {
+function guardSurface(surface: CircadianKeyframe['surface']): CircadianKeyframe['surface'] {
 	const { l } = surface;
-	if (l < DEAD_ZONE_MIN || l > DEAD_ZONE_MAX) return surface;
+	if (l <= DEAD_ZONE_MIN || l >= DEAD_ZONE_MAX) return surface;
 
-	const dusk = hour >= 19.5 && hour < 21;
-	const dawn = hour >= 5.5 && hour < 7;
-	const night = hour >= 21 || hour < 5.5;
-
-	if (dusk || night) {
-		return { ...surface, h: 40, s: Math.max(surface.s, 5), l: 10 };
+	if (l > DEAD_ZONE_MID) {
+		// Light side of the crossover — hold at the dim-but-readable boundary.
+		return { ...surface, s: Math.max(surface.s, 11), l: DEAD_ZONE_MAX };
 	}
-	if (dawn) {
-		return { ...surface, s: Math.max(surface.s, 11), l: 97 };
-	}
-	// Daytime hold — bias light if we somehow land mid-band.
-	return { ...surface, s: Math.max(surface.s, 11), l: 97 };
+	// Dark side — hold at the lifted-night boundary.
+	return { ...surface, s: Math.max(surface.s, 5), l: DEAD_ZONE_MIN };
 }
 
 /**
@@ -123,10 +118,7 @@ export function sampleCircadian(date = new Date()): CircadianSample {
 	const span = to.hour - from.hour;
 	const localT = span > 0 ? (hour - from.hour) / span : 0;
 
-	const surface = guardSurface(
-		lerpTriple(from.surface, to.surface, localT),
-		hour
-	);
+	const surface = guardSurface(lerpTriple(from.surface, to.surface, localT));
 	const fg = guardContrast(surface, lerpTriple(from.fg, to.fg, localT));
 
 	return {

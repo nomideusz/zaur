@@ -7,6 +7,7 @@
 	// Keep in sync with circadian/keyframes.ts
 	var FRAMES = [
 		{ hour: 0, surface: { h: 40, s: 5, l: 10 }, fg: { h: 40, s: 8, l: 93 } },
+		{ hour: 3.5, surface: { h: 38, s: 5, l: 9 }, fg: { h: 40, s: 8, l: 92 } },
 		{ hour: 5.5, surface: { h: 40, s: 6, l: 10 }, fg: { h: 40, s: 8, l: 93 } },
 		{ hour: 7, surface: { h: 44, s: 16, l: 96 }, fg: { h: 215, s: 11, l: 13 } },
 		{ hour: 9, surface: { h: 42, s: 11, l: 98 }, fg: { h: 210, s: 10, l: 11 } },
@@ -22,24 +23,19 @@
 	var MIN_CONTRAST_L = 70;
 	var DEAD_ZONE_MIN = 25;
 	var DEAD_ZONE_MAX = 70;
+	var DEAD_ZONE_MID = (DEAD_ZONE_MIN + DEAD_ZONE_MAX) / 2;
 
 	function clamp(value, min, max) {
 		return Math.min(max, Math.max(min, value));
 	}
 
-	function guardSurface(surface, hour) {
+	function guardSurface(surface) {
 		var l = surface.l;
-		if (l < DEAD_ZONE_MIN || l > DEAD_ZONE_MAX) return surface;
-		var dusk = hour >= 19.5 && hour < 21;
-		var dawn = hour >= 5.5 && hour < 7;
-		var night = hour >= 21 || hour < 5.5;
-		if (dusk || night) {
-			return { h: 40, s: Math.max(surface.s, 5), l: 10 };
+		if (l <= DEAD_ZONE_MIN || l >= DEAD_ZONE_MAX) return surface;
+		if (l > DEAD_ZONE_MID) {
+			return { h: surface.h, s: Math.max(surface.s, 11), l: DEAD_ZONE_MAX };
 		}
-		if (dawn) {
-			return { s: Math.max(surface.s, 11), l: 97 };
-		}
-		return { s: Math.max(surface.s, 11), l: 97 };
+		return { h: surface.h, s: Math.max(surface.s, 5), l: DEAD_ZONE_MIN };
 	}
 
 	function guardContrast(surface, fg) {
@@ -92,7 +88,7 @@
 		}
 		var span = to.hour - from.hour;
 		var localT = span > 0 ? (hour - from.hour) / span : 0;
-		var surface = guardSurface(lerpTriple(from.surface, to.surface, localT), hour);
+		var surface = guardSurface(lerpTriple(from.surface, to.surface, localT));
 		return {
 			surface: surface,
 			fg: guardContrast(surface, lerpTriple(from.fg, to.fg, localT))
@@ -138,6 +134,11 @@
 	function startCircadianLoop() {
 		if (window.__zaurCircadianTimer) return;
 		window.__zaurCircadianTimer = setInterval(tickCircadian, 60000);
+		// Timers throttle in background tabs and pause during sleep — resample on wake.
+		document.addEventListener('visibilitychange', function () {
+			if (document.visibilityState === 'visible') tickCircadian();
+		});
+		window.addEventListener('focus', tickCircadian);
 	}
 
 	var mode = readMode();

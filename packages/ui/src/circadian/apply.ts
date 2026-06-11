@@ -44,6 +44,7 @@ export function applyCircadianNow(el: HTMLElement = document.documentElement): C
 }
 
 let timer: ReturnType<typeof setInterval> | null = null;
+let removeWakeListeners: (() => void) | null = null;
 
 /** Tear down circadian primitives and data attributes. */
 export function stopCircadianTheme(el: HTMLElement = document.documentElement): void {
@@ -51,6 +52,8 @@ export function stopCircadianTheme(el: HTMLElement = document.documentElement): 
 		clearInterval(timer);
 		timer = null;
 	}
+	removeWakeListeners?.();
+	removeWakeListeners = null;
 	for (const name of PRIMITIVE_VARS) el.style.removeProperty(name);
 	delete el.dataset.theme;
 	delete el.dataset.circadianPhase;
@@ -77,6 +80,19 @@ export function startCircadian(options: CircadianOptions = {}): () => void {
 	tick();
 	if (timer) clearInterval(timer);
 	timer = setInterval(tick, options.intervalMs ?? 60_000);
+
+	// Interval timers are throttled in background tabs and paused during sleep,
+	// so resample the moment the page becomes visible again.
+	const onWake = () => {
+		if (document.visibilityState === 'visible') tick();
+	};
+	removeWakeListeners?.();
+	document.addEventListener('visibilitychange', onWake);
+	window.addEventListener('focus', onWake);
+	removeWakeListeners = () => {
+		document.removeEventListener('visibilitychange', onWake);
+		window.removeEventListener('focus', onWake);
+	};
 
 	return () => stopCircadianTheme(el);
 }

@@ -162,9 +162,17 @@
 :root[data-theme='circadian'] {
 	color-scheme: light dark;
 
-	/* Snap instantly — JS resamples every ~60s. CSS transitions smear dusk/dawn
-	   through unreadable mid-lightness even when sampled values are safe. */
-	transition: none;
+	/* JS resamples every ~60s. A short ease on the registered primitives turns
+	   each tick — including the dusk/dawn crossover step — into a gentle drift
+	   instead of a hard repaint, while staying far too brief to strand the
+	   palette at unreadable mid-lightness. */
+	transition:
+		--z-c-s-h 1200ms ease-in-out,
+		--z-c-s-s 1200ms ease-in-out,
+		--z-c-s-l 1200ms ease-in-out,
+		--z-c-f-h 1200ms ease-in-out,
+		--z-c-f-s 1200ms ease-in-out,
+		--z-c-f-l 1200ms ease-in-out;
 
 	--z-surface: hsl(var(--z-c-s-h) var(--z-c-s-s) var(--z-c-s-l));
 	--z-fg: hsl(var(--z-c-f-h) var(--z-c-f-s) var(--z-c-f-l));
@@ -1005,6 +1013,33 @@ body {
 	color: var(--z-fg-muted);
 }
 
+.z-btn-lg {
+	padding: 0.625rem 1rem;
+	font-size: 0.9375rem;
+}
+
+.z-link {
+	color: var(--z-accent);
+	text-decoration: none;
+}
+
+.z-link:hover {
+	color: var(--z-accent-hover);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.z-link-muted {
+	color: var(--z-fg-muted);
+	text-decoration: none;
+}
+
+.z-link-muted:hover {
+	color: var(--z-fg);
+	text-decoration: underline;
+}
+
+
 /* Site shell — register.zaur.app ↔ webmail cross-nav */
 
 .z-site-shell {
@@ -1811,15 +1846,44 @@ button.z-domain-option.available:hover {
 	font-size: 0.875rem;
 }
 
-.z-admin-shell .z-stat-grid {
+.z-stat-grid {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
 	gap: 1rem 1.5rem;
 	margin-bottom: 1.5rem;
 	padding-bottom: 1.5rem;
 	border-bottom: 1px solid var(--z-divider);
 }
 
-.z-admin-shell .z-stat-card__value {
+@media (min-width: 640px) {
+	.z-stat-grid {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+.z-stat-card {
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+}
+
+.z-stat-card__value {
 	font-size: 1.5rem;
+	font-weight: 600;
+	line-height: 1;
+	color: var(--z-fg);
+}
+
+.z-stat-card__value--success {
+	color: var(--z-success);
+}
+
+.z-stat-card__value--warning {
+	color: var(--z-warning);
+}
+
+.z-stat-card__value--danger {
+	color: var(--z-danger);
 }
 
 .z-admin-section {
