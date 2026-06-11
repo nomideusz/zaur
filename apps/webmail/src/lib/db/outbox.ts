@@ -8,9 +8,12 @@ export interface OutboxEnqueueInput {
 	bcc: string;
 	subject: string;
 	body: string;
+	bodyHtml?: string;
+	format?: string;
 	fromEmail: string;
 	fromName?: string;
 	attachments?: OutboxAttachmentPayload[];
+	jmapEmailId?: string;
 }
 
 function newOutboxId(): string {
@@ -32,9 +35,12 @@ export async function enqueueOutbox(accountId: string, input: OutboxEnqueueInput
 		bcc: input.bcc,
 		subject: input.subject,
 		body: input.body,
+		bodyHtml: input.bodyHtml,
+		format: input.format,
 		fromEmail: input.fromEmail,
 		fromName: input.fromName,
 		attachmentsJson: input.attachments?.length ? JSON.stringify(input.attachments) : undefined,
+		jmapEmailId: input.jmapEmailId,
 		status: 'pending',
 		attempts: 0,
 		createdAt: now,
@@ -109,6 +115,16 @@ export async function updateOutboxStatus(
 		attempts: patch.attempts ?? doc.attempts,
 		updatedAt: Date.now()
 	});
+}
+
+export async function setOutboxJmapEmailId(id: string, jmapEmailId: string): Promise<void> {
+	const db = getMailDatabase();
+	if (!db) return;
+
+	const doc = await db.outbox.findOne({ selector: { id } }).exec();
+	if (!doc) return;
+
+	await doc.patch({ jmapEmailId, updatedAt: Date.now() });
 }
 
 export async function removeOutboxItem(id: string): Promise<void> {

@@ -19,6 +19,7 @@ export {
 	listPendingOutbox,
 	removeOutboxItem,
 	retryOutboxItem,
+	setOutboxJmapEmailId,
 	updateOutboxStatus,
 	type OutboxEnqueueInput
 } from './outbox';

@@ -1225,6 +1225,10 @@ export class JMAPClient {
 			attachments?: EmailAttachmentInput[];
 			format?: ComposeFormat;
 			bodyHtml?: string;
+			/** Server email id from a previous attempt; lets retries resume instead of re-creating. */
+			jmapEmailId?: string;
+			/** Called with the server email id once the outgoing email exists, before submission. */
+			onEmailCreated?: (emailId: string) => void | Promise<void>;
 		}
 	): Promise<void> {
 		const mailboxes = await this.getMailboxes();
@@ -1240,40 +1244,46 @@ export class JMAPClient {
 				identities.find((id) => id.email === fromEmail)?.id ?? identities[0]?.id ?? this.accountId;
 		}
 
-		const emailId = `draft-${Date.now()}`;
 		const holdingMailboxId = draftsMailbox?.id ?? sentMailbox.id;
 		const fromEmail = options?.fromEmail ?? this.username;
 
-		const emailData = buildEmailCreateData({
-			fromEmail,
-			fromName: options?.fromName,
-			to,
-			cc: options?.cc,
-			bcc: options?.bcc,
-			subject,
-			bodyText: body,
-			bodyHtml: options?.bodyHtml,
-			format: options?.format,
-			mailboxIds: { [holdingMailboxId]: true },
-			keywords: { $draft: true },
-			attachments: options?.attachments
-		});
+		// Phase 1: make sure the outgoing email exists on the server exactly once.
+		// On retry, check whether a previous attempt already submitted it — a lost
+		// response after the server accepted the send must not produce a duplicate.
+		let emailId = options?.jmapEmailId;
+		if (emailId) {
+			const status = await this.checkSendStatus(emailId);
+			if (status === 'submitted') return;
+			if (status === 'missing') emailId = undefined;
+		}
 
+		if (!emailId) {
+			const emailData = buildEmailCreateData({
+				fromEmail,
+				fromName: options?.fromName,
+				to,
+				cc: options?.cc,
+				bcc: options?.bcc,
+				subject,
+				bodyText: body,
+				bodyHtml: options?.bodyHtml,
+				format: options?.format,
+				mailboxIds: { [holdingMailboxId]: true },
+				keywords: { $draft: true },
+				attachments: options?.attachments
+			});
+			emailId = await this.createOutgoingEmail(emailData);
+			await options?.onEmailCreated?.(emailId);
+		}
+
+		// Phase 2: submit for delivery and move out of the holding mailbox.
 		const response = await this.request(
 			[
-				[
-					'Email/set',
-					{
-						accountId: this.accountId,
-						create: { [emailId]: emailData }
-					},
-					'0'
-				],
 				[
 					'EmailSubmission/set',
 					{
 						accountId: this.accountId,
-						create: { '1': { emailId: `#${emailId}`, identityId } },
+						create: { '1': { emailId, identityId } },
 						onSuccessUpdateEmail: {
 							'#1': {
 								[`mailboxIds/${holdingMailboxId}`]: null,
@@ -1283,15 +1293,85 @@ export class JMAPClient {
 							}
 						}
 					},
-					'1'
+					'0'
 				]
 			],
 			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
 		);
+		this.throwOnSetErrors(response, 'Failed to send email');
+	}
+
+	private async createOutgoingEmail(emailData: Record<string, unknown>): Promise<string> {
+		const createId = 'outgoing';
+		const response = await this.request(
+			[
+				[
+					'Email/set',
+					{
+						accountId: this.accountId,
+						create: { [createId]: emailData }
+					},
+					'0'
+				]
+			],
+			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail']
+		);
+		this.throwOnSetErrors(response, 'Failed to create outgoing email');
 
 		for (const [methodName, result] of response.methodResponses ?? []) {
+			if (methodName === 'Email/set') {
+				const created = (result.created as Record<string, { id?: string }> | undefined)?.[createId];
+				if (created?.id) return created.id;
+			}
+		}
+		throw new Error('Failed to create outgoing email');
+	}
+
+	/**
+	 * Determine whether a previously created outgoing email was already submitted.
+	 * Returns `draft` when in doubt (e.g. the server can't answer) so the caller
+	 * falls back to submitting — the same behavior as before this check existed.
+	 */
+	private async checkSendStatus(emailId: string): Promise<'submitted' | 'draft' | 'missing'> {
+		try {
+			const response = await this.request(
+				[
+					[
+						'EmailSubmission/query',
+						{ accountId: this.accountId, filter: { emailIds: [emailId] } },
+						'0'
+					],
+					['Email/get', { accountId: this.accountId, ids: [emailId], properties: ['id'] }, '1']
+				],
+				['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
+			);
+
+			let submitted = false;
+			let emailGetAnswered = false;
+			let emailExists = false;
+
+			for (const [methodName, result] of response.methodResponses ?? []) {
+				if (methodName === 'EmailSubmission/query' && Array.isArray(result.ids)) {
+					submitted = result.ids.length > 0;
+				}
+				if (methodName === 'Email/get' && Array.isArray(result.list)) {
+					emailGetAnswered = true;
+					emailExists = result.list.length > 0;
+				}
+			}
+
+			if (submitted) return 'submitted';
+			if (!emailGetAnswered) return 'draft';
+			return emailExists ? 'draft' : 'missing';
+		} catch {
+			return 'draft';
+		}
+	}
+
+	private throwOnSetErrors(response: JMAPResponse, fallbackMessage: string): void {
+		for (const [methodName, result] of response.methodResponses ?? []) {
 			if (methodName.endsWith('/error')) {
-				throw new Error((result.description as string) || `Failed to send: ${methodName}`);
+				throw new Error((result.description as string) || `${fallbackMessage}: ${methodName}`);
 			}
 			if (result.notCreated || result.notUpdated) {
 				const errors = (result.notCreated ?? result.notUpdated) as Record<
@@ -1299,7 +1379,7 @@ export class JMAPClient {
 					{ description?: string; type?: string }
 				>;
 				const firstError = Object.values(errors)[0];
-				throw new Error(firstError?.description || firstError?.type || 'Failed to send email');
+				throw new Error(firstError?.description || firstError?.type || fallbackMessage);
 			}
 		}
 	}

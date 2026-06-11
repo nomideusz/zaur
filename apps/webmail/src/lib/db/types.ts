@@ -26,9 +26,13 @@ export interface OutboxDoc {
 	bcc: string;
 	subject: string;
 	body: string;
+	bodyHtml?: string;
+	format?: string;
 	fromEmail: string;
 	fromName?: string;
 	attachmentsJson?: string;
+	/** Server id of the created outgoing email; set once phase 1 of the send succeeds. */
+	jmapEmailId?: string;
 	status: OutboxStatus;
 	error?: string;
 	attempts: number;

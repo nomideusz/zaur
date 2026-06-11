@@ -38,7 +38,13 @@ const COLLECTIONS = {
 			})
 		}
 	},
-	outbox: { schema: outboxSchema },
+	outbox: {
+		schema: outboxSchema,
+		migrationStrategies: {
+			// v1 only adds optional fields (bodyHtml, format, jmapEmailId).
+			1: (oldDoc: OutboxDoc) => oldDoc
+		}
+	},
 	recentThreads: { schema: recentThreadSchema },
 	syncState: { schema: syncStateSchema },
 	threadCache: { schema: threadCacheSchema },

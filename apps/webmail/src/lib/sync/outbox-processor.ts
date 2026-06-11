@@ -63,8 +63,28 @@ class OutboxProcessor {
 	async processQueue(): Promise<void> {
 		if (!browser || this.processing || !this.client || !navigator.onLine) return;
 
-		const { getAccountId, listPendingOutbox, updateOutboxStatus, removeOutboxItem } =
-			await import('$lib/db');
+		// Web Locks give cross-tab mutual exclusion; without it two tabs could
+		// both pick up the same outbox item and double-send.
+		if (typeof navigator.locks?.request === 'function') {
+			await navigator.locks.request('zaur-outbox-processor', { ifAvailable: true }, async (lock) => {
+				if (!lock) return;
+				await this.processQueueLocked();
+			});
+		} else {
+			await this.processQueueLocked();
+		}
+	}
+
+	private async processQueueLocked(): Promise<void> {
+		if (this.processing || !this.client) return;
+
+		const {
+			getAccountId,
+			listPendingOutbox,
+			updateOutboxStatus,
+			removeOutboxItem,
+			setOutboxJmapEmailId
+		} = await import('$lib/db');
 		const accountId = getAccountId();
 		if (!accountId) return;
 
@@ -90,7 +110,11 @@ class OutboxProcessor {
 						fromName: item.fromName ?? this.fromName,
 						cc: cc.length ? cc : undefined,
 						bcc: bcc.length ? bcc : undefined,
-						attachments: parseOutboxAttachments(item.attachmentsJson)
+						attachments: parseOutboxAttachments(item.attachmentsJson),
+						bodyHtml: item.bodyHtml,
+						format: item.format === 'html' ? 'html' : undefined,
+						jmapEmailId: item.jmapEmailId,
+						onEmailCreated: (emailId) => setOutboxJmapEmailId(item.id, emailId)
 					});
 
 					const subject = item.subject || '(no subject)';
@@ -118,6 +142,8 @@ class OutboxProcessor {
 
 					if (nextAttempts >= MAX_ATTEMPTS) {
 						toast.show(`Could not send "${subject}" — ${message}`, 'error');
+					} else if (nextAttempts === 1) {
+						toast.show(`Send of "${subject}" failed — will retry automatically`, 'info');
 					}
 				}
 			}

@@ -787,8 +787,17 @@ class ComposeStore {
 		fromEmail: string,
 		fromName?: string
 	): Promise<ComposeSendResult> {
+		// If the send fails after the server created the email (e.g. the network
+		// dropped mid-request), carry the id into the outbox so the retry resumes
+		// the same email instead of sending a duplicate.
+		let createdEmailId: string | undefined;
 		try {
-			await client.sendEmail(payload.recipients, payload.subject, payload.body, payload.sendOptions);
+			await client.sendEmail(payload.recipients, payload.subject, payload.body, {
+				...payload.sendOptions,
+				onEmailCreated: (emailId) => {
+					createdEmailId = emailId;
+				}
+			});
 
 			if (payload.draftId) {
 				try {
@@ -814,9 +823,12 @@ class ComposeStore {
 						bcc: payload.bccRaw,
 						subject: payload.subject,
 						body: payload.body,
+						bodyHtml: payload.bodyHtml,
+						format: payload.sendOptions.format,
 						fromEmail,
 						fromName: fromName?.trim() || undefined,
-						attachments: payload.attachments.length ? payload.attachments : undefined
+						attachments: payload.attachments.length ? payload.attachments : undefined,
+						jmapEmailId: createdEmailId
 					});
 					void import('$lib/sync/outbox-processor').then(({ outboxProcessor }) =>
 						outboxProcessor.processQueue()

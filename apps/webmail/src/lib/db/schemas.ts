@@ -27,7 +27,7 @@ export const draftSchema: RxJsonSchema<DraftDoc> = {
 
 export const outboxSchema: RxJsonSchema<OutboxDoc> = {
 	title: 'outbox',
-	version: 0,
+	version: 1,
 	primaryKey: 'id',
 	type: 'object',
 	properties: {
@@ -38,9 +38,12 @@ export const outboxSchema: RxJsonSchema<OutboxDoc> = {
 		bcc: { type: 'string' },
 		subject: { type: 'string' },
 		body: { type: 'string' },
+		bodyHtml: { type: 'string' },
+		format: { type: 'string', maxLength: 16 },
 		fromEmail: { type: 'string', maxLength: 320 },
 		fromName: { type: 'string', maxLength: 320 },
 		attachmentsJson: { type: 'string' },
+		jmapEmailId: { type: 'string', maxLength: 128 },
 		status: { type: 'string', maxLength: 16 },
 		error: { type: 'string' },
 		attempts: { type: 'number', minimum: 0, maximum: 1000, multipleOf: 1 },
