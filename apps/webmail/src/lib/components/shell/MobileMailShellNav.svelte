@@ -17,6 +17,11 @@
 		SegmentGroupItemText,
 		SegmentGroupScroll
 	} from '$lib/components/ui/segment-group';
+	import {
+		MOBILE_RAIL_GROUP_CLASS,
+		MOBILE_RAIL_INDICATOR_CLASS,
+		MOBILE_RAIL_ITEM_CLASS
+	} from '$lib/shell/mobile-rail';
 
 	const pathname = $derived($page.url.pathname);
 	const mailCtx = $derived(parseMailContext(pathname));
@@ -51,13 +56,13 @@
 		<SegmentGroup
 			value={activeSegment}
 			track={false}
-			indicatorClass="z-segment-group__indicator--accent rounded-md"
-			class="rounded-lg px-0.5"
+			indicatorClass={MOBILE_RAIL_INDICATOR_CLASS}
+			class={MOBILE_RAIL_GROUP_CLASS}
 		>
 			<SegmentGroupItem
 				value="unseen"
 				href={unseenHref}
-				class="px-2.5 py-1.5 text-sm font-medium text-fg-muted data-[state=checked]:font-semibold data-[state=checked]:text-fg"
+				class={MOBILE_RAIL_ITEM_CLASS}
 			>
 				<SegmentGroupItemText>{LABEL_UNSEEN}</SegmentGroupItemText>
 			</SegmentGroupItem>
@@ -65,7 +70,7 @@
 				<SegmentGroupItem
 					value={mailbox.id}
 					href={mailListHref(mailbox.id)}
-					class="px-2.5 py-1.5 text-sm font-medium text-fg-muted data-[state=checked]:font-semibold data-[state=checked]:text-fg"
+					class={MOBILE_RAIL_ITEM_CLASS}
 				>
 					<SegmentGroupItemText>{segmentLabel(mailbox)}</SegmentGroupItemText>
 				</SegmentGroupItem>

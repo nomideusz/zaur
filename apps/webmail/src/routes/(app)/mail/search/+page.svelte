@@ -57,7 +57,7 @@
 		<div class="z-mail-mobile-search flex items-center gap-2 md:hidden">
 			<a
 				href={backHref}
-				class="z-btn-icon min-h-10 min-w-10 shrink-0 p-2.5 text-fg-muted no-underline transition-colors hover:text-fg"
+				class="z-back-btn no-underline"
 				aria-label="Back to mail"
 			>
 				<ArrowLeft class="size-5" aria-hidden="true" />

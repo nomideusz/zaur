@@ -16,6 +16,15 @@
 		overflow: hidden;
 	}
 
+
+	/* Mobile: match the shell header height. */
+	@media (max-width: 767px) {
+		.z-mail-view .z-compose__header-bar {
+			min-height: var(--height-header);
+			padding-block: 0.125rem;
+		}
+	}
+
 	.z-mail-view .z-compose__back-btn {
 		display: inline-grid;
 		place-items: center;

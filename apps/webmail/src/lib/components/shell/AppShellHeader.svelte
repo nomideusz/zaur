@@ -160,11 +160,11 @@
 				<span class="hidden md:inline">New event</span>
 			</button>
 		{:else if showComposeAction}
-			<div class="flex items-center max-md:translate-y-0.5 md:contents">
-				<Separator orientation="vertical" class="h-5 max-md:ml-0.5 md:hidden" />
+			<div class="flex items-center gap-2 md:contents">
+				<Separator orientation="vertical" class="h-5 md:hidden" />
 				<a
 					href="/mail/compose"
-					class="z-mail-text-nav__action z-mail-text-nav__action--pill max-md:-translate-y-0.5 shrink-0 md:inline-flex"
+					class="z-mail-text-nav__action z-mail-text-nav__action--pill shrink-0 md:inline-flex"
 				>
 					<span class="md:hidden">New</span>
 					<span class="hidden md:inline">New message</span>

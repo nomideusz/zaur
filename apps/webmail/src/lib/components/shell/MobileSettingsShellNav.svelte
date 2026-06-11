@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
+	import {
+		MOBILE_RAIL_GROUP_CLASS,
+		MOBILE_RAIL_INDICATOR_CLASS,
+		MOBILE_RAIL_ITEM_CLASS
+	} from '$lib/shell/mobile-rail';
 	import { settings } from '$lib/stores/settings.svelte';
 	import {
 		SegmentGroup,
@@ -18,26 +24,22 @@
 </script>
 
 <nav
-	class="flex w-full min-w-0 items-center justify-between gap-3 md:hidden"
+	class="flex w-full min-w-0 items-center gap-2 md:hidden"
 	aria-label="Settings navigation"
 >
-	<a href={backHref} class="z-mail-text-nav__link shrink-0">
-		Back
+	<a href={backHref} class="z-back-btn no-underline" aria-label="Back to mail">
+		<ArrowLeft class="size-5" aria-hidden="true" />
 	</a>
 
-	<SegmentGroupScroll activeValue={activeHref} class="min-w-0">
+	<SegmentGroupScroll activeValue={activeHref} class="min-w-0 flex-1">
 		<SegmentGroup
 			value={activeHref}
 			track={false}
-			indicatorClass="z-segment-group__indicator--accent rounded-md"
-			class="rounded-lg px-0.5"
+			indicatorClass={MOBILE_RAIL_INDICATOR_CLASS}
+			class={MOBILE_RAIL_GROUP_CLASS}
 		>
 			{#each navLinks as link (link.href)}
-				<SegmentGroupItem
-					value={link.href}
-					href={link.href}
-					class="px-2.5 py-1.5 text-sm font-medium text-fg-muted data-[state=checked]:font-semibold data-[state=checked]:text-fg"
-				>
+				<SegmentGroupItem value={link.href} href={link.href} class={MOBILE_RAIL_ITEM_CLASS}>
 					<SegmentGroupItemText>{link.label}</SegmentGroupItemText>
 				</SegmentGroupItem>
 			{/each}

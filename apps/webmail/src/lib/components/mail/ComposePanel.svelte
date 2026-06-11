@@ -346,7 +346,7 @@
 			<div class="z-compose__header-bar flex flex-wrap items-center justify-between gap-2 px-4 py-2 min-w-0 max-md:flex-nowrap">
 				<!-- Left: Back -->
 				<div class="z-compose__header-leading">
-					<button type="button" class="z-compose__back-btn shrink-0" aria-label="Save draft and go back" onclick={() => void saveDraftAndClose()}>
+					<button type="button" class="z-back-btn" aria-label="Save draft and go back" onclick={() => void saveDraftAndClose()}>
 						<ArrowLeft class="size-4" aria-hidden="true" />
 					</button>
 					<h1 class="sr-only">{composeTitle}</h1>
@@ -411,7 +411,7 @@
 									{...props}
 									type="submit"
 									form="compose-form"
-									class="z-mail-text-nav__action"
+									class="z-mail-text-nav__action z-mail-text-nav__action--pill"
 									disabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
 								>
 									{sendLabel}

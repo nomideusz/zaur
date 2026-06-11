@@ -87,7 +87,39 @@
 	}
 
 	.z-mail-mobile-search {
-		@apply shrink-0 border-b border-border/80 bg-surface px-3 py-2;
+		@apply shrink-0 border-b border-border/80 bg-surface;
+		min-height: var(--height-header);
+		padding-inline: 1rem;
+		padding-block: 0.25rem;
+	}
+
+	/* Shared back button — identical affordance on reader, compose, search, settings. */
+	.z-back-btn {
+		display: inline-grid;
+		place-items: center;
+		width: 2.5rem;
+		height: 2.5rem;
+		flex-shrink: 0;
+		cursor: pointer;
+		border-radius: var(--radius-md);
+		color: var(--z-fg-muted);
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			background-color var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-back-btn:hover {
+		color: var(--z-fg);
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
+	}
+
+	.z-back-btn:focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: 2px;
+	}
+
+	.z-back-btn svg {
+		display: block;
 	}
 
 	.z-app-mobile-nav {

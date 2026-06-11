@@ -295,7 +295,7 @@
 	<header class="z-reader-header flex shrink-0 items-center gap-2 border-b border-border/80 px-4 py-2.5 min-w-0">
 		<a
 			href={listHref}
-			class="z-btn-icon min-h-10 min-w-10 shrink-0 p-2.5 text-fg-muted no-underline transition-colors hover:text-fg md:hidden"
+			class="z-back-btn no-underline md:hidden"
 			aria-label="Back to list"
 		>
 			<ArrowLeft class="size-5" aria-hidden="true" />

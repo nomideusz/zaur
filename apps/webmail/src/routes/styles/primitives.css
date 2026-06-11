@@ -601,7 +601,8 @@
 		background-color: color-mix(in srgb, var(--z-accent) 55%, transparent);
 	}
 
-	.z-mail-folder-segments .z-segment-group__item:focus-visible {
+	/* Every header rail (mail, calendar, contacts, settings), not just mail folders. */
+	.z-segment-group--rail .z-segment-group__item:focus-visible {
 		outline: 2px solid var(--z-accent);
 		outline-offset: 2px;
 		border-radius: var(--radius-sm);

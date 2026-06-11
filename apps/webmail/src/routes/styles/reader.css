@@ -21,10 +21,11 @@
 			line-height: 1.35;
 		}
 
+		/* Match the shell header height so leaf screens keep the same top rhythm. */
 		.z-reader-header {
-			min-height: 0;
+			min-height: var(--height-header);
 			align-items: center;
-			padding-block: 0.625rem;
+			padding-block: 0.125rem;
 		}
 	}
 

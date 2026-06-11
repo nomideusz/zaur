@@ -8,6 +8,11 @@
 		SegmentGroupItem,
 		SegmentGroupItemText
 	} from '$lib/components/ui/segment-group';
+	import {
+		MOBILE_RAIL_GROUP_CLASS,
+		MOBILE_RAIL_INDICATOR_CLASS,
+		MOBILE_RAIL_ITEM_CLASS
+	} from '$lib/shell/mobile-rail';
 
 	const contactsNav = $derived(shellHeader.page?.contactsNav);
 
@@ -18,8 +23,6 @@
 		allActive ? 'all' : (contactsNav?.selectedLetter ?? undefined)
 	);
 
-	const segmentItemClass =
-		'px-2.5 py-1.5 text-sm font-medium text-fg-muted data-[state=checked]:font-semibold data-[state=checked]:text-fg';
 </script>
 
 {#if contactsNav}
@@ -31,18 +34,18 @@
 		<SegmentGroup
 			value={activeValue}
 			track={false}
-			indicatorClass="z-segment-group__indicator--accent rounded-md"
-			class="rounded-lg px-0.5"
+			indicatorClass={MOBILE_RAIL_INDICATOR_CLASS}
+			class={MOBILE_RAIL_GROUP_CLASS}
 			onValueChange={(value) => {
 				if (value === 'all') nav.onShowAll();
 				else nav.onSelectLetter(value);
 			}}
 		>
-			<SegmentGroupItem value="all" class={segmentItemClass}>
+			<SegmentGroupItem value="all" class={MOBILE_RAIL_ITEM_CLASS}>
 				<SegmentGroupItemText>All</SegmentGroupItemText>
 			</SegmentGroupItem>
 			{#if nav.selectedLetter}
-				<SegmentGroupItem value={nav.selectedLetter} class={segmentItemClass}>
+				<SegmentGroupItem value={nav.selectedLetter} class={MOBILE_RAIL_ITEM_CLASS}>
 					<SegmentGroupItemText>{nav.selectedLetter}</SegmentGroupItemText>
 				</SegmentGroupItem>
 			{/if}
