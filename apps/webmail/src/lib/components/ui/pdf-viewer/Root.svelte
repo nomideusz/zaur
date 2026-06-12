@@ -3,25 +3,22 @@
   import type { PDFDocumentProxy } from 'pdfjs-dist';
   import type { Snippet } from 'svelte';
 
-  export type ViewMode = 'single' | 'scroll';
-
   export interface PdfViewerContext {
     currentPage: number;
     totalPages: number;
+    /** User zoom multiplier on top of the fit-to-width scale (1 = fit width). */
     zoom: number;
-    viewMode: ViewMode;
     pdf: PDFDocumentProxy | null;
     loading: boolean;
     error: string | null;
     setPage: (page: number) => void;
-    setZoom: (zoom: number) => void;
-    setViewMode: (mode: ViewMode) => void;
-    nextPage: () => void;
-    prevPage: () => void;
+    /** Renderer registers this so the toolbar's page navigation can scroll. */
+    registerScrollToPage: (fn: (page: number) => void) => void;
+    /** Renderer reports the page currently dominating the viewport. */
+    reportVisiblePage: (page: number) => void;
     zoomIn: () => void;
     zoomOut: () => void;
     resetZoom: () => void;
-    toggleViewMode: () => void;
   }
 
   export type PdfDocumentSource = string | Blob | ArrayBuffer | Uint8Array;
@@ -30,151 +27,111 @@
     src: PdfDocumentSource;
     children?: Snippet;
     class?: string;
-    initialPage?: number;
-    initialZoom?: number;
-    initialViewMode?: ViewMode;
   }
+
+  export const PDF_VIEWER_CTX = 'pdfViewerContext';
 </script>
 
 <script lang="ts">
   import { onMount, setContext } from 'svelte';
 
-  let {
-    src,
-    children,
-    class: className = '',
-    initialPage = 1,
-    initialZoom = 1,
-    initialViewMode = 'single'
-  }: PdfViewerRootProps = $props();
+  let { src, children, class: className = '' }: PdfViewerRootProps = $props();
 
-  // PDF state using Svelte 5 runes
+  const ZOOM_STEPS = [0.5, 0.67, 0.8, 1, 1.25, 1.5, 2, 3];
+
   let currentPage = $state(1);
   let totalPages = $state(0);
   let zoom = $state(1);
-  let viewMode = $state<ViewMode>('single');
   let pdf = $state<PDFDocumentProxy | null>(null);
   let loading = $state(true);
   let error = $state<string | null>(null);
 
-  // Navigation functions
+  let scrollToPage: ((page: number) => void) | null = null;
+
   function setPage(page: number) {
-    if (page >= 1 && page <= totalPages) {
-      currentPage = page;
-    }
+    const target = Math.max(1, Math.min(totalPages, page));
+    scrollToPage?.(target);
   }
 
-  function nextPage() {
-    if (currentPage < totalPages) {
-      currentPage++;
-    }
+  function stepZoom(direction: 1 | -1) {
+    const index = ZOOM_STEPS.findIndex((step) => Math.abs(step - zoom) < 0.01);
+    const nextIndex =
+      index >= 0
+        ? index + direction
+        : direction > 0
+          ? ZOOM_STEPS.findIndex((step) => step > zoom)
+          : ZOOM_STEPS.length - 1 - [...ZOOM_STEPS].reverse().findIndex((step) => step < zoom);
+    zoom = ZOOM_STEPS[Math.max(0, Math.min(ZOOM_STEPS.length - 1, nextIndex))] ?? zoom;
   }
 
-  function prevPage() {
-    if (currentPage > 1) {
-      currentPage--;
-    }
-  }
-
-  function setZoom(z: number) {
-    zoom = Math.max(0.25, Math.min(5, z));
-  }
-
-  function zoomIn() {
-    setZoom(zoom + 0.25);
-  }
-
-  function zoomOut() {
-    setZoom(zoom - 0.25);
-  }
-
-  function resetZoom() {
-    zoom = 1;
-  }
-
-  function setViewMode(mode: ViewMode) {
-    viewMode = mode;
-  }
-
-  function toggleViewMode() {
-    viewMode = viewMode === 'single' ? 'scroll' : 'single';
-  }
-
-  // Create context with getters that return current values
   const context: PdfViewerContext = {
     get currentPage() { return currentPage; },
     get totalPages() { return totalPages; },
     get zoom() { return zoom; },
-    get viewMode() { return viewMode; },
     get pdf() { return pdf; },
     get loading() { return loading; },
     get error() { return error; },
     setPage,
-    setZoom,
-    setViewMode,
-    nextPage,
-    prevPage,
-    zoomIn,
-    zoomOut,
-    resetZoom,
-    toggleViewMode
+    registerScrollToPage(fn) { scrollToPage = fn; },
+    reportVisiblePage(page) { currentPage = page; },
+    zoomIn: () => stepZoom(1),
+    zoomOut: () => stepZoom(-1),
+    resetZoom: () => { zoom = 1; }
   };
 
-  setContext('pdfViewerContext', context);
+  setContext(PDF_VIEWER_CTX, context);
 
   async function pdfDocumentParams(source: PdfDocumentSource) {
-    if (typeof source === 'string') {
-      return { url: source };
-    }
-    if (source instanceof Blob) {
-      return { data: await source.arrayBuffer() };
-    }
+    if (typeof source === 'string') return { url: source };
+    if (source instanceof Blob) return { data: await source.arrayBuffer() };
     return { data: source };
   }
 
-  onMount(async () => {
-    try {
-      loading = true;
-      error = null;
+  onMount(() => {
+    let destroyed = false;
 
-      const pdfjsLib = await import('pdfjs-dist');
+    (async () => {
+      try {
+        const pdfjsLib = await import('pdfjs-dist');
+        pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+          'pdfjs-dist/build/pdf.worker.min.mjs',
+          import.meta.url
+        ).toString();
 
-      // Set up worker for pdfjs-dist
-      pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-        'pdfjs-dist/build/pdf.worker.min.mjs',
-        import.meta.url
-      ).toString();
+        const doc = await pdfjsLib.getDocument(await pdfDocumentParams(src)).promise;
+        if (destroyed) {
+          void doc.loadingTask.destroy();
+          return;
+        }
+        pdf = doc;
+        totalPages = doc.numPages;
+        loading = false;
+      } catch (err) {
+        if (destroyed) return;
+        console.error('Failed to load PDF:', err);
+        error = err instanceof Error ? err.message : 'Failed to load PDF';
+        loading = false;
+      }
+    })();
 
-      const loadingTask = pdfjsLib.getDocument(await pdfDocumentParams(src));
-      const doc = await loadingTask.promise;
-      
-      pdf = doc;
-      totalPages = doc.numPages;
-      currentPage = Math.min(initialPage, doc.numPages);
-      zoom = initialZoom;
-      viewMode = initialViewMode;
-      loading = false;
-    } catch (err) {
-      console.error('Failed to load PDF:', err);
-      error = err instanceof Error ? err.message : 'Failed to load PDF';
-      loading = false;
-    }
+    return () => {
+      destroyed = true;
+      void pdf?.loadingTask.destroy();
+    };
   });
 </script>
 
-<div class={cn('pdf-viewer-root relative flex flex-col h-full w-full bg-bg-muted/30', className)}>
+<div class={cn('pdf-viewer-root relative flex h-full w-full flex-col', className)}>
   {#if loading}
-    <div class="flex items-center justify-center p-8 flex-1">
+    <div class="flex flex-1 items-center justify-center p-8">
       <div class="flex flex-col items-center gap-3">
-        <div
-          class="h-8 w-8 animate-spin rounded-full border-4 border-fg-primary border-t-transparent"
-        ></div>
-        <span class="text-fg-muted text-sm">Loading PDF...</span>
+        <div class="h-8 w-8 animate-spin rounded-full border-4 border-accent border-t-transparent"></div>
+        <span class="text-sm text-fg-muted">Loading PDF…</span>
       </div>
     </div>
   {:else if error}
-    <div class="flex items-center justify-center p-8 flex-1">
-      <div class="text-fg-error text-center">
+    <div class="flex flex-1 items-center justify-center p-8">
+      <div class="text-center text-danger">
         <p class="font-medium">Error loading PDF</p>
         <p class="text-sm opacity-80">{error}</p>
       </div>
