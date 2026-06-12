@@ -55,6 +55,7 @@ interface SendPayload {
 		attachments?: EmailAttachmentInput[];
 		format: ComposeFormat;
 		bodyHtml?: string;
+		sendAt?: string;
 	};
 }
 
@@ -654,12 +655,8 @@ class ComposeStore {
 		}
 	}
 
-	async send(
-		client: JMAPClient,
-		fromEmail: string,
-		fromName?: string,
-		options?: ComposeSendOptions
-	): Promise<ComposeSendResult> {
+	/** Validate the compose fields and assemble a send payload; sets this.error and returns null on failure. */
+	private prepareSendPayload(fromEmail: string, fromName?: string): SendPayload | null {
 		const invalid = [
 			...invalidAddressParts(this.to),
 			...invalidAddressParts(this.cc),
@@ -667,23 +664,23 @@ class ComposeStore {
 		];
 		if (invalid.length) {
 			this.error = `Check recipient address: ${invalid[0]}`;
-			return false;
+			return null;
 		}
 
 		const recipients = parseAddressList(this.to);
 		if (!recipients.length) {
 			this.error = 'Enter at least one recipient';
-			return false;
+			return null;
 		}
 		if (this.hasUploadingAttachments) {
 			this.error = 'Wait for attachments to finish uploading';
-			return false;
+			return null;
 		}
 
 		const failedAttachment = this.attachments.find((attachment) => attachment.uploadError);
 		if (failedAttachment) {
 			this.error = `Remove or re-attach "${failedAttachment.name}" before sending`;
-			return false;
+			return null;
 		}
 
 		const cc = parseAddressList(this.cc);
@@ -695,22 +692,20 @@ class ComposeStore {
 			);
 			if (!alreadyOnMessage) bcc.push(fromEmail);
 		}
-		const draftId = this.jmapDraftId;
-		const attachments = this.readyAttachments();
 		const subject = this.subject.trim() || '(no subject)';
+		const attachments = this.readyAttachments();
 		// Signature is already in the body under "-- " — send exactly what's shown.
-		const body = this.body;
-		const payload: SendPayload = {
+		return {
 			recipients,
 			cc,
 			bcc,
 			subject,
-			body,
+			body: this.body,
 			bodyHtml: settings.defaultComposeFormat === 'html' ? this.bodyHtml || undefined : undefined,
 			toRaw: this.to,
 			ccRaw: this.cc,
 			bccRaw: this.bcc,
-			draftId,
+			draftId: this.jmapDraftId,
 			attachments,
 			sendOptions: {
 				fromEmail,
@@ -723,6 +718,16 @@ class ComposeStore {
 					settings.defaultComposeFormat === 'html' ? this.bodyHtml || undefined : undefined
 			}
 		};
+	}
+
+	async send(
+		client: JMAPClient,
+		fromEmail: string,
+		fromName?: string,
+		options?: ComposeSendOptions
+	): Promise<ComposeSendResult> {
+		const payload = this.prepareSendPayload(fromEmail, fromName);
+		if (!payload) return false;
 
 		this.cancelAutosaveTimers();
 
@@ -771,15 +776,45 @@ class ComposeStore {
 		await this.clearLocalDraft();
 		this.isSending = false;
 
-		toast.showUndo(`Sending "${subject}"…`, () => this.undoPendingSend(), settings.undoSendDelay);
+		toast.showUndo(`Sending "${payload.subject}"…`, () => this.undoPendingSend(), settings.undoSendDelay);
 		return 'pending';
+	}
+
+	/** Schedule a delayed send — the message lands in Scheduled until the server releases it. */
+	async scheduleSend(
+		client: JMAPClient,
+		fromEmail: string,
+		fromName: string | undefined,
+		sendAt: string
+	): Promise<ComposeSendResult> {
+		const payload = this.prepareSendPayload(fromEmail, fromName);
+		if (!payload) return false;
+		payload.sendOptions.sendAt = sendAt;
+
+		this.cancelAutosaveTimers();
+		await this.flushPendingSend();
+		this.isSending = true;
+		this.error = null;
+		try {
+			const result = await this.deliverPayload(client, payload, fromEmail, fromName, {
+				queueOnOffline: false
+			});
+			if (result === 'sent') {
+				this.clearComposeFields();
+				await this.clearLocalDraft();
+			}
+			return result;
+		} finally {
+			this.isSending = false;
+		}
 	}
 
 	private async deliverPayload(
 		client: JMAPClient,
 		payload: SendPayload,
 		fromEmail: string,
-		fromName?: string
+		fromName?: string,
+		options?: { queueOnOffline?: boolean }
 	): Promise<ComposeSendResult> {
 		// If the send fails after the server created the email (e.g. the network
 		// dropped mid-request), carry the id into the outbox so the retry resumes
@@ -807,7 +842,7 @@ class ComposeStore {
 
 			return 'sent';
 		} catch (error) {
-			if (browser && isOfflineError(error)) {
+			if (browser && isOfflineError(error) && options?.queueOnOffline !== false) {
 				const { getAccountId, enqueueOutbox } = await import('$lib/db');
 				const accountId = getAccountId();
 				if (accountId) {

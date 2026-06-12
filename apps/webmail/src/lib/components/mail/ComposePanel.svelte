@@ -4,6 +4,8 @@
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
+	import Clock from '$lib/components/icons/Clock.svelte';
+	import RiFontSize2 from 'svelte-remixicon/RiFontSize2.svelte';
 	import ComposeRecipientInput from '$lib/components/mail/ComposeRecipientInput.svelte';
 	import { formatAttachmentSize } from '$lib/attachments/upload';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -13,6 +15,7 @@
 	import RichTextEditor from '$lib/components/mail/RichTextEditor.svelte';
 	import { plainTextToSafeHtml } from '$lib/email/html';
 	import { invalidAddressParts } from '$lib/utils/addresses';
+	import { toast } from '$lib/stores/toast.svelte';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -210,6 +213,78 @@
 		input.value = '';
 	}
 
+	let showSchedulePanel = $state(false);
+	let scheduleZone = $state<HTMLDivElement | null>(null);
+	let customSendTime = $state('');
+
+	const scheduleDisabled = $derived(
+		compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()
+	);
+
+	const schedulePresets = $derived.by(() => {
+		void showSchedulePanel; // recompute relative times each time the panel opens
+		const now = new Date();
+		const presets: { label: string; date: Date }[] = [
+			{ label: 'In 1 hour', date: new Date(now.getTime() + 3_600_000) }
+		];
+		const evening = new Date(now);
+		evening.setHours(18, 0, 0, 0);
+		if (evening.getTime() - now.getTime() > 5 * 60_000) {
+			presets.push({ label: 'This evening', date: evening });
+		}
+		const tomorrow = new Date(now);
+		tomorrow.setDate(tomorrow.getDate() + 1);
+		tomorrow.setHours(8, 0, 0, 0);
+		presets.push({ label: 'Tomorrow morning', date: tomorrow });
+		return presets;
+	});
+
+	const scheduleTimeFormat = new Intl.DateTimeFormat(undefined, {
+		weekday: 'short',
+		hour: '2-digit',
+		minute: '2-digit'
+	});
+
+	/** Local-time value for the datetime-local minimum (now + 5 minutes). */
+	const customSendTimeMin = $derived.by(() => {
+		void showSchedulePanel;
+		const min = new Date(Date.now() + 5 * 60_000);
+		min.setSeconds(0, 0);
+		const pad = (value: number) => String(value).padStart(2, '0');
+		return `${min.getFullYear()}-${pad(min.getMonth() + 1)}-${pad(min.getDate())}T${pad(min.getHours())}:${pad(min.getMinutes())}`;
+	});
+
+	function onWindowPointerDown(event: PointerEvent) {
+		if (!showSchedulePanel) return;
+		if (scheduleZone && event.target instanceof Node && !scheduleZone.contains(event.target)) {
+			showSchedulePanel = false;
+		}
+	}
+
+	async function scheduleSendAt(date: Date) {
+		showSchedulePanel = false;
+		if (!auth.client || !auth.username) return;
+		if (invalidRecipients.length > 0 || !compose.canSend) {
+			sendAttempted = true;
+			return;
+		}
+		if (date.getTime() < Date.now() + 60_000) {
+			toast.show('Pick a time at least a minute from now', 'error');
+			return;
+		}
+
+		const result = await compose.scheduleSend(
+			auth.client,
+			auth.username,
+			senderName,
+			date.toISOString()
+		);
+		if (result === 'sent') {
+			toast.show(`Scheduled for ${scheduleTimeFormat.format(date)}`, 'success');
+			goto(mailListHref(INBOX_MAILBOX_ROUTE_ID));
+		}
+	}
+
 	function onBodyKeydown(event: KeyboardEvent) {
 		if (!settings.enableKeyboardShortcuts) return;
 		if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
@@ -242,6 +317,8 @@
 		void compose.addAttachments(auth.client, event.dataTransfer.files);
 	}
 </script>
+
+<svelte:window onpointerdown={onWindowPointerDown} />
 
 <input
 	bind:this={fileInput}
@@ -285,21 +362,28 @@
 							Discard
 						</button>
 					{/if}
-					<button
-						type="button"
-						class="z-mail-text-nav__link"
-						onclick={() => {
-							isRichText = !isRichText;
-							if (isRichText) {
-								if (!compose.bodyHtml) {
-									compose.bodyHtml = plainTextToSafeHtml(compose.body);
-								}
-								compose.ensureInlineAttachmentsFromHtml(compose.bodyHtml);
-							}
-						}}
-					>
-						{isRichText ? 'Plain text' : 'Rich text'}
-					</button>
+					<TooltipWrap label={isRichText ? 'Switch to plain text' : 'Switch to rich text'}>
+						{#snippet trigger({ props })}
+							<button
+								{...props}
+								type="button"
+								class={cn('z-icon-tap-target z-icon-tap-target--sm', isRichText && 'text-accent')}
+								aria-label={isRichText ? 'Switch to plain text' : 'Switch to rich text'}
+								aria-pressed={isRichText}
+								onclick={() => {
+									isRichText = !isRichText;
+									if (isRichText) {
+										if (!compose.bodyHtml) {
+											compose.bodyHtml = plainTextToSafeHtml(compose.body);
+										}
+										compose.ensureInlineAttachmentsFromHtml(compose.bodyHtml);
+									}
+								}}
+							>
+								<RiFontSize2 size="18" aria-hidden="true" />
+							</button>
+						{/snippet}
+					</TooltipWrap>
 					<button
 						type="button"
 						class="z-mail-text-nav__link max-md:hidden"
@@ -315,6 +399,64 @@
 					>
 						<Paperclip class="size-[1.125rem]" aria-hidden="true" />
 					</button>
+					<div class="relative" bind:this={scheduleZone}>
+						<TooltipWrap label="Schedule send" wrapDisabled={scheduleDisabled}>
+							{#snippet trigger({ props })}
+								<button
+									{...props}
+									type="button"
+									class={cn('z-icon-tap-target z-icon-tap-target--sm', showSchedulePanel && 'text-accent')}
+									aria-label="Schedule send"
+									aria-expanded={showSchedulePanel}
+									disabled={scheduleDisabled}
+									onclick={() => (showSchedulePanel = !showSchedulePanel)}
+								>
+									<Clock class="size-[1.125rem]" aria-hidden="true" />
+								</button>
+							{/snippet}
+						</TooltipWrap>
+						{#if showSchedulePanel}
+							<div
+								class="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-64 rounded-xl border border-border bg-surface-raised p-2 shadow-lg"
+								role="menu"
+								aria-label="Schedule send"
+							>
+								{#each schedulePresets as preset (preset.label)}
+									<button
+										type="button"
+										class="flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-sm text-fg hover:bg-surface-sunken"
+										onclick={() => void scheduleSendAt(preset.date)}
+									>
+										<span>{preset.label}</span>
+										<span class="text-xs tabular-nums text-fg-subtle">
+											{scheduleTimeFormat.format(preset.date)}
+										</span>
+									</button>
+								{/each}
+								<div class="my-2 border-t border-border"></div>
+								<div class="flex flex-col gap-2 px-1 pb-1">
+									<label class="text-xs text-fg-muted" for="compose-schedule-custom">
+										Pick date &amp; time
+									</label>
+									<input
+										id="compose-schedule-custom"
+										type="datetime-local"
+										class="rounded-md border border-border bg-surface px-2 py-1.5 text-sm text-fg outline-none focus-visible:border-accent"
+										min={customSendTimeMin}
+										bind:value={customSendTime}
+									/>
+									<button
+										type="button"
+										class="z-mail-text-nav__action z-mail-text-nav__action--pill"
+										disabled={!customSendTime}
+										onclick={() => customSendTime && void scheduleSendAt(new Date(customSendTime))}
+									>
+										Schedule
+									</button>
+								</div>
+							</div>
+						{/if}
+					</div>
 					<TooltipWrap
 						label={sendBlockedReason ?? 'Send message'}
 						wrapDisabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}

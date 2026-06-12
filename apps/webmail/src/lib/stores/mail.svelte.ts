@@ -198,11 +198,30 @@ class MailStore {
 			const list = await client.getMailboxes();
 			this.mailboxes = list.map((mb) => this.decorateMailbox(mb)).sort(sortMailboxes);
 			applyUnreadPrefixToDocument();
+			const scheduled = this.mailboxes.find((mb) => mb.role === 'scheduled');
+			if (scheduled?.total) void this.reconcileScheduled(client);
 		} catch (error) {
 			this.mailboxesError = error instanceof Error ? error.message : 'Failed to load folders';
 			this.mailboxes = [];
 		} finally {
 			this.mailboxesLoading = false;
+		}
+	}
+
+	private scheduledReconciledAt = 0;
+
+	/** Move messages whose delayed send has been released from Scheduled to Sent. */
+	async reconcileScheduled(client: JMAPClient, options?: { force?: boolean }) {
+		if (!options?.force && Date.now() - this.scheduledReconciledAt < 60_000) return;
+		this.scheduledReconciledAt = Date.now();
+		try {
+			const moved = await client.reconcileScheduledEmails();
+			if (moved) {
+				const list = await client.getMailboxes();
+				this.mailboxes = list.map((mb) => this.decorateMailbox(mb)).sort(sortMailboxes);
+			}
+		} catch {
+			// Best-effort housekeeping — released mail stays visible in Scheduled until next pass.
 		}
 	}
 
@@ -232,6 +251,10 @@ class MailStore {
 			this.messagesHasMore = false;
 			this.messagesLoadSettledForRouteId = routeMailboxId;
 			return;
+		}
+
+		if (mailbox.role === 'scheduled') {
+			await this.reconcileScheduled(client);
 		}
 
 		this.clearSelection();

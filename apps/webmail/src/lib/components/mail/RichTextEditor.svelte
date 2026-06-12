@@ -1,11 +1,13 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { Separator, Toolbar } from 'bits-ui';
+	import { DropdownMenu, Separator, Toolbar } from 'bits-ui';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { Editor } from '@tiptap/core';
 	import StarterKit from '@tiptap/starter-kit';
 	import Link from '@tiptap/extension-link';
 	import Image from '@tiptap/extension-image';
+	import { Color, TextStyle } from '@tiptap/extension-text-style';
+	import RiFontColor from 'svelte-remixicon/RiFontColor.svelte';
 	import RiBold from 'svelte-remixicon/RiBold.svelte';
 	import RiDoubleQuotesL from 'svelte-remixicon/RiDoubleQuotesL.svelte';
 	import RiFormatClear from 'svelte-remixicon/RiFormatClear.svelte';
@@ -44,6 +46,27 @@
 	let isOrderedList = $state(false);
 	let isBlockquote = $state(false);
 	let isLink = $state(false);
+	let activeColor = $state<string | null>(null);
+	let colorMenuOpen = $state(false);
+
+	/** Strong hues that stay legible on both light and dark surfaces. */
+	const TEXT_COLORS = [
+		{ label: 'Red', value: '#dc2626' },
+		{ label: 'Orange', value: '#ea580c' },
+		{ label: 'Green', value: '#16a34a' },
+		{ label: 'Blue', value: '#2563eb' },
+		{ label: 'Purple', value: '#9333ea' },
+		{ label: 'Pink', value: '#db2777' },
+		{ label: 'Gray', value: '#6b7280' }
+	];
+
+	function setColor(value: string | null) {
+		if (!editor) return;
+		if (value) editor.chain().focus().setColor(value).run();
+		else editor.chain().focus().unsetColor().run();
+		colorMenuOpen = false;
+		updateActiveStates();
+	}
 
 	const textFormats = $derived([
 		...(isBold ? ['bold'] : []),
@@ -89,6 +112,7 @@
 		isOrderedList = editor.isActive('orderedList');
 		isBlockquote = editor.isActive('blockquote');
 		isLink = editor.isActive('link');
+		activeColor = (editor.getAttributes('textStyle').color as string | undefined) ?? null;
 	}
 
 	async function handleUploadedFiles(files: File[]) {
@@ -228,6 +252,8 @@
 			element,
 			extensions: [
 				StarterKit.configure({ link: false }),
+				TextStyle,
+				Color,
 				Link.extend({ keepOnSplit: true }).configure({
 					openOnClick: false,
 					HTMLAttributes: {
@@ -375,6 +401,43 @@
 				</Toolbar.Button>
 			{/snippet}
 		</TooltipWrap>
+		<DropdownMenu.Root bind:open={colorMenuOpen}>
+			<TooltipWrap label="Text color">
+				{#snippet trigger({ props })}
+					<DropdownMenu.Trigger
+						class={activeColor ? 'z-rich-editor__btn z-rich-editor__btn--active' : 'z-rich-editor__btn'}
+						aria-label="Text color"
+						style={activeColor ? `color: ${activeColor}` : ''}
+						{...props}
+					>
+						<RiFontColor size="18" />
+					</DropdownMenu.Trigger>
+				{/snippet}
+			</TooltipWrap>
+			<DropdownMenu.Portal>
+				<DropdownMenu.Content class="z-rich-editor__palette" sideOffset={6} align="start">
+					<button
+						type="button"
+						class="z-rich-editor__swatch z-rich-editor__swatch--default"
+						class:z-rich-editor__swatch--current={!activeColor}
+						aria-label="Default color"
+						onclick={() => setColor(null)}
+					>
+						A
+					</button>
+					{#each TEXT_COLORS as color (color.value)}
+						<button
+							type="button"
+							class="z-rich-editor__swatch"
+							class:z-rich-editor__swatch--current={activeColor?.toLowerCase() === color.value}
+							style={`background: ${color.value}`}
+							aria-label={color.label}
+							onclick={() => setColor(color.value)}
+						></button>
+					{/each}
+				</DropdownMenu.Content>
+			</DropdownMenu.Portal>
+		</DropdownMenu.Root>
 		<TooltipWrap label="Clear formatting">
 			{#snippet trigger({ props })}
 				<Toolbar.Button
@@ -399,15 +462,59 @@
 		color: var(--z-fg, #000);
 	}
 
+	/* Bleed past the compose pane's 1rem inline padding so the bottom rule
+	   spans the full pane width. */
 	:global(.z-rich-editor__toolbar) {
 		display: flex;
 		flex-wrap: wrap;
 		align-items: center;
 		gap: 0.25rem;
+		margin-inline: -1rem;
+		padding-inline: 1rem;
 		padding-bottom: 0.5rem;
 		border-bottom: 1px solid var(--z-border, rgba(0,0,0,0.1));
 		border-color: var(--z-border, rgba(0,0,0,0.1));
 		box-shadow: none;
+	}
+
+	:global(.z-rich-editor__palette) {
+		z-index: 60;
+		display: grid;
+		grid-template-columns: repeat(4, 1.5rem);
+		gap: 0.375rem;
+		padding: 0.5rem;
+		border: 1px solid var(--z-border, rgba(0, 0, 0, 0.1));
+		border-radius: 0.5rem;
+		background: var(--z-surface-raised, #fff);
+		box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.15));
+	}
+
+	:global(.z-rich-editor__swatch) {
+		width: 1.5rem;
+		height: 1.5rem;
+		border-radius: 0.375rem;
+		border: 1px solid var(--z-border, rgba(0, 0, 0, 0.1));
+		cursor: pointer;
+		transition: transform var(--z-motion-fast, 150ms) var(--z-ease-standard, ease);
+	}
+
+	:global(.z-rich-editor__swatch:hover) {
+		transform: scale(1.12);
+	}
+
+	:global(.z-rich-editor__swatch--current) {
+		outline: 2px solid var(--z-accent, #0076ff);
+		outline-offset: 1px;
+	}
+
+	:global(.z-rich-editor__swatch--default) {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: transparent;
+		color: var(--z-fg, #000);
+		font-size: 0.8125rem;
+		font-weight: 600;
 	}
 
 	:global(.z-rich-editor__group) {

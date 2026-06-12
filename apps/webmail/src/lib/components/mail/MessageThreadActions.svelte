@@ -58,6 +58,8 @@
 		threadActionMessage(thread, $page.url.searchParams.get('messageId'), mail.messages)
 	);
 	const isDraft = $derived(mailboxRouteId === 'drafts');
+	const isScheduled = $derived(mailboxRouteId === 'scheduled');
+	let cancelingScheduled = $state(false);
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const draftMoveTargets = $derived(
 		isDraft ? moveTargetMailboxes(mail.mailboxes, currentMailbox) : []
@@ -130,6 +132,21 @@
 		if (result === 'pending' || result === 'sent') goto(destination);
 		else if (result === 'queued') goto(settings.preferredMailHref());
 		else if (result === false) goto(`/mail/compose?draft=${latest.id}`);
+	}
+
+	async function cancelScheduledSend() {
+		if (!auth.client || !actionMessage || cancelingScheduled) return;
+		cancelingScheduled = true;
+		try {
+			await auth.client.cancelScheduledSend(actionMessage.id);
+			toast.show('Sending canceled — message moved to Drafts', 'success');
+			await mail.loadMailboxes(auth.client);
+			onMoved?.();
+		} catch (error) {
+			toast.show(error instanceof Error ? error.message : 'Could not cancel send', 'error');
+		} finally {
+			cancelingScheduled = false;
+		}
 	}
 
 	async function deleteMessage() {
@@ -289,6 +306,15 @@
 			{#if isDraft}
 				<button type="button" class="z-mail-text-nav__action" onclick={() => void sendDraft()}>
 					Send
+				</button>
+			{:else if isScheduled}
+				<button
+					type="button"
+					class="z-mail-text-nav__action"
+					disabled={cancelingScheduled}
+					onclick={() => void cancelScheduledSend()}
+				>
+					{cancelingScheduled ? 'Canceling…' : 'Cancel send'}
 				</button>
 			{:else}
 				<button type="button" class="z-mail-text-nav__action" onclick={primaryReply}>

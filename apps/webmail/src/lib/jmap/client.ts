@@ -1233,6 +1233,8 @@ export class JMAPClient {
 			attachments?: EmailAttachmentInput[];
 			format?: ComposeFormat;
 			bodyHtml?: string;
+			/** UTC ISO time for delayed delivery (SMTP FUTURERELEASE via the JMAP envelope). */
+			sendAt?: string;
 			/** Server email id from a previous attempt; lets retries resume instead of re-creating. */
 			jmapEmailId?: string;
 			/** Called with the server email id once the outgoing email exists, before submission. */
@@ -1242,7 +1244,9 @@ export class JMAPClient {
 		const mailboxes = await this.getMailboxes();
 		const sentMailbox = mailboxes.find((mb) => mb.role === 'sent');
 		const draftsMailbox = mailboxes.find((mb) => mb.role === 'drafts');
+		const scheduledMailbox = mailboxes.find((mb) => mb.role === 'scheduled');
 		if (!sentMailbox) throw new Error('No sent mailbox found');
+		if (options?.sendAt && !scheduledMailbox) throw new Error('No scheduled mailbox found');
 
 		let identityId = options?.identityId;
 		if (!identityId) {
@@ -1285,17 +1289,34 @@ export class JMAPClient {
 		}
 
 		// Phase 2: submit for delivery and move out of the holding mailbox.
+		// Scheduled mail goes to the Scheduled folder; the server queue holds
+		// delivery until sendAt (FUTURERELEASE), and reconcileScheduledEmails
+		// moves released messages on to Sent.
+		const submission: Record<string, unknown> = { emailId, identityId };
+		if (options?.sendAt) {
+			const holdSeconds = Math.max(
+				1,
+				Math.round((new Date(options.sendAt).getTime() - Date.now()) / 1000)
+			);
+			const rcptTo = [...new Set([...to, ...(options.cc ?? []), ...(options.bcc ?? [])])];
+			submission.envelope = {
+				mailFrom: { email: fromEmail, parameters: { holdfor: String(holdSeconds) } },
+				rcptTo: rcptTo.map((email) => ({ email }))
+			};
+		}
+		const targetMailboxId = options?.sendAt ? scheduledMailbox!.id : sentMailbox.id;
+
 		const response = await this.request(
 			[
 				[
 					'EmailSubmission/set',
 					{
 						accountId: this.accountId,
-						create: { '1': { emailId, identityId } },
+						create: { '1': submission },
 						onSuccessUpdateEmail: {
 							'#1': {
 								[`mailboxIds/${holdingMailboxId}`]: null,
-								[`mailboxIds/${sentMailbox.id}`]: true,
+								[`mailboxIds/${targetMailboxId}`]: true,
 								'keywords/$draft': null,
 								'keywords/$seen': true
 							}
@@ -1307,6 +1328,117 @@ export class JMAPClient {
 			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
 		);
 		this.throwOnSetErrors(response, 'Failed to send email');
+	}
+
+	/**
+	 * Move messages whose delayed submission has been released (undoStatus no
+	 * longer pending) from Scheduled to Sent. Returns true if anything moved.
+	 */
+	async reconcileScheduledEmails(): Promise<boolean> {
+		const mailboxes = await this.getMailboxes();
+		const scheduled = mailboxes.find((mb) => mb.role === 'scheduled');
+		const sent = mailboxes.find((mb) => mb.role === 'sent');
+		if (!scheduled || !sent) return false;
+
+		const queryResponse = await this.request([
+			['Email/query', { accountId: this.accountId, filter: { inMailbox: scheduled.id } }, 'q']
+		]);
+		const queryResult = queryResponse.methodResponses?.[0];
+		if (queryResult?.[0] !== 'Email/query') return false;
+		const emailIds = (queryResult[1].ids as string[]) ?? [];
+		if (!emailIds.length) return false;
+
+		const subResponse = await this.request(
+			[
+				['EmailSubmission/query', { accountId: this.accountId, filter: { emailIds } }, 'sq'],
+				[
+					'EmailSubmission/get',
+					{
+						accountId: this.accountId,
+						'#ids': { resultOf: 'sq', name: 'EmailSubmission/query', path: '/ids' },
+						properties: ['id', 'emailId', 'undoStatus']
+					},
+					'sg'
+				]
+			],
+			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
+		);
+		const subGet = subResponse.methodResponses?.find((r) => r[0] === 'EmailSubmission/get');
+		if (!subGet) return false;
+		const submissions =
+			(subGet[1].list as Array<{ emailId: string; undoStatus: string }> | undefined) ?? [];
+
+		const released = new Set(
+			submissions.filter((sub) => sub.undoStatus === 'final').map((sub) => sub.emailId)
+		);
+		const toMove = emailIds.filter((id) => released.has(id));
+		if (!toMove.length) return false;
+
+		const update: Record<string, Record<string, boolean | null>> = {};
+		for (const id of toMove) {
+			update[id] = {
+				[`mailboxIds/${scheduled.id}`]: null,
+				[`mailboxIds/${sent.id}`]: true
+			};
+		}
+		await this.request([['Email/set', { accountId: this.accountId, update }, '0']]);
+		return true;
+	}
+
+	/** Cancel a pending delayed send and move the message back to Drafts. */
+	async cancelScheduledSend(emailId: string): Promise<void> {
+		const response = await this.request(
+			[
+				[
+					'EmailSubmission/query',
+					{ accountId: this.accountId, filter: { emailIds: [emailId], undoStatus: 'pending' } },
+					'q'
+				]
+			],
+			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
+		);
+		const queryResult = response.methodResponses?.[0];
+		const submissionIds =
+			queryResult?.[0] === 'EmailSubmission/query' ? ((queryResult[1].ids as string[]) ?? []) : [];
+		if (!submissionIds.length) {
+			throw new Error('This message is no longer scheduled — it may already be sent.');
+		}
+
+		const cancelResponse = await this.request(
+			[
+				[
+					'EmailSubmission/set',
+					{
+						accountId: this.accountId,
+						update: Object.fromEntries(submissionIds.map((id) => [id, { undoStatus: 'canceled' }]))
+					},
+					'0'
+				]
+			],
+			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
+		);
+		this.throwOnSetErrors(cancelResponse, 'Could not cancel the scheduled send');
+
+		const mailboxes = await this.getMailboxes();
+		const scheduled = mailboxes.find((mb) => mb.role === 'scheduled');
+		const drafts = mailboxes.find((mb) => mb.role === 'drafts');
+		if (!drafts) return;
+		await this.request([
+			[
+				'Email/set',
+				{
+					accountId: this.accountId,
+					update: {
+						[emailId]: {
+							...(scheduled ? { [`mailboxIds/${scheduled.id}`]: null } : {}),
+							[`mailboxIds/${drafts.id}`]: true,
+							'keywords/$draft': true
+						}
+					}
+				},
+				'0'
+			]
+		]);
 	}
 
 	private async createOutgoingEmail(emailData: Record<string, unknown>): Promise<string> {
