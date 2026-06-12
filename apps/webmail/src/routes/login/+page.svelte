@@ -10,6 +10,9 @@
 	import LabelInput from '$lib/components/ui/LabelInput.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
 
 	const remembered = loadRememberedLogin();
 	const urlEmail = $derived($page.url.searchParams.get('email')?.trim() ?? '');
@@ -22,17 +25,19 @@
 	let email = $state(remembered.email);
 	let password = $state('');
 	let rememberMe = $state(remembered.rememberMe);
-	let oauthReady = $state(false);
 
 	const canSubmitPassword = $derived(email.trim().length > 0 && password.length > 0);
 	const nextPath = $derived.by(() => {
 		const next = $page.url.searchParams.get('next');
 		return next?.startsWith('/') && !next.startsWith('//') ? next : undefined;
 	});
-	const oauthEnabled = $derived(auth.oauthConfig?.enabled === true);
-	const passwordFallback = $derived(auth.oauthConfig?.passwordFallback !== false);
+	// SSR-loaded config renders the right form immediately; the auth store takes over
+	// once the app-wide config fetch resolves (they come from the same server logic).
+	const oauthConfig = $derived(auth.oauthConfig ?? data.oauthConfig);
+	const oauthEnabled = $derived(oauthConfig?.enabled === true);
+	const passwordFallback = $derived(oauthConfig?.passwordFallback !== false);
 	const showPassword = $derived(!oauthEnabled || passwordFallback);
-	const showPasskey = $derived(oauthEnabled && auth.oauthConfig?.passkeyEnabled !== false);
+	const showPasskey = $derived(oauthEnabled && oauthConfig?.passkeyEnabled !== false);
 	const forgotPasswordHref = $derived.by(() => {
 		const recovery = urlRecovery;
 		const trimmed = email.trim();
@@ -49,32 +54,17 @@
 		}
 	});
 
-	// Reveal the form as soon as the OAuth config is known — whether it was loaded by
-	// this page or by the app-wide auth.init() — so we never wait on a duplicate request.
-	$effect(() => {
-		if (auth.oauthConfig !== null) {
-			oauthReady = true;
+	onMount(() => {
+		// Seed the store from SSR data so passkey sign-in works before the app-wide
+		// auth.init() config fetch resolves.
+		if (auth.oauthConfig === null) {
+			auth.oauthConfig = data.oauthConfig;
 		}
-	});
-
-	onMount(async () => {
 		if (urlEmail) {
 			email = urlEmail;
 		}
 		if ($page.url.searchParams.get('error') === 'passkey_email') {
 			auth.error = 'Enter your email address before signing in with a passkey.';
-		}
-		// Never trap the user on the loading screen if the config request is slow or
-		// unreachable (seen on mobile networks right after registration): the password
-		// form is a safe default and the UI reconciles automatically once config arrives.
-		const revealFallback = setTimeout(() => {
-			oauthReady = true;
-		}, 4000);
-		try {
-			await auth.checkOauthConfig();
-		} finally {
-			clearTimeout(revealFallback);
-			oauthReady = true;
 		}
 	});
 
@@ -101,91 +91,87 @@
 </svelte:head>
 
 <AuthPage title={appConfig.brandName} tagline="Private, focused email">
-	{#if !oauthReady}
-		<p class="z-auth-tagline text-center">Loading sign-in…</p>
-	{:else}
-		<form class="z-form-stack" onsubmit={submitLogin}>
-			{#if passkeyReady && showPasskey}
-				<div class="z-callout">
-					<span class="z-callout__title">Passkey ready</span>
-					<p class="z-callout__body">Use “Sign in with passkey” below.</p>
-				</div>
-			{:else if isWelcome}
-				<div class="z-callout">
-					<span class="z-callout__title">Welcome — almost done</span>
-					<p class="z-callout__body">
-						Sign in with the email and password you just created.
-					</p>
-				</div>
-			{/if}
-
-			<LabelInput
-				id="email"
-				label="Email"
-				type="email"
-				bind:value={email}
-				placeholder="you@zaur.app"
-				autocomplete="username"
-				required
-				disabled={auth.isLoading}
-			/>
-
-			{#if showPassword}
-				<div class="z-field-stack">
-					<LabelInput
-						id="password"
-						label="Password"
-						type="password"
-						bind:value={password}
-						autocomplete="current-password"
-						required
-						disabled={auth.isLoading}
-					/>
-					<p class="text-right">
-						<a href={forgotPasswordHref} class="z-link text-sm">
-							Forgot password?
-						</a>
-					</p>
-				</div>
-			{/if}
-
-			<Checkbox
-				bind:checked={rememberMe}
-				disabled={auth.isLoading}
-				label="Remember me"
-				class="w-full py-0.5 text-sm text-fg-muted"
-			>
-				Remember me
-			</Checkbox>
-
-			{#if auth.error}
-				<p class="text-sm text-danger" role="alert">{auth.error}</p>
-			{/if}
-
-			<div class="z-field-stack">
-				{#if showPassword}
-					<Button
-						type="submit"
-						class="z-btn-lg w-full"
-						disabled={auth.isLoading || !canSubmitPassword}
-					>
-						{auth.isLoading ? 'Signing in…' : 'Sign in'}
-					</Button>
-				{/if}
-				{#if showPasskey}
-					<Button
-						type="button"
-						variant={showPassword ? 'ghost' : 'primary'}
-						class={showPassword ? 'w-full' : 'z-btn-lg w-full'}
-						disabled={auth.isLoading || !email.trim().includes('@')}
-						onclick={signInWithPasskey}
-					>
-						{auth.isLoading ? 'Waiting for passkey…' : 'Sign in with passkey'}
-					</Button>
-				{/if}
+	<form class="z-form-stack" onsubmit={submitLogin}>
+		{#if passkeyReady && showPasskey}
+			<div class="z-callout">
+				<span class="z-callout__title">Passkey ready</span>
+				<p class="z-callout__body">Use “Sign in with passkey” below.</p>
 			</div>
-		</form>
-	{/if}
+		{:else if isWelcome}
+			<div class="z-callout">
+				<span class="z-callout__title">Welcome — almost done</span>
+				<p class="z-callout__body">
+					Sign in with the email and password you just created.
+				</p>
+			</div>
+		{/if}
+
+		<LabelInput
+			id="email"
+			label="Email"
+			type="email"
+			bind:value={email}
+			placeholder="you@zaur.app"
+			autocomplete="username"
+			required
+			disabled={auth.isLoading}
+		/>
+
+		{#if showPassword}
+			<div class="z-field-stack">
+				<LabelInput
+					id="password"
+					label="Password"
+					type="password"
+					bind:value={password}
+					autocomplete="current-password"
+					required
+					disabled={auth.isLoading}
+				/>
+				<p class="text-right">
+					<a href={forgotPasswordHref} class="z-link text-sm">
+						Forgot password?
+					</a>
+				</p>
+			</div>
+		{/if}
+
+		<Checkbox
+			bind:checked={rememberMe}
+			disabled={auth.isLoading}
+			label="Remember me"
+			class="w-full py-0.5 text-sm text-fg-muted"
+		>
+			Remember me
+		</Checkbox>
+
+		{#if auth.error}
+			<p class="text-sm text-danger" role="alert">{auth.error}</p>
+		{/if}
+
+		<div class="z-field-stack">
+			{#if showPassword}
+				<Button
+					type="submit"
+					class="z-btn-lg w-full"
+					disabled={auth.isLoading || !canSubmitPassword}
+				>
+					{auth.isLoading ? 'Signing in…' : 'Sign in'}
+				</Button>
+			{/if}
+			{#if showPasskey}
+				<Button
+					type="button"
+					variant={showPassword ? 'ghost' : 'primary'}
+					class={showPassword ? 'w-full' : 'z-btn-lg w-full'}
+					disabled={auth.isLoading || !email.trim().includes('@')}
+					onclick={signInWithPasskey}
+				>
+					{auth.isLoading ? 'Waiting for passkey…' : 'Sign in with passkey'}
+				</Button>
+			{/if}
+		</div>
+	</form>
 
 	{#snippet footer()}
 		Need an address?

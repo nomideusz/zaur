@@ -6,18 +6,23 @@
 	import AuthPage from '$lib/components/auth/AuthPage.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
+	import type { PageProps } from './$types';
+
+	let { data }: PageProps = $props();
 
 	const urlEmail = $derived($page.url.searchParams.get('email')?.trim().toLowerCase() ?? '');
 	const urlToken = $derived($page.url.searchParams.get('token')?.trim() ?? '');
 
-	let oauthReady = $state(false);
 	let done = $state(false);
 	let error = $state<string | null>(null);
 	let loading = $state(false);
 
-	onMount(async () => {
-		await auth.checkOauthConfig();
-		oauthReady = true;
+	onMount(() => {
+		// Seed the store from SSR data so passkey setup works before the app-wide
+		// auth.init() config fetch resolves.
+		if (auth.oauthConfig === null) {
+			auth.oauthConfig = data.oauthConfig;
+		}
 
 		if (urlEmail && urlToken) {
 			void createPasskey();
@@ -53,9 +58,7 @@
 </svelte:head>
 
 <AuthPage title="Set up a passkey" tagline={urlEmail || undefined}>
-	{#if !oauthReady}
-		<p class="z-auth-tagline text-center">Loading…</p>
-	{:else if !urlEmail || !urlToken}
+	{#if !urlEmail || !urlToken}
 		<div class="z-form-stack">
 			<p class="z-auth-tagline text-center">
 				This link is incomplete. Open mail and add a passkey from Settings after signing in.

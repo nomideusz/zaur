@@ -1,40 +1,11 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
 import { buildAuthorizationUrl } from '$lib/server/oauth';
-import { getOidcDiscovery, isOauthEnabled, isPasswordLoginEnabled } from '$lib/server/oidc-discovery';
+import { getOauthClientConfig, isOauthEnabled } from '$lib/server/oidc-discovery';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 
 export const GET: RequestHandler = async () => {
-	if (!isOauthEnabled()) {
-		return json({
-			enabled: false,
-			passwordFallback: true
-		});
-	}
-
-	try {
-		const discovery = await getOidcDiscovery();
-		const passwordFallback = isPasswordLoginEnabled();
-		return json({
-			enabled: true,
-			passwordFallback,
-			passkeyEnabled: true,
-			passkeyOnly: !passwordFallback,
-			clientId: env.OAUTH_CLIENT_ID || 'webmail',
-			issuerUrl: discovery.issuer,
-			authorizationEndpoint: discovery.authorization_endpoint
-		});
-	} catch (err) {
-		console.error('[auth/config] OIDC discovery failed:', err);
-		return json(
-			{
-				enabled: false,
-				passwordFallback: true,
-				error: 'Identity provider is unavailable'
-			},
-			{ status: 503 }
-		);
-	}
+	const config = await getOauthClientConfig();
+	return json(config, { status: config.error ? 503 : 200 });
 };
 
 export const POST: RequestHandler = async ({ request }) => {
