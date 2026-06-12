@@ -7,8 +7,8 @@ import {
 	mailboxDisplayName,
 	mailboxRouteId,
 	moveTargetMailboxes,
-	primarySidebarMailboxRank,
 	resolveMailboxKind,
+	sidebarMailboxGroups,
 	shouldClearImportantOnMoveTo,
 	shouldPresentImportantColors,
 	shouldShowImportantRainbow
@@ -21,13 +21,17 @@ describe('mailboxes', () => {
 		assert.equal(resolveMailboxKind({ name: 'Trash', role: 'trash' }), 'trash');
 	});
 
-	it('resolves Starwart display names and legacy aliases', () => {
-		assert.equal(resolveMailboxKind({ name: 'E-mails', role: 'inbox' }), 'inbox');
-		assert.equal(resolveMailboxKind({ name: 'Junk', role: 'junk' }), 'junk');
-		assert.equal(resolveMailboxKind({ name: 'Bin', role: 'trash' }), 'trash');
-		assert.equal(resolveMailboxKind({ name: 'Starred', role: null }), 'important');
-		assert.equal(resolveMailboxKind({ name: 'Notes', role: null }), 'memos');
-		assert.equal(resolveMailboxKind({ name: 'Zaured', role: null }), 'important');
+	it('resolves extended Stalwart roles', () => {
+		assert.equal(resolveMailboxKind({ name: 'Important', role: 'important' }), 'important');
+		assert.equal(resolveMailboxKind({ name: 'Scheduled', role: 'scheduled' }), 'scheduled');
+		assert.equal(resolveMailboxKind({ name: 'Memos', role: 'memos' }), 'memos');
+		assert.equal(resolveMailboxKind({ name: 'Snoozed', role: 'snoozed' }), 'snoozed');
+	});
+
+	it('treats roleless folders as custom regardless of name', () => {
+		assert.equal(resolveMailboxKind({ name: 'Notes', role: null }), 'custom');
+		assert.equal(resolveMailboxKind({ name: 'Starred', role: null }), 'custom');
+		assert.equal(resolveMailboxKind({ name: 'Bin', role: null }), 'custom');
 	});
 
 	it('maps kinds to display names', () => {
@@ -81,11 +85,39 @@ describe('mailboxes', () => {
 	});
 
 	it('orders primary sidebar mailboxes with Important under Inbox', () => {
-		assert.equal(primarySidebarMailboxRank('inbox'), 0);
-		assert.equal(primarySidebarMailboxRank('important'), 1);
-		assert.equal(primarySidebarMailboxRank('drafts'), 2);
 		assert.equal(isPrimarySidebarMailbox('important'), true);
 		assert.equal(isPrimarySidebarMailbox('scheduled'), false);
+
+		const { system } = sidebarMailboxGroups([
+			{ id: 'drafts', jmapId: '3', name: 'Drafts', role: 'drafts', unread: 0, total: 0 },
+			{ id: 'important', jmapId: '2', name: 'Highlights', role: 'important', unread: 0, total: 0 },
+			{ id: 'inbox', jmapId: '1', name: 'Emails', role: 'inbox', unread: 0, total: 0 }
+		]);
+		assert.deepEqual(
+			system.map((mb) => mb.id),
+			['inbox', 'important', 'drafts']
+		);
+	});
+
+	it('groups sidebar mailboxes into system and custom sections', () => {
+		const { system, custom } = sidebarMailboxGroups([
+			{ id: 'inbox', jmapId: '1', name: 'Emails', role: 'inbox', unread: 0, total: 4 },
+			{ id: 'trash', jmapId: '2', name: 'Trash', role: 'trash', unread: 0, total: 0 },
+			{ id: 'mb-9', jmapId: 'mb-9', name: 'Receipts', role: 'custom', unread: 1, total: 3 },
+			{ id: 'mb-8', jmapId: 'mb-8', name: 'Clients', role: 'custom', unread: 0, total: 2 },
+			{ id: 'scheduled', jmapId: '4', name: 'Scheduled', role: 'scheduled', unread: 0, total: 0 },
+			{ id: 'snoozed', jmapId: '5', name: 'Snoozed', role: 'snoozed', unread: 0, total: 2 }
+		]);
+
+		// Scheduled is hidden while empty; Snoozed shows because it has mail.
+		assert.deepEqual(
+			system.map((mb) => mb.id),
+			['inbox', 'snoozed', 'trash']
+		);
+		assert.deepEqual(
+			custom.map((mb) => mb.name),
+			['Clients', 'Receipts']
+		);
 	});
 
 	it('excludes trash and spam from important section surfacing', () => {

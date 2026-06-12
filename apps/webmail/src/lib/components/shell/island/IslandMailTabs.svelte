@@ -8,7 +8,7 @@
 		SegmentGroupItemText,
 		SegmentGroupScroll
 	} from '$lib/components/ui/segment-group';
-	import { isPrimarySidebarMailbox, primarySidebarMailboxRank } from '$lib/mail/mailboxes';
+	import { sidebarMailboxGroups } from '$lib/mail/mailboxes';
 	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import {
 		INBOX_MAILBOX_ROUTE_ID,
@@ -36,15 +36,10 @@
 		unseenFilterActive ? 'unseen' : (mailRouteId ?? undefined)
 	);
 
-	const folderSegments = $derived(
-		[...mail.mailboxes]
-			.filter((mb) => isPrimarySidebarMailbox(mb.role))
-			.sort((a, b) => {
-				const aRank = primarySidebarMailboxRank(a.role);
-				const bRank = primarySidebarMailboxRank(b.role);
-				return aRank - bRank || a.name.localeCompare(b.name);
-			})
-	);
+	const folderSegments = $derived.by(() => {
+		const groups = sidebarMailboxGroups(mail.mailboxes);
+		return [...groups.system, ...groups.custom];
+	});
 
 	function segmentLabel(mailbox: (typeof folderSegments)[number]): string {
 		return mailbox.id === INBOX_MAILBOX_ROUTE_ID ? 'All' : mailbox.name;

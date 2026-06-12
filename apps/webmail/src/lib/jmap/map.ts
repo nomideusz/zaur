@@ -28,26 +28,41 @@ function mapAddresses(addrs?: { name?: string; email: string }[]) {
 	}));
 }
 
-export function extractBodyText(email: JMAPEmail): string {
-	if (email.bodyValues) {
-		const textPartId = email.textBody?.[0]?.partId;
-		if (textPartId && email.bodyValues[textPartId]?.value) {
-			return email.bodyValues[textPartId].value;
-		}
-		const htmlPartId = email.htmlBody?.[0]?.partId;
-		if (htmlPartId && email.bodyValues[htmlPartId]?.value) {
-			return stripHtml(email.bodyValues[htmlPartId].value);
-		}
+/**
+ * RFC 8621 §4.1.4: textBody/htmlBody fall back to the other format's part when
+ * a message has only one — htmlBody on a plain-text-only message contains the
+ * text/plain part. Always check the part type, or plain text gets rendered as
+ * HTML and its newlines collapse.
+ */
+function partValue(
+	email: JMAPEmail,
+	parts: { partId?: string; type?: string }[] | undefined,
+	type: string
+): string | undefined {
+	for (const part of parts ?? []) {
+		if (part.type !== type || !part.partId) continue;
+		const value = email.bodyValues?.[part.partId]?.value;
+		if (value) return value;
 	}
+	return undefined;
+}
+
+export function extractBodyText(email: JMAPEmail): string {
+	const text =
+		partValue(email, email.textBody, 'text/plain') ??
+		partValue(email, email.htmlBody, 'text/plain');
+	if (text) return text;
+
+	const html =
+		partValue(email, email.htmlBody, 'text/html') ??
+		partValue(email, email.textBody, 'text/html');
+	if (html) return stripHtml(html);
+
 	return email.preview?.trim() ?? '';
 }
 
 export function extractBodyHtml(email: JMAPEmail): string | undefined {
-	const htmlPartId = email.htmlBody?.[0]?.partId;
-	if (htmlPartId && email.bodyValues?.[htmlPartId]?.value) {
-		return email.bodyValues[htmlPartId].value;
-	}
-	return undefined;
+	return partValue(email, email.htmlBody, 'text/html');
 }
 
 function stripHtml(html: string): string {

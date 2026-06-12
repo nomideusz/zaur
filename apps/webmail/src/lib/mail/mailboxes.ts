@@ -27,32 +27,13 @@ export const MAILBOX_DISPLAY_NAMES: Record<Exclude<MailboxKind, 'custom'>, strin
 	snoozed: 'Snoozed'
 };
 
-/** Server mailbox names (and legacy aliases) mapped to a canonical kind. */
-const NAME_TO_KIND: Record<string, MailboxKind> = {
-	inbox: 'inbox',
-	'e-mails': 'inbox',
-	emails: 'inbox',
-	drafts: 'drafts',
-	sent: 'sent',
-	'sent items': 'sent',
-	archive: 'archive',
-	junk: 'junk',
-	'junk mail': 'junk',
-	spam: 'junk',
-	trash: 'trash',
-	bin: 'trash',
-	'deleted items': 'trash',
-	deleted: 'trash',
-	important: 'important',
-	starred: 'important',
-	marked: 'important',
-	zaured: 'important',
-	scheduled: 'scheduled',
-	memos: 'memos',
-	notes: 'memos',
-	snoozed: 'snoozed'
-};
-
+/**
+ * Stalwart assigns a role to every default folder it creates (including the
+ * extended important/scheduled/memos/snoozed roles), so the role is the sole
+ * source of truth; folders without a recognized role are custom. Legacy server
+ * names ("E-mails", "Bin", …) are handled by aliases in Stalwart's
+ * defaultFolders config, not here.
+ */
 const JMAP_ROLE_TO_KIND: Partial<Record<string, MailboxKind>> = {
 	inbox: 'inbox',
 	drafts: 'drafts',
@@ -60,7 +41,11 @@ const JMAP_ROLE_TO_KIND: Partial<Record<string, MailboxKind>> = {
 	archive: 'archive',
 	junk: 'junk',
 	spam: 'junk',
-	trash: 'trash'
+	trash: 'trash',
+	important: 'important',
+	scheduled: 'scheduled',
+	memos: 'memos',
+	snoozed: 'snoozed'
 };
 
 export const MAILBOX_KIND_ORDER: Record<MailboxKind, number> = {
@@ -86,9 +71,6 @@ export function resolveMailboxKind(mailbox: {
 		return JMAP_ROLE_TO_KIND[role]!;
 	}
 
-	const normalized = mailbox.name.trim().toLowerCase();
-	if (NAME_TO_KIND[normalized]) return NAME_TO_KIND[normalized];
-
 	return 'custom';
 }
 
@@ -113,7 +95,7 @@ export function mailboxKindOrder(kind: MailboxKind | undefined): number {
 	return MAILBOX_KIND_ORDER[kind] ?? MAILBOX_KIND_ORDER.custom;
 }
 
-/** Roles shown in the mail sidebar and mobile mailbox picker, in display order. */
+/** Roles always shown in the mail sidebar and mobile mailbox picker. */
 export const PRIMARY_SIDEBAR_MAILBOX_ROLES = [
 	'inbox',
 	'important',
@@ -136,9 +118,62 @@ export function isPrimarySidebarMailbox(
 	return !!role && PRIMARY_SIDEBAR_ROLE_ORDER.has(role);
 }
 
-export function primarySidebarMailboxRank(role: MailboxRole | undefined): number {
+/** Roles shown in the sidebar only while they contain messages. */
+const CONDITIONAL_SIDEBAR_MAILBOX_ROLES = new Set<MailboxRole>([
+	'scheduled',
+	'snoozed',
+	'memos'
+]);
+
+const SIDEBAR_ROLE_ORDER = new Map<MailboxRole, number>(
+	(
+		[
+			'inbox',
+			'important',
+			'drafts',
+			'sent',
+			'scheduled',
+			'snoozed',
+			'memos',
+			'archive',
+			'junk',
+			'trash'
+		] satisfies MailboxRole[]
+	).map((role, index) => [role, index])
+);
+
+function sidebarRoleRank(role: MailboxRole | undefined): number {
 	if (!role) return 99;
-	return PRIMARY_SIDEBAR_ROLE_ORDER.get(role) ?? 99;
+	return SIDEBAR_ROLE_ORDER.get(role) ?? 99;
+}
+
+export interface SidebarMailboxGroups {
+	/** Role-tagged folders in fixed display order. */
+	system: Mailbox[];
+	/** User-created folders, alphabetical. */
+	custom: Mailbox[];
+}
+
+export function sidebarMailboxGroups(mailboxes: readonly Mailbox[]): SidebarMailboxGroups {
+	const system: Mailbox[] = [];
+	const custom: Mailbox[] = [];
+
+	for (const mb of mailboxes) {
+		if (isPrimarySidebarMailbox(mb.role)) {
+			system.push(mb);
+		} else if (mb.role && CONDITIONAL_SIDEBAR_MAILBOX_ROLES.has(mb.role)) {
+			if (mb.total > 0) system.push(mb);
+		} else {
+			custom.push(mb);
+		}
+	}
+
+	system.sort(
+		(a, b) => sidebarRoleRank(a.role) - sidebarRoleRank(b.role) || a.name.localeCompare(b.name)
+	);
+	custom.sort((a, b) => a.name.localeCompare(b.name));
+
+	return { system, custom };
 }
 
 export function mailboxKindOrderForMailbox(mailbox: {

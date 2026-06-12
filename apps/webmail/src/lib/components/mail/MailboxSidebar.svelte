@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { parseMailContext, mailListHref } from '$lib/mail/routes';
-	import {
-		isPrimarySidebarMailbox,
-		primarySidebarMailboxRank
-	} from '$lib/mail/mailboxes';
+	import { sidebarMailboxGroups } from '$lib/mail/mailboxes';
 	import { mail } from '$lib/stores/mail.svelte';
+	import type { Mailbox } from '$lib/types/mail';
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
@@ -14,19 +12,36 @@
 
 	let { class: className = '' }: Props = $props();
 
-	const primaryItems = $derived.by(() => {
-		return [...mail.mailboxes]
-			.filter((mb) => isPrimarySidebarMailbox(mb.role))
-			.sort((a, b) => {
-				const aRank = primarySidebarMailboxRank(a.role);
-				const bRank = primarySidebarMailboxRank(b.role);
-				return aRank - bRank || a.name.localeCompare(b.name);
-			});
-	});
+	const mailboxGroups = $derived(sidebarMailboxGroups(mail.mailboxes));
 
 	const mailCtx = $derived(parseMailContext($page.url.pathname));
 	const currentMailboxRouteId = $derived(mailCtx?.mailboxRouteId ?? null);
 </script>
+
+{#snippet mailboxRow(item: Mailbox)}
+	{@const href = mailListHref(item.id)}
+	{@const isActive = currentMailboxRouteId === item.id}
+	{@const badgeCount = item.role === 'drafts' ? item.total : item.unread}
+	<li>
+		<a
+			{href}
+			class={cn(
+				'flex min-h-10 w-full items-center justify-between rounded-md px-3 py-2.5 text-sm transition-colors',
+				isActive
+					? 'z-surface-active font-semibold'
+					: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
+			)}
+			aria-current={isActive ? 'page' : undefined}
+		>
+			<span class="truncate">{item.name}</span>
+			{#if badgeCount > 0}
+				<span class={cn('text-xs tabular-nums text-fg-subtle', isActive && 'text-accent font-semibold')}>
+					{badgeCount}
+				</span>
+			{/if}
+		</a>
+	</li>
+{/snippet}
 
 <aside
 	class={cn(
@@ -43,30 +58,18 @@
 
 	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto p-2.5">
 		<ul class="space-y-0.5">
-			{#each primaryItems as item (item.id)}
-				{@const href = mailListHref(item.id)}
-				{@const isActive = currentMailboxRouteId === item.id}
-				{@const badgeCount = item.role === 'drafts' ? item.total : item.unread}
-				<li>
-					<a
-						{href}
-						class={cn(
-							'flex min-h-10 w-full items-center justify-between rounded-md px-3 py-2.5 text-sm transition-colors',
-							isActive
-								? 'z-surface-active font-semibold'
-								: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
-						)}
-						aria-current={isActive ? 'page' : undefined}
-					>
-						<span class="truncate">{item.name}</span>
-						{#if badgeCount > 0}
-							<span class={cn('text-xs tabular-nums text-fg-subtle', isActive && 'text-accent font-semibold')}>
-								{badgeCount}
-							</span>
-						{/if}
-					</a>
-				</li>
+			{#each mailboxGroups.system as item (item.id)}
+				{@render mailboxRow(item)}
 			{/each}
 		</ul>
+
+		{#if mailboxGroups.custom.length}
+			<h3 class="z-type-label mt-4 px-3 pb-1">Folders</h3>
+			<ul class="space-y-0.5">
+				{#each mailboxGroups.custom as item (item.id)}
+					{@render mailboxRow(item)}
+				{/each}
+			</ul>
+		{/if}
 	</nav>
 </aside>

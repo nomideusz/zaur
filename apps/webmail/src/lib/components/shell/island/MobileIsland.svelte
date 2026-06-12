@@ -15,13 +15,14 @@
 	import { fade, fly } from 'svelte/transition';
 	import IslandAppNav from './IslandAppNav.svelte';
 	import IslandBulkActions from './IslandBulkActions.svelte';
-	import IslandComposeActions from './IslandComposeActions.svelte';
 	import IslandMailTabs from './IslandMailTabs.svelte';
 	import IslandReaderActions from './IslandReaderActions.svelte';
 
-	type IslandMode = 'app-nav' | 'mail-tabs' | 'bulk' | 'reader' | 'compose';
+	type IslandMode = 'app-nav' | 'mail-tabs' | 'bulk' | 'reader';
 
 	const pathname = $derived($page.url.pathname);
+	/* Compose owns its actions in a solid top bar — the floating island would
+	   fight the on-screen keyboard there, so it stays hidden entirely. */
 	const onMailCompose = $derived(pathname.startsWith('/mail/compose'));
 	const onMailSearch = $derived(pathname.startsWith('/mail/search'));
 	const onMailThread = $derived(/^\/mail\/[^/]+\/[^/]+/.test(pathname));
@@ -30,15 +31,14 @@
 	);
 
 	const mode = $derived.by((): IslandMode => {
-		if (onMailCompose && mobileIsland.compose) return 'compose';
 		if (onMailThread && mobileIsland.reader) return 'reader';
 		if (onMailList && mail.hasSelection && shellHeader.mail?.mailboxRouteId) return 'bulk';
 		if (onMailList) return mobileIsland.appsOverlay ? 'app-nav' : 'mail-tabs';
 		return 'app-nav';
 	});
 
-	/* Action modes must stay usable — bulk and compose never scroll-shrink. */
-	const collapsible = $derived(mode !== 'bulk' && mode !== 'compose');
+	/* Action modes must stay usable — bulk never scroll-shrinks. */
+	const collapsible = $derived(mode !== 'bulk');
 	const collapsed = $derived(mobileIsland.collapsed && collapsible);
 	/* Full-row modes; nav pills hug their content. */
 	const wide = $derived(mode !== 'app-nav' && !collapsed);
@@ -123,7 +123,10 @@
 	});
 </script>
 
-<div class="z-mobile-island-positioner md:hidden" bind:this={positionerEl}>
+<div
+	class={cn('z-mobile-island-positioner md:hidden', onMailCompose && 'hidden')}
+	bind:this={positionerEl}
+>
 	<div
 		class={cn(
 			'z-mobile-island',
@@ -133,9 +136,7 @@
 	>
 		{#key mode}
 			<div class="z-mobile-island__content" inert={collapsed} in:fly={flyIn} out:fade={fadeOut}>
-				{#if mode === 'compose'}
-					<IslandComposeActions />
-				{:else if mode === 'reader'}
+				{#if mode === 'reader'}
 					<IslandReaderActions />
 				{:else if mode === 'bulk'}
 					<IslandBulkActions />

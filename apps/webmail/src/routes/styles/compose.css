@@ -281,10 +281,3 @@
 		border-bottom: none;
 	}
 
-	/* The body textarea flex-fills the pane — end it above the floating
-	   island (textareas scroll internally, so pane clearance can't help). */
-	@media (max-width: 767px) {
-		.z-mail-view .z-compose {
-			padding-bottom: var(--z-island-clearance);
-		}
-	}

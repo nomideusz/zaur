@@ -8,7 +8,6 @@
 	import { formatAttachmentSize } from '$lib/attachments/upload';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
-	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
 	import RichTextEditor from '$lib/components/mail/RichTextEditor.svelte';
@@ -153,20 +152,6 @@
 	const sendLabel = $derived(
 		compose.isSending ? 'Sending…' : compose.hasUploadingAttachments ? 'Uploading…' : 'Send'
 	);
-
-	/* Mobile island renders back / attach / discard / send while composing. */
-	$effect(() => {
-		const generation = mobileIsland.setCompose({
-			onBack: () => void saveDraftAndClose(),
-			onSend: () => void send(),
-			onAttach: openFilePicker,
-			onDiscard: () => void discardAndClose(),
-			sendLabel,
-			sendDisabled: compose.isSending || compose.hasUploadingAttachments || !compose.to.trim(),
-			isEmpty: compose.isComposeEmpty
-		});
-		return () => mobileIsland.clearCompose(generation);
-	});
 
 	$effect(() => {
 		if (!showSignature || !configuredSignature) return;
@@ -375,7 +360,7 @@
 					{#if !compose.isComposeEmpty}
 						<button
 							type="button"
-							class="z-mail-text-nav__link z-mail-text-nav__link--danger max-md:hidden"
+							class="z-mail-text-nav__link z-mail-text-nav__link--danger"
 							onclick={() => void discardAndClose()}
 						>
 							Discard
@@ -403,12 +388,20 @@
 					>
 						Attach
 					</button>
+					<button
+						type="button"
+						class="z-icon-tap-target z-icon-tap-target--sm md:hidden"
+						aria-label="Attach file"
+						onclick={openFilePicker}
+					>
+						<Paperclip class="size-[1.125rem]" aria-hidden="true" />
+					</button>
 					<TooltipWrap
 						label={sendBlockedReason ?? 'Send message'}
 						wrapDisabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
 					>
 						{#snippet trigger({ props })}
-							<div class="z-header-action-zone max-md:hidden">
+							<div class="z-header-action-zone">
 								<button
 									{...props}
 									type="submit"
