@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 const logto = require('./logto');
@@ -88,13 +89,21 @@ async function consumeInvitation(recoveryEmail, token) {
   }
 }
 
+function hashToken(token) {
+  return crypto.createHash('sha256').update(String(token || '')).digest('hex');
+}
+
 function markAuditConsumed(recoveryEmail, token, logtoTokenId) {
   const email = normalizeEmail(recoveryEmail);
+  const tokenHash = hashToken(token);
   const entries = readAudit();
   const found = entries.find(
     (item) =>
       normalizeEmail(item.recoveryEmail) === email &&
-      (item.token === token || item.logtoTokenId === logtoTokenId),
+      (item.tokenHash === tokenHash ||
+        // Legacy entries created before hashing stored the raw token.
+        item.token === token ||
+        (logtoTokenId && item.logtoTokenId === logtoTokenId)),
   );
   if (found) {
     found.consumedAt = new Date().toISOString();
@@ -144,7 +153,7 @@ async function createInvitation(recoveryEmail, expiresInSec = DEFAULT_EXPIRES_SE
   entries.unshift({
     recoveryEmail: email,
     logtoTokenId: created.id,
-    token: created.token,
+    tokenHash: hashToken(created.token),
     createdAt: new Date().toISOString(),
     expiresAt: new Date(created.expiresAt).toISOString(),
     mailboxEmail: null,

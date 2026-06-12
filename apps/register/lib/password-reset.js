@@ -59,16 +59,28 @@ function generateToken() {
   return crypto.randomBytes(32).toString('hex');
 }
 
+/** Only the hash is stored at rest — a leaked tokens file cannot be replayed. */
+function hashToken(token) {
+  return crypto.createHash('sha256').update(token).digest('hex');
+}
+
+function matchesToken(item, cleanToken, tokenHash) {
+  if (item.tokenHash) return item.tokenHash === tokenHash;
+  // Legacy entries created before hashing stored the raw token.
+  return item.token === cleanToken;
+}
+
 function findActiveToken(mailboxEmail, token) {
   const email = normalizeEmail(mailboxEmail);
   const cleanToken = String(token || '').trim();
   if (!email || !cleanToken) return null;
 
+  const tokenHash = hashToken(cleanToken);
   const now = Date.now();
   return (
     readTokens().find(
       (item) =>
-        item.token === cleanToken &&
+        matchesToken(item, cleanToken, tokenHash) &&
         normalizeEmail(item.mailboxEmail) === email &&
         !item.usedAt &&
         !item.revokedAt &&
@@ -156,7 +168,7 @@ async function requestReset(emailInput) {
   }
 
   tokens.unshift({
-    token,
+    tokenHash: hashToken(token),
     mailboxEmail,
     recoveryEmail,
     createdAt: new Date(now).toISOString(),
@@ -171,14 +183,18 @@ async function requestReset(emailInput) {
     email: mailboxEmail,
   }).toString()}`;
 
-  await inviteMail.sendPasswordResetEmail({
-    to: recoveryEmail,
-    mailboxEmail,
-    resetLink,
-    expiresAt,
-  }).catch((err) => {
-    throw new Error(`Failed to send reset email to ${recoveryEmail}: ${err.message}`);
-  });
+  // Fire-and-forget: responding before the SMTP round-trip keeps the response
+  // time identical for known and unknown addresses (no enumeration by timing).
+  inviteMail
+    .sendPasswordResetEmail({
+      to: recoveryEmail,
+      mailboxEmail,
+      resetLink,
+      expiresAt,
+    })
+    .catch((err) => {
+      console.error(`Failed to send reset email for ${mailboxEmail}:`, err.message);
+    });
 
   return { ok: true, message: GENERIC_SUCCESS };
 }
@@ -210,12 +226,28 @@ async function resetPassword(mailboxEmail, token, password, confirmPassword) {
       await logto.updatePassword(email, password);
     } catch (err) {
       console.error('resetPassword logto:', err.message);
-      throw new Error('Password was updated for mail, but sign-in sync failed. Contact support.');
+      // Token stays unused so the user can retry once sign-in sync recovers.
+      return {
+        valid: false,
+        error: 'Password was updated for mail, but sign-in sync failed. Contact support.',
+      };
+    }
+
+    // Sign out everywhere — a hijacked session must not survive the reset.
+    try {
+      const revoked = await logto.revokeUserSessions(email);
+      if (revoked) console.log(`resetPassword: revoked ${revoked} session(s) for ${email}`);
+    } catch (err) {
+      console.error('resetPassword revoke sessions:', err.message);
     }
   }
 
   const tokens = readTokens();
-  const stored = tokens.find((item) => item.token === entry.token);
+  const stored = tokens.find(
+    (item) =>
+      (entry.tokenHash && item.tokenHash === entry.tokenHash) ||
+      (entry.token && item.token === entry.token),
+  );
   if (stored) {
     stored.usedAt = new Date().toISOString();
   }

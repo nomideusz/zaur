@@ -442,7 +442,7 @@ app.post('/api/forgot-password/request', forgotPasswordIpLimiter, forgotPassword
   }
 });
 
-app.get('/api/forgot-password/verify', (req, res) => {
+app.get('/api/forgot-password/verify', forgotPasswordIpLimiter, (req, res) => {
   const email = String(req.query.email || '').trim();
   const token = String(req.query.token || '').trim();
   const result = passwordReset.verifyToken(email, token);
@@ -465,8 +465,9 @@ app.post('/api/forgot-password/reset', forgotPasswordIpLimiter, async (req, res)
     }
     return res.json({ success: true, mailboxEmail: result.mailboxEmail });
   } catch (err) {
-    console.error('POST /api/forgot-password/reset:', err.message);
-    return res.status(502).json({ error: err.message || 'Unable to reset password right now.' });
+    // Internal failure details (Stalwart/DB errors) are logged, never returned.
+    console.error('POST /api/forgot-password/reset:', err.stack || err.message);
+    return res.status(502).json({ error: 'Unable to reset password right now. Please try again later.' });
   }
 });
 

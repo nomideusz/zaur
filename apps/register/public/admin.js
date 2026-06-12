@@ -391,11 +391,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const tdEmail = document.createElement('td');
       tdEmail.className = 'z-td-code';
+      // Raw tokens are no longer stored — the magic link is only available at
+      // creation time. Legacy rows that still carry a token keep the button.
+      const copyButton = invite.token
+        ? `<button class="z-btn-copy" title="Copy magic link" data-link="${escapeHtml(buildMagicLink(invite))}">
+          <svg class="z-icon-copy" viewBox="0 0 24 24" fill="currentColor"><path d="M7 6V3C7 2.44772 7.44772 2 8 2H20C20.5523 2 21 2.44772 21 3V17C21 17.5523 20.5523 18 20 18H17V21C17 21.5523 16.5523 22 16 22H4C3.44772 22 3 21.5523 3 21V7C3 6.44772 3.44772 6 4 6H7ZM9 6H15V8H9V6ZM17 6V16H19V4H9V6H17ZM5 8V20H15V8H5Z"/></svg>
+        </button>`
+        : '';
       tdEmail.innerHTML = `
         <span class="z-code-text">${escapeHtml(invite.recoveryEmail)}</span>
-        <button class="z-btn-copy" title="Copy magic link" data-link="${escapeHtml(buildMagicLink(invite))}">
-          <svg class="z-icon-copy" viewBox="0 0 24 24" fill="currentColor"><path d="M7 6V3C7 2.44772 7.44772 2 8 2H20C20.5523 2 21 2.44772 21 3V17C21 17.5523 20.5523 18 20 18H17V21C17 21.5523 16.5523 22 16 22H4C3.44772 22 3 21.5523 3 21V7C3 6.44772 3.44772 6 4 6H7ZM9 6H15V8H9V6ZM17 6V16H19V4H9V6H17ZM5 8V20H15V8H5Z"/></svg>
-        </button>
+        ${copyButton}
       `;
 
       const tdStatus = document.createElement('td');

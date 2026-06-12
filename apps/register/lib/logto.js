@@ -211,6 +211,37 @@ async function updatePassword(email, password) {
   return true;
 }
 
+/**
+ * Sign the user out everywhere: revoke every active Logto session along with
+ * its grants and refresh tokens (revokeGrantsTarget=all). Used after a
+ * password reset so a hijacked session does not survive the reset.
+ * Returns the number of sessions revoked.
+ */
+async function revokeUserSessions(email) {
+  const user = await findUserByEmail(email);
+  if (!user?.id) return 0;
+
+  const response = await managementRequest('GET', `/api/users/${user.id}/sessions`);
+  const sessions = Array.isArray(response?.sessions) ? response.sessions : [];
+
+  let revoked = 0;
+  for (const session of sessions) {
+    // DELETE /users/:userId/sessions/:sessionId resolves by Session.uid.
+    const sessionId = session?.payload?.uid;
+    if (!sessionId) continue;
+    try {
+      await managementRequest(
+        'DELETE',
+        `/api/users/${user.id}/sessions/${encodeURIComponent(sessionId)}?revokeGrantsTarget=all`,
+      );
+      revoked += 1;
+    } catch (err) {
+      console.error(`revokeUserSessions(${email}) session ${sessionId}:`, err.message);
+    }
+  }
+  return revoked;
+}
+
 async function deleteUser(email) {
   const user = await findUserByEmail(email);
   if (!user?.id) return false;
@@ -242,6 +273,7 @@ module.exports = {
   listUsers,
   findPrimaryEmailByRecoveryEmail,
   updatePassword,
+  revokeUserSessions,
   createOneTimeToken,
   createPasskeySetupToken,
   verifyOneTimeToken,
