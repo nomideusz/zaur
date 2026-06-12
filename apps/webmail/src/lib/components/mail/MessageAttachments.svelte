@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Download from '$lib/components/icons/Download.svelte';
 	import FileText from '$lib/components/icons/FileText.svelte';
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import {
@@ -40,14 +41,7 @@
 		return count === 1 ? '1 attachment' : `${count} attachments`;
 	}
 
-	async function handleAttachmentClick(attachment: MessageAttachment) {
-		const index = previewable.findIndex((item) => item.blobId === attachment.blobId);
-		if (index >= 0) {
-			previewIndex = index;
-			previewOpen = true;
-			return;
-		}
-
+	async function handleDownload(attachment: MessageAttachment) {
 		downloadingId = attachment.blobId;
 		try {
 			await downloadAttachment(attachment);
@@ -56,6 +50,17 @@
 		} finally {
 			downloadingId = null;
 		}
+	}
+
+	async function handleAttachmentClick(attachment: MessageAttachment) {
+		const index = previewable.findIndex((item) => item.blobId === attachment.blobId);
+		if (index >= 0) {
+			previewIndex = index;
+			previewOpen = true;
+			return;
+		}
+
+		await handleDownload(attachment);
 	}
 </script>
 
@@ -85,13 +90,13 @@
 					: opaqueName
 						? `${attachment.name} — download`
 						: `Download ${attachment.name}`}
-				<li>
+				<li class="relative">
 					<TooltipWrap label={attachmentHint} wrapDisabled={downloadingId === attachment.blobId}>
 						{#snippet trigger({ props })}
 							<button
 								{...props}
 								type="button"
-								class="z-reader-attachment-item"
+								class="z-reader-attachment-item {previewKind ? 'pr-10' : ''}"
 								aria-label={previewKind ? `Preview ${displayName}` : `Download ${displayName}`}
 								disabled={downloadingId === attachment.blobId}
 								onclick={() => handleAttachmentClick(attachment)}
@@ -124,6 +129,28 @@
 							</button>
 						{/snippet}
 					</TooltipWrap>
+					{#if previewKind}
+						<TooltipWrap label={`Download ${displayName}`}>
+							{#snippet trigger({ props })}
+								<button
+									{...props}
+									type="button"
+									class="z-icon-tap-target z-icon-tap-target--sm absolute right-0 top-1/2 -translate-y-1/2"
+									aria-label={`Download ${displayName}`}
+									disabled={downloadingId === attachment.blobId}
+									onclick={() => handleDownload(attachment)}
+								>
+									{#if downloadingId === attachment.blobId}
+										<span class="z-spinner size-4 text-fg-muted" aria-hidden="true">
+											<LoaderCircle class="size-full" />
+										</span>
+									{:else}
+										<Download class="size-4" aria-hidden="true" />
+									{/if}
+								</button>
+							{/snippet}
+						</TooltipWrap>
+					{/if}
 				</li>
 			{/each}
 		</ul>
