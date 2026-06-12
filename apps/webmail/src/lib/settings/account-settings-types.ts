@@ -20,7 +20,12 @@ export function accountSettingsSyncAtKey(email: string): string {
 	return `${ACCOUNT_SETTINGS_SYNC_AT_KEY}:${email.trim().toLowerCase()}`;
 }
 
-export const EMAIL_SCOPED_PREFIXES = ['zaur:display-name:', 'zaur:signature:', 'zaur:use-signature:'] as const;
+export const EMAIL_SCOPED_PREFIXES = [
+	'zaur:display-name:',
+	'zaur:signature:',
+	'zaur:use-signature:',
+	'zaur:onboarding-done:'
+] as const;
 
 export const DEVICE_LOCAL_SYNC_KEYS = new Set(['zaur:remember-me', 'zaur:remembered-email']);
 

@@ -216,35 +216,6 @@
 		padding: 0;
 	}
 
-	.z-mail-view .z-compose__signature {
-		flex-shrink: 0;
-		border-top: 1px solid var(--z-border);
-		padding: 0.75rem 1rem;
-	}
-
-	.z-mail-view .z-compose__signature-input {
-		display: block;
-		width: 100%;
-		overflow: hidden;
-		resize: none;
-		background: transparent;
-		border: none;
-		margin: 0;
-		padding: 0;
-		outline: none;
-		color: var(--z-fg-muted);
-		font-family: var(--z-reader-font);
-		font-size: var(--z-reader-text);
-		line-height: var(--z-reader-leading);
-	}
-
-	.z-mail-view .z-compose__signature-empty {
-		flex-shrink: 0;
-		border-top: 1px solid var(--z-border);
-		padding: 0.75rem 1rem;
-		font-size: 0.875rem;
-		color: var(--z-fg-muted);
-	}
 
 	.z-mail-view .z-compose__quote {
 		flex-shrink: 0;

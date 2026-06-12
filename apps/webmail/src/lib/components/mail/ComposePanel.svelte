@@ -14,7 +14,6 @@
 	import { plainTextToSafeHtml } from '$lib/email/html';
 	import { invalidAddressParts } from '$lib/utils/addresses';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
-	import Button from '$lib/components/ui/Button.svelte';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { cn } from '$lib/utils/cn';
 
@@ -34,72 +33,21 @@
 
 	const quoteMarker = /\n\n---\n/;
 
-	const configuredSignature = $derived(settings.signature.trim());
-
-	const showSignature = $derived(settings.useSignature);
-
 	const quotedPart = $derived.by(() => {
 		const match = compose.body.match(/\n\n---\n[\s\S]+$/);
 		return match?.[0] ?? '';
 	});
 
+	/* The signature lives in the body under "-- " and is sent exactly as shown. */
 	const bodyBeforeQuote = $derived.by(() => {
 		const idx = compose.body.search(quoteMarker);
 		return idx >= 0 ? compose.body.slice(0, idx) : compose.body;
 	});
 
-	const composeBodyParts = $derived.by(() => {
-		const beforeQuote = bodyBeforeQuote;
-		if (!showSignature) {
-			return { message: beforeQuote, signature: '' };
-		}
-
-		if (!configuredSignature) {
-			return { message: beforeQuote, signature: '' };
-		}
-
-		const trimmedEnd = beforeQuote.trimEnd();
-		if (trimmedEnd === configuredSignature) {
-			return { message: '', signature: configuredSignature };
-		}
-		if (trimmedEnd.endsWith(configuredSignature)) {
-			const message = beforeQuote
-				.slice(0, beforeQuote.length - configuredSignature.length)
-				.replace(/\s+$/, '');
-			return { message, signature: configuredSignature };
-		}
-
-		const splitAt = beforeQuote.lastIndexOf('\n\n');
-		if (splitAt >= 0) {
-			const maybeSignature = beforeQuote.slice(splitAt + 2).trimEnd();
-			if (maybeSignature) {
-				return {
-					message: beforeQuote.slice(0, splitAt),
-					signature: maybeSignature
-				};
-			}
-		}
-
-		return { message: beforeQuote, signature: configuredSignature };
-	});
-
-	const messageBody = $derived(composeBodyParts.message);
-	const signatureBody = $derived(composeBodyParts.signature);
-
-	function rebuildComposeBody(message: string, signature: string) {
+	function setMessageBody(value: string) {
 		const idx = compose.body.search(quoteMarker);
 		const quote = idx >= 0 ? compose.body.slice(idx) : '';
-		const sigBlock = showSignature && signature.trim() ? `\n\n${signature.trimEnd()}` : '';
-		compose.body = message + sigBlock + quote;
-	}
-
-	function setMessageBody(value: string) {
-		rebuildComposeBody(value, signatureBody);
-		if (!isRichText) compose.bodyHtml = '';
-	}
-
-	function setSignatureBody(value: string) {
-		rebuildComposeBody(messageBody, value);
+		compose.body = value + quote;
 		if (!isRichText) compose.bodyHtml = '';
 	}
 
@@ -152,20 +100,6 @@
 	const sendLabel = $derived(
 		compose.isSending ? 'Sending…' : compose.hasUploadingAttachments ? 'Uploading…' : 'Send'
 	);
-
-	$effect(() => {
-		if (!showSignature || !configuredSignature) return;
-		const beforeQuote = bodyBeforeQuote;
-		const trimmed = beforeQuote.trimEnd();
-		if (
-			trimmed === configuredSignature ||
-			trimmed.endsWith(`\n\n${configuredSignature}`) ||
-			trimmed.endsWith(configuredSignature)
-		) {
-			return;
-		}
-		rebuildComposeBody(messageBody, signatureBody || configuredSignature);
-	});
 
 	$effect(() => {
 		if (initialTo && mode === 'new' && !compose.to) {
@@ -223,9 +157,6 @@
 		if (invalidRecipients.length > 0 || !compose.canSend) {
 			sendAttempted = true;
 			return;
-		}
-		if (showSignature && configuredSignature) {
-			rebuildComposeBody(messageBody, signatureBody || configuredSignature);
 		}
 		const destination = mailListHref(INBOX_MAILBOX_ROUTE_ID);
 		const result = await compose.send(auth.client, auth.username, senderName, {
@@ -289,18 +220,6 @@
 
 	function fieldInvalid(field: 'to' | 'cc' | 'bcc'): boolean {
 		return sendAttempted && invalidAddressParts(compose[field]).length > 0;
-	}
-
-	let isAddingSignatureInline = $state(false);
-	let newSignatureInline = $state('');
-
-	function saveSignatureInline() {
-		const signature = newSignatureInline.trim();
-		if (signature) {
-			settings.setSignature(signature);
-			rebuildComposeBody(messageBody, signature);
-		}
-		isAddingSignatureInline = false;
 	}
 
 	let dragCounter = $state(0);
@@ -581,60 +500,12 @@
 					id="compose-body"
 					bind:this={bodyInput}
 					class="z-compose__body min-h-0 flex-1 resize-none"
-					value={messageBody}
+					value={bodyBeforeQuote}
 					oninput={(event) => setMessageBody(event.currentTarget.value)}
 					onkeydown={onBodyKeydown}
 				></textarea>
 			{/if}
 		</div>
-
-			{#if showSignature && !isRichText}
-				{#if configuredSignature || signatureBody}
-					<div class="z-compose__signature">
-						<label class="sr-only" for="compose-signature">Signature</label>
-						<textarea
-							id="compose-signature"
-							class="z-compose__signature-input"
-							rows={Math.max(2, (signatureBody || configuredSignature).split('\n').length + 1)}
-							value={signatureBody || configuredSignature}
-							oninput={(event) => setSignatureBody(event.currentTarget.value)}
-						></textarea>
-					</div>
-				{:else if isAddingSignatureInline}
-					<div class="z-compose__signature">
-						<label class="sr-only" for="compose-signature-inline">New signature</label>
-						<textarea
-							id="compose-signature-inline"
-							class="z-compose__signature-input"
-							placeholder="Write your signature..."
-							bind:value={newSignatureInline}
-						></textarea>
-						<div class="mt-2 flex gap-2">
-							<Button type="button" variant="ghost" onclick={saveSignatureInline}>Save signature</Button>
-							<Button
-								type="button"
-								variant="ghost"
-								onclick={() => (isAddingSignatureInline = false)}
-							>
-								Cancel
-							</Button>
-						</div>
-					</div>
-				{:else if !settings.hideComposeHints}
-					<p class="z-compose__signature-empty">
-						<Button
-							type="button"
-							variant="ghost"
-							onclick={() => {
-								isAddingSignatureInline = true;
-								newSignatureInline = '';
-							}}
-						>
-							Add a signature
-						</Button>
-					</p>
-				{/if}
-			{/if}
 
 			{#if quotedPart && !isRichText}
 				<details class="z-compose__quote" open={!settings.collapseQuotedInCompose}>

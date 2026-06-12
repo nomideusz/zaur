@@ -4,7 +4,7 @@ import type { EmailAttachmentInput } from '$lib/jmap/email-build';
 import { validateAttachmentFile } from '$lib/attachments/upload';
 import { invalidAddressParts, parseAddressList, formatAddressList } from '$lib/utils/addresses';
 import { mapEmailDetail } from '$lib/jmap/map';
-import { ensureBodyIncludesSignature, isComposeBodyEmpty } from '$lib/mail/compose-body';
+import { isComposeBodyEmpty } from '$lib/mail/compose-body';
 import { plainTextToSafeHtml } from '$lib/email/html';
 import { extractInlineCidsFromHtml } from '$lib/email/inline-images';
 import { isOfflineError } from '$lib/utils/network';
@@ -105,10 +105,7 @@ class ComposeStore {
 	private pendingSend: PendingSend | null = null;
 
 	isComposeEmpty = $derived.by(() => {
-		const isBodyEmpty = isComposeBodyEmpty(this.body, {
-			useSignature: settings.useSignature,
-			signature: settings.signature
-		}) && !this.bodyHtml.trim();
+		const isBodyEmpty = isComposeBodyEmpty(this.body) && !this.bodyHtml.trim();
 
 		return (
 			!this.to.trim() &&
@@ -701,11 +698,8 @@ class ComposeStore {
 		const draftId = this.jmapDraftId;
 		const attachments = this.readyAttachments();
 		const subject = this.subject.trim() || '(no subject)';
-		const body = ensureBodyIncludesSignature(this.body, {
-			useSignature: settings.useSignature,
-			signature: settings.signature
-		});
-		this.body = body;
+		// Signature is already in the body under "-- " — send exactly what's shown.
+		const body = this.body;
 		const payload: SendPayload = {
 			recipients,
 			cc,
@@ -907,10 +901,7 @@ class ComposeStore {
 				cc: parseAddressList(this.cc),
 				bcc: parseAddressList(this.bcc),
 				subject: this.subject.trim(),
-				body: ensureBodyIncludesSignature(this.body, {
-					useSignature: settings.useSignature,
-					signature: settings.signature
-				}),
+				body: this.body,
 				bodyHtml:
 					settings.defaultComposeFormat === 'html' ? this.bodyHtml || undefined : undefined,
 				fromEmail,

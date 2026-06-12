@@ -60,7 +60,8 @@ const STORAGE = {
 	hideCalendarEventTimes: 'zaur:hide-calendar-event-times',
 	calendarMaxEventsPerDay: 'zaur:calendar-max-events-per-day',
 	displayName: (email: string) => `zaur:display-name:${email}`,
-	signature: (email: string) => `zaur:signature:${email}`
+	signature: (email: string) => `zaur:signature:${email}`,
+	onboardingDone: (email: string) => `zaur:onboarding-done:${email}`
 } as const;
 
 const READER_TEXT_SIZE: Record<ReaderTextSize, string> = {
@@ -252,6 +253,11 @@ function readSignature(email: string | null): string {
 	return localStorage.getItem(STORAGE.signature(email)) ?? '';
 }
 
+function readOnboardingDone(email: string | null): boolean {
+	if (!browser || !email) return false;
+	return localStorage.getItem(STORAGE.onboardingDone(email)) === 'true';
+}
+
 class SettingsStore {
 	blockExternalContent = $state(readBlockExternal());
 	showSenderEmailInList = $state(readShowSenderEmailInList());
@@ -286,6 +292,9 @@ class SettingsStore {
 	displayName = $state('');
 	signature = $state('');
 	useSignature = $state(true);
+	onboardingDone = $state(false);
+	/** True once the initial pull of account settings has finished (or failed). */
+	accountSyncReady = $state(false);
 
 	private userEmail: string | null = null;
 
@@ -333,18 +342,21 @@ class SettingsStore {
 	}
 
 	setUser(email: string | null) {
+		if (email !== this.userEmail) this.accountSyncReady = false;
 		this.userEmail = email;
 		setSyncAccountEmail(email);
 		this.displayName = readDisplayName(email);
 		this.signature = readSignature(email);
 		this.useSignature = readUseSignature(email);
+		this.onboardingDone = readOnboardingDone(email);
 	}
 
+	/** Signature goes in the body under the standard "-- " delimiter line. */
 	composeBodyWithSignature(suffix = ''): string {
 		if (!this.useSignature) return suffix;
 		const trimmed = this.signature.trim();
 		if (!trimmed) return suffix;
-		return `\n\n${trimmed}${suffix}`;
+		return `\n\n-- \n${trimmed}${suffix}`;
 	}
 
 	resolvedDisplayName(fallback?: string | null): string {
@@ -380,7 +392,12 @@ class SettingsStore {
 	async syncFromAccount(): Promise<void> {
 		if (!this.userEmail) return;
 
-		const result = await pullAccountSettings(this.userEmail, () => this.init());
+		const email = this.userEmail;
+		const result = await pullAccountSettings(email, () => {
+			this.init();
+			// Identity keys are email-scoped and read in setUser, not init.
+			this.setUser(email);
+		});
 		if (result === 'applied') {
 			void import('$lib/stores/theme.svelte').then(({ theme }) => theme.init());
 		} else if (result === 'empty') {
@@ -388,6 +405,7 @@ class SettingsStore {
 				scheduleAccountSettingsPush();
 			}
 		}
+		this.accountSyncReady = true;
 	}
 
 	async refreshFromAccount(): Promise<boolean> {
@@ -632,6 +650,12 @@ class SettingsStore {
 		} else {
 			this.removeStorage(STORAGE.signature(this.userEmail));
 		}
+	}
+
+	setOnboardingDone() {
+		this.onboardingDone = true;
+		if (!browser || !this.userEmail) return;
+		this.writeStorage(STORAGE.onboardingDone(this.userEmail), 'true');
 	}
 
 	resetAppearanceSettings() {

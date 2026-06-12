@@ -1,52 +1,20 @@
+/** Quoted original message appended to replies/forwards ("\n\n---\n…"). */
 const QUOTE_MARKER = /\n\n---\n[\s\S]*$/;
 
-function splitBodyAndQuote(body: string): { beforeQuote: string; quote: string } {
-	const match = body.match(QUOTE_MARKER);
-	if (!match || match.index === undefined) {
-		return { beforeQuote: body, quote: '' };
-	}
-	return {
-		beforeQuote: body.slice(0, match.index),
-		quote: match[0]
-	};
+/**
+ * Signature block under the RFC 3676 "-- " delimiter line. The signature is
+ * seeded into the body when composing starts and sent exactly as displayed —
+ * deleting it in the editor removes it from that message.
+ */
+const SIGNATURE_BLOCK = /(?:^|\n)-- ?\n[\s\S]*$/;
+
+export const SIGNATURE_DELIMITER = '-- \n';
+
+export function stripQuotedReply(body: string): string {
+	return body.replace(QUOTE_MARKER, '');
 }
 
-/** Ensure outgoing body includes the configured signature (message + quote preserved). */
-export function ensureBodyIncludesSignature(
-	body: string,
-	options: { useSignature: boolean; signature: string }
-): string {
-	if (!options.useSignature) return body;
-
-	const sig = options.signature.trim();
-	if (!sig) return body;
-
-	const { beforeQuote, quote } = splitBodyAndQuote(body);
-	const trimmed = beforeQuote.trimEnd();
-
-	if (!trimmed) {
-		return `\n\n${sig}${quote}`;
-	}
-
-	if (trimmed === sig || trimmed.endsWith(`\n\n${sig}`) || trimmed.endsWith(sig)) {
-		return body;
-	}
-
-	return `${trimmed}\n\n${sig}${quote}`;
-}
-
-/** True when the body is empty or contains only the configured signature. */
-export function isComposeBodyEmpty(
-	body: string,
-	options: { useSignature: boolean; signature: string }
-): boolean {
-	const trimmed = body.trim();
-	if (!trimmed) return true;
-
-	if (!options.useSignature) return false;
-
-	const sig = options.signature.trim();
-	if (!sig) return false;
-
-	return trimmed === sig;
+/** True when the body has no content besides the signature block and quote. */
+export function isComposeBodyEmpty(body: string): boolean {
+	return !stripQuotedReply(body).replace(SIGNATURE_BLOCK, '').trim();
 }
