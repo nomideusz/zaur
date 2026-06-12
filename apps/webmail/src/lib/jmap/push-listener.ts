@@ -4,6 +4,7 @@ import type { StateChange } from './types';
 const POLL_INTERVAL_MS = 20_000;
 const SSE_STALE_MS = 90_000;
 const SSE_RECONNECT_MS = 5_000;
+const SSE_RECONNECT_MAX_MS = 120_000;
 
 const STATE_METHODS = [
 	['Mailbox/get', 'Mailbox'],
@@ -19,6 +20,10 @@ export class PushListener {
 	private client: JMAPClient | null = null;
 	private onVisibilityChange: (() => void) | null = null;
 	private streamAbort: AbortController | null = null;
+	private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+	private reconnectDelay = SSE_RECONNECT_MS;
+	private onOnline: (() => void) | null = null;
+	private streamErrorLogged = false;
 
 	start(client: JMAPClient, onChange: (change: StateChange) => void) {
 		this.stop();
@@ -52,6 +57,7 @@ export class PushListener {
 		this.stopPolling();
 		this.stopEventSource();
 		this.clearStaleTimer();
+		this.clearReconnect();
 		if (this.onVisibilityChange) {
 			document.removeEventListener('visibilitychange', this.onVisibilityChange);
 			this.onVisibilityChange = null;
@@ -59,6 +65,41 @@ export class PushListener {
 		this.states = {};
 		this.callback = null;
 		this.client = null;
+		this.reconnectDelay = SSE_RECONNECT_MS;
+		this.streamErrorLogged = false;
+	}
+
+	private clearReconnect() {
+		if (this.reconnectTimer) {
+			clearTimeout(this.reconnectTimer);
+			this.reconnectTimer = null;
+		}
+		if (this.onOnline) {
+			window.removeEventListener('online', this.onOnline);
+			this.onOnline = null;
+		}
+	}
+
+	/** Reconnect with backoff; while offline, wait for the 'online' event instead. */
+	private scheduleReconnect() {
+		if (!this.client || !this.callback) return;
+		this.clearReconnect();
+
+		const reconnect = () => {
+			this.clearReconnect();
+			if (this.client && this.callback && !this.isRunning) {
+				this.startEventSource(this.callback);
+			}
+		};
+
+		if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+			this.onOnline = reconnect;
+			window.addEventListener('online', this.onOnline, { once: true });
+			return;
+		}
+
+		this.reconnectTimer = setTimeout(reconnect, this.reconnectDelay);
+		this.reconnectDelay = Math.min(this.reconnectDelay * 2, SSE_RECONNECT_MAX_MS);
 	}
 
 	private startPolling(client: JMAPClient) {
@@ -87,6 +128,10 @@ export class PushListener {
 				if (!response.ok || !response.body) {
 					throw { status: response.status, body: await response.text().catch(() => '') };
 				}
+
+				// Healthy connection — reset the backoff and error squelch.
+				this.reconnectDelay = SSE_RECONNECT_MS;
+				this.streamErrorLogged = false;
 
 				const reader = response.body.getReader();
 				const decoder = new TextDecoder();
@@ -123,17 +168,23 @@ export class PushListener {
 						}
 					}
 				}
+
+				// Server closed the stream gracefully — reconnect right away
+				// instead of waiting for the stale timer (polling covers the gap).
+				if (this.isRunning && !abort.signal.aborted) {
+					this.stopEventSource();
+					this.scheduleReconnect();
+				}
 			} catch (err) {
 				if (abort.signal.aborted) return;
-				console.warn('JMAP event stream error:', err);
-				this.stopEventSource();
-				if (this.client && this.callback) {
-					setTimeout(() => {
-						if (this.client && this.callback && !this.isRunning) {
-							this.startEventSource(this.callback);
-						}
-					}, SSE_RECONNECT_MS);
+				// Stream interruptions (network change, proxy timeout, sleep) are
+				// routine — log the first one, stay quiet while retrying.
+				if (!this.streamErrorLogged) {
+					console.warn('JMAP event stream interrupted (will reconnect):', err);
+					this.streamErrorLogged = true;
 				}
+				this.stopEventSource();
+				this.scheduleReconnect();
 			}
 		})();
 	}
