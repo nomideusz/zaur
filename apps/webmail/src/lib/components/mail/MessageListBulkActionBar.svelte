@@ -31,6 +31,12 @@
 	const selectedCount = $derived(mail.selectedMessageIds.size);
 	const isOpen = $derived(mail.hasSelection && selectedCount > 0);
 
+	/* The bar itself is fit-content, so available space is measured on the
+	   host pane: full width minus chrome (count, separators, close, padding). */
+	let hostWidth = $state(0);
+	const BAR_CHROME_PX = 200;
+	const actionsAvailableWidth = $derived(Math.max(0, hostWidth - BAR_CHROME_PX));
+
 	const ghostBtnClass = 'min-h-8 min-w-8 gap-1.5 px-2 py-1.5 text-sm font-medium text-fg';
 
 	function handleOpenChange(open: boolean) {
@@ -48,7 +54,7 @@
 	closeOnEscape={!disabled}
 	positioning={{ mode: 'inline' }}
 >
-	<div class="z-mail-list-action-bar-host flex min-h-0 flex-1 flex-col">
+	<div class="z-mail-list-action-bar-host flex min-h-0 flex-1 flex-col" bind:clientWidth={hostWidth}>
 		{#if children}
 			{@render children()}
 		{/if}
@@ -62,7 +68,12 @@
 			<ActionBarSeparator />
 
 			<ActionBarBody>
-				<BulkActionsRow {mailboxRouteId} {onBulkAction} menuSide="top" />
+				<BulkActionsRow
+					{mailboxRouteId}
+					{onBulkAction}
+					menuSide="top"
+					availableWidth={actionsAvailableWidth}
+				/>
 			</ActionBarBody>
 
 			<ActionBarSeparator />

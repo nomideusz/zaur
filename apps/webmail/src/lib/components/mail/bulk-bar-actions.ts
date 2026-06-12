@@ -23,6 +23,8 @@ export type BulkBarAction = {
 	id: BulkBarActionId;
 	label: string;
 	variant: 'link' | 'danger';
+	/** Inline display priority — lower goes inline first (1 = Highlight, always inline). */
+	priority: number;
 };
 
 export function bulkBarActions(options: {
@@ -41,7 +43,8 @@ export function bulkBarActions(options: {
 		actions.push({
 			id: 'unsee',
 			label: bulkAffectedLabel(LABEL_UNSEE, readCount, selectedCount),
-			variant: 'link'
+			variant: 'link',
+			priority: 2
 		});
 	}
 
@@ -49,7 +52,8 @@ export function bulkBarActions(options: {
 		actions.push({
 			id: 'mark-seen',
 			label: bulkAffectedLabel(LABEL_MARK_SEEN, counts.new, selectedCount),
-			variant: 'link'
+			variant: 'link',
+			priority: 2
 		});
 	}
 
@@ -57,7 +61,8 @@ export function bulkBarActions(options: {
 		actions.push({
 			id: 'important',
 			label: bulkAffectedLabel(LABEL_MARK_IMPORTANT, counts.notImportant, selectedCount),
-			variant: 'link'
+			variant: 'link',
+			priority: 1
 		});
 	}
 
@@ -65,16 +70,53 @@ export function bulkBarActions(options: {
 		actions.push({
 			id: 'not-important',
 			label: bulkAffectedLabel(LABEL_NOT_IMPORTANT, counts.important, selectedCount),
-			variant: 'link'
+			variant: 'link',
+			priority: 1
 		});
 	}
 
 	if (canMarkSpam) {
-		actions.push({ id: 'spam', label: 'Mark spam', variant: 'link' });
+		actions.push({ id: 'spam', label: 'Mark spam', variant: 'link', priority: 3 });
 	}
 
-	actions.push({ id: 'trash', label: deleteLabel, variant: 'danger' });
-	actions.push({ id: 'cancel', label: 'Cancel', variant: 'link' });
+	actions.push({ id: 'trash', label: deleteLabel, variant: 'danger', priority: 0 });
+	actions.push({ id: 'cancel', label: 'Cancel', variant: 'link', priority: 99 });
 
 	return actions;
+}
+
+/** Rough rendered width of an inline action button (icon + gap + label + padding). */
+export function estimateBulkActionWidth(action: Pick<BulkBarAction, 'label'>): number {
+	return 46 + action.label.length * 7.5;
+}
+
+/**
+ * Split mark actions into inline buttons and overflow-menu entries based on
+ * the measured width of the actions area. The highest-priority action
+ * (Highlight) always stays inline regardless of space.
+ */
+export function fitBulkActions(
+	actions: BulkBarAction[],
+	availableWidth: number,
+	options?: { reservedWidth?: number }
+): { inline: BulkBarAction[]; overflow: BulkBarAction[] } {
+	// Trash button + separators + the More trigger itself.
+	const reserved = options?.reservedWidth ?? 150;
+	const byPriority = [...actions].sort((a, b) => a.priority - b.priority);
+
+	const inlineIds = new Set<BulkBarActionId>();
+	let used = reserved;
+	for (const action of byPriority) {
+		const width = estimateBulkActionWidth(action);
+		// Priority 1 (Highlight family) always stays inline.
+		if (action.priority <= 1 || used + width <= availableWidth) {
+			inlineIds.add(action.id);
+			used += width;
+		}
+	}
+
+	return {
+		inline: actions.filter((action) => inlineIds.has(action.id)),
+		overflow: actions.filter((action) => !inlineIds.has(action.id))
+	};
 }

@@ -11,6 +11,11 @@
 	const mailboxRouteId = $derived(ctx?.mailboxRouteId);
 	const disabled = $derived(!ctx || ctx.loading || !!ctx.error || ctx.messageCount === 0);
 	const selectedCount = $derived(mail.selectedMessageIds.size);
+
+	/* Island width is fixed by the viewport; reserve the count + close chrome. */
+	let toolbarWidth = $state(0);
+	const ISLAND_CHROME_PX = 150;
+	const actionsAvailableWidth = $derived(Math.max(0, toolbarWidth - ISLAND_CHROME_PX));
 </script>
 
 {#if mailboxRouteId}
@@ -18,6 +23,7 @@
 		class={cn('z-mobile-island__bulk', disabled && 'pointer-events-none opacity-60')}
 		role="toolbar"
 		aria-label="Actions for selected messages"
+		bind:clientWidth={toolbarWidth}
 	>
 		<span class="flex shrink-0 items-center gap-0.5">
 			<ActionBarValue count={selectedCount} />
@@ -30,6 +36,7 @@
 				onBulkAction={ctx?.onBulkAction}
 				menuSide="top"
 				menuId="island-bulk-actions-menu"
+				availableWidth={actionsAvailableWidth}
 			/>
 		</div>
 
