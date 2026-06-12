@@ -64,7 +64,7 @@
 		height: auto;
 	}
 
-	.z-app-main--page-scroll .z-mail-pane--mobile-fullscreen .z-pane-scroll--mobile-reader {
+	.z-app-main--page-scroll .z-mail-pane--mobile-fullscreen .z-pane-scroll {
 		min-height: 0;
 		flex: 1 1 0;
 		overflow-y: auto;

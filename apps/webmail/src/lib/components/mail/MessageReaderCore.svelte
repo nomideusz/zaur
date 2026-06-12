@@ -2,7 +2,6 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { tick } from 'svelte';
-	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
@@ -14,6 +13,7 @@
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { renderMessageBody } from '$lib/email/html';
 	import {
@@ -70,6 +70,18 @@
 		const returnTo = $page.url.searchParams.get('returnTo');
 		if (returnTo?.startsWith('/mail/search')) return returnTo;
 		return mailListBackHref(mailboxRouteId);
+	});
+
+	/* Mobile island renders back + thread actions while a thread is open. */
+	$effect(() => {
+		const generation = mobileIsland.setReader({
+			listHref,
+			thread,
+			mailboxRouteId,
+			onMoved,
+			onBackToList
+		});
+		return () => mobileIsland.clearReader(generation);
 	});
 	const allowExternal = $derived(
 		!settings.blockExternalContent || (pane?.showImagesOnce ?? localShowImagesOnce)
@@ -292,16 +304,11 @@
 	style="view-transition-name: message-reader;"
 >
 	<div class="z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-	<header class="z-reader-header flex shrink-0 items-center gap-2 border-b border-border/80 px-4 py-2.5 min-w-0">
-		<a
-			href={listHref}
-			class="z-back-btn no-underline md:hidden"
-			aria-label="Back to list"
-		>
-			<ArrowLeft class="size-5" aria-hidden="true" />
-		</a>
+	<!-- Desktop only — on phones the island carries back + thread actions. -->
+	<header
+		class="z-reader-header flex shrink-0 items-center gap-2 border-b border-border/80 px-4 py-2.5 min-w-0 max-md:hidden"
+	>
 		{@render readerSubjectDesktop()}
-		<div class="min-w-0 flex-1 md:hidden" aria-hidden="true"></div>
 		{#if latest}
 			<div
 				class={cn(
@@ -327,7 +334,7 @@
 	{/if}
 
 	<div
-		class="z-pane-scroll z-pane-scroll--mobile-reader min-h-0 flex-1 overflow-y-auto"
+		class="z-pane-scroll min-h-0 flex-1 overflow-y-auto"
 		bind:this={scrollPane}
 	>
 		{#if hasBlockedExternal && !allowExternal}

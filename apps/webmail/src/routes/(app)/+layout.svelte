@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import AppMobileNav from '$lib/components/shell/AppMobileNav.svelte';
 	import AppShellHeader from '$lib/components/shell/AppShellHeader.svelte';
+	import MobileIsland from '$lib/components/shell/island/MobileIsland.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import ToastStack from '$lib/components/ui/ToastStack.svelte';
 	import { pushListener } from '$lib/jmap/push-listener';
@@ -12,16 +12,7 @@
 	import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
 
 	let { children } = $props();
-	const onMailRoute = $derived($page.url.pathname === '/' || $page.url.pathname.startsWith('/mail'));
-	const onMailCompose = $derived($page.url.pathname.startsWith('/mail/compose'));
-	const onMailSearch = $derived($page.url.pathname.startsWith('/mail/search'));
-	const onMailThreadRoute = $derived(/^\/mail\/[^/]+\/[^/]+/.test($page.url.pathname));
 
-	const showAppHeader = $derived(true);
-	const routeOwnsMobileHeader = $derived(
-		onMailCompose || onMailSearch || onMailThreadRoute
-	);
-	const showMobileAppNav = $derived(!onMailCompose && !onMailThreadRoute);
 	const pageScrollOnMain = false;
 	const pageScrollOverflowX = 'overflow-x-hidden';
 
@@ -67,11 +58,7 @@
 	</div>
 {:else}
 	<div class="relative flex h-dvh flex-col overflow-hidden">
-		{#if showAppHeader}
-			<div class={routeOwnsMobileHeader ? 'contents max-md:hidden' : 'contents'}>
-				<AppShellHeader />
-			</div>
-		{/if}
+		<AppShellHeader />
 		<main
 			id="main-content"
 			class="flex min-h-0 flex-1 flex-col {pageScrollOverflowX} {pageScrollOnMain
@@ -81,9 +68,7 @@
 		>
 			{@render children()}
 		</main>
-		{#if showMobileAppNav}
-			<AppMobileNav />
-		{/if}
+		<MobileIsland />
 		<ConfirmDialog />
 		<ToastStack />
 	</div>

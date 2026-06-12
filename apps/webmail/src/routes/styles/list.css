@@ -215,16 +215,6 @@
 		width: 100%;
 	}
 
-	.z-mail-list-bulk-header--shell {
-		gap: var(--z-mail-list-checkbox-gap, 0.625rem);
-	}
-
-	/* Mobile shell: keep the selection count intact; it shouldn't be the part that truncates. */
-	.z-app-shell-header .z-mail-list-bulk-bar__summary {
-		flex: 0 1 auto;
-		white-space: nowrap;
-	}
-
 	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-bar__checkbox {
 		opacity: 1;
 		pointer-events: auto;

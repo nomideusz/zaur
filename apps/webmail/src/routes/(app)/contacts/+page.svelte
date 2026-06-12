@@ -221,6 +221,21 @@
 	</div>
 
 	<div class="flex shrink-0 flex-col gap-3 border-b border-border/80 px-4 py-3">
+		<!-- Mobile title + Add — the shell header is desktop-only. -->
+		<div class="flex items-center justify-between gap-2 md:hidden">
+			<h2 class="z-type-pane-title min-w-0 truncate">{listTitle}</h2>
+			<button
+				type="button"
+				class="z-mail-text-nav__action z-mail-text-nav__action--pill shrink-0"
+				onclick={() => {
+					showAddForm = true;
+					selectedEmail = null;
+				}}
+			>
+				Add
+			</button>
+		</div>
+
 		{#if showAddForm}
 			<form class="mb-3 grid gap-3 border-b border-border bg-surface-sunken/40 p-4 sm:grid-cols-2" onsubmit={addContact}>
 				<label class="block text-sm">

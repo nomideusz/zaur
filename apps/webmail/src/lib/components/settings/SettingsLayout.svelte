@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import MobileSettingsShellNav from '$lib/components/shell/MobileSettingsShellNav.svelte';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
 	import { SETTINGS_NAV_ICON_MAP } from '$lib/components/settings/settings-nav-icons';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
@@ -60,7 +61,10 @@
 
 	<!-- Main content -->
 	<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-		<div class="z-settings-mobile-toolbar shrink-0 border-b border-border/80 py-2.5 md:hidden">
+		<div
+			class="z-settings-mobile-toolbar flex shrink-0 flex-col gap-2 border-b border-border/80 py-2.5 md:hidden"
+		>
+			<MobileSettingsShellNav />
 			<SettingsSearch />
 		</div>
 		<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">

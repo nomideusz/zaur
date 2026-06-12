@@ -228,7 +228,7 @@
 
 				<div class="h-4 w-px bg-border/80" aria-hidden="true"></div>
 
-				<div class="hidden items-center rounded-lg border border-border/50 bg-surface-sunken/60 p-0.5 md:flex">
+				<div class="flex items-center rounded-lg border border-border/50 bg-surface-sunken/60 p-0.5">
 					{#each tabs as tab (tab.id)}
 						<button
 							type="button"
@@ -244,6 +244,15 @@
 						</button>
 					{/each}
 				</div>
+
+				<!-- Desktop keeps the shell-header New event pill. -->
+				<button
+					type="button"
+					class="z-mail-text-nav__action z-mail-text-nav__action--pill shrink-0 md:hidden"
+					onclick={() => calendar.openCompose()}
+				>
+					New
+				</button>
 			</div>
 		</div>
 

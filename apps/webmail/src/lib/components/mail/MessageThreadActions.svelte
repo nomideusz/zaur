@@ -36,9 +36,20 @@
 		onMoved?: () => void;
 		/** Navigate to the list after marking unread (Important triage). */
 		onBackToList?: () => void;
+		/** Overflow menu opens away from the toolbar — 'top' inside the island. */
+		menuPlacement?: 'top' | 'bottom';
+		/** Unique menu id — the toolbar mounts twice (reader header + island). */
+		menuId?: string;
 	}
 
-	let { thread, mailboxRouteId, onMoved, onBackToList }: Props = $props();
+	let {
+		thread,
+		mailboxRouteId,
+		onMoved,
+		onBackToList,
+		menuPlacement = 'bottom',
+		menuId = 'reader-actions-menu'
+	}: Props = $props();
 
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
 
@@ -206,8 +217,8 @@
 		{#if !isDraft || showDraftOverflowMenu}
 			<OverflowMenu
 				label="Message actions"
-				menuId="reader-actions-menu"
-				placement="bottom"
+				{menuId}
+				placement={menuPlacement}
 				textTrigger
 				triggerText="More"
 				triggerClass="z-mail-text-nav__link"

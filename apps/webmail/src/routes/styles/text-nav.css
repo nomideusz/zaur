@@ -51,7 +51,7 @@
 		margin-top: var(--z-space-nav-label-top);
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__link {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__link {
 		@apply inline-flex items-baseline gap-1.5 text-fg no-underline;
 		font-size: var(--z-main-page-text);
 		line-height: 1.6;
@@ -61,43 +61,43 @@
 			transform var(--z-motion-fast) var(--z-ease-out);
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__link:is(button) {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__link:is(button) {
 		@apply cursor-pointer border-0 bg-transparent p-0;
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__link:not(.z-mail-text-nav__link--here):hover {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__link:not(.z-mail-text-nav__link--here):hover {
 		@apply text-fg underline underline-offset-4 decoration-fg/30 decoration-1;
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__link:active {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__link:active {
 		transform: scale(0.985);
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__link:focus-visible {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__link:focus-visible {
 		outline: 2px solid var(--z-accent);
 		outline-offset: 2px;
 		border-radius: 0.125rem;
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__link--active {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__link--active {
 		@apply font-semibold underline underline-offset-4 decoration-fg/55;
 	}
 
-	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link--button {
+	:is(.z-mail-view, .z-settings-view, .z-mobile-island) .z-mail-text-nav__link--button {
 		@apply !px-0 !py-0 !font-normal !text-fg !underline !underline-offset-2 !decoration-fg/40 hover:!bg-transparent;
 	}
 
-	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link--danger {
+	:is(.z-mail-view, .z-settings-view, .z-mobile-island) .z-mail-text-nav__link--danger {
 		color: var(--z-danger);
 		text-decoration-color: color-mix(in srgb, var(--z-danger) 35%, transparent);
 	}
 
-	:is(.z-mail-view, .z-settings-view) .z-mail-text-nav__link--danger:hover {
+	:is(.z-mail-view, .z-settings-view, .z-mobile-island) .z-mail-text-nav__link--danger:hover {
 		color: var(--z-danger);
 		text-decoration-color: color-mix(in srgb, var(--z-danger) 55%, transparent);
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__action {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__action {
 		@apply inline-flex shrink-0 cursor-pointer items-center font-semibold text-accent no-underline;
 		font-size: var(--z-main-page-text);
 		line-height: 1.55;
@@ -107,26 +107,26 @@
 			transform var(--z-motion-fast) var(--z-ease-out);
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__action:hover:not(:disabled) {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__action:hover:not(:disabled) {
 		@apply text-accent-hover underline underline-offset-4 decoration-accent/40;
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__action:active:not(:disabled) {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__action:active:not(:disabled) {
 		transform: scale(0.98);
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__action:focus-visible {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__action:focus-visible {
 		outline: 2px solid var(--z-accent);
 		outline-offset: 2px;
 		border-radius: 0.125rem;
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__action:disabled {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__action:disabled {
 		@apply cursor-not-allowed text-fg-subtle no-underline;
 	}
 
 	/* Primary "New" actions — accent-tinted pill so they read as the page's main button. */
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__action--pill {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__action--pill {
 		padding: 0.25rem 0.75rem;
 		border-radius: var(--radius-md);
 		background-color: color-mix(in srgb, var(--z-accent) 12%, transparent);
@@ -137,7 +137,7 @@
 			transform var(--z-motion-fast) var(--z-ease-out);
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__action--pill:hover:not(:disabled) {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__action--pill:hover:not(:disabled) {
 		background-color: color-mix(in srgb, var(--z-accent) 20%, transparent);
 		text-decoration: none;
 	}
@@ -150,12 +150,12 @@
 		background-color: color-mix(in srgb, var(--z-accent) 30%, transparent);
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__action--danger {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__action--danger {
 		color: var(--z-danger);
 		text-decoration-color: color-mix(in srgb, var(--z-danger) 45%, transparent);
 	}
 
-	:is(.z-mail-view, .z-settings-view, .z-app-shell-header) .z-mail-text-nav__action--danger:hover:not(:disabled) {
+	:is(.z-mail-view, .z-settings-view, .z-app-shell-header, .z-mobile-island) .z-mail-text-nav__action--danger:hover:not(:disabled) {
 		color: var(--z-danger);
 		text-decoration-color: color-mix(in srgb, var(--z-danger) 70%, transparent);
 	}

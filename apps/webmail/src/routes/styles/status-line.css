@@ -15,6 +15,14 @@
 		pointer-events: none;
 	}
 
+	/* Toasts stack above the floating island on phones. */
+	@media (max-width: 767px) {
+		.z-status-line {
+			bottom: var(--z-island-clearance);
+			padding-bottom: 0;
+		}
+	}
+
 	.z-status-line__item {
 		position: relative;
 		width: min(var(--z-content-max-width), 100%);
