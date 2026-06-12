@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { getAttachmentBlob } from '$lib/attachments/download';
 	import type { MessageAttachment } from '$lib/types/mail';
 	import type { Snippet } from 'svelte';
@@ -15,20 +16,26 @@
 	/** Same ceiling as the blob cache — bigger images aren't worth thumbnailing. */
 	const MAX_THUMB_SOURCE_BYTES = 5 * 1024 * 1024;
 
+	/* Track primitives, not the object: list refreshes hand us new attachment
+	   objects with the same blobId, and revoking/recreating the object URL on
+	   each would leave <img> elements pointing at dead blob: URLs. */
+	const blobId = $derived(attachment.blobId);
+	const type = $derived(attachment.type);
+	const size = $derived(attachment.size ?? 0);
+
 	let url = $state<string | null>(null);
 
 	$effect(() => {
-		const target = attachment;
+		void blobId;
 		url = null;
-		if (!target.type.startsWith('image/') || (target.size ?? 0) > MAX_THUMB_SOURCE_BYTES) {
-			return;
-		}
+		if (!type.startsWith('image/') || size > MAX_THUMB_SOURCE_BYTES) return;
 
-		let revoked = false;
+		const target = untrack(() => attachment);
+		let cancelled = false;
 		let created: string | null = null;
 		void getAttachmentBlob(target)
 			.then((blob) => {
-				if (revoked) return;
+				if (cancelled) return;
 				created = URL.createObjectURL(blob);
 				url = created;
 			})
@@ -37,7 +44,7 @@
 			});
 
 		return () => {
-			revoked = true;
+			cancelled = true;
 			if (created) URL.revokeObjectURL(created);
 		};
 	});

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { Dialog } from 'bits-ui';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
@@ -26,6 +27,10 @@
 	const active = $derived(open ? (attachments[index] ?? null) : null);
 	const kind = $derived(active ? attachmentPreviewKind(active) : null);
 	const hasMultiple = $derived(attachments.length > 1);
+	/* Track the stable id, not the object — attachment arrays are rebuilt on
+	   every list refresh, and recreating the object URL mid-display would point
+	   live <img>/<video> elements at revoked blob: URLs. */
+	const activeBlobId = $derived(active?.blobId ?? null);
 
 	let blob = $state<Blob | null>(null);
 	let objectUrl = $state<string | null>(null);
@@ -35,20 +40,25 @@
 	let mediaError = $state(false);
 	let generation = 0;
 
+	/* The effect body only WRITES display state (reading it here would make it
+	   a dependency and re-trigger the effect when the async load lands). The
+	   object URL is revoked exclusively in the cleanup, which runs on blobId
+	   change and on destroy — after the elements using it are gone. */
 	$effect(() => {
-		const attachment = active;
+		void activeBlobId;
+		const attachment = activeBlobId ? untrack(() => active) : null;
+
 		blob = null;
 		textContent = null;
 		loadError = null;
 		mediaError = false;
-		if (objectUrl) {
-			URL.revokeObjectURL(objectUrl);
-			objectUrl = null;
-		}
+		objectUrl = null;
+
 		if (!attachment) return;
 
 		const requestId = ++generation;
 		loading = true;
+		let createdUrl: string | null = null;
 		void (async () => {
 			try {
 				const data = await getAttachmentBlob(attachment);
@@ -58,7 +68,8 @@
 					textContent = await data.text();
 					if (requestId !== generation) return;
 				} else {
-					objectUrl = URL.createObjectURL(data);
+					createdUrl = URL.createObjectURL(data);
+					objectUrl = createdUrl;
 				}
 			} catch (err) {
 				if (requestId !== generation) return;
@@ -69,10 +80,8 @@
 		})();
 
 		return () => {
-			if (objectUrl) {
-				URL.revokeObjectURL(objectUrl);
-				objectUrl = null;
-			}
+			generation++;
+			if (createdUrl) URL.revokeObjectURL(createdUrl);
 		};
 	});
 
