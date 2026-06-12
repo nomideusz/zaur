@@ -254,6 +254,22 @@ class ImportantMarkerStore {
 		this.startHoverSample(subjectEl, messageId);
 	}
 
+	/**
+	 * Touch scrub — dragging maps directly to a hue shift like a slider,
+	 * wrapping at the palette edges. Takes over from the auto-cycle the
+	 * moment the finger moves.
+	 */
+	scrubTouchPick(messageId: string, shift: number) {
+		if (!browser) return;
+		if (this.pickInterval) {
+			clearInterval(this.pickInterval);
+			this.pickInterval = null;
+		}
+		this.pickingMessageId = messageId;
+		this.pickingShift = clampHueShift(((shift % 60) + 60) % 60);
+		this.hoverSamplePick.set(messageId, { hueShift: this.pickingShift });
+	}
+
 	finishTouchPick(subjectEl: HTMLElement, messageId: string) {
 		this.pickFromElement(subjectEl, messageId);
 	}

@@ -24,6 +24,7 @@ const message = (overrides: Partial<MessagePreview> = {}): MessagePreview => ({
 
 const baseCtx = {
 	canMarkImportant: true,
+	canMarkSpam: true,
 	hasInbox: true
 };
 
@@ -55,71 +56,73 @@ describe('list-swipe-actions', () => {
 		);
 	});
 
-	it('uses important then done for new messages', () => {
+	it('restore actions dismiss the row', () => {
+		const [restore] = listSwipeLeadingActions({
+			message: message(),
+			mailbox: { role: 'trash' },
+			...baseCtx
+		});
+		assert.equal(restore?.dismiss, true);
+	});
+
+	it('offers seen toggle (tier 1) then highlight toggle (tier 2)', () => {
 		assert.deepEqual(
 			listSwipeLeadingActions({
 				message: message({ unread: true }),
 				mailbox: { role: 'inbox' },
 				...baseCtx
 			}).map((action) => action.id),
-			['mark-important']
+			['mark-seen', 'mark-important']
 		);
 		assert.deepEqual(
 			listSwipeLeadingActions({
-				message: message({ unread: true, important: true }),
+				message: message({ unread: false, important: true }),
 				mailbox: { role: 'inbox' },
-				canMarkImportant: true,
-				hasInbox: true
+				...baseCtx
 			}).map((action) => action.id),
-			['done']
+			['unsee', 'remove-important']
 		);
+	});
+
+	it('drops the highlight tier where marking important is not allowed', () => {
 		assert.deepEqual(
 			listSwipeLeadingActions({
 				message: message({ unread: true }),
 				mailbox: { role: 'sent' },
-				canMarkImportant: false,
-				hasInbox: true
+				...baseCtx,
+				canMarkImportant: false
 			}).map((action) => action.id),
-			['done']
+			['mark-seen']
 		);
 	});
 
-	it('uses important for normal messages when eligible', () => {
-		assert.deepEqual(
-			listSwipeLeadingActions({
-				message: message(),
-				mailbox: { role: 'inbox' },
-				...baseCtx
-			}).map((action) => action.id),
-			['mark-important']
-		);
-	});
-
-	it('uses done for read important messages', () => {
-		assert.deepEqual(
-			listSwipeLeadingActions({
-				message: message({ important: true }),
-				mailbox: { role: 'inbox' },
-				...baseCtx
-			}).map((action) => action.id),
-			['done']
-		);
-	});
-
-	it('uses destructive trailing actions per folder', () => {
+	it('offers trash (tier 1) then spam (tier 2) where spam applies', () => {
 		assert.deepEqual(
 			listSwipeTrailingActions({
 				message: message(),
 				mailbox: { role: 'inbox' },
 				...baseCtx
 			}).map((action) => action.id),
+			['trash', 'spam']
+		);
+		assert.deepEqual(
+			listSwipeTrailingActions({
+				message: message(),
+				mailbox: { role: 'sent' },
+				...baseCtx,
+				canMarkSpam: false
+			}).map((action) => action.id),
 			['trash']
 		);
+	});
+
+	it('uses permanent delete in trash and drafts', () => {
 		assert.deepEqual(
 			listSwipeTrailingActions({
 				message: message(),
 				mailbox: { role: 'trash' },
-				...baseCtx
+				...baseCtx,
+				canMarkSpam: false
 			}).map((action) => action.id),
 			['delete-forever']
 		);
@@ -127,7 +130,8 @@ describe('list-swipe-actions', () => {
 			listSwipeTrailingActions({
 				message: message(),
 				mailbox: { role: 'drafts' },
-				...baseCtx
+				...baseCtx,
+				canMarkSpam: false
 			}).map((action) => action.id),
 			['delete-draft']
 		);

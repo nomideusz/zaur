@@ -9,6 +9,12 @@
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
+	import Important from '$lib/components/icons/Important.svelte';
+	import Inbox from '$lib/components/icons/Inbox.svelte';
+	import Mail from '$lib/components/icons/Mail.svelte';
+	import MailOpen from '$lib/components/icons/MailOpen.svelte';
+	import ShieldAlert from '$lib/components/icons/ShieldAlert.svelte';
+	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import { goto } from '$app/navigation';
 	import {
 		listSwipeContext,
@@ -284,7 +290,12 @@
 	const showRowCheckbox = $derived(listSelectMode);
 
 	function handleMobileBulkLongPress(message: MessagePreview) {
-		mail.startSelection(message.id);
+		/* Already selecting: long-press joins the selection instead of restarting it. */
+		if (mail.hasSelection) {
+			mail.toggleMessageSelection(message.id);
+		} else {
+			mail.startSelection(message.id);
+		}
 		suppressRowNavigationUntil = Date.now() + 400;
 	}
 
@@ -295,11 +306,30 @@
 
 	function swipeContext(message: MessagePreview, routeId: string) {
 		const mailbox = mail.mailboxByRouteId(routeId);
+		const role = mailbox?.role;
 		return listSwipeContext(message, mailbox, {
 			canMarkImportant: mail.canMarkImportantInMailbox(mailbox),
+			canMarkSpam:
+				mail.mailboxes.some((mb) => mb.role === 'junk') &&
+				role !== 'junk' &&
+				role !== 'trash' &&
+				role !== 'drafts' &&
+				role !== 'sent',
 			hasInbox: mail.mailboxes.some((mb) => mb.role === 'inbox' && mb.jmapId)
 		});
 	}
+
+	const SWIPE_ACTION_ICONS: Record<string, SwipeAction['icon']> = {
+		'mark-seen': MailOpen,
+		unsee: Mail,
+		'mark-important': Important,
+		'remove-important': Important,
+		'move-inbox': Inbox,
+		spam: ShieldAlert,
+		trash: Trash2,
+		'delete-forever': Trash2,
+		'delete-draft': Trash2
+	};
 
 	function toSwipeActions(
 		actions: ListSwipeAction[],
@@ -310,7 +340,9 @@
 			id: action.id,
 			label: action.label,
 			variant: action.variant,
-			onAction: () => void runSwipeAction(action.id, message, routeId)
+			dismiss: action.dismiss,
+			icon: SWIPE_ACTION_ICONS[action.id],
+			onAction: () => runSwipeAction(action.id, message, routeId)
 		}));
 	}
 
@@ -326,68 +358,70 @@
 		);
 	}
 
-	async function runSwipeAction(actionId: string, message: MessagePreview, routeId: string) {
-		if (!auth.client) return;
+	/** Returns false on cancel/failure so dismissed rows slide back into place. */
+	async function runSwipeAction(
+		actionId: string,
+		message: MessagePreview,
+		routeId: string
+	): Promise<boolean> {
+		if (!auth.client) return false;
 
 		switch (actionId) {
 			case 'move-inbox':
-				return swipeMoveToInbox(message, routeId);
+				return swipeMoveToInbox(message);
 			case 'mark-important':
+			case 'remove-important':
 				return swipeToggleImportant(message);
-			case 'done':
-				return swipeDone(message);
+			case 'mark-seen':
+				return swipeMutate(() => mail.markMessageDone(auth.client!, message), 'Could not mark seen');
+			case 'unsee':
+				return swipeMutate(() => mail.markMessageNew(auth.client!, message), 'Could not restore Unseen');
+			case 'spam':
+				return swipeMarkSpam(message);
 			case 'trash':
 			case 'delete-forever':
 			case 'delete-draft':
 				return swipeDeleteMessage(message, routeId);
 		}
+		return false;
 	}
 
-	async function swipeMoveToInbox(message: MessagePreview, routeId: string) {
-		if (!auth.client) return;
+	async function swipeMutate(action: () => Promise<unknown>, failText: string): Promise<boolean> {
 		try {
-			await mail.moveMessage(auth.client, message, 'inbox');
+			await action();
 			onBulkAction?.();
+			return true;
 		} catch (err) {
-			const text = err instanceof Error ? err.message : 'Move failed';
+			const text = err instanceof Error ? err.message : failText;
 			toast.show(text, 'error');
+			return false;
 		}
 	}
 
-	async function swipeToggleImportant(message: MessagePreview) {
-		if (!auth.client) return;
-		try {
-			await mail.toggleImportant(auth.client, message);
-			onBulkAction?.();
-		} catch (err) {
-			const text = err instanceof Error ? err.message : 'Could not update important';
-			toast.show(text, 'error');
-		}
+	function swipeMoveToInbox(message: MessagePreview): Promise<boolean> {
+		return swipeMutate(() => mail.moveMessage(auth.client!, message, 'inbox'), 'Move failed');
 	}
 
-	async function swipeDone(message: MessagePreview) {
-		if (!auth.client) return;
-		try {
-			await mail.fileAsNotImportant(auth.client, message);
-			onBulkAction?.();
-		} catch (err) {
-			const text = err instanceof Error ? err.message : 'Could not update highlight';
-			toast.show(text, 'error');
-		}
+	function swipeToggleImportant(message: MessagePreview): Promise<boolean> {
+		return swipeMutate(
+			() => mail.toggleImportant(auth.client!, message),
+			'Could not update highlight'
+		);
 	}
 
-	async function swipeDeleteMessage(message: MessagePreview, routeId: string) {
-		if (!auth.client) return;
+	function swipeMarkSpam(message: MessagePreview): Promise<boolean> {
+		return swipeMutate(async () => {
+			await mail.moveMessage(auth.client!, message, 'junk');
+			toast.show('Moved to Spam', 'success');
+		}, 'Could not move to Spam');
+	}
+
+	async function swipeDeleteMessage(message: MessagePreview, routeId: string): Promise<boolean> {
+		if (!auth.client) return false;
 		const mailbox = mail.mailboxByRouteId(routeId);
 		const permanent = mailbox?.role === 'trash' || mailbox?.role === 'drafts';
-		if (!(await settings.confirmDeleteMessage(1, permanent))) return;
-		try {
-			await mail.deleteMessage(auth.client, message, routeId);
-			onBulkAction?.();
-		} catch (err) {
-			const text = err instanceof Error ? err.message : 'Delete failed';
-			toast.show(text, 'error');
-		}
+		if (!(await settings.confirmDeleteMessage(1, permanent))) return false;
+		return swipeMutate(() => mail.deleteMessage(auth.client!, message, routeId), 'Delete failed');
 	}
 
 	function handleRowSelect(
