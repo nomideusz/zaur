@@ -49,6 +49,14 @@
 		}
 	});
 
+	// Reveal the form as soon as the OAuth config is known — whether it was loaded by
+	// this page or by the app-wide auth.init() — so we never wait on a duplicate request.
+	$effect(() => {
+		if (auth.oauthConfig !== null) {
+			oauthReady = true;
+		}
+	});
+
 	onMount(async () => {
 		if (urlEmail) {
 			email = urlEmail;
@@ -56,8 +64,18 @@
 		if ($page.url.searchParams.get('error') === 'passkey_email') {
 			auth.error = 'Enter your email address before signing in with a passkey.';
 		}
-		await auth.checkOauthConfig();
-		oauthReady = true;
+		// Never trap the user on the loading screen if the config request is slow or
+		// unreachable (seen on mobile networks right after registration): the password
+		// form is a safe default and the UI reconciles automatically once config arrives.
+		const revealFallback = setTimeout(() => {
+			oauthReady = true;
+		}, 4000);
+		try {
+			await auth.checkOauthConfig();
+		} finally {
+			clearTimeout(revealFallback);
+			oauthReady = true;
+		}
 	});
 
 	function submitLogin(e: Event) {

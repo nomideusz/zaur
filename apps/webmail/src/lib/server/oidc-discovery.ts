@@ -44,8 +44,11 @@ export async function getOidcDiscovery(forceRefresh = false): Promise<OidcDiscov
 	}
 
 	const discoveryUrl = `${normalizedIssuer}/.well-known/openid-configuration`;
+	// Cap the upstream call so /api/auth/config can't hang the sign-in screen when the
+	// identity provider is slow or unreachable.
 	const response = await fetch(discoveryUrl, {
-		headers: { Accept: 'application/json' }
+		headers: { Accept: 'application/json' },
+		signal: AbortSignal.timeout(5000)
 	});
 
 	if (!response.ok) {
