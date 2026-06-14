@@ -1,18 +1,21 @@
 import type { JMAPEmail } from '$lib/jmap/types';
-import { mailThreadHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
+import { mailListHref, mailThreadHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
 import { createConnectedClient } from '$lib/server/jmap';
 import { sendPushNotification } from '$lib/server/push-sender';
 import { isPushConfigured } from '$lib/server/push-config';
 import {
 	listPushSubscriptions,
 	removePushSubscription,
-	updatePushSubscriptionState,
 	type StoredPushSubscription
 } from '$lib/server/push-subscriptions';
-import { readSessionById } from '$lib/server/session';
+import { accountKey, readAccountsById, type SessionData } from '$lib/server/session';
 
 const RECONNECT_DELAY_MS = 5_000;
 const POLL_INTERVAL_MS = 30_000;
+/** Re-read a subscription's account set periodically so added/removed accounts are picked up. */
+const ACCOUNT_RESYNC_MS = 5 * 60_000;
+
+type ConnectedClient = Awaited<ReturnType<typeof createConnectedClient>>;
 
 class PushWatcher {
 	private started = false;
@@ -60,10 +63,11 @@ class PushWatcher {
 	}
 }
 
+/** One push subscription (device/browser) → one inbox watcher per account in its session. */
 class SubscriptionWatcher {
 	private stopped = false;
-	private pollTimer: ReturnType<typeof setInterval> | null = null;
-	private streamAbort: AbortController | null = null;
+	private accountWatchers = new Map<string, AccountWatcher>();
+	private resyncTimer: ReturnType<typeof setInterval> | null = null;
 
 	constructor(
 		private record: StoredPushSubscription,
@@ -71,34 +75,87 @@ class SubscriptionWatcher {
 	) {}
 
 	async start(): Promise<void> {
-		const session = readSessionById(this.record.sessionId);
-		if (!session) {
+		await this.syncAccounts();
+		this.resyncTimer = setInterval(() => void this.syncAccounts(), ACCOUNT_RESYNC_MS);
+	}
+
+	/** Reconcile the per-account watchers with the session's current account set. */
+	private async syncAccounts(): Promise<void> {
+		if (this.stopped) return;
+		const accounts = readAccountsById(this.record.sessionId);
+		if (!accounts.length) {
 			await removePushSubscription(this.record.id);
 			this.onInvalid();
 			return;
 		}
 
+		// Only label notifications with the account when there's more than one.
+		const showAccount = accounts.length > 1;
+		const wanted = new Set(accounts.map((account) => accountKey(account.username)));
+
+		for (const [key, watcher] of this.accountWatchers) {
+			if (!wanted.has(key)) {
+				watcher.stop();
+				this.accountWatchers.delete(key);
+			}
+		}
+
+		for (const account of accounts) {
+			const key = accountKey(account.username);
+			const existing = this.accountWatchers.get(key);
+			if (existing) {
+				existing.setShowAccount(showAccount);
+				continue;
+			}
+			const watcher = new AccountWatcher(this.record, account, showAccount, this.onInvalid);
+			this.accountWatchers.set(key, watcher);
+			void watcher.start();
+		}
+	}
+
+	stop(): void {
+		this.stopped = true;
+		this.resyncTimer && clearInterval(this.resyncTimer);
+		this.resyncTimer = null;
+		for (const watcher of this.accountWatchers.values()) watcher.stop();
+		this.accountWatchers.clear();
+	}
+}
+
+/** Watches one account's inbox and emits account-aware push notifications. */
+class AccountWatcher {
+	private stopped = false;
+	private pollTimer: ReturnType<typeof setInterval> | null = null;
+	private streamAbort: AbortController | null = null;
+	// In-memory state: avoids per-account persistence. After a server restart the watcher
+	// re-initialises from the current state (no notification for mail during downtime).
+	private emailState?: string;
+	private readonly key: string;
+	private readonly label: string;
+
+	constructor(
+		private record: StoredPushSubscription,
+		private account: SessionData,
+		private showAccount: boolean,
+		private onInvalid: () => void
+	) {
+		this.key = accountKey(account.username);
+		this.label = account.displayName?.trim() || account.username;
+	}
+
+	setShowAccount(value: boolean): void {
+		this.showAccount = value;
+	}
+
+	async start(): Promise<void> {
 		try {
-			const client = await createConnectedClient(session);
+			const client = await createConnectedClient(this.account);
 			const mailboxes = await client.getMailboxes();
 			const inbox = mailboxes.find((mailbox) => mailbox.role === 'inbox');
-			if (!inbox) {
-				await removePushSubscription(this.record.id);
-				this.onInvalid();
-				return;
-			}
+			if (!inbox) return; // no inbox for this account — nothing to watch
 
 			const states = await client.fetchSyncStates();
-			await updatePushSubscriptionState(this.record.id, {
-				inboxMailboxId: inbox.id,
-				emailState: this.record.emailState ?? states.Email
-			});
-
-			this.record = {
-				...this.record,
-				inboxMailboxId: inbox.id,
-				emailState: this.record.emailState ?? states.Email
-			};
+			this.emailState = states.Email;
 
 			if (client.getSession()?.eventSourceUrl) {
 				void this.watchEventStream(client, inbox.id);
@@ -106,7 +163,7 @@ class SubscriptionWatcher {
 				this.startPolling(client, inbox.id);
 			}
 		} catch (error) {
-			console.warn('[push-watcher] Failed to start watcher:', error);
+			console.warn('[push-watcher] Failed to start watcher for', this.key, error);
 			this.scheduleRestart();
 		}
 	}
@@ -126,17 +183,13 @@ class SubscriptionWatcher {
 		}, RECONNECT_DELAY_MS);
 	}
 
-	private startPolling(client: Awaited<ReturnType<typeof createConnectedClient>>, inboxId: string) {
+	private startPolling(client: ConnectedClient, inboxId: string) {
 		this.pollTimer = setInterval(() => {
 			void this.checkForNewMail(client, inboxId);
 		}, POLL_INTERVAL_MS);
-		void this.checkForNewMail(client, inboxId);
 	}
 
-	private async watchEventStream(
-		client: Awaited<ReturnType<typeof createConnectedClient>>,
-		inboxId: string
-	) {
+	private async watchEventStream(client: ConnectedClient, inboxId: string) {
 		while (!this.stopped) {
 			this.streamAbort = new AbortController();
 
@@ -185,7 +238,7 @@ class SubscriptionWatcher {
 				}
 			} catch (error) {
 				if (!this.stopped) {
-					console.warn('[push-watcher] Event stream disconnected:', error);
+					console.warn('[push-watcher] Event stream disconnected for', this.key, error);
 				}
 			} finally {
 				this.streamAbort = null;
@@ -197,34 +250,26 @@ class SubscriptionWatcher {
 		}
 	}
 
-	private async checkForNewMail(
-		client: Awaited<ReturnType<typeof createConnectedClient>>,
-		inboxId: string
-	) {
-		if (this.stopped || !this.record.emailState) return;
+	private async checkForNewMail(client: ConnectedClient, inboxId: string) {
+		if (this.stopped || !this.emailState) return;
 
 		try {
 			const states = await client.fetchSyncStates();
 			const nextState = states.Email;
-			if (!nextState || nextState === this.record.emailState) return;
+			if (!nextState || nextState === this.emailState) return;
 			await this.processEmailState(client, inboxId, nextState);
 		} catch (error) {
-			console.warn('[push-watcher] Poll failed:', error);
+			console.warn('[push-watcher] Poll failed for', this.key, error);
 		}
 	}
 
-	private async processEmailState(
-		client: Awaited<ReturnType<typeof createConnectedClient>>,
-		inboxId: string,
-		newState: string
-	) {
-		if (!this.record.emailState || newState === this.record.emailState) {
-			this.record.emailState = newState;
-			await updatePushSubscriptionState(this.record.id, { emailState: newState });
+	private async processEmailState(client: ConnectedClient, inboxId: string, newState: string) {
+		if (!this.emailState || newState === this.emailState) {
+			this.emailState = newState;
 			return;
 		}
 
-		let sinceState = this.record.emailState;
+		let sinceState = this.emailState;
 		let latestState = newState;
 		const created: string[] = [];
 
@@ -237,15 +282,12 @@ class SubscriptionWatcher {
 				sinceState = changes.newState;
 			}
 		} catch (error) {
-			console.warn('[push-watcher] Email/changes failed:', error);
-			this.record.emailState = newState;
-			await updatePushSubscriptionState(this.record.id, { emailState: newState });
+			console.warn('[push-watcher] Email/changes failed for', this.key, error);
+			this.emailState = newState;
 			return;
 		}
 
-		this.record.emailState = latestState;
-		await updatePushSubscriptionState(this.record.id, { emailState: latestState });
-
+		this.emailState = latestState;
 		if (!created.length) return;
 
 		const emails = await client.getEmailsByIds(created);
@@ -257,10 +299,7 @@ class SubscriptionWatcher {
 		await this.notifyIncomingMail(client, inboxId, incoming);
 	}
 
-	private async getInboxUnreadCount(
-		client: Awaited<ReturnType<typeof createConnectedClient>>,
-		inboxId: string
-	): Promise<number | undefined> {
+	private async getInboxUnreadCount(client: ConnectedClient, inboxId: string): Promise<number | undefined> {
 		try {
 			const mailboxes = await client.getMailboxes();
 			const inbox = mailboxes.find((mailbox) => mailbox.id === inboxId);
@@ -270,11 +309,19 @@ class SubscriptionWatcher {
 		}
 	}
 
-	private async notifyIncomingMail(
-		client: Awaited<ReturnType<typeof createConnectedClient>>,
-		inboxId: string,
-		emails: JMAPEmail[]
-	) {
+	/** Notification URL — carries ?account so clicking switches to the right account first. */
+	private notificationUrl(threadId?: string): string {
+		if (!threadId) {
+			if (!this.showAccount) return '/';
+			return `${mailListHref(INBOX_MAILBOX_ROUTE_ID)}?account=${encodeURIComponent(this.key)}`;
+		}
+		const base = mailThreadHref(INBOX_MAILBOX_ROUTE_ID, threadId);
+		if (!this.showAccount) return base;
+		const separator = base.includes('?') ? '&' : '?';
+		return `${base}${separator}account=${encodeURIComponent(this.key)}`;
+	}
+
+	private async notifyIncomingMail(client: ConnectedClient, inboxId: string, emails: JMAPEmail[]) {
 		const unreadCount = await this.getInboxUnreadCount(client, inboxId);
 
 		let result;
@@ -283,17 +330,18 @@ class SubscriptionWatcher {
 			const from = email.from?.[0]?.name?.trim() || email.from?.[0]?.email || 'Someone';
 			const subject = email.subject?.trim() || '(no subject)';
 			result = await sendPushNotification(this.record, {
-				title: 'New mail',
+				title: this.showAccount ? this.label : 'New mail',
 				body: `${from}: ${subject}`,
-				url: email.threadId
-					? mailThreadHref(INBOX_MAILBOX_ROUTE_ID, email.threadId)
-					: '/',
+				url: this.notificationUrl(email.threadId),
+				tag: `zaur-new-mail-${this.key}`,
 				unreadCount
 			});
 		} else {
 			result = await sendPushNotification(this.record, {
-				title: 'New mail',
+				title: this.showAccount ? this.label : 'New mail',
 				body: `${emails.length} unseen messages in Inbox`,
+				url: this.notificationUrl(),
+				tag: `zaur-new-mail-${this.key}`,
 				unreadCount
 			});
 		}

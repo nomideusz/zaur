@@ -24,6 +24,28 @@
 		}
 	});
 
+	// A notification for another account opens `…?account=<key>`. Switch to that account
+	// (once auth is ready), then strip the param so the thread opens in its context.
+	let pendingAccountSwitch = $state(false);
+	$effect(() => {
+		if (auth.isRestoring || pendingAccountSwitch) return;
+		const acct = $page.url.searchParams.get('account');
+		if (!acct) return;
+
+		const url = new URL($page.url);
+		url.searchParams.delete('account');
+		const clean = `${url.pathname}${url.search}${url.hash}`;
+
+		if (acct !== auth.activeKey && auth.accounts.some((account) => account.key === acct)) {
+			pendingAccountSwitch = true;
+			void auth
+				.switchAccount(acct, { redirectTo: clean })
+				.finally(() => (pendingAccountSwitch = false));
+		} else {
+			void goto(clean, { replaceState: true });
+		}
+	});
+
 	$effect(() => {
 		if (!auth.isAuthenticated) return;
 		mail.mailboxes;

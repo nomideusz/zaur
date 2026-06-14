@@ -163,7 +163,7 @@ class AuthStore {
 	}
 
 	/** Switch the active mailbox: flip server-side, then rebuild the mail layer for it. */
-	async switchAccount(key: string): Promise<void> {
+	async switchAccount(key: string, options?: { redirectTo?: string }): Promise<void> {
 		if (!browser || key === this.activeKey) return;
 		this.isLoading = true;
 		this.error = null;
@@ -180,7 +180,7 @@ class AuthStore {
 
 			await this.rebuildActiveAccount();
 			toast.show(`Switched to ${this.displayName ?? this.username}`, 'success');
-			await goto(settings.preferredMailHref());
+			await goto(options?.redirectTo ?? settings.preferredMailHref());
 		} catch (error) {
 			console.error('Switch account failed:', error);
 			toast.show('Could not switch account', 'error');

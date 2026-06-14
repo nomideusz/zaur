@@ -257,6 +257,13 @@ export function readSessionById(id: string | undefined, secret?: string): Sessio
 	return active ? { ...active, id: session.id } : null;
 }
 
+/** All accounts of a session looked up by id, each carrying the session id (push-watcher). */
+export function readAccountsById(id: string | undefined, secret?: string): SessionData[] {
+	const session = readSessionRecord(id, secret);
+	if (!session) return [];
+	return session.accounts.map((account) => ({ ...account, id: session.id }));
+}
+
 /** Header a request may set to target a specific account; otherwise the active one is used. */
 export const ACCOUNT_HEADER = 'x-zaur-account';
 
