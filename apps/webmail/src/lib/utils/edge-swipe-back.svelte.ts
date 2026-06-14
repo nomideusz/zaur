@@ -23,9 +23,10 @@ interface EdgeSwipeBackOptions {
 /**
  * Left-edge swipe-to-go-back for leaf screens. Installed iOS PWAs have no
  * system back gesture, so this is the resilient fallback to the floating
- * island. Listeners are strictly passive — the gesture never calls
- * preventDefault, so it cannot interfere with scrolling: it only acts on a
- * horizontally-dominant drag that begins at the very left edge.
+ * island. touchstart/move stay passive so the gesture never blocks scrolling;
+ * it only acts on a horizontally-dominant drag that begins at the very left
+ * edge. On release it cancels the synthesized click so the back navigation
+ * fires exactly once.
  */
 export function createEdgeSwipeBack(options: EdgeSwipeBackOptions) {
 	let peek = $state(0);
@@ -95,12 +96,18 @@ export function createEdgeSwipeBack(options: EdgeSwipeBackOptions) {
 		}
 	}
 
-	function onTouchEnd() {
+	function onTouchEnd(event?: TouchEvent) {
 		if (!tracking) return;
+		const wasActive = active;
 		const commit = active && armed;
 		tracking = false;
 		active = false;
 		armed = false;
+		/* A recognised edge-swipe must not also fire the browser's synthesized
+		   click — it would land on the freshly-rendered list and navigate again
+		   (the double back animation). preventDefault on touchend suppresses the
+		   click without affecting scrolling. */
+		if (wasActive && event?.cancelable) event.preventDefault();
 		if (commit) {
 			/* Reset before navigating so the back view transition starts clean. */
 			peek = 0;
@@ -112,11 +119,12 @@ export function createEdgeSwipeBack(options: EdgeSwipeBackOptions) {
 	}
 
 	function attach(node: HTMLElement) {
-		const opts = { passive: true } as const;
-		node.addEventListener('touchstart', onTouchStart, opts);
-		node.addEventListener('touchmove', onTouchMove, opts);
-		node.addEventListener('touchend', onTouchEnd, opts);
-		node.addEventListener('touchcancel', onTouchEnd, opts);
+		/* touchstart/move stay passive (never block scroll); touchend is active
+		   only so a committed swipe can cancel the synthesized click. */
+		node.addEventListener('touchstart', onTouchStart, { passive: true });
+		node.addEventListener('touchmove', onTouchMove, { passive: true });
+		node.addEventListener('touchend', onTouchEnd, { passive: false });
+		node.addEventListener('touchcancel', onTouchEnd, { passive: true });
 		return {
 			destroy() {
 				node.removeEventListener('touchstart', onTouchStart);

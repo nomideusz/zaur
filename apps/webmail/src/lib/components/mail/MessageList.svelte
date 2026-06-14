@@ -264,7 +264,18 @@
 	const resolvedEmptyHint = $derived(
 		emptyHint ?? (emptyMessage ? null : defaultEmptyHint(mailboxRouteId))
 	);
-	const showFlatEmpty = $derived(!loading && !error && messages.length === 0);
+	/**
+	 * The list fetch has finished for the mailbox we're actually rendering.
+	 * During mailbox→mailbox navigation the new route renders before its load
+	 * settles, so without this the empty state ("Inbox zero") flashes over the
+	 * previous folder's now-stale state. Non-mailbox lists (search) always pass.
+	 */
+	const routeSettled = $derived(
+		!mailboxRouteId || mail.messagesLoadSettledForRouteId === mailboxRouteId
+	);
+	/** Show the skeleton both while loading and during the pre-settle nav gap. */
+	const showListSkeleton = $derived((loading || !routeSettled) && messages.length === 0);
+	const showFlatEmpty = $derived(routeSettled && !loading && !error && messages.length === 0);
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const allVisibleSelected = $derived(
 		listMessages.length > 0 &&
@@ -1131,7 +1142,7 @@
 			</li>
 		{/snippet}
 
-		{#if loading && messages.length === 0}
+		{#if showListSkeleton}
 			<MessageListSkeleton />
 		{:else if error || showFlatEmpty}
 			<MessageListStatus
@@ -1152,7 +1163,7 @@
 				{/each}
 			</ul>
 			<MessageListLoadMore {hasMore} {loadingMore} {onLoadMore} />
-		{:else if sectionMode}
+		{:else if sectionMode && routeSettled}
 			<p class="px-4 py-8 text-sm text-fg-muted">{resolvedEmptyMessage}</p>
 		{/if}
 	</div>
