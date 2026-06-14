@@ -120,6 +120,33 @@ class AuthStore {
 		}
 	}
 
+	/**
+	 * Persist the active account's Display name to its Stalwart identity so it is
+	 * authoritative server-side and consistent across devices. No-ops when unchanged.
+	 */
+	async updateDisplayName(name: string): Promise<boolean> {
+		if (!browser || !this.client) return false;
+		const trimmed = name.trim();
+		const target = this.username ? normalizeEmail(this.username) : '';
+		const primary =
+			this.identities.find((identity) => identity.email && normalizeEmail(identity.email) === target) ??
+			this.identities[0];
+		if (!primary) return false;
+		if ((primary.name ?? '').trim() === trimmed) return true; // nothing changed
+
+		try {
+			await this.client.setIdentityName(primary.id, trimmed);
+			this.identities = this.identities.map((identity) =>
+				identity.id === primary.id ? { ...identity, name: trimmed } : identity
+			);
+			if (trimmed) this.displayName = trimmed;
+			return true;
+		} catch (error) {
+			console.warn('Could not save display name to the server:', error);
+			return false;
+		}
+	}
+
 	private applyAccounts(payload: SessionResponse): void {
 		this.accounts = payload.accounts ?? [];
 		this.activeKey = payload.activeKey ?? null;

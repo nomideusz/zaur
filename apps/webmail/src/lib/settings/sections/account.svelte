@@ -162,6 +162,16 @@
 		settings.resetAllSettings();
 		toast.show('Preferences reset', 'success');
 	}
+
+	let lastSyncedDisplayName = $state(settings.displayName);
+	async function saveDisplayNameToServer() {
+		if (settings.displayName === lastSyncedDisplayName) return;
+		lastSyncedDisplayName = settings.displayName;
+		const ok = await auth.updateDisplayName(settings.displayName);
+		if (!ok) {
+			toast.show('Saved on this device — could not sync your name to the server.', 'info');
+		}
+	}
 </script>
 
 <SettingsFormGroup title="Profile" description="How you appear when you send mail.">
@@ -174,6 +184,7 @@
 				value={settings.displayName}
 				placeholder={auth.displayName ?? auth.username ?? 'Your name'}
 				oninput={(e) => settings.setDisplayName(e.currentTarget.value)}
+				onblur={() => void saveDisplayNameToServer()}
 			/>
 		{/snippet}
 	</SettingsField>

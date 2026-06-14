@@ -860,6 +860,15 @@ export class JMAPClient {
 		return (first[1].list as JMAPIdentity[]) ?? [];
 	}
 
+	/** Update the display name on one of the account's send-as identities. */
+	async setIdentityName(identityId: string, name: string): Promise<void> {
+		const response = await this.request(
+			[['Identity/set', { accountId: this.accountId, update: { [identityId]: { name } } }, 'is']],
+			['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
+		);
+		this.throwOnSetErrors(response, 'Could not update display name');
+	}
+
 	async queryEmails(
 		mailboxId: string,
 		limit = 50,
