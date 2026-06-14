@@ -133,7 +133,9 @@
 >
 	<Dialog.Portal>
 		<Dialog.Overlay class="fixed inset-0 z-50 bg-black/60 backdrop-blur-md" />
-		<Dialog.Content class="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
+		<Dialog.Content
+			class="fixed inset-0 z-50 flex items-center justify-center px-4 md:px-8 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))] md:py-8"
+		>
 			{#if active}
 				<div
 					class="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl border border-border bg-surface shadow-2xl"

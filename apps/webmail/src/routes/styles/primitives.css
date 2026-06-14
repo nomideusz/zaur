@@ -25,11 +25,16 @@
 	.z-mail-pane--mobile-fullscreen {
 		@apply max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-30 max-md:flex max-md:flex-col max-md:bg-surface;
 		top: 0;
+		/* Edge-to-edge: this fixed pane escapes #main-content, so it carries the
+		   top inset itself (the reader has no header on mobile). */
+		padding-top: env(safe-area-inset-top, 0px);
 	}
 
 	.z-mobile-sheet-backdrop {
 		@apply fixed inset-x-0 bottom-0 z-30 flex justify-end bg-black/20 backdrop-blur-[1px];
 		top: 0;
+		padding-top: env(safe-area-inset-top, 0px);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
 	}
 
 	.z-mail-pane--mobile-fullscreen .z-mail-reader-pane {

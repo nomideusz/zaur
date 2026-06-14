@@ -108,8 +108,8 @@
 
 .z-skip-link {
 	position: fixed;
-	left: 0.75rem;
-	top: 0.75rem;
+	left: max(0.75rem, env(safe-area-inset-left, 0px));
+	top: max(0.75rem, env(safe-area-inset-top, 0px));
 	z-index: 100;
 	transform: translateY(-150%);
 	border-radius: var(--radius-md);

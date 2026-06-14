@@ -67,7 +67,10 @@
 	});
 </script>
 
-<div class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]">
+<div
+	class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]"
+	style="padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);"
+>
 	<div
 		class="z-panel flex h-full min-h-0 w-full max-w-lg flex-col overflow-hidden border-l shadow-md"
 	>
