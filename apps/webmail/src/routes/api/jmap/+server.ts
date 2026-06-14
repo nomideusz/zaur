@@ -1,11 +1,11 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import type { JMAPMethodCall, JMAPResponse } from '$lib/jmap/types';
 import { createConnectedClient } from '$lib/server/jmap';
-import { readSession } from '$lib/server/session';
+import { resolveRequestAccount } from '$lib/server/session';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
-	const session = readSession(cookies);
-	if (!session) {
+	const account = resolveRequestAccount(cookies, request);
+	if (!account) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
@@ -21,7 +21,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	try {
-		const client = await createConnectedClient(session, cookies);
+		const client = await createConnectedClient(account, cookies);
 		const response = await client.request(body.methodCalls, body.using);
 		return json(response satisfies JMAPResponse);
 	} catch (error) {

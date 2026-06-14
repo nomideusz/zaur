@@ -1,18 +1,18 @@
 import type { RequestHandler } from '@sveltejs/kit';
 import { createConnectedClient } from '$lib/server/jmap';
-import { readSession } from '$lib/server/session';
+import { resolveRequestAccount } from '$lib/server/session';
 
 const KEEPALIVE_MS = 15_000;
 
 export const GET: RequestHandler = async ({ cookies, request }) => {
-	const session = readSession(cookies);
-	if (!session) {
+	const account = resolveRequestAccount(cookies, request);
+	if (!account) {
 		return new Response('Unauthorized', { status: 401 });
 	}
 
 	let client;
 	try {
-		client = await createConnectedClient(session, cookies);
+		client = await createConnectedClient(account, cookies);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : 'JMAP connection failed';
 		return new Response(message, { status: 502 });

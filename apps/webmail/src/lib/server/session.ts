@@ -4,9 +4,8 @@ import path from 'node:path';
 import type { Cookies } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import {
-	accountKey,
-	bareAccount,
 	dropAccount,
+	getAccount,
 	getActiveAccount,
 	isSession,
 	upsertAccount,
@@ -256,6 +255,27 @@ export function readSessionById(id: string | undefined, secret?: string): Sessio
 	if (!session) return null;
 	const active = getActiveAccount(session);
 	return active ? { ...active, id: session.id } : null;
+}
+
+/** Header a request may set to target a specific account; otherwise the active one is used. */
+export const ACCOUNT_HEADER = 'x-zaur-account';
+
+/**
+ * The account a proxied request targets: the one named by the `X-Zaur-Account`
+ * header (if it belongs to this session) else the active account. Returns a
+ * {@link SessionData} carrying the session id so token refresh writes back to the
+ * right account.
+ */
+export function resolveRequestAccount(
+	cookies: Cookies,
+	request?: Request,
+	secret?: string
+): SessionData | null {
+	const session = readSessionFull(cookies, secret);
+	if (!session) return null;
+	const requested = request?.headers.get(ACCOUNT_HEADER) ?? undefined;
+	const account = (requested ? getAccount(session, requested) : undefined) ?? getActiveAccount(session);
+	return account ? { ...account, id: session.id } : null;
 }
 
 /* ── Mutations ────────────────────────────────────────────────────────────── */

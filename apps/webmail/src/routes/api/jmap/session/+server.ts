@@ -1,6 +1,6 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { createConnectedClient } from '$lib/server/jmap';
-import { readSession } from '$lib/server/session';
+import { resolveRequestAccount } from '$lib/server/session';
 import type { JMAPSession } from '$lib/jmap/types';
 
 function proxySafeSession(session: JMAPSession): JMAPSession {
@@ -15,14 +15,14 @@ function proxySafeSession(session: JMAPSession): JMAPSession {
 	};
 }
 
-export const GET: RequestHandler = async ({ cookies }) => {
-	const session = readSession(cookies);
-	if (!session) {
+export const GET: RequestHandler = async ({ cookies, request }) => {
+	const account = resolveRequestAccount(cookies, request);
+	if (!account) {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
 	try {
-		const client = await createConnectedClient(session, cookies);
+		const client = await createConnectedClient(account, cookies);
 		const jmapSession = client.getSession();
 		if (!jmapSession) {
 			return json({ error: 'No JMAP session' }, { status: 502 });

@@ -1,6 +1,6 @@
 import { error, type RequestHandler } from '@sveltejs/kit';
 import { createConnectedClient } from '$lib/server/jmap';
-import { readSession } from '$lib/server/session';
+import { resolveRequestAccount } from '$lib/server/session';
 
 function contentDispositionFilename(name: string): string {
 	const fallback = name.replace(/[\r\n"\\/:*?<>|]+/g, '_').trim() || 'attachment';
@@ -10,9 +10,9 @@ function contentDispositionFilename(name: string): string {
 	return `attachment; filename="${fallback}"; filename*=UTF-8''${encoded}`;
 }
 
-export const GET: RequestHandler = async ({ url, cookies }) => {
-	const session = readSession(cookies);
-	if (!session) {
+export const GET: RequestHandler = async ({ url, cookies, request }) => {
+	const account = resolveRequestAccount(cookies, request);
+	if (!account) {
 		error(401, 'Unauthorized');
 	}
 
@@ -26,7 +26,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 	}
 
 	try {
-		const client = await createConnectedClient(session, cookies);
+		const client = await createConnectedClient(account, cookies);
 		const response = await client.downloadBlob(blobId, name, type);
 
 		if (!response.ok) {

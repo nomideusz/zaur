@@ -1,14 +1,14 @@
 import { json, error, type RequestHandler } from '@sveltejs/kit';
 import { createConnectedClient } from '$lib/server/jmap';
-import { readSession } from '$lib/server/session';
+import { resolveRequestAccount } from '$lib/server/session';
 
 export const config = {
 	bodySizeLimit: 25 * 1024 * 1024
 };
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
-	const session = readSession(cookies);
-	if (!session) {
+	const account = resolveRequestAccount(cookies, request);
+	if (!account) {
 		error(401, 'Unauthorized');
 	}
 
@@ -20,7 +20,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	try {
-		const client = await createConnectedClient(session, cookies);
+		const client = await createConnectedClient(account, cookies);
 		const result = await client.uploadBlob(data, type);
 		return json(result);
 	} catch (err) {
