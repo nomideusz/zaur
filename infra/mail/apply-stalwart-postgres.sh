@@ -74,7 +74,7 @@ if [[ -n "$existing_sql" ]]; then
 		--field "columnEmail=name" \
 		--field "columnSecret=secret" \
 		--field "queryLogin=SELECT name, secret FROM accounts WHERE name = \$1" \
-		--field "queryRecipient=SELECT name, secret FROM accounts WHERE name = \$1 AND active = true" \
+		--field "queryRecipient=SELECT a.name, a.secret FROM accounts a JOIN emails e ON a.name = e.name WHERE e.address = \$1 AND a.active = true" \
 		--field "store=$store_payload"
 else
 	echo "==> Creating SQL directory"
@@ -83,7 +83,7 @@ else
 		--field "columnEmail=name" \
 		--field "columnSecret=secret" \
 		--field "queryLogin=SELECT name, secret FROM accounts WHERE name = \$1" \
-		--field "queryRecipient=SELECT name, secret FROM accounts WHERE name = \$1 AND active = true" \
+		--field "queryRecipient=SELECT a.name, a.secret FROM accounts a JOIN emails e ON a.name = e.name WHERE e.address = \$1 AND a.active = true" \
 		--field "store=$store_payload" \
 		| awk '/Created Directory/ { print $3 }')"
 fi
