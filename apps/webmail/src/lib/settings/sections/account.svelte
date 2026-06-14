@@ -7,6 +7,7 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { appConfig } from '$lib/config';
@@ -209,6 +210,53 @@
 		/>
 	</SettingsFormToggle>
 </SettingsFormGroup>
+
+<SettingsGroup title="Accounts">
+	{#each auth.accounts as account (account.key)}
+		<SettingsRow
+			kind="action"
+			title={account.displayName}
+			description={account.displayName.trim().toLowerCase() !== account.username.trim().toLowerCase()
+				? account.username
+				: undefined}
+		>
+			<div class="flex items-center gap-2">
+				{#if (auth.unread[account.key] ?? 0) > 0}
+					<span
+						class="rounded-full bg-accent/15 px-1.5 py-0.5 text-xs font-medium tabular-nums text-accent"
+						aria-label="{auth.unread[account.key]} unread"
+					>
+						{auth.unread[account.key] > 99 ? '99+' : auth.unread[account.key]}
+					</span>
+				{/if}
+				{#if account.isActive}
+					<span class="text-sm text-fg-muted">Active</span>
+				{:else}
+					<Button variant="ghost" onclick={() => void auth.switchAccount(account.key)}>Switch</Button>
+				{/if}
+			</div>
+		</SettingsRow>
+	{/each}
+
+	<SettingsRow kind="action" title="Add account" description="Sign in to another mailbox.">
+		<Button variant="ghost" onclick={() => auth.addAccountFlow()}>Add</Button>
+	</SettingsRow>
+
+	{#if auth.accounts.length > 1}
+		<SettingsRow
+			kind="action"
+			title="Sign out of this account"
+			description="Keep your other accounts signed in."
+		>
+			<Button
+				variant="ghost"
+				onclick={() => auth.activeKey && void auth.removeAccount(auth.activeKey)}
+			>
+				Sign out
+			</Button>
+		</SettingsRow>
+	{/if}
+</SettingsGroup>
 
 <SettingsGroup title="Account">
 	<SettingsRow kind="info" title="Primary address">
@@ -453,7 +501,10 @@
 				if (
 					await confirm.ask({
 						title: 'Sign out?',
-						description: 'Sign out of ZAUR Webmail on this device?',
+						description:
+							auth.accounts.length > 1
+								? 'Sign out of all accounts on this device?'
+								: 'Sign out of ZAUR Webmail on this device?',
 						confirmLabel: 'Sign out',
 						tone: 'danger'
 					})
@@ -462,7 +513,7 @@
 				}
 			}}
 		>
-			Sign out
+			{auth.accounts.length > 1 ? 'Sign out of all' : 'Sign out'}
 		</button>
 	</SettingsRow>
 </SettingsGroup>
