@@ -111,6 +111,19 @@
 					<span class="truncate">Settings</span>
 				</DropdownMenu.Item>
 
+				{#if auth.accounts.length > 1}
+					<DropdownMenu.Item
+						class="z-overflow-menu-item"
+						textValue="Sign out of this account"
+						onSelect={() => auth.activeKey && auth.removeAccount(auth.activeKey)}
+					>
+						<span class="flex size-5 shrink-0 items-center justify-center">
+							<LogOut class="size-4 text-fg-muted" aria-hidden="true" />
+						</span>
+						<span class="truncate">Sign out of this account</span>
+					</DropdownMenu.Item>
+				{/if}
+
 				<DropdownMenu.Item
 					class="z-overflow-menu-item"
 					textValue="Sign out"
@@ -119,7 +132,7 @@
 					<span class="flex size-5 shrink-0 items-center justify-center">
 						<LogOut class="size-4 text-fg-muted" aria-hidden="true" />
 					</span>
-					<span class="truncate">Sign out</span>
+					<span class="truncate">{auth.accounts.length > 1 ? 'Sign out of all' : 'Sign out'}</span>
 				</DropdownMenu.Item>
 			</div>
 		</DropdownMenu.Content>

@@ -57,6 +57,8 @@ class AuthStore {
 	accounts = $state<AccountInfo[]>([]);
 	activeKey = $state<string | null>(null);
 	client = $state<JMAPClient | null>(null);
+	/** Re-entrancy guard while isolating a dead account in handleUnauthorized(). */
+	private handlingUnauthorized = false;
 	oauthConfig = $state<{
 		enabled: boolean;
 		passwordFallback?: boolean;
@@ -139,19 +141,7 @@ class AuthStore {
 				return;
 			}
 
-			this.resetMailState();
-			const client = JMAPClient.createProxy();
-			await client.connect();
-			await this.openOfflineLayer(client);
-			await this.bootstrapMail(client);
-
-			this.client = client;
-			await this.refreshAccounts();
-			this.isAuthenticated = true;
-			settings.setUser(this.username);
-			await settings.syncFromAccount();
-			this.startBackgroundSync(client, this.username ?? '', this.displayName ?? undefined);
-
+			await this.rebuildActiveAccount();
 			toast.show(`Switched to ${this.displayName ?? this.username}`, 'success');
 			await goto(settings.preferredMailHref());
 		} catch (error) {
@@ -162,10 +152,57 @@ class AuthStore {
 		}
 	}
 
-	/** Start the add-account flow — a fresh Logto sign-in that appends a new mailbox. */
-	addAccountFlow(): void {
+	/** Tear down the mail layer and bring it back up for whichever account is now active. */
+	private async rebuildActiveAccount(): Promise<void> {
+		this.resetMailState();
+		const client = JMAPClient.createProxy();
+		await client.connect();
+		await this.openOfflineLayer(client);
+		await this.bootstrapMail(client);
+
+		this.client = client;
+		await this.refreshAccounts();
+		this.isAuthenticated = true;
+		settings.setUser(this.username);
+		await settings.syncFromAccount();
+		this.startBackgroundSync(client, this.username ?? '', this.displayName ?? undefined);
+	}
+
+	/** Sign out of a single account; full logout if it was the last one. */
+	async removeAccount(key: string): Promise<void> {
 		if (!browser) return;
-		window.location.href = '/login/start?mode=add';
+		const wasActive = key === this.activeKey;
+		this.isLoading = true;
+		try {
+			const res = await fetch('/api/auth/remove-account', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ key })
+			});
+			const payload = (await res.json()) as { authenticated?: boolean };
+			if (!payload.authenticated) {
+				await this.logout();
+				return;
+			}
+			if (wasActive) {
+				await this.rebuildActiveAccount();
+				await goto(settings.preferredMailHref());
+			} else {
+				await this.refreshAccounts();
+			}
+			toast.show('Signed out of that account.', 'info');
+		} catch {
+			toast.show('Could not sign out of that account.', 'error');
+		} finally {
+			this.isLoading = false;
+		}
+	}
+
+	/** Start the add-account flow — a fresh Logto sign-in that appends a new mailbox. */
+	addAccountFlow(email?: string): void {
+		if (!browser) return;
+		const hint = email?.trim() ? `&email=${encodeURIComponent(email.trim())}` : '';
+		window.location.href = `/login/start?mode=add${hint}`;
 	}
 
 	async login(email: string, password: string, totp?: string, rememberMe = false, redirectTo?: string) {
@@ -547,9 +584,39 @@ class AuthStore {
 		goto('/login');
 	}
 
-	/** Clear local session when the server rejects credentials (401). */
-	handleUnauthorized() {
-		if (!this.isAuthenticated) return;
+	/**
+	 * The active account's token was rejected (401). If another account is
+	 * available, isolate the failure — drop the dead account and switch to a
+	 * healthy one — instead of signing out of everything. Otherwise full logout.
+	 */
+	async handleUnauthorized() {
+		if (!this.isAuthenticated || this.handlingUnauthorized) return;
+		this.handlingUnauthorized = true;
+		try {
+			const deadKey = this.activeKey;
+			const fallback = this.accounts.find((account) => account.key !== deadKey);
+			if (deadKey && fallback) {
+				try {
+					await fetch('/api/auth/remove-account', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ key: deadKey })
+					});
+					await this.rebuildActiveAccount();
+					toast.show('That account’s session expired — switched to another account.', 'info');
+					return;
+				} catch {
+					// The fallback is unusable too — fall through to a full sign-out.
+				}
+			}
+			this.forceLogout();
+		} finally {
+			this.handlingUnauthorized = false;
+		}
+	}
+
+	/** Wipe all local session state and return to the login screen. */
+	private forceLogout() {
 		pushListener.stop();
 		this.stopBackgroundSync();
 		void this.closeOfflineLayer();
