@@ -491,20 +491,28 @@
 		transform: scale(1.18);
 	}
 
+	/* Text colour is set per variant for guaranteed contrast across light, dark
+	   and the circadian "automatic" theme (where surface/fg shift over the day). */
 	.z-swipe-row__pane--default {
+		/* fg-muted flips light at night — its contrast partner is the surface. */
 		background-color: var(--z-fg-muted);
+		color: var(--z-surface);
 	}
 
 	.z-swipe-row__pane--accent {
 		background-color: var(--z-accent);
+		color: var(--z-accent-fg);
 	}
 
 	.z-swipe-row__pane--danger {
 		background-color: var(--z-danger);
+		color: #fff;
 	}
 
 	.z-swipe-row__pane--warning {
-		background-color: color-mix(in srgb, var(--z-danger) 40%, var(--z-star) 60%);
+		/* Bias toward red so white stays legible even at the bright-gold extreme. */
+		background-color: color-mix(in srgb, var(--z-danger) 55%, var(--z-star) 45%);
+		color: #fff;
 	}
 
 	@media (prefers-reduced-motion: reduce) {
