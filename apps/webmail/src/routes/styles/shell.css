@@ -159,7 +159,8 @@
 		color: var(--z-fg-muted);
 		transition:
 			color var(--z-motion-fast) var(--z-ease-standard),
-			background-color var(--z-motion-fast) var(--z-ease-standard);
+			background-color var(--z-motion-fast) var(--z-ease-standard),
+			transform var(--z-motion-fast) var(--z-ease-out);
 	}
 
 	.z-mobile-island__icon-btn:hover {
@@ -180,6 +181,12 @@
 	.z-mobile-island__icon-btn--accent:hover {
 		color: var(--z-accent);
 		background-color: color-mix(in srgb, var(--z-accent) 16%, transparent);
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		.z-mobile-island__icon-btn:active {
+			transform: scale(0.9);
+		}
 	}
 
 	/* Scroll-shrunk pill — content fades + clips while the shell condenses. */

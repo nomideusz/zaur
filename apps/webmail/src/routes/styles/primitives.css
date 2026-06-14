@@ -182,6 +182,53 @@
 		animation-iteration-count: infinite !important;
 	}
 
+	/*
+	 * Skeleton placeholders — content-shaped loading blocks. The base is a muted
+	 * sunken block; a pseudo-element sweeps a light band across it. Reduce-motion
+	 * (base.css freezes *::after animations) degrades it to a static block, so the
+	 * shape still communicates "content is loading" without the moving sweep.
+	 */
+	.z-skeleton {
+		position: relative;
+		overflow: hidden;
+		border-radius: var(--radius-sm);
+		background-color: var(--z-surface-sunken);
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		html:not(.z-reduce-motion) .z-skeleton::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+			transform: translateX(-100%);
+			background-image: linear-gradient(
+				90deg,
+				transparent,
+				color-mix(in srgb, var(--z-surface-raised) 60%, transparent),
+				transparent
+			);
+			animation: z-skeleton-shimmer 1.5s var(--z-ease-standard) infinite;
+		}
+	}
+
+	@keyframes z-skeleton-shimmer {
+		to {
+			transform: translateX(100%);
+		}
+	}
+
+	/* Staggered entrance for skeleton rows — rows ease in rather than popping. */
+	@keyframes z-fade-rise {
+		from {
+			opacity: 0;
+			transform: translateY(6px);
+		}
+		to {
+			opacity: 1;
+			transform: none;
+		}
+	}
+
 	@media (prefers-reduced-motion: no-preference) {
 		*::-webkit-scrollbar-thumb {
 			transition: background-color 150ms ease;

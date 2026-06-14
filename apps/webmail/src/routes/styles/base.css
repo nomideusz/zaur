@@ -4,6 +4,9 @@
 		-webkit-font-smoothing: antialiased;
 		-moz-osx-font-smoothing: grayscale;
 		letter-spacing: -0.011em;
+		/* The app paints its own hover/active states — suppress the default grey
+		   tap flash mobile browsers overlay on every tappable element. */
+		-webkit-tap-highlight-color: transparent;
 	}
 
 	body {

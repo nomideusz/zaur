@@ -88,6 +88,70 @@
 		min-width: 0;
 	}
 
+	/* Reader cold-load skeleton — tracks the real reader's inset, meta grid, and
+	   body rhythm so the swap to content is shift-free. */
+	.z-reader-skeleton {
+		padding-inline: 1rem;
+		padding-block: var(--z-space-reader-content);
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		html:not(.z-reduce-motion) .z-reader-skeleton {
+			animation: z-fade-rise var(--z-motion-base) var(--z-ease-out) both;
+		}
+	}
+
+	.z-reader-skeleton__title {
+		width: min(60%, 20rem);
+		height: 0.875rem;
+	}
+
+	.z-reader-skeleton__meta {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.z-reader-skeleton__from {
+		width: 9rem;
+		height: 0.9375rem;
+	}
+
+	.z-reader-skeleton__email {
+		width: 12rem;
+		max-width: 60%;
+		height: 0.8125rem;
+	}
+
+	.z-reader-skeleton__subject {
+		width: 80%;
+		height: 1.0625rem;
+		margin-top: var(--z-space-reader-inline-subject);
+	}
+
+	.z-reader-skeleton__body {
+		display: flex;
+		flex-direction: column;
+		gap: 0.6875rem;
+		margin-top: 1.5rem;
+		/* Mirror .z-reader-body — capped to the reading measure, centred on desktop. */
+		max-width: var(--z-reader-measure);
+	}
+
+	@media (min-width: 768px) {
+		.z-reader-skeleton__body {
+			margin-inline: auto;
+		}
+	}
+
+	.z-reader-skeleton__line {
+		height: 0.75rem;
+	}
+
+	.z-reader-skeleton__break {
+		height: 0.5rem;
+	}
+
 	.z-reader-chrome__time {
 		justify-self: end;
 		font-size: var(--z-reader-text);

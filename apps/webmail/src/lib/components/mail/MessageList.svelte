@@ -6,6 +6,7 @@
 	import MessageListBulkActionBar from '$lib/components/mail/MessageListBulkActionBar.svelte';
 	import MessageListToolbar from '$lib/components/mail/MessageListToolbar.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
+	import MessageListSkeleton from '$lib/components/mail/MessageListSkeleton.svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
@@ -15,6 +16,8 @@
 	import MailOpen from '$lib/components/icons/MailOpen.svelte';
 	import ShieldAlert from '$lib/components/icons/ShieldAlert.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
+	import RefreshCw from '$lib/components/icons/RefreshCw.svelte';
+	import { createPullToRefresh } from '$lib/utils/pull-to-refresh.svelte';
 	import { goto } from '$app/navigation';
 	import {
 		listSwipeContext,
@@ -129,6 +132,20 @@
 	let importantMarkerSampleStartedAt = 0;
 
 	const mobileRowGestures = $derived(supportsMobileListGestures());
+
+	const ptr = createPullToRefresh({
+		canPull: () => !!mailboxRouteId && mobileRowGestures && !mail.hasSelection && !!auth.client,
+		onRefresh: async () => {
+			const client = auth.client;
+			if (!client || !mailboxRouteId) return;
+			await Promise.all([
+				mail.refreshMessages(client, mailboxRouteId),
+				mail.refreshMailboxes(client)
+			]);
+		}
+	});
+	/* Render the indicator only where the gesture can fire (touch + a mailbox). */
+	const ptrActive = $derived(mobileRowGestures && !!mailboxRouteId);
 
 	const listMarkerTouch = createImportantMarkerTouchPick({
 		canPick: () => !settings.reduceMotion && !hasPreciseHover(),
@@ -941,8 +958,40 @@
 	{/if}
 
 	{#snippet listScroll()}
-		<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto flex flex-col">
-			<div class="z-mail-list-body flex-1 flex w-full min-w-0 flex-col min-h-full">
+		<div
+			class={cn('z-pane-scroll min-h-0 flex-1 overflow-y-auto flex flex-col', ptrActive && 'z-pane-scroll--ptr')}
+			use:ptr.attach
+		>
+			{#if ptrActive}
+				<div
+					class={cn(
+						'z-ptr',
+						ptr.armed && 'z-ptr--armed',
+						ptr.refreshing && 'z-ptr--refreshing',
+						ptr.releasing && 'z-ptr-animating'
+					)}
+					style="transform: translateY({ptr.pull - 52}px); opacity: {ptr.refreshing ? 1 : ptr.progress};"
+					aria-hidden="true"
+				>
+					<span class="z-ptr__spinner">
+						{#if ptr.refreshing}
+							<span class="z-spinner size-[1.05rem]" aria-hidden="true">
+								<RefreshCw class="size-full" />
+							</span>
+						{:else}
+							<span class="z-ptr__icon" style="transform: rotate({ptr.progress * 280}deg);">
+								<RefreshCw class="size-[1.05rem]" />
+							</span>
+						{/if}
+					</span>
+				</div>
+			{/if}
+			<div
+				class={cn('z-mail-list-body flex-1 flex w-full min-w-0 flex-col min-h-full', ptr.releasing && 'z-ptr-animating')}
+				style={ptrActive && (ptr.pull > 0 || ptr.refreshing || ptr.releasing)
+					? `transform: translateY(${ptr.pull}px);`
+					: undefined}
+			>
 	<div
 		class={cn(
 			'z-mail-list-flow flex-1 flex flex-col min-h-full',
@@ -1079,9 +1128,10 @@
 			</li>
 		{/snippet}
 
-		{#if error || showFlatEmpty || (loading && messages.length === 0)}
+		{#if loading && messages.length === 0}
+			<MessageListSkeleton />
+		{:else if error || showFlatEmpty}
 			<MessageListStatus
-				{loading}
 				{error}
 				empty={showFlatEmpty}
 				emptyMessage={resolvedEmptyMessage}
