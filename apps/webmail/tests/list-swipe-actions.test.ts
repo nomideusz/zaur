@@ -65,14 +65,14 @@ describe('list-swipe-actions', () => {
 		assert.equal(restore?.dismiss, true);
 	});
 
-	it('offers seen toggle (tier 1) then highlight toggle (tier 2)', () => {
+	it('offers the highlight toggle first, then the seen toggle', () => {
 		assert.deepEqual(
 			listSwipeLeadingActions({
 				message: message({ unread: true }),
 				mailbox: { role: 'inbox' },
 				...baseCtx
 			}).map((action) => action.id),
-			['mark-seen', 'mark-important']
+			['mark-important', 'mark-seen']
 		);
 		assert.deepEqual(
 			listSwipeLeadingActions({
@@ -80,7 +80,7 @@ describe('list-swipe-actions', () => {
 				mailbox: { role: 'inbox' },
 				...baseCtx
 			}).map((action) => action.id),
-			['unsee', 'remove-important']
+			['remove-important', 'unsee']
 		);
 	});
 

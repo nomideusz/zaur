@@ -53,8 +53,14 @@
 	let snapping = $state(false);
 	/** True once the drag is deep enough that a release fires the action. */
 	let armed = $state(false);
-	/** Keeps the action panel painted while the dismiss animation runs. */
+	/** Keeps the action panel painted while the commit animation runs. */
 	let committing = $state(false);
+	/**
+	 * The action captured at commit time. The panel keeps showing it through the
+	 * close animation, so a toggle (e.g. Highlight) doesn't flip its label to the
+	 * opposite state (Remove highlight) while the row is still springing shut.
+	 */
+	let committedAction = $state<SwipeAction | null>(null);
 	let pointerId: number | null = null;
 	let foregroundEl: HTMLElement | null = null;
 	let rowWidth = 0;
@@ -82,6 +88,15 @@
 	);
 	const leadingWidth = $derived(offset > 0 ? offset : 0);
 	const trailingWidth = $derived(offset < 0 ? -offset : 0);
+
+	/* While committing, keep painting the captured action so its label/icon
+	   don't flip to the post-toggle state mid-animation. */
+	const leadingPaneAction = $derived(
+		committing && committedAction && offset > 0 ? committedAction : leadingAction
+	);
+	const trailingPaneAction = $derived(
+		committing && committedAction && offset < 0 ? committedAction : trailingAction
+	);
 
 	function stopSpring() {
 		cancelSpring?.();
@@ -125,9 +140,11 @@
 
 	async function commitAction(action: SwipeAction) {
 		const dir = offset > 0 ? 1 : -1;
+		/* Freeze the panel on the committed action until it finishes closing. */
+		committedAction = action;
+		committing = true;
 
 		if (action.dismiss) {
-			committing = true;
 			if (rowWidth === 0) measureRowWidth();
 			/* Slide the row away; the colored panel grows to fill behind it. */
 			animateOffset(dir * Math.max(rowWidth, Math.abs(offset)));
@@ -141,12 +158,14 @@
 				/* Cancelled (e.g. delete confirm) or failed — bring the row back. */
 				armed = false;
 				committing = false;
+				committedAction = null;
 				animateOffset(0);
 				return;
 			}
 			/* Row usually unmounts via the store update; tidy local state regardless. */
 			armed = false;
 			committing = false;
+			committedAction = null;
 			closeRow();
 			return;
 		}
@@ -155,6 +174,7 @@
 		armed = false;
 		animateOffset(0, () => {
 			committing = false;
+			committedAction = null;
 		});
 		void action.onAction();
 	}
@@ -384,11 +404,11 @@
 	data-swipe-side={activeSide ?? undefined}
 	onclickcapture={onClickCapture}
 >
-	{#if hasSwipe && leadingAction && leadingWidth > 0}
-		{@render pane(leadingAction, 'leading', leadingWidth, activeSide === 'leading' && armed)}
+	{#if hasSwipe && leadingPaneAction && leadingWidth > 0}
+		{@render pane(leadingPaneAction, 'leading', leadingWidth, activeSide === 'leading' && armed)}
 	{/if}
-	{#if hasSwipe && trailingAction && trailingWidth > 0}
-		{@render pane(trailingAction, 'trailing', trailingWidth, activeSide === 'trailing' && armed)}
+	{#if hasSwipe && trailingPaneAction && trailingWidth > 0}
+		{@render pane(trailingPaneAction, 'trailing', trailingWidth, activeSide === 'trailing' && armed)}
 	{/if}
 
 	<div

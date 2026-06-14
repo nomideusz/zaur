@@ -27,9 +27,9 @@ export interface ListSwipeContext {
 const RESTORE_ROLES = new Set<MailboxRole>(['trash', 'junk', 'archive']);
 
 /**
- * Swipe right — positive actions. Tier 1 (full swipe) toggles Seen/Unseen,
- * tier 2 (deep swipe) toggles the Highlight. Trash/spam/archive swap in a
- * single restore action instead.
+ * Swipe right — the primary action toggles the Highlight where it's available
+ * (the everyday triage on this app), falling back to Seen/Unseen in folders
+ * that can't be highlighted. Trash/spam/archive swap in a single restore.
  */
 export function listSwipeLeadingActions(ctx: ListSwipeContext): ListSwipeAction[] {
 	const { message, mailbox, canMarkImportant, hasInbox } = ctx;
@@ -49,11 +49,7 @@ export function listSwipeLeadingActions(ctx: ListSwipeContext): ListSwipeAction[
 
 	if (role === 'drafts') return [];
 
-	const actions: ListSwipeAction[] = [
-		message.unread
-			? { id: 'mark-seen', label: LABEL_MARK_SEEN, variant: 'default' }
-			: { id: 'unsee', label: LABEL_UNSEE, variant: 'default' }
-	];
+	const actions: ListSwipeAction[] = [];
 
 	if (canMarkImportant) {
 		actions.push(
@@ -62,6 +58,12 @@ export function listSwipeLeadingActions(ctx: ListSwipeContext): ListSwipeAction[
 				: { id: 'mark-important', label: LABEL_MARK_IMPORTANT, variant: 'accent' }
 		);
 	}
+
+	actions.push(
+		message.unread
+			? { id: 'mark-seen', label: LABEL_MARK_SEEN, variant: 'default' }
+			: { id: 'unsee', label: LABEL_UNSEE, variant: 'default' }
+	);
 
 	return actions;
 }
