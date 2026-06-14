@@ -4,7 +4,7 @@ import { mapEmailPreview, resolveRouteMailboxId } from '$lib/jmap/map';
 import { isAccountSettingsSubject } from '$lib/settings/account-settings-types';
 import type { JMAPEmail } from '$lib/jmap/types';
 import type { Mailbox, MessagePreview } from '$lib/types/mail';
-import { recordContacts } from '$lib/utils/contact-index';
+import { recordMessages } from '$lib/utils/contact-index';
 
 const PAGE_SIZE = 50;
 
@@ -20,10 +20,7 @@ function indexSearchContacts(previews: MessagePreview[]) {
 	void import('$lib/db').then(({ getAccountId }) => {
 		const accountId = getAccountId();
 		if (!accountId) return;
-		recordContacts(
-			accountId,
-			previews.map((message) => message.from)
-		);
+		recordMessages(accountId, previews);
 	});
 }
 

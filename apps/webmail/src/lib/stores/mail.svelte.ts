@@ -19,7 +19,7 @@ import { settings } from '$lib/stores/settings.svelte';
 import { toast } from '$lib/stores/toast.svelte';
 import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
 import { showBrowserNotification } from '$lib/utils/notifications';
-import { recordContact, recordContacts } from '$lib/utils/contact-index';
+import { recordMessages } from '$lib/utils/contact-index';
 
 const PAGE_SIZE = 50;
 
@@ -81,16 +81,7 @@ function indexMessagesContacts(messages: Array<MessagePreview | MessageDetail>) 
 	void import('$lib/db').then(({ getAccountId }) => {
 		const accountId = getAccountId();
 		if (!accountId) return;
-
-		for (const message of messages) {
-			recordContact(accountId, message.from.name, message.from.email);
-			if (message.to?.length) {
-				recordContacts(accountId, message.to);
-			}
-			if ('cc' in message && message.cc?.length) {
-				recordContacts(accountId, message.cc);
-			}
-		}
+		recordMessages(accountId, messages);
 	});
 }
 
