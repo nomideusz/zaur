@@ -12,6 +12,7 @@
 	import ContactsSidebar from '$lib/components/contacts/ContactsSidebar.svelte';
 	import SwipeableListRow from '$lib/components/ui/SwipeableListRow.svelte';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
+	import { haptic } from '$lib/utils/haptics';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -93,6 +94,7 @@
 	);
 
 	function selectLetter(letter: string | null) {
+		if (supportsMobileListGestures()) haptic(8);
 		selectedLetter = letter;
 		selectedEmail = null;
 	}
@@ -102,6 +104,7 @@
 	}
 
 	function selectContact(email: string) {
+		if (supportsMobileListGestures()) haptic(8);
 		selectedEmail = email;
 	}
 
@@ -343,7 +346,7 @@
 										<button
 											type="button"
 											class={cn(
-												'z-list-row flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-sunken/60',
+												'z-list-row flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-sunken/60 active:bg-surface-sunken/80',
 												selectedEmail === contact.email && 'z-list-row--current'
 											)}
 											aria-current={selectedEmail === contact.email ? 'true' : undefined}

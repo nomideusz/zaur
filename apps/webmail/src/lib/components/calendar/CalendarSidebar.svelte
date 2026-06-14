@@ -1,8 +1,12 @@
 <script lang="ts">
-	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
+	import { haptic } from '$lib/utils/haptics';
+	import { isCoarsePointer } from '$lib/utils/pointer-env';
 	import { cn } from '$lib/utils/cn';
+
+	/* Skeleton row name widths — uneven so the placeholder reads like real names. */
+	const SKELETON_WIDTHS = ['55%', '72%', '48%', '64%'];
 </script>
 
 <aside
@@ -16,12 +20,16 @@
 
 	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto p-2.5">
 		{#if calendar.calendarsLoading}
-			<div class="flex items-center gap-2 px-3 py-4 text-sm text-fg-muted">
-				<span class="z-spinner size-4" aria-hidden="true">
-					<LoaderCircle class="size-full" />
-				</span>
-				Loading calendars…
-			</div>
+			<ul class="space-y-0.5" aria-hidden="true">
+				{#each SKELETON_WIDTHS as width, i (i)}
+					<li class="flex items-center gap-2.5 px-3 py-2">
+						<span class="z-skeleton size-4 shrink-0 rounded"></span>
+						<span class="z-skeleton size-2.5 shrink-0 rounded-full"></span>
+						<span class="z-skeleton h-3 rounded" style="width: {width};"></span>
+					</li>
+				{/each}
+			</ul>
+			<p class="sr-only" role="status">Loading calendars…</p>
 		{:else if calendar.supported === false}
 			<p class="px-3 py-4 text-sm text-fg-muted">Calendars are not available on this account.</p>
 		{:else if !calendar.calendars.length}
@@ -33,7 +41,10 @@
 						<Checkbox
 							checked={calendar.isCalendarVisible(item.id)}
 							label={`Show ${item.name} calendar`}
-							onchange={() => calendar.toggleCalendar(item.id)}
+							onchange={() => {
+								if (isCoarsePointer()) haptic(8);
+								calendar.toggleCalendar(item.id);
+							}}
 							class={cn(
 								'z-checkbox-row w-full py-2 text-left',
 								calendar.isCalendarVisible(item.id) ? 'text-fg' : 'text-fg-muted'
