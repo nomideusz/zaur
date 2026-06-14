@@ -5,6 +5,7 @@
 	import X from '$lib/components/icons/X.svelte';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import Clock from '$lib/components/icons/Clock.svelte';
+	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import RiFontSize2 from 'svelte-remixicon/RiFontSize2.svelte';
 	import ComposeRecipientInput from '$lib/components/mail/ComposeRecipientInput.svelte';
 	import { formatAttachmentSize } from '$lib/attachments/upload';
@@ -45,6 +46,18 @@
 		)
 	);
 	const fromName = $derived(fromIdentity?.name?.trim() || senderName);
+	const fromLabel = $derived(
+		fromIdentity?.name?.trim() &&
+			fromIdentity.name.trim().toLowerCase() !== fromAddress.trim().toLowerCase()
+			? fromIdentity.name.trim()
+			: ''
+	);
+	let showFromMenu = $state(false);
+	let fromZone = $state<HTMLDivElement | null>(null);
+
+	function isSelectedFrom(email: string): boolean {
+		return email.trim().toLowerCase() === fromAddress.trim().toLowerCase();
+	}
 
 	const composeErrorsId = 'compose-form-errors';
 	const mailHomeHref = $derived(settings.preferredMailHref());
@@ -164,7 +177,12 @@
 		});
 
 		function onKeydown(event: KeyboardEvent) {
-			if (event.key === 'Escape') void saveDraftAndClose();
+			if (event.key !== 'Escape') return;
+			if (showFromMenu) {
+				showFromMenu = false;
+				return;
+			}
+			void saveDraftAndClose();
 		}
 		window.addEventListener('keydown', onKeydown);
 		return () => window.removeEventListener('keydown', onKeydown);
@@ -270,6 +288,14 @@
 	});
 
 	function onWindowPointerDown(event: PointerEvent) {
+		if (
+			showFromMenu &&
+			fromZone &&
+			event.target instanceof Node &&
+			!fromZone.contains(event.target)
+		) {
+			showFromMenu = false;
+		}
 		if (!showSchedulePanel) return;
 		if (scheduleZone && event.target instanceof Node && !scheduleZone.contains(event.target)) {
 			showSchedulePanel = false;
@@ -513,22 +539,61 @@
 				{#if showFromPicker}
 					<div class="z-compose__field">
 						<span class="z-compose__prefix">From</span>
-						<label class="sr-only" for="compose-from">From</label>
-						<select
-							id="compose-from"
-							class="z-compose__input"
-							value={fromAddress}
-							onchange={(event) => (compose.fromEmail = event.currentTarget.value)}
-						>
-							{#each auth.identities as identity (identity.id)}
-								<option value={identity.email}>
-									{identity.name?.trim() &&
-									identity.name.trim().toLowerCase() !== identity.email.trim().toLowerCase()
-										? `${identity.name.trim()} <${identity.email}>`
-										: identity.email}
-								</option>
-							{/each}
-						</select>
+						<div class="relative min-w-0" bind:this={fromZone}>
+							<button
+								type="button"
+								id="compose-from"
+								class="z-compose-field-input flex w-full items-center justify-between gap-2 text-left"
+								aria-haspopup="listbox"
+								aria-expanded={showFromMenu}
+								onclick={() => (showFromMenu = !showFromMenu)}
+							>
+								<span class="min-w-0 truncate">
+									{#if fromLabel}
+										<span class="font-medium text-fg">{fromLabel}</span>
+										<span class="ml-1 text-fg-muted">{fromAddress}</span>
+									{:else}
+										<span class="text-fg">{fromAddress}</span>
+									{/if}
+								</span>
+								<ChevronDown class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+							</button>
+
+							{#if showFromMenu}
+								<ul
+									class="absolute left-0 top-full z-20 mt-2 w-full max-w-md overflow-hidden rounded-md border border-border bg-surface-raised shadow-md"
+									role="listbox"
+									aria-label="Send from"
+								>
+									{#each auth.identities as identity (identity.id)}
+										<li>
+											<button
+												type="button"
+												role="option"
+												aria-selected={isSelectedFrom(identity.email)}
+												class={cn(
+													'flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none hover:bg-surface-sunken',
+													isSelectedFrom(identity.email) && 'bg-surface-sunken'
+												)}
+												onclick={() => {
+													compose.fromEmail = identity.email;
+													showFromMenu = false;
+												}}
+											>
+												<span class="min-w-0 truncate">
+													<span class="font-medium text-fg">
+														{identity.name?.trim() || identity.email}
+													</span>
+													{#if identity.name?.trim() && identity.name.trim().toLowerCase() !== identity.email.trim().toLowerCase()}
+														<span class="ml-1 text-fg-muted">{identity.email}</span>
+													{/if}
+												</span>
+											</button>
+										</li>
+									{/each}
+								</ul>
+							{/if}
+						</div>
 					</div>
 				{/if}
 				<div class={cn('z-compose__field', fieldInvalid('to') && 'z-compose__field--invalid')}>
