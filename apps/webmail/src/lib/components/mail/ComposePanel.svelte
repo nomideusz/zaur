@@ -31,6 +31,21 @@
 	let toInput = $state<HTMLTextAreaElement | null>(null);
 
 	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
+
+	// From picker: only shown when the account has more than one send-as identity.
+	const showFromPicker = $derived(auth.identities.length > 1);
+	const fromAddress = $derived.by(() => {
+		const want = (compose.fromEmail || auth.username || '').trim().toLowerCase();
+		const match = auth.identities.find((identity) => identity.email?.trim().toLowerCase() === want);
+		return match?.email ?? (compose.fromEmail || auth.username || '');
+	});
+	const fromIdentity = $derived(
+		auth.identities.find(
+			(identity) => identity.email?.trim().toLowerCase() === fromAddress.trim().toLowerCase()
+		)
+	);
+	const fromName = $derived(fromIdentity?.name?.trim() || senderName);
+
 	const composeErrorsId = 'compose-form-errors';
 	const mailHomeHref = $derived(settings.preferredMailHref());
 
@@ -111,7 +126,7 @@
 	});
 
 	$effect(() => {
-		compose.scheduleAutosave(auth.client, auth.username ?? '', senderName, {
+		compose.scheduleAutosave(auth.client, fromAddress, fromName, {
 			to: compose.to,
 			cc: compose.cc,
 			bcc: compose.bcc,
@@ -162,7 +177,7 @@
 			return;
 		}
 		const destination = mailListHref(INBOX_MAILBOX_ROUTE_ID);
-		const result = await compose.send(auth.client, auth.username, senderName, {
+		const result = await compose.send(auth.client, fromAddress, fromName, {
 			onUndo: () => {
 				const undoMode = compose.mode;
 				goto(undoMode === 'new' ? '/mail/compose' : `/mail/compose?mode=${undoMode}`);
@@ -177,7 +192,7 @@
 	}
 
 	async function saveDraftAndClose() {
-		await compose.saveDraftAndLeave(auth.client, auth.username ?? '', senderName);
+		await compose.saveDraftAndLeave(auth.client, fromAddress, fromName);
 		goto(mailHomeHref);
 	}
 
@@ -275,8 +290,8 @@
 
 		const result = await compose.scheduleSend(
 			auth.client,
-			auth.username,
-			senderName,
+			fromAddress,
+			fromName,
 			date.toISOString()
 		);
 		if (result === 'sent') {
@@ -495,6 +510,27 @@
 		}}
 	>
 		<div class="z-compose__fields shrink-0 divide-y divide-border border-b border-border">
+				{#if showFromPicker}
+					<div class="z-compose__field">
+						<span class="z-compose__prefix">From</span>
+						<label class="sr-only" for="compose-from">From</label>
+						<select
+							id="compose-from"
+							class="z-compose__input"
+							value={fromAddress}
+							onchange={(event) => (compose.fromEmail = event.currentTarget.value)}
+						>
+							{#each auth.identities as identity (identity.id)}
+								<option value={identity.email}>
+									{identity.name?.trim() &&
+									identity.name.trim().toLowerCase() !== identity.email.trim().toLowerCase()
+										? `${identity.name.trim()} <${identity.email}>`
+										: identity.email}
+								</option>
+							{/each}
+						</select>
+					</div>
+				{/if}
 				<div class={cn('z-compose__field', fieldInvalid('to') && 'z-compose__field--invalid')}>
 					<label class="sr-only" for="compose-to">To</label>
 					<span class="z-compose__prefix" aria-hidden={!showToPrefix}>{showToPrefix ? 'To' : ''}</span>

@@ -32,6 +32,7 @@ interface ComposeSnapshot {
 	showCcBcc: boolean;
 	mode: ComposeMode;
 	jmapDraftId?: string;
+	fromEmail: string;
 	attachments: ComposeAttachment[];
 }
 
@@ -93,6 +94,8 @@ class ComposeStore {
 	showCcBcc = $state(false);
 	mode = $state<ComposeMode>('new');
 	jmapDraftId = $state<string | undefined>(undefined);
+	/** Selected sender address; '' means the account's primary address. */
+	fromEmail = $state('');
 	isSending = $state(false);
 	isSavingDraft = $state(false);
 	draftSavedAt = $state<number | null>(null);
@@ -186,6 +189,7 @@ class ComposeStore {
 		this.body = draft.body;
 		this.bodyHtml = draft.bodyHtml ?? '';
 		this.jmapDraftId = draft.jmapDraftId;
+		this.fromEmail = '';
 		this.showCcBcc = !!(draft.cc || draft.bcc);
 		this.mode = draft.mode;
 		this.draftSavedAt = draft.updatedAt;
@@ -257,6 +261,7 @@ class ComposeStore {
 		this.showCcBcc = false;
 		this.mode = 'new';
 		this.jmapDraftId = undefined;
+		this.fromEmail = '';
 		this.sourceEmailId = undefined;
 		this.sourceMailboxId = undefined;
 		this.error = null;
@@ -274,6 +279,7 @@ class ComposeStore {
 		this.showCcBcc = false;
 		this.mode = 'new';
 		this.jmapDraftId = undefined;
+		this.fromEmail = '';
 		this.sourceEmailId = undefined;
 		this.sourceMailboxId = undefined;
 		this.error = null;
@@ -355,13 +361,14 @@ class ComposeStore {
 		this.attachments = this.attachments.filter((attachment) => attachment.id !== id);
 	}
 
-	startReply(message: MessageDetail) {
+	startReply(message: MessageDetail, fromEmail = '') {
 		const when = new Intl.DateTimeFormat(undefined, {
 			dateStyle: 'medium',
 			timeStyle: 'short'
 		}).format(new Date(message.receivedAt));
 
 		this.mode = 'reply';
+		this.fromEmail = fromEmail;
 		this.to = message.from.email;
 		this.cc = '';
 		this.bcc = '';
@@ -384,8 +391,9 @@ class ComposeStore {
 		this.clearAttachments();
 	}
 
-	startReplyAll(message: MessageDetail, thread: MessageDetail[], userEmail: string) {
+	startReplyAll(message: MessageDetail, thread: MessageDetail[], userEmail: string, fromEmail = '') {
 		const normalizedUser = userEmail.trim().toLowerCase();
+		this.fromEmail = fromEmail;
 		const recipients = new Set<string>();
 
 		for (const item of thread) {
@@ -439,6 +447,7 @@ class ComposeStore {
 		}).format(new Date(message.receivedAt));
 
 		this.mode = 'forward';
+		this.fromEmail = '';
 		this.to = '';
 		this.cc = '';
 		this.bcc = '';
@@ -467,6 +476,7 @@ class ComposeStore {
 	openDraft(message: MessageDetail) {
 		this.cancelPendingSend();
 		this.mode = 'new';
+		this.fromEmail = '';
 		this.to = formatAddressList(message.to);
 		this.cc = formatAddressList(message.cc);
 		this.bcc = formatAddressList(message.bcc ?? []);
@@ -599,6 +609,7 @@ class ComposeStore {
 			showCcBcc: this.showCcBcc,
 			mode: this.mode,
 			jmapDraftId: this.jmapDraftId,
+			fromEmail: this.fromEmail,
 			attachments: this.attachments.map((attachment) => ({ ...attachment }))
 		};
 	}
@@ -613,6 +624,7 @@ class ComposeStore {
 		this.showCcBcc = snapshot.showCcBcc;
 		this.mode = snapshot.mode;
 		this.jmapDraftId = snapshot.jmapDraftId;
+		this.fromEmail = snapshot.fromEmail;
 		this.attachments = snapshot.attachments.map((attachment) => ({ ...attachment }));
 		this.error = null;
 		this.isSending = false;

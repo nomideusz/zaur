@@ -71,6 +71,34 @@ function matchRecipients(
 	return matches;
 }
 
+/**
+ * The address a reply should come from: the owned address the original message
+ * was delivered to (so replying to mail sent to an alias replies from that alias).
+ * Returns '' when no owned recipient matches — caller falls back to the primary.
+ */
+export function replyFromAddress(
+	message: MessageDetail,
+	username: string | null | undefined,
+	identities: readonly { email?: string | null }[]
+): string {
+	const owned = userOwnedAddresses(username, identities);
+	if (owned.size === 0) return '';
+
+	for (const recipients of [message.to, message.cc, message.bcc]) {
+		for (const recipient of recipients ?? []) {
+			const email = recipient.email?.trim();
+			if (!email || !owned.has(normalizeEmail(email))) continue;
+			// Return the identity's canonical casing so the From picker matches an option.
+			const identity = identities.find(
+				(candidate) => candidate.email?.trim().toLowerCase() === normalizeEmail(email)
+			);
+			return identity?.email?.trim() ?? email;
+		}
+	}
+
+	return '';
+}
+
 export function readerDeliveredTo(
 	message: MessageDetail,
 	ownedAddresses: Set<string>

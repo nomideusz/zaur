@@ -11,6 +11,7 @@
 	import { resolveMailboxRouteByShortcut } from '$lib/mail/folder-shortcuts';
 	import { canMarkImportantFromMailboxRole } from '$lib/mail/mailboxes';
 	import { mailListBackHref, mailListHref, mailThreadHref, parseMailContext } from '$lib/mail/routes';
+	import { replyFromAddress } from '$lib/mail/reader-delivered-to';
 	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
 	import { isTypingTarget } from '$lib/utils/keyboard';
 	import type { MessagePreview } from '$lib/types/mail';
@@ -102,13 +103,18 @@
 			mode ?? (settings.defaultReplyMode === 'reply-all' ? 'reply-all' : 'reply');
 
 		if (resolved === 'reply') {
-			compose.startReply(latest);
+			compose.startReply(latest, replyFromAddress(latest, auth.username, auth.identities));
 			goto('/mail/compose?mode=reply');
 			return;
 		}
 
 		if (!auth.username) return;
-		compose.startReplyAll(latest, thread, auth.username);
+		compose.startReplyAll(
+			latest,
+			thread,
+			auth.username,
+			replyFromAddress(latest, auth.username, auth.identities)
+		);
 		goto('/mail/compose?mode=reply-all');
 	}
 

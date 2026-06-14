@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
 	readerDeliveredTo,
+	replyFromAddress,
 	userOwnedAddresses
 } from '../src/lib/mail/reader-delivered-to.ts';
 import type { MessageDetail } from '../src/lib/types/mail.ts';
@@ -121,5 +122,40 @@ describe('readerDeliveredTo', () => {
 			),
 			{ prefix: 'To', addresses: 'sales@example.com, support@example.com' }
 		);
+	});
+});
+
+describe('replyFromAddress', () => {
+	const identities = [{ email: 'me@example.com' }, { email: 'Alias@Example.com' }];
+
+	it('replies from the owned address the message was delivered to', () => {
+		const from = replyFromAddress(
+			message({ to: [{ name: '', email: 'alias@example.com' }] }),
+			'me@example.com',
+			identities
+		);
+		// Canonical identity casing so the From picker matches an option.
+		assert.equal(from, 'Alias@Example.com');
+	});
+
+	it('prefers the matched recipient across to/cc/bcc', () => {
+		const from = replyFromAddress(
+			message({
+				to: [{ name: '', email: 'friend@other.com' }],
+				cc: [{ name: '', email: 'me@example.com' }]
+			}),
+			'me@example.com',
+			identities
+		);
+		assert.equal(from, 'me@example.com');
+	});
+
+	it('returns empty when no owned address is among the recipients', () => {
+		const from = replyFromAddress(
+			message({ to: [{ name: '', email: 'friend@other.com' }] }),
+			'me@example.com',
+			identities
+		);
+		assert.equal(from, '');
 	});
 });

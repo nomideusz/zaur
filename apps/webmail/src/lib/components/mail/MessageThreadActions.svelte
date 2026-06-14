@@ -19,6 +19,7 @@
 		LABEL_UNSEE
 	} from '$lib/mail/new-mail';
 	import { INBOX_MAILBOX_ROUTE_ID, mailListHref } from '$lib/mail/routes';
+	import { replyFromAddress } from '$lib/mail/reader-delivered-to';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { canMarkImportantFromMailboxRole, moveTargetMailboxes } from '$lib/mail/mailboxes';
@@ -95,13 +96,18 @@
 
 	function reply() {
 		if (!latest) return;
-		compose.startReply(latest);
+		compose.startReply(latest, replyFromAddress(latest, auth.username, auth.identities));
 		goto('/mail/compose?mode=reply');
 	}
 
 	function replyAll() {
 		if (!latest || !auth.username) return;
-		compose.startReplyAll(latest, thread, auth.username);
+		compose.startReplyAll(
+			latest,
+			thread,
+			auth.username,
+			replyFromAddress(latest, auth.username, auth.identities)
+		);
 		goto('/mail/compose?mode=reply-all');
 	}
 
