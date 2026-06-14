@@ -1,5 +1,6 @@
 export {
 	closeMailDatabase,
+	removeMailDatabase,
 	getAccountId,
 	getMailDatabase,
 	initMailDatabase,

@@ -185,6 +185,8 @@ class AuthStore {
 				return;
 			}
 			if (wasActive) {
+				// Delete the signed-out account's local cache before bringing up the next one.
+				await this.wipeOfflineLayer();
 				await this.rebuildActiveAccount();
 				await goto(settings.preferredMailHref());
 			} else {
@@ -529,7 +531,7 @@ class AuthStore {
 
 		pushListener.stop();
 		this.stopBackgroundSync();
-		await this.closeOfflineLayer();
+		await this.wipeOfflineLayer();
 		mail.reset();
 
 		try {
@@ -555,7 +557,7 @@ class AuthStore {
 	async logout() {
 		pushListener.stop();
 		this.stopBackgroundSync();
-		await this.closeOfflineLayer();
+		await this.wipeOfflineLayer();
 		this.client?.disconnect();
 		this.client = null;
 		this.serverUrl = null;
@@ -619,7 +621,7 @@ class AuthStore {
 	private forceLogout() {
 		pushListener.stop();
 		this.stopBackgroundSync();
-		void this.closeOfflineLayer();
+		void this.wipeOfflineLayer();
 		this.client?.disconnect();
 		this.client = null;
 		this.serverUrl = null;
@@ -683,10 +685,18 @@ class AuthStore {
 		});
 	}
 
+	/** Close the active account's local DB but keep its data (used when switching). */
 	private async closeOfflineLayer() {
 		if (!browser) return;
 		const { closeMailDatabase } = await import('$lib/db');
 		await closeMailDatabase();
+	}
+
+	/** Delete the active account's local DB (used for sign-out and cache wipe). */
+	private async wipeOfflineLayer() {
+		if (!browser) return;
+		const { removeMailDatabase } = await import('$lib/db');
+		await removeMailDatabase();
 	}
 }
 

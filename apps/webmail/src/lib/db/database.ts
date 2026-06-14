@@ -144,7 +144,21 @@ export async function initMailDatabase(nextAccountId: string): Promise<MailDatab
 	}
 }
 
+/** Close the open database, preserving its data on disk (used when switching accounts). */
 export async function closeMailDatabase(): Promise<void> {
+	if (!db) {
+		accountId = null;
+		return;
+	}
+
+	const current = db;
+	db = null;
+	accountId = null;
+	await current.close();
+}
+
+/** Remove the open database, deleting its local data (used for sign-out and cache wipe). */
+export async function removeMailDatabase(): Promise<void> {
 	if (!db) {
 		accountId = null;
 		return;
