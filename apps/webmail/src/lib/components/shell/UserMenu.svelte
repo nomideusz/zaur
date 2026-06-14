@@ -83,6 +83,14 @@
 									<span class="truncate text-xs text-fg-muted">{account.username}</span>
 								{/if}
 							</span>
+							{#if (auth.unread[account.key] ?? 0) > 0}
+								<span
+									class="ml-auto shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 text-xs font-medium tabular-nums text-accent"
+									aria-label="{auth.unread[account.key]} unread"
+								>
+									{auth.unread[account.key] > 99 ? '99+' : auth.unread[account.key]}
+								</span>
+							{/if}
 						</DropdownMenu.Item>
 					{/each}
 				</div>

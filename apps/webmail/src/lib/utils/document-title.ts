@@ -2,6 +2,7 @@ import { browser } from '$app/environment';
 import { mail } from '$lib/stores/mail.svelte';
 import { settings } from '$lib/stores/settings.svelte';
 import { syncAppBadge } from '$lib/utils/app-badge';
+import { getInactiveUnread } from '$lib/utils/unread-state';
 
 const UNREAD_PREFIX = /^\(\d+\)\s*/;
 
@@ -22,8 +23,10 @@ export function withUnreadPrefix(title: string, unread: number): string {
 
 export function applyUnreadPrefixToDocument(): void {
 	const unread = inboxUnreadCount();
+	// Title reflects the active account's inbox; the OS app badge is the total across
+	// all accounts (active inbox + the other accounts' unread from the last poll).
 	document.title = withUnreadPrefix(document.title, unread);
 	if (browser) {
-		void syncAppBadge(unread);
+		void syncAppBadge(unread + getInactiveUnread());
 	}
 }

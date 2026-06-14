@@ -9,6 +9,8 @@ import type { JMAPIdentity } from '$lib/jmap/types';
 
 /** localStorage map of account key (email) → JMAP accountId, for wiping inactive DBs on sign-out. */
 const ACCOUNT_DB_MAP_KEY = 'zaur:account-dbs';
+/** How often to refresh per-account unread counts for the switcher/app badge. */
+const UNREAD_POLL_MS = 60_000;
 import { pushListener } from '$lib/jmap/push-listener';
 import { mail } from '$lib/stores/mail.svelte';
 import { compose } from '$lib/stores/compose.svelte';
@@ -18,6 +20,7 @@ import { calendar } from '$lib/stores/calendar.svelte';
 import { settings } from '$lib/stores/settings.svelte';
 import { toast } from '$lib/stores/toast.svelte';
 import { saveRememberedLogin } from '$lib/auth/remember-login';
+import { setInactiveUnread } from '$lib/utils/unread-state';
 
 export interface AccountInfo {
 	key: string;
@@ -60,9 +63,12 @@ class AuthStore {
 	/** All accounts signed into this session; the active one drives the mail view. */
 	accounts = $state<AccountInfo[]>([]);
 	activeKey = $state<string | null>(null);
+	/** Per-account-key inbox unread counts (all accounts), refreshed on a poll. */
+	unread = $state<Record<string, number>>({});
 	client = $state<JMAPClient | null>(null);
 	/** Re-entrancy guard while isolating a dead account in handleUnauthorized(). */
 	private handlingUnauthorized = false;
+	private unreadTimer: ReturnType<typeof setInterval> | null = null;
 	oauthConfig = $state<{
 		enabled: boolean;
 		passwordFallback?: boolean;
@@ -642,6 +648,8 @@ class AuthStore {
 		this.identities = [];
 		this.accounts = [];
 		this.activeKey = null;
+		this.unread = {};
+		setInactiveUnread(0);
 		this.isAuthenticated = false;
 		this.error = null;
 		this.errorCode = null;
@@ -706,6 +714,8 @@ class AuthStore {
 		this.identities = [];
 		this.accounts = [];
 		this.activeKey = null;
+		this.unread = {};
+		setInactiveUnread(0);
 		this.isAuthenticated = false;
 		settings.setUser(null);
 		mail.reset();
@@ -802,6 +812,7 @@ class AuthStore {
 		void import('$lib/sync/outbox-processor').then(({ outboxProcessor }) => {
 			outboxProcessor.start(client, fromEmail, fromName);
 		});
+		this.startUnreadPolling();
 	}
 
 	private stopBackgroundSync() {
@@ -810,6 +821,42 @@ class AuthStore {
 		void import('$lib/sync/outbox-processor').then(({ outboxProcessor }) => {
 			outboxProcessor.stop();
 		});
+		this.stopUnreadPolling();
+	}
+
+	/** Refresh per-account inbox unread counts (switcher badges + app badge total). */
+	async refreshUnread(): Promise<void> {
+		if (!browser || !this.isAuthenticated) return;
+		try {
+			const res = await fetch('/api/auth/unread');
+			if (!res.ok) return;
+			const payload = (await res.json()) as { unread?: Record<string, number> };
+			if (!payload.unread) return;
+			this.unread = payload.unread;
+			let inactive = 0;
+			for (const [key, count] of Object.entries(payload.unread)) {
+				if (key !== this.activeKey) inactive += count;
+			}
+			setInactiveUnread(inactive);
+			const { applyUnreadPrefixToDocument } = await import('$lib/utils/document-title');
+			applyUnreadPrefixToDocument();
+		} catch {
+			// Best-effort; keep the last counts on failure.
+		}
+	}
+
+	private startUnreadPolling() {
+		if (!browser) return;
+		this.stopUnreadPolling();
+		void this.refreshUnread();
+		this.unreadTimer = setInterval(() => void this.refreshUnread(), UNREAD_POLL_MS);
+	}
+
+	private stopUnreadPolling() {
+		if (this.unreadTimer) {
+			clearInterval(this.unreadTimer);
+			this.unreadTimer = null;
+		}
 	}
 
 	/** Close the active account's local DB but keep its data (used when switching). */
