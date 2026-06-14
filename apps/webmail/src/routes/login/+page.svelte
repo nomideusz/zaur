@@ -21,6 +21,7 @@
 		$page.url.searchParams.get('welcome') === '1' || urlEmail.length > 0
 	);
 	const passkeyReady = $derived($page.url.searchParams.get('passkey_ready') === '1');
+	const isAdd = $derived($page.url.searchParams.get('mode') === 'add');
 
 	let email = $state(remembered.email);
 	let password = $state('');
@@ -49,7 +50,8 @@
 	});
 
 	$effect(() => {
-		if (!auth.isRestoring && auth.isAuthenticated) {
+		// In add mode we intentionally stay on the form while already authenticated.
+		if (!isAdd && !auth.isRestoring && auth.isAuthenticated) {
 			goto(nextPath ?? settings.preferredMailHref());
 		}
 	});
@@ -62,6 +64,9 @@
 		}
 		if (urlEmail) {
 			email = urlEmail;
+		} else if (isAdd) {
+			// Adding an account: start from a blank email, not the current user's.
+			email = '';
 		}
 		if ($page.url.searchParams.get('error') === 'passkey_email') {
 			auth.error = 'Enter your email address before signing in with a passkey.';
@@ -71,7 +76,7 @@
 	function submitLogin(e: Event) {
 		e.preventDefault();
 		if (showPassword) {
-			void auth.login(email, password, undefined, rememberMe, nextPath);
+			void auth.login(email, password, undefined, rememberMe, nextPath, { add: isAdd });
 		} else if (showPasskey) {
 			signInWithPasskey();
 		}
@@ -81,7 +86,8 @@
 		void auth.loginWithPasskey({
 			rememberMe,
 			redirectTo: nextPath,
-			loginHint: email.trim().toLowerCase()
+			loginHint: email.trim().toLowerCase(),
+			add: isAdd
 		});
 	}
 </script>
@@ -92,7 +98,14 @@
 
 <AuthPage title={appConfig.brandName} tagline="Private, focused email">
 	<form class="z-form-stack" onsubmit={submitLogin}>
-		{#if passkeyReady && showPasskey}
+		{#if isAdd}
+			<div class="z-callout">
+				<span class="z-callout__title">Add another account</span>
+				<p class="z-callout__body">
+					Sign in with the address you want to add. Your current account stays open.
+				</p>
+			</div>
+		{:else if passkeyReady && showPasskey}
 			<div class="z-callout">
 				<span class="z-callout__title">Passkey ready</span>
 				<p class="z-callout__body">Use “Sign in with passkey” below.</p>
@@ -169,6 +182,11 @@
 				>
 					{auth.isLoading ? 'Waiting for passkey…' : 'Sign in with passkey'}
 				</Button>
+			{/if}
+			{#if isAdd}
+				<p class="text-center">
+					<a href={settings.preferredMailHref()} class="z-link text-sm">Cancel</a>
+				</p>
 			{/if}
 		</div>
 	</form>

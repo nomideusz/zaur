@@ -3,7 +3,7 @@ import { appConfig } from '$lib/config';
 import { createConnectedClient } from '$lib/server/jmap';
 import { classifyJmapError, loginErrorMessage } from '$lib/jmap/errors';
 import { findIdentityEmail, normalizeEmail } from '$lib/jmap/account';
-import { writeSession } from '$lib/server/session';
+import { addAccount, writeSession } from '$lib/server/session';
 import { isOauthEnabled, isPasswordLoginEnabled } from '$lib/server/oidc-discovery';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 
@@ -31,7 +31,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		);
 	}
 
-	let body: { email?: string; password?: string; totp?: string; rememberMe?: boolean };
+	let body: { email?: string; password?: string; totp?: string; rememberMe?: boolean; add?: boolean };
 	try {
 		body = await request.json();
 	} catch {
@@ -54,21 +54,28 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			password: effectivePassword
 		});
 
+		const identities = await client.getIdentities();
+		const primary = findIdentityEmail(identities, email) ?? identities[0];
+		const displayName = primary?.name ?? primary?.email ?? email;
+
 		const sessionData = {
 			serverUrl,
 			username: email,
+			displayName,
 			password: effectivePassword
 		};
 
-		const identities = await client.getIdentities();
-		const primary = findIdentityEmail(identities, email) ?? identities[0];
-
-		writeSession(cookies, sessionData, { remember: body.rememberMe === true });
+		// 'add' appends to (and activates within) the current session; otherwise replace it.
+		if (body.add === true) {
+			addAccount(cookies, sessionData, { remember: body.rememberMe === true });
+		} else {
+			writeSession(cookies, sessionData, { remember: body.rememberMe === true });
+		}
 
 		return json({
 			serverUrl,
 			username: sessionData.username,
-			displayName: primary?.name ?? primary?.email ?? sessionData.username,
+			displayName,
 			identities: identities.map((identity) => ({
 				id: identity.id,
 				name: identity.name,

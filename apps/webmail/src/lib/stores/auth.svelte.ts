@@ -212,24 +212,33 @@ class AuthStore {
 		}
 	}
 
-	/** Start the add-account flow — a fresh Logto sign-in that appends a new mailbox. */
+	/** Start the add-account flow on our own login screen (password or passkey), appending a mailbox. */
 	addAccountFlow(email?: string): void {
 		if (!browser) return;
 		const hint = email?.trim() ? `&email=${encodeURIComponent(email.trim())}` : '';
-		window.location.href = `/login/start?mode=add${hint}`;
+		void goto(`/login?mode=add${hint}`);
 	}
 
-	async login(email: string, password: string, totp?: string, rememberMe = false, redirectTo?: string) {
+	async login(
+		email: string,
+		password: string,
+		totp?: string,
+		rememberMe = false,
+		redirectTo?: string,
+		options?: { add?: boolean }
+	) {
+		const add = options?.add === true;
 		this.isLoading = true;
 		this.error = null;
 		this.errorCode = null;
-		this.resetMailState();
+		// In add mode the current account stays live until the new sign-in succeeds.
+		if (!add) this.resetMailState();
 
 		try {
 			const response = await fetch('/api/auth/login', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ email: email.trim(), password, totp, rememberMe })
+				body: JSON.stringify({ email: email.trim(), password, totp, rememberMe, add })
 			});
 
 			const payload = (await response.json()) as LoginResponse;
@@ -240,6 +249,16 @@ class AuthStore {
 				this.error =
 					payload.error ??
 					loginErrorMessage(code, payload.serverUrl ?? appConfig.jmapServerUrl);
+				return;
+			}
+
+			saveRememberedLogin(email, rememberMe);
+
+			if (add) {
+				// Appended + made active server-side; switch the mail layer to it.
+				await this.rebuildActiveAccount();
+				toast.show(`Added ${this.displayName ?? this.username}`, 'success');
+				await goto(redirectTo ?? settings.preferredMailHref());
 				return;
 			}
 
@@ -255,7 +274,6 @@ class AuthStore {
 			this.identities = payload.identities ?? [];
 			this.isAuthenticated = true;
 			settings.setUser(payload.username);
-			saveRememberedLogin(email, rememberMe);
 			await settings.syncFromAccount();
 			this.startBackgroundSync(client, payload.username, payload.displayName);
 			await this.refreshAccounts();
@@ -269,9 +287,12 @@ class AuthStore {
 				detail && (code !== 'generic' || detail.length < 120)
 					? detail
 					: loginErrorMessage(code);
-			this.client?.disconnect();
-			this.client = null;
-			this.isAuthenticated = false;
+			// Don't tear down the current account when an add attempt fails.
+			if (!add) {
+				this.client?.disconnect();
+				this.client = null;
+				this.isAuthenticated = false;
+			}
 		} finally {
 			this.isLoading = false;
 		}
@@ -281,6 +302,7 @@ class AuthStore {
 		rememberMe?: boolean;
 		redirectTo?: string;
 		loginHint?: string;
+		add?: boolean;
 	}) {
 		this.isLoading = true;
 		this.error = null;
@@ -337,7 +359,7 @@ class AuthStore {
 				throw new Error(verifyPayload.error ?? 'Passkey verification failed.');
 			}
 
-			await this.completeOauthLogin(verifyPayload.code, verifyPayload.state);
+			await this.completeOauthLogin(verifyPayload.code, verifyPayload.state, { add: options?.add });
 		} catch (error) {
 			this.isLoading = false;
 			this.error = error instanceof Error ? error.message : 'Failed to sign in with passkey';
@@ -431,11 +453,13 @@ class AuthStore {
 		}
 	}
 
-	async completeOauthLogin(code: string, state?: string | null) {
+	async completeOauthLogin(code: string, state?: string | null, options?: { add?: boolean }) {
+		const add = options?.add === true;
 		this.isLoading = true;
 		this.error = null;
 		this.errorCode = null;
-		this.resetMailState();
+		// In add mode the current account stays live until the new sign-in succeeds.
+		if (!add) this.resetMailState();
 
 		try {
 			const expectedState = sessionStorage.getItem('oauth_state');
@@ -462,7 +486,8 @@ class AuthStore {
 					codeVerifier: hasSessionFlow ? codeVerifier : undefined,
 					redirectUri,
 					rememberMe: hasSessionFlow ? rememberMe : undefined,
-					state: state ?? undefined
+					state: state ?? undefined,
+					mode: add ? 'add' : undefined
 				})
 			});
 
@@ -472,7 +497,19 @@ class AuthStore {
 				const code = payload.code ?? classifyJmapError(new Error(payload.error ?? ''));
 				this.errorCode = code;
 				this.error = payload.error ?? loginErrorMessage(code);
-				await goto('/login');
+				await goto(add ? '/login?mode=add' : '/login');
+				return;
+			}
+
+			if (payload.username) {
+				saveRememberedLogin(payload.username, rememberMe);
+			}
+
+			if (add) {
+				// Appended + made active server-side; switch the mail layer to it.
+				await this.rebuildActiveAccount();
+				toast.show(`Added ${this.displayName ?? this.username}`, 'success');
+				await goto(payload.redirectTo ?? redirectTo ?? settings.preferredMailHref());
 				return;
 			}
 
@@ -488,9 +525,6 @@ class AuthStore {
 			this.identities = payload.identities ?? [];
 			this.isAuthenticated = true;
 			settings.setUser(payload.username);
-			if (payload.username) {
-				saveRememberedLogin(payload.username, rememberMe);
-			}
 			await settings.syncFromAccount();
 			this.startBackgroundSync(client, payload.username, payload.displayName);
 			await this.refreshAccounts();
@@ -501,10 +535,13 @@ class AuthStore {
 			const code = classifyJmapError(error);
 			this.errorCode = code;
 			this.error = error instanceof Error ? error.message : 'Passkey sign-in failed';
-			this.client?.disconnect();
-			this.client = null;
-			this.isAuthenticated = false;
-			await goto('/login');
+			// Don't tear down the current account when an add attempt fails.
+			if (!add) {
+				this.client?.disconnect();
+				this.client = null;
+				this.isAuthenticated = false;
+			}
+			await goto(add ? '/login?mode=add' : '/login');
 		} finally {
 			this.isLoading = false;
 		}

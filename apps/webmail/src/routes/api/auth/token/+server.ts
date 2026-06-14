@@ -28,6 +28,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		redirectUri?: string;
 		rememberMe?: boolean;
 		state?: string;
+		mode?: OauthFlowMode;
 	};
 	try {
 		body = await request.json();
@@ -47,6 +48,8 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		mode = cookieFlow.mode;
 		clearOauthFlowCookies(cookies);
 	}
+	// In-app passkey "add" has no /login/start cookie flow — honour an explicit body mode.
+	if (body.mode === 'add') mode = 'add';
 
 	if (!code || !codeVerifier || !redirectUri) {
 		return json({ error: 'code, codeVerifier, and redirectUri are required' }, { status: 400 });
