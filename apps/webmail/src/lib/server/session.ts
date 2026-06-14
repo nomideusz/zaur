@@ -3,15 +3,22 @@ import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Cookies } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
+import {
+	accountKey,
+	bareAccount,
+	dropAccount,
+	getActiveAccount,
+	isSession,
+	upsertAccount,
+	withAccountTokens,
+	withActiveAccount,
+	wrapAccount,
+	type Session,
+	type SessionData
+} from './session-model';
 
-export interface SessionData {
-	serverUrl: string;
-	username: string;
-	password?: string;
-	accessToken?: string;
-	refreshToken?: string;
-	id?: string;
-}
+export type { SessionData, AccountSession, Session } from './session-model';
+export { accountKey, getActiveAccount, getAccount, listAccounts } from './session-model';
 
 export const COOKIE_NAME = 'zaur_session';
 const ALGO = 'aes-256-gcm';
@@ -32,6 +39,10 @@ interface StoredSessionRecord {
 }
 
 type SessionStore = Record<string, StoredSessionRecord>;
+
+function newSessionId(): string {
+	return randomBytes(32).toString('base64url');
+}
 
 function getKey(secret: string): Buffer {
 	return createHash('sha256').update(secret).digest();
@@ -89,30 +100,55 @@ function pruneExpiredSessions(store: SessionStore): boolean {
 	return pruned;
 }
 
-function createSessionRecord(data: SessionData, options?: { remember?: boolean; secret?: string }): string {
+export function sealSession(data: unknown, secret?: string): string {
+	const key = getKey(requireSecret(secret ?? env.SESSION_SECRET));
+	const iv = randomBytes(IV_LEN);
+	const cipher = createCipheriv(ALGO, key, iv);
+	const plaintext = JSON.stringify(data);
+	const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
+	const tag = cipher.getAuthTag();
+	return Buffer.concat([iv, tag, encrypted]).toString('base64url');
+}
+
+export function unsealSession(token: string, secret?: string): unknown {
+	try {
+		const key = getKey(requireSecret(secret ?? env.SESSION_SECRET));
+		const buf = Buffer.from(token, 'base64url');
+		const iv = buf.subarray(0, IV_LEN);
+		const tag = buf.subarray(IV_LEN, IV_LEN + TAG_LEN);
+		const encrypted = buf.subarray(IV_LEN + TAG_LEN);
+		const decipher = createDecipheriv(ALGO, key, iv);
+		decipher.setAuthTag(tag);
+		const plaintext = Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
+		return JSON.parse(plaintext);
+	} catch {
+		return null;
+	}
+}
+
+/* ── Store records (hold a multi-account Session) ─────────────────────────── */
+
+function persistSession(session: Session, secret?: string): void {
 	const store = readSessionStore();
 	pruneExpiredSessions(store);
 
-	const id = randomBytes(32).toString('base64url');
-	data.id = id;
-	const now = new Date();
-	const record: StoredSessionRecord = {
-		id,
-		username: data.username,
-		sealedData: sealSession(data, options?.secret),
-		createdAt: now.toISOString(),
-		updatedAt: now.toISOString(),
-		...(options?.remember
-			? { expiresAt: new Date(now.getTime() + SESSION_RECORD_MAX_AGE_MS).toISOString() }
+	const existing = store[session.id];
+	const now = new Date().toISOString();
+	store[session.id] = {
+		id: session.id,
+		username: getActiveAccount(session)?.username ?? session.accounts[0]?.username ?? '',
+		sealedData: sealSession(session, secret),
+		createdAt: existing?.createdAt ?? now,
+		updatedAt: now,
+		...(session.remember
+			? { expiresAt: new Date(Date.now() + SESSION_RECORD_MAX_AGE_MS).toISOString() }
 			: {})
 	};
-
-	store[id] = record;
 	writeSessionStore(store);
-	return id;
 }
 
-export function readSessionById(id: string | undefined, secret?: string): SessionData | null {
+/** Read a stored session by id, upgrading a legacy single-account record in place. */
+function readSessionRecord(id: string | undefined, secret?: string): Session | null {
 	if (!id) return null;
 
 	const store = readSessionStore();
@@ -132,10 +168,20 @@ export function readSessionById(id: string | undefined, secret?: string): Sessio
 		return null;
 	}
 
+	if (isSession(data)) {
+		record.updatedAt = new Date().toISOString();
+		store[id] = record;
+		writeSessionStore(store);
+		return data;
+	}
+
+	// Legacy: record held a single SessionData → upgrade to multi-account in place.
+	const upgraded = wrapAccount(data as SessionData, id, !!record.expiresAt);
+	record.sealedData = sealSession(upgraded, secret);
 	record.updatedAt = new Date().toISOString();
 	store[id] = record;
 	writeSessionStore(store);
-	return data;
+	return upgraded;
 }
 
 function removeSessionRecord(id: string | undefined): void {
@@ -146,96 +192,177 @@ function removeSessionRecord(id: string | undefined): void {
 	writeSessionStore(store);
 }
 
-export function sealSession(data: SessionData, secret?: string): string {
-	const key = getKey(requireSecret(secret ?? env.SESSION_SECRET));
-	const iv = randomBytes(IV_LEN);
-	const cipher = createCipheriv(ALGO, key, iv);
-	const plaintext = JSON.stringify(data);
-	const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
-	const tag = cipher.getAuthTag();
-	return Buffer.concat([iv, tag, encrypted]).toString('base64url');
-}
+/* ── Reading the session ──────────────────────────────────────────────────── */
 
-export function unsealSession(token: string, secret?: string): SessionData | null {
-	try {
-		const key = getKey(requireSecret(secret ?? env.SESSION_SECRET));
-		const buf = Buffer.from(token, 'base64url');
-		const iv = buf.subarray(0, IV_LEN);
-		const tag = buf.subarray(IV_LEN, IV_LEN + TAG_LEN);
-		const encrypted = buf.subarray(IV_LEN + TAG_LEN);
-		const decipher = createDecipheriv(ALGO, key, iv);
-		decipher.setAuthTag(tag);
-		const plaintext = Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
-		return JSON.parse(plaintext) as SessionData;
-	} catch {
-		return null;
-	}
-}
-
-export function readSession(cookies: Cookies, secret?: string): SessionData | null {
+/**
+ * Resolve the full multi-account session from the cookie, transparently
+ * upgrading the two legacy cookie formats (a sealed single-account blob, or an
+ * id pointing at a legacy single-account record) to the id-only cookie + the
+ * multi-account store format.
+ */
+export function readSessionFull(cookies: Cookies, secret?: string): Session | null {
 	const token = cookies.get(COOKIE_NAME);
 	if (!token) return null;
 
+	// New format: cookie is the session id.
+	const byId = readSessionRecord(token, secret);
+	if (byId) return byId;
+
+	// Legacy format: cookie is a sealed blob.
 	const direct = unsealSession(token, secret);
-	if (direct) {
-		if (direct.id) readSessionById(direct.id, secret);
+	if (isSession(direct)) {
+		persistSession(direct, secret);
+		syncIdCookie(cookies, direct.id, { remember: direct.remember });
 		return direct;
 	}
-
-	const legacy = readSessionById(token, secret);
-	if (legacy) {
-		syncSessionCookie(cookies, legacy, { remember: true });
-		return legacy;
+	if (direct && typeof direct === 'object' && 'username' in direct) {
+		const legacy = direct as SessionData;
+		// The old cookie sealed the account *and* carried its store-record id, where the
+		// same data lives with the correct remember-state. Upgrade via that record so a
+		// non-remembered session is not silently promoted to a 30-day one.
+		if (legacy.id) {
+			const viaRecord = readSessionRecord(legacy.id, secret);
+			if (viaRecord) {
+				syncIdCookie(cookies, viaRecord.id, { remember: viaRecord.remember });
+				return viaRecord;
+			}
+		}
+		// No backing record (very old / edge case): create one, defaulting to remembered.
+		const id = legacy.id ?? newSessionId();
+		const upgraded = wrapAccount(legacy, id, true);
+		persistSession(upgraded, secret);
+		syncIdCookie(cookies, id, { remember: true });
+		return upgraded;
 	}
 
 	return null;
 }
 
-export function syncSessionCookie(
+/**
+ * The active account as a single {@link SessionData}, carrying the session id so
+ * existing callers (proxy endpoints, settings, push) keep working unchanged.
+ */
+export function readSession(cookies: Cookies, secret?: string): SessionData | null {
+	const session = readSessionFull(cookies, secret);
+	if (!session) return null;
+	const active = getActiveAccount(session);
+	if (!active) return null;
+	return { ...active, id: session.id };
+}
+
+/** The active account of a session looked up by id (no cookie needed; used by push-watcher). */
+export function readSessionById(id: string | undefined, secret?: string): SessionData | null {
+	const session = readSessionRecord(id, secret);
+	if (!session) return null;
+	const active = getActiveAccount(session);
+	return active ? { ...active, id: session.id } : null;
+}
+
+/* ── Mutations ────────────────────────────────────────────────────────────── */
+
+/** Create a fresh single-account session, replacing any existing one. */
+export function writeSession(
 	cookies: Cookies,
 	data: SessionData,
 	options?: { remember?: boolean; secret?: string }
 ): void {
+	const id = data.id ?? newSessionId();
+	const session = wrapAccount(data, id, options?.remember);
+	persistSession(session, options?.secret);
+	syncIdCookie(cookies, id, options);
+}
+
+/**
+ * Add (or replace, keyed by email) an account in the current session and make it
+ * active. Creates the session if none exists. Returns the updated session.
+ */
+export function addAccount(
+	cookies: Cookies,
+	data: SessionData,
+	options?: { remember?: boolean; secret?: string }
+): Session {
+	const existing = readSessionFull(cookies, options?.secret);
+	const session = existing
+		? upsertAccount(existing, data, options?.remember)
+		: wrapAccount(data, newSessionId(), options?.remember);
+	persistSession(session, options?.secret);
+	syncIdCookie(cookies, session.id, { remember: session.remember });
+	return session;
+}
+
+/** Remove an account; clears the whole session when the last one goes. */
+export function removeAccount(cookies: Cookies, key: string, secret?: string): Session | null {
+	const session = readSessionFull(cookies, secret);
+	if (!session) return null;
+	const next = dropAccount(session, key);
+	if (!next) {
+		clearSession(cookies);
+		return null;
+	}
+	persistSession(next, secret);
+	return next;
+}
+
+/** Switch the active account (no-op if the key is unknown). */
+export function setActiveAccount(cookies: Cookies, key: string, secret?: string): Session | null {
+	const session = readSessionFull(cookies, secret);
+	if (!session) return null;
+	const next = withActiveAccount(session, key);
+	persistSession(next, secret);
+	return next;
+}
+
+/** Refresh-token write-back for a single account. Updates only the matching account. */
+export function updateAccountTokens(id: string, data: SessionData, secret?: string): void {
+	const session = readSessionRecord(id, secret);
+	if (!session) return;
+	persistSession(withAccountTokens(session, data), secret);
+}
+
+/** @deprecated back-compat alias — use {@link updateAccountTokens}. */
+export function updateSessionData(id: string, data: SessionData, secret?: string): void {
+	updateAccountTokens(id, data, secret);
+}
+
+/* ── Cookie ───────────────────────────────────────────────────────────────── */
+
+function syncIdCookie(cookies: Cookies, id: string, options?: { remember?: boolean }): void {
 	const cookieOptions: Parameters<Cookies['set']>[2] = {
 		path: '/',
 		httpOnly: true,
 		sameSite: 'lax',
 		secure: process.env.NODE_ENV === 'production'
 	};
-
 	if (options?.remember) {
 		cookieOptions.maxAge = REMEMBERED_SESSION_MAX_AGE_SEC;
 	}
-
-	cookies.set(COOKIE_NAME, sealSession(data, options?.secret), cookieOptions);
+	cookies.set(COOKIE_NAME, id, cookieOptions);
 }
 
-export function writeSession(
+/**
+ * Back-compat: previously re-sealed the cookie on token refresh. The cookie now
+ * holds only the session id, so this just re-asserts it (id + maxAge).
+ */
+export function syncSessionCookie(
 	cookies: Cookies,
 	data: SessionData,
 	options?: { remember?: boolean; secret?: string }
 ): void {
-	createSessionRecord(data, options);
-	syncSessionCookie(cookies, data, options);
-}
-
-export function updateSessionData(id: string, data: SessionData, secret?: string): void {
-	const store = readSessionStore();
-	const record = store[id];
-	if (!record) return;
-
-	data.id = id;
-	record.sealedData = sealSession(data, secret);
-	record.updatedAt = new Date().toISOString();
-	store[id] = record;
-	writeSessionStore(store);
+	if (!data.id) return;
+	syncIdCookie(cookies, data.id, options);
 }
 
 export function clearSession(cookies: Cookies): void {
 	const token = cookies.get(COOKIE_NAME);
 	if (token) {
-		const data = unsealSession(token) ?? readSessionById(token);
-		removeSessionRecord(data?.id ?? token);
+		// token is normally the session id; tolerate a legacy sealed-blob cookie too.
+		if (readSessionStore()[token]) {
+			removeSessionRecord(token);
+		} else {
+			const data = unsealSession(token);
+			const id = isSession(data) ? data.id : (data as SessionData | null)?.id;
+			removeSessionRecord(id ?? token);
+		}
 	}
 	cookies.delete(COOKIE_NAME, { path: '/' });
 }
