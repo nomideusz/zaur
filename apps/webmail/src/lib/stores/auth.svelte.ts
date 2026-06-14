@@ -15,12 +15,22 @@ import { settings } from '$lib/stores/settings.svelte';
 import { toast } from '$lib/stores/toast.svelte';
 import { saveRememberedLogin } from '$lib/auth/remember-login';
 
+export interface AccountInfo {
+	key: string;
+	username: string;
+	displayName: string;
+	isActive: boolean;
+	identities?: JMAPIdentity[];
+}
+
 interface SessionResponse {
 	authenticated: boolean;
 	serverUrl?: string;
 	username?: string;
 	displayName?: string;
 	identities?: JMAPIdentity[];
+	accounts?: AccountInfo[];
+	activeKey?: string | null;
 }
 
 interface LoginResponse {
@@ -43,6 +53,9 @@ class AuthStore {
 	username = $state<string | null>(null);
 	displayName = $state<string | null>(null);
 	identities = $state<JMAPIdentity[]>([]);
+	/** All accounts signed into this session; the active one drives the mail view. */
+	accounts = $state<AccountInfo[]>([]);
+	activeKey = $state<string | null>(null);
 	client = $state<JMAPClient | null>(null);
 	oauthConfig = $state<{
 		enabled: boolean;
@@ -88,6 +101,73 @@ class AuthStore {
 		}
 	}
 
+	/** Pull the multi-account list (and active-account fields) from the session probe. */
+	private async refreshAccounts(): Promise<void> {
+		try {
+			const res = await fetch('/api/auth/session');
+			if (!res.ok) return;
+			const payload = (await res.json()) as SessionResponse;
+			if (!payload.authenticated) return;
+			this.applyAccounts(payload);
+		} catch {
+			// Best-effort; keep the current list on failure.
+		}
+	}
+
+	private applyAccounts(payload: SessionResponse): void {
+		this.accounts = payload.accounts ?? [];
+		this.activeKey = payload.activeKey ?? null;
+		if (payload.serverUrl) this.serverUrl = payload.serverUrl;
+		if (payload.username) this.username = payload.username;
+		this.displayName = payload.displayName ?? payload.username ?? this.displayName;
+		this.identities = payload.identities ?? this.identities;
+	}
+
+	/** Switch the active mailbox: flip server-side, then rebuild the mail layer for it. */
+	async switchAccount(key: string): Promise<void> {
+		if (!browser || key === this.activeKey) return;
+		this.isLoading = true;
+		this.error = null;
+		try {
+			const res = await fetch('/api/auth/switch', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ key })
+			});
+			if (!res.ok) {
+				toast.show('Could not switch account', 'error');
+				return;
+			}
+
+			this.resetMailState();
+			const client = JMAPClient.createProxy();
+			await client.connect();
+			await this.openOfflineLayer(client);
+			await this.bootstrapMail(client);
+
+			this.client = client;
+			await this.refreshAccounts();
+			this.isAuthenticated = true;
+			settings.setUser(this.username);
+			await settings.syncFromAccount();
+			this.startBackgroundSync(client, this.username ?? '', this.displayName ?? undefined);
+
+			toast.show(`Switched to ${this.displayName ?? this.username}`, 'success');
+			await goto(settings.preferredMailHref());
+		} catch (error) {
+			console.error('Switch account failed:', error);
+			toast.show('Could not switch account', 'error');
+		} finally {
+			this.isLoading = false;
+		}
+	}
+
+	/** Start the add-account flow — a fresh Logto sign-in that appends a new mailbox. */
+	addAccountFlow(): void {
+		if (!browser) return;
+		window.location.href = '/login/start?mode=add';
+	}
+
 	async login(email: string, password: string, totp?: string, rememberMe = false, redirectTo?: string) {
 		this.isLoading = true;
 		this.error = null;
@@ -127,6 +207,7 @@ class AuthStore {
 			saveRememberedLogin(email, rememberMe);
 			await settings.syncFromAccount();
 			this.startBackgroundSync(client, payload.username, payload.displayName);
+			await this.refreshAccounts();
 
 			await goto(redirectTo ?? settings.preferredMailHref());
 		} catch (error) {
@@ -361,6 +442,7 @@ class AuthStore {
 			}
 			await settings.syncFromAccount();
 			this.startBackgroundSync(client, payload.username, payload.displayName);
+			await this.refreshAccounts();
 
 			await goto(payload.redirectTo ?? redirectTo ?? settings.preferredMailHref());
 		} catch (error) {
@@ -393,6 +475,8 @@ class AuthStore {
 			this.username = payload.username;
 			this.displayName = payload.displayName ?? payload.username;
 			this.identities = payload.identities ?? [];
+			this.accounts = payload.accounts ?? [];
+			this.activeKey = payload.activeKey ?? null;
 			this.isAuthenticated = true;
 			settings.setUser(payload.username);
 			await settings.syncFromAccount();
@@ -441,6 +525,8 @@ class AuthStore {
 		this.username = null;
 		this.displayName = null;
 		this.identities = [];
+		this.accounts = [];
+		this.activeKey = null;
 		this.isAuthenticated = false;
 		this.error = null;
 		this.errorCode = null;
@@ -473,6 +559,8 @@ class AuthStore {
 		this.username = null;
 		this.displayName = null;
 		this.identities = [];
+		this.accounts = [];
+		this.activeKey = null;
 		this.isAuthenticated = false;
 		settings.setUser(null);
 		mail.reset();

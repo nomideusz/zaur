@@ -6,6 +6,7 @@
 	import LogOut from '$lib/components/icons/LogOut.svelte';
 	import Settings from '$lib/components/icons/Settings.svelte';
 	import User from '$lib/components/icons/User.svelte';
+	import UserPlus from '$lib/components/icons/UserPlus.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -23,6 +24,8 @@
 		email: auth.username ?? ''
 	});
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
+	/** Other mailboxes the user can switch to (the active one is shown in the header). */
+	const otherAccounts = $derived(auth.accounts.filter((account) => !account.isActive));
 </script>
 
 <DropdownMenu.Root bind:open>
@@ -63,7 +66,40 @@
 				<p class="mt-0.5 truncate text-xs text-fg-muted">{user.email}</p>
 			</div>
 
+			{#if otherAccounts.length}
+				<div class="flex flex-col gap-1 border-b border-border p-1">
+					{#each otherAccounts as account (account.key)}
+						<DropdownMenu.Item
+							class="z-overflow-menu-item"
+							textValue={account.username}
+							onSelect={() => auth.switchAccount(account.key)}
+						>
+							<span class="flex size-5 shrink-0 items-center justify-center">
+								<User class="size-4 text-fg-muted" aria-hidden="true" />
+							</span>
+							<span class="flex min-w-0 flex-col text-left">
+								<span class="truncate text-sm text-fg">{account.displayName}</span>
+								{#if account.displayName.trim().toLowerCase() !== account.username.trim().toLowerCase()}
+									<span class="truncate text-xs text-fg-muted">{account.username}</span>
+								{/if}
+							</span>
+						</DropdownMenu.Item>
+					{/each}
+				</div>
+			{/if}
+
 			<div class="flex flex-col gap-1 p-1">
+				<DropdownMenu.Item
+					class="z-overflow-menu-item"
+					textValue="Add account"
+					onSelect={() => auth.addAccountFlow()}
+				>
+					<span class="flex size-5 shrink-0 items-center justify-center">
+						<UserPlus class="size-4 text-fg-muted" aria-hidden="true" />
+					</span>
+					<span class="truncate">Add account</span>
+				</DropdownMenu.Item>
+
 				<DropdownMenu.Item
 					class={cn('z-overflow-menu-item', onSettingsRoute && 'z-surface-active')}
 					textValue="Settings"
