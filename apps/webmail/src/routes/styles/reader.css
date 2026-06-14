@@ -1,5 +1,17 @@
 /* Reader chrome, typography, and HTML email body. */
 
+	/* Edge swipe-back — snap the peek back after a cancelled gesture. During the
+	   drag itself no transition runs, so the reader tracks the finger. */
+	.z-edge-releasing {
+		transition: transform var(--z-motion-base) var(--z-ease-out);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.z-edge-releasing {
+			transition: none;
+		}
+	}
+
 	/* Keep subject row height stable when reply/actions hide (e.g. bulk select). */
 	.z-reader-header {
 		align-items: center;

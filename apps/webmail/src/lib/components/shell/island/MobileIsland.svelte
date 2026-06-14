@@ -37,8 +37,9 @@
 		return 'app-nav';
 	});
 
-	/* Action modes must stay usable — bulk never scroll-shrinks. */
-	const collapsible = $derived(mode !== 'bulk');
+	/* Action modes must stay usable — bulk and reader never scroll-shrink, so
+	   their back/actions (the only such affordance on mobile) stay one tap away. */
+	const collapsible = $derived(mode !== 'bulk' && mode !== 'reader');
 	const collapsed = $derived(mobileIsland.collapsed && collapsible);
 	/* Full-row modes; nav pills hug their content. */
 	const wide = $derived(mode !== 'app-nav' && !collapsed);
