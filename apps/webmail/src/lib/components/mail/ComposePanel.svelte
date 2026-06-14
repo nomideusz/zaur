@@ -31,8 +31,6 @@
 	let bodyInput = $state<HTMLTextAreaElement | null>(null);
 	let toInput = $state<HTMLTextAreaElement | null>(null);
 
-	const senderName = $derived(settings.resolvedDisplayName(auth.displayName ?? auth.username));
-
 	// From picker: only shown when the account has more than one send-as identity.
 	const showFromPicker = $derived(auth.identities.length > 1);
 	const fromAddress = $derived.by(() => {
@@ -45,7 +43,12 @@
 			(identity) => identity.email?.trim().toLowerCase() === fromAddress.trim().toLowerCase()
 		)
 	);
-	const fromName = $derived(fromIdentity?.name?.trim() || senderName);
+	// The user's explicitly-set Display name (settings) wins for the outgoing From; the
+	// server identity name is only a fallback. Without this, a freshly-provisioned
+	// account whose identity name is just its email would send the email as the name.
+	const fromName = $derived(
+		settings.resolvedDisplayName(fromIdentity?.name?.trim() || auth.displayName || auth.username)
+	);
 	const fromLabel = $derived(
 		fromIdentity?.name?.trim() &&
 			fromIdentity.name.trim().toLowerCase() !== fromAddress.trim().toLowerCase()
