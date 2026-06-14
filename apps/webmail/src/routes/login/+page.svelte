@@ -21,7 +21,9 @@
 		$page.url.searchParams.get('welcome') === '1' || urlEmail.length > 0
 	);
 	const passkeyReady = $derived($page.url.searchParams.get('passkey_ready') === '1');
-	const isAdd = $derived($page.url.searchParams.get('mode') === 'add');
+	// Prefer the server-load value (bound to the navigated route, race-free); fall back to
+	// the live URL param for safety. Either being true keeps us in add mode.
+	const isAdd = $derived(data.isAdd === true || $page.url.searchParams.get('mode') === 'add');
 
 	let email = $state(remembered.email);
 	let password = $state('');
