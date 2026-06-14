@@ -7,19 +7,21 @@ export const IMPORTANT_MARKER_TEXT = '#1a1d1f';
  */
 export function markerHighlightColor(hue: number): string {
 	const h = ((hue % 360) + 360) % 360;
-	let saturation = 56;
-	let lightness = 85;
+	let saturation = 80;
+	let lightness = 80;
 
 	if (h >= 245 && h <= 295) {
-		saturation = 46;
-		lightness = 88;
+		// Purple/violet stack darker — lift lightness, ease saturation a touch.
+		saturation = 68;
+		lightness = 84;
 	} else if (h >= 200 && h < 245) {
-		saturation = 50;
-		lightness = 87;
+		saturation = 74;
+		lightness = 82;
 	} else if (h >= 45 && h <= 75) {
-		saturation = 52;
-		lightness = 86;
+		// Yellow/lime turn muddy when too dark — keep them bright.
+		saturation = 84;
+		lightness = 82;
 	}
 
-	return `hsla(${h}, ${saturation}%, ${lightness}%, 0.78)`;
+	return `hsla(${h}, ${saturation}%, ${lightness}%, 0.9)`;
 }

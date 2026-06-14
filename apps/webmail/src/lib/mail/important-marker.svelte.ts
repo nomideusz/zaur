@@ -5,9 +5,10 @@ import { markerHighlightColor } from '$lib/mail/important-marker-colors';
 const STORAGE_KEY = 'zaur:important-marker-picks';
 const LEGACY_STORAGE_KEY = 'zaur:important-rainbow-phases';
 const SHOWN_STORAGE_KEY = 'zaur:important-marker-shown';
-/** Hue step interval while hover-sampling — slow enough to browse, not strobe. */
-const PICK_CYCLE_MS = 420;
-const PICK_HUE_STEP = 4;
+/** Hue step interval while sampling — paired with a CSS stroke transition so
+ *  the steps read as a smooth, continuous sweep through the full spectrum. */
+const PICK_CYCLE_MS = 200;
+const PICK_HUE_STEP = 16;
 
 export type ImportantIntroSurface = 'list' | 'reader';
 
@@ -26,8 +27,9 @@ export function shouldCommitImportantMarkerPick(sampleStartedAt: number): boolea
 
 type MarkerPick = { hueShift: number };
 
+/** Hue shift wraps the full colour wheel so holding cycles through every hue. */
 function clampHueShift(shift: number): number {
-	return Math.max(0, Math.min(60, Math.round(shift * 10) / 10));
+	return ((Math.round(shift) % 360) + 360) % 360;
 }
 
 function hashMessageId(id: string): number {
@@ -236,7 +238,7 @@ class ImportantMarkerStore {
 		this.pickingShift = this.pickFor(messageId).hueShift;
 
 		this.pickInterval = setInterval(() => {
-			this.pickingShift = clampHueShift(this.pickingShift >= 56 ? 0 : this.pickingShift + PICK_HUE_STEP);
+			this.pickingShift = clampHueShift(this.pickingShift + PICK_HUE_STEP);
 			this.hoverSamplePick.set(messageId, { hueShift: this.pickingShift });
 		}, PICK_CYCLE_MS);
 	}
@@ -266,7 +268,7 @@ class ImportantMarkerStore {
 			this.pickInterval = null;
 		}
 		this.pickingMessageId = messageId;
-		this.pickingShift = clampHueShift(((shift % 60) + 60) % 60);
+		this.pickingShift = clampHueShift(shift);
 		this.hoverSamplePick.set(messageId, { hueShift: this.pickingShift });
 	}
 
@@ -291,8 +293,7 @@ class ImportantMarkerStore {
 
 	cyclePhase(messageId: string) {
 		const current = this.pickFor(messageId);
-		const nextShift = current.hueShift >= 48 ? 0 : clampHueShift(current.hueShift + 12);
-		this.pickPosition(messageId, { hueShift: nextShift });
+		this.pickPosition(messageId, { hueShift: clampHueShift(current.hueShift + 40) });
 	}
 
 	pickFromElement(root: HTMLElement, messageId: string) {

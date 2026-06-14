@@ -25,15 +25,21 @@
 				</div>
 
 				<div class="flex shrink-0 flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-					<AlertDialog.Cancel class={cn(confirmBtn, 'text-fg-muted hover:bg-surface-sunken hover:text-fg focus-visible:outline-accent')}>
+					<AlertDialog.Cancel
+						class={cn(
+							confirmBtn,
+							'border border-border bg-surface text-fg hover:bg-surface-sunken focus-visible:outline-accent'
+						)}
+					>
 						{confirm.request.cancelLabel}
 					</AlertDialog.Cancel>
 					<AlertDialog.Action
 						class={cn(
 							confirmBtn,
+							'shadow-sm',
 							confirm.request.tone === 'danger'
-								? 'text-danger hover:bg-danger/10 focus-visible:outline-danger'
-								: 'bg-accent text-accent-fg shadow-sm hover:bg-accent-hover focus-visible:outline-accent'
+								? 'bg-danger text-white hover:bg-danger/90 focus-visible:outline-danger'
+								: 'bg-accent text-accent-fg hover:bg-accent-hover focus-visible:outline-accent'
 						)}
 						onclick={() => confirm.confirm()}
 					>

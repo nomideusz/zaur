@@ -77,7 +77,7 @@
 			<div class="flex shrink-0 flex-col-reverse gap-2 sm:flex-row sm:justify-end">
 				<button
 					type="button"
-					class={cn(actionBtn, 'text-fg-muted hover:bg-surface-sunken hover:text-fg focus-visible:outline-accent')}
+					class={cn(actionBtn, 'border border-border bg-surface text-fg hover:bg-surface-sunken focus-visible:outline-accent')}
 					onclick={() => finish(false)}
 				>
 					Skip

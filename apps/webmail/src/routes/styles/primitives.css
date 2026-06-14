@@ -245,6 +245,16 @@
 		}
 	}
 
+	/* Highlight hue changes (hold-to-pick / scrub) blend smoothly instead of
+	   snapping between rough-notation re-strokes. */
+	.rough-annotation path {
+		transition: stroke var(--z-motion-base) var(--z-ease-standard);
+	}
+
+	html.z-reduce-motion .rough-annotation path {
+		transition: none;
+	}
+
 	.z-btn-primary {
 		@apply inline-flex cursor-pointer items-center justify-center gap-2 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-fg transition-all hover:bg-accent-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent active:scale-[0.97];
 		box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);

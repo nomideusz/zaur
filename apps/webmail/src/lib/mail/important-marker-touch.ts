@@ -9,8 +9,8 @@ export const IMPORTANT_RAINBOW_TOUCH_HOLD_MS = IMPORTANT_MARKER_TOUCH_HOLD_MS;
 const PRE_ACTIVATION_CANCEL_PX = 10;
 /** After activation, a clearly vertical pull abandons the pick. */
 const VERTICAL_CANCEL_PX = 18;
-/** Scrub gearing — a comfortable thumb sweep (~170px) covers the full 60° palette. */
-const SCRUB_DEG_PER_PX = 0.35;
+/** Scrub gearing — a comfortable thumb sweep (~300px) covers the full colour wheel. */
+const SCRUB_DEG_PER_PX = 1.2;
 /** Horizontal travel that switches from hold-to-cycle to drag-to-scrub. */
 const SCRUB_START_PX = 6;
 
