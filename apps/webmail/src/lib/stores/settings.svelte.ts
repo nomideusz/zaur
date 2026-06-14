@@ -125,8 +125,19 @@ function readShowCcBccInCompose(): boolean {
 	return readBool(STORAGE.showCcBccInCompose, true);
 }
 
+function prefersReducedMotion(): boolean {
+	if (!browser) return false;
+	return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/** Whether the user has made an explicit in-app choice (vs. inheriting the OS). */
+function hasExplicitReduceMotion(): boolean {
+	return browser && localStorage.getItem(STORAGE.reduceMotion) !== null;
+}
+
 function readReduceMotion(): boolean {
-	return readBool(STORAGE.reduceMotion, false);
+	// No explicit in-app choice yet → honour the OS "reduce motion" setting.
+	return readBool(STORAGE.reduceMotion, prefersReducedMotion());
 }
 
 function readRememberLastMailbox(): boolean {
@@ -269,6 +280,7 @@ class SettingsStore {
 	showComposeContactSuggestions = $state(readShowComposeContactSuggestions());
 	showCcBccInCompose = $state(readShowCcBccInCompose());
 	reduceMotion = $state(readReduceMotion());
+	private reduceMotionWatcherAttached = false;
 	rememberLastMailbox = $state(readRememberLastMailbox());
 	enableKeyboardShortcuts = $state(readEnableKeyboardShortcuts());
 	confirmBeforeDelete = $state(readConfirmBeforeDelete());
@@ -336,9 +348,25 @@ class SettingsStore {
 		this.calendarMaxEventsPerDay = readCalendarMaxEventsPerDay();
 
 		this.applyReduceMotion();
+		this.watchReducedMotionPreference();
 		this.applyReaderTextSize(this.readerTextSize);
 		this.applyReadingTypeface(this.readingTypeface);
 		importantMarker.reload();
+	}
+
+	/**
+	 * Track the OS "reduce motion" setting while the user hasn't made an explicit
+	 * in-app choice — an explicit toggle writes to storage and takes over.
+	 */
+	private watchReducedMotionPreference() {
+		if (!browser || this.reduceMotionWatcherAttached) return;
+		this.reduceMotionWatcherAttached = true;
+		const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+		mq.addEventListener('change', (event) => {
+			if (hasExplicitReduceMotion()) return;
+			this.reduceMotion = event.matches;
+			this.applyReduceMotion();
+		});
 	}
 
 	setUser(email: string | null) {
