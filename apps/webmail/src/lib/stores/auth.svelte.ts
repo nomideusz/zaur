@@ -9,8 +9,6 @@ import type { JMAPIdentity } from '$lib/jmap/types';
 
 /** localStorage map of account key (email) → JMAP accountId, for wiping inactive DBs on sign-out. */
 const ACCOUNT_DB_MAP_KEY = 'zaur:account-dbs';
-/** How often to refresh per-account unread counts for the switcher/app badge. */
-const UNREAD_POLL_MS = 60_000;
 import { pushListener } from '$lib/jmap/push-listener';
 import { mail } from '$lib/stores/mail.svelte';
 import { compose } from '$lib/stores/compose.svelte';
@@ -68,7 +66,6 @@ class AuthStore {
 	client = $state<JMAPClient | null>(null);
 	/** Re-entrancy guard while isolating a dead account in handleUnauthorized(). */
 	private handlingUnauthorized = false;
-	private unreadTimer: ReturnType<typeof setInterval> | null = null;
 	oauthConfig = $state<{
 		enabled: boolean;
 		passwordFallback?: boolean;
@@ -812,7 +809,6 @@ class AuthStore {
 		void import('$lib/sync/outbox-processor').then(({ outboxProcessor }) => {
 			outboxProcessor.start(client, fromEmail, fromName);
 		});
-		this.startUnreadPolling();
 	}
 
 	private stopBackgroundSync() {
@@ -821,42 +817,22 @@ class AuthStore {
 		void import('$lib/sync/outbox-processor').then(({ outboxProcessor }) => {
 			outboxProcessor.stop();
 		});
-		this.stopUnreadPolling();
 	}
 
-	/** Refresh per-account inbox unread counts (switcher badges + app badge total). */
-	async refreshUnread(): Promise<void> {
-		if (!browser || !this.isAuthenticated) return;
-		try {
-			const res = await fetch('/api/auth/unread');
-			if (!res.ok) return;
-			const payload = (await res.json()) as { unread?: Record<string, number> };
-			if (!payload.unread) return;
-			this.unread = payload.unread;
-			let inactive = 0;
-			for (const [key, count] of Object.entries(payload.unread)) {
-				if (key !== this.activeKey) inactive += count;
-			}
-			setInactiveUnread(inactive);
-			const { applyUnreadPrefixToDocument } = await import('$lib/utils/document-title');
-			applyUnreadPrefixToDocument();
-		} catch {
-			// Best-effort; keep the last counts on failure.
+	/**
+	 * Sink for per-account inbox unread counts, fed by the `unreadCounts` live query
+	 * (subscribed in the app layout). Updates the switcher badges + app-badge total.
+	 */
+	setUnread(counts: Record<string, number>): void {
+		this.unread = counts;
+		let inactive = 0;
+		for (const [key, count] of Object.entries(counts)) {
+			if (key !== this.activeKey) inactive += count;
 		}
-	}
-
-	private startUnreadPolling() {
-		if (!browser) return;
-		this.stopUnreadPolling();
-		void this.refreshUnread();
-		this.unreadTimer = setInterval(() => void this.refreshUnread(), UNREAD_POLL_MS);
-	}
-
-	private stopUnreadPolling() {
-		if (this.unreadTimer) {
-			clearInterval(this.unreadTimer);
-			this.unreadTimer = null;
-		}
+		setInactiveUnread(inactive);
+		void import('$lib/utils/document-title').then(({ applyUnreadPrefixToDocument }) =>
+			applyUnreadPrefixToDocument()
+		);
 	}
 
 	/** Close the active account's local DB but keep its data (used when switching). */

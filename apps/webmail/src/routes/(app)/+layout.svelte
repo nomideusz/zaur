@@ -11,8 +11,16 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
+	import { unreadCounts } from '../unread.remote';
 
 	let { children } = $props();
+
+	// Live per-account unread counts (one streamed connection while the app is open) →
+	// mirrored into the auth store for the switcher badges and summed app badge.
+	const unread = unreadCounts();
+	$effect(() => {
+		if (unread.current) auth.setUnread(unread.current);
+	});
 
 	const pageScrollOnMain = false;
 	const pageScrollOverflowX = 'overflow-x-hidden';
