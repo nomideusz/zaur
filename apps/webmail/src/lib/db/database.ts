@@ -66,6 +66,10 @@ function sanitizeAccountId(value: string): string {
 	return value.replace(/[^a-zA-Z0-9_-]/g, '_').slice(0, 64);
 }
 
+function mailDatabaseName(id: string): string {
+	return `zaur-mail-${sanitizeAccountId(id)}`;
+}
+
 async function ensureCollections(database: RxDatabase): Promise<MailDatabase> {
 	const missing: Record<string, (typeof COLLECTIONS)[keyof typeof COLLECTIONS]> = {};
 
@@ -101,7 +105,7 @@ export async function initMailDatabase(nextAccountId: string): Promise<MailDatab
 
 	await closeMailDatabase();
 
-	const name = `zaur-mail-${sanitizeAccountId(nextAccountId)}`;
+	const name = mailDatabaseName(nextAccountId);
 	let database: RxDatabase | null = null;
 	try {
 		database = await createRxDatabase({
@@ -168,4 +172,23 @@ export async function removeMailDatabase(): Promise<void> {
 	db = null;
 	accountId = null;
 	await current.remove();
+}
+
+/**
+ * Delete a specific account's local database by its JMAP accountId, whether or
+ * not it is the one currently open. Lets sign-out wipe inactive accounts whose
+ * databases are not held open by this tab.
+ */
+export async function removeMailDatabaseById(targetAccountId: string): Promise<void> {
+	if (!browser) return;
+	if (db && accountId === targetAccountId) {
+		await removeMailDatabase();
+		return;
+	}
+	ensureRxdbPlugins();
+	try {
+		await removeRxDatabase(mailDatabaseName(targetAccountId), getRxStorageDexie());
+	} catch (err) {
+		console.warn('Failed to remove mail database for account', targetAccountId, err);
+	}
 }

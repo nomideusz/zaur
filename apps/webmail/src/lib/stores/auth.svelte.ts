@@ -3,8 +3,12 @@ import { goto } from '$app/navigation';
 import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
 import { appConfig } from '$lib/config';
 import { JMAPClient } from '$lib/jmap/client';
+import { normalizeEmail } from '$lib/jmap/account';
 import { classifyJmapError, loginErrorMessage, type LoginErrorCode } from '$lib/jmap/errors';
 import type { JMAPIdentity } from '$lib/jmap/types';
+
+/** localStorage map of account key (email) → JMAP accountId, for wiping inactive DBs on sign-out. */
+const ACCOUNT_DB_MAP_KEY = 'zaur:account-dbs';
 import { pushListener } from '$lib/jmap/push-listener';
 import { mail } from '$lib/stores/mail.svelte';
 import { compose } from '$lib/stores/compose.svelte';
@@ -187,9 +191,17 @@ class AuthStore {
 			if (wasActive) {
 				// Delete the signed-out account's local cache before bringing up the next one.
 				await this.wipeOfflineLayer();
+				this.forgetAccountDb(key);
 				await this.rebuildActiveAccount();
 				await goto(settings.preferredMailHref());
 			} else {
+				// Inactive account removed — wipe its (not-open) local cache by id.
+				const accountId = this.readAccountDbMap()[key];
+				if (accountId) {
+					const { removeMailDatabaseById } = await import('$lib/db');
+					await removeMailDatabaseById(accountId);
+				}
+				this.forgetAccountDb(key);
 				await this.refreshAccounts();
 			}
 			toast.show('Signed out of that account.', 'info');
@@ -557,7 +569,7 @@ class AuthStore {
 	async logout() {
 		pushListener.stop();
 		this.stopBackgroundSync();
-		await this.wipeOfflineLayer();
+		await this.wipeAllOfflineLayers();
 		this.client?.disconnect();
 		this.client = null;
 		this.serverUrl = null;
@@ -621,7 +633,7 @@ class AuthStore {
 	private forceLogout() {
 		pushListener.stop();
 		this.stopBackgroundSync();
-		void this.wipeOfflineLayer();
+		void this.wipeAllOfflineLayers();
 		this.client?.disconnect();
 		this.client = null;
 		this.serverUrl = null;
@@ -664,9 +676,60 @@ class AuthStore {
 		const accountId = client.getAccountId();
 		await initMailDatabase(accountId);
 		await migrateLegacyComposeDraft(accountId);
+		// Remember this account's DB id so a later sign-out can wipe it even when inactive.
+		this.rememberAccountDb(normalizeEmail(client.getUsername()), accountId);
 
 		const { syncEngine } = await import('$lib/sync/engine');
 		await syncEngine.bootstrap(client);
+	}
+
+	private readAccountDbMap(): Record<string, string> {
+		if (!browser) return {};
+		try {
+			return JSON.parse(localStorage.getItem(ACCOUNT_DB_MAP_KEY) || '{}') as Record<string, string>;
+		} catch {
+			return {};
+		}
+	}
+
+	private writeAccountDbMap(map: Record<string, string>): void {
+		if (!browser) return;
+		try {
+			localStorage.setItem(ACCOUNT_DB_MAP_KEY, JSON.stringify(map));
+		} catch {
+			// Ignore storage quota / availability issues.
+		}
+	}
+
+	private rememberAccountDb(key: string, accountId: string | undefined): void {
+		if (!browser || !key || !accountId) return;
+		const map = this.readAccountDbMap();
+		if (map[key] === accountId) return;
+		map[key] = accountId;
+		this.writeAccountDbMap(map);
+	}
+
+	private forgetAccountDb(key: string): void {
+		if (!browser || !key || !(key in this.readAccountDbMap())) return;
+		const map = this.readAccountDbMap();
+		delete map[key];
+		this.writeAccountDbMap(map);
+	}
+
+	/** Delete the local databases of every account in this session (full sign-out). */
+	private async wipeAllOfflineLayers(): Promise<void> {
+		if (!browser) return;
+		const map = this.readAccountDbMap();
+		const { removeMailDatabase, removeMailDatabaseById } = await import('$lib/db');
+		await removeMailDatabase(); // the currently-open (active) account
+		for (const accountId of Object.values(map)) {
+			await removeMailDatabaseById(accountId);
+		}
+		try {
+			localStorage.removeItem(ACCOUNT_DB_MAP_KEY);
+		} catch {
+			// Ignore.
+		}
 	}
 
 	private startBackgroundSync(client: JMAPClient, fromEmail: string, fromName?: string) {
