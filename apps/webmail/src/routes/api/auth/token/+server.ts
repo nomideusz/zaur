@@ -3,9 +3,9 @@ import { appConfig } from '$lib/config';
 import { createConnectedClient } from '$lib/server/jmap';
 import { classifyJmapError, loginErrorMessage } from '$lib/jmap/errors';
 import { findIdentityEmail, normalizeEmail } from '$lib/jmap/account';
-import { writeSession } from '$lib/server/session';
+import { addAccount, writeSession } from '$lib/server/session';
 import { exchangeCodeForTokens, decodeJwt } from '$lib/server/oauth';
-import { clearOauthFlowCookies, readOauthFlow } from '$lib/server/oauth-flow';
+import { clearOauthFlowCookies, readOauthFlow, type OauthFlowMode } from '$lib/server/oauth-flow';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
@@ -38,11 +38,13 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	const { code, redirectUri, state } = body;
 	let codeVerifier = body.codeVerifier;
 	let rememberMe = body.rememberMe === true;
+	let mode: OauthFlowMode = 'login';
 
 	const cookieFlow = readOauthFlow(cookies, state);
 	if (cookieFlow) {
 		codeVerifier = cookieFlow.codeVerifier;
 		rememberMe = cookieFlow.rememberMe;
+		mode = cookieFlow.mode;
 		clearOauthFlowCookies(cookies);
 	}
 
@@ -84,22 +86,27 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
 		const identities = await client.getIdentities();
 		const primary = findIdentityEmail(identities, email || username) ?? identities[0];
+		const displayName = primary?.name ?? primary?.email ?? username;
 
-		writeSession(
-			cookies,
-			{
-				serverUrl,
-				username,
-				accessToken: tokens.access_token,
-				refreshToken: tokens.refresh_token
-			},
-			{ remember: rememberMe }
-		);
+		const account = {
+			serverUrl,
+			username,
+			displayName,
+			accessToken: tokens.access_token,
+			refreshToken: tokens.refresh_token
+		};
+		// 'add' appends to (or refreshes within) the current session and makes the new
+		// account active; 'login' replaces the session entirely.
+		if (mode === 'add') {
+			addAccount(cookies, account, { remember: rememberMe });
+		} else {
+			writeSession(cookies, account, { remember: rememberMe });
+		}
 
 		return json({
 			serverUrl,
 			username,
-			displayName: primary?.name ?? primary?.email ?? username,
+			displayName,
 			identities: identities.map((identity) => ({
 				id: identity.id,
 				name: identity.name,

@@ -6,6 +6,10 @@ export const OAUTH_VERIFIER_COOKIE = 'oauth_code_verifier';
 export const OAUTH_STATE_COOKIE = 'oauth_state';
 export const OAUTH_REMEMBER_COOKIE = 'oauth_remember_me';
 export const OAUTH_REDIRECT_COOKIE = 'oauth_redirect_to';
+export const OAUTH_MODE_COOKIE = 'oauth_mode';
+
+/** 'login' replaces the session; 'add' appends the new account to the current session. */
+export type OauthFlowMode = 'login' | 'add';
 export const PASSKEY_LOGTO_COOKIE = 'passkey_logto_cookies';
 export const PASSKEY_VERIFICATION_COOKIE = 'passkey_verification_id';
 export const PASSKEY_DISCOVERABLE_COOKIE = 'passkey_discoverable';
@@ -34,7 +38,8 @@ export function clearOauthFlowCookies(cookies: Cookies) {
 		OAUTH_VERIFIER_COOKIE,
 		OAUTH_STATE_COOKIE,
 		OAUTH_REMEMBER_COOKIE,
-		OAUTH_REDIRECT_COOKIE
+		OAUTH_REDIRECT_COOKIE,
+		OAUTH_MODE_COOKIE
 	]) {
 		cookies.delete(name, { path: '/' });
 	}
@@ -58,11 +63,13 @@ export function setOauthFlowCookies(
 		state: string;
 		rememberMe?: boolean;
 		redirectTo?: string;
+		mode?: OauthFlowMode;
 	}
 ) {
 	cookies.set(OAUTH_VERIFIER_COOKIE, input.codeVerifier, cookieOpts);
 	cookies.set(OAUTH_STATE_COOKIE, input.state, cookieOpts);
 	cookies.set(OAUTH_REMEMBER_COOKIE, input.rememberMe ? '1' : '0', cookieOpts);
+	cookies.set(OAUTH_MODE_COOKIE, input.mode === 'add' ? 'add' : 'login', cookieOpts);
 	if (input.redirectTo) {
 		cookies.set(OAUTH_REDIRECT_COOKIE, input.redirectTo, cookieOpts);
 	} else {
@@ -103,6 +110,7 @@ export async function startOauthRedirect(input: {
 	identifier?: string;
 	rememberMe?: boolean;
 	redirectTo?: string;
+	mode?: OauthFlowMode;
 }): Promise<string> {
 	const verifier = randomString(48);
 	const state = randomString(32);
@@ -111,7 +119,8 @@ export async function startOauthRedirect(input: {
 		codeVerifier: verifier,
 		state,
 		rememberMe: input.rememberMe,
-		redirectTo: input.redirectTo
+		redirectTo: input.redirectTo,
+		mode: input.mode
 	});
 
 	return buildAuthorizationUrl({
@@ -138,6 +147,7 @@ export function readOauthFlow(cookies: Cookies, state: string | undefined) {
 	return {
 		codeVerifier,
 		rememberMe: cookies.get(OAUTH_REMEMBER_COOKIE) === '1',
-		redirectTo: cookies.get(OAUTH_REDIRECT_COOKIE) || undefined
+		redirectTo: cookies.get(OAUTH_REDIRECT_COOKIE) || undefined,
+		mode: (cookies.get(OAUTH_MODE_COOKIE) === 'add' ? 'add' : 'login') as OauthFlowMode
 	};
 }
