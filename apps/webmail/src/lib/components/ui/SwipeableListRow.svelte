@@ -4,18 +4,7 @@
 	import { cn } from '$lib/utils/cn';
 	import { haptic } from '$lib/utils/haptics';
 	import { animateSpringScalar } from '$lib/utils/swipe-row-spring';
-	import {
-		SWIPE_ACTION_WIDTH,
-		clampSwipeOffset,
-		snapSwipeOffset,
-		swipeArmedTier,
-		swipeRevealWidth
-	} from '$lib/utils/swipe-row';
-	import {
-		closeOtherSwipeRows,
-		registerSwipeRow,
-		unregisterSwipeRow
-	} from '$lib/utils/swipe-row-controller';
+	import { clampSwipeOffset, swipeCommitThreshold, type SwipeSide } from '$lib/utils/swipe-row';
 
 	export interface SwipeAction {
 		id: string;
@@ -29,6 +18,7 @@
 
 	interface Props {
 		enabled?: boolean;
+		/** Only the first action of each side is used — one primary action per direction. */
 		leading?: SwipeAction[];
 		trailing?: SwipeAction[];
 		longPressEnabled?: boolean;
@@ -58,20 +48,18 @@
 	}: Props = $props();
 
 	let offset = $state(0);
-	let openSide = $state<'leading' | 'trailing' | null>(null);
 	let dragging = $state(false);
 	let swipeActive = $state(false);
 	let snapping = $state(false);
-	/** Which action a release right now would commit: 0 none, 1 primary, 2 secondary. */
-	let armedTier = $state<0 | 1 | 2>(0);
-	/** Keeps the armed fill visible while the commit animation runs. */
+	/** True once the drag is deep enough that a release fires the action. */
+	let armed = $state(false);
+	/** Keeps the action panel painted while the dismiss animation runs. */
 	let committing = $state(false);
 	let pointerId: number | null = null;
 	let foregroundEl: HTMLElement | null = null;
 	let rowWidth = 0;
 	let startX = 0;
 	let startY = 0;
-	let startOffset = 0;
 	let axisLock: 'x' | 'y' | null = null;
 	/* Intentional-horizontal gate: enough travel, clearly flatter than vertical. */
 	const AXIS_LOCK_PX = 8;
@@ -81,23 +69,19 @@
 	let suppressClick = false;
 	let cancelSpring: (() => void) | null = null;
 
-	const leadingWidth = $derived(swipeRevealWidth(leading.length));
-	const trailingWidth = $derived(swipeRevealWidth(trailing.length));
-	const hasSwipe = $derived(enabled && (leadingWidth > 0 || trailingWidth > 0));
+	/** One primary action per direction — the configured first action. */
+	const leadingAction = $derived(leading[0] ?? null);
+	const trailingAction = $derived(trailing[0] ?? null);
+	const hasSwipe = $derived(enabled && (!!leadingAction || !!trailingAction));
 
-	const activeSide = $derived(offset > 0 ? 'leading' : offset < 0 ? 'trailing' : null);
-	const sideActions = $derived(activeSide === 'leading' ? leading : trailing);
-	const armedAction = $derived(
-		armedTier > 0 ? (sideActions[Math.min(armedTier, sideActions.length) - 1] ?? null) : null
+	const activeSide = $derived<SwipeSide | null>(
+		offset > 0 ? 'leading' : offset < 0 ? 'trailing' : null
 	);
-	const armedVisual = $derived((swipeActive || committing) && armedAction !== null);
-
-	/* The action tray grows with the pull so the armed action fills it edge-to-edge. */
-	const leadingTrayWidth = $derived(offset > 0 ? Math.max(leadingWidth, offset) : leadingWidth);
-	const trailingTrayWidth = $derived(offset < 0 ? Math.max(trailingWidth, -offset) : trailingWidth);
-
-	/* Primary action sits at the outer screen edge — full pulls read as "into" it. */
-	const trailingRender = $derived([...trailing].reverse());
+	const activeAction = $derived(
+		activeSide === 'leading' ? leadingAction : activeSide === 'trailing' ? trailingAction : null
+	);
+	const leadingWidth = $derived(offset > 0 ? offset : 0);
+	const trailingWidth = $derived(offset < 0 ? -offset : 0);
 
 	function stopSpring() {
 		cancelSpring?.();
@@ -108,13 +92,8 @@
 	function closeRow() {
 		stopSpring();
 		offset = 0;
-		openSide = null;
-		armedTier = 0;
+		armed = false;
 		committing = false;
-	}
-
-	function registerOpen() {
-		registerSwipeRow(closeRow);
 	}
 
 	function measureRowWidth() {
@@ -144,24 +123,13 @@
 		});
 	}
 
-	function applySnap(nextOffset: number) {
-		armedTier = 0;
-		const snapped = snapSwipeOffset(nextOffset, leadingWidth, trailingWidth);
-		animateOffset(snapped.offset, () => {
-			openSide = snapped.side;
-			if (snapped.side) registerOpen();
-			else unregisterSwipeRow(closeRow);
-		});
-	}
-
-	async function commitAction(action: SwipeAction, direction?: 1 | -1) {
-		unregisterSwipeRow(closeRow);
-		openSide = null;
+	async function commitAction(action: SwipeAction) {
+		const dir = offset > 0 ? 1 : -1;
 
 		if (action.dismiss) {
 			committing = true;
 			if (rowWidth === 0) measureRowWidth();
-			const dir = direction ?? (offset > 0 ? 1 : -1);
+			/* Slide the row away; the colored panel grows to fill behind it. */
 			animateOffset(dir * Math.max(rowWidth, Math.abs(offset)));
 			let result: void | boolean;
 			try {
@@ -171,29 +139,24 @@
 			}
 			if (result === false) {
 				/* Cancelled (e.g. delete confirm) or failed — bring the row back. */
+				armed = false;
 				committing = false;
-				armedTier = 0;
 				animateOffset(0);
 				return;
 			}
 			/* Row usually unmounts via the store update; tidy local state regardless. */
+			armed = false;
 			committing = false;
-			armedTier = 0;
 			closeRow();
 			return;
 		}
 
-		armedTier = 0;
+		/* Non-destructive toggle — fire, then spring the row back into place. */
+		armed = false;
 		animateOffset(0, () => {
 			committing = false;
 		});
 		void action.onAction();
-	}
-
-	function commitFromTray(action: SwipeAction, side: 'leading' | 'trailing') {
-		/* Full-swipe commits already tick while arming; a tray tap needs its own. */
-		haptic(10);
-		void commitAction(action, side === 'leading' ? 1 : -1);
 	}
 
 	function resetDragState() {
@@ -245,13 +208,11 @@
 		startY = event.clientY;
 
 		if (hasSwipe) {
-			/* Tidy other rows; a tap that closes one must not also navigate. */
-			if (closeOtherSwipeRows(closeRow)) suppressClick = true;
 			measureRowWidth();
 			dragging = true;
 			swipeActive = false;
+			armed = false;
 			pointerId = event.pointerId;
-			startOffset = offset;
 		}
 
 		if (
@@ -271,12 +232,12 @@
 		}
 	}
 
-	function updateArmedTier() {
-		const revealWidth = activeSide === 'leading' ? leadingWidth : trailingWidth;
-		const tier = swipeArmedTier(offset, revealWidth, rowWidth, sideActions.length);
-		if (tier === armedTier) return;
-		if (tier > armedTier || tier > 0) haptic(tier === 2 ? [10, 30, 14] : 8);
-		armedTier = tier;
+	function updateArmed() {
+		const threshold = swipeCommitThreshold(rowWidth);
+		const next = !!activeAction && Math.abs(offset) >= threshold;
+		if (next === armed) return;
+		armed = next;
+		if (armed) haptic(10);
 	}
 
 	function onPointerMove(event: PointerEvent) {
@@ -309,8 +270,8 @@
 
 		event.preventDefault();
 		const delta = event.clientX - startX;
-		offset = clampSwipeOffset(startOffset + delta, leadingWidth, trailingWidth, rowWidth);
-		updateArmedTier();
+		offset = clampSwipeOffset(delta, !!leadingAction, !!trailingAction, rowWidth);
+		updateArmed();
 	}
 
 	function finishLongPress(event: PointerEvent) {
@@ -341,14 +302,15 @@
 		if (wasSwipe) releaseCapturedPointer(event);
 		resetDragState();
 
-		if (!hasSwipe || (!wasSwipe && offset === startOffset && !openSide)) return;
+		if (!wasSwipe) return;
 
-		if (wasSwipe && armedAction) {
-			void commitAction(armedAction);
+		if (armed && activeAction) {
+			void commitAction(activeAction);
 			return;
 		}
-
-		applySnap(offset);
+		/* Released short of the threshold — spring back, nothing fires. */
+		armed = false;
+		animateOffset(0);
 	}
 
 	function onPointerCancel(event: PointerEvent) {
@@ -356,7 +318,8 @@
 		if (event.pointerId !== pointerId) return;
 		releaseCapturedPointer(event);
 		resetDragState();
-		applySnap(offset);
+		armed = false;
+		animateOffset(0);
 	}
 
 	function onClickCapture(event: MouseEvent) {
@@ -364,62 +327,49 @@
 			event.preventDefault();
 			event.stopPropagation();
 			suppressClick = false;
-			return;
-		}
-		/* Tap on an open row closes it instead of opening the message —
-		   taps on the revealed action buttons still go through. */
-		if (
-			openSide &&
-			!(event.target instanceof Element && event.target.closest('.z-swipe-row__actions'))
-		) {
-			event.preventDefault();
-			event.stopPropagation();
-			unregisterSwipeRow(closeRow);
-			applySnap(0);
 		}
 	}
 
 	onDestroy(() => {
 		if (longPressTimer) clearTimeout(longPressTimer);
 		stopSpring();
-		unregisterSwipeRow(closeRow);
 	});
 
-	const actionVariantClass = (variant: SwipeAction['variant']) => {
+	const paneVariantClass = (variant: SwipeAction['variant']) => {
 		switch (variant) {
 			case 'danger':
-				return 'z-swipe-row__action--danger';
+				return 'z-swipe-row__pane--danger';
 			case 'warning':
-				return 'z-swipe-row__action--warning';
+				return 'z-swipe-row__pane--warning';
 			case 'accent':
-				return 'z-swipe-row__action--accent';
+				return 'z-swipe-row__pane--accent';
 			default:
-				return 'z-swipe-row__action--default';
+				return 'z-swipe-row__pane--default';
 		}
 	};
 </script>
 
-{#snippet trayAction(action: SwipeAction, side: 'leading' | 'trailing')}
-	{@const ActionIcon = action.icon}
-	<button
-		type="button"
+{#snippet pane(action: SwipeAction, side: SwipeSide, width: number, isArmed: boolean)}
+	{@const PaneIcon = action.icon}
+	<div
 		class={cn(
-			'z-swipe-row__action',
-			actionVariantClass(action.variant),
-			armedVisual && action === armedAction && 'z-swipe-row__action--armed',
-			armedVisual && action !== armedAction && 'z-swipe-row__action--collapsed'
+			'z-swipe-row__pane',
+			`z-swipe-row__pane--${side}`,
+			paneVariantClass(action.variant),
+			isArmed && 'z-swipe-row__pane--armed'
 		)}
-		style="flex-basis: {SWIPE_ACTION_WIDTH}px"
-		aria-label={action.label}
-		onclick={() => commitFromTray(action, side)}
+		style="width: {width}px;"
+		aria-hidden="true"
 	>
-		{#if ActionIcon}
-			<span class="z-swipe-row__action-icon" aria-hidden="true">
-				<ActionIcon class="size-[1.125rem]" />
-			</span>
-		{/if}
-		<span class="z-swipe-row__action-label">{action.label}</span>
-	</button>
+		<div class="z-swipe-row__pane-content">
+			{#if PaneIcon}
+				<span class="z-swipe-row__pane-icon">
+					<PaneIcon class="size-[1.25rem]" />
+				</span>
+			{/if}
+			<span class="z-swipe-row__pane-label">{action.label}</span>
+		</div>
+	</div>
 {/snippet}
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -427,37 +377,18 @@
 	class={cn(
 		'z-swipe-row',
 		hasSwipe && 'z-swipe-row--interactive',
-		openSide && 'z-swipe-row--elevated',
-		(swipeActive || snapping) && 'z-swipe-row--dragging',
-		armedVisual && 'z-swipe-row--armed',
+		(swipeActive || snapping || committing) && 'z-swipe-row--dragging',
+		armed && 'z-swipe-row--armed',
 		className
 	)}
-	data-swipe-open={openSide ?? undefined}
+	data-swipe-side={activeSide ?? undefined}
 	onclickcapture={onClickCapture}
 >
-	{#if hasSwipe}
-		<div
-			class="z-swipe-row__actions z-swipe-row__actions--leading"
-			style="width: {leadingTrayWidth}px; display: {offset > 0 || openSide === 'leading'
-				? 'flex'
-				: 'none'};"
-			aria-hidden={leadingWidth === 0 || (offset <= 0 && openSide !== 'leading')}
-		>
-			{#each leading as action (action.id)}
-				{@render trayAction(action, 'leading')}
-			{/each}
-		</div>
-		<div
-			class="z-swipe-row__actions z-swipe-row__actions--trailing"
-			style="width: {trailingTrayWidth}px; display: {offset < 0 || openSide === 'trailing'
-				? 'flex'
-				: 'none'};"
-			aria-hidden={trailingWidth === 0 || (offset >= 0 && openSide !== 'trailing')}
-		>
-			{#each trailingRender as action (action.id)}
-				{@render trayAction(action, 'trailing')}
-			{/each}
-		</div>
+	{#if hasSwipe && leadingAction && leadingWidth > 0}
+		{@render pane(leadingAction, 'leading', leadingWidth, activeSide === 'leading' && armed)}
+	{/if}
+	{#if hasSwipe && trailingAction && trailingWidth > 0}
+		{@render pane(trailingAction, 'trailing', trailingWidth, activeSide === 'trailing' && armed)}
 	{/if}
 
 	<div

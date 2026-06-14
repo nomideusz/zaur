@@ -1,56 +1,32 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import {
-	clampSwipeOffset,
-	snapSwipeOffset,
-	swipeArmedTier,
-	swipeRevealWidth,
-	swipeTierThresholds
-} from '../src/lib/utils/swipe-row.ts';
+import { clampSwipeOffset, swipeCommitThreshold } from '../src/lib/utils/swipe-row.ts';
 
 const ROW = 400;
+const MAX = ROW * 0.92; // 368
 
 describe('swipe-row', () => {
-	it('computes reveal width from action count', () => {
-		assert.equal(swipeRevealWidth(0), 0);
-		assert.equal(swipeRevealWidth(2), 144);
+	it('tracks the finger 1:1 within bounds', () => {
+		assert.equal(clampSwipeOffset(100, true, true, ROW), 100);
+		assert.equal(clampSwipeOffset(-100, true, true, ROW), -100);
 	});
 
-	it('clamps offset to reveal bounds without a row width', () => {
-		assert.equal(clampSwipeOffset(120, 72, 72), 72);
-		assert.equal(clampSwipeOffset(-120, 72, 72), -72);
-		assert.equal(clampSwipeOffset(10, 72, 72), 10);
+	it('does not move a side that has no action', () => {
+		assert.equal(clampSwipeOffset(100, false, true, ROW), 0);
+		assert.equal(clampSwipeOffset(-100, true, false, ROW), 0);
 	});
 
-	it('allows dragging past the reveal up to maxDrag when row width is known', () => {
-		const { maxDrag } = swipeTierThresholds(72, ROW);
-		assert.equal(clampSwipeOffset(200, 72, 72, ROW), 200);
-		assert.equal(clampSwipeOffset(1000, 72, 72, ROW), maxDrag);
-		assert.equal(clampSwipeOffset(-1000, 72, 72, ROW), -maxDrag);
+	it('rubber-bands past the max drag', () => {
+		// 468 → MAX + (468 - MAX) * 0.3 = 368 + 30 = 398
+		assert.equal(clampSwipeOffset(468, true, true, ROW), 398);
+		assert.equal(clampSwipeOffset(-468, true, true, ROW), -398);
+		assert.ok(clampSwipeOffset(1000, true, true, ROW) < 1000);
 	});
 
-	it('snaps open past threshold', () => {
-		assert.deepEqual(snapSwipeOffset(40, 72, 72), { offset: 72, side: 'leading' });
-		assert.deepEqual(snapSwipeOffset(-40, 72, 72), { offset: -72, side: 'trailing' });
-		assert.deepEqual(snapSwipeOffset(10, 72, 72), { offset: 0, side: null });
-	});
-
-	it('arms tier 1 past the first threshold and tier 2 past the second', () => {
-		const { tier1, tier2 } = swipeTierThresholds(144, ROW);
-		assert.equal(swipeArmedTier(tier1 - 1, 144, ROW, 2), 0);
-		assert.equal(swipeArmedTier(tier1 + 1, 144, ROW, 2), 1);
-		assert.equal(swipeArmedTier(tier2 + 1, 144, ROW, 2), 2);
-		assert.equal(swipeArmedTier(-(tier2 + 1), 144, ROW, 2), 2);
-	});
-
-	it('caps the armed tier at the action count', () => {
-		const { tier2 } = swipeTierThresholds(72, ROW);
-		assert.equal(swipeArmedTier(tier2 + 1, 72, ROW, 1), 1);
-		assert.equal(swipeArmedTier(tier2 + 1, 72, ROW, 0), 0);
-	});
-
-	it('tier 1 always sits beyond the reveal width', () => {
-		const { tier1 } = swipeTierThresholds(144, 320);
-		assert.ok(tier1 > 144);
+	it('commit threshold scales with the row, clamped to a sane range', () => {
+		assert.equal(swipeCommitThreshold(400), 120); // 30% of row
+		assert.equal(swipeCommitThreshold(200), 72); // floor
+		assert.equal(swipeCommitThreshold(1000), 140); // ceiling
+		assert.equal(swipeCommitThreshold(0), 80); // fallback
 	});
 });

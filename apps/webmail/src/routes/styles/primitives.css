@@ -432,107 +432,78 @@
 		background-color: var(--z-surface-raised);
 	}
 
-	.z-swipe-row--elevated {
-		z-index: 30;
-	}
-
-	.z-swipe-row__actions {
+	/* Single colored action panel per side — its width tracks the drag 1:1, so
+	   it always fills the revealed area (no gap / see-through). The icon+label
+	   ride the outer screen edge. */
+	.z-swipe-row__pane {
 		position: absolute;
 		top: 0;
 		bottom: 0;
 		display: flex;
-		align-items: stretch;
+		align-items: center;
+		overflow: hidden;
+		color: #fff;
 	}
 
-	.z-swipe-row__actions--leading {
+	.z-swipe-row__pane--leading {
 		left: 0;
 		justify-content: flex-start;
 	}
 
-	.z-swipe-row__actions--trailing {
+	.z-swipe-row__pane--trailing {
 		right: 0;
 		justify-content: flex-end;
 	}
 
-	.z-swipe-row__action {
+	.z-swipe-row__pane-content {
 		display: flex;
-		flex: 0 1 auto;
-		flex-direction: column;
+		flex-shrink: 0;
 		align-items: center;
-		justify-content: center;
-		gap: 0.125rem;
-		height: 100%;
-		min-width: 0;
-		padding: 0 0.25rem;
-		overflow: hidden;
-		font-size: 0.625rem;
+		gap: 0.5rem;
+		padding-inline: 1.125rem;
+		font-size: 0.8125rem;
 		font-weight: 600;
-		line-height: 1.2;
-		color: white;
-		transition:
-			flex-grow 160ms var(--z-ease-standard),
-			flex-basis 160ms var(--z-ease-standard),
-			opacity 120ms var(--z-ease-standard),
-			transform var(--z-motion-fast) var(--z-ease-out);
+		white-space: nowrap;
 	}
 
-	@media (prefers-reduced-motion: no-preference) {
-		.z-swipe-row__action:active {
-			transform: scale(0.94);
-		}
+	/* Keep the icon at the outer edge — first thing revealed as you pull. */
+	.z-swipe-row__pane--trailing .z-swipe-row__pane-content {
+		flex-direction: row-reverse;
 	}
 
-	/* Strength tiers: the armed action swells to fill the tray (full-swipe fill);
-	   its neighbours collapse so the color change reads instantly. */
-	.z-swipe-row__action--armed {
-		flex-grow: 1;
+	.z-swipe-row__pane-icon {
+		display: inline-flex;
+		transition: transform var(--z-motion-fast) var(--z-ease-out);
 	}
 
-	.z-swipe-row__action--collapsed {
-		flex-basis: 0 !important;
-		flex-grow: 0;
-		padding: 0;
-		opacity: 0;
+	/* Past the commit threshold the icon swells — "release now to act". */
+	.z-swipe-row__pane--armed .z-swipe-row__pane-icon {
+		transform: scale(1.18);
 	}
 
-	.z-swipe-row__action-icon {
-		transition: transform 160ms var(--z-ease-out);
-	}
-
-	.z-swipe-row__action--armed .z-swipe-row__action-icon {
-		transform: scale(1.2);
-	}
-
-	.z-swipe-row__action-label {
-		max-width: 4.25rem;
-		text-align: center;
-	}
-
-	.z-swipe-row__action--default {
+	.z-swipe-row__pane--default {
 		background-color: var(--z-fg-muted);
 	}
 
-	.z-swipe-row__action--accent {
+	.z-swipe-row__pane--accent {
 		background-color: var(--z-accent);
 	}
 
-	.z-swipe-row__action--danger {
+	.z-swipe-row__pane--danger {
 		background-color: var(--z-danger);
 	}
 
-	.z-swipe-row__action--warning {
+	.z-swipe-row__pane--warning {
 		background-color: color-mix(in srgb, var(--z-danger) 40%, var(--z-star) 60%);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
-		.z-swipe-row__action,
-		.z-swipe-row__action-icon {
+		.z-swipe-row__pane-icon {
 			transition: none;
 		}
 	}
 
-	html.z-reduce-motion .z-swipe-row__action,
-	html.z-reduce-motion .z-swipe-row__action-icon {
+	html.z-reduce-motion .z-swipe-row__pane-icon {
 		transition: none;
 	}
 
@@ -541,30 +512,13 @@
 		z-index: 1;
 		background-color: var(--z-surface-raised);
 		touch-action: pan-y;
-		transition: transform 0.2s ease-out;
 	}
 
+	/* Motion is JS-driven (finger 1:1, then a spring on release), so the
+	   foreground carries no CSS transition that would lag the drag. */
 	.z-swipe-row--dragging .z-swipe-row__foreground {
 		touch-action: none;
-	}
-
-	.z-swipe-row--interactive.z-swipe-row--dragging .z-swipe-row__foreground,
-	.z-swipe-row--interactive[data-swipe-open] .z-swipe-row__foreground {
 		will-change: transform;
-	}
-
-	.z-swipe-row--interactive:not([data-swipe-open]):not(.z-swipe-row--dragging) .z-swipe-row__foreground {
-		transition: none;
-	}
-
-	.z-swipe-row--interactive:not([data-swipe-open]):not(.z-swipe-row--dragging) .z-swipe-row__actions {
-		opacity: 0;
-		visibility: hidden;
-		pointer-events: none;
-	}
-
-	.z-swipe-row[data-swipe-open] .z-swipe-row__foreground {
-		transition: none;
 	}
 
 	/* @shark/action-bar — port of Shark UI registry (bulk table example). */
