@@ -467,7 +467,14 @@
 		transition:
 			flex-grow 160ms var(--z-ease-standard),
 			flex-basis 160ms var(--z-ease-standard),
-			opacity 120ms var(--z-ease-standard);
+			opacity 120ms var(--z-ease-standard),
+			transform var(--z-motion-fast) var(--z-ease-out);
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		.z-swipe-row__action:active {
+			transform: scale(0.94);
+		}
 	}
 
 	/* Strength tiers: the armed action swells to fill the tray (full-swipe fill);
@@ -780,6 +787,13 @@
 	.z-checkbox:focus-visible {
 		outline: 2px solid var(--z-accent);
 		outline-offset: 2px;
+	}
+
+	/* Tactile press on selection toggles — pairs with the haptic tick. */
+	@media (prefers-reduced-motion: no-preference) {
+		.z-checkbox:active:not(:disabled) {
+			transform: scale(0.86);
+		}
 	}
 
 	.z-checkbox:disabled {

@@ -191,6 +191,8 @@
 	}
 
 	function commitFromTray(action: SwipeAction, side: 'leading' | 'trailing') {
+		/* Full-swipe commits already tick while arming; a tray tap needs its own. */
+		haptic(10);
 		void commitAction(action, side === 'leading' ? 1 : -1);
 	}
 

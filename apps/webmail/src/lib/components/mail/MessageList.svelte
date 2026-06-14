@@ -18,6 +18,7 @@
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import RefreshCw from '$lib/components/icons/RefreshCw.svelte';
 	import { createPullToRefresh } from '$lib/utils/pull-to-refresh.svelte';
+	import { haptic } from '$lib/utils/haptics';
 	import { goto } from '$app/navigation';
 	import {
 		listSwipeContext,
@@ -452,6 +453,7 @@
 	}
 
 	function handleRowCheckboxChange(messageId: string) {
+		if (mobileRowGestures) haptic(8);
 		mail.toggleMessageSelection(messageId);
 	}
 
@@ -469,6 +471,7 @@
 	function handleRowLinkClick(messageId: string, event: MouseEvent) {
 		if (mail.hasSelection) {
 			event.preventDefault();
+			if (mobileRowGestures) haptic(8);
 			if (event.shiftKey || event.metaKey || event.ctrlKey) {
 				handleRowSelect(messageId, {
 					shift: event.shiftKey,
