@@ -20,6 +20,8 @@
 		iconTriggerLabel?: string;
 		/** Match text-nav links — no chrome padding or text-sm. */
 		textTrigger?: boolean;
+		/** Caret-only trigger — the second segment of a split button (e.g. Reply ▾). */
+		caretTrigger?: boolean;
 		class?: string;
 		menuClass?: string;
 		triggerClass?: string;
@@ -35,6 +37,7 @@
 		triggerText = '',
 		iconTriggerLabel = '',
 		textTrigger = false,
+		caretTrigger = false,
 		class: className = '',
 		menuClass = '',
 		triggerClass = '',
@@ -61,7 +64,7 @@
 	lazyMount
 	unmountOnExit
 >
-	<div class={cn(textTrigger ? 'contents' : cn('relative shrink-0', className))}>
+	<div class={cn(textTrigger || caretTrigger ? 'contents' : cn('relative shrink-0', className))}>
 		{#if triggerText}
 			<Menu.Trigger
 				aria-label={label}
@@ -74,6 +77,13 @@
 			>
 				<span>{triggerText}</span>
 				<ChevronDown class={textTrigger ? 'size-3.5 shrink-0' : 'size-4'} aria-hidden="true" />
+			</Menu.Trigger>
+		{:else if caretTrigger}
+			<Menu.Trigger
+				aria-label={label}
+				class={cn('z-split-caret inline-flex items-center justify-center', triggerClass)}
+			>
+				<ChevronDown class="size-4 shrink-0" aria-hidden="true" />
 			</Menu.Trigger>
 		{:else}
 			<Menu.Trigger

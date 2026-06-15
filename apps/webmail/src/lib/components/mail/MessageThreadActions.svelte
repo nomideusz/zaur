@@ -65,7 +65,6 @@
 	const draftMoveTargets = $derived(
 		isDraft ? moveTargetMailboxes(mail.mailboxes, currentMailbox) : []
 	);
-	const showDraftOverflowMenu = $derived(isDraft && draftMoveTargets.length > 0);
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
 	const canMarkImportant = $derived(canMarkImportantFromMailboxRole(currentMailbox?.role));
 	const allowExternal = $derived(!settings.blockExternalContent || pane?.showImagesOnce);
@@ -80,8 +79,6 @@
 	);
 	const primaryReplyMode = $derived(settings.defaultReplyMode);
 	const primaryReplyLabel = $derived(primaryReplyMode === 'reply-all' ? 'Reply all' : 'Reply');
-	const showReplyInMenu = $derived(primaryReplyMode !== 'reply');
-	const showReplyAllInMenu = $derived(primaryReplyMode !== 'reply-all');
 
 	async function withClient(action: (client: NonNullable<typeof auth.client>) => Promise<void>) {
 		if (!auth.client || !actionMessage) return;
@@ -228,42 +225,25 @@
 	<div class="z-reader-toolbar flex min-w-0 shrink-0 items-center justify-end gap-3">
 		{#if isDraft}
 			<a href="/mail/compose?draft={latest.id}" class="z-mail-text-nav__link">Edit</a>
-			<button
-				type="button"
-				class="z-mail-text-nav__link z-mail-text-nav__link--danger"
-				onclick={deleteMessage}
-			>
-				{deleteLabel}
-			</button>
 		{/if}
 
-		{#if !isDraft || showDraftOverflowMenu}
-			<OverflowMenu
-				label="Message actions"
-				{menuId}
-				placement={menuPlacement}
-				textTrigger
-				triggerText="More"
-				triggerClass="z-mail-text-nav__link"
-			>
-				{#if isDraft}
-					{#if auth.client}
-						<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
-					{/if}
-				{:else}
-				{#if showReplyInMenu}
-					<OverflowMenuItem label="Reply" onclick={reply}>
-						{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
+		<OverflowMenu
+			label="Message actions"
+			{menuId}
+			placement={menuPlacement}
+			textTrigger
+			triggerText="More"
+			triggerClass="z-mail-text-nav__link"
+		>
+			{#if isDraft}
+				{#if auth.client && draftMoveTargets.length}
+					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
+					<div class="mx-4 my-1 border-t border-border" role="separator"></div>
 				{/if}
-				{#if showReplyAllInMenu}
-					<OverflowMenuItem label="Reply all" onclick={replyAll}>
-						{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
-					</OverflowMenuItem>
-				{/if}
-				<OverflowMenuItem label="Forward" onclick={forward}>
-					{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
+				<OverflowMenuItem label={deleteLabel} danger onclick={deleteMessage}>
+					{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
 				</OverflowMenuItem>
+			{:else}
 				{#if actionMessage?.unread}
 					<OverflowMenuItem label={LABEL_CLEAR_NEW} onclick={fileAsNotImportant} />
 				{:else if actionMessage}
@@ -304,9 +284,8 @@
 				<OverflowMenuItem label={deleteLabel} danger onclick={deleteMessage}>
 					{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
 				</OverflowMenuItem>
-				{/if}
-			</OverflowMenu>
-		{/if}
+			{/if}
+		</OverflowMenu>
 
 		<div class="z-header-action-zone">
 			{#if isDraft}
@@ -323,9 +302,33 @@
 					{cancelingScheduled ? 'Canceling…' : 'Cancel send'}
 				</button>
 			{:else}
-				<button type="button" class="z-mail-text-nav__action" onclick={primaryReply}>
-					{primaryReplyLabel}
-				</button>
+				<!-- Reply, with the other reply modes folded into a split-button caret. -->
+				<div class="z-reader-reply-split flex items-center">
+					<button
+						type="button"
+						class="z-mail-text-nav__action z-reader-reply-split__main"
+						onclick={primaryReply}
+					>
+						{primaryReplyLabel}
+					</button>
+					<OverflowMenu
+						caretTrigger
+						label="Reply options"
+						menuId={`${menuId}-reply`}
+						placement={menuPlacement}
+						triggerClass="z-reader-reply-split__caret"
+					>
+						<OverflowMenuItem label="Reply" onclick={reply}>
+							{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
+						</OverflowMenuItem>
+						<OverflowMenuItem label="Reply all" onclick={replyAll}>
+							{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
+						</OverflowMenuItem>
+						<OverflowMenuItem label="Forward" onclick={forward}>
+							{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
+						</OverflowMenuItem>
+					</OverflowMenu>
+				</div>
 			{/if}
 		</div>
 	</div>
