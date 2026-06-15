@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getContext } from 'svelte';
-	import { Switch as BitsSwitch } from 'bits-ui';
+	import { Switch } from '@ark-ui/svelte/switch';
 	import {
 		SETTINGS_A11Y,
 		type SettingsA11yContext
@@ -27,18 +27,28 @@
 	const a11y = getContext<SettingsA11yContext | undefined>(SETTINGS_A11Y);
 </script>
 
-<BitsSwitch.Root
-	id={a11y?.controlId}
+<!--
+	Ark splits the switch into Root(label) > Control(track) > Thumb + a focusable
+	HiddenInput. The settings <label for={controlId}> targets that input, so the
+	control id moves to ids.hiddenInput and the aria-* wiring moves onto the input.
+	`.z-switch-root` is display:contents so Control stays the row's flex child.
+-->
+<Switch.Root
 	{checked}
 	{disabled}
-	class={cn('z-switch', className)}
-	aria-label={!a11y?.labelId && label ? label : undefined}
-	aria-labelledby={a11y?.labelId}
-	aria-describedby={a11y?.descId}
-	onCheckedChange={(next) => {
-		if (onchange) onchange(next);
-		else checked = next;
+	class="z-switch-root"
+	ids={a11y?.controlId ? { hiddenInput: a11y.controlId } : undefined}
+	onCheckedChange={(details) => {
+		if (onchange) onchange(details.checked);
+		else checked = details.checked;
 	}}
 >
-	<BitsSwitch.Thumb class="z-switch__thumb" />
-</BitsSwitch.Root>
+	<Switch.Control class={cn('z-switch', className)}>
+		<Switch.Thumb class="z-switch__thumb" />
+	</Switch.Control>
+	<Switch.HiddenInput
+		aria-label={!a11y?.labelId && label ? label : undefined}
+		aria-labelledby={a11y?.labelId}
+		aria-describedby={a11y?.descId}
+	/>
+</Switch.Root>

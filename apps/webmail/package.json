@@ -38,6 +38,7 @@
 		"workbox-window": "^7.4.1"
 	},
 	"dependencies": {
+		"@ark-ui/svelte": "^5.22.1",
 		"@nomideusz/svelte-calendar": "workspace:*",
 		"@simplewebauthn/browser": "^13.3.0",
 		"@simplewebauthn/server": "^13.3.1",
