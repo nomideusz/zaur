@@ -25,6 +25,11 @@ export function invalidAddressParts(input: string): string[] {
 		.map((entry) => entry.raw);
 }
 
+/** Whether a single raw recipient part (e.g. `a@b.com` or `Name <a@b.com>`) is a valid address. */
+export function isAddressValid(raw: string): boolean {
+	return isValidEmail(extractEmail(raw));
+}
+
 function parseAddressEntries(input: string): Array<{ raw: string; email: string; valid: boolean }> {
 	return splitAddressList(input)
 		.map((raw) => {
@@ -34,7 +39,8 @@ function parseAddressEntries(input: string): Array<{ raw: string; email: string;
 		.filter((entry) => entry.raw || entry.email);
 }
 
-function splitAddressList(input: string): string[] {
+/** Split a recipient string into raw parts on `,`/`;`, keeping invalid parts and respecting quotes/angle brackets. */
+export function splitAddressList(input: string): string[] {
 	const parts: string[] = [];
 	let current = '';
 	let inQuotes = false;

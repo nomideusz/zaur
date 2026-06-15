@@ -29,7 +29,7 @@
 	let { mode = 'new', initialTo = '' }: Props = $props();
 	let fileInput = $state<HTMLInputElement | null>(null);
 	let bodyInput = $state<HTMLTextAreaElement | null>(null);
-	let toInput = $state<HTMLTextAreaElement | null>(null);
+	let toInput = $state<HTMLInputElement | null>(null);
 
 	// From picker: only shown when the account has more than one send-as identity.
 	const showFromPicker = $derived(auth.identities.length > 1);

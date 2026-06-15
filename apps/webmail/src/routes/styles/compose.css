@@ -252,3 +252,97 @@
 		border-bottom: none;
 	}
 
+	/* Recipient chips (Ark tags-input). The control wraps chips + the typing input. */
+	.z-mail-view .z-compose__recipients {
+		display: block;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.z-mail-view .z-compose__recipients-control {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.25rem;
+		width: 100%;
+		min-width: 0;
+	}
+
+	.z-mail-view .z-compose__chip {
+		display: inline-flex;
+		align-items: center;
+		max-width: 100%;
+		outline: none;
+		cursor: default;
+	}
+
+	.z-mail-view .z-compose__chip-preview {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.25rem;
+		max-width: 100%;
+		padding: 0.0625rem 0.25rem 0.0625rem 0.5rem;
+		border-radius: 999px;
+		font-size: var(--z-compose-field-size);
+		line-height: 1.25rem;
+		color: var(--z-fg);
+		background-color: color-mix(in srgb, var(--z-fg) 8%, transparent);
+		border: 1px solid transparent;
+		outline: none;
+		transition:
+			background-color 0.15s ease,
+			border-color 0.15s ease;
+	}
+
+	.z-mail-view .z-compose__chip-preview[data-highlighted] {
+		background-color: color-mix(in srgb, var(--z-accent) 18%, transparent);
+		border-color: color-mix(in srgb, var(--z-accent) 45%, transparent);
+	}
+
+	.z-mail-view .z-compose__chip--invalid .z-compose__chip-preview {
+		color: var(--z-danger);
+		background-color: color-mix(in srgb, var(--z-danger) 12%, transparent);
+		border-color: color-mix(in srgb, var(--z-danger) 35%, transparent);
+	}
+
+	.z-mail-view .z-compose__chip-text {
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.z-mail-view .z-compose__chip-delete {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		padding: 0.0625rem;
+		border: none;
+		background: transparent;
+		border-radius: 999px;
+		color: inherit;
+		cursor: pointer;
+		opacity: 0.7;
+	}
+
+	.z-mail-view .z-compose__chip-delete:hover {
+		opacity: 1;
+	}
+
+	.z-mail-view .z-compose__chip-delete svg {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+
+	/* Editing a chip in place is disabled (editable={false}); the edit input is dead markup. */
+	.z-mail-view .z-compose__chip-edit {
+		display: none;
+	}
+
+	/* The typing input shares the row with chips: grow to fill, wrap to a new line when needed. */
+	.z-mail-view .z-compose__recipients-input.z-compose__input {
+		flex: 1 1 8ch;
+		width: auto;
+		min-width: 8ch;
+	}
+
