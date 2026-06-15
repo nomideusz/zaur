@@ -6,29 +6,21 @@
 	import SettingsFormToggle from '$lib/components/settings/SettingsFormToggle.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
-	import { mail } from '$lib/stores/mail.svelte';
-	import { settings, type CalendarMaxEventsPerDay } from '$lib/stores/settings.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 
-	let emptyingTrash = $state(false);
-	let emptyingSpam = $state(false);
 	let passkeyPassword = $state('');
 	let passkeyLoading = $state(false);
 	let passkeyRegistered = $state<boolean | null>(null);
 	let passkeyStatusLoading = $state(false);
-	let importInput = $state<HTMLInputElement | null>(null);
-	let clearingCache = $state(false);
 
 	const oauthEnabled = $derived(auth.oauthConfig?.enabled === true);
-	const trashMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'trash'));
-	const junkMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'junk'));
 
 	async function loadPasskeyStatus() {
 		if (!oauthEnabled || !auth.username) return;
@@ -69,99 +61,6 @@
 		} finally {
 			passkeyLoading = false;
 		}
-	}
-
-	async function emptyMailbox(role: 'trash' | 'junk') {
-		const mailbox = role === 'trash' ? trashMailbox : junkMailbox;
-		const client = auth.client;
-		if (!mailbox?.jmapId || !client) {
-			toast.show(`No ${role === 'trash' ? 'Trash' : 'Spam'} folder available on this account`, 'error');
-			return;
-		}
-		const label = role === 'trash' ? 'Trash' : 'Spam';
-		if (
-			!(await confirm.ask({
-				title: `Empty ${label}?`,
-				description: `Permanently delete every message in ${label}? This cannot be undone.`,
-				confirmLabel: `Empty ${label}`,
-				tone: 'danger'
-			}))
-		) {
-			return;
-		}
-
-		if (role === 'trash') emptyingTrash = true;
-		else emptyingSpam = true;
-
-		try {
-			const removed = await client.emptyMailbox(mailbox.jmapId);
-			toast.show(
-				removed
-					? `Deleted ${removed} message${removed === 1 ? '' : 's'} from ${label}`
-					: `${label} was already empty`,
-				removed ? 'success' : 'info'
-			);
-			await mail.refreshMailboxes(client);
-		} catch (error) {
-			const message = error instanceof Error ? error.message : `Could not empty ${label}`;
-			toast.show(message, 'error');
-		} finally {
-			if (role === 'trash') emptyingTrash = false;
-			else emptyingSpam = false;
-		}
-	}
-
-	function importPreferences(event: Event) {
-		const input = event.currentTarget as HTMLInputElement;
-		const file = input.files?.[0];
-		if (!file) return;
-
-		void file.text().then((text) => {
-			const result = settings.importLocalPreferences(text);
-			if (result.ok) {
-				toast.show('Settings imported', 'success');
-			} else {
-				toast.show(result.error, 'error');
-			}
-			input.value = '';
-		});
-	}
-
-	async function clearLocalCache() {
-		if (
-			!(await confirm.ask({
-				title: 'Clear local cache?',
-				description:
-					'Clear downloaded mail and sync state from this device? Your messages on the server are not affected.',
-				confirmLabel: 'Clear cache',
-				tone: 'danger'
-			}))
-		) {
-			return;
-		}
-
-		clearingCache = true;
-		try {
-			await auth.clearLocalCache();
-		} finally {
-			clearingCache = false;
-		}
-	}
-
-	async function resetPreferences() {
-		if (
-			!(await confirm.ask({
-				title: 'Reset preferences?',
-				description:
-					'Reset mail and display preferences to defaults? Your display name and signature are unchanged.',
-				confirmLabel: 'Reset',
-				tone: 'danger'
-			}))
-		) {
-			return;
-		}
-		settings.resetAllSettings();
-		toast.show('Preferences reset', 'success');
 	}
 
 	let lastSyncedDisplayName = $state(settings.displayName);
@@ -256,6 +155,34 @@
 			</Button>
 		</SettingsRow>
 	{/if}
+
+	<SettingsRow
+		kind="action"
+		title="Sign out"
+		description="Sign out of every account on this device."
+	>
+		<button
+			type="button"
+			class="z-mail-text-nav__link z-mail-text-nav__link--danger"
+			onclick={async () => {
+				if (
+					await confirm.ask({
+						title: 'Sign out?',
+						description:
+							auth.accounts.length > 1
+								? 'Sign out of all accounts on this device?'
+								: 'Sign out of ZAUR Webmail on this device?',
+						confirmLabel: 'Sign out',
+						tone: 'danger'
+					})
+				) {
+					auth.logout();
+				}
+			}}
+		>
+			{auth.accounts.length > 1 ? 'Sign out of all' : 'Sign out'}
+		</button>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup title="Account">
@@ -313,7 +240,7 @@
 	<SettingsRow
 		kind="toggle"
 		title="Unseen count on app icon"
-		description="Show the number of unread messages as a badge on the installed app's icon."
+		description="Show the number of unseen messages as a badge on the installed app's icon."
 	>
 		<Switch
 			checked={settings.showUnreadAppBadge}
@@ -324,56 +251,11 @@
 	<SettingsRow
 		kind="toggle"
 		title="Unseen count in tab title"
-		description="Show the number of unread messages in the browser tab title."
+		description="Show the number of unseen messages in the browser tab title."
 	>
 		<Switch
 			checked={settings.showUnreadInTitle}
 			onchange={(checked) => settings.setShowUnreadInTitle(checked)}
-		/>
-	</SettingsRow>
-</SettingsGroup>
-
-<SettingsGroup title="Calendar">
-	<SettingsRow
-		kind="toggle"
-		title="Week starts on Monday"
-		description="Begin each calendar week on Monday instead of Sunday."
-	>
-		<Switch
-			checked={settings.calendarWeekStartsOnMonday}
-			onchange={(checked) => settings.setCalendarWeekStartsOnMonday(checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="toggle"
-		title="Hide event times"
-		description="Show events by title only, without their start and end times."
-	>
-		<Switch
-			checked={settings.hideCalendarEventTimes}
-			onchange={(checked) => settings.setHideCalendarEventTimes(checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="menu"
-		title="Events per day in month view"
-		description="How many events to list under a day before the rest collapse into a count."
-	>
-		<SettingsSelect
-			label="Events per day in month view"
-			value={String(settings.calendarMaxEventsPerDay)}
-			options={[
-				{ value: '2', label: '2' },
-				{ value: '3', label: '3' },
-				{ value: '5', label: '5' }
-			]}
-			onchange={(v) => {
-				if (v === '2' || v === '3' || v === '5') {
-					settings.setCalendarMaxEventsPerDay(Number(v) as CalendarMaxEventsPerDay);
-				}
-			}}
 		/>
 	</SettingsRow>
 </SettingsGroup>
@@ -442,133 +324,3 @@
 	</SettingsGroup>
 {/if}
 
-{#if trashMailbox || junkMailbox}
-	<SettingsGroup title="Mailbox" description="Bulk cleanup actions. These permanently delete mail and can't be undone.">
-		{#if trashMailbox}
-			<SettingsRow
-				kind="action"
-				title="Empty Trash"
-				description="Permanently delete every message in the Trash folder."
-			>
-				<button
-					type="button"
-					class="z-mail-text-nav__link z-mail-text-nav__link--danger"
-					disabled={emptyingTrash || !auth.client}
-					onclick={() => void emptyMailbox('trash')}
-				>
-					{emptyingTrash ? 'Emptying…' : 'Empty'}
-				</button>
-			</SettingsRow>
-		{/if}
-
-		{#if junkMailbox}
-			<SettingsRow
-				kind="action"
-				title="Empty Spam"
-				description="Permanently delete every message in the Spam folder."
-			>
-				<button
-					type="button"
-					class="z-mail-text-nav__link z-mail-text-nav__link--danger"
-					disabled={emptyingSpam || !auth.client}
-					onclick={() => void emptyMailbox('junk')}
-				>
-					{emptyingSpam ? 'Emptying…' : 'Empty'}
-				</button>
-			</SettingsRow>
-		{/if}
-	</SettingsGroup>
-{/if}
-
-<SettingsGroup
-	title="Sync & data"
-	description="Your preferences sync automatically across your devices. These are manual backups and resets."
->
-	<SettingsRow
-		kind="action"
-		title="Sync now"
-		description="Force an immediate sync with your account instead of waiting for the automatic one."
-	>
-		<button type="button" class="z-mail-text-nav__link" onclick={() => void settings.syncToAccount()}>
-			Sync
-		</button>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="action"
-		title="Export settings"
-		description="Download your preferences as a JSON file."
-	>
-		<button type="button" class="z-mail-text-nav__link" onclick={() => settings.downloadLocalPreferences()}>
-			Export
-		</button>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="action"
-		title="Import settings"
-		description="Load preferences from a previously exported file."
-	>
-		<input bind:this={importInput} type="file" accept="application/json,.json" class="hidden" onchange={importPreferences} />
-		<button type="button" class="z-mail-text-nav__link" onclick={() => importInput?.click()}>
-			Import
-		</button>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="action"
-		title="Clear local cache"
-		description="Remove downloaded mail and sync state from this device. Your mail on the server is untouched."
-	>
-		<button
-			type="button"
-			class="z-mail-text-nav__link"
-			disabled={clearingCache}
-			onclick={() => void clearLocalCache()}
-		>
-			{clearingCache ? 'Clearing…' : 'Clear'}
-		</button>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="action"
-		title="Reset preferences"
-		description="Restore all settings to their defaults. Your display name and signature are kept."
-	>
-		<button
-			type="button"
-			class="z-mail-text-nav__link z-mail-text-nav__link--danger"
-			onclick={() => void resetPreferences()}
-		>
-			Reset
-		</button>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="action"
-		title="Sign out"
-		description="Sign out of ZAUR Webmail on this device."
-	>
-		<button
-			type="button"
-			class="z-mail-text-nav__link z-mail-text-nav__link--danger"
-			onclick={async () => {
-				if (
-					await confirm.ask({
-						title: 'Sign out?',
-						description:
-							auth.accounts.length > 1
-								? 'Sign out of all accounts on this device?'
-								: 'Sign out of ZAUR Webmail on this device?',
-						confirmLabel: 'Sign out',
-						tone: 'danger'
-					})
-				) {
-					auth.logout();
-				}
-			}}
-		>
-			{auth.accounts.length > 1 ? 'Sign out of all' : 'Sign out'}
-		</button>
-	</SettingsRow>
-</SettingsGroup>

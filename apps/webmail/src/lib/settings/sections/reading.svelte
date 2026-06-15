@@ -125,8 +125,8 @@
 
 	<SettingsRow
 		kind="toggle"
-		title="Mark as read when opened"
-		description="Clear the unread mark as soon as you open a message. Turn off to mark messages read yourself."
+		title="Mark as seen when opened"
+		description="Clear the unseen mark as soon as you open a message. Turn off to mark messages seen yourself."
 	>
 		<Switch
 			checked={settings.markReadOnOpen}

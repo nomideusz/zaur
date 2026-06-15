@@ -1,12 +1,12 @@
 <script lang="ts">
 	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
-	import AccountSection from '$lib/settings/sections/account.svelte';
+	import DataSection from '$lib/settings/sections/data.svelte';
 </script>
 
 <svelte:head>
-	<title>Account · ZAUR Webmail</title>
+	<title>Data · ZAUR Webmail</title>
 </svelte:head>
 
 <SettingsPanel>
-	<AccountSection />
+	<DataSection />
 </SettingsPanel>

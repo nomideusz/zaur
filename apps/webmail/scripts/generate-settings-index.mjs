@@ -8,10 +8,12 @@ function slug(title) {
 }
 
 const files = [
-	['src/lib/settings/sections/appearance.svelte', '/settings/account'],
 	['src/lib/settings/sections/account.svelte', '/settings/account'],
+	['src/lib/settings/sections/appearance.svelte', '/settings/appearance'],
 	['src/lib/settings/sections/reading.svelte', '/settings/reading'],
 	['src/lib/settings/sections/writing.svelte', '/settings/compose'],
+	['src/lib/settings/sections/calendar.svelte', '/settings/calendar'],
+	['src/lib/settings/sections/data.svelte', '/settings/data'],
 	['src/lib/settings/sections/shortcuts.svelte', '/settings/shortcuts']
 ];
 

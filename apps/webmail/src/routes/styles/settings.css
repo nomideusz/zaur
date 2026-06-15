@@ -132,10 +132,10 @@
 
 	/* Optional one-line subtitle under a plain section heading. */
 	.z-settings-section-desc {
-		margin: 0.25rem 0 0;
-		font-size: var(--z-main-page-muted-text);
-		line-height: var(--z-space-folder-message-leading);
-		color: var(--z-fg-muted);
+		margin: 0.1875rem 0 0;
+		font-size: 0.8125rem;
+		line-height: 1.4;
+		color: var(--z-fg-subtle);
 	}
 
 	/* Form panels — Appwrite-style intro + fields (Profile, etc.). */
@@ -361,9 +361,10 @@
 	.z-settings-row-desc {
 		grid-column: 1;
 		grid-row: 2;
-		font-size: var(--z-main-page-muted-text);
-		line-height: var(--z-space-folder-message-leading);
-		color: var(--z-fg-muted);
+		margin-top: 0.0625rem;
+		font-size: 0.8125rem;
+		line-height: 1.4;
+		color: var(--z-fg-subtle);
 	}
 
 	.z-settings-row:not(:has(.z-settings-row-desc)) .z-settings-row-control {

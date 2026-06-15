@@ -19,18 +19,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Install ZAUR as an app on this device for a standalone window."
 	},
 	{
-		"id": "/settings/account-appearance",
-		"href": "/settings/account",
-		"title": "Appearance",
-		"description": ""
-	},
-	{
-		"id": "/settings/account-clear-local-cache",
-		"href": "/settings/account",
-		"title": "Clear local cache",
-		"description": "Remove downloaded mail and sync state from this device. Your mail on the server is untouched."
-	},
-	{
 		"id": "/settings/account-confirm-before-delete",
 		"href": "/settings/account",
 		"title": "Confirm before delete",
@@ -43,46 +31,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Shown to recipients on messages you send."
 	},
 	{
-		"id": "/settings/account-empty-spam",
-		"href": "/settings/account",
-		"title": "Empty Spam",
-		"description": "Permanently delete every message in the Spam folder."
-	},
-	{
-		"id": "/settings/account-empty-trash",
-		"href": "/settings/account",
-		"title": "Empty Trash",
-		"description": "Permanently delete every message in the Trash folder."
-	},
-	{
-		"id": "/settings/account-events-per-day-in-month-view",
-		"href": "/settings/account",
-		"title": "Events per day in month view",
-		"description": "How many events to list under a day before the rest collapse into a count."
-	},
-	{
-		"id": "/settings/account-export-settings",
-		"href": "/settings/account",
-		"title": "Export settings",
-		"description": "Download your preferences as a JSON file."
-	},
-	{
 		"id": "/settings/account-hide-action-toasts",
 		"href": "/settings/account",
 		"title": "Hide action toasts",
 		"description": "Stop showing the brief confirmations that pop up after actions."
-	},
-	{
-		"id": "/settings/account-hide-event-times",
-		"href": "/settings/account",
-		"title": "Hide event times",
-		"description": "Show events by title only, without their start and end times."
-	},
-	{
-		"id": "/settings/account-import-settings",
-		"href": "/settings/account",
-		"title": "Import settings",
-		"description": "Load preferences from a previously exported file."
 	},
 	{
 		"id": "/settings/account-include-signature",
@@ -115,18 +67,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Get notified about new mail even when ZAUR isn't open."
 	},
 	{
-		"id": "/settings/account-reduce-motion",
-		"href": "/settings/account",
-		"title": "Reduce motion",
-		"description": "Minimize animations and transitions throughout the app."
-	},
-	{
-		"id": "/settings/account-reset-preferences",
-		"href": "/settings/account",
-		"title": "Reset preferences",
-		"description": "Restore all settings to their defaults. Your display name and signature are kept."
-	},
-	{
 		"id": "/settings/account-session",
 		"href": "/settings/account",
 		"title": "Session",
@@ -136,7 +76,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/account-sign-out",
 		"href": "/settings/account",
 		"title": "Sign out",
-		"description": "Sign out of ZAUR Webmail on this device."
+		"description": "Sign out of every account on this device."
 	},
 	{
 		"id": "/settings/account-sign-out-of-this-account",
@@ -151,26 +91,44 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Appended to the bottom of new messages."
 	},
 	{
-		"id": "/settings/account-sync-now",
-		"href": "/settings/account",
-		"title": "Sync now",
-		"description": "Force an immediate sync with your account instead of waiting for the automatic one."
-	},
-	{
 		"id": "/settings/account-unseen-count-in-tab-title",
 		"href": "/settings/account",
 		"title": "Unseen count in tab title",
-		"description": "Show the number of unread messages in the browser tab title."
+		"description": "Show the number of unseen messages in the browser tab title."
 	},
 	{
 		"id": "/settings/account-unseen-count-on-app-icon",
 		"href": "/settings/account",
 		"title": "Unseen count on app icon",
-		"description": "Show the number of unread messages as a badge on the installed app's icon."
+		"description": "Show the number of unseen messages as a badge on the installed app's icon."
 	},
 	{
-		"id": "/settings/account-week-starts-on-monday",
-		"href": "/settings/account",
+		"id": "/settings/appearance-appearance",
+		"href": "/settings/appearance",
+		"title": "Appearance",
+		"description": ""
+	},
+	{
+		"id": "/settings/appearance-reduce-motion",
+		"href": "/settings/appearance",
+		"title": "Reduce motion",
+		"description": "Minimize animations and transitions throughout the app."
+	},
+	{
+		"id": "/settings/calendar-events-per-day-in-month-view",
+		"href": "/settings/calendar",
+		"title": "Events per day in month view",
+		"description": "How many events to list under a day before the rest collapse into a count."
+	},
+	{
+		"id": "/settings/calendar-hide-event-times",
+		"href": "/settings/calendar",
+		"title": "Hide event times",
+		"description": "Show events by title only, without their start and end times."
+	},
+	{
+		"id": "/settings/calendar-week-starts-on-monday",
+		"href": "/settings/calendar",
 		"title": "Week starts on Monday",
 		"description": "Begin each calendar week on Monday instead of Sunday."
 	},
@@ -229,6 +187,48 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Briefly hold sent messages so you can recall them before they leave."
 	},
 	{
+		"id": "/settings/data-clear-local-cache",
+		"href": "/settings/data",
+		"title": "Clear local cache",
+		"description": "Remove downloaded mail and sync state from this device. Your mail on the server is untouched."
+	},
+	{
+		"id": "/settings/data-empty-spam",
+		"href": "/settings/data",
+		"title": "Empty Spam",
+		"description": "Permanently delete every message in the Spam folder."
+	},
+	{
+		"id": "/settings/data-empty-trash",
+		"href": "/settings/data",
+		"title": "Empty Trash",
+		"description": "Permanently delete every message in the Trash folder."
+	},
+	{
+		"id": "/settings/data-export-settings",
+		"href": "/settings/data",
+		"title": "Export settings",
+		"description": "Download your preferences as a JSON file."
+	},
+	{
+		"id": "/settings/data-import-settings",
+		"href": "/settings/data",
+		"title": "Import settings",
+		"description": "Load preferences from a previously exported file."
+	},
+	{
+		"id": "/settings/data-reset-preferences",
+		"href": "/settings/data",
+		"title": "Reset preferences",
+		"description": "Restore all settings to their defaults. Your display name and signature are kept."
+	},
+	{
+		"id": "/settings/data-sync-now",
+		"href": "/settings/data",
+		"title": "Sync now",
+		"description": "Force an immediate sync with your account instead of waiting for the automatic one."
+	},
+	{
 		"id": "/settings/reading-block-remote-images",
 		"href": "/settings/reading",
 		"title": "Block remote images",
@@ -247,10 +247,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Open every message in a conversation instead of just the latest."
 	},
 	{
-		"id": "/settings/reading-mark-as-read-when-opened",
+		"id": "/settings/reading-mark-as-seen-when-opened",
 		"href": "/settings/reading",
-		"title": "Mark as read when opened",
-		"description": "Clear the unread mark as soon as you open a message. Turn off to mark messages read yourself."
+		"title": "Mark as seen when opened",
+		"description": "Clear the unseen mark as soon as you open a message. Turn off to mark messages seen yourself."
 	},
 	{
 		"id": "/settings/reading-marker-colors-on-highlighted",
