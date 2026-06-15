@@ -12,8 +12,6 @@
 	let { html, darkMode, lightSurface }: Props = $props();
 
 	let frame: HTMLIFrameElement | undefined = $state();
-	// Min-height to avoid a zero-height flash before the first measure settles.
-	let height = $state(48);
 	let observer: ResizeObserver | undefined;
 	let pending = false;
 
@@ -21,13 +19,16 @@
 
 	function applyHeight() {
 		pending = false;
-		const body = frame?.contentDocument?.body;
-		if (!body) return;
-		// Measure the body, not documentElement: documentElement.scrollHeight is floored by the
-		// iframe's own viewport height, so it would never shrink once the frame has grown. The
-		// body tracks content height in both directions.
-		const next = body.scrollHeight;
-		if (next > 0 && next !== height) height = next;
+		const el = frame;
+		const doc = el?.contentDocument;
+		if (!el || !doc?.documentElement) return;
+		// Collapse first, then read documentElement.scrollHeight. documentElement is floored by the
+		// iframe's current viewport height, so collapsing lets it shrink *and* grow accurately;
+		// it also counts trailing child margins that escape body.scrollHeight (which undercounts).
+		// Both writes happen in this one rAF, so the 0px state is never painted (no flicker).
+		el.style.height = '0';
+		const next = doc.documentElement.scrollHeight;
+		el.style.height = `${next > 0 ? next : 48}px`;
 	}
 
 	/**
@@ -73,5 +74,5 @@
 	onload={handleLoad}
 	sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
 	scrolling="no"
-	style="width: 100%; height: {height}px; border: 0; display: block; background: transparent;"
+	style="width: 100%; height: 48px; border: 0; display: block; background: transparent;"
 ></iframe>

@@ -28,6 +28,15 @@ test('auto-sizes height to content and re-measures on body swap', async ({ page 
 	// Tall body (~800px block) should drive the iframe well past its 48px min-height.
 	await expect.poll(async () => (await el.boundingBox())?.height ?? 0).toBeGreaterThan(400);
 
+	// The frame must contain the whole body — no clipping. body.scrollHeight undercounts trailing
+	// margins, so the height is read from documentElement after collapsing; guard that here.
+	const clip = await el.evaluate((f: HTMLIFrameElement) => {
+		const d = f.contentDocument!;
+		const last = Math.ceil(d.body.lastElementChild!.getBoundingClientRect().bottom);
+		return last - Math.round(f.getBoundingClientRect().height);
+	});
+	expect(clip).toBeLessThanOrEqual(1);
+
 	const tall = (await el.boundingBox())?.height ?? 0;
 	await page.getByTestId('mode-short').click();
 	// Swapping to a one-line body reloads the srcdoc and shrinks the frame.
