@@ -41,14 +41,32 @@
 		});
 
 		return new Promise((resolve) => {
-			document.startViewTransition(async () => {
+			let settled = false;
+			/* resolve() tells SvelteKit to swap in the new page. It must run even
+			   if the view transition misbehaves. Some WebKit builds — notably
+			   Chrome on iOS — expose document.startViewTransition but never invoke
+			   the update callback, which would leave this unresolved and hang the
+			   navigation: the page freezes and taps do nothing. Guarantee the swap. */
+			const swap = () => {
+				if (settled) return;
+				settled = true;
 				resolve();
-				try {
-					await navigation.complete;
-				} catch {
-					// A newer navigation superseded this one — normal when clicking quickly.
-				}
-			});
+			};
+			const fallback = setTimeout(swap, 200);
+			try {
+				document.startViewTransition(async () => {
+					clearTimeout(fallback);
+					swap();
+					try {
+						await navigation.complete;
+					} catch {
+						// A newer navigation superseded this one — normal when clicking quickly.
+					}
+				});
+			} catch {
+				clearTimeout(fallback);
+				swap();
+			}
 		});
 	});
 
@@ -119,5 +137,7 @@
 <a href="#main-content" class="z-skip-link">Skip to main content</a>
 <TooltipProvider>
 	{@render children()}
+	<!-- Must stay inside the provider: InstallPrompt renders an IconButton (Tooltip),
+	     and the iOS install hint mounts it on the very devices that hit this path. -->
+	<InstallPrompt />
 </TooltipProvider>
-<InstallPrompt />
