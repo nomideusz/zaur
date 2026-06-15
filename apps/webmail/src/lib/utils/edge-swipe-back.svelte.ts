@@ -1,5 +1,6 @@
 import { haptic } from '$lib/utils/haptics';
 import { isCoarsePointer } from '$lib/utils/pointer-env';
+import { isStandalone } from '$lib/utils/pwa';
 
 /* Gesture must begin within this many px of the left screen edge. */
 const EDGE_PX = 24;
@@ -42,6 +43,11 @@ export function createEdgeSwipeBack(options: EdgeSwipeBackOptions) {
 
 	function allowed(): boolean {
 		if (!isCoarsePointer()) return false;
+		/* A browser tab already has its own back gesture (e.g. Safari iOS's
+		   left-edge swipe). Running ours alongside it navigates — and slides the
+		   list — twice. Only act as the fallback in an installed PWA, which has no
+		   system back gesture. */
+		if (!isStandalone()) return false;
 		return options.canSwipe?.() ?? true;
 	}
 
