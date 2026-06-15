@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { DropdownMenu } from 'bits-ui';
+	import { Menu } from '@ark-ui/svelte/menu';
+	import { Portal } from '@ark-ui/svelte/portal';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -19,58 +20,65 @@
 	const menuId = 'message-list-select-menu';
 
 	function choose(filter: 'all' | 'normal' | 'new' | 'none') {
-		open = false;
 		mail.selectMessagesByFilter(filter);
 	}
 </script>
 
-<DropdownMenu.Root bind:open>
-	<DropdownMenu.Trigger
+<Menu.Root
+	{open}
+	onOpenChange={(details) => (open = details.open)}
+	positioning={{ placement: `${side}-start`, gutter: 8, overflowPadding: 12 }}
+	ids={{ content: menuId }}
+>
+	<Menu.Trigger
 		aria-label="Selection options"
-		aria-controls={menuId}
 		class={cn('z-mail-list-select-trigger', className)}
 		{disabled}
 	>
 		<ChevronDown class="size-4 shrink-0" aria-hidden="true" />
-	</DropdownMenu.Trigger>
+	</Menu.Trigger>
 
-	<DropdownMenu.Portal>
-		<DropdownMenu.Content
-			id={menuId}
-			{side}
-			align="start"
-			sideOffset={8}
-			collisionPadding={12}
-			sticky="always"
-			updatePositionStrategy="always"
-			class="z-overflow-menu z-overflow-menu--fixed w-44 min-w-44 max-w-[calc(100vw-1rem)] py-1"
-			onpointerdown={(event) => event.stopPropagation()}
-		>
-			<DropdownMenu.Group>
-				<DropdownMenu.GroupHeading class="z-type-label px-3 py-1 text-[10px] uppercase tracking-wider text-fg-muted">
-					Select
-				</DropdownMenu.GroupHeading>
-				<DropdownMenu.Item class="z-overflow-menu-item" textValue="All" onSelect={() => choose('all')}>
-					All
-				</DropdownMenu.Item>
-				<DropdownMenu.Item
-					class="z-overflow-menu-item"
-					textValue="Normal"
-					onSelect={() => choose('normal')}
-				>
-					Normal
-				</DropdownMenu.Item>
-				<DropdownMenu.Item
-					class="z-overflow-menu-item"
-					textValue={LABEL_UNSEEN}
-					onSelect={() => choose('new')}
-				>
-					{LABEL_UNSEEN}
-				</DropdownMenu.Item>
-				<DropdownMenu.Item class="z-overflow-menu-item" textValue="None" onSelect={() => choose('none')}>
-					Clear selection
-				</DropdownMenu.Item>
-			</DropdownMenu.Group>
-		</DropdownMenu.Content>
-	</DropdownMenu.Portal>
-</DropdownMenu.Root>
+	<Portal>
+		<Menu.Positioner>
+			<Menu.Content
+				class="z-overflow-menu z-overflow-menu--fixed w-44 min-w-44 max-w-[calc(100vw-1rem)] py-1"
+				onpointerdown={(event) => event.stopPropagation()}
+			>
+				<Menu.ItemGroup>
+					<Menu.ItemGroupLabel
+						class="z-type-label px-3 py-1 text-[10px] uppercase tracking-wider text-fg-muted"
+					>
+						Select
+					</Menu.ItemGroupLabel>
+					<Menu.Item class="z-overflow-menu-item" value="all" valueText="All" onSelect={() => choose('all')}>
+						All
+					</Menu.Item>
+					<Menu.Item
+						class="z-overflow-menu-item"
+						value="normal"
+						valueText="Normal"
+						onSelect={() => choose('normal')}
+					>
+						Normal
+					</Menu.Item>
+					<Menu.Item
+						class="z-overflow-menu-item"
+						value="new"
+						valueText={LABEL_UNSEEN}
+						onSelect={() => choose('new')}
+					>
+						{LABEL_UNSEEN}
+					</Menu.Item>
+					<Menu.Item
+						class="z-overflow-menu-item"
+						value="none"
+						valueText="None"
+						onSelect={() => choose('none')}
+					>
+						Clear selection
+					</Menu.Item>
+				</Menu.ItemGroup>
+			</Menu.Content>
+		</Menu.Positioner>
+	</Portal>
+</Menu.Root>
