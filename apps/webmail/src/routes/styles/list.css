@@ -1042,6 +1042,13 @@
 		.z-mail-view .z-mail-list-row[data-selected="true"] .z-mail-list-swipe-row .z-swipe-row__foreground {
 			background-color: color-mix(in srgb, var(--z-accent) 6%, var(--z-surface-raised)) !important;
 		}
+
+		/* Pressed feedback on touch — there is no :hover to lean on, so a tap or
+		   long-press tints the row the way hover does on desktop. */
+		.z-mail-view .z-mail-list-row:active:not([data-current="true"]):not([data-selected="true"]) .z-swipe-row__foreground,
+		.z-mail-view .z-mail-list-row:active:not([data-current="true"]):not([data-selected="true"]) > :where(a) {
+			background-color: color-mix(in srgb, var(--z-surface-sunken) 75%, transparent) !important;
+		}
 	}
 
 	html.z-standalone .z-mail-view .z-mail-list-row :where(a),
