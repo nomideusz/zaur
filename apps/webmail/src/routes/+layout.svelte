@@ -20,6 +20,12 @@
 	onNavigate((navigation) => {
 		if (!document.startViewTransition) return;
 
+		// Browser-driven back/forward (history popstate, incl. the mobile edge-swipe-back
+		// gesture) animates itself — running our own directional slide on top doubles it,
+		// so the list appears to slide in over the already-revealed list. Let the browser
+		// own those; our slide still runs for in-app navigation (links / goto back button).
+		if (navigation.type === 'popstate') return;
+
 		const fromPath = navigation.from?.url.pathname ?? '';
 		const toPath = navigation.to?.url.pathname ?? '';
 		const fromParts = fromPath.split('/').filter(Boolean);
