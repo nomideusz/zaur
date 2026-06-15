@@ -1,7 +1,9 @@
 <script lang="ts">
-	import { Command, Popover } from 'bits-ui';
+	import { Popover } from '@ark-ui/svelte/popover';
+	import { Portal } from '@ark-ui/svelte/portal';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import { cn } from '$lib/utils/cn';
+	import { focusFirstItem, rovingFocus } from '$lib/utils/roving-focus';
 	import type { Snippet } from 'svelte';
 
 	export type CommandMenuItem = {
@@ -19,6 +21,9 @@
 		items: CommandMenuItem[];
 	};
 
+	type Align = 'start' | 'center' | 'end';
+	type Placement = 'bottom' | `bottom-${'start' | 'end'}`;
+
 	interface Props {
 		label: string;
 		menuId?: string;
@@ -26,7 +31,7 @@
 		triggerClass?: string;
 		placeholder?: string;
 		emptyText?: string;
-		align?: 'start' | 'center' | 'end';
+		align?: Align;
 		groups: CommandMenuGroup[];
 	}
 
@@ -43,15 +48,31 @@
 
 	let open = $state(false);
 	let search = $state('');
+	let listEl = $state<HTMLDivElement | null>(null);
 
-	const visibleGroups = $derived(
+	const placement = $derived<Placement>(align === 'center' ? 'bottom' : `bottom-${align}`);
+
+	// Ark has no Command primitive, so the fuzzy filter bits-ui provided is replaced
+	// with a case-insensitive token-substring match over label + keywords.
+	function itemMatches(item: CommandMenuItem, query: string) {
+		const q = query.trim().toLowerCase();
+		if (!q) return true;
+		const haystack = [item.label, ...(item.keywords ?? [])].join(' ').toLowerCase();
+		return q.split(/\s+/).every((token) => haystack.includes(token));
+	}
+
+	const filteredGroups = $derived(
 		groups
 			.map((group) => ({
 				...group,
-				items: group.items.filter((item) => item.label.trim().length > 0)
+				items: group.items.filter(
+					(item) => item.label.trim().length > 0 && itemMatches(item, search)
+				)
 			}))
 			.filter((group) => group.items.length > 0)
 	);
+
+	const hasResults = $derived(filteredGroups.length > 0);
 
 	$effect(() => {
 		if (!open) search = '';
@@ -64,79 +85,82 @@
 	}
 </script>
 
-<Popover.Root bind:open>
+<Popover.Root
+	{open}
+	onOpenChange={(details) => (open = details.open)}
+	positioning={{ placement, gutter: 8, overflowPadding: 12 }}
+	ids={{ content: menuId }}
+>
 	<Popover.Trigger
 		aria-label={label}
-		aria-controls={menuId}
-		class={cn(
-			'inline-flex items-center gap-1 border-0 bg-transparent',
-			triggerClass
-		)}
+		class={cn('inline-flex items-center gap-1 border-0 bg-transparent', triggerClass)}
 	>
 		<span>{triggerText}</span>
 		<ChevronDown class="size-3.5 shrink-0" aria-hidden="true" />
 	</Popover.Trigger>
 
-	<Popover.Portal>
-		<Popover.Content
-			id={menuId}
-			{align}
-			side="bottom"
-			sideOffset={8}
-			collisionPadding={12}
-			sticky="always"
-			updatePositionStrategy="always"
-			class="z-command-menu z-overflow-menu z-overflow-menu--fixed w-72 min-w-64 max-w-[calc(100vw-1rem)] p-0"
-			onpointerdown={(event) => event.stopPropagation()}
-		>
-			<Command.Root {label} loop class="flex w-full flex-col overflow-hidden">
+	<Portal>
+		<Popover.Positioner>
+			<Popover.Content
+				class="z-command-menu z-overflow-menu z-overflow-menu--fixed w-72 min-w-64 max-w-[calc(100vw-1rem)] p-0"
+				onpointerdown={(event) => event.stopPropagation()}
+			>
 				<div class="border-b border-border">
-					<Command.Input
+					<!-- svelte-ignore a11y_autofocus -->
+					<input
 						bind:value={search}
 						{placeholder}
+						aria-label={label}
+						autofocus
 						class="h-10 w-full bg-transparent px-3 text-sm text-fg outline-none placeholder:text-fg-subtle"
+						onkeydown={(event) => {
+							if (event.key === 'ArrowDown') {
+								event.preventDefault();
+								focusFirstItem(listEl);
+							}
+						}}
 					/>
 				</div>
 
-				<Command.List class="z-overflow-menu-scroll max-h-[min(50vh,20rem)] py-1">
-					<Command.Viewport>
-						<Command.Empty class="px-3 py-6 text-center text-sm text-fg-muted">
-							{emptyText}
-						</Command.Empty>
-
-						{#each visibleGroups as group, groupIndex (group.heading ?? group.items.map((item) => item.value).join('-'))}
-							<Command.Group value={group.heading ?? `group-${groupIndex}`}>
+				<div
+					bind:this={listEl}
+					role="listbox"
+					aria-label={label}
+					use:rovingFocus
+					class="z-overflow-menu-scroll max-h-[min(50vh,20rem)] py-1"
+				>
+					{#if !hasResults}
+						<p class="px-3 py-6 text-center text-sm text-fg-muted">{emptyText}</p>
+					{:else}
+						{#each filteredGroups as group, groupIndex (group.heading ?? group.items.map((item) => item.value).join('-'))}
+							<div role="group">
 								{#if group.heading}
-									<Command.GroupHeading class="z-overflow-menu-label">
-										{group.heading}
-									</Command.GroupHeading>
+									<div class="z-overflow-menu-label">{group.heading}</div>
 								{/if}
-								<Command.GroupItems>
-									{#each group.items as item (item.value)}
-										<Command.Item
-											value={item.value}
-											keywords={item.keywords ?? [item.label]}
-											disabled={item.disabled}
-											class={cn(
-												'z-overflow-menu-item data-selected:bg-surface-sunken',
-												item.danger && 'z-overflow-menu-item--danger'
-											)}
-											onSelect={() => selectItem(item)}
-										>
-											{#if item.icon}
-												<span class="flex size-5 shrink-0 items-center justify-center">
-													{@render item.icon()}
-												</span>
-											{/if}
-											<span class="truncate">{item.label}</span>
-										</Command.Item>
-									{/each}
-								</Command.GroupItems>
-							</Command.Group>
+								{#each group.items as item (item.value)}
+									<button
+										type="button"
+										data-roving-item
+										disabled={item.disabled}
+										class={cn(
+											'z-overflow-menu-item w-full text-left outline-none focus:bg-surface-sunken',
+											item.danger && 'z-overflow-menu-item--danger'
+										)}
+										onclick={() => selectItem(item)}
+									>
+										{#if item.icon}
+											<span class="flex size-5 shrink-0 items-center justify-center">
+												{@render item.icon()}
+											</span>
+										{/if}
+										<span class="truncate">{item.label}</span>
+									</button>
+								{/each}
+							</div>
 						{/each}
-					</Command.Viewport>
-				</Command.List>
-			</Command.Root>
-		</Popover.Content>
-	</Popover.Portal>
+					{/if}
+				</div>
+			</Popover.Content>
+		</Popover.Positioner>
+	</Portal>
 </Popover.Root>
