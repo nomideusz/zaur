@@ -1,83 +1,99 @@
 <script lang="ts">
+	// Ark combobox over the settings search registry. The registry owns filtering
+	// (query lives in settingsSearch.query), so this is an externally-filtered combobox
+	// — the collection is just whatever filtered() returns. Replaces the previous
+	// roving-focus.ts listbox.
+	import { Combobox, createListCollection } from '@ark-ui/svelte/combobox';
+	import { Portal } from '@ark-ui/svelte/portal';
 	import Search from '$lib/components/icons/Search.svelte';
 	import { settingsSearch } from '$lib/settings/search-registry.svelte';
+	import type { SettingsSearchEntry } from '$lib/settings/search-index';
 	import { goto } from '$lib/utils/navigation';
-	import { focusFirstItem, rovingFocus } from '$lib/utils/roving-focus';
 
-	let input = $state<HTMLInputElement | null>(null);
-	let listEl = $state<HTMLDivElement | null>(null);
-	const resultsId = 'settings-search-results';
+	let open = $state(false);
 
 	const results = $derived(settingsSearch.filtered());
+	const entryKey = (entry: SettingsSearchEntry) => `${entry.id}::${entry.href}`;
 
-	function selectEntry(entry: (typeof results)[number]) {
+	const collection = $derived(
+		createListCollection({
+			items: results,
+			itemToValue: entryKey,
+			itemToString: (entry) => entry.title
+		})
+	);
+	const byKey = $derived(new Map(results.map((entry) => [entryKey(entry), entry])));
+
+	const popupOpen = $derived(open && results.length > 0);
+
+	function selectEntry(entry: SettingsSearchEntry) {
 		settingsSearch.setQuery('');
-		if (input) input.value = '';
+		open = false;
 		const target = `${entry.href}#${entry.id}`;
 		void goto(target).then(() => {
 			requestAnimationFrame(() => settingsSearch.scrollTo(entry.id));
 		});
 	}
 
-	function onInput(e: Event) {
-		settingsSearch.setQuery((e.currentTarget as HTMLInputElement).value);
+	function onInputValueChange(details: Combobox.InputValueChangeDetails) {
+		if (details.reason === 'input-change') {
+			settingsSearch.setQuery(details.inputValue);
+			open = true;
+		}
 	}
 
-	function onKeydown(e: KeyboardEvent) {
-		if (e.key === 'Escape') {
-			settingsSearch.setQuery('');
-			if (input) input.value = '';
-			input?.blur();
-		} else if (e.key === 'ArrowDown' && results.length) {
-			e.preventDefault();
-			focusFirstItem(listEl);
-		}
+	function onSelect(details: Combobox.SelectionDetails) {
+		const entry = byKey.get(details.itemValue);
+		if (entry) selectEntry(entry);
 	}
 </script>
 
-<div class="relative">
-	<label class="sr-only" for="settings-search">Search settings</label>
-	<div class="z-settings-search-field relative">
+<Combobox.Root
+	{collection}
+	inputValue={settingsSearch.query}
+	open={popupOpen}
+	allowCustomValue
+	selectionBehavior="preserve"
+	openOnClick
+	positioning={{ placement: 'bottom-start', sameWidth: true }}
+	onInputValueChange={onInputValueChange}
+	onOpenChange={(d) => (open = d.open)}
+	onSelect={onSelect}
+	class="relative"
+>
+	<Combobox.Label class="sr-only">Search settings</Combobox.Label>
+	<Combobox.Control class="z-settings-search-field relative">
 		<Search
 			class="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-subtle"
 			aria-hidden="true"
 		/>
-		<input
-			id="settings-search"
-			bind:this={input}
+		<Combobox.Input
 			type="search"
 			class="z-settings-search-input"
 			placeholder="Search settings…"
 			autocomplete="off"
-			aria-controls={results.length ? resultsId : undefined}
-			oninput={onInput}
-			onkeydown={onKeydown}
+			onkeydown={(e: KeyboardEvent) => {
+				// Preserve the original Escape behaviour: clear the query, not just close.
+				if (e.key === 'Escape') settingsSearch.setQuery('');
+			}}
 		/>
-	</div>
+	</Combobox.Control>
 
-	{#if results.length}
-		<!-- Results are pre-filtered by the registry; this list only needs roving focus
-		     (bits Command with shouldFilter=false). Items are buttons → native activation. -->
-		<div
-			bind:this={listEl}
-			id={resultsId}
-			role="listbox"
-			aria-label="Settings search results"
-			use:rovingFocus
-			class="absolute top-full right-0 left-0 z-30 mt-1.5 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-md"
-		>
-			<div class="max-h-72 overflow-y-auto py-1">
-				{#each results as entry (entry.id + entry.href)}
-					<button
-						type="button"
-						data-roving-item
-						class="z-overflow-menu-item w-full text-left outline-none focus:bg-surface-sunken hover:bg-surface-sunken"
-						onclick={() => selectEntry(entry)}
+	<Portal>
+		<Combobox.Positioner>
+			<Combobox.Content
+				class="z-30 mt-1.5 max-h-72 overflow-y-auto rounded-lg border border-border bg-surface-raised py-1 shadow-md outline-none"
+				aria-label="Settings search results"
+			>
+				{#each results as entry (entryKey(entry))}
+					<Combobox.Item
+						item={entry}
+						class="z-overflow-menu-item w-full cursor-pointer text-left outline-none data-[highlighted]:bg-surface-sunken"
 					>
-						{entry.title}
-					</button>
+						<Combobox.ItemText>{entry.title}</Combobox.ItemText>
+					</Combobox.Item>
 				{/each}
-			</div>
-		</div>
-	{/if}
-</div>
+			</Combobox.Content>
+		</Combobox.Positioner>
+	</Portal>
+</Combobox.Root>
