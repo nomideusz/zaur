@@ -6,7 +6,11 @@
 </script>
 
 <SettingsGroup title="Keyboard shortcuts" visibleOn="desktop">
-	<SettingsRow kind="toggle" title="Enable shortcuts">
+	<SettingsRow
+		kind="toggle"
+		title="Enable shortcuts"
+		description="Use the single-key shortcuts below to move around without the mouse."
+	>
 		<Switch
 			checked={settings.enableKeyboardShortcuts}
 			onchange={(checked) => settings.setEnableKeyboardShortcuts(checked)}

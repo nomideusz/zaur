@@ -30,7 +30,11 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Reduce motion">
+	<SettingsRow
+		kind="toggle"
+		title="Reduce motion"
+		description="Minimize animations and transitions throughout the app."
+	>
 		<Switch
 			checked={settings.reduceMotion}
 			onchange={(checked) => settings.setReduceMotion(checked)}

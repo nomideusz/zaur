@@ -263,7 +263,7 @@
 		<span class="text-fg">{auth.username ?? '—'}</span>
 	</SettingsRow>
 
-	<SettingsRow kind="info" title="JMAP server">
+	<SettingsRow kind="info" title="JMAP server" description="The mail server this app syncs with.">
 		<span class="max-w-[12rem] truncate text-fg sm:max-w-none">
 			{auth.serverUrl ?? appConfig.jmapServerUrl}
 		</span>
@@ -288,28 +288,44 @@
 </SettingsGroup>
 
 <SettingsGroup title="Notifications & Actions">
-	<SettingsRow kind="toggle" title="Confirm before delete">
+	<SettingsRow
+		kind="toggle"
+		title="Confirm before delete"
+		description="Ask before moving messages to the Trash."
+	>
 		<Switch
 			checked={settings.confirmBeforeDelete}
 			onchange={(checked) => settings.setConfirmBeforeDelete(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Hide action toasts">
+	<SettingsRow
+		kind="toggle"
+		title="Hide action toasts"
+		description="Stop showing the brief confirmations that pop up after actions."
+	>
 		<Switch
 			checked={settings.hideActionToasts}
 			onchange={(checked) => settings.setHideActionToasts(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Unseen count on app icon">
+	<SettingsRow
+		kind="toggle"
+		title="Unseen count on app icon"
+		description="Show the number of unread messages as a badge on the installed app's icon."
+	>
 		<Switch
 			checked={settings.showUnreadAppBadge}
 			onchange={(checked) => settings.setShowUnreadAppBadge(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Unseen count in tab title">
+	<SettingsRow
+		kind="toggle"
+		title="Unseen count in tab title"
+		description="Show the number of unread messages in the browser tab title."
+	>
 		<Switch
 			checked={settings.showUnreadInTitle}
 			onchange={(checked) => settings.setShowUnreadInTitle(checked)}
@@ -318,21 +334,33 @@
 </SettingsGroup>
 
 <SettingsGroup title="Calendar">
-	<SettingsRow kind="toggle" title="Week starts on Monday">
+	<SettingsRow
+		kind="toggle"
+		title="Week starts on Monday"
+		description="Begin each calendar week on Monday instead of Sunday."
+	>
 		<Switch
 			checked={settings.calendarWeekStartsOnMonday}
 			onchange={(checked) => settings.setCalendarWeekStartsOnMonday(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Hide event times">
+	<SettingsRow
+		kind="toggle"
+		title="Hide event times"
+		description="Show events by title only, without their start and end times."
+	>
 		<Switch
 			checked={settings.hideCalendarEventTimes}
 			onchange={(checked) => settings.setHideCalendarEventTimes(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="menu" title="Events per day in month view">
+	<SettingsRow
+		kind="menu"
+		title="Events per day in month view"
+		description="How many events to list under a day before the rest collapse into a count."
+	>
 		<SettingsSelect
 			label="Events per day in month view"
 			value={String(settings.calendarMaxEventsPerDay)}
@@ -351,7 +379,11 @@
 </SettingsGroup>
 
 <SettingsGroup title="Device">
-	<SettingsRow kind="action" title="App install">
+	<SettingsRow
+		kind="action"
+		title="App install"
+		description="Install ZAUR as an app on this device for a standalone window."
+	>
 		{#if pwa.isInstalled}
 			<span class="text-fg-muted">Installed</span>
 		{:else if pwa.canInstall}
@@ -363,14 +395,18 @@
 		{/if}
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Push notifications">
+	<SettingsRow
+		kind="toggle"
+		title="Push notifications"
+		description="Get notified about new mail even when ZAUR isn't open."
+	>
 		<PushNotificationStatus />
 	</SettingsRow>
 </SettingsGroup>
 
 {#if oauthEnabled}
 	<SettingsGroup title="Security">
-		<SettingsField title="Passkey">
+		<SettingsField title="Passkey" description="Sign in with your device's biometrics or PIN instead of a password.">
 			{#snippet children({ id })}
 				<div class="flex w-full flex-col gap-2 sm:max-w-xs">
 					{#if passkeyStatusLoading}
@@ -409,7 +445,11 @@
 {#if trashMailbox || junkMailbox}
 	<SettingsGroup title="Mailbox">
 		{#if trashMailbox}
-			<SettingsRow kind="action" title="Empty Trash">
+			<SettingsRow
+				kind="action"
+				title="Empty Trash"
+				description="Permanently delete every message in the Trash folder."
+			>
 				<button
 					type="button"
 					class="z-mail-text-nav__link z-mail-text-nav__link--danger"
@@ -422,7 +462,11 @@
 		{/if}
 
 		{#if junkMailbox}
-			<SettingsRow kind="action" title="Empty Spam">
+			<SettingsRow
+				kind="action"
+				title="Empty Spam"
+				description="Permanently delete every message in the Spam folder."
+			>
 				<button
 					type="button"
 					class="z-mail-text-nav__link z-mail-text-nav__link--danger"
@@ -437,7 +481,11 @@
 {/if}
 
 <SettingsGroup title="Sync & data">
-	<SettingsRow kind="action" title="Refresh from account">
+	<SettingsRow
+		kind="action"
+		title="Refresh from account"
+		description="Pull your saved settings from the server, replacing the ones on this device."
+	>
 		<button
 			type="button"
 			class="z-mail-text-nav__link"
@@ -453,26 +501,42 @@
 		</button>
 	</SettingsRow>
 
-	<SettingsRow kind="action" title="Save to account">
+	<SettingsRow
+		kind="action"
+		title="Save to account"
+		description="Store these settings on the server so they follow you to other devices."
+	>
 		<button type="button" class="z-mail-text-nav__link" onclick={() => void settings.syncToAccount()}>
 			Save
 		</button>
 	</SettingsRow>
 
-	<SettingsRow kind="action" title="Export settings">
+	<SettingsRow
+		kind="action"
+		title="Export settings"
+		description="Download your preferences as a JSON file."
+	>
 		<button type="button" class="z-mail-text-nav__link" onclick={() => settings.downloadLocalPreferences()}>
 			Export
 		</button>
 	</SettingsRow>
 
-	<SettingsRow kind="action" title="Import settings">
+	<SettingsRow
+		kind="action"
+		title="Import settings"
+		description="Load preferences from a previously exported file."
+	>
 		<input bind:this={importInput} type="file" accept="application/json,.json" class="hidden" onchange={importPreferences} />
 		<button type="button" class="z-mail-text-nav__link" onclick={() => importInput?.click()}>
 			Import
 		</button>
 	</SettingsRow>
 
-	<SettingsRow kind="action" title="Clear local cache">
+	<SettingsRow
+		kind="action"
+		title="Clear local cache"
+		description="Remove downloaded mail and sync state from this device. Your mail on the server is untouched."
+	>
 		<button
 			type="button"
 			class="z-mail-text-nav__link"
@@ -483,7 +547,11 @@
 		</button>
 	</SettingsRow>
 
-	<SettingsRow kind="action" title="Reset preferences">
+	<SettingsRow
+		kind="action"
+		title="Reset preferences"
+		description="Restore all settings to their defaults. Your display name and signature are kept."
+	>
 		<button
 			type="button"
 			class="z-mail-text-nav__link z-mail-text-nav__link--danger"
@@ -493,7 +561,11 @@
 		</button>
 	</SettingsRow>
 
-	<SettingsRow kind="action" title="Sign out">
+	<SettingsRow
+		kind="action"
+		title="Sign out"
+		description="Sign out of ZAUR Webmail on this device."
+	>
 		<button
 			type="button"
 			class="z-mail-text-nav__link z-mail-text-nav__link--danger"

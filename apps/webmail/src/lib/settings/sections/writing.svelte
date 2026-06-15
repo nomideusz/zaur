@@ -11,7 +11,11 @@
 </script>
 
 <SettingsGroup title="Format & Send Delay">
-	<SettingsRow kind="menu" title="Default format">
+	<SettingsRow
+		kind="menu"
+		title="Default format"
+		description="The format new messages start in. HTML allows styling; plain text is simpler and lighter."
+	>
 		<SettingsSelect
 			label="Default format"
 			value={settings.defaultComposeFormat}
@@ -23,7 +27,11 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="menu" title="Default reply">
+	<SettingsRow
+		kind="menu"
+		title="Default reply"
+		description="Whether the reply button answers just the sender or everyone on the message."
+	>
 		<SettingsSelect
 			label="Default reply"
 			value={settings.defaultReplyMode}
@@ -35,7 +43,11 @@
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="menu" title="Undo send">
+	<SettingsRow
+		kind="menu"
+		title="Undo send"
+		description="Briefly hold sent messages so you can recall them before they leave."
+	>
 		<SettingsSelect
 			label="Undo send"
 			value={String(settings.undoSendDelay)}
@@ -56,42 +68,66 @@
 </SettingsGroup>
 
 <SettingsGroup title="Writing Behavior">
-	<SettingsRow kind="toggle" title="Show Cc/Bcc">
+	<SettingsRow
+		kind="toggle"
+		title="Show Cc/Bcc"
+		description="Always show the Cc and Bcc fields when composing, instead of on demand."
+	>
 		<Switch
 			checked={settings.showCcBccInCompose}
 			onchange={(checked) => settings.setShowCcBccInCompose(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Contact suggestions">
+	<SettingsRow
+		kind="toggle"
+		title="Contact suggestions"
+		description="Suggest matching addresses from your contacts as you type recipients."
+	>
 		<Switch
 			checked={settings.showComposeContactSuggestions}
 			onchange={(checked) => settings.setShowComposeContactSuggestions(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Collapse quoted text">
+	<SettingsRow
+		kind="toggle"
+		title="Collapse quoted text"
+		description="Start replies with the quoted original folded out of the way."
+	>
 		<Switch
 			checked={settings.collapseQuotedInCompose}
 			onchange={(checked) => settings.setCollapseQuotedInCompose(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Hide compose hints">
+	<SettingsRow
+		kind="toggle"
+		title="Hide compose hints"
+		description="Hide the inline tips shown while composing, such as why a message can't be sent yet."
+	>
 		<Switch
 			checked={settings.hideComposeHints}
 			onchange={(checked) => settings.setHideComposeHints(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Always Bcc me">
+	<SettingsRow
+		kind="toggle"
+		title="Always Bcc me"
+		description="Send yourself a blind copy of every message you send."
+	>
 		<Switch
 			checked={settings.bccSelf}
 			onchange={(checked) => settings.setBccSelf(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Confirm before discard">
+	<SettingsRow
+		kind="toggle"
+		title="Confirm before discard"
+		description="Ask before throwing away a draft that has unsaved changes."
+	>
 		<Switch
 			checked={settings.confirmBeforeDiscardCompose}
 			onchange={(checked) => settings.setConfirmBeforeDiscardCompose(checked)}

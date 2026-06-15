@@ -16,7 +16,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/account-app-install",
 		"href": "/settings/account",
 		"title": "App install",
-		"description": ""
+		"description": "Install ZAUR as an app on this device for a standalone window."
 	},
 	{
 		"id": "/settings/account-appearance",
@@ -28,13 +28,13 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/account-clear-local-cache",
 		"href": "/settings/account",
 		"title": "Clear local cache",
-		"description": ""
+		"description": "Remove downloaded mail and sync state from this device. Your mail on the server is untouched."
 	},
 	{
 		"id": "/settings/account-confirm-before-delete",
 		"href": "/settings/account",
 		"title": "Confirm before delete",
-		"description": ""
+		"description": "Ask before moving messages to the Trash."
 	},
 	{
 		"id": "/settings/account-display-name",
@@ -46,43 +46,43 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/account-empty-spam",
 		"href": "/settings/account",
 		"title": "Empty Spam",
-		"description": ""
+		"description": "Permanently delete every message in the Spam folder."
 	},
 	{
 		"id": "/settings/account-empty-trash",
 		"href": "/settings/account",
 		"title": "Empty Trash",
-		"description": ""
+		"description": "Permanently delete every message in the Trash folder."
 	},
 	{
 		"id": "/settings/account-events-per-day-in-month-view",
 		"href": "/settings/account",
 		"title": "Events per day in month view",
-		"description": ""
+		"description": "How many events to list under a day before the rest collapse into a count."
 	},
 	{
 		"id": "/settings/account-export-settings",
 		"href": "/settings/account",
 		"title": "Export settings",
-		"description": ""
+		"description": "Download your preferences as a JSON file."
 	},
 	{
 		"id": "/settings/account-hide-action-toasts",
 		"href": "/settings/account",
 		"title": "Hide action toasts",
-		"description": ""
+		"description": "Stop showing the brief confirmations that pop up after actions."
 	},
 	{
 		"id": "/settings/account-hide-event-times",
 		"href": "/settings/account",
 		"title": "Hide event times",
-		"description": ""
+		"description": "Show events by title only, without their start and end times."
 	},
 	{
 		"id": "/settings/account-import-settings",
 		"href": "/settings/account",
 		"title": "Import settings",
-		"description": ""
+		"description": "Load preferences from a previously exported file."
 	},
 	{
 		"id": "/settings/account-include-signature",
@@ -94,13 +94,13 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/account-jmap-server",
 		"href": "/settings/account",
 		"title": "JMAP server",
-		"description": ""
+		"description": "The mail server this app syncs with."
 	},
 	{
 		"id": "/settings/account-passkey",
 		"href": "/settings/account",
 		"title": "Passkey",
-		"description": ""
+		"description": "Sign in with your device's biometrics or PIN instead of a password."
 	},
 	{
 		"id": "/settings/account-primary-address",
@@ -112,31 +112,31 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/account-push-notifications",
 		"href": "/settings/account",
 		"title": "Push notifications",
-		"description": ""
+		"description": "Get notified about new mail even when ZAUR isn't open."
 	},
 	{
 		"id": "/settings/account-reduce-motion",
 		"href": "/settings/account",
 		"title": "Reduce motion",
-		"description": ""
+		"description": "Minimize animations and transitions throughout the app."
 	},
 	{
 		"id": "/settings/account-refresh-from-account",
 		"href": "/settings/account",
 		"title": "Refresh from account",
-		"description": ""
+		"description": "Pull your saved settings from the server, replacing the ones on this device."
 	},
 	{
 		"id": "/settings/account-reset-preferences",
 		"href": "/settings/account",
 		"title": "Reset preferences",
-		"description": ""
+		"description": "Restore all settings to their defaults. Your display name and signature are kept."
 	},
 	{
 		"id": "/settings/account-save-to-account",
 		"href": "/settings/account",
 		"title": "Save to account",
-		"description": ""
+		"description": "Store these settings on the server so they follow you to other devices."
 	},
 	{
 		"id": "/settings/account-session",
@@ -148,7 +148,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/account-sign-out",
 		"href": "/settings/account",
 		"title": "Sign out",
-		"description": ""
+		"description": "Sign out of ZAUR Webmail on this device."
 	},
 	{
 		"id": "/settings/account-sign-out-of-this-account",
@@ -166,73 +166,73 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/account-unseen-count-in-tab-title",
 		"href": "/settings/account",
 		"title": "Unseen count in tab title",
-		"description": ""
+		"description": "Show the number of unread messages in the browser tab title."
 	},
 	{
 		"id": "/settings/account-unseen-count-on-app-icon",
 		"href": "/settings/account",
 		"title": "Unseen count on app icon",
-		"description": ""
+		"description": "Show the number of unread messages as a badge on the installed app's icon."
 	},
 	{
 		"id": "/settings/account-week-starts-on-monday",
 		"href": "/settings/account",
 		"title": "Week starts on Monday",
-		"description": ""
+		"description": "Begin each calendar week on Monday instead of Sunday."
 	},
 	{
 		"id": "/settings/compose-always-bcc-me",
 		"href": "/settings/compose",
 		"title": "Always Bcc me",
-		"description": ""
+		"description": "Send yourself a blind copy of every message you send."
 	},
 	{
 		"id": "/settings/compose-collapse-quoted-text",
 		"href": "/settings/compose",
 		"title": "Collapse quoted text",
-		"description": ""
+		"description": "Start replies with the quoted original folded out of the way."
 	},
 	{
 		"id": "/settings/compose-confirm-before-discard",
 		"href": "/settings/compose",
 		"title": "Confirm before discard",
-		"description": ""
+		"description": "Ask before throwing away a draft that has unsaved changes."
 	},
 	{
 		"id": "/settings/compose-contact-suggestions",
 		"href": "/settings/compose",
 		"title": "Contact suggestions",
-		"description": ""
+		"description": "Suggest matching addresses from your contacts as you type recipients."
 	},
 	{
 		"id": "/settings/compose-default-format",
 		"href": "/settings/compose",
 		"title": "Default format",
-		"description": ""
+		"description": "The format new messages start in. HTML allows styling; plain text is simpler and lighter."
 	},
 	{
 		"id": "/settings/compose-default-reply",
 		"href": "/settings/compose",
 		"title": "Default reply",
-		"description": ""
+		"description": "Whether the reply button answers just the sender or everyone on the message."
 	},
 	{
 		"id": "/settings/compose-hide-compose-hints",
 		"href": "/settings/compose",
 		"title": "Hide compose hints",
-		"description": ""
+		"description": "Hide the inline tips shown while composing, such as why a message can't be sent yet."
 	},
 	{
 		"id": "/settings/compose-show-cc-bcc",
 		"href": "/settings/compose",
 		"title": "Show Cc/Bcc",
-		"description": ""
+		"description": "Always show the Cc and Bcc fields when composing, instead of on demand."
 	},
 	{
 		"id": "/settings/compose-undo-send",
 		"href": "/settings/compose",
 		"title": "Undo send",
-		"description": ""
+		"description": "Briefly hold sent messages so you can recall them before they leave."
 	},
 	{
 		"id": "/settings/reading-block-remote-images",
@@ -304,6 +304,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/shortcuts-enable-shortcuts",
 		"href": "/settings/shortcuts",
 		"title": "Enable shortcuts",
-		"description": ""
+		"description": "Use the single-key shortcuts below to move around without the mouse."
 	}
 ];
