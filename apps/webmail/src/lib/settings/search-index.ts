@@ -37,6 +37,18 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Stop showing the brief confirmations that pop up after actions."
 	},
 	{
+		"id": "/settings/account-imap-port",
+		"href": "/settings/account",
+		"title": "IMAP port",
+		"description": "Incoming mail, SSL/TLS."
+	},
+	{
+		"id": "/settings/account-imap-server",
+		"href": "/settings/account",
+		"title": "IMAP server",
+		"description": ""
+	},
+	{
 		"id": "/settings/account-include-signature",
 		"href": "/settings/account",
 		"title": "Include signature",
@@ -53,6 +65,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"href": "/settings/account",
 		"title": "Passkey",
 		"description": "Sign in with your device's biometrics or PIN instead of a password."
+	},
+	{
+		"id": "/settings/account-password",
+		"href": "/settings/account",
+		"title": "Password",
+		"description": "Your mailbox password — the one you registered with."
 	},
 	{
 		"id": "/settings/account-primary-address",
@@ -91,6 +109,24 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Appended to the bottom of new messages."
 	},
 	{
+		"id": "/settings/account-smtp-port",
+		"href": "/settings/account",
+		"title": "SMTP port",
+		"description": "Outgoing mail. SSL/TLS, or 587 with STARTTLS."
+	},
+	{
+		"id": "/settings/account-smtp-server",
+		"href": "/settings/account",
+		"title": "SMTP server",
+		"description": ""
+	},
+	{
+		"id": "/settings/account-undo-window",
+		"href": "/settings/account",
+		"title": "Undo window",
+		"description": "How long an Undo button stays after you send, archive, delete, or move a message. Off acts immediately."
+	},
+	{
 		"id": "/settings/account-unseen-count-in-tab-title",
 		"href": "/settings/account",
 		"title": "Unseen count in tab title",
@@ -101,6 +137,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"href": "/settings/account",
 		"title": "Unseen count on app icon",
 		"description": "Show the number of unseen messages as a badge on the installed app's icon."
+	},
+	{
+		"id": "/settings/account-username",
+		"href": "/settings/account",
+		"title": "Username",
+		"description": ""
 	},
 	{
 		"id": "/settings/appearance-appearance",
@@ -179,12 +221,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"href": "/settings/compose",
 		"title": "Show Cc/Bcc",
 		"description": "Always show the Cc and Bcc fields when composing, instead of on demand."
-	},
-	{
-		"id": "/settings/compose-undo-send",
-		"href": "/settings/compose",
-		"title": "Undo send",
-		"description": "Briefly hold sent messages so you can recall them before they leave."
 	},
 	{
 		"id": "/settings/data-clear-local-cache",

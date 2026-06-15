@@ -239,7 +239,7 @@ function readHideActionToasts(): boolean {
 }
 
 function readCalendarWeekStartsOnMonday(): boolean {
-	return readBool(STORAGE.calendarWeekStartsOnMonday, false);
+	return readBool(STORAGE.calendarWeekStartsOnMonday, true);
 }
 
 function readHideCalendarEventTimes(): boolean {
@@ -726,7 +726,7 @@ class SettingsStore {
 	}
 
 	resetCalendarSettings() {
-		this.setCalendarWeekStartsOnMonday(false);
+		this.setCalendarWeekStartsOnMonday(true);
 		this.setCalendarMaxEventsPerDay(3);
 		this.setHideCalendarEventTimes(false);
 	}

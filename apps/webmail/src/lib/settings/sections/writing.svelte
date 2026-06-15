@@ -10,7 +10,7 @@
 	} from '$lib/stores/settings.svelte';
 </script>
 
-<SettingsGroup title="Format & Send Delay">
+<SettingsGroup title="Defaults">
 	<SettingsRow
 		kind="menu"
 		title="Default format"
@@ -40,29 +40,6 @@
 				{ value: 'reply-all', label: 'Reply all' }
 			]}
 			onchange={(v) => settings.setDefaultReplyMode(v as DefaultReplyMode)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="menu"
-		title="Undo send"
-		description="Briefly hold sent messages so you can recall them before they leave."
-	>
-		<SettingsSelect
-			label="Undo send"
-			value={String(settings.undoSendDelay)}
-			options={[
-				{ value: '0', label: 'Off' },
-				{ value: '5000', label: '5 s' },
-				{ value: '10000', label: '10 s' },
-				{ value: '20000', label: '20 s' }
-			]}
-			onchange={(v) => {
-				const next = Number(v);
-				if (next === 0 || next === 5000 || next === 10000 || next === 20000) {
-					settings.setUndoSendDelay(next);
-				}
-			}}
 		/>
 	</SettingsRow>
 </SettingsGroup>

@@ -6,6 +6,7 @@
 	import SettingsFormToggle from '$lib/components/settings/SettingsFormToggle.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
+	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
@@ -21,6 +22,10 @@
 	let passkeyStatusLoading = $state(false);
 
 	const oauthEnabled = $derived(auth.oauthConfig?.enabled === true);
+	// Bare hostname of the mail server — IMAP/SMTP share the JMAP host.
+	const mailHost = $derived(
+		(auth.serverUrl ?? appConfig.jmapServerUrl).replace(/^https?:\/\//, '').replace(/[/:].*$/, '')
+	);
 
 	async function loadPasskeyStatus() {
 		if (!oauthEnabled || !auth.username) return;
@@ -214,6 +219,35 @@
 	{/if}
 </SettingsGroup>
 
+<SettingsGroup
+	title="Other email apps"
+	description="Use any IMAP client — Apple Mail, Thunderbird, Outlook. Sign in with your full email address and mailbox password."
+>
+	<SettingsRow kind="info" title="IMAP server">
+		<span class="text-fg">{mailHost}</span>
+	</SettingsRow>
+
+	<SettingsRow kind="info" title="IMAP port" description="Incoming mail, SSL/TLS.">
+		<span class="text-fg tabular-nums">993</span>
+	</SettingsRow>
+
+	<SettingsRow kind="info" title="SMTP server">
+		<span class="text-fg">{mailHost}</span>
+	</SettingsRow>
+
+	<SettingsRow kind="info" title="SMTP port" description="Outgoing mail. SSL/TLS, or 587 with STARTTLS.">
+		<span class="text-fg tabular-nums">465</span>
+	</SettingsRow>
+
+	<SettingsRow kind="info" title="Username">
+		<span class="max-w-[12rem] truncate text-fg sm:max-w-none">{auth.username ?? '—'}</span>
+	</SettingsRow>
+
+	<SettingsRow kind="info" title="Password" description="Your mailbox password — the one you registered with.">
+		<span class="text-fg-muted">Mailbox password</span>
+	</SettingsRow>
+</SettingsGroup>
+
 <SettingsGroup title="Notifications & Actions">
 	<SettingsRow
 		kind="toggle"
@@ -223,6 +257,29 @@
 		<Switch
 			checked={settings.confirmBeforeDelete}
 			onchange={(checked) => settings.setConfirmBeforeDelete(checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		kind="menu"
+		title="Undo window"
+		description="How long an Undo button stays after you send, archive, delete, or move a message. Off acts immediately."
+	>
+		<SettingsSelect
+			label="Undo window"
+			value={String(settings.undoSendDelay)}
+			options={[
+				{ value: '0', label: 'Off' },
+				{ value: '5000', label: '5 s' },
+				{ value: '10000', label: '10 s' },
+				{ value: '20000', label: '20 s' }
+			]}
+			onchange={(v) => {
+				const next = Number(v);
+				if (next === 0 || next === 5000 || next === 10000 || next === 20000) {
+					settings.setUndoSendDelay(next);
+				}
+			}}
 		/>
 	</SettingsRow>
 
