@@ -567,6 +567,10 @@
 		border-radius: 0.5rem;
 		padding: clamp(0.75rem, 3vw, 1.25rem);
 		isolation: isolate;
+		/* Soften the bright card in dark/automatic mode: dims background, text, images and
+		 * any baked-in white logo boxes together (contrast preserved) so it stops glaring
+		 * against the dark reader at night. Tune the single factor below to taste. */
+		filter: brightness(0.86);
 	}
 
 	:root:is(.dark, [data-circadian-dark]) .z-email-body--light :where(a) {
