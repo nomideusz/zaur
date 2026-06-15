@@ -1,35 +1,36 @@
 <script lang="ts">
-	import { toast } from '$lib/stores/toast.svelte';
+	import { Toast, Toaster } from '@ark-ui/svelte/toast';
+	import { Portal } from '@ark-ui/svelte/portal';
+	import { toaster } from '$lib/stores/toast.svelte';
 </script>
 
-<div class="z-status-line" aria-live="polite" aria-relevant="additions">
-	{#each toast.toasts as item (item.id)}
-		{@const isTimed = !!item.action}
-		<div
-			class="z-status-line__item"
-			class:z-status-line__item--timed={isTimed}
-			data-variant={item.variant}
-			role="status"
-		>
-			{#if isTimed}
-				<div
-					class="z-status-line__shape-fill"
-					style:animation-duration="{item.durationMs}ms"
-					aria-hidden="true"
-				></div>
-			{/if}
-			<div class="z-status-line__content">
-				<p class="z-status-line__message">{item.message}</p>
-				{#if item.action}
-					<button
-						type="button"
-						class="z-status-line__action"
-						onclick={() => void toast.runAction(item.id, item.action!)}
-					>
-						{item.action.label}
-					</button>
+<Portal>
+	<Toaster {toaster}>
+		{#snippet children(toast)}
+			{@const timed = !!toast().action}
+			<Toast.Root
+				class="z-status-line__item{timed ? ' z-status-line__item--timed' : ''}"
+				data-variant={toast().type}
+			>
+				{#if timed}
+					<!-- Decorative countdown. Driven by the toast duration; Ark pauses dismissal
+					     on hover but this purely-visual fill does not — acceptable for the rare
+					     case of hovering the Undo toast. -->
+					<div
+						class="z-status-line__shape-fill"
+						style:animation-duration="{toast().duration ?? 0}ms"
+						aria-hidden="true"
+					></div>
 				{/if}
-			</div>
-		</div>
-	{/each}
-</div>
+				<div class="z-status-line__content">
+					<Toast.Title class="z-status-line__message">{toast().title}</Toast.Title>
+					{#if toast().action}
+						<Toast.ActionTrigger class="z-status-line__action">
+							{toast().action?.label}
+						</Toast.ActionTrigger>
+					{/if}
+				</div>
+			</Toast.Root>
+		{/snippet}
+	</Toaster>
+</Portal>
