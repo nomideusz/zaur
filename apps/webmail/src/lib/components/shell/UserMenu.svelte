@@ -33,6 +33,8 @@
 	{open}
 	onOpenChange={(details) => (open = details.open)}
 	positioning={{ placement: 'bottom-end', gutter: 8, overflowPadding: 12 }}
+	lazyMount
+	unmountOnExit
 >
 	<Menu.Trigger
 		class={cn(

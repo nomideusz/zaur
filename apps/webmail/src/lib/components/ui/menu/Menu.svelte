@@ -37,6 +37,8 @@
 	}}
 	positioning={{ placement, gutter: 8, overflowPadding: 12 }}
 	ids={menuId ? { content: menuId } : undefined}
+	lazyMount
+	unmountOnExit
 >
 	{@render children()}
 </Menu.Root>

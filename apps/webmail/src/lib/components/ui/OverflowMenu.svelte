@@ -47,6 +47,9 @@
 	const arkPlacement = $derived<Placement>(align === 'center' ? side : `${side}-${align}`);
 </script>
 
+<!-- Mount content on open / unmount on close (bits-ui behaviour). Ark defaults to
+     eager mount + keep-mounted, which mounts every row's menu hidden and tears its
+     `$derived` reads down with the component on navigation (derived_inert warnings). -->
 <Menu.Root
 	{open}
 	onOpenChange={(details) => {
@@ -55,6 +58,8 @@
 	}}
 	positioning={{ placement: arkPlacement, gutter: 8, overflowPadding: 12 }}
 	ids={{ content: menuId }}
+	lazyMount
+	unmountOnExit
 >
 	<div class={cn(textTrigger ? 'contents' : cn('relative shrink-0', className))}>
 		{#if triggerText}

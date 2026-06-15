@@ -29,6 +29,8 @@
 	onOpenChange={(details) => (open = details.open)}
 	positioning={{ placement: `${side}-start`, gutter: 8, overflowPadding: 12 }}
 	ids={{ content: menuId }}
+	lazyMount
+	unmountOnExit
 >
 	<Menu.Trigger
 		aria-label="Selection options"
