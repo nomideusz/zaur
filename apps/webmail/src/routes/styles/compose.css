@@ -8,15 +8,6 @@
 		--z-compose-prefix-width: 1.75rem;
 	}
 
-	.z-mail-view .z-compose__header-leading {
-		display: flex;
-		min-width: 0;
-		align-items: center;
-		gap: 0.5rem;
-		overflow: hidden;
-	}
-
-
 	/* Mobile: match the shell header height. */
 	@media (max-width: 767px) {
 		.z-mail-view .z-compose__header-bar {
@@ -54,12 +45,34 @@
 		opacity: 0.6;
 	}
 
-	.z-mail-view .z-compose__draft-status {
+	/* Centered compose title / draft status — owns the middle column so it never competes
+	   with the back button or Send for width (was truncating on mobile). */
+	.z-mail-view .z-compose__title {
 		min-width: 0;
-		font-size: 0.75rem;
-		font-weight: 400;
+		margin: 0;
+		font-size: 0.8125rem;
+		font-weight: 500;
 		line-height: 2rem;
-		color: var(--z-fg-subtle);
+		text-align: center;
+		color: var(--z-fg-muted);
+	}
+
+	/* Send split button: Send | ▾ (schedule). Two pill segments joined into one control. */
+	.z-mail-view .z-compose__send-split {
+		display: inline-flex;
+		align-items: stretch;
+	}
+
+	.z-mail-view .z-compose__send-main {
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
+	}
+
+	.z-mail-view .z-compose__send-caret {
+		padding-inline: 0.5rem;
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+		border-left: 1px solid color-mix(in srgb, var(--z-accent) 28%, transparent);
 	}
 
 	@media (max-width: 767px) {

@@ -4,7 +4,7 @@
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
-	import Clock from '$lib/components/icons/Clock.svelte';
+	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import RiFontSize2 from 'svelte-remixicon/RiFontSize2.svelte';
 	import ComposeRecipientInput from '$lib/components/mail/ComposeRecipientInput.svelte';
@@ -383,147 +383,96 @@
 >
 	<div class="z-compose z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 		<header class="z-compose__header flex shrink-0 flex-col border-b border-border/80">
-			<div class="z-compose__header-bar flex flex-wrap items-center justify-between gap-2 px-4 py-2 min-w-0 max-md:flex-nowrap">
-				<!-- Left: Back -->
-				<div class="z-compose__header-leading">
-					<button type="button" class="z-back-btn" aria-label="Save draft and go back" onclick={() => void saveDraftAndClose()}>
-						<ArrowLeft class="size-4" aria-hidden="true" />
-					</button>
-					<h1 class="sr-only">{composeTitle}</h1>
-					{#if draftStatus}
-						<span class="z-compose__draft-status truncate" aria-live="polite">{draftStatus}</span>
-					{/if}
-				</div>
+			<div class="z-compose__header-bar grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 min-w-0">
+				<!-- Left: Back (saves draft) -->
+				<button type="button" class="z-back-btn" aria-label="Save draft and go back" onclick={() => void saveDraftAndClose()}>
+					<ArrowLeft class="size-4" aria-hidden="true" />
+				</button>
 
-				<!-- Right: Actions -->
-				<div class="flex items-center gap-3 shrink-0 md:gap-4">
-					{#if !compose.isComposeEmpty}
-						<button
-							type="button"
-							class="z-mail-text-nav__link z-mail-text-nav__link--danger"
-							onclick={() => void discardAndClose()}
-						>
-							Discard
-						</button>
-					{/if}
-					<TooltipWrap label={isRichText ? 'Switch to plain text' : 'Switch to rich text'}>
-						{#snippet trigger({ props })}
-							<button
-								{...props}
-								type="button"
-								class={cn('z-icon-tap-target z-icon-tap-target--sm', isRichText && 'text-accent')}
-								aria-label={isRichText ? 'Switch to plain text' : 'Switch to rich text'}
-								aria-pressed={isRichText}
-								onclick={() => {
-									isRichText = !isRichText;
-									if (isRichText) {
-										if (!compose.bodyHtml) {
-											compose.bodyHtml = plainTextToSafeHtml(compose.body);
-										}
-										compose.ensureInlineAttachmentsFromHtml(compose.bodyHtml);
-									}
-								}}
-							>
-								<RiFontSize2 size="18" aria-hidden="true" />
-							</button>
-						{/snippet}
-					</TooltipWrap>
-					<button
-						type="button"
-						class="z-mail-text-nav__link max-md:hidden"
-						onclick={openFilePicker}
-					>
-						Attach
-					</button>
-					<button
-						type="button"
-						class="z-icon-tap-target z-icon-tap-target--sm md:hidden"
-						aria-label="Attach file"
-						onclick={openFilePicker}
-					>
-						<Paperclip class="size-[1.125rem]" aria-hidden="true" />
-					</button>
-					<div class="relative" bind:this={scheduleZone}>
-						<TooltipWrap label="Schedule send" wrapDisabled={scheduleDisabled}>
-							{#snippet trigger({ props })}
-								<button
-									{...props}
-									type="button"
-									class={cn('z-icon-tap-target z-icon-tap-target--sm', showSchedulePanel && 'text-accent')}
-									aria-label="Schedule send"
-									aria-expanded={showSchedulePanel}
-									disabled={scheduleDisabled}
-									onclick={() => (showSchedulePanel = !showSchedulePanel)}
-								>
-									<Clock class="size-[1.125rem]" aria-hidden="true" />
-								</button>
-							{/snippet}
-						</TooltipWrap>
-						{#if showSchedulePanel}
-							<div
-								class="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-64 rounded-xl border border-border bg-surface-raised p-2 shadow-lg"
-								role="menu"
-								aria-label="Schedule send"
-							>
-								{#each schedulePresets as preset (preset.label)}
-									<button
-										type="button"
-										class="flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-sm text-fg hover:bg-surface-sunken"
-										onclick={() => void scheduleSendAt(preset.date)}
-									>
-										<span>{preset.label}</span>
-										<span class="text-xs tabular-nums text-fg-subtle">
-											{scheduleTimeFormat.format(preset.date)}
-										</span>
-									</button>
-								{/each}
-								<div class="my-2 border-t border-border"></div>
-								<div class="flex flex-col gap-2 px-1 pb-1">
-									<label class="text-xs text-fg-muted" for="compose-schedule-custom">
-										Pick date &amp; time
-									</label>
-									<input
-										id="compose-schedule-custom"
-										type="datetime-local"
-										class="rounded-md border border-border bg-surface px-2 py-1.5 text-sm text-fg outline-none focus-visible:border-accent"
-										min={customSendTimeMin}
-										bind:value={customSendTime}
-									/>
-									<button
-										type="button"
-										class="z-mail-text-nav__action z-mail-text-nav__action--pill"
-										disabled={!customSendTime}
-										onclick={() => customSendTime && void scheduleSendAt(new Date(customSendTime))}
-									>
-										Schedule
-									</button>
-								</div>
-							</div>
-						{/if}
-					</div>
+				<!-- Center: compose title, swapped for draft status once saving/saved -->
+				<h1 class="sr-only">{composeTitle}</h1>
+				<p class="z-compose__title truncate" aria-live="polite">{draftStatus ?? composeTitle}</p>
+
+				<!-- Right: Send, with Schedule folded in as a split-button caret -->
+				<div class="z-compose__send-split relative" bind:this={scheduleZone}>
 					<TooltipWrap
 						label={sendBlockedReason ?? 'Send message'}
 						wrapDisabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
 					>
 						{#snippet trigger({ props })}
-							<div class="z-header-action-zone">
-								<button
-									{...props}
-									type="submit"
-									form="compose-form"
-									class="z-mail-text-nav__action z-mail-text-nav__action--pill"
-									disabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
-								>
-									{sendLabel}
-								</button>
-							</div>
+							<button
+								{...props}
+								type="submit"
+								form="compose-form"
+								class="z-mail-text-nav__action z-mail-text-nav__action--pill z-compose__send-main"
+								disabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
+							>
+								{sendLabel}
+							</button>
 						{/snippet}
 					</TooltipWrap>
+					<TooltipWrap label="Schedule send" wrapDisabled={scheduleDisabled}>
+						{#snippet trigger({ props })}
+							<button
+								{...props}
+								type="button"
+								class="z-mail-text-nav__action z-mail-text-nav__action--pill z-compose__send-caret"
+								aria-label="Schedule send"
+								aria-haspopup="menu"
+								aria-expanded={showSchedulePanel}
+								disabled={scheduleDisabled}
+								onclick={() => (showSchedulePanel = !showSchedulePanel)}
+							>
+								<ChevronDown class="size-4" aria-hidden="true" />
+							</button>
+						{/snippet}
+					</TooltipWrap>
+					{#if showSchedulePanel}
+						<div
+							class="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-64 rounded-xl border border-border bg-surface-raised p-2 shadow-lg"
+							role="menu"
+							aria-label="Schedule send"
+						>
+							{#each schedulePresets as preset (preset.label)}
+								<button
+									type="button"
+									class="flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-sm text-fg hover:bg-surface-sunken"
+									onclick={() => void scheduleSendAt(preset.date)}
+								>
+									<span>{preset.label}</span>
+									<span class="text-xs tabular-nums text-fg-subtle">
+										{scheduleTimeFormat.format(preset.date)}
+									</span>
+								</button>
+							{/each}
+							<div class="my-2 border-t border-border"></div>
+							<div class="flex flex-col gap-2 px-1 pb-1">
+								<label class="text-xs text-fg-muted" for="compose-schedule-custom">
+									Pick date &amp; time
+								</label>
+								<input
+									id="compose-schedule-custom"
+									type="datetime-local"
+									class="rounded-md border border-border bg-surface px-2 py-1.5 text-sm text-fg outline-none focus-visible:border-accent"
+									min={customSendTimeMin}
+									bind:value={customSendTime}
+								/>
+								<button
+									type="button"
+									class="z-mail-text-nav__action z-mail-text-nav__action--pill"
+									disabled={!customSendTime}
+									onclick={() => customSendTime && void scheduleSendAt(new Date(customSendTime))}
+								>
+									Schedule
+								</button>
+							</div>
+						</div>
+					{/if}
 				</div>
 			</div>
 
 			{#if !settings.hideComposeHints && sendBlockedReason && compose.to.trim() && !recipientFocused}
-				<div class="hidden px-4 pb-2 text-xs text-danger md:block md:px-4 md:pb-2.5" role="status">
+				<div class="px-4 pb-2 text-xs text-danger" role="status">
 					{sendBlockedReason}
 				</div>
 			{/if}
@@ -767,6 +716,63 @@
 				{compose.error ?? `Check recipient: ${invalidRecipients[0]}`}
 			</p>
 		{/if}
+
+		<!-- Composition tools — kept out of the send header and in one icon language. -->
+		<div class="z-compose__tools flex shrink-0 items-center gap-1 border-t border-border px-4 py-1.5">
+			<TooltipWrap label={isRichText ? 'Switch to plain text' : 'Switch to rich text'}>
+				{#snippet trigger({ props })}
+					<button
+						{...props}
+						type="button"
+						class={cn('z-icon-tap-target z-icon-tap-target--sm', isRichText && 'text-accent')}
+						aria-label={isRichText ? 'Switch to plain text' : 'Switch to rich text'}
+						aria-pressed={isRichText}
+						onclick={() => {
+							isRichText = !isRichText;
+							if (isRichText) {
+								if (!compose.bodyHtml) {
+									compose.bodyHtml = plainTextToSafeHtml(compose.body);
+								}
+								compose.ensureInlineAttachmentsFromHtml(compose.bodyHtml);
+							}
+						}}
+					>
+						<RiFontSize2 size="18" aria-hidden="true" />
+					</button>
+				{/snippet}
+			</TooltipWrap>
+			<TooltipWrap label="Attach file">
+				{#snippet trigger({ props })}
+					<button
+						{...props}
+						type="button"
+						class="z-icon-tap-target z-icon-tap-target--sm"
+						aria-label="Attach file"
+						onclick={openFilePicker}
+					>
+						<Paperclip class="size-[1.125rem]" aria-hidden="true" />
+					</button>
+				{/snippet}
+			</TooltipWrap>
+
+			<div class="flex-1"></div>
+
+			{#if !compose.isComposeEmpty}
+				<TooltipWrap label="Discard draft">
+					{#snippet trigger({ props })}
+						<button
+							{...props}
+							type="button"
+							class="z-icon-tap-target z-icon-tap-target--sm hover:text-danger"
+							aria-label="Discard draft"
+							onclick={() => void discardAndClose()}
+						>
+							<Trash2 class="size-[1.125rem]" aria-hidden="true" />
+						</button>
+					{/snippet}
+				</TooltipWrap>
+			{/if}
+		</div>
 	</form>
 	</div>
 
