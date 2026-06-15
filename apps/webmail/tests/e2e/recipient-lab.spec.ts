@@ -40,13 +40,15 @@ test('recipient chips: commit, echo-guard, fold, delete', async ({ page }) => {
 	await expect(chips(page)).toHaveCount(3);
 	await expect(value(page)).not.toContainText('alice@example.com');
 
-	// 6. Blurring with pending text commits it (so Send, which blurs the field,
-	//    sees the address in the value).
+	// 6. Pending text is folded into the value as you type (so Send — which blurs the
+	//    field — always sees it), without being force-committed to a chip on blur.
 	await input(page).click();
 	await input(page).pressSequentially('dave@example.com');
-	await page.getByTestId('value').click(); // blur the field
-	await expect(chips(page)).toHaveCount(4);
 	await expect(value(page)).toContainText('dave@example.com');
+	const beforeBlur = await chips(page).count();
+	await page.getByTestId('value').click(); // blur the field
+	await expect(chips(page)).toHaveCount(beforeBlur); // blur doesn't add a chip
+	await expect(value(page)).toContainText('dave@example.com'); // still in the value
 
 	// 7. External value change (reply/forward/draft prefill) re-syncs the chips.
 	await page.getByTestId('prefill').click();
@@ -56,4 +58,29 @@ test('recipient chips: commit, echo-guard, fold, delete', async ({ page }) => {
 	// 8. External clear (after send) empties the field.
 	await page.getByTestId('clear').click();
 	await expect(chips(page)).toHaveCount(0);
+});
+
+test('suggestion: Enter picks the top contact, not the raw partial', async ({ page }) => {
+	await page.goto('/recipient-lab');
+	await input(page).click();
+
+	// Typing a partial that matches a seeded contact shows the suggestion list.
+	await input(page).pressSequentially('zoe');
+	await expect(page.getByRole('listbox', { name: 'Contact suggestions' })).toBeVisible();
+
+	// Enter must commit the contact's full address (zoe@example.com), not the raw "zoe",
+	// and leave the input empty (no leftover first letters).
+	await input(page).press('Enter');
+	await expect(chips(page).filter({ hasText: 'zoe@example.com' })).toHaveCount(1);
+	await expect(chips(page).filter({ hasText: /^zoe$/ })).toHaveCount(0);
+	await expect(input(page)).toHaveValue('');
+});
+
+test('suggestion: clicking a contact picks it and clears the input', async ({ page }) => {
+	await page.goto('/recipient-lab');
+	await input(page).click();
+	await input(page).pressSequentially('zane');
+	await page.getByRole('listbox', { name: 'Contact suggestions' }).getByText('zane@example.com').click();
+	await expect(chips(page).filter({ hasText: 'zane@example.com' })).toHaveCount(1);
+	await expect(input(page)).toHaveValue('');
 });

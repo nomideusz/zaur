@@ -2,6 +2,13 @@
 	// Dev-only test fixture for ComposeRecipientInput (driven by tests/e2e/recipient-lab.spec.ts).
 	// The route is 404'd in production via +page.ts.
 	import ComposeRecipientInput from '$lib/components/mail/ComposeRecipientInput.svelte';
+	import { auth } from '$lib/stores/auth.svelte';
+	import { recordContact } from '$lib/utils/contact-index';
+
+	// Mock a signed-in client + seed contacts so the suggestion dropdown appears.
+	auth.client = { getAccountId: () => 'lab' } as any;
+	recordContact('lab', 'Zoe Zebra', 'zoe@example.com');
+	recordContact('lab', 'Zane Zorro', 'zane@example.com');
 
 	let value = $state('alice@example.com, bob@example.com');
 </script>

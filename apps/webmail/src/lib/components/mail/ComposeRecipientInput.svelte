@@ -88,9 +88,17 @@
 			tags = [...tags, email];
 		}
 		pending = '';
+		// The input is machine-owned (uncontrolled), so clearing `pending` alone leaves
+		// the typed partial in the DOM input. Clear it directly and let the machine
+		// observe the change via a synthetic input event.
+		const el = (id ? (document.getElementById(id) as HTMLInputElement | null) : null) ?? inputElement;
+		if (el) {
+			el.value = '';
+			el.dispatchEvent(new Event('input', { bubbles: true }));
+		}
 		emit();
 		open = false;
-		if (id) document.getElementById(id)?.focus();
+		el?.focus();
 	}
 
 	/** Chips display the contact's name when the value is `Name <email>`, otherwise the raw address. */
@@ -141,6 +149,22 @@
 		}
 	}
 
+	function onSuggestionKeydownCapture(event: KeyboardEvent) {
+		// While typing with the suggestion list open, Enter should pick the top contact
+		// rather than letting tags-input commit the raw partial text as a chip. Runs in
+		// the capture phase so it intercepts the key before the machine's input handler.
+		if (
+			event.key === 'Enter' &&
+			event.target === inputElement &&
+			showSuggestions &&
+			suggestions.length > 0
+		) {
+			event.preventDefault();
+			event.stopPropagation();
+			pick(suggestions[0].email);
+		}
+	}
+
 	$effect(() => {
 		// Expose the real <input> so the parent's focusComposeTarget() can focus it.
 		if (id) inputElement = document.getElementById(id) as HTMLInputElement | null;
@@ -155,13 +179,13 @@
 	onfocusin={onWrapperFocusIn}
 	onfocusout={onWrapperFocusOut}
 	onkeydown={onWrapperKeydown}
+	onkeydowncapture={onSuggestionKeydownCapture}
 >
 	<TagsInput.Root
 		class={cn('z-compose__recipients', className)}
 		value={tags}
 		ids={id ? { input: id } : undefined}
 		delimiter={/[,;]/}
-		blurBehavior="add"
 		addOnPaste
 		editable={false}
 		autoFocus={autofocus}
@@ -200,38 +224,48 @@
 			/>
 		</TagsInput.Control>
 		<TagsInput.HiddenInput />
-	</TagsInput.Root>
 
-	{#if showSuggestions}
-		<!-- Contacts are filtered in `suggestions`; this list just needs roving focus.
-		     mousedown is prevented so picking a contact doesn't blur the input before
-		     the click lands. -->
-		<div
-			bind:this={listEl}
-			id={id ? `${id}-suggestions` : undefined}
-			role="listbox"
-			aria-label="Contact suggestions"
-			use:rovingFocus
-			class="absolute left-0 top-full z-20 mt-2 w-full max-w-md overflow-hidden rounded-md border border-border bg-surface-raised shadow-md"
-		>
-			<div class="max-h-64 overflow-y-auto py-1.5">
-				{#each suggestions as contact (contact.email)}
-					<button
-						type="button"
-						data-roving-item
-						class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none focus:bg-surface-sunken hover:bg-surface-sunken"
-						onclick={() => pick(contact.email)}
-						onmousedown={(e) => e.preventDefault()}
-					>
-						<span class="min-w-0 truncate">
-							<span class="font-medium text-fg">{contact.name}</span>
-							{#if contact.name.trim().toLowerCase() !== contact.email.trim().toLowerCase()}
-								<span class="ml-1 text-fg-muted">{contact.email}</span>
-							{/if}
-						</span>
-					</button>
-				{/each}
+		{#if showSuggestions}
+			<!-- Rendered INSIDE TagsInput.Root so the machine doesn't treat clicks on it as
+			     "interact outside" (which would blur-commit the raw partial before pick runs).
+			     Contacts are pre-filtered; this list just needs roving focus. mousedown is
+			     prevented so picking doesn't blur the input before the click lands. -->
+			<div
+				bind:this={listEl}
+				id={id ? `${id}-suggestions` : undefined}
+				role="listbox"
+				aria-label="Contact suggestions"
+				use:rovingFocus
+				class="absolute left-0 top-full z-20 mt-2 w-full max-w-md overflow-hidden rounded-md border border-border bg-surface-raised shadow-md"
+			>
+				<div class="max-h-64 overflow-y-auto py-1.5">
+					{#each suggestions as contact, i (contact.email)}
+						<button
+							type="button"
+							data-roving-item
+							class={cn(
+								'flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none focus:bg-surface-sunken hover:bg-surface-sunken',
+								i === 0 && 'bg-surface-sunken/40'
+							)}
+							onclick={() => pick(contact.email)}
+							onmousedown={(e) => {
+								// Pick on mousedown (before the input blurs and the list tears down),
+								// and preventDefault to keep focus on the input. onclick remains for
+								// keyboard activation of a roving-focused item; pick() dedups.
+								e.preventDefault();
+								pick(contact.email);
+							}}
+						>
+							<span class="min-w-0 truncate">
+								<span class="font-medium text-fg">{contact.name}</span>
+								{#if contact.name.trim().toLowerCase() !== contact.email.trim().toLowerCase()}
+									<span class="ml-1 text-fg-muted">{contact.email}</span>
+								{/if}
+							</span>
+						</button>
+					{/each}
+				</div>
 			</div>
-		</div>
-	{/if}
+		{/if}
+	</TagsInput.Root>
 </div>
