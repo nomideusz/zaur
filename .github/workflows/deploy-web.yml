@@ -1,0 +1,64 @@
+name: Deploy web to CapRover
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/web/**'
+      - 'packages/ui/**'
+      - 'packages/sprite/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
+      - '.npmrc'
+      - 'infra/deploy/web.captain-definition'
+      - '.github/workflows/deploy-web.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter @zaur/web...
+
+      - name: Type check
+        run: pnpm --filter @zaur/web check
+
+      - name: Prepare captain-definition
+        run: cp infra/deploy/web.captain-definition captain-definition
+
+      - name: Create deployment tarball
+        uses: a7ul/tar-action@v1.1.0
+        with:
+          command: c
+          cwd: ./
+          files: |
+            captain-definition
+            pnpm-lock.yaml
+            pnpm-workspace.yaml
+            package.json
+            .npmrc
+            packages/ui/
+            packages/sprite/
+            apps/web/
+          outPath: deploy.tar
+
+      - name: Deploy to CapRover
+        uses: caprover/deploy-from-github@v1.1.2
+        with:
+          server: https://captain.zaur.app
+          app: web
+          token: ${{ secrets.CAPROVER_WEB_TOKEN }}
