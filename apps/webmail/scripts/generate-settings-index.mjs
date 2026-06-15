@@ -21,11 +21,17 @@ const seen = new Set();
 for (const [file, href] of files) {
 	const src = fs.readFileSync(file, 'utf8');
 
-	const rowRe = /<(SettingsRow|SettingsField|SettingsFormToggle)\s+[^>]*title="([^"]+)"[^>]*(?:\s+description="([^"]*)")?/g;
+	// Match each opening tag, then pull title/description out of its attribute
+	// block independently — order-agnostic and tolerant of multi-line tags.
+	const tagRe = /<(SettingsRow|SettingsField|SettingsFormToggle)\b([^>]*)>/g;
 	let m;
-	while ((m = rowRe.exec(src)) !== null) {
-		const title = m[2];
-		const description = m[3] ?? '';
+	while ((m = tagRe.exec(src)) !== null) {
+		const attrs = m[2];
+		const titleMatch = /\btitle="([^"]+)"/.exec(attrs);
+		if (!titleMatch) continue;
+		const title = titleMatch[1];
+		const descMatch = /\bdescription="([^"]*)"/.exec(attrs);
+		const description = descMatch ? descMatch[1] : '';
 		const publicHref = href;
 		const id = `${publicHref}-${slug(title)}`;
 		if (seen.has(id)) continue;

@@ -7,6 +7,12 @@ export type SettingsSearchEntry = {
 
 export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 	{
+		"id": "/settings/account-add-account",
+		"href": "/settings/account",
+		"title": "Add account",
+		"description": "Sign in to another mailbox."
+	},
+	{
 		"id": "/settings/account-app-install",
 		"href": "/settings/account",
 		"title": "App install",
@@ -34,7 +40,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/account-display-name",
 		"href": "/settings/account",
 		"title": "Display name",
-		"description": ""
+		"description": "Shown to recipients on messages you send."
 	},
 	{
 		"id": "/settings/account-empty-spam",
@@ -82,7 +88,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/account-include-signature",
 		"href": "/settings/account",
 		"title": "Include signature",
-		"description": ""
+		"description": "Add your signature when composing."
 	},
 	{
 		"id": "/settings/account-jmap-server",
@@ -145,10 +151,16 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": ""
 	},
 	{
+		"id": "/settings/account-sign-out-of-this-account",
+		"href": "/settings/account",
+		"title": "Sign out of this account",
+		"description": "Keep your other accounts signed in."
+	},
+	{
 		"id": "/settings/account-signature",
 		"href": "/settings/account",
 		"title": "Signature",
-		"description": ""
+		"description": "Appended to the bottom of new messages."
 	},
 	{
 		"id": "/settings/account-unseen-count-in-tab-title",
@@ -226,49 +238,49 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-block-remote-images",
 		"href": "/settings/reading",
 		"title": "Block remote images",
-		"description": ""
+		"description": "Don't load images hosted elsewhere, which can signal when you open a message."
 	},
 	{
 		"id": "/settings/reading-clean-reading-view",
 		"href": "/settings/reading",
 		"title": "Clean reading view",
-		"description": ""
+		"description": "Strip senders' fonts, colors, and fixed widths so messages match your reading settings."
 	},
 	{
 		"id": "/settings/reading-expand-all-threads",
 		"href": "/settings/reading",
 		"title": "Expand all threads",
-		"description": ""
+		"description": "Open every message in a conversation instead of just the latest."
 	},
 	{
 		"id": "/settings/reading-marker-colors-on-highlighted",
 		"href": "/settings/reading",
 		"title": "Marker colors on Highlighted",
-		"description": ""
+		"description": "Tint subject lines with their marker color in the Highlighted view."
 	},
 	{
 		"id": "/settings/reading-prefer-plain-text",
 		"href": "/settings/reading",
 		"title": "Prefer plain text",
-		"description": ""
+		"description": "Show the plain-text version of a message when the sender provides one."
 	},
 	{
 		"id": "/settings/reading-remember-last-folder",
 		"href": "/settings/reading",
 		"title": "Remember last folder",
-		"description": ""
+		"description": "Reopen the folder you were last viewing instead of the Inbox."
 	},
 	{
 		"id": "/settings/reading-show-delivery-address",
 		"href": "/settings/reading",
 		"title": "Show delivery address",
-		"description": ""
+		"description": "Show which of your addresses a message was delivered to (its Delivered-To)."
 	},
 	{
 		"id": "/settings/reading-show-sender-email-address",
 		"href": "/settings/reading",
 		"title": "Show sender email address",
-		"description": ""
+		"description": "Show each sender's address beneath their name in the message list."
 	},
 	{
 		"id": "/settings/reading-text-size",

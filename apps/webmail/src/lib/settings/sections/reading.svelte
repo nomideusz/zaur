@@ -11,21 +11,33 @@
 </script>
 
 <SettingsGroup title="Inbox & Folders">
-	<SettingsRow kind="toggle" title="Marker colors on Highlighted">
+	<SettingsRow
+		kind="toggle"
+		title="Marker colors on Highlighted"
+		description="Tint subject lines with their marker color in the Highlighted view."
+	>
 		<Switch
 			checked={settings.showImportantColors}
 			onchange={(checked) => settings.setShowImportantColors(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Remember last folder">
+	<SettingsRow
+		kind="toggle"
+		title="Remember last folder"
+		description="Reopen the folder you were last viewing instead of the Inbox."
+	>
 		<Switch
 			checked={settings.rememberLastMailbox}
 			onchange={(checked) => settings.setRememberLastMailbox(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Show sender email address">
+	<SettingsRow
+		kind="toggle"
+		title="Show sender email address"
+		description="Show each sender's address beneath their name in the message list."
+	>
 		<Switch
 			checked={settings.showSenderEmailInList}
 			onchange={(checked) => settings.setShowSenderEmailInList(checked)}
@@ -78,35 +90,55 @@
 </SettingsGroup>
 
 <SettingsGroup title="Message Rendering">
-	<SettingsRow kind="toggle" title="Prefer plain text">
+	<SettingsRow
+		kind="toggle"
+		title="Prefer plain text"
+		description="Show the plain-text version of a message when the sender provides one."
+	>
 		<Switch
 			checked={settings.preferPlainText}
 			onchange={(checked) => settings.setPreferPlainText(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Block remote images">
+	<SettingsRow
+		kind="toggle"
+		title="Block remote images"
+		description="Don't load images hosted elsewhere, which can signal when you open a message."
+	>
 		<Switch
 			checked={settings.blockExternalContent}
 			onchange={(checked) => settings.setBlockExternalContent(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Expand all threads">
+	<SettingsRow
+		kind="toggle"
+		title="Expand all threads"
+		description="Open every message in a conversation instead of just the latest."
+	>
 		<Switch
 			checked={settings.expandAllThreadMessages}
 			onchange={(checked) => settings.setExpandAllThreadMessages(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Clean reading view">
+	<SettingsRow
+		kind="toggle"
+		title="Clean reading view"
+		description="Strip senders' fonts, colors, and fixed widths so messages match your reading settings."
+	>
 		<Switch
 			checked={settings.readerCleanView}
 			onchange={(checked) => settings.setReaderCleanView(checked)}
 		/>
 	</SettingsRow>
 
-	<SettingsRow kind="toggle" title="Show delivery address">
+	<SettingsRow
+		kind="toggle"
+		title="Show delivery address"
+		description="Show which of your addresses a message was delivered to (its Delivered-To)."
+	>
 		<Switch
 			checked={settings.showDeliveredToInReader}
 			onchange={(checked) => settings.setShowDeliveredToInReader(checked)}
