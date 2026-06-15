@@ -1,13 +1,14 @@
 <script lang="ts">
-	import { DropdownMenu } from 'bits-ui';
-	import { MENU_CTX, type MenuContext } from '$lib/components/ui/menu/menu-context';
+	import { Menu } from '@ark-ui/svelte/menu';
 	import { cn } from '$lib/utils/cn';
-	import { getContext, type Snippet } from 'svelte';
+	import type { Snippet } from 'svelte';
 
 	type MenuItemVariant = 'default' | 'destructive';
 
 	interface Props {
 		label?: string;
+		/** Defaults to a generated id; Ark needs a unique value per item. */
+		value?: string;
 		variant?: MenuItemVariant;
 		disabled?: boolean;
 		closeOnClick?: boolean;
@@ -17,6 +18,7 @@
 
 	let {
 		label,
+		value,
 		variant = 'default',
 		disabled = false,
 		closeOnClick = true,
@@ -24,29 +26,27 @@
 		children
 	}: Props = $props();
 
-	const menu = getContext<MenuContext>(MENU_CTX);
-
-	function handleSelect() {
-		if (disabled) return;
-		onSelect?.();
-		if (closeOnClick) menu?.close();
-	}
+	const uid = $props.id();
 </script>
 
-<DropdownMenu.Item
+<!-- Ark fires onSelect for both pointer and keyboard, and closes the menu itself
+     (closeOnSelect) — so no MENU_CTX close plumbing is needed. valueText drives typeahead. -->
+<Menu.Item
+	value={value ?? uid}
+	valueText={label}
+	{disabled}
+	closeOnSelect={closeOnClick}
+	onSelect={() => onSelect?.()}
 	class={cn(
 		'z-menu-item z-overflow-menu-item',
 		variant === 'destructive' && 'z-menu-item--destructive z-overflow-menu-item--danger'
 	)}
-	{disabled}
-	textValue={label}
 	data-slot="menu-item"
 	data-variant={variant}
-	onSelect={handleSelect}
 >
 	{#if children}
 		{@render children()}
 	{:else}
 		<span class="truncate">{label}</span>
 	{/if}
-</DropdownMenu.Item>
+</Menu.Item>

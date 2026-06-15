@@ -1,18 +1,20 @@
 <script lang="ts">
-	import { DropdownMenu } from 'bits-ui';
+	import { Menu } from '@ark-ui/svelte/menu';
+	import { Portal } from '@ark-ui/svelte/portal';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import MoreVertical from '$lib/components/icons/MoreVertical.svelte';
-	import { OVERFLOW_MENU_CTX, type OverflowMenuContext } from '$lib/components/ui/overflow-menu-context';
 	import { cn } from '$lib/utils/cn';
 	import type { OverflowMenuPlacement } from '$lib/utils/overflow-menu-position';
-	import { setContext } from 'svelte';
 	import type { Snippet } from 'svelte';
+
+	type Align = 'start' | 'center' | 'end';
+	type Placement = 'top' | 'bottom' | `top-${'start' | 'end'}` | `bottom-${'start' | 'end'}`;
 
 	interface Props {
 		label?: string;
 		menuId?: string;
 		placement?: OverflowMenuPlacement;
-		align?: 'start' | 'center' | 'end';
+		align?: Align;
 		triggerText?: string;
 		/** Icon trigger with a screen-reader-only label below the `sm` breakpoint. */
 		iconTriggerLabel?: string;
@@ -42,24 +44,27 @@
 
 	let open = $state(false);
 	const side = $derived(placement === 'top' ? 'top' : 'bottom');
-
-	$effect(() => {
-		onOpenChange?.(open);
-	});
-
-	function close() {
-		open = false;
-	}
-
-	setContext<OverflowMenuContext>(OVERFLOW_MENU_CTX, { close });
+	const arkPlacement = $derived<Placement>(align === 'center' ? side : `${side}-${align}`);
 </script>
 
-<DropdownMenu.Root bind:open>
+<!-- Mount content on open / unmount on close (bits-ui behaviour). Ark defaults to
+     eager mount + keep-mounted, which mounts every row's menu hidden and tears its
+     `$derived` reads down with the component on navigation (derived_inert warnings). -->
+<Menu.Root
+	{open}
+	onOpenChange={(details) => {
+		open = details.open;
+		onOpenChange?.(details.open);
+	}}
+	positioning={{ placement: arkPlacement, gutter: 8, overflowPadding: 12 }}
+	ids={{ content: menuId }}
+	lazyMount
+	unmountOnExit
+>
 	<div class={cn(textTrigger ? 'contents' : cn('relative shrink-0', className))}>
 		{#if triggerText}
-			<DropdownMenu.Trigger
+			<Menu.Trigger
 				aria-label={label}
-				aria-controls={menuId}
 				class={cn(
 					textTrigger
 						? 'inline-flex items-center gap-1 border-0 bg-transparent'
@@ -69,15 +74,12 @@
 			>
 				<span>{triggerText}</span>
 				<ChevronDown class={textTrigger ? 'size-3.5 shrink-0' : 'size-4'} aria-hidden="true" />
-			</DropdownMenu.Trigger>
+			</Menu.Trigger>
 		{:else}
-			<DropdownMenu.Trigger
+			<Menu.Trigger
 				aria-label={label}
-				aria-controls={menuId}
 				class={cn(
-					iconTriggerLabel
-						? 'inline-flex items-center gap-1.5'
-						: 'z-btn-icon min-h-8 min-w-8 p-1.5',
+					iconTriggerLabel ? 'inline-flex items-center gap-1.5' : 'z-btn-icon min-h-8 min-w-8 p-1.5',
 					triggerClass
 				)}
 			>
@@ -85,23 +87,21 @@
 				{#if iconTriggerLabel}
 					<span class="max-sm:sr-only">{iconTriggerLabel}</span>
 				{/if}
-			</DropdownMenu.Trigger>
+			</Menu.Trigger>
 		{/if}
 
-		<DropdownMenu.Portal>
-			<DropdownMenu.Content
-				id={menuId}
-				{side}
-				{align}
-				sideOffset={8}
-				collisionPadding={12}
-				sticky="always"
-				updatePositionStrategy="always"
-				class={cn('z-overflow-menu z-overflow-menu--fixed w-72 min-w-64 max-w-[calc(100vw-1rem)]', menuClass)}
-				onpointerdown={(event) => event.stopPropagation()}
-			>
-				{@render children()}
-			</DropdownMenu.Content>
-		</DropdownMenu.Portal>
+		<Portal>
+			<Menu.Positioner>
+				<Menu.Content
+					class={cn(
+						'z-overflow-menu z-overflow-menu--fixed w-72 min-w-64 max-w-[calc(100vw-1rem)]',
+						menuClass
+					)}
+					onpointerdown={(event) => event.stopPropagation()}
+				>
+					{@render children()}
+				</Menu.Content>
+			</Menu.Positioner>
+		</Portal>
 	</div>
-</DropdownMenu.Root>
+</Menu.Root>

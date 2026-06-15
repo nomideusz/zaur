@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Command } from 'bits-ui';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { listContacts } from '$lib/utils/contact-index';
 	import { cn } from '$lib/utils/cn';
+	import { focusFirstItem, rovingFocus } from '$lib/utils/roving-focus';
 
 	interface Props {
 		id?: string;
@@ -36,12 +36,10 @@
 	}: Props = $props();
 
 	let open = $state(false);
-	let commandRoot = $state<ReturnType<typeof Command.Root> | null>(null);
+	let listEl = $state<HTMLDivElement | null>(null);
 
 	const partial = $derived(value.split(/[,;]/).pop()?.trim() ?? '');
-	const prefix = $derived(
-		partial ? value.slice(0, value.length - partial.length) : value
-	);
+	const prefix = $derived(partial ? value.slice(0, value.length - partial.length) : value);
 
 	const suggestions = $derived.by(() => {
 		if (!settings.showComposeContactSuggestions || partial.length < 1) return [];
@@ -64,10 +62,7 @@
 
 		if (event.key === 'ArrowDown') {
 			event.preventDefault();
-			const items = commandRoot?.getValidItems();
-			if (!items?.length) return;
-		commandRoot?.updateSelectedToIndex(0);
-		items[0]?.focus();
+			focusFirstItem(listEl);
 		} else if (event.key === 'Escape') {
 			open = false;
 		}
@@ -101,12 +96,12 @@
 		{id}
 		class={cn('z-compose-field-input w-full resize-none overflow-hidden', className)}
 		rows={1}
-		placeholder={placeholder}
+		{placeholder}
 		autocomplete={autocomplete as any}
 		aria-invalid={invalid || undefined}
 		aria-describedby={ariaDescribedby}
 		aria-controls={showSuggestions ? `${id}-suggestions` : undefined}
-		value={value}
+		{value}
 		onfocus={() => {
 			open = true;
 			onfocus?.();
@@ -124,33 +119,35 @@
 	></textarea>
 
 	{#if showSuggestions}
-		<Command.Root
-			bind:this={commandRoot}
+		<!-- Contacts are filtered externally; this list just needs roving focus
+		     (bits Command with shouldFilter=false). mousedown is prevented so picking
+		     a contact doesn't blur the textarea before the click lands. -->
+		<div
+			bind:this={listEl}
 			id={id ? `${id}-suggestions` : undefined}
-			shouldFilter={false}
-			class="absolute left-0 top-full z-20 mt-2 w-full max-w-md overflow-hidden rounded-md border border-border bg-surface-raised shadow-md"
+			role="listbox"
 			aria-label="Contact suggestions"
+			use:rovingFocus
+			class="absolute left-0 top-full z-20 mt-2 w-full max-w-md overflow-hidden rounded-md border border-border bg-surface-raised shadow-md"
 		>
-			<Command.List class="max-h-64 overflow-y-auto py-1.5">
-				<Command.Viewport>
-					{#each suggestions as contact (contact.email)}
-						<Command.Item
-							value={contact.email}
-							keywords={[contact.name, contact.email]}
-							class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
-							onSelect={() => pick(contact.email)}
-							onmousedown={(e) => e.preventDefault()}
-						>
-							<span class="min-w-0 truncate">
-								<span class="font-medium text-fg">{contact.name}</span>
-								{#if contact.name.trim().toLowerCase() !== contact.email.trim().toLowerCase()}
-									<span class="ml-1 text-fg-muted">{contact.email}</span>
-								{/if}
-							</span>
-						</Command.Item>
-					{/each}
-				</Command.Viewport>
-			</Command.List>
-		</Command.Root>
+			<div class="max-h-64 overflow-y-auto py-1.5">
+				{#each suggestions as contact (contact.email)}
+					<button
+						type="button"
+						data-roving-item
+						class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none focus:bg-surface-sunken hover:bg-surface-sunken"
+						onclick={() => pick(contact.email)}
+						onmousedown={(e) => e.preventDefault()}
+					>
+						<span class="min-w-0 truncate">
+							<span class="font-medium text-fg">{contact.name}</span>
+							{#if contact.name.trim().toLowerCase() !== contact.email.trim().toLowerCase()}
+								<span class="ml-1 text-fg-muted">{contact.email}</span>
+							{/if}
+						</span>
+					</button>
+				{/each}
+			</div>
+		</div>
 	{/if}
 </div>

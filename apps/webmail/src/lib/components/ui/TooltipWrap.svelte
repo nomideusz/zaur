@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Tooltip } from 'bits-ui';
+	import { Tooltip } from '@ark-ui/svelte/tooltip';
+	import { Portal } from '@ark-ui/svelte/portal';
 	import type { Snippet } from 'svelte';
 	import { cn } from '$lib/utils/cn';
 
@@ -26,28 +27,27 @@
 {#if !label.trim()}
 	{@render trigger({ props: {} })}
 {:else}
-	<!-- Self-contained: own Provider so a tooltip never depends on an ancestor
-	     Tooltip.Provider. Without this, any trigger mounted outside the global
-	     provider (e.g. a top-level overlay) crashes with "Context Tooltip.Provider
-	     not found". Trade-off: cross-tooltip show-delay grouping is per-trigger. -->
-	<Tooltip.Provider delayDuration={300} disableHoverableContent>
-		<Tooltip.Root>
-			<Tooltip.Trigger>
-				{#snippet child({ props })}
-					{#if wrapDisabled}
-						<span {...props} class="inline-flex">
-							{@render trigger({ props: {} })}
-						</span>
-					{:else}
-						{@render trigger({ props })}
-					{/if}
-				{/snippet}
-			</Tooltip.Trigger>
-			<Tooltip.Portal>
-				<Tooltip.Content {side} sideOffset={6} class={cn('z-tooltip', className)}>
+	<!-- Ark tooltips are self-contained: each Root owns its open/close delay, so no
+	     ancestor Provider is required (unlike bits-ui). `interactive` defaults to false
+	     (≈ bits disableHoverableContent); `side` → positioning.placement, sideOffset → gutter. -->
+	<Tooltip.Root openDelay={300} closeDelay={150} positioning={{ placement: side, gutter: 6 }}>
+		<Tooltip.Trigger>
+			{#snippet asChild(triggerProps)}
+				{#if wrapDisabled}
+					<span {...triggerProps()} class="inline-flex">
+						{@render trigger({ props: {} })}
+					</span>
+				{:else}
+					{@render trigger({ props: triggerProps() as Record<string, unknown> })}
+				{/if}
+			{/snippet}
+		</Tooltip.Trigger>
+		<Portal>
+			<Tooltip.Positioner>
+				<Tooltip.Content class={cn('z-tooltip', className)}>
 					{label}
 				</Tooltip.Content>
-			</Tooltip.Portal>
-		</Tooltip.Root>
-	</Tooltip.Provider>
+			</Tooltip.Positioner>
+		</Portal>
+	</Tooltip.Root>
 {/if}

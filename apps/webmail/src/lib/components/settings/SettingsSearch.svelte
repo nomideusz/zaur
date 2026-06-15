@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { Command } from 'bits-ui';
 	import Search from '$lib/components/icons/Search.svelte';
 	import { settingsSearch } from '$lib/settings/search-registry.svelte';
 	import { goto } from '$lib/utils/navigation';
+	import { focusFirstItem, rovingFocus } from '$lib/utils/roving-focus';
 
 	let input = $state<HTMLInputElement | null>(null);
-	let commandRoot = $state<ReturnType<typeof Command.Root> | null>(null);
+	let listEl = $state<HTMLDivElement | null>(null);
 	const resultsId = 'settings-search-results';
 
 	const results = $derived(settingsSearch.filtered());
@@ -23,13 +23,6 @@
 		settingsSearch.setQuery((e.currentTarget as HTMLInputElement).value);
 	}
 
-	function focusFirstResult() {
-		const items = commandRoot?.getValidItems();
-		if (!items?.length) return;
-		commandRoot?.updateSelectedToIndex(0);
-		items[0]?.focus();
-	}
-
 	function onKeydown(e: KeyboardEvent) {
 		if (e.key === 'Escape') {
 			settingsSearch.setQuery('');
@@ -37,7 +30,7 @@
 			input?.blur();
 		} else if (e.key === 'ArrowDown' && results.length) {
 			e.preventDefault();
-			focusFirstResult();
+			focusFirstItem(listEl);
 		}
 	}
 </script>
@@ -63,27 +56,28 @@
 	</div>
 
 	{#if results.length}
-		<Command.Root
-			bind:this={commandRoot}
+		<!-- Results are pre-filtered by the registry; this list only needs roving focus
+		     (bits Command with shouldFilter=false). Items are buttons → native activation. -->
+		<div
+			bind:this={listEl}
 			id={resultsId}
-			shouldFilter={false}
-			class="absolute top-full right-0 left-0 z-30 mt-1.5 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-md"
+			role="listbox"
 			aria-label="Settings search results"
+			use:rovingFocus
+			class="absolute top-full right-0 left-0 z-30 mt-1.5 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-md"
 		>
-			<Command.List class="max-h-72 overflow-y-auto py-1">
-				<Command.Viewport>
-					{#each results as entry (entry.id + entry.href)}
-						<Command.Item
-							value={`${entry.id}-${entry.href}`}
-							keywords={[entry.title, entry.description ?? '']}
-							class="z-overflow-menu-item data-selected:bg-surface-sunken"
-							onSelect={() => selectEntry(entry)}
-						>
-							{entry.title}
-						</Command.Item>
-					{/each}
-				</Command.Viewport>
-			</Command.List>
-		</Command.Root>
+			<div class="max-h-72 overflow-y-auto py-1">
+				{#each results as entry (entry.id + entry.href)}
+					<button
+						type="button"
+						data-roving-item
+						class="z-overflow-menu-item w-full text-left outline-none focus:bg-surface-sunken hover:bg-surface-sunken"
+						onclick={() => selectEntry(entry)}
+					>
+						{entry.title}
+					</button>
+				{/each}
+			</div>
+		</div>
 	{/if}
 </div>

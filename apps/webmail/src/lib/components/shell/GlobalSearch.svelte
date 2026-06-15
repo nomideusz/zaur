@@ -5,7 +5,7 @@
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { Command } from 'bits-ui';
+	import { focusFirstItem, rovingFocus } from '$lib/utils/roving-focus';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
@@ -29,7 +29,7 @@
 	let open = $state(false);
 	let searchInput = $state<HTMLInputElement | null>(null);
 	let formContainer = $state<HTMLFormElement | null>(null);
-	let commandRoot = $state<ReturnType<typeof Command.Root> | null>(null);
+	let listEl = $state<HTMLDivElement | null>(null);
 
 	const isSidebar = $derived(placement === 'sidebar');
 	const isMobile = $derived(placement === 'mobile');
@@ -116,10 +116,7 @@
 	]);
 
 	function focusFirstSuggestion() {
-		const items = commandRoot?.getValidItems();
-		if (!items?.length) return;
-		commandRoot?.updateSelectedToIndex(0);
-		items[0]?.focus();
+		focusFirstItem(listEl);
 	}
 
 	function composeTo(email: string) {
@@ -424,77 +421,77 @@
 				{#if showAdvanced}
 					{@render advancedPanel()}
 				{:else}
-					<Command.Root
-						bind:this={commandRoot}
+					<!-- Suggestions are built/filtered here; bits Command (shouldFilter=false)
+					     only supplied roving focus, now via use:rovingFocus over button items. -->
+					<div
+						bind:this={listEl}
 						id={dropdownId}
-						shouldFilter={false}
-						class="w-full"
+						role="listbox"
 						aria-label="Search suggestions"
+						use:rovingFocus
+						class="w-full"
 					>
-						<Command.List class="max-h-[min(50vh,20rem)] overflow-y-auto py-1.5">
-					<Command.Viewport>
+						<div class="max-h-[min(50vh,20rem)] overflow-y-auto py-1.5">
 						{#if input.trim().length === 0}
-							<Command.Group>
-								<Command.GroupHeading class="z-type-label px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-fg-muted">
+							<div role="group">
+								<div class="z-type-label px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-fg-muted">
 									Quick Filters
-								</Command.GroupHeading>
-								<Command.GroupItems>
-									<Command.Item
-										value="filter-attachment"
-										keywords={['attachment', 'has']}
-										class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
-										onSelect={() => {
-											input = 'has:attachment';
+								</div>
+								<button
+									type="button"
+									data-roving-item
+									class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none focus:bg-surface-sunken hover:bg-surface-sunken"
+									onclick={() => {
+										input = 'has:attachment';
+										searchInput?.focus();
+									}}
+								>
+									<span class="inline-flex size-4.5 items-center justify-center rounded border border-border bg-surface-sunken text-[11px]">📎</span>
+									<span>Has attachment</span>
+								</button>
+								<button
+									type="button"
+									data-roving-item
+									class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none focus:bg-surface-sunken hover:bg-surface-sunken"
+									onclick={() => {
+										input = 'is:unseen';
+										searchInput?.focus();
+									}}
+								>
+									<span class="inline-flex size-4.5 items-center justify-center rounded border border-border bg-surface-sunken text-[11px]">✉️</span>
+									<span>{LABEL_UNSEEN} messages</span>
+								</button>
+								{#if auth.username}
+									<button
+										type="button"
+										data-roving-item
+										class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none focus:bg-surface-sunken hover:bg-surface-sunken"
+										onclick={() => {
+											input = `from:${auth.username}`;
 											searchInput?.focus();
 										}}
 									>
-										<span class="inline-flex size-4.5 items-center justify-center rounded border border-border bg-surface-sunken text-[11px]">📎</span>
-										<span>Has attachment</span>
-									</Command.Item>
-									<Command.Item
-										value="filter-unseen"
-										keywords={['unseen', 'new', 'unread']}
-										class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
-										onSelect={() => {
-											input = 'is:unseen';
-											searchInput?.focus();
-										}}
-									>
-										<span class="inline-flex size-4.5 items-center justify-center rounded border border-border bg-surface-sunken text-[11px]">✉️</span>
-										<span>{LABEL_UNSEEN} messages</span>
-									</Command.Item>
-									{#if auth.username}
-										<Command.Item
-											value="filter-from-me"
-											keywords={['from', 'me', 'sent']}
-											class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
-											onSelect={() => {
-												input = `from:${auth.username}`;
-												searchInput?.focus();
-											}}
-										>
-											<span class="inline-flex size-4.5 items-center justify-center rounded border border-border bg-surface-sunken text-[11px]">👤</span>
-											<span>Sent by me</span>
-										</Command.Item>
-									{/if}
-									<Command.Item
-										value="filter-recent"
-										keywords={['recent', 'week', 'days']}
-										class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
-										onSelect={() => {
-											const now = new Date();
-											now.setDate(now.getDate() - 7);
-											input = `after:${now.toISOString().split('T')[0]}`;
-											searchInput?.focus();
-										}}
-									>
-										<span class="inline-flex size-4.5 items-center justify-center rounded border border-border bg-surface-sunken text-[11px]">📅</span>
-										<span>Received in last 7 days</span>
-									</Command.Item>
-								</Command.GroupItems>
-							</Command.Group>
+										<span class="inline-flex size-4.5 items-center justify-center rounded border border-border bg-surface-sunken text-[11px]">👤</span>
+										<span>Sent by me</span>
+									</button>
+								{/if}
+								<button
+									type="button"
+									data-roving-item
+									class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none focus:bg-surface-sunken hover:bg-surface-sunken"
+									onclick={() => {
+										const now = new Date();
+										now.setDate(now.getDate() - 7);
+										input = `after:${now.toISOString().split('T')[0]}`;
+										searchInput?.focus();
+									}}
+								>
+									<span class="inline-flex size-4.5 items-center justify-center rounded border border-border bg-surface-sunken text-[11px]">📅</span>
+									<span>Received in last 7 days</span>
+								</button>
+							</div>
 
-							<Command.Separator class="mx-2 my-1 h-px bg-border" forceMount />
+							<div class="mx-2 my-1 h-px bg-border" role="separator"></div>
 
 							<div class="px-3 py-1">
 								<p class="z-type-label py-1 text-[10px] font-bold uppercase tracking-wider text-fg-muted">Search Hints</p>
@@ -510,57 +507,54 @@
 							</div>
 
 							{#if placement === 'shell' || isMobile}
-								<Command.Separator class="mx-2 my-1 h-px bg-border" forceMount />
-								<Command.Item
-									value="advanced-search"
-									keywords={['advanced', 'options']}
-									class="flex w-full cursor-pointer select-none items-center justify-center gap-1 px-3 py-1.5 text-center text-xs font-semibold text-accent outline-none transition-colors data-selected:bg-surface-sunken hover:bg-surface-sunken"
-									onSelect={() => {
+								<div class="mx-2 my-1 h-px bg-border" role="separator"></div>
+								<button
+									type="button"
+									data-roving-item
+									class="flex w-full cursor-pointer select-none items-center justify-center gap-1 px-3 py-1.5 text-center text-xs font-semibold text-accent outline-none transition-colors focus:bg-surface-sunken hover:bg-surface-sunken"
+									onclick={() => {
 										populateAdvancedFromInput(input);
 										showAdvanced = true;
 										open = true;
 									}}
 								>
 									Advanced Search Options
-								</Command.Item>
+								</button>
 							{/if}
 						{:else}
-							<Command.Item
-								value="search-submit"
-								keywords={[input.trim()]}
-								class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
-								onSelect={submit}
+							<button
+								type="button"
+								data-roving-item
+								class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none focus:bg-surface-sunken hover:bg-surface-sunken"
+								onclick={submit}
 							>
 								<Search class="size-4 text-fg-subtle" aria-hidden="true" />
 								Search mail for “{input.trim()}”
-							</Command.Item>
+							</button>
 
 							{#if contactMatches.length}
-								<Command.Group>
-									<Command.GroupHeading class="z-type-label px-3 py-1.5 text-fg-muted">Contacts</Command.GroupHeading>
-									<Command.GroupItems>
-										{#each contactMatches as contact (contact.email)}
-											<Command.Item
-												value={`contact-${contact.email}`}
-												keywords={[contact.name, contact.email]}
-												class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none data-selected:bg-surface-sunken hover:bg-surface-sunken"
-												onSelect={() => composeTo(contact.email)}
-												onmousedown={(e) => e.preventDefault()}
-											>
-												<User class="size-4 text-fg-subtle" aria-hidden="true" />
-												<span class="min-w-0 truncate">
-													<span class="text-fg">{contact.name}</span>
-													<span class="ml-1 text-fg-muted">{contact.email}</span>
-												</span>
-											</Command.Item>
-										{/each}
-									</Command.GroupItems>
-								</Command.Group>
+								<div role="group">
+									<div class="z-type-label px-3 py-1.5 text-fg-muted">Contacts</div>
+									{#each contactMatches as contact (contact.email)}
+										<button
+											type="button"
+											data-roving-item
+											class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none focus:bg-surface-sunken hover:bg-surface-sunken"
+											onclick={() => composeTo(contact.email)}
+											onmousedown={(e) => e.preventDefault()}
+										>
+											<User class="size-4 text-fg-subtle" aria-hidden="true" />
+											<span class="min-w-0 truncate">
+												<span class="text-fg">{contact.name}</span>
+												<span class="ml-1 text-fg-muted">{contact.email}</span>
+											</span>
+										</button>
+									{/each}
+								</div>
 							{/if}
 						{/if}
-					</Command.Viewport>
-						</Command.List>
-					</Command.Root>
+						</div>
+					</div>
 				{/if}
 			</div>
 		{/if}

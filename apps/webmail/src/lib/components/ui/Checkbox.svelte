@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Checkbox } from 'bits-ui';
+	import { Checkbox } from '@ark-ui/svelte/checkbox';
 	import type { Snippet } from 'svelte';
 	import { cn } from '$lib/utils/cn';
 
@@ -26,21 +26,27 @@
 	}: Props = $props();
 </script>
 
+<!--
+	Ark renders Root(label) > Control(box) + focusable HiddenInput. The check/dash
+	is drawn by CSS ::after on `.z-checkbox` keyed off [data-state], so no Indicator
+	is needed. Row mode keeps `.z-checkbox-row` on Root (the flex layout); standalone
+	mode uses `.z-checkbox-root` (display:contents) so Control stays the layout box.
+	Ark accepts CheckedState directly, so the boolean/indeterminate split is gone.
+-->
 <Checkbox.Root
-	checked={checked === true}
-	indeterminate={checked === 'indeterminate'}
+	{checked}
 	{disabled}
-	aria-label={label}
-	class={children ? cn('z-checkbox-row', className) : cn('z-checkbox', className)}
-	onCheckedChange={(next) => {
-		// When onchange is provided the parent owns checked state — avoid double toggles.
-		if (onchange) onchange(next);
-		else checked = next;
-	}}
 	{onclick}
+	class={children ? cn('z-checkbox-row', className) : 'z-checkbox-root'}
+	onCheckedChange={(details) => {
+		// When onchange is provided the parent owns checked state — avoid double toggles.
+		if (onchange) onchange(details.checked);
+		else checked = details.checked;
+	}}
 >
+	<Checkbox.Control class={children ? 'z-checkbox' : cn('z-checkbox', className)} />
 	{#if children}
-		<span class="z-checkbox" aria-hidden="true"></span>
 		{@render children()}
 	{/if}
+	<Checkbox.HiddenInput aria-label={label} />
 </Checkbox.Root>

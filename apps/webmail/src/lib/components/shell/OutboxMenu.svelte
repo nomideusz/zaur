@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { Popover } from 'bits-ui';
+	import { Popover } from '@ark-ui/svelte/popover';
+	import { Portal } from '@ark-ui/svelte/portal';
 	import Clock from '$lib/components/icons/Clock.svelte';
 	import Send from '$lib/components/icons/Send.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
@@ -42,17 +43,20 @@
 	function recipientPreview(item: OutboxDoc) {
 		return item.to.split(',')[0]?.trim() || 'No recipient';
 	}
-
 </script>
 
-<Popover.Root bind:open>
+<Popover.Root
+	{open}
+	onOpenChange={(details) => (open = details.open)}
+	positioning={{ placement: 'bottom-end', gutter: 8, overflowPadding: 8 }}
+	ids={{ content: 'outbox-menu' }}
+>
 	{#if display === 'text'}
 		<Popover.Trigger
 			class={cn(
 				'z-btn-ghost h-9 w-full justify-between px-2 text-sm',
 				open && 'bg-surface-sunken/70 text-fg'
 			)}
-			aria-controls="outbox-menu"
 		>
 			<span class="truncate text-left">{outbox.pendingCount ? outboxLabel : 'Outbox'}</span>
 			{#if outbox.pendingCount}
@@ -62,7 +66,6 @@
 	{:else}
 		<Popover.Trigger
 			aria-label={outboxLabel}
-			aria-controls="outbox-menu"
 			class={cn('z-btn-icon relative min-h-10 min-w-10 p-2.5', open && 'bg-surface-sunken/70 text-fg')}
 		>
 			<Send class="size-4" />
@@ -74,101 +77,93 @@
 		</Popover.Trigger>
 	{/if}
 
-	<Popover.Portal>
-		<Popover.Content
-			id="outbox-menu"
-			aria-label="Outbox"
-			align="end"
-			sideOffset={8}
-			collisionPadding={8}
-			sticky="always"
-			updatePositionStrategy="always"
-			class="z-50 w-[min(20rem,calc(100vw-1rem))] rounded-md border border-border bg-surface-raised shadow-md"
-			onpointerdown={(e) => e.stopPropagation()}
-		>
-			<div
-				class="flex items-center justify-between border-b border-border px-3 py-2"
+	<Portal>
+		<Popover.Positioner>
+			<Popover.Content
+				aria-label="Outbox"
+				class="z-50 w-[min(20rem,calc(100vw-1rem))] rounded-md border border-border bg-surface-raised shadow-md"
+				onpointerdown={(e) => e.stopPropagation()}
 			>
-				<div>
-					<p class="text-sm font-medium text-fg">Outbox</p>
-					{#if outbox.items.length}
-						<p class="text-xs text-fg-subtle">{outboxLabel.replace('Outbox: ', '')}</p>
-					{/if}
+				<div class="flex items-center justify-between border-b border-border px-3 py-2">
+					<div>
+						<p class="text-sm font-medium text-fg">Outbox</p>
+						{#if outbox.items.length}
+							<p class="text-xs text-fg-subtle">{outboxLabel.replace('Outbox: ', '')}</p>
+						{/if}
+					</div>
+					<IconButton label="Close outbox" onclick={() => (open = false)}>
+						<X class="size-4" />
+					</IconButton>
 				</div>
-				<IconButton label="Close outbox" onclick={() => (open = false)}>
-					<X class="size-4" />
-				</IconButton>
-			</div>
 
-			{#if !outbox.items.length}
-				<p class="px-3 py-4 text-sm text-fg-muted">
-					No queued messages
-				</p>
-			{:else}
-				<ul class="max-h-72 overflow-y-auto py-1">
-					{#each outbox.items as item (item.id)}
-						<li class="border-b border-border px-3 py-2 last:border-b-0">
-							<div class="flex items-start justify-between gap-2">
-								<div class="min-w-0 flex-1">
-									<p class="truncate text-sm font-medium text-fg">
-										{item.subject || '(no subject)'}
-									</p>
-									<p class="truncate text-xs text-fg-subtle">To {recipientPreview(item)}</p>
-									{#if item.attempts > 0}
-										<p class="mt-0.5 text-[11px] text-fg-subtle">
-											Attempt {item.attempts}
+				{#if !outbox.items.length}
+					<p class="px-3 py-4 text-sm text-fg-muted">No queued messages</p>
+				{:else}
+					<ul class="max-h-72 overflow-y-auto py-1">
+						{#each outbox.items as item (item.id)}
+							<li class="border-b border-border px-3 py-2 last:border-b-0">
+								<div class="flex items-start justify-between gap-2">
+									<div class="min-w-0 flex-1">
+										<p class="truncate text-sm font-medium text-fg">
+											{item.subject || '(no subject)'}
 										</p>
-									{/if}
-									<p
-										class="mt-1 text-xs {item.status === 'failed'
-											? 'text-red-600 dark:text-red-400'
-											: 'text-fg-muted'}"
-									>
-										{statusLabel(item)}
-									</p>
-								</div>
-								<div class="flex shrink-0 gap-1">
-									{#if item.status === 'failed'}
-										<IconButton label="Retry send" onclick={() => outbox.retry(item.id)}>
-											<Clock class="size-4" />
+										<p class="truncate text-xs text-fg-subtle">To {recipientPreview(item)}</p>
+										{#if item.attempts > 0}
+											<p class="mt-0.5 text-[11px] text-fg-subtle">
+												Attempt {item.attempts}
+											</p>
+										{/if}
+										<p
+											class="mt-1 text-xs {item.status === 'failed'
+												? 'text-red-600 dark:text-red-400'
+												: 'text-fg-muted'}"
+										>
+											{statusLabel(item)}
+										</p>
+									</div>
+									<div class="flex shrink-0 gap-1">
+										{#if item.status === 'failed'}
+											<IconButton label="Retry send" onclick={() => outbox.retry(item.id)}>
+												<Clock class="size-4" />
+											</IconButton>
+										{/if}
+										<IconButton
+											label="Discard queued message"
+											onclick={async () => {
+												const { confirm: askConfirm } = await import('$lib/stores/confirm.svelte');
+												if (
+													await askConfirm.ask({
+														title: 'Discard queued message?',
+														description: 'Discard this queued message?',
+														confirmLabel: 'Discard',
+														tone: 'danger'
+													})
+												) {
+													outbox.discard(item.id);
+												}
+											}}
+										>
+											<Trash2 class="size-4" />
 										</IconButton>
-									{/if}
-									<IconButton
-										label="Discard queued message"
-										onclick={async () => {
-											const { confirm: askConfirm } = await import('$lib/stores/confirm.svelte');
-											if (
-												await askConfirm.ask({
-													title: 'Discard queued message?',
-													description: 'Discard this queued message?',
-													confirmLabel: 'Discard',
-													tone: 'danger'
-												})
-											) {
-												outbox.discard(item.id);
-											}
-										}}
-									>
-										<Trash2 class="size-4" />
-									</IconButton>
+									</div>
 								</div>
-							</div>
-						</li>
-					{/each}
-				</ul>
-			{/if}
+							</li>
+						{/each}
+					</ul>
+				{/if}
 
-			{#if hasFailed || outbox.items.length}
-				<p class="border-t border-border px-3 py-2 text-xs text-fg-muted">
-					{#if hasFailed}
-						Failed messages retry automatically when online. Use retry to send one now.
-					{:else if network.isOnline}
-						Queued messages send automatically in the background.
-					{:else}
-						Queued messages will send as soon as this device is online.
-					{/if}
-				</p>
-			{/if}
-		</Popover.Content>
-	</Popover.Portal>
+				{#if hasFailed || outbox.items.length}
+					<p class="border-t border-border px-3 py-2 text-xs text-fg-muted">
+						{#if hasFailed}
+							Failed messages retry automatically when online. Use retry to send one now.
+						{:else if network.isOnline}
+							Queued messages send automatically in the background.
+						{:else}
+							Queued messages will send as soon as this device is online.
+						{/if}
+					</p>
+				{/if}
+			</Popover.Content>
+		</Popover.Positioner>
+	</Portal>
 </Popover.Root>
