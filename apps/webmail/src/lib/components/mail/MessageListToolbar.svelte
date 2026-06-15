@@ -30,14 +30,12 @@
 </script>
 
 <nav
-	class={cn(
-		'z-mail-list-toolbar flex w-full min-w-0 items-center',
-		disabled && 'pointer-events-none opacity-60',
-		className
-	)}
+	class={cn('z-mail-list-toolbar flex w-full min-w-0 items-center', className)}
 	aria-label="Message list"
 >
-	<div class="z-mail-list-toolbar__selectors">
+	<!-- Only the bulk-selection controls dim when there's nothing to select (empty/loading/error).
+	     Compose and the Unseen filter stay usable regardless. -->
+	<div class={cn('z-mail-list-toolbar__selectors', disabled && 'pointer-events-none opacity-60')}>
 		<div class="z-mail-list-checkbox-col">
 			<MessageListMasterCheckbox class="z-mail-list-bulk-bar__checkbox" />
 		</div>

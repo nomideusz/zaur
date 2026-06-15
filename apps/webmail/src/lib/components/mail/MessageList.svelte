@@ -950,7 +950,7 @@
 
 <section
 	class={cn(
-		'z-mail-pane-surface flex min-h-0 min-w-0 flex-col overflow-hidden',
+		'z-mail-pane-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
 		hideOnMobile ? (mail.hasSelection ? 'flex' : 'hidden md:flex') : 'flex'
 	)}
 	style="view-transition-name: message-list;"
