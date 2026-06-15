@@ -25,3 +25,18 @@ export function buildMailboxTree(mailboxes: Mailbox[]): MailboxNode[] {
 
 	return roots;
 }
+
+/** Ids of every node that has children — useful as a tree-view's default-expanded set. */
+export function collectBranchIds(nodes: MailboxNode[]): string[] {
+	const ids: string[] = [];
+	const walk = (list: MailboxNode[]) => {
+		for (const node of list) {
+			if (node.children.length > 0) {
+				ids.push(node.id);
+				walk(node.children);
+			}
+		}
+	};
+	walk(nodes);
+	return ids;
+}

@@ -1,10 +1,13 @@
 <script lang="ts">
 	import { page } from '$app/stores';
+	import { TreeView, createTreeCollection } from '@ark-ui/svelte/tree-view';
 	import { parseMailContext, mailListHref } from '$lib/mail/routes';
 	import { sidebarMailboxGroups } from '$lib/mail/mailboxes';
 	import { mail } from '$lib/stores/mail.svelte';
 	import type { Mailbox } from '$lib/types/mail';
+	import { buildMailboxTree, collectBranchIds, type MailboxNode } from '$lib/utils/mailbox-tree';
 	import { cn } from '$lib/utils/cn';
+	import MailboxTreeNode from './MailboxTreeNode.svelte';
 
 	interface Props {
 		class?: string;
@@ -16,6 +19,17 @@
 
 	const mailCtx = $derived(parseMailContext($page.url.pathname));
 	const currentMailboxRouteId = $derived(mailCtx?.mailboxRouteId ?? null);
+
+	// Custom (non-role) folders can nest via parentId; render them as a collapsible tree.
+	const customTree = $derived(buildMailboxTree([...mailboxGroups.custom]));
+	const customCollection = $derived(
+		createTreeCollection<MailboxNode>({
+			nodeToValue: (node) => node.id,
+			nodeToString: (node) => node.name,
+			rootNode: { id: 'ROOT', name: '', unread: 0, total: 0, children: customTree }
+		})
+	);
+	const expandedBranches = $derived(collectBranchIds(customTree));
 </script>
 
 {#snippet mailboxRow(item: Mailbox)}
@@ -65,11 +79,19 @@
 
 		{#if mailboxGroups.custom.length}
 			<h3 class="z-type-label mt-4 px-3 pb-1">Folders</h3>
-			<ul class="space-y-0.5">
-				{#each mailboxGroups.custom as item (item.id)}
-					{@render mailboxRow(item)}
-				{/each}
-			</ul>
+			<TreeView.Root
+				class="z-folder-tree"
+				collection={customCollection}
+				selectedValue={currentMailboxRouteId ? [currentMailboxRouteId] : []}
+				defaultExpandedValue={expandedBranches}
+				expandOnClick={false}
+			>
+				<TreeView.Tree class="z-folder-tree-list">
+					{#each customCollection.rootNode.children ?? [] as node, index (node.id)}
+						<MailboxTreeNode {node} indexPath={[index]} activeRouteId={currentMailboxRouteId} />
+					{/each}
+				</TreeView.Tree>
+			</TreeView.Root>
 		{/if}
 	</nav>
 </aside>
