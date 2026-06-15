@@ -27,7 +27,6 @@
 	import { createImportantMarkerTouchPick } from '$lib/mail/important-marker-touch';
 	import { mailListBackHref } from '$lib/mail/routes';
 	import { hasPreciseHover, isMobileLayout } from '$lib/utils/pointer-env';
-	import { createEdgeSwipeBack } from '$lib/utils/edge-swipe-back.svelte';
 	import { cn } from '$lib/utils/cn';
 	import type { MessageDetail } from '$lib/types/mail';
 
@@ -73,12 +72,6 @@
 		return mailListBackHref(mailboxRouteId);
 	});
 
-	/* Left-edge swipe-back — the resilient fallback to the island on mobile,
-	   where installed PWAs have no system back gesture. */
-	const edgeBack = createEdgeSwipeBack({
-		canSwipe: () => isMobileLayout() && !mail.hasSelection,
-		onBack: () => goto(listHref)
-	});
 
 	/* Mobile island renders back + thread actions while a thread is open. */
 	$effect(() => {
@@ -308,14 +301,8 @@
 {/snippet}
 
 <article
-	class={cn(
-		'z-mail-pane-surface z-mail-pane-surface--reader flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
-		edgeBack.releasing && 'z-edge-releasing'
-	)}
-	style="view-transition-name: message-reader;{edgeBack.peek !== 0 || edgeBack.releasing
-		? ` transform: translateX(${edgeBack.peek}px);`
-		: ''}"
-	use:edgeBack.attach
+	class="z-mail-pane-surface z-mail-pane-surface--reader flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+	style="view-transition-name: message-reader;"
 >
 	<div class="z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 	<!-- Desktop only — on phones the island carries back + thread actions. -->
