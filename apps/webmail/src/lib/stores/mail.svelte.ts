@@ -431,9 +431,11 @@ class MailStore {
 					.map((email) => mapEmailDetail(email, routeMailboxId));
 				indexMessagesContacts(this.selectedThread);
 
-				for (const msg of this.selectedThread) {
-					if (msg.unread) {
-						void this.markAsRead(client, msg, true);
+				if (settings.markReadOnOpen) {
+					for (const msg of this.selectedThread) {
+						if (msg.unread) {
+							void this.markAsRead(client, msg, true);
+						}
 					}
 				}
 

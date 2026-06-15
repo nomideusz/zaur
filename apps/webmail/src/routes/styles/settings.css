@@ -130,6 +130,14 @@
 		color: var(--z-fg);
 	}
 
+	/* Optional one-line subtitle under a plain section heading. */
+	.z-settings-section-desc {
+		margin: 0.25rem 0 0;
+		font-size: var(--z-main-page-muted-text);
+		line-height: var(--z-space-folder-message-leading);
+		color: var(--z-fg-muted);
+	}
+
 	/* Form panels — Appwrite-style intro + fields (Profile, etc.). */
 	.z-settings-form-heading-desc {
 		margin: 0.375rem 0 0;

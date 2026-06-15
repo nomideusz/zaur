@@ -33,6 +33,7 @@ const STORAGE = {
 	preferPlainText: 'zaur:prefer-plain-text',
 	collapseQuotedInCompose: 'zaur:collapse-quoted-in-compose',
 	expandAllThreadMessages: 'zaur:expand-all-thread-messages',
+	markReadOnOpen: 'zaur:mark-read-on-open',
 	hideComposeHints: 'zaur:hide-compose-hints',
 	showComposeContactSuggestions: 'zaur:show-compose-contact-suggestions',
 	showCcBccInCompose: 'zaur:show-cc-bcc-in-compose',
@@ -111,6 +112,10 @@ function readCollapseQuotedInCompose(): boolean {
 
 function readExpandAllThreadMessages(): boolean {
 	return readBool(STORAGE.expandAllThreadMessages, false);
+}
+
+function readMarkReadOnOpen(): boolean {
+	return readBool(STORAGE.markReadOnOpen, true);
 }
 
 function readHideComposeHints(): boolean {
@@ -276,6 +281,7 @@ class SettingsStore {
 	preferPlainText = $state(readPreferPlainText());
 	collapseQuotedInCompose = $state(readCollapseQuotedInCompose());
 	expandAllThreadMessages = $state(readExpandAllThreadMessages());
+	markReadOnOpen = $state(readMarkReadOnOpen());
 	hideComposeHints = $state(readHideComposeHints());
 	showComposeContactSuggestions = $state(readShowComposeContactSuggestions());
 	showCcBccInCompose = $state(readShowCcBccInCompose());
@@ -322,6 +328,7 @@ class SettingsStore {
 		this.preferPlainText = readPreferPlainText();
 		this.collapseQuotedInCompose = readCollapseQuotedInCompose();
 		this.expandAllThreadMessages = readExpandAllThreadMessages();
+		this.markReadOnOpen = readMarkReadOnOpen();
 		this.hideComposeHints = readHideComposeHints();
 		this.showComposeContactSuggestions = readShowComposeContactSuggestions();
 		this.showCcBccInCompose = readShowCcBccInCompose();
@@ -436,17 +443,6 @@ class SettingsStore {
 		this.accountSyncReady = true;
 	}
 
-	async refreshFromAccount(): Promise<boolean> {
-		if (!this.userEmail) return false;
-
-		const before = this.exportLocalPreferences();
-		const result = await pullAccountSettings(this.userEmail, () => this.init(), { force: true });
-		if (result === 'applied') {
-			void import('$lib/stores/theme.svelte').then(({ theme }) => theme.init());
-		}
-		return result === 'applied' || this.exportLocalPreferences() !== before;
-	}
-
 	async syncToAccount(): Promise<boolean> {
 		await this.syncFromAccount();
 		const ok = await pushAccountSettingsNow();
@@ -498,6 +494,11 @@ class SettingsStore {
 	setExpandAllThreadMessages(value: boolean) {
 		this.expandAllThreadMessages = value;
 		if (browser) this.writeStorage(STORAGE.expandAllThreadMessages, String(value));
+	}
+
+	setMarkReadOnOpen(value: boolean) {
+		this.markReadOnOpen = value;
+		if (browser) this.writeStorage(STORAGE.markReadOnOpen, String(value));
 	}
 
 	setHideComposeHints(value: boolean) {
@@ -705,6 +706,7 @@ class SettingsStore {
 		this.setPreferPlainText(false);
 		this.setBlockExternalContent(true);
 		this.setExpandAllThreadMessages(false);
+		this.setMarkReadOnOpen(true);
 		this.setConfirmBeforeDelete(true);
 		this.setHideActionToasts(false);
 		this.setTimeFormat('auto');

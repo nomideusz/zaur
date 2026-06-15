@@ -125,6 +125,17 @@
 
 	<SettingsRow
 		kind="toggle"
+		title="Mark as read when opened"
+		description="Clear the unread mark as soon as you open a message. Turn off to mark messages read yourself."
+	>
+		<Switch
+			checked={settings.markReadOnOpen}
+			onchange={(checked) => settings.setMarkReadOnOpen(checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		kind="toggle"
 		title="Clean reading view"
 		description="Strip senders' fonts, colors, and fixed widths so messages match your reading settings."
 	>

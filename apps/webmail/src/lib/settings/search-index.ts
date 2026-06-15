@@ -121,22 +121,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Minimize animations and transitions throughout the app."
 	},
 	{
-		"id": "/settings/account-refresh-from-account",
-		"href": "/settings/account",
-		"title": "Refresh from account",
-		"description": "Pull your saved settings from the server, replacing the ones on this device."
-	},
-	{
 		"id": "/settings/account-reset-preferences",
 		"href": "/settings/account",
 		"title": "Reset preferences",
 		"description": "Restore all settings to their defaults. Your display name and signature are kept."
-	},
-	{
-		"id": "/settings/account-save-to-account",
-		"href": "/settings/account",
-		"title": "Save to account",
-		"description": "Store these settings on the server so they follow you to other devices."
 	},
 	{
 		"id": "/settings/account-session",
@@ -161,6 +149,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"href": "/settings/account",
 		"title": "Signature",
 		"description": "Appended to the bottom of new messages."
+	},
+	{
+		"id": "/settings/account-sync-now",
+		"href": "/settings/account",
+		"title": "Sync now",
+		"description": "Force an immediate sync with your account instead of waiting for the automatic one."
 	},
 	{
 		"id": "/settings/account-unseen-count-in-tab-title",
@@ -251,6 +245,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"href": "/settings/reading",
 		"title": "Expand all threads",
 		"description": "Open every message in a conversation instead of just the latest."
+	},
+	{
+		"id": "/settings/reading-mark-as-read-when-opened",
+		"href": "/settings/reading",
+		"title": "Mark as read when opened",
+		"description": "Clear the unread mark as soon as you open a message. Turn off to mark messages read yourself."
 	},
 	{
 		"id": "/settings/reading-marker-colors-on-highlighted",

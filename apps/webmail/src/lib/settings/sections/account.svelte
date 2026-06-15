@@ -443,7 +443,7 @@
 {/if}
 
 {#if trashMailbox || junkMailbox}
-	<SettingsGroup title="Mailbox">
+	<SettingsGroup title="Mailbox" description="Bulk cleanup actions. These permanently delete mail and can't be undone.">
 		{#if trashMailbox}
 			<SettingsRow
 				kind="action"
@@ -480,34 +480,17 @@
 	</SettingsGroup>
 {/if}
 
-<SettingsGroup title="Sync & data">
+<SettingsGroup
+	title="Sync & data"
+	description="Your preferences sync automatically across your devices. These are manual backups and resets."
+>
 	<SettingsRow
 		kind="action"
-		title="Refresh from account"
-		description="Pull your saved settings from the server, replacing the ones on this device."
-	>
-		<button
-			type="button"
-			class="z-mail-text-nav__link"
-			onclick={async () => {
-				const changed = await settings.refreshFromAccount();
-				toast.show(
-					changed ? 'Settings updated from your account' : 'Settings are already up to date',
-					changed ? 'success' : 'info'
-				);
-			}}
-		>
-			Refresh
-		</button>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="action"
-		title="Save to account"
-		description="Store these settings on the server so they follow you to other devices."
+		title="Sync now"
+		description="Force an immediate sync with your account instead of waiting for the automatic one."
 	>
 		<button type="button" class="z-mail-text-nav__link" onclick={() => void settings.syncToAccount()}>
-			Save
+			Sync
 		</button>
 	</SettingsRow>
 
