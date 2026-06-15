@@ -30,7 +30,9 @@
 		data-testid="fire-undo"
 		onclick={() => {
 			undone = false;
-			toast.showUndo(`Sending "Draft ${++n}"…`, () => (undone = true), 8000);
+			toast.showUndo(`Sending "Draft ${++n}"…`, () => {
+				undone = true;
+			}, 8000);
 		}}
 	>
 		undo

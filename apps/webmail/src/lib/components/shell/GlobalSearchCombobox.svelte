@@ -11,6 +11,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { Combobox, createListCollection } from '@ark-ui/svelte/combobox';
+	import { Highlight } from '@ark-ui/svelte/highlight';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import Search from '$lib/components/icons/Search.svelte';
 	import User from '$lib/components/icons/User.svelte';
@@ -669,7 +670,15 @@
 								{#each contactItems as item (item.value)}
 									<Combobox.Item {item} class={cn(itemClass, 'py-2')}>
 										<User class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-										<Combobox.ItemText class="min-w-0 truncate">{item.label}</Combobox.ItemText>
+										<Combobox.ItemText class="min-w-0 truncate">
+											<Highlight
+												query={input.trim()}
+												text={item.label}
+												ignoreCase
+												matchAll
+												class="z-search-mark"
+											/>
+										</Combobox.ItemText>
 									</Combobox.Item>
 								{/each}
 							</Combobox.ItemGroup>

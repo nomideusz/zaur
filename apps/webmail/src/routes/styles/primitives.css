@@ -1,5 +1,15 @@
 /* Single-purpose UI primitives — buttons, inputs, menus, list mechanics. */
 
+	/* Matched-substring emphasis for search results (Ark <Highlight> marks). */
+	.z-search-mark {
+		background: color-mix(in srgb, var(--z-accent) 18%, transparent);
+		color: var(--z-fg);
+		border-radius: 2px;
+		font-weight: 600;
+		box-decoration-break: clone;
+		-webkit-box-decoration-break: clone;
+	}
+
 	.z-panel {
 		@apply border-b border-border;
 		background-color: var(--z-chrome);

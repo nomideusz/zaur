@@ -4,6 +4,7 @@
 	// — the collection is just whatever filtered() returns. Replaces the previous
 	// roving-focus.ts listbox.
 	import { Combobox, createListCollection } from '@ark-ui/svelte/combobox';
+	import { Highlight } from '@ark-ui/svelte/highlight';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import Search from '$lib/components/icons/Search.svelte';
 	import { settingsSearch } from '$lib/settings/search-registry.svelte';
@@ -90,7 +91,15 @@
 						item={entry}
 						class="z-overflow-menu-item w-full cursor-pointer text-left outline-none data-[highlighted]:bg-surface-sunken"
 					>
-						<Combobox.ItemText>{entry.title}</Combobox.ItemText>
+						<Combobox.ItemText>
+							<Highlight
+								query={settingsSearch.query}
+								text={entry.title}
+								ignoreCase
+								matchAll
+								class="z-search-mark"
+							/>
+						</Combobox.ItemText>
 					</Combobox.Item>
 				{/each}
 			</Combobox.Content>
