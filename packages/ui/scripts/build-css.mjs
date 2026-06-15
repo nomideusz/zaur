@@ -26,7 +26,8 @@ writeFileSync(registerCss, css);
 const seedSrc = join(root, 'src/circadian/seed.js');
 const seedTargets = [
   join(root, '../../apps/register/public/circadian-seed.js'),
-  join(root, '../../apps/webmail/static/circadian-seed.js')
+  join(root, '../../apps/webmail/static/circadian-seed.js'),
+  join(root, '../../apps/web/static/circadian-seed.js')
 ];
 for (const target of seedTargets) {
   mkdirSync(dirname(target), { recursive: true });

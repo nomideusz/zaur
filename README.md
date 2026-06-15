@@ -1,11 +1,16 @@
 # Zaur
 
-Monorepo for the Zaur email platform and its pixel dinosaur mascot.
+Monorepo for the Zaur communications suite — Mail, Chat, Discuss — and its pixel dinosaur mascot.
+
+The suite lives across subdomains: **Mail** (`register.zaur.app` + `webmail.zaur.app`),
+**Chat** (`chat.zaur.app`, Once Campfire), and **Discuss** (`discourse.zaur.app`, Discourse).
+The apex `zaur.app` is the marketing landing site (`@zaur/web`).
 
 ## Apps
 
 | App | Package | URL | Deploy |
 |-----|---------|-----|--------|
+| **Web** (landing) | `@zaur/web` | [zaur.app](https://zaur.app) | CapRover |
 | **Webmail** | `@zaur/webmail` | [webmail.zaur.app](https://webmail.zaur.app) | CapRover |
 | **Register** | `@zaur/register` | [register.zaur.app](https://register.zaur.app) | CapRover |
 | **Dinosaurus** | `@zaur/dinosaurus` | [dino.zaur.app](https://dino.zaur.app) | CapRover |
@@ -30,6 +35,7 @@ pnpm install
 ### Development
 
 ```sh
+pnpm dev:web           # http://localhost:5173 (landing site)
 pnpm dev:webmail       # http://localhost:5173
 pnpm dev:dinosaurus    # http://localhost:5173 (vite)
 pnpm dev:register       # http://localhost:3000
@@ -53,6 +59,7 @@ pnpm test:webmail
 
 ```
 apps/
+  web/           SvelteKit static landing site (zaur.app)
   webmail/       SvelteKit JMAP client
   dinosaurus/    Zaur's world (Vite + archive server)
   register/      Stalwart account registration portal
@@ -74,6 +81,7 @@ GitHub Actions deploy **webmail** and **register** to CapRover on push to `main`
 Local deploy (requires `caprover login`):
 
 ```sh
+pnpm deploy:web
 pnpm deploy:webmail
 pnpm deploy:register
 ```

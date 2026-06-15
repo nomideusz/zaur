@@ -1,0 +1,157 @@
+/* Zaur marketing site — page styles layered on the @zaur/ui design tokens. */
+
+.zw-container {
+	width: min(var(--z-measure-wide), 92vw);
+	margin-inline: auto;
+}
+
+/* Header brand: pixel mark + wordmark */
+.zw-brand {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.zw-brand__mark {
+	color: var(--z-brand-mark);
+}
+
+/* ---- Hero ---------------------------------------------------------------- */
+
+.zw-hero {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 1rem;
+	padding-block: clamp(3rem, 10vw, 5.5rem) clamp(2rem, 6vw, 3.5rem);
+}
+
+.zw-hero__mark {
+	color: var(--z-brand-mark);
+	margin-bottom: 0.5rem;
+	filter: drop-shadow(0 8px 24px color-mix(in srgb, var(--z-brand-mark) 22%, transparent));
+}
+
+.zw-hero__title {
+	margin: 0;
+	max-width: 16ch;
+	font-size: clamp(1.75rem, 4.5vw, 2.75rem);
+	font-weight: 700;
+	letter-spacing: -0.025em;
+	line-height: 1.1;
+	color: var(--z-fg);
+	text-wrap: balance;
+}
+
+.zw-hero__lede {
+	margin: 0;
+	max-width: 40ch;
+	font-size: clamp(1rem, 2.2vw, 1.125rem);
+	line-height: 1.55;
+	color: var(--z-fg-muted);
+	text-wrap: pretty;
+}
+
+/* ---- Product grid ------------------------------------------------------- */
+
+.zw-products {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 1rem;
+	padding-bottom: clamp(2rem, 5vw, 3rem);
+}
+
+@media (min-width: 720px) {
+	.zw-products {
+		grid-template-columns: repeat(3, minmax(0, 1fr));
+		gap: 1.25rem;
+	}
+}
+
+.zw-card {
+	display: grid;
+	grid-template-columns: 1fr auto;
+	column-gap: 1rem;
+	align-items: center;
+	padding: 1.5rem;
+	border: 1px solid var(--z-border);
+	border-radius: var(--radius-lg);
+	background: var(--z-surface-raised);
+	box-shadow: var(--shadow-sm);
+	text-decoration: none;
+	color: inherit;
+	transition:
+		border-color 160ms ease,
+		box-shadow 160ms ease,
+		transform 160ms ease;
+}
+
+.zw-card:hover {
+	border-color: color-mix(in srgb, var(--z-accent) 35%, var(--z-border));
+	box-shadow: var(--shadow-md);
+	transform: translateY(-2px);
+}
+
+.zw-card__name {
+	grid-area: 1 / 1 / 2 / 2;
+	font-size: 1.25rem;
+	font-weight: 650;
+	letter-spacing: -0.01em;
+	color: var(--z-fg);
+}
+
+.zw-card__desc {
+	grid-area: 2 / 1 / 3 / 2;
+	margin-top: 0.25rem;
+	font-size: 0.9375rem;
+	line-height: 1.5;
+	color: var(--z-fg-muted);
+	text-wrap: pretty;
+}
+
+.zw-arrow {
+	grid-area: 1 / 2 / 3 / 3;
+	align-self: center;
+	font-size: 1.125rem;
+	color: var(--z-fg-subtle);
+	transition:
+		transform 160ms ease,
+		color 160ms ease;
+}
+
+.zw-card:hover .zw-arrow {
+	color: var(--z-accent);
+	transform: translateX(3px);
+}
+
+/* Travel-site redirect note */
+.zw-aside {
+	margin-inline: auto;
+	padding-bottom: clamp(3rem, 8vw, 5rem);
+	text-align: center;
+	font-size: 0.875rem;
+	line-height: 1.55;
+	color: var(--z-fg-subtle);
+	text-wrap: pretty;
+}
+
+/* ---- Footer extras ------------------------------------------------------ */
+
+.zw-footer-links {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.25rem 1rem;
+}
+
+.zw-footer-links a {
+	color: var(--z-fg-muted);
+	text-decoration: none;
+}
+
+.zw-footer-links a:hover {
+	color: var(--z-fg);
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}

@@ -1,0 +1,44 @@
+<script lang="ts">
+	import '@zaur/ui/css/zaur.css';
+	import '$lib/landing.css';
+	import { onMount } from 'svelte';
+	import Sprite from '$lib/Sprite.svelte';
+
+	let { children } = $props();
+
+	onMount(() => {
+		// Keep the time-adaptive palette drifting while the tab stays open.
+		(window as { ZaurCircadianSeed?: { startCircadianLoop?: () => void } }).ZaurCircadianSeed?.startCircadianLoop?.();
+	});
+</script>
+
+<div class="z-site-shell">
+	<header class="z-site-header z-panel">
+		<div class="z-site-header__inner zw-container">
+			<a href="/" class="zw-brand z-type-brand" aria-label="Zaur home">
+				<Sprite frame="happy" size={22} />
+				<span>ZAUR</span>
+			</a>
+			<nav class="z-site-nav" aria-label="Account">
+				<a href="https://register.zaur.app" class="z-site-nav__link">Register</a>
+			</nav>
+		</div>
+	</header>
+
+	<main class="z-site-main">
+		{@render children()}
+	</main>
+
+	<footer class="z-site-footer">
+		<div class="z-site-footer__inner zw-container">
+			<span>© 2026 Zaur</span>
+			<nav class="zw-footer-links" aria-label="Footer">
+				<a href="https://register.zaur.app">Register</a>
+				<a href="https://webmail.zaur.app">Webmail</a>
+				<a href="https://chat.zaur.app">Chat</a>
+				<a href="https://discourse.zaur.app">Discuss</a>
+				<a href="mailto:nom@zaur.app">nom@zaur.app</a>
+			</nav>
+		</div>
+	</footer>
+</div>
