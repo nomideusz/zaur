@@ -177,16 +177,15 @@
 {/each}
 
 {#if overflowActions.length > 0}
-	<Menu>
+	<Menu side={menuSide} align="start" {menuId}>
 		<MenuTrigger
 			aria-label="More actions for selected messages"
-			aria-controls={menuId}
 			class={`z-btn-ghost ${ghostBtnClass} shrink-0`}
 		>
 			<MoreVertical class="size-4" aria-hidden="true" />
 			<span class="max-sm:sr-only">More</span>
 		</MenuTrigger>
-		<MenuContent id={menuId} side={menuSide} align="start" class="w-56 min-w-48">
+		<MenuContent class="w-56 min-w-48">
 			{#each overflowReadState as action (action.id)}
 				<MenuItem label={action.label} onSelect={() => runAction(action.id)}>
 					<span class="flex size-5 shrink-0 items-center justify-center">

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { DropdownMenu } from 'bits-ui';
+	import { Menu } from '@ark-ui/svelte/menu';
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
@@ -9,7 +9,7 @@
 	let { class: className }: Props = $props();
 </script>
 
-<DropdownMenu.Separator
+<Menu.Separator
 	class={cn('z-menu-separator -mx-1 my-1 h-px bg-border', className)}
 	data-slot="menu-separator"
 />
