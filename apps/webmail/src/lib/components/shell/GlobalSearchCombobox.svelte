@@ -1,18 +1,16 @@
 <script lang="ts">
-	// Ark combobox replacement for GlobalSearch. The combobox machine owns the
-	// suggestions dropdown (open state + keyboard nav), dropping the dependency on
-	// roving-focus.ts. Placement behaviour matches the original:
-	//   - shell:   combobox + advanced-search toggle + md:hidden icon button
-	//   - sidebar: combobox suggestions only
-	//   - mobile:  plain input (no dropdown), like the original isSimpleSearch path
-	// The advanced-search panel is plain form markup rendered as a sibling overlay;
-	// while it is open the combobox popup is forced closed.
+	// Single-dropdown global search. One panel does it all: quick-filter chips (idle),
+	// "search for…" + contact matches (typing), and an inline collapsible Advanced section —
+	// no second floating panel. A plain input (not an Ark combobox) so form fields can live
+	// inside the same dropdown without the listbox stealing focus; keyboard nav over the top
+	// suggestions is a small roving highlight.
+	//   - shell:   input + advanced section + md:hidden icon button
+	//   - sidebar: input + suggestions only (no advanced)
+	//   - mobile:  plain input, no dropdown
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { Combobox, createListCollection } from '@ark-ui/svelte/combobox';
 	import { Highlight } from '@ark-ui/svelte/highlight';
-	import { Portal } from '@ark-ui/svelte/portal';
 	import Search from '$lib/components/icons/Search.svelte';
 	import User from '$lib/components/icons/User.svelte';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
@@ -44,7 +42,8 @@
 
 	let input = $state('');
 	let open = $state(false);
-	let showAdvanced = $state(false);
+	let advancedExpanded = $state(false);
+	let highlightIndex = $state(-1);
 	let mobileInput = $state<HTMLInputElement | null>(null);
 	let rootEl = $state<HTMLDivElement | null>(null);
 
@@ -71,13 +70,19 @@
 		requestAnimationFrame(() => mobileInput?.focus());
 	});
 
-	// --- Suggestions (combobox) ---------------------------------------------
+	// Reset the keyboard highlight whenever what's typed changes.
+	$effect(() => {
+		void input;
+		highlightIndex = -1;
+	});
+
+	// --- Suggestions ---------------------------------------------------------
 
 	type SuggestItem = {
 		value: string;
 		label: string;
-		group: 'filter' | 'search' | 'contact' | 'advanced';
-		icon: 'attachment' | 'unseen' | 'me' | 'recent' | 'search' | 'contact' | 'advanced';
+		group: 'filter' | 'search' | 'contact';
+		icon: 'attachment' | 'unseen' | 'me' | 'recent' | 'search' | 'contact';
 		run: () => void;
 	};
 
@@ -112,16 +117,6 @@
 				setQuery(`after:${since.toISOString().split('T')[0]}`);
 			}
 		});
-		// The "Advanced Search Options" entry only exists on shell (matches original).
-		if (showAdvancedToggle) {
-			items.push({
-				value: 'qf:advanced',
-				label: 'Advanced Search Options',
-				group: 'advanced',
-				icon: 'advanced',
-				run: () => openAdvanced()
-			});
-		}
 		return items;
 	});
 
@@ -139,7 +134,8 @@
 			}));
 	});
 
-	const items = $derived.by<SuggestItem[]>(() => {
+	// The flat list the keyboard navigates: quick filters when idle, else search + contacts.
+	const topItems = $derived.by<SuggestItem[]>(() => {
 		if (input.trim().length === 0) return quickFilters;
 		const searchItem: SuggestItem = {
 			value: 'search',
@@ -151,29 +147,8 @@
 		return [searchItem, ...contactMatches];
 	});
 
-	const collection = $derived(
-		createListCollection({
-			items,
-			itemToValue: (item) => item.value,
-			itemToString: (item) => item.label
-		})
-	);
-	const byValue = $derived(new Map(items.map((item) => [item.value, item])));
-
-	// Render slices (the collection stays flat for correct keyboard nav order).
-	const filterItems = $derived(items.filter((i) => i.group === 'filter'));
-	const advancedItem = $derived(items.find((i) => i.group === 'advanced'));
-	const searchAction = $derived(items.find((i) => i.group === 'search'));
-	const contactItems = $derived(items.filter((i) => i.group === 'contact'));
-
-	const popupOpen = $derived(open && !showAdvanced && items.length > 0);
-
-	function onInputValueChange(details: Combobox.InputValueChangeDetails) {
-		if (details.reason === 'input-change') input = details.inputValue;
-	}
-
-	function onSelect(details: Combobox.SelectionDetails) {
-		byValue.get(details.itemValue)?.run();
+	function filterEmoji(icon: SuggestItem['icon']): string {
+		return icon === 'attachment' ? '📎' : icon === 'unseen' ? '✉️' : icon === 'me' ? '👤' : '📅';
 	}
 
 	const placeholder = $derived.by(() => {
@@ -190,11 +165,55 @@
 	function submit(query = input.trim()) {
 		if (!query) return;
 		open = false;
-		showAdvanced = false;
+		advancedExpanded = false;
 		goto(`/mail/search?${new URLSearchParams({ q: query }).toString()}`);
 	}
 
-	// --- Advanced search (ported verbatim) ----------------------------------
+	// --- Keyboard ------------------------------------------------------------
+
+	function move(delta: number) {
+		const n = topItems.length;
+		if (n === 0) {
+			highlightIndex = -1;
+			return;
+		}
+		highlightIndex =
+			highlightIndex < 0 ? (delta > 0 ? 0 : n - 1) : (highlightIndex + delta + n) % n;
+	}
+
+	function onInputKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape') {
+			if (advancedExpanded) advancedExpanded = false;
+			else open = false;
+			return;
+		}
+		if (advancedExpanded) return;
+		if (event.key === 'ArrowDown') {
+			event.preventDefault();
+			if (!open) open = true;
+			else move(1);
+		} else if (event.key === 'ArrowUp') {
+			if (open) {
+				event.preventDefault();
+				move(-1);
+			}
+		}
+	}
+
+	function onFormSubmit(event: SubmitEvent) {
+		event.preventDefault();
+		if (advancedExpanded) {
+			submitAdvanced();
+			return;
+		}
+		if (open && highlightIndex >= 0 && highlightIndex < topItems.length) {
+			topItems[highlightIndex].run();
+			return;
+		}
+		submit();
+	}
+
+	// --- Advanced search -----------------------------------------------------
 
 	const dateRangeOptions = [
 		{ value: 'any', label: 'Any time' },
@@ -304,22 +323,21 @@
 		return parts.join(' ');
 	}
 
-	function openAdvanced() {
-		populateAdvancedFromInput(input);
-		showAdvanced = true;
-		open = false;
-	}
-
-	function toggleAdvanced(event: MouseEvent) {
-		event.stopPropagation();
-		if (!showAdvanced) openAdvanced();
-		else showAdvanced = false;
+	function toggleAdvanced(event?: MouseEvent) {
+		event?.stopPropagation();
+		open = true;
+		if (advancedExpanded) {
+			advancedExpanded = false;
+		} else {
+			populateAdvancedFromInput(input);
+			advancedExpanded = true;
+		}
 	}
 
 	function submitAdvanced() {
 		const query = buildQueryFromAdvanced();
 		input = query;
-		showAdvanced = false;
+		advancedExpanded = false;
 		open = false;
 
 		const params = new URLSearchParams({ q: query });
@@ -340,7 +358,7 @@
 		input = '';
 	}
 
-	// --- Global "/" shortcut -------------------------------------------------
+	// --- Global "/" shortcut + outside click ---------------------------------
 
 	function isTypingTarget(target: EventTarget | null) {
 		return (
@@ -362,15 +380,13 @@
 		return false;
 	}
 
-	// The advanced panel isn't a dismissable layer the combobox manages, so it keeps
-	// its own click-outside. The combobox handles outside-clicks for the popup itself.
 	function handleWindowClick(event: MouseEvent) {
-		if (!showAdvanced) return;
+		if (!open) return;
 		const target = event.target;
-		if (!(target instanceof Node)) return;
-		if (!target.isConnected) return;
+		if (!(target instanceof Node) || !target.isConnected) return;
 		if (rootEl?.contains(target)) return;
-		showAdvanced = false;
+		open = false;
+		advancedExpanded = false;
 	}
 
 	onMount(() => {
@@ -395,7 +411,7 @@
 	});
 
 	const itemClass =
-		'flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none data-[highlighted]:bg-surface-sunken';
+		'flex w-full cursor-pointer select-none items-center gap-2 px-3 py-1.5 text-left text-sm outline-none';
 	const filterBadge =
 		'inline-flex size-4.5 items-center justify-center rounded border border-border bg-surface-sunken text-[11px]';
 </script>
@@ -434,59 +450,42 @@
 		</IconButton>
 	{/if}
 
-	<Combobox.Root
-		bind:ref={rootEl}
-		{collection}
-		ids={{ input: inputId }}
-		inputValue={input}
-		open={popupOpen}
-		multiple={false}
-		openOnClick
-		allowCustomValue
-		selectionBehavior="preserve"
-		closeOnSelect={false}
-		positioning={{ placement: 'bottom-start', sameWidth: true }}
-		onInputValueChange={onInputValueChange}
-		onOpenChange={(d) => (open = d.open)}
-		onSelect={onSelect}
+	<div
+		bind:this={rootEl}
 		class={cn(
 			'relative w-full min-w-0',
 			isSidebar ? className : cn('hidden w-full md:block', className)
 		)}
 	>
-		<Combobox.Label class="sr-only">Search mail</Combobox.Label>
-
-		<!-- Wrapped in a form so a plain Enter (nothing highlighted) submits; ArrowDown
-		     into the list + Enter routes through onSelect. The advanced panel lives in the
-		     same form so Enter inside its fields submits the advanced query. -->
-		<form
-			role="search"
-			onsubmit={(e) => {
-				e.preventDefault();
-				if (showAdvanced) submitAdvanced();
-				else submit();
-			}}
-		>
-			<Combobox.Control class="relative">
+		<label class="sr-only" for={inputId}>Search mail</label>
+		<!-- One form so a plain Enter submits, and Enter inside the advanced fields submits the
+		     advanced query. -->
+		<form role="search" onsubmit={onFormSubmit}>
+			<div class="relative">
 				<Search
 					class="pointer-events-none absolute top-1/2 left-3 z-10 size-4 -translate-y-1/2 text-fg-subtle"
 				/>
-				<Combobox.Input
+				<!-- svelte-ignore a11y_autofocus -->
+				<input
+					id={inputId}
 					type="search"
 					data-zaur-mail-search={isSidebar ? '' : undefined}
 					enterkeyhint="search"
 					inputmode="search"
 					autocomplete="off"
 					autofocus={autofocus}
+					role="combobox"
+					aria-expanded={open}
+					aria-controls="{inputId}-dropdown"
 					{placeholder}
 					class={cn(
 						isSidebar
 							? 'z-sidebar-search-input pr-10'
 							: 'z-input z-chrome-field w-full rounded-full pl-9 pr-10 shadow-none'
 					)}
-					onfocus={() => {
-						if (!showAdvanced) open = true;
-					}}
+					bind:value={input}
+					onfocus={() => (open = true)}
+					onkeydown={onInputKeydown}
 				/>
 
 				{#if showAdvancedToggle}
@@ -498,179 +497,50 @@
 								class="absolute top-1/2 right-3 z-20 flex size-7 -translate-y-1/2 cursor-pointer items-center justify-center rounded-full text-fg-subtle transition-colors hover:bg-surface-sunken hover:text-fg"
 								onclick={toggleAdvanced}
 								aria-label="Show advanced search options"
+								aria-expanded={advancedExpanded}
 							>
 								<ChevronDown
-									class={cn('size-4 transition-transform duration-200', showAdvanced && 'rotate-180')}
+									class={cn('size-4 transition-transform duration-200', advancedExpanded && 'rotate-180')}
 								/>
 							</button>
 						{/snippet}
 					</TooltipWrap>
 				{/if}
-			</Combobox.Control>
+			</div>
 
-			{#if showAdvanced}
+			{#if open}
 				<div
-					class="absolute left-0 right-0 top-full z-50 mt-1.5 overflow-hidden rounded-lg border border-border bg-surface-raised shadow-md"
+					id="{inputId}-dropdown"
+					class="absolute right-0 left-0 top-full z-50 mt-1.5 flex max-h-[min(80vh,36rem)] flex-col overflow-hidden rounded-lg border border-border bg-surface-raised shadow-md"
 				>
-					<div
-						class="flex max-h-[min(75vh,34rem)] flex-col overflow-hidden text-sm"
-						role="dialog"
-						tabindex="-1"
-						aria-label="Advanced search"
-						onkeydown={(event) => {
-							if (event.key === 'Escape') {
-								showAdvanced = false;
-								document.getElementById(inputId)?.focus();
-							}
-						}}
-					>
-						<div class="flex items-center justify-between border-b border-border px-3 py-2">
-							<span class="font-semibold text-fg">Advanced search</span>
-							<button
-								type="button"
-								class="cursor-pointer text-xs text-fg-subtle transition-colors hover:text-fg"
-								onclick={clearAdvanced}
-							>
-								Clear all
-							</button>
-						</div>
-
-						<div class="flex flex-col gap-3 overflow-y-auto p-3">
-							<label class="flex flex-col gap-1">
-								<span class="text-xs font-medium text-fg-muted">Search in</span>
-								<select class="z-select" bind:value={advMailboxId}>
-									{#each mailboxOptions as option (option.value)}
-										<option value={option.value}>{option.label}</option>
-									{/each}
-								</select>
-							</label>
-
-							<label class="flex flex-col gap-1">
-								<span class="text-xs font-medium text-fg-muted">From</span>
-								<input type="text" class="z-input" placeholder="Sender's name or email" bind:value={advFrom} />
-							</label>
-
-							<label class="flex flex-col gap-1">
-								<span class="text-xs font-medium text-fg-muted">To</span>
-								<input type="text" class="z-input" placeholder="Recipient's name or email" bind:value={advTo} />
-							</label>
-
-							<label class="flex flex-col gap-1">
-								<span class="text-xs font-medium text-fg-muted">Subject</span>
-								<input type="text" class="z-input" placeholder="Subject line contains" bind:value={advSubject} />
-							</label>
-
-							<label class="flex flex-col gap-1">
-								<span class="text-xs font-medium text-fg-muted">Keywords / Body</span>
-								<input type="text" class="z-input" placeholder="Has the words" bind:value={advText} />
-							</label>
-
-							<div class="grid grid-cols-2 gap-3">
-								<label class="flex flex-col gap-1">
-									<span class="text-xs font-medium text-fg-muted">Date range</span>
-									<select class="z-select" bind:value={advDateRange}>
-										{#each dateRangeOptions as option (option.value)}
-											<option value={option.value}>{option.label}</option>
-										{/each}
-									</select>
-								</label>
-
-								<div class="flex items-end pb-1">
-									<Checkbox
-										checked={advHasAttachment}
-										label="Has attachment"
-										class="z-checkbox-row px-0 py-1.5 text-fg-muted transition-colors hover:text-fg"
-										onchange={(checked) => {
-											advHasAttachment = checked === true;
-										}}
-									>
-										<span class="text-xs font-medium">Has attachment</span>
-									</Checkbox>
-								</div>
-							</div>
-
-							{#if advDateRange === 'custom'}
-								<div class="grid grid-cols-2 gap-3 border-t border-border/50 pt-2">
-									<label class="flex flex-col gap-1">
-										<span class="text-xs font-medium text-fg-muted">After date</span>
-										<input type="date" class="z-input" bind:value={advAfterDate} />
-									</label>
-									<label class="flex flex-col gap-1">
-										<span class="text-xs font-medium text-fg-muted">Before date</span>
-										<input type="date" class="z-input" bind:value={advBeforeDate} />
-									</label>
+					{#if !advancedExpanded}
+						<div class="overflow-y-auto py-1.5">
+							{#if input.trim().length === 0}
+								<div
+									class="z-type-label px-3 py-1 text-[10px] font-bold tracking-wider text-fg-muted uppercase"
+								>
+									Quick Filters
 								</div>
 							{/if}
-						</div>
-
-						<div class="flex items-center justify-end gap-2 border-t border-border px-3 py-2">
-							<button
-								type="button"
-								class="cursor-pointer rounded-md px-3 py-1.5 text-xs font-medium text-fg transition-colors hover:bg-surface-sunken"
-								onclick={() => {
-									showAdvanced = false;
-									document.getElementById(inputId)?.focus();
-								}}
-							>
-								Cancel
-							</button>
-							<button type="button" class="z-btn-primary px-4 py-1.5 text-xs" onclick={submitAdvanced}>
-								Search
-							</button>
-						</div>
-					</div>
-				</div>
-			{/if}
-		</form>
-
-		<Portal>
-			<Combobox.Positioner>
-				<Combobox.Content
-					class="z-50 mt-1.5 max-h-[min(50vh,20rem)] overflow-x-hidden overflow-y-auto rounded-lg border border-border bg-surface-raised py-1.5 shadow-md outline-none"
-				>
-					{#if input.trim().length === 0}
-						<Combobox.ItemGroup>
-							<Combobox.ItemGroupLabel
-								class="z-type-label px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-fg-muted"
-							>
-								Quick Filters
-							</Combobox.ItemGroupLabel>
-							{#each filterItems as item (item.value)}
-								<Combobox.Item {item} class={itemClass}>
-									<span class={filterBadge} aria-hidden="true">
-										{item.icon === 'attachment' ? '📎' : item.icon === 'unseen' ? '✉️' : item.icon === 'me' ? '👤' : '📅'}
-									</span>
-									<Combobox.ItemText>{item.label}</Combobox.ItemText>
-								</Combobox.Item>
-							{/each}
-						</Combobox.ItemGroup>
-
-						{#if advancedItem}
-							<div class="mx-2 my-1 h-px bg-border" role="separator"></div>
-							<Combobox.Item
-								item={advancedItem}
-								class="flex w-full cursor-pointer select-none items-center justify-center gap-1 px-3 py-1.5 text-center text-xs font-semibold text-accent outline-none data-[highlighted]:bg-surface-sunken"
-							>
-								<Combobox.ItemText>{advancedItem.label}</Combobox.ItemText>
-							</Combobox.Item>
-						{/if}
-					{:else}
-						{#if searchAction}
-							<Combobox.Item item={searchAction} class={cn(itemClass, 'py-2')}>
-								<Search class="size-4 text-fg-subtle" aria-hidden="true" />
-								<Combobox.ItemText>{searchAction.label}</Combobox.ItemText>
-							</Combobox.Item>
-						{/if}
-
-						{#if contactItems.length}
-							<Combobox.ItemGroup>
-								<Combobox.ItemGroupLabel class="z-type-label px-3 py-1.5 text-fg-muted">
-									Contacts
-								</Combobox.ItemGroupLabel>
-								{#each contactItems as item (item.value)}
-									<Combobox.Item {item} class={cn(itemClass, 'py-2')}>
+							{#each topItems as item, i (item.value)}
+								{#if item.group === 'contact' && topItems[i - 1]?.group !== 'contact'}
+									<div class="z-type-label px-3 py-1.5 text-fg-muted">Contacts</div>
+								{/if}
+								<button
+									type="button"
+									class={cn(itemClass, i === highlightIndex && 'bg-surface-sunken')}
+									onclick={() => item.run()}
+									onmousemove={() => (highlightIndex = i)}
+								>
+									{#if item.group === 'filter'}
+										<span class={filterBadge} aria-hidden="true">{filterEmoji(item.icon)}</span>
+										<span>{item.label}</span>
+									{:else if item.group === 'search'}
+										<Search class="size-4 text-fg-subtle" aria-hidden="true" />
+										<span>{item.label}</span>
+									{:else}
 										<User class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
-										<Combobox.ItemText class="min-w-0 truncate">
+										<span class="min-w-0 truncate">
 											<Highlight
 												query={input.trim()}
 												text={item.label}
@@ -678,14 +548,114 @@
 												matchAll
 												class="z-search-mark"
 											/>
-										</Combobox.ItemText>
-									</Combobox.Item>
-								{/each}
-							</Combobox.ItemGroup>
+										</span>
+									{/if}
+								</button>
+							{/each}
+						</div>
+					{/if}
+
+					{#if showAdvancedToggle}
+						{#if !advancedExpanded}
+							<div class="mx-2 h-px bg-border" role="separator"></div>
+						{/if}
+						<button
+							type="button"
+							class="flex w-full cursor-pointer items-center justify-between px-3 py-2 text-xs font-semibold text-accent outline-none hover:bg-surface-sunken"
+							onclick={toggleAdvanced}
+							aria-expanded={advancedExpanded}
+						>
+							<span>Advanced search</span>
+							<ChevronDown
+								class={cn('size-4 transition-transform duration-200', advancedExpanded && 'rotate-180')}
+							/>
+						</button>
+
+						{#if advancedExpanded}
+							<div class="flex flex-col gap-3 overflow-y-auto border-t border-border p-3 text-sm">
+								<label class="flex flex-col gap-1">
+									<span class="text-xs font-medium text-fg-muted">Search in</span>
+									<select class="z-select" bind:value={advMailboxId}>
+										{#each mailboxOptions as option (option.value)}
+											<option value={option.value}>{option.label}</option>
+										{/each}
+									</select>
+								</label>
+
+								<label class="flex flex-col gap-1">
+									<span class="text-xs font-medium text-fg-muted">From</span>
+									<input type="text" class="z-input" placeholder="Sender's name or email" bind:value={advFrom} />
+								</label>
+
+								<label class="flex flex-col gap-1">
+									<span class="text-xs font-medium text-fg-muted">To</span>
+									<input type="text" class="z-input" placeholder="Recipient's name or email" bind:value={advTo} />
+								</label>
+
+								<label class="flex flex-col gap-1">
+									<span class="text-xs font-medium text-fg-muted">Subject</span>
+									<input type="text" class="z-input" placeholder="Subject line contains" bind:value={advSubject} />
+								</label>
+
+								<label class="flex flex-col gap-1">
+									<span class="text-xs font-medium text-fg-muted">Keywords / Body</span>
+									<input type="text" class="z-input" placeholder="Has the words" bind:value={advText} />
+								</label>
+
+								<div class="grid grid-cols-2 gap-3">
+									<label class="flex flex-col gap-1">
+										<span class="text-xs font-medium text-fg-muted">Date range</span>
+										<select class="z-select" bind:value={advDateRange}>
+											{#each dateRangeOptions as option (option.value)}
+												<option value={option.value}>{option.label}</option>
+											{/each}
+										</select>
+									</label>
+
+									<div class="flex items-end pb-1">
+										<Checkbox
+											checked={advHasAttachment}
+											label="Has attachment"
+											class="z-checkbox-row px-0 py-1.5 text-fg-muted transition-colors hover:text-fg"
+											onchange={(checked) => {
+												advHasAttachment = checked === true;
+											}}
+										>
+											<span class="text-xs font-medium">Has attachment</span>
+										</Checkbox>
+									</div>
+								</div>
+
+								{#if advDateRange === 'custom'}
+									<div class="grid grid-cols-2 gap-3 border-t border-border/50 pt-2">
+										<label class="flex flex-col gap-1">
+											<span class="text-xs font-medium text-fg-muted">After date</span>
+											<input type="date" class="z-input" bind:value={advAfterDate} />
+										</label>
+										<label class="flex flex-col gap-1">
+											<span class="text-xs font-medium text-fg-muted">Before date</span>
+											<input type="date" class="z-input" bind:value={advBeforeDate} />
+										</label>
+									</div>
+								{/if}
+							</div>
+
+							<div class="flex items-center justify-between gap-2 border-t border-border px-3 py-2">
+								<button
+									type="button"
+									class="cursor-pointer text-xs text-fg-subtle transition-colors hover:text-fg"
+									onclick={clearAdvanced}
+								>
+									Clear all
+								</button>
+								<button type="button" class="z-btn-primary px-4 py-1.5 text-xs" onclick={submitAdvanced}>
+									Search
+								</button>
+							</div>
 						{/if}
 					{/if}
-				</Combobox.Content>
-			</Combobox.Positioner>
-		</Portal>
-	</Combobox.Root>
+				</div>
+			{/if}
+		</form>
+	</div>
 {/if}
