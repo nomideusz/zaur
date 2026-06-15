@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { onMount, onDestroy } from 'svelte';
-	import { DropdownMenu, Separator, Toolbar } from 'bits-ui';
+	import { ToggleGroup } from '@ark-ui/svelte/toggle-group';
+	import { Popover } from '@ark-ui/svelte/popover';
+	import { Portal } from '@ark-ui/svelte/portal';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { Editor } from '@tiptap/core';
 	import StarterKit from '@tiptap/starter-kit';
@@ -312,145 +314,162 @@
 />
 
 <div class="z-rich-editor flex flex-col min-h-0 flex-1 bg-transparent">
-	<Toolbar.Root class="z-rich-editor__toolbar" aria-label="Rich text formatting" onmousedown={toolbarMouseDown}>
-		<Toolbar.Group
-			type="multiple"
+	<!-- Ark has no Toolbar/Separator: native role="toolbar"/"separator" wrappers, with
+	     ToggleGroup (built-in roving + data-state='on') for the toggle button groups. -->
+	<div
+		class="z-rich-editor__toolbar"
+		role="toolbar"
+		tabindex={-1}
+		aria-label="Rich text formatting"
+		aria-orientation="horizontal"
+		onmousedown={toolbarMouseDown}
+	>
+		<ToggleGroup.Root
+			multiple
 			value={textFormats}
-			onValueChange={setTextFormats}
+			onValueChange={(details) => setTextFormats(details.value)}
 			class="z-rich-editor__group"
 			aria-label="Text style"
 		>
-		<TooltipWrap label="Bold">
-			{#snippet trigger({ props })}
-				<Toolbar.GroupItem value="bold" class="z-rich-editor__btn" aria-label="Bold" {...props}>
-					<RiBold size="18" />
-				</Toolbar.GroupItem>
-			{/snippet}
-		</TooltipWrap>
-		<TooltipWrap label="Italic">
-			{#snippet trigger({ props })}
-				<Toolbar.GroupItem value="italic" class="z-rich-editor__btn" aria-label="Italic" {...props}>
-					<RiItalic size="18" />
-				</Toolbar.GroupItem>
-			{/snippet}
-		</TooltipWrap>
-		<TooltipWrap label="Strikethrough">
-			{#snippet trigger({ props })}
-				<Toolbar.GroupItem value="strike" class="z-rich-editor__btn" aria-label="Strikethrough" {...props}>
-					<RiStrikethrough size="18" />
-				</Toolbar.GroupItem>
-			{/snippet}
-		</TooltipWrap>
-		</Toolbar.Group>
+			<TooltipWrap label="Bold">
+				{#snippet trigger({ props })}
+					<ToggleGroup.Item value="bold" class="z-rich-editor__btn" aria-label="Bold" {...props}>
+						<RiBold size="18" />
+					</ToggleGroup.Item>
+				{/snippet}
+			</TooltipWrap>
+			<TooltipWrap label="Italic">
+				{#snippet trigger({ props })}
+					<ToggleGroup.Item value="italic" class="z-rich-editor__btn" aria-label="Italic" {...props}>
+						<RiItalic size="18" />
+					</ToggleGroup.Item>
+				{/snippet}
+			</TooltipWrap>
+			<TooltipWrap label="Strikethrough">
+				{#snippet trigger({ props })}
+					<ToggleGroup.Item value="strike" class="z-rich-editor__btn" aria-label="Strikethrough" {...props}>
+						<RiStrikethrough size="18" />
+					</ToggleGroup.Item>
+				{/snippet}
+			</TooltipWrap>
+		</ToggleGroup.Root>
 
-		<Separator.Root class="z-rich-editor__divider" />
+		<div class="z-rich-editor__divider" role="separator" aria-orientation="vertical"></div>
 
-		<Toolbar.Group
-			type="single"
-			value={paragraphFormat}
-			onValueChange={setParagraphFormat}
+		<ToggleGroup.Root
+			value={paragraphFormat ? [paragraphFormat] : []}
+			onValueChange={(details) => setParagraphFormat(details.value[0] ?? '')}
 			class="z-rich-editor__group"
 			aria-label="Paragraph style"
 		>
-		<TooltipWrap label="Bullet list">
-			{#snippet trigger({ props })}
-				<Toolbar.GroupItem value="bulletList" class="z-rich-editor__btn" aria-label="Bullet list" {...props}>
-					<RiListUnordered size="18" />
-				</Toolbar.GroupItem>
-			{/snippet}
-		</TooltipWrap>
-		<TooltipWrap label="Numbered list">
-			{#snippet trigger({ props })}
-				<Toolbar.GroupItem value="orderedList" class="z-rich-editor__btn" aria-label="Numbered list" {...props}>
-					<RiListOrdered size="18" />
-				</Toolbar.GroupItem>
-			{/snippet}
-		</TooltipWrap>
-		<TooltipWrap label="Quote">
-			{#snippet trigger({ props })}
-				<Toolbar.GroupItem value="blockquote" class="z-rich-editor__btn" aria-label="Quote" {...props}>
-					<RiDoubleQuotesL size="18" />
-				</Toolbar.GroupItem>
-			{/snippet}
-		</TooltipWrap>
-		</Toolbar.Group>
+			<TooltipWrap label="Bullet list">
+				{#snippet trigger({ props })}
+					<ToggleGroup.Item value="bulletList" class="z-rich-editor__btn" aria-label="Bullet list" {...props}>
+						<RiListUnordered size="18" />
+					</ToggleGroup.Item>
+				{/snippet}
+			</TooltipWrap>
+			<TooltipWrap label="Numbered list">
+				{#snippet trigger({ props })}
+					<ToggleGroup.Item value="orderedList" class="z-rich-editor__btn" aria-label="Numbered list" {...props}>
+						<RiListOrdered size="18" />
+					</ToggleGroup.Item>
+				{/snippet}
+			</TooltipWrap>
+			<TooltipWrap label="Quote">
+				{#snippet trigger({ props })}
+					<ToggleGroup.Item value="blockquote" class="z-rich-editor__btn" aria-label="Quote" {...props}>
+						<RiDoubleQuotesL size="18" />
+					</ToggleGroup.Item>
+				{/snippet}
+			</TooltipWrap>
+		</ToggleGroup.Root>
 
-		<Separator.Root class="z-rich-editor__divider" />
+		<div class="z-rich-editor__divider" role="separator" aria-orientation="vertical"></div>
 
 		<TooltipWrap label="Link">
 			{#snippet trigger({ props })}
-				<Toolbar.Button
+				<button
+					type="button"
 					class={isLink ? 'z-rich-editor__btn z-rich-editor__btn--active' : 'z-rich-editor__btn'}
 					onclick={toggleLink}
 					aria-label="Link"
 					{...props}
 				>
 					<RiLink size="18" />
-				</Toolbar.Button>
+				</button>
 			{/snippet}
 		</TooltipWrap>
 		<TooltipWrap label="Insert image">
 			{#snippet trigger({ props })}
-				<Toolbar.Button
+				<button
+					type="button"
 					class="z-rich-editor__btn"
 					onclick={() => fileInput?.click()}
 					aria-label="Insert image"
 					{...props}
 				>
 					<RiImageLine size="18" />
-				</Toolbar.Button>
+				</button>
 			{/snippet}
 		</TooltipWrap>
-		<DropdownMenu.Root bind:open={colorMenuOpen}>
+		<Popover.Root
+			open={colorMenuOpen}
+			onOpenChange={(details) => (colorMenuOpen = details.open)}
+			positioning={{ placement: 'bottom-start', gutter: 6 }}
+		>
 			<TooltipWrap label="Text color">
 				{#snippet trigger({ props })}
-					<DropdownMenu.Trigger
+					<Popover.Trigger
 						class={activeColor ? 'z-rich-editor__btn z-rich-editor__btn--active' : 'z-rich-editor__btn'}
 						aria-label="Text color"
 						style={activeColor ? `color: ${activeColor}` : ''}
 						{...props}
 					>
 						<RiFontColor size="18" />
-					</DropdownMenu.Trigger>
+					</Popover.Trigger>
 				{/snippet}
 			</TooltipWrap>
-			<DropdownMenu.Portal>
-				<DropdownMenu.Content class="z-rich-editor__palette" sideOffset={6} align="start">
-					<button
-						type="button"
-						class="z-rich-editor__swatch z-rich-editor__swatch--default"
-						class:z-rich-editor__swatch--current={!activeColor}
-						aria-label="Default color"
-						onclick={() => setColor(null)}
-					>
-						A
-					</button>
-					{#each TEXT_COLORS as color (color.value)}
+			<Portal>
+				<Popover.Positioner>
+					<Popover.Content class="z-rich-editor__palette">
 						<button
 							type="button"
-							class="z-rich-editor__swatch"
-							class:z-rich-editor__swatch--current={activeColor?.toLowerCase() === color.value}
-							style={`background: ${color.value}`}
-							aria-label={color.label}
-							onclick={() => setColor(color.value)}
-						></button>
-					{/each}
-				</DropdownMenu.Content>
-			</DropdownMenu.Portal>
-		</DropdownMenu.Root>
+							class="z-rich-editor__swatch z-rich-editor__swatch--default"
+							class:z-rich-editor__swatch--current={!activeColor}
+							aria-label="Default color"
+							onclick={() => setColor(null)}
+						>
+							A
+						</button>
+						{#each TEXT_COLORS as color (color.value)}
+							<button
+								type="button"
+								class="z-rich-editor__swatch"
+								class:z-rich-editor__swatch--current={activeColor?.toLowerCase() === color.value}
+								style={`background: ${color.value}`}
+								aria-label={color.label}
+								onclick={() => setColor(color.value)}
+							></button>
+						{/each}
+					</Popover.Content>
+				</Popover.Positioner>
+			</Portal>
+		</Popover.Root>
 		<TooltipWrap label="Clear formatting">
 			{#snippet trigger({ props })}
-				<Toolbar.Button
+				<button
+					type="button"
 					class="z-rich-editor__btn"
 					onclick={clearFormatting}
 					aria-label="Clear formatting"
 					{...props}
 				>
 					<RiFormatClear size="18" />
-				</Toolbar.Button>
+				</button>
 			{/snippet}
 		</TooltipWrap>
-	</Toolbar.Root>
+	</div>
 
 	<!-- Editor body -->
 	<div bind:this={element} class="z-rich-editor__wrapper flex-1 overflow-y-auto pt-3 bg-transparent"></div>
