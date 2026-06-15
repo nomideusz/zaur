@@ -61,7 +61,7 @@ export const modeArchitecture = {
 export const componentTree = {
 	shell: {
 		AppShellHeader: [
-			'GlobalSearch',
+			'GlobalSearchCombobox',
 			'OfflineIndicator',
 			'UserMenu'
 		]

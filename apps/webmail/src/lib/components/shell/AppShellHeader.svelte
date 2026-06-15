@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { page } from '$app/state';
-	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
+	import GlobalSearchCombobox from '$lib/components/shell/GlobalSearchCombobox.svelte';
 	import OfflineIndicator from '$lib/components/shell/OfflineIndicator.svelte';
 	import ToolSwitcher from '$lib/components/shell/ToolSwitcher.svelte';
 	import UserMenu from '$lib/components/shell/UserMenu.svelte';
@@ -65,7 +65,7 @@
 	<div
 		class="z-app-shell-header__center relative z-10 w-full min-w-0 max-w-xl md:col-start-2 md:justify-self-center"
 	>
-		<GlobalSearch />
+		<GlobalSearchCombobox />
 	</div>
 
 	<div

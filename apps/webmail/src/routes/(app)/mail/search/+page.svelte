@@ -3,7 +3,7 @@
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import MailPane from '$lib/components/mail/MailPane.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
-	import GlobalSearch from '$lib/components/shell/GlobalSearch.svelte';
+	import GlobalSearchCombobox from '$lib/components/shell/GlobalSearchCombobox.svelte';
 	import { mailCountLabel } from '$lib/mail/count-label';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -63,7 +63,7 @@
 				<ArrowLeft class="size-5" aria-hidden="true" />
 			</a>
 			<div class="min-w-0 flex-1">
-				<GlobalSearch placement="mobile" autofocus={shouldAutofocusSearch} />
+				<GlobalSearchCombobox placement="mobile" autofocus={shouldAutofocusSearch} />
 			</div>
 		</div>
 			<MessageList
