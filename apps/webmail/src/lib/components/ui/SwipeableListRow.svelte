@@ -62,7 +62,7 @@
 	 */
 	let committedAction = $state<SwipeAction | null>(null);
 	let pointerId: number | null = null;
-	let foregroundEl: HTMLElement | null = null;
+	let foregroundEl: HTMLElement | null = $state(null);
 	let rowWidth = 0;
 	let startX = 0;
 	let startY = 0;
@@ -341,6 +341,27 @@
 		armed = false;
 		animateOffset(0);
 	}
+
+	/**
+	 * The swipe logic runs on pointer events, but `preventDefault` on a
+	 * pointermove does NOT stop the browser's native scroll — only `touch-action`
+	 * does, and that can't change mid-gesture. So once we've locked to a
+	 * horizontal swipe, veto the vertical scroll here: a `preventDefault` on a
+	 * non-passive `touchmove` overrides `touch-action: pan-y` for the gesture
+	 * in flight, keeping the list from scrolling up/down under the finger.
+	 */
+	function onTouchMove(event: TouchEvent) {
+		if (axisLock === 'x') event.preventDefault();
+	}
+
+	/* Svelte attaches `touchmove` as passive by default, which can't cancel
+	   scrolling — bind it explicitly as non-passive. */
+	$effect(() => {
+		const el = foregroundEl;
+		if (!el) return;
+		el.addEventListener('touchmove', onTouchMove, { passive: false });
+		return () => el.removeEventListener('touchmove', onTouchMove);
+	});
 
 	function onClickCapture(event: MouseEvent) {
 		if (suppressClick) {
