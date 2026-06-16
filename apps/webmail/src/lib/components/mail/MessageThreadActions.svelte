@@ -322,11 +322,12 @@
 					{cancelingScheduled ? 'Canceling…' : 'Cancel send'}
 				</button>
 			{:else}
-				<!-- Reply, with the other reply modes folded into a split-button caret. -->
-				<div class="z-reader-reply-split flex items-center">
+				<!-- Reply, with the other reply modes folded into a split-button caret.
+				     Styled as a joined accent pill to match the compose Send control. -->
+				<div class="z-reader-reply-split">
 					<button
 						type="button"
-						class="z-mail-text-nav__action z-reader-reply-split__main"
+						class="z-mail-text-nav__action z-mail-text-nav__action--pill z-reader-reply-split__main"
 						onclick={primaryReply}
 					>
 						{primaryReplyLabel}
@@ -336,7 +337,7 @@
 						label="Reply options"
 						menuId={`${menuId}-reply`}
 						placement={menuPlacement}
-						triggerClass="z-reader-reply-split__caret"
+						triggerClass="z-mail-text-nav__action z-mail-text-nav__action--pill z-reader-reply-split__caret"
 					>
 						<OverflowMenuItem label="Reply" onclick={reply}>
 							{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}

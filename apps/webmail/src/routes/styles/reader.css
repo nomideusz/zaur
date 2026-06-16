@@ -10,27 +10,24 @@
 		min-height: 2.25rem;
 	}
 
-	/* Reply split button: "Reply ⌄" — primary action plus a caret for the other reply modes. */
+	/* Reply split button: "Reply ▾" — joined accent pill segments, mirroring the
+	   compose Send control (.z-compose__send-split) so the reader bar matches it. */
 	.z-reader-reply-split {
-		gap: 0.125rem;
+		display: inline-flex;
+		align-items: stretch;
+		gap: 0;
+	}
+
+	.z-reader-reply-split__main {
+		border-top-right-radius: 0;
+		border-bottom-right-radius: 0;
 	}
 
 	.z-reader-reply-split__caret {
-		cursor: pointer;
-		min-height: 1.75rem;
-		min-width: 1.5rem;
-		border-radius: 0.25rem;
-		color: var(--z-accent);
-		transition: color var(--z-motion-fast) var(--z-ease-standard);
-	}
-
-	.z-reader-reply-split__caret:hover {
-		color: var(--z-accent-hover);
-	}
-
-	.z-reader-reply-split__caret:focus-visible {
-		outline: 2px solid var(--z-accent);
-		outline-offset: 2px;
+		padding-inline: 0.5rem;
+		border-top-left-radius: 0;
+		border-bottom-left-radius: 0;
+		border-left: 1px solid color-mix(in srgb, var(--z-accent) 28%, transparent);
 	}
 
 	.z-type-reader-title {
