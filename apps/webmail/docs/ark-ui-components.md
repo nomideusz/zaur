@@ -20,7 +20,7 @@ Tracking sheet for the gradual migration of the **webmail** app towards
 
 ## Summary
 
-**16 / 63** Ark UI components are currently in use.
+**17 / 63** Ark UI components are currently in use.
 
 ---
 
@@ -55,7 +55,7 @@ them unticked until a need appears.
 | --- | --- |
 | `collapsible` | "Show trimmed content" / quoted-reply expansion in messages; collapsible settings groups. |
 | `pagination` | Paging through long message lists or search results. |
-| `clipboard` | Copy sender email address, copy a shareable message/thread link. |
+| ~~`clipboard`~~ ✅ | **Done** — reusable `ui/CopyButton.svelte`, first used for "Copy email" in the contact detail panel (replaces a manual `navigator.clipboard` + toast with inline copied feedback). Still open: copy sender address in the reader, shareable message/thread links. |
 | `accordion` | Grouped settings panels and help/FAQ sections. |
 | `editable` | Inline rename of folders and labels in the sidebar; contact name editing. |
 | `avatar` | Sender/contact avatars in the message list and reading pane (with initials fallback). |
@@ -163,7 +163,7 @@ internal building block rather than a user-facing component.
 | Component | Used | Used in |
 | --- | :---: | --- |
 | `client-only` | [ ] | |
-| `clipboard` | [ ] | |
+| `clipboard` | [x] | `src/lib/components/ui/CopyButton.svelte` (reusable); used in `contacts/ContactDetailPanel.svelte` (copy email) |
 | `collection` | [ ] | |
 | `download-trigger` | [ ] | |
 | `environment` | [ ] | |

@@ -1,9 +1,9 @@
 <script lang="ts">
-	import Copy from '$lib/components/icons/Copy.svelte';
-import Mail from '$lib/components/icons/Mail.svelte';
-import Trash2 from '$lib/components/icons/Trash2.svelte';
-import X from '$lib/components/icons/X.svelte';
+	import Mail from '$lib/components/icons/Mail.svelte';
+	import Trash2 from '$lib/components/icons/Trash2.svelte';
+	import X from '$lib/components/icons/X.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import CopyButton from '$lib/components/ui/CopyButton.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import type { ContactEntry } from '$lib/utils/contact-index';
 	import { cn } from '$lib/utils/cn';
@@ -12,13 +12,11 @@ import X from '$lib/components/icons/X.svelte';
 		contact,
 		onClose,
 		onCompose,
-		onCopy,
 		onRemove
 	}: {
 		contact: ContactEntry;
 		onClose: () => void;
 		onCompose: () => void;
-		onCopy: () => void;
 		onRemove: () => void;
 	} = $props();
 
@@ -59,10 +57,7 @@ import X from '$lib/components/icons/X.svelte';
 			<Mail class="size-4" aria-hidden="true" />
 			New message
 		</Button>
-		<Button variant="ghost" onclick={onCopy}>
-			<Copy class="size-4" aria-hidden="true" />
-			Copy email
-		</Button>
+		<CopyButton value={contact.email} label="Copy email" copiedLabel="Email copied" />
 		<Button variant="danger" onclick={onRemove}>
 			<Trash2 class="size-4" aria-hidden="true" />
 			Remove

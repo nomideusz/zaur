@@ -5,7 +5,6 @@
 	import UserPlus from '$lib/components/icons/UserPlus.svelte';
 	import Users from '$lib/components/icons/Users.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
-	import { toast } from '$lib/stores/toast.svelte';
 	import ContactDetailEmpty from '$lib/components/contacts/ContactDetailEmpty.svelte';
 	import ContactDetailPanel from '$lib/components/contacts/ContactDetailPanel.svelte';
 	import ContactLetterRail from '$lib/components/contacts/ContactLetterRail.svelte';
@@ -143,15 +142,6 @@
 		removeContact(accountId, email);
 		if (selectedEmail === email) selectedEmail = null;
 		refresh++;
-	}
-
-	async function copyEmail(email: string) {
-		try {
-			await navigator.clipboard.writeText(email);
-			toast.show('Email copied', 'success');
-		} catch {
-			toast.show('Could not copy email', 'error');
-		}
 	}
 
 	$effect(() => {
@@ -406,7 +396,6 @@
 		contact={selectedContact}
 		onClose={clearSelection}
 		onCompose={() => composeTo(selectedContact.email)}
-		onCopy={() => void copyEmail(selectedContact.email)}
 		onRemove={() => deleteContact(selectedContact.email)}
 	/>
 {:else}
