@@ -20,7 +20,7 @@ Tracking sheet for the gradual migration of the **webmail** app towards
 
 ## Summary
 
-**14 / 63** Ark UI components are currently in use.
+**15 / 63** Ark UI components are currently in use.
 
 ---
 
@@ -47,7 +47,7 @@ them unticked until a need appears.
 | `file-upload` | Drag-and-drop attachment picking in the composer, replacing the raw `<input type="file">`. |
 | `drawer` | Mobile mailbox sidebar, mobile compose sheet, and slide-in settings panels on small screens. |
 | `scroll-area` | Consistent custom scrollbars for the message list and mailbox sidebar across browsers. |
-| `progress` | Attachment upload/download progress and background sync indicators. |
+| ~~`progress`~~ ✅ | **Done** — reusable `ui/Progress.svelte` wrapper, first wired into PDF document-download progress. Still TODO: attachment upload progress and background sync indicators. |
 
 ### P2 — opportunistic
 
@@ -140,7 +140,7 @@ internal building block rather than a user-facing component.
 
 | Component | Used | Used in |
 | --- | :---: | --- |
-| `progress` | [ ] | |
+| `progress` | [x] | `src/lib/components/ui/Progress.svelte` (reusable wrapper); wired into `ui/pdf-viewer/Root.svelte` for document download progress |
 | `timer` | [ ] | |
 | `toast` | [x] | `src/lib/stores/toast.svelte.ts`, `ui/ToastStack.svelte` |
 

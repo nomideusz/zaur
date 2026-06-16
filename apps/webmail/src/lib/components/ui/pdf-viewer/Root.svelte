@@ -34,6 +34,7 @@
 
 <script lang="ts">
   import { onMount, setContext } from 'svelte';
+  import Progress from '$lib/components/ui/Progress.svelte';
 
   let { src, children, class: className = '' }: PdfViewerRootProps = $props();
 
@@ -45,6 +46,12 @@
   let pdf = $state<PDFDocumentProxy | null>(null);
   let loading = $state(true);
   let error = $state<string | null>(null);
+  /** Bytes loaded so far; total may be 0 until the server reports it. */
+  let loadedBytes = $state(0);
+  let totalBytes = $state(0);
+
+  // null => indeterminate bar while the total size is still unknown.
+  const loadProgress = $derived(totalBytes > 0 ? Math.round((loadedBytes / totalBytes) * 100) : null);
 
   let scrollToPage: ((page: number) => void) | null = null;
 
@@ -98,7 +105,13 @@
           import.meta.url
         ).toString();
 
-        const doc = await pdfjsLib.getDocument(await pdfDocumentParams(src)).promise;
+        const loadingTask = pdfjsLib.getDocument(await pdfDocumentParams(src));
+        loadingTask.onProgress = ({ loaded, total }: { loaded: number; total: number }) => {
+          if (destroyed) return;
+          loadedBytes = loaded;
+          totalBytes = total;
+        };
+        const doc = await loadingTask.promise;
         if (destroyed) {
           void doc.loadingTask.destroy();
           return;
@@ -124,9 +137,9 @@
 <div class={cn('pdf-viewer-root relative flex h-full w-full flex-col', className)}>
   {#if loading}
     <div class="flex flex-1 items-center justify-center p-8">
-      <div class="flex flex-col items-center gap-3">
-        <div class="h-8 w-8 animate-spin rounded-full border-4 border-accent border-t-transparent"></div>
+      <div class="flex w-full max-w-xs flex-col items-center gap-3">
         <span class="text-sm text-fg-muted">Loading PDF…</span>
+        <Progress value={loadProgress} label="Downloading" showValueText={loadProgress !== null} />
       </div>
     </div>
   {:else if error}
