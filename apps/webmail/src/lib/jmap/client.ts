@@ -583,8 +583,10 @@ export class JMAPClient {
 		if (first?.[0] !== 'Quota/get') return null;
 
 		const list = (first[1].list as JMAPQuota[]) ?? [];
-		// Prefer the storage (octets) quota; ignore object-count quotas.
-		const storage = list.find((quota) => quota.resourceType === 'octets');
+		// Storage is the octets quota; ignore object-count quotas. Stalwart can
+		// expose per-user, per-domain and global quotas, so prefer account scope.
+		const octets = list.filter((quota) => quota.resourceType === 'octets');
+		const storage = octets.find((quota) => quota.scope === 'account') ?? octets[0];
 		if (!storage) return null;
 
 		const limit = storage.hardLimit ?? storage.softLimit ?? storage.warnLimit ?? null;
