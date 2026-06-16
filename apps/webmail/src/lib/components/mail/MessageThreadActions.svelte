@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import Copy from '$lib/components/icons/Copy.svelte';
 	import Forward from '$lib/components/icons/Forward.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
@@ -55,6 +56,7 @@
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
 
 	const latest = $derived(thread.at(-1));
+	const senderEmail = $derived(latest?.from?.email ?? '');
 	const actionMessage = $derived(
 		threadActionMessage(thread, $page.url.searchParams.get('messageId'), mail.messages)
 	);
@@ -196,6 +198,18 @@
 		pane?.setShowImagesOnce(true);
 	}
 
+	// In a menu the action closes the popover, so a toast is the right feedback
+	// here (the inline CopyButton indicator wouldn't stay visible).
+	async function copySenderEmail() {
+		if (!senderEmail) return;
+		try {
+			await navigator.clipboard.writeText(senderEmail);
+			toast.show('Email address copied', 'success');
+		} catch {
+			toast.show('Could not copy email address', 'error');
+		}
+	}
+
 	async function moveTo(targetRouteId: string) {
 		if (!auth.client || !actionMessage) return;
 		try {
@@ -244,6 +258,12 @@
 					{#snippet icon()}<Trash2 class="size-5" aria-hidden="true" />{/snippet}
 				</OverflowMenuItem>
 			{:else}
+				{#if senderEmail}
+					<OverflowMenuItem label="Copy email address" onclick={() => void copySenderEmail()}>
+						{#snippet icon()}<Copy class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
+					<div class="mx-4 my-1 border-t border-border" role="separator"></div>
+				{/if}
 				{#if actionMessage?.unread}
 					<OverflowMenuItem label={LABEL_CLEAR_NEW} onclick={fileAsNotImportant} />
 				{:else if actionMessage}

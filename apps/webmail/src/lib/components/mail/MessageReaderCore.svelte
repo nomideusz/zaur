@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { tick } from 'svelte';
+	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
@@ -305,10 +306,16 @@
 	style="view-transition-name: message-reader;"
 >
 	<div class="z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-	<!-- Desktop only — on phones the island carries back + thread actions. -->
+	<!--
+		Desktop only — on phones the island carries back + thread actions.
+		Mirrors the compose header: Back | subject | actions on a 3-col grid.
+	-->
 	<header
-		class="z-reader-header flex shrink-0 items-center gap-2 border-b border-border/80 px-4 py-2.5 min-w-0 max-md:hidden"
+		class="z-reader-header grid grid-cols-[auto_minmax(0,1fr)_auto] shrink-0 items-center gap-2 border-b border-border/80 px-4 py-2.5 min-w-0 max-md:hidden"
 	>
+		<a href={listHref} class="z-back-btn" aria-label="Back to list">
+			<ArrowLeft class="size-4" aria-hidden="true" />
+		</a>
 		{@render readerSubjectDesktop()}
 		{#if latest}
 			<div
