@@ -20,7 +20,7 @@ Tracking sheet for the gradual migration of the **webmail** app towards
 
 ## Summary
 
-**15 / 63** Ark UI components are currently in use.
+**16 / 63** Ark UI components are currently in use.
 
 ---
 
@@ -43,7 +43,7 @@ them unticked until a need appears.
 | --- | --- |
 | `field` | Accessible label / helper-text / error wiring for compose and settings inputs; foundational, pairs with the inputs already in use (`checkbox`, `select`, `switch`). |
 | `fieldset` | Group related settings controls (e.g. signature, notifications) with a shared legend and disabled state. |
-| `tabs` | Settings sections, and switching between mailbox views (e.g. Focused / Other, message vs. headers). |
+| ~~`tabs`~~ ✅ | **Done** — calendar Week / Day / Agenda view switcher (`routes/(app)/calendar/+page.svelte`), giving proper `tablist`/`tab`/`tabpanel` semantics and arrow-key navigation. Still open: settings sections, mailbox view switches. |
 | `file-upload` | Drag-and-drop attachment picking in the composer, replacing the raw `<input type="file">`. |
 | `drawer` | Mobile mailbox sidebar, mobile compose sheet, and slide-in settings panels on small screens. |
 | `scroll-area` | Consistent custom scrollbars for the message list and mailbox sidebar across browsers. |
@@ -122,7 +122,7 @@ internal building block rather than a user-facing component.
 | `navigation-menu` | [ ] | |
 | `pagination` | [ ] | |
 | `steps` | [ ] | |
-| `tabs` | [ ] | |
+| `tabs` | [x] | `routes/(app)/calendar/+page.svelte` (Week / Day / Agenda view switcher) |
 | `tour` | [ ] | |
 
 ### Overlays

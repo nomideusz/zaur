@@ -4,6 +4,7 @@
 	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import { Calendar as LibCalendar, auto } from '@nomideusz/svelte-calendar';
+	import { Tabs } from '@ark-ui/svelte/tabs';
 	import AgendaWeekNav from '$lib/components/calendar/AgendaWeekNav.svelte';
 	import CalendarSidebar from '$lib/components/calendar/CalendarSidebar.svelte';
 	import EventComposePanel from '$lib/components/calendar/EventComposePanel.svelte';
@@ -11,7 +12,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
-	import { calendar } from '$lib/stores/calendar.svelte';
+	import { calendar, type CalendarViewTab } from '$lib/stores/calendar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { ZaurCalendarAdapter } from '$lib/components/calendar/calendar-adapter';
 	import { cn } from '$lib/utils/cn';
@@ -193,6 +194,18 @@
 		style="view-transition-name: calendar-grid;"
 		aria-label="Calendar view"
 	>
+		<!--
+			Ark Tabs drives the view switcher: Root is display:contents so the header
+			and the panels below stay direct flex children of the section. Triggers and
+			panels are far apart in the markup but share this one Root.
+		-->
+		<Tabs.Root
+			value={calendar.activeView}
+			onValueChange={(details) => (calendar.activeView = details.value as CalendarViewTab)}
+			lazyMount
+			unmountOnExit
+			class="contents"
+		>
 		<div
 			class={cn(
 				'flex min-h-12 shrink-0 flex-wrap items-center gap-2 border-b border-border/80 px-4 py-2',
@@ -228,22 +241,16 @@
 
 				<div class="h-4 w-px bg-border/80" aria-hidden="true"></div>
 
-				<div class="flex items-center rounded-lg border border-border/50 bg-surface-sunken/60 p-0.5">
+				<Tabs.List class="flex items-center rounded-lg border border-border/50 bg-surface-sunken/60 p-0.5">
 					{#each tabs as tab (tab.id)}
-						<button
-							type="button"
-							class={cn(
-								'rounded-md px-2.5 py-1 text-xs font-medium transition-all duration-150',
-								calendar.activeView === tab.id
-									? 'bg-surface-raised font-semibold text-fg shadow-sm'
-									: 'text-fg-muted hover:text-fg'
-							)}
-							onclick={() => (calendar.activeView = tab.id)}
+						<Tabs.Trigger
+							value={tab.id}
+							class="rounded-md px-2.5 py-1 text-xs font-medium text-fg-muted transition-all duration-150 hover:text-fg data-[selected]:bg-surface-raised data-[selected]:font-semibold data-[selected]:text-fg data-[selected]:shadow-sm"
 						>
 							{tab.label}
-						</button>
+						</Tabs.Trigger>
 					{/each}
-				</div>
+				</Tabs.List>
 
 				<!-- Desktop keeps the shell-header New event pill. -->
 				<button
@@ -256,45 +263,46 @@
 			</div>
 		</div>
 
-		{#if calAdapter}
-			{#key `${calendar.activeView}-${calendar.refreshCounter}`}
-				{#if calendar.activeView === 'week'}
-					<div class="flex min-h-0 min-w-0 flex-1 flex-col">
-						<LibCalendar
-							adapter={calAdapter}
-							view="week-planner"
-							{...plannerCalendarProps}
-						/>
-					</div>
-				{:else if calendar.activeView === 'day'}
-					<div class="flex min-h-0 min-w-0 flex-1 flex-col">
-						<LibCalendar
-							adapter={calAdapter}
-							view="day-planner"
-							{...plannerCalendarProps}
-						/>
-					</div>
-				{:else}
-					<div class="flex min-h-0 min-w-0 flex-1 flex-row divide-x divide-border bg-surface-sunken/10">
-						{#if isWide}
-							<!-- Week overview is a desktop-only side column — stacked with the
-							     day agenda it crowds small screens; the header date nav covers
-							     day switching there. -->
-							<div class="flex min-h-0 w-72 max-w-[20rem] min-w-0 shrink-0 flex-col">
-								<AgendaWeekNav selectedDay={currentDate} onSelectDay={selectAgendaDay} />
-							</div>
-						{/if}
-						<div class="min-h-0 flex-1 overflow-hidden">
-							<LibCalendar
-								adapter={calAdapter}
-								view="day-agenda"
-								{...dayAgendaProps}
-							/>
+		<!--
+			unmountOnExit keeps only the active panel mounted (the planners are heavy);
+			the inner {#key refreshCounter} preserves the remount-on-refresh behaviour the
+			previous {#key} block provided when data changes without switching views.
+		-->
+		<Tabs.Content value="week" class="flex min-h-0 min-w-0 flex-1 flex-col">
+			{#if calAdapter}
+				{#key calendar.refreshCounter}
+					<LibCalendar adapter={calAdapter} view="week-planner" {...plannerCalendarProps} />
+				{/key}
+			{/if}
+		</Tabs.Content>
+		<Tabs.Content value="day" class="flex min-h-0 min-w-0 flex-1 flex-col">
+			{#if calAdapter}
+				{#key calendar.refreshCounter}
+					<LibCalendar adapter={calAdapter} view="day-planner" {...plannerCalendarProps} />
+				{/key}
+			{/if}
+		</Tabs.Content>
+		<Tabs.Content
+			value="agendas"
+			class="flex min-h-0 min-w-0 flex-1 flex-row divide-x divide-border bg-surface-sunken/10"
+		>
+			{#if calAdapter}
+				{#key calendar.refreshCounter}
+					{#if isWide}
+						<!-- Week overview is a desktop-only side column — stacked with the
+						     day agenda it crowds small screens; the header date nav covers
+						     day switching there. -->
+						<div class="flex min-h-0 w-72 max-w-[20rem] min-w-0 shrink-0 flex-col">
+							<AgendaWeekNav selectedDay={currentDate} onSelectDay={selectAgendaDay} />
 						</div>
+					{/if}
+					<div class="min-h-0 flex-1 overflow-hidden">
+						<LibCalendar adapter={calAdapter} view="day-agenda" {...dayAgendaProps} />
 					</div>
-				{/if}
-			{/key}
-		{/if}
+				{/key}
+			{/if}
+		</Tabs.Content>
+		</Tabs.Root>
 	</section>
 	{#if calendar.selectedEvent}
 		<EventPanel />
