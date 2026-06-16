@@ -519,14 +519,6 @@
 		font-size: var(--z-mail-list-row-meta-text);
 	}
 
-	.z-important-subject-touch {
-		touch-action: manipulation;
-	}
-
-	.z-important-subject-touch .rough-annotation {
-		pointer-events: none;
-	}
-
 	@media (max-width: 767px) {
 		.z-mail-list-row-copy {
 			grid-template-columns: minmax(0, 1fr);

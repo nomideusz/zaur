@@ -62,7 +62,6 @@
 		IMPORTANT_MARKER_HOVER_DELAY_MS,
 		shouldCommitImportantMarkerPick
 	} from '$lib/mail/important-marker.svelte';
-	import { createImportantMarkerTouchPick } from '$lib/mail/important-marker-touch';
 	import ImportantSubjectHighlight from '$lib/components/mail/ImportantSubjectHighlight.svelte';
 	import { LABEL_SEEN, LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import { inboxNormalSectionDefaultVisible, inboxImportantSectionCanShowMore } from '$lib/mail/inbox-list-sections';
@@ -148,24 +147,9 @@
 	/* Render the indicator only where the gesture can fire (touch + a mailbox). */
 	const ptrActive = $derived(mobileRowGestures && !!mailboxRouteId);
 
-	const listMarkerTouch = createImportantMarkerTouchPick({
-		canPick: () => !settings.reduceMotion && !hasPreciseHover(),
-		onCommitted: () => {
-			suppressRowNavigationUntil = Date.now() + 450;
-		},
-		/* Holding a highlighted subject enters bulk selection like any other row;
-		   the colour picker moves to a sideways drag. Gated on selection being
-		   available so the hold is a no-op where there's nothing to select. */
-		onSelect: (messageId) => {
-			if (!bulkSelectEnabled) return;
-			handleMobileBulkLongPress(messageId);
-		}
-	});
-
 	$effect(() => {
 		void $page.url.pathname;
 		importantMarkerHoverId = null;
-		listMarkerTouch.onPointerCancel();
 		if (rainbowHoverTimeout) {
 			clearTimeout(rainbowHoverTimeout);
 			rainbowHoverTimeout = null;
@@ -1071,31 +1055,7 @@
 					>
 						<div class="z-mail-list-row-copy min-w-0 flex-1">
 							<p class={listSenderClass(isUnread)}>{#if isUnread}<span class="z-mail-list-unread-dot" aria-hidden="true"></span>{/if}{senderLabel}</p>
-							<p
-								class={cn(
-									listSubjectClass(isUnread, subjectImportant),
-									subjectImportant &&
-										mobileRowGestures &&
-										canPickImportantRainbow(routeId) &&
-										'z-important-subject-touch'
-								)}
-								onpointerdowncapture={(event) => {
-									if (!subjectImportant || !canPickImportantRainbow(routeId)) return;
-									event.stopPropagation();
-								}}
-								onpointerdown={(event) => {
-									if (!subjectImportant || !canPickImportantRainbow(routeId)) return;
-									event.stopPropagation();
-									listMarkerTouch.onPointerDown(message.id, event);
-								}}
-								onpointermove={listMarkerTouch.onPointerMove}
-								onpointerup={(event) => {
-									if (!subjectImportant || !canPickImportantRainbow(routeId)) return;
-									listMarkerTouch.onPointerUp(message.id, event);
-								}}
-								onpointercancel={listMarkerTouch.onPointerCancel}
-								onclickcapture={listMarkerTouch.onClickCapture}
-							>
+							<p class={listSubjectClass(isUnread, subjectImportant)}>
 								{#if subjectImportant}
 									{#key importantMarker.highlightInstanceKey(message.id)}
 										<ImportantSubjectHighlight
