@@ -6,7 +6,7 @@
 		type SegmentGroupVariant
 	} from '$lib/components/ui/segment-group/segment-group-context';
 	import { cn } from '$lib/utils/cn';
-	import { setContext } from 'svelte';
+	import { setContext, untrack } from 'svelte';
 	import type { Snippet } from 'svelte';
 
 	interface Props {
@@ -33,7 +33,7 @@
 		children
 	}: Props = $props();
 
-	let internalValue = $state(defaultValue);
+	let internalValue = $state(untrack(() => defaultValue));
 	let indicatorEl: HTMLElement | null = null;
 	const itemEls = new Map<string, HTMLElement>();
 

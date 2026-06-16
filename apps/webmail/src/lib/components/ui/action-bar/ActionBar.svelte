@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Snippet } from 'svelte';
-	import { setContext } from 'svelte';
+	import { setContext, untrack } from 'svelte';
 	import {
 		ACTION_BAR_CTX,
 		type ActionBarContext,
@@ -31,7 +31,7 @@
 
 	const defaultPositioning = { placement: 'bottom', gutter: '16px', mode: 'floating' } as const;
 
-	let internalOpen = $state(defaultOpen);
+	let internalOpen = $state(untrack(() => defaultOpen));
 
 	const isControlled = $derived(open !== undefined);
 	const isOpen = $derived(isControlled ? !!open : internalOpen);
@@ -46,18 +46,21 @@
 		onOpenChange?.(true);
 	}
 
-	const actionBarCtx = $state<ActionBarContext>({
-		isOpen: defaultOpen,
-		lazyMount,
-		unmountOnExit,
-		positioning: {
-			...defaultPositioning,
-			...positioning,
-			mode: positioning?.mode ?? defaultPositioning.mode
-		},
-		onClose: handleClose,
-		onOpen: handleOpen
-	});
+	// Seed from the initial prop values; the $effect below keeps it in sync.
+	const actionBarCtx = $state<ActionBarContext>(
+		untrack(() => ({
+			isOpen: defaultOpen,
+			lazyMount,
+			unmountOnExit,
+			positioning: {
+				...defaultPositioning,
+				...positioning,
+				mode: positioning?.mode ?? defaultPositioning.mode
+			},
+			onClose: handleClose,
+			onOpen: handleOpen
+		}))
+	);
 
 	$effect(() => {
 		actionBarCtx.isOpen = isOpen;

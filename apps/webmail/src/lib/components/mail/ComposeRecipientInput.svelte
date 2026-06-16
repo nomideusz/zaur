@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import { TagsInput } from '@ark-ui/svelte/tags-input';
 	import RiCloseLine from 'svelte-remixicon/RiCloseLine.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -46,9 +47,9 @@
 	// guards against echoing our own emission back in as an external change — without
 	// it, the round-trip would re-split the emitted string and turn pending text into
 	// a chip on every keystroke.
-	let tags = $state<string[]>(splitAddressList(value));
+	let tags = $state<string[]>(splitAddressList(untrack(() => value)));
 	let pending = $state('');
-	let lastEmitted = value;
+	let lastEmitted = untrack(() => value);
 
 	$effect(() => {
 		// Resync only on genuine external changes (reply/forward prefill, draft load,
