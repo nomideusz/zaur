@@ -1,6 +1,7 @@
 <script lang="ts">
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
+	import StorageQuota from '$lib/components/settings/StorageQuota.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -108,6 +109,8 @@
 		toast.show('Preferences reset', 'success');
 	}
 </script>
+
+<StorageQuota />
 
 <SettingsGroup
 	title="Backup & sync"

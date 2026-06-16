@@ -5,7 +5,8 @@ import type {
 	JMAPMethodCall,
 	JMAPResponse,
 	JMAPSession,
-	JMAPEmail
+	JMAPEmail,
+	JMAPQuota
 } from './types';
 import { parseSearchQuery } from '$lib/mail/search-query';
 import { buildEmailCreateData, type ComposeFormat, type EmailAttachmentInput } from './email-build';
@@ -43,6 +44,8 @@ const sessionCache = new Map<string, CachedSessionEntry>();
 
 const CALENDARS_URN = 'urn:ietf:params:jmap:calendars';
 const CALENDAR_USING = ['urn:ietf:params:jmap:core', CALENDARS_URN] as const;
+const QUOTA_URN = 'urn:ietf:params:jmap:quota';
+const QUOTA_USING = ['urn:ietf:params:jmap:core', QUOTA_URN] as const;
 
 const CALENDAR_EVENT_PROPERTIES = [
 	'id',
@@ -176,6 +179,10 @@ export class JMAPClient {
 
 	getCalendarAccountId(): string {
 		return this.session?.primaryAccounts?.[CALENDARS_URN] ?? this.accountId;
+	}
+
+	hasQuota(): boolean {
+		return !!this.session?.capabilities?.[QUOTA_URN];
 	}
 
 	getUsername(): string {
@@ -558,6 +565,32 @@ export class JMAPClient {
 
 		const list = (first[1].list as JMAPCalendar[]) ?? [];
 		return list.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+	}
+
+	/**
+	 * Storage quota (octets) for the account, or null when the server does not
+	 * advertise the JMAP Quota extension or exposes no usable storage limit.
+	 */
+	async getStorageQuota(): Promise<{ used: number; limit: number } | null> {
+		if (!this.hasQuota()) return null;
+
+		const response = await this.request(
+			[['Quota/get', { accountId: this.accountId, ids: null }, 'q']],
+			[...QUOTA_USING]
+		);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'Quota/get') return null;
+
+		const list = (first[1].list as JMAPQuota[]) ?? [];
+		// Prefer the storage (octets) quota; ignore object-count quotas.
+		const storage = list.find((quota) => quota.resourceType === 'octets');
+		if (!storage) return null;
+
+		const limit = storage.hardLimit ?? storage.softLimit ?? storage.warnLimit ?? null;
+		if (typeof limit !== 'number' || limit <= 0) return null;
+
+		return { used: storage.used ?? 0, limit };
 	}
 
 	async queryCalendarEvents(params: {

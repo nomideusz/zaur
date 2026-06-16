@@ -14,6 +14,8 @@
 		label?: string;
 		/** Render the formatted percentage next to the label. */
 		showValueText?: boolean;
+		/** Range colour — `danger` for at-capacity states like a full quota. */
+		tone?: 'accent' | 'danger';
 		class?: string;
 	}
 
@@ -23,6 +25,7 @@
 		max = 100,
 		label,
 		showValueText = false,
+		tone = 'accent',
 		class: className = ''
 	}: Props = $props();
 </script>
@@ -32,7 +35,7 @@
 	A `null` value puts the machine in its indeterminate state
 	(data-state="indeterminate"), which the CSS animates.
 -->
-<Progress.Root {value} {min} {max} class={cn('z-progress', className)}>
+<Progress.Root {value} {min} {max} class={cn('z-progress', tone === 'danger' && 'z-progress--danger', className)}>
 	{#if label || showValueText}
 		<div class="z-progress__header">
 			{#if label}

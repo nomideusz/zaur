@@ -47,7 +47,7 @@ them unticked until a need appears.
 | `file-upload` | Drag-and-drop attachment picking in the composer, replacing the raw `<input type="file">`. |
 | `drawer` | Mobile mailbox sidebar, mobile compose sheet, and slide-in settings panels on small screens. |
 | `scroll-area` | Consistent custom scrollbars for the message list and mailbox sidebar across browsers. |
-| ~~`progress`~~ ✅ | **Done** — reusable `ui/Progress.svelte` wrapper, first wired into PDF document-download progress. Still TODO: attachment upload progress and background sync indicators. |
+| ~~`progress`~~ ✅ | **Done** — reusable `ui/Progress.svelte` wrapper, wired into PDF document-download progress and account storage-quota display (`settings/StorageQuota.svelte`, via JMAP `Quota/get`). Still TODO: attachment upload progress and background sync indicators. |
 
 ### P2 — opportunistic
 
@@ -140,7 +140,7 @@ internal building block rather than a user-facing component.
 
 | Component | Used | Used in |
 | --- | :---: | --- |
-| `progress` | [x] | `src/lib/components/ui/Progress.svelte` (reusable wrapper); wired into `ui/pdf-viewer/Root.svelte` for document download progress |
+| `progress` | [x] | `src/lib/components/ui/Progress.svelte` (reusable wrapper); wired into `ui/pdf-viewer/Root.svelte` (document download) and `settings/StorageQuota.svelte` (account storage quota) |
 | `timer` | [ ] | |
 | `toast` | [x] | `src/lib/stores/toast.svelte.ts`, `ui/ToastStack.svelte` |
 

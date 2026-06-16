@@ -906,7 +906,37 @@
 		height: 100%;
 		border-radius: 9999px;
 		background-color: var(--z-accent);
-		transition: width var(--z-motion-fast) var(--z-ease-standard);
+		transition:
+			width var(--z-motion-fast) var(--z-ease-standard),
+			background-color var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-progress--danger .z-progress__range {
+		background-color: var(--z-danger);
+	}
+
+	.z-storage-quota {
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+	}
+
+	.z-storage-quota__caption {
+		font-size: 0.8125rem;
+		color: var(--z-fg-muted);
+	}
+
+	.z-storage-quota__caption strong {
+		color: var(--z-fg);
+		font-weight: 600;
+	}
+
+	.z-storage-quota__caption--warn {
+		color: var(--z-danger);
+	}
+
+	.z-storage-quota__caption--warn strong {
+		color: var(--z-danger);
 	}
 
 	/* Indeterminate: Ark omits the width, so we sweep a fixed-width chip. */

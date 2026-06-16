@@ -5,6 +5,20 @@ export interface JMAPIdentity {
 	replyTo?: { name?: string; email: string }[];
 }
 
+/** Quota object — JMAP Quota extension, RFC 9425. */
+export interface JMAPQuota {
+	id: string;
+	/** "octets" for storage, "count" for object counts. */
+	resourceType: string;
+	used: number;
+	hardLimit?: number | null;
+	softLimit?: number | null;
+	warnLimit?: number | null;
+	scope?: string;
+	name?: string;
+	types?: string[];
+}
+
 export interface JMAPMailbox {
 	id: string;
 	name: string;
