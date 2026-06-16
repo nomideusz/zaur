@@ -1043,6 +1043,16 @@
 			background-color: color-mix(in srgb, var(--z-accent) 6%, var(--z-surface-raised)) !important;
 		}
 
+		/* Touch has no hover, but a tap still leaves the row's link focused — so
+		   the desktop :focus-within tint would stick to whatever you last touched
+		   and read as a stuck selection. Neutralise it here; the :active rule
+		   below still gives press feedback, and :focus-visible keeps the keyboard
+		   outline. */
+		.z-mail-view .z-mail-list-row:focus-within:not([data-current="true"]):not([data-selected="true"]),
+		.z-mail-view .z-mail-list-row:focus-within:not([data-current="true"]):not([data-selected="true"]) .z-swipe-row__foreground {
+			background-color: var(--z-surface-raised) !important;
+		}
+
 		/* Pressed feedback on touch — there is no :hover to lean on, so a tap or
 		   long-press tints the row the way hover does on desktop. */
 		.z-mail-view .z-mail-list-row:active:not([data-current="true"]):not([data-selected="true"]) .z-swipe-row__foreground,
