@@ -24,6 +24,62 @@ Tracking sheet for the gradual migration of the **webmail** app towards
 
 ---
 
+## Migration roadmap — next candidates
+
+Prioritised shortlist of components worth adopting next, with webmail-specific
+use cases. Priorities are a starting suggestion, not a commitment:
+
+- **P1** — high value / fills an obvious current gap; pick these up first.
+- **P2** — clear use case, adopt opportunistically when touching the area.
+- **P3** — nice-to-have or situational.
+
+Components not listed here have no obvious webmail use case yet (e.g.
+`angle-slider`, `marquee`, `signature-pad`, `qr-code`, `rating-group`) — leave
+them unticked until a need appears.
+
+### P1 — adopt next
+
+| Component | Potential use case |
+| --- | --- |
+| `field` | Accessible label / helper-text / error wiring for compose and settings inputs; foundational, pairs with the inputs already in use (`checkbox`, `select`, `switch`). |
+| `fieldset` | Group related settings controls (e.g. signature, notifications) with a shared legend and disabled state. |
+| `tabs` | Settings sections, and switching between mailbox views (e.g. Focused / Other, message vs. headers). |
+| `file-upload` | Drag-and-drop attachment picking in the composer, replacing the raw `<input type="file">`. |
+| `drawer` | Mobile mailbox sidebar, mobile compose sheet, and slide-in settings panels on small screens. |
+| `scroll-area` | Consistent custom scrollbars for the message list and mailbox sidebar across browsers. |
+| `progress` | Attachment upload/download progress and background sync indicators. |
+
+### P2 — opportunistic
+
+| Component | Potential use case |
+| --- | --- |
+| `collapsible` | "Show trimmed content" / quoted-reply expansion in messages; collapsible settings groups. |
+| `pagination` | Paging through long message lists or search results. |
+| `clipboard` | Copy sender email address, copy a shareable message/thread link. |
+| `accordion` | Grouped settings panels and help/FAQ sections. |
+| `editable` | Inline rename of folders and labels in the sidebar; contact name editing. |
+| `avatar` | Sender/contact avatars in the message list and reading pane (with initials fallback). |
+| `radio-group` | Mutually-exclusive settings (theme, list density, reading-pane layout). |
+| `number-input` | Numeric settings such as auto-refresh interval or messages-per-page. |
+| `password-input` | Change-password flow in settings and any password entry in auth. |
+| `date-picker` | Schedule-send and snooze date selection (calendar app already lives here). |
+| `time-picker` | Time half of schedule-send / snooze. |
+
+### P3 — situational
+
+| Component | Potential use case |
+| --- | --- |
+| `hover-card` | Contact/sender preview card on hover over a name in the message list. |
+| `color-picker` | Custom colors for labels and folders. |
+| `steps` | Multi-step onboarding / account-setup wizard. |
+| `tour` | Guided feature discovery for new users (builds on existing onboarding). |
+| `segment-group` | Compact segmented toggle for view switches (e.g. list density, unread filter). |
+| `carousel` | Image-attachment gallery in the preview dialog. |
+| `image-cropper` | Avatar / profile-image cropping in settings. |
+| `json-tree-view` | Developer/debug view for raw message source or sync payloads. |
+
+---
+
 ## Components
 
 Grouping below is for readability only — it does not reflect official Ark UI
