@@ -152,6 +152,13 @@
 		canPick: () => !settings.reduceMotion && !hasPreciseHover(),
 		onCommitted: () => {
 			suppressRowNavigationUntil = Date.now() + 450;
+		},
+		/* Holding a highlighted subject enters bulk selection like any other row;
+		   the colour picker moves to a sideways drag. Gated on selection being
+		   available so the hold is a no-op where there's nothing to select. */
+		onSelect: (messageId) => {
+			if (!bulkSelectEnabled) return;
+			handleMobileBulkLongPress(messageId);
 		}
 	});
 
@@ -318,19 +325,14 @@
 	);
 	const showRowCheckbox = $derived(listSelectMode);
 
-	function handleMobileBulkLongPress(message: MessagePreview) {
+	function handleMobileBulkLongPress(messageId: string) {
 		/* Already selecting: long-press joins the selection instead of restarting it. */
 		if (mail.hasSelection) {
-			mail.toggleMessageSelection(message.id);
+			mail.toggleMessageSelection(messageId);
 		} else {
-			mail.startSelection(message.id);
+			mail.startSelection(messageId);
 		}
 		suppressRowNavigationUntil = Date.now() + 400;
-	}
-
-	function isImportantSubjectTouchTarget(event: PointerEvent): boolean {
-		const target = event.target;
-		return target instanceof Element && target.closest('.z-important-subject-touch') !== null;
 	}
 
 	function swipeContext(message: MessagePreview, routeId: string) {
@@ -1092,6 +1094,7 @@
 									listMarkerTouch.onPointerUp(message.id, event);
 								}}
 								onpointercancel={listMarkerTouch.onPointerCancel}
+								onclickcapture={listMarkerTouch.onClickCapture}
 							>
 								{#if subjectImportant}
 									{#key importantMarker.highlightInstanceKey(message.id)}
@@ -1131,8 +1134,7 @@
 						trailing={swipeTrailing}
 						springSnap={!settings.reduceMotion}
 						longPressEnabled={bulkSelectEnabled}
-						longPressExempt={isImportantSubjectTouchTarget}
-						onLongPress={() => handleMobileBulkLongPress(message)}
+						onLongPress={() => handleMobileBulkLongPress(message.id)}
 					>
 						{@render rowLink()}
 					</SwipeableListRow>

@@ -24,8 +24,6 @@
 		longPressEnabled?: boolean;
 		/** Spring snap on release; off when reduce motion is enabled. */
 		springSnap?: boolean;
-		/** When true, long-press selection is skipped (e.g. important-subject color pick). */
-		longPressExempt?: (event: PointerEvent) => boolean;
 		onLongPress?: (event: PointerEvent, target: HTMLElement) => void;
 		onLongPressEnd?: (event: PointerEvent) => void;
 		onLongPressCancel?: (event: PointerEvent) => void;
@@ -39,7 +37,6 @@
 		trailing = [],
 		longPressEnabled = false,
 		springSnap = true,
-		longPressExempt,
 		onLongPress,
 		onLongPressEnd,
 		onLongPressCancel,
@@ -235,12 +232,7 @@
 			pointerId = event.pointerId;
 		}
 
-		if (
-			longPressEnabled &&
-			onLongPress &&
-			event.pointerType !== 'mouse' &&
-			!longPressExempt?.(event)
-		) {
+		if (longPressEnabled && onLongPress && event.pointerType !== 'mouse') {
 			const longPressEvent = event;
 			const longPressTarget = event.currentTarget as HTMLElement;
 			longPressTimer = setTimeout(() => {
