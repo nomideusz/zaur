@@ -19,6 +19,8 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
+	import ComposeFileUpload from '$lib/components/ui/ComposeFileUpload.svelte';
+	import { FileUpload } from '@ark-ui/svelte/file-upload';
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
@@ -27,7 +29,6 @@
 	}
 
 	let { mode = 'new', initialTo = '' }: Props = $props();
-	let fileInput = $state<HTMLInputElement | null>(null);
 	let bodyInput = $state<HTMLTextAreaElement | null>(null);
 	let toInput = $state<HTMLInputElement | null>(null);
 
@@ -237,16 +238,9 @@
 	}
 
 
-	function openFilePicker() {
-		fileInput?.click();
-	}
-
-	async function onFilesSelected(event: Event) {
-		const input = event.currentTarget as HTMLInputElement;
-		const files = input.files;
-		if (!files?.length || !auth.client) return;
+	async function addComposeAttachments(files: File[]) {
+		if (!files.length || !auth.client) return;
 		await compose.addAttachments(auth.client, files);
-		input.value = '';
 	}
 
 	let showSchedulePanel = $state(false);
@@ -340,47 +334,17 @@
 	function fieldInvalid(field: 'to' | 'cc' | 'bcc'): boolean {
 		return sendAttempted && invalidAddressParts(compose[field]).length > 0;
 	}
-
-	let dragCounter = $state(0);
-	const isDragActive = $derived(dragCounter > 0);
-
-	function handleDragEnter(event: DragEvent) {
-		event.preventDefault();
-		dragCounter++;
-	}
-
-	function handleDragLeave(event: DragEvent) {
-		event.preventDefault();
-		dragCounter--;
-	}
-
-	function handleDrop(event: DragEvent) {
-		event.preventDefault();
-		dragCounter = 0;
-		if (!event.dataTransfer?.files?.length || !auth.client) return;
-		void compose.addAttachments(auth.client, event.dataTransfer.files);
-	}
 </script>
 
 <svelte:window onpointerdown={onWindowPointerDown} />
 
-<input
-	bind:this={fileInput}
-	type="file"
-	class="hidden"
-	multiple
-	onchange={onFilesSelected}
-/>
-
-<section
-	class="z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden relative"
-	style="view-transition-name: compose-panel;"
-	aria-label="Compose message"
-	ondragenter={handleDragEnter}
-	ondragover={(e) => e.preventDefault()}
-	ondragleave={handleDragLeave}
-	ondrop={handleDrop}
->
+<ComposeFileUpload onaccept={(files) => void addComposeAttachments(files)}>
+	<FileUpload.Dropzone
+		disableClick
+		class="z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose z-compose-dropzone relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+		style="view-transition-name: compose-panel;"
+		aria-label="Compose message"
+	>
 	<div class="z-compose z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 		<header class="z-compose__header flex shrink-0 flex-col border-b border-border/80">
 			<div class="z-compose__header-bar grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 min-w-0">
@@ -743,15 +707,14 @@
 			</TooltipWrap>
 			<TooltipWrap label="Attach file">
 				{#snippet trigger({ props })}
-					<button
+					<FileUpload.Trigger
 						{...props}
 						type="button"
 						class="z-icon-tap-target z-icon-tap-target--sm"
 						aria-label="Attach file"
-						onclick={openFilePicker}
 					>
 						<Paperclip class="size-[1.125rem]" aria-hidden="true" />
-					</button>
+					</FileUpload.Trigger>
 				{/snippet}
 			</TooltipWrap>
 
@@ -776,14 +739,13 @@
 	</form>
 	</div>
 
-	{#if isDragActive}
-		<div class="absolute inset-0 z-50 flex flex-col items-center justify-center bg-accent/10 border-2 border-dashed border-accent m-3 rounded-xl pointer-events-none backdrop-blur-xs transition-all">
-			<div class="p-6 bg-surface border border-border rounded-xl shadow-2xl flex flex-col items-center gap-3 animate-pulse">
-				<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="size-8 text-accent">
-					<path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
-				</svg>
-				<span class="text-sm font-semibold text-fg">Drop files here to attach</span>
-			</div>
+	<div class="z-compose-drop-hint pointer-events-none" aria-hidden="true">
+		<div class="z-compose-drop-hint__card">
+			<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" class="size-8 text-accent">
+				<path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V9.75m0 0l3 3m-3-3l-3 3M6.75 19.5a4.5 4.5 0 01-1.41-8.775 5.25 5.25 0 0110.233-2.33 3 3 0 013.758 3.848A3.752 3.752 0 0118 19.5H6.75z" />
+			</svg>
+			<span class="text-sm font-semibold text-fg">Drop files here to attach</span>
 		</div>
-	{/if}
-</section>
+	</div>
+	</FileUpload.Dropzone>
+</ComposeFileUpload>

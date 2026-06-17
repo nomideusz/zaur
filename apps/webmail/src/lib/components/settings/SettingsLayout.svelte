@@ -5,6 +5,7 @@
 	import { SETTINGS_NAV_ICON_MAP } from '$lib/components/settings/settings-nav-icons';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
 	import { settingsShellClass } from '$lib/mail/layout';
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { cn } from '$lib/utils/cn';
 	import type { Snippet } from 'svelte';
 
@@ -34,7 +35,8 @@
 			<SettingsSearch />
 		</div>
 
-		<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto p-2.5">
+		<ScrollArea class="min-h-0 flex-1">
+			<nav class="p-2.5">
 			<ul class="space-y-0.5">
 				{#each sectionLinks as link (link.href)}
 					{@const isActive = isSettingsNavActive(pathname, link.href)}
@@ -56,7 +58,8 @@
 					</li>
 			{/each}
 		</ul>
-	</nav>
+			</nav>
+		</ScrollArea>
 </aside>
 
 	<!-- Main content -->
@@ -67,7 +70,7 @@
 			<MobileSettingsShellNav />
 			<SettingsSearch />
 		</div>
-		<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
+		<ScrollArea pane class="min-h-0 flex-1">
 			<div class={cn(settingsShellClass(), 'flex min-h-full flex-col')}>
 				<div class="z-settings-content flex-1">
 					<div class="z-settings-body">
@@ -75,6 +78,6 @@
 					</div>
 				</div>
 			</div>
-		</div>
+		</ScrollArea>
 	</div>
 </div>

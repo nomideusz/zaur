@@ -12,6 +12,7 @@
 	import { buildMailboxTree, collectBranchIds, type MailboxNode } from '$lib/utils/mailbox-tree';
 	import { cn } from '$lib/utils/cn';
 	import X from '$lib/components/icons/X.svelte';
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import MailboxTreeNode from './MailboxTreeNode.svelte';
 
 	interface Props {
@@ -170,7 +171,8 @@
 		</div>
 	</div>
 
-	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto p-2.5">
+	<ScrollArea class="min-h-0 flex-1">
+		<nav class="p-2.5">
 		<ul class="space-y-0.5">
 			{#each mailboxGroups.system as item (item.id)}
 				{@render mailboxRow(item)}
@@ -219,7 +221,8 @@
 				</TreeView.Root>
 			{/if}
 		{/if}
-	</nav>
+		</nav>
+	</ScrollArea>
 </aside>
 
 <CreateFolderDialog

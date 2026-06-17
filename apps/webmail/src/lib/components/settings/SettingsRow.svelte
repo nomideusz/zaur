@@ -2,6 +2,7 @@
 	import { onMount, setContext } from 'svelte';
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
+	import { Field } from '@ark-ui/svelte/field';
 	import {
 		SETTINGS_A11Y,
 		type SettingsA11yContext
@@ -53,25 +54,28 @@
 </script>
 
 {#if visible}
-	<div
+	<Field.Root
 		id={rowId}
+		ids={{
+			root: rowId,
+			label: labelId,
+			helperText: descId,
+			control: linksControl ? controlId : undefined
+		}}
 		data-settings-row
 		data-settings-row-kind={kind}
 		class={cn('z-settings-row scroll-mt-20', `z-settings-row--${kind}`)}
-		role="group"
-		aria-labelledby={labelId}
-		aria-describedby={descId}
 	>
 		{#if linksControl}
-			<label for={controlId} id={labelId} class="z-settings-row-label">{title}</label>
+			<Field.Label id={labelId} class="z-settings-row-label">{title}</Field.Label>
 		{:else}
 			<span id={labelId} class="z-settings-row-label">{title}</span>
 		{/if}
 		{#if description}
-			<p id={descId} class="z-settings-row-desc">{description}</p>
+			<Field.HelperText id={descId} class="z-settings-row-desc">{description}</Field.HelperText>
 		{/if}
 		<div class="z-settings-row-control">
 			{@render children()}
 		</div>
-	</div>
+	</Field.Root>
 {/if}

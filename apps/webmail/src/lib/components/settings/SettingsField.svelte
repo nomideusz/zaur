@@ -2,6 +2,7 @@
 	import { onMount, setContext } from 'svelte';
 	import { get } from 'svelte/store';
 	import { page } from '$app/stores';
+	import Field from '$lib/components/ui/Field.svelte';
 	import {
 		SETTINGS_A11Y,
 		type SettingsA11yContext
@@ -11,7 +12,7 @@
 	let {
 		title,
 		description,
-		children
+		children: control
 	}: {
 		title: string;
 		description?: string;
@@ -46,20 +47,19 @@
 </script>
 
 {#if visible}
-	<div
+	<Field
 		id={rowId}
+		ids={{ root: rowId, label: labelId, helperText: descId, control: controlId }}
 		data-settings-row
 		class="z-settings-field scroll-mt-20"
-		role="group"
-		aria-labelledby={labelId}
-		aria-describedby={descId}
+		bodyClass="z-settings-field-body"
+		label={title}
+		labelClass="z-settings-field-label"
+		{description}
+		descriptionClass="z-settings-field-desc"
 	>
-		<label for={controlId} id={labelId} class="z-settings-field-label">{title}</label>
-		{#if description}
-			<p id={descId} class="z-settings-field-desc">{description}</p>
-		{/if}
-		<div class="z-settings-field-body">
-			{@render children({ id: controlId })}
-		</div>
-	</div>
+		{#snippet children({ controlId: fieldControlId })}
+			{@render control({ id: fieldControlId })}
+		{/snippet}
+	</Field>
 {/if}

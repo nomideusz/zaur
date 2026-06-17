@@ -648,7 +648,8 @@
 			padding-top: 0;
 		}
 
-		.z-settings-page .z-pane-scroll {
+		.z-settings-page .z-pane-scroll,
+		.z-settings-page .z-scroll-area [data-part='viewport'] {
 			/* Status text under toggles (e.g. push sync) must not yank scroll position. */
 			overflow-anchor: none;
 		}
