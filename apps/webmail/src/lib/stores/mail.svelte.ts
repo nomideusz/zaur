@@ -96,6 +96,8 @@ class MailStore {
 	messagesError = $state<string | null>(null);
 	messagesTotal = $state(0);
 	messagesHasMore = $state(false);
+	/** JMAP Email/query offset for the next page (server row count, not filtered previews). */
+	messagesQueryOffset = $state(0);
 	messagesFromCache = $state(false);
 	/** Unseen-only header filter — list queries exclude $seen while set. */
 	messagesUnseenOnly = $state(false);
@@ -175,6 +177,12 @@ class MailStore {
 		return Math.max(0, rawTotal - (this.hiddenSettingsPerMailbox.get(jmapId) ?? 0));
 	}
 
+	private syncMessagesHasMore(hasMoreFromQuery: boolean) {
+		this.messagesHasMore =
+			hasMoreFromQuery ||
+			(this.messagesTotal > 0 && this.messages.length < this.messagesTotal);
+	}
+
 	private decorateMailbox(mb: JMAPMailbox): Mailbox {
 		const mapped = mapMailbox(mb);
 		mapped.total = this.visibleMailboxTotal(mb.id, mb.totalEmails ?? 0);
@@ -250,6 +258,7 @@ class MailStore {
 
 		this.clearSelection();
 		this.messagesError = null;
+		this.messagesQueryOffset = 0;
 		this.removedFromViewMessageIds = new Set();
 		if (!options?.preserveOpenThreadId) {
 			this.selectedThread = [];
@@ -266,7 +275,10 @@ class MailStore {
 			if (cached.length) {
 				this.messages = cached.filter((message) => !isAccountSettingsSubject(message.subject));
 				this.messagesFromCache = true;
-				this.messagesHasMore = false;
+				this.messagesTotal = mailbox.total ?? cached.length;
+				this.syncMessagesHasMore(
+					cached.length >= PAGE_SIZE || (mailbox.total ?? 0) > cached.length
+				);
 				indexMessagesContacts(cached);
 				showedCache = true;
 			} else {
@@ -289,7 +301,8 @@ class MailStore {
 					? this.mergeQueryWithSyncedMessages(previews)
 					: previews;
 			this.messagesTotal = this.visibleMailboxTotal(mailbox.jmapId, total);
-			this.messagesHasMore = hasMore;
+			this.messagesQueryOffset = emails.length;
+			this.syncMessagesHasMore(hasMore);
 			this.messagesFromCache = false;
 			this.messagesError = null;
 			indexMessagesContacts(this.messages);
@@ -301,6 +314,10 @@ class MailStore {
 		} catch (error) {
 			if (this.messagesFromCache && this.messages.length) {
 				this.messagesError = 'Offline — showing cached messages';
+				this.syncMessagesHasMore(
+					this.messages.length >= PAGE_SIZE ||
+						(mailbox.total ?? 0) > this.messages.length
+				);
 				return;
 			}
 			this.messages = [];
@@ -316,20 +333,21 @@ class MailStore {
 
 	async loadMoreMessages(client: JMAPClient) {
 		const routeMailboxId = this.currentMailboxRouteId;
-		if (!routeMailboxId || !this.messagesHasMore || this.messagesLoadingMore) return;
+		if (!routeMailboxId || this.messagesLoadingMore || !this.messagesHasMore) return;
 
 		const mailbox = this.mailboxByRouteId(routeMailboxId);
 		if (!mailbox?.jmapId) return;
 
 		this.messagesLoadingMore = true;
 		try {
-			const position = this.messages.length;
+			const position = this.messagesQueryOffset;
 			const { emails, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, position, {
 				unseenOnly: this.messagesUnseenOnly
 			});
 			const previews = mapVisiblePreviews(emails, routeMailboxId);
 			this.messages = [...this.messages, ...previews];
-			this.messagesHasMore = hasMore;
+			this.messagesQueryOffset = position + emails.length;
+			this.syncMessagesHasMore(hasMore);
 			this.messagesFromCache = false;
 			indexMessagesContacts(previews);
 
@@ -1428,7 +1446,8 @@ class MailStore {
 				}
 			}
 			this.messagesTotal = this.visibleMailboxTotal(mailbox.jmapId, total);
-			this.messagesHasMore = hasMore;
+			this.messagesQueryOffset = emails.length;
+			this.syncMessagesHasMore(hasMore);
 		} catch {
 			// Background refresh — ignore transient errors
 		}

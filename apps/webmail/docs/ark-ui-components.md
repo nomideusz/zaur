@@ -47,7 +47,7 @@ them unticked until a need appears.
 | ~~`tabs`~~ ✅ | **Done** — calendar Week / Day / Agenda view switcher (`routes/(app)/calendar/+page.svelte`), giving proper `tablist`/`tab`/`tabpanel` semantics and arrow-key navigation. Still open: settings sections, mailbox view switches. |
 | `file-upload` | Drag-and-drop attachment picking in the composer, replacing the raw `<input type="file">`. |
 | ~~`drawer`~~ ✅ | **Done** — mobile mailbox / app nav sheet (`shell/NavDrawer.svelte`, mounted from `routes/(app)/+layout.svelte`). Still open: mobile compose sheet, slide-in settings panels. |
-| ~~`scroll-area`~~ ✅ | **Done** — `ui/ScrollArea.svelte` on the message list (`mail/MessageList.svelte`); pairs with scroll-edge load-more via `mail/LoadMoreSentinel.svelte`. Still open: sidebar, reader, settings panes. |
+| ~~`scroll-area`~~ ✅ | **Done** — `ui/ScrollArea.svelte` on the message list (`mail/MessageList.svelte`); scroll-edge auto load-more on the viewport. Still open: sidebar, reader, settings panes. |
 | ~~`progress`~~ ✅ | **Done** — reusable `ui/Progress.svelte` wrapper, wired into PDF document-download progress and account storage-quota display (`settings/StorageQuota.svelte`, via JMAP `Quota/get`). Compose attachment rows show inline upload status (`ComposePanel.svelte`). Still open: per-file progress bars, background sync indicators. |
 
 ### P2 — opportunistic
@@ -173,6 +173,6 @@ internal building block rather than a user-facing component.
 | `highlight` | [x] | `src/lib/components/settings/SettingsSearch.svelte`, `shell/GlobalSearchCombobox.svelte` |
 | `portal` | [x] | used alongside most overlay components (dialog, drawer, menu, popover, tooltip, select, toast) |
 | `presence` | [ ] | |
-| `scroll-area` | [x] | `src/lib/components/ui/ScrollArea.svelte`; message list in `mail/MessageList.svelte` with infinite scroll sentinel in `mail/LoadMoreSentinel.svelte` |
+| `scroll-area` | [x] | `src/lib/components/ui/ScrollArea.svelte`; message list in `mail/MessageList.svelte` (viewport scroll auto load-more) |
 | `splitter` | [ ] | |
 | `swap` | [ ] | |

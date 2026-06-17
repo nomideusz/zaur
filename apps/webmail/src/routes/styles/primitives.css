@@ -81,6 +81,11 @@
 		overscroll-behavior-y: contain;
 	}
 
+	/* Ark content defaults to min-width: fit-content — force list panes to stay in-bounds. */
+	.z-scroll-area__content {
+		min-width: 0 !important;
+	}
+
 	.z-scroll-area__scrollbar {
 		display: flex;
 		width: 5px;

@@ -8,6 +8,8 @@
 		viewportClass?: string;
 		/** Scrollable viewport element — pass to infinite-scroll observers and PTR. */
 		viewportRef?: HTMLElement | null;
+		/** Vertical-only omits the horizontal scrollbar and corner (message lists). */
+		orientation?: 'vertical' | 'both';
 		children: Snippet;
 	}
 
@@ -15,6 +17,7 @@
 		class: className,
 		viewportClass,
 		viewportRef = $bindable(null),
+		orientation = 'vertical',
 		children
 	}: Props = $props();
 </script>
@@ -27,17 +30,22 @@
 >
 	<ScrollArea.Viewport
 		bind:ref={viewportRef}
-		class={cn('z-pane-scroll z-scroll-area__viewport h-full w-full', viewportClass)}
+		class={cn('z-pane-scroll z-scroll-area__viewport h-full w-full min-w-0', viewportClass)}
 	>
-		<ScrollArea.Content class="z-scroll-area__content flex min-h-full min-w-full flex-col">
+		<ScrollArea.Content class="z-scroll-area__content flex min-h-full w-full min-w-0 flex-col">
 			{@render children()}
 		</ScrollArea.Content>
 	</ScrollArea.Viewport>
 	<ScrollArea.Scrollbar orientation="vertical" class="z-scroll-area__scrollbar">
 		<ScrollArea.Thumb class="z-scroll-area__thumb" />
 	</ScrollArea.Scrollbar>
-	<ScrollArea.Scrollbar orientation="horizontal" class="z-scroll-area__scrollbar z-scroll-area__scrollbar--horizontal">
-		<ScrollArea.Thumb class="z-scroll-area__thumb" />
-	</ScrollArea.Scrollbar>
-	<ScrollArea.Corner class="z-scroll-area__corner" />
+	{#if orientation === 'both'}
+		<ScrollArea.Scrollbar
+			orientation="horizontal"
+			class="z-scroll-area__scrollbar z-scroll-area__scrollbar--horizontal"
+		>
+			<ScrollArea.Thumb class="z-scroll-area__thumb" />
+		</ScrollArea.Scrollbar>
+		<ScrollArea.Corner class="z-scroll-area__corner" />
+	{/if}
 </ScrollArea.Root>

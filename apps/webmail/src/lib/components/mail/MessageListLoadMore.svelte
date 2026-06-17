@@ -1,5 +1,4 @@
 <script lang="ts">
-	import LoadMoreSentinel from '$lib/components/mail/LoadMoreSentinel.svelte';
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 
@@ -8,14 +7,12 @@
 		loadingMore = false,
 		loadedCount,
 		total,
-		scrollRoot = null,
 		onLoadMore
 	}: {
 		hasMore?: boolean;
 		loadingMore?: boolean;
 		loadedCount?: number;
 		total?: number;
-		scrollRoot?: HTMLElement | null;
 		onLoadMore?: () => void;
 	} = $props();
 
@@ -26,7 +23,7 @@
 </script>
 
 {#if hasMore && onLoadMore}
-	<div class="z-mail-list-load-more border-t border-border px-4 py-3">
+	<div class="z-mail-list-load-more shrink-0 border-t border-border px-4 py-3 pb-4">
 		{#if statusLabel}
 			<p class="mb-2 text-center text-xs text-fg-subtle">{statusLabel}</p>
 		{/if}
@@ -40,6 +37,5 @@
 				Load more
 			{/if}
 		</Button>
-		<LoadMoreSentinel {scrollRoot} {hasMore} {loadingMore} {onLoadMore} />
 	</div>
 {/if}

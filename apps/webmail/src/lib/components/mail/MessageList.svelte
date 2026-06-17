@@ -256,6 +256,35 @@
 		}
 		return collapsed;
 	});
+	const loadMoreAvailable = $derived(
+		!!onLoadMore && (hasMore || (total != null && listMessages.length < total))
+	);
+
+	const LOAD_MORE_THRESHOLD_PX = 320;
+
+	$effect(() => {
+		const viewport = listScrollViewport;
+		const canLoad = loadMoreAvailable;
+		const loading = loadingMore;
+		const load = onLoadMore;
+		if (!viewport || !canLoad || !load) return;
+
+		function maybeLoadMore() {
+			if (!viewport || !load || loading || !canLoad) return;
+			const remaining = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
+			if (remaining <= LOAD_MORE_THRESHOLD_PX) load();
+		}
+
+		viewport.addEventListener('scroll', maybeLoadMore, { passive: true });
+		const resizeObserver = new ResizeObserver(() => maybeLoadMore());
+		resizeObserver.observe(viewport);
+		queueMicrotask(maybeLoadMore);
+
+		return () => {
+			viewport.removeEventListener('scroll', maybeLoadMore);
+			resizeObserver.disconnect();
+		};
+	});
 	const currentMessageId = $derived(
 		activeMessageId(
 			listMessages,
@@ -1199,10 +1228,9 @@
 				{/each}
 			</ul>
 			<MessageListLoadMore
-				{hasMore}
+				hasMore={loadMoreAvailable}
 				{loadingMore}
 				{onLoadMore}
-				scrollRoot={listScrollViewport}
 				loadedCount={listMessages.length}
 				{total}
 			/>
