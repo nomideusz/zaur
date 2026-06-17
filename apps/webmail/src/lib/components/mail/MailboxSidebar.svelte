@@ -28,6 +28,16 @@
 
 	const mailCtx = $derived(parseMailContext($page.url.pathname));
 	const currentMailboxRouteId = $derived(mailCtx?.mailboxRouteId ?? null);
+	const activeMailbox = $derived(
+		currentMailboxRouteId ? mail.mailboxByRouteId(currentMailboxRouteId) : null
+	);
+	const sidebarMessageSummary = $derived.by(() => {
+		const folderTotal = activeMailbox?.total ?? mail.messagesTotal;
+		if (folderTotal > mail.messages.length) {
+			return `${mail.messages.length} of ${folderTotal} messages`;
+		}
+		return `${folderTotal} message${folderTotal === 1 ? '' : 's'}`;
+	});
 
 	// Custom (non-role) folders can nest via parentId; render them as a collapsible tree.
 	const customTree = $derived(buildMailboxTree([...mailboxGroups.custom]));
@@ -145,7 +155,7 @@
 		<div class="flex items-start justify-between gap-2">
 			<div class="min-w-0">
 				<h2 class="z-type-label">Mailboxes</h2>
-				<p class="mt-1 text-xs text-fg-muted">{mail.messagesTotal} messages</p>
+				<p class="mt-1 text-xs text-fg-muted">{sidebarMessageSummary}</p>
 			</div>
 			{#if onClose && !embedded}
 				<button

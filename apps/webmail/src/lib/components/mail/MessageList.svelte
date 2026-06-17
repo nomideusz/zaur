@@ -257,20 +257,26 @@
 		return collapsed;
 	});
 	const loadMoreAvailable = $derived(
-		!!onLoadMore && (hasMore || (total != null && listMessages.length < total))
+		!!onLoadMore && (hasMore || (total != null && messages.length < total))
 	);
 
 	const LOAD_MORE_THRESHOLD_PX = 320;
 
 	$effect(() => {
 		const viewport = listScrollViewport;
+		const load = onLoadMore;
+		const routeId = mailboxRouteId;
 		const canLoad = loadMoreAvailable;
 		const loading = loadingMore;
-		const load = onLoadMore;
-		if (!viewport || !canLoad || !load) return;
+		if (!viewport || !load || !canLoad) return;
 
 		function maybeLoadMore() {
-			if (!viewport || !load || loading || !canLoad) return;
+			if (!viewport || !load) return;
+			if (loading || mail.messagesLoadingMore) return;
+			const storeHasMore = routeId
+				? mail.messagesHasMore
+				: canLoad;
+			if (!storeHasMore) return;
 			const remaining = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
 			if (remaining <= LOAD_MORE_THRESHOLD_PX) load();
 		}
@@ -1232,7 +1238,7 @@
 				hasMore={loadMoreAvailable}
 				{loadingMore}
 				{onLoadMore}
-				loadedCount={listMessages.length}
+				loadedCount={messages.length}
 				{total}
 			/>
 		{:else if sectionMode && routeSettled}
