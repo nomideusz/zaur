@@ -75,6 +75,7 @@ them unticked until a need appears.
 | `steps` | Multi-step onboarding / account-setup wizard. |
 | `tour` | Guided feature discovery for new users (builds on existing onboarding). |
 | `segment-group` | Compact segmented toggle for view switches (e.g. list density, unread filter). A custom Shark UI port already covers mobile rails at `ui/segment-group/*` (`IslandMailTabs.svelte`, `MobileSettingsShellNav.svelte`) without `@ark-ui/svelte/segment-group`. |
+| `floating-panel` | Desktop non-modal compose overlay — lab at `/floating-compose-lab` (`lab/FloatingComposeLab.svelte`). Evaluate before replacing `/mail/compose` route on desktop. |
 | `carousel` | Image-attachment gallery in the preview dialog. |
 | `image-cropper` | Avatar / profile-image cropping in settings. |
 | `json-tree-view` | Developer/debug view for raw message source or sync payloads. |
@@ -133,7 +134,7 @@ internal building block rather than a user-facing component.
 | --- | :---: | --- |
 | `dialog` | [x] | `src/lib/components/ui/ConfirmDialog.svelte`, `mail/AttachmentPreview.svelte`, `mail/CreateFolderDialog.svelte`, `shell/WelcomeOnboarding.svelte` |
 | `drawer` | [x] | `src/lib/components/shell/NavDrawer.svelte` (mobile mailbox / app nav sheet; `routes/(app)/+layout.svelte`) |
-| `floating-panel` | [ ] | |
+| `floating-panel` | [ ] | lab prototype at `routes/floating-compose-lab/+page.svelte`, `lab/FloatingComposeLab.svelte` |
 | `hover-card` | [ ] | |
 | `popover` | [x] | `src/lib/components/mail/RichTextEditor.svelte`, `shell/OutboxMenu.svelte` |
 | `tooltip` | [x] | `src/lib/components/ui/TooltipWrap.svelte` |

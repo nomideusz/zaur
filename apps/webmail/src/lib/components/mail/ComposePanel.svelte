@@ -28,9 +28,12 @@
 	interface Props {
 		mode?: ComposeMode;
 		initialTo?: string;
+		/** Floating panel / lab: stay on-page instead of navigating after close or send. */
+		embedded?: boolean;
+		onDismiss?: () => void;
 	}
 
-	let { mode = 'new', initialTo = '' }: Props = $props();
+	let { mode = 'new', initialTo = '', embedded = false, onDismiss }: Props = $props();
 	let bodyInput = $state<HTMLTextAreaElement | null>(null);
 	let toInput = $state<HTMLInputElement | null>(null);
 
@@ -194,6 +197,11 @@
 		return () => window.removeEventListener('keydown', onKeydown);
 	});
 
+	function dismissCompose() {
+		if (embedded) onDismiss?.();
+		else goto(mailHomeHref);
+	}
+
 	async function send() {
 		if (!auth.client || !auth.username) return;
 		if (invalidRecipients.length > 0 || !compose.canSend) {
@@ -204,20 +212,29 @@
 		const result = await compose.send(auth.client, fromAddress, fromName, {
 			onUndo: () => {
 				const undoMode = compose.mode;
+				if (embedded) return;
 				goto(undoMode === 'new' ? '/mail/compose' : `/mail/compose?mode=${undoMode}`);
 			},
 			onComplete: (outcome) => {
+				if (embedded) {
+					onDismiss?.();
+					return;
+				}
 				if (outcome === 'sent') goto(destination);
 				else if (outcome === 'queued') goto(mailHomeHref);
 			}
 		});
+		if (embedded) {
+			if (result === 'pending' || result === 'sent' || result === 'queued') onDismiss?.();
+			return;
+		}
 		if (result === 'pending' || result === 'sent') goto(destination);
 		else if (result === 'queued') goto(mailHomeHref);
 	}
 
 	async function saveDraftAndClose() {
 		await compose.saveDraftAndLeave(auth.client, fromAddress, fromName);
-		goto(mailHomeHref);
+		dismissCompose();
 	}
 
 	async function discardAndClose() {
@@ -236,7 +253,7 @@
 		}
 
 		await compose.discard(auth.client);
-		goto(mailHomeHref);
+		dismissCompose();
 	}
 
 
@@ -334,7 +351,8 @@
 		);
 		if (result === 'sent') {
 			toast.show(`Scheduled for ${scheduleTimeFormat.format(date)}`, 'success');
-			goto(mailListHref(INBOX_MAILBOX_ROUTE_ID));
+			if (embedded) onDismiss?.();
+			else goto(mailListHref(INBOX_MAILBOX_ROUTE_ID));
 		}
 	}
 
@@ -361,8 +379,11 @@
 		{#snippet render(fileUploadApi)}
 			<FileUpload.Dropzone
 				disableClick
-				class="z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose z-compose-dropzone relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-				style="view-transition-name: compose-panel;"
+				class={cn(
+					'z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose z-compose-dropzone relative flex min-h-0 min-w-0 flex-col overflow-hidden',
+					embedded && 'min-h-0 flex-1 rounded-none border-0 shadow-none'
+				)}
+				style={embedded ? undefined : 'view-transition-name: compose-panel;'}
 				aria-label="Compose message"
 				onpaste={(event) => {
 					if (fileUploadApi().setClipboardFiles(event.clipboardData)) {
