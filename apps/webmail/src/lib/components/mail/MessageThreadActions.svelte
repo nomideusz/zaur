@@ -309,13 +309,17 @@
 
 		<div class="z-header-action-zone">
 			{#if isDraft}
-				<button type="button" class="z-mail-text-nav__action" onclick={() => void sendDraft()}>
+				<button
+					type="button"
+					class="z-mail-text-nav__action z-mail-text-nav__action--pill"
+					onclick={() => void sendDraft()}
+				>
 					Send
 				</button>
 			{:else if isScheduled}
 				<button
 					type="button"
-					class="z-mail-text-nav__action"
+					class="z-mail-text-nav__action z-mail-text-nav__action--pill"
 					disabled={cancelingScheduled}
 					onclick={() => void cancelScheduledSend()}
 				>
