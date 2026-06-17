@@ -6,6 +6,8 @@ import {
 	getAccount,
 	getActiveAccount,
 	isSession,
+	mergeLinkedGroup,
+	removeFromGroup,
 	upsertAccount,
 	withAccountTokens,
 	withActiveAccount,
@@ -79,5 +81,30 @@ describe('session-model', () => {
 		const s: Session = { id: 'sid', accounts: [acct('a@x.io', 't1'), acct('b@y.io', 't2')], activeKey: 'a@x.io' };
 		assert.equal(withActiveAccount(s, 'b@y.io').activeKey, 'b@y.io');
 		assert.equal(withActiveAccount(s, 'nope@z.io').activeKey, 'a@x.io');
+	});
+
+	it('mergeLinkedGroup puts the fresh login first with its tokens, then the rest', () => {
+		const fresh = acct('a@x.io', 'fresh'); // this login's tokens
+		const group = [acct('A@X.io', 'stale'), acct('b@y.io', 't2')]; // stored copy of A is stale
+		const merged = mergeLinkedGroup(fresh, group);
+		assert.deepEqual(merged.map((a) => a.username), ['a@x.io', 'b@y.io']); // self deduped (case-insensitive)
+		assert.equal(merged[0].accessToken, 'fresh'); // fresh tokens win over the stored copy
+		assert.equal(merged[1].accessToken, 't2');
+	});
+
+	it('mergeLinkedGroup strips any leaked session id off restored accounts', () => {
+		const merged = mergeLinkedGroup({ ...acct('a@x.io', 't'), id: 'leak' }, [{ ...acct('b@y.io', 't2'), id: 'leak2' }]);
+		assert.equal(merged[0].id, undefined);
+		assert.equal(merged[1].id, undefined);
+	});
+
+	it('mergeLinkedGroup returns just the fresh account when it has no group', () => {
+		assert.deepEqual(mergeLinkedGroup(acct('a@x.io', 't'), []).map((a) => a.username), ['a@x.io']);
+	});
+
+	it('removeFromGroup drops a member case-insensitively', () => {
+		const group = [acct('a@x.io', 't1'), acct('b@y.io', 't2')];
+		assert.deepEqual(removeFromGroup(group, 'A@X.io').map((a) => a.username), ['b@y.io']);
+		assert.equal(removeFromGroup(group, 'nope@z.io').length, 2);
 	});
 });

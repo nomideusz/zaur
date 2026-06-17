@@ -100,6 +100,24 @@ export function withActiveAccount(session: Session, key: string): Session {
 	return { ...session, activeKey: k };
 }
 
+/**
+ * Build the account list to restore on a fresh login: the just-authenticated
+ * account first (so it is active and carries this login's fresh tokens), then the
+ * rest of its previously-linked group, deduped by email. Used by the durable
+ * linked-accounts store; pure so it can be unit-tested.
+ */
+export function mergeLinkedGroup(fresh: SessionData, group: SessionData[]): SessionData[] {
+	const key = accountKey(fresh.username);
+	const others = group.filter((a) => accountKey(a.username) !== key).map(bareAccount);
+	return [bareAccount(fresh), ...others];
+}
+
+/** Remove an account (by email, case-insensitive) from a stored group. */
+export function removeFromGroup(group: SessionData[], key: string): SessionData[] {
+	const k = accountKey(key);
+	return group.filter((a) => accountKey(a.username) !== k);
+}
+
 /** Replace the matching account's data (token refresh); appends if not present. */
 export function withAccountTokens(session: Session, data: SessionData): Session {
 	const key = accountKey(data.username);

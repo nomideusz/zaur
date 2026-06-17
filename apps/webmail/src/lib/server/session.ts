@@ -1,9 +1,11 @@
-import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
+import { randomBytes } from 'node:crypto';
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Cookies } from '@sveltejs/kit';
 import { env } from '$env/dynamic/private';
 import {
+	accountKey,
+	bareAccount,
 	dropAccount,
 	getAccount,
 	getActiveAccount,
@@ -15,14 +17,19 @@ import {
 	type Session,
 	type SessionData
 } from './session-model';
+import { sealSession, unsealSession } from './session-crypto';
+import {
+	forgetLinkedAccount,
+	forgetLinkedAccounts,
+	rememberLinkedAccounts,
+	restoreLinkedAccounts
+} from './linked-accounts';
 
 export type { SessionData, AccountSession, Session } from './session-model';
 export { accountKey, getActiveAccount, getAccount, listAccounts } from './session-model';
+export { sealSession, unsealSession } from './session-crypto';
 
 export const COOKIE_NAME = 'zaur_session';
-const ALGO = 'aes-256-gcm';
-const IV_LEN = 12;
-const TAG_LEN = 16;
 /** Persistent session when the user chooses “Remember me”. */
 export const REMEMBERED_SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 30; // 30 days
 const SESSION_RECORD_MAX_AGE_MS = REMEMBERED_SESSION_MAX_AGE_SEC * 1000;
@@ -41,18 +48,6 @@ type SessionStore = Record<string, StoredSessionRecord>;
 
 function newSessionId(): string {
 	return randomBytes(32).toString('base64url');
-}
-
-function getKey(secret: string): Buffer {
-	return createHash('sha256').update(secret).digest();
-}
-
-function requireSecret(secret: string | undefined): string {
-	if (secret?.trim()) return secret.trim();
-	if (process.env.NODE_ENV === 'production') {
-		throw new Error('SESSION_SECRET must be set in production');
-	}
-	return 'dev-insecure-session-secret-change-me';
 }
 
 function getSessionStorePath(): string {
@@ -97,32 +92,6 @@ function pruneExpiredSessions(store: SessionStore): boolean {
 		}
 	}
 	return pruned;
-}
-
-export function sealSession(data: unknown, secret?: string): string {
-	const key = getKey(requireSecret(secret ?? env.SESSION_SECRET));
-	const iv = randomBytes(IV_LEN);
-	const cipher = createCipheriv(ALGO, key, iv);
-	const plaintext = JSON.stringify(data);
-	const encrypted = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
-	const tag = cipher.getAuthTag();
-	return Buffer.concat([iv, tag, encrypted]).toString('base64url');
-}
-
-export function unsealSession(token: string, secret?: string): unknown {
-	try {
-		const key = getKey(requireSecret(secret ?? env.SESSION_SECRET));
-		const buf = Buffer.from(token, 'base64url');
-		const iv = buf.subarray(0, IV_LEN);
-		const tag = buf.subarray(IV_LEN, IV_LEN + TAG_LEN);
-		const encrypted = buf.subarray(IV_LEN + TAG_LEN);
-		const decipher = createDecipheriv(ALGO, key, iv);
-		decipher.setAuthTag(tag);
-		const plaintext = Buffer.concat([decipher.update(encrypted), decipher.final()]).toString('utf8');
-		return JSON.parse(plaintext);
-	} catch {
-		return null;
-	}
 }
 
 /* ── Store records (hold a multi-account Session) ─────────────────────────── */
@@ -287,16 +256,29 @@ export function resolveRequestAccount(
 
 /* ── Mutations ────────────────────────────────────────────────────────────── */
 
-/** Create a fresh single-account session, replacing any existing one. */
+/**
+ * Create a fresh session for a login, replacing any existing one. With "Remember
+ * me" on, the accounts previously linked to this user are restored alongside the
+ * just-authenticated one (which stays active and keeps this login's fresh tokens)
+ * — so a multi-account set survives sign-out and follows the user across devices.
+ */
 export function writeSession(
 	cookies: Cookies,
 	data: SessionData,
 	options?: { remember?: boolean; secret?: string }
 ): void {
 	const id = data.id ?? newSessionId();
-	const session = wrapAccount(data, id, options?.remember);
+	const accounts = options?.remember ? restoreLinkedAccounts(data) : [bareAccount(data)];
+	const session: Session = {
+		id,
+		accounts,
+		activeKey: accountKey(data.username),
+		remember: options?.remember
+	};
 	persistSession(session, options?.secret);
 	syncIdCookie(cookies, id, options);
+	// Re-seal the group with this login's fresh tokens (and prune any since-removed members).
+	if (options?.remember) rememberLinkedAccounts(session.accounts);
 }
 
 /**
@@ -314,6 +296,8 @@ export function addAccount(
 		: wrapAccount(data, newSessionId(), options?.remember);
 	persistSession(session, options?.secret);
 	syncIdCookie(cookies, session.id, { remember: session.remember });
+	// Durably link the group so it is restored on a later fresh sign-in (any device).
+	if (session.remember) rememberLinkedAccounts(session.accounts);
 	return session;
 }
 
@@ -322,11 +306,15 @@ export function removeAccount(cookies: Cookies, key: string, secret?: string): S
 	const session = readSessionFull(cookies, secret);
 	if (!session) return null;
 	const next = dropAccount(session, key);
+	// Intentional removal: drop it from the durable groups too, so it does not
+	// reappear on the next remembered sign-in.
+	forgetLinkedAccount(key);
 	if (!next) {
 		clearSession(cookies);
 		return null;
 	}
 	persistSession(next, secret);
+	if (next.remember) rememberLinkedAccounts(next.accounts);
 	return next;
 }
 
@@ -343,7 +331,11 @@ export function setActiveAccount(cookies: Cookies, key: string, secret?: string)
 export function updateAccountTokens(id: string, data: SessionData, secret?: string): void {
 	const session = readSessionRecord(id, secret);
 	if (!session) return;
-	persistSession(withAccountTokens(session, data), secret);
+	const next = withAccountTokens(session, data);
+	persistSession(next, secret);
+	// Keep the durable group in sync so a rotated refresh token is still valid when
+	// the account is restored on another device (Logto rotates refresh tokens).
+	if (next.remember && next.accounts.length >= 2) rememberLinkedAccounts(next.accounts);
 }
 
 /** @deprecated back-compat alias — use {@link updateAccountTokens}. */
@@ -380,6 +372,11 @@ export function syncSessionCookie(
 }
 
 export function clearSession(cookies: Cookies): void {
+	// Explicit sign-out forgets the durable group, so "Sign out" stays a real
+	// "forget me" — the linked accounts will not be restored on the next login.
+	const session = readSessionFull(cookies);
+	if (session) forgetLinkedAccounts(session.accounts);
+
 	const token = cookies.get(COOKIE_NAME);
 	if (token) {
 		// token is normally the session id; tolerate a legacy sealed-blob cookie too.
