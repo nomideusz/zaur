@@ -2,6 +2,7 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import { untrack } from 'svelte';
+	import MoveToMenu from '$lib/components/mail/MoveToMenu.svelte';
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
 	import MessageListBulkActionBar from '$lib/components/mail/MessageListBulkActionBar.svelte';
 	import MessageListToolbar from '$lib/components/mail/MessageListToolbar.svelte';
@@ -53,7 +54,7 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { Mailbox, MessagePreview } from '$lib/types/mail';
 	import { mailThreadHref, mailListHref } from '$lib/mail/routes';
-	import { mailboxKindOrderForMailbox } from '$lib/mail/mailboxes';
+	import { mailboxKindOrderForMailbox, moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { formatMessageListWhen, simpleMessageDayKey } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
@@ -71,11 +72,18 @@
 		shouldPresentImportantColors
 	} from '$lib/mail/mailboxes';
 
-	const listRowLinkClass = (current: boolean) =>
+	const listRowLinkBase = (current: boolean) =>
 		cn(
-			'group/message z-list-row flex w-full min-w-0 items-start gap-3 px-4 py-2.5 text-left no-underline transition-colors',
+			'group/message flex min-w-0 items-start gap-3 text-left no-underline transition-colors',
 			current && 'z-list-row--current'
 		);
+	const listRowLinkClass = (current: boolean) =>
+		cn(
+			listRowLinkBase(current),
+			'z-list-row w-full px-4 py-2.5'
+		);
+	const listRowLinkClassEmbedded = (current: boolean) =>
+		cn(listRowLinkBase(current), 'flex-1');
 	const listSenderClass = (unread: boolean) =>
 		cn(
 			'list-sender min-w-0 truncate',
@@ -273,6 +281,14 @@
 			listMessages.every((message) => selectedIds.includes(message.id))
 	);
 	const bulkSelectEnabled = $derived(!!mailboxRouteId);
+	const listMoveTargets = $derived(
+		mailboxRouteId && auth.client
+			? moveTargetMailboxes(mail.mailboxes, mail.mailboxByRouteId(mailboxRouteId))
+			: []
+	);
+	const showListRowMove = $derived(
+		hasPreciseHover() && !!auth.client && !mail.hasSelection && listMoveTargets.length > 0
+	);
 	const bulkSelectionMessages = $derived(listMessages);
 
 	const listToolbarDisabled = $derived(loading || !!error || !messages.length);
@@ -1032,28 +1048,13 @@
 						/>
 					</div>
 				{/if}
-				{#snippet rowLink()}
-					<a
-						href={rowHref}
-						class={listRowLinkClass(isCurrent)}
-						data-hide-active-indicator
-						draggable={mobileRowGestures ? 'false' : undefined}
-						aria-current={isCurrent ? 'page' : undefined}
-						aria-label="{isUnread ? `${LABEL_UNSEEN}. ` : ''}{subjectText} — {senderLabel}, {timeLabel}"
-						oncontextmenu={(event) => {
-							if (supportsMobileListGestures()) event.preventDefault();
-						}}
-						onclick={(event) => handleRowLinkClick(message.id, event)}
-						onpointerenter={(event) => {
-							if (!subjectImportant) return;
-							handleRainbowPointerEnter(message.id, event.currentTarget);
-						}}
-						onpointerleave={(event) => {
-							if (!subjectImportant) return;
-							handleRainbowPointerLeave(message.id, event.currentTarget, event, routeId);
-						}}
-					>
-						<div class="z-mail-list-row-copy min-w-0 flex-1">
+				{#snippet rowBody(showTimeInCopy = true)}
+						<div
+							class={cn(
+								'z-mail-list-row-copy min-w-0 flex-1',
+								!showTimeInCopy && 'z-mail-list-row-copy--no-time'
+							)}
+						>
 							<p class={listSenderClass(isUnread)}>{#if isUnread}<span class="z-mail-list-unread-dot" aria-hidden="true"></span>{/if}{senderLabel}</p>
 							<p class={listSubjectClass(isUnread, subjectImportant)}>
 								{#if subjectImportant}
@@ -1070,9 +1071,11 @@
 									{subjectText}
 								{/if}
 							</p>
-							<time class={listTimeClass} datetime={message.receivedAt}>
-								{timeLabel}
-							</time>
+							{#if showTimeInCopy}
+								<time class={listTimeClass} datetime={message.receivedAt}>
+									{timeLabel}
+								</time>
+							{/if}
 						</div>
 						{#if message.hasAttachment || message.replied}
 							<div class="flex items-center gap-1 shrink-0 text-fg-subtle">
@@ -1084,7 +1087,69 @@
 								{/if}
 							</div>
 						{/if}
-					</a>
+				{/snippet}
+				{#snippet rowLink()}
+					{#if showListRowMove && auth.client}
+						<div class="z-list-row flex w-full min-w-0 items-start gap-3 px-4 py-2.5">
+							<a
+								href={rowHref}
+								class={listRowLinkClassEmbedded(isCurrent)}
+								data-hide-active-indicator
+								draggable={mobileRowGestures ? 'false' : undefined}
+								aria-current={isCurrent ? 'page' : undefined}
+								aria-label="{isUnread ? `${LABEL_UNSEEN}. ` : ''}{subjectText} — {senderLabel}, {timeLabel}"
+								oncontextmenu={(event) => {
+									if (supportsMobileListGestures()) event.preventDefault();
+								}}
+								onclick={(event) => handleRowLinkClick(message.id, event)}
+								onpointerenter={(event) => {
+									if (!subjectImportant) return;
+									handleRainbowPointerEnter(message.id, event.currentTarget);
+								}}
+								onpointerleave={(event) => {
+									if (!subjectImportant) return;
+									handleRainbowPointerLeave(message.id, event.currentTarget, event, routeId);
+								}}
+							>
+								{@render rowBody(false)}
+							</a>
+							<div class="z-mail-list-row-meta shrink-0">
+								<time class={listTimeClass} datetime={message.receivedAt}>
+									{timeLabel}
+								</time>
+								<div class="z-mail-list-row-move">
+									<MoveToMenu
+										{message}
+										currentMailboxRouteId={routeId}
+										client={auth.client}
+									/>
+								</div>
+							</div>
+						</div>
+					{:else}
+						<a
+							href={rowHref}
+							class={listRowLinkClass(isCurrent)}
+							data-hide-active-indicator
+							draggable={mobileRowGestures ? 'false' : undefined}
+							aria-current={isCurrent ? 'page' : undefined}
+							aria-label="{isUnread ? `${LABEL_UNSEEN}. ` : ''}{subjectText} — {senderLabel}, {timeLabel}"
+							oncontextmenu={(event) => {
+								if (supportsMobileListGestures()) event.preventDefault();
+							}}
+							onclick={(event) => handleRowLinkClick(message.id, event)}
+							onpointerenter={(event) => {
+								if (!subjectImportant) return;
+								handleRainbowPointerEnter(message.id, event.currentTarget);
+							}}
+							onpointerleave={(event) => {
+								if (!subjectImportant) return;
+								handleRainbowPointerLeave(message.id, event.currentTarget, event, routeId);
+							}}
+						>
+							{@render rowBody()}
+						</a>
+					{/if}
 				{/snippet}
 				{#if mobileRowGestures}
 					<SwipeableListRow

@@ -181,6 +181,24 @@
 		height: 1rem;
 	}
 
+	.z-mail-view .z-folder-rename-input {
+		flex: 1;
+		min-width: 0;
+		height: 1.5rem;
+		padding-inline: 0.375rem;
+		font: inherit;
+		color: var(--z-fg);
+		background: var(--z-surface-raised);
+		border: 1px solid var(--z-accent);
+		border-radius: 0.25rem;
+		outline: none;
+	}
+
+	.z-mail-view .z-folder-rename-input:focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: -1px;
+	}
+
 	.z-mail-view .z-folder-name {
 		min-width: 0;
 	}
@@ -195,4 +213,9 @@
 	.z-mail-view .z-folder-badge--active {
 		color: var(--z-accent);
 		font-weight: 600;
+	}
+
+	.z-mailbox-drawer-backdrop,
+	.z-mailbox-drawer-positioner {
+		z-index: 55;
 	}

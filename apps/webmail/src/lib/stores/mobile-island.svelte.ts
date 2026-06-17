@@ -23,11 +23,22 @@ class MobileIslandStore {
 	collapsed = $state(false);
 	/** Mail-tabs mode temporarily showing app navigation. */
 	appsOverlay = $state(false);
+	/** Full mailbox sidebar on phones (system folders + custom tree). */
+	mailboxDrawerOpen = $state(false);
 	reader = $state<IslandReaderContext | null>(null);
 	#readerGeneration = 0;
 
 	expand() {
 		this.collapsed = false;
+	}
+
+	openMailboxDrawer() {
+		this.appsOverlay = false;
+		this.mailboxDrawerOpen = true;
+	}
+
+	closeMailboxDrawer() {
+		this.mailboxDrawerOpen = false;
 	}
 
 	setReader(ctx: IslandReaderContext): number {

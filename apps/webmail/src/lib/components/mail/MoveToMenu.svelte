@@ -1,9 +1,12 @@
 <script lang="ts">
+	import { Menu } from '@ark-ui/svelte/menu';
+	import { Portal } from '@ark-ui/svelte/portal';
 	import FolderInput from '$lib/components/icons/FolderInput.svelte';
-	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
+	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { cn } from '$lib/utils/cn';
 	import type { JMAPClient } from '$lib/jmap/client';
 	import type { MessagePreview } from '$lib/types/mail';
 
@@ -20,6 +23,10 @@
 	let open = $state(false);
 
 	const menuId = $derived(`move-to-menu-${message.id.replace(/[^a-zA-Z0-9_-]/g, '-')}`);
+	const currentMailbox = $derived(mail.mailboxByRouteId(currentMailboxRouteId));
+	const hasTargets = $derived(
+		moveTargetMailboxes(mail.mailboxes, currentMailbox).length > 0
+	);
 
 	async function moveTo(targetRouteId: string) {
 		open = false;
@@ -31,42 +38,38 @@
 			toast.show(message, 'error');
 		}
 	}
-
-	function onMenuKeydown(event: KeyboardEvent) {
-		if (event.key === 'Escape') {
-			open = false;
-		}
-	}
 </script>
 
-<svelte:window onclick={() => (open = false)} />
-
-<div class="relative">
-	<IconButton
-		label="Move to folder"
-		class={className}
-		ariaExpanded={open}
-		ariaControls={menuId}
-		ariaHaspopup="menu"
-		onclick={(e) => {
-			e.stopPropagation();
-			open = !open;
+{#if hasTargets}
+	<Menu.Root
+		{open}
+		onOpenChange={(details) => {
+			open = details.open;
 		}}
+		positioning={{ placement: 'bottom-end', gutter: 8, overflowPadding: 12 }}
+		ids={{ content: menuId }}
+		lazyMount
+		unmountOnExit
 	>
-		<FolderInput class="size-5" />
-	</IconButton>
+		<div class={cn('relative shrink-0', className)}>
+			<Menu.Trigger
+				aria-label="Move to folder"
+				class="z-btn-icon min-h-5 min-w-5 p-0"
+				onclick={(event) => event.stopPropagation()}
+			>
+				<FolderInput class="size-3.5" aria-hidden="true" />
+			</Menu.Trigger>
 
-	{#if open}
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<div
-			id={menuId}
-			role="menu"
-			tabindex="-1"
-			class="z-overflow-menu"
-			onpointerdown={(e) => e.stopPropagation()}
-			onkeydown={onMenuKeydown}
-		>
-			<MoveToMenuItems {currentMailboxRouteId} onSelect={moveTo} />
+			<Portal>
+				<Menu.Positioner>
+					<Menu.Content
+						class="z-overflow-menu z-overflow-menu--fixed w-72 min-w-64 max-w-[calc(100vw-1rem)]"
+						onpointerdown={(event) => event.stopPropagation()}
+					>
+						<MoveToMenuItems {currentMailboxRouteId} onSelect={moveTo} />
+					</Menu.Content>
+				</Menu.Positioner>
+			</Portal>
 		</div>
-	{/if}
-</div>
+	</Menu.Root>
+{/if}

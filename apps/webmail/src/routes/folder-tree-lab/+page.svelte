@@ -8,21 +8,56 @@
 
 	// id === jmapId here so parentId links resolve; Work > Projects > Q1, plus Personal.
 	const mailboxes: Mailbox[] = [
-		{ id: 'work', jmapId: 'work', name: 'Work', unread: 3, total: 10 },
-		{ id: 'work-projects', jmapId: 'work-projects', name: 'Projects', unread: 1, total: 5, parentId: 'work' },
-		{ id: 'work-projects-q1', jmapId: 'work-projects-q1', name: 'Q1', unread: 0, total: 2, parentId: 'work-projects' },
-		{ id: 'personal', jmapId: 'personal', name: 'Personal', unread: 0, total: 8 }
+		{ id: 'work', jmapId: 'work', name: 'Work', role: 'custom', unread: 3, total: 10 },
+		{
+			id: 'work-projects',
+			jmapId: 'work-projects',
+			name: 'Projects',
+			role: 'custom',
+			unread: 1,
+			total: 5,
+			parentId: 'work'
+		},
+		{
+			id: 'work-projects-q1',
+			jmapId: 'work-projects-q1',
+			name: 'Q1',
+			role: 'custom',
+			unread: 0,
+			total: 2,
+			parentId: 'work-projects'
+		},
+		{ id: 'personal', jmapId: 'personal', name: 'Personal', role: 'custom', unread: 0, total: 8 }
 	];
 
 	const activeRouteId = 'work-projects';
 
 	const tree = buildMailboxTree(mailboxes);
-	const collection = createTreeCollection<MailboxNode>({
-		nodeToValue: (node) => node.id,
-		nodeToString: (node) => node.name,
-		rootNode: { id: 'ROOT', name: '', unread: 0, total: 0, children: tree }
-	});
 	const expanded = collectBranchIds(tree);
+
+	let collection = $state(
+		createTreeCollection<MailboxNode>({
+			nodeToValue: (node) => node.id,
+			nodeToString: (node) => node.name,
+			rootNode: { id: 'ROOT', name: '', unread: 0, total: 0, children: tree }
+		})
+	);
+
+	function canRenameFolder(_node: MailboxNode): boolean {
+		return true;
+	}
+
+	function beforeRenameFolder(details: { label: string }): boolean {
+		return details.label.trim().length > 0;
+	}
+
+	function handleRenameComplete(details: { indexPath: number[]; label: string }) {
+		const node = collection.at(details.indexPath);
+		if (!node) return;
+		const trimmed = details.label.trim();
+		if (!trimmed || trimmed === node.name) return;
+		collection = collection.replace(details.indexPath, { ...node, name: trimmed });
+	}
 </script>
 
 <div class="z-mail-view" style="max-width: 18rem; margin: 4rem auto; font-family: sans-serif;">
@@ -33,11 +68,24 @@
 		selectedValue={[activeRouteId]}
 		defaultExpandedValue={expanded}
 		expandOnClick={false}
+		canRename={canRenameFolder}
+		onBeforeRename={beforeRenameFolder}
+		onRenameComplete={handleRenameComplete}
 	>
-		<TreeView.Tree class="z-folder-tree-list">
-			{#each collection.rootNode.children ?? [] as node, index (node.id)}
-				<MailboxTreeNode {node} indexPath={[index]} {activeRouteId} />
-			{/each}
-		</TreeView.Tree>
+		<TreeView.Context>
+			{#snippet render(tree)}
+				<TreeView.Tree class="z-folder-tree-list">
+					{#each collection.rootNode.children ?? [] as node, index (node.id)}
+						<MailboxTreeNode
+							{node}
+							indexPath={[index]}
+							{activeRouteId}
+							renamable
+							startRename={(routeId) => tree().startRenaming(routeId)}
+						/>
+					{/each}
+				</TreeView.Tree>
+			{/snippet}
+		</TreeView.Context>
 	</TreeView.Root>
 </div>

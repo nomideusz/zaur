@@ -499,6 +499,43 @@
 		align-items: start;
 	}
 
+	.z-mail-list-row-copy--no-time {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.z-mail-list-row-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		align-self: start;
+		min-height: calc(var(--z-mail-list-row-text, 0.875rem) * 1.35);
+		font-size: var(--z-mail-list-row-meta-text);
+		line-height: 1.25rem;
+	}
+
+	.z-mail-list-row-move {
+		display: flex;
+		align-items: center;
+		opacity: 0;
+		transition: opacity var(--z-motion-fast, 150ms) var(--z-ease-standard, ease);
+	}
+
+	.z-list-row:hover .z-mail-list-row-move,
+	.z-list-row:focus-within .z-mail-list-row-move {
+		opacity: 1;
+	}
+
+	.z-mail-list-row-meta .z-mail-list-row-move :where(button) {
+		min-height: 1.25rem;
+		min-width: 1.25rem;
+		padding: 0;
+	}
+
+	.z-mail-list-row-meta .z-mail-list-row-move :where(svg) {
+		width: 0.875rem;
+		height: 0.875rem;
+	}
+
 	.z-mail-view .z-mail-list-row .list-sender {
 		grid-column: 1;
 		grid-row: 1;

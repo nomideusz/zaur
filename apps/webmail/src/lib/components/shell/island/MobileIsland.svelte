@@ -98,6 +98,7 @@
 	afterNavigate(() => {
 		mobileIsland.expand();
 		mobileIsland.appsOverlay = false;
+		mobileIsland.closeMailboxDrawer();
 	});
 
 	let positionerEl = $state<HTMLDivElement | null>(null);

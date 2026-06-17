@@ -1342,6 +1342,56 @@ class MailStore {
 		}
 	}
 
+	async renameCustomFolder(client: JMAPClient, routeId: string, name: string): Promise<void> {
+		const trimmed = name.trim();
+		if (!trimmed) throw new Error('Folder name cannot be empty');
+
+		const mailbox = this.mailboxByRouteId(routeId);
+		if (!mailbox?.jmapId) throw new Error('Folder not found');
+		if (mailbox.role !== 'custom') throw new Error('Cannot rename this folder');
+		if (trimmed === mailbox.name) return;
+
+		const previous = mailbox.name;
+		this.patchMailboxName(routeId, trimmed);
+		try {
+			await client.renameMailbox(mailbox.jmapId, trimmed);
+			toast.show(`Renamed to “${trimmed}”`, 'success');
+		} catch (error) {
+			this.patchMailboxName(routeId, previous);
+			throw error;
+		}
+	}
+
+	private patchMailboxName(routeId: string, name: string): void {
+		this.mailboxes = this.mailboxes.map((mb) => (mb.id === routeId ? { ...mb, name } : mb));
+	}
+
+	async createCustomFolder(
+		client: JMAPClient,
+		name: string,
+		parentRouteId?: string | null
+	): Promise<Mailbox> {
+		const trimmed = name.trim();
+		if (!trimmed) throw new Error('Folder name cannot be empty');
+
+		let parentJmapId: string | undefined;
+		if (parentRouteId) {
+			const parent = this.mailboxByRouteId(parentRouteId);
+			if (!parent?.jmapId) throw new Error('Parent folder not found');
+			if (parent.role !== 'custom') throw new Error('Cannot nest under this folder');
+			parentJmapId = parent.jmapId;
+		}
+
+		const jmapId = await client.createMailbox(trimmed, parentJmapId ?? null);
+		const [created] = await client.getMailboxesByIds([jmapId]);
+		if (!created) throw new Error('Could not load new folder');
+
+		const mapped = this.decorateMailbox(created);
+		this.mailboxes = [...this.mailboxes, mapped].sort(sortMailboxes);
+		toast.show(`Created “${trimmed}”`, 'success');
+		return mapped;
+	}
+
 	/** Refresh folder totals (and drafts/sent lists) after sending a message. */
 	async refreshAfterSend(client: JMAPClient, options?: { removedDraftId?: string }) {
 		const removedDraftId = options?.removedDraftId;

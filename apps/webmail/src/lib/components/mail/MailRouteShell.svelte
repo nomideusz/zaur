@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
 	import MailKeyboardShortcuts from '$lib/components/mail/MailKeyboardShortcuts.svelte';
+	import MailboxDrawer from '$lib/components/mail/MailboxDrawer.svelte';
 	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import { parseMailContext } from '$lib/mail/routes';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -49,6 +50,8 @@
 </script>
 
 <MailKeyboardShortcuts />
+
+<MailboxDrawer />
 
 <div class="relative flex min-h-0 flex-1 flex-row overflow-hidden {MAIL_LAYOUT.mailRootClass}">
 	<div class="hidden md:contents">

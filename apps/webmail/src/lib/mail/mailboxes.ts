@@ -101,7 +101,6 @@ export const PRIMARY_SIDEBAR_MAILBOX_ROLES = [
 	'important',
 	'drafts',
 	'sent',
-	'archive',
 	'junk',
 	'trash'
 ] as const satisfies readonly MailboxRole[];
@@ -120,6 +119,7 @@ export function isPrimarySidebarMailbox(
 
 /** Roles shown in the sidebar only while they contain messages. */
 const CONDITIONAL_SIDEBAR_MAILBOX_ROLES = new Set<MailboxRole>([
+	'archive',
 	'scheduled',
 	'snoozed',
 	'memos'

@@ -103,13 +103,14 @@ describe('mailboxes', () => {
 		const { system, custom } = sidebarMailboxGroups([
 			{ id: 'inbox', jmapId: '1', name: 'Emails', role: 'inbox', unread: 0, total: 4 },
 			{ id: 'trash', jmapId: '2', name: 'Trash', role: 'trash', unread: 0, total: 0 },
+			{ id: 'archive', jmapId: '3', name: 'Archive', role: 'archive', unread: 0, total: 0 },
 			{ id: 'mb-9', jmapId: 'mb-9', name: 'Receipts', role: 'custom', unread: 1, total: 3 },
 			{ id: 'mb-8', jmapId: 'mb-8', name: 'Clients', role: 'custom', unread: 0, total: 2 },
 			{ id: 'scheduled', jmapId: '4', name: 'Scheduled', role: 'scheduled', unread: 0, total: 0 },
 			{ id: 'snoozed', jmapId: '5', name: 'Snoozed', role: 'snoozed', unread: 0, total: 2 }
 		]);
 
-		// Scheduled is hidden while empty; Snoozed shows because it has mail.
+		// Archive and Scheduled are hidden while empty; Snoozed shows because it has mail.
 		assert.deepEqual(
 			system.map((mb) => mb.id),
 			['inbox', 'snoozed', 'trash']
@@ -117,6 +118,26 @@ describe('mailboxes', () => {
 		assert.deepEqual(
 			custom.map((mb) => mb.name),
 			['Clients', 'Receipts']
+		);
+	});
+
+	it('shows archive in the sidebar only when it contains messages', () => {
+		const empty = sidebarMailboxGroups([
+			{ id: 'inbox', jmapId: '1', name: 'Emails', role: 'inbox', unread: 0, total: 1 },
+			{ id: 'archive', jmapId: '2', name: 'Archive', role: 'archive', unread: 0, total: 0 }
+		]);
+		assert.deepEqual(
+			empty.system.map((mb) => mb.id),
+			['inbox']
+		);
+
+		const withMail = sidebarMailboxGroups([
+			{ id: 'inbox', jmapId: '1', name: 'Emails', role: 'inbox', unread: 0, total: 1 },
+			{ id: 'archive', jmapId: '2', name: 'Archive', role: 'archive', unread: 0, total: 3 }
+		]);
+		assert.deepEqual(
+			withMail.system.map((mb) => mb.id),
+			['inbox', 'archive']
 		);
 	});
 

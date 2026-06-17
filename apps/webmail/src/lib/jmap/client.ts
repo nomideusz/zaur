@@ -883,6 +883,53 @@ export class JMAPClient {
 		return (first[1].list as JMAPMailbox[]) ?? [];
 	}
 
+	async renameMailbox(mailboxId: string, name: string): Promise<void> {
+		const trimmed = name.trim();
+		if (!trimmed) throw new Error('Folder name cannot be empty');
+
+		const response = await this.request([
+			[
+				'Mailbox/set',
+				{ accountId: this.accountId, update: { [mailboxId]: { name: trimmed } } },
+				'mbr'
+			]
+		]);
+		this.throwOnSetErrors(response, 'Could not rename folder');
+	}
+
+	async createMailbox(name: string, parentId?: string | null): Promise<string> {
+		const trimmed = name.trim();
+		if (!trimmed) throw new Error('Folder name cannot be empty');
+
+		const creationId = 'new-folder';
+		const data: { name: string; parentId?: string } = { name: trimmed };
+		if (parentId) data.parentId = parentId;
+
+		const response = await this.request([
+			[
+				'Mailbox/set',
+				{ accountId: this.accountId, create: { [creationId]: data } },
+				'mbc'
+			]
+		]);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] === 'error') {
+			const error = first[1] as { type?: string; description?: string };
+			throw new Error(error.description ?? error.type ?? 'Could not create folder');
+		}
+		if (first?.[0] !== 'Mailbox/set') {
+			throw new Error('Unexpected Mailbox/set response');
+		}
+
+		this.throwOnSetErrors(response, 'Could not create folder');
+
+		const created = first[1].created as Record<string, { id: string }> | undefined;
+		const id = created?.[creationId]?.id;
+		if (!id) throw new Error('Could not create folder');
+		return id;
+	}
+
 	async getIdentities(): Promise<JMAPIdentity[]> {
 		const response = await this.request(
 			[['Identity/get', { accountId: this.accountId }, 'id']],
