@@ -11,19 +11,22 @@
 	}
 
 	/* Reply split button: "Reply ▾" — joined accent pill segments, mirroring the
-	   compose Send control (.z-compose__send-split) so the reader bar matches it. */
+	   compose Send control (.z-compose__send-split) so the reader bar matches it.
+	   Nested under the container so these win over .z-mail-text-nav__action--pill
+	   (same 0,2,0 specificity, later in the components layer) — otherwise the pill's
+	   border-radius shorthand keeps the inner corners rounded and they read as two. */
 	.z-reader-reply-split {
 		display: inline-flex;
 		align-items: stretch;
 		gap: 0;
 	}
 
-	.z-reader-reply-split__main {
+	.z-reader-reply-split .z-reader-reply-split__main {
 		border-top-right-radius: 0;
 		border-bottom-right-radius: 0;
 	}
 
-	.z-reader-reply-split__caret {
+	.z-reader-reply-split .z-reader-reply-split__caret {
 		padding-inline: 0.5rem;
 		border-top-left-radius: 0;
 		border-bottom-left-radius: 0;
