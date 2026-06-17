@@ -5,6 +5,7 @@
 	import X from '$lib/components/icons/X.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { formatEventTime } from '$lib/utils/dates';
@@ -45,9 +46,8 @@
 		{/if}
 	</header>
 
-	<div
-		class="z-pane-scroll min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm"
-	>
+	<ScrollArea pane class="min-h-0 flex-1">
+		<div class="space-y-4 px-4 py-4 text-sm">
 		{#if eventCalendars.length}
 			<div>
 				<p class="text-xs font-medium uppercase tracking-wide text-fg-subtle">Calendars</p>
@@ -81,7 +81,8 @@
 		{:else if !eventLocation && !eventCalendars.length}
 			<p class="text-sm text-fg-muted">No extra details for this event.</p>
 		{/if}
-	</div>
+		</div>
+	</ScrollArea>
 
 	<footer
 		class={cn('flex shrink-0 gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]', panelPadding)}

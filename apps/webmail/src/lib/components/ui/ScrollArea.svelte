@@ -12,6 +12,8 @@
 		orientation?: 'vertical' | 'both';
 		/** Mobile island clearance + scroll padding (message/settings panes). */
 		pane?: boolean;
+		/** Stretch content to viewport height (message list load-more footer). */
+		fill?: boolean;
 		children: Snippet;
 	}
 
@@ -21,6 +23,7 @@
 		viewportRef = $bindable(null),
 		orientation = 'vertical',
 		pane = false,
+		fill = false,
 		children
 	}: Props = $props();
 </script>
@@ -36,7 +39,12 @@
 		bind:ref={viewportRef}
 		class={cn('z-scroll-area__viewport h-full w-full min-w-0', viewportClass)}
 	>
-		<ScrollArea.Content class="z-scroll-area__content flex min-h-full w-full min-w-0 flex-col">
+		<ScrollArea.Content
+			class={cn(
+				'z-scroll-area__content flex w-full min-w-0 flex-col',
+				fill && 'min-h-full'
+			)}
+		>
 			{@render children()}
 		</ScrollArea.Content>
 	</ScrollArea.Viewport>

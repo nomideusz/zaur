@@ -47,7 +47,7 @@ them unticked until a need appears.
 | ~~`tabs`~~ ✅ | **Done** — calendar Week / Day / Agenda view switcher (`routes/(app)/calendar/+page.svelte`), giving proper `tablist`/`tab`/`tabpanel` semantics and arrow-key navigation. Still open: settings sections, mailbox view switches. |
 | ~~`file-upload`~~ ✅ | **Done** — `ui/ComposeFileUpload.svelte` + Ark dropzone/trigger in `mail/ComposePanel.svelte`; reject toasts and clipboard paste. |
 | ~~`drawer`~~ ✅ | **Done** — mobile mailbox / app nav sheet (`shell/NavDrawer.svelte`, mounted from `routes/(app)/+layout.svelte`). Still open: mobile compose sheet, slide-in settings panels. |
-| ~~`scroll-area`~~ ✅ | **Done** — `ui/ScrollArea.svelte` on message list, sidebars, settings, reader, and contacts list/detail panes. Still open: calendar month grid, event panels. |
+| ~~`scroll-area`~~ ✅ | **Done** — `ui/ScrollArea.svelte` across mail, settings, reader, contacts, and calendar panes; scrollbars hidden when content fits (`data-overflow-*`). Still open: contact letter rail. |
 | ~~`progress`~~ ✅ | **Done** — reusable `ui/Progress.svelte` wrapper, wired into PDF document-download progress and account storage-quota display (`settings/StorageQuota.svelte`, via JMAP `Quota/get`). Compose attachment rows show inline upload status (`ComposePanel.svelte`). Still open: per-file progress bars, background sync indicators. |
 
 ### P2 — opportunistic
@@ -173,6 +173,6 @@ internal building block rather than a user-facing component.
 | `highlight` | [x] | `src/lib/components/settings/SettingsSearch.svelte`, `shell/GlobalSearchCombobox.svelte` |
 | `portal` | [x] | used alongside most overlay components (dialog, drawer, menu, popover, tooltip, select, toast) |
 | `presence` | [ ] | |
-| `scroll-area` | [x] | `ui/ScrollArea.svelte`; message list, mailbox sidebar, settings, reader (`MessageReaderCore.svelte`), contacts list/detail, calendar sidebar |
+| `scroll-area` | [x] | `ui/ScrollArea.svelte`; mail list/reader/sidebar, settings, contacts, calendar (sidebar, month grid, agenda nav, event panels) |
 | `splitter` | [ ] | |
 | `swap` | [ ] | |

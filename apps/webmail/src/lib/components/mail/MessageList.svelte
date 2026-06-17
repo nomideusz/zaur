@@ -1020,6 +1020,7 @@
 		<ScrollArea
 			bind:viewportRef={listScrollViewport}
 			pane
+			fill
 			class={cn(ptrActive && 'z-pane-scroll--ptr')}
 			viewportClass="flex flex-col"
 		>

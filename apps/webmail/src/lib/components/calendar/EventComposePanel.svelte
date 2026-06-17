@@ -6,6 +6,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { EVENT_REPEAT_OPTIONS } from '$lib/jmap/recurrence';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
@@ -90,9 +91,8 @@
 				if (auth.client && canSave) void calendar.saveCompose(auth.client);
 			}}
 		>
-			<div
-				class={cn('z-pane-scroll min-h-0 flex-1 overflow-y-auto px-4 py-4', fieldGap)}
-			>
+			<ScrollArea pane class="min-h-0 flex-1">
+			<div class={cn('px-4 py-4', fieldGap)}>
 				<label class="block space-y-1.5">
 					<span class={fieldLabelClass}>Title</span>
 					<input
@@ -219,6 +219,7 @@
 					></textarea>
 				</label>
 			</div>
+			</ScrollArea>
 
 			{#if calendar.composeError}
 				<p class="border-t border-border px-4 py-2 text-sm text-danger" role="alert">

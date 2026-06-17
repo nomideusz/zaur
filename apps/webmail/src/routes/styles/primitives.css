@@ -105,6 +105,19 @@
 		min-width: 0 !important;
 	}
 
+	/* Hide Ark scrollbars when content fits (e.g. short mailbox nav lists). */
+	.z-scroll-area:not([data-overflow-y]) > [data-part='scrollbar'][data-orientation='vertical'] {
+		display: none;
+	}
+
+	.z-scroll-area:not([data-overflow-x]) > [data-part='scrollbar'][data-orientation='horizontal'] {
+		display: none;
+	}
+
+	.z-scroll-area:not([data-overflow-x]):not([data-overflow-y]) > [data-part='corner'] {
+		display: none;
+	}
+
 	.z-scroll-area__scrollbar {
 		display: flex;
 		width: 5px;

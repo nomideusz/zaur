@@ -7,6 +7,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -107,12 +108,13 @@
 	{/if}
 
 	{#if calendarsOpen && calendar.calendars.length}
+		<ScrollArea class="max-h-48 shrink-0 border-b border-border md:hidden">
 		<div
 			id="mobile-calendar-list"
 			role="group"
 			aria-label="Visible calendars"
 			tabindex="-1"
-			class="z-pane-scroll max-h-48 shrink-0 overflow-y-auto border-b border-border px-2 py-2 md:hidden"
+			class="px-2 py-2"
 		>
 			<ul class="space-y-0.5">
 				{#each calendar.calendars as item (item.id)}
@@ -137,6 +139,7 @@
 				{/each}
 			</ul>
 		</div>
+		</ScrollArea>
 	{/if}
 
 	<div class="grid shrink-0 grid-cols-7 border-b border-border/80 bg-surface-sunken/50">
@@ -164,7 +167,8 @@
 			{/if}
 		</div>
 	{:else}
-		<div class="z-pane-scroll grid min-h-0 flex-1 auto-rows-fr grid-cols-7 overflow-y-auto">
+		<ScrollArea class="min-h-0 flex-1">
+		<div class="grid auto-rows-fr grid-cols-7">
 			{#each days as day (day.toISOString())}
 				{@const inMonth = isSameMonth(day, calendar.viewYear, calendar.viewMonth)}
 				{@const isToday = isSameDay(day, today)}
@@ -245,5 +249,6 @@
 				</div>
 			{/each}
 		</div>
+		</ScrollArea>
 	{/if}
 </section>

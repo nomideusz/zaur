@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import type { CalendarEvent } from '$lib/types/calendar';
@@ -39,7 +40,8 @@
 		</p>
 	</div>
 
-	<ul class="z-pane-scroll min-h-0 flex-1 space-y-0.5 overflow-y-auto p-2">
+	<ScrollArea class="min-h-0 flex-1">
+		<ul class="space-y-0.5 p-2">
 		{#each days as day (day.toISOString())}
 			{@const selected = isSameDay(day, selectedDay)}
 			{@const isToday = isSameDay(day, today)}
@@ -90,5 +92,6 @@
 				</button>
 			</li>
 		{/each}
-	</ul>
+		</ul>
+	</ScrollArea>
 </nav>
