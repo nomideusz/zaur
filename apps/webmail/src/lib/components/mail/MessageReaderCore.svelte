@@ -2,11 +2,14 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { tick } from 'svelte';
+	import { Collapsible } from '@ark-ui/svelte/collapsible';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
+	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
 	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
+	import ThreadMessageActions from '$lib/components/mail/ThreadMessageActions.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
 	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
 	import { readerPrimaryContact, shouldShowContactEmail } from '$lib/mail/reader-contact';
@@ -141,10 +144,11 @@
 		return expandedIds.has(message.id);
 	}
 
-	function toggleMessage(message: MessageDetail) {
+	/** Drive each thread message's Ark Collapsible open state from `expandedIds`. */
+	function setMessageOpen(message: MessageDetail, open: boolean) {
 		const next = new Set(expandedIds);
-		if (next.has(message.id)) next.delete(message.id);
-		else next.add(message.id);
+		if (open) next.add(message.id);
+		else next.delete(message.id);
 		expandedIds = next;
 	}
 
@@ -301,6 +305,23 @@
 	</h1>
 {/snippet}
 
+<!-- Shared expanded body: mobile subject (latest only), message body, attachments. -->
+{#snippet threadBody(message: MessageDetail)}
+	{#if message.id === latest?.id}
+		{@render readerSubjectMobile()}
+	{/if}
+
+	<div class="z-reader-body mt-4">
+		<MessageBody bodyHtml={message.bodyHtml} bodyText={message.bodyText} {allowExternal} />
+	</div>
+
+	{#if message.attachments.length}
+		<div class="mt-4">
+			<MessageAttachments attachments={message.attachments} />
+		</div>
+	{/if}
+{/snippet}
+
 <article
 	class="z-mail-pane-surface z-mail-pane-surface--reader flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
 	style="view-transition-name: message-reader;"
@@ -364,15 +385,9 @@
 				{@const deliveredTo = settings.showDeliveredToInReader
 					? readerDeliveredTo(message, ownedAddresses)
 					: null}
-				<section
-					class={cn(
-						'z-reader-thread',
-						thread.length === 1 || isExpanded(message)
-							? 'z-reader-thread--expanded'
-							: 'z-reader-thread--collapsed'
-					)}
-				>
-					{#if thread.length === 1 || isExpanded(message)}
+				{#if thread.length === 1}
+					<!-- Single message: full reader, always expanded. -->
+					<section class="z-reader-thread z-reader-thread--expanded">
 						<div class="px-4" style="padding-block: var(--z-space-reader-content);">
 							<div class="z-reader-chrome__meta">
 								<div class="z-reader-chrome__from">
@@ -396,65 +411,81 @@
 										</p>
 									{/if}
 								</div>
-								{#if thread.length > 1}
-									<button
-										type="button"
-										class="z-reader-chrome__time shrink-0 text-right hover:text-fg"
-										onclick={() => toggleMessage(message)}
-									>
-										<time datetime={message.receivedAt}>
-											{formatMessageListWhen(message.receivedAt, true, settings.timeFormat)}
-										</time>
-									</button>
-								{:else}
-									<time class="z-reader-chrome__time shrink-0 tabular-nums" datetime={message.receivedAt}>
-										{formatMessageListWhen(message.receivedAt, true, settings.timeFormat)}
-									</time>
-								{/if}
+								<time class="z-reader-chrome__time shrink-0 tabular-nums" datetime={message.receivedAt}>
+									{formatMessageListWhen(message.receivedAt, true, settings.timeFormat)}
+								</time>
 							</div>
 
-							{#if message.id === latest?.id}
-								{@render readerSubjectMobile()}
-							{/if}
-
-							<div class="z-reader-body mt-4">
-								<MessageBody
-									bodyHtml={message.bodyHtml}
-									bodyText={message.bodyText}
-									{allowExternal}
-								/>
-							</div>
-
-							{#if message.attachments.length}
-								<div class="mt-4">
-									<MessageAttachments attachments={message.attachments} />
-								</div>
-							{/if}
-
+							{@render threadBody(message)}
 						</div>
-					{:else}
-						<button
-							type="button"
-							class="z-reader-thread-toggle flex w-full px-4 text-left transition-colors hover:bg-surface-sunken/60"
+					</section>
+				{:else}
+					{@const expanded = isExpanded(message)}
+					<!--
+						Multi-message thread: Ark Collapsible per message. unmountOnExit keeps
+						collapsed message bodies out of the DOM (matching the previous render).
+					-->
+					<Collapsible.Root
+						open={expanded}
+						onOpenChange={(details) => setMessageOpen(message, details.open)}
+						lazyMount
+						unmountOnExit
+						class={cn(
+							'z-reader-thread',
+							expanded ? 'z-reader-thread--expanded' : 'z-reader-thread--collapsed'
+						)}
+					>
+						<div
+							class="flex items-start gap-2 px-4 transition-colors hover:bg-surface-sunken/30"
 							style="padding-block: var(--z-space-reader-content-compact);"
-							aria-expanded={false}
-							aria-label={`Expand message from ${contact.displayName}`}
-							onclick={() => toggleMessage(message)}
 						>
-							<div class="min-w-0 flex-1">
-								<div class="flex items-baseline justify-between gap-3">
-									<p class="truncate text-sm font-medium text-fg">{contact.displayName}</p>
-									<time class="shrink-0 text-xs tabular-nums text-fg-subtle" datetime={message.receivedAt}>
-										{formatMessageListWhen(message.receivedAt, false, settings.timeFormat)}
+							<Collapsible.Trigger
+								class="block min-w-0 flex-1 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+								aria-label={`${expanded ? 'Collapse' : 'Expand'} message from ${contact.displayName}`}
+							>
+								<div class="z-reader-chrome__meta">
+									<div class="z-reader-chrome__from">
+										<p class="z-reader-from truncate">{contact.displayName}</p>
+										{#if expanded}
+											{#if showContactEmail}
+												<p class="z-reader-meta mt-0.5 truncate">{contact.email}</p>
+											{/if}
+											{#if deliveredTo}
+												<p class="z-reader-delivered-to mt-0.5 truncate" title="{deliveredTo.prefix} {deliveredTo.addresses}">
+													{deliveredTo.prefix} {deliveredTo.addresses}
+												</p>
+											{/if}
+										{:else}
+											<div class="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-fg-muted">
+												{#if message.hasAttachment}
+													<Paperclip class="size-3.5 shrink-0" aria-hidden="true" />
+												{/if}
+												{#if message.preview.trim()}
+													<span class="truncate">{message.preview}</span>
+												{/if}
+											</div>
+										{/if}
+									</div>
+									<time class="z-reader-chrome__time shrink-0 tabular-nums" datetime={message.receivedAt}>
+										{formatMessageListWhen(message.receivedAt, expanded, settings.timeFormat)}
 									</time>
 								</div>
-								{#if message.preview.trim()}
-									<p class="mt-0.5 truncate text-xs text-fg-muted">{message.preview}</p>
-								{/if}
+							</Collapsible.Trigger>
+
+							{#if expanded}
+								<div class="shrink-0">
+									<ThreadMessageActions {message} {thread} menuId={`thread-msg-actions-${message.id}`} />
+								</div>
+							{/if}
+						</div>
+
+						<Collapsible.Content>
+							<div class="px-4" style="padding-bottom: var(--z-space-reader-content);">
+								{@render threadBody(message)}
 							</div>
-						</button>
-					{/if}
-				</section>
+						</Collapsible.Content>
+					</Collapsible.Root>
+				{/if}
 			{/each}
 		</div>
 	</div>

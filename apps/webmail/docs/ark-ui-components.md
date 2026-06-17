@@ -20,7 +20,7 @@ Tracking sheet for the gradual migration of the **webmail** app towards
 
 ## Summary
 
-**17 / 63** Ark UI components are currently in use.
+**18 / 63** Ark UI components are currently in use.
 
 ---
 
@@ -53,7 +53,7 @@ them unticked until a need appears.
 
 | Component | Potential use case |
 | --- | --- |
-| `collapsible` | "Show trimmed content" / quoted-reply expansion in messages; collapsible settings groups. |
+| ~~`collapsible`~~ ✅ | **Done** — per-message expand/collapse in multi-message threads (`mail/MessageReaderCore.svelte`). Still open: "show trimmed content" / quoted-reply expansion, collapsible settings groups. |
 | `pagination` | Paging through long message lists or search results. |
 | ~~`clipboard`~~ ✅ | **Done** — reusable `ui/CopyButton.svelte`, first used for "Copy email" in the contact detail panel (replaces a manual `navigator.clipboard` + toast with inline copied feedback). Still open: copy sender address in the reader, shareable message/thread links. |
 | `accordion` | Grouped settings panels and help/FAQ sections. |
@@ -151,7 +151,7 @@ internal building block rather than a user-facing component.
 | `accordion` | [ ] | |
 | `avatar` | [ ] | |
 | `carousel` | [ ] | |
-| `collapsible` | [ ] | |
+| `collapsible` | [x] | `mail/MessageReaderCore.svelte` (per-message expand/collapse in multi-message threads) |
 | `image-cropper` | [ ] | |
 | `json-tree-view` | [ ] | |
 | `marquee` | [ ] | |
