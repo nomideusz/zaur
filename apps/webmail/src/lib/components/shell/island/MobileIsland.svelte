@@ -8,6 +8,7 @@
 	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { cn } from '$lib/utils/cn';
+	import { visualViewportKeyboardOffset } from '$lib/utils/visual-viewport';
 	import IslandBulkActions from './IslandBulkActions.svelte';
 	import IslandMailTabs from './IslandMailTabs.svelte';
 	import IslandMinimal from './IslandMinimal.svelte';
@@ -74,8 +75,8 @@
 		const vv = window.visualViewport;
 		if (!el || !vv) return;
 		const update = () => {
-			const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-			el.style.transform = offset > 1 ? `translateY(-${offset}px)` : '';
+			const offset = visualViewportKeyboardOffset();
+			el.style.transform = offset > 0 ? `translateY(-${offset}px)` : '';
 		};
 		update();
 		vv.addEventListener('resize', update);

@@ -41,6 +41,9 @@
 	onCheckedChange={(details) => {
 		if (onchange) onchange(details.checked);
 		else checked = details.checked;
+		// Hidden checkbox focus after tap can nudge mobile browser chrome and shrink dvh.
+		const active = document.activeElement;
+		if (active instanceof HTMLElement) active.blur();
 	}}
 >
 	<Switch.Control class={cn('z-switch', className)}>

@@ -89,7 +89,7 @@
 		<span>Connecting…</span>
 	</div>
 {:else}
-	<div class="relative flex h-dvh flex-col overflow-hidden">
+	<div class="relative flex h-svh flex-col overflow-hidden">
 		<AppShellHeader />
 		<main
 			id="main-content"
