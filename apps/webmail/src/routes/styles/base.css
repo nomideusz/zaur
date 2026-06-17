@@ -15,6 +15,16 @@
 		min-height: 100svh;
 	}
 
+	@media (max-width: 767px) {
+		/* App shell is fixed inset-0 — keep the document from scrolling behind it. */
+		html,
+		body {
+			height: 100%;
+			overflow: hidden;
+			overscroll-behavior: none;
+		}
+	}
+
 	/* Reserve scrollbar width so short → long pages don't shift layout. */
 	#main-content {
 		scrollbar-gutter: stable;

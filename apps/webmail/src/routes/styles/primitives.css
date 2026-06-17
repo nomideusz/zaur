@@ -722,10 +722,28 @@
 		@apply flex cursor-pointer items-center gap-2.5 rounded-lg px-3 text-sm transition-all hover:bg-surface-sunken/80 focus-within:ring-2 focus-within:ring-accent/20;
 	}
 
-	/* Ark Root wrapper around the control — transparent to layout. */
-	.z-checkbox-root,
-	.z-switch-root {
+	/* Checkbox root stays layout-transparent; switch wraps control + input as one unit. */
+	.z-checkbox-root {
 		display: contents;
+	}
+
+	.z-switch-root {
+		position: relative;
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+	}
+
+	/* Overlay the hidden input on the track so focus/scroll-into-view stays local. */
+	.z-switch-root :where(input[type='checkbox']) {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		width: 100%;
+		height: 100%;
+		margin: 0;
+		opacity: 0;
+		cursor: pointer;
 	}
 
 	.z-checkbox {

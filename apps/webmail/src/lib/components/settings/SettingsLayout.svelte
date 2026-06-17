@@ -20,7 +20,7 @@
 	const pathname = $derived($page.url.pathname);
 </script>
 
-<div class="z-settings-page {settingsRootClass} flex h-full w-full flex-row overflow-hidden bg-surface">
+<div class="z-settings-page {settingsRootClass} flex min-h-0 flex-1 flex-row overflow-hidden bg-surface">
 	<!-- Desktop sidebar -->
 	<aside
 		class="z-mail-pane-surface hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-visible border-r border-border z-10 md:flex"

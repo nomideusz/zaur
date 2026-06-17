@@ -648,6 +648,11 @@
 			padding-top: 0;
 		}
 
+		.z-settings-page .z-pane-scroll {
+			/* Status text under toggles (e.g. push sync) must not yank scroll position. */
+			overflow-anchor: none;
+		}
+
 		/* Rows sit inside raised cards — same inline inset as mail rows (px-4). */
 		.z-settings-row,
 		.z-settings-field,
