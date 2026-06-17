@@ -16,11 +16,12 @@ Tracking sheet for the gradual migration of the **webmail** app towards
   primary file(s) where it lives under **Used in**.
 
 > Tip: regenerate the "used" list with
-> `grep -rho '@ark-ui/svelte/[a-z-]*' apps/webmail/src | sort -u`
+> `rg -o '@ark-ui/svelte/[a-z-]+' apps/webmail/src --no-filename | sort -u`
 
 ## Summary
 
-**18 / 63** Ark UI components are currently in use.
+**20 / 61** Ark UI components are currently in use (`@ark-ui/svelte` ^5.22.1;
+excludes internal `factory` / `anatomy` exports).
 
 ---
 
@@ -45,17 +46,17 @@ them unticked until a need appears.
 | `fieldset` | Group related settings controls (e.g. signature, notifications) with a shared legend and disabled state. |
 | ~~`tabs`~~ ✅ | **Done** — calendar Week / Day / Agenda view switcher (`routes/(app)/calendar/+page.svelte`), giving proper `tablist`/`tab`/`tabpanel` semantics and arrow-key navigation. Still open: settings sections, mailbox view switches. |
 | `file-upload` | Drag-and-drop attachment picking in the composer, replacing the raw `<input type="file">`. |
-| `drawer` | Mobile mailbox sidebar, mobile compose sheet, and slide-in settings panels on small screens. |
-| `scroll-area` | Consistent custom scrollbars for the message list and mailbox sidebar across browsers. |
-| ~~`progress`~~ ✅ | **Done** — reusable `ui/Progress.svelte` wrapper, wired into PDF document-download progress and account storage-quota display (`settings/StorageQuota.svelte`, via JMAP `Quota/get`). Still TODO: attachment upload progress and background sync indicators. |
+| ~~`drawer`~~ ✅ | **Done** — mobile mailbox / app nav sheet (`shell/NavDrawer.svelte`, mounted from `routes/(app)/+layout.svelte`). Still open: mobile compose sheet, slide-in settings panels. |
+| ~~`scroll-area`~~ ✅ | **Done** — `ui/ScrollArea.svelte` on the message list (`mail/MessageList.svelte`); pairs with scroll-edge load-more via `mail/LoadMoreSentinel.svelte`. Still open: sidebar, reader, settings panes. |
+| ~~`progress`~~ ✅ | **Done** — reusable `ui/Progress.svelte` wrapper, wired into PDF document-download progress and account storage-quota display (`settings/StorageQuota.svelte`, via JMAP `Quota/get`). Compose attachment rows show inline upload status (`ComposePanel.svelte`). Still open: per-file progress bars, background sync indicators. |
 
 ### P2 — opportunistic
 
 | Component | Potential use case |
 | --- | --- |
-| ~~`collapsible`~~ ✅ | **Done** — per-message expand/collapse in multi-message threads (`mail/MessageReaderCore.svelte`). Still open: "show trimmed content" / quoted-reply expansion, collapsible settings groups. |
+| ~~`collapsible`~~ ✅ | **Done** — per-message expand/collapse in multi-message threads (`mail/MessageReaderCore.svelte`). Quoted reply in plain-text compose uses a native `<details>` block (`ComposePanel.svelte`, gated by `collapseQuotedInCompose`). Still open: collapsible settings groups. |
 | `pagination` | Paging through long message lists or search results. |
-| ~~`clipboard`~~ ✅ | **Done** — reusable `ui/CopyButton.svelte`, first used for "Copy email" in the contact detail panel (replaces a manual `navigator.clipboard` + toast with inline copied feedback). Still open: copy sender address in the reader, shareable message/thread links. |
+| ~~`clipboard`~~ ✅ | **Done** — reusable `ui/CopyButton.svelte` in `contacts/ContactDetailPanel.svelte` (inline copied feedback). Reader "Copy email address" in the More menu uses toast feedback instead (`mail/MessageThreadActions.svelte` — menu closes on action, so inline indicator would not persist). Still open: shareable message/thread links. |
 | `accordion` | Grouped settings panels and help/FAQ sections. |
 | `editable` | Inline rename of folders and labels in the sidebar; contact name editing. |
 | `avatar` | Sender/contact avatars in the message list and reading pane (with initials fallback). |
@@ -63,7 +64,6 @@ them unticked until a need appears.
 | `number-input` | Numeric settings such as auto-refresh interval or messages-per-page. |
 | `password-input` | Change-password flow in settings and any password entry in auth. |
 | `date-picker` | Schedule-send and snooze date selection (calendar app already lives here). |
-| `time-picker` | Time half of schedule-send / snooze. |
 
 ### P3 — situational
 
@@ -73,7 +73,7 @@ them unticked until a need appears.
 | `color-picker` | Custom colors for labels and folders. |
 | `steps` | Multi-step onboarding / account-setup wizard. |
 | `tour` | Guided feature discovery for new users (builds on existing onboarding). |
-| `segment-group` | Compact segmented toggle for view switches (e.g. list density, unread filter). |
+| `segment-group` | Compact segmented toggle for view switches (e.g. list density, unread filter). A custom Shark UI port already covers mobile rails at `ui/segment-group/*` (`IslandMailTabs.svelte`, `MobileSettingsShellNav.svelte`) without `@ark-ui/svelte/segment-group`. |
 | `carousel` | Image-attachment gallery in the preview dialog. |
 | `image-cropper` | Avatar / profile-image cropping in settings. |
 | `json-tree-view` | Developer/debug view for raw message source or sync payloads. |
@@ -94,6 +94,7 @@ internal building block rather than a user-facing component.
 | `checkbox` | [x] | `src/lib/components/ui/Checkbox.svelte` |
 | `color-picker` | [ ] | |
 | `combobox` | [x] | `src/lib/components/settings/SettingsSearch.svelte` |
+| `date-input` | [ ] | |
 | `date-picker` | [ ] | |
 | `editable` | [ ] | |
 | `field` | [ ] | |
@@ -105,7 +106,7 @@ internal building block rather than a user-facing component.
 | `pin-input` | [ ] | |
 | `radio-group` | [ ] | |
 | `rating-group` | [ ] | |
-| `segment-group` | [ ] | |
+| `segment-group` | [ ] | custom Shark UI port at `src/lib/components/ui/segment-group/*` (not `@ark-ui/svelte/segment-group`) |
 | `select` | [x] | `src/lib/components/ui/MobilePicker.svelte` |
 | `signature-pad` | [ ] | |
 | `slider` | [ ] | |
@@ -129,8 +130,8 @@ internal building block rather than a user-facing component.
 
 | Component | Used | Used in |
 | --- | :---: | --- |
-| `dialog` | [x] | `src/lib/components/ui/ConfirmDialog.svelte`, `mail/AttachmentPreview.svelte`, `shell/WelcomeOnboarding.svelte` |
-| `drawer` | [ ] | |
+| `dialog` | [x] | `src/lib/components/ui/ConfirmDialog.svelte`, `mail/AttachmentPreview.svelte`, `mail/CreateFolderDialog.svelte`, `shell/WelcomeOnboarding.svelte` |
+| `drawer` | [x] | `src/lib/components/shell/NavDrawer.svelte` (mobile mailbox / app nav sheet; `routes/(app)/+layout.svelte`) |
 | `floating-panel` | [ ] | |
 | `hover-card` | [ ] | |
 | `popover` | [x] | `src/lib/components/mail/RichTextEditor.svelte`, `shell/OutboxMenu.svelte` |
@@ -151,7 +152,7 @@ internal building block rather than a user-facing component.
 | `accordion` | [ ] | |
 | `avatar` | [ ] | |
 | `carousel` | [ ] | |
-| `collapsible` | [x] | `mail/MessageReaderCore.svelte` (per-message expand/collapse in multi-message threads) |
+| `collapsible` | [x] | `mail/MessageReaderCore.svelte` (per-message expand/collapse in multi-message threads). Plain-text compose quoted reply: native `<details>` in `mail/ComposePanel.svelte` |
 | `image-cropper` | [ ] | |
 | `json-tree-view` | [ ] | |
 | `marquee` | [ ] | |
@@ -163,17 +164,15 @@ internal building block rather than a user-facing component.
 | Component | Used | Used in |
 | --- | :---: | --- |
 | `client-only` | [ ] | |
-| `clipboard` | [x] | `src/lib/components/ui/CopyButton.svelte` (reusable); used in `contacts/ContactDetailPanel.svelte` (copy email) |
+| `clipboard` | [x] | `src/lib/components/ui/CopyButton.svelte` (reusable); `contacts/ContactDetailPanel.svelte` (copy email). Reader copy-sender uses `Clipboard` via menu + toast in `mail/MessageThreadActions.svelte` |
 | `collection` | [ ] | |
 | `download-trigger` | [ ] | |
-| `environment` | [ ] | |
 | `focus-trap` | [ ] | |
 | `format` | [ ] | |
 | `frame` | [ ] | |
 | `highlight` | [x] | `src/lib/components/settings/SettingsSearch.svelte`, `shell/GlobalSearchCombobox.svelte` |
-| `locale` | [ ] | |
-| `portal` | [x] | used alongside most overlay components (dialog, menu, popover, tooltip, select, toast) |
+| `portal` | [x] | used alongside most overlay components (dialog, drawer, menu, popover, tooltip, select, toast) |
 | `presence` | [ ] | |
-| `scroll-area` | [ ] | |
+| `scroll-area` | [x] | `src/lib/components/ui/ScrollArea.svelte`; message list in `mail/MessageList.svelte` with infinite scroll sentinel in `mail/LoadMoreSentinel.svelte` |
 | `splitter` | [ ] | |
 | `swap` | [ ] | |

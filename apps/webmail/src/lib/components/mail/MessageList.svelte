@@ -18,6 +18,7 @@
 	import ShieldAlert from '$lib/components/icons/ShieldAlert.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import RefreshCw from '$lib/components/icons/RefreshCw.svelte';
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { createPullToRefresh } from '$lib/utils/pull-to-refresh.svelte';
 	import { haptic } from '$lib/utils/haptics';
 	import { goto } from '$app/navigation';
@@ -123,6 +124,7 @@
 	let sectionMessagesByFolder = $state<Record<string, MessagePreview[]>>({});
 	let sectionVisibleCounts = $state<Record<string, number>>({});
 	let sectionHasMoreByFolder = $state<Record<string, boolean>>({});
+	let listScrollViewport = $state<HTMLElement | null>(null);
 	const INBOX_SECTION_PAGE_SIZE = 8;
 	const FOLDER_SECTION_PAGE_SIZE = 3;
 	const NEW_SECTION_ID = 'new';
@@ -154,6 +156,12 @@
 	});
 	/* Render the indicator only where the gesture can fire (touch + a mailbox). */
 	const ptrActive = $derived(mobileRowGestures && !!mailboxRouteId);
+
+	$effect(() => {
+		const viewport = listScrollViewport;
+		if (!viewport) return;
+		return ptr.attach(viewport).destroy;
+	});
 
 	$effect(() => {
 		void $page.url.pathname;
@@ -974,9 +982,10 @@
 	{/if}
 
 	{#snippet listScroll()}
-		<div
-			class={cn('z-pane-scroll min-h-0 flex-1 overflow-y-auto flex flex-col', ptrActive && 'z-pane-scroll--ptr')}
-			use:ptr.attach
+		<ScrollArea
+			bind:viewportRef={listScrollViewport}
+			class={cn(ptrActive && 'z-pane-scroll--ptr')}
+			viewportClass="flex flex-col"
 		>
 			{#if ptrActive}
 				<div
@@ -1189,13 +1198,20 @@
 					{@render simpleMessageRow(message, mailboxRouteId ?? message.mailboxId)}
 				{/each}
 			</ul>
-			<MessageListLoadMore {hasMore} {loadingMore} {onLoadMore} />
+			<MessageListLoadMore
+				{hasMore}
+				{loadingMore}
+				{onLoadMore}
+				scrollRoot={listScrollViewport}
+				loadedCount={listMessages.length}
+				{total}
+			/>
 		{:else if sectionMode && routeSettled}
 			<p class="px-4 py-8 text-sm text-fg-muted">{resolvedEmptyMessage}</p>
 		{/if}
 	</div>
 			</div>
-		</div>
+		</ScrollArea>
 	{/snippet}
 
 	{#if mailboxRouteId}

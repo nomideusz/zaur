@@ -1,20 +1,35 @@
 <script lang="ts">
+	import LoadMoreSentinel from '$lib/components/mail/LoadMoreSentinel.svelte';
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 
 	let {
 		hasMore = false,
 		loadingMore = false,
+		loadedCount,
+		total,
+		scrollRoot = null,
 		onLoadMore
 	}: {
 		hasMore?: boolean;
 		loadingMore?: boolean;
+		loadedCount?: number;
+		total?: number;
+		scrollRoot?: HTMLElement | null;
 		onLoadMore?: () => void;
 	} = $props();
+
+	const statusLabel = $derived.by(() => {
+		if (loadedCount == null || total == null || total <= loadedCount) return null;
+		return `Showing ${loadedCount} of ${total}`;
+	});
 </script>
 
 {#if hasMore && onLoadMore}
-	<div class="border-t border-border px-4 py-3">
+	<div class="z-mail-list-load-more border-t border-border px-4 py-3">
+		{#if statusLabel}
+			<p class="mb-2 text-center text-xs text-fg-subtle">{statusLabel}</p>
+		{/if}
 		<Button variant="ghost" class="w-full" disabled={loadingMore} onclick={onLoadMore}>
 			{#if loadingMore}
 				<span class="z-spinner size-4" aria-hidden="true">
@@ -25,5 +40,6 @@
 				Load more
 			{/if}
 		</Button>
+		<LoadMoreSentinel {scrollRoot} {hasMore} {loadingMore} {onLoadMore} />
 	</div>
 {/if}

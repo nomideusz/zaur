@@ -58,6 +58,17 @@ test('adds and searches a local contact', async ({ page }) => {
 	await expect(page.getByRole('button', { name: new RegExp(contactName) })).toBeVisible();
 });
 
+test('inbox list uses scroll area with load-more footer', async ({ page }) => {
+	await signIn(page);
+	await page.goto('/mail/inbox');
+	await expect(page.locator('.z-scroll-area')).toBeVisible({ timeout: 30_000 });
+
+	const loadMore = page.locator('.z-mail-list-load-more');
+	if (await loadMore.isVisible().catch(() => false)) {
+		await expect(loadMore.getByRole('button', { name: 'Load more' })).toBeVisible();
+	}
+});
+
 test('opens calendar or explains missing calendar support', async ({ page }) => {
 	await signIn(page);
 	await page.goto('/calendar');

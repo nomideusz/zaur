@@ -76,6 +76,45 @@
 		background-color: var(--z-scrollbar-thumb-hover);
 	}
 
+	/* @shark/scroll-area — Ark ScrollArea wrapper (`ui/ScrollArea.svelte`). */
+	.z-scroll-area [data-part='viewport'] {
+		overscroll-behavior-y: contain;
+	}
+
+	.z-scroll-area__scrollbar {
+		display: flex;
+		width: 5px;
+		padding: 2px 0;
+		touch-action: none;
+		user-select: none;
+	}
+
+	.z-scroll-area__scrollbar--horizontal {
+		height: 5px;
+		width: auto;
+		flex-direction: column;
+		padding: 0 2px;
+	}
+
+	.z-scroll-area__scrollbar[data-orientation='horizontal'] {
+		border-top: none;
+	}
+
+	.z-scroll-area__thumb {
+		position: relative;
+		flex: 1;
+		border-radius: 9999px;
+		background-color: var(--z-scrollbar-thumb);
+	}
+
+	.z-scroll-area:hover .z-scroll-area__thumb {
+		background-color: var(--z-scrollbar-thumb-hover);
+	}
+
+	.z-scroll-area__corner {
+		background: transparent;
+	}
+
 	/* @shark/menu — Svelte port; content/items reuse overflow-menu surface tokens. */
 	.z-menu-trigger {
 		@apply inline-flex items-center;
