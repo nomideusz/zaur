@@ -9,10 +9,11 @@
 		SegmentGroupItemText,
 		SegmentGroupScroll
 	} from '$lib/components/ui/segment-group';
-	import { sidebarMailboxGroups } from '$lib/mail/mailboxes';
+	import { MAILBOX_DISPLAY_NAMES } from '$lib/mail/mailboxes';
 	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import {
 		INBOX_MAILBOX_ROUTE_ID,
+		MAIL_ROUTE_SEGMENTS,
 		mailListHref,
 		parseMailContext
 	} from '$lib/mail/routes';
@@ -30,21 +31,31 @@
 		mailCtx?.kind === 'mailbox' ? (mailCtx.mailboxRouteId ?? INBOX_MAILBOX_ROUTE_ID) : null
 	);
 	const unseenFilterActive = $derived($page.url.searchParams.get('filter') === 'unseen');
-	const unseenHref = $derived(
-		`${mailListHref(mailRouteId ?? INBOX_MAILBOX_ROUTE_ID)}?filter=unseen`
+
+	const currentRouteId = $derived(mailRouteId ?? INBOX_MAILBOX_ROUTE_ID);
+	const currentMailbox = $derived(mail.mailboxByRouteId(currentRouteId));
+	const onHighlights = $derived(mailRouteId === MAIL_ROUTE_SEGMENTS.important);
+
+	const currentHref = $derived(
+		onHighlights
+			? mailListHref(INBOX_MAILBOX_ROUTE_ID)
+			: mailListHref(currentRouteId)
 	);
-	const activeSegment = $derived(
-		unseenFilterActive ? 'unseen' : (mailRouteId ?? undefined)
+	const currentLabel = $derived(
+		onHighlights || currentRouteId === INBOX_MAILBOX_ROUTE_ID
+			? 'All'
+			: (currentMailbox?.name ?? 'Current')
 	);
 
-	const folderSegments = $derived.by(() => {
-		const groups = sidebarMailboxGroups(mail.mailboxes);
-		return groups.system;
+	const unseenHref = $derived(`${mailListHref(INBOX_MAILBOX_ROUTE_ID)}?filter=unseen`);
+	const highlightsHref = $derived(mailListHref(MAIL_ROUTE_SEGMENTS.important));
+
+	const activeSegment = $derived.by(() => {
+		if (!mailRouteId) return undefined;
+		if (unseenFilterActive && mailRouteId === INBOX_MAILBOX_ROUTE_ID) return 'unseen';
+		if (mailRouteId === MAIL_ROUTE_SEGMENTS.important) return 'highlights';
+		return 'current';
 	});
-
-	function segmentLabel(mailbox: (typeof folderSegments)[number]): string {
-		return mailbox.id === INBOX_MAILBOX_ROUTE_ID ? 'All' : mailbox.name;
-	}
 </script>
 
 <div class="z-mobile-island__tabs">
@@ -67,7 +78,7 @@
 		<FolderInput class="size-[1.125rem]" aria-hidden="true" />
 	</button>
 
-	<nav class="min-w-0 flex-1" aria-label="Mail folders">
+	<nav class="min-w-0 flex-1" aria-label="Mail views">
 		<SegmentGroupScroll activeValue={activeSegment} class="w-full">
 			<SegmentGroup
 				value={activeSegment}
@@ -78,15 +89,12 @@
 				<SegmentGroupItem value="unseen" href={unseenHref} class={ISLAND_RAIL_ITEM_CLASS}>
 					<SegmentGroupItemText>{LABEL_UNSEEN}</SegmentGroupItemText>
 				</SegmentGroupItem>
-				{#each folderSegments as mailbox (mailbox.id)}
-					<SegmentGroupItem
-						value={mailbox.id}
-						href={mailListHref(mailbox.id)}
-						class={ISLAND_RAIL_ITEM_CLASS}
-					>
-						<SegmentGroupItemText>{segmentLabel(mailbox)}</SegmentGroupItemText>
-					</SegmentGroupItem>
-				{/each}
+				<SegmentGroupItem value="current" href={currentHref} class={ISLAND_RAIL_ITEM_CLASS}>
+					<SegmentGroupItemText>{currentLabel}</SegmentGroupItemText>
+				</SegmentGroupItem>
+				<SegmentGroupItem value="highlights" href={highlightsHref} class={ISLAND_RAIL_ITEM_CLASS}>
+					<SegmentGroupItemText>{MAILBOX_DISPLAY_NAMES.important}</SegmentGroupItemText>
+				</SegmentGroupItem>
 			</SegmentGroup>
 		</SegmentGroupScroll>
 	</nav>
