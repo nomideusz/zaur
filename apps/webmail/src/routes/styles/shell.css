@@ -196,6 +196,7 @@
 
 	.z-mobile-island--collapsed .z-mobile-island__content {
 		opacity: 0;
+		pointer-events: none;
 	}
 
 	.z-mobile-island__pill {
@@ -204,12 +205,14 @@
 		display: grid;
 		place-items: center;
 		opacity: 0;
+		pointer-events: none;
 		color: var(--z-fg-muted);
 		transition: opacity var(--z-motion-fast) var(--z-ease-standard);
 	}
 
 	.z-mobile-island--collapsed .z-mobile-island__pill {
 		opacity: 1;
+		pointer-events: auto;
 	}
 
 	.z-mobile-island__pill:focus-visible {
