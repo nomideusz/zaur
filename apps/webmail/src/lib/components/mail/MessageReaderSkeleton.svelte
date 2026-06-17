@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	// Body line widths — uneven, with a short final line per "paragraph" so the
 	// placeholder reads like prose rather than a solid block.
 	const BODY_LINES = ['97%', '92%', '99%', '74%', '0', '95%', '88%', '63%'];
@@ -20,7 +21,7 @@
 			<div class="z-skeleton z-reader-skeleton__title"></div>
 		</header>
 
-		<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
+		<ScrollArea pane class="min-h-0 flex-1">
 			<div class="z-reader-skeleton" aria-hidden="true">
 				<div class="z-reader-skeleton__meta">
 					<div class="z-skeleton z-reader-skeleton__from"></div>
@@ -40,6 +41,6 @@
 					{/each}
 				</div>
 			</div>
-		</div>
+		</ScrollArea>
 	</div>
 </article>

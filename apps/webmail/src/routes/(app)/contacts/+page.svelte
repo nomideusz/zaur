@@ -10,6 +10,7 @@
 	import ContactLetterRail from '$lib/components/contacts/ContactLetterRail.svelte';
 	import ContactsSidebar from '$lib/components/contacts/ContactsSidebar.svelte';
 	import SwipeableListRow from '$lib/components/ui/SwipeableListRow.svelte';
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { haptic } from '$lib/utils/haptics';
 	import Button from '$lib/components/ui/Button.svelte';
@@ -311,7 +312,7 @@
 			/>
 		{/if}
 
-		<div class="z-pane-scroll min-h-0 flex-1 overflow-y-auto">
+		<ScrollArea pane class="min-h-0 flex-1">
 		{#if contacts.length}
 			<div class={cn(showLetterNav && 'md:pr-12')}>
 				{#each groupedContacts as [letter, group] (letter)}
@@ -387,7 +388,7 @@
 				</div>
 			</div>
 		{/if}
-		</div>
+		</ScrollArea>
 	</div>
 </section>
 

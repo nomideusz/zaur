@@ -5,6 +5,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import CopyButton from '$lib/components/ui/CopyButton.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import type { ContactEntry } from '$lib/utils/contact-index';
 	import { cn } from '$lib/utils/cn';
 
@@ -37,7 +38,8 @@
 		{/if}
 	</header>
 
-	<div class="z-pane-scroll min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
+	<ScrollArea pane class="min-h-0 flex-1">
+		<div class="space-y-4 px-4 py-4 text-sm">
 		{#if contact.count > 0}
 			<div>
 				<p class="text-xs font-medium uppercase tracking-wide text-fg-subtle">Activity</p>
@@ -50,7 +52,8 @@
 		{#if contact.count === 0}
 			<p class="text-sm text-fg-muted">No indexed messages for this contact yet.</p>
 		{/if}
-	</div>
+		</div>
+	</ScrollArea>
 
 	<footer class={cn('flex shrink-0 flex-wrap gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]', panelPadding)}>
 		<Button onclick={onCompose}>

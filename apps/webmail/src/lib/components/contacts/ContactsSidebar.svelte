@@ -1,6 +1,7 @@
 <script lang="ts">
 	import UserPlus from '$lib/components/icons/UserPlus.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	let {
@@ -26,7 +27,8 @@
 		<p class="mt-1 text-xs text-fg-muted">{totalCount} saved</p>
 	</div>
 
-	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto p-2.5">
+	<ScrollArea class="min-h-0 flex-1">
+		<nav class="p-2.5">
 		<ul class="space-y-0.5">
 			<li>
 				<button
@@ -44,7 +46,8 @@
 				</button>
 			</li>
 		</ul>
-	</nav>
+		</nav>
+	</ScrollArea>
 
 	<div class="shrink-0 space-y-0.5 border-t border-border/80 p-2">
 		<Button variant="ghost" class="w-full justify-start px-3 py-2" onclick={onAddContact}>

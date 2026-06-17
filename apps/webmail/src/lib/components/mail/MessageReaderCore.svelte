@@ -26,6 +26,7 @@
 		shouldCommitImportantMarkerPick
 	} from '$lib/mail/important-marker.svelte';
 	import ImportantSubjectHighlight from '$lib/components/mail/ImportantSubjectHighlight.svelte';
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { shouldPresentImportantColors } from '$lib/mail/mailboxes';
 	import { formatMessageListWhen } from '$lib/utils/dates';
 	import { createImportantMarkerTouchPick } from '$lib/mail/important-marker-touch';
@@ -47,7 +48,7 @@
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
 	let localShowImagesOnce = $state(false);
 	let expandedIds = $state<Set<string>>(new Set());
-	let scrollPane = $state<HTMLDivElement | null>(null);
+	let scrollPane = $state<HTMLElement | null>(null);
 	let readerSubjectEl = $state<HTMLHeadingElement | null>(null);
 	let readerSubjectElMobile = $state<HTMLHeadingElement | null>(null);
 
@@ -362,10 +363,7 @@
 		</p>
 	{/if}
 
-	<div
-		class="z-pane-scroll min-h-0 flex-1 overflow-y-auto"
-		bind:this={scrollPane}
-	>
+	<ScrollArea pane class="min-h-0 flex-1" viewportRef={scrollPane}>
 		{#if hasBlockedExternal && !allowExternal}
 			<div class="z-mail-external-banner border-b border-border/80 px-4 py-2 text-xs">
 				<Shield class="size-3.5 shrink-0" aria-hidden="true" />
@@ -488,7 +486,7 @@
 				{/if}
 			{/each}
 		</div>
-	</div>
+	</ScrollArea>
 	</div>
 
 </article>

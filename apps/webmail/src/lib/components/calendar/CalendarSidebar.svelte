@@ -1,5 +1,6 @@
 <script lang="ts">
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { haptic } from '$lib/utils/haptics';
 	import { isCoarsePointer } from '$lib/utils/pointer-env';
@@ -18,7 +19,8 @@
 		<h2 class="z-type-label">Calendars</h2>
 	</div>
 
-	<nav class="z-pane-scroll min-h-0 flex-1 overflow-y-auto p-2.5">
+	<ScrollArea class="min-h-0 flex-1">
+		<nav class="p-2.5">
 		{#if calendar.calendarsLoading}
 			<ul class="space-y-0.5" aria-hidden="true">
 				{#each SKELETON_WIDTHS as width, i (i)}
@@ -61,5 +63,6 @@
 				{/each}
 			</ul>
 		{/if}
-	</nav>
+		</nav>
+	</ScrollArea>
 </aside>

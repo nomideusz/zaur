@@ -1,17 +1,30 @@
 <script lang="ts">
 	import { FileUpload } from '@ark-ui/svelte/file-upload';
+	import type { FileUploadFileRejection } from '@ark-ui/svelte/file-upload';
 	import { cn } from '$lib/utils/cn';
 	import type { Snippet } from 'svelte';
+
+	export type FileUploadRejection = {
+		file: File;
+		errors: string[];
+	};
 
 	interface Props {
 		class?: string;
 		disabled?: boolean;
 		onaccept: (files: File[]) => void;
-		onreject?: (files: File[]) => void;
+		onreject?: (rejections: FileUploadRejection[]) => void;
 		children: Snippet;
 	}
 
 	let { class: className, disabled = false, onaccept, onreject, children }: Props = $props();
+
+	function mapRejections(files: FileUploadFileRejection[]): FileUploadRejection[] {
+		return files.map((entry) => ({
+			file: entry.file,
+			errors: entry.errors as string[]
+		}));
+	}
 </script>
 
 <!--
@@ -25,7 +38,7 @@
 	allowDrop
 	preventDocumentDrop
 	onFileAccept={(details) => onaccept(details.files)}
-	onFileReject={(details) => onreject?.(details.files.map((entry) => entry.file))}
+	onFileReject={(details) => onreject?.(mapRejections(details.files))}
 >
 	<FileUpload.HiddenInput />
 	{@render children()}

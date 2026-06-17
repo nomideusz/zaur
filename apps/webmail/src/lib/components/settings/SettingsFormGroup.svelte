@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { Fieldset } from '@ark-ui/svelte/fieldset';
 	import { observeVisibleSettingsRows } from '$lib/settings/observe-visible-rows';
 	import { settingsSearch } from '$lib/settings/search-registry.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -15,7 +16,7 @@
 		children: import('svelte').Snippet;
 	} = $props();
 
-	let sectionRef = $state<HTMLElement | null>(null);
+	let sectionRef = $state<HTMLFieldSetElement | null>(null);
 	let hasRows = $state(true);
 
 	$effect(() => {
@@ -31,8 +32,8 @@
 	});
 </script>
 
-<section
-	bind:this={sectionRef}
+<Fieldset.Root
+	bind:ref={sectionRef}
 	class={cn(
 		'z-settings-section z-settings-form-section',
 		visibleOn === 'desktop' && 'z-settings-section--desktop',
@@ -42,9 +43,9 @@
 >
 	{#if hasRows}
 		<div class="z-settings-section-heading">
-			<p class="z-settings-section-title">{title}</p>
+			<Fieldset.Legend class="z-settings-section-title">{title}</Fieldset.Legend>
 			{#if description}
-				<p class="z-settings-form-heading-desc">{description}</p>
+				<Fieldset.HelperText class="z-settings-form-heading-desc">{description}</Fieldset.HelperText>
 			{/if}
 		</div>
 	{/if}
@@ -59,4 +60,4 @@
 			{@render children()}
 		</div>
 	</div>
-</section>
+</Fieldset.Root>

@@ -81,6 +81,10 @@
 		flex-direction: column;
 		gap: 0;
 		width: 100%;
+		border: none;
+		margin: 0;
+		padding: 0;
+		min-width: 0;
 	}
 
 	.z-settings-section.z-settings-section--desktop {
@@ -122,8 +126,14 @@
 	}
 
 	/* Matches .z-mail-list-section-title — settings heads read like mail section heads. */
-	.z-settings-section-title {
+	.z-settings-section-title,
+	legend.z-settings-section-title {
 		margin: 0;
+		padding: 0;
+		border: none;
+		float: none;
+		display: block;
+		width: 100%;
 		font-size: var(--z-main-page-text);
 		font-weight: 600;
 		line-height: 1.35;

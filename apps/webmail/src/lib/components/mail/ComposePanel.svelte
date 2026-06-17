@@ -19,7 +19,9 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
-	import ComposeFileUpload from '$lib/components/ui/ComposeFileUpload.svelte';
+	import ComposeFileUpload, {
+		type FileUploadRejection
+	} from '$lib/components/ui/ComposeFileUpload.svelte';
 	import { FileUpload } from '@ark-ui/svelte/file-upload';
 	import { cn } from '$lib/utils/cn';
 
@@ -243,6 +245,19 @@
 		await compose.addAttachments(auth.client, files);
 	}
 
+	function attachmentRejectMessage(rejections: FileUploadRejection[]): string {
+		if (rejections.length === 1) {
+			const entry = rejections[0];
+			const code = entry.errors[0];
+			if (code === 'TOO_MANY_FILES') return 'Too many attachments at once.';
+			if (code === 'FILE_TOO_LARGE') return `${entry.file.name} is too large.`;
+			if (code === 'FILE_INVALID_TYPE') return `${entry.file.name} is not a supported file type.`;
+			if (code === 'FILE_EXISTS') return `${entry.file.name} is already attached.`;
+			return `Could not attach ${entry.file.name}.`;
+		}
+		return `Could not attach ${rejections.length} files.`;
+	}
+
 	let showSchedulePanel = $state(false);
 	let scheduleZone = $state<HTMLDivElement | null>(null);
 	let customSendTime = $state('');
@@ -338,13 +353,23 @@
 
 <svelte:window onpointerdown={onWindowPointerDown} />
 
-<ComposeFileUpload onaccept={(files) => void addComposeAttachments(files)}>
-	<FileUpload.Dropzone
-		disableClick
-		class="z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose z-compose-dropzone relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
-		style="view-transition-name: compose-panel;"
-		aria-label="Compose message"
-	>
+<ComposeFileUpload
+	onaccept={(files) => void addComposeAttachments(files)}
+	onreject={(rejections) => toast.show(attachmentRejectMessage(rejections), 'error')}
+>
+	<FileUpload.Context>
+		{#snippet render(fileUploadApi)}
+			<FileUpload.Dropzone
+				disableClick
+				class="z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose z-compose-dropzone relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+				style="view-transition-name: compose-panel;"
+				aria-label="Compose message"
+				onpaste={(event) => {
+					if (fileUploadApi().setClipboardFiles(event.clipboardData)) {
+						event.preventDefault();
+					}
+				}}
+			>
 	<div class="z-compose z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 		<header class="z-compose__header flex shrink-0 flex-col border-b border-border/80">
 			<div class="z-compose__header-bar grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 min-w-0">
@@ -748,4 +773,6 @@
 		</div>
 	</div>
 	</FileUpload.Dropzone>
+		{/snippet}
+	</FileUpload.Context>
 </ComposeFileUpload>

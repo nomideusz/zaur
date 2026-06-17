@@ -20,7 +20,7 @@ Tracking sheet for the gradual migration of the **webmail** app towards
 
 ## Summary
 
-**22 / 61** Ark UI components are currently in use (`@ark-ui/svelte` ^5.22.1;
+**23 / 61** Ark UI components are currently in use (`@ark-ui/svelte` ^5.22.1;
 excludes internal `factory` / `anatomy` exports).
 
 ---
@@ -43,11 +43,11 @@ them unticked until a need appears.
 | Component | Potential use case |
 | --- | --- |
 | ~~`field`~~ ✅ | **Done** — `ui/Field.svelte` wrapper; settings labels/helper text via Ark Field in `settings/SettingsField.svelte` and `settings/SettingsRow.svelte`. Still open: compose recipient error wiring. |
-| `fieldset` | Group related settings controls (e.g. signature, notifications) with a shared legend and disabled state. |
+| ~~`fieldset`~~ ✅ | **Done** — Ark `Fieldset` in `settings/SettingsGroup.svelte` and `settings/SettingsFormGroup.svelte` (legend + helper text for grouped rows). Still open: disabled-state groups. |
 | ~~`tabs`~~ ✅ | **Done** — calendar Week / Day / Agenda view switcher (`routes/(app)/calendar/+page.svelte`), giving proper `tablist`/`tab`/`tabpanel` semantics and arrow-key navigation. Still open: settings sections, mailbox view switches. |
-| ~~`file-upload`~~ ✅ | **Done** — `ui/ComposeFileUpload.svelte` + Ark dropzone/trigger in `mail/ComposePanel.svelte` (replaces hidden `<input type="file">` and manual drag counter). Still open: rejected-file toasts, paste-from-clipboard. |
+| ~~`file-upload`~~ ✅ | **Done** — `ui/ComposeFileUpload.svelte` + Ark dropzone/trigger in `mail/ComposePanel.svelte`; reject toasts and clipboard paste. |
 | ~~`drawer`~~ ✅ | **Done** — mobile mailbox / app nav sheet (`shell/NavDrawer.svelte`, mounted from `routes/(app)/+layout.svelte`). Still open: mobile compose sheet, slide-in settings panels. |
-| ~~`scroll-area`~~ ✅ | **Done** — `ui/ScrollArea.svelte` on message list, mailbox sidebar nav, and settings layout (`mail/MessageList.svelte`, `mail/MailboxSidebar.svelte`, `settings/SettingsLayout.svelte`). Still open: reader panes, contacts/calendar sidebars. |
+| ~~`scroll-area`~~ ✅ | **Done** — `ui/ScrollArea.svelte` on message list, sidebars, settings, reader, and contacts list/detail panes. Still open: calendar month grid, event panels. |
 | ~~`progress`~~ ✅ | **Done** — reusable `ui/Progress.svelte` wrapper, wired into PDF document-download progress and account storage-quota display (`settings/StorageQuota.svelte`, via JMAP `Quota/get`). Compose attachment rows show inline upload status (`ComposePanel.svelte`). Still open: per-file progress bars, background sync indicators. |
 
 ### P2 — opportunistic
@@ -98,7 +98,7 @@ internal building block rather than a user-facing component.
 | `date-picker` | [ ] | |
 | `editable` | [ ] | |
 | `field` | [x] | `src/lib/components/ui/Field.svelte`; settings rows in `settings/SettingsField.svelte`, `settings/SettingsRow.svelte` |
-| `fieldset` | [ ] | |
+| `fieldset` | [x] | `settings/SettingsGroup.svelte`, `settings/SettingsFormGroup.svelte` |
 | `file-upload` | [x] | `src/lib/components/ui/ComposeFileUpload.svelte`; compose attach + drop in `mail/ComposePanel.svelte` |
 | `listbox` | [ ] | |
 | `number-input` | [ ] | |
@@ -173,6 +173,6 @@ internal building block rather than a user-facing component.
 | `highlight` | [x] | `src/lib/components/settings/SettingsSearch.svelte`, `shell/GlobalSearchCombobox.svelte` |
 | `portal` | [x] | used alongside most overlay components (dialog, drawer, menu, popover, tooltip, select, toast) |
 | `presence` | [ ] | |
-| `scroll-area` | [x] | `src/lib/components/ui/ScrollArea.svelte`; message list (`mail/MessageList.svelte`), mailbox sidebar nav (`mail/MailboxSidebar.svelte`), settings layout (`settings/SettingsLayout.svelte`) |
+| `scroll-area` | [x] | `ui/ScrollArea.svelte`; message list, mailbox sidebar, settings, reader (`MessageReaderCore.svelte`), contacts list/detail, calendar sidebar |
 | `splitter` | [ ] | |
 | `swap` | [ ] | |
