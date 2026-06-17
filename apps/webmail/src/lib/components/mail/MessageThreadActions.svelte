@@ -4,10 +4,13 @@
 	import Copy from '$lib/components/icons/Copy.svelte';
 	import Forward from '$lib/components/icons/Forward.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
+	import PencilLine from '$lib/components/icons/PencilLine.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
+	import Send from '$lib/components/icons/Send.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
+	import XCircle from '$lib/components/icons/XCircle.svelte';
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
 	import OverflowMenuItem from '$lib/components/ui/OverflowMenuItem.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
@@ -31,6 +34,7 @@
 	import { renderMessageBody } from '$lib/email/html';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
 	import type { MessageDetail } from '$lib/types/mail';
+	import { cn } from '$lib/utils/cn';
 
 	interface Props {
 		thread: MessageDetail[];
@@ -42,6 +46,8 @@
 		menuPlacement?: 'top' | 'bottom';
 		/** Unique menu id — the toolbar mounts twice (reader header + island). */
 		menuId?: string;
+		/** Compact icon layout for the mobile floating island. */
+		variant?: 'default' | 'island';
 	}
 
 	let {
@@ -50,8 +56,11 @@
 		onMoved,
 		onBackToList,
 		menuPlacement = 'bottom',
-		menuId = 'reader-actions-menu'
+		menuId = 'reader-actions-menu',
+		variant = 'default'
 	}: Props = $props();
+
+	const isIsland = $derived(variant === 'island');
 
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
 
@@ -236,8 +245,14 @@
 </script>
 
 {#if latest}
-	<div class="z-reader-toolbar flex min-w-0 shrink-0 items-center justify-end gap-3">
-		{#if isDraft}
+	<div
+		class={cn(
+			isIsland
+				? 'flex min-w-0 flex-1 items-center justify-end gap-0.375rem'
+				: 'z-reader-toolbar flex min-w-0 shrink-0 items-center justify-end gap-3'
+		)}
+	>
+		{#if isDraft && !isIsland}
 			<a href="/mail/compose?draft={latest.id}" class="z-mail-text-nav__link">Edit</a>
 		{/if}
 
@@ -245,10 +260,22 @@
 			label="Message actions"
 			{menuId}
 			placement={menuPlacement}
-			textTrigger
-			triggerText="More"
-			triggerClass="z-mail-text-nav__link"
+			textTrigger={!isIsland}
+			triggerText={isIsland ? undefined : 'More'}
+			triggerClass={isIsland ? 'z-mobile-island__icon-btn' : 'z-mail-text-nav__link'}
 		>
+			{#if isIsland && !isDraft}
+				<OverflowMenuItem label="Reply" onclick={reply}>
+					{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+				<OverflowMenuItem label="Reply all" onclick={replyAll}>
+					{#snippet icon()}<ReplyAll class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+				<OverflowMenuItem label="Forward" onclick={forward}>
+					{#snippet icon()}<Forward class="size-5" aria-hidden="true" />{/snippet}
+				</OverflowMenuItem>
+				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
+			{/if}
 			{#if isDraft}
 				{#if auth.client && draftMoveTargets.length}
 					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveTo} />
@@ -307,23 +334,60 @@
 			{/if}
 		</OverflowMenu>
 
-		<div class="z-header-action-zone">
+		{#if isDraft && isIsland}
+			<a
+				href="/mail/compose?draft={latest.id}"
+				class="z-mobile-island__icon-btn no-underline"
+				aria-label="Edit draft"
+			>
+				<PencilLine class="size-[1.125rem]" aria-hidden="true" />
+			</a>
+		{/if}
+
+		<div class={isIsland ? 'shrink-0' : 'z-header-action-zone'}>
 			{#if isDraft}
 				<button
 					type="button"
-					class="z-mail-text-nav__action z-mail-text-nav__action--pill"
+					class={cn(
+						isIsland
+							? 'z-mobile-island__icon-btn z-mobile-island__icon-btn--accent'
+							: 'z-mail-text-nav__action z-mail-text-nav__action--pill'
+					)}
+					aria-label="Send draft"
 					onclick={() => void sendDraft()}
 				>
-					Send
+					{#if isIsland}
+						<Send class="size-[1.125rem]" aria-hidden="true" />
+					{:else}
+						Send
+					{/if}
 				</button>
 			{:else if isScheduled}
 				<button
 					type="button"
-					class="z-mail-text-nav__action z-mail-text-nav__action--pill"
+					class={cn(
+						isIsland
+							? 'z-mobile-island__icon-btn z-mobile-island__icon-btn--accent'
+							: 'z-mail-text-nav__action z-mail-text-nav__action--pill'
+					)}
+					aria-label={cancelingScheduled ? 'Canceling send' : 'Cancel send'}
 					disabled={cancelingScheduled}
 					onclick={() => void cancelScheduledSend()}
 				>
-					{cancelingScheduled ? 'Canceling…' : 'Cancel send'}
+					{#if isIsland}
+						<XCircle class="size-[1.125rem]" aria-hidden="true" />
+					{:else}
+						{cancelingScheduled ? 'Canceling…' : 'Cancel send'}
+					{/if}
+				</button>
+			{:else if isIsland}
+				<button
+					type="button"
+					class="z-mobile-island__icon-btn z-mobile-island__icon-btn--accent"
+					aria-label={primaryReplyLabel}
+					onclick={primaryReply}
+				>
+					<Reply class="size-[1.125rem]" aria-hidden="true" />
 				</button>
 			{:else}
 				<!-- Reply, with the other reply modes folded into a split-button caret.

@@ -30,7 +30,7 @@
 		return 'default';
 	});
 
-	const islandWide = $derived(islandMode === 'mail' || islandMode === 'bulk');
+	const islandWide = $derived(islandMode === 'mail' || islandMode === 'bulk' || islandMode === 'reader');
 	const scrollCollapsible = $derived(islandMode === 'mail');
 	const collapsed = $derived(scrollCollapsible && mobileIsland.collapsed);
 
