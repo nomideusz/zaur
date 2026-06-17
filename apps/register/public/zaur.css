@@ -45,7 +45,7 @@
 	--z-auth-measure: 24rem;
 	--z-register-measure: var(--z-auth-measure);
 	/* Register flow: address + password side by side on desktop */
-	--z-register-flow-measure: 52rem;
+	--z-register-flow-measure: 64rem;
 
 	--z-chrome: var(--z-surface-raised);
 	--z-chrome-active: var(--z-surface-sunken);
@@ -1168,7 +1168,8 @@ body {
 
 @media (min-width: 768px) {
 	.z-auth-card--register {
-		padding-inline: 2.5rem;
+		padding-inline: 3rem;
+		padding-block: 2.75rem;
 	}
 }
 
@@ -1196,6 +1197,10 @@ body {
 	margin-top: 0;
 }
 
+#apply-intro:not(.z-hidden) {
+	margin-bottom: 1.5rem;
+}
+
 .z-register-split {
 	display: grid;
 	grid-template-columns: minmax(0, 1fr);
@@ -1204,19 +1209,19 @@ body {
 
 @media (min-width: 768px) {
 	.z-register-split {
-		grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.6fr);
+		grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
 		gap: 0;
 		align-items: start;
 	}
 
 	.z-register-pick {
-		padding-right: 2rem;
+		padding-right: 2.75rem;
 		border-right: 1px solid var(--z-divider);
 	}
 
 	.z-register-create {
 		display: block;
-		padding-left: 2rem;
+		padding-left: 2.75rem;
 		padding-right: 0.125rem;
 	}
 

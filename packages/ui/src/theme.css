@@ -45,7 +45,7 @@
 	--z-auth-measure: 24rem;
 	--z-register-measure: var(--z-auth-measure);
 	/* Register flow: address + password side by side on desktop */
-	--z-register-flow-measure: 52rem;
+	--z-register-flow-measure: 64rem;
 
 	--z-chrome: var(--z-surface-raised);
 	--z-chrome-active: var(--z-surface-sunken);
