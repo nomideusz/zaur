@@ -161,6 +161,14 @@ async function listDomains(forceRefresh = false) {
   return domains;
 }
 
+async function getDomainName(domainId) {
+  const { body } = await jmapRequest([
+    ['x:Domain/get', { ids: [domainId], properties: ['name'] }, 'domainNameGet'],
+  ]);
+  const domain = getMethodResponse(body, 'domainNameGet')?.list?.[0];
+  return domain?.name || null;
+}
+
 let cachedPostgresDirectoryId = null;
 
 async function getPostgresDirectoryId() {
@@ -421,9 +429,8 @@ async function createAccount(username, domainId, password) {
     throw new Error(extractJmapError(response));
   }
 
-  const domains = await listDomains();
-  const domain = domains.find((d) => d.id === domainId);
-  const email = created.emailAddress || `${username}@${domain?.name || 'unknown'}`;
+  const domainName = (await getDomainName(domainId)) || 'unknown';
+  const email = created.emailAddress || `${username}@${domainName}`;
 
   // Hash password using bcryptjs and write user credentials directly to PostgreSQL
   const hash = await bcrypt.hash(password, 10);
