@@ -6,6 +6,7 @@
 	import CopyButton from '$lib/components/ui/CopyButton.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
+	import MobileSheet from '$lib/components/ui/MobileSheet.svelte';
 	import type { ContactEntry } from '$lib/utils/contact-index';
 	import { cn } from '$lib/utils/cn';
 
@@ -76,8 +77,6 @@
 	{@render details(false)}
 </aside>
 
-<div class="z-mobile-sheet-backdrop md:hidden">
-	<div class="m-2 flex h-[calc(100%-1rem)] w-[calc(100%-1rem)] max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-md">
-		{@render details(true)}
-	</div>
-</div>
+<MobileSheet ariaLabel="Contact details">
+	{@render details(true)}
+</MobileSheet>

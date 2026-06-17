@@ -7,6 +7,7 @@
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
+	import FocusTrap from '$lib/components/ui/FocusTrap.svelte';
 	import { EVENT_REPEAT_OPTIONS } from '$lib/jmap/recurrence';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
@@ -71,9 +72,14 @@
 <div
 	class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]"
 	style="padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);"
+	role="presentation"
 >
-	<div
-		class="z-panel flex h-full min-h-0 w-full max-w-lg flex-col overflow-hidden border-l shadow-md"
+	<FocusTrap
+		class="z-panel flex h-full min-h-0 w-full max-w-lg flex-col overflow-hidden border-l shadow-md outline-none"
+		role="dialog"
+		aria-modal="true"
+		aria-label={isEdit ? 'Edit event' : 'New event'}
+		tabindex={-1}
 	>
 		<header
 			class={cn('flex shrink-0 items-center justify-between border-b border-border', panelPadding)}
@@ -248,5 +254,5 @@
 				</div>
 			</footer>
 		</form>
-	</div>
+	</FocusTrap>
 </div>

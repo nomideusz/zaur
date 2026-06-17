@@ -20,7 +20,7 @@ Tracking sheet for the gradual migration of the **webmail** app towards
 
 ## Summary
 
-**23 / 61** Ark UI components are currently in use (`@ark-ui/svelte` ^5.22.1;
+**24 / 61** Ark UI components are currently in use (`@ark-ui/svelte` ^5.22.1;
 excludes internal `factory` / `anatomy` exports).
 
 ---
@@ -70,6 +70,7 @@ them unticked until a need appears.
 | Component | Potential use case |
 | --- | --- |
 | `hover-card` | Contact/sender preview card on hover over a name in the message list. |
+| ~~`focus-trap`~~ ✅ | **Done** — `ui/FocusTrap.svelte` + `ui/MobileSheet.svelte` on contact/event mobile sheets and calendar event compose slide-over. Dialog/Drawer already trap focus. |
 | `color-picker` | Custom colors for labels and folders. |
 | `steps` | Multi-step onboarding / account-setup wizard. |
 | `tour` | Guided feature discovery for new users (builds on existing onboarding). |
@@ -167,7 +168,7 @@ internal building block rather than a user-facing component.
 | `clipboard` | [x] | `src/lib/components/ui/CopyButton.svelte` (reusable); `contacts/ContactDetailPanel.svelte` (copy email). Reader copy-sender uses `Clipboard` via menu + toast in `mail/MessageThreadActions.svelte` |
 | `collection` | [ ] | |
 | `download-trigger` | [ ] | |
-| `focus-trap` | [ ] | |
+| `focus-trap` | [x] | `ui/FocusTrap.svelte`, `ui/MobileSheet.svelte`; contact/event mobile sheets, `calendar/EventComposePanel.svelte` |
 | `format` | [ ] | |
 | `frame` | [ ] | |
 | `highlight` | [x] | `src/lib/components/settings/SettingsSearch.svelte`, `shell/GlobalSearchCombobox.svelte` |

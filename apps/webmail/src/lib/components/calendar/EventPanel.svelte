@@ -6,6 +6,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
+	import MobileSheet from '$lib/components/ui/MobileSheet.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { formatEventTime } from '$lib/utils/dates';
@@ -107,11 +108,7 @@
 		{@render details(true)}
 	</aside>
 
-	<div class="z-mobile-sheet-backdrop md:hidden">
-		<div
-			class="m-2 flex h-[calc(100%-1rem)] w-[calc(100%-1rem)] max-w-md flex-col overflow-hidden rounded-2xl border border-border bg-surface-raised shadow-md"
-		>
-			{@render details(true)}
-		</div>
-	</div>
+	<MobileSheet ariaLabel="Event details">
+		{@render details(true)}
+	</MobileSheet>
 {/if}
