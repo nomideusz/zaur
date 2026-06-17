@@ -10,12 +10,14 @@
 	interface Props {
 		value: string;
 		href?: string;
+		/** Selected context label — no navigation (e.g. current folder from drawer). */
+		static?: boolean;
 		disabled?: boolean;
 		class?: string;
 		children: Snippet;
 	}
 
-	let { value, href, disabled = false, class: className, children }: Props = $props();
+	let { value, href, static: isStatic = false, disabled = false, class: className, children }: Props = $props();
 
 	const segmentGroup = getContext<SegmentGroupContext>(SEGMENT_GROUP_CTX);
 
@@ -28,7 +30,8 @@
 
 	const itemClass = $derived(
 		cn(
-			'z-segment-group__item relative z-1 shrink-0 cursor-pointer border border-transparent outline-none',
+			'z-segment-group__item relative z-1 shrink-0 border border-transparent outline-none',
+			isStatic ? 'cursor-default' : 'cursor-pointer',
 			segmentGroup.variant === 'default' && segmentGroup.track && 'z-segmented__item',
 			segmentGroup.variant === 'underline' && 'px-2 py-1.5 text-sm font-medium text-fg-muted',
 			segmentGroup.variant === 'underline' && selected && 'text-fg',
@@ -38,7 +41,18 @@
 	);
 </script>
 
-{#if href && !disabled}
+{#if isStatic}
+	<span
+		use:attachItem
+		class={itemClass}
+		aria-current={selected ? 'location' : undefined}
+		data-slot="segment-group-item"
+		data-value={value}
+		data-state={selected ? 'checked' : 'unchecked'}
+	>
+		{@render children()}
+	</span>
+{:else if href && !disabled}
 	<a
 		use:attachItem
 		{href}

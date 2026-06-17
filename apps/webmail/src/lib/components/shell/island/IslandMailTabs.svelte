@@ -9,7 +9,6 @@
 		SegmentGroupItemText,
 		SegmentGroupScroll
 	} from '$lib/components/ui/segment-group';
-	import { MAILBOX_DISPLAY_NAMES } from '$lib/mail/mailboxes';
 	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import {
 		INBOX_MAILBOX_ROUTE_ID,
@@ -32,29 +31,28 @@
 	);
 	const unseenFilterActive = $derived($page.url.searchParams.get('filter') === 'unseen');
 
-	const currentRouteId = $derived(mailRouteId ?? INBOX_MAILBOX_ROUTE_ID);
-	const currentMailbox = $derived(mail.mailboxByRouteId(currentRouteId));
-	const onHighlights = $derived(mailRouteId === MAIL_ROUTE_SEGMENTS.important);
+	const inboxHref = $derived(mailListHref(INBOX_MAILBOX_ROUTE_ID));
+	const unseenHref = $derived(`${inboxHref}?filter=unseen`);
+	const importantHref = $derived(mailListHref(MAIL_ROUTE_SEGMENTS.important));
 
-	const currentHref = $derived(
-		onHighlights
-			? mailListHref(INBOX_MAILBOX_ROUTE_ID)
-			: mailListHref(currentRouteId)
-	);
-	const currentLabel = $derived(
-		onHighlights || currentRouteId === INBOX_MAILBOX_ROUTE_ID
-			? 'All'
-			: (currentMailbox?.name ?? 'Current')
-	);
+	/** Drawer/system/custom folders — show a non-link label between All and Important. */
+	const folderContextRouteId = $derived.by(() => {
+		if (!mailRouteId) return null;
+		if (mailRouteId === INBOX_MAILBOX_ROUTE_ID) return null;
+		if (mailRouteId === MAIL_ROUTE_SEGMENTS.important) return null;
+		return mailRouteId;
+	});
 
-	const unseenHref = $derived(`${mailListHref(INBOX_MAILBOX_ROUTE_ID)}?filter=unseen`);
-	const highlightsHref = $derived(mailListHref(MAIL_ROUTE_SEGMENTS.important));
+	const folderContextLabel = $derived(
+		folderContextRouteId ? (mail.mailboxByRouteId(folderContextRouteId)?.name ?? 'Folder') : null
+	);
 
 	const activeSegment = $derived.by(() => {
 		if (!mailRouteId) return undefined;
-		if (unseenFilterActive && mailRouteId === INBOX_MAILBOX_ROUTE_ID) return 'unseen';
-		if (mailRouteId === MAIL_ROUTE_SEGMENTS.important) return 'highlights';
-		return 'current';
+		if (folderContextRouteId) return folderContextRouteId;
+		if (unseenFilterActive) return 'unseen';
+		if (mailRouteId === MAIL_ROUTE_SEGMENTS.important) return 'important';
+		return 'all';
 	});
 </script>
 
@@ -89,11 +87,20 @@
 				<SegmentGroupItem value="unseen" href={unseenHref} class={ISLAND_RAIL_ITEM_CLASS}>
 					<SegmentGroupItemText>{LABEL_UNSEEN}</SegmentGroupItemText>
 				</SegmentGroupItem>
-				<SegmentGroupItem value="current" href={currentHref} class={ISLAND_RAIL_ITEM_CLASS}>
-					<SegmentGroupItemText>{currentLabel}</SegmentGroupItemText>
+				<SegmentGroupItem value="all" href={inboxHref} class={ISLAND_RAIL_ITEM_CLASS}>
+					<SegmentGroupItemText>All</SegmentGroupItemText>
 				</SegmentGroupItem>
-				<SegmentGroupItem value="highlights" href={highlightsHref} class={ISLAND_RAIL_ITEM_CLASS}>
-					<SegmentGroupItemText>{MAILBOX_DISPLAY_NAMES.important}</SegmentGroupItemText>
+				{#if folderContextRouteId && folderContextLabel}
+					<SegmentGroupItem
+						value={folderContextRouteId}
+						static
+						class={ISLAND_RAIL_ITEM_CLASS}
+					>
+						<SegmentGroupItemText>{folderContextLabel}</SegmentGroupItemText>
+					</SegmentGroupItem>
+				{/if}
+				<SegmentGroupItem value="important" href={importantHref} class={ISLAND_RAIL_ITEM_CLASS}>
+					<SegmentGroupItemText>Important</SegmentGroupItemText>
 				</SegmentGroupItem>
 			</SegmentGroup>
 		</SegmentGroupScroll>
