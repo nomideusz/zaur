@@ -344,7 +344,7 @@
 			</a>
 		{/if}
 
-		<div class={isIsland ? 'shrink-0' : 'z-header-action-zone'}>
+		<div class={isIsland ? 'ml-2 shrink-0' : 'z-header-action-zone'}>
 			{#if isDraft}
 				<button
 					type="button"
@@ -383,11 +383,10 @@
 			{:else if isIsland}
 				<button
 					type="button"
-					class="z-mobile-island__icon-btn z-mobile-island__icon-btn--accent"
-					aria-label={primaryReplyLabel}
+					class="z-mail-text-nav__action z-mail-text-nav__action--pill"
 					onclick={primaryReply}
 				>
-					<Reply class="size-[1.125rem]" aria-hidden="true" />
+					{primaryReplyLabel}
 				</button>
 			{:else}
 				<!-- Reply, with the other reply modes folded into a split-button caret.
