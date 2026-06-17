@@ -79,6 +79,25 @@
 	/* @shark/scroll-area — Ark ScrollArea wrapper (`ui/ScrollArea.svelte`). */
 	.z-scroll-area [data-part='viewport'] {
 		overscroll-behavior-y: contain;
+		/* Viewport scrolls; native bars are hidden so only Ark scrollbars show. */
+		scrollbar-width: none;
+		-ms-overflow-style: none;
+	}
+
+	.z-scroll-area [data-part='viewport']::-webkit-scrollbar {
+		display: none;
+		width: 0;
+		height: 0;
+	}
+
+	@media (max-width: 767px) {
+		.z-scroll-area--pane [data-part='viewport'] {
+			scroll-padding-bottom: var(--z-island-clearance);
+		}
+
+		.z-scroll-area--pane .z-scroll-area__content {
+			padding-bottom: var(--z-island-clearance);
+		}
 	}
 
 	/* Ark content defaults to min-width: fit-content — force list panes to stay in-bounds. */

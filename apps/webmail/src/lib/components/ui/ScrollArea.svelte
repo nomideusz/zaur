@@ -10,6 +10,8 @@
 		viewportRef?: HTMLElement | null;
 		/** Vertical-only omits the horizontal scrollbar and corner (message lists). */
 		orientation?: 'vertical' | 'both';
+		/** Mobile island clearance + scroll padding (message/settings panes). */
+		pane?: boolean;
 		children: Snippet;
 	}
 
@@ -18,6 +20,7 @@
 		viewportClass,
 		viewportRef = $bindable(null),
 		orientation = 'vertical',
+		pane = false,
 		children
 	}: Props = $props();
 </script>
@@ -25,12 +28,13 @@
 <ScrollArea.Root
 	class={cn(
 		'z-scroll-area relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+		pane && 'z-scroll-area--pane',
 		className
 	)}
 >
 	<ScrollArea.Viewport
 		bind:ref={viewportRef}
-		class={cn('z-pane-scroll z-scroll-area__viewport h-full w-full min-w-0', viewportClass)}
+		class={cn('z-scroll-area__viewport h-full w-full min-w-0', viewportClass)}
 	>
 		<ScrollArea.Content class="z-scroll-area__content flex min-h-full w-full min-w-0 flex-col">
 			{@render children()}

@@ -1013,6 +1013,7 @@
 	{#snippet listScroll()}
 		<ScrollArea
 			bind:viewportRef={listScrollViewport}
+			pane
 			class={cn(ptrActive && 'z-pane-scroll--ptr')}
 			viewportClass="flex flex-col"
 		>
