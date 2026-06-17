@@ -314,6 +314,8 @@ function selectDomain(row) {
     hideApplyError();
     applySuccess.classList.add('z-hidden');
     applyForm.classList.remove('z-hidden');
+    applySubmitBtn.disabled = false;
+    applySubmitBtn.textContent = 'Send application';
     loadApplyCaptcha();
   } else {
     hideFormError();
@@ -434,6 +436,26 @@ async function loadCaptcha() {
   }
 }
 
+async function loadApplyCaptcha() {
+  try {
+    const res = await fetch('/api/captcha');
+    const data = await res.json();
+    applyCaptchaQuestion.textContent = data.question;
+  } catch {
+    applyCaptchaQuestion.textContent = 'Unable to load captcha';
+  }
+}
+
+function showApplyError(message) {
+  applyError.textContent = message;
+  applyError.classList.add('is-visible');
+}
+
+function hideApplyError() {
+  applyError.classList.remove('is-visible');
+  applyError.textContent = '';
+}
+
 usernameInput.addEventListener('input', updateView);
 
 passwordInput.addEventListener('input', updateStrengthBar);
@@ -501,42 +523,87 @@ registerForm.addEventListener('submit', async (e) => {
   }
 });
 
-async function loadDomainTeaser() {
-  const list = document.getElementById('teaser-domains');
-  const sample = document.getElementById('teaser-sample');
-  if (!list) return;
+applyForm?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  hideApplyError();
+
+  if (!selectedResult) {
+    showApplyError('Select an available address first.');
+    return;
+  }
+
+  const name = document.getElementById('apply-name').value.trim();
+  const contactEmail = document.getElementById('apply-contact').value.trim();
+  const message = document.getElementById('apply-message').value.trim();
+  const captchaAnswer = document.getElementById('apply-captcha-answer').value;
+
+  applySubmitBtn.disabled = true;
+  applySubmitBtn.textContent = 'Sending…';
 
   try {
-    const res = await fetch('/api/domains');
-    const { domains } = await res.json();
-    if (!domains?.length) {
-      list.innerHTML = '<li class="z-domain-teaser__item z-text-subtle">No domains listed</li>';
+    const res = await fetch('/api/apply', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: currentUsername,
+        domainId: selectedResult.domainId,
+        name,
+        contactEmail,
+        message,
+        captchaAnswer,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      showApplyError(data.error || 'Unable to send application.');
+      if (data.captcha) {
+        applyCaptchaQuestion.textContent = data.captcha;
+      } else {
+        loadApplyCaptcha();
+      }
+      document.getElementById('apply-captcha-answer').value = '';
+      applySubmitBtn.disabled = false;
+      applySubmitBtn.textContent = 'Send application';
       return;
     }
 
-    list.innerHTML = domains
-      .map((d) => `<li class="z-domain-teaser__item">@${escapeHtml(d.name)}</li>`)
-      .join('');
-
-    if (sample && domains[0]) {
-      sample.hidden = false;
-      sample.innerHTML = `<span class="z-domain-teaser__name">yourname</span><span class="z-domain-teaser__at">@${escapeHtml(domains[0].name)}</span>`;
-    }
+    applyForm.classList.add('z-hidden');
+    applySuccess.textContent =
+      `Thanks! Your request for ${data.requestedEmail} has been sent. We'll review it and email ${contactEmail} with an invitation.`;
+    applySuccess.classList.remove('z-hidden');
   } catch {
-    list.innerHTML = '<li class="z-domain-teaser__item z-text-subtle">Unavailable</li>';
+    showApplyError('Network error. Please try again.');
+    applySubmitBtn.disabled = false;
+    applySubmitBtn.textContent = 'Send application';
   }
-}
-
-function showInvitationGate(message) {
-  registerContent.classList.add('z-hidden');
-  invitationGate.classList.remove('z-hidden');
-  if (message) invitationGateMessage.textContent = message;
-  void loadDomainTeaser();
-}
+});
 
 function showRegisterFlow() {
-  invitationGate.classList.add('z-hidden');
   registerContent.classList.remove('z-hidden');
+}
+
+// Invite-only visitors with no valid magic link can still browse every address
+// and apply for the one they want; selecting one opens the application form.
+function enterApplyMode() {
+  applyMode = true;
+  invitationReady = true;
+  // Swap the password panel out of the split grid for the application panel.
+  registerPanel.classList.add('z-hidden');
+  applyPanel.classList.remove('z-hidden');
+  if (registerTagline) registerTagline.textContent = 'Find your address';
+  if (applyIntro) {
+    if (!applicationsEnabled) {
+      const body = applyIntro.querySelector('.z-callout__body');
+      if (body) {
+        body.textContent =
+          'Registration is currently invite-only. Browse available addresses below — applications are temporarily closed, so check back soon.';
+      }
+    }
+    applyIntro.classList.remove('z-hidden');
+  }
+  showRegisterFlow();
 }
 
 async function initInvitation() {
@@ -548,6 +615,7 @@ async function initInvitation() {
     const configRes = await fetch('/api/config');
     const config = await configRes.json();
     requiresInvitation = config.requiresInvitation === true;
+    applicationsEnabled = config.applicationsEnabled === true;
 
     if (!requiresInvitation) {
       invitationReady = true;
@@ -556,7 +624,7 @@ async function initInvitation() {
     }
 
     if (!inviteToken || !inviteEmail) {
-      showInvitationGate();
+      enterApplyMode();
       return;
     }
 
@@ -566,9 +634,7 @@ async function initInvitation() {
     const verifyData = await verifyRes.json();
 
     if (!verifyRes.ok || !verifyData.valid) {
-      showInvitationGate(
-        verifyData.error || 'This invitation link is invalid or has expired.',
-      );
+      enterApplyMode();
       return;
     }
 
@@ -581,7 +647,7 @@ async function initInvitation() {
     showRegisterFlow();
     applyInvitationUi();
   } catch {
-    showInvitationGate('Unable to verify invitation. Try again later.');
+    enterApplyMode();
   }
 }
 

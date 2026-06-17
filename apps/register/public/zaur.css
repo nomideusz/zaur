@@ -507,6 +507,26 @@ body {
 	transform: translateY(-50%);
 }
 
+/* Multi-line variant: auto-height textarea with a top-anchored label. */
+.z-label-input--area .z-label-input__field {
+	height: auto;
+	min-height: 5rem;
+	padding-top: 1rem;
+	resize: vertical;
+}
+
+.z-label-input--area .z-label-input__label {
+	top: 1.25rem;
+	transform: none;
+}
+
+.z-label-input--area:focus-within .z-label-input__label,
+.z-label-input--area.is-filled .z-label-input__label,
+.z-label-input--area .z-label-input__field:not(:placeholder-shown) + .z-label-input__label {
+	top: 0;
+	transform: translateY(-50%);
+}
+
 
 /* Shared UI components */
 
