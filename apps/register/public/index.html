@@ -21,41 +21,6 @@
   <main class="z-site-main">
     <div class="z-auth-page z-auth-page--in-shell z-auth-page--register" id="main-content">
       <div class="z-auth-card z-auth-card--register" id="auth-card">
-        <div class="z-hidden" id="invitation-gate">
-          <div class="z-auth-hero">
-            <div class="z-auth-sprite" aria-hidden="true">
-              <img src="/zaur-sprite-happy.svg" width="100" height="90" alt="">
-            </div>
-            <h1 class="z-type-brand z-auth-brand">ZAUR</h1>
-            <p class="z-auth-tagline">Private, focused email</p>
-          </div>
-
-          <div class="z-callout">
-            <span class="z-callout__title">Invite only</span>
-            <p class="z-text-muted z-callout__body" id="invitation-gate-message">
-              Registration is invite-only. Open the magic link sent to your personal email to continue.
-            </p>
-          </div>
-
-          <div class="z-domain-teaser" id="domain-teaser">
-            <p class="z-type-label">Available domains</p>
-            <ul class="z-domain-teaser__list" id="teaser-domains">
-              <li class="z-domain-teaser__item z-text-subtle">Loading…</li>
-            </ul>
-            <p class="z-domain-teaser__sample" id="teaser-sample" hidden>
-              <span class="z-domain-teaser__name">yourname</span><span class="z-domain-teaser__at">@zaur.app</span>
-            </p>
-            <p class="z-domain-teaser__hint">
-              Pick an address on any domain when you register with an invitation.
-            </p>
-          </div>
-
-          <p class="z-auth-aside">
-            Already have a mailbox?
-            <a data-webmail-link class="z-link">Sign in</a>
-          </p>
-        </div>
-
         <div class="z-hidden" id="register-content">
           <div class="z-auth-hero z-auth-hero--compact z-auth-hero--register">
             <div class="z-auth-hero__row">
@@ -70,6 +35,14 @@
           </div>
 
           <div class="z-invite-status z-hidden" id="invitation-banner" role="status"></div>
+
+          <div class="z-callout z-hidden" id="apply-intro">
+            <span class="z-callout__title">Invite only</span>
+            <p class="z-text-muted z-callout__body">
+              Registration is currently invite-only. Browse available addresses below, then apply for
+              the one you want — we'll review it and email you an invitation.
+            </p>
+          </div>
 
           <div class="z-register-flow">
             <div class="z-register-split" id="register-split">
@@ -164,6 +137,77 @@
                     </div>
 
                     <button type="submit" class="z-btn-primary z-btn-block z-btn-lg" id="submit-btn">Create account</button>
+                  </form>
+                </div>
+              </section>
+
+              <section class="z-register-create z-panel-collapsible z-hidden" id="apply-panel" aria-labelledby="apply-create-heading">
+                <h2 class="z-register-create__heading" id="apply-create-heading">Apply for this address</h2>
+                <p class="z-register-create__idle" id="apply-panel-idle" aria-hidden="true"></p>
+
+                <div class="z-register-create__body">
+                  <div class="z-selected-address">
+                    <p class="z-selected-address__email" id="apply-selected-email">—</p>
+                  </div>
+
+                  <div class="z-alert z-alert--error" id="apply-error" role="alert"></div>
+                  <div class="z-alert z-alert--success z-hidden" id="apply-success" role="status"></div>
+
+                  <form id="apply-form" class="z-form-stack">
+                    <div class="z-label-input z-label-input--primary">
+                      <input
+                        type="text"
+                        id="apply-name"
+                        name="name"
+                        class="z-label-input__field"
+                        autocomplete="name"
+                        maxlength="100"
+                        required
+                      >
+                      <label for="apply-name" class="z-label-input__label">Your name</label>
+                    </div>
+
+                    <div class="z-label-input z-label-input--primary">
+                      <input
+                        type="email"
+                        id="apply-contact"
+                        name="contactEmail"
+                        class="z-label-input__field"
+                        autocomplete="email"
+                        required
+                      >
+                      <label for="apply-contact" class="z-label-input__label">Contact email</label>
+                    </div>
+
+                    <div class="z-label-input z-label-input--primary">
+                      <textarea
+                        id="apply-message"
+                        name="message"
+                        class="z-label-input__field"
+                        rows="3"
+                        maxlength="2000"
+                      ></textarea>
+                      <label for="apply-message" class="z-label-input__label">Why this address? (optional)</label>
+                    </div>
+
+                    <div class="z-field-stack" id="apply-captcha-section">
+                      <div class="z-captcha-row">
+                        <span class="z-captcha-question" id="apply-captcha-question">Loading…</span>
+                        <div class="z-label-input z-label-input--primary z-label-input--compact">
+                          <input
+                            type="number"
+                            id="apply-captcha-answer"
+                            name="captchaAnswer"
+                            class="z-label-input__field"
+                            inputmode="numeric"
+                            required
+                          >
+                          <label for="apply-captcha-answer" class="z-label-input__label">Answer</label>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button type="submit" class="z-btn-primary z-btn-block z-btn-lg" id="apply-submit-btn">Send application</button>
                   </form>
                 </div>
               </section>

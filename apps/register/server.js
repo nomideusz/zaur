@@ -95,6 +95,14 @@ const registerDailyLimiter = rateLimit({
   message: { error: 'Daily registration limit reached. Try again tomorrow.' },
 });
 
+const applyLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many applications. Please try again in an hour.' },
+});
+
 const forgotPasswordIpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
@@ -119,6 +127,7 @@ app.get('/api/config', (_req, res) => {
   res.json({
     ...getSiteConfig(),
     requiresInvitation: invitations.requiresInvitation(),
+    applicationsEnabled: inviteMail.isConfigured(),
     passwordResetEnabled: passwordReset.isEnabled(),
     passkeySetupEnabled: logto.isConfigured(),
   });
@@ -327,6 +336,78 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
     const captcha = generateCaptcha();
     req.session.captchaAnswer = captcha.answer;
     res.status(400).json({ error: err.message, captcha: captcha.question });
+  }
+});
+
+app.post('/api/apply', applyLimiter, async (req, res) => {
+  const { username, domainId, name, contactEmail, message, captchaAnswer } = req.body;
+
+  const usernameValidation = validateUsername(username);
+  if (!usernameValidation.valid) {
+    return res.status(400).json({ error: usernameValidation.error });
+  }
+
+  const cleanName = String(name || '').trim();
+  if (cleanName.length < 1 || cleanName.length > 100) {
+    return res.status(400).json({ error: 'Please enter your name.' });
+  }
+
+  const cleanContact = String(contactEmail || '').trim();
+  if (!invitations.isValidEmail(cleanContact)) {
+    return res.status(400).json({ error: 'A valid contact email is required.' });
+  }
+
+  const cleanMessage = String(message || '').trim().slice(0, 2000);
+
+  const captchaValidation = validateCaptchaAnswer(captchaAnswer, req.session.captchaAnswer);
+  if (!captchaValidation.valid) {
+    return res.status(400).json({ error: captchaValidation.error });
+  }
+
+  if (!domainId) {
+    return res.status(400).json({ error: 'Please select a domain.' });
+  }
+
+  if (!inviteMail.isConfigured()) {
+    console.error('POST /api/apply: invitation email is not configured.');
+    return res.status(503).json({ error: 'Applications are temporarily unavailable. Please try again later.' });
+  }
+
+  try {
+    const domains = await stalwart.listDomains();
+    const domain = domains.find((d) => d.id === domainId);
+    if (!domain) {
+      return res.status(400).json({ error: 'Invalid domain selected.' });
+    }
+
+    const requestedEmail = `${usernameValidation.username}@${domain.name}`;
+
+    const available = await stalwart.checkUsernameAcrossDomains(usernameValidation.username);
+    const selected = available.find((r) => r.domainId === domainId);
+    if (!selected?.available) {
+      return res.status(409).json({ error: 'This address is already taken. Please choose another.' });
+    }
+
+    await inviteMail.sendApplicationEmail({
+      requestedEmail,
+      name: cleanName,
+      contactEmail: cleanContact,
+      message: cleanMessage,
+    });
+
+    // Rotate the captcha so a fresh challenge is required for any further use.
+    const captcha = generateCaptcha();
+    req.session.captchaAnswer = captcha.answer;
+
+    res.json({ success: true, requestedEmail });
+  } catch (err) {
+    console.error('POST /api/apply:', err.message);
+    const captcha = generateCaptcha();
+    req.session.captchaAnswer = captcha.answer;
+    res.status(502).json({
+      error: 'Unable to send your application right now. Please try again later.',
+      captcha: captcha.question,
+    });
   }
 });
 

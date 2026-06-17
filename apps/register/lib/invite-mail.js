@@ -3,6 +3,14 @@ const nodemailer = require('nodemailer');
 let transporter = null;
 let verifyPromise = null;
 
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
 function isConfigured() {
   return Boolean(process.env.INVITE_SMTP_HOST?.trim() && process.env.INVITE_SMTP_FROM?.trim());
 }
@@ -211,9 +219,52 @@ async function sendPasswordResetEmail({ to, mailboxEmail, resetLink, expiresAt }
   return true;
 }
 
+async function sendApplicationEmail({ requestedEmail, name, contactEmail, message }) {
+  const from = process.env.INVITE_SMTP_FROM.trim();
+  const fromName = process.env.INVITE_SMTP_FROM_NAME?.trim() || 'ZAUR';
+  const to = process.env.APPLICATION_TO?.trim() || 'bartek@zaur.app';
+
+  const subject = `ZAUR address request: ${requestedEmail}`;
+
+  const textLines = [
+    'A visitor applied for a ZAUR email address.',
+    '',
+    `Requested address: ${requestedEmail}`,
+    `Name:              ${name}`,
+    `Contact email:     ${contactEmail}`,
+  ];
+  if (message) {
+    textLines.push('', 'Message:', message);
+  }
+  const text = textLines.join('\n');
+
+  const html = `
+    <p>A visitor applied for a ZAUR email address.</p>
+    <table cellpadding="4" style="border-collapse:collapse;font-size:14px;">
+      <tr><td style="color:#666;">Requested address</td><td><strong>${escapeHtml(requestedEmail)}</strong></td></tr>
+      <tr><td style="color:#666;">Name</td><td>${escapeHtml(name)}</td></tr>
+      <tr><td style="color:#666;">Contact email</td><td><a href="mailto:${escapeHtml(contactEmail)}">${escapeHtml(contactEmail)}</a></td></tr>
+    </table>
+    ${message ? `<p style="margin-top:12px;"><strong>Message:</strong></p><p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>` : ''}
+    <p style="color:#666;font-size:13px;margin-top:16px;">Reply directly to this email to reach the applicant.</p>
+  `.trim();
+
+  await sendMail({
+    from: `"${fromName}" <${from}>`,
+    to,
+    replyTo: contactEmail,
+    subject,
+    text,
+    html,
+  });
+
+  return true;
+}
+
 module.exports = {
   isConfigured,
   verifySmtp,
   sendInvitationEmail,
   sendPasswordResetEmail,
+  sendApplicationEmail,
 };

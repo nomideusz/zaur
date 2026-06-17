@@ -17,8 +17,6 @@ const submitBtn = document.getElementById('submit-btn');
 const loginEmailInput = document.getElementById('login-email');
 
 const registerSplit = document.getElementById('register-split');
-const invitationGate = document.getElementById('invitation-gate');
-const invitationGateMessage = document.getElementById('invitation-gate-message');
 const registerContent = document.getElementById('register-content');
 const invitationBanner = document.getElementById('invitation-banner');
 const inviteTokenInput = document.getElementById('invite-token');
@@ -26,7 +24,18 @@ const inviteEmailInput = document.getElementById('invite-email');
 const captchaSection = document.getElementById('captcha-section');
 const registerTagline = document.getElementById('register-tagline');
 
+const applyIntro = document.getElementById('apply-intro');
+const applyPanel = document.getElementById('apply-panel');
+const applyForm = document.getElementById('apply-form');
+const applySelectedEmail = document.getElementById('apply-selected-email');
+const applyError = document.getElementById('apply-error');
+const applySuccess = document.getElementById('apply-success');
+const applyCaptchaQuestion = document.getElementById('apply-captcha-question');
+const applySubmitBtn = document.getElementById('apply-submit-btn');
+
 let requiresInvitation = false;
+let applicationsEnabled = false;
+let applyMode = false;
 let invitationReady = false;
 let hasMagicLinkInvitation = false;
 let inviteToken = '';
@@ -271,7 +280,13 @@ function syncSelectedEmail() {
   if (!selectedResult || !currentUsername) return;
   const email = `${currentUsername}@${selectedResult.domain}`;
   selectedEmailLabel.textContent = email;
+  applySelectedEmail.textContent = email;
   if (loginEmailInput) loginEmailInput.value = email;
+}
+
+function hideCreatePanels() {
+  registerPanel.classList.remove('is-visible');
+  applyPanel.classList.remove('is-visible');
 }
 
 function configureFormForPasswordManagers() {
@@ -291,14 +306,26 @@ function selectDomain(row) {
 
   selectedDomainId.value = selectedResult.domainId;
   syncSelectedEmail();
-  registerPanel.classList.add('is-visible');
-  hideFormError();
-  window.ZaurLabelInput?.init(registerPanel);
-  window.ZaurLabelInput?.syncAll(registerPanel);
-  if (!hasMagicLinkInvitation) {
-    loadCaptcha();
+
+  const panel = applyMode ? applyPanel : registerPanel;
+  panel.classList.add('is-visible');
+
+  if (applyMode) {
+    hideApplyError();
+    applySuccess.classList.add('z-hidden');
+    applyForm.classList.remove('z-hidden');
+    loadApplyCaptcha();
+  } else {
+    hideFormError();
+    if (!hasMagicLinkInvitation) {
+      loadCaptcha();
+    }
+    applyInvitationUi();
   }
-  applyInvitationUi();
+
+  window.ZaurLabelInput?.init(panel);
+  window.ZaurLabelInput?.syncAll(panel);
+
   if (currentUsername) {
     const statuses = new Map(
       cachedDomains.map((d) => [d.id, availabilityMap.get(d.id) || 'pending']),
@@ -306,9 +333,14 @@ function selectDomain(row) {
     patchDomainList(currentUsername, statuses);
   }
   if (window.matchMedia('(max-width: 767px)').matches) {
-    registerPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
   }
-  passwordInput.focus();
+
+  if (applyMode) {
+    document.getElementById('apply-name').focus();
+  } else {
+    passwordInput.focus();
+  }
 }
 
 function syncSplitState(hasUsername) {
@@ -320,7 +352,7 @@ function updateView() {
   validationHint.textContent = hint;
 
   if (!username) {
-    registerPanel.classList.remove('is-visible');
+    hideCreatePanels();
     selectedResult = null;
     availabilityMap.clear();
     mountedListUsername = '';
@@ -345,7 +377,7 @@ function updateView() {
   renderSearchResults(username, statuses);
 
   if (!valid) {
-    registerPanel.classList.remove('is-visible');
+    hideCreatePanels();
     selectedResult = null;
     return;
   }

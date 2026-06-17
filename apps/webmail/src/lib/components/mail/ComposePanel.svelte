@@ -380,8 +380,8 @@
 			<FileUpload.Dropzone
 				disableClick
 				class={cn(
-					'z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose z-compose-dropzone relative flex min-h-0 min-w-0 flex-col overflow-hidden',
-					embedded && 'min-h-0 flex-1 rounded-none border-0 shadow-none'
+					'z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose z-compose-dropzone relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
+					embedded && 'rounded-none border-0 shadow-none'
 				)}
 				style={embedded ? undefined : 'view-transition-name: compose-panel;'}
 				aria-label="Compose message"
