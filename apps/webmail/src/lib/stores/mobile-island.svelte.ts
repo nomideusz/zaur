@@ -13,18 +13,13 @@ export type IslandReaderContext = {
 };
 
 /**
- * State for the mobile floating island — the single piece of bottom chrome on
- * phones. Which mode shows is derived centrally in MobileIsland.svelte;
- * screens register data/handlers the island can't derive globally via the
- * generation-counter set/clear pattern (see shell-header.svelte.ts).
+ * Mobile floating island — mail context toolbar plus combined nav drawer
+ * (apps + mailboxes) opened from the menu button.
  */
 class MobileIslandStore {
-	/** Scroll-shrunk to a minimal pill. */
+	/** Shrinks the island to a pill while scrolling the message list. */
 	collapsed = $state(false);
-	/** Mail-tabs mode temporarily showing app navigation. */
-	appsOverlay = $state(false);
-	/** Full mailbox sidebar on phones (system folders + custom tree). */
-	mailboxDrawerOpen = $state(false);
+	navDrawerOpen = $state(false);
 	reader = $state<IslandReaderContext | null>(null);
 	#readerGeneration = 0;
 
@@ -32,13 +27,12 @@ class MobileIslandStore {
 		this.collapsed = false;
 	}
 
-	openMailboxDrawer() {
-		this.appsOverlay = false;
-		this.mailboxDrawerOpen = true;
+	openNavDrawer() {
+		this.navDrawerOpen = true;
 	}
 
-	closeMailboxDrawer() {
-		this.mailboxDrawerOpen = false;
+	closeNavDrawer() {
+		this.navDrawerOpen = false;
 	}
 
 	setReader(ctx: IslandReaderContext): number {

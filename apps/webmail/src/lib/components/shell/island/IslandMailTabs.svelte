@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import LayoutGrid from '$lib/components/icons/LayoutGrid.svelte';
+	import Menu from '$lib/components/icons/Menu.svelte';
 	import PenSquare from '$lib/components/icons/PenSquare.svelte';
-	import FolderInput from '$lib/components/icons/FolderInput.svelte';
 	import {
 		SegmentGroup,
 		SegmentGroupItem,
@@ -60,20 +59,11 @@
 	<button
 		type="button"
 		class="z-mobile-island__icon-btn"
-		aria-label="Show apps"
-		onclick={() => (mobileIsland.appsOverlay = true)}
+		aria-label="Apps and folders"
+		aria-expanded={mobileIsland.navDrawerOpen}
+		onclick={() => mobileIsland.openNavDrawer()}
 	>
-		<LayoutGrid class="size-[1.125rem]" aria-hidden="true" />
-	</button>
-
-	<button
-		type="button"
-		class="z-mobile-island__icon-btn"
-		aria-label="All mailboxes and folders"
-		aria-expanded={mobileIsland.mailboxDrawerOpen}
-		onclick={() => mobileIsland.openMailboxDrawer()}
-	>
-		<FolderInput class="size-[1.125rem]" aria-hidden="true" />
+		<Menu class="size-[1.125rem]" aria-hidden="true" />
 	</button>
 
 	<nav class="min-w-0 flex-1" aria-label="Mail views">

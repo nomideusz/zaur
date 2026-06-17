@@ -62,9 +62,7 @@
 		display: block;
 	}
 
-	/* Mobile floating island — the single piece of bottom chrome on phones.
-	   The positioner pins to the viewport bottom; the pill inside morphs per
-	   context (app nav, folder tabs, bulk, reader, compose). */
+	/* Mobile floating island — centered pill at the bottom of the viewport. */
 	.z-mobile-island-positioner {
 		position: fixed;
 		inset-inline: 0;
@@ -238,6 +236,20 @@
 		align-items: stretch;
 		gap: 0.125rem;
 		padding: 0.25rem;
+	}
+
+	.z-nav-drawer__apps {
+		flex-shrink: 0;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
+		-webkit-overflow-scrolling: touch;
+		border-bottom: 1px solid color-mix(in srgb, var(--z-border) 65%, transparent);
+	}
+
+	.z-nav-drawer__apps .z-mobile-island__nav {
+		width: max-content;
+		min-width: 100%;
+		justify-content: safe center;
 	}
 
 	.z-mobile-island__nav-link {

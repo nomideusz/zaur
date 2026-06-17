@@ -185,6 +185,13 @@ body {
 }
 `;
 
+/** Last-line defense after DOMPurify — keeps `<script>` out of srcdoc so the sandbox never logs blocks. */
+function stripExecutableTags(html: string): string {
+	return html
+		.replace(/<script\b[\s\S]*?<\/script>/gi, '')
+		.replace(/<script\b[^>]*\/>/gi, '');
+}
+
 export function buildEmailFrameSrcdoc(options: {
 	html: string;
 	darkMode: boolean;
@@ -205,6 +212,6 @@ export function buildEmailFrameSrcdoc(options: {
 		`<meta name="viewport" content="width=device-width, initial-scale=1">` +
 		`<base target="_blank">` +
 		`<style>:root { ${tokenVars} }${FRAME_CSS}</style></head>` +
-		`<body class="${bodyClass}">${options.html}</body></html>`
+		`<body class="${bodyClass}">${stripExecutableTags(options.html)}</body></html>`
 	);
 }

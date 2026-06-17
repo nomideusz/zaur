@@ -66,12 +66,12 @@
 	--z-main-page-title: 1rem;
 	/* ~44rem ≈ 704px — Hobday-scale column, ~70 characters at body size. */
 	--z-content-max-width: 44rem;
-	/* Mobile floating island — single bottom chrome; clearance keeps scroll content reachable. */
+	/* Mobile floating island — clearance for scrollable panes. */
 	--z-island-height: 3.5rem;
-	--z-island-collapsed-size: 3rem;
+	--z-island-collapsed-size: 3.25rem;
 	--z-island-gutter: 0.75rem;
 	--z-island-clearance: calc(
-		var(--z-island-height) + var(--z-island-gutter) * 2 + env(safe-area-inset-bottom, 0px)
+		var(--z-island-height) + var(--z-island-gutter) + env(safe-area-inset-bottom, 0px)
 	);
 	/* Motion — fast, smooth, invisible until you notice them */
 	--z-motion-fast: 150ms;

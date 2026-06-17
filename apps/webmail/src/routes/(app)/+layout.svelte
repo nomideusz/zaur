@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import AppShellHeader from '$lib/components/shell/AppShellHeader.svelte';
 	import MobileIsland from '$lib/components/shell/island/MobileIsland.svelte';
+	import NavDrawer from '$lib/components/shell/NavDrawer.svelte';
 	import WelcomeOnboarding from '$lib/components/shell/WelcomeOnboarding.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import ToastStack from '$lib/components/ui/ToastStack.svelte';
@@ -101,6 +102,7 @@
 			{@render children()}
 		</main>
 		<MobileIsland />
+		<NavDrawer />
 		<WelcomeOnboarding />
 		<ConfirmDialog />
 		<ToastStack />

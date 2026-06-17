@@ -1,6 +1,6 @@
 import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 
-/* Hysteresis keeps the island from flickering on small scroll jitters. */
+/* Hysteresis keeps the context bar from flickering on small scroll jitters. */
 const COLLAPSE_AFTER_PX = 32;
 const EXPAND_AFTER_PX = 16;
 const NEAR_TOP_PX = 48;
@@ -8,10 +8,8 @@ const NEAR_TOP_PX = 48;
 const MIN_SCROLL_RANGE_PX = 200;
 
 /**
- * Collapses/expands the mobile island based on scroll direction. All app
- * scrolling happens in inner panes (never the window), so a single
- * capture-phase document listener observes every scroller without
- * per-screen wiring. Returns a detach function.
+ * Collapses the floating island while scrolling the message list.
+ * Returns a detach function.
  */
 export function attachIslandScrollEngine(): () => void {
 	const lastScrollTop = new WeakMap<Element, number>();

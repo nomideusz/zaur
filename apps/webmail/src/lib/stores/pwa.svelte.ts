@@ -51,6 +51,8 @@ class PwaStore {
 	}
 
 	private onBeforeInstallPrompt = (event: Event) => {
+		// Defer Chrome's mini-infobar so InstallPrompt can call prompt() on user action.
+		// DevTools logs "Banner not shown…" here — expected; not an error.
 		event.preventDefault();
 		this.deferredPrompt = event as BeforeInstallPromptEvent;
 

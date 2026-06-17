@@ -54,8 +54,7 @@ export function appNavItems(): AppNavItem[] {
 }
 
 /**
- * App switcher items plus the Search/Settings utilities the mobile island
- * appends — one list so the island nav and its collapsed-pill glyph agree.
+ * App switcher items plus Search/Settings for the mobile tab bar.
  * Search lives under /mail/*, so Mail is suppressed while searching.
  */
 export function mobileNavItems(): AppNavItem[] {

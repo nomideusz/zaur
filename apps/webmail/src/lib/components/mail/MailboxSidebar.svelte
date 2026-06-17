@@ -17,10 +17,12 @@
 	interface Props {
 		class?: string;
 		variant?: 'sidebar' | 'drawer';
+		/** Inside the combined nav drawer — no duplicate close chrome. */
+		embedded?: boolean;
 		onClose?: () => void;
 	}
 
-	let { class: className = '', variant = 'sidebar', onClose }: Props = $props();
+	let { class: className = '', variant = 'sidebar', embedded = false, onClose }: Props = $props();
 
 	const mailboxGroups = $derived(sidebarMailboxGroups(mail.mailboxes));
 
@@ -145,7 +147,7 @@
 				<h2 class="z-type-label">Mailboxes</h2>
 				<p class="mt-1 text-xs text-fg-muted">{mail.messagesTotal} messages</p>
 			</div>
-			{#if onClose}
+			{#if onClose && !embedded}
 				<button
 					type="button"
 					class="z-btn-icon -mr-1 shrink-0"
