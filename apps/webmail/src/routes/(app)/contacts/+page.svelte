@@ -275,23 +275,25 @@
 			</form>
 		{/if}
 
-		<label class="relative block">
-			<span class="sr-only">Search contacts</span>
-			<Search
-				class={cn(
-					'pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-subtle'
-				)}
-			/>
-			<input
-				type="search"
-				enterkeyhint="search"
-				inputmode="search"
-				class="z-sidebar-search-input"
-				placeholder="Search contacts…"
-				bind:this={searchInput}
-				bind:value={query}
-			/>
-		</label>
+		{#if settings.showSearchBar}
+			<label class="relative block">
+				<span class="sr-only">Search contacts</span>
+				<Search
+					class={cn(
+						'pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-subtle'
+					)}
+				/>
+				<input
+					type="search"
+					enterkeyhint="search"
+					inputmode="search"
+					class="z-sidebar-search-input"
+					placeholder="Search contacts…"
+					bind:this={searchInput}
+					bind:value={query}
+				/>
+			</label>
+		{/if}
 
 		{#if showLetterNav}
 			<ContactLetterRail

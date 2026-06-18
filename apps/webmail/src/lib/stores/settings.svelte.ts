@@ -57,6 +57,7 @@ const STORAGE = {
 	bccSelf: 'zaur:bcc-self',
 	timeFormat: 'zaur:time-format',
 	hideActionToasts: 'zaur:hide-action-toasts',
+	showSearchBar: 'zaur:show-search-bar',
 	calendarWeekStartsOnMonday: 'zaur:calendar-week-starts-on-monday',
 	hideCalendarEventTimes: 'zaur:hide-calendar-event-times',
 	calendarMaxEventsPerDay: 'zaur:calendar-max-events-per-day',
@@ -238,6 +239,10 @@ function readHideActionToasts(): boolean {
 	return readBool(STORAGE.hideActionToasts, false);
 }
 
+function readShowSearchBar(): boolean {
+	return readBool(STORAGE.showSearchBar, true);
+}
+
 function readCalendarWeekStartsOnMonday(): boolean {
 	return readBool(STORAGE.calendarWeekStartsOnMonday, true);
 }
@@ -304,6 +309,7 @@ class SettingsStore {
 	bccSelf = $state(readBccSelf());
 	timeFormat = $state<TimeFormat>(readTimeFormat());
 	hideActionToasts = $state(readHideActionToasts());
+	showSearchBar = $state(readShowSearchBar());
 	calendarWeekStartsOnMonday = $state(readCalendarWeekStartsOnMonday());
 	hideCalendarEventTimes = $state(readHideCalendarEventTimes());
 	calendarMaxEventsPerDay = $state<CalendarMaxEventsPerDay>(readCalendarMaxEventsPerDay());
@@ -350,6 +356,7 @@ class SettingsStore {
 		this.bccSelf = readBccSelf();
 		this.timeFormat = readTimeFormat();
 		this.hideActionToasts = readHideActionToasts();
+		this.showSearchBar = readShowSearchBar();
 		this.calendarWeekStartsOnMonday = readCalendarWeekStartsOnMonday();
 		this.hideCalendarEventTimes = readHideCalendarEventTimes();
 		this.calendarMaxEventsPerDay = readCalendarMaxEventsPerDay();
@@ -640,6 +647,11 @@ class SettingsStore {
 	setHideActionToasts(value: boolean) {
 		this.hideActionToasts = value;
 		if (browser) this.writeStorage(STORAGE.hideActionToasts, String(value));
+	}
+
+	setShowSearchBar(value: boolean) {
+		this.showSearchBar = value;
+		if (browser) this.writeStorage(STORAGE.showSearchBar, String(value));
 	}
 
 	setCalendarWeekStartsOnMonday(value: boolean) {

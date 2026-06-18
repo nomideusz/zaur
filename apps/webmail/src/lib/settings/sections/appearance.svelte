@@ -41,3 +41,16 @@
 		/>
 	</SettingsRow>
 </SettingsGroup>
+
+<SettingsGroup title="Navigation">
+	<SettingsRow
+		kind="toggle"
+		title="Show search bar"
+		description="Show the search bar at the top of mail, contacts, calendar, and settings. You can also hide it from the bar itself."
+	>
+		<Switch
+			checked={settings.showSearchBar}
+			onchange={(checked) => settings.setShowSearchBar(checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>

@@ -2,6 +2,7 @@
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import AppShellHeader from '$lib/components/shell/AppShellHeader.svelte';
+	import MobileSearchBar from '$lib/components/shell/MobileSearchBar.svelte';
 	import MobileIsland from '$lib/components/shell/island/MobileIsland.svelte';
 	import NavDrawer from '$lib/components/shell/NavDrawer.svelte';
 	import WelcomeOnboarding from '$lib/components/shell/WelcomeOnboarding.svelte';
@@ -99,6 +100,7 @@
 			style="padding-top: env(safe-area-inset-top, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);"
 			tabindex="-1"
 		>
+			<MobileSearchBar />
 			{@render children()}
 		</main>
 		<MobileIsland />

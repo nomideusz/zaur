@@ -84,3 +84,35 @@ export function activeMobileNavItem(path: string): AppNavItem | undefined {
 	return items.find((item) => (item.id === 'mail' && onSearch ? false : item.isActive(path)));
 }
 
+export type TopSearchSection = {
+	id: 'mail' | 'calendar';
+	searchHref: string;
+	placeholder: string;
+};
+
+/**
+ * Sections that render the shared mobile top search bar. Contacts and Settings
+ * own richer inline searches (the contacts list filter and the settings search
+ * combobox), so they opt out here and gate those on `settings.showSearchBar`
+ * instead — the floating-island + top-search pattern stays consistent without
+ * stacking two search inputs.
+ */
+export function topSearchSection(path: string): TopSearchSection | undefined {
+	if (path.startsWith('/calendar')) {
+		return { id: 'calendar', searchHref: '/calendar/search', placeholder: 'Search events' };
+	}
+	if (path === '/' || isMailPath(path)) {
+		return { id: 'mail', searchHref: '/mail/search?focus=1', placeholder: 'Search mail' };
+	}
+	return undefined;
+}
+
+/** Focused full-screen views (compose, the reader, the search screens) hide the bar. */
+export function topSearchSuppressed(path: string): boolean {
+	if (path.startsWith('/mail/compose')) return true;
+	if (path.startsWith('/mail/search') || path.startsWith('/calendar/search')) return true;
+	// Mail thread reader is a focused full-screen view on mobile.
+	if (/^\/mail\/[^/]+\/[^/]+/.test(path)) return true;
+	return false;
+}
+

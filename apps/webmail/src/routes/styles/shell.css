@@ -398,3 +398,60 @@
 		flex: 1 1 0;
 		overflow: hidden;
 	}
+
+	/* Shared mobile top search bar — a tap-through field that opens a section's
+	   dedicated search screen. Phone-only; desktop search lives in the header. */
+	.z-mobile-search-bar {
+		display: flex;
+		flex-shrink: 0;
+		align-items: center;
+		gap: 0.5rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
+		background-color: var(--z-surface);
+		padding: 0.5rem 0.75rem;
+	}
+
+	.z-mobile-search-bar__field {
+		display: flex;
+		min-width: 0;
+		flex: 1 1 auto;
+		align-items: center;
+		gap: 0.5rem;
+		height: 2.5rem;
+		border: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
+		border-radius: var(--radius-lg);
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 80%, transparent);
+		padding-inline: 0.75rem;
+		font-size: 0.9375rem;
+	}
+
+	.z-mobile-search-bar__field:active {
+		background-color: var(--z-chrome-active);
+	}
+
+	.z-mobile-search-bar__hide {
+		display: grid;
+		flex-shrink: 0;
+		place-items: center;
+		width: 2.25rem;
+		height: 2.25rem;
+		border-radius: var(--radius-md);
+		color: var(--z-fg-subtle);
+	}
+
+	.z-mobile-search-bar__hide:hover {
+		color: var(--z-fg);
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
+	}
+
+	.z-mobile-search-bar__hide:focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: -2px;
+	}
+
+	/* Dedicated section search screens — header row with a back button + input. */
+	.z-search-screen__header {
+		border-bottom: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
+		background-color: var(--z-surface);
+		padding: 0.5rem 0.75rem;
+	}

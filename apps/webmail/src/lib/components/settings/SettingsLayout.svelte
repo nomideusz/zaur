@@ -6,6 +6,7 @@
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
 	import { settingsShellClass } from '$lib/mail/layout';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 	import type { Snippet } from 'svelte';
 
@@ -31,9 +32,11 @@
 		<div class="shrink-0 border-b border-border/80 px-4 py-3">
 			<h2 class="z-type-label">Settings</h2>
 		</div>
-		<div class="px-3 pt-3 pb-2 shrink-0">
-			<SettingsSearch />
-		</div>
+		{#if settings.showSearchBar}
+			<div class="px-3 pt-3 pb-2 shrink-0">
+				<SettingsSearch />
+			</div>
+		{/if}
 
 		<ScrollArea class="min-h-0 flex-1">
 			<nav class="p-2.5">
@@ -68,7 +71,9 @@
 			class="z-settings-mobile-toolbar flex shrink-0 flex-col gap-2 border-b border-border/80 py-2.5 md:hidden"
 		>
 			<MobileSettingsShellNav />
-			<SettingsSearch />
+			{#if settings.showSearchBar}
+				<SettingsSearch />
+			{/if}
 		</div>
 		<ScrollArea pane class="min-h-0 flex-1">
 			<div class={cn(settingsShellClass(), 'flex min-h-full flex-col')}>

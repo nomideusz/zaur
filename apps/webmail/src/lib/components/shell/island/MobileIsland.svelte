@@ -13,8 +13,9 @@
 	import IslandMailTabs from './IslandMailTabs.svelte';
 	import IslandMinimal from './IslandMinimal.svelte';
 	import IslandReaderActions from './IslandReaderActions.svelte';
+	import IslandSectionNav from './IslandSectionNav.svelte';
 
-	type IslandMode = 'mail' | 'bulk' | 'reader' | 'default';
+	type IslandMode = 'mail' | 'bulk' | 'reader' | 'section' | 'default';
 
 	const pathname = $derived($page.url.pathname);
 	const onMailCompose = $derived(pathname.startsWith('/mail/compose'));
@@ -23,15 +24,26 @@
 	const onMailList = $derived(
 		(pathname === '/' || isMailPath(pathname)) && !onMailCompose && !onMailSearch && !onMailThread
 	);
+	const onSection = $derived(
+		pathname.startsWith('/calendar') ||
+			pathname.startsWith('/contacts') ||
+			pathname.startsWith('/settings')
+	);
 
 	const islandMode = $derived.by((): IslandMode => {
 		if (onMailThread && mobileIsland.reader) return 'reader';
 		if (onMailList && mail.hasSelection && shellHeader.mail?.mailboxRouteId) return 'bulk';
 		if (onMailList) return 'mail';
+		if (onSection) return 'section';
 		return 'default';
 	});
 
-	const islandWide = $derived(islandMode === 'mail' || islandMode === 'bulk' || islandMode === 'reader');
+	const islandWide = $derived(
+		islandMode === 'mail' ||
+			islandMode === 'bulk' ||
+			islandMode === 'reader' ||
+			islandMode === 'section'
+	);
 	const scrollCollapsible = $derived(islandMode === 'mail');
 	const collapsed = $derived(scrollCollapsible && mobileIsland.collapsed);
 
@@ -107,6 +119,8 @@
 				<IslandBulkActions />
 			{:else if islandMode === 'mail'}
 				<IslandMailTabs />
+			{:else if islandMode === 'section'}
+				<IslandSectionNav />
 			{:else}
 				<IslandMinimal />
 			{/if}
