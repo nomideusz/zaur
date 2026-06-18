@@ -5,7 +5,16 @@ export type JmapEmailFilter = Record<string, unknown>;
 const OPERATOR_PATTERN =
 	/^(from|to|cc|subject|has|after|before|is):(?:"([^"]*)"|(\S+))$/i;
 
-export function parseSearchQuery(input: string): { filter: JmapEmailFilter; terms: string[] } {
+/**
+ * @param nameAddresses Email addresses resolved from the local contact index for
+ *   the free-text terms. Stalwart's full-text index is token-based (bloom filter),
+ *   so "Bart" can't match "Bartek" server-side; OR-ing in known correspondents'
+ *   addresses widens a name search to the people it likely means.
+ */
+export function parseSearchQuery(
+	input: string,
+	nameAddresses: string[] = []
+): { filter: JmapEmailFilter; terms: string[] } {
 	const trimmed = input.trim();
 	if (!trimmed) return { filter: { text: '' }, terms: [] };
 
@@ -77,7 +86,19 @@ export function parseSearchQuery(input: string): { filter: JmapEmailFilter; term
 	}
 
 	if (textTerms.length) {
-		filters.push({ text: textTerms.join(' ') });
+		const text = textTerms.join(' ');
+		if (nameAddresses.length) {
+			// Match the typed text OR mail from/to the resolved correspondents.
+			filters.push({
+				or: [
+					{ text },
+					...nameAddresses.map((address) => ({ from: address })),
+					...nameAddresses.map((address) => ({ to: address }))
+				]
+			});
+		} else {
+			filters.push({ text });
+		}
 	}
 
 	if (!filters.length) return { filter: { text: trimmed }, terms: textTerms };

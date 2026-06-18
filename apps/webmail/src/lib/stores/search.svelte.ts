@@ -4,9 +4,24 @@ import { mapEmailPreview, resolveRouteMailboxId } from '$lib/jmap/map';
 import { isAccountSettingsSubject } from '$lib/settings/account-settings-types';
 import type { JMAPEmail } from '$lib/jmap/types';
 import type { Mailbox, MessagePreview } from '$lib/types/mail';
-import { recordMessages } from '$lib/utils/contact-index';
+import { listContacts, recordMessages } from '$lib/utils/contact-index';
+import { parseSearchQuery } from '$lib/mail/search-query';
 
 const PAGE_SIZE = 50;
+
+/**
+ * Stalwart's full-text index is token-based, so a partial name ("Bart") never
+ * matches a fuller one ("Bartek"). Resolve the free-text terms against the local
+ * contact index and return the matching correspondents' addresses so the query
+ * can also match mail from/to them.
+ */
+function resolveNameAddresses(accountId: string | null, query: string): string[] {
+	if (!browser || !accountId) return [];
+	const { terms } = parseSearchQuery(query);
+	if (!terms.length) return [];
+	const matches = listContacts(accountId, terms.join(' ')).slice(0, 8);
+	return [...new Set(matches.map((contact) => contact.email))];
+}
 
 function mapVisibleSearchPreviews(emails: JMAPEmail[], mailboxes: Mailbox[]): MessagePreview[] {
 	return emails
@@ -27,6 +42,7 @@ function indexSearchContacts(previews: MessagePreview[]) {
 class SearchStore {
 	query = $state('');
 	mailboxId = $state<string | null>(null);
+	nameAddresses: string[] = [];
 	results = $state<MessagePreview[]>([]);
 	loading = $state(false);
 	loadingMore = $state(false);
@@ -52,6 +68,8 @@ class SearchStore {
 			return;
 		}
 
+		this.nameAddresses = resolveNameAddresses(client.getAccountId(), trimmed);
+
 		this.loading = true;
 		this.error = null;
 
@@ -60,7 +78,8 @@ class SearchStore {
 				trimmed,
 				PAGE_SIZE,
 				0,
-				mailboxId ?? undefined
+				mailboxId ?? undefined,
+				this.nameAddresses
 			);
 			this.results = mapVisibleSearchPreviews(emails, mailboxes);
 			this.total = total;
@@ -86,7 +105,8 @@ class SearchStore {
 				this.query,
 				PAGE_SIZE,
 				position,
-				this.mailboxId ?? undefined
+				this.mailboxId ?? undefined,
+				this.nameAddresses
 			);
 			const previews = mapVisibleSearchPreviews(emails, mailboxes);
 			this.results = [...this.results, ...previews];
@@ -102,6 +122,7 @@ class SearchStore {
 	reset() {
 		this.query = '';
 		this.mailboxId = null;
+		this.nameAddresses = [];
 		this.results = [];
 		this.loading = false;
 		this.loadingMore = false;

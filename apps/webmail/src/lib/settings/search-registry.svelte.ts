@@ -44,10 +44,13 @@ class SettingsSearchRegistry {
 			.slice(0, 12);
 	}
 
-	matchesRow(title: string, description?: string): boolean {
-		const q = this.query.trim().toLowerCase();
-		if (!q) return true;
-		return `${title} ${description ?? ''}`.toLowerCase().includes(q);
+	/**
+	 * Rows stay visible while searching — the combobox dropdown is the single place
+	 * results are shown. (Filtering the page inline as well made every current-page
+	 * match appear twice: once in the dropdown, once on the page behind it.)
+	 */
+	matchesRow(_title: string, _description?: string): boolean {
+		return true;
 	}
 
 	scrollTo(id: string) {
