@@ -52,6 +52,4 @@
 			</SegmentGroup>
 		</SegmentGroupScroll>
 	</nav>
-
-	<div class="size-11 shrink-0" aria-hidden="true"></div>
 </div>

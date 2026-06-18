@@ -239,9 +239,10 @@
 				{/if}
 				<Button variant="ghost" onclick={goToday}>Today</Button>
 
-				<div class="h-4 w-px bg-border/80" aria-hidden="true"></div>
+				<!-- Desktop keeps the view switcher inline; mobile moves it to the island. -->
+				<div class="hidden h-4 w-px bg-border/80 md:block" aria-hidden="true"></div>
 
-				<Tabs.List class="flex items-center rounded-lg border border-border/50 bg-surface-sunken/60 p-0.5">
+				<Tabs.List class="hidden items-center rounded-lg border border-border/50 bg-surface-sunken/60 p-0.5 md:flex">
 					{#each tabs as tab (tab.id)}
 						<Tabs.Trigger
 							value={tab.id}

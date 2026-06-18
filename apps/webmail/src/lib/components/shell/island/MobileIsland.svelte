@@ -12,6 +12,7 @@
 	import IslandBulkActions from './IslandBulkActions.svelte';
 	import IslandMailTabs from './IslandMailTabs.svelte';
 	import IslandMinimal from './IslandMinimal.svelte';
+	import IslandCalendarNav from './IslandCalendarNav.svelte';
 	import IslandReaderActions from './IslandReaderActions.svelte';
 	import IslandSectionNav from './IslandSectionNav.svelte';
 	import IslandSettingsNav from './IslandSettingsNav.svelte';
@@ -26,9 +27,8 @@
 		(pathname === '/' || isMailPath(pathname)) && !onMailCompose && !onMailSearch && !onMailThread
 	);
 	const onSettings = $derived(pathname.startsWith('/settings'));
-	const onSection = $derived(
-		pathname.startsWith('/calendar') || pathname.startsWith('/contacts') || onSettings
-	);
+	const onCalendar = $derived(pathname.startsWith('/calendar'));
+	const onSection = $derived(onCalendar || pathname.startsWith('/contacts') || onSettings);
 
 	const islandMode = $derived.by((): IslandMode => {
 		if (onMailThread && mobileIsland.reader) return 'reader';
@@ -44,7 +44,7 @@
 			islandMode === 'reader' ||
 			islandMode === 'section'
 	);
-	const scrollCollapsible = $derived(islandMode === 'mail');
+	const scrollCollapsible = $derived(islandMode === 'mail' || islandMode === 'section');
 	const collapsed = $derived(scrollCollapsible && mobileIsland.collapsed);
 
 	$effect(() => {
@@ -122,6 +122,8 @@
 			{:else if islandMode === 'section'}
 				{#if onSettings}
 					<IslandSettingsNav />
+				{:else if onCalendar}
+					<IslandCalendarNav />
 				{:else}
 					<IslandSectionNav />
 				{/if}
@@ -134,7 +136,7 @@
 			<button
 				type="button"
 				class="z-mobile-island__pill"
-				aria-label="Expand mail navigation"
+				aria-label="Expand navigation"
 				onclick={() => mobileIsland.expand()}
 			>
 				<Menu class="size-5" aria-hidden="true" />
