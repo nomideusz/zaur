@@ -1,13 +1,15 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import CalendarIcon from '$lib/components/icons/Calendar.svelte';
-	import MobileSearchScreen from '$lib/components/shell/MobileSearchScreen.svelte';
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 
-	let query = $state('');
+	/* Results for the top search bar's ?q — the bar is the input, this is the list. */
+	const query = $derived(page.url.searchParams.get('q')?.trim() ?? '');
 
 	const matches = $derived.by(() => {
-		const q = query.trim().toLowerCase();
+		const q = query.toLowerCase();
 		if (!q) return [];
 		return calendar.events
 			.filter((event) => `${event.title} ${event.location ?? ''}`.toLowerCase().includes(q))
@@ -30,17 +32,12 @@
 </script>
 
 <svelte:head>
-	<title>Search events · ZAUR Webmail</title>
+	<title>{query ? `${query} · Search` : 'Search'} · Calendar · ZAUR</title>
 </svelte:head>
 
-<MobileSearchScreen
-	bind:value={query}
-	placeholder="Search events"
-	backHref="/calendar"
-	backLabel="Back to calendar"
->
-	{#snippet results()}
-		{#if query.trim() && matches.length}
+<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+	<ScrollArea pane class="min-h-0 flex-1">
+		{#if query && matches.length}
 			<ul class="divide-y divide-border">
 				{#each matches as event (event.id)}
 					<li>
@@ -68,21 +65,13 @@
 				</div>
 				<div>
 					<p class="text-sm font-semibold text-fg">
-						{#if query.trim()}
-							No events match your search
-						{:else}
-							Search your events
-						{/if}
+						{query ? 'No events match your search' : 'Search your events'}
 					</p>
 					<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">
-						{#if query.trim()}
-							Try a different title or location.
-						{:else}
-							Find events by title or location.
-						{/if}
+						{query ? 'Try a different title or location.' : 'Find events by title or location.'}
 					</p>
 				</div>
 			</div>
 		{/if}
-	{/snippet}
-</MobileSearchScreen>
+	</ScrollArea>
+</div>

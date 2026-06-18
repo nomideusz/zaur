@@ -1,15 +1,17 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/state';
 	import Mail from '$lib/components/icons/Mail.svelte';
 	import Users from '$lib/components/icons/Users.svelte';
-	import MobileSearchScreen from '$lib/components/shell/MobileSearchScreen.svelte';
+	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { listContacts } from '$lib/utils/contact-index';
 
-	let query = $state('');
+	/* Results for the top search bar's ?q — the bar is the input, this is the list. */
+	const query = $derived(page.url.searchParams.get('q')?.trim() ?? '');
 
 	const matches = $derived.by(() =>
-		query.trim() ? listContacts(auth.client?.getAccountId() ?? null, query) : []
+		query ? listContacts(auth.client?.getAccountId() ?? null, query) : []
 	);
 
 	function openContact(email: string) {
@@ -18,17 +20,12 @@
 </script>
 
 <svelte:head>
-	<title>Search contacts · ZAUR Webmail</title>
+	<title>{query ? `${query} · Search` : 'Search'} · Contacts · ZAUR Webmail</title>
 </svelte:head>
 
-<MobileSearchScreen
-	bind:value={query}
-	placeholder="Search contacts"
-	backHref="/contacts"
-	backLabel="Back to contacts"
->
-	{#snippet results()}
-		{#if query.trim() && matches.length}
+<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+	<ScrollArea pane class="min-h-0 flex-1">
+		{#if query && matches.length}
 			<ul class="divide-y divide-border">
 				{#each matches as contact (contact.email)}
 					<li>
@@ -56,15 +53,13 @@
 				</div>
 				<div>
 					<p class="text-sm font-semibold text-fg">
-						{query.trim() ? 'No contacts match your search' : 'Search your contacts'}
+						{query ? 'No contacts match your search' : 'Search your contacts'}
 					</p>
 					<p class="mx-auto mt-1 max-w-xs text-xs text-fg-muted">
-						{query.trim()
-							? 'Try a different name or email address.'
-							: 'Find people by name or email.'}
+						{query ? 'Try a different name or email address.' : 'Find people by name or email.'}
 					</p>
 				</div>
 			</div>
 		{/if}
-	{/snippet}
-</MobileSearchScreen>
+	</ScrollArea>
+</div>

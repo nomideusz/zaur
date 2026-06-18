@@ -86,40 +86,55 @@ export function activeMobileNavItem(path: string): AppNavItem | undefined {
 
 export type TopSearchSection = {
 	id: 'mail' | 'calendar' | 'contacts';
-	searchHref: string;
 	placeholder: string;
+	/** Route that renders this section's search results (the bar drives its ?q). */
+	searchPath: string;
+	/** Where clearing the search returns to. */
+	homePath: string;
 };
 
 /**
- * Sections that render the shared mobile top search bar, each routing to its own
- * dedicated search screen. Settings owns a richer inline search combobox, so it
- * opts out here and gates that on `settings.showSearchBar` instead — the
- * floating-island + top-search pattern stays consistent without stacking two
- * search inputs.
+ * Sections that render the shared mobile top search bar. The bar is the single
+ * search input — it drives the section's results route via ?q and persists across
+ * the list → results transition, so there's never a second, different-looking
+ * field. Settings owns a richer inline search combobox and opts out here.
  */
 export function topSearchSection(path: string): TopSearchSection | undefined {
 	if (path.startsWith('/calendar')) {
-		return { id: 'calendar', searchHref: '/calendar/search', placeholder: 'Search events' };
+		return {
+			id: 'calendar',
+			placeholder: 'Search events',
+			searchPath: '/calendar/search',
+			homePath: '/calendar'
+		};
 	}
 	if (path.startsWith('/contacts')) {
-		return { id: 'contacts', searchHref: '/contacts/search', placeholder: 'Search contacts' };
+		return {
+			id: 'contacts',
+			placeholder: 'Search contacts',
+			searchPath: '/contacts/search',
+			homePath: '/contacts'
+		};
 	}
 	if (path === '/' || isMailPath(path)) {
-		return { id: 'mail', searchHref: '/mail/search?focus=1', placeholder: 'Search mail' };
+		return {
+			id: 'mail',
+			placeholder: 'Search all mail',
+			searchPath: '/mail/search',
+			homePath: settings.preferredMailHref()
+		};
 	}
 	return undefined;
 }
 
-/** Focused full-screen views (compose, the reader, the search screens) hide the bar. */
+/** True when `path` is a section's search-results route (the bar owns its ?q there). */
+export function isSectionSearchRoute(path: string): boolean {
+	return path === '/mail/search' || path === '/contacts/search' || path === '/calendar/search';
+}
+
+/** Focused full-screen views (compose, the reader) hide the bar. */
 export function topSearchSuppressed(path: string): boolean {
 	if (path.startsWith('/mail/compose')) return true;
-	if (
-		path.startsWith('/mail/search') ||
-		path.startsWith('/calendar/search') ||
-		path.startsWith('/contacts/search')
-	) {
-		return true;
-	}
 	// Mail thread reader is a focused full-screen view on mobile.
 	if (/^\/mail\/[^/]+\/[^/]+/.test(path)) return true;
 	return false;
