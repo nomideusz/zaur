@@ -14,7 +14,16 @@
 	const pathname = $derived(page.url.pathname);
 	const section = $derived(topSearchSection(pathname));
 	const visible = $derived(settings.showSearchBar && !!section && !topSearchSuppressed(pathname));
-	const onResults = $derived(isSectionSearchRoute(pathname));
+
+	// Mail searches in-place on the current mailbox route (results render right
+	// there via ?q), so it never swaps to a separate page. Calendar/Contacts open
+	// their dedicated results route.
+	const inPlace = $derived(section?.id === 'mail');
+	const searchBase = $derived(inPlace ? pathname : (section?.searchPath ?? pathname));
+	const clearBase = $derived(inPlace ? pathname : (section?.homePath ?? pathname));
+	const onResults = $derived(
+		inPlace ? page.url.searchParams.has('q') : isSectionSearchRoute(pathname)
+	);
 
 	let value = $state('');
 	let inputEl = $state<HTMLInputElement | null>(null);
@@ -32,13 +41,13 @@
 		if (!section) return;
 		const trimmed = next.trim();
 		if (trimmed) {
-			void goto(`${section.searchPath}?q=${encodeURIComponent(trimmed)}`, {
+			void goto(`${searchBase}?q=${encodeURIComponent(trimmed)}`, {
 				replaceState: onResults,
 				keepFocus: true,
 				noScroll: true
 			});
 		} else {
-			void goto(section.homePath, { keepFocus: true, noScroll: true });
+			void goto(clearBase, { keepFocus: true, noScroll: true });
 		}
 	}
 
@@ -58,7 +67,7 @@
 	function clear() {
 		if (timer) clearTimeout(timer);
 		value = '';
-		if (section) void goto(section.homePath, { noScroll: true });
+		void goto(clearBase, { noScroll: true });
 		inputEl?.focus();
 	}
 </script>

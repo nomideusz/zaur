@@ -23,6 +23,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { listContacts } from '$lib/utils/contact-index';
 	import { searchOperatorHint } from '$lib/mail/search-query';
+	import { isMailPath } from '$lib/mail/routes';
 	import { cn } from '$lib/utils/cn';
 
 	interface Props {
@@ -59,7 +60,8 @@
 	let advBeforeDate = $state('');
 
 	$effect(() => {
-		if ($page.url.pathname === '/mail/search') {
+		// Search is shown in-place on the mailbox list (?q), so mirror it on any mail route.
+		if (isMailPath($page.url.pathname)) {
 			input = $page.url.searchParams.get('q') ?? '';
 		}
 	});
@@ -166,7 +168,8 @@
 		if (!query) return;
 		open = false;
 		advancedExpanded = false;
-		goto(`/mail/search?${new URLSearchParams({ q: query }).toString()}`);
+		// Search renders in-place on the inbox list via ?q (no separate search page).
+		goto(`/?${new URLSearchParams({ q: query }).toString()}`);
 	}
 
 	// --- Keyboard ------------------------------------------------------------
@@ -342,7 +345,7 @@
 
 		const params = new URLSearchParams({ q: query });
 		if (advMailboxId) params.set('mailbox', advMailboxId);
-		goto(`/mail/search?${params.toString()}`);
+		goto(`/?${params.toString()}`);
 	}
 
 	function clearAdvanced() {
