@@ -205,3 +205,13 @@
 		@apply text-xs tabular-nums text-fg-subtle no-underline;
 		line-height: 1.55;
 	}
+
+	/* Mobile: text action buttons (Reply, Send, and similar) grow to a 2.75rem
+	   touch target so they match the icon buttons they sit beside — e.g. the
+	   island's "…" more button. Split controls (compose Send ▾, reader Reply ▾)
+	   stretch their segments, so both halves follow this height. */
+	@media (max-width: 767px) {
+		:is(.z-mail-view, .z-settings-view, .z-mobile-island) .z-mail-text-nav__action--pill {
+			min-height: 2.75rem;
+		}
+	}
