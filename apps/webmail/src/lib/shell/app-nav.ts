@@ -85,21 +85,24 @@ export function activeMobileNavItem(path: string): AppNavItem | undefined {
 }
 
 export type TopSearchSection = {
-	id: 'mail' | 'calendar';
+	id: 'mail' | 'calendar' | 'contacts';
 	searchHref: string;
 	placeholder: string;
 };
 
 /**
- * Sections that render the shared mobile top search bar. Contacts and Settings
- * own richer inline searches (the contacts list filter and the settings search
- * combobox), so they opt out here and gate those on `settings.showSearchBar`
- * instead — the floating-island + top-search pattern stays consistent without
- * stacking two search inputs.
+ * Sections that render the shared mobile top search bar, each routing to its own
+ * dedicated search screen. Settings owns a richer inline search combobox, so it
+ * opts out here and gates that on `settings.showSearchBar` instead — the
+ * floating-island + top-search pattern stays consistent without stacking two
+ * search inputs.
  */
 export function topSearchSection(path: string): TopSearchSection | undefined {
 	if (path.startsWith('/calendar')) {
 		return { id: 'calendar', searchHref: '/calendar/search', placeholder: 'Search events' };
+	}
+	if (path.startsWith('/contacts')) {
+		return { id: 'contacts', searchHref: '/contacts/search', placeholder: 'Search contacts' };
 	}
 	if (path === '/' || isMailPath(path)) {
 		return { id: 'mail', searchHref: '/mail/search?focus=1', placeholder: 'Search mail' };
@@ -110,7 +113,13 @@ export function topSearchSection(path: string): TopSearchSection | undefined {
 /** Focused full-screen views (compose, the reader, the search screens) hide the bar. */
 export function topSearchSuppressed(path: string): boolean {
 	if (path.startsWith('/mail/compose')) return true;
-	if (path.startsWith('/mail/search') || path.startsWith('/calendar/search')) return true;
+	if (
+		path.startsWith('/mail/search') ||
+		path.startsWith('/calendar/search') ||
+		path.startsWith('/contacts/search')
+	) {
+		return true;
+	}
 	// Mail thread reader is a focused full-screen view on mobile.
 	if (/^\/mail\/[^/]+\/[^/]+/.test(path)) return true;
 	return false;

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { page } from '$app/stores';
 	import Mail from '$lib/components/icons/Mail.svelte';
 	import Search from '$lib/components/icons/Search.svelte';
 	import UserPlus from '$lib/components/icons/UserPlus.svelte';
@@ -158,6 +159,19 @@
 		selectLetter(null);
 	}
 
+	// The mobile search screen hands a contact back via ?email=; select it, then
+	// strip the param so it doesn't re-fire on later state changes.
+	$effect(() => {
+		const email = $page.url.searchParams.get('email');
+		if (!email) return;
+		selectedEmail = email;
+		selectedLetter = null;
+		query = '';
+		const url = new URL($page.url);
+		url.searchParams.delete('email');
+		void goto(`${url.pathname}${url.search}`, { replaceState: true, noScroll: true });
+	});
+
 	$effect(() => {
 		const generation = shellHeader.setPage({
 			title: listTitle,
@@ -276,7 +290,8 @@
 		{/if}
 
 		{#if settings.showSearchBar}
-			<label class="relative block">
+			<!-- Desktop keeps the inline filter; mobile searches from the top bar. -->
+			<label class="relative hidden md:block">
 				<span class="sr-only">Search contacts</span>
 				<Search
 					class={cn(
@@ -295,14 +310,6 @@
 			</label>
 		{/if}
 
-		{#if showLetterNav}
-			<ContactLetterRail
-				variant="horizontal"
-				letters={availableLetters}
-				{selectedLetter}
-				onSelectLetter={selectLetter}
-			/>
-		{/if}
 	</div>
 
 	<div class="relative flex min-h-0 flex-1 flex-col overflow-hidden">
@@ -316,7 +323,7 @@
 
 		<ScrollArea pane class="min-h-0 flex-1">
 		{#if contacts.length}
-			<div class={cn(showLetterNav && 'md:pr-12')}>
+			<div class={cn(showLetterNav && 'pr-9 md:pr-12')}>
 				{#each groupedContacts as [letter, group] (letter)}
 					<section>
 						<h3 class="sticky top-0 z-[1] bg-surface/95 px-4 py-1.5 text-xs font-medium uppercase tracking-wide text-fg-subtle backdrop-blur-sm">
