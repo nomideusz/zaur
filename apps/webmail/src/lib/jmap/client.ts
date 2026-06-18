@@ -1001,10 +1001,9 @@ export class JMAPClient {
 		query: string,
 		limit = 50,
 		position = 0,
-		mailboxId?: string,
-		nameAddresses: string[] = []
+		mailboxId?: string
 	): Promise<EmailQueryResult> {
-		const { filter } = parseSearchQuery(query, nameAddresses);
+		const { filter } = parseSearchQuery(query);
 		const scopedFilter = mailboxId ? { and: [{ inMailbox: mailboxId }, filter] } : filter;
 
 		const response = await this.request([

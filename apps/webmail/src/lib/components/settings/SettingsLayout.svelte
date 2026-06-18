@@ -19,6 +19,19 @@
 
 	const sectionLinks = $derived(settingsNavLinks());
 	const pathname = $derived($page.url.pathname);
+
+	// The sidebar (desktop) and toolbar (mobile) each host a SettingsSearch, but
+	// its dropdown portals to <body> — so a CSS-hidden instance would still show
+	// its results, duplicating them. Mount only the instance for the live
+	// breakpoint so exactly one dropdown can ever render.
+	let isDesktop = $state(false);
+	$effect(() => {
+		const mq = window.matchMedia('(min-width: 768px)');
+		isDesktop = mq.matches;
+		const onChange = (e: MediaQueryListEvent) => (isDesktop = e.matches);
+		mq.addEventListener('change', onChange);
+		return () => mq.removeEventListener('change', onChange);
+	});
 </script>
 
 <div class="z-settings-page {settingsRootClass} flex min-h-0 flex-1 flex-row overflow-hidden bg-surface">
@@ -31,7 +44,7 @@
 		<div class="shrink-0 border-b border-border/80 px-4 py-3">
 			<h2 class="z-type-label">Settings</h2>
 		</div>
-		{#if settings.showSearchBar}
+		{#if settings.showSearchBar && isDesktop}
 			<div class="px-3 pt-3 pb-2 shrink-0">
 				<SettingsSearch />
 			</div>
@@ -66,7 +79,7 @@
 
 	<!-- Main content -->
 	<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-		{#if settings.showSearchBar}
+		{#if settings.showSearchBar && !isDesktop}
 			<!-- Mobile top is search only; category nav lives in the floating island. -->
 			<div
 				class="z-settings-mobile-toolbar flex shrink-0 flex-col gap-2 border-b border-border/80 py-2.5 md:hidden"
