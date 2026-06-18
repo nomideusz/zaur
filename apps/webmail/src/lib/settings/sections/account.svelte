@@ -119,6 +119,7 @@
 	{#each auth.accounts as account (account.key)}
 		<SettingsRow
 			kind="action"
+			searchable={false}
 			title={account.displayName}
 			description={account.displayName.trim().toLowerCase() !== account.username.trim().toLowerCase()
 				? account.username
@@ -207,7 +208,7 @@
 
 	{#if auth.identities.length > 1}
 		{#each auth.identities as identity (identity.id)}
-			<SettingsRow kind="info" title={identity.name?.trim() || identity.email}>
+			<SettingsRow kind="info" searchable={false} title={identity.name?.trim() || identity.email}>
 				<div class="flex flex-col items-end">
 					<span class="text-fg">{identity.email}</span>
 					{#if identity.name?.trim() && identity.name !== identity.email}

@@ -34,9 +34,10 @@
 	setContext(SETTINGS_A11Y, a11yIds);
 
 	onMount(() => {
+		const id = rowId;
 		const href = get(page).url.pathname;
-		settingsSearch.register({ id: rowId, title, description: description ?? '', href });
-		return () => settingsSearch.unregister(rowId);
+		settingsSearch.register({ id, title, description: description ?? '', href });
+		return () => settingsSearch.unregister(id);
 	});
 
 	$effect(() => {

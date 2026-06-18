@@ -16,12 +16,15 @@
 		title,
 		description,
 		kind = 'info',
+		searchable = true,
 		children
 	}: {
 		title: string;
 		description?: string;
 		/** toggle: label + switch · menu: label + picker · action: label + button · info: label + value */
 		kind?: SettingsRowKind;
+		/** Off for dynamic list rows (e.g. one per account) — they aren't searchable settings. */
+		searchable?: boolean;
 		children: import('svelte').Snippet;
 	} = $props();
 
@@ -42,9 +45,14 @@
 	setContext(SETTINGS_A11Y, a11yIds);
 
 	onMount(() => {
+		if (!searchable) return;
+		// Capture the id at registration — rowId is reactive and can change before
+		// the cleanup runs (e.g. pathname updates mid-navigation), which would leak
+		// the entry under its old id.
+		const id = rowId;
 		const href = get(page).url.pathname;
-		settingsSearch.register({ id: rowId, title, description: description ?? '', href });
-		return () => settingsSearch.unregister(rowId);
+		settingsSearch.register({ id, title, description: description ?? '', href });
+		return () => settingsSearch.unregister(id);
 	});
 
 	$effect(() => {
