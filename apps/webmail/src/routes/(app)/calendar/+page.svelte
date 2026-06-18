@@ -251,15 +251,6 @@
 						</Tabs.Trigger>
 					{/each}
 				</Tabs.List>
-
-				<!-- Desktop keeps the shell-header New event pill. -->
-				<button
-					type="button"
-					class="z-mail-text-nav__action z-mail-text-nav__action--pill shrink-0 md:hidden"
-					onclick={() => calendar.openCompose()}
-				>
-					New
-				</button>
 			</div>
 		</div>
 

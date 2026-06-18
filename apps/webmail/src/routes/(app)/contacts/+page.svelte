@@ -228,24 +228,11 @@
 		<h2 class="z-type-pane-title min-w-0 truncate">{listTitle}</h2>
 	</div>
 
-	<div class="flex shrink-0 flex-col gap-3 border-b border-border/80 px-4 py-3">
-		<!-- Mobile title + Add — the shell header is desktop-only. -->
-		<div class="flex items-center justify-between gap-2 md:hidden">
-			<h2 class="z-type-pane-title min-w-0 truncate">{listTitle}</h2>
-			<button
-				type="button"
-				class="z-mail-text-nav__action z-mail-text-nav__action--pill shrink-0"
-				onclick={() => {
-					showAddForm = true;
-					selectedEmail = null;
-				}}
-			>
-				Add
-			</button>
-		</div>
-
+	<!-- Mobile chrome is just the top search bar + island; the title and Add live
+	     there. Desktop keeps an inline search and the add form renders inline. -->
+	<div class="contents">
 		{#if showAddForm}
-			<form class="mb-3 grid gap-3 border-b border-border bg-surface-sunken/40 p-4 sm:grid-cols-2" onsubmit={addContact}>
+			<form class="shrink-0 grid gap-3 border-b border-border bg-surface-sunken/40 p-4 sm:grid-cols-2" onsubmit={addContact}>
 				<label class="block text-sm">
 					<span class="mb-1 block text-fg-muted">
 						Name
@@ -290,24 +277,26 @@
 		{/if}
 
 		{#if settings.showSearchBar}
-			<!-- Desktop keeps the inline filter; mobile searches from the top bar. -->
-			<label class="relative hidden md:block">
-				<span class="sr-only">Search contacts</span>
-				<Search
-					class={cn(
-						'pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-subtle'
-					)}
-				/>
-				<input
-					type="search"
-					enterkeyhint="search"
-					inputmode="search"
-					class="z-sidebar-search-input"
-					placeholder="Search contacts…"
-					bind:this={searchInput}
-					bind:value={query}
-				/>
-			</label>
+			<!-- Desktop keeps the inline filter; mobile searches from the top bar + island. -->
+			<div class="hidden shrink-0 border-b border-border/80 px-4 py-3 md:block">
+				<label class="relative block">
+					<span class="sr-only">Search contacts</span>
+					<Search
+						class={cn(
+							'pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-subtle'
+						)}
+					/>
+					<input
+						type="search"
+						enterkeyhint="search"
+						inputmode="search"
+						class="z-sidebar-search-input"
+						placeholder="Search contacts…"
+						bind:this={searchInput}
+						bind:value={query}
+					/>
+				</label>
+			</div>
 		{/if}
 
 	</div>

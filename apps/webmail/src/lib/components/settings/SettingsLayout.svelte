@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import MobileSettingsShellNav from '$lib/components/shell/MobileSettingsShellNav.svelte';
 	import SettingsSearch from '$lib/components/settings/SettingsSearch.svelte';
 	import { SETTINGS_NAV_ICON_MAP } from '$lib/components/settings/settings-nav-icons';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
@@ -67,14 +66,14 @@
 
 	<!-- Main content -->
 	<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-		<div
-			class="z-settings-mobile-toolbar flex shrink-0 flex-col gap-2 border-b border-border/80 py-2.5 md:hidden"
-		>
-			<MobileSettingsShellNav />
-			{#if settings.showSearchBar}
+		{#if settings.showSearchBar}
+			<!-- Mobile top is search only; category nav lives in the floating island. -->
+			<div
+				class="z-settings-mobile-toolbar flex shrink-0 flex-col gap-2 border-b border-border/80 py-2.5 md:hidden"
+			>
 				<SettingsSearch />
-			{/if}
-		</div>
+			</div>
+		{/if}
 		<ScrollArea pane class="min-h-0 flex-1">
 			<div class={cn(settingsShellClass(), 'flex min-h-full flex-col')}>
 				<div class="z-settings-content flex-1">

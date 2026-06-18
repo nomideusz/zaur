@@ -14,6 +14,7 @@
 	import IslandMinimal from './IslandMinimal.svelte';
 	import IslandReaderActions from './IslandReaderActions.svelte';
 	import IslandSectionNav from './IslandSectionNav.svelte';
+	import IslandSettingsNav from './IslandSettingsNav.svelte';
 
 	type IslandMode = 'mail' | 'bulk' | 'reader' | 'section' | 'default';
 
@@ -24,10 +25,9 @@
 	const onMailList = $derived(
 		(pathname === '/' || isMailPath(pathname)) && !onMailCompose && !onMailSearch && !onMailThread
 	);
+	const onSettings = $derived(pathname.startsWith('/settings'));
 	const onSection = $derived(
-		pathname.startsWith('/calendar') ||
-			pathname.startsWith('/contacts') ||
-			pathname.startsWith('/settings')
+		pathname.startsWith('/calendar') || pathname.startsWith('/contacts') || onSettings
 	);
 
 	const islandMode = $derived.by((): IslandMode => {
@@ -120,7 +120,11 @@
 			{:else if islandMode === 'mail'}
 				<IslandMailTabs />
 			{:else if islandMode === 'section'}
-				<IslandSectionNav />
+				{#if onSettings}
+					<IslandSettingsNav />
+				{:else}
+					<IslandSectionNav />
+				{/if}
 			{:else}
 				<IslandMinimal />
 			{/if}
