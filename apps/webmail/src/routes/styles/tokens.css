@@ -70,8 +70,12 @@
 	--z-island-height: 3.5rem;
 	--z-island-collapsed-size: 3.25rem;
 	--z-island-gutter: 0.75rem;
+	/* Island height + the positioner's bottom gutter + an extra gutter of
+	   breathing room so the scrollable tail never sits flush against the
+	   floating island, plus the safe-area inset on notched devices. */
 	--z-island-clearance: calc(
-		var(--z-island-height) + var(--z-island-gutter) + env(safe-area-inset-bottom, 0px)
+		var(--z-island-height) + var(--z-island-gutter) * 2 +
+			env(safe-area-inset-bottom, 0px)
 	);
 	/* Motion — fast, smooth, invisible until you notice them */
 	--z-motion-fast: 150ms;
