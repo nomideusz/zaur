@@ -55,7 +55,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		return json({ error: 'code, codeVerifier, and redirectUri are required' }, { status: 400 });
 	}
 
-	const serverUrl = appConfig.jmapServerUrl;
+	let serverUrl = appConfig.jmapServerUrl;
 
 	try {
 		// Exchange authorization code for tokens from Logto (OIDC)

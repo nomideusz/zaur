@@ -45,6 +45,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	const effectivePassword = body.totp?.trim() ? `${password}$${body.totp.trim()}` : password;
+	
 	const serverUrl = appConfig.jmapServerUrl;
 
 	try {
