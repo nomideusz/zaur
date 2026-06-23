@@ -1,8 +1,8 @@
 <script lang="ts">
 	import Sprite from '$lib/Sprite.svelte';
 
-	const title = 'Zaur — mail, chat, discuss';
-	const description = 'Private mail, chat, and discussion. One account, no ads, no tracking.';
+	const title = 'Zaur — mail, chat';
+	const description = 'Private mail and chat. One account, no ads, no tracking.';
 
 	const products = [
 		{
@@ -16,12 +16,6 @@
 			name: 'Chat',
 			desc: 'Real-time group chat for teams and friends.',
 			href: 'https://chat.zaur.app'
-		},
-		{
-			id: 'discuss',
-			name: 'Discuss',
-			desc: 'A community forum for longer conversations.',
-			href: 'https://discourse.zaur.app'
 		}
 	];
 </script>
