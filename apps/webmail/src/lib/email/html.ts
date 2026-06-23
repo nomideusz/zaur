@@ -534,12 +534,11 @@ function postProcessSanitizedHtml(
 
 	let lightSurface = false;
 	if (darkMode && !options.cleanView) {
-		// A light-authored email with no light background of its own would otherwise render
-		// theme text + dark logos/buttons straight onto the dark reader. Show it as a light
-		// card instead, keeping the author's colors exactly as designed for light backgrounds.
-		markLightSurfaces(container);
-		const hasLightSurface = !!container.querySelector('[data-z-light-surface]');
-		lightSurface = !hasLightSurface && !emailIsDarkAuthored(container);
+		// HTML email is authored for a light background. Render any light-authored message on a
+		// light card with the author's original colors untouched — adapting colors region-by-region
+		// goes wrong on mixed nesting (e.g. a dark bar inside a white card lost its white text).
+		// Only genuinely dark-authored mail keeps the adaptive path.
+		lightSurface = !emailIsDarkAuthored(container);
 		if (!lightSurface) {
 			integrateHtmlForDarkMode(container, true);
 		}
