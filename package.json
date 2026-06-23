@@ -5,20 +5,15 @@
   "scripts": {
     "dev:web": "pnpm --filter @zaur/web dev",
     "dev:webmail": "pnpm --filter @zaur/webmail dev",
-    "dev:dinosaurus": "pnpm --filter @zaur/dinosaurus dev",
     "dev:register": "pnpm --filter @zaur/register dev",
     "build:web": "pnpm --filter @zaur/web build",
     "build:webmail": "pnpm --filter @zaur/webmail build",
     "build:ui": "pnpm --filter @zaur/ui build:css",
-    "build:dinosaurus": "pnpm --filter @zaur/dinosaurus build",
     "check:webmail": "pnpm --filter @zaur/webmail check",
     "test:webmail": "pnpm --filter @zaur/webmail test",
     "test:register": "pnpm --filter @zaur/register test:e2e",
     "deploy:web": "bash infra/deploy/caprover.sh web",
     "deploy:webmail": "bash infra/deploy/caprover.sh webmail",
-    "deploy:register": "bash infra/deploy/caprover.sh register",
-    "deploy:dino": "bash infra/deploy/caprover.sh dino",
-    "deploy:dino-archive": "bash infra/deploy/caprover.sh dino-archive",
-    "deploy:music": "bash infra/deploy/caprover.sh music"
+    "deploy:register": "bash infra/deploy/caprover.sh register"
   }
 }
