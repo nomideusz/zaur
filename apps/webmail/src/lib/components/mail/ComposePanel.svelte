@@ -111,7 +111,9 @@
 	let toFocused = $state(false);
 	let ccFocused = $state(false);
 	let bccFocused = $state(false);
-	let isRichText = $state(settings.defaultComposeFormat === 'html');
+	// Open in rich mode when the seeded body already carries markup (e.g. forwarding an HTML
+	// message), so typing in a plain textarea doesn't silently wipe the quoted HTML.
+	let isRichText = $state(settings.defaultComposeFormat === 'html' || !!compose.bodyHtml.trim());
 
 	const showToPrefix = $derived(toFocused && !compose.to.trim());
 	const showCcPrefix = $derived(ccFocused && !compose.cc.trim());
@@ -744,6 +746,9 @@
 									compose.bodyHtml = plainTextToSafeHtml(compose.body);
 								}
 								compose.ensureInlineAttachmentsFromHtml(compose.bodyHtml);
+							} else {
+								// Plain mode means no HTML part — keep it the single source of truth for send format.
+								compose.bodyHtml = '';
 							}
 						}}
 					>

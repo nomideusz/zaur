@@ -132,6 +132,13 @@ class ComposeStore {
 			parseAddressList(this.to).length > 0
 	);
 
+	/** Send HTML whenever the body actually carries markup — a rich-edited message or an HTML
+	 * message being forwarded — rather than keying off the global default, which would flatten
+	 * forwarded rich mail to plain text. */
+	private get htmlBodyForSend(): string | undefined {
+		return this.bodyHtml.trim() ? this.bodyHtml : undefined;
+	}
+
 	startNew() {
 		this.resetComposeFields();
 		void this.clearLocalDraft();
@@ -456,6 +463,9 @@ class ComposeStore {
 		this.body = settings.composeBodyWithSignature(
 			`\n\n---\nForwarded message:\n${quoteHeader(message)}\n\n${message.bodyText}`
 		);
+		// Preserve the original's richness: forwarding an HTML message keeps HTML regardless of the
+		// user's default compose format, so rich mail isn't flattened to plain text on its way out.
+		const sourceIsHtml = !!message.bodyHtml?.trim();
 		const quotedHtml = message.bodyHtml || plainTextToSafeHtml(message.bodyText);
 		const headerHtml = `<strong>Forwarded message:</strong><br>` +
 			`From: ${message.from.name} &lt;${message.from.email}&gt;<br>` +
@@ -463,7 +473,7 @@ class ComposeStore {
 			`Subject: ${message.subject}<br>`;
 		const sigHtml = settings.useSignature && settings.signature.trim() ? `<p>-- <br>${plainTextToSafeHtml(settings.signature.trim())}</p>` : '';
 		this.bodyHtml =
-			settings.defaultComposeFormat === 'html'
+			settings.defaultComposeFormat === 'html' || sourceIsHtml
 				? `<p><br></p><p><br></p>${sigHtml}<blockquote class="z-email-quote">${headerHtml}<br>${quotedHtml}</blockquote>`
 				: '';
 		this.jmapDraftId = undefined;
@@ -713,7 +723,7 @@ class ComposeStore {
 			bcc,
 			subject,
 			body: this.body,
-			bodyHtml: settings.defaultComposeFormat === 'html' ? this.bodyHtml || undefined : undefined,
+			bodyHtml: this.htmlBodyForSend,
 			toRaw: this.to,
 			ccRaw: this.cc,
 			bccRaw: this.bcc,
@@ -725,9 +735,8 @@ class ComposeStore {
 				cc: cc.length ? cc : undefined,
 				bcc: bcc.length ? bcc : undefined,
 				attachments: attachments.length ? attachments : undefined,
-				format: settings.defaultComposeFormat,
-				bodyHtml:
-					settings.defaultComposeFormat === 'html' ? this.bodyHtml || undefined : undefined
+				format: this.htmlBodyForSend ? 'html' : 'plain',
+				bodyHtml: this.htmlBodyForSend
 			}
 		};
 	}
@@ -949,12 +958,11 @@ class ComposeStore {
 				bcc: parseAddressList(this.bcc),
 				subject: this.subject.trim(),
 				body: this.body,
-				bodyHtml:
-					settings.defaultComposeFormat === 'html' ? this.bodyHtml || undefined : undefined,
+				bodyHtml: this.htmlBodyForSend,
 				fromEmail,
 				fromName: fromName?.trim() || undefined,
 				attachments: this.readyAttachments(),
-				format: settings.defaultComposeFormat
+				format: this.htmlBodyForSend ? 'html' : 'plain'
 			});
 			if (this.shouldSkipDraftAutosave() || this.isComposeEmpty) return;
 			this.jmapDraftId = id;
