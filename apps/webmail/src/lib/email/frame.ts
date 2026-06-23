@@ -210,6 +210,9 @@ export function buildEmailFrameSrcdoc(options: {
 		`<!doctype html><html${options.darkMode ? ' class="dark"' : ''}>` +
 		`<head><meta charset="utf-8">` +
 		`<meta name="viewport" content="width=device-width, initial-scale=1">` +
+		// No referrer on image loads: avoids leaking the reader's client to senders and
+		// sidesteps hosts that 403 hotlinked images by Referer (e.g. nexo.systems).
+		`<meta name="referrer" content="no-referrer">` +
 		`<base target="_blank">` +
 		`<style>:root { ${tokenVars} }${FRAME_CSS}</style></head>` +
 		`<body class="${bodyClass}">${stripExecutableTags(options.html)}</body></html>`
