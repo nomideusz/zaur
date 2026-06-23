@@ -7,14 +7,12 @@
 	import { parseMailContext } from '$lib/mail/routes';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
-	import { readerFocus } from '$lib/stores/reader-focus.svelte';
 	import { MAIL_LAYOUT } from '$lib/mail/config';
 
 	let { children } = $props();
 
 	$effect(() => {
 		const ctx = parseMailContext($page.url.pathname);
-		readerFocus.setClean(false);
 		mail.clearSelection();
 		// Only clear an open thread on list/compose routes — not when entering a thread page.
 		if (!ctx?.threadId) {

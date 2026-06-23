@@ -1,7 +1,6 @@
 <script lang="ts">
 	import EmailHtmlFrame from '$lib/components/mail/EmailHtmlFrame.svelte';
 	import { renderMessageBody } from '$lib/email/html';
-	import { readerFocus } from '$lib/stores/reader-focus.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
 
@@ -22,7 +21,7 @@
 			allowExternal,
 			darkMode,
 			preferPlainText: settings.preferPlainText,
-			cleanView: readerFocus.clean
+			cleanView: settings.readerCleanView
 		})
 	);
 </script>

@@ -11,8 +11,6 @@
 	import { mailListBackHref, mailListHref } from '$lib/mail/routes';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
-	import { readerFocus } from '$lib/stores/reader-focus.svelte';
-	import { settings } from '$lib/stores/settings.svelte';
 	import { MAIL_LAYOUT } from '$lib/mail/config';
 
 	interface Props {
@@ -21,10 +19,6 @@
 	}
 
 	let { mailboxId, threadId }: Props = $props();
-
-	$effect(() => {
-		readerFocus.setClean(settings.readerCleanView);
-	});
 
 	const mailbox = $derived(mail.mailboxByRouteId(mailboxId));
 	const mailboxName = $derived(mailbox?.name ?? 'Emails');
