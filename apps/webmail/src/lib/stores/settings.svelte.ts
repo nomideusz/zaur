@@ -46,7 +46,6 @@ const STORAGE = {
 	undoSendDelay: 'zaur:undo-send-delay',
 	readerTextSize: 'zaur:reader-text-size',
 	readingTypeface: 'zaur:reading-typeface',
-	readerCleanView: 'zaur:reader-clean-view',
 	showDeliveredToInReader: 'zaur:show-delivered-to-in-reader',
 	defaultReplyMode: 'zaur:default-reply-mode',
 	defaultComposeFormat: 'zaur:default-compose-format',
@@ -189,10 +188,6 @@ function readReadingTypeface(): ReadingTypeface {
 	return localStorage.getItem(STORAGE.readingTypeface) === 'serif' ? 'serif' : 'sans';
 }
 
-function readReaderCleanView(): boolean {
-	return readBool(STORAGE.readerCleanView, true);
-}
-
 function readShowDeliveredToInReader(): boolean {
 	return readBool(STORAGE.showDeliveredToInReader, false);
 }
@@ -299,7 +294,6 @@ class SettingsStore {
 	undoSendDelay = $state<UndoSendDelay>(readUndoSendDelay());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	readingTypeface = $state<ReadingTypeface>(readReadingTypeface());
-	readerCleanView = $state(readReaderCleanView());
 	showDeliveredToInReader = $state(readShowDeliveredToInReader());
 	defaultReplyMode = $state<DefaultReplyMode>(readDefaultReplyMode());
 	defaultComposeFormat = $state<ComposeFormat>(readDefaultComposeFormat());
@@ -346,7 +340,6 @@ class SettingsStore {
 		this.undoSendDelay = readUndoSendDelay();
 		this.readerTextSize = readReaderTextSize();
 		this.readingTypeface = readReadingTypeface();
-		this.readerCleanView = readReaderCleanView();
 		this.showDeliveredToInReader = readShowDeliveredToInReader();
 		this.defaultReplyMode = readDefaultReplyMode();
 		this.defaultComposeFormat = readDefaultComposeFormat();
@@ -579,11 +572,6 @@ class SettingsStore {
 		this.applyReadingTypeface(value);
 	}
 
-	setReaderCleanView(value: boolean) {
-		this.readerCleanView = value;
-		if (browser) this.writeStorage(STORAGE.readerCleanView, String(value));
-	}
-
 	setShowDeliveredToInReader(value: boolean) {
 		this.showDeliveredToInReader = value;
 		if (browser) this.writeStorage(STORAGE.showDeliveredToInReader, String(value));
@@ -713,7 +701,6 @@ class SettingsStore {
 		this.setRememberLastMailbox(false);
 		this.setReaderTextSize('normal');
 		this.setReadingTypeface('sans');
-		this.setReaderCleanView(true);
 		this.setShowDeliveredToInReader(false);
 		this.setPreferPlainText(false);
 		this.setBlockExternalContent(true);

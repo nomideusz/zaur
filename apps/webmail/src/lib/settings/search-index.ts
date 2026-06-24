@@ -157,6 +157,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Minimize animations and transitions throughout the app."
 	},
 	{
+		"id": "/settings/appearance-show-search-bar",
+		"href": "/settings/appearance",
+		"title": "Show search bar",
+		"description": "Show the search bar at the top of mail, contacts, calendar, and settings. You can also hide it from the bar itself."
+	},
+	{
 		"id": "/settings/calendar-events-per-day-in-month-view",
 		"href": "/settings/calendar",
 		"title": "Events per day in month view",
@@ -269,12 +275,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"href": "/settings/reading",
 		"title": "Block remote images",
 		"description": "Don't load images hosted elsewhere, which can signal when you open a message."
-	},
-	{
-		"id": "/settings/reading-clean-reading-view",
-		"href": "/settings/reading",
-		"title": "Clean reading view",
-		"description": "Strip senders' fonts, colors, and fixed widths so messages match your reading settings."
 	},
 	{
 		"id": "/settings/reading-expand-all-threads",

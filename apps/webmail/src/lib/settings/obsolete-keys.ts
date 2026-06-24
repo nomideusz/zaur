@@ -1,6 +1,7 @@
 /** Legacy density / layout keys removed after Simple mode — purged on init and excluded from sync. */
 export const OBSOLETE_SETTING_KEYS = new Set([
 	'zaur:auto-load-more',
+	'zaur:reader-clean-view',
 	'zaur:search-scope',
 	'zaur:show-reader-list-rail',
 	'zaur:focus-reading-default',

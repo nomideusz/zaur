@@ -136,17 +136,6 @@
 
 	<SettingsRow
 		kind="toggle"
-		title="Clean reading view"
-		description="Strip senders' fonts, colors, and fixed widths so messages match your reading settings."
-	>
-		<Switch
-			checked={settings.readerCleanView}
-			onchange={(checked) => settings.setReaderCleanView(checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="toggle"
 		title="Show delivery address"
 		description="Show which of your addresses a message was delivered to (its Delivered-To)."
 	>

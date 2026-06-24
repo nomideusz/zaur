@@ -20,8 +20,7 @@
 			bodyText,
 			allowExternal,
 			darkMode,
-			preferPlainText: settings.preferPlainText,
-			cleanView: settings.readerCleanView
+			preferPlainText: settings.preferPlainText
 		})
 	);
 </script>

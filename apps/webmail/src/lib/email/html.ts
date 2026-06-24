@@ -403,63 +403,6 @@ function blockExternalContentInDocument(root: ParentNode, allowExternal: boolean
 	return blockedExternal;
 }
 
-/**
- * "Clean reading view" — neutralizes a message's own typography and fixed sizing so it
- * re-flows into the app's reading column and type scale (similar to Safari Reader).
- * Structure is preserved; only presentational styling that fights the reader is removed.
- */
-const CLEAN_VIEW_STRIP_STYLE_PROPS = new Set([
-	'font',
-	'font-family',
-	'font-size',
-	'font-stretch',
-	'line-height',
-	'letter-spacing',
-	'word-spacing',
-	'color',
-	'background',
-	'background-color',
-	'background-image',
-	'width',
-	'min-width',
-	'max-width',
-	'height',
-	'min-height',
-	'max-height'
-]);
-
-const CLEAN_VIEW_STRIP_ATTRS = ['face', 'size', 'color', 'width', 'height', 'bgcolor', 'background', 'align'];
-
-function cleanStyleAttribute(node: Element) {
-	const style = node.getAttribute('style');
-	if (!style) return;
-
-	const kept = style
-		.split(';')
-		.map((rule) => rule.trim())
-		.filter((rule) => {
-			if (!rule) return false;
-			const prop = rule.split(':')[0]?.trim().toLowerCase();
-			return !prop || !CLEAN_VIEW_STRIP_STYLE_PROPS.has(prop);
-		})
-		.join('; ')
-		.trim();
-
-	if (kept) node.setAttribute('style', kept);
-	else node.removeAttribute('style');
-}
-
-function applyCleanReadingView(root: ParentNode) {
-	for (const element of root.querySelectorAll('*')) {
-		const tag = element.tagName.toLowerCase();
-		// Preserve image dimensions so they don't blow up to natural size.
-		if (tag !== 'img') {
-			for (const attr of CLEAN_VIEW_STRIP_ATTRS) element.removeAttribute(attr);
-		}
-		cleanStyleAttribute(element);
-	}
-}
-
 function hardenLinks(root: ParentNode) {
 	for (const link of root.querySelectorAll('a')) {
 		link.setAttribute('target', '_blank');
@@ -544,7 +487,7 @@ function wrapHtmlQuotedReplies(root: HTMLElement) {
 
 function postProcessSanitizedHtml(
 	html: string,
-	options: { allowExternal: boolean; darkMode?: boolean; cleanView?: boolean }
+	options: { allowExternal: boolean; darkMode?: boolean }
 ): { html: string; blockedExternal: boolean; lightSurface: boolean } {
 	if (!browser) {
 		return {
@@ -560,13 +503,12 @@ function postProcessSanitizedHtml(
 	hardenLinks(container);
 	wrapHtmlQuotedReplies(container);
 	normalizeEmailBlockquotes(container);
-	if (options.cleanView) applyCleanReadingView(container);
 	const darkMode =
 		options.darkMode ??
 		(browser && document.documentElement.classList.contains('dark'));
 
 	let lightSurface = false;
-	if (darkMode && !options.cleanView) {
+	if (darkMode) {
 		// HTML email is authored for a light background. Render any light-authored message on a
 		// light card with the author's original colors untouched — adapting colors region-by-region
 		// goes wrong on mixed nesting (e.g. a dark bar inside a white card lost its white text).
@@ -577,8 +519,6 @@ function postProcessSanitizedHtml(
 		} else {
 			integrateHtmlForDarkMode(container, true);
 		}
-	} else if (darkMode) {
-		integrateHtmlForDarkMode(container, true);
 	}
 
 	return { html: container.innerHTML, blockedExternal, lightSurface };
@@ -663,7 +603,7 @@ function formatPlainSegment(text: string, skipLinkify = false): string {
 
 export function prepareEmailHtml(
 	rawHtml: string,
-	options: { allowExternal: boolean; darkMode?: boolean; cleanView?: boolean }
+	options: { allowExternal: boolean; darkMode?: boolean }
 ): { html: string; blockedExternal: boolean; lightSurface: boolean } {
 	const html = DOMPurify.sanitize(rawHtml, EMAIL_SANITIZE_CONFIG);
 	return postProcessSanitizedHtml(html, options);
@@ -675,7 +615,6 @@ export function renderMessageBody(options: {
 	allowExternal: boolean;
 	darkMode?: boolean;
 	preferPlainText?: boolean;
-	cleanView?: boolean;
 }): { html: string; blockedExternal: boolean; isHtml: boolean; lightSurface: boolean } {
 	if (options.preferPlainText && options.bodyText.trim()) {
 		return {
@@ -689,8 +628,7 @@ export function renderMessageBody(options: {
 	if (options.bodyHtml?.trim()) {
 		const prepared = prepareEmailHtml(options.bodyHtml, {
 			allowExternal: options.allowExternal,
-			darkMode: options.darkMode,
-			cleanView: options.cleanView
+			darkMode: options.darkMode
 		});
 		const textHasQuote =
 			options.bodyText.trim() && findPlainTextQuoteStart(options.bodyText) >= 0;
