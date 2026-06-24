@@ -20,7 +20,8 @@ const COLOR_TOKENS = [
 	'--z-accent-hover',
 	'--z-border',
 	'--z-border-strong',
-	'--z-surface-sunken'
+	'--z-surface-sunken',
+	'--z-chrome'
 ] as const;
 
 /** Light-theme defaults — used only for SSR, where there is no live root to probe. */
@@ -33,6 +34,7 @@ const SSR_TOKEN_FALLBACK: Record<string, string> = {
 	'--z-border': '#e8e8e6',
 	'--z-border-strong': '#d5d5d2',
 	'--z-surface-sunken': '#f5f4f1',
+	'--z-chrome': '#ffffff',
 	'--z-reader-text': '1rem',
 	'--z-reader-leading': '1.7',
 	'--z-reader-font':
@@ -90,11 +92,12 @@ function resolveTokens(): Record<string, string> {
  */
 const FRAME_CSS = `
 *, *::before, *::after { box-sizing: border-box; }
-html, body { background: transparent; }
+/* Paint the document with the reader's own surface colour rather than leaving it transparent: a
+   transparent srcdoc iframe falls back to the UA's *white* canvas, which leaves theme-foreground
+   text invisible in dark mode once an email's own backgrounds are stripped (clean reading view).
+   The light reading card (.z-email-body--light) overrides this with its white surface. */
+html, body { background: var(--z-chrome); }
 html { -webkit-text-size-adjust: 100%; }
-/* A transparent srcdoc document falls back to the UA's *white* canvas unless its colour scheme
-   is declared — which leaves theme-foreground text invisible in dark mode once an email's own
-   backgrounds are stripped (clean reading view). Match the canvas to the theme. */
 :root.dark { color-scheme: dark; }
 body {
 	margin: 0;

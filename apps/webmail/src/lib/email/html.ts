@@ -216,6 +216,39 @@ function markLightSurfaces(root: ParentNode) {
 	}
 }
 
+function isWithinDarkSurface(element: Element, root: ParentNode): boolean {
+	let node: Element | null = element;
+	while (node && node !== root) {
+		if (node instanceof HTMLElement && node.hasAttribute('data-z-dark-surface')) return true;
+		node = node.parentElement;
+	}
+	return false;
+}
+
+/**
+ * A light-authored email rendered on the white reading card keeps its own colours, but inline
+ * light text (meant for the email's dark bands) would vanish on the card. Strip light text colours
+ * except inside the email's own dark-background islands — the mirror of the dark-mode pass, so a
+ * dark header keeps its white text while light-on-light body copy falls back to the card's dark ink.
+ */
+function neutralizeLightCardText(root: ParentNode) {
+	if (!browser) return;
+
+	for (const element of root.querySelectorAll('*')) {
+		if (!(element instanceof HTMLElement)) continue;
+		const background = elementBackgroundColor(element);
+		if (background && isDarkBackgroundColor(background)) {
+			element.setAttribute('data-z-dark-surface', '');
+		}
+	}
+
+	for (const element of root.querySelectorAll('*')) {
+		if (!(element instanceof HTMLElement)) continue;
+		if (isWithinDarkSurface(element, root)) continue;
+		stripLightTextColor(element);
+	}
+}
+
 /** Backgrounds the email author clearly intends as a dark page/canvas. */
 function isDarkBackgroundColor(value: string): boolean {
 	const rgb = parseCssColor(value);
@@ -539,7 +572,9 @@ function postProcessSanitizedHtml(
 		// goes wrong on mixed nesting (e.g. a dark bar inside a white card lost its white text).
 		// Only genuinely dark-authored mail keeps the adaptive path.
 		lightSurface = !emailIsDarkAuthored(container);
-		if (!lightSurface) {
+		if (lightSurface) {
+			neutralizeLightCardText(container);
+		} else {
 			integrateHtmlForDarkMode(container, true);
 		}
 	} else if (darkMode) {
