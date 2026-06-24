@@ -84,6 +84,36 @@
 		return idx >= 0 ? compose.body.slice(0, idx) : compose.body;
 	});
 
+	/**
+	 * Rich-mode quote collapse — mirror of the plain-text quoted-message details. When the
+	 * "collapse quoted text" setting is on, split the seeded `<blockquote class="z-email-quote">`
+	 * out of the editable area so it renders folded below the editor instead of inline. The quote
+	 * is recombined onto `compose.bodyHtml`/`body` on every edit, so the send path sees the full
+	 * message unchanged.
+	 */
+	const richQuoteMarker = /<blockquote class="z-email-quote"/i;
+	const richQuote = $derived.by(() => {
+		if (!isRichText || !settings.collapseQuotedInCompose) return null;
+		const htmlIdx = compose.bodyHtml.search(richQuoteMarker);
+		if (htmlIdx < 0) return null;
+		return {
+			htmlBefore: compose.bodyHtml.slice(0, htmlIdx),
+			htmlQuote: compose.bodyHtml.slice(htmlIdx),
+			textQuote: quotedPart
+		};
+	});
+
+	function onRichChange(html: string, text: string) {
+		if (richQuote) {
+			compose.bodyHtml = html + richQuote.htmlQuote;
+			compose.body = text + richQuote.textQuote;
+		} else {
+			compose.bodyHtml = html;
+			compose.body = text;
+		}
+		sendAttempted = false;
+	}
+
 	function setMessageBody(value: string) {
 		const idx = compose.body.search(quoteMarker);
 		const quote = idx >= 0 ? compose.body.slice(idx) : '';
@@ -585,7 +615,7 @@
 							recipientFocused = false;
 						}}
 					/>
-					{#if settings.showCcBccInCompose && !compose.showCcBcc}
+					{#if !settings.showCcBccInCompose && !compose.showCcBcc}
 						<button
 							type="button"
 							class="z-compose__suffix-link"
@@ -597,7 +627,7 @@
 					{/if}
 				</div>
 
-				{#if compose.showCcBcc && (settings.showCcBccInCompose || compose.cc.trim() || compose.bcc.trim())}
+				{#if settings.showCcBccInCompose || compose.showCcBcc || compose.cc.trim() || compose.bcc.trim()}
 					<div class={cn('z-compose__field', fieldInvalid('cc') && 'z-compose__field--invalid')}>
 						<label class="sr-only" for="compose-cc">Cc</label>
 						<span class="z-compose__prefix" aria-hidden={!showCcPrefix}>{showCcPrefix ? 'Cc' : ''}</span>
@@ -695,13 +725,15 @@
 		<div class="z-compose__write flex min-h-0 flex-1 flex-col px-4" style="padding-block: var(--z-space-reader-content-compact);">
 			<label class="sr-only" for="compose-body">Message</label>
 			{#if isRichText}
-				<RichTextEditor
-					bind:htmlValue={compose.bodyHtml}
-					bind:textValue={compose.body}
-					onchange={() => {
-						sendAttempted = false;
-					}}
-				/>
+				<!-- Re-mount when the quote is split out / merged back so the editor is seeded with the
+				     right content; recombine via onchange keeps compose.bodyHtml the full message. -->
+				{#key !!richQuote}
+					<RichTextEditor
+						htmlValue={richQuote ? richQuote.htmlBefore : compose.bodyHtml}
+						textValue={compose.body}
+						onchange={onRichChange}
+					/>
+				{/key}
 			{:else}
 				<textarea
 					id="compose-body"
@@ -718,6 +750,13 @@
 				<details class="z-compose__quote" open={!settings.collapseQuotedInCompose}>
 					<summary>Quoted message</summary>
 					<pre>{quotedPart.trim()}</pre>
+				</details>
+			{/if}
+
+			{#if richQuote && richQuote.textQuote.trim()}
+				<details class="z-compose__quote">
+					<summary>Quoted message</summary>
+					<pre>{richQuote.textQuote.trim()}</pre>
 				</details>
 			{/if}
 

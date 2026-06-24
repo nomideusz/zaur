@@ -92,6 +92,10 @@ const FRAME_CSS = `
 *, *::before, *::after { box-sizing: border-box; }
 html, body { background: transparent; }
 html { -webkit-text-size-adjust: 100%; }
+/* A transparent srcdoc document falls back to the UA's *white* canvas unless its colour scheme
+   is declared — which leaves theme-foreground text invisible in dark mode once an email's own
+   backgrounds are stripped (clean reading view). Match the canvas to the theme. */
+:root.dark { color-scheme: dark; }
 body {
 	margin: 0;
 	color: var(--z-fg);

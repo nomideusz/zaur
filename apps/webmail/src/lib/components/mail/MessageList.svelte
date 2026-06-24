@@ -623,7 +623,7 @@
 		return auth.identities.some((identity) => identity.email?.trim().toLowerCase() === cleanEmail);
 	}
 
-	function simpleSenderLabel(message: MessagePreview, folderRouteId: string): string {
+	function simpleSenderLabel(message: MessagePreview, folderRouteId: string) {
 		const threadMessages = messagesByThreadId.get(message.threadId) ?? [message];
 		return listThreadSenderLabel(
 			threadMessages,
@@ -1062,7 +1062,8 @@
 		)}
 	>
 		{#snippet simpleMessageRow(message: MessagePreview, routeId: string)}
-			{@const senderLabel = simpleSenderLabel(message, routeId)}
+			{@const sender = simpleSenderLabel(message, routeId)}
+			{@const senderLabel = sender.label}
 			{@const subjectText = message.subject.trim() || '(no subject)'}
 			{@const timeLabel = formatMessageListWhen(
 				message.receivedAt,
@@ -1102,6 +1103,9 @@
 							)}
 						>
 							<p class={listSenderClass(isUnread)}>{#if isUnread}<span class="z-mail-list-unread-dot" aria-hidden="true"></span>{/if}{senderLabel}</p>
+							{#if settings.showSenderEmailInList && sender.email && sender.email !== senderLabel}
+								<p class="truncate text-xs text-fg-subtle">{sender.email}</p>
+							{/if}
 							<p class={listSubjectClass(isUnread, subjectImportant)}>
 								{#if subjectImportant}
 									{#key importantMarker.highlightInstanceKey(message.id)}

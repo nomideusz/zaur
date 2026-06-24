@@ -8,8 +8,8 @@
 	import { isMailPath } from '$lib/mail/routes';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
-	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
+	import { shellHeader } from '$lib/stores/shell-header.svelte';
 
 	/* Desktop-only chrome — on phones the mobile island carries navigation
 	   and the pages own their toolbars. */
@@ -65,7 +65,9 @@
 	<div
 		class="z-app-shell-header__center relative z-10 w-full min-w-0 max-w-xl md:col-start-2 md:justify-self-center"
 	>
-		<GlobalSearchCombobox />
+		{#if settings.showSearchBar}
+			<GlobalSearchCombobox />
+		{/if}
 	</div>
 
 	<div

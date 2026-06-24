@@ -1,11 +1,13 @@
 import type { MessagePreview } from '$lib/types/mail';
 
+export type SenderLabel = { label: string; email: string };
+
 function previewSenderLabel(
 	message: MessagePreview,
 	folderRouteId: string,
 	isMe: (email: string) => boolean,
 	showSenderEmailInList: boolean
-): string {
+): SenderLabel {
 	if (
 		isMe(message.from.email) &&
 		folderRouteId !== 'inbox' &&
@@ -13,14 +15,14 @@ function previewSenderLabel(
 		message.to.length > 0
 	) {
 		const recipient = message.to[0];
-		return `To ${recipient.name?.trim() || recipient.email}`;
+		const email = recipient.email?.trim() ?? '';
+		return { label: `To ${recipient.name?.trim() || email}`, email };
 	}
+	const email = message.from.email?.trim() ?? '';
 	const name = message.from.name?.trim();
-	if (name) return name;
-	if (showSenderEmailInList) return message.from.email?.trim() || 'Unknown';
-	const email = message.from.email?.trim();
-	if (!email) return 'Unknown';
-	return email.split('@')[0] ?? email;
+	if (name) return { label: name, email };
+	if (showSenderEmailInList) return { label: email || 'Unknown', email };
+	return { label: email ? (email.split('@')[0] ?? email) : 'Unknown', email };
 }
 
 /** One list row per thread — latest message wins; flags merge across the thread. */
@@ -60,8 +62,8 @@ export function listThreadSenderLabel(
 	folderRouteId: string,
 	isMe: (email: string) => boolean,
 	showSenderEmailInList: boolean
-): string {
-	if (!threadMessages.length) return 'Unknown';
+): SenderLabel {
+	if (!threadMessages.length) return { label: 'Unknown', email: '' };
 
 	const sorted = [...threadMessages].sort(
 		(a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
@@ -71,11 +73,11 @@ export function listThreadSenderLabel(
 	if (folderRouteId === 'inbox' && isMe(latest.from.email)) {
 		const recipient = latest.to?.[0];
 		if (recipient) {
+			const email = recipient.email?.trim() ?? '';
 			const name = recipient.name?.trim();
-			if (name) return name;
-			const email = recipient.email?.trim();
+			if (name) return { label: name, email };
 			if (email) {
-				return showSenderEmailInList ? email : (email.split('@')[0] ?? email);
+				return { label: showSenderEmailInList ? email : (email.split('@')[0] ?? email), email };
 			}
 		}
 		const counterparty = sorted.find((message) => !isMe(message.from.email));
