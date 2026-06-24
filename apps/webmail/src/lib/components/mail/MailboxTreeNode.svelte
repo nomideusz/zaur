@@ -17,6 +17,7 @@
 		renamable?: boolean;
 		startRename?: (routeId: string) => void;
 		onCreateSubfolder?: (routeId: string) => void;
+		onDelete?: (routeId: string) => void;
 	}
 
 	let {
@@ -25,14 +26,17 @@
 		activeRouteId,
 		renamable = false,
 		startRename,
-		onCreateSubfolder
+		onCreateSubfolder,
+		onDelete
 	}: Props = $props();
 
 	const href = $derived(mailListHref(node.id));
 	const isActive = $derived(activeRouteId === node.id);
 	const badgeCount = $derived(node.role === 'drafts' ? node.total : node.unread);
 	const hasChildren = $derived(node.children.length > 0);
-	const showFolderMenu = $derived(renamable && (!!startRename || !!onCreateSubfolder));
+	const showFolderMenu = $derived(
+		renamable && (!!startRename || !!onCreateSubfolder || !!onDelete)
+	);
 
 	const menuPositioning = { placement: 'bottom-start' as const, gutter: 4, overflowPadding: 12 };
 
@@ -54,6 +58,10 @@
 	function requestSubfolder() {
 		onCreateSubfolder?.(node.id);
 	}
+
+	function requestDelete() {
+		onDelete?.(node.id);
+	}
 </script>
 
 {#snippet folderBadge()}
@@ -70,6 +78,9 @@
 			{/if}
 			{#if startRename}
 				<MenuItem label="Rename" onSelect={requestRename} />
+			{/if}
+			{#if onDelete}
+				<MenuItem label="Delete folder" variant="destructive" onSelect={requestDelete} />
 			{/if}
 		</MenuContent>
 	{/if}
@@ -133,6 +144,7 @@
 								{renamable}
 								{startRename}
 								{onCreateSubfolder}
+								{onDelete}
 							/>
 						{/each}
 					</TreeView.BranchContent>

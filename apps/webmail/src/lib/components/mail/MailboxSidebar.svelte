@@ -97,6 +97,24 @@
 		}
 	}
 
+	async function deleteFolder(routeId: string) {
+		const client = auth.client;
+		if (!client) {
+			toast.show('Connect to delete folders', 'error');
+			return;
+		}
+
+		try {
+			const deleted = await mail.deleteCustomFolder(client, routeId);
+			// Leave the now-gone folder if we were viewing it.
+			if (deleted && currentMailboxRouteId === routeId) {
+				await goto(mailListHref('inbox'));
+			}
+		} catch (error) {
+			toast.show(error instanceof Error ? error.message : 'Could not delete folder', 'error');
+		}
+	}
+
 	async function submitCreateFolder(name: string) {
 		const client = auth.client;
 		if (!client) {
@@ -213,6 +231,7 @@
 										renamable
 										startRename={(routeId) => tree().startRenaming(routeId)}
 										onCreateSubfolder={(routeId) => openCreateFolder(routeId)}
+										onDelete={deleteFolder}
 									/>
 								{/each}
 							</TreeView.Tree>

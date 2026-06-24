@@ -1434,6 +1434,32 @@ class MailStore {
 		return mapped;
 	}
 
+	/** Delete a custom folder (only custom folders, never role mailboxes). Returns false if the
+	 *  user cancels the confirmation. Non-empty folders take their messages with them. */
+	async deleteCustomFolder(client: JMAPClient, routeId: string): Promise<boolean> {
+		const mailbox = this.mailboxByRouteId(routeId);
+		if (!mailbox?.jmapId) throw new Error('Folder not found');
+		if (mailbox.role !== 'custom') throw new Error('Cannot delete this folder');
+
+		const messageCount = mailbox.total ?? 0;
+		const { confirm: askConfirm } = await import('$lib/stores/confirm.svelte');
+		const confirmed = await askConfirm.ask({
+			title: 'Delete folder?',
+			description:
+				messageCount > 0
+					? `Delete “${mailbox.name}” and its ${messageCount} message${messageCount === 1 ? '' : 's'}? This cannot be undone.`
+					: `Delete “${mailbox.name}”?`,
+			confirmLabel: 'Delete',
+			tone: 'danger'
+		});
+		if (!confirmed) return false;
+
+		await client.destroyMailbox(mailbox.jmapId, messageCount > 0);
+		this.mailboxes = this.mailboxes.filter((mb) => mb.id !== routeId);
+		toast.show(`Deleted “${mailbox.name}”`, 'success');
+		return true;
+	}
+
 	/** Refresh folder totals (and drafts/sent lists) after sending a message. */
 	async refreshAfterSend(client: JMAPClient, options?: { removedDraftId?: string }) {
 		const removedDraftId = options?.removedDraftId;

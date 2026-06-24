@@ -930,6 +930,34 @@ export class JMAPClient {
 		return id;
 	}
 
+	/**
+	 * Destroy a mailbox. With `removeEmails`, JMAP also destroys mail that lives *only* in this
+	 * mailbox (permanently); without it, the server refuses a non-empty mailbox. A mailbox with
+	 * child mailboxes can't be destroyed until its children are.
+	 */
+	async destroyMailbox(mailboxId: string, removeEmails = false): Promise<void> {
+		const response = await this.request([
+			[
+				'Mailbox/set',
+				{ accountId: this.accountId, onDestroyRemoveEmails: removeEmails, destroy: [mailboxId] },
+				'mbd'
+			]
+		]);
+		this.throwOnSetErrors(response, 'Could not delete folder');
+
+		const result = response.methodResponses?.[0]?.[1];
+		const notDestroyed = result?.notDestroyed as
+			| Record<string, { description?: string; type?: string }>
+			| undefined;
+		const failure = notDestroyed?.[mailboxId];
+		if (failure) {
+			if (failure.type === 'mailboxHasChild') {
+				throw new Error('Delete the subfolders inside this folder first');
+			}
+			throw new Error(failure.description ?? failure.type ?? 'Could not delete folder');
+		}
+	}
+
 	async getIdentities(): Promise<JMAPIdentity[]> {
 		const response = await this.request(
 			[['Identity/get', { accountId: this.accountId }, 'id']],
