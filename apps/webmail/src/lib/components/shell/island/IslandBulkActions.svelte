@@ -1,5 +1,6 @@
 <script lang="ts">
 	import BulkActionsRow from '$lib/components/mail/BulkActionsRow.svelte';
+	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import { ActionBarValue } from '$lib/components/ui/action-bar';
@@ -25,7 +26,8 @@
 		aria-label="Actions for selected messages"
 		bind:clientWidth={toolbarWidth}
 	>
-		<span class="flex shrink-0 items-center gap-0.5">
+		<span class="flex shrink-0 items-center gap-1.5">
+			<MessageListMasterCheckbox class="z-mail-list-bulk-bar__checkbox" />
 			<ActionBarValue count={selectedCount} />
 			<MessageListSelectMenu placement="top" {disabled} />
 		</span>

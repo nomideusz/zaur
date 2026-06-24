@@ -1108,15 +1108,7 @@
 							)}
 						>
 							<p class={listSenderClass(isUnread)}>
-								{#if showRowCheckbox && mobileListLayout}
-									<Checkbox
-										class={cn('z-mail-list-row__checkbox z-mail-list-row__checkbox--inline', rowSelected && 'z-mail-list-row__checkbox--on')}
-										checked={rowSelected}
-										label={`Select ${subjectText}`}
-										onchange={() => handleRowCheckboxChange(message.id)}
-										onclick={(event) => handleRowCheckboxClick(message.id, event)}
-									/>
-								{:else if isUnread}
+								{#if isUnread}
 									<span class="z-mail-list-unread-dot" aria-hidden="true"></span>
 								{/if}{senderLabel}
 							</p>
@@ -1142,6 +1134,15 @@
 								<time class={listTimeClass} datetime={message.receivedAt}>
 									{timeLabel}
 								</time>
+							{/if}
+							{#if showRowCheckbox && mobileListLayout}
+								<Checkbox
+									class={cn('z-mail-list-row__checkbox z-mail-list-row__checkbox--corner', rowSelected && 'z-mail-list-row__checkbox--on')}
+									checked={rowSelected}
+									label={`Select ${subjectText}`}
+									onchange={() => handleRowCheckboxChange(message.id)}
+									onclick={(event) => handleRowCheckboxClick(message.id, event)}
+								/>
 							{/if}
 						</div>
 						{#if message.hasAttachment || message.replied}
