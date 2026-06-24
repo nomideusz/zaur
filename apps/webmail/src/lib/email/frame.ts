@@ -53,9 +53,12 @@ function resolveTokens(): Record<string, string> {
 	const root = document.documentElement;
 	const rootStyle = getComputedStyle(root);
 
+	// The probe inherits the live --z-* custom properties from the app root, so reading them back
+	// through a real `color` resolves the full var() chain to an rgb. (Re-declaring each token as
+	// `var(--token)` on the probe self-references it — that's invalid at computed-value time and
+	// silently collapses every token to the inherited text colour, i.e. white in dark mode.)
 	const probe = document.createElement('div');
 	probe.style.cssText = 'position:absolute;visibility:hidden;pointer-events:none';
-	for (const token of COLOR_TOKENS) probe.style.setProperty(token, `var(${token})`);
 	probe.style.color = `var(${COLOR_TOKENS[0]})`;
 	probe.style.fontFamily = 'var(--z-reader-font)';
 	root.appendChild(probe);
