@@ -632,28 +632,30 @@
 		border-radius: 0.25rem;
 	}
 
-	/* Selectable lists — stable flex row; checkbox column always reserved. */
-	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row {
-		display: flex;
-		align-items: flex-start;
-		gap: var(--z-mail-list-checkbox-gap);
-		padding-inline: var(--z-mail-list-row-pad-x);
-	}
+	/* Selectable lists — desktop flex row with a reserved checkbox column. */
+	@media (min-width: 768px) {
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row {
+			display: flex;
+			align-items: flex-start;
+			gap: var(--z-mail-list-checkbox-gap);
+			padding-inline: var(--z-mail-list-row-pad-x);
+		}
 
-	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row > :where(a),
-	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row .z-mail-list-swipe-row {
-		flex: 1 1 auto;
-		min-width: 0;
-	}
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row > :where(a),
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row .z-mail-list-swipe-row {
+			flex: 1 1 auto;
+			min-width: 0;
+		}
 
-	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row > :where(a),
-	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
-		padding: 0.625rem 0.875rem 0.625rem 0 !important;
-	}
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row > :where(a),
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+			padding: 0.625rem 0.875rem 0.625rem 0 !important;
+		}
 
-	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row,
-	.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground {
-		width: 100%;
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row,
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground {
+			width: 100%;
+		}
 	}
 
 	.z-mail-view .z-mail-list-row__checkbox,
@@ -785,9 +787,32 @@
 			padding-inline-start: 0;
 		}
 
-		/* Reset padding of the New section on mobile selecting view and hide its unread vertical stroke */
-		.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new {
-			padding-inline-start: 0;
+		/*
+		 * Bulk select — overlay checkboxes in the link's left gutter so row width
+		 * and subject wrapping stay identical before and after long-press selection.
+		 */
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row {
+			padding-inline: 0;
+		}
+
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row > :where(a),
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+			padding: 0.625rem var(--z-mail-list-row-link-pad-x) !important;
+		}
+
+		.z-mail-view .z-mail-list-checkbox-col--row {
+			position: absolute;
+			z-index: 4;
+			left: var(--z-mail-list-row-link-pad-x);
+			top: 0.875rem;
+			width: 1.125rem;
+			height: 1.125rem;
+			margin-top: 0;
+			pointer-events: none;
+		}
+
+		.z-mail-view .z-mail-list--selecting .z-mail-list-checkbox-col--row {
+			pointer-events: auto;
 		}
 
 		.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new::before {
@@ -854,6 +879,11 @@
 		border-radius: 9999px;
 		background-color: var(--z-unread);
 		vertical-align: 0.0625rem;
+	}
+
+	/* Bulk select overlays the checkbox — keep dot space so sender/subject lines stay put. */
+	.z-mail-list-unread-dot--bulk {
+		visibility: hidden;
 	}
 
 	/* Swipe rows paint an opaque foreground — carry the unseen tint through. */

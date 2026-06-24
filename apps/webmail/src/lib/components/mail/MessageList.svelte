@@ -58,7 +58,7 @@
 	import { mailboxKindOrderForMailbox, moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { formatMessageListWhen, simpleMessageDayKey } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
-	import { hasPreciseHover, supportsMobileListGestures } from '$lib/utils/pointer-env';
+	import { hasPreciseHover, isMobileLayout, supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import {
 		importantMarker,
 		IMPORTANT_MARKER_HOVER_DELAY_MS,
@@ -363,13 +363,15 @@
 		mail.setSelectionList(next);
 	});
 	/**
-	 * Always reserve the checkbox column (desktop + mobile) so entering selection
-	 * never reflows the list. Desktop reveals the box on hover; mobile keeps it
-	 * hidden (no hover) until a selection is active — the slot stays reserved so
-	 * subjects never re-wrap and the timestamp stays put.
+	 * Desktop reserves a flex checkbox column so hover-reveal never reflows rows.
+	 * Mobile overlays checkboxes in the row gutter once selection is active — full
+	 * width while browsing, no subject re-wrap when long-press enters bulk select.
 	 */
 	const listSelectMode = $derived(bulkSelectEnabled);
-	const showRowCheckbox = $derived(listSelectMode);
+	const mobileListLayout = $derived(isMobileLayout());
+	const showRowCheckbox = $derived(
+		bulkSelectEnabled && (!mobileListLayout || mail.hasSelection)
+	);
 
 	function handleMobileBulkLongPress(messageId: string) {
 		/* Already selecting: long-press joins the selection instead of restarting it. */
@@ -1105,7 +1107,7 @@
 								!showTimeInCopy && 'z-mail-list-row-copy--no-time'
 							)}
 						>
-							<p class={listSenderClass(isUnread)}>{#if isUnread}<span class="z-mail-list-unread-dot" aria-hidden="true"></span>{/if}{senderLabel}</p>
+							<p class={listSenderClass(isUnread)}>{#if isUnread}<span class={cn('z-mail-list-unread-dot', mail.hasSelection && 'z-mail-list-unread-dot--bulk')} aria-hidden="true"></span>{/if}{senderLabel}</p>
 							{#if settings.showSenderEmailInList && sender.email && sender.email !== senderLabel}
 								<p class="truncate text-xs text-fg-subtle">{sender.email}</p>
 							{/if}
