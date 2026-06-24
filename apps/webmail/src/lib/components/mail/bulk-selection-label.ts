@@ -48,7 +48,7 @@ export function bulkSelectionSummary(
 	const categorized = counts.new + counts.important + counts.normal;
 	const parts: string[] = [];
 	if (counts.new > 0) parts.push(`${counts.new} ${LABEL_UNSEEN.toLowerCase()}`);
-	if (counts.important > 0) parts.push(`${counts.important} important`);
+	if (counts.important > 0) parts.push(`${counts.important} highlighted`);
 	if (counts.normal > 0) parts.push(`${counts.normal} normal`);
 	if (unresolved > 0) parts.push(`${unresolved} unavailable`);
 

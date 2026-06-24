@@ -44,7 +44,7 @@ describe('bulkSelectionSummary', () => {
 		assert.equal(counts.new + counts.important + counts.normal, 3);
 		assert.deepEqual(bulkSelectionSummary(3, counts), {
 			headline: '3 selected',
-			detail: '1 unseen · 1 important · 1 normal'
+			detail: '1 unseen · 1 highlighted · 1 normal'
 		});
 	});
 
@@ -64,7 +64,7 @@ describe('bulkSelectionSummary', () => {
 		});
 		assert.deepEqual(bulkSelectionSummary(3, counts), {
 			headline: '3 selected',
-			detail: '1 unseen · 1 important · 1 normal'
+			detail: '1 unseen · 1 highlighted · 1 normal'
 		});
 	});
 
@@ -76,7 +76,7 @@ describe('bulkSelectionSummary', () => {
 		assert.deepEqual(
 			bulkSelectionSummary(2, { new: 0, normal: 0, important: 2, notImportant: 0 }),
 			{
-				headline: '2 important',
+				headline: '2 highlighted',
 				detail: null
 			}
 		);
@@ -87,7 +87,7 @@ describe('bulkSelectionSummary', () => {
 			bulkSelectionSummary(9, { new: 1, important: 2, normal: 4, notImportant: 7 }, 2),
 			{
 				headline: '9 selected',
-				detail: '1 unseen · 2 important · 4 normal · 2 unavailable'
+				detail: '1 unseen · 2 highlighted · 4 normal · 2 unavailable'
 			}
 		);
 	});

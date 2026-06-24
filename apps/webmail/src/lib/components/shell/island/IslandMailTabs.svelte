@@ -90,7 +90,7 @@
 					</SegmentGroupItem>
 				{/if}
 				<SegmentGroupItem value="important" href={importantHref} class={ISLAND_RAIL_ITEM_CLASS}>
-					<SegmentGroupItemText>Important</SegmentGroupItemText>
+					<SegmentGroupItemText>Highlights</SegmentGroupItemText>
 				</SegmentGroupItem>
 			</SegmentGroup>
 		</SegmentGroupScroll>

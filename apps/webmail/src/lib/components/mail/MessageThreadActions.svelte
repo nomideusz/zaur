@@ -173,7 +173,7 @@
 	function toggleImportant() {
 		if (!auth.client || !actionMessage) return;
 		void mail.toggleImportant(auth.client, actionMessage).catch((error) => {
-			const message = error instanceof Error ? error.message : 'Could not update important';
+			const message = error instanceof Error ? error.message : 'Could not update highlight';
 			toast.show(message, 'error');
 		});
 	}

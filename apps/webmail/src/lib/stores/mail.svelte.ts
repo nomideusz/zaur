@@ -1576,10 +1576,14 @@ class MailStore {
 	private patchMessages(updates: { id: string; patch: Partial<MessagePreview> }[]) {
 		if (!updates.length) return;
 		const byId = new Map(updates.map(({ id, patch }) => [id, patch]));
-		this.messages = this.messages.map((m) => {
+		const apply = (m: MessagePreview) => {
 			const patch = byId.get(m.id);
 			return patch ? { ...m, ...patch } : m;
-		});
+		};
+		this.messages = this.messages.map(apply);
+		// selectionList is a snapshot the bulk bar prefers over messages — keep it
+		// patched too, or re-selecting shows stale flags (e.g. Highlight after highlighting).
+		if (this.selectionList.length) this.selectionList = this.selectionList.map(apply);
 		if (browser) {
 			void import('$lib/db').then(({ getAccountId, patchCachedMessage }) => {
 				const accountId = getAccountId();
