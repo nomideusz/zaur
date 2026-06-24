@@ -364,8 +364,8 @@
 	});
 	/**
 	 * Desktop reserves a flex checkbox column so hover-reveal never reflows rows.
-	 * Mobile overlays checkboxes in the row gutter once selection is active — full
-	 * width while browsing, no subject re-wrap when long-press enters bulk select.
+	 * Mobile inlines the checkbox on the sender line (replacing the unread dot) so
+	 * it never overlaps the subject on the row below. Full width while browsing.
 	 */
 	const listSelectMode = $derived(bulkSelectEnabled);
 	const mobileListLayout = $derived(isMobileLayout());
@@ -1089,7 +1089,7 @@
 				data-selected={rowSelected ? 'true' : undefined}
 				data-unread={isUnread ? 'true' : undefined}
 			>
-				{#if showRowCheckbox}
+				{#if showRowCheckbox && !mobileListLayout}
 					<div class="z-mail-list-checkbox-col z-mail-list-checkbox-col--row">
 						<Checkbox
 							class={cn('z-mail-list-row__checkbox absolute m-0', rowSelected && 'z-mail-list-row__checkbox--on')}
@@ -1107,7 +1107,19 @@
 								!showTimeInCopy && 'z-mail-list-row-copy--no-time'
 							)}
 						>
-							<p class={listSenderClass(isUnread)}>{#if isUnread}<span class={cn('z-mail-list-unread-dot', mail.hasSelection && 'z-mail-list-unread-dot--bulk')} aria-hidden="true"></span>{/if}{senderLabel}</p>
+							<p class={listSenderClass(isUnread)}>
+								{#if showRowCheckbox && mobileListLayout}
+									<Checkbox
+										class={cn('z-mail-list-row__checkbox z-mail-list-row__checkbox--inline', rowSelected && 'z-mail-list-row__checkbox--on')}
+										checked={rowSelected}
+										label={`Select ${subjectText}`}
+										onchange={() => handleRowCheckboxChange(message.id)}
+										onclick={(event) => handleRowCheckboxClick(message.id, event)}
+									/>
+								{:else if isUnread}
+									<span class="z-mail-list-unread-dot" aria-hidden="true"></span>
+								{/if}{senderLabel}
+							</p>
 							{#if settings.showSenderEmailInList && sender.email && sender.email !== senderLabel}
 								<p class="truncate text-xs text-fg-subtle">{sender.email}</p>
 							{/if}
