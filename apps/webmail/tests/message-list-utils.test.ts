@@ -39,7 +39,7 @@ describe('listThreadSenderLabel', () => {
 	const isMe = (email: string) => email === 'me@example.com';
 
 	it('shows counterparty when the latest inbox message is mine', () => {
-		const label = listThreadSenderLabel(
+		const sender = listThreadSenderLabel(
 			[
 				preview({
 					id: '1',
@@ -60,6 +60,7 @@ describe('listThreadSenderLabel', () => {
 			false
 		);
 
-		assert.equal(label, 'Alice');
+		assert.equal(sender.label, 'Alice');
+		assert.equal(sender.email, 'alice@example.com');
 	});
 });
