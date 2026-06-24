@@ -362,10 +362,13 @@
 		if (sameMessageIds(current, next)) return;
 		mail.setSelectionList(next);
 	});
-	/** Desktop: reserve checkbox column (revealed on hover). Mobile: only while selecting (enter via long-press). */
-	const listSelectMode = $derived(
-		bulkSelectEnabled && (!mobileRowGestures || mail.hasSelection)
-	);
+	/**
+	 * Always reserve the checkbox column (desktop + mobile) so entering selection
+	 * never reflows the list. Desktop reveals the box on hover; mobile keeps it
+	 * hidden (no hover) until a selection is active — the slot stays reserved so
+	 * subjects never re-wrap and the timestamp stays put.
+	 */
+	const listSelectMode = $derived(bulkSelectEnabled);
 	const showRowCheckbox = $derived(listSelectMode);
 
 	function handleMobileBulkLongPress(messageId: string) {

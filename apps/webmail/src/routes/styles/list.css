@@ -656,52 +656,6 @@
 		width: 100%;
 	}
 
-	/* Mobile bulk-select: overlay the checkbox and slide the row right instead of
-	   shrinking it, so the subject keeps its full reading width and entering select
-	   never reflows the list (no 1→2 line wrap, no vertical jump). The shifted right
-	   edge tucks under the card's overflow:hidden. Gated on --selecting (not just
-	   --selectable) so a narrow non-touch window — where the column is reserved at
-	   all times — keeps the desktop reserved-column layout and only slides while a
-	   selection is active. */
-	@media (max-width: 767px) {
-		.z-mail-view .z-mail-list-flow--selectable.z-mail-list--selecting .z-mail-list-row {
-			display: block;
-			padding-inline: 0;
-		}
-
-		.z-mail-view
-			.z-mail-list-flow--selectable.z-mail-list--selecting
-			.z-mail-list-checkbox-col--row {
-			position: absolute;
-			inset-inline-start: var(--z-mail-list-row-link-pad-x);
-			top: 0;
-			bottom: 0;
-			margin-block: auto;
-			z-index: 3;
-		}
-
-		.z-mail-view .z-mail-list-flow--selectable.z-mail-list--selecting .z-mail-list-row > :where(a),
-		.z-mail-view
-			.z-mail-list-flow--selectable.z-mail-list--selecting
-			.z-mail-list-row
-			.z-mail-list-swipe-row {
-			transform: translateX(
-				calc(var(--z-mail-list-checkbox-col) + var(--z-mail-list-checkbox-gap))
-			);
-			transition: transform var(--z-motion-fast) var(--z-ease-standard);
-		}
-
-		/* Keep reading-mode link padding so the slide is the only change. */
-		.z-mail-view .z-mail-list-flow--selectable.z-mail-list--selecting .z-mail-list-row > :where(a),
-		.z-mail-view
-			.z-mail-list-flow--selectable.z-mail-list--selecting
-			.z-mail-list-swipe-row
-			.z-swipe-row__foreground
-			> :where(a) {
-			padding: 0.625rem var(--z-mail-list-row-link-pad-x) !important;
-		}
-	}
-
 	.z-mail-view .z-mail-list-row__checkbox,
 	.z-mail-list-bulk-bar__checkbox,
 	:is(.z-mail-view, .z-app-shell-header) .z-mail-list-bulk-header__checkbox {
