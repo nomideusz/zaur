@@ -1,6 +1,5 @@
 <script lang="ts">
 	import BulkActionsRow from '$lib/components/mail/BulkActionsRow.svelte';
-	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import { ActionBarValue } from '$lib/components/ui/action-bar';
@@ -26,8 +25,10 @@
 		aria-label="Actions for selected messages"
 		bind:clientWidth={toolbarWidth}
 	>
+		<!-- Selection summary + options. Per-row checkboxes live on the right of each
+		     row, so a master checkbox here would both duplicate the select menu and sit
+		     on the wrong side — the count badge plus the select menu cover it. -->
 		<span class="flex shrink-0 items-center gap-1.5">
-			<MessageListMasterCheckbox class="z-mail-list-bulk-bar__checkbox" />
 			<ActionBarValue count={selectedCount} />
 			<MessageListSelectMenu placement="top" {disabled} />
 		</span>

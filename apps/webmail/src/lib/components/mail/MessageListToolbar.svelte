@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { page } from '$app/stores';
-	import MessageListMasterCheckbox from '$lib/components/mail/MessageListMasterCheckbox.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
 	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import {
@@ -33,13 +32,14 @@
 	class={cn('z-mail-list-toolbar flex w-full min-w-0 items-center', className)}
 	aria-label="Message list"
 >
-	<!-- Only the bulk-selection controls dim when there's nothing to select (empty/loading/error).
-	     Compose and the Unseen filter stay usable regardless. -->
+	<!-- Only the bulk-selection control dims when there's nothing to select (empty/loading/error).
+	     Compose and the Unseen filter stay usable regardless. The select menu (All / Normal /
+	     Unseen / Clear) is the single selection entry point — it sits in the checkbox column so it
+	     lines up with the per-row checkboxes, and it makes a separate master checkbox redundant. -->
 	<div class={cn('z-mail-list-toolbar__selectors', disabled && 'pointer-events-none opacity-60')}>
 		<div class="z-mail-list-checkbox-col">
-			<MessageListMasterCheckbox class="z-mail-list-bulk-bar__checkbox" />
+			<MessageListSelectMenu {disabled} />
 		</div>
-		<MessageListSelectMenu {disabled} />
 	</div>
 	<a
 		href={unseenToggleHref}
