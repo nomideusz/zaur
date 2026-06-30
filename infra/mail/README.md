@@ -28,26 +28,23 @@ location = / {
 
 Configured in CapRover → **mail** → **HTTP Settings** → **Edit Default Nginx Config** (insert before the catch-all `location /`). After edits on the VPS, restart captain: `docker service update --force captain-captain`.
 
-## Stalwart auth (Logto OIDC + PostgreSQL)
+## Stalwart auth (PostgreSQL, password-only)
 
-Hybrid auth: **Logto** for Bearer/passkey JMAP sessions; **PostgreSQL** (`stalwart_auth` on `auth-db`) for mailbox passwords (JMAP basic auth, IMAP, SMTP submission).
+Logto was removed 2026-06-30. Stalwart is the sole auth authority; all auth is **email + password** validated against **PostgreSQL** (`stalwart_auth` on `auth-db`) via the SQL directory.
 
 ```
-webmail (PKCE)     → Logto @ auth.zaur.app
-webmail JMAP       → mail.zaur.app  (Bearer access_token → Logto OIDC directory)
-webmail password   → mail.zaur.app  (basic auth → PostgreSQL SQL directory)
+webmail login      → mail.zaur.app  (basic auth → PostgreSQL SQL directory; password held in encrypted session cookie)
 Thunderbird / SMTP → mail.zaur.app  (login → PostgreSQL SQL directory)
-register signup    → Stalwart account + bcrypt hash in PostgreSQL + Logto user
+register signup    → Stalwart account + bcrypt hash in PostgreSQL
 ```
 
-Requires **Stalwart 0.16.1+**. Webmail uses **opaque** Logto access tokens (no `OAUTH_RESOURCE`); Stalwart validates them via Logto’s userinfo endpoint (`/oidc/me`).
+webmail's custom login (`/api/auth/login`) does HTTP Basic auth straight to JMAP — no OIDC client, no Bearer tokens, no Logto.
 
 | Setting | Directory |
 |---------|-----------|
-| **Authentication → Directory** (global default) | **Logto OIDC** |
-| **Each mail domain → Directory** | **PostgreSQL Auth** |
+| **Authentication → Directory** (global default) | **PostgreSQL Auth** |
 
-Domains must **never** inherit the Logto OIDC directory — password login would break.
+**Why the global default — and not per-domain — must be the SQL directory:** Stalwart's per-domain directory routing (which the old hybrid setup used to keep OIDC for tokens + SQL for passwords) is an **Enterprise-only** feature. On the Community edition it silently degrades and *all* authentication uses the global default directory. If that default is ever an OIDC directory, every password/Basic login fails with `Unsupported credentials type for OIDC backend`. Keep the global default on **PostgreSQL Auth**.
 
 ### Apply on the server
 

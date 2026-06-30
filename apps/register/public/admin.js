@@ -162,11 +162,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
       }
       pills.push({
-        label: data.logtoConfigured ? 'Logto connected' : 'Logto off',
-        ok: data.logtoConfigured,
-        off: !data.logtoConfigured,
-      });
-      pills.push({
         label: data.stalwartConfigured ? 'Stalwart connected' : 'Stalwart off',
         ok: data.stalwartConfigured,
         off: !data.stalwartConfigured,
@@ -315,10 +310,6 @@ document.addEventListener('DOMContentLoaded', () => {
           <span>${data.stalwart ? escapeHtml(email) : 'Not found'}</span>
         </div>
         <div class="z-account-lookup-row">
-          <span class="z-account-lookup-label">Logto</span>
-          <span>${data.logto ? 'Present' : 'Not found'}</span>
-        </div>
-        <div class="z-account-lookup-row">
           <span class="z-account-lookup-label">Recovery</span>
           <span>${data.recoveryEmail ? escapeHtml(data.recoveryEmail) : '—'}</span>
         </div>
@@ -326,16 +317,6 @@ document.addEventListener('DOMContentLoaded', () => {
           ${
             data.stalwart
               ? '<button type="button" class="z-btn-danger z-btn-sm" data-cleanup="stalwart">Delete Stalwart</button>'
-              : ''
-          }
-          ${
-            data.logto
-              ? '<button type="button" class="z-btn-danger z-btn-sm" data-cleanup="logto">Delete Logto</button>'
-              : ''
-          }
-          ${
-            data.stalwart || data.logto
-              ? '<button type="button" class="z-btn-danger z-btn-sm" data-cleanup="all">Delete all</button>'
               : ''
           }
         </div>`;
@@ -353,7 +334,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   async function deleteAccount(email, target) {
-    const label = target === 'all' ? 'Stalwart and Logto' : target;
+    const label = target === 'all' ? 'Stalwart' : target;
     if (!confirm(`Delete ${email} from ${label}? This cannot be undone.`)) return;
 
     try {
@@ -435,7 +416,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const revokeBtn = document.createElement('button');
         revokeBtn.className = 'z-btn-danger z-btn-sm';
         revokeBtn.textContent = 'Revoke';
-        revokeBtn.addEventListener('click', () => revokeInvitation(invite.logtoTokenId));
+        revokeBtn.addEventListener('click', () => revokeInvitation(invite.id));
         tdActions.appendChild(revokeBtn);
       } else if (invite.mailboxEmail) {
         const lookupBtn = document.createElement('button');
@@ -508,18 +489,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
       auditSummary.innerHTML = `
         <div class="z-stat-card"><span class="z-type-label">Stalwart</span><strong class="z-stat-card__value">${data.counts.stalwartAccounts}</strong></div>
-        <div class="z-stat-card"><span class="z-type-label">Logto</span><strong class="z-stat-card__value">${data.counts.logtoUsers}</strong></div>
-        <div class="z-stat-card"><span class="z-type-label">Logto only</span><strong class="z-stat-card__value">${data.counts.logtoOnly}</strong></div>
         <div class="z-stat-card"><span class="z-type-label">Stalwart only</span><strong class="z-stat-card__value">${data.counts.stalwartOnly}</strong></div>
       `;
 
-      auditResults.appendChild(renderAuditGroup('Logto only', data.logtoOnly, 'logto'));
       auditResults.appendChild(renderAuditGroup('Stalwart only', data.stalwartOnly, 'stalwart'));
 
       auditSuccess.textContent =
-        data.counts.logtoOnly || data.counts.stalwartOnly
-          ? 'Audit completed. Review mismatches below before cleanup.'
-          : 'Audit completed. No provisioning mismatches found.';
+        data.counts.stalwartOnly
+          ? 'Audit completed. Review accounts below before cleanup.'
+          : 'Audit completed. No mailboxes found.';
       auditSuccess.classList.add('is-visible');
     } catch (err) {
       showError(err.message || 'Audit failed.', auditError);
@@ -557,8 +535,8 @@ document.addEventListener('DOMContentLoaded', () => {
     return section;
   }
 
-  async function cleanupAccount(email, target) {
-    await deleteAccount(email, target === 'logto' ? 'logto' : 'stalwart');
+  async function cleanupAccount(email) {
+    await deleteAccount(email, 'stalwart');
   }
 
   generateForm.addEventListener('submit', async (e) => {
@@ -602,7 +580,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  async function revokeInvitation(logtoTokenId) {
+  async function revokeInvitation(invitationId) {
     if (!confirm('Revoke this invitation link?')) {
       return;
     }
@@ -611,7 +589,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const res = await fetch('/api/admin/invitations/revoke', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ logtoTokenId }),
+        body: JSON.stringify({ invitationId }),
       });
 
       const data = await res.json();

@@ -1,6 +1,5 @@
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
-import { startAuthentication, startRegistration } from '@simplewebauthn/browser';
 import { appConfig } from '$lib/config';
 import { JMAPClient } from '$lib/jmap/client';
 import { normalizeEmail } from '$lib/jmap/account';
@@ -66,35 +65,13 @@ class AuthStore {
 	client = $state<JMAPClient | null>(null);
 	/** Re-entrancy guard while isolating a dead account in handleUnauthorized(). */
 	private handlingUnauthorized = false;
-	oauthConfig = $state<{
-		enabled: boolean;
-		passwordFallback?: boolean;
-		passkeyEnabled?: boolean;
-		passkeyOnly?: boolean;
-		clientId?: string;
-		issuerUrl?: string;
-		authorizationEndpoint?: string;
-		error?: string;
-	} | null>(null);
 
 	async init() {
 		if (!browser) return;
 		try {
-			await this.checkOauthConfig();
 			await this.restore();
 		} finally {
 			this.isRestoring = false;
-		}
-	}
-
-	async checkOauthConfig() {
-		try {
-			const res = await fetch('/api/auth/config');
-			if (res.ok) {
-				this.oauthConfig = await res.json();
-			}
-		} catch (e) {
-			console.error('Failed to load OIDC config:', e);
 		}
 	}
 
@@ -242,7 +219,7 @@ class AuthStore {
 		}
 	}
 
-	/** Start the add-account flow on our own login screen (password or passkey), appending a mailbox. */
+	/** Start the add-account flow on our own login screen, appending a mailbox. */
 	addAccountFlow(email?: string): void {
 		if (!browser) return;
 		const hint = email?.trim() ? `&email=${encodeURIComponent(email.trim())}` : '';
@@ -323,255 +300,6 @@ class AuthStore {
 				this.client = null;
 				this.isAuthenticated = false;
 			}
-		} finally {
-			this.isLoading = false;
-		}
-	}
-
-	async loginWithPasskey(options?: {
-		rememberMe?: boolean;
-		redirectTo?: string;
-		loginHint?: string;
-		add?: boolean;
-	}) {
-		this.isLoading = true;
-		this.error = null;
-		this.errorCode = null;
-
-		try {
-			if (!this.oauthConfig?.enabled) {
-				throw new Error('Sign-in is not configured yet.');
-			}
-
-			const email = options?.loginHint?.trim().toLowerCase();
-			if (!email || !email.includes('@')) {
-				throw new Error('Enter your email address before signing in with a passkey.');
-			}
-
-			const optionsRes = await fetch('/api/auth/passkey/options', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					email,
-					rememberMe: options?.rememberMe,
-					redirectTo: options?.redirectTo
-				})
-			});
-			const optionsPayload = (await optionsRes.json()) as {
-				authenticationOptions?: Record<string, unknown>;
-				error?: string;
-			};
-			if (!optionsRes.ok || !optionsPayload.authenticationOptions) {
-				throw new Error(optionsPayload.error ?? 'Could not start passkey sign-in.');
-			}
-
-			let credential;
-			try {
-				credential = await startAuthentication({
-					optionsJSON: optionsPayload.authenticationOptions as unknown as Parameters<
-						typeof startAuthentication
-					>[0]['optionsJSON']
-				});
-			} catch (error) {
-				if (error instanceof Error && error.name === 'NotAllowedError') {
-					throw new Error('Passkey sign-in was cancelled.');
-				}
-				throw error;
-			}
-
-			const verifyRes = await fetch('/api/auth/passkey/verify', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ credential })
-			});
-			const verifyPayload = (await verifyRes.json()) as { code?: string; state?: string; error?: string };
-			if (!verifyRes.ok || !verifyPayload.code) {
-				throw new Error(verifyPayload.error ?? 'Passkey verification failed.');
-			}
-
-			await this.completeOauthLogin(verifyPayload.code, verifyPayload.state, { add: options?.add });
-		} catch (error) {
-			this.isLoading = false;
-			this.error = error instanceof Error ? error.message : 'Failed to sign in with passkey';
-		}
-	}
-
-	/** @deprecated Use loginWithPasskey */
-	async loginWithSSO() {
-		return this.loginWithPasskey();
-	}
-
-	async registerPasskey(input: {
-		email: string;
-		password?: string;
-		token?: string;
-		rememberMe?: boolean;
-		redirectTo?: string;
-	}) {
-		this.isLoading = true;
-		this.error = null;
-
-		try {
-			if (!this.oauthConfig?.enabled) {
-				throw new Error('Passkey setup is not configured yet.');
-			}
-
-			const email = input.email.trim().toLowerCase();
-			if (!email.includes('@')) {
-				throw new Error('Enter a valid email address.');
-			}
-			if (!input.token && !input.password) {
-				throw new Error('Confirm your password to add a passkey.');
-			}
-
-			const optionsRes = await fetch('/api/auth/passkey/register/options', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					email,
-					password: input.password,
-					token: input.token,
-					rememberMe: input.rememberMe,
-					redirectTo: input.redirectTo
-				})
-			});
-			const optionsPayload = (await optionsRes.json()) as {
-				registrationOptions?: Record<string, unknown>;
-				error?: string;
-			};
-			if (!optionsRes.ok || !optionsPayload.registrationOptions) {
-				throw new Error(optionsPayload.error ?? 'Could not start passkey setup.');
-			}
-
-			let credential;
-			try {
-				credential = await startRegistration({
-					optionsJSON: optionsPayload.registrationOptions as unknown as Parameters<
-						typeof startRegistration
-					>[0]['optionsJSON']
-				});
-			} catch (error) {
-				if (error instanceof Error && error.name === 'NotAllowedError') {
-					throw new Error('Passkey setup was cancelled.');
-				}
-				throw error;
-			}
-
-			const verifyRes = await fetch('/api/auth/passkey/register/verify', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ credential })
-			});
-			const verifyPayload = (await verifyRes.json()) as {
-				success?: boolean;
-				code?: string;
-				state?: string;
-				error?: string;
-			};
-			if (!verifyRes.ok || !verifyPayload.success) {
-				throw new Error(verifyPayload.error ?? 'Passkey setup failed.');
-			}
-
-			if (verifyPayload.code) {
-				await this.completeOauthLogin(verifyPayload.code, verifyPayload.state);
-				return;
-			}
-		} catch (error) {
-			throw error instanceof Error ? error : new Error('Passkey setup failed.');
-		} finally {
-			this.isLoading = false;
-		}
-	}
-
-	async completeOauthLogin(code: string, state?: string | null, options?: { add?: boolean }) {
-		const add = options?.add === true;
-		this.isLoading = true;
-		this.error = null;
-		this.errorCode = null;
-		// In add mode the current account stays live until the new sign-in succeeds.
-		if (!add) this.resetMailState();
-
-		try {
-			const expectedState = sessionStorage.getItem('oauth_state');
-			const hasSessionFlow = Boolean(expectedState && state && expectedState === state);
-
-			const codeVerifier = sessionStorage.getItem('oauth_code_verifier') || '';
-			const rememberMe = sessionStorage.getItem('oauth_remember_me') === 'true';
-			const redirectTo = sessionStorage.getItem('oauth_redirect_to') || undefined;
-
-			if (hasSessionFlow) {
-				sessionStorage.removeItem('oauth_code_verifier');
-				sessionStorage.removeItem('oauth_state');
-				sessionStorage.removeItem('oauth_remember_me');
-				sessionStorage.removeItem('oauth_redirect_to');
-			}
-
-			const redirectUri = `${window.location.origin}/oauth/callback`;
-
-			const response = await fetch('/api/auth/token', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					code,
-					codeVerifier: hasSessionFlow ? codeVerifier : undefined,
-					redirectUri,
-					rememberMe: hasSessionFlow ? rememberMe : undefined,
-					state: state ?? undefined,
-					mode: add ? 'add' : undefined
-				})
-			});
-
-			const payload = (await response.json()) as LoginResponse;
-
-			if (!response.ok) {
-				const code = payload.code ?? classifyJmapError(new Error(payload.error ?? ''));
-				this.errorCode = code;
-				this.error = payload.error ?? loginErrorMessage(code);
-				await goto(add ? '/login?mode=add' : '/login');
-				return;
-			}
-
-			if (payload.username) {
-				saveRememberedLogin(payload.username, rememberMe);
-			}
-
-			if (add) {
-				// Appended + made active server-side; switch the mail layer to it.
-				await this.rebuildActiveAccount();
-				toast.show(`Added ${this.displayName ?? this.username}`, 'success');
-				await goto(payload.redirectTo ?? redirectTo ?? settings.preferredMailHref());
-				return;
-			}
-
-			const client = JMAPClient.createProxy();
-			await client.connect();
-			await this.openOfflineLayer(client);
-			await this.bootstrapMail(client);
-
-			this.client = client;
-			this.serverUrl = payload.serverUrl;
-			this.username = payload.username;
-			this.displayName = payload.displayName;
-			this.identities = payload.identities ?? [];
-			this.isAuthenticated = true;
-			settings.setUser(payload.username);
-			await settings.syncFromAccount();
-			this.startBackgroundSync(client, payload.username, payload.displayName);
-			await this.refreshAccounts();
-
-			await goto(payload.redirectTo ?? redirectTo ?? settings.preferredMailHref());
-		} catch (error) {
-			console.error('OAuth complete failed:', error);
-			const code = classifyJmapError(error);
-			this.errorCode = code;
-			this.error = error instanceof Error ? error.message : 'Passkey sign-in failed';
-			// Don't tear down the current account when an add attempt fails.
-			if (!add) {
-				this.client?.disconnect();
-				this.client = null;
-				this.isAuthenticated = false;
-			}
-			await goto(add ? '/login?mode=add' : '/login');
 		} finally {
 			this.isLoading = false;
 		}

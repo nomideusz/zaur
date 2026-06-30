@@ -26,8 +26,7 @@ export const init: ServerInit = async () => {
 export const handle: Handle = async ({ event, resolve }) => {
 	const response = await resolve(event);
 
-	const authOrigin = env.OAUTH_ISSUER_URL?.trim().replace(/\/$/, '') ?? '';
-	const connectSrc = ["'self'", 'https://mail.zaur.app', authOrigin].filter(Boolean).join(' ');
+	const connectSrc = ["'self'", 'https://mail.zaur.app'].join(' ');
 
 	const csp = [
 		"default-src 'self'",

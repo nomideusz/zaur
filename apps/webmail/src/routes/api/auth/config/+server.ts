@@ -1,57 +1,9 @@
-import { error, json, type RequestHandler } from '@sveltejs/kit';
-import { buildAuthorizationUrl } from '$lib/server/oauth';
-import { getOauthClientConfig, isOauthEnabled } from '$lib/server/oidc-discovery';
-import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
+import { json, type RequestHandler } from '@sveltejs/kit';
 
+/**
+ * Sign-in configuration for the client. OAuth/OIDC/passkey sign-in has been
+ * removed — this app only supports password (HTTP Basic → Stalwart JMAP) login.
+ */
 export const GET: RequestHandler = async () => {
-	const config = await getOauthClientConfig();
-	return json(config, { status: config.error ? 503 : 200 });
-};
-
-export const POST: RequestHandler = async ({ request }) => {
-	if (!isOauthEnabled()) {
-		error(503, 'Single sign-on is not configured');
-	}
-
-	const clientAddress = getClientAddress(request);
-	const limit = checkRateLimit({
-		key: `oauth-start:${clientAddress}`,
-		limit: 30,
-		windowMs: 15 * 60 * 1000
-	});
-	if (!limit.allowed) {
-		error(429, `Too many sign-in attempts. Try again in ${limit.retryAfterSec}s.`);
-	}
-
-	let body: {
-		state?: string;
-		codeChallenge?: string;
-		redirectUri?: string;
-		loginHint?: string;
-		directSignIn?: string;
-	};
-	try {
-		body = await request.json();
-	} catch {
-		error(400, 'Invalid request body');
-	}
-
-	const { state, codeChallenge, redirectUri, loginHint, directSignIn } = body;
-	if (!state || !codeChallenge || !redirectUri) {
-		error(400, 'state, codeChallenge, and redirectUri are required');
-	}
-
-	try {
-		const url = await buildAuthorizationUrl({
-			state,
-			codeChallenge,
-			redirectUri,
-			loginHint,
-			directSignIn
-		});
-		return json({ url });
-	} catch (err) {
-		console.error('[auth/config] Failed to build authorization URL:', err);
-		error(503, 'Identity provider is unavailable');
-	}
+	return json({ enabled: false, passwordFallback: true });
 };

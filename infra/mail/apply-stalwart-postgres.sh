@@ -100,9 +100,14 @@ echo "==> Configuring Security IP ban settings"
 "$CLI" update Security --field authBanRate=null --field abuseBanRate=null --field loiterBanRate=null --field scanBanRate=null --field authBanPeriod=3600000 --field abuseBanPeriod=3600000 --field loiterBanPeriod=3600000 --field scanBanPeriod=3600000
 
 
-# 3. Set global default authentication to OIDC
-echo "==> Authentication default → Logto OIDC (Bearer tokens)"
-"$CLI" update Authentication --field "directoryId=$oidc_id"
+# 3. Set global default authentication to the PostgreSQL SQL directory.
+# Logto/OIDC was removed (2026-06-30): webmail authenticates email+password
+# directly against Stalwart over JMAP Basic auth, so the SQL directory is the
+# sole auth backend. The per-domain OIDC routing that the hybrid setup relied on
+# is Enterprise-only and silently degrades to the global default on Community —
+# so the global default MUST be the SQL directory, never OIDC.
+echo "==> Authentication default → PostgreSQL SQL directory (password/Basic auth)"
+"$CLI" update Authentication --field "directoryId=$sql_id"
 "$CLI" get Authentication | head -3
 
 # 4. Set all mail domains to use the SQL directory for basic auth

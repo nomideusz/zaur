@@ -20,7 +20,6 @@
 	const isWelcome = $derived(
 		$page.url.searchParams.get('welcome') === '1' || urlEmail.length > 0
 	);
-	const passkeyReady = $derived($page.url.searchParams.get('passkey_ready') === '1');
 	// Prefer the server-load value (bound to the navigated route, race-free); fall back to
 	// the live URL param for safety. Either being true keeps us in add mode.
 	const isAdd = $derived(data.isAdd === true || $page.url.searchParams.get('mode') === 'add');
@@ -34,13 +33,6 @@
 		const next = $page.url.searchParams.get('next');
 		return next?.startsWith('/') && !next.startsWith('//') ? next : undefined;
 	});
-	// SSR-loaded config renders the right form immediately; the auth store takes over
-	// once the app-wide config fetch resolves (they come from the same server logic).
-	const oauthConfig = $derived(auth.oauthConfig ?? data.oauthConfig);
-	const oauthEnabled = $derived(oauthConfig?.enabled === true);
-	const passwordFallback = $derived(oauthConfig?.passwordFallback !== false);
-	const showPassword = $derived(!oauthEnabled || passwordFallback);
-	const showPasskey = $derived(oauthEnabled && oauthConfig?.passkeyEnabled !== false);
 	const forgotPasswordHref = $derived.by(() => {
 		const recovery = urlRecovery;
 		const trimmed = email.trim();
@@ -59,38 +51,17 @@
 	});
 
 	onMount(() => {
-		// Seed the store from SSR data so passkey sign-in works before the app-wide
-		// auth.init() config fetch resolves.
-		if (auth.oauthConfig === null) {
-			auth.oauthConfig = data.oauthConfig;
-		}
 		if (urlEmail) {
 			email = urlEmail;
 		} else if (isAdd) {
 			// Adding an account: start from a blank email, not the current user's.
 			email = '';
 		}
-		if ($page.url.searchParams.get('error') === 'passkey_email') {
-			auth.error = 'Enter your email address before signing in with a passkey.';
-		}
 	});
 
 	function submitLogin(e: Event) {
 		e.preventDefault();
-		if (showPassword) {
-			void auth.login(email, password, undefined, rememberMe, nextPath, { add: isAdd });
-		} else if (showPasskey) {
-			signInWithPasskey();
-		}
-	}
-
-	function signInWithPasskey() {
-		void auth.loginWithPasskey({
-			rememberMe,
-			redirectTo: nextPath,
-			loginHint: email.trim().toLowerCase(),
-			add: isAdd
-		});
+		void auth.login(email, password, undefined, rememberMe, nextPath, { add: isAdd });
 	}
 </script>
 
@@ -106,11 +77,6 @@
 				<p class="z-callout__body">
 					Sign in with the address you want to add. Your current account stays open.
 				</p>
-			</div>
-		{:else if passkeyReady && showPasskey}
-			<div class="z-callout">
-				<span class="z-callout__title">Passkey ready</span>
-				<p class="z-callout__body">Use “Sign in with passkey” below.</p>
 			</div>
 		{:else if isWelcome}
 			<div class="z-callout">
@@ -132,24 +98,22 @@
 			disabled={auth.isLoading}
 		/>
 
-		{#if showPassword}
-			<div class="z-field-stack">
-				<LabelInput
-					id="password"
-					label="Password"
-					type="password"
-					bind:value={password}
-					autocomplete="current-password"
-					required
-					disabled={auth.isLoading}
-				/>
-				<p class="text-right">
-					<a href={forgotPasswordHref} class="z-link text-sm">
-						Forgot password?
-					</a>
-				</p>
-			</div>
-		{/if}
+		<div class="z-field-stack">
+			<LabelInput
+				id="password"
+				label="Password"
+				type="password"
+				bind:value={password}
+				autocomplete="current-password"
+				required
+				disabled={auth.isLoading}
+			/>
+			<p class="text-right">
+				<a href={forgotPasswordHref} class="z-link text-sm">
+					Forgot password?
+				</a>
+			</p>
+		</div>
 
 		<Checkbox
 			bind:checked={rememberMe}
@@ -165,26 +129,13 @@
 		{/if}
 
 		<div class="z-field-stack">
-			{#if showPassword}
-				<Button
-					type="submit"
-					class="z-btn-lg w-full"
-					disabled={auth.isLoading || !canSubmitPassword}
-				>
-					{auth.isLoading ? 'Signing in…' : 'Sign in'}
-				</Button>
-			{/if}
-			{#if showPasskey}
-				<Button
-					type="button"
-					variant={showPassword ? 'ghost' : 'primary'}
-					class={showPassword ? 'w-full' : 'z-btn-lg w-full'}
-					disabled={auth.isLoading || !email.trim().includes('@')}
-					onclick={signInWithPasskey}
-				>
-					{auth.isLoading ? 'Waiting for passkey…' : 'Sign in with passkey'}
-				</Button>
-			{/if}
+			<Button
+				type="submit"
+				class="z-btn-lg w-full"
+				disabled={auth.isLoading || !canSubmitPassword}
+			>
+				{auth.isLoading ? 'Signing in…' : 'Sign in'}
+			</Button>
 			{#if isAdd}
 				<p class="text-center">
 					<a href={settings.preferredMailHref()} class="z-link text-sm">Cancel</a>

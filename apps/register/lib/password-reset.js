@@ -3,7 +3,6 @@ const fs = require('fs');
 const path = require('path');
 
 const stalwart = require('./stalwart');
-const logto = require('./logto');
 const invitations = require('./invitations');
 const inviteMail = require('./invite-mail');
 const { validatePassword } = require('./validation');
@@ -92,16 +91,6 @@ function findActiveToken(mailboxEmail, token) {
 async function resolveRecoveryEmail(mailboxEmail) {
   const normalized = normalizeEmail(mailboxEmail);
 
-  if (logto.isConfigured()) {
-    try {
-      const user = await logto.getUserByEmail(normalized);
-      const recovery = user?.customData?.recoveryEmail;
-      if (recovery) return normalizeEmail(recovery);
-    } catch (err) {
-      console.error('resolveRecoveryEmail logto:', err.message);
-    }
-  }
-
   const fromAudit = invitations.findRecoveryEmailByMailbox(normalized);
   if (fromAudit) return fromAudit;
 
@@ -120,17 +109,6 @@ async function resolveMailboxEmail(input) {
   const fromAudit = invitations.findMailboxByRecoveryEmail(normalized);
   if (fromAudit && (await stalwart.findAccountByEmail(fromAudit))) {
     return fromAudit;
-  }
-
-  if (logto.isConfigured()) {
-    try {
-      const fromLogto = await logto.findPrimaryEmailByRecoveryEmail(normalized);
-      if (fromLogto && (await stalwart.findAccountByEmail(fromLogto))) {
-        return fromLogto;
-      }
-    } catch (err) {
-      console.error('resolveMailboxEmail logto:', err.message);
-    }
   }
 
   return null;
@@ -220,27 +198,6 @@ async function resetPassword(mailboxEmail, token, password, confirmPassword) {
 
   const email = normalizeEmail(entry.mailboxEmail);
   await stalwart.changePassword(email, password);
-
-  if (logto.isConfigured()) {
-    try {
-      await logto.updatePassword(email, password);
-    } catch (err) {
-      console.error('resetPassword logto:', err.message);
-      // Token stays unused so the user can retry once sign-in sync recovers.
-      return {
-        valid: false,
-        error: 'Password was updated for mail, but sign-in sync failed. Contact support.',
-      };
-    }
-
-    // Sign out everywhere — a hijacked session must not survive the reset.
-    try {
-      const revoked = await logto.revokeUserSessions(email);
-      if (revoked) console.log(`resetPassword: revoked ${revoked} session(s) for ${email}`);
-    } catch (err) {
-      console.error('resetPassword revoke sessions:', err.message);
-    }
-  }
 
   const tokens = readTokens();
   const stored = tokens.find(

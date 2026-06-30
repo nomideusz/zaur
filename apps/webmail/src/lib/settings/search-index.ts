@@ -61,12 +61,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "The mail server this app syncs with."
 	},
 	{
-		"id": "/settings/account-passkey",
-		"href": "/settings/account",
-		"title": "Passkey",
-		"description": "Sign in with your device's biometrics or PIN instead of a password."
-	},
-	{
 		"id": "/settings/account-password",
 		"href": "/settings/account",
 		"title": "Password",

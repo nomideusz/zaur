@@ -10,7 +10,6 @@ const stalwart = require('./lib/stalwart');
 const invitations = require('./lib/invitations');
 const inviteMail = require('./lib/invite-mail');
 const passwordReset = require('./lib/password-reset');
-const logto = require('./lib/logto');
 const {
   validateUsername,
   validatePassword,
@@ -129,7 +128,7 @@ app.get('/api/config', (_req, res) => {
     requiresInvitation: invitations.requiresInvitation(),
     applicationsEnabled: inviteMail.isConfigured(),
     passwordResetEnabled: passwordReset.isEnabled(),
-    passkeySetupEnabled: logto.isConfigured(),
+    passkeySetupEnabled: false,
   });
 });
 
@@ -260,16 +259,9 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
     }
 
     let accountId = null;
-    let logtoCreated = false;
 
     try {
-      // 1. Create matching Logto user for webmail passkey / OIDC sign-in
-      if (logto.isConfigured()) {
-        await logto.createUser(email, password, { recoveryEmail });
-        logtoCreated = true;
-      }
-
-      // 2. Create Stalwart account representation with internal password
+      // 1. Create Stalwart account representation with internal password
       const account = await stalwart.createAccount(
         usernameValidation.username,
         domainId,
@@ -277,7 +269,7 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
       );
       accountId = account.accountId;
 
-      // 3. Provision standard mailboxes via admin JMAP
+      // 2. Provision standard mailboxes via admin JMAP
       await stalwart.ensureStandardMailboxes(accountId);
 
       if (recoveryEmail) {
@@ -289,13 +281,6 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
       }
     } catch (err) {
       const cleanupErrors = [];
-      if (logtoCreated) {
-        try {
-          await logto.deleteUser(email);
-        } catch (cleanupErr) {
-          cleanupErrors.push(`Logto cleanup failed: ${cleanupErr.message}`);
-        }
-      }
       if (accountId) {
         try {
           await stalwart.deleteAccount(accountId);
@@ -313,21 +298,12 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
 
     delete req.session.captchaAnswer;
 
-    let passkeySetup = null;
-    if (logtoCreated) {
-      try {
-        passkeySetup = await logto.createPasskeySetupToken(email);
-      } catch (err) {
-        console.warn('Passkey setup token creation failed:', err.message);
-      }
-    }
-
     res.json({
       success: true,
       email,
       recoveryEmail,
-      passkeySetupEnabled: Boolean(passkeySetup?.token),
-      passkeySetup: passkeySetup?.token ? { token: passkeySetup.token } : null,
+      passkeySetupEnabled: false,
+      passkeySetup: null,
       webmailUrl: process.env.WEBMAIL_URL || 'https://webmail.zaur.app',
       mailHost: process.env.MAIL_HOST || 'mail.zaur.app',
     });
@@ -498,13 +474,13 @@ app.post('/api/admin/invitations/send', requireAdmin, async (req, res) => {
 });
 
 app.post('/api/admin/invitations/revoke', requireAdmin, async (req, res) => {
-  const logtoTokenId = String(req.body.logtoTokenId || '').trim();
-  if (!logtoTokenId) {
+  const invitationId = String(req.body.invitationId || '').trim();
+  if (!invitationId) {
     return res.status(400).json({ error: 'Invitation id is required.' });
   }
 
   try {
-    await invitations.revokeInvitation(logtoTokenId);
+    await invitations.revokeInvitation(invitationId);
     res.json({ success: true });
   } catch (err) {
     res.status(502).json({ error: err.message });
@@ -554,40 +530,13 @@ app.post('/api/forgot-password/reset', forgotPasswordIpLimiter, async (req, res)
 
 async function getProvisioningAudit() {
   const mailAccounts = await stalwart.listAccounts();
-  const mailByEmail = new Map(mailAccounts.map((account) => [account.email.toLowerCase(), account]));
-
-  let logtoUsers = [];
-  if (logto.isConfigured()) {
-    try {
-      logtoUsers = await logto.listUsers();
-    } catch (err) {
-      console.error('getProvisioningAudit logto:', err.message);
-    }
-  }
-
-  const logtoByEmail = new Map(
-    logtoUsers
-      .filter((user) => user.primaryEmail)
-      .map((user) => [user.primaryEmail.toLowerCase(), user]),
-  );
-
-  const stalwartOnly = mailAccounts.filter((account) => !logtoByEmail.has(account.email.toLowerCase()));
-  const logtoOnly = [...logtoByEmail.entries()]
-    .filter(([email]) => !mailByEmail.has(email))
-    .map(([email, user]) => ({
-      email,
-      username: user.username || email,
-    }));
 
   return {
     counts: {
       stalwartAccounts: mailAccounts.length,
-      logtoUsers: logtoByEmail.size,
-      logtoOnly: logtoOnly.length,
-      stalwartOnly: stalwartOnly.length,
+      stalwartOnly: mailAccounts.length,
     },
-    logtoOnly,
-    stalwartOnly: stalwartOnly.map((account) => ({
+    stalwartOnly: mailAccounts.map((account) => ({
       email: account.email,
       username: account.name,
       accountId: account.id,
@@ -618,7 +567,6 @@ app.get('/api/admin/overview', requireAdmin, async (_req, res) => {
       invitationEmailConfigured: inviteMail.isConfigured(),
       smtpStatus,
       passwordResetEnabled: passwordReset.isEnabled(),
-      logtoConfigured: logto.isConfigured(),
       stalwartConfigured: Boolean(process.env.STALWART_URL),
       domains: domains.map((domain) => ({ id: domain.id, name: domain.name })),
       counts: {
@@ -670,11 +618,6 @@ app.get('/api/admin/account', requireAdmin, async (req, res) => {
 
   try {
     const stalwartAccount = await stalwart.findAccountByEmail(email);
-    let logtoUser = null;
-    if (logto.isConfigured()) {
-      logtoUser = await logto.findUserByEmail(email);
-    }
-
     const recoveryEmail = invitations.findRecoveryEmailByMailbox(email);
 
     res.json({
@@ -682,13 +625,7 @@ app.get('/api/admin/account', requireAdmin, async (req, res) => {
       stalwart: stalwartAccount
         ? { id: stalwartAccount.id, username: stalwartAccount.name, domain: stalwartAccount.domain }
         : null,
-      logto: logtoUser
-        ? {
-            id: logtoUser.id,
-            recoveryEmail: logtoUser.customData?.recoveryEmail?.toLowerCase() || null,
-          }
-        : null,
-      recoveryEmail: recoveryEmail || logtoUser?.customData?.recoveryEmail?.toLowerCase() || null,
+      recoveryEmail: recoveryEmail || null,
     });
   } catch (err) {
     console.error('GET /api/admin/account:', err.message);
@@ -713,17 +650,14 @@ app.post('/api/admin/cleanup-account', requireAdmin, async (req, res) => {
     return res.status(400).json({ error: 'Email is required.' });
   }
 
-  if (!['directory', 'logto', 'stalwart', 'both', 'all'].includes(target)) {
+  if (!['directory', 'stalwart', 'both', 'all'].includes(target)) {
     return res.status(400).json({
-      error: 'Cleanup target must be directory, logto, stalwart, both, or all.',
+      error: 'Cleanup target must be directory, stalwart, both, or all.',
     });
   }
 
   try {
     const result = {};
-    if (target === 'logto' || target === 'all') {
-      result.logto = logto.isConfigured() ? await logto.deleteUser(email) : false;
-    }
     if (target === 'stalwart' || target === 'both' || target === 'all') {
       result.stalwart = await stalwart.deleteAccountByEmail(email);
     }

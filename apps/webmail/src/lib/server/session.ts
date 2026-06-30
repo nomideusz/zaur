@@ -333,8 +333,7 @@ export function updateAccountTokens(id: string, data: SessionData, secret?: stri
 	if (!session) return;
 	const next = withAccountTokens(session, data);
 	persistSession(next, secret);
-	// Keep the durable group in sync so a rotated refresh token is still valid when
-	// the account is restored on another device (Logto rotates refresh tokens).
+	// Keep the durable group in sync when an account's stored data changes.
 	if (next.remember && next.accounts.length >= 2) rememberLinkedAccounts(next.accounts);
 }
 

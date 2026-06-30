@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import PushNotificationStatus from '$lib/components/settings/PushNotificationStatus.svelte';
 	import SettingsField from '$lib/components/settings/SettingsField.svelte';
 	import SettingsFormGroup from '$lib/components/settings/SettingsFormGroup.svelte';
@@ -16,57 +15,10 @@
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 
-	let passkeyPassword = $state('');
-	let passkeyLoading = $state(false);
-	let passkeyRegistered = $state<boolean | null>(null);
-	let passkeyStatusLoading = $state(false);
-
-	const oauthEnabled = $derived(auth.oauthConfig?.enabled === true);
 	// Bare hostname of the mail server — IMAP/SMTP share the JMAP host.
 	const mailHost = $derived(
 		(auth.serverUrl ?? appConfig.jmapServerUrl).replace(/^https?:\/\//, '').replace(/[/:].*$/, '')
 	);
-
-	async function loadPasskeyStatus() {
-		if (!oauthEnabled || !auth.username) return;
-		passkeyStatusLoading = true;
-		try {
-			const res = await fetch('/api/auth/passkey/status');
-			if (res.ok) {
-				const payload = (await res.json()) as { registered?: boolean };
-				passkeyRegistered = payload.registered === true;
-			}
-		} catch {
-			// Non-critical — keep add-passkey UI available.
-		} finally {
-			passkeyStatusLoading = false;
-		}
-	}
-
-	onMount(async () => {
-		await auth.checkOauthConfig();
-		await loadPasskeyStatus();
-	});
-
-	async function addPasskey() {
-		if (!auth.username || !passkeyPassword) return;
-		passkeyLoading = true;
-		try {
-			await auth.registerPasskey({
-				email: auth.username,
-				password: passkeyPassword
-			});
-			passkeyPassword = '';
-			passkeyRegistered = true;
-			void loadPasskeyStatus();
-			toast.show('Passkey added. You can use it to sign in next time.', 'success');
-		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Passkey setup failed.';
-			toast.show(message, 'error');
-		} finally {
-			passkeyLoading = false;
-		}
-	}
 
 	let lastSyncedDisplayName = $state(settings.displayName);
 	async function saveDisplayNameToServer() {
@@ -344,41 +296,4 @@
 	</SettingsRow>
 </SettingsGroup>
 
-{#if oauthEnabled}
-	<SettingsGroup title="Security">
-		<SettingsField title="Passkey" description="Sign in with your device's biometrics or PIN instead of a password.">
-			{#snippet children({ id })}
-				<div class="flex w-full flex-col gap-2 sm:max-w-xs">
-					{#if passkeyStatusLoading}
-						<p class="text-fg-muted">Checking passkey status…</p>
-					{:else if passkeyRegistered}
-						<p class="text-fg">Passkey registered for this account.</p>
-						<p class="text-fg-muted">You can sign in with a passkey from the login page.</p>
-					{/if}
-					<input
-						{id}
-						type="password"
-						class="z-input"
-						bind:value={passkeyPassword}
-						autocomplete="current-password"
-						placeholder="Confirm password"
-						disabled={passkeyLoading}
-					/>
-					<button
-						type="button"
-						class="z-mail-text-nav__link w-fit"
-						disabled={passkeyLoading || !passkeyPassword.trim()}
-						onclick={() => void addPasskey()}
-					>
-						{passkeyLoading
-							? 'Waiting for passkey…'
-							: passkeyRegistered
-								? 'Add another passkey'
-								: 'Add passkey'}
-					</button>
-				</div>
-			{/snippet}
-		</SettingsField>
-	</SettingsGroup>
-{/if}
 
