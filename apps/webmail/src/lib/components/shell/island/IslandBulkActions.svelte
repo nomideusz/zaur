@@ -12,9 +12,9 @@
 	const disabled = $derived(!ctx || ctx.loading || !!ctx.error || ctx.messageCount === 0);
 	const selectedCount = $derived(mail.selectedMessageIds.size);
 
-	/* Island width is fixed by the viewport; reserve the count + close chrome. */
+	/* Island width is fixed by the viewport; reserve the count + select + close chrome. */
 	let toolbarWidth = $state(0);
-	const ISLAND_CHROME_PX = 150;
+	const ISLAND_CHROME_PX = 130;
 	const actionsAvailableWidth = $derived(Math.max(0, toolbarWidth - ISLAND_CHROME_PX));
 </script>
 
@@ -25,21 +25,21 @@
 		aria-label="Actions for selected messages"
 		bind:clientWidth={toolbarWidth}
 	>
-		<!-- Selection summary + options. Per-row checkboxes live on the right of each
-		     row, so a master checkbox here would both duplicate the select menu and sit
-		     on the wrong side — the count badge plus the select menu cover it. -->
-		<span class="flex shrink-0 items-center gap-1.5">
+		<!-- Selection summary + options — the count badge plus the select menu stand
+		     in for a master checkbox. -->
+		<span class="flex shrink-0 items-center gap-1">
 			<ActionBarValue count={selectedCount} />
 			<MessageListSelectMenu placement="top" {disabled} />
 		</span>
 
-		<div class="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto">
+		<div class="flex min-w-0 flex-1 items-center justify-evenly gap-1">
 			<BulkActionsRow
 				{mailboxRouteId}
 				onBulkAction={ctx?.onBulkAction}
 				menuSide="top"
 				menuId="island-bulk-actions-menu"
 				availableWidth={actionsAvailableWidth}
+				iconOnly
 			/>
 		</div>
 

@@ -98,7 +98,7 @@ export function estimateBulkActionWidth(action: Pick<BulkBarAction, 'label'>): n
 export function fitBulkActions(
 	actions: BulkBarAction[],
 	availableWidth: number,
-	options?: { reservedWidth?: number }
+	options?: { reservedWidth?: number; actionWidth?: number }
 ): { inline: BulkBarAction[]; overflow: BulkBarAction[] } {
 	// Trash button + separators + the More trigger itself.
 	const reserved = options?.reservedWidth ?? 150;
@@ -107,7 +107,7 @@ export function fitBulkActions(
 	const inlineIds = new Set<BulkBarActionId>();
 	let used = reserved;
 	for (const action of byPriority) {
-		const width = estimateBulkActionWidth(action);
+		const width = options?.actionWidth ?? estimateBulkActionWidth(action);
 		// Priority 1 (Highlight family) always stays inline.
 		if (action.priority <= 1 || used + width <= availableWidth) {
 			inlineIds.add(action.id);

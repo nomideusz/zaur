@@ -11,10 +11,10 @@
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
+	import Eye from '$lib/components/icons/Eye.svelte';
+	import EyeOff from '$lib/components/icons/EyeOff.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
 	import Inbox from '$lib/components/icons/Inbox.svelte';
-	import Mail from '$lib/components/icons/Mail.svelte';
-	import MailOpen from '$lib/components/icons/MailOpen.svelte';
 	import ShieldAlert from '$lib/components/icons/ShieldAlert.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import RefreshCw from '$lib/components/icons/RefreshCw.svelte';
@@ -364,8 +364,8 @@
 	});
 	/**
 	 * Desktop reserves a flex checkbox column so hover-reveal never reflows rows.
-	 * Mobile inlines the checkbox on the sender line (replacing the unread dot) so
-	 * it never overlaps the subject on the row below. Full width while browsing.
+	 * Mobile mounts the same left column only while selecting — long press starts
+	 * selection and the column slides in. Full width while browsing.
 	 */
 	const listSelectMode = $derived(bulkSelectEnabled);
 	const mobileListLayout = $derived(isMobileLayout());
@@ -399,8 +399,8 @@
 	}
 
 	const SWIPE_ACTION_ICONS: Record<string, SwipeAction['icon']> = {
-		'mark-seen': MailOpen,
-		unsee: Mail,
+		'mark-seen': Eye,
+		unsee: EyeOff,
 		'mark-important': Important,
 		'remove-important': Important,
 		'move-inbox': Inbox,
@@ -1089,7 +1089,7 @@
 				data-selected={rowSelected ? 'true' : undefined}
 				data-unread={isUnread ? 'true' : undefined}
 			>
-				{#if showRowCheckbox && !mobileListLayout}
+				{#if showRowCheckbox}
 					<div class="z-mail-list-checkbox-col z-mail-list-checkbox-col--row">
 						<Checkbox
 							class={cn('z-mail-list-row__checkbox absolute m-0', rowSelected && 'z-mail-list-row__checkbox--on')}
@@ -1134,15 +1134,6 @@
 								<time class={listTimeClass} datetime={message.receivedAt}>
 									{timeLabel}
 								</time>
-							{/if}
-							{#if showRowCheckbox && mobileListLayout}
-								<Checkbox
-									class={cn('z-mail-list-row__checkbox z-mail-list-row__checkbox--corner', rowSelected && 'z-mail-list-row__checkbox--on')}
-									checked={rowSelected}
-									label={`Select ${subjectText}`}
-									onchange={() => handleRowCheckboxChange(message.id)}
-									onclick={(event) => handleRowCheckboxClick(message.id, event)}
-								/>
 							{/if}
 						</div>
 						{#if message.hasAttachment || message.replied}

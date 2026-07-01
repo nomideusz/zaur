@@ -552,11 +552,9 @@
 
 	@media (max-width: 767px) {
 		/*
-		 * Two-column grid: sender + subject stack on the left, a right rail holds
-		 * the time on top and the bulk-select checkbox beneath it. The checkbox sits
-		 * in its own grid cell — out of the text flow — so checking a row never
-		 * reflows it, and the rail's width is set by the time, so the checkbox
-		 * appearing on selection-mode entry shifts nothing.
+		 * Two-column grid: sender + subject stack on the left, the time in a right
+		 * rail. The bulk-select checkbox lives in the shared left column instead
+		 * (see the selecting rules below), matching desktop.
 		 */
 		.z-mail-list-row-copy {
 			grid-template-columns: minmax(0, 1fr) auto;
@@ -580,13 +578,34 @@
 			align-self: start;
 		}
 
-		.z-mail-view .z-mail-list-row__checkbox--corner {
-			grid-column: 2;
-			grid-row: 2;
-			justify-self: end;
-			align-self: end;
-			opacity: 1;
-			pointer-events: auto;
+		/*
+		 * Bulk select — checkboxes are hidden while browsing; long press starts
+		 * selection and the left column slides in, pushing row content right.
+		 * (Row padding overrides live in the selectable-list block further down.)
+		 */
+		.z-mail-view .z-mail-list--selecting .z-mail-list-row {
+			display: flex;
+			align-items: flex-start;
+			gap: var(--z-mail-list-checkbox-gap);
+		}
+
+		.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a),
+		.z-mail-view .z-mail-list--selecting .z-mail-list-row .z-mail-list-swipe-row {
+			flex: 1 1 auto;
+			min-width: 0;
+		}
+
+		@media (prefers-reduced-motion: no-preference) {
+			html:not(.z-reduce-motion) .z-mail-view .z-mail-list--selecting .z-mail-list-checkbox-col--row {
+				animation: z-checkbox-col-in var(--z-motion-base) var(--z-ease-out);
+			}
+		}
+	}
+
+	@keyframes z-checkbox-col-in {
+		from {
+			width: 0;
+			opacity: 0;
 		}
 	}
 
@@ -774,9 +793,9 @@
 		}
 
 		/*
-		 * Bulk select — the checkbox sits in the row's right rail (see
-		 * __checkbox--corner); row padding matches the non-selectable list so
-		 * nothing re-wraps when selection mode turns on.
+		 * Bulk select — while browsing, row padding matches the non-selectable
+		 * list so nothing re-wraps; once selecting, the left checkbox column
+		 * provides the start inset instead of the link padding.
 		 */
 		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row {
 			padding-inline: 0;
@@ -785,6 +804,15 @@
 		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row > :where(a),
 		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
 			padding: 0.625rem var(--z-mail-list-row-link-pad-x) !important;
+		}
+
+		.z-mail-view .z-mail-list--selecting .z-mail-list-row {
+			padding-inline-start: var(--z-mail-list-row-pad-x);
+		}
+
+		.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a),
+		.z-mail-view .z-mail-list--selecting .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+			padding-inline-start: 0 !important;
 		}
 
 		.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new::before {

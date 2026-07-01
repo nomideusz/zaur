@@ -2,6 +2,8 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Copy from '$lib/components/icons/Copy.svelte';
+	import Eye from '$lib/components/icons/Eye.svelte';
+	import EyeOff from '$lib/components/icons/EyeOff.svelte';
 	import Forward from '$lib/components/icons/Forward.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
 	import PencilLine from '$lib/components/icons/PencilLine.svelte';
@@ -9,6 +11,7 @@
 	import ReplyAll from '$lib/components/icons/ReplyAll.svelte';
 	import Send from '$lib/components/icons/Send.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
+	import ShieldAlert from '$lib/components/icons/ShieldAlert.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import XCircle from '$lib/components/icons/XCircle.svelte';
 	import OverflowMenu from '$lib/components/ui/OverflowMenu.svelte';
@@ -292,9 +295,13 @@
 					<div class="mx-4 my-1 border-t border-border" role="separator"></div>
 				{/if}
 				{#if actionMessage?.unread}
-					<OverflowMenuItem label={LABEL_CLEAR_NEW} onclick={fileAsNotImportant} />
+					<OverflowMenuItem label={LABEL_CLEAR_NEW} onclick={fileAsNotImportant}>
+						{#snippet icon()}<Eye class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
 				{:else if actionMessage}
-					<OverflowMenuItem label={LABEL_RESTORE_NEW} onclick={() => void markUnread()} />
+					<OverflowMenuItem label={LABEL_RESTORE_NEW} onclick={() => void markUnread()}>
+						{#snippet icon()}<EyeOff class="size-5" aria-hidden="true" />{/snippet}
+					</OverflowMenuItem>
 				{/if}
 				<div class="mx-4 my-1 border-t border-border" role="separator"></div>
 				{#if actionMessage?.important}
@@ -315,7 +322,7 @@
 						</OverflowMenuItem>
 					{:else}
 						<OverflowMenuItem label="Mark spam" onclick={toggleSpam}>
-							{#snippet icon()}<Shield class="size-5" aria-hidden="true" />{/snippet}
+							{#snippet icon()}<ShieldAlert class="size-5" aria-hidden="true" />{/snippet}
 						</OverflowMenuItem>
 					{/if}
 				{/if}

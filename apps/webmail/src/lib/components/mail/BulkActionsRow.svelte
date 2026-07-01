@@ -13,9 +13,9 @@
 		type BulkBarActionId
 	} from '$lib/components/mail/bulk-bar-actions';
 	import { bulkSelectionCounts } from '$lib/components/mail/bulk-selection-label';
+	import Eye from '$lib/components/icons/Eye.svelte';
+	import EyeOff from '$lib/components/icons/EyeOff.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
-	import Mail from '$lib/components/icons/Mail.svelte';
-	import MailOpen from '$lib/components/icons/MailOpen.svelte';
 	import MoreVertical from '$lib/components/icons/MoreVertical.svelte';
 	import ShieldAlert from '$lib/components/icons/ShieldAlert.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
@@ -41,6 +41,8 @@
 		 * fit-content, so it can't self-measure). Unset = everything inline.
 		 */
 		availableWidth?: number;
+		/** Island mode — icon-only tap targets, labels via aria-label. */
+		iconOnly?: boolean;
 	}
 
 	let {
@@ -48,14 +50,15 @@
 		onBulkAction,
 		menuSide = 'top',
 		menuId = 'bulk-actions-menu',
-		availableWidth = Number.POSITIVE_INFINITY
+		availableWidth = Number.POSITIVE_INFINITY,
+		iconOnly = false
 	}: Props = $props();
 
 	const ACTION_ICONS: Partial<
 		Record<BulkBarActionId, Component<{ class?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>>
 	> = {
-		unsee: Mail,
-		'mark-seen': MailOpen,
+		unsee: EyeOff,
+		'mark-seen': Eye,
 		important: Important,
 		'not-important': Important,
 		spam: ShieldAlert
@@ -95,7 +98,14 @@
 	]);
 	const markActions = $derived(actions.filter((action) => markActionIds.has(action.id)));
 
-	const fitted = $derived(fitBulkActions(markActions, availableWidth));
+	/* Icon buttons are fixed-width (2.75rem + gap); reserve separator + trash + More. */
+	const fitted = $derived(
+		fitBulkActions(
+			markActions,
+			availableWidth,
+			iconOnly ? { reservedWidth: 104, actionWidth: 50 } : undefined
+		)
+	);
 	const inlineActions = $derived(fitted.inline);
 	const overflowActions = $derived(fitted.overflow);
 	/** Read-state group first, then spam — separated in the menu. */
@@ -170,20 +180,36 @@
 {/snippet}
 
 {#each inlineActions as action (action.id)}
-	<Button variant="ghost" class="{ghostBtnClass} shrink-0" onclick={() => runAction(action.id)}>
-		{@render actionIcon(action, 'size-4')}
-		{action.label}
-	</Button>
+	{#if iconOnly}
+		<button
+			type="button"
+			class="z-mobile-island__icon-btn shrink-0"
+			aria-label={action.label}
+			title={action.label}
+			onclick={() => runAction(action.id)}
+		>
+			{@render actionIcon(action, 'size-[1.125rem]')}
+		</button>
+	{:else}
+		<Button variant="ghost" class="{ghostBtnClass} shrink-0" onclick={() => runAction(action.id)}>
+			{@render actionIcon(action, 'size-4')}
+			{action.label}
+		</Button>
+	{/if}
 {/each}
 
 {#if overflowActions.length > 0}
 	<Menu side={menuSide} align="start" {menuId}>
 		<MenuTrigger
 			aria-label="More actions for selected messages"
-			class={`z-btn-ghost ${ghostBtnClass} shrink-0`}
+			class={iconOnly
+				? 'z-mobile-island__icon-btn shrink-0'
+				: `z-btn-ghost ${ghostBtnClass} shrink-0`}
 		>
-			<MoreVertical class="size-4" aria-hidden="true" />
-			<span class="max-sm:sr-only">More</span>
+			<MoreVertical class={iconOnly ? 'size-[1.125rem]' : 'size-4'} aria-hidden="true" />
+			{#if !iconOnly}
+				<span class="max-sm:sr-only">More</span>
+			{/if}
 		</MenuTrigger>
 		<MenuContent class="w-56 min-w-48">
 			{#each overflowReadState as action (action.id)}
@@ -211,7 +237,19 @@
 
 <ActionBarSeparator />
 
-<Button variant="danger" class="{actionBtnSizeClass} shrink-0" onclick={() => runAction('trash')}>
-	<Trash2 class="size-4" aria-hidden="true" />
-	<span class="max-sm:sr-only">{deleteLabel}</span>
-</Button>
+{#if iconOnly}
+	<button
+		type="button"
+		class="z-mobile-island__icon-btn z-mobile-island__icon-btn--danger shrink-0"
+		aria-label={deleteLabel}
+		title={deleteLabel}
+		onclick={() => runAction('trash')}
+	>
+		<Trash2 class="size-[1.125rem]" aria-hidden="true" />
+	</button>
+{:else}
+	<Button variant="danger" class="{actionBtnSizeClass} shrink-0" onclick={() => runAction('trash')}>
+		<Trash2 class="size-4" aria-hidden="true" />
+		<span class="max-sm:sr-only">{deleteLabel}</span>
+	</Button>
+{/if}

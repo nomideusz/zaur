@@ -181,6 +181,15 @@
 		background-color: color-mix(in srgb, var(--z-accent) 16%, transparent);
 	}
 
+	.z-mobile-island__icon-btn--danger,
+	.z-mobile-island__icon-btn--danger:hover {
+		color: var(--z-danger);
+	}
+
+	.z-mobile-island__icon-btn--danger:hover {
+		background-color: color-mix(in srgb, var(--z-danger) 10%, transparent);
+	}
+
 	@media (prefers-reduced-motion: no-preference) {
 		.z-mobile-island__icon-btn:active {
 			transform: scale(0.9);
