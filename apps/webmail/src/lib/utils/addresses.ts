@@ -39,7 +39,7 @@ function parseAddressEntries(input: string): Array<{ raw: string; email: string;
 		.filter((entry) => entry.raw || entry.email);
 }
 
-/** Split a recipient string into raw parts on `,`/`;`, keeping invalid parts and respecting quotes/angle brackets. */
+/** Split a recipient string into raw parts on `,`/`;`/newlines, keeping invalid parts and respecting quotes/angle brackets. */
 export function splitAddressList(input: string): string[] {
 	const parts: string[] = [];
 	let current = '';
@@ -51,7 +51,7 @@ export function splitAddressList(input: string): string[] {
 		if (!inQuotes) {
 			if (char === '<') angleDepth += 1;
 			if (char === '>' && angleDepth > 0) angleDepth -= 1;
-			if ((char === ',' || char === ';') && angleDepth === 0) {
+			if ((char === ',' || char === ';' || char === '\n') && angleDepth === 0) {
 				const part = current.trim();
 				if (part) parts.push(part);
 				current = '';

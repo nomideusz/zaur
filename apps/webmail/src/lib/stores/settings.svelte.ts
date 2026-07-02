@@ -127,7 +127,7 @@ function readShowComposeContactSuggestions(): boolean {
 }
 
 function readShowCcBccInCompose(): boolean {
-	return readBool(STORAGE.showCcBccInCompose, true);
+	return readBool(STORAGE.showCcBccInCompose, false);
 }
 
 function prefersReducedMotion(): boolean {
@@ -719,7 +719,7 @@ class SettingsStore {
 
 	resetWritingSettings() {
 		this.setDefaultComposeFormat('plain');
-		this.setShowCcBccInCompose(true);
+		this.setShowCcBccInCompose(false);
 		this.setShowComposeContactSuggestions(true);
 		this.setBccSelf(false);
 		this.setCollapseQuotedInCompose(false);

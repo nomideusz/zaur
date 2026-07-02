@@ -1,11 +1,11 @@
-/* Compose — Gmail-style intelligent labels (prefix on focus, placeholders when idle). */
+/* Compose — fixed label column (From/To/Cc/Bcc), values aligned, placeholders only for Subject. */
 
 	.z-mail-view .z-compose {
 		@apply w-full min-w-0;
 		--z-compose-field-size: 0.875rem;
 		--z-compose-field-leading: 1.375rem;
 		--z-compose-field-gap: 0.5rem;
-		--z-compose-prefix-width: 1.75rem;
+		--z-compose-label-width: 3rem;
 	}
 
 	/* Mobile: match the shell header height. */
@@ -14,35 +14,6 @@
 			min-height: var(--height-header);
 			padding-block: 0.125rem;
 		}
-	}
-
-	.z-mail-view .z-compose__back-btn {
-		display: inline-grid;
-		place-items: center;
-		width: 2rem;
-		height: 2rem;
-		flex-shrink: 0;
-		cursor: pointer;
-		border-radius: var(--radius-md);
-		color: var(--z-fg-muted);
-		transition:
-			color 150ms ease,
-			background-color 150ms ease;
-	}
-
-	.z-mail-view .z-compose__back-btn:hover {
-		color: var(--z-fg);
-		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
-	}
-
-	.z-mail-view .z-compose__back-btn:focus-visible {
-		outline: 2px solid var(--z-accent);
-		outline-offset: 2px;
-	}
-
-	.z-mail-view .z-compose__back-btn svg {
-		display: block;
-		opacity: 0.6;
 	}
 
 	/* Centered compose title / draft status — owns the middle column so it never competes
@@ -102,10 +73,12 @@
 		flex-direction: column;
 	}
 
+	/* Label | value | optional suffix. The fixed label column keeps values aligned
+	   across rows and can never overlap them. Subject renders label-less. */
 	.z-mail-view .z-compose__field {
 		position: relative;
 		display: grid;
-		grid-template-columns: minmax(0, 1fr) auto;
+		grid-template-columns: var(--z-compose-label-width) minmax(0, 1fr) auto;
 		align-items: center;
 		column-gap: var(--z-compose-field-gap);
 		padding: 0.6875rem 1rem;
@@ -122,36 +95,17 @@
 		background-color: color-mix(in srgb, var(--z-danger) 6%, transparent);
 	}
 
-	.z-mail-view .z-compose__prefix {
-		display: none;
-	}
-
-	.z-mail-view .z-compose__prefix:not(:empty) {
-		display: block;
-		position: absolute;
-		left: 1rem;
-		top: 50%;
-		z-index: 1;
-		box-sizing: border-box;
+	.z-mail-view .z-compose__label {
 		font-size: var(--z-compose-field-size);
 		font-weight: 400;
 		line-height: var(--z-compose-field-leading);
 		color: var(--z-fg-muted);
-		transform: translateY(-50%);
-	}
-
-	.z-mail-view .z-compose__prefix--empty {
-		display: none;
-		pointer-events: none;
-	}
-
-	.z-mail-view .z-compose__field:has(.z-compose__prefix:not(:empty)) > .relative,
-	.z-mail-view .z-compose__field:has(.z-compose__prefix:not(:empty)) > .z-compose__input {
-		padding-left: calc(var(--z-compose-prefix-width) + var(--z-compose-field-gap));
+		user-select: none;
+		align-self: start;
+		padding-top: 0;
 	}
 
 	.z-mail-view .z-compose__field > .relative {
-		grid-column: 1;
 		display: flex;
 		align-items: center;
 		align-self: center;
@@ -165,14 +119,9 @@
 	}
 
 	.z-mail-view .z-compose__field > .z-compose__input {
-		grid-column: 1;
 		align-self: center;
 		min-width: 0;
 		min-height: var(--z-compose-field-leading);
-	}
-
-	.z-mail-view .z-compose__suffix-link {
-		grid-column: 2;
 	}
 
 	.z-mail-view .z-compose__input,

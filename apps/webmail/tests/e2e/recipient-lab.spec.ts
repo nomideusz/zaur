@@ -40,14 +40,14 @@ test('recipient chips: commit, echo-guard, fold, delete', async ({ page }) => {
 	await expect(chips(page)).toHaveCount(3);
 	await expect(value(page)).not.toContainText('alice@example.com');
 
-	// 6. Pending text is folded into the value as you type (so Send — which blurs the
-	//    field — always sees it), without being force-committed to a chip on blur.
+	// 6. Pending text is folded into the value as you type (so Send always sees it),
+	//    and leaving the field commits it as a chip — recipients end up as pills.
 	await input(page).click();
 	await input(page).pressSequentially('dave@example.com');
 	await expect(value(page)).toContainText('dave@example.com');
 	const beforeBlur = await chips(page).count();
 	await page.getByTestId('value').click(); // blur the field
-	await expect(chips(page)).toHaveCount(beforeBlur); // blur doesn't add a chip
+	await expect(chips(page)).toHaveCount(beforeBlur + 1); // blur commits the pending chip
 	await expect(value(page)).toContainText('dave@example.com'); // still in the value
 
 	// 7. External value change (reply/forward/draft prefill) re-syncs the chips.
@@ -82,5 +82,24 @@ test('suggestion: clicking a contact picks it and clears the input', async ({ pa
 	await input(page).pressSequentially('zane');
 	await page.getByRole('listbox', { name: 'Contact suggestions' }).getByText('zane@example.com').click();
 	await expect(chips(page).filter({ hasText: 'zane@example.com' })).toHaveCount(1);
+	await expect(chips(page).filter({ hasText: /^zane\s*$/ })).toHaveCount(0);
 	await expect(input(page)).toHaveValue('');
+});
+
+test('pasting an address list commits chips, including newline-separated', async ({ page, context }) => {
+	await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+	await page.goto('/recipient-lab');
+	await input(page).click();
+
+	await page.evaluate(() => navigator.clipboard.writeText('dan@example.com\nDee Dee <dee@example.com>; don@example.com'));
+	await input(page).press('ControlOrMeta+v');
+	await expect(chips(page)).toHaveCount(5); // 2 initial + 3 pasted
+	await expect(input(page)).toHaveValue('');
+	await expect(value(page)).toContainText('dee@example.com');
+
+	// A non-address fragment paste is left as editable text, not hijacked into a chip.
+	await page.evaluate(() => navigator.clipboard.writeText('not-an-address'));
+	await input(page).press('ControlOrMeta+v');
+	await expect(input(page)).toHaveValue('not-an-address');
+	await expect(chips(page)).toHaveCount(5);
 });

@@ -138,19 +138,13 @@
 
 	let sendAttempted = $state(false);
 	let recipientFocused = $state(false);
-	let toFocused = $state(false);
-	let ccFocused = $state(false);
-	let bccFocused = $state(false);
 	// Open in rich mode when the seeded body already carries markup (e.g. forwarding an HTML
 	// message), so typing in a plain textarea doesn't silently wipe the quoted HTML.
 	let isRichText = $state(settings.defaultComposeFormat === 'html' || !!compose.bodyHtml.trim());
 
-	const showToPrefix = $derived(toFocused && !compose.to.trim());
-	const showCcPrefix = $derived(ccFocused && !compose.cc.trim());
-	const showBccPrefix = $derived(bccFocused && !compose.bcc.trim());
-	const toPlaceholder = $derived(showToPrefix ? '' : 'Recipients');
-	const ccPlaceholder = $derived(showCcPrefix ? '' : 'Cc');
-	const bccPlaceholder = $derived(showBccPrefix ? '' : 'Bcc');
+	const ccBccVisible = $derived(
+		settings.showCcBccInCompose || compose.showCcBcc || !!compose.cc.trim() || !!compose.bcc.trim()
+	);
 
 	const invalidRecipients = $derived([
 		...invalidAddressParts(compose.to),
@@ -532,7 +526,7 @@
 		<div class="z-compose__fields shrink-0 divide-y divide-border border-b border-border">
 				{#if showFromPicker}
 					<div class="z-compose__field">
-						<span class="z-compose__prefix">From</span>
+						<span class="z-compose__label" aria-hidden="true">From</span>
 						<div class="relative min-w-0" bind:this={fromZone}>
 							<button
 								type="button"
@@ -591,13 +585,11 @@
 					</div>
 				{/if}
 				<div class={cn('z-compose__field', fieldInvalid('to') && 'z-compose__field--invalid')}>
-					<label class="sr-only" for="compose-to">To</label>
-					<span class="z-compose__prefix" aria-hidden={!showToPrefix}>{showToPrefix ? 'To' : ''}</span>
+					<label class="z-compose__label" for="compose-to">To</label>
 					<ComposeRecipientInput
 						id="compose-to"
 						bind:inputElement={toInput}
 						value={compose.to}
-						placeholder={toPlaceholder}
 						autocomplete="email"
 						class="z-compose__input"
 						invalid={fieldInvalid('to')}
@@ -606,16 +598,10 @@
 							compose.to = value;
 							sendAttempted = false;
 						}}
-						onfocus={() => {
-							toFocused = true;
-							recipientFocused = true;
-						}}
-						onblur={() => {
-							toFocused = false;
-							recipientFocused = false;
-						}}
+						onfocus={() => (recipientFocused = true)}
+						onblur={() => (recipientFocused = false)}
 					/>
-					{#if !settings.showCcBccInCompose && !compose.showCcBcc}
+					{#if !ccBccVisible}
 						<button
 							type="button"
 							class="z-compose__suffix-link"
@@ -627,14 +613,12 @@
 					{/if}
 				</div>
 
-				{#if settings.showCcBccInCompose || compose.showCcBcc || compose.cc.trim() || compose.bcc.trim()}
+				{#if ccBccVisible}
 					<div class={cn('z-compose__field', fieldInvalid('cc') && 'z-compose__field--invalid')}>
-						<label class="sr-only" for="compose-cc">Cc</label>
-						<span class="z-compose__prefix" aria-hidden={!showCcPrefix}>{showCcPrefix ? 'Cc' : ''}</span>
+						<label class="z-compose__label" for="compose-cc">Cc</label>
 						<ComposeRecipientInput
 							id="compose-cc"
 							value={compose.cc}
-							placeholder={ccPlaceholder}
 							autocomplete="email"
 							class="z-compose__input"
 							invalid={fieldInvalid('cc')}
@@ -643,23 +627,15 @@
 								compose.cc = value;
 								sendAttempted = false;
 							}}
-							onfocus={() => {
-								ccFocused = true;
-								recipientFocused = true;
-							}}
-							onblur={() => {
-								ccFocused = false;
-								recipientFocused = false;
-							}}
+							onfocus={() => (recipientFocused = true)}
+							onblur={() => (recipientFocused = false)}
 						/>
 					</div>
 					<div class={cn('z-compose__field', fieldInvalid('bcc') && 'z-compose__field--invalid')}>
-						<label class="sr-only" for="compose-bcc">Bcc</label>
-						<span class="z-compose__prefix" aria-hidden={!showBccPrefix}>{showBccPrefix ? 'Bcc' : ''}</span>
+						<label class="z-compose__label" for="compose-bcc">Bcc</label>
 						<ComposeRecipientInput
 							id="compose-bcc"
 							value={compose.bcc}
-							placeholder={bccPlaceholder}
 							autocomplete="email"
 							class="z-compose__input"
 							invalid={fieldInvalid('bcc')}
@@ -668,14 +644,8 @@
 								compose.bcc = value;
 								sendAttempted = false;
 							}}
-							onfocus={() => {
-								bccFocused = true;
-								recipientFocused = true;
-							}}
-							onblur={() => {
-								bccFocused = false;
-								recipientFocused = false;
-							}}
+							onfocus={() => (recipientFocused = true)}
+							onblur={() => (recipientFocused = false)}
 						/>
 					</div>
 				{/if}
@@ -768,14 +738,18 @@
 			</p>
 		{/if}
 
-		<!-- Composition tools — kept out of the send header and in one icon language. -->
-		<div class="z-compose__tools flex shrink-0 items-center gap-1 border-t border-border px-4 py-1.5">
+		<!-- Composition tools — labeled Attach so it's discoverable, one icon language. -->
+		<div class="z-compose__tools flex shrink-0 items-center gap-1 border-t border-border px-3 py-2">
+			<FileUpload.Trigger type="button" class="z-btn-ghost min-h-9 gap-1.5 px-2.5">
+				<Paperclip class="size-4" aria-hidden="true" />
+				Attach
+			</FileUpload.Trigger>
 			<TooltipWrap label={isRichText ? 'Switch to plain text' : 'Switch to rich text'}>
 				{#snippet trigger({ props })}
 					<button
 						{...props}
 						type="button"
-						class={cn('z-icon-tap-target z-icon-tap-target--sm', isRichText && 'text-accent')}
+						class={cn('z-btn-ghost min-h-9 min-w-9 justify-center px-2', isRichText && 'text-accent')}
 						aria-label={isRichText ? 'Switch to plain text' : 'Switch to rich text'}
 						aria-pressed={isRichText}
 						onclick={() => {
@@ -795,18 +769,6 @@
 					</button>
 				{/snippet}
 			</TooltipWrap>
-			<TooltipWrap label="Attach file">
-				{#snippet trigger({ props })}
-					<FileUpload.Trigger
-						{...props}
-						type="button"
-						class="z-icon-tap-target z-icon-tap-target--sm"
-						aria-label="Attach file"
-					>
-						<Paperclip class="size-[1.125rem]" aria-hidden="true" />
-					</FileUpload.Trigger>
-				{/snippet}
-			</TooltipWrap>
 
 			<div class="flex-1"></div>
 
@@ -816,7 +778,7 @@
 						<button
 							{...props}
 							type="button"
-							class="z-icon-tap-target z-icon-tap-target--sm hover:text-danger"
+							class="z-btn-ghost min-h-9 min-w-9 justify-center px-2 hover:text-danger"
 							aria-label="Discard draft"
 							onclick={() => void discardAndClose()}
 						>

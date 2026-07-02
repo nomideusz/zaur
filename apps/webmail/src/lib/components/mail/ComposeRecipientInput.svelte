@@ -137,7 +137,28 @@
 		const next = event.relatedTarget as Node | null;
 		if (next && wrapperEl?.contains(next)) return; // focus stayed within the field
 		open = false;
+		commitPending();
 		onblur?.(event);
+	}
+
+	/**
+	 * Leaving the field commits typed-but-uncommitted text as a chip, matching
+	 * Enter/delimiter semantics — recipients always end up as pills. Done here
+	 * rather than via the machine's blurBehavior, whose insert races the
+	 * controlled suggestion pick and could replace it with the raw partial.
+	 */
+	function commitPending() {
+		const part = pending.trim();
+		if (!part) return;
+		if (!tags.some((tag) => tag.toLowerCase() === part.toLowerCase())) {
+			tags = [...tags, part];
+		}
+		pending = '';
+		if (inputElement) {
+			inputElement.value = '';
+			inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+		}
+		emit();
 	}
 
 	function onWrapperKeydown(event: KeyboardEvent) {
@@ -148,6 +169,31 @@
 		} else if (event.key === 'Escape') {
 			open = false;
 		}
+	}
+
+	/**
+	 * Commit pasted addresses to chips ourselves. The machine's own paste path
+	 * relies on the `insertFromPaste` input type (missed by some mobile keyboards)
+	 * and doesn't split on newlines, so a pasted address list stayed one blob of
+	 * text. Only complete address lists are taken over — pasting a fragment to
+	 * finish a half-typed address falls through to the normal browser paste.
+	 */
+	function onWrapperPaste(event: ClipboardEvent) {
+		if (event.target !== inputElement) return;
+		const text = event.clipboardData?.getData('text') ?? '';
+		const parts = splitAddressList(text);
+		if (!parts.length || !parts.every((part) => isAddressValid(part))) return;
+		event.preventDefault();
+		event.stopPropagation();
+		const existing = new Set(tags.map((tag) => tag.toLowerCase()));
+		const fresh = parts.filter((part) => !existing.has(part.toLowerCase()));
+		if (fresh.length) tags = [...tags, ...fresh];
+		pending = '';
+		if (inputElement) {
+			inputElement.value = '';
+			inputElement.dispatchEvent(new Event('input', { bubbles: true }));
+		}
+		emit();
 	}
 
 	function onSuggestionKeydownCapture(event: KeyboardEvent) {
@@ -181,13 +227,13 @@
 	onfocusout={onWrapperFocusOut}
 	onkeydown={onWrapperKeydown}
 	onkeydowncapture={onSuggestionKeydownCapture}
+	onpastecapture={onWrapperPaste}
 >
 	<TagsInput.Root
 		class={cn('z-compose__recipients', className)}
 		value={tags}
 		ids={id ? { input: id } : undefined}
 		delimiter={/[,;]/}
-		addOnPaste
 		editable={false}
 		autoFocus={autofocus}
 		{invalid}

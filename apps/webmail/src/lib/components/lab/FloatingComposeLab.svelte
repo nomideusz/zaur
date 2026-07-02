@@ -132,7 +132,8 @@
 
 								<FloatingPanel.Body class="flex min-h-0 flex-1 flex-col overflow-hidden">
 									{#snippet asChild(bodyProps)}
-										<div {...bodyProps()} class="flex min-h-0 flex-1 flex-col overflow-hidden">
+										<!-- z-mail-view scopes the compose styles, matching the real mail shell. -->
+										<div {...bodyProps()} class="z-mail-view flex min-h-0 flex-1 flex-col overflow-hidden">
 											<ComposePanel embedded onDismiss={() => (open = false)} />
 										</div>
 									{/snippet}

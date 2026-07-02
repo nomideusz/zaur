@@ -13,7 +13,10 @@
 		auth.username = 'lab@example.com';
 		auth.isAuthenticated = true;
 		auth.isRestoring = false;
-		auth.identities = [{ id: 'lab', email: 'lab@example.com', name: 'Lab User' }];
+		auth.identities = [
+			{ id: 'lab', email: 'lab@example.com', name: 'Lab User' },
+			{ id: 'lab-alias', email: 'hello@zaur.app', name: 'Lab User (alias)' }
+		];
 		auth.displayName = 'Lab User';
 		void compose.restoreOrStartNew();
 	});
