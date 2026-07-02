@@ -4,7 +4,7 @@ import { test, expect } from '@playwright/test';
 // Auth-independent: the registry always merges the static settings index.
 
 type Page = import('@playwright/test').Page;
-const input = (page: Page) => page.getByPlaceholder('Search settings…');
+const input = (page: Page) => page.getByPlaceholder('Search all settings…');
 
 test('typing filters results and highlights the matched substring', async ({ page }) => {
 	await page.goto('/settings-search-lab');

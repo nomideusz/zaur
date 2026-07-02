@@ -145,3 +145,50 @@
 		/>
 	</SettingsRow>
 </SettingsGroup>
+
+<SettingsGroup title="Actions">
+	<SettingsRow
+		kind="toggle"
+		title="Confirm before delete"
+		description="Ask before moving messages to the Trash."
+	>
+		<Switch
+			checked={settings.confirmBeforeDelete}
+			onchange={(checked) => settings.setConfirmBeforeDelete(checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		kind="menu"
+		title="Undo window"
+		description="How long an Undo button stays after you send, archive, delete, or move a message. Off acts immediately."
+	>
+		<SettingsSelect
+			label="Undo window"
+			value={String(settings.undoSendDelay)}
+			options={[
+				{ value: '0', label: 'Off' },
+				{ value: '5000', label: '5 s' },
+				{ value: '10000', label: '10 s' },
+				{ value: '20000', label: '20 s' }
+			]}
+			onchange={(v) => {
+				const next = Number(v);
+				if (next === 0 || next === 5000 || next === 10000 || next === 20000) {
+					settings.setUndoSendDelay(next);
+				}
+			}}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		kind="toggle"
+		title="Hide action toasts"
+		description="Stop showing the brief confirmations that pop up after actions."
+	>
+		<Switch
+			checked={settings.hideActionToasts}
+			onchange={(checked) => settings.setHideActionToasts(checked)}
+		/>
+	</SettingsRow>
+</SettingsGroup>

@@ -5,7 +5,6 @@
 	import SettingsFormToggle from '$lib/components/settings/SettingsFormToggle.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
-	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
@@ -201,76 +200,7 @@
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Notifications & Actions">
-	<SettingsRow
-		kind="toggle"
-		title="Confirm before delete"
-		description="Ask before moving messages to the Trash."
-	>
-		<Switch
-			checked={settings.confirmBeforeDelete}
-			onchange={(checked) => settings.setConfirmBeforeDelete(checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="menu"
-		title="Undo window"
-		description="How long an Undo button stays after you send, archive, delete, or move a message. Off acts immediately."
-	>
-		<SettingsSelect
-			label="Undo window"
-			value={String(settings.undoSendDelay)}
-			options={[
-				{ value: '0', label: 'Off' },
-				{ value: '5000', label: '5 s' },
-				{ value: '10000', label: '10 s' },
-				{ value: '20000', label: '20 s' }
-			]}
-			onchange={(v) => {
-				const next = Number(v);
-				if (next === 0 || next === 5000 || next === 10000 || next === 20000) {
-					settings.setUndoSendDelay(next);
-				}
-			}}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="toggle"
-		title="Hide action toasts"
-		description="Stop showing the brief confirmations that pop up after actions."
-	>
-		<Switch
-			checked={settings.hideActionToasts}
-			onchange={(checked) => settings.setHideActionToasts(checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="toggle"
-		title="Unseen count on app icon"
-		description="Show the number of unseen messages as a badge on the installed app's icon."
-	>
-		<Switch
-			checked={settings.showUnreadAppBadge}
-			onchange={(checked) => settings.setShowUnreadAppBadge(checked)}
-		/>
-	</SettingsRow>
-
-	<SettingsRow
-		kind="toggle"
-		title="Unseen count in tab title"
-		description="Show the number of unseen messages in the browser tab title."
-	>
-		<Switch
-			checked={settings.showUnreadInTitle}
-			onchange={(checked) => settings.setShowUnreadInTitle(checked)}
-		/>
-	</SettingsRow>
-</SettingsGroup>
-
-<SettingsGroup title="Device">
+<SettingsGroup title="Device & Notifications">
 	<SettingsRow
 		kind="action"
 		title="App install"
@@ -293,6 +223,28 @@
 		description="Get notified about new mail even when ZAUR isn't open."
 	>
 		<PushNotificationStatus />
+	</SettingsRow>
+
+	<SettingsRow
+		kind="toggle"
+		title="Unseen count on app icon"
+		description="Show the number of unseen messages as a badge on the installed app's icon."
+	>
+		<Switch
+			checked={settings.showUnreadAppBadge}
+			onchange={(checked) => settings.setShowUnreadAppBadge(checked)}
+		/>
+	</SettingsRow>
+
+	<SettingsRow
+		kind="toggle"
+		title="Unseen count in tab title"
+		description="Show the number of unseen messages in the browser tab title."
+	>
+		<Switch
+			checked={settings.showUnreadInTitle}
+			onchange={(checked) => settings.setShowUnreadInTitle(checked)}
+		/>
 	</SettingsRow>
 </SettingsGroup>
 

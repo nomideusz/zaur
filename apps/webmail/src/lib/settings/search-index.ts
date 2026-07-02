@@ -19,22 +19,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Install ZAUR as an app on this device for a standalone window."
 	},
 	{
-		"id": "/settings/account-confirm-before-delete",
-		"href": "/settings/account",
-		"title": "Confirm before delete",
-		"description": "Ask before moving messages to the Trash."
-	},
-	{
 		"id": "/settings/account-display-name",
 		"href": "/settings/account",
 		"title": "Display name",
 		"description": "Shown to recipients on messages you send."
-	},
-	{
-		"id": "/settings/account-hide-action-toasts",
-		"href": "/settings/account",
-		"title": "Hide action toasts",
-		"description": "Stop showing the brief confirmations that pop up after actions."
 	},
 	{
 		"id": "/settings/account-imap-port",
@@ -113,12 +101,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"href": "/settings/account",
 		"title": "SMTP server",
 		"description": ""
-	},
-	{
-		"id": "/settings/account-undo-window",
-		"href": "/settings/account",
-		"title": "Undo window",
-		"description": "How long an Undo button stays after you send, archive, delete, or move a message. Off acts immediately."
 	},
 	{
 		"id": "/settings/account-unseen-count-in-tab-title",
@@ -271,10 +253,22 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Don't load images hosted elsewhere, which can signal when you open a message."
 	},
 	{
+		"id": "/settings/reading-confirm-before-delete",
+		"href": "/settings/reading",
+		"title": "Confirm before delete",
+		"description": "Ask before moving messages to the Trash."
+	},
+	{
 		"id": "/settings/reading-expand-all-threads",
 		"href": "/settings/reading",
 		"title": "Expand all threads",
 		"description": "Open every message in a conversation instead of just the latest."
+	},
+	{
+		"id": "/settings/reading-hide-action-toasts",
+		"href": "/settings/reading",
+		"title": "Hide action toasts",
+		"description": "Stop showing the brief confirmations that pop up after actions."
 	},
 	{
 		"id": "/settings/reading-mark-as-seen-when-opened",
@@ -329,6 +323,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"href": "/settings/reading",
 		"title": "Typeface",
 		"description": ""
+	},
+	{
+		"id": "/settings/reading-undo-window",
+		"href": "/settings/reading",
+		"title": "Undo window",
+		"description": "How long an Undo button stays after you send, archive, delete, or move a message. Off acts immediately."
 	},
 	{
 		"id": "/settings/shortcuts-enable-shortcuts",

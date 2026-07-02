@@ -166,7 +166,11 @@ function readUndoSendDelay(): UndoSendDelay {
 	const stored = localStorage.getItem(STORAGE.undoSendDelay);
 	if (stored === null) {
 		const legacy = localStorage.getItem('zaur:enable-undo-send');
-		if (legacy === 'false') return 0;
+		if (legacy === 'false') {
+			// Persist the migration — the legacy key is purged as obsolete on init.
+			localStorage.setItem(STORAGE.undoSendDelay, '0');
+			return 0;
+		}
 		return 5000;
 	}
 	const val = Number(stored);
@@ -708,6 +712,7 @@ class SettingsStore {
 		this.setMarkReadOnOpen(true);
 		this.setConfirmBeforeDelete(true);
 		this.setHideActionToasts(false);
+		this.setUndoSendDelay(5000);
 		this.setTimeFormat('auto');
 		this.setEnableKeyboardShortcuts(true);
 	}
@@ -721,7 +726,6 @@ class SettingsStore {
 		this.setHideComposeHints(false);
 		this.setDefaultReplyMode('reply');
 		this.setConfirmBeforeDiscardCompose(true);
-		this.setUndoSendDelay(5000);
 	}
 
 	resetCalendarSettings() {

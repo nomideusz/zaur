@@ -90,11 +90,12 @@
 			'list-sender min-w-0 truncate',
 			unread ? 'font-semibold text-fg' : 'font-medium text-fg-muted'
 		);
+	/* Single truncated line on every viewport — wrapping would change row height
+	   when bulk-select compresses the row, causing layout shifts. */
 	const listSubjectClass = (unread: boolean, important = false) =>
 		cn(
 			'list-subject min-w-0',
-			'max-md:line-clamp-2 max-md:overflow-hidden',
-			important ? 'md:overflow-visible' : 'md:truncate',
+			important ? 'max-md:truncate md:overflow-visible' : 'truncate',
 			unread ? 'font-semibold text-fg' : 'font-medium text-fg'
 		);
 
@@ -1113,7 +1114,7 @@
 								{/if}{senderLabel}
 							</p>
 							{#if settings.showSenderEmailInList && sender.email && sender.email !== senderLabel}
-								<p class="truncate text-xs text-fg-subtle">{sender.email}</p>
+								<p class="list-sender-email truncate text-xs text-fg-subtle">{sender.email}</p>
 							{/if}
 							<p class={listSubjectClass(isUnread, subjectImportant)}>
 								{#if subjectImportant}
@@ -1135,17 +1136,17 @@
 									{timeLabel}
 								</time>
 							{/if}
+							{#if message.hasAttachment || message.replied}
+								<div class="z-mail-list-row-icons flex items-center gap-1 text-fg-subtle">
+									{#if message.replied}
+										<Reply class="size-4" aria-hidden="true" />
+									{/if}
+									{#if message.hasAttachment}
+										<Paperclip class="size-4" aria-hidden="true" />
+									{/if}
+								</div>
+							{/if}
 						</div>
-						{#if message.hasAttachment || message.replied}
-							<div class="flex items-center gap-1 shrink-0 text-fg-subtle">
-								{#if message.replied}
-									<Reply class="mt-0.5 size-4" aria-hidden="true" />
-								{/if}
-								{#if message.hasAttachment}
-									<Paperclip class="mt-0.5 size-4" aria-hidden="true" />
-								{/if}
-							</div>
-						{/if}
 				{/snippet}
 				{#snippet rowLink()}
 					{#if showListRowMove && auth.client}

@@ -550,37 +550,37 @@
 		font-size: var(--z-mail-list-row-meta-text);
 	}
 
+	/* Right rail, second line — replied/attachment icons sit under the time,
+	   aligned with the subject. */
+	.z-mail-view .z-mail-list-row .z-mail-list-row-icons {
+		grid-column: 2;
+		grid-row: 2;
+		justify-self: end;
+		align-self: center;
+	}
+
+	/* With icons in the rail the subject keeps to the first column. */
+	.z-mail-view .z-mail-list-row .z-mail-list-row-copy:has(.z-mail-list-row-icons) .list-subject {
+		grid-column: 1;
+	}
+
+	/* Optional sender-address line sits beneath the name; subject and icons drop a row. */
+	.z-mail-view .z-mail-list-row .list-sender-email {
+		grid-column: 1;
+		grid-row: 2;
+	}
+
+	.z-mail-view .z-mail-list-row .z-mail-list-row-copy:has(.list-sender-email) .list-subject,
+	.z-mail-view .z-mail-list-row .z-mail-list-row-copy:has(.list-sender-email) .z-mail-list-row-icons {
+		grid-row: 3;
+	}
+
 	@media (max-width: 767px) {
-		/*
-		 * Two-column grid: sender + subject stack on the left, the time in a right
-		 * rail. The bulk-select checkbox lives in the shared left column instead
-		 * (see the selecting rules below), matching desktop.
-		 */
-		.z-mail-list-row-copy {
-			grid-template-columns: minmax(0, 1fr) auto;
-			grid-template-rows: auto auto;
-		}
-
-		.z-mail-view .z-mail-list-row .list-sender {
-			grid-column: 1;
-			grid-row: 1;
-		}
-
-		.z-mail-view .z-mail-list-row .list-subject {
-			grid-column: 1;
-			grid-row: 2;
-		}
-
-		.z-mail-view .z-mail-list-row .list-time {
-			grid-column: 2;
-			grid-row: 1;
-			justify-self: end;
-			align-self: start;
-		}
-
 		/*
 		 * Bulk select — checkboxes are hidden while browsing; long press starts
 		 * selection and the left column slides in, pushing row content right.
+		 * The subject is a single truncated line (see .list-subject), so the
+		 * narrower row truncates harder instead of re-wrapping — no layout shift.
 		 * (Row padding overrides live in the selectable-list block further down.)
 		 */
 		.z-mail-view .z-mail-list--selecting .z-mail-list-row {

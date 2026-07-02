@@ -83,7 +83,7 @@
 		lastError = null;
 		try {
 			await resetAppServiceWorker();
-			const ok = await syncPushSubscription(settings.notifyOnNewMail || true);
+			const ok = await syncPushSubscription(settings.notifyOnNewMail);
 			if (!ok) lastError = 'Registration failed';
 			await refreshStatus();
 		} finally {
