@@ -75,13 +75,28 @@ function validateCaptchaAnswer(answer, expected) {
   return { valid: true };
 }
 
+// ponytail: still a toy captcha, not bot-proof — a real captcha service is the
+// upgrade path if bots start solving it. This only widens the answer space
+// (the original a+b, 1..10 had ~19 possible answers, trivial to fixed-guess).
 function generateCaptcha() {
-  const a = Math.floor(Math.random() * 10) + 1;
-  const b = Math.floor(Math.random() * 10) + 1;
-  return {
-    question: `${a} + ${b} = ?`,
-    answer: a + b,
-  };
+  const ops = [
+    () => {
+      const a = 10 + Math.floor(Math.random() * 30);
+      const b = 1 + Math.floor(Math.random() * 20);
+      return { question: `${a} + ${b} = ?`, answer: a + b };
+    },
+    () => {
+      const a = 20 + Math.floor(Math.random() * 30);
+      const b = 1 + Math.floor(Math.random() * 20);
+      return { question: `${a} - ${b} = ?`, answer: a - b };
+    },
+    () => {
+      const a = 2 + Math.floor(Math.random() * 8);
+      const b = 2 + Math.floor(Math.random() * 8);
+      return { question: `${a} × ${b} = ?`, answer: a * b };
+    },
+  ];
+  return ops[Math.floor(Math.random() * ops.length)]();
 }
 
 function getPasswordStrength(password) {

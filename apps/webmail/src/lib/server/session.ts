@@ -33,6 +33,7 @@ export const COOKIE_NAME = 'zaur_session';
 /** Persistent session when the user chooses “Remember me”. */
 export const REMEMBERED_SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 30; // 30 days
 const SESSION_RECORD_MAX_AGE_MS = REMEMBERED_SESSION_MAX_AGE_SEC * 1000;
+const SESSION_TOUCH_THROTTLE_MS = 60 * 60 * 1000; // re-write updatedAt at most hourly
 const DEFAULT_SESSION_STORE_PATH = path.join(process.cwd(), '.data', 'sessions.json');
 
 interface StoredSessionRecord {
@@ -137,9 +138,15 @@ function readSessionRecord(id: string | undefined, secret?: string): Session | n
 	}
 
 	if (isSession(data)) {
-		record.updatedAt = new Date().toISOString();
-		store[id] = record;
-		writeSessionStore(store);
+		// Bump the sliding-expiry timestamp at most hourly. Writing the whole store on
+		// every read was O(all sessions) per request and, across instances, a
+		// last-writer-wins race that could clobber concurrent changes.
+		const last = Date.parse(record.updatedAt || record.createdAt);
+		if (!Number.isFinite(last) || Date.now() - last > SESSION_TOUCH_THROTTLE_MS) {
+			record.updatedAt = new Date().toISOString();
+			store[id] = record;
+			writeSessionStore(store);
+		}
 		return data;
 	}
 
@@ -172,22 +179,17 @@ export function readSessionFull(cookies: Cookies, secret?: string): Session | nu
 	const token = cookies.get(COOKIE_NAME);
 	if (!token) return null;
 
-	// New format: cookie is the session id.
+	// New format: cookie is the session id → look up the (revocable) store record.
 	const byId = readSessionRecord(token, secret);
 	if (byId) return byId;
 
-	// Legacy format: cookie is a sealed blob.
+	// Legacy format: cookie is a sealed blob. Only honour it while it still points at
+	// a live store record, so sign-out/expiry actually revokes it. A self-contained
+	// blob with no backing record is NOT resurrected — that was an un-revocable
+	// session (a captured old cookie stayed valid after logout). Those re-login.
 	const direct = unsealSession(token, secret);
-	if (isSession(direct)) {
-		persistSession(direct, secret);
-		syncIdCookie(cookies, direct.id, { remember: direct.remember });
-		return direct;
-	}
 	if (direct && typeof direct === 'object' && 'username' in direct) {
 		const legacy = direct as SessionData;
-		// The old cookie sealed the account *and* carried its store-record id, where the
-		// same data lives with the correct remember-state. Upgrade via that record so a
-		// non-remembered session is not silently promoted to a 30-day one.
 		if (legacy.id) {
 			const viaRecord = readSessionRecord(legacy.id, secret);
 			if (viaRecord) {
@@ -195,12 +197,6 @@ export function readSessionFull(cookies: Cookies, secret?: string): Session | nu
 				return viaRecord;
 			}
 		}
-		// No backing record (very old / edge case): create one, defaulting to remembered.
-		const id = legacy.id ?? newSessionId();
-		const upgraded = wrapAccount(legacy, id, true);
-		persistSession(upgraded, secret);
-		syncIdCookie(cookies, id, { remember: true });
-		return upgraded;
 	}
 
 	return null;
