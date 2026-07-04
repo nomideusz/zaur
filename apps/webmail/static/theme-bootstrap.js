@@ -1,0 +1,33 @@
+// Pre-render bootstrap: applies persisted text-size / pointer / standalone state
+// before first paint to avoid a flash. External (not inline) so it satisfies the
+// nonce-based CSP without 'unsafe-inline'. Runs render-blocking from <head>.
+(function () {
+	try {
+		document.documentElement.removeAttribute('data-accent');
+		try {
+			localStorage.removeItem('zaur:accent-color');
+		} catch (e) {}
+
+		var listText = localStorage.getItem('zaur:list-text-size');
+		if (listText === 'large') {
+			document.documentElement.style.setProperty('--z-list-text', '1.0625rem');
+		} else if (listText === 'small') {
+			document.documentElement.style.setProperty('--z-list-text', '0.9375rem');
+		}
+		var readerText = localStorage.getItem('zaur:reader-text-size');
+		if (readerText === 'large') {
+			document.documentElement.style.setProperty('--z-reader-text', '1.125rem');
+		} else if (readerText === 'small') {
+			document.documentElement.style.setProperty('--z-reader-text', '0.9375rem');
+		}
+		if (window.matchMedia('(pointer: coarse)').matches) {
+			document.documentElement.classList.add('z-coarse-pointer');
+		}
+		if (
+			window.matchMedia('(display-mode: standalone)').matches ||
+			window.navigator.standalone === true
+		) {
+			document.documentElement.classList.add('z-standalone');
+		}
+	} catch (e) {}
+})();
