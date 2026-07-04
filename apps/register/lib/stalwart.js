@@ -1,17 +1,5 @@
-const { Pool } = require('pg');
-const bcrypt = require('bcryptjs');
-
-if (!process.env.PG_PASSWORD) {
-  throw new Error('PG_PASSWORD must be set');
-}
-
-const pool = new Pool({
-  host: process.env.PG_HOST || 'srv-captain--auth-db',
-  port: parseInt(process.env.PG_PORT || '5432', 10),
-  database: process.env.PG_DATABASE || 'stalwart_auth',
-  user: process.env.PG_USER || 'postgres',
-  password: process.env.PG_PASSWORD,
-});
+// Auth lives entirely in Stalwart's internal directory now (no external Postgres).
+// Passwords are set as plaintext on the principal; Stalwart hashes them (argon2id).
 
 const JMAP_CAPABILITIES = [
   'urn:ietf:params:jmap:core',
@@ -173,58 +161,16 @@ async function getDomainName(domainId) {
   return domain?.name || null;
 }
 
-let cachedPostgresDirectoryId = null;
-
-async function getPostgresDirectoryId() {
-  if (process.env.STALWART_PG_DIRECTORY_ID) {
-    return process.env.STALWART_PG_DIRECTORY_ID;
-  }
-
-  if (cachedPostgresDirectoryId) return cachedPostgresDirectoryId;
-
-  const { body } = await jmapRequest([['x:Directory/query', {}, 'directoryQuery']]);
-  const query = getMethodResponse(body, 'directoryQuery');
-  if (!query?.ids?.length) return null;
-
-  const { body: getBody } = await jmapRequest([
-    ['x:Directory/get', { ids: query.ids, properties: ['id', 'description', 'type'] }, 'directoryGet'],
+// Set (or replace) the password on a Stalwart principal. The internal directory
+// hashes the plaintext per the configured algorithm (argon2id).
+async function setAccountCredential(accountId, password) {
+  const { body } = await jmapRequest([
+    ['x:Account/set', { update: { [accountId]: { 'credentials/0/secret': password } } }, 'setCred'],
   ]);
-  const getResponse = getMethodResponse(getBody, 'directoryGet');
-  const directories = getResponse?.list || [];
-  const list = Array.isArray(directories) ? directories : Object.values(directories);
-  const sql = list.find(
-    (entry) =>
-      entry.type === 'Sql' ||
-      entry['@type'] === 'Sql' ||
-      /postgres/i.test(entry.description || ''),
-  );
-  cachedPostgresDirectoryId = sql?.id || null;
-  return cachedPostgresDirectoryId;
-}
-
-async function ensureDomainPostgresDirectory(domainId) {
-  const postgresDirectoryId = await getPostgresDirectoryId();
-  if (!postgresDirectoryId) {
-    throw new Error('PostgreSQL auth directory is not configured in Stalwart.');
+  const response = getMethodResponse(body, 'setCred');
+  if (response?.notUpdated?.[accountId]) {
+    throw new Error(extractJmapError(response));
   }
-
-  const { body: domainGetBody } = await jmapRequest([
-    ['x:Domain/get', { ids: [domainId], properties: ['directoryId'] }, 'domainGet'],
-  ]);
-  const getResponse = getMethodResponse(domainGetBody, 'domainGet');
-  const domain = getResponse?.list?.[0];
-  if (!domain) return false;
-  if (domain.directoryId === postgresDirectoryId) return true;
-
-  const { body: setBody } = await jmapRequest([
-    ['x:Domain/set', { update: { [domainId]: { directoryId: postgresDirectoryId } } }, 'domainSet'],
-  ]);
-  const setResponse = getMethodResponse(setBody, 'domainSet');
-  if (setResponse?.notUpdated?.[domainId]) {
-    throw new Error(extractJmapError(setResponse));
-  }
-
-  domainCache.expiresAt = 0;
   return true;
 }
 
@@ -347,52 +293,17 @@ async function listAccounts() {
 
 async function findAccountByEmail(email) {
   const normalized = email.toLowerCase();
-
-  try {
-    const { rows } = await pool.query(
-      `SELECT a.name AS email
-       FROM accounts a
-       WHERE LOWER(a.name) = $1
-          OR EXISTS (
-            SELECT 1 FROM emails e
-            WHERE e.name = a.name AND LOWER(e.address) = $1
-          )
-       LIMIT 1`,
-      [normalized],
-    );
-
-    if (rows.length > 0) {
-      const accountEmail = rows[0].email.toLowerCase();
-      const [name, domainName] = accountEmail.split('@');
-
-      try {
-        const accounts = await listAccounts();
-        const match = accounts.find((account) => account.email.toLowerCase() === accountEmail);
-        if (match) return match;
-      } catch (err) {
-        console.error('findAccountByEmail jmap enrich:', err.message);
-      }
-
-      return {
-        id: null,
-        name: name || accountEmail,
-        domainId: null,
-        domain: domainName || null,
-        email: accountEmail,
-        aliases: [],
-      };
-    }
-  } catch (err) {
-    console.error('findAccountByEmail pg:', err.message);
-  }
-
   const accounts = await listAccounts();
-  return accounts.find((account) => account.email.toLowerCase() === normalized) || null;
+  return (
+    accounts.find(
+      (account) =>
+        account.email.toLowerCase() === normalized ||
+        account.aliases.some((alias) => alias.email.toLowerCase() === normalized),
+    ) || null
+  );
 }
 
 async function createAccount(username, domainId, password) {
-  await ensureDomainPostgresDirectory(domainId);
-
   const config = getConfig();
 
   const { body } = await jmapRequest([
@@ -436,16 +347,8 @@ async function createAccount(username, domainId, password) {
   const domainName = (await getDomainName(domainId)) || 'unknown';
   const email = created.emailAddress || `${username}@${domainName}`;
 
-  // Hash password using bcryptjs and write user credentials directly to PostgreSQL
-  const hash = await bcrypt.hash(password, 10);
-  await pool.query(
-    'INSERT INTO accounts (name, secret, description, type, active) VALUES ($1, $2, $3, $4, $5)',
-    [email, hash, email, 'individual', true]
-  );
-  await pool.query(
-    'INSERT INTO emails (name, address) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-    [email, email]
-  );
+  // Set the password on the freshly created principal (Stalwart hashes it).
+  await setAccountCredential(created.id, password);
 
   return { email, accountId: created.id };
 }
@@ -453,47 +356,13 @@ async function createAccount(username, domainId, password) {
 async function deleteAccount(accountId) {
   if (!accountId) return false;
 
-  // Resolve email address from metadata before deleting account
-  let email = null;
-  try {
-    const { body: getBody } = await jmapRequest([
-      [
-        'x:Account/get',
-        {
-          ids: [accountId],
-          properties: ['name', 'domainId', 'emailAddress'],
-        },
-        'getAccount',
-      ],
-    ]);
-    const account = getMethodResponse(getBody, 'getAccount')?.list?.[0];
-    if (account) {
-      const domains = await listDomains();
-      const domain = domains.find((d) => d.id === account.domainId);
-      email = account.emailAddress || `${account.name}@${domain?.name || 'unknown'}`;
-    }
-  } catch (err) {
-    console.error('Failed to resolve account email for DB deletion:', err.message);
-  }
-
   const { body } = await jmapRequest([
-    [
-      'x:Account/set',
-      {
-        destroy: [accountId],
-      },
-      'deleteAccount',
-    ],
+    ['x:Account/set', { destroy: [accountId] }, 'deleteAccount'],
   ]);
 
   const response = getMethodResponse(body, 'deleteAccount');
   if (response?.notDestroyed?.[accountId]) {
     throw new Error(extractJmapError(response));
-  }
-
-  if (email) {
-    // Delete user from PostgreSQL (cascades to emails and group_members)
-    await pool.query('DELETE FROM accounts WHERE name = $1', [email]);
   }
 
   return response?.destroyed?.includes(accountId) ?? false;
@@ -542,30 +411,11 @@ async function ensureStandardMailboxes(accountId) {
 
 async function changePassword(email, password) {
   const account = await findAccountByEmail(email);
-  if (!account) {
+  if (!account?.id) {
     throw new Error('Account not found in Stalwart.');
   }
 
-  // Update the secret directly in PostgreSQL database using bcryptjs
-  const canonicalEmail = account.email.toLowerCase();
-  const hash = await bcrypt.hash(password, 10);
-  const res = await pool.query(
-    'UPDATE accounts SET secret = $1 WHERE name = $2',
-    [hash, canonicalEmail]
-  );
-
-  if (res.rowCount === 0) {
-    // If user exists in Stalwart but not in DB, insert them
-    await pool.query(
-      'INSERT INTO accounts (name, secret, description, type, active) VALUES ($1, $2, $3, $4, $5)',
-      [canonicalEmail, hash, canonicalEmail, 'individual', true]
-    );
-    await pool.query(
-      'INSERT INTO emails (name, address) VALUES ($1, $2) ON CONFLICT DO NOTHING',
-      [canonicalEmail, canonicalEmail]
-    );
-  }
-
+  await setAccountCredential(account.id, password);
   return true;
 }
 
