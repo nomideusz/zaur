@@ -22,7 +22,7 @@ PG_HOST="${PG_HOST:-srv-captain--auth-db}"
 PG_PORT="${PG_PORT:-5432}"
 PG_DB="${PG_DB:-stalwart_auth}"
 PG_USER="${PG_USER:-postgres}"
-PG_PASS="${PG_PASS:-SE3sGjIeN-tl3BHcNBWog4Qx}"
+PG_PASS="${PG_PASS:?PG_PASS is required (Stalwart SQL directory auth secret)}"
 
 if [[ -z "${STALWART_URL:-}" ]]; then
 	echo "STALWART_URL is required" >&2
