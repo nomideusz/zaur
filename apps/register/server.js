@@ -292,6 +292,12 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
       // 2. Provision standard mailboxes via admin JMAP
       await stalwart.ensureStandardMailboxes(accountId);
 
+      // This address may be a recycled one. Drop any prior tenant's recovery
+      // mapping + pending reset links before we record this registration's, so
+      // the old owner can't reset the new account. Runs for open + invite signups.
+      invitations.purgeMailbox(email);
+      passwordReset.revokeTokensForMailbox(email);
+
       if (recoveryEmail) {
         const consumed = await invitations.consumeInvitation(recoveryEmail, inviteToken);
         if (!consumed.valid) {
@@ -680,6 +686,10 @@ app.post('/api/admin/cleanup-account', requireAdmin, async (req, res) => {
     if (target === 'stalwart' || target === 'both' || target === 'all') {
       result.stalwart = await stalwart.deleteAccountByEmail(email);
     }
+    // Always drop register's recovery mapping + reset tokens for the address, so a
+    // later re-registration can't be taken over via the old owner's recovery email.
+    result.mappingsPurged = invitations.purgeMailbox(email);
+    passwordReset.revokeTokensForMailbox(email);
     res.json({ success: true, result });
   } catch (err) {
     console.error('POST /api/admin/cleanup-account:', err.message);

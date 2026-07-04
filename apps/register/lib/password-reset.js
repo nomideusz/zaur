@@ -216,10 +216,26 @@ async function resetPassword(mailboxEmail, token, password, confirmPassword) {
   return { valid: true, mailboxEmail: email };
 }
 
+// Revoke any pending reset links for an address (writeTokens then prunes them).
+// Called on account delete / re-registration so a recycled address starts clean.
+function revokeTokensForMailbox(mailboxEmail) {
+  const normalized = normalizeEmail(mailboxEmail);
+  const tokens = readTokens();
+  let changed = false;
+  for (const item of tokens) {
+    if (normalizeEmail(item.mailboxEmail) === normalized && !item.usedAt && !item.revokedAt) {
+      item.revokedAt = new Date().toISOString();
+      changed = true;
+    }
+  }
+  if (changed) writeTokens(tokens);
+}
+
 module.exports = {
   isEnabled,
   requestReset,
   verifyToken,
   resetPassword,
+  revokeTokensForMailbox,
   GENERIC_SUCCESS,
 };

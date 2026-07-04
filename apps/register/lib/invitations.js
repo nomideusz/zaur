@@ -118,6 +118,17 @@ function findMailboxByRecoveryEmail(recoveryEmail) {
   return entry?.mailboxEmail ? normalizeEmail(entry.mailboxEmail) : null;
 }
 
+// Drop every recovery↔mailbox mapping for an address. Called when the account is
+// deleted or the address is (re)registered so a recycled address can't inherit a
+// prior tenant's recovery email (which would let them reset the new account).
+function purgeMailbox(mailboxEmail) {
+  const normalized = normalizeEmail(mailboxEmail);
+  const entries = readAudit();
+  const kept = entries.filter((item) => normalizeEmail(item.mailboxEmail) !== normalized);
+  if (kept.length !== entries.length) writeAudit(kept);
+  return entries.length - kept.length;
+}
+
 async function createInvitation(recoveryEmail, expiresInSec = DEFAULT_EXPIRES_SEC) {
   const email = normalizeEmail(recoveryEmail);
   if (!isValidEmail(email)) {
@@ -185,5 +196,6 @@ module.exports = {
   markAuditMailbox,
   findRecoveryEmailByMailbox,
   findMailboxByRecoveryEmail,
+  purgeMailbox,
   isValidEmail,
 };
