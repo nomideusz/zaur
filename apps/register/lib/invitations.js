@@ -27,7 +27,12 @@ function readAudit() {
 
 function writeAudit(entries) {
   ensureAuditFile();
-  fs.writeFileSync(AUDIT_FILE, JSON.stringify(entries, null, 2), 'utf8');
+  // Write-then-rename so a crash mid-write never truncates the store.
+  // ponytail: single register process → the sync read-modify-write is already
+  // atomic w.r.t. the event loop; move to Postgres if it ever runs multi-instance.
+  const tmp = `${AUDIT_FILE}.${crypto.randomBytes(6).toString('hex')}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(entries, null, 2), 'utf8');
+  fs.renameSync(tmp, AUDIT_FILE);
   return true;
 }
 

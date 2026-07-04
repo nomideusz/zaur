@@ -26,22 +26,7 @@ export const init: ServerInit = async () => {
 export const handle: Handle = async ({ event, resolve }) => {
 	const response = await resolve(event);
 
-	const connectSrc = ["'self'", 'https://mail.zaur.app'].join(' ');
-
-	const csp = [
-		"default-src 'self'",
-		"script-src 'self' 'unsafe-inline'",
-		"style-src 'self' 'unsafe-inline'",
-		"img-src 'self' data: blob: https:",
-		"font-src 'self'",
-		`connect-src ${connectSrc}`,
-		"frame-ancestors 'none'",
-		"base-uri 'self'",
-		"form-action 'self'",
-		"object-src 'none'"
-	].join('; ');
-
-	response.headers.set('Content-Security-Policy', csp);
+	// CSP is owned by kit.csp (svelte.config.js) so inline scripts get nonced.
 	response.headers.set('X-Frame-Options', 'DENY');
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');

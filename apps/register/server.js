@@ -24,6 +24,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
+if (isProduction && !process.env.SESSION_SECRET?.trim()) {
+  throw new Error('SESSION_SECRET must be set in production');
+}
+
 app.set('trust proxy', 1);
 
 app.use((req, res, next) => {
@@ -311,7 +315,8 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
     console.error('POST /api/register:', err.message);
     const captcha = generateCaptcha();
     req.session.captchaAnswer = captcha.answer;
-    res.status(400).json({ error: err.message, captcha: captcha.question });
+    // Don't echo raw pg/JMAP error text (constraint names, directory ids) to the client.
+    res.status(400).json({ error: 'Registration could not be completed. Please try again.', captcha: captcha.question });
   }
 });
 

@@ -11,6 +11,23 @@ const config = {
 	},
 	kit: {
 		adapter: adapter(),
+		// SvelteKit nonces its own inline scripts + the app.html bootstrap, so script-src
+		// no longer needs 'unsafe-inline'. style-src keeps it (Svelte emits inline styles).
+		csp: {
+			mode: 'auto',
+			directives: {
+				'default-src': ['self'],
+				'script-src': ['self'],
+				'style-src': ['self', 'unsafe-inline'],
+				'img-src': ['self', 'data:', 'blob:', 'https:'],
+				'font-src': ['self'],
+				'connect-src': ['self', 'https://mail.zaur.app'],
+				'frame-ancestors': ['none'],
+				'base-uri': ['self'],
+				'form-action': ['self'],
+				'object-src': ['none']
+			}
+		},
 		files: {
 			serviceWorker: 'src/service-worker.ts'
 		},

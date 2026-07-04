@@ -50,7 +50,10 @@ function writeTokens(entries) {
     const expiresAt = Date.parse(item.expiresAt || '');
     return !item.usedAt && !item.revokedAt && Number.isFinite(expiresAt) && expiresAt > cutoff;
   });
-  fs.writeFileSync(TOKENS_FILE, JSON.stringify(pruned.slice(0, 500), null, 2), 'utf8');
+  // Write-then-rename so a crash mid-write never truncates the token store.
+  const tmp = `${TOKENS_FILE}.${crypto.randomBytes(6).toString('hex')}.tmp`;
+  fs.writeFileSync(tmp, JSON.stringify(pruned.slice(0, 500), null, 2), 'utf8');
+  fs.renameSync(tmp, TOKENS_FILE);
   return true;
 }
 
