@@ -1,5 +1,6 @@
 require('dotenv').config();
 
+const crypto = require('crypto');
 const path = require('path');
 const express = require('express');
 const session = require('express-session');
@@ -26,6 +27,13 @@ const isProduction = process.env.NODE_ENV === 'production';
 
 if (isProduction && !process.env.SESSION_SECRET?.trim()) {
   throw new Error('SESSION_SECRET must be set in production');
+}
+
+// Fixed-time compare over sha256 digests so neither the password nor its length leaks via timing.
+function constantTimeEqual(a, b) {
+  const ha = crypto.createHash('sha256').update(a).digest();
+  const hb = crypto.createHash('sha256').update(b).digest();
+  return crypto.timingSafeEqual(ha, hb);
 }
 
 app.set('trust proxy', 1);
@@ -112,6 +120,14 @@ const forgotPasswordIpLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: 'Too many reset requests. Please wait a few minutes.' },
+});
+
+const adminLoginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 5,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts. Please try again in a few minutes.' },
 });
 
 const forgotPasswordEmailLimiter = rateLimit({
@@ -402,20 +418,18 @@ function requireAdmin(req, res, next) {
   next();
 }
 
-app.post('/api/admin/login', (req, res) => {
-  const { password } = req.body;
+app.post('/api/admin/login', adminLoginLimiter, (req, res) => {
   const adminPass = process.env.ADMIN_PASSWORD;
 
   if (!adminPass) {
     return res.status(403).json({ error: 'Admin panel is disabled.' });
   }
 
-  if (password === adminPass) {
+  if (constantTimeEqual(String(req.body.password ?? ''), adminPass)) {
     req.session.isAdmin = true;
     return res.json({ success: true });
-  } else {
-    return res.status(401).json({ error: 'Invalid admin password.' });
   }
+  return res.status(401).json({ error: 'Invalid admin password.' });
 });
 
 app.post('/api/admin/logout', (req, res) => {

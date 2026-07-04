@@ -1,3 +1,5 @@
+import { env } from '$env/dynamic/private';
+
 type Bucket = {
 	count: number;
 	resetAt: number;
@@ -38,7 +40,18 @@ export function checkRateLimit({ key, limit, windowMs }: RateLimitOptions): Rate
 }
 
 export function getClientAddress(request: Request): string {
-	const forwarded = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim();
-	const realIp = request.headers.get('x-real-ip')?.trim();
-	return forwarded || realIp || 'unknown';
+	// CapRover's nginx APPENDS the real client IP as the last X-Forwarded-For entry,
+	// so the trusted address is the Nth from the right (N = trusted proxy hops).
+	// Taking [0] (leftmost) trusts a client-supplied value → rate-limit bypass.
+	// zaur.app is 1 hop (nginx). Set TRUSTED_PROXY_HOPS=2 if a CDN (e.g. Cloudflare) is fronted.
+	const hops = Math.max(1, Number(env.TRUSTED_PROXY_HOPS) || 1);
+	const chain = request.headers
+		.get('x-forwarded-for')
+		?.split(',')
+		.map((s) => s.trim())
+		.filter(Boolean);
+	if (chain?.length) {
+		return chain[Math.max(0, chain.length - hops)];
+	}
+	return request.headers.get('x-real-ip')?.trim() || 'unknown';
 }
