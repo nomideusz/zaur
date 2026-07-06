@@ -4,6 +4,7 @@
 	import StorageQuota from '$lib/components/settings/StorageQuota.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { quota } from '$lib/stores/quota.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -47,6 +48,7 @@
 				removed ? 'success' : 'info'
 			);
 			await mail.refreshMailboxes(client);
+			void quota.load(client, { force: true });
 		} catch (error) {
 			const message = error instanceof Error ? error.message : `Could not empty ${label}`;
 			toast.show(message, 'error');

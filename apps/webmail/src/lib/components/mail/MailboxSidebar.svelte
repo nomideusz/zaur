@@ -7,7 +7,9 @@
 	import { sidebarMailboxGroups } from '$lib/mail/mailboxes';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { quota, formatStorageSize } from '$lib/stores/quota.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import Progress from '$lib/components/ui/Progress.svelte';
 	import type { Mailbox } from '$lib/types/mail';
 	import { buildMailboxTree, collectBranchIds, type MailboxNode } from '$lib/utils/mailbox-tree';
 	import { cn } from '$lib/utils/cn';
@@ -24,6 +26,10 @@
 	}
 
 	let { class: className = '', variant = 'sidebar', embedded = false, onClose }: Props = $props();
+
+	$effect(() => {
+		if (auth.client) void quota.load(auth.client);
+	});
 
 	const mailboxGroups = $derived(sidebarMailboxGroups(mail.mailboxes));
 
@@ -242,6 +248,24 @@
 		{/if}
 		</nav>
 	</ScrollArea>
+
+	{#if quota.status === 'ready'}
+		<a
+			href="/settings/data"
+			class="block shrink-0 border-t border-border/80 px-4 py-3 no-underline transition-colors hover:bg-surface-sunken/60"
+			aria-label="Storage: {formatStorageSize(quota.used)} of {formatStorageSize(quota.limit)} used ({quota.percent}%)"
+		>
+			<Progress value={quota.percent} max={100} tone={quota.nearFull ? 'danger' : 'accent'} />
+			<p
+				class={cn(
+					'mt-1.5 truncate text-xs',
+					quota.nearFull ? 'font-medium text-danger' : 'text-fg-muted'
+				)}
+			>
+				{formatStorageSize(quota.used)} of {formatStorageSize(quota.limit)} used
+			</p>
+		</a>
+	{/if}
 </aside>
 
 <CreateFolderDialog
