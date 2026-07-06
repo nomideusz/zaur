@@ -27,6 +27,7 @@
 	} from '$lib/mail/new-mail';
 	import { INBOX_MAILBOX_ROUTE_ID, mailListHref } from '$lib/mail/routes';
 	import { replyFromAddress } from '$lib/mail/reader-delivered-to';
+	import { resolveSendFrom } from '$lib/mail/send-from';
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { canMarkImportantFromMailboxRole, moveTargetMailboxes } from '$lib/mail/mailboxes';
@@ -124,7 +125,7 @@
 
 	function forward() {
 		if (!latest) return;
-		compose.startForward(latest);
+		compose.startForward(latest, replyFromAddress(latest, auth.username, auth.identities));
 		goto('/mail/compose?mode=forward');
 	}
 
@@ -137,9 +138,18 @@
 		if (!auth.client || !auth.username || !latest) return;
 
 		compose.openDraft(latest);
-		const senderName = settings.resolvedDisplayName(auth.displayName ?? auth.username);
+		// Send from the address the draft was written as (e.g. an alias), not
+		// always the primary — mirrors the compose panel's From resolution.
+		const { email: fromEmail, identity } = resolveSendFrom(
+			compose.fromEmail,
+			auth.username,
+			auth.identities
+		);
+		const senderName = settings.resolvedDisplayName(
+			identity?.name?.trim() || auth.displayName || auth.username
+		);
 		const destination = mailListHref(INBOX_MAILBOX_ROUTE_ID);
-		const result = await compose.send(auth.client, auth.username, senderName, {
+		const result = await compose.send(auth.client, fromEmail, senderName, {
 			onUndo: () => goto(`/mail/compose?draft=${latest.id}`),
 			onComplete: (outcome) => {
 				if (outcome === 'sent') goto(destination);

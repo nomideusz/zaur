@@ -13,6 +13,7 @@
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
+	import { resolveSendFrom } from '$lib/mail/send-from';
 	import RichTextEditor from '$lib/components/mail/RichTextEditor.svelte';
 	import { plainTextToSafeHtml } from '$lib/email/html';
 	import { invalidAddressParts } from '$lib/utils/addresses';
@@ -39,16 +40,11 @@
 
 	// From picker: only shown when the account has more than one send-as identity.
 	const showFromPicker = $derived(auth.identities.length > 1);
-	const fromAddress = $derived.by(() => {
-		const want = (compose.fromEmail || auth.username || '').trim().toLowerCase();
-		const match = auth.identities.find((identity) => identity.email?.trim().toLowerCase() === want);
-		return match?.email ?? (compose.fromEmail || auth.username || '');
-	});
-	const fromIdentity = $derived(
-		auth.identities.find(
-			(identity) => identity.email?.trim().toLowerCase() === fromAddress.trim().toLowerCase()
-		)
+	const fromResolution = $derived(
+		resolveSendFrom(compose.fromEmail, auth.username, auth.identities)
 	);
+	const fromAddress = $derived(fromResolution.email);
+	const fromIdentity = $derived(fromResolution.identity);
 	// The user's explicitly-set Display name (settings) wins for the outgoing From; the
 	// server identity name is only a fallback. Without this, a freshly-provisioned
 	// account whose identity name is just its email would send the email as the name.

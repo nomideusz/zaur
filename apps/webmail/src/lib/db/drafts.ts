@@ -34,6 +34,8 @@ export interface DraftSnapshot {
 	bodyHtml?: string;
 	mode: ComposeMode;
 	jmapDraftId?: string;
+	/** Selected sender address; unset means the account's primary address. */
+	fromEmail?: string;
 	attachments?: StoredComposeAttachment[];
 	updatedAt: number;
 }
@@ -58,6 +60,7 @@ function toSnapshot(doc: DraftDoc): DraftSnapshot {
 		bodyHtml: doc.bodyHtml,
 		mode: doc.mode,
 		jmapDraftId: doc.jmapDraftId,
+		fromEmail: doc.fromEmail,
 		attachments: parseAttachments(doc.attachmentsJson),
 		updatedAt: doc.updatedAt
 	};
@@ -94,6 +97,7 @@ export async function saveComposeDraft(
 			bodyHtml: draft.bodyHtml,
 			mode: draft.mode,
 			jmapDraftId: draft.jmapDraftId,
+			fromEmail: draft.fromEmail,
 			attachmentsJson: draft.attachments?.length ? JSON.stringify(draft.attachments) : undefined,
 			updatedAt: now,
 			createdAt: existing?.createdAt ?? now

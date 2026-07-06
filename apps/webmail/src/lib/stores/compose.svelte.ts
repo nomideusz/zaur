@@ -196,7 +196,7 @@ class ComposeStore {
 		this.body = draft.body;
 		this.bodyHtml = draft.bodyHtml ?? '';
 		this.jmapDraftId = draft.jmapDraftId;
-		this.fromEmail = '';
+		this.fromEmail = draft.fromEmail ?? '';
 		this.showCcBcc = !!(draft.cc || draft.bcc);
 		this.mode = draft.mode;
 		this.draftSavedAt = draft.updatedAt;
@@ -447,14 +447,14 @@ class ComposeStore {
 		this.clearAttachments();
 	}
 
-	startForward(message: MessageDetail) {
+	startForward(message: MessageDetail, fromEmail = '') {
 		const when = new Intl.DateTimeFormat(undefined, {
 			dateStyle: 'medium',
 			timeStyle: 'short'
 		}).format(new Date(message.receivedAt));
 
 		this.mode = 'forward';
-		this.fromEmail = '';
+		this.fromEmail = fromEmail;
 		this.to = '';
 		this.cc = '';
 		this.bcc = '';
@@ -486,7 +486,9 @@ class ComposeStore {
 	openDraft(message: MessageDetail) {
 		this.cancelPendingSend();
 		this.mode = 'new';
-		this.fromEmail = '';
+		// Keep the sender the draft was written as, so editing or sending a draft
+		// doesn't silently fall back to the primary address.
+		this.fromEmail = message.from?.email ?? '';
 		this.to = formatAddressList(message.to);
 		this.cc = formatAddressList(message.cc);
 		this.bcc = formatAddressList(message.bcc ?? []);
@@ -930,6 +932,7 @@ class ComposeStore {
 			bodyHtml: this.bodyHtml,
 			mode: this.mode,
 			jmapDraftId: this.jmapDraftId,
+			fromEmail: this.fromEmail || undefined,
 			attachments: storedAttachments.length ? storedAttachments : undefined,
 			updatedAt
 		});

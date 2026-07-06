@@ -35,7 +35,9 @@ const COLLECTIONS = {
 			1: (oldDoc: DraftDoc) => ({
 				...oldDoc,
 				bodyHtml: oldDoc.bodyHtml ?? ''
-			})
+			}),
+			// v2 only adds the optional fromEmail field.
+			2: (oldDoc: DraftDoc) => oldDoc
 		}
 	},
 	outbox: {

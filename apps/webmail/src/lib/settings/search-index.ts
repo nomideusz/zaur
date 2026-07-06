@@ -298,7 +298,7 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/reading-show-delivery-address",
 		"href": "/settings/reading",
 		"title": "Show delivery address",
-		"description": "Show which of your addresses a message was delivered to (its Delivered-To)."
+		"description": "Show which of your addresses a message was delivered to. Automatic shows it when you have more than one address."
 	},
 	{
 		"id": "/settings/reading-show-sender-email-address",

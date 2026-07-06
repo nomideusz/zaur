@@ -93,6 +93,12 @@
 		!settings.blockExternalContent || (pane?.showImagesOnce ?? localShowImagesOnce)
 	);
 	const ownedAddresses = $derived(userOwnedAddresses(auth.username, auth.identities));
+	// 'auto' surfaces the delivery address only when the user actually has more
+	// than one address (aliases), where knowing which one received the mail matters.
+	const deliveredToVisible = $derived(
+		settings.showDeliveredToInReader === 'always' ||
+			(settings.showDeliveredToInReader === 'auto' && ownedAddresses.size > 1)
+	);
 
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>
@@ -380,7 +386,7 @@
 			{#each thread as message (message.id)}
 				{@const contact = readerPrimaryContact(message, mailboxRouteId, isMe)}
 				{@const showContactEmail = shouldShowContactEmail(contact.displayName, contact.email)}
-				{@const deliveredTo = settings.showDeliveredToInReader
+				{@const deliveredTo = deliveredToVisible
 					? readerDeliveredTo(message, ownedAddresses)
 					: null}
 				{#if thread.length === 1}

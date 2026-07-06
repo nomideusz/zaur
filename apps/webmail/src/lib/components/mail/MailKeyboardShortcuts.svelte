@@ -140,7 +140,7 @@
 		}
 
 		if (!latest) return;
-		compose.startForward(latest);
+		compose.startForward(latest, replyFromAddress(latest, auth.username, auth.identities));
 		goto('/mail/compose?mode=forward');
 	}
 

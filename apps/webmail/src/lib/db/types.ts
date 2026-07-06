@@ -11,6 +11,8 @@ export interface DraftDoc {
 	bodyHtml?: string;
 	mode: ComposeMode;
 	jmapDraftId?: string;
+	/** Selected sender address; unset means the account's primary address. */
+	fromEmail?: string;
 	attachmentsJson?: string;
 	updatedAt: number;
 	createdAt: number;

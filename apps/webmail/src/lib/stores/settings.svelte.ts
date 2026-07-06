@@ -24,6 +24,8 @@ export type CalendarMaxEventsPerDay = 2 | 3 | 5;
 export type DefaultReplyMode = 'reply' | 'reply-all';
 export type ComposeFormat = 'plain' | 'html';
 export type TimeFormat = 'auto' | '12h' | '24h';
+/** 'auto' shows the delivery address only for accounts with more than one send-as address. */
+export type ShowDeliveredTo = 'auto' | 'always' | 'never';
 export type UndoSendDelay = 0 | 5000 | 10000 | 20000;
 
 const STORAGE = {
@@ -192,8 +194,14 @@ function readReadingTypeface(): ReadingTypeface {
 	return localStorage.getItem(STORAGE.readingTypeface) === 'serif' ? 'serif' : 'sans';
 }
 
-function readShowDeliveredToInReader(): boolean {
-	return readBool(STORAGE.showDeliveredToInReader, false);
+function readShowDeliveredToInReader(): ShowDeliveredTo {
+	if (!browser) return 'auto';
+	const stored = localStorage.getItem(STORAGE.showDeliveredToInReader);
+	if (stored === 'always' || stored === 'never') return stored;
+	// Legacy boolean values from when this was a simple toggle.
+	if (stored === 'true') return 'always';
+	if (stored === 'false') return 'never';
+	return 'auto';
 }
 
 function readDefaultReplyMode(): DefaultReplyMode {
@@ -298,7 +306,7 @@ class SettingsStore {
 	undoSendDelay = $state<UndoSendDelay>(readUndoSendDelay());
 	readerTextSize = $state<ReaderTextSize>(readReaderTextSize());
 	readingTypeface = $state<ReadingTypeface>(readReadingTypeface());
-	showDeliveredToInReader = $state(readShowDeliveredToInReader());
+	showDeliveredToInReader = $state<ShowDeliveredTo>(readShowDeliveredToInReader());
 	defaultReplyMode = $state<DefaultReplyMode>(readDefaultReplyMode());
 	defaultComposeFormat = $state<ComposeFormat>(readDefaultComposeFormat());
 	showUnreadInTitle = $state(readShowUnreadInTitle());
@@ -576,9 +584,9 @@ class SettingsStore {
 		this.applyReadingTypeface(value);
 	}
 
-	setShowDeliveredToInReader(value: boolean) {
+	setShowDeliveredToInReader(value: ShowDeliveredTo) {
 		this.showDeliveredToInReader = value;
-		if (browser) this.writeStorage(STORAGE.showDeliveredToInReader, String(value));
+		if (browser) this.writeStorage(STORAGE.showDeliveredToInReader, value);
 	}
 
 	setDefaultReplyMode(value: DefaultReplyMode) {
@@ -705,7 +713,7 @@ class SettingsStore {
 		this.setRememberLastMailbox(false);
 		this.setReaderTextSize('normal');
 		this.setReadingTypeface('sans');
-		this.setShowDeliveredToInReader(false);
+		this.setShowDeliveredToInReader('auto');
 		this.setPreferPlainText(false);
 		this.setBlockExternalContent(true);
 		this.setExpandAllThreadMessages(false);

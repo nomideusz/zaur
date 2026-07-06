@@ -135,13 +135,23 @@
 	</SettingsRow>
 
 	<SettingsRow
-		kind="toggle"
+		kind="menu"
 		title="Show delivery address"
-		description="Show which of your addresses a message was delivered to (its Delivered-To)."
+		description="Show which of your addresses a message was delivered to. Automatic shows it when you have more than one address."
 	>
-		<Switch
-			checked={settings.showDeliveredToInReader}
-			onchange={(checked) => settings.setShowDeliveredToInReader(checked)}
+		<SettingsSelect
+			label="Show delivery address"
+			value={settings.showDeliveredToInReader}
+			options={[
+				{ value: 'auto', label: 'Automatic' },
+				{ value: 'always', label: 'Always' },
+				{ value: 'never', label: 'Never' }
+			]}
+			onchange={(v) => {
+				if (v === 'auto' || v === 'always' || v === 'never') {
+					settings.setShowDeliveredToInReader(v);
+				}
+			}}
 		/>
 	</SettingsRow>
 </SettingsGroup>

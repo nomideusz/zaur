@@ -37,7 +37,7 @@
 	}
 
 	function forward() {
-		compose.startForward(message);
+		compose.startForward(message, replyFromAddress(message, auth.username, auth.identities));
 		goto('/mail/compose?mode=forward');
 	}
 </script>
