@@ -28,6 +28,26 @@
 			toast.show('Saved on this device — could not sync your name to the server.', 'info');
 		}
 	}
+
+	let refreshingIdentities = $state(false);
+	async function refreshIdentities() {
+		if (refreshingIdentities) return;
+		refreshingIdentities = true;
+		const before = auth.identities.length;
+		const ok = await auth.refreshIdentities();
+		refreshingIdentities = false;
+		if (!ok) {
+			toast.show('Could not refresh send-from addresses.', 'error');
+			return;
+		}
+		const found = auth.identities.length;
+		toast.show(
+			found > before
+				? `Found ${found - before} new send-from ${found - before === 1 ? 'address' : 'addresses'}.`
+				: 'Send-from addresses are up to date.',
+			'success'
+		);
+	}
 </script>
 
 <SettingsFormGroup title="Profile" description="How you appear when you send mail.">
@@ -169,6 +189,16 @@
 			</SettingsRow>
 		{/each}
 	{/if}
+
+	<SettingsRow
+		kind="action"
+		title="Send-from addresses"
+		description="Refresh the list of addresses you can send from if an alias isn't showing up."
+	>
+		<Button variant="ghost" disabled={refreshingIdentities} onclick={() => void refreshIdentities()}>
+			{refreshingIdentities ? 'Refreshing…' : 'Refresh'}
+		</Button>
+	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup

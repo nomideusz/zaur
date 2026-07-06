@@ -24,7 +24,8 @@ export const EMAIL_SCOPED_PREFIXES = [
 	'zaur:display-name:',
 	'zaur:signature:',
 	'zaur:use-signature:',
-	'zaur:onboarding-done:'
+	'zaur:onboarding-done:',
+	'zaur:identities-resynced:'
 ] as const;
 
 export const DEVICE_LOCAL_SYNC_KEYS = new Set(['zaur:remember-me', 'zaur:remembered-email']);

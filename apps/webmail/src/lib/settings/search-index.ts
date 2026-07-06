@@ -67,6 +67,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Get notified about new mail even when ZAUR isn't open."
 	},
 	{
+		"id": "/settings/account-send-from-addresses",
+		"href": "/settings/account",
+		"title": "Send-from addresses",
+		"description": "Refresh the list of addresses you can send from if an alias isn't showing up."
+	},
+	{
 		"id": "/settings/account-session",
 		"href": "/settings/account",
 		"title": "Session",

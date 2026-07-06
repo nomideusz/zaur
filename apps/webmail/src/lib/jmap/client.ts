@@ -970,6 +970,72 @@ export class JMAPClient {
 		return (first[1].list as JMAPIdentity[]) ?? [];
 	}
 
+	/**
+	 * Force the server to rebuild the send-as identity list from the account's
+	 * current addresses. Stalwart only synthesizes identities when an account has
+	 * none stored, so aliases added after first login never show up until the
+	 * stale identities are destroyed and regenerated (stalwart#1475).
+	 */
+	async resyncIdentities(): Promise<JMAPIdentity[]> {
+		const before = await this.getIdentities();
+
+		if (before.length) {
+			const response = await this.request(
+				[
+					[
+						'Identity/set',
+						{ accountId: this.accountId, destroy: before.map((identity) => identity.id) },
+						'ids'
+					]
+				],
+				['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
+			);
+			this.throwOnSetErrors(response, 'Could not refresh send-from addresses');
+			const result = response.methodResponses?.[0]?.[1];
+			const notDestroyed = result?.notDestroyed as Record<string, { description?: string }> | undefined;
+			if (notDestroyed && Object.keys(notDestroyed).length) {
+				throw new Error(
+					Object.values(notDestroyed)[0]?.description ?? 'Could not refresh send-from addresses'
+				);
+			}
+		}
+
+		// The next get regenerates one identity per current address (primary + aliases).
+		const after = await this.getIdentities();
+
+		// Regeneration resets names (and drops signatures stored on the identity) —
+		// put back what the user had on addresses that still exist.
+		type IdentityExtras = JMAPIdentity & { textSignature?: string; htmlSignature?: string };
+		const previousByEmail = new Map(
+			(before as IdentityExtras[])
+				.filter((identity) => identity.email)
+				.map((identity) => [identity.email.trim().toLowerCase(), identity])
+		);
+		for (const identity of after) {
+			const previous = previousByEmail.get(identity.email?.trim().toLowerCase() ?? '');
+			if (!previous) continue;
+			const update: Record<string, string> = {};
+			if (previous.name?.trim() && previous.name.trim() !== identity.name?.trim()) {
+				update.name = previous.name.trim();
+			}
+			if (previous.textSignature) update.textSignature = previous.textSignature;
+			if (previous.htmlSignature) update.htmlSignature = previous.htmlSignature;
+			if (!Object.keys(update).length) continue;
+			try {
+				const response = await this.request(
+					[['Identity/set', { accountId: this.accountId, update: { [identity.id]: update } }, 'ir']],
+					['urn:ietf:params:jmap:core', 'urn:ietf:params:jmap:mail', 'urn:ietf:params:jmap:submission']
+				);
+				this.throwOnSetErrors(response, 'Could not restore identity details');
+				if (update.name) identity.name = update.name;
+			} catch {
+				// Keep the regenerated values if the restore fails.
+			}
+		}
+
+		return after;
+	}
+
 	/** Update the display name on one of the account's send-as identities. */
 	async setIdentityName(identityId: string, name: string): Promise<void> {
 		const response = await this.request(

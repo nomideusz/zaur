@@ -101,6 +101,47 @@ class AuthStore {
 	}
 
 	/**
+	 * Rebuild the send-from identity list from the account's current aliases.
+	 * Stalwart never updates stored identities when aliases change, so this
+	 * destroys and regenerates them (names/signatures are preserved).
+	 */
+	async refreshIdentities(): Promise<boolean> {
+		if (!browser || !this.client) return false;
+		try {
+			this.identities = await this.client.resyncIdentities();
+			return true;
+		} catch (error) {
+			console.warn('Could not refresh send-from addresses:', error);
+			return false;
+		}
+	}
+
+	/**
+	 * One-time self-heal per account: accounts that show a single identity may
+	 * actually have aliases the server never turned into identities (added after
+	 * the identity list was first created). Resync once so the From picker and
+	 * alias features work without a manual step.
+	 */
+	private maybeResyncIdentities(): void {
+		if (!browser || !this.client || !this.username) return;
+		if (this.identities.length > 1) return;
+		const marker = `zaur:identities-resynced:${normalizeEmail(this.username)}`;
+		try {
+			if (localStorage.getItem(marker)) return;
+		} catch {
+			return;
+		}
+		void this.refreshIdentities().then((ok) => {
+			if (!ok) return;
+			try {
+				localStorage.setItem(marker, new Date().toISOString());
+			} catch {
+				// Ignore storage failures — worst case we resync again next load.
+			}
+		});
+	}
+
+	/**
 	 * Persist the active account's Display name to its Stalwart identity so it is
 	 * authoritative server-side and consistent across devices. No-ops when unchanged.
 	 */
@@ -176,6 +217,7 @@ class AuthStore {
 		this.isAuthenticated = true;
 		settings.setUser(this.username);
 		await settings.syncFromAccount();
+		this.maybeResyncIdentities();
 		this.startBackgroundSync(client, this.username ?? '', this.displayName ?? undefined);
 	}
 
@@ -282,6 +324,7 @@ class AuthStore {
 			this.isAuthenticated = true;
 			settings.setUser(payload.username);
 			await settings.syncFromAccount();
+			this.maybeResyncIdentities();
 			this.startBackgroundSync(client, payload.username, payload.displayName);
 			await this.refreshAccounts();
 
@@ -326,6 +369,7 @@ class AuthStore {
 			this.isAuthenticated = true;
 			settings.setUser(payload.username);
 			await settings.syncFromAccount();
+			this.maybeResyncIdentities();
 			this.startBackgroundSync(client, payload.username, payload.displayName ?? payload.username);
 		} catch (error) {
 			console.warn('Session restore failed:', error);
