@@ -26,6 +26,10 @@ Mail server (`mail.zaur.app`) is Stalwart — config and ops notes live in [`inf
 | `@zaur/sprite` | Zaur pixel sprite frames + SVG renderer (shared by web and webmail) |
 | `@zaur/ui` | Shared design tokens, components CSS, and utilities (webmail + register) |
 
+> **Parked (2026-07-08):** the Kotlin Multiplatform rewrite of webmail is deliberately
+> on hold until thebest.travel and szkolyjogi.pl QR ticketing have shipped. The Svelte
+> webmail keeps running as-is; don't start the rewrite before then.
+
 ## Setup
 
 ```sh
