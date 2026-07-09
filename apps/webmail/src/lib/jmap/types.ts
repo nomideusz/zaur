@@ -19,6 +19,19 @@ export interface JMAPQuota {
 	types?: string[];
 }
 
+/** VacationResponse singleton — RFC 8621 §8. */
+export interface JMAPVacationResponse {
+	id: string;
+	isEnabled: boolean;
+	/** UTCDate, e.g. "2026-07-14T00:00:00Z", or null for "starts immediately". */
+	fromDate?: string | null;
+	/** UTCDate, or null for "until switched off". */
+	toDate?: string | null;
+	subject?: string | null;
+	textBody?: string | null;
+	htmlBody?: string | null;
+}
+
 export interface JMAPMailbox {
 	id: string;
 	name: string;

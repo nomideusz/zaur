@@ -6,7 +6,8 @@ import type {
 	JMAPResponse,
 	JMAPSession,
 	JMAPEmail,
-	JMAPQuota
+	JMAPQuota,
+	JMAPVacationResponse
 } from './types';
 import { parseSearchQuery } from '$lib/mail/search-query';
 import { buildEmailCreateData, type ComposeFormat, type EmailAttachmentInput } from './email-build';
@@ -46,6 +47,8 @@ const CALENDARS_URN = 'urn:ietf:params:jmap:calendars';
 const CALENDAR_USING = ['urn:ietf:params:jmap:core', CALENDARS_URN] as const;
 const QUOTA_URN = 'urn:ietf:params:jmap:quota';
 const QUOTA_USING = ['urn:ietf:params:jmap:core', QUOTA_URN] as const;
+const VACATION_URN = 'urn:ietf:params:jmap:vacationresponse';
+const VACATION_USING = ['urn:ietf:params:jmap:core', VACATION_URN] as const;
 
 const CALENDAR_EVENT_PROPERTIES = [
 	'id',
@@ -183,6 +186,13 @@ export class JMAPClient {
 
 	hasQuota(): boolean {
 		return !!this.session?.capabilities?.[QUOTA_URN];
+	}
+
+	hasVacationResponse(): boolean {
+		// RFC 8621 §8 lists the urn in both places; Stalwart gates the account-level
+		// entry on per-account permissions, so check there too.
+		if (this.session?.capabilities?.[VACATION_URN]) return true;
+		return !!this.session?.accounts?.[this.accountId]?.accountCapabilities?.[VACATION_URN];
 	}
 
 	getUsername(): string {
@@ -593,6 +603,61 @@ export class JMAPClient {
 		if (typeof limit !== 'number' || limit <= 0) return null;
 
 		return { used: storage.used ?? 0, limit };
+	}
+
+	/**
+	 * The account's vacation auto-reply (RFC 8621 §8 singleton), or null when the
+	 * server does not advertise the capability.
+	 */
+	async getVacationResponse(): Promise<JMAPVacationResponse | null> {
+		if (!this.hasVacationResponse()) return null;
+
+		const response = await this.request(
+			[['VacationResponse/get', { accountId: this.accountId, ids: null }, 'v']],
+			[...VACATION_USING]
+		);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'VacationResponse/get') {
+			const error = first?.[1] as { type?: string; description?: string } | undefined;
+			throw new Error(error?.description ?? error?.type ?? 'VacationResponse/get failed');
+		}
+
+		const list = (first[1].list as JMAPVacationResponse[]) ?? [];
+		return list[0] ?? null;
+	}
+
+	/** Patch the vacation singleton; only the provided fields change. */
+	async setVacationResponse(
+		update: Partial<Omit<JMAPVacationResponse, 'id'>>
+	): Promise<void> {
+		if (!this.hasVacationResponse()) {
+			throw new Error('Vacation responses are not supported by this server');
+		}
+
+		const response = await this.request(
+			[
+				[
+					'VacationResponse/set',
+					{ accountId: this.accountId, update: { singleton: update } },
+					'v'
+				]
+			],
+			[...VACATION_USING]
+		);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'VacationResponse/set') {
+			const error = first?.[1] as { type?: string; description?: string } | undefined;
+			throw new Error(error?.description ?? error?.type ?? 'VacationResponse/set failed');
+		}
+		const result = first[1] as {
+			notUpdated?: Record<string, { type?: string; description?: string }>;
+		};
+		const rejection = result.notUpdated?.singleton;
+		if (rejection) {
+			throw new Error(rejection.description ?? rejection.type ?? 'Vacation response rejected');
+		}
 	}
 
 	async queryCalendarEvents(params: {

@@ -29,6 +29,8 @@ for (const [file, href] of files) {
 	let m;
 	while ((m = tagRe.exec(src)) !== null) {
 		const attrs = m[2];
+		// Rows opting out of in-page search opt out of the static index too.
+		if (/\bsearchable=\{false\}/.test(attrs)) continue;
 		const titleMatch = /\btitle="([^"]+)"/.exec(attrs);
 		if (!titleMatch) continue;
 		const title = titleMatch[1];

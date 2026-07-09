@@ -19,10 +19,22 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Install ZAUR as an app on this device for a standalone window."
 	},
 	{
+		"id": "/settings/account-auto-reply-to-incoming-mail",
+		"href": "/settings/account",
+		"title": "Auto-reply to incoming mail",
+		"description": "Senders get your away message at most once per week."
+	},
+	{
 		"id": "/settings/account-display-name",
 		"href": "/settings/account",
 		"title": "Display name",
 		"description": "Shown to recipients on messages you send."
+	},
+	{
+		"id": "/settings/account-first-day",
+		"href": "/settings/account",
+		"title": "First day",
+		"description": "Leave empty to start right away."
 	},
 	{
 		"id": "/settings/account-imap-port",
@@ -47,6 +59,18 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"href": "/settings/account",
 		"title": "JMAP server",
 		"description": "The mail server this app syncs with."
+	},
+	{
+		"id": "/settings/account-last-day",
+		"href": "/settings/account",
+		"title": "Last day",
+		"description": "Leave empty to reply until you switch it off."
+	},
+	{
+		"id": "/settings/account-message",
+		"href": "/settings/account",
+		"title": "Message",
+		"description": "The reply senders receive while you're away."
 	},
 	{
 		"id": "/settings/account-password",
@@ -107,6 +131,12 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"href": "/settings/account",
 		"title": "SMTP server",
 		"description": ""
+	},
+	{
+		"id": "/settings/account-subject",
+		"href": "/settings/account",
+		"title": "Subject",
+		"description": "Leave empty for the server default."
 	},
 	{
 		"id": "/settings/account-unseen-count-in-tab-title",

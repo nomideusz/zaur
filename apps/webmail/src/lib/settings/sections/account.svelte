@@ -13,6 +13,12 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import {
+		vacation,
+		vacationDateInputValue,
+		vacationDateToUtc
+	} from '$lib/stores/vacation.svelte';
+	import type { JMAPVacationResponse } from '$lib/jmap/types';
 
 	// Bare hostname of the mail server — IMAP/SMTP share the JMAP host.
 	const mailHost = $derived(
@@ -27,6 +33,16 @@
 		if (!ok) {
 			toast.show('Saved on this device — could not sync your name to the server.', 'info');
 		}
+	}
+
+	$effect(() => {
+		if (auth.client) void vacation.load(auth.client);
+	});
+
+	async function saveVacation(patch: Partial<Omit<JMAPVacationResponse, 'id'>>) {
+		if (!auth.client) return;
+		const ok = await vacation.save(auth.client, patch);
+		if (!ok) toast.show('Could not save your auto-reply to the server.', 'error');
 	}
 
 	let refreshingIdentities = $state(false);
@@ -85,6 +101,104 @@
 		/>
 	</SettingsFormToggle>
 </SettingsFormGroup>
+
+{#if vacation.status !== 'unavailable'}
+	<SettingsFormGroup
+		title="Vacation responder"
+		description="Automatically reply to incoming mail while you're away."
+	>
+		{#if vacation.status === 'error'}
+			<SettingsRow
+				kind="action"
+				searchable={false}
+				title="Auto-reply"
+				description="Could not load your auto-reply from the server."
+			>
+				<Button
+					variant="ghost"
+					onclick={() => auth.client && void vacation.load(auth.client, { force: true })}
+				>
+					Retry
+				</Button>
+			</SettingsRow>
+		{:else}
+			<SettingsFormToggle
+				title="Auto-reply to incoming mail"
+				description="Senders get your away message at most once per week."
+			>
+				<Switch
+					checked={vacation.isEnabled}
+					disabled={vacation.status !== 'ready' || vacation.saving}
+					onchange={(checked) => void saveVacation({ isEnabled: checked })}
+				/>
+			</SettingsFormToggle>
+
+			<SettingsField title="First day" description="Leave empty to start right away.">
+				{#snippet children({ id })}
+					<input
+						{id}
+						type="date"
+						class="z-input"
+						value={vacationDateInputValue(vacation.fromDate)}
+						disabled={vacation.status !== 'ready'}
+						max={vacationDateInputValue(vacation.toDate) || undefined}
+						onchange={(e) =>
+							void saveVacation({ fromDate: vacationDateToUtc(e.currentTarget.value, 'start') })}
+					/>
+				{/snippet}
+			</SettingsField>
+
+			<SettingsField title="Last day" description="Leave empty to reply until you switch it off.">
+				{#snippet children({ id })}
+					<input
+						{id}
+						type="date"
+						class="z-input"
+						value={vacationDateInputValue(vacation.toDate)}
+						disabled={vacation.status !== 'ready'}
+						min={vacationDateInputValue(vacation.fromDate) || undefined}
+						onchange={(e) =>
+							void saveVacation({ toDate: vacationDateToUtc(e.currentTarget.value, 'end') })}
+					/>
+				{/snippet}
+			</SettingsField>
+
+			<SettingsField title="Subject" description="Leave empty for the server default.">
+				{#snippet children({ id })}
+					<input
+						{id}
+						type="text"
+						class="z-input"
+						value={vacation.subject}
+						disabled={vacation.status !== 'ready'}
+						placeholder="Out of office"
+						onblur={(e) => {
+							const value = e.currentTarget.value.trim();
+							if (value !== vacation.subject) void saveVacation({ subject: value || null });
+						}}
+					/>
+				{/snippet}
+			</SettingsField>
+
+			<SettingsField title="Message" description="The reply senders receive while you're away.">
+				{#snippet children({ id })}
+					<textarea
+						{id}
+						class="z-input resize-y"
+						rows={4}
+						value={vacation.textBody}
+						disabled={vacation.status !== 'ready'}
+						placeholder="I'm away until … and will reply when I'm back."
+						onblur={(e) => {
+							const value = e.currentTarget.value;
+							if (value !== vacation.textBody) void saveVacation({ textBody: value || null });
+						}}
+					></textarea>
+				{/snippet}
+			</SettingsField>
+		{/if}
+	</SettingsFormGroup>
+{/if}
 
 <SettingsGroup title="Accounts">
 	{#each auth.accounts as account (account.key)}
