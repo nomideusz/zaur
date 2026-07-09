@@ -1,8 +1,5 @@
 import { randomBytes } from 'node:crypto';
-import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
-import path from 'node:path';
 import type { Cookies } from '@sveltejs/kit';
-import { env } from '$env/dynamic/private';
 import {
 	accountKey,
 	bareAccount,
@@ -24,6 +21,14 @@ import {
 	rememberLinkedAccounts,
 	restoreLinkedAccounts
 } from './linked-accounts';
+import {
+	deleteSessionRow,
+	getSessionRow,
+	hasSessionRow,
+	putSessionRow,
+	touchSessionRow
+} from './store-db';
+import { getStoreDb } from './store-instance';
 
 export type { SessionData, AccountSession, Session } from './session-model';
 export { accountKey, getActiveAccount, getAccount, listAccounts } from './session-model';
@@ -34,137 +39,75 @@ export const COOKIE_NAME = 'zaur_session';
 export const REMEMBERED_SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 30; // 30 days
 const SESSION_RECORD_MAX_AGE_MS = REMEMBERED_SESSION_MAX_AGE_SEC * 1000;
 const SESSION_TOUCH_THROTTLE_MS = 60 * 60 * 1000; // re-write updatedAt at most hourly
-const DEFAULT_SESSION_STORE_PATH = path.join(process.cwd(), '.data', 'sessions.json');
 
-interface StoredSessionRecord {
-	id: string;
-	username: string;
-	sealedData: string;
-	createdAt: string;
-	updatedAt: string;
-	expiresAt?: string;
-}
-
-type SessionStore = Record<string, StoredSessionRecord>;
+export { SESSION_RECORD_MAX_AGE_MS };
 
 function newSessionId(): string {
 	return randomBytes(32).toString('base64url');
 }
 
-function getSessionStorePath(): string {
-	return env.SESSION_STORE_PATH?.trim() || DEFAULT_SESSION_STORE_PATH;
-}
-
-function readSessionStore(): SessionStore {
-	try {
-		const raw = readFileSync(getSessionStorePath(), 'utf8');
-		const parsed = JSON.parse(raw) as SessionStore;
-		return parsed && typeof parsed === 'object' ? parsed : {};
-	} catch {
-		return {};
-	}
-}
-
-function writeSessionStore(store: SessionStore): void {
-	const storePath = getSessionStorePath();
-	mkdirSync(path.dirname(storePath), { recursive: true });
-	// Write-then-rename so a crash or concurrent reader never sees a truncated file.
-	const tmpPath = `${storePath}.${randomBytes(6).toString('hex')}.tmp`;
-	writeFileSync(tmpPath, JSON.stringify(store, null, 2), 'utf8');
-	renameSync(tmpPath, storePath);
-}
-
-function isExpired(record: StoredSessionRecord, now = Date.now()): boolean {
-	const expiresAt = record.expiresAt ? Date.parse(record.expiresAt) : NaN;
-	if (Number.isFinite(expiresAt) && now > expiresAt) return true;
-
-	const updatedAt = Date.parse(record.updatedAt || record.createdAt);
-	if (!Number.isFinite(updatedAt)) return true;
-	return now - updatedAt > SESSION_RECORD_MAX_AGE_MS;
-}
-
-function pruneExpiredSessions(store: SessionStore): boolean {
-	const now = Date.now();
-	let pruned = false;
-	for (const [id, record] of Object.entries(store)) {
-		if (isExpired(record, now)) {
-			delete store[id];
-			pruned = true;
-		}
-	}
-	return pruned;
+function isExpiredRow(row: { updatedAt: number; expiresAt: number | null }, now = Date.now()): boolean {
+	if (row.expiresAt !== null && now > row.expiresAt) return true;
+	return now - row.updatedAt > SESSION_RECORD_MAX_AGE_MS;
 }
 
 /* ── Store records (hold a multi-account Session) ─────────────────────────── */
 
 function persistSession(session: Session, secret?: string): void {
-	const store = readSessionStore();
-	pruneExpiredSessions(store);
-
-	const existing = store[session.id];
-	const now = new Date().toISOString();
-	store[session.id] = {
+	const db = getStoreDb();
+	const existing = getSessionRow(db, session.id);
+	const now = Date.now();
+	putSessionRow(db, {
 		id: session.id,
 		username: getActiveAccount(session)?.username ?? session.accounts[0]?.username ?? '',
 		sealedData: sealSession(session, secret),
 		createdAt: existing?.createdAt ?? now,
 		updatedAt: now,
-		...(session.remember
-			? { expiresAt: new Date(Date.now() + SESSION_RECORD_MAX_AGE_MS).toISOString() }
-			: {})
-	};
-	writeSessionStore(store);
+		expiresAt: session.remember ? now + SESSION_RECORD_MAX_AGE_MS : null
+	});
 }
 
 /** Read a stored session by id, upgrading a legacy single-account record in place. */
 function readSessionRecord(id: string | undefined, secret?: string): Session | null {
 	if (!id) return null;
 
-	const store = readSessionStore();
-	const record = store[id];
+	const db = getStoreDb();
+	const record = getSessionRow(db, id);
 	if (!record) return null;
 
-	if (isExpired(record)) {
-		delete store[id];
-		writeSessionStore(store);
+	if (isExpiredRow(record)) {
+		deleteSessionRow(db, id);
 		return null;
 	}
 
 	const data = unsealSession(record.sealedData, secret);
 	if (!data) {
-		delete store[id];
-		writeSessionStore(store);
+		deleteSessionRow(db, id);
 		return null;
 	}
 
 	if (isSession(data)) {
-		// Bump the sliding-expiry timestamp at most hourly. Writing the whole store on
-		// every read was O(all sessions) per request and, across instances, a
-		// last-writer-wins race that could clobber concurrent changes.
-		const last = Date.parse(record.updatedAt || record.createdAt);
-		if (!Number.isFinite(last) || Date.now() - last > SESSION_TOUCH_THROTTLE_MS) {
-			record.updatedAt = new Date().toISOString();
-			store[id] = record;
-			writeSessionStore(store);
+		// Bump the sliding-expiry timestamp at most hourly; per-row UPDATE, so
+		// concurrent requests can't clobber each other's session records.
+		if (Date.now() - record.updatedAt > SESSION_TOUCH_THROTTLE_MS) {
+			touchSessionRow(db, id, Date.now());
 		}
 		return data;
 	}
 
 	// Legacy: record held a single SessionData → upgrade to multi-account in place.
-	const upgraded = wrapAccount(data as SessionData, id, !!record.expiresAt);
-	record.sealedData = sealSession(upgraded, secret);
-	record.updatedAt = new Date().toISOString();
-	store[id] = record;
-	writeSessionStore(store);
+	const upgraded = wrapAccount(data as SessionData, id, record.expiresAt !== null);
+	putSessionRow(db, {
+		...record,
+		sealedData: sealSession(upgraded, secret),
+		updatedAt: Date.now()
+	});
 	return upgraded;
 }
 
 function removeSessionRecord(id: string | undefined): void {
 	if (!id) return;
-	const store = readSessionStore();
-	if (!store[id]) return;
-	delete store[id];
-	writeSessionStore(store);
+	deleteSessionRow(getStoreDb(), id);
 }
 
 /* ── Reading the session ──────────────────────────────────────────────────── */
@@ -375,7 +318,7 @@ export function clearSession(cookies: Cookies): void {
 	const token = cookies.get(COOKIE_NAME);
 	if (token) {
 		// token is normally the session id; tolerate a legacy sealed-blob cookie too.
-		if (readSessionStore()[token]) {
+		if (hasSessionRow(getStoreDb(), token)) {
 			removeSessionRecord(token);
 		} else {
 			const data = unsealSession(token);

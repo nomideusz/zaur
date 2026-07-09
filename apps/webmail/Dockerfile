@@ -1,4 +1,4 @@
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 
 WORKDIR /app
 
@@ -22,7 +22,7 @@ ENV PUBLIC_APP_NAME=$PUBLIC_APP_NAME
 RUN pnpm --filter @zaur/webmail build
 RUN pnpm --filter @zaur/webmail --prod deploy /out --legacy
 
-FROM node:22-alpine AS runner
+FROM node:24-alpine AS runner
 
 WORKDIR /app
 
@@ -31,6 +31,7 @@ ENV PORT=3000
 ENV HOST=0.0.0.0
 ENV BODY_SIZE_LIMIT=50M
 ENV PUSH_SUBSCRIPTIONS_PATH=/app/.data/push-subscriptions.json
+ENV STORE_DB_PATH=/app/.data/store.sqlite
 
 RUN addgroup --system --gid 1001 nodejs && \
 	adduser --system --uid 1001 sveltekit && \

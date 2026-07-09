@@ -1,4 +1,7 @@
-name: Deploy webmail to CapRover
+name: Webmail CI
+
+# Deployment is owned by Dokploy (git auto-deploy builds apps/webmail/Dockerfile
+# on push to main). This workflow is the pre-deploy gate: typecheck + unit tests.
 
 on:
   push:
@@ -12,12 +15,17 @@ on:
       - 'pnpm-workspace.yaml'
       - 'package.json'
       - '.npmrc'
-      - 'infra/deploy/webmail.captain-definition'
       - '.github/workflows/deploy-webmail.yml'
+  pull_request:
+    paths:
+      - 'apps/webmail/**'
+      - 'packages/sprite/**'
+      - 'packages/ui/**'
+      - 'packages/svelte-calendar/**'
   workflow_dispatch:
 
 jobs:
-  deploy:
+  ci:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -29,7 +37,7 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
 
       - name: Install dependencies
@@ -43,30 +51,3 @@ jobs:
 
       - name: Unit tests
         run: pnpm --filter @zaur/webmail test
-
-      - name: Prepare captain-definition
-        run: cp infra/deploy/webmail.captain-definition captain-definition
-
-      - name: Create deployment tarball
-        uses: a7ul/tar-action@v1.1.0
-        with:
-          command: c
-          cwd: ./
-          files: |
-            captain-definition
-            pnpm-lock.yaml
-            pnpm-workspace.yaml
-            package.json
-            .npmrc
-            packages/ui/
-            packages/sprite/
-            packages/svelte-calendar/
-            apps/webmail/
-          outPath: deploy.tar
-
-      - name: Deploy to CapRover
-        uses: caprover/deploy-from-github@v1.1.2
-        with:
-          server: https://captain.zaur.app
-          app: webmail
-          token: ${{ secrets.CAPROVER_WEBMAIL_TOKEN }}
