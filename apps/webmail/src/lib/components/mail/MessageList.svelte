@@ -1007,6 +1007,10 @@
 	style="view-transition-name: message-list;"
 	aria-label="{mailboxName} messages"
 >
+	<div class="z-mail-list-brand-stripe md:hidden" aria-hidden="true">
+		<span class="z-mail-list-brand-stripe__text">ZAUR MAIL</span>
+	</div>
+
 	{#if mailboxRouteId || !sectionMode}
 		<header
 			class="z-mail-list-pane-header hidden h-14 w-full shrink-0 items-center overflow-hidden border-b border-border/80 bg-surface md:flex"

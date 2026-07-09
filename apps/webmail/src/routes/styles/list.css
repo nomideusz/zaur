@@ -167,6 +167,31 @@
 		overflow: visible;
 	}
 
+	/* Mobile brand hairline pinned above the rows — decorative only, never carries actions. */
+	.z-mail-list-brand-stripe {
+		display: flex;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		overflow: hidden;
+		height: 0.875rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--z-border) 70%, transparent);
+		background-color: var(--z-surface-sunken);
+	}
+
+	.z-mail-list-brand-stripe__text {
+		display: inline-block;
+		font-size: 0.5rem;
+		font-weight: 600;
+		line-height: 1;
+		letter-spacing: 0.5em;
+		/* Offsets the trailing letter-space so the wordmark stays optically centred. */
+		padding-inline-start: 0.5em;
+		color: color-mix(in srgb, var(--z-fg-subtle) 85%, var(--z-accent));
+		transform: scaleX(1.5);
+		transform-origin: center;
+	}
+
 	/* List pane header — fixed height for folder title ↔ bulk toolbar swap. */
 	:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header {
 		position: sticky;
