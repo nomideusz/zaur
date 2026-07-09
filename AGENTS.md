@@ -23,7 +23,12 @@ Root scripts live in `package.json`; see `README.md` for the canonical list.
 
 - `webmail` and `register` read `.env` (copy from each app's `.env.example`). A `SESSION_SECRET`
   is only strictly required when `NODE_ENV=production`; in dev the apps boot without it. `@zaur/web`
-  needs no env.
+  needs no env. These `.env` files are gitignored and are NOT recreated by the update script — copy
+  them from `.env.example` when setting up.
+- `register` reads `STALWART_URL` (and `STALWART_JMAP_PATH`, `REGISTRATION_OPEN`) from its `.env`,
+  but Stalwart admin credentials come from injected secrets: `STALWART_TOKEN` (preferred) or
+  `STALWART_ADMIN_PASSWORD` (used with `STALWART_ADMIN_USER=admin`). Set `REGISTRATION_OPEN=true` in
+  `register/.env` to enable open (non-invite) signup in dev.
 
 ### External-service gotchas (important for "full" e2e testing)
 
@@ -37,6 +42,14 @@ Root scripts live in `package.json`; see `README.md` for the canonical list.
   `STALWART_ADMIN_USER`/`STALWART_ADMIN_PASSWORD`. Without them the portal loads but shows
   "Unable to load domains" and `/api/check-username` returns 502 — this is expected, not a bug.
   `/api/captcha` works standalone.
+- **Register signup writes to `/app/data` by default** (`INVITATIONS_AUDIT_PATH`,
+  `PASSWORD_RESET_TOKENS_PATH` in `lib/invitations.js` / `lib/password-reset.js`) — the production
+  CapRover volume path. Locally that fails with `EACCES: permission denied, mkdir '/app/data'` and
+  the UI shows a generic "Registration could not be completed" error. Point both env vars at a
+  local writable dir (e.g. `/workspace/apps/register/.data/...`) in `register/.env` to finish
+  signups locally. Note: a successful signup creates a **real mailbox** on the live `mail.zaur.app`
+  server — delete test accounts afterward (`node -e "require('dotenv').config();
+  require('./lib/stalwart').deleteAccountByEmail('user@zaur.app')"` from `apps/register/`).
 
 ### Lint / test / build
 
