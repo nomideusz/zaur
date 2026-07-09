@@ -1,0 +1,45 @@
+# AGENTS.md
+
+## Cursor Cloud specific instructions
+
+This is the **Zaur** pnpm monorepo (`pnpm@10.32.1`, Node 22). Standard setup is `pnpm install`
+(see `README.md`). CSS for `@zaur/ui` is built automatically by `predev`/`prestart` hooks, so no
+separate build step is needed before running the apps.
+
+### Apps, dev commands, and ports
+
+Root scripts live in `package.json`; see `README.md` for the canonical list.
+
+| App | Dev command | Default port | Notes |
+|-----|-------------|--------------|-------|
+| `@zaur/web` (landing) | `pnpm dev:web` | 5173 | Fully standalone; no backend needed |
+| `@zaur/webmail` | `pnpm dev:webmail` | 5173 | SvelteKit/Vite; needs a JMAP backend for real login |
+| `@zaur/register` | `pnpm dev:register` | 3000 | Express; needs Stalwart admin creds for real signups |
+
+- **Port collision:** `web` and `webmail` both default to Vite port **5173**. To run them at the
+  same time, override one, e.g. `pnpm dev:webmail --port 5174`.
+
+### Env files
+
+- `webmail` and `register` read `.env` (copy from each app's `.env.example`). A `SESSION_SECRET`
+  is only strictly required when `NODE_ENV=production`; in dev the apps boot without it. `@zaur/web`
+  needs no env.
+
+### External-service gotchas (important for "full" e2e testing)
+
+- **Webmail login** posts to the JMAP server at `PUBLIC_JMAP_SERVER_URL` (default the live
+  `https://mail.zaur.app`). Logging in requires a **real mailbox account** — there is no local mail
+  server in this repo. To exercise the core webmail UI *without* auth, use the unauthenticated
+  "lab" routes: `/floating-compose-lab`, `/recipient-lab`, `/list-lab`, `/toast-lab`,
+  `/search-lab`, `/folder-tree-lab`, `/email-frame-lab`, `/settings-search-lab`. The `(app)` routes
+  (inbox, calendar, settings) redirect to `/login` without a session.
+- **Register** talks to Stalwart's admin JMAP API and needs `STALWART_TOKEN` **or**
+  `STALWART_ADMIN_USER`/`STALWART_ADMIN_PASSWORD`. Without them the portal loads but shows
+  "Unable to load domains" and `/api/check-username` returns 502 — this is expected, not a bug.
+  `/api/captcha` works standalone.
+
+### Lint / test / build
+
+Commands are defined in root `package.json` (`check:webmail`, `test:webmail`, `build:webmail`,
+`build:web`). `test:webmail` uses `node --test`; e2e (`test:register`, webmail `test:e2e`) uses
+Playwright and points at running/remote instances.
