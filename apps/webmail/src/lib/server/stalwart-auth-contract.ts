@@ -8,8 +8,14 @@ export function parseStalwartAuthResponse(value: unknown): StalwartAuthResponse 
 	const record = value as Record<string, unknown>;
 	if (record.type === 'mfaRequired') return { type: 'mfaRequired' };
 	if (record.type === 'failure') return { type: 'failure' };
-	if (record.type === 'authenticated' && typeof record.clientCode === 'string' && record.clientCode) {
-		return { type: 'authenticated', clientCode: record.clientCode };
+	const clientCode =
+		typeof record.clientCode === 'string'
+			? record.clientCode
+			: typeof record.client_code === 'string'
+				? record.client_code
+				: null;
+	if (record.type === 'authenticated' && clientCode) {
+		return { type: 'authenticated', clientCode };
 	}
 	return null;
 }

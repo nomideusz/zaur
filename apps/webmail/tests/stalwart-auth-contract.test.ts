@@ -47,6 +47,17 @@ test('parses documented password, MFA, failure, and malformed fixtures', () => {
 		type: 'authenticated',
 		clientCode: 'ABC'
 	});
+	assert.deepEqual(
+		parseStalwartAuthResponse({
+			type: 'authenticated',
+			client_code: 'LIVE-ABC',
+			iss: 'https://mail.zaur.app'
+		}),
+		{
+			type: 'authenticated',
+			clientCode: 'LIVE-ABC'
+		}
+	);
 	assert.deepEqual(parseStalwartAuthResponse({ type: 'mfaRequired' }), { type: 'mfaRequired' });
 	assert.deepEqual(parseStalwartAuthResponse({ type: 'failure' }), { type: 'failure' });
 	assert.equal(parseStalwartAuthResponse({ type: 'authenticated' }), null);
