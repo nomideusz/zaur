@@ -9,9 +9,13 @@ export interface SessionData {
 	serverUrl: string;
 	username: string;
 	displayName?: string;
+	authMethod?: 'password' | 'oauth';
 	password?: string;
 	accessToken?: string;
 	refreshToken?: string;
+	/** Epoch milliseconds. */
+	accessTokenExpiresAt?: number;
+	scope?: string;
 	/** Session id (the cookie value). Set on the active account returned by readSession(). */
 	id?: string;
 }

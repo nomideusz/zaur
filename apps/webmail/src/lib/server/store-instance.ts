@@ -5,7 +5,13 @@
 import path from 'node:path';
 import type { DatabaseSync } from 'node:sqlite';
 import { env } from '$env/dynamic/private';
-import { importLegacySessionsJson, openStoreDb, pruneRateLimitRows, pruneSessionRows } from './store-db';
+import {
+	importLegacySessionsJson,
+	openStoreDb,
+	pruneOauthFlowRows,
+	pruneRateLimitRows,
+	pruneSessionRows
+} from './store-db';
 import { log } from './log';
 
 const DEFAULT_DB_PATH = path.join(process.cwd(), '.data', 'store.sqlite');
@@ -41,6 +47,7 @@ export function startStoreMaintenance(sessionMaxAgeMs: number): () => void {
 			const store = getStoreDb();
 			const pruned = pruneSessionRows(store, Date.now(), sessionMaxAgeMs);
 			pruneRateLimitRows(store);
+			pruneOauthFlowRows(store);
 			if (pruned > 0) log.info('sessions_pruned', { count: pruned });
 		} catch (error) {
 			log.error('store_maintenance_failed', {}, error);

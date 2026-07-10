@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { appConfig } from '$lib/config';
 import { createConnectedClient } from '$lib/server/jmap';
@@ -16,7 +17,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	if (!limit.allowed) {
 		return json(
 			{ error: `Too many sign-in attempts. Try again in ${limit.retryAfterSec}s.` },
-			{ status: 429 }
+			{ status: 429, headers: { 'Retry-After': String(limit.retryAfterSec) } }
 		);
 	}
 
@@ -33,8 +34,21 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		return json({ error: 'Email and password are required' }, { status: 400 });
 	}
 
+	const emailKey = createHash('sha256').update(email).digest('base64url').slice(0, 24);
+	const accountLimit = checkRateLimit({
+		key: `password-login-account:${emailKey}`,
+		limit: 20,
+		windowMs: 15 * 60 * 1000
+	});
+	if (!accountLimit.allowed) {
+		return json(
+			{ error: `Too many sign-in attempts. Try again in ${accountLimit.retryAfterSec}s.` },
+			{ status: 429, headers: { 'Retry-After': String(accountLimit.retryAfterSec) } }
+		);
+	}
+
 	const effectivePassword = body.totp?.trim() ? `${password}$${body.totp.trim()}` : password;
-	
+
 	const serverUrl = appConfig.jmapServerUrl;
 
 	try {
@@ -52,6 +66,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			serverUrl,
 			username: email,
 			displayName,
+			authMethod: 'password' as const,
 			password: effectivePassword
 		};
 

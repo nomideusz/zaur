@@ -1,4 +1,5 @@
 import type { PageServerLoad } from './$types';
+import { isStalwartOauthEnabled } from '$lib/server/oauth-config';
 
 // Resolve the sign-in config during SSR so the form is in the initial HTML. Mobile users
 // arriving from registration must never wait on client-side JS just to see the inputs.
@@ -7,6 +8,7 @@ export const load: PageServerLoad = async ({ url }) => {
 	// "already authenticated → go to mail" redirect can be suppressed reliably even
 	// during a view-transition navigation.
 	return {
-		isAdd: url.searchParams.get('mode') === 'add'
+		isAdd: url.searchParams.get('mode') === 'add',
+		oauthEnabled: isStalwartOauthEnabled()
 	};
 };

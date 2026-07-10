@@ -42,6 +42,23 @@
 		else if (trimmed) params.set('email', trimmed);
 		return `/forgot-password?${params.toString()}`;
 	});
+	const oauthHref = $derived.by(() => {
+		const params = new URLSearchParams();
+		if (isAdd) params.set('mode', 'add');
+		if (email.trim()) params.set('email', email.trim());
+		if (rememberMe) params.set('remember', '1');
+		if (nextPath) params.set('next', nextPath);
+		return `/api/auth/oauth/start?${params.toString()}`;
+	});
+	const oauthError = $derived.by(() => {
+		const code = $page.url.searchParams.get('error');
+		if (!code?.startsWith('oauth_')) return null;
+		if (code === 'oauth_denied') return 'Secure sign-in was cancelled.';
+		if (code === 'oauth_state' || code === 'oauth_session') {
+			return 'Secure sign-in expired. Please try again.';
+		}
+		return 'Secure sign-in could not be completed.';
+	});
 
 	$effect(() => {
 		// In add mode we intentionally stay on the form while already authenticated.
@@ -70,6 +87,17 @@
 </svelte:head>
 
 <AuthPage title={appConfig.brandName} tagline="Private, focused email">
+	{#if data.oauthEnabled}
+		<div class="z-form-stack">
+			<Button href={oauthHref} class="z-btn-lg w-full">Continue with secure sign-in</Button>
+			<p class="text-center text-sm text-fg-muted">or use your mailbox password</p>
+		</div>
+	{/if}
+
+	{#if oauthError}
+		<p class="text-sm text-danger" role="alert">{oauthError}</p>
+	{/if}
+
 	<form class="z-form-stack" onsubmit={submitLogin}>
 		{#if isAdd}
 			<div class="z-callout">

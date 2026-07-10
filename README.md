@@ -63,14 +63,16 @@ packages/
   sprite/        Shared Zaur pixel art
   ui/            Shared design system (tokens, CSS, cn utility)
 infra/
-  auth/          Zitadel + passkey-first webmail setup
+  auth/          Retired Logto notes; Stalwart is the auth authority
   mail/          Stalwart ops notes
   deploy/        CapRover captain-definition templates
 ```
 
 ## Deploy
 
-GitHub Actions deploy **webmail** and **register** to CapRover on push to `main` when their paths change. Webmail uses the monorepo root as Docker context; **register** deploys a self-contained tarball of `apps/register/` (CSS is vendored into `public/zaur.css` at build time).
+GitHub Actions deploy **web** and **register** to CapRover on push to `main` when their
+paths change. Webmail CI gates pushes with checks, unit tests, a production build,
+and browser smoke tests; Dokploy then builds `apps/webmail/Dockerfile`.
 
 Local deploy (requires `caprover login`):
 

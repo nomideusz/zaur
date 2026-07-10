@@ -5,13 +5,16 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
 	checkRateLimitRow,
+	consumeOauthFlowRow,
 	deleteSessionRow,
 	getSessionRow,
 	hasSessionRow,
 	importLegacySessionsJson,
 	openStoreDb,
+	pruneOauthFlowRows,
 	pruneRateLimitRows,
 	pruneSessionRows,
+	putOauthFlowRow,
 	putSessionRow,
 	touchSessionRow
 } from '../src/lib/server/store-db.ts';
@@ -129,6 +132,24 @@ describe('legacy JSON import', () => {
 		putSessionRow(db, { id: 'a', username: 'new', sealedData: 'fresh', createdAt: 1, updatedAt: 1, expiresAt: null });
 		importLegacySessionsJson(db, jsonPath);
 		assert.equal(getSessionRow(db, 'a')?.sealedData, 'fresh');
+	});
+});
+
+describe('OAuth flows', () => {
+	it('consumes a live flow exactly once', () => {
+		const db = freshDb();
+		putOauthFlowRow(db, { stateHash: 'state', sealedData: 'sealed', expiresAt: 2000 });
+		assert.equal(consumeOauthFlowRow(db, 'state', 1000)?.sealedData, 'sealed');
+		assert.equal(consumeOauthFlowRow(db, 'state', 1000), null);
+	});
+
+	it('does not return expired flows and prunes them', () => {
+		const db = freshDb();
+		putOauthFlowRow(db, { stateHash: 'expired', sealedData: 'old', expiresAt: 999 });
+		putOauthFlowRow(db, { stateHash: 'live', sealedData: 'new', expiresAt: 2000 });
+		assert.equal(consumeOauthFlowRow(db, 'expired', 1000), null);
+		assert.equal(pruneOauthFlowRows(db, 1000), 1);
+		assert.equal(consumeOauthFlowRow(db, 'live', 1000)?.sealedData, 'new');
 	});
 });
 

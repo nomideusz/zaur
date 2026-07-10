@@ -22,12 +22,12 @@ test.beforeEach(async ({ page }) => {
 	});
 });
 
-test('signs in with the dedicated Stalwart test mailbox', async ({ page }) => {
+test('signs in with the dedicated Stalwart test mailbox', { tag: '@auth' }, async ({ page }) => {
 	await signIn(page);
 	await expect(page.getByRole('link', { name: /Inbox/i })).toBeVisible();
 });
 
-test('sends a message to itself and finds it through search', async ({ page }) => {
+test('sends a message to itself and finds it through search', { tag: '@auth' }, async ({ page }) => {
 	await signIn(page);
 	const subject = `E2E self-send ${Date.now()}`;
 
@@ -43,7 +43,7 @@ test('sends a message to itself and finds it through search', async ({ page }) =
 	await expect(page.getByTitle(new RegExp(subject)).first()).toBeVisible({ timeout: 30_000 });
 });
 
-test('adds and searches a local contact', async ({ page }) => {
+test('adds and searches a local contact', { tag: '@auth' }, async ({ page }) => {
 	await signIn(page);
 	const contactEmail = `contact-${Date.now()}@example.com`;
 	const contactName = 'E2E Contact';
@@ -58,7 +58,7 @@ test('adds and searches a local contact', async ({ page }) => {
 	await expect(page.getByRole('button', { name: new RegExp(contactName) })).toBeVisible();
 });
 
-test('inbox list uses scroll area with load-more footer', async ({ page }) => {
+test('inbox list uses scroll area with load-more footer', { tag: '@auth' }, async ({ page }) => {
 	await signIn(page);
 	await page.goto('/mail/inbox');
 	await expect(page.locator('.z-scroll-area')).toBeVisible({ timeout: 30_000 });
@@ -69,7 +69,7 @@ test('inbox list uses scroll area with load-more footer', async ({ page }) => {
 	}
 });
 
-test('opens calendar or explains missing calendar support', async ({ page }) => {
+test('opens calendar or explains missing calendar support', { tag: '@auth' }, async ({ page }) => {
 	await signIn(page);
 	await page.goto('/calendar');
 

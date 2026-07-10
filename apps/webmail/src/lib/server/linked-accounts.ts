@@ -1,13 +1,13 @@
 /**
  * Durable, per-user record of the accounts a user has linked together, so the
  * full set is restored on a fresh "Remember me" sign-in — on *any* device, not
- * just within the lifetime of one session cookie (which `sessions.json` is).
+ * just within the lifetime of one session cookie.
  *
  * The group is symmetric: it is written under *every* member's email key, so
- * signing in as any member restores the whole set. Tokens/passwords live sealed
- * at rest — the same exposure as `sessions.json` — and the group is cleared on
- * explicit sign-out. Synchronous file I/O mirrors `session.ts` so the session
- * mutators that call it can stay synchronous.
+ * signing in as any member restores the whole set. Only password accounts are
+ * persisted here: rotating OAuth refresh tokens stay session-local so multiple
+ * devices cannot race stale token copies. The group is cleared on explicit
+ * sign-out. Synchronous file I/O mirrors `session.ts`.
  */
 import { mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
@@ -65,14 +65,25 @@ function sealGroup(group: SessionData[], now: string): LinkRecord {
 	return { sealed: sealSession(group.map(bareAccount)), updatedAt: now };
 }
 
+function durablePasswordAccounts(accounts: SessionData[]): SessionData[] {
+	return accounts.filter(
+		(account) => account.authMethod !== 'oauth' && !account.refreshToken && Boolean(account.password)
+	);
+}
+
 /**
  * Persist the session's account group under every member's email. A group only
  * exists with ≥2 accounts; with fewer there is nothing to link, so any stale
  * single-member records are cleared instead. Caller gates this on "Remember me".
  */
 export function rememberLinkedAccounts(accounts: SessionData[]): void {
-	const group = accounts.map(bareAccount);
+	const group = durablePasswordAccounts(accounts).map(bareAccount);
 	const store = readStore();
+	for (const account of accounts) {
+		if (!group.some((candidate) => accountKey(candidate.username) === accountKey(account.username))) {
+			delete store[accountKey(account.username)];
+		}
+	}
 
 	if (group.length < 2) {
 		// Nothing to remember — drop any record we previously wrote for these emails.
@@ -102,7 +113,8 @@ export function rememberLinkedAccounts(accounts: SessionData[]): void {
  */
 export function restoreLinkedAccounts(fresh: SessionData): SessionData[] {
 	const store = readStore();
-	const group = unsealGroup(store[accountKey(fresh.username)]);
+	if (fresh.authMethod === 'oauth' || fresh.refreshToken) return [bareAccount(fresh)];
+	const group = durablePasswordAccounts(unsealGroup(store[accountKey(fresh.username)]));
 	return mergeLinkedGroup(fresh, group);
 }
 

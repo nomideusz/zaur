@@ -150,12 +150,23 @@ export class JMAPClient {
 	private accountId = '';
 	private session: JMAPSession | null = null;
 	private readonly proxyMode: boolean;
+	private readonly isTokenAuth: boolean;
+	private readonly refreshAuth?: () => Promise<string | null>;
 
-	constructor(serverUrl: string, username: string, passwordOrToken: string, proxyMode = false, isToken = false) {
+	constructor(
+		serverUrl: string,
+		username: string,
+		passwordOrToken: string,
+		proxyMode = false,
+		isToken = false,
+		refreshAuth?: () => Promise<string | null>
+	) {
 		this.serverUrl = serverUrl.replace(/\/$/, '');
 		this.username = username;
 		this.password = isToken ? undefined : passwordOrToken;
 		this.proxyMode = proxyMode;
+		this.isTokenAuth = isToken;
+		this.refreshAuth = refreshAuth;
 		this.authHeader = proxyMode
 			? ''
 			: isToken
@@ -200,11 +211,22 @@ export class JMAPClient {
 	}
 
 	private async authenticatedFetch(url: string, init?: RequestInit): Promise<Response> {
-		const headers = {
-			...(init?.headers as Record<string, string> | undefined),
-			Authorization: this.authHeader
+		const execute = () => {
+			const headers = {
+				...(init?.headers as Record<string, string> | undefined),
+				Authorization: this.authHeader
+			};
+			return fetch(url, { ...init, headers });
 		};
-		return fetch(url, { ...init, headers });
+		let response = await execute();
+		if (response.status === 401 && this.refreshAuth) {
+			const token = await this.refreshAuth();
+			if (token) {
+				this.authHeader = `Bearer ${token}`;
+				response = await execute();
+			}
+		}
+		return response;
 	}
 
 	async connect(): Promise<void> {
@@ -236,8 +258,10 @@ export class JMAPClient {
 		}
 
 		const sessionUrl = `${this.serverUrl}/.well-known/jmap`;
-		const cacheKey = `${this.serverUrl}|${this.authHeader}`;
-		const cached = sessionCache.get(cacheKey);
+		// Bearer tokens rotate and must not become long-lived cache keys containing
+		// credentials. OAuth sessions reconnect against Stalwart instead.
+		const cacheKey = this.isTokenAuth ? '' : `${this.serverUrl}|${this.authHeader}`;
+		const cached = cacheKey ? sessionCache.get(cacheKey) : undefined;
 		const now = Date.now();
 
 		if (cached && (now - cached.timestamp < SESSION_CACHE_TTL_MS)) {
@@ -247,6 +271,7 @@ export class JMAPClient {
 			this.username = cached.data.username;
 			return;
 		}
+		if (cached) sessionCache.delete(cacheKey);
 
 		try {
 			const sessionResponse = await this.authenticatedFetch(sessionUrl, { method: 'GET' });
@@ -276,15 +301,17 @@ export class JMAPClient {
 				throw new Error('No mail account found in session');
 			}
 
-			sessionCache.set(cacheKey, {
-				data: {
-					session,
-					apiUrl: this.apiUrl,
-					accountId: this.accountId,
-					username: this.username
-				},
-				timestamp: Date.now()
-			});
+			if (cacheKey) {
+				sessionCache.set(cacheKey, {
+					data: {
+						session,
+						apiUrl: this.apiUrl,
+						accountId: this.accountId,
+						username: this.username
+					},
+					timestamp: Date.now()
+				});
+			}
 		} catch (error) {
 			if (
 				error instanceof TypeError &&

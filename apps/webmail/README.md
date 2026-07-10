@@ -7,10 +7,11 @@ Live at [webmail.zaur.app](https://webmail.zaur.app).
 ## Features
 
 - **Mail** — inbox, folders, search (with operators like `from:` and `has:attachment`), compose, reply/forward, attachments, quick reply, undo for archive/delete
-- **Contacts** — built from mail history, manual add, search integration
-- **Calendar** — month view, create and edit events
+- **Contacts** — device-local contacts built from mail history, manual add, search integration
+- **Calendar** — week, day, and agenda views; create and edit events
 - **Offline** — cached threads and an outbox queue for sending when back online
 - **Settings** — synced preferences across devices (JMAP account blob), settings search, and export/import
+- **Authentication** — mailbox password plus optional Stalwart OAuth/PKCE for TOTP accounts
 
 ### Settings overview
 
@@ -25,7 +26,7 @@ Keyboard shortcuts (when enabled): `c` compose, `/` search, `g` then `i`/`s`/`d`
 
 ## Requirements
 
-- Node.js 22+
+- Node.js 24
 - pnpm
 - A ZAUR JMAP account (defaults to `https://mail.zaur.app`)
 
@@ -46,7 +47,13 @@ Open [http://localhost:5173](http://localhost:5173).
 | --- | --- |
 | `PUBLIC_JMAP_SERVER_URL` | JMAP server URL (default: `https://mail.zaur.app`) |
 | `PUBLIC_APP_NAME` | App title shown in the UI |
-| `SESSION_SECRET` | **Required in production** — encrypts the httpOnly session cookie |
+| `SESSION_SECRET` | **Required in production** — seals credentials in the server-side session store; the cookie contains only an opaque id |
+| `STORE_DB_PATH` | Session and rate-limit SQLite database (default: `.data/store.sqlite`) |
+| `TRUSTED_PROXY_HOPS` | Trusted proxy count used when resolving client IPs for rate limits |
+| `PUBLIC_SENTRY_DSN` | Optional Sentry DSN for browser and server error reporting |
+| `STALWART_OAUTH_ENABLED` | Enables Stalwart's built-in OAuth/PKCE sign-in button |
+| `STALWART_OAUTH_CLIENT_ID` | Registered Stalwart OAuth client id |
+| `STALWART_OAUTH_REDIRECT_URI` | Exact callback URI registered for the OAuth client |
 
 ## Scripts
 
@@ -55,6 +62,9 @@ pnpm dev      # development server
 pnpm build    # production build
 pnpm preview  # preview production build
 pnpm check    # TypeScript + Svelte checks
+pnpm test     # unit tests
+pnpm test:e2e:labs  # unauthenticated component smoke tests
+pnpm test:e2e:auth  # Stalwart smoke tests (requires E2E_MAIL_EMAIL/PASSWORD)
 ```
 
 After adding or renaming settings rows, regenerate the search index and Essential-mode counts:
@@ -65,15 +75,21 @@ node scripts/generate-settings-index.mjs
 
 ## Deploy
 
-The app uses `@sveltejs/adapter-node` and ships with a multi-stage Dockerfile. Set `SESSION_SECRET` in your runtime environment.
+The app uses `@sveltejs/adapter-node` and ships with a multi-stage Dockerfile. Dokploy builds
+`apps/webmail/Dockerfile` after the Webmail CI workflow passes. Set `SESSION_SECRET` and mount
+`/app/.data` on persistent storage so sessions, rate limits, and push subscriptions survive deploys.
 
 ```sh
 docker build -t zaur-webmail .
 docker run -p 3000:3000 -e SESSION_SECRET=... zaur-webmail
 ```
 
-CapRover deployment is configured via `.github/workflows/deploy-caprover.yml`.
+The root `deploy:webmail` script remains available for manual CapRover deployments.
 
 ## Architecture
 
-See `src/lib/architecture.ts` for the route map and component tree. Client-side mail data is stored in IndexedDB (RxDB/Dexie) per account; credentials live in an encrypted httpOnly cookie on the server.
+See `src/lib/architecture.ts` for the route map and component tree. Client-side mail data is stored
+in IndexedDB (RxDB/Dexie) per account. Stalwart mailbox credentials are sealed with AES-256-GCM in
+the server-side SQLite session store; the secure httpOnly cookie contains only an opaque session id.
+OAuth access and refresh tokens remain server-side. OAuth-linked accounts are intentionally not copied
+into the cross-device linked-account file because Stalwart rotates refresh tokens.

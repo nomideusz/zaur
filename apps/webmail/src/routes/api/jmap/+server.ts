@@ -1,7 +1,13 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
-import type { JMAPMethodCall, JMAPResponse } from '$lib/jmap/types';
+import type { JMAPResponse } from '$lib/jmap/types';
 import { createConnectedClient } from '$lib/server/jmap';
+import { validateJmapRequest } from '$lib/server/jmap-request';
+import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 import { resolveRequestAccount } from '$lib/server/session';
+
+export const config = {
+	bodySizeLimit: 5 * 1024 * 1024
+};
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
 	const account = resolveRequestAccount(cookies, request);
@@ -9,20 +15,33 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		return json({ error: 'Unauthorized' }, { status: 401 });
 	}
 
-	let body: { using?: string[]; methodCalls?: JMAPMethodCall[] };
+	const rate = checkRateLimit({
+		key: `jmap:${account.id ?? getClientAddress(request)}`,
+		limit: 300,
+		windowMs: 60_000
+	});
+	if (!rate.allowed) {
+		return json(
+			{ error: 'Too many requests' },
+			{ status: 429, headers: { 'Retry-After': String(rate.retryAfterSec) } }
+		);
+	}
+
+	let body: unknown;
 	try {
 		body = await request.json();
 	} catch {
 		return json({ error: 'Invalid request body' }, { status: 400 });
 	}
 
-	if (!body.methodCalls?.length) {
-		return json({ error: 'methodCalls required' }, { status: 400 });
+	const validated = validateJmapRequest(body);
+	if (!validated.ok) {
+		return json({ error: validated.error }, { status: 400 });
 	}
 
 	try {
 		const client = await createConnectedClient(account, cookies);
-		const response = await client.request(body.methodCalls, body.using);
+		const response = await client.request(validated.value.methodCalls, validated.value.using);
 		return json(response satisfies JMAPResponse);
 	} catch (error) {
 		const message = error instanceof Error ? error.message : 'JMAP request failed';

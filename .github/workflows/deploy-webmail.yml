@@ -1,7 +1,7 @@
 name: Webmail CI
 
 # Deployment is owned by Dokploy (git auto-deploy builds apps/webmail/Dockerfile
-# on push to main). This workflow is the pre-deploy gate: typecheck + unit tests.
+# on push to main). This workflow is the pre-deploy quality gate.
 
 on:
   push:
@@ -51,3 +51,24 @@ jobs:
 
       - name: Unit tests
         run: pnpm --filter @zaur/webmail test
+
+      - name: Production build
+        run: pnpm --filter @zaur/webmail build
+
+      - name: Install Playwright Chromium
+        run: pnpm --filter @zaur/webmail exec playwright install --with-deps chromium
+
+      - name: Component smoke tests
+        run: pnpm --filter @zaur/webmail test:e2e:labs
+
+      - name: Authenticated Stalwart smoke tests
+        if: github.event_name != 'pull_request'
+        env:
+          E2E_MAIL_EMAIL: ${{ secrets.E2E_MAIL_EMAIL }}
+          E2E_MAIL_PASSWORD: ${{ secrets.E2E_MAIL_PASSWORD }}
+        run: |
+          test -n "$E2E_MAIL_EMAIL" && test -n "$E2E_MAIL_PASSWORD" || {
+            echo "E2E_MAIL_EMAIL and E2E_MAIL_PASSWORD secrets are required"
+            exit 1
+          }
+          pnpm --filter @zaur/webmail test:e2e:auth

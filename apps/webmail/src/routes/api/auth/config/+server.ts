@@ -1,9 +1,10 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
+import { isStalwartOauthEnabled } from '$lib/server/oauth-config';
 
 /**
- * Sign-in configuration for the client. OAuth/OIDC/passkey sign-in has been
- * removed — this app only supports password (HTTP Basic → Stalwart JMAP) login.
+ * Client-safe sign-in configuration. Tokens and OAuth client secrets never leave
+ * the server; the browser only needs to know whether the redirect flow is enabled.
  */
 export const GET: RequestHandler = async () => {
-	return json({ enabled: false, passwordFallback: true });
+	return json({ enabled: isStalwartOauthEnabled(), passwordFallback: true });
 };
