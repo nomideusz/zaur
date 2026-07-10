@@ -35,7 +35,6 @@
 			<nav class="zw-footer-links" aria-label="Footer">
 				<a href="https://register.zaur.app">Register</a>
 				<a href="https://webmail.zaur.app">Webmail</a>
-				<a href="https://chat.zaur.app">Chat</a>
 				<a href="mailto:nom@zaur.app">nom@zaur.app</a>
 			</nav>
 		</div>

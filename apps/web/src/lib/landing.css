@@ -53,6 +53,32 @@
 	text-wrap: pretty;
 }
 
+/* ---- Sections ------------------------------------------------------------ */
+
+.zw-section {
+	padding-bottom: clamp(2rem, 5vw, 3rem);
+}
+
+.zw-section__title {
+	margin: 0 0 0.25rem;
+	font-size: 1.375rem;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	color: var(--z-fg);
+}
+
+.zw-section__lede {
+	margin: 0 0 1rem;
+	font-size: 0.9375rem;
+	line-height: 1.5;
+	color: var(--z-fg-muted);
+}
+
+.zw-section .zw-products {
+	padding-bottom: 0;
+	margin-top: 1rem;
+}
+
 /* ---- Product grid ------------------------------------------------------- */
 
 .zw-products {
@@ -108,6 +134,35 @@
 	line-height: 1.5;
 	color: var(--z-fg-muted);
 	text-wrap: pretty;
+}
+
+/* Non-link cards (packages, templates) with a row of small links */
+.zw-card--static:hover {
+	transform: none;
+}
+
+.zw-card__name--mono {
+	font-family: var(--z-font-mono, ui-monospace, monospace);
+	font-size: 1.0625rem;
+	overflow-wrap: anywhere;
+}
+
+.zw-card__links {
+	grid-area: 3 / 1 / 4 / 3;
+	display: flex;
+	gap: 1rem;
+	margin-top: 0.75rem;
+	font-size: 0.875rem;
+}
+
+.zw-card__links a {
+	color: var(--z-accent);
+	text-decoration: none;
+}
+
+.zw-card__links a:hover {
+	text-decoration: underline;
+	text-underline-offset: 2px;
 }
 
 .zw-arrow {
