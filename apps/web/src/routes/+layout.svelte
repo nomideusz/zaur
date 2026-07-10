@@ -2,7 +2,6 @@
 	import '@zaur/ui/css/zaur.css';
 	import '$lib/landing.css';
 	import { onMount } from 'svelte';
-	import Sprite from '$lib/Sprite.svelte';
 
 	let { children } = $props();
 
@@ -16,7 +15,6 @@
 	<header class="z-site-header z-panel">
 		<div class="z-site-header__inner zw-container">
 			<a href="/" class="zw-brand z-type-brand" aria-label="Zaur home">
-				<Sprite frame="happy" size={22} />
 				<span>ZAUR</span>
 			</a>
 			<nav class="z-site-nav" aria-label="Account">

@@ -17,6 +17,12 @@
 			name: 'Register',
 			desc: 'Create your own @zaur.app email account.',
 			href: 'https://register.zaur.app'
+		},
+		{
+			id: 'dino',
+			name: 'Dino',
+			desc: 'A quiet page of important news — no feed, no ads, just Zaur and a few stories a day.',
+			href: 'https://dino.zaur.app'
 		}
 	];
 
@@ -109,6 +115,12 @@
 			name: 'fixtar.pl',
 			desc: 'FixTar — e-commerce store for power tools, built with SvelteKit.',
 			href: 'https://fixtar.pl'
+		},
+		{
+			id: 'recycling',
+			name: 'recycling.kompi.pl',
+			desc: 'Map of e-waste, battery, and fluorescent-lamp collection points across Poland.',
+			href: 'https://recycling.kompi.pl'
 		}
 	];
 </script>
@@ -125,7 +137,7 @@
 
 <section class="zw-hero zw-container">
 	<div class="zw-hero__mark">
-		<Sprite frame="happy" size={96} label="Zaur" />
+		<Sprite frame="happy" size={96} label="Zaur" blinks />
 	</div>
 	<h1 class="zw-hero__title">One page to rule them all.</h1>
 	<p class="zw-hero__lede">
