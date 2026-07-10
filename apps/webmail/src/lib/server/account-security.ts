@@ -1,12 +1,11 @@
 import { randomBytes } from 'node:crypto';
 import type { JMAPMethodCall, JMAPResponse } from '$lib/jmap/types';
-import { getFreshOauthSession } from './jmap';
+import { createConnectedClient } from './jmap';
 import { accountKey, type SessionData } from './session';
 import { consumeTotpSetup, putTotpSetup } from './store-db';
 import { getStoreDb } from './store-instance';
 import { sealSession, unsealSession } from './session-crypto';
 import { credentialPermissions, extractOneTimeCredential } from './account-security-contract';
-import { getStalwartOauthIssuer } from './oauth-config';
 import { log } from './log';
 
 const MANAGEMENT_USING = ['urn:ietf:params:jmap:core', 'urn:stalwart:jmap'];
@@ -38,28 +37,8 @@ function methodData(response: JMAPResponse, callId: string): Record<string, unkn
 }
 
 async function request(account: SessionData, methodCalls: JMAPMethodCall[]): Promise<JMAPResponse> {
-	let current = await getFreshOauthSession(account);
-	const send = (accessToken: string) =>
-		fetch(new URL('/api', getStalwartOauthIssuer()), {
-			method: 'POST',
-			headers: {
-				Authorization: `Bearer ${accessToken}`,
-				'Content-Type': 'application/json',
-				Accept: 'application/json'
-			},
-			body: JSON.stringify({ using: MANAGEMENT_USING, methodCalls }),
-			signal: AbortSignal.timeout(10_000)
-		});
-	let response = await send(current.accessToken!);
-	if (response.status === 401) {
-		current = await getFreshOauthSession(current, true);
-		response = await send(current.accessToken!);
-	}
-	if (!response.ok) {
-		log.warn('stalwart_account_security_http_error', { status: response.status });
-		throw new Error('Stalwart account-security request failed');
-	}
-	const body = (await response.json()) as JMAPResponse;
+	const client = await createConnectedClient(account);
+	const body = await client.request(methodCalls, MANAGEMENT_USING);
 	if (!Array.isArray(body.methodResponses)) {
 		log.warn('stalwart_account_security_contract_mismatch', {
 			responseKeys:
