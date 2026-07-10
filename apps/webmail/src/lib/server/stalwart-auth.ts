@@ -88,7 +88,9 @@ export async function authenticateStalwartCredentials(input: {
 		redirectUri
 	});
 	if (tokens.scope && !tokens.scope.split(/\s+/).includes(MAIL_SCOPE)) {
-		throw new StalwartAuthError();
+		log.warn('stalwart_oauth_scope_not_echoed', {
+			grantedScopes: tokens.scope.split(/\s+/).filter(Boolean).slice(0, 20)
+		});
 	}
 	return { status: 'authenticated', tokens };
 }
