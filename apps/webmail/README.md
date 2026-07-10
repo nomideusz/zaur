@@ -4,6 +4,10 @@ A fast, offline-capable webmail client for [ZAUR](https://zaur.app) accounts. Bu
 
 Live at [webmail.zaur.app](https://webmail.zaur.app).
 
+This web/PWA client remains a supported ZAUR Mail product alongside the planned native iOS and
+Android clients. The native direction is documented in
+[`../../docs/decisions/0001-native-mobile-architecture.md`](../../docs/decisions/0001-native-mobile-architecture.md).
+
 ## Features
 
 - **Mail** — inbox, folders, search (with operators like `from:` and `has:attachment`), compose, reply/forward, attachments, quick reply, undo for archive/delete
@@ -88,8 +92,6 @@ docker build -t zaur-webmail .
 docker run -p 3000:3000 -e SESSION_SECRET=... zaur-webmail
 ```
 
-The root `deploy:webmail` script remains available for manual CapRover deployments.
-
 ## Architecture
 
 See `src/lib/architecture.ts` for the route map and component tree. Client-side mail data is stored
@@ -97,3 +99,12 @@ in IndexedDB (RxDB/Dexie) per account. Only Stalwart OAuth access and refresh to
 AES-256-GCM in the server-side SQLite session store; the secure httpOnly cookie contains only an
 opaque session id. Mailbox passwords and TOTP codes exist only for the duration of the authentication
 request. Multi-account tokens stay isolated within the current browser session.
+
+These are web-specific boundaries. Native clients connect directly to Stalwart OAuth/JMAP and the
+public Register API; they do not call the cookie-authenticated `/api/jmap`, `/api/auth`, or account
+security routes. RxDB/Dexie, Svelte stores, service workers, and VAPID Web Push also remain web-only.
+
+The TypeScript JMAP types, mapping behavior, synchronization state machine, and outbox are reference
+implementations for native protocol fixtures. They are not linked into the Kotlin shared core. See
+[`../../docs/mobile.md`](../../docs/mobile.md) for the native integration contract and delivery
+roadmap.

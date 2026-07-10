@@ -1,0 +1,205 @@
+# ZAUR Mail native clients
+
+The native iOS and Android clients are sibling applications to the SvelteKit webmail. The accepted
+architecture is recorded in
+[ADR-0001](decisions/0001-native-mobile-architecture.md): Kotlin Multiplatform shares the protocol
+and data core, while SwiftUI and Jetpack Compose provide platform-native user interfaces.
+
+No native project has been scaffolded yet. This document defines the boundary the first
+implementation should preserve.
+
+## Goals
+
+- Deliver iOS and Android together without compromising platform-native interaction and
+  accessibility.
+- Keep mail, authentication, synchronization, and offline behavior consistent across platforms.
+- Make the inbox, reader, search, and compose useful with unreliable or absent connectivity.
+- Integrate with native secure storage, sharing, files, background work, and notifications.
+- Keep the web/PWA client supported and independently deployable.
+
+## Planned layout
+
+```text
+apps/mobile/
+  shared/
+    src/commonMain/       JMAP, OAuth, models, repositories, sync, SQLDelight
+    src/androidMain/      Android storage, scheduling, and network adapters
+    src/iosMain/          Apple storage, scheduling, and network adapters
+    src/commonTest/       Protocol fixtures and repository tests
+  androidApp/             Jetpack Compose UI and Android integrations
+  iosApp/                 SwiftUI UI and Apple integrations
+```
+
+`shared` must not depend on Compose Multiplatform UI. Its public API should expose stable domain
+models, repository operations, and observable data streams. Presentation state remains in native
+platform code.
+
+## Runtime architecture
+
+```mermaid
+flowchart LR
+  subgraph clients [Native clients]
+    IOS[SwiftUI iOS app]
+    Android[Jetpack Compose Android app]
+    Core[Kotlin shared core]
+    Store[SQLite source of truth]
+    SecureStore[Keychain or Keystore]
+    IOS --> Core
+    Android --> Core
+    Core --> Store
+    Core --> SecureStore
+  end
+
+  Core -->|"OAuth PKCE and direct JMAP"| Stalwart[mail.zaur.app]
+  Core -->|"Signup and recovery"| Register[register.zaur.app]
+  PushService[Native push service] --> IOS
+  PushService --> Android
+  Stalwart --> PushService
+```
+
+## Authentication
+
+Native clients authenticate directly with Stalwart; they do not create a webmail cookie session.
+
+1. Discover the authorization and token endpoints from
+   `https://mail.zaur.app/.well-known/oauth-authorization-server`.
+2. Use Authorization Code with PKCE S256 and a dedicated public client registration for each
+   native application.
+3. Request `offline_access` plus mail, contacts, and calendars scopes.
+4. Store refresh tokens behind a platform interface implemented with Keychain on iOS and
+   Keystore-backed storage on Android.
+5. Refresh before expiry and serialize refresh operations per account.
+6. Treat invalid refresh grants as an account-scoped sign-out, never as a global sign-out.
+
+The web implementation in `apps/webmail/src/lib/server/oauth-*` and
+`apps/webmail/src/lib/server/stalwart-auth-*` is a contract reference only. Native clients must not
+call webmail's `/api/auth/*` routes or store `SESSION_SECRET`.
+
+## JMAP
+
+The shared core discovers the session document from `https://mail.zaur.app/.well-known/jmap` and
+uses URLs returned by the server rather than constructing `/jmap`, upload, download, or event URLs.
+
+Initial protocol scope:
+
+- mailbox list and state changes;
+- email query, get, changes, set, and thread expansion;
+- draft creation and updates;
+- submission and attachment upload/download;
+- server-side search;
+- quota and vacation response;
+- contacts and calendars after the mail foundation is stable;
+- Stalwart account-security methods after core mail flows ship.
+
+Useful behavioral references in webmail:
+
+- `apps/webmail/src/lib/jmap/client.ts`
+- `apps/webmail/src/lib/jmap/types.ts`
+- `apps/webmail/src/lib/jmap/map.ts`
+- `apps/webmail/src/lib/jmap/email-build.ts`
+- `apps/webmail/src/lib/sync/engine.ts`
+- `apps/webmail/src/lib/sync/outbox-processor.ts`
+
+Port behavior and test fixtures, not browser or SvelteKit implementation details.
+
+## Offline-first data flow
+
+The local SQLite database is the source of truth read by both native UIs. SQLDelight provides the
+shared schema and typed queries; repositories coordinate local and remote data sources.
+
+```mermaid
+flowchart LR
+  UI[Native UI] --> State[Platform state adapter]
+  State --> Repository[Shared repository]
+  Repository --> Database[SQLite]
+  Sync[Sync engine] --> JMAP[Stalwart JMAP]
+  Sync --> Database
+  Outbox[Durable outbox] --> JMAP
+  Repository --> Outbox
+```
+
+- Reads always come from SQLite-backed observable queries.
+- Network responses update SQLite transactionally before the UI observes them.
+- JMAP state tokens are stored per account and data type.
+- Writes enter a durable outbox before transmission and expose pending/failed state to the UI.
+- Reconnect, foreground, push, and scheduled work all invoke the same idempotent sync coordinator.
+- Database files and queued work are isolated per account.
+
+## Platform-owned behavior
+
+The shared core defines interfaces but does not hide platform capabilities:
+
+- SwiftUI and Compose navigation, layout, animation, accessibility, and adaptive presentation;
+- Keychain and Keystore-backed token storage;
+- BGTaskScheduler and WorkManager;
+- APNs and FCM registration;
+- native share sheets, file pickers, downloads, and attachment previews;
+- notification actions, deep links, widgets, and app shortcuts;
+- platform lifecycle and network reachability.
+
+## Registration and recovery
+
+Public flows call `https://register.zaur.app` directly:
+
+- `GET /api/config`
+- `GET /api/domains`
+- `GET /api/captcha`
+- `POST /api/check-username`
+- `POST /api/register`
+- password-reset request, verification, and reset endpoints
+
+Server-to-server endpoints protected by `REGISTER_INTERNAL_SECRET` or `WEBMAIL_INTERNAL_SECRET`
+must never be called or receive secrets from a mobile client. Recovery verification links should
+eventually support universal/app links with a safe web fallback.
+
+## Native push gap
+
+The current webmail notification pipeline uses VAPID and Web Push subscriptions. APNs device
+tokens and native FCM tokens are different protocols and cannot reuse that endpoint or storage.
+
+Before production release, design a small authenticated push service that:
+
+- registers an APNs or FCM token against a mailbox account and device;
+- watches or receives Stalwart state changes without exposing mailbox tokens to notification
+  providers;
+- sends metadata-minimal notifications;
+- supports token rotation, revocation, account removal, and notification actions;
+- never includes message bodies unless the user explicitly enables previews.
+
+Foreground synchronization and the first offline milestone do not depend on native push.
+
+## Milestones
+
+### 1. Foundation spike
+
+- Create the KMP shared module and empty native shells.
+- Register native OAuth clients and redirects.
+- Prove sign-in, TOTP challenge, refresh, sign-out, JMAP discovery, and inbox fetch.
+- Verify the shared API is natural to consume from Swift and Kotlin.
+- Decide the minimum supported iOS and Android versions from measured API requirements.
+
+### 2. Offline mail core
+
+- Add SQLDelight schema, repositories, change-state sync, and durable outbox.
+- Implement mailbox list, inbox, reader, compose, attachments, search, and optimistic actions.
+- Share protocol fixtures with the TypeScript client and test against a dedicated Stalwart account.
+
+### 3. Native product quality
+
+- Add platform navigation, accessibility, dynamic type/font scaling, theming, sharing, files, and
+  background synchronization.
+- Add contacts, calendars, account security, multi-account isolation, and recovery deep links.
+
+### 4. Distribution
+
+- Add APNs/FCM delivery and notification actions.
+- Add crash reporting with mail-content redaction.
+- Configure signing, privacy manifests, store metadata, TestFlight, and Play testing tracks.
+
+## Non-goals
+
+- Replacing or embedding the SvelteKit webmail.
+- Sharing SwiftUI/Compose screen implementations.
+- Calling webmail's cookie-authenticated `/api/*` routes.
+- Reusing RxDB, Dexie, IndexedDB, service workers, or Web Push.
+- Reaching feature parity before validating the mail foundation and native interaction quality.

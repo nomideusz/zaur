@@ -19,6 +19,18 @@ Root scripts live in `package.json`; see `README.md` for the canonical list.
 - **Port collision:** `web` and `webmail` both default to Vite port **5173**. To run them at the
   same time, override one, e.g. `pnpm dev:webmail --port 5174`.
 
+### Native mobile direction
+
+The accepted mobile architecture is
+[`docs/decisions/0001-native-mobile-architecture.md`](docs/decisions/0001-native-mobile-architecture.md):
+a Kotlin Multiplatform protocol/data core with SwiftUI on iOS and Jetpack Compose on Android.
+`apps/mobile` is planned but has not been scaffolded.
+
+Native clients connect directly to Stalwart OAuth/JMAP and the public Register API. Do not make
+them depend on webmail's SvelteKit `/api/*` proxy, httpOnly session cookies, RxDB/Dexie, Svelte
+stores, or Web Push. The detailed integration boundary is in
+[`docs/mobile.md`](docs/mobile.md).
+
 ### Env files
 
 - `webmail` and `register` read `.env` (copy from each app's `.env.example`). A `SESSION_SECRET`
@@ -44,7 +56,7 @@ Root scripts live in `package.json`; see `README.md` for the canonical list.
   `/api/captcha` works standalone.
 - **Register signup writes to `/app/data` by default** (`INVITATIONS_AUDIT_PATH`,
   `PASSWORD_RESET_TOKENS_PATH` in `lib/invitations.js` / `lib/password-reset.js`) — the production
-  CapRover volume path. Locally that fails with `EACCES: permission denied, mkdir '/app/data'` and
+  persistent-volume path. Locally that fails with `EACCES: permission denied, mkdir '/app/data'` and
   the UI shows a generic "Registration could not be completed" error. Point both env vars at a
   local writable dir (e.g. `/workspace/apps/register/.data/...`) in `register/.env` to finish
   signups locally. Note: a successful signup creates a **real mailbox** on the live `mail.zaur.app`
