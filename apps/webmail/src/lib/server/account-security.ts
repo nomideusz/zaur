@@ -7,6 +7,7 @@ import { getStoreDb } from './store-instance';
 import { sealSession, unsealSession } from './session-crypto';
 import { credentialPermissions, extractOneTimeCredential } from './account-security-contract';
 import { getStalwartOauthIssuer } from './oauth-config';
+import { log } from './log';
 
 const MANAGEMENT_USING = ['urn:ietf:params:jmap:core', 'urn:stalwart:jmap'];
 const TOTP_SETUP_TTL_MS = 10 * 60_000;
@@ -15,7 +16,24 @@ type CredentialType = 'AppPassword' | 'ApiKey';
 
 function methodData(response: JMAPResponse, callId: string): Record<string, unknown> {
 	const call = response.methodResponses.find((item) => item[2] === callId);
-	if (!call || call[0] === 'error') throw new Error('Stalwart account-security request failed');
+	if (!call) {
+		log.warn('stalwart_account_security_missing_response', { callId });
+		throw new Error('Stalwart account-security request failed');
+	}
+	if (call[0] === 'error') {
+		const errorType =
+			typeof call[1]?.type === 'string' && /^[A-Za-z0-9_.-]{1,64}$/.test(call[1].type)
+				? call[1].type
+				: null;
+		log.warn('stalwart_account_security_method_error', {
+			callId,
+			errorType,
+			errorKeys: Object.keys(call[1] ?? {})
+				.filter((key) => /^[A-Za-z0-9_@.-]{1,64}$/.test(key))
+				.slice(0, 20)
+		});
+		throw new Error('Stalwart account-security request failed');
+	}
 	return call[1];
 }
 
@@ -37,9 +55,20 @@ async function request(account: SessionData, methodCalls: JMAPMethodCall[]): Pro
 		current = await getFreshOauthSession(current, true);
 		response = await send(current.accessToken!);
 	}
-	if (!response.ok) throw new Error('Stalwart account-security request failed');
+	if (!response.ok) {
+		log.warn('stalwart_account_security_http_error', { status: response.status });
+		throw new Error('Stalwart account-security request failed');
+	}
 	const body = (await response.json()) as JMAPResponse;
 	if (!Array.isArray(body.methodResponses)) {
+		log.warn('stalwart_account_security_contract_mismatch', {
+			responseKeys:
+				body && typeof body === 'object'
+					? Object.keys(body)
+							.filter((key) => /^[A-Za-z0-9_@.-]{1,64}$/.test(key))
+							.slice(0, 20)
+					: []
+		});
 		throw new Error('Invalid Stalwart account-security response');
 	}
 	return body;
