@@ -219,6 +219,30 @@ async function sendPasswordResetEmail({ to, mailboxEmail, resetLink, expiresAt }
   return true;
 }
 
+async function sendRecoveryChangeEmail({ to, mailboxEmail, verificationLink, expiresAt }) {
+  const from = process.env.INVITE_SMTP_FROM.trim();
+  const fromName = process.env.INVITE_SMTP_FROM_NAME?.trim() || 'ZAUR';
+  const expiresText = new Date(expiresAt).toLocaleString('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  });
+  await sendMail({
+    from: { name: fromName, address: from },
+    to,
+    subject: 'Verify your ZAUR recovery email',
+    text: [
+      `Confirm this address as the recovery email for ${mailboxEmail}:`,
+      '',
+      verificationLink,
+      '',
+      `This link expires ${expiresText}.`,
+      '',
+      'If you did not request this change, you can ignore this email.',
+    ].join('\n'),
+  });
+  return true;
+}
+
 async function sendApplicationEmail({ requestedEmail, name, contactEmail, message }) {
   const from = process.env.INVITE_SMTP_FROM.trim();
   const fromName = process.env.INVITE_SMTP_FROM_NAME?.trim() || 'ZAUR';
@@ -266,5 +290,6 @@ module.exports = {
   verifySmtp,
   sendInvitationEmail,
   sendPasswordResetEmail,
+  sendRecoveryChangeEmail,
   sendApplicationEmail,
 };

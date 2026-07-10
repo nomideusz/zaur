@@ -32,6 +32,14 @@ export function isStalwartOauthEnabled(): boolean {
 	);
 }
 
+export function isPasswordLoginRollbackEnabled(): boolean {
+	return env.STALWART_PASSWORD_LOGIN_ROLLBACK_ENABLED === 'true';
+}
+
+export function isRedirectOauthRollbackEnabled(): boolean {
+	return env.STALWART_REDIRECT_OAUTH_ROLLBACK_ENABLED === 'true';
+}
+
 export function getStalwartOauthClientId(): string {
 	const clientId = env.STALWART_OAUTH_CLIENT_ID?.trim();
 	if (!clientId) throw new Error('STALWART_OAUTH_CLIENT_ID is not configured');
@@ -53,9 +61,12 @@ export function getStalwartOauthRedirectUri(requestOrigin: string): string {
 	return configured || `${normalizeOrigin(requestOrigin)}/api/auth/oauth/callback`;
 }
 
-export function getStalwartOauthScopes(): string[] {
+export function getStalwartOauthScopes(discovery?: StalwartOauthDiscovery): string[] {
 	const configured = env.STALWART_OAUTH_SCOPES?.trim();
-	return configured ? configured.split(/\s+/).filter(Boolean) : [...DEFAULT_SCOPES];
+	const requested = configured ? configured.split(/\s+/).filter(Boolean) : [...DEFAULT_SCOPES];
+	return discovery?.scopes_supported?.length
+		? requested.filter((scope) => discovery.scopes_supported!.includes(scope))
+		: requested;
 }
 
 export async function getStalwartOauthDiscovery(

@@ -8,7 +8,7 @@ test.skip(!email || !password, 'Set E2E_MAIL_EMAIL and E2E_MAIL_PASSWORD in .env
 async function signIn(page: Page) {
 	await page.goto('/login');
 	await page.getByLabel('Email').fill(email!);
-	await page.getByLabel('Password').fill(password!);
+	await page.locator('#password').fill(password!);
 	const submit = page.getByRole('button', { name: 'Sign in' });
 	await expect(submit).toBeEnabled();
 	await submit.click();
@@ -80,4 +80,14 @@ test('opens calendar or explains missing calendar support', { tag: '@auth' }, as
 	}
 
 	await expect(page.getByRole('button', { name: 'New event' }).first()).toBeVisible();
+});
+
+test('opens the branded account security center', { tag: '@auth' }, async ({ page }) => {
+	await signIn(page);
+	await page.goto('/settings/security');
+	await expect(page.getByText('Confirm your identity', { exact: true })).toBeVisible();
+	await expect(page.getByText('Two-factor authentication', { exact: true })).toBeVisible();
+	await expect(page.getByText('App passwords', { exact: true })).toBeVisible();
+	await expect(page.getByText('ZAUR sessions', { exact: true })).toBeVisible();
+	await expect(page.getByText('Advanced · API keys', { exact: true })).toBeVisible();
 });

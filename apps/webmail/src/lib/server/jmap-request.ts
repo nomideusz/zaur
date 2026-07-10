@@ -30,6 +30,9 @@ export function validateJmapRequest(value: unknown): JmapRequestValidation {
 	) {
 		return { ok: false, error: 'Invalid using capabilities' };
 	}
+	if ((using as unknown[] | undefined)?.includes('urn:stalwart:jmap')) {
+		return { ok: false, error: 'Management capabilities are not available through this endpoint' };
+	}
 
 	const methodCalls = value.methodCalls;
 	if (!Array.isArray(methodCalls) || methodCalls.length === 0) {
@@ -53,6 +56,9 @@ export function validateJmapRequest(value: unknown): JmapRequestValidation {
 			call[2].length > 128
 		) {
 			return { ok: false, error: 'Invalid method call' };
+		}
+		if (call[0].startsWith('x:')) {
+			return { ok: false, error: 'Management methods are not available through this endpoint' };
 		}
 		validCalls.push(call as ValidJmapMethodCall);
 	}

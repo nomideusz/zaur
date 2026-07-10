@@ -16,19 +16,22 @@ import {
 } from './session-model';
 import { sealSession, unsealSession } from './session-crypto';
 import {
-	forgetLinkedAccount,
-	forgetLinkedAccounts,
-	rememberLinkedAccounts,
-	restoreLinkedAccounts
-} from './linked-accounts';
-import {
 	deleteSessionRow,
 	getSessionRow,
+	hasStepUpProof,
 	hasSessionRow,
+	listSessionAccountRows,
 	putSessionRow,
+	putStepUpProof,
+	setSessionAccountDevice,
+	syncSessionAccountRows,
 	touchSessionRow
 } from './store-db';
 import { getStoreDb } from './store-instance';
+import {
+	isPasswordLoginRollbackEnabled,
+	isStalwartOauthEnabled
+} from './oauth-config';
 
 export type { SessionData, AccountSession, Session } from './session-model';
 export { accountKey, getActiveAccount, getAccount, listAccounts } from './session-model';
@@ -65,6 +68,12 @@ function persistSession(session: Session, secret?: string): void {
 		updatedAt: now,
 		expiresAt: session.remember ? now + SESSION_RECORD_MAX_AGE_MS : null
 	});
+	syncSessionAccountRows(
+		db,
+		session.id,
+		session.accounts.map((account) => accountKey(account.username)),
+		now
+	);
 }
 
 /** Read a stored session by id, upgrading a legacy single-account record in place. */
@@ -87,16 +96,54 @@ function readSessionRecord(id: string | undefined, secret?: string): Session | n
 	}
 
 	if (isSession(data)) {
+		if (isStalwartOauthEnabled() && !isPasswordLoginRollbackEnabled()) {
+			const tokenAccounts = data.accounts.filter(
+				(account) =>
+					account.authMethod === 'oauth' &&
+					Boolean(account.accessToken) &&
+					Boolean(account.refreshToken)
+			);
+			if (!tokenAccounts.length) {
+				deleteSessionRow(db, id);
+				return null;
+			}
+			if (tokenAccounts.length !== data.accounts.length) {
+				const activeKey = tokenAccounts.some(
+					(account) => accountKey(account.username) === data.activeKey
+				)
+					? data.activeKey
+					: accountKey(tokenAccounts[0].username);
+				const migrated = { ...data, accounts: tokenAccounts, activeKey };
+				persistSession(migrated, secret);
+				return migrated;
+			}
+		}
 		// Bump the sliding-expiry timestamp at most hourly; per-row UPDATE, so
 		// concurrent requests can't clobber each other's session records.
 		if (Date.now() - record.updatedAt > SESSION_TOUCH_THROTTLE_MS) {
-			touchSessionRow(db, id, Date.now());
+			const now = Date.now();
+			touchSessionRow(db, id, now);
+			syncSessionAccountRows(
+				db,
+				id,
+				data.accounts.map((account) => accountKey(account.username)),
+				now
+			);
 		}
 		return data;
 	}
 
 	// Legacy: record held a single SessionData → upgrade to multi-account in place.
-	const upgraded = wrapAccount(data as SessionData, id, record.expiresAt !== null);
+	const legacy = data as SessionData;
+	if (
+		isStalwartOauthEnabled() &&
+		!isPasswordLoginRollbackEnabled() &&
+		(legacy.authMethod !== 'oauth' || !legacy.accessToken || !legacy.refreshToken)
+	) {
+		deleteSessionRow(db, id);
+		return null;
+	}
+	const upgraded = wrapAccount(legacy, id, record.expiresAt !== null);
 	putSessionRow(db, {
 		...record,
 		sealedData: sealSession(upgraded, secret),
@@ -196,10 +243,9 @@ export function resolveRequestAccount(
 /* ── Mutations ────────────────────────────────────────────────────────────── */
 
 /**
- * Create a fresh session for a login, replacing any existing one. With "Remember
- * me" on, the accounts previously linked to this user are restored alongside the
- * just-authenticated one (which stays active and keeps this login's fresh tokens)
- * — so a multi-account set survives sign-out and follows the user across devices.
+ * Create a fresh token-only session for a login, replacing any existing one.
+ * "Remember me" extends this browser session; it never copies credentials or
+ * refresh tokens into a separate linked-account store.
  */
 export function writeSession(
 	cookies: Cookies,
@@ -207,17 +253,14 @@ export function writeSession(
 	options?: { remember?: boolean; secret?: string }
 ): void {
 	const id = data.id ?? newSessionId();
-	const accounts = options?.remember ? restoreLinkedAccounts(data) : [bareAccount(data)];
 	const session: Session = {
 		id,
-		accounts,
+		accounts: [bareAccount(data)],
 		activeKey: accountKey(data.username),
 		remember: options?.remember
 	};
 	persistSession(session, options?.secret);
 	syncIdCookie(cookies, id, options);
-	// Re-seal the group with this login's fresh tokens (and prune any since-removed members).
-	if (options?.remember) rememberLinkedAccounts(session.accounts);
 }
 
 /**
@@ -235,8 +278,6 @@ export function addAccount(
 		: wrapAccount(data, newSessionId(), options?.remember);
 	persistSession(session, options?.secret);
 	syncIdCookie(cookies, session.id, { remember: session.remember });
-	// Durably link the group so it is restored on a later fresh sign-in (any device).
-	if (session.remember) rememberLinkedAccounts(session.accounts);
 	return session;
 }
 
@@ -245,15 +286,11 @@ export function removeAccount(cookies: Cookies, key: string, secret?: string): S
 	const session = readSessionFull(cookies, secret);
 	if (!session) return null;
 	const next = dropAccount(session, key);
-	// Intentional removal: drop it from the durable groups too, so it does not
-	// reappear on the next remembered sign-in.
-	forgetLinkedAccount(key);
 	if (!next) {
 		clearSession(cookies);
 		return null;
 	}
 	persistSession(next, secret);
-	if (next.remember) rememberLinkedAccounts(next.accounts);
 	return next;
 }
 
@@ -272,13 +309,92 @@ export function updateAccountTokens(id: string, data: SessionData, secret?: stri
 	if (!session) return;
 	const next = withAccountTokens(session, data);
 	persistSession(next, secret);
-	// Keep the durable group in sync when an account's stored data changes.
-	if (next.remember && next.accounts.length >= 2) rememberLinkedAccounts(next.accounts);
 }
 
 /** @deprecated back-compat alias — use {@link updateAccountTokens}. */
 export function updateSessionData(id: string, data: SessionData, secret?: string): void {
 	updateAccountTokens(id, data, secret);
+}
+
+export function recordSessionDevice(
+	cookies: Cookies,
+	userAgent: string | null,
+	ipHash: string | null,
+	secret?: string
+): void {
+	const session = readSessionFull(cookies, secret);
+	const active = session && getActiveAccount(session);
+	if (!session || !active) return;
+	setSessionAccountDevice(
+		getStoreDb(),
+		session.id,
+		accountKey(active.username),
+		userAgent?.slice(0, 240) || null,
+		ipHash
+	);
+}
+
+export function listAccountSessions(cookies: Cookies, secret?: string) {
+	const session = readSessionFull(cookies, secret);
+	const active = session && getActiveAccount(session);
+	if (!session || !active) return [];
+	return listSessionAccountRows(getStoreDb(), accountKey(active.username)).map((row) => ({
+		id: row.sessionId,
+		current: row.sessionId === session.id,
+		createdAt: row.createdAt,
+		lastSeenAt: row.updatedAt,
+		userAgent: row.userAgent
+	}));
+}
+
+/** Remove one account from any local browser session, preserving sibling accounts. */
+export function revokeAccountSession(
+	cookies: Cookies,
+	targetSessionId: string,
+	key: string,
+	secret?: string
+): boolean {
+	const target = readSessionRecord(targetSessionId, secret);
+	if (!target || !getAccount(target, key)) return false;
+	const next = dropAccount(target, key);
+	if (!next) {
+		removeSessionRecord(targetSessionId);
+		if (cookies.get(COOKIE_NAME) === targetSessionId) {
+			cookies.delete(COOKIE_NAME, { path: '/' });
+		}
+		return true;
+	}
+	persistSession(next, secret);
+	return true;
+}
+
+export function revokeOtherAccountSessions(cookies: Cookies, key: string, secret?: string): number {
+	const current = readSessionFull(cookies, secret);
+	if (!current) return 0;
+	let revoked = 0;
+	for (const row of listSessionAccountRows(getStoreDb(), accountKey(key))) {
+		if (row.sessionId !== current.id && revokeAccountSession(cookies, row.sessionId, key, secret)) {
+			revoked++;
+		}
+	}
+	return revoked;
+}
+
+export function rotateSessionId(cookies: Cookies, secret?: string): Session | null {
+	const current = readSessionFull(cookies, secret);
+	if (!current) return null;
+	const now = Date.now();
+	const recentlyVerified = current.accounts
+		.map((account) => accountKey(account.username))
+		.filter((key) => hasStepUpProof(getStoreDb(), current.id, key, now));
+	const next = { ...current, id: newSessionId() };
+	removeSessionRecord(current.id);
+	persistSession(next, secret);
+	for (const key of recentlyVerified) {
+		putStepUpProof(getStoreDb(), next.id, key, now, now + 5 * 60_000);
+	}
+	syncIdCookie(cookies, next.id, { remember: next.remember });
+	return next;
 }
 
 /* ── Cookie ───────────────────────────────────────────────────────────────── */
@@ -310,11 +426,6 @@ export function syncSessionCookie(
 }
 
 export function clearSession(cookies: Cookies): void {
-	// Explicit sign-out forgets the durable group, so "Sign out" stays a real
-	// "forget me" — the linked accounts will not be restored on the next login.
-	const session = readSessionFull(cookies);
-	if (session) forgetLinkedAccounts(session.accounts);
-
 	const token = cookies.get(COOKIE_NAME);
 	if (token) {
 		// token is normally the session id; tolerate a legacy sealed-blob cookie too.

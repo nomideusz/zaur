@@ -11,6 +11,10 @@ const TOKENS_FILE =
   process.env.PASSWORD_RESET_TOKENS_PATH || '/app/data/password_reset_tokens.json';
 const DEFAULT_EXPIRES_SEC = Number.parseInt(process.env.PASSWORD_RESET_EXPIRES_SEC || '3600', 10);
 const WEBMAIL_URL = (process.env.WEBMAIL_URL || 'https://webmail.zaur.app').replace(/\/$/, '');
+const REGISTER_URL = (process.env.REGISTER_PUBLIC_URL || 'https://register.zaur.app').replace(
+  /\/$/,
+  '',
+);
 
 const GENERIC_SUCCESS =
   'If an account exists for that address, we sent password reset instructions to its recovery email.';
@@ -82,6 +86,7 @@ function findActiveToken(mailboxEmail, token) {
   return (
     readTokens().find(
       (item) =>
+        (!item.kind || item.kind === 'password-reset') &&
         matchesToken(item, cleanToken, tokenHash) &&
         normalizeEmail(item.mailboxEmail) === email &&
         !item.usedAt &&
@@ -149,6 +154,7 @@ async function requestReset(emailInput) {
   }
 
   tokens.unshift({
+    kind: 'password-reset',
     tokenHash: hashToken(token),
     mailboxEmail,
     recoveryEmail,
@@ -178,6 +184,85 @@ async function requestReset(emailInput) {
     });
 
   return { ok: true, message: GENERIC_SUCCESS };
+}
+
+function findActiveRecoveryChange(mailboxEmail, token) {
+  const mailbox = normalizeEmail(mailboxEmail);
+  const cleanToken = String(token || '').trim();
+  const tokenHash = hashToken(cleanToken);
+  const now = Date.now();
+  return (
+    readTokens().find(
+      (item) =>
+        item.kind === 'recovery-change' &&
+        matchesToken(item, cleanToken, tokenHash) &&
+        normalizeEmail(item.mailboxEmail) === mailbox &&
+        !item.usedAt &&
+        !item.revokedAt &&
+        Date.parse(item.expiresAt) > now,
+    ) || null
+  );
+}
+
+async function requestRecoveryChange(mailboxEmail, recoveryEmail) {
+  const mailbox = normalizeEmail(mailboxEmail);
+  const recovery = normalizeEmail(recoveryEmail);
+  if (!isValidEmail(mailbox) || !isValidEmail(recovery) || mailbox === recovery) {
+    throw new Error('A different, valid recovery email is required.');
+  }
+  const existingMailbox = invitations.findMailboxByRecoveryEmail(recovery);
+  if (existingMailbox && existingMailbox !== mailbox) {
+    throw new Error('That recovery email is already in use.');
+  }
+  const now = Date.now();
+  const expiresAt = now + 30 * 60 * 1000;
+  const token = generateToken();
+  const tokens = readTokens();
+  for (const item of tokens) {
+    if (
+      item.kind === 'recovery-change' &&
+      normalizeEmail(item.mailboxEmail) === mailbox &&
+      !item.usedAt &&
+      !item.revokedAt
+    ) {
+      item.revokedAt = new Date(now).toISOString();
+    }
+  }
+  tokens.unshift({
+    kind: 'recovery-change',
+    tokenHash: hashToken(token),
+    mailboxEmail: mailbox,
+    recoveryEmail: recovery,
+    createdAt: new Date(now).toISOString(),
+    expiresAt: new Date(expiresAt).toISOString(),
+    usedAt: null,
+    revokedAt: null,
+  });
+  writeTokens(tokens);
+  const verificationLink = `${REGISTER_URL}/api/recovery/verify?${new URLSearchParams({
+    token,
+    email: mailbox,
+  }).toString()}`;
+  await inviteMail.sendRecoveryChangeEmail({
+    to: recovery,
+    mailboxEmail: mailbox,
+    verificationLink,
+    expiresAt,
+  });
+  return { ok: true };
+}
+
+function confirmRecoveryChange(mailboxEmail, token) {
+  const entry = findActiveRecoveryChange(mailboxEmail, token);
+  if (!entry) return { valid: false };
+  invitations.setRecoveryEmailByMailbox(entry.mailboxEmail, entry.recoveryEmail);
+  const tokens = readTokens();
+  const stored = tokens.find(
+    (item) => item.kind === 'recovery-change' && item.tokenHash === entry.tokenHash,
+  );
+  if (stored) stored.usedAt = new Date().toISOString();
+  writeTokens(tokens);
+  return { valid: true, mailboxEmail: entry.mailboxEmail };
 }
 
 function verifyToken(mailboxEmail, token) {
@@ -237,5 +322,7 @@ module.exports = {
   verifyToken,
   resetPassword,
   revokeTokensForMailbox,
+  requestRecoveryChange,
+  confirmRecoveryChange,
   GENERIC_SUCCESS,
 };

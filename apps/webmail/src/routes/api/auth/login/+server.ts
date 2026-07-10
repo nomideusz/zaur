@@ -4,10 +4,17 @@ import { appConfig } from '$lib/config';
 import { createConnectedClient } from '$lib/server/jmap';
 import { classifyJmapError, loginErrorMessage } from '$lib/jmap/errors';
 import { findIdentityEmail, normalizeEmail } from '$lib/jmap/account';
-import { addAccount, writeSession } from '$lib/server/session';
+import { addAccount, recordSessionDevice, writeSession } from '$lib/server/session';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
+import {
+	isPasswordLoginRollbackEnabled,
+	isStalwartOauthEnabled
+} from '$lib/server/oauth-config';
+import { authenticateStalwartCredentials } from '$lib/server/stalwart-auth';
+import type { SessionData } from '$lib/server/session-model';
+import { createTokenSession } from '$lib/server/stalwart-auth-contract';
 
-export const POST: RequestHandler = async ({ request, cookies }) => {
+export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	const clientAddress = getClientAddress(request);
 	const limit = checkRateLimit({
 		key: `password-login:${clientAddress}`,
@@ -47,28 +54,58 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		);
 	}
 
-	const effectivePassword = body.totp?.trim() ? `${password}$${body.totp.trim()}` : password;
-
 	const serverUrl = appConfig.jmapServerUrl;
 
 	try {
-		const client = await createConnectedClient({
-			serverUrl,
-			username: email,
-			password: effectivePassword
-		});
+		let sessionData: SessionData;
+		if (isStalwartOauthEnabled()) {
+			const authResult = await authenticateStalwartCredentials({
+				accountName: email,
+				accountSecret: password,
+				mfaToken: body.totp,
+				requestOrigin: url.origin
+			});
+			if (authResult.status === 'mfa_required') {
+				return json(
+					{ requiresTotp: true, code: 'mfa_required' },
+					{ status: 202, headers: { 'Cache-Control': 'no-store' } }
+				);
+			}
+			if (authResult.status === 'failure') {
+				return json(
+					{ error: 'Invalid email, password, or 2FA code.', code: 'invalid_credentials' },
+					{ status: 401, headers: { 'Cache-Control': 'no-store' } }
+				);
+			}
+			sessionData = createTokenSession({
+				serverUrl,
+				username: email,
+				accessToken: authResult.tokens.accessToken,
+				refreshToken: authResult.tokens.refreshToken,
+				accessTokenExpiresAt: authResult.tokens.accessTokenExpiresAt,
+				scope: authResult.tokens.scope
+			});
+		} else if (isPasswordLoginRollbackEnabled()) {
+			const effectivePassword = body.totp?.trim() ? `${password}$${body.totp.trim()}` : password;
+			sessionData = {
+				serverUrl,
+				username: email,
+				authMethod: 'password' as const,
+				password: effectivePassword
+			};
+		} else {
+			return json(
+				{ error: 'Secure sign-in is temporarily unavailable.', code: 'server_unavailable' },
+				{ status: 503, headers: { 'Cache-Control': 'no-store' } }
+			);
+		}
+
+		const client = await createConnectedClient(sessionData);
 
 		const identities = await client.getIdentities();
 		const primary = findIdentityEmail(identities, email) ?? identities[0];
 		const displayName = primary?.name ?? primary?.email ?? email;
-
-		const sessionData = {
-			serverUrl,
-			username: email,
-			displayName,
-			authMethod: 'password' as const,
-			password: effectivePassword
-		};
+		sessionData.displayName = displayName;
 
 		// 'add' appends to (and activates within) the current session; otherwise replace it.
 		if (body.add === true) {
@@ -76,18 +113,26 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		} else {
 			writeSession(cookies, sessionData, { remember: body.rememberMe === true });
 		}
+		recordSessionDevice(
+			cookies,
+			request.headers.get('user-agent'),
+			createHash('sha256').update(clientAddress).digest('base64url').slice(0, 16)
+		);
 
-		return json({
-			serverUrl,
-			username: sessionData.username,
-			displayName,
-			identities: identities.map((identity) => ({
-				id: identity.id,
-				name: identity.name,
-				email: identity.email,
-				replyTo: identity.replyTo
-			}))
-		});
+		return json(
+			{
+				serverUrl,
+				username: sessionData.username,
+				displayName,
+				identities: identities.map((identity) => ({
+					id: identity.id,
+					name: identity.name,
+					email: identity.email,
+					replyTo: identity.replyTo
+				}))
+			},
+			{ headers: { 'Cache-Control': 'no-store' } }
+		);
 	} catch (error) {
 		console.error('[Login Error]:', error);
 		const code = classifyJmapError(error);

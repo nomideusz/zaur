@@ -1,5 +1,6 @@
 export type SettingsNavSectionId =
 	| 'account'
+	| 'security'
 	| 'appearance'
 	| 'reading'
 	| 'writing'
@@ -9,6 +10,7 @@ export type SettingsNavSectionId =
 
 export type SettingsNavIcon =
 	| 'account'
+	| 'security'
 	| 'appearance'
 	| 'reading'
 	| 'writing'
@@ -36,6 +38,7 @@ export const MAIL_LAYOUT = {
 
 export const SETTINGS_SECTIONS: { id: SettingsNavSectionId; label: string }[] = [
 	{ id: 'account', label: 'Account' },
+	{ id: 'security', label: 'Security' },
 	{ id: 'appearance', label: 'Appearance' },
 	{ id: 'reading', label: 'Reading' },
 	{ id: 'writing', label: 'Writing' },
@@ -46,6 +49,7 @@ export const SETTINGS_SECTIONS: { id: SettingsNavSectionId; label: string }[] = 
 
 export const SETTINGS_NAV_LINKS: SettingsNavLink[] = [
 	{ href: '/settings/account', label: 'Account', icon: 'account', section: 'account' },
+	{ href: '/settings/security', label: 'Security', icon: 'security', section: 'security' },
 	{ href: '/settings/appearance', label: 'Appearance', icon: 'appearance', section: 'appearance' },
 	{ href: '/settings/reading', label: 'Reading', icon: 'reading', section: 'reading' },
 	{ href: '/settings/compose', label: 'Writing', icon: 'writing', section: 'writing' },

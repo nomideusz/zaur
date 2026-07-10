@@ -1,7 +1,7 @@
 /**
  * AES-256-GCM seal/unseal over the SESSION_SECRET. Lives in its own module so both
- * the session store and the durable linked-accounts store can use it without a
- * circular import (`session.ts` → `linked-accounts.ts` → here, never back up).
+ * session-store encryption can be reused by short-lived security challenges
+ * without coupling them to the cookie/session I/O layer.
  */
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from 'node:crypto';
 import { env } from '$env/dynamic/private';

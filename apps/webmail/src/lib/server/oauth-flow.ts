@@ -82,7 +82,7 @@ export async function createOauthFlow(input: {
 	url.searchParams.set('response_type', 'code');
 	url.searchParams.set('client_id', getStalwartOauthClientId());
 	url.searchParams.set('redirect_uri', input.redirectUri);
-	url.searchParams.set('scope', getStalwartOauthScopes().join(' '));
+	url.searchParams.set('scope', getStalwartOauthScopes(discovery).join(' '));
 	url.searchParams.set('state', state);
 	url.searchParams.set('code_challenge', createPkceChallenge(codeVerifier));
 	url.searchParams.set('code_challenge_method', 'S256');

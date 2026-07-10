@@ -118,6 +118,31 @@ function findMailboxByRecoveryEmail(recoveryEmail) {
   return entry?.mailboxEmail ? normalizeEmail(entry.mailboxEmail) : null;
 }
 
+function setRecoveryEmailByMailbox(mailboxEmail, recoveryEmail) {
+  const mailbox = normalizeEmail(mailboxEmail);
+  const recovery = normalizeEmail(recoveryEmail);
+  if (!isValidEmail(mailbox) || !isValidEmail(recovery)) {
+    throw new Error('Valid mailbox and recovery email addresses are required.');
+  }
+  const entries = readAudit();
+  const found = entries.find((item) => normalizeEmail(item.mailboxEmail) === mailbox);
+  if (found) {
+    found.recoveryEmail = recovery;
+    found.recoveryUpdatedAt = new Date().toISOString();
+  } else {
+    entries.unshift({
+      id: crypto.randomUUID(),
+      recoveryEmail: recovery,
+      mailboxEmail: mailbox,
+      createdAt: new Date().toISOString(),
+      consumedAt: new Date().toISOString(),
+      recoveryUpdatedAt: new Date().toISOString(),
+    });
+  }
+  writeAudit(entries);
+  return recovery;
+}
+
 // Drop every recovery↔mailbox mapping for an address. Called when the account is
 // deleted or the address is (re)registered so a recycled address can't inherit a
 // prior tenant's recovery email (which would let them reset the new account).
@@ -196,6 +221,7 @@ module.exports = {
   markAuditMailbox,
   findRecoveryEmailByMailbox,
   findMailboxByRecoveryEmail,
+  setRecoveryEmailByMailbox,
   purgeMailbox,
   isValidEmail,
 };

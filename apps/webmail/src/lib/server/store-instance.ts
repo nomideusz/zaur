@@ -3,6 +3,7 @@
  * so the pure DB helpers stay testable without SvelteKit's `$env`.
  */
 import path from 'node:path';
+import { existsSync, unlinkSync } from 'node:fs';
 import type { DatabaseSync } from 'node:sqlite';
 import { env } from '$env/dynamic/private';
 import {
@@ -10,12 +11,14 @@ import {
 	openStoreDb,
 	pruneOauthFlowRows,
 	pruneRateLimitRows,
+	pruneSecurityRows,
 	pruneSessionRows
 } from './store-db';
 import { log } from './log';
 
 const DEFAULT_DB_PATH = path.join(process.cwd(), '.data', 'store.sqlite');
 const LEGACY_SESSIONS_JSON = path.join(process.cwd(), '.data', 'sessions.json');
+const LEGACY_LINKED_ACCOUNTS_JSON = path.join(process.cwd(), '.data', 'linked-accounts.json');
 const PRUNE_INTERVAL_MS = 60 * 60 * 1000;
 
 let db: DatabaseSync | null = null;
@@ -37,6 +40,19 @@ export function getStoreDb(): DatabaseSync {
 		log.error('session_store_migration_failed', { from: legacyPath }, error);
 	}
 
+	// Previous releases copied encrypted mailbox passwords into a cross-device
+	// linked-account file. Token-only sessions never use it; remove stale copies.
+	const linkedAccountsPath =
+		env.LINKED_ACCOUNTS_STORE_PATH?.trim() || LEGACY_LINKED_ACCOUNTS_JSON;
+	try {
+		if (existsSync(linkedAccountsPath)) {
+			unlinkSync(linkedAccountsPath);
+			log.info('legacy_linked_accounts_removed', { from: linkedAccountsPath });
+		}
+	} catch (error) {
+		log.error('legacy_linked_accounts_removal_failed', { from: linkedAccountsPath }, error);
+	}
+
 	return db;
 }
 
@@ -48,6 +64,7 @@ export function startStoreMaintenance(sessionMaxAgeMs: number): () => void {
 			const pruned = pruneSessionRows(store, Date.now(), sessionMaxAgeMs);
 			pruneRateLimitRows(store);
 			pruneOauthFlowRows(store);
+			pruneSecurityRows(store);
 			if (pruned > 0) log.info('sessions_pruned', { count: pruned });
 		} catch (error) {
 			log.error('store_maintenance_failed', {}, error);

@@ -49,6 +49,16 @@ export function openStoreDb(dbPath: string): DatabaseSync {
 			expires_at INTEGER
 		);
 		CREATE INDEX IF NOT EXISTS idx_sessions_updated_at ON sessions (updated_at);
+		CREATE TABLE IF NOT EXISTS session_accounts (
+			session_id TEXT NOT NULL,
+			account_key TEXT NOT NULL,
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER NOT NULL,
+			user_agent TEXT,
+			ip_hash TEXT,
+			PRIMARY KEY (session_id, account_key)
+		);
+		CREATE INDEX IF NOT EXISTS idx_session_accounts_account ON session_accounts (account_key);
 		CREATE TABLE IF NOT EXISTS rate_limits (
 			key TEXT PRIMARY KEY,
 			count INTEGER NOT NULL,
@@ -60,6 +70,20 @@ export function openStoreDb(dbPath: string): DatabaseSync {
 			expires_at INTEGER NOT NULL
 		);
 		CREATE INDEX IF NOT EXISTS idx_oauth_flows_expires_at ON oauth_flows (expires_at);
+		CREATE TABLE IF NOT EXISTS step_up_proofs (
+			session_id TEXT NOT NULL,
+			account_key TEXT NOT NULL,
+			verified_at INTEGER NOT NULL,
+			expires_at INTEGER NOT NULL,
+			PRIMARY KEY (session_id, account_key)
+		);
+		CREATE TABLE IF NOT EXISTS totp_setups (
+			session_id TEXT NOT NULL,
+			account_key TEXT NOT NULL,
+			sealed_data TEXT NOT NULL,
+			expires_at INTEGER NOT NULL,
+			PRIMARY KEY (session_id, account_key)
+		);
 	`);
 	return db;
 }
@@ -116,6 +140,9 @@ export function touchSessionRow(db: DatabaseSync, id: string, updatedAt: number)
 }
 
 export function deleteSessionRow(db: DatabaseSync, id: string): void {
+	db.prepare('DELETE FROM session_accounts WHERE session_id = ?').run(id);
+	db.prepare('DELETE FROM step_up_proofs WHERE session_id = ?').run(id);
+	db.prepare('DELETE FROM totp_setups WHERE session_id = ?').run(id);
 	db.prepare('DELETE FROM sessions WHERE id = ?').run(id);
 }
 
@@ -248,4 +275,147 @@ export function consumeOauthFlowRow(
 
 export function pruneOauthFlowRows(db: DatabaseSync, now = Date.now()): number {
 	return Number(db.prepare('DELETE FROM oauth_flows WHERE expires_at < ?').run(now).changes);
+}
+
+/* ── Account security state ──────────────────────────────────────────────── */
+
+export interface SessionAccountRow {
+	sessionId: string;
+	accountKey: string;
+	createdAt: number;
+	updatedAt: number;
+	userAgent: string | null;
+	ipHash: string | null;
+}
+
+export function syncSessionAccountRows(
+	db: DatabaseSync,
+	sessionId: string,
+	accountKeys: string[],
+	now = Date.now()
+): void {
+	const keys = new Set(accountKeys);
+	for (const row of db
+		.prepare('SELECT account_key FROM session_accounts WHERE session_id = ?')
+		.all(sessionId) as { account_key: string }[]) {
+		if (!keys.has(row.account_key)) {
+			db.prepare('DELETE FROM session_accounts WHERE session_id = ? AND account_key = ?').run(
+				sessionId,
+				row.account_key
+			);
+		}
+	}
+	const upsert = db.prepare(
+		`INSERT INTO session_accounts (session_id, account_key, created_at, updated_at)
+		 VALUES (?, ?, ?, ?)
+		 ON CONFLICT(session_id, account_key) DO UPDATE SET updated_at = excluded.updated_at`
+	);
+	for (const key of keys) upsert.run(sessionId, key, now, now);
+}
+
+export function setSessionAccountDevice(
+	db: DatabaseSync,
+	sessionId: string,
+	accountKey: string,
+	userAgent: string | null,
+	ipHash: string | null
+): void {
+	db.prepare(
+		`UPDATE session_accounts SET user_agent = ?, ip_hash = ?, updated_at = ?
+		 WHERE session_id = ? AND account_key = ?`
+	).run(userAgent, ipHash, Date.now(), sessionId, accountKey);
+}
+
+export function listSessionAccountRows(
+	db: DatabaseSync,
+	accountKey: string
+): SessionAccountRow[] {
+	return (
+		db
+			.prepare(
+				`SELECT session_id, account_key, created_at, updated_at, user_agent, ip_hash
+				 FROM session_accounts WHERE account_key = ? ORDER BY updated_at DESC`
+			)
+			.all(accountKey) as {
+			session_id: string;
+			account_key: string;
+			created_at: number;
+			updated_at: number;
+			user_agent: string | null;
+			ip_hash: string | null;
+		}[]
+	).map((row) => ({
+		sessionId: row.session_id,
+		accountKey: row.account_key,
+		createdAt: row.created_at,
+		updatedAt: row.updated_at,
+		userAgent: row.user_agent,
+		ipHash: row.ip_hash
+	}));
+}
+
+export function putStepUpProof(
+	db: DatabaseSync,
+	sessionId: string,
+	accountKey: string,
+	verifiedAt: number,
+	expiresAt: number
+): void {
+	db.prepare(
+		`INSERT INTO step_up_proofs (session_id, account_key, verified_at, expires_at)
+		 VALUES (?, ?, ?, ?)
+		 ON CONFLICT(session_id, account_key) DO UPDATE SET
+			verified_at = excluded.verified_at, expires_at = excluded.expires_at`
+	).run(sessionId, accountKey, verifiedAt, expiresAt);
+}
+
+export function hasStepUpProof(
+	db: DatabaseSync,
+	sessionId: string,
+	accountKey: string,
+	now = Date.now()
+): boolean {
+	return (
+		db
+			.prepare(
+				'SELECT 1 FROM step_up_proofs WHERE session_id = ? AND account_key = ? AND expires_at >= ?'
+			)
+			.get(sessionId, accountKey, now) !== undefined
+	);
+}
+
+export function putTotpSetup(
+	db: DatabaseSync,
+	sessionId: string,
+	accountKey: string,
+	sealedData: string,
+	expiresAt: number
+): void {
+	db.prepare(
+		`INSERT INTO totp_setups (session_id, account_key, sealed_data, expires_at)
+		 VALUES (?, ?, ?, ?)
+		 ON CONFLICT(session_id, account_key) DO UPDATE SET
+			sealed_data = excluded.sealed_data, expires_at = excluded.expires_at`
+	).run(sessionId, accountKey, sealedData, expiresAt);
+}
+
+export function consumeTotpSetup(
+	db: DatabaseSync,
+	sessionId: string,
+	accountKey: string,
+	now = Date.now()
+): string | null {
+	const row = db
+		.prepare(
+			`DELETE FROM totp_setups WHERE session_id = ? AND account_key = ? AND expires_at >= ?
+			 RETURNING sealed_data`
+		)
+		.get(sessionId, accountKey, now) as { sealed_data: string } | undefined;
+	return row?.sealed_data ?? null;
+}
+
+export function pruneSecurityRows(db: DatabaseSync, now = Date.now()): void {
+	db.prepare('DELETE FROM step_up_proofs WHERE expires_at < ?').run(now);
+	db.prepare('DELETE FROM totp_setups WHERE expires_at < ?').run(now);
+	db.prepare('DELETE FROM session_accounts WHERE session_id NOT IN (SELECT id FROM sessions)').run();
 }

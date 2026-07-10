@@ -45,6 +45,7 @@ interface LoginResponse {
 	error?: string;
 	code?: LoginErrorCode;
 	redirectTo?: string;
+	requiresTotp?: boolean;
 }
 
 class AuthStore {
@@ -53,6 +54,7 @@ class AuthStore {
 	isRestoring = $state(true);
 	error = $state<string | null>(null);
 	errorCode = $state<LoginErrorCode | null>(null);
+	requiresTotp = $state(false);
 	serverUrl = $state<string | null>(null);
 	username = $state<string | null>(null);
 	displayName = $state<string | null>(null);
@@ -280,6 +282,7 @@ class AuthStore {
 		this.isLoading = true;
 		this.error = null;
 		this.errorCode = null;
+		this.requiresTotp = false;
 		// In add mode the current account stays live until the new sign-in succeeds.
 		if (!add) this.resetMailState();
 
@@ -291,6 +294,11 @@ class AuthStore {
 			});
 
 			const payload = (await response.json()) as LoginResponse;
+
+			if (payload.requiresTotp) {
+				this.requiresTotp = true;
+				return;
+			}
 
 			if (!response.ok) {
 				const code = payload.code ?? classifyJmapError(new Error(payload.error ?? ''));

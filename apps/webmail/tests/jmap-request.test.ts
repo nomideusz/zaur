@@ -30,6 +30,22 @@ describe('validateJmapRequest', () => {
 		});
 	});
 
+	it('keeps Stalwart management methods out of the browser proxy', () => {
+		assert.equal(
+			validateJmapRequest({
+				using: ['urn:ietf:params:jmap:core', 'urn:stalwart:jmap'],
+				methodCalls: [['x:AccountPassword/get', { ids: ['singleton'] }, 'c1']]
+			}).ok,
+			false
+		);
+		assert.equal(
+			validateJmapRequest({
+				methodCalls: [['x:ApiKey/query', { filter: {} }, 'c1']]
+			}).ok,
+			false
+		);
+	});
+
 	it('caps the number of calls in a request', () => {
 		const methodCalls = Array.from({ length: MAX_JMAP_METHOD_CALLS + 1 }, (_, index) => [
 			'Email/get',

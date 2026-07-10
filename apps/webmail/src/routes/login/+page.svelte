@@ -26,9 +26,14 @@
 
 	let email = $state(remembered.email);
 	let password = $state('');
+	let totp = $state('');
 	let rememberMe = $state(remembered.rememberMe);
 
-	const canSubmitPassword = $derived(email.trim().length > 0 && password.length > 0);
+	const canSubmitPassword = $derived(
+		email.trim().length > 0 &&
+			password.length > 0 &&
+			(!auth.requiresTotp || /^\d{6}$/.test(totp.trim()))
+	);
 	const nextPath = $derived.by(() => {
 		const next = $page.url.searchParams.get('next');
 		return next?.startsWith('/') && !next.startsWith('//') ? next : undefined;
@@ -42,24 +47,6 @@
 		else if (trimmed) params.set('email', trimmed);
 		return `/forgot-password?${params.toString()}`;
 	});
-	const oauthHref = $derived.by(() => {
-		const params = new URLSearchParams();
-		if (isAdd) params.set('mode', 'add');
-		if (email.trim()) params.set('email', email.trim());
-		if (rememberMe) params.set('remember', '1');
-		if (nextPath) params.set('next', nextPath);
-		return `/api/auth/oauth/start?${params.toString()}`;
-	});
-	const oauthError = $derived.by(() => {
-		const code = $page.url.searchParams.get('error');
-		if (!code?.startsWith('oauth_')) return null;
-		if (code === 'oauth_denied') return 'Secure sign-in was cancelled.';
-		if (code === 'oauth_state' || code === 'oauth_session') {
-			return 'Secure sign-in expired. Please try again.';
-		}
-		return 'Secure sign-in could not be completed.';
-	});
-
 	$effect(() => {
 		// In add mode we intentionally stay on the form while already authenticated.
 		if (!isAdd && !auth.isRestoring && auth.isAuthenticated) {
@@ -78,7 +65,9 @@
 
 	function submitLogin(e: Event) {
 		e.preventDefault();
-		void auth.login(email, password, undefined, rememberMe, nextPath, { add: isAdd });
+		void auth.login(email, password, auth.requiresTotp ? totp : undefined, rememberMe, nextPath, {
+			add: isAdd
+		});
 	}
 </script>
 
@@ -87,17 +76,6 @@
 </svelte:head>
 
 <AuthPage title={appConfig.brandName} tagline="Private, focused email">
-	{#if data.oauthEnabled}
-		<div class="z-form-stack">
-			<Button href={oauthHref} class="z-btn-lg w-full">Continue with secure sign-in</Button>
-			<p class="text-center text-sm text-fg-muted">or use your mailbox password</p>
-		</div>
-	{/if}
-
-	{#if oauthError}
-		<p class="text-sm text-danger" role="alert">{oauthError}</p>
-	{/if}
-
 	<form class="z-form-stack" onsubmit={submitLogin}>
 		{#if isAdd}
 			<div class="z-callout">
@@ -143,6 +121,27 @@
 			</p>
 		</div>
 
+		{#if auth.requiresTotp}
+			<div class="z-callout">
+				<span class="z-callout__title">Two-factor authentication</span>
+				<p class="z-callout__body">Enter the six-digit code from your authenticator app.</p>
+			</div>
+			<LabelInput
+				id="totp"
+				label="Authentication code"
+				type="text"
+				bind:value={totp}
+				placeholder="000000"
+				inputmode="numeric"
+				pattern="[0-9]{6}"
+				maxlength={6}
+				autocomplete="one-time-code"
+				required
+				autofocus
+				disabled={auth.isLoading}
+			/>
+		{/if}
+
 		<Checkbox
 			bind:checked={rememberMe}
 			disabled={auth.isLoading}
@@ -162,7 +161,7 @@
 				class="z-btn-lg w-full"
 				disabled={auth.isLoading || !canSubmitPassword}
 			>
-				{auth.isLoading ? 'Signing in…' : 'Sign in'}
+				{auth.isLoading ? 'Signing in…' : auth.requiresTotp ? 'Verify and sign in' : 'Sign in'}
 			</Button>
 			{#if isAdd}
 				<p class="text-center">

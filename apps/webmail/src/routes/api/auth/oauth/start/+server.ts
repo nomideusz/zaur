@@ -1,13 +1,14 @@
 import { error, redirect, type RequestHandler } from '@sveltejs/kit';
 import {
 	getStalwartOauthRedirectUri,
+	isRedirectOauthRollbackEnabled,
 	isStalwartOauthEnabled
 } from '$lib/server/oauth-config';
 import { createOauthFlow, sanitizeLocalRedirect } from '$lib/server/oauth-flow';
 import { readSessionFull } from '$lib/server/session';
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
-	if (!isStalwartOauthEnabled()) redirect(303, '/login');
+	if (!isStalwartOauthEnabled() || !isRedirectOauthRollbackEnabled()) redirect(303, '/login');
 
 	const requestedMode = url.searchParams.get('mode');
 	const currentSession = readSessionFull(cookies);

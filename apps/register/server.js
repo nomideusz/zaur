@@ -1,6 +1,7 @@
 require('dotenv').config();
 
 const crypto = require('crypto');
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const session = require('express-session');
@@ -64,6 +65,59 @@ app.use((req, res, next) => {
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+
+const INTERNAL_NONCES_PATH =
+  process.env.INTERNAL_NONCES_PATH || '/app/data/internal_request_nonces.json';
+
+function consumeInternalNonce(nonce, now) {
+  try {
+    fs.mkdirSync(path.dirname(INTERNAL_NONCES_PATH), { recursive: true });
+    let entries = [];
+    if (fs.existsSync(INTERNAL_NONCES_PATH)) {
+      entries = JSON.parse(fs.readFileSync(INTERNAL_NONCES_PATH, 'utf8'));
+    }
+    entries = entries.filter(
+      (entry) => Number.isFinite(entry.seenAt) && now - entry.seenAt <= 5 * 60 * 1000,
+    );
+    if (entries.some((entry) => entry.nonce === nonce)) return false;
+    entries.push({ nonce, seenAt: now });
+    const tempPath = `${INTERNAL_NONCES_PATH}.${crypto.randomBytes(6).toString('hex')}.tmp`;
+    fs.writeFileSync(tempPath, JSON.stringify(entries.slice(-2000)), 'utf8');
+    fs.renameSync(tempPath, INTERNAL_NONCES_PATH);
+    return true;
+  } catch (err) {
+    console.error('Failed to persist internal request nonce:', err.message);
+    return false;
+  }
+}
+
+function requireInternalWebmail(req, res, next) {
+  const secret = process.env.WEBMAIL_INTERNAL_SECRET?.trim();
+  const timestamp = req.get('x-zaur-timestamp') || '';
+  const nonce = req.get('x-zaur-nonce') || '';
+  const signature = req.get('x-zaur-signature') || '';
+  const parsedTimestamp = Number(timestamp);
+  if (
+    !secret ||
+    !/^[A-Za-z0-9_-]{16,64}$/.test(nonce) ||
+    !Number.isFinite(parsedTimestamp) ||
+    Math.abs(Date.now() - parsedTimestamp) > 5 * 60 * 1000
+  ) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  const body = req.method === 'GET' ? '' : JSON.stringify(req.body || {});
+  const bodyHash = crypto.createHash('sha256').update(body).digest('hex');
+  const payload = `${timestamp}.${nonce}.${req.method}.${req.originalUrl}.${bodyHash}`;
+  const expected = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+  if (!constantTimeEqual(signature, expected)) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  if (!consumeInternalNonce(nonce, Date.now())) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  res.setHeader('Cache-Control', 'no-store');
+  next();
+}
 
 app.use(
   session({
@@ -511,6 +565,45 @@ app.post('/api/admin/invitations/revoke', requireAdmin, async (req, res) => {
   } catch (err) {
     res.status(502).json({ error: err.message });
   }
+});
+
+app.get('/api/internal/recovery', requireInternalWebmail, (req, res) => {
+  const mailboxEmail = String(req.query.mailbox || '').trim().toLowerCase();
+  if (!invitations.isValidEmail(mailboxEmail)) {
+    return res.status(400).json({ error: 'Invalid mailbox' });
+  }
+  return res.json({
+    recoveryEmail: invitations.findRecoveryEmailByMailbox(mailboxEmail),
+  });
+});
+
+app.post('/api/internal/recovery', requireInternalWebmail, async (req, res) => {
+  try {
+    const mailboxEmail = String(req.body?.mailboxEmail || '').trim().toLowerCase();
+    const recoveryEmail = String(req.body?.recoveryEmail || '').trim().toLowerCase();
+    if (!invitations.isValidEmail(mailboxEmail) || !invitations.isValidEmail(recoveryEmail)) {
+      return res.status(400).json({ error: 'Valid email addresses are required' });
+    }
+    await passwordReset.requestRecoveryChange(mailboxEmail, recoveryEmail);
+    return res.json({ pending: true });
+  } catch (err) {
+    console.error('Recovery email change request failed:', err.message);
+    return res.status(400).json({ error: 'Could not request recovery email change' });
+  }
+});
+
+app.get('/api/recovery/verify', (req, res) => {
+  const mailboxEmail = String(req.query.email || '').trim().toLowerCase();
+  const token = String(req.query.token || '').trim();
+  let result = { valid: false };
+  try {
+    result = passwordReset.confirmRecoveryChange(mailboxEmail, token);
+  } catch (err) {
+    console.error('Recovery email verification failed:', err.message);
+  }
+  const target = new URL('/settings/security', siteConfig.webmailUrl || 'https://webmail.zaur.app');
+  target.searchParams.set('recovery', result.valid ? 'verified' : 'invalid');
+  return res.redirect(303, target.toString());
 });
 
 app.post('/api/forgot-password/request', forgotPasswordIpLimiter, forgotPasswordEmailLimiter, async (req, res) => {

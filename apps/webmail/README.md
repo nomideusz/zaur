@@ -11,13 +11,15 @@ Live at [webmail.zaur.app](https://webmail.zaur.app).
 - **Calendar** — week, day, and agenda views; create and edit events
 - **Offline** — cached threads and an outbox queue for sending when back online
 - **Settings** — synced preferences across devices (JMAP account blob), settings search, and export/import
-- **Authentication** — mailbox password plus optional Stalwart OAuth/PKCE for TOTP accounts
+- **Authentication** — branded ZAUR password/TOTP sign-in backed by Stalwart OAuth Authorization Code + PKCE; passwords and codes are never stored
+- **Security** — password, TOTP, recovery email, app passwords, browser sessions, and scoped API keys
 
 ### Settings overview
 
 | Page | Contents |
 | --- | --- |
 | **Account** | Profile (name, signature), appearance (theme, reduce motion), notifications & actions, calendar, device (app install), security, mailbox, sync & data (export/import, clear cache, reset preferences) |
+| **Security** | Password, authenticator app, recovery email, app passwords, ZAUR browser sessions, and API keys |
 | **Reading** | Inbox & folders, time format, text size, typeface, message rendering (plain text, remote images, threads, clean view) |
 | **Writing** | Compose format, reply mode, Cc/Bcc, contact suggestions, signature, confirmations, undo send delay |
 | **Shortcuts** | Keyboard shortcuts toggle and reference (desktop only) |
@@ -26,7 +28,7 @@ Keyboard shortcuts (when enabled): `c` compose, `/` search, `g` then `i`/`s`/`d`
 
 ## Requirements
 
-- Node.js 24
+- Node.js 22
 - pnpm
 - A ZAUR JMAP account (defaults to `https://mail.zaur.app`)
 
@@ -51,9 +53,11 @@ Open [http://localhost:5173](http://localhost:5173).
 | `STORE_DB_PATH` | Session and rate-limit SQLite database (default: `.data/store.sqlite`) |
 | `TRUSTED_PROXY_HOPS` | Trusted proxy count used when resolving client IPs for rate limits |
 | `PUBLIC_SENTRY_DSN` | Optional Sentry DSN for browser and server error reporting |
-| `STALWART_OAUTH_ENABLED` | Enables Stalwart's built-in OAuth/PKCE sign-in button |
+| `STALWART_OAUTH_ENABLED` | Enables custom ZAUR token-only sign-in through Stalwart OAuth/PKCE |
 | `STALWART_OAUTH_CLIENT_ID` | Registered Stalwart OAuth client id |
 | `STALWART_OAUTH_REDIRECT_URI` | Exact callback URI registered for the OAuth client |
+| `REGISTER_INTERNAL_URL` | Register service base URL for verified recovery-email changes |
+| `REGISTER_INTERNAL_SECRET` | HMAC secret shared with the register service |
 
 ## Scripts
 
@@ -89,7 +93,7 @@ The root `deploy:webmail` script remains available for manual CapRover deploymen
 ## Architecture
 
 See `src/lib/architecture.ts` for the route map and component tree. Client-side mail data is stored
-in IndexedDB (RxDB/Dexie) per account. Stalwart mailbox credentials are sealed with AES-256-GCM in
-the server-side SQLite session store; the secure httpOnly cookie contains only an opaque session id.
-OAuth access and refresh tokens remain server-side. OAuth-linked accounts are intentionally not copied
-into the cross-device linked-account file because Stalwart rotates refresh tokens.
+in IndexedDB (RxDB/Dexie) per account. Only Stalwart OAuth access and refresh tokens are sealed with
+AES-256-GCM in the server-side SQLite session store; the secure httpOnly cookie contains only an
+opaque session id. Mailbox passwords and TOTP codes exist only for the duration of the authentication
+request. Multi-account tokens stay isolated within the current browser session.

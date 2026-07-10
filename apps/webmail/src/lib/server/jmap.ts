@@ -7,6 +7,7 @@ import { OauthTokenError, refreshOauthTokens } from './oauth-token';
 
 const REFRESH_SKEW_MS = 90_000;
 const refreshes = new Map<string, Promise<SessionData>>();
+const sessionWrites = new Map<string, Promise<void>>();
 
 function isOauthSession(session: SessionData): boolean {
 	return session.authMethod === 'oauth' || (!session.password && Boolean(session.accessToken));
@@ -14,6 +15,23 @@ function isOauthSession(session: SessionData): boolean {
 
 function refreshKey(session: SessionData): string {
 	return `${session.id ?? 'no-session'}:${session.username.toLowerCase()}`;
+}
+
+async function persistRefreshedAccount(sessionId: string, account: SessionData): Promise<void> {
+	const previous = sessionWrites.get(sessionId) ?? Promise.resolve();
+	const pending = previous
+		.catch(() => undefined)
+		.then(() => {
+			// updateAccountTokens re-reads the newest multi-account record while
+			// this per-session queue is held, so sibling refreshes cannot overwrite it.
+			updateAccountTokens(sessionId, account);
+		});
+	sessionWrites.set(sessionId, pending);
+	try {
+		await pending;
+	} finally {
+		if (sessionWrites.get(sessionId) === pending) sessionWrites.delete(sessionId);
+	}
 }
 
 async function refreshSession(session: SessionData): Promise<SessionData> {
@@ -46,7 +64,7 @@ async function refreshSession(session: SessionData): Promise<SessionData> {
 				accessTokenExpiresAt: tokens.accessTokenExpiresAt,
 				scope: tokens.scope ?? session.scope
 			};
-			if (next.id) updateAccountTokens(next.id, next);
+			if (next.id) await persistRefreshedAccount(next.id, next);
 			return next;
 		} catch (error) {
 			if (error instanceof OauthTokenError && error.code === 'invalid_grant') {
@@ -71,6 +89,22 @@ function shouldRefresh(session: SessionData): boolean {
 	);
 }
 
+export async function getFreshOauthSession(
+	session: SessionData,
+	forceRefresh = false
+): Promise<SessionData> {
+	const latest = session.id
+		? readAccountsById(session.id).find(
+				(account) => accountKey(account.username) === accountKey(session.username)
+			)
+		: undefined;
+	const current = latest ?? session;
+	if (forceRefresh || shouldRefresh(current) || !current.accessToken) {
+		return refreshSession(current);
+	}
+	return current;
+}
+
 export async function createConnectedClient(
 	session: SessionData,
 	_cookies?: Cookies
@@ -86,8 +120,7 @@ export async function createConnectedClient(
 		return client;
 	}
 
-	let current = shouldRefresh(session) ? await refreshSession(session) : session;
-	if (!current.accessToken) current = await refreshSession(current);
+	let current = await getFreshOauthSession(session);
 	const refreshAuth = async () => {
 		current = await refreshSession(current);
 		return current.accessToken ?? null;

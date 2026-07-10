@@ -8,6 +8,7 @@
     "prestart": "node ../../packages/ui/scripts/build-css.mjs",
     "start": "node server.js",
     "dev": "node --watch server.js",
+    "test": "node --test test/*.test.js",
     "test:e2e": "playwright test"
   },
   "engines": {

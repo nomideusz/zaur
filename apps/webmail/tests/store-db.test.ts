@@ -9,13 +9,17 @@ import {
 	deleteSessionRow,
 	getSessionRow,
 	hasSessionRow,
+	hasStepUpProof,
 	importLegacySessionsJson,
 	openStoreDb,
+	listSessionAccountRows,
 	pruneOauthFlowRows,
 	pruneRateLimitRows,
 	pruneSessionRows,
 	putOauthFlowRow,
 	putSessionRow,
+	putStepUpProof,
+	syncSessionAccountRows,
 	touchSessionRow
 } from '../src/lib/server/store-db.ts';
 
@@ -150,6 +154,34 @@ describe('OAuth flows', () => {
 		assert.equal(consumeOauthFlowRow(db, 'expired', 1000), null);
 		assert.equal(pruneOauthFlowRows(db, 1000), 1);
 		assert.equal(consumeOauthFlowRow(db, 'live', 1000)?.sealedData, 'new');
+	});
+});
+
+describe('account security state', () => {
+	it('expires step-up proofs after five-minute-style windows', () => {
+		const db = freshDb();
+		putStepUpProof(db, 'session', 'user@zaur.app', 1000, 2000);
+		assert.equal(hasStepUpProof(db, 'session', 'user@zaur.app', 1999), true);
+		assert.equal(hasStepUpProof(db, 'session', 'user@zaur.app', 2001), false);
+		assert.equal(hasStepUpProof(db, 'session', 'sibling@zaur.app', 1500), false);
+	});
+
+	it('indexes each account in a multi-account session independently', () => {
+		const db = freshDb();
+		putSessionRow(db, {
+			id: 'session',
+			username: 'first@zaur.app',
+			sealedData: 'sealed',
+			createdAt: 1000,
+			updatedAt: 1000,
+			expiresAt: null
+		});
+		syncSessionAccountRows(db, 'session', ['first@zaur.app', 'second@zaur.app'], 1000);
+		assert.equal(listSessionAccountRows(db, 'first@zaur.app').length, 1);
+		assert.equal(listSessionAccountRows(db, 'second@zaur.app').length, 1);
+		syncSessionAccountRows(db, 'session', ['second@zaur.app'], 2000);
+		assert.equal(listSessionAccountRows(db, 'first@zaur.app').length, 0);
+		assert.equal(listSessionAccountRows(db, 'second@zaur.app')[0].updatedAt, 2000);
 	});
 });
 
