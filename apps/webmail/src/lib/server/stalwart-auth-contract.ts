@@ -14,6 +14,26 @@ export function parseStalwartAuthResponse(value: unknown): StalwartAuthResponse 
 	return null;
 }
 
+export function describeStalwartAuthResponse(value: unknown): {
+	responseType: string | null;
+	responseKeys: string[];
+} {
+	if (!value || typeof value !== 'object' || Array.isArray(value)) {
+		return { responseType: null, responseKeys: [] };
+	}
+	const record = value as Record<string, unknown>;
+	const responseType =
+		typeof record.type === 'string' && /^[A-Za-z0-9_-]{1,64}$/.test(record.type)
+			? record.type
+			: null;
+	return {
+		responseType,
+		responseKeys: Object.keys(record)
+			.filter((key) => /^[A-Za-z0-9_@.-]{1,64}$/.test(key))
+			.slice(0, 20)
+	};
+}
+
 export function createStalwartAuthPayload(input: {
 	accountName: string;
 	accountSecret: string;

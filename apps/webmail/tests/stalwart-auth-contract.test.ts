@@ -3,6 +3,7 @@ import test from 'node:test';
 import {
 	createStalwartAuthPayload,
 	createTokenSession,
+	describeStalwartAuthResponse,
 	parseStalwartAuthResponse
 } from '../src/lib/server/stalwart-auth-contract.ts';
 
@@ -63,4 +64,22 @@ test('creates token-only sessions without password or TOTP fields', () => {
 	assert.equal(session.authMethod, 'oauth');
 	assert.equal('password' in session, false);
 	assert.equal('totp' in session, false);
+});
+
+test('describes contract mismatches without logging response values', () => {
+	assert.deepEqual(
+		describeStalwartAuthResponse({
+			type: 'unexpected',
+			clientCode: 'must-not-be-logged',
+			detail: 'must-not-be-logged'
+		}),
+		{
+			responseType: 'unexpected',
+			responseKeys: ['type', 'clientCode', 'detail']
+		}
+	);
+	assert.deepEqual(describeStalwartAuthResponse('not-json-object'), {
+		responseType: null,
+		responseKeys: []
+	});
 });

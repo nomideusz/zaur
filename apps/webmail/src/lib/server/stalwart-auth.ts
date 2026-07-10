@@ -8,7 +8,12 @@ import {
 } from './oauth-config';
 import { exchangeOauthCode, type OauthTokens } from './oauth-token';
 import { createPkceChallenge } from './oauth-utils';
-import { createStalwartAuthPayload, parseStalwartAuthResponse } from './stalwart-auth-contract';
+import {
+	createStalwartAuthPayload,
+	describeStalwartAuthResponse,
+	parseStalwartAuthResponse
+} from './stalwart-auth-contract';
+import { log } from './log';
 
 export type CredentialAuthResult =
 	| { status: 'authenticated'; tokens: OauthTokens }
@@ -63,8 +68,15 @@ export async function authenticateStalwartCredentials(input: {
 		if (response.status === 401) return { status: 'failure' };
 		throw new StalwartAuthError();
 	}
-	const body = parseStalwartAuthResponse(await response.json().catch(() => null));
-	if (!body) throw new StalwartAuthError();
+	const rawBody: unknown = await response.json().catch(() => null);
+	const body = parseStalwartAuthResponse(rawBody);
+	if (!body) {
+		log.warn('stalwart_auth_contract_mismatch', {
+			status: response.status,
+			...describeStalwartAuthResponse(rawBody)
+		});
+		throw new StalwartAuthError();
+	}
 	if (body.type === 'mfaRequired') return { status: 'mfa_required' };
 	if (body.type === 'failure') return { status: 'failure' };
 	if (body.type !== 'authenticated' || !body.clientCode) throw new StalwartAuthError();
