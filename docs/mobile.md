@@ -1,6 +1,11 @@
 # ZAUR Mail native clients
 
-**Current direction ([ADR-0002](decisions/0002-capacitor-shell.md)):** `apps/mobile` is a
+**Current direction ([ADR-0003](decisions/0003-react-native-client.md)):** `apps/native` is a
+React Native (Expo) client talking JMAP + OAuth directly to Stalwart, sharing protocol code with
+webmail via `packages/mail-core`. The [ADR-0002](decisions/0002-capacitor-shell.md) Capacitor
+shell (`apps/mobile`) keeps shipping until the native app reaches parity.
+
+**Interim shell ([ADR-0002](decisions/0002-capacitor-shell.md)):** `apps/mobile` is a
 Capacitor shell that loads the live webmail. Build the Android debug APK with
 `pnpm --filter @zaur/mobile build:android` (needs the Android SDK and a JDK); install via
 `adb install apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk`.
