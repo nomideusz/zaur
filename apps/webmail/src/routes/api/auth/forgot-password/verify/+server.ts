@@ -1,7 +1,8 @@
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { registerApiFetch, isPasswordResetEnabled } from '$lib/server/register-api';
+import { getClientAddress } from '$lib/server/rate-limit';
 
-export const GET: RequestHandler = async ({ url }) => {
+export const GET: RequestHandler = async ({ request, url }) => {
 	if (!isPasswordResetEnabled()) {
 		return json({ valid: false, error: 'Password reset is not available.' }, { status: 503 });
 	}
@@ -14,7 +15,8 @@ export const GET: RequestHandler = async ({ url }) => {
 
 	try {
 		const response = await registerApiFetch(
-			`/api/forgot-password/verify?${new URLSearchParams({ email, token }).toString()}`
+			`/api/forgot-password/verify?${new URLSearchParams({ email, token }).toString()}`,
+			{ clientIp: getClientAddress(request) }
 		);
 		const payload = await response.json().catch(() => ({}));
 		return json(payload, { status: response.status });

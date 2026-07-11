@@ -17,6 +17,7 @@ const {
   validatePassword,
   validateCaptchaAnswer,
   generateCaptcha,
+  verifyForwardedClientIp,
 } = require('./lib/validation');
 const { getSiteConfig } = require('./lib/site-config');
 
@@ -169,11 +170,22 @@ const applyLimiter = rateLimit({
   message: { error: 'Too many applications. Please try again in an hour.' },
 });
 
+// Webmail proxies the forgot-password endpoints, so all its users share one
+// req.ip. It forwards the real client IP signed with the shared secret; use it
+// as the bucket key when the signature verifies.
+function forwardedClientIp(req) {
+  const ip = req.get('x-zaur-client-ip') || '';
+  const signature = req.get('x-zaur-client-ip-signature') || '';
+  const secret = process.env.WEBMAIL_INTERNAL_SECRET?.trim();
+  return verifyForwardedClientIp(ip, signature, secret) ? ip : null;
+}
+
 const forgotPasswordIpLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
+  keyGenerator: (req) => forwardedClientIp(req) || req.ip,
   message: { error: 'Too many reset requests. Please wait a few minutes.' },
 });
 
@@ -192,7 +204,7 @@ const forgotPasswordEmailLimiter = rateLimit({
   legacyHeaders: false,
   keyGenerator: (req) => {
     const email = String(req.body?.email || '').trim().toLowerCase();
-    return email || req.ip;
+    return email || forwardedClientIp(req) || req.ip;
   },
   message: { error: 'Too many reset requests for this address. Try again later.' },
 });

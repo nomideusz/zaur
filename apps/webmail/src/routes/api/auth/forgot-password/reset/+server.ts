@@ -41,7 +41,8 @@ export const POST: RequestHandler = async ({ request }) => {
 				token,
 				password: body.password,
 				confirmPassword: body.confirmPassword
-			})
+			}),
+			clientIp: clientAddress
 		});
 		const payload = await response.json().catch(() => ({}));
 		if (!response.ok) {

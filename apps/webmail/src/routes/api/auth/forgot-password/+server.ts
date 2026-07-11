@@ -35,7 +35,8 @@ export const POST: RequestHandler = async ({ request }) => {
 	try {
 		const response = await registerApiFetch('/api/forgot-password/request', {
 			method: 'POST',
-			body: JSON.stringify({ email })
+			body: JSON.stringify({ email }),
+			clientIp: clientAddress
 		});
 		const payload = await response.json().catch(() => ({}));
 		if (!response.ok) {

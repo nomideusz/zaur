@@ -1,3 +1,5 @@
+const crypto = require('node:crypto');
+
 const USERNAME_REGEX = /^[a-z0-9](?:[a-z0-9._-]*[a-z0-9])?$/;
 
 const RESERVED_USERNAMES = new Set([
@@ -113,6 +115,16 @@ function getPasswordStrength(password) {
   return { score: Math.min(score, 4), label: labels[Math.min(score, 4)] };
 }
 
+// Webmail proxies some public endpoints and forwards the real client IP,
+// HMAC-signed with the shared internal secret so a public caller can't spoof it.
+function verifyForwardedClientIp(ip, signature, secret) {
+  if (!secret || !ip || ip.length > 64 || !signature) return false;
+  const expected = crypto.createHmac('sha256', secret).update(ip).digest('hex');
+  const ha = crypto.createHash('sha256').update(String(signature)).digest();
+  const hb = crypto.createHash('sha256').update(expected).digest();
+  return crypto.timingSafeEqual(ha, hb);
+}
+
 module.exports = {
   USERNAME_REGEX,
   RESERVED_USERNAMES,
@@ -121,4 +133,5 @@ module.exports = {
   validateCaptchaAnswer,
   generateCaptcha,
   getPasswordStrength,
+  verifyForwardedClientIp,
 };
