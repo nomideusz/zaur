@@ -6,8 +6,9 @@
 
 	onMount(() => {
 		// No dot grid (that's dino's graph paper) and no weather card —
-		// here the sky is pure backdrop.
-		const sky = createWorld(canvas, { gridColor: null });
+		// here the sky is pure backdrop. Terrain shapes the horizon from
+		// real nearby elevations; the real ISS crosses when it's overhead.
+		const sky = createWorld(canvas, { gridColor: null, terrain: true, satellites: true });
 		return () => sky.destroy();
 	});
 </script>
