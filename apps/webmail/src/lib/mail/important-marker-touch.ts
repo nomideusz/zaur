@@ -2,9 +2,6 @@ import { importantMarker } from '$lib/mail/important-marker.svelte';
 import { haptic } from '$lib/utils/haptics';
 
 export const IMPORTANT_MARKER_TOUCH_HOLD_MS = 320;
-/** @deprecated Use IMPORTANT_MARKER_TOUCH_HOLD_MS */
-export const IMPORTANT_RAINBOW_TOUCH_HOLD_MS = IMPORTANT_MARKER_TOUCH_HOLD_MS;
-
 /** Before activation, any real movement is a scroll — bail out. */
 const PRE_ACTIVATION_CANCEL_PX = 10;
 /** After activation, a clearly vertical pull abandons the pick. */
@@ -159,6 +156,3 @@ export function createImportantMarkerTouchPick(options: {
 		}
 	};
 }
-
-/** @deprecated Use createImportantMarkerTouchPick */
-export const createImportantRainbowTouchPick = createImportantMarkerTouchPick;

@@ -9,7 +9,6 @@ import { env } from '$env/dynamic/private';
 import {
 	importLegacySessionsJson,
 	openStoreDb,
-	pruneOauthFlowRows,
 	pruneRateLimitRows,
 	pruneSecurityRows,
 	pruneSessionRows
@@ -63,7 +62,6 @@ export function startStoreMaintenance(sessionMaxAgeMs: number): () => void {
 			const store = getStoreDb();
 			const pruned = pruneSessionRows(store, Date.now(), sessionMaxAgeMs);
 			pruneRateLimitRows(store);
-			pruneOauthFlowRows(store);
 			pruneSecurityRows(store);
 			if (pruned > 0) log.info('sessions_pruned', { count: pruned });
 		} catch (error) {

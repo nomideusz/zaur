@@ -12,7 +12,8 @@ import {
 	createStalwartAuthPayload,
 	describeStalwartAuthResponse,
 	parseStalwartAuthResponse
-} from './stalwart-auth-contract';
+} from '@zaur/mail-core/auth/contract';
+import { MAIL_SCOPE } from '@zaur/mail-core/auth/stalwart';
 import { log } from './log';
 
 export type CredentialAuthResult =
@@ -27,7 +28,6 @@ export class StalwartAuthError extends Error {
 	}
 }
 
-const MAIL_SCOPE = 'urn:ietf:params:oauth:scope:mail';
 
 export async function authenticateStalwartCredentials(input: {
 	accountName: string;

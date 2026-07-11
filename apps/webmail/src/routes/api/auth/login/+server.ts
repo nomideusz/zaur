@@ -12,7 +12,7 @@ import {
 } from '$lib/server/oauth-config';
 import { authenticateStalwartCredentials } from '$lib/server/stalwart-auth';
 import type { SessionData } from '$lib/server/session-model';
-import { createTokenSession } from '$lib/server/stalwart-auth-contract';
+import { createTokenSession } from '@zaur/mail-core/auth/contract';
 
 export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	const clientAddress = getClientAddress(request);

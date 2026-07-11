@@ -8,15 +8,7 @@ export type SettingsNavSectionId =
 	| 'data'
 	| 'shortcuts';
 
-export type SettingsNavIcon =
-	| 'account'
-	| 'security'
-	| 'appearance'
-	| 'reading'
-	| 'writing'
-	| 'calendar'
-	| 'data'
-	| 'shortcuts';
+export type SettingsNavIcon = SettingsNavSectionId;
 
 export type SettingsNavLink = {
 	href: string;
@@ -91,18 +83,4 @@ export function isSettingsNavActive(pathname: string, href: string): boolean {
 		return pathname === '/settings/writing';
 	}
 	return false;
-}
-
-export function settingsRedirect(pathname: string): string | null {
-	if (pathname === '/settings') return '/settings/account';
-	if (pathname === '/settings/mail') return '/settings/reading';
-	if (pathname === '/settings/writing') return '/settings/compose';
-	if (pathname === '/settings/general') return '/settings/account';
-	if (pathname === '/settings/layout') return '/settings/reading';
-	if (pathname === '/settings/inbox') return '/settings/reading';
-	if (pathname === '/settings/workspace') return '/settings/reading';
-	if (pathname === '/settings/sidebar') return '/settings/reading';
-	if (pathname === '/settings/contacts') return '/settings/account';
-	if (pathname === '/settings/display') return '/settings/account';
-	return null;
 }

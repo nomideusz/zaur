@@ -7,11 +7,13 @@ RUN corepack enable && corepack prepare pnpm@10.32.1 --activate
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json .npmrc ./
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/sprite/package.json ./packages/sprite/
+COPY packages/mail-core/package.json ./packages/mail-core/
 COPY apps/webmail/package.json ./apps/webmail/
 RUN pnpm install --frozen-lockfile --filter @zaur/webmail...
 
 COPY packages/ui ./packages/ui
 COPY packages/sprite ./packages/sprite
+COPY packages/mail-core ./packages/mail-core
 COPY apps/webmail ./apps/webmail
 
 ARG PUBLIC_JMAP_SERVER_URL=https://mail.zaur.app

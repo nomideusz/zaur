@@ -25,12 +25,6 @@ export interface SessionRow {
 	expiresAt: number | null;
 }
 
-export interface OauthFlowRow {
-	stateHash: string;
-	sealedData: string;
-	expiresAt: number;
-}
-
 export function openStoreDb(dbPath: string): DatabaseSync {
 	if (dbPath !== ':memory:') {
 		mkdirSync(path.dirname(dbPath), { recursive: true });
@@ -64,12 +58,6 @@ export function openStoreDb(dbPath: string): DatabaseSync {
 			count INTEGER NOT NULL,
 			reset_at INTEGER NOT NULL
 		);
-		CREATE TABLE IF NOT EXISTS oauth_flows (
-			state_hash TEXT PRIMARY KEY,
-			sealed_data TEXT NOT NULL,
-			expires_at INTEGER NOT NULL
-		);
-		CREATE INDEX IF NOT EXISTS idx_oauth_flows_expires_at ON oauth_flows (expires_at);
 		CREATE TABLE IF NOT EXISTS step_up_proofs (
 			session_id TEXT NOT NULL,
 			account_key TEXT NOT NULL,
@@ -239,42 +227,6 @@ export function checkRateLimitRow(
 
 export function pruneRateLimitRows(db: DatabaseSync, now = Date.now()): void {
 	db.prepare('DELETE FROM rate_limits WHERE reset_at <= ?').run(now);
-}
-
-/* ── OAuth flows ─────────────────────────────────────────────────────────── */
-
-export function putOauthFlowRow(db: DatabaseSync, row: OauthFlowRow): void {
-	db.prepare(
-		`INSERT INTO oauth_flows (state_hash, sealed_data, expires_at)
-		 VALUES (?, ?, ?)
-		 ON CONFLICT(state_hash) DO UPDATE SET
-			sealed_data = excluded.sealed_data,
-			expires_at = excluded.expires_at`
-	).run(row.stateHash, row.sealedData, row.expiresAt);
-}
-
-/** Atomically returns and removes a live flow so callback replay cannot succeed. */
-export function consumeOauthFlowRow(
-	db: DatabaseSync,
-	stateHash: string,
-	now = Date.now()
-): OauthFlowRow | null {
-	const raw = db
-		.prepare(
-			`DELETE FROM oauth_flows
-			 WHERE state_hash = ? AND expires_at >= ?
-			 RETURNING state_hash, sealed_data, expires_at`
-		)
-		.get(stateHash, now) as
-		| { state_hash: string; sealed_data: string; expires_at: number }
-		| undefined;
-	return raw
-		? { stateHash: raw.state_hash, sealedData: raw.sealed_data, expiresAt: raw.expires_at }
-		: null;
-}
-
-export function pruneOauthFlowRows(db: DatabaseSync, now = Date.now()): number {
-	return Number(db.prepare('DELETE FROM oauth_flows WHERE expires_at < ?').run(now).changes);
 }
 
 /* ── Account security state ──────────────────────────────────────────────── */

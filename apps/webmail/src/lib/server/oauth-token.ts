@@ -1,3 +1,5 @@
+export type { OauthTokens } from '@zaur/mail-core/auth/stalwart';
+import type { OauthTokens } from '@zaur/mail-core/auth/stalwart';
 import {
 	getStalwartOauthClientId,
 	getStalwartOauthClientSecret,
@@ -13,12 +15,6 @@ interface RawTokenResponse {
 	error?: string;
 }
 
-export interface OauthTokens {
-	accessToken: string;
-	refreshToken: string;
-	accessTokenExpiresAt: number;
-	scope?: string;
-}
 
 export class OauthTokenError extends Error {
 	constructor(

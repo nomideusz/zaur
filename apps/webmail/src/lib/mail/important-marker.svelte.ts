@@ -321,7 +321,4 @@ class ImportantMarkerStore {
 
 export const importantMarker = new ImportantMarkerStore();
 
-/** @deprecated Use importantMarker */
-export const importantRainbow = importantMarker;
-
 export type { MarkerPick };

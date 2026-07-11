@@ -4,7 +4,7 @@
 	import { untrack } from 'svelte';
 	import MailPane from '$lib/components/mail/MailPane.svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
-	import MessageReader from '$lib/components/mail/MessageReader.svelte';
+	import MessageReaderCore from '$lib/components/mail/MessageReaderCore.svelte';
 	import MessageReaderSkeleton from '$lib/components/mail/MessageReaderSkeleton.svelte';
 	import MessageReaderStatus from '$lib/components/mail/MessageReaderStatus.svelte';
 	import { mailCountLabel } from '$lib/mail/count-label';
@@ -100,7 +100,7 @@
 		{#if mail.selectedLoading && thread.length === 0}
 			<MessageReaderSkeleton />
 		{:else if thread.length}
-			<MessageReader {thread} mailboxRouteId={mailboxId} onMoved={afterMove} onBackToList={backToList} />
+			<MessageReaderCore {thread} mailboxRouteId={mailboxId} onMoved={afterMove} onBackToList={backToList} />
 		{:else}
 			<MessageReaderStatus
 				message={mail.selectedError ?? 'Message not found.'}

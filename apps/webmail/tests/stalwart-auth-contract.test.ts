@@ -5,7 +5,7 @@ import {
 	createTokenSession,
 	describeStalwartAuthResponse,
 	parseStalwartAuthResponse
-} from '../src/lib/server/stalwart-auth-contract.ts';
+} from '@zaur/mail-core/auth/contract';
 
 test('builds Stalwart authCode PKCE requests without inventing MFA state', () => {
 	const payload = createStalwartAuthPayload({

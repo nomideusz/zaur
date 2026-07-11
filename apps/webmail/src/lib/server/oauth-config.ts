@@ -36,10 +36,6 @@ export function isPasswordLoginRollbackEnabled(): boolean {
 	return env.STALWART_PASSWORD_LOGIN_ROLLBACK_ENABLED === 'true';
 }
 
-export function isRedirectOauthRollbackEnabled(): boolean {
-	return env.STALWART_REDIRECT_OAUTH_ROLLBACK_ENABLED === 'true';
-}
-
 export function getStalwartOauthClientId(): string {
 	const clientId = env.STALWART_OAUTH_CLIENT_ID?.trim();
 	if (!clientId) throw new Error('STALWART_OAUTH_CLIENT_ID is not configured');

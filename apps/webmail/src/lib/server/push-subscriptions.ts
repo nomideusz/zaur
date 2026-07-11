@@ -139,19 +139,3 @@ export async function removePushSubscriptionsForSession(sessionId: string): Prom
 	if (removed) await writeStore(store);
 	return removed;
 }
-
-export async function updatePushSubscriptionState(
-	id: string,
-	patch: Pick<StoredPushSubscription, 'emailState' | 'inboxMailboxId'>
-): Promise<void> {
-	const store = await readStore();
-	const record = store[id];
-	if (!record) return;
-
-	store[id] = {
-		...record,
-		...patch,
-		updatedAt: new Date().toISOString()
-	};
-	await writeStore(store);
-}

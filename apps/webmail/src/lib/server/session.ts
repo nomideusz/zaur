@@ -204,14 +204,6 @@ export function readSession(cookies: Cookies, secret?: string): SessionData | nu
 	return { ...active, id: session.id };
 }
 
-/** The active account of a session looked up by id (no cookie needed; used by push-watcher). */
-export function readSessionById(id: string | undefined, secret?: string): SessionData | null {
-	const session = readSessionRecord(id, secret);
-	if (!session) return null;
-	const active = getActiveAccount(session);
-	return active ? { ...active, id: session.id } : null;
-}
-
 /** All accounts of a session looked up by id, each carrying the session id (push-watcher). */
 export function readAccountsById(id: string | undefined, secret?: string): SessionData[] {
 	const session = readSessionRecord(id, secret);
@@ -311,11 +303,6 @@ export function updateAccountTokens(id: string, data: SessionData, secret?: stri
 	persistSession(next, secret);
 }
 
-/** @deprecated back-compat alias — use {@link updateAccountTokens}. */
-export function updateSessionData(id: string, data: SessionData, secret?: string): void {
-	updateAccountTokens(id, data, secret);
-}
-
 export function recordSessionDevice(
 	cookies: Cookies,
 	userAgent: string | null,
@@ -410,19 +397,6 @@ function syncIdCookie(cookies: Cookies, id: string, options?: { remember?: boole
 		cookieOptions.maxAge = REMEMBERED_SESSION_MAX_AGE_SEC;
 	}
 	cookies.set(COOKIE_NAME, id, cookieOptions);
-}
-
-/**
- * Back-compat: previously re-sealed the cookie on token refresh. The cookie now
- * holds only the session id, so this just re-asserts it (id + maxAge).
- */
-export function syncSessionCookie(
-	cookies: Cookies,
-	data: SessionData,
-	options?: { remember?: boolean; secret?: string }
-): void {
-	if (!data.id) return;
-	syncIdCookie(cookies, data.id, options);
 }
 
 export function clearSession(cookies: Cookies): void {

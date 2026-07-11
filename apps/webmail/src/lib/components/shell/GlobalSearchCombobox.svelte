@@ -11,6 +11,7 @@
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
 	import { Highlight } from '@ark-ui/svelte/highlight';
+	import { isTypingTarget } from '$lib/utils/keyboard';
 	import Search from '$lib/components/icons/Search.svelte';
 	import User from '$lib/components/icons/User.svelte';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
@@ -362,15 +363,6 @@
 	}
 
 	// --- Global "/" shortcut + outside click ---------------------------------
-
-	function isTypingTarget(target: EventTarget | null) {
-		return (
-			target instanceof HTMLInputElement ||
-			target instanceof HTMLTextAreaElement ||
-			target instanceof HTMLSelectElement ||
-			(target instanceof HTMLElement && target.isContentEditable)
-		);
-	}
 
 	function focusVisibleMailSearch() {
 		for (const candidate of document.querySelectorAll<HTMLInputElement>('[data-zaur-mail-search]')) {

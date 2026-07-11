@@ -2,6 +2,7 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
+	import { isTypingTarget } from '$lib/utils/keyboard';
 	import MailKeyboardShortcuts from '$lib/components/mail/MailKeyboardShortcuts.svelte';
 	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import { parseMailContext } from '$lib/mail/routes';
@@ -25,15 +26,7 @@
 			if (!settings.enableKeyboardShortcuts) return;
 			if (event.key !== 'c' || event.metaKey || event.ctrlKey || event.altKey) return;
 
-			const target = event.target;
-			if (
-				target instanceof HTMLInputElement ||
-				target instanceof HTMLTextAreaElement ||
-				target instanceof HTMLSelectElement ||
-				(target instanceof HTMLElement && target.isContentEditable)
-			) {
-				return;
-			}
+			if (isTypingTarget(event.target)) return;
 
 			if (!$page.url.pathname.startsWith('/mail/compose')) {
 				event.preventDefault();
