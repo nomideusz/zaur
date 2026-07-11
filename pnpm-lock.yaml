@@ -61,8 +61,8 @@ importers:
   apps/web:
     dependencies:
       '@nomideusz/zaur-world':
-        specifier: ^0.2.0
-        version: 0.2.0
+        specifier: ^0.3.0
+        version: 0.3.0
       '@zaur/sprite':
         specifier: workspace:*
         version: link:../../packages/sprite
@@ -1461,8 +1461,8 @@ packages:
       '@chenglou/pretext':
         optional: true
 
-  '@nomideusz/zaur-world@0.2.0':
-    resolution: {integrity: sha512-6+AjF+fbxfG+MS5DDDOesufKUS8K+K8Ocnqcq/Gim0KS3+YIAAHmSwUzjbp9l0BusKPoxigisE3TtlFW8ecPgA==}
+  '@nomideusz/zaur-world@0.3.0':
+    resolution: {integrity: sha512-feeNjs9HjzYsdvcP/u6DycII/eMvqSWGFQOvwzTRV/pIul9CtBLgD2K3IMRLQwfWQf1ApW+81e7v/uXZH5ilnQ==}
 
   '@opentelemetry/api-logs@0.220.0':
     resolution: {integrity: sha512-CmVa4ImJ+ynfrPMNaAXHET6Bhb44SwzmfyVJFq9ni2jgXJR/l7C6gfVFddNmHP+ZOkP9cf4f9DBe68qVLTHc9w==}
@@ -6842,7 +6842,7 @@ snapshots:
       date-fns-tz: 3.2.0(date-fns@4.4.0)
       svelte: 5.55.9
 
-  '@nomideusz/zaur-world@0.2.0': {}
+  '@nomideusz/zaur-world@0.3.0': {}
 
   '@opentelemetry/api-logs@0.220.0':
     dependencies:
