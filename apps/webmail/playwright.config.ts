@@ -33,6 +33,9 @@ export default defineConfig({
 		url: 'http://127.0.0.1:4174',
 		reuseExistingServer: !process.env.CI,
 		env: {
+			// Spread explicitly — Playwright does not merge process.env when env is set,
+			// and the @auth tests need the STALWART_OAUTH_*/SESSION_SECRET vars from CI.
+			...(process.env as Record<string, string>),
 			PUBLIC_JMAP_SERVER_URL: process.env.PUBLIC_JMAP_SERVER_URL ?? 'https://mail.zaur.app'
 		}
 	},

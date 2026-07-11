@@ -66,9 +66,13 @@ jobs:
         env:
           E2E_MAIL_EMAIL: ${{ secrets.E2E_MAIL_EMAIL }}
           E2E_MAIL_PASSWORD: ${{ secrets.E2E_MAIL_PASSWORD }}
+          STALWART_OAUTH_ENABLED: 'true'
+          STALWART_OAUTH_ISSUER_URL: https://mail.zaur.app
+          STALWART_OAUTH_CLIENT_ID: zaur-webmail-prod
+          STALWART_OAUTH_REDIRECT_URI: https://webmail.zaur.app/api/auth/oauth/callback
         run: |
           if [ -z "$E2E_MAIL_EMAIL" ] || [ -z "$E2E_MAIL_PASSWORD" ]; then
             echo "::warning::E2E_MAIL_EMAIL/E2E_MAIL_PASSWORD secrets not configured — skipping authenticated smoke tests"
             exit 0
           fi
-          pnpm --filter @zaur/webmail test:e2e:auth
+          SESSION_SECRET=$(openssl rand -base64 32) pnpm --filter @zaur/webmail test:e2e:auth
