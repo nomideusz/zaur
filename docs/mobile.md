@@ -156,19 +156,26 @@ eventually support universal/app links with a safe web fallback.
 
 ## Native push gap
 
-The current webmail notification pipeline uses VAPID and Web Push subscriptions. APNs device
-tokens and native FCM tokens are different protocols and cannot reuse that endpoint or storage.
+**Implemented (2026-07-11):** native push reuses webmail's existing pipeline — the Stalwart
+watcher (`push-watcher.ts`) is delivery-agnostic; subscription records now carry either a Web Push
+subscription or an FCM device token, and `push-sender.ts` branches per platform. FCM delivery is
+`fcm.ts` (HTTP v1 with a service-account JWT, no firebase-admin dependency). The Capacitor shell
+registers via `@capacitor/push-notifications`; `notifications.ts` detects the native bridge and
+posts `{ fcmToken }` to the same `/api/push/subscribe` / `unsubscribe` endpoints. Notification
+taps navigate via the `data.url` payload (`initNativePushNavigation`). FCM also delivers to iOS
+(via APNs) when the iOS shell lands, so one sender covers both platforms.
 
-Before production release, design a small authenticated push service that:
+Remaining setup (owner action, one-time):
 
-- registers an APNs or FCM token against a mailbox account and device;
-- watches or receives Stalwart state changes without exposing mailbox tokens to notification
-  providers;
-- sends metadata-minimal notifications;
-- supports token rotation, revocation, account removal, and notification actions;
-- never includes message bodies unless the user explicitly enables previews.
+1. Create a Firebase project and register Android app `app.zaur.mail`.
+2. Drop `google-services.json` into `apps/mobile/android/app/` (the Gradle template applies the
+   google-services plugin only when the file exists) and rebuild the APK.
+3. Create a service account with the "Firebase Cloud Messaging API" role, download its JSON key,
+   and set it as the `FCM_SERVICE_ACCOUNT` env var (the raw JSON) on the webmail service.
 
-Foreground synchronization and the first offline milestone do not depend on native push.
+Notifications carry sender + subject only — never message bodies. Token rotation is handled by
+re-registration on every app start; revocation by unsubscribe and by pruning on FCM 404
+(UNREGISTERED). Foreground synchronization does not depend on native push.
 
 ## Milestones
 

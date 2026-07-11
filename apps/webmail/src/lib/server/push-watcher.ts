@@ -3,6 +3,7 @@ import { mailListHref, mailThreadHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/
 import { createConnectedClient } from '$lib/server/jmap';
 import { sendPushNotification } from '$lib/server/push-sender';
 import { isPushConfigured } from '$lib/server/push-config';
+import { isFcmConfigured } from '$lib/server/fcm';
 import {
 	listPushSubscriptions,
 	removePushSubscription,
@@ -22,7 +23,7 @@ class PushWatcher {
 	private watchers = new Map<string, SubscriptionWatcher>();
 
 	async start(): Promise<void> {
-		if (this.started || !isPushConfigured()) return;
+		if (this.started || !(isPushConfigured() || isFcmConfigured())) return;
 		this.started = true;
 		await this.syncWatchers();
 	}

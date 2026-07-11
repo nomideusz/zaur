@@ -1,4 +1,5 @@
 import { configureWebPush, isPushConfigured, webpush } from '$lib/server/push-config';
+import { sendFcmNotification } from '$lib/server/fcm';
 import { removePushSubscription, type StoredPushSubscription } from '$lib/server/push-subscriptions';
 
 export interface PushMessage {
@@ -16,6 +17,21 @@ export async function sendPushNotification(
 	record: StoredPushSubscription,
 	message: PushMessage
 ): Promise<PushSendResult> {
+	if (record.platform === 'fcm' && record.fcmToken) {
+		const result = await sendFcmNotification(record.fcmToken, {
+			title: message.title,
+			body: message.body,
+			url: message.url ?? '/',
+			tag: message.tag ?? 'zaur-new-mail'
+		});
+		if (result === 'gone') {
+			await removePushSubscription(record.id);
+			console.warn('[push] FCM token gone, removed:', record.id);
+		}
+		return result;
+	}
+
+	if (!record.subscription) return 'failed';
 	if (!isPushConfigured() || !configureWebPush()) return 'failed';
 
 	try {

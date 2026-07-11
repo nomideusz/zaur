@@ -10,7 +10,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { importantMarker } from '$lib/mail/important-marker.svelte';
 	import { theme } from '$lib/stores/theme.svelte';
-	import { syncPushSubscription } from '$lib/utils/notifications';
+	import { initNativePushNavigation, syncPushSubscription } from '$lib/utils/notifications';
 	import { ensureAppServiceWorkerReady } from '$lib/utils/service-worker';
 
 	let { children } = $props();
@@ -106,6 +106,8 @@
 			window.location.reload();
 		};
 		window.addEventListener('vite:preloadError', onPreloadError);
+
+		initNativePushNavigation();
 
 		void (async () => {
 			await ensureAppServiceWorkerReady();

@@ -56,7 +56,8 @@ export function assertPushAdmin(request: Request): void {
 }
 
 export function summarizePushSubscription(record: StoredPushSubscription): PushSubscriptionSummary {
-	const endpoint = record.subscription.endpoint;
+	// FCM records have a device token instead of a Web Push endpoint.
+	const endpoint = record.subscription?.endpoint ?? `fcm:${record.fcmToken ?? 'unknown'}`;
 	let pushService = 'unknown';
 
 	try {

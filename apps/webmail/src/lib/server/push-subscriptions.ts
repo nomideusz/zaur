@@ -9,7 +9,10 @@ export interface StoredPushSubscription {
 	id: string;
 	username: string;
 	sessionId: string;
-	subscription: webpush.PushSubscription;
+	/** Absent means 'webpush' (legacy records predate the field). */
+	platform?: 'webpush' | 'fcm';
+	subscription?: webpush.PushSubscription;
+	fcmToken?: string;
 	emailState?: string;
 	inboxMailboxId?: string;
 	createdAt: string;
@@ -79,10 +82,14 @@ export async function getPushSubscription(id: string): Promise<StoredPushSubscri
 export async function upsertPushSubscription(input: {
 	username: string;
 	sessionId: string;
-	subscription: webpush.PushSubscription;
+	subscription?: webpush.PushSubscription;
+	fcmToken?: string;
 }): Promise<StoredPushSubscription> {
 	const store = await readStore();
-	const id = subscriptionId(input.subscription.endpoint);
+	// `fcm:` prefix keeps token-derived ids from ever colliding with endpoint ids.
+	const id = input.fcmToken
+		? subscriptionId(`fcm:${input.fcmToken}`)
+		: subscriptionId(input.subscription!.endpoint);
 	const now = new Date().toISOString();
 	const existing = store[id];
 
@@ -90,7 +97,9 @@ export async function upsertPushSubscription(input: {
 		id,
 		username: input.username,
 		sessionId: input.sessionId,
+		platform: input.fcmToken ? 'fcm' : 'webpush',
 		subscription: input.subscription,
+		fcmToken: input.fcmToken,
 		emailState: existing?.emailState,
 		inboxMailboxId: existing?.inboxMailboxId,
 		createdAt: existing?.createdAt ?? now,

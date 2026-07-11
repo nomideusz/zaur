@@ -9,7 +9,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		error(401, 'Unauthorized');
 	}
 
-	let body: { endpoint?: string };
+	let body: { endpoint?: string; fcmToken?: string };
 	try {
 		body = await request.json();
 	} catch {
@@ -17,11 +17,12 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 	}
 
 	const endpoint = body.endpoint?.trim();
-	if (!endpoint) {
+	const fcmToken = body.fcmToken?.trim();
+	if (!endpoint && !fcmToken) {
 		error(400, 'Missing subscription endpoint');
 	}
 
-	const id = subscriptionId(endpoint);
+	const id = fcmToken ? subscriptionId(`fcm:${fcmToken}`) : subscriptionId(endpoint!);
 	const record = await getPushSubscription(id);
 	if (record && record.username !== session.username) {
 		error(403, 'Forbidden');

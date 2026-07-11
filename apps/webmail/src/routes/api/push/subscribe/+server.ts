@@ -1,8 +1,11 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
 import { isPushConfigured } from '$lib/server/push-config';
+import { isFcmConfigured } from '$lib/server/fcm';
 import { upsertPushSubscription } from '$lib/server/push-subscriptions';
 import { pushWatcher } from '$lib/server/push-watcher';
 import { readSession, COOKIE_NAME } from '$lib/server/session';
+
+const FCM_TOKEN_PATTERN = /^[A-Za-z0-9_:.-]{20,4096}$/;
 
 // The push-watcher POSTs to this endpoint server-side, so an unvalidated URL is
 // blind SSRF into the internal network. Only real push services are allowed.
@@ -26,21 +29,39 @@ function isAllowedPushEndpoint(endpoint: string): boolean {
 }
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
-	if (!isPushConfigured()) {
-		error(503, 'Push notifications are not configured');
-	}
-
 	const sessionId = cookies.get(COOKIE_NAME);
 	const session = readSession(cookies);
 	if (!session || !sessionId) {
 		error(401, 'Unauthorized');
 	}
 
-	let body: { subscription?: PushSubscriptionJSON };
+	let body: { subscription?: PushSubscriptionJSON; fcmToken?: string };
 	try {
 		body = await request.json();
 	} catch {
 		error(400, 'Invalid request body');
+	}
+
+	// Native app registration: an FCM device token instead of a Web Push subscription.
+	if (body.fcmToken !== undefined) {
+		if (!isFcmConfigured()) {
+			error(503, 'Native push is not configured');
+		}
+		const fcmToken = String(body.fcmToken).trim();
+		if (!FCM_TOKEN_PATTERN.test(fcmToken)) {
+			error(400, 'Invalid device token');
+		}
+		const record = await upsertPushSubscription({
+			username: session.username,
+			sessionId,
+			fcmToken
+		});
+		await pushWatcher.refresh();
+		return json({ ok: true, id: record.id });
+	}
+
+	if (!isPushConfigured()) {
+		error(503, 'Push notifications are not configured');
 	}
 
 	const subscription = body.subscription;

@@ -4,6 +4,104 @@ import {
 	resetAppServiceWorker
 } from '$lib/utils/service-worker';
 
+// --- Native (Capacitor shell) push -----------------------------------------
+// Inside the Capacitor app the page runs in a WebView where Web Push can't
+// deliver; the injected Capacitor bridge exposes the native FCM/APNs plugin
+// instead. Same server endpoints, `fcmToken` payload instead of `subscription`.
+
+interface CapacitorPushPlugin {
+	checkPermissions(): Promise<{ receive: string }>;
+	requestPermissions(): Promise<{ receive: string }>;
+	register(): Promise<void>;
+	addListener(
+		event: 'registration' | 'registrationError' | 'pushNotificationActionPerformed',
+		callback: (payload: never) => void
+	): Promise<unknown>;
+}
+
+const FCM_TOKEN_STORAGE_KEY = 'zaur-fcm-token';
+
+function nativePushPlugin(): CapacitorPushPlugin | null {
+	if (!browser) return null;
+	const capacitor = (
+		window as unknown as {
+			Capacitor?: {
+				isNativePlatform?: () => boolean;
+				Plugins?: { PushNotifications?: CapacitorPushPlugin };
+			};
+		}
+	).Capacitor;
+	if (!capacitor?.isNativePlatform?.()) return null;
+	return capacitor.Plugins?.PushNotifications ?? null;
+}
+
+async function isNativePushEnabledOnServer(): Promise<boolean> {
+	try {
+		const response = await fetch('/api/push/vapid-public-key');
+		if (!response.ok) return false;
+		const payload = (await response.json()) as { fcm?: boolean };
+		return payload.fcm === true;
+	} catch {
+		return false;
+	}
+}
+
+/** Register the device token with the server; resolves false on any failure. */
+async function subscribeNative(plugin: CapacitorPushPlugin): Promise<boolean> {
+	const permission = await plugin.requestPermissions();
+	if (permission.receive !== 'granted') return false;
+
+	const token = await new Promise<string | null>((resolve) => {
+		const timeout = setTimeout(() => resolve(null), 15_000);
+		void plugin.addListener('registration', (payload: { value: string }) => {
+			clearTimeout(timeout);
+			resolve(payload.value);
+		});
+		void plugin.addListener('registrationError', () => {
+			clearTimeout(timeout);
+			resolve(null);
+		});
+		void plugin.register();
+	});
+	if (!token) return false;
+
+	const response = await fetch('/api/push/subscribe', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ fcmToken: token })
+	});
+	if (response.ok) localStorage.setItem(FCM_TOKEN_STORAGE_KEY, token);
+	return response.ok;
+}
+
+async function unsubscribeNative(): Promise<void> {
+	const token = localStorage.getItem(FCM_TOKEN_STORAGE_KEY);
+	if (!token) return;
+	await fetch('/api/push/unsubscribe', {
+		method: 'POST',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify({ fcmToken: token })
+	});
+	localStorage.removeItem(FCM_TOKEN_STORAGE_KEY);
+}
+
+/**
+ * Call once at app start (native shell only, no-op elsewhere): navigates when
+ * the user taps a notification delivered while the app was closed/backgrounded.
+ */
+export function initNativePushNavigation(): void {
+	const plugin = nativePushPlugin();
+	if (!plugin) return;
+	void plugin.addListener(
+		'pushNotificationActionPerformed',
+		(payload: { notification?: { data?: { url?: string } } }) => {
+			const url = payload.notification?.data?.url;
+			if (url && url.startsWith('/')) window.location.assign(url);
+		}
+	);
+}
+// ---------------------------------------------------------------------------
+
 export function canUseBrowserNotifications(): boolean {
 	return browser && 'Notification' in window;
 }
@@ -45,6 +143,7 @@ async function getServiceWorkerRegistration(): Promise<ServiceWorkerRegistration
 }
 
 export async function isPushSupported(): Promise<boolean> {
+	if (nativePushPlugin()) return isNativePushEnabledOnServer();
 	if (!browser || !('PushManager' in window) || !('serviceWorker' in navigator)) return false;
 
 	try {
@@ -59,6 +158,9 @@ export async function isPushSupported(): Promise<boolean> {
 
 export async function subscribeToPushNotifications(): Promise<boolean> {
 	if (!(await isPushSupported())) return false;
+
+	const nativePlugin = nativePushPlugin();
+	if (nativePlugin) return subscribeNative(nativePlugin);
 
 	const permission = await requestBrowserNotificationPermission();
 	if (permission !== 'granted') return false;
@@ -100,6 +202,7 @@ export async function subscribeToPushNotifications(): Promise<boolean> {
 }
 
 export async function unsubscribeFromPushNotifications(): Promise<void> {
+	if (nativePushPlugin()) return unsubscribeNative();
 	if (!browser || !('serviceWorker' in navigator)) return;
 
 	const registration = await navigator.serviceWorker.getRegistration();
@@ -135,6 +238,17 @@ export type PushNotificationStatus =
 
 export async function getPushNotificationStatus(): Promise<PushNotificationStatus> {
 	if (!browser) return { state: 'unsupported' };
+
+	const nativePlugin = nativePushPlugin();
+	if (nativePlugin) {
+		if (!(await isNativePushEnabledOnServer())) return { state: 'server_disabled' };
+		const permission = await nativePlugin.checkPermissions();
+		if (permission.receive === 'denied') return { state: 'denied' };
+		if (permission.receive !== 'granted') return { state: 'prompt' };
+		return localStorage.getItem(FCM_TOKEN_STORAGE_KEY)
+			? { state: 'subscribed' }
+			: { state: 'not_subscribed' };
+	}
 
 	if (!(await isPushSupported())) {
 		try {
