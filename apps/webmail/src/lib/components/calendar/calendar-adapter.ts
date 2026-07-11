@@ -1,3 +1,4 @@
+import { errorMessage } from '@zaur/mail-core/utils/errors';
 import type { CalendarAdapter, DateRange, TimelineEvent } from '@nomideusz/svelte-calendar';
 import type { JMAPClient } from '$lib/jmap/client';
 import { mapCalendarEvent } from '$lib/jmap/calendar-map';
@@ -162,7 +163,7 @@ export class ZaurCalendarAdapter implements CalendarAdapter {
 				toast.show(RECURRING_INSTANCE_MESSAGE, 'error');
 				throw new Error(RECURRING_INSTANCE_MESSAGE);
 			}
-			const message = error instanceof Error ? error.message : 'Failed to move event';
+			const message = errorMessage(error, 'Failed to move event');
 			toast.show(message, 'error');
 			throw error;
 		}

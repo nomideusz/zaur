@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { TreeView, createTreeCollection } from '@ark-ui/svelte/tree-view';
@@ -99,7 +100,7 @@
 		try {
 			await mail.renameCustomFolder(client, node.id, trimmed);
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Could not rename folder', 'error');
+			toast.show(errorMessage(error, 'Could not rename folder'), 'error');
 		}
 	}
 
@@ -117,7 +118,7 @@
 				await goto(mailListHref('inbox'));
 			}
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Could not delete folder', 'error');
+			toast.show(errorMessage(error, 'Could not delete folder'), 'error');
 		}
 	}
 
@@ -134,7 +135,7 @@
 			createFolderOpen = false;
 			await goto(mailListHref(folder.id));
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Could not create folder', 'error');
+			toast.show(errorMessage(error, 'Could not create folder'), 'error');
 		} finally {
 			createFolderSubmitting = false;
 		}

@@ -1,3 +1,4 @@
+import { errorMessage } from '@zaur/mail-core/utils/errors';
 import type { JMAPClient } from '$lib/jmap/client';
 import { browser } from '$app/environment';
 import { mapEmailPreview, resolveRouteMailboxId } from '$lib/jmap/map';
@@ -70,7 +71,7 @@ class SearchStore {
 			this.results = [];
 			this.total = 0;
 			this.hasMore = false;
-			this.error = error instanceof Error ? error.message : 'Search failed';
+			this.error = errorMessage(error, 'Search failed');
 		} finally {
 			this.loading = false;
 		}
@@ -93,7 +94,7 @@ class SearchStore {
 			this.hasMore = hasMore;
 			indexSearchContacts(previews);
 		} catch (error) {
-			this.error = error instanceof Error ? error.message : 'Failed to load more results';
+			this.error = errorMessage(error, 'Failed to load more results');
 		} finally {
 			this.loadingMore = false;
 		}

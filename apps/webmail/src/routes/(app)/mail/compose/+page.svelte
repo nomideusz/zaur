@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import ComposePanel from '$lib/components/mail/ComposePanel.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
@@ -36,7 +37,7 @@
 		const client = auth.client;
 		if (!client || auth.isRestoring || !draftId) return;
 		void compose.loadDraft(client, draftId).catch((error) => {
-			compose.error = error instanceof Error ? error.message : 'Could not open draft';
+			compose.error = errorMessage(error, 'Could not open draft');
 		});
 	});
 </script>

@@ -1,4 +1,5 @@
 <script lang="ts" module>
+	import { errorMessage } from '@zaur/mail-core/utils/errors';
   import { cn } from '$lib/utils/cn';
   import type { PDFDocumentProxy } from 'pdfjs-dist';
   import type { Snippet } from 'svelte';
@@ -122,7 +123,7 @@
       } catch (err) {
         if (destroyed) return;
         console.error('Failed to load PDF:', err);
-        error = err instanceof Error ? err.message : 'Failed to load PDF';
+        error = errorMessage(err, 'Failed to load PDF');
         loading = false;
       }
     })();

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import Download from '$lib/components/icons/Download.svelte';
 	import FileText from '$lib/components/icons/FileText.svelte';
 	import LoaderCircle from '$lib/components/icons/LoaderCircle.svelte';
@@ -46,7 +47,7 @@
 		try {
 			await downloadAttachment(attachment);
 		} catch (err) {
-			toast.show(err instanceof Error ? err.message : 'Download failed', 'error');
+			toast.show(errorMessage(err, 'Download failed'), 'error');
 		} finally {
 			downloadingId = null;
 		}

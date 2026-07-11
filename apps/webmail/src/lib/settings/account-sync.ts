@@ -1,3 +1,4 @@
+import { errorMessage } from '@zaur/mail-core/utils/errors';
 import { browser } from '$app/environment';
 import { toast } from '$lib/stores/toast.svelte';
 import {
@@ -155,7 +156,7 @@ async function pushAccountSettings(options?: { quiet?: boolean }): Promise<boole
 			return false;
 		}
 
-		const message = error instanceof Error ? error.message : 'Could not save settings';
+		const message = errorMessage(error, 'Could not save settings');
 		console.warn('Account settings sync failed:', message);
 		if (!options?.quiet && navigator.onLine) {
 			toast.show(message, 'error');

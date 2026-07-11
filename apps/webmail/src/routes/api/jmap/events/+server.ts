@@ -1,3 +1,4 @@
+import { errorMessage } from '@zaur/mail-core/utils/errors';
 import type { RequestHandler } from '@sveltejs/kit';
 import { createConnectedClient } from '$lib/server/jmap';
 import { resolveRequestAccount } from '$lib/server/session';
@@ -14,7 +15,7 @@ export const GET: RequestHandler = async ({ cookies, request }) => {
 	try {
 		client = await createConnectedClient(account, cookies);
 	} catch (error) {
-		const message = error instanceof Error ? error.message : 'JMAP connection failed';
+		const message = errorMessage(error, 'JMAP connection failed');
 		return new Response(message, { status: 502 });
 	}
 
@@ -34,7 +35,7 @@ export const GET: RequestHandler = async ({ cookies, request }) => {
 		start(controller) {
 			const keepalive = setInterval(() => {
 				try {
-					controller.enqueue(encoder.encode(': keepalive\n\n'));
+					controller.enqueue(encoder.encode('event: ping\ndata: {}\n\n'));
 				} catch {
 					clearInterval(keepalive);
 				}

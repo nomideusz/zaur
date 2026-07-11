@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Copy from '$lib/components/icons/Copy.svelte';
@@ -101,7 +102,7 @@
 			await action(auth.client);
 			onMoved?.();
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Action failed';
+			const message = errorMessage(error, 'Action failed');
 			toast.show(message, 'error');
 		}
 	}
@@ -170,7 +171,7 @@
 			await mail.loadMailboxes(auth.client);
 			onMoved?.();
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Could not cancel send', 'error');
+			toast.show(errorMessage(error, 'Could not cancel send'), 'error');
 		} finally {
 			cancelingScheduled = false;
 		}
@@ -186,7 +187,7 @@
 	function toggleImportant() {
 		if (!auth.client || !actionMessage) return;
 		void mail.toggleImportant(auth.client, actionMessage).catch((error) => {
-			const message = error instanceof Error ? error.message : 'Could not update highlight';
+			const message = errorMessage(error, 'Could not update highlight');
 			toast.show(message, 'error');
 		});
 	}
@@ -238,7 +239,7 @@
 			await mail.moveMessageToMailbox(auth.client, actionMessage, targetRouteId);
 			onMoved?.();
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Could not move message';
+			const message = errorMessage(error, 'Could not move message');
 			toast.show(message, 'error');
 		}
 	}

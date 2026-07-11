@@ -1,3 +1,4 @@
+import { errorMessage } from '@zaur/mail-core/utils/errors';
 import type { JMAPClient } from '$lib/jmap/client';
 import { browser } from '$app/environment';
 import { mapEmailDetail, mapEmailPreview } from '$lib/jmap/map';
@@ -214,7 +215,7 @@ class MailStore {
 			const scheduled = this.mailboxes.find((mb) => mb.role === 'scheduled');
 			if (scheduled?.total) void this.reconcileScheduled(client);
 		} catch (error) {
-			this.mailboxesError = error instanceof Error ? error.message : 'Failed to load folders';
+			this.mailboxesError = errorMessage(error, 'Failed to load folders');
 			this.mailboxes = [];
 		} finally {
 			this.mailboxesLoading = false;
@@ -344,7 +345,7 @@ class MailStore {
 			this.messagesTotal = 0;
 			this.messagesHasMore = false;
 			this.messagesFromCache = false;
-			this.messagesError = error instanceof Error ? error.message : 'Failed to load messages';
+			this.messagesError = errorMessage(error, 'Failed to load messages');
 		} finally {
 			this.messagesLoading = false;
 			this.messagesLoadSettledForRouteId = routeMailboxId;
@@ -380,7 +381,7 @@ class MailStore {
 				await cacheMessagePreviews(client.getAccountId(), routeMailboxId, previews);
 			}
 		} catch (error) {
-			this.messagesError = error instanceof Error ? error.message : 'Failed to load more messages';
+			this.messagesError = errorMessage(error, 'Failed to load more messages');
 		} finally {
 			this.messagesLoadingMore = false;
 		}
@@ -509,7 +510,7 @@ class MailStore {
 					}
 				}
 				this.selectedThread = [];
-				this.selectedError = error instanceof Error ? error.message : 'Failed to load message';
+				this.selectedError = errorMessage(error, 'Failed to load message');
 			} finally {
 				if (generation === this.openMessageGeneration) {
 					this.selectedLoading = false;
@@ -1731,7 +1732,7 @@ class MailStore {
 					}
 				}
 			} catch (error) {
-				toast.show(error instanceof Error ? error.message : 'Undo failed', 'error');
+				toast.show(errorMessage(error, 'Undo failed'), 'error');
 			}
 		});
 	}

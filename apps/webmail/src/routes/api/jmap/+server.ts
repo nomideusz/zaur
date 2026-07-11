@@ -1,3 +1,4 @@
+import { errorMessage } from '@zaur/mail-core/utils/errors';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import type { JMAPResponse } from '$lib/jmap/types';
 import { createConnectedClient } from '$lib/server/jmap';
@@ -44,7 +45,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 		const response = await client.request(validated.value.methodCalls, validated.value.using);
 		return json(response satisfies JMAPResponse);
 	} catch (error) {
-		const message = error instanceof Error ? error.message : 'JMAP request failed';
+		const message = errorMessage(error, 'JMAP request failed');
 		const unauthorized = message.includes('401') || message.includes('Unauthorized');
 		if (!unauthorized) {
 			console.error('[api/jmap] Upstream request failed:', error);

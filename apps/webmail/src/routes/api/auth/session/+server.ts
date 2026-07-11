@@ -1,3 +1,4 @@
+import { errorMessage } from '@zaur/mail-core/utils/errors';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { createConnectedClient } from '$lib/server/jmap';
 import { findIdentityEmail } from '$lib/jmap/account';
@@ -5,7 +6,7 @@ import { accountKey, getActiveAccount, readSessionFull, removeAccount } from '$l
 
 /** A genuine auth failure (dead token) vs. a transient network/server error. */
 function isAuthError(error: unknown): boolean {
-	const message = error instanceof Error ? error.message : '';
+	const message = errorMessage(error, '');
 	return /unauthorized|invalid username|401/i.test(message);
 }
 

@@ -6,6 +6,7 @@
 	 * The Highlight action is always inline; the remaining mark actions go
 	 * inline as measured space allows, the rest into the More menu.
 	 */
+	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import {
 		bulkBarActions,
 		fitBulkActions,
@@ -121,7 +122,7 @@
 			await action();
 			if (refreshList) onBulkAction?.();
 		} catch (err) {
-			const message = err instanceof Error ? err.message : 'Bulk action failed';
+			const message = errorMessage(err, 'Bulk action failed');
 			toast.show(message, 'error');
 		}
 	}

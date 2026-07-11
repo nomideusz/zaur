@@ -32,6 +32,9 @@ export function isStalwartOauthEnabled(): boolean {
 	);
 }
 
+// Deliberately kept (2026-07-11 audit): emergency lever to restore password
+// login if Stalwart OAuth breaks in production (see the 2026-06-30 license
+// incident). Not dead code — do not remove with the next flag sweep.
 export function isPasswordLoginRollbackEnabled(): boolean {
 	return env.STALWART_PASSWORD_LOGIN_ROLLBACK_ENABLED === 'true';
 }

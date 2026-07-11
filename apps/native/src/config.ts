@@ -4,7 +4,7 @@
 // 'zaur-native' public client when store release nears.
 export const config = {
 	issuer: 'https://mail.zaur.app',
-	oauthClientId: 'webmail',
+	oauthClientId: 'zaur-webmail-prod',
 	oauthRedirectUri: 'https://webmail.zaur.app/api/auth/oauth/callback',
 	registerUrl: 'https://register.zaur.app'
 };

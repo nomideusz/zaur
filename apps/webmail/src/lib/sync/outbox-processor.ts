@@ -1,3 +1,4 @@
+import { errorMessage } from '@zaur/mail-core/utils/errors';
 import { browser } from '$app/environment';
 import type { JMAPClient } from '$lib/jmap/client';
 import { parseAddressList } from '$lib/utils/addresses';
@@ -124,7 +125,7 @@ class OutboxProcessor {
 						void mail.refreshAfterSend(client);
 					});
 				} catch (error) {
-					const message = error instanceof Error ? error.message : 'Send failed';
+					const message = errorMessage(error, 'Send failed');
 					if (isOfflineError(error)) {
 						await updateOutboxStatus(item.id, 'pending', {
 							attempts: item.attempts,

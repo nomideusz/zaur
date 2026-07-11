@@ -21,3 +21,4 @@ export * from './mail/inbox-list-sections';
 export * from './mail/send-from';
 export * from './mail/compose-body';
 export * from './mail/thread-list-utils';
+export * from './utils/errors';

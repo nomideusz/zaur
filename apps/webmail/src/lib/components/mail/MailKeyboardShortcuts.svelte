@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
@@ -90,7 +91,7 @@
 				goto(mailListBackHref(routeId));
 			}
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Action failed', 'error');
+			toast.show(errorMessage(error, 'Action failed'), 'error');
 		}
 	}
 

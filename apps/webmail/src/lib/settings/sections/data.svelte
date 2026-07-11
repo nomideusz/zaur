@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import StorageQuota from '$lib/components/settings/StorageQuota.svelte';
@@ -50,7 +51,7 @@
 			await mail.refreshMailboxes(client);
 			void quota.load(client, { force: true });
 		} catch (error) {
-			const message = error instanceof Error ? error.message : `Could not empty ${label}`;
+			const message = errorMessage(error, `Could not empty ${label}`);
 			toast.show(message, 'error');
 		} finally {
 			if (role === 'trash') emptyingTrash = false;

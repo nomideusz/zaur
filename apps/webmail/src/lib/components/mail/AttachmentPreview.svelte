@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import { untrack } from 'svelte';
 	import { Dialog } from '@ark-ui/svelte/dialog';
 	import { Portal } from '@ark-ui/svelte/portal';
@@ -74,7 +75,7 @@
 				}
 			} catch (err) {
 				if (requestId !== generation) return;
-				loadError = err instanceof Error ? err.message : 'Failed to load preview';
+				loadError = errorMessage(err, 'Failed to load preview');
 			} finally {
 				if (requestId === generation) loading = false;
 			}
@@ -108,7 +109,7 @@
 		try {
 			await downloadAttachment(active);
 		} catch (err) {
-			toast.show(err instanceof Error ? err.message : 'Download failed', 'error');
+			toast.show(errorMessage(err, 'Download failed'), 'error');
 		}
 	}
 

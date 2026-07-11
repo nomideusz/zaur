@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import FolderInput from '$lib/components/icons/FolderInput.svelte';
@@ -34,7 +35,7 @@
 			await mail.moveMessageToMailbox(client, message, targetRouteId);
 			onMoved?.();
 		} catch (error) {
-			const message = error instanceof Error ? error.message : 'Could not move message';
+			const message = errorMessage(error, 'Could not move message');
 			toast.show(message, 'error');
 		}
 	}

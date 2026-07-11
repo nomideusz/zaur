@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import { untrack } from 'svelte';
@@ -472,7 +473,7 @@
 			onBulkAction?.();
 			return true;
 		} catch (err) {
-			const text = err instanceof Error ? err.message : failText;
+			const text = errorMessage(err, failText);
 			toast.show(text, 'error');
 			return false;
 		}

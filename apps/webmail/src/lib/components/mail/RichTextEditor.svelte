@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import { onMount, onDestroy } from 'svelte';
 	import { ToggleGroup } from '@ark-ui/svelte/toggle-group';
 	import { Popover } from '@ark-ui/svelte/popover';
@@ -167,7 +168,7 @@
 				}
 			} catch (err) {
 				toast.show(
-					`Failed to upload inline image: ${err instanceof Error ? err.message : 'Unknown error'}`,
+					`Failed to upload inline image: ${errorMessage(err, 'Unknown error')}`,
 					'error'
 				);
 				// If upload fails, remove the local image block

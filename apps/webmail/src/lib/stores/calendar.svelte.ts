@@ -1,3 +1,4 @@
+import { errorMessage } from '@zaur/mail-core/utils/errors';
 import type { JMAPClient } from '$lib/jmap/client';
 import { mapCalendar, mapCalendarEvent } from '$lib/jmap/calendar-map';
 import { expandRecurringEventInRange, recurrenceRuleFor, type EventRepeat } from '$lib/jmap/recurrence';
@@ -120,7 +121,7 @@ class CalendarStore {
 			);
 			this.calendarsLoaded = true;
 		} catch (error) {
-			this.error = error instanceof Error ? error.message : 'Failed to load calendars';
+			this.error = errorMessage(error, 'Failed to load calendars');
 			this.calendars = [];
 		} finally {
 			this.calendarsLoading = false;
@@ -148,7 +149,7 @@ class CalendarStore {
 			this.events = events.map(mapCalendarEvent);
 		} catch (error) {
 			this.events = [];
-			this.error = error instanceof Error ? error.message : 'Failed to load events';
+			this.error = errorMessage(error, 'Failed to load events');
 		} finally {
 			this.eventsLoading = false;
 		}

@@ -1,3 +1,4 @@
+import { errorMessage } from '@zaur/mail-core/utils/errors';
 import { browser } from '$app/environment';
 import type { JMAPClient } from '$lib/jmap/client';
 import type { EmailAttachmentInput } from '$lib/jmap/email-build';
@@ -353,7 +354,7 @@ class ComposeStore {
 						: attachment
 				);
 			} catch (error) {
-				const message = error instanceof Error ? error.message : 'Upload failed';
+				const message = errorMessage(error, 'Upload failed');
 				this.attachments = this.attachments.map((attachment) =>
 					attachment.id === id
 						? { ...attachment, uploading: false, uploadError: message }
@@ -891,7 +892,7 @@ class ComposeStore {
 				}
 			}
 
-			const message = error instanceof Error ? error.message : 'Failed to send message';
+			const message = errorMessage(error, 'Failed to send message');
 			this.error = message;
 			toast.show(message, 'error');
 			return false;

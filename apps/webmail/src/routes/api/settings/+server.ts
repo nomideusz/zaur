@@ -1,3 +1,4 @@
+import { errorMessage } from '@zaur/mail-core/utils/errors';
 import { json } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import { readSession } from '$lib/server/session';
@@ -14,7 +15,7 @@ export const GET: RequestHandler = async ({ cookies }) => {
 		const blob = await loadSettingsForSession(session, cookies);
 		return json(blob);
 	} catch (err) {
-		const message = err instanceof Error ? err.message : 'Could not load settings';
+		const message = errorMessage(err, 'Could not load settings');
 		return json({ error: message }, { status: 502 });
 	}
 };
@@ -40,7 +41,7 @@ export const PUT: RequestHandler = async ({ cookies, request }) => {
 		const result = await saveSettingsForSession(session, body.blob, body.baseUpdatedAt, cookies);
 		return json(result);
 	} catch (err) {
-		const message = err instanceof Error ? err.message : 'Could not save settings';
+		const message = errorMessage(err, 'Could not save settings');
 		return json({ error: message }, { status: 502 });
 	}
 };

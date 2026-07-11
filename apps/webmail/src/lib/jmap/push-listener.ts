@@ -19,7 +19,7 @@ export class PushListener {
 	private callback: ((change: StateChange) => void) | null = null;
 	private client: JMAPClient | null = null;
 	private onVisibilityChange: (() => void) | null = null;
-	private streamAbort: AbortController | null = null;
+	private eventSource: EventSource | null = null;
 	private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
 	private reconnectDelay = SSE_RECONNECT_MS;
 	private onOnline: (() => void) | null = null;
@@ -119,80 +119,54 @@ export class PushListener {
 		this.isRunning = true;
 		this.resetStaleTimer();
 
-		const abort = new AbortController();
-		this.streamAbort = abort;
+		// Native EventSource does the SSE parsing and retries transient drops
+		// itself. Stalwart pushes RFC 8620 named `state` events (forwarded by
+		// the proxy) and the proxy adds `ping` keepalives, so both are wired
+		// explicitly; onmessage covers unnamed events for safety.
+		const source = new EventSource('/api/jmap/events');
+		this.eventSource = source;
 
-		void (async () => {
+		const handleData = (event: MessageEvent) => {
+			this.resetStaleTimer();
+			this.reconnectDelay = SSE_RECONNECT_MS;
+			this.streamErrorLogged = false;
 			try {
-				const response = await fetch('/api/jmap/events', { signal: abort.signal });
-				if (!response.ok || !response.body) {
-					throw { status: response.status, body: await response.text().catch(() => '') };
+				const data = JSON.parse(event.data as string) as StateChange;
+				if (data?.['@type'] === 'StateChange') {
+					this.trackIncomingStates(data);
+					onChange(data);
 				}
+			} catch {
+				// Non-JSON payload — ignore.
+			}
+		};
 
-				// Healthy connection — reset the backoff and error squelch.
-				this.reconnectDelay = SSE_RECONNECT_MS;
-				this.streamErrorLogged = false;
-
-				const reader = response.body.getReader();
-				const decoder = new TextDecoder();
-				let buffer = '';
-
-				while (this.isRunning && !abort.signal.aborted) {
-					const { done, value } = await reader.read();
-					if (done) break;
-
-					buffer += decoder.decode(value, { stream: true });
-					const lines = buffer.split('\n');
-					buffer = lines.pop() ?? '';
-
-					for (const line of lines) {
-						const trimmed = line.trim();
-						if (!trimmed || trimmed.startsWith(':')) {
-							this.resetStaleTimer();
-							continue;
-						}
-						if (!trimmed.startsWith('data:')) continue;
-
-						this.resetStaleTimer();
-						const dataStr = trimmed.slice(5).trim();
-						if (!dataStr) continue;
-
-						try {
-							const data = JSON.parse(dataStr) as StateChange;
-							if (data?.['@type'] === 'StateChange') {
-								this.trackIncomingStates(data);
-								onChange(data);
-							}
-						} catch {
-							// Ping or other non-JSON keepalive
-						}
-					}
-				}
-
-				// Server closed the stream gracefully — reconnect right away
-				// instead of waiting for the stale timer (polling covers the gap).
-				if (this.isRunning && !abort.signal.aborted) {
-					this.stopEventSource();
-					this.scheduleReconnect();
-				}
-			} catch (err) {
-				if (abort.signal.aborted) return;
-				// Stream interruptions (network change, proxy timeout, sleep) are
-				// routine — log the first one, stay quiet while retrying.
+		source.onopen = () => {
+			this.reconnectDelay = SSE_RECONNECT_MS;
+			this.streamErrorLogged = false;
+			this.resetStaleTimer();
+		};
+		source.onmessage = handleData;
+		source.addEventListener('state', handleData);
+		source.addEventListener('ping', () => this.resetStaleTimer());
+		source.onerror = () => {
+			// Only a permanent close (non-200 response, wrong content-type)
+			// needs our backoff — EventSource handles the rest internally.
+			if (source.readyState === EventSource.CLOSED) {
 				if (!this.streamErrorLogged) {
-					console.warn('JMAP event stream interrupted (will reconnect):', err);
+					console.warn('JMAP event stream closed (will reconnect)');
 					this.streamErrorLogged = true;
 				}
 				this.stopEventSource();
 				this.scheduleReconnect();
 			}
-		})();
+		};
 	}
 
 	private stopEventSource() {
 		this.isRunning = false;
-		this.streamAbort?.abort();
-		this.streamAbort = null;
+		this.eventSource?.close();
+		this.eventSource = null;
 		this.clearStaleTimer();
 	}
 

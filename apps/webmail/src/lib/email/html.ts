@@ -53,105 +53,25 @@ function isExternalUrl(url: string): boolean {
 	return url.startsWith('http://') || url.startsWith('https://') || url.startsWith('//');
 }
 
-const NAMED_CSS_COLORS: Record<string, string> = {
-	black: '#000000',
-	white: '#ffffff',
-	gray: '#808080',
-	grey: '#808080',
-	silver: '#c0c0c0',
-	darkgray: '#a9a9a9',
-	darkgrey: '#a9a9a9',
-	dimgray: '#696969',
-	dimgrey: '#696969',
-	lightgray: '#d3d3d3',
-	lightgrey: '#d3d3d3',
-	gainsboro: '#dcdcdc',
-	whitesmoke: '#f5f5f5',
-	ghostwhite: '#f8f8ff',
-	snow: '#fffafa',
-	ivory: '#fffff0',
-	seashell: '#fff5ee',
-	linen: '#faf0e6',
-	antiquewhite: '#faebd7',
-	beige: '#f5f5dc',
-	mintcream: '#f5fffa',
-	azure: '#f0ffff',
-	aliceblue: '#f0f8ff'
-};
-
 type Rgb = { r: number; g: number; b: number };
 
-function expandHex(hex: string): string | null {
-	const h = hex.replace('#', '');
-	if (h.length === 3) return `#${h[0]}${h[0]}${h[1]}${h[1]}${h[2]}${h[2]}`;
-	if (h.length === 6) return `#${h}`;
-	return null;
-}
+// The browser parses any CSS color (named, hex, rgb/hsl/oklch, modern syntax)
+// when assigned to an inline style; reading it back yields a canonical rgb()/
+// rgba() serialization. Callers all run in the DOM post-processing pass, so
+// document is always available here.
+let colorProbe: HTMLSpanElement | null = null;
 
 function parseCssColor(value: string): Rgb | null {
-	const normalized = value.trim().toLowerCase();
-	if (!normalized || normalized === 'transparent' || normalized === 'inherit' || normalized === 'initial') {
-		return null;
-	}
-
-	const named = NAMED_CSS_COLORS[normalized];
-	if (named) return parseCssColor(named);
-
-	const hex = normalized.match(/^#([0-9a-f]{3,8})$/i);
-	if (hex) {
-		const expanded = expandHex(`#${hex[1]}`);
-		if (!expanded) return null;
-		const h = expanded.slice(1);
-		return {
-			r: parseInt(h.slice(0, 2), 16),
-			g: parseInt(h.slice(2, 4), 16),
-			b: parseInt(h.slice(4, 6), 16)
-		};
-	}
-
-	const rgb = normalized.match(
-		/^rgba?\(\s*([\d.]+)(%?)\s*,\s*([\d.]+)(%?)\s*,\s*([\d.]+)(%?)(?:\s*,\s*[\d.]+%?)?\s*\)$/i
-	);
-	if (rgb) {
-		const channel = (n: number, pct: string) => (pct === '%' ? (n / 100) * 255 : n);
-		return {
-			r: Math.round(channel(Number(rgb[1]), rgb[2])),
-			g: Math.round(channel(Number(rgb[3]), rgb[4])),
-			b: Math.round(channel(Number(rgb[5]), rgb[6]))
-		};
-	}
-
-	const hsl = normalized.match(
-		/^hsla?\(\s*([\d.]+)\s*,\s*([\d.]+)%\s*,\s*([\d.]+)%(?:\s*,\s*[\d.]+%?)?\s*\)$/i
-	);
-	if (hsl) {
-		const h = Number(hsl[1]) / 360;
-		const s = Number(hsl[2]) / 100;
-		const l = Number(hsl[3]) / 100;
-		const hue2rgb = (p: number, q: number, t: number) => {
-			if (t < 0) t += 1;
-			if (t > 1) t -= 1;
-			if (t < 1 / 6) return p + (q - p) * 6 * t;
-			if (t < 1 / 2) return q;
-			if (t < 2 / 3) return p + (q - p) * (2 / 3 - t) * 6;
-			return p;
-		};
-		let r: number;
-		let g: number;
-		let b: number;
-		if (s === 0) {
-			r = g = b = l;
-		} else {
-			const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-			const p = 2 * l - q;
-			r = hue2rgb(p, q, h + 1 / 3);
-			g = hue2rgb(p, q, h);
-			b = hue2rgb(p, q, h - 1 / 3);
-		}
-		return { r: Math.round(r * 255), g: Math.round(g * 255), b: Math.round(b * 255) };
-	}
-
-	return null;
+	const input = value.trim();
+	if (!input || typeof document === 'undefined') return null;
+	colorProbe ??= document.createElement('span');
+	colorProbe.style.color = '';
+	colorProbe.style.color = input;
+	const serialized = colorProbe.style.color;
+	const match = serialized.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)$/);
+	if (!match) return null;
+	if (match[4] !== undefined && Number(match[4]) === 0) return null;
+	return { r: Number(match[1]), g: Number(match[2]), b: Number(match[3]) };
 }
 
 function relativeLuminance({ r, g, b }: Rgb): number {

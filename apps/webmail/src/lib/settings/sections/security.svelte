@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import { onMount } from 'svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import SettingsField from '$lib/components/settings/SettingsField.svelte';
@@ -68,7 +69,7 @@
 			recoveryEmail = (recovery.recoveryEmail as string | null) ?? null;
 			recoveryInput = recoveryEmail ?? '';
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Could not load security settings', 'error');
+			toast.show(errorMessage(error, 'Could not load security settings'), 'error');
 		} finally {
 			loading = false;
 		}
@@ -90,7 +91,7 @@
 			reauthNeedsTotp = false;
 			toast.show('Identity confirmed for five minutes.', 'success');
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Could not confirm identity', 'error');
+			toast.show(errorMessage(error, 'Could not confirm identity'), 'error');
 		} finally {
 			busy = false;
 		}
@@ -114,7 +115,7 @@
 			toast.show('Password changed. Other mail sessions have been revoked.', 'success');
 			await load();
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Password change failed', 'error');
+			toast.show(errorMessage(error, 'Password change failed'), 'error');
 		} finally {
 			busy = false;
 		}
@@ -131,7 +132,7 @@
 				qr: await toDataURL(String(setup.uri), { width: 220, margin: 1 })
 			};
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Could not start setup', 'error');
+			toast.show(errorMessage(error, 'Could not start setup'), 'error');
 		} finally {
 			busy = false;
 		}
@@ -150,7 +151,7 @@
 			toast.show('Two-factor authentication enabled.', 'success');
 			await load();
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Code could not be verified', 'error');
+			toast.show(errorMessage(error, 'Code could not be verified'), 'error');
 		} finally {
 			busy = false;
 		}
@@ -175,7 +176,7 @@
 			toast.show('Two-factor authentication disabled.', 'success');
 			await load();
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Could not disable 2FA', 'error');
+			toast.show(errorMessage(error, 'Could not disable 2FA'), 'error');
 		} finally {
 			busy = false;
 		}
@@ -195,7 +196,7 @@
 			else apiKeyDescription = '';
 			await load();
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Could not create credential', 'error');
+			toast.show(errorMessage(error, 'Could not create credential'), 'error');
 		} finally {
 			busy = false;
 		}
@@ -214,7 +215,7 @@
 			await api(`/api/account/security/${kind}/${encodeURIComponent(item.id)}`, 'DELETE', {});
 			await load();
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Could not revoke credential', 'error');
+			toast.show(errorMessage(error, 'Could not revoke credential'), 'error');
 		}
 	}
 
@@ -224,7 +225,7 @@
 			await api('/api/account/security/recovery', 'POST', { recoveryEmail: recoveryInput });
 			toast.show('Check the new address for a verification link.', 'success');
 		} catch (error) {
-			toast.show(error instanceof Error ? error.message : 'Could not change recovery email', 'error');
+			toast.show(errorMessage(error, 'Could not change recovery email'), 'error');
 		} finally {
 			busy = false;
 		}

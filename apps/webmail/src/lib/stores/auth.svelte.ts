@@ -1,3 +1,4 @@
+import { errorMessage } from '@zaur/mail-core/utils/errors';
 import { browser } from '$app/environment';
 import { goto } from '$app/navigation';
 import { appConfig } from '$lib/config';
@@ -340,7 +341,7 @@ class AuthStore {
 		} catch (error) {
 			const code = classifyJmapError(error);
 			this.errorCode = code;
-			const detail = error instanceof Error ? error.message : '';
+			const detail = errorMessage(error, '');
 			this.error =
 				detail && (code !== 'generic' || detail.length < 120)
 					? detail
