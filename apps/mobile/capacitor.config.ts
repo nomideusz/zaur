@@ -9,7 +9,8 @@ const config: CapacitorConfig = {
 	appName: 'Zaur Mail',
 	webDir: 'www',
 	server: {
-		url: 'https://mail.zaur.app',
+		// webmail.zaur.app is the SvelteKit app; mail.zaur.app is Stalwart itself.
+		url: 'https://webmail.zaur.app',
 		errorPath: 'offline.html'
 	},
 	ios: {

@@ -18,7 +18,7 @@ share-sheet integration, offline, secure storage.
 
 ## Decision
 
-Ship `apps/mobile`: a Capacitor shell that loads the live webmail (`https://mail.zaur.app`) in a
+Ship `apps/mobile`: a Capacitor shell that loads the live webmail (`https://webmail.zaur.app`) in a
 native WebView via `server.url`. No web assets are bundled — webmail is SSR (adapter-node) and its
 auth/JMAP proxying stays server-side, unchanged. Native capabilities (push, Keychain/Keystore,
 share) are added incrementally as Capacitor plugins, with `Capacitor.isNativePlatform()` guards in
