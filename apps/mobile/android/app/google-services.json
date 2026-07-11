@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "300682464879",
+    "project_id": "zaur-mail",
+    "storage_bucket": "zaur-mail.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:300682464879:android:b204fd7365736611a0079a",
+        "android_client_info": {
+          "package_name": "app.zaur.mail"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAQkvjWK3cUwmu57rHeqLwRju5GjQtPcD4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
