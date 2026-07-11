@@ -12,7 +12,8 @@ async function signIn(page: Page) {
 	const submit = page.getByRole('button', { name: 'Sign in' });
 	await expect(submit).toBeEnabled();
 	await submit.click();
-	await expect(page).toHaveURL(/\/mail\//, { timeout: 45_000 });
+	// The inbox lives at the root URL; just assert we left the login page.
+	await expect(page).not.toHaveURL(/\/login/, { timeout: 45_000 });
 	await expect(page.getByRole('link', { name: /Inbox/i })).toBeVisible({ timeout: 30_000 });
 }
 
