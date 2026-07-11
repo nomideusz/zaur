@@ -1,0 +1,19 @@
+{
+ "name": "@zaur/mail-core",
+ "version": "0.1.0",
+ "private": true,
+ "description": "Platform-agnostic JMAP client, Stalwart auth, and mail domain logic shared by webmail and the native app",
+ "type": "module",
+ "exports": {
+  ".": "./src/index.ts",
+  "./*": "./src/*.ts"
+ },
+ "scripts": {
+  "check": "tsc --noEmit",
+  "test": "node --test --experimental-strip-types tests/*.test.ts"
+ },
+ "devDependencies": {
+  "typescript": "^5.6.0",
+  "@types/node": "^22.0.0"
+ }
+}
