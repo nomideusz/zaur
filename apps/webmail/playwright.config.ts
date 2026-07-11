@@ -40,8 +40,19 @@ export default defineConfig({
 		}
 	},
 	projects: [
+		// Signs in once (tagged @auth so it's selected/skipped alongside the auth tests).
+		{ name: 'auth-setup', testMatch: /auth\.setup\.ts/ },
+		// Authenticated tests reuse the stored session — no per-test login.
+		{
+			name: 'auth',
+			testMatch: /webmail\.spec\.ts/,
+			use: { ...devices['Desktop Chrome'], storageState: 'test-results/.auth/mail.json' },
+			dependencies: ['auth-setup']
+		},
+		// Everything else (the *-lab specs) runs unauthenticated.
 		{
 			name: 'chromium',
+			testIgnore: [/auth\.setup\.ts/, /webmail\.spec\.ts/],
 			use: { ...devices['Desktop Chrome'] }
 		}
 	]
