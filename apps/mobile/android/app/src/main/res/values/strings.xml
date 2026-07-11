@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Zaur Mail</string>
+    <string name="title_activity_main">Zaur Mail</string>
+    <string name="package_name">app.zaur.mail</string>
+    <string name="custom_url_scheme">app.zaur.mail</string>
+</resources>

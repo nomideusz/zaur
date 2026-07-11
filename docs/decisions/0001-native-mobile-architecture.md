@@ -2,7 +2,8 @@
 
 ## Status
 
-Accepted
+Superseded by [ADR-0002](0002-capacitor-shell.md) — kept as the documented upgrade path if the
+Capacitor shell proves inadequate.
 
 ## Date
 

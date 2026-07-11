@@ -1,12 +1,14 @@
 # ZAUR Mail native clients
 
-The native iOS and Android clients are sibling applications to the SvelteKit webmail. The accepted
-architecture is recorded in
-[ADR-0001](decisions/0001-native-mobile-architecture.md): Kotlin Multiplatform shares the protocol
-and data core, while SwiftUI and Jetpack Compose provide platform-native user interfaces.
+**Current direction ([ADR-0002](decisions/0002-capacitor-shell.md)):** `apps/mobile` is a
+Capacitor shell that loads the live webmail. Build the Android debug APK with
+`pnpm --filter @zaur/mobile build:android` (needs the Android SDK and a JDK); install via
+`adb install apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk`.
 
-No native project has been scaffolded yet. This document defines the boundary the first
-implementation should preserve.
+The rest of this document is the superseded
+[ADR-0001](decisions/0001-native-mobile-architecture.md) Kotlin Multiplatform plan, kept as the
+upgrade path if the shell proves inadequate. The [Native push gap](#native-push-gap) section
+applies to both approaches.
 
 ## Goals
 
