@@ -2,6 +2,7 @@
 	import '@zaur/ui/css/zaur.css';
 	import '$lib/landing.css';
 	import { onMount } from 'svelte';
+	import World from '$lib/World.svelte';
 
 	let { children } = $props();
 
@@ -10,6 +11,8 @@
 		(window as { ZaurCircadianSeed?: { startCircadianLoop?: () => void } }).ZaurCircadianSeed?.startCircadianLoop?.();
 	});
 </script>
+
+<World />
 
 <div class="z-site-shell">
 	<header class="z-site-header z-panel">

@@ -1,5 +1,12 @@
 /* Zaur marketing site — page styles layered on the @zaur/ui design tokens. */
 
+/* The living sky (@nomideusz/zaur-world) renders on a fixed canvas at
+   z-index -1; the body must be transparent for it to show through. The
+   scrim in World.svelte restores text contrast. */
+body {
+	background-color: transparent;
+}
+
 .zw-container {
 	width: min(var(--z-measure-wide), 92vw);
 	margin-inline: auto;

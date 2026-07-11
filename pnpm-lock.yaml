@@ -60,6 +60,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@nomideusz/zaur-world':
+        specifier: ^0.1.0
+        version: 0.1.0
       '@zaur/sprite':
         specifier: workspace:*
         version: link:../../packages/sprite
@@ -1457,6 +1460,9 @@ packages:
     peerDependenciesMeta:
       '@chenglou/pretext':
         optional: true
+
+  '@nomideusz/zaur-world@0.1.0':
+    resolution: {integrity: sha512-tyE8jf/X7ufQhfYPnBh/1cQ/xXsVaPnMESPqKxUnIqmd8IaqiTbVgoIHrno0Dyep/0avUyqCPMlkmwxWRxbAoQ==}
 
   '@opentelemetry/api-logs@0.220.0':
     resolution: {integrity: sha512-CmVa4ImJ+ynfrPMNaAXHET6Bhb44SwzmfyVJFq9ni2jgXJR/l7C6gfVFddNmHP+ZOkP9cf4f9DBe68qVLTHc9w==}
@@ -6835,6 +6841,8 @@ snapshots:
       date-fns: 4.4.0
       date-fns-tz: 3.2.0(date-fns@4.4.0)
       svelte: 5.55.9
+
+  '@nomideusz/zaur-world@0.1.0': {}
 
   '@opentelemetry/api-logs@0.220.0':
     dependencies:
