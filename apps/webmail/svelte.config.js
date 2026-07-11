@@ -21,7 +21,9 @@ const config = {
 				'style-src': ['self', 'unsafe-inline'],
 				'img-src': ['self', 'data:', 'blob:', 'https:'],
 				'font-src': ['self'],
-				'connect-src': ['self', 'https://mail.zaur.app'],
+				// All JMAP traffic is proxied same-origin through /api/jmap, so no
+				// external connect-src is needed regardless of PUBLIC_JMAP_SERVER_URL.
+				'connect-src': ['self'],
 				'frame-ancestors': ['none'],
 				'base-uri': ['self'],
 				'form-action': ['self'],

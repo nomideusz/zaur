@@ -32,11 +32,33 @@ export function isStalwartOauthEnabled(): boolean {
 	);
 }
 
-// Deliberately kept (2026-07-11 audit): emergency lever to restore password
-// login if Stalwart OAuth breaks in production (see the 2026-06-30 license
-// incident). Not dead code — do not remove with the next flag sweep.
-export function isPasswordLoginRollbackEnabled(): boolean {
-	return env.STALWART_PASSWORD_LOGIN_ROLLBACK_ENABLED === 'true';
+// Password sign-in (HTTP Basic to the JMAP server; the password is sealed in
+// the server-side session). Tri-state on STALWART_PASSWORD_LOGIN_ROLLBACK_ENABLED:
+//   - truthy → always on. Deliberately kept as the emergency lever to restore
+//     password login if Stalwart OAuth breaks (see the 2026-06-30 license
+//     incident) — do not remove with the next flag sweep. Note: while OAuth
+//     stays *configured*, the login endpoint routes through OAuth first, so
+//     restoring password login also needs STALWART_OAUTH_ENABLED unset/false.
+//   - falsy → always off.
+//   - unset → keys off DECLARED intent, not config completeness: on unless the
+//     operator declared STALWART_OAUTH_ENABLED=true. This means a fresh
+//     self-hosted deploy signs in out of the box without an OAuth client, while
+//     a deployment that declares OAuth but loses one OAuth var still fails
+//     CLOSED (503) instead of silently downgrading to password-in-session auth.
+export function isPasswordLoginEnabled(): boolean {
+	const explicit = parseBool(env.STALWART_PASSWORD_LOGIN_ROLLBACK_ENABLED);
+	if (explicit !== undefined) return explicit;
+	return env.STALWART_OAUTH_ENABLED?.trim().toLowerCase() !== 'true';
+}
+
+// Lenient boolean env parse: true/1/yes/on and false/0/no/off (case-insensitive);
+// undefined for unset or unrecognized, so callers apply their own default.
+function parseBool(raw: string | undefined): boolean | undefined {
+	const v = raw?.trim().toLowerCase();
+	if (v === undefined || v === '') return undefined;
+	if (['true', '1', 'yes', 'on'].includes(v)) return true;
+	if (['false', '0', 'no', 'off'].includes(v)) return false;
+	return undefined;
 }
 
 export function getStalwartOauthClientId(): string {

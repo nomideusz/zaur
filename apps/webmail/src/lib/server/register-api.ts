@@ -2,7 +2,13 @@ import { createHmac } from 'node:crypto';
 import { env } from '$env/dynamic/private';
 
 function registerApiUrl(): string {
-	return (env.REGISTER_API_URL || 'https://register.zaur.app').replace(/\/$/, '');
+	const url = env.REGISTER_API_URL?.trim();
+	if (!url) {
+		// Callers are gated on isPasswordResetEnabled(); reaching this without a
+		// configured register service is a programming error, not user input.
+		throw new Error('REGISTER_API_URL is not configured');
+	}
+	return url.replace(/\/$/, '');
 }
 
 export async function registerApiFetch(
@@ -36,6 +42,8 @@ export async function registerApiFetch(
 	});
 }
 
+// Password reset proxies to the register service, so it needs REGISTER_API_URL
+// to be configured at all; PASSWORD_RESET_ENABLED=false force-disables it.
 export function isPasswordResetEnabled(): boolean {
-	return env.PASSWORD_RESET_ENABLED !== 'false';
+	return Boolean(env.REGISTER_API_URL?.trim()) && env.PASSWORD_RESET_ENABLED !== 'false';
 }

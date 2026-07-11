@@ -7,7 +7,7 @@ import { findIdentityEmail, normalizeEmail } from '$lib/jmap/account';
 import { addAccount, recordSessionDevice, writeSession } from '$lib/server/session';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 import {
-	isPasswordLoginRollbackEnabled,
+	isPasswordLoginEnabled,
 	isStalwartOauthEnabled
 } from '$lib/server/oauth-config';
 import { authenticateStalwartCredentials } from '$lib/server/stalwart-auth';
@@ -85,7 +85,7 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 				accessTokenExpiresAt: authResult.tokens.accessTokenExpiresAt,
 				scope: authResult.tokens.scope
 			});
-		} else if (isPasswordLoginRollbackEnabled()) {
+		} else if (isPasswordLoginEnabled()) {
 			const effectivePassword = body.totp?.trim() ? `${password}$${body.totp.trim()}` : password;
 			sessionData = {
 				serverUrl,

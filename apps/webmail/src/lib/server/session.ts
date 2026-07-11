@@ -29,7 +29,7 @@ import {
 } from './store-db';
 import { getStoreDb } from './store-instance';
 import {
-	isPasswordLoginRollbackEnabled,
+	isPasswordLoginEnabled,
 	isStalwartOauthEnabled
 } from './oauth-config';
 
@@ -96,7 +96,7 @@ function readSessionRecord(id: string | undefined, secret?: string): Session | n
 	}
 
 	if (isSession(data)) {
-		if (isStalwartOauthEnabled() && !isPasswordLoginRollbackEnabled()) {
+		if (isStalwartOauthEnabled() && !isPasswordLoginEnabled()) {
 			const tokenAccounts = data.accounts.filter(
 				(account) =>
 					account.authMethod === 'oauth' &&
@@ -137,7 +137,7 @@ function readSessionRecord(id: string | undefined, secret?: string): Session | n
 	const legacy = data as SessionData;
 	if (
 		isStalwartOauthEnabled() &&
-		!isPasswordLoginRollbackEnabled() &&
+		!isPasswordLoginEnabled() &&
 		(legacy.authMethod !== 'oauth' || !legacy.accessToken || !legacy.refreshToken)
 	) {
 		deleteSessionRow(db, id);

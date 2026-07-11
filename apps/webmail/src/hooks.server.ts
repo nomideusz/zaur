@@ -40,6 +40,13 @@ export const init: ServerInit = async () => {
 				'SESSION_SECRET must be set to a random string of at least 32 characters in production'
 			);
 		}
+		// Fail fast rather than silently signing strangers in against a default
+		// mail server that isn't theirs.
+		if (!publicEnv.PUBLIC_JMAP_SERVER_URL?.trim()) {
+			throw new Error(
+				'PUBLIC_JMAP_SERVER_URL must be set in production (the base URL of your JMAP server, e.g. https://mail.example.com)'
+			);
+		}
 	}
 
 	// Open the store eagerly so the one-time legacy sessions.json import runs at

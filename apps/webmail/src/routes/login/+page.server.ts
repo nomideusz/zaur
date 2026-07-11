@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import { isStalwartOauthEnabled } from '$lib/server/oauth-config';
+import { isPasswordResetEnabled } from '$lib/server/register-api';
 
 // Resolve the sign-in config during SSR so the form is in the initial HTML. Mobile users
 // arriving from registration must never wait on client-side JS just to see the inputs.
@@ -9,6 +9,6 @@ export const load: PageServerLoad = async ({ url }) => {
 	// during a view-transition navigation.
 	return {
 		isAdd: url.searchParams.get('mode') === 'add',
-		oauthEnabled: isStalwartOauthEnabled()
+		passwordResetEnabled: isPasswordResetEnabled()
 	};
 };

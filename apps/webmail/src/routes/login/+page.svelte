@@ -98,7 +98,7 @@
 			label="Email"
 			type="email"
 			bind:value={email}
-			placeholder="you@zaur.app"
+			placeholder="you@example.com"
 			autocomplete="username"
 			required
 			disabled={auth.isLoading}
@@ -114,11 +114,13 @@
 				required
 				disabled={auth.isLoading}
 			/>
-			<p class="text-right">
-				<a href={forgotPasswordHref} class="z-link text-sm">
-					Forgot password?
-				</a>
-			</p>
+			{#if data.passwordResetEnabled}
+				<p class="text-right">
+					<a href={forgotPasswordHref} class="z-link text-sm">
+						Forgot password?
+					</a>
+				</p>
+			{/if}
 		</div>
 
 		{#if auth.requiresTotp}
@@ -172,7 +174,9 @@
 	</form>
 
 	{#snippet footer()}
-		Need an address?
-		<a href={appConfig.registerUrl} class="z-link">Get your address</a>
+		{#if appConfig.registerUrl}
+			Need an address?
+			<a href={appConfig.registerUrl} class="z-link">Get your address</a>
+		{/if}
 	{/snippet}
 </AuthPage>

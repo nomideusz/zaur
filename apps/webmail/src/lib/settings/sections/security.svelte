@@ -31,6 +31,7 @@
 
 	let overview = $state<Overview | null>(null);
 	let recoveryEmail = $state<string | null>(null);
+	let recoveryAvailable = $state(true);
 	let loading = $state(true);
 	let busy = $state(false);
 	let verified = $state(false);
@@ -66,6 +67,9 @@
 		try {
 			overview = (await api('/api/account/security')) as unknown as Overview;
 			const recovery = await api('/api/account/security/recovery');
+			// unavailable → no register service is wired, so the recovery-email
+			// feature can't work; hide the form rather than show one that 502s.
+			recoveryAvailable = recovery.unavailable !== true;
 			recoveryEmail = (recovery.recoveryEmail as string | null) ?? null;
 			recoveryInput = recoveryEmail ?? '';
 		} catch (error) {
@@ -251,7 +255,11 @@
 {#if loading}
 	<p class="p-4 text-sm text-fg-muted">Loading security settings…</p>
 {:else if !overview}
-	<p class="p-4 text-sm text-danger">Security settings are currently unavailable.</p>
+	<p class="p-4 text-sm text-fg-muted">
+		These controls (password, two-factor, app passwords, API keys, sessions) require
+		token-based sign-in. This account signed in with a password, so manage its security
+		in your mail server directly.
+	</p>
 {:else}
 	<SettingsFormGroup
 		title="Confirm your identity"
@@ -316,16 +324,18 @@
 		{/if}
 	</SettingsGroup>
 
-	<SettingsFormGroup title="Recovery email" description="Password-reset messages go to this verified address.">
-		<SettingsField title="Recovery address">
-			{#snippet children({ id })}
-				<input id={id} class="z-input" type="email" autocomplete="email" bind:value={recoveryInput} disabled={!verified} />
-			{/snippet}
-		</SettingsField>
-		<SettingsRow kind="action" title={recoveryEmail ?? 'No recovery email'} description="A verification link is sent before the address changes.">
-			<Button onclick={() => void saveRecovery()} disabled={busy || !verified || !recoveryInput}>Verify new address</Button>
-		</SettingsRow>
-	</SettingsFormGroup>
+	{#if recoveryAvailable}
+		<SettingsFormGroup title="Recovery email" description="Password-reset messages go to this verified address.">
+			<SettingsField title="Recovery address">
+				{#snippet children({ id })}
+					<input id={id} class="z-input" type="email" autocomplete="email" bind:value={recoveryInput} disabled={!verified} />
+				{/snippet}
+			</SettingsField>
+			<SettingsRow kind="action" title={recoveryEmail ?? 'No recovery email'} description="A verification link is sent before the address changes.">
+				<Button onclick={() => void saveRecovery()} disabled={busy || !verified || !recoveryInput}>Verify new address</Button>
+			</SettingsRow>
+		</SettingsFormGroup>
+	{/if}
 
 	<SettingsFormGroup title="App passwords" description="Use these for IMAP, SMTP, and other mail apps.">
 		<SettingsField title="New app password name">

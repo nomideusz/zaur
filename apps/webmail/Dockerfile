@@ -16,11 +16,8 @@ COPY packages/sprite ./packages/sprite
 COPY packages/mail-core ./packages/mail-core
 COPY apps/webmail ./apps/webmail
 
-ARG PUBLIC_JMAP_SERVER_URL=https://mail.zaur.app
-ARG PUBLIC_APP_NAME=ZAUR Webmail
-ENV PUBLIC_JMAP_SERVER_URL=$PUBLIC_JMAP_SERVER_URL
-ENV PUBLIC_APP_NAME=$PUBLIC_APP_NAME
-
+# PUBLIC_* config is $env/dynamic/public — read at runtime, not baked into the
+# build. Set PUBLIC_JMAP_SERVER_URL / PUBLIC_APP_NAME on the container instead.
 RUN pnpm --filter @zaur/webmail build
 RUN pnpm --filter @zaur/webmail --prod deploy /out --legacy
 
