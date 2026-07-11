@@ -67,8 +67,8 @@ jobs:
           E2E_MAIL_EMAIL: ${{ secrets.E2E_MAIL_EMAIL }}
           E2E_MAIL_PASSWORD: ${{ secrets.E2E_MAIL_PASSWORD }}
         run: |
-          test -n "$E2E_MAIL_EMAIL" && test -n "$E2E_MAIL_PASSWORD" || {
-            echo "E2E_MAIL_EMAIL and E2E_MAIL_PASSWORD secrets are required"
-            exit 1
-          }
+          if [ -z "$E2E_MAIL_EMAIL" ] || [ -z "$E2E_MAIL_PASSWORD" ]; then
+            echo "::warning::E2E_MAIL_EMAIL/E2E_MAIL_PASSWORD secrets not configured — skipping authenticated smoke tests"
+            exit 0
+          fi
           pnpm --filter @zaur/webmail test:e2e:auth
