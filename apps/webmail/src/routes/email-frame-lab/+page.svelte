@@ -12,6 +12,7 @@
 		<a id="ext" href="https://example.com/landing">External link</a>
 		<div id="tall" style="height: 800px; background: #eee;">tall block</div>
 		<table id="wide"><tr><td style="width: 2000px;">very wide cell</td></tr></table>
+		<div id="nowrap" style="white-space: nowrap;">an intentionally unbreakable single line that models a fixed-width email which cannot reflow onto a narrow phone screen and must scroll horizontally instead of being clipped</div>
 	`;
 
 	let mode = $state<'html' | 'short'>('html');

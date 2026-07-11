@@ -100,7 +100,9 @@ const FRAME_CSS = `
    text invisible in dark mode once an email's own backgrounds are stripped (clean reading view).
    The light reading card (.z-email-body--light) overrides this with its white surface. */
 html, body { background: var(--z-chrome); }
-html { -webkit-text-size-adjust: 100%; }
+/* Horizontal scroll for fixed-width mail that can't reflow to a phone's width; the parent owns
+   the height, so vertical stays hidden (the iframe never shows its own vertical scrollbar). */
+html { -webkit-text-size-adjust: 100%; overflow-x: auto; overflow-y: hidden; }
 :root.dark { color-scheme: dark; }
 body {
 	margin: 0;
@@ -109,7 +111,6 @@ body {
 	font-size: var(--z-reader-text);
 	line-height: var(--z-reader-leading);
 	overflow-wrap: anywhere;
-	overflow-x: auto;
 }
 .z-email-body :where(p + p, p + ul, p + ol, ul + p, ol + p) { margin-top: var(--z-space-reader-body-stack); }
 .z-email-body :where(a) {

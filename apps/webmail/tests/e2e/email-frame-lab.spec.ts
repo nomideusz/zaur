@@ -43,6 +43,29 @@ test('auto-sizes height to content and re-measures on body swap', async ({ page 
 	await expect.poll(async () => (await el.boundingBox())?.height ?? 0).toBeLessThan(tall);
 });
 
+test('fixed-width mail scrolls horizontally instead of clipping', async ({ page }) => {
+	// Narrow viewport so the ~2000px #wide table can't fit — the phone-bug scenario.
+	await page.setViewportSize({ width: 380, height: 800 });
+	await page.goto('/email-frame-lab');
+	const el = frame(page);
+	await expect(el.contentFrame().locator('#wide')).toBeVisible();
+
+	// The frame's document must be horizontally scrollable (overflow-x), not clipped.
+	const overflow = await el.evaluate((f: HTMLIFrameElement) => {
+		const root = f.contentDocument!.documentElement;
+		return { scrollWidth: root.scrollWidth, clientWidth: root.clientWidth };
+	});
+	expect(overflow.scrollWidth).toBeGreaterThan(overflow.clientWidth);
+
+	// And scrolling right actually moves — proves the content is reachable, not cut off.
+	const moved = await el.evaluate((f: HTMLIFrameElement) => {
+		const root = f.contentDocument!.documentElement;
+		root.scrollLeft = root.scrollWidth;
+		return root.scrollLeft;
+	});
+	expect(moved).toBeGreaterThan(0);
+});
+
 test('frame defaults links to a new tab via <base>', async ({ page }) => {
 	// Link hardening (rel=noopener) happens upstream in html.ts; the frame itself adds a
 	// <base target="_blank"> so any link still opens out of the sandbox rather than navigating it.

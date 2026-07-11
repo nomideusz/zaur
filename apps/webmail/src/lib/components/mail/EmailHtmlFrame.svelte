@@ -20,15 +20,22 @@
 	function applyHeight() {
 		pending = false;
 		const el = frame;
-		const doc = el?.contentDocument;
-		if (!el || !doc?.documentElement) return;
+		const root = el?.contentDocument?.documentElement;
+		if (!el || !root) return;
 		// Collapse first, then read documentElement.scrollHeight. documentElement is floored by the
 		// iframe's current viewport height, so collapsing lets it shrink *and* grow accurately;
 		// it also counts trailing child margins that escape body.scrollHeight (which undercounts).
 		// Both writes happen in this one rAF, so the 0px state is never painted (no flicker).
 		el.style.height = '0';
-		const next = doc.documentElement.scrollHeight;
-		el.style.height = `${next > 0 ? next : 48}px`;
+		const next = root.scrollHeight > 0 ? root.scrollHeight : 48;
+		el.style.height = `${next}px`;
+		// Fixed-width mail scrolls horizontally (overflow-x on html); a classic bottom scrollbar
+		// would otherwise overlay the last line. Overlay/mobile scrollbars measure 0, so this is
+		// a no-op there. Measured after the height is applied so the scrollbar has laid out.
+		if (root.scrollWidth > root.clientWidth) {
+			const scrollbar = el.clientHeight - root.clientHeight;
+			if (scrollbar > 0) el.style.height = `${next + scrollbar}px`;
+		}
 	}
 
 	/**
@@ -73,6 +80,5 @@
 	{srcdoc}
 	onload={handleLoad}
 	sandbox="allow-same-origin allow-popups allow-popups-to-escape-sandbox"
-	scrolling="no"
 	style="width: 100%; height: 48px; border: 0; display: block; background: transparent;"
 ></iframe>
