@@ -11,10 +11,7 @@
     "build:ui": "pnpm --filter @zaur/ui build:css",
     "check:webmail": "pnpm --filter @zaur/webmail check",
     "test:webmail": "pnpm --filter @zaur/webmail test",
-    "test:register": "pnpm --filter @zaur/register test:e2e",
-    "deploy:web": "bash infra/deploy/caprover.sh web",
-    "deploy:webmail": "bash infra/deploy/caprover.sh webmail",
-    "deploy:register": "bash infra/deploy/caprover.sh register"
+    "test:register": "pnpm --filter @zaur/register test:e2e"
   },
   "pnpm": {
     "overrides": {

@@ -76,29 +76,11 @@ docs/
 infra/
   auth/          Stalwart identity architecture and retired Logto notes
   mail/          Stalwart ops notes
-  deploy/        CapRover captain-definition templates
+  deploy/        Legacy auth/Logto provisioning scripts
 ```
 
 ## Deploy
 
-The landing site deploys to CapRover. Production **register** and **webmail** run on Dokploy,
-which builds their Dockerfiles from `main`; webmail CI gates changes with checks, unit tests,
-a production build, and browser smoke tests.
-
-The CapRover deployment scripts and workflows for register/webmail are legacy paths and must not
-be treated as production ownership. Local CapRover deployment remains available for the landing
-site (requires `caprover login`):
-
-```sh
-pnpm deploy:web
-```
-
-## Migrating from standalone repos
-
-This monorepo was assembled with `git subtree` from:
-
-- `nomideusz/webmail`
-- `nomideusz/dinosaurus`
-- `nomideusz/register`
-
-History is preserved under each `apps/*` prefix. Point remotes at a new `zaur` repository when ready, then archive the old repos.
+All apps deploy via Dokploy, which auto-builds their Dockerfiles on push to
+`main` — no manual deploy step. Webmail CI gates changes with checks, unit
+tests, a production build, and browser smoke tests.
