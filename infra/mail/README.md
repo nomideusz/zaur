@@ -28,6 +28,29 @@ location = / {
 
 Configured in CapRover → **mail** → **HTTP Settings** → **Edit Default Nginx Config** (insert before the catch-all `location /`). After edits on the VPS, restart captain: `docker service update --force captain-captain`.
 
+## Managing Stalwart config
+
+Settings live in Stalwart's RocksDB, not in a config file (`/etc/stalwart/config.json` only points at the store). Manage them from the contabo host:
+
+```bash
+ADMIN=$(docker inspect mail --format '{{range .Config.Env}}{{println .}}{{end}}' | grep STALWART_RECOVERY_ADMIN | cut -d= -f2)
+export STALWART_URL=http://127.0.0.1:8082 STALWART_USER=${ADMIN%%:*} STALWART_PASSWORD=${ADMIN#*:}
+sudo -E /root/.cargo/bin/stalwart-cli describe            # list object types + schemas
+sudo -E /root/.cargo/bin/stalwart-cli query NetworkListener
+sudo -E /root/.cargo/bin/stalwart-cli snapshot <Object>   # dump as JSON plan (shows exact field shapes)
+```
+
+Notes: JMAP set fields are maps (`"bind": {"[::]:587": true}`); `Action/ReloadSettings` does **not** bind newly created listeners — `docker restart mail` for that; `QueuedMessage.nextRetry` is mutable, so a stuck queue entry can be force-retried with `update`.
+
+### Incident 2026-07-11: port 587 dead
+
+Two config objects had vanished from the settings DB (cause unknown, possibly the 2026-06-30 license-lapse recovery):
+
+- the `submission` NetworkListener (587/STARTTLS) — docker still mapped the port, but nothing listened inside, so connections were accepted and immediately closed;
+- the `report` MtaDeliverySchedule — every outbound DMARC/TLS report failed with `Queue strategy not found` and rescheduled forever.
+
+Both were recreated with `stalwart-cli create` (listener mirrors the 465 one with `tlsImplicit: false`; schedule mirrors `dsn` with `queueId` = the `report` virtual queue), followed by a container restart. If other subsystems misbehave, suspect more missing objects and audit with `snapshot`.
+
 ## Stalwart authentication
 
 Logto and the external PostgreSQL auth directory were removed. Stalwart is the
