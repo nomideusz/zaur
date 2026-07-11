@@ -167,11 +167,39 @@ taps navigate via the `data.url` payload (`initNativePushNavigation`). FCM also 
 
 Remaining setup (owner action, one-time):
 
-1. Create a Firebase project and register Android app `app.zaur.mail`.
-2. Drop `google-services.json` into `apps/mobile/android/app/` (the Gradle template applies the
-   google-services plugin only when the file exists) and rebuild the APK.
+1. ~~Create a Firebase project and register Android app `app.zaur.mail`.~~ Done — project
+   `zaur-mail`.
+2. ~~Drop `google-services.json` into `apps/mobile/android/app/`.~~ Done — committed.
 3. Create a service account with the "Firebase Cloud Messaging API" role, download its JSON key,
    and set it as the `FCM_SERVICE_ACCOUNT` env var (the raw JSON) on the webmail service.
+   Until this is set, `/api/push/vapid-public-key` reports `fcm: false` and the shell's
+   subscribe attempt gets `server_disabled`.
+
+## Release readiness (audited 2026-07-11)
+
+Shell-side gaps closed in-repo: `allowNavigation: ['register.zaur.app']` (signup stays
+in-WebView; login never leaves webmail.zaur.app), `POST_NOTIFICATIONS` manifest permission
+(Android 13+), release signing wired via gitignored `android/keystore.properties`,
+`build:android:release` script (`bundleRelease`).
+
+Remaining owner actions before store submission:
+
+1. **`FCM_SERVICE_ACCOUNT`** on the webmail service (step 3 above) — native push is dead
+   without it.
+2. **Release keystore** — generate once (`keytool -genkeypair -v -keystore zaur-mail.jks
+   -alias zaur-mail -keyalg RSA -keysize 4096 -validity 10000`), fill
+   `android/keystore.properties` (`storeFile`/`storePassword`/`keyAlias`/`keyPassword`),
+   back it up off-repo. Play listing, data-safety form, privacy policy URL follow.
+3. **iOS project** — greenfield: needs a Mac (`cap add ios`), APNs key uploaded to the
+   `zaur-mail` Firebase project, `WKAppBoundDomains` = webmail.zaur.app + register.zaur.app
+   in Info.plist (required by `limitsNavigationsToAppBoundDomains: true`), Apple developer
+   account. Watch App Store guideline 4.2 (thin remote-URL clients) — ADR-0001 KMP is the
+   documented fallback.
+4. **App Links (deferred)** — recovery/verification links opening in the app need an
+   `autoVerify` intent filter plus `/.well-known/assetlinks.json` on webmail.zaur.app with
+   the release-cert SHA-256; blocked on the keystore existing first.
+5. **CI (deferred)** — builds are manual (`pnpm --filter @zaur/mobile build:android[:release]`);
+   add a workflow when releases become frequent.
 
 Notifications carry sender + subject only — never message bodies. Token rotation is handled by
 re-registration on every app start; revocation by unsubscribe and by pruning on FCM 404

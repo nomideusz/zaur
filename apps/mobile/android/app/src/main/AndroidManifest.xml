@@ -32,4 +32,6 @@
     <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Android 13+ runtime permission; without it PushNotifications.requestPermissions() silently fails. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 </manifest>
