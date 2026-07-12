@@ -20,8 +20,11 @@
 			<a href="/" class="zw-brand z-type-brand" aria-label="Zaur home">
 				<span>ZAUR</span>
 			</a>
-			<nav class="z-site-nav" aria-label="Account">
-				<a href="https://register.zaur.app" class="z-site-nav__link">Register</a>
+			<nav class="z-site-nav zw-site-nav" aria-label="Primary">
+				<a href="/#apps" class="z-site-nav__link">Apps</a>
+				<a href="/#packages" class="z-site-nav__link">Packages</a>
+				<a href="/#templates" class="z-site-nav__link">Templates</a>
+				<a href="https://register.zaur.app" class="z-site-nav__link zw-site-nav__cta">Get an address</a>
 			</nav>
 		</div>
 	</header>
