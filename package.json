@@ -12,10 +12,5 @@
     "check:webmail": "pnpm --filter @zaur/webmail check",
     "test:webmail": "pnpm --filter @zaur/webmail test",
     "test:register": "pnpm --filter @zaur/register test:e2e"
-  },
-  "pnpm": {
-    "overrides": {
-      "@capacitor/assets>sharp": "^0.34.0"
-    }
   }
 }

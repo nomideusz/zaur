@@ -2,6 +2,9 @@ packages:
   - 'apps/*'
   - 'packages/*'
 
+overrides:
+  "@capacitor/assets>sharp": "^0.34.0"
+
 onlyBuiltDependencies:
   - "@tailwindcss/oxide"
   - esbuild
