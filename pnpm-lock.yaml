@@ -110,8 +110,8 @@ importers:
   apps/web:
     dependencies:
       '@nomideusz/zaur-world':
-        specifier: ^0.5.1
-        version: 0.5.1(react@19.2.3)
+        specifier: ^0.8.0
+        version: 0.8.0(react@19.2.3)
       '@zaur/sprite':
         specifier: workspace:*
         version: link:../../packages/sprite
@@ -1795,8 +1795,8 @@ packages:
       '@chenglou/pretext':
         optional: true
 
-  '@nomideusz/zaur-world@0.5.1':
-    resolution: {integrity: sha512-40C7GlydGB4Vm/QKO9VECVtxTFDH681gHtyEHyJFk9PtU9GWsvuLzswZiis/4Su9crXBp4UXIVQqPvvxXsKj4g==}
+  '@nomideusz/zaur-world@0.8.0':
+    resolution: {integrity: sha512-iFz9bJRmHZV1PCxksuFF9OnhBUIXFNbUne1nap0iJNOh6vLp1bIAG0pgtNPTeuKo0MqIlvYlyqkbMjayyK+SpA==}
     peerDependencies:
       react: '>=18'
     peerDependenciesMeta:
@@ -8577,7 +8577,7 @@ snapshots:
       date-fns-tz: 3.2.0(date-fns@4.4.0)
       svelte: 5.55.9
 
-  '@nomideusz/zaur-world@0.5.1(react@19.2.3)':
+  '@nomideusz/zaur-world@0.8.0(react@19.2.3)':
     optionalDependencies:
       react: 19.2.3
 
