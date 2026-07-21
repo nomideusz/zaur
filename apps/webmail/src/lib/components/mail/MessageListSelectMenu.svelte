@@ -6,14 +6,22 @@
 	import { mail } from '$lib/stores/mail.svelte';
 	import { cn } from '$lib/utils/cn';
 	import type { OverflowMenuPlacement } from '$lib/utils/overflow-menu-position';
+	import type { Snippet } from 'svelte';
 
 	interface Props {
 		disabled?: boolean;
 		placement?: OverflowMenuPlacement;
 		class?: string;
+		/** Rendered inside the trigger before the chevron (e.g. the selection count). */
+		children?: Snippet;
 	}
 
-	let { disabled = false, placement = 'bottom', class: className = '' }: Props = $props();
+	let {
+		disabled = false,
+		placement = 'bottom',
+		class: className = '',
+		children
+	}: Props = $props();
 
 	let open = $state(false);
 	const side = $derived(placement === 'top' ? 'top' : 'bottom');
@@ -37,6 +45,7 @@
 		class={cn('z-mail-list-select-trigger', className)}
 		{disabled}
 	>
+		{#if children}{@render children()}{/if}
 		<ChevronDown class="size-4 shrink-0" aria-hidden="true" />
 	</Menu.Trigger>
 

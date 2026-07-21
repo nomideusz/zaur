@@ -89,7 +89,7 @@
 	const listSenderClass = (unread: boolean) =>
 		cn(
 			'list-sender min-w-0 truncate',
-			unread ? 'font-semibold text-fg' : 'font-medium text-fg-muted'
+			unread ? 'font-semibold text-fg' : 'font-normal text-fg-muted'
 		);
 	/* Single truncated line on every viewport — wrapping would change row height
 	   when bulk-select compresses the row, causing layout shifts. */
@@ -97,7 +97,7 @@
 		cn(
 			'list-subject min-w-0',
 			important ? 'max-md:truncate md:overflow-visible' : 'truncate',
-			unread ? 'font-semibold text-fg' : 'font-medium text-fg'
+			unread ? 'font-semibold text-fg' : 'font-normal text-fg'
 		);
 
 	const listTimeClass = 'list-time shrink-0 tabular-nums text-fg-subtle';
@@ -1060,14 +1060,14 @@
 				</div>
 			{/if}
 			<div
-				class={cn('z-mail-list-body flex-1 flex w-full min-w-0 flex-col min-h-full', ptr.releasing && 'z-ptr-animating')}
+				class={cn('z-mail-list-body flex-1 flex w-full min-w-0 flex-col', ptr.releasing && 'z-ptr-animating')}
 				style={ptrActive && (ptr.pull > 0 || ptr.refreshing || ptr.releasing)
 					? `transform: translateY(${ptr.pull}px);`
 					: undefined}
 			>
 	<div
 		class={cn(
-			'z-mail-list-flow flex-1 flex flex-col min-h-full',
+			'z-mail-list-flow flex-1 flex flex-col',
 			listSelectMode && 'z-mail-list-flow--selectable',
 			mail.hasSelection && 'z-mail-list--selecting'
 		)}

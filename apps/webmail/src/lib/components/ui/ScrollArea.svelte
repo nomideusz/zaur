@@ -42,7 +42,10 @@
 		<ScrollArea.Content
 			class={cn(
 				'z-scroll-area__content flex w-full min-w-0 flex-col',
-				fill && 'min-h-full'
+				/* flex-1, not min-h-full: percentage min-height would override the
+				   flex min-height:auto floor and let tall content overflow the box
+				   (escaping the mobile island clearance padding). */
+				fill && 'flex-1'
 			)}
 		>
 			{@render children()}

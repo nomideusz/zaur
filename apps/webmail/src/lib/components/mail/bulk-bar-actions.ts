@@ -115,6 +115,11 @@ export function fitBulkActions(
 		}
 	}
 
+	// The More trigger occupies a slot of its own (part of `reserved`) — a lone
+	// overflow action just takes that slot instead of a one-item menu.
+	const overflowing = actions.filter((action) => !inlineIds.has(action.id));
+	if (overflowing.length === 1) inlineIds.add(overflowing[0].id);
+
 	return {
 		inline: actions.filter((action) => inlineIds.has(action.id)),
 		overflow: actions.filter((action) => !inlineIds.has(action.id))

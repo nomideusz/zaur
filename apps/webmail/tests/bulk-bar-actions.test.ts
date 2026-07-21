@@ -111,4 +111,17 @@ describe('fitBulkActions', () => {
 			['mark-seen', 'spam']
 		);
 	});
+
+	it('inlines a lone overflow action instead of a one-item More menu', () => {
+		// Room for all but the last action — the leftover takes the More trigger's slot.
+		const width =
+			150 +
+			estimateBulkActionWidth(marks[2]) +
+			estimateBulkActionWidth(marks[0]) +
+			estimateBulkActionWidth(marks[1]) +
+			1;
+		const { inline, overflow } = fitBulkActions([...marks], width);
+		assert.equal(overflow.length, 0);
+		assert.equal(inline.length, marks.length);
+	});
 });
