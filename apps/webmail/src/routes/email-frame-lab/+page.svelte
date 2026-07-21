@@ -2,7 +2,9 @@
 	// Dev-only playground + e2e fixture for EmailHtmlFrame (see tests/e2e/email-frame-lab.spec.ts).
 	// 404'd in production via +page.ts. Renders untrusted-shaped email HTML in the sandboxed
 	// iframe so isolation (no scripts), auto-height, and link hardening can be exercised.
+	import { page } from '$app/state';
 	import EmailHtmlFrame from '$lib/components/mail/EmailHtmlFrame.svelte';
+	import { prepareEmailHtml } from '$lib/email/html';
 
 	// A "hostile" body: an inline script (must never run), a tall block (drives height), an
 	// external link (should be target=_blank), and a wide table (reflow / overflow).
@@ -17,7 +19,16 @@
 
 	let mode = $state<'html' | 'short'>('html');
 	const short = `<p id="lead">One line.</p>`;
-	const html = $derived(mode === 'short' ? short : hostile);
+	// ?body=<html> renders an arbitrary body through the real sanitize pipeline —
+	// handy for reproducing real-mail layouts.
+	const custom = $derived(page.url.searchParams.get('body'));
+	const html = $derived(
+		custom
+			? prepareEmailHtml(custom, { allowExternal: true }).html
+			: mode === 'short'
+				? short
+				: hostile
+	);
 </script>
 
 <div style="max-width: 40rem; margin: 2rem auto; font-family: sans-serif; display: flex; flex-direction: column; gap: 0.75rem;">

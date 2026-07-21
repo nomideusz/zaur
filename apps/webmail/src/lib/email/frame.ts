@@ -193,6 +193,9 @@ body {
 		min-width: 0 !important;
 	}
 	.z-email-body--html :where(img) { max-width: 100% !important; height: auto !important; }
+	/* Sanitizer-tagged fixed-width wrappers (html.ts) — drop the specified width so it
+	   stops inflating table min-content width, which max-width alone can't override. */
+	.z-email-body--html :where([data-z-fixed-width]) { width: 100% !important; }
 }
 `;
 

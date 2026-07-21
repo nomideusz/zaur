@@ -444,10 +444,40 @@ function postProcessSanitizedHtmlString(html: string, allowExternal: boolean): s
 }
 
 /** Start index of trailing quoted reply in plain-text bodies (Gmail, Proton, Apple Mail, etc.). */
+/* Fixed-width table/div wrappers inflate a containing table's min-content width, which CSS
+   max-width cannot shrink — the classic 600px marketing-email card nested in a 100% outer
+   table. Tag them here; the frame's narrow-media CSS reflows [data-z-fixed-width] to 100%.
+   Incoming data-* attrs are stripped (ALLOW_DATA_ATTR: false), so the tag can't be spoofed.
+   ponytail: fixed-width td/th keep their width — the e2e-covered scroll fallback. */
+const FIXED_WIDTH_REFLOW_MIN_PX = 480;
+
+function fixedPxWidth(el: Element): number | null {
+	const attr = el.getAttribute('width')?.trim();
+	if (attr && /^\d+$/.test(attr)) return Number(attr);
+	const style = el instanceof HTMLElement ? el.style.width.trim() : '';
+	const match = /^(\d+(?:\.\d+)?)px$/.exec(style);
+	return match ? Number(match[1]) : null;
+}
+
+let reflowHookAdded = false;
+
+function ensureReflowHook() {
+	if (reflowHookAdded || !browser) return;
+	reflowHookAdded = true;
+	DOMPurify.addHook('afterSanitizeAttributes', (node) => {
+		if (node.tagName !== 'TABLE' && node.tagName !== 'DIV') return;
+		const width = fixedPxWidth(node);
+		if (width !== null && width >= FIXED_WIDTH_REFLOW_MIN_PX) {
+			node.setAttribute('data-z-fixed-width', '');
+		}
+	});
+}
+
 export function prepareEmailHtml(
 	rawHtml: string,
 	options: { allowExternal: boolean; darkMode?: boolean }
 ): { html: string; blockedExternal: boolean; lightSurface: boolean } {
+	ensureReflowHook();
 	const html = DOMPurify.sanitize(rawHtml, EMAIL_SANITIZE_CONFIG);
 	return postProcessSanitizedHtml(html, options);
 }
