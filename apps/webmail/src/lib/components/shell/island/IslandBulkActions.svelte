@@ -25,12 +25,11 @@
 		aria-label="Actions for selected messages"
 		bind:clientWidth={toolbarWidth}
 	>
-		<!-- Selection summary + options — the count badge plus the select menu stand
-		     in for a master checkbox. -->
-		<span class="flex shrink-0 items-center gap-1">
+		<!-- Selection summary + options — count badge and chevron are one trigger
+		     standing in for a master checkbox. -->
+		<MessageListSelectMenu placement="top" {disabled} class="h-11! w-auto! shrink-0 gap-1 px-1.5!">
 			<ActionBarValue count={selectedCount} />
-			<MessageListSelectMenu placement="top" {disabled} />
-		</span>
+		</MessageListSelectMenu>
 
 		<div class="flex min-w-0 flex-1 items-center justify-evenly gap-1">
 			<BulkActionsRow

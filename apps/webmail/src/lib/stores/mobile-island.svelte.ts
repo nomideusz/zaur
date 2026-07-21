@@ -17,15 +17,14 @@ export type IslandReaderContext = {
  * (apps + mailboxes) opened from the menu button.
  */
 class MobileIslandStore {
-	/** Shrinks the island to a pill while scrolling the message list. */
-	collapsed = $state(false);
 	navDrawerOpen = $state(false);
+	/** Session override: the Search nav item shows the top bar even when the
+	 * persistent "show search bar" setting is off. */
+	searchBarOpen = $state(false);
+	/** One-shot: focus the search input once it renders (set with searchBarOpen). */
+	searchBarFocusPending = $state(false);
 	reader = $state<IslandReaderContext | null>(null);
 	#readerGeneration = 0;
-
-	expand() {
-		this.collapsed = false;
-	}
 
 	openNavDrawer() {
 		this.navDrawerOpen = true;

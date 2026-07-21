@@ -3,7 +3,9 @@
 	import { page } from '$app/state';
 	import Search from '$lib/components/icons/Search.svelte';
 	import X from '$lib/components/icons/X.svelte';
+	import UserMenu from '$lib/components/shell/UserMenu.svelte';
 	import { isSectionSearchRoute, topSearchSection, topSearchSuppressed } from '$lib/shell/app-nav';
+	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	/* The single mobile search input. It lives in the app shell (persistent across
@@ -13,7 +15,20 @@
 
 	const pathname = $derived(page.url.pathname);
 	const section = $derived(topSearchSection(pathname));
-	const visible = $derived(settings.showSearchBar && !!section && !topSearchSuppressed(pathname));
+	const visible = $derived(
+		(settings.showSearchBar || mobileIsland.searchBarOpen) &&
+			!!section &&
+			!topSearchSuppressed(pathname)
+	);
+
+	// Search nav item: focus the input once it renders. Deferred a tick so it
+	// wins over SvelteKit's post-navigation focus reset.
+	$effect(() => {
+		if (!mobileIsland.searchBarFocusPending || !visible || !inputEl) return;
+		mobileIsland.searchBarFocusPending = false;
+		const el = inputEl;
+		setTimeout(() => el.focus(), 50);
+	});
 
 	// Mail searches in-place on the current mailbox route (results render right
 	// there via ?q), so it never swaps to a separate page. Calendar/Contacts open
@@ -99,5 +114,6 @@
 				</button>
 			{/if}
 		</div>
+		<UserMenu compact />
 	</form>
 {/if}

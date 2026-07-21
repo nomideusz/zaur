@@ -1,9 +1,7 @@
 <script lang="ts">
 	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/stores';
-	import Menu from '$lib/components/icons/Menu.svelte';
 	import { isMailPath } from '$lib/mail/routes';
-	import { attachIslandScrollEngine } from '$lib/shell/island-scroll';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
@@ -44,39 +42,8 @@
 			islandMode === 'reader' ||
 			islandMode === 'section'
 	);
-	const scrollCollapsible = $derived(islandMode === 'mail' || islandMode === 'section');
-	const collapsed = $derived(scrollCollapsible && mobileIsland.collapsed);
-
-	$effect(() => {
-		const mq = window.matchMedia('(max-width: 767px)');
-		const collapsible = scrollCollapsible;
-		let detach: (() => void) | null = null;
-
-		const sync = () => {
-			detach?.();
-			detach = null;
-			if (mq.matches && collapsible) {
-				detach = attachIslandScrollEngine();
-			} else {
-				mobileIsland.collapsed = false;
-			}
-		};
-
-		sync();
-		mq.addEventListener('change', sync);
-		return () => {
-			mq.removeEventListener('change', sync);
-			detach?.();
-		};
-	});
-
-	$effect(() => {
-		void islandMode;
-		mobileIsland.expand();
-	});
 
 	afterNavigate(() => {
-		mobileIsland.expand();
 		mobileIsland.closeNavDrawer();
 	});
 
@@ -105,14 +72,8 @@
 	class={cn('z-mobile-island-positioner md:hidden', onMailCompose && 'hidden')}
 	bind:this={positionerEl}
 >
-	<div
-		class={cn(
-			'z-mobile-island',
-			islandWide && 'z-mobile-island--wide',
-			collapsed && 'z-mobile-island--collapsed'
-		)}
-	>
-		<div class="z-mobile-island__content" aria-hidden={collapsed}>
+	<div class={cn('z-mobile-island', islandWide && 'z-mobile-island--wide')}>
+		<div class="z-mobile-island__content">
 			{#if islandMode === 'reader'}
 				<IslandReaderActions />
 			{:else if islandMode === 'bulk'}
@@ -131,16 +92,5 @@
 				<IslandMinimal />
 			{/if}
 		</div>
-
-		{#if scrollCollapsible}
-			<button
-				type="button"
-				class="z-mobile-island__pill"
-				aria-label="Expand navigation"
-				onclick={() => mobileIsland.expand()}
-			>
-				<Menu class="size-5" aria-hidden="true" />
-			</button>
-		{/if}
 	</div>
 </div>

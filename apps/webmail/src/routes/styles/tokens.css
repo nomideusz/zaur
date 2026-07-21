@@ -68,7 +68,6 @@
 	--z-content-max-width: 44rem;
 	/* Mobile floating island — clearance for scrollable panes. */
 	--z-island-height: 3.5rem;
-	--z-island-collapsed-size: 3.25rem;
 	--z-island-gutter: 0.75rem;
 	/* Island height + the positioner's bottom gutter + an extra gutter of
 	   breathing room so the scrollable tail never sits flush against the

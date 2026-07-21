@@ -247,7 +247,7 @@ function readHideActionToasts(): boolean {
 }
 
 function readShowSearchBar(): boolean {
-	return readBool(STORAGE.showSearchBar, true);
+	return readBool(STORAGE.showSearchBar, false);
 }
 
 function readCalendarWeekStartsOnMonday(): boolean {
@@ -702,6 +702,7 @@ class SettingsStore {
 	resetAppearanceSettings() {
 		void import('$lib/stores/theme.svelte').then(({ theme }) => theme.set('circadian'));
 		this.setReduceMotion(false);
+		this.setShowSearchBar(false);
 	}
 
 	resetReadingSettings() {

@@ -196,50 +196,15 @@
 		}
 	}
 
-	/* Scroll-shrunk pill — content fades + clips while the shell condenses. */
-	.z-mobile-island--collapsed {
-		max-width: var(--z-island-collapsed-size);
-		min-height: var(--z-island-collapsed-size);
-		border-radius: calc(var(--z-island-collapsed-size) / 2);
-	}
-
-	.z-mobile-island--collapsed .z-mobile-island__content {
-		opacity: 0;
-		pointer-events: none;
-	}
-
-	.z-mobile-island__pill {
-		position: absolute;
-		inset: 0;
-		display: grid;
-		place-items: center;
-		opacity: 0;
-		pointer-events: none;
-		color: var(--z-fg-muted);
-		transition: opacity var(--z-motion-fast) var(--z-ease-standard);
-	}
-
-	.z-mobile-island--collapsed .z-mobile-island__pill {
-		opacity: 1;
-		pointer-events: auto;
-	}
-
-	.z-mobile-island__pill:focus-visible {
-		outline: 2px solid var(--z-accent);
-		outline-offset: -2px;
-	}
-
 	@media (prefers-reduced-motion: reduce) {
 		.z-mobile-island,
-		.z-mobile-island__content,
-		.z-mobile-island__pill {
+		.z-mobile-island__content {
 			transition: none;
 		}
 	}
 
 	html.z-reduce-motion .z-mobile-island,
-	html.z-reduce-motion .z-mobile-island__content,
-	html.z-reduce-motion .z-mobile-island__pill {
+	html.z-reduce-motion .z-mobile-island__content {
 		transition: none;
 	}
 
@@ -250,12 +215,22 @@
 		padding: 0.25rem;
 	}
 
-	.z-nav-drawer__apps {
+	/* Drawer header — scrollable apps row + account menu pinned at the end. */
+	.z-nav-drawer__header {
+		display: flex;
 		flex-shrink: 0;
+		align-items: center;
+		gap: 0.25rem;
+		padding-inline-end: 0.5rem;
+		border-bottom: 1px solid color-mix(in srgb, var(--z-border) 65%, transparent);
+	}
+
+	.z-nav-drawer__apps {
+		min-width: 0;
+		flex: 1 1 auto;
 		overflow-x: auto;
 		overscroll-behavior-x: contain;
 		-webkit-overflow-scrolling: touch;
-		border-bottom: 1px solid color-mix(in srgb, var(--z-border) 65%, transparent);
 	}
 
 	.z-nav-drawer__apps .z-mobile-island__nav {
