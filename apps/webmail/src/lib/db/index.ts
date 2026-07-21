@@ -29,7 +29,8 @@ export {
 	cacheMessagePreviews,
 	getCachedMessagePreviews,
 	patchCachedMessage,
-	removeCachedMessage
+	removeCachedMessage,
+	searchCachedMessagePreviews
 } from './recent-threads';
 export { getAllSyncStates, getSyncState, setSyncState } from './sync-state';
 export { cacheThread, getCachedThread } from './thread-cache';

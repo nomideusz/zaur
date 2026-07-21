@@ -89,6 +89,36 @@ export async function getCachedMessagePreviews(
 	return docs.map((doc) => toPreview(doc.toJSON()));
 }
 
+/**
+ * Substring search over the cached previews (sender, subject, preview text).
+ * Complements server search: Stalwart's FTS only matches whole tokens, so
+ * "rail" won't find "Railway" server-side — locally it does.
+ */
+export async function searchCachedMessagePreviews(
+	accountId: string,
+	terms: string[],
+	options?: { mailboxRouteId?: string; limit?: number }
+): Promise<MessagePreview[]> {
+	const db = getMailDatabase();
+	if (!db || !terms.length) return [];
+
+	const selector: Record<string, string> = { accountId };
+	if (options?.mailboxRouteId) selector.mailboxRouteId = options.mailboxRouteId;
+	const docs = await db.recentThreads.find({ selector }).exec();
+
+	const needles = terms.map((term) => term.toLowerCase());
+	return docs
+		.map((doc) => doc.toJSON() as RecentThreadDoc)
+		.filter((doc) => {
+			const haystack =
+				`${doc.fromName} ${doc.fromEmail} ${doc.subject} ${doc.preview}`.toLowerCase();
+			return needles.every((needle) => haystack.includes(needle));
+		})
+		.sort((a, b) => (a.receivedAt < b.receivedAt ? 1 : -1))
+		.slice(0, options?.limit ?? 50)
+		.map(toPreview);
+}
+
 export async function patchCachedMessage(
 	accountId: string,
 	emailId: string,
