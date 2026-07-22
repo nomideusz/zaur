@@ -65,9 +65,7 @@
 	<div
 		class="z-app-shell-header__center relative z-10 w-full min-w-0 max-w-xl md:col-start-2 md:justify-self-center"
 	>
-		{#if settings.showSearchBar}
-			<GlobalSearchCombobox />
-		{/if}
+		<GlobalSearchCombobox />
 	</div>
 
 	<div

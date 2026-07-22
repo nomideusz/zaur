@@ -45,8 +45,8 @@
 <SettingsGroup title="Navigation">
 	<SettingsRow
 		kind="toggle"
-		title="Show search bar"
-		description="Show the search bar at the top of mail, contacts, calendar, and settings. You can also hide it from the bar itself."
+		title="Show search bar on phone"
+		description="Show the search bar at the top of mail, contacts, calendar, and settings on small screens. Desktop always shows search in the header."
 	>
 		<Switch
 			checked={settings.showSearchBar}

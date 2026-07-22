@@ -276,28 +276,26 @@
 			</form>
 		{/if}
 
-		{#if settings.showSearchBar}
-			<!-- Desktop keeps the inline filter; mobile searches from the top bar + island. -->
-			<div class="hidden shrink-0 border-b border-border/80 px-4 py-3 md:block">
-				<label class="relative block">
-					<span class="sr-only">Search contacts</span>
-					<Search
-						class={cn(
-							'pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-subtle'
-						)}
-					/>
-					<input
-						type="search"
-						enterkeyhint="search"
-						inputmode="search"
-						class="z-sidebar-search-input"
-						placeholder="Search contacts…"
-						bind:this={searchInput}
-						bind:value={query}
-					/>
-				</label>
-			</div>
-		{/if}
+		<!-- Desktop keeps the inline filter; mobile searches from the top bar + island. -->
+		<div class="hidden shrink-0 border-b border-border/80 px-4 py-3 md:block">
+			<label class="relative block">
+				<span class="sr-only">Search contacts</span>
+				<Search
+					class={cn(
+						'pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-fg-subtle'
+					)}
+				/>
+				<input
+					type="search"
+					enterkeyhint="search"
+					inputmode="search"
+					class="z-sidebar-search-input"
+					placeholder="Search contacts…"
+					bind:this={searchInput}
+					bind:value={query}
+				/>
+			</label>
+		</div>
 
 	</div>
 

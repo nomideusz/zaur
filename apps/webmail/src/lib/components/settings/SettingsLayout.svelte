@@ -44,7 +44,7 @@
 		<div class="shrink-0 border-b border-border/80 px-4 py-3">
 			<h2 class="z-type-label">Settings</h2>
 		</div>
-		{#if settings.showSearchBar && isDesktop}
+		{#if isDesktop}
 			<div class="px-3 pt-3 pb-2 shrink-0">
 				<SettingsSearch />
 			</div>
