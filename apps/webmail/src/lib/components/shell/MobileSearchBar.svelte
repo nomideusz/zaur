@@ -114,6 +114,6 @@
 				</button>
 			{/if}
 		</div>
-		<UserMenu compact />
+		<UserMenu compact apps />
 	</form>
 {/if}

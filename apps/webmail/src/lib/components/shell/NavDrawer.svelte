@@ -3,7 +3,7 @@
 	import { Drawer } from '@ark-ui/svelte/drawer';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
-	import IslandAppNav from '$lib/components/shell/island/IslandAppNav.svelte';
+	import NavDrawerHeader from '$lib/components/shell/NavDrawerHeader.svelte';
 	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 
 	/** One snap — ~92% height; swipe down on the grabber (or sheet) to dismiss. */
@@ -37,7 +37,7 @@
 				<Drawer.Grabber class="z-mailbox-drawer-grabber">
 					<Drawer.GrabberIndicator class="z-mailbox-drawer-grabber-indicator" />
 				</Drawer.Grabber>
-				<IslandAppNav />
+				<NavDrawerHeader />
 				<MailboxSidebar
 					variant="drawer"
 					embedded
