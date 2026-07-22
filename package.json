@@ -1,6 +1,7 @@
 {
   "name": "zaur",
   "private": true,
+  "license": "AGPL-3.0-only",
   "packageManager": "pnpm@10.32.1",
   "scripts": {
     "dev:web": "pnpm --filter @zaur/web dev",

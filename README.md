@@ -84,3 +84,7 @@ infra/
 All apps deploy via Dokploy, which auto-builds their Dockerfiles on push to
 `main` — no manual deploy step. Webmail CI gates changes with checks, unit
 tests, a production build, and browser smoke tests.
+
+## License
+
+Licensed under the [GNU AGPL-3.0](LICENSE). You can self-host and modify freely; if you run a modified version as a service, you must share your changes.

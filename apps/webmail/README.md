@@ -1,6 +1,10 @@
 # ZAUR Webmail
 
-A fast, offline-capable webmail client for [ZAUR](https://zaur.app) accounts. Built with SvelteKit and JMAP.
+A fast, offline-capable **JMAP webmail client** built with SvelteKit — made for [Stalwart](https://stalw.art) mail servers. Stalwart ships without a webmail; this is one. Self-host it against your own server ([guide](docs/self-hosting.md)), or deploy in one click:
+
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/stalwart-webmail)
+
+It also powers [ZAUR Mail](https://zaur.app).
 
 Live at [webmail.zaur.app](https://webmail.zaur.app).
 
@@ -108,3 +112,7 @@ The TypeScript JMAP types, mapping behavior, synchronization state machine, and 
 implementations for native protocol fixtures. They are not linked into the Kotlin shared core. See
 [`../../docs/mobile.md`](../../docs/mobile.md) for the native integration contract and delivery
 roadmap.
+
+## License
+
+[AGPL-3.0](../../LICENSE).
