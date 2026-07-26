@@ -137,6 +137,30 @@
 			desc: 'Privacy-friendly YouTube frontend with Companion and Postgres included.',
 			deploy: 'https://railway.com/deploy/invidious',
 			source: 'https://github.com/nomideusz/invidious-railway'
+		},
+		{
+			name: 'Funkwhale',
+			desc: 'Federated audio platform — stream your library, podcasts, and channels via web or Subsonic apps.',
+			deploy: 'https://railway.com/new/template/funkwhale',
+			source: 'https://github.com/nomideusz/funkwhale-railway'
+		},
+		{
+			name: 'PeerTube',
+			desc: 'Decentralized video platform — HLS transcoding, RTMP live streaming, ActivityPub federation.',
+			deploy: 'https://railway.com/new/template/peertube',
+			source: 'https://github.com/nomideusz/peertube-railway'
+		},
+		{
+			name: 'Chevereto',
+			desc: 'Self-hosted image and video sharing — albums, user accounts, moderation, direct hotlinks.',
+			deploy: 'https://railway.com/new/template/chevereto',
+			source: 'https://github.com/nomideusz/chevereto-railway'
+		},
+		{
+			name: 'Owncast',
+			desc: 'Self-hosted live streaming with chat — point OBS at your own Twitch-style stream page.',
+			deploy: 'https://railway.com/new/template/owncast',
+			source: 'https://github.com/nomideusz/owncast-railway'
 		}
 	];
 
