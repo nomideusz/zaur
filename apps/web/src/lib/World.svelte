@@ -23,6 +23,9 @@
 		inset: 0;
 		width: 100%;
 		height: 100%;
+		/* Large-viewport height: the mobile URL bar collapsing during scroll
+		   no longer resizes the canvas (which cleared it — visible blinking). */
+		height: 100lvh;
 		z-index: -1;
 		pointer-events: none;
 	}

@@ -21,7 +21,7 @@
 		{
 			id: 'dino',
 			name: 'Dino',
-			desc: 'A quiet page of important news — no feed, no ads, just Zaur and a few stories a day.',
+			desc: 'Your sky for the next 24 hours — real sun, moon, stars, and live weather on one quiet page.',
 			href: 'https://dino.zaur.app'
 		},
 		{
