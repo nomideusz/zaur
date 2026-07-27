@@ -161,6 +161,24 @@
 			desc: 'Self-hosted live streaming with chat — point OBS at your own Twitch-style stream page.',
 			deploy: 'https://railway.com/new/template/owncast',
 			source: 'https://github.com/nomideusz/owncast-railway'
+		},
+		{
+			name: 'GoAlert',
+			desc: 'On-call scheduling, escalations, and SMS/voice paging — PagerDuty alternative by Target.',
+			deploy: 'https://railway.com/new/template/goalert',
+			source: 'https://github.com/nomideusz/goalert-railway'
+		},
+		{
+			name: 'Dittofeed',
+			desc: 'Customer engagement journeys with segments, ClickHouse, and Temporal — Customer.io alternative.',
+			deploy: 'https://railway.com/new/template/dittofeed-2',
+			source: 'https://github.com/nomideusz/dittofeed-railway'
+		},
+		{
+			name: 'OpenEMR',
+			desc: 'Electronic medical records and practice management — charts, scheduling, billing, portal.',
+			deploy: 'https://railway.com/new/template/openemr',
+			source: 'https://github.com/nomideusz/openemr-railway'
 		}
 	];
 
