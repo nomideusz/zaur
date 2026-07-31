@@ -227,6 +227,47 @@ export async function syncPushSubscription(enabled: boolean): Promise<boolean> {
 	return true;
 }
 
+/** This device's push identity for the preferences API (web endpoint or FCM token). */
+async function pushDeviceRef(): Promise<{ endpoint: string } | { fcmToken: string } | null> {
+	if (nativePushPlugin()) {
+		const fcmToken = localStorage.getItem(FCM_TOKEN_STORAGE_KEY);
+		return fcmToken ? { fcmToken } : null;
+	}
+	if (!browser || !('serviceWorker' in navigator)) return null;
+	const registration = await navigator.serviceWorker.getRegistration();
+	const subscription = await registration?.pushManager.getSubscription();
+	return subscription ? { endpoint: subscription.endpoint } : null;
+}
+
+/** Account keys muted on this device; null when there's no active subscription. */
+export async function fetchMutedPushAccounts(): Promise<string[] | null> {
+	const ref = await pushDeviceRef();
+	if (!ref) return null;
+	try {
+		const response = await fetch(`/api/push/preferences?${new URLSearchParams(ref)}`);
+		if (!response.ok) return null;
+		const payload = (await response.json()) as { mutedAccounts?: string[] };
+		return payload.mutedAccounts ?? [];
+	} catch {
+		return null;
+	}
+}
+
+export async function saveMutedPushAccounts(mutedAccounts: string[]): Promise<boolean> {
+	const ref = await pushDeviceRef();
+	if (!ref) return false;
+	try {
+		const response = await fetch('/api/push/preferences', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({ ...ref, mutedAccounts })
+		});
+		return response.ok;
+	} catch {
+		return false;
+	}
+}
+
 export type PushNotificationStatus =
 	| { state: 'server_disabled' }
 	| { state: 'unsupported' }

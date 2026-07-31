@@ -13,6 +13,8 @@ export interface StoredPushSubscription {
 	platform?: 'webpush' | 'fcm';
 	subscription?: webpush.PushSubscription;
 	fcmToken?: string;
+	/** Account keys the user muted on this device — no notifications for them. */
+	mutedAccounts?: string[];
 	emailState?: string;
 	inboxMailboxId?: string;
 	createdAt: string;
@@ -100,6 +102,7 @@ export async function upsertPushSubscription(input: {
 		platform: input.fcmToken ? 'fcm' : 'webpush',
 		subscription: input.subscription,
 		fcmToken: input.fcmToken,
+		mutedAccounts: existing?.mutedAccounts,
 		emailState: existing?.emailState,
 		inboxMailboxId: existing?.inboxMailboxId,
 		createdAt: existing?.createdAt ?? now,
@@ -109,6 +112,19 @@ export async function upsertPushSubscription(input: {
 	store[id] = record;
 	await writeStore(store);
 	return record;
+}
+
+export async function setPushSubscriptionMutedAccounts(
+	id: string,
+	mutedAccounts: string[]
+): Promise<boolean> {
+	const store = await readStore();
+	const record = store[id];
+	if (!record) return false;
+	record.mutedAccounts = mutedAccounts.length ? mutedAccounts : undefined;
+	record.updatedAt = new Date().toISOString();
+	await writeStore(store);
+	return true;
 }
 
 function isExpired(record: StoredPushSubscription, now = Date.now()): boolean {

@@ -51,7 +51,12 @@ class PushWatcher {
 		}
 
 		for (const record of records) {
-			if (this.watchers.has(record.id)) continue;
+			const existing = this.watchers.get(record.id);
+			if (existing) {
+				// Same device re-registered or its prefs (e.g. muted accounts) changed.
+				void existing.applyRecord(record);
+				continue;
+			}
 			const watcher = new SubscriptionWatcher(record, () => this.handleRecordRemoved(record.id));
 			this.watchers.set(record.id, watcher);
 			void watcher.start();
@@ -80,6 +85,12 @@ class SubscriptionWatcher {
 		this.resyncTimer = setInterval(() => void this.syncAccounts(), ACCOUNT_RESYNC_MS);
 	}
 
+	/** Adopt a fresh copy of the stored record (re-registration or pref change). */
+	async applyRecord(record: StoredPushSubscription): Promise<void> {
+		this.record = record;
+		await this.syncAccounts();
+	}
+
 	/** Reconcile the per-account watchers with the session's current account set. */
 	private async syncAccounts(): Promise<void> {
 		if (this.stopped) return;
@@ -92,7 +103,9 @@ class SubscriptionWatcher {
 
 		// Only label notifications with the account when there's more than one.
 		const showAccount = accounts.length > 1;
-		const wanted = new Set(accounts.map((account) => accountKey(account.username)));
+		const muted = new Set(this.record.mutedAccounts ?? []);
+		const watched = accounts.filter((account) => !muted.has(accountKey(account.username)));
+		const wanted = new Set(watched.map((account) => accountKey(account.username)));
 
 		for (const [key, watcher] of this.accountWatchers) {
 			if (!wanted.has(key)) {
@@ -101,7 +114,7 @@ class SubscriptionWatcher {
 			}
 		}
 
-		for (const account of accounts) {
+		for (const account of watched) {
 			const key = accountKey(account.username);
 			const existing = this.accountWatchers.get(key);
 			if (existing) {

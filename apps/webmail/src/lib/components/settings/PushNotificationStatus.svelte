@@ -1,23 +1,42 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import {
+		fetchMutedPushAccounts,
 		getPushNotificationStatus,
+		saveMutedPushAccounts,
 		syncPushSubscription,
 		unsubscribeFromPushNotifications,
 		type PushNotificationStatus
 	} from '$lib/utils/notifications';
 	import { ensureAppServiceWorkerReady, resetAppServiceWorker } from '$lib/utils/service-worker';
 	import Switch from '$lib/components/ui/Switch.svelte';
+	import { auth } from '$lib/stores/auth.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 
 	let pushStatus = $state<PushNotificationStatus>({ state: 'prompt' });
 	let busy = $state(false);
 	let lastError = $state<string | null>(null);
+	/** Account keys muted on this device; null until loaded. */
+	let mutedAccounts = $state<string[] | null>(null);
 
 	async function refreshStatus() {
 		pushStatus = await getPushNotificationStatus();
 		pwa.refreshInstalledState();
+		mutedAccounts =
+			pushStatus.state === 'subscribed' && auth.accounts.length > 1
+				? await fetchMutedPushAccounts()
+				: null;
+	}
+
+	async function toggleAccount(key: string, enabled: boolean) {
+		const current = mutedAccounts ?? [];
+		const next = enabled ? current.filter((k) => k !== key) : [...new Set([...current, key])];
+		mutedAccounts = next;
+		if (!(await saveMutedPushAccounts(next))) {
+			mutedAccounts = current;
+			lastError = 'Could not save notification preferences';
+		}
 	}
 
 	onMount(() => {
@@ -131,6 +150,22 @@
 			>
 				Retry
 			</button>
+		</div>
+	{/if}
+
+	{#if pushStatus.state === 'subscribed' && auth.accounts.length > 1 && mutedAccounts !== null}
+		<div class="mt-1 flex flex-col items-end gap-1.5">
+			{#each auth.accounts as account (account.key)}
+				<div class="flex items-center gap-2">
+					<span class="text-fg-muted">{account.username}</span>
+					<Switch
+						checked={!mutedAccounts.includes(account.key)}
+						disabled={busy}
+						label={`Notifications for ${account.username}`}
+						onchange={(checked) => void toggleAccount(account.key, checked)}
+					/>
+				</div>
+			{/each}
 		</div>
 	{/if}
 
