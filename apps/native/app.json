@@ -25,7 +25,14 @@
     },
     "scheme": "zaurmail",
     "plugins": [
-      "expo-secure-store"
-    ]
+      "expo-secure-store",
+      "expo-status-bar"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "d6fd7cbd-2aff-4857-aec8-8120d222145f"
+      }
+    },
+    "owner": "gladiator208s-team"
   }
 }
