@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { createWorld } from '@nomideusz/zaur-world';
+	import { mountZaur } from '@nomideusz/zaur-world/zaur';
 
 	let canvas: HTMLCanvasElement;
 
@@ -9,7 +10,17 @@
 		// here the sky is pure backdrop. Terrain shapes the horizon from
 		// real nearby elevations; the real ISS crosses when it's overhead.
 		const sky = createWorld(canvas, { gridColor: null, terrain: true, satellites: true });
-		return () => sky.destroy();
+		// Zaur walks the bottom edge on his own overlay canvas, living in
+		// the sky's weather: soaked in rain, sweater below 5 °C, snow crest.
+		const zaur = mountZaur({
+			floorY: () => window.innerHeight - 8,
+			skyHour: () => new Date().getHours() + new Date().getMinutes() / 60,
+			weather: () => sky.conditions()
+		});
+		return () => {
+			zaur.destroy();
+			sky.destroy();
+		};
 	});
 </script>
 

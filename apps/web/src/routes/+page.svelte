@@ -35,7 +35,7 @@
 	const packages = [
 		{
 			name: '@nomideusz/zaur-world',
-			desc: 'A living ambient sky — real sun times, weather, seasons, terrain, and satellites. Zero dependencies.',
+			desc: 'A living ambient sky — real sun times, weather, true star positions, eclipses, and a pixel dinosaur who lives in it. Zero dependencies.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/zaur-world',
 			demo: 'https://dino.zaur.app',
 			source: 'https://github.com/nomideusz/zaur-world'
@@ -161,6 +161,12 @@
 			desc: 'Self-hosted live streaming with chat — point OBS at your own Twitch-style stream page.',
 			deploy: 'https://railway.com/new/template/owncast',
 			source: 'https://github.com/nomideusz/owncast-railway'
+		},
+		{
+			name: 'LNbits',
+			desc: 'Bitcoin Lightning wallet and payments API, backed by a self-custodial phoenixd node.',
+			deploy: 'https://railway.com/deploy/lnbits',
+			source: 'https://github.com/nomideusz/lnbits-railway'
 		},
 		{
 			name: 'GoAlert',
