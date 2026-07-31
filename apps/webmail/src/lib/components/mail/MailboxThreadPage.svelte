@@ -97,16 +97,19 @@
 		/>
 	{/snippet}
 	{#snippet reader()}
-		{#if mail.selectedLoading && thread.length === 0}
-			<MessageReaderSkeleton />
-		{:else if thread.length}
+		{#if thread.length}
 			<MessageReaderCore {thread} mailboxRouteId={mailboxId} onMoved={afterMove} onBackToList={backToList} />
-		{:else}
+		{:else if mail.selectedError}
 			<MessageReaderStatus
-				message={mail.selectedError ?? 'Message not found.'}
+				message={mail.selectedError}
 				onBack={backToList}
 				onRetry={retryOpenMessage}
 			/>
+		{:else}
+			<!-- Empty with no error means we haven't finished loading yet: covers session
+			     restore on cold start (notification deep link) and the pre-$effect frame,
+			     both of which previously flashed "Message not found." -->
+			<MessageReaderSkeleton />
 		{/if}
 	{/snippet}
 </MailPane>
