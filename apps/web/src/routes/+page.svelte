@@ -185,6 +185,18 @@
 			desc: 'Electronic medical records and practice management — charts, scheduling, billing, portal.',
 			deploy: 'https://railway.com/new/template/openemr',
 			source: 'https://github.com/nomideusz/openemr-railway'
+		},
+		{
+			name: 'Navidrome',
+			desc: 'Self-hosted music streaming with a drag-and-drop upload panel — works with any Subsonic app.',
+			deploy: 'https://railway.com/new/template/navidrome-1',
+			source: 'https://github.com/nomideusz/navidrome-railway'
+		},
+		{
+			name: 'Pixelfed',
+			desc: 'Federated photo sharing on ActivityPub — an Instagram alternative with albums and stories.',
+			deploy: 'https://railway.com/new/template/pixelfed',
+			source: 'https://github.com/nomideusz/pixelfed-railway'
 		}
 	];
 
