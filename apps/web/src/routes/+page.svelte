@@ -74,6 +74,29 @@
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-qr',
 			demo: 'https://svelte-qr.vercel.app',
 			source: 'https://github.com/nomideusz/svelte-qr'
+		},
+		{
+			name: '@nomideusz/svelte-scheduler',
+			desc: 'Booking and scheduling logic for Svelte 5 — tour slots, pricing, cancellation policies.',
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler'
+		},
+		{
+			name: '@nomideusz/svelte-payments',
+			desc: 'Provider-agnostic payments for the booking platform — Mollie server adapter + Stripe Connect UI.',
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-payments'
+		},
+		{
+			name: '@nomideusz/svelte-notify',
+			desc: 'Email notification template library for the booking platform.',
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-notify'
+		}
+	];
+
+	const skills = [
+		{
+			name: 'simple-web-design',
+			desc: "Agent skill for auditing, critiquing, and building better websites — grounded in Anthony Hobday's 15 principles of simple web design.",
+			source: 'https://github.com/nomideusz/simple-web-design'
 		}
 	];
 
@@ -212,12 +235,6 @@
 			name: 'szkolyjogi.pl',
 			desc: 'Directory of yoga schools and studios across Poland.',
 			href: 'https://szkolyjogi.pl'
-		},
-		{
-			id: 'kompi',
-			name: 'kompi.pl',
-			desc: 'Online store for microcomputers, Raspberry Pi, Arduino, and electronics.',
-			href: 'https://kompi.pl'
 		},
 		{
 			id: 'fixtar',
@@ -384,8 +401,8 @@
 				<span class="zw-card__desc">{p.desc}</span>
 				<span class="zw-card__links">
 					<a href={p.npm}>View on npm</a>
-					<a href={p.demo}>Try the demo</a>
-					<a href={p.source}>Source</a>
+					{#if p.demo}<a href={p.demo}>Try the demo</a>{/if}
+					{#if p.source}<a href={p.source}>Source</a>{/if}
 				</span>
 			</div>
 		{/each}
@@ -413,6 +430,26 @@
 				<span class="zw-card__links">
 					<a href={t.deploy}>Deploy on Railway</a>
 					<a href={t.source}>Source</a>
+				</span>
+			</div>
+		{/each}
+	</div>
+</section>
+
+<section class="zw-container zw-section" id="skills" aria-labelledby="skills-heading">
+	<div class="zw-section__intro">
+		<p class="zw-eyebrow">Agents</p>
+		<h2 class="zw-section__title" id="skills-heading">Agent skills.</h2>
+		<p class="zw-section__lede">Skills that teach coding agents how we work.</p>
+	</div>
+	<div class="zw-products">
+		{#each skills as s (s.name)}
+			<div class="zw-card zw-card--static">
+				<span class="zw-card__kicker">Claude skill</span>
+				<span class="zw-card__name zw-card__name--mono">{s.name}</span>
+				<span class="zw-card__desc">{s.desc}</span>
+				<span class="zw-card__links">
+					<a href={s.source}>Source</a>
 				</span>
 			</div>
 		{/each}
