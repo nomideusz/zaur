@@ -7,7 +7,7 @@ const SECTION_TITLES: Record<string, string> = {
 	account: 'Account',
 	appearance: 'Appearance',
 	calendar: 'Calendar',
-	compose: 'Compose',
+	compose: 'Writing',
 	data: 'Data',
 	reading: 'Reading'
 };

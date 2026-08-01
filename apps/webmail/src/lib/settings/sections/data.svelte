@@ -3,6 +3,7 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import StorageQuota from '$lib/components/settings/StorageQuota.svelte';
+	import Button from '$lib/components/ui/Button.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { quota } from '$lib/stores/quota.svelte';
@@ -116,7 +117,7 @@
 <StorageQuota />
 
 <SettingsGroup
-	title="Backup & sync"
+	title="Backup & Sync"
 	description="Your preferences sync automatically across your devices. Export to keep an offline copy."
 >
 	<SettingsRow
@@ -124,9 +125,7 @@
 		title="Sync now"
 		description="Force an immediate sync with your account instead of waiting for the automatic one."
 	>
-		<button type="button" class="z-mail-text-nav__link" onclick={() => void settings.syncToAccount()}>
-			Sync
-		</button>
+		<Button variant="ghost" onclick={() => void settings.syncToAccount()}>Sync</Button>
 	</SettingsRow>
 
 	<SettingsRow
@@ -134,9 +133,7 @@
 		title="Export settings"
 		description="Download your preferences as a JSON file."
 	>
-		<button type="button" class="z-mail-text-nav__link" onclick={() => settings.downloadLocalPreferences()}>
-			Export
-		</button>
+		<Button variant="ghost" onclick={() => settings.downloadLocalPreferences()}>Export</Button>
 	</SettingsRow>
 
 	<SettingsRow
@@ -145,14 +142,12 @@
 		description="Load preferences from a previously exported file."
 	>
 		<input bind:this={importInput} type="file" accept="application/json,.json" class="hidden" onchange={importPreferences} />
-		<button type="button" class="z-mail-text-nav__link" onclick={() => importInput?.click()}>
-			Import
-		</button>
+		<Button variant="ghost" onclick={() => importInput?.click()}>Import</Button>
 	</SettingsRow>
 </SettingsGroup>
 
 <SettingsGroup
-	title="Storage & reset"
+	title="Storage & Reset"
 	description="Free up space or start fresh. These actions can't be undone."
 >
 	{#if trashMailbox}
@@ -161,14 +156,9 @@
 			title="Empty Trash"
 			description="Permanently delete every message in the Trash folder."
 		>
-			<button
-				type="button"
-				class="z-mail-text-nav__link z-mail-text-nav__link--danger"
-				disabled={emptyingTrash || !auth.client}
-				onclick={() => void emptyMailbox('trash')}
-			>
+			<Button variant="danger" disabled={emptyingTrash || !auth.client} onclick={() => void emptyMailbox('trash')}>
 				{emptyingTrash ? 'Emptying…' : 'Empty'}
-			</button>
+			</Button>
 		</SettingsRow>
 	{/if}
 
@@ -178,14 +168,9 @@
 			title="Empty Spam"
 			description="Permanently delete every message in the Spam folder."
 		>
-			<button
-				type="button"
-				class="z-mail-text-nav__link z-mail-text-nav__link--danger"
-				disabled={emptyingSpam || !auth.client}
-				onclick={() => void emptyMailbox('junk')}
-			>
+			<Button variant="danger" disabled={emptyingSpam || !auth.client} onclick={() => void emptyMailbox('junk')}>
 				{emptyingSpam ? 'Emptying…' : 'Empty'}
-			</button>
+			</Button>
 		</SettingsRow>
 	{/if}
 
@@ -194,14 +179,9 @@
 		title="Clear local cache"
 		description="Remove downloaded mail and sync state from this device. Your mail on the server is untouched."
 	>
-		<button
-			type="button"
-			class="z-mail-text-nav__link"
-			disabled={clearingCache}
-			onclick={() => void clearLocalCache()}
-		>
+		<Button variant="ghost" disabled={clearingCache} onclick={() => void clearLocalCache()}>
 			{clearingCache ? 'Clearing…' : 'Clear'}
-		</button>
+		</Button>
 	</SettingsRow>
 
 	<SettingsRow
@@ -209,12 +189,6 @@
 		title="Reset preferences"
 		description="Restore all settings to their defaults. Your display name and signature are kept."
 	>
-		<button
-			type="button"
-			class="z-mail-text-nav__link z-mail-text-nav__link--danger"
-			onclick={() => void resetPreferences()}
-		>
-			Reset
-		</button>
+		<Button variant="danger" onclick={() => void resetPreferences()}>Reset</Button>
 	</SettingsRow>
 </SettingsGroup>

@@ -252,9 +252,8 @@
 		title="Sign out"
 		description="Sign out of every account on this device."
 	>
-		<button
-			type="button"
-			class="z-mail-text-nav__link z-mail-text-nav__link--danger"
+		<Button
+			variant="danger"
 			onclick={async () => {
 				if (
 					await confirm.ask({
@@ -272,11 +271,11 @@
 			}}
 		>
 			{auth.accounts.length > 1 ? 'Sign out of all' : 'Sign out'}
-		</button>
+		</Button>
 	</SettingsRow>
 </SettingsGroup>
 
-<SettingsGroup title="Account">
+<SettingsGroup title="Connection">
 	<SettingsRow kind="info" title="Primary address">
 		<span class="text-fg">{auth.username ?? '—'}</span>
 	</SettingsRow>
@@ -285,10 +284,6 @@
 		<span class="max-w-[12rem] truncate text-fg sm:max-w-none">
 			{auth.serverUrl ?? appConfig.jmapServerUrl}
 		</span>
-	</SettingsRow>
-
-	<SettingsRow kind="info" title="Session">
-		<span class="text-fg">{auth.isAuthenticated ? 'Active' : 'Signed out'}</span>
 	</SettingsRow>
 
 	{#if auth.identities.length > 1}
@@ -353,9 +348,7 @@
 		{#if pwa.isInstalled}
 			<span class="text-fg-muted">Installed</span>
 		{:else if pwa.canInstall}
-			<button type="button" class="z-mail-text-nav__link" onclick={() => pwa.showInstallPromptAgain()}>
-				Install
-			</button>
+			<Button variant="ghost" onclick={() => pwa.showInstallPromptAgain()}>Install</Button>
 		{:else}
 			<span class="text-fg-muted">Use browser menu</span>
 		{/if}

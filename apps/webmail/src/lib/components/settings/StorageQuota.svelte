@@ -16,12 +16,15 @@
 			<p class="z-settings-section-title">Storage</p>
 			<p class="z-settings-section-desc">Mailbox storage used on your account.</p>
 		</div>
-		<div class="z-storage-quota">
-			<Progress value={quota.percent} max={100} tone={quota.nearFull ? 'danger' : 'accent'} />
-			<p class="z-storage-quota__caption" class:z-storage-quota__caption--warn={quota.nearFull}>
-				<strong>{formatStorageSize(quota.used)}</strong>
-				of {formatStorageSize(quota.limit)} used · {quota.percent}%
-			</p>
+		<!-- z-settings-list gives it the same raised-card chrome as every other group. -->
+		<div class="z-settings-list">
+			<div class="z-storage-quota px-4 py-3.5">
+				<Progress value={quota.percent} max={100} tone={quota.nearFull ? 'danger' : 'accent'} />
+				<p class="z-storage-quota__caption" class:z-storage-quota__caption--warn={quota.nearFull}>
+					<strong>{formatStorageSize(quota.used)}</strong>
+					of {formatStorageSize(quota.limit)} used · {quota.percent}%
+				</p>
+			</div>
 		</div>
 	</section>
 {/if}

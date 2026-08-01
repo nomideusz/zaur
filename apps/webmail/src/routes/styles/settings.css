@@ -741,7 +741,11 @@
 			justify-content: flex-start;
 		}
 
-		.z-settings-row--menu:has(.z-settings-row-desc) .z-settings-row-control .z-settings-select,
+		/* Same compact width as desc-less menu rows — a full-bleed picker for "3" or "Off" reads oversized. */
+		.z-settings-row--menu:has(.z-settings-row-desc) .z-settings-row-control .z-settings-select {
+			width: min(10.5rem, 42vw);
+		}
+
 		.z-settings-row--menu:has(.z-settings-row-desc) .z-settings-row-control .z-select-trigger,
 		.z-settings-row--menu:has(.z-settings-row-desc) .z-settings-row-control .z-mobile-picker-trigger {
 			width: 100%;

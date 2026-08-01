@@ -110,7 +110,6 @@
 		}
 	}
 
-	const showInstall = $derived(!pwa.isInstalled && (pwa.canInstall || pwa.showIosHint));
 </script>
 
 <div class="flex flex-col items-end gap-1">
@@ -171,11 +170,5 @@
 
 	{#if lastError}
 		<span class="text-fg-muted">{lastError}</span>
-	{/if}
-
-	{#if showInstall && pushStatus.state !== 'unsupported' && pushStatus.state !== 'server_disabled'}
-		<button type="button" class="z-mail-text-nav__link" onclick={() => pwa.showInstallPromptAgain()}>
-			Install app
-		</button>
 	{/if}
 </div>

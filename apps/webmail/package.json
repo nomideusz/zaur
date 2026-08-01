@@ -9,13 +9,14 @@
 		"build": "vite build && node scripts/inject-pwa.mjs",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check": "node scripts/generate-settings-index.mjs && svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
 		"check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
 		"test": "node --test --experimental-strip-types tests/*.test.ts",
 		"test:e2e": "playwright test",
 		"test:e2e:labs": "playwright test --grep-invert @auth",
 		"test:e2e:auth": "playwright test --grep @auth",
-		"push:admin": "node scripts/push-admin.mjs"
+		"push:admin": "node scripts/push-admin.mjs",
+		"generate:settings-index": "node scripts/generate-settings-index.mjs"
 	},
 	"devDependencies": {
 		"@playwright/test": "^1.60.0",

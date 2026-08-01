@@ -28,17 +28,6 @@ export const MAIL_LAYOUT = {
 	}
 } as const;
 
-export const SETTINGS_SECTIONS: { id: SettingsNavSectionId; label: string }[] = [
-	{ id: 'account', label: 'Account' },
-	{ id: 'security', label: 'Security' },
-	{ id: 'appearance', label: 'Appearance' },
-	{ id: 'reading', label: 'Reading' },
-	{ id: 'writing', label: 'Writing' },
-	{ id: 'calendar', label: 'Calendar' },
-	{ id: 'data', label: 'Data' },
-	{ id: 'shortcuts', label: 'Shortcuts' }
-];
-
 export const SETTINGS_NAV_LINKS: SettingsNavLink[] = [
 	{ href: '/settings/account', label: 'Account', icon: 'account', section: 'account' },
 	{ href: '/settings/security', label: 'Security', icon: 'security', section: 'security' },
@@ -52,18 +41,6 @@ export const SETTINGS_NAV_LINKS: SettingsNavLink[] = [
 
 export type SettingsNavViewport = 'all' | 'mobile' | 'desktop';
 
-/** Paths merged into consolidated settings pages — kept for redirects and search. */
-export const LEGACY_SETTINGS_PATHS = new Set([
-	'/settings/mail',
-	'/settings/writing',
-	'/settings/general',
-	'/settings/workspace',
-	'/settings/display',
-	'/settings/sidebar',
-	'/settings/contacts',
-	'/settings/layout'
-]);
-
 export function settingsNavLinks(viewport: SettingsNavViewport = 'all'): SettingsNavLink[] {
 	return SETTINGS_NAV_LINKS.filter((link) => {
 		if (viewport === 'mobile' && link.desktopOnly) return false;
@@ -71,16 +48,8 @@ export function settingsNavLinks(viewport: SettingsNavViewport = 'all'): Setting
 	});
 }
 
+// Legacy paths (/settings/mail, /settings/display, …) 307-redirect server-side,
+// so the nav never sees them — plain equality is enough.
 export function isSettingsNavActive(pathname: string, href: string): boolean {
-	if (pathname === href) return true;
-	if (href === '/settings/account') {
-		return pathname === '/settings/display' || pathname === '/settings/general';
-	}
-	if (href === '/settings/reading') {
-		return pathname === '/settings/mail' || pathname === '/settings/layout';
-	}
-	if (href === '/settings/compose') {
-		return pathname === '/settings/writing';
-	}
-	return false;
+	return pathname === href;
 }

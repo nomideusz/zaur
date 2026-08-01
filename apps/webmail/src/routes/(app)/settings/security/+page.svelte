@@ -1,4 +1,5 @@
 <script lang="ts">
+	import SettingsPanel from '$lib/components/settings/SettingsPanel.svelte';
 	import SecuritySettings from '$lib/settings/sections/security.svelte';
 </script>
 
@@ -6,4 +7,6 @@
 	<title>Security · ZAUR Webmail</title>
 </svelte:head>
 
-<SecuritySettings />
+<SettingsPanel>
+	<SecuritySettings />
+</SettingsPanel>

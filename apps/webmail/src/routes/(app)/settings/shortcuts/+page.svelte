@@ -7,7 +7,7 @@
 	$effect(() => {
 		if (!browser) return;
 		if (window.matchMedia('(max-width: 767px)').matches) {
-			void goto('/settings/reading', { replaceState: true });
+			void goto('/settings', { replaceState: true });
 		}
 	});
 </script>

@@ -46,6 +46,48 @@
 	let oneTimeSecret = $state<{ title: string; value: string } | null>(null);
 	let totpSetup = $state<{ secret: string; uri: string; qr?: string } | null>(null);
 	let totpCode = $state('');
+	let showAllSessions = $state(false);
+
+	const SESSION_PREVIEW_COUNT = 5;
+	const sortedSessions = $derived(
+		[...(overview?.sessions ?? [])].sort(
+			(a, b) => Number(b.current) - Number(a.current) || b.lastSeenAt - a.lastSeenAt
+		)
+	);
+	const visibleSessions = $derived(
+		showAllSessions ? sortedSessions : sortedSessions.slice(0, SESSION_PREVIEW_COUNT)
+	);
+	const otherSessions = $derived(sortedSessions.filter((s) => !s.current));
+
+	/** "Chrome on Linux" instead of the raw user-agent string. */
+	function describeSession(ua: string | null | undefined): string {
+		if (!ua) return 'Browser session';
+		const browser = ua.includes('HeadlessChrome')
+			? 'Headless Chrome'
+			: ua.includes('Edg/')
+				? 'Edge'
+				: ua.includes('OPR/')
+					? 'Opera'
+					: ua.includes('Firefox/')
+						? 'Firefox'
+						: ua.includes('Chrome/')
+							? 'Chrome'
+							: ua.includes('Safari/')
+								? 'Safari'
+								: 'Browser';
+		const os = /iPhone|iPad/.test(ua)
+			? 'iOS'
+			: ua.includes('Android')
+				? 'Android'
+				: ua.includes('Mac OS X')
+					? 'macOS'
+					: ua.includes('Windows')
+						? 'Windows'
+						: /Linux|X11/.test(ua)
+							? 'Linux'
+							: '';
+		return os ? `${browser} on ${os}` : browser;
+	}
 
 	async function api(path: string, method = 'GET', body?: unknown) {
 		const response = await fetch(path, {
@@ -244,9 +286,35 @@
 			confirmLabel: 'Sign out',
 			tone: 'danger'
 		})) return;
-		await api(`/api/account/security/sessions/${encodeURIComponent(session.id)}`, 'DELETE', {});
-		if (session.current) location.href = '/login';
-		else await load();
+		try {
+			await api(`/api/account/security/sessions/${encodeURIComponent(session.id)}`, 'DELETE', {});
+			if (session.current) location.href = '/login';
+			else await load();
+		} catch (error) {
+			toast.show(errorMessage(error, 'Could not sign out the session'), 'error');
+		}
+	}
+
+	async function revokeOtherSessions() {
+		const count = otherSessions.length;
+		if (!await confirm.ask({
+			title: 'Sign out other sessions?',
+			description: `Sign out ${count} other browser session${count === 1 ? '' : 's'}? This browser stays signed in.`,
+			confirmLabel: 'Sign out others',
+			tone: 'danger'
+		})) return;
+		busy = true;
+		try {
+			for (const session of otherSessions) {
+				await api(`/api/account/security/sessions/${encodeURIComponent(session.id)}`, 'DELETE', {});
+			}
+			toast.show('Signed out of other sessions.', 'success');
+			await load();
+		} catch (error) {
+			toast.show(errorMessage(error, 'Could not sign out other sessions'), 'error');
+		} finally {
+			busy = false;
+		}
 	}
 
 	onMount(() => void load());
@@ -313,14 +381,17 @@
 			{/if}
 		</SettingsRow>
 		{#if totpSetup}
-			<SettingsRow kind="info" title="Scan this QR code" description="Or enter the manual key in your authenticator app.">
-				<div class="flex max-w-[14rem] flex-col items-end gap-2">
-					{#if totpSetup.qr}<img src={totpSetup.qr} alt="Authenticator setup QR code" width="180" height="180" />{/if}
-					<code class="break-all text-xs">{totpSetup.secret}</code>
-					<input class="z-input" inputmode="numeric" maxlength="6" placeholder="Six-digit code" bind:value={totpCode} />
+			<!-- Full-width block, not a two-column row — the QR + code input need the whole card. -->
+			<div class="flex flex-col items-start gap-2 px-4 py-3">
+				<p class="z-settings-row-label">Scan this QR code</p>
+				<p class="z-settings-row-desc">Or enter the manual key in your authenticator app.</p>
+				{#if totpSetup.qr}<img src={totpSetup.qr} alt="Authenticator setup QR code" width="180" height="180" />{/if}
+				<code class="break-all text-xs">{totpSetup.secret}</code>
+				<div class="flex items-center gap-2">
+					<input class="z-input max-w-[11rem]" inputmode="numeric" maxlength="6" placeholder="Six-digit code" bind:value={totpCode} />
 					<Button onclick={() => void confirmTotp()} disabled={!/^\d{6}$/.test(totpCode)}>Enable</Button>
 				</div>
-			</SettingsRow>
+			</div>
 		{/if}
 	</SettingsGroup>
 
@@ -346,6 +417,9 @@
 		<SettingsRow kind="action" title="Create app password">
 			<Button onclick={() => void createCredential('app-passwords')} disabled={!verified || !credentialDescription}>Create</Button>
 		</SettingsRow>
+		{#if oneTimeSecret?.title === 'App password'}
+			{@render secretCallout()}
+		{/if}
 		{#each overview.appPasswords as item (item.id)}
 			<SettingsRow kind="action" searchable={false} title={item.description || 'App password'} description={item.createdAt}>
 				<Button variant="danger" onclick={() => void revokeCredential('app-passwords', item)} disabled={!verified}>Revoke</Button>
@@ -354,11 +428,21 @@
 	</SettingsFormGroup>
 
 	<SettingsGroup title="ZAUR sessions">
-		{#each overview.sessions as session (session.id)}
-			<SettingsRow kind="action" searchable={false} title={session.current ? 'This browser' : session.userAgent || 'Browser session'} description={`Last active ${new Date(session.lastSeenAt).toLocaleString()}`}>
+		{#if otherSessions.length > 0}
+			<SettingsRow kind="action" title="Sign out other sessions" description="Keep this browser signed in; sign out everywhere else.">
+				<Button variant="danger" onclick={() => void revokeOtherSessions()} disabled={!verified || busy}>Sign out others</Button>
+			</SettingsRow>
+		{/if}
+		{#each visibleSessions as session (session.id)}
+			<SettingsRow kind="action" searchable={false} title={session.current ? 'This browser' : describeSession(session.userAgent)} description={`Last active ${new Date(session.lastSeenAt).toLocaleString()}`}>
 				<Button variant={session.current ? 'danger' : 'ghost'} onclick={() => void revokeSession(session)} disabled={!verified}>Sign out</Button>
 			</SettingsRow>
 		{/each}
+		{#if !showAllSessions && sortedSessions.length > SESSION_PREVIEW_COUNT}
+			<SettingsRow kind="action" searchable={false} title={`${sortedSessions.length - SESSION_PREVIEW_COUNT} more session${sortedSessions.length - SESSION_PREVIEW_COUNT === 1 ? '' : 's'}`}>
+				<Button variant="ghost" onclick={() => (showAllSessions = true)}>Show all</Button>
+			</SettingsRow>
+		{/if}
 		<SettingsRow kind="info" title="OAuth sessions" description="ZAUR can list browser sessions only. Change your password to revoke all OAuth tokens.">
 			<span class="text-sm text-fg-muted">Browser sessions only</span>
 		</SettingsRow>
@@ -373,6 +457,9 @@
 		<SettingsRow kind="action" title="Create API key" description="Uses your account's safe inherited permission preset.">
 			<Button onclick={() => void createCredential('api-keys')} disabled={!verified || !apiKeyDescription}>Create</Button>
 		</SettingsRow>
+		{#if oneTimeSecret?.title === 'API key'}
+			{@render secretCallout()}
+		{/if}
 		{#each overview.apiKeys as item (item.id)}
 			<SettingsRow kind="action" searchable={false} title={item.description || 'API key'} description={item.createdAt}>
 				<Button variant="danger" onclick={() => void revokeCredential('api-keys', item)} disabled={!verified}>Revoke</Button>
@@ -380,15 +467,17 @@
 		{/each}
 	</SettingsFormGroup>
 
-	{#if oneTimeSecret}
-		<div class="z-callout m-4" role="status">
-			<span class="z-callout__title">{oneTimeSecret.title} created</span>
-			<p class="z-callout__body">Copy it now. It will not be shown again.</p>
-			<code class="my-2 block break-all rounded bg-bg-subtle p-3 text-sm">{oneTimeSecret.value}</code>
-			<div class="flex gap-2">
-				<Button onclick={() => void navigator.clipboard.writeText(oneTimeSecret!.value)}>Copy</Button>
-				<Button variant="ghost" onclick={() => oneTimeSecret = null}>Done</Button>
-			</div>
-		</div>
-	{/if}
 {/if}
+
+{#snippet secretCallout()}
+	<!-- Rendered next to the Create row, not at page bottom — the secret is shown once. -->
+	<div class="z-callout m-4 md:mx-0" role="status">
+		<span class="z-callout__title">{oneTimeSecret!.title} created</span>
+		<p class="z-callout__body">Copy it now. It will not be shown again.</p>
+		<code class="my-2 block break-all rounded bg-bg-subtle p-3 text-sm">{oneTimeSecret!.value}</code>
+		<div class="flex gap-2">
+			<Button onclick={() => void navigator.clipboard.writeText(oneTimeSecret!.value)}>Copy</Button>
+			<Button variant="ghost" onclick={() => oneTimeSecret = null}>Done</Button>
+		</div>
+	</div>
+{/snippet}

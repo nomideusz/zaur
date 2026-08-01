@@ -9,6 +9,7 @@ function slug(title) {
 
 const files = [
 	['src/lib/settings/sections/account.svelte', '/settings/account'],
+	['src/lib/settings/sections/security.svelte', '/settings/security'],
 	['src/lib/settings/sections/appearance.svelte', '/settings/appearance'],
 	['src/lib/settings/sections/reading.svelte', '/settings/reading'],
 	['src/lib/settings/sections/writing.svelte', '/settings/compose'],

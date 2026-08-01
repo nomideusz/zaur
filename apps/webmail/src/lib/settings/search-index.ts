@@ -97,12 +97,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Refresh the list of addresses you can send from if an alias isn't showing up."
 	},
 	{
-		"id": "/settings/account-session",
-		"href": "/settings/account",
-		"title": "Session",
-		"description": ""
-	},
-	{
 		"id": "/settings/account-sign-out",
 		"href": "/settings/account",
 		"title": "Sign out",
@@ -169,10 +163,10 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"description": "Minimize animations and transitions throughout the app."
 	},
 	{
-		"id": "/settings/appearance-show-search-bar",
+		"id": "/settings/appearance-show-search-bar-on-phone",
 		"href": "/settings/appearance",
-		"title": "Show search bar",
-		"description": "Show the search bar at the top of mail, contacts, calendar, and settings. You can also hide it from the bar itself."
+		"title": "Show search bar on phone",
+		"description": "Show the search bar at the top of mail, contacts, calendar, and settings on small screens. Desktop always shows search in the header."
 	},
 	{
 		"id": "/settings/calendar-events-per-day-in-month-view",
@@ -365,6 +359,78 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"href": "/settings/reading",
 		"title": "Undo window",
 		"description": "How long an Undo button stays after you send, archive, delete, or move a message. Off acts immediately."
+	},
+	{
+		"id": "/settings/security-authentication-code",
+		"href": "/settings/security",
+		"title": "Authentication code",
+		"description": ""
+	},
+	{
+		"id": "/settings/security-change-password",
+		"href": "/settings/security",
+		"title": "Change password",
+		"description": "Changing it revokes OAuth tokens on other devices."
+	},
+	{
+		"id": "/settings/security-confirm-new-password",
+		"href": "/settings/security",
+		"title": "Confirm new password",
+		"description": ""
+	},
+	{
+		"id": "/settings/security-create-api-key",
+		"href": "/settings/security",
+		"title": "Create API key",
+		"description": "Uses your account's safe inherited permission preset."
+	},
+	{
+		"id": "/settings/security-create-app-password",
+		"href": "/settings/security",
+		"title": "Create app password",
+		"description": ""
+	},
+	{
+		"id": "/settings/security-new-api-key-name",
+		"href": "/settings/security",
+		"title": "New API key name",
+		"description": ""
+	},
+	{
+		"id": "/settings/security-new-app-password-name",
+		"href": "/settings/security",
+		"title": "New app password name",
+		"description": ""
+	},
+	{
+		"id": "/settings/security-new-password",
+		"href": "/settings/security",
+		"title": "New password",
+		"description": ""
+	},
+	{
+		"id": "/settings/security-oauth-sessions",
+		"href": "/settings/security",
+		"title": "OAuth sessions",
+		"description": "ZAUR can list browser sessions only. Change your password to revoke all OAuth tokens."
+	},
+	{
+		"id": "/settings/security-password",
+		"href": "/settings/security",
+		"title": "Password",
+		"description": ""
+	},
+	{
+		"id": "/settings/security-recovery-address",
+		"href": "/settings/security",
+		"title": "Recovery address",
+		"description": ""
+	},
+	{
+		"id": "/settings/security-sign-out-other-sessions",
+		"href": "/settings/security",
+		"title": "Sign out other sessions",
+		"description": "Keep this browser signed in; sign out everywhere else."
 	},
 	{
 		"id": "/settings/shortcuts-enable-shortcuts",
