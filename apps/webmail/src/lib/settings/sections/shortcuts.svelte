@@ -28,7 +28,7 @@
 		</div>
 		<div class="z-settings-shortcut-row">
 			<p class="z-settings-shortcut-label">Toggle select / range</p>
-			<p class="z-settings-shortcut-keys">x · Shift+j · Shift+k</p>
+			<p class="z-settings-shortcut-keys">x · Shift+x · Shift+j · Shift+k</p>
 		</div>
 		<div class="z-settings-shortcut-row">
 			<p class="z-settings-shortcut-label">Select all / none / unseen / seen</p>
@@ -39,8 +39,8 @@
 			<p class="z-settings-shortcut-keys">s · u</p>
 		</div>
 		<div class="z-settings-shortcut-row">
-			<p class="z-settings-shortcut-label">Archive / trash</p>
-			<p class="z-settings-shortcut-keys">e · #</p>
+			<p class="z-settings-shortcut-label">Archive / move menu / trash</p>
+			<p class="z-settings-shortcut-keys">e · v · #</p>
 		</div>
 		<div class="z-settings-shortcut-row">
 			<p class="z-settings-shortcut-label">Compose / search / settings</p>

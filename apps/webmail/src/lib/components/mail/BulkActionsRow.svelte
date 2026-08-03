@@ -30,6 +30,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import { cn } from '$lib/utils/cn';
+	import { onMount } from 'svelte';
 	import type { Component } from 'svelte';
 
 	interface Props {
@@ -127,6 +128,17 @@
 	const overflowPrimary = $derived(overflowActions.filter((action) => action.id !== 'spam'));
 	const overflowSpam = $derived(overflowActions.filter((action) => action.id === 'spam'));
 	const showMoreMenu = $derived(overflowActions.length > 0 || canMove);
+	/** Keyboard `v` opens the More menu (Move targets live there). */
+	let moreOpen = $state(false);
+
+	onMount(() => {
+		const openMove = () => {
+			if (!canMove && overflowActions.length === 0) return;
+			moreOpen = true;
+		};
+		window.addEventListener('zaur:open-bulk-move', openMove);
+		return () => window.removeEventListener('zaur:open-bulk-move', openMove);
+	});
 
 	const linkBtnClass = 'z-mail-text-nav__link shrink-0';
 	const dangerActionClass = 'z-mail-text-nav__action z-mail-text-nav__action--danger shrink-0';
@@ -217,7 +229,13 @@
 {/each}
 
 {#if showMoreMenu}
-	<Menu side={menuSide} align="start" {menuId}>
+	<Menu
+		side={menuSide}
+		align="start"
+		{menuId}
+		bind:open={moreOpen}
+		onOpenChange={(open) => (moreOpen = open)}
+	>
 		<MenuTrigger
 			aria-label="More actions for selected messages"
 			class={iconOnly

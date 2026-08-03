@@ -415,11 +415,30 @@
 				return;
 			}
 
-			if (key === 'x' && mode !== 'reader') {
+			if ((key === 'x' || key === 'X') && mode !== 'reader') {
 				event.preventDefault();
 				const message = cursorMessage();
 				if (!message) return;
-				mail.toggleMessageSelection(message.id);
+				if (event.shiftKey || key === 'X') {
+					mail.selectMessageAt(message.id, {
+						shift: true,
+						activeMessageId: mail.selectionAnchorId ?? message.id
+					});
+				} else {
+					mail.toggleMessageSelection(message.id);
+				}
+				return;
+			}
+
+			if (key === 'v' && mode !== 'reader') {
+				event.preventDefault();
+				const message = cursorMessage();
+				if (!mail.hasSelection && message) {
+					mail.startSelection(message.id);
+				}
+				if (mail.hasSelection || message) {
+					window.dispatchEvent(new CustomEvent('zaur:open-bulk-move'));
+				}
 				return;
 			}
 

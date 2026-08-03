@@ -15,6 +15,10 @@ import {
 } from '$lib/mail/mailboxes';
 import { importantMarker } from '$lib/mail/important-marker.svelte';
 import { moveCursor, rangeIds, resolveCursorId } from '$lib/mail/list-cursor';
+import {
+	filterMessagesForSelection,
+	type SelectionFilter
+} from '$lib/mail/selection-filters';
 import { LABEL_MARK_SEEN, LABEL_UNSEE } from '$lib/mail/new-mail';
 import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
 import { settings } from '$lib/stores/settings.svelte';
@@ -1004,18 +1008,13 @@ class MailStore {
 		this.selectionAnchorId = list[0]?.id ?? null;
 	}
 
-	selectMessagesByFilter(filter: 'all' | 'normal' | 'new' | 'none') {
+	selectMessagesByFilter(filter: SelectionFilter) {
 		if (filter === 'none') {
 			this.clearSelection();
 			return;
 		}
 
-		const list = this.selectableMessages();
-		const matching = list.filter((message) => {
-			if (filter === 'all') return true;
-			if (filter === 'normal') return !message.unread;
-			return message.unread;
-		});
+		const matching = filterMessagesForSelection(this.selectableMessages(), filter);
 
 		if (!matching.length) {
 			this.clearSelection();

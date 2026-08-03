@@ -27,7 +27,7 @@
 	const side = $derived(placement === 'top' ? 'top' : 'bottom');
 	const menuId = 'message-list-select-menu';
 
-	function choose(filter: 'all' | 'normal' | 'new' | 'none') {
+	function choose(filter: Parameters<typeof mail.selectMessagesByFilter>[0]) {
 		mail.selectMessagesByFilter(filter);
 	}
 </script>
@@ -79,6 +79,14 @@
 						onSelect={() => choose('new')}
 					>
 						{LABEL_UNSEEN}
+					</Menu.Item>
+					<Menu.Item
+						class="z-overflow-menu-item"
+						value="important"
+						valueText="Highlighted"
+						onSelect={() => choose('important')}
+					>
+						Highlighted
 					</Menu.Item>
 					<Menu.Item
 						class="z-overflow-menu-item"
