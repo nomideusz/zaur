@@ -13,12 +13,14 @@
 	import { Highlight } from '@ark-ui/svelte/highlight';
 	import { isTypingTarget } from '$lib/utils/keyboard';
 	import Search from '$lib/components/icons/Search.svelte';
+	import Settings from '$lib/components/icons/Settings.svelte';
 	import User from '$lib/components/icons/User.svelte';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
+	import { SETTINGS_SEARCH_INDEX } from '$lib/settings/search-index';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -84,8 +86,8 @@
 	type SuggestItem = {
 		value: string;
 		label: string;
-		group: 'filter' | 'search' | 'contact';
-		icon: 'attachment' | 'unseen' | 'me' | 'recent' | 'search' | 'contact';
+		group: 'filter' | 'search' | 'contact' | 'settings';
+		icon: 'attachment' | 'unseen' | 'me' | 'recent' | 'search' | 'contact' | 'settings';
 		run: () => void;
 	};
 
@@ -137,7 +139,28 @@
 			}));
 	});
 
-	// The flat list the keyboard navigates: quick filters when idle, else search + contacts.
+	const settingsMatches = $derived.by<SuggestItem[]>(() => {
+		const query = input.trim().toLowerCase();
+		if (query.length < 2) return [];
+		return SETTINGS_SEARCH_INDEX.filter((entry) => {
+			const haystack = `${entry.title} ${entry.description}`.toLowerCase();
+			return haystack.includes(query);
+		})
+			.slice(0, 4)
+			.map((entry) => ({
+				value: `settings:${entry.id}`,
+				label: entry.title,
+				group: 'settings' as const,
+				icon: 'settings' as const,
+				run: () => {
+					open = false;
+					input = '';
+					goto(entry.href);
+				}
+			}));
+	});
+
+	// The flat list the keyboard navigates: quick filters when idle, else search + contacts + settings.
 	const topItems = $derived.by<SuggestItem[]>(() => {
 		if (input.trim().length === 0) return quickFilters;
 		const searchItem: SuggestItem = {
@@ -147,7 +170,7 @@
 			icon: 'search',
 			run: () => submit()
 		};
-		return [searchItem, ...contactMatches];
+		return [searchItem, ...contactMatches, ...settingsMatches];
 	});
 
 	function filterEmoji(icon: SuggestItem['icon']): string {
@@ -521,6 +544,9 @@
 								{#if item.group === 'contact' && topItems[i - 1]?.group !== 'contact'}
 									<div class="z-type-label px-3 py-1.5 text-fg-muted">Contacts</div>
 								{/if}
+								{#if item.group === 'settings' && topItems[i - 1]?.group !== 'settings'}
+									<div class="z-type-label px-3 py-1.5 text-fg-muted">Settings</div>
+								{/if}
 								<button
 									type="button"
 									class={cn(itemClass, i === highlightIndex && 'bg-surface-sunken')}
@@ -533,6 +559,17 @@
 									{:else if item.group === 'search'}
 										<Search class="size-4 text-fg-subtle" aria-hidden="true" />
 										<span>{item.label}</span>
+									{:else if item.group === 'settings'}
+										<Settings class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+										<span class="min-w-0 truncate">
+											<Highlight
+												query={input.trim()}
+												text={item.label}
+												ignoreCase
+												matchAll
+												class="z-search-mark"
+											/>
+										</span>
 									{:else}
 										<User class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
 										<span class="min-w-0 truncate">
