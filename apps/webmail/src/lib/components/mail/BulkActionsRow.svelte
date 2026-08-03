@@ -117,7 +117,7 @@
 	const ghostBtnClass = `${actionBtnSizeClass} text-fg`;
 
 	async function runBulk(action: () => Promise<void>, refreshList = false) {
-		if (!auth.client || mail.bulkActionLoading) return;
+		if (!auth.client) return;
 		try {
 			await action();
 			if (refreshList) onBulkAction?.();
@@ -153,14 +153,8 @@
 			case 'spam': {
 				const target = junkMailbox;
 				if (!target) break;
-				const count = selectedCount;
-				void runBulk(async () => {
-					await mail.bulkMoveToMailbox(auth.client!, target.id);
-					toast.show(
-						count === 1 ? 'Moved to Spam' : `${count} messages moved to Spam`,
-						'success'
-					);
-				}, true);
+				/* bulkMoveToMailbox paints instantly and offers its own Undo toast. */
+				void runBulk(() => mail.bulkMoveToMailbox(auth.client!, target.id), true);
 				break;
 			}
 			case 'trash':
