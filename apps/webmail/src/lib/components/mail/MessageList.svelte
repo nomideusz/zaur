@@ -364,6 +364,7 @@
 		if (sameMessageIds(current, next)) return;
 		mail.setSelectionList(next);
 	});
+
 	/**
 	 * Desktop reserves a flex checkbox column so hover-reveal never reflows rows.
 	 * Mobile mounts the same left column only while selecting — long press starts
@@ -374,6 +375,28 @@
 	const showRowCheckbox = $derived(
 		bulkSelectEnabled && (!mobileListLayout || mail.hasSelection)
 	);
+
+	/** Keep the list cursor on a valid visible row; prefer the open message. */
+	$effect(() => {
+		const list = bulkSelectEnabled && sectionMode ? bulkSelectionMessages : [];
+		if (!list.length) {
+			if (mail.listCursorId) mail.clearListCursor();
+			return;
+		}
+		mail.ensureListCursor(currentMessageId);
+	});
+
+	/** Scroll the cursor row into view when it moves via keyboard. */
+	$effect(() => {
+		const cursorId = mail.listCursorId;
+		const viewport = listScrollViewport;
+		if (!cursorId || !viewport || mobileListLayout) return;
+		const row = viewport.querySelector<HTMLElement>(
+			`.z-mail-list-row[data-message-id="${CSS.escape(cursorId)}"]`
+		);
+		if (!row) return;
+		row.scrollIntoView({ block: 'nearest', behavior: settings.reduceMotion ? 'auto' : 'smooth' });
+	});
 
 	function handleMobileBulkLongPress(messageId: string) {
 		/* Already selecting: long-press joins the selection instead of restarting it. */
@@ -509,14 +532,18 @@
 		messageId: string,
 		modifiers: { shift?: boolean; ctrl?: boolean } = {}
 	) {
+		/* Seed range from the previous cursor before moving it to the target. */
+		const seedId = mail.listCursorId ?? currentMessageId;
+		mail.setListCursor(messageId);
 		mail.selectMessageAt(messageId, {
 			...modifiers,
-			activeMessageId: currentMessageId
+			activeMessageId: seedId
 		});
 	}
 
 	function handleRowCheckboxChange(messageId: string) {
 		if (mobileRowGestures) haptic(8);
+		mail.setListCursor(messageId);
 		mail.toggleMessageSelection(messageId);
 	}
 
@@ -532,6 +559,7 @@
 	}
 
 	function handleRowLinkClick(messageId: string, event: MouseEvent) {
+		mail.setListCursor(messageId);
 		if (mail.hasSelection) {
 			event.preventDefault();
 			if (mobileRowGestures) haptic(8);
@@ -1080,6 +1108,7 @@
 			{@const isUnread = message.unread}
 			{@const subjectImportant = showImportantPresentation(message, routeId)}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
+			{@const rowCursor = mail.listCursorId === message.id}
 			{@const rowHref = listMessageHref(message, routeId)}
 			{@const isCurrent = currentMessageId === message.id}
 			{@const swipeLeading = listSwipeLeading(message, routeId)}
@@ -1088,6 +1117,7 @@
 				class="z-mail-list-row list-none"
 				data-message-id={message.id}
 				data-current={isCurrent ? 'true' : undefined}
+				data-cursor={rowCursor ? 'true' : undefined}
 				data-selected={rowSelected ? 'true' : undefined}
 				data-unread={isUnread ? 'true' : undefined}
 			>

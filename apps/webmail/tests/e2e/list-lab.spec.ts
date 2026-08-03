@@ -55,6 +55,26 @@ test('entering bulk select keeps row height and puts checkboxes on the left', as
 	await expect(checkbox).toHaveCount(0);
 });
 
+test('list cursor attribute moves without changing row height', async ({ page }) => {
+	await page.goto('/list-lab');
+	const first = page.locator('.z-mail-list-row').first();
+	await expect(first).toBeVisible();
+	await expect(first).toHaveAttribute('data-cursor', 'true');
+	await expect(page.getByTestId('cursor-id')).toHaveText('m1');
+
+	const before = await box(first);
+	await page.getByTestId('cursor-next').click();
+	await expect(page.getByTestId('cursor-id')).toHaveText('m2');
+	await expect(page.locator('.z-mail-list-row[data-message-id="m2"]')).toHaveAttribute(
+		'data-cursor',
+		'true'
+	);
+	await expect(first).not.toHaveAttribute('data-cursor', 'true');
+
+	const after = await box(page.locator('.z-mail-list-row[data-message-id="m2"]'));
+	expect(after.height).toBe(before.height);
+});
+
 test('long press on a row starts bulk selection', async ({ page }) => {
 	await page.goto('/list-lab');
 	const row = page.locator('.z-mail-list-row').nth(1);

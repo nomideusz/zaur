@@ -653,6 +653,26 @@
 	}
 
 	/*
+	 * List cursor — keyboard triage highlight without opening the thread.
+	 * Left hairline + wash; distinct from data-current (open) and data-selected.
+	 * Muted on touch layouts where the cursor is not the primary affordance.
+	 */
+	@media (min-width: 768px) {
+		.z-mail-view .z-mail-list-row[data-cursor="true"]:not([data-current="true"]) {
+			background-color: color-mix(in srgb, var(--z-accent) 4%, var(--z-surface-raised));
+			box-shadow: inset 2px 0 0 0 var(--z-accent);
+		}
+
+		.z-mail-view .z-mail-list-row[data-cursor="true"][data-current="true"] {
+			box-shadow: inset 2px 0 0 0 var(--z-accent);
+		}
+
+		.z-mail-view .z-mail-list--selecting .z-mail-list-row[data-cursor="true"]:not([data-current="true"]) {
+			box-shadow: inset 2px 0 0 0 var(--z-accent);
+		}
+	}
+
+	/*
 	 * Bulk mode — selected rows share a tint; ring + subject underline marks
 	 * which message is open in the reader (no left border).
 	 * ::after sits above swipe foreground — inset box-shadow on <li> was hidden.
