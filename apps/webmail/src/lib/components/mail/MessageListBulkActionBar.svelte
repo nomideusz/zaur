@@ -6,6 +6,10 @@
 	 * The ActionBar root still wraps the list on all sizes so Escape clears selection.
 	 */
 	import BulkActionsRow from '$lib/components/mail/BulkActionsRow.svelte';
+	import {
+		bulkSelectionCounts,
+		bulkSelectionSummary
+	} from '$lib/components/mail/bulk-selection-label';
 	import X from '$lib/components/icons/X.svelte';
 	import {
 		ActionBar,
@@ -28,16 +32,18 @@
 
 	let { mailboxRouteId, disabled = false, onBulkAction, children }: Props = $props();
 
-	const selectedCount = $derived(mail.selectedMessageIds.size);
+	const selectedIds = $derived([...mail.selectedMessageIds]);
+	const selectedCount = $derived(selectedIds.length);
 	const isOpen = $derived(mail.hasSelection && selectedCount > 0);
+	const summary = $derived(
+		bulkSelectionSummary(selectedCount, bulkSelectionCounts(mail.selectedMessages(), selectedIds))
+	);
 
 	/* The bar itself is fit-content, so available space is measured on the
 	   host pane: full width minus chrome (count, separators, close, padding). */
 	let hostWidth = $state(0);
 	const BAR_CHROME_PX = 200;
 	const actionsAvailableWidth = $derived(Math.max(0, hostWidth - BAR_CHROME_PX));
-
-	const ghostBtnClass = 'min-h-8 min-w-8 gap-1.5 px-2 py-1.5 text-sm font-medium text-fg';
 
 	function handleOpenChange(open: boolean) {
 		if (!open) mail.clearSelection();
@@ -63,7 +69,12 @@
 			aria-label="Actions for selected messages"
 			class={cn('max-md:hidden', disabled && 'pointer-events-none opacity-60')}
 		>
-			<ActionBarValue count={selectedCount} />
+			<ActionBarValue
+				count={selectedCount}
+				label={summary.headline}
+				class="max-w-[12rem] truncate"
+				title={summary.detail ?? summary.headline}
+			/>
 
 			<ActionBarSeparator />
 
@@ -79,8 +90,9 @@
 			<ActionBarSeparator />
 
 			<ActionBarClose
-				class="{ghostBtnClass} opacity-64 transition-opacity hover:opacity-100 motion-reduce:transition-none"
+				class="z-mail-text-nav__link opacity-64 transition-opacity hover:opacity-100 motion-reduce:transition-none"
 				onclick={handleClose}
+				aria-label="Clear selection"
 			>
 				<X class="size-4" aria-hidden="true" />
 			</ActionBarClose>

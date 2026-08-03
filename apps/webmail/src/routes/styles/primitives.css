@@ -660,6 +660,11 @@
 		color: var(--z-fg);
 	}
 
+	/* Editorial bulk links inside the Shark action-bar body. */
+	.z-action-bar-body .z-mail-text-nav__link {
+		white-space: nowrap;
+	}
+
 	.z-mail-list-bulk-selectors {
 		display: flex;
 		width: 100%;

@@ -148,6 +148,9 @@
 							<Settings class="size-4 text-fg-muted" aria-hidden="true" />
 						</span>
 						<span class="truncate">Settings</span>
+						{#if settings.enableKeyboardShortcuts}
+							<span class="ml-auto shrink-0 font-mono text-[10px] text-fg-subtle">,</span>
+						{/if}
 					</Menu.Item>
 
 					{#if auth.accounts.length > 1}

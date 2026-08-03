@@ -426,6 +426,8 @@ class SettingsStore {
 				tone: 'danger'
 			});
 		}
+		/* Undo toast covers reversible trash — skip the modal when the undo window is on. */
+		if (this.undoSendDelay > 0) return true;
 		if (!this.confirmBeforeDelete) return true;
 		return askConfirm.ask({
 			title: 'Move to trash?',

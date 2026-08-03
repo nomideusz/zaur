@@ -5,11 +5,12 @@
 	interface Props {
 		count: number;
 		label?: string;
+		title?: string;
 		class?: string;
 		children?: Snippet;
 	}
 
-	let { count, label, class: className, children }: Props = $props();
+	let { count, label, title, class: className, children }: Props = $props();
 </script>
 
 <span
@@ -18,6 +19,7 @@
 		className
 	)}
 	data-slot="action-bar-value"
+	{title}
 >
 	{#if children}
 		{@render children()}

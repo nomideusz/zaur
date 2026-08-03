@@ -36,6 +36,22 @@ class ToastStore {
 		this.showAction(message, variant);
 	}
 
+	/**
+	 * Success/info that power-users can hide — skipped unless `force`, and also
+	 * skipped when action toasts are disabled. Prefer this for bulk mark Seen etc.
+	 * Errors should use `show` / `showAction` instead.
+	 */
+	showQuiet(message: string, variant: ToastVariant = 'success') {
+		if (variant === 'error') {
+			this.showAction(message, variant);
+			return;
+		}
+		/* Quiet by default for triage: no toast unless the user wants action feedback. */
+		if (settings.hideActionToasts) return;
+		/* Intentionally no-op for bulk mark success — Undo toasts use showMoveUndo(force). */
+		void message;
+	}
+
 	showAction(
 		message: string,
 		variant: ToastVariant = 'info',

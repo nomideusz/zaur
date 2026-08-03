@@ -3,6 +3,7 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import { untrack } from 'svelte';
+	import type { TransitionConfig } from 'svelte/transition';
 	import MoveToMenu from '$lib/components/mail/MoveToMenu.svelte';
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
 	import MessageListBulkActionBar from '$lib/components/mail/MessageListBulkActionBar.svelte';
@@ -101,6 +102,21 @@
 		);
 
 	const listTimeClass = 'list-time shrink-0 tabular-nums text-fg-subtle';
+
+	/** Soft collapse when a row leaves the list (trash/archive/move). */
+	function rowExit(node: HTMLElement): TransitionConfig {
+		const reduce = settings.reduceMotion;
+		const duration = reduce ? 0 : 140;
+		node.classList.add('z-mail-list-row--exiting');
+		const height = node.getBoundingClientRect().height;
+		return {
+			duration,
+			css: (t) =>
+				reduce
+					? ''
+					: `opacity: ${t}; max-height: ${height * t}px; overflow: hidden; margin-block: 0; padding-block: ${0.625 * t}rem;`
+		};
+	}
 
 	let {
 		messages,
@@ -364,6 +380,7 @@
 		if (sameMessageIds(current, next)) return;
 		mail.setSelectionList(next);
 	});
+
 	/**
 	 * Desktop reserves a flex checkbox column so hover-reveal never reflows rows.
 	 * Mobile mounts the same left column only while selecting — long press starts
@@ -374,6 +391,28 @@
 	const showRowCheckbox = $derived(
 		bulkSelectEnabled && (!mobileListLayout || mail.hasSelection)
 	);
+
+	/** Keep the list cursor on a valid visible row; prefer the open message. */
+	$effect(() => {
+		const list = bulkSelectEnabled && sectionMode ? bulkSelectionMessages : [];
+		if (!list.length) {
+			if (mail.listCursorId) mail.clearListCursor();
+			return;
+		}
+		mail.ensureListCursor(currentMessageId);
+	});
+
+	/** Scroll the cursor row into view when it moves via keyboard. */
+	$effect(() => {
+		const cursorId = mail.listCursorId;
+		const viewport = listScrollViewport;
+		if (!cursorId || !viewport || mobileListLayout) return;
+		const row = viewport.querySelector<HTMLElement>(
+			`.z-mail-list-row[data-message-id="${CSS.escape(cursorId)}"]`
+		);
+		if (!row) return;
+		row.scrollIntoView({ block: 'nearest', behavior: settings.reduceMotion ? 'auto' : 'smooth' });
+	});
 
 	function handleMobileBulkLongPress(messageId: string) {
 		/* Already selecting: long-press joins the selection instead of restarting it. */
@@ -509,14 +548,18 @@
 		messageId: string,
 		modifiers: { shift?: boolean; ctrl?: boolean } = {}
 	) {
+		/* Seed range from the previous cursor before moving it to the target. */
+		const seedId = mail.listCursorId ?? currentMessageId;
+		mail.setListCursor(messageId);
 		mail.selectMessageAt(messageId, {
 			...modifiers,
-			activeMessageId: currentMessageId
+			activeMessageId: seedId
 		});
 	}
 
 	function handleRowCheckboxChange(messageId: string) {
 		if (mobileRowGestures) haptic(8);
+		mail.setListCursor(messageId);
 		mail.toggleMessageSelection(messageId);
 	}
 
@@ -532,6 +575,7 @@
 	}
 
 	function handleRowLinkClick(messageId: string, event: MouseEvent) {
+		mail.setListCursor(messageId);
 		if (mail.hasSelection) {
 			event.preventDefault();
 			if (mobileRowGestures) haptic(8);
@@ -1080,6 +1124,7 @@
 			{@const isUnread = message.unread}
 			{@const subjectImportant = showImportantPresentation(message, routeId)}
 			{@const rowSelected = bulkSelectEnabled && selectedIds.includes(message.id)}
+			{@const rowCursor = mail.listCursorId === message.id}
 			{@const rowHref = listMessageHref(message, routeId)}
 			{@const isCurrent = currentMessageId === message.id}
 			{@const swipeLeading = listSwipeLeading(message, routeId)}
@@ -1088,8 +1133,10 @@
 				class="z-mail-list-row list-none"
 				data-message-id={message.id}
 				data-current={isCurrent ? 'true' : undefined}
+				data-cursor={rowCursor ? 'true' : undefined}
 				data-selected={rowSelected ? 'true' : undefined}
 				data-unread={isUnread ? 'true' : undefined}
+				out:rowExit
 			>
 				{#if showRowCheckbox}
 					<div class="z-mail-list-checkbox-col z-mail-list-checkbox-col--row">

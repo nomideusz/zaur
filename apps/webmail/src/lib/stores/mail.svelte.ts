@@ -14,6 +14,11 @@ import {
 	shouldClearImportantOnMoveTo
 } from '$lib/mail/mailboxes';
 import { importantMarker } from '$lib/mail/important-marker.svelte';
+import { moveCursor, rangeIds, resolveCursorId } from '$lib/mail/list-cursor';
+import {
+	filterMessagesForSelection,
+	type SelectionFilter
+} from '$lib/mail/selection-filters';
 import { LABEL_MARK_SEEN, LABEL_UNSEE } from '$lib/mail/new-mail';
 import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
 import { settings } from '$lib/stores/settings.svelte';
@@ -119,6 +124,11 @@ class MailStore {
 	/** Visible list order for shift-range selection (sectioned inbox home, etc.). */
 	selectionList = $state<MessagePreview[]>([]);
 	bulkActionLoading = $state(false);
+	/**
+	 * Keyboard/list triage highlight — moves without opening a thread.
+	 * Distinct from the open reader message (`selectedThread` / route messageId).
+	 */
+	listCursorId = $state<string | null>(null);
 
 	/** True when one or more list messages are checked. */
 	get hasSelection() {
@@ -150,6 +160,13 @@ class MailStore {
 	}
 
 	setSelectionList(messages: MessagePreview[]) {
+		const current = this.selectionList;
+		if (
+			current.length === messages.length &&
+			current.every((message, index) => message.id === messages[index]?.id)
+		) {
+			return;
+		}
 		this.selectionList = messages;
 	}
 
@@ -272,6 +289,7 @@ class MailStore {
 		}
 
 		this.clearSelection();
+		this.clearListCursor();
 		this.messagesError = null;
 		this.messagesQueryOffset = 0;
 		this.removedFromViewMessageIds = new Set();
@@ -750,26 +768,31 @@ class MailStore {
 		const sourceJmapId = this.mailboxByRouteId(sourceRouteId)?.jmapId;
 		const snapshot = { ...message };
 
-		await this.clearImportantBeforeMove(client, [snapshot], target);
-		await client.moveToMailbox(message.id, target.jmapId, sourceJmapId);
 		this.applyMoveAwayCounts([message], sourceRouteId, target);
 		this.removeMessage(message, { skipCounts: true });
 
-		if (sourceJmapId) {
-			const label =
-				targetRole === 'archive'
-					? snapshot.subject
-						? `Archived “${snapshot.subject}”`
-						: 'Message archived'
-					: `Moved to ${target.name}`;
-			this.offerMoveUndo({
-				client,
-				snapshots: [snapshot],
-				sourceRouteId,
-				sourceJmapId,
-				targetJmapId: target.jmapId,
-				message: label
-			});
+		try {
+			await this.clearImportantBeforeMove(client, [snapshot], target);
+			await client.moveToMailbox(message.id, target.jmapId, sourceJmapId);
+			if (sourceJmapId) {
+				const label =
+					targetRole === 'archive'
+						? snapshot.subject
+							? `Archived “${snapshot.subject}”`
+							: 'Message archived'
+						: `Moved to ${target.name}`;
+				this.offerMoveUndo({
+					client,
+					snapshots: [snapshot],
+					sourceRouteId,
+					sourceJmapId,
+					targetJmapId: target.jmapId,
+					message: label
+				});
+			}
+		} catch (error) {
+			this.restoreMovedSnapshots([snapshot], sourceRouteId, target);
+			throw error;
 		}
 	}
 
@@ -781,20 +804,25 @@ class MailStore {
 		const sourceJmapId = this.mailboxByRouteId(sourceRouteId)?.jmapId;
 		const snapshot = { ...message };
 
-		await this.clearImportantBeforeMove(client, [snapshot], target);
-		await client.moveToMailbox(message.id, target.jmapId, sourceJmapId);
 		this.applyMoveAwayCounts([message], sourceRouteId, target);
 		this.removeMessage(message, { skipCounts: true });
 
-		if (sourceJmapId) {
-			this.offerMoveUndo({
-				client,
-				snapshots: [snapshot],
-				sourceRouteId,
-				sourceJmapId,
-				targetJmapId: target.jmapId,
-				message: `Moved to ${target.name}`
-			});
+		try {
+			await this.clearImportantBeforeMove(client, [snapshot], target);
+			await client.moveToMailbox(message.id, target.jmapId, sourceJmapId);
+			if (sourceJmapId) {
+				this.offerMoveUndo({
+					client,
+					snapshots: [snapshot],
+					sourceRouteId,
+					sourceJmapId,
+					targetJmapId: target.jmapId,
+					message: `Moved to ${target.name}`
+				});
+			}
+		} catch (error) {
+			this.restoreMovedSnapshots([snapshot], sourceRouteId, target);
+			throw error;
 		}
 	}
 
@@ -805,32 +833,46 @@ class MailStore {
 		const sourceJmapId = currentMailbox?.jmapId;
 
 		if (currentMailbox?.role === 'trash' || currentMailbox?.role === 'drafts') {
-			await client.destroyEmail(message.id);
 			this.removeMessage(message);
+			try {
+				await client.destroyEmail(message.id);
+			} catch (error) {
+				this.restoreMessage(snapshot);
+				throw error;
+			}
 			return;
 		}
 
-		if (trash?.jmapId) {
-			await this.clearImportantBeforeMove(client, [snapshot], trash);
-			await client.moveToMailbox(message.id, trash.jmapId, sourceJmapId);
-		} else {
-			await client.destroyEmail(message.id);
+		if (!trash?.jmapId) {
 			this.removeMessage(message);
+			try {
+				await client.destroyEmail(message.id);
+			} catch (error) {
+				this.restoreMessage(snapshot);
+				throw error;
+			}
 			return;
 		}
 
 		this.applyMoveAwayCounts([message], routeMailboxId, trash);
 		this.removeMessage(message, { skipCounts: true });
 
-		if (sourceJmapId) {
-			this.offerMoveUndo({
-				client,
-				snapshots: [snapshot],
-				sourceRouteId: routeMailboxId,
-				sourceJmapId,
-				targetJmapId: trash.jmapId,
-				message: snapshot.subject ? `Moved “${snapshot.subject}” to trash` : 'Moved to trash'
-			});
+		try {
+			await this.clearImportantBeforeMove(client, [snapshot], trash);
+			await client.moveToMailbox(message.id, trash.jmapId, sourceJmapId);
+			if (sourceJmapId) {
+				this.offerMoveUndo({
+					client,
+					snapshots: [snapshot],
+					sourceRouteId: routeMailboxId,
+					sourceJmapId,
+					targetJmapId: trash.jmapId,
+					message: snapshot.subject ? `Moved “${snapshot.subject}” to trash` : 'Moved to trash'
+				});
+			}
+		} catch (error) {
+			this.restoreMovedSnapshots([snapshot], routeMailboxId, trash);
+			throw error;
 		}
 	}
 
@@ -839,6 +881,41 @@ class MailStore {
 		this.selectionAnchorId = null;
 		this.bulkActionLoading = false;
 	}
+
+	setListCursor(messageId: string | null) {
+		if (this.listCursorId === messageId) return;
+		this.listCursorId = messageId;
+	}
+
+	clearListCursor() {
+		if (this.listCursorId === null) return;
+		this.listCursorId = null;
+	}
+
+	/** Move the list cursor by delta within the selectable/visible list. */
+	moveListCursor(delta: number) {
+		const next = moveCursor(this.selectableMessages(), this.listCursorId, delta);
+		if (next !== this.listCursorId) this.listCursorId = next;
+		return this.listCursorId;
+	}
+
+	/** Ensure cursor points at a valid row (optionally preferring an id). */
+	ensureListCursor(preferredId?: string | null) {
+		const next = resolveCursorId(
+			this.selectableMessages(),
+			this.listCursorId,
+			preferredId
+		);
+		if (next !== this.listCursorId) this.listCursorId = next;
+		return this.listCursorId;
+	}
+
+	/** Inclusive ids from selection anchor (or cursor) through target — for Shift+range. */
+	rangeMessageIds(targetId: string, anchorId?: string | null): string[] {
+		const anchor = anchorId ?? this.selectionAnchorId ?? this.listCursorId ?? targetId;
+		return rangeIds(this.selectableMessages(), anchor, targetId);
+	}
+
 	startSelection(messageId: string) {
 		const list = this.selectableMessages();
 		const index = list.findIndex((message) => message.id === messageId);
@@ -931,18 +1008,13 @@ class MailStore {
 		this.selectionAnchorId = list[0]?.id ?? null;
 	}
 
-	selectMessagesByFilter(filter: 'all' | 'normal' | 'new' | 'none') {
+	selectMessagesByFilter(filter: SelectionFilter) {
 		if (filter === 'none') {
 			this.clearSelection();
 			return;
 		}
 
-		const list = this.selectableMessages();
-		const matching = list.filter((message) => {
-			if (filter === 'all') return true;
-			if (filter === 'normal') return !message.unread;
-			return message.unread;
-		});
+		const matching = filterMessagesForSelection(this.selectableMessages(), filter);
 
 		if (!matching.length) {
 			this.clearSelection();
@@ -963,22 +1035,35 @@ class MailStore {
 		const sourceJmapId = sourceRouteId
 			? this.mailboxByRouteId(sourceRouteId)?.jmapId
 			: undefined;
+		const snapshots = messages.map((message) => ({ ...message }));
+		const ids = messages.map((message) => message.id);
 
-		this.bulkActionLoading = true;
+		/* Paint first — clear selection and remove rows before the network round-trip. */
+		this.clearSelection();
+		this.applyMoveAwayCounts(messages, sourceRouteId, target);
+		for (const message of messages) {
+			this.removeMessage(message, { skipCounts: true });
+		}
+
 		try {
-			await this.clearImportantBeforeMove(client, messages, target);
-			await client.moveEmailsToMailbox(
-				messages.map((message) => message.id),
-				target.jmapId,
-				sourceJmapId
-			);
-			this.applyMoveAwayCounts(messages, sourceRouteId, target);
-			for (const message of messages) {
-				this.removeMessage(message, { skipCounts: true });
+			await this.clearImportantBeforeMove(client, snapshots, target);
+			await client.moveEmailsToMailbox(ids, target.jmapId, sourceJmapId);
+			if (sourceJmapId) {
+				this.offerMoveUndo({
+					client,
+					snapshots,
+					sourceRouteId: sourceRouteId ?? snapshots[0]!.mailboxId,
+					sourceJmapId,
+					targetJmapId: target.jmapId,
+					message:
+						snapshots.length === 1
+							? `Moved to ${target.name}`
+							: `${snapshots.length} messages moved to ${target.name}`
+				});
 			}
-			this.clearSelection();
-		} finally {
-			this.bulkActionLoading = false;
+		} catch (error) {
+			this.restoreMovedSnapshots(snapshots, sourceRouteId, target);
+			throw error;
 		}
 	}
 
@@ -1025,57 +1110,37 @@ class MailStore {
 		const messages = this.selectedMessages().filter((message) => message.unread);
 		if (!messages.length) return;
 
-		this.bulkActionLoading = true;
-		try {
-			await this.bulkSetNewState(client, messages, true);
-			this.clearSelection();
-			toast.show(
-				messages.length === 1
-					? LABEL_MARK_SEEN
-					: `${messages.length} messages marked seen`,
-				'success'
-			);
-		} finally {
-			this.bulkActionLoading = false;
-		}
+		this.clearSelection();
+		await this.bulkSetNewState(client, messages, true);
+		toast.showQuiet(
+			messages.length === 1 ? LABEL_MARK_SEEN : `${messages.length} messages marked seen`
+		);
 	}
 
 	async bulkMarkAsDone(client: JMAPClient) {
 		const messages = this.selectedMessages().filter((message) => message.unread);
 		if (!messages.length) return;
 
-		this.bulkActionLoading = true;
-		try {
-			const important = messages.filter((message) => message.important);
-			if (important.length) {
-				await this.setMessagesImportant(client, important, false);
-			}
-			await this.bulkSetNewState(client, messages, true);
-			this.clearSelection();
-			toast.show(
-				messages.length === 1 ? 'Marked done' : `${messages.length} messages marked done`,
-				'success'
-			);
-		} finally {
-			this.bulkActionLoading = false;
+		this.clearSelection();
+		const important = messages.filter((message) => message.important);
+		if (important.length) {
+			await this.setMessagesImportant(client, important, false);
 		}
+		await this.bulkSetNewState(client, messages, true);
+		toast.showQuiet(
+			messages.length === 1 ? 'Marked done' : `${messages.length} messages marked done`
+		);
 	}
 
 	async bulkMarkAsNew(client: JMAPClient) {
 		const messages = this.selectedMessages().filter((message) => !message.unread);
 		if (!messages.length) return;
 
-		this.bulkActionLoading = true;
-		try {
-			await this.bulkSetNewState(client, messages, false);
-			this.clearSelection();
-			toast.show(
-				messages.length === 1 ? LABEL_UNSEE : `${messages.length} messages unseen`,
-				'success'
-			);
-		} finally {
-			this.bulkActionLoading = false;
-		}
+		this.clearSelection();
+		await this.bulkSetNewState(client, messages, false);
+		toast.showQuiet(
+			messages.length === 1 ? LABEL_UNSEE : `${messages.length} messages unseen`
+		);
 	}
 
 	async bulkMarkAsImportant(client: JMAPClient) {
@@ -1086,19 +1151,11 @@ class MailStore {
 		);
 		if (!messages.length) return;
 
-		this.bulkActionLoading = true;
-		try {
-			await this.setMessagesImportant(client, messages, true);
-			this.clearSelection();
-			toast.show(
-				messages.length === 1
-					? 'Highlighted'
-					: `${messages.length} messages highlighted`,
-				'success'
-			);
-		} finally {
-			this.bulkActionLoading = false;
-		}
+		this.clearSelection();
+		await this.setMessagesImportant(client, messages, true);
+		toast.showQuiet(
+			messages.length === 1 ? 'Highlighted' : `${messages.length} messages highlighted`
+		);
 	}
 
 	async bulkMarkAsNotImportant(client: JMAPClient) {
@@ -1107,19 +1164,11 @@ class MailStore {
 		);
 		if (!messages.length) return;
 
-		this.bulkActionLoading = true;
-		try {
-			await this.setMessagesImportant(client, messages, false);
-			this.clearSelection();
-			toast.show(
-				messages.length === 1
-					? 'Highlight removed'
-					: `${messages.length} messages unmarked`,
-				'success'
-			);
-		} finally {
-			this.bulkActionLoading = false;
-		}
+		this.clearSelection();
+		await this.setMessagesImportant(client, messages, false);
+		toast.showQuiet(
+			messages.length === 1 ? 'Highlight removed' : `${messages.length} messages unmarked`
+		);
 	}
 
 	async bulkDelete(client: JMAPClient, routeMailboxId: string) {
@@ -1132,43 +1181,62 @@ class MailStore {
 		const snapshots = messages.map((message) => ({ ...message }));
 		const sourceJmapId = currentMailbox?.jmapId;
 
-		this.bulkActionLoading = true;
-		try {
-			if (currentMailbox?.role === 'trash') {
+		/* Paint first — selection bar disappears and rows leave immediately. */
+		this.clearSelection();
+
+		if (currentMailbox?.role === 'trash') {
+			for (const message of messages) {
+				this.removeMessage(message);
+			}
+			try {
 				await client.destroyEmails(ids);
-				for (const message of messages) {
-					this.removeMessage(message);
+			} catch (error) {
+				for (const snapshot of snapshots) {
+					this.restoreMessage(snapshot);
 				}
-			} else if (trash?.jmapId) {
+				throw error;
+			}
+			return;
+		}
+
+		if (trash?.jmapId) {
+			this.applyMoveAwayCounts(messages, routeMailboxId, trash);
+			for (const message of messages) {
+				this.removeMessage(message, { skipCounts: true });
+			}
+			try {
 				await this.clearImportantBeforeMove(client, snapshots, trash);
 				await client.moveEmailsToMailbox(ids, trash.jmapId, sourceJmapId);
-				this.applyMoveAwayCounts(messages, routeMailboxId, trash);
-				for (const message of messages) {
-					this.removeMessage(message, { skipCounts: true });
+				if (sourceJmapId) {
+					this.offerMoveUndo({
+						client,
+						snapshots,
+						sourceRouteId: routeMailboxId,
+						sourceJmapId,
+						targetJmapId: trash.jmapId,
+						message:
+							snapshots.length === 1
+								? 'Moved to trash'
+								: `${snapshots.length} messages moved to trash`
+					});
 				}
-			} else {
-				await client.destroyEmails(ids);
-				for (const message of messages) {
-					this.removeMessage(message);
-				}
+			} catch (error) {
+				this.restoreMovedSnapshots(snapshots, routeMailboxId, trash);
+				throw error;
 			}
-			this.clearSelection();
+			return;
+		}
 
-			if (currentMailbox?.role !== 'trash' && sourceJmapId && trash?.jmapId) {
-				this.offerMoveUndo({
-					client,
-					snapshots,
-					sourceRouteId: routeMailboxId,
-					sourceJmapId,
-					targetJmapId: trash.jmapId,
-					message:
-						snapshots.length === 1
-							? 'Moved to trash'
-							: `${snapshots.length} messages moved to trash`
-				});
+		for (const message of messages) {
+			this.removeMessage(message);
+		}
+		try {
+			await client.destroyEmails(ids);
+		} catch (error) {
+			for (const snapshot of snapshots) {
+				this.restoreMessage(snapshot);
 			}
-		} finally {
-			this.bulkActionLoading = false;
+			throw error;
 		}
 	}
 
@@ -1697,6 +1765,31 @@ class MailStore {
 		}
 	}
 
+	/** Roll back an optimistic move/trash when the server rejects it. */
+	private restoreMovedSnapshots(
+		snapshots: MessagePreview[],
+		sourceRouteId: string | null,
+		target?: Mailbox | null
+	) {
+		if (!snapshots.length) return;
+		if (target) {
+			const unreadInTarget = snapshots.filter((message) => message.unread).length;
+			this.adjustMailboxCounts(target.id, -snapshots.length, -unreadInTarget);
+		}
+		if (!sourceRouteId) return;
+		this.applyMoveRestoreCounts(snapshots, sourceRouteId);
+		if (this.currentMailboxRouteId !== sourceRouteId) return;
+		for (const snapshot of snapshots) {
+			this.clearRemovedFromView(snapshot.id);
+			if (!this.messages.some((item) => item.id === snapshot.id)) {
+				this.messages = [...this.messages, snapshot].sort(
+					(a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
+				);
+				this.messagesTotal += 1;
+			}
+		}
+	}
+
 	private offerMoveUndo(params: {
 		client: JMAPClient;
 		snapshots: MessagePreview[];
@@ -1779,6 +1872,7 @@ class MailStore {
 		this.openMessageInflight = null;
 		this.openMessageInflightKey = null;
 		this.clearSelection();
+		this.clearListCursor();
 		this.selectionList = [];
 		this.removedFromViewMessageIds = new Set();
 		this.pendingKeywords.clear();
