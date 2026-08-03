@@ -3,6 +3,9 @@
 	// The toggle button enters/leaves bulk-select deterministically; long press on
 	// a row exercises the real gesture path. Cursor buttons drive listCursorId for
 	// keyboard-triage visuals without opening threads.
+	//
+	// Dates are newest-first after collapseMessagesByThread sorts — put the
+	// geometry fixture (long subject + icons) on the newest message.
 	import MessageList from '$lib/components/mail/MessageList.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import type { MessagePreview } from '$lib/types/mail';
@@ -23,13 +26,7 @@
 	});
 
 	const messages: MessagePreview[] = [
-		msg(1, {
-			unread: true,
-			hasAttachment: true,
-			replied: true,
-			subject:
-				'A very long subject line that should truncate with an ellipsis instead of wrapping onto a second line when the row narrows'
-		}),
+		msg(1, { subject: 'Older normal message' }),
 		msg(2, { subject: 'Short subject' }),
 		msg(3, {
 			hasAttachment: true,
@@ -38,13 +35,14 @@
 			subject: 'Invoice attached for March services'
 		}),
 		msg(4, { unread: true, subject: 'Quick question about the roadmap' }),
-		msg(5, { important: true, subject: 'Highlighted follow-up' })
+		msg(5, {
+			unread: true,
+			hasAttachment: true,
+			replied: true,
+			subject:
+				'A very long subject line that should truncate with an ellipsis instead of wrapping onto a second line when the row narrows'
+		})
 	];
-
-	$effect(() => {
-		mail.setSelectionList(messages);
-		mail.ensureListCursor(messages[0]?.id ?? null);
-	});
 </script>
 
 <svelte:head>
@@ -57,7 +55,7 @@
 			type="button"
 			data-testid="toggle-select"
 			class="z-btn-ghost self-start px-3 py-2 text-sm"
-			onclick={() => (mail.hasSelection ? mail.clearSelection() : mail.startSelection('m1'))}
+			onclick={() => (mail.hasSelection ? mail.clearSelection() : mail.startSelection('m5'))}
 		>
 			Toggle selection
 		</button>

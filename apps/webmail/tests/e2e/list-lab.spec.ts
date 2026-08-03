@@ -57,21 +57,22 @@ test('entering bulk select keeps row height and puts checkboxes on the left', as
 
 test('list cursor attribute moves without changing row height', async ({ page }) => {
 	await page.goto('/list-lab');
+	/* List is newest-first after collapse — fixture m5 is first, then m4… */
 	const first = page.locator('.z-mail-list-row').first();
 	await expect(first).toBeVisible();
 	await expect(first).toHaveAttribute('data-cursor', 'true');
-	await expect(page.getByTestId('cursor-id')).toHaveText('m1');
+	await expect(page.getByTestId('cursor-id')).toHaveText('m5');
 
 	const before = await box(first);
 	await page.getByTestId('cursor-next').click();
-	await expect(page.getByTestId('cursor-id')).toHaveText('m2');
-	await expect(page.locator('.z-mail-list-row[data-message-id="m2"]')).toHaveAttribute(
+	await expect(page.getByTestId('cursor-id')).toHaveText('m4');
+	await expect(page.locator('.z-mail-list-row[data-message-id="m4"]')).toHaveAttribute(
 		'data-cursor',
 		'true'
 	);
 	await expect(first).not.toHaveAttribute('data-cursor', 'true');
 
-	const after = await box(page.locator('.z-mail-list-row[data-message-id="m2"]'));
+	const after = await box(page.locator('.z-mail-list-row[data-message-id="m4"]'));
 	expect(after.height).toBe(before.height);
 });
 

@@ -156,6 +156,13 @@ class MailStore {
 	}
 
 	setSelectionList(messages: MessagePreview[]) {
+		const current = this.selectionList;
+		if (
+			current.length === messages.length &&
+			current.every((message, index) => message.id === messages[index]?.id)
+		) {
+			return;
+		}
 		this.selectionList = messages;
 	}
 
@@ -872,26 +879,30 @@ class MailStore {
 	}
 
 	setListCursor(messageId: string | null) {
+		if (this.listCursorId === messageId) return;
 		this.listCursorId = messageId;
 	}
 
 	clearListCursor() {
+		if (this.listCursorId === null) return;
 		this.listCursorId = null;
 	}
 
 	/** Move the list cursor by delta within the selectable/visible list. */
 	moveListCursor(delta: number) {
-		this.listCursorId = moveCursor(this.selectableMessages(), this.listCursorId, delta);
+		const next = moveCursor(this.selectableMessages(), this.listCursorId, delta);
+		if (next !== this.listCursorId) this.listCursorId = next;
 		return this.listCursorId;
 	}
 
 	/** Ensure cursor points at a valid row (optionally preferring an id). */
 	ensureListCursor(preferredId?: string | null) {
-		this.listCursorId = resolveCursorId(
+		const next = resolveCursorId(
 			this.selectableMessages(),
 			this.listCursorId,
 			preferredId
 		);
+		if (next !== this.listCursorId) this.listCursorId = next;
 		return this.listCursorId;
 	}
 
