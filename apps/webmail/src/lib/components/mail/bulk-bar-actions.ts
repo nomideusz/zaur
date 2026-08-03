@@ -16,6 +16,7 @@ export type BulkBarActionId =
 	| 'important'
 	| 'not-important'
 	| 'spam'
+	| 'archive'
 	| 'trash'
 	| 'cancel';
 
@@ -33,9 +34,18 @@ export function bulkBarActions(options: {
 	canMarkImportant: boolean;
 	/** Spam folder exists and the current view isn't Spam/Trash/Drafts/Sent. */
 	canMarkSpam?: boolean;
+	/** Archive folder exists and the current view isn't Archive/Trash/Drafts. */
+	canArchive?: boolean;
 	deleteLabel: string;
 }): BulkBarAction[] {
-	const { counts, selectedCount, canMarkImportant, canMarkSpam = false, deleteLabel } = options;
+	const {
+		counts,
+		selectedCount,
+		canMarkImportant,
+		canMarkSpam = false,
+		canArchive = false,
+		deleteLabel
+	} = options;
 	const readCount = bulkSelectionReadCount(counts);
 	const actions: BulkBarAction[] = [];
 
@@ -77,6 +87,11 @@ export function bulkBarActions(options: {
 
 	if (canMarkSpam) {
 		actions.push({ id: 'spam', label: 'Mark spam', variant: 'link', priority: 3 });
+	}
+
+	if (canArchive) {
+		/* Priority 1 keeps Archive inline with Highlight when space is tight. */
+		actions.push({ id: 'archive', label: 'Archive', variant: 'link', priority: 1 });
 	}
 
 	actions.push({ id: 'trash', label: deleteLabel, variant: 'danger', priority: 0 });

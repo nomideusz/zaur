@@ -1,10 +1,10 @@
 <script lang="ts">
 	/**
-	 * Bulk mark/spam/trash actions for the current selection — shared between
+	 * Bulk mark/spam/archive/trash actions for the current selection — shared between
 	 * the desktop inline action bar and the mobile island's bulk mode.
 	 *
-	 * The Highlight action is always inline; the remaining mark actions go
-	 * inline as measured space allows, the rest into the More menu.
+	 * Highlight + Archive stay inline preferentially; remaining marks fit by width;
+	 * Move targets live in the More menu.
 	 */
 	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import {
@@ -14,6 +14,8 @@
 		type BulkBarActionId
 	} from '$lib/components/mail/bulk-bar-actions';
 	import { bulkSelectionCounts } from '$lib/components/mail/bulk-selection-label';
+	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
+	import Archive from '$lib/components/icons/Archive.svelte';
 	import Eye from '$lib/components/icons/Eye.svelte';
 	import EyeOff from '$lib/components/icons/EyeOff.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
@@ -21,13 +23,13 @@
 	import ShieldAlert from '$lib/components/icons/ShieldAlert.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import { ActionBarSeparator } from '$lib/components/ui/action-bar';
-	import Button from '$lib/components/ui/Button.svelte';
 	import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '$lib/components/ui/menu';
-	import { canMarkImportantFromMailboxRole } from '$lib/mail/mailboxes';
+	import { canMarkImportantFromMailboxRole, moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { cn } from '$lib/utils/cn';
 	import type { Component } from 'svelte';
 
 	interface Props {
@@ -62,7 +64,8 @@
 		'mark-seen': Eye,
 		important: Important,
 		'not-important': Important,
-		spam: ShieldAlert
+		spam: ShieldAlert,
+		archive: Archive
 	};
 
 	const selectedIds = $derived([...mail.selectedMessageIds]);
@@ -73,6 +76,7 @@
 	const selectionCounts = $derived(bulkSelectionCounts(selectedMessages, selectedIds));
 	const canMarkImportant = $derived(canMarkImportantFromMailboxRole(currentMailbox?.role));
 	const junkMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'junk'));
+	const archiveMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'archive'));
 	const canMarkSpam = $derived(
 		!!junkMailbox &&
 			currentMailbox?.role !== 'junk' &&
@@ -80,12 +84,21 @@
 			currentMailbox?.role !== 'drafts' &&
 			currentMailbox?.role !== 'sent'
 	);
+	const canArchive = $derived(
+		!!archiveMailbox &&
+			currentMailbox?.role !== 'archive' &&
+			currentMailbox?.role !== 'trash' &&
+			currentMailbox?.role !== 'drafts'
+	);
+	const moveTargets = $derived(moveTargetMailboxes(mail.mailboxes, currentMailbox));
+	const canMove = $derived(moveTargets.length > 0);
 	const actions = $derived(
 		bulkBarActions({
 			counts: selectionCounts,
 			selectedCount,
 			canMarkImportant,
 			canMarkSpam,
+			canArchive,
 			deleteLabel
 		})
 	);
@@ -95,7 +108,8 @@
 		'mark-seen',
 		'important',
 		'not-important',
-		'spam'
+		'spam',
+		'archive'
 	]);
 	const markActions = $derived(actions.filter((action) => markActionIds.has(action.id)));
 
@@ -109,12 +123,13 @@
 	);
 	const inlineActions = $derived(fitted.inline);
 	const overflowActions = $derived(fitted.overflow);
-	/** Read-state group first, then spam — separated in the menu. */
-	const overflowReadState = $derived(overflowActions.filter((action) => action.id !== 'spam'));
+	/** Read-state / archive group first, then spam — separated in the menu. */
+	const overflowPrimary = $derived(overflowActions.filter((action) => action.id !== 'spam'));
 	const overflowSpam = $derived(overflowActions.filter((action) => action.id === 'spam'));
+	const showMoreMenu = $derived(overflowActions.length > 0 || canMove);
 
-	const actionBtnSizeClass = 'min-h-8 min-w-8 gap-1.5 px-2 py-1.5 text-sm font-medium';
-	const ghostBtnClass = `${actionBtnSizeClass} text-fg`;
+	const linkBtnClass = 'z-mail-text-nav__link shrink-0';
+	const dangerActionClass = 'z-mail-text-nav__action z-mail-text-nav__action--danger shrink-0';
 
 	async function runBulk(action: () => Promise<void>, refreshList = false) {
 		if (!auth.client) return;
@@ -132,6 +147,10 @@
 		const permanent = currentMailbox?.role === 'trash';
 		if (!(await settings.confirmDeleteMessage(selectedCount, permanent))) return;
 		void runBulk(() => mail.bulkDelete(auth.client!, mailboxRouteId), true);
+	}
+
+	function moveSelected(targetRouteId: string) {
+		void runBulk(() => mail.bulkMoveToMailbox(auth.client!, targetRouteId), true);
 	}
 
 	export function runAction(id: BulkBarActionId) {
@@ -153,7 +172,12 @@
 			case 'spam': {
 				const target = junkMailbox;
 				if (!target) break;
-				/* bulkMoveToMailbox paints instantly and offers its own Undo toast. */
+				void runBulk(() => mail.bulkMoveToMailbox(auth.client!, target.id), true);
+				break;
+			}
+			case 'archive': {
+				const target = archiveMailbox;
+				if (!target) break;
 				void runBulk(() => mail.bulkMoveToMailbox(auth.client!, target.id), true);
 				break;
 			}
@@ -186,28 +210,28 @@
 			{@render actionIcon(action, 'size-[1.125rem]')}
 		</button>
 	{:else}
-		<Button variant="ghost" class="{ghostBtnClass} shrink-0" onclick={() => runAction(action.id)}>
-			{@render actionIcon(action, 'size-4')}
+		<button type="button" class={linkBtnClass} onclick={() => runAction(action.id)}>
 			{action.label}
-		</Button>
+		</button>
 	{/if}
 {/each}
 
-{#if overflowActions.length > 0}
+{#if showMoreMenu}
 	<Menu side={menuSide} align="start" {menuId}>
 		<MenuTrigger
 			aria-label="More actions for selected messages"
 			class={iconOnly
 				? 'z-mobile-island__icon-btn shrink-0'
-				: `z-btn-ghost ${ghostBtnClass} shrink-0`}
+				: cn(linkBtnClass, 'inline-flex items-center gap-1')}
 		>
-			<MoreVertical class={iconOnly ? 'size-[1.125rem]' : 'size-4'} aria-hidden="true" />
-			{#if !iconOnly}
-				<span class="max-sm:sr-only">More</span>
+			{#if iconOnly}
+				<MoreVertical class="size-[1.125rem]" aria-hidden="true" />
+			{:else}
+				More
 			{/if}
 		</MenuTrigger>
 		<MenuContent class="w-56 min-w-48">
-			{#each overflowReadState as action (action.id)}
+			{#each overflowPrimary as action (action.id)}
 				<MenuItem label={action.label} onSelect={() => runAction(action.id)}>
 					<span class="flex size-5 shrink-0 items-center justify-center">
 						{@render actionIcon(action, 'size-4')}
@@ -215,7 +239,7 @@
 					<span class="truncate">{action.label}</span>
 				</MenuItem>
 			{/each}
-			{#if overflowReadState.length > 0 && overflowSpam.length > 0}
+			{#if overflowPrimary.length > 0 && overflowSpam.length > 0}
 				<MenuSeparator />
 			{/if}
 			{#each overflowSpam as action (action.id)}
@@ -226,6 +250,12 @@
 					<span class="truncate">{action.label}</span>
 				</MenuItem>
 			{/each}
+			{#if canMove}
+				{#if overflowActions.length > 0}
+					<MenuSeparator />
+				{/if}
+				<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveSelected} />
+			{/if}
 		</MenuContent>
 	</Menu>
 {/if}
@@ -243,8 +273,9 @@
 		<Trash2 class="size-[1.125rem]" aria-hidden="true" />
 	</button>
 {:else}
-	<Button variant="danger" class="{actionBtnSizeClass} shrink-0" onclick={() => runAction('trash')}>
-		<Trash2 class="size-4" aria-hidden="true" />
-		<span class="max-sm:sr-only">{deleteLabel}</span>
-	</Button>
+	<div class="z-header-action-zone shrink-0">
+		<button type="button" class={dangerActionClass} onclick={() => runAction('trash')}>
+			{deleteLabel}
+		</button>
+	</div>
 {/if}
