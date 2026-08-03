@@ -652,6 +652,17 @@
 		background-color: color-mix(in srgb, var(--z-accent) 5%, var(--z-surface-raised));
 	}
 
+	/* Soften selected-row paint so cursor hairline stays readable on top. */
+	.z-mail-view .z-mail-list-row[data-selected="true"] {
+		transition: background-color var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.z-mail-view .z-mail-list-row[data-selected="true"] {
+			transition: none;
+		}
+	}
+
 	/*
 	 * List cursor — keyboard triage highlight without opening the thread.
 	 * Left hairline + wash; distinct from data-current (open) and data-selected.

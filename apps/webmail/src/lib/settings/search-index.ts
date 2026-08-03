@@ -436,6 +436,6 @@ export const SETTINGS_SEARCH_INDEX: SettingsSearchEntry[] = [
 		"id": "/settings/shortcuts-enable-shortcuts",
 		"href": "/settings/shortcuts",
 		"title": "Enable shortcuts",
-		"description": "Use the single-key shortcuts below to move around without the mouse."
+		"description": "Use the single-key shortcuts below to triage the list without the mouse. Press ? for a quick reference."
 	}
 ];

@@ -32,7 +32,7 @@ Android clients. The native direction is documented in
 | **Writing** | Compose format, reply mode, Cc/Bcc, contact suggestions, signature, confirmations, undo send delay |
 | **Shortcuts** | Keyboard shortcuts toggle and reference (desktop only) |
 
-Keyboard shortcuts (when enabled): `c` compose, `/` search, `g` then `i`/`s`/`d`/`a`/`t`/`j` go to folder, `j`/`k` next/previous, `n` next unseen, `r` reply, `a` reply all, `f` forward, `d` not important, `u` toggle important, `#` trash, `Ctrl+Enter` send, `Esc` back/close compose.
+Keyboard shortcuts (when enabled): `j`/`k` move the list cursor (Enter/`o` opens), `x` toggle select, `Shift+j`/`k` range select, `* a`/`n`/`u`/`r` select filters, `s` mark seen, `u` toggle unseen on the list (highlight in the reader), `e` archive, `#` trash, `,` settings, `?` shortcut help, `c` compose, `/` search, `g` then `i`/`s`/`d`/`a`/`t`/`j` go to folder, `n` next unseen, `r`/`a`/`f` reply/reply-all/forward, `d` not highlighted (reader), `Ctrl+Enter` send, `Esc` back/clear selection.
 
 ## Requirements
 

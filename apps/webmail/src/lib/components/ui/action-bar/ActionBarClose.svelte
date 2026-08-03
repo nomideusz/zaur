@@ -11,9 +11,15 @@
 		class?: string;
 		children: Snippet;
 		onclick?: (event: MouseEvent) => void;
+		'aria-label'?: string;
 	}
 
-	let { class: className, children, onclick }: Props = $props();
+	let {
+		class: className,
+		children,
+		onclick,
+		'aria-label': ariaLabel = 'Close'
+	}: Props = $props();
 
 	const actionBar = getContext<ActionBarContext>(ACTION_BAR_CTX);
 
@@ -25,7 +31,7 @@
 
 <button
 	type="button"
-	aria-label="Close"
+	aria-label={ariaLabel}
 	class={cn('z-action-bar-close z-btn-ghost', className)}
 	data-slot="action-bar-close"
 	data-state={actionBar.isOpen ? 'open' : 'closed'}
