@@ -14,6 +14,7 @@ import {
 	shouldClearImportantOnMoveTo
 } from '$lib/mail/mailboxes';
 import { importantMarker } from '$lib/mail/important-marker.svelte';
+import { moveCursor, rangeIds, resolveCursorId } from '$lib/mail/list-cursor';
 import { LABEL_MARK_SEEN, LABEL_UNSEE } from '$lib/mail/new-mail';
 import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
 import { settings } from '$lib/stores/settings.svelte';
@@ -119,6 +120,11 @@ class MailStore {
 	/** Visible list order for shift-range selection (sectioned inbox home, etc.). */
 	selectionList = $state<MessagePreview[]>([]);
 	bulkActionLoading = $state(false);
+	/**
+	 * Keyboard/list triage highlight — moves without opening a thread.
+	 * Distinct from the open reader message (`selectedThread` / route messageId).
+	 */
+	listCursorId = $state<string | null>(null);
 
 	/** True when one or more list messages are checked. */
 	get hasSelection() {
@@ -272,6 +278,7 @@ class MailStore {
 		}
 
 		this.clearSelection();
+		this.clearListCursor();
 		this.messagesError = null;
 		this.messagesQueryOffset = 0;
 		this.removedFromViewMessageIds = new Set();
@@ -839,6 +846,37 @@ class MailStore {
 		this.selectionAnchorId = null;
 		this.bulkActionLoading = false;
 	}
+
+	setListCursor(messageId: string | null) {
+		this.listCursorId = messageId;
+	}
+
+	clearListCursor() {
+		this.listCursorId = null;
+	}
+
+	/** Move the list cursor by delta within the selectable/visible list. */
+	moveListCursor(delta: number) {
+		this.listCursorId = moveCursor(this.selectableMessages(), this.listCursorId, delta);
+		return this.listCursorId;
+	}
+
+	/** Ensure cursor points at a valid row (optionally preferring an id). */
+	ensureListCursor(preferredId?: string | null) {
+		this.listCursorId = resolveCursorId(
+			this.selectableMessages(),
+			this.listCursorId,
+			preferredId
+		);
+		return this.listCursorId;
+	}
+
+	/** Inclusive ids from selection anchor (or cursor) through target — for Shift+range. */
+	rangeMessageIds(targetId: string, anchorId?: string | null): string[] {
+		const anchor = anchorId ?? this.selectionAnchorId ?? this.listCursorId ?? targetId;
+		return rangeIds(this.selectableMessages(), anchor, targetId);
+	}
+
 	startSelection(messageId: string) {
 		const list = this.selectableMessages();
 		const index = list.findIndex((message) => message.id === messageId);
@@ -1779,6 +1817,7 @@ class MailStore {
 		this.openMessageInflight = null;
 		this.openMessageInflightKey = null;
 		this.clearSelection();
+		this.clearListCursor();
 		this.selectionList = [];
 		this.removedFromViewMessageIds = new Set();
 		this.pendingKeywords.clear();
