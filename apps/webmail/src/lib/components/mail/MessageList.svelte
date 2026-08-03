@@ -3,6 +3,7 @@
 	import { browser } from '$app/environment';
 	import { page } from '$app/stores';
 	import { untrack } from 'svelte';
+	import type { TransitionConfig } from 'svelte/transition';
 	import MoveToMenu from '$lib/components/mail/MoveToMenu.svelte';
 	import MessageListLoadMore from '$lib/components/mail/MessageListLoadMore.svelte';
 	import MessageListBulkActionBar from '$lib/components/mail/MessageListBulkActionBar.svelte';
@@ -101,6 +102,21 @@
 		);
 
 	const listTimeClass = 'list-time shrink-0 tabular-nums text-fg-subtle';
+
+	/** Soft collapse when a row leaves the list (trash/archive/move). */
+	function rowExit(node: HTMLElement): TransitionConfig {
+		const reduce = settings.reduceMotion;
+		const duration = reduce ? 0 : 140;
+		node.classList.add('z-mail-list-row--exiting');
+		const height = node.getBoundingClientRect().height;
+		return {
+			duration,
+			css: (t) =>
+				reduce
+					? ''
+					: `opacity: ${t}; max-height: ${height * t}px; overflow: hidden; margin-block: 0; padding-block: ${0.625 * t}rem;`
+		};
+	}
 
 	let {
 		messages,
@@ -1120,6 +1136,7 @@
 				data-cursor={rowCursor ? 'true' : undefined}
 				data-selected={rowSelected ? 'true' : undefined}
 				data-unread={isUnread ? 'true' : undefined}
+				out:rowExit
 			>
 				{#if showRowCheckbox}
 					<div class="z-mail-list-checkbox-col z-mail-list-checkbox-col--row">

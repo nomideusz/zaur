@@ -555,9 +555,19 @@
 		transition: background-color var(--z-motion-fast) var(--z-ease-standard);
 	}
 
+	/* Soft exit while a row is removed (trash / archive / move). */
+	.z-mail-view .z-mail-list-row--exiting {
+		pointer-events: none;
+		border-color: transparent;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
 		.z-mail-view .z-mail-list-row[data-selected="true"] {
 			transition: none;
+		}
+
+		.z-mail-view .z-mail-list-row--exiting {
+			opacity: 0;
 		}
 	}
 
