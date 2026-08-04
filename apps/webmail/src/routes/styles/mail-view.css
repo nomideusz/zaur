@@ -46,7 +46,6 @@
 	}
 
 	.z-app-main--page-scroll .z-mail-pane--mobile-fullscreen {
-		top: calc(env(safe-area-inset-top, 0px) + var(--z-mobile-topbar-height));
 		overflow: hidden;
 		min-height: 0;
 		flex: 1 1 0;

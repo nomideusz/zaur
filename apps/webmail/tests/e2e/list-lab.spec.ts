@@ -1,7 +1,7 @@
 import { test, expect } from '@playwright/test';
 
-// Mobile message-list rows via /list-lab: two fixed lines (sender / truncated
-// subject), date on line 1 right, icons on line 2 right. Selectable lists
+// Mobile message-list rows via /list-lab: sender + up-to-two-line subject,
+// date on line 1 right, icons on the subject row right. Selectable lists
 // reserve a left checkbox gutter so bulk-select never reflows row content.
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
@@ -23,8 +23,9 @@ test('rows are two lines with date and icons in the right rail', async ({ page }
 	const icons = await box(row.locator('.z-mail-list-row-icons'));
 	const rowBox = await box(row);
 
-	// Subject is a single truncated line despite the long fixture text.
-	expect(subject.height).toBeLessThan(sender.height * 1.8);
+	// Long fixture subject clamps to ~2 lines on phone (not a single ellipsis line).
+	expect(subject.height).toBeGreaterThan(sender.height * 1.2);
+	expect(subject.height).toBeLessThan(sender.height * 2.8);
 	// Line 1: sender left, date right. Line 2: subject left, icons right.
 	expect(Math.abs(time.y - sender.y)).toBeLessThan(sender.height);
 	expect(icons.y).toBeGreaterThan(sender.y + sender.height / 2);
@@ -81,8 +82,10 @@ test('list cursor attribute moves without changing row height', async ({ page })
 	);
 	await expect(first).not.toHaveAttribute('data-cursor', 'true');
 
-	const after = await box(page.locator('.z-mail-list-row[data-message-id="m4"]'));
-	expect(after.height).toBe(before.height);
+	/* Cursor chrome must not reflow the row that lost focus (m5 may be taller
+	   than m4 now that subjects clamp to two lines). */
+	const afterFirst = await box(first);
+	expect(afterFirst.height).toBe(before.height);
 });
 
 test('long press on a row starts bulk selection', async ({ page }) => {

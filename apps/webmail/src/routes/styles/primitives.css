@@ -33,12 +33,13 @@
 	}
 
 	.z-mail-pane--mobile-fullscreen {
-		@apply max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-30 max-md:flex max-md:flex-col max-md:bg-surface;
-		/* Fixed pane escapes #main-content. Sit below the sticky mobile top bar
-		   (which already lives inside main's safe-area padding) so From/meta
-		   never paint underneath the back chrome. */
-		top: calc(env(safe-area-inset-top, 0px) + var(--z-mobile-topbar-height));
-		padding-top: 0;
+		/*
+		 * Phone thread view: stay in normal flex flow under the sticky top bar.
+		 * Fixed/overlay positioning previously escaped #main-content and painted
+		 * From/meta underneath the back chrome — in-flow flex-1 avoids that class
+		 * of bugs entirely (list pane is already hidden while a thread is open).
+		 */
+		@apply max-md:relative max-md:z-30 max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col max-md:bg-surface;
 	}
 
 	.z-mobile-sheet-backdrop {
@@ -820,6 +821,10 @@
 
 	/* @shark/segment-group — horizontal folder rail (mobile mail header). */
 	.z-segment-group-scroll {
+		min-width: 0;
+		flex: 1 1 auto;
+		overflow-x: auto;
+		overscroll-behavior-x: contain;
 		scrollbar-width: none;
 		-ms-overflow-style: none;
 		-webkit-overflow-scrolling: touch;

@@ -39,3 +39,24 @@ test('top bar exposes a back control without a chrome title', async ({ page }) =
 	await expect(page.getByRole('link', { name: 'Back to list' })).toBeVisible();
 	await expect(page.getByTestId('mobile-topbar').locator('.truncate')).toHaveCount(0);
 });
+
+test('short landscape viewport still clears the top bar', async ({ page }) => {
+	await page.setViewportSize({ width: 740, height: 360 });
+	await page.goto('/mobile-chrome-lab');
+
+	const topbar = page.getByTestId('mobile-topbar');
+	const from = page.getByTestId('reader-from');
+	const subject = page.getByTestId('reader-subject');
+	await expect(from).toBeVisible();
+	await expect(subject).toBeVisible();
+
+	const topbarBox = await topbar.boundingBox();
+	const fromBox = await from.boundingBox();
+	expect(topbarBox).toBeTruthy();
+	expect(fromBox).toBeTruthy();
+	expect(fromBox!.y).toBeGreaterThanOrEqual(topbarBox!.y + topbarBox!.height - 1);
+
+	/* Usable reading band remains between top bar and viewport bottom. */
+	const readingBand = 360 - (topbarBox!.y + topbarBox!.height);
+	expect(readingBand).toBeGreaterThan(200);
+});

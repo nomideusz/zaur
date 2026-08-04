@@ -1,8 +1,8 @@
 <script lang="ts">
 	/**
-	 * Auth-free layout fixture: sticky mobile top bar + fixed fullscreen reader
-	 * pane. Asserts the reader content starts below the top bar (no overlap)
-	 * and that the subject appears once (inline, not in the top bar).
+	 * Auth-free layout fixture mirroring production phone chrome:
+	 * sticky top bar (back only) + in-flow reader filling the remaining column.
+	 * Asserts no top-bar overlap and a single (inline) subject.
 	 */
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 </script>
@@ -12,8 +12,9 @@
 </svelte:head>
 
 <div
-	class="relative flex h-svh flex-col overflow-hidden max-md:fixed max-md:inset-0 max-md:h-auto bg-surface text-fg"
+	class="relative flex h-svh flex-col overflow-hidden bg-surface text-fg"
 	data-testid="mobile-chrome-lab"
+	style="max-width: 390px; margin-inline: auto; border-inline: 1px solid var(--z-border);"
 >
 	<main
 		id="main-content"
@@ -39,7 +40,7 @@
 						<div class="px-4" style="padding-block: var(--z-space-reader-content);">
 							<div class="z-reader-chrome__meta">
 								<div class="z-reader-chrome__from">
-									<p class="z-reader-from max-md:break-words md:truncate" data-testid="reader-from">
+									<p class="z-reader-from break-words" data-testid="reader-from">
 										Alexandria Montgomery-Whitfield
 									</p>
 									<p class="z-reader-meta mt-0.5 truncate" title="alexandria.montgomery@example.com">
@@ -49,7 +50,7 @@
 								<time class="z-reader-chrome__time shrink-0 tabular-nums">Yesterday</time>
 							</div>
 
-							<h1 class="z-reader-inline-subject md:hidden" data-testid="reader-subject">
+							<h1 class="z-reader-inline-subject" data-testid="reader-subject">
 								Quarterly planning notes, budget revisions, and the follow-ups from last
 								Thursday’s stakeholder sync
 							</h1>
