@@ -76,6 +76,13 @@
 			source: 'https://github.com/nomideusz/svelte-qr'
 		},
 		{
+			name: '@nomideusz/svelte-media',
+			desc: 'Image upload, processing, and S3-compatible storage for Svelte 5 apps.',
+			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-media',
+			demo: 'https://svelte-media-gamma.vercel.app',
+			source: 'https://github.com/nomideusz/svelte-media'
+		},
+		{
 			name: '@nomideusz/svelte-scheduler',
 			desc: 'Booking and scheduling logic for Svelte 5 — tour slots, pricing, cancellation policies.',
 			npm: 'https://www.npmjs.com/package/@nomideusz/svelte-scheduler'
@@ -220,6 +227,36 @@
 			desc: 'Federated photo sharing on ActivityPub — an Instagram alternative with albums and stories.',
 			deploy: 'https://railway.com/new/template/pixelfed',
 			source: 'https://github.com/nomideusz/pixelfed-railway'
+		},
+		{
+			name: 'Audiobookshelf',
+			desc: 'Audiobook and podcast server — streams to any device with progress sync across all of them.',
+			deploy: 'https://railway.com/new/template/audiobookshelf',
+			source: 'https://github.com/nomideusz/audiobookshelf-railway'
+		},
+		{
+			name: 'TubeArchivist',
+			desc: 'Self-hosted YouTube archive — subscribe to channels, download with yt-dlp, search everything.',
+			deploy: 'https://railway.com/new/template/tubearchivist',
+			source: 'https://github.com/nomideusz/tubearchivist-railway'
+		},
+		{
+			name: 'Baby Buddy',
+			desc: 'Baby tracker for caregivers — feedings, sleep, diapers, and growth on one timeline with charts.',
+			deploy: 'https://railway.com/new/template/baby-buddy',
+			source: 'https://github.com/nomideusz/babybuddy-railway'
+		},
+		{
+			name: 'Cockpit CMS',
+			desc: 'Veteran API-first headless CMS — model collections, singletons, and trees, deliver over REST or GraphQL.',
+			deploy: 'https://railway.com/new/template/cockpit',
+			source: 'https://github.com/nomideusz/cockpit-railway'
+		},
+		{
+			name: 'Chromium',
+			desc: 'A full desktop browser in the cloud, streamed to any device — sessions and extensions persist.',
+			deploy: 'https://railway.com/new/template/chromium',
+			source: 'https://github.com/nomideusz/chromium-railway'
 		}
 	];
 
