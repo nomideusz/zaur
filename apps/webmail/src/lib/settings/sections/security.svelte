@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import { onMount } from 'svelte';
+	import { QrCode } from '@ark-ui/svelte/qr-code';
 	import Button from '$lib/components/ui/Button.svelte';
 	import PasswordInput from '$lib/components/ui/PasswordInput.svelte';
 	import PinInput from '$lib/components/ui/PinInput.svelte';
@@ -46,7 +47,7 @@
 	let credentialDescription = $state('');
 	let apiKeyDescription = $state('');
 	let oneTimeSecret = $state<{ title: string; value: string } | null>(null);
-	let totpSetup = $state<{ secret: string; uri: string; qr?: string } | null>(null);
+	let totpSetup = $state<{ secret: string; uri: string } | null>(null);
 	let totpCode = $state('');
 	let showAllSessions = $state(false);
 
@@ -173,11 +174,9 @@
 		busy = true;
 		try {
 			const setup = await api('/api/account/security/totp/setup', 'POST', {});
-			const { toDataURL } = await import('qrcode');
 			totpSetup = {
 				secret: String(setup.secret),
-				uri: String(setup.uri),
-				qr: await toDataURL(String(setup.uri), { width: 220, margin: 1 })
+				uri: String(setup.uri)
 			};
 		} catch (error) {
 			toast.show(errorMessage(error, 'Could not start setup'), 'error');
@@ -401,7 +400,11 @@
 			<div class="flex flex-col items-start gap-2 px-4 py-3">
 				<p class="z-settings-row-label">Scan this QR code</p>
 				<p class="z-settings-row-desc">Or enter the manual key in your authenticator app.</p>
-				{#if totpSetup.qr}<img src={totpSetup.qr} alt="Authenticator setup QR code" width="180" height="180" />{/if}
+				<QrCode.Root value={totpSetup.uri} class="z-qr-code" encoding={{ ecc: 'M' }}>
+					<QrCode.Frame class="z-qr-code__frame" aria-label="Authenticator setup QR code">
+						<QrCode.Pattern class="z-qr-code__pattern" />
+					</QrCode.Frame>
+				</QrCode.Root>
 				<code class="break-all text-xs">{totpSetup.secret}</code>
 				<div class="flex flex-wrap items-center gap-2">
 					<PinInput label="Six-digit code" bind:value={totpCode} />

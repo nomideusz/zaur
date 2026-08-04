@@ -7,10 +7,11 @@
 		attachmentDisplayName,
 		attachmentIsOpaqueName
 	} from '$lib/attachments/display-name';
-	import { downloadAttachment } from '$lib/attachments/download';
+	import { downloadAttachment, getAttachmentBlob } from '$lib/attachments/download';
 	import { attachmentPreviewKind } from '$lib/attachments/preview';
 	import AttachmentPreview from '$lib/components/mail/AttachmentPreview.svelte';
 	import AttachmentThumbnail from '$lib/components/mail/AttachmentThumbnail.svelte';
+	import DownloadButton from '$lib/components/ui/DownloadButton.svelte';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { MessageAttachment } from '$lib/types/mail';
@@ -131,24 +132,34 @@
 						{/snippet}
 					</TooltipWrap>
 					{#if previewKind}
-						<TooltipWrap label={`Download ${displayName}`}>
+						<TooltipWrap
+							label={`Download ${displayName}`}
+							wrapDisabled={downloadingId === attachment.blobId}
+						>
 							{#snippet trigger({ props })}
-								<button
+								<DownloadButton
 									{...props}
-									type="button"
 									class="z-icon-tap-target z-icon-tap-target--sm absolute right-0 top-1/2 -translate-y-1/2"
-									aria-label={`Download ${displayName}`}
+									label={`Download ${displayName}`}
+									fileName={attachment.name}
+									mimeType={attachment.type || 'application/octet-stream'}
+									data={() => getAttachmentBlob(attachment)}
 									disabled={downloadingId === attachment.blobId}
-									onclick={() => handleDownload(attachment)}
+									onBusyChange={(busy) => {
+										downloadingId = busy ? attachment.blobId : null;
+									}}
+									onError={(err) => toast.show(errorMessage(err, 'Download failed'), 'error')}
 								>
-									{#if downloadingId === attachment.blobId}
-										<span class="z-spinner size-4 text-fg-muted" aria-hidden="true">
-											<LoaderCircle class="size-full" />
-										</span>
-									{:else}
-										<Download class="size-4" aria-hidden="true" />
-									{/if}
-								</button>
+									{#snippet children({ busy })}
+										{#if busy}
+											<span class="z-spinner size-4 text-fg-muted" aria-hidden="true">
+												<LoaderCircle class="size-full" />
+											</span>
+										{:else}
+											<Download class="size-4" aria-hidden="true" />
+										{/if}
+									{/snippet}
+								</DownloadButton>
 							{/snippet}
 						</TooltipWrap>
 					{/if}

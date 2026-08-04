@@ -1,4 +1,5 @@
 <script lang="ts">
+	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import {
 		accountInitial,
 		accountRailMode,
@@ -67,9 +68,11 @@
 					openSheet();
 				}}
 			>
-				<span class="z-island-account-rail__glyph" aria-hidden="true">
-					{accountInitial(account.displayName, account.username)}
-				</span>
+				<Avatar
+					fallback={accountInitial(account.displayName, account.username)}
+					class="z-island-account-rail__glyph-avatar"
+					fallbackClass="z-island-account-rail__glyph"
+				/>
 				{#if badge}
 					<span class="z-island-account-rail__pip" aria-hidden="true">{badge}</span>
 				{/if}
@@ -90,9 +93,11 @@
 		onclick={openSheet}
 	>
 		<span class="z-island-account-rail__avatar z-island-account-rail__avatar--active">
-			<span class="z-island-account-rail__glyph" aria-hidden="true">
-				{accountInitial(active.displayName, active.username)}
-			</span>
+			<Avatar
+				fallback={accountInitial(active.displayName, active.username)}
+				class="z-island-account-rail__glyph-avatar"
+				fallbackClass="z-island-account-rail__glyph"
+			/>
 			{#if othersBadge}
 				<span class="z-island-account-rail__pip" aria-hidden="true">{othersBadge}</span>
 			{/if}

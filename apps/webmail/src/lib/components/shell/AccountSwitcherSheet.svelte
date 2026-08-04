@@ -3,6 +3,7 @@
 	import { Portal } from '@ark-ui/svelte/portal';
 	import User from '$lib/components/icons/User.svelte';
 	import UserPlus from '$lib/components/icons/UserPlus.svelte';
+	import Avatar from '$lib/components/ui/Avatar.svelte';
 	import {
 		accountInitial,
 		formatUnreadBadge,
@@ -79,17 +80,16 @@
 								aria-current={account.isActive ? 'true' : undefined}
 								onclick={() => void switchTo(account.key, account.isActive)}
 							>
-								<span
+								<Avatar
+									fallback={accountInitial(account.displayName, account.username)}
 									class={cn(
-										'z-account-avatar flex size-10 shrink-0 items-center justify-center rounded-full text-sm font-semibold',
+										'z-account-avatar size-10 shrink-0 text-sm font-semibold',
 										account.isActive
 											? 'bg-accent text-accent-fg ring-2 ring-accent ring-offset-2 ring-offset-surface-raised'
 											: 'bg-surface-sunken text-fg-muted'
 									)}
-									aria-hidden="true"
-								>
-									{accountInitial(account.displayName, account.username)}
-								</span>
+									fallbackClass="z-avatar__fallback--fill"
+								/>
 								<span class="flex min-w-0 flex-1 flex-col">
 									<span class="truncate text-sm font-medium text-fg">
 										{account.displayName}
