@@ -22,7 +22,6 @@
 	import MoreVertical from '$lib/components/icons/MoreVertical.svelte';
 	import ShieldAlert from '$lib/components/icons/ShieldAlert.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
-	import { ActionBarSeparator } from '$lib/components/ui/action-bar';
 	import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '$lib/components/ui/menu';
 	import { canMarkImportantFromMailboxRole, moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -131,7 +130,7 @@
 			})
 	);
 
-	/* Icon buttons are fixed-width (2.75rem + gap); reserve separator + trash + More. */
+	/* Icon buttons are fixed-width (2.75rem + gap); reserve trash + More. */
 	const fitted = $derived(
 		fitBulkActions(
 			markActions,
@@ -157,8 +156,8 @@
 		return () => window.removeEventListener('zaur:open-bulk-move', openMove);
 	});
 
-	const linkBtnClass = 'z-mail-text-nav__link shrink-0';
-	const dangerActionClass = 'z-mail-text-nav__action z-mail-text-nav__action--danger shrink-0';
+	const linkBtnClass = 'z-action-bar-btn shrink-0';
+	const dangerActionClass = 'z-action-bar-btn z-action-bar-btn--danger shrink-0';
 
 	async function runBulk(action: () => Promise<void>, refreshList = false) {
 		if (!auth.client) return;
@@ -295,8 +294,6 @@
 	</Menu>
 {/if}
 
-<ActionBarSeparator />
-
 {#if iconOnly}
 	<button
 		type="button"
@@ -308,9 +305,7 @@
 		<Trash2 class="size-[1.125rem]" aria-hidden="true" />
 	</button>
 {:else}
-	<div class="z-header-action-zone shrink-0">
-		<button type="button" class={dangerActionClass} onclick={() => runAction('trash')}>
-			{deleteLabel}
-		</button>
-	</div>
+	<button type="button" class={dangerActionClass} onclick={() => runAction('trash')}>
+		{deleteLabel}
+	</button>
 {/if}
