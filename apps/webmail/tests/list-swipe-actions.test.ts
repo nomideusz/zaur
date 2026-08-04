@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
+	listSwipeActionForTier,
 	listSwipeLeadingActions,
 	listSwipeTrailingActions
 } from '../src/lib/mail/list-swipe-actions.ts';
@@ -25,6 +26,7 @@ const message = (overrides: Partial<MessagePreview> = {}): MessagePreview => ({
 const baseCtx = {
 	canMarkImportant: true,
 	canMarkSpam: true,
+	canArchive: true,
 	hasInbox: true
 };
 
@@ -65,45 +67,64 @@ describe('list-swipe-actions', () => {
 		assert.equal(restore?.dismiss, true);
 	});
 
-	it('offers the highlight toggle first, then the seen toggle', () => {
+	it('offers Seen short then Archive deep when archive is available', () => {
 		assert.deepEqual(
 			listSwipeLeadingActions({
 				message: message({ unread: true }),
 				mailbox: { role: 'inbox' },
 				...baseCtx
-			}).map((action) => action.id),
-			['mark-important', 'mark-seen']
+			}).map((action) => [action.id, action.tier]),
+			[
+				['mark-seen', 1],
+				['archive', 2]
+			]
 		);
 		assert.deepEqual(
 			listSwipeLeadingActions({
-				message: message({ unread: false, important: true }),
+				message: message({ unread: false }),
 				mailbox: { role: 'inbox' },
 				...baseCtx
 			}).map((action) => action.id),
-			['remove-important', 'unsee']
+			['unsee', 'archive']
 		);
 	});
 
-	it('drops the highlight tier where marking important is not allowed', () => {
+	it('falls back to Highlight deep when archive is unavailable', () => {
+		assert.deepEqual(
+			listSwipeLeadingActions({
+				message: message({ unread: true }),
+				mailbox: { role: 'inbox' },
+				...baseCtx,
+				canArchive: false
+			}).map((action) => action.id),
+			['mark-seen', 'mark-important']
+		);
+	});
+
+	it('drops the deep tier where neither archive nor highlight apply', () => {
 		assert.deepEqual(
 			listSwipeLeadingActions({
 				message: message({ unread: true }),
 				mailbox: { role: 'sent' },
 				...baseCtx,
-				canMarkImportant: false
+				canMarkImportant: false,
+				canArchive: false
 			}).map((action) => action.id),
 			['mark-seen']
 		);
 	});
 
-	it('offers trash (tier 1) then spam (tier 2) where spam applies', () => {
+	it('offers trash (short) then spam (deep) where spam applies', () => {
 		assert.deepEqual(
 			listSwipeTrailingActions({
 				message: message(),
 				mailbox: { role: 'inbox' },
 				...baseCtx
-			}).map((action) => action.id),
-			['trash', 'spam']
+			}).map((action) => [action.id, action.tier]),
+			[
+				['trash', 1],
+				['spam', 2]
+			]
 		);
 		assert.deepEqual(
 			listSwipeTrailingActions({
@@ -146,5 +167,16 @@ describe('list-swipe-actions', () => {
 			}),
 			[]
 		);
+	});
+
+	it('picks the action for an armed tier', () => {
+		const actions = listSwipeLeadingActions({
+			message: message({ unread: true }),
+			mailbox: { role: 'inbox' },
+			...baseCtx
+		});
+		assert.equal(listSwipeActionForTier(actions, 1)?.id, 'mark-seen');
+		assert.equal(listSwipeActionForTier(actions, 2)?.id, 'archive');
+		assert.equal(listSwipeActionForTier([], 1), null);
 	});
 });

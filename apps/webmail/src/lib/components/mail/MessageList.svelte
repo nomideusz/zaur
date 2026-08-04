@@ -10,6 +10,7 @@
 	import MessageListToolbar from '$lib/components/mail/MessageListToolbar.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
 	import MessageListSkeleton from '$lib/components/mail/MessageListSkeleton.svelte';
+	import Archive from '$lib/components/icons/Archive.svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
 	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
@@ -30,6 +31,7 @@
 		listSwipeTrailingActions,
 		type ListSwipeAction
 	} from '$lib/mail/list-swipe-actions';
+	import { nextScrubSelection } from '$lib/mail/scrub-select';
 	import SwipeableListRow, {
 		type SwipeAction
 	} from '$lib/components/ui/SwipeableListRow.svelte';
@@ -382,15 +384,13 @@
 	});
 
 	/**
-	 * Desktop reserves a flex checkbox column so hover-reveal never reflows rows.
-	 * Mobile mounts the same left column only while selecting — long press starts
-	 * selection and the column slides in. Full width while browsing.
+	 * Always reserve the left checkbox column on selectable lists so entering
+	 * bulk-select never shoves sender/subject. Desktop hover-reveals the box;
+	 * mobile keeps the gutter empty until selecting (opacity).
 	 */
 	const listSelectMode = $derived(bulkSelectEnabled);
 	const mobileListLayout = $derived(isMobileLayout());
-	const showRowCheckbox = $derived(
-		bulkSelectEnabled && (!mobileListLayout || mail.hasSelection)
-	);
+	const showRowCheckbox = $derived(bulkSelectEnabled);
 
 	/** Keep the list cursor on a valid visible row; prefer the open message. */
 	$effect(() => {
@@ -417,16 +417,36 @@
 	function handleMobileBulkLongPress(messageId: string) {
 		/* Already selecting: long-press joins the selection instead of restarting it. */
 		if (mail.hasSelection) {
-			mail.toggleMessageSelection(messageId);
+			if (!mail.selectedMessageIds.has(messageId)) {
+				mail.toggleMessageSelection(messageId);
+			}
 		} else {
 			mail.startSelection(messageId);
 		}
 		suppressRowNavigationUntil = Date.now() + 400;
 	}
 
+	function handleMobileScrubSelect(messageId: string) {
+		const ordered = mail.selectionList.map((message) => message.id);
+		const next = nextScrubSelection(ordered, mail.selectedMessageIds, messageId, 'add');
+		if (next.size === mail.selectedMessageIds.size && next.has(messageId)) {
+			mail.setListCursor(messageId);
+			suppressRowNavigationUntil = Date.now() + 400;
+			return;
+		}
+		if (!mail.hasSelection) {
+			mail.startSelection(messageId);
+		} else if (!mail.selectedMessageIds.has(messageId)) {
+			mail.toggleMessageSelection(messageId);
+		}
+		mail.setListCursor(messageId);
+		suppressRowNavigationUntil = Date.now() + 400;
+	}
+
 	function swipeContext(message: MessagePreview, routeId: string) {
 		const mailbox = mail.mailboxByRouteId(routeId);
 		const role = mailbox?.role;
+		const hasArchive = mail.mailboxes.some((mb) => mb.role === 'archive' && mb.jmapId);
 		return listSwipeContext(message, mailbox, {
 			canMarkImportant: mail.canMarkImportantInMailbox(mailbox),
 			canMarkSpam:
@@ -435,6 +455,12 @@
 				role !== 'trash' &&
 				role !== 'drafts' &&
 				role !== 'sent',
+			canArchive:
+				hasArchive &&
+				role !== 'archive' &&
+				role !== 'trash' &&
+				role !== 'drafts' &&
+				role !== 'junk',
 			hasInbox: mail.mailboxes.some((mb) => mb.role === 'inbox' && mb.jmapId)
 		});
 	}
@@ -444,6 +470,7 @@
 		unsee: EyeOff,
 		'mark-important': Important,
 		'remove-important': Important,
+		archive: Archive,
 		'move-inbox': Inbox,
 		spam: ShieldAlert,
 		trash: Trash2,
@@ -461,6 +488,7 @@
 			label: action.label,
 			variant: action.variant,
 			dismiss: action.dismiss,
+			tier: action.tier,
 			icon: SWIPE_ACTION_ICONS[action.id],
 			onAction: () => runSwipeAction(action.id, message, routeId)
 		}));
@@ -492,6 +520,8 @@
 			case 'mark-important':
 			case 'remove-important':
 				return swipeToggleImportant(message);
+			case 'archive':
+				return swipeArchive(message);
 			case 'mark-seen':
 				return swipeMutate(() => mail.markMessageDone(auth.client!, message), 'Could not mark seen');
 			case 'unsee':
@@ -536,10 +566,17 @@
 		}, 'Could not move to Spam');
 	}
 
+	function swipeArchive(message: MessagePreview): Promise<boolean> {
+		return swipeMutate(async () => {
+			await mail.moveMessage(auth.client!, message, 'archive');
+		}, 'Could not archive');
+	}
+
 	async function swipeDeleteMessage(message: MessagePreview, routeId: string): Promise<boolean> {
 		if (!auth.client) return false;
 		const mailbox = mail.mailboxByRouteId(routeId);
 		const permanent = mailbox?.role === 'trash' || mailbox?.role === 'drafts';
+		/* Matches bulk trash — skip confirm when the undo window covers the move. */
 		if (!(await settings.confirmDeleteMessage(1, permanent))) return false;
 		return swipeMutate(() => mail.deleteMessage(auth.client!, message, routeId), 'Delete failed');
 	}
@@ -1267,7 +1304,9 @@
 						trailing={swipeTrailing}
 						springSnap={!settings.reduceMotion}
 						longPressEnabled={bulkSelectEnabled}
+						longPressMs={350}
 						onLongPress={() => handleMobileBulkLongPress(message.id)}
+						onScrubSelect={handleMobileScrubSelect}
 					>
 						{@render rowLink()}
 					</SwipeableListRow>
