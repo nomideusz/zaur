@@ -51,6 +51,8 @@ Do **not** use `Button`, filled pills, or icon+label buttons for the primary hea
 
 On mobile shell only, inbox **New** sits in `.z-app-shell-header__end` (alongside the **Search** icon, separated by `.z-app-shell-header__divider`); the read filter is the segmented control filling `.z-app-shell-header__center`.
 
+Multi-account **avatar rail** on the floating island is **utility chrome** (not a pane primary action): ≤3 accounts switch in one tap; ≥4 opens the account switcher sheet.
+
 Bulk select bar (one row, never wraps): selection count · mark links (`Unsee` / `Mark seen` / `Highlight` / `Archive`, fitted into a **More** overflow when space is tight; **Move to…** folder targets live in More) · separated **Trash** primary in `.z-header-action-zone` (`.z-mail-text-nav__action--danger`, trailing/standout). Desktop uses editorial text links (not `Button`); the mobile island uses icon-only taps for the same actions.
 
 ## Do not

@@ -126,6 +126,97 @@
 		padding: 0.25rem 0.375rem;
 	}
 
+	/* Multi-account rail — utility chrome on the island (not a pane primary). */
+	.z-island-account-rail {
+		display: flex;
+		flex-shrink: 0;
+		align-items: center;
+		gap: 0.25rem;
+		padding-inline: 0.125rem;
+	}
+
+	.z-island-account-rail--overflow {
+		gap: 0.125rem;
+		padding-inline-end: 0.25rem;
+		border-radius: calc(var(--radius-lg) - 0.25rem);
+		cursor: pointer;
+		color: var(--z-fg-muted);
+	}
+
+	.z-island-account-rail--overflow:hover {
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
+	}
+
+	.z-island-account-rail__avatar {
+		position: relative;
+		display: grid;
+		place-items: center;
+		width: 2rem;
+		height: 2rem;
+		flex-shrink: 0;
+		border-radius: 9999px;
+		background-color: var(--z-surface-sunken);
+		color: var(--z-fg-muted);
+		cursor: pointer;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			background-color var(--z-motion-fast) var(--z-ease-standard),
+			box-shadow var(--z-motion-fast) var(--z-ease-standard),
+			transform var(--z-motion-fast) var(--z-ease-out);
+	}
+
+	.z-island-account-rail__avatar--active {
+		color: var(--z-accent-fg);
+		background-color: var(--z-accent);
+		box-shadow: 0 0 0 2px color-mix(in srgb, var(--z-accent) 35%, transparent);
+	}
+
+	.z-island-account-rail__glyph {
+		font-size: 0.75rem;
+		font-weight: 600;
+		line-height: 1;
+	}
+
+	.z-island-account-rail__pip {
+		position: absolute;
+		top: -0.2rem;
+		right: -0.25rem;
+		min-width: 0.95rem;
+		height: 0.95rem;
+		padding-inline: 0.2rem;
+		border-radius: 9999px;
+		background-color: var(--z-accent);
+		color: var(--z-accent-fg);
+		font-size: 0.5625rem;
+		font-weight: 700;
+		line-height: 0.95rem;
+		text-align: center;
+		font-variant-numeric: tabular-nums;
+	}
+
+	.z-island-account-rail__avatar--active .z-island-account-rail__pip {
+		background-color: var(--z-danger);
+	}
+
+	.z-island-account-rail__more {
+		font-size: 0.6875rem;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		padding-inline-end: 0.25rem;
+	}
+
+	.z-account-switcher-sheet {
+		max-height: 70vh;
+		border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+		box-shadow: var(--shadow-md);
+	}
+
+	@media (prefers-reduced-motion: no-preference) {
+		.z-island-account-rail__avatar:active {
+			transform: scale(0.92);
+		}
+	}
+
 	.z-mobile-island__bulk {
 		display: flex;
 		align-items: center;

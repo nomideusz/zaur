@@ -92,6 +92,7 @@
 
 	afterNavigate(() => {
 		mobileIsland.closeNavDrawer();
+		mobileIsland.closeAccountSwitcher();
 		mobileIsland.expand();
 	});
 

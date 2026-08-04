@@ -29,6 +29,10 @@ export type IslandComposeContext = {
  */
 class MobileIslandStore {
 	navDrawerOpen = $state(false);
+	/** Bottom sheet for quick multi-account switching from the island rail. */
+	accountSwitcherOpen = $state(false);
+	/** Labs / tests can intercept switches without hitting the session API. */
+	accountSwitchHandler: ((key: string) => void | Promise<void>) | null = null;
 	/** Session override: the Search nav item shows the top bar even when the
 	 * persistent "show search bar" setting is off. */
 	searchBarOpen = $state(false);
@@ -47,6 +51,15 @@ class MobileIslandStore {
 
 	closeNavDrawer() {
 		this.navDrawerOpen = false;
+	}
+
+	openAccountSwitcher() {
+		this.collapsed = false;
+		this.accountSwitcherOpen = true;
+	}
+
+	closeAccountSwitcher() {
+		this.accountSwitcherOpen = false;
 	}
 
 	expand() {

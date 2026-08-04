@@ -3,6 +3,7 @@
 	import CalendarPlus from '$lib/components/icons/CalendarPlus.svelte';
 	import Menu from '$lib/components/icons/Menu.svelte';
 	import Plus from '$lib/components/icons/Plus.svelte';
+	import IslandAccountRail from '$lib/components/shell/island/IslandAccountRail.svelte';
 	import { activeMobileNavItem } from '$lib/shell/app-nav';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
@@ -30,6 +31,8 @@
 	>
 		<Menu class="size-[1.125rem]" aria-hidden="true" />
 	</button>
+
+	<IslandAccountRail />
 
 	{#if active}
 		{@const Icon = active.icon}

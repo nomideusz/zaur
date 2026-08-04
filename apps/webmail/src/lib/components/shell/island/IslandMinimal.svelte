@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import Menu from '$lib/components/icons/Menu.svelte';
+	import IslandAccountRail from '$lib/components/shell/island/IslandAccountRail.svelte';
 	import { activeMobileNavItem } from '$lib/shell/app-nav';
 	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 
@@ -17,6 +18,8 @@
 	>
 		<Menu class="size-[1.125rem]" aria-hidden="true" />
 	</button>
+
+	<IslandAccountRail />
 
 	{#if active}
 		{@const Icon = active.icon}

@@ -20,6 +20,7 @@
 		MOBILE_RAIL_GROUP_CLASS,
 		MOBILE_RAIL_INDICATOR_CLASS
 	} from '$lib/shell/mobile-rail';
+	import IslandAccountRail from '$lib/components/shell/island/IslandAccountRail.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 
@@ -65,6 +66,8 @@
 	>
 		<Menu class="size-[1.125rem]" aria-hidden="true" />
 	</button>
+
+	<IslandAccountRail />
 
 	<nav class="min-w-0 flex-1" aria-label="Mail views">
 		<SegmentGroupScroll activeValue={activeSegment} class="w-full">
