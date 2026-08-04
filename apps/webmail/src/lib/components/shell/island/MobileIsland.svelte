@@ -49,13 +49,15 @@
 	);
 	const collapsed = $derived(mobileIsland.collapsed && collapsible);
 
+	/* Browse modes use a compact compose/action pill; only action docks go wide. */
 	const islandWide = $derived(
 		!collapsed &&
-			(islandMode === 'mail' ||
-				islandMode === 'bulk' ||
-				islandMode === 'reader' ||
-				islandMode === 'compose' ||
-				islandMode === 'section')
+			(islandMode === 'bulk' || islandMode === 'reader' || islandMode === 'compose')
+	);
+
+	/** Settings / empty default — chrome moved to MobileTopBar; hide the dock. */
+	const islandHidden = $derived(
+		(islandMode === 'section' && onSettings) || islandMode === 'default'
 	);
 
 	const PillIcon = $derived.by(() => {
@@ -117,7 +119,10 @@
 	});
 </script>
 
-<div class="z-mobile-island-positioner md:hidden" bind:this={positionerEl}>
+<div
+	class={cn('z-mobile-island-positioner md:hidden', islandHidden && 'hidden')}
+	bind:this={positionerEl}
+>
 	<div
 		class={cn(
 			'z-mobile-island',

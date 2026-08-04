@@ -2,15 +2,14 @@
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import AppShellHeader from '$lib/components/shell/AppShellHeader.svelte';
-	import MobileSearchBar from '$lib/components/shell/MobileSearchBar.svelte';
 	import AccountSwitcherSheet from '$lib/components/shell/AccountSwitcherSheet.svelte';
+	import MobileTopBar from '$lib/components/shell/MobileTopBar.svelte';
 	import MobileIsland from '$lib/components/shell/island/MobileIsland.svelte';
 	import NavDrawer from '$lib/components/shell/NavDrawer.svelte';
 	import WelcomeOnboarding from '$lib/components/shell/WelcomeOnboarding.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
 	import ToastStack from '$lib/components/ui/ToastStack.svelte';
 	import { pushListener } from '$lib/jmap/push-listener';
-	import { topSearchSuppressed } from '$lib/shell/app-nav';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -28,19 +27,6 @@
 
 	const pageScrollOnMain = false;
 	const pageScrollOverflowX = 'overflow-x-hidden';
-
-	/** Brand stripe hides on focused full-screen views (reader, compose), like the search bar. */
-	const showBrandStripe = $derived(!topSearchSuppressed($page.url.pathname));
-
-	// iOS-status-bar convention: tapping the top strip scrolls the visible panes home.
-	function scrollPanesToTop() {
-		const scrollers = document.querySelectorAll(
-			'.z-scroll-area [data-part="viewport"], .z-pane-scroll'
-		);
-		for (const el of scrollers) {
-			if (el.scrollTop > 0) el.scrollTo({ top: 0, behavior: 'smooth' });
-		}
-	}
 
 	$effect(() => {
 		if (auth.isRestoring) return;
@@ -115,17 +101,7 @@
 			style="padding-top: env(safe-area-inset-top, 0px); padding-left: env(safe-area-inset-left, 0px); padding-right: env(safe-area-inset-right, 0px);"
 			tabindex="-1"
 		>
-			{#if showBrandStripe}
-				<button
-					type="button"
-					class="z-mail-list-brand-stripe w-full cursor-pointer md:hidden"
-					aria-label="Scroll to top"
-					onclick={scrollPanesToTop}
-				>
-					<span class="z-mail-list-brand-stripe__text" aria-hidden="true">ZAUR MAIL</span>
-				</button>
-			{/if}
-			<MobileSearchBar />
+			<MobileTopBar />
 			{@render children()}
 		</main>
 		<MobileIsland />
