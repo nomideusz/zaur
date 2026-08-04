@@ -16,7 +16,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { ZaurCalendarAdapter } from '$lib/components/calendar/calendar-adapter';
 	import { cn } from '$lib/utils/cn';
-	import { addDays } from '$lib/utils/dates';
+	import { addDays, formatWeekRange } from '$lib/utils/dates';
 	import { untrack } from 'svelte';
 
 	const tabs = [
@@ -38,10 +38,13 @@
 		calendar.openCompose(range.start);
 	}
 
+	const weekStart = $derived(settings.calendarWeekStartsOnMonday ? 'monday' : 'sunday');
+
 	const plannerCalendarProps = $derived({
 		currentDate,
 		initialDate: currentDate,
 		theme: auto,
+		mondayStart: weekStart === 'monday',
 		showModePills: false,
 		showNavigation: false,
 		oneventclick: handleEventClick,
@@ -111,7 +114,7 @@
 	});
 
 	const headerTitle = $derived.by(() => {
-		if (calendar.activeView === 'week') return 'Week';
+		if (calendar.activeView === 'week') return formatWeekRange(currentDate, weekStart);
 		if (calendar.activeView === 'day' || calendar.activeView === 'agendas') {
 			return currentDate.toLocaleDateString(undefined, {
 				weekday: 'long',
@@ -126,14 +129,17 @@
 		});
 	});
 
-	const showDateNav = $derived(calendar.activeView === 'day' || calendar.activeView === 'agendas');
+	/* Week pages a week at a time; day and agenda step a single day. */
+	const onWeek = $derived(calendar.activeView === 'week');
+	const navUnit = $derived(onWeek ? 'week' : 'day');
+	const navStep = $derived(onWeek ? 7 : 1);
 
 	function prev() {
-		currentDate = addDays(currentDate, -1);
+		currentDate = addDays(currentDate, -navStep);
 	}
 
 	function next() {
-		currentDate = addDays(currentDate, 1);
+		currentDate = addDays(currentDate, navStep);
 	}
 
 	function goToday() {
@@ -207,24 +213,19 @@
 			class="contents"
 		>
 		<div
-			class={cn(
-				'flex min-h-12 shrink-0 flex-wrap items-center gap-2 border-b border-border/80 px-4 py-2',
-				showDateNav ? 'justify-between' : 'justify-end'
-			)}
+			class="flex min-h-12 shrink-0 flex-wrap items-center justify-between gap-2 border-b border-border/80 px-4 py-2"
 		>
-			{#if showDateNav}
-				<div class="flex items-center gap-1">
-					<IconButton label="Previous day" onclick={prev}>
-						<ChevronLeft class="size-4" />
-					</IconButton>
-					<h2 class="min-w-36 text-center text-sm font-semibold text-fg">
-						{headerTitle}
-					</h2>
-					<IconButton label="Next day" onclick={next}>
-						<ChevronRight class="size-4" />
-					</IconButton>
-				</div>
-			{/if}
+			<div class="flex items-center gap-1">
+				<IconButton label="Previous {navUnit}" onclick={prev}>
+					<ChevronLeft class="size-4" />
+				</IconButton>
+				<h2 class="min-w-36 text-center text-sm font-semibold text-fg" aria-live="polite">
+					{headerTitle}
+				</h2>
+				<IconButton label="Next {navUnit}" onclick={next}>
+					<ChevronRight class="size-4" />
+				</IconButton>
+			</div>
 
 			<div class="flex items-center gap-3">
 				{#if calendar.selectedEvent}
