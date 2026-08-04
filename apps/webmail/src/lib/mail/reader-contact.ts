@@ -1,2 +1,2 @@
-// Moved to @zaur/mail-core (shared with apps/native); shim keeps existing imports working.
+// Moved to @zaur/mail-core; shim keeps existing imports working.
 export * from '@zaur/mail-core/mail/reader-contact';

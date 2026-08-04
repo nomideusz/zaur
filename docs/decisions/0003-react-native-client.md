@@ -2,8 +2,9 @@
 
 ## Status
 
-Accepted (supersedes [ADR-0002](0002-capacitor-shell.md) as the product direction; the
-Capacitor shell keeps shipping until the native app reaches feature parity)
+Superseded by [ADR-0004](0004-consolidate-on-capacitor.md) — the React Native client was
+retired on 2026-08-04; a second UI stack cost more than the native feel was worth for a
+solo developer. `packages/mail-core`, extracted by this ADR, survives it.
 
 ## Date
 

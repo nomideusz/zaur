@@ -2,7 +2,9 @@
 
 ## Status
 
-Accepted (supersedes [ADR-0001](0001-native-mobile-architecture.md))
+Accepted (supersedes [ADR-0001](0001-native-mobile-architecture.md)). Briefly deprecated by
+[ADR-0003](0003-react-native-client.md); reinstated as the product direction by
+[ADR-0004](0004-consolidate-on-capacitor.md).
 
 ## Date
 

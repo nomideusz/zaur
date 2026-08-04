@@ -1,14 +1,14 @@
 # ZAUR Mail native clients
 
-**Current direction ([ADR-0003](decisions/0003-react-native-client.md)):** `apps/native` is a
-React Native (Expo) client talking JMAP + OAuth directly to Stalwart, sharing protocol code with
-webmail via `packages/mail-core`. The [ADR-0002](decisions/0002-capacitor-shell.md) Capacitor
-shell (`apps/mobile`) keeps shipping until the native app reaches parity.
-
-**Interim shell ([ADR-0002](decisions/0002-capacitor-shell.md)):** `apps/mobile` is a
-Capacitor shell that loads the live webmail. Build the Android debug APK with
-`pnpm --filter @zaur/mobile build:android` (needs the Android SDK and a JDK); install via
+**Current direction ([ADR-0004](decisions/0004-consolidate-on-capacitor.md)):** `apps/mobile`
+is a Capacitor shell that loads the live webmail, and mobile investment goes into the Svelte PWA
+it loads. Build the Android debug APK with `pnpm --filter @zaur/mobile build:android` (needs the
+Android SDK and a JDK); install via
 `adb install apps/mobile/android/app/build/outputs/apk/debug/app-debug.apk`.
+
+The React Native client of [ADR-0003](decisions/0003-react-native-client.md) was retired on
+2026-08-04 — a second UI stack cost more than the native feel was worth. `packages/mail-core`
+(pure-TS JMAP, mappers, address parsing) survives it and stays framework-free.
 
 The rest of this document is the superseded
 [ADR-0001](decisions/0001-native-mobile-architecture.md) Kotlin Multiplatform plan, kept as the
