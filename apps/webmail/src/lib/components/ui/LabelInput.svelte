@@ -51,11 +51,15 @@
 	>
 		<PasswordInput.Control class="z-label-input__control">
 			<PasswordInput.Input
+				{id}
 				class="z-label-input__field"
-				bind:value
+				{value}
 				placeholder={fieldPlaceholder}
-				{disabled}
+				disabled={disabled === true}
 				{...rest}
+				oninput={(event) => {
+					value = event.currentTarget.value;
+				}}
 			/>
 			<PasswordInput.Label class="z-label-input__label">{label}</PasswordInput.Label>
 			<PasswordInput.VisibilityTrigger class="z-label-input__toggle" tabindex={-1} {disabled}>
