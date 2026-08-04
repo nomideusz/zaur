@@ -14,7 +14,7 @@
 
 	/* Island width is fixed by the viewport; reserve the count + select + close chrome. */
 	let toolbarWidth = $state(0);
-	const ISLAND_CHROME_PX = 130;
+	const ISLAND_CHROME_PX = 138;
 	const actionsAvailableWidth = $derived(Math.max(0, toolbarWidth - ISLAND_CHROME_PX));
 </script>
 
@@ -27,7 +27,11 @@
 	>
 		<!-- Selection summary + options — count badge and chevron are one trigger
 		     standing in for a master checkbox. -->
-		<MessageListSelectMenu placement="top" {disabled} class="h-11! w-auto! shrink-0 gap-1 px-1.5!">
+		<MessageListSelectMenu
+			placement="top"
+			{disabled}
+			class="h-11! w-auto! shrink-0 gap-1 rounded-full! px-2.5!"
+		>
 			<ActionBarValue count={selectedCount} />
 		</MessageListSelectMenu>
 

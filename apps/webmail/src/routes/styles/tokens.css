@@ -68,6 +68,9 @@
 	--z-content-max-width: 44rem;
 	/* Mobile floating island — clearance for scrollable panes. */
 	--z-island-height: 3.5rem;
+	/* Capsule dock — the expanded island and the collapsed pill share circular
+	   geometry, so the scroll morph is a pure size change. */
+	--z-island-radius: calc(var(--z-island-height) / 2);
 	--z-island-collapsed-size: 3rem;
 	--z-island-gutter: 0.75rem;
 	/* Fixed mobile top bar (menu + filters + search + accounts). */
