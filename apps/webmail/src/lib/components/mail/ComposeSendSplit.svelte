@@ -58,43 +58,56 @@
 
 <svelte:window onpointerdown={onWindowPointerDown} />
 
+{#snippet sendButton(props: Record<string, unknown> = {})}
+	<button
+		{...props}
+		type="submit"
+		form="compose-form"
+		class="z-mail-text-nav__action z-mail-text-nav__action--pill z-compose__send-main"
+		disabled={sendDisabled}
+		title={compact ? (sendBlockedReason ?? 'Send message') : undefined}
+	>
+		{sendLabel}
+	</button>
+{/snippet}
+
+{#snippet scheduleButton(props: Record<string, unknown> = {})}
+	<button
+		{...props}
+		type="button"
+		class="z-mail-text-nav__action z-mail-text-nav__action--pill z-compose__send-caret"
+		aria-label="Schedule send"
+		aria-haspopup="menu"
+		aria-expanded={showSchedulePanel}
+		disabled={scheduleDisabled}
+		title={compact ? 'Schedule send' : undefined}
+		onclick={onToggleSchedule}
+	>
+		<ChevronDown class="size-4" aria-hidden="true" />
+	</button>
+{/snippet}
+
 <div
 	class="z-compose__send-split relative"
 	class:z-compose__send-split--compact={compact}
 	bind:this={zone}
 >
-	<TooltipWrap
-		label={sendBlockedReason ?? 'Send message'}
-		wrapDisabled={sendDisabled}
-	>
-		{#snippet trigger({ props })}
-			<button
-				{...props}
-				type="submit"
-				form="compose-form"
-				class="z-mail-text-nav__action z-mail-text-nav__action--pill z-compose__send-main"
-				disabled={sendDisabled}
-			>
-				{sendLabel}
-			</button>
-		{/snippet}
-	</TooltipWrap>
-	<TooltipWrap label="Schedule send" wrapDisabled={scheduleDisabled}>
-		{#snippet trigger({ props })}
-			<button
-				{...props}
-				type="button"
-				class="z-mail-text-nav__action z-mail-text-nav__action--pill z-compose__send-caret"
-				aria-label="Schedule send"
-				aria-haspopup="menu"
-				aria-expanded={showSchedulePanel}
-				disabled={scheduleDisabled}
-				onclick={onToggleSchedule}
-			>
-				<ChevronDown class="size-4" aria-hidden="true" />
-			</button>
-		{/snippet}
-	</TooltipWrap>
+	{#if compact}
+		<!-- No TooltipWrap: Ark wraps break the joined Send|▾ pill in the top bar. -->
+		{@render sendButton()}
+		{@render scheduleButton()}
+	{:else}
+		<TooltipWrap label={sendBlockedReason ?? 'Send message'} wrapDisabled={sendDisabled}>
+			{#snippet trigger({ props })}
+				{@render sendButton(props)}
+			{/snippet}
+		</TooltipWrap>
+		<TooltipWrap label="Schedule send" wrapDisabled={scheduleDisabled}>
+			{#snippet trigger({ props })}
+				{@render scheduleButton(props)}
+			{/snippet}
+		</TooltipWrap>
+	{/if}
 	{#if showSchedulePanel}
 		<div
 			class="absolute right-0 top-[calc(100%+0.5rem)] z-50 w-64 rounded-xl border border-border bg-surface-raised p-2 shadow-lg"
