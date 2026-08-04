@@ -12,6 +12,7 @@
 		MOBILE_RAIL_GROUP_CLASS,
 		MOBILE_RAIL_INDICATOR_CLASS
 	} from '$lib/shell/mobile-rail';
+	import IslandAccountRail from '$lib/components/shell/island/IslandAccountRail.svelte';
 	import { calendar, type CalendarViewTab } from '$lib/stores/calendar.svelte';
 	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 
@@ -35,6 +36,8 @@
 	>
 		<Menu class="size-[1.125rem]" aria-hidden="true" />
 	</button>
+
+	<IslandAccountRail />
 
 	<nav class="min-w-0 flex-1" aria-label="Calendar views">
 		<SegmentGroupScroll activeValue={calendar.activeView} class="w-full">

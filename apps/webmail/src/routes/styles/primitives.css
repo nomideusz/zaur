@@ -572,9 +572,18 @@
 		transition: transform var(--z-motion-fast) var(--z-ease-out);
 	}
 
-	/* Past the commit threshold the icon swells — "release now to act". */
+	/* Past the short commit threshold the icon swells — "release now to act". */
 	.z-swipe-row__pane--armed .z-swipe-row__pane-icon {
 		transform: scale(1.18);
+	}
+
+	/* Deep tier — stronger commit cue for Archive / Spam. */
+	.z-swipe-row__pane--armed-deep .z-swipe-row__pane-icon {
+		transform: scale(1.28);
+	}
+
+	.z-swipe-row__pane--armed-deep .z-swipe-row__pane-label {
+		letter-spacing: 0.01em;
 	}
 
 	/* Text colour is set per variant for guaranteed contrast across light, dark

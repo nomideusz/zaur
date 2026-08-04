@@ -9,6 +9,11 @@
 	import User from '$lib/components/icons/User.svelte';
 	import UserPlus from '$lib/components/icons/UserPlus.svelte';
 	import { appNavItems } from '$lib/shell/app-nav';
+	import {
+		accountInitial,
+		formatUnreadBadge,
+		otherAccountsUnreadSum
+	} from '$lib/shell/account-switcher';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -33,6 +38,10 @@
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
 	/** Other mailboxes the user can switch to (the active one is shown in the header). */
 	const otherAccounts = $derived(auth.accounts.filter((account) => !account.isActive));
+	const othersUnread = $derived(
+		otherAccountsUnreadSum(auth.accounts, auth.unread, auth.activeKey)
+	);
+	const othersUnreadBadge = $derived(formatUnreadBadge(othersUnread));
 </script>
 
 <Menu.Root
@@ -44,19 +53,33 @@
 >
 	<Menu.Trigger
 		class={cn(
-			'rounded-md border border-transparent transition-colors hover:border-border/40 hover:bg-surface-sunken/80',
+			'relative rounded-md border border-transparent transition-colors hover:border-border/40 hover:bg-surface-sunken/80',
 			compact ? 'z-icon-tap-target p-0' : 'flex items-center gap-2 p-1.5'
 		)}
-		aria-label="Account menu"
+		aria-label={othersUnreadBadge
+			? `Account menu, ${othersUnread} unread in other accounts`
+			: 'Account menu'}
 	>
 		<span
 			class={cn(
-				'flex items-center justify-center rounded-full bg-surface-sunken text-fg-muted',
+				'flex items-center justify-center rounded-full bg-surface-sunken text-sm font-semibold text-fg-muted',
 				compact ? 'size-9' : 'size-8'
 			)}
 		>
-			<User class="size-4" aria-hidden="true" />
+			{#if auth.accounts.length > 1}
+				<span aria-hidden="true">{accountInitial(user.name, user.email)}</span>
+			{:else}
+				<User class="size-4" aria-hidden="true" />
+			{/if}
 		</span>
+		{#if othersUnreadBadge}
+			<span
+				class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold tabular-nums text-accent-fg"
+				aria-hidden="true"
+			>
+				{othersUnreadBadge}
+			</span>
+		{/if}
 		{#if !compact}
 			<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
 		{/if}
@@ -77,14 +100,19 @@
 				{#if otherAccounts.length}
 					<div class="flex flex-col gap-1 border-b border-border p-1">
 						{#each otherAccounts as account (account.key)}
+							{@const unread = auth.unread[account.key] ?? 0}
+							{@const badge = formatUnreadBadge(unread)}
 							<Menu.Item
 								class="z-overflow-menu-item"
 								value={account.key}
 								valueText={account.username}
 								onSelect={() => auth.switchAccount(account.key)}
 							>
-								<span class="flex size-5 shrink-0 items-center justify-center">
-									<User class="size-4 text-fg-muted" aria-hidden="true" />
+								<span
+									class="flex size-5 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-[10px] font-semibold text-fg-muted"
+									aria-hidden="true"
+								>
+									{accountInitial(account.displayName, account.username)}
 								</span>
 								<span class="flex min-w-0 flex-col text-left">
 									<span class="truncate text-sm text-fg">{account.displayName}</span>
@@ -92,12 +120,12 @@
 										<span class="truncate text-xs text-fg-muted">{account.username}</span>
 									{/if}
 								</span>
-								{#if (auth.unread[account.key] ?? 0) > 0}
+								{#if badge}
 									<span
 										class="ml-auto shrink-0 rounded-full bg-accent/15 px-1.5 py-0.5 text-xs font-medium tabular-nums text-accent"
-										aria-label="{auth.unread[account.key]} unread"
+										aria-label="{unread} unread"
 									>
-										{auth.unread[account.key] > 99 ? '99+' : auth.unread[account.key]}
+										{badge}
 									</span>
 								{/if}
 							</Menu.Item>

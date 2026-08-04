@@ -3,6 +3,7 @@
 	import { page } from '$app/stores';
 	import AppShellHeader from '$lib/components/shell/AppShellHeader.svelte';
 	import MobileSearchBar from '$lib/components/shell/MobileSearchBar.svelte';
+	import AccountSwitcherSheet from '$lib/components/shell/AccountSwitcherSheet.svelte';
 	import MobileIsland from '$lib/components/shell/island/MobileIsland.svelte';
 	import NavDrawer from '$lib/components/shell/NavDrawer.svelte';
 	import WelcomeOnboarding from '$lib/components/shell/WelcomeOnboarding.svelte';
@@ -128,6 +129,7 @@
 			{@render children()}
 		</main>
 		<MobileIsland />
+		<AccountSwitcherSheet />
 		<NavDrawer />
 		<WelcomeOnboarding />
 		<ConfirmDialog />

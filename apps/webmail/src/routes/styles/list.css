@@ -500,35 +500,31 @@
 
 	@media (max-width: 767px) {
 		/*
-		 * Bulk select — checkboxes are hidden while browsing; long press starts
-		 * selection and the left column slides in, pushing row content right.
-		 * The subject is a single truncated line (see .list-subject), so the
-		 * narrower row truncates harder instead of re-wrapping — no layout shift.
-		 * (Row padding overrides live in the selectable-list block further down.)
+		 * Bulk select — reserved left gutter matches desktop: the checkbox column
+		 * is always mounted on selectable lists so long-press never reflows the
+		 * row. The box itself stays invisible until selecting (opacity rules).
 		 */
-		.z-mail-view .z-mail-list--selecting .z-mail-list-row {
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row {
 			display: flex;
 			align-items: flex-start;
 			gap: var(--z-mail-list-checkbox-gap);
+			padding-inline: var(--z-mail-list-row-pad-x);
 		}
 
-		.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a),
-		.z-mail-view .z-mail-list--selecting .z-mail-list-row .z-mail-list-swipe-row {
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row > :where(a),
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row .z-mail-list-swipe-row {
 			flex: 1 1 auto;
 			min-width: 0;
 		}
 
-		@media (prefers-reduced-motion: no-preference) {
-			html:not(.z-reduce-motion) .z-mail-view .z-mail-list--selecting .z-mail-list-checkbox-col--row {
-				animation: z-checkbox-col-in var(--z-motion-base) var(--z-ease-out);
-			}
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row > :where(a),
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
+			padding: 0.625rem 0.875rem 0.625rem 0 !important;
 		}
-	}
 
-	@keyframes z-checkbox-col-in {
-		from {
-			width: 0;
-			opacity: 0;
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row,
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground {
+			width: 100%;
 		}
 	}
 
@@ -754,29 +750,6 @@
 		.z-mail-view .z-mail-list-body .z-mail-list-flow--selectable {
 			margin-inline-start: 0;
 			padding-inline-start: 0;
-		}
-
-		/*
-		 * Bulk select — while browsing, row padding matches the non-selectable
-		 * list so nothing re-wraps; once selecting, the left checkbox column
-		 * provides the start inset instead of the link padding.
-		 */
-		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row {
-			padding-inline: 0;
-		}
-
-		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-row > :where(a),
-		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
-			padding: 0.625rem var(--z-mail-list-row-link-pad-x) !important;
-		}
-
-		.z-mail-view .z-mail-list--selecting .z-mail-list-row {
-			padding-inline-start: var(--z-mail-list-row-pad-x);
-		}
-
-		.z-mail-view .z-mail-list--selecting .z-mail-list-row > :where(a),
-		.z-mail-view .z-mail-list--selecting .z-mail-list-swipe-row .z-swipe-row__foreground > :where(a) {
-			padding-inline-start: 0 !important;
 		}
 
 		.z-mail-view .z-mail-list--selecting .z-mail-list-section-messages--new::before {

@@ -1,6 +1,11 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { clampSwipeOffset, swipeCommitThreshold } from '../src/lib/utils/swipe-row.ts';
+import {
+	clampSwipeOffset,
+	swipeArmLevel,
+	swipeCommitThreshold,
+	swipeDeepThreshold
+} from '../src/lib/utils/swipe-row.ts';
 
 const ROW = 400;
 const MAX = ROW * 0.92; // 368
@@ -23,10 +28,27 @@ describe('swipe-row', () => {
 		assert.ok(clampSwipeOffset(1000, true, true, ROW) < 1000);
 	});
 
-	it('commit threshold scales with the row, clamped to a sane range', () => {
-		assert.equal(swipeCommitThreshold(400), 120); // 30% of row
-		assert.equal(swipeCommitThreshold(200), 72); // floor
-		assert.equal(swipeCommitThreshold(1000), 140); // ceiling
-		assert.equal(swipeCommitThreshold(0), 80); // fallback
+	it('short threshold scales with the row, clamped to a sane range', () => {
+		assert.equal(swipeCommitThreshold(400), 88); // 22% of row
+		assert.equal(swipeCommitThreshold(200), 56); // floor
+		assert.equal(swipeCommitThreshold(1000), 110); // ceiling
+		assert.equal(swipeCommitThreshold(0), 64); // fallback
+	});
+
+	it('deep threshold sits beyond the short threshold', () => {
+		assert.equal(swipeDeepThreshold(400), 192); // 48% of row
+		assert.equal(swipeDeepThreshold(200), 120); // floor
+		assert.equal(swipeDeepThreshold(1000), 220); // ceiling
+		assert.ok(swipeDeepThreshold(400) > swipeCommitThreshold(400));
+	});
+
+	it('reports arm levels for staged swipe', () => {
+		assert.equal(swipeArmLevel(0, ROW, 2), 0);
+		assert.equal(swipeArmLevel(40, ROW, 2), 0);
+		assert.equal(swipeArmLevel(88, ROW, 2), 1);
+		assert.equal(swipeArmLevel(192, ROW, 2), 2);
+		/* Single-action sides stay at level 1 even past the deep mark. */
+		assert.equal(swipeArmLevel(250, ROW, 1), 1);
+		assert.equal(swipeArmLevel(-192, ROW, 2), 2);
 	});
 });

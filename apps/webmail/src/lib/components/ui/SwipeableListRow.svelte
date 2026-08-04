@@ -4,7 +4,12 @@
 	import { cn } from '$lib/utils/cn';
 	import { haptic } from '$lib/utils/haptics';
 	import { animateSpringScalar } from '$lib/utils/swipe-row-spring';
-	import { clampSwipeOffset, swipeCommitThreshold, type SwipeSide } from '$lib/utils/swipe-row';
+	import {
+		clampSwipeOffset,
+		swipeArmLevel,
+		type SwipeArmLevel,
+		type SwipeSide
+	} from '$lib/utils/swipe-row';
 
 	export interface SwipeAction {
 		id: string;
@@ -13,20 +18,26 @@
 		icon?: Component<{ class?: string; 'aria-hidden'?: boolean | 'true' | 'false' }>;
 		/** Row slides off-screen on commit (move/delete). Return false from onAction to roll it back. */
 		dismiss?: boolean;
+		/** 1 = short swipe, 2 = deep swipe. Defaults to array order. */
+		tier?: 1 | 2;
 		onAction: () => void | boolean | Promise<void | boolean>;
 	}
 
 	interface Props {
 		enabled?: boolean;
-		/** Only the first action of each side is used — one primary action per direction. */
+		/** Ordered short → deep. Engine commits the highest armed tier. */
 		leading?: SwipeAction[];
 		trailing?: SwipeAction[];
 		longPressEnabled?: boolean;
+		/** ms before long-press fires (touch only). */
+		longPressMs?: number;
 		/** Spring snap on release; off when reduce motion is enabled. */
 		springSnap?: boolean;
 		onLongPress?: (event: PointerEvent, target: HTMLElement) => void;
 		onLongPressEnd?: (event: PointerEvent) => void;
 		onLongPressCancel?: (event: PointerEvent) => void;
+		/** After long-press, called as the finger scrubs across other rows. */
+		onScrubSelect?: (messageId: string) => void;
 		class?: string;
 		children: Snippet;
 	}
@@ -36,10 +47,12 @@
 		leading = [],
 		trailing = [],
 		longPressEnabled = false,
+		longPressMs = 350,
 		springSnap = true,
 		onLongPress,
 		onLongPressEnd,
 		onLongPressCancel,
+		onScrubSelect,
 		class: className = '',
 		children
 	}: Props = $props();
@@ -48,8 +61,8 @@
 	let dragging = $state(false);
 	let swipeActive = $state(false);
 	let snapping = $state(false);
-	/** True once the drag is deep enough that a release fires the action. */
-	let armed = $state(false);
+	/** Highest armed tier for the active side (0 / 1 / 2). */
+	let armLevel = $state<SwipeArmLevel>(0);
 	/** Keeps the action panel painted while the commit animation runs. */
 	let committing = $state(false);
 	/**
@@ -69,30 +82,41 @@
 	const AXIS_DOMINANCE = 1.3;
 	let longPressTimer: ReturnType<typeof setTimeout> | null = null;
 	let longPressFired = false;
+	let scrubbing = false;
+	let lastScrubId: string | null = null;
 	let suppressClick = false;
 	let cancelSpring: (() => void) | null = null;
 
-	/** One primary action per direction — the configured first action. */
-	const leadingAction = $derived(leading[0] ?? null);
-	const trailingAction = $derived(trailing[0] ?? null);
-	const hasSwipe = $derived(enabled && (!!leadingAction || !!trailingAction));
+	const leadingTier1 = $derived(leading[0] ?? null);
+	const trailingTier1 = $derived(trailing[0] ?? null);
+	const hasSwipe = $derived(enabled && (!!leadingTier1 || !!trailingTier1));
 
 	const activeSide = $derived<SwipeSide | null>(
 		offset > 0 ? 'leading' : offset < 0 ? 'trailing' : null
 	);
-	const activeAction = $derived(
-		activeSide === 'leading' ? leadingAction : activeSide === 'trailing' ? trailingAction : null
-	);
+	const sideActions = $derived(activeSide === 'leading' ? leading : activeSide === 'trailing' ? trailing : []);
+	const activeAction = $derived.by((): SwipeAction | null => {
+		if (!activeSide || armLevel === 0) return null;
+		return sideActions[armLevel - 1] ?? sideActions[0] ?? null;
+	});
 	const leadingWidth = $derived(offset > 0 ? offset : 0);
 	const trailingWidth = $derived(offset < 0 ? -offset : 0);
 
 	/* While committing, keep painting the captured action so its label/icon
 	   don't flip to the post-toggle state mid-animation. */
 	const leadingPaneAction = $derived(
-		committing && committedAction && offset > 0 ? committedAction : leadingAction
+		committing && committedAction && offset > 0
+			? committedAction
+			: armLevel > 0 && activeSide === 'leading'
+				? (activeAction ?? leadingTier1)
+				: leadingTier1
 	);
 	const trailingPaneAction = $derived(
-		committing && committedAction && offset < 0 ? committedAction : trailingAction
+		committing && committedAction && offset < 0
+			? committedAction
+			: armLevel > 0 && activeSide === 'trailing'
+				? (activeAction ?? trailingTier1)
+				: trailingTier1
 	);
 
 	function stopSpring() {
@@ -104,7 +128,7 @@
 	function closeRow() {
 		stopSpring();
 		offset = 0;
-		armed = false;
+		armLevel = 0;
 		committing = false;
 	}
 
@@ -153,14 +177,14 @@
 			}
 			if (result === false) {
 				/* Cancelled (e.g. delete confirm) or failed — bring the row back. */
-				armed = false;
+				armLevel = 0;
 				committing = false;
 				committedAction = null;
 				animateOffset(0);
 				return;
 			}
 			/* Row usually unmounts via the store update; tidy local state regardless. */
-			armed = false;
+			armLevel = 0;
 			committing = false;
 			committedAction = null;
 			closeRow();
@@ -168,7 +192,7 @@
 		}
 
 		/* Non-destructive toggle — fire, then spring the row back into place. */
-		armed = false;
+		armLevel = 0;
 		animateOffset(0, () => {
 			committing = false;
 			committedAction = null;
@@ -219,6 +243,8 @@
 
 		stopSpring();
 		longPressFired = false;
+		scrubbing = false;
+		lastScrubId = null;
 		suppressClick = false;
 		axisLock = null;
 		startX = event.clientX;
@@ -228,7 +254,7 @@
 			measureRowWidth();
 			dragging = true;
 			swipeActive = false;
-			armed = false;
+			armLevel = 0;
 			pointerId = event.pointerId;
 		}
 
@@ -237,19 +263,46 @@
 			const longPressTarget = event.currentTarget as HTMLElement;
 			longPressTimer = setTimeout(() => {
 				longPressFired = true;
+				scrubbing = !!onScrubSelect;
 				suppressClick = true;
+				/* Cancel an in-progress swipe so selection owns the gesture. */
+				if (dragging) {
+					resetDragState();
+					offset = 0;
+					armLevel = 0;
+				}
+				const row = longPressTarget.closest('[data-message-id]');
+				const id = row?.getAttribute('data-message-id');
+				if (id) lastScrubId = id;
 				onLongPress(longPressEvent, longPressTarget);
-				haptic(12);
-			}, 420);
+				if (springSnap) haptic(12);
+			}, longPressMs);
 		}
 	}
 
-	function updateArmed() {
-		const threshold = swipeCommitThreshold(rowWidth);
-		const next = !!activeAction && Math.abs(offset) >= threshold;
-		if (next === armed) return;
-		armed = next;
-		if (armed) haptic(10);
+	function updateArmLevel() {
+		const tiers =
+			activeSide === 'leading'
+				? leading.length
+				: activeSide === 'trailing'
+					? trailing.length
+					: 0;
+		const next = swipeArmLevel(offset, rowWidth, tiers);
+		if (next === armLevel) return;
+		armLevel = next;
+		if (armLevel > 0 && springSnap) haptic(armLevel === 2 ? 14 : 10);
+	}
+
+	function scrubAt(clientX: number, clientY: number) {
+		if (!scrubbing || !onScrubSelect) return;
+		const el = document.elementFromPoint(clientX, clientY);
+		if (!(el instanceof Element)) return;
+		const row = el.closest('[data-message-id]');
+		const id = row?.getAttribute('data-message-id');
+		if (!id || id === lastScrubId) return;
+		lastScrubId = id;
+		onScrubSelect(id);
+		if (springSnap) haptic(8);
 	}
 
 	function onPointerMove(event: PointerEvent) {
@@ -258,6 +311,10 @@
 		if (longPressTimer && (moveX > 10 || moveY > 10)) {
 			clearTimeout(longPressTimer);
 			longPressTimer = null;
+		}
+		if (longPressFired && scrubbing) {
+			scrubAt(event.clientX, event.clientY);
+			return;
 		}
 		if (longPressFired && !swipeActive && (moveX > 10 || moveY > 10)) {
 			cancelLongPress(event);
@@ -282,13 +339,14 @@
 
 		event.preventDefault();
 		const delta = event.clientX - startX;
-		offset = clampSwipeOffset(delta, !!leadingAction, !!trailingAction, rowWidth);
-		updateArmed();
+		offset = clampSwipeOffset(delta, !!leadingTier1, !!trailingTier1, rowWidth);
+		updateArmLevel();
 	}
 
 	function finishLongPress(event: PointerEvent) {
 		if (!longPressFired) return;
 		longPressFired = false;
+		scrubbing = false;
 		onLongPressEnd?.(event);
 	}
 
@@ -299,6 +357,7 @@
 		}
 		if (!longPressFired) return;
 		longPressFired = false;
+		scrubbing = false;
 		onLongPressCancel?.(event);
 	}
 
@@ -316,12 +375,12 @@
 
 		if (!wasSwipe) return;
 
-		if (armed && activeAction) {
+		if (armLevel > 0 && activeAction) {
 			void commitAction(activeAction);
 			return;
 		}
 		/* Released short of the threshold — spring back, nothing fires. */
-		armed = false;
+		armLevel = 0;
 		animateOffset(0);
 	}
 
@@ -330,7 +389,7 @@
 		if (event.pointerId !== pointerId) return;
 		releaseCapturedPointer(event);
 		resetDragState();
-		armed = false;
+		armLevel = 0;
 		animateOffset(0);
 	}
 
@@ -343,7 +402,7 @@
 	 * in flight, keeping the list from scrolling up/down under the finger.
 	 */
 	function onTouchMove(event: TouchEvent) {
-		if (axisLock === 'x') event.preventDefault();
+		if (axisLock === 'x' || scrubbing) event.preventDefault();
 	}
 
 	/* Svelte attaches `touchmove` as passive by default, which can't cancel
@@ -382,14 +441,15 @@
 	};
 </script>
 
-{#snippet pane(action: SwipeAction, side: SwipeSide, width: number, isArmed: boolean)}
+{#snippet pane(action: SwipeAction, side: SwipeSide, width: number, level: SwipeArmLevel)}
 	{@const PaneIcon = action.icon}
 	<div
 		class={cn(
 			'z-swipe-row__pane',
 			`z-swipe-row__pane--${side}`,
 			paneVariantClass(action.variant),
-			isArmed && 'z-swipe-row__pane--armed'
+			level > 0 && 'z-swipe-row__pane--armed',
+			level === 2 && 'z-swipe-row__pane--armed-deep'
 		)}
 		style="width: {width}px;"
 		aria-hidden="true"
@@ -411,17 +471,29 @@
 		'z-swipe-row',
 		hasSwipe && 'z-swipe-row--interactive',
 		(swipeActive || snapping || committing) && 'z-swipe-row--dragging',
-		armed && 'z-swipe-row--armed',
+		armLevel > 0 && 'z-swipe-row--armed',
+		armLevel === 2 && 'z-swipe-row--armed-deep',
 		className
 	)}
 	data-swipe-side={activeSide ?? undefined}
+	data-arm-level={armLevel || undefined}
 	onclickcapture={onClickCapture}
 >
 	{#if hasSwipe && leadingPaneAction && leadingWidth > 0}
-		{@render pane(leadingPaneAction, 'leading', leadingWidth, activeSide === 'leading' && armed)}
+		{@render pane(
+			leadingPaneAction,
+			'leading',
+			leadingWidth,
+			activeSide === 'leading' ? armLevel : 0
+		)}
 	{/if}
 	{#if hasSwipe && trailingPaneAction && trailingWidth > 0}
-		{@render pane(trailingPaneAction, 'trailing', trailingWidth, activeSide === 'trailing' && armed)}
+		{@render pane(
+			trailingPaneAction,
+			'trailing',
+			trailingWidth,
+			activeSide === 'trailing' ? armLevel : 0
+		)}
 	{/if}
 
 	<div

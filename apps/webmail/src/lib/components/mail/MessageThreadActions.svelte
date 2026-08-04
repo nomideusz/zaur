@@ -2,6 +2,7 @@
 	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
+	import Archive from '$lib/components/icons/Archive.svelte';
 	import Copy from '$lib/components/icons/Copy.svelte';
 	import Eye from '$lib/components/icons/Eye.svelte';
 	import EyeOff from '$lib/components/icons/EyeOff.svelte';
@@ -83,6 +84,16 @@
 	);
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
 	const canMarkImportant = $derived(canMarkImportantFromMailboxRole(currentMailbox?.role));
+	const archiveMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'archive'));
+	const canArchive = $derived(
+		!!archiveMailbox &&
+			currentMailbox?.role !== 'archive' &&
+			currentMailbox?.role !== 'trash' &&
+			currentMailbox?.role !== 'drafts' &&
+			currentMailbox?.role !== 'junk' &&
+			!isDraft &&
+			!isScheduled
+	);
 	const allowExternal = $derived(!settings.blockExternalContent || pane?.showImagesOnce);
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>
@@ -182,6 +193,16 @@
 		const permanent = currentMailbox?.role === 'trash';
 		if (!(await settings.confirmDeleteMessage(1, permanent))) return;
 		void withClient((client) => mail.deleteMessage(client, actionMessage, mailboxRouteId));
+	}
+
+	async function archiveMessage() {
+		if (!auth.client || !actionMessage || !archiveMailbox) return;
+		try {
+			await mail.moveMessage(auth.client, actionMessage, 'archive');
+			onMoved?.();
+		} catch (error) {
+			toast.show(errorMessage(error, 'Could not archive'), 'error');
+		}
 	}
 
 	function toggleImportant() {
@@ -360,6 +381,27 @@
 			>
 				<PencilLine class="size-[1.125rem]" aria-hidden="true" />
 			</a>
+		{/if}
+
+		{#if isIsland && !isDraft && !isScheduled}
+			{#if canArchive}
+				<button
+					type="button"
+					class="z-mobile-island__icon-btn"
+					aria-label="Archive"
+					onclick={() => void archiveMessage()}
+				>
+					<Archive class="size-[1.125rem]" aria-hidden="true" />
+				</button>
+			{/if}
+			<button
+				type="button"
+				class="z-mobile-island__icon-btn z-mobile-island__icon-btn--danger"
+				aria-label={deleteLabel}
+				onclick={() => void deleteMessage()}
+			>
+				<Trash2 class="size-[1.125rem]" aria-hidden="true" />
+			</button>
 		{/if}
 
 		<div class={isIsland ? 'ml-2 shrink-0' : 'z-header-action-zone'}>
