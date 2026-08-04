@@ -1,0 +1,38 @@
+---
+description: Ark UI (@ark-ui/svelte) APIs — use official LLMs.txt docs before implementing or migrating primitives in webmail
+globs: apps/webmail/**/*
+alwaysApply: false
+---
+
+# Ark UI documentation (LLMs.txt)
+
+Webmail uses **@ark-ui/svelte** (Svelte 5). Prefer Ark UI APIs over Radix/shadcn assumptions.
+
+Official guide: [Ark UI LLMs.txt](https://ark-ui.com/docs/ai/llms.txt)
+
+## LLMs.txt routes
+
+| Route | URL | When to use |
+| --- | --- | --- |
+| Index (all frameworks) | https://ark-ui.com/llms.txt | Overview / cross-framework links |
+| **Svelte** (primary) | https://ark-ui.com/llms-svelte.txt | Default for webmail |
+| Full documentation | https://ark-ui.com/llms-full.txt | Deep dive on unfamiliar primitives |
+
+## Workflow
+
+Before implementing or changing `@ark-ui/svelte/*` imports:
+
+1. Fetch **llms-svelte.txt** (or follow links from that index for the specific component).
+2. Match APIs to the installed `@ark-ui/svelte` version in `apps/webmail/package.json`.
+3. Check the local inventory: `apps/webmail/docs/ark-ui-components.md`.
+4. Reuse existing wrappers in `apps/webmail/src/lib/components/ui/` when present.
+
+Do not quote entire upstream pages; cite component names or doc paths only.
+
+## Cursor @Docs
+
+In **Settings → Features → Docs**, add:
+
+- `https://ark-ui.com/llms-svelte.txt`
+
+Reference with `@Docs` in chat when working on Ark UI components.
