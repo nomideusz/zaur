@@ -1400,8 +1400,10 @@
 	}
 
 	.z-date-field__positioner {
-		z-index: 80;
-		/* Floating-ui sets min-width:max-content inline; without a fixed content
+		/* Floating-ui sets z-index:var(--z-index) inline (often auto). The search
+		   advanced panel is z-50, so without !important the calendar paints under it. */
+		z-index: 80 !important;
+		/* Floating-ui also sets min-width:max-content inline; without a fixed content
 		   width, day cells (width:100% + aspect-ratio:1) and the table feed back
 		   into max-content and explode to ~1e6px, parking the popover off-screen. */
 		max-width: min(18rem, calc(100vw - 1rem));
