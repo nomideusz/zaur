@@ -78,7 +78,7 @@
 	});
 
 
-	/* Mobile: top bar owns Back; island owns thread actions while open. */
+	/* Mobile: top bar owns Back + thread actions (no floating island). */
 	$effect(() => {
 		const generation = mobileIsland.setReader({
 			listHref,
@@ -335,8 +335,8 @@
 >
 	<div class="z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 	<!--
-		Desktop only — on phones the top bar carries Back and the island carries
-		thread actions. Subject is inline in the scroll body (not duplicated in chrome).
+		Desktop only — on phones the top bar carries Back + thread actions.
+		Subject is inline in the scroll body (not duplicated in chrome).
 	-->
 	<header
 		class="z-reader-header grid grid-cols-[auto_minmax(0,1fr)_auto] shrink-0 items-center gap-2 border-b border-border/80 px-4 py-2.5 min-w-0 max-md:hidden"

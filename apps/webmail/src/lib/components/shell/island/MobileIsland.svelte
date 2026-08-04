@@ -14,10 +14,8 @@
 	import { visualViewportKeyboardOffset } from '$lib/utils/visual-viewport';
 	import IslandBulkActions from './IslandBulkActions.svelte';
 	import IslandCalendarNav from './IslandCalendarNav.svelte';
-	import IslandComposeActions from './IslandComposeActions.svelte';
 	import IslandMailTabs from './IslandMailTabs.svelte';
 	import IslandMinimal from './IslandMinimal.svelte';
-	import IslandReaderActions from './IslandReaderActions.svelte';
 	import IslandSectionNav from './IslandSectionNav.svelte';
 	import IslandSettingsNav from './IslandSettingsNav.svelte';
 
@@ -49,16 +47,25 @@
 	);
 	const collapsed = $derived(mobileIsland.collapsed && collapsible);
 
-	/* Browse modes use a compact compose/action pill; only action docks go wide. */
-	const islandWide = $derived(
-		!collapsed &&
-			(islandMode === 'bulk' || islandMode === 'reader' || islandMode === 'compose')
+	/* Browse modes use a compact compose pill; bulk is the only wide action dock. */
+	const islandWide = $derived(!collapsed && islandMode === 'bulk');
+
+	/**
+	 * Compose + reader actions live in the sticky top bar — no floating dock.
+	 * Settings / empty default also hide the island (chrome is in MobileTopBar).
+	 */
+	const islandHidden = $derived(
+		islandMode === 'compose' ||
+			islandMode === 'reader' ||
+			(islandMode === 'section' && onSettings) ||
+			islandMode === 'default'
 	);
 
-	/** Settings / empty default — chrome moved to MobileTopBar; hide the dock. */
-	const islandHidden = $derived(
-		(islandMode === 'section' && onSettings) || islandMode === 'default'
-	);
+	/* Drop island scroll clearance when the dock is hidden (compose/reader). */
+	$effect(() => {
+		document.documentElement.toggleAttribute('data-z-island-hidden', islandHidden);
+		return () => document.documentElement.removeAttribute('data-z-island-hidden');
+	});
 
 	const PillIcon = $derived.by(() => {
 		if (islandMode === 'reader') return Reply;
@@ -131,11 +138,7 @@
 		)}
 	>
 		<div class="z-mobile-island__content" inert={collapsed || undefined}>
-			{#if islandMode === 'compose'}
-				<IslandComposeActions />
-			{:else if islandMode === 'reader'}
-				<IslandReaderActions />
-			{:else if islandMode === 'bulk'}
+			{#if islandMode === 'bulk'}
 				<IslandBulkActions />
 			{:else if islandMode === 'mail'}
 				<IslandMailTabs />
@@ -148,6 +151,7 @@
 					<IslandSectionNav />
 				{/if}
 			{:else}
+				<!-- compose / reader / default — island hidden; top bar owns actions -->
 				<IslandMinimal />
 			{/if}
 		</div>

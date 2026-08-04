@@ -50,10 +50,14 @@
 		onBackToList?: () => void;
 		/** Overflow menu opens away from the toolbar — 'top' inside the island. */
 		menuPlacement?: 'top' | 'bottom';
-		/** Unique menu id — the toolbar mounts twice (reader header + island). */
+		/** Unique menu id — desktop reader header vs mobile top bar. */
 		menuId?: string;
-		/** Compact icon layout for the mobile floating island. */
-		variant?: 'default' | 'island';
+		/**
+		 * `default` — desktop reader header (text links).
+		 * `island` — legacy floating dock (unused; kept for lab/tests).
+		 * `topbar` — compact icons + Reply in the sticky mobile top bar.
+		 */
+		variant?: 'default' | 'island' | 'topbar';
 	}
 
 	let {
@@ -67,6 +71,21 @@
 	}: Props = $props();
 
 	const isIsland = $derived(variant === 'island');
+	const isTopbar = $derived(variant === 'topbar');
+	const isCompact = $derived(isIsland || isTopbar);
+	const iconBtnClass = $derived(
+		isTopbar ? 'z-mobile-topbar__icon-btn' : 'z-mobile-island__icon-btn'
+	);
+	const iconBtnAccentClass = $derived(
+		isTopbar
+			? 'z-mobile-topbar__icon-btn z-mobile-topbar__icon-btn--accent'
+			: 'z-mobile-island__icon-btn z-mobile-island__icon-btn--accent'
+	);
+	const iconBtnDangerClass = $derived(
+		isTopbar
+			? 'z-mobile-topbar__icon-btn z-mobile-topbar__icon-btn--danger'
+			: 'z-mobile-island__icon-btn z-mobile-island__icon-btn--danger'
+	);
 
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
 
@@ -282,12 +301,12 @@
 {#if latest}
 	<div
 		class={cn(
-			isIsland
-				? 'flex min-w-0 flex-1 items-center justify-end gap-0.375rem'
+			isCompact
+				? 'flex min-w-0 flex-1 items-center justify-end gap-0.5'
 				: 'z-reader-toolbar flex min-w-0 shrink-0 items-center justify-end gap-3'
 		)}
 	>
-		{#if isDraft && !isIsland}
+		{#if isDraft && !isCompact}
 			<a href="/mail/compose?draft={latest.id}" class="z-mail-text-nav__link">Edit</a>
 		{/if}
 
@@ -295,11 +314,11 @@
 			label="Message actions"
 			{menuId}
 			placement={menuPlacement}
-			textTrigger={!isIsland}
-			triggerText={isIsland ? undefined : 'More'}
-			triggerClass={isIsland ? 'z-mobile-island__icon-btn' : 'z-mail-text-nav__link'}
+			textTrigger={!isCompact}
+			triggerText={isCompact ? undefined : 'More'}
+			triggerClass={isCompact ? iconBtnClass : 'z-mail-text-nav__link'}
 		>
-			{#if isIsland && !isDraft}
+			{#if isCompact && !isDraft}
 				<OverflowMenuItem label="Reply" onclick={reply}>
 					{#snippet icon()}<Reply class="size-5" aria-hidden="true" />{/snippet}
 				</OverflowMenuItem>
@@ -373,21 +392,21 @@
 			{/if}
 		</OverflowMenu>
 
-		{#if isDraft && isIsland}
+		{#if isDraft && isCompact}
 			<a
 				href="/mail/compose?draft={latest.id}"
-				class="z-mobile-island__icon-btn no-underline"
+				class="{iconBtnClass} no-underline"
 				aria-label="Edit draft"
 			>
 				<PencilLine class="size-[1.125rem]" aria-hidden="true" />
 			</a>
 		{/if}
 
-		{#if isIsland && !isDraft && !isScheduled}
+		{#if isCompact && !isDraft && !isScheduled}
 			{#if canArchive}
 				<button
 					type="button"
-					class="z-mobile-island__icon-btn"
+					class={iconBtnClass}
 					aria-label="Archive"
 					onclick={() => void archiveMessage()}
 				>
@@ -396,7 +415,7 @@
 			{/if}
 			<button
 				type="button"
-				class="z-mobile-island__icon-btn z-mobile-island__icon-btn--danger"
+				class={iconBtnDangerClass}
 				aria-label={deleteLabel}
 				onclick={() => void deleteMessage()}
 			>
@@ -404,19 +423,17 @@
 			</button>
 		{/if}
 
-		<div class={isIsland ? 'ml-2 shrink-0' : 'z-header-action-zone'}>
+		<div class={isCompact ? 'ml-1 shrink-0' : 'z-header-action-zone'}>
 			{#if isDraft}
 				<button
 					type="button"
 					class={cn(
-						isIsland
-							? 'z-mobile-island__icon-btn z-mobile-island__icon-btn--accent'
-							: 'z-mail-text-nav__action z-mail-text-nav__action--pill'
+						isCompact ? iconBtnAccentClass : 'z-mail-text-nav__action z-mail-text-nav__action--pill'
 					)}
 					aria-label="Send draft"
 					onclick={() => void sendDraft()}
 				>
-					{#if isIsland}
+					{#if isCompact}
 						<Send class="size-[1.125rem]" aria-hidden="true" />
 					{:else}
 						Send
@@ -426,21 +443,19 @@
 				<button
 					type="button"
 					class={cn(
-						isIsland
-							? 'z-mobile-island__icon-btn z-mobile-island__icon-btn--accent'
-							: 'z-mail-text-nav__action z-mail-text-nav__action--pill'
+						isCompact ? iconBtnAccentClass : 'z-mail-text-nav__action z-mail-text-nav__action--pill'
 					)}
 					aria-label={cancelingScheduled ? 'Canceling send' : 'Cancel send'}
 					disabled={cancelingScheduled}
 					onclick={() => void cancelScheduledSend()}
 				>
-					{#if isIsland}
+					{#if isCompact}
 						<XCircle class="size-[1.125rem]" aria-hidden="true" />
 					{:else}
 						{cancelingScheduled ? 'Canceling…' : 'Cancel send'}
 					{/if}
 				</button>
-			{:else if isIsland}
+			{:else if isCompact}
 				<button
 					type="button"
 					class="z-mail-text-nav__action z-mail-text-nav__action--pill"

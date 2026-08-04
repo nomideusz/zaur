@@ -111,6 +111,52 @@
 		outline-offset: -2px;
 	}
 
+	.z-mobile-topbar__icon-btn--accent {
+		color: var(--z-accent);
+		background-color: color-mix(in srgb, var(--z-accent) 10%, transparent);
+	}
+
+	.z-mobile-topbar__icon-btn--accent:hover {
+		color: var(--z-accent);
+		background-color: color-mix(in srgb, var(--z-accent) 16%, transparent);
+	}
+
+	.z-mobile-topbar__icon-btn--danger,
+	.z-mobile-topbar__icon-btn--danger:hover {
+		color: var(--z-danger);
+	}
+
+	.z-mobile-topbar__icon-btn--danger:hover {
+		background-color: color-mix(in srgb, var(--z-danger) 10%, transparent);
+	}
+
+	/* Reader/compose actions sit in the sticky top bar (no floating island). */
+	.z-mobile-topbar__reader-actions {
+		display: flex;
+		min-width: 0;
+		max-width: min(100%, 16.5rem);
+		align-items: center;
+		justify-content: flex-end;
+	}
+
+	.z-mobile-topbar .z-header-action-zone {
+		display: flex;
+		align-items: center;
+		margin-inline-start: 0.25rem;
+		padding-inline-start: 0.5rem;
+		border-inline-start: 1px solid color-mix(in srgb, var(--z-border) 70%, transparent);
+	}
+
+	.z-mobile-topbar .z-compose__send-split--compact .z-mail-text-nav__action--pill {
+		min-height: 2.5rem;
+		padding-block: 0.375rem;
+	}
+
+	/* No floating dock on compose/reader — reclaim island clearance. */
+	html[data-z-island-hidden] {
+		--z-island-clearance: max(0.75rem, env(safe-area-inset-bottom, 0px));
+	}
+
 	.z-mobile-topbar__search-field {
 		display: flex;
 		min-width: 0;
