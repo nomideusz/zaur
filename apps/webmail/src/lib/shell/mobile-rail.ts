@@ -13,3 +13,7 @@ export const MOBILE_RAIL_GROUP_CLASS = 'rounded-lg px-0.5';
 /* Island variant — taller items so segment targets stay ≥44px inside the pill. */
 export const ISLAND_RAIL_ITEM_CLASS =
 	'min-h-11 px-3 py-2.5 text-sm font-medium text-fg-muted data-[state=checked]:font-semibold data-[state=checked]:text-fg';
+
+/* Fixed top bar — compact but still ≥40px tap targets. */
+export const TOPBAR_RAIL_ITEM_CLASS =
+	'min-h-10 px-2.5 py-2 text-sm font-medium text-fg-muted data-[state=checked]:font-semibold data-[state=checked]:text-fg';

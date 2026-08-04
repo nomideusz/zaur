@@ -2,6 +2,15 @@ import { test, expect } from '@playwright/test';
 
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
+test('top bar shows mail filters and account rail; island is compose-only', async ({ page }) => {
+	await page.goto('/island-lab');
+	await expect(page.getByTestId('mobile-topbar')).toBeVisible();
+	await expect(page.getByTestId('account-rail')).toBeVisible();
+	await expect(page.getByRole('navigation', { name: 'Mail views' })).toBeVisible();
+	await expect(page.getByTestId('island-compose')).toBeVisible();
+	await expect(page.getByTestId('island-compose').getByText('Compose')).toBeVisible();
+});
+
 test('inline rail shows avatars for two accounts and switches on tap', async ({ page }) => {
 	await page.goto('/island-lab');
 	await expect(page.getByTestId('account-rail')).toBeVisible();
