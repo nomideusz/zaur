@@ -41,8 +41,9 @@
 	<header class="flex flex-col gap-1">
 		<h1 class="text-lg font-semibold">STDF spike</h1>
 		<p class="text-sm text-fg-muted">
-			Dev-only. Components render inside a <code>data-theme</code> scope, so nothing here can
-			restyle the rest of webmail.
+			Dev-only. STDF's colour namespace is mapped onto our <code>--z-*</code> tokens in
+			<code>layout.css</code>, so these widgets follow ZAUR theming (including dark) without
+			registering STDF's own theme.
 		</p>
 	</header>
 
@@ -79,7 +80,7 @@
 		<NumKeyboard bind:visible={keyboardOpen} bind:value={pin} close done dot={false} />
 		<Picker
 			bind:visible={pickerOpen}
-			datas={[{ data: hours, showRow: 5 }]}
+			datas={[{ data: hours, showRow: 7 }]}
 			title="Start time"
 			onconfirm={(items: { label?: string }[]) => {
 				picked = items?.[0]?.label ?? picked;
