@@ -113,7 +113,7 @@ export function estimateBulkActionWidth(action: Pick<BulkBarAction, 'label'>): n
 export function fitBulkActions(
 	actions: BulkBarAction[],
 	availableWidth: number,
-	options?: { reservedWidth?: number; actionWidth?: number }
+	options?: { reservedWidth?: number; actionWidth?: number; moreAlwaysShown?: boolean }
 ): { inline: BulkBarAction[]; overflow: BulkBarAction[] } {
 	// Trash button + separators + the More trigger itself.
 	const reserved = options?.reservedWidth ?? 150;
@@ -131,9 +131,12 @@ export function fitBulkActions(
 	}
 
 	// The More trigger occupies a slot of its own (part of `reserved`) — a lone
-	// overflow action just takes that slot instead of a one-item menu.
+	// overflow action just takes that slot instead of a one-item menu. Only
+	// when the trigger would actually disappear: the bar also shows More for
+	// Move targets, and claiming its slot while it still renders overflows the
+	// bar by one button (which pushed the close button outside the capsule).
 	const overflowing = actions.filter((action) => !inlineIds.has(action.id));
-	if (overflowing.length === 1) inlineIds.add(overflowing[0].id);
+	if (overflowing.length === 1 && !options?.moreAlwaysShown) inlineIds.add(overflowing[0].id);
 
 	return {
 		inline: actions.filter((action) => inlineIds.has(action.id)),

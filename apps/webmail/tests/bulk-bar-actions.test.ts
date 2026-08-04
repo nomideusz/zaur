@@ -107,6 +107,23 @@ describe('fitBulkActions', () => {
 		);
 	});
 
+	it('pulls a lone overflow action inline, reusing the vanishing More slot', () => {
+		// Room for Highlight plus one more; two of the remaining three overflow.
+		const width = 150 + estimateBulkActionWidth(marks[2]) + estimateBulkActionWidth(marks[0]) + 1;
+		const roomier = width + estimateBulkActionWidth(marks[1]);
+		const { overflow } = fitBulkActions([...marks], roomier);
+		assert.equal(overflow.length, 0, 'the single leftover takes the More slot');
+	});
+
+	it('keeps a lone overflow action in the menu when More renders anyway', () => {
+		// Move targets keep the More trigger on screen, so its slot is not free
+		// — taking it overflowed the bar and pushed the close button out.
+		const width = 150 + estimateBulkActionWidth(marks[2]) + estimateBulkActionWidth(marks[0]) + 1;
+		const roomier = width + estimateBulkActionWidth(marks[1]);
+		const { overflow } = fitBulkActions([...marks], roomier, { moreAlwaysShown: true });
+		assert.equal(overflow.length, 1);
+	});
+
 	it('moves everything inline when space is unbounded', () => {
 		const { inline, overflow } = fitBulkActions([...marks], Number.POSITIVE_INFINITY);
 		assert.equal(inline.length, marks.length);

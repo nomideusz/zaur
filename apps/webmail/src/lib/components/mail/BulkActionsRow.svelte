@@ -135,7 +135,9 @@
 		fitBulkActions(
 			markActions,
 			availableWidth,
-			iconOnly ? { reservedWidth: 104, actionWidth: 50 } : undefined
+			iconOnly
+				? { reservedWidth: 104, actionWidth: 50, moreAlwaysShown: canMove }
+				: { moreAlwaysShown: canMove }
 		)
 	);
 	const inlineActions = $derived(fitted.inline);

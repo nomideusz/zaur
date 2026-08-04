@@ -38,11 +38,17 @@
 		bulkSelectionSummary(selectedCount, bulkSelectionCounts(mail.selectedMessages(), selectedIds))
 	);
 
-	/* The bar itself is fit-content, so available space is measured on the
-	   host pane: full width minus chrome (count, separators, close, padding). */
+	/* The bar is fit-content, so space is measured on the host pane. The count
+	   chip is measured rather than guessed — its label runs from "2 selected"
+	   to "3 unseen, 2 normal" — and the rest of the chrome is fixed: the
+	   positioner's 2rem gutter, the capsule's 0.75rem padding plus border, the
+	   gaps between the three zones, and the 2.25rem close button. */
 	let hostWidth = $state(0);
-	const BAR_CHROME_PX = 190;
-	const actionsAvailableWidth = $derived(Math.max(0, hostWidth - BAR_CHROME_PX));
+	let valueWidth = $state(0);
+	const FIXED_CHROME_PX = 94;
+	const actionsAvailableWidth = $derived(
+		Math.max(0, hostWidth - valueWidth - FIXED_CHROME_PX)
+	);
 
 	function handleOpenChange(open: boolean) {
 		if (!open) mail.clearSelection();
@@ -70,12 +76,14 @@
 		>
 			<!-- Grouping is spacing, not pipes: count | actions | close read as
 			     three zones because of the gaps and the accent count chip. -->
-			<ActionBarValue
-				count={selectedCount}
-				label={summary.headline}
-				class="z-action-bar-value--accent max-w-[12rem] truncate"
-				title={summary.detail ?? summary.headline}
-			/>
+			<span class="flex shrink-0" bind:clientWidth={valueWidth}>
+				<ActionBarValue
+					count={selectedCount}
+					label={summary.headline}
+					class="z-action-bar-value--accent max-w-[12rem] truncate"
+					title={summary.detail ?? summary.headline}
+				/>
+			</span>
 
 			<ActionBarBody>
 				<BulkActionsRow
