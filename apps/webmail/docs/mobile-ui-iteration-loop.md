@@ -39,6 +39,12 @@ mobile width, then commit if behavior changed.
 | 19 | Regression tests / lab harness | `/mobile-chrome-lab` + e2e | done |
 | 20 | Final visual QA checklist | list, reader, compose labs | done |
 
+## Follow-up (compose / reader chrome)
+
+After the loop: hide the floating island on compose + reader; put **Send** (+ schedule)
+and reader **Reply** actions in the sticky top bar; keep a single Attach in the compose
+footer. See `MobileTopBar.svelte` + `ComposeSendSplit.svelte`.
+
 ## Working rules
 
 - Prefer CSS tokens (`--z-mobile-topbar-height`, `--z-island-clearance`) over magic numbers.

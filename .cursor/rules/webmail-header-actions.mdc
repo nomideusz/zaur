@@ -24,10 +24,11 @@ The primary action is **always the trailing (rightmost) element** of its header 
 
 Examples:
 - **Inbox list (desktop)**: filters left (All · Unseen · Important) · **New message** in list-pane header zone
-- **Inbox (mobile shell)**: fixed **top bar** — folders (☰) · Unseen/All/Highlights · Search · accounts; floating island is **Compose** only (action dock)
-- **Reader**: secondary links · More · **Reply** / **Send** zone (trailing)
+- **Inbox (mobile shell)**: fixed **top bar** — folders (☰) · Unseen/All/Highlights · Search · accounts; floating island is **Compose** only (list browse / bulk)
+- **Reader (desktop)**: secondary links · More · **Reply** / **Send** zone (trailing)
+- **Reader (mobile)**: sticky top bar — Back · More / Archive / Trash · **Reply** (no floating island; subject stays inline in the body)
 - **Compose (desktop)**: Discard / Rich text / Attach · **Send** zone (trailing)
-- **Compose (mobile)**: the floating island owns Back / Attach / Discard / **Send**; the compose header keeps the title (+ schedule caret) and hides the duplicate Back/Send
+- **Compose (mobile)**: sticky top bar — Back · title/draft status · **Send** (+ schedule caret); footer keeps a single Attach / rich text / Discard (no floating island)
 - **Search (no list toolbar)**: **New message** stays in app shell end
 
 Do **not** use `Button`, filled pills, or icon+label buttons for the primary header action.
@@ -49,7 +50,7 @@ Do **not** use `Button`, filled pills, or icon+label buttons for the primary hea
 [ secondary links / filters … ]  |  [ primary __action in .z-header-action-zone ]
 ```
 
-On mobile, navigation/filters live in `.z-mobile-topbar` (not the island). The island is a thumb-zone **action dock** (Compose / bulk / reader / compose-send).
+On mobile, navigation/filters and focused-screen actions (compose Send, reader Reply) live in `.z-mobile-topbar`. The floating island is only the list **Compose** pill and bulk-select dock — not used on compose or reader.
 
 Multi-account **avatar rail** sits on the top bar (utility chrome): ≤3 accounts switch in one tap; ≥4 opens the account switcher sheet.
 

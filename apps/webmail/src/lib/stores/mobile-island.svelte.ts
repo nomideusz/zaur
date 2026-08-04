@@ -12,15 +12,30 @@ export type IslandReaderContext = {
 	onBackToList?: () => void;
 };
 
-/** Context the compose screen registers for the island's compose actions. */
+export type ComposeSchedulePreset = { label: string; date: Date };
+
+/**
+ * Context the compose screen registers for the mobile top bar (Send / schedule)
+ * and back control. The floating island is not used on compose.
+ */
 export type IslandComposeContext = {
 	onBack: () => void;
 	onSend: () => void;
-	onAttach: () => void;
-	onDiscard: () => void;
 	sendLabel: string;
 	sendDisabled: boolean;
-	isEmpty: boolean;
+	sendBlockedReason: string | null;
+	/** Draft status or mode title shown in the top bar. */
+	title: string;
+	scheduleDisabled: boolean;
+	showSchedulePanel: boolean;
+	toggleSchedulePanel: () => void;
+	closeSchedulePanel: () => void;
+	schedulePresets: ComposeSchedulePreset[];
+	scheduleSendAt: (date: Date) => void | Promise<void>;
+	customSendTime: string;
+	setCustomSendTime: (value: string) => void;
+	customSendTimeMin: string;
+	formatScheduleTime: (date: Date) => string;
 };
 
 /**
