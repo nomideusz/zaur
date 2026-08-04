@@ -213,7 +213,12 @@
 	   island's "…" more button. Split controls (compose Send ▾, reader Reply ▾)
 	   stretch their segments, so both halves follow this height. */
 	@media (max-width: 767px) {
-		:is(.z-mail-view, .z-settings-view, .z-mobile-island) .z-mail-text-nav__action--pill {
+		:is(.z-mail-view, .z-settings-view, .z-mobile-island, .z-mobile-topbar) .z-mail-text-nav__action--pill {
 			min-height: 2.75rem;
+		}
+
+		/* Compact Send|▾ in the sticky top bar stays one capsule at bar height. */
+		.z-mobile-topbar .z-compose__send-split--compact .z-mail-text-nav__action--pill {
+			min-height: 2.5rem;
 		}
 	}
