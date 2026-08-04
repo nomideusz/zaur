@@ -14,6 +14,6 @@ export const MOBILE_RAIL_GROUP_CLASS = 'rounded-full px-0.5';
 export const ISLAND_RAIL_ITEM_CLASS =
 	'min-h-11 px-3 py-2.5 text-sm font-medium text-fg-muted data-[state=checked]:font-semibold data-[state=checked]:text-fg';
 
-/* Fixed top bar — compact but still ≥40px tap targets. */
+/* Fixed top bar — ≥44px tap targets (WCAG / Apple HIG). */
 export const TOPBAR_RAIL_ITEM_CLASS =
-	'min-h-10 px-2.5 py-2 text-sm font-medium text-fg-muted data-[state=checked]:font-semibold data-[state=checked]:text-fg';
+	'min-h-11 px-2.5 py-2 text-sm font-medium text-fg-muted data-[state=checked]:font-semibold data-[state=checked]:text-fg';

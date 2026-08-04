@@ -34,10 +34,11 @@
 
 	.z-mail-pane--mobile-fullscreen {
 		@apply max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-30 max-md:flex max-md:flex-col max-md:bg-surface;
-		top: 0;
-		/* Edge-to-edge: this fixed pane escapes #main-content, so it carries the
-		   top inset itself (the reader has no header on mobile). */
-		padding-top: env(safe-area-inset-top, 0px);
+		/* Fixed pane escapes #main-content. Sit below the sticky mobile top bar
+		   (which already lives inside main's safe-area padding) so From/meta
+		   never paint underneath the back chrome. */
+		top: calc(env(safe-area-inset-top, 0px) + var(--z-mobile-topbar-height));
+		padding-top: 0;
 	}
 
 	.z-mobile-sheet-backdrop {

@@ -120,7 +120,7 @@
 									<FileText class="z-reader-attachment-icon" aria-hidden="true" />
 								{/if}
 								<span class="z-reader-attachment-copy">
-									<span class="z-reader-attachment-name">{displayName}</span>
+									<span class="z-reader-attachment-name" title={attachment.name}>{displayName}</span>
 									<span class="z-reader-attachment-meta">
 										{#if attachment.size}
 											<span class="z-reader-attachment-size">{formatSize(attachment.size)}</span>

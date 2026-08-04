@@ -398,9 +398,11 @@
 
 	.z-reader-inline-subject {
 		margin: var(--z-space-reader-inline-subject) 0 0;
-		font-size: var(--z-reader-text);
-		line-height: var(--z-reader-leading);
+		font-size: calc(var(--z-reader-text) + 0.0625rem);
+		line-height: 1.35;
 		@apply break-words font-semibold text-fg;
+		/* Full subject on mobile — never truncate; top bar no longer repeats it. */
+		overflow-wrap: anywhere;
 	}
 
 	.z-email-body :where(p + p, p + ul, p + ol, ul + p, ol + p) {

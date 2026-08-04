@@ -132,7 +132,11 @@ export function isSectionSearchRoute(path: string): boolean {
 	return path === '/mail/search' || path === '/contacts/search' || path === '/calendar/search';
 }
 
-/** Focused full-screen views (compose, the reader) hide the bar. */
+/**
+ * Focused views suppress the *search* chrome in the mobile top bar.
+ * Thread/compose still show the top bar (back control) via MobileTopBar.showBar;
+ * only the searchable filter/account row is replaced.
+ */
 export function topSearchSuppressed(path: string): boolean {
 	if (path.startsWith('/mail/compose')) return true;
 	// Mail thread reader is a focused full-screen view on mobile.

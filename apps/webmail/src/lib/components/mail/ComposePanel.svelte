@@ -765,7 +765,7 @@
 					<li class="z-compose-attachment-item">
 						<div class="flex min-w-0 flex-1 items-center gap-2 text-sm">
 							<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
-							<span class="min-w-0 truncate font-medium text-fg">{attachment.name}</span>
+							<span class="min-w-0 truncate font-medium text-fg" title={attachment.name}>{attachment.name}</span>
 							<span class="shrink-0 text-xs text-fg-subtle">
 								({formatAttachmentSize(attachment.size)})
 							</span>

@@ -54,8 +54,9 @@
 	const showSectionTitle = $derived(onContacts && !searchExpanded);
 
 	/* Inner screens (thread / compose) get a back arrow in the top bar instead
-	   of a second hamburger — the drawer stays reachable from the list views. */
-	const threadSubject = $derived(mobileIsland.reader?.thread[0]?.subject?.trim() || 'Message');
+	   of a second hamburger — the drawer stays reachable from the list views.
+	   Titles stay in-pane (reader subject / compose draft status) so we never
+	   duplicate or truncate the same string in the chrome. */
 	const backHref = $derived(mobileIsland.reader?.listHref ?? settings.preferredMailHref());
 
 	function composeBack() {
@@ -262,11 +263,8 @@
 					</nav>
 				{:else if showSectionTitle}
 					<div class="min-w-0 flex-1 px-2 text-sm font-medium text-fg">Contacts</div>
-				{:else if onMailThread}
-					<div class="min-w-0 flex-1 px-2 text-sm font-medium text-fg truncate">{threadSubject}</div>
-				{:else if onMailCompose}
-					<div class="min-w-0 flex-1 px-2 text-sm font-medium text-fg truncate">Compose</div>
 				{:else}
+					<!-- Thread/compose: back only — subject & draft title live in-pane. -->
 					<div class="min-w-0 flex-1" aria-hidden="true"></div>
 				{/if}
 

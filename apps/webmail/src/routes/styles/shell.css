@@ -90,8 +90,8 @@
 	.z-mobile-topbar__icon-btn {
 		display: grid;
 		place-items: center;
-		width: 2.5rem;
-		height: 2.5rem;
+		width: 2.75rem;
+		height: 2.75rem;
 		flex-shrink: 0;
 		cursor: pointer;
 		border-radius: 9999px;
@@ -358,6 +358,7 @@
 		max-height: 70vh;
 		border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 		box-shadow: var(--shadow-md);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
 	}
 
 	@media (prefers-reduced-motion: no-preference) {
