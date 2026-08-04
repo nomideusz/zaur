@@ -709,8 +709,10 @@
 
 								{#if advDateRange === 'custom'}
 									<!-- #region agent log -->
+									<!-- svelte-ignore a11y_no_static_element_interactions -->
 									<div
 										class="grid grid-cols-2 gap-3 border-t border-border/50 pt-2"
+										role="presentation"
 										onpointerdown={(e) => {
 											const t = e.target as HTMLElement | null;
 											fetch('/api/__debug_log', {

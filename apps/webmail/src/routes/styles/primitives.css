@@ -1401,10 +1401,16 @@
 
 	.z-date-field__positioner {
 		z-index: 80;
+		/* Floating-ui sets min-width:max-content inline; without a fixed content
+		   width, day cells (width:100% + aspect-ratio:1) and the table feed back
+		   into max-content and explode to ~1e6px, parking the popover off-screen. */
+		max-width: min(18rem, calc(100vw - 1rem));
 	}
 
 	.z-date-field__content {
-		min-width: 16.5rem;
+		width: 17.5rem;
+		max-width: 100%;
+		box-sizing: border-box;
 		border: 1px solid var(--z-border);
 		border-radius: var(--radius-lg);
 		background-color: var(--z-surface-raised);
@@ -1469,8 +1475,10 @@
 	.z-date-field__cell {
 		display: grid;
 		place-items: center;
-		width: 100%;
-		aspect-ratio: 1;
+		/* Fixed square size — not width:100% + aspect-ratio, which fights
+		   positioner min-width:max-content and blows up the floating layer. */
+		width: 2.25rem;
+		height: 2.25rem;
 		margin: 0 auto;
 		border: none;
 		border-radius: var(--radius-sm);

@@ -154,15 +154,34 @@
 				// #region agent log
 				logTriggerPointer(e, 'click');
 				queueMicrotask(() => {
-					const t = e.currentTarget as HTMLElement | null;
-					dbg('B,C', 'DateField.svelte:trigger:click:after', 'post-click state', {
-						dataState: t?.getAttribute('data-state'),
-						ariaExpanded: t?.getAttribute('aria-expanded'),
-						rootState: t?.closest('[data-scope="date-picker"][data-part="root"]')?.getAttribute(
-							'data-state'
-						),
-						contentInDom: !!document.querySelector(
-							'[data-scope="date-picker"][data-part="content"][data-state="open"]'
+					const trigger = document.querySelector(
+						'[data-scope="date-picker"][data-part="trigger"][data-state="open"]'
+					) as HTMLElement | null;
+					const content = document.querySelector(
+						'[data-scope="date-picker"][data-part="content"][data-state="open"]'
+					) as HTMLElement | null;
+					const positioner = content?.closest(
+						'[data-scope="date-picker"][data-part="positioner"]'
+					) as HTMLElement | null;
+					const cr = content?.getBoundingClientRect();
+					const y =
+						positioner?.style.getPropertyValue('--y') ||
+						getComputedStyle(positioner ?? document.documentElement).getPropertyValue('--y');
+					dbg('E', 'DateField.svelte:trigger:click:after', 'post-click layout', {
+						runId: 'post-fix',
+						dataState: trigger?.getAttribute('data-state'),
+						ariaExpanded: trigger?.getAttribute('aria-expanded'),
+						contentInDom: !!content,
+						contentW: cr ? Math.round(cr.width) : null,
+						contentH: cr ? Math.round(cr.height) : null,
+						contentY: cr ? Math.round(cr.y) : null,
+						positionerY: y?.trim() || null,
+						inViewport: !!(
+							cr &&
+							cr.width > 0 &&
+							cr.height > 0 &&
+							cr.y > -cr.height &&
+							cr.y < window.innerHeight
 						)
 					});
 				});
