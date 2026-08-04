@@ -32,6 +32,18 @@
 	--height-header: 3.25rem;
 }
 
+/*
+ * Wider message list on real desktops (+3rem = 48px). Held back until lg:
+ * both panes appear at md (768px), where sidebar 13.5rem + list 27rem already
+ * leaves the reader ~120px — taking another 48px there would squeeze it to
+ * ~72px on iPad portrait. Unlayered, so it wins over the @theme default.
+ */
+@media (min-width: 1024px) {
+	:root {
+		--width-list: 30rem;
+	}
+}
+
 :root {
 	--z-list-row: 4rem;
 	--z-list-text: 1rem;
