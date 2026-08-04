@@ -352,7 +352,11 @@
 		</SettingsRow>
 	</SettingsFormGroup>
 
-	<SettingsFormGroup title="Password" description="Use a unique password you do not use elsewhere.">
+	<SettingsFormGroup
+		title="Password"
+		description="Use a unique password you do not use elsewhere."
+		disabled={!verified}
+	>
 		<SettingsField title="New password">
 			{#snippet children({ id })}
 				<input id={id} class="z-input" type="password" autocomplete="new-password" bind:value={newPassword} disabled={!verified} />

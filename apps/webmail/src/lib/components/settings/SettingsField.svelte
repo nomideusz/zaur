@@ -12,10 +12,14 @@
 	let {
 		title,
 		description,
+		invalid = false,
+		error,
 		children: control
 	}: {
 		title: string;
 		description?: string;
+		invalid?: boolean;
+		error?: string;
 		children: import('svelte').Snippet<[{ id: string }]>;
 	} = $props();
 
@@ -23,6 +27,7 @@
 	const labelId = $derived(`${rowId}-label`);
 	const controlId = $derived(`${rowId}-control`);
 	const descId = $derived(description ? `${rowId}-desc` : undefined);
+	const errorId = $derived(invalid && error ? `${rowId}-error` : undefined);
 
 	const visible = $derived(settingsSearch.matchesRow(title, description));
 
@@ -50,7 +55,13 @@
 {#if visible}
 	<Field
 		id={rowId}
-		ids={{ root: rowId, label: labelId, helperText: descId, control: controlId }}
+		ids={{
+			root: rowId,
+			label: labelId,
+			helperText: descId,
+			errorText: errorId,
+			control: controlId
+		}}
 		data-settings-row
 		class="z-settings-field scroll-mt-20"
 		bodyClass="z-settings-field-body"
@@ -58,6 +69,9 @@
 		labelClass="z-settings-field-label"
 		{description}
 		descriptionClass="z-settings-field-desc"
+		errorClass="z-settings-field-error"
+		{invalid}
+		{error}
 	>
 		{#snippet children({ controlId: fieldControlId })}
 			{@render control({ id: fieldControlId })}

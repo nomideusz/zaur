@@ -21,9 +21,12 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
+	import Field from '$lib/components/ui/Field.svelte';
+	import Progress from '$lib/components/ui/Progress.svelte';
 	import ComposeFileUpload, {
 		type FileUploadRejection
 	} from '$lib/components/ui/ComposeFileUpload.svelte';
+	import { Collapsible } from '@ark-ui/svelte/collapsible';
 	import { FileUpload } from '@ark-ui/svelte/file-upload';
 	import { cn } from '$lib/utils/cn';
 
@@ -407,6 +410,20 @@
 	function fieldInvalid(field: 'to' | 'cc' | 'bcc'): boolean {
 		return sendAttempted && invalidAddressParts(compose[field]).length > 0;
 	}
+
+	function fieldError(field: 'to' | 'cc' | 'bcc'): string | undefined {
+		if (!fieldInvalid(field)) return undefined;
+		const bad = invalidAddressParts(compose[field])[0];
+		return bad ? `Fix recipient ${bad}` : 'Fix recipient address';
+	}
+
+	const quoteOpen = $derived(!settings.collapseQuotedInCompose);
+	let plainQuoteOpen = $state(true);
+	let richQuoteOpen = $state(false);
+
+	$effect(() => {
+		plainQuoteOpen = quoteOpen;
+	});
 </script>
 
 <svelte:window onpointerdown={onWindowPointerDown} />
@@ -609,70 +626,124 @@
 						</div>
 					</div>
 				{/if}
-				<div class={cn('z-compose__field', fieldInvalid('to') && 'z-compose__field--invalid')}>
-					<label class="z-compose__label" for="compose-to">To</label>
-					<ComposeRecipientInput
-						id="compose-to"
-						bind:inputElement={toInput}
-						value={compose.to}
-						autocomplete="email"
-						class="z-compose__input"
-						invalid={fieldInvalid('to')}
-						ariaDescribedby={compose.error || (sendAttempted && invalidRecipients.length) ? composeErrorsId : undefined}
-						oninput={(value) => {
-							compose.to = value;
-							sendAttempted = false;
-						}}
-						onfocus={() => (recipientFocused = true)}
-						onblur={() => (recipientFocused = false)}
-					/>
-					{#if !ccBccVisible}
-						<button
-							type="button"
-							class="z-compose__suffix-link"
-							tabindex="-1"
-							onclick={() => (compose.showCcBcc = true)}
-						>
-							Cc/Bcc
-						</button>
-					{/if}
-				</div>
+				<Field
+					id="compose-to-field"
+					ids={{
+						root: 'compose-to-field',
+						label: 'compose-to-label',
+						control: 'compose-to',
+						errorText: 'compose-to-error'
+					}}
+					class={cn('z-compose__field', fieldInvalid('to') && 'z-compose__field--invalid')}
+					bodyClass="z-compose__field-body"
+					label="To"
+					labelClass="z-compose__label"
+					invalid={fieldInvalid('to')}
+					error={fieldError('to')}
+					errorClass="z-compose__field-error"
+				>
+					{#snippet children({ controlId, errorId })}
+						<ComposeRecipientInput
+							id={controlId}
+							bind:inputElement={toInput}
+							value={compose.to}
+							autocomplete="email"
+							class="z-compose__input"
+							invalid={fieldInvalid('to')}
+							ariaDescribedby={[errorId, compose.error ? composeErrorsId : undefined]
+								.filter(Boolean)
+								.join(' ') || undefined}
+							oninput={(value) => {
+								compose.to = value;
+								sendAttempted = false;
+							}}
+							onfocus={() => (recipientFocused = true)}
+							onblur={() => (recipientFocused = false)}
+						/>
+						{#if !ccBccVisible}
+							<button
+								type="button"
+								class="z-compose__suffix-link"
+								tabindex="-1"
+								onclick={() => (compose.showCcBcc = true)}
+							>
+								Cc/Bcc
+							</button>
+						{/if}
+					{/snippet}
+				</Field>
 
 				{#if ccBccVisible}
-					<div class={cn('z-compose__field', fieldInvalid('cc') && 'z-compose__field--invalid')}>
-						<label class="z-compose__label" for="compose-cc">Cc</label>
-						<ComposeRecipientInput
-							id="compose-cc"
-							value={compose.cc}
-							autocomplete="email"
-							class="z-compose__input"
-							invalid={fieldInvalid('cc')}
-							ariaDescribedby={compose.error || (sendAttempted && invalidRecipients.length) ? composeErrorsId : undefined}
-							oninput={(value) => {
-								compose.cc = value;
-								sendAttempted = false;
-							}}
-							onfocus={() => (recipientFocused = true)}
-							onblur={() => (recipientFocused = false)}
-						/>
-					</div>
-					<div class={cn('z-compose__field', fieldInvalid('bcc') && 'z-compose__field--invalid')}>
-						<label class="z-compose__label" for="compose-bcc">Bcc</label>
-						<ComposeRecipientInput
-							id="compose-bcc"
-							value={compose.bcc}
-							autocomplete="email"
-							class="z-compose__input"
-							invalid={fieldInvalid('bcc')}
-							ariaDescribedby={compose.error || (sendAttempted && invalidRecipients.length) ? composeErrorsId : undefined}
-							oninput={(value) => {
-								compose.bcc = value;
-								sendAttempted = false;
-							}}
-							onfocus={() => (recipientFocused = true)}
-							onblur={() => (recipientFocused = false)}
-						/>
-					</div>
+					<Field
+						id="compose-cc-field"
+						ids={{
+							root: 'compose-cc-field',
+							label: 'compose-cc-label',
+							control: 'compose-cc',
+							errorText: 'compose-cc-error'
+						}}
+						class={cn('z-compose__field', fieldInvalid('cc') && 'z-compose__field--invalid')}
+						bodyClass="z-compose__field-body"
+						label="Cc"
+						labelClass="z-compose__label"
+						invalid={fieldInvalid('cc')}
+						error={fieldError('cc')}
+						errorClass="z-compose__field-error"
+					>
+						{#snippet children({ controlId, errorId })}
+							<ComposeRecipientInput
+								id={controlId}
+								value={compose.cc}
+								autocomplete="email"
+								class="z-compose__input"
+								invalid={fieldInvalid('cc')}
+								ariaDescribedby={[errorId, compose.error ? composeErrorsId : undefined]
+									.filter(Boolean)
+									.join(' ') || undefined}
+								oninput={(value) => {
+									compose.cc = value;
+									sendAttempted = false;
+								}}
+								onfocus={() => (recipientFocused = true)}
+								onblur={() => (recipientFocused = false)}
+							/>
+						{/snippet}
+					</Field>
+					<Field
+						id="compose-bcc-field"
+						ids={{
+							root: 'compose-bcc-field',
+							label: 'compose-bcc-label',
+							control: 'compose-bcc',
+							errorText: 'compose-bcc-error'
+						}}
+						class={cn('z-compose__field', fieldInvalid('bcc') && 'z-compose__field--invalid')}
+						bodyClass="z-compose__field-body"
+						label="Bcc"
+						labelClass="z-compose__label"
+						invalid={fieldInvalid('bcc')}
+						error={fieldError('bcc')}
+						errorClass="z-compose__field-error"
+					>
+						{#snippet children({ controlId, errorId })}
+							<ComposeRecipientInput
+								id={controlId}
+								value={compose.bcc}
+								autocomplete="email"
+								class="z-compose__input"
+								invalid={fieldInvalid('bcc')}
+								ariaDescribedby={[errorId, compose.error ? composeErrorsId : undefined]
+									.filter(Boolean)
+									.join(' ') || undefined}
+								oninput={(value) => {
+									compose.bcc = value;
+									sendAttempted = false;
+								}}
+								onfocus={() => (recipientFocused = true)}
+								onblur={() => (recipientFocused = false)}
+							/>
+						{/snippet}
+					</Field>
 				{/if}
 
 				<div class="z-compose__field z-compose__field--subject">
@@ -699,7 +770,10 @@
 								({formatAttachmentSize(attachment.size)})
 							</span>
 							{#if attachment.uploading}
-								<span class="text-xs text-fg-subtle">Uploading…</span>
+								<span class="flex min-w-[5rem] flex-col gap-0.5">
+									<span class="text-xs text-fg-subtle">Uploading…</span>
+									<Progress class="z-compose-attachment-progress" />
+								</span>
 							{:else if attachment.uploadError}
 								<span class="text-xs text-danger">Failed</span>
 							{/if}
@@ -742,24 +816,30 @@
 		</div>
 
 			{#if quotedPart && !isRichText}
-				<details class="z-compose__quote" open={!settings.collapseQuotedInCompose}>
-					<summary>Quoted message</summary>
-					<pre>{quotedPart.trim()}</pre>
-				</details>
+				<Collapsible.Root bind:open={plainQuoteOpen} class="z-compose__quote">
+					<Collapsible.Trigger class="z-compose__quote-trigger">Quoted message</Collapsible.Trigger>
+					<Collapsible.Content>
+						<pre>{quotedPart.trim()}</pre>
+					</Collapsible.Content>
+				</Collapsible.Root>
 			{/if}
 
 			{#if richQuote && richQuote.textQuote.trim()}
-				<details class="z-compose__quote">
-					<summary>Quoted message</summary>
-					<pre>{richQuote.textQuote.trim()}</pre>
-				</details>
+				<Collapsible.Root bind:open={richQuoteOpen} class="z-compose__quote">
+					<Collapsible.Trigger class="z-compose__quote-trigger">Quoted message</Collapsible.Trigger>
+					<Collapsible.Content>
+						<pre>{richQuote.textQuote.trim()}</pre>
+					</Collapsible.Content>
+				</Collapsible.Root>
 			{/if}
 
-
-
-		{#if compose.error || (sendAttempted && invalidRecipients.length)}
+		{#if compose.error}
 			<p id={composeErrorsId} class="shrink-0 px-4 py-2 text-sm text-danger" role="alert">
-				{compose.error ?? `Check recipient: ${invalidRecipients[0]}`}
+				{compose.error}
+			</p>
+		{:else if sendAttempted && invalidRecipients.length && !fieldInvalid('to') && !fieldInvalid('cc') && !fieldInvalid('bcc')}
+			<p id={composeErrorsId} class="shrink-0 px-4 py-2 text-sm text-danger" role="alert">
+				Check recipient: {invalidRecipients[0]}
 			</p>
 		{/if}
 
