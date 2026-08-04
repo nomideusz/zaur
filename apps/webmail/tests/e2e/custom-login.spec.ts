@@ -20,8 +20,10 @@ test('uses ZAUR-branded inline password and TOTP steps', async ({ page }) => {
 		.toBe(true);
 	await submit.click();
 	await expect(page.getByText('Two-factor authentication')).toBeVisible();
-	await expect(page.getByLabel('Authentication code')).toHaveAttribute('autocomplete', 'one-time-code');
+	// Ark PinInput: autofill lives on the hidden aggregate input; digits are typed in slots.
+	await expect(page.locator('#totp')).toHaveAttribute('autocomplete', 'one-time-code');
 	await expect(page.getByRole('button', { name: 'Verify and sign in' })).toBeDisabled();
-	await page.getByLabel('Authentication code').fill('123456');
+	await page.locator('.z-pin-input__slot').first().click();
+	await page.keyboard.type('123456');
 	await expect(page.getByRole('button', { name: 'Verify and sign in' })).toBeEnabled();
 });

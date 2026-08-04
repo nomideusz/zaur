@@ -66,5 +66,6 @@
 			/>
 		{/each}
 	</PinInput.Control>
-	<PinInput.HiddenInput />
+	<!-- Form/autofill target — keep autocomplete here; slots are the visible UI. -->
+	<PinInput.HiddenInput autocomplete={autocomplete as 'one-time-code'} />
 </PinInput.Root>
