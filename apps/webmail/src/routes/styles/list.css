@@ -507,6 +507,14 @@
 		line-height: 1.35;
 	}
 
+	@media (max-width: 767px) {
+		/* Two-line clamp — pairs with max-md:line-clamp-2 on the row class. */
+		.z-mail-view .z-mail-list-row .list-subject {
+			overflow: hidden;
+			word-break: break-word;
+		}
+	}
+
 	.z-mail-view .z-mail-list-row .list-time {
 		grid-column: 2;
 		grid-row: 1;

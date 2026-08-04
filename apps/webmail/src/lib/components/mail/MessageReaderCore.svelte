@@ -78,7 +78,7 @@
 	});
 
 
-	/* Mobile island renders back + thread actions while a thread is open. */
+	/* Mobile: top bar owns Back; island owns thread actions while open. */
 	$effect(() => {
 		const generation = mobileIsland.setReader({
 			listHref,
@@ -335,8 +335,8 @@
 >
 	<div class="z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 	<!--
-		Desktop only — on phones the island carries back + thread actions.
-		Mirrors the compose header: Back | subject | actions on a 3-col grid.
+		Desktop only — on phones the top bar carries Back and the island carries
+		thread actions. Subject is inline in the scroll body (not duplicated in chrome).
 	-->
 	<header
 		class="z-reader-header grid grid-cols-[auto_minmax(0,1fr)_auto] shrink-0 items-center gap-2 border-b border-border/80 px-4 py-2.5 min-w-0 max-md:hidden"
@@ -395,18 +395,19 @@
 						<div class="px-4" style="padding-block: var(--z-space-reader-content);">
 							<div class="z-reader-chrome__meta">
 								<div class="z-reader-chrome__from">
-									<p class="z-reader-from truncate">{contact.displayName}</p>
+									<p class="z-reader-from max-md:break-words md:truncate">{contact.displayName}</p>
 									{#if showContactEmail}
 										{#if !contact.isMe}
 											<button
 												type="button"
 												class="z-reader-meta mt-0.5 block max-w-full truncate text-left hover:text-fg"
+												title={contact.email}
 												onclick={() => composeTo(contact.email)}
 											>
 												{contact.email}
 											</button>
 										{:else}
-											<p class="z-reader-meta mt-0.5 truncate">{contact.email}</p>
+											<p class="z-reader-meta mt-0.5 truncate" title={contact.email}>{contact.email}</p>
 										{/if}
 									{/if}
 									{#if deliveredTo}
@@ -449,10 +450,10 @@
 							>
 								<div class="z-reader-chrome__meta">
 									<div class="z-reader-chrome__from">
-										<p class="z-reader-from truncate">{contact.displayName}</p>
+										<p class="z-reader-from max-md:break-words md:truncate">{contact.displayName}</p>
 										{#if expanded}
 											{#if showContactEmail}
-												<p class="z-reader-meta mt-0.5 truncate">{contact.email}</p>
+												<p class="z-reader-meta mt-0.5 truncate" title={contact.email}>{contact.email}</p>
 											{/if}
 											{#if deliveredTo}
 												<p class="z-reader-delivered-to mt-0.5 truncate" title="{deliveredTo.prefix} {deliveredTo.addresses}">
@@ -465,7 +466,7 @@
 													<Paperclip class="size-3.5 shrink-0" aria-hidden="true" />
 												{/if}
 												{#if message.preview.trim()}
-													<span class="truncate">{message.preview}</span>
+													<span class="truncate" title={message.preview}>{message.preview}</span>
 												{/if}
 											</div>
 										{/if}

@@ -90,8 +90,8 @@
 	.z-mobile-topbar__icon-btn {
 		display: grid;
 		place-items: center;
-		width: 2.5rem;
-		height: 2.5rem;
+		width: 2.75rem;
+		height: 2.75rem;
 		flex-shrink: 0;
 		cursor: pointer;
 		border-radius: 9999px;
@@ -117,6 +117,8 @@
 		flex: 1 1 auto;
 		align-items: center;
 		gap: 0.5rem;
+		/* Keep the field from colliding with 44px icon buttons on narrow phones. */
+		min-height: 2.75rem;
 		border: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
 		border-radius: var(--radius-md);
 		background-color: var(--z-surface-sunken);
@@ -358,6 +360,7 @@
 		max-height: 70vh;
 		border-radius: var(--radius-lg) var(--radius-lg) 0 0;
 		box-shadow: var(--shadow-md);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
 	}
 
 	@media (prefers-reduced-motion: no-preference) {

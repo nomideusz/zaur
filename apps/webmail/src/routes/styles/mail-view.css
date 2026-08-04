@@ -46,7 +46,6 @@
 	}
 
 	.z-app-main--page-scroll .z-mail-pane--mobile-fullscreen {
-		top: 0;
 		overflow: hidden;
 		min-height: 0;
 		flex: 1 1 0;

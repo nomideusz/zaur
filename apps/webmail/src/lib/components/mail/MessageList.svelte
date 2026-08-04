@@ -95,12 +95,12 @@
 			'list-sender min-w-0 truncate',
 			unread ? 'font-semibold text-fg' : 'font-normal text-fg-muted'
 		);
-	/* Single truncated line on every viewport — wrapping would change row height
-	   when bulk-select compresses the row, causing layout shifts. */
+	/* Phone: up to two lines before ellipsis. Desktop: one line (important may
+	   paint highlight overflow). Fixed clamp avoids bulk-select height thrash. */
 	const listSubjectClass = (unread: boolean, important = false) =>
 		cn(
-			'list-subject min-w-0',
-			important ? 'max-md:truncate md:overflow-visible' : 'truncate',
+			'list-subject min-w-0 max-md:line-clamp-2',
+			important ? 'md:overflow-visible' : 'md:truncate',
 			unread ? 'font-semibold text-fg' : 'font-normal text-fg'
 		);
 

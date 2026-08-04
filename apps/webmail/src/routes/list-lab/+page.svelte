@@ -45,7 +45,7 @@
 			hasAttachment: true,
 			replied: true,
 			subject:
-				'A very long subject line that should truncate with an ellipsis instead of wrapping onto a second line when the row narrows'
+				'A very long subject line that should wrap to two lines on phones before ellipsis, without overflowing the row'
 		})
 	];
 
