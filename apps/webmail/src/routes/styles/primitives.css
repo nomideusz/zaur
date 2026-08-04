@@ -672,6 +672,27 @@
 		white-space: nowrap;
 	}
 
+	/* Selection count reads as state, not as another neutral chip. */
+	.z-action-bar-value--accent {
+		background-color: color-mix(in srgb, var(--z-accent) 14%, transparent);
+		color: var(--z-accent);
+	}
+
+	/* Destructive action gets a tinted capsule so it separates from the
+	   neutral actions without needing a divider. */
+	.z-action-bar-content .z-mail-text-nav__action--danger {
+		min-height: 2.25rem;
+		padding-inline: 0.875rem;
+		border-radius: 9999px;
+		text-decoration: none;
+		background-color: color-mix(in srgb, var(--z-danger) 10%, transparent);
+	}
+
+	.z-action-bar-content .z-mail-text-nav__action--danger:hover:not(:disabled) {
+		text-decoration: none;
+		background-color: color-mix(in srgb, var(--z-danger) 18%, transparent);
+	}
+
 	/* Capsule controls inside the dock — same rule as the mobile island. */
 	.z-action-bar-content :is(.z-mail-text-nav__link, .z-action-bar-close) {
 		display: inline-flex;

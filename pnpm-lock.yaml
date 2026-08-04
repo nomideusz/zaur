@@ -153,8 +153,8 @@ importers:
         specifier: ^5.22.1
         version: 5.22.1(svelte@5.55.9)
       '@nomideusz/svelte-calendar':
-        specifier: ^0.7.5
-        version: 0.7.5(svelte@5.55.9)
+        specifier: ^0.13.1
+        version: 0.13.1(svelte@5.55.9)
       '@sentry/sveltekit':
         specifier: ^10.64.0
         version: 10.64.0(@opentelemetry/core@2.9.0(@opentelemetry/api@1.9.1))(@sveltejs/kit@2.61.1(@opentelemetry/api@1.9.1)(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.55.9)(vite@8.0.14(@types/node@25.9.1)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0)))(svelte@5.55.9)(typescript@6.0.3)(vite@8.0.14(@types/node@25.9.1)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0)))(rollup@4.60.4)(svelte@5.55.9)(vite@8.0.14(@types/node@25.9.1)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(yaml@2.9.0))
@@ -1789,14 +1789,10 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
-  '@nomideusz/svelte-calendar@0.7.5':
-    resolution: {integrity: sha512-BRmXANT3+INQIJ3pnNL5Rg/5IbY1F9dPkfm7rAMxvD4BjCkxTaJPFjSRU2N/NUoMTPx6707zRVowigc8uHVGyw==}
+  '@nomideusz/svelte-calendar@0.13.1':
+    resolution: {integrity: sha512-K5ss8ZAoXRTzn1iSBeU2FbRZh3t880q8Mg6jFQsEpSvzXm6JrjNPsCYVGcRNjtcWG/L/7iUdl41clAPIL7Bmtw==}
     peerDependencies:
-      '@chenglou/pretext': ^0.0.5
       svelte: ^5.0.0
-    peerDependenciesMeta:
-      '@chenglou/pretext':
-        optional: true
 
   '@nomideusz/zaur-world@1.0.1':
     resolution: {integrity: sha512-NThup3p6bxwohezLyRGhGvSthHuSrwxf+MaW346SjMvEVEjKYjJKYMbw6QvNGOUzSxLaeH78H7P6tkh9T85Ykw==}
@@ -8609,7 +8605,7 @@ snapshots:
       '@tybys/wasm-util': 0.10.2
     optional: true
 
-  '@nomideusz/svelte-calendar@0.7.5(svelte@5.55.9)':
+  '@nomideusz/svelte-calendar@0.13.1(svelte@5.55.9)':
     dependencies:
       date-fns: 4.4.0
       date-fns-tz: 3.2.0(date-fns@4.4.0)

@@ -16,7 +16,6 @@
 		ActionBarBody,
 		ActionBarClose,
 		ActionBarContent,
-		ActionBarSeparator,
 		ActionBarValue
 	} from '$lib/components/ui/action-bar';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -42,7 +41,7 @@
 	/* The bar itself is fit-content, so available space is measured on the
 	   host pane: full width minus chrome (count, separators, close, padding). */
 	let hostWidth = $state(0);
-	const BAR_CHROME_PX = 200;
+	const BAR_CHROME_PX = 190;
 	const actionsAvailableWidth = $derived(Math.max(0, hostWidth - BAR_CHROME_PX));
 
 	function handleOpenChange(open: boolean) {
@@ -69,14 +68,14 @@
 			aria-label="Actions for selected messages"
 			class={cn('max-md:hidden', disabled && 'pointer-events-none opacity-60')}
 		>
+			<!-- Grouping is spacing, not pipes: count | actions | close read as
+			     three zones because of the gaps and the accent count chip. -->
 			<ActionBarValue
 				count={selectedCount}
 				label={summary.headline}
-				class="max-w-[12rem] truncate"
+				class="z-action-bar-value--accent max-w-[12rem] truncate"
 				title={summary.detail ?? summary.headline}
 			/>
-
-			<ActionBarSeparator />
 
 			<ActionBarBody>
 				<BulkActionsRow
@@ -87,13 +86,7 @@
 				/>
 			</ActionBarBody>
 
-			<ActionBarSeparator />
-
-			<ActionBarClose
-				class="z-mail-text-nav__link opacity-64 transition-opacity hover:opacity-100 motion-reduce:transition-none"
-				onclick={handleClose}
-				aria-label="Clear selection"
-			>
+			<ActionBarClose onclick={handleClose} aria-label="Clear selection">
 				<X class="size-4" aria-hidden="true" />
 			</ActionBarClose>
 		</ActionBarContent>

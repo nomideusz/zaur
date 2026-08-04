@@ -69,6 +69,47 @@
 
 	.z-mail-list-select-trigger:hover:not(:disabled) {
 		color: var(--z-fg);
+		/* Bare chevron read as a stray glyph — give it a control surface.
+		   Painted outside the 1.25rem box so the checkbox column keeps aligning. */
+		box-shadow: 0 0 0 0.3125rem color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
+		border-radius: 9999px;
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
+	}
+
+	/* Filter chips (Unseen) — capsule state instead of an underline. */
+	.z-filter-chip {
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		gap: 0.375rem;
+		min-height: 2rem;
+		padding-inline: 0.75rem;
+		border-radius: 9999px;
+		font-size: var(--z-main-page-text);
+		font-weight: 500;
+		line-height: 1.4;
+		color: var(--z-fg-muted);
+		text-decoration: none;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			background-color var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-filter-chip:hover {
+		color: var(--z-fg);
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
+		text-decoration: none;
+	}
+
+	.z-filter-chip--active {
+		font-weight: 600;
+		color: var(--z-accent);
+		background-color: color-mix(in srgb, var(--z-accent) 12%, transparent);
+	}
+
+	.z-filter-chip--active:hover {
+		color: var(--z-accent);
+		background-color: color-mix(in srgb, var(--z-accent) 18%, transparent);
 	}
 
 	.z-mail-list-select-trigger:focus-visible {

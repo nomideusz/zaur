@@ -43,10 +43,7 @@
 	</div>
 	<a
 		href={unseenToggleHref}
-		class={cn(
-			'z-mail-text-nav__link max-md:hidden',
-			unseenFilterActive && 'z-mail-text-nav__link--active'
-		)}
+		class={cn('z-filter-chip max-md:hidden', unseenFilterActive && 'z-filter-chip--active')}
 		aria-current={unseenFilterActive ? 'page' : undefined}
 	>
 		{LABEL_UNSEEN}

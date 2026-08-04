@@ -11,7 +11,7 @@
 </script>
 
 <div
-	class={cn('z-action-bar-body flex items-center gap-3', className)}
+	class={cn('z-action-bar-body flex items-center gap-1', className)}
 	data-slot="action-bar-body"
 >
 	{@render children()}
