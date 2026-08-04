@@ -2,6 +2,13 @@
  * ZAUR webmail styles — modular, composable layers (Tachyons-style).
  */
 @import 'tailwindcss';
+
+/* STDF spike (/stdf-lab, dev-only): Tailwind v4 must see the library's classes
+   to emit them. Scoped to the two components under evaluation — pointing at
+   the whole dist would generate utilities for all 63. */
+@source '../../node_modules/stdf/dist/components/numKeyboard';
+@source '../../node_modules/stdf/dist/components/picker';
+
 @import '@zaur/ui/theme.css';
 @import '@zaur/ui/circadian.css';
 

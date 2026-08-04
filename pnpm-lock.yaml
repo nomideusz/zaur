@@ -154,6 +154,9 @@ importers:
       rxjs:
         specifier: ^7.8.2
         version: 7.8.2
+      stdf:
+        specifier: ^2.0.2
+        version: 2.0.2(svelte@5.55.9)(tailwindcss@4.3.0)
       web-push:
         specifier: ^3.6.7
         version: 3.6.7
@@ -4866,6 +4869,12 @@ packages:
   statuses@2.0.2:
     resolution: {integrity: sha512-DvEy55V3DB7uknRo+4iOGT5fP1slR8wQohVdknigZPMpMstaKJQWhwiYBACJE3Ul2pTnATihhBYnRhZQHGBiRw==}
     engines: {node: '>= 0.8'}
+
+  stdf@2.0.2:
+    resolution: {integrity: sha512-G3M86Cl6Lu54ea24MJHsFgBtnxgarLCewgZdS24ohdhgNup67N6GHamXhbijl9i77Nb766ToXnOsZzk1z29EAA==}
+    peerDependencies:
+      svelte: ^5.0.0
+      tailwindcss: ^4.0.0
 
   stop-iteration-iterator@1.1.0:
     resolution: {integrity: sha512-eLoXW/DHyl62zxY4SCaIgnRhuMr6ri4juEYARS8E6sCEqzKpOiE521Ucofdx+KnDZl5xmvGYaaKCk5FEOxJCoQ==}
@@ -10717,6 +10726,11 @@ snapshots:
       through: 2.3.8
 
   statuses@2.0.2: {}
+
+  stdf@2.0.2(svelte@5.55.9)(tailwindcss@4.3.0):
+    dependencies:
+      svelte: 5.55.9
+      tailwindcss: 4.3.0
 
   stop-iteration-iterator@1.1.0:
     dependencies:
