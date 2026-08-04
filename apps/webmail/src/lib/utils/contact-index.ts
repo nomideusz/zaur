@@ -116,12 +116,23 @@ export function recordContact(accountId: string, name: string, email: string) {
  * (deduped by message id across calls) and each contact at most once per message, so the
  * "messages exchanged" count reflects distinct locally-seen messages — not how often the
  * UI happened to re-index them.
+ *
+ * Which messages reach here is the caller's decision — see the mail store. This only
+ * enforces that the account's own addresses never become contacts: on a sent message
+ * `from` is you, and on a thread you replied to you appear as a recipient.
  */
 export function recordMessages(
 	accountId: string,
-	messages: MessageLike[] | null | undefined
+	messages: MessageLike[] | null | undefined,
+	ownEmails: Iterable<string> = []
 ) {
 	if (!browser || !accountId || !messages?.length) return;
+
+	const own = new Set<string>();
+	for (const email of ownEmails) {
+		const trimmed = email?.trim().toLowerCase();
+		if (trimmed) own.add(trimmed);
+	}
 
 	const index = readIndex(accountId);
 	const order = readSeen(accountId);
@@ -141,6 +152,7 @@ export function recordMessages(
 			const email = addr?.email?.trim();
 			if (!email) return;
 			const key = email.toLowerCase();
+			if (own.has(key)) return;
 			if (!participants.has(key)) participants.set(key, { name: addr?.name?.trim() || email, email });
 		};
 		add(message.from);

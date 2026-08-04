@@ -6,7 +6,6 @@ import { mapEmailPreview, resolveRouteMailboxId } from '$lib/jmap/map';
 import { isAccountSettingsSubject } from '$lib/settings/account-settings-types';
 import type { JMAPEmail } from '$lib/jmap/types';
 import type { Mailbox, MessagePreview } from '$lib/types/mail';
-import { recordMessages } from '$lib/utils/contact-index';
 
 const PAGE_SIZE = 50;
 
@@ -50,15 +49,7 @@ function mapVisibleSearchPreviews(emails: JMAPEmail[], mailboxes: Mailbox[]): Me
 		.map((email) => mapEmailPreview(email, resolveRouteMailboxId(email, mailboxes)));
 }
 
-function indexSearchContacts(previews: MessagePreview[]) {
-	if (!browser || !previews.length) return;
 
-	void import('$lib/db').then(({ getAccountId }) => {
-		const accountId = getAccountId();
-		if (!accountId) return;
-		recordMessages(accountId, previews);
-	});
-}
 
 class SearchStore {
 	query = $state('');
@@ -105,7 +96,6 @@ class SearchStore {
 			this.results = mergeByReceivedAt(server, extras);
 			this.total = total + extras.length;
 			this.hasMore = hasMore;
-			indexSearchContacts(this.results);
 		} catch (error) {
 			this.results = [];
 			this.total = 0;
@@ -134,7 +124,6 @@ class SearchStore {
 			);
 			this.results = [...this.results, ...previews];
 			this.hasMore = hasMore;
-			indexSearchContacts(previews);
 		} catch (error) {
 			this.error = errorMessage(error, 'Failed to load more results');
 		} finally {

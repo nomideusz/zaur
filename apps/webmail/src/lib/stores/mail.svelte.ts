@@ -20,12 +20,18 @@ import {
 	type SelectionFilter
 } from '$lib/mail/selection-filters';
 import { LABEL_MARK_SEEN, LABEL_UNSEE } from '$lib/mail/new-mail';
-import type { Mailbox, MessageDetail, MessagePreview } from '$lib/types/mail';
+import type { Mailbox, MailboxRole, MessageDetail, MessagePreview } from '$lib/types/mail';
+import { auth } from '$lib/stores/auth.svelte';
 import { settings } from '$lib/stores/settings.svelte';
 import { toast } from '$lib/stores/toast.svelte';
 import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
 import { showBrowserNotification } from '$lib/utils/notifications';
 import { recordMessages } from '$lib/utils/contact-index';
+import {
+	collectsFromMailbox,
+	ownAddressSet,
+	threadInvolvesOwner
+} from '$lib/mail/contact-collection';
 
 const PAGE_SIZE = 50;
 
@@ -81,14 +87,35 @@ function sortMailboxes(a: Mailbox, b: Mailbox): number {
 	return a.name.localeCompare(b.name);
 }
 
+/* Collection policy (who becomes a contact) lives in mail/contact-collection. */
+function ownAddresses(): Set<string> {
+	return ownAddressSet(auth.identities.map((identity) => identity.email));
+}
+
 function indexMessagesContacts(messages: Array<MessagePreview | MessageDetail>) {
 	if (!browser || !messages.length) return;
 
+	const own = ownAddresses();
 	void import('$lib/db').then(({ getAccountId }) => {
 		const accountId = getAccountId();
 		if (!accountId) return;
-		recordMessages(accountId, messages);
+		recordMessages(accountId, messages, own);
 	});
+}
+
+/** Messages in the Sent mailbox: everyone addressed is someone you wrote to. */
+function indexSentContacts(
+	messages: Array<MessagePreview | MessageDetail>,
+	role: MailboxRole | undefined
+) {
+	if (!collectsFromMailbox(role)) return;
+	indexMessagesContacts(messages);
+}
+
+/** A thread counts only once you have taken part in it. */
+function indexThreadContacts(thread: MessageDetail[]) {
+	if (!thread.length || !threadInvolvesOwner(thread, ownAddresses())) return;
+	indexMessagesContacts(thread);
 }
 
 class MailStore {
@@ -314,7 +341,7 @@ class MailStore {
 					cached.length >= PAGE_SIZE || (mailbox.total ?? 0) > cached.length,
 					cached.length
 				);
-				indexMessagesContacts(cached);
+				indexSentContacts(cached, mailbox.role);
 				showedCache = true;
 			} else {
 				this.messages = [];
@@ -343,7 +370,7 @@ class MailStore {
 			this.syncMessagesHasMore(hasMore, emails.length);
 			this.messagesFromCache = false;
 			this.messagesError = null;
-			indexMessagesContacts(this.messages);
+			indexSentContacts(this.messages, mailbox.role);
 
 			if (browser && !unseenOnly) {
 				const { cacheMessagePreviews } = await import('$lib/db');
@@ -392,7 +419,7 @@ class MailStore {
 			this.messagesQueryOffset = position + emails.length;
 			this.syncMessagesHasMore(hasMore, emails.length);
 			this.messagesFromCache = false;
-			indexMessagesContacts(previews);
+			indexSentContacts(previews, this.mailboxByRouteId(routeMailboxId)?.role);
 
 			if (browser && !this.messagesUnseenOnly) {
 				const { cacheMessagePreviews } = await import('$lib/db');
@@ -490,7 +517,7 @@ class MailStore {
 				this.selectedThread = emails
 					.filter((email) => !isAccountSettingsSubject(email.subject))
 					.map((email) => mapEmailDetail(email, routeMailboxId));
-				indexMessagesContacts(this.selectedThread);
+				indexThreadContacts(this.selectedThread);
 
 				if (settings.markReadOnOpen) {
 					for (const msg of this.selectedThread) {
@@ -1412,7 +1439,7 @@ class MailStore {
 			const detail = mapEmailDetail(email, routeMailboxId);
 			return { ...detail, ...this.applyPendingKeywords(email.id, detail) };
 		});
-		indexMessagesContacts(this.selectedThread);
+		indexThreadContacts(this.selectedThread);
 
 		if (browser && this.selectedThreadId && this.selectedThread.length) {
 			void import('$lib/db').then(({ getAccountId, cacheThread }) => {
