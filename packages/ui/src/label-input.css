@@ -6,6 +6,11 @@
 	--z-label-notch-bg: var(--z-surface-raised);
 }
 
+/* Ark PasswordInput.Control — keep Input/Label/Trigger as Root children for focus-within. */
+.z-label-input__control {
+	display: contents;
+}
+
 .z-label-input__field {
 	display: block;
 	width: 100%;

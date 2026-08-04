@@ -8,6 +8,7 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import LabelInput from '$lib/components/ui/LabelInput.svelte';
+	import PinInput from '$lib/components/ui/PinInput.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import type { PageProps } from './$types';
@@ -128,20 +129,15 @@
 				<span class="z-callout__title">Two-factor authentication</span>
 				<p class="z-callout__body">Enter the six-digit code from your authenticator app.</p>
 			</div>
-			<LabelInput
-				id="totp"
-				label="Authentication code"
-				type="text"
-				bind:value={totp}
-				placeholder="000000"
-				inputmode="numeric"
-				pattern="[0-9]{6}"
-				maxlength={6}
-				autocomplete="one-time-code"
-				required
-				autofocus
-				disabled={auth.isLoading}
-			/>
+			<div class="z-field-stack">
+				<span class="text-sm text-fg-muted">Authentication code</span>
+				<PinInput
+					id="totp"
+					label="Authentication code"
+					bind:value={totp}
+					disabled={auth.isLoading}
+				/>
+			</div>
 		{/if}
 
 		<Checkbox

@@ -2,6 +2,8 @@
 	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import { onMount } from 'svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import PasswordInput from '$lib/components/ui/PasswordInput.svelte';
+	import PinInput from '$lib/components/ui/PinInput.svelte';
 	import SettingsField from '$lib/components/settings/SettingsField.svelte';
 	import SettingsFormGroup from '$lib/components/settings/SettingsFormGroup.svelte';
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
@@ -335,13 +337,13 @@
 	>
 		<SettingsField title="Password">
 			{#snippet children({ id })}
-				<input id={id} class="z-input" type="password" autocomplete="current-password" bind:value={reauthPassword} />
+				<PasswordInput id={id} autocomplete="current-password" bind:value={reauthPassword} />
 			{/snippet}
 		</SettingsField>
 		{#if reauthNeedsTotp || overview.totpEnabled}
 			<SettingsField title="Authentication code">
 				{#snippet children({ id })}
-					<input id={id} class="z-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" bind:value={reauthTotp} />
+					<PinInput id={id} label="Authentication code" bind:value={reauthTotp} />
 				{/snippet}
 			</SettingsField>
 		{/if}
@@ -359,12 +361,22 @@
 	>
 		<SettingsField title="New password">
 			{#snippet children({ id })}
-				<input id={id} class="z-input" type="password" autocomplete="new-password" bind:value={newPassword} disabled={!verified} />
+				<PasswordInput
+					id={id}
+					autocomplete="new-password"
+					bind:value={newPassword}
+					disabled={!verified}
+				/>
 			{/snippet}
 		</SettingsField>
 		<SettingsField title="Confirm new password">
 			{#snippet children({ id })}
-				<input id={id} class="z-input" type="password" autocomplete="new-password" bind:value={confirmPassword} disabled={!verified} />
+				<PasswordInput
+					id={id}
+					autocomplete="new-password"
+					bind:value={confirmPassword}
+					disabled={!verified}
+				/>
 			{/snippet}
 		</SettingsField>
 		<SettingsRow kind="action" title="Change password" description="Changing it revokes OAuth tokens on other devices.">
@@ -372,7 +384,7 @@
 		</SettingsRow>
 	</SettingsFormGroup>
 
-	<SettingsGroup title="Two-factor authentication">
+	<SettingsGroup title="Two-factor authentication" disabled={!verified}>
 		<SettingsRow
 			kind="action"
 			title={overview.totpEnabled ? 'Authenticator app enabled' : 'Authenticator app'}
@@ -391,8 +403,8 @@
 				<p class="z-settings-row-desc">Or enter the manual key in your authenticator app.</p>
 				{#if totpSetup.qr}<img src={totpSetup.qr} alt="Authenticator setup QR code" width="180" height="180" />{/if}
 				<code class="break-all text-xs">{totpSetup.secret}</code>
-				<div class="flex items-center gap-2">
-					<input class="z-input max-w-[11rem]" inputmode="numeric" maxlength="6" placeholder="Six-digit code" bind:value={totpCode} />
+				<div class="flex flex-wrap items-center gap-2">
+					<PinInput label="Six-digit code" bind:value={totpCode} />
 					<Button onclick={() => void confirmTotp()} disabled={!/^\d{6}$/.test(totpCode)}>Enable</Button>
 				</div>
 			</div>
@@ -400,7 +412,11 @@
 	</SettingsGroup>
 
 	{#if recoveryAvailable}
-		<SettingsFormGroup title="Recovery email" description="Password-reset messages go to this verified address.">
+		<SettingsFormGroup
+			title="Recovery email"
+			description="Password-reset messages go to this verified address."
+			disabled={!verified}
+		>
 			<SettingsField title="Recovery address">
 				{#snippet children({ id })}
 					<input id={id} class="z-input" type="email" autocomplete="email" bind:value={recoveryInput} disabled={!verified} />
@@ -412,7 +428,11 @@
 		</SettingsFormGroup>
 	{/if}
 
-	<SettingsFormGroup title="App passwords" description="Use these for IMAP, SMTP, and other mail apps.">
+	<SettingsFormGroup
+		title="App passwords"
+		description="Use these for IMAP, SMTP, and other mail apps."
+		disabled={!verified}
+	>
 		<SettingsField title="New app password name">
 			{#snippet children({ id })}
 				<input id={id} class="z-input" placeholder="Phone mail app" bind:value={credentialDescription} disabled={!verified} />
@@ -431,7 +451,7 @@
 		{/each}
 	</SettingsFormGroup>
 
-	<SettingsGroup title="ZAUR sessions">
+	<SettingsGroup title="ZAUR sessions" disabled={!verified}>
 		{#if otherSessions.length > 0}
 			<SettingsRow kind="action" title="Sign out other sessions" description="Keep this browser signed in; sign out everywhere else.">
 				<Button variant="danger" onclick={() => void revokeOtherSessions()} disabled={!verified || busy}>Sign out others</Button>
@@ -452,7 +472,11 @@
 		</SettingsRow>
 	</SettingsGroup>
 
-	<SettingsFormGroup title="Advanced · API keys" description="For scripts and integrations. Store keys securely.">
+	<SettingsFormGroup
+		title="Advanced · API keys"
+		description="For scripts and integrations. Store keys securely."
+		disabled={!verified}
+	>
 		<SettingsField title="New API key name">
 			{#snippet children({ id })}
 				<input id={id} class="z-input" placeholder="Automation" bind:value={apiKeyDescription} disabled={!verified} />
