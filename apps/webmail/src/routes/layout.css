@@ -3,10 +3,32 @@
  */
 @import 'tailwindcss';
 
+/*
+ * Tailwind's built-in `dark:` variant keys off prefers-color-scheme, but our
+ * theme is a resolved choice: theme.svelte.ts always writes .dark or .light on
+ * <html> (circadian included). An OS set to dark with the app in light made
+ * STDF's dark:text-white/60 and dark:border-white/20 paint white on our light
+ * surfaces. Point the variant at the class we actually set; the media query
+ * stays as the pre-hydration fallback, matching theme.css's :root:not(.light).
+ */
+
+
+@custom-variant dark {
+	&:where(:root.dark, :root.dark *) {
+		@slot;
+	}
+	@media (prefers-color-scheme: dark) {
+		&:where(:root:not(.light):not(.dark), :root:not(.light):not(.dark) *) {
+			@slot;
+		}
+	}
+}
+
 /* STDF (mobile widgets): Tailwind v4 must see the library's classes to emit
    them. Listed per component — pointing at the whole dist would generate
    utilities for all 63. timePicker ships in calendar compose; the other two
    are still only exercised by /stdf-lab. */
+@source '../../node_modules/stdf/dist/components/calendar';
 @source '../../node_modules/stdf/dist/components/numKeyboard';
 @source '../../node_modules/stdf/dist/components/picker';
 @source '../../node_modules/stdf/dist/components/timePicker';
