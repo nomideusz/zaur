@@ -4,10 +4,11 @@
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
-	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
+	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import RiFontSize2 from 'svelte-remixicon/RiFontSize2.svelte';
 	import ComposeRecipientInput from '$lib/components/mail/ComposeRecipientInput.svelte';
+	import ComposeSendSplit from '$lib/components/mail/ComposeSendSplit.svelte';
 	import { formatAttachmentSize } from '$lib/attachments/upload';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
@@ -167,22 +168,8 @@
 		compose.isSending ? 'Sending…' : compose.hasUploadingAttachments ? 'Uploading…' : 'Send'
 	);
 
-	/** Wired from FileUpload.Context so the island Attach button can open the picker. */
+	/** Wired from FileUpload.Context (dropzone / programmatic attach). */
 	let openFilePicker: (() => void) | null = null;
-
-	/* Mobile island owns back / attach / discard / send while composing. */
-	$effect(() => {
-		const generation = mobileIsland.setCompose({
-			onBack: () => void saveDraftAndClose(),
-			onSend: () => void send(),
-			onAttach: () => openFilePicker?.(),
-			onDiscard: () => void discardAndClose(),
-			sendLabel,
-			sendDisabled: compose.isSending || compose.hasUploadingAttachments || !compose.to.trim(),
-			isEmpty: compose.isComposeEmpty
-		});
-		return () => mobileIsland.clearCompose(generation);
-	});
 
 	$effect(() => {
 		if (initialTo && mode === 'new' && !compose.to) {
@@ -319,7 +306,6 @@
 	}
 
 	let showSchedulePanel = $state(false);
-	let scheduleZone = $state<HTMLDivElement | null>(null);
 	let customSendTime = $state('');
 
 	const scheduleDisabled = $derived(
@@ -368,10 +354,6 @@
 		) {
 			showFromMenu = false;
 		}
-		if (!showSchedulePanel) return;
-		if (scheduleZone && event.target instanceof Node && !scheduleZone.contains(event.target)) {
-			showSchedulePanel = false;
-		}
 	}
 
 	async function scheduleSendAt(date: Date) {
@@ -398,6 +380,29 @@
 			else goto(mailListHref(INBOX_MAILBOX_ROUTE_ID));
 		}
 	}
+
+	/* Mobile top bar owns Back + Send/schedule; footer keeps a single Attach. */
+	$effect(() => {
+		const generation = mobileIsland.setCompose({
+			onBack: () => void saveDraftAndClose(),
+			onSend: () => void send(),
+			sendLabel,
+			sendDisabled: compose.isSending || compose.hasUploadingAttachments || !compose.to.trim(),
+			sendBlockedReason,
+			title: draftStatus ?? composeTitle,
+			scheduleDisabled,
+			showSchedulePanel,
+			toggleSchedulePanel: () => (showSchedulePanel = !showSchedulePanel),
+			closeSchedulePanel: () => (showSchedulePanel = false),
+			schedulePresets,
+			scheduleSendAt: (date) => void scheduleSendAt(date),
+			customSendTime,
+			setCustomSendTime: (value) => (customSendTime = value),
+			customSendTimeMin,
+			formatScheduleTime: (date) => scheduleTimeFormat.format(date)
+		});
+		return () => mobileIsland.clearCompose(generation);
+	});
 
 	function onBodyKeydown(event: KeyboardEvent) {
 		if (!settings.enableKeyboardShortcuts) return;
@@ -455,98 +460,36 @@
 				}}
 			>
 	<div class="z-compose z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-		<header class="z-compose__header flex shrink-0 flex-col border-b border-border/80">
+		<!-- Desktop only — phones use MobileTopBar for Back + title + Send/schedule. -->
+		<header class="z-compose__header flex shrink-0 flex-col border-b border-border/80 max-md:hidden">
 			<div class="z-compose__header-bar grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 min-w-0">
-				<!-- Left: Back (saves draft). Mobile island owns this control. -->
 				<button
 					type="button"
-					class="z-back-btn max-md:hidden"
+					class="z-back-btn"
 					aria-label="Save draft and go back"
 					onclick={() => void saveDraftAndClose()}
 				>
 					<ArrowLeft class="size-4" aria-hidden="true" />
 				</button>
 
-				<!-- Center: compose title, swapped for draft status once saving/saved -->
 				<h1 class="sr-only">{composeTitle}</h1>
 				<p class="z-compose__title truncate" aria-live="polite">{draftStatus ?? composeTitle}</p>
 
-				<!-- Right: Send (desktop) + Schedule. Mobile island owns Send. -->
-				<div class="z-compose__send-split relative" bind:this={scheduleZone}>
-					<TooltipWrap
-						label={sendBlockedReason ?? 'Send message'}
-						wrapDisabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
-					>
-						{#snippet trigger({ props })}
-							<button
-								{...props}
-								type="submit"
-								form="compose-form"
-								class="z-mail-text-nav__action z-mail-text-nav__action--pill z-compose__send-main max-md:hidden"
-								disabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
-							>
-								{sendLabel}
-							</button>
-						{/snippet}
-					</TooltipWrap>
-					<TooltipWrap label="Schedule send" wrapDisabled={scheduleDisabled}>
-						{#snippet trigger({ props })}
-							<button
-								{...props}
-								type="button"
-								class="z-mail-text-nav__action z-mail-text-nav__action--pill z-compose__send-caret"
-								aria-label="Schedule send"
-								aria-haspopup="menu"
-								aria-expanded={showSchedulePanel}
-								disabled={scheduleDisabled}
-								onclick={() => (showSchedulePanel = !showSchedulePanel)}
-							>
-								<ChevronDown class="size-4" aria-hidden="true" />
-							</button>
-						{/snippet}
-					</TooltipWrap>
-					{#if showSchedulePanel}
-						<div
-							class="absolute right-0 top-[calc(100%+0.5rem)] z-30 w-64 rounded-xl border border-border bg-surface-raised p-2 shadow-lg"
-							role="menu"
-							aria-label="Schedule send"
-						>
-							{#each schedulePresets as preset (preset.label)}
-								<button
-									type="button"
-									class="flex w-full items-center justify-between gap-2 rounded-md px-3 py-2 text-sm text-fg hover:bg-surface-sunken"
-									onclick={() => void scheduleSendAt(preset.date)}
-								>
-									<span>{preset.label}</span>
-									<span class="text-xs tabular-nums text-fg-subtle">
-										{scheduleTimeFormat.format(preset.date)}
-									</span>
-								</button>
-							{/each}
-							<div class="my-2 border-t border-border"></div>
-							<div class="flex flex-col gap-2 px-1 pb-1">
-								<label class="text-xs text-fg-muted" for="compose-schedule-custom">
-									Pick date &amp; time
-								</label>
-								<input
-									id="compose-schedule-custom"
-									type="datetime-local"
-									class="rounded-md border border-border bg-surface px-2 py-1.5 text-sm text-fg outline-none focus-visible:border-accent"
-									min={customSendTimeMin}
-									bind:value={customSendTime}
-								/>
-								<button
-									type="button"
-									class="z-mail-text-nav__action z-mail-text-nav__action--pill"
-									disabled={!customSendTime}
-									onclick={() => customSendTime && void scheduleSendAt(new Date(customSendTime))}
-								>
-									Schedule
-								</button>
-							</div>
-						</div>
-					{/if}
-				</div>
+				<ComposeSendSplit
+					{sendLabel}
+					sendDisabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
+					{sendBlockedReason}
+					{scheduleDisabled}
+					{showSchedulePanel}
+					onToggleSchedule={() => (showSchedulePanel = !showSchedulePanel)}
+					onCloseSchedule={() => (showSchedulePanel = false)}
+					{schedulePresets}
+					onSchedule={(date) => void scheduleSendAt(date)}
+					{customSendTime}
+					onCustomSendTimeChange={(value) => (customSendTime = value)}
+					{customSendTimeMin}
+					formatScheduleTime={(date) => scheduleTimeFormat.format(date)}
+				/>
 			</div>
 
 			{#if !settings.hideComposeHints && sendBlockedReason && compose.to.trim() && !recipientFocused}
@@ -555,6 +498,15 @@
 				</div>
 			{/if}
 		</header>
+
+		<!-- Mobile: screen-reader title (visual title is in the top bar). -->
+		<h1 class="sr-only md:hidden">{draftStatus ?? composeTitle}</h1>
+
+		{#if !settings.hideComposeHints && sendBlockedReason && compose.to.trim() && !recipientFocused}
+			<div class="shrink-0 px-4 py-2 text-xs text-danger md:hidden" role="status">
+				{sendBlockedReason}
+			</div>
+		{/if}
 
 	<form
 		id="compose-form"

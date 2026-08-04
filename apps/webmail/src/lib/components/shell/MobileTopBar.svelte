@@ -5,6 +5,8 @@
 	import Menu from '$lib/components/icons/Menu.svelte';
 	import Search from '$lib/components/icons/Search.svelte';
 	import X from '$lib/components/icons/X.svelte';
+	import ComposeSendSplit from '$lib/components/mail/ComposeSendSplit.svelte';
+	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
 	import IslandAccountRail from '$lib/components/shell/island/IslandAccountRail.svelte';
 	import MailViewTabs from '$lib/components/shell/MailViewTabs.svelte';
 	import {
@@ -53,11 +55,11 @@
 	const showCalendarTabs = $derived(onCalendar && !searchExpanded);
 	const showSectionTitle = $derived(onContacts && !searchExpanded);
 
-	/* Inner screens (thread / compose) get a back arrow in the top bar instead
-	   of a second hamburger — the drawer stays reachable from the list views.
-	   Titles stay in-pane (reader subject / compose draft status) so we never
-	   duplicate or truncate the same string in the chrome. */
+	/* Inner screens: back in the top bar; compose shows title + Send here;
+	   reader shows thread actions here. No floating island on those routes. */
 	const backHref = $derived(mobileIsland.reader?.listHref ?? settings.preferredMailHref());
+	const composeCtx = $derived(mobileIsland.compose);
+	const readerCtx = $derived(mobileIsland.reader);
 
 	function composeBack() {
 		const ctx = mobileIsland.compose;
@@ -263,23 +265,60 @@
 					</nav>
 				{:else if showSectionTitle}
 					<div class="min-w-0 flex-1 px-2 text-sm font-medium text-fg">Contacts</div>
+				{:else if onMailCompose && composeCtx}
+					<div
+						class="min-w-0 flex-1 truncate px-2 text-sm font-medium text-fg"
+						aria-live="polite"
+					>
+						{composeCtx.title}
+					</div>
 				{:else}
-					<!-- Thread/compose: back only — subject & draft title live in-pane. -->
+					<!-- Thread: subject stays inline in the reader body. -->
 					<div class="min-w-0 flex-1" aria-hidden="true"></div>
 				{/if}
 
-				{#if section && !onMailCompose && !onMailThread}
-					<button
-						type="button"
-						class="z-mobile-topbar__icon-btn"
-						aria-label="Search"
-						onclick={openSearch}
-					>
-						<Search class="size-[1.125rem]" aria-hidden="true" />
-					</button>
-				{/if}
-
-				{#if !onMailThread && !onMailCompose}
+				{#if onMailCompose && composeCtx}
+					<div class="z-header-action-zone shrink-0">
+						<ComposeSendSplit
+							sendLabel={composeCtx.sendLabel}
+							sendDisabled={composeCtx.sendDisabled}
+							sendBlockedReason={composeCtx.sendBlockedReason}
+							scheduleDisabled={composeCtx.scheduleDisabled}
+							showSchedulePanel={composeCtx.showSchedulePanel}
+							onToggleSchedule={composeCtx.toggleSchedulePanel}
+							onCloseSchedule={composeCtx.closeSchedulePanel}
+							schedulePresets={composeCtx.schedulePresets}
+							onSchedule={composeCtx.scheduleSendAt}
+							customSendTime={composeCtx.customSendTime}
+							onCustomSendTimeChange={composeCtx.setCustomSendTime}
+							customSendTimeMin={composeCtx.customSendTimeMin}
+							formatScheduleTime={composeCtx.formatScheduleTime}
+							compact
+						/>
+					</div>
+				{:else if onMailThread && readerCtx}
+					<div class="z-mobile-topbar__reader-actions shrink-0">
+						<MessageThreadActions
+							thread={readerCtx.thread}
+							mailboxRouteId={readerCtx.mailboxRouteId}
+							onMoved={readerCtx.onMoved}
+							onBackToList={readerCtx.onBackToList}
+							menuPlacement="bottom"
+							menuId="topbar-reader-actions-menu"
+							variant="topbar"
+						/>
+					</div>
+				{:else}
+					{#if section}
+						<button
+							type="button"
+							class="z-mobile-topbar__icon-btn"
+							aria-label="Search"
+							onclick={openSearch}
+						>
+							<Search class="size-[1.125rem]" aria-hidden="true" />
+						</button>
+					{/if}
 					<IslandAccountRail />
 				{/if}
 			</div>
