@@ -11,10 +11,16 @@ setup('authenticate against Stalwart', { tag: '@auth' }, async ({ page }) => {
 	setup.skip(!email || !password, 'Set E2E_MAIL_EMAIL and E2E_MAIL_PASSWORD');
 
 	await page.goto('/login');
-	await page.getByLabel('Email').fill(email!);
-	await page.locator('#password').fill(password!);
 	const submit = page.getByRole('button', { name: 'Sign in' });
-	await expect(submit).toBeEnabled();
+	// Ark PasswordInput needs a settled input event before Svelte bindable state
+	// updates canSubmit — poll/retry like custom-login.spec.ts.
+	await expect
+		.poll(async () => {
+			await page.getByLabel('Email').fill(email!);
+			await page.locator('#password').fill(password!);
+			return submit.isEnabled();
+		})
+		.toBe(true);
 	await submit.click();
 
 	await expect(page).not.toHaveURL(/\/login/, { timeout: 45_000 });
