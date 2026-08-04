@@ -229,6 +229,28 @@
 	}
 
 	function onFormSubmit(event: SubmitEvent) {
+		// #region agent log
+		try {
+			fetch('/api/__debug_log', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					hypothesisId: 'A',
+					location: 'GlobalSearchCombobox.svelte:onFormSubmit',
+					message: 'form submit',
+					data: {
+						advancedExpanded,
+						advDateRange,
+						submitter: (event.submitter as HTMLElement | null)?.tagName,
+						submitterLabel: (event.submitter as HTMLElement | null)?.getAttribute('aria-label')
+					},
+					timestamp: Date.now()
+				})
+			}).catch(() => {});
+		} catch {
+			/* ignore */
+		}
+		// #endregion
 		event.preventDefault();
 		if (advancedExpanded) {
 			submitAdvanced();
@@ -404,6 +426,32 @@
 		const target = event.target;
 		if (!(target instanceof Node) || !target.isConnected) return;
 		if (rootEl?.contains(target)) return;
+		// #region agent log
+		const el = target instanceof Element ? target : null;
+		const inDatePicker = !!el?.closest?.('[data-scope="date-picker"]');
+		try {
+			fetch('/api/__debug_log', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					hypothesisId: 'A',
+					location: 'GlobalSearchCombobox.svelte:handleWindowClick',
+					message: 'outside click closing dropdown',
+					data: {
+						tag: el?.tagName,
+						ariaLabel: el?.getAttribute?.('aria-label'),
+						dataPart: el?.getAttribute?.('data-part'),
+						inDatePicker,
+						advancedExpanded,
+						advDateRange
+					},
+					timestamp: Date.now()
+				})
+			}).catch(() => {});
+		} catch {
+			/* ignore */
+		}
+		// #endregion
 		open = false;
 		advancedExpanded = false;
 	}
@@ -660,7 +708,34 @@
 								</div>
 
 								{#if advDateRange === 'custom'}
-									<div class="grid grid-cols-2 gap-3 border-t border-border/50 pt-2">
+									<!-- #region agent log -->
+									<div
+										class="grid grid-cols-2 gap-3 border-t border-border/50 pt-2"
+										onpointerdown={(e) => {
+											const t = e.target as HTMLElement | null;
+											fetch('/api/__debug_log', {
+												method: 'POST',
+												headers: { 'Content-Type': 'application/json' },
+												body: JSON.stringify({
+													hypothesisId: 'A,D',
+													location: 'GlobalSearchCombobox.svelte:customDates:pointerdown',
+													message: 'pointerdown in custom date area',
+													data: {
+														tag: t?.tagName,
+														ariaLabel: t?.getAttribute?.('aria-label'),
+														dataPart: t?.getAttribute?.('data-part'),
+														dataState: t?.getAttribute?.('data-state'),
+														defaultPrevented: e.defaultPrevented,
+														closestTrigger: !!t?.closest?.(
+															'[data-scope="date-picker"][data-part="trigger"]'
+														)
+													},
+													timestamp: Date.now()
+												})
+											}).catch(() => {});
+										}}
+									>
+										<!-- #endregion -->
 										<label class="flex flex-col gap-1">
 											<span class="text-xs font-medium text-fg-muted">After date</span>
 											<DateField
