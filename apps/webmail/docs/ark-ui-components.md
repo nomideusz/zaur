@@ -8,6 +8,22 @@ Tracking sheet for the gradual migration of the **webmail** app towards
 - **Source of truth:** the component list is taken from the official Ark UI
   Svelte distribution. Keep it in sync when upgrading the package.
 
+## AI / LLMs.txt
+
+Ark UI publishes machine-readable documentation for LLM tools. See
+[Ark UI LLMs.txt](https://ark-ui.com/docs/ai/llms.txt).
+
+| Route | URL | Use when |
+| --- | --- | --- |
+| Index | https://ark-ui.com/llms.txt | Overview across frameworks |
+| **Svelte** | https://ark-ui.com/llms-svelte.txt | **Primary** for this app |
+| Full | https://ark-ui.com/llms-full.txt | Comprehensive Svelte docs in one file |
+
+**Cursor:** add `https://ark-ui.com/llms-svelte.txt` under **Settings → Features →
+Docs**, then reference it with `@Docs` in chat.
+
+Project rule: `.cursor/rules/ark-ui-llms.mdc` (auto-attached for `apps/webmail/**`).
+
 ## How to use this document
 
 - `[x]` = the component is already used somewhere in the webmail app.

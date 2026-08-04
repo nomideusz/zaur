@@ -68,3 +68,10 @@ stores, or Web Push. The detailed integration boundary is in
 Commands are defined in root `package.json` (`check:webmail`, `test:webmail`, `build:webmail`,
 `build:web`). `test:webmail` uses `node --test`; e2e (`test:register`, webmail `test:e2e`) uses
 Playwright and points at running/remote instances.
+
+### Ark UI (webmail)
+
+Webmail uses `@ark-ui/svelte`. For component APIs and usage patterns, consult Ark UI's
+[LLMs.txt docs](https://ark-ui.com/docs/ai/llms.txt) — primary index for this repo:
+`https://ark-ui.com/llms-svelte.txt`. Local inventory: `apps/webmail/docs/ark-ui-components.md`.
+Cursor rule: `.cursor/rules/ark-ui-llms.mdc`.
