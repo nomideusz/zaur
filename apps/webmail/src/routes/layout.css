@@ -28,7 +28,6 @@
    them. Listed per component — pointing at the whole dist would generate
    utilities for all 63. timePicker ships in calendar compose; the other two
    are still only exercised by /stdf-lab. */
-@source '../../node_modules/stdf/dist/components/calendar';
 @source '../../node_modules/stdf/dist/components/numKeyboard';
 @source '../../node_modules/stdf/dist/components/picker';
 @source '../../node_modules/stdf/dist/components/timePicker';

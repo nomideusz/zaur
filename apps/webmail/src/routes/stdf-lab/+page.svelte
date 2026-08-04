@@ -17,8 +17,7 @@
 	 */
 	// No subpath exports — the package root is the only entry. Tree-shaking
 	// still applies (sideEffects is CSS-only).
-	import { Calendar, NumKeyboard, Picker } from 'stdf';
-	import { settings } from '$lib/stores/settings.svelte';
+	import { NumKeyboard, Picker } from 'stdf';
 
 	let pin = $state('');
 	let keyboardOpen = $state(false);
@@ -30,8 +29,6 @@
 		label: `${String(h).padStart(2, '0')}:00`
 	}));
 
-	let calendarOpen = $state(false);
-	let pickedDate = $state('—');
 </script>
 
 <svelte:head><title>stdf-lab</title></svelte:head>
@@ -75,29 +72,7 @@
 		</div>
 	</section>
 
-	<section class="flex flex-col gap-3">
-		<h2 class="text-sm font-semibold">Date picker (calendar)</h2>
-		<p class="text-sm text-fg-muted">
-			The gap it would fill: the <code>&lt;input type="date"&gt;</code> fields in event compose —
-			the same argument as the time wheel. Week start follows our setting.
-		</p>
-		<div class="flex items-center gap-3">
-			<output class="z-action-bar-value min-w-28 tabular-nums">{pickedDate}</output>
-			<button type="button" class="z-action-bar-btn" onclick={() => (calendarOpen = true)}>
-				Pick a date
-			</button>
-		</div>
-	</section>
-
 	<div>
-		<Calendar
-			bind:visible={calendarOpen}
-			mode="single"
-			outFormat="YYYY-MM-DD"
-			startSunday={!settings.calendarWeekStartsOnMonday}
-			highlightToday
-			onconfirm={(dates: string[]) => (pickedDate = dates[0] ?? pickedDate)}
-		/>
 		<NumKeyboard bind:visible={keyboardOpen} bind:value={pin} close done dot={false} />
 		<Picker
 			bind:visible={pickerOpen}
