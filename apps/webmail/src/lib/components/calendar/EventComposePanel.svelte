@@ -3,6 +3,7 @@
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
+	import TimeField from '$lib/components/calendar/TimeField.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
@@ -172,7 +173,7 @@
 					{:else}
 						<label class="block space-y-1.5">
 							<span class={fieldLabelClass}>Start time</span>
-							<input type="time" class="z-input" bind:value={calendar.composeDraft.startTime} required />
+							<TimeField label="Start time" bind:value={calendar.composeDraft.startTime} />
 						</label>
 						<label class="block space-y-1.5 sm:col-span-2">
 							<span class={fieldLabelClass}>End time</span>
@@ -185,13 +186,11 @@
 									bind:value={calendar.composeDraft.endDate}
 									required
 								/>
-								<input
-									type="time"
-									class="z-input"
-									aria-invalid={timeRangeInvalid ? 'true' : undefined}
-									aria-describedby={timeRangeInvalid ? composeHintId : undefined}
+								<TimeField
+									label="End time"
+									invalid={timeRangeInvalid}
+									describedby={timeRangeInvalid ? composeHintId : undefined}
 									bind:value={calendar.composeDraft.endTime}
-									required
 								/>
 							</div>
 						</label>

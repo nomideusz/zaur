@@ -3,11 +3,13 @@
  */
 @import 'tailwindcss';
 
-/* STDF spike (/stdf-lab, dev-only): Tailwind v4 must see the library's classes
-   to emit them. Scoped to the two components under evaluation — pointing at
-   the whole dist would generate utilities for all 63. */
+/* STDF (mobile widgets): Tailwind v4 must see the library's classes to emit
+   them. Listed per component — pointing at the whole dist would generate
+   utilities for all 63. timePicker ships in calendar compose; the other two
+   are still only exercised by /stdf-lab. */
 @source '../../node_modules/stdf/dist/components/numKeyboard';
 @source '../../node_modules/stdf/dist/components/picker';
+@source '../../node_modules/stdf/dist/components/timePicker';
 
 /* STDF's components paint with a fixed colour namespace (bg-bg-surface,
    text-primary, …). Rather than register their theme plugin — which emits a

@@ -10,19 +10,14 @@
 	 * (bg-bg-surface, text-primary, …) onto our --z-* tokens, so the widgets
 	 * inherit ZAUR colours and follow circadian for free.
 	 *
-	 * Language ships as zh_CN by default and v2 has no ConfigProvider — every
-	 * component reads a bare `STDF_lang` context, so the host sets it.
+	 * Language (STDF_lang context) is set once in the root layout.
 	 *
 	 * Judge two things here: whether the widgets feel native under a thumb,
 	 * and whether they look like they belong to this app.
 	 */
-	import { setContext } from 'svelte';
-	import { en_GB } from 'stdf/lang';
 	// No subpath exports — the package root is the only entry. Tree-shaking
 	// still applies (sideEffects is CSS-only).
 	import { NumKeyboard, Picker } from 'stdf';
-
-	setContext('STDF_lang', en_GB);
 
 	let pin = $state('');
 	let keyboardOpen = $state(false);

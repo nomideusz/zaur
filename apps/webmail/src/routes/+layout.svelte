@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
+	import { onMount, setContext } from 'svelte';
 	import { onNavigate } from '$app/navigation';
+	import { en_GB } from 'stdf/lang';
 	import './layout.css';
 	import favicon from '$lib/assets/favicon.svg';
 	import InstallPrompt from '$lib/components/pwa/InstallPrompt.svelte';
@@ -14,6 +15,10 @@
 	import { ensureAppServiceWorkerReady } from '$lib/utils/service-worker';
 
 	let { children } = $props();
+
+	/* STDF components read their labels from this context and default to
+	   zh_CN; v2 ships no provider component, so the host sets it once here. */
+	setContext('STDF_lang', en_GB);
 
 	const PRELOAD_RELOAD_KEY = 'zaur:vite-preload-reload-at';
 
