@@ -3,17 +3,26 @@
 	 * STDF evaluation spike (dev-only, /stdf-lab).
 	 *
 	 * Question this page answers: can STDF components live inside our chrome
-	 * without dragging their own look across the app? Its theme plugin emits
-	 * every variable under [data-theme="…"] (never :root), so the wrapper
-	 * below is the whole isolation mechanism — remove the attribute and the
-	 * components fall back to STDF defaults.
+	 * without dragging their own look across the app?
 	 *
-	 * Judge three things here: whether the widgets feel native on a phone,
-	 * whether they can be made to look like ours, and what they cost in CSS.
+	 * We do NOT register their theme plugin (it paints its own look under a
+	 * [data-theme] scope). Instead layout.css maps their colour namespace
+	 * (bg-bg-surface, text-primary, …) onto our --z-* tokens, so the widgets
+	 * inherit ZAUR colours and follow circadian for free.
+	 *
+	 * Language ships as zh_CN by default and v2 has no ConfigProvider — every
+	 * component reads a bare `STDF_lang` context, so the host sets it.
+	 *
+	 * Judge two things here: whether the widgets feel native under a thumb,
+	 * and whether they look like they belong to this app.
 	 */
+	import { setContext } from 'svelte';
+	import { en_GB } from 'stdf/lang';
 	// No subpath exports — the package root is the only entry. Tree-shaking
 	// still applies (sideEffects is CSS-only).
 	import { NumKeyboard, Picker } from 'stdf';
+
+	setContext('STDF_lang', en_GB);
 
 	let pin = $state('');
 	let keyboardOpen = $state(false);
@@ -66,8 +75,7 @@
 		</div>
 	</section>
 
-	<!-- Everything STDF renders is confined to this subtree. -->
-	<div data-theme="STDF">
+	<div>
 		<NumKeyboard bind:visible={keyboardOpen} bind:value={pin} close done dot={false} />
 		<Picker
 			bind:visible={pickerOpen}

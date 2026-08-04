@@ -9,6 +9,29 @@
 @source '../../node_modules/stdf/dist/components/numKeyboard';
 @source '../../node_modules/stdf/dist/components/picker';
 
+/* STDF's components paint with a fixed colour namespace (bg-bg-surface,
+   text-primary, …). Rather than register their theme plugin — which emits a
+   look of its own under [data-theme] — point that namespace at our tokens, so
+   the widgets inherit ZAUR colours and follow circadian without a second
+   theme to maintain. `inline` keeps the reference live so dark mode flips.
+   Their names don't collide with ours (we use accent/fg/surface/border).
+   Light and dark both map to the same token because --z-* already flips. */
+@theme inline {
+	--color-primary: var(--z-accent);
+	--color-dark: var(--z-accent);
+	--color-bg-base: var(--z-surface);
+	--color-bg-base-dark: var(--z-surface);
+	--color-bg-surface: var(--z-surface-raised);
+	--color-bg-surface-dark: var(--z-surface-raised);
+	--color-bg-overlay: var(--z-surface-raised);
+	--color-bg-overlay-dark: var(--z-surface-raised);
+	--color-bg-highlight: var(--z-surface-sunken);
+	--color-bg-highlight-dark: var(--z-surface-sunken);
+	--color-text-primary: var(--z-fg);
+	--color-text-dark: var(--z-fg);
+	--color-error: var(--z-danger);
+}
+
 @import '@zaur/ui/theme.css';
 @import '@zaur/ui/circadian.css';
 
