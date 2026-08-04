@@ -31,11 +31,11 @@ describe('island-scroll hysteresis', () => {
 		const mid = nextIslandCollapsed({
 			collapsed: false,
 			scrollTop: 120,
-			delta: 20,
+			delta: 10,
 			accumulated: 20
 		});
 		assert.equal(mid.collapsed, false);
-		assert.equal(mid.accumulated, 40);
+		assert.equal(mid.accumulated, 30);
 		const flipped = nextIslandCollapsed({
 			collapsed: false,
 			scrollTop: 110,
