@@ -36,7 +36,7 @@ Project rule: `.cursor/rules/ark-ui-llms.mdc` (auto-attached for `apps/webmail/*
 
 ## Summary
 
-**31 / 61** Ark UI components are currently in use (`@ark-ui/svelte` ^5.22.1;
+**32 / 61** Ark UI components are currently in use (`@ark-ui/svelte` ^5.22.1;
 excludes internal `factory` / `anatomy` exports; includes lab-only
 `floating-panel`).
 
@@ -80,7 +80,7 @@ unticked until a need appears.
 | `accordion` | **Deferred** — Shortcuts help is a short flat list; settings keep Fieldset IA. |
 | `editable` | **Deferred** — folder rename already uses `TreeView.NodeRenameInput`; no contact edit UI. |
 | `number-input` | **Deferred** — numeric settings are fixed enums via `SettingsSelect`. |
-| `date-picker` | Still open — vacation / advanced search / schedule-send still use native date inputs. |
+| ~~`date-picker`~~ ✅ | `ui/DateField.svelte` — vacation dates, advanced search custom range, event compose. Schedule-send keeps native `datetime-local`. |
 
 ### P3 — status
 
@@ -111,8 +111,8 @@ internal building block rather than a user-facing component.
 | `checkbox` | [x] | `src/lib/components/ui/Checkbox.svelte` |
 | `color-picker` | [ ] | |
 | `combobox` | [x] | `src/lib/components/settings/SettingsSearch.svelte` |
-| `date-input` | [ ] | |
-| `date-picker` | [ ] | |
+| `date-input` | [ ] | segment style unused — DatePicker covers ISO date fields |
+| `date-picker` | [x] | `src/lib/components/ui/DateField.svelte`; vacation in `settings/sections/account.svelte`; advanced search in `shell/GlobalSearchCombobox.svelte`; event compose in `calendar/EventComposePanel.svelte` |
 | `editable` | [ ] | folder rename uses `TreeView.NodeRenameInput` instead |
 | `field` | [x] | `src/lib/components/ui/Field.svelte`; `settings/SettingsField.svelte`, `settings/SettingsRow.svelte`; compose To/Cc/Bcc in `mail/ComposePanel.svelte` |
 | `fieldset` | [x] | `settings/SettingsGroup.svelte`, `settings/SettingsFormGroup.svelte` (`disabled` for unverified security) |

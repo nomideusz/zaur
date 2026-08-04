@@ -17,6 +17,7 @@
 	import User from '$lib/components/icons/User.svelte';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
+	import DateField from '$lib/components/ui/DateField.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
@@ -662,11 +663,17 @@
 									<div class="grid grid-cols-2 gap-3 border-t border-border/50 pt-2">
 										<label class="flex flex-col gap-1">
 											<span class="text-xs font-medium text-fg-muted">After date</span>
-											<input type="date" class="z-input" bind:value={advAfterDate} />
+											<DateField
+												bind:value={advAfterDate}
+												weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
+											/>
 										</label>
 										<label class="flex flex-col gap-1">
 											<span class="text-xs font-medium text-fg-muted">Before date</span>
-											<input type="date" class="z-input" bind:value={advBeforeDate} />
+											<DateField
+												bind:value={advBeforeDate}
+												weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
+											/>
 										</label>
 									</div>
 								{/if}
