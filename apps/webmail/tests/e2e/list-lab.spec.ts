@@ -150,10 +150,8 @@ test('staged swipe exposes arm levels on the row shell', async ({ page }) => {
 		clientY: b.y + b.height / 2,
 		button: 0
 	});
-	/* Without an archive mailbox in the lab, deep tier may still be Highlight
-	   (tier 2) when canMarkImportant — or stay at 1 if only Seen applies. */
-	const arm = await swipe.getAttribute('data-arm-level');
-	expect(arm === '1' || arm === '2').toBeTruthy();
+	/* Lab seeds an Archive mailbox — deep leading tier must arm. */
+	await expect(swipe).toHaveAttribute('data-arm-level', '2');
 
 	await foreground.dispatchEvent('pointerup', {
 		pointerType: 'touch',
@@ -163,4 +161,13 @@ test('staged swipe exposes arm levels on the row shell', async ({ page }) => {
 		clientY: b.y + b.height / 2,
 		button: 0
 	});
+});
+
+test('simulate scrub adds multiple selected rows', async ({ page }) => {
+	await page.goto('/list-lab');
+	await expect(page.getByTestId('selection-count')).toHaveText('sel:0');
+	await page.getByTestId('simulate-scrub').click();
+	await expect(page.getByTestId('selection-count')).toHaveText('sel:3');
+	await expect(page.locator('.z-mail-list--selecting')).toHaveCount(1);
+	await expect(page.locator('.z-mail-list-row[data-selected="true"]')).toHaveCount(3);
 });

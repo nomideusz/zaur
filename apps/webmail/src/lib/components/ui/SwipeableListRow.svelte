@@ -275,7 +275,7 @@
 				const id = row?.getAttribute('data-message-id');
 				if (id) lastScrubId = id;
 				onLongPress(longPressEvent, longPressTarget);
-				haptic(12);
+				if (springSnap) haptic(12);
 			}, longPressMs);
 		}
 	}
@@ -290,7 +290,7 @@
 		const next = swipeArmLevel(offset, rowWidth, tiers);
 		if (next === armLevel) return;
 		armLevel = next;
-		if (armLevel > 0) haptic(armLevel === 2 ? 14 : 10);
+		if (armLevel > 0 && springSnap) haptic(armLevel === 2 ? 14 : 10);
 	}
 
 	function scrubAt(clientX: number, clientY: number) {
@@ -302,7 +302,7 @@
 		if (!id || id === lastScrubId) return;
 		lastScrubId = id;
 		onScrubSelect(id);
-		haptic(8);
+		if (springSnap) haptic(8);
 	}
 
 	function onPointerMove(event: PointerEvent) {

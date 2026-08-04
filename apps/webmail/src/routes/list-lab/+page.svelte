@@ -4,11 +4,16 @@
 	// a row exercises the real gesture path. Cursor buttons drive listCursorId for
 	// keyboard-triage visuals without opening threads.
 	//
+	// Archive + junk mailboxes are seeded so staged swipe deep tiers (Archive /
+	// Spam) resolve the same way they do in a live session.
+	//
 	// Dates are newest-first after collapseMessagesByThread sorts — put the
 	// geometry fixture (long subject + icons) on the newest message.
+	import { onMount } from 'svelte';
 	import MessageList from '$lib/components/mail/MessageList.svelte';
+	import { nextScrubSelection } from '$lib/mail/scrub-select';
 	import { mail } from '$lib/stores/mail.svelte';
-	import type { MessagePreview } from '$lib/types/mail';
+	import type { Mailbox, MessagePreview } from '$lib/types/mail';
 
 	const msg = (n: number, over: Partial<MessagePreview> = {}): MessagePreview => ({
 		id: `m${n}`,
@@ -43,6 +48,35 @@
 				'A very long subject line that should truncate with an ellipsis instead of wrapping onto a second line when the row narrows'
 		})
 	];
+
+	const labMailboxes: Mailbox[] = [
+		{ id: 'inbox', jmapId: 'jmap-inbox', name: 'Inbox', role: 'inbox', unread: 3, total: 5 },
+		{ id: 'archive', jmapId: 'jmap-archive', name: 'Archive', role: 'archive', unread: 0, total: 0 },
+		{ id: 'junk', jmapId: 'jmap-junk', name: 'Spam', role: 'junk', unread: 0, total: 0 },
+		{ id: 'trash', jmapId: 'jmap-trash', name: 'Trash', role: 'trash', unread: 0, total: 0 }
+	];
+
+	onMount(() => {
+		mail.mailboxes = labMailboxes;
+		mail.currentMailboxRouteId = 'inbox';
+		return () => {
+			mail.mailboxes = [];
+			mail.currentMailboxRouteId = null;
+			mail.clearSelection();
+		};
+	});
+
+	/** Deterministic scrub path for e2e — adds m4 then m3 after a seed selection. */
+	function simulateScrub() {
+		if (!mail.hasSelection) mail.startSelection('m5');
+		const ordered = mail.selectionList.map((message) => message.id);
+		for (const id of ['m4', 'm3']) {
+			const next = nextScrubSelection(ordered, mail.selectedMessageIds, id, 'add');
+			if (!mail.selectedMessageIds.has(id) && next.has(id)) {
+				mail.toggleMessageSelection(id);
+			}
+		}
+	}
 </script>
 
 <svelte:head>
@@ -58,6 +92,14 @@
 			onclick={() => (mail.hasSelection ? mail.clearSelection() : mail.startSelection('m5'))}
 		>
 			Toggle selection
+		</button>
+		<button
+			type="button"
+			data-testid="simulate-scrub"
+			class="z-btn-ghost px-3 py-2 text-sm"
+			onclick={simulateScrub}
+		>
+			Simulate scrub
 		</button>
 		<button
 			type="button"

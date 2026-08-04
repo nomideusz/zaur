@@ -109,7 +109,10 @@
 	/** Soft collapse when a row leaves the list (trash/archive/move). */
 	function rowExit(node: HTMLElement): TransitionConfig {
 		const reduce = settings.reduceMotion;
-		const duration = reduce ? 0 : 140;
+		/* Swipe dismiss already slid the row off-screen — only collapse height so
+		   the list reflows without a second opacity fade. */
+		const swipeDismissed = node.dataset.swipeDismissing === 'true';
+		const duration = reduce ? 0 : swipeDismissed ? 120 : 140;
 		node.classList.add('z-mail-list-row--exiting');
 		const height = node.getBoundingClientRect().height;
 		return {
@@ -117,7 +120,9 @@
 			css: (t) =>
 				reduce
 					? ''
-					: `opacity: ${t}; max-height: ${height * t}px; overflow: hidden; margin-block: 0; padding-block: ${0.625 * t}rem;`
+					: swipeDismissed
+						? `opacity: 0; max-height: ${height * t}px; overflow: hidden; margin-block: 0; padding-block: ${0.625 * t}rem;`
+						: `opacity: ${t}; max-height: ${height * t}px; overflow: hidden; margin-block: 0; padding-block: ${0.625 * t}rem;`
 		};
 	}
 
@@ -509,6 +514,23 @@
 		);
 	}
 
+	const SWIPE_DISMISS_IDS = new Set([
+		'move-inbox',
+		'archive',
+		'spam',
+		'trash',
+		'delete-forever',
+		'delete-draft'
+	]);
+
+	/** Stamp the row before a dismiss mutate so `out:rowExit` skips a second fade. */
+	function markSwipeDismissing(messageId: string) {
+		const row = listScrollViewport?.querySelector(
+			`.z-mail-list-row[data-message-id="${CSS.escape(messageId)}"]`
+		);
+		if (row instanceof HTMLElement) row.dataset.swipeDismissing = 'true';
+	}
+
 	/** Returns false on cancel/failure so dismissed rows slide back into place. */
 	async function runSwipeAction(
 		actionId: string,
@@ -516,6 +538,8 @@
 		routeId: string
 	): Promise<boolean> {
 		if (!auth.client) return false;
+
+		if (SWIPE_DISMISS_IDS.has(actionId)) markSwipeDismissing(message.id);
 
 		switch (actionId) {
 			case 'move-inbox':
