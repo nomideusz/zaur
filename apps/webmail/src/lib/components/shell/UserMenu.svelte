@@ -53,7 +53,7 @@
 >
 	<Menu.Trigger
 		class={cn(
-			'relative rounded-md border border-transparent transition-colors hover:border-border/40 hover:bg-surface-sunken/80',
+			'relative rounded-full border border-transparent transition-colors hover:border-border/40 hover:bg-surface-sunken/80',
 			compact ? 'z-icon-tap-target p-0' : 'flex items-center gap-2 p-1.5'
 		)}
 		aria-label={othersUnreadBadge

@@ -15,7 +15,7 @@
 
 <span
 	class={cn(
-		'z-action-bar-value inline-flex shrink-0 items-center rounded-md bg-surface-sunken px-2 py-0.5 text-sm font-medium tabular-nums text-fg',
+		'z-action-bar-value inline-flex h-9 shrink-0 items-center rounded-full bg-surface-sunken px-3 text-sm font-medium tabular-nums text-fg',
 		className
 	)}
 	data-slot="action-bar-value"

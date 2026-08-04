@@ -14,7 +14,7 @@
 		<a
 			href={tool.href}
 			class={cn(
-				'flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors',
+				'flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium transition-colors',
 				isActive ? 'bg-accent/10 text-accent' : 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
 			)}
 			aria-current={isActive ? 'page' : undefined}
