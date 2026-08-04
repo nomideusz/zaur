@@ -28,22 +28,54 @@
 		color: var(--z-fg-muted);
 	}
 
-	/* Send split button: Send | ▾ (schedule). Two pill segments joined into one control. */
-	.z-mail-view .z-compose__send-split {
+	/* Send split button: Send | ▾ (schedule). Two pill segments joined into one control.
+	   Unscoped so the mobile top bar (outside .z-mail-view) gets the same join. */
+	.z-compose__send-split {
 		display: inline-flex;
 		align-items: stretch;
+		isolation: isolate;
 	}
 
-	.z-mail-view .z-compose__send-main {
-		border-top-right-radius: 0;
-		border-bottom-right-radius: 0;
+	.z-compose__send-main {
+		border-top-right-radius: 0 !important;
+		border-bottom-right-radius: 0 !important;
 	}
 
-	.z-mail-view .z-compose__send-caret {
+	.z-compose__send-caret {
 		padding-inline: 0.5rem;
-		border-top-left-radius: 0;
-		border-bottom-left-radius: 0;
+		border-top-left-radius: 0 !important;
+		border-bottom-left-radius: 0 !important;
 		border-left: 1px solid color-mix(in srgb, var(--z-accent) 28%, transparent);
+	}
+
+	/* Compact top-bar variant — one capsule, not two floating blocks. */
+	.z-compose__send-split--compact {
+		border-radius: 9999px;
+		overflow: hidden;
+		background-color: color-mix(in srgb, var(--z-accent) 14%, transparent);
+	}
+
+	:root:is(.dark, [data-circadian-dark]) .z-compose__send-split--compact {
+		background-color: color-mix(in srgb, var(--z-accent) 24%, transparent);
+	}
+
+	.z-compose__send-split--compact .z-mail-text-nav__action--pill {
+		background-color: transparent;
+		min-height: 2.5rem;
+		padding-block: 0.375rem;
+	}
+
+	.z-compose__send-split--compact .z-compose__send-main {
+		padding-inline: 0.875rem 0.625rem;
+	}
+
+	.z-compose__send-split--compact .z-compose__send-caret {
+		padding-inline: 0.375rem 0.625rem;
+	}
+
+	.z-compose__send-split--compact .z-mail-text-nav__action--pill:hover:not(:disabled) {
+		background-color: color-mix(in srgb, var(--z-accent) 12%, transparent);
+		text-decoration: none;
 	}
 
 	@media (max-width: 767px) {
@@ -348,6 +380,27 @@
 		flex: 1 1 8ch;
 		width: auto;
 		min-width: 8ch;
+	}
+
+	/*
+	 * Browser autofill paints a yellow (or dark-blue) slab on the typing input —
+	 * after a chip is committed that slab sits beside the chip. Force the fill to
+	 * match the compose surface so it disappears into the field.
+	 */
+	.z-mail-view .z-compose__input:-webkit-autofill,
+	.z-mail-view .z-compose__input:-webkit-autofill:hover,
+	.z-mail-view .z-compose__input:-webkit-autofill:focus,
+	.z-mail-view .z-compose__input:-webkit-autofill:active,
+	.z-mail-view .z-compose__recipients-input:-webkit-autofill,
+	.z-mail-view .z-compose__recipients-input:-webkit-autofill:hover,
+	.z-mail-view .z-compose__recipients-input:-webkit-autofill:focus,
+	.z-mail-view .z-compose__recipients-input:-webkit-autofill:active {
+		-webkit-text-fill-color: var(--z-fg) !important;
+		caret-color: var(--z-fg);
+		border-radius: 0;
+		/* Opaque inset wash — transparent backgrounds are ignored by WebKit autofill. */
+		box-shadow: 0 0 0 1000px var(--z-surface) inset !important;
+		transition: background-color 99999s ease-out;
 	}
 
 	/* @ark-ui/file-upload — compose drop target (`ui/ComposeFileUpload.svelte`). */
