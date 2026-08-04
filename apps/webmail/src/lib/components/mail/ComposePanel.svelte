@@ -11,6 +11,7 @@
 	import { formatAttachmentSize } from '$lib/attachments/upload';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
+	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
 	import { resolveSendFrom } from '$lib/mail/send-from';
@@ -162,6 +163,23 @@
 	const sendLabel = $derived(
 		compose.isSending ? 'Sending…' : compose.hasUploadingAttachments ? 'Uploading…' : 'Send'
 	);
+
+	/** Wired from FileUpload.Context so the island Attach button can open the picker. */
+	let openFilePicker: (() => void) | null = null;
+
+	/* Mobile island owns back / attach / discard / send while composing. */
+	$effect(() => {
+		const generation = mobileIsland.setCompose({
+			onBack: () => void saveDraftAndClose(),
+			onSend: () => void send(),
+			onAttach: () => openFilePicker?.(),
+			onDiscard: () => void discardAndClose(),
+			sendLabel,
+			sendDisabled: compose.isSending || compose.hasUploadingAttachments || !compose.to.trim(),
+			isEmpty: compose.isComposeEmpty
+		});
+		return () => mobileIsland.clearCompose(generation);
+	});
 
 	$effect(() => {
 		if (initialTo && mode === 'new' && !compose.to) {
@@ -399,16 +417,22 @@
 >
 	<FileUpload.Context>
 		{#snippet render(fileUploadApi)}
+			{@const api = fileUploadApi()}
+			{@const __wireAttach = (() => {
+				openFilePicker = () => api.openFilePicker();
+				return true;
+			})()}
 			<FileUpload.Dropzone
 				disableClick
 				class={cn(
 					'z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose z-compose-dropzone relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
-					embedded && 'rounded-none border-0 shadow-none'
+					embedded && 'rounded-none border-0 shadow-none',
+					__wireAttach && null
 				)}
 				style={embedded ? undefined : 'view-transition-name: compose-panel;'}
 				aria-label="Compose message"
 				onpaste={(event) => {
-					if (fileUploadApi().setClipboardFiles(event.clipboardData)) {
+					if (api.setClipboardFiles(event.clipboardData)) {
 						event.preventDefault();
 					}
 				}}
@@ -416,8 +440,13 @@
 	<div class="z-compose z-reader-card flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 		<header class="z-compose__header flex shrink-0 flex-col border-b border-border/80">
 			<div class="z-compose__header-bar grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 px-4 py-2 min-w-0">
-				<!-- Left: Back (saves draft) -->
-				<button type="button" class="z-back-btn" aria-label="Save draft and go back" onclick={() => void saveDraftAndClose()}>
+				<!-- Left: Back (saves draft). Mobile island owns this control. -->
+				<button
+					type="button"
+					class="z-back-btn max-md:hidden"
+					aria-label="Save draft and go back"
+					onclick={() => void saveDraftAndClose()}
+				>
 					<ArrowLeft class="size-4" aria-hidden="true" />
 				</button>
 
@@ -425,7 +454,7 @@
 				<h1 class="sr-only">{composeTitle}</h1>
 				<p class="z-compose__title truncate" aria-live="polite">{draftStatus ?? composeTitle}</p>
 
-				<!-- Right: Send, with Schedule folded in as a split-button caret -->
+				<!-- Right: Send (desktop) + Schedule. Mobile island owns Send. -->
 				<div class="z-compose__send-split relative" bind:this={scheduleZone}>
 					<TooltipWrap
 						label={sendBlockedReason ?? 'Send message'}
@@ -436,7 +465,7 @@
 								{...props}
 								type="submit"
 								form="compose-form"
-								class="z-mail-text-nav__action z-mail-text-nav__action--pill z-compose__send-main"
+								class="z-mail-text-nav__action z-mail-text-nav__action--pill z-compose__send-main max-md:hidden"
 								disabled={compose.isSending || compose.hasUploadingAttachments || !compose.to.trim()}
 							>
 								{sendLabel}

@@ -112,7 +112,24 @@
 		'spam',
 		'archive'
 	]);
-	const markActions = $derived(actions.filter((action) => markActionIds.has(action.id)));
+	/**
+	 * Island prefers Seen + Archive inline (everyday triage); Highlight/Spam
+	 * overflow into More. Desktop keeps Highlight as the editorial first link.
+	 */
+	const markActions = $derived(
+		actions
+			.filter((action) => markActionIds.has(action.id))
+			.map((action) => {
+				if (!iconOnly) return action;
+				if (action.id === 'mark-seen' || action.id === 'unsee' || action.id === 'archive') {
+					return { ...action, priority: 1 };
+				}
+				if (action.id === 'important' || action.id === 'not-important') {
+					return { ...action, priority: 2 };
+				}
+				return action;
+			})
+	);
 
 	/* Icon buttons are fixed-width (2.75rem + gap); reserve separator + trash + More. */
 	const fitted = $derived(

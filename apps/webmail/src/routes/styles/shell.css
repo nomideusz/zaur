@@ -190,6 +190,40 @@
 		background-color: color-mix(in srgb, var(--z-danger) 10%, transparent);
 	}
 
+	/* Scroll-shrunk pill — content fades + clips while the shell condenses. */
+	.z-mobile-island--collapsed {
+		max-width: var(--z-island-collapsed-size);
+		min-height: var(--z-island-collapsed-size);
+		border-radius: calc(var(--z-island-collapsed-size) / 2);
+	}
+
+	.z-mobile-island--collapsed .z-mobile-island__content {
+		opacity: 0;
+		pointer-events: none;
+	}
+
+	.z-mobile-island__pill {
+		position: absolute;
+		inset: 0;
+		display: grid;
+		place-items: center;
+		opacity: 0;
+		pointer-events: none;
+		color: var(--z-fg-muted);
+		transition: opacity var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-mobile-island--collapsed .z-mobile-island__pill {
+		opacity: 1;
+		pointer-events: auto;
+	}
+
+	.z-mobile-island__pill:focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: -2px;
+		border-radius: inherit;
+	}
+
 	@media (prefers-reduced-motion: no-preference) {
 		.z-mobile-island__icon-btn:active {
 			transform: scale(0.9);
@@ -198,13 +232,15 @@
 
 	@media (prefers-reduced-motion: reduce) {
 		.z-mobile-island,
-		.z-mobile-island__content {
+		.z-mobile-island__content,
+		.z-mobile-island__pill {
 			transition: none;
 		}
 	}
 
 	html.z-reduce-motion .z-mobile-island,
-	html.z-reduce-motion .z-mobile-island__content {
+	html.z-reduce-motion .z-mobile-island__content,
+	html.z-reduce-motion .z-mobile-island__pill {
 		transition: none;
 	}
 

@@ -26,7 +26,8 @@ Examples:
 - **Inbox list (desktop)**: filters left (All · Unseen · Important) · **New message** in list-pane header zone
 - **Inbox (mobile shell)**: single row — folder picker (start) · segmented read filter fills the center · **Search** icon │ **New** link (end)
 - **Reader**: secondary links · More · **Reply** / **Send** zone (trailing)
-- **Compose**: Discard / Rich text / Attach · **Send** zone (trailing)
+- **Compose (desktop)**: Discard / Rich text / Attach · **Send** zone (trailing)
+- **Compose (mobile)**: the floating island owns Back / Attach / Discard / **Send**; the compose header keeps the title (+ schedule caret) and hides the duplicate Back/Send
 - **Search (no list toolbar)**: **New message** stays in app shell end
 
 Do **not** use `Button`, filled pills, or icon+label buttons for the primary header action.
