@@ -2,9 +2,10 @@
 	import { DownloadTrigger } from '@ark-ui/svelte/download-trigger';
 	import type { DownloadableData } from '@ark-ui/svelte/download-trigger';
 	import type { Snippet } from 'svelte';
+	import type { HTMLButtonAttributes } from 'svelte/elements';
 	import { cn } from '$lib/utils/cn';
 
-	interface Props {
+	interface Props extends Omit<HTMLButtonAttributes, 'type' | 'class' | 'children'> {
 		fileName: string;
 		mimeType?: string;
 		/** Sync payload, or async loader invoked on first click. */
@@ -27,7 +28,9 @@
 		label,
 		onError,
 		onBusyChange,
-		children
+		children,
+		onclick: onclickProp,
+		...rest
 	}: Props = $props();
 
 	let busy = $state(false);
@@ -39,7 +42,10 @@
 		resolved ?? (isLoader ? new Blob() : (data as DownloadableData))
 	);
 
-	async function onclick(event: MouseEvent) {
+	async function onclick(event: MouseEvent & { currentTarget: EventTarget & HTMLButtonElement }) {
+		onclickProp?.(event);
+		if (event.defaultPrevented) return;
+
 		if (!isLoader) return;
 
 		if (resolved) {
@@ -57,7 +63,7 @@
 		try {
 			resolved = await (data as () => Promise<DownloadableData>)();
 			queueMicrotask(() => {
-				(event.currentTarget as HTMLButtonElement | null)?.click();
+				event.currentTarget?.click();
 			});
 		} catch (error) {
 			resolved = null;
@@ -77,7 +83,8 @@
 	class={cn(className)}
 	aria-label={label}
 	aria-busy={busy || undefined}
-	onclick={onclick}
+	{onclick}
+	{...rest}
 >
 	{#if children}
 		{@render children({ busy })}
