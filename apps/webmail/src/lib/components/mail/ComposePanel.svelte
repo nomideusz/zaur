@@ -599,7 +599,7 @@
 							id={controlId}
 							bind:inputElement={toInput}
 							value={compose.to}
-							autocomplete="email"
+							autocomplete="off"
 							class="z-compose__input"
 							invalid={fieldInvalid('to')}
 							ariaDescribedby={[errorId, compose.error ? composeErrorsId : undefined]
@@ -646,7 +646,7 @@
 							<ComposeRecipientInput
 								id={controlId}
 								value={compose.cc}
-								autocomplete="email"
+								autocomplete="off"
 								class="z-compose__input"
 								invalid={fieldInvalid('cc')}
 								ariaDescribedby={[errorId, compose.error ? composeErrorsId : undefined]
@@ -681,7 +681,7 @@
 							<ComposeRecipientInput
 								id={controlId}
 								value={compose.bcc}
-								autocomplete="email"
+								autocomplete="off"
 								class="z-compose__input"
 								invalid={fieldInvalid('bcc')}
 								ariaDescribedby={[errorId, compose.error ? composeErrorsId : undefined]
