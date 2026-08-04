@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import Menu from '$lib/components/icons/Menu.svelte';
 	import Search from '$lib/components/icons/Search.svelte';
 	import X from '$lib/components/icons/X.svelte';
@@ -51,6 +52,17 @@
 	const showSettingsTabs = $derived(onSettings && !searchExpanded);
 	const showCalendarTabs = $derived(onCalendar && !searchExpanded);
 	const showSectionTitle = $derived(onContacts && !searchExpanded);
+
+	/* Inner screens (thread / compose) get a back arrow in the top bar instead
+	   of a second hamburger — the drawer stays reachable from the list views. */
+	const threadSubject = $derived(mobileIsland.reader?.thread[0]?.subject?.trim() || 'Message');
+	const backHref = $derived(mobileIsland.reader?.listHref ?? settings.preferredMailHref());
+
+	function composeBack() {
+		const ctx = mobileIsland.compose;
+		if (ctx) ctx.onBack();
+		else history.back();
+	}
 
 	const settingsLinks = $derived(settingsNavLinks('mobile'));
 	const activeSettingsHref = $derived(
@@ -182,15 +194,30 @@
 			</form>
 		{:else}
 			<div class="z-mobile-topbar__row">
-				<button
-					type="button"
-					class="z-mobile-topbar__icon-btn"
-					aria-label="Apps and folders"
-					aria-expanded={mobileIsland.navDrawerOpen}
-					onclick={() => mobileIsland.openNavDrawer()}
-				>
-					<Menu class="size-[1.125rem]" aria-hidden="true" />
-				</button>
+				{#if onMailThread}
+					<a href={backHref} class="z-mobile-topbar__icon-btn no-underline" aria-label="Back to list">
+						<ArrowLeft class="size-[1.125rem]" aria-hidden="true" />
+					</a>
+				{:else if onMailCompose}
+					<button
+						type="button"
+						class="z-mobile-topbar__icon-btn"
+						aria-label="Save draft and go back"
+						onclick={composeBack}
+					>
+						<ArrowLeft class="size-[1.125rem]" aria-hidden="true" />
+					</button>
+				{:else}
+					<button
+						type="button"
+						class="z-mobile-topbar__icon-btn"
+						aria-label="Apps and folders"
+						aria-expanded={mobileIsland.navDrawerOpen}
+						onclick={() => mobileIsland.openNavDrawer()}
+					>
+						<Menu class="size-[1.125rem]" aria-hidden="true" />
+					</button>
+				{/if}
 
 				{#if showFilters}
 					<MailViewTabs />
@@ -236,14 +263,14 @@
 				{:else if showSectionTitle}
 					<div class="min-w-0 flex-1 px-2 text-sm font-medium text-fg">Contacts</div>
 				{:else if onMailThread}
-					<div class="min-w-0 flex-1 px-2 text-sm text-fg-muted truncate">Message</div>
+					<div class="min-w-0 flex-1 px-2 text-sm font-medium text-fg truncate">{threadSubject}</div>
 				{:else if onMailCompose}
-					<div class="min-w-0 flex-1 px-2 text-sm text-fg-muted truncate">Compose</div>
+					<div class="min-w-0 flex-1 px-2 text-sm font-medium text-fg truncate">Compose</div>
 				{:else}
 					<div class="min-w-0 flex-1" aria-hidden="true"></div>
 				{/if}
 
-				{#if section && !onMailCompose}
+				{#if section && !onMailCompose && !onMailThread}
 					<button
 						type="button"
 						class="z-mobile-topbar__icon-btn"
@@ -254,7 +281,9 @@
 					</button>
 				{/if}
 
-				<IslandAccountRail />
+				{#if !onMailThread && !onMailCompose}
+					<IslandAccountRail />
+				{/if}
 			</div>
 		{/if}
 	</header>

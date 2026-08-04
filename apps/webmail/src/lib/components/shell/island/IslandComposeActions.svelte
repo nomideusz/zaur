@@ -1,21 +1,13 @@
 <script lang="ts">
-	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 
 	const ctx = $derived(mobileIsland.compose);
 </script>
 
+<!-- Back (save draft) lives in the top bar; the island keeps the actions. -->
 {#if ctx}
 	<div class="z-mobile-island__compose" role="toolbar" aria-label="Compose actions">
-		<button
-			type="button"
-			class="z-mobile-island__icon-btn"
-			aria-label="Save draft and go back"
-			onclick={ctx.onBack}
-		>
-			<ArrowLeft class="size-[1.125rem]" aria-hidden="true" />
-		</button>
 		<button
 			type="button"
 			class="z-mobile-island__icon-btn"

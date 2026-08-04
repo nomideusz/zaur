@@ -11,6 +11,10 @@ export function visualViewportKeyboardOffset(): number {
 	const vv = window.visualViewport;
 	if (!vv) return 0;
 
+	// Pinch-zoom also shrinks vv.height; treating that as a keyboard used to
+	// translate the bottom island into the middle of the screen.
+	if (vv.scale && Math.abs(vv.scale - 1) > 0.01) return 0;
+
 	const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
 	return offset >= KEYBOARD_OFFSET_THRESHOLD_PX ? offset : 0;
 }
