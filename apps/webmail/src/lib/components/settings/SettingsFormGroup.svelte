@@ -7,11 +7,14 @@
 	let {
 		title,
 		description,
+		disabled = false,
 		visibleOn = 'all',
 		children
 	}: {
 		title: string;
 		description?: string;
+		/** Disables all controls in the group via Ark Fieldset. */
+		disabled?: boolean;
 		visibleOn?: 'all' | 'desktop' | 'mobile';
 		children: import('svelte').Snippet;
 	} = $props();
@@ -34,6 +37,7 @@
 
 <Fieldset.Root
 	bind:ref={sectionRef}
+	{disabled}
 	class={cn(
 		'z-settings-section z-settings-form-section',
 		visibleOn === 'desktop' && 'z-settings-section--desktop',

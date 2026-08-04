@@ -6,12 +6,14 @@
 	import TimeField from '$lib/components/calendar/TimeField.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
+	import DateField from '$lib/components/ui/DateField.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import FocusTrap from '$lib/components/ui/FocusTrap.svelte';
 	import { EVENT_REPEAT_OPTIONS } from '$lib/jmap/recurrence';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 
 	const isEdit = $derived(calendar.composeMode === 'edit');
@@ -155,19 +157,21 @@
 				<div class="grid gap-3 sm:grid-cols-2">
 					<label class="block space-y-1.5">
 						<span class={fieldLabelClass}>Starts</span>
-						<input type="date" class="z-input" bind:value={calendar.composeDraft.startDate} required />
+						<DateField
+							bind:value={calendar.composeDraft.startDate}
+							required
+							weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
+						/>
 					</label>
 
 					{#if calendar.composeDraft.allDay}
 						<label class="block space-y-1.5">
 							<span class={fieldLabelClass}>Ends</span>
-							<input
-								type="date"
-								class="z-input"
-								aria-invalid={timeRangeInvalid ? 'true' : undefined}
-								aria-describedby={timeRangeInvalid ? composeHintId : undefined}
+							<DateField
 								bind:value={calendar.composeDraft.endDate}
 								required
+								invalid={timeRangeInvalid}
+								weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
 							/>
 						</label>
 					{:else}
@@ -178,13 +182,11 @@
 						<label class="block space-y-1.5 sm:col-span-2">
 							<span class={fieldLabelClass}>End time</span>
 							<div class="grid gap-3 sm:grid-cols-2">
-								<input
-									type="date"
-									class="z-input"
-									aria-invalid={timeRangeInvalid ? 'true' : undefined}
-									aria-describedby={timeRangeInvalid ? composeHintId : undefined}
+								<DateField
 									bind:value={calendar.composeDraft.endDate}
 									required
+									invalid={timeRangeInvalid}
+									weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
 								/>
 								<TimeField
 									label="End time"

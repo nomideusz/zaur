@@ -335,6 +335,20 @@
 		justify-content: space-between;
 	}
 
+	/* Radio groups need the full row — stack under the label/description. */
+	.z-settings-row--menu:has(.z-radio-group) {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.z-settings-row--menu:has(.z-radio-group) .z-settings-row-control {
+		grid-column: 1;
+		grid-row: auto;
+		width: 100%;
+		margin-top: 0.375rem;
+		justify-content: flex-start;
+		text-align: left;
+	}
+
 	.z-settings-row--action .z-settings-row-control .z-mail-text-nav__link {
 		white-space: nowrap;
 	}
@@ -433,8 +447,21 @@
 		color: var(--z-fg-muted);
 	}
 
+	.z-settings-field-error {
+		margin: 0;
+		font-size: var(--z-main-page-muted-text);
+		line-height: var(--z-space-folder-message-leading);
+		color: var(--z-danger);
+	}
+
 	.z-settings-field-body {
 		margin-top: 0;
+	}
+
+	.z-settings-section[data-disabled] .z-settings-section-title,
+	.z-settings-section[data-disabled] .z-settings-section-desc,
+	.z-settings-section[data-disabled] .z-settings-form-heading-desc {
+		opacity: 0.64;
 	}
 
 	/* Text fields — same raised chrome + accent focus as compose. */

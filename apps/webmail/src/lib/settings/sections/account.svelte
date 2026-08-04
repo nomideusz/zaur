@@ -6,6 +6,7 @@
 	import SettingsGroup from '$lib/components/settings/SettingsGroup.svelte';
 	import SettingsRow from '$lib/components/settings/SettingsRow.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import DateField from '$lib/components/ui/DateField.svelte';
 	import Switch from '$lib/components/ui/Switch.svelte';
 	import { pwa } from '$lib/stores/pwa.svelte';
 	import { appConfig } from '$lib/config';
@@ -135,30 +136,26 @@
 
 			<SettingsField title="First day" description="Leave empty to start right away.">
 				{#snippet children({ id })}
-					<input
+					<DateField
 						{id}
-						type="date"
-						class="z-input"
 						value={vacationDateInputValue(vacation.fromDate)}
 						disabled={vacation.status !== 'ready'}
-						max={vacationDateInputValue(vacation.toDate) || undefined}
-						onchange={(e) =>
-							void saveVacation({ fromDate: vacationDateToUtc(e.currentTarget.value, 'start') })}
+						max={vacationDateInputValue(vacation.toDate)}
+						weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
+						onchange={(next) => void saveVacation({ fromDate: vacationDateToUtc(next, 'start') })}
 					/>
 				{/snippet}
 			</SettingsField>
 
 			<SettingsField title="Last day" description="Leave empty to reply until you switch it off.">
 				{#snippet children({ id })}
-					<input
+					<DateField
 						{id}
-						type="date"
-						class="z-input"
 						value={vacationDateInputValue(vacation.toDate)}
 						disabled={vacation.status !== 'ready'}
-						min={vacationDateInputValue(vacation.fromDate) || undefined}
-						onchange={(e) =>
-							void saveVacation({ toDate: vacationDateToUtc(e.currentTarget.value, 'end') })}
+						min={vacationDateInputValue(vacation.fromDate)}
+						weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
+						onchange={(next) => void saveVacation({ toDate: vacationDateToUtc(next, 'end') })}
 					/>
 				{/snippet}
 			</SettingsField>

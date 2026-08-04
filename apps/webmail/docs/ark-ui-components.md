@@ -36,65 +36,64 @@ Project rule: `.cursor/rules/ark-ui-llms.mdc` (auto-attached for `apps/webmail/*
 
 ## Summary
 
-**24 / 61** Ark UI components are currently in use (`@ark-ui/svelte` ^5.22.1;
-excludes internal `factory` / `anatomy` exports).
+**32 / 61** Ark UI components are currently in use (`@ark-ui/svelte` ^5.22.1;
+excludes internal `factory` / `anatomy` exports; includes lab-only
+`floating-panel`).
 
 ---
 
-## Migration roadmap — next candidates
+## Migration roadmap
 
-Prioritised shortlist of components worth adopting next, with webmail-specific
-use cases. Priorities are a starting suggestion, not a commitment:
+Priorities are a starting suggestion, not a commitment:
 
-- **P1** — high value / fills an obvious current gap; pick these up first.
-- **P2** — clear use case, adopt opportunistically when touching the area.
+- **P1** — high value / fills an obvious current gap.
+- **P2** — clear use case, adopt opportunistically.
 - **P3** — nice-to-have or situational.
 
 Components not listed here have no obvious webmail use case yet (e.g.
-`angle-slider`, `marquee`, `signature-pad`, `qr-code`, `rating-group`) — leave
-them unticked until a need appears.
+`angle-slider`, `marquee`, `signature-pad`, `rating-group`) — leave them
+unticked until a need appears.
 
-### P1 — adopt next
+### P1 — done
 
-| Component | Potential use case |
+| Component | Notes |
 | --- | --- |
-| ~~`field`~~ ✅ | **Done** — `ui/Field.svelte` wrapper; settings labels/helper text via Ark Field in `settings/SettingsField.svelte` and `settings/SettingsRow.svelte`. Still open: compose recipient error wiring. |
-| ~~`fieldset`~~ ✅ | **Done** — Ark `Fieldset` in `settings/SettingsGroup.svelte` and `settings/SettingsFormGroup.svelte` (legend + helper text for grouped rows). Still open: disabled-state groups. |
-| ~~`tabs`~~ ✅ | **Done** — calendar Week / Day / Agenda view switcher (`routes/(app)/calendar/+page.svelte`), giving proper `tablist`/`tab`/`tabpanel` semantics and arrow-key navigation. Still open: settings sections, mailbox view switches. |
-| ~~`file-upload`~~ ✅ | **Done** — `ui/ComposeFileUpload.svelte` + Ark dropzone/trigger in `mail/ComposePanel.svelte`; reject toasts and clipboard paste. |
-| ~~`drawer`~~ ✅ | **Done** — mobile mailbox / app nav sheet (`shell/NavDrawer.svelte`, mounted from `routes/(app)/+layout.svelte`). Still open: mobile compose sheet, slide-in settings panels. |
-| ~~`scroll-area`~~ ✅ | **Done** — `ui/ScrollArea.svelte` across mail, settings, reader, contacts, and calendar panes; scrollbars hidden when content fits (`data-overflow-*`). Still open: contact letter rail. |
-| ~~`progress`~~ ✅ | **Done** — reusable `ui/Progress.svelte` wrapper, wired into PDF document-download progress and account storage-quota display (`settings/StorageQuota.svelte`, via JMAP `Quota/get`). Compose attachment rows show inline upload status (`ComposePanel.svelte`). Still open: per-file progress bars, background sync indicators. |
+| ~~`field`~~ ✅ | `ui/Field.svelte` with `invalid` / `ErrorText`; settings + compose To/Cc/Bcc. |
+| ~~`fieldset`~~ ✅ | Settings groups; `disabled` when security is unverified. |
+| ~~`tabs`~~ ✅ | Calendar Week / Day / Agenda. Still open: settings sections. |
+| ~~`file-upload`~~ ✅ | Compose attach + dropzone. |
+| ~~`drawer`~~ ✅ | Mobile nav / account switcher sheets. Still open: MobileSheet → Drawer. |
+| ~~`scroll-area`~~ ✅ | Mail, settings, reader, contacts, calendar panes. |
+| ~~`progress`~~ ✅ | PDF download, storage quota, indeterminate compose upload rows. |
 
-### P2 — opportunistic
+### P2 — status
 
-| Component | Potential use case |
+| Component | Status |
 | --- | --- |
-| ~~`collapsible`~~ ✅ | **Done** — per-message expand/collapse in multi-message threads (`mail/MessageReaderCore.svelte`). Quoted reply in plain-text compose uses a native `<details>` block (`ComposePanel.svelte`, gated by `collapseQuotedInCompose`). Still open: collapsible settings groups. |
-| `pagination` | Paging through long message lists or search results. |
-| ~~`clipboard`~~ ✅ | **Done** — reusable `ui/CopyButton.svelte` in `contacts/ContactDetailPanel.svelte` (inline copied feedback). Reader "Copy email address" in the More menu uses toast feedback instead (`mail/MessageThreadActions.svelte` — menu closes on action, so inline indicator would not persist). Still open: shareable message/thread links. |
-| `accordion` | Grouped settings panels and help/FAQ sections. |
-| `editable` | Inline rename of folders and labels in the sidebar; contact name editing. |
-| `avatar` | Sender/contact avatars in the message list and reading pane (with initials fallback). |
-| `radio-group` | Mutually-exclusive settings (theme, list density, reading-pane layout). |
-| `number-input` | Numeric settings such as auto-refresh interval or messages-per-page. |
-| `password-input` | Change-password flow in settings and any password entry in auth. |
-| `date-picker` | Schedule-send and snooze date selection (calendar app already lives here). |
+| ~~`collapsible`~~ ✅ | Thread messages + compose quoted reply (`ComposePanel.svelte`). |
+| ~~`clipboard`~~ ✅ | `ui/CopyButton.svelte`; contact email copy. |
+| ~~`password-input`~~ ✅ | `ui/PasswordInput.svelte`; `LabelInput` password path; security passwords. |
+| ~~`pin-input`~~ ✅ | `ui/PinInput.svelte`; login TOTP + security OTP. |
+| ~~`radio-group`~~ ✅ | `ui/RadioGroup.svelte`; Appearance theme. |
+| ~~`avatar`~~ ✅ | `ui/Avatar.svelte`; account rail + account switcher. |
+| `pagination` | **Deferred** — mail/search use infinite `loadMore`, not page numbers. |
+| `accordion` | **Deferred** — Shortcuts help is a short flat list; settings keep Fieldset IA. |
+| `editable` | **Deferred** — folder rename already uses `TreeView.NodeRenameInput`; no contact edit UI. |
+| `number-input` | **Deferred** — numeric settings are fixed enums via `SettingsSelect`. |
+| ~~`date-picker`~~ ✅ | `ui/DateField.svelte` — vacation dates, advanced search custom range, event compose. Schedule-send keeps native `datetime-local`. |
 
-### P3 — situational
+### P3 — status
 
-| Component | Potential use case |
+| Component | Status |
 | --- | --- |
-| `hover-card` | Contact/sender preview card on hover over a name in the message list. |
-| ~~`focus-trap`~~ ✅ | **Done** — `ui/FocusTrap.svelte` + `ui/MobileSheet.svelte` on contact/event mobile sheets and calendar event compose slide-over. Dialog/Drawer already trap focus. |
-| `color-picker` | Custom colors for labels and folders. |
-| `steps` | Multi-step onboarding / account-setup wizard. |
-| `tour` | Guided feature discovery for new users (builds on existing onboarding). |
-| `segment-group` | Compact segmented toggle for view switches (e.g. list density, unread filter). A custom Shark UI port already covers mobile rails at `ui/segment-group/*` (`IslandMailTabs.svelte`, `MobileSettingsShellNav.svelte`) without `@ark-ui/svelte/segment-group`. |
-| `floating-panel` | Desktop non-modal compose overlay — lab at `/floating-compose-lab` (`lab/FloatingComposeLab.svelte`). Evaluate before replacing `/mail/compose` route on desktop. |
-| `carousel` | Image-attachment gallery in the preview dialog. |
-| `image-cropper` | Avatar / profile-image cropping in settings. |
-| `json-tree-view` | Developer/debug view for raw message source or sync payloads. |
+| ~~`focus-trap`~~ ✅ | `ui/FocusTrap.svelte` + `ui/MobileSheet.svelte`. |
+| ~~`download-trigger`~~ ✅ | `ui/DownloadButton.svelte`; attachment list + preview. |
+| ~~`qr-code`~~ ✅ | TOTP setup in `settings/sections/security.svelte` (replaced `qrcode` npm). |
+| `segment-group` | **Intentionally custom** — `ui/segment-group/*` supports navigational `href` / static items; Ark’s is radio-label based. |
+| `floating-panel` | Lab only — `/floating-compose-lab`. Do not promote without a product decision. |
+| `hover-card` | Still open — sender/contact preview. |
+| `carousel` | Still open — attachment preview already has prev/next. |
+| `color-picker` / `steps` / `tour` / `image-cropper` / `json-tree-view` | No product surface yet. |
 
 ---
 
@@ -112,17 +111,17 @@ internal building block rather than a user-facing component.
 | `checkbox` | [x] | `src/lib/components/ui/Checkbox.svelte` |
 | `color-picker` | [ ] | |
 | `combobox` | [x] | `src/lib/components/settings/SettingsSearch.svelte` |
-| `date-input` | [ ] | |
-| `date-picker` | [ ] | |
-| `editable` | [ ] | |
-| `field` | [x] | `src/lib/components/ui/Field.svelte`; settings rows in `settings/SettingsField.svelte`, `settings/SettingsRow.svelte` |
-| `fieldset` | [x] | `settings/SettingsGroup.svelte`, `settings/SettingsFormGroup.svelte` |
-| `file-upload` | [x] | `src/lib/components/ui/ComposeFileUpload.svelte`; compose attach + drop in `mail/ComposePanel.svelte` |
+| `date-input` | [ ] | segment style unused — DatePicker covers ISO date fields |
+| `date-picker` | [x] | `src/lib/components/ui/DateField.svelte`; vacation in `settings/sections/account.svelte`; advanced search in `shell/GlobalSearchCombobox.svelte`; event compose in `calendar/EventComposePanel.svelte` |
+| `editable` | [ ] | folder rename uses `TreeView.NodeRenameInput` instead |
+| `field` | [x] | `src/lib/components/ui/Field.svelte`; `settings/SettingsField.svelte`, `settings/SettingsRow.svelte`; compose To/Cc/Bcc in `mail/ComposePanel.svelte` |
+| `fieldset` | [x] | `settings/SettingsGroup.svelte`, `settings/SettingsFormGroup.svelte` (`disabled` for unverified security) |
+| `file-upload` | [x] | `src/lib/components/ui/ComposeFileUpload.svelte`; `mail/ComposePanel.svelte` |
 | `listbox` | [ ] | |
-| `number-input` | [ ] | |
-| `password-input` | [ ] | |
-| `pin-input` | [ ] | |
-| `radio-group` | [ ] | |
+| `number-input` | [ ] | deferred — enum selects only |
+| `password-input` | [x] | `src/lib/components/ui/PasswordInput.svelte`; `ui/LabelInput.svelte` (password); `settings/sections/security.svelte` |
+| `pin-input` | [x] | `src/lib/components/ui/PinInput.svelte`; `routes/login/+page.svelte`; `settings/sections/security.svelte` |
+| `radio-group` | [x] | `src/lib/components/ui/RadioGroup.svelte`; `settings/sections/appearance.svelte` |
 | `rating-group` | [ ] | |
 | `segment-group` | [ ] | custom Shark UI port at `src/lib/components/ui/segment-group/*` (not `@ark-ui/svelte/segment-group`) |
 | `select` | [x] | `src/lib/components/ui/MobilePicker.svelte` |
@@ -139,7 +138,7 @@ internal building block rather than a user-facing component.
 | --- | :---: | --- |
 | `menu` | [x] | `src/lib/components/ui/menu/*`, `shell/UserMenu.svelte`, `mail/MoveToMenuItems.svelte`, `mail/MessageListSelectMenu.svelte`, `ui/OverflowMenu.svelte` |
 | `navigation-menu` | [ ] | |
-| `pagination` | [ ] | |
+| `pagination` | [ ] | deferred — infinite scroll |
 | `steps` | [ ] | |
 | `tabs` | [x] | `routes/(app)/calendar/+page.svelte` (Week / Day / Agenda view switcher) |
 | `tour` | [ ] | |
@@ -149,8 +148,8 @@ internal building block rather than a user-facing component.
 | Component | Used | Used in |
 | --- | :---: | --- |
 | `dialog` | [x] | `src/lib/components/ui/ConfirmDialog.svelte`, `mail/AttachmentPreview.svelte`, `mail/CreateFolderDialog.svelte`, `shell/WelcomeOnboarding.svelte` |
-| `drawer` | [x] | `src/lib/components/shell/NavDrawer.svelte` (mobile mailbox / app nav sheet; `routes/(app)/+layout.svelte`) |
-| `floating-panel` | [ ] | lab prototype at `routes/floating-compose-lab/+page.svelte`, `lab/FloatingComposeLab.svelte` |
+| `drawer` | [x] | `src/lib/components/shell/NavDrawer.svelte`, `shell/AccountSwitcherSheet.svelte` |
+| `floating-panel` | [x] | lab: `routes/floating-compose-lab/+page.svelte`, `lab/FloatingComposeLab.svelte` |
 | `hover-card` | [ ] | |
 | `popover` | [x] | `src/lib/components/mail/RichTextEditor.svelte`, `shell/OutboxMenu.svelte` |
 | `tooltip` | [x] | `src/lib/components/ui/TooltipWrap.svelte` |
@@ -159,7 +158,7 @@ internal building block rather than a user-facing component.
 
 | Component | Used | Used in |
 | --- | :---: | --- |
-| `progress` | [x] | `src/lib/components/ui/Progress.svelte` (reusable wrapper); wired into `ui/pdf-viewer/Root.svelte` (document download) and `settings/StorageQuota.svelte` (account storage quota) |
+| `progress` | [x] | `src/lib/components/ui/Progress.svelte`; PDF viewer, `settings/StorageQuota.svelte`, compose upload rows |
 | `timer` | [ ] | |
 | `toast` | [x] | `src/lib/stores/toast.svelte.ts`, `ui/ToastStack.svelte` |
 
@@ -167,14 +166,14 @@ internal building block rather than a user-facing component.
 
 | Component | Used | Used in |
 | --- | :---: | --- |
-| `accordion` | [ ] | |
-| `avatar` | [ ] | |
+| `accordion` | [ ] | deferred — no strong surface yet |
+| `avatar` | [x] | `src/lib/components/ui/Avatar.svelte`; `shell/island/IslandAccountRail.svelte`, `shell/AccountSwitcherSheet.svelte` |
 | `carousel` | [ ] | |
-| `collapsible` | [x] | `mail/MessageReaderCore.svelte` (per-message expand/collapse in multi-message threads). Plain-text compose quoted reply: native `<details>` in `mail/ComposePanel.svelte` |
+| `collapsible` | [x] | `mail/MessageReaderCore.svelte`; compose quoted reply in `mail/ComposePanel.svelte` |
 | `image-cropper` | [ ] | |
 | `json-tree-view` | [ ] | |
 | `marquee` | [ ] | |
-| `qr-code` | [ ] | |
+| `qr-code` | [x] | `settings/sections/security.svelte` (TOTP setup) |
 | `tree-view` | [x] | `src/lib/components/mail/MailboxSidebar.svelte`, `mail/MailboxTreeNode.svelte`, `routes/folder-tree-lab/+page.svelte` |
 
 ### Utilities & primitives
@@ -182,15 +181,15 @@ internal building block rather than a user-facing component.
 | Component | Used | Used in |
 | --- | :---: | --- |
 | `client-only` | [ ] | |
-| `clipboard` | [x] | `src/lib/components/ui/CopyButton.svelte` (reusable); `contacts/ContactDetailPanel.svelte` (copy email). Reader copy-sender uses `Clipboard` via menu + toast in `mail/MessageThreadActions.svelte` |
+| `clipboard` | [x] | `src/lib/components/ui/CopyButton.svelte`; `contacts/ContactDetailPanel.svelte`; reader copy via menu + toast |
 | `collection` | [ ] | |
-| `download-trigger` | [ ] | |
+| `download-trigger` | [x] | `src/lib/components/ui/DownloadButton.svelte`; `mail/MessageAttachments.svelte`, `mail/AttachmentPreview.svelte` |
 | `focus-trap` | [x] | `ui/FocusTrap.svelte`, `ui/MobileSheet.svelte`; contact/event mobile sheets, `calendar/EventComposePanel.svelte` |
 | `format` | [ ] | |
 | `frame` | [ ] | |
 | `highlight` | [x] | `src/lib/components/settings/SettingsSearch.svelte`, `shell/GlobalSearchCombobox.svelte` |
 | `portal` | [x] | used alongside most overlay components (dialog, drawer, menu, popover, tooltip, select, toast) |
 | `presence` | [ ] | |
-| `scroll-area` | [x] | `ui/ScrollArea.svelte`; mail list/reader/sidebar, settings, contacts, calendar (sidebar, month grid, agenda nav, event panels) |
+| `scroll-area` | [x] | `ui/ScrollArea.svelte`; mail list/reader/sidebar, settings, contacts, calendar |
 | `splitter` | [ ] | |
 | `swap` | [ ] | |

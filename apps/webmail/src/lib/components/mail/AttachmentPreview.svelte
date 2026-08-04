@@ -11,6 +11,7 @@
 	import { downloadAttachment, getAttachmentBlob } from '$lib/attachments/download';
 	import { attachmentPreviewKind } from '$lib/attachments/preview';
 	import { PdfViewer } from '$lib/components/ui/pdf-viewer';
+	import DownloadButton from '$lib/components/ui/DownloadButton.svelte';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { MessageAttachment } from '$lib/types/mail';
@@ -166,11 +167,33 @@
 						</div>
 
 						<div class="flex shrink-0 items-center gap-2">
-							<TooltipWrap label="Download">
+							<TooltipWrap label="Download" wrapDisabled={!blob}>
 								{#snippet trigger({ props })}
-									<button {...props} type="button" class={headerBtn} aria-label="Download" onclick={download}>
-										<Download class="size-4.5" />
-									</button>
+									{#if blob}
+										<DownloadButton
+											{...props}
+											class={headerBtn}
+											label="Download"
+											fileName={active.name}
+											mimeType={active.type || 'application/octet-stream'}
+											data={blob}
+											onError={(err) => toast.show(errorMessage(err, 'Download failed'), 'error')}
+										>
+											{#snippet children()}
+												<Download class="size-4.5" />
+											{/snippet}
+										</DownloadButton>
+									{:else}
+										<button
+											{...props}
+											type="button"
+											class={headerBtn}
+											aria-label="Download"
+											onclick={() => void download()}
+										>
+											<Download class="size-4.5" />
+										</button>
+									{/if}
 								{/snippet}
 							</TooltipWrap>
 							<TooltipWrap label="Close preview">

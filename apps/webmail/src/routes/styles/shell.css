@@ -310,6 +310,16 @@
 		box-shadow: 0 0 0 2px color-mix(in srgb, var(--z-accent) 35%, transparent);
 	}
 
+	.z-island-account-rail__glyph-avatar {
+		display: grid;
+		place-items: center;
+		width: 100%;
+		height: 100%;
+		border-radius: inherit;
+		background: transparent;
+		color: inherit;
+	}
+
 	.z-island-account-rail__glyph {
 		font-size: 0.75rem;
 		font-weight: 600;

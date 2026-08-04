@@ -7,12 +7,15 @@
 	let {
 		title,
 		description,
+		disabled = false,
 		visibleOn = 'all',
 		children
 	}: {
 		title: string;
 		/** Optional one-line subtitle under the group heading. */
 		description?: string;
+		/** Disables all controls in the group via Ark Fieldset. */
+		disabled?: boolean;
 		/** Hide entire section on the wrong viewport — e.g. desktop-only layout options. */
 		visibleOn?: 'all' | 'desktop' | 'mobile';
 		children: import('svelte').Snippet;
@@ -36,6 +39,7 @@
 
 <Fieldset.Root
 	bind:ref={sectionRef}
+	{disabled}
 	class={cn(
 		'z-settings-section',
 		visibleOn === 'desktop' && 'z-settings-section--desktop',

@@ -73,12 +73,13 @@
 		flex-direction: column;
 	}
 
-	/* Label | value | optional suffix. The fixed label column keeps values aligned
-	   across rows and can never overlap them. Subject renders label-less. */
+	/* Label | value (+ optional suffix inside body). The fixed label column keeps
+	   values aligned across rows. Subject renders label-less. Recipient rows use
+	   Ark Field (`.z-field`) so ErrorText can sit under the control. */
 	.z-mail-view .z-compose__field {
 		position: relative;
 		display: grid;
-		grid-template-columns: var(--z-compose-label-width) minmax(0, 1fr) auto;
+		grid-template-columns: var(--z-compose-label-width) minmax(0, 1fr);
 		align-items: center;
 		column-gap: var(--z-compose-field-gap);
 		padding: 0.6875rem 1rem;
@@ -105,23 +106,43 @@
 		padding-top: 0;
 	}
 
-	.z-mail-view .z-compose__field > .relative {
+	.z-mail-view .z-compose__field-body {
 		display: flex;
 		align-items: center;
 		align-self: center;
 		min-width: 0;
 		width: 100%;
 		min-height: var(--z-compose-field-leading);
+		gap: var(--z-compose-field-gap);
 	}
 
-	.z-mail-view .z-compose__field > .relative .z-compose-field-input {
+	.z-mail-view .z-compose__field-body > .relative {
+		display: flex;
+		align-items: center;
+		align-self: center;
+		min-width: 0;
+		flex: 1;
+		width: 100%;
+		min-height: var(--z-compose-field-leading);
+	}
+
+	.z-mail-view .z-compose__field-body > .relative .z-compose-field-input {
 		align-self: center;
 	}
 
+	.z-mail-view .z-compose__field-body > .z-compose__input,
 	.z-mail-view .z-compose__field > .z-compose__input {
 		align-self: center;
 		min-width: 0;
 		min-height: var(--z-compose-field-leading);
+	}
+
+	.z-mail-view .z-compose__field-error {
+		grid-column: 2;
+		margin: 0.25rem 0 0;
+		font-size: 0.75rem;
+		line-height: 1.25;
+		color: var(--z-danger);
 	}
 
 	.z-mail-view .z-compose__input,
@@ -186,13 +207,34 @@
 		border-top: 1px solid var(--z-border);
 	}
 
+	.z-mail-view .z-compose__quote-trigger,
 	.z-mail-view .z-compose__quote summary {
 		@apply cursor-pointer text-sm text-fg-muted;
+		display: list-item;
+		list-style: disclosure-closed inside;
+		width: 100%;
+		text-align: left;
+		background: none;
+		border: none;
+		padding: 0;
+		color: inherit;
+	}
+
+	.z-mail-view .z-compose__quote[data-state='open'] .z-compose__quote-trigger {
+		list-style: disclosure-open inside;
 	}
 
 	.z-mail-view .z-compose__quote pre {
 		@apply mt-2 max-h-48 overflow-y-auto whitespace-pre-wrap text-xs text-fg-subtle;
 		line-height: 1.5;
+	}
+
+	.z-mail-view .z-compose-attachment-progress {
+		width: 5rem;
+	}
+
+	.z-mail-view .z-compose-attachment-progress .z-progress__track {
+		height: 0.25rem;
 	}
 
 	.z-mail-view .z-compose-attachment-list {
