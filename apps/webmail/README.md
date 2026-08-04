@@ -14,7 +14,7 @@ Android clients. The native direction is documented in
 
 ## Features
 
-- **Mail** — inbox, folders, search (with operators like `from:` and `has:attachment`), compose, reply/forward, attachments, quick reply, undo for archive/delete
+- **Mail** — inbox, folders, search (with operators like `from:` and `has:attachment`), compose, reply/forward, attachments, quick reply, undo for archive/delete; on phones a floating island handles tabs/bulk/reader/compose with staged swipe (Seen → Archive, Trash → Spam), long-press scrub-select, and pull-to-refresh
 - **Contacts** — device-local contacts built from mail history, manual add, search integration
 - **Calendar** — week, day, and agenda views; create and edit events
 - **Offline** — cached threads and an outbox queue for sending when back online

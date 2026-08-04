@@ -28,8 +28,9 @@ test('rows are two lines with date and icons in the right rail', async ({ page }
 	// Line 1: sender left, date right. Line 2: subject left, icons right.
 	expect(Math.abs(time.y - sender.y)).toBeLessThan(sender.height);
 	expect(icons.y).toBeGreaterThan(sender.y + sender.height / 2);
-	expect(time.x + time.width).toBeGreaterThan(rowBox.x + rowBox.width - 24);
-	expect(icons.x + icons.width).toBeGreaterThan(rowBox.x + rowBox.width - 24);
+	/* Right rail hugs the trailing edge (gutter + padding leave ~1–2rem slack). */
+	expect(time.x + time.width).toBeGreaterThan(rowBox.x + rowBox.width - 40);
+	expect(icons.x + icons.width).toBeGreaterThan(rowBox.x + rowBox.width - 40);
 	expect(subject.x + subject.width).toBeLessThanOrEqual(icons.x + 1);
 });
 

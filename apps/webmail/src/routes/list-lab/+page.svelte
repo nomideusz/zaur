@@ -78,6 +78,9 @@
 		<span data-testid="cursor-id" class="text-xs text-fg-muted tabular-nums">
 			{mail.listCursorId ?? 'none'}
 		</span>
+		<span data-testid="selection-count" class="text-xs text-fg-muted tabular-nums">
+			sel:{mail.selectedMessageIds.size}
+		</span>
 	</div>
 	<MessageList {messages} mailboxName="Inbox" mailboxRouteId="inbox" />
 </div>

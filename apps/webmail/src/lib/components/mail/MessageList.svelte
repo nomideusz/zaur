@@ -54,6 +54,7 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { appConfig } from '$lib/config';
 	import { mail } from '$lib/stores/mail.svelte';
+	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -415,6 +416,8 @@
 	});
 
 	function handleMobileBulkLongPress(messageId: string) {
+		/* Selection owns the island — expand if it was scroll-collapsed. */
+		mobileIsland.expand();
 		/* Already selecting: long-press joins the selection instead of restarting it. */
 		if (mail.hasSelection) {
 			if (!mail.selectedMessageIds.has(messageId)) {
