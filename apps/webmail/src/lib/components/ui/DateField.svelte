@@ -55,50 +55,6 @@
 		value = iso;
 		onchange?.(iso);
 	}
-
-	// #region agent log
-	function dbg(hypothesisId: string, location: string, message: string, data: Record<string, unknown> = {}) {
-		const payload = { hypothesisId, location, message, data, timestamp: Date.now() };
-		try {
-			fetch('/api/__debug_log', {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(payload)
-			}).catch(() => {});
-		} catch {
-			/* ignore */
-		}
-		console.info('[DBG-DateField]', hypothesisId, location, message, data);
-	}
-
-	function logTriggerPointer(e: PointerEvent | MouseEvent, kind: string) {
-		const t = e.currentTarget as HTMLElement | null;
-		const cs = t ? getComputedStyle(t) : null;
-		const rect = t?.getBoundingClientRect();
-		dbg('A,D', `DateField.svelte:trigger:${kind}`, `Trigger ${kind}`, {
-			type: e.type,
-			defaultPrevented: e.defaultPrevented,
-			eventPhase: e.eventPhase,
-			button: 'button' in e ? e.button : undefined,
-			pointerType: 'pointerType' in e ? e.pointerType : undefined,
-			targetTag: (e.target as HTMLElement | null)?.tagName,
-			currentTag: t?.tagName,
-			dataState: t?.getAttribute('data-state'),
-			ariaExpanded: t?.getAttribute('aria-expanded'),
-			disabledAttr: t?.hasAttribute('disabled'),
-			pointerEvents: cs?.pointerEvents,
-			visibility: cs?.visibility,
-			display: cs?.display,
-			zIndex: cs?.zIndex,
-			rect: rect
-				? { x: rect.x, y: rect.y, w: rect.width, h: rect.height }
-				: null,
-			isoValue: value,
-			pickerLen: pickerValue.length,
-			disabled
-		});
-	}
-	// #endregion
 </script>
 
 <!--
@@ -113,27 +69,7 @@
 	closeOnSelect
 	{disabled}
 	class={cn('z-date-field', invalid && 'z-date-field--invalid', className)}
-	onValueChange={(details) => {
-		// #region agent log
-		dbg('C', 'DateField.svelte:onValueChange', 'value change', {
-			next: details.value?.map((d) => d.toString()) ?? [],
-			isoBound: value
-		});
-		// #endregion
-		emit(details.value);
-	}}
-	onOpenChange={(details) => {
-		// #region agent log
-		dbg('B,C', 'DateField.svelte:onOpenChange', 'open change', {
-			open: details.open,
-			isoBound: value,
-			pickerLen: pickerValue.length,
-			hasMin: !!minValue,
-			hasMax: !!maxValue,
-			disabled
-		});
-		// #endregion
-	}}
+	onValueChange={(details) => emit(details.value)}
 >
 	<DatePicker.Control class="z-date-field__control">
 		<DatePicker.Input
@@ -142,52 +78,7 @@
 			{required}
 			aria-invalid={invalid || undefined}
 		/>
-		<DatePicker.Trigger
-			class="z-date-field__trigger"
-			aria-label="Open calendar"
-			onpointerdown={(e) => {
-				// #region agent log
-				logTriggerPointer(e, 'pointerdown');
-				// #endregion
-			}}
-			onclick={(e) => {
-				// #region agent log
-				logTriggerPointer(e, 'click');
-				queueMicrotask(() => {
-					const trigger = document.querySelector(
-						'[data-scope="date-picker"][data-part="trigger"][data-state="open"]'
-					) as HTMLElement | null;
-					const content = document.querySelector(
-						'[data-scope="date-picker"][data-part="content"][data-state="open"]'
-					) as HTMLElement | null;
-					const positioner = content?.closest(
-						'[data-scope="date-picker"][data-part="positioner"]'
-					) as HTMLElement | null;
-					const cr = content?.getBoundingClientRect();
-					const y =
-						positioner?.style.getPropertyValue('--y') ||
-						getComputedStyle(positioner ?? document.documentElement).getPropertyValue('--y');
-					dbg('E', 'DateField.svelte:trigger:click:after', 'post-click layout', {
-						runId: 'post-fix',
-						dataState: trigger?.getAttribute('data-state'),
-						ariaExpanded: trigger?.getAttribute('aria-expanded'),
-						contentInDom: !!content,
-						contentW: cr ? Math.round(cr.width) : null,
-						contentH: cr ? Math.round(cr.height) : null,
-						contentY: cr ? Math.round(cr.y) : null,
-						positionerY: y?.trim() || null,
-						inViewport: !!(
-							cr &&
-							cr.width > 0 &&
-							cr.height > 0 &&
-							cr.y > -cr.height &&
-							cr.y < window.innerHeight
-						)
-					});
-				});
-				// #endregion
-			}}
-		>
+		<DatePicker.Trigger class="z-date-field__trigger" aria-label="Open calendar">
 			<Calendar class="size-4" aria-hidden="true" />
 		</DatePicker.Trigger>
 	</DatePicker.Control>
