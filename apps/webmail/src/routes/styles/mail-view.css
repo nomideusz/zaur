@@ -258,3 +258,24 @@
 		border-radius: 9999px;
 		background-color: color-mix(in srgb, var(--z-fg-muted) 45%, transparent);
 	}
+
+	/* Splitter grip between folder sidebar and mail panes (desktop). The
+	   sidebar's own border-r stays the visual divider; this is the hit area. */
+	.z-mail-split-trigger {
+		position: relative;
+		z-index: 5;
+		flex-shrink: 0;
+		width: 0.375rem;
+		margin-inline: -0.1875rem;
+		padding: 0;
+		border: 0;
+		background: transparent;
+		cursor: col-resize;
+		transition: background-color 120ms ease;
+	}
+
+	.z-mail-split-trigger:hover,
+	.z-mail-split-trigger:focus-visible,
+	.z-mail-split-trigger[data-state='dragging'] {
+		background-color: color-mix(in srgb, var(--z-accent) 30%, transparent);
+	}

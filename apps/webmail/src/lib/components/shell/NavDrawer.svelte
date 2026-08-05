@@ -20,6 +20,12 @@
 	lazyMount
 	unmountOnExit
 >
+	<!-- Left-edge gesture strip — swipe in from the edge to open folder nav.
+	     Starts below the top bar so it never shadows the hamburger button. -->
+	<Drawer.SwipeArea
+		class="fixed bottom-0 left-0 z-40 w-4 md:hidden"
+		style="top: var(--z-mobile-topbar-height)"
+	/>
 	<Portal>
 		<Drawer.Backdrop class="z-mailbox-drawer-backdrop fixed inset-0 bg-black/50 md:hidden" />
 		<Drawer.Positioner

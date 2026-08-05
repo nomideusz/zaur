@@ -418,6 +418,8 @@
 			open={colorMenuOpen}
 			onOpenChange={(details) => (colorMenuOpen = details.open)}
 			positioning={{ placement: 'bottom-start', gutter: 6 }}
+			lazyMount
+			unmountOnExit
 		>
 			<TooltipWrap label="Text color">
 				{#snippet trigger({ props })}

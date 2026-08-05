@@ -30,7 +30,13 @@
 	<!-- Ark tooltips are self-contained: each Root owns its open/close delay, so no
 	     ancestor Provider is required (unlike bits-ui). `interactive` defaults to false
 	     (≈ bits disableHoverableContent); `side` → positioning.placement, sideOffset → gutter. -->
-	<Tooltip.Root openDelay={300} closeDelay={150} positioning={{ placement: side, gutter: 6 }}>
+	<Tooltip.Root
+		openDelay={300}
+		closeDelay={150}
+		positioning={{ placement: side, gutter: 6 }}
+		lazyMount
+		unmountOnExit
+	>
 		<Tooltip.Trigger>
 			{#snippet asChild(triggerProps)}
 				{#if wrapDisabled}
