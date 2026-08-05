@@ -1,6 +1,8 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { Drawer } from '@ark-ui/svelte/drawer';
 	import { Portal } from '@ark-ui/svelte/portal';
+	import Settings from '$lib/components/icons/Settings.svelte';
 	import User from '$lib/components/icons/User.svelte';
 	import UserPlus from '$lib/components/icons/UserPlus.svelte';
 	import Avatar from '$lib/components/ui/Avatar.svelte';
@@ -33,6 +35,11 @@
 		if (mobileIsland.accountSwitchHandler) return;
 		auth.addAccountFlow();
 	}
+
+	function openSettings() {
+		mobileIsland.closeAccountSwitcher();
+		void goto('/settings');
+	}
 </script>
 
 <Drawer.Root
@@ -54,7 +61,7 @@
 			<Drawer.Content
 				class="z-mail-view z-account-switcher-sheet flex w-full max-w-lg flex-col bg-surface-raised outline-none"
 			>
-				<Drawer.Title class="sr-only">Switch account</Drawer.Title>
+				<Drawer.Title class="sr-only">Account menu</Drawer.Title>
 				<Drawer.Grabber class="z-mailbox-drawer-grabber">
 					<Drawer.GrabberIndicator class="z-mailbox-drawer-grabber-indicator" />
 				</Drawer.Grabber>
@@ -129,6 +136,19 @@
 							<UserPlus class="size-5" />
 						</span>
 						<span class="text-sm font-medium">Add account</span>
+					</button>
+					<button
+						type="button"
+						class="z-account-switcher-row flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-fg hover:bg-surface-sunken/80"
+						onclick={openSettings}
+					>
+						<span
+							class="flex size-10 shrink-0 items-center justify-center rounded-full bg-surface-sunken text-fg-muted"
+							aria-hidden="true"
+						>
+							<Settings class="size-5" />
+						</span>
+						<span class="text-sm font-medium">Settings</span>
 					</button>
 				</div>
 			</Drawer.Content>

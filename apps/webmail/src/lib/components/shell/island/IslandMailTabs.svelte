@@ -10,6 +10,6 @@
 		aria-label="New message"
 	>
 		<PenSquare class="size-[1.125rem]" aria-hidden="true" />
-		<span>Compose</span>
+		<span>New</span>
 	</a>
 </div>

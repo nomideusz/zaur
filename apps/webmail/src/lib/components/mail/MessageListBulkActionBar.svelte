@@ -38,18 +38,6 @@
 		bulkSelectionSummary(selectedCount, bulkSelectionCounts(mail.selectedMessages(), selectedIds))
 	);
 
-	/* The bar is fit-content, so space is measured on the host pane. The count
-	   chip is measured rather than guessed — its label runs from "2 selected"
-	   to "3 unseen, 2 normal" — and the rest of the chrome is fixed: the
-	   positioner's 2rem gutter, the capsule's 0.75rem padding plus border, the
-	   gaps between the three zones, and the 2.25rem close button. */
-	let hostWidth = $state(0);
-	let valueWidth = $state(0);
-	const FIXED_CHROME_PX = 94;
-	const actionsAvailableWidth = $derived(
-		Math.max(0, hostWidth - valueWidth - FIXED_CHROME_PX)
-	);
-
 	function handleOpenChange(open: boolean) {
 		if (!open) mail.clearSelection();
 	}
@@ -65,7 +53,7 @@
 	closeOnEscape={!disabled}
 	positioning={{ mode: 'inline' }}
 >
-	<div class="z-mail-list-action-bar-host flex min-h-0 flex-1 flex-col" bind:clientWidth={hostWidth}>
+	<div class="z-mail-list-action-bar-host flex min-h-0 flex-1 flex-col">
 		{#if children}
 			{@render children()}
 		{/if}
@@ -76,7 +64,7 @@
 		>
 			<!-- Grouping is spacing, not pipes: count | actions | close read as
 			     three zones because of the gaps and the accent count chip. -->
-			<span class="flex shrink-0" bind:clientWidth={valueWidth}>
+			<span class="flex shrink-0">
 				<ActionBarValue
 					count={selectedCount}
 					label={summary.headline}
@@ -85,13 +73,10 @@
 				/>
 			</span>
 
-			<ActionBarBody>
-				<BulkActionsRow
-					{mailboxRouteId}
-					{onBulkAction}
-					menuSide="top"
-					availableWidth={actionsAvailableWidth}
-				/>
+			<!-- Every action link stays reachable regardless of pane width:
+			     no width-fitting, the row wraps onto extra lines instead. -->
+			<ActionBarBody class="flex-wrap overflow-visible">
+				<BulkActionsRow {mailboxRouteId} {onBulkAction} menuSide="top" />
 			</ActionBarBody>
 
 			<ActionBarClose onclick={handleClose} aria-label="Clear selection">

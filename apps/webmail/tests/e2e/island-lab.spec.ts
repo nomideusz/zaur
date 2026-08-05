@@ -8,7 +8,7 @@ test('top bar shows mail filters and account rail; island is compose-only', asyn
 	await expect(page.getByTestId('account-rail')).toBeVisible();
 	await expect(page.getByRole('navigation', { name: 'Mail views' })).toBeVisible();
 	await expect(page.getByTestId('island-compose')).toBeVisible();
-	await expect(page.getByTestId('island-compose').getByText('Compose')).toBeVisible();
+	await expect(page.getByTestId('island-compose').getByText('New')).toBeVisible();
 });
 
 test('inline rail shows avatars for two accounts and switches on tap', async ({ page }) => {

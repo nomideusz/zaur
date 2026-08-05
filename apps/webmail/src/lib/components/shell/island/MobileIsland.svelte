@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { afterNavigate } from '$app/navigation';
+	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import Mail from '$lib/components/icons/Mail.svelte';
 	import PenSquare from '$lib/components/icons/PenSquare.svelte';
@@ -69,9 +69,18 @@
 
 	const PillIcon = $derived.by(() => {
 		if (islandMode === 'reader') return Reply;
-		if (islandMode === 'compose') return PenSquare;
+		if (islandMode === 'compose' || islandMode === 'mail') return PenSquare;
 		return activeMobileNavItem(pathname)?.icon ?? Mail;
 	});
+
+	/* Collapsed pill in mail browse mode IS the compose action — one tap, not expand-then-tap. */
+	function onPillClick() {
+		if (islandMode === 'mail') {
+			void goto('/mail/compose');
+			return;
+		}
+		mobileIsland.expand();
+	}
 
 	$effect(() => {
 		const mq = window.matchMedia('(max-width: 767px)');
@@ -158,10 +167,10 @@
 		<button
 			type="button"
 			class="z-mobile-island__pill"
-			aria-label="Show navigation"
+			aria-label={islandMode === 'mail' ? 'New message' : 'Show navigation'}
 			aria-expanded={!collapsed}
 			inert={!collapsed || undefined}
-			onclick={() => mobileIsland.expand()}
+			onclick={onPillClick}
 		>
 			<PillIcon class="size-[1.125rem]" aria-hidden="true" />
 		</button>

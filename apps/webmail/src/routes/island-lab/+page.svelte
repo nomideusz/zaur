@@ -122,9 +122,9 @@
 		<div class="z-mobile-island" data-testid="island-lab-shell">
 			<div class="z-mobile-island__content">
 				<div class="z-mobile-island__tabs z-mobile-island__tabs--compose" data-testid="island-compose">
-					<a href="/mail/compose" class="z-mobile-island__compose-pill">
+					<a href="/mail/compose" class="z-mobile-island__compose-pill" aria-label="New message">
 						<PenSquare class="size-[1.125rem]" aria-hidden="true" />
-						<span>Compose</span>
+						<span>New</span>
 					</a>
 				</div>
 			</div>

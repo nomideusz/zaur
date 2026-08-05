@@ -59,10 +59,11 @@
 				data-testid="account-rail-avatar"
 				data-account-key={account.key}
 				aria-label={account.isActive
-					? `${account.displayName} (current account)`
+					? `Account menu for ${account.displayName}`
 					: `Switch to ${account.displayName}`}
 				aria-current={account.isActive ? 'true' : undefined}
-				onclick={() => void switchTo(account.key)}
+				aria-expanded={account.isActive ? mobileIsland.accountSwitcherOpen : undefined}
+				onclick={() => (account.isActive ? openSheet() : void switchTo(account.key))}
 				oncontextmenu={(event) => {
 					event.preventDefault();
 					openSheet();

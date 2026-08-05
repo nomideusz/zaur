@@ -6,9 +6,6 @@
 	import NavDrawerHeader from '$lib/components/shell/NavDrawerHeader.svelte';
 	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 
-	/** One snap — ~92% height; swipe down on the grabber (or sheet) to dismiss. */
-	const snapPoints = [0.92];
-
 	afterNavigate(() => {
 		mobileIsland.closeNavDrawer();
 	});
@@ -19,24 +16,19 @@
 	onOpenChange={(details) => {
 		mobileIsland.navDrawerOpen = details.open;
 	}}
-	swipeDirection="down"
-	{snapPoints}
-	defaultSnapPoint={snapPoints[0]}
+	swipeDirection="start"
 	lazyMount
 	unmountOnExit
 >
 	<Portal>
 		<Drawer.Backdrop class="z-mailbox-drawer-backdrop fixed inset-0 bg-black/50 md:hidden" />
 		<Drawer.Positioner
-			class="z-mailbox-drawer-positioner fixed inset-0 flex items-end justify-center md:hidden"
+			class="z-mailbox-drawer-positioner fixed inset-0 flex items-stretch justify-start md:hidden"
 		>
 			<Drawer.Content
-				class="z-mail-view z-mailbox-drawer-content z-nav-drawer-content flex w-full max-w-lg flex-col bg-surface-raised outline-none"
+				class="z-mail-view z-nav-drawer-content flex h-full flex-col bg-surface-raised outline-none"
 			>
 				<Drawer.Title class="sr-only">Navigation</Drawer.Title>
-				<Drawer.Grabber class="z-mailbox-drawer-grabber">
-					<Drawer.GrabberIndicator class="z-mailbox-drawer-grabber-indicator" />
-				</Drawer.Grabber>
 				<NavDrawerHeader />
 				<MailboxSidebar
 					variant="drawer"

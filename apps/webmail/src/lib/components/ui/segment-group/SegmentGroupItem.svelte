@@ -30,7 +30,7 @@
 
 	const itemClass = $derived(
 		cn(
-			'z-segment-group__item relative z-1 shrink-0 border border-transparent outline-none',
+			'z-segment-group__item relative z-1 inline-flex shrink-0 items-center justify-center border border-transparent outline-none',
 			isStatic ? 'cursor-default' : 'cursor-pointer',
 			segmentGroup.variant === 'default' && segmentGroup.track && 'z-segmented__item',
 			segmentGroup.variant === 'underline' && 'px-2 py-1.5 text-sm font-medium text-fg-muted',

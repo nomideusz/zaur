@@ -651,7 +651,8 @@
 		max-width: min(100%, 42rem);
 		align-items: center;
 		gap: 0.25rem;
-		border-radius: 9999px;
+		/* Pill at one row, sane corners when the action row wraps to two. */
+		border-radius: 1.75rem;
 		border: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
 		background-color: color-mix(in srgb, var(--z-surface-raised) 85%, transparent);
 		backdrop-filter: saturate(180%) blur(20px);

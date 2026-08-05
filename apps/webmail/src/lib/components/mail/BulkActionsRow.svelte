@@ -112,15 +112,18 @@
 		'archive'
 	]);
 	/**
-	 * Island prefers Seen + Archive inline (everyday triage); Highlight/Spam
-	 * overflow into More. Desktop keeps Highlight as the editorial first link.
+	 * Island prefers Seen inline (everyday triage); Archive is a deliberate
+	 * secondary action there — always in More, never an inline icon — so a
+	 * stray tap can't archive a selection. Desktop keeps Highlight first.
 	 */
+	const islandSecondary = $derived(iconOnly ? actions.filter((a) => a.id === 'archive') : []);
 	const markActions = $derived(
 		actions
 			.filter((action) => markActionIds.has(action.id))
+			.filter((action) => !(iconOnly && action.id === 'archive'))
 			.map((action) => {
 				if (!iconOnly) return action;
-				if (action.id === 'mark-seen' || action.id === 'unsee' || action.id === 'archive') {
+				if (action.id === 'mark-seen' || action.id === 'unsee') {
 					return { ...action, priority: 1 };
 				}
 				if (action.id === 'important' || action.id === 'not-important') {
@@ -143,9 +146,14 @@
 	const inlineActions = $derived(fitted.inline);
 	const overflowActions = $derived(fitted.overflow);
 	/** Read-state / archive group first, then spam — separated in the menu. */
-	const overflowPrimary = $derived(overflowActions.filter((action) => action.id !== 'spam'));
+	const overflowPrimary = $derived([
+		...islandSecondary,
+		...overflowActions.filter((action) => action.id !== 'spam')
+	]);
 	const overflowSpam = $derived(overflowActions.filter((action) => action.id === 'spam'));
-	const showMoreMenu = $derived(overflowActions.length > 0 || canMove);
+	const showMoreMenu = $derived(
+		overflowActions.length > 0 || islandSecondary.length > 0 || canMove
+	);
 	/** Keyboard `v` opens the More menu (Move targets live there). */
 	let moreOpen = $state(false);
 

@@ -219,6 +219,17 @@
 		z-index: 55;
 	}
 
+	/* Left-anchored nav drawer (hamburger). Bottom-sheet styles below stay for AccountSwitcherSheet. */
+	.z-nav-drawer-content {
+		width: min(85vw, 20rem);
+		border-right: 1px solid var(--z-border);
+		border-top-right-radius: 1rem;
+		border-bottom-right-radius: 1rem;
+		box-shadow: 12px 0 40px rgb(0 0 0 / 0.18);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+		padding-left: env(safe-area-inset-left, 0px);
+	}
+
 	.z-mailbox-drawer-content {
 		max-height: min(92dvh, 100%);
 		border-top-left-radius: 1rem;
