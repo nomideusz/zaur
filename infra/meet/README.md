@@ -56,13 +56,21 @@ DISABLE_HTTPS=1
 ENABLE_HTTP_REDIRECT=0
 ENABLE_LETSENCRYPT=0
 HTTP_PORT=8000
-HTTPS_PORT=8443
+HTTPS_PORT=18443
 # Public IPv4 of the Contabo host (required for clients to reach media):
 JVB_ADVERTISE_IPS=<CONTABO_PUBLIC_IP>
 JVB_PORT=10000
 ```
 
-Point Traefik / Caddy / Dokploy at `http://127.0.0.1:8000` for `meet.zaur.app`.
+After first `docker compose up`, ensure config volumes are writable by uid 1000:
+
+```bash
+chown -R 1000:1000 /opt/jitsi-meet-cfg
+```
+
+On Contabo, Traefik file route lives at
+`/etc/dokploy/traefik/dynamic/meet-zaur.yml` → `http://172.17.0.1:8000`.
+Elsewhere, point Traefik / Caddy / Dokploy at `http://127.0.0.1:8000` for `meet.zaur.app`.
 WebSockets that must be forwarded (hop-by-hop):
 
 - `/xmpp-websocket`
