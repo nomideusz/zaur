@@ -1,5 +1,5 @@
 import { env } from '$env/dynamic/public';
-import { normalizeJitsiBaseUrl } from '$lib/utils/jitsi';
+import { normalizeMeetBaseUrl } from '$lib/utils/meet';
 
 export const appConfig = {
 	appName: env.PUBLIC_APP_NAME || 'Webmail',
@@ -12,7 +12,8 @@ export const appConfig = {
 	// Optional signup service. Empty (the default) hides every "get an address"
 	// entry point — self-hosted deploys create accounts in Stalwart directly.
 	registerUrl: (env.PUBLIC_REGISTER_URL || '').replace(/\/$/, ''),
-	// Optional self-hosted Jitsi base URL (e.g. https://meet.zaur.app). Empty
+	// Optional self-hosted Galene base URL (e.g. https://meet.zaur.app). Empty
 	// hides the calendar "Video call" control; see infra/meet/.
-	jitsiUrl: normalizeJitsiBaseUrl(env.PUBLIC_JITSI_URL)
+	// PUBLIC_JITSI_URL is a temporary alias while deploys rename the env var.
+	galeneUrl: normalizeMeetBaseUrl(env.PUBLIC_GALENE_URL || env.PUBLIC_JITSI_URL)
 };

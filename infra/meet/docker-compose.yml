@@ -1,0 +1,29 @@
+# Galene on the Contabo host. Copy to /opt/galene/docker-compose.yml
+# (deploy.sh does this) or run from this directory with the env below.
+services:
+  galene:
+    build:
+      context: .
+      args:
+        GALENE_REF: ${GALENE_REF:-master}
+    image: zaur-galene:local
+    restart: unless-stopped
+    command:
+      - galene
+      - -insecure
+      - -http
+      - ":8000"
+      - -turn
+      - ${PUBLIC_IP}:1194
+      - -udp-range
+      - "10000"
+    ports:
+      - "8000:8000"
+      - "1194:1194/tcp"
+      - "1194:1194/udp"
+      - "10000:10000/udp"
+    volumes:
+      - ${GALENE_DATA:-/opt/galene/data}:/opt/galene/data
+      - ${GALENE_GROUPS:-/opt/galene/groups}:/opt/galene/groups
+      - ${GALENE_RECORDINGS:-/opt/galene/recordings}:/opt/galene/recordings
+    working_dir: /opt/galene

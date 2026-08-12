@@ -7,7 +7,7 @@ Monorepo for the Zaur communications suite — Mail, Chat, Discuss, Meet.
 
 The suite lives across subdomains: **Mail** (`register.zaur.app` + `webmail.zaur.app`),
 **Chat** (`chat.zaur.app`, Once Campfire), **Discuss** (`discourse.zaur.app`, Discourse),
-and **Meet** (`meet.zaur.app`, self-hosted Jitsi — see [`infra/meet/`](infra/meet/)).
+and **Meet** (`meet.zaur.app`, self-hosted Galene — see [`infra/meet/`](infra/meet/)).
 The apex `zaur.app` is the marketing landing site (`@zaur/web`).
 
 ## Apps
@@ -20,8 +20,8 @@ The apex `zaur.app` is the marketing landing site (`@zaur/web`).
 | **Native Mail** (planned) | `apps/mobile` | iOS + Android | App Store + Google Play |
 
 Mail server (`mail.zaur.app`) is Stalwart — config and ops notes live in [`infra/mail/`](infra/mail/).
-Video (`meet.zaur.app`) is Jitsi — ops notes in [`infra/meet/`](infra/meet/); webmail
-enables calendar video controls when `PUBLIC_JITSI_URL` is set.
+Video (`meet.zaur.app`) is Galene — ops notes in [`infra/meet/`](infra/meet/); webmail
+enables calendar video controls when `PUBLIC_GALENE_URL` is set.
 
 ## Packages
 
@@ -79,7 +79,7 @@ docs/
 infra/
   auth/          Stalwart identity architecture and retired Logto notes
   mail/          Stalwart ops notes
-  meet/          Self-hosted Jitsi (docker-jitsi-meet) ops notes
+  meet/          Self-hosted Galene ops notes
   deploy/        Legacy auth/Logto provisioning scripts
 ```
 

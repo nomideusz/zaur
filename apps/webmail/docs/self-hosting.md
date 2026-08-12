@@ -57,9 +57,9 @@ With OAuth, the server stores revocable tokens instead of the password:
   directly.
 - **Branding** — `PUBLIC_APP_NAME` names the app in the UI, page titles that
   use `appConfig`, and the PWA install manifest (served dynamically).
-- **Video calls** — set `PUBLIC_JITSI_URL` to your self-hosted Jitsi base
-  (e.g. `https://meet.example.com`) to enable the calendar "Video call"
-  toggle and "Join call" button. Deploy notes: `infra/meet/`.
+- **Video calls** — set `PUBLIC_GALENE_URL` to your self-hosted Galene base
+  (e.g. `https://meet.example.com`) and `GALENE_ADMIN_PASSWORD` so calendar
+  **Join call** can mint invite tokens. Deploy notes: `infra/meet/`.
 
 ## What works on non-Stalwart JMAP servers
 

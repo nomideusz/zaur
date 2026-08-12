@@ -17,10 +17,10 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 	import {
-		createJitsiMeetingUrl,
-		isJitsiConfigured,
-		isJitsiMeetingUrl
-	} from '$lib/utils/jitsi';
+		createMeetingUrl,
+		isMeetConfigured,
+		isMeetingUrl
+	} from '$lib/utils/meet';
 
 	const isEdit = $derived(calendar.composeMode === 'edit');
 	const submitLabel = $derived(
@@ -59,28 +59,28 @@
 	const calendarOptions = $derived(
 		calendar.calendars.map((item) => ({ value: item.id, label: item.name }))
 	);
-	const jitsiEnabled = $derived(isJitsiConfigured(appConfig.jitsiUrl));
+	const meetEnabled = $derived(isMeetConfigured(appConfig.galeneUrl));
 	const videoCall = $derived(
-		jitsiEnabled && isJitsiMeetingUrl(calendar.composeDraft.location, appConfig.jitsiUrl)
+		meetEnabled && isMeetingUrl(calendar.composeDraft.location, appConfig.galeneUrl)
 	);
 
 	function setVideoCall(on: boolean) {
-		if (!appConfig.jitsiUrl) return;
+		if (!appConfig.galeneUrl) return;
 		if (on) {
 			const loc = calendar.composeDraft.location.trim();
-			if (loc && !isJitsiMeetingUrl(loc, appConfig.jitsiUrl)) {
+			if (loc && !isMeetingUrl(loc, appConfig.galeneUrl)) {
 				const note = `Location: ${loc}`;
 				const description = calendar.composeDraft.description.trim();
 				if (!description.includes(note)) {
 					calendar.composeDraft.description = [description, note].filter(Boolean).join('\n\n');
 				}
 			}
-			if (!isJitsiMeetingUrl(calendar.composeDraft.location, appConfig.jitsiUrl)) {
-				calendar.composeDraft.location = createJitsiMeetingUrl(appConfig.jitsiUrl);
+			if (!isMeetingUrl(calendar.composeDraft.location, appConfig.galeneUrl)) {
+				calendar.composeDraft.location = createMeetingUrl(window.location.origin);
 			}
 			return;
 		}
-		if (isJitsiMeetingUrl(calendar.composeDraft.location, appConfig.jitsiUrl)) {
+		if (isMeetingUrl(calendar.composeDraft.location, appConfig.galeneUrl)) {
 			calendar.composeDraft.location = '';
 		}
 	}
@@ -238,7 +238,7 @@
 					</p>
 				{/if}
 
-				{#if jitsiEnabled}
+				{#if meetEnabled}
 					<Checkbox
 						checked={videoCall}
 						label="Video call"
@@ -259,7 +259,7 @@
 						readonly={videoCall}
 					/>
 					{#if videoCall}
-						<p class="text-xs text-fg-muted">Opens on your Jitsi server when guests join.</p>
+						<p class="text-xs text-fg-muted">Guests join from this link; signed-in users enter with their name.</p>
 					{/if}
 				</label>
 

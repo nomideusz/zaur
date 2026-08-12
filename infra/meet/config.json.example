@@ -1,0 +1,11 @@
+{
+  "canonicalHost": "meet.zaur.app",
+  "proxyURL": "https://meet.zaur.app/",
+  "writableGroups": true,
+  "users": {
+    "admin": {
+      "password": "change-me",
+      "permissions": "admin"
+    }
+  }
+}

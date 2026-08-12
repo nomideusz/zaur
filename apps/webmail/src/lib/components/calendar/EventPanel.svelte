@@ -13,7 +13,7 @@
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { formatEventTime } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
-	import { extractJitsiMeetingUrl } from '$lib/utils/jitsi';
+	import { extractMeetingGroup, meetingJoinPath } from '$lib/utils/meet';
 
 	const event = $derived(calendar.selectedEvent);
 	const eventCalendars = $derived(
@@ -22,7 +22,8 @@
 	const eventTitle = $derived(event?.title?.trim() || 'Untitled event');
 	const eventDescription = $derived(event?.description?.trim() ?? '');
 	const eventLocation = $derived(event?.location?.trim() ?? '');
-	const meetingUrl = $derived(extractJitsiMeetingUrl(eventLocation, appConfig.jitsiUrl));
+	const meetingGroup = $derived(extractMeetingGroup(eventLocation, appConfig.galeneUrl));
+	const meetingUrl = $derived(meetingGroup ? meetingJoinPath(meetingGroup) : null);
 	const panelPadding = 'px-4 py-3';
 
 	function deleteEvent() {
@@ -80,7 +81,7 @@
 					rel="noopener noreferrer"
 					class="min-w-0 break-all text-accent underline-offset-2 hover:underline"
 				>
-					{meetingUrl}
+					{eventLocation || meetingUrl}
 				</a>
 			</div>
 		{:else if eventLocation}
