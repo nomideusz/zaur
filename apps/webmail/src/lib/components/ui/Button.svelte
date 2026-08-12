@@ -8,6 +8,8 @@
 	interface Props {
 		variant?: Variant;
 		href?: string;
+		target?: string;
+		rel?: string;
 		type?: 'button' | 'submit';
 		class?: string;
 		disabled?: boolean;
@@ -21,6 +23,8 @@
 	let {
 		variant = 'primary',
 		href,
+		target,
+		rel,
 		type = 'button',
 		class: className,
 		disabled = false,
@@ -52,6 +56,8 @@
 				<a
 					{...props}
 					{href}
+					{target}
+					{rel}
 					class={classes}
 					aria-disabled={disabled}
 					aria-describedby={ariaDescribedby}
@@ -74,7 +80,14 @@
 		{/snippet}
 	</TooltipWrap>
 {:else if href}
-	<a {href} class={classes} aria-disabled={disabled} aria-describedby={ariaDescribedby}>
+	<a
+		{href}
+		{target}
+		{rel}
+		class={classes}
+		aria-disabled={disabled}
+		aria-describedby={ariaDescribedby}
+	>
 		{@render children()}
 	</a>
 {:else}

@@ -56,6 +56,7 @@ Open [http://localhost:5173](http://localhost:5173).
 | Variable | Description |
 | --- | --- |
 | `PUBLIC_JMAP_SERVER_URL` | JMAP server URL (default: `https://mail.zaur.app`) |
+| `PUBLIC_JITSI_URL` | Optional Jitsi Meet base URL — enables calendar video-call controls |
 | `PUBLIC_APP_NAME` | App title shown in the UI |
 | `SESSION_SECRET` | **Required in production** — seals credentials in the server-side session store; the cookie contains only an opaque id |
 | `STORE_DB_PATH` | Session and rate-limit SQLite database (default: `.data/store.sqlite`) |

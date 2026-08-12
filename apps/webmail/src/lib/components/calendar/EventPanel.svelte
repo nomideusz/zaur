@@ -2,15 +2,18 @@
 	import MapPin from '$lib/components/icons/MapPin.svelte';
 	import Pencil from '$lib/components/icons/Pencil.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
+	import Video from '$lib/components/icons/Video.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import MobileSheet from '$lib/components/ui/MobileSheet.svelte';
+	import { appConfig } from '$lib/config';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { formatEventTime } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
+	import { extractJitsiMeetingUrl } from '$lib/utils/jitsi';
 
 	const event = $derived(calendar.selectedEvent);
 	const eventCalendars = $derived(
@@ -19,6 +22,7 @@
 	const eventTitle = $derived(event?.title?.trim() || 'Untitled event');
 	const eventDescription = $derived(event?.description?.trim() ?? '');
 	const eventLocation = $derived(event?.location?.trim() ?? '');
+	const meetingUrl = $derived(extractJitsiMeetingUrl(eventLocation, appConfig.jitsiUrl));
 	const panelPadding = 'px-4 py-3';
 
 	function deleteEvent() {
@@ -67,7 +71,19 @@
 			</div>
 		{/if}
 
-		{#if eventLocation}
+		{#if meetingUrl}
+			<div class="flex items-start gap-2 text-fg">
+				<Video class="mt-0.5 size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+				<a
+					href={meetingUrl}
+					target="_blank"
+					rel="noopener noreferrer"
+					class="min-w-0 break-all text-accent underline-offset-2 hover:underline"
+				>
+					{meetingUrl}
+				</a>
+			</div>
+		{:else if eventLocation}
 			<div class="flex items-start gap-2 text-fg">
 				<MapPin class="mt-0.5 size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
 				<span>{eventLocation}</span>
@@ -86,8 +102,17 @@
 	</ScrollArea>
 
 	<footer
-		class={cn('flex shrink-0 gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]', panelPadding)}
+		class={cn(
+			'flex shrink-0 flex-wrap gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+			panelPadding
+		)}
 	>
+		{#if meetingUrl}
+			<Button href={meetingUrl} target="_blank" rel="noopener noreferrer" class="min-w-0">
+				<Video class="size-4" aria-hidden="true" />
+				Join call
+			</Button>
+		{/if}
 		<Button variant="ghost" onclick={editEvent}>
 			<Pencil class="size-4" aria-hidden="true" />
 			Edit

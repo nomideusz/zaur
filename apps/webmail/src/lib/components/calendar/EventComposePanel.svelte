@@ -10,11 +10,17 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import FocusTrap from '$lib/components/ui/FocusTrap.svelte';
+	import { appConfig } from '$lib/config';
 	import { EVENT_REPEAT_OPTIONS } from '$lib/jmap/recurrence';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
+	import {
+		createJitsiMeetingUrl,
+		isJitsiConfigured,
+		isJitsiMeetingUrl
+	} from '$lib/utils/jitsi';
 
 	const isEdit = $derived(calendar.composeMode === 'edit');
 	const submitLabel = $derived(
@@ -53,6 +59,31 @@
 	const calendarOptions = $derived(
 		calendar.calendars.map((item) => ({ value: item.id, label: item.name }))
 	);
+	const jitsiEnabled = $derived(isJitsiConfigured(appConfig.jitsiUrl));
+	const videoCall = $derived(
+		jitsiEnabled && isJitsiMeetingUrl(calendar.composeDraft.location, appConfig.jitsiUrl)
+	);
+
+	function setVideoCall(on: boolean) {
+		if (!appConfig.jitsiUrl) return;
+		if (on) {
+			const loc = calendar.composeDraft.location.trim();
+			if (loc && !isJitsiMeetingUrl(loc, appConfig.jitsiUrl)) {
+				const note = `Location: ${loc}`;
+				const description = calendar.composeDraft.description.trim();
+				if (!description.includes(note)) {
+					calendar.composeDraft.description = [description, note].filter(Boolean).join('\n\n');
+				}
+			}
+			if (!isJitsiMeetingUrl(calendar.composeDraft.location, appConfig.jitsiUrl)) {
+				calendar.composeDraft.location = createJitsiMeetingUrl(appConfig.jitsiUrl);
+			}
+			return;
+		}
+		if (isJitsiMeetingUrl(calendar.composeDraft.location, appConfig.jitsiUrl)) {
+			calendar.composeDraft.location = '';
+		}
+	}
 
 	function close() {
 		calendar.closeCompose();
@@ -207,14 +238,29 @@
 					</p>
 				{/if}
 
+				{#if jitsiEnabled}
+					<Checkbox
+						checked={videoCall}
+						label="Video call"
+						class="inline-flex cursor-pointer items-center gap-2 rounded-md text-sm"
+						onchange={(checked) => setVideoCall(checked === true)}
+					>
+						<span class="text-fg">Video call</span>
+					</Checkbox>
+				{/if}
+
 				<label class="block space-y-1.5">
 					<span class={fieldLabelClass}>Location</span>
 					<input
 						type="text"
 						class="z-input"
-						placeholder="Optional"
+						placeholder={videoCall ? 'Meeting link' : 'Optional'}
 						bind:value={calendar.composeDraft.location}
+						readonly={videoCall}
 					/>
+					{#if videoCall}
+						<p class="text-xs text-fg-muted">Opens on your Jitsi server when guests join.</p>
+					{/if}
 				</label>
 
 				<label class="block space-y-1.5">
