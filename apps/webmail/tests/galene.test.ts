@@ -6,7 +6,8 @@ import {
 	galeneConfigFromEnv,
 	galeneDisplayName,
 	galeneJoinUrl,
-	mintJoinUrl
+	mintJoinUrl,
+	tokenFromLocation
 } from '../src/lib/server/galene.ts';
 
 const config = {
@@ -46,7 +47,10 @@ describe('galene admin client', () => {
 
 	it('uses the mailbox local-part when no display name is set', () => {
 		assert.equal(galeneDisplayName({ username: 'ada@zaur.app' }), 'ada');
-		assert.equal(galeneDisplayName({ username: 'ada@zaur.app', displayName: 'Ada Lovelace' }), 'Ada Lovelace');
+		assert.equal(
+			galeneDisplayName({ username: 'ada@zaur.app', displayName: 'Ada Lovelace' }),
+			'Ada Lovelace'
+		);
 	});
 
 	it('creates the group then mints a named operator token', async () => {
@@ -57,68 +61,84 @@ describe('galene admin client', () => {
 			if (url.endsWith('/.groups/zaur-room')) {
 				return new Response(null, { status: 412 });
 			}
+			if (url.endsWith('/.wildcard-user')) {
+				return init?.method === 'GET'
+					? new Response(null, { status: 404 })
+					: new Response(null, { status: 201 });
+			}
+			if (url.endsWith('/.password')) {
+				return new Response(null, { status: 204 });
+			}
 			return new Response(null, { status: 201, headers: { location: 'N3Vgwp8PHns' } });
 		};
 
-		const join = await mintJoinUrl(
-			config,
-			'zaur-room',
-			{ username: 'Ada', operator: true },
-			fetchFn
-		);
+		const join = await mintJoinUrl(config, 'zaur-room', { username: 'Ada', operator: true }, fetchFn);
 		assert.equal(join, 'https://meet.zaur.app/group/zaur-room/?token=N3Vgwp8PHns');
-		assert.equal(calls.length, 2);
-		assert.equal(calls[0].init.method, 'PUT');
-		assert.equal((calls[0].init.headers as Record<string, string>)['If-None-Match'], '*');
-		assert.equal(calls[1].init.method, 'POST');
-		assert.match(String(calls[1].url), /\/\.tokens\/$/);
-		const body = JSON.parse(String(calls[1].init.body));
+		assert.equal(calls[0]?.init.method, 'PUT');
+		assert.equal((calls[0]?.init.headers as Record<string, string>)['If-None-Match'], '*');
+		const tokenCall = calls.find((call) => String(call.url).endsWith('/.tokens/'));
+		assert.equal(tokenCall?.init.method, 'POST');
+		const body = JSON.parse(String(tokenCall?.init.body));
 		assert.equal(body.username, 'Ada');
-		assert.deepEqual(body.permissions, ['op']);
+		assert.deepEqual(body.permissions, ['op', 'present', 'message', 'caption', 'token']);
 	});
 
-	it('treats an existing group as success', async () => {
-		const fetchFn: typeof fetch = async () => new Response(null, { status: 412 });
-		await ensureGroup(config, 'zaur-room', fetchFn);
-	});
-
-	it('writes authPortal on create and updates an existing group', async () => {
-		const portal = 'https://webmail.zaur.app/meet/zaur-room';
-		const calls: { method?: string; body?: string; ifMatch?: string }[] = [];
-		let created = false;
-		const fetchFn: typeof fetch = async (_input, init) => {
-			const method = init?.method ?? 'GET';
-			const headers = init?.headers as Record<string, string> | undefined;
+	it('opens an existing group so anyone with the link can join', async () => {
+		const calls: { url: string; method?: string; body?: string }[] = [];
+		const fetchFn: typeof fetch = async (input, init) => {
+			const url = String(input);
 			calls.push({
-				method,
-				body: typeof init?.body === 'string' ? init.body : undefined,
-				ifMatch: headers?.['If-Match']
+				url,
+				method: init?.method ?? 'GET',
+				body: typeof init?.body === 'string' ? init.body : undefined
 			});
-			if (method === 'PUT' && headers?.['If-None-Match'] === '*') {
-				if (!created) {
-					created = true;
-					return new Response(null, { status: 412 });
+			if (url.endsWith('/.groups/zaur-room')) {
+				if ((init?.method ?? 'GET') === 'GET') {
+					return new Response(
+						JSON.stringify({ authPortal: 'https://webmail.zaur.app/meet/zaur-room' }),
+						{
+							status: 200,
+							headers: { etag: '"1"', 'content-type': 'application/json' }
+						}
+					);
 				}
-				return new Response(null, { status: 204 });
-			}
-			if (method === 'GET') {
-				return new Response('{}', {
-					status: 200,
-					headers: { etag: '"1"', 'content-type': 'application/json' }
+				const headers = init?.headers as Record<string, string> | undefined;
+				return new Response(null, {
+					status: headers?.['If-None-Match'] === '*' ? 412 : 204
 				});
+			}
+			if (url.endsWith('/.wildcard-user')) {
+				return init?.method === 'GET'
+					? new Response(null, { status: 404 })
+					: new Response(null, { status: 201 });
+			}
+			if (url.endsWith('/.password')) {
+				return new Response(null, { status: 204 });
 			}
 			return new Response(null, { status: 204 });
 		};
-		await ensureGroup(config, 'zaur-room', fetchFn, portal);
-		assert.equal(calls[0]?.method, 'PUT');
-		assert.equal(calls[0]?.body, JSON.stringify({ authPortal: portal }));
-		assert.equal(calls[1]?.method, 'GET');
-		assert.equal(calls[2]?.method, 'PUT');
-		assert.equal(calls[2]?.ifMatch, '"1"');
-		assert.equal(calls[2]?.body, JSON.stringify({ authPortal: portal }));
+		await ensureGroup(config, 'zaur-room', fetchFn);
+		const groupPuts = calls.filter(
+			(call) => call.url.endsWith('/.groups/zaur-room') && call.method === 'PUT'
+		);
+		assert.equal(groupPuts[0]?.body, JSON.stringify({ 'unrestricted-tokens': true }));
+		assert.equal(groupPuts[1]?.body, JSON.stringify({ 'unrestricted-tokens': true }));
+		assert.equal(
+			calls.find((call) => call.url.endsWith('/.wildcard-user') && call.method === 'PUT')?.body,
+			JSON.stringify({ permissions: 'present' })
+		);
+		assert.equal(
+			calls.find((call) => call.url.endsWith('/.password'))?.body,
+			JSON.stringify({ type: 'wildcard' })
+		);
 	});
 
 	it('parses a token out of a Location path', async () => {
+		assert.equal(tokenFromLocation('N3Vgwp8PHns'), 'N3Vgwp8PHns');
+		assert.equal(
+			tokenFromLocation('/galene-api/v0/.groups/zaur-room/.tokens/abc_12'),
+			'abc_12'
+		);
 		const fetchFn: typeof fetch = async () =>
 			new Response(null, {
 				status: 201,

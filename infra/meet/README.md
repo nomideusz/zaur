@@ -107,9 +107,9 @@ Redeploy webmail. Calendar compose gains **Video call**; event details gain
 3. Open the same location URL in a private window (no webmail session) —
    Galene should ask for a display name, then connect.
 4. Opening `https://meet.zaur.app/group/{id}/` with no token (refresh after
-   Galene strips `?token=` from the address bar) should bounce through
-   webmail `/meet/{id}` and mint a new invite. Groups store that bounce as
-   `authPortal`.
+   Galene strips `?token=` from the address bar) should show Galene’s name
+   prompt. Rooms are open to anyone with the unguessable link (`wildcard-user`);
+   do not set `authPortal` — that bounce loops when a token fails.
 
 If audio/video fails but the page loads, check `PUBLIC_IP` in compose
 (`-turn <ip>:1194`), UDP/10000, and TCP+UDP/1194 first.

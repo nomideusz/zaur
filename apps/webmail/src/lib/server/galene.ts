@@ -8,6 +8,10 @@ function normalizeBaseUrl(raw: string | null | undefined): string {
 /** Invite tokens last a working day so calendar guests can join late. */
 export const GALENE_TOKEN_TTL_MS = 12 * 60 * 60 * 1000;
 
+/** Galene stores token permissions as an internal list — `"op"` does not expand. */
+const OPERATOR_PERMISSIONS = ['op', 'present', 'message', 'caption', 'token'];
+const PRESENTER_PERMISSIONS = ['present', 'message'];
+
 export type GaleneConfig = {
 	baseUrl: string;
 	adminUser: string;
@@ -55,32 +59,92 @@ function groupApiUrl(config: GaleneConfig, group: string): string {
 	return `${config.baseUrl}/galene-api/v0/.groups/${encodeURIComponent(group)}`;
 }
 
-function groupBody(authPortal?: string): string {
-	return JSON.stringify(authPortal ? { authPortal } : {});
+function jsonHeaders(config: GaleneConfig, extra?: Record<string, string>): Record<string, string> {
+	return apiHeaders(config, { 'Content-Type': 'application/json', ...extra });
 }
 
-/** If the group already exists, set authPortal so a token-less visit bounces back. */
-async function ensureAuthPortal(
+/** Location is either the raw token or a path ending in the token. */
+export function tokenFromLocation(location: string): string {
+	const trimmed = location.trim();
+	if (!trimmed) return '';
+	const path = trimmed.includes('://')
+		? (() => {
+				try {
+					return new URL(trimmed).pathname;
+				} catch {
+					return trimmed;
+				}
+			})()
+		: trimmed;
+	const last = path.split('/').filter(Boolean).pop() ?? '';
+	if (!last || last.startsWith('.')) return '';
+	return last;
+}
+
+/**
+ * Anyone with the room URL can join under any name. The unguessable group id
+ * is the access control; a failed invite token must not trap the client.
+ */
+async function ensureOpenJoin(
 	config: GaleneConfig,
 	group: string,
-	authPortal: string,
+	fetchFn: typeof fetch
+): Promise<void> {
+	const userUrl = `${groupApiUrl(config, group)}/.wildcard-user`;
+	const get = await fetchFn(userUrl, { headers: apiHeaders(config) });
+	const etag = get.ok ? get.headers.get('etag')?.trim() : undefined;
+	if (get.ok) await get.text().catch(() => undefined);
+	const putUser = await fetchFn(userUrl, {
+		method: 'PUT',
+		headers: jsonHeaders(config, etag ? { 'If-Match': etag } : {}),
+		body: JSON.stringify({ permissions: 'present' })
+	});
+	if (!putUser.ok && putUser.status !== 204 && putUser.status !== 201 && putUser.status !== 412) {
+		throw new GaleneError(await readError(putUser), putUser.status);
+	}
+
+	const putPassword = await fetchFn(`${userUrl}/.password`, {
+		method: 'PUT',
+		headers: jsonHeaders(config),
+		body: JSON.stringify({ type: 'wildcard' })
+	});
+	if (!putPassword.ok && putPassword.status !== 204 && putPassword.status !== 201) {
+		throw new GaleneError(await readError(putPassword), putPassword.status);
+	}
+}
+
+/**
+ * Drop authPortal from existing rooms. Galene strips `?token=` from the
+ * address bar; with authPortal set, a refresh bounces back to webmail
+ * instead of showing the name prompt.
+ */
+async function stripAuthPortal(
+	config: GaleneConfig,
+	group: string,
 	fetchFn: typeof fetch
 ): Promise<void> {
 	const url = groupApiUrl(config, group);
 	const get = await fetchFn(url, { headers: apiHeaders(config) });
 	if (!get.ok) return;
-	const desc = (await get.json().catch(() => null)) as { authPortal?: string } | null;
-	if (!desc || desc.authPortal === authPortal) return;
 	const etag = get.headers.get('etag')?.trim();
+	let desc: Record<string, unknown> = {};
+	try {
+		desc = JSON.parse(await get.text()) as Record<string, unknown>;
+	} catch {
+		return;
+	}
+	if (!('authPortal' in desc) && desc['unrestricted-tokens'] === true) return;
+	delete desc.authPortal;
+	delete desc.users;
+	delete desc['wildcard-user'];
+	delete desc.authKeys;
+	desc['unrestricted-tokens'] = true;
 	const put = await fetchFn(url, {
 		method: 'PUT',
-		headers: apiHeaders(config, {
-			'Content-Type': 'application/json',
-			...(etag ? { 'If-Match': etag } : {})
-		}),
-		body: JSON.stringify({ ...desc, authPortal })
+		headers: jsonHeaders(config, etag ? { 'If-Match': etag } : {}),
+		body: JSON.stringify(desc)
 	});
-	if (!put.ok && put.status !== 412) {
+	if (!put.ok && put.status !== 204 && put.status !== 201 && put.status !== 412) {
 		throw new GaleneError(await readError(put), put.status);
 	}
 }
@@ -89,22 +153,17 @@ async function ensureAuthPortal(
 export async function ensureGroup(
 	config: GaleneConfig,
 	group: string,
-	fetchFn: typeof fetch = fetch,
-	authPortal?: string
+	fetchFn: typeof fetch = fetch
 ): Promise<void> {
 	const res = await fetchFn(groupApiUrl(config, group), {
 		method: 'PUT',
-		headers: apiHeaders(config, {
-			'Content-Type': 'application/json',
-			'If-None-Match': '*'
-		}),
-		body: groupBody(authPortal)
+		headers: jsonHeaders(config, { 'If-None-Match': '*' }),
+		body: JSON.stringify({ 'unrestricted-tokens': true })
 	});
 	// 412/409: already created. 200/201/204: created.
 	if (res.ok || res.status === 412 || res.status === 409) {
-		if (authPortal && (res.status === 412 || res.status === 409)) {
-			await ensureAuthPortal(config, group, authPortal, fetchFn);
-		}
+		await stripAuthPortal(config, group, fetchFn);
+		await ensureOpenJoin(config, group, fetchFn);
 		return;
 	}
 	throw new GaleneError(await readError(res), res.status);
@@ -113,8 +172,6 @@ export async function ensureGroup(
 export type InviteOptions = {
 	username?: string;
 	operator?: boolean;
-	/** Webmail `/meet/{group}` URL. Galene redirects here when the invite token is missing. */
-	authPortal?: string;
 };
 
 /** POST a stateful invite token (Zulip: `/groups/{id}/.tokens/`). */
@@ -125,7 +182,7 @@ export async function createInviteToken(
 	fetchFn: typeof fetch = fetch
 ): Promise<string> {
 	const body: Record<string, unknown> = {
-		permissions: options.operator ? ['op'] : ['present', 'message'],
+		permissions: options.operator ? OPERATOR_PERMISSIONS : PRESENTER_PERMISSIONS,
 		expires: new Date(Date.now() + GALENE_TOKEN_TTL_MS).toISOString()
 	};
 	const username = options.username?.trim();
@@ -135,15 +192,14 @@ export async function createInviteToken(
 		`${config.baseUrl}/galene-api/v0/.groups/${encodeURIComponent(group)}/.tokens/`,
 		{
 			method: 'POST',
-			headers: apiHeaders(config, { 'Content-Type': 'application/json' }),
+			headers: jsonHeaders(config),
 			body: JSON.stringify(body)
 		}
 	);
 	if (!res.ok) {
 		throw new GaleneError(await readError(res), res.status);
 	}
-	const location = res.headers.get('location')?.trim() ?? '';
-	const token = location.split('/').filter(Boolean).pop() ?? '';
+	const token = tokenFromLocation(res.headers.get('location') ?? '');
 	if (!token) {
 		throw new GaleneError('Galene did not return an invite token', 502);
 	}
@@ -160,7 +216,7 @@ export async function mintJoinUrl(
 	options: InviteOptions = {},
 	fetchFn: typeof fetch = fetch
 ): Promise<string> {
-	await ensureGroup(config, group, fetchFn, options.authPortal);
+	await ensureGroup(config, group, fetchFn);
 	const token = await createInviteToken(config, group, options, fetchFn);
 	return galeneJoinUrl(config, group, token);
 }
@@ -168,5 +224,5 @@ export async function mintJoinUrl(
 /** Display name Galene shows in the roster. */
 export function galeneDisplayName(account: { displayName?: string; username: string }): string {
 	const raw = account.displayName?.trim() || account.username.split('@')[0] || 'user';
-	return raw.replace(/[\u0000-\u001f]/g, '').slice(0, 64);
+	return raw.replace(/[\u0000-\u001f\\/]/g, '').slice(0, 64);
 }

@@ -1,12 +1,7 @@
 <script lang="ts">
-	import { afterNavigate, goto } from '$app/navigation';
+	import { afterNavigate } from '$app/navigation';
 	import { page } from '$app/stores';
-	import Mail from '$lib/components/icons/Mail.svelte';
-	import PenSquare from '$lib/components/icons/PenSquare.svelte';
-	import Reply from '$lib/components/icons/Reply.svelte';
 	import { isMailPath } from '$lib/mail/routes';
-	import { activeMobileNavItem } from '$lib/shell/app-nav';
-	import { attachIslandScrollEngine } from '$lib/shell/island-scroll';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
@@ -46,15 +41,6 @@
 		return 'default';
 	});
 
-	/* Action modes stay usable — bulk / reader / compose never scroll-shrink. */
-	const collapsible = $derived(
-		islandMode === 'mail' || islandMode === 'section' || islandMode === 'default'
-	);
-	const collapsed = $derived(mobileIsland.collapsed && collapsible);
-
-	/* Browse modes use a compact compose pill; bulk is the only wide action dock. */
-	const islandWide = $derived(!collapsed && islandMode === 'bulk');
-
 	/**
 	 * Compose + reader actions live in the sticky top bar — no floating dock.
 	 * Settings / empty default also hide the island (chrome is in MobileTopBar).
@@ -66,57 +52,19 @@
 			islandMode === 'default'
 	);
 
+	/* Browse modes use a compact compose control; bulk is the only wide action dock. */
+	const islandWide = $derived(islandMode === 'bulk');
+	const islandFab = $derived(!islandWide && !islandHidden);
+
 	/* Drop island scroll clearance when the dock is hidden (compose/reader). */
 	$effect(() => {
 		document.documentElement.toggleAttribute('data-z-island-hidden', islandHidden);
 		return () => document.documentElement.removeAttribute('data-z-island-hidden');
 	});
 
-	const PillIcon = $derived.by(() => {
-		if (islandMode === 'reader') return Reply;
-		if (islandMode === 'compose' || islandMode === 'mail') return PenSquare;
-		return activeMobileNavItem(pathname)?.icon ?? Mail;
-	});
-
-	/* Collapsed pill in mail browse mode IS the compose action — one tap, not expand-then-tap. */
-	function onPillClick() {
-		if (islandMode === 'mail') {
-			void goto('/mail/compose');
-			return;
-		}
-		mobileIsland.expand();
-	}
-
-	$effect(() => {
-		const mq = window.matchMedia('(max-width: 767px)');
-		let detach: (() => void) | null = null;
-		const sync = () => {
-			if (mq.matches && !detach) {
-				detach = attachIslandScrollEngine();
-			} else if (!mq.matches && detach) {
-				detach();
-				detach = null;
-				mobileIsland.collapsed = false;
-			}
-		};
-		sync();
-		mq.addEventListener('change', sync);
-		return () => {
-			mq.removeEventListener('change', sync);
-			detach?.();
-		};
-	});
-
-	/* A mode change is a context change — always come back expanded. */
-	$effect(() => {
-		void islandMode;
-		mobileIsland.expand();
-	});
-
 	afterNavigate(() => {
 		mobileIsland.closeNavDrawer();
 		mobileIsland.closeAccountSwitcher();
-		mobileIsland.expand();
 	});
 
 	let positionerEl = $state<HTMLDivElement | null>(null);
@@ -148,10 +96,10 @@
 		class={cn(
 			'z-mobile-island',
 			islandWide && 'z-mobile-island--wide',
-			collapsed && 'z-mobile-island--collapsed'
+			islandFab && 'z-mobile-island--fab'
 		)}
 	>
-		<div class="z-mobile-island__content" inert={collapsed || undefined}>
+		<div class="z-mobile-island__content">
 			{#if islandMode === 'bulk'}
 				<IslandBulkActions />
 			{:else if islandMode === 'mail'}
@@ -169,15 +117,5 @@
 				<IslandMinimal />
 			{/if}
 		</div>
-		<button
-			type="button"
-			class="z-mobile-island__pill"
-			aria-label={islandMode === 'mail' ? 'New message' : 'Show navigation'}
-			aria-expanded={!collapsed}
-			inert={!collapsed || undefined}
-			onclick={onPillClick}
-		>
-			<PillIcon class="size-[1.125rem]" aria-hidden="true" />
-		</button>
 	</div>
 </div>

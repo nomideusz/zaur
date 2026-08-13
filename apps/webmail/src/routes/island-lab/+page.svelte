@@ -114,12 +114,14 @@
 		</div>
 	</header>
 
-	<div class="flex flex-1 flex-col items-center justify-end px-4 pb-8">
-		<p class="mb-auto max-w-sm pt-6 text-center text-sm text-fg-muted">
-			Top bar holds filters + accounts; lean island is Compose only.
+	<div class="flex flex-1 flex-col px-4 pb-8">
+		<p class="mx-auto mb-auto max-w-sm pt-6 text-center text-sm text-fg-muted">
+			Top bar holds filters + accounts; New stays bottom-right and does not shrink on scroll.
 		</p>
+	</div>
 
-		<div class="z-mobile-island" data-testid="island-lab-shell">
+	<div class="z-mobile-island-positioner" data-testid="island-lab-shell">
+		<div class="z-mobile-island z-mobile-island--fab">
 			<div class="z-mobile-island__content">
 				<div class="z-mobile-island__tabs z-mobile-island__tabs--compose" data-testid="island-compose">
 					<a href="/mail/compose" class="z-mobile-island__compose-pill" aria-label="New message">

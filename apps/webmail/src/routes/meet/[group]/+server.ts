@@ -5,9 +5,9 @@ import { galeneConfigFromEnv, galeneDisplayName, mintJoinUrl } from '$lib/server
 import { log } from '$lib/server/log';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
 import { readSession } from '$lib/server/session';
-import { isMeetGroupId, meetingJoinPath } from '$lib/utils/meet';
+import { isMeetGroupId } from '$lib/utils/meet';
 
-export const GET: RequestHandler = async ({ params, cookies, request, url }) => {
+export const GET: RequestHandler = async ({ params, cookies, request }) => {
 	const group = String(params.group ?? '').trim();
 	if (!isMeetGroupId(group)) {
 		error(400, 'Invalid meeting link');
@@ -32,8 +32,7 @@ export const GET: RequestHandler = async ({ params, cookies, request, url }) => 
 	try {
 		const joinUrl = await mintJoinUrl(config, group, {
 			username: account ? galeneDisplayName(account) : undefined,
-			operator: Boolean(account),
-			authPortal: `${url.origin}${meetingJoinPath(group)}`
+			operator: Boolean(account)
 		});
 		return new Response(null, {
 			status: 302,

@@ -204,14 +204,14 @@
 		color: var(--z-fg-muted);
 	}
 
-	/* Mobile floating island — centered pill at the bottom of the viewport. */
+	/* Mobile floating island — compose control sits in the bottom-right corner. */
 	.z-mobile-island-positioner {
 		position: fixed;
 		inset-inline: 0;
 		bottom: 0;
 		z-index: 50;
 		display: flex;
-		justify-content: center;
+		justify-content: flex-end;
 		pointer-events: none;
 		padding-inline: max(0.75rem, env(safe-area-inset-left, 0px))
 			max(0.75rem, env(safe-area-inset-right, 0px));
@@ -262,6 +262,20 @@
 		width: 100%;
 	}
 
+	/* Compact compose control — one capsule, no nested chrome, no scroll-shrink. */
+	.z-mobile-island--fab {
+		min-height: 0;
+		border: 0;
+		background: transparent;
+		backdrop-filter: none;
+		-webkit-backdrop-filter: none;
+		box-shadow: none;
+	}
+
+	.z-mobile-island--fab .z-mobile-island__content {
+		padding: 0;
+	}
+
 	.z-mobile-island__tabs {
 		display: flex;
 		align-items: center;
@@ -286,9 +300,10 @@
 		gap: 0.5rem;
 		min-height: 2.75rem;
 		padding: 0.5rem 1.125rem;
+		border: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
 		border-radius: 9999px;
-		background-color: color-mix(in srgb, var(--z-accent) 12%, transparent);
-		color: var(--z-accent);
+		background-color: color-mix(in srgb, var(--z-surface-raised) 92%, transparent);
+		color: var(--z-fg);
 		font-size: 0.9375rem;
 		font-weight: 600;
 		text-decoration: none;
@@ -299,12 +314,12 @@
 	}
 
 	.z-mobile-island__compose-pill:hover {
-		background-color: color-mix(in srgb, var(--z-accent) 18%, transparent);
+		background-color: var(--z-surface-raised);
 	}
 
 	.z-mobile-island__compose-pill:focus-visible {
 		outline: 2px solid var(--z-accent);
-		outline-offset: -2px;
+		outline-offset: 2px;
 	}
 
 	@media (prefers-reduced-motion: no-preference) {
