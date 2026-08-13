@@ -4,6 +4,8 @@
 	import { SETTINGS_NAV_ICON_MAP } from '$lib/components/settings/settings-nav-icons';
 	import { isSettingsNavActive, settingsNavLinks } from '$lib/mail/config';
 	import { settingsShellClass } from '$lib/mail/layout';
+	import PaneSplit from '$lib/components/ui/PaneSplit.svelte';
+	import { PANE_SPLIT } from '$lib/components/ui/pane-split';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -35,6 +37,14 @@
 </script>
 
 <div class="z-settings-page {settingsRootClass} flex min-h-0 flex-1 flex-row overflow-hidden bg-surface">
+	<PaneSplit
+		storageKey={PANE_SPLIT.settingsNav.key}
+		defaultSize={PANE_SPLIT.settingsNav.defaultSize}
+		firstWidthVar="--width-sidebar"
+		firstClass="z-10 overflow-visible"
+		triggerLabel="Resize settings sidebar"
+	>
+		{#snippet first()}
 	<!-- Desktop sidebar -->
 	<aside
 		class="z-mail-pane-surface hidden min-h-0 w-(--width-sidebar) shrink-0 flex-col overflow-visible border-r border-border z-10 md:flex"
@@ -76,7 +86,8 @@
 			</nav>
 		</ScrollArea>
 </aside>
-
+		{/snippet}
+		{#snippet second()}
 	<!-- Main content -->
 	<div class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
 		{#if settings.showSearchBar && !isDesktop}
@@ -97,4 +108,6 @@
 			</div>
 		</ScrollArea>
 	</div>
+		{/snippet}
+	</PaneSplit>
 </div>

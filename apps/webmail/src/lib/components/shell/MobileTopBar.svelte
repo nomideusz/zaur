@@ -40,6 +40,7 @@
 	const onSettings = $derived(pathname.startsWith('/settings'));
 	const onCalendar = $derived(pathname.startsWith('/calendar'));
 	const onContacts = $derived(pathname.startsWith('/contacts'));
+	const onFiles = $derived(pathname.startsWith('/files'));
 	const suppressed = $derived(topSearchSuppressed(pathname));
 
 	const section = $derived(topSearchSection(pathname));
@@ -53,7 +54,7 @@
 	const showFilters = $derived(onMailList && !searchExpanded);
 	const showSettingsTabs = $derived(onSettings && !searchExpanded);
 	const showCalendarTabs = $derived(onCalendar && !searchExpanded);
-	const showSectionTitle = $derived(onContacts && !searchExpanded);
+	const showSectionTitle = $derived((onContacts || onFiles) && !searchExpanded);
 
 	/* Inner screens: back in the top bar; compose shows title + Send here;
 	   reader shows thread actions here. No floating island on those routes. */

@@ -89,6 +89,19 @@ test('opens calendar or explains missing calendar support', { tag: '@auth' }, as
 	await expect(page.getByRole('button', { name: 'New event' }).first()).toBeVisible();
 });
 
+test('opens files or explains missing file storage', { tag: '@auth' }, async ({ page }) => {
+	await openMail(page);
+	await page.goto('/files');
+
+	const unavailable = page.getByRole('heading', { name: 'Files unavailable' });
+	if (await unavailable.isVisible().catch(() => false)) {
+		await expect(unavailable).toBeVisible();
+		return;
+	}
+
+	await expect(page.getByRole('region', { name: 'Files list' })).toBeVisible();
+});
+
 test('opens the branded account security center', { tag: '@auth' }, async ({ page }) => {
 	await openMail(page);
 	await page.goto('/settings/security');

@@ -21,6 +21,12 @@ import type {
 	JMAPCalendarRights,
 	JMAPPrincipal
 } from './calendar-types';
+import type {
+	JMAPFileNode,
+	JMAPFileNodeCapability,
+	JMAPFileRights
+} from './file-types';
+import { FILE_NODE_PROPERTIES } from './file-types';
 import { JmapMethodError } from './errors';
 
 // Unauthorized handling is platform-injected: webmail leaves the default
@@ -76,6 +82,8 @@ const sessionCache = new Map<string, CachedSessionEntry>();
 
 const CALENDARS_URN = 'urn:ietf:params:jmap:calendars';
 const CALENDAR_USING = ['urn:ietf:params:jmap:core', CALENDARS_URN] as const;
+const FILENODE_URN = 'urn:ietf:params:jmap:filenode';
+const FILENODE_USING = ['urn:ietf:params:jmap:core', FILENODE_URN] as const;
 const PRINCIPALS_URN = 'urn:ietf:params:jmap:principals';
 const PRINCIPALS_OWNER_URN = 'urn:ietf:params:jmap:principals:owner';
 const PRINCIPAL_USING = ['urn:ietf:params:jmap:core', PRINCIPALS_URN] as const;
@@ -224,6 +232,24 @@ export class JMAPClient {
 
 	hasCalendars(): boolean {
 		return !!this.session?.capabilities?.[CALENDARS_URN];
+	}
+
+	hasFileNode(): boolean {
+		if (this.session?.capabilities?.[FILENODE_URN]) return true;
+		const accountId = this.getFileNodeAccountId();
+		return !!this.session?.accounts?.[accountId]?.accountCapabilities?.[FILENODE_URN];
+	}
+
+	getFileNodeAccountId(): string {
+		return this.session?.primaryAccounts?.[FILENODE_URN] ?? this.accountId;
+	}
+
+	getFileNodeCapability(): JMAPFileNodeCapability | null {
+		const accountId = this.getFileNodeAccountId();
+		const caps = this.session?.accounts?.[accountId]?.accountCapabilities?.[FILENODE_URN] as
+			| JMAPFileNodeCapability
+			| undefined;
+		return caps ?? null;
 	}
 
 	getCalendarAccountId(): string {
@@ -784,6 +810,194 @@ export class JMAPClient {
 		]);
 
 		this.throwCalendarSetErrors(response, 'Could not delete calendar');
+	}
+
+	private async fileNodeRequest(methodCalls: JMAPMethodCall[]): Promise<JMAPResponse> {
+		return this.request(methodCalls, [...FILENODE_USING]);
+	}
+
+	async queryFileNodes(
+		filter: Record<string, unknown>,
+		options?: { limit?: number; fetchParents?: boolean }
+	): Promise<JMAPFileNode[]> {
+		if (!this.hasFileNode()) return [];
+
+		const accountId = this.getFileNodeAccountId();
+		const response = await this.fileNodeRequest([
+			[
+				'FileNode/query',
+				{
+					accountId,
+					filter,
+					sort: [
+						{ property: 'nodeType', isAscending: true },
+						{ property: 'name', isAscending: true }
+					],
+					limit: options?.limit,
+					calculateTotal: false
+				},
+				'fnq'
+			],
+			[
+				'FileNode/get',
+				{
+					accountId,
+					'#ids': { resultOf: 'fnq', name: 'FileNode/query', path: '/ids' },
+					properties: [...FILE_NODE_PROPERTIES],
+					fetchParents: options?.fetchParents ?? false
+				},
+				'fng'
+			]
+		]);
+
+		assertNoMethodErrors(response, 'FileNode/query failed');
+		const getResult = response.methodResponses?.find(([name]) => name === 'FileNode/get');
+		if (getResult?.[0] !== 'FileNode/get') return [];
+		return (getResult[1].list as JMAPFileNode[]) ?? [];
+	}
+
+	async getFileNodes(ids: string[], fetchParents = false): Promise<JMAPFileNode[]> {
+		if (!this.hasFileNode() || !ids.length) return [];
+
+		const response = await this.fileNodeRequest([
+			[
+				'FileNode/get',
+				{
+					accountId: this.getFileNodeAccountId(),
+					ids,
+					properties: [...FILE_NODE_PROPERTIES],
+					fetchParents
+				},
+				'fng'
+			]
+		]);
+
+		assertNoMethodErrors(response, 'FileNode/get failed');
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'FileNode/get') return [];
+		return (first[1].list as JMAPFileNode[]) ?? [];
+	}
+
+	async createFileNode(input: {
+		parentId: string | null;
+		name: string;
+		nodeType?: 'file' | 'directory';
+		blobId?: string;
+		type?: string;
+	}): Promise<string> {
+		if (!this.hasFileNode()) throw new Error('File storage is not supported');
+
+		const trimmed = input.name.trim();
+		if (!trimmed) throw new Error('Name cannot be empty');
+
+		const creationId = 'new-node';
+		const data: Record<string, unknown> = {
+			name: trimmed,
+			parentId: input.parentId,
+			nodeType: input.nodeType ?? (input.blobId ? 'file' : 'directory')
+		};
+		if (input.blobId) data.blobId = input.blobId;
+		if (input.type) data.type = input.type;
+
+		const response = await this.fileNodeRequest([
+			[
+				'FileNode/set',
+				{ accountId: this.getFileNodeAccountId(), create: { [creationId]: data } },
+				'fns'
+			]
+		]);
+
+		this.throwFileNodeSetErrors(response, 'Could not create file');
+
+		const first = response.methodResponses?.find(([name]) => name === 'FileNode/set');
+		const created = first?.[1]?.created as Record<string, { id?: string }> | undefined;
+		const id = created?.[creationId]?.id;
+		if (!id) throw new Error('Could not create file');
+		return id;
+	}
+
+	async updateFileNode(
+		id: string,
+		patch: {
+			name?: string;
+			parentId?: string | null;
+			blobId?: string;
+			type?: string | null;
+			shareWith?: Record<string, JMAPFileRights | null> | null;
+		}
+	): Promise<void> {
+		if (!this.hasFileNode()) throw new Error('File storage is not supported');
+
+		const update: Record<string, unknown> = {};
+		if (patch.name !== undefined) {
+			const trimmed = patch.name.trim();
+			if (!trimmed) throw new Error('Name cannot be empty');
+			update.name = trimmed;
+		}
+		if (patch.parentId !== undefined) update.parentId = patch.parentId;
+		if (patch.blobId !== undefined) update.blobId = patch.blobId;
+		if (patch.type !== undefined) update.type = patch.type;
+		if (patch.shareWith !== undefined) update.shareWith = patch.shareWith;
+		if (!Object.keys(update).length) return;
+
+		const response = await this.fileNodeRequest([
+			[
+				'FileNode/set',
+				{
+					accountId: this.getFileNodeAccountId(),
+					update: { [id]: update }
+				},
+				'fnu'
+			]
+		]);
+
+		this.throwFileNodeSetErrors(response, 'Could not update file');
+	}
+
+	async destroyFileNodes(ids: string[], onDestroyRemoveChildren = false): Promise<void> {
+		if (!this.hasFileNode()) throw new Error('File storage is not supported');
+		if (!ids.length) return;
+
+		const response = await this.fileNodeRequest([
+			[
+				'FileNode/set',
+				{
+					accountId: this.getFileNodeAccountId(),
+					onDestroyRemoveChildren,
+					destroy: ids
+				},
+				'fnx'
+			]
+		]);
+
+		this.throwFileNodeSetErrors(response, 'Could not delete file');
+	}
+
+	private throwFileNodeSetErrors(response: JMAPResponse, fallbackMessage: string): void {
+		for (const [methodName, result] of response.methodResponses ?? []) {
+			if (methodName === 'error' || methodName.endsWith('/error')) {
+				const failure = result as { type?: string; description?: string };
+				throw new JmapMethodError(
+					failure.type ?? 'error',
+					failure.description ?? failure.type ?? fallbackMessage
+				);
+			}
+			if (methodName !== 'FileNode/set') continue;
+
+			const buckets = [result.notCreated, result.notUpdated, result.notDestroyed];
+			for (const bucket of buckets) {
+				if (bucket && typeof bucket === 'object' && Object.keys(bucket).length) {
+					const firstError = Object.values(bucket)[0] as {
+						description?: string;
+						type?: string;
+					};
+					throw new JmapMethodError(
+						firstError?.type ?? 'error',
+						firstError?.description ?? firstError?.type ?? fallbackMessage
+					);
+				}
+			}
+		}
 	}
 
 	async queryPrincipals(query: string): Promise<JMAPPrincipal[]> {

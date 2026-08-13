@@ -1,11 +1,13 @@
 import type { Component } from 'svelte';
 import Calendar from '$lib/components/icons/Calendar.svelte';
+import FileText from '$lib/components/icons/FileText.svelte';
 import Mail from '$lib/components/icons/Mail.svelte';
 import Search from '$lib/components/icons/Search.svelte';
 import Settings from '$lib/components/icons/Settings.svelte';
 import Users from '$lib/components/icons/Users.svelte';
 import { isMailPath } from '$lib/mail/routes';
 import { calendar } from '$lib/stores/calendar.svelte';
+import { files } from '$lib/stores/files.svelte';
 import { settings } from '$lib/stores/settings.svelte';
 
 export type AppNavItem = {
@@ -18,7 +20,7 @@ export type AppNavItem = {
 
 /**
  * Single source of truth for top-level app navigation (Mail, Contacts,
- * Calendar). Consumed by the desktop header switcher and the mobile bottom nav
+ * Calendar, Files). Consumed by the desktop header switcher and the mobile bottom nav
  * so both stay in sync. Settings is intentionally excluded — it lives in the
  * account/avatar menu, not the app switcher. Call inside a reactive context —
  * it reads the calendar/settings stores.
@@ -47,6 +49,17 @@ export function appNavItems(): AppNavItem[] {
 						label: 'Calendar',
 						icon: Calendar,
 						isActive: (path: string) => path.startsWith('/calendar')
+					}
+				]
+			: []),
+		...(files.supported !== false
+			? [
+					{
+						id: 'files',
+						href: '/files',
+						label: 'Files',
+						icon: FileText,
+						isActive: (path: string) => path.startsWith('/files')
 					}
 				]
 			: [])
@@ -85,7 +98,7 @@ export function activeMobileNavItem(path: string): AppNavItem | undefined {
 }
 
 export type TopSearchSection = {
-	id: 'mail' | 'calendar' | 'contacts';
+	id: 'mail' | 'calendar' | 'contacts' | 'files';
 	placeholder: string;
 	/** Route that renders this section's search results (the bar drives its ?q). */
 	searchPath: string;
@@ -106,6 +119,14 @@ export function topSearchSection(path: string): TopSearchSection | undefined {
 			placeholder: 'Search events',
 			searchPath: '/calendar/search',
 			homePath: '/calendar'
+		};
+	}
+	if (path.startsWith('/files')) {
+		return {
+			id: 'files',
+			placeholder: 'Search files',
+			searchPath: '/files/search',
+			homePath: '/files'
 		};
 	}
 	if (path.startsWith('/contacts')) {
@@ -129,7 +150,12 @@ export function topSearchSection(path: string): TopSearchSection | undefined {
 
 /** True when `path` is a section's search-results route (the bar owns its ?q there). */
 export function isSectionSearchRoute(path: string): boolean {
-	return path === '/mail/search' || path === '/contacts/search' || path === '/calendar/search';
+	return (
+		path === '/mail/search' ||
+		path === '/contacts/search' ||
+		path === '/calendar/search' ||
+		path === '/files/search'
+	);
 }
 
 /**

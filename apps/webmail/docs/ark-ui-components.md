@@ -191,5 +191,5 @@ internal building block rather than a user-facing component.
 | `portal` | [x] | used alongside most overlay components (dialog, drawer, menu, popover, tooltip, select, toast) |
 | `presence` | [ ] | |
 | `scroll-area` | [x] | `ui/ScrollArea.svelte`; mail list/reader/sidebar, settings, contacts, calendar |
-| `splitter` | [ ] | |
+| `splitter` | [x] | `ui/PaneSplit.svelte`; mail folder + list, calendar, contacts, settings |
 | `swap` | [ ] | |

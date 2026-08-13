@@ -30,7 +30,12 @@
 	);
 	const onSettings = $derived(pathname.startsWith('/settings'));
 	const onCalendar = $derived(pathname.startsWith('/calendar'));
-	const onSection = $derived(onCalendar || pathname.startsWith('/contacts') || onSettings);
+	const onSection = $derived(
+		onCalendar ||
+			pathname.startsWith('/contacts') ||
+			pathname.startsWith('/files') ||
+			onSettings
+	);
 
 	const islandMode = $derived.by((): IslandMode => {
 		if (onMailCompose && mobileIsland.compose) return 'compose';

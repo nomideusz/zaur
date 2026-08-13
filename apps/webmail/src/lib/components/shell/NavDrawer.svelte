@@ -4,6 +4,7 @@
 	import { Drawer } from '@ark-ui/svelte/drawer';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import CalendarSidebar from '$lib/components/calendar/CalendarSidebar.svelte';
+	import FilesSidebar from '$lib/components/files/FilesSidebar.svelte';
 	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import NavDrawerHeader from '$lib/components/shell/NavDrawerHeader.svelte';
 	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
@@ -13,6 +14,7 @@
 	});
 
 	const onCalendar = $derived(page.url.pathname.startsWith('/calendar'));
+	const onFiles = $derived(page.url.pathname.startsWith('/files'));
 </script>
 
 <Drawer.Root
@@ -38,7 +40,9 @@
 			<Drawer.Content
 				class="z-mail-view z-nav-drawer-content flex h-full flex-col bg-surface-raised outline-none"
 			>
-				<Drawer.Title class="sr-only">{onCalendar ? 'Calendars' : 'Navigation'}</Drawer.Title>
+				<Drawer.Title class="sr-only">
+					{onCalendar ? 'Calendars' : onFiles ? 'Files' : 'Navigation'}
+				</Drawer.Title>
 				<NavDrawerHeader />
 				{#if onCalendar}
 					<CalendarSidebar
@@ -46,6 +50,8 @@
 						embedded
 						class="flex min-h-0 flex-1 border-t border-border/80"
 					/>
+				{:else if onFiles}
+					<FilesSidebar class="flex min-h-0 w-full flex-1 border-t border-border/80" />
 				{:else}
 					<MailboxSidebar
 						variant="drawer"

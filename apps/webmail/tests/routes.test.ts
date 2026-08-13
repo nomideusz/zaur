@@ -58,5 +58,6 @@ describe('mail routes', () => {
 		assert.equal(isMailPath('/settings/account'), false);
 		assert.equal(isMailPath('/contacts'), false);
 		assert.equal(isMailPath('/calendar'), false);
+		assert.equal(isMailPath('/files'), false);
 	});
 });

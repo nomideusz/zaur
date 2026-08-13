@@ -18,6 +18,7 @@
 	const pathname = $derived(page.url.pathname);
 	const onMailRoute = $derived(pathname === '/' || isMailPath(pathname));
 	const onContactsRoute = $derived(pathname.startsWith('/contacts'));
+	const onFilesRoute = $derived(pathname.startsWith('/files'));
 	const onCalendarRoute = $derived(pathname.startsWith('/calendar'));
 	const onMailCompose = $derived(pathname.startsWith('/mail/compose'));
 	const onMailSearch = $derived(pathname.startsWith('/mail/search'));
@@ -38,8 +39,8 @@
 	);
 
 	const pagePrimaryAction = $derived(pageCtx?.primaryAction);
-	const showContactsAction = $derived(
-		onContactsRoute && actionContextActive && !!pagePrimaryAction
+	const showPageAction = $derived(
+		(onContactsRoute || onFilesRoute) && actionContextActive && !!pagePrimaryAction
 	);
 </script>
 
@@ -88,7 +89,7 @@
 			>
 				New message
 			</a>
-		{:else if showContactsAction && pagePrimaryAction?.kind === 'button'}
+		{:else if showPageAction && pagePrimaryAction?.kind === 'button'}
 			{@const action = pagePrimaryAction}
 			<button
 				type="button"
@@ -97,7 +98,7 @@
 			>
 				{action.label}
 			</button>
-		{:else if showContactsAction && pagePrimaryAction?.kind === 'link'}
+		{:else if showPageAction && pagePrimaryAction?.kind === 'link'}
 			{@const action = pagePrimaryAction}
 			<a href={action.href} class="z-mail-text-nav__action z-mail-text-nav__action--pill shrink-0">
 				{action.label}

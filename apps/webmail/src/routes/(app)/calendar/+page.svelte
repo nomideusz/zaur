@@ -10,6 +10,8 @@
 	import EventComposePanel from '$lib/components/calendar/EventComposePanel.svelte';
 	import EventPanel from '$lib/components/calendar/EventPanel.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
+	import PaneSplit from '$lib/components/ui/PaneSplit.svelte';
+	import { PANE_SPLIT } from '$lib/components/ui/pane-split';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar, type CalendarViewTab } from '$lib/stores/calendar.svelte';
@@ -189,11 +191,11 @@
 		</div>
 	</div>
 {:else}
-	<CalendarSidebar class="hidden md:flex" />
+	{#snippet calendarMain(showEdge: boolean)}
 	<section
 		class={cn(
 			'z-mail-pane-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
-			calendar.selectedEvent && 'max-md:hidden md:border-r md:border-border'
+			showEdge && 'md:border-r md:border-border'
 		)}
 		style="view-transition-name: calendar-grid;"
 		aria-label="Calendar view"
@@ -275,29 +277,80 @@
 		</Tabs.Content>
 		<Tabs.Content
 			value="agendas"
-			class="flex min-h-0 min-w-0 flex-1 flex-row divide-x divide-border bg-surface-sunken/10"
+			class="flex min-h-0 min-w-0 flex-1 flex-row bg-surface-sunken/10"
 		>
 			{#if calAdapter}
+				{@const adapter = calAdapter}
 				{#key calendar.refreshCounter}
 					{#if isWide}
-						<!-- Week overview is a desktop-only side column — stacked with the
-						     day agenda it crowds small screens; the header date nav covers
-						     day switching there. -->
-						<div class="flex min-h-0 w-72 max-w-[20rem] min-w-0 shrink-0 flex-col">
-							<AgendaWeekNav selectedDay={currentDate} onSelectDay={selectAgendaDay} />
+						<PaneSplit
+							storageKey={PANE_SPLIT.calendarAgenda.key}
+							defaultSize={PANE_SPLIT.calendarAgenda.defaultSize}
+							firstMin="12rem"
+							firstMax="20rem"
+							secondMin="50%"
+							mobileFirst="keep"
+							mobileSecond="keep"
+							triggerLabel="Resize week overview"
+						>
+							{#snippet first()}
+								<div class="flex min-h-0 min-w-0 flex-1 flex-col">
+									<AgendaWeekNav selectedDay={currentDate} onSelectDay={selectAgendaDay} />
+								</div>
+							{/snippet}
+							{#snippet second()}
+								<div class="min-h-0 flex-1 overflow-hidden">
+									<LibCalendar {adapter} view="day-agenda" {...dayAgendaProps} />
+								</div>
+							{/snippet}
+						</PaneSplit>
+					{:else}
+						<div class="min-h-0 flex-1 overflow-hidden">
+							<LibCalendar {adapter} view="day-agenda" {...dayAgendaProps} />
 						</div>
 					{/if}
-					<div class="min-h-0 flex-1 overflow-hidden">
-						<LibCalendar adapter={calAdapter} view="day-agenda" {...dayAgendaProps} />
-					</div>
 				{/key}
 			{/if}
 		</Tabs.Content>
 		</Tabs.Root>
 	</section>
-	{#if calendar.selectedEvent}
-		<EventPanel />
-	{/if}
+	{/snippet}
+
+	<PaneSplit
+		storageKey={PANE_SPLIT.calendarNav.key}
+		defaultSize={PANE_SPLIT.calendarNav.defaultSize}
+		firstWidthVar="--width-sidebar"
+		triggerLabel="Resize calendar list"
+	>
+		{#snippet first()}
+			<CalendarSidebar class="hidden md:flex" />
+		{/snippet}
+		{#snippet second()}
+			{#if calendar.selectedEvent}
+				<PaneSplit
+					storageKey={PANE_SPLIT.calendarEvent.key}
+					defaultSize={PANE_SPLIT.calendarEvent.defaultSize}
+					firstMin="40%"
+					firstMax={null}
+					secondMin="16rem"
+					secondMax="36rem"
+					mobileFirst="hide"
+					mobileSecond="hide"
+					triggerLabel="Resize event panel"
+				>
+					{#snippet first()}
+						{@render calendarMain(true)}
+					{/snippet}
+					{#snippet second()}
+						<EventPanel chrome="pane" />
+					{/snippet}
+				</PaneSplit>
+				<EventPanel chrome="sheet" />
+			{:else}
+				{@render calendarMain(false)}
+			{/if}
+		{/snippet}
+	</PaneSplit>
 {/if}
 
 {#if calendar.composeOpen}

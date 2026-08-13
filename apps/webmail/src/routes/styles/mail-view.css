@@ -259,8 +259,9 @@
 		background-color: color-mix(in srgb, var(--z-fg-muted) 45%, transparent);
 	}
 
-	/* Splitter grip between folder sidebar and mail panes (desktop). The
-	   sidebar's own border-r stays the visual divider; this is the hit area. */
+	/* Splitter grip between desktop panes. The pane's own border-r stays the
+	   visual divider; this is the hit area. */
+	.z-pane-split-trigger,
 	.z-mail-split-trigger {
 		position: relative;
 		z-index: 5;
@@ -274,8 +275,20 @@
 		transition: background-color 120ms ease;
 	}
 
+	.z-pane-split-trigger:hover,
+	.z-pane-split-trigger:focus-visible,
+	.z-pane-split-trigger[data-state='dragging'],
 	.z-mail-split-trigger:hover,
 	.z-mail-split-trigger:focus-visible,
 	.z-mail-split-trigger[data-state='dragging'] {
 		background-color: color-mix(in srgb, var(--z-accent) 30%, transparent);
+	}
+
+	/* Visible pane fills the row when its sibling is hidden below md. */
+	@media (max-width: 767px) {
+		.z-pane-split-panel--mobile-fill {
+			flex: 1 1 auto !important;
+			width: auto !important;
+			min-width: 0 !important;
+		}
 	}

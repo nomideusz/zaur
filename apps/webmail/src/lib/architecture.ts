@@ -39,7 +39,8 @@ export const routeMap = {
 		calendar: '/settings/calendar'
 	},
 	calendar: '/calendar',
-	contacts: '/contacts'
+	contacts: '/contacts',
+	files: '/files'
 } as const;
 
 /**
@@ -71,6 +72,9 @@ export const componentTree = {
 	},
 	contacts: {
 		ContactsLayout: ['ContactsSidebar', 'ContactsList', 'ContactDetailPanel | ContactDetailEmpty']
+	},
+	files: {
+		FilesLayout: ['FilesSidebar', 'FilesList', 'FileDetailPanel | FileDetailEmpty', 'ShareFileDialog']
 	},
 	mail: {
 		MailLayout: ['MailPane → MailLayout'],

@@ -10,6 +10,8 @@
 	import ContactDetailPanel from '$lib/components/contacts/ContactDetailPanel.svelte';
 	import ContactLetterRail from '$lib/components/contacts/ContactLetterRail.svelte';
 	import ContactsSidebar from '$lib/components/contacts/ContactsSidebar.svelte';
+	import PaneSplit from '$lib/components/ui/PaneSplit.svelte';
+	import { PANE_SPLIT } from '$lib/components/ui/pane-split';
 	import SwipeableListRow from '$lib/components/ui/SwipeableListRow.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
@@ -201,26 +203,39 @@
 	<title>Contacts · ZAUR Webmail</title>
 </svelte:head>
 
-<div class="hidden md:contents">
-	<ContactsSidebar
-		totalCount={listContacts(auth.client?.getAccountId() ?? null).length}
-		{selectedLetter}
-		onSelectLetter={selectLetter}
-		onAddContact={() => {
-			showAddForm = true;
-			selectedEmail = null;
-		}}
-	/>
-</div>
-
+<PaneSplit
+	storageKey={PANE_SPLIT.contactsNav.key}
+	defaultSize={PANE_SPLIT.contactsNav.defaultSize}
+	firstWidthVar="--width-sidebar"
+	triggerLabel="Resize contacts sidebar"
+>
+	{#snippet first()}
+		<ContactsSidebar
+			totalCount={listContacts(auth.client?.getAccountId() ?? null).length}
+			{selectedLetter}
+			onSelectLetter={selectLetter}
+			onAddContact={() => {
+				showAddForm = true;
+				selectedEmail = null;
+			}}
+		/>
+	{/snippet}
+	{#snippet second()}
+		<PaneSplit
+			storageKey={PANE_SPLIT.contactsList.key}
+			defaultSize={PANE_SPLIT.contactsList.defaultSize}
+			firstId="list"
+			secondId="detail"
+			firstMin="18rem"
+			firstMax="40rem"
+			secondMin="40%"
+			mobileFirst={selectedEmail ? 'hide' : 'fill'}
+			mobileSecond="hide"
+			triggerLabel="Resize contacts list"
+		>
+			{#snippet first()}
 <section
-	class={cn(
-		'z-mail-pane-surface flex min-h-0 min-w-0 flex-col overflow-hidden',
-		selectedEmail
-			? 'hidden md:flex md:w-(--width-list) md:max-w-(--width-list) md:flex-none'
-			: 'flex flex-1',
-		selectedEmail && 'md:border-r md:border-border'
-	)}
+	class="z-mail-pane-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:border-r md:border-border"
 	style="view-transition-name: contacts-list;"
 	aria-label="Contacts list"
 >
@@ -387,14 +402,29 @@
 		</ScrollArea>
 	</div>
 </section>
-
-{#if selectedContact}
-	<ContactDetailPanel
-		contact={selectedContact}
-		onClose={clearSelection}
-		onCompose={() => composeTo(selectedContact.email)}
-		onRemove={() => deleteContact(selectedContact.email)}
-	/>
-{:else}
-	<ContactDetailEmpty />
-{/if}
+			{/snippet}
+			{#snippet second()}
+				{#if selectedContact}
+					<ContactDetailPanel
+						chrome="pane"
+						contact={selectedContact}
+						onClose={clearSelection}
+						onCompose={() => composeTo(selectedContact.email)}
+						onRemove={() => deleteContact(selectedContact.email)}
+					/>
+				{:else}
+					<ContactDetailEmpty />
+				{/if}
+			{/snippet}
+		</PaneSplit>
+		{#if selectedContact}
+			<ContactDetailPanel
+				chrome="sheet"
+				contact={selectedContact}
+				onClose={clearSelection}
+				onCompose={() => composeTo(selectedContact.email)}
+				onRemove={() => deleteContact(selectedContact.email)}
+			/>
+		{/if}
+	{/snippet}
+</PaneSplit>

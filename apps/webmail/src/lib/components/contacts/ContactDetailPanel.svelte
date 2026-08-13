@@ -14,12 +14,14 @@
 		contact,
 		onClose,
 		onCompose,
-		onRemove
+		onRemove,
+		chrome = 'both'
 	}: {
 		contact: ContactEntry;
 		onClose: () => void;
 		onCompose: () => void;
 		onRemove: () => void;
+		chrome?: 'pane' | 'sheet' | 'both';
 	} = $props();
 
 	const panelPadding = 'px-4 py-3';
@@ -69,6 +71,7 @@
 	</footer>
 {/snippet}
 
+{#if chrome === 'pane' || chrome === 'both'}
 <aside
 	class="z-mail-pane-surface hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex"
 	style="view-transition-name: contact-detail;"
@@ -76,7 +79,10 @@
 >
 	{@render details(false)}
 </aside>
+{/if}
 
+{#if chrome === 'sheet' || chrome === 'both'}
 <MobileSheet ariaLabel="Contact details">
 	{@render details(true)}
 </MobileSheet>
+{/if}
