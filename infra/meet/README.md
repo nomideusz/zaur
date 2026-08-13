@@ -106,6 +106,10 @@ Redeploy webmail. Calendar compose gains **Video call**; event details gain
    **Join call**. You should land in `/group/zaur-…/?token=…` already named.
 3. Open the same location URL in a private window (no webmail session) —
    Galene should ask for a display name, then connect.
+4. Opening `https://meet.zaur.app/group/{id}/` with no token (refresh after
+   Galene strips `?token=` from the address bar) should bounce through
+   webmail `/meet/{id}` and mint a new invite. Groups store that bounce as
+   `authPortal`.
 
 If audio/video fails but the page loads, check `PUBLIC_IP` in compose
 (`-turn <ip>:1194`), UDP/10000, and TCP+UDP/1194 first.

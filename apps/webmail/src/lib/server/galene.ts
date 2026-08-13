@@ -51,28 +51,70 @@ async function readError(res: Response): Promise<string> {
 	return text.slice(0, 200) || res.statusText || 'Galene request failed';
 }
 
+function groupApiUrl(config: GaleneConfig, group: string): string {
+	return `${config.baseUrl}/galene-api/v0/.groups/${encodeURIComponent(group)}`;
+}
+
+function groupBody(authPortal?: string): string {
+	return JSON.stringify(authPortal ? { authPortal } : {});
+}
+
+/** If the group already exists, set authPortal so a token-less visit bounces back. */
+async function ensureAuthPortal(
+	config: GaleneConfig,
+	group: string,
+	authPortal: string,
+	fetchFn: typeof fetch
+): Promise<void> {
+	const url = groupApiUrl(config, group);
+	const get = await fetchFn(url, { headers: apiHeaders(config) });
+	if (!get.ok) return;
+	const desc = (await get.json().catch(() => null)) as { authPortal?: string } | null;
+	if (!desc || desc.authPortal === authPortal) return;
+	const etag = get.headers.get('etag')?.trim();
+	const put = await fetchFn(url, {
+		method: 'PUT',
+		headers: apiHeaders(config, {
+			'Content-Type': 'application/json',
+			...(etag ? { 'If-Match': etag } : {})
+		}),
+		body: JSON.stringify({ ...desc, authPortal })
+	});
+	if (!put.ok && put.status !== 412) {
+		throw new GaleneError(await readError(put), put.status);
+	}
+}
+
 /** PUT the group if it does not exist yet (If-None-Match: *). */
 export async function ensureGroup(
 	config: GaleneConfig,
 	group: string,
-	fetchFn: typeof fetch = fetch
+	fetchFn: typeof fetch = fetch,
+	authPortal?: string
 ): Promise<void> {
-	const res = await fetchFn(`${config.baseUrl}/galene-api/v0/.groups/${encodeURIComponent(group)}`, {
+	const res = await fetchFn(groupApiUrl(config, group), {
 		method: 'PUT',
 		headers: apiHeaders(config, {
 			'Content-Type': 'application/json',
 			'If-None-Match': '*'
 		}),
-		body: '{}'
+		body: groupBody(authPortal)
 	});
 	// 412/409: already created. 200/201/204: created.
-	if (res.ok || res.status === 412 || res.status === 409) return;
+	if (res.ok || res.status === 412 || res.status === 409) {
+		if (authPortal && (res.status === 412 || res.status === 409)) {
+			await ensureAuthPortal(config, group, authPortal, fetchFn);
+		}
+		return;
+	}
 	throw new GaleneError(await readError(res), res.status);
 }
 
 export type InviteOptions = {
 	username?: string;
 	operator?: boolean;
+	/** Webmail `/meet/{group}` URL. Galene redirects here when the invite token is missing. */
+	authPortal?: string;
 };
 
 /** POST a stateful invite token (Zulip: `/groups/{id}/.tokens/`). */
@@ -118,7 +160,7 @@ export async function mintJoinUrl(
 	options: InviteOptions = {},
 	fetchFn: typeof fetch = fetch
 ): Promise<string> {
-	await ensureGroup(config, group, fetchFn);
+	await ensureGroup(config, group, fetchFn, options.authPortal);
 	const token = await createInviteToken(config, group, options, fetchFn);
 	return galeneJoinUrl(config, group, token);
 }

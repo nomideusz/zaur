@@ -82,6 +82,42 @@ describe('galene admin client', () => {
 		await ensureGroup(config, 'zaur-room', fetchFn);
 	});
 
+	it('writes authPortal on create and updates an existing group', async () => {
+		const portal = 'https://webmail.zaur.app/meet/zaur-room';
+		const calls: { method?: string; body?: string; ifMatch?: string }[] = [];
+		let created = false;
+		const fetchFn: typeof fetch = async (_input, init) => {
+			const method = init?.method ?? 'GET';
+			const headers = init?.headers as Record<string, string> | undefined;
+			calls.push({
+				method,
+				body: typeof init?.body === 'string' ? init.body : undefined,
+				ifMatch: headers?.['If-Match']
+			});
+			if (method === 'PUT' && headers?.['If-None-Match'] === '*') {
+				if (!created) {
+					created = true;
+					return new Response(null, { status: 412 });
+				}
+				return new Response(null, { status: 204 });
+			}
+			if (method === 'GET') {
+				return new Response('{}', {
+					status: 200,
+					headers: { etag: '"1"', 'content-type': 'application/json' }
+				});
+			}
+			return new Response(null, { status: 204 });
+		};
+		await ensureGroup(config, 'zaur-room', fetchFn, portal);
+		assert.equal(calls[0]?.method, 'PUT');
+		assert.equal(calls[0]?.body, JSON.stringify({ authPortal: portal }));
+		assert.equal(calls[1]?.method, 'GET');
+		assert.equal(calls[2]?.method, 'PUT');
+		assert.equal(calls[2]?.ifMatch, '"1"');
+		assert.equal(calls[2]?.body, JSON.stringify({ authPortal: portal }));
+	});
+
 	it('parses a token out of a Location path', async () => {
 		const fetchFn: typeof fetch = async () =>
 			new Response(null, {
