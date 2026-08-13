@@ -19,6 +19,7 @@
 	const eventCalendars = $derived(
 		event ? event.calendarIds.map((id) => calendar.calendarById(id)).filter(Boolean) : []
 	);
+	const canEditEvent = $derived(event ? calendar.eventAllowsWrites(event) : false);
 	const eventTitle = $derived(event?.title?.trim() || 'Untitled event');
 	const eventDescription = $derived(event?.description?.trim() ?? '');
 	const eventLocation = $derived(event?.location?.trim() ?? '');
@@ -102,27 +103,31 @@
 		</div>
 	</ScrollArea>
 
-	<footer
-		class={cn(
-			'flex shrink-0 flex-wrap gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]',
-			panelPadding
-		)}
-	>
-		{#if meetingUrl}
-			<Button href={meetingUrl} target="_blank" rel="noopener noreferrer" class="min-w-0">
-				<Video class="size-4" aria-hidden="true" />
-				Join call
-			</Button>
-		{/if}
-		<Button variant="ghost" onclick={editEvent}>
-			<Pencil class="size-4" aria-hidden="true" />
-			Edit
-		</Button>
-		<Button variant="danger" onclick={deleteEvent}>
-			<Trash2 class="size-4" aria-hidden="true" />
-			Delete
-		</Button>
-	</footer>
+	{#if meetingUrl || canEditEvent}
+		<footer
+			class={cn(
+				'flex shrink-0 flex-wrap gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+				panelPadding
+			)}
+		>
+			{#if meetingUrl}
+				<Button href={meetingUrl} target="_blank" rel="noopener noreferrer" class="min-w-0">
+					<Video class="size-4" aria-hidden="true" />
+					Join call
+				</Button>
+			{/if}
+			{#if canEditEvent}
+				<Button variant="ghost" onclick={editEvent}>
+					<Pencil class="size-4" aria-hidden="true" />
+					Edit
+				</Button>
+				<Button variant="danger" onclick={deleteEvent}>
+					<Trash2 class="size-4" aria-hidden="true" />
+					Delete
+				</Button>
+			{/if}
+		</footer>
+	{/if}
 {/snippet}
 
 {#if event}

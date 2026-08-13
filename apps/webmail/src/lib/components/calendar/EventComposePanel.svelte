@@ -57,7 +57,7 @@
 	const canSave = $derived(!calendar.composeSaving && !saveBlockedReason);
 	const composeHintId = 'event-compose-hint';
 	const calendarOptions = $derived(
-		calendar.calendars.map((item) => ({ value: item.id, label: item.name }))
+		calendar.writableCalendars.map((item) => ({ value: item.id, label: item.name }))
 	);
 	const meetEnabled = $derived(isMeetConfigured(appConfig.galeneUrl));
 	const videoCall = $derived(

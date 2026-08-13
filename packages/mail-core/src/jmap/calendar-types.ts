@@ -1,10 +1,38 @@
+export interface JMAPCalendarRights {
+	mayReadFreeBusy?: boolean;
+	mayReadItems?: boolean;
+	mayWriteAll?: boolean;
+	mayWriteOwn?: boolean;
+	mayUpdatePrivate?: boolean;
+	mayRSVP?: boolean;
+	mayShare?: boolean;
+	mayDelete?: boolean;
+}
+
 export interface JMAPCalendar {
 	id: string;
 	name: string;
+	description?: string | null;
 	color?: string | null;
 	isDefault?: boolean;
 	isVisible?: boolean;
+	isSubscribed?: boolean;
 	sortOrder?: number;
+	shareWith?: Record<string, JMAPCalendarRights> | null;
+	myRights?: JMAPCalendarRights | null;
+}
+
+export interface JMAPPrincipal {
+	id: string;
+	type?: string;
+	name: string;
+	description?: string | null;
+	email?: string | null;
+}
+
+export interface CalendarEventQueryResult {
+	events: JMAPCalendarEvent[];
+	total: number;
 }
 
 import type { JmapRecurrenceRule } from './recurrence';
@@ -26,9 +54,4 @@ export interface JMAPCalendarEvent {
 	utcStart?: string;
 	utcEnd?: string;
 	locations?: Record<string, { name?: string; description?: string }>;
-}
-
-export interface CalendarEventQueryResult {
-	events: JMAPCalendarEvent[];
-	total: number;
 }

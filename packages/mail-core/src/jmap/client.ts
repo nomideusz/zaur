@@ -16,8 +16,11 @@ import { buildDownloadUrl, buildUploadUrl } from './urls';
 import type {
 	CalendarEventQueryResult,
 	JMAPCalendar,
-	JMAPCalendarEvent
+	JMAPCalendarEvent,
+	JMAPCalendarRights,
+	JMAPPrincipal
 } from './calendar-types';
+import { JmapMethodError } from './errors';
 
 // Unauthorized handling is platform-injected: webmail leaves the default
 // (a `zaur:unauthorized` DOM event), native registers a listener.
@@ -72,6 +75,9 @@ const sessionCache = new Map<string, CachedSessionEntry>();
 
 const CALENDARS_URN = 'urn:ietf:params:jmap:calendars';
 const CALENDAR_USING = ['urn:ietf:params:jmap:core', CALENDARS_URN] as const;
+const PRINCIPALS_URN = 'urn:ietf:params:jmap:principals';
+const PRINCIPALS_OWNER_URN = 'urn:ietf:params:jmap:principals:owner';
+const PRINCIPAL_USING = ['urn:ietf:params:jmap:core', PRINCIPALS_URN] as const;
 const QUOTA_URN = 'urn:ietf:params:jmap:quota';
 const QUOTA_USING = ['urn:ietf:params:jmap:core', QUOTA_URN] as const;
 const VACATION_URN = 'urn:ietf:params:jmap:vacationresponse';
@@ -220,6 +226,37 @@ export class JMAPClient {
 
 	getCalendarAccountId(): string {
 		return this.session?.primaryAccounts?.[CALENDARS_URN] ?? this.accountId;
+	}
+
+	hasPrincipals(): boolean {
+		return !!this.session?.capabilities?.[PRINCIPALS_URN];
+	}
+
+	getPrincipalAccountId(): string {
+		const calendarAccountId = this.getCalendarAccountId();
+		const owner = this.session?.accounts?.[calendarAccountId]?.accountCapabilities?.[
+			PRINCIPALS_OWNER_URN
+		] as { accountIdForPrincipal?: string } | undefined;
+		if (owner?.accountIdForPrincipal) return owner.accountIdForPrincipal;
+
+		const primary = this.session?.primaryAccounts?.[PRINCIPALS_URN];
+		if (primary) return primary;
+
+		if (this.session?.accounts) {
+			for (const [id, account] of Object.entries(this.session.accounts)) {
+				if (account.accountCapabilities?.[PRINCIPALS_URN]) return id;
+			}
+		}
+
+		return this.accountId;
+	}
+
+	getCurrentUserPrincipalId(): string | null {
+		const accountId = this.getPrincipalAccountId();
+		const caps = this.session?.accounts?.[accountId]?.accountCapabilities?.[PRINCIPALS_URN] as
+			| { currentUserPrincipalId?: string | null }
+			| undefined;
+		return caps?.currentUserPrincipalId ?? null;
 	}
 
 	hasQuota(): boolean {
@@ -624,7 +661,210 @@ export class JMAPClient {
 		}
 
 		const list = (first[1].list as JMAPCalendar[]) ?? [];
-		return list.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+		return list.sort((a, b) => {
+			const order = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
+			if (order !== 0) return order;
+			return a.name.localeCompare(b.name);
+		});
+	}
+
+	async getCalendarsByIds(ids: string[]): Promise<JMAPCalendar[]> {
+		if (!this.hasCalendars() || !ids.length) return [];
+
+		const response = await this.calendarRequest([
+			['Calendar/get', { accountId: this.getCalendarAccountId(), ids }, 'cal']
+		]);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'Calendar/get') {
+			throw new Error('Unexpected Calendar/get response');
+		}
+		return (first[1].list as JMAPCalendar[]) ?? [];
+	}
+
+	async createCalendar(input: { name: string; color?: string; description?: string }): Promise<string> {
+		if (!this.hasCalendars()) throw new Error('Calendars not supported');
+
+		const trimmed = input.name.trim();
+		if (!trimmed) throw new Error('Calendar name cannot be empty');
+
+		const creationId = 'new-calendar';
+		const data: Record<string, unknown> = { name: trimmed };
+		if (input.color) data.color = input.color;
+		if (input.description?.trim()) data.description = input.description.trim();
+
+		const response = await this.calendarRequest([
+			[
+				'Calendar/set',
+				{ accountId: this.getCalendarAccountId(), create: { [creationId]: data } },
+				'ccs'
+			]
+		]);
+
+		this.throwCalendarSetErrors(response, 'Could not create calendar');
+
+		const first = response.methodResponses?.find(([name]) => name === 'Calendar/set');
+		const created = first?.[1]?.created as Record<string, { id?: string }> | undefined;
+		const id = created?.[creationId]?.id;
+		if (!id) throw new Error('Could not create calendar');
+		return id;
+	}
+
+	async updateCalendar(
+		calendarId: string,
+		patch: {
+			name?: string;
+			color?: string | null;
+			description?: string | null;
+			isVisible?: boolean;
+			shareWith?: Record<string, JMAPCalendarRights | null> | null;
+		}
+	): Promise<void> {
+		if (!this.hasCalendars()) throw new Error('Calendars not supported');
+
+		const update: Record<string, unknown> = {};
+		if (patch.name !== undefined) {
+			const trimmed = patch.name.trim();
+			if (!trimmed) throw new Error('Calendar name cannot be empty');
+			update.name = trimmed;
+		}
+		if (patch.color !== undefined) update.color = patch.color;
+		if (patch.description !== undefined) update.description = patch.description;
+		if (patch.isVisible !== undefined) update.isVisible = patch.isVisible;
+		if (patch.shareWith !== undefined) update.shareWith = patch.shareWith;
+
+		if (!Object.keys(update).length) return;
+
+		const response = await this.calendarRequest([
+			[
+				'Calendar/set',
+				{
+					accountId: this.getCalendarAccountId(),
+					update: { [calendarId]: update }
+				},
+				'ccu'
+			]
+		]);
+
+		this.throwCalendarSetErrors(response, 'Could not update calendar');
+	}
+
+	async setDefaultCalendar(calendarId: string): Promise<void> {
+		if (!this.hasCalendars()) throw new Error('Calendars not supported');
+
+		const response = await this.calendarRequest([
+			[
+				'Calendar/set',
+				{
+					accountId: this.getCalendarAccountId(),
+					onSuccessSetIsDefault: calendarId
+				},
+				'ccd'
+			]
+		]);
+
+		this.throwCalendarSetErrors(response, 'Could not set default calendar');
+	}
+
+	async destroyCalendar(calendarId: string, removeEvents = false): Promise<void> {
+		if (!this.hasCalendars()) throw new Error('Calendars not supported');
+
+		const response = await this.calendarRequest([
+			[
+				'Calendar/set',
+				{
+					accountId: this.getCalendarAccountId(),
+					onDestroyRemoveEvents: removeEvents,
+					destroy: [calendarId]
+				},
+				'ccx'
+			]
+		]);
+
+		this.throwCalendarSetErrors(response, 'Could not delete calendar');
+	}
+
+	async queryPrincipals(query: string): Promise<JMAPPrincipal[]> {
+		if (!this.hasPrincipals()) {
+			throw new Error('Sharing is not supported by this server');
+		}
+
+		const trimmed = query.trim();
+		if (!trimmed) return [];
+
+		const accountId = this.getPrincipalAccountId();
+		const filter: Record<string, string> = trimmed.includes('@')
+			? { email: trimmed }
+			: { text: trimmed };
+
+		const list = await this.runPrincipalQuery(accountId, filter);
+		if (list.length || !trimmed.includes('@')) return list;
+
+		return this.runPrincipalQuery(accountId, { text: trimmed });
+	}
+
+	async getPrincipals(ids: string[]): Promise<JMAPPrincipal[]> {
+		if (!this.hasPrincipals() || !ids.length) return [];
+
+		const response = await this.request(
+			[
+				[
+					'Principal/get',
+					{
+						accountId: this.getPrincipalAccountId(),
+						ids,
+						properties: ['id', 'type', 'name', 'email', 'description']
+					},
+					'pg'
+				]
+			],
+			[...PRINCIPAL_USING]
+		);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] === 'error') {
+			const error = first[1] as { type?: string; description?: string };
+			throw new JmapMethodError(
+				error.type ?? 'error',
+				error.description ?? error.type ?? 'Could not load people'
+			);
+		}
+		if (first?.[0] !== 'Principal/get') return [];
+		return (first[1].list as JMAPPrincipal[]) ?? [];
+	}
+
+	private async runPrincipalQuery(
+		accountId: string,
+		filter: Record<string, string>
+	): Promise<JMAPPrincipal[]> {
+		const response = await this.request(
+			[
+				['Principal/query', { accountId, filter, limit: 20 }, 'pq'],
+				[
+					'Principal/get',
+					{
+						accountId,
+						'#ids': { resultOf: 'pq', name: 'Principal/query', path: '/ids' },
+						properties: ['id', 'type', 'name', 'email', 'description']
+					},
+					'pg'
+				]
+			],
+			[...PRINCIPAL_USING]
+		);
+
+		const queryResult = response.methodResponses?.[0];
+		if (queryResult?.[0] === 'error') {
+			const error = queryResult[1] as { type?: string; description?: string };
+			throw new JmapMethodError(
+				error.type ?? 'error',
+				error.description ?? error.type ?? 'Could not look up people on this server'
+			);
+		}
+
+		const getResult = response.methodResponses?.[1];
+		if (getResult?.[0] !== 'Principal/get') return [];
+		return (getResult[1].list as JMAPPrincipal[]) ?? [];
 	}
 
 	/**
@@ -1805,6 +2045,33 @@ export class JMAPClient {
 			return emailExists ? 'draft' : 'missing';
 		} catch {
 			return 'draft';
+		}
+	}
+
+	private throwCalendarSetErrors(response: JMAPResponse, fallbackMessage: string): void {
+		for (const [methodName, result] of response.methodResponses ?? []) {
+			if (methodName === 'error' || methodName.endsWith('/error')) {
+				const failure = result as { type?: string; description?: string };
+				throw new JmapMethodError(
+					failure.type ?? 'error',
+					failure.description ?? failure.type ?? fallbackMessage
+				);
+			}
+			if (methodName !== 'Calendar/set') continue;
+
+			const buckets = [result.notCreated, result.notUpdated, result.notDestroyed];
+			for (const bucket of buckets) {
+				if (bucket && typeof bucket === 'object' && Object.keys(bucket).length) {
+					const firstError = Object.values(bucket)[0] as {
+						description?: string;
+						type?: string;
+					};
+					throw new JmapMethodError(
+						firstError?.type ?? 'error',
+						firstError?.description ?? firstError?.type ?? fallbackMessage
+					);
+				}
+			}
 		}
 	}
 

@@ -189,9 +189,7 @@
 		</div>
 	</div>
 {:else}
-	<div class="hidden md:contents">
-		<CalendarSidebar />
-	</div>
+	<CalendarSidebar class="hidden md:flex" />
 	<section
 		class={cn(
 			'z-mail-pane-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
@@ -228,7 +226,7 @@
 			</div>
 
 			<div class="flex items-center gap-3">
-				{#if calendar.selectedEvent}
+				{#if calendar.selectedEvent && calendar.eventAllowsWrites(calendar.selectedEvent)}
 					<IconButton
 						label="Delete event"
 						class="text-danger hover:bg-danger/10"

@@ -1,8 +1,23 @@
 import { errorMessage } from '@zaur/mail-core/utils/errors';
+import { isJmapMethodError } from '@zaur/mail-core/jmap/errors';
 import type { JMAPClient } from '$lib/jmap/client';
 import { mapCalendar, mapCalendarEvent } from '$lib/jmap/calendar-map';
+import {
+	calendarAllowsWrites,
+	calendarDeleteBlockedReason,
+	eventIsVisibleOnCalendars,
+	nextCalendarColor,
+	patchShareWith,
+	rightsForShareRole
+} from '$lib/jmap/calendar-rights';
 import { expandRecurringEventInRange, recurrenceRuleFor, type EventRepeat } from '$lib/jmap/recurrence';
-import { isSyntheticCalendarError, type Calendar, type CalendarEvent } from '$lib/types/calendar';
+import {
+	isSyntheticCalendarError,
+	type Calendar,
+	type CalendarEvent,
+	type CalendarRights,
+	type CalendarShareRole
+} from '$lib/types/calendar';
 import { toast } from '$lib/stores/toast.svelte';
 import {
 	allDayInclusiveEnd,
@@ -94,14 +109,15 @@ class CalendarStore {
 		};
 	}
 
+	writableCalendars = $derived(this.calendars.filter(calendarAllowsWrites));
+
 	defaultCalendarId(): string | undefined {
-		return (
-			this.calendars.find((calendar) => calendar.isDefault)?.id ?? this.calendars[0]?.id
-		);
+		const writable = this.writableCalendars;
+		return writable.find((item) => item.isDefault)?.id ?? writable[0]?.id;
 	}
 
-	async ensureCalendars(client: JMAPClient) {
-		if (this.calendarsLoaded) return;
+	async ensureCalendars(client: JMAPClient, options?: { force?: boolean }) {
+		if (this.calendarsLoaded && !options?.force) return;
 
 		this.calendarsLoading = true;
 		this.error = null;
@@ -117,15 +133,20 @@ class CalendarStore {
 			const list = await client.getCalendars();
 			this.calendars = list.map(mapCalendar);
 			this.hiddenCalendarIds = new Set(
-				this.calendars.filter((calendar) => !calendar.isVisible).map((calendar) => calendar.id)
+				this.calendars.filter((item) => !item.isVisible).map((item) => item.id)
 			);
 			this.calendarsLoaded = true;
+			this.syncComposeCalendar();
 		} catch (error) {
 			this.error = errorMessage(error, 'Failed to load calendars');
 			this.calendars = [];
 		} finally {
 			this.calendarsLoading = false;
 		}
+	}
+
+	async reloadCalendars(client: JMAPClient) {
+		await this.ensureCalendars(client, { force: true });
 	}
 
 	async loadMonth(client: JMAPClient, options?: { preserveSelection?: boolean }) {
@@ -158,7 +179,7 @@ class CalendarStore {
 	visibleEvents = $derived.by(() => {
 		if (!this.hiddenCalendarIds.size) return this.events;
 		return this.events.filter((event) =>
-			event.calendarIds.some((id) => !this.hiddenCalendarIds.has(id))
+			eventIsVisibleOnCalendars(event.calendarIds, this.hiddenCalendarIds)
 		);
 	});
 
@@ -190,18 +211,43 @@ class CalendarStore {
 		return !this.hiddenCalendarIds.has(id);
 	}
 
-	toggleCalendar(id: string) {
+	toggleCalendar(id: string, client?: JMAPClient | null) {
 		const next = new Set(this.hiddenCalendarIds);
-		if (next.has(id)) next.delete(id);
+		const visible = next.has(id);
+		if (visible) next.delete(id);
 		else next.add(id);
 		this.hiddenCalendarIds = next;
 		this.refreshCounter++;
 
+		this.calendars = this.calendars.map((item) =>
+			item.id === id ? { ...item, isVisible: visible } : item
+		);
+
 		if (this.selectedEventId) {
 			const selected = this.events.find((event) => event.id === this.selectedEventId);
-			if (selected && selected.calendarIds.every((calendarId) => next.has(calendarId))) {
+			if (selected && !eventIsVisibleOnCalendars(selected.calendarIds, next)) {
 				this.selectedEventId = null;
 			}
+		}
+
+		if (client) {
+			void this.persistVisibility(client, id, visible);
+		}
+	}
+
+	private async persistVisibility(client: JMAPClient, id: string, isVisible: boolean) {
+		try {
+			await client.updateCalendar(id, { isVisible });
+		} catch (error) {
+			const reverted = new Set(this.hiddenCalendarIds);
+			if (isVisible) reverted.add(id);
+			else reverted.delete(id);
+			this.hiddenCalendarIds = reverted;
+			this.calendars = this.calendars.map((item) =>
+				item.id === id ? { ...item, isVisible: !isVisible } : item
+			);
+			this.refreshCounter++;
+			toast.show(errorMessage(error, 'Could not update calendar visibility'), 'error');
 		}
 	}
 
@@ -221,6 +267,11 @@ class CalendarStore {
 	}
 
 	openCompose(day?: Date) {
+		if (!this.defaultCalendarId()) {
+			toast.show('Create a calendar you can edit before adding events.', 'error');
+			return;
+		}
+
 		this.selectedEventId = null;
 		this.composeMode = 'create';
 		this.composeEventId = null;
@@ -234,6 +285,11 @@ class CalendarStore {
 	}
 
 	openComposeEdit(event: CalendarEvent) {
+		if (!this.eventAllowsWrites(event)) {
+			toast.show('You don’t have permission to change this event.', 'error');
+			return;
+		}
+
 		this.composeMode = 'edit';
 		this.composeEventId = event.id;
 		this.composePreviousCalendarIds = [...event.calendarIds];
@@ -271,6 +327,10 @@ class CalendarStore {
 		const title = this.composeDraft.title.trim();
 		if (!title) return { ok: false, error: 'Title is required' };
 		if (!this.composeDraft.calendarId) return { ok: false, error: 'Choose a calendar' };
+		const target = this.calendarById(this.composeDraft.calendarId);
+		if (!target || !calendarAllowsWrites(target)) {
+			return { ok: false, error: 'Choose a calendar you can edit' };
+		}
 
 		const { start, end } = this.composeRange();
 		const allDay = this.composeDraft.allDay;
@@ -366,6 +426,11 @@ class CalendarStore {
 	}
 
 	async deleteEvent(client: JMAPClient, event: CalendarEvent): Promise<boolean> {
+		if (!this.eventAllowsWrites(event)) {
+			toast.show('You don’t have permission to delete this event.', 'error');
+			return false;
+		}
+
 		const { confirm: askConfirm } = await import('$lib/stores/confirm.svelte');
 		if (
 			!(await askConfirm.ask({
@@ -406,6 +471,220 @@ class CalendarStore {
 		const event = this.events.find((item) => item.id === this.composeEventId);
 		if (!event) return false;
 		return this.deleteEvent(client, event);
+	}
+
+	eventAllowsWrites(event: CalendarEvent): boolean {
+		return event.calendarIds.some((id) => {
+			const item = this.calendarById(id);
+			return item ? calendarAllowsWrites(item) : false;
+		});
+	}
+
+	private replaceCalendar(next: Calendar) {
+		const index = this.calendars.findIndex((item) => item.id === next.id);
+		if (index < 0) {
+			this.calendars = [...this.calendars, next];
+			return;
+		}
+		const copy = [...this.calendars];
+		copy[index] = next;
+		this.calendars = copy;
+	}
+
+	private syncComposeCalendar() {
+		const writableIds = new Set(this.writableCalendars.map((item) => item.id));
+		if (this.composeDraft.calendarId && writableIds.has(this.composeDraft.calendarId)) return;
+		this.composeDraft.calendarId = this.defaultCalendarId() ?? '';
+	}
+
+	private async hydrateCalendar(client: JMAPClient, id: string): Promise<Calendar | undefined> {
+		const [raw] = await client.getCalendarsByIds([id]);
+		if (!raw) return undefined;
+		const mapped = mapCalendar(raw, this.calendars.length);
+		this.replaceCalendar(mapped);
+		return mapped;
+	}
+
+	async createCalendar(
+		client: JMAPClient,
+		input: { name: string; color?: string }
+	): Promise<Calendar> {
+		const trimmed = input.name.trim();
+		if (!trimmed) throw new Error('Calendar name cannot be empty');
+
+		const color = input.color || nextCalendarColor(this.calendars.map((item) => item.color));
+		const id = await client.createCalendar({ name: trimmed, color });
+		let created: Calendar | undefined;
+		try {
+			created = await this.hydrateCalendar(client, id);
+		} catch {
+			created = undefined;
+		}
+		created ??= mapCalendar(
+			{ id, name: trimmed, color, isVisible: true, isDefault: false, isSubscribed: true },
+			this.calendars.length
+		);
+		if (!this.calendarById(created.id)) this.replaceCalendar(created);
+
+		this.refreshCounter++;
+		toast.show(`Created “${created.name}”`, 'success');
+		return created;
+	}
+
+	async updateCalendarDetails(
+		client: JMAPClient,
+		id: string,
+		patch: { name?: string; color?: string }
+	): Promise<void> {
+		const existing = this.calendarById(id);
+		if (!existing) throw new Error('Calendar not found');
+
+		const name = patch.name?.trim();
+		if (name !== undefined && !name) throw new Error('Calendar name cannot be empty');
+
+		const nextName = name ?? existing.name;
+		const nextColor = patch.color ?? existing.color;
+		if (nextName === existing.name && nextColor === existing.color) return;
+
+		this.replaceCalendar({ ...existing, name: nextName, color: nextColor });
+		this.refreshCounter++;
+
+		try {
+			await client.updateCalendar(id, {
+				...(name !== undefined ? { name } : {}),
+				...(patch.color !== undefined ? { color: patch.color } : {})
+			});
+			toast.show(`Updated “${nextName}”`, 'success');
+		} catch (error) {
+			this.replaceCalendar(existing);
+			this.refreshCounter++;
+			throw error;
+		}
+	}
+
+	async setDefaultCalendar(client: JMAPClient, id: string): Promise<void> {
+		const existing = this.calendarById(id);
+		if (!existing) throw new Error('Calendar not found');
+		if (existing.isDefault) return;
+
+		const previous = this.calendars;
+		this.calendars = this.calendars.map((item) => ({
+			...item,
+			isDefault: item.id === id
+		}));
+
+		try {
+			await client.setDefaultCalendar(id);
+			toast.show(`“${existing.name}” is now the default calendar`, 'success');
+		} catch (error) {
+			this.calendars = previous;
+			throw error;
+		}
+	}
+
+	async deleteCalendar(client: JMAPClient, id: string): Promise<boolean> {
+		const existing = this.calendarById(id);
+		if (!existing) throw new Error('Calendar not found');
+
+		const blocked = calendarDeleteBlockedReason(existing, this.calendars);
+		if (blocked) throw new Error(blocked);
+
+		const { confirm: askConfirm } = await import('$lib/stores/confirm.svelte');
+		if (
+			!(await askConfirm.ask({
+				title: 'Delete calendar?',
+				description: `Delete “${existing.name}”? Events that live only in this calendar will be removed.`,
+				confirmLabel: 'Delete',
+				tone: 'danger'
+			}))
+		) {
+			return false;
+		}
+
+		try {
+			await client.destroyCalendar(id, false);
+		} catch (error) {
+			if (!isJmapMethodError(error, 'calendarHasEvent')) throw error;
+			if (
+				!(await askConfirm.ask({
+					title: 'Delete events too?',
+					description: `“${existing.name}” still has events. Delete the calendar and those events? This cannot be undone.`,
+					confirmLabel: 'Delete calendar and events',
+					tone: 'danger'
+				}))
+			) {
+				return false;
+			}
+			await client.destroyCalendar(id, true);
+		}
+
+		this.calendars = this.calendars.filter((item) => item.id !== id);
+		this.events = this.events.filter((event) => !event.calendarIds.includes(id));
+		const hidden = new Set(this.hiddenCalendarIds);
+		hidden.delete(id);
+		this.hiddenCalendarIds = hidden;
+
+		if (this.selectedEvent?.calendarIds.includes(id)) {
+			this.selectedEventId = null;
+		}
+		if (this.composeDraft.calendarId === id) {
+			this.composeDraft.calendarId = this.defaultCalendarId() ?? '';
+		}
+
+		this.refreshCounter++;
+		toast.show(`Deleted “${existing.name}”`, 'success');
+		return true;
+	}
+
+	async shareCalendar(
+		client: JMAPClient,
+		calendarId: string,
+		principalId: string,
+		role: CalendarShareRole
+	): Promise<void> {
+		const existing = this.calendarById(calendarId);
+		if (!existing) throw new Error('Calendar not found');
+
+		const selfId = client.getCurrentUserPrincipalId();
+		if (selfId && principalId === selfId) {
+			throw new Error('You already own this calendar.');
+		}
+
+		const rights = rightsForShareRole(role);
+		await this.applyShareWith(client, existing, principalId, rights);
+	}
+
+	async unshareCalendar(client: JMAPClient, calendarId: string, principalId: string): Promise<void> {
+		const existing = this.calendarById(calendarId);
+		if (!existing) throw new Error('Calendar not found');
+		await this.applyShareWith(client, existing, principalId, null);
+	}
+
+	private async applyShareWith(
+		client: JMAPClient,
+		existing: Calendar,
+		principalId: string,
+		rights: CalendarRights | null
+	): Promise<void> {
+		const previous = existing.shareWith;
+		const patched = patchShareWith(previous, principalId, rights);
+		const nextShareWith = Object.fromEntries(
+			Object.entries(patched).filter((entry): entry is [string, CalendarRights] => entry[1] !== null)
+		);
+
+		this.replaceCalendar({
+			...existing,
+			shareWith: Object.keys(nextShareWith).length ? nextShareWith : null
+		});
+
+		try {
+			await client.updateCalendar(existing.id, { shareWith: patched });
+			const hydrated = await this.hydrateCalendar(client, existing.id);
+			if (!hydrated) this.refreshCounter++;
+		} catch (error) {
+			this.replaceCalendar({ ...existing, shareWith: previous });
+			throw error;
+		}
 	}
 
 	goToToday() {

@@ -2,6 +2,7 @@ import { errorMessage } from '@zaur/mail-core/utils/errors';
 import type { CalendarAdapter, DateRange, TimelineEvent } from '@nomideusz/svelte-calendar';
 import type { JMAPClient } from '$lib/jmap/client';
 import { mapCalendarEvent } from '$lib/jmap/calendar-map';
+import { calendarAllowsWrites, eventIsVisibleOnCalendars } from '$lib/jmap/calendar-rights';
 import { expandRecurringEventInRange } from '$lib/jmap/recurrence';
 import { calendar } from '$lib/stores/calendar.svelte';
 import {
@@ -50,7 +51,7 @@ export class ZaurCalendarAdapter implements CalendarAdapter {
 	private client: JMAPClient;
 	private cachedEvents = new Map<
 		string,
-		{ event: CalendarEvent; timelineEv: TimelineEvent; calendarId: string }
+		{ event: CalendarEvent; timelineEv: TimelineEvent; calendarIds: string[] }
 	>();
 	private lastRefresh = -1;
 
@@ -73,30 +74,41 @@ export class ZaurCalendarAdapter implements CalendarAdapter {
 			});
 
 			const masters = events.map(mapCalendarEvent);
-			const currentEventsMap = new Map(calendar.events.map((ev) => [ev.id, ev]));
-			for (const ev of masters) {
-				currentEventsMap.set(ev.id, ev);
-			}
-			calendar.events = Array.from(currentEventsMap.values());
+			const fetchedIds = new Set(masters.map((ev) => ev.id));
+			const rangeStart = range.start.getTime();
+			const rangeEnd = range.end.getTime();
+			const kept = calendar.events.filter((ev) => {
+				if (fetchedIds.has(ev.id)) return false;
+				return ev.end.getTime() <= rangeStart || ev.start.getTime() >= rangeEnd;
+			});
+			calendar.events = [...kept, ...masters];
 
+			const freshIds = new Set<string>();
 			for (const master of masters) {
 				const instances = expandRecurringEventInRange(master, range);
 				for (const event of instances) {
-					const calendarId = event.calendarIds[0];
 					const timelineEv = toTimelineEvent(event);
-					this.cachedEvents.set(event.id, { event, timelineEv, calendarId });
+					freshIds.add(event.id);
+					this.cachedEvents.set(event.id, {
+						event,
+						timelineEv,
+						calendarIds: event.calendarIds
+					});
 				}
+			}
+
+			for (const [id, cached] of this.cachedEvents) {
+				const overlaps = cached.timelineEv.start < range.end && cached.timelineEv.end > range.start;
+				if (overlaps && !freshIds.has(id)) this.cachedEvents.delete(id);
 			}
 		} catch (err) {
 			console.error('Failed to fetch calendar events', err);
 		}
 
 		const results: TimelineEvent[] = [];
-		for (const { timelineEv, calendarId } of this.cachedEvents.values()) {
+		for (const { timelineEv, calendarIds } of this.cachedEvents.values()) {
 			const overlaps = timelineEv.start < range.end && timelineEv.end > range.start;
-			const isVisible = !calendar.hiddenCalendarIds.has(calendarId);
-
-			if (overlaps && isVisible) {
+			if (overlaps && eventIsVisibleOnCalendars(calendarIds, calendar.hiddenCalendarIds)) {
 				results.push(timelineEv);
 			}
 		}
@@ -129,6 +141,13 @@ export class ZaurCalendarAdapter implements CalendarAdapter {
 		const calendarId = master.calendarIds[0];
 		if (!calendarId) {
 			throw new Error('Event has no calendar');
+		}
+
+		const hostCalendar = calendar.calendarById(calendarId);
+		if (hostCalendar && !calendarAllowsWrites(hostCalendar)) {
+			const message = 'You don’t have permission to change events on this calendar.';
+			toast.show(message, 'error');
+			throw new Error(message);
 		}
 
 		const nextStart = patch.start ?? existing.start;

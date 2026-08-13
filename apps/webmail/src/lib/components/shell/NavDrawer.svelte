@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { afterNavigate } from '$app/navigation';
+	import { page } from '$app/state';
 	import { Drawer } from '@ark-ui/svelte/drawer';
 	import { Portal } from '@ark-ui/svelte/portal';
+	import CalendarSidebar from '$lib/components/calendar/CalendarSidebar.svelte';
 	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import NavDrawerHeader from '$lib/components/shell/NavDrawerHeader.svelte';
 	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
@@ -9,6 +11,8 @@
 	afterNavigate(() => {
 		mobileIsland.closeNavDrawer();
 	});
+
+	const onCalendar = $derived(page.url.pathname.startsWith('/calendar'));
 </script>
 
 <Drawer.Root
@@ -34,13 +38,21 @@
 			<Drawer.Content
 				class="z-mail-view z-nav-drawer-content flex h-full flex-col bg-surface-raised outline-none"
 			>
-				<Drawer.Title class="sr-only">Navigation</Drawer.Title>
+				<Drawer.Title class="sr-only">{onCalendar ? 'Calendars' : 'Navigation'}</Drawer.Title>
 				<NavDrawerHeader />
-				<MailboxSidebar
-					variant="drawer"
-					embedded
-					class="flex min-h-0 flex-1 border-t border-border/80"
-				/>
+				{#if onCalendar}
+					<CalendarSidebar
+						variant="drawer"
+						embedded
+						class="flex min-h-0 flex-1 border-t border-border/80"
+					/>
+				{:else}
+					<MailboxSidebar
+						variant="drawer"
+						embedded
+						class="flex min-h-0 flex-1 border-t border-border/80"
+					/>
+				{/if}
 			</Drawer.Content>
 		</Drawer.Positioner>
 	</Portal>

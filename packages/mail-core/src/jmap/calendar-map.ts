@@ -1,17 +1,35 @@
 import { parseIsoDuration } from '../utils/dates';
-import type { Calendar, CalendarEvent } from '../types/calendar';
+import type { Calendar, CalendarEvent, CalendarRights } from '../types/calendar';
 import type { JMAPCalendar, JMAPCalendarEvent } from './calendar-types';
+import { CALENDAR_COLORS, normalizeCalendarRights } from './calendar-rights';
 import type { JmapRecurrenceRule } from './recurrence';
 
-const DEFAULT_COLORS = ['#2563eb', '#7c3aed', '#db2777', '#ea580c', '#16a34a', '#0891b2'];
+export { CALENDAR_COLORS };
+
+function mapShareWith(
+	shareWith: JMAPCalendar['shareWith']
+): Record<string, CalendarRights> | null {
+	if (!shareWith) return null;
+
+	const mapped: Record<string, CalendarRights> = {};
+	for (const [principalId, rights] of Object.entries(shareWith)) {
+		if (!rights) continue;
+		mapped[principalId] = normalizeCalendarRights(rights);
+	}
+	return Object.keys(mapped).length ? mapped : null;
+}
 
 export function mapCalendar(calendar: JMAPCalendar, index: number): Calendar {
 	return {
 		id: calendar.id,
 		name: calendar.name,
-		color: calendar.color ?? DEFAULT_COLORS[index % DEFAULT_COLORS.length],
+		color: calendar.color ?? CALENDAR_COLORS[index % CALENDAR_COLORS.length],
+		description: calendar.description?.trim() || undefined,
 		isDefault: calendar.isDefault ?? false,
-		isVisible: calendar.isVisible ?? true
+		isVisible: calendar.isVisible ?? true,
+		isSubscribed: calendar.isSubscribed ?? true,
+		myRights: normalizeCalendarRights(calendar.myRights),
+		shareWith: mapShareWith(calendar.shareWith)
 	};
 }
 

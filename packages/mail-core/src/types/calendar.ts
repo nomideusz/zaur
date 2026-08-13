@@ -1,11 +1,28 @@
 import type { JmapRecurrenceRule } from '../jmap/recurrence';
 
+export interface CalendarRights {
+	mayReadFreeBusy: boolean;
+	mayReadItems: boolean;
+	mayWriteAll: boolean;
+	mayWriteOwn: boolean;
+	mayUpdatePrivate: boolean;
+	mayRSVP: boolean;
+	mayShare: boolean;
+	mayDelete: boolean;
+}
+
+export type CalendarShareRole = 'read' | 'write';
+
 export interface Calendar {
 	id: string;
 	name: string;
 	color: string;
+	description?: string;
 	isDefault: boolean;
 	isVisible: boolean;
+	isSubscribed: boolean;
+	myRights: CalendarRights;
+	shareWith: Record<string, CalendarRights> | null;
 }
 
 export interface CalendarEvent {

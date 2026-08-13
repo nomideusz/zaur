@@ -7,6 +7,7 @@ export * from './jmap/email-build';
 export * from './jmap/urls';
 export * from './jmap/calendar-types';
 export * from './jmap/calendar-map';
+export * from './jmap/calendar-rights';
 export * from './jmap/recurrence';
 export * from './auth/stalwart';
 export * from './auth/contract';

@@ -1,3 +1,19 @@
+/** Structured JMAP `/set` rejection (`notCreated` / `notUpdated` / `notDestroyed`). */
+export class JmapMethodError extends Error {
+	readonly type: string;
+
+	constructor(type: string, message: string) {
+		super(message);
+		this.name = 'JmapMethodError';
+		this.type = type;
+	}
+}
+
+export function isJmapMethodError(error: unknown, type?: string): error is JmapMethodError {
+	if (!(error instanceof JmapMethodError)) return false;
+	return type ? error.type === type : true;
+}
+
 export type LoginErrorCode =
 	| 'invalid_credentials'
 	| 'cors_blocked'
