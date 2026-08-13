@@ -457,7 +457,7 @@
 				openFilePicker = () => api.openFilePicker();
 				return true;
 			})()}
-			<FileUpload.Dropzone disableClick asChild>
+			<FileUpload.Dropzone disableClick>
 				{#snippet asChild(dropzoneProps)}
 			<div
 				{...dropzoneProps()}

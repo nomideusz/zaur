@@ -290,9 +290,9 @@
 					) {
 						return false;
 					}
-					const $from = view.state.selection.$from;
-					for (let depth = $from.depth; depth > 0; depth--) {
-						const name = $from.node(depth).type.name;
+					const fromPos = view.state.selection.$from;
+					for (let depth = fromPos.depth; depth > 0; depth--) {
+						const name = fromPos.node(depth).type.name;
 						if (name === 'bulletList' || name === 'orderedList' || name === 'listItem') {
 							return false;
 						}
