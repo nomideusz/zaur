@@ -220,7 +220,7 @@
 			<div class="flex flex-col gap-4 px-4 py-4 text-sm">
 				{#if markdownTooLarge}
 					<p class="text-sm text-fg-muted">
-						This markdown file is larger than {formatFileSize(MAX_MARKDOWN_BYTES)} and can’t be
+						This markdown file is larger than {formatFileSize(MAX_MARKDOWN_BYTES)} and can't be
 						previewed here. Download it to read it locally.
 					</p>
 				{/if}

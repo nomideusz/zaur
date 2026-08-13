@@ -68,4 +68,9 @@ describe('renderMarkdown', () => {
 		assert.doesNotMatch(html, /href="#hello-world"[^>]*target=/);
 		assert.match(html, /<h2 id="hello-world">Hello world<\/h2>/);
 	});
+
+	it('strips a leading BOM', () => {
+		const html = renderMarkdown('\uFEFF# Title\n');
+		assert.match(html, /<h1 id="title">Title<\/h1>/);
+	});
 });
