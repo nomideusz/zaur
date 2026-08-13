@@ -38,8 +38,8 @@
 
 	let status = $state<'connecting' | 'live' | 'error' | 'left'>('connecting');
 	let errorMessage = $state('');
-	let micOn = $state(true);
-	let camOn = $state(true);
+	let micOn = $state(false);
+	let camOn = $state(false);
 	let sharing = $state(false);
 	let tiles = $state<Tile[]>([]);
 	let audioHost = $state<HTMLDivElement | null>(null);
@@ -173,12 +173,8 @@
 					await nextRoom.disconnect();
 					return;
 				}
-				try {
-					await nextRoom.localParticipant.enableCameraAndMicrophone();
-				} catch {
-					micOn = false;
-					camOn = false;
-				}
+				micOn = await setLocalDevice(nextRoom, 'microphone', true);
+				camOn = await setLocalDevice(nextRoom, 'camera', true);
 				status = 'live';
 			} catch (err) {
 				errorMessage = err instanceof Error ? err.message : 'Could not join the call';
@@ -194,25 +190,34 @@
 		};
 	});
 
+	async function setLocalDevice(
+		target: Room,
+		kind: 'microphone' | 'camera' | 'screen',
+		enabled: boolean
+	): Promise<boolean> {
+		try {
+			if (kind === 'microphone') await target.localParticipant.setMicrophoneEnabled(enabled);
+			else if (kind === 'camera') await target.localParticipant.setCameraEnabled(enabled);
+			else await target.localParticipant.setScreenShareEnabled(enabled);
+			return enabled;
+		} catch {
+			return false;
+		}
+	}
+
 	async function toggleMic() {
 		if (!room) return;
-		const next = !micOn;
-		await room.localParticipant.setMicrophoneEnabled(next);
-		micOn = next;
+		micOn = await setLocalDevice(room, 'microphone', !micOn);
 	}
 
 	async function toggleCam() {
 		if (!room) return;
-		const next = !camOn;
-		await room.localParticipant.setCameraEnabled(next);
-		camOn = next;
+		camOn = await setLocalDevice(room, 'camera', !camOn);
 	}
 
 	async function toggleShare() {
 		if (!room) return;
-		const next = !sharing;
-		await room.localParticipant.setScreenShareEnabled(next);
-		sharing = next;
+		sharing = await setLocalDevice(room, 'screen', !sharing);
 	}
 </script>
 

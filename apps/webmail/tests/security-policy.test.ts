@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { validateSameOriginJson } from '../src/lib/server/security-policy.ts';
+import {
+	permissionsPolicyForPath,
+	validateSameOriginJson
+} from '../src/lib/server/security-policy.ts';
 
 function request(headers: Record<string, string>) {
 	return { headers: new Headers(headers) };
@@ -38,5 +41,24 @@ test('rejects cross-origin, missing-origin, and non-JSON mutations', () => {
 			'https://webmail.zaur.app'
 		),
 		'content_type'
+	);
+});
+
+test('unlocks camera, microphone, and screen share only on meet routes', () => {
+	assert.equal(
+		permissionsPolicyForPath('/inbox'),
+		'camera=(), microphone=(), geolocation=()'
+	);
+	assert.equal(
+		permissionsPolicyForPath('/meet/zaur-st9n5e7dvz6w'),
+		'camera=(self), microphone=(self), display-capture=(self), geolocation=()'
+	);
+	assert.equal(
+		permissionsPolicyForPath('/meet'),
+		'camera=(self), microphone=(self), display-capture=(self), geolocation=()'
+	);
+	assert.equal(
+		permissionsPolicyForPath('/meet-lab'),
+		'camera=(), microphone=(), geolocation=()'
 	);
 });

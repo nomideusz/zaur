@@ -6,6 +6,7 @@ import { env } from '$env/dynamic/private';
 import { env as publicEnv } from '$env/dynamic/public';
 import { pushWatcher } from '$lib/server/push-watcher';
 import { log } from '$lib/server/log';
+import { permissionsPolicyForPath } from '$lib/server/security-policy';
 import { getStoreDb, startStoreMaintenance } from '$lib/server/store-instance';
 import { SESSION_RECORD_MAX_AGE_MS } from '$lib/server/session';
 
@@ -98,7 +99,7 @@ const securityAndLogging: Handle = async ({ event, resolve }) => {
 	response.headers.set('X-Frame-Options', 'DENY');
 	response.headers.set('X-Content-Type-Options', 'nosniff');
 	response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-	response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+	response.headers.set('Permissions-Policy', permissionsPolicyForPath(event.url.pathname));
 
 	return response;
 };
