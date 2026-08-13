@@ -57,9 +57,10 @@ With OAuth, the server stores revocable tokens instead of the password:
   directly.
 - **Branding** — `PUBLIC_APP_NAME` names the app in the UI, page titles that
   use `appConfig`, and the PWA install manifest (served dynamically).
-- **Video calls** — set `PUBLIC_GALENE_URL` to your self-hosted Galene base
-  (e.g. `https://meet.example.com`) and `GALENE_ADMIN_PASSWORD` so calendar
-  **Join call** can mint invite tokens. Deploy notes: `infra/meet/`.
+- **Video calls** — set `LIVEKIT_URL`, `LIVEKIT_API_KEY`, and
+  `LIVEKIT_API_SECRET` (LiveKit Cloud). Calendar **Video call** stores a
+  `/meet/{group}` join link; opening it mints a LiveKit token and joins in
+  webmail. Unset = video controls hidden.
 
 ## What works on non-Stalwart JMAP servers
 

@@ -56,8 +56,9 @@ Open [http://localhost:5173](http://localhost:5173).
 | Variable | Description |
 | --- | --- |
 | `PUBLIC_JMAP_SERVER_URL` | JMAP server URL (default: `https://mail.zaur.app`) |
-| `PUBLIC_GALENE_URL` | Optional Galene base URL — enables calendar video-call controls |
-| `GALENE_ADMIN_PASSWORD` | Server-only Galene admin password (with `GALENE_ADMIN_USER`, default `admin`) so Join can mint invite tokens |
+| `LIVEKIT_URL` | Optional LiveKit Cloud websocket URL (`wss://…livekit.cloud`) — with the API key/secret, enables calendar video calls |
+| `LIVEKIT_API_KEY` | LiveKit API key (server-only) |
+| `LIVEKIT_API_SECRET` | LiveKit API secret (server-only) |
 | `PUBLIC_APP_NAME` | App title shown in the UI |
 | `SESSION_SECRET` | **Required in production** — seals credentials in the server-side session store; the cookie contains only an opaque id |
 | `STORE_DB_PATH` | Session and rate-limit SQLite database (default: `.data/store.sqlite`) |

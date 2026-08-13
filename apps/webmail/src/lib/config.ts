@@ -1,5 +1,4 @@
 import { env } from '$env/dynamic/public';
-import { normalizeMeetBaseUrl } from '$lib/utils/meet';
 
 export const appConfig = {
 	appName: env.PUBLIC_APP_NAME || 'Webmail',
@@ -12,8 +11,11 @@ export const appConfig = {
 	// Optional signup service. Empty (the default) hides every "get an address"
 	// entry point — self-hosted deploys create accounts in Stalwart directly.
 	registerUrl: (env.PUBLIC_REGISTER_URL || '').replace(/\/$/, ''),
-	// Optional self-hosted Galene base URL (e.g. https://meet.zaur.app). Empty
-	// hides the calendar "Video call" control; see infra/meet/.
-	// PUBLIC_JITSI_URL is a temporary alias while deploys rename the env var.
-	galeneUrl: normalizeMeetBaseUrl(env.PUBLIC_GALENE_URL || env.PUBLIC_JITSI_URL)
+	// Calendar "Video call" is enabled from the server when LiveKit is configured
+	// (LIVEKIT_URL + API key/secret). These public flags are optional overrides
+	// for local/dev without private env.
+	meetEnabled:
+		env.PUBLIC_MEET_ENABLED === 'true' ||
+		Boolean(env.PUBLIC_LIVEKIT_URL?.trim()) ||
+		Boolean(env.PUBLIC_GALENE_URL?.trim() || env.PUBLIC_JITSI_URL?.trim())
 };

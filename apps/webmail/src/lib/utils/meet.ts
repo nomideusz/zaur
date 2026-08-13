@@ -1,11 +1,14 @@
 /**
- * Calendar ↔ Galene helpers. Meeting links are stored in the event `location`
+ * Calendar ↔ Meet helpers. Meeting links are stored in the event `location`
  * field as a same-origin join URL (`/meet/{group}`). Opening one mints a
- * Galene invite token and redirects to the room (Zulip's path).
+ * LiveKit access token and joins the room in webmail.
  */
 
-/** Galene group names: one path segment, no slashes or `.` / `..`. */
+/** Room names: one path segment, no slashes or `.` / `..`. */
 export const MEET_GROUP_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,62}$/;
+
+/** Old Galene rooms used `https://meet.zaur.app/group/{id}/`. */
+const LEGACY_MEET_HOSTS = new Set(['meet.zaur.app']);
 
 export function normalizeMeetBaseUrl(raw: string | null | undefined): string {
 	const trimmed = raw?.trim() ?? '';
@@ -22,10 +25,6 @@ export function normalizeMeetBaseUrl(raw: string | null | undefined): string {
 	}
 }
 
-export function isMeetConfigured(baseUrl: string | null | undefined): boolean {
-	return Boolean(normalizeMeetBaseUrl(baseUrl));
-}
-
 export function isMeetGroupId(value: string): boolean {
 	return MEET_GROUP_RE.test(value);
 }
@@ -40,49 +39,36 @@ function groupFromPath(pathname: string, prefix: 'meet' | 'group'): string | nul
 	return isMeetGroupId(parts[1]) ? parts[1] : null;
 }
 
-function groupFromUrl(
-	value: string,
-	galeneUrl: string | null | undefined
-): string | null {
+function groupFromUrl(value: string): string | null {
 	try {
 		const url = new URL(value);
 		const meetGroup = groupFromPath(url.pathname, 'meet');
 		if (meetGroup) return meetGroup;
-		const galene = normalizeMeetBaseUrl(galeneUrl);
-		if (!galene) return null;
-		const host = new URL(galene);
-		if (url.protocol !== host.protocol || url.host !== host.host) return null;
+		if (!LEGACY_MEET_HOSTS.has(url.host)) return null;
 		return groupFromPath(url.pathname, 'group');
 	} catch {
 		return null;
 	}
 }
 
-/** True when `value` is a webmail `/meet/{group}` link or a Galene group URL. */
-export function isMeetingUrl(
-	value: string | null | undefined,
-	galeneUrl: string | null | undefined
-): boolean {
-	return extractMeetingGroup(value, galeneUrl) !== null;
+/** True when `value` is a webmail `/meet/{group}` link or a legacy Galene group URL. */
+export function isMeetingUrl(value: string | null | undefined): boolean {
+	return extractMeetingGroup(value) !== null;
 }
 
-/** Extract the Galene group id from location text, or null. */
-export function extractMeetingGroup(
-	value: string | null | undefined,
-	galeneUrl: string | null | undefined
-): string | null {
+/** Extract the room id from location text, or null. */
+export function extractMeetingGroup(value: string | null | undefined): string | null {
 	const candidate = value?.trim() ?? '';
 	if (!candidate) return null;
-	const direct = groupFromUrl(candidate, galeneUrl);
+	const direct = groupFromUrl(candidate);
 	if (direct) return direct;
 
 	const meetMatch = candidate.match(/\/meet\/([A-Za-z0-9][A-Za-z0-9._-]{0,62})(?=[/?#\s]|$)/i);
 	if (meetMatch && isMeetGroupId(meetMatch[1])) return meetMatch[1];
 
-	const galene = normalizeMeetBaseUrl(galeneUrl);
-	if (!galene) return null;
-	const escaped = galene.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-	const galeneMatch = candidate.match(new RegExp(`${escaped}/group/([A-Za-z0-9._-]+)`, 'i'));
+	const galeneMatch = candidate.match(
+		/https?:\/\/meet\.zaur\.app\/group\/([A-Za-z0-9._-]+)/i
+	);
 	return galeneMatch && isMeetGroupId(galeneMatch[1]) ? galeneMatch[1] : null;
 }
 

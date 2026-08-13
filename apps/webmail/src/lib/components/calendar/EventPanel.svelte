@@ -8,7 +8,6 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import MobileSheet from '$lib/components/ui/MobileSheet.svelte';
-	import { appConfig } from '$lib/config';
 	import { calendarKey } from '$lib/jmap/calendar-rights';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
@@ -30,7 +29,7 @@
 	const eventTitle = $derived(event?.title?.trim() || 'Untitled event');
 	const eventDescription = $derived(event?.description?.trim() ?? '');
 	const eventLocation = $derived(event?.location?.trim() ?? '');
-	const meetingGroup = $derived(extractMeetingGroup(eventLocation, appConfig.galeneUrl));
+	const meetingGroup = $derived(extractMeetingGroup(eventLocation));
 	const meetingUrl = $derived(meetingGroup ? meetingJoinPath(meetingGroup) : null);
 	const panelPadding = 'px-4 py-3';
 

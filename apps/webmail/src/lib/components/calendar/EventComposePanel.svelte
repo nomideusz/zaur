@@ -3,6 +3,7 @@
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
+	import { page } from '$app/stores';
 	import TimeField from '$lib/components/calendar/TimeField.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
@@ -10,7 +11,6 @@
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import FocusTrap from '$lib/components/ui/FocusTrap.svelte';
-	import { appConfig } from '$lib/config';
 	import { EVENT_REPEAT_OPTIONS } from '$lib/jmap/recurrence';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
@@ -18,7 +18,6 @@
 	import { cn } from '$lib/utils/cn';
 	import {
 		createMeetingUrl,
-		isMeetConfigured,
 		isMeetingUrl
 	} from '$lib/utils/meet';
 
@@ -59,28 +58,26 @@
 	const calendarOptions = $derived(
 		calendar.writableCalendars.map((item) => ({ value: item.id, label: item.name }))
 	);
-	const meetEnabled = $derived(isMeetConfigured(appConfig.galeneUrl));
-	const videoCall = $derived(
-		meetEnabled && isMeetingUrl(calendar.composeDraft.location, appConfig.galeneUrl)
-	);
+	const meetEnabled = $derived(Boolean($page.data.meetEnabled));
+	const videoCall = $derived(meetEnabled && isMeetingUrl(calendar.composeDraft.location));
 
 	function setVideoCall(on: boolean) {
-		if (!appConfig.galeneUrl) return;
+		if (!meetEnabled) return;
 		if (on) {
 			const loc = calendar.composeDraft.location.trim();
-			if (loc && !isMeetingUrl(loc, appConfig.galeneUrl)) {
+			if (loc && !isMeetingUrl(loc)) {
 				const note = `Location: ${loc}`;
 				const description = calendar.composeDraft.description.trim();
 				if (!description.includes(note)) {
 					calendar.composeDraft.description = [description, note].filter(Boolean).join('\n\n');
 				}
 			}
-			if (!isMeetingUrl(calendar.composeDraft.location, appConfig.galeneUrl)) {
+			if (!isMeetingUrl(calendar.composeDraft.location)) {
 				calendar.composeDraft.location = createMeetingUrl(window.location.origin);
 			}
 			return;
 		}
-		if (isMeetingUrl(calendar.composeDraft.location, appConfig.galeneUrl)) {
+		if (isMeetingUrl(calendar.composeDraft.location)) {
 			calendar.composeDraft.location = '';
 		}
 	}

@@ -1,4 +1,7 @@
+import { env } from '$env/dynamic/private';
 import { redirect } from '@sveltejs/kit';
+import { appConfig } from '$lib/config';
+import { livekitConfigFromEnv } from '$lib/server/livekit';
 import { readSession } from '$lib/server/session';
 import type { LayoutServerLoad } from './$types';
 
@@ -19,5 +22,7 @@ export const load: LayoutServerLoad = ({ cookies, url }) => {
 		redirect(303, `/login?next=${encodeURIComponent(next)}`);
 	}
 
-	return {};
+	return {
+		meetEnabled: Boolean(livekitConfigFromEnv(env)) || appConfig.meetEnabled
+	};
 };

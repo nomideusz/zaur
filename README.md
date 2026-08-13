@@ -7,7 +7,7 @@ Monorepo for the Zaur communications suite — Mail, Chat, Discuss, Meet.
 
 The suite lives across subdomains: **Mail** (`register.zaur.app` + `webmail.zaur.app`),
 **Chat** (`chat.zaur.app`, Once Campfire), **Discuss** (`discourse.zaur.app`, Discourse),
-and **Meet** (`meet.zaur.app`, self-hosted Galene — see [`infra/meet/`](infra/meet/)).
+and **Meet** (LiveKit Cloud, joined from webmail `/meet/{group}`).
 The apex `zaur.app` is the marketing landing site (`@zaur/web`).
 
 ## Apps
@@ -20,8 +20,9 @@ The apex `zaur.app` is the marketing landing site (`@zaur/web`).
 | **Native Mail** (planned) | `apps/mobile` | iOS + Android | App Store + Google Play |
 
 Mail server (`mail.zaur.app`) is Stalwart — config and ops notes live in [`infra/mail/`](infra/mail/).
-Video (`meet.zaur.app`) is Galene — ops notes in [`infra/meet/`](infra/meet/); webmail
-enables calendar video controls when `PUBLIC_GALENE_URL` is set.
+Video calls use LiveKit Cloud; webmail mints a token on `/meet/{group}` when
+`LIVEKIT_URL` / `LIVEKIT_API_KEY` / `LIVEKIT_API_SECRET` are set. The old Galene
+stack on Contabo (`infra/meet/`) can be stopped.
 
 ## Packages
 
