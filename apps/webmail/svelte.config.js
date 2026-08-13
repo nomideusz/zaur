@@ -21,9 +21,18 @@ const config = {
 				'style-src': ['self', 'unsafe-inline'],
 				'img-src': ['self', 'data:', 'blob:', 'https:'],
 				'font-src': ['self'],
-				// All JMAP traffic is proxied same-origin through /api/jmap, so no
-				// external connect-src is needed regardless of PUBLIC_JMAP_SERVER_URL.
-				'connect-src': ['self'],
+				// Camera/mic tiles are blob: / mediastream: object URLs.
+				'media-src': ['self', 'blob:', 'mediastream:'],
+				// JMAP is same-origin (/api/jmap). LiveKit Cloud is the calendar
+				// call SFU — signal is wss, region/validate is https, ICE may use TURN.
+				'connect-src': [
+					'self',
+					'https://*.livekit.cloud',
+					'wss://*.livekit.cloud',
+					'https://*.turn.livekit.cloud',
+					'wss://*.turn.livekit.cloud'
+				],
+				'worker-src': ['self', 'blob:'],
 				'frame-ancestors': ['none'],
 				'base-uri': ['self'],
 				'form-action': ['self'],

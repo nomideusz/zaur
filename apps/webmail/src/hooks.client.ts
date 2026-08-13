@@ -5,8 +5,8 @@ import type { HandleClientError } from '@sveltejs/kit';
 
 /*
  * Error tracking (Sentry-compatible — points at a Temps DSN via PUBLIC_SENTRY_DSN).
- * Events go through the same-origin `/api/errors` tunnel so the strict CSP
- * (`connect-src 'self'`) holds and ad blockers can't eat crash reports.
+ * Events go through the same-origin `/api/errors` tunnel so Sentry's ingest
+ * host is not in connect-src and ad blockers can't eat crash reports.
  *
  * No session replay, deliberately: replaying a webmail session would ship
  * users' email contents to the error tracker.
