@@ -53,10 +53,16 @@
 		createTreeCollection<MailboxNode>({
 			nodeToValue: (node) => node.id,
 			nodeToString: (node) => node.name,
+			nodeToChildren: (node) => node?.children ?? [],
 			rootNode: { id: 'ROOT', name: '', unread: 0, total: 0, children: customTree }
 		})
 	);
 	const expandedBranches = $derived(collectBranchIds(customTree));
+	const customSelected = $derived(
+		currentMailboxRouteId && customCollection.findNode(currentMailboxRouteId)
+			? [currentMailboxRouteId]
+			: []
+	);
 
 	let createFolderOpen = $state(false);
 	let createFolderParentRouteId = $state<string | null>(null);
@@ -220,7 +226,7 @@
 				<TreeView.Root
 					class="z-folder-tree"
 					collection={customCollection}
-					selectedValue={currentMailboxRouteId ? [currentMailboxRouteId] : []}
+					selectedValue={customSelected}
 					defaultExpandedValue={expandedBranches}
 					expandOnClick={false}
 					canRename={canRenameFolder}
@@ -230,7 +236,7 @@
 					<TreeView.Context>
 						{#snippet render(tree)}
 							<TreeView.Tree class="z-folder-tree-list">
-								{#each customCollection.rootNode.children ?? [] as node, index (node.id)}
+								{#each tree().collection.rootNode.children ?? [] as node, index (node.id)}
 									<MailboxTreeNode
 										{node}
 										indexPath={[index]}

@@ -16,6 +16,7 @@ export type BulkBarActionId =
 	| 'important'
 	| 'not-important'
 	| 'spam'
+	| 'restore'
 	| 'archive'
 	| 'trash'
 	| 'cancel';
@@ -34,7 +35,10 @@ export function bulkBarActions(options: {
 	canMarkImportant: boolean;
 	/** Spam folder exists and the current view isn't Spam/Trash/Drafts/Sent. */
 	canMarkSpam?: boolean;
-	/** Archive folder exists and the current view isn't Archive/Trash/Drafts. */
+	/** Inbox exists and the current view is Spam, Trash, or Archive. */
+	canRestore?: boolean;
+	restoreLabel?: string;
+	/** Archive folder exists and the current view isn't Archive/Trash/Drafts/Spam. */
 	canArchive?: boolean;
 	deleteLabel: string;
 }): BulkBarAction[] {
@@ -43,6 +47,8 @@ export function bulkBarActions(options: {
 		selectedCount,
 		canMarkImportant,
 		canMarkSpam = false,
+		canRestore = false,
+		restoreLabel = 'Move to inbox',
 		canArchive = false,
 		deleteLabel
 	} = options;
@@ -83,6 +89,10 @@ export function bulkBarActions(options: {
 			variant: 'link',
 			priority: 1
 		});
+	}
+
+	if (canRestore) {
+		actions.push({ id: 'restore', label: restoreLabel, variant: 'link', priority: 1 });
 	}
 
 	if (canMarkSpam) {

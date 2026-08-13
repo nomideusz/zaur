@@ -6,7 +6,7 @@
 	import MenuItem from '$lib/components/ui/menu/MenuItem.svelte';
 	import { hasFileNodeDrag, fileNodeDragId } from '$lib/files/drag';
 	import { fileAllowsAddChildren, fileAllowsDelete, fileAllowsRename, fileRoleLabel } from '$lib/jmap/file-rights';
-	import type { FileTreeNode } from '@zaur/mail-core/files/folder-tree';
+	import { fileNodeTreeId, type FileTreeNode } from '@zaur/mail-core/files/folder-tree';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { files } from '$lib/stores/files.svelte';
@@ -162,7 +162,7 @@
 						{/if}
 					</TreeView.BranchControl>
 					<TreeView.BranchContent class="z-folder-children">
-						{#each node.children as child, i (child.id)}
+						{#each node.children as child, i (fileNodeTreeId(child))}
 							<Self node={child} indexPath={[...indexPath, i]} {activeId} {onOpen} />
 						{/each}
 					</TreeView.BranchContent>

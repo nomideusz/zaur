@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { TreeView, createTreeCollection } from '@ark-ui/svelte/tree-view';
-	import { collectFileBranchIds, type FileTreeNode } from '@zaur/mail-core/files/folder-tree';
+	import { collectFileBranchIds, fileNodeTreeId, type FileTreeNode } from '@zaur/mail-core/files/folder-tree';
 	import Folder from '$lib/components/icons/Folder.svelte';
 	import Plus from '$lib/components/icons/Plus.svelte';
 	import FilesTreeNode from '$lib/components/files/FilesTreeNode.svelte';
@@ -17,17 +17,25 @@
 	const sharedCollection = $derived(fileTreeCollection(files.sharedTree));
 	const ownedExpanded = $derived(collectFileBranchIds(files.ownedTree));
 	const sharedExpanded = $derived(collectFileBranchIds(files.sharedTree));
-	const selectedValue = $derived(files.currentParentId ? [files.currentParentId] : []);
-
-	const ownedTreeKey = $derived(files.ownedFolders.map((node) => node.id).join(','));
-	const sharedTreeKey = $derived(files.sharedFolders.map((node) => node.id).join(','));
+	const ownedSelected = $derived(selectedInCollection(ownedCollection, files.currentFolder));
+	const sharedSelected = $derived(selectedInCollection(sharedCollection, files.currentFolder));
 
 	function fileTreeCollection(nodes: FileTreeNode[]) {
 		return createTreeCollection<FileTreeNode>({
-			nodeToValue: (node) => node.id,
+			nodeToValue: fileNodeTreeId,
 			nodeToString: (node) => node.name,
+			nodeToChildren: (node) => node?.children ?? [],
 			rootNode: { id: 'ROOT', name: '', children: nodes } as FileTreeNode
 		});
+	}
+
+	function selectedInCollection(
+		collection: ReturnType<typeof fileTreeCollection>,
+		folder: { id: string; accountId: string | null } | null
+	) {
+		if (!folder) return [];
+		const value = fileNodeTreeId(folder);
+		return collection.findNode(value) ? [value] : [];
 	}
 
 	function openFolder(id: string | null) {
@@ -96,18 +104,17 @@
 			</ul>
 
 			{#if files.ownedTree.length}
-				{#key ownedTreeKey}
 				<TreeView.Root
 					class="z-folder-tree mt-1"
 					collection={ownedCollection}
-					{selectedValue}
+					selectedValue={ownedSelected}
 					defaultExpandedValue={ownedExpanded}
 					expandOnClick={false}
 				>
 					<TreeView.Context>
-						{#snippet render()}
+						{#snippet render(tree)}
 							<TreeView.Tree class="z-folder-tree-list">
-								{#each ownedCollection.rootNode.children ?? [] as node, index (node.id)}
+								{#each tree().collection.rootNode.children ?? [] as node, index (fileNodeTreeId(node))}
 									<FilesTreeNode
 										{node}
 										indexPath={[index]}
@@ -119,25 +126,23 @@
 						{/snippet}
 					</TreeView.Context>
 				</TreeView.Root>
-				{/key}
 			{/if}
 
 			{#if files.sharedTree.length}
 				<p class="mt-4 px-3 text-xs font-medium uppercase tracking-wide text-fg-subtle">
 					Shared with me
 				</p>
-				{#key sharedTreeKey}
 				<TreeView.Root
 					class="z-folder-tree mt-1"
 					collection={sharedCollection}
-					{selectedValue}
+					selectedValue={sharedSelected}
 					defaultExpandedValue={sharedExpanded}
 					expandOnClick={false}
 				>
 					<TreeView.Context>
-						{#snippet render()}
+						{#snippet render(tree)}
 							<TreeView.Tree class="z-folder-tree-list">
-								{#each sharedCollection.rootNode.children ?? [] as node, index (node.id)}
+								{#each tree().collection.rootNode.children ?? [] as node, index (fileNodeTreeId(node))}
 									<FilesTreeNode
 										{node}
 										indexPath={[index]}
@@ -149,7 +154,6 @@
 						{/snippet}
 					</TreeView.Context>
 				</TreeView.Root>
-				{/key}
 			{/if}
 		</nav>
 	</ScrollArea>

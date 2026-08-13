@@ -3,8 +3,8 @@
 	 * Bulk mark/spam/archive/trash actions for the current selection — shared between
 	 * the desktop inline action bar and the mobile island's bulk mode.
 	 *
-	 * Highlight + Archive stay inline preferentially; remaining marks fit by width;
-	 * Move targets live in the More menu.
+	 * Highlight, Archive, and folder restore (Not spam / Move to inbox) stay inline
+	 * preferentially; remaining marks fit by width; Move targets live in the More menu.
 	 */
 	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import {
@@ -19,7 +19,9 @@
 	import Eye from '$lib/components/icons/Eye.svelte';
 	import EyeOff from '$lib/components/icons/EyeOff.svelte';
 	import Important from '$lib/components/icons/Important.svelte';
+	import Inbox from '$lib/components/icons/Inbox.svelte';
 	import MoreVertical from '$lib/components/icons/MoreVertical.svelte';
+	import Shield from '$lib/components/icons/Shield.svelte';
 	import ShieldAlert from '$lib/components/icons/ShieldAlert.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import { Menu, MenuContent, MenuItem, MenuSeparator, MenuTrigger } from '$lib/components/ui/menu';
@@ -65,6 +67,7 @@
 		important: Important,
 		'not-important': Important,
 		spam: ShieldAlert,
+		restore: Inbox,
 		archive: Archive
 	};
 
@@ -77,18 +80,26 @@
 	const canMarkImportant = $derived(canMarkImportantFromMailboxRole(currentMailbox?.role));
 	const junkMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'junk'));
 	const archiveMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'archive'));
+	const inboxMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'inbox' && mb.jmapId));
+	const mailboxRole = $derived(currentMailbox?.role);
+	const canRestore = $derived(
+		!!inboxMailbox &&
+			(mailboxRole === 'junk' || mailboxRole === 'trash' || mailboxRole === 'archive')
+	);
+	const restoreLabel = $derived(mailboxRole === 'junk' ? 'Not spam' : 'Move to inbox');
 	const canMarkSpam = $derived(
 		!!junkMailbox &&
-			currentMailbox?.role !== 'junk' &&
-			currentMailbox?.role !== 'trash' &&
-			currentMailbox?.role !== 'drafts' &&
-			currentMailbox?.role !== 'sent'
+			mailboxRole !== 'junk' &&
+			mailboxRole !== 'trash' &&
+			mailboxRole !== 'drafts' &&
+			mailboxRole !== 'sent'
 	);
 	const canArchive = $derived(
 		!!archiveMailbox &&
-			currentMailbox?.role !== 'archive' &&
-			currentMailbox?.role !== 'trash' &&
-			currentMailbox?.role !== 'drafts'
+			mailboxRole !== 'archive' &&
+			mailboxRole !== 'trash' &&
+			mailboxRole !== 'drafts' &&
+			mailboxRole !== 'junk'
 	);
 	const moveTargets = $derived(moveTargetMailboxes(mail.mailboxes, currentMailbox));
 	const canMove = $derived(moveTargets.length > 0);
@@ -98,6 +109,8 @@
 			selectedCount,
 			canMarkImportant,
 			canMarkSpam,
+			canRestore,
+			restoreLabel,
 			canArchive,
 			deleteLabel
 		})
@@ -109,6 +122,7 @@
 		'important',
 		'not-important',
 		'spam',
+		'restore',
 		'archive'
 	]);
 	/**
@@ -213,6 +227,12 @@
 				void runBulk(() => mail.bulkMoveToMailbox(auth.client!, target.id), true);
 				break;
 			}
+			case 'restore': {
+				const target = inboxMailbox;
+				if (!target) break;
+				void runBulk(() => mail.bulkMoveToMailbox(auth.client!, target.id), true);
+				break;
+			}
 			case 'archive': {
 				const target = archiveMailbox;
 				if (!target) break;
@@ -230,7 +250,7 @@
 </script>
 
 {#snippet actionIcon(action: BulkBarAction, sizeClass: string)}
-	{@const Icon = ACTION_ICONS[action.id]}
+	{@const Icon = action.id === 'restore' && action.label === 'Not spam' ? Shield : ACTION_ICONS[action.id]}
 	{#if Icon}
 		<Icon class="{sizeClass} {action.id === 'not-important' ? 'opacity-50' : ''}" aria-hidden="true" />
 	{/if}

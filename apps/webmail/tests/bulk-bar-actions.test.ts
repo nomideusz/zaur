@@ -70,6 +70,37 @@ describe('bulkBarActions', () => {
 		);
 	});
 
+	it('offers Not spam in Junk instead of Mark spam', () => {
+		const actions = bulkBarActions({
+			counts: { new: 1, important: 0, normal: 0, notImportant: 1 },
+			selectedCount: 1,
+			canMarkImportant: false,
+			canRestore: true,
+			restoreLabel: 'Not spam',
+			deleteLabel: 'Trash'
+		});
+
+		assert.deepEqual(
+			actions.map((action) => action.id),
+			['mark-seen', 'restore', 'trash', 'cancel']
+		);
+		assert.equal(actions[1]?.label, 'Not spam');
+	});
+
+	it('offers Move to inbox in Archive and Trash', () => {
+		const actions = bulkBarActions({
+			counts: { new: 0, important: 0, normal: 2, notImportant: 2 },
+			selectedCount: 2,
+			canMarkImportant: false,
+			canRestore: true,
+			restoreLabel: 'Move to inbox',
+			deleteLabel: 'Delete forever'
+		});
+
+		assert.equal(actions.find((action) => action.id === 'restore')?.label, 'Move to inbox');
+		assert.ok(!actions.some((action) => action.id === 'spam' || action.id === 'archive'));
+	});
+
 	it('skips important actions in trash', () => {
 		const actions = bulkBarActions({
 			counts: { new: 0, important: 2, normal: 1, notImportant: 1 },

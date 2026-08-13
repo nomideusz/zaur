@@ -4,13 +4,24 @@ export interface FileTreeNode extends FileNode {
 	children: FileTreeNode[];
 }
 
+/** Tree-view value / map key — ids are only unique within a JMAP account. */
+export function fileNodeTreeId(node: Pick<FileNode, 'id' | 'accountId'>): string {
+	return node.accountId ? `${node.accountId}:${node.id}` : node.id;
+}
+
+function parentTreeId(node: Pick<FileNode, 'parentId' | 'accountId'>): string | null {
+	if (!node.parentId) return null;
+	return node.accountId ? `${node.accountId}:${node.parentId}` : node.parentId;
+}
+
 export function buildFileTree(nodes: FileNode[]): FileTreeNode[] {
 	const mapped: FileTreeNode[] = nodes.map((node) => ({ ...node, children: [] }));
-	const byId = new Map(mapped.map((node) => [node.id, node]));
+	const byId = new Map(mapped.map((node) => [fileNodeTreeId(node), node]));
 	const roots: FileTreeNode[] = [];
 
 	for (const node of mapped) {
-		const parent = node.parentId ? byId.get(node.parentId) : undefined;
+		const parentKey = parentTreeId(node);
+		const parent = parentKey ? byId.get(parentKey) : undefined;
 		if (parent) parent.children.push(node);
 		else roots.push(node);
 	}
@@ -30,7 +41,7 @@ export function collectFileBranchIds(nodes: FileTreeNode[]): string[] {
 	const walk = (list: FileTreeNode[]) => {
 		for (const node of list) {
 			if (node.children.length > 0) {
-				ids.push(node.id);
+				ids.push(fileNodeTreeId(node));
 				walk(node.children);
 			}
 		}
@@ -41,6 +52,9 @@ export function collectFileBranchIds(nodes: FileTreeNode[]): string[] {
 
 /** Nodes whose parent is missing from the set — top-level, or shared folders whose parent is not visible. */
 export function orphanFileRoots(nodes: FileNode[]): FileNode[] {
-	const ids = new Set(nodes.map((node) => node.id));
-	return nodes.filter((node) => !node.parentId || !ids.has(node.parentId));
+	const ids = new Set(nodes.map(fileNodeTreeId));
+	return nodes.filter((node) => {
+		const parentKey = parentTreeId(node);
+		return !parentKey || !ids.has(parentKey);
+	});
 }

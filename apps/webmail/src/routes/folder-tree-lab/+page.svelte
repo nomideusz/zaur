@@ -39,6 +39,7 @@
 		createTreeCollection<MailboxNode>({
 			nodeToValue: (node) => node.id,
 			nodeToString: (node) => node.name,
+			nodeToChildren: (node) => node?.children ?? [],
 			rootNode: { id: 'ROOT', name: '', unread: 0, total: 0, children: tree }
 		})
 	);
@@ -75,7 +76,7 @@
 		<TreeView.Context>
 			{#snippet render(tree)}
 				<TreeView.Tree class="z-folder-tree-list">
-					{#each collection.rootNode.children ?? [] as node, index (node.id)}
+					{#each tree().collection.rootNode.children ?? [] as node, index (node.id)}
 						<MailboxTreeNode
 							{node}
 							indexPath={[index]}
