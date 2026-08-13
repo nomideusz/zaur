@@ -21,6 +21,8 @@ import type {
 	JMAPCalendarRights,
 	JMAPPrincipal
 } from './calendar-types';
+import { CALENDAR_PROPERTIES } from './calendar-types';
+import { shareWithPointerPatch } from './calendar-rights';
 import type {
 	JMAPFileNode,
 	JMAPFileNodeCapability,
@@ -737,17 +739,21 @@ export class JMAPClient {
 		const response = await this.calendarRequest(
 			accountIds.map((accountId, index) => [
 				'Calendar/get',
-				{ accountId },
+				{ accountId, properties: [...CALENDAR_PROPERTIES] },
 				`cal-${index}`
 			])
 		);
 
 		const list: JMAPCalendar[] = [];
+		const seen = new Set<string>();
 		for (const [index, accountId] of accountIds.entries()) {
 			const call = response.methodResponses?.find(([, , id]) => id === `cal-${index}`);
 			if (!call || call[0] !== 'Calendar/get') continue;
 			const calendars = (call[1].list as JMAPCalendar[]) ?? [];
 			for (const calendar of calendars) {
+				const key = `${accountId}:${calendar.id}`;
+				if (seen.has(key)) continue;
+				seen.add(key);
 				list.push({ ...calendar, accountId });
 			}
 		}
@@ -771,7 +777,7 @@ export class JMAPClient {
 
 		const resolved = this.calendarAccount(accountId);
 		const response = await this.calendarRequest([
-			['Calendar/get', { accountId: resolved, ids }, 'cal']
+			['Calendar/get', { accountId: resolved, ids, properties: [...CALENDAR_PROPERTIES] }, 'cal']
 		]);
 
 		const first = response.methodResponses?.[0];
@@ -834,24 +840,24 @@ export class JMAPClient {
 		if (patch.color !== undefined) update.color = patch.color;
 		if (patch.description !== undefined) update.description = patch.description;
 		if (patch.isVisible !== undefined) update.isVisible = patch.isVisible;
-		if (patch.shareWith !== undefined) update.shareWith = patch.shareWith;
+		if (patch.shareWith === null) {
+			update.shareWith = null;
+		} else if (patch.shareWith !== undefined) {
+			Object.assign(update, shareWithPointerPatch(patch.shareWith));
+		}
 
 		if (!Object.keys(update).length) return;
 
-		const extraUsing = patch.shareWith !== undefined ? [PRINCIPALS_URN] : [];
-		const response = await this.calendarRequest(
+		const response = await this.calendarRequest([
 			[
-				[
-					'Calendar/set',
-					{
-						accountId: this.calendarAccount(patch.accountId),
-						update: { [calendarId]: update }
-					},
-					'ccu'
-				]
-			],
-			extraUsing
-		);
+				'Calendar/set',
+				{
+					accountId: this.calendarAccount(patch.accountId),
+					update: { [calendarId]: update }
+				},
+				'ccu'
+			]
+		]);
 
 		this.throwCalendarSetErrors(response, 'Could not update calendar');
 	}

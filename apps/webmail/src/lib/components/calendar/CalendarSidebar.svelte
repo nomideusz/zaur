@@ -8,6 +8,7 @@
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import {
 		calendarAllowsShare,
+		calendarKey,
 		isOwnedCalendar,
 		nextCalendarColor
 	} from '$lib/jmap/calendar-rights';
@@ -57,12 +58,12 @@
 
 	function openEdit(item: Calendar) {
 		editorMode = 'edit';
-		editorCalendarId = item.id;
+		editorCalendarId = calendarKey(item);
 		editorOpen = true;
 	}
 
 	function openShare(item: Calendar) {
-		shareCalendarId = item.id;
+		shareCalendarId = calendarKey(item);
 		shareOpen = true;
 	}
 
@@ -95,7 +96,7 @@
 			return;
 		}
 		try {
-			await calendar.setDefaultCalendar(client, item.id);
+			await calendar.setDefaultCalendar(client, calendarKey(item));
 		} catch (error) {
 			toast.show(errorMessage(error, 'Could not set default calendar'), 'error');
 		}
@@ -108,15 +109,15 @@
 			return;
 		}
 		try {
-			await calendar.deleteCalendar(client, item.id);
+			await calendar.deleteCalendar(client, calendarKey(item));
 		} catch (error) {
 			toast.show(errorMessage(error, 'Could not delete calendar'), 'error');
 		}
 	}
 
-	function toggle(id: string) {
+	function toggle(item: Calendar) {
 		if (isCoarsePointer()) haptic(8);
-		calendar.toggleCalendar(id, auth.client);
+		calendar.toggleCalendar(item, auth.client);
 	}
 </script>
 
@@ -124,12 +125,12 @@
 	{@const shareCount = item.shareWith ? Object.keys(item.shareWith).length : 0}
 	<li class="flex items-center gap-0.5">
 		<Checkbox
-			checked={calendar.isCalendarVisible(item.id)}
+			checked={calendar.isCalendarVisible(item)}
 			label={`Show ${item.name} calendar`}
-			onchange={() => toggle(item.id)}
+			onchange={() => toggle(item)}
 			class={cn(
 				'z-checkbox-row min-w-0 flex-1 py-2 text-left',
-				calendar.isCalendarVisible(item.id) ? 'text-fg' : 'text-fg-muted'
+				calendar.isCalendarVisible(item) ? 'text-fg' : 'text-fg-muted'
 			)}
 		>
 			<span
@@ -175,7 +176,7 @@
 		<div class="flex flex-col gap-0.5">
 			<h3 class="z-type-label px-3 pb-1 pt-2">{title}</h3>
 			<ul class="flex flex-col gap-0.5">
-				{#each items as item (item.id)}
+				{#each items as item (calendarKey(item))}
 					{@render calendarRow(item)}
 				{/each}
 			</ul>
@@ -238,7 +239,7 @@
 			{@render calendarGroup('Shared with me', sharedCalendars)}
 		{:else}
 			<ul class="flex flex-col gap-0.5">
-				{#each ownedCalendars as item (item.id)}
+				{#each ownedCalendars as item (calendarKey(item))}
 					{@render calendarRow(item)}
 				{/each}
 			</ul>

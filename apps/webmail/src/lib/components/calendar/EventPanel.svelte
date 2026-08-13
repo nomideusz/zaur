@@ -9,6 +9,7 @@
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import MobileSheet from '$lib/components/ui/MobileSheet.svelte';
 	import { appConfig } from '$lib/config';
+	import { calendarKey } from '$lib/jmap/calendar-rights';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { formatEventTime } from '$lib/utils/dates';
@@ -19,7 +20,11 @@
 
 	const event = $derived(calendar.selectedEvent);
 	const eventCalendars = $derived(
-		event ? event.calendarIds.map((id) => calendar.calendarById(id)).filter(Boolean) : []
+		event
+			? event.calendarIds
+					.map((id) => calendar.calendarById(id, event.accountId))
+					.filter(Boolean)
+			: []
 	);
 	const canEditEvent = $derived(event ? calendar.eventAllowsWrites(event) : false);
 	const eventTitle = $derived(event?.title?.trim() || 'Untitled event');
@@ -61,7 +66,7 @@
 			<div>
 				<p class="text-xs font-medium uppercase tracking-wide text-fg-subtle">Calendars</p>
 				<ul class="mt-2 space-y-1">
-					{#each eventCalendars as item (item!.id)}
+					{#each eventCalendars as item (calendarKey(item!))}
 						<li class="flex items-center gap-2 text-fg">
 							<span
 								class="size-2.5 shrink-0 rounded-full"

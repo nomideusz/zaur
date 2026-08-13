@@ -1,5 +1,55 @@
-import type { Calendar, CalendarRights, CalendarShareRole } from '../types/calendar';
+import type { Calendar, CalendarEvent, CalendarRights, CalendarShareRole } from '../types/calendar';
 import type { JMAPCalendarRights } from './calendar-types';
+
+const CALENDAR_RIGHT_KEYS = [
+	'mayReadFreeBusy',
+	'mayReadItems',
+	'mayWriteAll',
+	'mayWriteOwn',
+	'mayUpdatePrivate',
+	'mayRSVP',
+	'mayShare',
+	'mayDelete'
+] as const;
+
+/** List/map key — JMAP calendar ids are only unique within an account. */
+export function calendarKey(calendar: Pick<Calendar, 'id' | 'accountId'>): string {
+	return calendar.accountId ? `${calendar.accountId}:${calendar.id}` : calendar.id;
+}
+
+/** List/map key — JMAP event ids are only unique within an account. */
+export function eventKey(event: Pick<CalendarEvent, 'id' | 'accountId'>): string {
+	return event.accountId ? `${event.accountId}:${event.id}` : event.id;
+}
+
+/** RFC 6901 JSON Pointer segment for JMAP PatchObject keys. */
+export function jmapPointerSegment(value: string): string {
+	return value.replace(/~/g, '~0').replace(/\//g, '~1');
+}
+
+/** Wire form: omitted keys default to false, so only send grants. */
+export function compactCalendarRights(
+	rights: CalendarRights | JMAPCalendarRights
+): JMAPCalendarRights {
+	const compact: JMAPCalendarRights = {};
+	for (const key of CALENDAR_RIGHT_KEYS) {
+		if (rights[key]) compact[key] = true;
+	}
+	return compact;
+}
+
+/** Calendar/set PatchObject for shareWith map entries (`null` removes a principal). */
+export function shareWithPointerPatch(
+	shareWith: Record<string, CalendarRights | JMAPCalendarRights | null>
+): Record<string, JMAPCalendarRights | null> {
+	const update: Record<string, JMAPCalendarRights | null> = {};
+	for (const [principalId, rights] of Object.entries(shareWith)) {
+		update[`shareWith/${jmapPointerSegment(principalId)}`] = rights
+			? compactCalendarRights(rights)
+			: null;
+	}
+	return update;
+}
 
 export const CALENDAR_COLORS = [
 	'#2563eb',
@@ -109,11 +159,16 @@ export function calendarDeleteBlockedReason(
 /** Spec: show an event if any of its calendars is visible. */
 export function eventIsVisibleOnCalendars(
 	calendarIds: string[],
-	hiddenCalendarIds: ReadonlySet<string>
+	hiddenCalendarIds: ReadonlySet<string>,
+	accountId?: string | null
 ): boolean {
 	if (!hiddenCalendarIds.size) return true;
 	if (!calendarIds.length) return true;
-	return calendarIds.some((id) => !hiddenCalendarIds.has(id));
+	return calendarIds.some((id) => {
+		const keyed = calendarKey({ id, accountId: accountId ?? null });
+		if (hiddenCalendarIds.has(keyed)) return false;
+		return keyed === id || !hiddenCalendarIds.has(id);
+	});
 }
 
 export function nextCalendarColor(existingColors: string[]): string {

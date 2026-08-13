@@ -24,6 +24,20 @@ export interface JMAPCalendar {
 	accountId?: string | null;
 }
 
+/** Always request shareWith/myRights — some servers omit them unless listed. */
+export const CALENDAR_PROPERTIES = [
+	'id',
+	'name',
+	'description',
+	'color',
+	'isDefault',
+	'isVisible',
+	'isSubscribed',
+	'sortOrder',
+	'myRights',
+	'shareWith'
+] as const;
+
 export interface JMAPPrincipal {
 	id: string;
 	type?: string;

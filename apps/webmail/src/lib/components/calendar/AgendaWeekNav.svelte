@@ -1,6 +1,7 @@
 <script lang="ts">
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
+	import { eventKey } from '$lib/jmap/calendar-rights';
 	import { settings } from '$lib/stores/settings.svelte';
 	import type { CalendarEvent } from '$lib/types/calendar';
 	import { cn } from '$lib/utils/cn';
@@ -78,7 +79,7 @@
 					</p>
 					{#if selected && events.length}
 						<ul class="mt-1 space-y-1 border-t border-border/60 pt-1.5">
-							{#each events.slice(0, 3) as event (event.id)}
+							{#each events.slice(0, 3) as event (eventKey(event))}
 								<li class="truncate text-[11px] text-fg-muted">
 									<span class="text-fg-subtle">{formatEventTime(event)}</span>
 									<span class="ml-1">{event.title || 'Untitled event'}</span>

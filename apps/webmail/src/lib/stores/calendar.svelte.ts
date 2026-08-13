@@ -5,7 +5,9 @@ import { mapCalendar, mapCalendarEvent } from '$lib/jmap/calendar-map';
 import {
 	calendarAllowsWrites,
 	calendarDeleteBlockedReason,
+	calendarKey,
 	eventIsVisibleOnCalendars,
+	eventKey,
 	nextCalendarColor,
 	patchShareWith,
 	rightsForShareRole
@@ -138,7 +140,7 @@ class CalendarStore {
 			const list = await client.getCalendars();
 			this.calendars = list.map((item, index) => mapCalendar(item, index, item.accountId));
 			this.hiddenCalendarIds = new Set(
-				this.calendars.filter((item) => !item.isVisible).map((item) => item.id)
+				this.calendars.filter((item) => !item.isVisible).map(calendarKey)
 			);
 			this.calendarsLoaded = true;
 			this.syncComposeCalendar();
@@ -184,17 +186,25 @@ class CalendarStore {
 	visibleEvents = $derived.by(() => {
 		if (!this.hiddenCalendarIds.size) return this.events;
 		return this.events.filter((event) =>
-			eventIsVisibleOnCalendars(event.calendarIds, this.hiddenCalendarIds)
+			eventIsVisibleOnCalendars(event.calendarIds, this.hiddenCalendarIds, event.accountId)
 		);
 	});
 
 	selectedEvent = $derived.by(() => {
 		if (!this.selectedEventId) return null;
-		return this.visibleEvents.find((event) => event.id === this.selectedEventId) ?? null;
+		return this.findEventByRef(this.selectedEventId, this.visibleEvents) ?? null;
 	});
 
-	calendarById(id: string): Calendar | undefined {
-		return this.calendars.find((calendar) => calendar.id === id);
+	calendarById(id: string, accountId?: string | null): Calendar | undefined {
+		if (accountId) {
+			const match = this.calendars.find(
+				(item) => item.id === id && item.accountId === accountId
+			);
+			if (match) return match;
+		}
+		const byKey = this.calendars.find((item) => calendarKey(item) === id);
+		if (byKey) return byKey;
+		return this.calendars.find((item) => item.id === id);
 	}
 
 	eventsForDay(day: Date): CalendarEvent[] {
@@ -212,36 +222,47 @@ class CalendarStore {
 		return expanded.sort((a, b) => a.start.getTime() - b.start.getTime());
 	}
 
-	isCalendarVisible(id: string): boolean {
-		return !this.hiddenCalendarIds.has(id);
+	isCalendarVisible(item: Calendar): boolean {
+		return !this.hiddenCalendarIds.has(calendarKey(item));
 	}
 
-	toggleCalendar(id: string, client?: JMAPClient | null) {
+	toggleCalendar(target: Calendar, client?: JMAPClient | null) {
+		const key = calendarKey(target);
 		const next = new Set(this.hiddenCalendarIds);
-		const visible = next.has(id);
-		if (visible) next.delete(id);
-		else next.add(id);
+		const visible = next.has(key);
+		if (visible) next.delete(key);
+		else next.add(key);
 		this.hiddenCalendarIds = next;
 		this.refreshCounter++;
 
 		this.calendars = this.calendars.map((item) =>
-			item.id === id ? { ...item, isVisible: visible } : item
+			calendarKey(item) === key ? { ...item, isVisible: visible } : item
 		);
 
 		if (this.selectedEventId) {
-			const selected = this.events.find((event) => event.id === this.selectedEventId);
-			if (selected && !eventIsVisibleOnCalendars(selected.calendarIds, next)) {
+			const selected = this.findEventByRef(this.selectedEventId, this.events);
+			if (
+				selected &&
+				!eventIsVisibleOnCalendars(selected.calendarIds, next, selected.accountId)
+			) {
 				this.selectedEventId = null;
 			}
 		}
 
 		if (client) {
-			void this.persistVisibility(client, id, visible);
+			void this.persistVisibility(client, target.id, visible, target.accountId);
 		}
 	}
 
 	private calendarAccountId(id: string): string | null {
 		return this.calendarById(id)?.accountId ?? null;
+	}
+
+	private findEventByRef(ref: string, events: CalendarEvent[]): CalendarEvent | undefined {
+		return (
+			events.find((event) => eventKey(event) === ref) ??
+			events.find((event) => event.id === ref)
+		);
 	}
 
 	private eventAccountId(event: CalendarEvent): string | null {
@@ -252,16 +273,22 @@ class CalendarStore {
 		);
 	}
 
-	private async persistVisibility(client: JMAPClient, id: string, isVisible: boolean) {
+	private async persistVisibility(
+		client: JMAPClient,
+		id: string,
+		isVisible: boolean,
+		accountId?: string | null
+	) {
+		const key = calendarKey({ id, accountId: accountId ?? null });
 		try {
-			await client.updateCalendar(id, { isVisible, accountId: this.calendarAccountId(id) });
+			await client.updateCalendar(id, { isVisible, accountId: accountId ?? this.calendarAccountId(id) });
 		} catch (error) {
 			const reverted = new Set(this.hiddenCalendarIds);
-			if (isVisible) reverted.add(id);
-			else reverted.delete(id);
+			if (isVisible) reverted.add(key);
+			else reverted.delete(key);
 			this.hiddenCalendarIds = reverted;
 			this.calendars = this.calendars.map((item) =>
-				item.id === id ? { ...item, isVisible: !isVisible } : item
+				calendarKey(item) === key ? { ...item, isVisible: !isVisible } : item
 			);
 			this.refreshCounter++;
 			toast.show(errorMessage(error, 'Could not update calendar visibility'), 'error');
@@ -279,8 +306,11 @@ class CalendarStore {
 		}
 
 		// Client-expanded recurrence instances use `${masterId}~${recurrenceId}`.
-		const masterId = id.includes('~') ? id.slice(0, id.indexOf('~')) : id;
-		this.selectedEventId = masterId;
+		const masterRef = id.includes('~') ? id.slice(0, id.indexOf('~')) : id;
+		const match =
+			this.findEventByRef(masterRef, this.visibleEvents) ??
+			this.findEventByRef(masterRef, this.events);
+		this.selectedEventId = match ? eventKey(match) : masterRef;
 	}
 
 	openCompose(day?: Date) {
@@ -391,7 +421,8 @@ class CalendarStore {
 		}
 
 		await this.loadMonth(client, { preserveSelection: true });
-		this.selectedEventId = eventId;
+		const match = this.findEventByRef(eventId, this.events);
+		this.selectedEventId = match ? eventKey(match) : eventId;
 		this.refreshCounter++;
 	}
 
@@ -466,13 +497,15 @@ class CalendarStore {
 
 		try {
 			await client.destroyCalendarEvent(event.id, this.eventAccountId(event));
-			if (this.selectedEventId === event.id) {
+			if (this.selectedEventId === event.id || this.selectedEventId === eventKey(event)) {
 				this.selectedEventId = null;
 			}
 			if (this.composeEventId === event.id) {
 				this.closeCompose();
 			}
-			this.events = this.events.filter((item) => item.id !== event.id);
+			this.events = this.events.filter(
+				(item) => item.id !== event.id || item.accountId !== event.accountId
+			);
 			this.refreshCounter++;
 			toast.show(`"${event.title}" deleted`, 'success');
 			return true;
@@ -496,7 +529,7 @@ class CalendarStore {
 
 	eventAllowsWrites(event: CalendarEvent): boolean {
 		return event.calendarIds.some((id) => {
-			const item = this.calendarById(id);
+			const item = this.calendarById(id, event.accountId);
 			return item ? calendarAllowsWrites(item) : false;
 		});
 	}
@@ -579,7 +612,7 @@ class CalendarStore {
 		this.refreshCounter++;
 
 		try {
-			await client.updateCalendar(id, {
+			await client.updateCalendar(existing.id, {
 				...(name !== undefined ? { name } : {}),
 				...(patch.color !== undefined ? { color: patch.color } : {}),
 				accountId: existing.accountId
@@ -600,11 +633,11 @@ class CalendarStore {
 		const previous = this.calendars;
 		this.calendars = this.calendars.map((item) => ({
 			...item,
-			isDefault: item.id === id
+			isDefault: calendarKey(item) === calendarKey(existing)
 		}));
 
 		try {
-			await client.setDefaultCalendar(id);
+			await client.setDefaultCalendar(existing.id);
 			toast.show(`“${existing.name}” is now the default calendar`, 'success');
 		} catch (error) {
 			this.calendars = previous;
@@ -632,7 +665,7 @@ class CalendarStore {
 		}
 
 		try {
-			await client.destroyCalendar(id, false, existing.accountId);
+			await client.destroyCalendar(existing.id, false, existing.accountId);
 		} catch (error) {
 			if (!isJmapMethodError(error, 'calendarHasEvent')) throw error;
 			if (
@@ -645,19 +678,25 @@ class CalendarStore {
 			) {
 				return false;
 			}
-			await client.destroyCalendar(id, true, existing.accountId);
+			await client.destroyCalendar(existing.id, true, existing.accountId);
 		}
 
-		this.calendars = this.calendars.filter((item) => item.id !== id);
-		this.events = this.events.filter((event) => !event.calendarIds.includes(id));
+		this.calendars = this.calendars.filter((item) => calendarKey(item) !== calendarKey(existing));
+		this.events = this.events.filter((event) => {
+			if (!event.calendarIds.includes(existing.id)) return true;
+			if (existing.accountId && event.accountId && event.accountId !== existing.accountId) {
+				return true;
+			}
+			return false;
+		});
 		const hidden = new Set(this.hiddenCalendarIds);
-		hidden.delete(id);
+		hidden.delete(calendarKey(existing));
 		this.hiddenCalendarIds = hidden;
 
-		if (this.selectedEvent?.calendarIds.includes(id)) {
+		if (this.selectedEvent?.calendarIds.includes(existing.id)) {
 			this.selectedEventId = null;
 		}
-		if (this.composeDraft.calendarId === id) {
+		if (this.composeDraft.calendarId === existing.id) {
 			this.composeDraft.calendarId = this.defaultCalendarId() ?? '';
 		}
 
@@ -712,12 +751,20 @@ class CalendarStore {
 				shareWith: patched,
 				accountId: existing.accountId
 			});
-			const hydrated = await this.hydrateCalendar(client, existing.id, existing.accountId);
-			if (!hydrated) this.refreshCounter++;
 		} catch (error) {
 			this.replaceCalendar({ ...existing, shareWith: previous });
 			throw error;
 		}
+
+		try {
+			const hydrated = await this.hydrateCalendar(client, existing.id, existing.accountId);
+			if (hydrated && !hydrated.shareWith && Object.keys(nextShareWith).length) {
+				this.replaceCalendar({ ...hydrated, shareWith: nextShareWith });
+			}
+		} catch {
+			// Set succeeded; keep the optimistic share list if GET omits shareWith.
+		}
+		this.refreshCounter++;
 	}
 
 	goToToday() {

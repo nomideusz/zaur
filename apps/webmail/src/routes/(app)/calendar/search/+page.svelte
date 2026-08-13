@@ -4,6 +4,7 @@
 	import CalendarIcon from '$lib/components/icons/Calendar.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
+	import { eventKey } from '$lib/jmap/calendar-rights';
 
 	/* Results for the top search bar's ?q — the bar is the input, this is the list. */
 	const query = $derived(page.url.searchParams.get('q')?.trim() ?? '');
@@ -39,12 +40,12 @@
 	<ScrollArea pane class="min-h-0 flex-1">
 		{#if query && matches.length}
 			<ul class="divide-y divide-border">
-				{#each matches as event (event.id)}
+				{#each matches as event (eventKey(event))}
 					<li>
 						<button
 							type="button"
 							class="z-list-row flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-sunken/60 active:bg-surface-sunken/80"
-							onclick={() => openEvent(event.id)}
+							onclick={() => openEvent(eventKey(event))}
 						>
 							<div class="min-w-0 flex-1">
 								<p class="truncate text-sm font-semibold tracking-tight text-fg">{event.title}</p>

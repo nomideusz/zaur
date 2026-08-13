@@ -5,7 +5,7 @@ import { Dialog } from '@ark-ui/svelte/dialog';
 import { Portal } from '@ark-ui/svelte/portal';
 import type { JMAPPrincipal } from '@zaur/mail-core/jmap/calendar-types';
 import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
-import { shareRoleFromRights } from '$lib/jmap/calendar-rights';
+import { shareRoleFromRights, calendarKey } from '$lib/jmap/calendar-rights';
 import { auth } from '$lib/stores/auth.svelte';
 import { calendar } from '$lib/stores/calendar.svelte';
 import { toast } from '$lib/stores/toast.svelte';
@@ -121,7 +121,7 @@ import type { CalendarShareRole } from '$lib/types/calendar';
 				return;
 			}
 
-			await calendar.shareCalendar(client, target.id, person.id, role);
+			await calendar.shareCalendar(client, calendarKey(target), person.id, role);
 			principals = { ...principals, [person.id]: person };
 			email = '';
 			toast.show(`Shared “${target.name}” with ${person.name || person.email || 'them'}`, 'success');
@@ -137,7 +137,7 @@ import type { CalendarShareRole } from '$lib/types/calendar';
 		const target = item;
 		if (!client || !target) return;
 		try {
-			await calendar.shareCalendar(client, target.id, principalId, nextRole);
+			await calendar.shareCalendar(client, calendarKey(target), principalId, nextRole);
 		} catch (err) {
 			toast.show(errorMessage(err, 'Could not update sharing'), 'error');
 		}
@@ -148,7 +148,7 @@ import type { CalendarShareRole } from '$lib/types/calendar';
 		const target = item;
 		if (!client || !target) return;
 		try {
-			await calendar.unshareCalendar(client, target.id, principalId);
+			await calendar.unshareCalendar(client, calendarKey(target), principalId);
 			toast.show('Access removed', 'success');
 		} catch (err) {
 			toast.show(errorMessage(err, 'Could not update sharing'), 'error');

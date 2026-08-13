@@ -3,13 +3,16 @@ import assert from 'node:assert/strict';
 import {
 	calendarAllowsWrites,
 	calendarDeleteBlockedReason,
+	calendarKey,
 	eventIsVisibleOnCalendars,
+	eventKey,
 	isOwnedCalendar,
 	nextCalendarColor,
 	normalizeCalendarRights,
 	patchShareWith,
 	rightsForShareRole,
-	shareRoleFromRights
+	shareRoleFromRights,
+	shareWithPointerPatch
 } from '../src/jmap/calendar-rights.ts';
 import { JmapMethodError, isJmapMethodError } from '../src/jmap/errors.ts';
 import type { Calendar } from '../src/types/calendar.ts';
@@ -93,6 +96,26 @@ test('shareWith patches add, update, and remove principals', () => {
 
 	const removed = patchShareWith({ p1: write }, 'p1', null);
 	assert.equal(removed.p1, null);
+});
+
+test('calendar and event keys include account id when present', () => {
+	assert.equal(calendarKey({ id: 'cal1', accountId: null }), 'cal1');
+	assert.equal(calendarKey({ id: 'cal1', accountId: 'acct-a' }), 'acct-a:cal1');
+	assert.equal(eventKey({ id: 'ev1', accountId: 'acct-a' }), 'acct-a:ev1');
+});
+
+test('shareWith pointer patches compact rights and escape principal ids', () => {
+	const read = rightsForShareRole('read');
+	const patch = shareWithPointerPatch({ 'p/1': read, p2: null });
+	assert.deepEqual(patch['shareWith/p~11'], { mayReadFreeBusy: true, mayReadItems: true });
+	assert.equal(patch['shareWith/p2'], null);
+	assert.equal('mayWriteAll' in (patch['shareWith/p~11'] ?? {}), false);
+});
+
+test('hidden calendars are scoped to account when keys include account id', () => {
+	const hidden = new Set(['acct-a:a']);
+	assert.equal(eventIsVisibleOnCalendars(['a'], hidden, 'acct-a'), false);
+	assert.equal(eventIsVisibleOnCalendars(['a'], hidden, 'acct-b'), true);
 });
 
 test('JmapMethodError matches calendarHasEvent', () => {

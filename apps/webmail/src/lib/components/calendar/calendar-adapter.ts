@@ -2,7 +2,7 @@ import { errorMessage } from '@zaur/mail-core/utils/errors';
 import type { CalendarAdapter, DateRange, TimelineEvent } from '@nomideusz/svelte-calendar';
 import type { JMAPClient } from '$lib/jmap/client';
 import { mapCalendarEvent } from '$lib/jmap/calendar-map';
-import { calendarAllowsWrites, eventIsVisibleOnCalendars } from '$lib/jmap/calendar-rights';
+import { calendarAllowsWrites, eventIsVisibleOnCalendars, eventKey } from '$lib/jmap/calendar-rights';
 import { expandRecurringEventInRange } from '$lib/jmap/recurrence';
 import { calendar } from '$lib/stores/calendar.svelte';
 import {
@@ -26,10 +26,10 @@ function formatJmapStart(start: Date, allDay: boolean): string {
 
 function toTimelineEvent(event: CalendarEvent): TimelineEvent {
 	const calendarId = event.calendarIds[0];
-	const associatedCalendar = calendar.calendars.find((item) => item.id === calendarId);
+	const associatedCalendar = calendar.calendarById(calendarId, event.accountId);
 
 	return {
-		id: event.id,
+		id: eventKey(event),
 		title: event.title || '(No title)',
 		start: event.start,
 		end: event.end,
@@ -74,11 +74,11 @@ export class ZaurCalendarAdapter implements CalendarAdapter {
 			});
 
 			const masters = events.map((event) => mapCalendarEvent(event, event.accountId));
-			const fetchedIds = new Set(masters.map((ev) => ev.id));
+			const fetchedIds = new Set(masters.map(eventKey));
 			const rangeStart = range.start.getTime();
 			const rangeEnd = range.end.getTime();
 			const kept = calendar.events.filter((ev) => {
-				if (fetchedIds.has(ev.id)) return false;
+				if (fetchedIds.has(eventKey(ev))) return false;
 				return ev.end.getTime() <= rangeStart || ev.start.getTime() >= rangeEnd;
 			});
 			calendar.events = [...kept, ...masters];
@@ -88,8 +88,9 @@ export class ZaurCalendarAdapter implements CalendarAdapter {
 				const instances = expandRecurringEventInRange(master, range);
 				for (const event of instances) {
 					const timelineEv = toTimelineEvent(event);
-					freshIds.add(event.id);
-					this.cachedEvents.set(event.id, {
+					const key = eventKey(event);
+					freshIds.add(key);
+					this.cachedEvents.set(key, {
 						event,
 						timelineEv,
 						calendarIds: event.calendarIds
@@ -106,9 +107,12 @@ export class ZaurCalendarAdapter implements CalendarAdapter {
 		}
 
 		const results: TimelineEvent[] = [];
-		for (const { timelineEv, calendarIds } of this.cachedEvents.values()) {
+		for (const { event, timelineEv, calendarIds } of this.cachedEvents.values()) {
 			const overlaps = timelineEv.start < range.end && timelineEv.end > range.start;
-			if (overlaps && eventIsVisibleOnCalendars(calendarIds, calendar.hiddenCalendarIds)) {
+			if (
+				overlaps &&
+				eventIsVisibleOnCalendars(calendarIds, calendar.hiddenCalendarIds, event.accountId)
+			) {
 				results.push(timelineEv);
 			}
 		}
@@ -118,7 +122,9 @@ export class ZaurCalendarAdapter implements CalendarAdapter {
 
 	async updateEvent(id: string, patch: Partial<TimelineEvent>): Promise<TimelineEvent> {
 		const cached = this.cachedEvents.get(id);
-		let existing = calendar.events.find((event) => event.id === id) ?? cached?.event;
+		let existing =
+			cached?.event ??
+			calendar.events.find((event) => eventKey(event) === id || event.id === id);
 
 		if (!existing) {
 			throw new Error(`Event not found: ${id}`);
@@ -143,7 +149,7 @@ export class ZaurCalendarAdapter implements CalendarAdapter {
 			throw new Error('Event has no calendar');
 		}
 
-		const hostCalendar = calendar.calendarById(calendarId);
+		const hostCalendar = calendar.calendarById(calendarId, master.accountId);
 		if (hostCalendar && !calendarAllowsWrites(hostCalendar)) {
 			const message = 'You don’t have permission to change events on this calendar.';
 			toast.show(message, 'error');
@@ -188,7 +194,9 @@ export class ZaurCalendarAdapter implements CalendarAdapter {
 			throw error;
 		}
 
-		calendar.events = calendar.events.map((event) => (event.id === updateId ? updated : event));
+		calendar.events = calendar.events.map((event) =>
+			event.id === updateId && event.accountId === updated.accountId ? updated : event
+		);
 		this.cachedEvents.clear();
 		this.lastRefresh = -1;
 
