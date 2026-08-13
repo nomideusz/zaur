@@ -177,6 +177,14 @@ function assertEmailSetSucceeded(response: JMAPResponse, fallback: string): Reco
 	return result;
 }
 
+function firstSetFailure(
+	bucket: unknown
+): { description?: string; type?: string } | undefined {
+	if (!bucket || typeof bucket !== 'object') return undefined;
+	const values = Object.values(bucket as Record<string, { description?: string; type?: string }>);
+	return values.length ? values[0] : undefined;
+}
+
 export interface EmailQueryResult {
 	emails: JMAPEmail[];
 	/** Matching rows when the server sent `total`; null if it was omitted. */
@@ -2021,8 +2029,14 @@ export class JMAPClient {
 				identities.find((id) => id.email === fromEmail)?.id ?? identities[0]?.id ?? this.accountId;
 		}
 
-		const holdingMailboxId = draftsMailbox?.id ?? sentMailbox.id;
 		const fromEmail = options?.fromEmail ?? this.username;
+		// Immediate sends are created in Sent so a failed mailbox patch cannot
+		// leave the copy with no mailboxes (JMAP destroys those). Scheduled
+		// mail still holds in Scheduled until reconcileScheduledEmails.
+		const holdingMailboxId = options?.sendAt
+			? (scheduledMailbox!.id ?? draftsMailbox?.id ?? sentMailbox.id)
+			: sentMailbox.id;
+		const targetMailboxId = options?.sendAt ? scheduledMailbox!.id : sentMailbox.id;
 
 		// Phase 1: make sure the outgoing email exists on the server exactly once.
 		// On retry, check whether a previous attempt already submitted it — a lost
@@ -2046,17 +2060,16 @@ export class JMAPClient {
 				bodyHtml: options?.bodyHtml,
 				format: options?.format,
 				mailboxIds: { [holdingMailboxId]: true },
-				keywords: { $draft: true },
+				keywords: options?.sendAt ? { $draft: true } : { $seen: true },
 				attachments: options?.attachments
 			});
 			emailId = await this.createOutgoingEmail(emailData);
 			await options?.onEmailCreated?.(emailId);
 		}
 
-		// Phase 2: submit for delivery and move out of the holding mailbox.
-		// Scheduled mail goes to the Scheduled folder; the server queue holds
-		// delivery until sendAt (FUTURERELEASE), and reconcileScheduledEmails
-		// moves released messages on to Sent.
+		// Phase 2: submit for delivery and keep a copy in Sent (or Scheduled).
+		// Replace mailboxIds as a whole — patching mailboxIds/<id> null then
+		// adding Sent can leave the message in no mailbox if the add is dropped.
 		const submission: Record<string, unknown> = { emailId, identityId };
 		if (options?.sendAt) {
 			const holdSeconds = Math.max(
@@ -2069,7 +2082,6 @@ export class JMAPClient {
 				rcptTo: rcptTo.map((email) => ({ email }))
 			};
 		}
-		const targetMailboxId = options?.sendAt ? scheduledMailbox!.id : sentMailbox.id;
 
 		const response = await this.request(
 			[
@@ -2080,8 +2092,7 @@ export class JMAPClient {
 						create: { '1': submission },
 						onSuccessUpdateEmail: {
 							'#1': {
-								[`mailboxIds/${holdingMailboxId}`]: null,
-								[`mailboxIds/${targetMailboxId}`]: true,
+								mailboxIds: { [targetMailboxId]: true },
 								'keywords/$draft': null,
 								'keywords/$seen': true
 							}
@@ -2305,13 +2316,9 @@ export class JMAPClient {
 			if (methodName.endsWith('/error')) {
 				throw new Error((result.description as string) || `${fallbackMessage}: ${methodName}`);
 			}
-			if (result.notCreated || result.notUpdated) {
-				const errors = (result.notCreated ?? result.notUpdated) as Record<
-					string,
-					{ description?: string; type?: string }
-				>;
-				const firstError = Object.values(errors)[0];
-				throw new Error(firstError?.description || firstError?.type || fallbackMessage);
+			const failures = firstSetFailure(result.notCreated) ?? firstSetFailure(result.notUpdated);
+			if (failures) {
+				throw new Error(failures.description || failures.type || fallbackMessage);
 			}
 		}
 	}

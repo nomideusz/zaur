@@ -108,6 +108,7 @@ class ComposeStore {
 	private autosaveTimer: ReturnType<typeof setTimeout> | null = null;
 	private serverDraftTimer: ReturnType<typeof setTimeout> | null = null;
 	private pendingSend: PendingSend | null = null;
+	private serverDraftInFlight: Promise<void> = Promise.resolve();
 
 	isComposeEmpty = $derived.by(() => {
 		const isBodyEmpty = isComposeBodyEmpty(this.body) && !this.bodyHtml.trim();
@@ -750,13 +751,17 @@ class ComposeStore {
 		fromName?: string,
 		options?: ComposeSendOptions
 	): Promise<ComposeSendResult> {
-		const payload = this.prepareSendPayload(fromEmail, fromName);
-		if (!payload) return false;
-
+		this.isSending = true;
 		this.cancelAutosaveTimers();
+		await this.serverDraftInFlight;
+
+		const payload = this.prepareSendPayload(fromEmail, fromName);
+		if (!payload) {
+			this.isSending = false;
+			return false;
+		}
 
 		if (settings.undoSendDelay === 0) {
-			this.isSending = true;
 			this.error = null;
 			try {
 				const result = await this.deliverPayload(client, payload, fromEmail, fromName);
@@ -811,13 +816,18 @@ class ComposeStore {
 		fromName: string | undefined,
 		sendAt: string
 	): Promise<ComposeSendResult> {
+		this.cancelAutosaveTimers();
+		this.isSending = true;
+		await this.serverDraftInFlight;
+		await this.flushPendingSend();
+
 		const payload = this.prepareSendPayload(fromEmail, fromName);
-		if (!payload) return false;
+		if (!payload) {
+			this.isSending = false;
+			return false;
+		}
 		payload.sendOptions.sendAt = sendAt;
 
-		this.cancelAutosaveTimers();
-		await this.flushPendingSend();
-		this.isSending = true;
 		this.error = null;
 		try {
 			const result = await this.deliverPayload(client, payload, fromEmail, fromName, {
@@ -852,7 +862,7 @@ class ComposeStore {
 				}
 			});
 
-			if (payload.draftId) {
+			if (payload.draftId && payload.draftId !== createdEmailId) {
 				try {
 					await client.destroyEmail(payload.draftId);
 				} catch {
@@ -905,6 +915,7 @@ class ComposeStore {
 		if (!options?.force && this.mode !== 'new' && !this.attachments.length) return;
 		if (this.isComposeEmpty) {
 			await this.clearLocalDraft();
+			if (this.shouldSkipDraftAutosave()) return;
 			const draftId = this.jmapDraftId;
 			if (draftId) {
 				this.jmapDraftId = undefined;
@@ -953,6 +964,12 @@ class ComposeStore {
 		if (this.isComposeEmpty) return;
 		if (!this.to && !this.subject && !this.body) return;
 
+		const run = this.writeServerDraft(client, fromEmail, fromName);
+		this.serverDraftInFlight = run.catch(() => {});
+		await run;
+	}
+
+	private async writeServerDraft(client: JMAPClient, fromEmail: string, fromName?: string) {
 		this.isSavingDraft = true;
 		try {
 			const id = await client.saveDraft({
