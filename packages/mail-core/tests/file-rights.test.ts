@@ -60,11 +60,12 @@ test('infers node type from blobId when nodeType is omitted', () => {
 });
 
 test('mapFileNode fills defaults', () => {
-	const mapped = mapFileNode({ id: 'n1', name: 'Notes.pdf', blobId: 'b1', size: 1200 });
+	const mapped = mapFileNode({ id: 'n1', name: 'Notes.pdf', blobId: 'b1', size: 1200 }, 'acct-1');
 	assert.equal(mapped.nodeType, 'file');
 	assert.equal(mapped.parentId, null);
 	assert.equal(mapped.myRights.mayRead, true);
 	assert.equal(mapped.isSubscribed, true);
+	assert.equal(mapped.accountId, 'acct-1');
 });
 
 test('role labels cover Stalwart special folders', () => {

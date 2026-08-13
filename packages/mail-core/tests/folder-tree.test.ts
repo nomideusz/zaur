@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildFileTree, collectFileBranchIds } from '../src/files/folder-tree.ts';
+import { buildFileTree, collectFileBranchIds, orphanFileRoots } from '../src/files/folder-tree.ts';
 import type { FileNode } from '../src/types/files.ts';
 
 function dir(partial: Pick<FileNode, 'id' | 'name'> & Partial<FileNode>): FileNode {
@@ -23,6 +23,7 @@ function dir(partial: Pick<FileNode, 'id' | 'name'> & Partial<FileNode>): FileNo
 		},
 		shareWith: null,
 		isSubscribed: true,
+		accountId: null,
 		...partial
 	};
 }
@@ -48,4 +49,16 @@ test('orphans with a missing parent become roots', () => {
 	const tree = buildFileTree([dir({ id: 'x', name: 'Shared', parentId: 'gone' })]);
 	assert.equal(tree.length, 1);
 	assert.equal(tree[0]?.id, 'x');
+});
+
+test('orphanFileRoots treats missing parents as roots', () => {
+	const nodes = [
+		dir({ id: 'own', name: 'Docs' }),
+		dir({ id: 'shared', name: 'Contracts', parentId: 'alice-docs' }),
+		dir({ id: 'nested', name: 'Q1', parentId: 'shared' })
+	];
+	assert.deepEqual(
+		orphanFileRoots(nodes).map((node) => node.id),
+		['own', 'shared']
+	);
 });

@@ -38,3 +38,9 @@ export function collectFileBranchIds(nodes: FileTreeNode[]): string[] {
 	walk(nodes);
 	return ids;
 }
+
+/** Nodes whose parent is missing from the set — top-level, or shared folders whose parent is not visible. */
+export function orphanFileRoots(nodes: FileNode[]): FileNode[] {
+	const ids = new Set(nodes.map((node) => node.id));
+	return nodes.filter((node) => !node.parentId || !ids.has(node.parentId));
+}

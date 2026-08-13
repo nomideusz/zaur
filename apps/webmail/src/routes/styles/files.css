@@ -126,3 +126,31 @@
 	background: var(--z-accent);
 	opacity: 1;
 }
+
+.z-files-dropzone[data-dragging] {
+	background-color: color-mix(in srgb, var(--z-accent) 8%, transparent);
+}
+
+.z-files-drop-hint {
+	position: absolute;
+	inset: 0.75rem;
+	z-index: 20;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 2px dashed var(--z-accent);
+	border-radius: 0.75rem;
+	background-color: color-mix(in srgb, var(--z-accent) 10%, var(--z-surface));
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.15s ease;
+}
+
+.z-files-dropzone[data-dragging] .z-files-drop-hint {
+	opacity: 1;
+}
+
+.z-folder-drop {
+	background: color-mix(in srgb, var(--z-accent) 16%, transparent) !important;
+	color: var(--z-fg);
+}

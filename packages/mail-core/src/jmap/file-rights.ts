@@ -82,7 +82,7 @@ export function inferFileNodeType(
 	return 'directory';
 }
 
-export function mapFileNode(node: JMAPFileNode): FileNode {
+export function mapFileNode(node: JMAPFileNode, accountId?: string | null): FileNode {
 	const shareWith = node.shareWith
 		? Object.fromEntries(
 				Object.entries(node.shareWith).map(([id, rights]) => [id, normalizeFileRights(rights)])
@@ -102,7 +102,8 @@ export function mapFileNode(node: JMAPFileNode): FileNode {
 		role: node.role ?? null,
 		myRights: normalizeFileRights(node.myRights),
 		shareWith,
-		isSubscribed: node.isSubscribed !== false
+		isSubscribed: node.isSubscribed !== false,
+		accountId: accountId ?? null
 	};
 }
 

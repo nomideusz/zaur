@@ -1,10 +1,9 @@
 import { errorMessage } from '@zaur/mail-core/utils/errors';
 import { isJmapMethodError } from '@zaur/mail-core/jmap/errors';
-import { buildFileTree } from '@zaur/mail-core/files/folder-tree';
+import { buildFileTree, orphanFileRoots } from '@zaur/mail-core/files/folder-tree';
 import type { JMAPClient } from '$lib/jmap/client';
 import {
 	fileRoleLabel,
-	isOwnedFileNode,
 	mapFileNode,
 	patchFileShareWith,
 	rightsForFileShareRole
@@ -22,6 +21,15 @@ function sortNodes(nodes: FileNode[]): FileNode[] {
 	});
 }
 
+const OWNER_RIGHTS = {
+	mayRead: true,
+	mayAddChildren: true,
+	mayRename: true,
+	mayDelete: true,
+	mayModifyContent: true,
+	mayShare: true
+} as const;
+
 class FilesStore {
 	nodes = $state<FileNode[]>([]);
 	ancestors = $state<FileNode[]>([]);
@@ -30,6 +38,7 @@ class FilesStore {
 	selectedId = $state<string | null>(null);
 	searchResults = $state<FileNode[]>([]);
 	searchQuery = $state('');
+	fileAccountId = $state<string | null>(null);
 
 	loading = $state(false);
 	searching = $state(false);
@@ -38,6 +47,7 @@ class FilesStore {
 	supported = $state<boolean | null>(null);
 	mayCreateTopLevel = $state(false);
 	createFolderOpen = $state(false);
+	dropTargetId = $state<string | null>(null);
 
 	selected = $derived(this.nodes.find((node) => node.id === this.selectedId) ?? null);
 	currentFolder = $derived(
@@ -48,8 +58,12 @@ class FilesStore {
 			: null
 	);
 	breadcrumb = $derived(this.ancestors);
-	ownedFolders = $derived(this.roleFolders.filter(isOwnedFileNode));
-	sharedFolders = $derived(this.roleFolders.filter((node) => !isOwnedFileNode(node)));
+	ownedFolders = $derived(
+		this.roleFolders.filter((node) => !this.isFromSharedAccount(node))
+	);
+	sharedFolders = $derived(
+		this.roleFolders.filter((node) => this.isFromSharedAccount(node))
+	);
 	ownedTree = $derived(buildFileTree(this.ownedFolders));
 	sharedTree = $derived(buildFileTree(this.sharedFolders));
 
@@ -65,6 +79,11 @@ class FilesStore {
 		return 'All files';
 	});
 
+	isFromSharedAccount(node: Pick<FileNode, 'accountId'>): boolean {
+		if (!node.accountId || !this.fileAccountId) return false;
+		return node.accountId !== this.fileAccountId;
+	}
+
 	async ensure(client: JMAPClient): Promise<void> {
 		if (!client.hasFileNode()) {
 			this.supported = false;
@@ -74,6 +93,7 @@ class FilesStore {
 		}
 
 		this.supported = true;
+		this.fileAccountId = client.getFileNodeAccountId();
 		this.mayCreateTopLevel = client.getFileNodeCapability()?.mayCreateTopLevelFileNode !== false;
 		await this.loadRoleFolders(client);
 		await this.openFolder(client, this.currentParentId);
@@ -81,40 +101,23 @@ class FilesStore {
 
 	async loadRoleFolders(client: JMAPClient): Promise<void> {
 		try {
-			const top = await client.queryFileNodes({ isTopLevel: true }, { limit: 200 });
-			const byId = new Map<string, FileNode>();
-			for (const raw of top) {
-				const node = mapFileNode(raw);
-				if (node.nodeType !== 'directory') continue;
-				byId.set(node.id, node);
-			}
-
-			let frontier = [...byId.keys()];
-			let depth = 0;
-			while (frontier.length && depth < 8) {
-				const batches = await Promise.all(
-					frontier.map(async (id) => {
-						try {
-							return await client.queryFileNodes({ parentId: id }, { limit: 200 });
-						} catch {
-							return [];
-						}
-					})
-				);
-				const next: string[] = [];
-				for (const children of batches) {
-					for (const raw of children) {
-						const node = mapFileNode(raw);
-						if (node.nodeType !== 'directory' || byId.has(node.id)) continue;
-						byId.set(node.id, node);
-						next.push(node.id);
+			this.fileAccountId = client.getFileNodeAccountId();
+			const lists = await Promise.all(
+				client.getFileNodeAccountIds().map(async (accountId) => {
+					try {
+						const raw = await client.queryFileNodes(
+							{ nodeType: 'directory' },
+							{ limit: 500, accountId }
+						);
+						return raw
+							.map((node) => mapFileNode(node, accountId))
+							.filter((node) => node.nodeType === 'directory');
+					} catch {
+						return [];
 					}
-				}
-				frontier = next;
-				depth += 1;
-			}
-
-			this.roleFolders = sortNodes([...byId.values()]);
+				})
+			);
+			this.roleFolders = sortNodes(lists.flat());
 		} catch (error) {
 			if (isJmapMethodError(error, 'unknownMethod') || isJmapMethodError(error, 'unknownCapability')) {
 				this.supported = false;
@@ -138,19 +141,59 @@ class FilesStore {
 			}
 
 			this.supported = true;
+			this.fileAccountId = client.getFileNodeAccountId();
+			const ownId = this.fileAccountId;
+
+			if (!parentId) {
+				const otherIds = client.getFileNodeAccountIds().filter((id) => id !== ownId);
+				const [ownTop, sharedRoots] = await Promise.all([
+					client.queryFileNodes({ isTopLevel: true }, { accountId: ownId }),
+					this.loadSharedRoots(client, otherIds)
+				]);
+				this.nodes = sortNodes([
+					...ownTop.map((node) => mapFileNode(node, ownId)),
+					...sharedRoots
+				]);
+				this.ancestors = [];
+				return;
+			}
+
+			const folder =
+				this.roleFolders.find((node) => node.id === parentId) ??
+				this.nodes.find((node) => node.id === parentId) ??
+				this.ancestors.find((node) => node.id === parentId);
+			const accountId = folder?.accountId ?? ownId;
 			const [children, parents] = await Promise.all([
-				client.queryFileNodes(parentId ? { parentId } : { isTopLevel: true }),
-				parentId ? client.getFileNodes([parentId], true) : Promise.resolve([])
+				client.queryFileNodes({ parentId }, { accountId }),
+				client.getFileNodes([parentId], true, accountId)
 			]);
 
-			this.nodes = sortNodes(children.map(mapFileNode));
-			this.ancestors = this.buildAncestors(parents.map(mapFileNode), parentId);
+			this.nodes = sortNodes(children.map((node) => mapFileNode(node, accountId)));
+			this.ancestors = this.buildAncestors(
+				parents.map((node) => mapFileNode(node, accountId)),
+				parentId
+			);
 		} catch (error) {
 			this.error = errorMessage(error, 'Failed to load files');
 			this.nodes = [];
 		} finally {
 			this.loading = false;
 		}
+	}
+
+	private async loadSharedRoots(client: JMAPClient, accountIds: string[]): Promise<FileNode[]> {
+		if (!accountIds.length) return [];
+		const lists = await Promise.all(
+			accountIds.map(async (accountId) => {
+				try {
+					const raw = await client.queryFileNodes({}, { limit: 500, accountId });
+					return orphanFileRoots(raw.map((node) => mapFileNode(node, accountId)));
+				} catch {
+					return [];
+				}
+			})
+		);
+		return lists.flat();
 	}
 
 	private buildAncestors(nodes: FileNode[], leafId: string | null): FileNode[] {
@@ -180,8 +223,17 @@ class FilesStore {
 		}
 		this.searching = true;
 		try {
-			const list = await client.queryFileNodes({ text: trimmed }, { limit: 50 });
-			this.searchResults = sortNodes(list.map(mapFileNode));
+			const lists = await Promise.all(
+				client.getFileNodeAccountIds().map(async (accountId) => {
+					try {
+						const list = await client.queryFileNodes({ text: trimmed }, { limit: 50, accountId });
+						return list.map((node) => mapFileNode(node, accountId));
+					} catch {
+						return [];
+					}
+				})
+			);
+			this.searchResults = sortNodes(lists.flat());
 		} catch (error) {
 			this.searchResults = [];
 			this.error = errorMessage(error, 'Search failed');
@@ -195,24 +247,51 @@ class FilesStore {
 			toast.show('You don’t have permission to add items here', 'error');
 			return;
 		}
+		const accountId = this.currentFolder?.accountId ?? this.fileAccountId;
+		const trimmed = name.trim();
 		try {
-			await client.createFileNode({
+			const id = await client.createFileNode({
 				parentId: this.currentParentId,
-				name,
-				nodeType: 'directory'
+				name: trimmed,
+				nodeType: 'directory',
+				accountId
 			});
-			toast.show(`Created “${name.trim()}”`, 'success');
-			await this.openFolder(client, this.currentParentId);
-			await this.loadRoleFolders(client);
+			this.upsertNode({
+				id,
+				parentId: this.currentParentId,
+				nodeType: 'directory',
+				blobId: null,
+				size: null,
+				name: trimmed,
+				type: null,
+				created: null,
+				modified: null,
+				role: null,
+				myRights: { ...OWNER_RIGHTS },
+				shareWith: null,
+				isSubscribed: true,
+				accountId: accountId ?? null
+			});
+			toast.show(`Created “${trimmed}”`, 'success');
+			await Promise.all([
+				this.openFolder(client, this.currentParentId),
+				this.loadRoleFolders(client)
+			]);
 		} catch (error) {
 			toast.show(errorMessage(error, 'Could not create folder'), 'error');
 			throw error;
 		}
 	}
 
-	async upload(client: JMAPClient, fileList: File[]): Promise<void> {
+	async upload(
+		client: JMAPClient,
+		fileList: File[],
+		parentId: string | null = this.currentParentId
+	): Promise<void> {
 		if (!fileList.length) return;
-		if (!this.canAddHere) {
+		const dest = parentId ? this.folderById(parentId) : this.currentFolder;
+		const canAdd = dest ? dest.myRights.mayAddChildren : this.mayCreateTopLevel;
+		if (!canAdd) {
 			toast.show('You don’t have permission to add items here', 'error');
 			return;
 		}
@@ -220,19 +299,23 @@ class FilesStore {
 		this.uploading = true;
 		let uploaded = 0;
 		try {
+			const accountId = dest?.accountId ?? this.fileAccountId;
 			for (const file of fileList) {
 				const blob = await client.uploadBlob(file, file.type || 'application/octet-stream');
 				await client.createFileNode({
-					parentId: this.currentParentId,
+					parentId,
 					name: file.name,
 					nodeType: 'file',
 					blobId: blob.blobId,
-					type: blob.type || file.type || 'application/octet-stream'
+					type: blob.type || file.type || 'application/octet-stream',
+					accountId
 				});
 				uploaded += 1;
 			}
 			toast.show(uploaded === 1 ? `Uploaded “${fileList[0].name}”` : `Uploaded ${uploaded} files`, 'success');
-			await this.openFolder(client, this.currentParentId);
+			if (parentId === this.currentParentId) {
+				await this.openFolder(client, this.currentParentId);
+			}
 		} catch (error) {
 			toast.show(errorMessage(error, 'Upload failed'), 'error');
 		} finally {
@@ -240,9 +323,38 @@ class FilesStore {
 		}
 	}
 
-	async rename(client: JMAPClient, id: string, name: string): Promise<void> {
+	async move(client: JMAPClient, nodeId: string, parentId: string | null): Promise<void> {
+		const node = this.nodeById(nodeId);
+		if (!node || node.id === parentId || node.parentId === parentId) return;
+
+		const dest = parentId ? this.folderById(parentId) : null;
+		if (parentId && dest?.nodeType !== 'directory') return;
+		if (dest?.accountId && node.accountId && dest.accountId !== node.accountId) {
+			toast.show('Can’t move items between accounts', 'error');
+			return;
+		}
+		const canAdd = dest ? dest.myRights.mayAddChildren : this.mayCreateTopLevel;
+		if (!canAdd) {
+			toast.show('You don’t have permission to add items here', 'error');
+			return;
+		}
+
 		try {
-			await client.updateFileNode(id, { name });
+			await client.updateFileNode(nodeId, { parentId, accountId: node.accountId });
+			toast.show(`Moved “${node.name}”`, 'success');
+			await Promise.all([
+				this.openFolder(client, this.currentParentId),
+				this.loadRoleFolders(client)
+			]);
+		} catch (error) {
+			toast.show(errorMessage(error, 'Could not move'), 'error');
+		}
+	}
+
+	async rename(client: JMAPClient, id: string, name: string): Promise<void> {
+		const existing = this.nodeById(id);
+		try {
+			await client.updateFileNode(id, { name, accountId: existing?.accountId });
 			await this.openFolder(client, this.currentParentId);
 			this.selectedId = id;
 			await this.loadRoleFolders(client);
@@ -254,11 +366,13 @@ class FilesStore {
 
 	async destroy(client: JMAPClient, node: FileNode): Promise<void> {
 		try {
-			await client.destroyFileNodes([node.id], node.nodeType === 'directory');
+			await client.destroyFileNodes([node.id], node.nodeType === 'directory', node.accountId);
 			if (this.selectedId === node.id) this.selectedId = null;
 			toast.show(`Deleted “${node.name}”`, 'success');
-			await this.openFolder(client, this.currentParentId);
-			await this.loadRoleFolders(client);
+			await Promise.all([
+				this.openFolder(client, this.currentParentId),
+				this.loadRoleFolders(client)
+			]);
 		} catch (error) {
 			toast.show(errorMessage(error, 'Could not delete'), 'error');
 			throw error;
@@ -266,9 +380,7 @@ class FilesStore {
 	}
 
 	async share(client: JMAPClient, nodeId: string, principalId: string, role: FileShareRole): Promise<void> {
-		const existing =
-			this.nodes.find((node) => node.id === nodeId) ??
-			this.roleFolders.find((node) => node.id === nodeId);
+		const existing = this.nodeById(nodeId);
 		if (!existing) return;
 
 		const patched = patchFileShareWith(
@@ -284,7 +396,7 @@ class FilesStore {
 			)
 		});
 		try {
-			await client.updateFileNode(nodeId, { shareWith: patched });
+			await client.updateFileNode(nodeId, { shareWith: patched, accountId: existing.accountId });
 		} catch (error) {
 			this.replaceNode({ ...existing, shareWith: previous });
 			throw error;
@@ -292,9 +404,7 @@ class FilesStore {
 	}
 
 	async unshare(client: JMAPClient, nodeId: string, principalId: string): Promise<void> {
-		const existing =
-			this.nodes.find((node) => node.id === nodeId) ??
-			this.roleFolders.find((node) => node.id === nodeId);
+		const existing = this.nodeById(nodeId);
 		if (!existing) return;
 
 		const patched = patchFileShareWith(existing.shareWith, principalId, null);
@@ -306,7 +416,7 @@ class FilesStore {
 			shareWith: Object.keys(nextShareWith).length ? nextShareWith : null
 		});
 		try {
-			await client.updateFileNode(nodeId, { shareWith: patched });
+			await client.updateFileNode(nodeId, { shareWith: patched, accountId: existing.accountId });
 		} catch (error) {
 			this.replaceNode({ ...existing, shareWith: previous });
 			throw error;
@@ -317,16 +427,25 @@ class FilesStore {
 		return (
 			this.nodes.find((node) => node.id === id) ??
 			this.roleFolders.find((node) => node.id === id) ??
+			this.ancestors.find((node) => node.id === id) ??
 			this.searchResults.find((node) => node.id === id)
 		);
+	}
+
+	folderById(id: string): FileNode | undefined {
+		const node = this.nodeById(id);
+		return node?.nodeType === 'directory' ? node : undefined;
+	}
+
+	private upsertNode(next: FileNode): void {
+		const merge = (list: FileNode[]) => sortNodes([next, ...list.filter((node) => node.id !== next.id)]);
+		if (this.currentParentId === next.parentId) this.nodes = merge(this.nodes);
+		if (next.nodeType === 'directory') this.roleFolders = merge(this.roleFolders);
 	}
 
 	private replaceNode(next: FileNode): void {
 		this.nodes = this.nodes.map((node) => (node.id === next.id ? next : node));
 		this.roleFolders = this.roleFolders.map((node) => (node.id === next.id ? next : node));
-		if (this.selectedId === next.id) {
-			/* selected is derived from nodes */
-		}
 	}
 }
 

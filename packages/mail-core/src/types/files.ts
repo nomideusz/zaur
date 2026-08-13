@@ -25,4 +25,6 @@ export interface FileNode {
 	myRights: FileRights;
 	shareWith: Record<string, FileRights> | null;
 	isSubscribed: boolean;
+	/** JMAP account that owns this node. Shared items live in the sharer's account. */
+	accountId: string | null;
 }

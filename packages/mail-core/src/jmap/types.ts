@@ -90,7 +90,15 @@ export interface JMAPSession {
 	eventSourceUrl?: string;
 	username?: string;
 	primaryAccounts?: Record<string, string>;
-	accounts?: Record<string, { name?: string; accountCapabilities?: Record<string, unknown> }>;
+	accounts?: Record<
+		string,
+		{
+			name?: string;
+			isPersonal?: boolean;
+			isReadOnly?: boolean;
+			accountCapabilities?: Record<string, unknown>;
+		}
+	>;
 	capabilities?: Record<string, unknown>;
 }
 

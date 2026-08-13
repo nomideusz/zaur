@@ -18,6 +18,7 @@
 	import PaneSplit from '$lib/components/ui/PaneSplit.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { PANE_SPLIT } from '$lib/components/ui/pane-split';
+	import { fileNodeDragId, hasFileNodeDrag, setFileNodeDragData } from '$lib/files/drag';
 	import { isImageFile } from '$lib/files/image';
 	import { fileAllowsDelete, fileAllowsShare, formatFileSize } from '$lib/jmap/file-rights';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -141,6 +142,35 @@
 		void files.upload(client, uploaded);
 	}
 
+	function onFileDragStart(event: DragEvent, node: FileNode) {
+		if (node.nodeType === 'directory' || !event.dataTransfer) return;
+		setFileNodeDragData(event.dataTransfer, node.id);
+	}
+
+	function onFolderDragOver(event: DragEvent, folderId: string) {
+		if (!hasFileNodeDrag(event.dataTransfer)) return;
+		event.preventDefault();
+		if (event.dataTransfer) event.dataTransfer.dropEffect = 'move';
+		files.dropTargetId = folderId;
+	}
+
+	function onFolderDragLeave(event: DragEvent, folderId: string) {
+		if (event.currentTarget instanceof HTMLElement && event.relatedTarget instanceof Node) {
+			if (event.currentTarget.contains(event.relatedTarget)) return;
+		}
+		if (files.dropTargetId === folderId) files.dropTargetId = null;
+	}
+
+	function onFolderDrop(event: DragEvent, folderId: string) {
+		if (!hasFileNodeDrag(event.dataTransfer)) return;
+		event.preventDefault();
+		event.stopPropagation();
+		files.dropTargetId = null;
+		const id = fileNodeDragId(event.dataTransfer);
+		const client = auth.client;
+		if (id && client) void files.move(client, id, folderId);
+	}
+
 	const renameTarget = $derived(renameNodeId ? files.nodeById(renameNodeId) : null);
 </script>
 
@@ -189,13 +219,19 @@
 					<FileUpload.Root
 						class="z-mail-pane-surface flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:border-r md:border-border"
 						allowDrop
+						preventDocumentDrop
 						maxFiles={50}
 						onFileAccept={(details) => onAccept(details.files)}
 						disabled={!files.canAddHere || files.uploading}
 					>
 						<FileUpload.HiddenInput />
+						<FileUpload.Context>
+							{#snippet render()}
+								<FileUpload.Dropzone disableClick>
+									{#snippet asChild(dropzoneProps)}
 						<section
-							class="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
+							{...dropzoneProps()}
+							class="z-files-dropzone relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden"
 							style="view-transition-name: files-list;"
 							aria-label="Files list"
 						>
@@ -244,10 +280,22 @@
 										{#each visibleNodes as node (node.id)}
 											<li>
 												<div
+													role="group"
 													class={cn(
 														'z-list-row flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-sunken/60',
-														selectedNode?.id === node.id && 'z-list-row--current'
+														selectedNode?.id === node.id && 'z-list-row--current',
+														node.nodeType === 'directory' &&
+															files.dropTargetId === node.id &&
+															'z-folder-drop'
 													)}
+													draggable={node.nodeType !== 'directory'}
+													ondragstart={(event) => onFileDragStart(event, node)}
+													ondragover={(event) =>
+														node.nodeType === 'directory' && onFolderDragOver(event, node.id)}
+													ondragleave={(event) =>
+														node.nodeType === 'directory' && onFolderDragLeave(event, node.id)}
+													ondrop={(event) =>
+														node.nodeType === 'directory' && onFolderDrop(event, node.id)}
 												>
 													<button
 														type="button"
@@ -320,7 +368,14 @@
 									</div>
 								{/if}
 							</ScrollArea>
+							<div class="z-files-drop-hint" aria-hidden="true">
+								<p class="text-sm font-semibold text-fg">Drop files to upload</p>
+							</div>
 						</section>
+									{/snippet}
+								</FileUpload.Dropzone>
+							{/snippet}
+						</FileUpload.Context>
 					</FileUpload.Root>
 				{/snippet}
 				{#snippet second()}

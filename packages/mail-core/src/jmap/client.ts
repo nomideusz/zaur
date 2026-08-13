@@ -252,6 +252,21 @@ export class JMAPClient {
 		return this.session?.primaryAccounts?.[FILENODE_URN] ?? this.accountId;
 	}
 
+	/** Own FileNode account plus any shared accounts advertised on the session. */
+	getFileNodeAccountIds(): string[] {
+		const primary = this.getFileNodeAccountId();
+		const ids = new Set<string>();
+		if (primary) ids.add(primary);
+		for (const [id, account] of Object.entries(this.session?.accounts ?? {})) {
+			if (account.accountCapabilities?.[FILENODE_URN]) ids.add(id);
+		}
+		return [...ids];
+	}
+
+	private fileNodeAccount(accountId?: string | null): string {
+		return accountId || this.getFileNodeAccountId();
+	}
+
 	getFileNodeCapability(): JMAPFileNodeCapability | null {
 		const accountId = this.getFileNodeAccountId();
 		const caps = this.session?.accounts?.[accountId]?.accountCapabilities?.[FILENODE_URN] as
@@ -826,11 +841,11 @@ export class JMAPClient {
 
 	async queryFileNodes(
 		filter: Record<string, unknown>,
-		options?: { limit?: number; fetchParents?: boolean }
+		options?: { limit?: number; fetchParents?: boolean; accountId?: string | null }
 	): Promise<JMAPFileNode[]> {
 		if (!this.hasFileNode()) return [];
 
-		const accountId = this.getFileNodeAccountId();
+		const accountId = this.fileNodeAccount(options?.accountId);
 		const response = await this.fileNodeRequest([
 			[
 				'FileNode/query',
@@ -864,14 +879,18 @@ export class JMAPClient {
 		return (getResult[1].list as JMAPFileNode[]) ?? [];
 	}
 
-	async getFileNodes(ids: string[], fetchParents = false): Promise<JMAPFileNode[]> {
+	async getFileNodes(
+		ids: string[],
+		fetchParents = false,
+		accountId?: string | null
+	): Promise<JMAPFileNode[]> {
 		if (!this.hasFileNode() || !ids.length) return [];
 
 		const response = await this.fileNodeRequest([
 			[
 				'FileNode/get',
 				{
-					accountId: this.getFileNodeAccountId(),
+					accountId: this.fileNodeAccount(accountId),
 					ids,
 					properties: [...FILE_NODE_PROPERTIES],
 					fetchParents
@@ -892,6 +911,7 @@ export class JMAPClient {
 		nodeType?: 'file' | 'directory';
 		blobId?: string;
 		type?: string;
+		accountId?: string | null;
 	}): Promise<string> {
 		if (!this.hasFileNode()) throw new Error('File storage is not supported');
 
@@ -910,7 +930,7 @@ export class JMAPClient {
 		const response = await this.fileNodeRequest([
 			[
 				'FileNode/set',
-				{ accountId: this.getFileNodeAccountId(), create: { [creationId]: data } },
+				{ accountId: this.fileNodeAccount(input.accountId), create: { [creationId]: data } },
 				'fns'
 			]
 		]);
@@ -932,6 +952,7 @@ export class JMAPClient {
 			blobId?: string;
 			type?: string | null;
 			shareWith?: Record<string, JMAPFileRights | null> | null;
+			accountId?: string | null;
 		}
 	): Promise<void> {
 		if (!this.hasFileNode()) throw new Error('File storage is not supported');
@@ -952,7 +973,7 @@ export class JMAPClient {
 			[
 				'FileNode/set',
 				{
-					accountId: this.getFileNodeAccountId(),
+					accountId: this.fileNodeAccount(patch.accountId),
 					update: { [id]: update }
 				},
 				'fnu'
@@ -962,7 +983,11 @@ export class JMAPClient {
 		this.throwFileNodeSetErrors(response, 'Could not update file');
 	}
 
-	async destroyFileNodes(ids: string[], onDestroyRemoveChildren = false): Promise<void> {
+	async destroyFileNodes(
+		ids: string[],
+		onDestroyRemoveChildren = false,
+		accountId?: string | null
+	): Promise<void> {
 		if (!this.hasFileNode()) throw new Error('File storage is not supported');
 		if (!ids.length) return;
 
@@ -970,7 +995,7 @@ export class JMAPClient {
 			[
 				'FileNode/set',
 				{
-					accountId: this.getFileNodeAccountId(),
+					accountId: this.fileNodeAccount(accountId),
 					onDestroyRemoveChildren,
 					destroy: ids
 				},
