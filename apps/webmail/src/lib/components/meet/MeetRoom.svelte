@@ -46,6 +46,17 @@
 	let room = $state<Room | null>(null);
 
 	const media = new Map<string, HTMLMediaElement>();
+	const hasLocalVideo = $derived(tiles.some((tile) => tile.isLocal && !tile.isScreen));
+	const hasRemote = $derived(tiles.some((tile) => !tile.isLocal));
+	const stageCount = $derived(tiles.length + (hasLocalVideo ? 0 : 1));
+	const initials = $derived(
+		displayName
+			.trim()
+			.split(/\s+/)
+			.slice(0, 2)
+			.map((part) => part[0]?.toUpperCase() ?? '')
+			.join('') || '?'
+	);
 
 	function videoHost(node: HTMLDivElement, id: string) {
 		const attach = (tileId: string) => {
@@ -222,6 +233,7 @@
 </script>
 
 <div class="z-meet">
+	<p class="z-meet__brand">Zaur Meet</p>
 	<div class="sr-only" bind:this={audioHost}></div>
 
 	{#if status === 'connecting'}
@@ -239,10 +251,16 @@
 		<div
 			class={cn(
 				'z-meet__grid',
-				tiles.length <= 1 && 'z-meet__grid--solo',
-				tiles.length === 2 && 'z-meet__grid--pair'
+				stageCount <= 1 && 'z-meet__grid--solo',
+				stageCount === 2 && 'z-meet__grid--pair'
 			)}
 		>
+			{#if !hasLocalVideo}
+				<div class="z-meet-tile">
+					<div class="z-meet-tile__placeholder" aria-hidden="true">{initials}</div>
+					<p class="z-meet-tile__name">{displayName} (you)</p>
+				</div>
+			{/if}
 			{#each tiles as tile (tile.id)}
 				<div class="z-meet-tile">
 					<div class="z-meet-tile__media" data-meet-tile={tile.id} use:videoHost={tile.id}></div>
@@ -252,6 +270,9 @@
 				</div>
 			{/each}
 		</div>
+		{#if !hasRemote}
+			<p class="z-meet__waiting">Waiting for others</p>
+		{/if}
 	{/if}
 
 	{#if status === 'live'}
@@ -299,12 +320,39 @@
 </div>
 
 <style>
+	:global(html:has(.z-meet)),
+	:global(body:has(.z-meet)) {
+		background: #111;
+	}
+
 	.z-meet {
+		--z-meet-bg: #111;
+		--z-meet-tile: #1c1c1c;
+		--z-meet-ctrl: #2a2a2a;
+		--z-meet-ctrl-hover: #3d3d3d;
+		--z-meet-fg: #ededec;
+		--z-meet-muted: #a8a8a6;
+		position: relative;
 		display: grid;
-		grid-template-rows: 1fr auto;
+		grid-template-rows: 1fr auto auto;
 		min-height: 100dvh;
-		background: var(--z-surface);
-		color: var(--z-fg);
+		color-scheme: dark;
+		background: var(--z-meet-bg);
+		color: var(--z-meet-fg);
+	}
+
+	.z-meet__brand {
+		position: absolute;
+		top: calc(0.75rem + env(safe-area-inset-top, 0px));
+		left: calc(0.75rem + env(safe-area-inset-left, 0px));
+		z-index: 2;
+		margin: 0;
+		font-size: 0.8125rem;
+		font-weight: 650;
+		letter-spacing: -0.03em;
+		color: color-mix(in srgb, var(--z-meet-muted) 72%, transparent);
+		pointer-events: none;
+		user-select: none;
 	}
 
 	.z-meet__status {
@@ -312,7 +360,7 @@
 		place-items: center;
 		padding: 2rem;
 		text-align: center;
-		color: var(--z-fg-muted);
+		color: var(--z-meet-muted);
 	}
 
 	.z-meet__grid {
@@ -335,13 +383,23 @@
 		position: relative;
 		overflow: hidden;
 		border-radius: 0.75rem;
-		background: color-mix(in srgb, var(--z-fg) 8%, var(--z-surface));
+		background: var(--z-meet-tile);
 		min-height: 12rem;
 	}
 
-	.z-meet-tile__media {
+	.z-meet-tile__media,
+	.z-meet-tile__placeholder {
 		height: 100%;
-		min-height: 12rem;
+		min-height: min(18rem, 50dvh);
+	}
+
+	.z-meet-tile__placeholder {
+		display: grid;
+		place-items: center;
+		font-size: 3rem;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		color: var(--z-meet-muted);
 	}
 
 	:global(.z-meet-tile__video) {
@@ -359,8 +417,17 @@
 		margin: 0;
 		padding: 0.2rem 0.5rem;
 		border-radius: 0.375rem;
-		background: color-mix(in srgb, var(--z-surface) 80%, transparent);
+		background: color-mix(in srgb, black 55%, transparent);
+		color: var(--z-meet-fg);
 		font-size: 0.8125rem;
+	}
+
+	.z-meet__waiting {
+		margin: 0;
+		padding: 0 0.75rem;
+		text-align: center;
+		color: var(--z-meet-muted);
+		font-size: 0.875rem;
 	}
 
 	.z-meet__bar {
@@ -375,27 +442,40 @@
 		place-items: center;
 		width: 2.75rem;
 		height: 2.75rem;
-		border: 1px solid var(--z-border);
+		border: 1px solid #3f3f3f;
 		border-radius: 9999px;
-		background: var(--z-surface-raised);
-		color: var(--z-fg);
+		background: var(--z-meet-ctrl);
+		color: var(--z-meet-fg);
 		cursor: pointer;
 	}
 
-	.z-meet__ctrl:hover {
-		background: var(--z-surface);
+	.z-meet__ctrl:hover,
+	.z-meet__ctrl:focus-visible {
+		background: var(--z-meet-ctrl-hover);
 	}
 
 	.z-meet__ctrl--off,
 	.z-meet__ctrl--leave {
-		background: color-mix(in srgb, var(--z-danger, #b42318) 85%, black);
+		background: color-mix(in srgb, var(--z-danger, #c03734) 85%, black);
 		border-color: transparent;
 		color: white;
+	}
+
+	.z-meet__ctrl--off:hover,
+	.z-meet__ctrl--off:focus-visible,
+	.z-meet__ctrl--leave:hover,
+	.z-meet__ctrl--leave:focus-visible {
+		background: color-mix(in srgb, var(--z-danger, #c03734) 70%, black);
 	}
 
 	.z-meet__ctrl--on {
 		background: var(--z-accent);
 		border-color: transparent;
 		color: var(--z-accent-fg, white);
+	}
+
+	.z-meet__ctrl--on:hover,
+	.z-meet__ctrl--on:focus-visible {
+		background: var(--z-accent-hover, var(--z-accent));
 	}
 </style>
