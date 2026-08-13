@@ -289,6 +289,10 @@
 			if (isTypingTarget(event.target)) return;
 
 			const pathname = $page.url.pathname;
+			// Compose owns its own keys (Tab, Ctrl+Enter, Escape). List shortcuts
+			// must not fire while the panel is open — including when focus is on
+			// a toolbar button rather than the body.
+			if (pathname.startsWith('/mail/compose')) return;
 			if (pathname.startsWith('/settings')) {
 				if (event.key === 'Escape') return;
 				if (event.key === ',' && !event.metaKey && !event.ctrlKey && !event.altKey) {

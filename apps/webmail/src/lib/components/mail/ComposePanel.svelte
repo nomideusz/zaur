@@ -30,6 +30,7 @@
 	import { Collapsible } from '@ark-ui/svelte/collapsible';
 	import { FileUpload } from '@ark-ui/svelte/file-upload';
 	import { cn } from '$lib/utils/cn';
+	import { spliceSelection } from '$lib/utils/keyboard';
 
 	interface Props {
 		mode?: ComposeMode;
@@ -405,6 +406,18 @@
 	});
 
 	function onBodyKeydown(event: KeyboardEvent) {
+		const el = event.currentTarget as HTMLTextAreaElement;
+		if (event.key === 'Tab' && !event.shiftKey && !event.altKey && !event.ctrlKey && !event.metaKey) {
+			event.preventDefault();
+			const start = el.selectionStart ?? el.value.length;
+			const end = el.selectionEnd ?? start;
+			const next = spliceSelection(el.value, start, end, '\t');
+			setMessageBody(next.value);
+			void tick().then(() => {
+				el.selectionStart = el.selectionEnd = next.caret;
+			});
+			return;
+		}
 		if (!settings.enableKeyboardShortcuts) return;
 		if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
 			event.preventDefault();
@@ -446,6 +459,7 @@
 			})()}
 			<FileUpload.Dropzone
 				disableClick
+				role="group"
 				class={cn(
 					'z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose z-compose-dropzone relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
 					embedded && 'rounded-none border-0 shadow-none',

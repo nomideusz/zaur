@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import { onMount, onDestroy } from 'svelte';
-	import { ToggleGroup } from '@ark-ui/svelte/toggle-group';
 	import { Popover } from '@ark-ui/svelte/popover';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
-	import { Editor } from '@tiptap/core';
+	import { Editor, Extension } from '@tiptap/core';
+	import { cn } from '$lib/utils/cn';
 	import StarterKit from '@tiptap/starter-kit';
 	import Link from '@tiptap/extension-link';
 	import Image from '@tiptap/extension-image';
@@ -71,14 +71,23 @@
 		updateActiveStates();
 	}
 
-	const textFormats = $derived([
-		...(isBold ? ['bold'] : []),
-		...(isItalic ? ['italic'] : []),
-		...(isStrike ? ['strike'] : [])
-	]);
-	const paragraphFormat = $derived(
-		isBulletList ? 'bulletList' : isOrderedList ? 'orderedList' : isBlockquote ? 'blockquote' : ''
-	);
+	function formatBtnClass(active: boolean) {
+		return cn('z-rich-editor__btn', active && 'z-rich-editor__btn--active');
+	}
+
+	const InsertTab = Extension.create({
+		name: 'insertTab',
+		addKeyboardShortcuts() {
+			return {
+				Tab: () => {
+					if (this.editor.isActive('bulletList') || this.editor.isActive('orderedList')) {
+						return false;
+					}
+					return this.editor.commands.insertContent('\t');
+				}
+			};
+		}
+	});
 
 	function inlineAttachmentSources() {
 		return compose.attachments
@@ -200,26 +209,9 @@
 		event.preventDefault();
 	}
 
-	function setTextFormats(next: string[]) {
+	function runFormat(command: () => void) {
 		if (!editor) return;
-		const chain = editor.chain().focus();
-		if (next.includes('bold') !== isBold) chain.toggleBold();
-		if (next.includes('italic') !== isItalic) chain.toggleItalic();
-		if (next.includes('strike') !== isStrike) chain.toggleStrike();
-		chain.run();
-		updateActiveStates();
-	}
-
-	function setParagraphFormat(next: string) {
-		if (!editor) return;
-		const chain = editor.chain().focus();
-		if (next === 'bulletList') chain.toggleBulletList();
-		else if (next === 'orderedList') chain.toggleOrderedList();
-		else if (next === 'blockquote') chain.toggleBlockquote();
-		else if (isBulletList) chain.toggleBulletList();
-		else if (isOrderedList) chain.toggleOrderedList();
-		else if (isBlockquote) chain.toggleBlockquote();
-		chain.run();
+		command();
 		updateActiveStates();
 	}
 
@@ -264,7 +256,8 @@
 						rel: 'noopener noreferrer'
 					}
 				}),
-				Image
+				Image,
+				InsertTab
 			],
 			content: editorHtml(htmlValue),
 			editorProps: {
@@ -315,8 +308,9 @@
 />
 
 <div class="z-rich-editor flex flex-col min-h-0 flex-1 bg-transparent">
-	<!-- Ark has no Toolbar/Separator: native role="toolbar"/"separator" wrappers, with
-	     ToggleGroup (built-in roving + data-state='on') for the toggle button groups. -->
+	<!-- Native toolbar: Ark ToggleGroup was wrapping these in a roving-focus
+	     widget whose tooltip asChild merge ate the click. Plain buttons keep
+	     the editor selection (mousedown preventDefault) and still fire onclick. -->
 	<div
 		class="z-rich-editor__toolbar"
 		role="toolbar"
@@ -325,83 +319,115 @@
 		aria-orientation="horizontal"
 		onmousedown={toolbarMouseDown}
 	>
-		<ToggleGroup.Root
-			multiple
-			value={textFormats}
-			onValueChange={(details) => setTextFormats(details.value)}
-			class="z-rich-editor__group"
-			aria-label="Text style"
-		>
-			<TooltipWrap label="Bold">
+		<div class="z-rich-editor__group" role="group" aria-label="Text style">
+			<TooltipWrap label="Bold" wrapDisabled>
 				{#snippet trigger({ props })}
-					<ToggleGroup.Item value="bold" class="z-rich-editor__btn" aria-label="Bold" {...props}>
+					<button
+						type="button"
+						class={formatBtnClass(isBold)}
+						aria-label="Bold"
+						aria-pressed={isBold}
+						onclick={() => runFormat(() => editor?.chain().focus().toggleBold().run())}
+						{...props}
+					>
 						<RiBold size="18" />
-					</ToggleGroup.Item>
+					</button>
 				{/snippet}
 			</TooltipWrap>
-			<TooltipWrap label="Italic">
+			<TooltipWrap label="Italic" wrapDisabled>
 				{#snippet trigger({ props })}
-					<ToggleGroup.Item value="italic" class="z-rich-editor__btn" aria-label="Italic" {...props}>
+					<button
+						type="button"
+						class={formatBtnClass(isItalic)}
+						aria-label="Italic"
+						aria-pressed={isItalic}
+						onclick={() => runFormat(() => editor?.chain().focus().toggleItalic().run())}
+						{...props}
+					>
 						<RiItalic size="18" />
-					</ToggleGroup.Item>
+					</button>
 				{/snippet}
 			</TooltipWrap>
-			<TooltipWrap label="Strikethrough">
+			<TooltipWrap label="Strikethrough" wrapDisabled>
 				{#snippet trigger({ props })}
-					<ToggleGroup.Item value="strike" class="z-rich-editor__btn" aria-label="Strikethrough" {...props}>
+					<button
+						type="button"
+						class={formatBtnClass(isStrike)}
+						aria-label="Strikethrough"
+						aria-pressed={isStrike}
+						onclick={() => runFormat(() => editor?.chain().focus().toggleStrike().run())}
+						{...props}
+					>
 						<RiStrikethrough size="18" />
-					</ToggleGroup.Item>
+					</button>
 				{/snippet}
 			</TooltipWrap>
-		</ToggleGroup.Root>
+		</div>
 
 		<div class="z-rich-editor__divider" role="separator" aria-orientation="vertical"></div>
 
-		<ToggleGroup.Root
-			value={paragraphFormat ? [paragraphFormat] : []}
-			onValueChange={(details) => setParagraphFormat(details.value[0] ?? '')}
-			class="z-rich-editor__group"
-			aria-label="Paragraph style"
-		>
-			<TooltipWrap label="Bullet list">
+		<div class="z-rich-editor__group" role="group" aria-label="Paragraph style">
+			<TooltipWrap label="Bullet list" wrapDisabled>
 				{#snippet trigger({ props })}
-					<ToggleGroup.Item value="bulletList" class="z-rich-editor__btn" aria-label="Bullet list" {...props}>
+					<button
+						type="button"
+						class={formatBtnClass(isBulletList)}
+						aria-label="Bullet list"
+						aria-pressed={isBulletList}
+						onclick={() => runFormat(() => editor?.chain().focus().toggleBulletList().run())}
+						{...props}
+					>
 						<RiListUnordered size="18" />
-					</ToggleGroup.Item>
+					</button>
 				{/snippet}
 			</TooltipWrap>
-			<TooltipWrap label="Numbered list">
+			<TooltipWrap label="Numbered list" wrapDisabled>
 				{#snippet trigger({ props })}
-					<ToggleGroup.Item value="orderedList" class="z-rich-editor__btn" aria-label="Numbered list" {...props}>
+					<button
+						type="button"
+						class={formatBtnClass(isOrderedList)}
+						aria-label="Numbered list"
+						aria-pressed={isOrderedList}
+						onclick={() => runFormat(() => editor?.chain().focus().toggleOrderedList().run())}
+						{...props}
+					>
 						<RiListOrdered size="18" />
-					</ToggleGroup.Item>
+					</button>
 				{/snippet}
 			</TooltipWrap>
-			<TooltipWrap label="Quote">
+			<TooltipWrap label="Quote" wrapDisabled>
 				{#snippet trigger({ props })}
-					<ToggleGroup.Item value="blockquote" class="z-rich-editor__btn" aria-label="Quote" {...props}>
+					<button
+						type="button"
+						class={formatBtnClass(isBlockquote)}
+						aria-label="Quote"
+						aria-pressed={isBlockquote}
+						onclick={() => runFormat(() => editor?.chain().focus().toggleBlockquote().run())}
+						{...props}
+					>
 						<RiDoubleQuotesL size="18" />
-					</ToggleGroup.Item>
+					</button>
 				{/snippet}
 			</TooltipWrap>
-		</ToggleGroup.Root>
+		</div>
 
 		<div class="z-rich-editor__divider" role="separator" aria-orientation="vertical"></div>
 
-		<TooltipWrap label="Link">
+		<TooltipWrap label="Link" wrapDisabled>
 			{#snippet trigger({ props })}
 				<button
 					type="button"
-					class={isLink ? 'z-rich-editor__btn z-rich-editor__btn--active' : 'z-rich-editor__btn'}
+					class={formatBtnClass(isLink)}
 					onclick={toggleLink}
 					aria-label="Link"
+					aria-pressed={isLink}
 					{...props}
 				>
 					<RiLink size="18" />
 				</button>
 			{/snippet}
 		</TooltipWrap>
-		<TooltipWrap label="Insert image">
+		<TooltipWrap label="Insert image" wrapDisabled>
 			{#snippet trigger({ props })}
 				<button
 					type="button"
@@ -421,10 +447,10 @@
 			lazyMount
 			unmountOnExit
 		>
-			<TooltipWrap label="Text color">
+			<TooltipWrap label="Text color" wrapDisabled>
 				{#snippet trigger({ props })}
 					<Popover.Trigger
-						class={activeColor ? 'z-rich-editor__btn z-rich-editor__btn--active' : 'z-rich-editor__btn'}
+						class={formatBtnClass(!!activeColor)}
 						aria-label="Text color"
 						style={activeColor ? `color: ${activeColor}` : ''}
 						{...props}
@@ -459,7 +485,7 @@
 				</Popover.Positioner>
 			</Portal>
 		</Popover.Root>
-		<TooltipWrap label="Clear formatting">
+		<TooltipWrap label="Clear formatting" wrapDisabled>
 			{#snippet trigger({ props })}
 				<button
 					type="button"
