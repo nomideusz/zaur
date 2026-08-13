@@ -5,11 +5,13 @@
 	import { Portal } from '@ark-ui/svelte/portal';
 	import type { JMAPPrincipal } from '@zaur/mail-core/jmap/calendar-types';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
+	import { shareNotifyBody, shareNotifySubject } from '$lib/files/share-notify';
 	import { fileShareRoleFromRights } from '$lib/jmap/file-rights';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { files } from '$lib/stores/files.svelte';
+	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
-	import type { FileShareRole } from '$lib/types/files';
+	import type { FileNode, FileShareRole } from '$lib/types/files';
 	import { cn } from '$lib/utils/cn';
 
 	let {
@@ -87,6 +89,37 @@
 		}
 	}
 
+	async function notifyShare(
+		client: NonNullable<typeof auth.client>,
+		person: JMAPPrincipal,
+		target: FileNode,
+		shareRole: FileShareRole
+	) {
+		const to = person.email?.trim();
+		if (!to) return;
+		const sharerName = settings.resolvedDisplayName(auth.displayName || auth.username);
+		try {
+			await client.sendEmail(
+				[to],
+				shareNotifySubject(target.name, sharerName),
+				shareNotifyBody({
+					itemName: target.name,
+					itemKind: target.nodeType === 'directory' ? 'folder' : 'file',
+					sharerName,
+					role: shareRole,
+					filesUrl: `${window.location.origin}/files`
+				}),
+				{
+					format: 'plain',
+					fromEmail: auth.username ?? undefined,
+					fromName: sharerName
+				}
+			);
+		} catch {
+			toast.show('Shared, but the notification email could not be sent.', 'info');
+		}
+	}
+
 	function lookupErrorMessage(err: unknown): string {
 		if (isJmapMethodError(err, 'forbidden')) {
 			return 'This server doesn’t allow looking up other accounts. Ask your admin to enable directory queries.';
@@ -123,10 +156,14 @@
 				return;
 			}
 
+			const isNewShare = !target.shareWith?.[person.id];
 			await files.share(client, target.id, person.id, role);
 			principals = { ...principals, [person.id]: person };
 			email = '';
 			toast.show(`Shared “${target.name}” with ${person.name || person.email || 'them'}`, 'success');
+			if (isNewShare) {
+				await notifyShare(client, person, target, role);
+			}
 		} catch (err) {
 			error = lookupErrorMessage(err);
 		} finally {

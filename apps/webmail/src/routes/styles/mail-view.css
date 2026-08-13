@@ -80,17 +80,15 @@
 		}
 	}
 
-	/* Custom-folder tree (Ark tree-view). Mirrors the flat sidebar rows, adding depth
-	   indentation and a chevron toggle on branches that have sub-folders. */
-	.z-mail-view .z-folder-tree-list {
+	/* Folder tree (Ark tree-view) — Mail custom folders and Files sidebar.
+	   `--depth` (1-based) is set by Ark on each node; indent each level past the first. */
+	.z-folder-tree-list {
 		display: flex;
 		flex-direction: column;
 		gap: 0.125rem;
 	}
 
-	/* A folder row — either a leaf link or a branch control. `--depth` (1-based) is
-	   set by Ark on each node; indent each level past the first. */
-	.z-mail-view .z-folder-row {
+	.z-folder-row {
 		display: flex;
 		align-items: center;
 		gap: 0.25rem;
@@ -112,22 +110,21 @@
 			color 0.15s ease;
 	}
 
-	.z-mail-view .z-folder-row:hover {
+	.z-folder-row:hover {
 		background: color-mix(in srgb, var(--z-surface-sunken) 60%, transparent);
 		color: var(--z-fg);
 	}
 
-	.z-mail-view .z-folder-row:focus-visible {
+	.z-folder-row:focus-visible {
 		outline: 2px solid var(--z-accent);
 		outline-offset: -2px;
 	}
 
-	/* Leaf rows lay name + badge out directly; branch rows hold a chevron + a link. */
-	.z-mail-view .z-folder-row--leaf {
+	.z-folder-row--leaf {
 		justify-content: space-between;
 	}
 
-	.z-mail-view .z-folder-branch-link {
+	.z-folder-branch-link {
 		display: flex;
 		flex: 1;
 		min-width: 0;
@@ -136,17 +133,22 @@
 		gap: 0.5rem;
 		color: inherit;
 		text-decoration: none;
+		background: transparent;
+		border: none;
+		padding: 0;
+		font: inherit;
+		text-align: start;
+		cursor: pointer;
 	}
 
-	/* Active folder — same treatment as the flat sidebar's z-surface-active rows. */
-	.z-mail-view .z-folder-row--leaf.z-folder-active,
-	.z-mail-view .z-folder-row--branch:has(.z-folder-active) {
+	.z-folder-row--leaf.z-folder-active,
+	.z-folder-row--branch:has(.z-folder-active) {
 		background: var(--z-chrome-active);
 		color: var(--z-fg);
 		font-weight: 600;
 	}
 
-	.z-mail-view .z-folder-chevron {
+	.z-folder-chevron {
 		display: inline-flex;
 		flex-shrink: 0;
 		align-items: center;
@@ -161,26 +163,26 @@
 		cursor: pointer;
 	}
 
-	.z-mail-view .z-folder-chevron:hover {
+	.z-folder-chevron:hover {
 		background: color-mix(in srgb, var(--z-fg) 10%, transparent);
 		color: var(--z-fg);
 	}
 
-	.z-mail-view .z-folder-chevron-icon {
+	.z-folder-chevron-icon {
 		display: inline-flex;
 		transition: transform 0.15s ease;
 	}
 
-	.z-mail-view .z-folder-chevron-icon[data-state='open'] {
+	.z-folder-chevron-icon[data-state='open'] {
 		transform: rotate(90deg);
 	}
 
-	.z-mail-view .z-folder-chevron svg {
+	.z-folder-chevron svg {
 		width: 1rem;
 		height: 1rem;
 	}
 
-	.z-mail-view .z-folder-rename-input {
+	.z-folder-rename-input {
 		flex: 1;
 		min-width: 0;
 		height: 1.5rem;
@@ -193,23 +195,23 @@
 		outline: none;
 	}
 
-	.z-mail-view .z-folder-rename-input:focus-visible {
+	.z-folder-rename-input:focus-visible {
 		outline: 2px solid var(--z-accent);
 		outline-offset: -1px;
 	}
 
-	.z-mail-view .z-folder-name {
+	.z-folder-name {
 		min-width: 0;
 	}
 
-	.z-mail-view .z-folder-badge {
+	.z-folder-badge {
 		flex-shrink: 0;
 		font-size: 0.75rem;
 		font-variant-numeric: tabular-nums;
 		color: var(--z-fg-subtle);
 	}
 
-	.z-mail-view .z-folder-badge--active {
+	.z-folder-badge--active {
 		color: var(--z-accent);
 		font-weight: 600;
 	}

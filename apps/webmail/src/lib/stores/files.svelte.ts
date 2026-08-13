@@ -1,5 +1,6 @@
 import { errorMessage } from '@zaur/mail-core/utils/errors';
 import { isJmapMethodError } from '@zaur/mail-core/jmap/errors';
+import { buildFileTree } from '@zaur/mail-core/files/folder-tree';
 import type { JMAPClient } from '$lib/jmap/client';
 import {
 	fileRoleLabel,
@@ -49,6 +50,8 @@ class FilesStore {
 	breadcrumb = $derived(this.ancestors);
 	ownedFolders = $derived(this.roleFolders.filter(isOwnedFileNode));
 	sharedFolders = $derived(this.roleFolders.filter((node) => !isOwnedFileNode(node)));
+	ownedTree = $derived(buildFileTree(this.ownedFolders));
+	sharedTree = $derived(buildFileTree(this.sharedFolders));
 
 	canAddHere = $derived.by(() => {
 		if (this.currentFolder) return this.currentFolder.myRights.mayAddChildren;
@@ -59,7 +62,7 @@ class FilesStore {
 		if (this.currentFolder) {
 			return fileRoleLabel(this.currentFolder.role) ?? this.currentFolder.name;
 		}
-		return 'Files';
+		return 'All files';
 	});
 
 	async ensure(client: JMAPClient): Promise<void> {
@@ -73,28 +76,45 @@ class FilesStore {
 		this.supported = true;
 		this.mayCreateTopLevel = client.getFileNodeCapability()?.mayCreateTopLevelFileNode !== false;
 		await this.loadRoleFolders(client);
-		if (this.currentParentId === null && !this.nodes.length) {
-			const documents = this.roleFolders.find((node) => node.role === 'documents');
-			const home = this.roleFolders.find((node) => node.role === 'home');
-			await this.openFolder(client, documents?.id ?? home?.id ?? null);
-		} else {
-			await this.openFolder(client, this.currentParentId);
-		}
+		await this.openFolder(client, this.currentParentId);
 	}
 
 	async loadRoleFolders(client: JMAPClient): Promise<void> {
 		try {
-			const [roles, top] = await Promise.all([
-				client.queryFileNodes({ hasAnyRole: true }),
-				client.queryFileNodes({ isTopLevel: true })
-			]);
-			const mapped = new Map<string, FileNode>();
-			for (const raw of [...roles, ...top]) {
+			const top = await client.queryFileNodes({ isTopLevel: true }, { limit: 200 });
+			const byId = new Map<string, FileNode>();
+			for (const raw of top) {
 				const node = mapFileNode(raw);
 				if (node.nodeType !== 'directory') continue;
-				mapped.set(node.id, node);
+				byId.set(node.id, node);
 			}
-			this.roleFolders = sortNodes([...mapped.values()]);
+
+			let frontier = [...byId.keys()];
+			let depth = 0;
+			while (frontier.length && depth < 8) {
+				const batches = await Promise.all(
+					frontier.map(async (id) => {
+						try {
+							return await client.queryFileNodes({ parentId: id }, { limit: 200 });
+						} catch {
+							return [];
+						}
+					})
+				);
+				const next: string[] = [];
+				for (const children of batches) {
+					for (const raw of children) {
+						const node = mapFileNode(raw);
+						if (node.nodeType !== 'directory' || byId.has(node.id)) continue;
+						byId.set(node.id, node);
+						next.push(node.id);
+					}
+				}
+				frontier = next;
+				depth += 1;
+			}
+
+			this.roleFolders = sortNodes([...byId.values()]);
 		} catch (error) {
 			if (isJmapMethodError(error, 'unknownMethod') || isJmapMethodError(error, 'unknownCapability')) {
 				this.supported = false;
@@ -183,6 +203,7 @@ class FilesStore {
 			});
 			toast.show(`Created “${name.trim()}”`, 'success');
 			await this.openFolder(client, this.currentParentId);
+			await this.loadRoleFolders(client);
 		} catch (error) {
 			toast.show(errorMessage(error, 'Could not create folder'), 'error');
 			throw error;
@@ -224,6 +245,7 @@ class FilesStore {
 			await client.updateFileNode(id, { name });
 			await this.openFolder(client, this.currentParentId);
 			this.selectedId = id;
+			await this.loadRoleFolders(client);
 		} catch (error) {
 			toast.show(errorMessage(error, 'Could not rename'), 'error');
 			throw error;

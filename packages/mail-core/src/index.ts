@@ -19,6 +19,7 @@ export * from './utils/addresses';
 export * from './types/mail';
 export * from './types/calendar';
 export * from './types/files';
+export * from './files/folder-tree';
 export * from './mail/mailboxes';
 export * from './mail/reader-delivered-to';
 export * from './mail/reader-contact';
