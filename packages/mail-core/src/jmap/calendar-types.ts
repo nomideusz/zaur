@@ -20,6 +20,8 @@ export interface JMAPCalendar {
 	sortOrder?: number;
 	shareWith?: Record<string, JMAPCalendarRights> | null;
 	myRights?: JMAPCalendarRights | null;
+	/** Account this calendar was fetched from (own or shared). */
+	accountId?: string | null;
 }
 
 export interface JMAPPrincipal {
@@ -39,6 +41,8 @@ import type { JmapRecurrenceRule } from './recurrence';
 
 export interface JMAPCalendarEvent {
 	id: string;
+	/** Account this event was fetched from (own or shared). */
+	accountId?: string | null;
 	/** Present when `id` is a server-expanded recurrence instance. */
 	baseEventId?: string | null;
 	recurrenceId?: string | null;

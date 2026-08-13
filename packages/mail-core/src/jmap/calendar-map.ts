@@ -19,7 +19,11 @@ function mapShareWith(
 	return Object.keys(mapped).length ? mapped : null;
 }
 
-export function mapCalendar(calendar: JMAPCalendar, index: number): Calendar {
+export function mapCalendar(
+	calendar: JMAPCalendar,
+	index: number,
+	accountId?: string | null
+): Calendar {
 	return {
 		id: calendar.id,
 		name: calendar.name,
@@ -29,7 +33,8 @@ export function mapCalendar(calendar: JMAPCalendar, index: number): Calendar {
 		isVisible: calendar.isVisible ?? true,
 		isSubscribed: calendar.isSubscribed ?? true,
 		myRights: normalizeCalendarRights(calendar.myRights),
-		shareWith: mapShareWith(calendar.shareWith)
+		shareWith: mapShareWith(calendar.shareWith),
+		accountId: accountId ?? calendar.accountId ?? null
 	};
 }
 
@@ -82,12 +87,16 @@ function parseRecurrenceRule(event: JMAPCalendarEvent): JmapRecurrenceRule | und
 	return event.recurrenceRules?.[0];
 }
 
-export function mapCalendarEvent(event: JMAPCalendarEvent): CalendarEvent {
+export function mapCalendarEvent(
+	event: JMAPCalendarEvent,
+	accountId?: string | null
+): CalendarEvent {
 	const start = parseEventStart(event);
 	const end = parseEventEnd(event, start);
 
 	return {
 		id: event.id,
+		accountId: accountId ?? event.accountId ?? null,
 		baseEventId:
 			event.baseEventId && event.baseEventId !== event.id ? event.baseEventId : undefined,
 		recurrenceId:

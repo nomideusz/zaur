@@ -133,8 +133,10 @@ class CalendarStore {
 			}
 
 			this.supported = true;
+			/* Session lists shared calendar accounts; refresh so a new share is visible. */
+			await client.connect();
 			const list = await client.getCalendars();
-			this.calendars = list.map(mapCalendar);
+			this.calendars = list.map((item, index) => mapCalendar(item, index, item.accountId));
 			this.hiddenCalendarIds = new Set(
 				this.calendars.filter((item) => !item.isVisible).map((item) => item.id)
 			);
@@ -170,7 +172,7 @@ class CalendarStore {
 				before,
 				timeZone: localTimeZone()
 			});
-			this.events = events.map(mapCalendarEvent);
+			this.events = events.map((event) => mapCalendarEvent(event, event.accountId));
 		} catch (error) {
 			this.events = [];
 			this.error = errorMessage(error, 'Failed to load events');
@@ -238,9 +240,21 @@ class CalendarStore {
 		}
 	}
 
+	private calendarAccountId(id: string): string | null {
+		return this.calendarById(id)?.accountId ?? null;
+	}
+
+	private eventAccountId(event: CalendarEvent): string | null {
+		return (
+			event.accountId ??
+			event.calendarIds.map((id) => this.calendarById(id)?.accountId).find(Boolean) ??
+			null
+		);
+	}
+
 	private async persistVisibility(client: JMAPClient, id: string, isVisible: boolean) {
 		try {
-			await client.updateCalendar(id, { isVisible });
+			await client.updateCalendar(id, { isVisible, accountId: this.calendarAccountId(id) });
 		} catch (error) {
 			const reverted = new Set(this.hiddenCalendarIds);
 			if (isVisible) reverted.add(id);
@@ -399,13 +413,17 @@ class CalendarStore {
 				const eventId = this.composeEventId;
 				await client.updateCalendarEvent(eventId, {
 					...payload,
-					previousCalendarIds: this.composePreviousCalendarIds
+					previousCalendarIds: this.composePreviousCalendarIds,
+					accountId: this.calendarAccountId(payload.calendarId)
 				});
 				await this.afterSave(client, validated.title, validated.start, eventId, 'edit');
 				return true;
 			}
 
-			const id = await client.createCalendarEvent(payload);
+			const id = await client.createCalendarEvent({
+				...payload,
+				accountId: this.calendarAccountId(payload.calendarId)
+			});
 			await this.afterSave(client, validated.title, validated.start, id, 'create');
 			return true;
 		} catch (error) {
@@ -447,7 +465,7 @@ class CalendarStore {
 		}
 
 		try {
-			await client.destroyCalendarEvent(event.id);
+			await client.destroyCalendarEvent(event.id, this.eventAccountId(event));
 			if (this.selectedEventId === event.id) {
 				this.selectedEventId = null;
 			}
@@ -484,7 +502,9 @@ class CalendarStore {
 	}
 
 	private replaceCalendar(next: Calendar) {
-		const index = this.calendars.findIndex((item) => item.id === next.id);
+		const index = this.calendars.findIndex(
+			(item) => item.id === next.id && item.accountId === next.accountId
+		);
 		if (index < 0) {
 			this.calendars = [...this.calendars, next];
 			return;
@@ -500,10 +520,14 @@ class CalendarStore {
 		this.composeDraft.calendarId = this.defaultCalendarId() ?? '';
 	}
 
-	private async hydrateCalendar(client: JMAPClient, id: string): Promise<Calendar | undefined> {
-		const [raw] = await client.getCalendarsByIds([id]);
+	private async hydrateCalendar(
+		client: JMAPClient,
+		id: string,
+		accountId?: string | null
+	): Promise<Calendar | undefined> {
+		const [raw] = await client.getCalendarsByIds([id], accountId);
 		if (!raw) return undefined;
-		const mapped = mapCalendar(raw, this.calendars.length);
+		const mapped = mapCalendar(raw, this.calendars.length, accountId ?? raw.accountId);
 		this.replaceCalendar(mapped);
 		return mapped;
 	}
@@ -518,14 +542,16 @@ class CalendarStore {
 		const color = input.color || nextCalendarColor(this.calendars.map((item) => item.color));
 		const id = await client.createCalendar({ name: trimmed, color });
 		let created: Calendar | undefined;
+		const ownAccountId = client.getCalendarAccountId();
 		try {
-			created = await this.hydrateCalendar(client, id);
+			created = await this.hydrateCalendar(client, id, ownAccountId);
 		} catch {
 			created = undefined;
 		}
 		created ??= mapCalendar(
 			{ id, name: trimmed, color, isVisible: true, isDefault: false, isSubscribed: true },
-			this.calendars.length
+			this.calendars.length,
+			ownAccountId
 		);
 		if (!this.calendarById(created.id)) this.replaceCalendar(created);
 
@@ -555,7 +581,8 @@ class CalendarStore {
 		try {
 			await client.updateCalendar(id, {
 				...(name !== undefined ? { name } : {}),
-				...(patch.color !== undefined ? { color: patch.color } : {})
+				...(patch.color !== undefined ? { color: patch.color } : {}),
+				accountId: existing.accountId
 			});
 			toast.show(`Updated “${nextName}”`, 'success');
 		} catch (error) {
@@ -605,7 +632,7 @@ class CalendarStore {
 		}
 
 		try {
-			await client.destroyCalendar(id, false);
+			await client.destroyCalendar(id, false, existing.accountId);
 		} catch (error) {
 			if (!isJmapMethodError(error, 'calendarHasEvent')) throw error;
 			if (
@@ -618,7 +645,7 @@ class CalendarStore {
 			) {
 				return false;
 			}
-			await client.destroyCalendar(id, true);
+			await client.destroyCalendar(id, true, existing.accountId);
 		}
 
 		this.calendars = this.calendars.filter((item) => item.id !== id);
@@ -681,8 +708,11 @@ class CalendarStore {
 		});
 
 		try {
-			await client.updateCalendar(existing.id, { shareWith: patched });
-			const hydrated = await this.hydrateCalendar(client, existing.id);
+			await client.updateCalendar(existing.id, {
+				shareWith: patched,
+				accountId: existing.accountId
+			});
+			const hydrated = await this.hydrateCalendar(client, existing.id, existing.accountId);
 			if (!hydrated) this.refreshCounter++;
 		} catch (error) {
 			this.replaceCalendar({ ...existing, shareWith: previous });

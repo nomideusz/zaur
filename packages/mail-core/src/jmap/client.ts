@@ -239,7 +239,9 @@ export class JMAPClient {
 	}
 
 	hasCalendars(): boolean {
-		return !!this.session?.capabilities?.[CALENDARS_URN];
+		if (this.session?.capabilities?.[CALENDARS_URN]) return true;
+		const accountId = this.getCalendarAccountId();
+		return !!this.session?.accounts?.[accountId]?.accountCapabilities?.[CALENDARS_URN];
 	}
 
 	hasFileNode(): boolean {
@@ -277,6 +279,21 @@ export class JMAPClient {
 
 	getCalendarAccountId(): string {
 		return this.session?.primaryAccounts?.[CALENDARS_URN] ?? this.accountId;
+	}
+
+	/** Own calendar account plus any shared accounts advertised on the session. */
+	getCalendarAccountIds(): string[] {
+		const primary = this.getCalendarAccountId();
+		const ids = new Set<string>();
+		if (primary) ids.add(primary);
+		for (const [id, account] of Object.entries(this.session?.accounts ?? {})) {
+			if (account.accountCapabilities?.[CALENDARS_URN]) ids.add(id);
+		}
+		return [...ids];
+	}
+
+	private calendarAccount(accountId?: string | null): string {
+		return accountId || this.getCalendarAccountId();
 	}
 
 	hasPrincipals(): boolean {
@@ -691,46 +708,80 @@ export class JMAPClient {
 		return JSON.parse(responseText) as JMAPResponse;
 	}
 
-	private async calendarRequest(methodCalls: JMAPMethodCall[]): Promise<JMAPResponse> {
-		return this.request(methodCalls, [...CALENDAR_USING]);
+	private async calendarRequest(
+		methodCalls: JMAPMethodCall[],
+		extraUsing: string[] = []
+	): Promise<JMAPResponse> {
+		const using = extraUsing.length
+			? [...new Set([...CALENDAR_USING, ...extraUsing])]
+			: [...CALENDAR_USING];
+		return this.request(methodCalls, using);
 	}
 
-	async getCalendars(): Promise<JMAPCalendar[]> {
-		if (!this.hasCalendars()) return [];
-
-		const response = await this.calendarRequest([
-			['Calendar/get', { accountId: this.getCalendarAccountId() }, 'cal']
-		]);
-
-		const first = response.methodResponses?.[0];
-		if (first?.[0] === 'error') {
-			const error = first[1] as { type?: string; description?: string };
-			throw new Error(error.description ?? error.type ?? 'Calendar/get failed');
-		}
-		if (first?.[0] !== 'Calendar/get') {
-			throw new Error('Unexpected Calendar/get response');
-		}
-
-		const list = (first[1].list as JMAPCalendar[]) ?? [];
-		return list.sort((a, b) => {
+	private sortCalendars(list: JMAPCalendar[]): JMAPCalendar[] {
+		const primary = this.getCalendarAccountId();
+		return [...list].sort((a, b) => {
+			const aOwn = (a.accountId ?? primary) === primary ? 0 : 1;
+			const bOwn = (b.accountId ?? primary) === primary ? 0 : 1;
+			if (aOwn !== bOwn) return aOwn - bOwn;
 			const order = (a.sortOrder ?? 0) - (b.sortOrder ?? 0);
 			if (order !== 0) return order;
 			return a.name.localeCompare(b.name);
 		});
 	}
 
-	async getCalendarsByIds(ids: string[]): Promise<JMAPCalendar[]> {
+	async getCalendars(): Promise<JMAPCalendar[]> {
+		if (!this.hasCalendars()) return [];
+
+		const accountIds = this.getCalendarAccountIds();
+		const response = await this.calendarRequest(
+			accountIds.map((accountId, index) => [
+				'Calendar/get',
+				{ accountId },
+				`cal-${index}`
+			])
+		);
+
+		const list: JMAPCalendar[] = [];
+		for (const [index, accountId] of accountIds.entries()) {
+			const call = response.methodResponses?.find(([, , id]) => id === `cal-${index}`);
+			if (!call || call[0] !== 'Calendar/get') continue;
+			const calendars = (call[1].list as JMAPCalendar[]) ?? [];
+			for (const calendar of calendars) {
+				list.push({ ...calendar, accountId });
+			}
+		}
+
+		if (!list.length) {
+			const first = response.methodResponses?.[0];
+			if (first?.[0] === 'error') {
+				const error = first[1] as { type?: string; description?: string };
+				throw new Error(error.description ?? error.type ?? 'Calendar/get failed');
+			}
+		}
+
+		return this.sortCalendars(list);
+	}
+
+	async getCalendarsByIds(
+		ids: string[],
+		accountId?: string | null
+	): Promise<JMAPCalendar[]> {
 		if (!this.hasCalendars() || !ids.length) return [];
 
+		const resolved = this.calendarAccount(accountId);
 		const response = await this.calendarRequest([
-			['Calendar/get', { accountId: this.getCalendarAccountId(), ids }, 'cal']
+			['Calendar/get', { accountId: resolved, ids }, 'cal']
 		]);
 
 		const first = response.methodResponses?.[0];
 		if (first?.[0] !== 'Calendar/get') {
 			throw new Error('Unexpected Calendar/get response');
 		}
-		return (first[1].list as JMAPCalendar[]) ?? [];
+		return ((first[1].list as JMAPCalendar[]) ?? []).map((calendar) => ({
+			...calendar,
+			accountId: resolved
+		}));
 	}
 
 	async createCalendar(input: { name: string; color?: string; description?: string }): Promise<string> {
@@ -769,6 +820,7 @@ export class JMAPClient {
 			description?: string | null;
 			isVisible?: boolean;
 			shareWith?: Record<string, JMAPCalendarRights | null> | null;
+			accountId?: string | null;
 		}
 	): Promise<void> {
 		if (!this.hasCalendars()) throw new Error('Calendars not supported');
@@ -786,16 +838,20 @@ export class JMAPClient {
 
 		if (!Object.keys(update).length) return;
 
-		const response = await this.calendarRequest([
+		const extraUsing = patch.shareWith !== undefined ? [PRINCIPALS_URN] : [];
+		const response = await this.calendarRequest(
 			[
-				'Calendar/set',
-				{
-					accountId: this.getCalendarAccountId(),
-					update: { [calendarId]: update }
-				},
-				'ccu'
-			]
-		]);
+				[
+					'Calendar/set',
+					{
+						accountId: this.calendarAccount(patch.accountId),
+						update: { [calendarId]: update }
+					},
+					'ccu'
+				]
+			],
+			extraUsing
+		);
 
 		this.throwCalendarSetErrors(response, 'Could not update calendar');
 	}
@@ -817,14 +873,18 @@ export class JMAPClient {
 		this.throwCalendarSetErrors(response, 'Could not set default calendar');
 	}
 
-	async destroyCalendar(calendarId: string, removeEvents = false): Promise<void> {
+	async destroyCalendar(
+		calendarId: string,
+		removeEvents = false,
+		accountId?: string | null
+	): Promise<void> {
 		if (!this.hasCalendars()) throw new Error('Calendars not supported');
 
 		const response = await this.calendarRequest([
 			[
 				'Calendar/set',
 				{
-					accountId: this.getCalendarAccountId(),
+					accountId: this.calendarAccount(accountId),
 					onDestroyRemoveEvents: removeEvents,
 					destroy: [calendarId]
 				},
@@ -1204,63 +1264,90 @@ export class JMAPClient {
 		before: string;
 		calendarId?: string;
 		timeZone?: string;
+		accountId?: string | null;
 	}): Promise<CalendarEventQueryResult> {
 		if (!this.hasCalendars()) return { events: [], total: 0 };
 
-		const accountId = this.getCalendarAccountId();
+		const accountIds = params.accountId
+			? [this.calendarAccount(params.accountId)]
+			: this.getCalendarAccountIds();
 		const filter: Record<string, string> = {
 			after: params.after,
 			before: params.before
 		};
 		if (params.calendarId) filter.inCalendar = params.calendarId;
 
-		const response = await this.calendarRequest([
-			[
-				'CalendarEvent/query',
-				{
-					accountId,
-					filter,
-					expandRecurrences: false,
-					timeZone: params.timeZone ?? 'Etc/UTC',
-					limit: 500
-				},
-				'ceq'
-			],
-			[
-				'CalendarEvent/get',
-				{
-					accountId,
-					'#ids': { resultOf: 'ceq', name: 'CalendarEvent/query', path: '/ids' },
-					properties: [...CALENDAR_EVENT_PROPERTIES]
-				},
-				'ceg'
-			]
-		]);
-
-		const queryResult = response.methodResponses?.[0];
-		if (queryResult?.[0] === 'error') {
-			const error = queryResult[1] as { type?: string; description?: string };
-			throw new Error(error.description ?? error.type ?? 'CalendarEvent/query failed');
+		const methodCalls: JMAPMethodCall[] = [];
+		for (const [index, accountId] of accountIds.entries()) {
+			methodCalls.push(
+				[
+					'CalendarEvent/query',
+					{
+						accountId,
+						filter,
+						expandRecurrences: false,
+						timeZone: params.timeZone ?? 'Etc/UTC',
+						limit: 500
+					},
+					`ceq-${index}`
+				],
+				[
+					'CalendarEvent/get',
+					{
+						accountId,
+						'#ids': {
+							resultOf: `ceq-${index}`,
+							name: 'CalendarEvent/query',
+							path: '/ids'
+						},
+						properties: [...CALENDAR_EVENT_PROPERTIES]
+					},
+					`ceg-${index}`
+				]
+			);
 		}
 
-		const getResult = response.methodResponses?.[1];
-		if (getResult?.[0] !== 'CalendarEvent/get') {
-			return { events: [], total: 0 };
+		const response = await this.calendarRequest(methodCalls);
+		const events: JMAPCalendarEvent[] = [];
+		let total = 0;
+		let sawQueryError: { type?: string; description?: string } | null = null;
+
+		for (const [index, accountId] of accountIds.entries()) {
+			const queryResult = response.methodResponses?.find(([, , id]) => id === `ceq-${index}`);
+			if (queryResult?.[0] === 'error') {
+				sawQueryError = queryResult[1] as { type?: string; description?: string };
+				continue;
+			}
+			const getResult = response.methodResponses?.find(([, , id]) => id === `ceg-${index}`);
+			if (getResult?.[0] !== 'CalendarEvent/get') continue;
+			const list = (getResult[1].list as JMAPCalendarEvent[]) ?? [];
+			total += (queryResult?.[1]?.total as number) ?? list.length;
+			for (const event of list) {
+				events.push({ ...event, accountId });
+			}
 		}
 
-		const events = (getResult[1].list as JMAPCalendarEvent[]) ?? [];
-		const total = (queryResult?.[1]?.total as number) ?? events.length;
+		if (!events.length && sawQueryError && accountIds.length === 1) {
+			throw new Error(
+				sawQueryError.description ?? sawQueryError.type ?? 'CalendarEvent/query failed'
+			);
+		}
+
 		return { events, total };
 	}
 
-	async getCalendarEvent(eventId: string): Promise<JMAPCalendarEvent | null> {
+	async getCalendarEvent(
+		eventId: string,
+		accountId?: string | null
+	): Promise<JMAPCalendarEvent | null> {
 		if (!this.hasCalendars()) return null;
 
+		const resolved = this.calendarAccount(accountId);
 		const response = await this.calendarRequest([
 			[
 				'CalendarEvent/get',
 				{
-					accountId: this.getCalendarAccountId(),
+					accountId: resolved,
 					ids: [eventId],
 					properties: [...CALENDAR_EVENT_PROPERTIES]
 				},
@@ -1271,7 +1358,8 @@ export class JMAPClient {
 		const first = response.methodResponses?.[0];
 		if (first?.[0] !== 'CalendarEvent/get') return null;
 		const list = (first[1].list as JMAPCalendarEvent[]) ?? [];
-		return list[0] ?? null;
+		const event = list[0];
+		return event ? { ...event, accountId: resolved } : null;
 	}
 
 	private buildCalendarEventData(
@@ -1342,10 +1430,11 @@ export class JMAPClient {
 		description?: string;
 		location?: string;
 		recurrenceRule?: { '@type': 'RecurrenceRule'; frequency: string };
+		accountId?: string | null;
 	}): Promise<string> {
 		if (!this.hasCalendars()) throw new Error('Calendars not supported');
 
-		const accountId = this.getCalendarAccountId();
+		const accountId = this.calendarAccount(input.accountId);
 		const createKey = `evt-${Date.now()}`;
 
 		const response = await this.calendarRequest([
@@ -1396,6 +1485,7 @@ export class JMAPClient {
 			description?: string;
 			location?: string;
 			previousCalendarIds?: string[];
+			accountId?: string | null;
 		}
 	): Promise<void> {
 		if (!this.hasCalendars()) throw new Error('Calendars not supported');
@@ -1404,7 +1494,7 @@ export class JMAPClient {
 			[
 				'CalendarEvent/set',
 				{
-					accountId: this.getCalendarAccountId(),
+					accountId: this.calendarAccount(input.accountId),
 					update: { [eventId]: this.buildCalendarEventData(input, 'update') }
 				},
 				'ceu'
@@ -1429,14 +1519,14 @@ export class JMAPClient {
 		}
 	}
 
-	async destroyCalendarEvent(eventId: string): Promise<void> {
+	async destroyCalendarEvent(eventId: string, accountId?: string | null): Promise<void> {
 		if (!this.hasCalendars()) throw new Error('Calendars not supported');
 
 		const response = await this.calendarRequest([
 			[
 				'CalendarEvent/set',
 				{
-					accountId: this.getCalendarAccountId(),
+					accountId: this.calendarAccount(accountId),
 					destroy: [eventId]
 				},
 				'ced'

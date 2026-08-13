@@ -23,10 +23,14 @@ export interface Calendar {
 	isSubscribed: boolean;
 	myRights: CalendarRights;
 	shareWith: Record<string, CalendarRights> | null;
+	/** JMAP account that owns this calendar. Shared calendars live in the sharer's account. */
+	accountId: string | null;
 }
 
 export interface CalendarEvent {
 	id: string;
+	/** JMAP account this event belongs to (own or shared). */
+	accountId: string | null;
 	/** Set when this row is an expanded instance of a recurring event. */
 	baseEventId?: string;
 	recurrenceId?: string;

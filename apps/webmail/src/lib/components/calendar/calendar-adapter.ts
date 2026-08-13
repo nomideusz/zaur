@@ -73,7 +73,7 @@ export class ZaurCalendarAdapter implements CalendarAdapter {
 				timeZone: localTimeZone()
 			});
 
-			const masters = events.map(mapCalendarEvent);
+			const masters = events.map((event) => mapCalendarEvent(event, event.accountId));
 			const fetchedIds = new Set(masters.map((ev) => ev.id));
 			const rangeStart = range.start.getTime();
 			const rangeEnd = range.end.getTime();
@@ -175,7 +175,8 @@ export class ZaurCalendarAdapter implements CalendarAdapter {
 				showWithoutTime: updated.allDay,
 				description: master.description,
 				location: updated.location,
-				previousCalendarIds: master.calendarIds
+				previousCalendarIds: master.calendarIds,
+				accountId: master.accountId ?? hostCalendar?.accountId
 			});
 		} catch (error) {
 			if (isSyntheticCalendarError(error)) {

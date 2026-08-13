@@ -22,6 +22,7 @@ function calendar(partial: Partial<Calendar> & Pick<Calendar, 'id' | 'name'>): C
 		isSubscribed: true,
 		myRights: normalizeCalendarRights(null),
 		shareWith: null,
+		accountId: null,
 		...partial
 	};
 }
