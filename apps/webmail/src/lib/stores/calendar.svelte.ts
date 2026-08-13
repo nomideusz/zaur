@@ -48,6 +48,22 @@ export interface EventComposeDraft {
 	description: string;
 }
 
+function createEmptyDraft(day = new Date(), calendarId = ''): EventComposeDraft {
+	const { start, end } = defaultEventTimes(day);
+	return {
+		calendarId,
+		title: '',
+		allDay: false,
+		repeat: 'none',
+		startDate: toDateInputValue(start),
+		startTime: `${pad2(start.getHours())}:${pad2(start.getMinutes())}`,
+		endDate: toDateInputValue(end),
+		endTime: `${pad2(end.getHours())}:${pad2(end.getMinutes())}`,
+		location: '',
+		description: ''
+	};
+}
+
 class CalendarStore {
 	calendars = $state<Calendar[]>([]);
 	events = $state<CalendarEvent[]>([]);
@@ -66,7 +82,7 @@ class CalendarStore {
 	composePreviousCalendarIds = $state<string[]>([]);
 	composeSaving = $state(false);
 	composeError = $state<string | null>(null);
-	composeDraft = $state<EventComposeDraft>(this.emptyDraft());
+	composeDraft = $state<EventComposeDraft>(createEmptyDraft());
 
 	calendarsLoading = $state(false);
 	eventsLoading = $state(false);
@@ -76,20 +92,7 @@ class CalendarStore {
 	private calendarsLoaded = false;
 
 	private emptyDraft(day = new Date()): EventComposeDraft {
-		const { start, end } = defaultEventTimes(day);
-		const calendarId = this.defaultCalendarId() ?? '';
-		return {
-			calendarId,
-			title: '',
-			allDay: false,
-			repeat: 'none',
-			startDate: toDateInputValue(start),
-			startTime: `${pad2(start.getHours())}:${pad2(start.getMinutes())}`,
-			endDate: toDateInputValue(end),
-			endTime: `${pad2(end.getHours())}:${pad2(end.getMinutes())}`,
-			location: '',
-			description: ''
-		};
+		return createEmptyDraft(day, this.defaultCalendarId() ?? '');
 	}
 
 	private draftFromEvent(event: CalendarEvent): EventComposeDraft {
