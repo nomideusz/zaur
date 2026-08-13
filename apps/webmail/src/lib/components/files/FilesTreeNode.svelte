@@ -1,10 +1,14 @@
 <script lang="ts">
+	import { Menu } from '@ark-ui/svelte/menu';
 	import { TreeView } from '@ark-ui/svelte/tree-view';
 	import RiArrowRightSLine from 'svelte-remixicon/RiArrowRightSLine.svelte';
+	import MenuContent from '$lib/components/ui/menu/MenuContent.svelte';
+	import MenuItem from '$lib/components/ui/menu/MenuItem.svelte';
 	import { hasFileNodeDrag, fileNodeDragId } from '$lib/files/drag';
-	import { fileRoleLabel } from '$lib/jmap/file-rights';
+	import { fileAllowsAddChildren, fileAllowsDelete, fileAllowsRename, fileRoleLabel } from '$lib/jmap/file-rights';
 	import type { FileTreeNode } from '@zaur/mail-core/files/folder-tree';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { confirm } from '$lib/stores/confirm.svelte';
 	import { files } from '$lib/stores/files.svelte';
 	import { cn } from '$lib/utils/cn';
 	import Self from './FilesTreeNode.svelte';
@@ -22,6 +26,12 @@
 	const isActive = $derived(activeId === node.id);
 	const isDropTarget = $derived(files.dropTargetId === node.id);
 	const hasChildren = $derived(node.children.length > 0);
+	const canAdd = $derived(fileAllowsAddChildren(node));
+	const canRename = $derived(fileAllowsRename(node));
+	const canDelete = $derived(fileAllowsDelete(node));
+	const showFolderMenu = $derived(canAdd || canRename || canDelete);
+
+	const menuPositioning = { placement: 'bottom-start' as const, gutter: 4, overflowPadding: 12 };
 
 	function onDragOver(event: DragEvent) {
 		if (!hasFileNodeDrag(event.dataTransfer)) return;
@@ -43,6 +53,30 @@
 		const id = fileNodeDragId(event.dataTransfer);
 		const client = auth.client;
 		if (id && client) void files.move(client, id, node.id);
+	}
+
+	function requestSubfolder() {
+		files.requestCreateFolder(node.id);
+	}
+
+	function requestRename() {
+		files.requestRename(node.id);
+	}
+
+	async function requestDelete() {
+		const client = auth.client;
+		if (!client) return;
+		if (
+			!(await confirm.ask({
+				title: 'Delete folder?',
+				description: `Delete “${node.name}” and everything inside it?`,
+				confirmLabel: 'Delete',
+				tone: 'danger'
+			}))
+		) {
+			return;
+		}
+		await files.destroy(client, node);
 	}
 </script>
 
@@ -71,6 +105,33 @@
 	</button>
 {/snippet}
 
+{#snippet folderMenu()}
+	{#if showFolderMenu}
+		<MenuContent class="w-44 min-w-44">
+			{#if canAdd}
+				<MenuItem label="New subfolder" onSelect={requestSubfolder} />
+			{/if}
+			{#if canRename}
+				<MenuItem label="Rename" onSelect={requestRename} />
+			{/if}
+			{#if canDelete}
+				<MenuItem label="Delete folder" variant="destructive" onSelect={requestDelete} />
+			{/if}
+		</MenuContent>
+	{/if}
+{/snippet}
+
+{#snippet menuButton(linkClass: string, extraProps?: () => object)}
+	<Menu.Root positioning={menuPositioning} lazyMount unmountOnExit>
+		<Menu.ContextTrigger>
+			{#snippet asChild(triggerProps)}
+				{@render folderButton(linkClass, () => ({ ...(extraProps?.() ?? {}), ...triggerProps() }))}
+			{/snippet}
+		</Menu.ContextTrigger>
+		{@render folderMenu()}
+	</Menu.Root>
+{/snippet}
+
 <TreeView.NodeProvider {node} {indexPath}>
 	<TreeView.NodeContext>
 		{#snippet render()}
@@ -82,13 +143,23 @@
 								<RiArrowRightSLine />
 							</TreeView.BranchIndicator>
 						</TreeView.BranchTrigger>
-						{@render folderButton(
-							cn(
-								'z-folder-branch-link',
-								isActive && 'z-folder-active',
-								isDropTarget && 'z-folder-drop'
-							)
-						)}
+						{#if showFolderMenu}
+							{@render menuButton(
+								cn(
+									'z-folder-branch-link',
+									isActive && 'z-folder-active',
+									isDropTarget && 'z-folder-drop'
+								)
+							)}
+						{:else}
+							{@render folderButton(
+								cn(
+									'z-folder-branch-link',
+									isActive && 'z-folder-active',
+									isDropTarget && 'z-folder-drop'
+								)
+							)}
+						{/if}
 					</TreeView.BranchControl>
 					<TreeView.BranchContent class="z-folder-children">
 						{#each node.children as child, i (child.id)}
@@ -96,6 +167,26 @@
 						{/each}
 					</TreeView.BranchContent>
 				</TreeView.Branch>
+			{:else if showFolderMenu}
+				<Menu.Root positioning={menuPositioning} lazyMount unmountOnExit>
+					<TreeView.Item class="z-folder-item">
+						{#snippet asChild(itemProps)}
+							<Menu.ContextTrigger>
+								{#snippet asChild(triggerProps)}
+									{@render folderButton(
+										cn(
+											'z-folder-row z-folder-row--leaf',
+											isActive && 'z-folder-active',
+											isDropTarget && 'z-folder-drop'
+										),
+										() => ({ ...itemProps(), ...triggerProps() })
+									)}
+								{/snippet}
+							</Menu.ContextTrigger>
+						{/snippet}
+					</TreeView.Item>
+					{@render folderMenu()}
+				</Menu.Root>
 			{:else}
 				<TreeView.Item class="z-folder-item">
 					{#snippet asChild(itemProps)}

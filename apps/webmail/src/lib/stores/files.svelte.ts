@@ -47,6 +47,9 @@ class FilesStore {
 	supported = $state<boolean | null>(null);
 	mayCreateTopLevel = $state(false);
 	createFolderOpen = $state(false);
+	/** Parent for the next “New folder” submit; `null` is All files. */
+	createFolderParentId = $state<string | null | undefined>(undefined);
+	renameRequestId = $state<string | null>(null);
 	dropTargetId = $state<string | null>(null);
 
 	selected = $derived(this.nodes.find((node) => node.id === this.selectedId) ?? null);
@@ -214,6 +217,15 @@ class FilesStore {
 		this.selectedId = id;
 	}
 
+	requestCreateFolder(parentId: string | null = this.currentParentId): void {
+		this.createFolderParentId = parentId;
+		this.createFolderOpen = true;
+	}
+
+	requestRename(id: string): void {
+		this.renameRequestId = id;
+	}
+
 	async search(client: JMAPClient, query: string): Promise<void> {
 		const trimmed = query.trim();
 		this.searchQuery = trimmed;
@@ -242,23 +254,31 @@ class FilesStore {
 		}
 	}
 
-	async createFolder(client: JMAPClient, name: string): Promise<void> {
-		if (!this.canAddHere) {
+	async createFolder(client: JMAPClient, name: string, parentId?: string | null): Promise<void> {
+		const targetParent =
+			parentId !== undefined
+				? parentId
+				: this.createFolderParentId !== undefined
+					? this.createFolderParentId
+					: this.currentParentId;
+		const dest = targetParent ? this.folderById(targetParent) : null;
+		const canAdd = dest ? dest.myRights.mayAddChildren : this.mayCreateTopLevel;
+		if (!canAdd) {
 			toast.show('You don’t have permission to add items here', 'error');
 			return;
 		}
-		const accountId = this.currentFolder?.accountId ?? this.fileAccountId;
+		const accountId = dest?.accountId ?? this.fileAccountId;
 		const trimmed = name.trim();
 		try {
 			const id = await client.createFileNode({
-				parentId: this.currentParentId,
+				parentId: targetParent,
 				name: trimmed,
 				nodeType: 'directory',
 				accountId
 			});
 			this.upsertNode({
 				id,
-				parentId: this.currentParentId,
+				parentId: targetParent,
 				nodeType: 'directory',
 				blobId: null,
 				size: null,
@@ -272,6 +292,7 @@ class FilesStore {
 				isSubscribed: true,
 				accountId: accountId ?? null
 			});
+			this.createFolderParentId = undefined;
 			toast.show(`Created “${trimmed}”`, 'success');
 			await Promise.all([
 				this.openFolder(client, this.currentParentId),
@@ -366,13 +387,15 @@ class FilesStore {
 
 	async destroy(client: JMAPClient, node: FileNode): Promise<void> {
 		try {
+			const viewingDeleted =
+				this.currentParentId === node.id || this.ancestors.some((item) => item.id === node.id);
+			const nextParent = viewingDeleted ? node.parentId : this.currentParentId;
 			await client.destroyFileNodes([node.id], node.nodeType === 'directory', node.accountId);
 			if (this.selectedId === node.id) this.selectedId = null;
+			this.roleFolders = this.roleFolders.filter((item) => item.id !== node.id);
+			this.nodes = this.nodes.filter((item) => item.id !== node.id);
 			toast.show(`Deleted “${node.name}”`, 'success');
-			await Promise.all([
-				this.openFolder(client, this.currentParentId),
-				this.loadRoleFolders(client)
-			]);
+			await Promise.all([this.openFolder(client, nextParent), this.loadRoleFolders(client)]);
 		} catch (error) {
 			toast.show(errorMessage(error, 'Could not delete'), 'error');
 			throw error;

@@ -94,7 +94,7 @@
 	}
 
 	function openNewFolder() {
-		files.createFolderOpen = true;
+		files.requestCreateFolder();
 	}
 
 	$effect(() => {
@@ -103,6 +103,15 @@
 			nameMode = 'folder';
 			nameOpen = true;
 			files.createFolderOpen = false;
+		}
+	});
+
+	$effect(() => {
+		if (files.renameRequestId) {
+			renameNodeId = files.renameRequestId;
+			nameMode = 'rename';
+			nameOpen = true;
+			files.renameRequestId = null;
 		}
 	});
 

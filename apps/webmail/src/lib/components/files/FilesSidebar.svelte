@@ -158,7 +158,7 @@
 		<Button
 			variant="ghost"
 			class="w-full justify-start px-3 py-2"
-			onclick={() => (files.createFolderOpen = true)}
+			onclick={() => files.requestCreateFolder()}
 			disabled={!files.canAddHere}
 		>
 			<Plus class="size-4 shrink-0" aria-hidden="true" />
