@@ -1,7 +1,13 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import { parseBootSnapshot, BOOT_SNAPSHOT_LIST_LIMIT } from '../src/lib/mail/boot-snapshot.ts';
-import { firstPageLimit, listHasMoreAfterBatch, FIRST_PAGE_SIZE, PAGE_SIZE } from '../src/lib/mail/list-pagination.ts';
+import {
+	firstPageLimit,
+	listHasMoreAfterBatch,
+	resolveListTotal,
+	FIRST_PAGE_SIZE,
+	PAGE_SIZE
+} from '../src/lib/mail/list-pagination.ts';
 import type { Mailbox, MessagePreview } from '../src/lib/types/mail.ts';
 
 const mailbox: Mailbox = {
@@ -115,6 +121,67 @@ describe('list pagination', () => {
 				catalogTotal: 200
 			}),
 			true
+		);
+	});
+
+	it('does not keep paging Unseen against the full folder catalog', () => {
+		assert.equal(
+			listHasMoreAfterBatch({
+				hasMoreFromQuery: false,
+				lastBatchSize: 4,
+				requestedLimit: FIRST_PAGE_SIZE,
+				queryOffset: 4,
+				catalogTotal: 4
+			}),
+			false
+		);
+	});
+});
+
+describe('resolveListTotal', () => {
+	it('uses the folder catalog, not the first query page, for All / Highlights', () => {
+		assert.equal(
+			resolveListTotal({
+				loadedCount: 20,
+				mailboxTotal: 80,
+				mailboxUnread: 4,
+				queryTotal: null,
+				unseenOnly: false
+			}),
+			80
+		);
+		assert.equal(
+			resolveListTotal({
+				loadedCount: 20,
+				mailboxTotal: 80,
+				mailboxUnread: 4,
+				queryTotal: 20,
+				unseenOnly: false
+			}),
+			80
+		);
+	});
+
+	it('uses unread (or loaded) for Unseen, never the whole folder size', () => {
+		assert.equal(
+			resolveListTotal({
+				loadedCount: 4,
+				mailboxTotal: 80,
+				mailboxUnread: 4,
+				queryTotal: null,
+				unseenOnly: true
+			}),
+			4
+		);
+		assert.equal(
+			resolveListTotal({
+				loadedCount: 20,
+				mailboxTotal: 80,
+				mailboxUnread: 4,
+				queryTotal: null,
+				unseenOnly: true
+			}),
+			20
 		);
 	});
 });

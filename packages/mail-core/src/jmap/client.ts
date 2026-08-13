@@ -171,7 +171,8 @@ function assertEmailSetSucceeded(response: JMAPResponse, fallback: string): Reco
 
 export interface EmailQueryResult {
 	emails: JMAPEmail[];
-	total: number;
+	/** Matching rows when the server sent `total`; null if it was omitted. */
+	total: number | null;
 	hasMore: boolean;
 }
 
@@ -1438,19 +1439,19 @@ export class JMAPClient {
 		const getResult = response.methodResponses?.[1]?.[1];
 
 		if (response.methodResponses?.[1]?.[0] !== 'Email/get' || !getResult) {
-			return { emails: [], total: 0, hasMore: false };
+			return { emails: [], total: null, hasMore: false };
 		}
 
 		const emails = (getResult.list as JMAPEmail[]) ?? [];
 		const ids = (queryResult?.ids as string[] | undefined) ?? [];
 		const idCount = ids.length || emails.length;
 		const total =
-			typeof queryResult?.total === 'number' ? (queryResult.total as number) : emails.length;
+			typeof queryResult?.total === 'number' ? (queryResult.total as number) : null;
 		const hasMore = emailQueryHasMore({
 			position,
 			idCount,
 			limit,
-			total: typeof queryResult?.total === 'number' ? (queryResult.total as number) : undefined
+			total: total ?? undefined
 		});
 
 		return { emails, total, hasMore };

@@ -94,7 +94,7 @@ class SearchStore {
 			const extras = local.filter((preview) => !seen.has(preview.id));
 			this.#serverCount = emails.length;
 			this.results = mergeByReceivedAt(server, extras);
-			this.total = total + extras.length;
+			this.total = (total ?? emails.length) + extras.length;
 			this.hasMore = hasMore;
 		} catch (error) {
 			this.results = [];

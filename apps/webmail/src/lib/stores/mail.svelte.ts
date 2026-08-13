@@ -32,7 +32,7 @@ import {
 	ownAddressSet,
 	threadInvolvesOwner
 } from '$lib/mail/contact-collection';
-import { firstPageLimit, listHasMoreAfterBatch, PAGE_SIZE } from '$lib/mail/list-pagination';
+import { firstPageLimit, listHasMoreAfterBatch, PAGE_SIZE, resolveListTotal } from '$lib/mail/list-pagination';
 import {
 	readBootSnapshot,
 	writeBootSnapshot,
@@ -227,8 +227,33 @@ class MailStore {
 	}
 
 	private catalogMessageTotal(routeMailboxId: string | null): number {
+		if (this.messagesUnseenOnly) return this.messagesTotal;
 		const mailbox = routeMailboxId ? this.mailboxByRouteId(routeMailboxId) : undefined;
 		return Math.max(this.messagesTotal, mailbox?.total ?? 0);
+	}
+
+	private applyListTotal(
+		mailbox: Mailbox,
+		loadedCount: number,
+		queryTotal: number | null,
+		unseenOnly = this.messagesUnseenOnly
+	) {
+		const visibleQueryTotal =
+			queryTotal == null || !mailbox.jmapId
+				? queryTotal
+				: this.visibleMailboxTotal(mailbox.jmapId, queryTotal);
+		this.messagesTotal = resolveListTotal({
+			loadedCount,
+			mailboxTotal: mailbox.total ?? 0,
+			mailboxUnread: mailbox.unread ?? 0,
+			queryTotal: unseenOnly ? queryTotal : visibleQueryTotal,
+			unseenOnly
+		});
+	}
+
+	private finalizeUnseenTotal(loadedCount: number, queryTotal: number | null) {
+		if (!this.messagesUnseenOnly || this.messagesHasMore) return;
+		this.messagesTotal = Math.max(loadedCount, queryTotal ?? loadedCount);
 	}
 
 	private syncMessagesHasMore(
@@ -283,7 +308,13 @@ class MailStore {
 		this.currentMailboxRouteId = routeMailboxId;
 		this.messagesFromCache = true;
 		this.messagesQueryOffset = list.length;
-		this.messagesTotal = Math.max(mailbox?.total ?? 0, list.length);
+		this.messagesTotal = resolveListTotal({
+			loadedCount: list.length,
+			mailboxTotal: mailbox?.total ?? 0,
+			mailboxUnread: mailbox?.unread ?? 0,
+			queryTotal: null,
+			unseenOnly: false
+		});
 		this.messagesError = null;
 		this.syncMessagesHasMore(
 			list.length >= firstPageLimit(list.length) || (mailbox?.total ?? 0) > list.length,
@@ -423,12 +454,10 @@ class MailStore {
 				syncRevisionAtStart !== this.messagesSyncRevision
 					? this.mergeQueryWithSyncedMessages(previews)
 					: previews;
-			this.messagesTotal = Math.max(
-				this.visibleMailboxTotal(mailbox.jmapId, total),
-				mailbox.total ?? 0
-			);
 			this.messagesQueryOffset = emails.length;
+			this.applyListTotal(mailbox, this.messages.length, total, unseenOnly);
 			this.syncMessagesHasMore(hasMore, emails.length, firstLimit);
+			this.finalizeUnseenTotal(this.messages.length, total);
 			this.messagesFromCache = false;
 			this.messagesError = null;
 			indexSentContacts(this.messages, mailbox.role);
@@ -484,7 +513,7 @@ class MailStore {
 			this.messages = previews;
 			this.messagesFromCache = true;
 			this.messagesQueryOffset = previews.length;
-			this.messagesTotal = Math.max(mailbox.total ?? 0, previews.length);
+			this.applyListTotal(mailbox, previews.length, null, false);
 			this.syncMessagesHasMore(
 				previews.length >= firstPageLimit(previews.length) ||
 					(mailbox.total ?? 0) > previews.length,
@@ -513,12 +542,15 @@ class MailStore {
 			});
 			if (emails.length === 0) {
 				this.messagesHasMore = false;
+				this.finalizeUnseenTotal(this.messages.length, null);
 				return;
 			}
 			const previews = mapVisiblePreviews(emails, routeMailboxId);
 			this.messages = [...this.messages, ...previews];
 			this.messagesQueryOffset = position + emails.length;
+			this.applyListTotal(mailbox, this.messages.length, null);
 			this.syncMessagesHasMore(hasMore, emails.length, PAGE_SIZE);
+			this.finalizeUnseenTotal(this.messages.length, null);
 			this.messagesFromCache = false;
 			indexSentContacts(previews, this.mailboxByRouteId(routeMailboxId)?.role);
 
@@ -1695,12 +1727,10 @@ class MailStore {
 					await cacheMessagePreviews(client.getAccountId(), routeMailboxId, previews);
 				}
 			}
-			this.messagesTotal = Math.max(
-				this.visibleMailboxTotal(mailbox.jmapId, total),
-				mailbox.total ?? 0
-			);
 			this.messagesQueryOffset = emails.length;
+			this.applyListTotal(mailbox, this.messages.length, total);
 			this.syncMessagesHasMore(hasMore, emails.length, PAGE_SIZE);
+			this.finalizeUnseenTotal(this.messages.length, total);
 		} catch {
 			// Background refresh — ignore transient errors
 		}

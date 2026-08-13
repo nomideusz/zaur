@@ -9,6 +9,21 @@ export function firstPageLimit(alreadyShowingCount: number): number {
 	return FIRST_PAGE_SIZE;
 }
 
+/** Folder / Unseen / Highlights header + pagination catalog — never a query page size. */
+export function resolveListTotal(options: {
+	loadedCount: number;
+	mailboxTotal: number;
+	mailboxUnread: number;
+	queryTotal: number | null;
+	unseenOnly: boolean;
+}): number {
+	const loaded = Math.max(0, options.loadedCount);
+	if (options.unseenOnly) {
+		return Math.max(loaded, options.queryTotal ?? options.mailboxUnread);
+	}
+	return Math.max(loaded, options.mailboxTotal, options.queryTotal ?? 0);
+}
+
 export function listHasMoreAfterBatch(options: {
 	hasMoreFromQuery: boolean;
 	lastBatchSize?: number;

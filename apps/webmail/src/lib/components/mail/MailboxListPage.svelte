@@ -32,7 +32,7 @@
 	const countLabel = $derived(
 		searching
 			? mailCountLabel(search.total, search.results.length, null)
-			: mailCountLabel(mail.messagesTotal, mail.messages.length, mailbox)
+			: mailCountLabel(mail.messagesTotal, mail.messages.length, mailbox, { unseenOnly })
 	);
 
 	$effect(() => {

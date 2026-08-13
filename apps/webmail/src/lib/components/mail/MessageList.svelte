@@ -282,9 +282,7 @@
 		}
 		return collapsed;
 	});
-	const loadMoreAvailable = $derived(
-		!!onLoadMore && (hasMore || (total != null && messages.length < total))
-	);
+	const loadMoreAvailable = $derived(!!onLoadMore && hasMore);
 
 	const LOAD_MORE_THRESHOLD_PX = 320;
 
@@ -860,8 +858,8 @@
 				routeId: mailboxRouteId,
 				messages: collapseMessagesByThread(messages).slice(0, limit),
 				totalCount: unseenOnly
-					? (total ?? listMessages.length)
-					: (mailbox?.total ?? listMessages.length),
+					? Math.max(mailbox?.unread ?? 0, total ?? 0, listMessages.length)
+					: Math.max(mailbox?.total ?? 0, listMessages.length),
 				sortOrder: 0,
 				showUnreadDot: (mailbox?.unread ?? 0) > 0
 			});
@@ -931,7 +929,7 @@
 			if (browser && previews.length) {
 				await cacheMessagePreviews(accountId, folder.id, previews);
 			}
-			return [previews, hasMore];
+			return [previews, hasMore && (folder.total === 0 || folder.total > previews.length)];
 		} catch {
 			return [cached, false];
 		}
