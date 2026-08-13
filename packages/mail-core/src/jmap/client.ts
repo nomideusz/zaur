@@ -10,6 +10,7 @@ import type {
 	JMAPVacationResponse
 } from './types';
 import { parseSearchQuery } from '../mail/search-query';
+import { emailQueryHasMore } from './email-query';
 import { buildEmailCreateData, type ComposeFormat, type EmailAttachmentInput } from './email-build';
 import { resolveMailAccountId } from './account';
 import { buildDownloadUrl, buildUploadUrl } from './urls';
@@ -1417,7 +1418,8 @@ export class JMAPClient {
 					filter,
 					sort: [{ property: 'receivedAt', isAscending: false }],
 					limit,
-					position
+					position,
+					calculateTotal: false
 				},
 				'q0'
 			],
@@ -1440,8 +1442,16 @@ export class JMAPClient {
 		}
 
 		const emails = (getResult.list as JMAPEmail[]) ?? [];
-		const total = (queryResult?.total as number) ?? emails.length;
-		const hasMore = position + emails.length < total;
+		const ids = (queryResult?.ids as string[] | undefined) ?? [];
+		const idCount = ids.length || emails.length;
+		const total =
+			typeof queryResult?.total === 'number' ? (queryResult.total as number) : emails.length;
+		const hasMore = emailQueryHasMore({
+			position,
+			idCount,
+			limit,
+			total: typeof queryResult?.total === 'number' ? (queryResult.total as number) : undefined
+		});
 
 		return { emails, total, hasMore };
 	}

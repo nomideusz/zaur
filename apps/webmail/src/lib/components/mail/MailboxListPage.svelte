@@ -16,6 +16,10 @@
 
 	let { mailboxId }: Props = $props();
 
+	$effect.pre(() => {
+		if (auth.username) mail.applyBootList(mailboxId, auth.username);
+	});
+
 	const unseenOnly = $derived($page.url.searchParams.get('filter') === 'unseen');
 	// Search renders in-place here (driven by ?q) rather than on a separate route,
 	// so it never crosses the / ↔ /mail layout boundary and the views can't clash.
@@ -33,10 +37,15 @@
 
 	$effect(() => {
 		const client = auth.client;
-		if (!client || auth.isRestoring) return;
+		const folders = mail.mailboxes;
+		const id = mailboxId;
+		const mailbox = mail.mailboxByRouteId(id);
+		if (!client) return;
+		if (!mailbox?.jmapId && (auth.isRestoring || mail.mailboxesLoading) && folders.length === 0) {
+			return;
+		}
 		const q = query;
 		const scope = scopedMailboxId;
-		const id = mailboxId;
 		const unseen = unseenOnly;
 		untrack(() => {
 			if (q) {

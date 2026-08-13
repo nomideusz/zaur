@@ -1344,7 +1344,7 @@
 		{/snippet}
 
 		{#if showListSkeleton}
-			<MessageListSkeleton />
+			<MessageListSkeleton {mailboxName} />
 		{:else if error || showFlatEmpty}
 			<MessageListStatus
 				{error}

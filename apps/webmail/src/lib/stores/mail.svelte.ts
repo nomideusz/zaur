@@ -32,8 +32,12 @@ import {
 	ownAddressSet,
 	threadInvolvesOwner
 } from '$lib/mail/contact-collection';
-
-const PAGE_SIZE = 50;
+import { firstPageLimit, listHasMoreAfterBatch, PAGE_SIZE } from '$lib/mail/list-pagination';
+import {
+	readBootSnapshot,
+	writeBootSnapshot,
+	type BootSnapshot
+} from '$lib/mail/boot-snapshot';
 
 function isVisibleListEmail(email: JMAPEmail): boolean {
 	return !isAccountSettingsSubject(email.subject);
@@ -227,19 +231,72 @@ class MailStore {
 		return Math.max(this.messagesTotal, mailbox?.total ?? 0);
 	}
 
-	private syncMessagesHasMore(hasMoreFromQuery: boolean, lastBatchSize?: number) {
-		if (lastBatchSize === 0) {
-			this.messagesHasMore = false;
-			return;
+	private syncMessagesHasMore(
+		hasMoreFromQuery: boolean,
+		lastBatchSize?: number,
+		requestedLimit = PAGE_SIZE
+	) {
+		this.messagesHasMore = listHasMoreAfterBatch({
+			hasMoreFromQuery,
+			lastBatchSize,
+			requestedLimit,
+			queryOffset: this.messagesQueryOffset,
+			catalogTotal: this.catalogMessageTotal(this.currentMailboxRouteId)
+		});
+	}
+
+	hasMailboxJmapIds(): boolean {
+		return this.mailboxes.some((mailbox) => !!mailbox.jmapId);
+	}
+
+	/** Paint folders (and optionally the open list) from the last visit before JMAP returns. */
+	hydrateFromSnapshot(username?: string | null): boolean {
+		const snapshot = readBootSnapshot(username);
+		if (!snapshot?.mailboxes.length) return false;
+		this.mailboxes = snapshot.mailboxes;
+		applyUnreadPrefixToDocument();
+		return true;
+	}
+
+	/** Swap in a cached first page for this folder so the list isn't empty on first paint. */
+	applyBootList(routeMailboxId: string, username?: string | null): boolean {
+		if (this.messagesLoadSettledForRouteId === routeMailboxId) return false;
+		if (this.currentMailboxRouteId === routeMailboxId && this.messages.length > 0) return false;
+
+		const snapshot = readBootSnapshot(username);
+		const list = snapshot?.lists[routeMailboxId];
+		if (!this.mailboxes.length && snapshot?.mailboxes.length) {
+			this.mailboxes = snapshot.mailboxes;
+			applyUnreadPrefixToDocument();
 		}
-		if (lastBatchSize !== undefined && lastBatchSize < PAGE_SIZE) {
-			this.messagesHasMore = false;
-			return;
+		if (!list?.length) {
+			if (this.currentMailboxRouteId !== routeMailboxId) {
+				this.messages = [];
+				this.currentMailboxRouteId = routeMailboxId;
+				this.messagesFromCache = false;
+			}
+			return false;
 		}
 
-		const catalogTotal = this.catalogMessageTotal(this.currentMailboxRouteId);
-		this.messagesHasMore =
-			hasMoreFromQuery || this.messagesQueryOffset < catalogTotal;
+		const mailbox = this.mailboxByRouteId(routeMailboxId);
+		this.messages = list;
+		this.currentMailboxRouteId = routeMailboxId;
+		this.messagesFromCache = true;
+		this.messagesQueryOffset = list.length;
+		this.messagesTotal = Math.max(mailbox?.total ?? 0, list.length);
+		this.messagesError = null;
+		this.syncMessagesHasMore(
+			list.length >= firstPageLimit(list.length) || (mailbox?.total ?? 0) > list.length,
+			list.length,
+			firstPageLimit(list.length)
+		);
+		return true;
+	}
+
+	private persistBootSnapshot(patch: Partial<Pick<BootSnapshot, 'mailboxes' | 'lists'>>): void {
+		const username = auth.username;
+		if (!browser || !username) return;
+		writeBootSnapshot(username, patch);
 	}
 
 	private decorateMailbox(mb: JMAPMailbox): Mailbox {
@@ -248,22 +305,36 @@ class MailStore {
 		return mapped;
 	}
 
-	async loadMailboxes(client: JMAPClient) {
+	async loadMailboxes(client: JMAPClient, options?: { deferHiddenSettings?: boolean }) {
 		this.mailboxesLoading = true;
 		this.mailboxesError = null;
 		try {
-			await this.syncHiddenSettingsCounts(client);
+			if (!options?.deferHiddenSettings) {
+				await this.syncHiddenSettingsCounts(client);
+			}
 			const list = await client.getMailboxes();
 			this.mailboxes = list.map((mb) => this.decorateMailbox(mb)).sort(sortMailboxes);
 			applyUnreadPrefixToDocument();
+			this.persistBootSnapshot({ mailboxes: this.mailboxes });
 			const scheduled = this.mailboxes.find((mb) => mb.role === 'scheduled');
 			if (scheduled?.total) void this.reconcileScheduled(client);
 		} catch (error) {
 			this.mailboxesError = errorMessage(error, 'Failed to load folders');
-			this.mailboxes = [];
+			if (!this.mailboxes.length) this.mailboxes = [];
 		} finally {
 			this.mailboxesLoading = false;
 		}
+	}
+
+	/** Subtract hidden settings-sync emails from folder totals after first paint. */
+	async restampHiddenSettingsCounts(client: JMAPClient) {
+		await this.syncHiddenSettingsCounts(client);
+		this.mailboxes = this.mailboxes.map((mailbox) =>
+			mailbox.jmapId
+				? { ...mailbox, total: this.visibleMailboxTotal(mailbox.jmapId, mailbox.total) }
+				: mailbox
+		);
+		this.persistBootSnapshot({ mailboxes: this.mailboxes });
 	}
 
 	private scheduledReconciledAt = 0;
@@ -299,6 +370,11 @@ class MailStore {
 			return;
 		}
 
+		const haveVisibleList =
+			!unseenOnly &&
+			this.currentMailboxRouteId === routeMailboxId &&
+			this.messages.length > 0;
+
 		this.currentMailboxRouteId = routeMailboxId;
 		this.messagesUnseenOnly = unseenOnly;
 
@@ -327,36 +403,21 @@ class MailStore {
 		}
 
 		const accountId = client.getAccountId();
-		let showedCache = false;
-		// The preview cache holds the unfiltered list — skip it while the Unseen filter is on.
-		if (browser && !unseenOnly) {
-			const { getCachedMessagePreviews } = await import('$lib/db');
-			const cached = await getCachedMessagePreviews(accountId, routeMailboxId);
-			if (cached.length) {
-				this.messages = cached.filter((message) => !isAccountSettingsSubject(message.subject));
-				this.messagesFromCache = true;
-				this.messagesQueryOffset = cached.length;
-				this.messagesTotal = Math.max(mailbox.total ?? 0, cached.length);
-				this.syncMessagesHasMore(
-					cached.length >= PAGE_SIZE || (mailbox.total ?? 0) > cached.length,
-					cached.length
-				);
-				indexSentContacts(cached, mailbox.role);
-				showedCache = true;
-			} else {
-				this.messages = [];
-			}
-		} else {
+		if (!haveVisibleList) {
 			this.messages = [];
 		}
-		this.messagesLoading = !showedCache && this.messages.length === 0;
+		this.messagesLoading = this.messages.length === 0;
 
+		const firstLimit = firstPageLimit(haveVisibleList ? this.messages.length : 0);
 		const syncRevisionAtStart = this.messagesSyncRevision;
+		const queryPromise = client.queryEmails(mailbox.jmapId, firstLimit, 0, { unseenOnly });
+
+		if (browser && !unseenOnly && this.messages.length === 0) {
+			void this.tryShowIndexedDbCache(accountId, routeMailboxId, mailbox);
+		}
 
 		try {
-			const { emails, total, hasMore } = await client.queryEmails(mailbox.jmapId, PAGE_SIZE, 0, {
-				unseenOnly
-			});
+			const { emails, total, hasMore } = await queryPromise;
 			const previews = mapVisiblePreviews(emails, routeMailboxId);
 			this.messages =
 				syncRevisionAtStart !== this.messagesSyncRevision
@@ -367,22 +428,27 @@ class MailStore {
 				mailbox.total ?? 0
 			);
 			this.messagesQueryOffset = emails.length;
-			this.syncMessagesHasMore(hasMore, emails.length);
+			this.syncMessagesHasMore(hasMore, emails.length, firstLimit);
 			this.messagesFromCache = false;
 			this.messagesError = null;
 			indexSentContacts(this.messages, mailbox.role);
 
-			if (browser && !unseenOnly) {
-				const { cacheMessagePreviews } = await import('$lib/db');
-				await cacheMessagePreviews(accountId, routeMailboxId, this.messages);
+			if (!unseenOnly) {
+				this.persistBootSnapshot({ lists: { [routeMailboxId]: this.messages } });
+				if (browser) {
+					void import('$lib/db').then(({ cacheMessagePreviews, getMailDatabase }) => {
+						if (!getMailDatabase()) return;
+						void cacheMessagePreviews(accountId, routeMailboxId, this.messages);
+					});
+				}
 			}
 		} catch (error) {
 			if (this.messagesFromCache && this.messages.length) {
 				this.messagesError = 'Offline — showing cached messages';
 				this.syncMessagesHasMore(
-					this.messages.length >= PAGE_SIZE ||
-						(mailbox.total ?? 0) > this.messages.length,
-					this.messages.length
+					this.messages.length >= firstLimit || (mailbox.total ?? 0) > this.messages.length,
+					this.messages.length,
+					firstLimit
 				);
 				return;
 			}
@@ -394,6 +460,41 @@ class MailStore {
 		} finally {
 			this.messagesLoading = false;
 			this.messagesLoadSettledForRouteId = routeMailboxId;
+		}
+	}
+
+	private async tryShowIndexedDbCache(
+		accountId: string,
+		routeMailboxId: string,
+		mailbox: Mailbox
+	) {
+		try {
+			const { getCachedMessagePreviews, getMailDatabase } = await import('$lib/db');
+			if (!getMailDatabase()) return;
+			const cached = await getCachedMessagePreviews(accountId, routeMailboxId);
+			if (!cached.length) return;
+			if (this.currentMailboxRouteId !== routeMailboxId) return;
+			if (this.messagesLoadSettledForRouteId === routeMailboxId && !this.messagesFromCache) {
+				return;
+			}
+			if (this.messages.length && !this.messagesFromCache) return;
+
+			const previews = cached.filter((message) => !isAccountSettingsSubject(message.subject));
+			if (!previews.length) return;
+			this.messages = previews;
+			this.messagesFromCache = true;
+			this.messagesQueryOffset = previews.length;
+			this.messagesTotal = Math.max(mailbox.total ?? 0, previews.length);
+			this.syncMessagesHasMore(
+				previews.length >= firstPageLimit(previews.length) ||
+					(mailbox.total ?? 0) > previews.length,
+				previews.length,
+				firstPageLimit(previews.length)
+			);
+			this.messagesLoading = false;
+			indexSentContacts(previews, mailbox.role);
+		} catch {
+			// IndexedDB is optional on the first paint — the network query is already in flight.
 		}
 	}
 
@@ -417,13 +518,15 @@ class MailStore {
 			const previews = mapVisiblePreviews(emails, routeMailboxId);
 			this.messages = [...this.messages, ...previews];
 			this.messagesQueryOffset = position + emails.length;
-			this.syncMessagesHasMore(hasMore, emails.length);
+			this.syncMessagesHasMore(hasMore, emails.length, PAGE_SIZE);
 			this.messagesFromCache = false;
 			indexSentContacts(previews, this.mailboxByRouteId(routeMailboxId)?.role);
 
 			if (browser && !this.messagesUnseenOnly) {
-				const { cacheMessagePreviews } = await import('$lib/db');
-				await cacheMessagePreviews(client.getAccountId(), routeMailboxId, previews);
+				void import('$lib/db').then(({ cacheMessagePreviews, getMailDatabase }) => {
+					if (!getMailDatabase()) return;
+					void cacheMessagePreviews(client.getAccountId(), routeMailboxId, previews);
+				});
 			}
 		} catch (error) {
 			this.messagesError = errorMessage(error, 'Failed to load more messages');
@@ -1475,6 +1578,7 @@ class MailStore {
 			const list = await client.getMailboxes();
 			this.mailboxes = list.map((mb) => this.decorateMailbox(mb)).sort(sortMailboxes);
 			applyUnreadPrefixToDocument();
+			this.persistBootSnapshot({ mailboxes: this.mailboxes });
 		} catch {
 			// Background refresh — ignore transient errors
 		}
@@ -1596,7 +1700,7 @@ class MailStore {
 				mailbox.total ?? 0
 			);
 			this.messagesQueryOffset = emails.length;
-			this.syncMessagesHasMore(hasMore, emails.length);
+			this.syncMessagesHasMore(hasMore, emails.length, PAGE_SIZE);
 		} catch {
 			// Background refresh — ignore transient errors
 		}

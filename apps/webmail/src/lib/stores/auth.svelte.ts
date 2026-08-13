@@ -18,6 +18,8 @@ import { calendar } from '$lib/stores/calendar.svelte';
 import { settings } from '$lib/stores/settings.svelte';
 import { toast } from '$lib/stores/toast.svelte';
 import { saveRememberedLogin } from '$lib/auth/remember-login';
+import { clearBootSnapshot } from '$lib/mail/boot-snapshot';
+import { parseMailContext } from '$lib/mail/routes';
 import { setInactiveUnread } from '$lib/utils/unread-state';
 
 export interface AccountInfo {
@@ -88,6 +90,49 @@ class AuthStore {
 		} catch {
 			// Non-critical housekeeping
 		}
+	}
+
+	private hydrateMailFromSnapshot(username: string | null | undefined) {
+		if (!username) return;
+		mail.hydrateFromSnapshot(username);
+		if (!browser) return;
+		const context = parseMailContext(window.location.pathname);
+		if (context?.mailboxRouteId) mail.applyBootList(context.mailboxRouteId, username);
+	}
+
+	/**
+	 * RxDB, settings sync, and hidden-folder housekeeping — off the first-paint path.
+	 */
+	private finishRestoreBackground(
+		client: JMAPClient,
+		username: string,
+		displayName: string | undefined,
+		options: { refreshMailboxes: boolean; restampHidden: boolean }
+	) {
+		void (async () => {
+			try {
+				await this.openOfflineLayer(client);
+			} catch (error) {
+				console.warn('Offline layer failed:', error);
+			}
+			this.startBackgroundSync(client, username, displayName);
+			void settings.syncFromAccount();
+			try {
+				if (options.refreshMailboxes) {
+					await mail.loadMailboxes(client);
+				} else if (options.restampHidden) {
+					await mail.restampHiddenSettingsCounts(client);
+				}
+				const { markAccountSettingsEmailsRead } = await import(
+					'$lib/settings/account-settings-email'
+				);
+				if (await markAccountSettingsEmailsRead(client)) {
+					await mail.refreshMailboxes(client);
+				}
+			} catch {
+				// Non-critical housekeeping
+			}
+		})();
 	}
 
 	/** Pull the multi-account list (and active-account fields) from the session probe. */
@@ -212,16 +257,20 @@ class AuthStore {
 		this.resetMailState();
 		const client = JMAPClient.createProxy();
 		await client.connect();
-		await this.openOfflineLayer(client);
-		await this.bootstrapMail(client);
-
 		this.client = client;
 		await this.refreshAccounts();
 		this.isAuthenticated = true;
 		settings.setUser(this.username);
-		await settings.syncFromAccount();
+		this.hydrateMailFromSnapshot(this.username);
+		const hadFolderIds = mail.hasMailboxJmapIds();
+		if (!hadFolderIds) {
+			await mail.loadMailboxes(client, { deferHiddenSettings: true });
+		}
 		this.maybeResyncIdentities();
-		this.startBackgroundSync(client, this.username ?? '', this.displayName ?? undefined);
+		this.finishRestoreBackground(client, this.username ?? '', this.displayName ?? undefined, {
+			refreshMailboxes: hadFolderIds,
+			restampHidden: !hadFolderIds
+		});
 	}
 
 	/** Sign out of a single account; full logout if it was the last one. */
@@ -322,9 +371,6 @@ class AuthStore {
 
 			const client = JMAPClient.createProxy();
 			await client.connect();
-			await this.openOfflineLayer(client);
-			await this.bootstrapMail(client);
-
 			this.client = client;
 			this.serverUrl = payload.serverUrl;
 			this.username = payload.username;
@@ -332,9 +378,12 @@ class AuthStore {
 			this.identities = payload.identities ?? [];
 			this.isAuthenticated = true;
 			settings.setUser(payload.username);
-			await settings.syncFromAccount();
+			await mail.loadMailboxes(client, { deferHiddenSettings: true });
 			this.maybeResyncIdentities();
-			this.startBackgroundSync(client, payload.username, payload.displayName);
+			this.finishRestoreBackground(client, payload.username, payload.displayName, {
+				refreshMailboxes: false,
+				restampHidden: true
+			});
 			await this.refreshAccounts();
 
 			await goto(redirectTo ?? settings.preferredMailHref());
@@ -363,23 +412,35 @@ class AuthStore {
 			const payload = (await response.json()) as SessionResponse;
 			if (!payload.authenticated || !payload.username) return;
 
-			const client = JMAPClient.createProxy();
-			await client.connect();
-			await this.openOfflineLayer(client);
-			await this.bootstrapMail(client);
-
-			this.client = client;
 			this.serverUrl = payload.serverUrl ?? appConfig.jmapServerUrl;
 			this.username = payload.username;
 			this.displayName = payload.displayName ?? payload.username;
 			this.identities = payload.identities ?? [];
 			this.accounts = payload.accounts ?? [];
 			this.activeKey = payload.activeKey ?? null;
-			this.isAuthenticated = true;
 			settings.setUser(payload.username);
-			await settings.syncFromAccount();
+			this.hydrateMailFromSnapshot(payload.username);
+
+			const client = JMAPClient.createProxy();
+			await client.connect();
+			this.client = client;
+			this.isAuthenticated = true;
+
+			const hadFolderIds = mail.hasMailboxJmapIds();
+			if (!hadFolderIds) {
+				await mail.loadMailboxes(client, { deferHiddenSettings: true });
+			}
+
 			this.maybeResyncIdentities();
-			this.startBackgroundSync(client, payload.username, payload.displayName ?? payload.username);
+			this.finishRestoreBackground(
+				client,
+				payload.username,
+				payload.displayName ?? payload.username,
+				{
+					refreshMailboxes: hadFolderIds,
+					restampHidden: !hadFolderIds
+				}
+			);
 		} catch (error) {
 			console.warn('Session restore failed:', error);
 		}
@@ -392,6 +453,7 @@ class AuthStore {
 		pushListener.stop();
 		this.stopBackgroundSync();
 		await this.wipeOfflineLayer();
+		clearBootSnapshot(this.username);
 		mail.reset();
 
 		try {
@@ -418,6 +480,7 @@ class AuthStore {
 		pushListener.stop();
 		this.stopBackgroundSync();
 		await this.wipeAllOfflineLayers();
+		clearBootSnapshot(this.username);
 		this.client?.disconnect();
 		this.client = null;
 		this.serverUrl = null;
@@ -484,6 +547,7 @@ class AuthStore {
 		pushListener.stop();
 		this.stopBackgroundSync();
 		void this.wipeAllOfflineLayers();
+		clearBootSnapshot(this.username);
 		this.client?.disconnect();
 		this.client = null;
 		this.serverUrl = null;

@@ -1,4 +1,5 @@
 export * from './jmap/client';
+export * from './jmap/email-query';
 export * from './jmap/map';
 export * from './jmap/types';
 export * from './jmap/errors';

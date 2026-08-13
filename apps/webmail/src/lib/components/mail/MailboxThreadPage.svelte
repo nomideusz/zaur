@@ -20,6 +20,10 @@
 
 	let { mailboxId, threadId }: Props = $props();
 
+	$effect.pre(() => {
+		if (auth.username) mail.applyBootList(mailboxId, auth.username);
+	});
+
 	const mailbox = $derived(mail.mailboxByRouteId(mailboxId));
 	const mailboxName = $derived(mailbox?.name ?? 'Emails');
 	const thread = $derived(mail.selectedThread);
@@ -51,10 +55,18 @@
 
 	$effect(() => {
 		const client = auth.client;
+		const folders = mail.mailboxes;
 		const messageId = $page.url.searchParams.get('messageId');
-		if (!client || auth.isRestoring) return;
 		const mId = mailboxId;
 		const tId = threadId;
+		if (!client) return;
+		if (
+			!mail.mailboxByRouteId(mId)?.jmapId &&
+			(auth.isRestoring || mail.mailboxesLoading) &&
+			folders.length === 0
+		) {
+			return;
+		}
 		untrack(() => {
 			void mail.loadMessage(client, mId, tId, { messageId });
 		});
