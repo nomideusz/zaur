@@ -51,6 +51,9 @@
 	let isLink = $state(false);
 	let activeColor = $state<string | null>(null);
 	let colorMenuOpen = $state(false);
+	let linkMenuOpen = $state(false);
+	let linkUrl = $state('https://');
+	let savedSel = { from: 0, to: 0 };
 
 	/** Strong hues that stay legible on both light and dark surfaces. */
 	const TEXT_COLORS = [
@@ -63,10 +66,18 @@
 		{ label: 'Gray', value: '#6b7280' }
 	];
 
+	function restoreSelection() {
+		if (!editor) return null;
+		return editor.chain().focus().setTextSelection(savedSel);
+	}
+
 	function setColor(value: string | null) {
 		if (!editor) return;
-		if (value) editor.chain().focus().setColor(value).run();
-		else editor.chain().focus().unsetColor().run();
+		const chain = restoreSelection();
+		if (!chain) return;
+		if (value) chain.setColor(value);
+		else chain.unsetColor();
+		chain.run();
 		colorMenuOpen = false;
 		updateActiveStates();
 	}
@@ -204,8 +215,14 @@
 		}
 	}
 
-	function toolbarMouseDown(event: MouseEvent) {
-		// Keep the editor selection when clicking toolbar buttons.
+	function toolbarPointerDown(event: PointerEvent) {
+		if (editor && !editor.isDestroyed) {
+			const { from, to } = editor.state.selection;
+			savedSel = { from, to };
+		}
+		// File pickers, popovers, and text fields need an un-cancelled user gesture.
+		const target = event.target;
+		if (target instanceof Element && target.closest('[data-keep-gesture]')) return;
 		event.preventDefault();
 	}
 
@@ -220,25 +237,24 @@
 		updateActiveStates();
 	}
 
-	function toggleLink() {
+	function applyLink() {
 		if (!editor) return;
-		if (editor.isActive('link')) {
-			editor.chain().focus().extendMarkRange('link').unsetLink().run();
-			updateActiveStates();
-			return;
-		}
-		const previousUrl = editor.getAttributes('link').href as string | undefined;
-		const { from, to } = editor.state.selection;
-		const url = prompt('Enter link URL:', previousUrl || 'https://');
-		if (!url) return;
-		editor
-			.chain()
-			.focus()
-			.setTextSelection({ from, to })
-			.extendMarkRange('link')
-			.toggleLink({ href: url })
-			.run();
+		const href = linkUrl.trim();
+		const chain = restoreSelection()?.extendMarkRange('link');
+		if (!chain) return;
+		if (!href) chain.unsetLink();
+		else chain.setLink({ href });
+		chain.run();
+		linkMenuOpen = false;
 		updateActiveStates();
+	}
+
+	function onLinkOpenChange(open: boolean) {
+		linkMenuOpen = open;
+		if (open) {
+			const current = (editor?.getAttributes('link').href as string | undefined) ?? '';
+			linkUrl = current || 'https://';
+		}
 	}
 
 	onMount(() => {
@@ -263,6 +279,27 @@
 			editorProps: {
 				attributes: {
 					class: 'z-rich-editor__editable outline-none min-h-[12rem] flex-1 text-sm leading-relaxed'
+				},
+				handleKeyDown: (view, event) => {
+					if (
+						event.key !== 'Tab' ||
+						event.shiftKey ||
+						event.altKey ||
+						event.metaKey ||
+						event.ctrlKey
+					) {
+						return false;
+					}
+					const $from = view.state.selection.$from;
+					for (let depth = $from.depth; depth > 0; depth--) {
+						const name = $from.node(depth).type.name;
+						if (name === 'bulletList' || name === 'orderedList' || name === 'listItem') {
+							return false;
+						}
+					}
+					event.preventDefault();
+					view.dispatch(view.state.tr.insertText('\t'));
+					return true;
 				},
 				handleDrop: (view, event, slice, moved) => {
 					if (!moved && event.dataTransfer?.files?.length) {
@@ -299,14 +336,6 @@
 	});
 </script>
 
-<input
-	bind:this={fileInput}
-	type="file"
-	accept="image/*"
-	class="hidden"
-	onchange={onImageSelect}
-/>
-
 <div class="z-rich-editor flex flex-col min-h-0 flex-1 bg-transparent">
 	<!-- Native toolbar: Ark ToggleGroup was wrapping these in a roving-focus
 	     widget whose tooltip asChild merge ate the click. Plain buttons keep
@@ -317,7 +346,7 @@
 		tabindex={-1}
 		aria-label="Rich text formatting"
 		aria-orientation="horizontal"
-		onmousedown={toolbarMouseDown}
+		onpointerdown={toolbarPointerDown}
 	>
 		<div class="z-rich-editor__group" role="group" aria-label="Text style">
 			<TooltipWrap label="Bold" wrapDisabled>
@@ -413,31 +442,74 @@
 
 		<div class="z-rich-editor__divider" role="separator" aria-orientation="vertical"></div>
 
-		<TooltipWrap label="Link" wrapDisabled>
-			{#snippet trigger({ props })}
-				<button
-					type="button"
-					class={formatBtnClass(isLink)}
-					onclick={toggleLink}
-					aria-label="Link"
-					aria-pressed={isLink}
-					{...props}
-				>
-					<RiLink size="18" />
-				</button>
-			{/snippet}
-		</TooltipWrap>
+		<Popover.Root
+			open={linkMenuOpen}
+			onOpenChange={(details) => onLinkOpenChange(details.open)}
+			positioning={{ placement: 'bottom-start', gutter: 6 }}
+			lazyMount
+			unmountOnExit
+		>
+			<Popover.Trigger
+				data-keep-gesture
+				class={formatBtnClass(isLink)}
+				aria-label="Link"
+				aria-pressed={isLink}
+				title="Link"
+			>
+				<RiLink size="18" />
+			</Popover.Trigger>
+			<Portal>
+				<Popover.Positioner>
+					<Popover.Content class="z-rich-editor__link-pop" data-keep-gesture>
+						<input
+							class="z-rich-editor__link-input"
+							type="url"
+							placeholder="https://"
+							bind:value={linkUrl}
+							onkeydown={(event) => {
+								if (event.key === 'Enter') {
+									event.preventDefault();
+									applyLink();
+								}
+							}}
+						/>
+						<button type="button" class="z-rich-editor__link-apply" onclick={applyLink}>
+							Apply
+						</button>
+						{#if isLink}
+							<button
+								type="button"
+								class="z-rich-editor__link-apply"
+								onclick={() => {
+									linkUrl = '';
+									applyLink();
+								}}
+							>
+								Remove
+							</button>
+						{/if}
+					</Popover.Content>
+				</Popover.Positioner>
+			</Portal>
+		</Popover.Root>
 		<TooltipWrap label="Insert image" wrapDisabled>
 			{#snippet trigger({ props })}
-				<button
-					type="button"
+				<label
 					class="z-rich-editor__btn"
-					onclick={() => fileInput?.click()}
+					data-keep-gesture
 					aria-label="Insert image"
+					title="Insert image"
 					{...props}
 				>
+					<input
+						bind:this={fileInput}
+						type="file"
+						accept="image/*"
+						class="sr-only"
+						onchange={onImageSelect}
+					/>
 					<RiImageLine size="18" />
-				</button>
+				</label>
 			{/snippet}
 		</TooltipWrap>
 		<Popover.Root
@@ -447,21 +519,18 @@
 			lazyMount
 			unmountOnExit
 		>
-			<TooltipWrap label="Text color" wrapDisabled>
-				{#snippet trigger({ props })}
-					<Popover.Trigger
-						class={formatBtnClass(!!activeColor)}
-						aria-label="Text color"
-						style={activeColor ? `color: ${activeColor}` : ''}
-						{...props}
-					>
-						<RiFontColor size="18" />
-					</Popover.Trigger>
-				{/snippet}
-			</TooltipWrap>
+			<Popover.Trigger
+				data-keep-gesture
+				class={formatBtnClass(!!activeColor)}
+				aria-label="Text color"
+				title="Text color"
+				style={activeColor ? `color: ${activeColor}` : ''}
+			>
+				<RiFontColor size="18" />
+			</Popover.Trigger>
 			<Portal>
 				<Popover.Positioner>
-					<Popover.Content class="z-rich-editor__palette">
+					<Popover.Content class="z-rich-editor__palette" data-keep-gesture>
 						<button
 							type="button"
 							class="z-rich-editor__swatch z-rich-editor__swatch--default"
@@ -535,6 +604,41 @@
 		border-radius: 0.5rem;
 		background: var(--z-surface-raised, #fff);
 		box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.15));
+	}
+
+	:global(.z-rich-editor__link-pop) {
+		z-index: 60;
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.5rem;
+		border: 1px solid var(--z-border, rgba(0, 0, 0, 0.1));
+		border-radius: 0.5rem;
+		background: var(--z-surface-raised, #fff);
+		box-shadow: var(--shadow-lg, 0 8px 24px rgba(0, 0, 0, 0.15));
+	}
+
+	:global(.z-rich-editor__link-input) {
+		width: 16rem;
+		height: 2rem;
+		padding: 0 0.5rem;
+		border: 1px solid var(--z-border, rgba(0, 0, 0, 0.1));
+		border-radius: 0.375rem;
+		background: var(--z-surface, #fff);
+		color: var(--z-fg, #000);
+		font-size: 0.8125rem;
+	}
+
+	:global(.z-rich-editor__link-apply) {
+		height: 2rem;
+		padding: 0 0.625rem;
+		border: none;
+		border-radius: 0.375rem;
+		background: var(--z-hover, rgba(0, 0, 0, 0.06));
+		color: var(--z-fg, #000);
+		font-size: 0.75rem;
+		font-weight: 600;
+		cursor: pointer;
 	}
 
 	:global(.z-rich-editor__swatch) {

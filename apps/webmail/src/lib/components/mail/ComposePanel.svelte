@@ -457,9 +457,12 @@
 				openFilePicker = () => api.openFilePicker();
 				return true;
 			})()}
-			<FileUpload.Dropzone
-				disableClick
+			<FileUpload.Dropzone disableClick asChild>
+				{#snippet asChild(dropzoneProps)}
+			<div
+				{...dropzoneProps()}
 				role="group"
+				tabindex="-1"
 				class={cn(
 					'z-mail-pane-surface z-mail-pane-surface--reader z-mail-pane-surface--compose z-compose-dropzone relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden',
 					embedded && 'rounded-none border-0 shadow-none',
@@ -870,7 +873,9 @@
 			<span class="text-sm font-semibold text-fg">Drop files here to attach</span>
 		</div>
 	</div>
-	</FileUpload.Dropzone>
+	</div>
+			{/snippet}
+			</FileUpload.Dropzone>
 		{/snippet}
 	</FileUpload.Context>
 </ComposeFileUpload>
