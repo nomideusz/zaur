@@ -10,6 +10,7 @@
 	import X from '$lib/components/icons/X.svelte';
 	import { downloadAttachment, getAttachmentBlob } from '$lib/attachments/download';
 	import { attachmentPreviewKind } from '$lib/attachments/preview';
+	import MarkdownBody from '$lib/components/ui/MarkdownBody.svelte';
 	import { PdfViewer } from '$lib/components/ui/pdf-viewer';
 	import DownloadButton from '$lib/components/ui/DownloadButton.svelte';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
@@ -67,7 +68,8 @@
 				const data = await getAttachmentBlob(attachment);
 				if (requestId !== generation) return;
 				blob = data;
-				if (attachmentPreviewKind(attachment) === 'text') {
+				const previewKind = attachmentPreviewKind(attachment);
+				if (previewKind === 'text' || previewKind === 'markdown') {
 					textContent = await data.text();
 					if (requestId !== generation) return;
 				} else {
@@ -122,6 +124,7 @@
 		video: 'Video',
 		audio: 'Audio',
 		pdf: 'PDF',
+		markdown: 'Markdown',
 		text: 'Text'
 	};
 </script>
@@ -258,6 +261,10 @@
 								{:else}
 									<audio src={objectUrl} controls class="w-full max-w-md" onerror={() => (mediaError = true)}></audio>
 								{/if}
+							</div>
+						{:else if kind === 'markdown' && textContent !== null}
+							<div class="flex-1 overflow-auto bg-surface px-5 py-5 md:px-8 md:py-6">
+								<MarkdownBody source={textContent} />
 							</div>
 						{:else if kind === 'text' && textContent !== null}
 							<div class="flex-1 overflow-auto bg-surface-sunken">

@@ -1,6 +1,7 @@
+import { canPreviewMarkdown, isMarkdownFile } from '$lib/markdown';
 import type { MessageAttachment } from '$lib/types/mail';
 
-export type AttachmentPreviewKind = 'image' | 'video' | 'audio' | 'pdf' | 'text';
+export type AttachmentPreviewKind = 'image' | 'video' | 'audio' | 'pdf' | 'markdown' | 'text';
 
 /** Text-ish types rendered as escaped plain text (HTML shown as source, never executed). */
 const TEXT_TYPES = new Set([
@@ -29,6 +30,9 @@ export function attachmentPreviewKind(
 	if (type.startsWith('image/')) return 'image';
 	if (type.startsWith('video/')) return 'video';
 	if (type.startsWith('audio/')) return 'audio';
+	if (isMarkdownFile(attachment)) {
+		return canPreviewMarkdown(attachment) ? 'markdown' : null;
+	}
 	if (TEXT_TYPES.has(type)) {
 		return !attachment.size || attachment.size <= MAX_TEXT_PREVIEW_BYTES ? 'text' : null;
 	}
