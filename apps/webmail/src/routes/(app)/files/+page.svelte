@@ -3,6 +3,7 @@
 	import ChevronRight from '$lib/components/icons/ChevronRight.svelte';
 	import FileText from '$lib/components/icons/FileText.svelte';
 	import Folder from '$lib/components/icons/Folder.svelte';
+	import Image from '$lib/components/icons/Image.svelte';
 	import Plus from '$lib/components/icons/Plus.svelte';
 	import Search from '$lib/components/icons/Search.svelte';
 	import Users from '$lib/components/icons/Users.svelte';
@@ -17,6 +18,7 @@
 	import PaneSplit from '$lib/components/ui/PaneSplit.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { PANE_SPLIT } from '$lib/components/ui/pane-split';
+	import { isImageFile } from '$lib/files/image';
 	import { fileAllowsDelete, fileAllowsShare, formatFileSize } from '$lib/jmap/file-rights';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
@@ -42,6 +44,7 @@
 	});
 
 	const selectedNode = $derived(files.selected);
+	const folderImages = $derived(visibleNodes.filter((node) => isImageFile(node)));
 
 	$effect(() => {
 		const client = auth.client;
@@ -253,6 +256,8 @@
 													>
 														{#if node.nodeType === 'directory'}
 															<Folder class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
+														{:else if isImageFile(node)}
+															<Image class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
 														{:else}
 															<FileText class="size-4 shrink-0 text-fg-subtle" aria-hidden="true" />
 														{/if}
@@ -323,10 +328,12 @@
 						<FileDetailPanel
 							chrome="pane"
 							node={selectedNode}
+							images={folderImages}
 							onClose={() => files.select(null)}
 							onShare={() => openShare(selectedNode)}
 							onRename={() => openRename(selectedNode)}
 							onRemove={() => void removeNode(selectedNode)}
+							onSelectImage={(id) => files.select(id)}
 						/>
 					{:else}
 						<FileDetailEmpty />
@@ -337,10 +344,12 @@
 				<FileDetailPanel
 					chrome="sheet"
 					node={selectedNode}
+					images={folderImages}
 					onClose={() => files.select(null)}
 					onShare={() => openShare(selectedNode)}
 					onRename={() => openRename(selectedNode)}
 					onRemove={() => void removeNode(selectedNode)}
+					onSelectImage={(id) => files.select(id)}
 				/>
 			{/if}
 		{/snippet}

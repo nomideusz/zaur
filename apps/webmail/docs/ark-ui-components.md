@@ -36,7 +36,7 @@ Project rule: `.cursor/rules/ark-ui-llms.mdc` (auto-attached for `apps/webmail/*
 
 ## Summary
 
-**32 / 61** Ark UI components are currently in use (`@ark-ui/svelte` ^5.22.1;
+**33 / 61** Ark UI components are currently in use (`@ark-ui/svelte` ^5.22.1;
 excludes internal `factory` / `anatomy` exports; includes lab-only
 `floating-panel`).
 
@@ -92,7 +92,7 @@ unticked until a need appears.
 | `segment-group` | **Intentionally custom** — `ui/segment-group/*` supports navigational `href` / static items; Ark’s is radio-label based. |
 | `floating-panel` | Lab only — `/floating-compose-lab`. Do not promote without a product decision. |
 | `hover-card` | Still open — sender/contact preview. |
-| `carousel` | Still open — attachment preview already has prev/next. |
+| `carousel` | Files image browser (`files/FileImageBrowser.svelte`). |
 | `color-picker` / `steps` / `tour` / `image-cropper` / `json-tree-view` | No product surface yet. |
 
 ---
@@ -168,7 +168,7 @@ internal building block rather than a user-facing component.
 | --- | :---: | --- |
 | `accordion` | [ ] | deferred — no strong surface yet |
 | `avatar` | [x] | `src/lib/components/ui/Avatar.svelte`; `shell/island/IslandAccountRail.svelte`, `shell/AccountSwitcherSheet.svelte` |
-| `carousel` | [ ] | |
+| `carousel` | [x] | `src/lib/components/files/FileImageBrowser.svelte` |
 | `collapsible` | [x] | `mail/MessageReaderCore.svelte`; compose quoted reply in `mail/ComposePanel.svelte` |
 | `image-cropper` | [ ] | |
 | `json-tree-view` | [ ] | |

@@ -74,7 +74,7 @@ export const componentTree = {
 		ContactsLayout: ['ContactsSidebar', 'ContactsList', 'ContactDetailPanel | ContactDetailEmpty']
 	},
 	files: {
-		FilesLayout: ['FilesSidebar', 'FilesList', 'FileDetailPanel | FileDetailEmpty', 'ShareFileDialog', 'MarkdownBody']
+		FilesLayout: ['FilesSidebar', 'FilesList', 'FileDetailPanel | FileDetailEmpty', 'FileImageBrowser', 'ShareFileDialog', 'MarkdownBody']
 	},
 	mail: {
 		MailLayout: ['MailPane → MailLayout'],

@@ -67,6 +67,7 @@
 @import './styles/list.css' layer(components);
 @import './styles/reader.css' layer(components);
 @import './styles/markdown.css' layer(components);
+@import './styles/files.css' layer(components);
 @import './styles/reader-chrome.css' layer(components);
 @import './styles/settings.css' layer(components);
 @import './styles/compose.css' layer(components);

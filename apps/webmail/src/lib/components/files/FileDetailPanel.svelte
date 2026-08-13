@@ -6,10 +6,12 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import DownloadButton from '$lib/components/ui/DownloadButton.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import FileImageBrowser from '$lib/components/files/FileImageBrowser.svelte';
 	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
 	import MarkdownBody from '$lib/components/ui/MarkdownBody.svelte';
 	import MobileSheet from '$lib/components/ui/MobileSheet.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
+	import { isImageFile } from '$lib/files/image';
 	import { fileAllowsDelete, fileAllowsShare, formatFileSize } from '$lib/jmap/file-rights';
 	import { canPreviewMarkdown, isMarkdownFile, MAX_MARKDOWN_BYTES, stripBom } from '$lib/markdown';
 	import { auth } from '$lib/stores/auth.svelte';
@@ -20,17 +22,21 @@
 
 	let {
 		node,
+		images = [],
 		onClose,
 		onShare,
 		onRename,
 		onRemove,
+		onSelectImage,
 		chrome = 'both'
 	}: {
 		node: FileNode;
+		images?: FileNode[];
 		onClose: () => void;
 		onShare: () => void;
 		onRename: () => void;
 		onRemove: () => void;
+		onSelectImage?: (id: string) => void;
 		chrome?: 'pane' | 'sheet' | 'both';
 	} = $props();
 
@@ -44,6 +50,13 @@
 	const markdownTooLarge = $derived(
 		markdownFile && (node.size ?? 0) > MAX_MARKDOWN_BYTES
 	);
+	const imageFile = $derived(node.nodeType === 'file' && isImageFile(node));
+	const gallery = $derived.by(() => {
+		if (!imageFile) return [];
+		const list = images.filter((item) => item.nodeType === 'file' && isImageFile(item));
+		if (list.some((item) => item.id === node.id)) return list;
+		return [node, ...list];
+	});
 
 	let view = $state<'preview' | 'source'>('preview');
 	let source = $state<string | null>(null);
@@ -153,8 +166,8 @@
 		<div class="min-w-0">
 			<h2 class="truncate text-base font-semibold text-fg">{node.name}</h2>
 			<p class="mt-1 truncate text-sm text-fg-muted">
-				{markdownFile ? 'Markdown' : kindLabel}{sizeLabel ? ` · ${sizeLabel}` : ''}
-				{#if modifiedLabel && markdownReadable}
+				{imageFile ? 'Image' : markdownFile ? 'Markdown' : kindLabel}{sizeLabel ? ` · ${sizeLabel}` : ''}
+				{#if modifiedLabel && (markdownReadable || imageFile)}
 					<span class="text-fg-subtle"> · {modifiedLabel}</span>
 				{/if}
 			</p>
@@ -194,40 +207,46 @@
 		</div>
 	</header>
 
-	<ScrollArea pane class="min-h-0 flex-1">
-		{#if markdownReadable}
-			{#if loading || (source === null && !loadError)}
-				<LoadingIndicator label="Loading markdown…" />
-			{:else if loadError}
-				<div class="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
-					<p class="text-sm text-danger">{loadError}</p>
-					<p class="text-xs text-fg-muted">You can still download the file.</p>
-				</div>
-			{:else if source !== null && view === 'source'}
-				<pre
-					class="whitespace-pre-wrap break-words px-4 py-4 font-mono text-xs leading-relaxed text-fg"
-				>{source}</pre>
-			{:else if source !== null}
-				<div class="px-4 py-4 md:px-5">
-					{#if source.trim()}
-						<MarkdownBody source={source} />
-					{:else}
-						<p class="text-sm text-fg-muted">This file is empty.</p>
+	{#if imageFile}
+		<div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+			<FileImageBrowser images={gallery} currentId={node.id} onSelect={(id) => onSelectImage?.(id)} />
+		</div>
+	{:else}
+		<ScrollArea pane class="min-h-0 flex-1">
+			{#if markdownReadable}
+				{#if loading || (source === null && !loadError)}
+					<LoadingIndicator label="Loading markdown…" />
+				{:else if loadError}
+					<div class="flex flex-col items-center justify-center gap-2 px-4 py-10 text-center">
+						<p class="text-sm text-danger">{loadError}</p>
+						<p class="text-xs text-fg-muted">You can still download the file.</p>
+					</div>
+				{:else if source !== null && view === 'source'}
+					<pre
+						class="whitespace-pre-wrap break-words px-4 py-4 font-mono text-xs leading-relaxed text-fg"
+					>{source}</pre>
+				{:else if source !== null}
+					<div class="px-4 py-4 md:px-5">
+						{#if source.trim()}
+							<MarkdownBody source={source} />
+						{:else}
+							<p class="text-sm text-fg-muted">This file is empty.</p>
+						{/if}
+					</div>
+				{/if}
+			{:else}
+				<div class="flex flex-col gap-4 px-4 py-4 text-sm">
+					{#if markdownTooLarge}
+						<p class="text-sm text-fg-muted">
+							This markdown file is larger than {formatFileSize(MAX_MARKDOWN_BYTES)} and can't be
+							previewed here. Download it to read it locally.
+						</p>
 					{/if}
+					{@render meta()}
 				</div>
 			{/if}
-		{:else}
-			<div class="flex flex-col gap-4 px-4 py-4 text-sm">
-				{#if markdownTooLarge}
-					<p class="text-sm text-fg-muted">
-						This markdown file is larger than {formatFileSize(MAX_MARKDOWN_BYTES)} and can't be
-						previewed here. Download it to read it locally.
-					</p>
-				{/if}
-				{@render meta()}
-			</div>
-		{/if}
-	</ScrollArea>
+		</ScrollArea>
+	{/if}
 
 	<footer
 		class={cn(
