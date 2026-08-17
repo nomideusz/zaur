@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'SvelteKit + Better Auth Starter',
+			desc: 'SvelteKit 3, Better Auth, Postgres/Drizzle, i18n and email — a base to build on.',
+			deploy: 'https://railway.com/deploy/sveltekit-better-auth-starter',
+			source: 'https://github.com/nomideusz/sveltekit-better-auth-starter'
+		},
+		{
 			name: 'Stalwart Webmail',
 			desc: 'Offline-capable, white-label JMAP webmail for self-hosted Stalwart servers.',
 			deploy: 'https://railway.com/deploy/stalwart-webmail',
