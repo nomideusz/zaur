@@ -8,6 +8,7 @@
 		RemoteTrack,
 		RemoteTrackPublication,
 		Room,
+		ScreenShareCaptureOptions,
 		Track as LKTrack,
 		TrackPublication
 	} from 'livekit-client';
@@ -18,6 +19,7 @@
 	import RiVideoLine from 'svelte-remixicon/RiVideoLine.svelte';
 	import RiVideoOffLine from 'svelte-remixicon/RiVideoOffLine.svelte';
 	import { cn } from '$lib/utils/cn';
+	import { isSafariUserAgent } from '$lib/utils/meet';
 
 	type Tile = {
 		id: string;
@@ -43,12 +45,16 @@
 	let camOn = $state(false);
 	let sharing = $state(false);
 	let playbackBlocked = $state(false);
+	let notice = $state('');
 	let tiles = $state<Tile[]>([]);
 	let audios = $state<{ id: string; track: LKTrack }[]>([]);
 	let room = $state<Room | null>(null);
 
 	const hasLocalVideo = $derived(tiles.some((tile) => tile.isLocal && !tile.isScreen));
 	const hasRemote = $derived(tiles.some((tile) => !tile.isLocal));
+	const hasScreen = $derived(tiles.some((tile) => tile.isScreen));
+	// A screen share is what everyone is there to look at — put it first and big.
+	const ordered = $derived([...tiles].sort((a, b) => Number(b.isScreen) - Number(a.isScreen)));
 	const stageCount = $derived(tiles.length + (hasLocalVideo ? 0 : 1));
 	const initials = $derived(
 		displayName
@@ -157,14 +163,22 @@
 					RoomEvent.LocalTrackPublished,
 					(publication: LocalTrackPublication, participant: LocalParticipant) => {
 						upsert(participant, publication, true);
+						syncLocal();
 					}
 				)
 				.on(
 					RoomEvent.LocalTrackUnpublished,
 					(publication: LocalTrackPublication, participant: LocalParticipant) => {
 						drop(participant, publication);
+						syncLocal();
 					}
 				)
+				// Screen share is usually stopped from the browser's own bar, and the
+				// camera can be revoked from the OS. Read the real state back rather
+				// than trusting our toggles, or the next click just re-syncs and the
+				// button looks dead.
+				.on(RoomEvent.TrackMuted, syncLocal)
+				.on(RoomEvent.TrackUnmuted, syncLocal)
 				// Android blocks autoplay far more often than iOS; offer a tap to resume.
 				.on(RoomEvent.AudioPlaybackStatusChanged, () => {
 					playbackBlocked = !nextRoom.canPlaybackAudio || !nextRoom.canPlaybackVideo;
@@ -183,8 +197,8 @@
 					await nextRoom.disconnect();
 					return;
 				}
-				micOn = await setLocalDevice(nextRoom, 'microphone', true);
-				camOn = await setLocalDevice(nextRoom, 'camera', true);
+				await setLocalDevice(nextRoom, 'microphone', true);
+				await setLocalDevice(nextRoom, 'camera', true);
 				status = 'live';
 			} catch (err) {
 				errorMessage = err instanceof Error ? err.message : 'Could not join the call';
@@ -198,36 +212,68 @@
 		};
 	});
 
+	/** Read the toggles back off the room; never infer them from our own clicks. */
+	function syncLocal() {
+		const me = room?.localParticipant;
+		if (!me) return;
+		micOn = me.isMicrophoneEnabled;
+		camOn = me.isCameraEnabled;
+		sharing = me.isScreenShareEnabled;
+	}
+
+	/**
+	 * WebKit captures at a uselessly low resolution — or fails outright — when
+	 * getDisplayMedia is given width/height constraints (webkit.org/show_bug.cgi?id=263015).
+	 * livekit-client guards for this, but its `isSafari17Based()` only matches a
+	 * literal "17." on desktop, so Safari 18+ gets capped anyway. Passing a zeroed
+	 * resolution is the SDK's documented "uncapped" escape hatch.
+	 */
+	function screenShareOptions(): ScreenShareCaptureOptions | undefined {
+		return isSafariUserAgent(navigator.userAgent)
+			? { resolution: { width: 0, height: 0, frameRate: 30 } }
+			: undefined;
+	}
+
 	async function setLocalDevice(
 		target: Room,
 		kind: 'microphone' | 'camera' | 'screen',
 		enabled: boolean
-	): Promise<boolean> {
+	): Promise<void> {
+		notice = '';
 		try {
 			if (kind === 'microphone') await target.localParticipant.setMicrophoneEnabled(enabled);
 			// Phones default to whichever camera the OS lists first — usually the rear one.
 			else if (kind === 'camera')
 				await target.localParticipant.setCameraEnabled(enabled, { facingMode: 'user' });
-			else await target.localParticipant.setScreenShareEnabled(enabled);
-			return enabled;
-		} catch {
-			return false;
+			// Must stay in the click's task: Safari drops the user gesture across an await.
+			else await target.localParticipant.setScreenShareEnabled(enabled, screenShareOptions());
+		} catch (err) {
+			// A dead-looking button with no explanation is worse than the failure.
+			if (!isUserCancelled(err)) {
+				notice = err instanceof Error ? err.message : `Could not turn ${kind} ${enabled ? 'on' : 'off'}`;
+			}
 		}
+		syncLocal();
+	}
+
+	function isUserCancelled(err: unknown): boolean {
+		return err instanceof DOMException && (err.name === 'NotAllowedError' || err.name === 'AbortError');
 	}
 
 	async function toggleMic() {
 		if (!room) return;
-		micOn = await setLocalDevice(room, 'microphone', !micOn);
+		await setLocalDevice(room, 'microphone', !micOn);
 	}
 
 	async function toggleCam() {
 		if (!room) return;
-		camOn = await setLocalDevice(room, 'camera', !camOn);
+		await setLocalDevice(room, 'camera', !camOn);
 	}
 
-	async function toggleShare() {
+	function toggleShare() {
 		if (!room) return;
-		sharing = await setLocalDevice(room, 'screen', !sharing);
+		// Not awaited and not async: keeps getDisplayMedia inside the user gesture.
+		void setLocalDevice(room, 'screen', !sharing);
 	}
 </script>
 
@@ -256,24 +302,31 @@
 			<div
 				class={cn(
 					'z-meet__grid',
-					stageCount <= 1 && 'z-meet__grid--solo',
-					stageCount === 2 && 'z-meet__grid--pair'
+					hasScreen && 'z-meet__grid--focus',
+					!hasScreen && stageCount <= 1 && 'z-meet__grid--solo',
+					!hasScreen && stageCount === 2 && 'z-meet__grid--pair'
 				)}
 			>
-				{#if !hasLocalVideo}
-					<div class="z-meet-tile">
-						<div class="z-meet-tile__placeholder" aria-hidden="true">{initials}</div>
-						<p class="z-meet-tile__name">{displayName} (you)</p>
-					</div>
-				{/if}
-				{#each tiles as tile (tile.id)}
-					<div class={cn('z-meet-tile', tile.isLocal && !tile.isScreen && 'z-meet-tile--mirror')}>
+				{#each ordered as tile (tile.id)}
+					<div
+						class={cn(
+							'z-meet-tile',
+							tile.isScreen && 'z-meet-tile--screen',
+							tile.isLocal && !tile.isScreen && 'z-meet-tile--mirror'
+						)}
+					>
 						<video class="z-meet-tile__video" {@attach attachTrack(tile.track)}></video>
 						<p class="z-meet-tile__name">
 							{tile.name}{tile.isLocal ? ' (you)' : ''}{tile.isScreen ? ' · screen' : ''}
 						</p>
 					</div>
 				{/each}
+				{#if !hasLocalVideo}
+					<div class="z-meet-tile">
+						<div class="z-meet-tile__placeholder" aria-hidden="true">{initials}</div>
+						<p class="z-meet-tile__name">{displayName} (you)</p>
+					</div>
+				{/if}
 			</div>
 			{#if !hasRemote}
 				<p class="z-meet__waiting">Waiting for others</p>
@@ -287,6 +340,8 @@
 				<button type="button" class="z-meet__resume" onclick={() => void resumePlayback()}>
 					Tap to start video and sound
 				</button>
+			{:else if notice}
+				<p class="z-meet__notice" role="status">{notice}</p>
 			{/if}
 			<div class="z-meet__ctrls">
 				<button
@@ -321,7 +376,7 @@
 					class={cn('z-meet__ctrl z-meet__ctrl--desktop', sharing && 'z-meet__ctrl--on')}
 					aria-pressed={sharing}
 					aria-label={sharing ? 'Stop sharing screen' : 'Share screen'}
-					onclick={() => void toggleShare()}
+					onclick={toggleShare}
 				>
 					<RiShareLine class="size-5" />
 				</button>
@@ -419,6 +474,16 @@
 		}
 	}
 
+	/* Someone is sharing: the share gets the room, faces drop to a thumbnail strip. */
+	.z-meet__grid--focus {
+		grid-template-columns: repeat(auto-fit, minmax(min(50% - 0.25rem, 8rem), 1fr));
+	}
+
+	.z-meet__grid--focus .z-meet-tile--screen {
+		grid-column: 1 / -1;
+		aspect-ratio: 16 / 9;
+	}
+
 	.z-meet-tile {
 		position: relative;
 		overflow: hidden;
@@ -456,6 +521,12 @@
 		transform: scaleX(-1);
 	}
 
+	/* Never crop a shared screen — letterbox it. */
+	.z-meet-tile--screen .z-meet-tile__video {
+		object-fit: contain;
+		background: #000;
+	}
+
 	.z-meet-tile__name {
 		position: absolute;
 		left: 0.5rem;
@@ -489,6 +560,14 @@
 		display: flex;
 		justify-content: center;
 		gap: 0.5rem;
+	}
+
+	.z-meet__notice {
+		margin: 0;
+		max-width: 32rem;
+		text-align: center;
+		font-size: 0.8125rem;
+		color: var(--z-danger, #e0706d);
 	}
 
 	.z-meet__resume {

@@ -7,6 +7,15 @@
 /** Room names: one path segment, no slashes or `.` / `..`. */
 export const MEET_GROUP_RE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,62}$/;
 
+/**
+ * True only for real WebKit/Safari. Every Chromium and Firefox-on-iOS UA also
+ * carries the "Safari" token, so the exclusions do the actual work.
+ * Used to uncap getDisplayMedia constraints — see MeetRoom.svelte.
+ */
+export function isSafariUserAgent(ua: string): boolean {
+	return /safari/i.test(ua) && !/chrome|chromium|android|crios|fxios|edg|opr/i.test(ua);
+}
+
 /** Old Galene rooms used `https://meet.zaur.app/group/{id}/`. */
 const LEGACY_MEET_HOSTS = new Set(['meet.zaur.app']);
 
