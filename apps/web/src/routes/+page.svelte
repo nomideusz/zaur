@@ -115,6 +115,12 @@
 			source: 'https://github.com/nomideusz/zaur/tree/main/apps/webmail'
 		},
 		{
+			name: 'Stalwart',
+			desc: 'Rust mail server on a single volume — SMTP, IMAP, JMAP, CalDAV, and a web admin.',
+			deploy: 'https://railway.com/new/template/stalwart-1',
+			source: 'https://github.com/nomideusz/stalwart-railway'
+		},
+		{
 			name: 'Twenty CRM',
 			desc: 'Production-ready open-source CRM with a worker, Redis, Postgres, and S3 file storage.',
 			deploy: 'https://railway.com/deploy/twenty-crm-production',
