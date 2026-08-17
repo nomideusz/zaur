@@ -46,13 +46,28 @@
 	let sharing = $state(false);
 	let playbackBlocked = $state(false);
 	let notice = $state('');
+	let remoteCount = $state(0);
+	let linkState = $state('');
+	let canShare = $state(false);
 	let tiles = $state<Tile[]>([]);
 	let audios = $state<{ id: string; track: LKTrack }[]>([]);
 	let room = $state<Room | null>(null);
 
 	const hasLocalVideo = $derived(tiles.some((tile) => tile.isLocal && !tile.isScreen));
-	const hasRemote = $derived(tiles.some((tile) => !tile.isLocal));
+	const hasRemoteVideo = $derived(tiles.some((tile) => !tile.isLocal));
 	const hasScreen = $derived(tiles.some((tile) => tile.isScreen));
+	/**
+	 * Who is in the room, not who is sending video. Keying the empty state off
+	 * video tiles claimed nobody had joined whenever a peer had their camera off
+	 * — or whenever their media never reached us.
+	 */
+	const roomState = $derived(
+		remoteCount === 0
+			? 'Waiting for others'
+			: hasRemoteVideo
+				? ''
+				: `${remoteCount} other${remoteCount === 1 ? '' : 's'} in the call, no video yet`
+	);
 	// A screen share is what everyone is there to look at — put it first and big.
 	const ordered = $derived([...tiles].sort((a, b) => Number(b.isScreen) - Number(a.isScreen)));
 	const stageCount = $derived(tiles.length + (hasLocalVideo ? 0 : 1));
@@ -186,6 +201,21 @@
 				.on(RoomEvent.VideoPlaybackStatusChanged, () => {
 					playbackBlocked = !nextRoom.canPlaybackAudio || !nextRoom.canPlaybackVideo;
 				})
+				.on(RoomEvent.ParticipantConnected, () => {
+					remoteCount = nextRoom.remoteParticipants.size;
+				})
+				.on(RoomEvent.ParticipantDisconnected, () => {
+					remoteCount = nextRoom.remoteParticipants.size;
+				})
+				// Signalling is a websocket and almost always connects; media is a
+				// separate transport that can fail on its own. Say which one is down
+				// instead of silently showing an empty room.
+				.on(RoomEvent.ConnectionStateChanged, (state) => {
+					linkState = state === 'connected' ? '' : `Connection: ${state}`;
+				})
+				.on(RoomEvent.MediaDevicesError, (err: Error) => {
+					notice = err.message;
+				})
 				.on(RoomEvent.Disconnected, () => {
 					if (!cancelled && status !== 'left') status = 'left';
 				});
@@ -197,6 +227,11 @@
 					await nextRoom.disconnect();
 					return;
 				}
+				remoteCount = nextRoom.remoteParticipants.size;
+				// iOS and iPadOS Safari have no getDisplayMedia at all — feature-detect
+				// rather than guessing from pointer type, which hid the button on
+				// touchscreen laptops and showed it where it could never work.
+				canShare = typeof navigator.mediaDevices?.getDisplayMedia === 'function';
 				await setLocalDevice(nextRoom, 'microphone', true);
 				await setLocalDevice(nextRoom, 'camera', true);
 				status = 'live';
@@ -328,8 +363,8 @@
 					</div>
 				{/if}
 			</div>
-			{#if !hasRemote}
-				<p class="z-meet__waiting">Waiting for others</p>
+			{#if roomState || linkState}
+				<p class="z-meet__waiting">{linkState || roomState}</p>
 			{/if}
 		{/if}
 	</div>
@@ -370,16 +405,17 @@
 						<RiVideoOffLine class="size-5" />
 					{/if}
 				</button>
-				<!-- ponytail: screen share is desktop-only; mobile browsers reject getDisplayMedia -->
-				<button
-					type="button"
-					class={cn('z-meet__ctrl z-meet__ctrl--desktop', sharing && 'z-meet__ctrl--on')}
-					aria-pressed={sharing}
-					aria-label={sharing ? 'Stop sharing screen' : 'Share screen'}
-					onclick={toggleShare}
-				>
-					<RiShareLine class="size-5" />
-				</button>
+				{#if canShare}
+					<button
+						type="button"
+						class={cn('z-meet__ctrl', sharing && 'z-meet__ctrl--on')}
+						aria-pressed={sharing}
+						aria-label={sharing ? 'Stop sharing screen' : 'Share screen'}
+						onclick={toggleShare}
+					>
+						<RiShareLine class="size-5" />
+					</button>
+				{/if}
 				<button
 					type="button"
 					class="z-meet__ctrl z-meet__ctrl--leave"
@@ -591,12 +627,6 @@
 		background: var(--z-meet-ctrl);
 		color: var(--z-meet-fg);
 		cursor: pointer;
-	}
-
-	@media (pointer: coarse) {
-		.z-meet__ctrl--desktop {
-			display: none;
-		}
 	}
 
 	.z-meet__ctrl:hover,
