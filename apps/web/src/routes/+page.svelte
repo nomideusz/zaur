@@ -116,7 +116,7 @@
 		},
 		{
 			name: 'Stalwart',
-			desc: 'Rust mail server on a single volume — SMTP, IMAP, JMAP, CalDAV, and a web admin.',
+			desc: 'Rust mailbox server on a single volume — JMAP, IMAP, CalDAV, and a web admin.',
 			deploy: 'https://railway.com/new/template/stalwart-1',
 			source: 'https://github.com/nomideusz/stalwart-railway'
 		},
