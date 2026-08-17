@@ -8,6 +8,7 @@
 		RemoteTrack,
 		RemoteTrackPublication,
 		Room,
+		Track as LKTrack,
 		TrackPublication
 	} from 'livekit-client';
 	import RiCloseLine from 'svelte-remixicon/RiCloseLine.svelte';
@@ -20,10 +21,10 @@
 
 	type Tile = {
 		id: string;
-		identity: string;
 		name: string;
 		isLocal: boolean;
 		isScreen: boolean;
+		track: LKTrack;
 	};
 
 	let {
@@ -41,11 +42,11 @@
 	let micOn = $state(false);
 	let camOn = $state(false);
 	let sharing = $state(false);
+	let playbackBlocked = $state(false);
 	let tiles = $state<Tile[]>([]);
-	let audioHost = $state<HTMLDivElement | null>(null);
+	let audios = $state<{ id: string; track: LKTrack }[]>([]);
 	let room = $state<Room | null>(null);
 
-	const media = new Map<string, HTMLMediaElement>();
 	const hasLocalVideo = $derived(tiles.some((tile) => tile.isLocal && !tile.isScreen));
 	const hasRemote = $derived(tiles.some((tile) => !tile.isLocal));
 	const stageCount = $derived(tiles.length + (hasLocalVideo ? 0 : 1));
@@ -58,16 +59,15 @@
 			.join('') || '?'
 	);
 
-	function videoHost(node: HTMLDivElement, id: string) {
-		const attach = (tileId: string) => {
-			const el = media.get(tileId);
-			if (el && el.parentElement !== node) node.appendChild(el);
-		};
-		attach(id);
-		return {
-			update(nextId: string) {
-				attach(nextId);
-			}
+	/**
+	 * Hand the element straight to LiveKit. `attach(el)` sets `muted`, `autoplay`
+	 * and `playsInline` itself, per-browser — never override them afterwards,
+	 * that is what black-screened Android.
+	 */
+	function attachTrack(track: LKTrack) {
+		return (node: HTMLMediaElement) => {
+			track.attach(node);
+			return () => track.detach(node);
 		};
 	}
 
@@ -79,6 +79,12 @@
 			return;
 		}
 		window.location.href = '/calendar';
+	}
+
+	async function resumePlayback() {
+		if (!room) return;
+		await Promise.allSettled([room.startAudio(), room.startVideo()]);
+		playbackBlocked = !room.canPlaybackAudio || !room.canPlaybackVideo;
 	}
 
 	onMount(() => {
@@ -97,40 +103,21 @@
 			}
 
 			function upsert(participant: Participant, publication: TrackPublication, isLocal: boolean) {
-				if (publication.kind !== Track.Kind.Video || !publication.track) return;
+				const track = publication.track;
+				if (publication.kind !== Track.Kind.Video || !track) return;
 				const id = tileId(participant, publication);
-				const el = publication.track.attach();
-				if (el instanceof HTMLVideoElement) el.playsInline = true;
-				el.autoplay = true;
-				el.muted = isLocal;
-				el.className = 'z-meet-tile__video';
-				media.get(id)?.remove();
-				media.set(id, el);
 				const next: Tile = {
 					id,
-					identity: participant.identity,
 					name: isLocal ? displayName || labelOf(participant) : labelOf(participant),
 					isLocal,
-					isScreen: publication.source === Track.Source.ScreenShare
+					isScreen: publication.source === Track.Source.ScreenShare,
+					track
 				};
 				tiles = [...tiles.filter((tile) => tile.id !== id), next];
-				queueMicrotask(() => {
-					const host = document.querySelector<HTMLDivElement>(
-						`[data-meet-tile="${CSS.escape(id)}"]`
-					);
-					const el = media.get(id);
-					if (host && el && el.parentElement !== host) host.appendChild(el);
-				});
 			}
 
 			function drop(participant: Participant, publication: TrackPublication) {
 				const id = tileId(participant, publication);
-				const el = media.get(id);
-				if (el) {
-					publication.track?.detach(el);
-					el.remove();
-					media.delete(id);
-				}
 				tiles = tiles.filter((tile) => tile.id !== id);
 			}
 
@@ -144,8 +131,8 @@
 						participant: RemoteParticipant
 					) => {
 						if (track.kind === Track.Kind.Audio) {
-							if (!audioHost) return;
-							audioHost.append(track.attach());
+							const id = tileId(participant, publication);
+							audios = [...audios.filter((a) => a.id !== id), { id, track }];
 							return;
 						}
 						upsert(participant, publication, false);
@@ -154,10 +141,15 @@
 				.on(
 					RoomEvent.TrackUnsubscribed,
 					(
-						_track: RemoteTrack,
+						track: RemoteTrack,
 						publication: RemoteTrackPublication,
 						participant: RemoteParticipant
 					) => {
+						if (track.kind === Track.Kind.Audio) {
+							const id = tileId(participant, publication);
+							audios = audios.filter((a) => a.id !== id);
+							return;
+						}
 						drop(participant, publication);
 					}
 				)
@@ -173,6 +165,13 @@
 						drop(participant, publication);
 					}
 				)
+				// Android blocks autoplay far more often than iOS; offer a tap to resume.
+				.on(RoomEvent.AudioPlaybackStatusChanged, () => {
+					playbackBlocked = !nextRoom.canPlaybackAudio || !nextRoom.canPlaybackVideo;
+				})
+				.on(RoomEvent.VideoPlaybackStatusChanged, () => {
+					playbackBlocked = !nextRoom.canPlaybackAudio || !nextRoom.canPlaybackVideo;
+				})
 				.on(RoomEvent.Disconnected, () => {
 					if (!cancelled && status !== 'left') status = 'left';
 				});
@@ -196,8 +195,6 @@
 		return () => {
 			cancelled = true;
 			void room?.disconnect();
-			for (const el of media.values()) el.remove();
-			media.clear();
 		};
 	});
 
@@ -208,7 +205,9 @@
 	): Promise<boolean> {
 		try {
 			if (kind === 'microphone') await target.localParticipant.setMicrophoneEnabled(enabled);
-			else if (kind === 'camera') await target.localParticipant.setCameraEnabled(enabled);
+			// Phones default to whichever camera the OS lists first — usually the rear one.
+			else if (kind === 'camera')
+				await target.localParticipant.setCameraEnabled(enabled, { facingMode: 'user' });
 			else await target.localParticipant.setScreenShareEnabled(enabled);
 			return enabled;
 		} catch {
@@ -233,88 +232,108 @@
 </script>
 
 <div class="z-meet">
-	<p class="z-meet__brand">Zaur Meet</p>
-	<div class="sr-only" bind:this={audioHost}></div>
+	<div class="sr-only">
+		{#each audios as audio (audio.id)}
+			<audio {@attach attachTrack(audio.track)}></audio>
+		{/each}
+	</div>
 
-	{#if status === 'connecting'}
-		<p class="z-meet__status">Joining…</p>
-	{:else if status === 'error'}
-		<div class="z-meet__status">
-			<p>{errorMessage}</p>
-			<button type="button" class="z-btn-primary mt-4" onclick={() => window.location.reload()}>
-				Try again
-			</button>
-		</div>
-	{:else if status === 'left'}
-		<p class="z-meet__status">You left the call.</p>
-	{:else}
-		<div
-			class={cn(
-				'z-meet__grid',
-				stageCount <= 1 && 'z-meet__grid--solo',
-				stageCount === 2 && 'z-meet__grid--pair'
-			)}
-		>
-			{#if !hasLocalVideo}
-				<div class="z-meet-tile">
-					<div class="z-meet-tile__placeholder" aria-hidden="true">{initials}</div>
-					<p class="z-meet-tile__name">{displayName} (you)</p>
-				</div>
+	<div class="z-meet__stage">
+		<p class="z-meet__brand">Zaur Meet</p>
+
+		{#if status === 'connecting'}
+			<p class="z-meet__status">Joining…</p>
+		{:else if status === 'error'}
+			<div class="z-meet__status">
+				<p>{errorMessage}</p>
+				<button type="button" class="z-btn-primary mt-4" onclick={() => window.location.reload()}>
+					Try again
+				</button>
+			</div>
+		{:else if status === 'left'}
+			<p class="z-meet__status">You left the call.</p>
+		{:else}
+			<div
+				class={cn(
+					'z-meet__grid',
+					stageCount <= 1 && 'z-meet__grid--solo',
+					stageCount === 2 && 'z-meet__grid--pair'
+				)}
+			>
+				{#if !hasLocalVideo}
+					<div class="z-meet-tile">
+						<div class="z-meet-tile__placeholder" aria-hidden="true">{initials}</div>
+						<p class="z-meet-tile__name">{displayName} (you)</p>
+					</div>
+				{/if}
+				{#each tiles as tile (tile.id)}
+					<div class={cn('z-meet-tile', tile.isLocal && !tile.isScreen && 'z-meet-tile--mirror')}>
+						<video class="z-meet-tile__video" {@attach attachTrack(tile.track)}></video>
+						<p class="z-meet-tile__name">
+							{tile.name}{tile.isLocal ? ' (you)' : ''}{tile.isScreen ? ' · screen' : ''}
+						</p>
+					</div>
+				{/each}
+			</div>
+			{#if !hasRemote}
+				<p class="z-meet__waiting">Waiting for others</p>
 			{/if}
-			{#each tiles as tile (tile.id)}
-				<div class="z-meet-tile">
-					<div class="z-meet-tile__media" data-meet-tile={tile.id} use:videoHost={tile.id}></div>
-					<p class="z-meet-tile__name">
-						{tile.name}{tile.isLocal ? ' (you)' : ''}{tile.isScreen ? ' · screen' : ''}
-					</p>
-				</div>
-			{/each}
-		</div>
-		{#if !hasRemote}
-			<p class="z-meet__waiting">Waiting for others</p>
 		{/if}
-	{/if}
+	</div>
 
 	{#if status === 'live'}
 		<div class="z-meet__bar">
-			<button
-				type="button"
-				class={cn('z-meet__ctrl', !micOn && 'z-meet__ctrl--off')}
-				aria-pressed={micOn}
-				aria-label={micOn ? 'Mute microphone' : 'Unmute microphone'}
-				onclick={() => void toggleMic()}
-			>
-				{#if micOn}
-					<RiMicLine class="size-5" />
-				{:else}
-					<RiMicOffLine class="size-5" />
-				{/if}
-			</button>
-			<button
-				type="button"
-				class={cn('z-meet__ctrl', !camOn && 'z-meet__ctrl--off')}
-				aria-pressed={camOn}
-				aria-label={camOn ? 'Turn camera off' : 'Turn camera on'}
-				onclick={() => void toggleCam()}
-			>
-				{#if camOn}
-					<RiVideoLine class="size-5" />
-				{:else}
-					<RiVideoOffLine class="size-5" />
-				{/if}
-			</button>
-			<button
-				type="button"
-				class={cn('z-meet__ctrl', sharing && 'z-meet__ctrl--on')}
-				aria-pressed={sharing}
-				aria-label={sharing ? 'Stop sharing screen' : 'Share screen'}
-				onclick={() => void toggleShare()}
-			>
-				<RiShareLine class="size-5" />
-			</button>
-			<button type="button" class="z-meet__ctrl z-meet__ctrl--leave" aria-label="Leave call" onclick={leave}>
-				<RiCloseLine class="size-5" />
-			</button>
+			{#if playbackBlocked}
+				<button type="button" class="z-meet__resume" onclick={() => void resumePlayback()}>
+					Tap to start video and sound
+				</button>
+			{/if}
+			<div class="z-meet__ctrls">
+				<button
+					type="button"
+					class={cn('z-meet__ctrl', !micOn && 'z-meet__ctrl--off')}
+					aria-pressed={micOn}
+					aria-label={micOn ? 'Mute microphone' : 'Unmute microphone'}
+					onclick={() => void toggleMic()}
+				>
+					{#if micOn}
+						<RiMicLine class="size-5" />
+					{:else}
+						<RiMicOffLine class="size-5" />
+					{/if}
+				</button>
+				<button
+					type="button"
+					class={cn('z-meet__ctrl', !camOn && 'z-meet__ctrl--off')}
+					aria-pressed={camOn}
+					aria-label={camOn ? 'Turn camera off' : 'Turn camera on'}
+					onclick={() => void toggleCam()}
+				>
+					{#if camOn}
+						<RiVideoLine class="size-5" />
+					{:else}
+						<RiVideoOffLine class="size-5" />
+					{/if}
+				</button>
+				<!-- ponytail: screen share is desktop-only; mobile browsers reject getDisplayMedia -->
+				<button
+					type="button"
+					class={cn('z-meet__ctrl z-meet__ctrl--desktop', sharing && 'z-meet__ctrl--on')}
+					aria-pressed={sharing}
+					aria-label={sharing ? 'Stop sharing screen' : 'Share screen'}
+					onclick={() => void toggleShare()}
+				>
+					<RiShareLine class="size-5" />
+				</button>
+				<button
+					type="button"
+					class="z-meet__ctrl z-meet__ctrl--leave"
+					aria-label="Leave call"
+					onclick={leave}
+				>
+					<RiCloseLine class="size-5" />
+				</button>
+			</div>
 		</div>
 	{/if}
 </div>
@@ -323,6 +342,10 @@
 	:global(html:has(.z-meet)),
 	:global(body:has(.z-meet)) {
 		background: #111;
+		/* The stage scrolls, not the document — otherwise the control bar drifts
+		   off-screen behind Android's collapsing browser chrome. */
+		overflow: hidden;
+		overscroll-behavior: none;
 	}
 
 	.z-meet {
@@ -332,13 +355,23 @@
 		--z-meet-ctrl-hover: #3d3d3d;
 		--z-meet-fg: #ededec;
 		--z-meet-muted: #a8a8a6;
-		position: relative;
 		display: grid;
-		grid-template-rows: 1fr auto auto;
-		min-height: 100dvh;
+		grid-template-rows: minmax(0, 1fr) auto;
+		height: 100dvh;
+		overflow: hidden;
 		color-scheme: dark;
 		background: var(--z-meet-bg);
 		color: var(--z-meet-fg);
+	}
+
+	.z-meet__stage {
+		position: relative;
+		display: grid;
+		grid-template-rows: minmax(0, 1fr) auto;
+		min-height: 0;
+		overflow-y: auto;
+		overscroll-behavior: contain;
+		-webkit-overflow-scrolling: touch;
 	}
 
 	.z-meet__brand {
@@ -357,7 +390,7 @@
 
 	.z-meet__status {
 		display: grid;
-		place-items: center;
+		place-content: center;
 		padding: 2rem;
 		text-align: center;
 		color: var(--z-meet-muted);
@@ -366,11 +399,12 @@
 	.z-meet__grid {
 		display: grid;
 		gap: 0.5rem;
-		padding: 0.75rem;
+		padding: 0.5rem;
 		align-content: center;
-		grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+		grid-template-columns: repeat(auto-fit, minmax(min(100%, 11rem), 1fr));
 	}
 
+	/* One tile fills the stage; two stack on phones and sit side by side above it. */
 	.z-meet__grid--solo,
 	.z-meet__grid--pair {
 		grid-template-columns: 1fr;
@@ -379,30 +413,38 @@
 		width: 100%;
 	}
 
+	@media (min-width: 48rem) {
+		.z-meet__grid--pair {
+			grid-template-columns: 1fr 1fr;
+		}
+	}
+
 	.z-meet-tile {
 		position: relative;
 		overflow: hidden;
 		border-radius: 0.75rem;
 		background: var(--z-meet-tile);
-		min-height: 12rem;
+		/* aspect-ratio, not min-height: tiles can never outgrow the viewport. */
+		aspect-ratio: 4 / 3;
 	}
 
-	.z-meet-tile__media,
-	.z-meet-tile__placeholder {
+	.z-meet__grid--solo .z-meet-tile {
+		aspect-ratio: auto;
 		height: 100%;
-		min-height: min(18rem, 50dvh);
+		min-height: min(60dvh, 32rem);
 	}
 
 	.z-meet-tile__placeholder {
 		display: grid;
 		place-items: center;
-		font-size: 3rem;
+		height: 100%;
+		font-size: clamp(2rem, 12vw, 3rem);
 		font-weight: 600;
 		letter-spacing: 0.04em;
 		color: var(--z-meet-muted);
 	}
 
-	:global(.z-meet-tile__video) {
+	.z-meet-tile__video {
 		display: block;
 		width: 100%;
 		height: 100%;
@@ -410,36 +452,59 @@
 		background: #111;
 	}
 
+	.z-meet-tile--mirror .z-meet-tile__video {
+		transform: scaleX(-1);
+	}
+
 	.z-meet-tile__name {
 		position: absolute;
-		left: 0.75rem;
-		bottom: 0.75rem;
+		left: 0.5rem;
+		bottom: 0.5rem;
 		margin: 0;
 		padding: 0.2rem 0.5rem;
 		border-radius: 0.375rem;
 		background: color-mix(in srgb, black 55%, transparent);
 		color: var(--z-meet-fg);
-		font-size: 0.8125rem;
+		font-size: 0.75rem;
 	}
 
 	.z-meet__waiting {
 		margin: 0;
-		padding: 0 0.75rem;
+		padding: 0.5rem 0.75rem;
 		text-align: center;
 		color: var(--z-meet-muted);
 		font-size: 0.875rem;
 	}
 
 	.z-meet__bar {
+		display: grid;
+		justify-items: center;
+		gap: 0.5rem;
+		padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+		background: var(--z-meet-bg);
+		border-top: 1px solid #262626;
+	}
+
+	.z-meet__ctrls {
 		display: flex;
 		justify-content: center;
 		gap: 0.5rem;
-		padding: 0.75rem 0.75rem calc(0.75rem + env(safe-area-inset-bottom, 0px));
+	}
+
+	.z-meet__resume {
+		padding: 0.5rem 0.875rem;
+		border: 0;
+		border-radius: 9999px;
+		background: var(--z-accent);
+		color: var(--z-accent-fg, white);
+		font-size: 0.8125rem;
+		cursor: pointer;
 	}
 
 	.z-meet__ctrl {
 		display: grid;
 		place-items: center;
+		/* 44px min touch target. */
 		width: 2.75rem;
 		height: 2.75rem;
 		border: 1px solid #3f3f3f;
@@ -447,6 +512,12 @@
 		background: var(--z-meet-ctrl);
 		color: var(--z-meet-fg);
 		cursor: pointer;
+	}
+
+	@media (pointer: coarse) {
+		.z-meet__ctrl--desktop {
+			display: none;
+		}
 	}
 
 	.z-meet__ctrl:hover,
