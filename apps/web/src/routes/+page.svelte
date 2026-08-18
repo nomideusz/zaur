@@ -109,6 +109,18 @@
 
 	const templates = [
 		{
+			name: 'HyperDX',
+			desc: 'ClickHouse observability — logs, traces, metrics, and session replay in one UI.',
+			deploy: 'https://railway.com/deploy/hyperdx',
+			source: 'https://github.com/nomideusz/hyperdx-railway'
+		},
+		{
+			name: 'Uptrace',
+			desc: 'OpenTelemetry APM on ClickHouse — traces, logs, metrics, service graph, and alerts.',
+			deploy: 'https://railway.com/deploy/uptrace',
+			source: 'https://github.com/nomideusz/uptrace-railway'
+		},
+		{
 			name: 'SvelteKit + Better Auth Starter',
 			desc: 'SvelteKit 3, Better Auth, Postgres/Drizzle, i18n and email — a base to build on.',
 			deploy: 'https://railway.com/deploy/sveltekit-better-auth-starter',
