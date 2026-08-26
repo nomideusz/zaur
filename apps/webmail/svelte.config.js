@@ -47,6 +47,12 @@ const config = {
 		},
 		experimental: {
 			remoteFunctions: true
+		},
+		// Replicated in hooks.server.ts (csrfProtect) with an exemption for the
+		// OIDC token endpoint: OAuth clients POST urlencoded forms server-to-server
+		// with no Origin header, which the built-in check rejects with a blanket 403.
+		csrf: {
+			checkOrigin: false
 		}
 	}
 };

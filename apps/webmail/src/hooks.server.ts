@@ -64,6 +64,25 @@ export const init: ServerInit = async () => {
 	});
 };
 
+/*
+ * SvelteKit's built-in cross-site form check (kit.csrf.checkOrigin, disabled in
+ * svelte.config.js) replicated here so /oidc/token can be exempt: OAuth clients
+ * POST application/x-www-form-urlencoded server-to-server with no Origin header,
+ * which the built-in check 403s. Same semantics otherwise: form-content-type
+ * POSTs must carry a same-origin Origin header. /oidc/token is safe to exempt —
+ * it authenticates with a client secret, not cookies.
+ */
+const FORM_CONTENT_TYPES = ['application/x-www-form-urlencoded', 'multipart/form-data', 'text/plain'];
+const csrfProtect: Handle = async ({ event, resolve }) => {
+	if (event.request.method === 'POST' && event.url.pathname !== '/oidc/token') {
+		const type = (event.request.headers.get('content-type') ?? '').split(';')[0].trim().toLowerCase();
+		if (FORM_CONTENT_TYPES.includes(type) && event.request.headers.get('origin') !== event.url.origin) {
+			return new Response('Cross-site POST form submissions are forbidden', { status: 403 });
+		}
+	}
+	return resolve(event);
+};
+
 const securityAndLogging: Handle = async ({ event, resolve }) => {
 	const started = Date.now();
 	let response: Response;
@@ -104,7 +123,7 @@ const securityAndLogging: Handle = async ({ event, resolve }) => {
 	return response;
 };
 
-export const handle: Handle = sequence(Sentry.sentryHandle(), securityAndLogging);
+export const handle: Handle = sequence(csrfProtect, Sentry.sentryHandle(), securityAndLogging);
 
 const fallbackError: HandleServerError = ({ error, event }) => {
 	log.error('unhandled_error', { method: event.request.method, path: event.url.pathname }, error);
