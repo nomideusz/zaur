@@ -256,11 +256,14 @@
 					</div>
 				{:else if onMailThread && readerCtx}
 					<div class="z-mobile-topbar__reader-actions shrink-0">
+						<!-- Props are lazy getters: the child can re-read them after an account
+						     switch nulls mobileShell.reader but before this block tears down,
+						     so every access must tolerate readerCtx being gone (JAVASCRIPT-B). -->
 						<MessageThreadActions
-							thread={readerCtx.thread}
-							mailboxRouteId={readerCtx.mailboxRouteId}
-							onMoved={readerCtx.onMoved}
-							onBackToList={readerCtx.onBackToList}
+							thread={readerCtx?.thread ?? []}
+							mailboxRouteId={readerCtx?.mailboxRouteId ?? INBOX_MAILBOX_ROUTE_ID}
+							onMoved={readerCtx?.onMoved}
+							onBackToList={readerCtx?.onBackToList}
 							menuPlacement="bottom"
 							menuId="topbar-reader-actions-menu"
 							variant="topbar"

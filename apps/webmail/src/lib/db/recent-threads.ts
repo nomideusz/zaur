@@ -55,7 +55,10 @@ export async function cacheMessagePreviews(
 	if (!db || !messages.length) return;
 
 	const cachedAt = Date.now();
-	await db.recentThreads.bulkUpsert(messages.map((message) => toDoc(accountId, message, cachedAt)));
+	// A listing can repeat an email id (RxDB rejects duplicate primary keys in
+	// one bulk write with COL22) — keep the last occurrence per id.
+	const docs = new Map(messages.map((message) => [message.id, toDoc(accountId, message, cachedAt)]));
+	await db.recentThreads.bulkUpsert([...docs.values()]);
 
 	const overflow = await db.recentThreads
 		.find({
