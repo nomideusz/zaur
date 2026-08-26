@@ -17,7 +17,6 @@
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 	import { haptic } from '$lib/utils/haptics';
 	import Button from '$lib/components/ui/Button.svelte';
-	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
@@ -243,7 +242,7 @@
 		<h2 class="z-type-pane-title min-w-0 truncate">{listTitle}</h2>
 	</div>
 
-	<!-- Mobile chrome is just the top search bar + island; the title and Add live
+	<!-- Mobile chrome is just the top search bar + FAB; the title and Add live
 	     there. Desktop keeps an inline search and the add form renders inline. -->
 	<div class="contents">
 		{#if showAddForm}
@@ -291,7 +290,7 @@
 			</form>
 		{/if}
 
-		<!-- Desktop keeps the inline filter; mobile searches from the top bar + island. -->
+		<!-- Desktop keeps the inline filter; mobile searches from the top bar. -->
 		<div class="hidden shrink-0 border-b border-border/80 px-4 py-3 md:block">
 			<label class="relative block">
 				<span class="sr-only">Search contacts</span>

@@ -2,8 +2,6 @@ import type { Component } from 'svelte';
 import Calendar from '$lib/components/icons/Calendar.svelte';
 import FileText from '$lib/components/icons/FileText.svelte';
 import Mail from '$lib/components/icons/Mail.svelte';
-import Search from '$lib/components/icons/Search.svelte';
-import Settings from '$lib/components/icons/Settings.svelte';
 import Users from '$lib/components/icons/Users.svelte';
 import { isMailPath } from '$lib/mail/routes';
 import { calendar } from '$lib/stores/calendar.svelte';
@@ -20,8 +18,8 @@ export type AppNavItem = {
 
 /**
  * Single source of truth for top-level app navigation (Mail, Contacts,
- * Calendar, Files). Consumed by the desktop header switcher and the mobile bottom nav
- * so both stay in sync. Settings is intentionally excluded — it lives in the
+ * Calendar, Files). Consumed by the desktop header switcher and the
+ * mobile drawer's UserMenu so both stay in sync. Settings is intentionally excluded — it lives in the
  * account/avatar menu, not the app switcher. Call inside a reactive context —
  * it reads the calendar/settings stores.
  */
@@ -64,37 +62,6 @@ export function appNavItems(): AppNavItem[] {
 				]
 			: [])
 	];
-}
-
-/**
- * App switcher items plus Search/Settings for the mobile tab bar.
- * Search lives under /mail/*, so Mail is suppressed while searching.
- */
-export function mobileNavItems(): AppNavItem[] {
-	return [
-		...appNavItems(),
-		{
-			id: 'search',
-			href: '/mail/search',
-			label: 'Search',
-			icon: Search,
-			isActive: (path) => path.startsWith('/mail/search')
-		},
-		{
-			id: 'settings',
-			href: '/settings/account',
-			label: 'Settings',
-			icon: Settings,
-			isActive: (path) => path.startsWith('/settings')
-		}
-	];
-}
-
-/** The mobile nav item that's active for `path`, if any. */
-export function activeMobileNavItem(path: string): AppNavItem | undefined {
-	const items = mobileNavItems();
-	const onSearch = path.startsWith('/mail/search');
-	return items.find((item) => (item.id === 'mail' && onSearch ? false : item.isActive(path)));
 }
 
 export type TopSearchSection = {

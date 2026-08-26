@@ -451,7 +451,7 @@
 			level > 0 && 'z-swipe-row__pane--armed',
 			level === 2 && 'z-swipe-row__pane--armed-deep'
 		)}
-		style="width: {width}px;"
+		style="--z-swipe-pane-width: {width}px;"
 		aria-hidden="true"
 	>
 		<div class="z-swipe-row__pane-content">

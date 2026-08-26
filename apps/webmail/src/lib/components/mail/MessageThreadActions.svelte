@@ -2,7 +2,6 @@
 	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
-	import Archive from '$lib/components/icons/Archive.svelte';
 	import Copy from '$lib/components/icons/Copy.svelte';
 	import Eye from '$lib/components/icons/Eye.svelte';
 	import EyeOff from '$lib/components/icons/EyeOff.svelte';
@@ -48,16 +47,15 @@
 		onMoved?: () => void;
 		/** Navigate to the list after marking unread (Important triage). */
 		onBackToList?: () => void;
-		/** Overflow menu opens away from the toolbar — 'top' inside the island. */
+		/** Overflow menu opens away from the toolbar. */
 		menuPlacement?: 'top' | 'bottom';
 		/** Unique menu id — desktop reader header vs mobile top bar. */
 		menuId?: string;
 		/**
 		 * `default` — desktop reader header (text links).
-		 * `island` — legacy floating dock (unused; kept for lab/tests).
 		 * `topbar` — compact icons + Reply in the sticky mobile top bar.
 		 */
-		variant?: 'default' | 'island' | 'topbar';
+		variant?: 'default' | 'topbar';
 	}
 
 	let {
@@ -70,22 +68,11 @@
 		variant = 'default'
 	}: Props = $props();
 
-	const isIsland = $derived(variant === 'island');
 	const isTopbar = $derived(variant === 'topbar');
-	const isCompact = $derived(isIsland || isTopbar);
-	const iconBtnClass = $derived(
-		isTopbar ? 'z-mobile-topbar__icon-btn' : 'z-mobile-island__icon-btn'
-	);
-	const iconBtnAccentClass = $derived(
-		isTopbar
-			? 'z-mobile-topbar__icon-btn z-mobile-topbar__icon-btn--accent'
-			: 'z-mobile-island__icon-btn z-mobile-island__icon-btn--accent'
-	);
-	const iconBtnDangerClass = $derived(
-		isTopbar
-			? 'z-mobile-topbar__icon-btn z-mobile-topbar__icon-btn--danger'
-			: 'z-mobile-island__icon-btn z-mobile-island__icon-btn--danger'
-	);
+	const isCompact = $derived(isTopbar);
+	const iconBtnClass = 'z-chrome-icon-btn';
+	const iconBtnAccentClass = 'z-chrome-icon-btn z-chrome-icon-btn--accent';
+	const iconBtnDangerClass = 'z-chrome-icon-btn z-chrome-icon-btn--danger';
 
 	const pane = getContext<MailPaneContext | undefined>(MAIL_PANE_CTX);
 
@@ -103,16 +90,6 @@
 	);
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
 	const canMarkImportant = $derived(canMarkImportantFromMailboxRole(currentMailbox?.role));
-	const archiveMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'archive'));
-	const canArchive = $derived(
-		!!archiveMailbox &&
-			currentMailbox?.role !== 'archive' &&
-			currentMailbox?.role !== 'trash' &&
-			currentMailbox?.role !== 'drafts' &&
-			currentMailbox?.role !== 'junk' &&
-			!isDraft &&
-			!isScheduled
-	);
 	const allowExternal = $derived(!settings.blockExternalContent || pane?.showImagesOnce);
 	const hasBlockedExternal = $derived(
 		thread.some((message) =>
@@ -212,16 +189,6 @@
 		const permanent = currentMailbox?.role === 'trash';
 		if (!(await settings.confirmDeleteMessage(1, permanent))) return;
 		void withClient((client) => mail.deleteMessage(client, actionMessage, mailboxRouteId));
-	}
-
-	async function archiveMessage() {
-		if (!auth.client || !actionMessage || !archiveMailbox) return;
-		try {
-			await mail.moveMessage(auth.client, actionMessage, 'archive');
-			onMoved?.();
-		} catch (error) {
-			toast.show(errorMessage(error, 'Could not archive'), 'error');
-		}
 	}
 
 	function toggleImportant() {
@@ -403,16 +370,6 @@
 		{/if}
 
 		{#if isCompact && !isDraft && !isScheduled}
-			{#if canArchive}
-				<button
-					type="button"
-					class={iconBtnClass}
-					aria-label="Archive"
-					onclick={() => void archiveMessage()}
-				>
-					<Archive class="size-[1.125rem]" aria-hidden="true" />
-				</button>
-			{/if}
 			<button
 				type="button"
 				class={iconBtnDangerClass}

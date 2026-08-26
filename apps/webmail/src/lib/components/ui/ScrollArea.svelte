@@ -10,7 +10,7 @@
 		viewportRef?: HTMLElement | null;
 		/** Vertical-only omits the horizontal scrollbar and corner (message lists). */
 		orientation?: 'vertical' | 'both';
-		/** Mobile island clearance + scroll padding (message/settings panes). */
+		/** Mobile chrome clearance + scroll padding (message/settings panes). */
 		pane?: boolean;
 		/** Stretch content to viewport height (message list load-more footer). */
 		fill?: boolean;
@@ -44,7 +44,7 @@
 				'z-scroll-area__content flex w-full min-w-0 flex-col',
 				/* flex-1, not min-h-full: percentage min-height would override the
 				   flex min-height:auto floor and let tall content overflow the box
-				   (escaping the mobile island clearance padding). */
+				   (escaping the mobile chrome clearance padding). */
 				fill && 'flex-1'
 			)}
 		>

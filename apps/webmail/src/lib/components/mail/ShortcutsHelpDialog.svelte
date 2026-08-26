@@ -16,7 +16,7 @@
 		{ label: 'Range select', keys: 'Shift+x · Shift+j · Shift+k' },
 		{ label: 'Select all / none / unseen / seen', keys: '* a · * n · * u · * r' },
 		{ label: 'Mark seen / toggle unseen', keys: 's · u' },
-		{ label: 'Archive / move menu / trash', keys: 'e · v · #' },
+		{ label: 'Move menu / trash', keys: 'v · #' },
 		{ label: 'Compose / search / settings', keys: 'c · / · ,' },
 		{ label: 'Go to folder', keys: 'g i · g s · g d · g a · g t · g j' },
 		{ label: 'Reply / reply all / forward', keys: 'r · a · f' },

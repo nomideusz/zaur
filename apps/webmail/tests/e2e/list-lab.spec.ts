@@ -118,7 +118,7 @@ test('long press on a row starts bulk selection', async ({ page }) => {
 	await expect(row.locator('.z-mail-list-checkbox-col')).toBeVisible();
 });
 
-test('staged swipe exposes arm levels on the row shell', async ({ page }) => {
+test('swipe arms its single action and never a deep tier', async ({ page }) => {
 	await page.goto('/list-lab');
 	const row = page.locator('.z-mail-list-row').first();
 	const foreground = row.locator('.z-swipe-row__foreground');
@@ -153,8 +153,8 @@ test('staged swipe exposes arm levels on the row shell', async ({ page }) => {
 		clientY: b.y + b.height / 2,
 		button: 0
 	});
-	/* Lab seeds an Archive mailbox — deep leading tier must arm. */
-	await expect(swipe).toHaveAttribute('data-arm-level', '2');
+	/* Single-action swipe — a deeper pull never arms a second tier. */
+	await expect(swipe).toHaveAttribute('data-arm-level', '1');
 
 	await foreground.dispatchEvent('pointerup', {
 		pointerType: 'touch',

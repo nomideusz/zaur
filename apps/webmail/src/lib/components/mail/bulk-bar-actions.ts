@@ -17,7 +17,6 @@ export type BulkBarActionId =
 	| 'not-important'
 	| 'spam'
 	| 'restore'
-	| 'archive'
 	| 'trash'
 	| 'cancel';
 
@@ -25,8 +24,6 @@ export type BulkBarAction = {
 	id: BulkBarActionId;
 	label: string;
 	variant: 'link' | 'danger';
-	/** Inline display priority — lower goes inline first (1 = Highlight, always inline). */
-	priority: number;
 };
 
 export function bulkBarActions(options: {
@@ -38,8 +35,6 @@ export function bulkBarActions(options: {
 	/** Inbox exists and the current view is Spam, Trash, or Archive. */
 	canRestore?: boolean;
 	restoreLabel?: string;
-	/** Archive folder exists and the current view isn't Archive/Trash/Drafts/Spam. */
-	canArchive?: boolean;
 	deleteLabel: string;
 }): BulkBarAction[] {
 	const {
@@ -49,7 +44,6 @@ export function bulkBarActions(options: {
 		canMarkSpam = false,
 		canRestore = false,
 		restoreLabel = 'Move to inbox',
-		canArchive = false,
 		deleteLabel
 	} = options;
 	const readCount = bulkSelectionReadCount(counts);
@@ -59,8 +53,7 @@ export function bulkBarActions(options: {
 		actions.push({
 			id: 'unsee',
 			label: bulkAffectedLabel(LABEL_UNSEE, readCount, selectedCount),
-			variant: 'link',
-			priority: 2
+			variant: 'link'
 		});
 	}
 
@@ -68,8 +61,7 @@ export function bulkBarActions(options: {
 		actions.push({
 			id: 'mark-seen',
 			label: bulkAffectedLabel(LABEL_MARK_SEEN, counts.new, selectedCount),
-			variant: 'link',
-			priority: 2
+			variant: 'link'
 		});
 	}
 
@@ -77,8 +69,7 @@ export function bulkBarActions(options: {
 		actions.push({
 			id: 'important',
 			label: bulkAffectedLabel(LABEL_MARK_IMPORTANT, counts.notImportant, selectedCount),
-			variant: 'link',
-			priority: 1
+			variant: 'link'
 		});
 	}
 
@@ -86,70 +77,20 @@ export function bulkBarActions(options: {
 		actions.push({
 			id: 'not-important',
 			label: bulkAffectedLabel(LABEL_NOT_IMPORTANT, counts.important, selectedCount),
-			variant: 'link',
-			priority: 1
+			variant: 'link'
 		});
 	}
 
 	if (canRestore) {
-		actions.push({ id: 'restore', label: restoreLabel, variant: 'link', priority: 1 });
+		actions.push({ id: 'restore', label: restoreLabel, variant: 'link' });
 	}
 
 	if (canMarkSpam) {
-		actions.push({ id: 'spam', label: 'Mark spam', variant: 'link', priority: 3 });
+		actions.push({ id: 'spam', label: 'Mark spam', variant: 'link' });
 	}
 
-	if (canArchive) {
-		/* Priority 1 keeps Archive inline with Highlight when space is tight. */
-		actions.push({ id: 'archive', label: 'Archive', variant: 'link', priority: 1 });
-	}
-
-	actions.push({ id: 'trash', label: deleteLabel, variant: 'danger', priority: 0 });
-	actions.push({ id: 'cancel', label: 'Cancel', variant: 'link', priority: 99 });
+	actions.push({ id: 'trash', label: deleteLabel, variant: 'danger' });
+	actions.push({ id: 'cancel', label: 'Cancel', variant: 'link' });
 
 	return actions;
-}
-
-/** Rough rendered width of an inline action button (icon + gap + label + padding). */
-export function estimateBulkActionWidth(action: Pick<BulkBarAction, 'label'>): number {
-	return 46 + action.label.length * 7.5;
-}
-
-/**
- * Split mark actions into inline buttons and overflow-menu entries based on
- * the measured width of the actions area. The highest-priority action
- * (Highlight) always stays inline regardless of space.
- */
-export function fitBulkActions(
-	actions: BulkBarAction[],
-	availableWidth: number,
-	options?: { reservedWidth?: number; actionWidth?: number; moreAlwaysShown?: boolean }
-): { inline: BulkBarAction[]; overflow: BulkBarAction[] } {
-	// Trash button + separators + the More trigger itself.
-	const reserved = options?.reservedWidth ?? 150;
-	const byPriority = [...actions].sort((a, b) => a.priority - b.priority);
-
-	const inlineIds = new Set<BulkBarActionId>();
-	let used = reserved;
-	for (const action of byPriority) {
-		const width = options?.actionWidth ?? estimateBulkActionWidth(action);
-		// Priority 1 (Highlight family) always stays inline.
-		if (action.priority <= 1 || used + width <= availableWidth) {
-			inlineIds.add(action.id);
-			used += width;
-		}
-	}
-
-	// The More trigger occupies a slot of its own (part of `reserved`) — a lone
-	// overflow action just takes that slot instead of a one-item menu. Only
-	// when the trigger would actually disappear: the bar also shows More for
-	// Move targets, and claiming its slot while it still renders overflows the
-	// bar by one button (which pushed the close button outside the capsule).
-	const overflowing = actions.filter((action) => !inlineIds.has(action.id));
-	if (overflowing.length === 1 && !options?.moreAlwaysShown) inlineIds.add(overflowing[0].id);
-
-	return {
-		inline: actions.filter((action) => inlineIds.has(action.id)),
-		overflow: actions.filter((action) => !inlineIds.has(action.id))
-	};
 }

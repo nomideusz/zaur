@@ -255,10 +255,6 @@
 			font-weight: 500;
 		}
 
-		.z-mail-view .z-mail-list-pane-header .z-mobile-picker-trigger__label {
-			line-height: 1;
-		}
-
 		:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header .z-icon-tap-target,
 		:is(.z-mail-view, .z-settings-page) .z-mail-list-pane-header .z-btn-icon {
 			display: inline-grid;
@@ -563,6 +559,32 @@
 		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row,
 		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__foreground {
 			width: 100%;
+		}
+
+		/*
+		 * Swipe panes reach the card edges. The swipe container starts after the
+		 * reserved checkbox gutter (and inside the row padding), so panes extend
+		 * past it by the same amounts; the row <li>'s overflow:hidden + radius
+		 * does the corner clipping instead of the swipe container.
+		 */
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row.z-swipe-row {
+			/* contain: paint (set below for lists) would clip the extended panes. */
+			overflow: visible;
+			contain: none;
+		}
+
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__pane--leading {
+			--z-swipe-pane-gutter: calc(
+				var(--z-mail-list-row-pad-x) + var(--z-mail-list-checkbox-col) +
+					var(--z-mail-list-checkbox-gap)
+			);
+			left: calc(-1 * var(--z-swipe-pane-gutter));
+			width: calc(var(--z-swipe-pane-width, 0px) + var(--z-swipe-pane-gutter));
+		}
+
+		.z-mail-view .z-mail-list-flow--selectable .z-mail-list-swipe-row .z-swipe-row__pane--trailing {
+			right: calc(-1 * var(--z-mail-list-row-pad-x));
+			width: calc(var(--z-swipe-pane-width, 0px) + var(--z-mail-list-row-pad-x));
 		}
 	}
 

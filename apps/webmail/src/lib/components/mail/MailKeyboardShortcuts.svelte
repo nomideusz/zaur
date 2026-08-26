@@ -213,11 +213,6 @@
 		else await mail.markMessageNew(auth.client, message);
 	}
 
-	async function archiveTarget(message: MessagePreview) {
-		if (!auth.client) return;
-		await mail.moveMessage(auth.client, message, 'archive');
-	}
-
 	async function trashTarget(message: MessagePreview, routeId: string) {
 		if (!auth.client) return;
 		const mailbox = mail.mailboxByRouteId(routeId);
@@ -496,23 +491,6 @@
 						} else if (read.length) {
 							await mail.bulkMarkAsNew(auth.client!);
 						}
-					}
-				);
-				return;
-			}
-
-			if (key === 'e') {
-				event.preventDefault();
-				if (mode === 'reader') {
-					void withLatest((message) => archiveTarget(message), { leaveThread: true });
-					return;
-				}
-				void withCursorOrSelection(
-					(message) => archiveTarget(message),
-					async () => {
-						const archive = mail.mailboxes.find((mb) => mb.role === 'archive');
-						if (!archive) return;
-						await mail.bulkMoveToMailbox(auth.client!, archive.id);
 					}
 				);
 				return;

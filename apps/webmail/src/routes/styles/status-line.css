@@ -11,10 +11,10 @@
 		--z-toast-bottom: max(0.75rem, env(safe-area-inset-bottom));
 	}
 
-	/* Toasts stack above the floating island on phones. */
+	/* Toasts stack above the mobile FAB on phones. */
 	@media (max-width: 767px) {
 		:root {
-			--z-toast-bottom: var(--z-island-clearance);
+			--z-toast-bottom: var(--z-mobile-chrome-clearance);
 		}
 	}
 

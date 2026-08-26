@@ -17,7 +17,7 @@
 	import { getContext } from 'svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
-	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
+	import { mobileShell } from '$lib/stores/mobile-shell.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { renderMessageBody } from '$lib/email/html';
 	import {
@@ -78,16 +78,16 @@
 	});
 
 
-	/* Mobile: top bar owns Back + thread actions (no floating island). */
+	/* Mobile: top bar owns Back + thread actions. */
 	$effect(() => {
-		const generation = mobileIsland.setReader({
+		const generation = mobileShell.setReader({
 			listHref,
 			thread,
 			mailboxRouteId,
 			onMoved,
 			onBackToList
 		});
-		return () => mobileIsland.clearReader(generation);
+		return () => mobileShell.clearReader(generation);
 	});
 	const allowExternal = $derived(
 		!settings.blockExternalContent || (pane?.showImagesOnce ?? localShowImagesOnce)

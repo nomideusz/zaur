@@ -4,9 +4,6 @@
 	// a row exercises the real gesture path. Cursor buttons drive listCursorId for
 	// keyboard-triage visuals without opening threads.
 	//
-	// Archive + junk mailboxes are seeded so staged swipe deep tiers (Archive /
-	// Spam) resolve the same way they do in a live session.
-	//
 	// Dates are newest-first after collapseMessagesByThread sorts — put the
 	// geometry fixture (long subject + icons) on the newest message.
 	import { onMount } from 'svelte';

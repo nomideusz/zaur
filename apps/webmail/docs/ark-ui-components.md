@@ -62,7 +62,7 @@ unticked until a need appears.
 | ~~`fieldset`~~ ✅ | Settings groups; `disabled` when security is unverified. |
 | ~~`tabs`~~ ✅ | Calendar Week / Day / Agenda. Still open: settings sections. |
 | ~~`file-upload`~~ ✅ | Compose attach + dropzone. |
-| ~~`drawer`~~ ✅ | Mobile nav / account switcher sheets. Still open: MobileSheet → Drawer. |
+| ~~`drawer`~~ ✅ | Mobile nav drawer (`shell/NavDrawer.svelte`). Still open: MobileSheet → Drawer. |
 | ~~`scroll-area`~~ ✅ | Mail, settings, reader, contacts, calendar panes. |
 | ~~`progress`~~ ✅ | PDF download, storage quota, indeterminate compose upload rows. |
 
@@ -75,7 +75,7 @@ unticked until a need appears.
 | ~~`password-input`~~ ✅ | `ui/PasswordInput.svelte`; `LabelInput` password path; security passwords. |
 | ~~`pin-input`~~ ✅ | `ui/PinInput.svelte`; login TOTP + security OTP. |
 | ~~`radio-group`~~ ✅ | `ui/RadioGroup.svelte`; Appearance theme. |
-| ~~`avatar`~~ ✅ | `ui/Avatar.svelte`; account rail + account switcher. |
+| `avatar` | **Removed 2026-08** — the account rail/switcher sheet went away with the mobile island; account identity lives in `shell/UserMenu.svelte`. |
 | `pagination` | **Deferred** — mail/search use infinite `loadMore`, not page numbers. |
 | `accordion` | **Deferred** — Shortcuts help is a short flat list; settings keep Fieldset IA. |
 | `editable` | **Deferred** — folder rename already uses `TreeView.NodeRenameInput`; no contact edit UI. |
@@ -89,7 +89,7 @@ unticked until a need appears.
 | ~~`focus-trap`~~ ✅ | `ui/FocusTrap.svelte` + `ui/MobileSheet.svelte`. |
 | ~~`download-trigger`~~ ✅ | `ui/DownloadButton.svelte`; attachment list + preview. |
 | ~~`qr-code`~~ ✅ | TOTP setup in `settings/sections/security.svelte` (replaced `qrcode` npm). |
-| `segment-group` | **Intentionally custom** — `ui/segment-group/*` supports navigational `href` / static items; Ark’s is radio-label based. |
+| `segment-group` | **Removed 2026-08** — the mobile segment rails were replaced by hamburger-drawer navigation; no segment control remains. |
 | `floating-panel` | Lab only — `/floating-compose-lab`. Do not promote without a product decision. |
 | `hover-card` | Still open — sender/contact preview. |
 | `carousel` | Files image browser (`files/FileImageBrowser.svelte`). |
@@ -123,7 +123,7 @@ internal building block rather than a user-facing component.
 | `pin-input` | [x] | `src/lib/components/ui/PinInput.svelte`; `routes/login/+page.svelte`; `settings/sections/security.svelte` |
 | `radio-group` | [x] | `src/lib/components/ui/RadioGroup.svelte`; `settings/sections/appearance.svelte` |
 | `rating-group` | [ ] | |
-| `segment-group` | [ ] | custom Shark UI port at `src/lib/components/ui/segment-group/*` (not `@ark-ui/svelte/segment-group`) |
+| `segment-group` | [ ] | removed 2026-08 (was a custom Shark UI port; mobile rails replaced by drawer nav) |
 | `select` | [x] | `src/lib/components/ui/MobilePicker.svelte` |
 | `signature-pad` | [ ] | |
 | `slider` | [ ] | |
@@ -148,7 +148,7 @@ internal building block rather than a user-facing component.
 | Component | Used | Used in |
 | --- | :---: | --- |
 | `dialog` | [x] | `src/lib/components/ui/ConfirmDialog.svelte`, `mail/AttachmentPreview.svelte`, `mail/CreateFolderDialog.svelte`, `shell/WelcomeOnboarding.svelte` |
-| `drawer` | [x] | `src/lib/components/shell/NavDrawer.svelte`, `shell/AccountSwitcherSheet.svelte` |
+| `drawer` | [x] | `src/lib/components/shell/NavDrawer.svelte` |
 | `floating-panel` | [x] | lab: `routes/floating-compose-lab/+page.svelte`, `lab/FloatingComposeLab.svelte` |
 | `hover-card` | [ ] | |
 | `popover` | [x] | `src/lib/components/mail/RichTextEditor.svelte`, `shell/OutboxMenu.svelte` |
@@ -167,7 +167,7 @@ internal building block rather than a user-facing component.
 | Component | Used | Used in |
 | --- | :---: | --- |
 | `accordion` | [ ] | deferred — no strong surface yet |
-| `avatar` | [x] | `src/lib/components/ui/Avatar.svelte`; `shell/island/IslandAccountRail.svelte`, `shell/AccountSwitcherSheet.svelte` |
+| `avatar` | [ ] | removed 2026-08 with the island account rail |
 | `carousel` | [x] | `src/lib/components/files/FileImageBrowser.svelte` |
 | `collapsible` | [x] | `mail/MessageReaderCore.svelte`; compose quoted reply in `mail/ComposePanel.svelte` |
 | `image-cropper` | [ ] | |

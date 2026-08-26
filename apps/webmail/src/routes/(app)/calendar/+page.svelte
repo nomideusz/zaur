@@ -240,14 +240,16 @@
 				{/if}
 				<Button variant="ghost" onclick={goToday}>Today</Button>
 
-				<!-- Desktop keeps the view switcher inline; mobile moves it to the island. -->
 				<div class="hidden h-4 w-px bg-border/80 md:block" aria-hidden="true"></div>
 
-				<Tabs.List class="hidden items-center rounded-lg border border-border/50 bg-surface-sunken/60 p-0.5 md:flex">
+				<Tabs.List
+					aria-label="Calendar views"
+					class="flex items-center rounded-lg border border-border/50 bg-surface-sunken/60 p-0.5"
+				>
 					{#each tabs as tab (tab.id)}
 						<Tabs.Trigger
 							value={tab.id}
-							class="rounded-md px-2.5 py-1 text-xs font-medium text-fg-muted transition-all duration-150 hover:text-fg data-[selected]:bg-surface-raised data-[selected]:font-semibold data-[selected]:text-fg data-[selected]:shadow-sm"
+							class="rounded-md px-2.5 py-1 text-xs font-medium text-fg-muted transition-all duration-150 hover:text-fg data-[selected]:bg-surface-raised data-[selected]:font-semibold data-[selected]:text-fg data-[selected]:shadow-sm max-md:min-h-11 max-md:px-3 max-md:text-sm"
 						>
 							{tab.label}
 						</Tabs.Trigger>

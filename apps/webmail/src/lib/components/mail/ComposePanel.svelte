@@ -12,7 +12,7 @@
 	import { formatAttachmentSize } from '$lib/attachments/upload';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
-	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
+	import { mobileShell } from '$lib/stores/mobile-shell.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { mailListHref, INBOX_MAILBOX_ROUTE_ID } from '$lib/mail/routes';
 	import { resolveSendFrom } from '$lib/mail/send-from';
@@ -384,7 +384,7 @@
 
 	/* Mobile top bar owns Back + Send/schedule; footer keeps a single Attach. */
 	$effect(() => {
-		const generation = mobileIsland.setCompose({
+		const generation = mobileShell.setCompose({
 			onBack: () => void saveDraftAndClose(),
 			onSend: () => void send(),
 			sendLabel,
@@ -402,7 +402,7 @@
 			customSendTimeMin,
 			formatScheduleTime: (date) => scheduleTimeFormat.format(date)
 		});
-		return () => mobileIsland.clearCompose(generation);
+		return () => mobileShell.clearCompose(generation);
 	});
 
 	function onBodyKeydown(event: KeyboardEvent) {

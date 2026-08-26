@@ -112,3 +112,40 @@ test('opens the branded account security center', { tag: '@auth' }, async ({ pag
 	});
 	await expect(page.getByRole('button', { name: 'Confirm', exact: true })).toBeVisible();
 });
+
+test.describe('mobile chrome', () => {
+	test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
+
+	test('hamburger-only navigation with a compose FAB', { tag: '@auth' }, async ({ page }) => {
+		await page.goto('/');
+		const welcome = page.getByRole('dialog', { name: 'Welcome to your mail' });
+		if (await welcome.isVisible({ timeout: 3_000 }).catch(() => false)) {
+			await welcome.getByRole('button', { name: 'Skip' }).click();
+		}
+
+		const topbar = page.getByTestId('mobile-topbar');
+		await expect(topbar).toBeVisible({ timeout: 30_000 });
+		// The hamburger is the only navigation control in the top bar.
+		await expect(topbar.getByRole('button', { name: 'Apps and folders' })).toBeVisible();
+		await expect(topbar.getByRole('navigation')).toHaveCount(0);
+
+		// The floating primary action is a plain compose link.
+		const fab = page.getByTestId('mobile-fab');
+		await expect(fab).toBeVisible();
+		await expect(fab.getByRole('link', { name: 'New' })).toHaveAttribute('href', '/mail/compose');
+
+		// Hamburger opens the drawer: app links + account rail + folders, no search.
+		await topbar.getByRole('button', { name: 'Apps and folders' }).click();
+		const drawer = page.getByRole('dialog', { name: 'Navigation' });
+		await expect(drawer).toBeVisible();
+		await expect(
+			drawer.getByRole('navigation', { name: 'Apps' }).getByRole('link', { name: 'Contacts' })
+		).toBeVisible();
+		await expect(drawer.getByRole('button', { name: 'Search' })).toHaveCount(0);
+		await drawer.getByRole('link', { name: 'Unseen' }).click();
+		await expect(page).toHaveURL(/filter=unseen/);
+		// Drawer closes after navigating; the top bar titles the filtered view.
+		await expect(drawer).not.toBeVisible();
+		await expect(topbar).toContainText('Unseen');
+	});
+});

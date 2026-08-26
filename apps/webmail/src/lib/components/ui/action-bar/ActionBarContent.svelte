@@ -39,12 +39,20 @@
 	});
 
 	const show = $derived(mounted && (actionBar.isOpen || !actionBar.unmountOnExit));
+
+	/* An open inline dock owns the bottom edge — phones lift toasts above it
+	   via html[data-z-dock] (tokens.css). */
+	$effect(() => {
+		if (!inline || !actionBar.isOpen) return;
+		document.documentElement.toggleAttribute('data-z-dock', true);
+		return () => document.documentElement.removeAttribute('data-z-dock');
+	});
 </script>
 
 {#if show && actionBar.isOpen}
 	{#if inline}
 		<div
-			class="z-action-bar-positioner z-action-bar-positioner--inline flex shrink-0 justify-center px-4 max-md:hidden"
+			class="z-action-bar-positioner z-action-bar-positioner--inline flex shrink-0 justify-center px-4"
 			data-placement="inline"
 			data-slot="action-bar-positioner"
 			data-state="open"

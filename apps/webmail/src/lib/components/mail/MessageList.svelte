@@ -10,21 +10,16 @@
 	import MessageListToolbar from '$lib/components/mail/MessageListToolbar.svelte';
 	import MessageListStatus from '$lib/components/mail/MessageListStatus.svelte';
 	import MessageListSkeleton from '$lib/components/mail/MessageListSkeleton.svelte';
-	import Archive from '$lib/components/icons/Archive.svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Reply from '$lib/components/icons/Reply.svelte';
-	import ChevronLeft from '$lib/components/icons/ChevronLeft.svelte';
 	import Eye from '$lib/components/icons/Eye.svelte';
 	import EyeOff from '$lib/components/icons/EyeOff.svelte';
-	import Important from '$lib/components/icons/Important.svelte';
 	import Inbox from '$lib/components/icons/Inbox.svelte';
-	import ShieldAlert from '$lib/components/icons/ShieldAlert.svelte';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import RefreshCw from '$lib/components/icons/RefreshCw.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { createPullToRefresh } from '$lib/utils/pull-to-refresh.svelte';
 	import { haptic } from '$lib/utils/haptics';
-	import { goto } from '$app/navigation';
 	import {
 		listSwipeContext,
 		listSwipeLeadingActions,
@@ -52,14 +47,12 @@
 	import { mapEmailPreview } from '$lib/jmap/map';
 	import { isAccountSettingsSubject } from '$lib/settings/account-settings-types';
 	import { auth } from '$lib/stores/auth.svelte';
-	import { appConfig } from '$lib/config';
 	import { mail } from '$lib/stores/mail.svelte';
-	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { Mailbox, MessagePreview } from '$lib/types/mail';
-	import { mailThreadHref, mailListHref } from '$lib/mail/routes';
+	import { mailThreadHref } from '$lib/mail/routes';
 	import { mailboxKindOrderForMailbox, moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { formatMessageListWhen, simpleMessageDayKey } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
@@ -70,8 +63,8 @@
 		shouldCommitImportantMarkerPick
 	} from '$lib/mail/important-marker.svelte';
 	import ImportantSubjectHighlight from '$lib/components/mail/ImportantSubjectHighlight.svelte';
-	import { LABEL_SEEN, LABEL_UNSEEN } from '$lib/mail/new-mail';
-	import { inboxNormalSectionDefaultVisible, inboxImportantSectionCanShowMore } from '$lib/mail/inbox-list-sections';
+	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
+	import { inboxNormalSectionDefaultVisible } from '$lib/mail/inbox-list-sections';
 	import {
 		canMarkImportantFromMailboxRole,
 		isExcludedFromImportantSection,
@@ -419,8 +412,6 @@
 	});
 
 	function handleMobileBulkLongPress(messageId: string) {
-		/* Selection owns the island — expand if it was scroll-collapsed. */
-		mobileIsland.expand();
 		/* Already selecting: long-press joins the selection instead of restarting it. */
 		if (mail.hasSelection) {
 			if (!mail.selectedMessageIds.has(messageId)) {
@@ -451,22 +442,7 @@
 
 	function swipeContext(message: MessagePreview, routeId: string) {
 		const mailbox = mail.mailboxByRouteId(routeId);
-		const role = mailbox?.role;
-		const hasArchive = mail.mailboxes.some((mb) => mb.role === 'archive' && mb.jmapId);
 		return listSwipeContext(message, mailbox, {
-			canMarkImportant: mail.canMarkImportantInMailbox(mailbox),
-			canMarkSpam:
-				mail.mailboxes.some((mb) => mb.role === 'junk') &&
-				role !== 'junk' &&
-				role !== 'trash' &&
-				role !== 'drafts' &&
-				role !== 'sent',
-			canArchive:
-				hasArchive &&
-				role !== 'archive' &&
-				role !== 'trash' &&
-				role !== 'drafts' &&
-				role !== 'junk',
 			hasInbox: mail.mailboxes.some((mb) => mb.role === 'inbox' && mb.jmapId)
 		});
 	}
@@ -474,11 +450,7 @@
 	const SWIPE_ACTION_ICONS: Record<string, SwipeAction['icon']> = {
 		'mark-seen': Eye,
 		unsee: EyeOff,
-		'mark-important': Important,
-		'remove-important': Important,
-		archive: Archive,
 		'move-inbox': Inbox,
-		spam: ShieldAlert,
 		trash: Trash2,
 		'delete-forever': Trash2,
 		'delete-draft': Trash2
@@ -494,7 +466,6 @@
 			label: action.label,
 			variant: action.variant,
 			dismiss: action.dismiss,
-			tier: action.tier,
 			icon: SWIPE_ACTION_ICONS[action.id],
 			onAction: () => runSwipeAction(action.id, message, routeId)
 		}));
@@ -512,14 +483,7 @@
 		);
 	}
 
-	const SWIPE_DISMISS_IDS = new Set([
-		'move-inbox',
-		'archive',
-		'spam',
-		'trash',
-		'delete-forever',
-		'delete-draft'
-	]);
+	const SWIPE_DISMISS_IDS = new Set(['move-inbox', 'trash', 'delete-forever', 'delete-draft']);
 
 	/** Stamp the row before a dismiss mutate so `out:rowExit` skips a second fade. */
 	function markSwipeDismissing(messageId: string) {
@@ -542,17 +506,10 @@
 		switch (actionId) {
 			case 'move-inbox':
 				return swipeMoveToInbox(message);
-			case 'mark-important':
-			case 'remove-important':
-				return swipeToggleImportant(message);
-			case 'archive':
-				return swipeArchive(message);
 			case 'mark-seen':
 				return swipeMutate(() => mail.markMessageDone(auth.client!, message), 'Could not mark seen');
 			case 'unsee':
 				return swipeMutate(() => mail.markMessageNew(auth.client!, message), 'Could not restore Unseen');
-			case 'spam':
-				return swipeMarkSpam(message);
 			case 'trash':
 			case 'delete-forever':
 			case 'delete-draft':
@@ -575,26 +532,6 @@
 
 	function swipeMoveToInbox(message: MessagePreview): Promise<boolean> {
 		return swipeMutate(() => mail.moveMessage(auth.client!, message, 'inbox'), 'Move failed');
-	}
-
-	function swipeToggleImportant(message: MessagePreview): Promise<boolean> {
-		return swipeMutate(
-			() => mail.toggleImportant(auth.client!, message),
-			'Could not update highlight'
-		);
-	}
-
-	function swipeMarkSpam(message: MessagePreview): Promise<boolean> {
-		return swipeMutate(async () => {
-			await mail.moveMessage(auth.client!, message, 'junk');
-			toast.show('Moved to Spam', 'success');
-		}, 'Could not move to Spam');
-	}
-
-	function swipeArchive(message: MessagePreview): Promise<boolean> {
-		return swipeMutate(async () => {
-			await mail.moveMessage(auth.client!, message, 'archive');
-		}, 'Could not archive');
 	}
 
 	async function swipeDeleteMessage(message: MessagePreview, routeId: string): Promise<boolean> {

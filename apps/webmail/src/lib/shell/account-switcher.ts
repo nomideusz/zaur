@@ -1,8 +1,4 @@
-/** Pure helpers for multi-account switcher chrome (island rail, sheet, UserMenu). */
-
-export const ACCOUNT_RAIL_INLINE_MAX = 3;
-
-export type AccountRailMode = 'hidden' | 'inline' | 'overflow';
+/** Pure helpers for the multi-account UserMenu. */
 
 export type AccountSwitcherEntry = {
 	key: string;
@@ -36,19 +32,4 @@ export function otherAccountsUnreadSum(
 		total += unread[account.key] ?? 0;
 	}
 	return total;
-}
-
-/** Active account first, then the rest in existing order. */
-export function orderedAccountsForSwitcher(
-	accounts: readonly AccountSwitcherEntry[]
-): AccountSwitcherEntry[] {
-	const active = accounts.filter((account) => account.isActive);
-	const rest = accounts.filter((account) => !account.isActive);
-	return [...active, ...rest];
-}
-
-export function accountRailMode(accountCount: number): AccountRailMode {
-	if (accountCount <= 1) return 'hidden';
-	if (accountCount <= ACCOUNT_RAIL_INLINE_MAX) return 'inline';
-	return 'overflow';
 }

@@ -8,7 +8,6 @@
 	import Settings from '$lib/components/icons/Settings.svelte';
 	import User from '$lib/components/icons/User.svelte';
 	import UserPlus from '$lib/components/icons/UserPlus.svelte';
-	import { appNavItems } from '$lib/shell/app-nav';
 	import {
 		accountInitial,
 		formatUnreadBadge,
@@ -18,16 +17,7 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
 
-	let {
-		compact = false,
-		apps = false
-	}: {
-		compact?: boolean;
-		/** Include app links (Mail/Contacts/Calendar) — mobile, where no app switcher is visible. */
-		apps?: boolean;
-	} = $props();
-
-	const appItems = $derived(apps ? appNavItems() : []);
+	let { compact = false }: { compact?: boolean } = $props();
 
 	let open = $state(false);
 
@@ -128,26 +118,6 @@
 										{badge}
 									</span>
 								{/if}
-							</Menu.Item>
-						{/each}
-					</div>
-				{/if}
-
-				{#if appItems.length}
-					<div class="flex flex-col gap-1 border-b border-border p-1">
-						{#each appItems as item (item.id)}
-							{@const Icon = item.icon}
-							{@const isActive = item.isActive($page.url.pathname)}
-							<Menu.Item
-								class={cn('z-overflow-menu-item', isActive && 'z-surface-active')}
-								value={item.id}
-								valueText={item.label}
-								onSelect={() => goto(item.href)}
-							>
-								<span class="flex size-5 shrink-0 items-center justify-center">
-									<Icon class="size-4 text-fg-muted" aria-hidden="true" />
-								</span>
-								<span class="truncate">{item.label}</span>
 							</Menu.Item>
 						{/each}
 					</div>

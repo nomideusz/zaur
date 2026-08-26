@@ -1,12 +1,18 @@
 # Mobile webmail UI — 20-iteration production loop
 
+> **2026-08 update:** the floating island this loop was built around has since been
+> removed. Mobile chrome is now: sticky top bar (hamburger + title + search +
+> contextual actions), hamburger drawer for all navigation, one `MobileFab.svelte`
+> primary-action pill, and the shared inline bulk action bar. The table below is
+> historical; the working rules at the bottom are kept current.
+
 **Goal:** Ship a production-ready phone experience for Zaur webmail: no overlapping chrome,
-no duplicated copy, minimal forced truncation, correct safe-area / island clearance, and
+no duplicated copy, minimal forced truncation, correct safe-area / bottom-chrome clearance, and
 stable list → reader → compose flows at ≤767px.
 
 **Exit criteria (all must pass):**
 
-1. No element paints under the sticky top bar or over the floating island.
+1. No element paints under the sticky top bar or over the bottom chrome (FAB / bulk dock).
 2. Each piece of copy (subject, compose title, section label) appears once per screen.
 3. Subjects in the reader wrap fully; list subjects show up to two lines before ellipsis.
 4. Touch targets stay ≥44×44px; drawers/sheets clear the notch and home indicator.
@@ -41,14 +47,14 @@ mobile width, then commit if behavior changed.
 
 ## Follow-up (compose / reader chrome)
 
-After the loop: hide the floating island on compose + reader; put **Send** (+ schedule)
-and reader **Reply** actions in the sticky top bar; keep a single Attach in the compose
-footer. See `MobileTopBar.svelte` + `ComposeSendSplit.svelte`.
+Done: **Send** (+ schedule) and reader **Reply** actions live in the sticky top bar;
+compose keeps a single Attach in the footer. See `MobileTopBar.svelte` +
+`ComposeSendSplit.svelte`.
 
 ## Working rules
 
-- Prefer CSS tokens (`--z-mobile-topbar-height`, `--z-island-clearance`) over magic numbers.
+- Prefer CSS tokens (`--z-mobile-topbar-height`, `--z-mobile-chrome-clearance`) over magic numbers.
 - Prefer removing duplicate chrome over adding more truncation.
 - Keep desktop (`md+`) paths unchanged unless a shared token requires it.
-- Use unauthenticated labs (`/island-lab`, `/list-lab`, `/mobile-chrome-lab`) for layout proof
+- Use unauthenticated labs (`/list-lab`, `/mobile-chrome-lab`) for layout proof
   when a live session is unavailable.

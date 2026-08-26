@@ -78,28 +78,34 @@
 	--z-main-page-title: 1rem;
 	/* ~44rem ≈ 704px — Hobday-scale column, ~70 characters at body size. */
 	--z-content-max-width: 44rem;
-	/* Mobile floating island — clearance for scrollable panes. */
-	--z-island-height: 3.5rem;
-	/* Capsule dock — the expanded island and the collapsed pill share circular
-	   geometry, so the scroll morph is a pure size change. */
-	--z-island-radius: calc(var(--z-island-height) / 2);
-	--z-island-collapsed-size: 3rem;
-	--z-island-gutter: 0.75rem;
-	/* Fixed mobile top bar (menu + filters + search + accounts). */
+	/* Fixed mobile top bar (menu + title + search). */
 	--z-mobile-topbar-height: 3.25rem;
-	/* Island height + the positioner's bottom gutter + an extra gutter of
-	   breathing room so the scrollable tail never sits flush against the
-	   floating island, plus the safe-area inset on notched devices. */
-	--z-island-clearance: calc(
-		var(--z-island-height) + var(--z-island-gutter) * 2 +
-			env(safe-area-inset-bottom, 0px)
-	);
+	/* Bottom clearance for scrollable panes on phones — grows while the mobile
+	   FAB floats over the pane (html[data-z-fab], set by MobileFab). */
+	--z-mobile-chrome-clearance: max(0.75rem, env(safe-area-inset-bottom, 0px));
 	/* Motion — fast, smooth, invisible until you notice them */
 	--z-motion-fast: 150ms;
 	--z-motion-base: 240ms;
 	--z-motion-enter: 380ms;
 	--z-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
 	--z-ease-standard: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* While the FAB floats over a pane, reserve room for it at the scroll tail
+   (attribute set by MobileFab). Unlayered on purpose: shell.css lives in
+   @layer components, where this override could never beat the :root default. */
+html[data-z-fab] {
+	--z-mobile-chrome-clearance: calc(4.25rem + env(safe-area-inset-bottom, 0px));
+}
+
+/* An open bottom action dock (bulk selection) — lift toasts clear of its
+   buttons on phones. Unlayered for the same reason as above. */
+@media (max-width: 767px) {
+	html[data-z-dock] {
+		/* ponytail: fixed guess that clears up to two wrapped button rows;
+		   measure the dock if a third row ever appears. */
+		--z-toast-bottom: calc(9rem + env(safe-area-inset-bottom, 0px));
+	}
 }
 
 @media (max-width: 767px) {

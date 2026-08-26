@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
 import {
-	listSwipeActionForTier,
 	listSwipeLeadingActions,
 	listSwipeTrailingActions
 } from '../src/lib/mail/list-swipe-actions.ts';
@@ -23,20 +22,13 @@ const message = (overrides: Partial<MessagePreview> = {}): MessagePreview => ({
 	...overrides
 });
 
-const baseCtx = {
-	canMarkImportant: true,
-	canMarkSpam: true,
-	canArchive: true,
-	hasInbox: true
-};
-
 describe('list-swipe-actions', () => {
 	it('uses restore actions on trash, junk, and archive folders', () => {
 		assert.deepEqual(
 			listSwipeLeadingActions({
 				message: message(),
 				mailbox: { role: 'trash' },
-				...baseCtx
+				hasInbox: true
 			}).map((action) => action.id),
 			['move-inbox']
 		);
@@ -44,7 +36,7 @@ describe('list-swipe-actions', () => {
 			listSwipeLeadingActions({
 				message: message(),
 				mailbox: { role: 'junk' },
-				...baseCtx
+				hasInbox: true
 			})[0]?.label,
 			'Not spam'
 		);
@@ -52,7 +44,7 @@ describe('list-swipe-actions', () => {
 			listSwipeLeadingActions({
 				message: message(),
 				mailbox: { role: 'archive' },
-				...baseCtx
+				hasInbox: true
 			}).map((action) => action.id),
 			['move-inbox']
 		);
@@ -62,76 +54,36 @@ describe('list-swipe-actions', () => {
 		const [restore] = listSwipeLeadingActions({
 			message: message(),
 			mailbox: { role: 'trash' },
-			...baseCtx
+			hasInbox: true
 		});
 		assert.equal(restore?.dismiss, true);
 	});
 
-	it('offers Seen short then Archive deep when archive is available', () => {
+	it('offers exactly one leading action: the Seen/Unsee toggle', () => {
 		assert.deepEqual(
 			listSwipeLeadingActions({
 				message: message({ unread: true }),
 				mailbox: { role: 'inbox' },
-				...baseCtx
-			}).map((action) => [action.id, action.tier]),
-			[
-				['mark-seen', 1],
-				['archive', 2]
-			]
+				hasInbox: true
+			}).map((action) => action.id),
+			['mark-seen']
 		);
 		assert.deepEqual(
 			listSwipeLeadingActions({
 				message: message({ unread: false }),
 				mailbox: { role: 'inbox' },
-				...baseCtx
+				hasInbox: true
 			}).map((action) => action.id),
-			['unsee', 'archive']
+			['unsee']
 		);
 	});
 
-	it('falls back to Highlight deep when archive is unavailable', () => {
-		assert.deepEqual(
-			listSwipeLeadingActions({
-				message: message({ unread: true }),
-				mailbox: { role: 'inbox' },
-				...baseCtx,
-				canArchive: false
-			}).map((action) => action.id),
-			['mark-seen', 'mark-important']
-		);
-	});
-
-	it('drops the deep tier where neither archive nor highlight apply', () => {
-		assert.deepEqual(
-			listSwipeLeadingActions({
-				message: message({ unread: true }),
-				mailbox: { role: 'sent' },
-				...baseCtx,
-				canMarkImportant: false,
-				canArchive: false
-			}).map((action) => action.id),
-			['mark-seen']
-		);
-	});
-
-	it('offers trash (short) then spam (deep) where spam applies', () => {
+	it('offers exactly one trailing action: Trash', () => {
 		assert.deepEqual(
 			listSwipeTrailingActions({
 				message: message(),
 				mailbox: { role: 'inbox' },
-				...baseCtx
-			}).map((action) => [action.id, action.tier]),
-			[
-				['trash', 1],
-				['spam', 2]
-			]
-		);
-		assert.deepEqual(
-			listSwipeTrailingActions({
-				message: message(),
-				mailbox: { role: 'sent' },
-				...baseCtx,
-				canMarkSpam: false
+				hasInbox: true
 			}).map((action) => action.id),
 			['trash']
 		);
@@ -142,8 +94,7 @@ describe('list-swipe-actions', () => {
 			listSwipeTrailingActions({
 				message: message(),
 				mailbox: { role: 'trash' },
-				...baseCtx,
-				canMarkSpam: false
+				hasInbox: true
 			}).map((action) => action.id),
 			['delete-forever']
 		);
@@ -151,8 +102,7 @@ describe('list-swipe-actions', () => {
 			listSwipeTrailingActions({
 				message: message(),
 				mailbox: { role: 'drafts' },
-				...baseCtx,
-				canMarkSpam: false
+				hasInbox: true
 			}).map((action) => action.id),
 			['delete-draft']
 		);
@@ -163,20 +113,9 @@ describe('list-swipe-actions', () => {
 			listSwipeLeadingActions({
 				message: message(),
 				mailbox: { role: 'drafts' },
-				...baseCtx
+				hasInbox: true
 			}),
 			[]
 		);
-	});
-
-	it('picks the action for an armed tier', () => {
-		const actions = listSwipeLeadingActions({
-			message: message({ unread: true }),
-			mailbox: { role: 'inbox' },
-			...baseCtx
-		});
-		assert.equal(listSwipeActionForTier(actions, 1)?.id, 'mark-seen');
-		assert.equal(listSwipeActionForTier(actions, 2)?.id, 'archive');
-		assert.equal(listSwipeActionForTier([], 1), null);
 	});
 });

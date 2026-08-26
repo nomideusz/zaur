@@ -94,11 +94,11 @@
 
 	@media (max-width: 767px) {
 		.z-scroll-area--pane [data-part='viewport'] {
-			scroll-padding-bottom: var(--z-island-clearance);
+			scroll-padding-bottom: var(--z-mobile-chrome-clearance);
 		}
 
 		.z-scroll-area--pane .z-scroll-area__content {
-			padding-bottom: var(--z-island-clearance);
+			padding-bottom: var(--z-mobile-chrome-clearance);
 		}
 	}
 
@@ -540,6 +540,7 @@
 		display: flex;
 		align-items: center;
 		overflow: hidden;
+		width: var(--z-swipe-pane-width, 0px);
 		color: #fff;
 	}
 
@@ -637,8 +638,7 @@
 	}
 
 	/* @shark/action-bar — port of Shark UI registry (bulk table example).
-	   Desktop counterpart of the mobile island: a floating capsule dock, not a
-	   docked strip, so bulk selection looks the same at every breakpoint. */
+	   Bulk selection dock, shared by every breakpoint. */
 	.z-action-bar-positioner--inline {
 		padding-top: 0.5rem;
 		padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0px));
@@ -717,6 +717,13 @@
 		opacity: 0.5;
 	}
 
+	/* Phone: dock buttons grow to a full touch-height target. */
+	@media (max-width: 767px) {
+		.z-action-bar-btn {
+			min-height: 2.75rem;
+		}
+	}
+
 	/* Destructive action is tinted, so it separates without a divider. */
 	.z-action-bar-btn--danger {
 		color: var(--z-danger);
@@ -742,6 +749,14 @@
 
 	.z-action-bar-content .z-action-bar-close:hover:not(:disabled) {
 		background-color: color-mix(in srgb, var(--z-surface-sunken) 75%, transparent);
+	}
+
+	/* Phone: the Clear-selection escape hatch matches its 44px siblings. */
+	@media (max-width: 767px) {
+		.z-action-bar-content .z-action-bar-close {
+			width: 2.75rem;
+			min-height: 2.75rem;
+		}
 	}
 
 	.z-mail-list-bulk-selectors {
@@ -818,49 +833,6 @@
 	.z-segmented__item:focus-visible {
 		outline: 2px solid var(--z-accent);
 		outline-offset: 2px;
-	}
-
-	/* @shark/segment-group — horizontal folder rail (mobile mail header). */
-	.z-segment-group-scroll {
-		min-width: 0;
-		flex: 1 1 auto;
-		overflow-x: auto;
-		overscroll-behavior-x: contain;
-		scrollbar-width: none;
-		-ms-overflow-style: none;
-		-webkit-overflow-scrolling: touch;
-	}
-
-	.z-segment-group-scroll::-webkit-scrollbar {
-		display: none;
-	}
-
-	.z-segment-group--rail {
-		padding: 0;
-		border: 0;
-		background: transparent;
-	}
-
-	.z-segment-group__indicator--accent {
-		background-color: color-mix(in srgb, var(--z-accent) 42%, transparent);
-		box-shadow: none;
-	}
-
-	:root:is(.dark, [data-circadian-dark]) .z-segment-group__indicator--accent {
-		background-color: color-mix(in srgb, var(--z-accent) 55%, transparent);
-	}
-
-	/* Every header rail (mail, calendar, contacts, settings), not just mail folders. */
-	.z-segment-group--rail .z-segment-group__item:focus-visible {
-		outline: 2px solid var(--z-accent);
-		outline-offset: 2px;
-		border-radius: var(--radius-sm);
-	}
-
-	.z-segment-group--underline .z-segment-group__item:focus-visible {
-		outline: 2px solid var(--z-accent);
-		outline-offset: 2px;
-		border-radius: var(--radius-sm);
 	}
 
 	.z-chrome-field {

@@ -2,9 +2,8 @@
 	import { afterNavigate, goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import AppShellHeader from '$lib/components/shell/AppShellHeader.svelte';
-	import AccountSwitcherSheet from '$lib/components/shell/AccountSwitcherSheet.svelte';
+	import MobileFab from '$lib/components/shell/MobileFab.svelte';
 	import MobileTopBar from '$lib/components/shell/MobileTopBar.svelte';
-	import MobileIsland from '$lib/components/shell/island/MobileIsland.svelte';
 	import NavDrawer from '$lib/components/shell/NavDrawer.svelte';
 	import WelcomeOnboarding from '$lib/components/shell/WelcomeOnboarding.svelte';
 	import ConfirmDialog from '$lib/components/ui/ConfirmDialog.svelte';
@@ -104,8 +103,7 @@
 			<MobileTopBar />
 			{@render children()}
 		</main>
-		<MobileIsland />
-		<AccountSwitcherSheet />
+		<MobileFab />
 		<NavDrawer />
 		<WelcomeOnboarding />
 		<ConfirmDialog />

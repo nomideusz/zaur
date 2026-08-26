@@ -23,7 +23,7 @@
 	>
 		<header class="z-mobile-topbar" data-testid="mobile-topbar">
 			<div class="z-mobile-topbar__row">
-				<a href="/list-lab" class="z-mobile-topbar__icon-btn no-underline" aria-label="Back to list">
+				<a href="/list-lab" class="z-chrome-icon-btn no-underline" aria-label="Back to list">
 					<ArrowLeft class="size-[1.125rem]" aria-hidden="true" />
 				</a>
 				<!-- Intentionally empty — subject lives once in the reader body. -->
@@ -61,8 +61,8 @@
 									here — never truncated in the chrome.
 								</p>
 								<p class="mt-4">
-									Scroll clearance for the floating island is covered by
-									<code>--z-island-clearance</code> on pane scroll.
+									Scroll clearance for the floating action button is covered by
+									<code>--z-mobile-chrome-clearance</code> on pane scroll.
 								</p>
 							</div>
 						</div>

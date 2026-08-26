@@ -7,20 +7,24 @@
 	import FilesSidebar from '$lib/components/files/FilesSidebar.svelte';
 	import MailboxSidebar from '$lib/components/mail/MailboxSidebar.svelte';
 	import NavDrawerHeader from '$lib/components/shell/NavDrawerHeader.svelte';
-	import { mobileIsland } from '$lib/stores/mobile-island.svelte';
+	import { appNavItems } from '$lib/shell/app-nav';
+	import { mobileShell } from '$lib/stores/mobile-shell.svelte';
+	import { cn } from '$lib/utils/cn';
 
 	afterNavigate(() => {
-		mobileIsland.closeNavDrawer();
+		mobileShell.closeNavDrawer();
 	});
 
-	const onCalendar = $derived(page.url.pathname.startsWith('/calendar'));
-	const onFiles = $derived(page.url.pathname.startsWith('/files'));
+	const pathname = $derived(page.url.pathname);
+	const onCalendar = $derived(pathname.startsWith('/calendar'));
+	const onFiles = $derived(pathname.startsWith('/files'));
+	const apps = $derived(appNavItems());
 </script>
 
 <Drawer.Root
-	open={mobileIsland.navDrawerOpen}
+	open={mobileShell.navDrawerOpen}
 	onOpenChange={(details) => {
-		mobileIsland.navDrawerOpen = details.open;
+		mobileShell.navDrawerOpen = details.open;
 	}}
 	swipeDirection="start"
 	lazyMount
@@ -44,6 +48,20 @@
 					{onCalendar ? 'Calendars' : onFiles ? 'Files' : 'Navigation'}
 				</Drawer.Title>
 				<NavDrawerHeader />
+				<nav class="z-nav-drawer__apps" aria-label="Apps">
+					{#each apps as item (item.id)}
+						{@const Icon = item.icon}
+						{@const isActive = item.isActive(pathname)}
+						<a
+							href={item.href}
+							class={cn('z-nav-drawer__app', isActive && 'z-nav-drawer__app--active')}
+							aria-current={isActive ? 'page' : undefined}
+						>
+							<Icon class="size-5" aria-hidden="true" />
+							<span>{item.label}</span>
+						</a>
+					{/each}
+				</nav>
 				{#if onCalendar}
 					<CalendarSidebar
 						variant="drawer"

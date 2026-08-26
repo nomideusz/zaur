@@ -16,23 +16,6 @@
 		}
 	}
 
-	.z-mobile-folder-picker {
-		@apply pointer-events-none flex w-full min-w-0 items-center gap-2 rounded-md border border-border bg-surface-raised px-3 py-2 text-left text-base font-medium text-fg;
-		min-height: 2.75rem;
-	}
-
-	.z-mobile-folder-picker--compact {
-		@apply py-1.5 text-sm;
-		min-height: 2.5rem;
-	}
-
-	.z-mail-mobile-search {
-		@apply shrink-0 border-b border-border/80 bg-surface;
-		min-height: var(--height-header);
-		padding-inline: 1rem;
-		padding-block: 0.25rem;
-	}
-
 	/* Shared back button — identical affordance on reader, compose, search, settings. */
 	.z-back-btn {
 		display: inline-grid;
@@ -62,7 +45,7 @@
 		display: block;
 	}
 
-	/* Fixed mobile top bar — navigation & filters (island keeps actions). */
+	/* Fixed mobile top bar — hamburger + title + search + contextual actions. */
 	.z-mobile-topbar {
 		position: sticky;
 		top: 0;
@@ -87,7 +70,7 @@
 		min-width: 0;
 	}
 
-	.z-mobile-topbar__icon-btn {
+	.z-chrome-icon-btn {
 		display: grid;
 		place-items: center;
 		width: 2.75rem;
@@ -101,36 +84,36 @@
 			background-color var(--z-motion-fast) var(--z-ease-standard);
 	}
 
-	.z-mobile-topbar__icon-btn:hover {
+	.z-chrome-icon-btn:hover {
 		color: var(--z-fg);
 		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
 	}
 
-	.z-mobile-topbar__icon-btn:focus-visible {
+	.z-chrome-icon-btn:focus-visible {
 		outline: 2px solid var(--z-accent);
 		outline-offset: -2px;
 	}
 
-	.z-mobile-topbar__icon-btn--accent {
+	.z-chrome-icon-btn--accent {
 		color: var(--z-accent);
 		background-color: color-mix(in srgb, var(--z-accent) 10%, transparent);
 	}
 
-	.z-mobile-topbar__icon-btn--accent:hover {
+	.z-chrome-icon-btn--accent:hover {
 		color: var(--z-accent);
 		background-color: color-mix(in srgb, var(--z-accent) 16%, transparent);
 	}
 
-	.z-mobile-topbar__icon-btn--danger,
-	.z-mobile-topbar__icon-btn--danger:hover {
+	.z-chrome-icon-btn--danger,
+	.z-chrome-icon-btn--danger:hover {
 		color: var(--z-danger);
 	}
 
-	.z-mobile-topbar__icon-btn--danger:hover {
+	.z-chrome-icon-btn--danger:hover {
 		background-color: color-mix(in srgb, var(--z-danger) 10%, transparent);
 	}
 
-	/* Reader/compose actions sit in the sticky top bar (no floating island). */
+	/* Reader/compose actions sit in the sticky top bar. */
 	.z-mobile-topbar__reader-actions {
 		display: flex;
 		min-width: 0;
@@ -152,10 +135,8 @@
 		text-decoration: none;
 	}
 
-	/* No floating dock on compose/reader — reclaim island clearance. */
-	html[data-z-island-hidden] {
-		--z-island-clearance: max(0.75rem, env(safe-area-inset-bottom, 0px));
-	}
+	/* The html[data-z-fab] clearance override lives in tokens.css — it must be
+	   unlayered to beat the :root default. */
 
 	.z-mobile-topbar__search-field {
 		display: flex;
@@ -204,96 +185,21 @@
 		color: var(--z-fg-muted);
 	}
 
-	/* Mobile floating island — compose control sits in the bottom-right corner. */
-	.z-mobile-island-positioner {
+	/* Mobile FAB — the section's primary action, fixed bottom-right. */
+	.z-mobile-fab {
 		position: fixed;
-		inset-inline: 0;
-		bottom: 0;
+		right: max(0.75rem, env(safe-area-inset-right, 0px));
+		bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
 		z-index: 50;
-		display: flex;
-		justify-content: flex-end;
-		pointer-events: none;
-		padding-inline: max(0.75rem, env(safe-area-inset-left, 0px))
-			max(0.75rem, env(safe-area-inset-right, 0px));
-		padding-bottom: calc(var(--z-island-gutter) + env(safe-area-inset-bottom, 0px));
 	}
 
-	.z-mobile-island {
-		pointer-events: auto;
-		position: relative;
-		/* Grid stack — mode contents overlap during crossfade instead of
-		   doubling the pill's width. */
-		display: grid;
-		align-items: center;
-		justify-items: center;
-		width: fit-content;
-		max-width: 100%;
-		min-height: var(--z-island-height);
-		overflow: hidden;
-		border: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
-		border-radius: var(--z-island-radius);
-		background-color: color-mix(in srgb, var(--z-surface-raised) 85%, transparent);
-		backdrop-filter: saturate(180%) blur(20px);
-		-webkit-backdrop-filter: saturate(180%) blur(20px);
-		box-shadow: var(--shadow-md);
-		transition:
-			max-width var(--z-motion-base) var(--z-ease-out),
-			min-height var(--z-motion-base) var(--z-ease-out),
-			border-radius var(--z-motion-base) var(--z-ease-out);
-	}
-
-	.z-mobile-island__content {
-		grid-area: 1 / 1;
-		display: flex;
-		align-items: center;
-		min-width: 0;
-		max-width: 100%;
-		/* One inner gutter for every mode — geometry never jumps between
-		   browse, bulk, reader, and compose docks. */
-		padding: 0.375rem;
-		transition: opacity var(--z-motion-fast) var(--z-ease-standard);
-	}
-
-	.z-mobile-island--wide {
-		width: 100%;
-	}
-
-	.z-mobile-island--wide .z-mobile-island__content {
-		width: 100%;
-	}
-
-	/* Compact compose control — one capsule, no nested chrome, no scroll-shrink. */
-	.z-mobile-island--fab {
-		min-height: 0;
-		border: 0;
-		background: transparent;
-		backdrop-filter: none;
-		-webkit-backdrop-filter: none;
-		box-shadow: none;
-	}
-
-	.z-mobile-island--fab .z-mobile-island__content {
-		padding: 0;
-	}
-
-	.z-mobile-island__tabs {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		width: 100%;
-		min-width: 0;
-	}
-
-	.z-mobile-island__tabs--compose {
-		justify-content: center;
-		width: auto;
-	}
-
-	.z-mobile-island__tabs--empty {
+	/* A modal detail sheet (contacts/files) owns the screen — the z-50 FAB must
+	   not stay tappable above its z-30 backdrop. */
+	html:has(.z-mobile-sheet-backdrop) .z-mobile-fab {
 		display: none;
 	}
 
-	.z-mobile-island__compose-pill {
+	.z-mobile-fab__pill {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
@@ -303,258 +209,26 @@
 		border: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
 		border-radius: 9999px;
 		background-color: color-mix(in srgb, var(--z-surface-raised) 92%, transparent);
+		box-shadow: var(--shadow-md);
 		color: var(--z-fg);
 		font-size: 0.9375rem;
 		font-weight: 600;
 		text-decoration: none;
 		cursor: pointer;
-		transition:
-			background-color var(--z-motion-fast) var(--z-ease-standard),
-			transform var(--z-motion-fast) var(--z-ease-out);
+		transition: background-color var(--z-motion-fast) var(--z-ease-standard);
 	}
 
-	.z-mobile-island__compose-pill:hover {
+	.z-mobile-fab__pill:hover {
 		background-color: var(--z-surface-raised);
 	}
 
-	.z-mobile-island__compose-pill:focus-visible {
+	.z-mobile-fab__pill:focus-visible {
 		outline: 2px solid var(--z-accent);
 		outline-offset: 2px;
 	}
 
-	@media (prefers-reduced-motion: no-preference) {
-		.z-mobile-island__compose-pill:active {
-			transform: scale(0.96);
-		}
-	}
-
-	/* Multi-account rail — utility chrome on the island (not a pane primary). */
-	.z-island-account-rail {
-		display: flex;
-		flex-shrink: 0;
-		align-items: center;
-		gap: 0.25rem;
-		padding-inline: 0.125rem;
-	}
-
-	.z-island-account-rail--overflow {
-		gap: 0.125rem;
-		padding-inline-end: 0.25rem;
-		border-radius: calc(var(--radius-lg) - 0.25rem);
-		cursor: pointer;
-		color: var(--z-fg-muted);
-	}
-
-	.z-island-account-rail--overflow:hover {
-		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
-	}
-
-	.z-island-account-rail__avatar {
-		position: relative;
-		display: grid;
-		place-items: center;
-		width: 2rem;
-		height: 2rem;
-		flex-shrink: 0;
-		border-radius: 9999px;
-		background-color: var(--z-surface-sunken);
-		color: var(--z-fg-muted);
-		cursor: pointer;
-		transition:
-			color var(--z-motion-fast) var(--z-ease-standard),
-			background-color var(--z-motion-fast) var(--z-ease-standard),
-			box-shadow var(--z-motion-fast) var(--z-ease-standard),
-			transform var(--z-motion-fast) var(--z-ease-out);
-	}
-
-	.z-island-account-rail__avatar--active {
-		color: var(--z-accent-fg);
-		background-color: var(--z-accent);
-		box-shadow: 0 0 0 2px color-mix(in srgb, var(--z-accent) 35%, transparent);
-	}
-
-	.z-island-account-rail__glyph-avatar {
-		display: grid;
-		place-items: center;
-		width: 100%;
-		height: 100%;
-		border-radius: inherit;
-		background: transparent;
-		color: inherit;
-	}
-
-	.z-island-account-rail__glyph {
-		font-size: 0.75rem;
-		font-weight: 600;
-		line-height: 1;
-	}
-
-	.z-island-account-rail__pip {
-		position: absolute;
-		top: -0.2rem;
-		right: -0.25rem;
-		min-width: 0.95rem;
-		height: 0.95rem;
-		padding-inline: 0.2rem;
-		border-radius: 9999px;
-		background-color: var(--z-accent);
-		color: var(--z-accent-fg);
-		font-size: 0.5625rem;
-		font-weight: 700;
-		line-height: 0.95rem;
-		text-align: center;
-		font-variant-numeric: tabular-nums;
-	}
-
-	.z-island-account-rail__avatar--active .z-island-account-rail__pip {
-		background-color: var(--z-danger);
-	}
-
-	.z-island-account-rail__more {
-		font-size: 0.6875rem;
-		font-weight: 600;
-		font-variant-numeric: tabular-nums;
-		padding-inline-end: 0.25rem;
-	}
-
-	.z-account-switcher-sheet {
-		max-height: 70vh;
-		border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-		box-shadow: var(--shadow-md);
-		padding-bottom: env(safe-area-inset-bottom, 0px);
-	}
-
-	@media (prefers-reduced-motion: no-preference) {
-		.z-island-account-rail__avatar:active {
-			transform: scale(0.92);
-		}
-	}
-
-	.z-mobile-island__bulk,
-	.z-mobile-island__reader,
-	.z-mobile-island__compose {
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		width: 100%;
-		min-width: 0;
-	}
-
-	.z-mobile-island__icon-btn {
-		display: grid;
-		place-items: center;
-		width: 2.75rem;
-		height: 2.75rem;
-		flex-shrink: 0;
-		cursor: pointer;
-		border-radius: 9999px;
-		color: var(--z-fg-muted);
-		transition:
-			color var(--z-motion-fast) var(--z-ease-standard),
-			background-color var(--z-motion-fast) var(--z-ease-standard),
-			transform var(--z-motion-fast) var(--z-ease-out);
-	}
-
-	.z-mobile-island__icon-btn:hover {
-		color: var(--z-fg);
-		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
-	}
-
-	.z-mobile-island__icon-btn:focus-visible {
-		outline: 2px solid var(--z-accent);
-		outline-offset: -2px;
-	}
-
-	.z-mobile-island__icon-btn--accent {
-		color: var(--z-accent);
-		background-color: color-mix(in srgb, var(--z-accent) 10%, transparent);
-	}
-
-	.z-mobile-island__icon-btn--accent:hover {
-		color: var(--z-accent);
-		background-color: color-mix(in srgb, var(--z-accent) 16%, transparent);
-	}
-
-	.z-mobile-island__icon-btn--danger,
-	.z-mobile-island__icon-btn--danger:hover {
-		color: var(--z-danger);
-	}
-
-	.z-mobile-island__icon-btn--danger:hover {
-		background-color: color-mix(in srgb, var(--z-danger) 10%, transparent);
-	}
-
-	/* Text controls inside the island (Send, Discard) — capsule geometry and
-	   full touch height, matching the icon buttons. */
-	.z-mobile-island .z-mail-text-nav__action--pill {
-		min-height: 2.75rem;
-		padding: 0.5rem 1.125rem;
-		border-radius: 9999px;
-	}
-
-	.z-mobile-island .z-mail-text-nav__link {
-		display: inline-flex;
-		align-items: center;
-		min-height: 2.75rem;
-		padding-inline: 0.75rem;
-		border-radius: 9999px;
-	}
-
-	/* Scroll-shrunk pill — content fades + clips while the shell condenses. */
-	.z-mobile-island--collapsed {
-		max-width: var(--z-island-collapsed-size);
-		min-height: var(--z-island-collapsed-size);
-		border-radius: calc(var(--z-island-collapsed-size) / 2);
-	}
-
-	.z-mobile-island--collapsed .z-mobile-island__content {
-		opacity: 0;
-		pointer-events: none;
-	}
-
-	.z-mobile-island__pill {
-		position: absolute;
-		inset: 0;
-		display: grid;
-		place-items: center;
-		opacity: 0;
-		pointer-events: none;
-		color: var(--z-fg-muted);
-		transition: opacity var(--z-motion-fast) var(--z-ease-standard);
-	}
-
-	.z-mobile-island--collapsed .z-mobile-island__pill {
-		opacity: 1;
-		pointer-events: auto;
-	}
-
-	.z-mobile-island__pill:focus-visible {
-		outline: 2px solid var(--z-accent);
-		outline-offset: -2px;
-		border-radius: inherit;
-	}
-
-	@media (prefers-reduced-motion: no-preference) {
-		.z-mobile-island__icon-btn:active {
-			transform: scale(0.9);
-		}
-	}
-
-	@media (prefers-reduced-motion: reduce) {
-		.z-mobile-island,
-		.z-mobile-island__content,
-		.z-mobile-island__pill {
-			transition: none;
-		}
-	}
-
-	html.z-reduce-motion .z-mobile-island,
-	html.z-reduce-motion .z-mobile-island__content,
-	html.z-reduce-motion .z-mobile-island__pill {
-		transition: none;
-	}
-
-	/* Slim drawer header — account menu (with app links) left, search right. */
+	/* Slim drawer header — account rail left (active avatar = menu, others
+	   switch on tap), Settings right. */
 	.z-nav-drawer__header {
 		display: flex;
 		flex-shrink: 0;
@@ -562,14 +236,56 @@
 		justify-content: space-between;
 		gap: 0.25rem;
 		padding: 0.25rem 0.5rem;
-		border-bottom: 1px solid color-mix(in srgb, var(--z-border) 65%, transparent);
 	}
 
-	/* Content scrolls behind the island — keep the tail reachable. */
+	/* App switcher — direct links, one tap from the hamburger. */
+	.z-nav-drawer__apps {
+		display: flex;
+		flex-shrink: 0;
+		gap: 0.25rem;
+		padding: 0.125rem 0.5rem 0.5rem;
+	}
+
+	.z-nav-drawer__app {
+		display: flex;
+		flex: 1 1 0;
+		min-width: 0;
+		min-height: 3.25rem;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 0.25rem;
+		border-radius: var(--radius-md);
+		color: var(--z-fg-muted);
+		font-size: 0.6875rem;
+		font-weight: 500;
+		text-decoration: none;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			background-color var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-nav-drawer__app:hover {
+		color: var(--z-fg);
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
+	}
+
+	.z-nav-drawer__app:focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: -2px;
+	}
+
+	.z-nav-drawer__app--active {
+		color: var(--z-fg);
+		background-color: var(--z-chrome-active);
+		font-weight: 600;
+	}
+
+	/* Content scrolls behind the FAB — keep the tail reachable. */
 	@media (max-width: 767px) {
 		.z-pane-scroll {
-			padding-bottom: var(--z-island-clearance);
-			scroll-padding-bottom: var(--z-island-clearance);
+			padding-bottom: var(--z-mobile-chrome-clearance);
+			scroll-padding-bottom: var(--z-mobile-chrome-clearance);
 		}
 	}
 
@@ -599,10 +315,6 @@
 		font-size: 0.8125rem;
 		line-height: 1;
 		gap: 0.25rem;
-	}
-
-	.z-mobile-picker-trigger__label {
-		line-height: 1;
 	}
 
 	.z-mobile-picker-trigger:hover {
@@ -666,72 +378,3 @@
 		overflow: hidden;
 	}
 
-	/* Shared mobile top search bar — the single persistent search input. Typing
-	   drives the section's results route via ?q. Phone-only; desktop search lives
-	   in the header. */
-	.z-mobile-search-bar {
-		display: flex;
-		flex-shrink: 0;
-		align-items: center;
-		gap: 0.5rem;
-		border-bottom: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
-		background-color: var(--z-surface);
-		padding: 0.5rem 0.75rem;
-	}
-
-	.z-mobile-search-bar__field {
-		display: flex;
-		min-width: 0;
-		flex: 1 1 auto;
-		align-items: center;
-		gap: 0.5rem;
-		height: 2.5rem;
-		border: 1px solid color-mix(in srgb, var(--z-border) 80%, transparent);
-		border-radius: var(--radius-lg);
-		background-color: color-mix(in srgb, var(--z-surface-sunken) 80%, transparent);
-		padding-inline: 0.75rem;
-	}
-
-	.z-mobile-search-bar__field:focus-within {
-		border-color: var(--z-border-strong);
-		background-color: var(--z-chrome-active);
-	}
-
-	.z-mobile-search-bar__input {
-		min-width: 0;
-		flex: 1 1 auto;
-		border: 0;
-		background: transparent;
-		font-size: 0.9375rem;
-		color: var(--z-fg);
-		outline: none;
-	}
-
-	.z-mobile-search-bar__input::placeholder {
-		color: var(--z-fg-subtle);
-	}
-
-	/* Hide the native search clear — we render our own. */
-	.z-mobile-search-bar__input::-webkit-search-cancel-button {
-		display: none;
-	}
-
-	.z-mobile-search-bar__clear {
-		display: grid;
-		flex-shrink: 0;
-		place-items: center;
-		width: 1.75rem;
-		height: 1.75rem;
-		border-radius: var(--radius-md);
-		color: var(--z-fg-subtle);
-	}
-
-	.z-mobile-search-bar__clear:hover {
-		color: var(--z-fg);
-		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
-	}
-
-	.z-mobile-search-bar__clear:focus-visible {
-		outline: 2px solid var(--z-accent);
-		outline-offset: -2px;
-	}

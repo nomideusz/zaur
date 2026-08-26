@@ -11,8 +11,8 @@
 	import { settings } from '$lib/stores/settings.svelte';
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
 
-	/* Desktop-only chrome — on phones the mobile island carries navigation
-	   and the pages own their toolbars. */
+	/* Desktop-only chrome — on phones the top bar + hamburger drawer carry
+	   navigation and the pages own their toolbars. */
 
 	const homeHref = $derived(settings.preferredMailHref());
 	const pathname = $derived(page.url.pathname);

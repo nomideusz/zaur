@@ -4,7 +4,8 @@
 	import { page } from '$app/stores';
 	import { TreeView, createTreeCollection } from '@ark-ui/svelte/tree-view';
 	import CreateFolderDialog from '$lib/components/mail/CreateFolderDialog.svelte';
-	import { parseMailContext, mailListHref } from '$lib/mail/routes';
+	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
+	import { INBOX_MAILBOX_ROUTE_ID, parseMailContext, mailListHref } from '$lib/mail/routes';
 	import { sidebarMailboxGroups } from '$lib/mail/mailboxes';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
@@ -36,6 +37,10 @@
 
 	const mailCtx = $derived(parseMailContext($page.url.pathname));
 	const currentMailboxRouteId = $derived(mailCtx?.mailboxRouteId ?? null);
+	/* The Unseen view is the inbox route filtered to unread — a row here keeps it
+	   reachable from the drawer (mobile has no filter tabs). */
+	const unseenActive = $derived($page.url.searchParams.get('filter') === 'unseen');
+	const unseenHref = `${mailListHref(INBOX_MAILBOX_ROUTE_ID)}?filter=unseen`;
 	const activeMailbox = $derived(
 		currentMailboxRouteId ? mail.mailboxByRouteId(currentMailboxRouteId) : null
 	);
@@ -150,7 +155,7 @@
 
 {#snippet mailboxRow(item: Mailbox)}
 	{@const href = mailListHref(item.id)}
-	{@const isActive = currentMailboxRouteId === item.id}
+	{@const isActive = currentMailboxRouteId === item.id && !(unseenActive && item.role === 'inbox')}
 	{@const badgeCount = item.role === 'drafts' ? item.total : item.unread}
 	<li>
 		<a
@@ -207,6 +212,23 @@
 		<ul class="space-y-0.5">
 			{#each mailboxGroups.system as item (item.id)}
 				{@render mailboxRow(item)}
+				{#if item.role === 'inbox'}
+					{@const unseenIsActive = unseenActive && currentMailboxRouteId === INBOX_MAILBOX_ROUTE_ID}
+					<li>
+						<a
+							href={unseenHref}
+							class={cn(
+								'flex min-h-10 w-full items-center justify-between rounded-md px-3 py-2.5 text-sm transition-colors',
+								unseenIsActive
+									? 'z-surface-active font-semibold'
+									: 'text-fg-muted hover:bg-surface-sunken/60 hover:text-fg'
+							)}
+							aria-current={unseenIsActive ? 'page' : undefined}
+						>
+							<span class="truncate">{LABEL_UNSEEN}</span>
+						</a>
+					</li>
+				{/if}
 			{/each}
 		</ul>
 

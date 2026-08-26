@@ -2,10 +2,11 @@
 	/**
 	 * Bulk selection action bar — Shark UI @shark/action-bar `example-table` pattern:
 	 * controlled open, inline toolbar below the message list, More menu, destructive delete, close.
-	 * Desktop only — on phones the mobile island renders the same BulkActionsRow.
-	 * The ActionBar root still wraps the list on all sizes so Escape clears selection.
+	 * All viewports — on phones the row wraps onto extra lines.
+	 * The ActionBar root wraps the list so Escape clears selection.
 	 */
 	import BulkActionsRow from '$lib/components/mail/BulkActionsRow.svelte';
+	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
 	import {
 		bulkSelectionCounts,
 		bulkSelectionSummary
@@ -60,17 +61,28 @@
 
 		<ActionBarContent
 			aria-label="Actions for selected messages"
-			class={cn('max-md:hidden', disabled && 'pointer-events-none opacity-60')}
+			class={cn(disabled && 'pointer-events-none opacity-60')}
 		>
 			<!-- Grouping is spacing, not pipes: count | actions | close read as
 			     three zones because of the gaps and the accent count chip. -->
-			<span class="flex shrink-0">
+			<span class="flex shrink-0 max-md:hidden">
 				<ActionBarValue
 					count={selectedCount}
 					label={summary.headline}
 					class="z-action-bar-value--accent max-w-[12rem] truncate"
 					title={summary.detail ?? summary.headline}
 				/>
+			</span>
+			<!-- Phone: the count chip doubles as the Select all / by-state menu
+			     (the list-header select control is desktop-only). -->
+			<span class="flex shrink-0 md:hidden">
+				<MessageListSelectMenu
+					placement="top"
+					{disabled}
+					class="h-11! w-auto! shrink-0 gap-1 rounded-full! px-2.5!"
+				>
+					<ActionBarValue count={selectedCount} class="z-action-bar-value--accent" />
+				</MessageListSelectMenu>
 			</span>
 
 			<!-- Every action link stays reachable regardless of pane width:

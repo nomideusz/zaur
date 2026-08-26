@@ -17,7 +17,7 @@ const MAX_TOASTS = 2;
 // Single module-scope toaster shared by the store (below) and ToastStack.svelte.
 // Bottom-centre, vertical stack (no overlap) to preserve the "status line" look.
 // `--z-toast-bottom` is defined responsively in status-line.css so the inline
-// offset picks up the floating-island clearance on phones.
+// offset picks up the mobile chrome clearance on phones.
 export const toaster = createToaster({
 	placement: 'bottom',
 	overlap: false,
