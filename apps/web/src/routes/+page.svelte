@@ -346,6 +346,12 @@
 			href: 'https://intertechpoland.pl'
 		},
 		{
+			id: 'polaczenie',
+			name: 'gabinet-polaczenie.pl',
+			desc: 'Acupuncture clinic in Kraków offering treatments that complement conventional care.',
+			href: 'https://gabinet-polaczenie.pl'
+		},
+		{
 			id: 'radiobartek',
 			name: 'radiobartek.com',
 			desc: 'Internet radio station, self-hosted on AzuraCast.',
