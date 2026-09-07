@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'LobeHub (Lobe Chat)',
+			desc: 'Team AI chat with Postgres, file storage and knowledge base — sign up and go, no config.',
+			deploy: 'https://railway.com/deploy/lobe-chat',
+			source: 'https://github.com/nomideusz/lobe-chat-railway'
+		},
+		{
 			name: 'Claude Code',
 			desc: 'Always-on Ubuntu dev box with Claude Code, gh, Node, and Python — browser terminal and SSH, home persists.',
 			deploy: 'https://railway.com/deploy/claude-code',
