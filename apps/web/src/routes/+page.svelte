@@ -115,6 +115,24 @@
 			source: 'https://github.com/nomideusz/claude-code-railway'
 		},
 		{
+			name: 'Google Chrome',
+			desc: 'Desktop Chrome in the cloud, streamed to any device — password-gated, profile persists.',
+			deploy: 'https://railway.com/deploy/google-chrome',
+			source: 'https://github.com/nomideusz/chrome-railway'
+		},
+		{
+			name: 'Brave',
+			desc: 'Desktop Brave in the cloud, streamed to any device — password-gated, profile persists.',
+			deploy: 'https://railway.com/deploy/brave-browser',
+			source: 'https://github.com/nomideusz/brave-railway'
+		},
+		{
+			name: 'Microsoft Edge',
+			desc: 'Desktop Edge in the cloud, streamed to any device — password-gated, profile persists.',
+			deploy: 'https://railway.com/deploy/microsoft-edge',
+			source: 'https://github.com/nomideusz/edge-railway'
+		},
+		{
 			name: 'Firefox',
 			desc: 'Desktop Firefox in the cloud, streamed to any device — password-gated, profile persists.',
 			deploy: 'https://railway.com/deploy/firefox-browser',
