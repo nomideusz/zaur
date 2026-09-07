@@ -109,6 +109,24 @@
 
 	const templates = [
 		{
+			name: 'Medusa v2',
+			desc: 'Headless commerce backend with server + worker, Postgres and Redis — admin user created on first boot.',
+			deploy: 'https://railway.com/deploy/medusa-commerce',
+			source: 'https://github.com/nomideusz/medusa-railway'
+		},
+		{
+			name: 'Flowise',
+			desc: 'Visual AI agent builder in queue mode — main + worker, Postgres, Redis and bucket storage.',
+			deploy: 'https://railway.com/deploy/flowise-workers',
+			source: 'https://github.com/nomideusz/flowise-railway'
+		},
+		{
+			name: 'Linux Desktop',
+			desc: 'Full Ubuntu XFCE desktop streamed to your browser — sudo, persistent home, password-gated.',
+			deploy: 'https://railway.com/deploy/linux-desktop',
+			source: 'https://github.com/nomideusz/webtop-railway'
+		},
+		{
 			name: 'LobeHub (Lobe Chat)',
 			desc: 'Team AI chat with Postgres, file storage and knowledge base — sign up and go, no config.',
 			deploy: 'https://railway.com/deploy/lobehub-chat',
