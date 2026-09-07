@@ -111,7 +111,7 @@
 		{
 			name: 'LobeHub (Lobe Chat)',
 			desc: 'Team AI chat with Postgres, file storage and knowledge base — sign up and go, no config.',
-			deploy: 'https://railway.com/deploy/lobe-chat',
+			deploy: 'https://railway.com/deploy/lobehub-chat',
 			source: 'https://github.com/nomideusz/lobe-chat-railway'
 		},
 		{
