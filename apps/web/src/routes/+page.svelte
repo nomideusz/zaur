@@ -109,6 +109,18 @@
 
 	const templates = [
 		{
+			name: 'Claude Code',
+			desc: 'Always-on Ubuntu dev box with Claude Code, gh, Node, and Python — browser terminal and SSH, home persists.',
+			deploy: 'https://railway.com/deploy/claude-code',
+			source: 'https://github.com/nomideusz/claude-code-railway'
+		},
+		{
+			name: 'Firefox',
+			desc: 'Desktop Firefox in the cloud, streamed to any device — password-gated, profile persists.',
+			deploy: 'https://railway.com/deploy/firefox-browser',
+			source: 'https://github.com/nomideusz/firefox-railway'
+		},
+		{
 			name: 'HyperDX',
 			desc: 'ClickHouse observability — logs, traces, metrics, and session replay in one UI.',
 			deploy: 'https://railway.com/deploy/hyperdx',
