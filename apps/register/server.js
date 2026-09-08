@@ -402,7 +402,8 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
       mailHost: process.env.MAIL_HOST || 'mail.zaur.app',
     });
   } catch (err) {
-    reportError(err, { where: 'POST /api/register' });
+    // A password-policy rejection is the user's problem, not an outage — keep it out of Traceway.
+    if (!err.userMessage) reportError(err, { where: 'POST /api/register' });
     const captcha = generateCaptcha();
     req.session.captchaAnswer = captcha.answer;
     // Only Stalwart's password-policy verdict is user-facing; other JMAP text stays generic.
@@ -657,8 +658,8 @@ app.post('/api/forgot-password/reset', forgotPasswordIpLimiter, async (req, res)
     }
     return res.json({ success: true, mailboxEmail: result.mailboxEmail });
   } catch (err) {
-    reportError(err, { where: 'POST /api/forgot-password/reset' });
     if (err.userMessage) return res.status(400).json({ error: err.userMessage });
+    reportError(err, { where: 'POST /api/forgot-password/reset' });
     return res.status(502).json({ error: 'Unable to reset password right now. Please try again later.' });
   }
 });
