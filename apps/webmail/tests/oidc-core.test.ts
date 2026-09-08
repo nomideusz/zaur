@@ -11,7 +11,8 @@ import {
 	secretsEqual,
 	signIdToken,
 	verifyPkceS256,
-	type AuthCodeData
+	type AuthCodeData,
+	postLogoutTarget
 } from '../src/lib/server/oidc/core.ts';
 
 const CLAIMS = { sub: '125', preferred_username: 'user@zaur.app', email: 'user@zaur.app' };
@@ -77,5 +78,19 @@ describe('oidc core', () => {
 		assert.equal(doc.issuer, 'https://webmail.zaur.app');
 		assert.equal(doc.authorization_endpoint, 'https://webmail.zaur.app/oidc/authorize');
 		assert.equal(doc.jwks_uri, 'https://webmail.zaur.app/oidc/jwks');
+	});
+});
+
+describe('postLogoutTarget', () => {
+	const registered = ['https://bartube.zaur.app/api/auth/oidc/callback'];
+	it('allows only origins of registered redirect_uris, carrying state', () => {
+		assert.equal(
+			postLogoutTarget('https://bartube.zaur.app/', 'xyz', registered),
+			'https://bartube.zaur.app/?state=xyz'
+		);
+		assert.equal(postLogoutTarget('https://evil.example/', null, registered), null);
+		assert.equal(postLogoutTarget('http://bartube.zaur.app/', null, registered), null);
+		assert.equal(postLogoutTarget('not a url', null, registered), null);
+		assert.equal(postLogoutTarget(null, null, registered), null);
 	});
 });

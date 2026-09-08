@@ -138,6 +138,7 @@ export function discoveryDocument(origin: string): Record<string, unknown> {
 		issuer: origin,
 		authorization_endpoint: `${origin}/oidc/authorize`,
 		token_endpoint: `${origin}/oidc/token`,
+		end_session_endpoint: `${origin}/oidc/logout`,
 		jwks_uri: `${origin}/oidc/jwks`,
 		response_types_supported: ['code'],
 		grant_types_supported: ['authorization_code'],
@@ -148,4 +149,33 @@ export function discoveryDocument(origin: string): Record<string, unknown> {
 		code_challenge_methods_supported: ['S256'],
 		claims_supported: ['sub', 'preferred_username', 'email']
 	};
+}
+
+/**
+ * Where to send the browser after RP-initiated logout: the requested
+ * post_logout_redirect_uri if its origin matches a registered redirect_uri
+ * (so a stray link can't bounce a signed-out user to an attacker), else null.
+ */
+export function postLogoutTarget(
+	requested: string | null,
+	state: string | null,
+	registeredRedirectUris: string[]
+): string | null {
+	if (!requested) return null;
+	let target: URL;
+	try {
+		target = new URL(requested);
+	} catch {
+		return null;
+	}
+	const allowed = registeredRedirectUris.some((uri) => {
+		try {
+			return new URL(uri).origin === target.origin;
+		} catch {
+			return false;
+		}
+	});
+	if (!allowed || (target.protocol !== 'https:' && target.hostname !== 'localhost')) return null;
+	if (state) target.searchParams.set('state', state);
+	return target.toString();
 }
