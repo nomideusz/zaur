@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Ubuntu Terminal',
+			desc: 'Ubuntu shell in the browser and over SSH — tmux sessions survive disconnects, home persists.',
+			deploy: 'https://railway.com/deploy/ubuntu-terminal',
+			source: 'https://github.com/nomideusz/terminal-railway'
+		},
+		{
 			name: 'Obsidian',
 			desc: 'Obsidian desktop in the cloud — an always-on vault with plugins, reachable from any device.',
 			deploy: 'https://railway.com/deploy/obsidian',
