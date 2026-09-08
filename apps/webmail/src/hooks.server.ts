@@ -1,4 +1,3 @@
-import * as Sentry from '@sentry/sveltekit';
 import type { Handle, HandleServerError, ServerInit } from '@sveltejs/kit';
 import { sequence } from '@sveltejs/kit/hooks';
 import { building } from '$app/environment';
@@ -6,28 +5,10 @@ import { env } from '$env/dynamic/private';
 import { env as publicEnv } from '$env/dynamic/public';
 import { pushWatcher } from '$lib/server/push-watcher';
 import { log } from '$lib/server/log';
+import { reportError } from '$lib/server/report';
 import { permissionsPolicyForPath } from '$lib/server/security-policy';
 import { getStoreDb, startStoreMaintenance } from '$lib/server/store-instance';
 import { SESSION_RECORD_MAX_AGE_MS } from '$lib/server/session';
-
-/*
- * Error tracking (Sentry-compatible; a Temps DSN works). Server events post
- * directly to the DSN host — no tunnel needed outside the browser. No-op when
- * the DSN is unset.
- */
-const sentryDsn = env.SENTRY_DSN?.trim() || publicEnv.PUBLIC_SENTRY_DSN?.trim();
-if (sentryDsn && !building) {
-	Sentry.init({
-		dsn: sentryDsn,
-		environment:
-			env.SENTRY_ENVIRONMENT?.trim() ||
-			publicEnv.PUBLIC_SENTRY_ENVIRONMENT?.trim() ||
-			process.env.NODE_ENV ||
-			'production',
-		tracesSampleRate: 0,
-		sendDefaultPii: false
-	});
-}
 
 let stopStoreMaintenance: (() => void) | undefined;
 
@@ -123,11 +104,18 @@ const securityAndLogging: Handle = async ({ event, resolve }) => {
 	return response;
 };
 
-export const handle: Handle = sequence(csrfProtect, Sentry.sentryHandle(), securityAndLogging);
+export const handle: Handle = sequence(csrfProtect, securityAndLogging);
 
-const fallbackError: HandleServerError = ({ error, event }) => {
+// Errors go to stdout (structured) and to Traceway (see $lib/server/report). 404s
+// reach handleError too but are not failures.
+export const handleError: HandleServerError = ({ error, event, status }) => {
 	log.error('unhandled_error', { method: event.request.method, path: event.url.pathname }, error);
+	if (status !== 404) {
+		reportError(error, {
+			method: event.request.method,
+			url: event.url.pathname,
+			status: String(status)
+		});
+	}
 	return { message: 'Internal error' };
 };
-
-export const handleError = Sentry.handleErrorWithSentry(fallbackError);

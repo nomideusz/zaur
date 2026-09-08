@@ -63,7 +63,7 @@ Open [http://localhost:5173](http://localhost:5173).
 | `SESSION_SECRET` | **Required in production** — seals credentials in the server-side session store; the cookie contains only an opaque id |
 | `STORE_DB_PATH` | Session and rate-limit SQLite database (default: `.data/store.sqlite`) |
 | `TRUSTED_PROXY_HOPS` | Trusted proxy count used when resolving client IPs for rate limits |
-| `PUBLIC_SENTRY_DSN` | Optional Sentry DSN for browser and server error reporting |
+| `PUBLIC_TRACEWAY_DSN` | Optional Traceway DSN (`{token}@{url}/api/report`) for browser and server error reporting |
 | `STALWART_OAUTH_ENABLED` | Enables custom ZAUR token-only sign-in through Stalwart OAuth/PKCE |
 | `STALWART_OAUTH_CLIENT_ID` | Registered Stalwart OAuth client id |
 | `STALWART_OAUTH_REDIRECT_URI` | Exact callback URI registered for the OAuth client |

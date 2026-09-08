@@ -42,9 +42,9 @@
 		"workbox-window": "^7.4.1"
 	},
 	"dependencies": {
+		"@tracewayapp/frontend": "^1.2.0",
 		"@ark-ui/svelte": "^5.22.1",
 		"@nomideusz/svelte-calendar": "^0.13.1",
-		"@sentry/sveltekit": "^10.64.0",
 		"@tiptap/core": "^3.27.3",
 		"@tiptap/extension-image": "^3.27.3",
 		"@tiptap/extension-link": "^3.27.3",

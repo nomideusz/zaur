@@ -20,6 +20,7 @@ const {
   verifyForwardedClientIp,
 } = require('./lib/validation');
 const { getSiteConfig } = require('./lib/site-config');
+const { reportError, tracewayOrigin } = require('./lib/report');
 
 const siteConfig = getSiteConfig();
 
@@ -51,7 +52,7 @@ app.use((req, res, next) => {
       "style-src 'self'",
       "font-src 'self'",
       "img-src 'self' data:",
-      "connect-src 'self'",
+      `connect-src 'self'${tracewayOrigin ? ' ' + tracewayOrigin : ''}`,
       `form-action 'self' ${siteConfig.webmailLoginUrl}`,
       "frame-ancestors 'none'",
       "base-uri 'self'",
@@ -87,7 +88,7 @@ function consumeInternalNonce(nonce, now) {
     fs.renameSync(tempPath, INTERNAL_NONCES_PATH);
     return true;
   } catch (err) {
-    console.error('Failed to persist internal request nonce:', err.message);
+    reportError(err, { where: 'Failed to persist internal request nonce' });
     return false;
   }
 }
@@ -244,7 +245,7 @@ app.get('/api/invitation', async (req, res) => {
       recoveryEmail: email.toLowerCase(),
     });
   } catch (err) {
-    console.error('GET /api/invitation:', err.message);
+    reportError(err, { where: 'GET /api/invitation' });
     return res.status(502).json({ valid: false, error: 'Unable to verify invitation.' });
   }
 });
@@ -254,7 +255,7 @@ app.get('/api/domains', async (_req, res) => {
     const domains = await stalwart.listDomains();
     res.json({ domains });
   } catch (err) {
-    console.error('GET /api/domains:', err.message);
+    reportError(err, { where: 'GET /api/domains' });
     res.status(502).json({ error: 'Unable to load domains. Please try again later.' });
   }
 });
@@ -275,7 +276,7 @@ app.post('/api/check-username', checkUsernameLimiter, async (req, res) => {
     const results = await stalwart.checkUsernameAcrossDomains(validation.username);
     res.json({ username: validation.username, results });
   } catch (err) {
-    console.error('POST /api/check-username:', err.message);
+    reportError(err, { where: 'POST /api/check-username' });
     res.status(502).json({ error: 'Unable to check availability. Please try again later.' });
   }
 });
@@ -401,7 +402,7 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
       mailHost: process.env.MAIL_HOST || 'mail.zaur.app',
     });
   } catch (err) {
-    console.error('POST /api/register:', err.message);
+    reportError(err, { where: 'POST /api/register' });
     const captcha = generateCaptcha();
     req.session.captchaAnswer = captcha.answer;
     // Don't echo raw pg/JMAP error text (constraint names, directory ids) to the client.
@@ -471,7 +472,7 @@ app.post('/api/apply', applyLimiter, async (req, res) => {
 
     res.json({ success: true, requestedEmail });
   } catch (err) {
-    console.error('POST /api/apply:', err.message);
+    reportError(err, { where: 'POST /api/apply' });
     const captcha = generateCaptcha();
     req.session.captchaAnswer = captcha.answer;
     res.status(502).json({
@@ -560,7 +561,7 @@ app.post('/api/admin/invitations/send', requireAdmin, async (req, res) => {
 
     res.json({ success: true, invitation, emailSent, emailError });
   } catch (err) {
-    console.error('POST /api/admin/invitations/send:', err.message);
+    reportError(err, { where: 'POST /api/admin/invitations/send' });
     res.status(502).json({ error: err.message });
   }
 });
@@ -599,7 +600,7 @@ app.post('/api/internal/recovery', requireInternalWebmail, async (req, res) => {
     await passwordReset.requestRecoveryChange(mailboxEmail, recoveryEmail);
     return res.json({ pending: true });
   } catch (err) {
-    console.error('Recovery email change request failed:', err.message);
+    reportError(err, { where: 'Recovery email change request failed' });
     return res.status(400).json({ error: 'Could not request recovery email change' });
   }
 });
@@ -611,7 +612,7 @@ app.get('/api/recovery/verify', (req, res) => {
   try {
     result = passwordReset.confirmRecoveryChange(mailboxEmail, token);
   } catch (err) {
-    console.error('Recovery email verification failed:', err.message);
+    reportError(err, { where: 'Recovery email verification failed' });
   }
   const target = new URL('/settings/security', siteConfig.webmailUrl || 'https://webmail.zaur.app');
   target.searchParams.set('recovery', result.valid ? 'verified' : 'invalid');
@@ -711,7 +712,7 @@ app.get('/api/admin/overview', requireAdmin, async (_req, res) => {
       ...getSiteConfig(),
     });
   } catch (err) {
-    console.error('GET /api/admin/overview:', err.message);
+    reportError(err, { where: 'GET /api/admin/overview' });
     res.status(502).json({ error: 'Unable to load admin overview.' });
   }
 });
@@ -736,7 +737,7 @@ app.get('/api/admin/accounts', requireAdmin, async (req, res) => {
       })),
     });
   } catch (err) {
-    console.error('GET /api/admin/accounts:', err.message);
+    reportError(err, { where: 'GET /api/admin/accounts' });
     res.status(502).json({ error: 'Unable to list mailboxes.' });
   }
 });
@@ -759,7 +760,7 @@ app.get('/api/admin/account', requireAdmin, async (req, res) => {
       recoveryEmail: recoveryEmail || null,
     });
   } catch (err) {
-    console.error('GET /api/admin/account:', err.message);
+    reportError(err, { where: 'GET /api/admin/account' });
     res.status(502).json({ error: 'Unable to look up account.' });
   }
 });
@@ -768,7 +769,7 @@ app.get('/api/admin/audit', requireAdmin, async (_req, res) => {
   try {
     res.json(await getProvisioningAudit());
   } catch (err) {
-    console.error('GET /api/admin/audit:', err.message);
+    reportError(err, { where: 'GET /api/admin/audit' });
     res.status(502).json({ error: err.message });
   }
 });
@@ -798,7 +799,7 @@ app.post('/api/admin/cleanup-account', requireAdmin, async (req, res) => {
     passwordReset.revokeTokensForMailbox(email);
     res.json({ success: true, result });
   } catch (err) {
-    console.error('POST /api/admin/cleanup-account:', err.message);
+    reportError(err, { where: 'POST /api/admin/cleanup-account' });
     res.status(502).json({ error: err.message });
   }
 });
@@ -819,10 +820,33 @@ app.get('/success', (_req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'success.html'));
 });
 
+// Browser error tracking: SDK + init served as ONE same-origin script (CSP has no
+// 'unsafe-inline'). The DSN token is a public write-only key. 204 when unset.
+const tracewayScript = process.env.TRACEWAY_DSN
+  ? `${fs.readFileSync(path.join(__dirname, 'node_modules/@tracewayapp/frontend/dist/traceway.iife.global.js'), 'utf8')}
+Traceway.init(${JSON.stringify(process.env.TRACEWAY_DSN.trim())}, { sessionRecording: false });`
+  : '';
+app.get('/traceway.js', (_req, res) => {
+  if (!tracewayScript) return res.status(204).end();
+  res.type('application/javascript').send(tracewayScript);
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use((_req, res) => {
   res.status(404).sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Anything thrown outside a route's own try/catch (sync handlers, body-parser).
+app.use((err, req, res, _next) => {
+  if (!err.status || err.status >= 500) reportError(err, { where: `${req.method} ${req.path}` });
+  res.status(err.status || 500).json({ error: err.expose ? err.message : 'Internal error' });
+});
+
+process.on('unhandledRejection', (err) => reportError(err, { where: 'unhandledRejection' }));
+process.on('uncaughtException', (err) => {
+  reportError(err, { where: 'uncaughtException' });
+  setTimeout(() => process.exit(1), 1000).unref(); // still crash, after the report leaves
 });
 
 app.listen(PORT, () => {

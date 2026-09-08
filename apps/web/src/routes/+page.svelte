@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Obsidian',
+			desc: 'Obsidian desktop in the cloud — an always-on vault with plugins, reachable from any device.',
+			deploy: 'https://railway.com/deploy/obsidian',
+			source: 'https://github.com/nomideusz/obsidian-railway'
+		},
+		{
 			name: 'Medusa v2',
 			desc: 'Headless commerce backend with server + worker, Postgres and Redis — admin user created on first boot.',
 			deploy: 'https://railway.com/deploy/medusa-commerce',

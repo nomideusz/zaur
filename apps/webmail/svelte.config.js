@@ -27,6 +27,8 @@ const config = {
 				// call SFU — signal is wss, region/validate is https, ICE may use TURN.
 				'connect-src': [
 					'self',
+					// Error reports go straight to self-hosted Traceway.
+					'https://traceway.zaur.app',
 					'https://*.livekit.cloud',
 					'wss://*.livekit.cloud',
 					'https://*.turn.livekit.cloud',
