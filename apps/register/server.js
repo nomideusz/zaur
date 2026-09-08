@@ -21,6 +21,7 @@ const {
 } = require('./lib/validation');
 const { getSiteConfig } = require('./lib/site-config');
 const { reportError, tracewayOrigin } = require('./lib/report');
+const { requestHandoff, safeNext } = require('./lib/webmail-handoff');
 
 const siteConfig = getSiteConfig();
 
@@ -290,6 +291,7 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
     password,
     confirmPassword,
     captchaAnswer,
+    next,
   } = req.body;
 
   let recoveryEmail = null;
@@ -392,10 +394,15 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
 
     delete req.session.captchaAnswer;
 
+    // Sign the new user in on webmail so they land in mail (or back in the app
+    // they came from, via `next`) without retyping the password.
+    const handoffUrl = await requestHandoff(email, password, safeNext(next));
+
     res.json({
       success: true,
       email,
       recoveryEmail,
+      handoffUrl,
       passkeySetupEnabled: false,
       passkeySetup: null,
       webmailUrl: process.env.WEBMAIL_URL || 'https://webmail.zaur.app',

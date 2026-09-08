@@ -1,18 +1,11 @@
 import { createHash } from 'node:crypto';
 import { json, type RequestHandler } from '@sveltejs/kit';
 import { appConfig } from '$lib/config';
-import { createConnectedClient } from '$lib/server/jmap';
 import { classifyJmapError, loginErrorMessage } from '$lib/jmap/errors';
-import { findIdentityEmail, normalizeEmail } from '$lib/jmap/account';
+import { normalizeEmail } from '$lib/jmap/account';
 import { addAccount, recordSessionDevice, writeSession } from '$lib/server/session';
+import { buildSessionFromCredentials } from '$lib/server/login-session';
 import { checkRateLimit, getClientAddress } from '$lib/server/rate-limit';
-import {
-	isPasswordLoginEnabled,
-	isStalwartOauthEnabled
-} from '$lib/server/oauth-config';
-import { authenticateStalwartCredentials } from '$lib/server/stalwart-auth';
-import type { SessionData } from '$lib/server/session-model';
-import { createTokenSession } from '@zaur/mail-core/auth/contract';
 
 export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	const clientAddress = getClientAddress(request);
@@ -57,55 +50,32 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	const serverUrl = appConfig.jmapServerUrl;
 
 	try {
-		let sessionData: SessionData;
-		if (isStalwartOauthEnabled()) {
-			const authResult = await authenticateStalwartCredentials({
-				accountName: email,
-				accountSecret: password,
-				mfaToken: body.totp,
-				requestOrigin: url.origin
-			});
-			if (authResult.status === 'mfa_required') {
-				return json(
-					{ requiresTotp: true, code: 'mfa_required' },
-					{ status: 202, headers: { 'Cache-Control': 'no-store' } }
-				);
-			}
-			if (authResult.status === 'failure') {
-				return json(
-					{ error: 'Invalid email, password, or 2FA code.', code: 'invalid_credentials' },
-					{ status: 401, headers: { 'Cache-Control': 'no-store' } }
-				);
-			}
-			sessionData = createTokenSession({
-				serverUrl,
-				username: email,
-				accessToken: authResult.tokens.accessToken,
-				refreshToken: authResult.tokens.refreshToken,
-				accessTokenExpiresAt: authResult.tokens.accessTokenExpiresAt,
-				scope: authResult.tokens.scope
-			});
-		} else if (isPasswordLoginEnabled()) {
-			const effectivePassword = body.totp?.trim() ? `${password}$${body.totp.trim()}` : password;
-			sessionData = {
-				serverUrl,
-				username: email,
-				authMethod: 'password' as const,
-				password: effectivePassword
-			};
-		} else {
+		const built = await buildSessionFromCredentials({
+			email,
+			password,
+			totp: body.totp,
+			requestOrigin: url.origin
+		});
+		if (built.status === 'mfa_required') {
+			return json(
+				{ requiresTotp: true, code: 'mfa_required' },
+				{ status: 202, headers: { 'Cache-Control': 'no-store' } }
+			);
+		}
+		if (built.status === 'invalid_credentials') {
+			return json(
+				{ error: 'Invalid email, password, or 2FA code.', code: 'invalid_credentials' },
+				{ status: 401, headers: { 'Cache-Control': 'no-store' } }
+			);
+		}
+		if (built.status === 'unavailable') {
 			return json(
 				{ error: 'Secure sign-in is temporarily unavailable.', code: 'server_unavailable' },
 				{ status: 503, headers: { 'Cache-Control': 'no-store' } }
 			);
 		}
-
-		const client = await createConnectedClient(sessionData);
-
-		const identities = await client.getIdentities();
-		const primary = findIdentityEmail(identities, email) ?? identities[0];
-		const displayName = primary?.name ?? primary?.email ?? email;
-		sessionData.displayName = displayName;
+		const { sessionData, identities } = built;
+		const displayName = sessionData.displayName ?? email;
 
 		// 'add' appends to (and activates within) the current session; otherwise replace it.
 		if (body.add === true) {

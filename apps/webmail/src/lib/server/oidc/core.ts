@@ -88,27 +88,36 @@ export function signIdToken(keypair: OidcKeypair, claims: Record<string, unknown
 	return `${header}.${payload}.${signature}`;
 }
 
-export function createAuthCode(db: DatabaseSync, data: AuthCodeData, ttlMs: number, now = Date.now()): string {
+/** Store any JSON payload under a random one-time code (shared table with auth codes). */
+export function createOneTimeCode(db: DatabaseSync, payload: unknown, ttlMs: number, now = Date.now()): string {
 	ensureTables(db);
 	db.prepare('DELETE FROM oidc_codes WHERE expires_at < ?').run(now);
 	const code = randomBytes(32).toString('base64url');
 	db.prepare('INSERT INTO oidc_codes (code, payload, expires_at) VALUES (?, ?, ?)').run(
 		code,
-		JSON.stringify(data),
+		JSON.stringify(payload),
 		now + ttlMs
 	);
 	return code;
 }
 
-/** One-time: the code row is deleted whether or not it is still valid. */
-export function consumeAuthCode(db: DatabaseSync, code: string, now = Date.now()): AuthCodeData | null {
+/** One-time: the row is deleted whether or not it is still valid. */
+export function consumeOneTimeCode<T>(db: DatabaseSync, code: string, now = Date.now()): T | null {
 	ensureTables(db);
 	const row = db.prepare('SELECT payload, expires_at FROM oidc_codes WHERE code = ?').get(code) as
 		| { payload: string; expires_at: number }
 		| undefined;
 	if (row) db.prepare('DELETE FROM oidc_codes WHERE code = ?').run(code);
 	if (!row || row.expires_at < now) return null;
-	return JSON.parse(row.payload) as AuthCodeData;
+	return JSON.parse(row.payload) as T;
+}
+
+export function createAuthCode(db: DatabaseSync, data: AuthCodeData, ttlMs: number, now = Date.now()): string {
+	return createOneTimeCode(db, data, ttlMs, now);
+}
+
+export function consumeAuthCode(db: DatabaseSync, code: string, now = Date.now()): AuthCodeData | null {
+	return consumeOneTimeCode<AuthCodeData>(db, code, now);
 }
 
 export function verifyPkceS256(verifier: string, challenge: string): boolean {

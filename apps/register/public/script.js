@@ -484,6 +484,7 @@ registerForm.addEventListener('submit', async (e) => {
         password: passwordInput.value,
         confirmPassword: confirmPasswordInput.value,
         captchaAnswer: hasMagicLinkInvitation ? undefined : document.getElementById('captcha-answer').value,
+        next: document.getElementById('next-path').value || undefined,
       }),
     });
 
@@ -514,6 +515,16 @@ registerForm.addEventListener('submit', async (e) => {
       );
     } else {
       sessionStorage.removeItem('passkeySetup');
+    }
+    if (data.handoffUrl) {
+      sessionStorage.setItem('handoffUrl', data.handoffUrl);
+      // Came from another app (next set): go straight back, already signed in.
+      if (document.getElementById('next-path').value) {
+        window.location.href = data.handoffUrl;
+        return;
+      }
+    } else {
+      sessionStorage.removeItem('handoffUrl');
     }
     window.location.href = `/success?email=${encodeURIComponent(data.email)}`;
   } catch {
@@ -608,6 +619,10 @@ function enterApplyMode() {
 
 async function initInvitation() {
   const params = new URLSearchParams(window.location.search);
+  const next = params.get('next') || '';
+  if (next.startsWith('/') && !next.startsWith('//')) {
+    document.getElementById('next-path').value = next;
+  }
   inviteToken = params.get('token')?.trim() || '';
   inviteEmail = params.get('email')?.trim() || '';
 

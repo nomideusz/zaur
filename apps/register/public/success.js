@@ -38,7 +38,9 @@ async function init() {
 
     const loginParams = new URLSearchParams({ email, welcome: '1' });
     if (recoveryEmail) loginParams.set('recovery', recoveryEmail);
-    const loginUrl = `${webmailUrl}/login?${loginParams.toString()}`;
+    // handoffUrl signs the user in directly (one-time, 10 min); fall back to the login form.
+    const handoffUrl = sessionStorage.getItem('handoffUrl');
+    const loginUrl = handoffUrl || `${webmailUrl}/login?${loginParams.toString()}`;
     webmailBtn.href = loginUrl;
     skipBtn.href = loginUrl;
 
@@ -70,6 +72,8 @@ async function init() {
 			passkeyBtn.href = `${webmailUrl}/setup-passkey?${setupParams.toString()}`;
       statusEl.textContent = 'Optional: set up a passkey — no need to re-enter your email.';
       sessionStorage.removeItem('passkeySetup');
+    } else if (handoffUrl) {
+      statusEl.textContent = "You're signed in — open mail to get started.";
     } else if (recoveryEmail) {
       statusEl.textContent = `Open mail to sign in. Forgot your password? We can send a reset link to ${recoveryEmail}.`;
     } else {

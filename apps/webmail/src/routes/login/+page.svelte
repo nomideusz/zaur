@@ -172,7 +172,9 @@
 	{#snippet footer()}
 		{#if appConfig.registerUrl}
 			Need an address?
-			<a href={appConfig.registerUrl} class="z-link">Get your address</a>
+			<a href={nextPath ? `/register?next=${encodeURIComponent(nextPath)}` : appConfig.registerUrl} class="z-link"
+				>Get your address</a
+			>
 		{/if}
 	{/snippet}
 </AuthPage>
