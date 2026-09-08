@@ -353,7 +353,15 @@ async function createAccount(username, domainId, password) {
   const email = created.emailAddress || `${username}@${domainName}`;
 
   // Set the password on the freshly created principal (Stalwart hashes it).
-  await setAccountCredential(created.id, password);
+  // If Stalwart rejects the password, the principal must not outlive this call:
+  // the caller never sees its id, so it would squat on the address with no
+  // credentials and every retry would get "no longer available".
+  try {
+    await setAccountCredential(created.id, password);
+  } catch (err) {
+    await deleteAccount(created.id).catch(() => {});
+    throw err;
+  }
 
   return { email, accountId: created.id };
 }
