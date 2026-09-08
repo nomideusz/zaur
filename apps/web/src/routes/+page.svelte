@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'LibreOffice',
+			desc: 'Full LibreOffice suite in the cloud — edit Office files from an iPad or Chromebook.',
+			deploy: 'https://railway.com/deploy/libreoffice',
+			source: 'https://github.com/nomideusz/libreoffice-railway'
+		},
+		{
 			name: 'VSCodium',
 			desc: 'Desktop VSCodium streamed to your browser — extensions and terminals stay alive between visits.',
 			deploy: 'https://railway.com/deploy/vscodium',
