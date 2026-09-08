@@ -169,7 +169,12 @@ async function setAccountCredential(accountId, password) {
   ]);
   const response = getMethodResponse(body, 'setCred');
   if (response?.notUpdated?.[accountId]) {
-    throw new Error(extractJmapError(response));
+    // Stalwart's password-policy verdict ("too weak", "repeats like aaa…") is
+    // written for the user; routes surface err.userMessage instead of the
+    // generic "try again" that hides why the signup failed.
+    const err = new Error(extractJmapError(response));
+    err.userMessage = err.message;
+    throw err;
   }
   return true;
 }

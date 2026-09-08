@@ -405,8 +405,11 @@ app.post('/api/register', registerHourlyLimiter, registerDailyLimiter, async (re
     reportError(err, { where: 'POST /api/register' });
     const captcha = generateCaptcha();
     req.session.captchaAnswer = captcha.answer;
-    // Don't echo raw pg/JMAP error text (constraint names, directory ids) to the client.
-    res.status(400).json({ error: 'Registration could not be completed. Please try again.', captcha: captcha.question });
+    // Only Stalwart's password-policy verdict is user-facing; other JMAP text stays generic.
+    res.status(400).json({
+      error: err.userMessage || 'Registration could not be completed. Please try again.',
+      captcha: captcha.question,
+    });
   }
 });
 
@@ -654,8 +657,8 @@ app.post('/api/forgot-password/reset', forgotPasswordIpLimiter, async (req, res)
     }
     return res.json({ success: true, mailboxEmail: result.mailboxEmail });
   } catch (err) {
-    // Internal failure details (Stalwart/DB errors) are logged, never returned.
-    console.error('POST /api/forgot-password/reset:', err.stack || err.message);
+    reportError(err, { where: 'POST /api/forgot-password/reset' });
+    if (err.userMessage) return res.status(400).json({ error: err.userMessage });
     return res.status(502).json({ error: 'Unable to reset password right now. Please try again later.' });
   }
 });
