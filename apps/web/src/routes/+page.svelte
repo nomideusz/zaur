@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'VSCodium',
+			desc: 'Desktop VSCodium streamed to your browser — extensions and terminals stay alive between visits.',
+			deploy: 'https://railway.com/deploy/vscodium',
+			source: 'https://github.com/nomideusz/vscodium-railway'
+		},
+		{
 			name: 'Ubuntu Terminal',
 			desc: 'Ubuntu shell in the browser and over SSH — tmux sessions survive disconnects, home persists.',
 			deploy: 'https://railway.com/deploy/ubuntu-terminal',
