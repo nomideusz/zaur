@@ -8,6 +8,8 @@ import { sealSession, unsealSession } from './session-crypto';
 import { credentialPermissions, extractOneTimeCredential } from './account-security-contract';
 import { log } from './log';
 
+import { AccountSecurityError, setFailureMessage } from '$lib/server/jmap-set-result';
+
 const MANAGEMENT_USING = ['urn:ietf:params:jmap:core', 'urn:stalwart:jmap'];
 const TOTP_SETUP_TTL_MS = 10 * 60_000;
 
@@ -98,6 +100,9 @@ function assertSetSucceeded(data: Record<string, unknown>, operation: 'updated' 
 	if (operation === 'updated' && Array.isArray(data.updated) && data.updated.includes('singleton')) return;
 	if (operation === 'destroyed' && Array.isArray(data.destroyed) && data.destroyed.length) return;
 	if (operation === 'created' && data.created && typeof data.created === 'object') return;
+	const reason = setFailureMessage(data);
+	log.warn('stalwart_account_security_rejected', { operation, reason });
+	if (reason) throw new AccountSecurityError(reason);
 	throw new Error('Stalwart rejected the account-security change');
 }
 

@@ -7,6 +7,8 @@ import {
 } from '$lib/server/security-request';
 import { hasRecentStepUp, performStepUp } from '$lib/server/step-up';
 import { rotateSessionId } from '$lib/server/session';
+import { AccountSecurityError } from '$lib/server/jmap-set-result';
+import { reportError } from '$lib/server/report';
 
 export const POST: RequestHandler = async ({ request, cookies, url }) => {
 	assertSameOriginJson(request, url);
@@ -28,16 +30,28 @@ export const POST: RequestHandler = async ({ request, cookies, url }) => {
 			newPassword: body.newPassword,
 			totp: body.totp
 		});
+	} catch (err) {
+		// Stalwart's own verdict (wrong current password, weak new one) is the
+		// message the user needs; anything else is ours to look at in Traceway.
+		if (err instanceof AccountSecurityError) {
+			return securityJson({ error: err.userMessage }, { status: 400 });
+		}
+		reportError(err, { where: 'POST /api/account/security/password', username: account.username });
+		return securityJson({ error: 'Password change failed. Please try again later.' }, { status: 502 });
+	}
+
+	// The password IS changed from here on — a step-up hiccup must not report failure.
+	try {
 		const refreshed = await performStepUp({
 			account,
 			password: body.newPassword,
 			totp: body.totp,
 			requestOrigin: url.origin
 		});
-		if (refreshed !== 'verified') throw new Error('Could not refresh authentication');
+		if (refreshed !== 'verified') throw new Error(`step-up after password change: ${refreshed}`);
 		rotateSessionId(cookies);
-		return securityJson({ changed: true });
-	} catch {
-		return securityJson({ error: 'Password change failed' }, { status: 400 });
+	} catch (err) {
+		reportError(err, { where: 'POST /api/account/security/password (step-up)', username: account.username });
 	}
+	return securityJson({ changed: true });
 };
