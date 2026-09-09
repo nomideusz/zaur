@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Mullvad Browser',
+			desc: 'Mullvad Browser in the cloud — Tor-grade anti-fingerprinting without the Tor network.',
+			deploy: 'https://railway.com/deploy/mullvad-browser',
+			source: 'https://github.com/nomideusz/mullvad-railway'
+		},
+		{
 			name: 'Ungoogled Chromium',
 			desc: 'Ungoogled Chromium in the cloud — Chromium without Google services, profile persists.',
 			deploy: 'https://railway.com/deploy/ungoogled-chromium',
