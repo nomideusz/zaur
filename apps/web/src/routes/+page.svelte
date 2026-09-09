@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Thunderbird',
+			desc: 'Thunderbird in the cloud — one always-on mail client for all your accounts.',
+			deploy: 'https://railway.com/deploy/thunderbird',
+			source: 'https://github.com/nomideusz/thunderbird-railway'
+		},
+		{
 			name: 'GIMP',
 			desc: 'GIMP in the cloud — edit images from a tablet or a locked-down laptop, files persist.',
 			deploy: 'https://railway.com/deploy/gimp',
