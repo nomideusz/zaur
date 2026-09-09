@@ -93,7 +93,9 @@ export interface OidcClaims {
  */
 export async function resolveOidcIdentity(session: SessionData): Promise<OidcClaims> {
 	const email = accountKey(session.username);
-	const fallbackName = session.displayName?.trim() || email.split('@')[0];
+	// The default identity's name is the address itself — that's not a name.
+	const displayName = session.displayName?.trim();
+	const fallbackName = displayName && displayName.toLowerCase() !== email ? displayName : email.split('@')[0];
 	const base: OidcClaims = { sub: email, preferred_username: email, email, name: fallbackName };
 
 	if (session.authMethod === 'oauth' || session.accessToken) {
