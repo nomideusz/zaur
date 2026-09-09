@@ -29,6 +29,8 @@
 	const overflow = $derived(Math.max(0, accounts.length - max));
 	/** Leave a slot for the “+N” hint when accounts are hidden. */
 	const visible = $derived(overflow > 0 ? accounts.slice(0, max - 1) : accounts);
+	/** What the hint actually counts — one more than `overflow`, since the hint takes a slot. */
+	const hidden = $derived(accounts.length - visible.length);
 </script>
 
 <div class={cn('z-account-rail', className)}>
@@ -70,8 +72,8 @@
 		{/if}
 	{/each}
 
-	{#if overflow > 0}
-		<span class="z-account-rail__overflow" aria-hidden="true">+{overflow}</span>
+	{#if hidden > 0}
+		<span class="z-account-rail__overflow" aria-hidden="true">+{hidden}</span>
 	{/if}
 
 	<UserMenu>

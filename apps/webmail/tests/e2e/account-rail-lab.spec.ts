@@ -91,5 +91,7 @@ test('menu lists the other accounts and sign out', async ({ page }) => {
 	await expect(content).toBeVisible();
 	await expect(content.getByText('grace@zaur.app')).toBeVisible();
 	await expect(content.getByText('Add account')).toBeVisible();
-	await expect(content.getByText('Sign out')).toBeVisible();
+	// Multi-account session adds "Sign out of this account" beside "Sign out of all".
+	await expect(content.getByText('Sign out of this account')).toBeVisible();
+	await expect(content.getByText('Sign out of all')).toBeVisible();
 });
