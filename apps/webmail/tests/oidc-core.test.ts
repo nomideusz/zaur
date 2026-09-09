@@ -111,7 +111,7 @@ describe('parseOidcClients', () => {
 			clients.map((c) => [c.clientId, c.name, c.redirectUris.length]),
 			[
 				['chat', 'Chat', 1],
-				['ytzero-bartube', 'bartube.zaur.app', 2]
+				['ytzero-bartube', 'Bartube', 2]
 			]
 		);
 		assert.deepEqual(parseOidcClients('not json', {}), []);

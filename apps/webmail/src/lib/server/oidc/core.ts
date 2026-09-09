@@ -210,8 +210,10 @@ export function parseOidcClients(
 		if (!clientId || !clientSecret || uris.length === 0) return;
 		let name = typeof r.name === 'string' && r.name.trim() ? r.name.trim() : '';
 		if (!name) {
+			// "bartube.zaur.app" → "Bartube": good enough for "continue to …" without config.
 			try {
-				name = new URL(uris[0]).hostname;
+				const label = new URL(uris[0]).hostname.split('.')[0];
+				name = label.charAt(0).toUpperCase() + label.slice(1);
 			} catch {
 				name = clientId;
 			}
