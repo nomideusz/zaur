@@ -357,6 +357,15 @@
 
 {#if calendar.composeOpen}
 	<EventComposePanel />
+	<!-- Mark body open so FAB stays hidden -->
+	<svelte:effect>
+		if (calendar.composeOpen) {
+			document.body.classList.add('compose-panel-open');
+		} else {
+			document.body.classList.remove('compose-panel-open');
+		}
+		return () => document.body.classList.remove('compose-panel-open');
+	</svelte:effect>
 {/if}
 
 <style>

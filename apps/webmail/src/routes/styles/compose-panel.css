@@ -1,0 +1,4 @@
+.svelte:global(.compose-panel-open) .z-mobile-fab {
+	visibility: hidden;
+	pointer-events: none;
+}
