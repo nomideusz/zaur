@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'LibreWolf',
+			desc: 'LibreWolf, the privacy-hardened Firefox, in the cloud — password-gated, profile persists.',
+			deploy: 'https://railway.com/deploy/librewolf-browser',
+			source: 'https://github.com/nomideusz/librewolf-railway'
+		},
+		{
 			name: 'Blender',
 			desc: 'Blender in the cloud — kick off CPU renders and close your laptop.',
 			deploy: 'https://railway.com/deploy/blender',
