@@ -390,32 +390,19 @@
 				{#snippet second()}
 					{#if selectedNode}
 						<FileDetailPanel
-							chrome="pane"
 							node={selectedNode}
 							images={folderImages}
 							onClose={() => files.select(null)}
 							onShare={() => openShare(selectedNode)}
 							onRename={() => openRename(selectedNode)}
 							onRemove={() => void removeNode(selectedNode)}
-							onSelectImage={(id) => files.select(id)}
+							onSelectImage={(id: string) => files.select(id)}
 						/>
 					{:else}
 						<FileDetailEmpty />
 					{/if}
 				{/snippet}
 			</PaneSplit>
-			{#if selectedNode}
-				<FileDetailPanel
-					chrome="sheet"
-					node={selectedNode}
-					images={folderImages}
-					onClose={() => files.select(null)}
-					onShare={() => openShare(selectedNode)}
-					onRename={() => openRename(selectedNode)}
-					onRemove={() => void removeNode(selectedNode)}
-					onSelectImage={(id) => files.select(id)}
-				/>
-			{/if}
 		{/snippet}
 	</PaneSplit>
 {/if}

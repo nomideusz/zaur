@@ -5,8 +5,9 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import CopyButton from '$lib/components/ui/CopyButton.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
+	import { Drawer } from '@ark-ui/svelte/drawer';
+	import { Portal } from '@ark-ui/svelte/portal';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
-	import MobileSheet from '$lib/components/ui/MobileSheet.svelte';
 	import type { ContactEntry } from '$lib/utils/contact-index';
 	import { cn } from '$lib/utils/cn';
 
@@ -15,13 +16,11 @@
 		onClose,
 		onCompose,
 		onRemove,
-		chrome = 'both'
 	}: {
 		contact: ContactEntry;
 		onClose: () => void;
 		onCompose: () => void;
 		onRemove: () => void;
-		chrome?: 'pane' | 'sheet' | 'both';
 	} = $props();
 
 	const panelPadding = 'px-4 py-3';
@@ -71,7 +70,7 @@
 	</footer>
 {/snippet}
 
-{#if chrome === 'pane' || chrome === 'both'}
+<!-- Desktop pane -->
 <aside
 	class="z-mail-pane-surface hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex"
 	style="view-transition-name: contact-detail;"
@@ -79,10 +78,28 @@
 >
 	{@render details(false)}
 </aside>
-{/if}
 
-{#if chrome === 'sheet' || chrome === 'both'}
-<MobileSheet ariaLabel="Contact details">
-	{@render details(true)}
-</MobileSheet>
-{/if}
+<!-- Mobile drawer -->
+<Drawer.Root
+	open={!!contact}
+	onOpenChange={(details) => {
+		if (!details.open) onClose();
+	}}
+	swipeDirection="end"
+	lazyMount
+	unmountOnExit
+>
+	<Portal>
+		<Drawer.Backdrop class="z-contact-drawer-backdrop fixed inset-0 bg-black/50 md:hidden" />
+		<Drawer.Positioner
+			class="z-contact-drawer-positioner fixed inset-0 flex items-stretch justify-end md:hidden"
+		>
+			<Drawer.Content
+				class="z-contact-drawer-content flex h-full min-h-0 max-w-md flex-col bg-surface-raised outline-none"
+				aria-label="Contact details"
+			>
+				{@render details(true)}
+			</Drawer.Content>
+		</Drawer.Positioner>
+	</Portal>
+</Drawer.Root>

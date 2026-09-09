@@ -1,0 +1,22 @@
+/* Event panel & compose drawer styles */
+
+.z-event-drawer-backdrop,
+.z-compose-drawer-backdrop,
+.z-contact-drawer-backdrop,
+.z-file-drawer-backdrop {
+	z-index: 50;
+}
+
+.z-event-drawer-positioner,
+.z-compose-drawer-positioner,
+.z-contact-drawer-positioner,
+.z-file-drawer-positioner {
+	z-index: 50;
+}
+
+.z-event-drawer-content,
+.z-compose-drawer-content,
+.z-contact-drawer-content,
+.z-file-drawer-content {
+	z-index: 51;
+}

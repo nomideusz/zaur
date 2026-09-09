@@ -9,7 +9,8 @@
 	import FileImageBrowser from '$lib/components/files/FileImageBrowser.svelte';
 	import LoadingIndicator from '$lib/components/ui/LoadingIndicator.svelte';
 	import MarkdownBody from '$lib/components/ui/MarkdownBody.svelte';
-	import MobileSheet from '$lib/components/ui/MobileSheet.svelte';
+	import { Drawer } from '@ark-ui/svelte/drawer';
+	import { Portal } from '@ark-ui/svelte/portal';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { isImageFile } from '$lib/files/image';
 	import { fileAllowsDelete, fileAllowsShare, formatFileSize } from '$lib/jmap/file-rights';
@@ -28,7 +29,6 @@
 		onRename,
 		onRemove,
 		onSelectImage,
-		chrome = 'both'
 	}: {
 		node: FileNode;
 		images?: FileNode[];
@@ -37,7 +37,6 @@
 		onRename: () => void;
 		onRemove: () => void;
 		onSelectImage?: (id: string) => void;
-		chrome?: 'pane' | 'sheet' | 'both';
 	} = $props();
 
 	const panelPadding = 'px-4 py-3';
@@ -286,18 +285,36 @@
 	</footer>
 {/snippet}
 
-{#if chrome === 'pane' || chrome === 'both'}
-	<aside
-		class="z-mail-pane-surface hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex"
-		style="view-transition-name: file-detail;"
-		aria-label="File details"
-	>
-		{@render details(false)}
+<!-- Desktop pane -->
+<aside
+	class="z-mail-pane-surface hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex"
+	style="view-transition-name: file-detail;"
+	aria-label="File details"
+>
+	{@render details(false)}
 	</aside>
-{/if}
 
-{#if chrome === 'sheet' || chrome === 'both'}
-	<MobileSheet ariaLabel="File details">
-		{@render details(true)}
-	</MobileSheet>
-{/if}
+<!-- Mobile drawer -->
+<Drawer.Root
+	open={!!node}
+	onOpenChange={(details) => {
+		if (!details.open) onClose();
+	}}
+	swipeDirection="end"
+	lazyMount
+	unmountOnExit
+>
+	<Portal>
+		<Drawer.Backdrop class="z-file-drawer-backdrop fixed inset-0 bg-black/50 md:hidden" />
+		<Drawer.Positioner
+			class="z-file-drawer-positioner fixed inset-0 flex items-stretch justify-end md:hidden"
+		>
+			<Drawer.Content
+				class="z-file-drawer-content flex h-full min-h-0 max-w-lg flex-col bg-surface-raised outline-none"
+				aria-label="File details"
+			>
+				{@render details(true)}
+			</Drawer.Content>
+		</Drawer.Positioner>
+	</Portal>
+</Drawer.Root>

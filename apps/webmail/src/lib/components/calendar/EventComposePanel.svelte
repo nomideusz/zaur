@@ -1,5 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
+	import { Drawer } from '@ark-ui/svelte/drawer';
+	import { Portal } from '@ark-ui/svelte/portal';
 	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import X from '$lib/components/icons/X.svelte';
 	import SettingsSelect from '$lib/components/settings/SettingsSelect.svelte';
@@ -10,7 +12,6 @@
 	import DateField from '$lib/components/ui/DateField.svelte';
 	import IconButton from '$lib/components/ui/IconButton.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
-	import FocusTrap from '$lib/components/ui/FocusTrap.svelte';
 	import { EVENT_REPEAT_OPTIONS } from '$lib/jmap/recurrence';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
@@ -91,6 +92,10 @@
 		void calendar.deleteComposeEvent(auth.client);
 	}
 
+	function handleSubmit() {
+		if (auth.client && canSave) void calendar.saveCompose(auth.client);
+	}
+
 	onMount(() => {
 		function onKeydown(event: KeyboardEvent) {
 			if (event.key === 'Escape') close();
@@ -100,203 +105,406 @@
 	});
 </script>
 
-<div
-	class="fixed inset-0 z-40 flex justify-end bg-black/20 backdrop-blur-[1px]"
-	style="padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px);"
-	role="presentation"
+<!-- Desktop pane -->
+<aside
+	class="z-mail-pane-surface hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex"
+	style="view-transition-name: calendar-compose;"
+	aria-label={isEdit ? 'Edit event' : 'New event'}
 >
-	<FocusTrap
-		class="z-panel flex h-full min-h-0 w-full max-w-lg flex-col overflow-hidden border-l shadow-md outline-none"
-		role="dialog"
-		aria-modal="true"
-		aria-label={isEdit ? 'Edit event' : 'New event'}
-		tabindex={-1}
+	<header
+		class={cn('flex shrink-0 items-center justify-between border-b border-border', panelPadding)}
 	>
-		<header
-			class={cn('flex shrink-0 items-center justify-between border-b border-border', panelPadding)}
-		>
-			<h2 class="text-base font-semibold text-fg">{isEdit ? 'Edit event' : 'New event'}</h2>
-			<IconButton label="Close event" onclick={close}>
-				<X class="size-4" />
-			</IconButton>
-		</header>
+		<h2 class="text-base font-semibold text-fg">{isEdit ? 'Edit event' : 'New event'}</h2>
+		<IconButton label="Close event" onclick={close}>
+			<X class="size-4" />
+		</IconButton>
+	</header>
 
-		<form
-			class="flex min-h-0 flex-1 flex-col overflow-hidden"
-			onsubmit={(e) => {
-				e.preventDefault();
-				if (auth.client && canSave) void calendar.saveCompose(auth.client);
-			}}
-		>
-			<ScrollArea pane class="min-h-0 flex-1">
-			<div class={cn('px-4 py-4', fieldGap)}>
-				<label class="block space-y-1.5">
-					<span class={fieldLabelClass}>Title</span>
-					<input
-						type="text"
-						class="z-input"
-						placeholder="Event title"
-						bind:value={calendar.composeDraft.title}
-						required
-					/>
-				</label>
+	<form
+		class="flex min-h-0 flex-1 flex-col overflow-hidden"
+		onsubmit={(e) => {
+			e.preventDefault();
+			handleSubmit();
+		}}
+	>
+		<ScrollArea pane class="min-h-0 flex-1">
+		<div class={cn('px-4 py-4', fieldGap)}>
+			<label class="block space-y-1.5">
+				<span class={fieldLabelClass}>Title</span>
+				<input
+					type="text"
+					class="z-input"
+					placeholder="Event title"
+					bind:value={calendar.composeDraft.title}
+					required
+				/>
+			</label>
 
+			<label class="block space-y-1.5">
+				<span class={fieldLabelClass}>Calendar</span>
+				<SettingsSelect
+					label="Calendar"
+					value={calendar.composeDraft.calendarId}
+					options={calendarOptions}
+					class="w-full"
+					onchange={(value) => (calendar.composeDraft.calendarId = value)}
+				/>
+			</label>
+
+			<Checkbox
+				checked={calendar.composeDraft.allDay}
+				label="All day"
+				class="inline-flex cursor-pointer items-center gap-2 rounded-md text-sm"
+				onchange={(checked) => {
+					calendar.composeDraft.allDay = checked === true;
+				}}
+			>
+				<span class="text-fg">All day</span>
+			</Checkbox>
+
+			{#if !isEdit}
 				<label class="block space-y-1.5">
-					<span class={fieldLabelClass}>Calendar</span>
+					<span class={fieldLabelClass}>Repeat</span>
 					<SettingsSelect
-						label="Calendar"
-						value={calendar.composeDraft.calendarId}
-						options={calendarOptions}
+						label="Repeat"
+						value={calendar.composeDraft.repeat}
+						options={EVENT_REPEAT_OPTIONS}
 						class="w-full"
-						onchange={(value) => (calendar.composeDraft.calendarId = value)}
+						onchange={(value) =>
+							(calendar.composeDraft.repeat = value as typeof calendar.composeDraft.repeat)}
+					/>
+					{#if calendar.composeDraft.repeat !== 'none'}
+						<p class="text-xs text-fg-muted">
+							Individual occurrences can't be moved on this server yet.
+						</p>
+					{/if}
+				</label>
+			{/if}
+
+			<div class="grid gap-3 sm:grid-cols-2">
+				<label class="block space-y-1.5">
+					<span class={fieldLabelClass}>Starts</span>
+					<DateField
+						bind:value={calendar.composeDraft.startDate}
+						required
+						weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
 					/>
 				</label>
 
-				<Checkbox
-					checked={calendar.composeDraft.allDay}
-					label="All day"
-					class="inline-flex cursor-pointer items-center gap-2 rounded-md text-sm"
-					onchange={(checked) => {
-						calendar.composeDraft.allDay = checked === true;
-					}}
-				>
-					<span class="text-fg">All day</span>
-				</Checkbox>
-
-				{#if !isEdit}
+				{#if calendar.composeDraft.allDay}
 					<label class="block space-y-1.5">
-						<span class={fieldLabelClass}>Repeat</span>
-						<SettingsSelect
-							label="Repeat"
-							value={calendar.composeDraft.repeat}
-							options={EVENT_REPEAT_OPTIONS}
-							class="w-full"
-							onchange={(value) =>
-								(calendar.composeDraft.repeat = value as typeof calendar.composeDraft.repeat)}
-						/>
-						{#if calendar.composeDraft.repeat !== 'none'}
-							<p class="text-xs text-fg-muted">
-								Individual occurrences can't be moved on this server yet.
-							</p>
-						{/if}
-					</label>
-				{/if}
-
-				<div class="grid gap-3 sm:grid-cols-2">
-					<label class="block space-y-1.5">
-						<span class={fieldLabelClass}>Starts</span>
+						<span class={fieldLabelClass}>Ends</span>
 						<DateField
-							bind:value={calendar.composeDraft.startDate}
+							bind:value={calendar.composeDraft.endDate}
 							required
+							invalid={timeRangeInvalid}
 							weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
 						/>
 					</label>
-
-					{#if calendar.composeDraft.allDay}
-						<label class="block space-y-1.5">
-							<span class={fieldLabelClass}>Ends</span>
+				{:else}
+					<label class="block space-y-1.5">
+						<span class={fieldLabelClass}>Start time</span>
+						<TimeField label="Start time" bind:value={calendar.composeDraft.startTime} />
+					</label>
+					<label class="block space-y-1.5 sm:col-span-2">
+						<span class={fieldLabelClass}>End time</span>
+						<div class="grid gap-3 sm:grid-cols-2">
 							<DateField
 								bind:value={calendar.composeDraft.endDate}
 								required
 								invalid={timeRangeInvalid}
 								weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
 							/>
-						</label>
-					{:else}
-						<label class="block space-y-1.5">
-							<span class={fieldLabelClass}>Start time</span>
-							<TimeField label="Start time" bind:value={calendar.composeDraft.startTime} />
-						</label>
-						<label class="block space-y-1.5 sm:col-span-2">
-							<span class={fieldLabelClass}>End time</span>
-							<div class="grid gap-3 sm:grid-cols-2">
-								<DateField
-									bind:value={calendar.composeDraft.endDate}
-									required
-									invalid={timeRangeInvalid}
-									weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
-								/>
-								<TimeField
-									label="End time"
-									invalid={timeRangeInvalid}
-									describedby={timeRangeInvalid ? composeHintId : undefined}
-									bind:value={calendar.composeDraft.endTime}
-								/>
-							</div>
-						</label>
-					{/if}
-				</div>
-				{#if saveBlockedReason && !calendar.composeError}
-					<p
-						id={composeHintId}
-						class={cn('text-xs', timeRangeInvalid ? 'text-danger' : 'text-fg-subtle')}
-					>
-						{saveBlockedReason}
-					</p>
+							<TimeField
+								label="End time"
+								invalid={timeRangeInvalid}
+								describedby={timeRangeInvalid ? composeHintId : undefined}
+								bind:value={calendar.composeDraft.endTime}
+							/>
+						</div>
+					</label>
 				{/if}
-
-				{#if meetEnabled}
-					<Checkbox
-						checked={videoCall}
-						label="Video call"
-						class="inline-flex cursor-pointer items-center gap-2 rounded-md text-sm"
-						onchange={(checked) => setVideoCall(checked === true)}
-					>
-						<span class="text-fg">Video call</span>
-					</Checkbox>
-				{/if}
-
-				<label class="block space-y-1.5">
-					<span class={fieldLabelClass}>Location</span>
-					<input
-						type="text"
-						class="z-input"
-						placeholder={videoCall ? 'Meeting link' : 'Optional'}
-						bind:value={calendar.composeDraft.location}
-						readonly={videoCall}
-					/>
-					{#if videoCall}
-						<p class="text-xs text-fg-muted">Guests join from this link; signed-in users enter with their name.</p>
-					{/if}
-				</label>
-
-				<label class="block space-y-1.5">
-					<span class={fieldLabelClass}>Description</span>
-					<textarea
-						class="z-input min-h-24 resize-y"
-						placeholder="Optional"
-						bind:value={calendar.composeDraft.description}
-					></textarea>
-				</label>
 			</div>
-			</ScrollArea>
-
-			{#if calendar.composeError}
-				<p class="border-t border-border px-4 py-2 text-sm text-danger" role="alert">
-					{calendar.composeError}
+			{#if saveBlockedReason && !calendar.composeError}
+				<p
+					id={composeHintId}
+					class={cn('text-xs', timeRangeInvalid ? 'text-danger' : 'text-fg-subtle')}
+				>
+					{saveBlockedReason}
 				</p>
 			{/if}
 
-			<footer
-				class={cn(
-					'flex shrink-0 items-center gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]',
-					panelPadding,
-					isEdit ? 'justify-between' : 'justify-end'
-				)}
-			>
-				{#if isEdit}
-					<Button variant="danger" type="button" onclick={deleteEvent}>
-						<Trash2 class="size-4" aria-hidden="true" />
-						Delete
-					</Button>
+			{#if meetEnabled}
+				<Checkbox
+					checked={videoCall}
+					label="Video call"
+					class="inline-flex cursor-pointer items-center gap-2 rounded-md text-sm"
+					onchange={(checked) => setVideoCall(checked === true)}
+				>
+					<span class="text-fg">Video call</span>
+				</Checkbox>
+			{/if}
+
+			<label class="block space-y-1.5">
+				<span class={fieldLabelClass}>Location</span>
+				<input
+					type="text"
+					class="z-input"
+					placeholder={videoCall ? 'Meeting link' : 'Optional'}
+					bind:value={calendar.composeDraft.location}
+					readonly={videoCall}
+				/>
+				{#if videoCall}
+					<p class="text-xs text-fg-muted">Guests join from this link; signed-in users enter with their name.</p>
 				{/if}
-				<div class="flex items-center gap-2">
-					<Button variant="ghost" type="button" onclick={close}>Close</Button>
-					<Button type="submit" disabled={!canSave} title={saveBlockedReason ?? submitLabel}>
-						{submitLabel}
-					</Button>
-				</div>
-			</footer>
-		</form>
-	</FocusTrap>
-</div>
+			</label>
+
+			<label class="block space-y-1.5">
+				<span class={fieldLabelClass}>Description</span>
+				<textarea
+					class="z-input min-h-24 resize-y"
+					placeholder="Optional"
+					bind:value={calendar.composeDraft.description}
+				></textarea>
+			</label>
+		</div>
+		</ScrollArea>
+
+		{#if calendar.composeError}
+			<p class="border-t border-border px-4 py-2 text-sm text-danger" role="alert">
+				{calendar.composeError}
+			</p>
+		{/if}
+
+		<footer
+			class={cn(
+				'flex shrink-0 items-center gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+				panelPadding,
+				isEdit ? 'justify-between' : 'justify-end'
+			)}
+		>
+			{#if isEdit}
+				<Button variant="danger" type="button" onclick={deleteEvent}>
+					<Trash2 class="size-4" aria-hidden="true" />
+					Delete
+				</Button>
+			{/if}
+			<div class="flex items-center gap-2">
+				<Button variant="ghost" type="button" onclick={close}>Close</Button>
+				<Button type="submit" disabled={!canSave} title={saveBlockedReason ?? submitLabel}>
+					{submitLabel}
+				</Button>
+			</div>
+		</footer>
+	</form>
+</aside>
+
+<!-- Mobile drawer -->
+<Drawer.Root
+	open={calendar.composeOpen}
+	onOpenChange={(details) => {
+		if (!details.open) calendar.closeCompose();
+	}}
+	swipeDirection="end"
+	lazyMount
+	unmountOnExit
+>
+	<Portal>
+		<Drawer.Backdrop class="z-compose-drawer-backdrop fixed inset-0 bg-black/50 md:hidden" />
+		<Drawer.Positioner
+			class="z-compose-drawer-positioner fixed inset-0 flex items-stretch justify-end md:hidden"
+		>
+			<Drawer.Content
+				class="z-compose-drawer-content flex h-full min-h-0 max-w-lg flex-col bg-surface-raised outline-none"
+				aria-label={isEdit ? 'Edit event' : 'New event'}
+			>
+				<header
+					class={cn('flex shrink-0 items-center justify-between border-b border-border', panelPadding)}
+				>
+					<h2 class="text-base font-semibold text-fg">{isEdit ? 'Edit event' : 'New event'}</h2>
+					<IconButton label="Close event" onclick={close}>
+						<X class="size-4" />
+					</IconButton>
+				</header>
+
+				<form
+					class="flex min-h-0 flex-1 flex-col overflow-hidden"
+					onsubmit={(e) => {
+						e.preventDefault();
+						handleSubmit();
+					}}
+				>
+					<ScrollArea pane class="min-h-0 flex-1">
+					<div class={cn('px-4 py-4', fieldGap)}>
+						<label class="block space-y-1.5">
+							<span class={fieldLabelClass}>Title</span>
+							<input
+								type="text"
+								class="z-input"
+								placeholder="Event title"
+								bind:value={calendar.composeDraft.title}
+								required
+							/>
+						</label>
+
+						<label class="block space-y-1.5">
+							<span class={fieldLabelClass}>Calendar</span>
+							<SettingsSelect
+								label="Calendar"
+								value={calendar.composeDraft.calendarId}
+								options={calendarOptions}
+								class="w-full"
+								onchange={(value) => (calendar.composeDraft.calendarId = value)}
+							/>
+						</label>
+
+						<Checkbox
+							checked={calendar.composeDraft.allDay}
+							label="All day"
+							class="inline-flex cursor-pointer items-center gap-2 rounded-md text-sm"
+							onchange={(checked) => {
+								calendar.composeDraft.allDay = checked === true;
+							}}
+						>
+							<span class="text-fg">All day</span>
+						</Checkbox>
+
+						{#if !isEdit}
+							<label class="block space-y-1.5">
+								<span class={fieldLabelClass}>Repeat</span>
+								<SettingsSelect
+									label="Repeat"
+									value={calendar.composeDraft.repeat}
+									options={EVENT_REPEAT_OPTIONS}
+									class="w-full"
+									onchange={(value) =>
+										(calendar.composeDraft.repeat = value as typeof calendar.composeDraft.repeat)}
+								/>
+								{#if calendar.composeDraft.repeat !== 'none'}
+									<p class="text-xs text-fg-muted">
+										Individual occurrences can't be moved on this server yet.
+									</p>
+								{/if}
+							</label>
+						{/if}
+
+						<div class="grid gap-3 sm:grid-cols-2">
+							<label class="block space-y-1.5">
+								<span class={fieldLabelClass}>Starts</span>
+								<DateField
+									bind:value={calendar.composeDraft.startDate}
+									required
+									weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
+								/>
+							</label>
+
+							{#if calendar.composeDraft.allDay}
+								<label class="block space-y-1.5">
+									<span class={fieldLabelClass}>Ends</span>
+									<DateField
+										bind:value={calendar.composeDraft.endDate}
+										required
+										invalid={timeRangeInvalid}
+										weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
+									/>
+								</label>
+							{:else}
+								<label class="block space-y-1.5">
+									<span class={fieldLabelClass}>Start time</span>
+									<TimeField label="Start time" bind:value={calendar.composeDraft.startTime} />
+								</label>
+								<label class="block space-y-1.5 sm:col-span-2">
+									<span class={fieldLabelClass}>End time</span>
+									<div class="grid gap-3 sm:grid-cols-2">
+										<DateField
+											bind:value={calendar.composeDraft.endDate}
+											required
+											invalid={timeRangeInvalid}
+											weekStartsOnMonday={settings.calendarWeekStartsOnMonday}
+										/>
+										<TimeField
+											label="End time"
+											invalid={timeRangeInvalid}
+											describedby={timeRangeInvalid ? composeHintId : undefined}
+											bind:value={calendar.composeDraft.endTime}
+										/>
+									</div>
+								</label>
+							{/if}
+						</div>
+						{#if saveBlockedReason && !calendar.composeError}
+							<p
+								id={composeHintId}
+								class={cn('text-xs', timeRangeInvalid ? 'text-danger' : 'text-fg-subtle')}
+							>
+								{saveBlockedReason}
+							</p>
+						{/if}
+
+						{#if meetEnabled}
+							<Checkbox
+								checked={videoCall}
+								label="Video call"
+								class="inline-flex cursor-pointer items-center gap-2 rounded-md text-sm"
+								onchange={(checked) => setVideoCall(checked === true)}
+							>
+								<span class="text-fg">Video call</span>
+							</Checkbox>
+						{/if}
+
+						<label class="block space-y-1.5">
+							<span class={fieldLabelClass}>Location</span>
+							<input
+								type="text"
+								class="z-input"
+								placeholder={videoCall ? 'Meeting link' : 'Optional'}
+								bind:value={calendar.composeDraft.location}
+								readonly={videoCall}
+							/>
+							{#if videoCall}
+								<p class="text-xs text-fg-muted">Guests join from this link; signed-in users enter with their name.</p>
+							{/if}
+						</label>
+
+						<label class="block space-y-1.5">
+							<span class={fieldLabelClass}>Description</span>
+							<textarea
+								class="z-input min-h-24 resize-y"
+								placeholder="Optional"
+								bind:value={calendar.composeDraft.description}
+							></textarea>
+						</label>
+					</div>
+					</ScrollArea>
+
+					{#if calendar.composeError}
+						<p class="border-t border-border px-4 py-2 text-sm text-danger" role="alert">
+							{calendar.composeError}
+						</p>
+					{/if}
+
+					<footer
+						class={cn(
+							'flex shrink-0 items-center gap-2 border-t border-border pb-[max(0.75rem,env(safe-area-inset-bottom))]',
+							panelPadding,
+							isEdit ? 'justify-between' : 'justify-end'
+						)}
+					>
+						{#if isEdit}
+							<Button variant="danger" type="button" onclick={deleteEvent}>
+								<Trash2 class="size-4" aria-hidden="true" />
+								Delete
+							</Button>
+						{/if}
+						<div class="flex items-center gap-2">
+							<Button variant="ghost" type="button" onclick={close}>Close</Button>
+							<Button type="submit" disabled={!canSave} title={saveBlockedReason ?? submitLabel}>
+								{submitLabel}
+							</Button>
+						</div>
+					</footer>
+				</form>
+			</Drawer.Content>
+		</Drawer.Positioner>
+	</Portal>
+</Drawer.Root>

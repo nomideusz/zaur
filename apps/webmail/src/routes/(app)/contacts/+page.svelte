@@ -405,7 +405,6 @@
 			{#snippet second()}
 				{#if selectedContact}
 					<ContactDetailPanel
-						chrome="pane"
 						contact={selectedContact}
 						onClose={clearSelection}
 						onCompose={() => composeTo(selectedContact.email)}
@@ -416,14 +415,5 @@
 				{/if}
 			{/snippet}
 		</PaneSplit>
-		{#if selectedContact}
-			<ContactDetailPanel
-				chrome="sheet"
-				contact={selectedContact}
-				onClose={clearSelection}
-				onCompose={() => composeTo(selectedContact.email)}
-				onRemove={() => deleteContact(selectedContact.email)}
-			/>
-		{/if}
 	{/snippet}
 </PaneSplit>

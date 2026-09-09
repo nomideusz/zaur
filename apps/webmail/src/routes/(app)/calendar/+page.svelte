@@ -344,10 +344,9 @@
 						{@render calendarMain(true)}
 					{/snippet}
 					{#snippet second()}
-						<EventPanel chrome="pane" />
+						<EventPanel />
 					{/snippet}
 				</PaneSplit>
-				<EventPanel chrome="sheet" />
 			{:else}
 				{@render calendarMain(false)}
 			{/if}
@@ -357,15 +356,6 @@
 
 {#if calendar.composeOpen}
 	<EventComposePanel />
-	<!-- Mark body open so FAB stays hidden -->
-	<svelte:effect>
-		if (calendar.composeOpen) {
-			document.body.classList.add('compose-panel-open');
-		} else {
-			document.body.classList.remove('compose-panel-open');
-		}
-		return () => document.body.classList.remove('compose-panel-open');
-	</svelte:effect>
 {/if}
 
 <style>
