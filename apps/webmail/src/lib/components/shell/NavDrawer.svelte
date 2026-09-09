@@ -11,6 +11,15 @@
 	import { mobileShell } from '$lib/stores/mobile-shell.svelte';
 	import { cn } from '$lib/utils/cn';
 
+	$effect(() => {
+		if (mobileShell.navDrawerOpen) {
+			document.body.classList.add('drawer-open');
+		} else {
+			document.body.classList.remove('drawer-open');
+		}
+		return () => document.body.classList.remove('drawer-open');
+	});
+
 	afterNavigate(() => {
 		mobileShell.closeNavDrawer();
 	});

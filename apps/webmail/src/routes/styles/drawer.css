@@ -1,0 +1,4 @@
+.svelte:global(.drawer-open) .z-mobile-fab {
+	visibility: hidden;
+	pointer-events: none;
+}
