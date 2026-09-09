@@ -37,7 +37,11 @@
 	);
 	const nextPath = $derived.by(() => {
 		const next = $page.url.searchParams.get('next');
-		return next?.startsWith('/') && !next.startsWith('//') ? next : undefined;
+		if (next?.startsWith('/') && !next.startsWith('//')) return next;
+		// Signed out of another app: signing in again should land back there,
+		// not in mail (which the person may never have heard of).
+		if (data.signedOutReturn) return `/auth/return?to=${encodeURIComponent(data.signedOutReturn.returnTo)}`;
+		return undefined;
 	});
 	const forgotPasswordHref = $derived.by(() => {
 		const recovery = urlRecovery;
@@ -82,9 +86,11 @@
 		: appConfig.brandName}
 	tagline={data.continueTo
 		? `Sign in to continue to ${data.continueTo}`
-		: data.signedOut
-			? "You're signed out"
-			: 'Private, focused email'}
+		: data.signedOutReturn
+			? `Sign in to continue to ${data.signedOutReturn.returnName}`
+			: data.signedOut
+				? "You're signed out"
+				: 'Private, focused email'}
 >
 	<form class="z-form-stack" onsubmit={submitLogin}>
 		{#if isAdd}
@@ -106,14 +112,9 @@
 				<span class="z-callout__title">Signed out everywhere</span>
 				<p class="z-callout__body">
 					{data.signedOutReturn
-						? `You're signed out of ${data.signedOutReturn.returnName} and ${appConfig.brandName}.`
-						: `You're signed out of ${appConfig.brandName}.`} Sign in again below whenever you're ready.
+						? `You're signed out of ${data.signedOutReturn.returnName} and ${appConfig.brandName}. Sign in below to get back to ${data.signedOutReturn.returnName}.`
+						: `You're signed out of ${appConfig.brandName}. Sign in again below whenever you're ready.`}
 				</p>
-				{#if data.signedOutReturn}
-					<Button href={data.signedOutReturn.returnTo} variant="ghost" class="w-full">
-						Back to {data.signedOutReturn.returnName}
-					</Button>
-				{/if}
 			</div>
 		{/if}
 
