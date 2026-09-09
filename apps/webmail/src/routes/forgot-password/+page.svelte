@@ -68,7 +68,6 @@
 			<div class="z-callout">
 				<p>{message}</p>
 			</div>
-			<a href="/login" class="z-link block text-center text-sm">Back to sign in</a>
 		</div>
 	{:else}
 		<form class="z-form-stack" onsubmit={submit}>
