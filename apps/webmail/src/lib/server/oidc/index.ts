@@ -11,6 +11,8 @@ import { accountKey, type SessionData } from '$lib/server/session';
 import { getFreshOauthSession } from '$lib/server/jmap';
 import { getStalwartOauthIssuer } from '$lib/server/oauth-config';
 import { getStoreDb } from '$lib/server/store-instance';
+import { getAccountProfile } from '$lib/server/recovery-service';
+import { log } from '$lib/server/log';
 import { getOrCreateKeypair, type OidcKeypair } from './core';
 
 export interface OidcProviderClient {
@@ -66,33 +68,60 @@ async function stalwartUserinfoEndpoint(): Promise<string> {
  * token once); legacy password sessions fall back to the session email, which
  * Stalwart's userinfo reports as `preferred_username` anyway.
  */
-export async function resolveOidcIdentity(
-	session: SessionData
-): Promise<{ sub: string; preferred_username: string; email: string }> {
+export interface OidcClaims {
+	sub: string;
+	preferred_username: string;
+	email: string;
+	name?: string;
+	groups?: string[];
+}
+
+/**
+ * name: Stalwart's principal description via userinfo, else the webmail
+ * display name (default identity), else the local part. groups: Stalwart
+ * roles (user/admin) fetched through register's signed internal API, so
+ * relying parties can grant admin from a group claim. Both are best-effort —
+ * a lookup failure degrades the claim, never the sign-in.
+ */
+export async function resolveOidcIdentity(session: SessionData): Promise<OidcClaims> {
 	const email = accountKey(session.username);
-	if (session.authMethod !== 'oauth' && !session.accessToken) {
-		return { sub: email, preferred_username: email, email };
+	const fallbackName = session.displayName?.trim() || email.split('@')[0];
+	const base: OidcClaims = { sub: email, preferred_username: email, email, name: fallbackName };
+
+	if (session.authMethod === 'oauth' || session.accessToken) {
+		const endpoint = await stalwartUserinfoEndpoint();
+		const attempt = async (accessToken: string) =>
+			fetch(endpoint, {
+				headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
+				signal: AbortSignal.timeout(10_000)
+			});
+
+		let current = await getFreshOauthSession(session);
+		let response = await attempt(current.accessToken!);
+		if (response.status === 401) {
+			current = await getFreshOauthSession(current, true);
+			response = await attempt(current.accessToken!);
+		}
+		if (!response.ok) throw new Error(`Stalwart userinfo failed (${response.status})`);
+		const info = (await response.json()) as {
+			sub?: unknown;
+			preferred_username?: unknown;
+			email?: unknown;
+			name?: unknown;
+		};
+		const preferred = String(info.preferred_username ?? info.email ?? email);
+		base.sub = String(info.sub ?? preferred);
+		base.preferred_username = preferred;
+		base.email = String(info.email ?? email);
+		if (typeof info.name === 'string' && info.name.trim()) base.name = info.name.trim();
 	}
 
-	const endpoint = await stalwartUserinfoEndpoint();
-	const attempt = async (accessToken: string) =>
-		fetch(endpoint, {
-			headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json' },
-			signal: AbortSignal.timeout(10_000)
-		});
-
-	let current = await getFreshOauthSession(session);
-	let response = await attempt(current.accessToken!);
-	if (response.status === 401) {
-		current = await getFreshOauthSession(current, true);
-		response = await attempt(current.accessToken!);
+	try {
+		const profile = await getAccountProfile(email);
+		if (typeof profile.name === 'string' && profile.name.trim()) base.name = profile.name.trim();
+		if (Array.isArray(profile.roles)) base.groups = profile.roles.filter((r): r is string => typeof r === 'string');
+	} catch (err) {
+		log.warn('oidc_profile_lookup_failed', { username: email }, err);
 	}
-	if (!response.ok) throw new Error(`Stalwart userinfo failed (${response.status})`);
-	const info = (await response.json()) as { sub?: unknown; preferred_username?: unknown; email?: unknown };
-	const preferred = String(info.preferred_username ?? info.email ?? email);
-	return {
-		sub: String(info.sub ?? preferred),
-		preferred_username: preferred,
-		email: String(info.email ?? email)
-	};
+	return base;
 }

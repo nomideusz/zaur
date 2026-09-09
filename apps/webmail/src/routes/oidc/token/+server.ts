@@ -54,7 +54,9 @@ export const POST: RequestHandler = async ({ request, url }) => {
 		exp: iat + TOKEN_TTL_S,
 		...(data.nonce ? { nonce: data.nonce } : {}),
 		preferred_username: data.claims.preferred_username,
-		email: data.claims.email
+		email: data.claims.email,
+		...(data.claims.name ? { name: data.claims.name } : {}),
+		...(data.claims.groups ? { groups: data.claims.groups } : {})
 	});
 	return json(
 		{

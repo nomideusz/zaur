@@ -1,7 +1,8 @@
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { env } from '$env/dynamic/private';
 
-const PATH = '/api/internal/recovery';
+const RECOVERY_PATH = '/api/internal/recovery';
+const ACCOUNT_PATH = '/api/internal/account';
 
 function config() {
 	const baseUrl = env.REGISTER_INTERNAL_URL?.trim()?.replace(/\/$/, '');
@@ -10,17 +11,17 @@ function config() {
 	return { baseUrl, secret };
 }
 
-async function request(method: 'GET' | 'POST', query = '', body?: Record<string, string>) {
+async function request(method: 'GET' | 'POST', path: string, query = '', body?: Record<string, string>) {
 	const { baseUrl, secret } = config();
 	const timestamp = String(Date.now());
 	const nonce = randomBytes(16).toString('base64url');
 	const bodyText = body ? JSON.stringify(body) : '';
 	const bodyHash = createHash('sha256').update(bodyText).digest('hex');
-	const requestTarget = `${PATH}${query}`;
+	const requestTarget = `${path}${query}`;
 	const signature = createHmac('sha256', secret)
 		.update(`${timestamp}.${nonce}.${method}.${requestTarget}.${bodyHash}`)
 		.digest('hex');
-	const response = await fetch(`${baseUrl}${PATH}${query}`, {
+	const response = await fetch(`${baseUrl}${requestTarget}`, {
 		method,
 		headers: {
 			Accept: 'application/json',
@@ -32,14 +33,22 @@ async function request(method: 'GET' | 'POST', query = '', body?: Record<string,
 		body: bodyText || undefined,
 		signal: AbortSignal.timeout(10_000)
 	});
-	if (!response.ok) throw new Error('Recovery service request failed');
+	if (!response.ok) throw new Error(`Register internal request failed (${response.status})`);
 	return response.json() as Promise<Record<string, unknown>>;
 }
 
 export function getRecoveryEmail(mailboxEmail: string) {
-	return request('GET', `?mailbox=${encodeURIComponent(mailboxEmail)}`);
+	return request('GET', RECOVERY_PATH, `?mailbox=${encodeURIComponent(mailboxEmail)}`);
 }
 
 export function requestRecoveryEmailChange(mailboxEmail: string, recoveryEmail: string) {
-	return request('POST', '', { mailboxEmail, recoveryEmail });
+	return request('POST', RECOVERY_PATH, '', { mailboxEmail, recoveryEmail });
+}
+
+/** Display name (Stalwart principal description) and roles, for OIDC claims. */
+export function getAccountProfile(email: string) {
+	return request('GET', ACCOUNT_PATH, `?email=${encodeURIComponent(email)}`) as Promise<{
+		name?: string | null;
+		roles?: string[];
+	}>;
 }

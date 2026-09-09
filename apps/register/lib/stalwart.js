@@ -308,6 +308,24 @@ async function findAccountByEmail(email) {
   );
 }
 
+// Display name + roles for OIDC claims. Roles come back as {'@type':'User'|'Admin'};
+// we expose them lowercased ("user", "admin") so a relying party's admin-group
+// setting can simply say "admin".
+async function getAccountProfile(email) {
+  const account = await findAccountByEmail(email);
+  if (!account) return null;
+  const { body } = await jmapRequest([
+    ['x:Account/get', { ids: [account.id], properties: ['description', 'roles'] }, 'profileGet'],
+  ]);
+  const principal = getMethodResponse(body, 'profileGet')?.list?.[0];
+  if (!principal) return null;
+  const type = principal.roles?.['@type'];
+  return {
+    name: principal.description || null,
+    roles: typeof type === 'string' ? [type.toLowerCase()] : [],
+  };
+}
+
 async function createAccount(username, domainId, password) {
   const config = getConfig();
 
@@ -436,6 +454,7 @@ module.exports = {
   listDomains,
   listAccounts,
   findAccountByEmail,
+  getAccountProfile,
   checkUsernameAcrossDomains,
   createAccount,
   deleteAccount,

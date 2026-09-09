@@ -601,6 +601,19 @@ app.get('/api/internal/recovery', requireInternalWebmail, (req, res) => {
   });
 });
 
+app.get('/api/internal/account', requireInternalWebmail, async (req, res) => {
+  const email = String(req.query.email || '').trim().toLowerCase();
+  if (!invitations.isValidEmail(email)) return res.status(400).json({ error: 'Invalid email' });
+  try {
+    const profile = await stalwart.getAccountProfile(email);
+    if (!profile) return res.status(404).json({ error: 'Unknown account' });
+    return res.json(profile);
+  } catch (err) {
+    reportError(err, { where: 'GET /api/internal/account' });
+    return res.status(502).json({ error: 'Lookup failed' });
+  }
+});
+
 app.post('/api/internal/recovery', requireInternalWebmail, async (req, res) => {
   try {
     const mailboxEmail = String(req.body?.mailboxEmail || '').trim().toLowerCase();

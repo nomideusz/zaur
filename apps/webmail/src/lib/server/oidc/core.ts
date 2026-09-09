@@ -29,7 +29,7 @@ export interface AuthCodeData {
 	redirectUri: string;
 	codeChallenge: string;
 	nonce?: string;
-	claims: { sub: string; preferred_username: string; email: string };
+	claims: { sub: string; preferred_username: string; email: string; name?: string; groups?: string[] };
 }
 
 const b64u = (input: Buffer | string): string => Buffer.from(input).toString('base64url');
@@ -147,7 +147,7 @@ export function discoveryDocument(origin: string): Record<string, unknown> {
 		scopes_supported: ['openid'],
 		token_endpoint_auth_methods_supported: ['client_secret_basic', 'client_secret_post'],
 		code_challenge_methods_supported: ['S256'],
-		claims_supported: ['sub', 'preferred_username', 'email']
+		claims_supported: ['sub', 'preferred_username', 'email', 'name', 'groups']
 	};
 }
 
