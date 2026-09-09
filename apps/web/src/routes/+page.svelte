@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Opera',
+			desc: 'Desktop Opera in the cloud, streamed to any device — password-gated, profile persists.',
+			deploy: 'https://railway.com/deploy/opera-browser',
+			source: 'https://github.com/nomideusz/opera-railway'
+		},
+		{
 			name: 'LibreOffice',
 			desc: 'Full LibreOffice suite in the cloud — edit Office files from an iPad or Chromebook.',
 			deploy: 'https://railway.com/deploy/libreoffice',
