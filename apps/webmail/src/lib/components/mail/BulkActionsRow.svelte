@@ -1,16 +1,28 @@
 <script lang="ts">
 	/**
-	 * Bulk mark/spam/archive/trash actions for the current selection, rendered
-	 * as labeled buttons inside the list's action bar (all viewports).
+	 * Bulk mark/spam/archive/trash actions for the current selection.
 	 *
-	 * Move targets live in the More menu.
+	 * Two renderings share one action list and one `runAction` implementation:
+	 *  - `inline` — labeled text buttons inside the list's action bar pill (tablet/desktop).
+	 *  - `dock`   — icon + short label buttons in a horizontally scrolling row (phones),
+	 *               where full sentences wrap onto three ragged lines.
+	 *
+	 * Move targets live in the More menu in both.
 	 */
 	import { errorMessage } from '@zaur/mail-core/utils/errors';
 	import {
 		bulkBarActions,
+		type BulkBarAction,
 		type BulkBarActionId
 	} from '$lib/components/mail/bulk-bar-actions';
 	import { bulkSelectionCounts } from '$lib/components/mail/bulk-selection-label';
+	import Important from '$lib/components/icons/Important.svelte';
+	import Inbox from '$lib/components/icons/Inbox.svelte';
+	import Mail from '$lib/components/icons/Mail.svelte';
+	import MailOpen from '$lib/components/icons/MailOpen.svelte';
+	import MoreVertical from '$lib/components/icons/MoreVertical.svelte';
+	import ShieldAlert from '$lib/components/icons/ShieldAlert.svelte';
+	import Trash2 from '$lib/components/icons/Trash2.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
 	import { Menu, MenuContent, MenuTrigger } from '$lib/components/ui/menu';
 	import { canMarkImportantFromMailboxRole, moveTargetMailboxes } from '$lib/mail/mailboxes';
@@ -28,16 +40,24 @@
 		menuSide?: 'top' | 'bottom';
 		/** Unique id for the marks menu. */
 		menuId?: string;
+		/** `inline` = text buttons in the pill; `dock` = icon buttons on phones. */
+		variant?: 'inline' | 'dock';
 	}
 
-	let { mailboxRouteId, onBulkAction, menuSide = 'top', menuId = 'bulk-actions-menu' }: Props =
-		$props();
+	let {
+		mailboxRouteId,
+		onBulkAction,
+		menuSide = 'top',
+		menuId = 'bulk-actions-menu',
+		variant = 'inline'
+	}: Props = $props();
 
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const selectedCount = $derived(selectedIds.length);
 	const selectedMessages = $derived(mail.selectedMessages());
 	const currentMailbox = $derived(mail.mailboxByRouteId(mailboxRouteId));
 	const deleteLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete forever' : 'Trash');
+	const deleteShortLabel = $derived(currentMailbox?.role === 'trash' ? 'Delete' : 'Trash');
 	const selectionCounts = $derived(bulkSelectionCounts(selectedMessages, selectedIds));
 	const canMarkImportant = $derived(canMarkImportantFromMailboxRole(currentMailbox?.role));
 	const junkMailbox = $derived(mail.mailboxes.find((mb) => mb.role === 'junk'));
@@ -48,6 +68,7 @@
 			(mailboxRole === 'junk' || mailboxRole === 'trash' || mailboxRole === 'archive')
 	);
 	const restoreLabel = $derived(mailboxRole === 'junk' ? 'Not spam' : 'Move to inbox');
+	const restoreShortLabel = $derived(mailboxRole === 'junk' ? 'Not spam' : 'Inbox');
 	const canMarkSpam = $derived(
 		!!junkMailbox &&
 			mailboxRole !== 'junk' &&
@@ -65,9 +86,14 @@
 			canMarkSpam,
 			canRestore,
 			restoreLabel,
-			deleteLabel
+			restoreShortLabel,
+			deleteLabel,
+			deleteShortLabel
 		})
 	);
+
+	/** Actions that get their own dock button (trash and the menus are separate). */
+	type MarkActionId = 'unsee' | 'mark-seen' | 'important' | 'not-important' | 'spam' | 'restore';
 
 	const markActionIds = new Set<BulkBarActionId>([
 		'unsee',
@@ -77,7 +103,23 @@
 		'spam',
 		'restore'
 	]);
-	const markActions = $derived(actions.filter((action) => markActionIds.has(action.id)));
+
+	function isMarkAction(action: BulkBarAction): action is BulkBarAction & { id: MarkActionId } {
+		return markActionIds.has(action.id);
+	}
+
+	const markActions = $derived(actions.filter(isMarkAction));
+
+	/** Phone dock pairs each action with a glyph so the row scans at a glance. */
+	const ACTION_ICONS = {
+		unsee: Mail,
+		'mark-seen': MailOpen,
+		important: Important,
+		'not-important': Important,
+		spam: ShieldAlert,
+		restore: Inbox,
+		trash: Trash2
+	} as const;
 
 	/** Keyboard `v` opens the More menu (Move targets live there). */
 	let moreOpen = $state(false);
@@ -154,32 +196,81 @@
 	}
 </script>
 
-{#each markActions as action (action.id)}
-	<button type="button" class={linkBtnClass} onclick={() => runAction(action.id)}>
-		{action.label}
-	</button>
-{/each}
+{#if variant === 'dock'}
+	<div class="z-bulk-dock__actions" role="group" aria-label="Bulk actions">
+		{#each markActions as action (action.id)}
+			{@const Icon = ACTION_ICONS[action.id]}
+			<button
+				type="button"
+				class="z-bulk-dock__action"
+				disabled={selectedCount === 0}
+				onclick={() => runAction(action.id)}
+			>
+				<Icon class="size-[1.125rem] shrink-0" aria-hidden="true" />
+				<span>{action.short}</span>
+			</button>
+		{/each}
 
-{#if canMove}
-	<Menu
-		side={menuSide}
-		align="start"
-		{menuId}
-		bind:open={moreOpen}
-		onOpenChange={(open) => (moreOpen = open)}
-	>
-		<MenuTrigger
-			aria-label="More actions for selected messages"
-			class={cn(linkBtnClass, 'inline-flex items-center gap-1')}
+		<button
+			type="button"
+			class="z-bulk-dock__action z-bulk-dock__action--danger"
+			disabled={selectedCount === 0}
+			onclick={() => runAction('trash')}
 		>
-			More
-		</MenuTrigger>
-		<MenuContent class="w-56 min-w-48">
-			<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveSelected} />
-		</MenuContent>
-	</Menu>
-{/if}
+			<Trash2 class="size-[1.125rem] shrink-0" aria-hidden="true" />
+			<span>{deleteShortLabel}</span>
+		</button>
 
-<button type="button" class={dangerActionClass} onclick={() => runAction('trash')}>
-	{deleteLabel}
-</button>
+		{#if canMove}
+			<Menu
+				side={menuSide}
+				align="end"
+				{menuId}
+				bind:open={moreOpen}
+				onOpenChange={(open) => (moreOpen = open)}
+			>
+				<MenuTrigger
+					aria-label="More actions for selected messages"
+					class="z-bulk-dock__action"
+					disabled={selectedCount === 0}
+				>
+					<MoreVertical class="size-[1.125rem] shrink-0" aria-hidden="true" />
+					<span>More</span>
+				</MenuTrigger>
+				<MenuContent class="w-56 min-w-48">
+					<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveSelected} />
+				</MenuContent>
+			</Menu>
+		{/if}
+	</div>
+{:else}
+	{#each markActions as action (action.id)}
+		<button type="button" class={linkBtnClass} onclick={() => runAction(action.id)}>
+			{action.label}
+		</button>
+	{/each}
+
+	{#if canMove}
+		<Menu
+			side={menuSide}
+			align="start"
+			{menuId}
+			bind:open={moreOpen}
+			onOpenChange={(open) => (moreOpen = open)}
+		>
+			<MenuTrigger
+				aria-label="More actions for selected messages"
+				class={cn(linkBtnClass, 'inline-flex items-center gap-1')}
+			>
+				More
+			</MenuTrigger>
+			<MenuContent class="w-56 min-w-48">
+				<MoveToMenuItems currentMailboxRouteId={mailboxRouteId} onSelect={moveSelected} />
+			</MenuContent>
+		</Menu>
+	{/if}
+
+	<button type="button" class={dangerActionClass} onclick={() => runAction('trash')}>
+		{deleteLabel}
+	</button>
+{/if}

@@ -100,11 +100,11 @@ html[data-z-fab] {
 
 /* An open bottom action dock (bulk selection) — lift toasts clear of its
    buttons on phones. Unlayered for the same reason as above. */
-@media (max-width: 767px) {
+	@media (max-width: 767px) {
 	html[data-z-dock] {
-		/* ponytail: fixed guess that clears up to two wrapped button rows;
-		   measure the dock if a third row ever appears. */
-		--z-toast-bottom: calc(9rem + env(safe-area-inset-bottom, 0px));
+		/* The phone dock is a fixed two-row layout (2.75rem header + 3.5rem action
+		   row + paddings), so this is now an exact clearance rather than a guess. */
+		--z-toast-bottom: calc(8.5rem + env(safe-area-inset-bottom, 0px));
 	}
 }
 

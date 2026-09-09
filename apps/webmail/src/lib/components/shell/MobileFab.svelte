@@ -29,8 +29,9 @@
 		| { kind: 'button'; onclick: () => void; label: string; icon: typeof Plus };
 
 	const action = $derived.by((): FabAction | null => {
-		/* The in-flow bulk action bar owns the bottom edge while selecting. */
-		if (onMailList && !mail.hasSelection) {
+		/* The in-flow bulk action bar owns the bottom edge while selecting —
+		   including select mode, where the dock is up with nothing checked yet. */
+		if (onMailList && !mail.hasSelection && !mail.selectMode) {
 			return { kind: 'link', href: '/mail/compose', label: 'New', icon: PenSquare };
 		}
 		if (onCalendar && calendar.supported !== false) {

@@ -347,7 +347,11 @@
 			: []
 	);
 	const showListRowMove = $derived(
-		hasPreciseHover() && !!auth.client && !mail.hasSelection && listMoveTargets.length > 0
+		hasPreciseHover() &&
+			!!auth.client &&
+			!mail.hasSelection &&
+			!mail.selectMode &&
+			listMoveTargets.length > 0
 	);
 	const bulkSelectionMessages = $derived(listMessages);
 
@@ -356,7 +360,7 @@
 	$effect(() => {
 		// The list pane keeps its filter toolbar while a thread is open in the reader, so this
 		// is gated on having a mailbox (not on sectionMode, which drops out once a thread opens).
-		if (!mailboxRouteId || mail.hasSelection) {
+		if (!mailboxRouteId || mail.hasSelection || mail.selectMode) {
 			shellHeader.clearMailListToolbar();
 			return;
 		}
@@ -575,7 +579,9 @@
 
 	function handleRowLinkClick(messageId: string, event: MouseEvent) {
 		mail.setListCursor(messageId);
-		if (mail.hasSelection) {
+		/* Select mode counts too: on phones the row is the tap target once the
+		   checkboxes are showing, even before anything is checked. */
+		if (mail.hasSelection || mail.selectMode) {
 			event.preventDefault();
 			if (mobileRowGestures) haptic(8);
 			if (event.shiftKey || event.metaKey || event.ctrlKey) {
@@ -584,7 +590,7 @@
 					ctrl: event.metaKey || event.ctrlKey
 				});
 			} else if (allVisibleSelected) {
-				mail.clearSelection();
+				mail.deselectAll();
 			} else {
 				mail.toggleMessageSelection(messageId);
 			}
@@ -1108,7 +1114,8 @@
 		class={cn(
 			'z-mail-list-flow flex-1 flex flex-col',
 			listSelectMode && 'z-mail-list-flow--selectable',
-			mail.hasSelection && 'z-mail-list--selecting'
+			mail.hasSelection && 'z-mail-list--selecting',
+			mail.selectMode && 'z-mail-list--select-mode'
 		)}
 	>
 		{#snippet simpleMessageRow(message: MessagePreview, routeId: string)}
@@ -1261,7 +1268,7 @@
 				{#if mobileRowGestures}
 					<SwipeableListRow
 						class="z-mail-list-swipe-row"
-						enabled={!mail.hasSelection}
+						enabled={!mail.hasSelection && !mail.selectMode}
 						leading={swipeLeading}
 						trailing={swipeTrailing}
 						springSnap={!settings.reduceMotion}

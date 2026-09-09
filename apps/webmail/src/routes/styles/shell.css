@@ -94,6 +94,35 @@
 		outline-offset: -2px;
 	}
 
+	/* Text action in the mobile top bar (bulk-select entry) — same 44px row as the
+	   icon buttons, but a word reads faster than a glyph for a mode switch. */
+	.z-chrome-text-btn {
+		display: inline-flex;
+		flex-shrink: 0;
+		align-items: center;
+		justify-content: center;
+		min-height: 2.25rem;
+		padding-inline: 0.625rem;
+		border-radius: 9999px;
+		font-size: var(--z-main-page-text);
+		font-weight: 500;
+		color: var(--z-fg-muted);
+		cursor: pointer;
+		transition:
+			color var(--z-motion-fast) var(--z-ease-standard),
+			background-color var(--z-motion-fast) var(--z-ease-standard);
+	}
+
+	.z-chrome-text-btn:hover {
+		color: var(--z-fg);
+		background-color: color-mix(in srgb, var(--z-surface-sunken) 70%, transparent);
+	}
+
+	.z-chrome-text-btn:focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: -2px;
+	}
+
 	.z-chrome-icon-btn--accent {
 		color: var(--z-accent);
 		background-color: color-mix(in srgb, var(--z-accent) 10%, transparent);

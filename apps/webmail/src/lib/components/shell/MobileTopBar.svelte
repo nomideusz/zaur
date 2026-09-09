@@ -75,6 +75,19 @@
 		return null;
 	});
 
+	/*
+	 * Bulk select used to be reachable on phones only by long-pressing a row — an
+	 * invisible gesture. This is the visible way in; the dock's close button is
+	 * the way out, so the button hides once the dock is up.
+	 */
+	const canBulkSelect = $derived(
+		onMailList &&
+			!page.url.searchParams.has('q') &&
+			mail.messages.length > 0 &&
+			!mail.hasSelection &&
+			!mail.selectMode
+	);
+
 	const inPlace = $derived(section?.id === 'mail');
 	const searchBase = $derived(inPlace ? pathname : (section?.searchPath ?? pathname));
 	const clearBase = $derived(inPlace ? pathname : (section?.homePath ?? pathname));
@@ -270,6 +283,15 @@
 						/>
 					</div>
 				{:else if section}
+					{#if canBulkSelect}
+						<button
+							type="button"
+							class="z-chrome-text-btn"
+							onclick={() => mail.enterSelectMode()}
+						>
+							Select
+						</button>
+					{/if}
 					<button
 						type="button"
 						class="z-chrome-icon-btn"

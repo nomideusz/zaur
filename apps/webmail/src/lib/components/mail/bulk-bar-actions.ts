@@ -23,6 +23,8 @@ export type BulkBarActionId =
 export type BulkBarAction = {
 	id: BulkBarActionId;
 	label: string;
+	/** Compact label for the phone dock, where full sentences wrap. */
+	short: string;
 	variant: 'link' | 'danger';
 };
 
@@ -35,7 +37,9 @@ export function bulkBarActions(options: {
 	/** Inbox exists and the current view is Spam, Trash, or Archive. */
 	canRestore?: boolean;
 	restoreLabel?: string;
+	restoreShortLabel?: string;
 	deleteLabel: string;
+	deleteShortLabel?: string;
 }): BulkBarAction[] {
 	const {
 		counts,
@@ -44,7 +48,9 @@ export function bulkBarActions(options: {
 		canMarkSpam = false,
 		canRestore = false,
 		restoreLabel = 'Move to inbox',
-		deleteLabel
+		restoreShortLabel = 'Inbox',
+		deleteLabel,
+		deleteShortLabel = 'Trash'
 	} = options;
 	const readCount = bulkSelectionReadCount(counts);
 	const actions: BulkBarAction[] = [];
@@ -53,6 +59,7 @@ export function bulkBarActions(options: {
 		actions.push({
 			id: 'unsee',
 			label: bulkAffectedLabel(LABEL_UNSEE, readCount, selectedCount),
+			short: 'Unread',
 			variant: 'link'
 		});
 	}
@@ -61,6 +68,7 @@ export function bulkBarActions(options: {
 		actions.push({
 			id: 'mark-seen',
 			label: bulkAffectedLabel(LABEL_MARK_SEEN, counts.new, selectedCount),
+			short: 'Read',
 			variant: 'link'
 		});
 	}
@@ -69,6 +77,7 @@ export function bulkBarActions(options: {
 		actions.push({
 			id: 'important',
 			label: bulkAffectedLabel(LABEL_MARK_IMPORTANT, counts.notImportant, selectedCount),
+			short: 'Highlight',
 			variant: 'link'
 		});
 	}
@@ -77,20 +86,31 @@ export function bulkBarActions(options: {
 		actions.push({
 			id: 'not-important',
 			label: bulkAffectedLabel(LABEL_NOT_IMPORTANT, counts.important, selectedCount),
+			short: 'Unhighlight',
 			variant: 'link'
 		});
 	}
 
 	if (canRestore) {
-		actions.push({ id: 'restore', label: restoreLabel, variant: 'link' });
+		actions.push({
+			id: 'restore',
+			label: restoreLabel,
+			short: restoreShortLabel,
+			variant: 'link'
+		});
 	}
 
 	if (canMarkSpam) {
-		actions.push({ id: 'spam', label: 'Mark spam', variant: 'link' });
+		actions.push({ id: 'spam', label: 'Mark spam', short: 'Spam', variant: 'link' });
 	}
 
-	actions.push({ id: 'trash', label: deleteLabel, variant: 'danger' });
-	actions.push({ id: 'cancel', label: 'Cancel', variant: 'link' });
+	actions.push({
+		id: 'trash',
+		label: deleteLabel,
+		short: deleteShortLabel,
+		variant: 'danger'
+	});
+	actions.push({ id: 'cancel', label: 'Cancel', short: 'Cancel', variant: 'link' });
 
 	return actions;
 }

@@ -14,21 +14,36 @@
 		class?: string;
 		/** Rendered inside the trigger before the chevron (e.g. the selection count). */
 		children?: Snippet;
+		/**
+		 * Phone dock: pair a "Select all" / "Clear all" button with the filter
+		 * chevron. The bare chevron alone gave no hint that it was tappable.
+		 */
+		split?: boolean;
+		menuId?: string;
 	}
 
 	let {
 		disabled = false,
 		placement = 'bottom',
 		class: className = '',
-		children
+		children,
+		split = false,
+		menuId = 'message-list-select-menu'
 	}: Props = $props();
 
 	let open = $state(false);
 	const side = $derived(placement === 'top' ? 'top' : 'bottom');
-	const menuId = 'message-list-select-menu';
+
+	const selectableCount = $derived(mail.selectableMessageList.length);
+	const allSelected = $derived(selectableCount > 0 && mail.selectedCount >= selectableCount);
 
 	function choose(filter: Parameters<typeof mail.selectMessagesByFilter>[0]) {
 		mail.selectMessagesByFilter(filter);
+	}
+
+	function toggleAll() {
+		if (allSelected) mail.deselectAll();
+		else mail.selectMessagesByFilter('all');
 	}
 </script>
 
@@ -40,14 +55,34 @@
 	lazyMount
 	unmountOnExit
 >
-	<Menu.Trigger
-		aria-label="Selection options"
-		class={cn('z-mail-list-select-trigger', className)}
-		{disabled}
-	>
-		{#if children}{@render children()}{/if}
-		<ChevronDown class="size-4 shrink-0" aria-hidden="true" />
-	</Menu.Trigger>
+	{#if split}
+		<div class="z-bulk-dock__select">
+			<button
+				type="button"
+				class="z-bulk-dock__select-main"
+				disabled={disabled || selectableCount === 0}
+				onclick={toggleAll}
+			>
+				{allSelected ? 'Clear all' : 'Select all'}
+			</button>
+			<Menu.Trigger
+				aria-label="More selection options"
+				class="z-bulk-dock__select-more"
+				disabled={disabled || selectableCount === 0}
+			>
+				<ChevronDown class="size-4 shrink-0" aria-hidden="true" />
+			</Menu.Trigger>
+		</div>
+	{:else}
+		<Menu.Trigger
+			aria-label="Selection options"
+			class={cn('z-mail-list-select-trigger', className)}
+			{disabled}
+		>
+			{#if children}{@render children()}{/if}
+			<ChevronDown class="size-4 shrink-0" aria-hidden="true" />
+		</Menu.Trigger>
+	{/if}
 
 	<Portal>
 		<Menu.Positioner>

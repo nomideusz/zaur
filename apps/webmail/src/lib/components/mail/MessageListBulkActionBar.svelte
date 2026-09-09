@@ -2,8 +2,13 @@
 	/**
 	 * Bulk selection action bar — Shark UI @shark/action-bar `example-table` pattern:
 	 * controlled open, inline toolbar below the message list, More menu, destructive delete, close.
-	 * All viewports — on phones the row wraps onto extra lines.
 	 * The ActionBar root wraps the list so Escape clears selection.
+	 *
+	 * Two layouts share this component:
+	 *  - `md+`: the original single-row pill (count | text actions | close).
+	 *  - phones: a full-width dock — a header row (count, Select all, close) above a
+	 *    horizontally scrolling row of icon actions. The pill's text buttons wrapped
+	 *    onto three ragged lines at phone widths, which pushed the list off-screen.
 	 */
 	import BulkActionsRow from '$lib/components/mail/BulkActionsRow.svelte';
 	import MessageListSelectMenu from '$lib/components/mail/MessageListSelectMenu.svelte';
@@ -34,17 +39,17 @@
 
 	const selectedIds = $derived([...mail.selectedMessageIds]);
 	const selectedCount = $derived(selectedIds.length);
-	const isOpen = $derived(mail.hasSelection && selectedCount > 0);
+	/** Select mode keeps the dock open with nothing checked yet (phone "Select" entry). */
+	const isOpen = $derived(mail.hasSelection || mail.selectMode);
 	const summary = $derived(
 		bulkSelectionSummary(selectedCount, bulkSelectionCounts(mail.selectedMessages(), selectedIds))
 	);
-
 	function handleOpenChange(open: boolean) {
-		if (!open) mail.clearSelection();
+		if (!open) mail.exitSelectMode();
 	}
 
 	function handleClose() {
-		mail.clearSelection();
+		mail.exitSelectMode();
 	}
 </script>
 
@@ -61,39 +66,62 @@
 
 		<ActionBarContent
 			aria-label="Actions for selected messages"
-			class={cn(disabled && 'pointer-events-none opacity-60')}
+			class="z-action-bar-content--dock"
 		>
-			<!-- Grouping is spacing, not pipes: count | actions | close read as
-			     three zones because of the gaps and the accent count chip. -->
-			<span class="flex shrink-0 max-md:hidden">
-				<ActionBarValue
-					count={selectedCount}
-					label={summary.headline}
-					class="z-action-bar-value--accent max-w-[12rem] truncate"
-					title={summary.detail ?? summary.headline}
-				/>
-			</span>
-			<!-- Phone: the count chip doubles as the Select all / by-state menu
-			     (the list-header select control is desktop-only). -->
-			<span class="flex shrink-0 md:hidden">
-				<MessageListSelectMenu
-					placement="top"
-					{disabled}
-					class="h-11! w-auto! shrink-0 gap-1 rounded-full! px-2.5!"
-				>
+			<!-- Tablet / desktop: one pill row. -->
+			<div class="z-bulk-dock__inline max-md:hidden">
+				<!-- Grouping is spacing, not pipes: count | actions | close read as
+				     three zones because of the gaps and the accent count chip. -->
+				<span class="flex shrink-0">
+					<ActionBarValue
+						count={selectedCount}
+						label={summary.headline}
+						class="z-action-bar-value--accent max-w-[12rem] truncate"
+						title={summary.detail ?? summary.headline}
+					/>
+				</span>
+
+				<!-- Every action link stays reachable regardless of pane width:
+				     no width-fitting, the row wraps onto extra lines instead. -->
+				<ActionBarBody class={cn('flex-wrap overflow-visible', disabled && 'pointer-events-none opacity-60')}>
+					<BulkActionsRow {mailboxRouteId} {onBulkAction} menuSide="top" />
+				</ActionBarBody>
+
+				<ActionBarClose onclick={handleClose} aria-label="Clear selection">
+					<X class="size-4" aria-hidden="true" />
+				</ActionBarClose>
+			</div>
+
+			<!-- Phone: header row + scrolling icon row. -->
+			<div class="z-bulk-dock__phone md:hidden">
+				<div class="z-bulk-dock__header">
 					<ActionBarValue count={selectedCount} class="z-action-bar-value--accent" />
-				</MessageListSelectMenu>
-			</span>
+					<p class="z-bulk-dock__status">
+						{selectedCount > 0 ? summary.headline : 'Select messages'}
+					</p>
+					<MessageListSelectMenu
+						placement="top"
+						split
+						{disabled}
+						menuId="bulk-dock-select-menu"
+					/>
+					<!-- Close stays live even when the list is empty/loading, so the
+					     dock is never a dead end. -->
+					<ActionBarClose onclick={handleClose} aria-label="Clear selection">
+						<X class="size-4" aria-hidden="true" />
+					</ActionBarClose>
+				</div>
 
-			<!-- Every action link stays reachable regardless of pane width:
-			     no width-fitting, the row wraps onto extra lines instead. -->
-			<ActionBarBody class="flex-wrap overflow-visible">
-				<BulkActionsRow {mailboxRouteId} {onBulkAction} menuSide="top" />
-			</ActionBarBody>
-
-			<ActionBarClose onclick={handleClose} aria-label="Clear selection">
-				<X class="size-4" aria-hidden="true" />
-			</ActionBarClose>
+				<div class={cn('z-bulk-dock__body', disabled && 'pointer-events-none opacity-60')}>
+					<BulkActionsRow
+						{mailboxRouteId}
+						{onBulkAction}
+						menuSide="top"
+						menuId="bulk-actions-menu-mobile"
+						variant="dock"
+					/>
+				</div>
+			</div>
 		</ActionBarContent>
 	</div>
 </ActionBar>

@@ -746,6 +746,10 @@
 	}
 
 	.z-mail-view .z-mail-list--selecting .z-mail-list-row__checkbox,
+	/* Select mode: checkboxes show with nothing checked yet, so the phone "Select"
+	   entry point has a visible target. The whole row toggles too, so the box
+	   itself doesn't need a 44px hit area. */
+	.z-mail-view .z-mail-list--select-mode .z-mail-list-row__checkbox,
 	.z-mail-view .z-mail-list-row__checkbox--on,
 	.z-mail-view .z-mail-list-row__checkbox:checked,
 	.z-mail-view .z-mail-list-row__checkbox[data-state='checked'],

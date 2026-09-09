@@ -152,6 +152,13 @@ class MailStore {
 
 	selectedMessageIds = $state<Set<string>>(new Set());
 	selectionAnchorId = $state<string | null>(null);
+	/**
+	 * Bulk-select mode on touch layouts: checkboxes and the action dock are shown
+	 * with nothing checked yet, so "Select" is a real entry point instead of a
+	 * hidden long-press. Desktop never sets this (its entry point is the header
+	 * select menu), so `hasSelection` stays the single source of truth there.
+	 */
+	selectMode = $state(false);
 	/** Visible list order for shift-range selection (sectioned inbox home, etc.). */
 	selectionList = $state<MessagePreview[]>([]);
 	bulkActionLoading = $state(false);
@@ -1042,6 +1049,24 @@ class MailStore {
 		this.selectedMessageIds = new Set();
 		this.selectionAnchorId = null;
 		this.bulkActionLoading = false;
+		this.selectMode = false;
+	}
+
+	/** Uncheck every row but stay in select mode (the dock's "Clear all"). */
+	deselectAll() {
+		this.selectedMessageIds = new Set();
+		this.selectionAnchorId = null;
+	}
+
+	/** Show checkboxes + dock with nothing checked yet (mobile "Select" entry). */
+	enterSelectMode() {
+		this.selectMode = true;
+	}
+
+	/** Leave bulk-select entirely — used by the dock's close button and Escape. */
+	exitSelectMode() {
+		this.selectMode = false;
+		this.clearSelection();
 	}
 
 	setListCursor(messageId: string | null) {
@@ -1094,7 +1119,10 @@ class MailStore {
 
 	private applySelection(next: Set<string>, anchor: string | null) {
 		if (next.size === 0) {
-			this.clearSelection();
+			// Unchecking the last row keeps select mode alive: the dock stays put so
+			// the user can pick another row instead of losing the whole affordance.
+			this.selectedMessageIds = new Set();
+			this.selectionAnchorId = null;
 			return;
 		}
 
