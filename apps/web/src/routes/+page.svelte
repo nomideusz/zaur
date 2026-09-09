@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Vivaldi',
+			desc: 'Desktop Vivaldi in the cloud, streamed to any device — password-gated, profile persists.',
+			deploy: 'https://railway.com/deploy/vivaldi-browser',
+			source: 'https://github.com/nomideusz/vivaldi-railway'
+		},
+		{
 			name: 'Thunderbird',
 			desc: 'Thunderbird in the cloud — one always-on mail client for all your accounts.',
 			deploy: 'https://railway.com/deploy/thunderbird',
