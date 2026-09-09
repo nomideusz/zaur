@@ -36,6 +36,26 @@ export function findOidcClient(clientId: string | null | undefined): OidcClient 
 	return oidcProviderClients().find((c) => c.clientId === clientId);
 }
 
+/** The client whose redirect_uris share an origin with `url`, for naming "Back to <app>". */
+export function findOidcClientByOrigin(url: string | null | undefined): OidcClient | undefined {
+	if (!url) return undefined;
+	let origin: string;
+	try {
+		origin = new URL(url).origin;
+	} catch {
+		return undefined;
+	}
+	return oidcProviderClients().find((c) =>
+		c.redirectUris.some((uri) => {
+			try {
+				return new URL(uri).origin === origin;
+			} catch {
+				return false;
+			}
+		})
+	);
+}
+
 /** Every registered redirect_uri, for post-logout origin checks. */
 export function allOidcRedirectUris(): string[] {
 	return oidcProviderClients().flatMap((c) => c.redirectUris);

@@ -77,8 +77,14 @@
 </svelte:head>
 
 <AuthPage
-	title={data.continueTo ? `${appConfig.brandName.replace(/\s+Mail$/i, '')} Account` : appConfig.brandName}
-	tagline={data.continueTo ? `Sign in to continue to ${data.continueTo}` : 'Private, focused email'}
+	title={data.continueTo || data.signedOut
+		? `${appConfig.brandName.replace(/\s+Mail$/i, '')} Account`
+		: appConfig.brandName}
+	tagline={data.continueTo
+		? `Sign in to continue to ${data.continueTo}`
+		: data.signedOut
+			? "You're signed out"
+			: 'Private, focused email'}
 >
 	<form class="z-form-stack" onsubmit={submitLogin}>
 		{#if isAdd}
@@ -94,6 +100,20 @@
 				<p class="z-callout__body">
 					Sign in with the email and password you just created.
 				</p>
+			</div>
+		{:else if data.signedOut}
+			<div class="z-callout">
+				<span class="z-callout__title">Signed out everywhere</span>
+				<p class="z-callout__body">
+					{data.signedOutReturn
+						? `You're signed out of ${data.signedOutReturn.returnName} and ${appConfig.brandName}.`
+						: `You're signed out of ${appConfig.brandName}.`} Sign in again below whenever you're ready.
+				</p>
+				{#if data.signedOutReturn}
+					<Button href={data.signedOutReturn.returnTo} variant="ghost" class="w-full">
+						Back to {data.signedOutReturn.returnName}
+					</Button>
+				{/if}
 			</div>
 		{/if}
 
