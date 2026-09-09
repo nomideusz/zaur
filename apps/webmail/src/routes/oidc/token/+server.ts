@@ -1,6 +1,6 @@
 import { error, json, type RequestHandler } from '@sveltejs/kit';
 import { randomBytes } from 'node:crypto';
-import { oidcKeypair, oidcProviderClient } from '$lib/server/oidc';
+import { findOidcClient, oidcKeypair, oidcProviderEnabled } from '$lib/server/oidc';
 import { consumeAuthCode, secretsEqual, signIdToken, verifyPkceS256 } from '$lib/server/oidc/core';
 import { getStoreDb } from '$lib/server/store-instance';
 
@@ -8,8 +8,7 @@ const NO_STORE = { 'Cache-Control': 'no-store', Pragma: 'no-cache' };
 const TOKEN_TTL_S = 3600;
 
 export const POST: RequestHandler = async ({ request, url }) => {
-	const client = oidcProviderClient();
-	if (!client) error(404, 'Not found');
+	if (!oidcProviderEnabled()) error(404, 'Not found');
 
 	const form = await request.formData().catch(() => null);
 	if (!form) return json({ error: 'invalid_request' }, { status: 400, headers: NO_STORE });
@@ -24,7 +23,8 @@ export const POST: RequestHandler = async ({ request, url }) => {
 		clientId = decodeURIComponent(id ?? '');
 		clientSecret = decodeURIComponent(secret.join(':'));
 	}
-	if (clientId !== client.clientId || !secretsEqual(clientSecret, client.clientSecret)) {
+	const client = findOidcClient(clientId);
+	if (!client || !secretsEqual(clientSecret, client.clientSecret)) {
 		return json(
 			{ error: 'invalid_client' },
 			{ status: 401, headers: { ...NO_STORE, 'WWW-Authenticate': 'Basic realm="oidc"' } }

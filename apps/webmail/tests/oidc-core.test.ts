@@ -12,7 +12,8 @@ import {
 	signIdToken,
 	verifyPkceS256,
 	type AuthCodeData,
-	postLogoutTarget
+	postLogoutTarget,
+	parseOidcClients
 } from '../src/lib/server/oidc/core.ts';
 
 const CLAIMS = { sub: '125', preferred_username: 'user@zaur.app', email: 'user@zaur.app' };
@@ -92,5 +93,27 @@ describe('postLogoutTarget', () => {
 		assert.equal(postLogoutTarget('http://bartube.zaur.app/', null, registered), null);
 		assert.equal(postLogoutTarget('not a url', null, registered), null);
 		assert.equal(postLogoutTarget(null, null, registered), null);
+	});
+});
+
+describe('parseOidcClients', () => {
+	it('merges the JSON registry with the legacy triple and drops broken entries', () => {
+		const json = JSON.stringify([
+			{ clientId: 'chat', clientSecret: 's1', redirectUris: ['https://chat.zaur.app/cb'], name: 'Chat' },
+			{ clientId: 'broken', clientSecret: '', redirectUris: [] }
+		]);
+		const clients = parseOidcClients(json, {
+			clientId: 'ytzero-bartube',
+			clientSecret: 's2',
+			redirectUris: 'https://bartube.zaur.app/api/auth/oidc/callback, https://bartube.zaur.app/alt'
+		});
+		assert.deepEqual(
+			clients.map((c) => [c.clientId, c.name, c.redirectUris.length]),
+			[
+				['chat', 'Chat', 1],
+				['ytzero-bartube', 'bartube.zaur.app', 2]
+			]
+		);
+		assert.deepEqual(parseOidcClients('not json', {}), []);
 	});
 });

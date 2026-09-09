@@ -76,7 +76,10 @@
 	<title>Sign in · {appConfig.appName}</title>
 </svelte:head>
 
-<AuthPage title={appConfig.brandName} tagline="Private, focused email">
+<AuthPage
+	title={data.continueTo ? `${appConfig.brandName.replace(/\s+Mail$/i, '')} Account` : appConfig.brandName}
+	tagline={data.continueTo ? `Sign in to continue to ${data.continueTo}` : 'Private, focused email'}
+>
 	<form class="z-form-stack" onsubmit={submitLogin}>
 		{#if isAdd}
 			<div class="z-callout">

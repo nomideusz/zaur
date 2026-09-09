@@ -1,5 +1,5 @@
 import { redirect, type RequestHandler } from '@sveltejs/kit';
-import { oidcProviderClient } from '$lib/server/oidc';
+import { allOidcRedirectUris } from '$lib/server/oidc';
 import { postLogoutTarget } from '$lib/server/oidc/core';
 import { removePushSubscriptionsForSession } from '$lib/server/push-subscriptions';
 import { pushWatcher } from '$lib/server/push-watcher';
@@ -12,7 +12,6 @@ import { clearSession, COOKIE_NAME } from '$lib/server/session';
  * post_logout_redirect_uri — everything else goes to /login.
  */
 const endSession: RequestHandler = async ({ url, cookies }) => {
-	const client = oidcProviderClient();
 	const sessionId = cookies.get(COOKIE_NAME);
 	if (sessionId) {
 		await removePushSubscriptionsForSession(sessionId);
@@ -23,7 +22,7 @@ const endSession: RequestHandler = async ({ url, cookies }) => {
 	const target = postLogoutTarget(
 		url.searchParams.get('post_logout_redirect_uri'),
 		url.searchParams.get('state'),
-		client?.redirectUris ?? []
+		allOidcRedirectUris()
 	);
 	redirect(303, target ?? '/login');
 };

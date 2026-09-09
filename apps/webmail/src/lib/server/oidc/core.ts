@@ -179,3 +179,53 @@ export function postLogoutTarget(
 	if (state) target.searchParams.set('state', state);
 	return target.toString();
 }
+
+export interface OidcClient {
+	clientId: string;
+	clientSecret: string;
+	redirectUris: string[];
+	/** Shown on the login page: "Sign in to continue to <name>". */
+	name: string;
+}
+
+/**
+ * Client registry. OIDC_PROVIDER_CLIENTS is a JSON array of
+ * {clientId, clientSecret, redirectUris, name?}; the legacy single-client
+ * env triple is appended so existing deployments keep working unchanged.
+ * Malformed entries are dropped rather than taking the provider down.
+ */
+export function parseOidcClients(
+	json: string | undefined,
+	legacy: { clientId?: string; clientSecret?: string; redirectUris?: string; name?: string }
+): OidcClient[] {
+	const clients: OidcClient[] = [];
+	const add = (raw: unknown) => {
+		if (!raw || typeof raw !== 'object') return;
+		const r = raw as Record<string, unknown>;
+		const clientId = typeof r.clientId === 'string' ? r.clientId.trim() : '';
+		const clientSecret = typeof r.clientSecret === 'string' ? r.clientSecret.trim() : '';
+		const uris = (Array.isArray(r.redirectUris) ? r.redirectUris : String(r.redirectUris ?? '').split(','))
+			.map((u) => String(u).trim())
+			.filter(Boolean);
+		if (!clientId || !clientSecret || uris.length === 0) return;
+		let name = typeof r.name === 'string' && r.name.trim() ? r.name.trim() : '';
+		if (!name) {
+			try {
+				name = new URL(uris[0]).hostname;
+			} catch {
+				name = clientId;
+			}
+		}
+		clients.push({ clientId, clientSecret, redirectUris: uris, name });
+	};
+	if (json?.trim()) {
+		try {
+			const parsed = JSON.parse(json) as unknown;
+			if (Array.isArray(parsed)) parsed.forEach(add);
+		} catch {
+			// ignore — legacy vars below may still configure a client
+		}
+	}
+	add(legacy);
+	return clients;
+}

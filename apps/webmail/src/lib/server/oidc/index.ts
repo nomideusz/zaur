@@ -13,24 +13,32 @@ import { getStalwartOauthIssuer } from '$lib/server/oauth-config';
 import { getStoreDb } from '$lib/server/store-instance';
 import { getAccountProfile } from '$lib/server/recovery-service';
 import { log } from '$lib/server/log';
-import { getOrCreateKeypair, type OidcKeypair } from './core';
+import { getOrCreateKeypair, parseOidcClients, type OidcClient, type OidcKeypair } from './core';
 
-export interface OidcProviderClient {
-	clientId: string;
-	clientSecret: string;
-	redirectUris: string[];
+export type OidcProviderClient = OidcClient;
+
+export function oidcProviderClients(): OidcClient[] {
+	return parseOidcClients(env.OIDC_PROVIDER_CLIENTS, {
+		clientId: env.OIDC_PROVIDER_CLIENT_ID,
+		clientSecret: env.OIDC_PROVIDER_CLIENT_SECRET,
+		redirectUris: env.OIDC_PROVIDER_REDIRECT_URIS,
+		name: env.OIDC_PROVIDER_CLIENT_NAME
+	});
 }
 
-/** Null unless the provider is fully configured — routes 404 in that case. */
-export function oidcProviderClient(): OidcProviderClient | null {
-	const clientId = env.OIDC_PROVIDER_CLIENT_ID?.trim();
-	const clientSecret = env.OIDC_PROVIDER_CLIENT_SECRET?.trim();
-	const redirectUris = (env.OIDC_PROVIDER_REDIRECT_URIS ?? '')
-		.split(',')
-		.map((uri) => uri.trim())
-		.filter(Boolean);
-	if (!clientId || !clientSecret || redirectUris.length === 0) return null;
-	return { clientId, clientSecret, redirectUris };
+/** False when no client is configured — the /oidc/* + discovery routes 404. */
+export function oidcProviderEnabled(): boolean {
+	return oidcProviderClients().length > 0;
+}
+
+export function findOidcClient(clientId: string | null | undefined): OidcClient | undefined {
+	if (!clientId) return undefined;
+	return oidcProviderClients().find((c) => c.clientId === clientId);
+}
+
+/** Every registered redirect_uri, for post-logout origin checks. */
+export function allOidcRedirectUris(): string[] {
+	return oidcProviderClients().flatMap((c) => c.redirectUris);
 }
 
 let cachedKeypair: OidcKeypair | undefined;

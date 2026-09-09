@@ -1,6 +1,6 @@
 import { error, redirect, type RequestHandler } from '@sveltejs/kit';
 import { readSession } from '$lib/server/session';
-import { oidcProviderClient, resolveOidcIdentity } from '$lib/server/oidc';
+import { findOidcClient, oidcProviderEnabled, resolveOidcIdentity } from '$lib/server/oidc';
 import { createAuthCode } from '$lib/server/oidc/core';
 import { getStoreDb } from '$lib/server/store-instance';
 import { log } from '$lib/server/log';
@@ -8,13 +8,13 @@ import { log } from '$lib/server/log';
 const CODE_TTL_MS = 60_000;
 
 export const GET: RequestHandler = async ({ url, cookies }) => {
-	const client = oidcProviderClient();
-	if (!client) error(404, 'Not found');
+	if (!oidcProviderEnabled()) error(404, 'Not found');
 
 	const params = url.searchParams;
 	const redirectUri = params.get('redirect_uri') ?? '';
+	const client = findOidcClient(params.get('client_id'));
 	// Never redirect to an unvalidated redirect_uri — hard error instead.
-	if (params.get('client_id') !== client.clientId || !client.redirectUris.includes(redirectUri)) {
+	if (!client || !client.redirectUris.includes(redirectUri)) {
 		error(400, 'Unknown client or redirect_uri');
 	}
 
