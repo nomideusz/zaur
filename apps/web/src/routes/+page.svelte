@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Blender',
+			desc: 'Blender in the cloud — kick off CPU renders and close your laptop.',
+			deploy: 'https://railway.com/deploy/blender',
+			source: 'https://github.com/nomideusz/blender-railway'
+		},
+		{
 			name: 'Vivaldi',
 			desc: 'Desktop Vivaldi in the cloud, streamed to any device — password-gated, profile persists.',
 			deploy: 'https://railway.com/deploy/vivaldi-browser',
