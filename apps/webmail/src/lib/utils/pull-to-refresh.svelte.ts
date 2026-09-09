@@ -60,6 +60,13 @@ export function createPullToRefresh(options: PullToRefreshOptions) {
 		tracking = true;
 		armed = false;
 		releasing = false;
+		/* Check if this could be a horizontal swipe (finger over a swipeable row). */
+		const touch = event.touches[0];
+		const row = document.elementFromPoint(touch.clientX, touch.clientY)?.closest('[data-swipe-side]');
+		if (row) {
+			/* Horizontal swipe takes precedence — disengage pull-to-refresh. */
+			tracking = false;
+		}
 	}
 
 	function onTouchMove(event: TouchEvent) {
