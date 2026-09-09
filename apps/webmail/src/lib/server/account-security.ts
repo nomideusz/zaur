@@ -97,11 +97,20 @@ export async function getAccountSecurityOverview(account: SessionData) {
 }
 
 function assertSetSucceeded(data: Record<string, unknown>, operation: 'updated' | 'created' | 'destroyed') {
-	if (operation === 'updated' && Array.isArray(data.updated) && data.updated.includes('singleton')) return;
+	// JMAP: `updated` is an Id→(Foo|null) map, never an array. Checking for an
+	// array read every successful change as a rejection — the password had
+	// changed while the UI said "failed".
+	const updated = data.updated;
+	if (
+		operation === 'updated' &&
+		((updated && typeof updated === 'object' && 'singleton' in updated) ||
+			(Array.isArray(updated) && updated.includes('singleton')))
+	)
+		return;
 	if (operation === 'destroyed' && Array.isArray(data.destroyed) && data.destroyed.length) return;
 	if (operation === 'created' && data.created && typeof data.created === 'object') return;
 	const reason = setFailureMessage(data);
-	log.warn('stalwart_account_security_rejected', { operation, reason });
+	log.warn('stalwart_account_security_rejected', { operation, reason, keys: Object.keys(data).slice(0, 10) });
 	if (reason) throw new AccountSecurityError(reason);
 	throw new Error('Stalwart rejected the account-security change');
 }
