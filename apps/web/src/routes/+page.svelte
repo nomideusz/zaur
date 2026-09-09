@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'FileZilla',
+			desc: 'FileZilla in the cloud — move files between servers over datacenter bandwidth.',
+			deploy: 'https://railway.com/deploy/filezilla',
+			source: 'https://github.com/nomideusz/filezilla-railway'
+		},
+		{
 			name: 'LibreWolf',
 			desc: 'LibreWolf, the privacy-hardened Firefox, in the cloud — password-gated, profile persists.',
 			deploy: 'https://railway.com/deploy/librewolf-browser',
