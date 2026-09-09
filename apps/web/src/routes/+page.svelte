@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'GIMP',
+			desc: 'GIMP in the cloud — edit images from a tablet or a locked-down laptop, files persist.',
+			deploy: 'https://railway.com/deploy/gimp',
+			source: 'https://github.com/nomideusz/gimp-railway'
+		},
+		{
 			name: 'Opera',
 			desc: 'Desktop Opera in the cloud, streamed to any device — password-gated, profile persists.',
 			deploy: 'https://railway.com/deploy/opera-browser',
