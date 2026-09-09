@@ -96,8 +96,10 @@
 			<div class="z-bulk-dock__phone md:hidden">
 				<div class="z-bulk-dock__header">
 					<ActionBarValue count={selectedCount} class="z-action-bar-value--accent" />
+					<!-- The chip already carries the count, so the status line spends its
+					     space on the breakdown ("3 unseen · 2 highlighted") when there is one. -->
 					<p class="z-bulk-dock__status">
-						{selectedCount > 0 ? summary.headline : 'Select messages'}
+						{selectedCount > 0 ? (summary.detail ?? summary.headline) : 'Select messages'}
 					</p>
 					<MessageListSelectMenu
 						placement="top"

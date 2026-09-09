@@ -1,11 +1,12 @@
 <script lang="ts">
 	import { page } from '$app/state';
+	import AccountRail from '$lib/components/shell/AccountRail.svelte';
 	import GlobalSearchCombobox from '$lib/components/shell/GlobalSearchCombobox.svelte';
 	import OfflineIndicator from '$lib/components/shell/OfflineIndicator.svelte';
 	import ToolSwitcher from '$lib/components/shell/ToolSwitcher.svelte';
-	import UserMenu from '$lib/components/shell/UserMenu.svelte';
 	import { appConfig } from '$lib/config';
 	import { isMailPath } from '$lib/mail/routes';
+	import { auth } from '$lib/stores/auth.svelte';
 	import { calendar } from '$lib/stores/calendar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -105,6 +106,8 @@
 			</a>
 		{/if}
 
-		<UserMenu />
+		{#if auth.accounts.length > 0}
+			<AccountRail max={5} />
+		{/if}
 	</div>
 </header>

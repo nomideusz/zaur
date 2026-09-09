@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { page } from '$app/state';
+	import AccountRail from '$lib/components/shell/AccountRail.svelte';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import Menu from '$lib/components/icons/Menu.svelte';
 	import Search from '$lib/components/icons/Search.svelte';
@@ -15,6 +16,7 @@
 		topSearchSection,
 		topSearchSuppressed
 	} from '$lib/shell/app-nav';
+	import { auth } from '$lib/stores/auth.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { mobileShell } from '$lib/stores/mobile-shell.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
@@ -74,19 +76,6 @@
 		if (pathname.startsWith('/files')) return 'Files';
 		return null;
 	});
-
-	/*
-	 * Bulk select used to be reachable on phones only by long-pressing a row — an
-	 * invisible gesture. This is the visible way in; the dock's close button is
-	 * the way out, so the button hides once the dock is up.
-	 */
-	const canBulkSelect = $derived(
-		onMailList &&
-			!page.url.searchParams.has('q') &&
-			mail.messages.length > 0 &&
-			!mail.hasSelection &&
-			!mail.selectMode
-	);
 
 	const inPlace = $derived(section?.id === 'mail');
 	const searchBase = $derived(inPlace ? pathname : (section?.searchPath ?? pathname));
@@ -283,14 +272,8 @@
 						/>
 					</div>
 				{:else if section}
-					{#if canBulkSelect}
-						<button
-							type="button"
-							class="z-chrome-text-btn"
-							onclick={() => mail.enterSelectMode()}
-						>
-							Select
-						</button>
+					{#if auth.accounts.length > 0}
+						<AccountRail max={3} />
 					{/if}
 					<button
 						type="button"

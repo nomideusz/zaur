@@ -24,6 +24,22 @@
 		if (unread.current) auth.setUnread(unread.current);
 	});
 
+	/*
+	 * The poll above is the only source for *inactive* accounts (no live channel),
+	 * so their badges lag by up to POLL_MS. The active account has no such excuse:
+	 * the mail store already knows its inbox unread the moment a message is read,
+	 * so mirror it in and let the badge update immediately.
+	 */
+	$effect(() => {
+		const key = auth.activeKey;
+		if (!key) {
+			auth.setActiveUnread(null);
+			return;
+		}
+		const inbox = mail.mailboxes.find((mailbox) => mailbox.role === 'inbox');
+		auth.setActiveUnread(inbox ? inbox.unread : null);
+	});
+
 	const pageScrollOnMain = false;
 	const pageScrollOverflowX = 'overflow-x-hidden';
 

@@ -67,6 +67,12 @@ class AuthStore {
 	activeKey = $state<string | null>(null);
 	/** Per-account-key inbox unread counts (all accounts), refreshed on a poll. */
 	unread = $state<Record<string, number>>({});
+	/**
+	 * Inbox unread for the *active* account, mirrored from the live mail store.
+	 * Inactive accounts have no live channel, so their badges can only be as fresh
+	 * as the poll — but the active one is known the moment a message is read.
+	 */
+	activeUnread = $state<number | null>(null);
 	client = $state<JMAPClient | null>(null);
 	/** Re-entrancy guard while isolating a dead account in handleUnauthorized(). */
 	private handlingUnauthorized = false;
@@ -662,6 +668,17 @@ class AuthStore {
 		void import('$lib/sync/outbox-processor').then(({ outboxProcessor }) => {
 			outboxProcessor.stop();
 		});
+	}
+
+	/** Unread badge for one account — live for the active one, polled for the rest. */
+	unreadFor(key: string): number {
+		if (key === this.activeKey && this.activeUnread !== null) return this.activeUnread;
+		return this.unread[key] ?? 0;
+	}
+
+	/** Mirror the active account's live inbox unread (see `activeUnread`). */
+	setActiveUnread(count: number | null): void {
+		this.activeUnread = count === null ? null : Math.max(0, count | 0);
 	}
 
 	/**

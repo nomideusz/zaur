@@ -16,8 +16,18 @@
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
+	import type { Snippet } from 'svelte';
 
-	let { compact = false }: { compact?: boolean } = $props();
+	interface Props {
+		compact?: boolean;
+		/**
+		 * Replaces the default avatar trigger. The account rail passes its own so the
+		 * menu opener reads as a control, not as one more avatar to tap.
+		 */
+		trigger?: Snippet;
+	}
+
+	let { compact = false, trigger }: Props = $props();
 
 	let open = $state(false);
 
@@ -28,8 +38,12 @@
 	const onSettingsRoute = $derived($page.url.pathname.startsWith('/settings'));
 	/** Other mailboxes the user can switch to (the active one is shown in the header). */
 	const otherAccounts = $derived(auth.accounts.filter((account) => !account.isActive));
+	/** Resolve through unreadFor() so the active account's live count is included. */
+	const unreadByKey = $derived(
+		Object.fromEntries(auth.accounts.map((account) => [account.key, auth.unreadFor(account.key)]))
+	);
 	const othersUnread = $derived(
-		otherAccountsUnreadSum(auth.accounts, auth.unread, auth.activeKey)
+		otherAccountsUnreadSum(auth.accounts, unreadByKey, auth.activeKey)
 	);
 	const othersUnreadBadge = $derived(formatUnreadBadge(othersUnread));
 </script>
@@ -44,34 +58,38 @@
 	<Menu.Trigger
 		class={cn(
 			'relative rounded-full border border-transparent transition-colors hover:border-border/40 hover:bg-surface-sunken/80',
-			compact ? 'z-icon-tap-target p-0' : 'flex items-center gap-2 p-1.5'
+			trigger ? 'z-chrome-icon-btn' : compact ? 'z-icon-tap-target p-0' : 'flex items-center gap-2 p-1.5'
 		)}
 		aria-label={othersUnreadBadge
 			? `Account menu, ${othersUnread} unread in other accounts`
 			: 'Account menu'}
 	>
-		<span
-			class={cn(
-				'flex items-center justify-center rounded-full bg-surface-sunken text-sm font-semibold text-fg-muted',
-				compact ? 'size-9' : 'size-8'
-			)}
-		>
-			{#if auth.accounts.length > 1}
-				<span aria-hidden="true">{accountInitial(user.name, user.email)}</span>
-			{:else}
-				<User class="size-4" aria-hidden="true" />
-			{/if}
-		</span>
-		{#if othersUnreadBadge}
+		{#if trigger}
+			{@render trigger()}
+		{:else}
 			<span
-				class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold tabular-nums text-accent-fg"
-				aria-hidden="true"
+				class={cn(
+					'flex items-center justify-center rounded-full bg-surface-sunken text-sm font-semibold text-fg-muted',
+					compact ? 'size-9' : 'size-8'
+				)}
 			>
-				{othersUnreadBadge}
+				{#if auth.accounts.length > 1}
+					<span aria-hidden="true">{accountInitial(user.name, user.email)}</span>
+				{:else}
+					<User class="size-4" aria-hidden="true" />
+				{/if}
 			</span>
-		{/if}
-		{#if !compact}
-			<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
+			{#if othersUnreadBadge}
+				<span
+					class="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-semibold tabular-nums text-accent-fg"
+					aria-hidden="true"
+				>
+					{othersUnreadBadge}
+				</span>
+			{/if}
+			{#if !compact}
+				<ChevronDown class="size-4 text-fg-subtle" aria-hidden="true" />
+			{/if}
 		{/if}
 	</Menu.Trigger>
 
@@ -90,7 +108,7 @@
 				{#if otherAccounts.length}
 					<div class="flex flex-col gap-1 border-b border-border p-1">
 						{#each otherAccounts as account (account.key)}
-							{@const unread = auth.unread[account.key] ?? 0}
+							{@const unread = auth.unreadFor(account.key)}
 							{@const badge = formatUnreadBadge(unread)}
 							<Menu.Item
 								class="z-overflow-menu-item"
