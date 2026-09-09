@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'Ungoogled Chromium',
+			desc: 'Ungoogled Chromium in the cloud — Chromium without Google services, profile persists.',
+			deploy: 'https://railway.com/deploy/ungoogled-chromium',
+			source: 'https://github.com/nomideusz/ungoogled-chromium-railway'
+		},
+		{
 			name: 'FileZilla',
 			desc: 'FileZilla in the cloud — move files between servers over datacenter bandwidth.',
 			deploy: 'https://railway.com/deploy/filezilla',
