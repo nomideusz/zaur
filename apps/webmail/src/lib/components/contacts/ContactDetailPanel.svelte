@@ -10,9 +10,10 @@
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import type { ContactEntry } from '$lib/utils/contact-index';
 	import { cn } from '$lib/utils/cn';
+	import { MediaQuery } from 'svelte/reactivity';
 
 	let {
-		contact,
+		contact: selected,
 		onClose,
 		onCompose,
 		onRemove,
@@ -23,14 +24,24 @@
 		onRemove: () => void;
 	} = $props();
 
+	// Ark portals the drawer body into its own Svelte root, which can outlive this
+	// component during the exit animation. Render from a retained copy so it never
+	// sees a null selection, and only open the drawer on mobile so the desktop app
+	// is not aria-hidden behind a CSS-hidden drawer.
+	// svelte-ignore state_referenced_locally -- seeded once, then tracked by the effect below
+	let contact = $state.raw(selected);
+	$effect.pre(() => {
+		contact = selected;
+	});
+	const mobile = new MediaQuery('(max-width: 767px)');
+
 	const panelPadding = 'px-4 py-3';
-	const displayName = $derived(contact.name.trim() || contact.email);
 </script>
 
 {#snippet details(showClose: boolean)}
 	<header class={cn('flex shrink-0 items-start justify-between gap-2 border-b border-border', panelPadding)}>
 		<div class="min-w-0">
-			<h2 class="truncate text-base font-semibold text-fg">{displayName}</h2>
+			<h2 class="truncate text-base font-semibold text-fg">{contact.name.trim() || contact.email}</h2>
 			<p class="mt-1 truncate text-sm text-fg-muted">{contact.email}</p>
 		</div>
 		{#if showClose}
@@ -81,7 +92,7 @@
 
 <!-- Mobile drawer -->
 <Drawer.Root
-	open={!!contact}
+	open={mobile.current}
 	onOpenChange={(details) => {
 		if (!details.open) onClose();
 	}}

@@ -15,15 +15,25 @@
 	import { formatEventTime } from '$lib/utils/dates';
 	import { cn } from '$lib/utils/cn';
 	import { extractMeetingGroup, meetingJoinPath } from '$lib/utils/meet';
+	import { MediaQuery } from 'svelte/reactivity';
 
-	const event = $derived(calendar.selectedEvent);
-	const eventCalendars = $derived(
-		event
-			? event.calendarIds
-					.map((id) => calendar.calendarById(id, event.accountId))
+	// Ark portals the drawer body into its own Svelte root, which can outlive this
+	// component during the exit animation. Render from a retained copy so it never
+	// sees a null selection, and only open the drawer on mobile so the desktop app
+	// is not aria-hidden behind a CSS-hidden drawer.
+	let event = $state.raw(calendar.selectedEvent);
+	$effect.pre(() => {
+		if (calendar.selectedEvent) event = calendar.selectedEvent;
+	});
+	const mobile = new MediaQuery('(max-width: 767px)');
+	const eventCalendars = $derived.by(() => {
+		const current = event;
+		return current
+			? current.calendarIds
+					.map((id) => calendar.calendarById(id, current.accountId))
 					.filter(Boolean)
-			: []
-	);
+			: [];
+	});
 	const canEditEvent = $derived(event ? calendar.eventAllowsWrites(event) : false);
 	const eventTitle = $derived(event?.title?.trim() || 'Untitled event');
 	const eventDescription = $derived(event?.description?.trim() ?? '');
@@ -153,7 +163,7 @@
 	{/if}
 {/snippet}
 
-{#if event}
+{#if calendar.selectedEvent}
 	<!-- Desktop pane -->
 	<aside
 		class="z-mail-pane-surface hidden min-h-0 min-w-0 flex-1 flex-col overflow-hidden md:flex"
@@ -165,7 +175,7 @@
 
 	<!-- Mobile drawer -->
 	<Drawer.Root
-		open={calendar.selectedEvent != null}
+		open={mobile.current}
 		onOpenChange={(details) => {
 			if (!details.open) calendar.selectEvent(null);
 		}}

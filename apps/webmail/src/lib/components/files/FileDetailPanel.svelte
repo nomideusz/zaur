@@ -19,10 +19,11 @@
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { FileNode } from '$lib/types/files';
 	import { cn } from '$lib/utils/cn';
+	import { MediaQuery } from 'svelte/reactivity';
 	import { errorMessage } from '@zaur/mail-core/utils/errors';
 
 	let {
-		node,
+		node: selected,
 		images = [],
 		onClose,
 		onShare,
@@ -38,6 +39,17 @@
 		onRemove: () => void;
 		onSelectImage?: (id: string) => void;
 	} = $props();
+
+	// Ark portals the drawer body into its own Svelte root, which can outlive this
+	// component during the exit animation. Render from a retained copy so it never
+	// sees a null selection, and only open the drawer on mobile so the desktop app
+	// is not aria-hidden behind a CSS-hidden drawer.
+	// svelte-ignore state_referenced_locally -- seeded once, then tracked by the effect below
+	let node = $state.raw(selected);
+	$effect.pre(() => {
+		node = selected;
+	});
+	const mobile = new MediaQuery('(max-width: 767px)');
 
 	const panelPadding = 'px-4 py-3';
 	const kindLabel = $derived(node.nodeType === 'directory' ? 'Folder' : 'File');
@@ -296,7 +308,7 @@
 
 <!-- Mobile drawer -->
 <Drawer.Root
-	open={!!node}
+	open={mobile.current}
 	onOpenChange={(details) => {
 		if (!details.open) onClose();
 	}}
