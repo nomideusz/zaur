@@ -116,6 +116,8 @@ export interface StateChange {
 			Email?: string;
 			Mailbox?: string;
 			Thread?: string;
+			Calendar?: string;
+			CalendarEvent?: string;
 		}
 	>;
 }

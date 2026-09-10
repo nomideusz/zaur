@@ -2093,6 +2093,7 @@ export class JMAPClient {
 	}
 
 	openEventStream(): Promise<Response> {
+		const EVENT_SOURCE_TYPES = 'Mailbox,Email,CalendarEvent,Calendar';
 		if (this.proxyMode) {
 			return fetch('/api/jmap/events');
 		}
@@ -2104,12 +2105,12 @@ export class JMAPClient {
 		let url = this.session.eventSourceUrl;
 		if (url.includes('{types}')) {
 			url = url
-				.replace('{types}', encodeURIComponent('Mailbox,Email'))
+				.replace('{types}', encodeURIComponent(EVENT_SOURCE_TYPES))
 				.replace('{closeafter}', encodeURIComponent('no'))
 				.replace('{ping}', encodeURIComponent('30'));
 		} else {
 			const separator = url.includes('?') ? '&' : '?';
-			url = `${url}${separator}types=Mailbox,Email&closeafter=no&ping=30`;
+			url = `${url}${separator}types=${EVENT_SOURCE_TYPES}&closeafter=no&ping=30`;
 		}
 		return this.authenticatedFetch(url, { headers: { Accept: 'text/event-stream' } });
 	}

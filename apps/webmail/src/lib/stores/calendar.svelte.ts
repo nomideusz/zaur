@@ -156,6 +156,15 @@ class CalendarStore {
 		await this.ensureCalendars(client, { force: true });
 	}
 
+	/** Server pushed a Calendar/CalendarEvent state change: refresh what is already loaded. */
+	async handlePushChange(client: JMAPClient, changed: { Calendar?: string; CalendarEvent?: string }) {
+		if (!this.calendarsLoaded) return;
+		if (changed.Calendar) await this.reloadCalendars(client);
+		if (changed.Calendar || changed.CalendarEvent) {
+			await this.loadMonth(client, { preserveSelection: true });
+		}
+	}
+
 	async loadMonth(client: JMAPClient, options?: { preserveSelection?: boolean }) {
 		await this.ensureCalendars(client);
 		if (!this.supported) return;

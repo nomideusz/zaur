@@ -10,6 +10,7 @@
 	import ToastStack from '$lib/components/ui/ToastStack.svelte';
 	import { pushListener } from '$lib/jmap/push-listener';
 	import { auth } from '$lib/stores/auth.svelte';
+	import { calendar } from '$lib/stores/calendar.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { applyUnreadPrefixToDocument } from '$lib/utils/document-title';
@@ -95,6 +96,8 @@
 			if (accountChanges) {
 				void mail.handlePushChange(client, accountChanges);
 			}
+			const calendarChange = Object.values(change.changed).find((c) => c.Calendar || c.CalendarEvent);
+			if (calendarChange) void calendar.handlePushChange(client, calendarChange);
 		});
 
 		return () => pushListener.stop();

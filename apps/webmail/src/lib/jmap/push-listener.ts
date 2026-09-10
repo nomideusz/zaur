@@ -32,10 +32,11 @@ export class PushListener {
 
 		void this.bootstrapSync(client);
 
-		this.startPolling(client);
-
+		// Push (SSE) is the primary channel; polling only runs while the stream is down.
 		if (typeof window !== 'undefined') {
 			this.startEventSource(onChange);
+		} else {
+			this.startPolling();
 		}
 
 		if (typeof document !== 'undefined') {
@@ -54,8 +55,9 @@ export class PushListener {
 	}
 
 	stop() {
-		this.stopPolling();
+		this.client = null; // before stopEventSource, so it does not restart the fallback poll
 		this.stopEventSource();
+		this.stopPolling();
 		this.clearStaleTimer();
 		this.clearReconnect();
 		if (this.onVisibilityChange) {
@@ -102,7 +104,8 @@ export class PushListener {
 		this.reconnectDelay = Math.min(this.reconnectDelay * 2, SSE_RECONNECT_MAX_MS);
 	}
 
-	private startPolling(client: JMAPClient) {
+	private startPolling() {
+		if (this.pollInterval) return;
 		this.pollInterval = setInterval(() => {
 			if (this.client) void this.check(this.client);
 		}, POLL_INTERVAL_MS);
@@ -145,6 +148,9 @@ export class PushListener {
 			this.reconnectDelay = SSE_RECONNECT_MS;
 			this.streamErrorLogged = false;
 			this.resetStaleTimer();
+			this.stopPolling();
+			// Catch anything that changed while the stream was down.
+			if (this.client) void this.check(this.client);
 		};
 		source.onmessage = handleData;
 		source.addEventListener('state', handleData);
@@ -168,6 +174,7 @@ export class PushListener {
 		this.eventSource?.close();
 		this.eventSource = null;
 		this.clearStaleTimer();
+		if (this.client) this.startPolling();
 	}
 
 	private resetStaleTimer() {
