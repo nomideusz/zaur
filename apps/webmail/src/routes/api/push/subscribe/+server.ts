@@ -66,11 +66,18 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 
 	const subscription = body.subscription;
 	if (!subscription?.endpoint || !subscription.keys?.p256dh || !subscription.keys.auth) {
+		console.warn('[push] rejected subscription: missing', {
+			endpoint: !subscription?.endpoint,
+			p256dh: !subscription?.keys?.p256dh,
+			auth: !subscription?.keys?.auth
+		});
 		error(400, 'Invalid push subscription');
 	}
 
 	if (!isAllowedPushEndpoint(subscription.endpoint)) {
-		error(400, 'Unsupported push endpoint');
+		const host = URL.canParse(subscription.endpoint) ? new URL(subscription.endpoint).host : '?';
+		console.warn('[push] rejected subscription: endpoint host not allowed:', host);
+		error(400, `Unsupported push endpoint: ${host}`);
 	}
 
 	const record = await upsertPushSubscription({
