@@ -193,6 +193,17 @@ export function listContacts(accountId: string | null, query = ''): ContactEntry
 		.sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 }
 
+/**
+ * Exact-email lookup used by hover previews. Returns null when the address
+ * isn't in the index yet (unknown sender) or there's no account.
+ */
+export function findContact(accountId: string | null, email: string): ContactEntry | null {
+	if (!accountId) return null;
+	const needle = email.trim().toLowerCase();
+	if (!needle) return null;
+	return readIndex(accountId).get(needle) ?? null;
+}
+
 export function removeContact(accountId: string, email: string): void {
 	if (!browser || !accountId) return;
 

@@ -60,9 +60,9 @@ unticked until a need appears.
 | --- | --- |
 | ~~`field`~~ ✅ | `ui/Field.svelte` with `invalid` / `ErrorText`; settings + compose To/Cc/Bcc. |
 | ~~`fieldset`~~ ✅ | Settings groups; `disabled` when security is unverified. |
-| ~~`tabs`~~ ✅ | Calendar Week / Day / Agenda. Still open: settings sections. |
+| ~~`tabs`~~ ✅ | Calendar Week / Day / Agenda. Settings audited 2026-09: no tab UI to migrate — its IA is a route-based sidebar (desktop) + index list (mobile), which is correct for deep-linkable sections. |
 | ~~`file-upload`~~ ✅ | Compose attach + dropzone. |
-| ~~`drawer`~~ ✅ | Mobile nav drawer (`shell/NavDrawer.svelte`). Still open: MobileSheet → Drawer. |
+| ~~`drawer`~~ ✅ | Mobile nav drawer (`shell/NavDrawer.svelte`); detail panels (`EventPanel`, `EventComposePanel`, `ContactDetailPanel`, `FileDetailPanel`) — `ui/MobileSheet.svelte` deleted. |
 | ~~`scroll-area`~~ ✅ | Mail, settings, reader, contacts, calendar panes. |
 | ~~`progress`~~ ✅ | PDF download, storage quota, indeterminate compose upload rows. |
 
@@ -77,7 +77,7 @@ unticked until a need appears.
 | ~~`radio-group`~~ ✅ | `ui/RadioGroup.svelte`; Appearance theme. |
 | `avatar` | **Removed 2026-08** — the account rail/switcher sheet went away with the mobile island; account identity lives in `shell/UserMenu.svelte`. |
 | `pagination` | **Deferred** — mail/search use infinite `loadMore`, not page numbers. |
-| `accordion` | **Deferred** — Shortcuts help is a short flat list; settings keep Fieldset IA. |
+| ~~`accordion`~~ ✅ | Thread messages in `mail/MessageReaderCore.svelte` (`multiple`, so Expand all works). |
 | `editable` | **Deferred** — folder rename already uses `TreeView.NodeRenameInput`; no contact edit UI. |
 | `number-input` | **Deferred** — numeric settings are fixed enums via `SettingsSelect`. |
 | ~~`date-picker`~~ ✅ | `ui/DateField.svelte` — vacation dates, advanced search custom range, event compose. Schedule-send keeps native `datetime-local`. |
@@ -91,7 +91,7 @@ unticked until a need appears.
 | ~~`qr-code`~~ ✅ | TOTP setup in `settings/sections/security.svelte` (replaced `qrcode` npm). |
 | `segment-group` | **Removed 2026-08** — the mobile segment rails were replaced by hamburger-drawer navigation; no segment control remains. |
 | `floating-panel` | Lab only — `/floating-compose-lab`. Do not promote without a product decision. |
-| `hover-card` | Still open — sender/contact preview. |
+| ~~`hover-card`~~ ✅ | `ui/ContactHoverCard.svelte` — sender preview in the reader (skipped on touch). |
 | `carousel` | Files image browser (`files/FileImageBrowser.svelte`). |
 | `color-picker` / `steps` / `tour` / `image-cropper` / `json-tree-view` | No product surface yet. |
 
@@ -140,7 +140,7 @@ internal building block rather than a user-facing component.
 | `navigation-menu` | [ ] | |
 | `pagination` | [ ] | deferred — infinite scroll |
 | `steps` | [ ] | |
-| `tabs` | [x] | `routes/(app)/calendar/+page.svelte` (Week / Day / Agenda view switcher) |
+| `tabs` | [x] | `routes/(app)/calendar/+page.svelte` (Week / Day / Agenda view switcher). Settings deliberately uses route links, not tabs. |
 | `tour` | [ ] | |
 
 ### Overlays
@@ -150,7 +150,7 @@ internal building block rather than a user-facing component.
 | `dialog` | [x] | `src/lib/components/ui/ConfirmDialog.svelte`, `mail/AttachmentPreview.svelte`, `mail/CreateFolderDialog.svelte`, `shell/WelcomeOnboarding.svelte` |
 | `drawer` | [x] | `src/lib/components/shell/NavDrawer.svelte` |
 | `floating-panel` | [x] | lab: `routes/floating-compose-lab/+page.svelte`, `lab/FloatingComposeLab.svelte` |
-| `hover-card` | [ ] | |
+| `hover-card` | [x] | `src/lib/components/ui/ContactHoverCard.svelte`; sender name in `mail/MessageReaderCore.svelte` |
 | `popover` | [x] | `src/lib/components/mail/RichTextEditor.svelte`, `shell/OutboxMenu.svelte` |
 | `tooltip` | [x] | `src/lib/components/ui/TooltipWrap.svelte` |
 
@@ -166,10 +166,10 @@ internal building block rather than a user-facing component.
 
 | Component | Used | Used in |
 | --- | :---: | --- |
-| `accordion` | [ ] | deferred — no strong surface yet |
+| `accordion` | [x] | `src/lib/components/mail/MessageReaderCore.svelte` (multi-message threads, `multiple`) |
 | `avatar` | [ ] | removed 2026-08 with the island account rail |
 | `carousel` | [x] | `src/lib/components/files/FileImageBrowser.svelte` |
-| `collapsible` | [x] | `mail/MessageReaderCore.svelte`; compose quoted reply in `mail/ComposePanel.svelte` |
+| `collapsible` | [x] | compose quoted reply in `mail/ComposePanel.svelte` (reader threads now use `accordion`) |
 | `image-cropper` | [ ] | |
 | `json-tree-view` | [ ] | |
 | `marquee` | [ ] | |

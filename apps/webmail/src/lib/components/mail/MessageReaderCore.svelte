@@ -2,13 +2,14 @@
 	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 	import { tick } from 'svelte';
-	import { Collapsible } from '@ark-ui/svelte/collapsible';
+	import { Accordion } from '@ark-ui/svelte/accordion';
 	import ArrowLeft from '$lib/components/icons/ArrowLeft.svelte';
 	import Paperclip from '$lib/components/icons/Paperclip.svelte';
 	import Shield from '$lib/components/icons/Shield.svelte';
 	import MessageBody from '$lib/components/mail/MessageBody.svelte';
 	import MessageAttachments from '$lib/components/mail/MessageAttachments.svelte';
 	import MessageThreadActions from '$lib/components/mail/MessageThreadActions.svelte';
+	import ContactHoverCard from '$lib/components/ui/ContactHoverCard.svelte';
 	import ThreadMessageActions from '$lib/components/mail/ThreadMessageActions.svelte';
 	import { MAIL_PANE_CTX, type MailPaneContext } from '$lib/components/mail/mail-pane-context';
 	import { threadActionMessage } from '$lib/components/mail/message-list-utils';
@@ -151,12 +152,12 @@
 		return expandedIds.has(message.id);
 	}
 
-	/** Drive each thread message's Ark Collapsible open state from `expandedIds`. */
-	function setMessageOpen(message: MessageDetail, open: boolean) {
-		const next = new Set(expandedIds);
-		if (open) next.add(message.id);
-		else next.delete(message.id);
-		expandedIds = next;
+	/**
+	 * The Ark Accordion owns the open set as a string[]; `expandedIds` stays the
+	 * Set-of-ids source of truth the rest of the reader reads from.
+	 */
+	function setExpandedIds(value: string[]) {
+		expandedIds = new Set(value);
 	}
 
 	function showImagesOnce() {
@@ -382,20 +383,22 @@
 			</div>
 		{/if}
 
-		<div class="z-reader-thread-list divide-y divide-border">
-			{#each thread as message (message.id)}
-				{@const contact = readerPrimaryContact(message, mailboxRouteId, isMe)}
-				{@const showContactEmail = shouldShowContactEmail(contact.displayName, contact.email)}
-				{@const deliveredTo = deliveredToVisible
-					? readerDeliveredTo(message, ownedAddresses)
-					: null}
-				{#if thread.length === 1}
+		<div class="z-reader-thread-list">
+			{#if thread.length === 1}
+				{#each thread as message (message.id)}
+					{@const contact = readerPrimaryContact(message, mailboxRouteId, isMe)}
+					{@const showContactEmail = shouldShowContactEmail(contact.displayName, contact.email)}
+					{@const deliveredTo = deliveredToVisible
+						? readerDeliveredTo(message, ownedAddresses)
+						: null}
 					<!-- Single message: full reader, always expanded. -->
 					<section class="z-reader-thread z-reader-thread--expanded">
 						<div class="px-4" style="padding-block: var(--z-space-reader-content);">
 							<div class="z-reader-chrome__meta">
 								<div class="z-reader-chrome__from">
-									<p class="z-reader-from max-md:break-words md:truncate">{contact.displayName}</p>
+									<ContactHoverCard email={contact.email} name={contact.displayName}>
+										<p class="z-reader-from max-md:break-words md:truncate">{contact.displayName}</p>
+									</ContactHoverCard>
 									{#if showContactEmail}
 										{#if !contact.isMe}
 											<button
@@ -424,74 +427,88 @@
 							{@render threadBody(message)}
 						</div>
 					</section>
+				{/each}
 				{:else}
-					{@const expanded = isExpanded(message)}
 					<!--
-						Multi-message thread: Ark Collapsible per message. unmountOnExit keeps
-						collapsed message bodies out of the DOM (matching the previous render).
+						Multi-message thread: Ark Accordion with `multiple` so several messages
+						can stay open at once (Expand all). unmountOnExit keeps collapsed
+						message bodies out of the DOM.
 					-->
-					<Collapsible.Root
-						open={expanded}
-						onOpenChange={(details) => setMessageOpen(message, details.open)}
+					<Accordion.Root
+						multiple
+						value={[...expandedIds]}
+						onValueChange={(details) => setExpandedIds(details.value)}
 						lazyMount
 						unmountOnExit
-						class={cn(
-							'z-reader-thread',
-							expanded ? 'z-reader-thread--expanded' : 'z-reader-thread--collapsed'
-						)}
+						class="divide-y divide-border"
 					>
-						<div
-							class="flex items-start gap-2 px-4 transition-colors hover:bg-surface-sunken/30"
-							style="padding-block: var(--z-space-reader-content-compact);"
-						>
-							<Collapsible.Trigger
-								class="block min-w-0 flex-1 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-								aria-label={`${expanded ? 'Collapse' : 'Expand'} message from ${contact.displayName}`}
+						{#each thread as message (message.id)}
+							{@const contact = readerPrimaryContact(message, mailboxRouteId, isMe)}
+							{@const showContactEmail = shouldShowContactEmail(contact.displayName, contact.email)}
+							{@const deliveredTo = deliveredToVisible
+								? readerDeliveredTo(message, ownedAddresses)
+								: null}
+							{@const expanded = isExpanded(message)}
+							<Accordion.Item
+								value={message.id}
+								class={cn(
+									'z-reader-thread',
+									expanded ? 'z-reader-thread--expanded' : 'z-reader-thread--collapsed'
+								)}
 							>
-								<div class="z-reader-chrome__meta">
-									<div class="z-reader-chrome__from">
-										<p class="z-reader-from max-md:break-words md:truncate">{contact.displayName}</p>
-										{#if expanded}
-											{#if showContactEmail}
-												<p class="z-reader-meta mt-0.5 truncate" title={contact.email}>{contact.email}</p>
-											{/if}
-											{#if deliveredTo}
-												<p class="z-reader-delivered-to mt-0.5 truncate" title="{deliveredTo.prefix} {deliveredTo.addresses}">
-													{deliveredTo.prefix} {deliveredTo.addresses}
-												</p>
-											{/if}
-										{:else}
-											<div class="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-fg-muted">
-												{#if message.hasAttachment}
-													<Paperclip class="size-3.5 shrink-0" aria-hidden="true" />
+							<div
+								class="flex items-start gap-2 px-4 transition-colors hover:bg-surface-sunken/30"
+								style="padding-block: var(--z-space-reader-content-compact);"
+							>
+								<Accordion.ItemTrigger
+									class="block min-w-0 flex-1 rounded-sm text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+									aria-label={`${expanded ? 'Collapse' : 'Expand'} message from ${contact.displayName}`}
+								>
+									<div class="z-reader-chrome__meta">
+										<div class="z-reader-chrome__from">
+											<p class="z-reader-from max-md:break-words md:truncate">{contact.displayName}</p>
+											{#if expanded}
+												{#if showContactEmail}
+													<p class="z-reader-meta mt-0.5 truncate" title={contact.email}>{contact.email}</p>
 												{/if}
-												{#if message.preview.trim()}
-													<span class="truncate" title={message.preview}>{message.preview}</span>
+												{#if deliveredTo}
+													<p class="z-reader-delivered-to mt-0.5 truncate" title="{deliveredTo.prefix} {deliveredTo.addresses}">
+														{deliveredTo.prefix} {deliveredTo.addresses}
+													</p>
 												{/if}
-											</div>
-										{/if}
+											{:else}
+												<div class="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-fg-muted">
+													{#if message.hasAttachment}
+														<Paperclip class="size-3.5 shrink-0" aria-hidden="true" />
+													{/if}
+													{#if message.preview.trim()}
+														<span class="truncate" title={message.preview}>{message.preview}</span>
+													{/if}
+												</div>
+											{/if}
+										</div>
+										<time class="z-reader-chrome__time shrink-0 tabular-nums" datetime={message.receivedAt}>
+											{formatMessageListWhen(message.receivedAt, expanded, settings.timeFormat)}
+										</time>
 									</div>
-									<time class="z-reader-chrome__time shrink-0 tabular-nums" datetime={message.receivedAt}>
-										{formatMessageListWhen(message.receivedAt, expanded, settings.timeFormat)}
-									</time>
-								</div>
-							</Collapsible.Trigger>
+								</Accordion.ItemTrigger>
 
-							{#if expanded}
-								<div class="shrink-0">
-									<ThreadMessageActions {message} {thread} menuId={`thread-msg-actions-${message.id}`} />
-								</div>
-							{/if}
-						</div>
-
-						<Collapsible.Content>
-							<div class="px-4" style="padding-bottom: var(--z-space-reader-content);">
-								{@render threadBody(message)}
+								{#if expanded}
+									<div class="shrink-0">
+										<ThreadMessageActions {message} {thread} menuId={`thread-msg-actions-${message.id}`} />
+									</div>
+								{/if}
 							</div>
-						</Collapsible.Content>
-					</Collapsible.Root>
-				{/if}
-			{/each}
+
+							<Accordion.ItemContent>
+								<div class="px-4" style="padding-bottom: var(--z-space-reader-content);">
+									{@render threadBody(message)}
+								</div>
+							</Accordion.ItemContent>
+						</Accordion.Item>
+					{/each}
+				</Accordion.Root>
+			{/if}
 		</div>
 	</ScrollArea>
 	</div>
