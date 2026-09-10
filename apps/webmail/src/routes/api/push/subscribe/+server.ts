@@ -25,6 +25,8 @@ function isAllowedPushEndpoint(endpoint: string): boolean {
 	}
 	if (url.protocol !== 'https:') return false;
 	const host = url.hostname.toLowerCase();
+	// Chromium 152+ hands out FCM endpoints on sharded jmtNN.google.com hosts.
+	if (/^jmt\d+\.google\.com$/.test(host) && url.pathname.startsWith('/fcm/send/')) return true;
 	return ALLOWED_PUSH_HOSTS.some((h) => host === h || host.endsWith(`.${h}`));
 }
 
