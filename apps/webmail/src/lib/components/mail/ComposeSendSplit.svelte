@@ -5,12 +5,14 @@
 	 *
 	 * The schedule panel is an Ark Popover anchored to the whole control: it
 	 * brings positioning, outside-click dismissal, Escape and focus handling.
-	 * The caret stays a plain button rather than a Popover.Trigger so it can
-	 * still be wrapped by Ark Tooltip (nested `asChild` providers merge their
-	 * click handlers and eat the toggle — see RichTextEditor).
+	 * The caret must be the Popover.Trigger — Ark only excludes triggers from
+	 * outside-dismiss (never the anchor), so a plain button would open and
+	 * immediately dismiss. It keeps a native title rather than Ark Tooltip:
+	 * nesting the two asChild providers merges their ids and handlers.
 	 */
 	import { Popover } from '@ark-ui/svelte/popover';
 	import { Portal } from '@ark-ui/svelte/portal';
+	import { MediaQuery } from 'svelte/reactivity';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -54,6 +56,15 @@
 		formatScheduleTime,
 		compact = false
 	}: Props = $props();
+
+	const mobile = new MediaQuery('(max-width: 767px)');
+	/**
+	 * The compose route mounts two of these — the desktop header (non-compact)
+	 * and the CSS-hidden mobile top bar (compact). Only the one matching the
+	 * current layout may open the panel, or the two Ark Popovers fight over
+	 * focus and outside-dismiss.
+	 */
+	const panelActive = $derived(compact ? mobile.current : !mobile.current);
 </script>
 
 {#snippet sendButton(props: Record<string, unknown> = {})}
@@ -70,25 +81,22 @@
 {/snippet}
 
 {#snippet scheduleButton(props: Record<string, unknown> = {})}
-	<button
+	<Popover.Trigger
 		{...props}
-		type="button"
 		class="z-mail-text-nav__action z-mail-text-nav__action--pill z-compose__send-caret"
 		aria-label="Schedule send"
-		aria-haspopup="dialog"
-		aria-expanded={showSchedulePanel}
 		disabled={scheduleDisabled}
-		title={compact ? 'Schedule send' : undefined}
-		onclick={onToggleSchedule}
+		title="Schedule send"
 	>
 		<ChevronDown class="size-4" aria-hidden="true" />
-	</button>
+	</Popover.Trigger>
 {/snippet}
 
 <Popover.Root
-	open={showSchedulePanel}
+	open={showSchedulePanel && panelActive}
 	onOpenChange={(details) => {
-		if (!details.open) onCloseSchedule();
+		if (details.open) onToggleSchedule();
+		else onCloseSchedule();
 	}}
 	positioning={{ placement: 'bottom-end', gutter: 8 }}
 	lazyMount
@@ -105,11 +113,10 @@
 					{@render sendButton(props)}
 				{/snippet}
 			</TooltipWrap>
-			<TooltipWrap label="Schedule send" wrapDisabled={scheduleDisabled}>
-				{#snippet trigger({ props })}
-					{@render scheduleButton(props)}
-				{/snippet}
-			</TooltipWrap>
+			<!-- The caret is a Popover.Trigger (Ark only excludes triggers from
+			     outside-dismiss). It keeps a native title instead of Ark Tooltip:
+			     nesting the two asChild providers would merge their ids/handlers. -->
+			{@render scheduleButton()}
 		{/if}
 	</Popover.Anchor>
 
