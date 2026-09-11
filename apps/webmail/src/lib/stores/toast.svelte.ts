@@ -23,6 +23,10 @@ export const toaster = createToaster({
 	overlap: false,
 	gap: 6,
 	max: MAX_TOASTS,
+	/* Hold the auto-dismiss timer while the tab is in the background, so an Undo
+	   window isn't spent on a tab nobody is looking at. Ark has no hover-pause
+	   option (only this one), so ToastStack adds hover on top via pause(id). */
+	pauseOnPageIdle: true,
 	offsets: {
 		top: '1rem',
 		bottom: 'var(--z-toast-bottom, 0.75rem)',
