@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Dialog } from '@ark-ui/svelte/dialog';
 	import { Portal } from '@ark-ui/svelte/portal';
+	import Field from '$lib/components/ui/Field.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -51,29 +52,50 @@
 						Set how your messages introduce you. You can change both anytime in Settings → Account.
 					</Dialog.Description>
 
-					<label class="mt-3 flex flex-col gap-1.5 text-sm">
-						<span class="font-medium text-fg">Your name</span>
-						<input
-							type="text"
-							class="rounded-md border border-border bg-surface px-3 py-2 text-sm text-fg outline-none focus-visible:border-accent"
-							placeholder={auth.username ?? 'Your name'}
-							bind:value={name}
-						/>
-						<span class="text-xs text-fg-subtle">Shown to recipients on messages you send.</span>
-					</label>
+					<!--
+						Ark Field, same as every settings row: the label is the accessible
+						name and the helper text is wired via aria-describedby. A wrapping
+						<label> would fold the helper into the name instead.
+					-->
+					<Field
+						id="onboarding-name"
+						ids={{}}
+						label="Your name"
+						description="Shown to recipients on messages you send."
+						class="mt-3 flex flex-col gap-1.5"
+						labelClass="text-sm font-medium text-fg"
+						descriptionClass="text-xs text-fg-subtle"
+					>
+						{#snippet children({ controlId })}
+							<input
+								id={controlId}
+								type="text"
+								class="z-input"
+								placeholder={auth.username ?? 'Your name'}
+								bind:value={name}
+							/>
+						{/snippet}
+					</Field>
 
-					<label class="mt-2 flex flex-col gap-1.5 text-sm">
-						<span class="font-medium text-fg">Signature <span class="font-normal text-fg-subtle">(optional)</span></span>
-						<textarea
-							rows="3"
-							class="resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-fg outline-none focus-visible:border-accent"
-							placeholder={'Best,\n' + (name.trim() || 'Your name')}
-							bind:value={signature}
-						></textarea>
-						<span class="text-xs text-fg-subtle">
-							Added under “--” at the end of new messages — edit or delete it right in the message.
-						</span>
-					</label>
+					<Field
+						id="onboarding-signature"
+						ids={{}}
+						label="Signature (optional)"
+						description="Added under “--” at the end of new messages — edit or delete it right in the message."
+						class="mt-2 flex flex-col gap-1.5"
+						labelClass="text-sm font-medium text-fg"
+						descriptionClass="text-xs text-fg-subtle"
+					>
+						{#snippet children({ controlId })}
+							<textarea
+								id={controlId}
+								rows="3"
+								class="z-input resize-none"
+								placeholder={'Best,\n' + (name.trim() || 'Your name')}
+								bind:value={signature}
+							></textarea>
+						{/snippet}
+					</Field>
 				</div>
 
 				<div class="flex shrink-0 flex-col-reverse gap-2 sm:flex-row sm:justify-end">

@@ -695,7 +695,10 @@
 		color: var(--z-fg, #000);
 	}
 
-	:global(.z-rich-editor__btn[data-state='on']),
+	/* Active state comes from `z-rich-editor__btn--active` (see formatBtnClass).
+	   A `[data-state='on']` rule used to sit here for an Ark Toggle that was
+	   reverted — and TooltipWrap already puts its own open/closed `data-state`
+	   on these buttons, so that attribute can never mean "toggled on" here. */
 	:global(.z-rich-editor__btn--active) {
 		background-color: var(--z-active, rgba(0,0,0,0.1));
 		color: var(--z-accent, #0076ff);
