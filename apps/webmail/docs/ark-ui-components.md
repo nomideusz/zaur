@@ -159,7 +159,7 @@ internal building block rather than a user-facing component.
 | Component | Used | Used in |
 | --- | :---: | --- |
 | `progress` | [x] | `src/lib/components/ui/Progress.svelte`; PDF viewer, `settings/StorageQuota.svelte`, compose upload rows |
-| `timer` | [ ] | not used — the Undo toast's countdown is a decorative CSS fill; Ark toast has no hover-pause to sync a real timer to, so we added hover pause/resume via `toaster.pause(id)` and freeze the fill on `[data-paused]` |
+| `timer` | [ ] | not used — the Undo toast's countdown is a decorative CSS fill frozen via the toast root's `[data-paused]`. Ark already pauses on region hover/focus (Toaster group) and `pauseOnPageIdle`, so no timer machine is needed. |
 | `toast` | [x] | `src/lib/stores/toast.svelte.ts`, `ui/ToastStack.svelte` |
 
 ### Data display

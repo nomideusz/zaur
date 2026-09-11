@@ -9,21 +9,21 @@
 		{#snippet children(toast)}
 			{@const timed = !!toast().action}
 			<!--
-				Hovering a timed toast (Undo) holds its dismissal — reaching for the
-				button shouldn't race the countdown. Ark only pauses on page idle by
-				default, so we drive it here; the root's [data-paused] then freezes
-				the decorative fill (see status-line.css).
+				No hover handlers here on purpose: Ark's Toaster (the group) already
+				pauses every toast in the placement on region pointer-enter/focus, and
+				resumes on leave. Adding per-toast pause/resume would fight that — a
+				pointerleave here could resume a toast the group still holds paused.
+				The root's [data-paused] reflects that shared state and freezes the
+				decorative fill (see status-line.css).
 			-->
 			<Toast.Root
 				class="z-status-line__item{timed ? ' z-status-line__item--timed' : ''}"
 				data-variant={toast().type}
-				onpointerenter={timed ? () => toaster.pause(toast().id) : undefined}
-				onpointerleave={timed ? () => toaster.resume(toast().id) : undefined}
 			>
 				{#if timed}
-					<!-- Decorative countdown, driven by the toast duration. The fill pauses
-					     via [data-paused] in status-line.css, so it stays in step with the
-					     dismissal timer below. -->
+					<!-- Decorative countdown, driven by the toast duration. [data-paused]
+					     (set by Ark whenever the timer is held — hover, focus, or idle tab)
+					     freezes it in status-line.css. -->
 					<div
 						class="z-status-line__shape-fill"
 						style:animation-duration="{toast().duration ?? 0}ms"
