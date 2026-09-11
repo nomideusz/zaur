@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { errorMessage } from '@zaur/mail-core/utils/errors';
-	import { Menu } from '@ark-ui/svelte/menu';
-	import { Portal } from '@ark-ui/svelte/portal';
 	import FolderInput from '$lib/components/icons/FolderInput.svelte';
 	import MoveToMenuItems from '$lib/components/mail/MoveToMenuItems.svelte';
+	import { Menu, MenuSurface, MenuTrigger } from '$lib/components/ui/menu';
 	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
@@ -42,35 +41,19 @@
 </script>
 
 {#if hasTargets}
-	<Menu.Root
-		{open}
-		onOpenChange={(details) => {
-			open = details.open;
-		}}
-		positioning={{ placement: 'bottom-end', gutter: 8, overflowPadding: 12 }}
-		ids={{ content: menuId }}
-		lazyMount
-		unmountOnExit
-	>
+	<Menu side="bottom" align="end" {menuId} bind:open>
 		<div class={cn('relative shrink-0', className)}>
-			<Menu.Trigger
+			<MenuTrigger
 				aria-label="Move to folder"
 				class="z-btn-icon min-h-5 min-w-5 p-0"
 				onclick={(event) => event.stopPropagation()}
 			>
 				<FolderInput class="size-3.5" aria-hidden="true" />
-			</Menu.Trigger>
+			</MenuTrigger>
 
-			<Portal>
-				<Menu.Positioner>
-					<Menu.Content
-						class="z-overflow-menu z-overflow-menu--fixed w-72 min-w-64 max-w-[calc(100vw-1rem)]"
-						onpointerdown={(event) => event.stopPropagation()}
-					>
-						<MoveToMenuItems {currentMailboxRouteId} onSelect={moveTo} />
-					</Menu.Content>
-				</Menu.Positioner>
-			</Portal>
+			<MenuSurface class="w-72 min-w-64 max-w-[calc(100vw-1rem)]">
+				<MoveToMenuItems {currentMailboxRouteId} onSelect={moveTo} />
+			</MenuSurface>
 		</div>
-	</Menu.Root>
+	</Menu>
 {/if}

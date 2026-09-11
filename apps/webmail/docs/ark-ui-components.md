@@ -173,7 +173,7 @@ internal building block rather than a user-facing component.
 
 | Component | Used | Used in |
 | --- | :---: | --- |
-| `menu` | [x] | `src/lib/components/ui/menu/*`, `shell/UserMenu.svelte`, `mail/MoveToMenuItems.svelte`, `mail/MessageListSelectMenu.svelte`, `ui/OverflowMenu.svelte` |
+| `menu` | [x] | `src/lib/components/ui/menu/*` is the single source of menu markup: `Menu` (root), `MenuTrigger`, `MenuSurface` (the one portalled `Portal > Positioner > Content`), `MenuItem`, `MenuSeparator`. `ui/OverflowMenu` + `ui/OverflowMenuItem` are thin wrappers over them, and `shell/UserMenu.svelte`, `mail/MoveToMenu.svelte`, `mail/MoveToMenuItems.svelte`, `mail/MessageListSelectMenu.svelte` compose the primitives directly. `mail/MailboxTreeNode.svelte` / `files/FilesTreeNode.svelte` keep raw `Menu.Root` + `Menu.ContextTrigger` for tree-row context menus but use `MenuContent`/`MenuItem`. |
 | `navigation-menu` | [ ] | |
 | `pagination` | [ ] | deferred — infinite scroll |
 | `steps` | [ ] | |

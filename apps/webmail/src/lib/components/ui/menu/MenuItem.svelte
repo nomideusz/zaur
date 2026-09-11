@@ -13,6 +13,7 @@
 		disabled?: boolean;
 		closeOnClick?: boolean;
 		onSelect?: () => void;
+		class?: string;
 		children?: Snippet;
 	}
 
@@ -23,6 +24,7 @@
 		disabled = false,
 		closeOnClick = true,
 		onSelect,
+		class: className,
 		children
 	}: Props = $props();
 
@@ -39,7 +41,8 @@
 	onSelect={() => onSelect?.()}
 	class={cn(
 		'z-menu-item z-overflow-menu-item',
-		variant === 'destructive' && 'z-menu-item--destructive z-overflow-menu-item--danger'
+		variant === 'destructive' && 'z-menu-item--destructive z-overflow-menu-item--danger',
+		className
 	)}
 	data-slot="menu-item"
 	data-variant={variant}

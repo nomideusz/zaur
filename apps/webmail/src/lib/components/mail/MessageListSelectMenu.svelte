@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Menu } from '@ark-ui/svelte/menu';
-	import { Portal } from '@ark-ui/svelte/portal';
+	import { Menu as ArkMenu } from '@ark-ui/svelte/menu';
 	import ChevronDown from '$lib/components/icons/ChevronDown.svelte';
+	import { Menu, MenuItem, MenuSurface, MenuTrigger } from '$lib/components/ui/menu';
 	import { LABEL_UNSEEN } from '$lib/mail/new-mail';
 	import { mail } from '$lib/stores/mail.svelte';
 	import { cn } from '$lib/utils/cn';
@@ -47,14 +47,7 @@
 	}
 </script>
 
-<Menu.Root
-	{open}
-	onOpenChange={(details) => (open = details.open)}
-	positioning={{ placement: `${side}-start`, gutter: 8, overflowPadding: 12 }}
-	ids={{ content: menuId }}
-	lazyMount
-	unmountOnExit
->
+<Menu {side} align="start" {menuId} bind:open>
 	{#if split}
 		<div class="z-bulk-dock__select">
 			<button
@@ -65,74 +58,37 @@
 			>
 				{allSelected ? 'Clear all' : 'Select all'}
 			</button>
-			<Menu.Trigger
+			<MenuTrigger
 				aria-label="More selection options"
 				class="z-bulk-dock__select-more"
 				disabled={disabled || selectableCount === 0}
 			>
 				<ChevronDown class="size-4 shrink-0" aria-hidden="true" />
-			</Menu.Trigger>
+			</MenuTrigger>
 		</div>
 	{:else}
-		<Menu.Trigger
+		<MenuTrigger
 			aria-label="Selection options"
 			class={cn('z-mail-list-select-trigger', className)}
 			{disabled}
 		>
 			{#if children}{@render children()}{/if}
 			<ChevronDown class="size-4 shrink-0" aria-hidden="true" />
-		</Menu.Trigger>
+		</MenuTrigger>
 	{/if}
 
-	<Portal>
-		<Menu.Positioner>
-			<Menu.Content
-				class="z-overflow-menu z-overflow-menu--fixed w-44 min-w-44 max-w-[calc(100vw-1rem)] py-1"
-				onpointerdown={(event) => event.stopPropagation()}
+	<MenuSurface class="w-44 min-w-44 max-w-[calc(100vw-1rem)] py-1">
+		<ArkMenu.ItemGroup>
+			<ArkMenu.ItemGroupLabel
+				class="z-type-label px-3 py-1 text-[10px] uppercase tracking-wider text-fg-muted"
 			>
-				<Menu.ItemGroup>
-					<Menu.ItemGroupLabel
-						class="z-type-label px-3 py-1 text-[10px] uppercase tracking-wider text-fg-muted"
-					>
-						Select
-					</Menu.ItemGroupLabel>
-					<Menu.Item class="z-overflow-menu-item" value="all" valueText="All" onSelect={() => choose('all')}>
-						All
-					</Menu.Item>
-					<Menu.Item
-						class="z-overflow-menu-item"
-						value="normal"
-						valueText="Normal"
-						onSelect={() => choose('normal')}
-					>
-						Normal
-					</Menu.Item>
-					<Menu.Item
-						class="z-overflow-menu-item"
-						value="new"
-						valueText={LABEL_UNSEEN}
-						onSelect={() => choose('new')}
-					>
-						{LABEL_UNSEEN}
-					</Menu.Item>
-					<Menu.Item
-						class="z-overflow-menu-item"
-						value="important"
-						valueText="Highlighted"
-						onSelect={() => choose('important')}
-					>
-						Highlighted
-					</Menu.Item>
-					<Menu.Item
-						class="z-overflow-menu-item"
-						value="none"
-						valueText="None"
-						onSelect={() => choose('none')}
-					>
-						Clear selection
-					</Menu.Item>
-				</Menu.ItemGroup>
-			</Menu.Content>
-		</Menu.Positioner>
-	</Portal>
-</Menu.Root>
+				Select
+			</ArkMenu.ItemGroupLabel>
+			<MenuItem label="All" value="all" onSelect={() => choose('all')} />
+			<MenuItem label="Normal" value="normal" onSelect={() => choose('normal')} />
+			<MenuItem label={LABEL_UNSEEN} value="new" onSelect={() => choose('new')} />
+			<MenuItem label="Highlighted" value="important" onSelect={() => choose('important')} />
+			<MenuItem label="Clear selection" value="none" onSelect={() => choose('none')} />
+		</ArkMenu.ItemGroup>
+	</MenuSurface>
+</Menu>

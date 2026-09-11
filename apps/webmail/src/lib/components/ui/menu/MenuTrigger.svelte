@@ -7,6 +7,8 @@
 		'aria-label'?: string;
 		class?: string;
 		disabled?: boolean;
+		/** Extra click handling (e.g. stopPropagation inside a clickable row). */
+		onclick?: (event: MouseEvent) => void;
 		children: Snippet;
 	}
 
@@ -14,6 +16,7 @@
 		'aria-label': ariaLabel,
 		class: className,
 		disabled = false,
+		onclick,
 		children
 	}: Props = $props();
 </script>
@@ -23,6 +26,7 @@
 	aria-label={ariaLabel}
 	class={cn('z-menu-trigger', className)}
 	{disabled}
+	{onclick}
 	data-slot="menu-trigger"
 >
 	{@render children()}

@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { Menu } from '@ark-ui/svelte/menu';
 	import { moveTargetMailboxes } from '$lib/mail/mailboxes';
+	import MenuItem from '$lib/components/ui/menu/MenuItem.svelte';
 	import { mail } from '$lib/stores/mail.svelte';
 
 	interface Props {
@@ -17,14 +17,11 @@
 {#if options.length}
 	<div class="z-overflow-menu-scroll">
 		{#each options as mailbox (mailbox.id)}
-			<Menu.Item
-				class="z-overflow-menu-item"
+			<MenuItem
+				label={`Move to ${mailbox.name}`}
 				value={mailbox.id}
-				valueText={`Move to ${mailbox.name}`}
 				onSelect={() => onSelect(mailbox.id)}
-			>
-				<span class="truncate">Move to {mailbox.name}</span>
-			</Menu.Item>
+			/>
 		{/each}
 	</div>
 {/if}
