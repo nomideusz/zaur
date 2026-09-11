@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { Dialog } from '@ark-ui/svelte/dialog';
+	import { ColorPicker, parseColor } from '@ark-ui/svelte/color-picker';
 	import { Portal } from '@ark-ui/svelte/portal';
+	import RiCheckLine from 'svelte-remixicon/RiCheckLine.svelte';
 	import { CALENDAR_COLORS } from '$lib/jmap/calendar-map';
 	import { cn } from '$lib/utils/cn';
 
@@ -25,7 +27,9 @@
 	}: Props = $props();
 
 	let calendarName = $state('');
-	let calendarColor = $state(CALENDAR_COLORS[0]);
+	let calendarColor = $state(parseColor(CALENDAR_COLORS[0]));
+
+	const selectedColor = $derived(calendarColor.toString('hex'));
 
 	const isEdit = $derived(mode === 'edit');
 	const title = $derived(isEdit ? 'Edit calendar' : 'New calendar');
@@ -41,7 +45,7 @@
 	$effect(() => {
 		if (!open) return;
 		calendarName = name;
-		calendarColor = color || CALENDAR_COLORS[0];
+		calendarColor = parseColor(color || CALENDAR_COLORS[0]);
 	});
 
 	function handleOpenChange(nextOpen: boolean) {
@@ -52,7 +56,7 @@
 	async function submit(event: Event) {
 		event.preventDefault();
 		if (!canSubmit) return;
-		await onSubmit?.({ name: calendarName.trim(), color: calendarColor });
+		await onSubmit?.({ name: calendarName.trim(), color: selectedColor });
 	}
 </script>
 
@@ -82,30 +86,40 @@
 						</label>
 						<fieldset class="flex flex-col gap-1.5">
 							<legend class="text-xs font-medium text-fg-muted">Color</legend>
-							<div class="flex flex-wrap gap-2" role="radiogroup" aria-label="Calendar color">
-								{#each CALENDAR_COLORS as swatch (swatch)}
-									<label class="inline-flex">
-										<input
-											type="radio"
-											name="calendar-color"
+							<ColorPicker.Root
+								inline
+								disabled={submitting}
+								bind:value={calendarColor}
+							>
+								<ColorPicker.SwatchGroup
+									role="group"
+									aria-label="Calendar color"
+									class="flex flex-wrap gap-2"
+								>
+									{#each CALENDAR_COLORS as swatch (swatch)}
+										<ColorPicker.SwatchTrigger
 											value={swatch}
-											checked={calendarColor === swatch}
-											class="sr-only"
-											onchange={() => (calendarColor = swatch)}
-											disabled={submitting}
-										/>
-										<span
-											class={cn(
-												'size-6 cursor-pointer rounded-full border-2',
-												calendarColor === swatch ? 'border-fg' : 'border-transparent'
-											)}
-											style:background-color={swatch}
-											aria-hidden="true"
-										></span>
-										<span class="sr-only">{swatch}</span>
-									</label>
-								{/each}
-							</div>
+											aria-label={swatch}
+											class="inline-flex cursor-pointer rounded-full focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+										>
+											<ColorPicker.Swatch
+												value={swatch}
+												style="background-color: {swatch}"
+												class={cn(
+													'relative grid size-6 place-items-center rounded-full border-2',
+													selectedColor === swatch ? 'border-fg' : 'border-transparent'
+												)}
+											>
+												<ColorPicker.SwatchIndicator
+													class="absolute inset-0 flex items-center justify-center text-white drop-shadow"
+												>
+													<RiCheckLine class="size-4" aria-hidden="true" />
+												</ColorPicker.SwatchIndicator>
+											</ColorPicker.Swatch>
+										</ColorPicker.SwatchTrigger>
+									{/each}
+								</ColorPicker.SwatchGroup>
+							</ColorPicker.Root>
 						</fieldset>
 					</div>
 
