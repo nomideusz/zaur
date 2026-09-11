@@ -13,6 +13,7 @@
 	import AttachmentThumbnail from '$lib/components/mail/AttachmentThumbnail.svelte';
 	import DownloadButton from '$lib/components/ui/DownloadButton.svelte';
 	import TooltipWrap from '$lib/components/ui/TooltipWrap.svelte';
+	import { formatBytes } from '$lib/utils/format-bytes';
 	import { toast } from '$lib/stores/toast.svelte';
 	import type { MessageAttachment } from '$lib/types/mail';
 
@@ -32,12 +33,6 @@
 
 	const canCollapse = $derived(attachments.length > COLLAPSE_THRESHOLD);
 	const previewable = $derived(attachments.filter((item) => attachmentPreviewKind(item) !== null));
-
-	function formatSize(bytes: number) {
-		if (bytes < 1024) return `${bytes} B`;
-		if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-		return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-	}
 
 	function attachmentLabel(count: number) {
 		return count === 1 ? '1 attachment' : `${count} attachments`;
@@ -123,7 +118,7 @@
 									<span class="z-reader-attachment-name" title={attachment.name}>{displayName}</span>
 									<span class="z-reader-attachment-meta">
 										{#if attachment.size}
-											<span class="z-reader-attachment-size">{formatSize(attachment.size)}</span>
+											<span class="z-reader-attachment-size">{formatBytes(attachment.size)}</span>
 										{/if}
 										<span class="z-reader-attachment-action">{previewKind ? 'Preview' : 'Download'}</span>
 									</span>

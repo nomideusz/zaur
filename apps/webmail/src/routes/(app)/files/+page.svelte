@@ -20,7 +20,7 @@
 	import { PANE_SPLIT } from '$lib/components/ui/pane-split';
 	import { fileNodeDragId, hasFileNodeDrag, setFileNodeDragData } from '$lib/files/drag';
 	import { isImageFile } from '$lib/files/image';
-	import { fileAllowsDelete, fileAllowsShare, formatFileSize } from '$lib/jmap/file-rights';
+	import { fileAllowsDelete, fileAllowsShare } from '$lib/jmap/file-rights';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { confirm } from '$lib/stores/confirm.svelte';
 	import { files } from '$lib/stores/files.svelte';
@@ -28,6 +28,7 @@
 	import { shellHeader } from '$lib/stores/shell-header.svelte';
 	import type { FileNode } from '$lib/types/files';
 	import { cn } from '$lib/utils/cn';
+	import { formatBytes } from '$lib/utils/format-bytes';
 	import { haptic } from '$lib/utils/haptics';
 	import { supportsMobileListGestures } from '$lib/utils/pointer-env';
 
@@ -323,7 +324,7 @@
 															<p class="truncate text-xs text-fg-muted">
 																{node.nodeType === 'directory'
 																	? 'Folder'
-																	: formatFileSize(node.size) || 'File'}
+																	: formatBytes(node.size) || 'File'}
 																{#if node.shareWith && Object.keys(node.shareWith).length}
 																	· Shared
 																{/if}

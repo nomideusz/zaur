@@ -9,7 +9,7 @@
 	import RiFontSize2 from 'svelte-remixicon/RiFontSize2.svelte';
 	import ComposeRecipientInput from '$lib/components/mail/ComposeRecipientInput.svelte';
 	import ComposeSendSplit from '$lib/components/mail/ComposeSendSplit.svelte';
-	import { formatAttachmentSize } from '$lib/attachments/upload';
+	import { formatBytes } from '$lib/utils/format-bytes';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { compose, type ComposeMode } from '$lib/stores/compose.svelte';
 	import { mobileShell } from '$lib/stores/mobile-shell.svelte';
@@ -736,7 +736,7 @@
 							<Paperclip class="size-3.5 shrink-0 text-fg-subtle" aria-hidden="true" />
 							<span class="min-w-0 truncate font-medium text-fg" title={attachment.name}>{attachment.name}</span>
 							<span class="shrink-0 text-xs text-fg-subtle">
-								({formatAttachmentSize(attachment.size)})
+								({formatBytes(attachment.size)})
 							</span>
 							{#if attachment.uploading}
 								<span class="flex min-w-[5rem] flex-col gap-0.5">

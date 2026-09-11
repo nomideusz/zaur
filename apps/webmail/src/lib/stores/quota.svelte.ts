@@ -2,19 +2,6 @@ import type { JMAPClient } from '$lib/jmap/client';
 
 const REFRESH_TTL_MS = 5 * 60 * 1000;
 
-/** Bytes → human-readable, GB/TB-aware (the attachment formatter only goes to MB). */
-export function formatStorageSize(bytes: number): string {
-	if (bytes < 1024) return `${bytes} B`;
-	const units = ['KB', 'MB', 'GB', 'TB'];
-	let size = bytes / 1024;
-	let unit = 0;
-	while (size >= 1024 && unit < units.length - 1) {
-		size /= 1024;
-		unit++;
-	}
-	return `${size.toFixed(size >= 100 || unit < 2 ? 0 : 1)} ${units[unit]}`;
-}
-
 /**
  * Shared mailbox storage quota, shown in the sidebar and settings.
  * 'unavailable' means the server does not expose the JMAP Quota extension.

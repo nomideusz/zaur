@@ -13,10 +13,11 @@
 	import { Portal } from '@ark-ui/svelte/portal';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
 	import { isImageFile } from '$lib/files/image';
-	import { fileAllowsDelete, fileAllowsShare, formatFileSize } from '$lib/jmap/file-rights';
+	import { fileAllowsDelete, fileAllowsShare } from '$lib/jmap/file-rights';
 	import { canPreviewMarkdown, isMarkdownFile, MAX_MARKDOWN_BYTES, stripBom } from '$lib/markdown';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { toast } from '$lib/stores/toast.svelte';
+	import { formatBytes } from '$lib/utils/format-bytes';
 	import type { FileNode } from '$lib/types/files';
 	import { cn } from '$lib/utils/cn';
 	import { MediaQuery } from 'svelte/reactivity';
@@ -53,7 +54,7 @@
 
 	const panelPadding = 'px-4 py-3';
 	const kindLabel = $derived(node.nodeType === 'directory' ? 'Folder' : 'File');
-	const sizeLabel = $derived(formatFileSize(node.size));
+	const sizeLabel = $derived(formatBytes(node.size));
 	const modifiedLabel = $derived(formatDate(node.modified ?? node.created));
 	const shareCount = $derived(node.shareWith ? Object.keys(node.shareWith).length : 0);
 	const markdownFile = $derived(node.nodeType === 'file' && isMarkdownFile(node));
@@ -249,7 +250,7 @@
 				<div class="flex flex-col gap-4 px-4 py-4 text-sm">
 					{#if markdownTooLarge}
 						<p class="text-sm text-fg-muted">
-							This markdown file is larger than {formatFileSize(MAX_MARKDOWN_BYTES)} and can't be
+							This markdown file is larger than {formatBytes(MAX_MARKDOWN_BYTES)} and can't be
 							previewed here. Download it to read it locally.
 						</p>
 					{/if}

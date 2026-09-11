@@ -4,7 +4,7 @@
 	import FileText from '$lib/components/icons/FileText.svelte';
 	import Folder from '$lib/components/icons/Folder.svelte';
 	import ScrollArea from '$lib/components/ui/ScrollArea.svelte';
-	import { formatFileSize } from '$lib/jmap/file-rights';
+	import { formatBytes } from '$lib/utils/format-bytes';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { files } from '$lib/stores/files.svelte';
 
@@ -52,7 +52,7 @@
 							<div class="min-w-0 flex-1">
 								<p class="truncate text-sm font-semibold tracking-tight text-fg">{node.name}</p>
 								<p class="truncate text-xs text-fg-muted">
-									{node.nodeType === 'directory' ? 'Folder' : formatFileSize(node.size) || 'File'}
+									{node.nodeType === 'directory' ? 'Folder' : formatBytes(node.size) || 'File'}
 								</p>
 							</div>
 						</button>
