@@ -117,7 +117,7 @@ internal building block rather than a user-facing component.
 | `field` | [x] | `src/lib/components/ui/Field.svelte`; `settings/SettingsField.svelte`, `settings/SettingsRow.svelte`; compose To/Cc/Bcc in `mail/ComposePanel.svelte` |
 | `fieldset` | [x] | `settings/SettingsGroup.svelte`, `settings/SettingsFormGroup.svelte` (`disabled` for unverified security) |
 | `file-upload` | [x] | `src/lib/components/ui/ComposeFileUpload.svelte`; `mail/ComposePanel.svelte` |
-| `listbox` | [ ] | |
+| `listbox` | [x] | `src/lib/components/mail/ComposeRecipientInput.svelte` — contact suggestions (highlight driven from the tags input; content is `tabindex=-1` so typing keeps focus) |
 | `number-input` | [ ] | deferred — enum selects only |
 | `password-input` | [x] | `src/lib/components/ui/PasswordInput.svelte`; `ui/LabelInput.svelte` (password); `settings/sections/security.svelte` |
 | `pin-input` | [x] | `src/lib/components/ui/PinInput.svelte`; `routes/login/+page.svelte`; `settings/sections/security.svelte` |
@@ -159,7 +159,7 @@ internal building block rather than a user-facing component.
 | Component | Used | Used in |
 | --- | :---: | --- |
 | `progress` | [x] | `src/lib/components/ui/Progress.svelte`; PDF viewer, `settings/StorageQuota.svelte`, compose upload rows |
-| `timer` | [ ] | |
+| `timer` | [ ] | not used — the Undo toast's countdown is a decorative CSS fill; Ark toast has no hover-pause to sync a real timer to, so we added hover pause/resume via `toaster.pause(id)` and freeze the fill on `[data-paused]` |
 | `toast` | [x] | `src/lib/stores/toast.svelte.ts`, `ui/ToastStack.svelte` |
 
 ### Data display

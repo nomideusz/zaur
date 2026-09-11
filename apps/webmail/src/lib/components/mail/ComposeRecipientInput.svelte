@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import { TagsInput } from '@ark-ui/svelte/tags-input';
+	import { Listbox, createListCollection } from '@ark-ui/svelte/listbox';
 	import RiCloseLine from 'svelte-remixicon/RiCloseLine.svelte';
 	import { auth } from '$lib/stores/auth.svelte';
 	import { settings } from '$lib/stores/settings.svelte';
 	import { listContacts } from '$lib/utils/contact-index';
 	import { splitAddressList, isAddressValid } from '$lib/utils/addresses';
 	import { cn } from '$lib/utils/cn';
-	import { focusFirstItem, rovingFocus } from '$lib/utils/roving-focus';
 
 	interface Props {
 		id?: string;
@@ -72,7 +72,13 @@
 
 	let open = $state(false);
 	let wrapperEl = $state<HTMLDivElement | null>(null);
-	let listEl = $state<HTMLDivElement | null>(null);
+	/**
+	 * Index of the highlighted suggestion, or -1 for none. The suggestion list is
+	 * an Ark Listbox for correct option semantics, but focus stays in the tags
+	 * input so the user can keep typing — so we drive the highlight from here
+	 * rather than letting the listbox own focus (its content is tabIndex -1).
+	 */
+	let activeIndex = $state(-1);
 
 	const partial = $derived(pending.trim());
 	const suggestions = $derived.by(() => {
@@ -83,6 +89,45 @@
 			.slice(0, 6);
 	});
 	const showSuggestions = $derived(open && suggestions.length > 0);
+
+	const suggestionCollection = $derived(
+		createListCollection({
+			items: suggestions,
+			itemToValue: (contact) => contact.email,
+			itemToString: (contact) => contact.name
+		})
+	);
+
+	const highlightedEmail = $derived(
+		activeIndex >= 0 ? (suggestions[activeIndex]?.email ?? null) : null
+	);
+
+	/*
+	 * Keep the highlight in range as the filtered list changes under the query,
+	 * and default to the top match so Enter's target is visible — the previous
+	 * roving-focus list highlighted the first row the same way.
+	 */
+	$effect(() => {
+		const count = suggestions.length;
+		if (count === 0) {
+			if (activeIndex !== -1) activeIndex = -1;
+			return;
+		}
+		if (activeIndex < 0 || activeIndex >= count) activeIndex = 0;
+	});
+
+	function moveActive(delta: number) {
+		const count = suggestions.length;
+		if (!count) return;
+		const from = activeIndex;
+		const next =
+			from === -1
+				? delta > 0
+					? 0
+					: count - 1
+				: (from + delta + count) % count;
+		activeIndex = next;
+	}
 
 	function pick(email: string) {
 		if (!tags.some((tag) => tag.toLowerCase() === email.toLowerCase())) {
@@ -163,9 +208,13 @@
 
 	function onWrapperKeydown(event: KeyboardEvent) {
 		if (!showSuggestions) return;
-		if (event.key === 'ArrowDown' && event.target === inputElement) {
+		if (event.target !== inputElement) return;
+		if (event.key === 'ArrowDown') {
 			event.preventDefault();
-			focusFirstItem(listEl);
+			moveActive(1);
+		} else if (event.key === 'ArrowUp') {
+			event.preventDefault();
+			moveActive(-1);
 		} else if (event.key === 'Escape') {
 			open = false;
 		}
@@ -197,9 +246,10 @@
 	}
 
 	function onSuggestionKeydownCapture(event: KeyboardEvent) {
-		// While typing with the suggestion list open, Enter should pick the top contact
-		// rather than letting tags-input commit the raw partial text as a chip. Runs in
-		// the capture phase so it intercepts the key before the machine's input handler.
+		// While typing with the suggestion list open, Enter should pick the highlighted
+		// contact (defaulting to the top one) rather than letting tags-input commit the
+		// raw partial text as a chip. Runs in the capture phase so it intercepts the key
+		// before the machine's input handler.
 		if (
 			event.key === 'Enter' &&
 			event.target === inputElement &&
@@ -208,7 +258,7 @@
 		) {
 			event.preventDefault();
 			event.stopPropagation();
-			pick(suggestions[0].email);
+			pick(suggestions[activeIndex >= 0 ? activeIndex : 0].email);
 		}
 	}
 
@@ -268,6 +318,11 @@
 				aria-invalid={invalid || undefined}
 				aria-describedby={ariaDescribedby}
 				aria-controls={showSuggestions && id ? `${id}-suggestions` : undefined}
+				aria-activedescendant={
+					showSuggestions && activeIndex >= 0 && id
+						? `${id}-suggestion-${activeIndex}`
+						: undefined
+				}
 			/>
 		</TagsInput.Control>
 		<TagsInput.HiddenInput />
@@ -275,30 +330,32 @@
 		{#if showSuggestions}
 			<!-- Rendered INSIDE TagsInput.Root so the machine doesn't treat clicks on it as
 			     "interact outside" (which would blur-commit the raw partial before pick runs).
-			     Contacts are pre-filtered; this list just needs roving focus. mousedown is
-			     prevented so picking doesn't blur the input before the click lands. -->
-			<div
-				bind:this={listEl}
-				id={id ? `${id}-suggestions` : undefined}
-				role="listbox"
-				aria-label="Contact suggestions"
-				use:rovingFocus
+			     Ark Listbox supplies the option semantics and highlight state; the content
+			     is tabIndex -1 so focus stays in the input and typing keeps filtering.
+			     mousedown is prevented so picking doesn't blur the input. -->
+			<Listbox.Root
+				collection={suggestionCollection}
+				highlightedValue={highlightedEmail}
+				selectionMode="single"
+				deselectable
 				class="absolute left-0 top-full z-20 mt-2 w-full max-w-md overflow-hidden rounded-md border border-border bg-surface-raised shadow-md"
 			>
-				<div class="max-h-64 overflow-y-auto py-1.5">
+				<Listbox.Content
+					id={id ? `${id}-suggestions` : undefined}
+					tabindex={-1}
+					aria-label="Contact suggestions"
+					class="max-h-64 overflow-y-auto py-1.5 outline-none"
+				>
 					{#each suggestions as contact, i (contact.email)}
-						<button
-							type="button"
-							data-roving-item
-							class={cn(
-								'flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none focus:bg-surface-sunken hover:bg-surface-sunken',
-								i === 0 && 'bg-surface-sunken/40'
-							)}
+						<Listbox.Item
+							item={contact}
+							id={id ? `${id}-suggestion-${i}` : undefined}
+							class="flex w-full cursor-pointer select-none items-center gap-2 px-3 py-2 text-left text-sm outline-none data-highlighted:bg-surface-sunken data-[state=checked]:bg-surface-sunken hover:bg-surface-sunken"
 							onclick={() => pick(contact.email)}
 							onmousedown={(e) => {
 								// Pick on mousedown (before the input blurs and the list tears down),
 								// and preventDefault to keep focus on the input. onclick remains for
-								// keyboard activation of a roving-focused item; pick() dedups.
+								// keyboard activation; pick() dedups.
 								e.preventDefault();
 								pick(contact.email);
 							}}
@@ -309,10 +366,11 @@
 									<span class="ml-1 text-fg-muted">{contact.email}</span>
 								{/if}
 							</span>
-						</button>
+							<Listbox.ItemIndicator class="sr-only">Selected</Listbox.ItemIndicator>
+						</Listbox.Item>
 					{/each}
-				</div>
-			</div>
+				</Listbox.Content>
+			</Listbox.Root>
 		{/if}
 	</TagsInput.Root>
 </div>

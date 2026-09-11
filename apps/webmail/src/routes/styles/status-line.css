@@ -71,6 +71,13 @@
 		animation: z-status-line-shape-fill linear forwards;
 	}
 
+	/* Ark tags the toast root with data-paused while its dismissal timer is held
+	   (hover on a timed toast). Freeze the decorative fill with it so the bar
+	   doesn't keep draining towards an Undo that is no longer about to expire. */
+	.z-status-line__item[data-paused] .z-status-line__shape-fill {
+		animation-play-state: paused;
+	}
+
 	.z-status-line__item--compact .z-status-line__content {
 		padding-block: 0.5rem;
 	}
