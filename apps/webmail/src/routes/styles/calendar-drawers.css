@@ -1,5 +1,15 @@
 /* Event panel & compose drawer styles */
 
+/* Desktop compose overlay — above the calendar panes, below confirm dialogs. */
+.z-compose-dialog-backdrop,
+.z-compose-dialog-positioner {
+	z-index: 40;
+}
+
+.z-compose-dialog-content {
+	z-index: 41;
+}
+
 .z-event-drawer-backdrop,
 .z-compose-drawer-backdrop,
 .z-contact-drawer-backdrop,
