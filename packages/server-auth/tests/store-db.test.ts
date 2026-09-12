@@ -18,7 +18,7 @@ import {
 	putStepUpProof,
 	syncSessionAccountRows,
 	touchSessionRow
-} from '../src/lib/server/store-db.ts';
+} from '../src/store-db.ts';
 
 const DAY = 24 * 60 * 60 * 1000;
 

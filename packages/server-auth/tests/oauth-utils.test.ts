@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import { createPkceChallenge } from '../src/lib/server/oauth-utils.ts';
+import { createPkceChallenge } from '../src/oauth-utils.ts';
 
 describe('OAuth utilities', () => {
 	it('creates the RFC 7636 S256 challenge', () => {

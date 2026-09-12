@@ -1,9 +1,2 @@
-import { createHash } from 'node:crypto';
-
-export function sha256Base64Url(value: string): string {
-	return createHash('sha256').update(value).digest('base64url');
-}
-
-export function createPkceChallenge(verifier: string): string {
-	return sha256Base64Url(verifier);
-}
+// Extracted to @zaur/server-auth (ADR-0005); this shim keeps existing imports working.
+export * from '@zaur/server-auth/oauth-utils';

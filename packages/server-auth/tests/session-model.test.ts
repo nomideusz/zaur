@@ -12,7 +12,7 @@ import {
 	wrapAccount,
 	type Session,
 	type SessionData
-} from '../src/lib/server/session-model.ts';
+} from '../src/session-model.ts';
 
 function acct(username: string, token: string): SessionData {
 	return { serverUrl: 'https://mail.zaur.app', username, accessToken: token, refreshToken: `r-${token}` };
