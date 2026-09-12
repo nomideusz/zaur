@@ -9,7 +9,7 @@ theme only** for now; Files and Meet arrive when their designs land.
 - [x] Shell scaffold, remote functions enabled, design tokens (foundation slice)
 - [x] Session-aware read path (mailbox → thread list → reader)
 - [x] Floating multi-draft compose (panels, dock, schedule send, offline outbox)
-- [ ] Draft persistence (Drafts mailbox) + compose attachments
+- [x] Draft persistence (Drafts mailbox) + compose attachments
 - [ ] Search + settings via remote functions
 - [ ] Calendar / Contacts (port from 1.0)
 - [ ] Own login/OIDC flows (1.0 login is used until then)
@@ -58,8 +58,9 @@ Kit 3 changes the layout from Kit 2:
   plumbing), `@zaur/ui` — the hard-won data core is **not** rewritten.
 - Server state goes through SvelteKit **remote functions** (`*.remote.ts`); the
   offline outbox is a lightweight IndexedDB queue (`#lib/compose/outbox`) that
-  drains on load and on reconnect; server-side draft persistence is still to
-  come.
+  drains on load and on reconnect. Drafts autosave to the server's Drafts
+  mailbox (debounced, 1.5 s) and attachment uploads go through a plain
+  `/api/upload` endpoint — remote commands cannot carry a `File`.
 - Design tokens: `src/routes/styles/tokens.css` — the handoff's resolved
   variants as CSS custom properties, mapped to Tailwind v4 utilities. The
   prototype's exploration props are **not** configurable; ship the resolved

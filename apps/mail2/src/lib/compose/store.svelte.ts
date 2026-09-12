@@ -1,5 +1,17 @@
 import type { MessageDetail } from '@zaur/mail-core';
 import {
+	MAX_ATTACHMENT_BYTES,
+	MAX_ATTACHMENT_COUNT,
+	attachmentFromServer,
+	outgoingAttachments
+} from './attachments';
+import {
+	DRAFT_CONTENT_KEYS,
+	buildDraftSaveInput,
+	draftContentSignature,
+	hasDraftContent
+} from './draft-save';
+import {
 	classifySendFailure,
 	enqueueOutbox,
 	listOutbox,
@@ -14,11 +26,16 @@ import type {
 	ComposeContact,
 	ComposeTransport,
 	Draft,
+	DraftAttachment,
+	DraftSeed,
 	FocusTarget,
+	OutgoingAttachment,
 	Recipient,
 	ReplyMode,
 	SendPayload
 } from './types';
+
+const DRAFT_SAVE_DEBOUNCE_MS = 1500;
 
 export interface Toast {
 	id: string;
@@ -46,6 +63,8 @@ export interface NewDraftOptions {
 	subject?: string;
 	body?: string;
 	focusTarget?: FocusTarget;
+	attachments?: DraftAttachment[];
+	jmapDraftId?: string | null;
 }
 
 class ComposeStore {
@@ -57,6 +76,8 @@ class ComposeStore {
 
 	#transport: ComposeTransport | null = null;
 	#draining = false;
+	#saveTimers = new Map<string, ReturnType<typeof setTimeout>>();
+	#savedSignatures = new Map<string, string>();
 
 	setTransport(transport: ComposeTransport) {
 		this.#transport = transport;
@@ -91,7 +112,7 @@ class ComposeStore {
 			bccOpen: false,
 			subject: options.subject ?? '',
 			body: options.body ?? '',
-			attachments: [],
+			attachments: options.attachments ?? [],
 			scheduled: false,
 			bodyOpened: false,
 			stage: 'default',
@@ -105,7 +126,10 @@ class ComposeStore {
 			z: ++this.zTop,
 			focusTarget: options.focusTarget ?? 'to',
 			sending: false,
-			sendError: null
+			sendError: null,
+			jmapDraftId: options.jmapDraftId ?? null,
+			draftSaving: false,
+			draftSavedAt: null
 		};
 		this.drafts.push(draft);
 		return draft.id;
@@ -142,16 +166,53 @@ class ComposeStore {
 	}
 
 	#removeInternal(id: string) {
+		const timer = this.#saveTimers.get(id);
+		if (timer) {
+			clearTimeout(timer);
+			this.#saveTimers.delete(id);
+		}
+		this.#savedSignatures.delete(id);
 		this.drafts = this.drafts.filter((draft) => draft.id !== id);
 	}
 
+	/**
+	 * Close: persist to the Drafts mailbox first, then remove the panel.
+	 * Silent per spec — no toast unless the save fails. An emptied draft that
+	 * already has a server copy is treated as a discard of that copy.
+	 */
 	close(id: string) {
+		const draft = this.#find(id);
+		if (!draft) return;
+		if (hasDraftContent(draft)) {
+			const signature = draftContentSignature(draft);
+			if (signature !== this.#savedSignatures.get(id) && this.#transport) {
+				const input = buildDraftSaveInput(draft);
+				this.#removeInternal(id);
+				void this.#transport.saveDraft(input).catch(() => {
+					this.pushToast({ text: 'Draft could not be saved' });
+				});
+				return;
+			}
+		} else if (draft.jmapDraftId && this.#transport) {
+			const emailId = draft.jmapDraftId;
+			void this.#transport.deleteDraft(emailId).catch(() => {});
+		}
 		this.#removeInternal(id);
 	}
 
 	discard(id: string) {
+		const draft = this.#find(id);
 		this.#removeInternal(id);
-		this.pushToast({ text: 'Draft discarded' });
+		if (draft?.jmapDraftId) {
+			void this.#transport
+				?.deleteDraft(draft.jmapDraftId)
+				.then(() => this.pushToast({ text: 'Draft discarded' }))
+				.catch(() =>
+					this.pushToast({ text: 'Draft discarded — the saved copy could not be deleted' })
+				);
+		} else {
+			this.pushToast({ text: 'Draft discarded' });
+		}
 	}
 
 	minimize(id: string) {
@@ -218,7 +279,14 @@ class ComposeStore {
 
 	patch(id: string, patch: Partial<Draft>) {
 		const draft = this.#find(id);
-		if (draft) Object.assign(draft, patch);
+		if (!draft) return;
+		Object.assign(draft, patch);
+		for (const key of Object.keys(patch)) {
+			if (DRAFT_CONTENT_KEYS.has(key)) {
+				this.scheduleDraftSave(id);
+				break;
+			}
+		}
 	}
 
 	consumeFocus(id: string) {
@@ -240,17 +308,157 @@ class ComposeStore {
 		draft.toHi = 0;
 		if (recipient && !isDuplicate(draft.to, recipient.email)) {
 			draft.to.push(recipient);
+			this.scheduleDraftSave(id);
 		}
 	}
 
 	removeTo(id: string, email: string) {
 		const draft = this.#find(id);
-		if (draft) draft.to = draft.to.filter((r) => r.email !== email);
+		if (!draft) return;
+		const before = draft.to.length;
+		draft.to = draft.to.filter((r) => r.email !== email);
+		if (draft.to.length !== before) this.scheduleDraftSave(id);
 	}
 
 	backspaceRemoveTo(id: string) {
 		const draft = this.#find(id);
-		if (draft && !draft.toInput && draft.to.length > 0) draft.to.pop();
+		if (draft && !draft.toInput && draft.to.length > 0) {
+			draft.to.pop();
+			this.scheduleDraftSave(id);
+		}
+	}
+
+	// --- attachments ---
+
+	/** Upload each picked file and track it as a live chip on the draft. */
+	attachFiles(id: string, files: File[]): void {
+		const draft = this.#find(id);
+		if (!draft) return;
+		for (const file of files) {
+			if (draft.attachments.length >= MAX_ATTACHMENT_COUNT) {
+				this.pushToast({ text: `A draft can hold at most ${MAX_ATTACHMENT_COUNT} attachments` });
+				break;
+			}
+			if (file.size > MAX_ATTACHMENT_BYTES) {
+				this.pushToast({ text: `"${file.name}" is too large — the limit is 25 MB` });
+				continue;
+			}
+			const chip: DraftAttachment = {
+				id: crypto.randomUUID(),
+				name: file.name || 'file',
+				type: file.type || 'application/octet-stream',
+				size: file.size,
+				blobId: null,
+				status: 'uploading'
+			};
+			draft.attachments.push(chip);
+			this.scheduleDraftSave(id);
+			this.#uploadInto(id, chip.id, file);
+		}
+	}
+
+	#uploadInto(draftId: string, chipId: string, file: File): void {
+		const transport = this.#transport;
+		if (!transport) {
+			this.#attachmentFailed(draftId, chipId);
+			return;
+		}
+		transport
+			.uploadAttachment(file)
+			.then((uploaded) => {
+				const chip = this.#findAttachment(draftId, chipId);
+				if (!chip) return;
+				chip.blobId = uploaded.blobId;
+				chip.size = uploaded.size;
+				chip.type = uploaded.type;
+				chip.status = 'ready';
+				this.scheduleDraftSave(draftId);
+			})
+			.catch(() => this.#attachmentFailed(draftId, chipId));
+	}
+
+	#attachmentFailed(draftId: string, chipId: string): void {
+		const chip = this.#findAttachment(draftId, chipId);
+		if (!chip) return;
+		chip.status = 'error';
+		this.pushToast({ text: `Could not upload "${chip.name}"` });
+	}
+
+	#findAttachment(draftId: string, chipId: string): DraftAttachment | undefined {
+		return this.#find(draftId)?.attachments.find((attachment) => attachment.id === chipId);
+	}
+
+	removeAttachment(id: string, attachmentId: string): void {
+		const draft = this.#find(id);
+		if (!draft) return;
+		draft.attachments = draft.attachments.filter((attachment) => attachment.id !== attachmentId);
+		this.scheduleDraftSave(id);
+	}
+
+	// --- draft persistence ---
+
+	scheduleDraftSave(id: string): void {
+		const draft = this.#find(id);
+		if (!draft || draft.sending || !this.#transport) return;
+		const existing = this.#saveTimers.get(id);
+		if (existing) clearTimeout(existing);
+		this.#saveTimers.set(
+			id,
+			setTimeout(() => {
+				this.#saveTimers.delete(id);
+				void this.saveDraftNow(id);
+			}, DRAFT_SAVE_DEBOUNCE_MS)
+		);
+	}
+
+	/** Persist the draft to the Drafts mailbox; reschedules if it changed mid-save. */
+	async saveDraftNow(id: string): Promise<void> {
+		const draft = this.#find(id);
+		if (!draft || draft.sending || !this.#transport) return;
+		if (!hasDraftContent(draft)) return;
+		const signature = draftContentSignature(draft);
+		if (signature === this.#savedSignatures.get(id)) return;
+		const input = buildDraftSaveInput(draft);
+		draft.draftSaving = true;
+		try {
+			const { emailId } = await this.#transport.saveDraft(input);
+			this.#savedSignatures.set(id, signature);
+			const current = this.#find(id);
+			if (current) {
+				current.jmapDraftId = emailId;
+				current.draftSavedAt = Date.now();
+				if (draftContentSignature(current) !== signature) this.scheduleDraftSave(id);
+			}
+		} catch (cause) {
+			if (classifySendFailure(cause) !== 'network') {
+				this.pushToast({ text: 'Draft could not be saved' });
+			}
+		} finally {
+			const current = this.#find(id);
+			if (current) current.draftSaving = false;
+		}
+	}
+
+	/** Open a panel from a persisted server draft (Drafts mailbox → compose). */
+	reopenDraft(seed: DraftSeed, position?: { x: number; y: number }): string {
+		const id = this.newDraft({
+			...position,
+			to: seed.to,
+			subject: seed.subject,
+			body: seed.body,
+			attachments: seed.attachments,
+			jmapDraftId: seed.jmapDraftId,
+			focusTarget: seed.to.length === 0 ? 'to' : seed.subject.trim() ? 'body' : 'subject'
+		});
+		const draft = this.#find(id);
+		if (draft) {
+			draft.cc = seed.cc;
+			draft.bcc = seed.bcc;
+			draft.ccOpen = seed.cc.trim().length > 0;
+			draft.bccOpen = seed.bcc.trim().length > 0;
+			this.#savedSignatures.set(id, draftContentSignature(draft));
+		}
+		return id;
 	}
 
 	reorderMinimized(fromId: string, toIndex: number) {
@@ -281,6 +489,14 @@ class ComposeStore {
 			this.patch(id, { focusTarget: 'to' });
 			return;
 		}
+		const pending = draft.attachments.find((attachment) => attachment.status !== 'ready');
+		if (pending) {
+			draft.sendError =
+				pending.status === 'uploading'
+					? 'Attachments are still uploading — try again in a moment.'
+					: 'An attachment failed to upload — remove it before sending.';
+			return;
+		}
 
 		const payload: SendPayload = {
 			to: dedupeEmails(draft.to.map((r) => r.email)),
@@ -288,7 +504,8 @@ class ComposeStore {
 			bcc,
 			subject: draft.subject,
 			body: draft.body,
-			sendAt: draft.scheduled ? tomorrow9ISO() : undefined
+			sendAt: draft.scheduled ? tomorrow9ISO() : undefined,
+			attachments: outgoingAttachments(draft.attachments)
 		};
 
 		draft.sendError = null;
@@ -302,6 +519,11 @@ class ComposeStore {
 
 		try {
 			const result = await transport.send(payload);
+			// The sent copy lives in Sent — the saved draft must not linger too.
+			const savedDraftId = draft.jmapDraftId;
+			if (savedDraftId) {
+				void transport.deleteDraft(savedDraftId).catch(() => {});
+			}
 			this.#removeInternal(id);
 			if (payload.sendAt && result.emailId) {
 				const emailId = result.emailId;
@@ -338,6 +560,7 @@ class ComposeStore {
 				to: payload.to.map((email) => ({ name: '', email, meta: '' })),
 				subject: payload.subject,
 				body: payload.body,
+				attachments: payload.attachments?.map((part) => attachmentFromServer(part)),
 				focusTarget: 'subject'
 			});
 			this.pushToast({ text: 'Scheduled send cancelled' });

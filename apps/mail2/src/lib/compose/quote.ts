@@ -1,4 +1,6 @@
 import type { MessageDetail } from '@zaur/mail-core';
+import { attachmentFromServer } from './attachments';
+import type { DraftSeed } from './types';
 
 export interface Seed {
 	subject: string;
@@ -17,6 +19,25 @@ export function replySubject(subject: string): string {
 
 export function forwardSubject(subject: string): string {
 	return subject.startsWith('Fwd:') ? subject : `Fwd: ${subject}`;
+}
+
+/**
+ * Reopen a server draft: chips from the stored recipients, body as written,
+ * file attachments reattached by blobId. Inline images stay out — a plain-text
+ * draft has no cid references, so they would resurface as duplicate files.
+ */
+export function draftSeed(message: MessageDetail): DraftSeed {
+	return {
+		jmapDraftId: message.id,
+		to: message.to.map((person) => ({ name: person.name, email: person.email, meta: '' })),
+		cc: message.cc.map((person) => person.email).join(', '),
+		bcc: message.bcc.map((person) => person.email).join(', '),
+		subject: message.subject,
+		body: message.bodyText,
+		attachments: message.attachments
+			.filter((part) => part.disposition !== 'inline')
+			.map((part) => attachmentFromServer(part))
+	};
 }
 
 /** Same quote shape webmail 1.0 uses for plain-text replies (`\n\n---\n` marker). */

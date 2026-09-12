@@ -50,6 +50,9 @@ function draft(overrides: Partial<Draft> = {}): Draft {
 		focusTarget: 'to',
 		sending: false,
 		sendError: null,
+		jmapDraftId: null,
+		draftSaving: false,
+		draftSavedAt: null,
 		...overrides
 	};
 }

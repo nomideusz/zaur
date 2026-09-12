@@ -1,7 +1,12 @@
 <script lang="ts">
 	import { whoami } from './session.remote';
 	import { mailboxes, threads, thread, quota } from './mail.remote';
-	import { send as sendRemote, cancelScheduled } from './compose.remote';
+	import {
+		send as sendRemote,
+		cancelScheduled,
+		saveDraft as saveDraftRemote,
+		deleteDraft as deleteDraftRemote
+	} from './compose.remote';
 	import TopBar from '#lib/components/mail/TopBar.svelte';
 	import MailList from '#lib/components/mail/MailList.svelte';
 	import Reader from '#lib/components/mail/Reader.svelte';
@@ -12,6 +17,7 @@
 	import Toasts from '#lib/components/compose/Toasts.svelte';
 	import { buildRowGroups } from '#lib/mail/rows';
 	import { openingPosition, type AnchorRect } from '#lib/compose/layout';
+	import { draftSeed } from '#lib/compose/quote';
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import type { ComposeContact } from '#lib/compose/types';
 	import type { MessageDetail } from '@zaur/mail-core';
@@ -73,9 +79,53 @@
 
 	// --- compose ---
 
+	// Sends, saves and deletes change server-side mailbox counts; when the
+	// Drafts folder is open the visible rows change too.
+	function afterMailMutation() {
+		void mailboxesResource?.refresh();
+		if (activeMailbox?.kind === 'drafts') void threadsResource?.refresh();
+	}
+
 	compose.setTransport({
-		send: sendRemote,
-		cancelScheduled: (emailId) => cancelScheduled({ emailId })
+		send: async (payload) => {
+			const result = await sendRemote(payload);
+			afterMailMutation();
+			return result;
+		},
+		cancelScheduled: (emailId) => cancelScheduled({ emailId }),
+		uploadAttachment: async (file) => {
+			// Raw binary body — remote commands cannot carry a File (devalue).
+			const response = await fetch('/api/upload', {
+				method: 'POST',
+				headers: { 'Content-Type': file.type || 'application/octet-stream' },
+				body: file
+			});
+			const payload = (await response.json().catch(() => ({}))) as {
+				blobId?: string;
+				size?: number;
+				type?: string;
+				error?: string;
+			};
+			if (!response.ok || !payload.blobId) {
+				throw new Error(payload.error ?? `Upload failed (${response.status})`);
+			}
+			return {
+				blobId: payload.blobId,
+				name: file.name,
+				type: payload.type ?? file.type,
+				size: payload.size ?? file.size
+			};
+		},
+		saveDraft: async (input) => {
+			const result = await saveDraftRemote(input);
+			afterMailMutation();
+			return result;
+		},
+		deleteDraft: async (emailId) => {
+			const result = await deleteDraftRemote({ emailId });
+			afterMailMutation();
+			return result;
+		}
 	});
 
 	// Suggestion contacts come from the senders currently in the list.
@@ -160,6 +210,25 @@
 		compose.reply(message, threadResource?.current ?? [message], myEmails, mode, position);
 	}
 
+	// Draft rows open back into a compose panel instead of the reader.
+	async function openRow(threadId: string) {
+		if (activeMailbox?.kind !== 'drafts') {
+			openThreadId = threadId;
+			return;
+		}
+		try {
+			const messages = await thread({ threadId });
+			const message = messages.at(-1);
+			if (!message) return;
+			compose.reopenDraft(
+				draftSeed(message),
+				openingPosition(newMessageAnchor(), rootW, rootH, compose.openPanels().length)
+			);
+		} catch {
+			compose.pushToast({ text: 'Could not open the draft' });
+		}
+	}
+
 	// --- list interactions ---
 
 	function setListWidth(next: number) {
@@ -182,7 +251,7 @@
 
 	function openCursor() {
 		const target = cursorId ?? flatRowIds[0];
-		if (target) openThreadId = target;
+		if (target) void openRow(target);
 	}
 
 	function toggleSelect(threadId: string) {
@@ -289,7 +358,7 @@
 				}}
 				onSetSelection={(ids) => (selection = ids)}
 				onToggleSelect={toggleSelect}
-				onOpen={(threadId) => (openThreadId = threadId)}
+				onOpen={(threadId) => void openRow(threadId)}
 				onRetry={() => threadsResource?.refresh()}
 				onNewMessage={(anchor) => openCompose(anchor)}
 			/>

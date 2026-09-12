@@ -1,13 +1,6 @@
 <script lang="ts">
-	import {
-		EDGE,
-		bodyHeightPx,
-		clamp,
-		clampPanel,
-		computeAutoHeight,
-		computeStep,
-		maximizedRect
-	} from '#lib/compose/layout';
+	import { attachmentKind, formatAttachmentSize } from '#lib/compose/attachments';
+	import { EDGE, bodyHeightPx, clamp, clampPanel, computeAutoHeight, computeStep, maximizedRect } from '#lib/compose/layout';
 	import { filterContacts } from '#lib/compose/recipients';
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import { initials } from '#lib/mail/rows';
@@ -21,9 +14,10 @@
 
 	let { draft, rootW, rootH }: Props = $props();
 
-	let panelEl = $state<HTMLElement | null>(null);
+	let panelEl = $state<HTMLDivElement | null>(null);
 	let headerEl = $state<HTMLElement | null>(null);
 	let toInputEl = $state<HTMLInputElement | null>(null);
+	let fileInputEl = $state<HTMLInputElement | null>(null);
 
 	const toId = $derived(`compose-to-${draft.id}`);
 	const subjectId = $derived(`compose-subject-${draft.id}`);
@@ -515,6 +509,39 @@
 		{/if}
 	</div>
 
+	<!-- Attachment strip -->
+	{#if draft.attachments.length > 0}
+		<div class="flex max-h-[66px] shrink-0 flex-wrap content-start gap-2 overflow-y-auto pt-3 pb-3 pr-4 pl-4">
+			{#each draft.attachments as attachment (attachment.id)}
+				<span class="flex h-[30px] shrink-0 items-center gap-2 rounded-control border border-line-light bg-surface-subtle pr-1 pl-2 text-xs">
+					<span class="font-mono text-[10px] text-ink-tertiary">
+						{attachmentKind(attachment.name, attachment.type)}
+					</span>
+					<span class="max-w-[180px] truncate {attachment.status === 'error' ? 'text-danger' : ''}">
+						{attachment.name}
+					</span>
+					<span class="shrink-0 text-ink-tertiary">
+						{attachment.status === 'uploading'
+							? '…'
+							: attachment.status === 'error'
+								? 'Failed'
+								: formatAttachmentSize(attachment.size)}
+					</span>
+					<button
+						type="button"
+						class="flex size-[18px] shrink-0 items-center justify-center rounded-full transition-colors duration-[160ms] hover:bg-divider"
+						aria-label="Remove {attachment.name}"
+						onclick={() => compose.removeAttachment(draft.id, attachment.id)}
+					>
+						<svg class="size-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+						</svg>
+					</button>
+				</span>
+			{/each}
+		</div>
+	{/if}
+
 	<!-- Action bar -->
 	<div class="flex h-[53px] shrink-0 items-center gap-2 border-t border-divider pr-3 pl-4">
 		<button
@@ -532,8 +559,7 @@
 			type="button"
 			class="flex size-8 items-center justify-center rounded-control text-ink-muted transition-colors duration-[160ms] hover:bg-hairline"
 			aria-label="Attach a file"
-			title="Attachments arrive in a later slice"
-			onclick={() => compose.pushToast({ text: 'Attachments arrive in a later slice' })}
+			onclick={() => fileInputEl?.click()}
 		>
 			<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 				<path
@@ -545,6 +571,19 @@
 				/>
 			</svg>
 		</button>
+		<input
+			bind:this={fileInputEl}
+			type="file"
+			multiple
+			class="hidden"
+			tabindex={-1}
+			aria-hidden="true"
+			onchange={(event) => {
+				const files = event.currentTarget.files;
+				if (files && files.length > 0) compose.attachFiles(draft.id, Array.from(files));
+				event.currentTarget.value = '';
+			}}
+		/>
 		<button
 			type="button"
 			class="h-8 rounded-pill px-2.5 text-xs transition-colors duration-[160ms] {draft.scheduled
