@@ -1,0 +1,322 @@
+<script lang="ts">
+	import { whoami } from './session.remote';
+	import { mailboxes, threads, thread, quota } from './mail.remote';
+	import { send as sendRemote, cancelScheduled } from './compose.remote';
+	import TopBar from '#lib/components/mail/TopBar.svelte';
+	import MailList from '#lib/components/mail/MailList.svelte';
+	import Reader from '#lib/components/mail/Reader.svelte';
+	import Splitter from '#lib/components/mail/Splitter.svelte';
+	import StatusLine from '#lib/components/mail/StatusLine.svelte';
+	import ComposePanel from '#lib/components/compose/ComposePanel.svelte';
+	import ComposeDock from '#lib/components/compose/ComposeDock.svelte';
+	import Toasts from '#lib/components/compose/Toasts.svelte';
+	import { buildRowGroups } from '#lib/mail/rows';
+	import { openingPosition, type AnchorRect } from '#lib/compose/layout';
+	import { compose } from '#lib/compose/store.svelte.ts';
+	import type { ComposeContact } from '#lib/compose/types';
+	import type { MessageDetail } from '@zaur/mail-core';
+
+	const LIST_WIDTH_KEY = 'mail2.listWidth';
+	const LIST_MIN = 380;
+	const LIST_MAX = 760;
+
+	let listWidth = $state(520);
+	let selectedMailboxId = $state<string | null>(null);
+	let unseenOnly = $state(false);
+	let openThreadId = $state<string | null>(null);
+	let cursorId = $state<string | null>(null);
+	let selection = $state<Set<string>>(new Set());
+	let rootEl = $state<HTMLDivElement | null>(null);
+	let rootW = $state(0);
+	let rootH = $state(0);
+
+	if (typeof localStorage !== 'undefined') {
+		const stored = Number(localStorage.getItem(LIST_WIDTH_KEY));
+		if (stored >= LIST_MIN && stored <= LIST_MAX) listWidth = stored;
+	}
+
+	const session = $derived(whoami()?.current ?? null);
+	const myEmails = $derived(
+		new Set((session?.accounts ?? []).map((account) => account.username.toLowerCase()))
+	);
+
+	const mailboxesResource = $derived(session ? mailboxes() : undefined);
+	const mailboxList = $derived(mailboxesResource?.current ?? undefined);
+
+	// Default to the inbox once the folder list arrives.
+	$effect(() => {
+		if (selectedMailboxId || !mailboxList) return;
+		const inbox = mailboxList.find((mailbox) => mailbox.kind === 'inbox');
+		selectedMailboxId = (inbox ?? mailboxList[0])?.id ?? null;
+	});
+
+	const activeMailbox = $derived(
+		mailboxList?.find((mailbox) => mailbox.id === selectedMailboxId) ?? null
+	);
+
+	const threadsResource = $derived(
+		session && activeMailbox ? threads({ mailboxId: activeMailbox.id, unseenOnly }) : undefined
+	);
+	const threadResource = $derived(
+		session && openThreadId ? thread({ threadId: openThreadId }) : undefined
+	);
+	const quotaResource = $derived(session ? quota() : undefined);
+
+	const rowGroups = $derived.by(() => {
+		const rows = threadsResource?.current?.rows;
+		if (!rows || !activeMailbox) return undefined;
+		const isMe = (email: string) => myEmails.has(email.trim().toLowerCase());
+		return buildRowGroups(rows, activeMailbox.kind, isMe);
+	});
+
+	const flatRowIds = $derived((rowGroups ?? []).flatMap((group) => group.rows.map((row) => row.threadId)));
+
+	// --- compose ---
+
+	compose.setTransport({
+		send: sendRemote,
+		cancelScheduled: (emailId) => cancelScheduled({ emailId })
+	});
+
+	// Suggestion contacts come from the senders currently in the list.
+	$effect(() => {
+		const rows = threadsResource?.current?.rows;
+		if (!rows) return;
+		const seen = new Set<string>();
+		const contacts: ComposeContact[] = [];
+		for (const row of rows) {
+			const email = row.from.email?.trim();
+			if (!email || !email.includes('@')) continue;
+			const key = email.toLowerCase();
+			if (seen.has(key) || myEmails.has(key)) continue;
+			seen.add(key);
+			contacts.push({ name: row.from.name, email, meta: 'Recent' });
+		}
+		compose.setContacts(contacts);
+	});
+
+	$effect(() => {
+		if (!session) return;
+		const drain = () =>
+			void compose.drainOutbox().then((sent) => {
+				if (sent > 0) threadsResource?.refresh();
+			});
+		void drain();
+		window.addEventListener('online', drain);
+		return () => window.removeEventListener('online', drain);
+	});
+
+	// Panels anchor against the shell, so track its size reactively.
+	$effect(() => {
+		const el = rootEl;
+		if (!el) return;
+		rootW = el.clientWidth;
+		rootH = el.clientHeight;
+		const observer = new ResizeObserver((entries) => {
+			const entry = entries[0];
+			if (!entry) return;
+			rootW = entry.contentRect.width;
+			rootH = entry.contentRect.height;
+		});
+		observer.observe(el);
+		return () => observer.disconnect();
+	});
+
+	function newMessageAnchor(): AnchorRect {
+		const el = document.querySelector<HTMLElement>('[data-new-message]');
+		if (!el) {
+			return {
+				left: Math.max(12, rootW - 584),
+				top: 68,
+				right: Math.max(24, rootW - 24),
+				bottom: 102
+			};
+		}
+		const rect = el.getBoundingClientRect();
+		return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
+	}
+
+	function openCompose(anchor?: AnchorRect | null) {
+		const position = openingPosition(
+			anchor ?? newMessageAnchor(),
+			rootW,
+			rootH,
+			compose.openPanels().length
+		);
+		compose.newDraft(position);
+	}
+
+	function openReply(
+		mode: 'reply' | 'replyAll' | 'forward',
+		message: MessageDetail,
+		anchor: AnchorRect | null
+	) {
+		const position = openingPosition(
+			anchor ?? newMessageAnchor(),
+			rootW,
+			rootH,
+			compose.openPanels().length
+		);
+		compose.reply(message, threadResource?.current ?? [message], myEmails, mode, position);
+	}
+
+	// --- list interactions ---
+
+	function setListWidth(next: number) {
+		listWidth = Math.min(LIST_MAX, Math.max(LIST_MIN, next));
+		if (typeof localStorage !== 'undefined') localStorage.setItem(LIST_WIDTH_KEY, String(listWidth));
+	}
+
+	function resetListWidth() {
+		setListWidth(520);
+	}
+
+	function moveCursor(delta: number) {
+		if (flatRowIds.length === 0) return;
+		const index = cursorId ? flatRowIds.indexOf(cursorId) : -1;
+		const next = index === -1
+			? flatRowIds[delta > 0 ? 0 : flatRowIds.length - 1]!
+			: flatRowIds[(index + delta + flatRowIds.length) % flatRowIds.length]!;
+		cursorId = next;
+	}
+
+	function openCursor() {
+		const target = cursorId ?? flatRowIds[0];
+		if (target) openThreadId = target;
+	}
+
+	function toggleSelect(threadId: string) {
+		const next = new Set(selection);
+		if (next.has(threadId)) next.delete(threadId);
+		else next.add(threadId);
+		selection = next;
+	}
+
+	function handleKeydown(event: KeyboardEvent) {
+		// Compose bindings work even while typing in a field.
+		if (event.key === 'Escape') {
+			const front = compose.frontPanel();
+			if (front) {
+				event.preventDefault();
+				compose.minimize(front.id);
+				return;
+			}
+		}
+		if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
+			const front = compose.frontPanel();
+			if (front) {
+				event.preventDefault();
+				void compose.sendDraft(front.id);
+				return;
+			}
+		}
+
+		const target = event.target as HTMLElement | null;
+		if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+			return;
+		}
+		if (event.metaKey || event.ctrlKey || event.altKey) return;
+
+		switch (event.key) {
+			case 'c':
+				event.preventDefault();
+				openCompose();
+				break;
+			case 'j':
+				event.preventDefault();
+				moveCursor(1);
+				break;
+			case 'k':
+				event.preventDefault();
+				moveCursor(-1);
+				break;
+			case 'Enter':
+			case 'o':
+				event.preventDefault();
+				openCursor();
+				break;
+			case 'x':
+				event.preventDefault();
+				if (cursorId) toggleSelect(cursorId);
+				break;
+			case 'Escape':
+				if (selection.size > 0) selection = new Set();
+				break;
+		}
+	}
+</script>
+
+<svelte:window onkeydown={handleKeydown} />
+
+<div bind:this={rootEl} class="relative flex h-svh min-w-[1240px] flex-col overflow-hidden bg-canvas text-ink">
+	<TopBar
+		mailboxes={mailboxList}
+		activeMailbox={activeMailbox}
+		onSelectMailbox={(id) => {
+			selectedMailboxId = id;
+			openThreadId = null;
+			cursorId = null;
+			selection = new Set();
+		}}
+		account={session ? { username: session.username, displayName: session.displayName } : null}
+	/>
+
+	{#if !session}
+		<div class="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+			<p class="text-sm font-medium">Sign in to open Mail 2.0</p>
+			<p class="max-w-[420px] text-[13px] leading-relaxed text-ink-secondary">
+				Mail 2.0 shares its session with webmail 1.0 — sign in there and reload this page.
+				Once Mail 2.0 ships its own login, this step goes away.
+			</p>
+		</div>
+	{:else}
+		<main
+			class="grid min-h-0 flex-1"
+			style:grid-template-columns="{listWidth}px 1px minmax(0, 1fr)"
+		>
+			<MailList
+				mailbox={activeMailbox}
+				groups={rowGroups}
+				loading={threadsResource?.loading ?? true}
+				error={threadsResource?.error}
+				{unseenOnly}
+				{cursorId}
+				{selection}
+				syncedAt={threadsResource?.current?.syncedAt ?? null}
+				onToggleUnseenOnly={(value) => {
+					unseenOnly = value;
+					cursorId = null;
+				}}
+				onSetSelection={(ids) => (selection = ids)}
+				onToggleSelect={toggleSelect}
+				onOpen={(threadId) => (openThreadId = threadId)}
+				onRetry={() => threadsResource?.refresh()}
+				onNewMessage={(anchor) => openCompose(anchor)}
+			/>
+			<Splitter width={listWidth} onResize={setListWidth} onReset={resetListWidth} />
+			<Reader
+				messages={threadResource?.current}
+				loading={threadResource?.loading ?? false}
+				error={threadResource?.error}
+				onRetry={() => threadResource?.refresh()}
+				onCompose={openReply}
+			/>
+		</main>
+
+		{#each compose.drafts as draft (draft.id)}
+			{#if draft.stage !== 'minimized'}
+				<ComposePanel {draft} {rootW} {rootH} />
+			{/if}
+		{/each}
+		<ComposeDock />
+	{/if}
+
+	<Toasts />
+
+	<StatusLine
+		mailboxName={activeMailbox?.name ?? null}
+		unseen={activeMailbox?.unread ?? 0}
+		syncedAt={threadsResource?.current?.syncedAt ?? null}
+		quota={quotaResource?.current}
+	/>
+</div>

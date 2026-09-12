@@ -1,0 +1,55 @@
+/* Mail 2.0 base — reset + shell ground. Component styles live beside their components. */
+
+@layer base {
+	*,
+	*::before,
+	*::after {
+		box-sizing: border-box;
+	}
+
+	html {
+		height: 100%;
+	}
+
+	body {
+		margin: 0;
+		min-height: 100svh;
+		background: var(--z-canvas);
+		color: var(--z-ink);
+		font-family: var(--font-sans);
+		font-size: 14px;
+		line-height: 1.5;
+		-webkit-font-smoothing: antialiased;
+	}
+
+	input,
+	textarea,
+	button,
+	select {
+		font: inherit;
+		color: inherit;
+	}
+
+	input:focus-visible,
+	textarea:focus-visible,
+	button:focus-visible,
+	a:focus-visible,
+	[role='button']:focus-visible {
+		outline: 2px solid var(--z-accent);
+		outline-offset: 2px;
+	}
+
+	/* Counts, times, sizes — per the handoff's typography rules. */
+	.z-num {
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* Uppercase monospace captions — group dividers, search captions, key hints. */
+	.z-caption {
+		font-family: var(--font-mono);
+		font-size: 10px;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--z-ink-secondary);
+	}
+}

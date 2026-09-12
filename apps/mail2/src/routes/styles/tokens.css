@@ -1,0 +1,137 @@
+/*
+ * Mail 2.0 design tokens — from the redesign handoff's "Resolved variants" +
+ * "Design Tokens" sections. Light theme only for now (decision in ADR-0005).
+ *
+ * Raw values live on :root; the @theme inline block maps them onto Tailwind v4
+ * utilities (bg-canvas, text-ink, border-line, rounded-panel, …).
+ */
+
+:root {
+	/* Surfaces */
+	--z-canvas: #f4f4f4; /* shell ground */
+	--z-container: #ffffff; /* reader, cards, menus, panels */
+	--z-surface-subtle: #fafafa; /* earlier-thread card, attachment chips */
+
+	/* Ink — the neutral ramp (no green tint; must sit neutral on #f4f4f4) */
+	--z-ink: #101413; /* primary text */
+	--z-ink-body: #2b3433; /* reader body copy */
+	--z-ink-muted: #46504f; /* sender names, icon strokes */
+	--z-ink-secondary: #5d6766; /* labels, meta, hints */
+	--z-ink-tertiary: #767676; /* dock meta */
+	--z-ink-disabled: #98a3a2; /* recessed Send */
+
+	/* Accent — one accent, used sparingly */
+	--z-accent: #7a3b5e;
+	--z-accent-fg: #ffffff;
+	--z-accent-soft: color-mix(in oklab, var(--z-accent) 13%, white); /* active pills, avatars */
+	--z-accent-tint: color-mix(in oklab, var(--z-accent) 6%, white); /* cursor/selected row */
+
+	/* Semantic */
+	--z-danger: #8a2f2f; /* trash labels, destructive hover */
+
+	/* Lines */
+	--z-hairline: #f1f1f1; /* field-row dividers, list separators */
+	--z-hairline-cool: #f0f4f3; /* calendar cells */
+	--z-divider: #ececec; /* section borders, hover fill */
+	--z-line-light: #e4e4e4; /* cards */
+	--z-line: #e0e0e0; /* controls, top bar */
+	--z-border: #dcdcdc; /* panels, popovers, dock chips */
+	--z-border-strong: #c8c8c8; /* unfilled dots */
+	--z-border-hover: #c9d3d2; /* card hover */
+	--z-grip: #b4b4b4; /* panel header grip */
+
+	/* Type */
+	--font-sans: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+	--font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+	--z-measure: 33em; /* ~70 characters — reading AND writing measure */
+
+	/* Fixed columns */
+	--z-list-width: 520px; /* mail list, user-resizable 380–760 */
+	--z-label-column: 62px; /* compose labels */
+	--z-calendar-gutter: 64px;
+	--z-agenda-day: 132px;
+	--z-settings-nav: 232px;
+
+	/* Motion — all geometry transitions are suppressed during pointer gestures */
+	--z-ease-nav: cubic-bezier(0.4, 0, 0.2, 1);
+	--z-motion-lift: 150ms ease; /* dock chip lift */
+	--z-motion-color: 160ms ease; /* color/opacity */
+	--z-motion-geometry: 180ms ease; /* panel geometry, stage changes */
+	--z-motion-nav: 180ms var(--z-ease-nav); /* nav indicator */
+	--z-motion-body: 200ms ease; /* compose body height */
+	--z-motion-grip: 120ms ease; /* splitter grip */
+
+	/* Z-index scale (README "z-index") */
+	--z-splitter: 5;
+	--z-menu: 40;
+	--z-fab: 45;
+	--z-bulk: 50;
+	--z-bulk-overflow: 55;
+	--z-toast: 60;
+	--z-dock: 68;
+	--z-panel: 70;
+	--z-scrim: 70;
+
+	/* Shadows */
+	--z-shadow-menu: 0 12px 32px rgb(16 20 19 / 0.14);
+	--z-shadow-toast: 0 12px 32px rgb(16 20 19 / 0.16);
+	--z-shadow-suggestion: 0 14px 34px rgb(16 20 19 / 0.16);
+	--z-shadow-bulk: 0 14px 36px rgb(16 20 19 / 0.18);
+	--z-shadow-search: 0 18px 40px rgb(16 20 19 / 0.18);
+	--z-shadow-panel: 0 24px 56px rgb(16 20 19 / 0.22), 0 2px 6px rgb(16 20 19 / 0.08);
+	--z-shadow-dialog: 0 24px 60px rgb(16 20 19 / 0.3);
+	--z-shadow-chip: 0 6px 16px rgb(16 20 19 / 0.1);
+	--z-shadow-chip-lift: 0 14px 28px rgb(16 20 19 / 0.2);
+}
+
+@theme inline {
+	--color-canvas: var(--z-canvas);
+	--color-container: var(--z-container);
+	--color-surface-subtle: var(--z-surface-subtle);
+	--color-ink: var(--z-ink);
+	--color-ink-body: var(--z-ink-body);
+	--color-ink-muted: var(--z-ink-muted);
+	--color-ink-secondary: var(--z-ink-secondary);
+	--color-ink-tertiary: var(--z-ink-tertiary);
+	--color-ink-disabled: var(--z-ink-disabled);
+	--color-accent: var(--z-accent);
+	--color-accent-fg: var(--z-accent-fg);
+	--color-accent-soft: var(--z-accent-soft);
+	--color-accent-tint: var(--z-accent-tint);
+	--color-danger: var(--z-danger);
+	--color-hairline: var(--z-hairline);
+	--color-hairline-cool: var(--z-hairline-cool);
+	--color-divider: var(--z-divider);
+	--color-line-light: var(--z-line-light);
+	--color-line: var(--z-line);
+	--color-border: var(--z-border);
+	--color-border-strong: var(--z-border-strong);
+	--color-border-hover: var(--z-border-hover);
+	--color-grip: var(--z-grip);
+
+	--radius-chip: 4px; /* checkbox */
+	--radius-badge: 5px;
+	--radius-row: 6px; /* cards, message rows */
+	--radius-menu-item: 7px; /* menu rows, icon buttons */
+	--radius-control: 8px; /* controls */
+	--radius-btn: 9px; /* buttons */
+	--radius-card: 10px; /* menus, cards */
+	--radius-pop: 11px; /* search popover, dock chip */
+	--radius-panel: 14px; /* compose panels, dialog */
+	--radius-pill: 999px;
+
+	--shadow-menu: var(--z-shadow-menu);
+	--shadow-toast: var(--z-shadow-toast);
+	--shadow-suggestion: var(--z-shadow-suggestion);
+	--shadow-bulk: var(--z-shadow-bulk);
+	--shadow-search: var(--z-shadow-search);
+	--shadow-panel: var(--z-shadow-panel);
+	--shadow-dialog: var(--z-shadow-dialog);
+	--shadow-chip: var(--z-shadow-chip);
+	--shadow-chip-lift: var(--z-shadow-chip-lift);
+
+	--font-sans: var(--font-sans);
+	--font-mono: var(--font-mono);
+
+	--width-list: var(--z-list-width);
+}

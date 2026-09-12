@@ -1,0 +1,124 @@
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+
+// Time formatting is locale-stable but TZ-sensitive; pin for deterministic tests.
+process.env.TZ = 'UTC';
+import {
+	buildRowGroups,
+	formatBytes,
+	formatListTime,
+	formatReaderTime,
+	initials,
+	typeBadge,
+	type ListRow
+} from '../src/lib/mail/rows.ts';
+import type { MessagePreview } from '@zaur/mail-core';
+
+let seq = 0;
+function preview(overrides: Partial<MessagePreview> = {}): MessagePreview {
+	seq += 1;
+	return {
+		id: `m${seq}`,
+		threadId: `t${seq}`,
+		mailboxId: 'inbox',
+		from: { name: 'Ada Lovelace', email: 'ada@example.com' },
+		subject: 'Hello',
+		preview: 'World',
+		receivedAt: new Date('2026-09-12T10:00:00Z').toISOString(),
+		unread: false,
+		starred: false,
+		important: false,
+		hasAttachment: false,
+		...overrides
+	};
+}
+
+test('buildRowGroups: one row per thread, latest message wins, merged flags', () => {
+	const now = new Date('2026-09-12T12:00:00Z');
+	const rows = buildRowGroups(
+		[
+			preview({ threadId: 't1', receivedAt: '2026-09-12T09:00:00Z', unread: true }),
+			preview({
+				threadId: 't1',
+				receivedAt: '2026-09-12T11:30:00Z',
+				unread: false,
+				from: { name: 'Me', email: 'me@zaur.app' }
+			}),
+			preview({ threadId: 't2', receivedAt: '2026-09-12T10:00:00Z', starred: true })
+		],
+		'inbox',
+		(e) => e === 'me@zaur.app',
+		now
+	);
+	assert.equal(rows.length, 1);
+	assert.equal(rows[0]!.label, 'Today');
+	assert.equal(rows[0]!.rows.length, 2);
+	// Latest first within the group
+	assert.equal(rows[0]!.rows[0]!.id, 'm2');
+	// Unread merges across the thread even though the latest message was seen
+	assert.equal(rows[0]!.rows[0]!.unread, true);
+});
+
+test('buildRowGroups: "To …" label when my own message is the latest outside inbox', () => {
+	const now = new Date('2026-09-12T12:00:00Z');
+	const rows = buildRowGroups(
+		[preview({ from: { name: 'Me', email: 'me@zaur.app' }, to: [{ name: 'Bob', email: 'bob@x.io' }] })],
+		'sent',
+		(e) => e === 'me@zaur.app',
+		now
+	);
+	assert.equal(rows[0]!.rows[0]!.senderLabel, 'To Bob');
+});
+
+test('buildRowGroups: date groups in descending order with correct labels', () => {
+	const now = new Date('2026-09-12T12:00:00Z');
+	const rows = buildRowGroups(
+		[
+			preview({ receivedAt: '2026-09-10T10:00:00Z' }),
+			preview({ receivedAt: '2026-09-11T10:00:00Z' }),
+			preview({ receivedAt: '2026-09-12T10:00:00Z' })
+		],
+		'inbox',
+		(e) => e === 'me@zaur.app',
+		now
+	);
+	assert.deepEqual(
+		rows.map((g) => g.label),
+		['Today', 'Yesterday', '10 September']
+	);
+});
+
+test('formatListTime: time today, weekday this week, date otherwise', () => {
+	const now = new Date('2026-09-12T12:00:00Z');
+	// 2026-09-12 is a Saturday; 2026-09-07 is the preceding Monday
+	assert.equal(formatListTime('2026-09-12T09:41:00Z', now), '09:41');
+	assert.equal(formatListTime('2026-09-07T09:41:00Z', now), 'Mon');
+	assert.equal(formatListTime('2026-08-30T09:41:00Z', now), '30 Aug');
+});
+
+test('formatReaderTime: "Today 09:41" style', () => {
+	const now = new Date('2026-09-12T12:00:00Z');
+	assert.equal(formatReaderTime('2026-09-12T09:41:00Z', now), 'Today 09:41');
+	assert.equal(formatReaderTime('2026-09-11T09:41:00Z', now), 'Yesterday 09:41');
+});
+
+test('initials: two letters from name or email', () => {
+	assert.equal(initials('Ada Lovelace', 'ada@x.io'), 'AL');
+	assert.equal(initials('', 'ada@zaur.app'), 'AD');
+	assert.equal(initials('Cher', 'cher@x.io'), 'CH');
+	assert.equal(initials('', ''), '?');
+});
+
+test('formatBytes and typeBadge', () => {
+	assert.equal(formatBytes(512), '512 B');
+	assert.equal(formatBytes(2048), '2.0 KB');
+	assert.equal(formatBytes(5 * 1024 * 1024), '5.0 MB');
+	assert.equal(typeBadge('application/pdf'), 'PDF');
+	assert.equal(typeBadge('image/svg+xml'), 'SVG');
+});
+
+test('rows are typed as MessagePreview plus senderLabel', () => {
+	const now = new Date('2026-09-12T12:00:00Z');
+	const rows: ListRow[] = buildRowGroups([preview()], 'inbox', (e) => e === 'me@zaur.app', now)[0]!.rows;
+	assert.equal(rows[0]!.senderLabel, 'Ada Lovelace');
+});

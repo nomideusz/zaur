@@ -52,6 +52,7 @@ pnpm install
 ```sh
 pnpm dev:web           # http://localhost:5173 (landing site)
 pnpm dev:webmail       # http://localhost:5173
+pnpm dev:mail2         # http://localhost:5175 (Mail 2.0 rebuild, shares the 1.0 session)
 pnpm dev:register       # http://localhost:3000
 ```
 
@@ -61,6 +62,9 @@ pnpm dev:register       # http://localhost:3000
 pnpm build:webmail
 pnpm check:webmail
 pnpm test:webmail
+pnpm build:mail2
+pnpm check:mail2
+pnpm test:mail2
 ```
 
 ## Structure
@@ -68,12 +72,15 @@ pnpm test:webmail
 ```
 apps/
   web/           SvelteKit static landing site (zaur.app)
-  webmail/       SvelteKit JMAP client
+  webmail/       SvelteKit JMAP client (1.0, frozen to bugfixes during the 2.0 rebuild)
+  mail2/         SvelteKit JMAP client (2.0 rebuild — see docs/decisions/0005-mail-2.0.md)
   register/      Stalwart account registration portal
   mobile/        Planned KMP core + native SwiftUI and Compose clients
 packages/
   sprite/        Shared Zaur pixel art
   ui/            Shared design system (tokens, CSS, cn utility)
+  mail-core/     Platform-agnostic JMAP client and mail domain logic (webmail + mail2)
+  server-auth/   Shared session, OAuth, and Stalwart auth server code
 docs/
   decisions/     Architecture decision records
   mobile.md      Native client integration contract and roadmap
