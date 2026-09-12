@@ -38,8 +38,15 @@ stores, or Web Push. The detailed integration boundary is in
   is only strictly required when `NODE_ENV=production`; in dev the apps boot without it. `@zaur/web`
   needs no env. These `.env` files are gitignored and are NOT recreated by the update script — copy
   them from `.env.example` when setting up. `@zaur/mail2` reads the same session variables
-  (`SESSION_SECRET`, `STORE_DB_PATH`, `SESSION_COOKIE_DOMAIN`) through `@zaur/server-auth` (no
-  `.env.example` yet); in dev it boots without `.env` and shares webmail's localhost session.
+  (`SESSION_SECRET`, `STORE_DB_PATH`, `SESSION_COOKIE_DOMAIN`) through `@zaur/server-auth`, which
+  reads `process.env` directly — SvelteKit does **not** put `.env` values there, so mail2's dev
+  script loads its `.env` itself (`node --env-file-if-exists=.env`). **Session sharing is not
+  automatic:** the session cookie holds an id that is looked up in one SQLite store, and each
+  app's store defaults to its own `<cwd>/.data/store.sqlite` — mail2's `.env` (copied from
+  `.env.example`) must point `STORE_DB_PATH` at webmail's store for the `localhost:5173` login to
+  be visible on `5175` (see the mail2 README's "Testing over the network" section for tunnel
+  hostnames, which additionally need `SESSION_COOKIE_DOMAIN` and `server.allowedHosts`, already
+  configured).
 - `register` reads `STALWART_URL` (and `STALWART_JMAP_PATH`, `REGISTRATION_OPEN`) from its `.env`,
   but Stalwart admin credentials come from injected secrets: `STALWART_TOKEN` (preferred) or
   `STALWART_ADMIN_PASSWORD` (used with `STALWART_ADMIN_USER=admin`). Set `REGISTRATION_OPEN=true` in

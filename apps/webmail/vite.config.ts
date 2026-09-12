@@ -9,7 +9,12 @@ export default defineConfig({
 	server: {
 		fs: {
 			allow: ['../..']
-		}
+		},
+		// Vite rejects requests whose Host header is neither localhost nor in
+		// this list — this is the cloudflared tunnel name used for
+		// on-the-internet testing (apps/mail2 README → "Testing over the
+		// network").
+		allowedHosts: ['webmail-dev.zaur.app']
 	},
 	optimizeDeps: {
 		// svelte-remixicon ships `.svelte` icon files whose exports map only defines a

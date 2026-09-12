@@ -21,10 +21,12 @@ theme only** for now; Files and Meet arrive when their designs land.
 pnpm dev:mail2          # http://localhost:5175
 ```
 
-Session sharing with webmail 1.0 works out of the box in dev: cookies are
-host-scoped and ignore ports, so `localhost:5173` (webmail) and
-`localhost:5175` (mail2) serve the same session. Log in via webmail, then open
-mail2.
+Session sharing with webmail 1.0 needs **one shared session store**: the
+session cookie holds an id that each app looks up in a SQLite file
+(`<cwd>/.data/store.sqlite` — per-app by default, so webmail's sessions are
+invisible to mail2 out of the box). Copy `.env.example` to `.env` — it points
+mail2's `STORE_DB_PATH` at webmail's store — then log in via webmail on
+`localhost:5173` and open `localhost:5175`.
 
 In production the two apps run on sibling subdomains, which requires setting in
 **both** apps' env:
@@ -34,6 +36,46 @@ SESSION_COOKIE_DOMAIN=.zaur.app   # parent domain so both hosts see the cookie
 SESSION_SECRET=<same value>       # session records are sealed with it
 STORE_DB_PATH=/data/store.sqlite  # same SQLite store for both apps
 ```
+
+### Testing over the network (Cloudflare Tunnel)
+
+Each dev server only answers Host headers it allows (`server.allowedHosts` in
+its `vite.config.ts`): `webmail-dev.zaur.app` and `mail2-dev.zaur.app`. To
+reach them from the internet while keeping all state on this machine:
+
+1. Route two tunnel hostnames at the local ports with one `cloudflared`
+   config, and create the CNAMEs (`cloudflared tunnel route dns <id> <name>`):
+
+   ```yaml
+   # ~/.cloudflared/config.yml
+   tunnel: <id>
+   credentials-file: ~/.cloudflared/<id>.json
+   ingress:
+     - hostname: webmail-dev.zaur.app
+       service: http://localhost:5173
+     - hostname: mail2-dev.zaur.app
+       service: http://localhost:5175
+     - service: http_status:404
+   ```
+
+2. Start both dev servers with the parent-domain cookie so the login made on
+   `webmail-dev.zaur.app` is sent to `mail2-dev.zaur.app`:
+
+   ```sh
+   SESSION_COOKIE_DOMAIN=.zaur.app pnpm dev:webmail
+   SESSION_COOKIE_DOMAIN=.zaur.app pnpm dev:mail2
+   ```
+
+   Keep the variable out of `.env` files: browsers reject a `.zaur.app`
+   cookie coming from `localhost`, which would break plain localhost login.
+
+3. Log in at `https://webmail-dev.zaur.app`, then open
+   `https://mail2-dev.zaur.app`.
+
+⚠️ A Vite dev server on the public internet serves unminified source and has
+no auth of its own — fine for a quick test, take it down afterwards, or put a
+Cloudflare Access policy on the `*-dev` hostnames. Production runs on
+`webmail.zaur.app` — never point that name at a local port.
 
 ## SvelteKit 3 (pre-release)
 

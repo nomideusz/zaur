@@ -7,6 +7,12 @@ import { defineConfig } from 'vite';
 // longer read). `adapter` and `experimental` are top-level plugin options; the
 // `experimental` namespace is shared with vite-plugin-svelte.
 export default defineConfig({
+	server: {
+		// Vite rejects requests whose Host header is neither localhost nor in
+		// this list — this is the cloudflared tunnel name used for
+		// on-the-internet testing (README → "Testing over the network").
+		allowedHosts: ['mail2-dev.zaur.app']
+	},
 	plugins: [
 		tailwindcss(),
 		sveltekit({
