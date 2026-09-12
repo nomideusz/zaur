@@ -1,0 +1,10 @@
+/*
+ * Mail 2.0 entry stylesheet — the Tailwind graph root, imported by +layout.svelte.
+ * Mirrors webmail's layout.css: `tailwindcss` first, then the token layer, then base.
+ * The @theme inline mapping in tokens.css only takes effect because it sits inside
+ * this graph — importing tokens.css/base.css alone generates no utilities.
+ */
+@import 'tailwindcss';
+
+@import './styles/tokens.css';
+@import './styles/base.css';
