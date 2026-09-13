@@ -16,6 +16,7 @@ The apex `zaur.app` is the marketing landing site (`@zaur/web`).
 |-----|---------|-----|--------|
 | **Web** (landing) | `@zaur/web` | [zaur.app](https://zaur.app) | CapRover |
 | **Webmail** | `@zaur/webmail` | [webmail.zaur.app](https://webmail.zaur.app) | Dokploy |
+| **Mail 2.0** (beta, session-borrowed login) | `@zaur/mail2` | [mail2.zaur.app](https://mail2.zaur.app) | Dokploy |
 | **Register** | `@zaur/register` | [register.zaur.app](https://register.zaur.app) | Dokploy |
 | **Native Mail** (planned) | `apps/mobile` | iOS + Android | App Store + Google Play |
 

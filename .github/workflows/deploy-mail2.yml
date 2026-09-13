@@ -1,0 +1,53 @@
+name: Mail 2.0 CI
+
+# Deployment is owned by Dokploy (git auto-deploy builds apps/mail2/Dockerfile
+# on push to main). This workflow is the pre-deploy quality gate.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/mail2/**'
+      - 'packages/mail-core/**'
+      - 'packages/server-auth/**'
+      - 'packages/ui/**'
+      - 'pnpm-lock.yaml'
+      - 'pnpm-workspace.yaml'
+      - 'package.json'
+      - '.npmrc'
+      - '.github/workflows/deploy-mail2.yml'
+  pull_request:
+    paths:
+      - 'apps/mail2/**'
+      - 'packages/mail-core/**'
+      - 'packages/server-auth/**'
+      - 'packages/ui/**'
+  workflow_dispatch:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --filter @zaur/mail2...
+
+      - name: Type check
+        run: pnpm --filter @zaur/mail2 check
+
+      - name: Unit tests
+        run: pnpm --filter @zaur/mail2 test
+
+      - name: Production build
+        run: pnpm --filter @zaur/mail2 build

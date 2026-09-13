@@ -77,6 +77,36 @@ no auth of its own — fine for a quick test, take it down afterwards, or put a
 Cloudflare Access policy on the `*-dev` hostnames. Production runs on
 `webmail.zaur.app` — never point that name at a local port.
 
+## Deploying (Dokploy)
+
+Deployed like webmail: a Dokploy service builds `apps/mail2/Dockerfile` from
+the repo root on every push to `main` (git auto-deploy), with
+`.github/workflows/deploy-mail2.yml` as the pre-deploy quality gate.
+
+Session borrowing works by **filesystem**: mail2 has no login of its own, so
+its container must read the same SQLite session store as the webmail
+container. Both images default `STORE_DB_PATH=/app/.data/store.sqlite` and
+share the same image layout — point **both** Dokploy services' `/app/.data`
+mounts at the **same host directory** and they read one store.
+
+Service settings (mirroring the webmail service):
+
+| Setting | Value |
+| --- | --- |
+| Build type | Dockerfile — path `apps/mail2/Dockerfile`, context: repo root |
+| Domain | `mail2.zaur.app` |
+| Port | 3000 (`PORT`, `HOST`, `BODY_SIZE_LIMIT=50M` are baked into the image) |
+| Env | `SESSION_SECRET=<same value as the webmail service>` |
+| Env | `SESSION_COOKIE_DOMAIN=.zaur.app` |
+| Volume | same host directory as webmail's `/app/.data` → `/app/.data` |
+
+`SESSION_COOKIE_DOMAIN` must be set on the **webmail** service too (add it and
+redeploy webmail — the Dockerfile there also needed a `packages/server-auth`
+COPY fix for the next build). Without that variable webmail's cookie stays
+scoped to `webmail.zaur.app` and mail2 never sees the login. `SESSION_SECRET`
+is required in production: session records are sealed with it, and two apps
+sharing one store must share the value.
+
 ## SvelteKit 3 (pre-release)
 
 mail2 is on the SvelteKit 3 pre-release line (`3.0.0-next.27`, with
