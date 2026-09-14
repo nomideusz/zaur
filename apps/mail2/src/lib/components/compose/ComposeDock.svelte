@@ -32,7 +32,6 @@
 			.filter((chip) => chip.id);
 		const dragged = rects.find((chip) => chip.id === drag!.id);
 		if (!dragged) return;
-		// Reading order over the wrapped rows: bucket rows by top, then by left.
 		const rowOf = (top: number) => Math.round(top / 10);
 		const pointerRow = rowOf(dragged.rect.top);
 		let index = 0;
@@ -61,7 +60,7 @@
 {#if minimized.length > 0}
 	<div
 		bind:this={dockEl}
-		class="absolute right-5 bottom-3.5 z-[68] flex max-w-[calc(100%-360px)] flex-wrap-reverse justify-end gap-2"
+		class="absolute right-5 bottom-12 z-[68] flex max-w-[calc(100%-360px)] flex-wrap-reverse justify-end gap-2.5"
 	>
 		{#each minimized as draft (draft.id)}
 			<div
@@ -69,9 +68,9 @@
 				role="button"
 				tabindex="0"
 				aria-label="Minimized draft: {chipTitle(draft)}. Activate to reopen."
-				class="flex h-11 w-[204px] cursor-grab items-center gap-2 rounded-pop border border-border bg-container pr-1.5 pl-[11px] shadow-chip select-none transition-[transform,box-shadow] duration-[150ms] {compose.trayDragId ===
+				class="flex h-11 w-[210px] cursor-grab items-center gap-2 rounded-[8px] border border-[#cbd5e1] bg-white pr-1.5 pl-3 shadow-md select-none transition-all duration-[150ms] hover:border-slate-400 hover:shadow-lg {compose.trayDragId ===
 				draft.id
-					? 'translate-y-[-3px] shadow-chip-lift transition-none'
+					? '-translate-y-1 shadow-xl'
 					: ''}"
 				onpointerdown={(event) => startDrag(event, draft.id)}
 				onpointermove={moveDrag}
@@ -86,33 +85,33 @@
 				}}
 			>
 				<span
-					class="size-1.5 shrink-0 rounded-pill {chipStatus(draft) ? 'bg-accent' : 'bg-border-strong'}"
+					class="size-2 shrink-0 rounded-full {chipStatus(draft) ? 'bg-blue-600 ring-2 ring-blue-100' : 'bg-slate-300'}"
 					aria-hidden="true"
 				></span>
 				<span class="min-w-0 flex-1">
-					<span class="block truncate text-xs font-semibold">{chipTitle(draft)}</span>
-					<span class="block truncate text-[11px] text-ink-tertiary">{chipMeta(draft)}</span>
+					<span class="block truncate text-xs font-bold text-slate-800">{chipTitle(draft)}</span>
+					<span class="block truncate text-[11px] text-slate-400 font-medium">{chipMeta(draft)}</span>
 				</span>
 				<button
 					type="button"
-					class="flex size-[26px] shrink-0 items-center justify-center rounded-menu-item text-ink-muted transition-colors duration-[160ms] hover:bg-hairline"
+					class="flex size-6 shrink-0 items-center justify-center rounded-[4px] text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
 					aria-label="Reopen draft"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.restore(draft.id)}
 				>
 					<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+						<path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
 					</svg>
 				</button>
 				<button
 					type="button"
-					class="flex size-[26px] shrink-0 items-center justify-center rounded-menu-item text-ink-muted transition-colors duration-[160ms] hover:bg-hairline"
+					class="flex size-6 shrink-0 items-center justify-center rounded-[4px] text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
 					aria-label="Close draft"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.close(draft.id)}
 				>
 					<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+						<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 					</svg>
 				</button>
 			</div>

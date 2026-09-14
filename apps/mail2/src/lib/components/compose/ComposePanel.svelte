@@ -232,7 +232,7 @@
 	role="dialog"
 	tabindex="-1"
 	aria-label="Compose: {title}"
-	class="absolute flex flex-col overflow-hidden rounded-panel border border-border bg-container shadow-panel {draft.gesture
+	class="absolute flex flex-col overflow-hidden rounded-[10px] border border-[#cbd5e1] bg-white shadow-2xl {draft.gesture
 		? 'transition-none'
 		: 'transition-[left,top,width,height] duration-[180ms]'}"
 	style:left="{rect.x}px"
@@ -246,35 +246,56 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		bind:this={headerEl}
-		class="flex h-[45px] shrink-0 cursor-grab items-center gap-2.5 border-b border-divider bg-canvas px-3 select-none active:cursor-grabbing"
+		class="flex h-[44px] shrink-0 cursor-grab items-center gap-2.5 border-b border-[#e2e8f0] bg-slate-50/90 px-3.5 select-none active:cursor-grabbing"
 		onpointerdown={startDrag}
 		onpointermove={moveDrag}
 		onpointerup={endDrag}
 		onpointercancel={endDrag}
 		ondblclick={() => compose.toggleMaximize(draft.id)}
 	>
-		<span class="flex flex-col gap-[2px]" aria-hidden="true">
-			<span class="h-px w-3 bg-grip"></span>
-			<span class="h-px w-3 bg-grip"></span>
-			<span class="h-px w-3 bg-grip"></span>
-		</span>
-		<span class="min-w-0 flex-1 truncate text-[13px] font-semibold">{title}</span>
-		<div class="flex items-center gap-[2px]">
+		<!-- Mac dots window controls -->
+		<div class="flex items-center gap-1.5 mr-1" aria-hidden="true">
 			<button
 				type="button"
-				class="flex size-7 items-center justify-center rounded-menu-item text-ink-muted transition-colors duration-[160ms] hover:bg-divider"
+				class="mac-dot mac-dot-close"
+				onpointerdown={(event) => event.stopPropagation()}
+				onclick={() => compose.close(draft.id)}
+				aria-label="Close"
+			></button>
+			<button
+				type="button"
+				class="mac-dot mac-dot-minimize"
+				onpointerdown={(event) => event.stopPropagation()}
+				onclick={() => compose.minimize(draft.id)}
+				aria-label="Minimize"
+			></button>
+			<button
+				type="button"
+				class="mac-dot mac-dot-maximize"
+				onpointerdown={(event) => event.stopPropagation()}
+				onclick={() => compose.toggleMaximize(draft.id)}
+				aria-label="Maximize"
+			></button>
+		</div>
+
+		<span class="min-w-0 flex-1 truncate text-[13px] font-semibold text-slate-800">{title}</span>
+
+		<div class="flex items-center gap-1">
+			<button
+				type="button"
+				class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition-colors"
 				aria-label="Minimize"
 				onpointerdown={(event) => event.stopPropagation()}
 				onclick={() => compose.minimize(draft.id)}
 			>
 				<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-					<path d="M3.5 8h9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+					<path d="M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 				</svg>
 			</button>
 			{#if maximized}
 				<button
 					type="button"
-					class="flex size-7 items-center justify-center rounded-menu-item text-ink-muted transition-colors duration-[160ms] hover:bg-divider"
+					class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition-colors"
 					aria-label="Restore down"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.toggleMaximize(draft.id)}
@@ -287,7 +308,7 @@
 			{:else}
 				<button
 					type="button"
-					class="flex size-7 items-center justify-center rounded-menu-item text-ink-muted transition-colors duration-[160ms] hover:bg-divider"
+					class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition-colors"
 					aria-label="Maximize"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.toggleMaximize(draft.id)}
@@ -299,13 +320,13 @@
 			{/if}
 			<button
 				type="button"
-				class="flex size-7 items-center justify-center rounded-menu-item text-ink-muted transition-colors duration-[160ms] hover:bg-divider"
+				class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
 				aria-label="Close draft"
 				onpointerdown={(event) => event.stopPropagation()}
 				onclick={() => compose.close(draft.id)}
 			>
-				<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-					<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+				<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 				</svg>
 			</button>
 		</div>

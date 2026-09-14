@@ -82,6 +82,14 @@
 	--z-shadow-dialog: 0 24px 60px rgb(16 20 19 / 0.3);
 	--z-shadow-chip: 0 6px 16px rgb(16 20 19 / 0.1);
 	--z-shadow-chip-lift: 0 14px 28px rgb(16 20 19 / 0.2);
+	--z-shadow-window: 0 24px 48px -12px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.06);
+
+	/* Hobday Tactile Tokens */
+	--z-tactile-border: #cbd5e1;
+	--z-tactile-border-hover: #94a3b8;
+	--z-tactile-bg: #ffffff;
+	--z-tactile-bg-hover: #f8fafc;
+	--z-sidebar-width: 240px;
 }
 
 @theme inline {
@@ -129,6 +137,12 @@
 	--shadow-dialog: var(--z-shadow-dialog);
 	--shadow-chip: var(--z-shadow-chip);
 	--shadow-chip-lift: var(--z-shadow-chip-lift);
+	--shadow-window: var(--z-shadow-window);
+
+	--color-tactile-border: var(--z-tactile-border);
+	--color-tactile-border-hover: var(--z-tactile-border-hover);
+	--color-tactile-bg: var(--z-tactile-bg);
+	--color-tactile-bg-hover: var(--z-tactile-bg-hover);
 
 	--font-sans: var(--font-sans);
 	--font-mono: var(--font-mono);

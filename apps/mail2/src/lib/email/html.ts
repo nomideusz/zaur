@@ -477,6 +477,9 @@ export function prepareEmailHtml(
 	rawHtml: string,
 	options: { allowExternal: boolean; darkMode?: boolean }
 ): { html: string; blockedExternal: boolean; lightSurface: boolean } {
+	if (!browser || typeof DOMPurify?.sanitize !== 'function') {
+		return { html: rawHtml, blockedExternal: false, lightSurface: false };
+	}
 	ensureReflowHook();
 	const html = DOMPurify.sanitize(rawHtml, EMAIL_SANITIZE_CONFIG);
 	return postProcessSanitizedHtml(html, options);

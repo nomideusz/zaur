@@ -4,7 +4,8 @@
 	import { renderMessageBody } from '#lib/email/html';
 	import type { MessageDetail } from '@zaur/mail-core';
 	import EmailHtmlFrame from './EmailHtmlFrame.svelte';
-	import { formatBytes, formatReaderTime, typeBadge } from '#lib/mail/rows';
+	import { formatBytes, formatReaderTime, typeBadge, initials } from '#lib/mail/rows';
+	import { getHobdayTheme, HOBDAY_THEMES } from '#lib/mail/colors';
 
 	interface Props {
 		messages: MessageDetail[] | undefined;
@@ -41,6 +42,10 @@
 		return { ...result, attachments: latest.attachments };
 	});
 
+	const senderTheme = $derived(
+		latest ? getHobdayTheme(latest.from.email || latest.from.name) : HOBDAY_THEMES.blue
+	);
+
 	function recipientsLabel(message: MessageDetail): string {
 		const others = [...message.to, ...message.cc].filter(
 			(person) => person.email.toLowerCase() !== message.from.email.toLowerCase()
@@ -55,18 +60,26 @@
 		const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
 		return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
 	}
+
+	function attachmentBadgeTheme(type: string) {
+		const lower = (type || '').toLowerCase();
+		if (lower.includes('pdf')) return { bg: '#fee2e2', border: '#ef4444', text: '#b91c1c' };
+		if (lower.includes('image')) return { bg: '#e0f2fe', border: '#38bdf8', text: '#0369a1' };
+		if (lower.includes('zip') || lower.includes('archive')) return { bg: '#fef3c7', border: '#f59e0b', text: '#b45309' };
+		return { bg: '#dcfce7', border: '#4ade80', text: '#15803d' };
+	}
 </script>
 
-<section class="flex h-full min-h-0 flex-col bg-container" aria-label="Message reader">
+<section class="flex h-full min-h-0 flex-col bg-white select-none" aria-label="Message reader">
 	{#if error}
-		<div class="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-			<p class="text-sm font-medium">Couldn't load the conversation</p>
-			<p class="max-w-[320px] text-[13px] leading-relaxed text-ink-secondary">
+		<div class="flex flex-1 flex-col items-center justify-center gap-2 text-center p-6">
+			<p class="text-sm font-semibold text-slate-800">Couldn't load the conversation</p>
+			<p class="max-w-[320px] text-[13px] leading-relaxed text-slate-500">
 				The mail server couldn't be reached.
 			</p>
 			<button
 				type="button"
-				class="mt-1 h-8 rounded-[8px] border border-border bg-container px-3.5 text-[13px] transition-colors duration-[160ms] hover:border-border-hover"
+				class="btn-tactile mt-2"
 				onclick={onRetry}
 			>
 				Retry
@@ -74,63 +87,86 @@
 		</div>
 	{:else if loading && !messages}
 		<div class="flex flex-1 flex-col gap-5 px-8 pt-8" aria-hidden="true">
-			<div class="h-7 w-2/3 animate-pulse rounded bg-canvas"></div>
-			<div class="h-4 w-1/3 animate-pulse rounded bg-canvas"></div>
+			<div class="h-7 w-2/3 animate-pulse rounded bg-slate-100"></div>
+			<div class="h-4 w-1/3 animate-pulse rounded bg-slate-100"></div>
 			<div class="mt-4 space-y-3">
-				<div class="h-3.5 w-full animate-pulse rounded bg-canvas"></div>
-				<div class="h-3.5 w-5/6 animate-pulse rounded bg-canvas"></div>
-				<div class="h-3.5 w-4/6 animate-pulse rounded bg-canvas"></div>
+				<div class="h-3.5 w-full animate-pulse rounded bg-slate-100"></div>
+				<div class="h-3.5 w-5/6 animate-pulse rounded bg-slate-100"></div>
+				<div class="h-3.5 w-4/6 animate-pulse rounded bg-slate-100"></div>
 			</div>
 		</div>
 	{:else if messages && messages.length === 0}
-		<div class="flex flex-1 items-center justify-center">
-			<p class="max-w-[320px] text-center text-[13px] leading-relaxed text-ink-secondary">
+		<div class="flex flex-1 items-center justify-center p-6">
+			<p class="max-w-[320px] text-center text-[13px] leading-relaxed text-slate-500">
 				This conversation has no messages.
 			</p>
 		</div>
 	{:else if latest && rendered}
-		<div class="flex h-[50px] shrink-0 items-center gap-2 border-b border-divider px-[26px]">
-			<div class="flex items-center">
+		<!-- Reader Action Toolbar: Hobday-style tactile buttons -->
+		<div class="flex h-[46px] shrink-0 items-center justify-between border-b border-[#e2e8f0] px-6">
+			<div class="flex items-center gap-2">
 				<button
 					type="button"
-					class="inline-flex h-[30px] items-center rounded-l-[8px] border border-line bg-container px-3 text-[13px] transition-colors duration-[160ms] hover:bg-canvas"
+					class="btn-tactile !h-[28px] gap-1.5"
 					onclick={(event) => latest && onCompose('reply', latest, anchorFrom(event))}
 				>
-					Reply
+					<svg class="size-3.5 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M6 3.5L1.5 8 6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+						<path d="M1.5 8H10a4 4 0 014 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+					</svg>
+					<span>Reply</span>
 				</button>
-				<Menu.Root positioning={{ placement: 'bottom-end', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
+
+				<button
+					type="button"
+					class="btn-tactile !h-[28px] gap-1.5"
+					onclick={(event) => latest && onCompose('replyAll', latest, anchorFrom(event))}
+				>
+					<svg class="size-3.5 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M6 3.5L1.5 8 6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+						<path d="M10 3.5L5.5 8 10 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+					<span>Reply all</span>
+				</button>
+
+				<button
+					type="button"
+					class="btn-tactile !h-[28px] gap-1.5"
+					onclick={(event) => latest && onCompose('forward', latest, anchorFrom(event))}
+				>
+					<svg class="size-3.5 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M10 3.5L14.5 8 10 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+						<path d="M14.5 8H6a4 4 0 00-4 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+					</svg>
+					<span>Forward</span>
+				</button>
+
+				<!-- More Menu -->
+				<Menu.Root positioning={{ placement: 'bottom-start', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
 					<Menu.Trigger
-						class="inline-flex h-[30px] w-8 items-center justify-center rounded-r-[8px] border border-line border-l-0 bg-container transition-colors duration-[160ms] hover:bg-canvas"
+						class="btn-tactile !h-[28px] !w-8 !p-0"
 						aria-label="More actions"
 					>
-						<svg class="size-4 text-ink-muted" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+						<svg class="size-3.5 text-slate-700" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
 							<circle cx="8" cy="3.5" r="1.3" /><circle cx="8" cy="8" r="1.3" /><circle cx="8" cy="12.5" r="1.3" />
 						</svg>
 					</Menu.Trigger>
 					<Portal>
 						<Menu.Positioner>
-							<Menu.Content class="z-40 w-[196px] rounded-[10px] border border-line bg-container p-1.5 shadow-menu">
-								{#each [['Reply all', 'replyAll'], ['Forward', 'forward']] as [action, mode] (action)}
-									<Menu.Item
-										value={action}
-										class="cursor-default rounded-[7px] px-2.5 py-2 text-[13px] data-highlighted:bg-divider"
-										onSelect={() => latest && onCompose(mode as 'replyAll' | 'forward', latest, null)}
-									>
-										{action}
-									</Menu.Item>
-								{/each}
+							<Menu.Content class="z-40 w-[196px] rounded-[8px] border border-[#cbd5e1] bg-white p-1.5 shadow-lg">
 								{#each ['Archive', 'Highlight', 'Mark unseen', 'Move to junk'] as action (action)}
 									<Menu.Item
 										value={action}
-										class="cursor-default rounded-[7px] px-2.5 py-2 text-[13px] data-highlighted:bg-divider"
+										class="cursor-pointer rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 data-highlighted:bg-slate-100"
 										title="Arrives with the write path"
 									>
 										{action}
 									</Menu.Item>
 								{/each}
+								<div class="my-1 h-px bg-slate-100"></div>
 								<Menu.Item
 									value="trash"
-									class="cursor-default rounded-[7px] px-2.5 py-2 text-[13px] text-danger data-highlighted:bg-divider"
+									class="cursor-pointer rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-red-600 data-highlighted:bg-red-50"
 									title="Arrives with the write path"
 								>
 									Trash
@@ -142,79 +178,144 @@
 			</div>
 		</div>
 
-		<div class="min-h-0 flex-1 overflow-y-auto px-[34px] pt-8 pb-2">
-			<div class="mx-auto flex max-w-[660px] flex-col gap-[22px]">
-				<h1 class="text-[25px] leading-[1.28] font-medium tracking-[-0.02em]">
+		<!-- Reader Content Area -->
+		<div class="min-h-0 flex-1 overflow-y-auto px-8 py-6 select-text">
+			<div class="mx-auto flex max-w-[680px] flex-col gap-6">
+				<!-- Conversation Subject -->
+				<h1 class="text-[24px] font-bold leading-tight tracking-tight text-slate-900">
 					{latest.subject}
 				</h1>
 
-				<div class="flex items-baseline gap-2">
-					<span class="text-sm font-medium">{latest.from.name || latest.from.email}</span>
-					<span class="min-w-0 flex-1 truncate text-xs text-ink-secondary">
-						{latest.from.email}{latest.from.email ? ' — ' : ''}{recipientsLabel(latest)}
-					</span>
-					<time class="shrink-0 text-xs text-ink-secondary tabular-nums" datetime={latest.receivedAt}>
+				<!-- Sender Identity Card -->
+				<div class="flex items-start justify-between gap-3.5 rounded-[8px] border border-[#e2e8f0] bg-slate-50/50 p-3.5">
+					<div class="flex items-start gap-3 min-w-0">
+						<!-- Sender Avatar Badge (Hobday style) -->
+						<div
+							class="flex size-9 shrink-0 items-center justify-center rounded-[6px] text-xs font-bold"
+							style:background-color={senderTheme.bg}
+							style:border="1px solid {senderTheme.border}"
+							style:color={senderTheme.text}
+						>
+							{initials(latest.from.name || latest.from.email, latest.from.email)}
+						</div>
+
+						<div class="min-w-0 space-y-0.5">
+							<div class="flex items-center gap-2 truncate">
+								<span class="text-[14px] font-bold text-slate-900 truncate">
+									{latest.from.name || latest.from.email}
+								</span>
+								{#if latest.from.name && latest.from.email}
+									<span class="text-xs text-slate-500 truncate">
+										&lt;{latest.from.email}&gt;
+									</span>
+								{/if}
+							</div>
+							<div class="text-xs text-slate-500 truncate">
+								{recipientsLabel(latest)}
+							</div>
+						</div>
+					</div>
+
+					<time
+						class="shrink-0 rounded-[4px] border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-600 tabular-nums shadow-2xs"
+						datetime={latest.receivedAt}
+					>
 						{formatReaderTime(latest.receivedAt)}
 					</time>
 				</div>
-				<div class="h-px bg-divider"></div>
 
+				<!-- Earlier Messages Banner: Modeled directly after Hobday's "Early May bank holiday" full banner -->
 				{#if earlier.length > 0 && !earlierExpanded}
 					<button
 						type="button"
-						class="flex w-full items-center gap-4 rounded-[10px] border border-line-light bg-surface-subtle px-4 py-3 text-left transition-colors duration-[160ms] hover:border-border-hover"
+						class="group flex w-full items-center justify-between gap-4 rounded-[6px] border border-[#d97706] bg-[#fef3c7] px-4 py-2.5 text-left transition-all hover:bg-[#fde68a] shadow-2xs"
 						onclick={() => (earlierExpanded = true)}
 					>
-						<span class="shrink-0 font-mono text-[11px] tracking-[0.06em] text-ink-tertiary uppercase">
-							{earlier.length} earlier message{earlier.length === 1 ? '' : 's'}
-						</span>
-						<span class="min-w-0 flex-1 truncate text-[13px] text-ink-muted">
-							{earlier[earlier.length - 1]!.preview || earlier[earlier.length - 1]!.subject}
+						<div class="flex items-center gap-2 min-w-0">
+							<span class="flex size-5 items-center justify-center rounded-[4px] bg-[#f59e0b] text-[11px] font-bold text-white tabular-nums">
+								{earlier.length}
+							</span>
+							<span class="text-[13px] font-bold text-[#78350f]">
+								Earlier {earlier.length === 1 ? 'message' : 'messages'} in this conversation
+							</span>
+						</div>
+						<span class="text-xs font-bold text-[#92400e] underline underline-offset-2">
+							Expand history
 						</span>
 					</button>
 				{/if}
 
 				{#if earlierExpanded}
-					{#each earlier as message (message.id)}
-						<div class="flex flex-col gap-2 border-l-2 border-divider py-2 pl-4">
-							<div class="flex items-baseline gap-2">
-								<span class="text-[13px] font-medium text-ink-muted">{message.from.name || message.from.email}</span>
-								<time class="text-xs font-normal text-ink-secondary tabular-nums" datetime={message.receivedAt}>
-									{formatReaderTime(message.receivedAt)}
-								</time>
+					<div class="space-y-4">
+						{#each earlier as message (message.id)}
+							<div class="rounded-[8px] border border-[#e2e8f0] bg-slate-50/70 p-4 space-y-2">
+								<div class="flex items-baseline justify-between gap-2 border-b border-slate-200 pb-2">
+									<div class="flex items-center gap-2 truncate">
+										<span class="text-[13px] font-bold text-slate-800">
+											{message.from.name || message.from.email}
+										</span>
+										<span class="text-xs text-slate-500 truncate">&lt;{message.from.email}&gt;</span>
+									</div>
+									<time class="text-xs text-slate-500 tabular-nums shrink-0" datetime={message.receivedAt}>
+										{formatReaderTime(message.receivedAt)}
+									</time>
+								</div>
+								<div class="text-[13.5px] leading-relaxed text-slate-700 whitespace-pre-wrap">
+									{message.bodyText}
+								</div>
 							</div>
-							<div class="text-sm leading-[1.65] text-ink-body whitespace-pre-wrap">
-								{message.bodyText}
-							</div>
-						</div>
-					{/each}
+						{/each}
+					</div>
 				{/if}
 
-				<div class="max-w-[33em]">
+				<!-- Message Body Frame -->
+				<div class="text-[14px] leading-relaxed text-slate-800">
 					<EmailHtmlFrame html={rendered.html} plain={!rendered.isHtml} />
 				</div>
 
+				<!-- Attachments with Hobday-style color-coded file badges -->
 				{#if rendered.attachments.length > 0}
-					<div class="flex flex-wrap gap-2">
-						{#each rendered.attachments as attachment (attachment.blobId)}
-							<div class="flex h-[46px] w-fit items-center gap-3 rounded-[10px] border border-line-light px-3.5" title={`${attachment.name} — downloads arrive in a later slice`}>
-								<span class="flex size-6 items-center justify-center rounded-[5px] bg-divider font-mono text-[9px] text-ink-muted">
-									{typeBadge(attachment.type)}
-								</span>
-								<span class="max-w-48 truncate text-[13px]">{attachment.name}</span>
-								<span class="text-[11px] text-ink-secondary tabular-nums">{formatBytes(attachment.size)}</span>
-							</div>
-						{/each}
+					<div class="border-t border-[#e2e8f0] pt-4">
+						<div class="mb-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+							Attachments ({rendered.attachments.length})
+						</div>
+						<div class="flex flex-wrap gap-2.5">
+							{#each rendered.attachments as attachment (attachment.blobId)}
+								{@const badge = attachmentBadgeTheme(attachment.type)}
+								<div
+									class="flex h-11 items-center gap-3 rounded-[6px] border border-[#cbd5e1] bg-white px-3 shadow-2xs hover:border-slate-400 transition-colors"
+									title={`${attachment.name} — downloads arrive in a later slice`}
+								>
+									<span
+										class="flex size-6 items-center justify-center rounded-[4px] text-[10px] font-bold uppercase"
+										style:background-color={badge.bg}
+										style:border="1px solid {badge.border}"
+										style:color={badge.text}
+									>
+										{typeBadge(attachment.type)}
+									</span>
+									<span class="max-w-44 truncate text-[13px] font-medium text-slate-800">{attachment.name}</span>
+									<span class="text-xs text-slate-400 tabular-nums font-medium">{formatBytes(attachment.size)}</span>
+								</div>
+							{/each}
+						</div>
 					</div>
 				{/if}
 			</div>
 		</div>
 	{:else}
-		<div class="flex flex-1 items-center justify-center">
-			<div class="text-center">
-				<p class="text-sm font-medium">Nothing selected</p>
-				<p class="mt-1 text-[13px] text-ink-secondary">
-					Pick a message, or press <kbd class="rounded bg-divider px-1 font-mono text-xs">j</kbd> to walk the list.
+		<!-- Empty Selection Placeholder -->
+		<div class="flex flex-1 items-center justify-center p-6 text-center">
+			<div class="max-w-[280px]">
+				<div class="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-3">
+					<svg class="size-6" viewBox="0 0 16 16" fill="none">
+						<rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.3" />
+						<path d="M2 5l6 4 6-4" stroke="currentColor" stroke-width="1.3" />
+					</svg>
+				</div>
+				<p class="text-sm font-semibold text-slate-800">No message selected</p>
+				<p class="mt-1 text-xs text-slate-500 leading-relaxed">
+					Select an email to read, or navigate with <kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 font-mono text-[11px] font-medium text-slate-600">j</kbd> and <kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 font-mono text-[11px] font-medium text-slate-600">k</kbd>.
 				</p>
 			</div>
 		</div>

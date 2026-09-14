@@ -23,21 +23,47 @@
 	);
 </script>
 
-<footer class="flex h-10 shrink-0 items-center gap-[18px] border-t border-line bg-canvas px-6 text-xs text-ink-secondary">
-	{#if mailboxName}
-		<span>
-			{unseen > 0 ? `${unseen} unseen` : 'All seen'} · {mailboxName}
-		</span>
-		<span>{syncedLabel}</span>
-		<span class="font-mono text-[11px]">j/k move · Enter open · / search</span>
-	{:else}
-		<span class="font-mono text-[11px]">Sign in to load your mail</span>
-	{/if}
+<footer
+	class="flex h-9 shrink-0 items-center justify-between border-t border-[#cbd5e1] bg-white px-4 text-xs font-medium text-slate-500 select-none"
+>
+	<div class="flex items-center gap-3">
+		{#if mailboxName}
+			<div class="flex items-center gap-1.5">
+				<span
+					class="size-1.5 rounded-full {unseen > 0 ? 'bg-blue-600' : 'bg-emerald-500'}"
+					aria-hidden="true"
+				></span>
+				<span class="font-semibold text-slate-700">
+					{unseen > 0 ? `${unseen} unseen` : 'All seen'}
+				</span>
+				<span>·</span>
+				<span>{mailboxName}</span>
+			</div>
+
+			<span class="text-slate-300">|</span>
+
+			<span class="text-slate-500">{syncedLabel}</span>
+
+			<span class="hidden md:inline text-slate-300">|</span>
+
+			<div class="hidden md:flex items-center gap-1 font-mono text-[11px] text-slate-400">
+				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px]">j/k</kbd> move
+				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px]">↵</kbd> open
+				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px]">/</kbd> search
+			</div>
+		{:else}
+			<span class="font-mono text-[11px] text-slate-400">Sign in to load your mail</span>
+		{/if}
+	</div>
+
 	{#if storageLabel}
-		<div class="ml-auto flex items-center gap-2">
-			<span class="tabular-nums">{storageLabel}</span>
-			<div class="h-1 w-[90px] overflow-hidden rounded-full bg-[#e0e7e6]">
-				<div class="h-full rounded-full bg-accent transition-[width] duration-[160ms]" style:width="{storagePct}%"></div>
+		<div class="flex items-center gap-2">
+			<span class="tabular-nums text-[11px] text-slate-500">{storageLabel}</span>
+			<div class="h-1.5 w-[72px] overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+				<div
+					class="h-full rounded-full bg-blue-600 transition-[width] duration-[160ms]"
+					style:width="{storagePct}%"
+				></div>
 			</div>
 		</div>
 	{/if}

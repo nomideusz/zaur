@@ -4,6 +4,7 @@
 	import type { MailboxDTO } from '#lib/mail/types';
 	import type { RowGroup, ListRow } from '#lib/mail/rows';
 	import { formatListTime, initials } from '#lib/mail/rows';
+	import { getHobdayTheme } from '#lib/mail/colors';
 
 	interface Props {
 		mailbox: MailboxDTO | null;
@@ -76,112 +77,146 @@
 			hint: 'Messages will appear here as soon as they arrive.'
 		}
 	);
+
+	function inferTag(row: ListRow): { name: string; bg: string; border: string; text: string } | null {
+		const s = (row.subject + ' ' + row.senderLabel).toLowerCase();
+		if (s.includes('practice') || s.includes('football') || s.includes('annie') || s.includes('daughter')) {
+			return { name: 'Annie & Emily', bg: '#fce7f3', border: '#f472b6', text: '#be185d' };
+		}
+		if (s.includes('bank holiday') || s.includes('holiday') || s.includes('uk')) {
+			return { name: 'UK Holidays', bg: '#fef3c7', border: '#f59e0b', text: '#b45309' };
+		}
+		if (s.includes('piano') || s.includes('lesson') || s.includes('son')) {
+			return { name: 'Family', bg: '#bbf7d0', border: '#16a34a', text: '#14532d' };
+		}
+		if (s.includes('pet') || s.includes('care') || s.includes('milo')) {
+			return { name: 'Pet Care', bg: '#ede9fe', border: '#a78bfa', text: '#6d28d9' };
+		}
+		if (s.includes('work') || s.includes('project') || s.includes('alpha')) {
+			return { name: 'Work', bg: '#dbeafe', border: '#3b82f6', text: '#1e40af' };
+		}
+		return null;
+	}
 </script>
 
-<section class="flex h-full min-h-0 flex-col overflow-hidden" aria-label="Message list">
-	<div class="flex h-[50px] shrink-0 items-center gap-2.5 border-b border-divider px-[18px]">
-		<Menu.Root positioning={{ placement: 'bottom-start', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
-			<Menu.Trigger
-				class="inline-flex h-7 items-center gap-1.5 rounded-[7px] border border-line bg-container px-2 transition-colors duration-[160ms] hover:border-border-hover"
-				aria-label="Selection options"
-			>
-				<span
-					class="flex size-[15px] items-center justify-center rounded-[4px] border border-border-strong {selection.size >
-					0
-						? 'bg-accent'
-						: 'bg-container'}"
-					aria-hidden="true"
+<section class="flex h-full min-h-0 flex-col overflow-hidden bg-white select-none" aria-label="Message list">
+	<!-- List Header with Hobday Tactile Controls -->
+	<div class="flex h-[46px] shrink-0 items-center justify-between gap-3 border-b border-[#e2e8f0] px-4">
+		<div class="flex items-center gap-2">
+			<!-- Select Menu Trigger -->
+			<Menu.Root positioning={{ placement: 'bottom-start', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
+				<Menu.Trigger
+					class="btn-tactile !h-[28px] !px-2 gap-1.5"
+					aria-label="Selection options"
 				>
-					{#if selection.size > 0}
-						<svg class="size-2.5 text-accent-fg" viewBox="0 0 16 16" fill="none">
-							<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+					<span
+						class="flex size-3.5 items-center justify-center rounded-[3px] border transition-colors {selection.size > 0
+							? 'border-transparent bg-blue-600 text-white'
+							: 'border-[#94a3b8] bg-white text-transparent'}"
+						aria-hidden="true"
+					>
+						<svg class="size-2.5" viewBox="0 0 16 16" fill="none">
+							<path
+								d="M3.5 8.5l3 3 6-7"
+								stroke="currentColor"
+								stroke-width="2.4"
+								stroke-linecap="round"
+								stroke-linejoin="round"
+							/>
 						</svg>
-					{/if}
-				</span>
-				<svg class="size-3 text-ink-secondary" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-					<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
-				</svg>
-			</Menu.Trigger>
-			<Portal>
-				<Menu.Positioner>
-					<Menu.Content class="z-40 w-[184px] rounded-[10px] border border-line bg-container p-1.5 shadow-menu">
-						<div class="px-2 pt-1 pb-1.5 font-mono text-[10px] tracking-[0.08em] text-ink-tertiary uppercase">
-							Select
-						</div>
-						<Menu.Item value="all" onSelect={selectAll} class="cursor-default rounded-[7px] px-2.5 py-2 text-[13px] data-highlighted:bg-divider">All</Menu.Item>
-						<Menu.Item value="none" onSelect={selectNone} class="cursor-default rounded-[7px] px-2.5 py-2 text-[13px] data-highlighted:bg-divider">None</Menu.Item>
-						<Menu.Item value="unseen" onSelect={() => selectWhere((row) => row.unread)} class="cursor-default rounded-[7px] px-2.5 py-2 text-[13px] data-highlighted:bg-divider">Unseen</Menu.Item>
-						<Menu.Item value="seen" onSelect={() => selectWhere((row) => !row.unread)} class="cursor-default rounded-[7px] px-2.5 py-2 text-[13px] data-highlighted:bg-divider">Seen</Menu.Item>
-						<Menu.Item value="highlighted" onSelect={() => selectWhere((row) => row.starred)} class="cursor-default rounded-[7px] px-2.5 py-2 text-[13px] data-highlighted:bg-divider">Highlighted</Menu.Item>
-					</Menu.Content>
-				</Menu.Positioner>
-			</Portal>
-		</Menu.Root>
+					</span>
+					<svg class="size-3 text-slate-400" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+				</Menu.Trigger>
+				<Portal>
+					<Menu.Positioner>
+						<Menu.Content class="z-40 w-[184px] rounded-[8px] border border-[#cbd5e1] bg-white p-1.5 shadow-lg">
+							<div class="px-2 pt-1 pb-1.5 font-mono text-[10px] tracking-wider text-slate-400 uppercase">
+								Select
+							</div>
+							<Menu.Item value="all" onSelect={selectAll} class="cursor-pointer rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 data-highlighted:bg-slate-100">All</Menu.Item>
+							<Menu.Item value="none" onSelect={selectNone} class="cursor-pointer rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 data-highlighted:bg-slate-100">None</Menu.Item>
+							<Menu.Item value="unseen" onSelect={() => selectWhere((row) => row.unread)} class="cursor-pointer rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 data-highlighted:bg-slate-100">Unseen</Menu.Item>
+							<Menu.Item value="seen" onSelect={() => selectWhere((row) => !row.unread)} class="cursor-pointer rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 data-highlighted:bg-slate-100">Seen</Menu.Item>
+							<Menu.Item value="highlighted" onSelect={() => selectWhere((row) => row.starred)} class="cursor-pointer rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 data-highlighted:bg-slate-100">Highlighted</Menu.Item>
+						</Menu.Content>
+					</Menu.Positioner>
+				</Portal>
+			</Menu.Root>
 
-		<div class="flex items-center rounded-full border border-line bg-container p-0.5" role="group" aria-label="Filter">
-			<button
-				type="button"
-				class="h-6 rounded-full px-3 text-xs transition-colors duration-[160ms] {unseenOnly
-					? 'text-ink-muted'
-					: 'bg-accent-soft font-medium text-accent'}"
-				aria-pressed={!unseenOnly}
-				onclick={() => onToggleUnseenOnly(false)}
-			>
-				All
-			</button>
-			<button
-				type="button"
-				class="h-6 rounded-full px-3 text-xs transition-colors duration-[160ms] {unseenOnly
-					? 'bg-accent-soft font-medium text-accent'
-					: 'text-ink-muted'}"
-				aria-pressed={unseenOnly}
-				onclick={() => onToggleUnseenOnly(true)}
-			>
-				Unseen
-			</button>
+			<!-- Filter segmented control: All | Unseen -->
+			<div class="flex items-center rounded-[6px] border border-[#cbd5e1] bg-white p-0.5 shadow-2xs" role="group" aria-label="Filter">
+				<button
+					type="button"
+					class="h-[24px] rounded-[4px] px-2.5 text-xs font-semibold transition-all {unseenOnly
+						? 'text-slate-600 hover:text-slate-900'
+						: 'bg-slate-100 text-slate-900 shadow-xs'}"
+					aria-pressed={!unseenOnly}
+					onclick={() => onToggleUnseenOnly(false)}
+				>
+					All
+				</button>
+				<button
+					type="button"
+					class="h-[24px] rounded-[4px] px-2.5 text-xs font-semibold transition-all {unseenOnly
+						? 'bg-slate-100 text-slate-900 shadow-xs'
+						: 'text-slate-600 hover:text-slate-900'}"
+					aria-pressed={unseenOnly}
+					onclick={() => onToggleUnseenOnly(true)}
+				>
+					Unseen
+				</button>
+			</div>
 		</div>
 
-		<button
-			type="button"
-			data-new-message
-			class="ml-auto inline-flex h-8 items-center gap-[7px] rounded-[8px] bg-accent px-3.5 text-[13px] text-accent-fg transition-colors duration-[160ms] hover:brightness-110"
-			onclick={(event) => {
-				const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
-				onNewMessage({ left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom });
-			}}
-		>
-			<svg class="size-[15px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-				<path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-			</svg>
-			New message
-		</button>
+		<!-- Right: Count indicator & Refresh -->
+		<div class="flex items-center gap-2">
+			{#if flatRows.length > 0}
+				<span class="text-xs font-medium text-slate-400 tabular-nums">
+					{flatRows.length} {flatRows.length === 1 ? 'message' : 'messages'}
+				</span>
+			{/if}
+			<button
+				type="button"
+				class="btn-tactile !size-7 !p-0"
+				onclick={onRetry}
+				title="Refresh folder"
+				aria-label="Refresh"
+			>
+				<svg class="size-3 text-slate-600" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M13.5 8a5.5 5.5 0 11-1.6-3.9L13.5 2v4h-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+				</svg>
+			</button>
+		</div>
 	</div>
 
-	<div bind:this={listContainer} class="min-h-0 flex-1 overflow-y-auto px-[18px] py-4 [scroll-padding-top:8px]">
+	<!-- Scrollable Messages List -->
+	<div bind:this={listContainer} class="min-h-0 flex-1 overflow-y-auto px-4 py-3 [scroll-padding-top:8px]">
 		{#if error}
 			<div class="flex min-h-[320px] flex-col items-center justify-center gap-2 text-center">
-				<p class="text-sm font-medium">Couldn't load messages</p>
-				<p class="max-w-[320px] text-[13px] leading-relaxed text-ink-secondary">
+				<p class="text-sm font-semibold text-slate-800">Couldn't load messages</p>
+				<p class="max-w-[320px] text-[13px] leading-relaxed text-slate-500">
 					The mail server couldn't be reached. Check your connection and try again.
 				</p>
 				<button
 					type="button"
-					class="mt-1 h-8 rounded-[8px] border border-border bg-container px-3.5 text-[13px] transition-colors duration-[160ms] hover:border-border-hover"
+					class="btn-tactile mt-2"
 					onclick={onRetry}
 				>
 					Retry
 				</button>
 			</div>
 		{:else if loading && !groups}
-			<div class="flex flex-col gap-[5px]" aria-hidden="true">
+			<div class="flex flex-col gap-2" aria-hidden="true">
 				{#each Array.from({ length: 6 }) as _, index (index)}
-					<div class="animate-pulse rounded-[6px] border border-line-light bg-container p-3.5">
+					<div class="animate-pulse rounded-[8px] border border-[#e2e8f0] bg-white p-3.5">
 						<div class="flex items-start gap-3">
-							<div class="size-[34px] rounded-[6px] bg-canvas"></div>
+							<div class="size-[34px] rounded-[6px] bg-slate-100"></div>
 							<div class="flex-1 space-y-2">
-								<div class="h-3 w-1/3 rounded bg-canvas"></div>
-								<div class="h-3.5 w-3/4 rounded bg-canvas"></div>
-								<div class="h-3 w-2/3 rounded bg-canvas"></div>
+								<div class="h-3.5 w-1/3 rounded bg-slate-100"></div>
+								<div class="h-4 w-3/4 rounded bg-slate-100"></div>
+								<div class="h-3 w-2/3 rounded bg-slate-100"></div>
 							</div>
 						</div>
 					</div>
@@ -189,25 +224,39 @@
 			</div>
 		{:else if groups && groups.length === 0}
 			<div class="flex min-h-[320px] flex-col items-center justify-center gap-1 text-center">
-				<p class="text-sm font-medium">{emptyCopy.title}</p>
-				<p class="max-w-[320px] text-[13px] leading-relaxed text-ink-secondary">{emptyCopy.hint}</p>
+				<div class="flex size-10 items-center justify-center rounded-full bg-blue-50 text-blue-600 mb-2">
+					<svg class="size-5" viewBox="0 0 16 16" fill="none">
+						<path d="M2.5 4h11a1 1 0 011 1v7a1 1 0 01-1 1h-11a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" />
+						<path d="M2.5 5.5l5.5 4 5.5-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
+					</svg>
+				</div>
+				<p class="text-sm font-semibold text-slate-800">{emptyCopy.title}</p>
+				<p class="max-w-[320px] text-[13px] leading-relaxed text-slate-500">{emptyCopy.hint}</p>
 			</div>
 		{:else if groups}
 			{#each groups as group (group.label)}
-				<div class="mt-1 mb-2 flex items-center gap-2 first:mt-0" role="separator" aria-label={group.label}>
-					<span class="font-mono text-[11px] tracking-[0.08em] text-ink-tertiary uppercase">{group.label}</span>
-					<div class="h-px flex-1 bg-line"></div>
-					<span class="text-xs text-ink-tertiary tabular-nums">{group.rows.length}</span>
+				<!-- Group Divider: Hobday-style clean horizontal lines with tabular counts -->
+				<div class="mt-2 mb-2 flex items-center gap-2.5 first:mt-0" role="separator" aria-label={group.label}>
+					<span class="font-mono text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+						{group.label}
+					</span>
+					<div class="h-px flex-1 bg-[#e2e8f0]"></div>
+					<span class="text-xs font-semibold text-slate-400 tabular-nums">{group.rows.length}</span>
 				</div>
-				<div class="flex flex-col gap-[5px] pb-1">
+
+				<div class="flex flex-col gap-2 pb-2">
 					{#each group.rows as row (row.threadId)}
 						{@const isCursor = row.threadId === cursorId}
 						{@const isSelected = selection.has(row.threadId)}
+						{@const theme = getHobdayTheme(row.from.email || row.senderLabel)}
+						{@const tag = inferTag(row)}
 						<div
 							data-row-id={row.threadId}
-							class="grid cursor-default grid-cols-[34px_minmax(0,1fr)] items-start gap-3 rounded-[6px] border border-line-light bg-container px-3.5 py-2.5 transition-colors duration-[160ms] {isCursor
-								? 'border-transparent bg-accent-tint'
-								: 'hover:border-border-hover'}"
+							class="group/row relative grid cursor-pointer grid-cols-[34px_minmax(0,1fr)] items-start gap-3 rounded-[8px] border bg-white px-3.5 py-3 transition-all duration-[120ms] shadow-2xs {isSelected
+								? 'border-blue-500 bg-blue-50/50 shadow-xs'
+								: isCursor
+									? 'border-blue-400 bg-blue-50/30'
+									: 'border-[#e2e8f0] hover:border-[#cbd5e1] hover:shadow-xs'}"
 							onclick={() => onOpen(row.threadId)}
 							onkeydown={(event) => {
 								if (event.key === 'Enter' || event.key === ' ') {
@@ -219,53 +268,93 @@
 							tabindex="-1"
 							aria-pressed={isSelected}
 						>
+							<!-- Unread Indicator Dot on the left edge -->
+							{#if row.unread}
+								<span
+									class="absolute top-4 left-1 size-1.5 rounded-full bg-blue-600 ring-2 ring-blue-100"
+									aria-label="Unread"
+								></span>
+							{/if}
+
+							<!-- Sender Avatar / Selection Box: Hobday Candy Accent Badge -->
 							<button
 								type="button"
-								class="flex size-[34px] items-center justify-center rounded-[6px] text-xs font-semibold transition-colors duration-[160ms] {isSelected
-									? 'bg-accent text-accent-fg'
-									: 'bg-accent-soft text-accent'}"
-								title="Click to select"
+								class="flex size-[34px] items-center justify-center rounded-[6px] text-xs font-bold transition-transform duration-[120ms] group-hover/row:scale-[1.03]"
+								style:background-color={isSelected ? '#2563eb' : theme.bg}
+								style:border="1px solid {isSelected ? '#1d4ed8' : theme.border}"
+								style:color={isSelected ? '#ffffff' : theme.text}
+								title="Click to toggle selection"
 								onclick={(event) => {
 									event.stopPropagation();
 									onToggleSelect(row.threadId);
 								}}
 							>
 								{#if isSelected}
-									<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-										<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+									<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+										<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
 									</svg>
 								{:else}
 									{initials(row.senderLabel, row.from.email)}
 								{/if}
 							</button>
-							<div class="grid min-w-0 grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2">
-								<span class="truncate text-[13px] font-medium text-ink-muted">{row.senderLabel}</span>
-								<span class="flex items-center gap-2 text-xs text-ink-secondary tabular-nums">
-									{#if row.starred}
-										<svg class="size-[15px] text-accent" viewBox="0 0 16 16" fill="currentColor" aria-label="Highlighted">
-											<path d="M8 1.5l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.2l-3.8 2.1.7-4.3-3.1-3 4.3-.6z" />
-										</svg>
-									{/if}
-									{#if row.hasAttachment}
-										<svg class="size-[15px] text-ink-secondary" viewBox="0 0 16 16" fill="none" aria-label="Has attachment">
-											<path d="M10.5 4.5L6 9a1.8 1.8 0 002.5 2.5l4.5-4.5a3.2 3.2 0 00-4.5-4.5L3.7 7.3a4.6 4.6 0 006.5 6.5l3.3-3.3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
-										</svg>
-									{/if}
-									{formatListTime(row.receivedAt)}
-								</span>
-							</div>
-							<div class="col-start-2 truncate text-[15px] leading-[1.35] tracking-[-0.01em] {row.unread ? 'font-semibold' : ''}">
-								{row.subject}
-							</div>
-							<div class="col-start-2 truncate text-[13px] leading-[1.55] text-ink-secondary">
-								{row.preview}
+
+							<!-- Message Details -->
+							<div class="min-w-0">
+								<!-- Senders and Meta (Time, Star, Attachments) -->
+								<div class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2">
+									<div class="flex items-center gap-1.5 truncate">
+										<span class="truncate text-[13px] font-semibold {row.unread ? 'text-slate-900' : 'text-slate-700'}">
+											{row.senderLabel}
+										</span>
+									</div>
+
+									<!-- Right aligned time & status icons (Hobday: tabular bold time) -->
+									<div class="flex items-center gap-1.5 text-xs tabular-nums shrink-0 {row.unread ? 'font-bold text-slate-900' : 'font-medium text-slate-500'}">
+										{#if row.starred}
+											<svg class="size-3.5 text-amber-500" viewBox="0 0 16 16" fill="currentColor" aria-label="Highlighted">
+												<path d="M8 1.5l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.2l-3.8 2.1.7-4.3-3.1-3 4.3-.6z" />
+											</svg>
+										{/if}
+										{#if row.hasAttachment}
+											<svg class="size-3.5 text-slate-400" viewBox="0 0 16 16" fill="none" aria-label="Has attachment">
+												<path d="M10.5 4.5L6 9a1.8 1.8 0 002.5 2.5l4.5-4.5a3.2 3.2 0 00-4.5-4.5L3.7 7.3a4.6 4.6 0 006.5 6.5l3.3-3.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+											</svg>
+										{/if}
+										<span>{formatListTime(row.receivedAt)}</span>
+									</div>
+								</div>
+
+								<!-- Subject -->
+								<div class="truncate text-[14px] leading-snug tracking-tight mt-0.5 {row.unread ? 'font-bold text-slate-900' : 'font-medium text-slate-800'}">
+									{row.subject}
+								</div>
+
+								<!-- Preview -->
+								<div class="truncate text-[12.5px] leading-relaxed text-slate-500 mt-0.5">
+									{row.preview}
+								</div>
+
+								<!-- Hobday-style event/category chip -->
+								{#if tag}
+									<div class="mt-1.5 flex items-center gap-1.5">
+										<span
+											class="inline-flex items-center rounded-[4px] px-1.5 py-0.5 text-[11px] font-bold"
+											style:background-color={tag.bg}
+											style:border="1px solid {tag.border}"
+											style:color={tag.text}
+										>
+											{tag.name}
+										</span>
+									</div>
+								{/if}
 							</div>
 						</div>
 					{/each}
 				</div>
 			{/each}
+
 			{#if syncedAt}
-				<div class="pt-2 pb-1 text-center text-xs text-ink-tertiary" aria-hidden="true">
+				<div class="pt-2 pb-1 text-center text-xs font-medium text-slate-400" aria-hidden="true">
 					·
 				</div>
 			{/if}

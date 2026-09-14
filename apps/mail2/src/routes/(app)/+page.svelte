@@ -10,6 +10,7 @@
 	} from '../compose.remote';
 	import { logout } from '../login.remote';
 	import TopBar from '#lib/components/mail/TopBar.svelte';
+	import Sidebar from '#lib/components/mail/Sidebar.svelte';
 	import MailList from '#lib/components/mail/MailList.svelte';
 	import Reader from '#lib/components/mail/Reader.svelte';
 	import Splitter from '#lib/components/mail/Splitter.svelte';
@@ -28,7 +29,9 @@
 	const LIST_MIN = 380;
 	const LIST_MAX = 760;
 
-	let listWidth = $state(520);
+	let listWidth = $state(480);
+	let sidebarOpen = $state(true);
+	let activeCategories = $state<Set<string>>(new Set(['personal', 'work', 'team', 'finance']));
 	let selectedMailboxId = $state<string | null>(null);
 	let unseenOnly = $state(false);
 	let openThreadId = $state<string | null>(null);
@@ -41,6 +44,22 @@
 	if (typeof localStorage !== 'undefined') {
 		const stored = Number(localStorage.getItem(LIST_WIDTH_KEY));
 		if (stored >= LIST_MIN && stored <= LIST_MAX) listWidth = stored;
+		const storedSidebar = localStorage.getItem('mail2.sidebarOpen');
+		if (storedSidebar !== null) sidebarOpen = storedSidebar === 'true';
+	}
+
+	function toggleSidebar() {
+		sidebarOpen = !sidebarOpen;
+		if (typeof localStorage !== 'undefined') {
+			localStorage.setItem('mail2.sidebarOpen', String(sidebarOpen));
+		}
+	}
+
+	function toggleCategory(categoryId: string) {
+		const next = new Set(activeCategories);
+		if (next.has(categoryId)) next.delete(categoryId);
+		else next.add(categoryId);
+		activeCategories = next;
 	}
 
 	const session = $derived(whoami()?.current ?? null);
@@ -48,8 +67,7 @@
 		new Set((session?.accounts ?? []).map((account) => account.username.toLowerCase()))
 	);
 
-	// Session gone (expired/revoked mid-use) → own login page. The (app) layout
-	// gate covers page loads; this covers a session dying while the app is open.
+	// Session gone (expired/revoked mid-use) → own login page.
 	$effect(() => {
 		const current = whoami()?.current;
 		if (whoami().ready && !current) goto('/login', { replaceState: true });
@@ -73,6 +91,26 @@
 		mailboxList?.find((mailbox) => mailbox.id === selectedMailboxId) ?? null
 	);
 
+	function selectPrevMailbox() {
+		if (!mailboxList || mailboxList.length === 0) return;
+		const currentIndex = mailboxList.findIndex((m) => m.id === selectedMailboxId);
+		const prevIndex = (currentIndex - 1 + mailboxList.length) % mailboxList.length;
+		selectedMailboxId = mailboxList[prevIndex]!.id;
+		openThreadId = null;
+		cursorId = null;
+		selection = new Set();
+	}
+
+	function selectNextMailbox() {
+		if (!mailboxList || mailboxList.length === 0) return;
+		const currentIndex = mailboxList.findIndex((m) => m.id === selectedMailboxId);
+		const nextIndex = (currentIndex + 1) % mailboxList.length;
+		selectedMailboxId = mailboxList[nextIndex]!.id;
+		openThreadId = null;
+		cursorId = null;
+		selection = new Set();
+	}
+
 	const threadsResource = $derived(
 		session && activeMailbox ? threads({ mailboxId: activeMailbox.id, unseenOnly }) : undefined
 	);
@@ -92,8 +130,6 @@
 
 	// --- compose ---
 
-	// Sends, saves and deletes change server-side mailbox counts; when the
-	// Drafts folder is open the visible rows change too.
 	function afterMailMutation() {
 		void mailboxesResource?.refresh();
 		if (activeMailbox?.kind === 'drafts') void threadsResource?.refresh();
@@ -107,7 +143,6 @@
 		},
 		cancelScheduled: (emailId) => cancelScheduled({ emailId }),
 		uploadAttachment: async (file) => {
-			// Raw binary body — remote commands cannot carry a File (devalue).
 			const response = await fetch('/api/upload', {
 				method: 'POST',
 				headers: { 'Content-Type': file.type || 'application/octet-stream' },
@@ -141,7 +176,6 @@
 		}
 	});
 
-	// Suggestion contacts come from the senders currently in the list.
 	$effect(() => {
 		const rows = threadsResource?.current?.rows;
 		if (!rows) return;
@@ -169,7 +203,6 @@
 		return () => window.removeEventListener('online', drain);
 	});
 
-	// Panels anchor against the shell, so track its size reactively.
 	$effect(() => {
 		const el = rootEl;
 		if (!el) return;
@@ -223,7 +256,6 @@
 		compose.reply(message, threadResource?.current ?? [message], myEmails, mode, position);
 	}
 
-	// Draft rows open back into a compose panel instead of the reader.
 	async function openRow(threadId: string) {
 		if (activeMailbox?.kind !== 'drafts') {
 			openThreadId = threadId;
@@ -242,15 +274,13 @@
 		}
 	}
 
-	// --- list interactions ---
-
 	function setListWidth(next: number) {
 		listWidth = Math.min(LIST_MAX, Math.max(LIST_MIN, next));
 		if (typeof localStorage !== 'undefined') localStorage.setItem(LIST_WIDTH_KEY, String(listWidth));
 	}
 
 	function resetListWidth() {
-		setListWidth(520);
+		setListWidth(480);
 	}
 
 	function moveCursor(delta: number) {
@@ -275,7 +305,6 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
-		// Compose bindings work even while typing in a field.
 		if (event.key === 'Escape') {
 			const front = compose.frontPanel();
 			if (front) {
@@ -321,6 +350,10 @@
 				event.preventDefault();
 				if (cursorId) toggleSelect(cursorId);
 				break;
+			case '[':
+				event.preventDefault();
+				toggleSidebar();
+				break;
 			case 'Escape':
 				if (selection.size > 0) selection = new Set();
 				break;
@@ -330,75 +363,107 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<div bind:this={rootEl} class="relative flex h-svh min-w-[1240px] flex-col overflow-hidden bg-canvas text-ink">
-	<TopBar
-		mailboxes={mailboxList}
-		activeMailbox={activeMailbox}
-		onSelectMailbox={(id) => {
-			selectedMailboxId = id;
-			openThreadId = null;
-			cursorId = null;
-			selection = new Set();
-		}}
-		account={session ? { username: session.username, displayName: session.displayName } : null}
-		onSignOut={signOut}
-	/>
+<!-- Outer background canvas: neutral light gray matching Hobday's portfolio presentation -->
+<div class="flex h-svh w-screen flex-col items-center justify-center bg-[#ebeef2] p-2 sm:p-3 overflow-hidden text-slate-900">
+	<!-- Desktop Window Shell Container -->
+	<div
+		bind:this={rootEl}
+		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden rounded-xl border border-[#cbd5e1] bg-white shadow-window"
+	>
+		<TopBar
+			mailboxes={mailboxList}
+			activeMailbox={activeMailbox}
+			onSelectMailbox={(id) => {
+				selectedMailboxId = id;
+				openThreadId = null;
+				cursorId = null;
+				selection = new Set();
+			}}
+			account={session ? { username: session.username, displayName: session.displayName } : null}
+			onSignOut={signOut}
+			{sidebarOpen}
+			onToggleSidebar={toggleSidebar}
+			onNewMessage={() => openCompose()}
+			onPrevMailbox={selectPrevMailbox}
+			onNextMailbox={selectNextMailbox}
+		/>
 
-	{#if !session}
-		<div class="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
-			<p class="text-sm font-medium">Session ended</p>
-			<p class="max-w-[420px] text-[13px] leading-relaxed text-ink-secondary">
-				Returning you to sign in…
-			</p>
-		</div>
-	{:else}
-		<main
-			class="grid min-h-0 flex-1"
-			style:grid-template-columns="{listWidth}px 1px minmax(0, 1fr)"
-		>
-			<MailList
-				mailbox={activeMailbox}
-				groups={rowGroups}
-				loading={threadsResource?.loading ?? true}
-				error={threadsResource?.error}
-				{unseenOnly}
-				{cursorId}
-				{selection}
-				syncedAt={threadsResource?.current?.syncedAt ?? null}
-				onToggleUnseenOnly={(value) => {
-					unseenOnly = value;
-					cursorId = null;
-				}}
-				onSetSelection={(ids) => (selection = ids)}
-				onToggleSelect={toggleSelect}
-				onOpen={(threadId) => void openRow(threadId)}
-				onRetry={() => threadsResource?.refresh()}
-				onNewMessage={(anchor) => openCompose(anchor)}
-			/>
-			<Splitter width={listWidth} onResize={setListWidth} onReset={resetListWidth} />
-			<Reader
-				messages={threadResource?.current}
-				loading={threadResource?.loading ?? false}
-				error={threadResource?.error}
-				onRetry={() => threadResource?.refresh()}
-				onCompose={openReply}
-			/>
-		</main>
+		{#if !session}
+			<div class="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+				<p class="text-sm font-semibold text-slate-800">Session ended</p>
+				<p class="max-w-[420px] text-[13px] leading-relaxed text-slate-500">
+					Returning you to sign in…
+				</p>
+			</div>
+		{:else}
+			<main
+				class="grid min-h-0 flex-1"
+				style:grid-template-columns={sidebarOpen
+					? `240px ${listWidth}px 1px minmax(0, 1fr)`
+					: `${listWidth}px 1px minmax(0, 1fr)`}
+			>
+				{#if sidebarOpen}
+					<Sidebar
+						mailboxes={mailboxList}
+						activeMailboxId={selectedMailboxId}
+						onSelectMailbox={(id) => {
+							selectedMailboxId = id;
+							openThreadId = null;
+							cursorId = null;
+							selection = new Set();
+						}}
+						{activeCategories}
+						onToggleCategory={toggleCategory}
+						onNewMessage={() => openCompose()}
+					/>
+				{/if}
 
-		{#each compose.drafts as draft (draft.id)}
-			{#if draft.stage !== 'minimized'}
-				<ComposePanel {draft} {rootW} {rootH} />
-			{/if}
-		{/each}
-		<ComposeDock />
-	{/if}
+				<MailList
+					mailbox={activeMailbox}
+					groups={rowGroups}
+					loading={threadsResource?.loading ?? true}
+					error={threadsResource?.error}
+					{unseenOnly}
+					{cursorId}
+					{selection}
+					syncedAt={threadsResource?.current?.syncedAt ?? null}
+					onToggleUnseenOnly={(value) => {
+						unseenOnly = value;
+						cursorId = null;
+					}}
+					onSetSelection={(ids) => (selection = ids)}
+					onToggleSelect={toggleSelect}
+					onOpen={(threadId) => void openRow(threadId)}
+					onRetry={() => threadsResource?.refresh()}
+					onNewMessage={(anchor) => openCompose(anchor)}
+				/>
 
-	<Toasts />
+				<Splitter width={listWidth} onResize={setListWidth} onReset={resetListWidth} />
 
-	<StatusLine
-		mailboxName={activeMailbox?.name ?? null}
-		unseen={activeMailbox?.unread ?? 0}
-		syncedAt={threadsResource?.current?.syncedAt ?? null}
-		quota={quotaResource?.current}
-	/>
+				<Reader
+					messages={threadResource?.current}
+					loading={threadResource?.loading ?? false}
+					error={threadResource?.error}
+					onRetry={() => threadResource?.refresh()}
+					onCompose={openReply}
+				/>
+			</main>
+
+			{#each compose.drafts as draft (draft.id)}
+				{#if draft.stage !== 'minimized'}
+					<ComposePanel {draft} {rootW} {rootH} />
+				{/if}
+			{/each}
+			<ComposeDock />
+		{/if}
+
+		<Toasts />
+
+		<StatusLine
+			mailboxName={activeMailbox?.name ?? null}
+			unseen={activeMailbox?.unread ?? 0}
+			syncedAt={threadsResource?.current?.syncedAt ?? null}
+			quota={quotaResource?.current}
+		/>
+	</div>
 </div>
