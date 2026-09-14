@@ -338,7 +338,7 @@ async function createAccount(username, domainId, password) {
             '@type': 'User',
             name: username,
             domainId,
-            locale: 'pl_PL',
+            locale: 'pl-PL',
             timeZone: 'Europe/Warsaw',
             quotas: {
               maxDiskQuota: config.maxDiskQuota,

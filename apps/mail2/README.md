@@ -10,10 +10,41 @@ theme only** for now; Files and Meet arrive when their designs land.
 - [x] Session-aware read path (mailbox → thread list → reader)
 - [x] Floating multi-draft compose (panels, dock, schedule send, offline outbox)
 - [x] Draft persistence (Drafts mailbox) + compose attachments
+- [x] Own login (`/login` + sign out) — Stalwart OAuth credential flow in prod,
+  password fallback in dev; 1.0 session sharing still works as a fallback
 - [ ] Search + settings via remote functions
 - [ ] Calendar / Contacts (port from 1.0)
-- [ ] Own login/OIDC flows (1.0 login is used until then)
+- [ ] OIDC provider flows (mail2 as an identity provider)
 - [ ] Cutover checklist green
+
+## Sign-in
+
+Mail 2.0 has its own login at `/login` — no webmail detour. The gate lives in
+`src/routes/(app)/+layout.server.ts`: no session → redirect to `/login`
+(preserving the target path as `?next=`).
+
+The credential flow reuses webmail 1.0's exactly, via the shared
+`@zaur/server-auth` package:
+
+- **Stalwart OAuth (production):** `authenticateStalwartCredentials` does a
+  PKCE'd server-side POST to Stalwart's auth endpoint and exchanges the code
+  for tokens — the session stores **tokens, never the password**. Needs the
+  `STALWART_OAUTH_*` env block (see `.env.example`) and an OAuth client
+  registered in Stalwart (`zaur-mail2-prod`, redirect
+  `https://mail2.zaur.app/api/auth/oauth/callback`).
+- **Password fallback (dev default):** with no OAuth config, credentials go
+  via HTTP Basic to the JMAP server and the password is sealed in the session
+  store. Works out of the box against the live mail server.
+- Accounts with 2FA get the TOTP prompt (`mfa_required` → second submit with
+  the six-digit code).
+- Login attempts are rate-limited per client address and per account through
+  the store-backed limiter (`#lib/server/login`), same budgets as webmail.
+- Account **creation** stays with the register service (real mailboxes on
+  Stalwart); the login page links to it via `PUBLIC_REGISTER_URL`.
+
+Because both apps share the store/cookie/secret, a webmail 1.0 login still
+lands you in mail2 and vice versa — sharing is now a feature, not a
+dependency. Signing out in either app revokes the shared session record.
 
 ## Running
 
@@ -21,12 +52,12 @@ theme only** for now; Files and Meet arrive when their designs land.
 pnpm dev:mail2          # http://localhost:5175
 ```
 
-Session sharing with webmail 1.0 needs **one shared session store**: the
-session cookie holds an id that each app looks up in a SQLite file
-(`<cwd>/.data/store.sqlite` — per-app by default, so webmail's sessions are
-invisible to mail2 out of the box). Copy `.env.example` to `.env` — it points
-mail2's `STORE_DB_PATH` at webmail's store — then log in via webmail on
-`localhost:5173` and open `localhost:5175`.
+Session sharing with webmail 1.0 is **optional** now. To test it locally, both
+apps must point at **one shared session store**: the session cookie holds an
+id that each app looks up in a SQLite file (`<cwd>/.data/store.sqlite` —
+per-app by default). Copy `.env.example` to `.env` — it points mail2's
+`STORE_DB_PATH` at webmail's store. With nothing set, mail2 signs in through
+its own `/login` page (password fallback) and needs nothing from webmail.
 
 In production the two apps run on sibling subdomains, which requires setting in
 **both** apps' env:
@@ -83,11 +114,11 @@ Deployed like webmail: a Dokploy service builds `apps/mail2/Dockerfile` from
 the repo root on every push to `main` (git auto-deploy), with
 `.github/workflows/deploy-mail2.yml` as the pre-deploy quality gate.
 
-Session borrowing works by **filesystem**: mail2 has no login of its own, so
-its container must read the same SQLite session store as the webmail
-container. Both images default `STORE_DB_PATH=/app/.data/store.sqlite` and
-share the same image layout — point **both** Dokploy services' `/app/.data`
-mounts at the **same host directory** and they read one store.
+The mail2 container signs in through **its own** `/login` (Stalwart OAuth
+credential flow), but keeps the shared-store mount so 1.0↔2.0 session sharing
+keeps working: both images default `STORE_DB_PATH=/app/.data/store.sqlite` —
+point **both** Dokploy services' `/app/.data` mounts at the **same host
+directory**.
 
 Service settings (mirroring the webmail service):
 
@@ -98,6 +129,9 @@ Service settings (mirroring the webmail service):
 | Port | 3000 (`PORT`, `HOST`, `BODY_SIZE_LIMIT=50M` are baked into the image) |
 | Env | `SESSION_SECRET=<same value as the webmail service>` |
 | Env | `SESSION_COOKIE_DOMAIN=.zaur.app` |
+| Env | `STALWART_OAUTH_ENABLED=true`, `STALWART_OAUTH_ISSUER_URL=https://mail.zaur.app` |
+| Env | `STALWART_OAUTH_CLIENT_ID=zaur-mail2-prod`, `STALWART_OAUTH_REDIRECT_URI=https://mail2.zaur.app/api/auth/oauth/callback` |
+| Env | `JMAP_INTERNAL_URL=http://mail:8080` |
 | Volume | same host directory as webmail's `/app/.data` → `/app/.data` |
 
 `SESSION_COOKIE_DOMAIN` must be set on the **webmail** service too (add it and

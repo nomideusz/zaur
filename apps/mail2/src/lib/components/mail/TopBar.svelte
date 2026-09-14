@@ -8,9 +8,10 @@
 		activeMailbox: MailboxDTO | null;
 		onSelectMailbox: (id: string) => void;
 		account: { username: string; displayName: string | null } | null;
+		onSignOut?: () => void;
 	}
 
-	let { mailboxes, activeMailbox, onSelectMailbox, account }: Props = $props();
+	let { mailboxes, activeMailbox, onSelectMailbox, account, onSignOut }: Props = $props();
 
 	let searchInput = $state<HTMLInputElement | undefined>();
 	let navButtons = $state<Record<string, HTMLElement>>({});
@@ -180,7 +181,7 @@
 						<Menu.Item
 							value="signout"
 							class="flex cursor-default items-center rounded-[7px] px-2.5 py-2 text-[13px] data-highlighted:bg-divider"
-							title="Arrives with Mail 2.0's own login"
+							onSelect={() => onSignOut?.()}
 						>
 							Sign out
 						</Menu.Item>

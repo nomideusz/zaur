@@ -1,12 +1,14 @@
 <script lang="ts">
-	import { whoami } from './session.remote';
-	import { mailboxes, threads, thread, quota } from './mail.remote';
+	import { goto } from '$app/navigation';
+	import { whoami } from '../session.remote';
+	import { mailboxes, threads, thread, quota } from '../mail.remote';
 	import {
 		send as sendRemote,
 		cancelScheduled,
 		saveDraft as saveDraftRemote,
 		deleteDraft as deleteDraftRemote
-	} from './compose.remote';
+	} from '../compose.remote';
+	import { logout } from '../login.remote';
 	import TopBar from '#lib/components/mail/TopBar.svelte';
 	import MailList from '#lib/components/mail/MailList.svelte';
 	import Reader from '#lib/components/mail/Reader.svelte';
@@ -45,6 +47,17 @@
 	const myEmails = $derived(
 		new Set((session?.accounts ?? []).map((account) => account.username.toLowerCase()))
 	);
+
+	// Session gone (expired/revoked mid-use) → own login page. The (app) layout
+	// gate covers page loads; this covers a session dying while the app is open.
+	$effect(() => {
+		const current = whoami()?.current;
+		if (whoami().ready && !current) goto('/login', { replaceState: true });
+	});
+
+	function signOut() {
+		void logout().then(() => goto('/login', { replaceState: true }));
+	}
 
 	const mailboxesResource = $derived(session ? mailboxes() : undefined);
 	const mailboxList = $derived(mailboxesResource?.current ?? undefined);
@@ -328,14 +341,14 @@
 			selection = new Set();
 		}}
 		account={session ? { username: session.username, displayName: session.displayName } : null}
+		onSignOut={signOut}
 	/>
 
 	{#if !session}
 		<div class="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
-			<p class="text-sm font-medium">Sign in to open Mail 2.0</p>
+			<p class="text-sm font-medium">Session ended</p>
 			<p class="max-w-[420px] text-[13px] leading-relaxed text-ink-secondary">
-				Mail 2.0 shares its session with webmail 1.0 — sign in there and reload this page.
-				Once Mail 2.0 ships its own login, this step goes away.
+				Returning you to sign in…
 			</p>
 		</div>
 	{:else}

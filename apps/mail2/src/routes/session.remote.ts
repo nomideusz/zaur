@@ -2,9 +2,10 @@ import { query, getRequestEvent } from '$app/server';
 import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
 
 /**
- * Who is signed in — reads the shared Zaur session cookie through
- * @zaur/server-auth, the same store webmail 1.0 writes. This is the seam that
- * lets Mail 2.0 piggyback on 1.0's login until it ships its own auth flows.
+ * Who is signed in — reads the session cookie through @zaur/server-auth.
+ * Sessions are created by Mail 2.0's own login (login.remote.ts); the same
+ * store/cookie is shared with webmail 1.0, so a 1.0 login also works here
+ * and vice versa.
  */
 export const whoami = query(async () => {
 	const { cookies } = getRequestEvent();
