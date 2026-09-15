@@ -1,4 +1,5 @@
 <script lang="ts">
+	import ZaurMark from '#lib/components/mail/ZaurMark.svelte';
 	import { goto } from '$app/navigation';
 	import { login } from '../login.remote';
 	import type { PageProps } from './$types';
@@ -34,13 +35,9 @@
 	>
 		<!-- Mac Window Header -->
 		<div class="flex h-11 items-center justify-between border-b border-[#e2e8f0] bg-slate-50/80 px-4">
-			<div class="flex items-center gap-1.5" aria-hidden="true">
-				<span class="mac-dot mac-dot-close"></span>
-				<span class="mac-dot mac-dot-minimize"></span>
-				<span class="mac-dot mac-dot-maximize"></span>
-			</div>
+			<ZaurMark unread={0} label="Zaur Mail" size={24} />
 			<span class="text-xs font-semibold text-slate-600">Zaur Mail</span>
-			<div class="w-12"></div>
+			<div class="w-6"></div>
 		</div>
 
 		<div class="p-6">

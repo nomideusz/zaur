@@ -254,31 +254,6 @@
 		onpointercancel={endDrag}
 		ondblclick={() => compose.toggleMaximize(draft.id)}
 	>
-		<!-- Mac dots window controls -->
-		<div class="flex items-center gap-1.5 mr-1" aria-hidden="true">
-			<button
-				type="button"
-				class="mac-dot mac-dot-close"
-				onpointerdown={(event) => event.stopPropagation()}
-				onclick={() => compose.close(draft.id)}
-				aria-label="Close"
-			></button>
-			<button
-				type="button"
-				class="mac-dot mac-dot-minimize"
-				onpointerdown={(event) => event.stopPropagation()}
-				onclick={() => compose.minimize(draft.id)}
-				aria-label="Minimize"
-			></button>
-			<button
-				type="button"
-				class="mac-dot mac-dot-maximize"
-				onpointerdown={(event) => event.stopPropagation()}
-				onclick={() => compose.toggleMaximize(draft.id)}
-				aria-label="Maximize"
-			></button>
-		</div>
-
 		<span class="min-w-0 flex-1 truncate text-[13px] font-semibold text-slate-800">{title}</span>
 
 		<div class="flex items-center gap-1">

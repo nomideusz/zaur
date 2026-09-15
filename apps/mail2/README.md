@@ -174,6 +174,20 @@ the browser owns:
   default Unseen filter, so the mail shell reads prefs instead of poking
   localStorage itself.
 
+## The Zaur mark
+
+Where every other window puts three inert traffic lights, the shell windows
+(mail, settings, login) put the Zaur pixel dinosaur — `@zaur/sprite`, the same
+mark as the zaur.app landing page, rendered in `currentColor` on its 20×18
+`crispEdges` grid. It is the brand *and* an ambient indicator, so the slot
+earns its place: `look_up` while unseen mail waits, `cheer` on reaching zero
+and `happy` at rest, `sad` when the browser goes offline, `sleep` after five
+minutes without input, with a random `blink` (skipped under
+`prefers-reduced-motion`). There is no sync or refresh frame — JMAP is live.
+
+Compose panels have no mark and no dots: their minimize/maximize/close live on
+the right of the header, and the dots only duplicated them.
+
 ## Compose panel geometry
 
 `#lib/compose/layout` owns the window maths:

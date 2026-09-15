@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import ZaurMark from '#lib/components/mail/ZaurMark.svelte';
 	import { whoami } from '../../session.remote';
 	import { identities, setDisplayName } from '../../settings.remote';
 	import { logout } from '../../login.remote';
@@ -54,11 +55,7 @@
 <div class="flex h-svh w-screen flex-col items-center justify-center bg-[#ebeef2] p-2 sm:p-3 overflow-hidden text-slate-900">
 	<div class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden rounded-xl border border-[#cbd5e1] bg-white shadow-window">
 		<header class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[#cbd5e1] bg-white px-4 select-none">
-			<div class="flex items-center gap-1.5 pr-1" aria-hidden="true">
-				<span class="mac-dot mac-dot-close"></span>
-				<span class="mac-dot mac-dot-minimize"></span>
-				<span class="mac-dot mac-dot-maximize"></span>
-			</div>
+			<ZaurMark unread={0} label="Settings" />
 			<div class="h-4 w-px bg-slate-200"></div>
 			<a href="/" class="btn-tactile gap-1.5" data-sveltekit-preload-data="hover">
 				<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">

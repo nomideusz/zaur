@@ -4,6 +4,7 @@
 	import { Portal } from '@ark-ui/svelte/portal';
 	import type { MailboxDTO } from '#lib/mail/types';
 	import { getHobdayTheme } from '#lib/mail/colors';
+	import ZaurMark from './ZaurMark.svelte';
 
 	interface Props {
 		mailboxes: MailboxDTO[] | undefined;
@@ -71,12 +72,8 @@
 >
 	<!-- Left: Window controls + Sidebar toggle + Segmented mailbox selector -->
 	<div class="flex items-center gap-3">
-		<!-- macOS Window Traffic Lights -->
-		<div class="flex items-center gap-1.5 pr-1" aria-hidden="true">
-			<span class="mac-dot mac-dot-close"></span>
-			<span class="mac-dot mac-dot-minimize"></span>
-			<span class="mac-dot mac-dot-maximize"></span>
-		</div>
+		<!-- Zaur pixel mark: the brand, doubling as an ambient mailbox indicator -->
+		<ZaurMark unread={activeMailbox?.unread ?? 0} />
 
 		<div class="h-4 w-px bg-slate-200"></div>
 
