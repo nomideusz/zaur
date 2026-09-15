@@ -178,12 +178,18 @@ the browser owns:
 
 Where every other window puts three inert traffic lights, the shell windows
 (mail, settings, login) put the Zaur pixel dinosaur — `@zaur/sprite`, the same
-mark as the zaur.app landing page, rendered in `currentColor` on its 20×18
-`crispEdges` grid. It is the brand *and* an ambient indicator, so the slot
+mark as the zaur.app landing page, drawn from `SPRITE_FRAMES` on its 20×18
+`crispEdges` grid as a duotone: raspberry `#db2777` body over deep plum
+`#831843` from row 11 down (legs and underside), with the eye left as a hole.
+Same hue family as `--z-accent`, vivid at 28px, and complementary to the green
+account avatar at the other end of the top bar. It is the brand *and* an ambient indicator, so the slot
 earns its place: `look_up` while unseen mail waits, `cheer` on reaching zero
 and `happy` at rest, `sad` when the browser goes offline, `sleep` after five
 minutes without input, with a random `blink` (skipped under
 `prefers-reduced-motion`). There is no sync or refresh frame — JMAP is live.
+
+On the sign-in window the mark is absolutely positioned, so the centred title
+sits on the window's centre rather than on whatever space is left beside it.
 
 Compose panels have no mark and no dots: their minimize/maximize/close live on
 the right of the header, and the dots only duplicated them.

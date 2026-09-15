@@ -33,11 +33,11 @@
 		{...login}
 		class="w-full max-w-[380px] overflow-hidden rounded-xl border border-[#cbd5e1] bg-white shadow-window"
 	>
-		<!-- Mac Window Header -->
-		<div class="flex h-11 items-center justify-between border-b border-[#e2e8f0] bg-slate-50/80 px-4">
-			<ZaurMark unread={0} label="Zaur Mail" size={24} />
+		<!-- Window header: the mark is taken out of the flow so the title stays
+		     centred on the window rather than on whatever is left beside it. -->
+		<div class="relative flex h-11 items-center justify-center border-b border-[#e2e8f0] bg-slate-50/80 px-4">
+			<ZaurMark unread={0} label="Zaur Mail" size={24} class="absolute left-4 top-1/2 -translate-y-1/2" />
 			<span class="text-xs font-semibold text-slate-600">Zaur Mail</span>
-			<div class="w-6"></div>
 		</div>
 
 		<div class="p-6">
