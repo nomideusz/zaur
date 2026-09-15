@@ -186,16 +186,16 @@ test('computeStep and bodyHeightPx follow the quiet-guidance ladder', () => {
 });
 
 test('computeAutoHeight matches the spec formula', () => {
-	// 45 header + 28 To + 45 subject + 84 body + 53 actions = 255
-	assert.equal(computeAutoHeight(draft()), 255);
+	// 45 header + 44 To + 45 subject + 84 body + 53 actions = 271
+	assert.equal(computeAutoHeight(draft()), 271);
 	// one chip adds one 32px row; recipient+subject grow the body to 228
 	assert.equal(
 		computeAutoHeight(draft({ to: [chip('a@x.com')], subject: 'Hi' })),
-		45 + 28 + 32 + 45 + 228 + 53
+		45 + 44 + 32 + 45 + 228 + 53
 	);
 	assert.equal(
 		computeAutoHeight(draft({ to: [chip('a@x.com')], subject: 'Hi', ccOpen: true, sendError: 'x' })),
-		45 + 28 + 32 + 45 + 228 + 45 + 34 + 53
+		45 + 44 + 32 + 45 + 228 + 45 + 34 + 53
 	);
 });
 
@@ -252,6 +252,14 @@ test('clampPanel: enforces min size and keeps the panel inside the shell', () =>
 	assert.deepEqual(clamped, { x: 8, y: 12, w: 420, h: 240 });
 	const pushedOut = clampPanel({ x: 1390, y: 890, w: 560, h: 460 }, 1400, 900);
 	assert.equal(pushedOut.x + pushedOut.w <= 1392, true); // rootW - EDGE
+});
+
+test('a typed address commits without Enter; partial text does not', () => {
+	// What commitPendingTo gates on: blur commits only a complete address.
+	assert.ok(makeRecipient('ada@example.com'));
+	assert.ok(makeRecipient('Ada Lovelace <ada@example.com>'));
+	assert.equal(makeRecipient('ada'), null);
+	assert.equal(makeRecipient('  '), null);
 });
 
 // --- outbox ---

@@ -336,7 +336,7 @@
 	<!-- Fields -->
 	<div class="flex min-h-0 flex-1 flex-col overflow-y-auto px-4">
 		<!-- To -->
-		<div class="flex min-h-[28px] flex-wrap items-start gap-x-3 gap-y-[6px] py-px">
+		<div class="flex min-h-[28px] flex-wrap items-start gap-x-3 gap-y-[6px] py-2">
 			<span class="flex shrink-0 items-center gap-1.5 pt-1">
 				<span class={dotClass(step > 0)} aria-hidden="true"></span>
 				<span class="text-[13px] {step === 0 ? 'text-ink' : 'text-ink-secondary'}">To</span>
@@ -373,6 +373,7 @@
 					value={draft.toInput}
 					oninput={onToInput}
 					onkeydown={onToKeydown}
+					onblur={() => compose.commitPendingTo(draft.id)}
 					role="combobox"
 					aria-expanded={draft.toOpen}
 					aria-autocomplete="list"

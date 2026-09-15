@@ -20,7 +20,7 @@ import {
 } from './outbox';
 import { PANEL_DEFAULT_W } from './layout';
 import { tomorrow9ISO } from './schedule';
-import { commitRecipient, isDuplicate, parseAddressList } from './recipients';
+import { commitRecipient, isDuplicate, makeRecipient, parseAddressList } from './recipients';
 import { forwardSeed, replyAllRecipients, replySeed } from './quote';
 import type {
 	ComposeContact,
@@ -312,6 +312,19 @@ class ComposeStore {
 		}
 	}
 
+	/**
+	 * Commit a complete address still sitting in the To input. Blurring the
+	 * field and sending both route through here, so a recipient typed without
+	 * pressing Enter is never silently dropped. Partial text that is not an
+	 * address yet is left alone for the user to finish.
+	 */
+	commitPendingTo(id: string) {
+		const draft = this.#find(id);
+		if (!draft) return;
+		if (makeRecipient(draft.toInput)) this.commitTo(id, draft.toInput, null);
+		else draft.toOpen = false;
+	}
+
 	removeTo(id: string, email: string) {
 		const draft = this.#find(id);
 		if (!draft) return;
@@ -481,6 +494,7 @@ class ComposeStore {
 	async sendDraft(id: string): Promise<void> {
 		const draft = this.#find(id);
 		if (!draft || draft.sending) return;
+		this.commitPendingTo(id);
 		const cc = parseAddressList(draft.cc);
 		const bcc = parseAddressList(draft.bcc);
 		if (draft.to.length === 0 && cc.length === 0 && bcc.length === 0) {

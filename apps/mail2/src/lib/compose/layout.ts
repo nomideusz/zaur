@@ -48,7 +48,7 @@ export function computeAutoHeight(draft: Draft): number {
 	const toRows = Math.ceil(draft.to.length / 2) * 32;
 	return (
 		45 + // header
-		(28 + toRows) + // To row (chips wrap ~2 per line)
+		(44 + toRows) + // To row: 28 content + 8/8 padding (chips wrap ~2 per line)
 		45 + // subject row
 		bodyHeightPx(draft) +
 		(draft.ccOpen ? 45 : 0) +
