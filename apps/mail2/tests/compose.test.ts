@@ -11,7 +11,10 @@ import {
 	computeAutoHeight,
 	maximizedRect,
 	openingPosition,
-	clampPanel
+	clampPanel,
+	PANEL_DEFAULT_W,
+	PANEL_MAX_W,
+	PANEL_TYPICAL_H
 } from '../src/lib/compose/layout.ts';
 import { classifySendFailure } from '../src/lib/compose/outbox.ts';
 import { tomorrow9ISO } from '../src/lib/compose/schedule.ts';
@@ -196,28 +199,52 @@ test('computeAutoHeight matches the spec formula', () => {
 	);
 });
 
-test('maximizedRect: centered and clamped on large and small shells', () => {
-	assert.deepEqual(maximizedRect(1400, 900), { x: 330, y: 76, w: 740, h: 620 });
-	const small = maximizedRect(500, 400);
-	assert.equal(small.w, 452);
-	assert.equal(small.h, 268);
-	assert.equal(small.x, 24);
-	assert.equal(small.y, 76);
+test('maximizedRect: fills the pane between the top bar and the status line', () => {
+	assert.deepEqual(maximizedRect(1400, 900), { x: 220, y: 64, w: 960, h: 788 });
+	// A short shell has no room for the chrome inset — fall back to the margin.
+	assert.deepEqual(maximizedRect(500, 400), { x: 12, y: 12, w: 476, h: 340 });
+	// Never wider than the cap, however wide the shell gets.
+	assert.equal(maximizedRect(2400, 1200).w, PANEL_MAX_W);
 });
 
-test('openingPosition: right of the button, flips left without room, cascades', () => {
+test('openingPosition: leans from the shell centre toward the button, cascades', () => {
 	const shell = { w: 1400, h: 900 };
-	const pos = openingPosition({ left: 180, top: 100, right: 200, bottom: 134 }, shell.w, shell.h, 0);
-	assert.deepEqual(pos, { x: 214, y: 92 });
-	const flipped = openingPosition(
+	const centreX = (shell.w - PANEL_DEFAULT_W) / 2; // 420
+	const centreY = (shell.h - PANEL_TYPICAL_H) / 2; // 240
+
+	const fromLeft = openingPosition({ left: 180, top: 100, right: 200, bottom: 134 }, shell.w, shell.h, 0);
+	assert.deepEqual(fromLeft, { x: 195, y: 157 });
+	const fromRight = openingPosition(
 		{ left: 1240, top: 100, right: 1300, bottom: 134 },
 		shell.w,
 		shell.h,
 		0
 	);
-	assert.equal(flipped.x, 666); // 1240 - 560 - 14
+	assert.deepEqual(fromRight, { x: 562, y: 157 });
+
+	// The lean follows the button, but never travels all the way to it.
+	assert.ok(fromLeft.x < centreX && fromRight.x > centreX, 'each leans toward its button');
+	assert.ok(Math.abs(fromLeft.x - centreX) < Math.abs(-90 - centreX), 'but stays nearer the centre');
+	assert.ok(Math.abs(fromRight.x - centreX) < Math.abs(990 - centreX), 'but stays nearer the centre');
+	assert.ok(fromLeft.y > centreY - PANEL_TYPICAL_H / 2, 'and does not ride the top edge');
+
 	const cascaded = openingPosition({ left: 180, top: 100, right: 200, bottom: 134 }, shell.w, shell.h, 1);
-	assert.deepEqual(cascaded, { x: 240, y: 118 });
+	assert.deepEqual(cascaded, { x: 221, y: 183 });
+});
+
+test('openingPosition: a corner button still opens fully inside the shell', () => {
+	for (const button of [
+		{ left: 0, top: 0, right: 30, bottom: 30 },
+		{ left: 1370, top: 0, right: 1400, bottom: 30 },
+		{ left: 1370, top: 870, right: 1400, bottom: 900 },
+		{ left: 0, top: 870, right: 30, bottom: 900 }
+	]) {
+		for (const openCount of [0, 1, 2, 3, 4]) {
+			const { x, y } = openingPosition(button, 1400, 900, openCount);
+			assert.ok(x >= 8 && x + PANEL_DEFAULT_W <= 1392, `x in shell: ${x}`);
+			assert.ok(y >= 12 && y + PANEL_TYPICAL_H <= 892, `y in shell: ${y}`);
+		}
+	}
 });
 
 test('clampPanel: enforces min size and keeps the panel inside the shell', () => {

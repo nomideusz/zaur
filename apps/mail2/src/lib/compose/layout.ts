@@ -2,11 +2,20 @@ import type { Draft } from './types';
 
 export const PANEL_DEFAULT_W = 560;
 export const PANEL_MIN_W = 420;
-export const PANEL_MAX_W = 760;
+export const PANEL_MAX_W = 960;
 export const PANEL_MIN_H = 240;
-export const PANEL_MAX_H = 760;
+export const PANEL_MAX_H = 1000;
 export const EDGE = 8;
+/** Height a draft settles at once it has a recipient and a subject. */
+export const PANEL_TYPICAL_H = 420;
 const CASCADE = 26;
+const GAP = 14;
+/** Shell chrome a maximized panel must not sit under: top bar and status line. */
+const TOP_CHROME = 52;
+const BOTTOM_CHROME = 36;
+const MARGIN = 12;
+/** How far an opening panel leans from the shell centre toward its button. */
+const CENTRE_PULL = 0.34;
 
 export interface AnchorRect {
 	left: number;
@@ -50,37 +59,56 @@ export function computeAutoHeight(draft: Draft): number {
 	);
 }
 
-/** Centered, pixel-computed maximized rect (percent math would freeze the transition). */
+/**
+ * Maximize fills the shell's content pane — everything between the top bar and
+ * the status line — rather than floating a slightly bigger box in the middle.
+ * Pixel-computed so the transition can animate (percent math freezes it).
+ */
 export function maximizedRect(rootW: number, rootH: number) {
-	const w = Math.min(740, Math.max(360, rootW - 48));
-	const h = Math.min(620, Math.max(260, rootH - 132));
+	const w = Math.min(PANEL_MAX_W, Math.max(360, rootW - MARGIN * 2));
+	// On a shell too short for the chrome inset, ignore it and use the margin.
+	const y = rootH > 420 ? TOP_CHROME + MARGIN : MARGIN;
+	const h = Math.min(PANEL_MAX_H, Math.max(260, rootH - y - BOTTOM_CHROME - MARGIN));
 	return {
-		x: Math.max(24, Math.round((rootW - w) / 2)),
-		y: 76,
+		x: Math.max(MARGIN, Math.round((rootW - w) / 2)),
+		y,
 		w,
 		h
 	};
 }
 
-/** Opening position anchored to the New message button (spec steps 1–4). */
+/**
+ * Opening position: the panel belongs near the middle of the shell — that is
+ * where it is comfortable to write — but it should still read as coming from
+ * the button that opened it. So take the strictly button-anchored spot, take
+ * the centred spot, and sit a third of the way from centre toward the button.
+ */
 export function openingPosition(
 	button: AnchorRect,
 	rootW: number,
 	rootH: number,
 	openCount: number,
-	width = PANEL_DEFAULT_W
+	width = PANEL_DEFAULT_W,
+	height = PANEL_TYPICAL_H
 ) {
-	let x = button.right + 14;
-	if (x + width + 16 > rootW) {
-		x = Math.max(12, button.left - width - 14);
-	}
-	let y = clamp(button.top - 8, 12, Math.max(12, rootH - 340));
-	const offset = (openCount % 5) * CASCADE;
-	x += offset;
-	y += offset;
-	x = clamp(x, EDGE, Math.max(EDGE, rootW - width - EDGE));
-	y = clamp(y, 12, Math.max(12, rootH - PANEL_MIN_H - EDGE));
-	return { x, y };
+	// Anchored spot: squarely under the button, centred on it. Sitting *beside*
+	// the button reads backwards once it has to flip — a top-right button would
+	// throw the panel left.
+	const anchoredX = (button.left + button.right) / 2 - width / 2;
+	const anchoredY = button.bottom + GAP;
+
+	const centreX = (rootW - width) / 2;
+	const centreY = (rootH - height) / 2;
+	// Cascade is symmetric about the centre, so a stack of panels spreads
+	// through the middle instead of marching off into a corner.
+	const offset = (openCount % 5) * CASCADE - CASCADE * 2;
+
+	const x = centreX + (anchoredX - centreX) * CENTRE_PULL + offset;
+	const y = centreY + (anchoredY - centreY) * CENTRE_PULL + offset;
+	return {
+		x: Math.round(clamp(x, EDGE, Math.max(EDGE, rootW - width - EDGE))),
+		y: Math.round(clamp(y, MARGIN, Math.max(MARGIN, rootH - height - EDGE)))
+	};
 }
 
 export function clamp(

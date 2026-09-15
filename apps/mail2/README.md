@@ -174,6 +174,21 @@ the browser owns:
   default Unseen filter, so the mail shell reads prefs instead of poking
   localStorage itself.
 
+## Compose panel geometry
+
+`#lib/compose/layout` owns the window maths:
+
+- **Opening position** blends two spots. The *anchored* spot is squarely under
+  the button that opened the panel; the *centred* spot is the middle of the
+  shell, sized for the height a draft settles at (`PANEL_TYPICAL_H`). The
+  panel opens a third of the way (`CENTRE_PULL`) from centre toward the button
+  — near the middle where it is comfortable to write, still visibly coming
+  from the button. The cascade for a stack of panels is symmetric about the
+  centre so panels spread through the middle rather than into a corner.
+- **Maximize** fills the content pane — everything between the top bar and the
+  status line — capped at `PANEL_MAX_W`, and the message box flexes to fill
+  the extra height instead of stopping at a fixed step.
+
 ## Bulk actions
 
 Selecting rows (avatar click, `x`, or the Select menu) opens a bulk bar over

@@ -31,7 +31,8 @@
 	const height = $derived(maximized ? rect.h : draft.auto ? computeAutoHeight(draft) : rect.h);
 	const step = $derived(computeStep(draft));
 	const bodyHeight = $derived(bodyHeightPx(draft));
-	const bodyOpen = $derived(bodyHeight === 228);
+	// Full-strength once the box has grown — an equality check dimmed it at 340 (maximized).
+	const bodyOpen = $derived(bodyHeight >= 228);
 	const suggestions = $derived(filterContacts(compose.contacts, draft.toInput, draft.to));
 	const title = $derived(draft.subject.trim() || 'New message');
 	const subjectDim = $derived(draft.to.length === 0 ? 'opacity-68' : 'opacity-100');
@@ -512,15 +513,16 @@
 		</div>
 
 		<!-- Message -->
+		<!-- Maximized: the message box flexes to fill the pane instead of a fixed step. -->
 		<textarea
 			id={bodyId}
 			value={draft.body}
 			oninput={onBodyInput}
 			onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
-			class="w-full max-w-[33em] resize-none border-0 bg-transparent pt-[14px] pb-4 text-[15px] leading-[1.7] text-ink-body focus:outline-none {bodyOpen
+			class="w-full resize-none border-0 bg-transparent pt-[14px] pb-4 text-[15px] leading-[1.7] text-ink-body focus:outline-none {bodyOpen
 				? 'opacity-100'
-				: 'opacity-68'}"
-			style:height="{bodyHeight}px"
+				: 'opacity-68'} {maximized ? 'min-h-0 flex-1 max-w-[46em]' : 'max-w-[33em]'}"
+			style:height={maximized ? undefined : `${bodyHeight}px`}
 			style:transition="height 200ms ease"
 			aria-label="Message"
 		></textarea>
