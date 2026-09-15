@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { whoami } from '../session.remote';
-	import { mailboxes, threads, thread, quota } from '../mail.remote';
+	import { mailboxes, threads, thread, quota, bulk, type BulkAction } from '../mail.remote';
 	import {
 		send as sendRemote,
 		cancelScheduled,
@@ -18,41 +18,27 @@
 	import ComposePanel from '#lib/components/compose/ComposePanel.svelte';
 	import ComposeDock from '#lib/components/compose/ComposeDock.svelte';
 	import Toasts from '#lib/components/compose/Toasts.svelte';
-	import { buildRowGroups } from '#lib/mail/rows';
+	import { buildRowGroups, selectedEmailIds } from '#lib/mail/rows';
+	import { prefs, setPref, LIST_MIN, LIST_MAX, DEFAULT_PREFS } from '#lib/settings.svelte.ts';
 	import { openingPosition, type AnchorRect } from '#lib/compose/layout';
 	import { draftSeed } from '#lib/compose/quote';
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import type { ComposeContact } from '#lib/compose/types';
 	import type { MessageDetail } from '@zaur/mail-core';
 
-	const LIST_WIDTH_KEY = 'mail2.listWidth';
-	const LIST_MIN = 380;
-	const LIST_MAX = 760;
-
-	let listWidth = $state(480);
-	let sidebarOpen = $state(true);
 	let activeCategories = $state<Set<string>>(new Set(['personal', 'work', 'team', 'finance']));
 	let selectedMailboxId = $state<string | null>(null);
-	let unseenOnly = $state(false);
+	let unseenOnly = $state(prefs.unseenByDefault);
 	let openThreadId = $state<string | null>(null);
 	let cursorId = $state<string | null>(null);
 	let selection = $state<Set<string>>(new Set());
 	let rootEl = $state<HTMLDivElement | null>(null);
 	let rootW = $state(0);
 	let rootH = $state(0);
-
-	if (typeof localStorage !== 'undefined') {
-		const stored = Number(localStorage.getItem(LIST_WIDTH_KEY));
-		if (stored >= LIST_MIN && stored <= LIST_MAX) listWidth = stored;
-		const storedSidebar = localStorage.getItem('mail2.sidebarOpen');
-		if (storedSidebar !== null) sidebarOpen = storedSidebar === 'true';
-	}
+	let bulkBusy = $state(false);
 
 	function toggleSidebar() {
-		sidebarOpen = !sidebarOpen;
-		if (typeof localStorage !== 'undefined') {
-			localStorage.setItem('mail2.sidebarOpen', String(sidebarOpen));
-		}
+		setPref('sidebarOpen', !prefs.sidebarOpen);
 	}
 
 	function toggleCategory(categoryId: string) {
@@ -112,7 +98,9 @@
 	}
 
 	const threadsResource = $derived(
-		session && activeMailbox ? threads({ mailboxId: activeMailbox.id, unseenOnly }) : undefined
+		session && activeMailbox
+			? threads({ mailboxId: activeMailbox.id, unseenOnly, limit: prefs.pageSize })
+			: undefined
 	);
 	const threadResource = $derived(
 		session && openThreadId ? thread({ threadId: openThreadId }) : undefined
@@ -256,9 +244,58 @@
 		compose.reply(message, threadResource?.current ?? [message], myEmails, mode, position);
 	}
 
+	const selectedIds = $derived(selectedEmailIds(threadsResource?.current?.rows, selection));
+
+	function markThreadRead(threadId: string) {
+		const ids = selectedEmailIds(threadsResource?.current?.rows, new Set([threadId])).filter(
+			(id) => threadsResource?.current?.rows.find((row) => row.id === id)?.unread
+		);
+		if (ids.length === 0) return;
+		return bulk({ action: 'read', emailIds: ids })
+			.then(() => {
+				void threadsResource?.refresh();
+				void mailboxesResource?.refresh();
+			})
+			.catch(() => {});
+	}
+
+	/**
+	 * Delete means "move to Trash" everywhere except Trash itself, where the
+	 * only thing left to do is destroy.
+	 */
+	async function runBulk(action: BulkAction, mailboxId?: string) {
+		const emailIds = selectedIds;
+		if (emailIds.length === 0 || bulkBusy) return;
+		let payload = { action, emailIds, mailboxId, sourceMailboxId: activeMailbox?.id };
+		if (action === 'delete' && activeMailbox?.kind !== 'trash') {
+			const trash = mailboxList?.find((box) => box.kind === 'trash');
+			if (trash) payload = { ...payload, action: 'move', mailboxId: trash.id };
+		}
+		const leavesFolder = payload.action === 'move' || payload.action === 'delete';
+		const verb =
+			payload.action === 'delete' ? 'deleted' : payload.action === 'move' ? 'moved' : 'updated';
+		bulkBusy = true;
+		try {
+			const { count } = await bulk(payload);
+			// A thread that just left the folder can't stay open in the reader.
+			if (leavesFolder && openThreadId && selection.has(openThreadId)) openThreadId = null;
+			selection = new Set();
+			void threadsResource?.refresh();
+			void mailboxesResource?.refresh();
+			compose.pushToast({ text: `${count} ${count === 1 ? 'message' : 'messages'} ${verb}` });
+		} catch (cause) {
+			compose.pushToast({
+				text: cause instanceof Error ? cause.message : 'Action failed'
+			});
+		} finally {
+			bulkBusy = false;
+		}
+	}
+
 	async function openRow(threadId: string) {
 		if (activeMailbox?.kind !== 'drafts') {
 			openThreadId = threadId;
+			if (prefs.markReadOnOpen) void markThreadRead(threadId);
 			return;
 		}
 		try {
@@ -275,12 +312,11 @@
 	}
 
 	function setListWidth(next: number) {
-		listWidth = Math.min(LIST_MAX, Math.max(LIST_MIN, next));
-		if (typeof localStorage !== 'undefined') localStorage.setItem(LIST_WIDTH_KEY, String(listWidth));
+		setPref('listWidth', Math.min(LIST_MAX, Math.max(LIST_MIN, next)));
 	}
 
 	function resetListWidth() {
-		setListWidth(480);
+		setListWidth(DEFAULT_PREFS.listWidth);
 	}
 
 	function moveCursor(delta: number) {
@@ -381,7 +417,7 @@
 			}}
 			account={session ? { username: session.username, displayName: session.displayName } : null}
 			onSignOut={signOut}
-			{sidebarOpen}
+			sidebarOpen={prefs.sidebarOpen}
 			onToggleSidebar={toggleSidebar}
 			onNewMessage={() => openCompose()}
 			onPrevMailbox={selectPrevMailbox}
@@ -398,11 +434,11 @@
 		{:else}
 			<main
 				class="grid min-h-0 flex-1"
-				style:grid-template-columns={sidebarOpen
-					? `240px ${listWidth}px 1px minmax(0, 1fr)`
-					: `${listWidth}px 1px minmax(0, 1fr)`}
+				style:grid-template-columns={prefs.sidebarOpen
+					? `240px ${prefs.listWidth}px 1px minmax(0, 1fr)`
+					: `${prefs.listWidth}px 1px minmax(0, 1fr)`}
 			>
-				{#if sidebarOpen}
+				{#if prefs.sidebarOpen}
 					<Sidebar
 						mailboxes={mailboxList}
 						activeMailboxId={selectedMailboxId}
@@ -420,6 +456,7 @@
 
 				<MailList
 					mailbox={activeMailbox}
+					mailboxes={mailboxList}
 					groups={rowGroups}
 					loading={threadsResource?.loading ?? true}
 					error={threadsResource?.error}
@@ -434,11 +471,13 @@
 					onSetSelection={(ids) => (selection = ids)}
 					onToggleSelect={toggleSelect}
 					onOpen={(threadId) => void openRow(threadId)}
+					onBulk={(action, mailboxId) => void runBulk(action, mailboxId)}
+					busy={bulkBusy}
 					onRetry={() => threadsResource?.refresh()}
 					onNewMessage={(anchor) => openCompose(anchor)}
 				/>
 
-				<Splitter width={listWidth} onResize={setListWidth} onReset={resetListWidth} />
+				<Splitter width={prefs.listWidth} onResize={setListWidth} onReset={resetListWidth} />
 
 				<Reader
 					messages={threadResource?.current}

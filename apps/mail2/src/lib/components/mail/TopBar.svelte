@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import type { MailboxDTO } from '#lib/mail/types';
@@ -224,7 +225,7 @@
 			>
 				Mail
 			</button>
-			{#each ['Calendar', 'Contacts', 'Settings'] as section (section)}
+			{#each ['Calendar', 'Contacts'] as section (section)}
 				<button
 					type="button"
 					class="h-[26px] rounded-[4px] px-2.5 text-[12px] font-medium text-slate-500 transition-colors hover:text-slate-900"
@@ -233,6 +234,12 @@
 					{section}
 				</button>
 			{/each}
+			<a
+				href="/settings"
+				class="flex h-[26px] items-center rounded-[4px] px-2.5 text-[12px] font-medium text-slate-500 transition-colors hover:text-slate-900"
+			>
+				Settings
+			</a>
 		</nav>
 
 		<!-- Profile Menu -->
@@ -265,6 +272,13 @@
 							>
 								<span>Keyboard shortcuts</span>
 								<kbd class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-[10px] text-slate-500">?</kbd>
+							</Menu.Item>
+							<Menu.Item
+								value="settings"
+								class="flex cursor-pointer items-center rounded-[6px] px-2.5 py-1.5 text-[13px] text-slate-700 data-highlighted:bg-slate-100"
+								onSelect={() => goto('/settings')}
+							>
+								Settings
 							</Menu.Item>
 							<Menu.Item
 								value="signout"

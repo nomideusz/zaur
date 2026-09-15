@@ -117,3 +117,15 @@ export function typeBadge(mime: string): string {
 	const subtype = mime.split('/')[1] ?? mime;
 	return subtype.split('+')[0]!.slice(0, 4).toUpperCase();
 }
+
+/**
+ * Selection is by thread, JMAP acts on emails: expand the selected threads
+ * back into every message id the current folder view holds for them.
+ */
+export function selectedEmailIds(
+	messages: MessagePreview[] | undefined,
+	selection: Set<string>
+): string[] {
+	if (!messages || selection.size === 0) return [];
+	return messages.filter((message) => selection.has(message.threadId)).map((message) => message.id);
+}

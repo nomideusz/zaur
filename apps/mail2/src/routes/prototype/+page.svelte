@@ -314,7 +314,9 @@
 
 			<MailList
 				mailbox={activeMailbox}
+				mailboxes={mockMailboxes}
 				groups={rowGroups}
+				onBulk={() => {}}
 				loading={false}
 				error={null}
 				{unseenOnly}

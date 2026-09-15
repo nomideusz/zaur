@@ -12,7 +12,8 @@ theme only** for now; Files and Meet arrive when their designs land.
 - [x] Draft persistence (Drafts mailbox) + compose attachments
 - [x] Own login (`/login` + sign out) — Stalwart OAuth credential flow in prod,
   password fallback in dev; 1.0 session sharing still works as a fallback
-- [ ] Search + settings via remote functions
+- [x] Settings page (`/settings`) + bulk selection actions
+- [ ] Search via remote functions
 - [ ] Calendar / Contacts (port from 1.0)
 - [ ] OIDC provider flows (mail2 as an identity provider)
 - [ ] Cutover checklist green
@@ -157,6 +158,30 @@ Kit 3 changes the layout from Kit 2:
 - Remote functions are still gated by `experimental.remoteFunctions: true`;
   `query`, `query.live`, `command`, `form` and `getRequestEvent` come from
   `$app/server` as in Kit 2.
+
+## Settings
+
+`/settings` (inside the `(app)` gate) splits into what the server owns and what
+the browser owns:
+
+- **Server:** the send-as display name per identity, through
+  `settings.remote.ts` (`Identity/get` + `Identity/set`). Account address,
+  quota and sign-out live here too.
+- **Browser:** `#lib/settings` — one `mail2.prefs` localStorage blob
+  (`parsePrefs` merges it over the defaults and drops anything malformed),
+  exposed as a `$state` object by `#lib/settings.svelte.ts`. Holds sidebar
+  state, list width, page size, mark-read-on-open, the preview line and the
+  default Unseen filter, so the mail shell reads prefs instead of poking
+  localStorage itself.
+
+## Bulk actions
+
+Selecting rows (avatar click, `x`, or the Select menu) opens a bulk bar over
+the list: mark read/unread, highlight, move to any folder, delete. Selection is
+by **thread**; `selectedEmailIds` expands it back into the message ids the
+folder view holds. Everything funnels through one `bulk` command in
+`mail.remote.ts` — they are all an `Email/set` over a batch of ids. Delete
+means move-to-Trash everywhere except Trash, where it destroys.
 
 ## Architecture
 

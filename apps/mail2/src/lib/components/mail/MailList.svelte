@@ -3,11 +3,14 @@
 	import { Portal } from '@ark-ui/svelte/portal';
 	import type { MailboxDTO } from '#lib/mail/types';
 	import type { RowGroup, ListRow } from '#lib/mail/rows';
+	import type { BulkAction } from '../../../routes/mail.remote';
 	import { formatListTime, initials } from '#lib/mail/rows';
 	import { getHobdayTheme } from '#lib/mail/colors';
+	import { prefs } from '#lib/settings.svelte.ts';
 
 	interface Props {
 		mailbox: MailboxDTO | null;
+		mailboxes: MailboxDTO[] | undefined;
 		groups: RowGroup[] | undefined;
 		loading: boolean;
 		error: unknown;
@@ -19,12 +22,15 @@
 		onSetSelection: (ids: Set<string>) => void;
 		onToggleSelect: (threadId: string) => void;
 		onOpen: (threadId: string) => void;
+		onBulk: (action: BulkAction, mailboxId?: string) => void;
+		busy?: boolean;
 		onRetry: () => void;
 		onNewMessage: (anchor: { left: number; top: number; right: number; bottom: number }) => void;
 	}
 
 	let {
 		mailbox,
+		mailboxes,
 		groups,
 		loading,
 		error,
@@ -36,6 +42,8 @@
 		onSetSelection,
 		onToggleSelect,
 		onOpen,
+		onBulk,
+		busy = false,
 		onRetry,
 		onNewMessage
 	}: Props = $props();
@@ -43,6 +51,13 @@
 	let listContainer = $state<HTMLDivElement | undefined>();
 
 	const flatRows = $derived((groups ?? []).flatMap((group) => group.rows));
+	const selectedRows = $derived(flatRows.filter((row) => selection.has(row.threadId)));
+	/** Toggles act on the majority state: all-read selection → "Mark unread". */
+	const allRead = $derived(selectedRows.length > 0 && selectedRows.every((row) => !row.unread));
+	const allStarred = $derived(selectedRows.length > 0 && selectedRows.every((row) => row.starred));
+	const moveTargets = $derived(
+		(mailboxes ?? []).filter((box) => box.id !== mailbox?.id && box.kind !== 'drafts')
+	);
 
 	$effect(() => {
 		if (!cursorId || !listContainer) return;
@@ -191,6 +206,82 @@
 		</div>
 	</div>
 
+	<!-- Bulk action bar: only while rows are selected -->
+	{#if selection.size > 0}
+		<div
+			class="flex h-[42px] shrink-0 items-center gap-2 border-b border-[#cbd5e1] bg-blue-50/60 px-4"
+			role="toolbar"
+			aria-label="Selection actions"
+		>
+			<span class="text-[13px] font-semibold text-slate-800 tabular-nums">
+				{selection.size} selected
+			</span>
+
+			<div class="h-4 w-px bg-blue-200"></div>
+
+			<button
+				type="button"
+				class="btn-tactile !h-[26px] !px-2 !text-[12px]"
+				disabled={busy}
+				onclick={() => onBulk(allRead ? 'unread' : 'read')}
+			>
+				{allRead ? 'Mark unread' : 'Mark read'}
+			</button>
+
+			<button
+				type="button"
+				class="btn-tactile !h-[26px] !px-2 !text-[12px]"
+				disabled={busy}
+				onclick={() => onBulk(allStarred ? 'unstar' : 'star')}
+			>
+				{allStarred ? 'Unhighlight' : 'Highlight'}
+			</button>
+
+			{#if moveTargets.length > 0}
+				<Menu.Root positioning={{ placement: 'bottom-start', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
+					<Menu.Trigger class="btn-tactile !h-[26px] !px-2 !text-[12px] gap-1" disabled={busy}>
+						Move to
+						<svg class="size-3 text-slate-400" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					</Menu.Trigger>
+					<Portal>
+						<Menu.Positioner>
+							<Menu.Content class="z-40 max-h-[320px] w-56 overflow-y-auto rounded-[8px] border border-[#cbd5e1] bg-white p-1.5 shadow-lg">
+								{#each moveTargets as target (target.id)}
+									<Menu.Item
+										value={target.id}
+										onSelect={() => onBulk('move', target.id)}
+										class="cursor-pointer truncate rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 data-highlighted:bg-slate-100"
+									>
+										{target.name}
+									</Menu.Item>
+								{/each}
+							</Menu.Content>
+						</Menu.Positioner>
+					</Portal>
+				</Menu.Root>
+			{/if}
+
+			<button
+				type="button"
+				class="btn-tactile !h-[26px] !px-2 !text-[12px] !text-red-600 hover:!border-red-300 hover:!bg-red-50"
+				disabled={busy}
+				onclick={() => onBulk('delete')}
+			>
+				{mailbox?.kind === 'trash' ? 'Delete forever' : 'Delete'}
+			</button>
+
+			<button
+				type="button"
+				class="ml-auto btn-tactile !h-[26px] !px-2 !text-[12px]"
+				onclick={selectNone}
+			>
+				Clear
+			</button>
+		</div>
+	{/if}
+
 	<!-- Scrollable Messages List -->
 	<div bind:this={listContainer} class="min-h-0 flex-1 overflow-y-auto px-4 py-3 [scroll-padding-top:8px]">
 		{#if error}
@@ -330,9 +421,11 @@
 								</div>
 
 								<!-- Preview -->
-								<div class="truncate text-[12.5px] leading-relaxed text-slate-500 mt-0.5">
-									{row.preview}
-								</div>
+								{#if prefs.showPreview}
+									<div class="truncate text-[12.5px] leading-relaxed text-slate-500 mt-0.5">
+										{row.preview}
+									</div>
+								{/if}
 
 								<!-- Hobday-style event/category chip -->
 								{#if tag}
