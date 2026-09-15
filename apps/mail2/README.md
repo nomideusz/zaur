@@ -203,6 +203,15 @@ the right of the header, and the dots only duplicated them.
   status line — capped at `PANEL_MAX_W`, and the message box flexes to fill
   the extra height instead of stopping at a fixed step.
 
+## No refresh, no sync clock
+
+JMAP is live, so there is nothing to refresh by hand: the message list header
+carries the **New message** `+` where a Refresh button used to sit (it is the
+compose anchor, `[data-new-message]`), and the status line has no "Synced HH:MM".
+`ThreadListDTO` no longer carries `syncedAt`. The Retry buttons on the list and
+reader error states stay — those recover a failed load, which is a different
+thing.
+
 ## Bulk actions
 
 Selecting rows (avatar click, `x`, or the Select menu) opens a bulk bar over

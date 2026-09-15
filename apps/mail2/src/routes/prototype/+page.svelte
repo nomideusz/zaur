@@ -287,7 +287,6 @@
 			account={{ username: 'anthony@zaur.app', displayName: 'Anthony Hobday' }}
 			{sidebarOpen}
 			onToggleSidebar={toggleSidebar}
-			onNewMessage={openCompose}
 			onPrevMailbox={selectPrevMailbox}
 			onNextMailbox={selectNextMailbox}
 		/>
@@ -322,7 +321,6 @@
 				{unseenOnly}
 				{cursorId}
 				{selection}
-				syncedAt={new Date().toISOString()}
 				onToggleUnseenOnly={(value) => (unseenOnly = value)}
 				onSetSelection={(ids) => (selection = ids)}
 				onToggleSelect={(id) => {
@@ -364,7 +362,6 @@
 		<StatusLine
 			mailboxName={activeMailbox.name}
 			unseen={activeMailbox.unread}
-			syncedAt={new Date().toISOString()}
 			quota={{ used: 1200000000, limit: 10000000000 }}
 		/>
 	</div>

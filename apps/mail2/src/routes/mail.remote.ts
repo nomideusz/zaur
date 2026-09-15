@@ -79,8 +79,7 @@ export const threads = query(
 		);
 		return {
 			mailboxId,
-			rows: emails.map((email) => mapEmailPreview(email, mailboxId)),
-			syncedAt: new Date().toISOString()
+			rows: emails.map((email) => mapEmailPreview(email, mailboxId))
 		};
 	}
 );

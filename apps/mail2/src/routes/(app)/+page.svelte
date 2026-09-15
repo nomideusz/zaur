@@ -419,7 +419,6 @@
 			onSignOut={signOut}
 			sidebarOpen={prefs.sidebarOpen}
 			onToggleSidebar={toggleSidebar}
-			onNewMessage={() => openCompose()}
 			onPrevMailbox={selectPrevMailbox}
 			onNextMailbox={selectNextMailbox}
 		/>
@@ -463,7 +462,6 @@
 					{unseenOnly}
 					{cursorId}
 					{selection}
-					syncedAt={threadsResource?.current?.syncedAt ?? null}
 					onToggleUnseenOnly={(value) => {
 						unseenOnly = value;
 						cursorId = null;
@@ -501,7 +499,6 @@
 		<StatusLine
 			mailboxName={activeMailbox?.name ?? null}
 			unseen={activeMailbox?.unread ?? 0}
-			syncedAt={threadsResource?.current?.syncedAt ?? null}
 			quota={quotaResource?.current}
 		/>
 	</div>

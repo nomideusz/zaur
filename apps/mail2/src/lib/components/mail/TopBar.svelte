@@ -14,7 +14,6 @@
 		onSignOut?: () => void;
 		sidebarOpen?: boolean;
 		onToggleSidebar?: () => void;
-		onNewMessage?: () => void;
 		onPrevMailbox?: () => void;
 		onNextMailbox?: () => void;
 	}
@@ -27,7 +26,6 @@
 		onSignOut,
 		sidebarOpen = true,
 		onToggleSidebar,
-		onNewMessage,
 		onPrevMailbox,
 		onNextMailbox
 	}: Props = $props();
@@ -198,21 +196,6 @@
 
 	<!-- Right: Tactile [+] button + Tabs + User Profile -->
 	<div class="flex items-center gap-2.5">
-		{#if onNewMessage}
-			<button
-				type="button"
-				data-new-message
-				class="btn-tactile size-8 !p-0"
-				onclick={onNewMessage}
-				title="New message (+)"
-				aria-label="New message"
-			>
-				<svg class="size-4 text-slate-800" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-					<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-				</svg>
-			</button>
-		{/if}
-
 		<!-- Section Tabs -->
 		<nav class="hidden sm:flex items-center rounded-[6px] border border-[#cbd5e1] bg-white p-0.5 shadow-2xs" aria-label="Sections">
 			<button

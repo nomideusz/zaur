@@ -2,17 +2,10 @@
 	interface Props {
 		mailboxName: string | null;
 		unseen: number;
-		syncedAt: string | null;
 		quota: { used: number; limit: number } | null | undefined;
 	}
 
-	let { mailboxName, unseen, syncedAt, quota }: Props = $props();
-
-	const syncedLabel = $derived(
-		syncedAt
-			? `Synced ${new Date(syncedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}`
-			: 'Not synced'
-	);
+	let { mailboxName, unseen, quota }: Props = $props();
 
 	const gb = (bytes: number) => (bytes / 1024 ** 3).toFixed(1);
 	const storageLabel = $derived(
@@ -39,10 +32,6 @@
 				<span>·</span>
 				<span>{mailboxName}</span>
 			</div>
-
-			<span class="text-slate-300">|</span>
-
-			<span class="text-slate-500">{syncedLabel}</span>
 
 			<span class="hidden md:inline text-slate-300">|</span>
 

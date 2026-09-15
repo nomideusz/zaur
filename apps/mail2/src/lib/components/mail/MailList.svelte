@@ -17,7 +17,6 @@
 		unseenOnly: boolean;
 		cursorId: string | null;
 		selection: Set<string>;
-		syncedAt: string | null;
 		onToggleUnseenOnly: (value: boolean) => void;
 		onSetSelection: (ids: Set<string>) => void;
 		onToggleSelect: (threadId: string) => void;
@@ -37,7 +36,6 @@
 		unseenOnly,
 		cursorId,
 		selection,
-		syncedAt,
 		onToggleUnseenOnly,
 		onSetSelection,
 		onToggleSelect,
@@ -185,7 +183,7 @@
 			</div>
 		</div>
 
-		<!-- Right: Count indicator & Refresh -->
+		<!-- Right: Count indicator & New message -->
 		<div class="flex items-center gap-2">
 			{#if flatRows.length > 0}
 				<span class="text-xs font-medium text-slate-400 tabular-nums">
@@ -194,13 +192,14 @@
 			{/if}
 			<button
 				type="button"
+				data-new-message
 				class="btn-tactile !size-7 !p-0"
-				onclick={onRetry}
-				title="Refresh folder"
-				aria-label="Refresh"
+				onclick={(event) => onNewMessage(event.currentTarget.getBoundingClientRect())}
+				title="New message (c)"
+				aria-label="New message"
 			>
-				<svg class="size-3 text-slate-600" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-					<path d="M13.5 8a5.5 5.5 0 11-1.6-3.9L13.5 2v4h-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+				<svg class="size-4 text-slate-800" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 				</svg>
 			</button>
 		</div>
@@ -445,12 +444,6 @@
 					{/each}
 				</div>
 			{/each}
-
-			{#if syncedAt}
-				<div class="pt-2 pb-1 text-center text-xs font-medium text-slate-400" aria-hidden="true">
-					·
-				</div>
-			{/if}
 		{/if}
 	</div>
 </section>

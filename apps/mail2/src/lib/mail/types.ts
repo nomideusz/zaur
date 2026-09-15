@@ -13,5 +13,4 @@ export type MailboxDTO = {
 export type ThreadListDTO = {
 	mailboxId: string;
 	rows: import('@zaur/mail-core').MessagePreview[];
-	syncedAt: string;
 };
