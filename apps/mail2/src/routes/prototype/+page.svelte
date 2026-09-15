@@ -272,10 +272,10 @@
 </svelte:head>
 
 <!-- Desktop Frame Canvas matching Hobday portfolio presentation -->
-<div class="flex h-svh w-screen flex-col items-center justify-center bg-[#ebeef2] p-2 sm:p-3 overflow-hidden text-slate-900">
+<div class="flex h-svh w-screen flex-col items-center justify-center bg-[#ebeef2] overflow-hidden text-slate-900">
 	<div
 		bind:this={rootEl}
-		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden rounded-xl border border-[#cbd5e1] bg-white shadow-window"
+		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-white"
 	>
 		<TopBar
 			mailboxes={mockMailboxes}

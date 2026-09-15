@@ -52,8 +52,8 @@
 
 <svelte:head><title>Settings · Zaur Mail</title></svelte:head>
 
-<div class="flex h-svh w-screen flex-col items-center justify-center bg-[#ebeef2] p-2 sm:p-3 overflow-hidden text-slate-900">
-	<div class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden rounded-xl border border-[#cbd5e1] bg-white shadow-window">
+<div class="flex h-svh w-screen flex-col items-center justify-center bg-[#ebeef2] overflow-hidden text-slate-900">
+	<div class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-white">
 		<header class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[#cbd5e1] bg-white px-4 select-none">
 			<ZaurMark unread={0} label="Settings" />
 			<div class="h-4 w-px bg-slate-200"></div>

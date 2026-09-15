@@ -174,6 +174,28 @@ the browser owns:
   default Unseen filter, so the mail shell reads prefs instead of poking
   localStorage itself.
 
+## Shell layout
+
+The app is edge to edge, not a Mac-style window floated on a grey ground. The
+window costume (rounded corners, border, shadow, canvas padding) came in with
+the tactile redesign as a portfolio presentation device; a window frame implies
+a window manager, and inside a browser tab there is none — which is why the
+traffic lights in it did nothing. The compose panels are the real windows here:
+they drag, resize, minimise to a dock and z-order.
+
+`max-w-[1780px]` stays as a **ceiling**, not a frame: below it the app fills the
+tab, above it the column is capped and centred so the chrome at each end (top
+bar tabs, account menu, storage meter) stays within reach of the content in the
+middle. `#ebeef2` shows either side only past that ceiling.
+
+The reader's content column is left-aligned rather than `mx-auto` centred:
+centring walked the message away from the list it came from and from its own
+Reply buttons as the pane widened. Slack pools on the right, where nothing
+needs to be reachable, and the toolbar shares the column's `px-8` left edge.
+
+The sign-in card keeps its border and shadow — a centred auth card on a ground
+is a card, not a fake window.
+
 ## The Zaur mark
 
 Where every other window puts three inert traffic lights, the shell windows

@@ -103,7 +103,7 @@
 		</div>
 	{:else if latest && rendered}
 		<!-- Reader Action Toolbar: Hobday-style tactile buttons -->
-		<div class="flex h-[46px] shrink-0 items-center justify-between border-b border-[#e2e8f0] px-6">
+		<div class="flex h-[46px] shrink-0 items-center justify-between border-b border-[#e2e8f0] px-8">
 			<div class="flex items-center gap-2">
 				<button
 					type="button"
@@ -178,9 +178,12 @@
 			</div>
 		</div>
 
-		<!-- Reader Content Area -->
+		<!-- Reader Content Area. The column is left-aligned, not centred: centring
+		     it walks the message away from the list it came from and from the
+		     Reply buttons above it as the pane gets wider. Slack pools on the
+		     right instead, where nothing needs to be reachable. -->
 		<div class="min-h-0 flex-1 overflow-y-auto px-8 py-6 select-text">
-			<div class="mx-auto flex max-w-[680px] flex-col gap-6">
+			<div class="flex max-w-[680px] flex-col gap-6">
 				<!-- Conversation Subject -->
 				<h1 class="text-[24px] font-bold leading-tight tracking-tight text-slate-900">
 					{latest.subject}

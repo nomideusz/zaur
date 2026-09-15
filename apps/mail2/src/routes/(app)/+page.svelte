@@ -399,12 +399,13 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<!-- Outer background canvas: neutral light gray matching Hobday's portfolio presentation -->
-<div class="flex h-svh w-screen flex-col items-center justify-center bg-[#ebeef2] p-2 sm:p-3 overflow-hidden text-slate-900">
-	<!-- Desktop Window Shell Container -->
+<!-- Ground behind the app column — only visible past the 1780px ceiling. -->
+<div class="flex h-svh w-screen flex-col items-center justify-center bg-[#ebeef2] overflow-hidden text-slate-900">
+	<!-- App column: edge to edge until 1780px, then capped so the chrome at each
+	     end stays within reach of the content in the middle. -->
 	<div
 		bind:this={rootEl}
-		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden rounded-xl border border-[#cbd5e1] bg-white shadow-window"
+		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-white"
 	>
 		<TopBar
 			mailboxes={mailboxList}
