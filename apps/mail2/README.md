@@ -174,6 +174,29 @@ the browser owns:
   default Unseen filter, so the mail shell reads prefs instead of poking
   localStorage itself.
 
+## Nothing inert on screen
+
+Everything the shell renders does something. The redesign carried a set of
+mockup affordances across from the Hobday prototype; they are gone:
+
+| Removed | Was |
+| --- | --- |
+| Calendar / Contacts tabs | inert buttons, "arrives in a later slice" |
+| Sidebar "Shared mailboxes" (Personal, Work, …) | hardcoded names, toggled a `Set` nothing read |
+| Sidebar "Read-only calendars" (UK Holidays) | same, and its checkbox was `|| true` |
+| Sidebar "Manage" | `onManageFolders` was never passed |
+| List category chips | `inferTag()` guessed "Family"/"Work" from subject keywords |
+| Reader "More actions" menu | Archive / Highlight / Mark unseen / Trash, all inert |
+| Top-bar search | an input with no handler at all |
+| Profile "Keyboard shortcuts" | inert menu item |
+
+Attachment chips stay — they list real attachments from the message; they just
+no longer style themselves as clickable, because downloads are not wired yet.
+
+`/prototype` is still the fake-data design reference (and the only page that
+renders the shell without a session, which is what makes it useful for visual
+checks). It is outside the `(app)` gate, so it is publicly reachable.
+
 ## Shell layout
 
 The app is edge to edge, not a Mac-style window floated on a grey ground. The

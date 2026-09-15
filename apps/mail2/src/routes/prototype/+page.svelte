@@ -16,7 +16,6 @@
 
 	let listWidth = $state(480);
 	let sidebarOpen = $state(true);
-	let activeCategories = $state<Set<string>>(new Set(['personal', 'work', 'team', 'finance']));
 	let selectedMailboxId = $state<string>('inbox');
 	let unseenOnly = $state(false);
 	let openThreadId = $state<string | null>('t1');
@@ -247,13 +246,6 @@
 		sidebarOpen = !sidebarOpen;
 	}
 
-	function toggleCategory(catId: string) {
-		const next = new Set(activeCategories);
-		if (next.has(catId)) next.delete(catId);
-		else next.add(catId);
-		activeCategories = next;
-	}
-
 	function selectPrevMailbox() {
 		const idx = mockMailboxes.findIndex((m) => m.id === selectedMailboxId);
 		const prev = (idx - 1 + mockMailboxes.length) % mockMailboxes.length;
@@ -305,8 +297,6 @@
 						selectedMailboxId = id;
 						cursorId = null;
 					}}
-					{activeCategories}
-					onToggleCategory={toggleCategory}
 					onNewMessage={openCompose}
 				/>
 			{/if}

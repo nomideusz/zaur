@@ -30,8 +30,6 @@
 		onNextMailbox
 	}: Props = $props();
 
-	let searchInput = $state<HTMLInputElement | undefined>();
-
 	const initialsOf = (name: string, email: string) => {
 		const source = name.trim() || email.trim();
 		if (!source) return '?';
@@ -51,19 +49,7 @@
 		account ? getHobdayTheme(account.username) : getHobdayTheme('default')
 	);
 
-	function focusSearch() {
-		searchInput?.focus();
-	}
-
-	function handleKeydown(event: KeyboardEvent) {
-		if (event.key === '/' && document.activeElement !== searchInput) {
-			event.preventDefault();
-			focusSearch();
-		}
-	}
 </script>
-
-<svelte:window onkeydown={handleKeydown} />
 
 <header
 	class="flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-[#cbd5e1] bg-white px-4 select-none"
@@ -167,35 +153,8 @@
 		</div>
 	</div>
 
-	<!-- Center: Search bar -->
-	<div class="flex max-w-[420px] flex-1 justify-center">
-		<div class="relative w-full max-w-[360px]">
-			<svg
-				class="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-slate-400"
-				viewBox="0 0 16 16"
-				fill="none"
-				aria-hidden="true"
-			>
-				<circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
-				<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
-			</svg>
-			<input
-				bind:this={searchInput}
-				type="search"
-				placeholder="Search messages..."
-				aria-label="Search mail"
-				class="h-[30px] w-full rounded-[6px] border border-[#cbd5e1] bg-white pl-8 pr-7 text-[13px] text-slate-900 placeholder:text-slate-400 shadow-2xs transition-all focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-			/>
-			<kbd
-				class="pointer-events-none absolute top-1/2 right-2 -translate-y-1/2 rounded border border-slate-200 bg-slate-50 px-1 py-0.5 font-mono text-[10px] font-medium text-slate-400"
-			>
-				/
-			</kbd>
-		</div>
-	</div>
-
-	<!-- Right: Tactile [+] button + Tabs + User Profile -->
-	<div class="flex items-center gap-2.5">
+	<!-- Right: Section tabs + account -->
+	<div class="ml-auto flex items-center gap-2.5">
 		<!-- Section Tabs -->
 		<nav class="hidden sm:flex items-center rounded-[6px] border border-[#cbd5e1] bg-white p-0.5 shadow-2xs" aria-label="Sections">
 			<button
@@ -205,15 +164,6 @@
 			>
 				Mail
 			</button>
-			{#each ['Calendar', 'Contacts'] as section (section)}
-				<button
-					type="button"
-					class="h-[26px] rounded-[4px] px-2.5 text-[12px] font-medium text-slate-500 transition-colors hover:text-slate-900"
-					title={`${section} arrives in a later slice`}
-				>
-					{section}
-				</button>
-			{/each}
 			<a
 				href="/settings"
 				class="flex h-[26px] items-center rounded-[4px] px-2.5 text-[12px] font-medium text-slate-500 transition-colors hover:text-slate-900"
@@ -245,14 +195,6 @@
 								<div class="text-[13px] font-semibold text-slate-900">{account.displayName ?? account.username}</div>
 								<div class="text-xs text-slate-500 truncate">{account.username}</div>
 							</div>
-							<Menu.Item
-								value="shortcuts"
-								class="flex cursor-pointer items-center justify-between rounded-[6px] px-2.5 py-1.5 text-[13px] text-slate-700 data-highlighted:bg-slate-100"
-								title="Arrives in a later slice"
-							>
-								<span>Keyboard shortcuts</span>
-								<kbd class="rounded border border-slate-200 bg-slate-50 px-1 font-mono text-[10px] text-slate-500">?</kbd>
-							</Menu.Item>
 							<Menu.Item
 								value="settings"
 								class="flex cursor-pointer items-center rounded-[6px] px-2.5 py-1.5 text-[13px] text-slate-700 data-highlighted:bg-slate-100"

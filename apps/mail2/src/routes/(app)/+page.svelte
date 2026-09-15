@@ -26,7 +26,6 @@
 	import type { ComposeContact } from '#lib/compose/types';
 	import type { MessageDetail } from '@zaur/mail-core';
 
-	let activeCategories = $state<Set<string>>(new Set(['personal', 'work', 'team', 'finance']));
 	let selectedMailboxId = $state<string | null>(null);
 	let unseenOnly = $state(prefs.unseenByDefault);
 	let openThreadId = $state<string | null>(null);
@@ -39,13 +38,6 @@
 
 	function toggleSidebar() {
 		setPref('sidebarOpen', !prefs.sidebarOpen);
-	}
-
-	function toggleCategory(categoryId: string) {
-		const next = new Set(activeCategories);
-		if (next.has(categoryId)) next.delete(categoryId);
-		else next.add(categoryId);
-		activeCategories = next;
 	}
 
 	const session = $derived(whoami()?.current ?? null);
@@ -448,8 +440,6 @@
 							cursorId = null;
 							selection = new Set();
 						}}
-						{activeCategories}
-						onToggleCategory={toggleCategory}
 						onNewMessage={() => openCompose()}
 					/>
 				{/if}

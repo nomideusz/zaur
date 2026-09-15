@@ -91,25 +91,6 @@
 		}
 	);
 
-	function inferTag(row: ListRow): { name: string; bg: string; border: string; text: string } | null {
-		const s = (row.subject + ' ' + row.senderLabel).toLowerCase();
-		if (s.includes('practice') || s.includes('football') || s.includes('annie') || s.includes('daughter')) {
-			return { name: 'Annie & Emily', bg: '#fce7f3', border: '#f472b6', text: '#be185d' };
-		}
-		if (s.includes('bank holiday') || s.includes('holiday') || s.includes('uk')) {
-			return { name: 'UK Holidays', bg: '#fef3c7', border: '#f59e0b', text: '#b45309' };
-		}
-		if (s.includes('piano') || s.includes('lesson') || s.includes('son')) {
-			return { name: 'Family', bg: '#bbf7d0', border: '#16a34a', text: '#14532d' };
-		}
-		if (s.includes('pet') || s.includes('care') || s.includes('milo')) {
-			return { name: 'Pet Care', bg: '#ede9fe', border: '#a78bfa', text: '#6d28d9' };
-		}
-		if (s.includes('work') || s.includes('project') || s.includes('alpha')) {
-			return { name: 'Work', bg: '#dbeafe', border: '#3b82f6', text: '#1e40af' };
-		}
-		return null;
-	}
 </script>
 
 <section class="flex h-full min-h-0 flex-col overflow-hidden bg-white select-none" aria-label="Message list">
@@ -339,7 +320,6 @@
 						{@const isCursor = row.threadId === cursorId}
 						{@const isSelected = selection.has(row.threadId)}
 						{@const theme = getHobdayTheme(row.from.email || row.senderLabel)}
-						{@const tag = inferTag(row)}
 						<div
 							data-row-id={row.threadId}
 							class="group/row relative grid cursor-pointer grid-cols-[34px_minmax(0,1fr)] items-start gap-3 rounded-[8px] border bg-white px-3.5 py-3 transition-all duration-[120ms] shadow-2xs {isSelected
@@ -426,19 +406,6 @@
 									</div>
 								{/if}
 
-								<!-- Hobday-style event/category chip -->
-								{#if tag}
-									<div class="mt-1.5 flex items-center gap-1.5">
-										<span
-											class="inline-flex items-center rounded-[4px] px-1.5 py-0.5 text-[11px] font-bold"
-											style:background-color={tag.bg}
-											style:border="1px solid {tag.border}"
-											style:color={tag.text}
-										>
-											{tag.name}
-										</span>
-									</div>
-								{/if}
 							</div>
 						</div>
 					{/each}

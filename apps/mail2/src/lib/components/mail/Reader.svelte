@@ -141,40 +141,6 @@
 					<span>Forward</span>
 				</button>
 
-				<!-- More Menu -->
-				<Menu.Root positioning={{ placement: 'bottom-start', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
-					<Menu.Trigger
-						class="btn-tactile !h-[28px] !w-8 !p-0"
-						aria-label="More actions"
-					>
-						<svg class="size-3.5 text-slate-700" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
-							<circle cx="8" cy="3.5" r="1.3" /><circle cx="8" cy="8" r="1.3" /><circle cx="8" cy="12.5" r="1.3" />
-						</svg>
-					</Menu.Trigger>
-					<Portal>
-						<Menu.Positioner>
-							<Menu.Content class="z-40 w-[196px] rounded-[8px] border border-[#cbd5e1] bg-white p-1.5 shadow-lg">
-								{#each ['Archive', 'Highlight', 'Mark unseen', 'Move to junk'] as action (action)}
-									<Menu.Item
-										value={action}
-										class="cursor-pointer rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 data-highlighted:bg-slate-100"
-										title="Arrives with the write path"
-									>
-										{action}
-									</Menu.Item>
-								{/each}
-								<div class="my-1 h-px bg-slate-100"></div>
-								<Menu.Item
-									value="trash"
-									class="cursor-pointer rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-red-600 data-highlighted:bg-red-50"
-									title="Arrives with the write path"
-								>
-									Trash
-								</Menu.Item>
-							</Menu.Content>
-						</Menu.Positioner>
-					</Portal>
-				</Menu.Root>
 			</div>
 		</div>
 
@@ -286,8 +252,8 @@
 							{#each rendered.attachments as attachment (attachment.blobId)}
 								{@const badge = attachmentBadgeTheme(attachment.type)}
 								<div
-									class="flex h-11 items-center gap-3 rounded-[6px] border border-[#cbd5e1] bg-white px-3 shadow-2xs hover:border-slate-400 transition-colors"
-									title={`${attachment.name} — downloads arrive in a later slice`}
+									class="flex h-11 items-center gap-3 rounded-[6px] border border-[#cbd5e1] bg-white px-3 shadow-2xs"
+									title={attachment.name}
 								>
 									<span
 										class="flex size-6 items-center justify-center rounded-[4px] text-[10px] font-bold uppercase"
