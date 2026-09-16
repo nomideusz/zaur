@@ -21,8 +21,8 @@ test('tokens: prototype geometry (list width, measure) is pinned', () => {
 	assert.match(css, /--z-measure: 33em/);
 });
 
-test('tokens: Inter is the interface face', () => {
-	assert.match(css, /--font-sans: 'Inter'/);
+test('tokens: Libre Franklin is the interface face', () => {
+	assert.match(css, /--font-sans: 'Libre Franklin'/);
 });
 
 test('tokens: Noto Sans Mono is the code face', () => {

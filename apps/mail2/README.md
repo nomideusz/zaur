@@ -320,7 +320,7 @@ The whole surface speaks one tactile language (`.btn-tactile` in
 - **Chrome:** white surfaces on the `#ebeef2` ground, capped at
   `max-w-[1780px]`. Structural borders are `#cbd5e1` (top bar, sidebar,
   inputs, menus); list/reader dividers and cards are `#e2e8f0`.
-- **Text:** Inter throughout, Noto Sans Mono for captions, counts and
+- **Text:** Libre Franklin throughout, Noto Sans Mono for captions, counts and
   code. The slate ramp — 900 headings, 800/700 body, 500 meta, 400
   captions. Counts, times and sizes are `tabular-nums`; group dividers and
   settings headings are uppercase mono 11px (`.z-caption`).
@@ -331,8 +331,8 @@ The whole surface speaks one tactile language (`.btn-tactile` in
   Destructive is red-600 on red-50; input focus is a blue-500 ring.
 - **Selection is blue-600 everywhere:** selected row
   (`border-blue-500` / `bg-blue-50/50`), keyboard cursor
-  (`border-blue-400` / `bg-blue-50/30`), unread rows (accent bar +
-  `bg-blue-50/30` wash, bold sender/subject), unread pills (`bg-blue-100`
+  (`border-blue-400` / `bg-blue-50/30`), unread rows (in-flow dot +
+  `bg-blue-50/30` wash, one step bolder sender/subject), unread pills (`bg-blue-100`
   `text-blue-700` — folder chip and Unseen filter), checkboxes
   (`accent-blue-600`), storage meter (`bg-blue-600`). The ringed status dot
   (`bg-blue-600` `ring-blue-100`) is reserved for tiny contexts: dock chips

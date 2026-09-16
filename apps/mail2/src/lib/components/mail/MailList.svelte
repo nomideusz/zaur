@@ -364,17 +364,7 @@
 							tabindex="-1"
 							aria-pressed={isSelected}
 						>
-							<!-- Unread accent bar: the notification-card vocabulary, down the
-							     card's left edge — scannable in a long list and untouched by
-							     the selection border. The ringed status dot stays reserved for
-							     tiny contexts (dock chips, compose step markers). -->
-							{#if row.unread}
-								<span
-									class="absolute top-2.5 bottom-2.5 left-[7px] w-[3px] rounded-full bg-blue-600"
-									aria-hidden="true"
-								></span>
-							{/if}
-
+							<!-- Message Details -->
 							<!-- Selection checkbox: a quiet Hobday box so the row stays a pure text card. -->
 							<button
 							type="button"
@@ -397,13 +387,16 @@
 								<!-- Senders and Meta (Time, Star, Attachments) -->
 								<div class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2">
 									<div class="flex items-center gap-1.5 truncate">
-										<span class="truncate text-[13px] font-semibold text-slate-800">
+										{#if row.unread}
+										<span class="size-1.5 shrink-0 rounded-full bg-blue-600" aria-hidden="true"></span>
+										{/if}
+										<span class="truncate text-[13px] {row.unread ? 'font-semibold text-slate-900' : 'font-medium text-slate-700'}">
 											{row.senderLabel}
 										</span>
 									</div>
 
 									<!-- Right aligned time & status icons (Hobday: tabular bold time) -->
-									<div class="flex items-center gap-1.5 text-xs font-medium tabular-nums text-slate-500 shrink-0">
+									<div class="flex items-center gap-1.5 text-xs tabular-nums text-slate-500 shrink-0">
 										{#if row.starred}
 											<svg class="size-3.5 text-amber-500" viewBox="0 0 16 16" fill="currentColor" aria-label="Highlighted">
 												<path d="M8 1.5l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.2l-3.8 2.1.7-4.3-3.1-3 4.3-.6z" />
@@ -419,7 +412,7 @@
 								</div>
 
 								<!-- Subject -->
-								<div class="truncate text-[14px] leading-snug tracking-tight mt-0.5 font-medium text-slate-800">
+								<div class="truncate text-[14px] leading-snug tracking-tight mt-0.5 {row.unread ? 'font-medium text-slate-900' : 'font-normal text-slate-700'}">
 									{row.subject}
 								</div>
 
