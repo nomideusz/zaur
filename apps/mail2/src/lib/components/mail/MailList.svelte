@@ -465,9 +465,11 @@
 											</svg>
 										{/if}
 										{#if row.hasAttachment}
-											<svg class="size-3.5 shrink-0 text-slate-400" viewBox="0 0 16 16" fill="none" role="img" aria-label="Has attachment">
-												<path d="M10.5 4.5L6 9a1.8 1.8 0 002.5 2.5l4.5-4.5a3.2 3.2 0 00-4.5-4.5L3.7 7.3a4.6 4.6 0 006.5 6.5l3.3-3.3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-											</svg>
+											<ActionIcon
+												name="clip"
+												class="size-3.5 shrink-0 text-slate-400"
+												label="Has attachment"
+											/>
 										{/if}
 										<time
 											class="text-[11.5px] tabular-nums {row.unread

@@ -4,6 +4,7 @@
 	import { filterContacts } from '#lib/compose/recipients';
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import { initials } from '#lib/mail/rows';
+	import ActionIcon from '#lib/components/mail/ActionIcon.svelte';
 	import { attachmentBadge, getHobdayTheme } from '#lib/mail/colors';
 	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 	import { Popover } from '@ark-ui/svelte/popover';
@@ -729,15 +730,7 @@
 			title="Attach a file"
 			onclick={() => fileInputEl?.click()}
 		>
-			<svg class="size-[18px] text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-				<path
-					d="M10.5 7L7.2 10.3a2.2 2.2 0 01-3.1-3.1l4.9-4.9a1.5 1.5 0 012.1 2.1L6.6 8.9a.8.8 0 01-1.1-1.1l3.5-3.5"
-					stroke="currentColor"
-					stroke-width="1.4"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				/>
-			</svg>
+			<ActionIcon name="clip" class="size-[18px] text-slate-700" />
 		</button>
 		<input
 			bind:this={fileInputEl}
@@ -838,15 +831,7 @@
 			title="Discard draft"
 			onclick={() => compose.discard(draft.id)}
 		>
-				<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-					<path
-						d="M3.5 5h9M6.5 5V3.5h3V5M5 5l.6 7.5h4.8L11 5"
-						stroke="currentColor"
-						stroke-width="1.4"
-						stroke-linecap="round"
-						stroke-linejoin="round"
-					/>
-				</svg>
+				<ActionIcon name="trash" class="size-[18px]" />
 			</button>
 			<!-- Primary last, on the right: attach/schedule left, discard + Send right. -->
 			{#if !sheet}
