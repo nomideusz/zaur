@@ -21,8 +21,12 @@ test('tokens: prototype geometry (list width, measure) is pinned', () => {
 	assert.match(css, /--z-measure: 33em/);
 });
 
-test('tokens: Libre Franklin is the interface face', () => {
-	assert.match(css, /--font-sans: 'Libre Franklin'/);
+test('tokens: Noto Sans is the interface face', () => {
+	assert.match(css, /--font-sans: 'Noto Sans'/);
+});
+
+test('tokens: Noto Sans Mono is the code face', () => {
+	assert.match(css, /--font-mono: 'Noto Sans Mono'/);
 });
 
 test('tokens: Tailwind theme bridge exposes the palette as utilities', () => {

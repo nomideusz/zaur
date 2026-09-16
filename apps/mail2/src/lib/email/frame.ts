@@ -13,7 +13,7 @@ const FRAME_STYLES = `
 	html { overflow-x: auto; }
 	body {
 		margin: 0;
-		font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+		font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
 			'Helvetica Neue', Arial, sans-serif;
 		font-size: 16px;
 		line-height: 1.75;
@@ -53,7 +53,7 @@ const FRAME_STYLES = `
 		color: #5d6766;
 	}
 	pre, code {
-		font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+		font-family: 'Noto Sans Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
 		font-size: 0.9em;
 	}
 	pre { background: #fafafa; border: 1px solid #ececec; border-radius: 6px; padding: 12px; overflow-x: auto; }
