@@ -20,6 +20,9 @@ theme only** for now; Files and Meet arrive when their designs land.
 - [x] Attachment downloads (`/api/download`) †
 - [x] Server-side rules (JMAP Sieve) †
 - [x] Settings that follow the account rather than the browser
+- [x] Design system v2 applied — channel hues, identity tones on avatars, the ZAUR
+  stamp, IBM Plex Mono, tactile controls, the v2 sign-in, phone and settings
+  screens (see [Design system v2](#design-system-v2-pastel-channels-tactile-controls))
 - [x] Security settings (`/settings/security`): password, 2FA, app passwords,
   API keys, signed-in devices, recovery email — see [Security](#security) ‡
 - [x] Contacts with a real source — JMAP Contacts (RFC 9610), feeding compose
@@ -318,104 +321,103 @@ touch pointers, where the same drag is the strip's scroll.
 - No swipe-to-archive on rows and no pull-to-refresh — the latter would be
   meaningless anyway, since JMAP is live.
 
-## The Zaur mark
+## The mark
 
-Where every other window puts three inert traffic lights, the shell windows
-(mail, settings, login) put the Zaur pixel dinosaur — `@zaur/sprite`, the same
-mark as the zaur.app landing page, drawn from `SPRITE_FRAMES` on its 20×18
-`crispEdges` grid as a duotone: raspberry `#db2777` body over deep plum
-`#831843` from row 11 down (legs and underside), with the eye left as a hole.
-Both tones are the Hobday pink already in `#lib/mail/colors` — vivid at 28px,
-and complementary to the green account avatar at the other end of the top bar. It is the brand *and* an ambient indicator, so the slot
-earns its place: `look_up` while unseen mail waits, `cheer` on reaching zero
-and `happy` at rest, `sad` when the browser goes offline, `sleep` after five
-minutes without input, with a random `blink` (skipped under
-`prefers-reduced-motion`). There is no sync or refresh frame — JMAP is live.
+Where the pixel dinosaur used to sit, the shell now carries a **stamp**:
+`ZAUR` in letter-spaced mono inside a hard 1px box, 24px tall in the top bar
+and 22px in compact headers. It says *Zaur* rather than *Zaur Mail* because one
+account spans Mail, Chat, Discuss and Meet, and it ties the brand to the mono
+captions already running through the shell.
 
-On the sign-in window the mark is absolutely positioned, so the centred title
-sits on the window's centre rather than on whatever space is left beside it.
+The dinosaur did two jobs in that corner — the brand, and an unread indicator
+that changed expression — and a mark that changes expression is charming once
+and ambiguous after that. It also cannot say "12". The unread count lives in
+the folder switcher and the status line now, where a number already does. The
+sprite stays a mascot for marketing and `@zaur/sprite`; it is not the app mark.
+`ZaurMark.svelte` keeps its name and renders the stamp.
 
-Compose panels have no mark and no dots: their minimize/maximize/close live on
-the right of the header, and the dots only duplicated them.
+## Design system v2: pastel channels, tactile controls
 
-## One visual language
+The shell speaks one language, written down in `styles/tokens.css` and
+`styles/base.css` and mirrored in the design project ("Zaur Mail Design
+System", `claude.ai/design`). Two ideas carry it:
 
-The whole surface speaks one tactile language (`.btn-tactile` in
-`styles/base.css`, Hobday candy palette in `#lib/mail/colors`):
+**Colour means channel, not identity.** Six fixed hues, each a pastel fill, a
+saturated stroke that matches it, a dark ink for text on the fill, and a solid
+for filled controls:
 
-- **Chrome:** white surfaces on the `#ebeef2` ground, capped at
-  `max-w-[1780px]`. Structural borders are `#cbd5e1` (top bar, sidebar,
-  inputs, menus); list/reader dividers and cards are `#e2e8f0`.
-- **Text:** Libre Franklin throughout, Noto Sans Mono for captions, counts and
-  code. The slate ramp — 900 headings, 800/700 body, 500 meta, 400
-  captions. Counts, times and sizes are `tabular-nums`; group dividers and
-  settings headings are uppercase mono 11px (`.z-caption`).
-- **Controls:** `btn-tactile` — white, 6px radius, `#cbd5e1` border, slate
-  text (`#f8fafc` / `#94a3b8` on hover). The primary action (Send, Sign in)
-  is the same button filled blue-600 (blue-700 border), recessed grey
-  (`slate-100`/`slate-200`/`slate-400`) until there is a recipient.
-  Destructive is red-600 on red-50; input focus is a blue-500 ring.
-- **Selection is blue-600 everywhere:** selected row (`#e3eeff` /
-  `border-blue-500`), keyboard cursor (`#f5f9ff` / `border-blue-400`),
-  unread pills (`bg-blue-100` `text-blue-700` — folder chip and Unseen
-  filter), checkboxes (`accent-blue-600`), storage meter (`bg-blue-600`).
-  The ringed status dot (`bg-blue-600` `ring-blue-100`) is reserved for tiny
-  contexts: dock chips and compose step markers. Unread list rows used to
-  borrow this blue too; they wear the sender's own colour now (see
-  "The message row"), which leaves blue to mean *you picked this*.
-- **People are Hobday candy:** `getHobdayTheme` in `#lib/mail/colors`
-  deterministically maps an email to one of five themes
-  (blue/green/pink/amber/purple) — **the same person is the same colour**
-  in the list row's rail and thread-count chip, the reader's sender card and
-  thread history, the compose To chips and the account menu. Two primitives in
-  `styles/base.css` carry it: **`.z-railed`** draws that person's accent bar as
-  a `::before` (so it costs no element and takes no place in a grid or flex
-  row), and **`.z-hue-wash`** is the surface to sit it on — `color-mix` of the
-  hue at 7% for the fill and 30% for the border. Both read **`--z-rail`**, which
-  is the only thing a caller sets. Not `--z-accent`: that name was already the
-  shell's accent, and `base.css` paints every focus ring with it — a row setting
-  a hue would have repainted the focus outline of everything inside it. `attachmentBadge` is the one source for the file-kind badge
-  (PDF red, image blue, archive amber, else green), shared by the reader
-  and compose. **Folders have colours too**, from `mailboxTheme`: the checkbox,
-  the unread pill and — when it is the open one — the rail and wash on its
-  sidebar row. Most take a Hobday theme; Archive is deliberately neutral, and
-  Junk and Trash are red, because the pill should say what the folder does with
-  what lands in it. The top bar's folder menu reads the same function, so the
-  same count cannot appear grey in one place and blue in the other.
-- **The chrome is one accent.** `--z-accent` is blue-600. It used to be the
-  handoff's plum, which by the end was reaching only three things — the focus
-  ring, the splitter's hover tint and the sign-in register link — and they were
-  the last plum in a shell that selects in blue everywhere else.
-- **Four classes, not four copies.** `.z-caption` is the uppercase mono label,
-  `.hobday-checkbox` the drawn checkbox, `.z-check` the same box on a real
-  `<input>` (so settings and sign-in keep native controls), and `.btn-tactile`
-  the button. The first three were written in `base.css` from the start and then
-  re-typed as Tailwind at every site instead; they are used now.
-- **Menus are Ark:** 8px card, `#cbd5e1` border, `bg-slate-100` highlight.
-  Contact suggestions add a ↵ kbd hint on the highlighted row and a
-  ↑↓ / ↵ / esc footer.
-- **Notices are cards:** toasts are 10px cards wearing `.z-railed` — the bar
-  that class is named after, with the tone in place of a person's hue (blue
-  info, green success, amber warning, red error) — and a tactile action button.
-  They sit **bottom centre**, because both bottom corners are spoken for: the
-  sidebar's New message button is bottom left (and the message list is, once the
-  sidebar is collapsed), the compose dock bottom right. When the dock has chips
-  the notices rise above it — on a phone the two were the same box, so a notice
-  landed squarely on the minimised drafts. Covering a message row for three
-  seconds is the one thing down there that costs nothing.
+| Channel | Says | fill / stroke / solid / ink |
+| --- | --- | --- |
+| Correspondence | mail, and anything selected | `#dbeafe` `#3b82f6` `#2563eb` `#1e40af` |
+| Confirmed | sent, done, success | `#dcfce7` `#16a34a` `#16a34a` `#14532d` |
+| Needs you | flagged important, drafts, warnings, scheduled | `#fde68a` `#d97706` `#d97706` `#78350f` |
+| Flagged | your own flag | `#fbcfe8` `#db2777` `#db2777` `#831843` |
+| Digest | automated mail, custom folders | `#ddd6fe` `#7c3aed` `#7c3aed` `#4c1d95` |
+| Discard | junk, trash, errors | `#fee2e2` `#ef4444` `#dc2626` `#b91c1c` |
+
+Rails, chips, unread washes, folder rows, toasts and error cards wear a
+channel. `messageChannel` in `#lib/mail/colors` decides a row's: the folder
+wins for junk, trash, sent and drafts, your flag outranks the server's
+`$important`, and the rest is correspondence — all from what JMAP already
+gives us, nothing new on a message. `mailboxChannel` does the same for folders.
+
+**Identity lives on the avatar tile.** Eight quieter tones (steel, sky,
+indigo, rose, lime, orange, plum, stone), picked deterministically per
+address, worn only by the 30px tile a person gets in a list row, the reader's
+sender card, a recipient chip, a contact, the account button. Teal is reserved
+for the brand. v1 hashed the sender into five hues and put it on the rail, so
+colour *was* identity — and identity is noise: two unrelated senders share a
+hue, and the same colour means something different in every row.
+
+The rest follows from those two:
+
+- **Surfaces and ink.** `#eef1f5` ground behind the app column, `#f6f7f9` pane
+  ground (settings sit on it), white surfaces, `#f1f4f8` sunken wells. Ink
+  `#0b1220` for headings and unread, `#1e293b` body, `#475569` muted, `#64748b`
+  *soft* — the lightest any text may be. `#94a3b8` *faint* is for rules and
+  glyphs only, never text; meta sitting on a channel fill steps up to muted or
+  to that channel's own ink, because 11px grey on a pastel wash does not clear
+  4.5:1. Hairlines are `#e2e8f0`, control and panel borders `#cbd5e1`. The dark
+  ramp is written in `tokens.css` behind `[data-theme='dark']` but nothing
+  reads it yet — see the design follow-ups.
+- **Type.** Libre Franklin for the interface, **IBM Plex Mono** (replacing Noto
+  Sans Mono) for captions, counts, times, addresses and keys. Eight roles from
+  a 38px display down to the 11px uppercase mono caption (`.z-caption`, soft).
+- **Controls are things you could press.** `.btn-tactile` is white, 8px radius,
+  `#cbd5e1` border, a 1px shadow and a half-pixel press; `.btn-primary` fills it
+  blue with a `#1d4ed8` edge (Send, Sign in, New message); `.btn-danger` is red
+  ink that turns to the discard channel on hover. Icon buttons are 26px inside
+  a bordered `.z-group`; segmented controls (`.z-segment`) mark the active
+  member with the correspondence fill. Fields are 34px with an inset shadow at
+  rest and a 3px accent ring on focus. Keys are `.z-kbd`, with a 2px bottom
+  border so they read as keys. Menus are 12px cards with 8px items.
+- **Four elevations, no more:** tactile (buttons, chips, fields), raised
+  (unread rows), menu (menus, popovers, dock chips, toasts), panel (compose,
+  dialogs). Radii 4–14 plus pill.
+- **Selection is the correspondence solid, everywhere.** The active filter, the
+  active section tab, a selected row (`#eff6ff` with a `#2563eb` ring), the
+  selection header (which takes the correspondence fill so it reads as one
+  object with the rows), the checkbox fill, the storage bar.
+
+Compose follows the same rules, so its parts match what they stand next to:
 
 | Compose | Matches |
 | --- | --- |
-| Send | the login submit — `btn-tactile` filled blue-600, recessed grey until there is a recipient |
-| Attach / Schedule / Discard | the reader toolbar's `btn-tactile`, discard in destructive red |
-| Recipient chips | the calendar chip — the person's Hobday fill, stroke and text, all three. They were a white chip carrying an 18px avatar tile; a chip that spells the name out does not need initials too, and the tile kept the colour in a corner. The initials live on in the tooltip that reveals the address, and in the suggestion list |
-| Contact suggestions | the Ark menus: 8px card, `#cbd5e1` border, `bg-slate-100` highlight, plus ↵ kbd hint and key-hint footer |
-| Attachment chips | the reader's chips, scaled to the 30px strip; `attachmentBadge` is the one source for the kind colour |
-| To / Subject step markers | the ringed blue status dot on a dock chip with content |
+| Send | `.btn-primary`, recessed grey until there is a recipient, `⌘↵` inside it on a desk |
+| Attach / Discard | the reader toolbar's tactile buttons; discard in danger red |
+| Schedule | the needs-you channel once a time is set — a filled amber chip that says when |
+| Recipient chips | the person's identity tone, fill, stroke and ink; the tooltip shows their tile and address |
+| Suggestions | the menu: the highlighted row is a correspondence card, with a 26px tile, a mono address and a `↵` key |
+| Attachment chips | the reader's chips at 30px; `attachmentBadge` is the one source for the kind colour |
+| To / Subject step markers | 7px dots — the correspondence solid with its stroke when done, line-grey before |
 
-The step dots stayed dots rather than becoming the sidebar's checkbox: a 17px
-checkbox does not fit the 62px label column, and the field geometry is a
-contract with `computeAutoHeight`.
+### One trap worth knowing
+
+Component `<style>` blocks are **unlayered**, and `base.css` lives in
+`@layer base` — so an unlayered `.z-row { background: #fff }` silently beats
+`.z-hue-wash` no matter how specific the shared class is, and every unread row
+goes flat. A component that wants a default *and* a shared surface has to claim
+the default conditionally (`.z-row:not(.z-hue-wash)`), not unconditionally.
 
 ## Compose panel geometry
 
@@ -501,67 +503,62 @@ Search is scoped to the open folder, which is what the placeholder says.
 
 ## The message row
 
-A row is a card with the **sender's rail** down its left edge — the accent bar
-off a notification card, in the Hobday hue that person already wears in the
-reader and in compose. It carries two things without collision: the **hue says
-who it is from**, its **weight says whether it has been seen**. Unread adds a
-7% wash of that same hue and a border mixed from it — the calendar chip's
-pastel fill, turned down until it is a tint rather than a block of colour —
-plus a bolder sender and subject.
-
-That is why unread is no longer blue. A blue dot beside a green rail is two
-systems arguing; letting unread be *more of the sender's colour* says the same
-thing with what is already there, and hands blue back to selection. Selection
-and the keyboard cursor still outrank the sender's colour, so a row you picked
-reads as picked whoever it is from.
+A row is a card in three columns — an 18px checkbox, a 30px identity tile, the
+text — with a 3px **rail** down its left edge in the row's channel. The rail
+says what kind of thing this is; the tile says who it is from; weight says
+whether it has been seen. Unread adds the channel's fill and stroke and a bold
+sender; read rows go white with the rail at a third strength. Selection and
+the keyboard cursor outrank the channel — a row you picked reads as picked
+whatever it is.
 
 The rest of the row:
 
-- **Thread size:** rows are threads, so one holding more than one message wears
-  a count chip in the sender's badge tint. `buildRowGroups` counts what *this
-  folder view* holds, which is why the Unseen filter can drop it — that is
-  honest, not stale. The header counts conversations to match.
-- **Meta, then actions, in one slot:** starred / attachment / time sit at the
-  top right. On hover they step aside and a card of icon buttons steps in —
-  highlight, mark read/unread, archive, delete, the same four the selection
-  header runs on a batch — so nothing is covered and no row grows. Pointer only (`@media (hover: hover)`; on a touch screen `:hover`
-  sticks), and out of the tab order, because 50 rows × 4 stops is not a tab
-  order. Screen readers still reach them; sighted keyboard users get `s` / `e`
-  / `#` on the cursor row, which the status line spells out.
-- **Group dividers stick.** The date a message arrived is what you lose first
-  when scrolling a long folder, so `TODAY` pins to the top of the pane while
-  its own rows pass under it.
+- **Channel chip.** Mono caps in the channel's ink on a white ground, after the
+  sender's name. Correspondence rows only wear it while unread — an inbox
+  where every row says "correspondence" is noise — and it hides below 430px,
+  where the rail carries it alone.
+- **Thread size:** a row is a thread, so one holding more than one message
+  wears a filled count chip. `buildRowGroups` counts what *this folder view*
+  holds, which is why the Unseen filter can drop it — that is honest, not stale.
+- **Meta, then actions, in one slot:** attachment clip and a mono time sit at
+  the top right. On hover they step aside and a card of icon buttons steps in —
+  flag, mark read/unread, archive, delete, the same four the selection header
+  runs on a batch. Pointer only (`@media (hover: hover)`; on a touch screen
+  `:hover` sticks), and out of the tab order, because 50 rows × 4 stops is not
+  a tab order. Sighted keyboard users get `s` / `e` / `#` on the cursor row,
+  which the status line spells out.
+- **Group dividers stick,** with the caption on the left and a mono count on
+  the right of the rule, so `TODAY · 4` pins while its rows pass under it.
+- **On a phone** the checkbox column goes: the row is tile plus text, and
+  selection lives in the header's Select menu.
 
 ## The reader wears the row it came from
 
-Open a thread and the sender's card is the row you clicked, grown up: the same
-`.z-railed` bar in the same hue, over the same `.z-hue-wash`. That handoff is
-the whole point — two panes that merely agree on a palette still read as two
-panes; one that hands its colour to the other reads as one thing. Selection
-blue outranks the hue on the row itself, but only on its *surface*: the rail
-keeps the sender's colour, so the link survives being the row you are on.
+Open a thread and the sender card is the row you clicked, grown up: the same
+rail in the same channel over the same fill, the same identity tile a size
+larger. That handoff is the whole point — two panes that merely agree on a
+palette still read as two panes; one that hands its colour to the other reads
+as one thing. The channel is decided the same way (`messageChannel`, from the
+folder the thread was opened in and the thread's flags), so the two can never
+disagree.
 
 The rest of the pane follows from the same rule:
 
-- The toolbar gained the **same four icons** the list uses, on the thread being
-  read, so archiving what is open does not mean going back to the list for it.
-  They are the actions the inert "More actions" menu once mimed.
-- **Thread history** is a stack of rows: each earlier message is railed by *its*
-  own sender, at the seen strength, so a thread with three people in it is
+- The toolbar's Reply set is labelled on a desk and icon-only on a phone, and
+  the **same four icons** the list uses sit in a bordered group on the right;
+  a flagged thread's flag button is filled in the flagged channel.
+- **Thread history** is a stack of cards, each railed by *its* sender's
+  identity tone at a third strength, so a thread with three people in it is
   scannable at a glance. Expanding it used to be one-way; it collapses now.
-- The banner that opens it was amber on amber, which in this shell means
-  *warning* — earlier history is not a warning. It is a plain tactile card, and
-  its count is the **same chip, in the same colours** as the thread count on the
-  list row, because it is the same number about the same thread.
-- `Attachments` is the list's group divider, to the letter: label, rule, count.
-
-### One trap worth knowing
-
-Component `<style>` blocks are **unlayered**, and `base.css` lives in
-`@layer base` — so an unlayered `.z-row { background: #fff }` silently beats
-`.z-hue-wash` no matter how specific the shared class is, and every unread row
-goes flat. A component that wants a default *and* a shared surface has to claim
-the default conditionally (`.z-row:not(.z-hue-wash)`), not unconditionally.
+- The card that opens history is a plain tactile card, and its count is the
+  **same chip** the list row wears, because it is the same number about the
+  same thread.
+- `Attachments` is the list's group divider to the letter — caption, rule,
+  count — and each chip is 40px with a 22px kind badge whose colour comes from
+  `attachmentBadge`, like compose's.
+- **Empty and error states are cards too.** Nothing open is a correspondence
+  tile with the `j` `k` keys; a load that failed is a discard-channel card with
+  the one action worth having, Retry.
 
 ## Bulk actions
 
@@ -749,8 +746,8 @@ personal address book is small. `contactMatches` is a prefix match on words and
 addresses, tested.
 
 `/contacts` is the pane: letter-grouped list with sticky dividers (the list's
-own vocabulary), search, a detail card that wears the person's Hobday rail and
-wash like the reader does, and an editor. "Write" opens Mail with
+own vocabulary), search, a detail card with the person's identity tile on a neutral surface (a hue on a
+surface means a channel, never a person), and an editor. "Write" opens Mail with
 `/?to=address`, which the mail page consumes once and strips from the URL, so a
 reload does not open a second draft. Push subscribes to `ContactCard` and
 `AddressBook`, so a card saved on the phone shows up without a reload.
@@ -957,13 +954,12 @@ Two smaller notes:
   would need too — the JMAP client, the search query parser, and the rule model
   with its Sieve compiler (`sieve-rules.ts`). What stays in mail2 is the shell:
   the push listener, the remote functions and the UI.
-- Styling is the tactile system, not a token ramp: `styles/base.css` owns
-  `.btn-tactile`, `.hobday-checkbox`, `.z-check`, `.z-field`, `.z-caption`, the
-  `.z-railed`/`.z-hue-wash` pair and the `.z-shell` grid;
-  surfaces use Tailwind slate/blue plus the chrome hexes (`#ebeef2` ground,
-  `#cbd5e1` chrome borders, `#e2e8f0` dividers); people and file-kind
-  colours come from `#lib/mail/colors` (`getHobdayTheme`,
-  `attachmentBadge`). `styles/tokens.css` remains as the Tailwind `@theme
-  inline` bridge, but the mail surface reads slate/blue/Hobday directly —
-  only the body ground, focus ring, splitter and login register link still
-  resolve its `--z-*` values.
+- Styling is design system v2: `styles/tokens.css` carries the surfaces, ink ramp,
+  six channels, elevations and the (unwired) dark ramp; `styles/base.css` owns the
+  shared primitives (`.btn-tactile` / `.btn-primary` / `.btn-danger`, `.z-icon-btn`,
+  `.z-group` / `.z-segment`, `.z-check`, `.z-field`, `.z-kbd`, `.z-avatar`, `.z-chip`,
+  `.z-count`, `.z-railed` / `.z-hue-wash`, `.z-menu`, `.z-caption`) and the `.z-shell`
+  grid; `#lib/mail/colors` owns the channel and identity models (`messageChannel`,
+  `mailboxChannel`, `identityTone`, `attachmentBadge`). Components use the v2 hex
+  values directly, like the design file does — moving them onto the tokens is the
+  first step of the dark pass.

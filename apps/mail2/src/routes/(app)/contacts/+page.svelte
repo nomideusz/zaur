@@ -129,7 +129,7 @@
 <SectionShell title="Contacts">
 	{#snippet controls()}
 		<div class="relative flex items-center max-md:hidden">
-			<svg class="pointer-events-none absolute left-2.5 size-3.5 text-slate-400" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+			<svg class="pointer-events-none absolute left-2.5 size-3.5 text-[#94a3b8]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 				<circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
 				<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
 			</svg>
@@ -160,38 +160,38 @@
 					aria-label="Search contacts"
 					class="z-field w-full md:hidden max-md:text-base"
 				/>
-				<span class="text-[12px] text-slate-500 tabular-nums max-md:hidden">
+				<span class="text-[12px] text-[#64748b] tabular-nums max-md:hidden">
 					{#if contactsState}
 						{visible.length === all.length ? `${all.length} contacts` : `${visible.length} of ${all.length}`}
 					{/if}
 				</span>
 				{#if notice}
-					<span class="ml-auto truncate text-[12px] font-medium text-slate-600" role="status">{notice}</span>
+					<span class="ml-auto truncate text-[12px] font-medium text-[#475569]" role="status">{notice}</span>
 				{/if}
 			</div>
 
 			<div class="min-h-0 flex-1 overflow-y-auto">
 				{#if resource?.error}
-					<div class="p-6 text-center text-[13px] text-red-600">
+					<div class="p-6 text-center text-[13px] text-[#b91c1c]">
 						Could not load your contacts.
 						<button type="button" class="btn-tactile mt-3 !h-[28px]" onclick={() => resource?.refresh()}>Retry</button>
 					</div>
 				{:else if !contactsState}
 					<ul class="space-y-1 p-3">
-						{#each [1, 2, 3, 4, 5, 6] as n (n)}<li class="h-[44px] animate-pulse rounded-[8px] bg-slate-100"></li>{/each}
+						{#each [1, 2, 3, 4, 5, 6] as n (n)}<li class="h-[44px] animate-pulse rounded-[8px] bg-[#f1f5f9]"></li>{/each}
 					</ul>
 				{:else if !contactsState.supported}
-					<p class="p-6 text-[13px] leading-relaxed text-slate-500">
+					<p class="p-6 text-[13px] leading-relaxed text-[#64748b]">
 						This mail server does not offer contacts over JMAP, so there is nothing to show here.
 						Compose still suggests people who have written to you.
 					</p>
 				{:else if all.length === 0}
 					<div class="p-6 text-center">
-						<p class="text-[13px] text-slate-500">No contacts yet.</p>
+						<p class="text-[13px] text-[#64748b]">No contacts yet.</p>
 						<button type="button" class="btn-tactile mt-3" onclick={startNew}>Add the first one</button>
 					</div>
 				{:else if visible.length === 0}
-					<p class="p-6 text-center text-[13px] text-slate-500">Nobody matches “{query}”.</p>
+					<p class="p-6 text-center text-[13px] text-[#64748b]">Nobody matches “{query}”.</p>
 				{:else}
 					{#each groups as group (group.letter)}
 						<div class="z-caption sticky top-0 z-10 border-b border-[#e2e8f0] bg-white/95 px-4 py-1.5 backdrop-blur">
@@ -204,7 +204,7 @@
 								<li>
 									<button
 										type="button"
-										class="flex w-full items-center gap-3 border-b border-[#f1f5f9] px-4 py-2 text-left transition-colors {isSelected ? 'bg-[#e3eeff]' : 'hover:bg-slate-50'}"
+										class="flex w-full items-center gap-3 border-b border-[#f1f5f9] px-4 py-2 text-left transition-colors {isSelected ? 'bg-[#e3eeff]' : 'hover:bg-[#f8fafc]'}"
 										onclick={() => open(contact)}
 										aria-current={isSelected ? 'true' : undefined}
 									>
@@ -217,8 +217,8 @@
 											{initials(contact)}
 										</span>
 										<span class="min-w-0 flex-1">
-											<span class="block truncate text-[13.5px] font-medium text-slate-900">{contactDisplayName(contact)}</span>
-											<span class="block truncate text-[12px] text-slate-500">
+											<span class="block truncate text-[13.5px] font-medium text-[#0b1220]">{contactDisplayName(contact)}</span>
+											<span class="block truncate text-[12px] text-[#64748b]">
 												{contact.emails[0]?.address ?? contact.phones[0]?.number ?? contact.organization}
 											</span>
 										</span>
@@ -228,7 +228,7 @@
 						</ul>
 					{/each}
 					{#if contactsState.truncated}
-						<p class="px-4 py-3 text-[12px] text-slate-400">Showing the first {all.length} — use search to find the rest.</p>
+						<p class="px-4 py-3 text-[12px] text-[#94a3b8]">Showing the first {all.length} — use search to find the rest.</p>
 					{/if}
 				{/if}
 			</div>
@@ -261,11 +261,13 @@
 								Write
 							</a>
 							<button type="button" class="btn-tactile !h-[30px]" onclick={() => (mode = 'edit')}>Edit</button>
-							<button type="button" class="btn-tactile !h-[30px] !text-red-600" disabled={saving} onclick={() => remove(selected!)}>Delete</button>
+							<button type="button" class="btn-tactile !h-[30px] !text-[#b91c1c]" disabled={saving} onclick={() => remove(selected!)}>Delete</button>
 						</div>
 					</div>
 					<div class="min-h-0 flex-1 overflow-y-auto px-8 py-6 max-md:px-4">
-						<div class="z-railed z-hue-wash flex items-center gap-4 rounded-[10px] border p-4" style:--z-rail={colors.accent}>
+						<!-- A person is carried by the avatar tile; the card around it stays neutral,
+						     because a surface hue means a channel, not who someone is. -->
+						<div class="flex items-center gap-4 rounded-[10px] border border-[#e2e8f0] bg-white p-4 shadow-[var(--z-shadow-tactile)]">
 							<span
 								class="flex size-14 shrink-0 items-center justify-center rounded-[8px] border text-[18px] font-bold"
 								style:background-color={colors.bg}
@@ -275,10 +277,10 @@
 								{initials(selected)}
 							</span>
 							<div class="min-w-0">
-								<h2 class="truncate text-[18px] font-bold tracking-tight text-slate-900">{contactDisplayName(selected)}</h2>
-								{#if selected.nickname}<p class="text-[13px] text-slate-500">“{selected.nickname}”</p>{/if}
+								<h2 class="truncate text-[18px] font-bold tracking-tight text-[#0b1220]">{contactDisplayName(selected)}</h2>
+								{#if selected.nickname}<p class="text-[13px] text-[#64748b]">“{selected.nickname}”</p>{/if}
 								{#if selected.title || selected.organization}
-									<p class="truncate text-[13px] text-slate-600">
+									<p class="truncate text-[13px] text-[#475569]">
 										{[selected.title, selected.organization].filter(Boolean).join(' · ')}
 									</p>
 								{/if}
@@ -290,8 +292,8 @@
 							<ul class="mt-2 divide-y divide-[#f1f5f9]">
 								{#each selected.emails as email (email.address)}
 									<li class="flex items-center justify-between gap-3 py-2">
-										<a href="/?to={encodeURIComponent(email.address)}" class="truncate text-[13.5px] font-medium text-slate-800 hover:text-blue-700 hover:underline">{email.address}</a>
-										{#if email.label}<span class="shrink-0 text-[12px] text-slate-400">{email.label}</span>{/if}
+										<a href="/?to={encodeURIComponent(email.address)}" class="truncate text-[13.5px] font-medium text-[#1e293b] hover:text-[#1d4ed8] hover:underline">{email.address}</a>
+										{#if email.label}<span class="shrink-0 text-[12px] text-[#94a3b8]">{email.label}</span>{/if}
 									</li>
 								{/each}
 							</ul>
@@ -302,8 +304,8 @@
 							<ul class="mt-2 divide-y divide-[#f1f5f9]">
 								{#each selected.phones as phone (phone.number)}
 									<li class="flex items-center justify-between gap-3 py-2">
-										<a href="tel:{phone.number.replace(/[^\d+]/g, '')}" class="text-[13.5px] font-medium text-slate-800 tabular-nums hover:text-blue-700 hover:underline">{phone.number}</a>
-										{#if phone.label}<span class="shrink-0 text-[12px] text-slate-400">{phone.label}</span>{/if}
+										<a href="tel:{phone.number.replace(/[^\d+]/g, '')}" class="text-[13.5px] font-medium text-[#1e293b] tabular-nums hover:text-[#1d4ed8] hover:underline">{phone.number}</a>
+										{#if phone.label}<span class="shrink-0 text-[12px] text-[#94a3b8]">{phone.label}</span>{/if}
 									</li>
 								{/each}
 							</ul>
@@ -311,18 +313,18 @@
 
 						{#if selected.note}
 							<h3 class="z-caption mt-6">Notes</h3>
-							<p class="mt-2 text-[13px] leading-relaxed whitespace-pre-wrap text-slate-700">{selected.note}</p>
+							<p class="mt-2 text-[13px] leading-relaxed whitespace-pre-wrap text-[#334155]">{selected.note}</p>
 						{/if}
 
 						{#if selected.updated}
-							<p class="mt-8 text-[12px] text-slate-400">
+							<p class="mt-8 text-[12px] text-[#94a3b8]">
 								Updated {new Date(selected.updated).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
 							</p>
 						{/if}
 					</div>
 				</div>
 			{:else}
-				<div class="flex h-full items-center justify-center p-8 text-center text-[13px] text-slate-400 max-md:hidden">
+				<div class="flex h-full items-center justify-center p-8 text-center text-[13px] text-[#94a3b8] max-md:hidden">
 					{#if contactsState?.supported}
 						Pick someone from the list, or add a new contact.
 					{/if}

@@ -10,11 +10,12 @@
 	 * That accent bar is where `.z-railed` came from, so the toast wears the
 	 * real thing — the tone in place of a person's hue.
 	 */
+	// A tone is a channel's solid: correspondence, confirmed, needs, discard.
 	const TONE: Record<ToastTone, string> = {
-		info: '#3b82f6',
+		info: '#2563eb',
 		success: '#16a34a',
 		warning: '#d97706',
-		error: '#ef4444'
+		error: '#dc2626'
 	};
 
 	/**
@@ -35,16 +36,16 @@
 	<div class="z-toasts absolute z-[60] flex flex-col items-center gap-2" data-docked={docked}>
 		{#each compose.toasts as toast (toast.id)}
 			<div
-				class="z-railed flex max-w-[min(380px,calc(100vw-3rem))] items-center gap-2.5 rounded-[10px] border border-[#cbd5e1] bg-white py-2.5 pr-2 pl-[18px] shadow-lg"
+				class="z-railed flex max-w-[min(380px,calc(100vw-3rem))] items-center gap-2.5 rounded-[10px] border border-[#cbd5e1] bg-white py-2.5 pr-2 pl-[18px] shadow-[var(--z-shadow-menu)]"
 				style:--z-rail={TONE[toast.tone ?? 'info']}
 				style:--z-rail-inset="10px"
 				role="status"
 			>
-				<p class="min-w-0 flex-1 text-[13px] font-medium text-slate-800">{toast.text}</p>
+				<p class="min-w-0 flex-1 text-[13px] font-medium text-[#1e293b]">{toast.text}</p>
 				{#if toast.actionLabel}
 					<button
 						type="button"
-						class="btn-tactile shrink-0 !h-[26px] !px-2.5 !text-[12px] font-semibold"
+						class="btn-tactile shrink-0 !h-[26px] !rounded-[6px] !px-2.5 !text-[12px] !font-semibold"
 						onclick={() => compose.runToastAction(toast.id)}
 					>
 						{toast.actionLabel}
@@ -52,12 +53,12 @@
 				{/if}
 				<button
 					type="button"
-					class="flex size-6 shrink-0 items-center justify-center rounded-[4px] text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+					class="z-icon-btn !size-6"
 					aria-label="Dismiss notification"
 					onclick={() => compose.dismissToast(toast.id)}
 				>
-					<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+					<svg class="size-[11px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 					</svg>
 				</button>
 			</div>

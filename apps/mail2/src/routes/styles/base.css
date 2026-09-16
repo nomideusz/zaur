@@ -1,4 +1,8 @@
-/* Mail 2.0 base — reset + shell ground. Component styles live beside their components. */
+/*
+ * Mail 2.0 base — reset, shell ground, and the shared primitives of design
+ * system v2. Component styles live beside their components; anything drawn in
+ * more than one place is drawn once, here.
+ */
 
 @layer base {
 	*,
@@ -14,7 +18,7 @@
 	body {
 		margin: 0;
 		min-height: 100svh;
-		background: var(--z-canvas);
+		background: var(--z-ground);
 		color: var(--z-ink);
 		font-family: var(--font-sans);
 		font-size: 14px;
@@ -45,53 +49,219 @@
 	button:focus-visible,
 	a:focus-visible,
 	[role='button']:focus-visible {
-		/* `--z-accent` is the shell's blue; the rail deliberately uses `--z-rail`,
-		   because a row setting a hue must not repaint the focus ring inside it. */
+		/* `--z-accent` is the shell's blue; rails and fills use their own vars,
+		   because a row setting a channel must not repaint the focus ring inside it. */
 		outline: 2px solid var(--z-accent);
 		outline-offset: 2px;
 	}
 
+	/* ── Type ─────────────────────────────────────────────────────────── */
+
 	/*
-	 * Uppercase monospace caption — the list's group dividers, the reader's
-	 * Attachments and History rules, the sidebar and settings headings, and the
-	 * captions on menus. It was written down here from the start and then
-	 * re-typed as Tailwind at every one of those sites; this is the one copy.
+	 * Uppercase monospace caption — group dividers, the reader's Attachments
+	 * and History rules, sidebar and settings headings, menu captions. `soft`
+	 * is the lightest ink any text may use; `faint` is for rules and glyphs.
 	 */
 	.z-caption {
 		font-family: var(--font-mono);
 		font-size: 11px;
 		font-weight: 600;
-		letter-spacing: 0.05em;
+		letter-spacing: 0.1em;
 		line-height: 1.4;
 		text-transform: uppercase;
-		color: #94a3b8;
+		color: var(--z-soft);
+	}
+
+	/* Mono meta: times, sizes, addresses. */
+	.z-mono {
+		font-family: var(--font-mono);
+		font-variant-numeric: tabular-nums;
+	}
+
+	/* ── Controls ─────────────────────────────────────────────────────── */
+
+	/*
+	 * The tactile button: white, 8px radius, line border, a 1px shadow, and a
+	 * half-pixel press. 30px by default (top bar, compose); toolbars use 28,
+	 * settings 32–34, phones 32–36 — call sites set the height.
+	 */
+	.btn-tactile {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 7px;
+		height: 30px;
+		padding: 0 11px;
+		border-radius: 8px;
+		border: 1px solid var(--z-line);
+		background: var(--z-surface);
+		color: var(--z-body);
+		font-size: 13px;
+		font-weight: 500;
+		line-height: 1;
+		box-shadow: var(--z-shadow-tactile);
+		transition:
+			background-color 120ms ease,
+			border-color 120ms ease,
+			color 120ms ease,
+			transform 80ms ease;
+		cursor: pointer;
+		user-select: none;
+	}
+
+	.btn-tactile:hover {
+		background: var(--z-tactile-bg-hover);
+		border-color: var(--z-faint);
+	}
+
+	.btn-tactile:active {
+		background: var(--z-tactile-bg-active);
+		transform: translateY(0.5px);
+	}
+
+	.btn-tactile:disabled {
+		border-color: var(--z-hairline);
+		background: #f8fafc;
+		color: var(--z-soft);
+		box-shadow: none;
+		cursor: default;
+		transform: none;
+	}
+
+	/* The one filled control on a surface: Send, Sign in, New message. */
+	.btn-primary {
+		border-color: var(--z-accent-edge);
+		background: var(--z-accent);
+		color: var(--z-accent-fg);
+		font-weight: 600;
+		box-shadow: var(--z-shadow-primary);
+	}
+
+	.btn-primary:hover {
+		background: var(--z-accent-edge);
+		border-color: var(--z-accent-edge);
+	}
+
+	.btn-primary:active {
+		background: var(--z-accent-edge);
+	}
+
+	.btn-primary:disabled {
+		border-color: var(--z-hairline);
+		background: #f1f5f9;
+		color: var(--z-faint);
+	}
+
+	/* Destructive: red ink on white, and the discard channel on hover. */
+	.btn-danger {
+		color: #b91c1c;
+	}
+
+	.btn-danger:hover {
+		background: #fef2f2;
+		border-color: #fca5a5;
 	}
 
 	/*
+	 * A square icon button inside a bordered group (the reader's four actions,
+	 * a row's hover strip): 26px, no border of its own, 6px radius.
+	 */
+	.z-icon-btn {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 26px;
+		height: 26px;
+		border: 0;
+		border-radius: 6px;
+		background: transparent;
+		color: var(--z-muted);
+		transition:
+			background-color 120ms ease,
+			color 120ms ease;
+		cursor: pointer;
+	}
+
+	.z-icon-btn:hover {
+		background: #f1f5f9;
+		color: var(--z-ink);
+	}
+
+	.z-icon-btn:disabled {
+		opacity: 0.4;
+		cursor: default;
+	}
+
+	/* The bordered group those buttons sit in; also the segmented filter's frame. */
+	.z-group {
+		display: flex;
+		align-items: center;
+		padding: 2px;
+		border-radius: 8px;
+		border: 1px solid var(--z-line);
+		background: var(--z-surface);
+		box-shadow: var(--z-shadow-tactile);
+	}
+
+	/* Segmented control member: All | Unseen, Mail | Settings. */
+	.z-segment {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		height: 26px;
+		padding: 0 11px;
+		border: 0;
+		border-radius: 6px;
+		background: transparent;
+		font-size: 12px;
+		font-weight: 600;
+		color: var(--z-muted);
+		cursor: pointer;
+		transition:
+			background-color 120ms ease,
+			color 120ms ease;
+	}
+
+	.z-segment:hover {
+		color: var(--z-ink);
+	}
+
+	.z-segment[aria-pressed='true'],
+	.z-segment[aria-current='page'] {
+		background: var(--z-accent-soft);
+		color: var(--z-ch-correspondence-ink);
+	}
+
+	/* ── Checkboxes ───────────────────────────────────────────────────── */
+
+	/*
 	 * The shell's checkbox. `--z-check` is the fill when it is on: blue-600
-	 * because selection is blue everywhere, or the folder's own colour in the
-	 * sidebar, where the box is what says which mailbox is open.
+	 * because selection is blue everywhere, or a channel's solid in the
+	 * sidebar, where the box is what says which mailbox is open. On, the border
+	 * takes the same colour as the fill; off, it is faint, and darkens on hover.
 	 *
 	 * `.hobday-checkbox` is the drawn version, for a span or a button that is
-	 * really a toggle; `.z-check` is the same thing on a real `<input>`, so a
-	 * form keeps a native control.
+	 * really a toggle; `.z-check` is the same thing on a real `<input>`.
 	 */
 	.hobday-checkbox {
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
 		flex-shrink: 0;
-		width: 18px;
-		height: 18px;
+		width: 17px;
+		height: 17px;
 		border-radius: 5px;
-		border: 1.5px solid #94a3b8;
-		background: #ffffff;
+		border: 1.5px solid var(--z-faint);
+		background: var(--z-surface);
 		color: transparent;
-		transition: all 120ms ease;
+		transition:
+			background-color 120ms ease,
+			border-color 120ms ease,
+			color 120ms ease;
 	}
 
 	.hobday-checkbox[data-checked='true'] {
-		border-color: transparent;
+		border-color: var(--z-check, #2563eb);
 		background: var(--z-check, #2563eb);
 		color: #ffffff;
 	}
@@ -103,16 +273,18 @@
 		width: 18px;
 		height: 18px;
 		border-radius: 5px;
-		border: 1.5px solid #94a3b8;
-		background: #ffffff;
+		border: 1.5px solid var(--z-faint);
+		background: var(--z-surface);
 		cursor: pointer;
-		transition: all 120ms ease;
+		transition:
+			background-color 120ms ease,
+			border-color 120ms ease;
 	}
 
 	.z-check:checked {
-		border-color: transparent;
+		border-color: var(--z-check, #2563eb);
 		background-color: var(--z-check, #2563eb);
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.5 8.5l3 3 6-7' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.5 8.5l3 3 6-7' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 		background-repeat: no-repeat;
 		background-position: center;
 		background-size: 12px 12px;
@@ -121,100 +293,158 @@
 	@media (hover: hover) {
 		.hobday-checkbox:not([data-checked='true']):hover,
 		.z-check:not(:checked):hover {
-			border-color: #64748b;
+			border-color: var(--z-soft);
 		}
 	}
 
-	/* Hobday tactile buttons & controls */
-	.btn-tactile {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		gap: 6px;
-		height: 30px;
-		padding: 0 10px;
-		border-radius: 6px;
-		border: 1px solid #cbd5e1;
-		background: #ffffff;
-		color: #1e293b;
-		font-size: 13px;
-		font-weight: 500;
-		line-height: 1;
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
-		transition: all 120ms ease;
-		cursor: pointer;
-		user-select: none;
-	}
-
-	.btn-tactile:hover {
-		background: #f8fafc;
-		border-color: #94a3b8;
-		color: #0f172a;
-	}
-
-	.btn-tactile:active {
-		background: #f1f5f9;
-		transform: translateY(0.5px);
-	}
-
-	/* Hobday custom checkboxes */
-	.hobday-checkbox {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
-		width: 17px;
-		height: 17px;
-		border-radius: 4px;
-		border: 1.5px solid #94a3b8;
-		background: #ffffff;
-		transition: all 120ms ease;
-		flex-shrink: 0;
-	}
-
-	.hobday-checkbox[data-checked='true'] {
-		border-color: transparent;
-	}
+	/* ── Fields ───────────────────────────────────────────────────────── */
 
 	/*
-	 * The shell's text input and select: the same 30px bordered control the
-	 * settings page and the rules editor both need, with the blue focus ring
-	 * the README promises. `.btn-tactile`'s quieter sibling.
+	 * The shell's text input and select: 34px, 8px radius, a line border and
+	 * an inset shadow at rest; the accent border with a soft ring on focus; the
+	 * discard channel when invalid.
 	 */
 	.z-field {
-		height: 30px;
-		border-radius: 6px;
-		border: 1px solid #cbd5e1;
-		background: #ffffff;
-		padding: 0 8px;
+		height: 34px;
+		border-radius: 8px;
+		border: 1px solid var(--z-line);
+		background: var(--z-surface);
+		padding: 0 10px;
 		font-size: 13px;
-		color: #0f172a;
-		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
-		transition: border-color 120ms ease;
+		color: var(--z-ink);
+		box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+		transition:
+			border-color 120ms ease,
+			box-shadow 120ms ease;
 	}
 
 	.z-field::placeholder {
-		color: #94a3b8;
+		color: var(--z-faint);
 	}
 
-	.z-field:focus {
-		border-color: #3b82f6;
+	.z-field:focus,
+	.z-field:focus-within {
+		border-color: var(--z-accent);
 		outline: none;
-		box-shadow: 0 0 0 1px #3b82f6;
+		box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.16);
+	}
+
+	.z-field[aria-invalid='true'] {
+		border-color: var(--z-ch-discard-stroke);
+		background: #fef2f2;
+		color: var(--z-ch-discard-ink);
+	}
+
+	.z-field[aria-invalid='true']:focus {
+		box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
 	}
 
 	.z-field:disabled {
 		background: #f8fafc;
-		color: #94a3b8;
+		color: var(--z-faint);
+		box-shadow: none;
+	}
+
+	/* ── Small things ─────────────────────────────────────────────────── */
+
+	/* A keycap: mono, a 2px bottom border so it reads as a key. */
+	.z-kbd {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		height: 19px;
+		min-width: 19px;
+		padding: 0 5px;
+		border-radius: 5px;
+		border: 1px solid var(--z-hairline);
+		border-bottom-width: 2px;
+		background: #f8fafc;
+		font-family: var(--font-mono);
+		font-size: 10px;
+		font-weight: 600;
+		color: var(--z-muted);
+	}
+
+	/* A keycap on a filled blue button. */
+	.z-kbd-inverse {
+		border-color: rgba(255, 255, 255, 0.35);
+		background: rgba(255, 255, 255, 0.14);
+		color: inherit;
 	}
 
 	/*
-	 * The sender's rail — an accent bar in that person's Hobday hue, taken from
-	 * `--z-rail`. A list row, the reader's sender card and each earlier
-	 * message in a thread all wear it: it is what carries "the same person is
-	 * the same colour" out of `#lib/mail/colors` and across the panes.
-	 *
-	 * It is a pseudo-element, and absolutely positioned, so it costs no element
-	 * and takes no place in a grid or flex row it sits inside.
+	 * The identity tile: a person, drawn from their tone. Reads `--z-id-fill`,
+	 * `--z-id-stroke`, `--z-id-ink` (set by `identityStyle` in #lib/mail/colors).
+	 */
+	.z-avatar {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 30px;
+		height: 30px;
+		border-radius: 8px;
+		border: 1px solid var(--z-id-stroke, #64748b);
+		background: var(--z-id-fill, #dbe3ec);
+		color: var(--z-id-ink, #1e293b);
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.01em;
+	}
+
+	/*
+	 * A channel chip: the channel's name in mono caps, stroke border, white
+	 * ground so it sits on the fill it labels. `.z-chip-filled` for a chip on
+	 * a white surface (compose's schedule button, settings' rule actions).
+	 * Both read `--z-stroke` / `--z-fill` / `--z-ink-on` from `channelStyle`.
+	 */
+	.z-chip {
+		display: inline-flex;
+		align-items: center;
+		gap: 5px;
+		flex-shrink: 0;
+		padding: 1px 6px;
+		border-radius: 5px;
+		border: 1px solid var(--z-stroke, var(--z-line));
+		background: var(--z-surface);
+		font-family: var(--font-mono);
+		font-size: 9.5px;
+		font-weight: 600;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		line-height: 1.5;
+		color: var(--z-ink-on, var(--z-muted));
+		white-space: nowrap;
+	}
+
+	.z-chip-filled {
+		background: var(--z-fill, var(--z-surface));
+	}
+
+	/* A count: mono, 19px, on a white ground with the channel's stroke. */
+	.z-count {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		height: 19px;
+		min-width: 19px;
+		padding: 0 5px;
+		border-radius: 5px;
+		border: 1px solid var(--z-stroke, var(--z-line));
+		background: var(--z-surface);
+		font-family: var(--font-mono);
+		font-size: 10px;
+		font-weight: 600;
+		font-variant-numeric: tabular-nums;
+		color: var(--z-ink-on, var(--z-muted));
+	}
+
+	/*
+	 * The rail — a 3px accent bar down a card's left edge, in the card's
+	 * channel. A list row, the reader's sender card, a toast and each earlier
+	 * message in a thread all wear it. A pseudo-element, absolutely positioned,
+	 * so it costs no element and takes no place in a grid or flex row.
 	 */
 	.z-railed {
 		position: relative;
@@ -223,28 +453,119 @@
 	.z-railed::before {
 		content: '';
 		position: absolute;
-		top: var(--z-rail-inset, 12px);
-		bottom: var(--z-rail-inset, 12px);
+		top: var(--z-rail-inset, 11px);
+		bottom: var(--z-rail-inset, 11px);
 		left: var(--z-rail-left, 7px);
 		width: 3px;
 		border-radius: 999px;
-		background: var(--z-rail, #94a3b8);
+		background: var(--z-rail, var(--z-faint));
 		opacity: var(--z-rail-strength, 1);
 		transition: opacity 120ms ease;
 	}
 
 	/*
-	 * The calendar chip's pastel fill, turned down until it is a tint: the
-	 * surface a railed thing sits on when it wants to belong to its colour.
+	 * The channel's surface: its fill with its matching stroke. What a railed
+	 * card sits on when it belongs to its colour — an unread row, the sender
+	 * card, a selected folder. Reads the same vars as `.z-chip`.
 	 */
 	.z-hue-wash {
-		background: color-mix(in oklab, var(--z-rail) 7%, #ffffff);
-		border-color: color-mix(in oklab, var(--z-rail) 30%, #ffffff);
+		background: var(--z-fill, color-mix(in oklab, var(--z-rail) 7%, #ffffff));
+		border-color: var(--z-stroke, color-mix(in oklab, var(--z-rail) 30%, #ffffff));
 	}
 
+	/* A 40–44px icon tile for empty states, in a channel. */
+	.z-tile {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 40px;
+		height: 40px;
+		border-radius: 10px;
+		border: 1px solid var(--z-stroke, var(--z-line));
+		background: var(--z-fill, var(--z-surface));
+		color: var(--z-ink-on, var(--z-muted));
+	}
+
+	/* The rule with a label and a count: TODAY ───── 4 */
+	.z-rule {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+	}
+
+	.z-rule::after {
+		content: '';
+		height: 1px;
+		flex: 1;
+		background: var(--z-hairline);
+	}
+
+	/* ── Menus ────────────────────────────────────────────────────────── */
+
+	.z-menu {
+		border-radius: 12px;
+		border: 1px solid var(--z-line);
+		background: var(--z-surface);
+		padding: 6px;
+		box-shadow: var(--z-shadow-menu);
+	}
+
+	.z-menu-caption {
+		padding: 5px 9px 7px;
+		font-family: var(--font-mono);
+		font-size: 10px;
+		font-weight: 600;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--z-soft);
+	}
+
+	.z-menu-item {
+		display: flex;
+		align-items: center;
+		gap: 9px;
+		width: 100%;
+		border-radius: 8px;
+		padding: 7px 9px;
+		font-size: 13px;
+		font-weight: 500;
+		color: #334155;
+		text-align: left;
+		cursor: pointer;
+		transition: background-color 100ms ease;
+	}
+
+	.z-menu-item:hover,
+	.z-menu-item[data-highlighted] {
+		background: #f1f5f9;
+		color: var(--z-ink);
+	}
+
+	/* ── Skeletons ────────────────────────────────────────────────────── */
+
+	@keyframes z-pulse {
+		0%,
+		100% {
+			opacity: 1;
+		}
+		50% {
+			opacity: 0.45;
+		}
+	}
+
+	.z-skeleton {
+		animation: z-pulse 1.6s ease-in-out infinite;
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.z-skeleton {
+			animation: none;
+		}
+	}
+
+	/* ── Shell grid ───────────────────────────────────────────────────── */
+
 	/*
-	 * Shell grid — the one piece of layout that changes shape by width.
-	 *
 	 * Phone: a single pane. The page hands the list or the reader `max-md:hidden`
 	 * depending on whether a thread is open, so exactly one fills it.
 	 * Tablet: list + reader; the sidebar is an overlay drawer instead of a column.

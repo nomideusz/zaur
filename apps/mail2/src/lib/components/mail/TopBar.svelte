@@ -3,7 +3,7 @@
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import type { MailboxDTO } from '#lib/mail/types';
-	import { getHobdayTheme, mailboxTheme } from '#lib/mail/colors';
+	import { COUNT_BADGE, channelStyle, identityStyle, mailboxChannel } from '#lib/mail/colors';
 	import ZaurMark from './ZaurMark.svelte';
 	import ActionIcon from './ActionIcon.svelte';
 	import SectionTabs from './SectionTabs.svelte';
@@ -92,49 +92,44 @@
 	const accountInitials = $derived(
 		account ? initialsOf(account.displayName ?? '', account.username) : '·'
 	);
-
-	const accountTheme = $derived(
-		account ? getHobdayTheme(account.username) : getHobdayTheme('default')
-	);
-
 </script>
 
 <header
 	class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[#cbd5e1] bg-white px-4 select-none max-md:gap-2 max-md:px-2.5"
 >
-	<!-- Left: Window controls + Sidebar toggle + Segmented mailbox selector -->
+	<!-- Left: the stamp, the sidebar toggle, the folder switcher -->
 	<div class="flex min-w-0 shrink-0 items-center gap-3 max-md:gap-2">
-		<!-- Zaur pixel mark: the brand, doubling as an ambient mailbox indicator -->
-		<ZaurMark unread={activeMailbox?.unread ?? 0} />
+		<ZaurMark size={'md'} class="max-md:hidden" />
+		<ZaurMark size={'sm'} class="md:hidden" />
 
-		<div class="h-4 w-px bg-slate-200 max-md:hidden"></div>
+		<div class="h-4 w-px bg-[#e2e8f0] max-md:hidden"></div>
 
 		{#if onToggleSidebar}
 			<button
 				type="button"
-				class="btn-tactile size-8 !p-0"
+				class="btn-tactile !size-8 !p-0"
 				onclick={onToggleSidebar}
 				title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
 				aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
 			>
-				<svg class="size-4 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+				<svg class="size-4 text-[#334155]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<rect x="2" y="2.5" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.3" />
 					<line x1="6" y1="2.5" x2="6" y2="13.5" stroke="currentColor" stroke-width="1.3" />
 				</svg>
 			</button>
 		{/if}
 
-		<!-- Folder switcher: the inspiration's date-switcher vocabulary — tactile arrow
-		     buttons around a fixed-width grey label that stays put while browsing. -->
+		<!-- Folder switcher: tactile arrows around a fixed-width sunken label
+		     that stays put while browsing, so the eye has one place to read. -->
 		<div
-			class="flex min-w-0 shrink-0 items-center rounded-[6px] border border-[#cbd5e1] bg-white shadow-2xs {phoneSearchOpen
+			class="flex min-w-0 shrink-0 items-center rounded-[8px] border border-[#cbd5e1] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] {phoneSearchOpen
 				? 'max-md:hidden'
 				: ''}"
 		>
 			{#if onPrevMailbox}
 				<button
 					type="button"
-					class="flex h-[30px] w-7 items-center justify-center rounded-l-[5px] text-slate-700 transition-colors hover:bg-slate-50 border-r border-[#cbd5e1] max-md:hidden"
+					class="flex h-[30px] w-7 items-center justify-center rounded-l-[7px] border-r border-[#cbd5e1] text-[#334155] transition-colors hover:bg-[#f8fafc] max-md:hidden"
 					onclick={onPrevMailbox}
 					title="Previous mailbox"
 					aria-label="Previous mailbox"
@@ -148,42 +143,43 @@
 			{#if mailboxes}
 				<Menu.Root positioning={{ placement: 'bottom-start', gutter: 8, overflowPadding: 12 }} lazyMount unmountOnExit>
 					<Menu.Trigger
-						class="flex h-[30px] w-[180px] items-center justify-center gap-1.5 bg-slate-100 px-2 text-[13px] font-semibold text-slate-900 transition-colors hover:bg-slate-200/70 max-md:w-auto max-md:max-w-[42vw] max-md:rounded-[5px] max-md:bg-white"
+						class="flex h-[30px] w-[184px] items-center justify-center gap-[7px] bg-[#f1f5f9] px-2.5 text-[13px] font-semibold text-[#0b1220] transition-colors hover:bg-[#e8edf3] max-md:w-auto max-md:max-w-[46vw] max-md:rounded-[7px] max-md:bg-white"
 					>
 						<span class="min-w-0 truncate">{activeMailbox?.name ?? 'Folder'}</span>
 						{#if activeMailbox && activeMailbox.unread > 0}
 							<span
-								class="flex h-4 min-w-[16px] items-center justify-center rounded-[3px] bg-blue-100 px-1 text-[10px] font-semibold text-blue-700 tabular-nums"
+								class="z-count !h-[17px] !min-w-[17px] !px-1 !text-[10px]"
+								style:--z-stroke={COUNT_BADGE.border}
+								style:--z-ink-on={COUNT_BADGE.text}
+								style:background-color={COUNT_BADGE.bg}
 							>
 								{activeMailbox.unread}
 							</span>
 						{/if}
-						<ActionIcon name="chevron" class="size-3 text-slate-400" />
+						<ActionIcon name="chevron" class="size-3 text-[#94a3b8]" />
 					</Menu.Trigger>
 					<Portal>
 						<Menu.Positioner>
-							<Menu.Content
-								class="z-40 w-60 rounded-[8px] border border-[#cbd5e1] bg-white p-1.5 shadow-lg"
-							>
-								<div class="z-caption px-2 pt-1 pb-1.5">Switch folder</div>
+							<Menu.Content class="z-menu z-40 w-60">
+								<div class="z-menu-caption">Switch folder</div>
 								{#each mailboxes as mailbox (mailbox.id)}
-									{@const colors = mailboxTheme(mailbox.kind)}
+									{@const channel = mailboxChannel(mailbox.kind)}
 									<Menu.Item
 										value={mailbox.id}
 										onSelect={() => onSelectMailbox(mailbox.id)}
-										class="flex cursor-pointer items-center justify-between gap-2 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 data-highlighted:bg-slate-100"
+										class="z-menu-item justify-between"
 									>
-										<span class="truncate">{mailbox.name}</span>
-										{#if mailbox.unread > 0}
-											<!-- The same pill the sidebar gives this folder, not a grey one. -->
+										<span class="flex min-w-0 items-center gap-[9px]">
 											<span
-												class="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-[4px] border px-1 text-[11px] font-semibold tabular-nums"
-												style:background-color={colors.badgeBg}
-												style:border-color={colors.badgeBorder}
-												style:color={colors.badgeText}
-											>
-												{mailbox.unread}
-											</span>
+												class="inline-block size-2.5 shrink-0 rounded-[3px] border"
+												style:background-color={channel.fill}
+												style:border-color={channel.stroke}
+												aria-hidden="true"
+											></span>
+											<span class="truncate">{mailbox.name}</span>
+										</span>
+										{#if mailbox.unread > 0}
+											<span class="z-count" style={channelStyle(channel)}>{mailbox.unread}</span>
 										{/if}
 									</Menu.Item>
 								{/each}
@@ -196,7 +192,7 @@
 			{#if onNextMailbox}
 				<button
 					type="button"
-					class="flex h-[30px] w-7 items-center justify-center rounded-r-[5px] text-slate-700 transition-colors hover:bg-slate-50 border-l border-[#cbd5e1] max-md:hidden"
+					class="flex h-[30px] w-7 items-center justify-center rounded-r-[7px] border-l border-[#cbd5e1] text-[#334155] transition-colors hover:bg-[#f8fafc] max-md:hidden"
 					onclick={onNextMailbox}
 					title="Next mailbox"
 					aria-label="Next mailbox"
@@ -210,10 +206,8 @@
 	</div>
 
 	<!--
-		Search. The top bar used to carry an input with no handler at all, which
-		is why the redesign took it out; this is the same slot, wired. Enter
-		commits — a mail search runs over the whole account, and `from:ada` means
-		nothing half-typed — and Escape clears back to the folder.
+		Search. Enter commits — a mail search runs over the whole account, and
+		`from:ada` means nothing half-typed — and Escape clears back to the folder.
 	-->
 	{#if onSearch}
 		<div
@@ -223,13 +217,13 @@
 		>
 			<div class="relative flex w-full max-w-[420px] items-center">
 				<svg
-					class="pointer-events-none absolute left-2.5 size-3.5 text-slate-400"
+					class="pointer-events-none absolute left-2.5 size-3.5 text-[#94a3b8]"
 					viewBox="0 0 16 16"
 					fill="none"
 					aria-hidden="true"
 				>
-					<circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
-					<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+					<circle cx="7" cy="7" r="4.4" stroke="currentColor" stroke-width="1.4" />
+					<path d="M10.4 10.4L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
 				</svg>
 				<input
 					bind:this={searchEl}
@@ -237,13 +231,13 @@
 					type="search"
 					aria-label="Search mail"
 					placeholder={activeMailbox ? `Search ${activeMailbox.name}…` : 'Search mail…'}
-					class="h-[30px] w-full rounded-[6px] border border-[#cbd5e1] bg-white pr-7 pl-8 text-[13px] text-slate-900 shadow-2xs placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none max-md:text-base"
+					class="z-field !h-[30px] w-full !pr-7 !pl-8 !text-[12.5px] max-md:!text-base"
 					onkeydown={onSearchKeydown}
 				/>
 				{#if draft || searchQuery}
 					<button
 						type="button"
-						class="absolute right-1 flex size-6 items-center justify-center rounded-[4px] text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+						class="z-icon-btn absolute right-0.5 !size-6"
 						aria-label="Clear search"
 						title="Clear search (esc)"
 						onclick={clear}
@@ -252,78 +246,59 @@
 							<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 						</svg>
 					</button>
+				{:else}
+					<kbd class="z-kbd pointer-events-none absolute right-1.5 max-md:hidden" aria-hidden="true">/</kbd>
 				{/if}
 			</div>
 		</div>
 	{/if}
 
-	<!-- Right: Section tabs + account -->
+	<!-- Right: section tabs + account -->
 	<div class="ml-auto flex items-center gap-2.5">
 		{#if onSearch && !phoneSearchOpen}
 			<!-- Phone: the field swaps in for the folder switcher instead of joining it. -->
 			<button
 				type="button"
-				class="btn-tactile !size-9 !p-0 md:hidden"
+				class="btn-tactile !size-8 !p-0 md:hidden"
 				aria-label="Search mail"
 				onclick={focusSearch}
 			>
-				<svg class="size-4 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-					<circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
-					<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+				<svg class="size-4 text-[#334155]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<circle cx="7" cy="7" r="4.4" stroke="currentColor" stroke-width="1.4" />
+					<path d="M10.4 10.4L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
 				</svg>
 			</button>
 		{/if}
-		<!-- Section Tabs: Mail · Contacts · Calendar · Settings -->
+
 		<SectionTabs class="hidden sm:flex" />
 
-		<!-- Profile Menu -->
+		<!-- Account: the person's identity tile, the same tone their card wears. -->
 		{#if account}
 			<Menu.Root positioning={{ placement: 'bottom-end', gutter: 8, overflowPadding: 12 }} lazyMount unmountOnExit>
 				<Menu.Trigger
-					class="flex size-[30px] items-center justify-center rounded-[6px] border border-[#cbd5e1] bg-white shadow-2xs transition-colors hover:border-slate-400"
+					class="z-avatar cursor-pointer transition-[filter] hover:brightness-[0.97]"
+					style={identityStyle(account.username)}
 					aria-label="Account"
 				>
-					<span
-						class="flex size-[24px] items-center justify-center rounded-[4px] text-[11px] font-bold"
-						style:background-color={accountTheme.bg}
-						style:color={accountTheme.text}
-						style:border="1px solid {accountTheme.border}"
-					>
-						{accountInitials}
-					</span>
+					{accountInitials}
 				</Menu.Trigger>
 				<Portal>
 					<Menu.Positioner>
-						<Menu.Content class="z-40 w-60 rounded-[8px] border border-[#cbd5e1] bg-white p-1.5 shadow-lg">
-							<div class="px-2.5 py-2 border-b border-slate-100 mb-1">
-								<div class="text-[13px] font-semibold text-slate-900">{account.displayName ?? account.username}</div>
-								<div class="text-xs text-slate-500 truncate">{account.username}</div>
+						<Menu.Content class="z-menu z-40 w-60">
+							<div class="mb-1 flex items-center gap-2.5 border-b border-[#e2e8f0] px-2 pt-1 pb-2.5">
+								<span class="z-avatar" style={identityStyle(account.username)} aria-hidden="true">{accountInitials}</span>
+								<span class="min-w-0">
+									<span class="block truncate text-[13px] font-semibold text-[#0b1220]">{account.displayName ?? account.username}</span>
+									<span class="z-mono block truncate text-[10.5px] text-[#64748b]">{account.username}</span>
+								</span>
 							</div>
 							<!-- The section tabs hide below `sm`; the menu is the phone's way there. -->
-							<Menu.Item
-								value="contacts"
-								class="flex cursor-pointer items-center rounded-[6px] px-2.5 py-1.5 text-[13px] text-slate-700 data-highlighted:bg-slate-100 sm:hidden"
-								onSelect={() => goto('/contacts')}
-							>
-								Contacts
-							</Menu.Item>
-							<Menu.Item
-								value="calendar"
-								class="flex cursor-pointer items-center rounded-[6px] px-2.5 py-1.5 text-[13px] text-slate-700 data-highlighted:bg-slate-100 sm:hidden"
-								onSelect={() => goto('/calendar')}
-							>
-								Calendar
-							</Menu.Item>
-							<Menu.Item
-								value="settings"
-								class="flex cursor-pointer items-center rounded-[6px] px-2.5 py-1.5 text-[13px] text-slate-700 data-highlighted:bg-slate-100"
-								onSelect={() => goto('/settings')}
-							>
-								Settings
-							</Menu.Item>
+							<Menu.Item value="contacts" class="z-menu-item sm:hidden" onSelect={() => goto('/contacts')}>Contacts</Menu.Item>
+							<Menu.Item value="calendar" class="z-menu-item sm:hidden" onSelect={() => goto('/calendar')}>Calendar</Menu.Item>
+							<Menu.Item value="settings" class="z-menu-item" onSelect={() => goto('/settings')}>Settings</Menu.Item>
 							<Menu.Item
 								value="signout"
-								class="flex cursor-pointer items-center rounded-[6px] px-2.5 py-1.5 text-[13px] text-red-600 font-medium data-highlighted:bg-red-50"
+								class="z-menu-item !text-[#b91c1c] data-highlighted:!bg-[#fef2f2]"
 								onSelect={() => onSignOut?.()}
 							>
 								Sign out

@@ -1,13 +1,156 @@
 /**
- * Anthony Hobday–inspired color palette:
- * Saturated, cheerful, high-contrast candy/pastel pairs with matching darker stroke borders.
- * Used for sender avatars, folder badges, calendar/event chips, and category checkboxes.
+ * Colour, in two channels that never overlap (design system v2).
+ *
+ * **Channels** say what kind of thing something is. Six fixed hues, each a
+ * pastel fill, a saturated stroke that matches it, a dark ink for text on the
+ * fill, and a solid for filled controls. Rails, chips, unread washes, folder
+ * rows and toasts wear a channel. A channel is never a person.
+ *
+ * **Identity** says who. Eight quieter tones, picked deterministically per
+ * address, worn only by the avatar tile — in a list row, the reader's sender
+ * card, a recipient chip, the account button. Teal is reserved for the brand.
+ *
+ * v1 hashed the sender into five hues and put it on the rail, so colour was
+ * identity — and identity is noise: two unrelated senders share a hue, and
+ * the same colour means something different in every row.
  */
 
-export type HobdayThemeName = 'blue' | 'green' | 'pink' | 'amber' | 'purple';
+export type ChannelKey =
+	| 'correspondence'
+	| 'confirmed'
+	| 'needs'
+	| 'flagged'
+	| 'digest'
+	| 'discard';
 
+export interface Channel {
+	key: ChannelKey;
+	/** What the chip says. */
+	label: string;
+	fill: string;
+	stroke: string;
+	solid: string;
+	ink: string;
+}
+
+export const CHANNELS: Record<ChannelKey, Channel> = {
+	correspondence: { key: 'correspondence', label: 'Correspondence', fill: '#dbeafe', stroke: '#3b82f6', solid: '#2563eb', ink: '#1e40af' },
+	confirmed: { key: 'confirmed', label: 'Confirmed', fill: '#dcfce7', stroke: '#16a34a', solid: '#16a34a', ink: '#14532d' },
+	needs: { key: 'needs', label: 'Needs you', fill: '#fde68a', stroke: '#d97706', solid: '#d97706', ink: '#78350f' },
+	flagged: { key: 'flagged', label: 'Flagged', fill: '#fbcfe8', stroke: '#db2777', solid: '#db2777', ink: '#831843' },
+	digest: { key: 'digest', label: 'Digest', fill: '#ddd6fe', stroke: '#7c3aed', solid: '#7c3aed', ink: '#4c1d95' },
+	discard: { key: 'discard', label: 'Junk', fill: '#fee2e2', stroke: '#ef4444', solid: '#dc2626', ink: '#b91c1c' }
+};
+
+/** Inline style vars the shared `.z-chip` / `.z-hue-wash` / `.z-tile` read. */
+export function channelStyle(channel: Channel): string {
+	return `--z-fill:${channel.fill};--z-stroke:${channel.stroke};--z-rail:${channel.solid};--z-ink-on:${channel.ink}`;
+}
+
+/**
+ * Which channel a message row is: the folder decides for junk, trash, sent
+ * and drafts; your own flag outranks the server's "important"; everything
+ * else is correspondence. Derived from what JMAP already gives us — nothing
+ * here is a new property of a message.
+ */
+export function messageChannel(input: {
+	mailboxKind?: string | null;
+	starred?: boolean;
+	important?: boolean;
+}): Channel {
+	const kind = input.mailboxKind ?? '';
+	if (kind === 'junk' || kind === 'trash') return CHANNELS.discard;
+	if (input.starred) return CHANNELS.flagged;
+	if (input.important) return CHANNELS.needs;
+	if (kind === 'sent') return CHANNELS.confirmed;
+	if (kind === 'drafts') return CHANNELS.needs;
+	return CHANNELS.correspondence;
+}
+
+/**
+ * A folder's channel — its checkbox and rail when it is the open one, and the
+ * ink of its unread count. Inbox and Archive are correspondence; Sent is what
+ * has been confirmed; Drafts need you; Junk and Trash discard. Anything else
+ * (a custom folder) is a digest, because that is what people file into them.
+ */
+export function mailboxChannel(kind: string | undefined | null): Channel {
+	switch (kind) {
+		case 'inbox':
+		case 'archive':
+			return CHANNELS.correspondence;
+		case 'sent':
+			return CHANNELS.confirmed;
+		case 'drafts':
+			return CHANNELS.needs;
+		case 'junk':
+		case 'trash':
+			return CHANNELS.discard;
+		default:
+			return CHANNELS.digest;
+	}
+}
+
+/* ── Identity ─────────────────────────────────────────────────────────── */
+
+export type IdentityToneName =
+	| 'steel'
+	| 'sky'
+	| 'indigo'
+	| 'rose'
+	| 'lime'
+	| 'orange'
+	| 'plum'
+	| 'stone';
+
+export interface IdentityTone {
+	name: IdentityToneName;
+	fill: string;
+	stroke: string;
+	ink: string;
+}
+
+export const IDENTITY_TONES: IdentityTone[] = [
+	{ name: 'steel', fill: '#dbe3ec', stroke: '#64748b', ink: '#1e293b' },
+	{ name: 'sky', fill: '#bae6fd', stroke: '#0284c7', ink: '#0c4a6e' },
+	{ name: 'indigo', fill: '#c7d2fe', stroke: '#4f46e5', ink: '#312e81' },
+	{ name: 'rose', fill: '#fecdd3', stroke: '#e11d48', ink: '#881337' },
+	{ name: 'lime', fill: '#d9f99d', stroke: '#65a30d', ink: '#365314' },
+	{ name: 'orange', fill: '#fed7aa', stroke: '#ea580c', ink: '#7c2d12' },
+	{ name: 'plum', fill: '#e9d5ff', stroke: '#9333ea', ink: '#581c87' },
+	{ name: 'stone', fill: '#e7e5e4', stroke: '#78716c', ink: '#292524' }
+];
+
+function hash(seed: string): number {
+	const str = (seed || '').trim().toLowerCase();
+	let h = 0;
+	for (let i = 0; i < str.length; i++) {
+		h = (h << 5) - h + str.charCodeAt(i);
+		h |= 0;
+	}
+	return Math.abs(h);
+}
+
+/** The same person is the same tone, wherever their tile appears. */
+export function identityTone(seed: string): IdentityTone {
+	return IDENTITY_TONES[hash(seed) % IDENTITY_TONES.length]!;
+}
+
+/** Inline style vars the shared `.z-avatar` reads. */
+export function identityStyle(seed: string): string {
+	const tone = identityTone(seed);
+	return `--z-id-fill:${tone.fill};--z-id-stroke:${tone.stroke};--z-id-ink:${tone.ink}`;
+}
+
+/* ── Compatibility ────────────────────────────────────────────────────── */
+
+/**
+ * The v1 shape a few call sites still read (recipient chips, the account
+ * button, contacts and calendar). Backed by the identity ramp now, so those
+ * sites already show the person's tone; they will move to `identityTone`
+ * as they are touched.
+ */
 export interface HobdayColorTheme {
-	name: HobdayThemeName;
+	name: string;
 	bg: string;
 	border: string;
 	text: string;
@@ -18,78 +161,19 @@ export interface HobdayColorTheme {
 	badgeText: string;
 }
 
-export const HOBDAY_THEMES: Record<HobdayThemeName, HobdayColorTheme> = {
-	blue: {
-		name: 'blue',
-		bg: '#dbeafe', // soft blue fill
-		border: '#3b82f6', // crisp cobalt stroke
-		text: '#1e40af', // high-contrast dark text
-		accent: '#2563eb',
-		checkboxBg: '#2563eb',
-		badgeBg: '#e0f2fe',
-		badgeBorder: '#38bdf8',
-		badgeText: '#0369a1'
-	},
-	green: {
-		name: 'green',
-		bg: '#bbf7d0', // fresh mint/emerald fill
-		border: '#16a34a', // crisp leaf green stroke
-		text: '#14532d',
-		accent: '#16a34a',
-		checkboxBg: '#16a34a',
-		badgeBg: '#dcfce7',
-		badgeBorder: '#4ade80',
-		badgeText: '#15803d'
-	},
-	pink: {
-		name: 'pink',
-		bg: '#fbcfe8', // bubblegum/fuchsia fill
-		border: '#db2777', // crisp dark pink stroke
-		text: '#831843',
-		accent: '#db2777',
-		checkboxBg: '#db2777',
-		badgeBg: '#fce7f3',
-		badgeBorder: '#f472b6',
-		badgeText: '#be185d'
-	},
-	amber: {
-		name: 'amber',
-		bg: '#fde68a', // warm gold/amber fill
-		border: '#d97706', // crisp amber stroke
-		text: '#78350f',
-		accent: '#d97706',
-		checkboxBg: '#d97706',
-		badgeBg: '#fef3c7',
-		badgeBorder: '#fcd34d',
-		badgeText: '#b45309'
-	},
-	purple: {
-		name: 'purple',
-		bg: '#ddd6fe', // lavender fill
-		border: '#7c3aed', // crisp violet stroke
-		text: '#4c1d95',
-		accent: '#7c3aed',
-		checkboxBg: '#7c3aed',
-		badgeBg: '#ede9fe',
-		badgeBorder: '#a78bfa',
-		badgeText: '#6d28d9'
-	}
-};
-
-const THEME_KEYS: HobdayThemeName[] = ['blue', 'green', 'pink', 'amber', 'purple'];
-
-/**
- * Deterministically hash an email or name to one of the 5 Hobday themes.
- */
 export function getHobdayTheme(seed: string): HobdayColorTheme {
-	const str = (seed || '').trim().toLowerCase();
-	let hash = 0;
-	for (let i = 0; i < str.length; i++) {
-		hash = (hash << 5) - hash + str.charCodeAt(i);
-		hash |= 0;
-	}
-	const index = Math.abs(hash) % THEME_KEYS.length;
-	return HOBDAY_THEMES[THEME_KEYS[index]!];
+	const tone = identityTone(seed);
+	return {
+		name: tone.name,
+		bg: tone.fill,
+		border: tone.stroke,
+		text: tone.ink,
+		accent: tone.stroke,
+		checkboxBg: tone.stroke,
+		badgeBg: tone.fill,
+		badgeBorder: tone.stroke,
+		badgeText: tone.ink
+	};
 }
 
 export interface MailboxColors {
@@ -98,69 +182,39 @@ export interface MailboxColors {
 	badgeBg: string;
 	badgeBorder: string;
 	badgeText: string;
+	channel: Channel;
 }
 
-const NEUTRAL: Omit<MailboxColors, 'check'> = {
-	badgeBg: '#f1f5f9',
-	badgeBorder: '#cbd5e1',
-	badgeText: '#475569'
-};
-
-const DANGER: Omit<MailboxColors, 'check'> = {
-	badgeBg: '#fee2e2',
-	badgeBorder: '#fca5a5',
-	badgeText: '#b91c1c'
-};
-
-const fromTheme = (theme: HobdayColorTheme): MailboxColors => ({
-	check: theme.checkboxBg,
-	badgeBg: theme.badgeBg,
-	badgeBorder: theme.badgeBorder,
-	badgeText: theme.badgeText
-});
-
-/**
- * A folder's colour — its checkbox, its unread pill and its rail when it is the
- * open one, all from here so the sidebar and the top bar's folder menu cannot
- * show the same count in two different colours.
- *
- * Most folders take a Hobday theme. Archive is deliberately neutral — it is
- * where things go to stop being colourful — and Junk and Trash are red, because
- * the pill should say what the folder does with what lands in it.
- */
-export function mailboxTheme(kind: string | undefined): MailboxColors {
-	switch (kind) {
-		case 'inbox':
-			return fromTheme(HOBDAY_THEMES.blue);
-		case 'sent':
-			return fromTheme(HOBDAY_THEMES.green);
-		case 'drafts':
-			return fromTheme(HOBDAY_THEMES.amber);
-		case 'archive':
-			return { check: '#64748b', ...NEUTRAL };
-		case 'junk':
-		case 'trash':
-			return { check: '#ef4444', ...DANGER };
-		default:
-			return fromTheme(HOBDAY_THEMES.purple);
-	}
+/** A folder's colours, all from its channel. */
+export function mailboxTheme(kind: string | undefined | null): MailboxColors {
+	const channel = mailboxChannel(kind);
+	return {
+		check: channel.solid,
+		badgeBg: '#ffffff',
+		badgeBorder: channel.stroke,
+		badgeText: channel.ink,
+		channel
+	};
 }
 
-/** No file type maps to red in the five themes, and a PDF has always been red. */
-const PDF_BADGE = { bg: '#fee2e2', border: '#ef4444', text: '#b91c1c' };
+/* ── Attachments ──────────────────────────────────────────────────────── */
 
 /**
- * The kind badge on an attachment chip — the same colours in the reader and in
- * a compose draft, so a file looks the same before and after it is sent.
+ * The kind badge on an attachment chip — the same in the reader and in a
+ * compose draft, so a file looks the same before and after it is sent. PDFs
+ * are the discard hue (a PDF has always been red), images sky, archives
+ * needs-amber, everything else confirmed-green — light variants, because the
+ * badge sits on a white chip and is 9px tall.
  */
 export function attachmentBadge(type: string): { bg: string; border: string; text: string } {
 	const mime = (type || '').toLowerCase();
-	const theme =
-		mime.includes('image')
-			? HOBDAY_THEMES.blue
-			: mime.includes('zip') || mime.includes('archive')
-				? HOBDAY_THEMES.amber
-				: HOBDAY_THEMES.green;
-	if (mime.includes('pdf')) return PDF_BADGE;
-	return { bg: theme.badgeBg, border: theme.badgeBorder, text: theme.badgeText };
+	if (mime.includes('pdf')) return { bg: '#fee2e2', border: '#ef4444', text: '#b91c1c' };
+	if (mime.includes('image')) return { bg: '#e0f2fe', border: '#38bdf8', text: '#0369a1' };
+	if (mime.includes('zip') || mime.includes('archive') || mime.includes('compressed')) {
+		return { bg: '#fef3c7', border: '#fcd34d', text: '#b45309' };
+	}
+	return { bg: '#dcfce7', border: '#4ade80', text: '#15803d' };
 }
+
+/** The unread count's colours: sky, everywhere a count sits on a control. */
+export const COUNT_BADGE = { bg: '#e0f2fe', border: '#38bdf8', text: '#0369a1' };

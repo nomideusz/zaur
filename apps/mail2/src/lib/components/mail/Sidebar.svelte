@@ -1,105 +1,98 @@
 <script lang="ts">
 	import type { MailboxDTO } from '#lib/mail/types';
-	import { mailboxTheme } from '#lib/mail/colors';
+	import { channelStyle, mailboxChannel } from '#lib/mail/colors';
+	import ZaurMark from './ZaurMark.svelte';
 
 	interface Props {
 		mailboxes: MailboxDTO[] | undefined;
 		activeMailboxId: string | null;
 		onSelectMailbox: (id: string) => void;
 		onNewMessage: () => void;
+		/** Set when the sidebar is a phone drawer: it gets its own header and a way to close. */
+		onClose?: () => void;
 	}
 
-	let {
-		mailboxes,
-		activeMailboxId,
-		onSelectMailbox,
-		onNewMessage
-	}: Props = $props();
+	let { mailboxes, activeMailboxId, onSelectMailbox, onNewMessage, onClose }: Props = $props();
 </script>
 
 <aside
 	class="flex h-full w-full shrink-0 flex-col border-r border-[#cbd5e1] bg-white select-none"
 	aria-label="Mailboxes"
 >
-	<!-- Scrollable content area -->
-	<div class="flex-1 overflow-y-auto px-4 py-4 space-y-5">
-		<!-- Section: Your mailboxes (Hobday: "Your calendars") -->
-		<div>
-			<h2 class="z-caption mb-2 px-2">Your mailboxes</h2>
-			<ul class="space-y-1" role="list">
-				{#if mailboxes}
-					{#each mailboxes as mailbox (mailbox.id)}
-						{@const isSelected = mailbox.id === activeMailboxId}
-						{@const colors = mailboxTheme(mailbox.kind)}
-						<li>
-							<!--
-								The open folder is railed and washed in its own colour, the way
-								an unread row is in its sender's. It used to be a grey
-								highlight, which said "current" in a shell where every other
-								current thing says it in colour.
-							-->
-							<button
-								type="button"
-								class="z-railed group flex w-full items-center justify-between gap-2.5 rounded-[8px] border py-1.5 pr-2 pl-[18px] text-left text-[14px] transition-[background-color,border-color] duration-[120ms] {isSelected
-									? 'z-hue-wash font-semibold text-slate-900'
-									: 'border-transparent font-medium text-slate-800 hover:bg-slate-50'}"
-								style:--z-rail={colors.check}
-								style:--z-check={colors.check}
-								style:--z-rail-inset="6px"
-								style:--z-rail-strength={isSelected ? '1' : '0'}
-								onclick={() => onSelectMailbox(mailbox.id)}
-							>
-								<span class="flex items-center gap-2.5 min-w-0">
-									<span class="hobday-checkbox" data-checked={isSelected} aria-hidden="true">
-										<svg class="size-3" viewBox="0 0 16 16" fill="none">
-											<path
-												d="M3.5 8.5l3 3 6-7"
-												stroke="currentColor"
-												stroke-width="2.4"
-												stroke-linecap="round"
-												stroke-linejoin="round"
-											/>
-										</svg>
-									</span>
-									<span class="truncate">{mailbox.name}</span>
-								</span>
-
-								{#if mailbox.unread > 0}
-									<span
-										class="flex h-5 min-w-[20px] shrink-0 items-center justify-center rounded-[4px] border px-1.5 text-[11px] font-semibold tabular-nums"
-										style:background-color={isSelected ? '#ffffff' : colors.badgeBg}
-										style:border-color={isSelected ? '#cbd5e1' : colors.badgeBorder}
-										style:color={isSelected ? '#0f172a' : colors.badgeText}
-									>
-										{mailbox.unread}
-									</span>
-								{/if}
-							</button>
-						</li>
-					{/each}
-				{:else}
-					{#each ['Inbox', 'Drafts', 'Sent', 'Archive', 'Trash'] as name (name)}
-						<li class="h-[34px] animate-pulse rounded-[8px] bg-slate-100"></li>
-					{/each}
-				{/if}
-			</ul>
+	{#if onClose}
+		<!-- Drawer header: the drawer is a screen of its own on a phone. -->
+		<div class="flex h-[52px] shrink-0 items-center justify-between border-b border-[#e2e8f0] px-3">
+			<ZaurMark size="sm" />
+			<button type="button" class="z-icon-btn !size-8 !rounded-[8px]" aria-label="Close folder list" onclick={onClose}>
+				<svg class="size-[13px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+				</svg>
+			</button>
 		</div>
+	{/if}
 
+	<div class="flex-1 overflow-y-auto px-3 py-4">
+		<h2 class="z-caption mb-[9px] px-1.5">Mailboxes</h2>
+		<ul class="flex flex-col gap-[3px]" role="list">
+			{#if mailboxes}
+				{#each mailboxes as mailbox (mailbox.id)}
+					{@const isSelected = mailbox.id === activeMailboxId}
+					{@const channel = mailboxChannel(mailbox.kind)}
+					<li>
+						<!--
+							A checkbox row in the folder's channel: the open folder takes the
+							channel's fill and stroke, its rail lights, its box fills with the
+							channel's solid. A closed folder is plain, and the box says so.
+						-->
+						<button
+							type="button"
+							class="z-railed flex w-full items-center gap-2.5 rounded-[8px] border py-[7px] pr-2 pl-[18px] text-left text-[13.5px] transition-[background-color,border-color] duration-[120ms] {isSelected
+								? 'z-hue-wash font-semibold'
+								: 'border-transparent font-medium text-[#334155] hover:bg-[#f8fafc]'}"
+							style="{channelStyle(channel)};--z-check:{channel.solid};--z-rail-inset:6px;--z-rail-strength:{isSelected ? '1' : '0'}"
+							style:color={isSelected ? channel.ink : undefined}
+							aria-current={isSelected ? 'true' : undefined}
+							onclick={() => onSelectMailbox(mailbox.id)}
+						>
+							<span class="hobday-checkbox" data-checked={isSelected} aria-hidden="true">
+								<svg class="size-[11px]" viewBox="0 0 16 16" fill="none">
+									<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+								</svg>
+							</span>
+							<span class="min-w-0 flex-1 truncate">{mailbox.name}</span>
+							{#if mailbox.unread > 0}
+								<span
+									class="z-count"
+									style:--z-stroke={isSelected ? channel.stroke : '#cbd5e1'}
+									style:--z-ink-on={isSelected ? channel.ink : '#475569'}
+								>
+									{mailbox.unread}
+								</span>
+							{/if}
+						</button>
+					</li>
+				{/each}
+			{:else}
+				{#each ['Inbox', 'Drafts', 'Sent', 'Archive', 'Trash'] as name (name)}
+					<li class="z-skeleton h-[33px] rounded-[8px] bg-[#f1f5f9]"></li>
+				{/each}
+			{/if}
+		</ul>
 	</div>
 
-	<!-- Bottom action bar: new message -->
-	<div class="mt-auto border-t border-[#e2e8f0] p-3.5">
+	<!-- New message: the one filled control in the sidebar, with its key. -->
+	<div class="border-t border-[#e2e8f0] p-3">
 		<button
 			type="button"
-			class="btn-tactile h-[34px] w-full gap-1.5 text-[13px]"
+			class="btn-tactile btn-primary h-[34px] w-full text-[13px] max-md:h-10 max-md:text-[14px]"
 			onclick={onNewMessage}
-			title="New message"
+			title="New message (c)"
 		>
-			<svg class="size-3.5 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-				<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+			<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+				<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
 			</svg>
 			<span>New message</span>
+			<kbd class="z-kbd z-kbd-inverse !h-[18px] max-md:hidden" aria-hidden="true">c</kbd>
 		</button>
 	</div>
-
 </aside>

@@ -5,7 +5,7 @@
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import { initials } from '#lib/mail/rows';
 	import ActionIcon from '#lib/components/mail/ActionIcon.svelte';
-	import { attachmentBadge, getHobdayTheme } from '#lib/mail/colors';
+	import { attachmentBadge, identityTone } from '#lib/mail/colors';
 	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 	import { Popover } from '@ark-ui/svelte/popover';
 	import { Portal } from '@ark-ui/svelte/portal';
@@ -286,22 +286,23 @@
      dot that marks a draft with content in the dock. -->
 {#snippet stepDot(done: boolean)}
 	<span
-		class="size-1.5 shrink-0 rounded-full {done ? 'bg-blue-600 ring-2 ring-blue-100' : 'bg-slate-300'}"
+		class="size-[7px] shrink-0 rounded-full border {done ? 'border-[#3b82f6] bg-[#2563eb]' : 'border-[#cbd5e1] bg-[#cbd5e1]'}"
 		aria-hidden="true"
 	></span>
 {/snippet}
 
+<!-- Primary, and recessed until there is a recipient; the key sits inside it on a desk. -->
 {#snippet sendButton(compact: boolean)}
 	<button
 		type="button"
-		class="btn-tactile font-semibold {compact ? '!h-8 !px-3 !text-[12px]' : '!h-[30px] !px-4'} {draft
-			.to.length === 0
-			? '!border-slate-200 !bg-slate-100 !text-slate-400'
-			: '!border-blue-700 !bg-blue-600 !text-white hover:!bg-blue-700'}"
-		disabled={draft.sending}
+		class="btn-tactile btn-primary {compact ? '!h-8 !px-3 !text-[12px]' : '!h-[30px] !px-3.5'}"
+		disabled={draft.sending || draft.to.length === 0}
 		onclick={() => void compose.sendDraft(draft.id)}
 	>
 		{draft.sendAt ? 'Schedule send' : draft.sending ? 'Sending…' : 'Send'}
+		{#if !compact}
+			<kbd class="z-kbd z-kbd-inverse !h-[18px]" aria-hidden="true">⌘↵</kbd>
+		{/if}
 	</button>
 {/snippet}
 
@@ -313,7 +314,7 @@
 	aria-label="Compose: {title}"
 	class="absolute flex flex-col overflow-hidden bg-white {sheet
 		? 'inset-0'
-		: 'rounded-[10px] border border-[#cbd5e1] shadow-2xl'} {draft.gesture
+		: 'rounded-[12px] border border-[#cbd5e1] shadow-[0_24px_56px_rgba(11,18,32,0.26)]'} {draft.gesture
 		? 'transition-none'
 		: 'transition-[left,top,width,height] duration-[180ms]'}"
 	style:left={sheet ? undefined : `${rect.x}px`}
@@ -327,18 +328,18 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		bind:this={headerEl}
-		class="flex h-[44px] shrink-0 touch-none items-center gap-2.5 border-b border-[#e2e8f0] bg-slate-50/90 px-3.5 select-none {sheet
-			? ''
-			: 'cursor-grab active:cursor-grabbing'}"
+		class="flex shrink-0 touch-none items-center gap-2.5 border-b border-[#e2e8f0] bg-[#f8fafc] pr-2.5 pl-3.5 select-none {sheet
+			? 'h-[52px]'
+			: 'h-[44px] cursor-grab active:cursor-grabbing'}"
 		onpointerdown={startDrag}
 		onpointermove={moveDrag}
 		onpointerup={endDrag}
 		onpointercancel={endDrag}
 		ondblclick={() => compose.toggleMaximize(draft.id)}
 	>
-		<span class="min-w-0 flex-1 truncate text-[13px] font-semibold text-slate-800">{title}</span>
+		<span class="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#1e293b]">{title}</span>
 		{#if saveLabel}
-			<span class="shrink-0 text-[11px] tabular-nums text-slate-400">{saveLabel}</span>
+			<span class="z-mono shrink-0 text-[10.5px] text-[#64748b]">{saveLabel}</span>
 		{/if}
 
 		<div class="flex items-center gap-1">
@@ -347,7 +348,7 @@
 			{/if}
 			<button
 				type="button"
-				class="flex size-6 items-center justify-center rounded-[4px] text-slate-500 hover:bg-slate-200/70 hover:text-slate-900 transition-colors max-md:size-8"
+				class="z-icon-btn hover:!bg-[#e2e8f0] max-md:!size-8 max-md:!rounded-[8px]"
 				aria-label="Minimize"
 				onpointerdown={(event) => event.stopPropagation()}
 				onclick={() => compose.minimize(draft.id)}
@@ -359,7 +360,7 @@
 			{#if !sheet && maximized}
 				<button
 					type="button"
-					class="flex size-6 items-center justify-center rounded-[4px] text-slate-500 hover:bg-slate-200/70 hover:text-slate-900 transition-colors"
+					class="z-icon-btn hover:!bg-[#e2e8f0]"
 					aria-label="Restore down"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.toggleMaximize(draft.id)}
@@ -373,7 +374,7 @@
 				<!-- A sheet already fills the shell; there is nothing to maximize. -->
 				<button
 					type="button"
-					class="flex size-6 items-center justify-center rounded-[4px] text-slate-500 hover:bg-slate-200/70 hover:text-slate-900 transition-colors"
+					class="z-icon-btn hover:!bg-[#e2e8f0]"
 					aria-label="Maximize"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.toggleMaximize(draft.id)}
@@ -385,7 +386,7 @@
 			{/if}
 			<button
 				type="button"
-				class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors max-md:size-8"
+				class="z-icon-btn hover:!bg-[#fef2f2] hover:!text-[#dc2626] max-md:!size-8 max-md:!rounded-[8px]"
 				aria-label="Close draft"
 				onpointerdown={(event) => event.stopPropagation()}
 				onclick={() => compose.close(draft.id)}
@@ -403,7 +404,7 @@
 		<div class="flex min-h-[28px] flex-wrap items-start gap-x-3 gap-y-[6px] py-2">
 			<span class="flex w-[62px] shrink-0 items-center gap-1.5 pt-1 pl-2">
 				{@render stepDot(step > 0)}
-				<span class="text-[13px] {step === 0 ? 'font-medium text-slate-900' : 'text-slate-500'}">To</span>
+				<span class="text-[13px] {step === 0 ? 'font-medium text-[#0b1220]' : 'text-[#64748b]'}">To</span>
 			</span>
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -412,7 +413,7 @@
 				onclick={() => toInputEl?.focus()}
 			>
 				{#each draft.to as person (person.email)}
-					{@const theme = getHobdayTheme(person.email || person.name)}
+					{@const theme = identityTone(person.email || person.name)}
 					{@const revealEmail =
 						person.name.trim().length > 0 && person.name.trim() !== person.email.trim()}
 					<!--
@@ -427,10 +428,10 @@
 						{#snippet trigger({ props })}
 							<span
 								{...props}
-								class="flex h-[26px] items-center gap-1 rounded-[6px] border pr-0.5 pl-2 text-[13px] font-medium shadow-2xs"
-								style:background-color={theme.bg}
-								style:border-color={theme.border}
-								style:color={theme.text}
+								class="flex h-[26px] items-center gap-1 rounded-[6px] border pr-0.5 pl-2 text-[13px] font-medium shadow-[var(--z-shadow-tactile)]"
+								style:background-color={theme.fill}
+								style:border-color={theme.stroke}
+								style:color={theme.ink}
 							>
 								<span class="max-w-[160px] truncate">{person.name || person.email}</span>
 								<button
@@ -449,18 +450,18 @@
 						<div class="flex min-w-0 items-center gap-2">
 							<span
 								class="flex size-[22px] shrink-0 items-center justify-center rounded-[5px] text-[10px] font-bold"
-								style:background-color={theme.bg}
-								style:border="1px solid {theme.border}"
-								style:color={theme.text}
+								style:background-color={theme.fill}
+								style:border="1px solid {theme.stroke}"
+								style:color={theme.ink}
 								aria-hidden="true"
 							>
 								{initials(person.name, person.email)}
 							</span>
 							<span class="min-w-0">
-								<span class="block truncate text-[13px] font-semibold text-slate-800"
+								<span class="block truncate text-[13px] font-semibold text-[#1e293b]"
 									>{person.name}</span
 								>
-								<span class="block truncate text-xs text-slate-500">{person.email}</span>
+								<span class="block truncate text-xs text-[#64748b]">{person.email}</span>
 							</span>
 						</div>
 					</Tooltip>
@@ -478,12 +479,12 @@
 					aria-autocomplete="list"
 					aria-controls={listboxId}
 					placeholder={draft.to.length > 0 ? 'Add another' : 'Name or email address'}
-					class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none max-md:text-base"
+					class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent text-sm text-[#0b1220] placeholder:text-[#94a3b8] focus:outline-none max-md:text-base"
 				/>
 				{#if !draft.ccOpen}
 					<button
 						type="button"
-						class="btn-tactile !h-[22px] !px-2 !text-[11px]"
+						class="btn-tactile !h-[22px] !rounded-[6px] !px-2 !text-[11px]"
 						onclick={() => compose.patch(draft.id, { ccOpen: true })}
 					>
 						Cc
@@ -492,7 +493,7 @@
 				{#if !draft.bccOpen}
 					<button
 						type="button"
-						class="btn-tactile !h-[22px] !px-2 !text-[11px]"
+						class="btn-tactile !h-[22px] !rounded-[6px] !px-2 !text-[11px]"
 						onclick={() => compose.patch(draft.id, { bccOpen: true })}
 					>
 						Bcc
@@ -504,18 +505,17 @@
 						id={listboxId}
 						role="listbox"
 						aria-label="Contact suggestions"
-						class="absolute top-[calc(100%+4px)] right-[52px] left-[66px] z-5 max-h-[214px] overflow-y-auto rounded-[8px] border border-[#cbd5e1] bg-white p-1.5 shadow-lg max-md:right-0 max-md:left-0"
+						class="absolute top-[calc(100%+4px)] right-[52px] left-[66px] z-5 max-h-[214px] overflow-y-auto rounded-[10px] border border-[#cbd5e1] bg-white p-1.5 shadow-[var(--z-shadow-menu)] max-md:right-0 max-md:left-0"
 					>
 						{#each suggestions as suggestion, index (suggestion.email)}
-							{@const theme = getHobdayTheme(suggestion.email || suggestion.name)}
+							{@const theme = identityTone(suggestion.email || suggestion.name)}
 							<button
 								type="button"
 								role="option"
 								aria-selected={index === draft.toHi}
-								class="flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-1.5 text-left transition-colors {index ===
+								class="flex w-full items-center gap-2.5 rounded-[8px] border px-[9px] py-1.5 text-left transition-colors {index ===
 								draft.toHi
-									? 'bg-slate-100'
-									: ''}"
+									? 'border-[#3b82f6] bg-[#dbeafe]' : 'border-transparent'}"
 								onpointerdown={(event) => event.preventDefault()}
 								onclick={() => {
 									compose.commitTo(draft.id, draft.toInput, suggestion);
@@ -524,33 +524,33 @@
 							>
 								<span
 									class="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-[10px] font-bold"
-									style:background-color={theme.bg}
-									style:border="1px solid {theme.border}"
-									style:color={theme.text}
+									style:background-color={theme.fill}
+									style:border="1px solid {theme.stroke}"
+									style:color={theme.ink}
 								>
 									{initials(suggestion.name, suggestion.email)}
 								</span>
-								<span class="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-800">
+								<span class="min-w-0 flex-1 truncate text-[13px] font-medium text-[#1e293b]">
 									{suggestion.name || suggestion.email}
 								</span>
-								<span class="min-w-0 truncate text-xs text-slate-500">{suggestion.email}</span>
+								<span class="min-w-0 truncate text-xs text-[#64748b]">{suggestion.email}</span>
 								{#if suggestion.meta}
-									<span class="shrink-0 text-[11px] text-slate-400">{suggestion.meta}</span>
+									<span class="shrink-0 text-[11px] text-[#94a3b8]">{suggestion.meta}</span>
 								{/if}
 								{#if index === draft.toHi}
 									<kbd
-										class="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-[4px] border border-[#cbd5e1] bg-slate-50 px-1 font-mono text-[11px] text-slate-500 shadow-2xs"
+										class="z-kbd"
 										aria-hidden="true">↵</kbd
 									>
 								{/if}
 							</button>
 						{/each}
 						{#if suggestions.length === 0}
-							<p class="px-2.5 py-1.5 text-[13px] text-slate-500">
+							<p class="px-2.5 py-1.5 text-[13px] text-[#64748b]">
 								{#if draft.toInput.includes('@')}
 									Press
 									<kbd
-										class="mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-[4px] border border-[#cbd5e1] bg-slate-50 px-1 font-mono text-[11px] text-slate-500 shadow-2xs"
+										class="z-kbd mx-0.5"
 										>Enter</kbd
 									>
 									to add {draft.toInput.trim()}
@@ -560,25 +560,25 @@
 							</p>
 						{:else}
 							<div
-								class="mt-1 flex items-center justify-end gap-3 border-t border-[#e2e8f0] px-2 pt-1.5 text-[11px] text-slate-400"
+								class="mt-1 flex items-center justify-end gap-3 border-t border-[#e2e8f0] px-2 pt-1.5 text-[11px] text-[#94a3b8]"
 							>
 								<span class="flex items-center gap-1">
 									<kbd
-										class="flex h-5 min-w-5 items-center justify-center rounded-[4px] border border-slate-200 bg-slate-50 px-1 font-mono text-[10px]"
+										class="z-kbd"
 										aria-hidden="true">↑↓</kbd
 									>
 									navigate
 								</span>
 								<span class="flex items-center gap-1">
 									<kbd
-										class="flex h-5 min-w-5 items-center justify-center rounded-[4px] border border-slate-200 bg-slate-50 px-1 font-mono text-[10px]"
+										class="z-kbd"
 										aria-hidden="true">↵</kbd
 									>
 									add
 								</span>
 								<span class="flex items-center gap-1">
 									<kbd
-										class="flex h-5 min-w-5 items-center justify-center rounded-[4px] border border-slate-200 bg-slate-50 px-1 font-mono text-[10px]"
+										class="z-kbd"
 										aria-hidden="true">esc</kbd
 									>
 									dismiss
@@ -592,18 +592,18 @@
 
 		{#if draft.ccOpen}
 			<div class="flex h-[45px] items-center gap-3 border-b border-[#e2e8f0]">
-				<span class="w-[62px] shrink-0 pl-5 text-[13px] text-slate-500">Cc</span>
+				<span class="w-[62px] shrink-0 pl-5 text-[13px] text-[#64748b]">Cc</span>
 				<input
 					type="text"
 					value={draft.cc}
 					oninput={(event) =>
 						compose.patch(draft.id, { cc: (event.currentTarget as HTMLInputElement).value })}
 					placeholder="Copy someone in"
-					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none max-md:text-base"
+					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[#0b1220] placeholder:text-[#94a3b8] focus:outline-none max-md:text-base"
 				/>
 				<button
 					type="button"
-					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-[#94a3b8] transition-colors hover:bg-[#f1f5f9] hover:text-[#0b1220]"
 					aria-label="Remove Cc"
 					onclick={() => compose.patch(draft.id, { ccOpen: false, cc: '' })}
 				>
@@ -616,18 +616,18 @@
 
 		{#if draft.bccOpen}
 			<div class="flex h-[45px] items-center gap-3 border-b border-[#e2e8f0]">
-				<span class="w-[62px] shrink-0 pl-5 text-[13px] text-slate-500">Bcc</span>
+				<span class="w-[62px] shrink-0 pl-5 text-[13px] text-[#64748b]">Bcc</span>
 				<input
 					type="text"
 					value={draft.bcc}
 					oninput={(event) =>
 						compose.patch(draft.id, { bcc: (event.currentTarget as HTMLInputElement).value })}
 					placeholder="Hidden recipients"
-					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none max-md:text-base"
+					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[#0b1220] placeholder:text-[#94a3b8] focus:outline-none max-md:text-base"
 				/>
 				<button
 					type="button"
-					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-[#94a3b8] transition-colors hover:bg-[#f1f5f9] hover:text-[#0b1220]"
 					aria-label="Remove Bcc"
 					onclick={() => compose.patch(draft.id, { bccOpen: false, bcc: '' })}
 				>
@@ -642,7 +642,7 @@
 		<div class="flex h-[45px] items-center gap-3 border-b border-[#e2e8f0] {subjectDim} transition-opacity duration-[160ms]">
 			<span class="flex w-[62px] shrink-0 items-center gap-1.5 pl-2">
 				{@render stepDot(step === 2)}
-				<span class="text-[13px] {step === 1 ? 'font-medium text-slate-900' : 'text-slate-500'}">Subject</span>
+				<span class="text-[13px] {step === 1 ? 'font-medium text-[#0b1220]' : 'text-[#64748b]'}">Subject</span>
 			</span>
 			<input
 				id={subjectId}
@@ -654,7 +654,7 @@
 						sendError: null
 					})}
 				onkeydown={onSubjectKeydown}
-				class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-900 focus:outline-none max-md:text-base"
+				class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[#0b1220] focus:outline-none max-md:text-base"
 			/>
 		</div>
 
@@ -665,7 +665,7 @@
 			value={draft.body}
 			oninput={onBodyInput}
 			onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
-			class="w-full resize-none border-0 bg-transparent pt-[14px] pb-4 text-[15px] leading-[1.7] text-slate-800 focus:outline-none max-md:text-base {bodyOpen
+			class="w-full resize-none border-0 bg-transparent pt-[14px] pb-4 text-[15px] leading-[1.7] text-[#1e293b] focus:outline-none max-md:text-base {bodyOpen
 				? 'opacity-100'
 				: 'opacity-68'} {filled ? 'min-h-0 flex-1 max-w-[46em]' : 'max-w-[33em]'}"
 			style:height={filled ? undefined : `${bodyHeight}px`}
@@ -683,7 +683,7 @@
 		<div class="flex max-h-[66px] shrink-0 flex-wrap content-start gap-2 overflow-y-auto pt-3 pb-3 pr-4 pl-4">
 			{#each draft.attachments as attachment (attachment.id)}
 				{@const badge = attachmentBadge(attachment.type)}
-				<span class="flex h-[30px] shrink-0 items-center gap-2 rounded-[6px] border border-[#cbd5e1] bg-white pr-1 pl-1.5 shadow-2xs">
+				<span class="flex h-[30px] shrink-0 items-center gap-2 rounded-[8px] border border-[#cbd5e1] bg-white pr-1.5 pl-1.5 shadow-[var(--z-shadow-tactile)]">
 					<span
 						class="flex h-5 min-w-5 items-center justify-center rounded-[4px] px-1 text-[10px] font-bold uppercase"
 						style:background-color={badge.bg}
@@ -695,11 +695,11 @@
 					<span
 						class="max-w-[180px] truncate text-[13px] font-medium {attachment.status === 'error'
 							? 'text-red-600'
-							: 'text-slate-800'}"
+							: 'text-[#1e293b]'}"
 					>
 						{attachment.name}
 					</span>
-					<span class="shrink-0 text-xs font-medium text-slate-400 tabular-nums">
+					<span class="shrink-0 text-xs font-medium text-[#94a3b8] tabular-nums">
 						{attachment.status === 'uploading'
 							? '…'
 							: attachment.status === 'error'
@@ -708,7 +708,7 @@
 					</span>
 					<button
 						type="button"
-						class="flex size-[18px] shrink-0 items-center justify-center rounded-[4px] text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+						class="flex size-[18px] shrink-0 items-center justify-center rounded-[4px] text-[#94a3b8] transition-colors hover:bg-[#f1f5f9] hover:text-[#0b1220]"
 						aria-label="Remove {attachment.name}"
 						onclick={() => compose.removeAttachment(draft.id, attachment.id)}
 					>
@@ -730,7 +730,7 @@
 			title="Attach a file"
 			onclick={() => fileInputEl?.click()}
 		>
-			<ActionIcon name="clip" class="size-[18px] text-slate-700" />
+			<ActionIcon name="clip" class="size-[18px] text-[#334155]" />
 		</button>
 		<input
 			bind:this={fileInputEl}
@@ -754,7 +754,7 @@
 				>
 					<Popover.Trigger
 						class="btn-tactile !h-[30px] !px-2.5 !text-[12px] {draft.sendAt
-							? '!border-blue-400 !bg-blue-50 !text-blue-700'
+							? '!border-[#d97706] !bg-[#fde68a] !text-[#78350f] !font-semibold'
 							: ''}"
 						aria-label="Schedule send"
 						title="Schedule send"
@@ -768,44 +768,44 @@
 					<Portal>
 						<Popover.Positioner style={`z-index: ${overlayZ}`}>
 							<Popover.Content
-								class="w-64 rounded-[8px] border border-[#cbd5e1] bg-white p-1.5 shadow-lg outline-none"
+								class="z-menu w-[260px] outline-none"
 								aria-label="Schedule send"
 							>
 								{#if draft.sendAt}
 									<button
 										type="button"
-										class="flex w-full items-center justify-between gap-2 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-100"
+										class="flex w-full items-center justify-between gap-2 z-menu-item justify-between"
 										onclick={() => {
 											compose.setSendAt(draft.id, null);
 											scheduleOpen = false;
 										}}
 									>
 										<span>Send immediately</span>
-										<span class="text-xs text-slate-400">clear</span>
+										<span class="text-xs text-[#94a3b8]">clear</span>
 									</button>
 									<div class="my-1.5 border-t border-[#e2e8f0]"></div>
 								{/if}
 								{#each schedulePresets as preset (preset.label)}
 									<button
 										type="button"
-										class="flex w-full items-center justify-between gap-2 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-100"
+										class="flex w-full items-center justify-between gap-2 z-menu-item justify-between"
 										onclick={() => pickSendAt(preset.date)}
 									>
 										<span>{preset.label}</span>
-										<span class="text-xs tabular-nums text-slate-500">
+										<span class="text-xs tabular-nums text-[#64748b]">
 											{formatScheduleTime(preset.date)}
 										</span>
 									</button>
 								{/each}
 								<div class="my-1.5 border-t border-[#e2e8f0]"></div>
 								<div class="flex flex-col gap-1.5 px-1.5 pt-1 pb-1">
-									<label class="text-xs text-slate-500" for="compose-schedule-{draft.id}">
+									<label class="text-xs text-[#64748b]" for="compose-schedule-{draft.id}">
 										Pick date &amp; time
 									</label>
 									<input
 										id="compose-schedule-{draft.id}"
 										type="datetime-local"
-										class="h-9 rounded-[6px] border border-[#cbd5e1] bg-white px-2.5 text-[13px] text-slate-800 shadow-2xs outline-none focus:border-blue-500"
+										class="z-field z-mono !text-[12.5px]"
 										min={customMin}
 										value={customSendTime}
 										oninput={(event) =>
@@ -813,8 +813,7 @@
 									/>
 									<button
 										type="button"
-										class="btn-tactile !h-[30px] !text-[12px] font-semibold"
-										disabled={!customSendTime}
+										class="btn-tactile !h-8 !border-[#d97706] !bg-[#fde68a] !text-[12.5px] !font-semibold !text-[#78350f]" disabled={!customSendTime}
 										onclick={pickCustomSendAt}
 									>
 										Schedule
@@ -826,7 +825,7 @@
 				</Popover.Root>
 		<button
 			type="button"
-			class="ml-auto btn-tactile !size-[30px] !p-0 !text-red-600 hover:!border-red-300 hover:!bg-red-50"
+			class="ml-auto btn-tactile btn-danger !size-[30px] !p-0"
 			aria-label="Discard draft"
 			title="Discard draft"
 			onclick={() => compose.discard(draft.id)}

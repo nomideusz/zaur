@@ -1,71 +1,107 @@
 /*
- * Mail 2.0 design tokens — from the redesign handoff's "Resolved variants" +
- * "Design Tokens" sections. Light theme only for now (decision in ADR-0005).
+ * Mail 2.0 design tokens — design system v2, "Pastel channels, tactile
+ * controls" (claude.ai/design project "Mail2 design system update").
+ *
+ * Two ideas carry the whole system:
+ *
+ * - **Colour means channel, not identity.** Six fixed hues, each a pastel
+ *   fill, a saturated stroke that matches it, a dark ink for text on the fill
+ *   and a solid for filled controls. A hue says what kind of thing this is —
+ *   correspondence, confirmed, needs you, flagged, digest, discard — never who
+ *   sent it. Rails, chips, unread washes and folder rows wear channels.
+ * - **Identity lives on the avatar tile**, from a quieter ramp of eight tones
+ *   picked deterministically per person. Teal is reserved for the brand.
  *
  * Raw values live on :root; the @theme inline block maps them onto Tailwind v4
- * utilities (bg-canvas, text-ink, border-line, rounded-panel, …).
+ * utilities. The dark ramp is written down here because the design specifies
+ * it, but the shell reads light values directly today — dark is a follow-up.
  */
 
 :root {
-	/* Surfaces */
-	--z-canvas: #f4f4f4; /* shell ground */
-	--z-container: #ffffff; /* reader, cards, menus, panels */
-	--z-surface-subtle: #fafafa; /* earlier-thread card, attachment chips */
+	/* Surfaces & ink — light */
+	--z-ground: #eef1f5; /* behind the app column */
+	--z-canvas: #f6f7f9; /* pane ground, settings body */
+	--z-surface: #ffffff; /* cards, panels, menus */
+	--z-sunken: #f1f4f8; /* inset wells, sunken rows */
+	--z-ink: #0b1220; /* headings, unread */
+	--z-body: #1e293b; /* reader copy */
+	--z-muted: #475569; /* labels, meta on tinted fills */
+	--z-soft: #64748b; /* captions and meta — the smallest text may use this, nothing lighter */
+	--z-faint: #94a3b8; /* rules and glyphs — never text */
+	--z-hairline: #e2e8f0; /* row separators */
+	--z-line: #cbd5e1; /* controls, panels */
 
-	/* Ink — the neutral ramp (no green tint; must sit neutral on #f4f4f4) */
-	--z-ink: #101413; /* primary text */
-	--z-ink-body: #2b3433; /* reader body copy */
-	--z-ink-muted: #46504f; /* sender names, icon strokes */
-	--z-ink-secondary: #5d6766; /* labels, meta, hints */
-	--z-ink-tertiary: #767676; /* dock meta */
-	--z-ink-disabled: #98a3a2; /* recessed Send */
+	/* Legacy aliases still read by a few call sites (@theme mapping below). */
+	--z-container: var(--z-surface);
+	--z-surface-subtle: #f8fafc;
+	--z-ink-body: var(--z-body);
+	--z-ink-muted: var(--z-muted);
+	--z-ink-secondary: var(--z-soft);
+	--z-ink-tertiary: var(--z-soft);
+	--z-ink-disabled: var(--z-faint);
+	--z-divider: var(--z-hairline);
+	--z-line-light: var(--z-hairline);
+	--z-border: var(--z-line);
+	--z-border-strong: var(--z-faint);
+	--z-border-hover: var(--z-faint);
+	--z-grip: var(--z-faint);
+	--z-hairline-cool: #f1f5f9;
 
-	/* Accent — one accent, used sparingly */
-	/* Blue-600 — selection is blue everywhere, and that now includes the three
-	   things still resolving this token: the focus ring, the splitter's hover
-	   tint and the sign-in page's register link. It was a plum left over from
-	   the original token ramp, the one accent in the shell that was not blue. */
+	/* Accent — selection is the correspondence channel's solid, everywhere. */
 	--z-accent: #2563eb;
 	--z-accent-fg: #ffffff;
-	--z-accent-soft: color-mix(in oklab, var(--z-accent) 13%, white); /* active pills, avatars */
-	--z-accent-tint: color-mix(in oklab, var(--z-accent) 6%, white); /* cursor/selected row */
+	--z-accent-soft: #dbeafe; /* active pills, selection header */
+	--z-accent-tint: #eff6ff; /* selected row */
+	--z-accent-edge: #1d4ed8; /* border of a filled blue control */
+	--z-danger: #b91c1c;
 
-	/* Semantic */
-	--z-danger: #8a2f2f; /* trash labels, destructive hover */
-
-	/* Lines */
-	--z-hairline: #f1f1f1; /* field-row dividers, list separators */
-	--z-hairline-cool: #f0f4f3; /* calendar cells */
-	--z-divider: #ececec; /* section borders, hover fill */
-	--z-line-light: #e4e4e4; /* cards */
-	--z-line: #e0e0e0; /* controls, top bar */
-	--z-border: #dcdcdc; /* panels, popovers, dock chips */
-	--z-border-strong: #c8c8c8; /* unfilled dots */
-	--z-border-hover: #c9d3d2; /* card hover */
-	--z-grip: #b4b4b4; /* panel header grip */
+	/* Channels: fill / stroke / solid / ink */
+	--z-ch-correspondence-fill: #dbeafe;
+	--z-ch-correspondence-stroke: #3b82f6;
+	--z-ch-correspondence-solid: #2563eb;
+	--z-ch-correspondence-ink: #1e40af;
+	--z-ch-confirmed-fill: #dcfce7;
+	--z-ch-confirmed-stroke: #16a34a;
+	--z-ch-confirmed-solid: #16a34a;
+	--z-ch-confirmed-ink: #14532d;
+	--z-ch-needs-fill: #fde68a;
+	--z-ch-needs-stroke: #d97706;
+	--z-ch-needs-solid: #d97706;
+	--z-ch-needs-ink: #78350f;
+	--z-ch-flagged-fill: #fbcfe8;
+	--z-ch-flagged-stroke: #db2777;
+	--z-ch-flagged-solid: #db2777;
+	--z-ch-flagged-ink: #831843;
+	--z-ch-digest-fill: #ddd6fe;
+	--z-ch-digest-stroke: #7c3aed;
+	--z-ch-digest-solid: #7c3aed;
+	--z-ch-digest-ink: #4c1d95;
+	--z-ch-discard-fill: #fee2e2;
+	--z-ch-discard-stroke: #ef4444;
+	--z-ch-discard-solid: #dc2626;
+	--z-ch-discard-ink: #b91c1c;
 
 	/* Type */
 	--font-sans: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-	--font-mono: 'Noto Sans Mono', ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, monospace;
+	--font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
 	--z-measure: 33em; /* ~70 characters — reading AND writing measure */
 
 	/* Fixed columns */
-	--z-list-width: 520px; /* mail list, user-resizable 380–760 */
+	--z-list-width: 480px; /* mail list, user-resizable 380–760 */
 	--z-label-column: 62px; /* compose labels */
-	--z-calendar-gutter: 64px;
-	--z-agenda-day: 132px;
-	--z-settings-nav: 232px;
+	--z-sidebar-width: 240px;
+	--z-drawer-width: 280px; /* the sidebar as a phone drawer */
 
 	/* Motion — all geometry transitions are suppressed during pointer gestures */
 	--z-ease-nav: cubic-bezier(0.4, 0, 0.2, 1);
-	--z-motion-lift: 150ms ease; /* dock chip lift */
-	--z-motion-color: 160ms ease; /* color/opacity */
-	--z-motion-geometry: 180ms ease; /* panel geometry, stage changes */
-	--z-motion-nav: 180ms var(--z-ease-nav); /* nav indicator */
-	--z-motion-body: 200ms ease; /* compose body height */
-	--z-motion-grip: 120ms ease; /* splitter grip */
+	--z-motion-lift: 150ms ease;
+	--z-motion-color: 160ms ease;
+	--z-motion-geometry: 180ms ease;
+	--z-motion-nav: 180ms var(--z-ease-nav);
+	--z-motion-body: 200ms ease;
+	--z-motion-grip: 120ms ease;
 
-	/* Z-index scale (README "z-index") */
+	/* Z-index scale */
 	--z-splitter: 5;
 	--z-menu: 40;
 	--z-fab: 45;
@@ -76,31 +112,53 @@
 	--z-panel: 70;
 	--z-scrim: 70;
 
-	/* Shadows */
-	--z-shadow-menu: 0 12px 32px rgb(16 20 19 / 0.14);
-	--z-shadow-toast: 0 12px 32px rgb(16 20 19 / 0.16);
-	--z-shadow-suggestion: 0 14px 34px rgb(16 20 19 / 0.16);
-	--z-shadow-bulk: 0 14px 36px rgb(16 20 19 / 0.18);
-	--z-shadow-search: 0 18px 40px rgb(16 20 19 / 0.18);
-	--z-shadow-panel: 0 24px 56px rgb(16 20 19 / 0.22), 0 2px 6px rgb(16 20 19 / 0.08);
-	--z-shadow-dialog: 0 24px 60px rgb(16 20 19 / 0.3);
-	--z-shadow-chip: 0 6px 16px rgb(16 20 19 / 0.1);
-	--z-shadow-chip-lift: 0 14px 28px rgb(16 20 19 / 0.2);
-	--z-shadow-window: 0 24px 48px -12px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(15, 23, 42, 0.06);
+	/* Elevation — four levels, no more */
+	--z-shadow-tactile: 0 1px 2px rgba(15, 23, 42, 0.06); /* buttons, chips, fields */
+	--z-shadow-raised: 0 1px 2px rgba(15, 23, 42, 0.05), 0 0 0 1px rgba(15, 23, 42, 0.02); /* unread rows, cards */
+	--z-shadow-menu: 0 12px 32px rgba(11, 18, 32, 0.14); /* menus, popovers, dock chips, toasts */
+	--z-shadow-panel: 0 24px 56px rgba(11, 18, 32, 0.22); /* compose, dialogs */
+	--z-shadow-window: 0 24px 56px rgba(11, 18, 32, 0.14); /* the sign-in card */
+	--z-shadow-primary: 0 1px 2px rgba(15, 23, 42, 0.18); /* filled blue buttons */
 
-	/* Hobday Tactile Tokens */
-	--z-tactile-border: #cbd5e1;
-	--z-tactile-border-hover: #94a3b8;
-	--z-tactile-bg: #ffffff;
+	/* Tactile control surfaces */
+	--z-tactile-border: var(--z-line);
+	--z-tactile-border-hover: var(--z-faint);
+	--z-tactile-bg: var(--z-surface);
 	--z-tactile-bg-hover: #f8fafc;
-	--z-sidebar-width: 240px;
+	--z-tactile-bg-active: #f1f5f9;
+}
+
+/*
+ * Dark ramp, as specified. Not wired to a toggle yet: the shell still reads
+ * light values directly, so switching this on would recolour the ground and
+ * nothing else. Kept so the tokens exist when the dark pass happens.
+ */
+:root[data-theme='dark'] {
+	--z-ground: #070b10;
+	--z-canvas: #0f141a;
+	--z-surface: #161d26;
+	--z-sunken: #11171f;
+	--z-ink: #e8eef6;
+	--z-body: #c3cedb;
+	--z-muted: #a3b1c2;
+	--z-soft: #8fa0b3;
+	--z-faint: #55637a;
+	--z-hairline: #1e2836;
+	--z-line: #2c3949;
 }
 
 @theme inline {
+	--color-ground: var(--z-ground);
 	--color-canvas: var(--z-canvas);
+	--color-surface: var(--z-surface);
+	--color-sunken: var(--z-sunken);
 	--color-container: var(--z-container);
 	--color-surface-subtle: var(--z-surface-subtle);
 	--color-ink: var(--z-ink);
+	--color-body: var(--z-body);
+	--color-muted: var(--z-muted);
+	--color-soft: var(--z-soft);
+	--color-faint: var(--z-faint);
 	--color-ink-body: var(--z-ink-body);
 	--color-ink-muted: var(--z-ink-muted);
 	--color-ink-secondary: var(--z-ink-secondary);
@@ -110,6 +168,7 @@
 	--color-accent-fg: var(--z-accent-fg);
 	--color-accent-soft: var(--z-accent-soft);
 	--color-accent-tint: var(--z-accent-tint);
+	--color-accent-edge: var(--z-accent-edge);
 	--color-danger: var(--z-danger);
 	--color-hairline: var(--z-hairline);
 	--color-hairline-cool: var(--z-hairline-cool);
@@ -121,27 +180,23 @@
 	--color-border-hover: var(--z-border-hover);
 	--color-grip: var(--z-grip);
 
-	--radius-chip: 4px; /* checkbox */
+	--radius-chip: 5px; /* checkbox, count badge */
 	--radius-badge: 5px;
-	--radius-row: 6px; /* cards, message rows */
-	--radius-menu-item: 7px; /* menu rows, icon buttons */
-	--radius-control: 8px; /* controls */
-	--radius-btn: 9px; /* buttons */
-	--radius-card: 10px; /* menus, cards */
-	--radius-pop: 11px; /* search popover, dock chip */
-	--radius-panel: 14px; /* compose panels, dialog */
+	--radius-row: 10px; /* cards, message rows */
+	--radius-menu-item: 8px; /* menu rows */
+	--radius-control: 8px; /* controls, buttons, fields */
+	--radius-btn: 8px;
+	--radius-card: 10px; /* settings cards */
+	--radius-pop: 12px; /* menus, popovers, compose panel */
+	--radius-panel: 14px; /* the app column's corners on a ground */
 	--radius-pill: 999px;
 
+	--shadow-tactile: var(--z-shadow-tactile);
+	--shadow-raised: var(--z-shadow-raised);
 	--shadow-menu: var(--z-shadow-menu);
-	--shadow-toast: var(--z-shadow-toast);
-	--shadow-suggestion: var(--z-shadow-suggestion);
-	--shadow-bulk: var(--z-shadow-bulk);
-	--shadow-search: var(--z-shadow-search);
 	--shadow-panel: var(--z-shadow-panel);
-	--shadow-dialog: var(--z-shadow-dialog);
-	--shadow-chip: var(--z-shadow-chip);
-	--shadow-chip-lift: var(--z-shadow-chip-lift);
 	--shadow-window: var(--z-shadow-window);
+	--shadow-primary: var(--z-shadow-primary);
 
 	--color-tactile-border: var(--z-tactile-border);
 	--color-tactile-border-hover: var(--z-tactile-border-hover);

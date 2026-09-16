@@ -300,7 +300,7 @@
 </svelte:head>
 
 <!-- Desktop Frame Canvas matching Hobday portfolio presentation -->
-<div class="flex h-svh w-full flex-col items-center justify-center bg-[#ebeef2] overflow-hidden text-slate-900">
+<div class="flex h-svh w-full flex-col items-center justify-center bg-[#eef1f5] overflow-hidden text-[#0b1220]">
 	<div
 		bind:this={rootEl}
 		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-white"
@@ -334,7 +334,7 @@
 				{#if viewport.compact}
 					<button
 						type="button"
-						class="absolute inset-0 z-40 bg-slate-900/25 lg:hidden"
+						class="absolute inset-0 z-40 bg-[#0f172a]/25 lg:hidden"
 						aria-label="Close folder list"
 						onclick={() => (drawerOpen = false)}
 					></button>

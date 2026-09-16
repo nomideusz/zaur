@@ -41,11 +41,91 @@ const session = {
 };
 
 const mailboxes = [
-	{ id: 'inbox', name: 'Inbox', role: 'inbox', totalEmails: 0, unreadEmails: 0, sortOrder: 0 },
+	{ id: 'inbox', name: 'Inbox', role: 'inbox', totalEmails: 6, unreadEmails: 2, sortOrder: 0 },
 	{ id: 'drafts', name: 'Drafts', role: 'drafts', totalEmails: 0, unreadEmails: 0, sortOrder: 1 },
-	{ id: 'sent', name: 'Sent', role: 'sent', totalEmails: 0, unreadEmails: 0, sortOrder: 2 },
-	{ id: 'trash', name: 'Trash', role: 'trash', totalEmails: 0, unreadEmails: 0, sortOrder: 3 }
+	{ id: 'sent', name: 'Sent', role: 'sent', totalEmails: 1, unreadEmails: 0, sortOrder: 2 },
+	{ id: 'archive', name: 'Archive', role: 'archive', totalEmails: 0, unreadEmails: 0, sortOrder: 3 },
+	{ id: 'junk', name: 'Junk', role: 'junk', totalEmails: 1, unreadEmails: 1, sortOrder: 4 },
+	{ id: 'trash', name: 'Trash', role: 'trash', totalEmails: 0, unreadEmails: 0, sortOrder: 5 }
 ];
+
+const now = Date.now();
+const at = (hoursAgo) => new Date(now - hoursAgo * 3_600_000).toISOString();
+const text = (partId, value) => ({
+	textBody: [{ partId, type: 'text/plain' }],
+	htmlBody: [],
+	bodyValues: { [partId]: { value, isTruncated: false } },
+	bodyStructure: { partId, type: 'text/plain' }
+});
+/** Sample mail: every channel, a thread, an attachment, one of each state. */
+const emails = new Map(
+	[
+		{
+			id: 'm1', threadId: 't1', mailboxIds: { inbox: true }, keywords: {},
+			from: [{ name: 'Stalwart Ops', email: 'ops@zaur.app' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
+			subject: 'Re: DKIM rotation for mail.zaur.app', receivedAt: at(1), hasAttachment: true,
+			preview: 'The new selector is live. Signing switched over at 09:31 UTC and the first outbound batch verified clean…',
+			...text('1', 'The new selector is live on mail.zaur.app. Signing switched over at 09:31 UTC and the first outbound batch verified clean against both Google and Outlook.\n\nThe old key stays published until the 30th so anything still in flight verifies. After that I’ll drop the record and we’re down to one selector again.\n\n— Ops'),
+			bodyStructure: {
+				type: 'multipart/mixed',
+				subParts: [
+					{ partId: '1', type: 'text/plain' },
+					{ partId: '2', blobId: 'blob-2', type: 'application/pdf', name: 'rotation-plan.pdf', size: 131072, disposition: 'attachment' },
+					{ partId: '3', blobId: 'blob-3', type: 'text/plain', name: 'dkim-selector-2026.txt', size: 4096, disposition: 'attachment' }
+				]
+			}
+		},
+		{
+			id: 'm0', threadId: 't1', mailboxIds: { inbox: true }, keywords: { $seen: true },
+			from: [{ name: 'Annie Hobday', email: 'annie@example.com' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
+			subject: 'Re: DKIM rotation for mail.zaur.app', receivedAt: at(20), hasAttachment: false,
+			preview: 'Works for me — I’ll watch the postmaster reports on Monday afternoon.',
+			...text('1', 'Works for me — I’ll watch the postmaster reports on Monday afternoon.')
+		},
+		{
+			id: 'm2', threadId: 't2', mailboxIds: { inbox: true }, keywords: { $important: true },
+			from: [{ name: 'Annie Hobday', email: 'annie@example.com' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
+			subject: 'Design handoff — reader spacing', receivedAt: at(2.5), hasAttachment: false,
+			preview: 'Waiting on your call about the 680px measure before I redraw.',
+			...text('1', 'Waiting on your call about the 680px measure before I redraw.')
+		},
+		{
+			id: 'm3', threadId: 't3', mailboxIds: { inbox: true }, keywords: { $seen: true, $flagged: true },
+			from: [{ name: 'Marek Lis', email: 'marek@example.org' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
+			subject: 'JMAP push quirks on reconnect', receivedAt: at(3), hasAttachment: false,
+			preview: 'Kept the thread so you have the history before Thursday.',
+			...text('1', 'Kept the thread so you have the history before Thursday.')
+		},
+		{
+			id: 'm4', threadId: 't4', mailboxIds: { inbox: true }, keywords: { $seen: true },
+			from: [{ name: 'Dokploy', email: 'deploys@dokploy.example' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
+			subject: 'Deployment succeeded — mail2', receivedAt: at(4), hasAttachment: false,
+			preview: 'Build 482 pushed to mail2.zaur.app in 2m 14s.',
+			...text('1', 'Build 482 pushed to mail2.zaur.app in 2m 14s.')
+		},
+		{
+			id: 'm5', threadId: 't5', mailboxIds: { inbox: true }, keywords: { $seen: true },
+			from: [{ name: 'GitHub', email: 'noreply@github.example' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
+			subject: 'All checks have passed on main', receivedAt: at(30), hasAttachment: false,
+			preview: '3 workflows completed successfully for commit 2030cba.',
+			...text('1', '3 workflows completed successfully for commit 2030cba.')
+		},
+		{
+			id: 'm6', threadId: 't6', mailboxIds: { sent: true }, keywords: { $seen: true },
+			from: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }], to: [{ name: 'Annie Hobday', email: 'annie@example.com' }],
+			subject: 'Reader spacing — decision', receivedAt: at(26), hasAttachment: false,
+			preview: 'Left-aligned at 680px. Holds up much better than centring.',
+			...text('1', 'Left-aligned at 680px. Holds up much better than centring.')
+		},
+		{
+			id: 'm7', threadId: 't7', mailboxIds: { junk: true }, keywords: {},
+			from: [{ name: 'Prize Desk', email: 'win@example.net' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
+			subject: 'You have been selected', receivedAt: at(5), hasAttachment: false,
+			preview: 'Claim within 24 hours.',
+			...text('1', 'Claim within 24 hours.')
+		}
+	].map((email) => [email.id, email])
+);
 
 const addressBooks = [
 	{ id: 'ab1', name: 'Personal', isDefault: true, isSubscribed: true, myRights: { mayRead: true, mayWrite: true, mayDelete: true } }
@@ -113,10 +193,51 @@ function handle([name, args, callId]) {
 	switch (name) {
 		case 'Mailbox/get':
 			return ok({ state: 'm1', list: args.ids ? mailboxes.filter((mb) => args.ids.includes(mb.id)) : mailboxes, notFound: [] });
-		case 'Email/query':
-			return ok({ queryState: 'q1', canCalculateChanges: false, position: 0, ids: [], total: 0 });
-		case 'Email/get':
-			return ok({ state: 'e1', list: [], notFound: [] });
+		case 'Email/query': {
+			const filter = args.filter ?? {};
+			const ascending = args.sort?.[0]?.isAscending === true;
+			const list = [...emails.values()]
+				.filter((e) => !filter.inMailbox || e.mailboxIds[filter.inMailbox])
+				.filter((e) => !filter.inThread || e.threadId === filter.inThread)
+				.filter((e) => !filter.notKeyword || !e.keywords[filter.notKeyword])
+				.filter((e) => !filter.text || JSON.stringify(e).toLowerCase().includes(String(filter.text).toLowerCase()))
+				.sort((a, b) => (ascending ? 1 : -1) * (Date.parse(a.receivedAt) - Date.parse(b.receivedAt)));
+			const position = args.position ?? 0;
+			const ids = list.slice(position, position + (args.limit ?? list.length)).map((e) => e.id);
+			return ok({ queryState: 'q1', canCalculateChanges: false, position, ids, total: list.length });
+		}
+		case 'Email/get': {
+			const ids = args.ids ?? [...emails.keys()];
+			return ok({ state: 'e1', list: ids.filter((id) => emails.has(id)).map((id) => emails.get(id)), notFound: ids.filter((id) => !emails.has(id)) });
+		}
+		case 'Email/set': {
+			const updated = {};
+			for (const [id, patch] of Object.entries(args.update ?? {})) {
+				const email = emails.get(id);
+				if (!email) continue;
+				for (const [k, v] of Object.entries(patch)) {
+					if (k.startsWith('keywords/')) {
+						const key = k.slice('keywords/'.length);
+						if (v) email.keywords[key] = true; else delete email.keywords[key];
+					} else if (k.startsWith('mailboxIds/')) {
+						const key = k.slice('mailboxIds/'.length);
+						if (v) email.mailboxIds[key] = true; else delete email.mailboxIds[key];
+					} else if (k === 'keywords' || k === 'mailboxIds') {
+						email[k] = { ...v };
+					}
+				}
+				updated[id] = null;
+				log('Email updated', id, JSON.stringify(patch));
+			}
+			const destroyed = [];
+			for (const id of args.destroy ?? []) if (emails.delete(id)) destroyed.push(id);
+			for (const mb of mailboxes) {
+				const inBox = [...emails.values()].filter((e) => e.mailboxIds[mb.id]);
+				mb.totalEmails = inBox.length;
+				mb.unreadEmails = inBox.filter((e) => !e.keywords.$seen).length;
+			}
+			return ok({ oldState: 'e1', newState: 'e2', updated, destroyed });
+		}
 		case 'Identity/get':
 			return ok({ state: 'i1', list: [{ id: 'id1', name: 'Smoke Tester', email: 'smoke@zaur.app', mayDelete: false }], notFound: [] });
 		case 'Quota/get':

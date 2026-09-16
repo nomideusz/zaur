@@ -569,7 +569,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <!-- Ground behind the app column — only visible past the 1780px ceiling. -->
-<div class="flex h-svh w-full flex-col items-center justify-center bg-[#ebeef2] overflow-hidden text-slate-900">
+<div class="flex h-svh w-full flex-col items-center justify-center bg-[#eef1f5] overflow-hidden text-[#0b1220]">
 	<!-- App column: edge to edge until 1780px, then capped so the chrome at each
 	     end stays within reach of the content in the middle. -->
 	<div
@@ -610,18 +610,19 @@
 					{#if viewport.compact}
 						<button
 							type="button"
-							class="absolute inset-0 z-40 bg-slate-900/25 lg:hidden"
+							class="absolute inset-0 z-40 bg-[#0f172a]/25 lg:hidden"
 							aria-label="Close folder list"
 							onclick={() => (drawerOpen = false)}
 						></button>
 					{/if}
 					<div
-						class="max-lg:absolute max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:w-[280px] max-lg:max-w-[85%] max-lg:shadow-xl"
+						class="max-lg:absolute max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:w-[280px] max-lg:max-w-[85%] max-lg:shadow-[var(--z-shadow-panel)]"
 					>
 						<Sidebar
 							mailboxes={mailboxList}
 							activeMailboxId={selectedMailboxId}
 							onSelectMailbox={selectMailbox}
+							onClose={viewport.compact ? () => (drawerOpen = false) : undefined}
 							onNewMessage={() => {
 								drawerOpen = false;
 								openCompose();
@@ -668,6 +669,7 @@
 					onAction={(action, mailboxId) =>
 						openThreadId && void runBulk(action, mailboxId, [openThreadId])}
 					threadState={openRowState}
+					mailboxKind={activeMailbox?.kind ?? null}
 					{archiveTarget}
 					inTrash={activeMailbox?.kind === 'trash'}
 				/>

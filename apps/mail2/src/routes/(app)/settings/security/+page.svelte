@@ -188,37 +188,37 @@
 <StatusNote {status} />
 
 {#if overviewResource?.error}
-	<section class="rounded-[10px] border border-red-200 bg-red-50 p-5 text-[13px] text-red-700">
+	<section class="rounded-[10px] border border-[#ef4444] bg-[#fee2e2] p-5 text-[13px] text-[#b91c1c]">
 		Could not load your security settings.
 		<button type="button" class="btn-tactile ml-2 !h-[28px]" onclick={() => overviewResource?.refresh()}>
 			Retry
 		</button>
 	</section>
 {:else if !overview}
-	<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 text-[13px] text-slate-400">Loading…</section>
+	<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-[18px] text-[13px] text-[#94a3b8]">Loading…</section>
 {:else}
 	{#if overview.serverError}
-		<section class="z-railed rounded-[10px] border border-amber-200 bg-amber-50 p-4 text-[13px] text-slate-700" style:--z-rail="#d97706">
+		<section class="z-railed rounded-[10px] border border-[#d97706] bg-[#fde68a] p-4 text-[13px] text-[#334155]" style:--z-rail="#d97706">
 			{overview.serverError} Signed-in devices can still be managed below.
 		</section>
 	{/if}
 
 	<!-- Confirm identity -->
-	<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
+	<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-[18px] shadow-[var(--z-shadow-tactile)] max-md:p-4">
 		<div class="flex items-baseline justify-between gap-3">
 			<h2 class="z-caption">Confirm it's you</h2>
 			{#if verified}
-				<span class="text-[12px] font-medium text-slate-500 tabular-nums">Confirmed · {countdown} left</span>
+				<span class="text-[12px] font-medium text-[#64748b] tabular-nums">Confirmed · {countdown} left</span>
 			{/if}
 		</div>
-		<p class="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
+		<p class="mt-1.5 text-[12.5px] leading-relaxed text-[#64748b]">
 			Creating app passwords and signing out devices needs your password again, recently. The
 			password and two-factor forms ask for it themselves.
 		</p>
 		{#if !verified}
 			<form {...confirmIdentity} class="mt-3 flex flex-wrap items-end gap-2">
 				<label class="min-w-0 flex-1 basis-[200px]">
-					<span class="block text-[12px] text-slate-500">Password</span>
+					<span class="block text-[12px] text-[#64748b]">Password</span>
 					<input
 						{...confirmIdentity.fields._password.as('password')}
 						autocomplete="current-password"
@@ -228,7 +228,7 @@
 				</label>
 				{#if showTotpField}
 					<label class="basis-[140px]">
-						<span class="block text-[12px] text-slate-500">Code</span>
+						<span class="block text-[12px] text-[#64748b]">Code</span>
 						<input
 							{...confirmIdentity.fields.totp.as('text')}
 							inputmode="numeric"
@@ -238,7 +238,7 @@
 						/>
 					</label>
 				{/if}
-				<button type="submit" class="btn-tactile !h-[30px] !border-blue-700 !bg-blue-600 !text-white hover:!bg-blue-700" disabled={confirmIdentity.pending > 0}>
+				<button type="submit" class="btn-tactile !h-[30px] btn-primary" disabled={confirmIdentity.pending > 0}>
 					{confirmIdentity.pending > 0 ? 'Checking…' : 'Confirm'}
 				</button>
 			</form>
@@ -246,36 +246,36 @@
 	</section>
 
 	<!-- Password -->
-	<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
+	<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-[18px] shadow-[var(--z-shadow-tactile)] max-md:p-4">
 		<h2 class="z-caption">Password</h2>
-		<p class="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
+		<p class="mt-1.5 text-[12.5px] leading-relaxed text-[#64748b]">
 			Changing it signs every other browser out; app passwords keep working until you revoke
 			them. This device stays signed in.
 		</p>
 		<form {...changePassword} class="mt-3 flex flex-col gap-3">
 			<fieldset disabled={Boolean(overview.serverError)} class="contents">
 				<label class="block">
-					<span class="block text-[12px] text-slate-500">Current password</span>
+					<span class="block text-[12px] text-[#64748b]">Current password</span>
 					<input {...changePassword.fields._current.as('password')} autocomplete="current-password" required class="z-field mt-1 w-full max-md:text-base" />
 				</label>
 				<div class="grid grid-cols-2 gap-3 max-md:grid-cols-1">
 					<label class="block">
-						<span class="block text-[12px] text-slate-500">New password</span>
+						<span class="block text-[12px] text-[#64748b]">New password</span>
 						<input {...changePassword.fields._next.as('password')} autocomplete="new-password" required minlength="8" class="z-field mt-1 w-full max-md:text-base" />
 					</label>
 					<label class="block">
-						<span class="block text-[12px] text-slate-500">Repeat new password</span>
+						<span class="block text-[12px] text-[#64748b]">Repeat new password</span>
 						<input {...changePassword.fields._confirm.as('password')} autocomplete="new-password" required class="z-field mt-1 w-full max-md:text-base" />
 					</label>
 				</div>
 				{#if overview.totpEnabled}
 					<label class="block max-w-[200px]">
-						<span class="block text-[12px] text-slate-500">Authentication code</span>
+						<span class="block text-[12px] text-[#64748b]">Authentication code</span>
 						<input {...changePassword.fields.totp.as('text')} inputmode="numeric" autocomplete="one-time-code" placeholder="123456" class="z-field mt-1 w-full font-mono tracking-[0.2em] max-md:text-base" />
 					</label>
 				{/if}
 				{#each changePassword.fields.allIssues() ?? [] as issue (issue.message)}
-					<p class="text-[12.5px] text-red-600">{issue.message}</p>
+					<p class="text-[12.5px] text-[#b91c1c]">{issue.message}</p>
 				{/each}
 				<div>
 					<button type="submit" class="btn-tactile" disabled={changePassword.pending > 0}>
@@ -287,19 +287,19 @@
 	</section>
 
 	<!-- Two-factor -->
-	<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
+	<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-[18px] shadow-[var(--z-shadow-tactile)] max-md:p-4">
 		<div class="flex items-baseline justify-between gap-3">
 			<h2 class="z-caption">Two-factor authentication</h2>
-			<span class="rounded-[4px] px-1.5 py-0.5 text-[11px] font-semibold {overview.totpEnabled ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}">
+			<span class="rounded-[4px] px-1.5 py-0.5 text-[11px] font-semibold {overview.totpEnabled ? 'bg-[#dcfce7] text-[#14532d]' : 'bg-[#f1f5f9] text-[#64748b]'}">
 				{overview.totpEnabled ? 'On' : 'Off'}
 			</span>
 		</div>
-		<p class="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
+		<p class="mt-1.5 text-[12.5px] leading-relaxed text-[#64748b]">
 			A six-digit code from an authenticator app, asked for at every sign-in. Mail apps that
 			cannot ask for one use an app password instead.
 		</p>
 		{#if overview.authMethod !== 'oauth'}
-			<p class="mt-3 text-[12.5px] text-amber-700">
+			<p class="mt-3 text-[12.5px] text-[#78350f]">
 				This session signed in with the password fallback, which cannot carry a code from
 				request to request. Sign in through the secure sign-in to manage two-factor authentication.
 			</p>
@@ -307,42 +307,42 @@
 			<form {...disableTotp} class="mt-3 flex flex-wrap items-end gap-2">
 				<fieldset disabled={locked} class="contents">
 					<label class="min-w-0 flex-1 basis-[200px]">
-						<span class="block text-[12px] text-slate-500">Password</span>
+						<span class="block text-[12px] text-[#64748b]">Password</span>
 						<input {...disableTotp.fields._password.as('password')} autocomplete="current-password" required class="z-field mt-1 w-full max-md:text-base" />
 					</label>
 					<label class="basis-[140px]">
-						<span class="block text-[12px] text-slate-500">Current code</span>
+						<span class="block text-[12px] text-[#64748b]">Current code</span>
 						<input {...disableTotp.fields.code.as('text')} inputmode="numeric" autocomplete="one-time-code" required placeholder="123456" class="z-field mt-1 w-full font-mono tracking-[0.2em] max-md:text-base" />
 					</label>
-					<button type="submit" class="btn-tactile !h-[30px] !text-red-600" disabled={disableTotp.pending > 0}>
+					<button type="submit" class="btn-tactile !h-[30px] !text-[#b91c1c]" disabled={disableTotp.pending > 0}>
 						{disableTotp.pending > 0 ? 'Turning off…' : 'Turn off'}
 					</button>
 				</fieldset>
 			</form>
-			{#if locked}<p class="mt-2 text-[12px] text-slate-400">Confirm your password above first.</p>{/if}
+			{#if locked}<p class="mt-2 text-[12px] text-[#94a3b8]">Confirm your password above first.</p>{/if}
 		{:else if totpSetup}
 			<div class="mt-3 flex flex-wrap gap-5">
 				<QrCode.Root value={totpSetup.uri} encoding={{ ecc: 'M' }} class="shrink-0 rounded-[8px] border border-[#e2e8f0] bg-white p-2">
 					<QrCode.Frame class="size-[168px]">
-						<QrCode.Pattern class="fill-slate-900" />
+						<QrCode.Pattern class="fill-[#0b1220]" />
 					</QrCode.Frame>
 				</QrCode.Root>
 				<div class="min-w-0 flex-1 basis-[240px]">
-					<ol class="list-decimal space-y-1 pl-4 text-[12.5px] leading-relaxed text-slate-600">
+					<ol class="list-decimal space-y-1 pl-4 text-[12.5px] leading-relaxed text-[#475569]">
 						<li>Scan the code with your authenticator app, or enter the key by hand:</li>
 					</ol>
-					<code class="mt-1.5 block select-all rounded-[6px] border border-[#cbd5e1] bg-slate-50 px-2.5 py-1.5 font-mono text-[12px] break-all text-slate-900">{totpSetup.secret}</code>
+					<code class="mt-1.5 block select-all rounded-[6px] border border-[#cbd5e1] bg-[#f8fafc] px-2.5 py-1.5 font-mono text-[12px] break-all text-[#0b1220]">{totpSetup.secret}</code>
 					<form {...confirmTotp} class="mt-3 flex flex-col gap-2">
 						<label class="block">
-							<span class="block text-[12px] text-slate-500">Password</span>
+							<span class="block text-[12px] text-[#64748b]">Password</span>
 							<input {...confirmTotp.fields._password.as('password')} autocomplete="current-password" required class="z-field mt-1 w-full max-md:text-base" />
 						</label>
 						<label class="block max-w-[200px]">
-							<span class="block text-[12px] text-slate-500">Code from the app</span>
+							<span class="block text-[12px] text-[#64748b]">Code from the app</span>
 							<input {...confirmTotp.fields.code.as('text')} inputmode="numeric" autocomplete="one-time-code" required placeholder="123456" class="z-field mt-1 w-full font-mono tracking-[0.2em] max-md:text-base" />
 						</label>
 						<div class="flex gap-2">
-							<button type="submit" class="btn-tactile !border-blue-700 !bg-blue-600 !text-white hover:!bg-blue-700" disabled={confirmTotp.pending > 0}>
+							<button type="submit" class="btn-tactile btn-primary" disabled={confirmTotp.pending > 0}>
 								{confirmTotp.pending > 0 ? 'Enabling…' : 'Enable'}
 							</button>
 							<button type="button" class="btn-tactile" onclick={() => (totpSetup = null)}>Cancel</button>
@@ -354,37 +354,37 @@
 			<button type="button" class="btn-tactile mt-3" disabled={locked || busy === 'totp'} onclick={startTotp}>
 				{busy === 'totp' ? 'Preparing…' : 'Set up'}
 			</button>
-			{#if locked}<p class="mt-2 text-[12px] text-slate-400">Confirm your password above first.</p>{/if}
+			{#if locked}<p class="mt-2 text-[12px] text-[#94a3b8]">Confirm your password above first.</p>{/if}
 		{/if}
 	</section>
 
 	<!-- App passwords / API keys -->
 	{#each [{ kind: 'AppPassword', form: appPasswordForm, title: 'App passwords', items: overview.appPasswords, blurb: 'For mail apps that sign in with a password of their own — Thunderbird, a phone, a printer. Each one can be revoked on its own.' }, { kind: 'ApiKey', form: apiKeyForm, title: 'API keys', items: overview.apiKeys, blurb: 'For scripts and automation talking to the server directly. A key cannot change the password or manage credentials.' }] as group (group.kind)}
 		{@const kind = group.kind as CredentialType}
-		<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
+		<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-[18px] shadow-[var(--z-shadow-tactile)] max-md:p-4">
 			<h2 class="z-caption">{group.title}</h2>
-			<p class="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">{group.blurb}</p>
+			<p class="mt-1.5 text-[12.5px] leading-relaxed text-[#64748b]">{group.blurb}</p>
 
 			{#if group.items.length}
 				<ul class="mt-3 divide-y divide-[#f1f5f9]" role="list">
 					{#each group.items as item (item.id)}
 						<li class="flex items-center justify-between gap-3 py-2">
 							<div class="min-w-0">
-								<div class="truncate text-[13px] font-medium text-slate-800">{item.description || 'Unnamed'}</div>
-								<div class="text-[12px] text-slate-400">
+								<div class="truncate text-[13px] font-medium text-[#1e293b]">{item.description || 'Unnamed'}</div>
+								<div class="text-[12px] text-[#94a3b8]">
 									{#if item.createdAt}Created {whenDate(item.createdAt)}{/if}
 									{#if item.expiresAt} · Expires {whenDate(item.expiresAt)}{/if}
 									{#if item.allowedIps.length} · {item.allowedIps.join(', ')}{/if}
 								</div>
 							</div>
-							<button type="button" class="btn-tactile !h-[28px] shrink-0 !text-red-600" disabled={locked || busy === item.id} onclick={() => revoke(kind, item)}>
+							<button type="button" class="btn-tactile !h-[28px] shrink-0 !text-[#b91c1c]" disabled={locked || busy === item.id} onclick={() => revoke(kind, item)}>
 								{busy === item.id ? 'Revoking…' : 'Revoke'}
 							</button>
 						</li>
 					{/each}
 				</ul>
 			{:else}
-				<p class="mt-3 text-[12.5px] text-slate-400">None yet.</p>
+				<p class="mt-3 text-[12.5px] text-[#94a3b8]">None yet.</p>
 			{/if}
 
 			{#if shownSecret?.kind === kind}
@@ -406,11 +406,11 @@
 				<fieldset disabled={locked || Boolean(overview.serverError)} class="contents">
 					<input {...group.form.fields.kind.as('hidden', kind)} />
 					<label class="min-w-0 flex-1 basis-[180px]">
-						<span class="block text-[12px] text-slate-500">Name</span>
+						<span class="block text-[12px] text-[#64748b]">Name</span>
 						<input {...group.form.fields.description.as('text')} required maxlength="100" placeholder={kind === 'ApiKey' ? 'Backup script' : 'Thunderbird on the laptop'} class="z-field mt-1 w-full max-md:text-base" />
 					</label>
 					<label class="basis-[120px]">
-						<span class="block text-[12px] text-slate-500">Expires</span>
+						<span class="block text-[12px] text-[#64748b]">Expires</span>
 						<select {...group.form.fields.expiresInDays.as('select')} class="z-field mt-1 w-full">
 							<option value="">Never</option>
 							<option value="30">30 days</option>
@@ -419,7 +419,7 @@
 						</select>
 					</label>
 					<label class="min-w-0 flex-1 basis-[180px]">
-						<span class="block text-[12px] text-slate-500">Allowed from (optional)</span>
+						<span class="block text-[12px] text-[#64748b]">Allowed from (optional)</span>
 						<input {...group.form.fields.allowedIps.as('text')} placeholder="203.0.113.0/24" class="z-field mt-1 w-full max-md:text-base" />
 					</label>
 					<button type="submit" class="btn-tactile !h-[30px]" disabled={group.form.pending > 0}>
@@ -427,21 +427,21 @@
 					</button>
 				</fieldset>
 			</form>
-			{#if locked}<p class="mt-2 text-[12px] text-slate-400">Confirm your password above first.</p>{/if}
+			{#if locked}<p class="mt-2 text-[12px] text-[#94a3b8]">Confirm your password above first.</p>{/if}
 		</section>
 	{/each}
 
 	<!-- Sessions -->
-	<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
+	<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-[18px] shadow-[var(--z-shadow-tactile)] max-md:p-4">
 		<div class="flex items-baseline justify-between gap-3">
 			<h2 class="z-caption">Signed-in devices</h2>
 			{#if otherSessions.length}
-				<button type="button" class="btn-tactile !h-[28px] !text-red-600" disabled={locked || busy === 'others'} onclick={signOutOthers}>
+				<button type="button" class="btn-tactile !h-[28px] !text-[#b91c1c]" disabled={locked || busy === 'others'} onclick={signOutOthers}>
 					{busy === 'others' ? 'Signing out…' : 'Sign out others'}
 				</button>
 			{/if}
 		</div>
-		<p class="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
+		<p class="mt-1.5 text-[12.5px] leading-relaxed text-[#64748b]">
 			Browsers signed into this account through Zaur Mail (1.0 and 2.0 share these). Mail apps
 			with app passwords are not sessions — revoke the password above.
 		</p>
@@ -449,13 +449,13 @@
 			{#each sessions as item (item.id)}
 				<li class="flex items-center justify-between gap-3 py-2">
 					<div class="min-w-0">
-						<div class="flex items-center gap-2 text-[13px] font-medium text-slate-800">
+						<div class="flex items-center gap-2 text-[13px] font-medium text-[#1e293b]">
 							<span class="truncate">{describeUserAgent(item.userAgent)}</span>
 							{#if item.current}
-								<span class="rounded-[4px] bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">This device</span>
+								<span class="z-chip !normal-case !tracking-normal" style="--z-stroke:#3b82f6;--z-ink-on:#1e40af">This device</span>
 							{/if}
 						</div>
-						<div class="text-[12px] text-slate-400">
+						<div class="text-[12px] text-[#94a3b8]">
 							Active {relativeTime(item.lastSeenAt, now)} · signed in {relativeTime(item.createdAt, now)}
 						</div>
 					</div>
@@ -465,20 +465,20 @@
 				</li>
 			{/each}
 		</ul>
-		{#if locked}<p class="mt-2 text-[12px] text-slate-400">Confirm your password above first.</p>{/if}
+		{#if locked}<p class="mt-2 text-[12px] text-[#94a3b8]">Confirm your password above first.</p>{/if}
 	</section>
 
 	<!-- Recovery email -->
 	{#if overview.recovery.available}
-		<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
+		<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-[18px] shadow-[var(--z-shadow-tactile)] max-md:p-4">
 			<h2 class="z-caption">Recovery email</h2>
-			<p class="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
+			<p class="mt-1.5 text-[12.5px] leading-relaxed text-[#64748b]">
 				Where a password reset link goes. A new address has to confirm before it counts.
 			</p>
 			<form {...saveRecoveryEmail} class="mt-3 flex flex-wrap items-end gap-2">
 				<fieldset disabled={locked} class="contents">
 					<label class="min-w-0 flex-1 basis-[240px]">
-						<span class="block text-[12px] text-slate-500">Address</span>
+						<span class="block text-[12px] text-[#64748b]">Address</span>
 						<input {...saveRecoveryEmail.fields.recoveryEmail.as('email', overview.recovery.email ?? '')} required class="z-field mt-1 w-full max-md:text-base" />
 					</label>
 					<button type="submit" class="btn-tactile !h-[30px]" disabled={saveRecoveryEmail.pending > 0}>
@@ -486,7 +486,7 @@
 					</button>
 				</fieldset>
 			</form>
-			{#if locked}<p class="mt-2 text-[12px] text-slate-400">Confirm your password above first.</p>{/if}
+			{#if locked}<p class="mt-2 text-[12px] text-[#94a3b8]">Confirm your password above first.</p>{/if}
 		</section>
 	{/if}
 {/if}

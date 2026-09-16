@@ -16,44 +16,51 @@
 	);
 </script>
 
+<!--
+	The status line carries the two numbers the mark used to gesture at — how
+	much is unseen, how much is stored — and the keyboard's half of the row's
+	hover buttons. Hidden on a phone, where the folder chip already says the
+	count and 36px of hints is not what a small screen should spend.
+-->
 <footer
-	class="flex h-9 shrink-0 items-center justify-between border-t border-[#cbd5e1] bg-white px-4 text-xs font-medium text-slate-500 select-none max-md:hidden"
+	class="flex h-9 shrink-0 items-center justify-between border-t border-[#cbd5e1] bg-white px-4 text-[12px] text-[#64748b] select-none max-md:hidden"
 >
 	<div class="flex items-center gap-3">
 		{#if mailboxName}
-			<div class="flex items-center gap-1.5">
+			<div class="flex items-center gap-[7px]">
 				<span
-					class="size-1.5 rounded-full {unseen > 0 ? 'bg-blue-600' : 'bg-emerald-500'}"
+					class="size-[7px] rounded-full border {unseen > 0
+						? 'border-[#3b82f6] bg-[#2563eb]'
+						: 'border-[#16a34a] bg-[#16a34a]'}"
 					aria-hidden="true"
 				></span>
-				<span class="font-semibold text-slate-700">
+				<span class="font-semibold text-[#334155] tabular-nums">
 					{unseen > 0 ? `${unseen} unseen` : 'All seen'}
 				</span>
-				<span>·</span>
+				<span class="text-[#cbd5e1]">·</span>
 				<span>{mailboxName}</span>
 			</div>
 
-			<span class="hidden md:inline text-slate-300">|</span>
+			<span class="hidden text-[#cbd5e1] md:inline">|</span>
 
-			<!-- The keyboard's half of the row's hover buttons. -->
-			<div class="hidden md:flex items-center gap-1 font-mono text-[11px] text-slate-400">
-				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px]">j/k</kbd> move
-				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px]">↵</kbd> open
-				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px]">x</kbd> select
-				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px]">s</kbd> highlight
-				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px]">e</kbd> archive
+			<div class="z-mono hidden items-center gap-[5px] text-[10.5px] md:flex">
+				<kbd class="z-kbd">j/k</kbd> move
+				<kbd class="z-kbd">↵</kbd> open
+				<kbd class="z-kbd">x</kbd> select
+				<kbd class="z-kbd">s</kbd> flag
+				<kbd class="z-kbd">e</kbd> archive
 			</div>
 		{:else}
-			<span class="font-mono text-[11px] text-slate-400">Sign in to load your mail</span>
+			<span class="z-mono text-[10.5px] text-[#64748b]">Sign in to load your mail</span>
 		{/if}
 	</div>
 
 	{#if storageLabel}
-		<div class="flex items-center gap-2">
-			<span class="tabular-nums text-[11px] text-slate-500">{storageLabel}</span>
-			<div class="h-1.5 w-[72px] overflow-hidden rounded-full border border-slate-200 bg-slate-100">
+		<div class="flex items-center gap-[9px]">
+			<span class="z-mono text-[10.5px]">{storageLabel}</span>
+			<div class="h-[7px] w-20 overflow-hidden rounded-full border border-[#cbd5e1] bg-[#f1f5f9]">
 				<div
-					class="h-full rounded-full bg-blue-600 transition-[width] duration-[160ms]"
+					class="h-full bg-[#2563eb] transition-[width] duration-[160ms]"
 					style:width="{storagePct}%"
 				></div>
 			</div>

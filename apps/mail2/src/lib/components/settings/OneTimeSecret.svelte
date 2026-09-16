@@ -31,11 +31,11 @@
 	style:--z-rail="#d97706"
 	role="alert"
 >
-	<div class="text-[13px] font-semibold text-slate-900">{label}</div>
-	<p class="mt-1 text-[12.5px] leading-relaxed text-slate-600">{hint}</p>
+	<div class="text-[13px] font-semibold text-[#0b1220]">{label}</div>
+	<p class="mt-1 text-[12.5px] leading-relaxed text-[#475569]">{hint}</p>
 	<div class="mt-2.5 flex items-center gap-2">
 		<code
-			class="min-w-0 flex-1 select-all overflow-x-auto rounded-[6px] border border-[#cbd5e1] bg-white px-2.5 py-1.5 font-mono text-[12.5px] text-slate-900"
+			class="min-w-0 flex-1 select-all overflow-x-auto rounded-[6px] border border-[#cbd5e1] bg-white px-2.5 py-1.5 font-mono text-[12.5px] text-[#0b1220]"
 		>
 			{secret}
 		</code>

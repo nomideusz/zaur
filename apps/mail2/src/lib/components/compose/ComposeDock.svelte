@@ -12,7 +12,7 @@
 
 	function chipMeta(draft: { to: { name: string; email: string }[] }): string {
 		if (draft.to.length === 0) return 'No recipients yet';
-		return draft.to.map((person) => person.name || person.email).join(', ');
+		return draft.to.map((person) => person.email || person.name).join(', ');
 	}
 
 	function startDrag(event: PointerEvent, id: string) {
@@ -63,14 +63,16 @@
 		class="absolute right-5 bottom-12 z-[68] flex max-w-[calc(100%-360px)] flex-wrap-reverse justify-end gap-2.5 max-md:right-3 max-md:bottom-3 max-md:left-3 max-md:max-w-none max-md:flex-nowrap max-md:justify-start max-md:overflow-x-auto"
 	>
 		{#each minimized as draft (draft.id)}
+			<!-- A dock chip: 44px, the menu's shadow, a status dot ringed in the
+			     correspondence fill when the draft has something in it. -->
 			<div
 				data-dock-chip={draft.id}
 				role="button"
 				tabindex="0"
 				aria-label="Minimized draft: {chipTitle(draft)}. Activate to reopen."
-				class="flex h-11 w-[210px] shrink-0 cursor-grab items-center gap-2 rounded-[10px] border border-[#cbd5e1] bg-white pr-1.5 pl-3 shadow-md select-none transition-all duration-[150ms] hover:border-slate-400 hover:shadow-lg max-md:w-[180px] max-md:cursor-default {compose.trayDragId ===
+				class="flex h-11 w-[220px] shrink-0 cursor-grab items-center gap-[9px] rounded-[10px] border border-[#cbd5e1] bg-white pr-1.5 pl-[11px] shadow-[var(--z-shadow-menu)] select-none transition-[transform,border-color,box-shadow] duration-[150ms] hover:border-[#94a3b8] max-md:w-[190px] max-md:cursor-default {compose.trayDragId ===
 				draft.id
-					? '-translate-y-1 shadow-xl'
+					? '-translate-y-1 shadow-[var(--z-shadow-panel)]'
 					: ''}"
 				onpointerdown={(event) => startDrag(event, draft.id)}
 				onpointermove={moveDrag}
@@ -85,33 +87,33 @@
 				}}
 			>
 				<span
-					class="size-2 shrink-0 rounded-full {chipStatus(draft) ? 'bg-blue-600 ring-2 ring-blue-100' : 'bg-slate-300'}"
+					class="size-2 shrink-0 rounded-full {chipStatus(draft) ? 'bg-[#2563eb] shadow-[0_0_0_3px_#dbeafe]' : 'bg-[#cbd5e1]'}"
 					aria-hidden="true"
 				></span>
 				<span class="min-w-0 flex-1">
-					<span class="block truncate text-xs font-bold text-slate-800">{chipTitle(draft)}</span>
-					<span class="block truncate text-[11px] text-slate-400 font-medium">{chipMeta(draft)}</span>
+					<span class="block truncate text-[12px] font-bold text-[#1e293b]">{chipTitle(draft)}</span>
+					<span class="z-mono block truncate text-[10px] text-[#64748b]">{chipMeta(draft)}</span>
 				</span>
 				<button
 					type="button"
-					class="flex size-6 shrink-0 items-center justify-center rounded-[4px] text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
+					class="z-icon-btn !size-6"
 					aria-label="Reopen draft"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.restore(draft.id)}
 				>
-					<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<svg class="size-[13px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						<path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
 					</svg>
 				</button>
 				<button
 					type="button"
-					class="flex size-6 shrink-0 items-center justify-center rounded-[4px] text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+					class="z-icon-btn !size-6 hover:!bg-[#fef2f2] hover:!text-[#dc2626]"
 					aria-label="Close draft"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.close(draft.id)}
 				>
-					<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+					<svg class="size-[11px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
 					</svg>
 				</button>
 			</div>
