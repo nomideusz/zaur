@@ -56,7 +56,8 @@ export interface Draft {
 	subject: string;
 	body: string;
 	attachments: DraftAttachment[];
-	scheduled: boolean;
+	/** UTC ISO for a delayed send, or null to send immediately. Ephemeral — not persisted. */
+	sendAt: string | null;
 	bodyOpened: boolean;
 	stage: DraftStage;
 	x: number;

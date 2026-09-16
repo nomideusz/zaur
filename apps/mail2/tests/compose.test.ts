@@ -17,7 +17,12 @@ import {
 	PANEL_TYPICAL_H
 } from '../src/lib/compose/layout.ts';
 import { classifySendFailure } from '../src/lib/compose/outbox.ts';
-import { tomorrow9ISO } from '../src/lib/compose/schedule.ts';
+import {
+	buildSchedulePresets,
+	customSendTimeMin,
+	isSendAtValid,
+	tomorrow9ISO
+} from '../src/lib/compose/schedule.ts';
 import type { Draft, Recipient } from '../src/lib/compose/types.ts';
 import type { MessageDetail } from '@zaur/mail-core';
 
@@ -39,7 +44,7 @@ function draft(overrides: Partial<Draft> = {}): Draft {
 		subject: '',
 		body: '',
 		attachments: [],
-		scheduled: false,
+		sendAt: null,
 		bodyOpened: false,
 		stage: 'default',
 		x: 24,
@@ -278,4 +283,36 @@ test('classifySendFailure: connectivity failures queue, server rejections do not
 test('tomorrow9ISO: next day at 09:00 local', () => {
 	const now = Date.UTC(2026, 8, 12, 23, 30, 0);
 	assert.equal(tomorrow9ISO(now), '2026-09-13T09:00:00.000Z');
+});
+
+test('buildSchedulePresets: relative presets around a morning', () => {
+	const now = Date.UTC(2026, 8, 14, 9, 0, 0);
+	const presets = buildSchedulePresets(now);
+	assert.equal(presets[0]?.label, 'In 1 hour');
+	assert.equal(presets[0]?.date.getTime(), now + 3_600_000);
+	// 18:00 is more than five minutes out at 09:00, so the evening preset shows.
+	assert.equal(presets[1]?.label, 'This evening');
+	assert.equal(presets[1]?.date.getUTCHours(), 18);
+	const morning = presets.at(-1)!;
+	assert.equal(morning.label, 'Tomorrow morning');
+	assert.equal(morning.date.toISOString(), '2026-09-15T09:00:00.000Z');
+});
+
+test('buildSchedulePresets: no evening preset late in the day', () => {
+	const now = Date.UTC(2026, 8, 14, 17, 58, 0);
+	assert.deepEqual(
+		buildSchedulePresets(now).map((preset) => preset.label),
+		['In 1 hour', 'Tomorrow morning']
+	);
+});
+
+test('isSendAtValid: the server needs a minute of lead time', () => {
+	const now = Date.UTC(2026, 8, 14, 12, 0, 0);
+	assert.equal(isSendAtValid(new Date(now + 59_000), now), false);
+	assert.equal(isSendAtValid(new Date(now + 60_000), now), true);
+});
+
+test('customSendTimeMin: local datetime-local value five minutes out', () => {
+	const now = Date.UTC(2026, 8, 14, 12, 0, 0);
+	assert.equal(customSendTimeMin(now), '2026-09-14T12:05');
 });

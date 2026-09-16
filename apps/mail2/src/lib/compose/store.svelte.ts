@@ -19,7 +19,7 @@ import {
 	updateOutboxEntry
 } from './outbox';
 import { PANEL_DEFAULT_W } from './layout';
-import { tomorrow9ISO } from './schedule';
+import { formatScheduleTime } from './schedule';
 import { commitRecipient, isDuplicate, makeRecipient, parseAddressList } from './recipients';
 import { forwardSeed, replyAllRecipients, replySeed } from './quote';
 import type {
@@ -116,7 +116,7 @@ class ComposeStore {
 			subject: options.subject ?? '',
 			body: options.body ?? '',
 			attachments: options.attachments ?? [],
-			scheduled: false,
+			sendAt: null,
 			bodyOpened: false,
 			stage: 'default',
 			x: options.x ?? 24,
@@ -300,9 +300,9 @@ class ComposeStore {
 		if (draft) draft.focusTarget = null;
 	}
 
-	toggleSchedule(id: string) {
+	setSendAt(id: string, sendAt: string | null) {
 		const draft = this.#find(id);
-		if (draft) draft.scheduled = !draft.scheduled;
+		if (draft) draft.sendAt = sendAt;
 	}
 
 	commitTo(id: string, input: string, highlighted: ComposeContact | null) {
@@ -527,7 +527,7 @@ class ComposeStore {
 			bcc,
 			subject: draft.subject,
 			body: draft.body,
-			sendAt: draft.scheduled ? tomorrow9ISO() : undefined,
+			sendAt: draft.sendAt ?? undefined,
 			attachments: outgoingAttachments(draft.attachments)
 		};
 
@@ -551,7 +551,7 @@ class ComposeStore {
 			if (payload.sendAt && result.emailId) {
 				const emailId = result.emailId;
 				this.pushToast({
-					text: 'Scheduled for tomorrow, 09:00',
+					text: `Scheduled for ${formatScheduleTime(new Date(payload.sendAt))}`,
 					tone: 'success',
 					actionLabel: 'Undo',
 					action: () => void this.undoScheduled(emailId, payload)

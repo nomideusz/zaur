@@ -6,6 +6,14 @@
 	import { initials } from '#lib/mail/rows';
 	import { attachmentBadge, getHobdayTheme } from '#lib/mail/colors';
 	import Tooltip from '#lib/components/ui/Tooltip.svelte';
+	import { Popover } from '@ark-ui/svelte/popover';
+	import { Portal } from '@ark-ui/svelte/portal';
+	import {
+		buildSchedulePresets,
+		customSendTimeMin,
+		formatScheduleTime,
+		isSendAtValid
+	} from '#lib/compose/schedule';
 	import { viewport } from '#lib/viewport.svelte.ts';
 	import type { Draft } from '#lib/compose/types';
 
@@ -48,6 +56,34 @@
 	const suggestions = $derived(filterContacts(compose.contacts, draft.toInput, draft.to));
 	const title = $derived(draft.subject.trim() || 'New message');
 	const subjectDim = $derived(draft.to.length === 0 ? 'opacity-68' : 'opacity-100');
+	/** Schedule picker state — transient UI, so local state rather than the draft record. */
+	let scheduleOpen = $state(false);
+	let customSendTime = $state('');
+	const schedulePresets = $derived.by(() => {
+		void scheduleOpen; // recompute relative times each time the picker opens
+		return buildSchedulePresets();
+	});
+	const customMin = $derived.by(() => {
+		void scheduleOpen;
+		return customSendTimeMin();
+	});
+	const sendAtDate = $derived(draft.sendAt ? new Date(draft.sendAt) : null);
+	const scheduleLabel = $derived(sendAtDate ? formatScheduleTime(sendAtDate) : 'Schedule');
+
+	function pickSendAt(date: Date) {
+		if (!isSendAtValid(date)) {
+			compose.pushToast({ text: 'Pick a time at least a minute from now', tone: 'error' });
+			return;
+		}
+		compose.setSendAt(draft.id, date.toISOString());
+		scheduleOpen = false;
+	}
+
+	function pickCustomSendAt() {
+		if (!customSendTime) return;
+		pickSendAt(new Date(customSendTime));
+	}
+
 	/** Autosave state in the tabbed-studio's "Draft: …" vocabulary. */
 	const saveLabel = $derived(
 		draft.draftSaving
@@ -262,7 +298,7 @@
 		disabled={draft.sending}
 		onclick={() => void compose.sendDraft(draft.id)}
 	>
-		{draft.scheduled ? 'Schedule send' : draft.sending ? 'Sending…' : 'Send'}
+		{draft.sendAt ? 'Schedule send' : draft.sending ? 'Sending…' : 'Send'}
 	</button>
 {/snippet}
 
@@ -362,7 +398,7 @@
 	<div class="flex min-h-0 flex-1 flex-col overflow-y-auto px-4">
 		<!-- To -->
 		<div class="flex min-h-[28px] flex-wrap items-start gap-x-3 gap-y-[6px] py-2">
-			<span class="flex shrink-0 items-center gap-1.5 pt-1">
+			<span class="flex w-[62px] shrink-0 items-center gap-1.5 pt-1 pl-2">
 				{@render stepDot(step > 0)}
 				<span class="text-[13px] {step === 0 ? 'font-medium text-slate-900' : 'text-slate-500'}">To</span>
 			</span>
@@ -553,7 +589,7 @@
 
 		{#if draft.ccOpen}
 			<div class="flex h-[45px] items-center gap-3 border-b border-[#e2e8f0]">
-				<span class="w-[62px] shrink-0 pl-4 text-[13px] text-slate-500">Cc</span>
+				<span class="w-[62px] shrink-0 pl-5 text-[13px] text-slate-500">Cc</span>
 				<input
 					type="text"
 					value={draft.cc}
@@ -577,7 +613,7 @@
 
 		{#if draft.bccOpen}
 			<div class="flex h-[45px] items-center gap-3 border-b border-[#e2e8f0]">
-				<span class="w-[62px] shrink-0 pl-4 text-[13px] text-slate-500">Bcc</span>
+				<span class="w-[62px] shrink-0 pl-5 text-[13px] text-slate-500">Bcc</span>
 				<input
 					type="text"
 					value={draft.bcc}
@@ -647,7 +683,7 @@
 				{@const badge = attachmentBadge(attachment.type)}
 				<span class="flex h-[30px] shrink-0 items-center gap-2 rounded-[6px] border border-[#cbd5e1] bg-white pr-1 pl-1.5 shadow-2xs">
 					<span
-						class="flex h-[18px] min-w-[18px] items-center justify-center rounded-[4px] px-1 text-[9px] font-bold uppercase"
+						class="flex h-5 min-w-5 items-center justify-center rounded-[4px] px-1 text-[10px] font-bold uppercase"
 						style:background-color={badge.bg}
 						style:border="1px solid {badge.border}"
 						style:color={badge.text}
@@ -692,7 +728,7 @@
 			title="Attach a file"
 			onclick={() => fileInputEl?.click()}
 		>
-			<svg class="size-4 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+			<svg class="size-[18px] text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 				<path
 					d="M10.5 7L7.2 10.3a2.2 2.2 0 01-3.1-3.1l4.9-4.9a1.5 1.5 0 012.1 2.1L6.6 8.9a.8.8 0 01-1.1-1.1l3.5-3.5"
 					stroke="currentColor"
@@ -715,20 +751,85 @@
 				event.currentTarget.value = '';
 			}}
 		/>
-		<button
-			type="button"
-			class="btn-tactile !h-[30px] !px-2.5 !text-[12px] {draft.scheduled
-				? '!border-blue-400 !bg-blue-50 !text-blue-700'
-				: ''}"
-			aria-pressed={draft.scheduled}
-			onclick={() => compose.toggleSchedule(draft.id)}
-		>
-			<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-				<rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.4" />
-				<path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-			</svg>
-			{draft.scheduled ? 'Tomorrow, 09:00' : 'Schedule'}
-		</button>
+		<Popover.Root
+					open={scheduleOpen}
+					onOpenChange={(details) => (scheduleOpen = details.open)}
+					positioning={{ placement: 'bottom-end', gutter: 8 }}
+					lazyMount
+					unmountOnExit
+				>
+					<Popover.Trigger
+						class="btn-tactile !h-[30px] !px-2.5 !text-[12px] {draft.sendAt
+							? '!border-blue-400 !bg-blue-50 !text-blue-700'
+							: ''}"
+						aria-label="Schedule send"
+						title="Schedule send"
+					>
+						<svg class="size-[18px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.4" />
+							<path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+						</svg>
+						{scheduleLabel}
+					</Popover.Trigger>
+					<Portal>
+						<Popover.Positioner>
+							<Popover.Content
+								class="w-64 rounded-[8px] border border-[#cbd5e1] bg-white p-1.5 shadow-lg outline-none"
+								aria-label="Schedule send"
+							>
+								{#if draft.sendAt}
+									<button
+										type="button"
+										class="flex w-full items-center justify-between gap-2 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-100"
+										onclick={() => {
+											compose.setSendAt(draft.id, null);
+											scheduleOpen = false;
+										}}
+									>
+										<span>Send immediately</span>
+										<span class="text-xs text-slate-400">clear</span>
+									</button>
+									<div class="my-1.5 border-t border-[#e2e8f0]"></div>
+								{/if}
+								{#each schedulePresets as preset (preset.label)}
+									<button
+										type="button"
+										class="flex w-full items-center justify-between gap-2 rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-100"
+										onclick={() => pickSendAt(preset.date)}
+									>
+										<span>{preset.label}</span>
+										<span class="text-xs tabular-nums text-slate-500">
+											{formatScheduleTime(preset.date)}
+										</span>
+									</button>
+								{/each}
+								<div class="my-1.5 border-t border-[#e2e8f0]"></div>
+								<div class="flex flex-col gap-1.5 px-1.5 pt-1 pb-1">
+									<label class="text-xs text-slate-500" for="compose-schedule-{draft.id}">
+										Pick date &amp; time
+									</label>
+									<input
+										id="compose-schedule-{draft.id}"
+										type="datetime-local"
+										class="h-9 rounded-[6px] border border-[#cbd5e1] bg-white px-2.5 text-[13px] text-slate-800 shadow-2xs outline-none focus:border-blue-500"
+										min={customMin}
+										value={customSendTime}
+										oninput={(event) =>
+											(customSendTime = (event.currentTarget as HTMLInputElement).value)}
+									/>
+									<button
+										type="button"
+										class="btn-tactile !h-[30px] !text-[12px] font-semibold"
+										disabled={!customSendTime}
+										onclick={pickCustomSendAt}
+									>
+										Schedule
+									</button>
+								</div>
+							</Popover.Content>
+						</Popover.Positioner>
+					</Portal>
+				</Popover.Root>
 		<button
 			type="button"
 			class="ml-auto btn-tactile !size-[30px] !p-0 !text-red-600 hover:!border-red-300 hover:!bg-red-50"

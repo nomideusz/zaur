@@ -30,7 +30,7 @@ function draft(overrides: Partial<Draft> = {}): Draft {
 		subject: '',
 		body: '',
 		attachments: [],
-		scheduled: false,
+		sendAt: null,
 		bodyOpened: false,
 		stage: 'default',
 		x: 24,
