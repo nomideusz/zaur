@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import ZaurMark from '#lib/components/mail/ZaurMark.svelte';
 	import { whoami } from '../../session.remote';
 	import { identities, setDisplayName } from '../../settings.remote';
 	import { logout } from '../../login.remote';
 	import { mailboxes, quota } from '../../mail.remote';
 	import { rules as rulesQuery, saveRules } from '../../rules.remote';
 	import RulesEditor from '#lib/components/settings/RulesEditor.svelte';
+	import StatusNote from '#lib/components/settings/StatusNote.svelte';
 	import type { MailRule } from '@zaur/mail-core';
 	import {
 		prefs,
@@ -93,186 +93,165 @@
 
 <svelte:head><title>Settings · Zaur Mail</title></svelte:head>
 
-<div class="flex h-svh w-full flex-col items-center justify-center bg-[#ebeef2] overflow-hidden text-slate-900">
-	<div class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-white">
-		<header class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[#cbd5e1] bg-white px-4 select-none">
-			<ZaurMark unread={0} label="Settings" />
-			<div class="h-4 w-px bg-slate-200"></div>
-			<a href="/" class="btn-tactile gap-1.5" data-sveltekit-preload-data="hover">
-				<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-					<path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-				</svg>
-				Mail
-			</a>
-			<h1 class="text-[13px] font-semibold text-slate-800">Settings</h1>
-			{#if status}
-				<span class="ml-auto text-[12px] font-medium {status.error ? 'text-red-600' : 'text-slate-500'}">
-					{status.text}
-				</span>
-			{/if}
-		</header>
+<StatusNote {status} />
 
-		<div class="min-h-0 flex-1 overflow-y-auto px-6 py-6 max-md:px-4 max-md:py-4">
-			<div class="mx-auto flex max-w-[640px] flex-col gap-6">
-				<!-- Account -->
-				<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
-					<h2 class="z-caption">Account</h2>
-					<div class="mt-3 flex items-baseline justify-between gap-3">
-						<div>
-							<div class="text-[14px] font-semibold text-slate-900">
-								{session?.displayName ?? session?.username ?? '—'}
-							</div>
-							<div class="text-[13px] text-slate-500">{session?.username ?? ''}</div>
-						</div>
-						<button type="button" class="btn-tactile !text-red-600" onclick={signOut}>Sign out</button>
-					</div>
-					{#if quotaLabel}
-						<p class="mt-3 text-[12.5px] text-slate-500">{quotaLabel}</p>
-					{/if}
-				</section>
+<!-- Account -->
+<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
+	<h2 class="z-caption">Account</h2>
+	<div class="mt-3 flex items-baseline justify-between gap-3">
+		<div>
+			<div class="text-[14px] font-semibold text-slate-900">
+				{session?.displayName ?? session?.username ?? '—'}
+			</div>
+			<div class="text-[13px] text-slate-500">{session?.username ?? ''}</div>
+		</div>
+		<button type="button" class="btn-tactile !text-red-600" onclick={signOut}>Sign out</button>
+	</div>
+	{#if quotaLabel}
+		<p class="mt-3 text-[12.5px] text-slate-500">{quotaLabel}</p>
+	{/if}
+	<p class="mt-3 text-[12.5px] text-slate-500">
+		Password, two-factor authentication, app passwords and signed-in devices are under
+		<a href="/settings/security" class="font-semibold text-accent hover:underline">Security</a>.
+	</p>
+</section>
 
-				<!-- Send-as display names -->
-				<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
-					<h2 class="z-caption">Display name</h2>
-					<p class="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
-						The name recipients see next to each of your addresses.
-					</p>
-					{#if identitiesResource?.error}
-						<p class="mt-3 text-[13px] text-red-600">Could not load your addresses.</p>
-					{:else if !identitiesResource?.current}
-						<p class="mt-3 text-[13px] text-slate-400">Loading…</p>
-					{:else}
-						<div class="mt-3 flex flex-col gap-3">
-							{#each rows as row (row.id)}
-								<div class="flex items-end gap-2">
-									<label class="min-w-0 flex-1">
-										<span class="block truncate text-[12px] text-slate-500">{row.email}</span>
-										<input
-											type="text"
-											maxlength="120"
-											value={row.draft}
-											oninput={(event) => (names[row.id] = event.currentTarget.value)}
-											onkeydown={(event) => {
-												if (event.key === 'Enter') void saveName(row.id, row.draft);
-											}}
-											placeholder="Your name"
-											class="mt-1 h-[32px] w-full rounded-[6px] border border-[#cbd5e1] bg-white px-2.5 text-[13px] shadow-2xs max-md:text-base focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
-										/>
-									</label>
-									<button
-										type="button"
-										class="btn-tactile !h-[32px]"
-										disabled={saving === row.id || row.draft === row.name}
-										onclick={() => void saveName(row.id, row.draft)}
-									>
-										{saving === row.id ? 'Saving…' : 'Save'}
-									</button>
-								</div>
-							{/each}
-						</div>
-					{/if}
-				</section>
-
-				<RulesEditor
-					data={rulesResource?.current}
-					error={rulesResource?.error}
-					mailboxes={mailboxesResource?.current}
-					saving={savingRules}
-					onSave={(next, takeOver) => void persistRules(next, takeOver)}
-				/>
-
-				<!-- Reading prefs (local to this browser) -->
-				<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
-					<h2 class="z-caption">Reading</h2>
-					<p class="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
-						These follow your account, so a new device starts where you left off.
-					</p>
-
-					<div class="mt-4 flex flex-col divide-y divide-[#f1f5f9]">
-						<label class="flex items-center justify-between gap-4 py-2.5">
-							<span class="text-[13px] font-medium text-slate-800">
-								Mark messages read when opened
-							</span>
-							<input
-								type="checkbox"
-								class="z-check"
-								checked={prefs.markReadOnOpen}
-								onchange={(event) => setPref('markReadOnOpen', event.currentTarget.checked)}
-							/>
-						</label>
-
-						<label class="flex items-center justify-between gap-4 py-2.5">
-							<span class="text-[13px] font-medium text-slate-800">Show preview line in the list</span>
-							<input
-								type="checkbox"
-								class="z-check"
-								checked={prefs.showPreview}
-								onchange={(event) => setPref('showPreview', event.currentTarget.checked)}
-							/>
-						</label>
-
-						<label class="flex items-center justify-between gap-4 py-2.5">
-							<span class="text-[13px] font-medium text-slate-800">Open folders on Unseen</span>
-							<input
-								type="checkbox"
-								class="z-check"
-								checked={prefs.unseenByDefault}
-								onchange={(event) => setPref('unseenByDefault', event.currentTarget.checked)}
-							/>
-						</label>
-
-						<label class="flex items-center justify-between gap-4 py-2.5">
-							<span class="text-[13px] font-medium text-slate-800">Messages per folder</span>
-							<select
-								class="h-[30px] rounded-[6px] border border-[#cbd5e1] bg-white px-2 text-[13px] shadow-2xs focus:border-blue-500 focus:outline-none"
-								value={prefs.pageSize}
-								onchange={(event) => setPref('pageSize', Number(event.currentTarget.value))}
-							>
-								{#each PAGE_SIZES as size (size)}
-									<option value={size}>{size}</option>
-								{/each}
-							</select>
-						</label>
-
-						<!--
-							The two below are deliberately not synced: a pixel width and a
-							sidebar state mean different things on a different screen.
-						-->
-						<label class="flex items-center justify-between gap-4 py-2.5 max-md:hidden">
-							<span class="min-w-0">
-								<span class="block text-[13px] font-medium text-slate-800">Message list width</span>
-								<span class="block text-[12px] text-slate-400">This device only</span>
-							</span>
-							<span class="flex items-center gap-2">
-								<input
-									type="range"
-									min={LIST_MIN}
-									max={LIST_MAX}
-									step="10"
-									class="w-40 accent-blue-600"
-									value={prefs.listWidth}
-									oninput={(event) => setPref('listWidth', Number(event.currentTarget.value))}
-								/>
-								<span class="w-12 text-right text-[12px] text-slate-500 tabular-nums">
-									{prefs.listWidth}px
-								</span>
-							</span>
-						</label>
-					</div>
-
+<!-- Send-as display names -->
+<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
+	<h2 class="z-caption">Display name</h2>
+	<p class="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
+		The name recipients see next to each of your addresses.
+	</p>
+	{#if identitiesResource?.error}
+		<p class="mt-3 text-[13px] text-red-600">Could not load your addresses.</p>
+	{:else if !identitiesResource?.current}
+		<p class="mt-3 text-[13px] text-slate-400">Loading…</p>
+	{:else}
+		<div class="mt-3 flex flex-col gap-3">
+			{#each rows as row (row.id)}
+				<div class="flex items-end gap-2">
+					<label class="min-w-0 flex-1">
+						<span class="block truncate text-[12px] text-slate-500">{row.email}</span>
+						<input
+							type="text"
+							maxlength="120"
+							value={row.draft}
+							oninput={(event) => (names[row.id] = event.currentTarget.value)}
+							onkeydown={(event) => {
+								if (event.key === 'Enter') void saveName(row.id, row.draft);
+							}}
+							placeholder="Your name"
+							class="z-field mt-1 w-full max-md:text-base"
+						/>
+					</label>
 					<button
 						type="button"
-						class="btn-tactile mt-4"
-						onclick={() => {
-							for (const key of Object.keys(DEFAULT_PREFS) as (keyof typeof DEFAULT_PREFS)[]) {
-								setPref(key, DEFAULT_PREFS[key] as never);
-							}
-						}}
+						class="btn-tactile !h-[32px]"
+						disabled={saving === row.id || row.draft === row.name}
+						onclick={() => void saveName(row.id, row.draft)}
 					>
-						Reset to defaults
+						{saving === row.id ? 'Saving…' : 'Save'}
 					</button>
-				</section>
-			</div>
+				</div>
+			{/each}
 		</div>
+	{/if}
+</section>
+
+<RulesEditor
+	data={rulesResource?.current}
+	error={rulesResource?.error}
+	mailboxes={mailboxesResource?.current}
+	saving={savingRules}
+	onSave={(next, takeOver) => void persistRules(next, takeOver)}
+/>
+
+<!-- Reading prefs -->
+<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
+	<h2 class="z-caption">Reading</h2>
+	<p class="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
+		These follow your account, so a new device starts where you left off.
+	</p>
+
+	<div class="mt-4 flex flex-col divide-y divide-[#f1f5f9]">
+		<label class="flex items-center justify-between gap-4 py-2.5">
+			<span class="text-[13px] font-medium text-slate-800">Mark messages read when opened</span>
+			<input
+				type="checkbox"
+				class="z-check"
+				checked={prefs.markReadOnOpen}
+				onchange={(event) => setPref('markReadOnOpen', event.currentTarget.checked)}
+			/>
+		</label>
+
+		<label class="flex items-center justify-between gap-4 py-2.5">
+			<span class="text-[13px] font-medium text-slate-800">Show preview line in the list</span>
+			<input
+				type="checkbox"
+				class="z-check"
+				checked={prefs.showPreview}
+				onchange={(event) => setPref('showPreview', event.currentTarget.checked)}
+			/>
+		</label>
+
+		<label class="flex items-center justify-between gap-4 py-2.5">
+			<span class="text-[13px] font-medium text-slate-800">Open folders on Unseen</span>
+			<input
+				type="checkbox"
+				class="z-check"
+				checked={prefs.unseenByDefault}
+				onchange={(event) => setPref('unseenByDefault', event.currentTarget.checked)}
+			/>
+		</label>
+
+		<label class="flex items-center justify-between gap-4 py-2.5">
+			<span class="text-[13px] font-medium text-slate-800">Messages per folder</span>
+			<select
+				class="h-[30px] rounded-[6px] border border-[#cbd5e1] bg-white px-2 text-[13px] shadow-2xs focus:border-blue-500 focus:outline-none"
+				value={prefs.pageSize}
+				onchange={(event) => setPref('pageSize', Number(event.currentTarget.value))}
+			>
+				{#each PAGE_SIZES as size (size)}
+					<option value={size}>{size}</option>
+				{/each}
+			</select>
+		</label>
+
+		<!--
+			The two below are deliberately not synced: a pixel width and a
+			sidebar state mean different things on a different screen.
+		-->
+		<label class="flex items-center justify-between gap-4 py-2.5 max-md:hidden">
+			<span class="min-w-0">
+				<span class="block text-[13px] font-medium text-slate-800">Message list width</span>
+				<span class="block text-[12px] text-slate-400">This device only</span>
+			</span>
+			<span class="flex items-center gap-2">
+				<input
+					type="range"
+					min={LIST_MIN}
+					max={LIST_MAX}
+					step="10"
+					class="w-40 accent-blue-600"
+					value={prefs.listWidth}
+					oninput={(event) => setPref('listWidth', Number(event.currentTarget.value))}
+				/>
+				<span class="w-12 text-right text-[12px] text-slate-500 tabular-nums">
+					{prefs.listWidth}px
+				</span>
+			</span>
+		</label>
 	</div>
-</div>
+
+	<button
+		type="button"
+		class="btn-tactile mt-4"
+		onclick={() => {
+			for (const key of Object.keys(DEFAULT_PREFS) as (keyof typeof DEFAULT_PREFS)[]) {
+				setPref(key, DEFAULT_PREFS[key] as never);
+			}
+		}}
+	>
+		Reset to defaults
+	</button>
+</section>

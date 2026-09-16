@@ -1,25 +1,45 @@
 import type { StateChange } from '@zaur/mail-core';
 
 /** Which JMAP types a push told us about, so a caller refreshes only those. */
-export type ChangedTypes = { email: boolean; mailbox: boolean };
+export type ChangedTypes = {
+	email: boolean;
+	mailbox: boolean;
+	/** ContactCard or AddressBook — the address book pane and compose suggestions. */
+	contact: boolean;
+	/** CalendarEvent or Calendar — the calendar pane. */
+	calendar: boolean;
+};
+
+const NOTHING: ChangedTypes = { email: false, mailbox: false, contact: false, calendar: false };
+export const EVERYTHING: ChangedTypes = { email: true, mailbox: true, contact: true, calendar: true };
+
+export function anyChanged(changed: ChangedTypes): boolean {
+	return changed.email || changed.mailbox || changed.contact || changed.calendar;
+}
 
 /**
  * What a `StateChange` means for this shell.
  *
  * The payload is keyed by account; this shell has one, and any account it hears
- * about is the one whose mail it is showing. An Email change moves unread
- * counts, so the folder list follows it even when Mailbox itself did not change
- * state — Stalwart is not obliged to bump both.
+ * about is the one whose mail it is showing (shared address books and
+ * calendars live in other accounts, and a change there is still a change to
+ * what is on screen). An Email change moves unread counts, so the folder list
+ * follows it even when Mailbox itself did not change state — Stalwart is not
+ * obliged to bump both.
  */
 export function changedTypes(change: StateChange | null | undefined): ChangedTypes {
-	if (change?.['@type'] !== 'StateChange') return { email: false, mailbox: false };
+	if (change?.['@type'] !== 'StateChange') return { ...NOTHING };
 	let email = false;
 	let mailbox = false;
+	let contact = false;
+	let calendar = false;
 	for (const types of Object.values(change.changed ?? {})) {
 		if (types?.Email) email = true;
 		if (types?.Mailbox) mailbox = true;
+		if (types?.ContactCard || types?.AddressBook) contact = true;
+		if (types?.CalendarEvent || types?.Calendar) calendar = true;
 	}
-	return { email, mailbox: mailbox || email };
+	return { email, mailbox: mailbox || email, contact, calendar };
 }
 
 const STALE_MS = 90_000;
@@ -105,7 +125,7 @@ export class LiveUpdates {
 
 	/** Treat everything as changed — for when we know we may have missed events. */
 	#everything() {
-		this.#onChange?.({ email: true, mailbox: true });
+		this.#onChange?.({ ...EVERYTHING });
 	}
 
 	#openStream() {
@@ -127,7 +147,7 @@ export class LiveUpdates {
 				return; // a ping, or something we do not speak
 			}
 			const changed = changedTypes(change);
-			if (changed.email || changed.mailbox) this.#onChange?.(changed);
+			if (anyChanged(changed)) this.#onChange?.(changed);
 		};
 
 		source.onopen = () => {

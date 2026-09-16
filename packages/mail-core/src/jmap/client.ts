@@ -30,6 +30,8 @@ import type {
 	JMAPFileRights
 } from './file-types';
 import { FILE_NODE_PROPERTIES } from './file-types';
+import type { JMAPAddressBook, JMAPContactCard } from './contact-types';
+import { ADDRESS_BOOK_PROPERTIES, CONTACTS_URN, CONTACT_CARD_PROPERTIES } from './contact-types';
 import { JmapMethodError } from './errors';
 
 // Unauthorized handling is platform-injected: webmail leaves the default
@@ -96,6 +98,7 @@ const VACATION_URN = 'urn:ietf:params:jmap:vacationresponse';
 const VACATION_USING = ['urn:ietf:params:jmap:core', VACATION_URN] as const;
 const SIEVE_URN = 'urn:ietf:params:jmap:sieve';
 const SIEVE_USING = ['urn:ietf:params:jmap:core', SIEVE_URN] as const;
+const CONTACTS_USING = ['urn:ietf:params:jmap:core', CONTACTS_URN] as const;
 /** RFC 9661 §2.2 — the media type a script blob is uploaded as. */
 const SIEVE_MEDIA_TYPE = 'application/sieve';
 
@@ -1111,6 +1114,217 @@ export class JMAPClient {
 		}
 	}
 
+	/* ── Contacts (RFC 9610) ──────────────────────────────────────────── */
+
+	hasContacts(): boolean {
+		if (this.session?.capabilities?.[CONTACTS_URN]) return true;
+		const accountId = this.getContactAccountId();
+		return !!this.session?.accounts?.[accountId]?.accountCapabilities?.[CONTACTS_URN];
+	}
+
+	getContactAccountId(): string {
+		return this.session?.primaryAccounts?.[CONTACTS_URN] ?? this.accountId;
+	}
+
+	/** Own contacts account plus any shared accounts advertised on the session. */
+	getContactAccountIds(): string[] {
+		const primary = this.getContactAccountId();
+		const ids = new Set<string>();
+		if (primary) ids.add(primary);
+		for (const [id, account] of Object.entries(this.session?.accounts ?? {})) {
+			if (account.accountCapabilities?.[CONTACTS_URN]) ids.add(id);
+		}
+		return [...ids];
+	}
+
+	private contactAccount(accountId?: string | null): string {
+		return accountId || this.getContactAccountId();
+	}
+
+	private async contactRequest(methodCalls: JMAPMethodCall[]): Promise<JMAPResponse> {
+		return this.request(methodCalls, [...CONTACTS_USING]);
+	}
+
+	async getAddressBooks(): Promise<JMAPAddressBook[]> {
+		if (!this.hasContacts()) return [];
+		const accountIds = this.getContactAccountIds();
+		const response = await this.contactRequest(
+			accountIds.map((accountId, index) => [
+				'AddressBook/get',
+				{ accountId, properties: [...ADDRESS_BOOK_PROPERTIES] },
+				`ab-${index}`
+			])
+		);
+		const list: JMAPAddressBook[] = [];
+		for (const [index, accountId] of accountIds.entries()) {
+			const call = response.methodResponses?.find(([, , id]) => id === `ab-${index}`);
+			if (call?.[0] === 'error' && accountIds.length === 1) {
+				const error = call[1] as { type?: string; description?: string };
+				throw new JmapMethodError(error.type ?? 'error', error.description ?? error.type ?? 'AddressBook/get failed');
+			}
+			if (call?.[0] !== 'AddressBook/get') continue;
+			for (const book of (call[1].list as JMAPAddressBook[]) ?? []) {
+				list.push({ ...book, accountId });
+			}
+		}
+		const primary = this.getContactAccountId();
+		return list.sort((a, b) => {
+			const aOwn = (a.accountId ?? primary) === primary ? 0 : 1;
+			const bOwn = (b.accountId ?? primary) === primary ? 0 : 1;
+			return aOwn - bOwn || Number(!!b.isDefault) - Number(!!a.isDefault) || (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.name.localeCompare(b.name);
+		});
+	}
+
+	async createAddressBook(input: { name: string; accountId?: string | null }): Promise<string> {
+		const accountId = this.contactAccount(input.accountId);
+		const response = await this.contactRequest([
+			['AddressBook/set', { accountId, create: { book: { name: input.name } } }, 'abs']
+		]);
+		this.throwOnSetErrors(response, 'Could not create the address book');
+		const first = response.methodResponses?.[0];
+		const created = first?.[1].created as Record<string, { id?: string }> | undefined;
+		const id = created?.book?.id;
+		if (!id) throw new Error('Could not create the address book');
+		return id;
+	}
+
+	/**
+	 * Every card the account can see, across own and shared address books,
+	 * paged through `ContactCard/query` in server-sized chunks (Stalwart caps a
+	 * `get` at 500 ids). `limit` bounds the total so a huge shared directory
+	 * cannot pin the server; autocomplete does not need all of it.
+	 */
+	async getContactCards(options: {
+		addressBookId?: string;
+		limit?: number;
+		accountId?: string | null;
+	} = {}): Promise<JMAPContactCard[]> {
+		if (!this.hasContacts()) return [];
+		const accountIds = options.accountId
+			? [this.contactAccount(options.accountId)]
+			: this.getContactAccountIds();
+		const cap = Math.max(1, options.limit ?? 2000);
+		const page = 250;
+		const cards: JMAPContactCard[] = [];
+
+		for (const accountId of accountIds) {
+			let position = 0;
+			while (cards.length < cap) {
+				const filter = options.addressBookId ? { inAddressBook: options.addressBookId } : {};
+				const response = await this.contactRequest([
+					[
+						'ContactCard/query',
+						{ accountId, filter, sort: [{ property: 'name/surname' }, { property: 'name/given' }], position, limit: Math.min(page, cap - cards.length), calculateTotal: false },
+						'ccq'
+					],
+					[
+						'ContactCard/get',
+						{
+							accountId,
+							'#ids': { resultOf: 'ccq', name: 'ContactCard/query', path: '/ids' },
+							properties: [...CONTACT_CARD_PROPERTIES]
+						},
+						'ccg'
+					]
+				]);
+				const query = response.methodResponses?.find(([, , id]) => id === 'ccq');
+				if (query?.[0] === 'error') {
+					const error = query[1] as { type?: string; description?: string };
+					// A sort the server does not support is not worth failing over.
+					if (error.type === 'unsupportedSort' && position === 0) {
+						return this.getContactCardsUnsorted(accountIds, options.addressBookId, cap);
+					}
+					if (accountIds.length === 1) {
+						throw new JmapMethodError(error.type ?? 'error', error.description ?? error.type ?? 'ContactCard/query failed');
+					}
+					break;
+				}
+				const get = response.methodResponses?.find(([, , id]) => id === 'ccg');
+				const list = get?.[0] === 'ContactCard/get' ? ((get[1].list as JMAPContactCard[]) ?? []) : [];
+				for (const card of list) cards.push({ ...card, accountId });
+				const ids = (query?.[1].ids as string[] | undefined) ?? [];
+				if (ids.length < Math.min(page, cap - cards.length + ids.length) || ids.length === 0) break;
+				position += ids.length;
+			}
+		}
+		return cards;
+	}
+
+	private async getContactCardsUnsorted(
+		accountIds: string[],
+		addressBookId: string | undefined,
+		cap: number
+	): Promise<JMAPContactCard[]> {
+		const cards: JMAPContactCard[] = [];
+		for (const accountId of accountIds) {
+			const filter = addressBookId ? { inAddressBook: addressBookId } : {};
+			const response = await this.contactRequest([
+				['ContactCard/query', { accountId, filter, limit: cap - cards.length }, 'ccq'],
+				[
+					'ContactCard/get',
+					{
+						accountId,
+						'#ids': { resultOf: 'ccq', name: 'ContactCard/query', path: '/ids' },
+						properties: [...CONTACT_CARD_PROPERTIES]
+					},
+					'ccg'
+				]
+			]);
+			const get = response.methodResponses?.find(([, , id]) => id === 'ccg');
+			if (get?.[0] !== 'ContactCard/get') continue;
+			for (const card of (get[1].list as JMAPContactCard[]) ?? []) cards.push({ ...card, accountId });
+		}
+		return cards;
+	}
+
+	async getContactCard(id: string, accountId?: string | null): Promise<JMAPContactCard | null> {
+		if (!this.hasContacts()) return null;
+		const resolved = this.contactAccount(accountId);
+		const response = await this.contactRequest([
+			['ContactCard/get', { accountId: resolved, ids: [id], properties: [...CONTACT_CARD_PROPERTIES] }, 'ccg']
+		]);
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'ContactCard/get') return null;
+		const card = ((first[1].list as JMAPContactCard[]) ?? [])[0];
+		return card ? { ...card, accountId: resolved } : null;
+	}
+
+	/** `card` is a whole JSContact Card with `addressBookIds` (see `buildContactCard`). */
+	async createContactCard(card: Record<string, unknown>, accountId?: string | null): Promise<string> {
+		if (!this.hasContacts()) throw new Error('Contacts are not supported by this server');
+		const resolved = this.contactAccount(accountId);
+		const response = await this.contactRequest([
+			['ContactCard/set', { accountId: resolved, create: { card } }, 'ccs']
+		]);
+		this.throwOnSetErrors(response, 'Could not save the contact');
+		const first = response.methodResponses?.[0];
+		const created = first?.[1].created as Record<string, { id?: string }> | undefined;
+		const id = created?.card?.id;
+		if (!id) throw new Error('Could not save the contact');
+		return id;
+	}
+
+	/** `patch` is a JMAP patch object (see `buildContactPatch`). */
+	async updateContactCard(
+		id: string,
+		patch: Record<string, unknown>,
+		accountId?: string | null
+	): Promise<void> {
+		if (!this.hasContacts()) throw new Error('Contacts are not supported by this server');
+		const response = await this.contactRequest([
+			['ContactCard/set', { accountId: this.contactAccount(accountId), update: { [id]: patch } }, 'ccu']
+		]);
+		this.throwOnSetErrors(response, 'Could not save the contact');
+	}
+
+	async destroyContactCard(id: string, accountId?: string | null): Promise<void> {
+		if (!this.hasContacts()) throw new Error('Contacts are not supported by this server');
+		const response = await this.contactRequest([
+			['ContactCard/set', { accountId: this.contactAccount(accountId), destroy: [id] }, 'ccd']
+		]);
+		this.throwOnSetErrors(response, 'Could not delete the contact');
+	}
+
 	async queryPrincipals(query: string): Promise<JMAPPrincipal[]> {
 		if (!this.hasPrincipals()) {
 			throw new Error('Sharing is not supported by this server');
@@ -1407,6 +1621,13 @@ export class JMAPClient {
 		calendarId?: string;
 		timeZone?: string;
 		accountId?: string | null;
+		/**
+		 * Ask the server to expand recurring events into instances inside the
+		 * range (JMAP Calendars `expandRecurrences`). Instances come back with
+		 * synthetic ids carrying `baseEventId` + `recurrenceId`. Off by default
+		 * because webmail 1.0 expands client-side.
+		 */
+		expandRecurrences?: boolean;
 	}): Promise<CalendarEventQueryResult> {
 		if (!this.hasCalendars()) return { events: [], total: 0 };
 
@@ -1427,7 +1648,7 @@ export class JMAPClient {
 					{
 						accountId,
 						filter,
-						expandRecurrences: false,
+						expandRecurrences: params.expandRecurrences === true,
 						timeZone: params.timeZone ?? 'Etc/UTC',
 						limit: 500
 					},
@@ -2229,7 +2450,7 @@ export class JMAPClient {
 	}
 
 	openEventStream(): Promise<Response> {
-		const EVENT_SOURCE_TYPES = 'Mailbox,Email,CalendarEvent,Calendar';
+		const EVENT_SOURCE_TYPES = 'Mailbox,Email,CalendarEvent,Calendar,ContactCard,AddressBook';
 		if (this.proxyMode) {
 			return fetch('/api/jmap/events');
 		}

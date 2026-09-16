@@ -1,5 +1,7 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
+	import { goto, replaceState } from '$app/navigation';
+	import { page } from '$app/state';
+	import { makeRecipient } from '#lib/compose/recipients';
 	import { whoami } from '../session.remote';
 	import { mailboxes, threads, thread, quota, bulk, type BulkAction,
 		search as searchRemote
@@ -11,6 +13,8 @@
 		deleteDraft as deleteDraftRemote
 	} from '../compose.remote';
 	import { logout } from '../login.remote';
+	import { contacts as contactsRemote } from '../contacts.remote';
+	import { contactDisplayName } from '@zaur/mail-core';
 	import TopBar from '#lib/components/mail/TopBar.svelte';
 	import Sidebar from '#lib/components/mail/Sidebar.svelte';
 	import MailList from '#lib/components/mail/MailList.svelte';
@@ -222,20 +226,33 @@
 		}
 	});
 
+	/**
+	 * Compose suggestions: the address book first (every address on every
+	 * card, labelled by the card's own label), then whoever wrote to this
+	 * folder recently, for the people not yet saved. One list, deduplicated on
+	 * the address, so a saved person is never also offered as "Recent".
+	 */
+	const contactsResource = $derived(session ? contactsRemote() : undefined);
 	$effect(() => {
 		const rows = listResource?.current?.rows;
-		if (!rows) return;
+		const book = contactsResource?.current?.contacts ?? [];
 		const seen = new Set<string>();
-		const contacts: ComposeContact[] = [];
-		for (const row of rows) {
-			const email = row.from.email?.trim();
-			if (!email || !email.includes('@')) continue;
-			const key = email.toLowerCase();
-			if (seen.has(key) || myEmails.has(key)) continue;
+		const suggestions: ComposeContact[] = [];
+		const add = (name: string, email: string, meta: string) => {
+			const address = email.trim();
+			if (!address.includes('@')) return;
+			const key = address.toLowerCase();
+			if (seen.has(key) || myEmails.has(key)) return;
 			seen.add(key);
-			contacts.push({ name: row.from.name, email, meta: 'Recent' });
+			suggestions.push({ name, email: address, meta });
+		};
+		for (const contact of book) {
+			for (const email of contact.emails) {
+				add(contactDisplayName(contact), email.address, email.label || 'Contact');
+			}
 		}
-		compose.setContacts(contacts);
+		for (const row of rows ?? []) add(row.from.name, row.from.email ?? '', 'Recent');
+		compose.setContacts(suggestions);
 	});
 
 	/**
@@ -247,9 +264,10 @@
 	$effect(() => {
 		if (!session) return;
 		const live = new LiveUpdates();
-		live.start(({ email, mailbox }) => {
+		live.start(({ email, mailbox, contact }) => {
 			if (email) void listResource?.refresh();
 			if (mailbox) void mailboxesResource?.refresh();
+			if (contact) void contactsResource?.refresh();
 		});
 		return () => live.stop();
 	});
@@ -308,6 +326,28 @@
 	function openCompose(anchor?: AnchorRect | null) {
 		compose.newDraft(panelPosition(anchor));
 	}
+
+	/**
+	 * `/?to=ada@example.com` opens a draft to that address — the Contacts pane's
+	 * "Write" link. The parameter is consumed once and taken off the URL, so a
+	 * reload does not open a second draft.
+	 */
+	let composeLinkHandled = false;
+	$effect(() => {
+		if (!session || composeLinkHandled) return;
+		const to = page.url.searchParams.get('to');
+		if (to === null) return;
+		composeLinkHandled = true;
+		const recipient = makeRecipient(to, 'Contact');
+		compose.newDraft({
+			...panelPosition(),
+			to: recipient ? [recipient] : [],
+			focusTarget: recipient ? 'subject' : 'to'
+		});
+		const url = new URL(page.url.href);
+		url.searchParams.delete('to');
+		replaceState(url, page.state);
+	});
 
 	function openReply(
 		mode: 'reply' | 'replyAll' | 'forward',

@@ -13,7 +13,9 @@
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
 		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-		"test": "node --import tsx --test tests/*.test.ts"
+		"test": "node --import tsx --test tests/*.test.ts",
+		"smoke:jmap": "node tests/smoke/fake-jmap.mjs",
+		"smoke:seed": "node --import tsx tests/smoke/seed-session.ts"
 	},
 	"devDependencies": {
 		"@fontsource-variable/noto-sans-mono": "^5.3.0",
@@ -37,6 +39,7 @@
 		"@zaur/sprite": "workspace:*",
 		"@zaur/ui": "workspace:*",
 		"clsx": "^2.1.1",
-		"dompurify": "^3.4.6"
+		"dompurify": "^3.4.6",
+		"valibot": "^1.5.0"
 	}
 }

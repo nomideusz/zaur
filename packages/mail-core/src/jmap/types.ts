@@ -116,6 +116,7 @@ export interface JMAPSieveScript {
 	isActive: boolean;
 }
 
+/** RFC 8620 §7.1, keyed by account id then by data type name. */
 export interface StateChange {
 	'@type': 'StateChange';
 	changed: Record<
@@ -126,6 +127,10 @@ export interface StateChange {
 			Thread?: string;
 			Calendar?: string;
 			CalendarEvent?: string;
+			AddressBook?: string;
+			ContactCard?: string;
+			/** Any other type the server pushes (EmailSubmission, Identity, …). */
+			[type: string]: string | undefined;
 		}
 	>;
 }

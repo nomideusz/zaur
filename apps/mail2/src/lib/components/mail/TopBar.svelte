@@ -6,6 +6,7 @@
 	import { getHobdayTheme, mailboxTheme } from '#lib/mail/colors';
 	import ZaurMark from './ZaurMark.svelte';
 	import ActionIcon from './ActionIcon.svelte';
+	import SectionTabs from './SectionTabs.svelte';
 
 	interface Props {
 		mailboxes: MailboxDTO[] | undefined;
@@ -272,22 +273,8 @@
 				</svg>
 			</button>
 		{/if}
-		<!-- Section Tabs -->
-		<nav class="hidden sm:flex items-center rounded-[6px] border border-[#cbd5e1] bg-white p-0.5 shadow-2xs" aria-label="Sections">
-			<button
-				type="button"
-				class="h-[26px] rounded-[4px] bg-slate-100 px-2.5 text-[12px] font-semibold text-slate-900"
-				aria-current="page"
-			>
-				Mail
-			</button>
-			<a
-				href="/settings"
-				class="flex h-[26px] items-center rounded-[4px] px-2.5 text-[12px] font-medium text-slate-500 transition-colors hover:text-slate-900"
-			>
-				Settings
-			</a>
-		</nav>
+		<!-- Section Tabs: Mail · Contacts · Calendar · Settings -->
+		<SectionTabs class="hidden sm:flex" />
 
 		<!-- Profile Menu -->
 		{#if account}
@@ -312,6 +299,21 @@
 								<div class="text-[13px] font-semibold text-slate-900">{account.displayName ?? account.username}</div>
 								<div class="text-xs text-slate-500 truncate">{account.username}</div>
 							</div>
+							<!-- The section tabs hide below `sm`; the menu is the phone's way there. -->
+							<Menu.Item
+								value="contacts"
+								class="flex cursor-pointer items-center rounded-[6px] px-2.5 py-1.5 text-[13px] text-slate-700 data-highlighted:bg-slate-100 sm:hidden"
+								onSelect={() => goto('/contacts')}
+							>
+								Contacts
+							</Menu.Item>
+							<Menu.Item
+								value="calendar"
+								class="flex cursor-pointer items-center rounded-[6px] px-2.5 py-1.5 text-[13px] text-slate-700 data-highlighted:bg-slate-100 sm:hidden"
+								onSelect={() => goto('/calendar')}
+							>
+								Calendar
+							</Menu.Item>
 							<Menu.Item
 								value="settings"
 								class="flex cursor-pointer items-center rounded-[6px] px-2.5 py-1.5 text-[13px] text-slate-700 data-highlighted:bg-slate-100"

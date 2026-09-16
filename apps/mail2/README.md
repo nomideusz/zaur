@@ -20,15 +20,22 @@ theme only** for now; Files and Meet arrive when their designs land.
 - [x] Attachment downloads (`/api/download`) †
 - [x] Server-side rules (JMAP Sieve) †
 - [x] Settings that follow the account rather than the browser
-- [ ] Security settings (2FA, app passwords, sessions) — **next**
-- [ ] Contacts with a real source
-- [ ] Calendar / Contacts / Files panes (port from 1.0)
-- [ ] OIDC provider flows (mail2 as an identity provider)
-- [ ] Cutover checklist green
+- [x] Security settings (`/settings/security`): password, 2FA, app passwords,
+  API keys, signed-in devices, recovery email — see [Security](#security) ‡
+- [x] Contacts with a real source — JMAP Contacts (RFC 9610), feeding compose
+  autocomplete and a Contacts pane ‡
+- [x] Calendar pane — JMAP Calendars, server-expanded recurrences ‡
+- [ ] Files pane — waits for its design (ADR-0005), and Stalwart's `FileNode`
+- [ ] Web Push, multi-account switching, PWA manifest — the cutover items left
+- [ ] OIDC provider flows (mail2 as an identity provider) — post-cutover
 
 † **Written and tested, but never run against a live Stalwart.** See
-[Not yet proven against a server](#not-yet-proven-against-a-server) — read that
-before trusting any of the four.
+[Not yet proven against a server](#not-yet-proven-against-a-server).
+
+‡ **Run end to end against a fake JMAP server, not a live Stalwart.** The wire
+shapes follow Stalwart 0.16's source and docs; `pnpm smoke:jmap` (see
+[Smoke-testing without a mailbox](#smoke-testing-without-a-mailbox)) is what
+they have been exercised against.
 
 ## Sign-in
 
@@ -173,9 +180,10 @@ Kit 3 changes the layout from Kit 2:
 
 ## Settings
 
-`/settings` (inside the `(app)` gate) has **three** owners, not two, and which
-one a setting belongs to is a real decision rather than an accident of where it
-was easiest to put:
+`/settings` (inside the `(app)` gate) is two pages under one layout — **General**
+here, and [Security](#security) — and has **three** owners, not two; which one a
+setting belongs to is a real decision rather than an accident of where it was
+easiest to put:
 
 - **The mail account (Stalwart).** The send-as display name per identity,
   through `settings.remote.ts` (`Identity/get` + `Identity/set`), plus the
@@ -640,6 +648,155 @@ is never a window where the rules exist but nothing is filtering.
 > by a real Stalwart. See
 > [Not yet proven against a server](#not-yet-proven-against-a-server).
 
+## Sections
+
+The top bar's segmented control is the shell's map: **Mail · Contacts ·
+Calendar · Settings**. It used to be two buttons, one of them inert; it is one
+component now (`SectionTabs`), drawn the same in the mail top bar, and in the
+header every sibling section wears (`SectionShell` — the mark, a way back to
+Mail, the section's own controls, the tabs). The current section is read from
+the URL, so a page cannot claim to be one it is not. Below `sm` the tabs hide
+and the account menu carries the same four entries, because a phone's top bar
+has no room for a fifth control.
+
+## Security
+
+`/settings/security` is the last thing that genuinely blocked retiring 1.0: you
+cannot ask people to move to a client where they cannot manage their own 2FA.
+Settings is two pages now, **General** and **Security**, under one layout with
+the same header.
+
+**Stalwart 0.16 removed its REST management API.** Everything self-service is
+JMAP under the `urn:stalwart:jmap` capability, on `x:`-prefixed objects:
+`x:AccountPassword` (a singleton — password and TOTP), `x:AppPassword` and
+`x:ApiKey`. Webmail 1.0's server code was already on that surface; the Stalwart
+calls moved into `@zaur/server-auth` (`account-security.ts`, `totp.ts`) where
+both apps — and whatever comes after — can share them. 1.0 keeps its own copy
+until it is retired; it is frozen to bugfixes and the two are byte-for-byte the
+same wire calls.
+
+Two different things need proving, and the design keeps them apart:
+
+- **Stalwart's own check.** Changing the password or the TOTP state needs the
+  current password in the same `x:AccountPassword/set` call (`currentSecret`,
+  plus `otpAuth/otpCode` once TOTP is on). Those forms ask for it right there
+  and pass it straight through; nothing is cached. 1.0 asked once and kept the
+  password in component state to resend — the same thing, less honestly.
+- **Our check**, for what Stalwart does not guard with a password: minting an
+  app password or API key, signing out a device, changing the recovery email.
+  "Confirm it's you" re-authenticates against Stalwart (the PKCE credential
+  flow for an OAuth session, a Basic-auth JMAP session for the password
+  fallback), writes a five-minute proof into the shared store
+  (`step_up_proofs`, keyed by session and account, so a borrowed 1.0 session
+  is treated the same) and **rotates the session id** — a fresh id after a
+  fresh proof is what stops a captured cookie from inheriting the window. The
+  page counts the window down and re-locks when it ends.
+
+The parts that are easy to get wrong, and are tested:
+
+- **TOTP is verified before it is enabled.** Stalwart never hands the secret
+  back (`otpUrl` is masked on `get`), so the client mints it, shows the QR, and
+  sends the `otpauth://` URL up. Stalwart does not insist on a code to turn
+  TOTP on — a mistyped scan would lock the account — so the confirmation code
+  is checked here, against the pending secret (RFC 6238 over `node:crypto`,
+  ±1 step), and a wrong code keeps the setup alive rather than making the
+  person rescan. TOTP management needs an **OAuth session**: a password-fallback
+  session cannot carry a code from request to request, and the page says so.
+- **Changing the password revokes every token the account holds.** The
+  session is signed back in with the new password in the same request; if that
+  fails, the next request lands on `/login`, which is the honest fallback.
+- **One-time secrets come from `created` only.** `extractOneTimeCredential`
+  refuses to read a secret from anywhere else in a response, so a listing can
+  never leak one. API keys are minted with a permission set that cannot manage
+  credentials or the password — a leaked key must not be able to make itself
+  permanent.
+- **Stalwart's rejection reason is shown.** "Current password is incorrect",
+  "Password is too weak" — the `notUpdated` description is the user's message,
+  not a generic "failed".
+- **Signed-in devices are ours, not Stalwart's.** Stalwart has no way to list or
+  revoke individual OAuth tokens (only a password change revokes them all), so
+  the sessions list is the shared store's `session_accounts`, which both apps
+  write. Signing a device out drops that account from that session record.
+- **Recovery email** lives with the register service; the card appears only
+  when `REGISTER_INTERNAL_URL` / `REGISTER_INTERNAL_SECRET` are set.
+- Identity checks share the login rate budget; other mutations get a looser
+  store-backed window. Password fields use `_`-prefixed form field names, which
+  Kit never echoes back to the page.
+
+## Contacts
+
+Compose autocomplete used to scrape senders out of whichever folder page was
+loaded and forgot everyone else. It reads the address book now — **JMAP for
+Contacts (RFC 9610)**, the same cards a CardDAV client on the phone sees — with
+recent senders still offered for the people not yet saved. One list,
+deduplicated on the address, so a saved person is never also "Recent".
+
+Nothing in this repo had touched `AddressBook/*` or `ContactCard/*` before
+(1.0's contacts pane is a browser-local index), so the JSContact (RFC 9553)
+model is new in `@zaur/mail-core`: `contact-types.ts` for the wire shapes,
+`contact-map.ts` to flatten a card into what a mail client shows and edits,
+and back. **Writes are patches**: the editor owns name, emails, phones,
+organisation, title, nickname and notes, and an update touches only those keys,
+so a card that also carries addresses, photos or anniversaries keeps them
+through an edit made here. Emails and phones are ordered by `pref`; "home" is
+translated to JSContact's `private` context.
+
+The whole directory (capped at 2000 cards, paged through `ContactCard/query`
+in server-sized chunks) comes down in one query and is filtered on the client.
+Stalwart's `text` filter matches whole tokens, which is the wrong shape for
+autocomplete — "an" has to find Anders while it is still being typed — and a
+personal address book is small. `contactMatches` is a prefix match on words and
+addresses, tested.
+
+`/contacts` is the pane: letter-grouped list with sticky dividers (the list's
+own vocabulary), search, a detail card that wears the person's Hobday rail and
+wash like the reader does, and an editor. "Write" opens Mail with
+`/?to=address`, which the mail page consumes once and strips from the URL, so a
+reload does not open a second draft. Push subscribes to `ContactCard` and
+`AddressBook`, so a card saved on the phone shows up without a reload.
+
+## Calendar
+
+`/calendar` is a month grid (Monday first), a calendar list with visibility
+toggles, and an agenda for the selected day that turns into the editor. It sits
+on the JMAP Calendars client mail-core already carried for 1.0, with two
+changes:
+
+- **Recurrences are expanded by the server** (`expandRecurrences`, which the
+  latest Stalwart implements and 1.0 predates). A weekly meeting is a row per
+  week with a synthetic id; editing one records an override for that date, and
+  deleting one is deleting the series, which the prompt says out loud.
+- **The browser owns the time zone.** Query bounds go up as local date-times in
+  the browser's zone (the six-week grid, so the edges fill), and dates come
+  back as `Date` — devalue carries them across the wire.
+
+Shared calendars ride along: `getCalendars` walks every account the session
+advertises, and an event carries the account it lives in so a write goes back
+to the right one.
+
+## Smoke-testing without a mailbox
+
+The `(app)` routes sit behind the session gate, and there is no test mailbox.
+`tests/smoke/` is the way to see them anyway:
+
+```sh
+pnpm --filter @zaur/mail2 smoke:jmap    # a fake JMAP server on :9911
+pnpm --filter @zaur/mail2 smoke:seed    # a signed-in session in .data/store.sqlite
+pnpm dev:mail2                          # set the printed cookie, open the app
+```
+
+`fake-jmap.mjs` speaks just enough of Stalwart's dialect — session, mailboxes,
+`AddressBook`/`ContactCard`, `Calendar`/`CalendarEvent` (with a fake weekly
+expansion), and the `x:` self-service objects — to exercise every remote
+function in Security, Contacts and Calendar end to end, including the
+`#ids` back-references the contact and credential listings chain on. It logs
+the payloads it receives, which is how the shapes were checked. The seeded
+password is `not-a-real-password`. Point `SMOKE_JMAP_URL` at a dead port to see
+every error state instead.
+
+It is a fake: it proves the plumbing, not Stalwart's acceptance of it. The
+first run against the real server is still a test — see the table below.
+
 ## Settings that follow the account
 
 Four of the six preferences travel with the account. **Two deliberately do
@@ -689,11 +846,11 @@ defaults.
 
 ```sh
 pnpm --filter @zaur/mail2 check     # svelte-check
-pnpm --filter @zaur/mail2 test      # 62 tests
+pnpm --filter @zaur/mail2 test      # 66 tests
 pnpm --filter @zaur/mail2 build
 
-pnpm --filter @zaur/mail-core check && pnpm --filter @zaur/mail-core test    # 41
-pnpm --filter @zaur/server-auth check && pnpm --filter @zaur/server-auth test # 26
+pnpm --filter @zaur/mail-core check && pnpm --filter @zaur/mail-core test    # 48
+pnpm --filter @zaur/server-auth check && pnpm --filter @zaur/server-auth test # 42
 ```
 
 `apps/webmail` currently reports **3 pre-existing `check` errors** — a duplicate
@@ -704,17 +861,19 @@ same three.
 
 ## Not yet proven against a server
 
-Four features were built without a mailbox to test them against. Everything
-below type-checks, and the parts that are pure logic are covered by tests — but
-**no `SieveScript/*`, no event stream, no blob download and no `Email/query`
-search has ever been answered by a real Stalwart from this codebase.** The
-`(app)` routes sit behind the session gate, and `/prototype` renders the shell
-on mock data, which exercises the UI and nothing underneath it.
+Everything here was built without a mailbox to test it against. Everything
+below type-checks, the pure parts are covered by tests, and the newer slices
+(Security, Contacts, Calendar) have run end to end against the fake JMAP server
+in `tests/smoke/` — but **nothing in this table has been answered by a real
+Stalwart from this codebase.**
 
 Treat the first run of each as a test. In the order they are likely to bite:
 
 | Feature | Verified | Never exercised | What would fail first |
 | --- | --- | --- | --- |
+| **Security** | `x:AccountPassword` / `x:AppPassword` / `x:ApiKey` calls against the fake, incl. rejection messages; TOTP against RFC 6238 vectors; 11 + 5 tests | a Bearer OAuth token being accepted for `x:` methods (1.0 relied on it; Stalwart's WebUI does the same); enabling TOTP with a client-minted `otpauth://` URL | Stalwart wanting a code to *enable* TOTP after all — the fake does not ask; if it does, the same code the page already verified is in the request, so it should pass. Check the permission preset on API keys is accepted verbatim |
+| **Contacts** | `AddressBook/get`, `ContactCard/query`+`get` chained on `#ids`, `set` create/update/destroy against the fake; JSContact mapping, 7 tests | Stalwart's `ContactCard/query` sort by `name/surname` (there is an unsorted fallback on `unsupportedSort`); `uid` handling on create | The `Card` shape on create — `@type`/`version` are sent; Stalwart may insist on `kind` or reject an unknown property |
+| **Calendar** | `Calendar/get`, `CalendarEvent/query`+`get` with `expandRecurrences`, `set` against the fake | real server-side expansion (synthetic id format, `recurrenceId`), updating one occurrence, `sendSchedulingMessages` | An update on a synthetic id being refused rather than recorded as an override; the editor says "this occurrence" — if Stalwart says no, the message surfaces |
 | **Live updates** | endpoint returns 401 unauthenticated; `changedTypes` unit-tested | the SSE pump, reconnect, OAuth refresh on a stream that outlives its token | The stream opens and then dies quietly at the first token refresh. The 90s stale timer and the polling fallback are what should keep the list correct anyway — check that polling actually takes over rather than assuming the stream is fine |
 | **Rules (Sieve)** | script generation round-trips, 14 tests | `SieveScript/get`/`set`/`validate`, blob upload of a script, activation | Stalwart rejecting the generated Sieve. This is the good failure: `validate` runs *before* the script is stored, so the error surfaces as a message rather than a filter that silently stops working. Check `require` handling and `addflag` first |
 | **Attachment downloads** | endpoint returns 401 unauthenticated; URL encoding unit-tested | `downloadBlob` against a real blob, streaming a large file | Content type or disposition being wrong for one file kind, or a large file buffering where it should stream |
@@ -724,44 +883,41 @@ The settings sync is the exception: it runs on our own SQLite, so it **is**
 tested for real, including that an existing deployed store picks up the new
 table on reopen with no migration step.
 
-Two UI surfaces have also never been rendered, because they are behind the
-gate: the **rules editor** and the rest of `/settings`. They compile and build;
-nobody has looked at them.
+The **rules editor** is the one surface that has still only been compiled, not
+looked at: the fake answers `SieveScript/get` with an empty list, so the editor
+renders its empty state and nothing more.
 
 ## Picking this up next
 
-**Security settings** is the next slice, and the last thing genuinely blocking
-1.0's retirement — you cannot ask people to move to a client where they cannot
-manage their own 2FA.
+The first thing to do is not a feature: **sign in with a real account and walk
+the table above**, top to bottom. Every wire shape here was checked against
+Stalwart 0.16's source and docs, and against the fake — the live server is the
+one reviewer that has not seen it.
 
-It is a different shape from everything above: it talks to **Stalwart's admin
-API, not JMAP**, so mail-core is not where it goes. 1.0 has the whole surface
-already, at `apps/webmail/src/routes/api/account/security/*` — TOTP setup and
-confirm, app passwords, API keys, active sessions, password change, recovery —
-and `@zaur/server-auth` already carries the step-up proof and TOTP setup tables
-those flows lean on (`putStepUpProof`, `putTotpSetup`, `consumeTotpSetup`),
-which is a strong hint that the server half is mostly there.
+After that, in the order they earn their place:
 
-Worth deciding before writing any of it: 1.0 spreads this across twelve
-endpoints. mail2 would express most of it as remote functions, and the
-step-up-auth flow (re-entering a password before changing security settings) is
-the part that needs designing rather than porting.
-
-While you are in there, the smaller wins from the list below — **contacts with a
-real source** especially — are much cheaper than they look and change something
-that is felt daily.
+1. **Web Push.** Stalwart implements `PushSubscription` (RFC 8620 §7.2) with
+   Web Push encryption and, since 0.16.14, VAPID (`urn:ietf:params:jmap:webpush-vapid`,
+   only advertised once `webPushKey` is configured on the server). It is on the
+   cutover checklist; the shell's `LiveUpdates` covers the open tab already, so
+   this is the closed-tab half. 1.0 has a sender and a subscription store to
+   crib from.
+2. **Multi-account switching.** `@zaur/server-auth` already keeps several
+   accounts in one session (`addAccount`, `setActiveAccount`); what is missing
+   is a second login flow and a switcher in the account menu.
+3. **PWA manifest.** There is no `static/` directory yet — the favicon the
+   `app.html` references does not exist — so this is icons first, then a
+   manifest.
+4. **Files pane.** Stalwart speaks JMAP for File Storage (`FileNode/*`) and
+   mail-core has the client for it from 1.0; ADR-0005 holds it until the
+   design lands.
 
 ## What is still missing
 
-Measured against webmail 1.0 and against what Stalwart actually implements.
-Security settings is the next slice and has its own section above; after it:
-
-1. **Contacts.** Compose autocomplete scrapes senders out of whichever folder
-   page happens to be loaded, so it forgets anyone not recently in view.
-   Stalwart speaks `Principal/query` and CardDAV; a real source is a small change
-   with a daily effect.
-2. **Calendar / Contacts / Files panes.** mail-core already carries the types,
-   maps, rights and recurrence. Mostly UI, and the largest surface left.
+Measured against webmail 1.0 and against what Stalwart actually implements:
+the four items above, and — post-cutover by ADR-0005 — mail2 acting as an OIDC
+provider. Stalwart itself is one (`/.well-known/openid-configuration`,
+`/auth/userinfo`), which is worth knowing before building another.
 
 Two smaller notes:
 
@@ -780,7 +936,15 @@ Two smaller notes:
 - Server state goes through SvelteKit **remote functions** (`*.remote.ts`):
   `mail` (folders, threads, one thread, quota, search, bulk actions), `compose`
   (send, schedule, drafts), `settings` (identities, account prefs), `rules`
-  (Sieve) and `session`/`login`.
+  (Sieve), `security` (password, TOTP, credentials, devices, recovery),
+  `contacts` (address books and cards), `calendar` (calendars and events) and
+  `session`/`login`. The newer modules validate their arguments with
+  **valibot** schemas (Kit's Standard Schema hook) and share
+  `#lib/server/account` for "who is signed in, give me a JMAP client"; the
+  older ones still carry the pass-through `schema<T>()` stub and their own copy
+  of that helper, which is the obvious next tidy-up. Remote **forms** are used
+  wherever a password crosses the wire: `_`-prefixed fields are never echoed
+  back, and a form still works without JavaScript.
 - **Three things are plain endpoints instead**, because remote functions are
   request/response over JSON and these are none of those: `/api/upload` and
   `/api/download` move bytes (a command cannot carry a `File`), and

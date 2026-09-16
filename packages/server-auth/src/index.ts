@@ -88,4 +88,35 @@ export {
 	StalwartAuthError
 } from './stalwart-auth';
 export type { CredentialAuthResult } from './stalwart-auth';
+export {
+	AccountSecurityError,
+	MANAGEMENT_USING,
+	changeAccountPassword,
+	createCredential,
+	credentialPermissions,
+	disableTotp,
+	enableTotp,
+	extractOneTimeCredential,
+	getAccountSecurityOverview,
+	isTotpEnabled,
+	listCredentials,
+	revokeCredential,
+	setFailureMessage
+} from './account-security';
+export type {
+	AccountSecurityOverview,
+	CredentialSummary,
+	CredentialType,
+	ManagementClient
+} from './account-security';
+export {
+	TOTP_DIGITS,
+	TOTP_PERIOD_SEC,
+	base32Decode,
+	base32Encode,
+	buildOtpAuthUrl,
+	generateTotpSecret,
+	totpCode,
+	verifyTotpCode
+} from './totp';
 export { log } from './log';
