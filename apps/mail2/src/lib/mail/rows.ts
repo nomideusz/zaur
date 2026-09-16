@@ -128,6 +128,16 @@ export function formatBytes(size: number): string {
 	return `${value >= 100 ? Math.round(value) : value.toFixed(1)} ${units[exponent]}`;
 }
 
+/**
+ * Where a message's attachment is fetched from. The bytes come through our own
+ * endpoint rather than Stalwart's `downloadUrl` because that one wants the
+ * account's credentials, which stay on the server.
+ */
+export function attachmentUrl(blobId: string, name: string, type: string): string {
+	const params = new URLSearchParams({ blobId, name, type });
+	return `/api/download?${params}`;
+}
+
 export function typeBadge(mime: string): string {
 	const subtype = mime.split('/')[1] ?? mime;
 	return subtype.split('+')[0]!.slice(0, 4).toUpperCase();

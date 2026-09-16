@@ -84,6 +84,38 @@ export const threads = query(
 	}
 );
 
+/**
+ * Search across the account, or inside one folder.
+ *
+ * The query language is `parseSearchQuery` in `@zaur/mail-core` — the same
+ * parser webmail 1.0 uses, so `from:` / `subject:` / `has:attachment` /
+ * `is:unseen` / `before:` mean the same thing in both clients. It was already
+ * in the shared package; it just was not exported from its index.
+ *
+ * `mailboxId` scopes the search and comes back on the DTO, which is what lets
+ * the list group and open results exactly like a folder view.
+ */
+export const search = query(
+	schema<{ query: string; mailboxId?: string; limit?: number }>(),
+	async ({ query: text, mailboxId, limit }): Promise<ThreadListDTO> => {
+		const trimmed = (text ?? '').trim();
+		if (!trimmed) return { mailboxId: mailboxId ?? '', rows: [] };
+		const client = await connect();
+		const { emails } = await client.searchEmails(
+			trimmed,
+			Math.min(500, Math.max(1, Number(limit) || 50)),
+			0,
+			mailboxId
+		);
+		return {
+			mailboxId: mailboxId ?? '',
+			// Results can come from any folder, so a row is labelled by the
+			// mailbox it is actually in rather than the one we searched from.
+			rows: emails.map((email) => mapEmailPreview(email, mailboxId ?? ''))
+		};
+	}
+);
+
 export const thread = query(
 	schema<{ threadId: string }>(),
 	async ({ threadId }): Promise<MessageDetail[]> => {

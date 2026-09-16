@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 // Time formatting is locale-stable but TZ-sensitive; pin for deterministic tests.
 process.env.TZ = 'UTC';
 import {
+	attachmentUrl,
 	buildRowGroups,
 	formatBytes,
 	formatListTime,
@@ -176,4 +177,13 @@ test('messageCount counts the thread as this folder view holds it', () => {
 	assert.equal(rows.length, 2);
 	assert.equal(rows.find((row) => row.threadId === 't1')!.messageCount, 3);
 	assert.equal(rows.find((row) => row.threadId === 't2')!.messageCount, 1);
+});
+
+test('attachmentUrl: encodes names that would otherwise break the query', () => {
+	const url = attachmentUrl('B123', 'Q2 report (final) & notes.pdf', 'application/pdf');
+	assert.match(url, /^\/api\/download\?/);
+	const params = new URLSearchParams(url.slice(url.indexOf('?') + 1));
+	assert.equal(params.get('blobId'), 'B123');
+	assert.equal(params.get('name'), 'Q2 report (final) & notes.pdf');
+	assert.equal(params.get('type'), 'application/pdf');
 });

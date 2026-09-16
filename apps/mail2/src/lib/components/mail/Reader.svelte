@@ -4,7 +4,7 @@
 	import { renderMessageBody } from '#lib/email/html';
 	import type { MessageDetail } from '@zaur/mail-core';
 	import EmailHtmlFrame from './EmailHtmlFrame.svelte';
-	import { formatBytes, formatReaderTime, typeBadge, initials } from '#lib/mail/rows';
+	import { attachmentUrl, formatBytes, formatReaderTime, typeBadge, initials } from '#lib/mail/rows';
 	import { attachmentBadge, getHobdayTheme, HOBDAY_THEMES } from '#lib/mail/colors';
 	import ActionIcon from './ActionIcon.svelte';
 	import type { BulkAction } from '../../../routes/mail.remote';
@@ -400,9 +400,13 @@
 						<div class="flex flex-wrap gap-2.5">
 							{#each rendered.attachments as attachment (attachment.blobId)}
 								{@const badge = attachmentBadge(attachment.type)}
-								<div
-									class="flex h-11 items-center gap-3 rounded-[8px] border border-[#cbd5e1] bg-white px-3 shadow-2xs"
-									title={attachment.name}
+								<!-- A chip is a download again; `download` keeps the browser from
+								     navigating to something it thinks it can render. -->
+								<a
+									href={attachmentUrl(attachment.blobId, attachment.name, attachment.type)}
+									download={attachment.name}
+									class="flex h-11 items-center gap-3 rounded-[8px] border border-[#cbd5e1] bg-white px-3 shadow-2xs transition-[border-color,box-shadow] hover:border-slate-400 hover:shadow-xs focus-visible:border-slate-400"
+									title="Download {attachment.name}"
 								>
 									<span
 										class="flex size-6 items-center justify-center rounded-[4px] text-[10px] font-bold uppercase"
@@ -414,7 +418,7 @@
 									</span>
 									<span class="max-w-44 truncate text-[13px] font-medium text-slate-800">{attachment.name}</span>
 									<span class="text-xs text-slate-400 tabular-nums font-medium">{formatBytes(attachment.size)}</span>
-								</div>
+								</a>
 							{/each}
 						</div>
 					</div>

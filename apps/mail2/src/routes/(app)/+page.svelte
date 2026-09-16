@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
 	import { whoami } from '../session.remote';
-	import { mailboxes, threads, thread, quota, bulk, type BulkAction } from '../mail.remote';
+	import { mailboxes, threads, thread, quota, bulk, type BulkAction,
+		search as searchRemote
+	} from '../mail.remote';
 	import {
 		send as sendRemote,
 		cancelScheduled,
@@ -20,6 +22,7 @@
 	import Toasts from '#lib/components/compose/Toasts.svelte';
 	import { buildRowGroups, selectedEmailIds } from '#lib/mail/rows';
 	import { readerThread } from '#lib/mail/reader-thread.svelte.ts';
+	import { LiveUpdates } from '#lib/mail/live';
 	import { prefs, setPref, LIST_MIN, LIST_MAX, DEFAULT_PREFS } from '#lib/settings.svelte.ts';
 	import { openingPosition, type AnchorRect } from '#lib/compose/layout';
 	import { draftSeed } from '#lib/compose/quote';
@@ -29,6 +32,9 @@
 	import type { MessageDetail } from '@zaur/mail-core';
 
 	let selectedMailboxId = $state<string | null>(null);
+	/** '' means "showing a folder"; anything else means the list shows results. */
+	let searchQuery = $state('');
+	let topBar = $state<ReturnType<typeof TopBar> | null>(null);
 	let unseenOnly = $state(prefs.unseenByDefault);
 	let cursorId = $state<string | null>(null);
 	let selection = $state<Set<string>>(new Set());
@@ -55,6 +61,19 @@
 		reader.close();
 		cursorId = null;
 		selection = new Set();
+		// A folder you picked is a folder you want to see, not results filtered by it.
+		searchQuery = '';
+	}
+
+	function runSearch(next: string) {
+		if (next === searchQuery) {
+			void searchResource?.refresh();
+			return;
+		}
+		searchQuery = next;
+		cursorId = null;
+		selection = new Set();
+		reader.close();
 	}
 
 	const session = $derived(whoami()?.current ?? null);
@@ -92,18 +111,37 @@
 		selectMailbox(mailboxList[(currentIndex + delta + mailboxList.length) % mailboxList.length]!.id);
 	}
 
+	const searching = $derived(searchQuery.trim().length > 0);
+
 	const threadsResource = $derived(
-		session && activeMailbox
+		session && activeMailbox && !searching
 			? threads({ mailboxId: activeMailbox.id, unseenOnly, limit: prefs.pageSize })
 			: undefined
 	);
+
+	/**
+	 * Search is scoped to the open folder, which is what the placeholder says and
+	 * what makes the results openable by the same code path as a folder row.
+	 */
+	const searchResource = $derived(
+		session && searching
+			? searchRemote({
+					query: searchQuery,
+					mailboxId: activeMailbox?.id,
+					limit: prefs.pageSize
+				})
+			: undefined
+	);
+
+	/** Whichever of the two is driving the list right now. */
+	const listResource = $derived(searching ? searchResource : threadsResource);
 	const threadResource = $derived(
 		session && openThreadId ? thread({ threadId: openThreadId }) : undefined
 	);
 	const quotaResource = $derived(session ? quota() : undefined);
 
 	const rowGroups = $derived.by(() => {
-		const rows = threadsResource?.current?.rows;
+		const rows = listResource?.current?.rows;
 		if (!rows || !activeMailbox) return undefined;
 		const isMe = (email: string) => myEmails.has(email.trim().toLowerCase());
 		return buildRowGroups(rows, activeMailbox.kind, isMe);
@@ -116,7 +154,7 @@
 
 	function afterMailMutation() {
 		void mailboxesResource?.refresh();
-		if (activeMailbox?.kind === 'drafts') void threadsResource?.refresh();
+		if (activeMailbox?.kind === 'drafts') void listResource?.refresh();
 	}
 
 	compose.setTransport({
@@ -161,7 +199,7 @@
 	});
 
 	$effect(() => {
-		const rows = threadsResource?.current?.rows;
+		const rows = listResource?.current?.rows;
 		if (!rows) return;
 		const seen = new Set<string>();
 		const contacts: ComposeContact[] = [];
@@ -176,11 +214,27 @@
 		compose.setContacts(contacts);
 	});
 
+	/**
+	 * Push: Stalwart tells us what changed, we re-run the queries that cover it.
+	 * The thread in the reader is deliberately not refreshed on every Email
+	 * change — the pane you are reading should not reflow under you — but a
+	 * mailbox you are looking at should show mail as it lands.
+	 */
+	$effect(() => {
+		if (!session) return;
+		const live = new LiveUpdates();
+		live.start(({ email, mailbox }) => {
+			if (email) void listResource?.refresh();
+			if (mailbox) void mailboxesResource?.refresh();
+		});
+		return () => live.stop();
+	});
+
 	$effect(() => {
 		if (!session) return;
 		const drain = () =>
 			void compose.drainOutbox().then((sent) => {
-				if (sent > 0) threadsResource?.refresh();
+				if (sent > 0) listResource?.refresh();
 			});
 		void drain();
 		window.addEventListener('online', drain);
@@ -245,16 +299,16 @@
 		);
 	}
 
-	const selectedIds = $derived(selectedEmailIds(threadsResource?.current?.rows, selection));
+	const selectedIds = $derived(selectedEmailIds(listResource?.current?.rows, selection));
 
 	function markThreadRead(threadId: string) {
-		const ids = selectedEmailIds(threadsResource?.current?.rows, new Set([threadId])).filter(
-			(id) => threadsResource?.current?.rows.find((row) => row.id === id)?.unread
+		const ids = selectedEmailIds(listResource?.current?.rows, new Set([threadId])).filter(
+			(id) => listResource?.current?.rows.find((row) => row.id === id)?.unread
 		);
 		if (ids.length === 0) return;
 		return bulk({ action: 'read', emailIds: ids })
 			.then(() => {
-				void threadsResource?.refresh();
+				void listResource?.refresh();
 				void mailboxesResource?.refresh();
 			})
 			.catch(() => {});
@@ -271,7 +325,7 @@
 	async function runBulk(action: BulkAction, mailboxId?: string, threadIds?: string[]) {
 		const scope = threadIds ? new Set(threadIds) : selection;
 		const emailIds = threadIds
-			? selectedEmailIds(threadsResource?.current?.rows, scope)
+			? selectedEmailIds(listResource?.current?.rows, scope)
 			: selectedIds;
 		if (emailIds.length === 0 || bulkBusy) return;
 		let payload = { action, emailIds, mailboxId, sourceMailboxId: activeMailbox?.id };
@@ -288,7 +342,7 @@
 			// A thread that just left the folder can't stay open in the reader.
 			if (leavesFolder && openThreadId && scope.has(openThreadId)) reader.close();
 			if (!threadIds) selection = new Set();
-			void threadsResource?.refresh();
+			void listResource?.refresh();
 			void mailboxesResource?.refresh();
 			compose.pushToast({ text: `${count} ${count === 1 ? 'message' : 'messages'} ${verb}`, tone: 'success' });
 		} catch (cause) {
@@ -436,8 +490,13 @@
 				event.preventDefault();
 				toggleSidebar();
 				break;
+			case '/':
+				event.preventDefault();
+				topBar?.focusSearch();
+				break;
 			case 'Escape':
 				if (selection.size > 0) selection = new Set();
+				else if (searchQuery) runSearch('');
 				break;
 		}
 	}
@@ -454,6 +513,9 @@
 		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-white"
 	>
 		<TopBar
+			bind:this={topBar}
+			{searchQuery}
+			onSearch={runSearch}
 			mailboxes={mailboxList}
 			activeMailbox={activeMailbox}
 			onSelectMailbox={selectMailbox}
@@ -506,6 +568,8 @@
 
 				<MailList
 					class={openThreadId ? 'max-md:hidden' : ''}
+					{searchQuery}
+					onClearSearch={() => runSearch('')}
 					mailbox={activeMailbox}
 					mailboxes={mailboxList}
 					groups={rowGroups}
@@ -523,7 +587,7 @@
 					onOpen={(threadId) => void openRow(threadId)}
 					onBulk={(action, mailboxId, threadIds) => void runBulk(action, mailboxId, threadIds)}
 					busy={bulkBusy}
-					onRetry={() => threadsResource?.refresh()}
+					onRetry={() => listResource?.refresh()}
 					onNewMessage={(anchor) => openCompose(anchor)}
 				/>
 

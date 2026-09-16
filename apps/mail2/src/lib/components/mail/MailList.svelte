@@ -6,6 +6,7 @@
 	import type { BulkAction } from '../../../routes/mail.remote';
 	import { formatListTime } from '#lib/mail/rows';
 	import { getHobdayTheme } from '#lib/mail/colors';
+	import { searchOperatorHint } from '@zaur/mail-core';
 	import ActionIcon from './ActionIcon.svelte';
 	import { prefs } from '#lib/settings.svelte.ts';
 
@@ -21,6 +22,9 @@
 		cursorId: string | null;
 		selection: Set<string>;
 		onToggleUnseenOnly: (value: boolean) => void;
+		/** Non-empty while the list is showing results rather than a folder. */
+		searchQuery?: string;
+		onClearSearch?: () => void;
 		onSetSelection: (ids: Set<string>) => void;
 		onToggleSelect: (threadId: string) => void;
 		onOpen: (threadId: string) => void;
@@ -41,6 +45,8 @@
 		unseenOnly,
 		cursorId,
 		selection,
+		searchQuery = '',
+		onClearSearch,
 		onToggleUnseenOnly,
 		onSetSelection,
 		onToggleSelect,
@@ -248,6 +254,33 @@
 						</Portal>
 					</Menu.Root>
 				{/if}
+			{:else if searchQuery}
+				<!--
+					Unseen does not scope a search — the query does — so showing the
+					filter here would be a control that lies. The query takes its place.
+				-->
+				<div
+					class="flex min-w-0 items-center gap-1.5 rounded-[6px] border border-[#cbd5e1] bg-white py-0.5 pr-0.5 pl-2 shadow-2xs"
+				>
+					<svg class="size-3.5 shrink-0 text-slate-400" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
+						<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+					</svg>
+					<span class="min-w-0 truncate text-xs font-semibold text-slate-900">{searchQuery}</span>
+					{#if onClearSearch}
+						<button
+							type="button"
+							class="flex size-6 shrink-0 items-center justify-center rounded-[4px] text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+							aria-label="Clear search"
+							title="Clear search (esc)"
+							onclick={onClearSearch}
+						>
+							<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+								<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+							</svg>
+						</button>
+					{/if}
+				</div>
 			{:else}
 				<!-- Filter segmented control: All | Unseen -->
 				<div class="flex items-center rounded-[6px] border border-[#cbd5e1] bg-white p-0.5 shadow-2xs" role="group" aria-label="Filter">
@@ -300,7 +333,12 @@
 				{#if flatRows.length > 0}
 					<!-- Rows are threads, and one of them now says how many messages it holds. -->
 					<span class="text-xs font-medium text-slate-400 tabular-nums @max-[430px]:hidden">
-						{flatRows.length} {flatRows.length === 1 ? 'conversation' : 'conversations'}
+						{flatRows.length}
+						{#if searchQuery}
+							{flatRows.length === 1 ? 'result' : 'results'}
+						{:else}
+							{flatRows.length === 1 ? 'conversation' : 'conversations'}
+						{/if}
 					</span>
 				{/if}
 				<button
@@ -353,6 +391,30 @@
 						</div>
 					</div>
 				{/each}
+			</div>
+		{:else if groups && groups.length === 0 && searchQuery}
+			<!-- No results is a different empty than an empty folder, and the useful
+			     thing to offer is what the query language can do. -->
+			<div class="flex min-h-[320px] flex-col items-center justify-center gap-1 px-4 text-center">
+				<div class="mb-2 flex size-10 items-center justify-center rounded-full bg-slate-100 text-slate-500">
+					<svg class="size-5" viewBox="0 0 16 16" fill="none">
+						<circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.4" />
+						<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+					</svg>
+				</div>
+				<p class="text-sm font-semibold text-slate-800">No matches</p>
+				<p class="max-w-[340px] text-[13px] leading-relaxed text-slate-500">
+					Nothing in {mailbox?.name ?? 'this folder'} matches
+					<span class="font-medium text-slate-700">{searchQuery}</span>.
+				</p>
+				<p class="z-caption mt-3 max-w-[340px] leading-relaxed normal-case">
+					{searchOperatorHint()}
+				</p>
+				{#if onClearSearch}
+					<button type="button" class="btn-tactile mt-3" onclick={onClearSearch}>
+						Clear search
+					</button>
+				{/if}
 			</div>
 		{:else if groups && groups.length === 0}
 			<div class="flex min-h-[320px] flex-col items-center justify-center gap-1 text-center">

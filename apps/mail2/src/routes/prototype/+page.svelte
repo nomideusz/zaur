@@ -21,6 +21,8 @@
 	let drawerOpen = $state(false);
 	let selectedMailboxId = $state<string>('inbox');
 	let unseenOnly = $state(false);
+	let searchQuery = $state('');
+	let topBar = $state<ReturnType<typeof TopBar> | null>(null);
 	const reader = readerThread('t1');
 	const openThreadId = $derived(reader.id);
 	let cursorId = $state<string | null>('t1');
@@ -224,9 +226,17 @@
 		]
 	};
 
-	const filteredPreviews = $derived(
-		unseenOnly ? mockMessagesPreview.filter((m) => m.unread) : mockMessagesPreview
-	);
+	// Search on the reference page is a naive contains — enough to drive the UI
+	// without a server. The real thing parses operators in @zaur/mail-core.
+	const filteredPreviews = $derived.by(() => {
+		const q = searchQuery.trim().toLowerCase();
+		if (q) {
+			return mockMessagesPreview.filter((m) =>
+				`${m.from.name} ${m.from.email} ${m.subject} ${m.preview}`.toLowerCase().includes(q)
+			);
+		}
+		return unseenOnly ? mockMessagesPreview.filter((m) => m.unread) : mockMessagesPreview;
+	});
 
 	const rowGroups = $derived(
 		buildRowGroups(filteredPreviews, activeMailbox.kind, (email) => email === 'you@zaur.app')
@@ -296,6 +306,12 @@
 		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-white"
 	>
 		<TopBar
+			bind:this={topBar}
+			{searchQuery}
+			onSearch={(next) => {
+				searchQuery = next;
+				cursorId = null;
+			}}
 			mailboxes={mockMailboxes}
 			{activeMailbox}
 			onSelectMailbox={(id) => {
@@ -347,6 +363,8 @@
 				mailbox={activeMailbox}
 				mailboxes={mockMailboxes}
 				groups={rowGroups}
+				{searchQuery}
+				onClearSearch={() => (searchQuery = '')}
 				onBulk={() => {}}
 				loading={false}
 				error={null}

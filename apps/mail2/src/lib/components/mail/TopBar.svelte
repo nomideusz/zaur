@@ -17,6 +17,9 @@
 		onToggleSidebar?: () => void;
 		onPrevMailbox?: () => void;
 		onNextMailbox?: () => void;
+		/** The committed search, owned by the page; '' means "showing a folder". */
+		searchQuery?: string;
+		onSearch?: (query: string) => void;
 	}
 
 	let {
@@ -28,8 +31,51 @@
 		sidebarOpen = true,
 		onToggleSidebar,
 		onPrevMailbox,
-		onNextMailbox
+		onNextMailbox,
+		searchQuery = '',
+		onSearch
 	}: Props = $props();
+
+	let searchEl = $state<HTMLInputElement | null>(null);
+	/** What is typed, which is only the committed query once Enter says so. */
+	let draft = $state('');
+	/** Phone: the field takes the folder switcher's place rather than crowding it. */
+	let phoneSearchOpen = $state(false);
+
+	// A search cleared from outside (Escape in the list, a folder switch) has to
+	// empty the field too, or the next Enter would re-run a query that is gone.
+	$effect(() => {
+		if (!searchQuery) draft = '';
+		else draft = searchQuery;
+	});
+
+	export function focusSearch() {
+		phoneSearchOpen = true;
+		// The field may be mounting this tick on a phone.
+		queueMicrotask(() => searchEl?.focus());
+	}
+
+	function commit() {
+		onSearch?.(draft.trim());
+	}
+
+	function clear() {
+		draft = '';
+		onSearch?.('');
+		phoneSearchOpen = false;
+	}
+
+	function onSearchKeydown(event: KeyboardEvent) {
+		if (event.key === 'Enter') {
+			event.preventDefault();
+			commit();
+		} else if (event.key === 'Escape') {
+			event.preventDefault();
+			if (draft || searchQuery) clear();
+			else phoneSearchOpen = false;
+			searchEl?.blur();
+		}
+	}
 
 	const initialsOf = (name: string, email: string) => {
 		const source = name.trim() || email.trim();
@@ -53,10 +99,10 @@
 </script>
 
 <header
-	class="flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-[#cbd5e1] bg-white px-4 select-none max-md:gap-2 max-md:px-2.5"
+	class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[#cbd5e1] bg-white px-4 select-none max-md:gap-2 max-md:px-2.5"
 >
 	<!-- Left: Window controls + Sidebar toggle + Segmented mailbox selector -->
-	<div class="flex min-w-0 items-center gap-3 max-md:gap-2">
+	<div class="flex min-w-0 shrink-0 items-center gap-3 max-md:gap-2">
 		<!-- Zaur pixel mark: the brand, doubling as an ambient mailbox indicator -->
 		<ZaurMark unread={activeMailbox?.unread ?? 0} />
 
@@ -79,7 +125,11 @@
 
 		<!-- Folder switcher: the inspiration's date-switcher vocabulary — tactile arrow
 		     buttons around a fixed-width grey label that stays put while browsing. -->
-		<div class="flex min-w-0 shrink-0 items-center rounded-[6px] border border-[#cbd5e1] bg-white shadow-2xs">
+		<div
+			class="flex min-w-0 shrink-0 items-center rounded-[6px] border border-[#cbd5e1] bg-white shadow-2xs {phoneSearchOpen
+				? 'max-md:hidden'
+				: ''}"
+		>
 			{#if onPrevMailbox}
 				<button
 					type="button"
@@ -158,8 +208,70 @@
 		</div>
 	</div>
 
+	<!--
+		Search. The top bar used to carry an input with no handler at all, which
+		is why the redesign took it out; this is the same slot, wired. Enter
+		commits — a mail search runs over the whole account, and `from:ada` means
+		nothing half-typed — and Escape clears back to the folder.
+	-->
+	{#if onSearch}
+		<div
+			class="flex min-w-0 flex-1 items-center justify-center px-2 {phoneSearchOpen
+				? ''
+				: 'max-md:hidden'}"
+		>
+			<div class="relative flex w-full max-w-[420px] items-center">
+				<svg
+					class="pointer-events-none absolute left-2.5 size-3.5 text-slate-400"
+					viewBox="0 0 16 16"
+					fill="none"
+					aria-hidden="true"
+				>
+					<circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
+					<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+				</svg>
+				<input
+					bind:this={searchEl}
+					bind:value={draft}
+					type="search"
+					aria-label="Search mail"
+					placeholder={activeMailbox ? `Search ${activeMailbox.name}…` : 'Search mail…'}
+					class="h-[30px] w-full rounded-[6px] border border-[#cbd5e1] bg-white pr-7 pl-8 text-[13px] text-slate-900 shadow-2xs placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none max-md:text-base"
+					onkeydown={onSearchKeydown}
+				/>
+				{#if draft || searchQuery}
+					<button
+						type="button"
+						class="absolute right-1 flex size-6 items-center justify-center rounded-[4px] text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
+						aria-label="Clear search"
+						title="Clear search (esc)"
+						onclick={clear}
+					>
+						<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+						</svg>
+					</button>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
 	<!-- Right: Section tabs + account -->
 	<div class="ml-auto flex items-center gap-2.5">
+		{#if onSearch && !phoneSearchOpen}
+			<!-- Phone: the field swaps in for the folder switcher instead of joining it. -->
+			<button
+				type="button"
+				class="btn-tactile !size-9 !p-0 md:hidden"
+				aria-label="Search mail"
+				onclick={focusSearch}
+			>
+				<svg class="size-4 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
+					<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+				</svg>
+			</button>
+		{/if}
 		<!-- Section Tabs -->
 		<nav class="hidden sm:flex items-center rounded-[6px] border border-[#cbd5e1] bg-white p-0.5 shadow-2xs" aria-label="Sections">
 			<button

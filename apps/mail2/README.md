@@ -15,7 +15,12 @@ theme only** for now; Files and Meet arrive when their designs land.
 - [x] Settings page (`/settings`) + bulk selection actions
 - [x] Phone and tablet layouts (ADR-0005 put the phone pass after the cutover;
   it turned out to be mostly CSS, so it landed early)
-- [ ] Search via remote functions
+- [x] Live updates — JMAP push (`/api/events`), with polling as the net
+- [x] Search via remote functions (`from:` / `subject:` / `has:attachment` / …)
+- [x] Attachment downloads (`/api/download`)
+- [ ] Server-side rules (JMAP Sieve) — see "What is still missing"
+- [ ] Settings that follow the account rather than the browser
+- [ ] Security settings (2FA, app passwords, sessions)
 - [ ] Calendar / Contacts (port from 1.0)
 - [ ] OIDC provider flows (mail2 as an identity provider)
 - [ ] Cutover checklist green
@@ -193,7 +198,10 @@ mockup affordances across from the Hobday prototype; they are gone:
 | Profile "Keyboard shortcuts" | inert menu item |
 
 Attachment chips stay — they list real attachments from the message; they just
-no longer style themselves as clickable, because downloads are not wired yet.
+are downloads: `/api/download` streams the blob through the server, mirroring
+`/api/upload`, because Stalwart's `downloadUrl` wants credentials that stay
+there. The filename goes out in both the RFC 5987 `filename*` form and a
+stripped plain one, so a name with an em dash in it survives.
 
 `/prototype` is still the fake-data design reference (and the only page that
 renders the shell without a session, which is what makes it useful for visual
@@ -412,14 +420,67 @@ contract with `computeAutoHeight`.
   status line — capped at `PANEL_MAX_W`, and the message box flexes to fill
   the extra height instead of stopping at a fixed step.
 
-## No refresh, no sync clock
+## Live updates
 
-JMAP is live, so there is nothing to refresh by hand: the message list header
-carries the **New message** `+` where a Refresh button used to sit (it is the
-compose anchor, `[data-new-message]`), and the status line has no "Synced HH:MM".
-`ThreadListDTO` no longer carries `syncedAt`. The Retry buttons on the list and
-reader error states stay — those recover a failed load, which is a different
-thing.
+There is no Refresh button — the message list header carries the **New message**
+`+` where one used to sit (it is the compose anchor, `[data-new-message]`), the
+status line has no "Synced HH:MM", and `ThreadListDTO` carries no `syncedAt`.
+
+That was justified here for a long time with "JMAP is live, so there is nothing
+to refresh by hand", **which was not true of this app**: mail2 subscribed to
+nothing. There was no push, no polling and no manual refresh, so new mail only
+appeared if you switched folders or reloaded. The claim describes the protocol,
+not what was built on it. It is true now:
+
+- **`/api/events`** proxies Stalwart's `eventSourceUrl` (RFC 8620 §7.3). It has
+  to be proxied: the stream needs the account's credentials, `EventSource` has
+  no header API, and the tokens should never reach the browser anyway. A stream
+  is also not remote-function state — `query`/`command` are request/response,
+  and this one stays open for hours — so it is a plain endpoint.
+- **`#lib/mail/live`** listens, and says only *what* changed. The page re-runs
+  the remote queries that cover it: `Email` refreshes the thread list, and the
+  folder list with it, because unread counts move with mail whether or not
+  Stalwart bumps `Mailbox` too. The open thread is deliberately **not**
+  refreshed — a message you are reading should not reflow under you.
+
+It is much smaller than webmail 1.0's `PushListener` because there is no local
+database to reconcile: 1.0 diffed `Email/changes` against RxDB, a remote `query`
+just re-runs. What was worth taking from 1.0 is its robustness, and that is all
+here — a 90s stale timer (a dead stream can stop delivering without ever firing
+`error`), polling while the stream is down, capped backoff on a permanent close,
+a catch-up when the tab is shown again, and a reconnect on `online`.
+
+One thing `EventSource` cannot do is see a response status, so a deployment with
+no `eventSourceUrl` (our 501) looks exactly like a flaky one. The backoff cap is
+what stops that becoming a hot loop, and the polling fallback is what keeps such
+a deployment working. `changedTypes` is a pure function so the payload handling
+is tested rather than trusted.
+
+The Retry buttons on the list and reader error states stay — those recover a
+failed load, which is a different thing.
+
+## Search
+
+The top bar used to carry an input with no handler at all, which is why the
+redesign removed it. This is the same slot, wired: **Enter commits**, because a
+mail search runs over the whole account and `from:ada` means nothing half-typed,
+and **Escape clears** back to the folder. `/` focuses it, and on a phone the
+field swaps in for the folder switcher rather than crowding it.
+
+The query language is `parseSearchQuery` in `@zaur/mail-core` — `from:` `to:`
+`cc:` `subject:` `has:attachment` `is:unseen` `is:highlighted` `before:`
+`after:` — so a query means the same thing in 1.0 and here. It was already in
+the shared package, along with `searchEmails` on the client; it simply was not
+exported from the package index, which is the whole of what "port search" turned
+out to be.
+
+While results are showing, the list header swaps its All/Unseen control for the
+query: Unseen does not scope a search — the query does — so leaving the filter
+there would be a control that lies. Empty results are their own state, and offer
+the operator list, because "no matches" is exactly when you want to know what
+else you could have typed.
+
+Search is scoped to the open folder, which is what the placeholder says.
 
 ## The message row
 
@@ -520,6 +581,43 @@ The row's own buttons and the `s` / `e` / `#` shortcuts are the same command
 with one thread's ids: `runBulk` takes an optional `threadIds`, and only the
 selection-wide call clears the selection afterwards. A shortcut prefers the
 selection when there is one, and falls back to the row under the cursor.
+
+## What is still missing
+
+Measured against webmail 1.0 and against what Stalwart actually implements, in
+the order worth doing:
+
+1. **Server-side rules (JMAP Sieve).** Stalwart implements JMAP for Sieve and
+   **nothing in this repo has ever called `SieveScript/*`** — not mail2, not
+   1.0. Rules that live on the server keep working with no client open and apply
+   on every device, which client-side filtering cannot. There is nothing to port,
+   so this is the one place where "do it properly this time" is the whole job.
+   `design/rules-interface.png` has been waiting for it.
+2. **Settings that follow the account.** Everything is one `mail2.prefs`
+   localStorage blob, so a second device starts from defaults. 1.0 syncs through
+   `WebmailSettings/get+set` (Stalwart capability
+   `https://zaur.app/jmap/webmail-settings/v1`) and falls back to a private
+   archived message; the mechanism is worth taking.
+3. **Security settings.** 1.0 has TOTP, app passwords, API keys, active sessions
+   and password change against Stalwart's admin API. mail2 has a display name, a
+   quota and a sign-out button. 1.0 cannot be retired while 2FA management lives
+   only there.
+4. **Contacts.** Compose autocomplete scrapes senders out of whichever folder
+   page happens to be loaded, so it forgets anyone not recently in view.
+   Stalwart speaks `Principal/query` and CardDAV; a real source is a small change
+   with a daily effect.
+5. **Calendar / Contacts / Files panes.** mail-core already carries the types,
+   maps, rights and recurrence. Mostly UI, and the largest surface left.
+
+Two smaller notes:
+
+- **`Thread/get` is unused**, here and in 1.0 — threads are collapsed client-side
+  out of the mailbox page. That is exactly why a row's count chip can only
+  honestly say "messages this folder view holds".
+- **Offline reading is not planned.** 1.0 runs RxDB and Dexie over six stores;
+  mail2 has only the compose outbox, and ADR-0005 is a clean-room rebuild. If
+  reading offline is wanted, a thread cache keyed by JMAP state is the shape,
+  not a second database.
 
 ## Architecture
 

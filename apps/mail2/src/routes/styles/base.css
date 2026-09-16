@@ -30,6 +30,16 @@
 		color: inherit;
 	}
 
+	/*
+	 * `type="search"` gets the browser's own clear button, which lands next to
+	 * the one the search field draws itself — two crosses, one of them not ours.
+	 */
+	input[type='search']::-webkit-search-cancel-button,
+	input[type='search']::-webkit-search-decoration {
+		-webkit-appearance: none;
+		appearance: none;
+	}
+
 	input:focus-visible,
 	textarea:focus-visible,
 	button:focus-visible,
