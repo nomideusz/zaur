@@ -7,6 +7,7 @@ import type {
 	JMAPSession,
 	JMAPEmail,
 	JMAPQuota,
+	JMAPSieveScript,
 	JMAPVacationResponse
 } from './types';
 import { parseSearchQuery } from '../mail/search-query';
@@ -93,6 +94,10 @@ const QUOTA_URN = 'urn:ietf:params:jmap:quota';
 const QUOTA_USING = ['urn:ietf:params:jmap:core', QUOTA_URN] as const;
 const VACATION_URN = 'urn:ietf:params:jmap:vacationresponse';
 const VACATION_USING = ['urn:ietf:params:jmap:core', VACATION_URN] as const;
+const SIEVE_URN = 'urn:ietf:params:jmap:sieve';
+const SIEVE_USING = ['urn:ietf:params:jmap:core', SIEVE_URN] as const;
+/** RFC 9661 §2.2 — the media type a script blob is uploaded as. */
+const SIEVE_MEDIA_TYPE = 'application/sieve';
 
 const CALENDAR_EVENT_PROPERTIES = [
 	'id',
@@ -331,6 +336,13 @@ export class JMAPClient {
 
 	hasQuota(): boolean {
 		return !!this.session?.capabilities?.[QUOTA_URN];
+	}
+
+	hasSieve(): boolean {
+		// Same shape as vacation: Stalwart can gate the account-level entry on
+		// per-account permissions, so a session-level miss is not a no.
+		if (this.session?.capabilities?.[SIEVE_URN]) return true;
+		return !!this.session?.accounts?.[this.accountId]?.accountCapabilities?.[SIEVE_URN];
 	}
 
 	hasVacationResponse(): boolean {
@@ -1262,6 +1274,130 @@ export class JMAPClient {
 		const rejection = result.notUpdated?.singleton;
 		if (rejection) {
 			throw new Error(rejection.description ?? rejection.type ?? 'Vacation response rejected');
+		}
+	}
+
+	/**
+	 * Sieve scripts on the account (RFC 9661). Metadata only — the script body
+	 * is a blob, which `getSieveScriptSource` fetches.
+	 */
+	async getSieveScripts(): Promise<JMAPSieveScript[]> {
+		if (!this.hasSieve()) return [];
+		const response = await this.request(
+			[['SieveScript/get', { accountId: this.accountId, ids: null }, 's']],
+			[...SIEVE_USING]
+		);
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'SieveScript/get') {
+			const error = first?.[1] as { type?: string; description?: string } | undefined;
+			throw new Error(error?.description ?? error?.type ?? 'SieveScript/get failed');
+		}
+		return ((first[1].list as JMAPSieveScript[]) ?? []).filter(Boolean);
+	}
+
+	async getSieveScriptSource(blobId: string): Promise<string> {
+		const response = await this.downloadBlob(blobId, 'script.sieve', SIEVE_MEDIA_TYPE);
+		if (!response.ok) throw new Error(`Could not download the script (${response.status})`);
+		return response.text();
+	}
+
+	/**
+	 * Store a script and make it the active one.
+	 *
+	 * RFC 9661 has no inline content: the body is uploaded as a blob first, then
+	 * referenced by id. It is validated before it is stored, because a script
+	 * the server accepts but cannot run would silently stop filtering mail —
+	 * `SieveScript/validate` is the only way to find out without risking that.
+	 *
+	 * `onSuccessActivateScript` activates it in the same call, so there is no
+	 * window where the rules exist but nothing is filtering.
+	 */
+	async saveSieveScript(input: {
+		/** Omit to create; pass an existing id to replace that script's content. */
+		id?: string;
+		name: string;
+		source: string;
+	}): Promise<string> {
+		if (!this.hasSieve()) {
+			throw new Error('This server does not support mail rules');
+		}
+
+		const { blobId } = await this.uploadBlob(
+			new TextEncoder().encode(input.source).buffer as ArrayBuffer,
+			SIEVE_MEDIA_TYPE
+		);
+
+		const invalid = await this.validateSieveScript(blobId);
+		if (invalid) throw new Error(invalid);
+
+		const creationId = 'script';
+		const call = input.id
+			? { accountId: this.accountId, update: { [input.id]: { blobId } } }
+			: {
+					accountId: this.accountId,
+					create: { [creationId]: { name: input.name, blobId } }
+				};
+
+		const response = await this.request(
+			[
+				[
+					'SieveScript/set',
+					{ ...call, onSuccessActivateScript: input.id ?? `#${creationId}` },
+					's'
+				]
+			],
+			[...SIEVE_USING]
+		);
+
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'SieveScript/set') {
+			const error = first?.[1] as { type?: string; description?: string } | undefined;
+			throw new Error(error?.description ?? error?.type ?? 'SieveScript/set failed');
+		}
+		const result = first[1] as {
+			created?: Record<string, { id?: string }>;
+			notCreated?: Record<string, { type?: string; description?: string }>;
+			notUpdated?: Record<string, { type?: string; description?: string }>;
+		};
+		const rejection =
+			result.notCreated?.[creationId] ?? (input.id ? result.notUpdated?.[input.id] : undefined);
+		if (rejection) {
+			throw new Error(rejection.description ?? rejection.type ?? 'The server rejected the rules');
+		}
+		return input.id ?? result.created?.[creationId]?.id ?? '';
+	}
+
+	/** `null` when the script is valid; otherwise why it is not. */
+	async validateSieveScript(blobId: string): Promise<string | null> {
+		const response = await this.request(
+			[['SieveScript/validate', { accountId: this.accountId, blobId }, 'v']],
+			[...SIEVE_USING]
+		);
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'SieveScript/validate') {
+			const error = first?.[1] as { type?: string; description?: string } | undefined;
+			throw new Error(error?.description ?? error?.type ?? 'SieveScript/validate failed');
+		}
+		const error = (first[1] as { error?: { type?: string; description?: string } | null }).error;
+		if (!error) return null;
+		return error.description ?? error.type ?? 'The script is not valid Sieve';
+	}
+
+	async destroySieveScript(id: string): Promise<void> {
+		const response = await this.request(
+			[['SieveScript/set', { accountId: this.accountId, destroy: [id] }, 's']],
+			[...SIEVE_USING]
+		);
+		const first = response.methodResponses?.[0];
+		if (first?.[0] !== 'SieveScript/set') {
+			const error = first?.[1] as { type?: string; description?: string } | undefined;
+			throw new Error(error?.description ?? error?.type ?? 'SieveScript/set failed');
+		}
+		const rejection = (
+			first[1] as { notDestroyed?: Record<string, { type?: string; description?: string }> }
+		).notDestroyed?.[id];
+		if (rejection) {
+			throw new Error(rejection.description ?? rejection.type ?? 'Could not delete the script');
 		}
 	}
 

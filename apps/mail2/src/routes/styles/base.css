@@ -176,6 +176,38 @@
 	}
 
 	/*
+	 * The shell's text input and select: the same 30px bordered control the
+	 * settings page and the rules editor both need, with the blue focus ring
+	 * the README promises. `.btn-tactile`'s quieter sibling.
+	 */
+	.z-field {
+		height: 30px;
+		border-radius: 6px;
+		border: 1px solid #cbd5e1;
+		background: #ffffff;
+		padding: 0 8px;
+		font-size: 13px;
+		color: #0f172a;
+		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+		transition: border-color 120ms ease;
+	}
+
+	.z-field::placeholder {
+		color: #94a3b8;
+	}
+
+	.z-field:focus {
+		border-color: #3b82f6;
+		outline: none;
+		box-shadow: 0 0 0 1px #3b82f6;
+	}
+
+	.z-field:disabled {
+		background: #f8fafc;
+		color: #94a3b8;
+	}
+
+	/*
 	 * The sender's rail — an accent bar in that person's Hobday hue, taken from
 	 * `--z-rail`. A list row, the reader's sender card and each earlier
 	 * message in a thread all wear it: it is what carries "the same person is

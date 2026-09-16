@@ -23,7 +23,15 @@
 	import { buildRowGroups, selectedEmailIds } from '#lib/mail/rows';
 	import { readerThread } from '#lib/mail/reader-thread.svelte.ts';
 	import { LiveUpdates } from '#lib/mail/live';
-	import { prefs, setPref, LIST_MIN, LIST_MAX, DEFAULT_PREFS } from '#lib/settings.svelte.ts';
+	import {
+		prefs,
+		setPref,
+		adoptAccountPrefs,
+		LIST_MIN,
+		LIST_MAX,
+		DEFAULT_PREFS
+	} from '#lib/settings.svelte.ts';
+	import { accountPrefs, setAccountPrefs } from '../settings.remote';
 	import { openingPosition, type AnchorRect } from '#lib/compose/layout';
 	import { draftSeed } from '#lib/compose/quote';
 	import { compose } from '#lib/compose/store.svelte.ts';
@@ -139,6 +147,22 @@
 		session && openThreadId ? thread({ threadId: openThreadId }) : undefined
 	);
 	const quotaResource = $derived(session ? quota() : undefined);
+	const accountPrefsResource = $derived(session ? accountPrefs() : undefined);
+
+	/**
+	 * Preferences that belong to the account, adopted once its copy arrives.
+	 * `listWidth` and `sidebarOpen` stay on the device on purpose — see
+	 * `ACCOUNT_PREF_KEYS`.
+	 */
+	$effect(() => {
+		if (!session || accountPrefsResource?.loading !== false) return;
+		adoptAccountPrefs(accountPrefsResource.current ?? null, (changed) => {
+			void setAccountPrefs(changed).catch(() => {
+				// A preference that failed to travel is not worth interrupting for;
+				// it is still correct on this device and will go up on the next change.
+			});
+		});
+	});
 
 	const rowGroups = $derived.by(() => {
 		const rows = listResource?.current?.rows;

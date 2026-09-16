@@ -1,7 +1,15 @@
 import { error } from '@sveltejs/kit';
 import { query, command, getRequestEvent } from '$app/server';
-import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
+import {
+	accountKey,
+	getAccountPrefs,
+	getActiveAccount,
+	getStoreDb,
+	putAccountPrefs,
+	readSessionFull
+} from '@zaur/server-auth';
 import { createConnectedClient } from '#lib/server/jmap';
+import { ACCOUNT_PREF_KEYS, DEFAULT_PREFS, type AccountPrefs } from '#lib/settings';
 
 function schema<T>() {
 	return {
@@ -27,6 +35,61 @@ async function connect() {
 		throw cause;
 	}
 }
+
+function requireAccountKey(): string {
+	const { cookies } = getRequestEvent();
+	const session = readSessionFull(cookies);
+	const account = session ? getActiveAccount(session) : undefined;
+	if (!account) error(401, 'Unauthorized');
+	return accountKey(account.username);
+}
+
+/**
+ * Only the four keys that belong to the account are ever accepted, whatever a
+ * client sends — a device-shaped preference stored per account is worse than
+ * one stored per device, and this is the boundary that enforces it.
+ */
+function sanitize(input: unknown): Partial<AccountPrefs> {
+	if (!input || typeof input !== 'object') return {};
+	const source = input as Record<string, unknown>;
+	const clean: Record<string, unknown> = {};
+	for (const key of ACCOUNT_PREF_KEYS) {
+		const value = source[key];
+		if (typeof value === typeof DEFAULT_PREFS[key]) clean[key] = value;
+	}
+	return clean as Partial<AccountPrefs>;
+}
+
+/** The account's own copy of the prefs that travel. `null` before it has any. */
+export const accountPrefs = query(async (): Promise<Partial<AccountPrefs> | null> => {
+	const key = requireAccountKey();
+	const raw = getAccountPrefs(getStoreDb(), key);
+	if (!raw) return null;
+	try {
+		return sanitize(JSON.parse(raw));
+	} catch {
+		// Someone's row is corrupt; defaults beat an error page in settings.
+		return null;
+	}
+});
+
+export const setAccountPrefs = command(
+	schema<Partial<AccountPrefs>>(),
+	async (input): Promise<void> => {
+		const key = requireAccountKey();
+		const clean = sanitize(input);
+		const existing = getAccountPrefs(getStoreDb(), key);
+		let merged = clean;
+		if (existing) {
+			try {
+				merged = { ...sanitize(JSON.parse(existing)), ...clean };
+			} catch {
+				// keep `clean`
+			}
+		}
+		putAccountPrefs(getStoreDb(), key, JSON.stringify(merged));
+	}
+);
 
 export type IdentityDTO = { id: string; email: string; name: string };
 

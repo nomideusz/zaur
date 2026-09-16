@@ -18,8 +18,8 @@ theme only** for now; Files and Meet arrive when their designs land.
 - [x] Live updates — JMAP push (`/api/events`), with polling as the net
 - [x] Search via remote functions (`from:` / `subject:` / `has:attachment` / …)
 - [x] Attachment downloads (`/api/download`)
-- [ ] Server-side rules (JMAP Sieve) — see "What is still missing"
-- [ ] Settings that follow the account rather than the browser
+- [x] Server-side rules (JMAP Sieve) — **not yet run against a live server**
+- [x] Settings that follow the account rather than the browser
 - [ ] Security settings (2FA, app passwords, sessions)
 - [ ] Calendar / Contacts (port from 1.0)
 - [ ] OIDC provider flows (mail2 as an identity provider)
@@ -582,31 +582,114 @@ with one thread's ids: `runBulk` takes an optional `threadIds`, and only the
 selection-wide call clears the selection afterwards. A shortcut prefers the
 selection when there is one, and falls back to the row under the cursor.
 
+## Rules
+
+Rules run on the **server**, through JMAP for Sieve (RFC 9661). That is the
+whole point of them: a rule that lives in a browser tab only sorts mail while
+that tab is open, on that one device. Nothing in this repo had ever called
+`SieveScript/*` — not mail2, not 1.0 — so there was nothing to port and the
+shape was ours to choose.
+
+**The awkward part is that RFC 9661 stores a script, not rules.** There is no
+structured rule object on the wire; a script is raw octets, uploaded as a blob
+and referenced by id (§2.2 — there is no inline `content` property). Sieve is
+also a real language with control flow, so parsing an arbitrary script back
+into an editor is not something to attempt.
+
+So the rules are the source of truth and the script is generated from them,
+with the rules themselves carried as JSON in a marker comment on the first
+line. `buildRuleScript` and `parseRuleScript` in `@zaur/mail-core` are a pair,
+and the round trip is exact — a rule goes out and comes back identical, which
+is the property the tests pin hardest.
+
+A script **without** that marker was written by hand or by another client.
+`parseRuleScript` reports `managed: false`, the editor shows the script
+read-only, and saving is refused until the person explicitly says to replace
+it. Silently overwriting someone's own Sieve would be the worst thing this
+feature could do.
+
+The details that are easy to get wrong, and are tested:
+
+- **`require` lists only what is used.** `fileinto` and `imap4flags` earn their
+  place; `discard` and `stop` are core Sieve and requiring them would be wrong.
+- **Flags are emitted before `fileinto`.** `imap4flags` applies to whatever
+  keeps the message next, so a flag set afterwards lands on nothing.
+- **Escaping happens twice for `:matches`.** A user's own `*` has to be escaped
+  to stay literal, and the backslash that escapes it then has to survive Sieve's
+  quoted-string escaping too.
+- **A rule name cannot forge a marker line.** `JSON.stringify` escapes the
+  newline, and the generated `# name` comment has its newlines flattened.
+- **Unfinished and disabled rules are carried but not compiled**, so editing one
+  is not a one-way trip — and the editor says out loud that they will not run.
+
+Every script is put through `SieveScript/validate` **before** it is stored, and
+activated in the same `SieveScript/set` via `onSuccessActivateScript`, so there
+is never a window where the rules exist but nothing is filtering.
+
+> **Not yet run against a live server.** The pure core is covered by tests, the
+> wire calls are typed against RFC 9661, and validation is server-side by
+> design — but `SieveScript/*` has never been exercised against Stalwart from
+> here. Treat the first run as a test.
+
+## Settings that follow the account
+
+Four of the six preferences travel with the account. **Two deliberately do
+not**, and this is the part worth stating plainly, because syncing them would
+have been a regression dressed as a feature:
+
+| Preference | Where it lives | Why |
+| --- | --- | --- |
+| `pageSize`, `markReadOnOpen`, `showPreview`, `unseenByDefault` | account | Behaviour and workflow — the same answer is right on every device |
+| `listWidth` | device | A pixel width for one screen. Push 760px from a wide monitor and it eats the reader on a laptop |
+| `sidebarOpen` | device | A column on a desktop, an overlay drawer on a phone — not the same question |
+
+`ACCOUNT_PREF_KEYS` is the list, and the server sanitises against it too: a
+device-shaped key smuggled into the payload is dropped at the boundary rather
+than trusted. A device-shaped preference stored per account is worse than one
+stored per device.
+
+**Where they are stored is a deliberate departure from 1.0.** JMAP has no
+standard place for a client's own settings. 1.0 reaches first for a
+`WebmailSettings` datatype behind the capability
+`https://zaur.app/jmap/webmail-settings/v1` — a custom Stalwart extension that
+appears nowhere in this repo's docs or infra, so mail2 would be building on
+something it cannot verify. Its fallback writes a message into the user's own
+Archive with the subject `__zaur_webmail_settings_v1__`, which shows up in
+their mailbox, in their search results and against their quota, and needs
+duplicate cleanup.
+
+So these go in the **shared session store** instead — the SQLite file both apps
+already mount, already share, and already keep logins in. `account_prefs` is
+one table keyed by account. `openStoreDb` creates it, so an existing deployed
+store picks it up on the next boot with no migration step (there is a test for
+exactly that).
+
+The trade is explicit: preferences follow the account across devices and
+browsers, but they live on **this deployment** rather than in the mail account,
+so they do not travel to a different server and are lost if the store is wiped.
+Preferences are not mail; the cost of losing them is one trip to this page.
+
+Merging is per key and the device wins: the account fills in what this browser
+has never been told, but a preference changed here is the newer intent. The
+first device to sign in seeds the account, so the second has something to adopt
+rather than starting from defaults again. Nothing is pushed until the account's
+copy has been heard, or a fresh tab would overwrite the account with its own
+defaults.
+
 ## What is still missing
 
 Measured against webmail 1.0 and against what Stalwart actually implements, in
 the order worth doing:
 
-1. **Server-side rules (JMAP Sieve).** Stalwart implements JMAP for Sieve and
-   **nothing in this repo has ever called `SieveScript/*`** — not mail2, not
-   1.0. Rules that live on the server keep working with no client open and apply
-   on every device, which client-side filtering cannot. There is nothing to port,
-   so this is the one place where "do it properly this time" is the whole job.
-   `design/rules-interface.png` has been waiting for it.
-2. **Settings that follow the account.** Everything is one `mail2.prefs`
-   localStorage blob, so a second device starts from defaults. 1.0 syncs through
-   `WebmailSettings/get+set` (Stalwart capability
-   `https://zaur.app/jmap/webmail-settings/v1`) and falls back to a private
-   archived message; the mechanism is worth taking.
-3. **Security settings.** 1.0 has TOTP, app passwords, API keys, active sessions
+1. **Security settings.** 1.0 has TOTP, app passwords, API keys, active sessions
    and password change against Stalwart's admin API. mail2 has a display name, a
    quota and a sign-out button. 1.0 cannot be retired while 2FA management lives
    only there.
-4. **Contacts.** Compose autocomplete scrapes senders out of whichever folder
+2. **Contacts.** Compose autocomplete scrapes senders out of whichever folder
    page happens to be loaded, so it forgets anyone not recently in view.
    Stalwart speaks `Principal/query` and CardDAV; a real source is a small change
    with a daily effect.
-5. **Calendar / Contacts / Files panes.** mail-core already carries the types,
+3. **Calendar / Contacts / Files panes.** mail-core already carries the types,
    maps, rights and recurrence. Mostly UI, and the largest surface left.
 
 Two smaller notes:
@@ -629,7 +712,7 @@ Two smaller notes:
   mailbox (debounced, 1.5 s) and attachment uploads go through a plain
   `/api/upload` endpoint — remote commands cannot carry a `File`.
 - Styling is the tactile system, not a token ramp: `styles/base.css` owns
-  `.btn-tactile`, `.hobday-checkbox`, `.z-check`, `.z-caption`, the
+  `.btn-tactile`, `.hobday-checkbox`, `.z-check`, `.z-field`, `.z-caption`, the
   `.z-railed`/`.z-hue-wash` pair and the `.z-shell` grid;
   surfaces use Tailwind slate/blue plus the chrome hexes (`#ebeef2` ground,
   `#cbd5e1` chrome borders, `#e2e8f0` dividers); people and file-kind

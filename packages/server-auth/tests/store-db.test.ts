@@ -5,6 +5,8 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import {
 	checkRateLimitRow,
+	getAccountPrefs,
+	putAccountPrefs,
 	deleteSessionRow,
 	getSessionRow,
 	hasSessionRow,
@@ -201,5 +203,43 @@ describe('rate limits', () => {
 		assert.equal(checkRateLimitRow(db, 'old', 1, 1000, now).allowed, true);
 		// Live key kept its count.
 		assert.equal(checkRateLimitRow(db, 'live', 1, 60_000, now + 1).allowed, false);
+	});
+});
+
+describe('account_prefs table', () => {
+	it('round-trips, and upserts rather than duplicating', () => {
+		const db = freshDb();
+		assert.equal(getAccountPrefs(db, 'nom@zaur.app'), null);
+
+		putAccountPrefs(db, 'nom@zaur.app', '{"pageSize":100}');
+		assert.equal(getAccountPrefs(db, 'nom@zaur.app'), '{"pageSize":100}');
+
+		// A second write to the same account replaces rather than conflicting —
+		// the primary key is what makes a second device safe to sign in on.
+		putAccountPrefs(db, 'nom@zaur.app', '{"pageSize":25}');
+		assert.equal(getAccountPrefs(db, 'nom@zaur.app'), '{"pageSize":25}');
+	});
+
+	it('keeps accounts apart', () => {
+		const db = freshDb();
+		putAccountPrefs(db, 'a@zaur.app', '{"showPreview":true}');
+		putAccountPrefs(db, 'b@zaur.app', '{"showPreview":false}');
+		assert.equal(getAccountPrefs(db, 'a@zaur.app'), '{"showPreview":true}');
+		assert.equal(getAccountPrefs(db, 'b@zaur.app'), '{"showPreview":false}');
+		assert.equal(getAccountPrefs(db, 'c@zaur.app'), null);
+	});
+
+	it('survives reopening the same file', () => {
+		// The table is created by openStoreDb, so an existing store picks it up
+		// on the next boot rather than needing a migration step.
+		const dir = mkdtempSync(path.join(tmpdir(), 'zaur-prefs-'));
+		const file = path.join(dir, 'store.sqlite');
+		const first = openStoreDb(file);
+		putAccountPrefs(first, 'nom@zaur.app', '{"unseenByDefault":true}');
+		first.close();
+
+		const second = openStoreDb(file);
+		assert.equal(getAccountPrefs(second, 'nom@zaur.app'), '{"unseenByDefault":true}');
+		second.close();
 	});
 });

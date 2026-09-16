@@ -4,12 +4,53 @@
 	import { whoami } from '../../session.remote';
 	import { identities, setDisplayName } from '../../settings.remote';
 	import { logout } from '../../login.remote';
-	import { quota } from '../../mail.remote';
-	import { prefs, setPref, PAGE_SIZES, DEFAULT_PREFS, LIST_MIN, LIST_MAX } from '#lib/settings.svelte.ts';
+	import { mailboxes, quota } from '../../mail.remote';
+	import { rules as rulesQuery, saveRules } from '../../rules.remote';
+	import RulesEditor from '#lib/components/settings/RulesEditor.svelte';
+	import type { MailRule } from '@zaur/mail-core';
+	import {
+		prefs,
+		setPref,
+		adoptAccountPrefs,
+		PAGE_SIZES,
+		DEFAULT_PREFS,
+		LIST_MIN,
+		LIST_MAX
+	} from '#lib/settings.svelte.ts';
+	import { accountPrefs, setAccountPrefs } from '../../settings.remote';
 
 	const session = $derived(whoami()?.current ?? null);
 	const identitiesResource = $derived(session ? identities() : undefined);
 	const quotaResource = $derived(session ? quota() : undefined);
+	const rulesResource = $derived(session ? rulesQuery() : undefined);
+	const accountPrefsResource = $derived(session ? accountPrefs() : undefined);
+
+	// Landing straight on /settings has to adopt the account's copy too.
+	$effect(() => {
+		if (!session || accountPrefsResource?.loading !== false) return;
+		adoptAccountPrefs(accountPrefsResource.current ?? null, (changed) => {
+			void setAccountPrefs(changed).catch(() => {});
+		});
+	});
+	const mailboxesResource = $derived(session ? mailboxes() : undefined);
+	let savingRules = $state(false);
+
+	async function persistRules(next: MailRule[], takeOver: boolean) {
+		savingRules = true;
+		status = null;
+		try {
+			const { count } = await saveRules({ rules: next, takeOver });
+			await rulesResource?.refresh();
+			status = { text: count === 1 ? '1 rule active' : `${count} rules active` };
+		} catch (cause) {
+			status = {
+				text: cause instanceof Error ? cause.message : 'Could not save the rules',
+				error: true
+			};
+		} finally {
+			savingRules = false;
+		}
+	}
 
 	// Send-as names are edited per identity; keep the pending edits keyed by id.
 	let names = $state<Record<string, string>>({});
@@ -132,11 +173,19 @@
 					{/if}
 				</section>
 
+				<RulesEditor
+					data={rulesResource?.current}
+					error={rulesResource?.error}
+					mailboxes={mailboxesResource?.current}
+					saving={savingRules}
+					onSave={(next, takeOver) => void persistRules(next, takeOver)}
+				/>
+
 				<!-- Reading prefs (local to this browser) -->
 				<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
 					<h2 class="z-caption">Reading</h2>
 					<p class="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
-						Stored in this browser only.
+						These follow your account, so a new device starts where you left off.
 					</p>
 
 					<div class="mt-4 flex flex-col divide-y divide-[#f1f5f9]">
@@ -185,8 +234,15 @@
 							</select>
 						</label>
 
+						<!--
+							The two below are deliberately not synced: a pixel width and a
+							sidebar state mean different things on a different screen.
+						-->
 						<label class="flex items-center justify-between gap-4 py-2.5 max-md:hidden">
-							<span class="text-[13px] font-medium text-slate-800">Message list width</span>
+							<span class="min-w-0">
+								<span class="block text-[13px] font-medium text-slate-800">Message list width</span>
+								<span class="block text-[12px] text-slate-400">This device only</span>
+							</span>
 							<span class="flex items-center gap-2">
 								<input
 									type="range"

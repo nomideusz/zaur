@@ -72,6 +72,11 @@ export function openStoreDb(dbPath: string): DatabaseSync {
 			expires_at INTEGER NOT NULL,
 			PRIMARY KEY (session_id, account_key)
 		);
+		CREATE TABLE IF NOT EXISTS account_prefs (
+			account_key TEXT PRIMARY KEY,
+			prefs TEXT NOT NULL,
+			updated_at INTEGER NOT NULL
+		);
 	`);
 	return db;
 }
@@ -304,6 +309,41 @@ export function listSessionAccountRows(
 		userAgent: row.user_agent,
 		ipHash: row.ip_hash
 	}));
+}
+
+/**
+ * Client preferences that belong to the account rather than the browser.
+ *
+ * There is no standard place in JMAP for a client's own settings, and the one
+ * webmail 1.0 reaches for first — a `WebmailSettings` datatype — is a custom
+ * capability that is not documented anywhere in this repo. Its fallback writes
+ * a message into the user's own Archive, which shows up in their mailbox, in
+ * search and against their quota.
+ *
+ * This store is already deployed, already shared by both apps, and already the
+ * thing a login lives in. The trade is explicit: these follow the account
+ * across devices, but they live on this deployment rather than in the mail
+ * account, so they do not travel to a different server. Preferences are not
+ * mail; losing them costs a trip to the settings page.
+ */
+export function getAccountPrefs(db: DatabaseSync, accountKey: string): string | null {
+	const row = db
+		.prepare('SELECT prefs FROM account_prefs WHERE account_key = ?')
+		.get(accountKey) as { prefs?: string } | undefined;
+	return row?.prefs ?? null;
+}
+
+export function putAccountPrefs(
+	db: DatabaseSync,
+	accountKey: string,
+	prefs: string,
+	now = Date.now()
+): void {
+	db.prepare(
+		`INSERT INTO account_prefs (account_key, prefs, updated_at)
+		 VALUES (?, ?, ?)
+		 ON CONFLICT(account_key) DO UPDATE SET prefs = excluded.prefs, updated_at = excluded.updated_at`
+	).run(accountKey, prefs, now);
 }
 
 export function putStepUpProof(

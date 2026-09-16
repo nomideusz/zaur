@@ -108,6 +108,14 @@ export interface JMAPResponse {
 	methodResponses: Array<[string, Record<string, unknown>, string]>;
 }
 
+/** RFC 9661 §2.1. The body is a blob; only its id lives on the object. */
+export interface JMAPSieveScript {
+	id: string;
+	name: string | null;
+	blobId: string;
+	isActive: boolean;
+}
+
 export interface StateChange {
 	'@type': 'StateChange';
 	changed: Record<

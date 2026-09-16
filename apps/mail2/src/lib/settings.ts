@@ -25,6 +25,54 @@ export const DEFAULT_PREFS: Prefs = {
 	unseenByDefault: false
 };
 
+/**
+ * The preferences that belong to the **account**, not to the browser.
+ *
+ * The other two are deliberately excluded, and syncing them would be a
+ * regression rather than a feature: `listWidth` is a pixel width for one
+ * screen — push a 760px list from a wide monitor to a laptop and it eats the
+ * reader — and `sidebarOpen` means different things on a phone, where the
+ * sidebar is an overlay drawer, than on a desktop where it is a column.
+ *
+ * A device-shaped preference stored per account is worse than one stored per
+ * device, so these are the four that travel.
+ */
+export const ACCOUNT_PREF_KEYS = [
+	'pageSize',
+	'markReadOnOpen',
+	'showPreview',
+	'unseenByDefault'
+] as const satisfies readonly (keyof Prefs)[];
+
+export type AccountPrefs = Pick<Prefs, (typeof ACCOUNT_PREF_KEYS)[number]>;
+
+export function accountPrefsOf(prefs: Prefs): AccountPrefs {
+	return {
+		pageSize: prefs.pageSize,
+		markReadOnOpen: prefs.markReadOnOpen,
+		showPreview: prefs.showPreview,
+		unseenByDefault: prefs.unseenByDefault
+	};
+}
+
+/**
+ * Take the account's copy over the defaults, then let anything already set on
+ * this device win — a preference the person changed here is the newer intent,
+ * and only what they touch is pushed back up.
+ */
+export function mergeAccountPrefs(local: Prefs, remote: Partial<AccountPrefs> | null): Prefs {
+	if (!remote) return local;
+	const merged = { ...local };
+	for (const key of ACCOUNT_PREF_KEYS) {
+		const value = remote[key];
+		if (value === undefined) continue;
+		if (typeof value !== typeof DEFAULT_PREFS[key]) continue;
+		(merged as Record<string, unknown>)[key] = value;
+	}
+	if (!PAGE_SIZES.includes(merged.pageSize)) merged.pageSize = DEFAULT_PREFS.pageSize;
+	return merged;
+}
+
 export const LIST_MIN = 380;
 export const LIST_MAX = 760;
 export const PAGE_SIZES = [25, 50, 100, 200];

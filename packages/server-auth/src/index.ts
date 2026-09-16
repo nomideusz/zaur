@@ -63,7 +63,9 @@ export {
 	consumeTotpSetup,
 	setSessionAccountDevice,
 	syncSessionAccountRows,
-	touchSessionRow
+	touchSessionRow,
+	getAccountPrefs,
+	putAccountPrefs
 } from './store-db';
 export type { RateLimitOutcome, SessionAccountRow, SessionRow } from './store-db';
 export { getStoreDb, startStoreMaintenance } from './store-instance';
