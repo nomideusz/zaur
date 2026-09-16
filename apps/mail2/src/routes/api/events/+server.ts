@@ -2,6 +2,7 @@ import { error, type Cookies, type RequestHandler } from '@sveltejs/kit';
 import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
 import type { SessionData } from '@zaur/server-auth';
 import { createConnectedClient } from '#lib/server/jmap';
+import { reportError } from '#lib/server/report';
 
 const KEEPALIVE_MS = 15_000;
 
@@ -32,6 +33,7 @@ export const GET: RequestHandler = async ({ cookies, request }) => {
 	} catch (cause) {
 		if (cause instanceof Error && cause.message === 'Unauthorized') error(401, 'Unauthorized');
 		console.error('[api/events] JMAP connect failed:', cause);
+		reportError(cause, { where: 'api/events connect' });
 		error(502, 'JMAP connection failed');
 	}
 
@@ -46,6 +48,7 @@ export const GET: RequestHandler = async ({ cookies, request }) => {
 		upstream = await client.openEventStream();
 	} catch (cause) {
 		console.error('[api/events] Could not open the push stream:', cause);
+		reportError(cause, { where: 'api/events stream' });
 		error(502, 'Failed to connect to the push stream');
 	}
 	if (!upstream.ok || !upstream.body) {

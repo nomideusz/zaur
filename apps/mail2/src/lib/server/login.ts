@@ -27,6 +27,7 @@ import {
 	findIdentityEmail
 } from '@zaur/mail-core';
 import { createConnectedClient } from '#lib/server/jmap';
+import { reportError } from '#lib/server/report';
 
 /** Public JMAP server — stored in the session; JMAP_INTERNAL_URL overrides it per-request. */
 export function jmapServerUrl(): string {
@@ -112,6 +113,8 @@ export async function attemptLogin(input: {
 				requestOrigin: input.requestOrigin
 			});
 		} catch (error) {
+			// A wrong password is a `failure` result, not a throw — anything here is ours.
+			reportError(error, { where: 'login: Stalwart credential flow' });
 			if (error instanceof StalwartAuthError) return { status: 'unavailable' };
 			return { status: 'error' };
 		}
@@ -149,6 +152,7 @@ export async function attemptLogin(input: {
 			return { status: 'invalid_credentials' };
 		}
 		console.error('[Mail2 Login] JMAP session verification failed:', error);
+		reportError(error, { where: 'login: JMAP session check' });
 		return { status: 'unavailable' };
 	}
 

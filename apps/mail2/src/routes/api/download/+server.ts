@@ -2,6 +2,7 @@ import { error, type Cookies, type RequestHandler } from '@sveltejs/kit';
 import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
 import type { SessionData } from '@zaur/server-auth';
 import { createConnectedClient } from '#lib/server/jmap';
+import { reportError } from '#lib/server/report';
 
 function requireAccount(cookies: Cookies): SessionData {
 	const session = readSessionFull(cookies);
@@ -35,6 +36,7 @@ export const GET: RequestHandler = async ({ url, cookies }) => {
 	} catch (cause) {
 		if (cause instanceof Error && cause.message === 'Unauthorized') error(401, 'Unauthorized');
 		console.error('[api/download] Upstream download failed:', cause);
+		reportError(cause, { where: 'api/download' });
 		error(502, 'Download failed');
 	}
 

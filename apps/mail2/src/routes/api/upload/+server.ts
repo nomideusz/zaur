@@ -2,6 +2,7 @@ import { error, json, type Cookies, type RequestHandler } from '@sveltejs/kit';
 import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
 import type { SessionData } from '@zaur/server-auth';
 import { createConnectedClient } from '#lib/server/jmap';
+import { reportError } from '#lib/server/report';
 
 export const config = {
 	bodySizeLimit: 25 * 1024 * 1024
@@ -37,6 +38,7 @@ export const POST: RequestHandler = async ({ request, cookies }) => {
 			error(401, 'Unauthorized');
 		}
 		console.error('[api/upload] Upstream upload failed:', cause);
+		reportError(cause, { where: 'api/upload' });
 		return json({ error: 'Upload failed' }, { status: 502 });
 	}
 };

@@ -18,8 +18,8 @@ COPY packages/server-auth ./packages/server-auth
 COPY packages/sprite ./packages/sprite
 COPY apps/mail2 ./apps/mail2
 
-# PUBLIC_* config is $env/dynamic/public — read at runtime, not baked into the
-# build. mail2 reads no PUBLIC_* vars today; secrets come from the Dokploy env.
+# PUBLIC_* config (PUBLIC_TRACEWAY_DSN) is read at runtime, not baked into the
+# build; secrets come from the Dokploy env.
 RUN pnpm --filter @zaur/mail2 build
 RUN pnpm --filter @zaur/mail2 --prod deploy /out --legacy
 

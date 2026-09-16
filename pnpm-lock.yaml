@@ -16,6 +16,9 @@ importers:
       '@ark-ui/svelte':
         specifier: ^5.22.1
         version: 5.22.1(svelte@5.57.0)
+      '@tracewayapp/frontend':
+        specifier: ^1.2.0
+        version: 1.2.0
       '@zaur/mail-core':
         specifier: workspace:*
         version: link:../../packages/mail-core
@@ -10666,7 +10669,7 @@ snapshots:
 
   rrweb-snapshot@2.1.4:
     dependencies:
-      postcss: 8.5.15
+      postcss: 8.5.28
 
   rrweb@2.1.4:
     dependencies:

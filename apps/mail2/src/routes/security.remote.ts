@@ -47,6 +47,7 @@ import {
 	isRecoveryConfigured,
 	requestRecoveryEmailChange
 } from '#lib/server/recovery';
+import { reportError } from '#lib/server/report';
 
 const TOTP_ISSUER = 'Zaur Mail';
 const TOTP_SETUP_TTL_MS = 10 * 60_000;
@@ -94,6 +95,7 @@ function failure(cause: unknown, fallback: string): FormOutcome {
 	if (cause instanceof AccountSecurityError) return { ok: false, error: cause.userMessage };
 	if (cause instanceof Error && cause.message === 'Unauthorized') error(401, 'Unauthorized');
 	console.error('[security]', cause);
+	reportError(cause, { where: 'security' });
 	return { ok: false, error: fallback };
 }
 
