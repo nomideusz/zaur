@@ -48,7 +48,10 @@ const config = {
 			register: false
 		},
 		experimental: {
-			remoteFunctions: true
+			remoteFunctions: true,
+			// Spans for handle/load/remote calls, exported by src/instrumentation.server.ts.
+			tracing: { server: true },
+			instrumentation: { server: true }
 		},
 		// Replicated in hooks.server.ts (csrfProtect) with an exemption for the
 		// OIDC token endpoint: OAuth clients POST urlencoded forms server-to-server

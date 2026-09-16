@@ -34,6 +34,10 @@
 	},
 	"dependencies": {
 		"@ark-ui/svelte": "^5.22.1",
+		"@opentelemetry/api": "^1.9.1",
+		"@opentelemetry/exporter-trace-otlp-http": "^0.222.0",
+		"@opentelemetry/resources": "^2.11.0",
+		"@opentelemetry/sdk-trace-node": "^2.11.0",
 		"@tracewayapp/frontend": "^1.2.0",
 		"@zaur/mail-core": "workspace:*",
 		"@zaur/server-auth": "workspace:*",

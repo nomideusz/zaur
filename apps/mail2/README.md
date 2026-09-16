@@ -158,7 +158,7 @@ Service settings (mirroring the webmail service):
 | Env | `STALWART_OAUTH_ENABLED=true`, `STALWART_OAUTH_ISSUER_URL=https://mail.zaur.app` |
 | Env | `STALWART_OAUTH_CLIENT_ID=zaur-mail2-prod`, `STALWART_OAUTH_REDIRECT_URI=https://mail2.zaur.app/api/auth/oauth/callback` |
 | Env | `JMAP_INTERNAL_URL=http://mail:8080` |
-| Env | `PUBLIC_TRACEWAY_DSN=<token>@https://traceway.zaur.app/api/report` — optional; browser and server errors |
+| Env | `PUBLIC_TRACEWAY_DSN=<token>@https://traceway.zaur.app/api/report` — optional; browser and server errors, plus server tracing (`src/lib/server/tracing.ts`) |
 | Volume | same host directory as webmail's `/app/.data` → `/app/.data` |
 
 `SESSION_COOKIE_DOMAIN` must be set on the **webmail** service too (add it and

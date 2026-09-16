@@ -27,6 +27,10 @@ export default defineConfig({
 			},
 			experimental: {
 				remoteFunctions: true
+			},
+			// Spans for handle/load/remote calls, exported by src/instrumentation.server.ts.
+			tracing: {
+				server: true
 			}
 		})
 	]
