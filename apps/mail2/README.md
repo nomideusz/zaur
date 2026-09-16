@@ -283,8 +283,9 @@ touch pointers, where the same drag is the strip's scroll.
 - The status line is hidden below 768px: 36px of keyboard hints and a storage
   meter is not what a phone should spend its height on, and the top bar's
   folder chip already carries the unread count.
-- The bulk bar scrolls horizontally rather than wrapping; Delete is ordered
-  ahead of the highlight toggle and Clear so it is on screen without one.
+- The bulk bar wraps to a second line instead of scrolling, so every action
+  stays reachable with no horizontal scrollbar; at the default list width it
+  still fits on one line.
 - New message stays the tactile `+` in the list header. A floating action
   button is a different design language, and the header button is already
   there.

@@ -76,8 +76,9 @@
 			</button>
 		{/if}
 
-		<!-- Segmented Control: [<] [ Folder Name ] [>] (Anthony Hobday design) -->
-		<div class="flex min-w-0 items-center rounded-[6px] border border-[#cbd5e1] bg-white shadow-2xs">
+		<!-- Folder switcher: the inspiration's date-switcher vocabulary — tactile arrow
+		     buttons around a fixed-width grey label that stays put while browsing. -->
+		<div class="flex min-w-0 shrink-0 items-center rounded-[6px] border border-[#cbd5e1] bg-white shadow-2xs">
 			{#if onPrevMailbox}
 				<button
 					type="button"
@@ -95,9 +96,9 @@
 			{#if mailboxes}
 				<Menu.Root positioning={{ placement: 'bottom-start', gutter: 8, overflowPadding: 12 }} lazyMount unmountOnExit>
 					<Menu.Trigger
-						class="flex h-[30px] items-center gap-2 px-3 text-[13px] font-medium text-slate-800 transition-colors hover:bg-slate-50 max-md:rounded-[5px]"
+						class="flex h-[30px] w-[180px] items-center justify-center gap-1.5 bg-slate-100 px-2 text-[13px] font-semibold text-slate-900 transition-colors hover:bg-slate-200/70 max-md:w-auto max-md:max-w-[42vw] max-md:rounded-[5px] max-md:bg-white"
 					>
-						<span class="max-w-44 truncate max-md:max-w-[38vw]">{activeMailbox?.name ?? 'Folder'}</span>
+						<span class="min-w-0 truncate">{activeMailbox?.name ?? 'Folder'}</span>
 						{#if activeMailbox && activeMailbox.unread > 0}
 							<span
 								class="flex h-4 min-w-[16px] items-center justify-center rounded-[3px] bg-blue-100 px-1 text-[10px] font-semibold text-blue-700 tabular-nums"

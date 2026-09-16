@@ -202,7 +202,7 @@
 	<!-- Bulk action bar: only while rows are selected -->
 	{#if selection.size > 0}
 		<div
-			class="flex h-[42px] shrink-0 items-center gap-2 overflow-x-auto border-b border-[#cbd5e1] bg-blue-50/60 px-4 max-md:px-3 [&>*]:shrink-0"
+			class="flex min-h-[42px] shrink-0 flex-wrap items-center gap-x-1.5 gap-y-1.5 border-b border-[#cbd5e1] bg-blue-50/60 px-3 py-1 whitespace-nowrap [&>*]:shrink-0"
 			role="toolbar"
 			aria-label="Selection actions"
 		>
@@ -214,7 +214,7 @@
 
 			<button
 				type="button"
-				class="btn-tactile !h-[26px] !px-2 !text-[12px]"
+				class="btn-tactile !h-[26px] !px-1.5 !text-[12px]"
 				disabled={busy}
 				onclick={() => onBulk(allRead ? 'unread' : 'read')}
 			>
@@ -223,7 +223,7 @@
 
 			<button
 				type="button"
-				class="btn-tactile !h-[26px] !px-2 !text-[12px] max-md:order-1"
+				class="btn-tactile !h-[26px] !px-1.5 !text-[12px]"
 				disabled={busy}
 				onclick={() => onBulk(allStarred ? 'unstar' : 'star')}
 			>
@@ -232,7 +232,7 @@
 
 			{#if moveTargets.length > 0}
 				<Menu.Root positioning={{ placement: 'bottom-start', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
-					<Menu.Trigger class="btn-tactile !h-[26px] !px-2 !text-[12px] gap-1" disabled={busy}>
+					<Menu.Trigger class="btn-tactile !h-[26px] !px-1.5 !text-[12px] gap-1" disabled={busy}>
 						Move to
 						<svg class="size-3 text-slate-400" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 							<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
@@ -258,7 +258,7 @@
 
 			<button
 				type="button"
-				class="btn-tactile !h-[26px] !px-2 !text-[12px] !text-red-600 hover:!border-red-300 hover:!bg-red-50"
+				class="btn-tactile !h-[26px] !px-1.5 !text-[12px] !text-red-600 hover:!border-red-300 hover:!bg-red-50"
 				disabled={busy}
 				onclick={() => onBulk('delete')}
 			>
@@ -267,7 +267,7 @@
 
 			<button
 				type="button"
-				class="ml-auto btn-tactile !h-[26px] !px-2 !text-[12px] max-md:order-2"
+				class="ml-auto btn-tactile !h-[26px] !px-1.5 !text-[12px]"
 				onclick={selectNone}
 			>
 				Clear
