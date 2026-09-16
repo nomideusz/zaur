@@ -104,7 +104,14 @@ const securityAndLogging: Handle = async ({ event, resolve }) => {
 	return response;
 };
 
-export const handle: Handle = sequence(csrfProtect, securityAndLogging);
+// Uptime probe, answered before the other hooks so it is never logged, redirected
+// or session-checked. Liveness only: the process is serving requests.
+const healthHandle: Handle = ({ event, resolve }) =>
+	event.url.pathname === '/health'
+		? Response.json({ ok: true }, { headers: { 'cache-control': 'no-store' } })
+		: resolve(event);
+
+export const handle: Handle = sequence(healthHandle, csrfProtect, securityAndLogging);
 
 // Errors go to stdout (structured) and to Traceway (see $lib/server/report). 404s
 // reach handleError too but are not failures.

@@ -42,6 +42,9 @@ function constantTimeEqual(a, b) {
 
 app.set('trust proxy', 1);
 
+// Uptime probe, ahead of the header middleware. Liveness only: the process is serving.
+app.get('/health', (_req, res) => res.set('cache-control', 'no-store').json({ ok: true }));
+
 app.use((req, res, next) => {
   res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   res.setHeader('X-Content-Type-Options', 'nosniff');
