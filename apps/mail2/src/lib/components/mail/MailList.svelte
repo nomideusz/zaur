@@ -159,13 +159,20 @@
 				</button>
 				<button
 					type="button"
-					class="h-[24px] rounded-[4px] px-2.5 text-xs font-semibold transition-all {unseenOnly
+					class="flex h-[24px] items-center gap-1.5 rounded-[4px] px-2.5 text-xs font-semibold transition-all {unseenOnly
 						? 'bg-slate-100 text-slate-900 shadow-xs'
 						: 'text-slate-600 hover:text-slate-900'}"
 					aria-pressed={unseenOnly}
 					onclick={() => onToggleUnseenOnly(true)}
 				>
 					Unseen
+					{#if (mailbox?.unread ?? 0) > 0}
+						<span
+							class="flex h-4 min-w-[16px] items-center justify-center rounded-[3px] bg-blue-100 px-1 text-[10px] font-semibold text-blue-700 tabular-nums"
+						>
+							{mailbox?.unread}
+						</span>
+					{/if}
 				</button>
 			</div>
 		</div>
@@ -345,7 +352,9 @@
 								? 'border-blue-500 bg-blue-50/50 shadow-xs'
 								: isCursor
 									? 'border-blue-400 bg-blue-50/30'
-									: 'border-[#e2e8f0] hover:border-[#cbd5e1] hover:shadow-xs'}"
+									: row.unread
+										? 'border-[#e2e8f0] bg-blue-50/30 hover:border-[#cbd5e1] hover:shadow-xs'
+										: 'border-[#e2e8f0] hover:border-[#cbd5e1] hover:shadow-xs'}"
 							onclick={() => onOpen(row.threadId)}
 							onkeydown={(event) => {
 								if (event.key === 'Enter' || event.key === ' ') {
@@ -357,11 +366,14 @@
 							tabindex="-1"
 							aria-pressed={isSelected}
 						>
-							<!-- Unread Indicator Dot on the left edge -->
+							<!-- Unread accent bar: the notification-card vocabulary, down the
+							     card's left edge — scannable in a long list and untouched by
+							     the selection border. The ringed status dot stays reserved for
+							     tiny contexts (dock chips, compose step markers). -->
 							{#if row.unread}
 								<span
-									class="absolute top-4 left-1 size-1.5 rounded-full bg-blue-600 ring-2 ring-blue-100"
-									aria-label="Unread"
+									class="absolute top-2.5 bottom-2.5 left-[7px] w-[3px] rounded-full bg-blue-600"
+									aria-hidden="true"
 								></span>
 							{/if}
 

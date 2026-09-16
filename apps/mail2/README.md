@@ -329,9 +329,12 @@ The whole surface speaks one tactile language (`.btn-tactile` in
   Destructive is red-600 on red-50; input focus is a blue-500 ring.
 - **Selection is blue-600 everywhere:** selected row
   (`border-blue-500` / `bg-blue-50/50`), keyboard cursor
-  (`border-blue-400` / `bg-blue-50/30`), unread dot (`bg-blue-600`
-  `ring-blue-100`), unread pill (`bg-blue-100` `text-blue-700`),
-  checkboxes (`accent-blue-600`), storage meter (`bg-blue-600`).
+  (`border-blue-400` / `bg-blue-50/30`), unread rows (accent bar +
+  `bg-blue-50/30` wash, bold sender/subject), unread pills (`bg-blue-100`
+  `text-blue-700` — folder chip and Unseen filter), checkboxes
+  (`accent-blue-600`), storage meter (`bg-blue-600`). The ringed status dot
+  (`bg-blue-600` `ring-blue-100`) is reserved for tiny contexts: dock chips
+  and compose step markers.
 - **People are Hobday candy:** `getHobdayTheme` in `#lib/mail/colors`
   deterministically maps an email to one of five themes
   (blue/green/pink/amber/purple) — **the same person is the same colour**
@@ -354,7 +357,7 @@ The whole surface speaks one tactile language (`.btn-tactile` in
 | Recipient chips | the list's avatar badge — white chip, `#cbd5e1` border, Hobday avatar |
 | Contact suggestions | the Ark menus: 8px card, `#cbd5e1` border, `bg-slate-100` highlight, plus ↵ kbd hint and key-hint footer |
 | Attachment chips | the reader's chips, scaled to the 30px strip; `attachmentBadge` is the one source for the kind colour |
-| To / Subject step markers | the ringed blue status dot on an unread row and on a dock chip |
+| To / Subject step markers | the ringed blue status dot on a dock chip with content |
 
 The step dots stayed dots rather than becoming the sidebar's checkbox: a 17px
 checkbox does not fit the 62px label column, and the field geometry is a

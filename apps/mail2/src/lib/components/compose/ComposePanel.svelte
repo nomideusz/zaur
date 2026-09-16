@@ -235,7 +235,7 @@
 </script>
 
 <!-- Step markers, in the shell's status-dot vocabulary: the same ringed blue
-     dot that marks an unread row and a draft with content in the dock. -->
+     dot that marks a draft with content in the dock. -->
 {#snippet stepDot(done: boolean)}
 	<span
 		class="size-1.5 shrink-0 rounded-full {done ? 'bg-blue-600 ring-2 ring-blue-100' : 'bg-slate-300'}"
