@@ -109,7 +109,8 @@
 		return buildRowGroups(rows, activeMailbox.kind, isMe);
 	});
 
-	const flatRowIds = $derived((rowGroups ?? []).flatMap((group) => group.rows.map((row) => row.threadId)));
+	const flatRows = $derived((rowGroups ?? []).flatMap((group) => group.rows));
+	const flatRowIds = $derived(flatRows.map((row) => row.threadId));
 
 	// --- compose ---
 
@@ -262,9 +263,16 @@
 	/**
 	 * Delete means "move to Trash" everywhere except Trash itself, where the
 	 * only thing left to do is destroy.
+	 *
+	 * `threadIds` is how a single row acts on itself — its hover buttons and the
+	 * cursor-row shortcuts. Without them the action runs on the selection, and
+	 * only then does it clear it: a row acting alone leaves a selection intact.
 	 */
-	async function runBulk(action: BulkAction, mailboxId?: string) {
-		const emailIds = selectedIds;
+	async function runBulk(action: BulkAction, mailboxId?: string, threadIds?: string[]) {
+		const scope = threadIds ? new Set(threadIds) : selection;
+		const emailIds = threadIds
+			? selectedEmailIds(threadsResource?.current?.rows, scope)
+			: selectedIds;
 		if (emailIds.length === 0 || bulkBusy) return;
 		let payload = { action, emailIds, mailboxId, sourceMailboxId: activeMailbox?.id };
 		if (action === 'delete' && activeMailbox?.kind !== 'trash') {
@@ -278,8 +286,8 @@
 		try {
 			const { count } = await bulk(payload);
 			// A thread that just left the folder can't stay open in the reader.
-			if (leavesFolder && openThreadId && selection.has(openThreadId)) reader.close();
-			selection = new Set();
+			if (leavesFolder && openThreadId && scope.has(openThreadId)) reader.close();
+			if (!threadIds) selection = new Set();
 			void threadsResource?.refresh();
 			void mailboxesResource?.refresh();
 			compose.pushToast({ text: `${count} ${count === 1 ? 'message' : 'messages'} ${verb}`, tone: 'success' });
@@ -292,6 +300,18 @@
 			bulkBusy = false;
 		}
 	}
+
+	/**
+	 * The keyboard's half of the row's hover buttons: a selection wins if there
+	 * is one, otherwise the action lands on the row under the cursor.
+	 */
+	function runRowShortcut(action: BulkAction, mailboxId?: string) {
+		if (selection.size > 0) return void runBulk(action, mailboxId);
+		if (!cursorId) return;
+		void runBulk(action, mailboxId, [cursorId]);
+	}
+
+	const cursorRow = $derived(flatRows.find((row) => row.threadId === cursorId));
 
 	async function openRow(threadId: string) {
 		if (activeMailbox?.kind !== 'drafts') {
@@ -389,6 +409,28 @@
 				event.preventDefault();
 				if (cursorId) toggleSelect(cursorId);
 				break;
+			case 's': {
+				event.preventDefault();
+				// Mirrors the bulk bar: act on the majority state of what is targeted.
+				const starred = selection.size > 0
+					? flatRows.filter((row) => selection.has(row.threadId)).every((row) => row.starred)
+					: (cursorRow?.starred ?? false);
+				runRowShortcut(starred ? 'unstar' : 'star');
+				break;
+			}
+			case 'e': {
+				event.preventDefault();
+				const archive = mailboxList?.find(
+					(box) => box.kind === 'archive' && box.id !== activeMailbox?.id
+				);
+				if (archive) runRowShortcut('move', archive.id);
+				break;
+			}
+			// Deliberately shift-# and not Delete: in Trash this one destroys.
+			case '#':
+				event.preventDefault();
+				runRowShortcut('delete');
+				break;
 			case '[':
 				event.preventDefault();
 				toggleSidebar();
@@ -478,7 +520,7 @@
 					onSetSelection={(ids) => (selection = ids)}
 					onToggleSelect={toggleSelect}
 					onOpen={(threadId) => void openRow(threadId)}
-					onBulk={(action, mailboxId) => void runBulk(action, mailboxId)}
+					onBulk={(action, mailboxId, threadIds) => void runBulk(action, mailboxId, threadIds)}
 					busy={bulkBusy}
 					onRetry={() => threadsResource?.refresh()}
 					onNewMessage={(anchor) => openCompose(anchor)}

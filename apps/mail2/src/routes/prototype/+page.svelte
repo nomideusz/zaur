@@ -57,6 +57,19 @@
 
 	const mockMessagesPreview: MessagePreview[] = [
 		{
+			id: 'm1-earlier',
+			threadId: 't1',
+			mailboxId: 'inbox',
+			from: { name: 'Annie Hobday', email: 'annie@hobday.design' },
+			subject: 'Pick up daughter from football practice',
+			preview: 'Are we still on for the 16:30 session?',
+			receivedAt: todayISO(8, 45),
+			unread: false,
+			starred: false,
+			important: false,
+			hasAttachment: false
+		},
+		{
 			id: 'm1',
 			threadId: 't1',
 			mailboxId: 'inbox',

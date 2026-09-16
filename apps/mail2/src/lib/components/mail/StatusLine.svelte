@@ -35,9 +35,13 @@
 
 			<span class="hidden md:inline text-slate-300">|</span>
 
+			<!-- The keyboard's half of the row's hover buttons. -->
 			<div class="hidden md:flex items-center gap-1 font-mono text-[11px] text-slate-400">
 				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px]">j/k</kbd> move
 				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px]">↵</kbd> open
+				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px]">x</kbd> select
+				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px]">s</kbd> highlight
+				<kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 text-[10px]">e</kbd> archive
 			</div>
 		{:else}
 			<span class="font-mono text-[11px] text-slate-400">Sign in to load your mail</span>

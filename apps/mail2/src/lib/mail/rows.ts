@@ -1,7 +1,17 @@
 import { collapseMessagesByThread, listThreadSenderLabel } from '@zaur/mail-core';
 import type { MessagePreview } from '@zaur/mail-core';
 
-export type ListRow = MessagePreview & { senderLabel: string };
+export type ListRow = MessagePreview & {
+	senderLabel: string;
+	/**
+	 * The counterparty's address, not the latest message's `from` — on Sent (and
+	 * on an inbox thread my own reply ends) those differ. It seeds the row's
+	 * Hobday hue, so one person is one colour in the list, the reader and compose.
+	 */
+	senderEmail: string;
+	/** Messages this folder view holds for the thread; > 1 earns a count chip. */
+	messageCount: number;
+};
 
 export type RowGroup = {
 	/** Monospace uppercase divider label: TODAY, YESTERDAY, or e.g. 12 MARCH */
@@ -48,11 +58,16 @@ export function buildRowGroups(
 		threads.set(message.threadId, group);
 	}
 
-	const rows: ListRow[] = collapsed.map((row) => ({
-		...row,
-		senderLabel: listThreadSenderLabel(threads.get(row.threadId) ?? [row], folderId, isMe, false)
-			.label
-	}));
+	const rows: ListRow[] = collapsed.map((row) => {
+		const threadMessages = threads.get(row.threadId) ?? [row];
+		const sender = listThreadSenderLabel(threadMessages, folderId, isMe, false);
+		return {
+			...row,
+			senderLabel: sender.label,
+			senderEmail: sender.email || row.from.email,
+			messageCount: threadMessages.length
+		};
+	});
 
 	rows.sort((a, b) => new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime());
 

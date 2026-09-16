@@ -283,9 +283,10 @@ touch pointers, where the same drag is the strip's scroll.
 - The status line is hidden below 768px: 36px of keyboard hints and a storage
   meter is not what a phone should spend its height on, and the top bar's
   folder chip already carries the unread count.
-- The bulk bar wraps to a second line instead of scrolling, so every action
-  stays reachable with no horizontal scrollbar; at the default list width it
-  still fits on one line.
+- Selection actions live in the list header rather than a bar of their own, so
+  they cost no height and need no wrapping (see "Bulk actions"). At the 380px
+  minimum list width the word "selected" drops to `sr-only` and the row of
+  icons still fits with room to spare.
 - New message stays the tactile `+` in the list header. A floating action
   button is a different design language, and the header button is already
   there.
@@ -329,19 +330,19 @@ The whole surface speaks one tactile language (`.btn-tactile` in
   is the same button filled blue-600 (blue-700 border), recessed grey
   (`slate-100`/`slate-200`/`slate-400`) until there is a recipient.
   Destructive is red-600 on red-50; input focus is a blue-500 ring.
-- **Selection is blue-600 everywhere:** selected row
-  (`border-blue-500` / `bg-blue-50/50`), keyboard cursor
-  (`border-blue-400` / `bg-blue-50/30`), unread rows (in-flow dot +
-  `bg-blue-50/30` wash, one step bolder sender/subject), unread pills (`bg-blue-100`
-  `text-blue-700` — folder chip and Unseen filter), checkboxes
-  (`accent-blue-600`), storage meter (`bg-blue-600`). The ringed status dot
-  (`bg-blue-600` `ring-blue-100`) is reserved for tiny contexts: dock chips
-  and compose step markers.
+- **Selection is blue-600 everywhere:** selected row (`#e3eeff` /
+  `border-blue-500`), keyboard cursor (`#f5f9ff` / `border-blue-400`),
+  unread pills (`bg-blue-100` `text-blue-700` — folder chip and Unseen
+  filter), checkboxes (`accent-blue-600`), storage meter (`bg-blue-600`).
+  The ringed status dot (`bg-blue-600` `ring-blue-100`) is reserved for tiny
+  contexts: dock chips and compose step markers. Unread list rows used to
+  borrow this blue too; they wear the sender's own colour now (see
+  "The message row"), which leaves blue to mean *you picked this*.
 - **People are Hobday candy:** `getHobdayTheme` in `#lib/mail/colors`
   deterministically maps an email to one of five themes
   (blue/green/pink/amber/purple) — **the same person is the same colour**
-  in the reader sender card, the compose To chips and the
-  account menu. `attachmentBadge` is the one source for the file-kind badge
+  in the list row's rail and thread-count chip, the reader sender card, the
+  compose To chips and the account menu. `attachmentBadge` is the one source for the file-kind badge
   (PDF red, image blue, archive amber, else green), shared by the reader
   and compose. Sidebar unread counts wear the same themes — each mailbox's
   count pill is tinted with its own badge colours.
@@ -394,14 +395,73 @@ compose anchor, `[data-new-message]`), and the status line has no "Synced HH:MM"
 reader error states stay — those recover a failed load, which is a different
 thing.
 
+## The message row
+
+A row is a card with the **sender's rail** down its left edge — the accent bar
+off a notification card, in the Hobday hue that person already wears in the
+reader and in compose. It carries two things without collision: the **hue says
+who it is from**, its **weight says whether it has been seen**. Unread adds a
+7% wash of that same hue and a border mixed from it — the calendar chip's
+pastel fill, turned down until it is a tint rather than a block of colour —
+plus a bolder sender and subject.
+
+That is why unread is no longer blue. A blue dot beside a green rail is two
+systems arguing; letting unread be *more of the sender's colour* says the same
+thing with what is already there, and hands blue back to selection. Selection
+and the keyboard cursor still outrank the sender's colour, so a row you picked
+reads as picked whoever it is from.
+
+The rest of the row:
+
+- **Thread size:** rows are threads, so one holding more than one message wears
+  a count chip in the sender's badge tint. `buildRowGroups` counts what *this
+  folder view* holds, which is why the Unseen filter can drop it — that is
+  honest, not stale. The header counts conversations to match.
+- **Meta, then actions, in one slot:** starred / attachment / time sit at the
+  top right. On hover they step aside and a card of icon buttons steps in —
+  highlight, mark read/unread, archive, delete, the same four the selection
+  header runs on a batch — so nothing is covered and no row grows. Pointer only (`@media (hover: hover)`; on a touch screen `:hover`
+  sticks), and out of the tab order, because 50 rows × 4 stops is not a tab
+  order. Screen readers still reach them; sighted keyboard users get `s` / `e`
+  / `#` on the cursor row, which the status line spells out.
+- **Group dividers stick.** The date a message arrived is what you lose first
+  when scrolling a long folder, so `TODAY` pins to the top of the pane while
+  its own rows pass under it.
+
 ## Bulk actions
 
-Selecting rows (checkbox, `x`, or the Select menu) opens a bulk bar over
-the list: mark read/unread, highlight, move to any folder, delete. Selection is
-by **thread**; `selectedEmailIds` expands it back into the message ids the
-folder view holds. Everything funnels through one `bulk` command in
-`mail.remote.ts` — they are all an `Email/set` over a batch of ids. Delete
-means move-to-Trash everywhere except Trash, where it destroys.
+Selecting rows (checkbox, `x`, or the Select menu) **swaps the list header's
+contents** — the All/Unseen filter and the conversation count step out, and the
+count of what is selected, the actions, and a ✕ step in. Selection is by
+**thread**; `selectedEmailIds` expands it back into the message ids the folder
+view holds. Everything funnels through one `bulk` command in `mail.remote.ts` —
+they are all an `Email/set` over a batch of ids. Delete means move-to-Trash
+everywhere except Trash, where it destroys (and the bin turns red at rest there,
+since the icon carries no label).
+
+It swaps rather than opening a second bar because a bar pushes the list down,
+and the moment you tick a box is the worst possible moment to move the rows you
+are ticking. Floating it over the pane was the other option, and the bottom of
+this pane is already taken: toasts land there — including the toast this very
+action produces — and on a phone the compose dock does too. The header is the
+one place that is free, costs no height, and moves nothing.
+
+Everything else about it falls out of that:
+
+- The actions are the **same four icons a row shows on hover**, because they are
+  the same four actions — one `{#snippet}` each, so they cannot drift. They sit
+  in a segmented group built like the All/Unseen control they replace, so the
+  header keeps its shapes: a menu trigger, then a group, then one trailing
+  button.
+- The Select menu trigger is the one control both modes keep — it is how you go
+  from one row to all of them, and its checkbox already shows the selection.
+- **New message** leaves the header while a selection is up. It is still on the
+  sidebar and still on `c`.
+
+The row's own buttons and the `s` / `e` / `#` shortcuts are the same command
+with one thread's ids: `runBulk` takes an optional `threadIds`, and only the
+selection-wide call clears the selection afterwards. A shortcut prefers the
+selection when there is one, and falls back to the row under the cursor.
 
 ## Architecture
 

@@ -121,4 +121,59 @@ test('rows are typed as MessagePreview plus senderLabel', () => {
 	const now = new Date('2026-09-12T12:00:00Z');
 	const rows: ListRow[] = buildRowGroups([preview()], 'inbox', (e) => e === 'me@zaur.app', now)[0]!.rows;
 	assert.equal(rows[0]!.senderLabel, 'Ada Lovelace');
+	assert.equal(rows[0]!.senderEmail, 'ada@example.com');
+	assert.equal(rows[0]!.messageCount, 1);
+});
+
+test('senderEmail follows the counterparty, not the latest message', () => {
+	const now = new Date('2026-09-12T12:00:00Z');
+	// Sent: the row is labelled "To Bob", so Bob's address seeds the row's colour.
+	const sent = buildRowGroups(
+		[
+			preview({
+				from: { name: 'Me', email: 'me@zaur.app' },
+				to: [{ name: 'Bob', email: 'bob@x.io' }]
+			})
+		],
+		'sent',
+		(e) => e === 'me@zaur.app',
+		now
+	);
+	assert.equal(sent[0]!.rows[0]!.senderEmail, 'bob@x.io');
+
+	// Inbox thread my own reply ends: still the person I am talking to.
+	const inbox = buildRowGroups(
+		[
+			preview({ threadId: 't9', receivedAt: '2026-09-12T09:00:00Z' }),
+			preview({
+				threadId: 't9',
+				receivedAt: '2026-09-12T11:30:00Z',
+				from: { name: 'Me', email: 'me@zaur.app' },
+				to: [{ name: 'Ada Lovelace', email: 'ada@example.com' }]
+			})
+		],
+		'inbox',
+		(e) => e === 'me@zaur.app',
+		now
+	);
+	assert.equal(inbox[0]!.rows[0]!.senderEmail, 'ada@example.com');
+});
+
+test('messageCount counts the thread as this folder view holds it', () => {
+	const now = new Date('2026-09-12T12:00:00Z');
+	const groups = buildRowGroups(
+		[
+			preview({ threadId: 't1', receivedAt: '2026-09-12T09:00:00Z' }),
+			preview({ threadId: 't1', receivedAt: '2026-09-12T10:00:00Z' }),
+			preview({ threadId: 't1', receivedAt: '2026-09-12T11:00:00Z' }),
+			preview({ threadId: 't2', receivedAt: '2026-09-12T08:00:00Z' })
+		],
+		'inbox',
+		(e) => e === 'me@zaur.app',
+		now
+	);
+	const rows = groups[0]!.rows;
+	assert.equal(rows.length, 2);
+	assert.equal(rows.find((row) => row.threadId === 't1')!.messageCount, 3);
+	assert.equal(rows.find((row) => row.threadId === 't2')!.messageCount, 1);
 });
