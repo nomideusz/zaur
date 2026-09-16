@@ -15,15 +15,20 @@ theme only** for now; Files and Meet arrive when their designs land.
 - [x] Settings page (`/settings`) + bulk selection actions
 - [x] Phone and tablet layouts (ADR-0005 put the phone pass after the cutover;
   it turned out to be mostly CSS, so it landed early)
-- [x] Live updates — JMAP push (`/api/events`), with polling as the net
-- [x] Search via remote functions (`from:` / `subject:` / `has:attachment` / …)
-- [x] Attachment downloads (`/api/download`)
-- [x] Server-side rules (JMAP Sieve) — **not yet run against a live server**
+- [x] Live updates — JMAP push (`/api/events`), with polling as the net †
+- [x] Search via remote functions (`from:` / `subject:` / `has:attachment` / …) †
+- [x] Attachment downloads (`/api/download`) †
+- [x] Server-side rules (JMAP Sieve) †
 - [x] Settings that follow the account rather than the browser
-- [ ] Security settings (2FA, app passwords, sessions)
-- [ ] Calendar / Contacts (port from 1.0)
+- [ ] Security settings (2FA, app passwords, sessions) — **next**
+- [ ] Contacts with a real source
+- [ ] Calendar / Contacts / Files panes (port from 1.0)
 - [ ] OIDC provider flows (mail2 as an identity provider)
 - [ ] Cutover checklist green
+
+† **Written and tested, but never run against a live Stalwart.** See
+[Not yet proven against a server](#not-yet-proven-against-a-server) — read that
+before trusting any of the four.
 
 ## Sign-in
 
@@ -168,18 +173,22 @@ Kit 3 changes the layout from Kit 2:
 
 ## Settings
 
-`/settings` (inside the `(app)` gate) splits into what the server owns and what
-the browser owns:
+`/settings` (inside the `(app)` gate) has **three** owners, not two, and which
+one a setting belongs to is a real decision rather than an accident of where it
+was easiest to put:
 
-- **Server:** the send-as display name per identity, through
-  `settings.remote.ts` (`Identity/get` + `Identity/set`). Account address,
-  quota and sign-out live here too.
-- **Browser:** `#lib/settings` — one `mail2.prefs` localStorage blob
-  (`parsePrefs` merges it over the defaults and drops anything malformed),
-  exposed as a `$state` object by `#lib/settings.svelte.ts`. Holds sidebar
-  state, list width, page size, mark-read-on-open, the preview line and the
-  default Unseen filter, so the mail shell reads prefs instead of poking
-  localStorage itself.
+- **The mail account (Stalwart).** The send-as display name per identity,
+  through `settings.remote.ts` (`Identity/get` + `Identity/set`), plus the
+  account address, quota and sign-out. Mail rules live here too, as a Sieve
+  script — see [Rules](#rules).
+- **The Zaur account (our store).** The four preferences that should be the
+  same wherever you sign in — see
+  [Settings that follow the account](#settings-that-follow-the-account).
+- **This browser.** `#lib/settings` still owns the `mail2.prefs` localStorage
+  blob (`parsePrefs` merges it over the defaults and drops anything malformed),
+  exposed as a `$state` object by `#lib/settings.svelte.ts`. Everything lives
+  here first; the account's copy is merged over it on sign-in, and `listWidth`
+  and `sidebarOpen` never leave.
 
 ## Nothing inert on screen
 
@@ -194,14 +203,14 @@ mockup affordances across from the Hobday prototype; they are gone:
 | Sidebar "Manage" | `onManageFolders` was never passed |
 | List category chips | `inferTag()` guessed "Family"/"Work" from subject keywords |
 | Reader "More actions" menu | Archive / Highlight / Mark unseen / Trash, all inert — the same four are back in the reader's toolbar now that they do something (see "The message row") |
-| Top-bar search | an input with no handler at all |
+| Top-bar search | an input with no handler at all — the slot is wired now, see [Search](#search) |
 | Profile "Keyboard shortcuts" | inert menu item |
 
-Attachment chips stay — they list real attachments from the message; they just
-are downloads: `/api/download` streams the blob through the server, mirroring
-`/api/upload`, because Stalwart's `downloadUrl` wants credentials that stay
-there. The filename goes out in both the RFC 5987 `filename*` form and a
-stripped plain one, so a name with an em dash in it survives.
+Attachment chips stay, and they are downloads again: `/api/download` streams
+the blob through the server, mirroring `/api/upload`, because Stalwart's
+`downloadUrl` wants credentials that stay there. The filename goes out in both
+the RFC 5987 `filename*` form and a stripped plain one, so a name with an em
+dash in it survives.
 
 `/prototype` is still the fake-data design reference (and the only page that
 renders the shell without a session, which is what makes it useful for visual
@@ -626,10 +635,10 @@ Every script is put through `SieveScript/validate` **before** it is stored, and
 activated in the same `SieveScript/set` via `onSuccessActivateScript`, so there
 is never a window where the rules exist but nothing is filtering.
 
-> **Not yet run against a live server.** The pure core is covered by tests, the
-> wire calls are typed against RFC 9661, and validation is server-side by
-> design — but `SieveScript/*` has never been exercised against Stalwart from
-> here. Treat the first run as a test.
+> **Not yet run against a live server** — the pure core is tested and the wire
+> calls are typed against RFC 9661, but `SieveScript/*` has never been answered
+> by a real Stalwart. See
+> [Not yet proven against a server](#not-yet-proven-against-a-server).
 
 ## Settings that follow the account
 
@@ -676,20 +685,82 @@ rather than starting from defaults again. Nothing is pushed until the account's
 copy has been heard, or a fresh tab would overwrite the account with its own
 defaults.
 
+## Checks
+
+```sh
+pnpm --filter @zaur/mail2 check     # svelte-check
+pnpm --filter @zaur/mail2 test      # 62 tests
+pnpm --filter @zaur/mail2 build
+
+pnpm --filter @zaur/mail-core check && pnpm --filter @zaur/mail-core test    # 41
+pnpm --filter @zaur/server-auth check && pnpm --filter @zaur/server-auth test # 26
+```
+
+`apps/webmail` currently reports **3 pre-existing `check` errors** — a duplicate
+Svelte version making two `Snippet` types unrelated, in its own
+`CopyButton`/`LabelInput`/`PasswordInput`. They are not mail2's and not
+mail-core's; confirmed by stashing the shared-package changes and getting the
+same three.
+
+## Not yet proven against a server
+
+Four features were built without a mailbox to test them against. Everything
+below type-checks, and the parts that are pure logic are covered by tests — but
+**no `SieveScript/*`, no event stream, no blob download and no `Email/query`
+search has ever been answered by a real Stalwart from this codebase.** The
+`(app)` routes sit behind the session gate, and `/prototype` renders the shell
+on mock data, which exercises the UI and nothing underneath it.
+
+Treat the first run of each as a test. In the order they are likely to bite:
+
+| Feature | Verified | Never exercised | What would fail first |
+| --- | --- | --- | --- |
+| **Live updates** | endpoint returns 401 unauthenticated; `changedTypes` unit-tested | the SSE pump, reconnect, OAuth refresh on a stream that outlives its token | The stream opens and then dies quietly at the first token refresh. The 90s stale timer and the polling fallback are what should keep the list correct anyway — check that polling actually takes over rather than assuming the stream is fine |
+| **Rules (Sieve)** | script generation round-trips, 14 tests | `SieveScript/get`/`set`/`validate`, blob upload of a script, activation | Stalwart rejecting the generated Sieve. This is the good failure: `validate` runs *before* the script is stored, so the error surfaces as a message rather than a filter that silently stops working. Check `require` handling and `addflag` first |
+| **Attachment downloads** | endpoint returns 401 unauthenticated; URL encoding unit-tested | `downloadBlob` against a real blob, streaming a large file | Content type or disposition being wrong for one file kind, or a large file buffering where it should stream |
+| **Search** | UI exercised end to end on mock data; the parser is 1.0's, already in production there | `Email/query` with a parsed filter against Stalwart | An operator Stalwart's FTS treats differently from 1.0's usage — `before:`/`after:` are the likeliest, since dates go over as ISO strings |
+
+The settings sync is the exception: it runs on our own SQLite, so it **is**
+tested for real, including that an existing deployed store picks up the new
+table on reopen with no migration step.
+
+Two UI surfaces have also never been rendered, because they are behind the
+gate: the **rules editor** and the rest of `/settings`. They compile and build;
+nobody has looked at them.
+
+## Picking this up next
+
+**Security settings** is the next slice, and the last thing genuinely blocking
+1.0's retirement — you cannot ask people to move to a client where they cannot
+manage their own 2FA.
+
+It is a different shape from everything above: it talks to **Stalwart's admin
+API, not JMAP**, so mail-core is not where it goes. 1.0 has the whole surface
+already, at `apps/webmail/src/routes/api/account/security/*` — TOTP setup and
+confirm, app passwords, API keys, active sessions, password change, recovery —
+and `@zaur/server-auth` already carries the step-up proof and TOTP setup tables
+those flows lean on (`putStepUpProof`, `putTotpSetup`, `consumeTotpSetup`),
+which is a strong hint that the server half is mostly there.
+
+Worth deciding before writing any of it: 1.0 spreads this across twelve
+endpoints. mail2 would express most of it as remote functions, and the
+step-up-auth flow (re-entering a password before changing security settings) is
+the part that needs designing rather than porting.
+
+While you are in there, the smaller wins from the list below — **contacts with a
+real source** especially — are much cheaper than they look and change something
+that is felt daily.
+
 ## What is still missing
 
-Measured against webmail 1.0 and against what Stalwart actually implements, in
-the order worth doing:
+Measured against webmail 1.0 and against what Stalwart actually implements.
+Security settings is the next slice and has its own section above; after it:
 
-1. **Security settings.** 1.0 has TOTP, app passwords, API keys, active sessions
-   and password change against Stalwart's admin API. mail2 has a display name, a
-   quota and a sign-out button. 1.0 cannot be retired while 2FA management lives
-   only there.
-2. **Contacts.** Compose autocomplete scrapes senders out of whichever folder
+1. **Contacts.** Compose autocomplete scrapes senders out of whichever folder
    page happens to be loaded, so it forgets anyone not recently in view.
    Stalwart speaks `Principal/query` and CardDAV; a real source is a small change
    with a daily effect.
-3. **Calendar / Contacts / Files panes.** mail-core already carries the types,
+2. **Calendar / Contacts / Files panes.** mail-core already carries the types,
    maps, rights and recurrence. Mostly UI, and the largest surface left.
 
 Two smaller notes:
@@ -706,11 +777,22 @@ Two smaller notes:
 
 - Reuses `@zaur/mail-core` (JMAP), `@zaur/server-auth` (sessions, OAuth
   plumbing), `@zaur/ui` — the hard-won data core is **not** rewritten.
-- Server state goes through SvelteKit **remote functions** (`*.remote.ts`); the
-  offline outbox is a lightweight IndexedDB queue (`#lib/compose/outbox`) that
-  drains on load and on reconnect. Drafts autosave to the server's Drafts
-  mailbox (debounced, 1.5 s) and attachment uploads go through a plain
-  `/api/upload` endpoint — remote commands cannot carry a `File`.
+- Server state goes through SvelteKit **remote functions** (`*.remote.ts`):
+  `mail` (folders, threads, one thread, quota, search, bulk actions), `compose`
+  (send, schedule, drafts), `settings` (identities, account prefs), `rules`
+  (Sieve) and `session`/`login`.
+- **Three things are plain endpoints instead**, because remote functions are
+  request/response over JSON and these are none of those: `/api/upload` and
+  `/api/download` move bytes (a command cannot carry a `File`), and
+  `/api/events` holds a stream open for hours. All three proxy Stalwart because
+  the credentials they need stay on the server.
+- The offline outbox is a lightweight IndexedDB queue (`#lib/compose/outbox`)
+  that drains on load and on reconnect. Drafts autosave to the server's Drafts
+  mailbox (debounced, 1.5 s).
+- **What lives in `@zaur/mail-core` rather than here:** anything a native client
+  would need too — the JMAP client, the search query parser, and the rule model
+  with its Sieve compiler (`sieve-rules.ts`). What stays in mail2 is the shell:
+  the push listener, the remote functions and the UI.
 - Styling is the tactile system, not a token ramp: `styles/base.css` owns
   `.btn-tactile`, `.hobday-checkbox`, `.z-check`, `.z-field`, `.z-caption`, the
   `.z-railed`/`.z-hue-wash` pair and the `.z-shell` grid;
