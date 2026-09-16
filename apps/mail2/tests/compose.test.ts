@@ -44,7 +44,7 @@ function draft(overrides: Partial<Draft> = {}): Draft {
 		stage: 'default',
 		x: 24,
 		y: 76,
-		w: 560,
+		w: PANEL_DEFAULT_W,
 		h: 460,
 		saved: null,
 		auto: true,
@@ -209,18 +209,18 @@ test('maximizedRect: fills the pane between the top bar and the status line', ()
 
 test('openingPosition: leans from the shell centre toward the button, cascades', () => {
 	const shell = { w: 1400, h: 900 };
-	const centreX = (shell.w - PANEL_DEFAULT_W) / 2; // 420
+	const centreX = (shell.w - PANEL_DEFAULT_W) / 2; // 360
 	const centreY = (shell.h - PANEL_TYPICAL_H) / 2; // 240
 
 	const fromLeft = openingPosition({ left: 180, top: 100, right: 200, bottom: 134 }, shell.w, shell.h, 0);
-	assert.deepEqual(fromLeft, { x: 195, y: 157 });
+	assert.deepEqual(fromLeft, { x: 135, y: 157 });
 	const fromRight = openingPosition(
 		{ left: 1240, top: 100, right: 1300, bottom: 134 },
 		shell.w,
 		shell.h,
 		0
 	);
-	assert.deepEqual(fromRight, { x: 562, y: 157 });
+	assert.deepEqual(fromRight, { x: 502, y: 157 });
 
 	// The lean follows the button, but never travels all the way to it.
 	assert.ok(fromLeft.x < centreX && fromRight.x > centreX, 'each leans toward its button');
@@ -229,7 +229,7 @@ test('openingPosition: leans from the shell centre toward the button, cascades',
 	assert.ok(fromLeft.y > centreY - PANEL_TYPICAL_H / 2, 'and does not ride the top edge');
 
 	const cascaded = openingPosition({ left: 180, top: 100, right: 200, bottom: 134 }, shell.w, shell.h, 1);
-	assert.deepEqual(cascaded, { x: 221, y: 183 });
+	assert.deepEqual(cascaded, { x: 161, y: 183 });
 });
 
 test('openingPosition: a corner button still opens fully inside the shell', () => {

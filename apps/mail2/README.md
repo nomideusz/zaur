@@ -355,7 +355,7 @@ The whole surface speaks one tactile language (`.btn-tactile` in
 | --- | --- |
 | Send | the login submit — `btn-tactile` filled blue-600, recessed grey until there is a recipient |
 | Attach / Schedule / Discard | the reader toolbar's `btn-tactile`, discard in destructive red |
-| Recipient chips | the list's avatar badge — white chip, `#cbd5e1` border, Hobday avatar |
+| Recipient chips | the list's avatar badge — white chip, `#cbd5e1` border, Hobday avatar; hovering a name reveals the address in an Ark tooltip |
 | Contact suggestions | the Ark menus: 8px card, `#cbd5e1` border, `bg-slate-100` highlight, plus ↵ kbd hint and key-hint footer |
 | Attachment chips | the reader's chips, scaled to the 30px strip; `attachmentBadge` is the one source for the kind colour |
 | To / Subject step markers | the ringed blue status dot on a dock chip with content |
@@ -367,6 +367,11 @@ contract with `computeAutoHeight`.
 ## Compose panel geometry
 
 `#lib/compose/layout` owns the window maths:
+
+- **Default size and chrome:** new panels open 680 wide (`PANEL_DEFAULT_W`)
+  with the writing measure unchanged; the action bar keeps attach/schedule on
+  the left and discard + Send on the right, and the header shows the autosave
+  state (`Saving…` / `Saved HH:MM`) next to the title.
 
 - **Opening position** blends two spots. The *anchored* spot is squarely under
   the button that opened the panel; the *centred* spot is the middle of the

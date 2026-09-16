@@ -5,6 +5,7 @@
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import { initials } from '#lib/mail/rows';
 	import { attachmentBadge, getHobdayTheme } from '#lib/mail/colors';
+	import Tooltip from '#lib/components/ui/Tooltip.svelte';
 	import { viewport } from '#lib/viewport.svelte.ts';
 	import type { Draft } from '#lib/compose/types';
 
@@ -47,6 +48,14 @@
 	const suggestions = $derived(filterContacts(compose.contacts, draft.toInput, draft.to));
 	const title = $derived(draft.subject.trim() || 'New message');
 	const subjectDim = $derived(draft.to.length === 0 ? 'opacity-68' : 'opacity-100');
+	/** Autosave state in the tabbed-studio's "Draft: …" vocabulary. */
+	const saveLabel = $derived(
+		draft.draftSaving
+			? 'Saving…'
+			: draft.draftSavedAt
+				? `Saved ${new Date(draft.draftSavedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+				: null
+	);
 
 	// Focus is requested once per draft (and again when send-without-recipients
 	// nudges back to To); the panel consumes it after focusing.
@@ -289,6 +298,9 @@
 		ondblclick={() => compose.toggleMaximize(draft.id)}
 	>
 		<span class="min-w-0 flex-1 truncate text-[13px] font-semibold text-slate-800">{title}</span>
+		{#if saveLabel}
+			<span class="shrink-0 text-[11px] tabular-nums text-slate-400">{saveLabel}</span>
+		{/if}
 
 		<div class="flex items-center gap-1">
 			{#if sheet}
@@ -362,28 +374,57 @@
 			>
 				{#each draft.to as person (person.email)}
 					{@const theme = getHobdayTheme(person.email || person.name)}
-					<span class="flex h-[26px] items-center gap-1.5 rounded-[6px] border border-[#cbd5e1] bg-white px-1 shadow-2xs">
-						<span
-							class="flex size-[18px] items-center justify-center rounded-[4px] text-[9px] font-bold"
-							style:background-color={theme.bg}
-							style:border="1px solid {theme.border}"
-							style:color={theme.text}
-						>
-							{initials(person.name, person.email)}
-						</span>
-						<span class="max-w-[160px] truncate text-[13px] text-slate-800">{person.name || person.email}</span>
-						<button
-							type="button"
-							class="flex size-[18px] items-center justify-center rounded-[4px] text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-							aria-label="Remove {person.name || person.email}"
-							onpointerdown={(event) => event.stopPropagation()}
-							onclick={(event) => removeTo(event, person.email)}
-						>
-							<svg class="size-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-								<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-							</svg>
-						</button>
-					</span>
+					{@const revealEmail =
+						person.name.trim().length > 0 && person.name.trim() !== person.email.trim()}
+					<!-- The chip shows the name; hovering reveals the address in an Ark tooltip. -->
+					<Tooltip disabled={!revealEmail}>
+						{#snippet trigger({ props })}
+							<span
+								{...props}
+								class="flex h-[26px] items-center gap-1.5 rounded-[6px] border border-[#cbd5e1] bg-white px-1 shadow-2xs"
+							>
+								<span
+									class="flex size-[18px] items-center justify-center rounded-[4px] text-[9px] font-bold"
+									style:background-color={theme.bg}
+									style:border="1px solid {theme.border}"
+									style:color={theme.text}
+								>
+									{initials(person.name, person.email)}
+								</span>
+								<span class="max-w-[160px] truncate text-[13px] text-slate-800"
+									>{person.name || person.email}</span
+								>
+								<button
+									type="button"
+									class="flex size-[18px] items-center justify-center rounded-[4px] text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+									aria-label="Remove {person.name || person.email}"
+									onpointerdown={(event) => event.stopPropagation()}
+									onclick={(event) => removeTo(event, person.email)}
+								>
+									<svg class="size-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+										<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+									</svg>
+								</button>
+							</span>
+						{/snippet}
+						<div class="flex min-w-0 items-center gap-2">
+							<span
+								class="flex size-[22px] shrink-0 items-center justify-center rounded-[5px] text-[10px] font-bold"
+								style:background-color={theme.bg}
+								style:border="1px solid {theme.border}"
+								style:color={theme.text}
+								aria-hidden="true"
+							>
+								{initials(person.name, person.email)}
+							</span>
+							<span class="min-w-0">
+								<span class="block truncate text-[13px] font-semibold text-slate-800"
+									>{person.name}</span
+								>
+								<span class="block truncate text-xs text-slate-500">{person.email}</span>
+							</span>
+						</div>
+					</Tooltip>
 				{/each}
 				<input
 					bind:this={toInputEl}
@@ -644,9 +685,6 @@
 
 	<!-- Action bar -->
 	<div class="flex h-[53px] shrink-0 items-center gap-2 border-t border-[#e2e8f0] pr-3 pl-4">
-		{#if !sheet}
-			{@render sendButton(false)}
-		{/if}
 		<button
 			type="button"
 			class="btn-tactile !size-[30px] !p-0"
@@ -698,17 +736,21 @@
 			title="Discard draft"
 			onclick={() => compose.discard(draft.id)}
 		>
-			<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-				<path
-					d="M3.5 5h9M6.5 5V3.5h3V5M5 5l.6 7.5h4.8L11 5"
-					stroke="currentColor"
-					stroke-width="1.4"
-					stroke-linecap="round"
-					stroke-linejoin="round"
-				/>
-			</svg>
-		</button>
-	</div>
+				<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path
+						d="M3.5 5h9M6.5 5V3.5h3V5M5 5l.6 7.5h4.8L11 5"
+						stroke="currentColor"
+						stroke-width="1.4"
+						stroke-linecap="round"
+						stroke-linejoin="round"
+					/>
+				</svg>
+			</button>
+			<!-- Primary last, on the right: attach/schedule left, discard + Send right. -->
+			{#if !sheet}
+				{@render sendButton(false)}
+			{/if}
+		</div>
 
 	{#if !filled}
 		<!-- Resize: right edge, bottom edge, corner -->

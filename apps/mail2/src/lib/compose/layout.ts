@@ -1,6 +1,6 @@
 import type { Draft } from './types';
 
-export const PANEL_DEFAULT_W = 560;
+export const PANEL_DEFAULT_W = 680;
 export const PANEL_MIN_W = 420;
 export const PANEL_MAX_W = 960;
 export const PANEL_MIN_H = 240;
