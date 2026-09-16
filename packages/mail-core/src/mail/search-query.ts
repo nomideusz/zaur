@@ -82,7 +82,18 @@ export function parseSearchQuery(input: string): { filter: JmapEmailFilter; term
 
 	if (!filters.length) return { filter: { text: trimmed }, terms: textTerms };
 	if (filters.length === 1) return { filter: filters[0], terms: textTerms };
-	return { filter: { and: filters }, terms: textTerms };
+	return { filter: allOf(filters), terms: textTerms };
+}
+
+/**
+ * RFC 8620 §5.5: several conditions combine through a FilterOperator, not a
+ * bare `and` key. This used to emit `{ and: [...] }`, which no JMAP server
+ * accepts — every search with more than one condition (including any search
+ * scoped to a folder) came back as "no results".
+ */
+export function allOf(conditions: JmapEmailFilter[]): JmapEmailFilter {
+	if (conditions.length === 1) return conditions[0]!;
+	return { operator: 'AND', conditions };
 }
 
 function parseSearchDate(value: string, edge: 'start' | 'end'): string {

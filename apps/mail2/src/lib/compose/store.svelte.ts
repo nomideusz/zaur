@@ -374,9 +374,29 @@ class ComposeStore {
 				status: 'uploading'
 			};
 			draft.attachments.push(chip);
+			// Kept until the upload lands, so a failed chip can be retried
+			// without picking the file again.
+			this.#pendingFiles.set(chip.id, file);
 			this.scheduleDraftSave(id);
 			this.#uploadInto(id, chip.id, file);
 		}
+	}
+
+	/** The `File` behind each chip that has not uploaded yet — never persisted. */
+	#pendingFiles = new Map<string, File>();
+
+	/** Try a failed upload again with the file that was picked. */
+	retryAttachment(draftId: string, chipId: string): void {
+		const chip = this.#findAttachment(draftId, chipId);
+		const file = this.#pendingFiles.get(chipId);
+		if (!chip || chip.status !== 'error') return;
+		if (!file) {
+			// The page was reloaded in between; the bytes are gone with it.
+			this.pushToast({ text: `Pick "${chip.name}" again to attach it`, tone: 'warning' });
+			return;
+		}
+		chip.status = 'uploading';
+		this.#uploadInto(draftId, chipId, file);
 	}
 
 	#uploadInto(draftId: string, chipId: string, file: File): void {
@@ -394,6 +414,7 @@ class ComposeStore {
 				chip.size = uploaded.size;
 				chip.type = uploaded.type;
 				chip.status = 'ready';
+				this.#pendingFiles.delete(chipId);
 				this.scheduleDraftSave(draftId);
 			})
 			.catch(() => this.#attachmentFailed(draftId, chipId));
@@ -414,6 +435,7 @@ class ComposeStore {
 		const draft = this.#find(id);
 		if (!draft) return;
 		draft.attachments = draft.attachments.filter((attachment) => attachment.id !== attachmentId);
+		this.#pendingFiles.delete(attachmentId);
 		this.scheduleDraftSave(id);
 	}
 

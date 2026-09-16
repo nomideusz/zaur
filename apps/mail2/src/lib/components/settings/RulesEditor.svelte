@@ -11,6 +11,7 @@
 	} from '@zaur/mail-core';
 	import type { MailboxDTO } from '#lib/mail/types';
 	import ActionIcon from '#lib/components/mail/ActionIcon.svelte';
+	import { CHANNELS, channelStyle, mailboxChannel, type Channel } from '#lib/mail/colors';
 
 	interface Props {
 		/** Server-side state; `undefined` while it loads. `state` itself is a rune. */
@@ -37,6 +38,12 @@
 	 */
 	let draft = $state<MailRule[]>([]);
 	let loadedFrom = $state<string | null>(null);
+	/**
+	 * Rules read as cards; one at a time opens into the editor. Most of the time
+	 * nobody is editing, and a card of chips is scannable in a way a row of
+	 * selects never is.
+	 */
+	let editingId = $state<string | null>(null);
 
 	$effect(() => {
 		if (!data) return;
@@ -66,20 +73,79 @@
 		{ value: 'endsWith', label: 'ends with' }
 	];
 	const FLAGS: { value: RuleFlag; label: string }[] = [
-		{ value: '$important', label: 'Highlight' },
+		{ value: '$important', label: 'Needs you' },
 		{ value: '\\Flagged', label: 'Flag' },
 		{ value: '\\Seen', label: 'Mark as read' }
 	];
+	const operatorLabel = (value: RuleOperator) =>
+		OPERATORS.find((operator) => operator.value === value)?.label ?? value;
+	const flagLabel = (value: string) => FLAGS.find((flag) => flag.value === value)?.label ?? value;
 
 	/** Drafts is not a destination for incoming mail. */
 	const fileTargets = $derived((mailboxes ?? []).filter((box) => box.kind !== 'drafts'));
 
+	/**
+	 * An action's channel: filing takes the folder's, a flag takes what the flag
+	 * means (needs you, flagged, confirmed), discard is discard. The same
+	 * function the list uses, so a rule that files into Junk is red here and
+	 * red there.
+	 */
+	function actionChannel(action: RuleAction): Channel {
+		if (action.type === 'discard') return CHANNELS.discard;
+		if (action.type === 'addFlag') {
+			if (action.flag === '$important') return CHANNELS.needs;
+			if (action.flag === '\\Flagged') return CHANNELS.flagged;
+			return CHANNELS.confirmed;
+		}
+		const target = (mailboxes ?? []).find((box) => box.name === action.mailbox);
+		return mailboxChannel(target?.kind);
+	}
+
+	function actionLabel(action: RuleAction): string {
+		if (action.type === 'discard') return 'Discard';
+		if (action.type === 'addFlag') return flagLabel(action.flag);
+		return `File into ${action.mailbox || '…'}`;
+	}
+
 	function addRule() {
-		draft = [...draft, emptyRule(`r${Date.now().toString(36)}`)];
+		const rule = emptyRule(`r${Date.now().toString(36)}`);
+		draft = [...draft, rule];
+		editingId = rule.id;
+	}
+
+	/**
+	 * The one rule almost everyone wants: newsletters and notifications out of
+	 * the inbox and into a folder the list colours as a digest. It files into
+	 * a folder called Digests or Newsletters if there is one, else Archive —
+	 * and opens in the editor so the folder can be changed before saving.
+	 */
+	function addNewslettersRule() {
+		const target =
+			fileTargets.find((box) => /^(digests?|newsletters?)$/i.test(box.name)) ??
+			fileTargets.find((box) => box.kind === 'archive') ??
+			fileTargets[0];
+		const rule: MailRule = {
+			...emptyRule(`r${Date.now().toString(36)}`),
+			name: 'Newsletters',
+			match: 'any',
+			conditions: [
+				{ field: 'from', operator: 'contains', value: 'newsletter' },
+				{ field: 'from', operator: 'contains', value: 'noreply' },
+				{ field: 'subject', operator: 'contains', value: 'unsubscribe' }
+			],
+			actions: [
+				{ type: 'addFlag', flag: '\\Seen' },
+				{ type: 'fileInto', mailbox: target?.name ?? 'Archive' }
+			],
+			stop: true
+		};
+		draft = [...draft, rule];
+		editingId = rule.id;
 	}
 
 	function removeRule(id: string) {
 		draft = draft.filter((rule) => rule.id !== id);
+		if (editingId === id) editingId = null;
 	}
 
 	function move(id: string, delta: number) {
@@ -119,21 +185,26 @@
 			flag: previous?.type === 'addFlag' ? previous.flag : '$important'
 		};
 	}
+
+	const card = 'rounded-[10px] border border-[var(--z-hairline)] p-3';
+	const chip = 'z-chip !normal-case !tracking-normal !text-[10.5px]';
 </script>
 
-<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-[18px] shadow-[var(--z-shadow-tactile)] max-md:p-4">
+<section class="rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-surface)] p-[18px] shadow-[var(--z-shadow-tactile)] max-md:p-4">
 	<h2 class="z-caption">Rules</h2>
-	<p class="mt-[7px] text-[12.5px] leading-[1.6] text-[#475569]">
-		These run on the server, so they apply to mail as it arrives — on every device, and whether
-		or not this one is open.
+	<p class="mt-[7px] text-[12.5px] leading-[1.6] text-[var(--z-muted)]">
+		Rules compile to one Sieve script the server runs on delivery, so they apply on every
+		device, whether or not this one is open. A rule is conditions matched <em>all</em> or
+		<em>any</em>, then actions: file into a folder, mark, or discard — and optionally stop
+		testing the rest.
 	</p>
 
 	{#if error}
-		<p class="mt-3 text-[13px] text-[#b91c1c]">Could not load your rules.</p>
+		<p class="mt-3 text-[13px] text-[var(--z-ch-discard-ink)]">Could not load your rules.</p>
 	{:else if !data}
-		<p class="mt-3 text-[13px] text-[#94a3b8]">Loading…</p>
+		<div class="z-skeleton mt-3 h-[72px] rounded-[10px] bg-[var(--z-sunken)]" aria-hidden="true"></div>
 	{:else if !data.supported}
-		<p class="mt-3 text-[13px] leading-relaxed text-[#64748b]">
+		<p class="mt-3 text-[13px] leading-relaxed text-[var(--z-soft)]">
 			This mail server does not offer server-side rules
 			(<span class="font-mono text-[12px]">urn:ietf:params:jmap:sieve</span>).
 		</p>
@@ -142,18 +213,15 @@
 			Someone's hand-written Sieve is not ours to silently replace, so the
 			editor stays shut until they say so.
 		-->
-		<div class="z-railed mt-3 rounded-[10px] border border-[#d97706] bg-[#fde68a] py-2.5 pr-3 pl-[18px]" style="--z-rail:#d97706;--z-rail-inset:10px">
-			<p class="text-[13px] font-semibold text-[#78350f]">
-				This account already has a filtering script
+		<div class="z-railed mt-3 rounded-[10px] border border-[var(--z-ch-needs-solid)] bg-[var(--z-ch-needs-fill)] py-2.5 pr-3 pl-[18px]" style="--z-rail:var(--z-ch-needs-solid);--z-rail-inset:10px">
+			<p class="text-[13px] font-semibold text-[var(--z-ch-needs-ink)]">A filtering script here was not written by Zaur</p>
+			<p class="mt-0.5 text-[12.5px] leading-normal text-[var(--z-ch-needs-ink)]">
+				Rules stay read-only until you hand this account over — taking over replaces that script.
 			</p>
-			<p class="mt-1 text-[12.5px] leading-relaxed text-[#78350f]">
-				It was not written here, so it cannot be edited as rules without replacing it.
-			</p>
-			<pre class="mt-2.5 max-h-40 overflow-auto rounded-[6px] border border-[#d97706]/40 bg-white p-2.5 font-mono text-[11px] leading-relaxed text-[#334155]">{data.foreignScript ??
-					''}</pre>
+			<pre class="mt-2.5 max-h-40 overflow-auto rounded-[6px] border border-[var(--z-ch-needs-solid)]/40 bg-[var(--z-surface)] p-2.5 font-mono text-[11px] leading-relaxed text-[var(--z-strong)]">{data.foreignScript ?? ''}</pre>
 			<button
 				type="button"
-				class="btn-tactile mt-2.5 !h-7 !border-[#d97706] !text-[12px] !font-semibold !text-[#78350f]"
+				class="btn-tactile mt-2.5 !h-7 !border-[var(--z-ch-needs-solid)] !text-[12px] !font-semibold !text-[var(--z-ch-needs-ink)]"
 				disabled={saving}
 				onclick={() => onSave([], true)}
 			>
@@ -161,265 +229,239 @@
 			</button>
 		</div>
 	{:else}
-		<div class="mt-4 flex flex-col gap-2.5">
+		<div class="mt-3 flex flex-col gap-2">
 			{#each draft as rule, index (rule.id)}
-				<div class="rounded-[10px] border border-[#e2e8f0] p-3 {rule.enabled ? 'bg-white' : 'bg-[#f8fafc]'}">
-					<div class="flex items-center gap-2.5">
-						<input
-							type="checkbox"
-							class="z-check"
-							checked={rule.enabled}
-							aria-label={rule.enabled ? 'Disable this rule' : 'Enable this rule'}
-							onchange={(event) => patch(rule.id, { enabled: event.currentTarget.checked })}
-						/>
-						<input
-							type="text"
-							class="z-field min-w-0 flex-1 max-md:text-base"
-							placeholder="Name this rule"
-							value={rule.name}
-							oninput={(event) => patch(rule.id, { name: event.currentTarget.value })}
-						/>
-						<!-- Order is meaning: a rule that stops ends the ones below it. -->
-						<button
-							type="button"
-							class="z-icon-btn shrink-0 disabled:!opacity-30"
-							aria-label="Move up"
-							disabled={index === 0}
-							onclick={() => move(rule.id, -1)}
-						>
-							<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-								<path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-							</svg>
-						</button>
-						<button
-							type="button"
-							class="z-icon-btn shrink-0 disabled:!opacity-30"
-							aria-label="Move down"
-							disabled={index === draft.length - 1}
-							onclick={() => move(rule.id, 1)}
-						>
-							<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-								<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-							</svg>
-						</button>
-						<button
-							type="button"
-							class="z-icon-btn shrink-0 hover:!bg-[#fef2f2] hover:!text-[#dc2626]"
-							aria-label="Delete this rule"
-							onclick={() => removeRule(rule.id)}
-						>
-							<ActionIcon name="trash" />
-						</button>
-					</div>
+				{@const issues = ruleProblems(rule)}
+				{#if editingId === rule.id}
+					<!-- Editing: the full form for this one rule. -->
+					<div class="{card} bg-[var(--z-surface)] shadow-[var(--z-shadow-tactile)]">
+						<div class="flex items-center gap-2.5">
+							<input
+								type="checkbox"
+								class="z-check !size-[17px]"
+								checked={rule.enabled}
+								aria-label={rule.enabled ? 'Disable this rule' : 'Enable this rule'}
+								onchange={(event) => patch(rule.id, { enabled: event.currentTarget.checked })}
+							/>
+							<input
+								type="text"
+								class="z-field min-w-0 flex-1 !h-[30px] max-md:text-base"
+								placeholder="Name this rule"
+								value={rule.name}
+								oninput={(event) => patch(rule.id, { name: event.currentTarget.value })}
+							/>
+							<button type="button" class="btn-tactile !h-7 !px-2.5 !text-[12px] !font-semibold" onclick={() => (editingId = null)}>
+								Done
+							</button>
+						</div>
 
-					<!-- Conditions -->
-					<div class="mt-3 flex flex-wrap items-center gap-2 text-[13px] text-[#64748b]">
-						<span>If</span>
-						<select
-							class="z-field"
-							aria-label="Match all or any condition"
-							value={rule.match}
-							onchange={(event) =>
-								patch(rule.id, { match: event.currentTarget.value as 'all' | 'any' })}
-						>
-							<option value="all">all</option>
-							<option value="any">any</option>
-						</select>
-						<span>of these match</span>
-					</div>
+						<!-- Conditions -->
+						<div class="mt-3 flex flex-wrap items-center gap-2 text-[13px] text-[var(--z-soft)]">
+							<span>If</span>
+							<select
+								class="z-field !h-[30px]"
+								aria-label="Match all or any condition"
+								value={rule.match}
+								onchange={(event) => patch(rule.id, { match: event.currentTarget.value as 'all' | 'any' })}
+							>
+								<option value="all">all</option>
+								<option value="any">any</option>
+							</select>
+							<span>of these match</span>
+						</div>
 
-					<div class="mt-2 flex flex-col gap-2">
-						{#each rule.conditions as condition, conditionIndex (conditionIndex)}
-							<div class="flex flex-wrap items-center gap-2">
-								<select
-									class="z-field"
-									aria-label="Field"
-									value={condition.field}
-									onchange={(event) =>
-										setCondition(rule.id, conditionIndex, {
-											field: event.currentTarget.value as RuleField
-										})}
-								>
-									{#each FIELDS as field (field.value)}
-										<option value={field.value}>{field.label}</option>
-									{/each}
-								</select>
-								<select
-									class="z-field"
-									aria-label="Comparison"
-									value={condition.operator}
-									onchange={(event) =>
-										setCondition(rule.id, conditionIndex, {
-											operator: event.currentTarget.value as RuleOperator
-										})}
-								>
-									{#each OPERATORS as operator (operator.value)}
-										<option value={operator.value}>{operator.label}</option>
-									{/each}
-								</select>
-								<input
-									type="text"
-									class="z-field min-w-0 flex-1 max-md:text-base"
-									placeholder="…"
-									value={condition.value}
-									oninput={(event) =>
-										setCondition(rule.id, conditionIndex, { value: event.currentTarget.value })}
-								/>
-								{#if rule.conditions.length > 1}
-									<button
-										type="button"
-										class="z-icon-btn shrink-0"
-										aria-label="Remove this condition"
-										onclick={() =>
-											patch(rule.id, {
-												conditions: rule.conditions.filter((_: RuleCondition, i: number) => i !== conditionIndex)
-											})}
-									>
+						<div class="mt-2 flex flex-col gap-2">
+							{#each rule.conditions as condition, conditionIndex (conditionIndex)}
+								<div class="flex flex-wrap items-center gap-2">
+									<select class="z-field !h-[30px]" aria-label="Field" value={condition.field} onchange={(event) => setCondition(rule.id, conditionIndex, { field: event.currentTarget.value as RuleField })}>
+										{#each FIELDS as field (field.value)}
+											<option value={field.value}>{field.label}</option>
+										{/each}
+									</select>
+									<select class="z-field !h-[30px]" aria-label="Comparison" value={condition.operator} onchange={(event) => setCondition(rule.id, conditionIndex, { operator: event.currentTarget.value as RuleOperator })}>
+										{#each OPERATORS as operator (operator.value)}
+											<option value={operator.value}>{operator.label}</option>
+										{/each}
+									</select>
+									<input
+										type="text"
+										class="z-field min-w-0 flex-1 !h-[30px] max-md:text-base"
+										placeholder="…"
+										value={condition.value}
+										oninput={(event) => setCondition(rule.id, conditionIndex, { value: event.currentTarget.value })}
+									/>
+									{#if rule.conditions.length > 1}
+										<button type="button" class="z-icon-btn shrink-0" aria-label="Remove this condition" onclick={() => patch(rule.id, { conditions: rule.conditions.filter((_: RuleCondition, i: number) => i !== conditionIndex) })}>
+											<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+												<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+											</svg>
+										</button>
+									{/if}
+								</div>
+							{/each}
+							<button type="button" class="btn-tactile !h-[26px] self-start !px-2 !text-[12px]" onclick={() => patch(rule.id, { conditions: [...rule.conditions, { field: 'from', operator: 'contains', value: '' }] })}>
+								Add condition
+							</button>
+						</div>
+
+						<!-- Actions -->
+						<div class="z-caption mt-3.5">Then</div>
+						<div class="mt-2 flex flex-col gap-2">
+							{#each rule.actions as action, actionIndex (actionIndex)}
+								<div class="flex flex-wrap items-center gap-2">
+									<select class="z-field !h-[30px]" aria-label="Action" value={action.type} onchange={(event) => setAction(rule.id, actionIndex, actionFor(event.currentTarget.value, action))}>
+										<option value="fileInto">File into</option>
+										<option value="addFlag">Mark</option>
+										<option value="discard">Discard</option>
+									</select>
+									{#if action.type === 'fileInto'}
+										<select class="z-field min-w-0 flex-1 !h-[30px]" aria-label="Folder" value={action.mailbox} onchange={(event) => setAction(rule.id, actionIndex, { type: 'fileInto', mailbox: event.currentTarget.value })}>
+											{#each fileTargets as target (target.id)}
+												<option value={target.name}>{target.name}</option>
+											{/each}
+										</select>
+									{:else if action.type === 'addFlag'}
+										<select class="z-field min-w-0 flex-1 !h-[30px]" aria-label="Mark as" value={action.flag} onchange={(event) => setAction(rule.id, actionIndex, { type: 'addFlag', flag: event.currentTarget.value as RuleFlag })}>
+											{#each FLAGS as flag (flag.value)}
+												<option value={flag.value}>{flag.label}</option>
+											{/each}
+										</select>
+									{:else}
+										<span class="flex-1 text-[12.5px] text-[var(--z-soft)]">The message is dropped before it arrives.</span>
+									{/if}
+									<button type="button" class="z-icon-btn shrink-0" aria-label="Remove this action" onclick={() => patch(rule.id, { actions: rule.actions.filter((_: RuleAction, i: number) => i !== actionIndex) })}>
 										<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 											<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 										</svg>
 									</button>
-								{/if}
-							</div>
-						{/each}
-						<button
-							type="button"
-							class="btn-tactile !h-[26px] !px-2 !text-[12px] self-start"
-							onclick={() =>
-								patch(rule.id, {
-									conditions: [
-										...rule.conditions,
-										{ field: 'from', operator: 'contains', value: '' }
-									]
-								})}
-						>
-							Add condition
-						</button>
-					</div>
-
-					<!-- Actions -->
-					<div class="z-caption mt-3.5">Then</div>
-					<div class="mt-2 flex flex-col gap-2">
-						{#each rule.actions as action, actionIndex (actionIndex)}
-							<div class="flex flex-wrap items-center gap-2">
-								<select
-									class="z-field"
-									aria-label="Action"
-									value={action.type}
-									onchange={(event) =>
-										setAction(rule.id, actionIndex, actionFor(event.currentTarget.value, action))}
-								>
-									<option value="fileInto">Move to</option>
-									<option value="addFlag">Mark</option>
-									<option value="discard">Delete</option>
-								</select>
-
-								{#if action.type === 'fileInto'}
-									<select
-										class="z-field min-w-0 flex-1"
-										aria-label="Folder"
-										value={action.mailbox}
-										onchange={(event) =>
-											setAction(rule.id, actionIndex, {
-												type: 'fileInto',
-												mailbox: event.currentTarget.value
-											})}
-									>
-										{#each fileTargets as target (target.id)}
-											<option value={target.name}>{target.name}</option>
-										{/each}
-									</select>
-								{:else if action.type === 'addFlag'}
-									<select
-										class="z-field min-w-0 flex-1"
-										aria-label="Mark as"
-										value={action.flag}
-										onchange={(event) =>
-											setAction(rule.id, actionIndex, {
-												type: 'addFlag',
-												flag: event.currentTarget.value as RuleFlag
-											})}
-									>
-										{#each FLAGS as flag (flag.value)}
-											<option value={flag.value}>{flag.label}</option>
-										{/each}
-									</select>
-								{:else}
-									<span class="flex-1 text-[12.5px] text-[#64748b]">
-										The message is dropped before it arrives.
-									</span>
-								{/if}
-
-								<button
-									type="button"
-									class="z-icon-btn shrink-0"
-									aria-label="Remove this action"
-									onclick={() =>
-										patch(rule.id, { actions: rule.actions.filter((_: RuleAction, i: number) => i !== actionIndex) })}
-								>
-									<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-										<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-									</svg>
-								</button>
-							</div>
-						{/each}
-						<button
-							type="button"
-							class="btn-tactile !h-[26px] !px-2 !text-[12px] self-start"
-							onclick={() =>
-								patch(rule.id, {
-									actions: [...rule.actions, actionFor('fileInto', undefined)]
-								})}
-						>
-							Add action
-						</button>
-					</div>
-
-					<label class="mt-3.5 flex cursor-pointer items-center gap-2.5 text-[13px] text-[#334155]">
-						<input
-							type="checkbox"
-							class="z-check"
-							checked={rule.stop}
-							onchange={(event) => patch(rule.id, { stop: event.currentTarget.checked })}
-						/>
-						Stop checking later rules when this one matches
-					</label>
-
-					{#if ruleProblems(rule).length > 0}
-						<ul class="mt-2.5 flex flex-col gap-1">
-							{#each ruleProblems(rule) as problem (problem)}
-								<li class="text-[12.5px] text-[#78350f]">{problem}</li>
+								</div>
 							{/each}
-						</ul>
-					{/if}
-				</div>
+							<button type="button" class="btn-tactile !h-[26px] self-start !px-2 !text-[12px]" onclick={() => patch(rule.id, { actions: [...rule.actions, actionFor('fileInto', undefined)] })}>
+								Add action
+							</button>
+						</div>
+
+						<div class="mt-3.5 flex flex-wrap items-center justify-between gap-3">
+							<label class="flex cursor-pointer items-center gap-2.5 text-[13px] text-[var(--z-strong)]">
+								<input type="checkbox" class="z-check !size-[17px]" checked={rule.stop} onchange={(event) => patch(rule.id, { stop: event.currentTarget.checked })} />
+								Stop checking later rules when this one matches
+							</label>
+							<button type="button" class="btn-tactile btn-danger !h-7 !px-2.5 !text-[12px]" onclick={() => removeRule(rule.id)}>
+								Delete rule
+							</button>
+						</div>
+
+						{#if issues.length > 0}
+							<ul class="mt-2.5 flex flex-col gap-1">
+								{#each issues as problem (problem)}
+									<li class="text-[12.5px] text-[var(--z-ch-needs-ink)]">{problem}</li>
+								{/each}
+							</ul>
+						{/if}
+					</div>
+				{:else}
+					<!--
+						Reading: the rule as a card of chips. An off rule still has a live
+						checkbox and Edit, so it is not a disabled control — the card recedes
+						by ground, never by opacity.
+					-->
+					<div class="{card} {rule.enabled ? 'bg-[var(--z-surface)]' : 'bg-[var(--z-hover)]'}">
+						<div class="flex items-center gap-2.5">
+							<input
+								type="checkbox"
+								class="z-check !size-[17px]"
+								checked={rule.enabled}
+								aria-label={rule.enabled ? 'Disable this rule' : 'Enable this rule'}
+								onchange={(event) => patch(rule.id, { enabled: event.currentTarget.checked })}
+							/>
+							<span class="min-w-0 flex-1 truncate text-[13px] font-semibold {rule.enabled ? 'text-[var(--z-ink)]' : 'text-[var(--z-muted)]'}">
+								{rule.name.trim() || 'Unnamed rule'}
+							</span>
+							{#if !rule.enabled}<span class="z-chip">Off</span>{/if}
+							{#if rule.stop}<span class="z-chip">Stop</span>{/if}
+							{#if issues.length > 0}<span class="z-chip" style={channelStyle(CHANNELS.needs)}>Unfinished</span>{/if}
+							<!-- Order is meaning: a rule that stops ends the ones below it. -->
+							<button type="button" class="z-icon-btn shrink-0 disabled:!opacity-30" aria-label="Move up" disabled={index === 0} onclick={() => move(rule.id, -1)}>
+								<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+									<path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+								</svg>
+							</button>
+							<button type="button" class="z-icon-btn shrink-0 disabled:!opacity-30" aria-label="Move down" disabled={index === draft.length - 1} onclick={() => move(rule.id, 1)}>
+								<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+									<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+								</svg>
+							</button>
+							<button type="button" class="z-icon-btn shrink-0" aria-label="Edit rule" title="Edit rule" onclick={() => (editingId = rule.id)}>
+								<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+									<path d="M11 2.6l2.4 2.4-7.6 7.6-3.2.8.8-3.2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+								</svg>
+							</button>
+						</div>
+
+						<div class="mt-[9px] flex flex-col gap-[5px] pl-[27px]">
+							<div class="flex items-center gap-[7px]">
+								<span class="z-mono text-[9.5px] font-semibold tracking-[0.08em] text-[var(--z-soft)] uppercase">
+									{rule.match === 'any' ? 'If any of' : 'If all of'}
+								</span>
+								<span class="h-px flex-1 bg-[var(--z-sunken)]"></span>
+							</div>
+							{#each rule.conditions as condition, conditionIndex (conditionIndex)}
+								<div class="flex flex-wrap items-center gap-[5px]">
+									<span class="z-mono rounded-[5px] border border-[var(--z-line)] bg-[var(--z-hover)] px-1.5 text-[10.5px] font-semibold text-[var(--z-strong)]">{condition.field}</span>
+									<span class="text-[12px] text-[var(--z-soft)]">{operatorLabel(condition.operator)}</span>
+									<span class="z-mono max-w-full truncate rounded-[5px] border border-[var(--z-line)] bg-[var(--z-surface)] px-1.5 text-[10.5px] text-[var(--z-ink)]">{condition.value || '…'}</span>
+								</div>
+							{/each}
+							<div class="mt-[3px] flex flex-wrap items-center gap-1.5">
+								<span class="z-mono text-[9.5px] font-semibold tracking-[0.08em] text-[var(--z-soft)] uppercase">Then</span>
+								{#each rule.actions as action, actionIndex (actionIndex)}
+									<span class="{chip} z-chip-filled" style={channelStyle(actionChannel(action))}>{actionLabel(action)}</span>
+								{/each}
+								{#if rule.actions.length === 0}
+									<span class="text-[12px] text-[var(--z-soft)]">nothing yet</span>
+								{/if}
+							</div>
+						</div>
+					</div>
+				{/if}
 			{/each}
 
 			{#if draft.length === 0}
-				<p class="text-[13px] leading-relaxed text-[#64748b]">
+				<p class="text-[13px] leading-relaxed text-[var(--z-soft)]">
 					No rules yet. A rule looks at mail as it arrives and can file it, mark it, or drop it.
 				</p>
 			{/if}
 		</div>
 
 		<div class="mt-4 flex flex-wrap items-center gap-2">
-			<button type="button" class="btn-tactile" onclick={addRule}>Add rule</button>
+			<button type="button" class="btn-tactile !h-[34px]" onclick={addRule}>
+				<svg class="size-3.5 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+				</svg>
+				Add rule
+			</button>
+			{#if !draft.some((rule) => rule.name === 'Newsletters')}
+				<!-- The one rule almost everyone wants, ready to adjust. -->
+				<button type="button" class="btn-tactile !h-[34px]" title="Newsletters and notifications out of the inbox, into a digest folder" onclick={addNewslettersRule}>
+					<span class="inline-block size-2.5 rounded-[3px] border" style:background-color={CHANNELS.digest.fill} style:border-color={CHANNELS.digest.stroke} aria-hidden="true"></span>
+					Newsletters rule
+				</button>
+			{/if}
 			<button
 				type="button"
-				class="btn-tactile font-semibold {dirty && !blocked
-					? 'btn-primary'
-					: '!border-[#e2e8f0] !bg-[#f1f5f9] !text-[#94a3b8]'}"
+				class="btn-tactile !h-[34px] {dirty && !blocked ? 'btn-primary' : ''}"
 				disabled={!dirty || blocked || saving}
-				onclick={() => onSave($state.snapshot(draft), false)}
+				onclick={() => {
+					editingId = null;
+					onSave($state.snapshot(draft), false);
+				}}
 			>
 				{saving ? 'Saving…' : 'Save rules'}
 			</button>
 			{#if problems.length > 0}
 				<!-- Unfinished rules are kept, just not compiled — say so rather than
 				     letting them look saved and working. -->
-				<span class="text-[12.5px] text-[#78350f]">
-					Rules that are not finished are saved but will not run.
-				</span>
+				<span class="text-[12.5px] text-[var(--z-ch-needs-ink)]">Rules that are not finished are saved but will not run.</span>
 			{/if}
 		</div>
 	{/if}

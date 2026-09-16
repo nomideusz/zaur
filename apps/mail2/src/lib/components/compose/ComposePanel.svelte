@@ -286,7 +286,7 @@
      dot that marks a draft with content in the dock. -->
 {#snippet stepDot(done: boolean)}
 	<span
-		class="size-[7px] shrink-0 rounded-full border {done ? 'border-[#3b82f6] bg-[#2563eb]' : 'border-[#cbd5e1] bg-[#cbd5e1]'}"
+		class="size-[7px] shrink-0 rounded-full border {done ? 'border-[var(--z-accent-stroke)] bg-[var(--z-accent)]' : 'border-[var(--z-line)] bg-[var(--z-line)]'}"
 		aria-hidden="true"
 	></span>
 {/snippet}
@@ -312,9 +312,9 @@
 	role="dialog"
 	tabindex="-1"
 	aria-label="Compose: {title}"
-	class="absolute flex flex-col overflow-hidden bg-white {sheet
+	class="absolute flex flex-col overflow-hidden bg-[var(--z-surface)] {sheet
 		? 'inset-0'
-		: 'rounded-[12px] border border-[#cbd5e1] shadow-[0_24px_56px_rgba(11,18,32,0.26)]'} {draft.gesture
+		: 'rounded-[12px] border border-[var(--z-line)] shadow-[0_24px_56px_rgba(11,18,32,0.26)]'} {draft.gesture
 		? 'transition-none'
 		: 'transition-[left,top,width,height] duration-[180ms]'}"
 	style:left={sheet ? undefined : `${rect.x}px`}
@@ -328,7 +328,7 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		bind:this={headerEl}
-		class="flex shrink-0 touch-none items-center gap-2.5 border-b border-[#e2e8f0] bg-[#f8fafc] pr-2.5 pl-3.5 select-none {sheet
+		class="flex shrink-0 touch-none items-center gap-2.5 border-b border-[var(--z-hairline)] bg-[var(--z-hover)] pr-2.5 pl-3.5 select-none {sheet
 			? 'h-[52px]'
 			: 'h-[44px] cursor-grab active:cursor-grabbing'}"
 		onpointerdown={startDrag}
@@ -337,9 +337,9 @@
 		onpointercancel={endDrag}
 		ondblclick={() => compose.toggleMaximize(draft.id)}
 	>
-		<span class="min-w-0 flex-1 truncate text-[13px] font-semibold text-[#1e293b]">{title}</span>
+		<span class="min-w-0 flex-1 truncate text-[13px] font-semibold text-[var(--z-body)]">{title}</span>
 		{#if saveLabel}
-			<span class="z-mono shrink-0 text-[10.5px] text-[#64748b]">{saveLabel}</span>
+			<span class="z-mono shrink-0 text-[10.5px] text-[var(--z-soft)]">{saveLabel}</span>
 		{/if}
 
 		<div class="flex items-center gap-1">
@@ -348,7 +348,7 @@
 			{/if}
 			<button
 				type="button"
-				class="z-icon-btn hover:!bg-[#e2e8f0] max-md:!size-8 max-md:!rounded-[8px]"
+				class="z-icon-btn hover:!bg-[var(--z-hairline)] max-md:!size-8 max-md:!rounded-[8px]"
 				aria-label="Minimize"
 				onpointerdown={(event) => event.stopPropagation()}
 				onclick={() => compose.minimize(draft.id)}
@@ -360,7 +360,7 @@
 			{#if !sheet && maximized}
 				<button
 					type="button"
-					class="z-icon-btn hover:!bg-[#e2e8f0]"
+					class="z-icon-btn hover:!bg-[var(--z-hairline)]"
 					aria-label="Restore down"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.toggleMaximize(draft.id)}
@@ -374,7 +374,7 @@
 				<!-- A sheet already fills the shell; there is nothing to maximize. -->
 				<button
 					type="button"
-					class="z-icon-btn hover:!bg-[#e2e8f0]"
+					class="z-icon-btn hover:!bg-[var(--z-hairline)]"
 					aria-label="Maximize"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.toggleMaximize(draft.id)}
@@ -386,7 +386,7 @@
 			{/if}
 			<button
 				type="button"
-				class="z-icon-btn hover:!bg-[#fef2f2] hover:!text-[#dc2626] max-md:!size-8 max-md:!rounded-[8px]"
+				class="z-icon-btn hover:!bg-[var(--z-ch-discard-hover)] hover:!text-[var(--z-ch-discard-solid)] max-md:!size-8 max-md:!rounded-[8px]"
 				aria-label="Close draft"
 				onpointerdown={(event) => event.stopPropagation()}
 				onclick={() => compose.close(draft.id)}
@@ -404,7 +404,7 @@
 		<div class="flex min-h-[28px] flex-wrap items-start gap-x-3 gap-y-[6px] py-2">
 			<span class="flex w-[62px] shrink-0 items-center gap-1.5 pt-1 pl-2">
 				{@render stepDot(step > 0)}
-				<span class="text-[13px] {step === 0 ? 'font-medium text-[#0b1220]' : 'text-[#64748b]'}">To</span>
+				<span class="text-[13px] {step === 0 ? 'font-medium text-[var(--z-ink)]' : 'text-[var(--z-soft)]'}">To</span>
 			</span>
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -458,10 +458,10 @@
 								{initials(person.name, person.email)}
 							</span>
 							<span class="min-w-0">
-								<span class="block truncate text-[13px] font-semibold text-[#1e293b]"
+								<span class="block truncate text-[13px] font-semibold text-[var(--z-body)]"
 									>{person.name}</span
 								>
-								<span class="block truncate text-xs text-[#64748b]">{person.email}</span>
+								<span class="block truncate text-xs text-[var(--z-soft)]">{person.email}</span>
 							</span>
 						</div>
 					</Tooltip>
@@ -479,7 +479,7 @@
 					aria-autocomplete="list"
 					aria-controls={listboxId}
 					placeholder={draft.to.length > 0 ? 'Add another' : 'Name or email address'}
-					class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent text-sm text-[#0b1220] placeholder:text-[#94a3b8] focus:outline-none max-md:text-base"
+					class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
 				/>
 				{#if !draft.ccOpen}
 					<button
@@ -505,7 +505,7 @@
 						id={listboxId}
 						role="listbox"
 						aria-label="Contact suggestions"
-						class="absolute top-[calc(100%+4px)] right-[52px] left-[66px] z-5 max-h-[214px] overflow-y-auto rounded-[10px] border border-[#cbd5e1] bg-white p-1.5 shadow-[var(--z-shadow-menu)] max-md:right-0 max-md:left-0"
+						class="absolute top-[calc(100%+4px)] right-[52px] left-[66px] z-5 max-h-[214px] overflow-y-auto rounded-[10px] border border-[var(--z-line)] bg-[var(--z-surface)] p-1.5 shadow-[var(--z-shadow-menu)] max-md:right-0 max-md:left-0"
 					>
 						{#each suggestions as suggestion, index (suggestion.email)}
 							{@const theme = identityTone(suggestion.email || suggestion.name)}
@@ -515,7 +515,7 @@
 								aria-selected={index === draft.toHi}
 								class="flex w-full items-center gap-2.5 rounded-[8px] border px-[9px] py-1.5 text-left transition-colors {index ===
 								draft.toHi
-									? 'border-[#3b82f6] bg-[#dbeafe]' : 'border-transparent'}"
+									? 'border-[var(--z-accent-stroke)] bg-[var(--z-accent-soft)]' : 'border-transparent'}"
 								onpointerdown={(event) => event.preventDefault()}
 								onclick={() => {
 									compose.commitTo(draft.id, draft.toInput, suggestion);
@@ -530,12 +530,12 @@
 								>
 									{initials(suggestion.name, suggestion.email)}
 								</span>
-								<span class="min-w-0 flex-1 truncate text-[13px] font-medium text-[#1e293b]">
+								<span class="min-w-0 flex-1 truncate text-[13px] font-medium text-[var(--z-body)]">
 									{suggestion.name || suggestion.email}
 								</span>
-								<span class="min-w-0 truncate text-xs text-[#64748b]">{suggestion.email}</span>
+								<span class="min-w-0 truncate text-xs text-[var(--z-soft)]">{suggestion.email}</span>
 								{#if suggestion.meta}
-									<span class="shrink-0 text-[11px] text-[#94a3b8]">{suggestion.meta}</span>
+									<span class="shrink-0 text-[11px] text-[var(--z-faint)]">{suggestion.meta}</span>
 								{/if}
 								{#if index === draft.toHi}
 									<kbd
@@ -546,7 +546,7 @@
 							</button>
 						{/each}
 						{#if suggestions.length === 0}
-							<p class="px-2.5 py-1.5 text-[13px] text-[#64748b]">
+							<p class="px-2.5 py-1.5 text-[13px] text-[var(--z-soft)]">
 								{#if draft.toInput.includes('@')}
 									Press
 									<kbd
@@ -560,7 +560,7 @@
 							</p>
 						{:else}
 							<div
-								class="mt-1 flex items-center justify-end gap-3 border-t border-[#e2e8f0] px-2 pt-1.5 text-[11px] text-[#94a3b8]"
+								class="mt-1 flex items-center justify-end gap-3 border-t border-[var(--z-hairline)] px-2 pt-1.5 text-[11px] text-[var(--z-faint)]"
 							>
 								<span class="flex items-center gap-1">
 									<kbd
@@ -591,19 +591,19 @@
 		</div>
 
 		{#if draft.ccOpen}
-			<div class="flex h-[45px] items-center gap-3 border-b border-[#e2e8f0]">
-				<span class="w-[62px] shrink-0 pl-5 text-[13px] text-[#64748b]">Cc</span>
+			<div class="flex h-[45px] items-center gap-3 border-b border-[var(--z-hairline)]">
+				<span class="w-[62px] shrink-0 pl-5 text-[13px] text-[var(--z-soft)]">Cc</span>
 				<input
 					type="text"
 					value={draft.cc}
 					oninput={(event) =>
 						compose.patch(draft.id, { cc: (event.currentTarget as HTMLInputElement).value })}
 					placeholder="Copy someone in"
-					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[#0b1220] placeholder:text-[#94a3b8] focus:outline-none max-md:text-base"
+					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
 				/>
 				<button
 					type="button"
-					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-[#94a3b8] transition-colors hover:bg-[#f1f5f9] hover:text-[#0b1220]"
+					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-[var(--z-faint)] transition-colors hover:bg-[var(--z-sunken)] hover:text-[var(--z-ink)]"
 					aria-label="Remove Cc"
 					onclick={() => compose.patch(draft.id, { ccOpen: false, cc: '' })}
 				>
@@ -615,19 +615,19 @@
 		{/if}
 
 		{#if draft.bccOpen}
-			<div class="flex h-[45px] items-center gap-3 border-b border-[#e2e8f0]">
-				<span class="w-[62px] shrink-0 pl-5 text-[13px] text-[#64748b]">Bcc</span>
+			<div class="flex h-[45px] items-center gap-3 border-b border-[var(--z-hairline)]">
+				<span class="w-[62px] shrink-0 pl-5 text-[13px] text-[var(--z-soft)]">Bcc</span>
 				<input
 					type="text"
 					value={draft.bcc}
 					oninput={(event) =>
 						compose.patch(draft.id, { bcc: (event.currentTarget as HTMLInputElement).value })}
 					placeholder="Hidden recipients"
-					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[#0b1220] placeholder:text-[#94a3b8] focus:outline-none max-md:text-base"
+					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
 				/>
 				<button
 					type="button"
-					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-[#94a3b8] transition-colors hover:bg-[#f1f5f9] hover:text-[#0b1220]"
+					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-[var(--z-faint)] transition-colors hover:bg-[var(--z-sunken)] hover:text-[var(--z-ink)]"
 					aria-label="Remove Bcc"
 					onclick={() => compose.patch(draft.id, { bccOpen: false, bcc: '' })}
 				>
@@ -639,10 +639,10 @@
 		{/if}
 
 		<!-- Subject -->
-		<div class="flex h-[45px] items-center gap-3 border-b border-[#e2e8f0] {subjectDim} transition-opacity duration-[160ms]">
+		<div class="flex h-[45px] items-center gap-3 border-b border-[var(--z-hairline)] {subjectDim} transition-opacity duration-[160ms]">
 			<span class="flex w-[62px] shrink-0 items-center gap-1.5 pl-2">
 				{@render stepDot(step === 2)}
-				<span class="text-[13px] {step === 1 ? 'font-medium text-[#0b1220]' : 'text-[#64748b]'}">Subject</span>
+				<span class="text-[13px] {step === 1 ? 'font-medium text-[var(--z-ink)]' : 'text-[var(--z-soft)]'}">Subject</span>
 			</span>
 			<input
 				id={subjectId}
@@ -654,7 +654,7 @@
 						sendError: null
 					})}
 				onkeydown={onSubjectKeydown}
-				class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[#0b1220] focus:outline-none max-md:text-base"
+				class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--z-ink)] focus:outline-none max-md:text-base"
 			/>
 		</div>
 
@@ -665,7 +665,7 @@
 			value={draft.body}
 			oninput={onBodyInput}
 			onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
-			class="w-full resize-none border-0 bg-transparent pt-[14px] pb-4 text-[15px] leading-[1.7] text-[#1e293b] focus:outline-none max-md:text-base {bodyOpen
+			class="w-full resize-none border-0 bg-transparent pt-[14px] pb-4 text-[15px] leading-[1.7] text-[var(--z-body)] focus:outline-none max-md:text-base {bodyOpen
 				? 'opacity-100'
 				: 'opacity-68'} {filled ? 'min-h-0 flex-1 max-w-[46em]' : 'max-w-[33em]'}"
 			style:height={filled ? undefined : `${bodyHeight}px`}
@@ -683,37 +683,52 @@
 		<div class="flex max-h-[66px] shrink-0 flex-wrap content-start gap-2 overflow-y-auto pt-3 pb-3 pr-4 pl-4">
 			{#each draft.attachments as attachment (attachment.id)}
 				{@const badge = attachmentBadge(attachment.type)}
-				<span class="flex h-[30px] shrink-0 items-center gap-2 rounded-[8px] border border-[#cbd5e1] bg-white pr-1.5 pl-1.5 shadow-[var(--z-shadow-tactile)]">
+				{@const failed = attachment.status === 'error'}
+				<!--
+					Uploading replaces the size with a progress rule; a failure turns the
+					whole chip into the discard channel and offers the one action worth
+					having, Retry — the file is kept until it lands.
+				-->
+				<span
+					class="flex h-[30px] shrink-0 items-center gap-2 rounded-[8px] border pr-1.5 pl-1.5 {failed
+						? 'border-[var(--z-ch-discard-stroke)] bg-[var(--z-ch-discard-fill)]'
+						: 'border-[var(--z-line)] bg-[var(--z-surface)] shadow-[var(--z-shadow-tactile)]'}"
+				>
 					<span
-						class="flex h-5 min-w-5 items-center justify-center rounded-[4px] px-1 text-[10px] font-bold uppercase"
-						style:background-color={badge.bg}
-						style:border="1px solid {badge.border}"
-						style:color={badge.text}
+						class="flex h-5 min-w-5 items-center justify-center rounded-[5px] border px-1 text-[9px] font-bold uppercase"
+						style:background-color={failed ? 'var(--z-surface)' : badge.bg}
+						style:border-color={failed ? 'var(--z-ch-discard-stroke)' : badge.border}
+						style:color={failed ? 'var(--z-ch-discard-ink)' : badge.text}
 					>
 						{attachmentKind(attachment.name, attachment.type)}
 					</span>
-					<span
-						class="max-w-[180px] truncate text-[13px] font-medium {attachment.status === 'error'
-							? 'text-red-600'
-							: 'text-[#1e293b]'}"
-					>
+					<span class="max-w-[180px] truncate text-[13px] font-medium {failed ? 'text-[var(--z-ch-discard-ink)]' : 'text-[var(--z-body)]'}">
 						{attachment.name}
 					</span>
-					<span class="shrink-0 text-xs font-medium text-[#94a3b8] tabular-nums">
-						{attachment.status === 'uploading'
-							? '…'
-							: attachment.status === 'error'
-								? 'Failed'
-								: formatAttachmentSize(attachment.size)}
-					</span>
+					{#if attachment.status === 'uploading'}
+						<span class="z-upload-rule inline-flex h-[5px] w-7 overflow-hidden rounded-full bg-[var(--z-hairline)]" aria-label="Uploading" role="progressbar">
+							<span class="block h-full w-3/5 bg-[var(--z-accent)]"></span>
+						</span>
+					{:else if failed}
+						<span class="z-mono shrink-0 text-[10.5px] text-[var(--z-ch-discard-ink)]">Failed · {formatAttachmentSize(attachment.size)}</span>
+						<button
+							type="button"
+							class="btn-tactile !h-[22px] !rounded-[6px] !border-[var(--z-ch-discard-line)] !px-2 !text-[11px] !font-semibold !text-[var(--z-ch-discard-ink)]"
+							onclick={() => compose.retryAttachment(draft.id, attachment.id)}
+						>
+							Retry
+						</button>
+					{:else}
+						<span class="z-mono shrink-0 text-[10.5px] text-[var(--z-soft)]">{formatAttachmentSize(attachment.size)}</span>
+					{/if}
 					<button
 						type="button"
-						class="flex size-[18px] shrink-0 items-center justify-center rounded-[4px] text-[#94a3b8] transition-colors hover:bg-[#f1f5f9] hover:text-[#0b1220]"
+						class="z-icon-btn !size-[18px] !rounded-[5px] {failed ? 'hover:!bg-[color-mix(in_oklab,var(--z-surface)_70%,transparent)]' : ''}"
 						aria-label="Remove {attachment.name}"
 						onclick={() => compose.removeAttachment(draft.id, attachment.id)}
 					>
 						<svg class="size-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-							<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+							<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
 						</svg>
 					</button>
 				</span>
@@ -722,7 +737,7 @@
 	{/if}
 
 	<!-- Action bar -->
-	<div class="flex h-[53px] shrink-0 items-center gap-2 border-t border-[#e2e8f0] pr-3 pl-4">
+	<div class="flex h-[53px] shrink-0 items-center gap-2 border-t border-[var(--z-hairline)] pr-3 pl-4">
 		<button
 			type="button"
 			class="btn-tactile !size-[30px] !p-0"
@@ -730,7 +745,7 @@
 			title="Attach a file"
 			onclick={() => fileInputEl?.click()}
 		>
-			<ActionIcon name="clip" class="size-[18px] text-[#334155]" />
+			<ActionIcon name="clip" class="size-[18px] text-[var(--z-strong)]" />
 		</button>
 		<input
 			bind:this={fileInputEl}
@@ -754,7 +769,7 @@
 				>
 					<Popover.Trigger
 						class="btn-tactile !h-[30px] !px-2.5 !text-[12px] {draft.sendAt
-							? '!border-[#d97706] !bg-[#fde68a] !text-[#78350f] !font-semibold'
+							? '!border-[var(--z-ch-needs-solid)] !bg-[var(--z-ch-needs-fill)] !text-[var(--z-ch-needs-ink)] !font-semibold'
 							: ''}"
 						aria-label="Schedule send"
 						title="Schedule send"
@@ -781,9 +796,9 @@
 										}}
 									>
 										<span>Send immediately</span>
-										<span class="text-xs text-[#94a3b8]">clear</span>
+										<span class="text-xs text-[var(--z-faint)]">clear</span>
 									</button>
-									<div class="my-1.5 border-t border-[#e2e8f0]"></div>
+									<div class="my-1.5 border-t border-[var(--z-hairline)]"></div>
 								{/if}
 								{#each schedulePresets as preset (preset.label)}
 									<button
@@ -792,14 +807,14 @@
 										onclick={() => pickSendAt(preset.date)}
 									>
 										<span>{preset.label}</span>
-										<span class="text-xs tabular-nums text-[#64748b]">
+										<span class="text-xs tabular-nums text-[var(--z-soft)]">
 											{formatScheduleTime(preset.date)}
 										</span>
 									</button>
 								{/each}
-								<div class="my-1.5 border-t border-[#e2e8f0]"></div>
+								<div class="my-1.5 border-t border-[var(--z-hairline)]"></div>
 								<div class="flex flex-col gap-1.5 px-1.5 pt-1 pb-1">
-									<label class="text-xs text-[#64748b]" for="compose-schedule-{draft.id}">
+									<label class="text-xs text-[var(--z-soft)]" for="compose-schedule-{draft.id}">
 										Pick date &amp; time
 									</label>
 									<input
@@ -813,7 +828,7 @@
 									/>
 									<button
 										type="button"
-										class="btn-tactile !h-8 !border-[#d97706] !bg-[#fde68a] !text-[12.5px] !font-semibold !text-[#78350f]" disabled={!customSendTime}
+										class="btn-tactile !h-8 !border-[var(--z-ch-needs-solid)] !bg-[var(--z-ch-needs-fill)] !text-[12.5px] !font-semibold !text-[var(--z-ch-needs-ink)]" disabled={!customSendTime}
 										onclick={pickCustomSendAt}
 									>
 										Schedule
@@ -866,7 +881,7 @@
 			onpointercancel={endResize}
 		>
 			<svg class="absolute right-1 bottom-1" width="7" height="7" viewBox="0 0 7 7" fill="none" aria-hidden="true">
-				<path d="M6.5 0.5L0.5 6.5M6.5 4L4 6.5" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" />
+				<path d="M6.5 0.5L0.5 6.5M6.5 4L4 6.5" stroke="var(--z-faint)" stroke-width="1.5" stroke-linecap="round" />
 			</svg>
 		</div>
 	{/if}

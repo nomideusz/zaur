@@ -33,13 +33,28 @@ export interface Channel {
 	ink: string;
 }
 
+/**
+ * Every value is a token reference, not a hex: the hex lives in `tokens.css`
+ * (light and dark), so a channel painted from here follows the theme.
+ */
+function channel(key: ChannelKey, label: string): Channel {
+	return {
+		key,
+		label,
+		fill: `var(--z-ch-${key}-fill)`,
+		stroke: `var(--z-ch-${key}-stroke)`,
+		solid: `var(--z-ch-${key}-solid)`,
+		ink: `var(--z-ch-${key}-ink)`
+	};
+}
+
 export const CHANNELS: Record<ChannelKey, Channel> = {
-	correspondence: { key: 'correspondence', label: 'Correspondence', fill: '#dbeafe', stroke: '#3b82f6', solid: '#2563eb', ink: '#1e40af' },
-	confirmed: { key: 'confirmed', label: 'Confirmed', fill: '#dcfce7', stroke: '#16a34a', solid: '#16a34a', ink: '#14532d' },
-	needs: { key: 'needs', label: 'Needs you', fill: '#fde68a', stroke: '#d97706', solid: '#d97706', ink: '#78350f' },
-	flagged: { key: 'flagged', label: 'Flagged', fill: '#fbcfe8', stroke: '#db2777', solid: '#db2777', ink: '#831843' },
-	digest: { key: 'digest', label: 'Digest', fill: '#ddd6fe', stroke: '#7c3aed', solid: '#7c3aed', ink: '#4c1d95' },
-	discard: { key: 'discard', label: 'Junk', fill: '#fee2e2', stroke: '#ef4444', solid: '#dc2626', ink: '#b91c1c' }
+	correspondence: channel('correspondence', 'Correspondence'),
+	confirmed: channel('confirmed', 'Confirmed'),
+	needs: channel('needs', 'Needs you'),
+	flagged: channel('flagged', 'Flagged'),
+	digest: channel('digest', 'Digest'),
+	discard: channel('discard', 'Junk')
 };
 
 /** Inline style vars the shared `.z-chip` / `.z-hue-wash` / `.z-tile` read. */
@@ -109,15 +124,25 @@ export interface IdentityTone {
 	ink: string;
 }
 
+/** Token references, like the channels: the hex (light and dark) is in `tokens.css`. */
+function tone(name: IdentityToneName): IdentityTone {
+	return {
+		name,
+		fill: `var(--z-id-${name}-fill)`,
+		stroke: `var(--z-id-${name}-stroke)`,
+		ink: `var(--z-id-${name}-ink)`
+	};
+}
+
 export const IDENTITY_TONES: IdentityTone[] = [
-	{ name: 'steel', fill: '#dbe3ec', stroke: '#64748b', ink: '#1e293b' },
-	{ name: 'sky', fill: '#bae6fd', stroke: '#0284c7', ink: '#0c4a6e' },
-	{ name: 'indigo', fill: '#c7d2fe', stroke: '#4f46e5', ink: '#312e81' },
-	{ name: 'rose', fill: '#fecdd3', stroke: '#e11d48', ink: '#881337' },
-	{ name: 'lime', fill: '#d9f99d', stroke: '#65a30d', ink: '#365314' },
-	{ name: 'orange', fill: '#fed7aa', stroke: '#ea580c', ink: '#7c2d12' },
-	{ name: 'plum', fill: '#e9d5ff', stroke: '#9333ea', ink: '#581c87' },
-	{ name: 'stone', fill: '#e7e5e4', stroke: '#78716c', ink: '#292524' }
+	tone('steel'),
+	tone('sky'),
+	tone('indigo'),
+	tone('rose'),
+	tone('lime'),
+	tone('orange'),
+	tone('plum'),
+	tone('stone')
 ];
 
 function hash(seed: string): number {
@@ -190,7 +215,7 @@ export function mailboxTheme(kind: string | undefined | null): MailboxColors {
 	const channel = mailboxChannel(kind);
 	return {
 		check: channel.solid,
-		badgeBg: '#ffffff',
+		badgeBg: 'var(--z-surface)',
 		badgeBorder: channel.stroke,
 		badgeText: channel.ink,
 		channel
@@ -217,4 +242,4 @@ export function attachmentBadge(type: string): { bg: string; border: string; tex
 }
 
 /** The unread count's colours: sky, everywhere a count sits on a control. */
-export const COUNT_BADGE = { bg: '#e0f2fe', border: '#38bdf8', text: '#0369a1' };
+export const COUNT_BADGE = { bg: 'var(--z-count-fill)', border: 'var(--z-count-stroke)', text: 'var(--z-count-ink)' };

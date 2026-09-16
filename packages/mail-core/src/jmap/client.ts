@@ -10,7 +10,7 @@ import type {
 	JMAPSieveScript,
 	JMAPVacationResponse
 } from './types';
-import { parseSearchQuery } from '../mail/search-query';
+import { allOf, parseSearchQuery } from '../mail/search-query';
 import { emailQueryHasMore } from './email-query';
 import { buildEmailCreateData, type ComposeFormat, type EmailAttachmentInput } from './email-build';
 import { resolveMailAccountId } from './account';
@@ -2106,11 +2106,12 @@ export class JMAPClient {
 		mailboxId: string,
 		limit = 50,
 		position = 0,
-		options?: { unseenOnly?: boolean }
+		options?: { unseenOnly?: boolean; flaggedOnly?: boolean }
 	): Promise<EmailQueryResult> {
-		const filter = options?.unseenOnly
-			? { inMailbox: mailboxId, notKeyword: '$seen' }
-			: { inMailbox: mailboxId };
+		// One FilterCondition can carry several properties (RFC 8620 §5.5); they AND.
+		const filter: Record<string, unknown> = { inMailbox: mailboxId };
+		if (options?.unseenOnly) filter.notKeyword = '$seen';
+		if (options?.flaggedOnly) filter.hasKeyword = '$flagged';
 		const response = await this.request([
 			[
 				'Email/query',
@@ -2164,7 +2165,7 @@ export class JMAPClient {
 		mailboxId?: string
 	): Promise<EmailQueryResult> {
 		const { filter } = parseSearchQuery(query);
-		const scopedFilter = mailboxId ? { and: [{ inMailbox: mailboxId }, filter] } : filter;
+		const scopedFilter = mailboxId ? allOf([{ inMailbox: mailboxId }, filter]) : filter;
 
 		const response = await this.request([
 			[
@@ -2189,9 +2190,19 @@ export class JMAPClient {
 			]
 		]);
 
-		const queryResult = response.methodResponses?.[0]?.[1];
+		const queryCall = response.methodResponses?.[0];
+		const queryResult = queryCall?.[1];
 		const getResult = response.methodResponses?.[1]?.[1];
 
+		// A rejected filter used to read as "no results". It is an error, and the
+		// list should say so rather than show an empty folder.
+		if (queryCall?.[0] === 'error') {
+			const error = queryResult as { type?: string; description?: string } | undefined;
+			throw new JmapMethodError(
+				error?.type ?? 'error',
+				error?.description ?? error?.type ?? 'Email/query failed'
+			);
+		}
 		if (response.methodResponses?.[1]?.[0] !== 'Email/get' || !getResult) {
 			return { emails: [], total: 0, hasMore: false };
 		}

@@ -38,7 +38,7 @@
 		<Portal>
 			<ArkTooltip.Positioner style={zIndex !== undefined ? `z-index: ${zIndex}` : undefined}>
 				<ArkTooltip.Content
-					class="max-w-[280px] rounded-[8px] border border-[#cbd5e1] bg-white px-2.5 py-2 shadow-lg"
+					class="max-w-[280px] rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] px-2.5 py-2 shadow-lg"
 				>
 					{@render children()}
 				</ArkTooltip.Content>

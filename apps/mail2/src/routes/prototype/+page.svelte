@@ -20,7 +20,7 @@
 	let sidebarOpen = $state(true);
 	let drawerOpen = $state(false);
 	let selectedMailboxId = $state<string>('inbox');
-	let unseenOnly = $state(false);
+	let listFilter = $state<'all' | 'unseen' | 'flagged'>('all');
 	let searchQuery = $state('');
 	let topBar = $state<ReturnType<typeof TopBar> | null>(null);
 	const reader = readerThread('t1');
@@ -235,7 +235,7 @@
 				`${m.from.name} ${m.from.email} ${m.subject} ${m.preview}`.toLowerCase().includes(q)
 			);
 		}
-		return unseenOnly ? mockMessagesPreview.filter((m) => m.unread) : mockMessagesPreview;
+		return listFilter === 'unseen' ? mockMessagesPreview.filter((m) => m.unread) : listFilter === 'flagged' ? mockMessagesPreview.filter((m) => m.starred) : mockMessagesPreview;
 	});
 
 	const rowGroups = $derived(
@@ -300,10 +300,10 @@
 </svelte:head>
 
 <!-- Desktop Frame Canvas matching Hobday portfolio presentation -->
-<div class="flex h-svh w-full flex-col items-center justify-center bg-[#eef1f5] overflow-hidden text-[#0b1220]">
+<div class="flex h-svh w-full flex-col items-center justify-center bg-[var(--z-ground)] overflow-hidden text-[var(--z-ink)]">
 	<div
 		bind:this={rootEl}
-		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-white"
+		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-[var(--z-surface)]"
 	>
 		<TopBar
 			bind:this={topBar}
@@ -334,7 +334,7 @@
 				{#if viewport.compact}
 					<button
 						type="button"
-						class="absolute inset-0 z-40 bg-[#0f172a]/25 lg:hidden"
+						class="absolute inset-0 z-40 bg-[var(--z-scrim)] lg:hidden"
 						aria-label="Close folder list"
 						onclick={() => (drawerOpen = false)}
 					></button>
@@ -368,10 +368,10 @@
 				onBulk={() => {}}
 				loading={false}
 				error={null}
-				{unseenOnly}
+				filter={listFilter}
 				{cursorId}
 				{selection}
-				onToggleUnseenOnly={(value) => (unseenOnly = value)}
+				onFilter={(value) => (listFilter = value)}
 				onSetSelection={(ids) => (selection = ids)}
 				onToggleSelect={(id) => {
 					const next = new Set(selection);

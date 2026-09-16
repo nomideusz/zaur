@@ -67,15 +67,18 @@ export const mailboxes = query(async (): Promise<MailboxDTO[]> => {
 		);
 });
 
+/** The list header's filter: everything, only unseen, or only what you flagged. */
+export type ListFilter = 'all' | 'unseen' | 'flagged';
+
 export const threads = query(
-	schema<{ mailboxId: string; unseenOnly?: boolean; limit?: number }>(),
-	async ({ mailboxId, unseenOnly, limit }): Promise<ThreadListDTO> => {
+	schema<{ mailboxId: string; filter?: ListFilter; limit?: number }>(),
+	async ({ mailboxId, filter, limit }): Promise<ThreadListDTO> => {
 		const client = await connect();
 		const { emails } = await client.queryEmails(
 			mailboxId,
 			Math.min(500, Math.max(1, Number(limit) || 50)),
 			0,
-			{ unseenOnly }
+			{ unseenOnly: filter === 'unseen', flaggedOnly: filter === 'flagged' }
 		);
 		return {
 			mailboxId,

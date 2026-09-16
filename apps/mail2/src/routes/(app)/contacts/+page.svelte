@@ -129,7 +129,7 @@
 <SectionShell title="Contacts">
 	{#snippet controls()}
 		<div class="relative flex items-center max-md:hidden">
-			<svg class="pointer-events-none absolute left-2.5 size-3.5 text-[#94a3b8]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+			<svg class="pointer-events-none absolute left-2.5 size-3.5 text-[var(--z-faint)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 				<circle cx="7" cy="7" r="4.5" stroke="currentColor" stroke-width="1.5" />
 				<path d="M10.5 10.5L14 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
 			</svg>
@@ -151,8 +151,8 @@
 
 	<div class="flex min-h-0 flex-1">
 		<!-- List -->
-		<div class="flex w-[380px] shrink-0 flex-col border-r border-[#e2e8f0] max-md:w-full max-md:border-r-0 {detailOpen ? 'max-md:hidden' : ''}">
-			<div class="flex items-center gap-2 border-b border-[#e2e8f0] px-4 py-2.5">
+		<div class="flex w-[380px] shrink-0 flex-col border-r border-[var(--z-hairline)] max-md:w-full max-md:border-r-0 {detailOpen ? 'max-md:hidden' : ''}">
+			<div class="flex items-center gap-2 border-b border-[var(--z-hairline)] px-4 py-2.5">
 				<input
 					type="search"
 					bind:value={query}
@@ -160,41 +160,41 @@
 					aria-label="Search contacts"
 					class="z-field w-full md:hidden max-md:text-base"
 				/>
-				<span class="text-[12px] text-[#64748b] tabular-nums max-md:hidden">
+				<span class="text-[12px] text-[var(--z-soft)] tabular-nums max-md:hidden">
 					{#if contactsState}
 						{visible.length === all.length ? `${all.length} contacts` : `${visible.length} of ${all.length}`}
 					{/if}
 				</span>
 				{#if notice}
-					<span class="ml-auto truncate text-[12px] font-medium text-[#475569]" role="status">{notice}</span>
+					<span class="ml-auto truncate text-[12px] font-medium text-[var(--z-muted)]" role="status">{notice}</span>
 				{/if}
 			</div>
 
 			<div class="min-h-0 flex-1 overflow-y-auto">
 				{#if resource?.error}
-					<div class="p-6 text-center text-[13px] text-[#b91c1c]">
+					<div class="p-6 text-center text-[13px] text-[var(--z-ch-discard-ink)]">
 						Could not load your contacts.
 						<button type="button" class="btn-tactile mt-3 !h-[28px]" onclick={() => resource?.refresh()}>Retry</button>
 					</div>
 				{:else if !contactsState}
 					<ul class="space-y-1 p-3">
-						{#each [1, 2, 3, 4, 5, 6] as n (n)}<li class="h-[44px] animate-pulse rounded-[8px] bg-[#f1f5f9]"></li>{/each}
+						{#each [1, 2, 3, 4, 5, 6] as n (n)}<li class="h-[44px] animate-pulse rounded-[8px] bg-[var(--z-sunken)]"></li>{/each}
 					</ul>
 				{:else if !contactsState.supported}
-					<p class="p-6 text-[13px] leading-relaxed text-[#64748b]">
+					<p class="p-6 text-[13px] leading-relaxed text-[var(--z-soft)]">
 						This mail server does not offer contacts over JMAP, so there is nothing to show here.
 						Compose still suggests people who have written to you.
 					</p>
 				{:else if all.length === 0}
 					<div class="p-6 text-center">
-						<p class="text-[13px] text-[#64748b]">No contacts yet.</p>
+						<p class="text-[13px] text-[var(--z-soft)]">No contacts yet.</p>
 						<button type="button" class="btn-tactile mt-3" onclick={startNew}>Add the first one</button>
 					</div>
 				{:else if visible.length === 0}
-					<p class="p-6 text-center text-[13px] text-[#64748b]">Nobody matches “{query}”.</p>
+					<p class="p-6 text-center text-[13px] text-[var(--z-soft)]">Nobody matches “{query}”.</p>
 				{:else}
 					{#each groups as group (group.letter)}
-						<div class="z-caption sticky top-0 z-10 border-b border-[#e2e8f0] bg-white/95 px-4 py-1.5 backdrop-blur">
+						<div class="z-caption sticky top-0 z-10 border-b border-[var(--z-hairline)] bg-[color-mix(in_oklab,var(--z-surface)_95%,transparent)] px-4 py-1.5 backdrop-blur">
 							{group.letter}
 						</div>
 						<ul role="list">
@@ -204,7 +204,7 @@
 								<li>
 									<button
 										type="button"
-										class="flex w-full items-center gap-3 border-b border-[#f1f5f9] px-4 py-2 text-left transition-colors {isSelected ? 'bg-[#e3eeff]' : 'hover:bg-[#f8fafc]'}"
+										class="flex w-full items-center gap-3 border-b border-[var(--z-sunken)] px-4 py-2 text-left transition-colors {isSelected ? 'bg-[var(--z-accent-tint)]' : 'hover:bg-[var(--z-hover)]'}"
 										onclick={() => open(contact)}
 										aria-current={isSelected ? 'true' : undefined}
 									>
@@ -217,8 +217,8 @@
 											{initials(contact)}
 										</span>
 										<span class="min-w-0 flex-1">
-											<span class="block truncate text-[13.5px] font-medium text-[#0b1220]">{contactDisplayName(contact)}</span>
-											<span class="block truncate text-[12px] text-[#64748b]">
+											<span class="block truncate text-[13.5px] font-medium text-[var(--z-ink)]">{contactDisplayName(contact)}</span>
+											<span class="block truncate text-[12px] text-[var(--z-soft)]">
 												{contact.emails[0]?.address ?? contact.phones[0]?.number ?? contact.organization}
 											</span>
 										</span>
@@ -228,7 +228,7 @@
 						</ul>
 					{/each}
 					{#if contactsState.truncated}
-						<p class="px-4 py-3 text-[12px] text-[#94a3b8]">Showing the first {all.length} — use search to find the rest.</p>
+						<p class="px-4 py-3 text-[12px] text-[var(--z-faint)]">Showing the first {all.length} — use search to find the rest.</p>
 					{/if}
 				{/if}
 			</div>
@@ -250,7 +250,7 @@
 			{:else if selected}
 				{@const colors = theme(selected)}
 				<div class="flex h-full flex-col">
-					<div class="flex items-center gap-2 border-b border-[#e2e8f0] px-6 py-3 max-md:px-3">
+					<div class="flex items-center gap-2 border-b border-[var(--z-hairline)] px-6 py-3 max-md:px-3">
 						<button type="button" class="btn-tactile !size-[30px] !p-0 md:hidden" aria-label="Back to the list" onclick={() => (selectedId = null)}>
 							<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 								<path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
@@ -261,13 +261,13 @@
 								Write
 							</a>
 							<button type="button" class="btn-tactile !h-[30px]" onclick={() => (mode = 'edit')}>Edit</button>
-							<button type="button" class="btn-tactile !h-[30px] !text-[#b91c1c]" disabled={saving} onclick={() => remove(selected!)}>Delete</button>
+							<button type="button" class="btn-tactile !h-[30px] !text-[var(--z-ch-discard-ink)]" disabled={saving} onclick={() => remove(selected!)}>Delete</button>
 						</div>
 					</div>
 					<div class="min-h-0 flex-1 overflow-y-auto px-8 py-6 max-md:px-4">
 						<!-- A person is carried by the avatar tile; the card around it stays neutral,
 						     because a surface hue means a channel, not who someone is. -->
-						<div class="flex items-center gap-4 rounded-[10px] border border-[#e2e8f0] bg-white p-4 shadow-[var(--z-shadow-tactile)]">
+						<div class="flex items-center gap-4 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-surface)] p-4 shadow-[var(--z-shadow-tactile)]">
 							<span
 								class="flex size-14 shrink-0 items-center justify-center rounded-[8px] border text-[18px] font-bold"
 								style:background-color={colors.bg}
@@ -277,10 +277,10 @@
 								{initials(selected)}
 							</span>
 							<div class="min-w-0">
-								<h2 class="truncate text-[18px] font-bold tracking-tight text-[#0b1220]">{contactDisplayName(selected)}</h2>
-								{#if selected.nickname}<p class="text-[13px] text-[#64748b]">“{selected.nickname}”</p>{/if}
+								<h2 class="truncate text-[18px] font-bold tracking-tight text-[var(--z-ink)]">{contactDisplayName(selected)}</h2>
+								{#if selected.nickname}<p class="text-[13px] text-[var(--z-soft)]">“{selected.nickname}”</p>{/if}
 								{#if selected.title || selected.organization}
-									<p class="truncate text-[13px] text-[#475569]">
+									<p class="truncate text-[13px] text-[var(--z-muted)]">
 										{[selected.title, selected.organization].filter(Boolean).join(' · ')}
 									</p>
 								{/if}
@@ -289,11 +289,11 @@
 
 						{#if selected.emails.length}
 							<h3 class="z-caption mt-6">Email</h3>
-							<ul class="mt-2 divide-y divide-[#f1f5f9]">
+							<ul class="mt-2 divide-y divide-[var(--z-sunken)]">
 								{#each selected.emails as email (email.address)}
 									<li class="flex items-center justify-between gap-3 py-2">
-										<a href="/?to={encodeURIComponent(email.address)}" class="truncate text-[13.5px] font-medium text-[#1e293b] hover:text-[#1d4ed8] hover:underline">{email.address}</a>
-										{#if email.label}<span class="shrink-0 text-[12px] text-[#94a3b8]">{email.label}</span>{/if}
+										<a href="/?to={encodeURIComponent(email.address)}" class="truncate text-[13.5px] font-medium text-[var(--z-body)] hover:text-[var(--z-accent-edge)] hover:underline">{email.address}</a>
+										{#if email.label}<span class="shrink-0 text-[12px] text-[var(--z-faint)]">{email.label}</span>{/if}
 									</li>
 								{/each}
 							</ul>
@@ -301,11 +301,11 @@
 
 						{#if selected.phones.length}
 							<h3 class="z-caption mt-6">Phone</h3>
-							<ul class="mt-2 divide-y divide-[#f1f5f9]">
+							<ul class="mt-2 divide-y divide-[var(--z-sunken)]">
 								{#each selected.phones as phone (phone.number)}
 									<li class="flex items-center justify-between gap-3 py-2">
-										<a href="tel:{phone.number.replace(/[^\d+]/g, '')}" class="text-[13.5px] font-medium text-[#1e293b] tabular-nums hover:text-[#1d4ed8] hover:underline">{phone.number}</a>
-										{#if phone.label}<span class="shrink-0 text-[12px] text-[#94a3b8]">{phone.label}</span>{/if}
+										<a href="tel:{phone.number.replace(/[^\d+]/g, '')}" class="text-[13.5px] font-medium text-[var(--z-body)] tabular-nums hover:text-[var(--z-accent-edge)] hover:underline">{phone.number}</a>
+										{#if phone.label}<span class="shrink-0 text-[12px] text-[var(--z-faint)]">{phone.label}</span>{/if}
 									</li>
 								{/each}
 							</ul>
@@ -313,18 +313,18 @@
 
 						{#if selected.note}
 							<h3 class="z-caption mt-6">Notes</h3>
-							<p class="mt-2 text-[13px] leading-relaxed whitespace-pre-wrap text-[#334155]">{selected.note}</p>
+							<p class="mt-2 text-[13px] leading-relaxed whitespace-pre-wrap text-[var(--z-strong)]">{selected.note}</p>
 						{/if}
 
 						{#if selected.updated}
-							<p class="mt-8 text-[12px] text-[#94a3b8]">
+							<p class="mt-8 text-[12px] text-[var(--z-faint)]">
 								Updated {new Date(selected.updated).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
 							</p>
 						{/if}
 					</div>
 				</div>
 			{:else}
-				<div class="flex h-full items-center justify-center p-8 text-center text-[13px] text-[#94a3b8] max-md:hidden">
+				<div class="flex h-full items-center justify-center p-8 text-center text-[13px] text-[var(--z-faint)] max-md:hidden">
 					{#if contactsState?.supported}
 						Pick someone from the list, or add a new contact.
 					{/if}

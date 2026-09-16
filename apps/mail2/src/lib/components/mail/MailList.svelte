@@ -3,7 +3,7 @@
 	import { Portal } from '@ark-ui/svelte/portal';
 	import type { MailboxDTO } from '#lib/mail/types';
 	import type { RowGroup, ListRow } from '#lib/mail/rows';
-	import type { BulkAction } from '../../../routes/mail.remote';
+	import type { BulkAction, ListFilter } from '../../../routes/mail.remote';
 	import { formatListTime, initials } from '#lib/mail/rows';
 	import {
 		CHANNELS,
@@ -26,12 +26,13 @@
 		groups: RowGroup[] | undefined;
 		loading: boolean;
 		error: unknown;
-		unseenOnly: boolean;
+		/** All | Unseen | Flagged — the header's segmented control. */
+		filter: ListFilter;
 		cursorId: string | null;
 		/** The thread in the reader — the one row that has to be findable at a glance. */
 		openThreadId?: string | null;
 		selection: Set<string>;
-		onToggleUnseenOnly: (value: boolean) => void;
+		onFilter: (value: ListFilter) => void;
 		/** Non-empty while the list is showing results rather than a folder. */
 		searchQuery?: string;
 		onClearSearch?: () => void;
@@ -52,13 +53,13 @@
 		groups,
 		loading,
 		error,
-		unseenOnly,
+		filter,
 		cursorId,
 		openThreadId = null,
 		selection,
 		searchQuery = '',
 		onClearSearch,
-		onToggleUnseenOnly,
+		onFilter,
 		onSetSelection,
 		onToggleSelect,
 		onOpen,
@@ -145,7 +146,7 @@
 </script>
 
 <section
-	class="@container flex h-full min-h-0 flex-col overflow-hidden bg-white select-none {className}"
+	class="@container flex h-full min-h-0 flex-col overflow-hidden bg-[var(--z-surface)] select-none {className}"
 	aria-label="Message list"
 >
 	<!--
@@ -154,30 +155,30 @@
 		it. With a selection up it wears the correspondence fill, so selection
 		reads as one object with the rows it is about.
 	-->
-	<div class="shrink-0 border-b border-[#e2e8f0] {selection.size > 0 ? 'p-1.5' : ''}">
+	<div class="shrink-0 border-b border-[var(--z-hairline)] {selection.size > 0 ? 'p-1.5' : ''}">
 		<div
 			class="flex h-[46px] items-center justify-between gap-3 {selection.size > 0
-				? 'z-bulk rounded-[10px] border border-[#3b82f6] bg-[#dbeafe] px-2.5'
+				? 'z-bulk rounded-[10px] border border-[var(--z-accent-stroke)] bg-[var(--z-accent-soft)] px-2.5'
 				: 'px-3.5 max-md:px-3'}"
 		>
 			<div class="flex min-w-0 items-center gap-2">
 				<!-- Select menu trigger — the one control both modes keep. -->
 				<Menu.Root positioning={{ placement: 'bottom-start', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
 					<Menu.Trigger
-						class="btn-tactile !h-7 gap-1.5 !px-2 {selection.size > 0 ? '!border-[#93c5fd]' : ''}"
+						class="btn-tactile !h-7 gap-1.5 !px-2 {selection.size > 0 ? '!border-[var(--z-accent-line)]' : ''}"
 						aria-label="Selection options"
 					>
 						<span
 							class="flex size-[15px] items-center justify-center rounded-[4px] border-[1.5px] transition-colors {selection.size > 0
-								? 'border-[#2563eb] bg-[#2563eb] text-white'
-								: 'border-[#94a3b8] bg-white text-transparent'}"
+								? 'border-[var(--z-accent)] bg-[var(--z-accent)] text-white'
+								: 'border-[var(--z-faint)] bg-[var(--z-surface)] text-transparent'}"
 							aria-hidden="true"
 						>
 							<svg class="size-2.5" viewBox="0 0 16 16" fill="none">
 								<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
 							</svg>
 						</span>
-						<ActionIcon name="chevron" class="size-3 text-[#94a3b8]" />
+						<ActionIcon name="chevron" class="size-3 text-[var(--z-faint)]" />
 					</Menu.Trigger>
 					<Portal>
 						<Menu.Positioner>
@@ -194,7 +195,7 @@
 				</Menu.Root>
 
 				{#if selection.size > 0}
-					<span class="shrink-0 text-[13px] font-semibold text-[#1e40af] tabular-nums">
+					<span class="shrink-0 text-[13px] font-semibold text-[var(--z-accent-ink)] tabular-nums">
 						{selection.size}<span class="@max-[430px]:sr-only">&nbsp;selected</span>
 					</span>
 				{:else if searchQuery}
@@ -203,11 +204,11 @@
 						filter here would be a control that lies. The query takes its place.
 					-->
 					<div class="z-field flex !h-7 min-w-0 items-center gap-1.5 !py-0 !pr-0.5 !pl-2">
-						<svg class="size-3.5 shrink-0 text-[#94a3b8]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<svg class="size-3.5 shrink-0 text-[var(--z-faint)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 							<circle cx="7" cy="7" r="4.4" stroke="currentColor" stroke-width="1.4" />
 							<path d="M10.4 10.4L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
 						</svg>
-						<span class="min-w-0 truncate text-xs font-semibold text-[#0b1220]">{searchQuery}</span>
+						<span class="min-w-0 truncate text-xs font-semibold text-[var(--z-ink)]">{searchQuery}</span>
 						{#if onClearSearch}
 							<button type="button" class="z-icon-btn !size-6" aria-label="Clear search" title="Clear search (esc)" onclick={onClearSearch}>
 								<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -217,12 +218,12 @@
 						{/if}
 					</div>
 				{:else}
-					<!-- Filter: All | Unseen -->
+					<!-- Filter: All | Unseen | Flagged -->
 					<div class="z-group" role="group" aria-label="Filter">
-						<button type="button" class="z-segment !h-6 !px-2.5" aria-pressed={!unseenOnly} onclick={() => onToggleUnseenOnly(false)}>
+						<button type="button" class="z-segment !h-6 !px-2.5" aria-pressed={filter === 'all'} onclick={() => onFilter('all')}>
 							All
 						</button>
-						<button type="button" class="z-segment !h-6 !px-2.5" aria-pressed={unseenOnly} onclick={() => onToggleUnseenOnly(true)}>
+						<button type="button" class="z-segment !h-6 !px-2.5" aria-pressed={filter === 'unseen'} onclick={() => onFilter('unseen')}>
 							Unseen
 							{#if (mailbox?.unread ?? 0) > 0}
 								<span
@@ -235,6 +236,9 @@
 								</span>
 							{/if}
 						</button>
+						<button type="button" class="z-segment !h-6 !px-2.5 @max-[430px]:hidden" aria-pressed={filter === 'flagged'} onclick={() => onFilter('flagged')}>
+							Flagged
+						</button>
 					</div>
 				{/if}
 			</div>
@@ -242,10 +246,10 @@
 			<div class="flex shrink-0 items-center gap-2">
 				{#if selection.size > 0}
 					<!-- The same four actions a row offers on hover, in the same icons. -->
-					<div class="z-group !border-[#93c5fd]" role="group" aria-label="Selection actions">
+					<div class="z-group !border-[var(--z-accent-line)]" role="group" aria-label="Selection actions">
 						<button
 							type="button"
-							class="z-icon-btn {allStarred ? '!text-[#db2777] hover:!bg-[#fdf2f8]' : ''}"
+							class="z-icon-btn {allStarred ? '!text-[var(--z-ch-flagged-solid)] hover:!bg-[var(--z-ch-flagged-hover)]' : ''}"
 							disabled={busy}
 							aria-label={allStarred ? 'Remove flag' : 'Flag'}
 							title={allStarred ? 'Remove flag (s)' : 'Flag (s)'}
@@ -270,7 +274,7 @@
 						{/if}
 						<button
 							type="button"
-							class="z-icon-btn hover:!bg-[#fef2f2] hover:!text-[#dc2626] {mailbox?.kind === 'trash' ? '!text-[#dc2626]' : ''}"
+							class="z-icon-btn hover:!bg-[var(--z-ch-discard-hover)] hover:!text-[var(--z-ch-discard-solid)] {mailbox?.kind === 'trash' ? '!text-[var(--z-ch-discard-solid)]' : ''}"
 							disabled={busy}
 							aria-label={mailbox?.kind === 'trash' ? 'Delete forever' : 'Delete'}
 							title={mailbox?.kind === 'trash' ? 'Delete forever (#)' : 'Delete (#)'}
@@ -282,7 +286,7 @@
 
 					{#if moveTargets.length > 0}
 						<Menu.Root positioning={{ placement: 'bottom-end', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
-							<Menu.Trigger class="btn-tactile !h-7 shrink-0 gap-1 !border-[#93c5fd] !px-2.5 !text-[12px] !font-semibold !text-[#1e40af] @max-[430px]:hidden" disabled={busy}>
+							<Menu.Trigger class="btn-tactile !h-7 shrink-0 gap-1 !border-[var(--z-accent-line)] !px-2.5 !text-[12px] !font-semibold !text-[var(--z-accent-ink)] @max-[430px]:hidden" disabled={busy}>
 								Move to
 								<ActionIcon name="chevron" class="size-[11px]" />
 							</Menu.Trigger>
@@ -305,7 +309,7 @@
 
 					<button
 						type="button"
-						class="btn-tactile !size-7 !border-[#93c5fd] !p-0 !text-[#1e40af]"
+						class="btn-tactile !size-7 !border-[var(--z-accent-line)] !p-0 !text-[var(--z-accent-ink)]"
 						onclick={selectNone}
 						title="Clear selection (esc)"
 						aria-label="Clear selection"
@@ -316,7 +320,7 @@
 					</button>
 				{:else}
 					{#if flatRows.length > 0}
-						<span class="z-mono text-[11px] text-[#64748b] @max-[430px]:hidden" title="{flatRows.length} {searchQuery ? 'results' : 'conversations'}">
+						<span class="z-mono text-[11px] text-[var(--z-soft)] @max-[430px]:hidden" title="{flatRows.length} {searchQuery ? 'results' : 'conversations'}">
 							{flatRows.length}
 						</span>
 					{/if}
@@ -329,7 +333,7 @@
 						title="New message (c)"
 						aria-label="New message"
 					>
-						<svg class="{viewport.phone ? 'size-[17px] text-white' : 'size-[15px] text-[#1e293b]'}" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<svg class="{viewport.phone ? 'size-[17px] text-white' : 'size-[15px] text-[var(--z-body)]'}" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 							<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
 						</svg>
 					</button>
@@ -345,31 +349,31 @@
 	>
 		{#if error}
 			<div
-				class="z-railed mt-3 flex items-start gap-[9px] rounded-[10px] border border-[#ef4444] bg-[#fee2e2] py-[11px] pr-3 pl-[18px]"
-				style:--z-rail="#dc2626"
+				class="z-railed mt-3 flex items-start gap-[9px] rounded-[10px] border border-[var(--z-ch-discard-stroke)] bg-[var(--z-ch-discard-fill)] py-[11px] pr-3 pl-[18px]"
+				style:--z-rail="var(--z-ch-discard-solid)"
 				style:--z-rail-inset="10px"
 				role="alert"
 			>
-				<svg class="mt-px size-[15px] shrink-0 text-[#b91c1c]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+				<svg class="mt-px size-[15px] shrink-0 text-[var(--z-ch-discard-ink)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<circle cx="8" cy="8" r="6.2" stroke="currentColor" stroke-width="1.4" />
 					<path d="M8 5v3.6M8 10.7v.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
 				</svg>
 				<div class="min-w-0 flex-1">
-					<span class="block text-[13px] font-semibold text-[#b91c1c]">Couldn't load messages</span>
-					<span class="mt-0.5 block text-[12.5px] leading-normal text-[#991b1b]">The mail server couldn't be reached.</span>
+					<span class="block text-[13px] font-semibold text-[var(--z-ch-discard-ink)]">Couldn't load messages</span>
+					<span class="mt-0.5 block text-[12.5px] leading-normal text-[var(--z-ch-discard-ink)]">The mail server couldn't be reached.</span>
 				</div>
-				<button type="button" class="btn-tactile !h-7 shrink-0 !border-[#fca5a5] !px-2.5 !text-[12px] !font-semibold !text-[#b91c1c]" onclick={onRetry}>Retry</button>
+				<button type="button" class="btn-tactile !h-7 shrink-0 !border-[var(--z-ch-discard-line)] !px-2.5 !text-[12px] !font-semibold !text-[var(--z-ch-discard-ink)]" onclick={onRetry}>Retry</button>
 			</div>
 		{:else if loading && !groups}
 			<div class="flex flex-col gap-2 pt-3" aria-hidden="true">
 				{#each [['34%', '72%', '58%'], ['28%', '64%', '48%'], ['40%', '80%', '52%'], ['30%', '68%', '44%'], ['36%', '76%', '60%']] as widths, index (index)}
-					<div class="z-railed z-skeleton rounded-[10px] border border-[#e2e8f0] bg-white py-[11px] pr-3 pl-[18px]" style:--z-rail="#e2e8f0">
+					<div class="z-railed z-skeleton rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-surface)] py-[11px] pr-3 pl-[18px]" style:--z-rail="var(--z-hairline)">
 						<div class="flex items-start gap-[11px]">
-							<span class="size-[30px] shrink-0 rounded-[8px] bg-[#f1f5f9]"></span>
+							<span class="size-[30px] shrink-0 rounded-[8px] bg-[var(--z-sunken)]"></span>
 							<div class="flex flex-1 flex-col gap-[7px]">
-								<span class="block h-[11px] rounded-[4px] bg-[#f1f5f9]" style:width={widths[0]}></span>
-								<span class="block h-[11px] rounded-[4px] bg-[#f1f5f9]" style:width={widths[1]}></span>
-								<span class="block h-[11px] rounded-[4px] bg-[#f1f5f9]" style:width={widths[2]}></span>
+								<span class="block h-[11px] rounded-[4px] bg-[var(--z-sunken)]" style:width={widths[0]}></span>
+								<span class="block h-[11px] rounded-[4px] bg-[var(--z-sunken)]" style:width={widths[1]}></span>
+								<span class="block h-[11px] rounded-[4px] bg-[var(--z-sunken)]" style:width={widths[2]}></span>
 							</div>
 						</div>
 					</div>
@@ -378,35 +382,35 @@
 		{:else if groups && groups.length === 0 && searchQuery}
 			<!-- No results is a different empty than an empty folder, and the useful
 			     thing to offer is what the query language can do. -->
-			<div class="mt-3 flex flex-col items-center gap-1 rounded-[10px] border border-[#e2e8f0] bg-white px-4 py-[18px] text-center">
+			<div class="mt-3 flex flex-col items-center gap-1 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-surface)] px-4 py-[18px] text-center">
 				<span class="z-tile mb-1.5" style={channelStyle(CHANNELS.digest)}>
 					<svg class="size-5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						<circle cx="7" cy="7" r="4.4" stroke="currentColor" stroke-width="1.4" />
 						<path d="M10.4 10.4L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
 					</svg>
 				</span>
-				<p class="text-[14px] font-bold text-[#0b1220]">No matches</p>
-				<p class="max-w-[300px] text-[12.5px] leading-relaxed text-[#475569]">
+				<p class="text-[14px] font-bold text-[var(--z-ink)]">No matches</p>
+				<p class="max-w-[300px] text-[12.5px] leading-relaxed text-[var(--z-muted)]">
 					Nothing in {mailbox?.name ?? 'this folder'} matches
-					<span class="font-medium text-[#334155]">{searchQuery}</span>.
+					<span class="font-medium text-[var(--z-strong)]">{searchQuery}</span>.
 				</p>
-				<p class="z-mono mt-2 max-w-[320px] text-[10.5px] leading-relaxed text-[#64748b]">{searchOperatorHint()}</p>
+				<p class="z-mono mt-2 max-w-[320px] text-[10.5px] leading-relaxed text-[var(--z-soft)]">{searchOperatorHint()}</p>
 				{#if onClearSearch}
 					<button type="button" class="btn-tactile mt-3 !h-8" onclick={onClearSearch}>Clear search</button>
 				{/if}
 			</div>
 		{:else if groups && groups.length === 0}
-			<div class="mt-3 flex flex-col items-center gap-1 rounded-[10px] border border-[#e2e8f0] bg-white px-4 py-[18px] text-center">
+			<div class="mt-3 flex flex-col items-center gap-1 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-surface)] px-4 py-[18px] text-center">
 				<span class="z-tile mb-1.5" style={channelStyle(mailbox?.kind === 'junk' || mailbox?.kind === 'trash' ? CHANNELS.discard : CHANNELS.confirmed)}>
 					<svg class="size-5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						<path d="M2.5 4h11a1 1 0 011 1v7a1 1 0 01-1 1h-11a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" />
 						<path d="M2.5 5.5l5.5 4 5.5-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
 					</svg>
 				</span>
-				<p class="text-[14px] font-bold text-[#0b1220]">{emptyCopy.title}</p>
-				<p class="max-w-[260px] text-[12.5px] leading-relaxed text-[#475569]">{emptyCopy.hint}</p>
+				<p class="text-[14px] font-bold text-[var(--z-ink)]">{emptyCopy.title}</p>
+				<p class="max-w-[260px] text-[12.5px] leading-relaxed text-[var(--z-muted)]">{emptyCopy.hint}</p>
 				<button type="button" class="btn-tactile mt-3 !h-8" onclick={(event) => onNewMessage(event.currentTarget.getBoundingClientRect())}>
-					<svg class="size-3.5 text-[#334155]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<svg class="size-3.5 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 					</svg>
 					New message
@@ -416,13 +420,13 @@
 			{#each groups as group (group.label)}
 				<!-- Group divider: stays put while its own rows scroll under it. -->
 				<div
-					class="sticky top-0 z-[5] -mx-3.5 flex items-center gap-2.5 bg-white/95 px-3.5 pt-3 pb-2 backdrop-blur max-md:-mx-3 max-md:px-3"
+					class="sticky top-0 z-[5] -mx-3.5 flex items-center gap-2.5 bg-[color-mix(in_oklab,var(--z-surface)_95%,transparent)] px-3.5 pt-3 pb-2 backdrop-blur max-md:-mx-3 max-md:px-3"
 					role="separator"
 					aria-label={group.label}
 				>
 					<span class="z-caption">{group.label}</span>
-					<span class="h-px flex-1 bg-[#e2e8f0]"></span>
-					<span class="z-mono text-[11px] font-semibold text-[#64748b]">{group.rows.length}</span>
+					<span class="h-px flex-1 bg-[var(--z-hairline)]"></span>
+					<span class="z-mono text-[11px] font-semibold text-[var(--z-soft)]">{group.rows.length}</span>
 				</div>
 
 				<div class="flex flex-col gap-2 pb-2">
@@ -481,7 +485,7 @@
 							<div class="min-w-0">
 								<div class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2">
 									<div class="flex min-w-0 items-baseline gap-[7px]">
-										<span class="truncate text-[13px] {row.unread ? 'font-bold text-[#0b1220]' : 'font-medium text-[#475569]'}">
+										<span class="truncate text-[13px] {row.unread ? 'font-bold text-[var(--z-ink)]' : 'font-medium text-[var(--z-muted)]'}">
 											{row.senderLabel}
 										</span>
 										<!-- The channel says what kind of thing this is; the folder already says correspondence. -->
@@ -499,10 +503,10 @@
 									     hover strip, which takes over exactly this slot. -->
 									<div class="z-row-meta flex shrink-0 items-center gap-1.5">
 										{#if row.hasAttachment}
-											<ActionIcon name="clip" class="size-3.5 shrink-0 text-[#94a3b8]" label="Has attachment" />
+											<ActionIcon name="clip" class="size-3.5 shrink-0 text-[var(--z-faint)]" label="Has attachment" />
 										{/if}
 										<time
-											class="z-mono text-[11px] {row.unread ? 'font-semibold text-[#334155]' : 'font-medium text-[#64748b]'}"
+											class="z-mono text-[11px] {row.unread ? 'font-semibold text-[var(--z-strong)]' : 'font-medium text-[var(--z-soft)]'}"
 											datetime={row.receivedAt}
 										>
 											{formatListTime(row.receivedAt)}
@@ -510,12 +514,12 @@
 									</div>
 								</div>
 
-								<div class="mt-[3px] truncate text-[14px] leading-snug tracking-[-0.01em] {row.unread ? 'font-semibold text-[#0b1220]' : 'font-normal text-[#334155]'}">
+								<div class="mt-[3px] truncate text-[14px] leading-snug tracking-[-0.01em] {row.unread ? 'font-semibold text-[var(--z-ink)]' : 'font-normal text-[var(--z-strong)]'}">
 									{row.subject}
 								</div>
 
 								{#if prefs.showPreview}
-									<div class="mt-0.5 truncate text-[12.5px] leading-[1.6] text-[#475569]">
+									<div class="mt-0.5 truncate text-[12.5px] leading-[1.6] text-[var(--z-muted)]">
 										{row.preview}
 									</div>
 								{/if}
@@ -531,7 +535,7 @@
 								<button
 									type="button"
 									tabindex="-1"
-									class="z-icon-btn {row.starred ? '!text-[#db2777] hover:!bg-[#fdf2f8]' : ''}"
+									class="z-icon-btn {row.starred ? '!text-[var(--z-ch-flagged-solid)] hover:!bg-[var(--z-ch-flagged-hover)]' : ''}"
 									aria-label={row.starred ? 'Remove flag' : 'Flag'}
 									aria-pressed={row.starred}
 									title={row.starred ? 'Remove flag (s)' : 'Flag (s)'}
@@ -557,7 +561,7 @@
 								<button
 									type="button"
 									tabindex="-1"
-									class="z-icon-btn hover:!bg-[#fef2f2] hover:!text-[#dc2626]"
+									class="z-icon-btn hover:!bg-[var(--z-ch-discard-hover)] hover:!text-[var(--z-ch-discard-solid)]"
 									aria-label={mailbox?.kind === 'trash' ? 'Delete forever' : 'Delete'}
 									title={mailbox?.kind === 'trash' ? 'Delete forever (#)' : 'Delete (#)'}
 									onclick={(event) => rowAction(event, row.threadId, 'delete')}
@@ -594,8 +598,8 @@
 	 * not on the element; the state rules below still outrank both.
 	 */
 	.z-row:not(.z-hue-wash) {
-		background: #ffffff;
-		border-color: #e2e8f0;
+		background: var(--z-surface);
+		border-color: var(--z-hairline);
 	}
 
 	.z-row[data-unread='false'] {
@@ -607,15 +611,15 @@
 	}
 
 	.z-row[data-state='cursor'] {
-		background: #f5f9ff;
-		border-color: #93c5fd;
+		background: var(--z-accent-faint);
+		border-color: var(--z-accent-line);
 	}
 
 	.z-row[data-state='selected'],
 	.z-row[data-state='open'] {
-		background: #eff6ff;
-		border-color: #2563eb;
-		box-shadow: 0 0 0 1px #2563eb;
+		background: var(--z-accent-tint);
+		border-color: var(--z-accent);
+		box-shadow: 0 0 0 1px var(--z-accent);
 	}
 
 	.z-row-actions {
@@ -643,7 +647,7 @@
 
 	@media (hover: hover) {
 		.z-row[data-state='rest']:not(.z-hue-wash):hover {
-			border-color: #cbd5e1;
+			border-color: var(--z-line);
 			box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
 		}
 

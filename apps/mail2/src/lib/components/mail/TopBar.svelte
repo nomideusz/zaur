@@ -95,14 +95,14 @@
 </script>
 
 <header
-	class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[#cbd5e1] bg-white px-4 select-none max-md:gap-2 max-md:px-2.5"
+	class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[var(--z-line)] bg-[var(--z-surface)] px-4 select-none max-md:gap-2 max-md:px-2.5"
 >
 	<!-- Left: the stamp, the sidebar toggle, the folder switcher -->
 	<div class="flex min-w-0 shrink-0 items-center gap-3 max-md:gap-2">
 		<ZaurMark size={'md'} class="max-md:hidden" />
 		<ZaurMark size={'sm'} class="md:hidden" />
 
-		<div class="h-4 w-px bg-[#e2e8f0] max-md:hidden"></div>
+		<div class="h-4 w-px bg-[var(--z-hairline)] max-md:hidden"></div>
 
 		{#if onToggleSidebar}
 			<button
@@ -112,7 +112,7 @@
 				title={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
 				aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
 			>
-				<svg class="size-4 text-[#334155]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+				<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<rect x="2" y="2.5" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.3" />
 					<line x1="6" y1="2.5" x2="6" y2="13.5" stroke="currentColor" stroke-width="1.3" />
 				</svg>
@@ -122,14 +122,14 @@
 		<!-- Folder switcher: tactile arrows around a fixed-width sunken label
 		     that stays put while browsing, so the eye has one place to read. -->
 		<div
-			class="flex min-w-0 shrink-0 items-center rounded-[8px] border border-[#cbd5e1] bg-white shadow-[0_1px_2px_rgba(15,23,42,0.05)] {phoneSearchOpen
+			class="flex min-w-0 shrink-0 items-center rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[0_1px_2px_rgba(15,23,42,0.05)] {phoneSearchOpen
 				? 'max-md:hidden'
 				: ''}"
 		>
 			{#if onPrevMailbox}
 				<button
 					type="button"
-					class="flex h-[30px] w-7 items-center justify-center rounded-l-[7px] border-r border-[#cbd5e1] text-[#334155] transition-colors hover:bg-[#f8fafc] max-md:hidden"
+					class="flex h-[30px] w-7 items-center justify-center rounded-l-[7px] border-r border-[var(--z-line)] text-[var(--z-strong)] transition-colors hover:bg-[var(--z-hover)] max-md:hidden"
 					onclick={onPrevMailbox}
 					title="Previous mailbox"
 					aria-label="Previous mailbox"
@@ -143,7 +143,7 @@
 			{#if mailboxes}
 				<Menu.Root positioning={{ placement: 'bottom-start', gutter: 8, overflowPadding: 12 }} lazyMount unmountOnExit>
 					<Menu.Trigger
-						class="flex h-[30px] w-[184px] items-center justify-center gap-[7px] bg-[#f1f5f9] px-2.5 text-[13px] font-semibold text-[#0b1220] transition-colors hover:bg-[#e8edf3] max-md:w-auto max-md:max-w-[46vw] max-md:rounded-[7px] max-md:bg-white"
+						class="flex h-[30px] w-[184px] items-center justify-center gap-[7px] bg-[var(--z-sunken)] px-2.5 text-[13px] font-semibold text-[var(--z-ink)] transition-colors hover:bg-[var(--z-sunken)] max-md:w-auto max-md:max-w-[46vw] max-md:rounded-[7px] max-md:bg-[var(--z-surface)]"
 					>
 						<span class="min-w-0 truncate">{activeMailbox?.name ?? 'Folder'}</span>
 						{#if activeMailbox && activeMailbox.unread > 0}
@@ -156,7 +156,7 @@
 								{activeMailbox.unread}
 							</span>
 						{/if}
-						<ActionIcon name="chevron" class="size-3 text-[#94a3b8]" />
+						<ActionIcon name="chevron" class="size-3 text-[var(--z-faint)]" />
 					</Menu.Trigger>
 					<Portal>
 						<Menu.Positioner>
@@ -192,7 +192,7 @@
 			{#if onNextMailbox}
 				<button
 					type="button"
-					class="flex h-[30px] w-7 items-center justify-center rounded-r-[7px] border-l border-[#cbd5e1] text-[#334155] transition-colors hover:bg-[#f8fafc] max-md:hidden"
+					class="flex h-[30px] w-7 items-center justify-center rounded-r-[7px] border-l border-[var(--z-line)] text-[var(--z-strong)] transition-colors hover:bg-[var(--z-hover)] max-md:hidden"
 					onclick={onNextMailbox}
 					title="Next mailbox"
 					aria-label="Next mailbox"
@@ -217,7 +217,7 @@
 		>
 			<div class="relative flex w-full max-w-[420px] items-center">
 				<svg
-					class="pointer-events-none absolute left-2.5 size-3.5 text-[#94a3b8]"
+					class="pointer-events-none absolute left-2.5 size-3.5 text-[var(--z-faint)]"
 					viewBox="0 0 16 16"
 					fill="none"
 					aria-hidden="true"
@@ -263,7 +263,7 @@
 				aria-label="Search mail"
 				onclick={focusSearch}
 			>
-				<svg class="size-4 text-[#334155]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+				<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<circle cx="7" cy="7" r="4.4" stroke="currentColor" stroke-width="1.4" />
 					<path d="M10.4 10.4L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
 				</svg>
@@ -285,11 +285,11 @@
 				<Portal>
 					<Menu.Positioner>
 						<Menu.Content class="z-menu z-40 w-60">
-							<div class="mb-1 flex items-center gap-2.5 border-b border-[#e2e8f0] px-2 pt-1 pb-2.5">
+							<div class="mb-1 flex items-center gap-2.5 border-b border-[var(--z-hairline)] px-2 pt-1 pb-2.5">
 								<span class="z-avatar" style={identityStyle(account.username)} aria-hidden="true">{accountInitials}</span>
 								<span class="min-w-0">
-									<span class="block truncate text-[13px] font-semibold text-[#0b1220]">{account.displayName ?? account.username}</span>
-									<span class="z-mono block truncate text-[10.5px] text-[#64748b]">{account.username}</span>
+									<span class="block truncate text-[13px] font-semibold text-[var(--z-ink)]">{account.displayName ?? account.username}</span>
+									<span class="z-mono block truncate text-[10.5px] text-[var(--z-soft)]">{account.username}</span>
 								</span>
 							</div>
 							<!-- The section tabs hide below `sm`; the menu is the phone's way there. -->
@@ -298,7 +298,7 @@
 							<Menu.Item value="settings" class="z-menu-item" onSelect={() => goto('/settings')}>Settings</Menu.Item>
 							<Menu.Item
 								value="signout"
-								class="z-menu-item !text-[#b91c1c] data-highlighted:!bg-[#fef2f2]"
+								class="z-menu-item !text-[var(--z-ch-discard-ink)] data-highlighted:!bg-[var(--z-ch-discard-hover)]"
 								onSelect={() => onSignOut?.()}
 							>
 								Sign out

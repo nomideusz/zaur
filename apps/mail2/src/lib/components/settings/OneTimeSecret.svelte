@@ -28,14 +28,14 @@
 
 <div
 	class="z-railed mt-3 rounded-[10px] border border-amber-200 bg-amber-50 p-4"
-	style:--z-rail="#d97706"
+	style:--z-rail="var(--z-ch-needs-solid)"
 	role="alert"
 >
-	<div class="text-[13px] font-semibold text-[#0b1220]">{label}</div>
-	<p class="mt-1 text-[12.5px] leading-relaxed text-[#475569]">{hint}</p>
+	<div class="text-[13px] font-semibold text-[var(--z-ink)]">{label}</div>
+	<p class="mt-1 text-[12.5px] leading-relaxed text-[var(--z-muted)]">{hint}</p>
 	<div class="mt-2.5 flex items-center gap-2">
 		<code
-			class="min-w-0 flex-1 select-all overflow-x-auto rounded-[6px] border border-[#cbd5e1] bg-white px-2.5 py-1.5 font-mono text-[12.5px] text-[#0b1220]"
+			class="min-w-0 flex-1 select-all overflow-x-auto rounded-[6px] border border-[var(--z-line)] bg-[var(--z-surface)] px-2.5 py-1.5 font-mono text-[12.5px] text-[var(--z-ink)]"
 		>
 			{secret}
 		</code>

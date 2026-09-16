@@ -12,10 +12,10 @@
 	 */
 	// A tone is a channel's solid: correspondence, confirmed, needs, discard.
 	const TONE: Record<ToastTone, string> = {
-		info: '#2563eb',
-		success: '#16a34a',
-		warning: '#d97706',
-		error: '#dc2626'
+		info: 'var(--z-accent)',
+		success: 'var(--z-ch-confirmed-solid)',
+		warning: 'var(--z-ch-needs-solid)',
+		error: 'var(--z-ch-discard-solid)'
 	};
 
 	/**
@@ -36,12 +36,12 @@
 	<div class="z-toasts absolute z-[60] flex flex-col items-center gap-2" data-docked={docked}>
 		{#each compose.toasts as toast (toast.id)}
 			<div
-				class="z-railed flex max-w-[min(380px,calc(100vw-3rem))] items-center gap-2.5 rounded-[10px] border border-[#cbd5e1] bg-white py-2.5 pr-2 pl-[18px] shadow-[var(--z-shadow-menu)]"
+				class="z-railed flex max-w-[min(380px,calc(100vw-3rem))] items-center gap-2.5 rounded-[10px] border border-[var(--z-line)] bg-[var(--z-surface)] py-2.5 pr-2 pl-[18px] shadow-[var(--z-shadow-menu)]"
 				style:--z-rail={TONE[toast.tone ?? 'info']}
 				style:--z-rail-inset="10px"
 				role="status"
 			>
-				<p class="min-w-0 flex-1 text-[13px] font-medium text-[#1e293b]">{toast.text}</p>
+				<p class="min-w-0 flex-1 text-[13px] font-medium text-[var(--z-body)]">{toast.text}</p>
 				{#if toast.actionLabel}
 					<button
 						type="button"

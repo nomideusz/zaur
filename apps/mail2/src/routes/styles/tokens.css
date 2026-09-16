@@ -12,28 +12,34 @@
  * - **Identity lives on the avatar tile**, from a quieter ramp of eight tones
  *   picked deterministically per person. Teal is reserved for the brand.
  *
- * Raw values live on :root; the @theme inline block maps them onto Tailwind v4
- * utilities. The dark ramp is written down here because the design specifies
- * it, but the shell reads light values directly today — dark is a follow-up.
+ * Every component reads these through `var(--z-*)` (or the Tailwind utilities
+ * the @theme block maps them to), so the dark ramp below is the whole of dark
+ * mode: in dark a stroke holds its saturation, a fill becomes a 22% wash of
+ * that stroke over the surface, and the ink flips to the light tint.
  */
 
 :root {
-	/* Surfaces & ink — light */
+	color-scheme: light;
+
+	/* Surfaces & ink */
 	--z-ground: #eef1f5; /* behind the app column */
 	--z-canvas: #f6f7f9; /* pane ground, settings body */
 	--z-surface: #ffffff; /* cards, panels, menus */
-	--z-sunken: #f1f4f8; /* inset wells, sunken rows */
+	--z-sunken: #f1f5f9; /* inset wells, sunken rows, segmented frames */
+	--z-hover: #f8fafc; /* a tactile control under the pointer */
 	--z-ink: #0b1220; /* headings, unread */
 	--z-body: #1e293b; /* reader copy */
+	--z-strong: #334155; /* labels that carry weight */
 	--z-muted: #475569; /* labels, meta on tinted fills */
 	--z-soft: #64748b; /* captions and meta — the smallest text may use this, nothing lighter */
 	--z-faint: #94a3b8; /* rules and glyphs — never text */
 	--z-hairline: #e2e8f0; /* row separators */
 	--z-line: #cbd5e1; /* controls, panels */
+	--z-scrim: rgba(15, 23, 42, 0.25);
 
 	/* Legacy aliases still read by a few call sites (@theme mapping below). */
 	--z-container: var(--z-surface);
-	--z-surface-subtle: #f8fafc;
+	--z-surface-subtle: var(--z-hover);
 	--z-ink-body: var(--z-body);
 	--z-ink-muted: var(--z-muted);
 	--z-ink-secondary: var(--z-soft);
@@ -45,17 +51,26 @@
 	--z-border-strong: var(--z-faint);
 	--z-border-hover: var(--z-faint);
 	--z-grip: var(--z-faint);
-	--z-hairline-cool: #f1f5f9;
+	--z-hairline-cool: var(--z-sunken);
 
-	/* Accent — selection is the correspondence channel's solid, everywhere. */
-	--z-accent: #2563eb;
+	/* Accent — selection is the correspondence channel, everywhere. */
+	--z-accent: #2563eb; /* filled controls, checkboxes, the cursor's ring */
 	--z-accent-fg: #ffffff;
-	--z-accent-soft: #dbeafe; /* active pills, selection header */
-	--z-accent-tint: #eff6ff; /* selected row */
 	--z-accent-edge: #1d4ed8; /* border of a filled blue control */
+	--z-accent-stroke: #3b82f6; /* border of a selection surface */
+	--z-accent-line: #93c5fd; /* a control's border on a selection surface */
+	--z-accent-ink: #1e40af; /* text on a selection surface */
+	--z-accent-soft: #dbeafe; /* active pills, selection header */
+	--z-accent-tint: #eff6ff; /* selected / open row */
+	--z-accent-faint: #f5f9ff; /* the keyboard cursor */
 	--z-danger: #b91c1c;
 
-	/* Channels: fill / stroke / solid / ink */
+	/* The unread count, wherever a count sits on a control. */
+	--z-count-fill: #e0f2fe;
+	--z-count-stroke: #38bdf8;
+	--z-count-ink: #0369a1;
+
+	/* Channels: fill / stroke / solid / ink, plus a hover wash and a light line */
 	--z-ch-correspondence-fill: #dbeafe;
 	--z-ch-correspondence-stroke: #3b82f6;
 	--z-ch-correspondence-solid: #2563eb;
@@ -72,6 +87,7 @@
 	--z-ch-flagged-stroke: #db2777;
 	--z-ch-flagged-solid: #db2777;
 	--z-ch-flagged-ink: #831843;
+	--z-ch-flagged-hover: #fdf2f8;
 	--z-ch-digest-fill: #ddd6fe;
 	--z-ch-digest-stroke: #7c3aed;
 	--z-ch-digest-solid: #7c3aed;
@@ -80,6 +96,34 @@
 	--z-ch-discard-stroke: #ef4444;
 	--z-ch-discard-solid: #dc2626;
 	--z-ch-discard-ink: #b91c1c;
+	--z-ch-discard-hover: #fef2f2;
+	--z-ch-discard-line: #fca5a5;
+
+	/* Identity tones — the avatar ramp. Teal is reserved for the brand. */
+	--z-id-steel-fill: #dbe3ec;
+	--z-id-steel-stroke: #64748b;
+	--z-id-steel-ink: #1e293b;
+	--z-id-sky-fill: #bae6fd;
+	--z-id-sky-stroke: #0284c7;
+	--z-id-sky-ink: #0c4a6e;
+	--z-id-indigo-fill: #c7d2fe;
+	--z-id-indigo-stroke: #4f46e5;
+	--z-id-indigo-ink: #312e81;
+	--z-id-rose-fill: #fecdd3;
+	--z-id-rose-stroke: #e11d48;
+	--z-id-rose-ink: #881337;
+	--z-id-lime-fill: #d9f99d;
+	--z-id-lime-stroke: #65a30d;
+	--z-id-lime-ink: #365314;
+	--z-id-orange-fill: #fed7aa;
+	--z-id-orange-stroke: #ea580c;
+	--z-id-orange-ink: #7c2d12;
+	--z-id-plum-fill: #e9d5ff;
+	--z-id-plum-stroke: #9333ea;
+	--z-id-plum-ink: #581c87;
+	--z-id-stone-fill: #e7e5e4;
+	--z-id-stone-stroke: #78716c;
+	--z-id-stone-ink: #292524;
 
 	/* Type */
 	--font-sans: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -110,7 +154,7 @@
 	--z-toast: 60;
 	--z-dock: 68;
 	--z-panel: 70;
-	--z-scrim: 70;
+	--z-scrim-z: 70;
 
 	/* Elevation — four levels, no more */
 	--z-shadow-tactile: 0 1px 2px rgba(15, 23, 42, 0.06); /* buttons, chips, fields */
@@ -124,27 +168,146 @@
 	--z-tactile-border: var(--z-line);
 	--z-tactile-border-hover: var(--z-faint);
 	--z-tactile-bg: var(--z-surface);
-	--z-tactile-bg-hover: #f8fafc;
-	--z-tactile-bg-active: #f1f5f9;
+	--z-tactile-bg-hover: var(--z-hover);
+	--z-tactile-bg-active: var(--z-sunken);
 }
 
 /*
- * Dark ramp, as specified. Not wired to a toggle yet: the shell still reads
- * light values directly, so switching this on would recolour the ground and
- * nothing else. Kept so the tokens exist when the dark pass happens.
+ * Dark. Applied by the explicit preference (`data-theme` on <html>, written
+ * before first paint from the stored prefs) or by the OS when the preference
+ * is "system". Surfaces and ink flip; a channel keeps its stroke and solid,
+ * takes a 22% wash of the stroke as its fill, and its light fill as its ink.
  */
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme='light']) {
+		color-scheme: dark;
+		--z-ground: #070b10;
+		--z-canvas: #0f141a;
+		--z-surface: #161d26;
+		--z-sunken: #11171f;
+		--z-hover: #1b2430;
+		--z-ink: #e8eef6;
+		--z-body: #c3cedb;
+		--z-strong: #b3bfcd;
+		--z-muted: #a3b1c2;
+		--z-soft: #8fa0b3;
+		--z-faint: #55637a;
+		--z-hairline: #1e2836;
+		--z-line: #2c3949;
+		--z-scrim: rgba(0, 0, 0, 0.5);
+		--z-accent: #3b82f6;
+		--z-accent-edge: #2563eb;
+		--z-accent-stroke: #3b82f6;
+		--z-accent-line: color-mix(in oklab, #3b82f6 55%, var(--z-surface));
+		--z-accent-ink: #dbeafe;
+		--z-accent-soft: color-mix(in oklab, #3b82f6 22%, var(--z-surface));
+		--z-accent-tint: color-mix(in oklab, #3b82f6 14%, var(--z-surface));
+		--z-accent-faint: color-mix(in oklab, #3b82f6 8%, var(--z-surface));
+		--z-danger: #fca5a5;
+		--z-count-fill: color-mix(in oklab, #38bdf8 22%, var(--z-surface));
+		--z-count-ink: #e0f2fe;
+		--z-ch-correspondence-fill: color-mix(in oklab, #3b82f6 22%, var(--z-surface));
+		--z-ch-correspondence-ink: #dbeafe;
+		--z-ch-confirmed-fill: color-mix(in oklab, #16a34a 22%, var(--z-surface));
+		--z-ch-confirmed-ink: #dcfce7;
+		--z-ch-needs-fill: color-mix(in oklab, #d97706 22%, var(--z-surface));
+		--z-ch-needs-ink: #fde68a;
+		--z-ch-flagged-fill: color-mix(in oklab, #db2777 22%, var(--z-surface));
+		--z-ch-flagged-ink: #fbcfe8;
+		--z-ch-flagged-hover: color-mix(in oklab, #db2777 12%, var(--z-surface));
+		--z-ch-digest-fill: color-mix(in oklab, #7c3aed 22%, var(--z-surface));
+		--z-ch-digest-ink: #ddd6fe;
+		--z-ch-discard-fill: color-mix(in oklab, #ef4444 22%, var(--z-surface));
+		--z-ch-discard-ink: #fecaca;
+		--z-ch-discard-hover: color-mix(in oklab, #ef4444 12%, var(--z-surface));
+		--z-ch-discard-line: color-mix(in oklab, #ef4444 55%, var(--z-surface));
+		--z-id-steel-fill: color-mix(in oklab, #64748b 22%, var(--z-surface));
+		--z-id-steel-ink: #dbe3ec;
+		--z-id-sky-fill: color-mix(in oklab, #0284c7 22%, var(--z-surface));
+		--z-id-sky-ink: #bae6fd;
+		--z-id-indigo-fill: color-mix(in oklab, #4f46e5 22%, var(--z-surface));
+		--z-id-indigo-ink: #c7d2fe;
+		--z-id-rose-fill: color-mix(in oklab, #e11d48 22%, var(--z-surface));
+		--z-id-rose-ink: #fecdd3;
+		--z-id-lime-fill: color-mix(in oklab, #65a30d 22%, var(--z-surface));
+		--z-id-lime-ink: #d9f99d;
+		--z-id-orange-fill: color-mix(in oklab, #ea580c 22%, var(--z-surface));
+		--z-id-orange-ink: #fed7aa;
+		--z-id-plum-fill: color-mix(in oklab, #9333ea 22%, var(--z-surface));
+		--z-id-plum-ink: #e9d5ff;
+		--z-id-stone-fill: color-mix(in oklab, #78716c 22%, var(--z-surface));
+		--z-id-stone-ink: #e7e5e4;
+		--z-shadow-tactile: 0 1px 2px rgba(0, 0, 0, 0.3);
+		--z-shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.03);
+		--z-shadow-menu: 0 12px 32px rgba(0, 0, 0, 0.45);
+		--z-shadow-panel: 0 24px 56px rgba(0, 0, 0, 0.6);
+		--z-shadow-window: 0 24px 56px rgba(0, 0, 0, 0.5);
+	}
+}
+
 :root[data-theme='dark'] {
+	color-scheme: dark;
 	--z-ground: #070b10;
 	--z-canvas: #0f141a;
 	--z-surface: #161d26;
 	--z-sunken: #11171f;
+	--z-hover: #1b2430;
 	--z-ink: #e8eef6;
 	--z-body: #c3cedb;
+	--z-strong: #b3bfcd;
 	--z-muted: #a3b1c2;
 	--z-soft: #8fa0b3;
 	--z-faint: #55637a;
 	--z-hairline: #1e2836;
 	--z-line: #2c3949;
+	--z-scrim: rgba(0, 0, 0, 0.5);
+	--z-accent: #3b82f6;
+	--z-accent-edge: #2563eb;
+	--z-accent-stroke: #3b82f6;
+	--z-accent-line: color-mix(in oklab, #3b82f6 55%, var(--z-surface));
+	--z-accent-ink: #dbeafe;
+	--z-accent-soft: color-mix(in oklab, #3b82f6 22%, var(--z-surface));
+	--z-accent-tint: color-mix(in oklab, #3b82f6 14%, var(--z-surface));
+	--z-accent-faint: color-mix(in oklab, #3b82f6 8%, var(--z-surface));
+	--z-danger: #fca5a5;
+	--z-count-fill: color-mix(in oklab, #38bdf8 22%, var(--z-surface));
+	--z-count-ink: #e0f2fe;
+	--z-ch-correspondence-fill: color-mix(in oklab, #3b82f6 22%, var(--z-surface));
+	--z-ch-correspondence-ink: #dbeafe;
+	--z-ch-confirmed-fill: color-mix(in oklab, #16a34a 22%, var(--z-surface));
+	--z-ch-confirmed-ink: #dcfce7;
+	--z-ch-needs-fill: color-mix(in oklab, #d97706 22%, var(--z-surface));
+	--z-ch-needs-ink: #fde68a;
+	--z-ch-flagged-fill: color-mix(in oklab, #db2777 22%, var(--z-surface));
+	--z-ch-flagged-ink: #fbcfe8;
+	--z-ch-flagged-hover: color-mix(in oklab, #db2777 12%, var(--z-surface));
+	--z-ch-digest-fill: color-mix(in oklab, #7c3aed 22%, var(--z-surface));
+	--z-ch-digest-ink: #ddd6fe;
+	--z-ch-discard-fill: color-mix(in oklab, #ef4444 22%, var(--z-surface));
+	--z-ch-discard-ink: #fecaca;
+	--z-ch-discard-hover: color-mix(in oklab, #ef4444 12%, var(--z-surface));
+	--z-ch-discard-line: color-mix(in oklab, #ef4444 55%, var(--z-surface));
+	--z-id-steel-fill: color-mix(in oklab, #64748b 22%, var(--z-surface));
+	--z-id-steel-ink: #dbe3ec;
+	--z-id-sky-fill: color-mix(in oklab, #0284c7 22%, var(--z-surface));
+	--z-id-sky-ink: #bae6fd;
+	--z-id-indigo-fill: color-mix(in oklab, #4f46e5 22%, var(--z-surface));
+	--z-id-indigo-ink: #c7d2fe;
+	--z-id-rose-fill: color-mix(in oklab, #e11d48 22%, var(--z-surface));
+	--z-id-rose-ink: #fecdd3;
+	--z-id-lime-fill: color-mix(in oklab, #65a30d 22%, var(--z-surface));
+	--z-id-lime-ink: #d9f99d;
+	--z-id-orange-fill: color-mix(in oklab, #ea580c 22%, var(--z-surface));
+	--z-id-orange-ink: #fed7aa;
+	--z-id-plum-fill: color-mix(in oklab, #9333ea 22%, var(--z-surface));
+	--z-id-plum-ink: #e9d5ff;
+	--z-id-stone-fill: color-mix(in oklab, #78716c 22%, var(--z-surface));
+	--z-id-stone-ink: #e7e5e4;
+	--z-shadow-tactile: 0 1px 2px rgba(0, 0, 0, 0.3);
+	--z-shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.03);
+	--z-shadow-menu: 0 12px 32px rgba(0, 0, 0, 0.45);
+	--z-shadow-panel: 0 24px 56px rgba(0, 0, 0, 0.6);
+	--z-shadow-window: 0 24px 56px rgba(0, 0, 0, 0.5);
 }
 
 @theme inline {
@@ -152,10 +315,12 @@
 	--color-canvas: var(--z-canvas);
 	--color-surface: var(--z-surface);
 	--color-sunken: var(--z-sunken);
+	--color-hover: var(--z-hover);
 	--color-container: var(--z-container);
 	--color-surface-subtle: var(--z-surface-subtle);
 	--color-ink: var(--z-ink);
 	--color-body: var(--z-body);
+	--color-strong: var(--z-strong);
 	--color-muted: var(--z-muted);
 	--color-soft: var(--z-soft);
 	--color-faint: var(--z-faint);
@@ -166,9 +331,13 @@
 	--color-ink-disabled: var(--z-ink-disabled);
 	--color-accent: var(--z-accent);
 	--color-accent-fg: var(--z-accent-fg);
+	--color-accent-edge: var(--z-accent-edge);
+	--color-accent-stroke: var(--z-accent-stroke);
+	--color-accent-line: var(--z-accent-line);
+	--color-accent-ink: var(--z-accent-ink);
 	--color-accent-soft: var(--z-accent-soft);
 	--color-accent-tint: var(--z-accent-tint);
-	--color-accent-edge: var(--z-accent-edge);
+	--color-accent-faint: var(--z-accent-faint);
 	--color-danger: var(--z-danger);
 	--color-hairline: var(--z-hairline);
 	--color-hairline-cool: var(--z-hairline-cool);

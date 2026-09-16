@@ -22,9 +22,6 @@ importers:
       '@zaur/server-auth':
         specifier: workspace:*
         version: link:../../packages/server-auth
-      '@zaur/sprite':
-        specifier: workspace:*
-        version: link:../../packages/sprite
       '@zaur/ui':
         specifier: workspace:*
         version: link:../../packages/ui

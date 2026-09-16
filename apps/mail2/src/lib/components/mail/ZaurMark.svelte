@@ -28,7 +28,7 @@
 	role="img"
 	aria-label={label}
 	title={label}
-	class="inline-flex shrink-0 items-center rounded-[6px] border border-[#0b1220] bg-white font-mono font-semibold text-[#0b1220] select-none {size ===
+	class="inline-flex shrink-0 items-center rounded-[6px] border border-[var(--z-ink)] bg-[var(--z-surface)] font-mono font-semibold text-[var(--z-ink)] select-none {size ===
 	'md'
 		? 'h-6 px-[9px] text-[11px]'
 		: 'h-[22px] px-2 text-[10px]'} {className}"

@@ -23,6 +23,9 @@ theme only** for now; Files and Meet arrive when their designs land.
 - [x] Design system v2 applied — channel hues, identity tones on avatars, the ZAUR
   stamp, IBM Plex Mono, tactile controls, the v2 sign-in, phone and settings
   screens (see [Design system v2](#design-system-v2-pastel-channels-tactile-controls))
+- [x] Design follow-ups from the v2 review — Flagged filter, attachment retry,
+  rule cards with a Newsletters template, `@zaur/sprite` dropped, and **dark
+  mode** wired end to end (see [Design follow-ups](#design-follow-ups))
 - [x] Security settings (`/settings/security`): password, 2FA, app passwords,
   API keys, signed-in devices, recovery email — see [Security](#security) ‡
 - [x] Contacts with a real source — JMAP Contacts (RFC 9610), feeding compose
@@ -378,8 +381,9 @@ The rest follows from those two:
   glyphs only, never text; meta sitting on a channel fill steps up to muted or
   to that channel's own ink, because 11px grey on a pastel wash does not clear
   4.5:1. Hairlines are `#e2e8f0`, control and panel borders `#cbd5e1`. The dark
-  ramp is written in `tokens.css` behind `[data-theme='dark']` but nothing
-  reads it yet — see the design follow-ups.
+  ramp lives in `tokens.css` too, and every component reads tokens rather
+  than hex, so one attribute flips the whole shell — see
+  [Dark mode](#dark-mode).
 - **Type.** Libre Franklin for the interface, **IBM Plex Mono** (replacing Noto
   Sans Mono) for captions, counts, times, addresses and keys. Eight roles from
   a 38px display down to the 11px uppercase mono caption (`.z-caption`, soft).
@@ -418,6 +422,55 @@ Component `<style>` blocks are **unlayered**, and `base.css` lives in
 `.z-hue-wash` no matter how specific the shared class is, and every unread row
 goes flat. A component that wants a default *and* a shared surface has to claim
 the default conditionally (`.z-row:not(.z-hue-wash)`), not unconditionally.
+
+## Design follow-ups
+
+The design project proposed a few things that were features rather than paint.
+Those were left for discussion, decided together, and landed in this order:
+
+- **`@zaur/sprite` dropped.** The stamp is the mark; mail2 imported nothing
+  from the package any more.
+- **A Flagged filter, and no Channels sidebar.** The list header is
+  All / Unseen / Flagged. Each goes to the server as one JMAP
+  `FilterCondition` (`notKeyword: '$seen'`, `hasKeyword: '$flagged'`), not a
+  client-side sieve of the loaded page, so it is right across the whole folder.
+  The design's Channels group in the sidebar was not built: a channel is derived
+  from a folder and a flag, so every entry in it would have duplicated a folder
+  row or this filter.
+- **Attachment retry.** A failed upload keeps its chip, in the discard channel,
+  with Retry; the compose store holds the `File` until it goes up or the chip
+  is removed. A chip that is still uploading shows a sliding rule rather than a
+  percentage the server does not report.
+- **Rules as cards**, with the form behind Edit — see [Rules](#rules).
+- **Digest is a rule, not a heuristic.** The design grouped "digest" mail by
+  newsletter markers in the client. That is guessing, per device, on mail that
+  has already landed in the inbox. The Newsletters rule template does the same
+  sorting on the server, on delivery, for every device.
+- **Dark mode** — below.
+- **Parked: the ⌘K palette.** Everything it would reach has a key already
+  (`/`, `c`, `j` `k`, `e`, `s`); it earns its place when there are more
+  destinations than keys.
+
+### Dark mode
+
+The theme is a preference — Appearance in Settings: System / Light / Dark —
+kept with the browser prefs in `localStorage` and deliberately *not* synced to
+the account: it belongs to the device, like the OS setting it defers to.
+`app.html` reads it and writes `data-theme` on `<html>` before first paint, so
+a dark tab never flashes light; the root layout keeps the attribute in step
+when the setting changes. `tokens.css` carries the dark ramp twice, under
+`prefers-color-scheme: dark` for System and under `[data-theme='dark']` for the
+explicit choice. Every component reads `var(--z-*)` and nothing else — the hex
+sweep was most of the work — so in dark a channel's stroke keeps its
+saturation, its fill becomes a 22% wash of that stroke over the surface, and
+its light fill becomes its ink.
+
+The email body is the one exception, on purpose. It renders in a sandboxed
+iframe that cannot see the tokens, so `buildEmailFrameSrcdoc` takes a `dark`
+flag. Plain-text mail is ours to typeset and follows the theme. HTML mail was
+written for a light page, so it keeps its light palette and sits on a white
+card inside the dark reader: recolouring someone else's layout is how you get
+invisible text.
 
 ## Compose panel geometry
 
@@ -493,13 +546,23 @@ the shared package, along with `searchEmails` on the client; it simply was not
 exported from the package index, which is the whole of what "port search" turned
 out to be.
 
-While results are showing, the list header swaps its All/Unseen control for the
-query: Unseen does not scope a search — the query does — so leaving the filter
-there would be a control that lies. Empty results are their own state, and offer
+While results are showing, the list header swaps its All/Unseen/Flagged control
+for the query: Unseen does not scope a search — the query does — so leaving the
+filter there would be a control that lies. Empty results are their own state, and offer
 the operator list, because "no matches" is exactly when you want to know what
 else you could have typed.
 
 Search is scoped to the open folder, which is what the placeholder says.
+
+**Every search used to return nothing**, and the reason is worth keeping: the
+folder scope and the parsed query were combined as `{ and: [...] }`, which is
+not a JMAP filter. RFC 8620 §5.5 combines conditions with a `FilterOperator`
+— `{ operator: 'AND', conditions: [...] }` — and Stalwart answers a shape it
+does not know with an `invalidArguments` error, which the client then read as
+"no results". `allOf` in `@zaur/mail-core` now builds the operator (and
+passes a single condition through untouched), `searchEmails` throws on a
+method error instead of returning an empty list, and the fake server rejects
+the bare `and` shape so the mistake cannot come back unnoticed.
 
 ## The message row
 
@@ -639,6 +702,15 @@ The details that are easy to get wrong, and are tested:
 Every script is put through `SieveScript/validate` **before** it is stored, and
 activated in the same `SieveScript/set` via `onSuccessActivateScript`, so there
 is never a window where the rules exist but nothing is filtering.
+
+The editor reads as **cards**, one per rule: its name, a chip per condition,
+and an action chip in the channel of what the action does — file is digest,
+mark is flagged or needs-you, discard is discard — with Edit opening the form
+in place. A **Newsletters rule** button drops in a template (from contains
+`newsletter` or `noreply`, subject contains `unsubscribe`, any of them,
+filed into a Digests or Newsletters folder if one exists, else Archive) that the
+person can trim before saving. That template is how the design's "digest" idea
+landed — see [Design follow-ups](#design-follow-ups).
 
 > **Not yet run against a live server** — the pure core is tested and the wire
 > calls are typed against RFC 9661, but `SieveScript/*` has never been answered
@@ -880,9 +952,10 @@ The settings sync is the exception: it runs on our own SQLite, so it **is**
 tested for real, including that an existing deployed store picks up the new
 table on reopen with no migration step.
 
-The **rules editor** is the one surface that has still only been compiled, not
-looked at: the fake answers `SieveScript/get` with an empty list, so the editor
-renders its empty state and nothing more.
+The **rules editor** has been looked at against the fake — empty state, the
+Newsletters template, a card and its inline form — but the fake's
+`SieveScript/set` accepts anything, so a script Stalwart would refuse has not
+been seen refused.
 
 ## Picking this up next
 

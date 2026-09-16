@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { buildEmailFrameSrcdoc } from '#lib/email/frame';
+	import { prefs } from '#lib/settings.svelte.ts';
 
 	interface Props {
 		/** Sanitized + post-processed email HTML (from `renderMessageBody`). */
@@ -14,7 +15,21 @@
 	let observer: ResizeObserver | undefined;
 	let pending = false;
 
-	const srcdoc = $derived(buildEmailFrameSrcdoc({ html, plain }));
+	/**
+	 * The frame cannot see the shell's tokens, so it is told which palette to
+	 * use. "system" follows the OS and is re-read when the OS flips.
+	 */
+	let systemDark = $state(false);
+	$effect(() => {
+		const media = window.matchMedia('(prefers-color-scheme: dark)');
+		const sync = () => (systemDark = media.matches);
+		sync();
+		media.addEventListener('change', sync);
+		return () => media.removeEventListener('change', sync);
+	});
+	const dark = $derived(prefs.theme === 'dark' || (prefs.theme === 'system' && systemDark));
+
+	const srcdoc = $derived(buildEmailFrameSrcdoc({ html, plain, dark }));
 
 	function applyHeight() {
 		pending = false;
@@ -69,11 +84,24 @@
 	$effect(() => () => observer?.disconnect());
 </script>
 
-<iframe
-	bind:this={frame}
-	title="Email message"
-	{srcdoc}
-	sandbox="allow-same-origin allow-popups"
-	onload={handleLoad}
-	class="w-full border-0 align-top"
-></iframe>
+<!-- HTML mail keeps its light palette, so in dark it sits on its own white
+     card rather than bleeding a white rectangle into the reader column. -->
+<div class={dark && !plain ? 'z-html-card' : undefined}>
+	<iframe
+		bind:this={frame}
+		title="Email message"
+		{srcdoc}
+		sandbox="allow-same-origin allow-popups"
+		onload={handleLoad}
+		class="w-full border-0 align-top"
+	></iframe>
+</div>
+
+<style>
+	.z-html-card {
+		padding: 14px 16px;
+		border-radius: 8px;
+		background: #ffffff;
+		border: 1px solid var(--z-line);
+	}
+</style>

@@ -16,12 +16,12 @@
 </script>
 
 <aside
-	class="flex h-full w-full shrink-0 flex-col border-r border-[#cbd5e1] bg-white select-none"
+	class="flex h-full w-full shrink-0 flex-col border-r border-[var(--z-line)] bg-[var(--z-surface)] select-none"
 	aria-label="Mailboxes"
 >
 	{#if onClose}
 		<!-- Drawer header: the drawer is a screen of its own on a phone. -->
-		<div class="flex h-[52px] shrink-0 items-center justify-between border-b border-[#e2e8f0] px-3">
+		<div class="flex h-[52px] shrink-0 items-center justify-between border-b border-[var(--z-hairline)] px-3">
 			<ZaurMark size="sm" />
 			<button type="button" class="z-icon-btn !size-8 !rounded-[8px]" aria-label="Close folder list" onclick={onClose}>
 				<svg class="size-[13px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -48,7 +48,7 @@
 							type="button"
 							class="z-railed flex w-full items-center gap-2.5 rounded-[8px] border py-[7px] pr-2 pl-[18px] text-left text-[13.5px] transition-[background-color,border-color] duration-[120ms] {isSelected
 								? 'z-hue-wash font-semibold'
-								: 'border-transparent font-medium text-[#334155] hover:bg-[#f8fafc]'}"
+								: 'border-transparent font-medium text-[var(--z-strong)] hover:bg-[var(--z-hover)]'}"
 							style="{channelStyle(channel)};--z-check:{channel.solid};--z-rail-inset:6px;--z-rail-strength:{isSelected ? '1' : '0'}"
 							style:color={isSelected ? channel.ink : undefined}
 							aria-current={isSelected ? 'true' : undefined}
@@ -63,8 +63,8 @@
 							{#if mailbox.unread > 0}
 								<span
 									class="z-count"
-									style:--z-stroke={isSelected ? channel.stroke : '#cbd5e1'}
-									style:--z-ink-on={isSelected ? channel.ink : '#475569'}
+									style:--z-stroke={isSelected ? channel.stroke : 'var(--z-line)'}
+									style:--z-ink-on={isSelected ? channel.ink : 'var(--z-muted)'}
 								>
 									{mailbox.unread}
 								</span>
@@ -74,14 +74,14 @@
 				{/each}
 			{:else}
 				{#each ['Inbox', 'Drafts', 'Sent', 'Archive', 'Trash'] as name (name)}
-					<li class="z-skeleton h-[33px] rounded-[8px] bg-[#f1f5f9]"></li>
+					<li class="z-skeleton h-[33px] rounded-[8px] bg-[var(--z-sunken)]"></li>
 				{/each}
 			{/if}
 		</ul>
 	</div>
 
 	<!-- New message: the one filled control in the sidebar, with its key. -->
-	<div class="border-t border-[#e2e8f0] p-3">
+	<div class="border-t border-[var(--z-hairline)] p-3">
 		<button
 			type="button"
 			class="btn-tactile btn-primary h-[34px] w-full text-[13px] max-md:h-10 max-md:text-[14px]"

@@ -125,22 +125,22 @@
 	}
 
 	const field = 'z-field w-full max-md:text-base';
-	const label = 'block text-[12px] text-[#64748b]';
+	const label = 'block text-[12px] text-[var(--z-soft)]';
 </script>
 
 <form onsubmit={submit} class="flex h-full flex-col">
-	<div class="flex items-center justify-between gap-3 border-b border-[#e2e8f0] px-6 py-3 max-md:px-4">
-		<h2 class="text-[14px] font-semibold text-[#0b1220]">
+	<div class="flex items-center justify-between gap-3 border-b border-[var(--z-hairline)] px-6 py-3 max-md:px-4">
+		<h2 class="text-[14px] font-semibold text-[var(--z-ink)]">
 			{event ? (instance ? 'Edit this occurrence' : 'Edit event') : 'New event'}
 		</h2>
 		<div class="flex items-center gap-2">
 			{#if event && onDelete}
-				<button type="button" class="btn-tactile !h-[30px] !text-[#b91c1c]" onclick={onDelete} disabled={saving}>Delete</button>
+				<button type="button" class="btn-tactile !h-[30px] !text-[var(--z-ch-discard-ink)]" onclick={onDelete} disabled={saving}>Delete</button>
 			{/if}
 			<button type="button" class="btn-tactile !h-[30px]" onclick={onCancel} disabled={saving}>Cancel</button>
 			<button
 				type="submit"
-				class="btn-tactile !h-[30px] btn-primary disabled:!border-[#e2e8f0] disabled:!bg-[#f1f5f9] disabled:!text-[#94a3b8]"
+				class="btn-tactile !h-[30px] btn-primary disabled:!border-[var(--z-hairline)] disabled:!bg-[var(--z-sunken)] disabled:!text-[var(--z-faint)]"
 				disabled={!canSave || saving}
 			>
 				{saving ? 'Saving…' : 'Save'}
@@ -151,10 +151,10 @@
 	<div class="min-h-0 flex-1 overflow-y-auto px-6 py-5 max-md:px-4">
 		<div class="mx-auto flex max-w-[560px] flex-col gap-4">
 			{#if error}
-				<p class="rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-[#b91c1c]" role="alert">{error}</p>
+				<p class="rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-[var(--z-ch-discard-ink)]" role="alert">{error}</p>
 			{/if}
 			{#if instance}
-				<p class="rounded-[8px] border border-[#e2e8f0] bg-[#f8fafc] px-3 py-2 text-[12.5px] text-[#475569]">
+				<p class="rounded-[8px] border border-[var(--z-hairline)] bg-[var(--z-hover)] px-3 py-2 text-[12.5px] text-[var(--z-muted)]">
 					This is one occurrence of a repeating event. Changes here apply to this date only.
 				</p>
 			{/if}
@@ -183,7 +183,7 @@
 				</label>
 			</div>
 
-			<label class="flex items-center gap-2.5 text-[13px] text-[#334155]">
+			<label class="flex items-center gap-2.5 text-[13px] text-[var(--z-strong)]">
 				<input type="checkbox" class="z-check" checked={allDay} onchange={(e) => toggleAllDay(e.currentTarget.checked)} />
 				All day
 			</label>
@@ -207,7 +207,7 @@
 				</label>
 			</div>
 			{#if endsBeforeStart}
-				<p class="-mt-2 text-[12.5px] text-[#b91c1c]">The end has to come after the start.</p>
+				<p class="-mt-2 text-[12.5px] text-[var(--z-ch-discard-ink)]">The end has to come after the start.</p>
 			{/if}
 
 			<label>

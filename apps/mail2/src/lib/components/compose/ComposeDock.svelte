@@ -70,7 +70,7 @@
 				role="button"
 				tabindex="0"
 				aria-label="Minimized draft: {chipTitle(draft)}. Activate to reopen."
-				class="flex h-11 w-[220px] shrink-0 cursor-grab items-center gap-[9px] rounded-[10px] border border-[#cbd5e1] bg-white pr-1.5 pl-[11px] shadow-[var(--z-shadow-menu)] select-none transition-[transform,border-color,box-shadow] duration-[150ms] hover:border-[#94a3b8] max-md:w-[190px] max-md:cursor-default {compose.trayDragId ===
+				class="flex h-11 w-[220px] shrink-0 cursor-grab items-center gap-[9px] rounded-[10px] border border-[var(--z-line)] bg-[var(--z-surface)] pr-1.5 pl-[11px] shadow-[var(--z-shadow-menu)] select-none transition-[transform,border-color,box-shadow] duration-[150ms] hover:border-[var(--z-faint)] max-md:w-[190px] max-md:cursor-default {compose.trayDragId ===
 				draft.id
 					? '-translate-y-1 shadow-[var(--z-shadow-panel)]'
 					: ''}"
@@ -87,12 +87,12 @@
 				}}
 			>
 				<span
-					class="size-2 shrink-0 rounded-full {chipStatus(draft) ? 'bg-[#2563eb] shadow-[0_0_0_3px_#dbeafe]' : 'bg-[#cbd5e1]'}"
+					class="size-2 shrink-0 rounded-full {chipStatus(draft) ? 'bg-[var(--z-accent)] shadow-[0_0_0_3px_var(--z-accent-soft)]' : 'bg-[var(--z-line)]'}"
 					aria-hidden="true"
 				></span>
 				<span class="min-w-0 flex-1">
-					<span class="block truncate text-[12px] font-bold text-[#1e293b]">{chipTitle(draft)}</span>
-					<span class="z-mono block truncate text-[10px] text-[#64748b]">{chipMeta(draft)}</span>
+					<span class="block truncate text-[12px] font-bold text-[var(--z-body)]">{chipTitle(draft)}</span>
+					<span class="z-mono block truncate text-[10px] text-[var(--z-soft)]">{chipMeta(draft)}</span>
 				</span>
 				<button
 					type="button"
@@ -107,7 +107,7 @@
 				</button>
 				<button
 					type="button"
-					class="z-icon-btn !size-6 hover:!bg-[#fef2f2] hover:!text-[#dc2626]"
+					class="z-icon-btn !size-6 hover:!bg-[var(--z-ch-discard-hover)] hover:!text-[var(--z-ch-discard-solid)]"
 					aria-label="Close draft"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.close(draft.id)}

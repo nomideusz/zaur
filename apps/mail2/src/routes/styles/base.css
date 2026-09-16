@@ -121,7 +121,7 @@
 
 	.btn-tactile:disabled {
 		border-color: var(--z-hairline);
-		background: #f8fafc;
+		background: var(--z-hover);
 		color: var(--z-soft);
 		box-shadow: none;
 		cursor: default;
@@ -148,18 +148,18 @@
 
 	.btn-primary:disabled {
 		border-color: var(--z-hairline);
-		background: #f1f5f9;
+		background: var(--z-sunken);
 		color: var(--z-faint);
 	}
 
 	/* Destructive: red ink on white, and the discard channel on hover. */
 	.btn-danger {
-		color: #b91c1c;
+		color: var(--z-ch-discard-ink);
 	}
 
 	.btn-danger:hover {
-		background: #fef2f2;
-		border-color: #fca5a5;
+		background: var(--z-ch-discard-hover);
+		border-color: var(--z-ch-discard-line);
 	}
 
 	/*
@@ -183,7 +183,7 @@
 	}
 
 	.z-icon-btn:hover {
-		background: #f1f5f9;
+		background: var(--z-sunken);
 		color: var(--z-ink);
 	}
 
@@ -261,8 +261,8 @@
 	}
 
 	.hobday-checkbox[data-checked='true'] {
-		border-color: var(--z-check, #2563eb);
-		background: var(--z-check, #2563eb);
+		border-color: var(--z-check, var(--z-accent));
+		background: var(--z-check, var(--z-accent));
 		color: #ffffff;
 	}
 
@@ -282,8 +282,8 @@
 	}
 
 	.z-check:checked {
-		border-color: var(--z-check, #2563eb);
-		background-color: var(--z-check, #2563eb);
+		border-color: var(--z-check, var(--z-accent));
+		background-color: var(--z-check, var(--z-accent));
 		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.5 8.5l3 3 6-7' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
 		background-repeat: no-repeat;
 		background-position: center;
@@ -331,7 +331,7 @@
 
 	.z-field[aria-invalid='true'] {
 		border-color: var(--z-ch-discard-stroke);
-		background: #fef2f2;
+		background: var(--z-ch-discard-hover);
 		color: var(--z-ch-discard-ink);
 	}
 
@@ -340,7 +340,7 @@
 	}
 
 	.z-field:disabled {
-		background: #f8fafc;
+		background: var(--z-hover);
 		color: var(--z-faint);
 		box-shadow: none;
 	}
@@ -358,7 +358,7 @@
 		border-radius: 5px;
 		border: 1px solid var(--z-hairline);
 		border-bottom-width: 2px;
-		background: #f8fafc;
+		background: var(--z-hover);
 		font-family: var(--font-mono);
 		font-size: 10px;
 		font-weight: 600;
@@ -384,9 +384,9 @@
 		width: 30px;
 		height: 30px;
 		border-radius: 8px;
-		border: 1px solid var(--z-id-stroke, #64748b);
-		background: var(--z-id-fill, #dbe3ec);
-		color: var(--z-id-ink, #1e293b);
+		border: 1px solid var(--z-id-stroke, var(--z-soft));
+		background: var(--z-id-fill, var(--z-id-steel-fill));
+		color: var(--z-id-ink, var(--z-body));
 		font-size: 11px;
 		font-weight: 700;
 		letter-spacing: 0.01em;
@@ -529,7 +529,7 @@
 		padding: 7px 9px;
 		font-size: 13px;
 		font-weight: 500;
-		color: #334155;
+		color: var(--z-strong);
 		text-align: left;
 		cursor: pointer;
 		transition: background-color 100ms ease;
@@ -537,7 +537,7 @@
 
 	.z-menu-item:hover,
 	.z-menu-item[data-highlighted] {
-		background: #f1f5f9;
+		background: var(--z-sunken);
 		color: var(--z-ink);
 	}
 
@@ -557,8 +557,23 @@
 		animation: z-pulse 1.6s ease-in-out infinite;
 	}
 
+	/* An upload in flight: a short rule sliding along its track. */
+	@keyframes z-slide {
+		from {
+			transform: translateX(-100%);
+		}
+		to {
+			transform: translateX(170%);
+		}
+	}
+
+	.z-upload-rule > span {
+		animation: z-slide 1.2s ease-in-out infinite;
+	}
+
 	@media (prefers-reduced-motion: reduce) {
-		.z-skeleton {
+		.z-skeleton,
+		.z-upload-rule > span {
 			animation: none;
 		}
 	}

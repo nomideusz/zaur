@@ -57,6 +57,12 @@ const text = (partId, value) => ({
 	bodyValues: { [partId]: { value, isTruncated: false } },
 	bodyStructure: { partId, type: 'text/plain' }
 });
+const html = (partId, value) => ({
+	textBody: [],
+	htmlBody: [{ partId, type: 'text/html' }],
+	bodyValues: { [partId]: { value, isTruncated: false } },
+	bodyStructure: { partId, type: 'text/html' }
+});
 /** Sample mail: every channel, a thread, an attachment, one of each state. */
 const emails = new Map(
 	[
@@ -101,7 +107,7 @@ const emails = new Map(
 			from: [{ name: 'Dokploy', email: 'deploys@dokploy.example' }], to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
 			subject: 'Deployment succeeded — mail2', receivedAt: at(4), hasAttachment: false,
 			preview: 'Build 482 pushed to mail2.zaur.app in 2m 14s.',
-			...text('1', 'Build 482 pushed to mail2.zaur.app in 2m 14s.')
+			...html('1', '<div style="font-family:Arial,sans-serif;max-width:560px"><h2 style="color:#1f2937;margin:0 0 8px">Deployment succeeded</h2><p style="color:#374151">Build <strong>482</strong> pushed to <a href="https://mail2.zaur.app">mail2.zaur.app</a> in 2m 14s.</p><table style="border-collapse:collapse;font-size:13px"><tr><td style="padding:4px 12px 4px 0;color:#6b7280">Commit</td><td><code>2030cba</code></td></tr><tr><td style="padding:4px 12px 4px 0;color:#6b7280">Duration</td><td>2m 14s</td></tr></table></div>')
 		},
 		{
 			id: 'm5', threadId: 't5', mailboxIds: { inbox: true }, keywords: { $seen: true },
@@ -194,14 +200,41 @@ function handle([name, args, callId]) {
 		case 'Mailbox/get':
 			return ok({ state: 'm1', list: args.ids ? mailboxes.filter((mb) => args.ids.includes(mb.id)) : mailboxes, notFound: [] });
 		case 'Email/query': {
-			const filter = args.filter ?? {};
 			const ascending = args.sort?.[0]?.isAscending === true;
-			const list = [...emails.values()]
-				.filter((e) => !filter.inMailbox || e.mailboxIds[filter.inMailbox])
-				.filter((e) => !filter.inThread || e.threadId === filter.inThread)
-				.filter((e) => !filter.notKeyword || !e.keywords[filter.notKeyword])
-				.filter((e) => !filter.text || JSON.stringify(e).toLowerCase().includes(String(filter.text).toLowerCase()))
-				.sort((a, b) => (ascending ? 1 : -1) * (Date.parse(a.receivedAt) - Date.parse(b.receivedAt)));
+			// RFC 8620 §5.5: a filter is a condition or a FilterOperator; a bare
+			// `and` key is neither, and a real server rejects it — so does this one.
+			const matches = (email, filter) => {
+				if (!filter || typeof filter !== 'object') return true;
+				if ('and' in filter || 'or' in filter) throw Object.assign(new Error('invalidArguments'), { jmap: 'Unknown filter property' });
+				if (filter.operator) {
+					const results = (filter.conditions ?? []).map((c) => matches(email, c));
+					if (filter.operator === 'AND') return results.every(Boolean);
+					if (filter.operator === 'OR') return results.some(Boolean);
+					if (filter.operator === 'NOT') return !results.some(Boolean);
+				}
+				const has = (needle, hay) => String(hay ?? '').toLowerCase().includes(String(needle).toLowerCase());
+				const addr = (list) => (list ?? []).map((a) => `${a.name} ${a.email}`).join(' ');
+				if (filter.inMailbox && !email.mailboxIds[filter.inMailbox]) return false;
+				if (filter.inThread && email.threadId !== filter.inThread) return false;
+				if (filter.notKeyword && email.keywords[filter.notKeyword]) return false;
+				if (filter.hasKeyword && !email.keywords[filter.hasKeyword]) return false;
+				if (filter.hasAttachment !== undefined && !!email.hasAttachment !== filter.hasAttachment) return false;
+				if (filter.from && !has(filter.from, addr(email.from))) return false;
+				if (filter.to && !has(filter.to, addr(email.to))) return false;
+				if (filter.subject && !has(filter.subject, email.subject)) return false;
+				if (filter.after && Date.parse(email.receivedAt) < Date.parse(filter.after)) return false;
+				if (filter.before && Date.parse(email.receivedAt) > Date.parse(filter.before)) return false;
+				if (filter.text && !has(filter.text, `${email.subject} ${email.preview} ${addr(email.from)} ${addr(email.to)}`)) return false;
+				return true;
+			};
+			let list;
+			try {
+				list = [...emails.values()].filter((e) => matches(e, args.filter));
+			} catch (error) {
+				log('Email/query rejected filter', JSON.stringify(args.filter));
+				return fail('invalidArguments', error.jmap ?? 'Invalid filter');
+			}
+			list.sort((a, b) => (ascending ? 1 : -1) * (Date.parse(a.receivedAt) - Date.parse(b.receivedAt)));
 			const position = args.position ?? 0;
 			const ids = list.slice(position, position + (args.limit ?? list.length)).map((e) => e.id);
 			return ok({ queryState: 'q1', canCalculateChanges: false, position, ids, total: list.length });

@@ -76,17 +76,17 @@
 	}
 
 	const field = 'z-field w-full max-md:text-base';
-	const label = 'block text-[12px] text-[#64748b]';
+	const label = 'block text-[12px] text-[var(--z-soft)]';
 </script>
 
 <form onsubmit={submit} class="flex h-full flex-col">
-	<div class="flex items-center justify-between gap-3 border-b border-[#e2e8f0] px-6 py-3 max-md:px-4">
-		<h2 class="text-[14px] font-semibold text-[#0b1220]">{contact ? 'Edit contact' : 'New contact'}</h2>
+	<div class="flex items-center justify-between gap-3 border-b border-[var(--z-hairline)] px-6 py-3 max-md:px-4">
+		<h2 class="text-[14px] font-semibold text-[var(--z-ink)]">{contact ? 'Edit contact' : 'New contact'}</h2>
 		<div class="flex items-center gap-2">
 			<button type="button" class="btn-tactile !h-[30px]" onclick={onCancel} disabled={saving}>Cancel</button>
 			<button
 				type="submit"
-				class="btn-tactile !h-[30px] btn-primary disabled:!border-[#e2e8f0] disabled:!bg-[#f1f5f9] disabled:!text-[#94a3b8]"
+				class="btn-tactile !h-[30px] btn-primary disabled:!border-[var(--z-hairline)] disabled:!bg-[var(--z-sunken)] disabled:!text-[var(--z-faint)]"
 				disabled={!canSave || saving}
 			>
 				{saving ? 'Saving…' : 'Save'}
@@ -97,7 +97,7 @@
 	<div class="min-h-0 flex-1 overflow-y-auto px-6 py-5 max-md:px-4">
 		<div class="mx-auto flex max-w-[560px] flex-col gap-4">
 			{#if error}
-				<p class="rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-[#b91c1c]" role="alert">{error}</p>
+				<p class="rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-[var(--z-ch-discard-ink)]" role="alert">{error}</p>
 			{/if}
 
 			<div class="grid grid-cols-2 gap-3 max-md:grid-cols-1">
@@ -130,7 +130,7 @@
 						<div class="flex items-center gap-2">
 							<input class="{field} min-w-0 flex-1" type="email" placeholder="name@example.com" bind:value={email.address} />
 							<input class="z-field w-[110px] max-md:text-base" placeholder="work" list="contact-labels" bind:value={email.label} aria-label="Label" />
-							<button type="button" class="btn-tactile !size-[30px] !p-0 text-[#64748b]" aria-label="Remove address" onclick={() => draft.emails.splice(index, 1)} disabled={draft.emails.length === 1 && !email.address}>
+							<button type="button" class="btn-tactile !size-[30px] !p-0 text-[var(--z-soft)]" aria-label="Remove address" onclick={() => draft.emails.splice(index, 1)} disabled={draft.emails.length === 1 && !email.address}>
 								<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
 							</button>
 						</div>
@@ -146,7 +146,7 @@
 						<div class="flex items-center gap-2">
 							<input class="{field} min-w-0 flex-1" type="tel" placeholder="+48 …" bind:value={phone.number} />
 							<input class="z-field w-[110px] max-md:text-base" placeholder="mobile" list="contact-labels" bind:value={phone.label} aria-label="Label" />
-							<button type="button" class="btn-tactile !size-[30px] !p-0 text-[#64748b]" aria-label="Remove number" onclick={() => draft.phones.splice(index, 1)} disabled={draft.phones.length === 1 && !phone.number}>
+							<button type="button" class="btn-tactile !size-[30px] !p-0 text-[var(--z-soft)]" aria-label="Remove number" onclick={() => draft.phones.splice(index, 1)} disabled={draft.phones.length === 1 && !phone.number}>
 								<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
 							</button>
 						</div>

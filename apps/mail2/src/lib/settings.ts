@@ -14,7 +14,12 @@ export type Prefs = {
 	showPreview: boolean;
 	/** Start each folder on the Unseen filter instead of All. */
 	unseenByDefault: boolean;
+	/** Light, dark, or whatever the OS says. A device preference: a desk and a phone differ. */
+	theme: Theme;
 };
+
+export type Theme = 'system' | 'light' | 'dark';
+export const THEMES: Theme[] = ['system', 'light', 'dark'];
 
 export const DEFAULT_PREFS: Prefs = {
 	sidebarOpen: true,
@@ -22,7 +27,8 @@ export const DEFAULT_PREFS: Prefs = {
 	pageSize: 50,
 	markReadOnOpen: true,
 	showPreview: true,
-	unseenByDefault: false
+	unseenByDefault: false,
+	theme: 'system'
 };
 
 /**
@@ -95,5 +101,6 @@ export function parsePrefs(raw: string | null): Prefs {
 	}
 	next.listWidth = Math.min(LIST_MAX, Math.max(LIST_MIN, next.listWidth));
 	if (!PAGE_SIZES.includes(next.pageSize)) next.pageSize = DEFAULT_PREFS.pageSize;
+	if (!THEMES.includes(next.theme)) next.theme = DEFAULT_PREFS.theme;
 	return next;
 }

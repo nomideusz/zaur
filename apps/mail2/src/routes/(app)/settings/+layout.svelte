@@ -17,21 +17,21 @@
 	);
 </script>
 
-<div class="flex h-svh w-full flex-col items-center justify-center overflow-hidden bg-[#eef1f5] text-[#0b1220]">
-	<div class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-white">
+<div class="flex h-svh w-full flex-col items-center justify-center overflow-hidden bg-[var(--z-ground)] text-[var(--z-ink)]">
+	<div class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-[var(--z-surface)]">
 		<header
-			class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[#cbd5e1] bg-white px-4 select-none max-md:gap-2 max-md:px-2.5"
+			class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[var(--z-line)] bg-[var(--z-surface)] px-4 select-none max-md:gap-2 max-md:px-2.5"
 		>
 			<ZaurMark size="md" class="max-md:hidden" />
 			<ZaurMark size="sm" class="md:hidden" />
-			<div class="h-4 w-px bg-[#e2e8f0] max-md:hidden"></div>
+			<div class="h-4 w-px bg-[var(--z-hairline)] max-md:hidden"></div>
 			<a href="/" class="btn-tactile gap-1.5" data-sveltekit-preload-data="hover">
-				<svg class="size-3.5 text-[#334155]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+				<svg class="size-3.5 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
 				</svg>
 				Mail
 			</a>
-			<h1 class="text-[13px] font-semibold text-[#1e293b] max-md:hidden">Settings</h1>
+			<h1 class="text-[13px] font-semibold text-[var(--z-body)] max-md:hidden">Settings</h1>
 
 			<!-- The same segmented control the top bar uses for its sections. -->
 			<nav class="z-group ml-auto" aria-label="Settings sections">
@@ -49,7 +49,7 @@
 		</header>
 
 		<!-- Settings sit on the pane ground; each card is a white surface on it. -->
-		<div class="min-h-0 flex-1 overflow-y-auto bg-[#f6f7f9] px-6 py-6 max-md:px-4 max-md:py-4">
+		<div class="min-h-0 flex-1 overflow-y-auto bg-[var(--z-canvas)] px-6 py-6 max-md:px-4 max-md:py-4">
 			<div class="mx-auto flex max-w-[640px] flex-col gap-4">
 				{@render children()}
 			</div>

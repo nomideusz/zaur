@@ -3,7 +3,7 @@
 	import { page } from '$app/state';
 	import { makeRecipient } from '#lib/compose/recipients';
 	import { whoami } from '../session.remote';
-	import { mailboxes, threads, thread, quota, bulk, type BulkAction,
+	import { mailboxes, threads, thread, quota, bulk, type BulkAction, type ListFilter,
 		search as searchRemote
 	} from '../mail.remote';
 	import {
@@ -47,7 +47,7 @@
 	/** '' means "showing a folder"; anything else means the list shows results. */
 	let searchQuery = $state('');
 	let topBar = $state<ReturnType<typeof TopBar> | null>(null);
-	let unseenOnly = $state(prefs.unseenByDefault);
+	let listFilter = $state<ListFilter>(prefs.unseenByDefault ? 'unseen' : 'all');
 	let cursorId = $state<string | null>(null);
 	let selection = $state<Set<string>>(new Set());
 	let rootEl = $state<HTMLDivElement | null>(null);
@@ -127,7 +127,7 @@
 
 	const threadsResource = $derived(
 		session && activeMailbox && !searching
-			? threads({ mailboxId: activeMailbox.id, unseenOnly, limit: prefs.pageSize })
+			? threads({ mailboxId: activeMailbox.id, filter: listFilter, limit: prefs.pageSize })
 			: undefined
 	);
 
@@ -569,12 +569,12 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <!-- Ground behind the app column — only visible past the 1780px ceiling. -->
-<div class="flex h-svh w-full flex-col items-center justify-center bg-[#eef1f5] overflow-hidden text-[#0b1220]">
+<div class="flex h-svh w-full flex-col items-center justify-center bg-[var(--z-ground)] overflow-hidden text-[var(--z-ink)]">
 	<!-- App column: edge to edge until 1780px, then capped so the chrome at each
 	     end stays within reach of the content in the middle. -->
 	<div
 		bind:this={rootEl}
-		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-white"
+		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-[var(--z-surface)]"
 	>
 		<TopBar
 			bind:this={topBar}
@@ -610,7 +610,7 @@
 					{#if viewport.compact}
 						<button
 							type="button"
-							class="absolute inset-0 z-40 bg-[#0f172a]/25 lg:hidden"
+							class="absolute inset-0 z-40 bg-[var(--z-scrim)] lg:hidden"
 							aria-label="Close folder list"
 							onclick={() => (drawerOpen = false)}
 						></button>
@@ -640,12 +640,12 @@
 					groups={rowGroups}
 					loading={threadsResource?.loading ?? true}
 					error={threadsResource?.error}
-					{unseenOnly}
+					filter={listFilter}
 					{cursorId}
 					{openThreadId}
 					{selection}
-					onToggleUnseenOnly={(value) => {
-						unseenOnly = value;
+					onFilter={(value) => {
+						listFilter = value;
 						cursorId = null;
 					}}
 					onSetSelection={(ids) => (selection = ids)}

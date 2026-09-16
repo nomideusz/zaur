@@ -99,7 +99,7 @@
 	const agenda = $derived(eventsOn(selectedDay));
 
 	function colorOf(event: CalendarEvent): string {
-		return calendarById.get(event.calendarIds[0] ?? '')?.color ?? '#2563eb';
+		return calendarById.get(event.calendarIds[0] ?? '')?.color ?? 'var(--z-accent)';
 	}
 
 	/* ── Editing ──────────────────────────────────────────────────────── */
@@ -220,14 +220,14 @@
 
 <SectionShell title="Calendar">
 	{#snippet controls()}
-		<div class="flex items-center rounded-[6px] border border-[#cbd5e1] bg-white shadow-[var(--z-shadow-tactile)]">
-			<button type="button" class="flex h-[30px] w-7 items-center justify-center rounded-l-[5px] border-r border-[#cbd5e1] text-[#334155] hover:bg-[#f8fafc]" onclick={() => step(-1)} aria-label="Previous month">
+		<div class="flex items-center rounded-[6px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[var(--z-shadow-tactile)]">
+			<button type="button" class="flex h-[30px] w-7 items-center justify-center rounded-l-[5px] border-r border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]" onclick={() => step(-1)} aria-label="Previous month">
 				<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
 			</button>
-			<button type="button" class="h-[30px] min-w-[150px] bg-[#f1f5f9] px-3 text-[13px] font-semibold text-[#0b1220] hover:bg-[#e8edf3] max-md:min-w-0" onclick={goToday} title="Back to today">
+			<button type="button" class="h-[30px] min-w-[150px] bg-[var(--z-sunken)] px-3 text-[13px] font-semibold text-[var(--z-ink)] hover:bg-[var(--z-sunken)] max-md:min-w-0" onclick={goToday} title="Back to today">
 				{formatMonthTitle(year, month)}
 			</button>
-			<button type="button" class="flex h-[30px] w-7 items-center justify-center rounded-r-[5px] border-l border-[#cbd5e1] text-[#334155] hover:bg-[#f8fafc]" onclick={() => step(1)} aria-label="Next month">
+			<button type="button" class="flex h-[30px] w-7 items-center justify-center rounded-r-[5px] border-l border-[var(--z-line)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]" onclick={() => step(1)} aria-label="Next month">
 				<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" /></svg>
 			</button>
 		</div>
@@ -239,20 +239,20 @@
 
 	<div class="flex min-h-0 flex-1">
 		<!-- Calendars -->
-		<aside class="flex w-[240px] shrink-0 flex-col border-r border-[#cbd5e1] bg-white max-lg:hidden" aria-label="Calendars">
+		<aside class="flex w-[240px] shrink-0 flex-col border-r border-[var(--z-line)] bg-[var(--z-surface)] max-lg:hidden" aria-label="Calendars">
 			<div class="flex-1 overflow-y-auto px-4 py-4">
 				<h2 class="z-caption mb-2 px-2">Your calendars</h2>
 				{#if calendarsResource?.error}
-					<p class="px-2 text-[12.5px] text-[#b91c1c]">Could not load calendars.</p>
+					<p class="px-2 text-[12.5px] text-[var(--z-ch-discard-ink)]">Could not load calendars.</p>
 				{:else if !calendarsState}
-					<ul class="space-y-1">{#each [1, 2] as n (n)}<li class="h-[32px] animate-pulse rounded-[8px] bg-[#f1f5f9]"></li>{/each}</ul>
+					<ul class="space-y-1">{#each [1, 2] as n (n)}<li class="h-[32px] animate-pulse rounded-[8px] bg-[var(--z-sunken)]"></li>{/each}</ul>
 				{:else if !calendarsState.supported}
-					<p class="px-2 text-[12.5px] leading-relaxed text-[#64748b]">This mail server does not offer calendars over JMAP.</p>
+					<p class="px-2 text-[12.5px] leading-relaxed text-[var(--z-soft)]">This mail server does not offer calendars over JMAP.</p>
 				{:else}
 					<ul class="space-y-0.5" role="list">
 						{#each calendarList as calendar (calendar.accountId + calendar.id)}
 							<li>
-								<label class="flex cursor-pointer items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-[13.5px] font-medium text-[#1e293b] hover:bg-[#f8fafc]">
+								<label class="flex cursor-pointer items-center gap-2.5 rounded-[8px] px-2 py-1.5 text-[13.5px] font-medium text-[var(--z-body)] hover:bg-[var(--z-hover)]">
 									<input type="checkbox" class="z-check" style:--z-check={calendar.color} checked={calendar.isVisible} onchange={(e) => toggleCalendar(calendar, e.currentTarget.checked)} />
 									<span class="size-2.5 shrink-0 rounded-full" style:background-color={calendar.color}></span>
 									<span class="truncate">{calendar.name}</span>
@@ -271,9 +271,9 @@
 		<!-- Month grid -->
 		<div class="flex min-w-0 flex-1 flex-col {editorOpen ? 'max-md:hidden' : ''}">
 			{#if notice}
-				<p class="border-b border-[#e2e8f0] bg-[#f8fafc] px-4 py-1.5 text-[12px] font-medium text-[#475569]" role="status">{notice}</p>
+				<p class="border-b border-[var(--z-hairline)] bg-[var(--z-hover)] px-4 py-1.5 text-[12px] font-medium text-[var(--z-muted)]" role="status">{notice}</p>
 			{/if}
-			<div class="grid grid-cols-7 border-b border-[#e2e8f0]">
+			<div class="grid grid-cols-7 border-b border-[var(--z-hairline)]">
 				{#each labels as label (label)}
 					<div class="z-caption px-2 py-1.5 text-center">{label}</div>
 				{/each}
@@ -288,28 +288,28 @@
 						role="gridcell"
 						tabindex="0"
 						aria-selected={isSelected}
-						class="flex min-h-[84px] flex-col gap-0.5 border-r border-b border-[#f1f5f9] p-1 text-left transition-colors {isSelected ? 'bg-[#f5f9ff]' : inMonth ? 'bg-white' : 'bg-[#f8fafc]/60'} hover:bg-[#f8fafc]"
+						class="flex min-h-[84px] flex-col gap-0.5 border-r border-b border-[var(--z-sunken)] p-1 text-left transition-colors {isSelected ? 'bg-[var(--z-accent-faint)]' : inMonth ? 'bg-[var(--z-surface)]' : 'bg-[var(--z-hover)]/60'} hover:bg-[var(--z-hover)]"
 						onclick={() => (selectedDay = day)}
 						ondblclick={() => startNew(day)}
 						onkeydown={(e) => { if (e.key === 'Enter') startNew(day); }}
 					>
-						<span class="flex size-6 items-center justify-center self-end rounded-[6px] text-[12px] tabular-nums {isToday ? 'bg-[#2563eb] font-bold text-white' : inMonth ? 'font-medium text-[#334155]' : 'text-[#94a3b8]'}">
+						<span class="flex size-6 items-center justify-center self-end rounded-[6px] text-[12px] tabular-nums {isToday ? 'bg-[var(--z-accent)] font-bold text-white' : inMonth ? 'font-medium text-[var(--z-strong)]' : 'text-[var(--z-faint)]'}">
 							{day.getDate()}
 						</span>
 						{#each items.slice(0, 3) as event (event.id)}
 							<button
 								type="button"
-								class="z-railed truncate rounded-[4px] py-0.5 pr-1 pl-3.5 text-left text-[11.5px] font-medium text-[#1e293b] hover:bg-[#f1f5f9]"
+								class="z-railed truncate rounded-[4px] py-0.5 pr-1 pl-3.5 text-left text-[11.5px] font-medium text-[var(--z-body)] hover:bg-[var(--z-sunken)]"
 								style:--z-rail={colorOf(event)}
 								style:--z-rail-inset="2px"
 								onclick={(e) => { e.stopPropagation(); selectedDay = day; startEdit(event); }}
 								title={event.title}
 							>
-								{#if !event.allDay}<span class="mr-1 text-[#64748b] tabular-nums">{timeShort.format(event.start)}</span>{/if}{event.title}
+								{#if !event.allDay}<span class="mr-1 text-[var(--z-soft)] tabular-nums">{timeShort.format(event.start)}</span>{/if}{event.title}
 							</button>
 						{/each}
 						{#if items.length > 3}
-							<span class="px-1 text-[11px] text-[#94a3b8]">+{items.length - 3} more</span>
+							<span class="px-1 text-[11px] text-[var(--z-faint)]">+{items.length - 3} more</span>
 						{/if}
 					</div>
 				{/each}
@@ -317,7 +317,7 @@
 		</div>
 
 		<!-- Agenda / editor -->
-		<div class="flex w-[380px] shrink-0 flex-col border-l border-[#e2e8f0] max-md:w-full max-md:border-l-0 {editorOpen ? '' : 'max-md:hidden'}">
+		<div class="flex w-[380px] shrink-0 flex-col border-l border-[var(--z-hairline)] max-md:w-full max-md:border-l-0 {editorOpen ? '' : 'max-md:hidden'}">
 			{#if editorOpen && calendarsState}
 				<EventEditor
 					event={mode === 'edit' ? editing : null}
@@ -330,17 +330,17 @@
 					onCancel={() => { mode = 'view'; editing = null; }}
 				/>
 			{:else}
-				<div class="flex items-center justify-between gap-2 border-b border-[#e2e8f0] px-4 py-3">
-					<h2 class="min-w-0 truncate text-[14px] font-semibold text-[#0b1220]">{dayTitle}</h2>
+				<div class="flex items-center justify-between gap-2 border-b border-[var(--z-hairline)] px-4 py-3">
+					<h2 class="min-w-0 truncate text-[14px] font-semibold text-[var(--z-ink)]">{dayTitle}</h2>
 					<button type="button" class="btn-tactile !h-[28px] shrink-0 text-[12px]" onclick={() => startNew()} disabled={!calendarsState?.supported}>New event</button>
 				</div>
 				<div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
 					{#if eventsResource?.error}
-						<p class="text-[13px] text-[#b91c1c]">Could not load events. <button type="button" class="underline" onclick={() => eventsResource?.refresh()}>Retry</button></p>
+						<p class="text-[13px] text-[var(--z-ch-discard-ink)]">Could not load events. <button type="button" class="underline" onclick={() => eventsResource?.refresh()}>Retry</button></p>
 					{:else if eventsResource?.loading && !eventsResource.current}
-						<ul class="space-y-2">{#each [1, 2, 3] as n (n)}<li class="h-[52px] animate-pulse rounded-[8px] bg-[#f1f5f9]"></li>{/each}</ul>
+						<ul class="space-y-2">{#each [1, 2, 3] as n (n)}<li class="h-[52px] animate-pulse rounded-[8px] bg-[var(--z-sunken)]"></li>{/each}</ul>
 					{:else if agenda.length === 0}
-						<p class="py-6 text-center text-[13px] text-[#94a3b8]">Nothing on this day.</p>
+						<p class="py-6 text-center text-[13px] text-[var(--z-faint)]">Nothing on this day.</p>
 					{:else}
 						<ul class="space-y-2" role="list">
 							{#each agenda as event (event.id)}
@@ -351,10 +351,10 @@
 										style:--z-rail={colorOf(event)}
 										onclick={() => startEdit(event)}
 									>
-										<span class="text-[13.5px] font-semibold text-[#0b1220]">{event.title}</span>
-										<span class="text-[12px] text-[#475569]">{formatEventTime(event)}</span>
-										{#if event.location}<span class="truncate text-[12px] text-[#64748b]">{event.location}</span>{/if}
-										{#if isRecurringInstance(event)}<span class="text-[11px] text-[#94a3b8]">Repeats</span>{/if}
+										<span class="text-[13.5px] font-semibold text-[var(--z-ink)]">{event.title}</span>
+										<span class="text-[12px] text-[var(--z-muted)]">{formatEventTime(event)}</span>
+										{#if event.location}<span class="truncate text-[12px] text-[var(--z-soft)]">{event.location}</span>{/if}
+										{#if isRecurringInstance(event)}<span class="text-[11px] text-[var(--z-faint)]">Repeats</span>{/if}
 									</button>
 								</li>
 							{/each}
