@@ -13,7 +13,7 @@ const FRAME_STYLES = `
 	html { overflow-x: auto; }
 	body {
 		margin: 0;
-		font-family: 'Noto Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
+		font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
 			'Helvetica Neue', Arial, sans-serif;
 		font-size: 16px;
 		line-height: 1.75;

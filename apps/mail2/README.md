@@ -320,7 +320,7 @@ The whole surface speaks one tactile language (`.btn-tactile` in
 - **Chrome:** white surfaces on the `#ebeef2` ground, capped at
   `max-w-[1780px]`. Structural borders are `#cbd5e1` (top bar, sidebar,
   inputs, menus); list/reader dividers and cards are `#e2e8f0`.
-- **Text:** Noto Sans throughout, Noto Sans Mono for captions, counts and
+- **Text:** Inter throughout, Noto Sans Mono for captions, counts and
   code. The slate ramp — 900 headings, 800/700 body, 500 meta, 400
   captions. Counts, times and sizes are `tabular-nums`; group dividers and
   settings headings are uppercase mono 11px (`.z-caption`).

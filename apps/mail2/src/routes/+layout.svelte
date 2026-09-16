@@ -1,5 +1,5 @@
 <script lang="ts">
-	import '@fontsource-variable/noto-sans';
+	import '@fontsource-variable/inter';
 	import '@fontsource-variable/noto-sans-mono';
 	import './layout.css';
 
