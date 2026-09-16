@@ -300,7 +300,7 @@
 		<!-- Empty Selection Placeholder -->
 		<div class="flex flex-1 items-center justify-center p-6 text-center">
 			<div class="max-w-[280px]">
-				<div class="mx-auto flex size-12 items-center justify-center rounded-full bg-slate-100 text-slate-400 mb-3">
+				<div class="mx-auto flex size-12 items-center justify-center rounded-full bg-blue-50 text-blue-600 mb-3">
 					<svg class="size-6" viewBox="0 0 16 16" fill="none">
 						<rect x="2" y="3" width="12" height="10" rx="2" stroke="currentColor" stroke-width="1.3" />
 						<path d="M2 5l6 4 6-4" stroke="currentColor" stroke-width="1.3" />

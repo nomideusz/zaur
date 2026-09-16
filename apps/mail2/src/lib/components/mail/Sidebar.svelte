@@ -54,7 +54,7 @@
 				{#if mailboxes}
 					{#each mailboxes as mailbox (mailbox.id)}
 						{@const isSelected = mailbox.id === activeMailboxId}
-						{@const { checkedBg } = mailboxColor(mailbox.kind)}
+						{@const { checkedBg, theme } = mailboxColor(mailbox.kind)}
 						<li>
 							<button
 								type="button"
@@ -88,9 +88,12 @@
 
 								{#if mailbox.unread > 0}
 									<span
-										class="flex h-5 min-w-[20px] items-center justify-center rounded-[4px] px-1.5 text-[11px] font-semibold tabular-nums {isSelected
-											? 'bg-white text-slate-900 shadow-2xs border border-slate-200'
-											: 'bg-slate-100 text-slate-600'}"
+										class="flex h-5 min-w-[20px] items-center justify-center rounded-[4px] border px-1.5 text-[11px] font-semibold tabular-nums {isSelected
+											? 'border-slate-200 bg-white text-slate-900 shadow-2xs'
+											: ''}"
+										style:background-color={isSelected ? undefined : theme.badgeBg}
+										style:border-color={isSelected ? undefined : theme.badgeBorder}
+										style:color={isSelected ? undefined : theme.badgeText}
 									>
 										{mailbox.unread}
 									</span>

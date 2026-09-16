@@ -37,9 +37,12 @@ import type {
 
 const DRAFT_SAVE_DEBOUNCE_MS = 1500;
 
+export type ToastTone = 'info' | 'success' | 'warning' | 'error';
+
 export interface Toast {
 	id: string;
 	text: string;
+	tone?: ToastTone;
 	actionLabel?: string;
 	action?: () => void;
 }
@@ -189,7 +192,7 @@ class ComposeStore {
 				const input = buildDraftSaveInput(draft);
 				this.#removeInternal(id);
 				void this.#transport.saveDraft(input).catch(() => {
-					this.pushToast({ text: 'Draft could not be saved' });
+					this.pushToast({ text: 'Draft could not be saved', tone: 'error' });
 				});
 				return;
 			}
@@ -206,12 +209,15 @@ class ComposeStore {
 		if (draft?.jmapDraftId) {
 			void this.#transport
 				?.deleteDraft(draft.jmapDraftId)
-				.then(() => this.pushToast({ text: 'Draft discarded' }))
+				.then(() => this.pushToast({ text: 'Draft discarded', tone: 'info' }))
 				.catch(() =>
-					this.pushToast({ text: 'Draft discarded — the saved copy could not be deleted' })
+					this.pushToast({
+						text: 'Draft discarded — the saved copy could not be deleted',
+						tone: 'warning'
+					})
 				);
 		} else {
-			this.pushToast({ text: 'Draft discarded' });
+			this.pushToast({ text: 'Draft discarded', tone: 'info' });
 		}
 	}
 
@@ -349,11 +355,14 @@ class ComposeStore {
 		if (!draft) return;
 		for (const file of files) {
 			if (draft.attachments.length >= MAX_ATTACHMENT_COUNT) {
-				this.pushToast({ text: `A draft can hold at most ${MAX_ATTACHMENT_COUNT} attachments` });
+				this.pushToast({
+					text: `A draft can hold at most ${MAX_ATTACHMENT_COUNT} attachments`,
+					tone: 'warning'
+				});
 				break;
 			}
 			if (file.size > MAX_ATTACHMENT_BYTES) {
-				this.pushToast({ text: `"${file.name}" is too large — the limit is 25 MB` });
+				this.pushToast({ text: `"${file.name}" is too large — the limit is 25 MB`, tone: 'warning' });
 				continue;
 			}
 			const chip: DraftAttachment = {
@@ -394,7 +403,7 @@ class ComposeStore {
 		const chip = this.#findAttachment(draftId, chipId);
 		if (!chip) return;
 		chip.status = 'error';
-		this.pushToast({ text: `Could not upload "${chip.name}"` });
+		this.pushToast({ text: `Could not upload "${chip.name}"`, tone: 'error' });
 	}
 
 	#findAttachment(draftId: string, chipId: string): DraftAttachment | undefined {
@@ -444,7 +453,7 @@ class ComposeStore {
 			}
 		} catch (cause) {
 			if (classifySendFailure(cause) !== 'network') {
-				this.pushToast({ text: 'Draft could not be saved' });
+				this.pushToast({ text: 'Draft could not be saved', tone: 'error' });
 			}
 		} finally {
 			const current = this.#find(id);
@@ -543,18 +552,19 @@ class ComposeStore {
 				const emailId = result.emailId;
 				this.pushToast({
 					text: 'Scheduled for tomorrow, 09:00',
+					tone: 'success',
 					actionLabel: 'Undo',
 					action: () => void this.undoScheduled(emailId, payload)
 				});
 			} else {
-				this.pushToast({ text: 'Message sent' });
+				this.pushToast({ text: 'Message sent', tone: 'success' });
 			}
 		} catch (cause) {
 			if (classifySendFailure(cause) === 'network') {
 				try {
 					await enqueueOutbox(payload);
 					this.#removeInternal(id);
-					this.pushToast({ text: "You're offline — message saved to the outbox" });
+					this.pushToast({ text: "You're offline — message saved to the outbox", tone: 'warning' });
 				} catch {
 					draft.sending = false;
 					draft.sendError = "You're offline and the message couldn't be stored. Try again.";
@@ -577,9 +587,9 @@ class ComposeStore {
 				attachments: payload.attachments?.map((part) => attachmentFromServer(part)),
 				focusTarget: 'subject'
 			});
-			this.pushToast({ text: 'Scheduled send cancelled' });
+			this.pushToast({ text: 'Scheduled send cancelled', tone: 'info' });
 		} catch {
-			this.pushToast({ text: 'Could not cancel the scheduled message' });
+			this.pushToast({ text: 'Could not cancel the scheduled message', tone: 'error' });
 		}
 	}
 
@@ -602,7 +612,7 @@ class ComposeStore {
 					if (classifySendFailure(cause) === 'network') break;
 					if (entry.attempts >= 5) {
 						await removeOutboxEntry(entry.id);
-						this.pushToast({ text: 'A queued message kept failing and was removed' });
+						this.pushToast({ text: 'A queued message kept failing and was removed', tone: 'error' });
 					}
 				}
 			}
@@ -612,7 +622,7 @@ class ComposeStore {
 		return sent;
 	}
 
-	pushToast(toast: { text: string; actionLabel?: string; action?: () => void }) {
+	pushToast(toast: { text: string; tone?: ToastTone; actionLabel?: string; action?: () => void }) {
 		const id = crypto.randomUUID();
 		this.toasts.unshift({ id, ...toast });
 		setTimeout(() => this.dismissToast(id), toast.action ? 9000 : 5000);

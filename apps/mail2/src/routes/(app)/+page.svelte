@@ -282,10 +282,11 @@
 			selection = new Set();
 			void threadsResource?.refresh();
 			void mailboxesResource?.refresh();
-			compose.pushToast({ text: `${count} ${count === 1 ? 'message' : 'messages'} ${verb}` });
+			compose.pushToast({ text: `${count} ${count === 1 ? 'message' : 'messages'} ${verb}`, tone: 'success' });
 		} catch (cause) {
 			compose.pushToast({
-				text: cause instanceof Error ? cause.message : 'Action failed'
+				text: cause instanceof Error ? cause.message : 'Action failed',
+				tone: 'error'
 			});
 		} finally {
 			bulkBusy = false;
@@ -304,7 +305,7 @@
 			if (!message) return;
 			compose.reopenDraft(draftSeed(message), panelPosition());
 		} catch {
-			compose.pushToast({ text: 'Could not open the draft' });
+			compose.pushToast({ text: 'Could not open the draft', tone: 'error' });
 		}
 	}
 

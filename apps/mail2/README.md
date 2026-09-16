@@ -6,7 +6,7 @@ theme only** for now; Files and Meet arrive when their designs land.
 
 ## Status
 
-- [x] Shell scaffold, remote functions enabled, design tokens (foundation slice)
+- [x] Shell scaffold, remote functions enabled, tactile shell + Hobday palette (foundation slice)
 - [x] Session-aware read path (mailbox → thread list → reader)
 - [x] Floating multi-draft compose (panels, dock, schedule send, offline outbox)
 - [x] Draft persistence (Drafts mailbox) + compose attachments
@@ -298,8 +298,8 @@ Where every other window puts three inert traffic lights, the shell windows
 mark as the zaur.app landing page, drawn from `SPRITE_FRAMES` on its 20×18
 `crispEdges` grid as a duotone: raspberry `#db2777` body over deep plum
 `#831843` from row 11 down (legs and underside), with the eye left as a hole.
-Same hue family as `--z-accent`, vivid at 28px, and complementary to the green
-account avatar at the other end of the top bar. It is the brand *and* an ambient indicator, so the slot
+Both tones are the Hobday pink already in `#lib/mail/colors` — vivid at 28px,
+and complementary to the green account avatar at the other end of the top bar. It is the brand *and* an ambient indicator, so the slot
 earns its place: `look_up` while unseen mail waits, `cheer` on reaching zero
 and `happy` at rest, `sad` when the browser goes offline, `sleep` after five
 minutes without input, with a random `blink` (skipped under
@@ -313,31 +313,52 @@ the right of the header, and the dots only duplicated them.
 
 ## One visual language
 
-The shell was built in the tactile style the prototype resolved to — white
-controls on a `#cbd5e1` hairline, `btn-tactile`, blue-600 for anything
-selected, and the Hobday candy palette for per-person avatars. The compose
-panel was the last surface still drawn from the original token set (plum
-accent, `--z-ink*` ramp, pill chips, `#f1f1f1` hairlines), so it read as a
-different app floating over this one. It now uses the shell's language
-throughout:
+The whole surface speaks one tactile language (`.btn-tactile` in
+`styles/base.css`, Hobday candy palette in `#lib/mail/colors`):
 
-| Compose | Now matches |
+- **Chrome:** white surfaces on the `#ebeef2` ground, capped at
+  `max-w-[1780px]`. Structural borders are `#cbd5e1` (top bar, sidebar,
+  inputs, menus); list/reader dividers and cards are `#e2e8f0`.
+- **Text:** the slate ramp — 900 headings, 800/700 body, 500 meta, 400
+  captions. Counts, times and sizes are `tabular-nums`; group dividers and
+  settings headings are uppercase mono 11px (`.z-caption`).
+- **Controls:** `btn-tactile` — white, 6px radius, `#cbd5e1` border, slate
+  text (`#f8fafc` / `#94a3b8` on hover). The primary action (Send, Sign in)
+  is the same button filled blue-600 (blue-700 border), recessed grey
+  (`slate-100`/`slate-200`/`slate-400`) until there is a recipient.
+  Destructive is red-600 on red-50; input focus is a blue-500 ring.
+- **Selection is blue-600 everywhere:** selected row
+  (`border-blue-500` / `bg-blue-50/50`), keyboard cursor
+  (`border-blue-400` / `bg-blue-50/30`), unread dot (`bg-blue-600`
+  `ring-blue-100`), unread pill (`bg-blue-100` `text-blue-700`),
+  checkboxes (`accent-blue-600`), storage meter (`bg-blue-600`).
+- **People are Hobday candy:** `getHobdayTheme` in `#lib/mail/colors`
+  deterministically maps an email to one of five themes
+  (blue/green/pink/amber/purple) — **the same person is the same colour**
+  in the list avatar, the reader sender card, the compose To chips and the
+  account menu. `attachmentBadge` is the one source for the file-kind badge
+  (PDF red, image blue, archive amber, else green), shared by the reader
+  and compose. Sidebar unread counts wear the same themes — each mailbox's
+  count pill is tinted with its own badge colours.
+- **Menus are Ark:** 8px card, `#cbd5e1` border, `bg-slate-100` highlight.
+  Contact suggestions add a ↵ kbd hint on the highlighted row and a
+  ↑↓ / ↵ / esc footer.
+- **Notices are cards:** toasts are 10px cards with a tone accent bar on the
+  left (blue info, green success, amber warning, red error) and a tactile
+  action button.
+
+| Compose | Matches |
 | --- | --- |
 | Send | the login submit — `btn-tactile` filled blue-600, recessed grey until there is a recipient |
-| Attach / Schedule / Discard | the reader toolbar's `btn-tactile`, discard in the list's destructive red |
-| Recipient chips | the list's avatar badge — **the same person is the same colour** in the list and in the To field |
-| Contact suggestions | the Ark menus: 8px card, `#cbd5e1` border, `bg-slate-100` highlight |
-| Attachment chips | the reader's chips, scaled to the 30px strip; `attachmentBadge` in `#lib/mail/colors` is now the one source for the kind colour |
+| Attach / Schedule / Discard | the reader toolbar's `btn-tactile`, discard in destructive red |
+| Recipient chips | the list's avatar badge — white chip, `#cbd5e1` border, Hobday avatar |
+| Contact suggestions | the Ark menus: 8px card, `#cbd5e1` border, `bg-slate-100` highlight, plus ↵ kbd hint and key-hint footer |
+| Attachment chips | the reader's chips, scaled to the 30px strip; `attachmentBadge` is the one source for the kind colour |
 | To / Subject step markers | the ringed blue status dot on an unread row and on a dock chip |
 
 The step dots stayed dots rather than becoming the sidebar's checkbox: a 17px
 checkbox does not fit the 62px label column, and the field geometry is a
 contract with `computeAutoHeight`.
-
-`tokens.css` keeps the plum accent — the tokens test pins it as the design
-handoff's resolved value — but nothing in the mail surface reads from it any
-more; only the splitter's hover line and the sign-in page's register link do.
-That drift is worth a decision of its own before the next surface is built.
 
 ## Compose panel geometry
 
@@ -381,7 +402,12 @@ means move-to-Trash everywhere except Trash, where it destroys.
   drains on load and on reconnect. Drafts autosave to the server's Drafts
   mailbox (debounced, 1.5 s) and attachment uploads go through a plain
   `/api/upload` endpoint — remote commands cannot carry a `File`.
-- Design tokens: `src/routes/styles/tokens.css` — the handoff's resolved
-  variants as CSS custom properties, mapped to Tailwind v4 utilities. The
-  prototype's exploration props are **not** configurable; ship the resolved
-  values.
+- Styling is the tactile system, not a token ramp: `styles/base.css` owns
+  `.btn-tactile`, `.hobday-checkbox`, `.z-caption` and the `.z-shell` grid;
+  surfaces use Tailwind slate/blue plus the chrome hexes (`#ebeef2` ground,
+  `#cbd5e1` chrome borders, `#e2e8f0` dividers); people and file-kind
+  colours come from `#lib/mail/colors` (`getHobdayTheme`,
+  `attachmentBadge`). `styles/tokens.css` remains as the Tailwind `@theme
+  inline` bridge, but the mail surface reads slate/blue/Hobday directly —
+  only the body ground, focus ring, splitter and login register link still
+  resolve its `--z-*` values.

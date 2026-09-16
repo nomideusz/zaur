@@ -312,6 +312,16 @@
 				</div>
 				<p class="text-sm font-semibold text-slate-800">{emptyCopy.title}</p>
 				<p class="max-w-[320px] text-[13px] leading-relaxed text-slate-500">{emptyCopy.hint}</p>
+				<button
+					type="button"
+					class="btn-tactile mt-3"
+					onclick={(event) => onNewMessage(event.currentTarget.getBoundingClientRect())}
+				>
+					<svg class="size-4 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+					</svg>
+					New message
+				</button>
 			</div>
 		{:else if groups}
 			{#each groups as group (group.label)}

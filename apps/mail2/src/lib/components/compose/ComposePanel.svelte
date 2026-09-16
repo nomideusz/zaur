@@ -457,14 +457,53 @@
 								{#if suggestion.meta}
 									<span class="shrink-0 text-[11px] text-slate-400">{suggestion.meta}</span>
 								{/if}
+								{#if index === draft.toHi}
+									<kbd
+										class="flex h-5 min-w-5 shrink-0 items-center justify-center rounded-[4px] border border-[#cbd5e1] bg-slate-50 px-1 font-mono text-[11px] text-slate-500 shadow-2xs"
+										aria-hidden="true">↵</kbd
+									>
+								{/if}
 							</button>
 						{/each}
 						{#if suggestions.length === 0}
 							<p class="px-2.5 py-1.5 text-[13px] text-slate-500">
-								{draft.toInput.includes('@')
-									? `Press Enter to add ${draft.toInput.trim()}`
-									: 'No matching contacts'}
+								{#if draft.toInput.includes('@')}
+									Press
+									<kbd
+										class="mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-[4px] border border-[#cbd5e1] bg-slate-50 px-1 font-mono text-[11px] text-slate-500 shadow-2xs"
+										>Enter</kbd
+									>
+									to add {draft.toInput.trim()}
+								{:else}
+									No matching contacts
+								{/if}
 							</p>
+						{:else}
+							<div
+								class="mt-1 flex items-center justify-end gap-3 border-t border-[#e2e8f0] px-2 pt-1.5 text-[11px] text-slate-400"
+							>
+								<span class="flex items-center gap-1">
+									<kbd
+										class="flex h-5 min-w-5 items-center justify-center rounded-[4px] border border-slate-200 bg-slate-50 px-1 font-mono text-[10px]"
+										aria-hidden="true">↑↓</kbd
+									>
+									navigate
+								</span>
+								<span class="flex items-center gap-1">
+									<kbd
+										class="flex h-5 min-w-5 items-center justify-center rounded-[4px] border border-slate-200 bg-slate-50 px-1 font-mono text-[10px]"
+										aria-hidden="true">↵</kbd
+									>
+									add
+								</span>
+								<span class="flex items-center gap-1">
+									<kbd
+										class="flex h-5 min-w-5 items-center justify-center rounded-[4px] border border-slate-200 bg-slate-50 px-1 font-mono text-[10px]"
+										aria-hidden="true">esc</kbd
+									>
+									dismiss
+								</span>
+							</div>
 						{/if}
 					</div>
 				{/if}
@@ -646,6 +685,10 @@
 			aria-pressed={draft.scheduled}
 			onclick={() => compose.toggleSchedule(draft.id)}
 		>
+			<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+				<rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.4" />
+				<path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+			</svg>
 			{draft.scheduled ? 'Tomorrow, 09:00' : 'Schedule'}
 		</button>
 		<button
