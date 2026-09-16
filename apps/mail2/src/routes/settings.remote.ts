@@ -88,6 +88,9 @@ export const setAccountPrefs = command(
 			}
 		}
 		putAccountPrefs(getStoreDb(), key, JSON.stringify(merged));
+		// Ride the fresh copy back with the response: a page that adopts the
+		// cached one after this (Settings → Mail) would otherwise revert the change.
+		await accountPrefs().refresh();
 	}
 );
 

@@ -1,4 +1,5 @@
 /** The reactive prefs object — the pure shape and parser live in `settings.ts`. */
+import { untrack } from 'svelte';
 import {
 	ACCOUNT_PREF_KEYS,
 	DEFAULT_PREFS,
@@ -45,18 +46,24 @@ export function setPref<K extends keyof Prefs>(key: K, value: Prefs[K]) {
  * The account wins over this device's defaults but not over what is already
  * stored here — a preference set on this device is the more recent intent, and
  * the merge is per key, so a device that has never seen a key still gets it.
+ *
+ * Callers run this from an `$effect`, so it is untracked: it reads every pref
+ * and a remote command bumps its own `$state` pending count, and either would
+ * make the effect re-run itself — a first sign-in used to push dozens of times.
  */
 export function adoptAccountPrefs(
 	remote: Partial<AccountPrefs> | null,
 	pushChanges: (changed: Partial<AccountPrefs>) => void
 ) {
-	const merged = mergeAccountPrefs({ ...prefs }, remote);
-	for (const key of ACCOUNT_PREF_KEYS) prefs[key] = merged[key] as never;
-	persist();
-	push = pushChanges;
-	synced = true;
+	untrack(() => {
+		const merged = mergeAccountPrefs({ ...prefs }, remote);
+		for (const key of ACCOUNT_PREF_KEYS) prefs[key] = merged[key] as never;
+		persist();
+		push = pushChanges;
+		synced = true;
 
-	// First device to sign in seeds the account, so a second one has something
-	// to adopt rather than starting from defaults again.
-	if (!remote) pushChanges(accountPrefsOf(prefs));
+		// First device to sign in seeds the account, so a second one has something
+		// to adopt rather than starting from defaults again.
+		if (!remote) pushChanges(accountPrefsOf(prefs));
+	});
 }
