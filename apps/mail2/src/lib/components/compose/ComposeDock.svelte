@@ -68,7 +68,7 @@
 				role="button"
 				tabindex="0"
 				aria-label="Minimized draft: {chipTitle(draft)}. Activate to reopen."
-				class="flex h-11 w-[210px] shrink-0 cursor-grab items-center gap-2 rounded-[8px] border border-[#cbd5e1] bg-white pr-1.5 pl-3 shadow-md select-none transition-all duration-[150ms] hover:border-slate-400 hover:shadow-lg max-md:w-[180px] max-md:cursor-default {compose.trayDragId ===
+				class="flex h-11 w-[210px] shrink-0 cursor-grab items-center gap-2 rounded-[10px] border border-[#cbd5e1] bg-white pr-1.5 pl-3 shadow-md select-none transition-all duration-[150ms] hover:border-slate-400 hover:shadow-lg max-md:w-[180px] max-md:cursor-default {compose.trayDragId ===
 				draft.id
 					? '-translate-y-1 shadow-xl'
 					: ''}"
@@ -94,7 +94,7 @@
 				</span>
 				<button
 					type="button"
-					class="flex size-6 shrink-0 items-center justify-center rounded-[4px] text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition-colors"
+					class="flex size-6 shrink-0 items-center justify-center rounded-[4px] text-slate-500 hover:bg-slate-100 hover:text-slate-900 transition-colors"
 					aria-label="Reopen draft"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.restore(draft.id)}
@@ -105,7 +105,7 @@
 				</button>
 				<button
 					type="button"
-					class="flex size-6 shrink-0 items-center justify-center rounded-[4px] text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+					class="flex size-6 shrink-0 items-center justify-center rounded-[4px] text-slate-500 hover:bg-red-50 hover:text-red-600 transition-colors"
 					aria-label="Close draft"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.close(draft.id)}

@@ -39,9 +39,10 @@
 							: 'happy'
 	);
 
-	// Raspberry over deep plum: vivid enough to read at 28px, same hue family as
-	// --z-accent (#7a3b5e), and complementary to the green account avatar across
-	// the top bar. Both tones are the Hobday pink already in #lib/mail/colors.
+	// Raspberry over deep plum: vivid enough to read at 28px, and complementary
+	// to the green account avatar across the top bar. Both tones are the Hobday
+	// pink already in #lib/mail/colors — the mark is the one thing in the shell
+	// that is deliberately not the blue everything else selects in.
 	const BODY = '#db2777';
 	const SHADE = '#831843';
 	/** Rows from here down are the underside — legs and belly take the darker tone. */

@@ -35,22 +35,84 @@
 	button:focus-visible,
 	a:focus-visible,
 	[role='button']:focus-visible {
+		/* `--z-accent` is the shell's blue; the rail deliberately uses `--z-rail`,
+		   because a row setting a hue must not repaint the focus ring inside it. */
 		outline: 2px solid var(--z-accent);
 		outline-offset: 2px;
 	}
 
-	/* Counts, times, sizes — per the handoff's typography rules. */
-	.z-num {
-		font-variant-numeric: tabular-nums;
-	}
-
-	/* Uppercase monospace captions — group dividers, search captions, key hints. */
+	/*
+	 * Uppercase monospace caption — the list's group dividers, the reader's
+	 * Attachments and History rules, the sidebar and settings headings, and the
+	 * captions on menus. It was written down here from the start and then
+	 * re-typed as Tailwind at every one of those sites; this is the one copy.
+	 */
 	.z-caption {
 		font-family: var(--font-mono);
-		font-size: 10px;
-		letter-spacing: 0.08em;
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.05em;
+		line-height: 1.4;
 		text-transform: uppercase;
-		color: var(--z-ink-secondary);
+		color: #94a3b8;
+	}
+
+	/*
+	 * The shell's checkbox. `--z-check` is the fill when it is on: blue-600
+	 * because selection is blue everywhere, or the folder's own colour in the
+	 * sidebar, where the box is what says which mailbox is open.
+	 *
+	 * `.hobday-checkbox` is the drawn version, for a span or a button that is
+	 * really a toggle; `.z-check` is the same thing on a real `<input>`, so a
+	 * form keeps a native control.
+	 */
+	.hobday-checkbox {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		flex-shrink: 0;
+		width: 18px;
+		height: 18px;
+		border-radius: 5px;
+		border: 1.5px solid #94a3b8;
+		background: #ffffff;
+		color: transparent;
+		transition: all 120ms ease;
+	}
+
+	.hobday-checkbox[data-checked='true'] {
+		border-color: transparent;
+		background: var(--z-check, #2563eb);
+		color: #ffffff;
+	}
+
+	.z-check {
+		appearance: none;
+		-webkit-appearance: none;
+		flex-shrink: 0;
+		width: 18px;
+		height: 18px;
+		border-radius: 5px;
+		border: 1.5px solid #94a3b8;
+		background: #ffffff;
+		cursor: pointer;
+		transition: all 120ms ease;
+	}
+
+	.z-check:checked {
+		border-color: transparent;
+		background-color: var(--z-check, #2563eb);
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.5 8.5l3 3 6-7' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: center;
+		background-size: 12px 12px;
+	}
+
+	@media (hover: hover) {
+		.hobday-checkbox:not([data-checked='true']):hover,
+		.z-check:not(:checked):hover {
+			border-color: #64748b;
+		}
 	}
 
 	/* Hobday tactile buttons & controls */
@@ -105,7 +167,7 @@
 
 	/*
 	 * The sender's rail — an accent bar in that person's Hobday hue, taken from
-	 * `--z-accent`. A list row, the reader's sender card and each earlier
+	 * `--z-rail`. A list row, the reader's sender card and each earlier
 	 * message in a thread all wear it: it is what carries "the same person is
 	 * the same colour" out of `#lib/mail/colors` and across the panes.
 	 *
@@ -124,7 +186,7 @@
 		left: var(--z-rail-left, 7px);
 		width: 3px;
 		border-radius: 999px;
-		background: var(--z-accent, #94a3b8);
+		background: var(--z-rail, #94a3b8);
 		opacity: var(--z-rail-strength, 1);
 		transition: opacity 120ms ease;
 	}
@@ -134,8 +196,8 @@
 	 * surface a railed thing sits on when it wants to belong to its colour.
 	 */
 	.z-hue-wash {
-		background: color-mix(in oklab, var(--z-accent) 7%, #ffffff);
-		border-color: color-mix(in oklab, var(--z-accent) 30%, #ffffff);
+		background: color-mix(in oklab, var(--z-rail) 7%, #ffffff);
+		border-color: color-mix(in oklab, var(--z-rail) 30%, #ffffff);
 	}
 
 	/*

@@ -75,9 +75,7 @@
 			<div class="mx-auto flex max-w-[640px] flex-col gap-6">
 				<!-- Account -->
 				<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
-					<h2 class="font-mono text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-						Account
-					</h2>
+					<h2 class="z-caption">Account</h2>
 					<div class="mt-3 flex items-baseline justify-between gap-3">
 						<div>
 							<div class="text-[14px] font-semibold text-slate-900">
@@ -94,9 +92,7 @@
 
 				<!-- Send-as display names -->
 				<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
-					<h2 class="font-mono text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-						Display name
-					</h2>
+					<h2 class="z-caption">Display name</h2>
 					<p class="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
 						The name recipients see next to each of your addresses.
 					</p>
@@ -138,9 +134,7 @@
 
 				<!-- Reading prefs (local to this browser) -->
 				<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
-					<h2 class="font-mono text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-						Reading
-					</h2>
+					<h2 class="z-caption">Reading</h2>
 					<p class="mt-1.5 text-[12.5px] leading-relaxed text-slate-500">
 						Stored in this browser only.
 					</p>
@@ -152,7 +146,7 @@
 							</span>
 							<input
 								type="checkbox"
-								class="size-4 accent-blue-600"
+								class="z-check"
 								checked={prefs.markReadOnOpen}
 								onchange={(event) => setPref('markReadOnOpen', event.currentTarget.checked)}
 							/>
@@ -162,7 +156,7 @@
 							<span class="text-[13px] font-medium text-slate-800">Show preview line in the list</span>
 							<input
 								type="checkbox"
-								class="size-4 accent-blue-600"
+								class="z-check"
 								checked={prefs.showPreview}
 								onchange={(event) => setPref('showPreview', event.currentTarget.checked)}
 							/>
@@ -172,7 +166,7 @@
 							<span class="text-[13px] font-medium text-slate-800">Open folders on Unseen</span>
 							<input
 								type="checkbox"
-								class="size-4 accent-blue-600"
+								class="z-check"
 								checked={prefs.unseenByDefault}
 								onchange={(event) => setPref('unseenByDefault', event.currentTarget.checked)}
 							/>

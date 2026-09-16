@@ -148,9 +148,7 @@
 				<Portal>
 					<Menu.Positioner>
 						<Menu.Content class="z-40 w-[184px] rounded-[8px] border border-[#cbd5e1] bg-white p-1.5 shadow-lg">
-							<div class="px-2 pt-1 pb-1.5 font-mono text-[10px] tracking-wider text-slate-400 uppercase">
-								Select
-							</div>
+							<div class="z-caption px-2 pt-1 pb-1.5">Select</div>
 							<Menu.Item value="all" onSelect={selectAll} class="cursor-pointer rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 data-highlighted:bg-slate-100">All</Menu.Item>
 							<Menu.Item value="none" onSelect={selectNone} class="cursor-pointer rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 data-highlighted:bg-slate-100">None</Menu.Item>
 							<Menu.Item value="unseen" onSelect={() => selectWhere((row) => row.unread)} class="cursor-pointer rounded-[6px] px-2.5 py-1.5 text-[13px] font-medium text-slate-700 data-highlighted:bg-slate-100">Unseen</Menu.Item>
@@ -385,9 +383,7 @@
 					role="separator"
 					aria-label={group.label}
 				>
-					<span class="font-mono text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-						{group.label}
-					</span>
+					<span class="z-caption">{group.label}</span>
 					<div class="h-px flex-1 bg-[#e2e8f0]"></div>
 					<span class="text-xs font-semibold text-slate-400 tabular-nums">{group.rows.length}</span>
 				</div>
@@ -403,7 +399,7 @@
 							data-unread={row.unread ? 'true' : 'false'}
 							class="z-row z-railed group/row grid cursor-pointer grid-cols-[18px_minmax(0,1fr)] items-start gap-x-3 rounded-[10px] border py-3 pr-3 pl-[18px]"
 							class:z-hue-wash={row.unread}
-							style:--z-accent={theme.border}
+							style:--z-rail={theme.border}
 							onclick={() => onOpen(row.threadId)}
 							onkeydown={(event) => {
 								if (event.key === 'Enter' || event.key === ' ') {
@@ -569,12 +565,21 @@
 	 * the part that is this component's own — the state machine.
 	 */
 	.z-row {
-		background: #ffffff;
-		border-color: #e2e8f0;
 		transition:
 			background-color 120ms ease,
 			border-color 120ms ease,
 			box-shadow 120ms ease;
+	}
+
+	/*
+	 * Scoped styles are unlayered and `.z-hue-wash` lives in `@layer base`, so a
+	 * plain `.z-row { background: #fff }` here would silently beat the shared
+	 * wash and flatten every unread row. Claim the default only when the wash is
+	 * not on the element; the state rules below still outrank both.
+	 */
+	.z-row:not(.z-hue-wash) {
+		background: #ffffff;
+		border-color: #e2e8f0;
 	}
 
 	/* Seen: the rail keeps the hue, and steps back. */
@@ -638,7 +643,7 @@
 		}
 
 		.z-row[data-state='rest'][data-unread='true']:hover {
-			border-color: color-mix(in oklab, var(--z-accent) 48%, #ffffff);
+			border-color: color-mix(in oklab, var(--z-rail) 48%, #ffffff);
 		}
 
 		/* One slot, two states: the time steps out, the buttons step in. */

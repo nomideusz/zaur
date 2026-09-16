@@ -92,6 +92,60 @@ export function getHobdayTheme(seed: string): HobdayColorTheme {
 	return HOBDAY_THEMES[THEME_KEYS[index]!];
 }
 
+export interface MailboxColors {
+	/** The solid fill of the folder's checkbox, and its rail when it is open. */
+	check: string;
+	badgeBg: string;
+	badgeBorder: string;
+	badgeText: string;
+}
+
+const NEUTRAL: Omit<MailboxColors, 'check'> = {
+	badgeBg: '#f1f5f9',
+	badgeBorder: '#cbd5e1',
+	badgeText: '#475569'
+};
+
+const DANGER: Omit<MailboxColors, 'check'> = {
+	badgeBg: '#fee2e2',
+	badgeBorder: '#fca5a5',
+	badgeText: '#b91c1c'
+};
+
+const fromTheme = (theme: HobdayColorTheme): MailboxColors => ({
+	check: theme.checkboxBg,
+	badgeBg: theme.badgeBg,
+	badgeBorder: theme.badgeBorder,
+	badgeText: theme.badgeText
+});
+
+/**
+ * A folder's colour — its checkbox, its unread pill and its rail when it is the
+ * open one, all from here so the sidebar and the top bar's folder menu cannot
+ * show the same count in two different colours.
+ *
+ * Most folders take a Hobday theme. Archive is deliberately neutral — it is
+ * where things go to stop being colourful — and Junk and Trash are red, because
+ * the pill should say what the folder does with what lands in it.
+ */
+export function mailboxTheme(kind: string | undefined): MailboxColors {
+	switch (kind) {
+		case 'inbox':
+			return fromTheme(HOBDAY_THEMES.blue);
+		case 'sent':
+			return fromTheme(HOBDAY_THEMES.green);
+		case 'drafts':
+			return fromTheme(HOBDAY_THEMES.amber);
+		case 'archive':
+			return { check: '#64748b', ...NEUTRAL };
+		case 'junk':
+		case 'trash':
+			return { check: '#ef4444', ...DANGER };
+		default:
+			return fromTheme(HOBDAY_THEMES.purple);
+	}
+}
+
 /** No file type maps to red in the five themes, and a PDF has always been red. */
 const PDF_BADGE = { bg: '#fee2e2', border: '#ef4444', text: '#b91c1c' };
 

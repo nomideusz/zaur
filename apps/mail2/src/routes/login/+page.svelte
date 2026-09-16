@@ -92,11 +92,11 @@
 					</div>
 				{/if}
 
-				<label class="flex w-full cursor-pointer items-center gap-2 py-0.5 text-sm text-slate-600">
+				<label class="flex w-full cursor-pointer items-center gap-2.5 py-0.5 text-sm text-slate-600">
 					<input
 						{...login.fields.remember.as('checkbox')}
 						disabled={pending}
-						class="size-4 rounded border-[#cbd5e1] text-blue-600 focus:ring-blue-500"
+						class="z-check disabled:opacity-60"
 					/>
 					Remember me
 				</label>

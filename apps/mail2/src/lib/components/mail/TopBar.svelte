@@ -3,8 +3,9 @@
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import type { MailboxDTO } from '#lib/mail/types';
-	import { getHobdayTheme } from '#lib/mail/colors';
+	import { getHobdayTheme, mailboxTheme } from '#lib/mail/colors';
 	import ZaurMark from './ZaurMark.svelte';
+	import ActionIcon from './ActionIcon.svelte';
 
 	interface Props {
 		mailboxes: MailboxDTO[] | undefined;
@@ -106,19 +107,16 @@
 								{activeMailbox.unread}
 							</span>
 						{/if}
-						<svg class="size-3 text-slate-400" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-							<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
+						<ActionIcon name="chevron" class="size-3 text-slate-400" />
 					</Menu.Trigger>
 					<Portal>
 						<Menu.Positioner>
 							<Menu.Content
 								class="z-40 w-60 rounded-[8px] border border-[#cbd5e1] bg-white p-1.5 shadow-lg"
 							>
-								<div class="px-2 py-1 text-[11px] font-medium text-slate-400 uppercase tracking-wider">
-									Switch folder
-								</div>
+								<div class="z-caption px-2 pt-1 pb-1.5">Switch folder</div>
 								{#each mailboxes as mailbox (mailbox.id)}
+									{@const colors = mailboxTheme(mailbox.kind)}
 									<Menu.Item
 										value={mailbox.id}
 										onSelect={() => onSelectMailbox(mailbox.id)}
@@ -126,7 +124,13 @@
 									>
 										<span class="truncate">{mailbox.name}</span>
 										{#if mailbox.unread > 0}
-											<span class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600 tabular-nums">
+											<!-- The same pill the sidebar gives this folder, not a grey one. -->
+											<span
+												class="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-[4px] border px-1 text-[11px] font-semibold tabular-nums"
+												style:background-color={colors.badgeBg}
+												style:border-color={colors.badgeBorder}
+												style:color={colors.badgeText}
+											>
 												{mailbox.unread}
 											</span>
 										{/if}

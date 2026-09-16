@@ -269,7 +269,7 @@
 				-->
 				<div
 					class="z-railed z-hue-wash flex items-start justify-between gap-3.5 rounded-[10px] border py-3.5 pr-3.5 pl-[18px] @max-md:flex-col @max-md:gap-2.5"
-					style:--z-accent={senderTheme.border}
+					style:--z-rail={senderTheme.border}
 				>
 					<div class="flex items-start gap-3 min-w-0">
 						<!-- Sender Avatar Badge (Hobday style) -->
@@ -343,9 +343,7 @@
 					<div class="flex flex-col gap-2">
 						<!-- Expanding used to be one-way; the history can be put back. -->
 						<div class="flex items-center gap-2.5" role="separator">
-							<span class="font-mono text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-								History
-							</span>
+							<span class="z-caption">History</span>
 							<span class="h-px flex-1 bg-[#e2e8f0]"></span>
 							<button
 								type="button"
@@ -361,7 +359,7 @@
 							<!-- Each earlier message is a row of the thread, railed by its own sender. -->
 							<div
 								class="z-railed space-y-2 rounded-[10px] border border-[#e2e8f0] bg-white py-3 pr-3.5 pl-[18px]"
-								style:--z-accent={theme.border}
+								style:--z-rail={theme.border}
 								style:--z-rail-strength="0.32"
 							>
 								<div class="flex items-baseline justify-between gap-2">
@@ -393,9 +391,7 @@
 					<div>
 						<!-- The list's group divider, to the letter: label, rule, count. -->
 						<div class="mb-2.5 flex items-center gap-2.5">
-							<span class="font-mono text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
-								Attachments
-							</span>
+							<span class="z-caption">Attachments</span>
 							<span class="h-px flex-1 bg-[#e2e8f0]"></span>
 							<span class="text-xs font-semibold text-slate-400 tabular-nums">
 								{rendered.attachments.length}

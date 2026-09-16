@@ -7,8 +7,13 @@ const css = readFileSync(new URL('../src/routes/styles/tokens.css', import.meta.
 // The resolved prototype variants (design handoff, September 2026) are contractual:
 // one light palette, one accent, fixed geometry. These tests guard against accidental
 // edits that would silently change the redesign's look.
+//
+// The accent moved off the handoff's plum deliberately: the tactile redesign made
+// selection blue-600 everywhere, and the three places still resolving this token —
+// the focus ring, the splitter's hover tint and the sign-in register link — were the
+// last plum left in a blue shell. The README documents focus as a blue ring.
 test('tokens: resolved prototype variants are present', () => {
-	assert.match(css, /--z-accent: #7a3b5e/); // plum accent
+	assert.match(css, /--z-accent: #2563eb/); // blue-600, the shell's one accent
 	assert.match(css, /--z-accent-fg: #ffffff/);
 	assert.match(css, /--z-canvas: #f4f4f4/); // shell ground
 	assert.match(css, /--z-container: #ffffff/); // cards, panels

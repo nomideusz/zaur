@@ -346,17 +346,38 @@ The whole surface speaks one tactile language (`.btn-tactile` in
   `styles/base.css` carry it: **`.z-railed`** draws that person's accent bar as
   a `::before` (so it costs no element and takes no place in a grid or flex
   row), and **`.z-hue-wash`** is the surface to sit it on — `color-mix` of the
-  hue at 7% for the fill and 30% for the border. Both read `--z-accent`, which
-  is the only thing a caller sets. `attachmentBadge` is the one source for the file-kind badge
+  hue at 7% for the fill and 30% for the border. Both read **`--z-rail`**, which
+  is the only thing a caller sets. Not `--z-accent`: that name was already the
+  shell's accent, and `base.css` paints every focus ring with it — a row setting
+  a hue would have repainted the focus outline of everything inside it. `attachmentBadge` is the one source for the file-kind badge
   (PDF red, image blue, archive amber, else green), shared by the reader
-  and compose. Sidebar unread counts wear the same themes — each mailbox's
-  count pill is tinted with its own badge colours.
+  and compose. **Folders have colours too**, from `mailboxTheme`: the checkbox,
+  the unread pill and — when it is the open one — the rail and wash on its
+  sidebar row. Most take a Hobday theme; Archive is deliberately neutral, and
+  Junk and Trash are red, because the pill should say what the folder does with
+  what lands in it. The top bar's folder menu reads the same function, so the
+  same count cannot appear grey in one place and blue in the other.
+- **The chrome is one accent.** `--z-accent` is blue-600. It used to be the
+  handoff's plum, which by the end was reaching only three things — the focus
+  ring, the splitter's hover tint and the sign-in register link — and they were
+  the last plum in a shell that selects in blue everywhere else.
+- **Four classes, not four copies.** `.z-caption` is the uppercase mono label,
+  `.hobday-checkbox` the drawn checkbox, `.z-check` the same box on a real
+  `<input>` (so settings and sign-in keep native controls), and `.btn-tactile`
+  the button. The first three were written in `base.css` from the start and then
+  re-typed as Tailwind at every site instead; they are used now.
 - **Menus are Ark:** 8px card, `#cbd5e1` border, `bg-slate-100` highlight.
   Contact suggestions add a ↵ kbd hint on the highlighted row and a
   ↑↓ / ↵ / esc footer.
-- **Notices are cards:** toasts are 10px cards with a tone accent bar on the
-  left (blue info, green success, amber warning, red error) and a tactile
-  action button.
+- **Notices are cards:** toasts are 10px cards wearing `.z-railed` — the bar
+  that class is named after, with the tone in place of a person's hue (blue
+  info, green success, amber warning, red error) — and a tactile action button.
+  They sit **bottom centre**, because both bottom corners are spoken for: the
+  sidebar's New message button is bottom left (and the message list is, once the
+  sidebar is collapsed), the compose dock bottom right. When the dock has chips
+  the notices rise above it — on a phone the two were the same box, so a notice
+  landed squarely on the minimised drafts. Covering a message row for three
+  seconds is the one thing down there that costs nothing.
 
 | Compose | Matches |
 | --- | --- |
@@ -456,6 +477,14 @@ The rest of the pane follows from the same rule:
   list row, because it is the same number about the same thread.
 - `Attachments` is the list's group divider, to the letter: label, rule, count.
 
+### One trap worth knowing
+
+Component `<style>` blocks are **unlayered**, and `base.css` lives in
+`@layer base` — so an unlayered `.z-row { background: #fff }` silently beats
+`.z-hue-wash` no matter how specific the shared class is, and every unread row
+goes flat. A component that wants a default *and* a shared surface has to claim
+the default conditionally (`.z-row:not(.z-hue-wash)`), not unconditionally.
+
 ## Bulk actions
 
 Selecting rows (checkbox, `x`, or the Select menu) **swaps the list header's
@@ -469,10 +498,10 @@ since the icon carries no label).
 
 It swaps rather than opening a second bar because a bar pushes the list down,
 and the moment you tick a box is the worst possible moment to move the rows you
-are ticking. Floating it over the pane was the other option, and the bottom of
-this pane is already taken: toasts land there — including the toast this very
-action produces — and on a phone the compose dock does too. The header is the
-one place that is free, costs no height, and moves nothing.
+are ticking. Floating it over the pane was the other option, and the bottom edge
+is contested: the sidebar's New message button, the compose dock, and the toast
+this very action produces all live there. The header is the one place that is
+free, costs no height, and moves nothing.
 
 Everything else about it falls out of that:
 
@@ -502,7 +531,8 @@ selection when there is one, and falls back to the row under the cursor.
   mailbox (debounced, 1.5 s) and attachment uploads go through a plain
   `/api/upload` endpoint — remote commands cannot carry a `File`.
 - Styling is the tactile system, not a token ramp: `styles/base.css` owns
-  `.btn-tactile`, `.hobday-checkbox`, `.z-caption` and the `.z-shell` grid;
+  `.btn-tactile`, `.hobday-checkbox`, `.z-check`, `.z-caption`, the
+  `.z-railed`/`.z-hue-wash` pair and the `.z-shell` grid;
   surfaces use Tailwind slate/blue plus the chrome hexes (`#ebeef2` ground,
   `#cbd5e1` chrome borders, `#e2e8f0` dividers); people and file-kind
   colours come from `#lib/mail/colors` (`getHobdayTheme`,

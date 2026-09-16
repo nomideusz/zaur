@@ -21,7 +21,11 @@
 	--z-ink-disabled: #98a3a2; /* recessed Send */
 
 	/* Accent — one accent, used sparingly */
-	--z-accent: #7a3b5e;
+	/* Blue-600 — selection is blue everywhere, and that now includes the three
+	   things still resolving this token: the focus ring, the splitter's hover
+	   tint and the sign-in page's register link. It was a plum left over from
+	   the original token ramp, the one accent in the shell that was not blue. */
+	--z-accent: #2563eb;
 	--z-accent-fg: #ffffff;
 	--z-accent-soft: color-mix(in oklab, var(--z-accent) 13%, white); /* active pills, avatars */
 	--z-accent-tint: color-mix(in oklab, var(--z-accent) 6%, white); /* cursor/selected row */
