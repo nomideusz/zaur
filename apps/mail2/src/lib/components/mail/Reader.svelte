@@ -6,6 +6,8 @@
 	import EmailHtmlFrame from './EmailHtmlFrame.svelte';
 	import { formatBytes, formatReaderTime, typeBadge, initials } from '#lib/mail/rows';
 	import { attachmentBadge, getHobdayTheme, HOBDAY_THEMES } from '#lib/mail/colors';
+	import ActionIcon from './ActionIcon.svelte';
+	import type { BulkAction } from '../../../routes/mail.remote';
 
 	interface Props {
 		/** The page hides this pane on a phone until a thread is open. */
@@ -21,10 +23,29 @@
 		) => void;
 		/** Phone only: the reader is a screen there, so it needs a way back. */
 		onBack?: () => void;
+		/** The same four actions a row runs, on the thread being read. */
+		onAction?: (action: BulkAction, mailboxId?: string) => void;
+		/** How the thread stands in the list, so the toolbar can flip its icons. */
+		threadState?: { starred: boolean; unread: boolean } | null;
+		/** Archive is the one move worth a button — absent inside Archive itself. */
+		archiveTarget?: { id: string } | null;
+		/** In Trash, delete destroys; the bin says so by being red at rest. */
+		inTrash?: boolean;
 	}
 
-	let { class: className = '', messages, loading, error, onRetry, onCompose, onBack }: Props =
-		$props();
+	let {
+		class: className = '',
+		messages,
+		loading,
+		error,
+		onRetry,
+		onCompose,
+		onBack,
+		onAction,
+		threadState = null,
+		archiveTarget = null,
+		inTrash = false
+	}: Props = $props();
 
 	let earlierExpanded = $state(false);
 
@@ -50,6 +71,9 @@
 	const senderTheme = $derived(
 		latest ? getHobdayTheme(latest.from.email || latest.from.name) : HOBDAY_THEMES.blue
 	);
+
+	const starred = $derived(threadState?.starred ?? false);
+	const unread = $derived(threadState?.unread ?? false);
 
 	function recipientsLabel(message: MessageDetail): string {
 		const others = [...message.to, ...message.cc].filter(
@@ -134,6 +158,65 @@
 				</button>
 				{/if}
 			</div>
+
+			<!--
+				The same four icons the list uses, on the thread you are reading —
+				so archiving what is open does not mean going back for it.
+			-->
+			{#if onAction && latest}
+				<div
+					class="flex shrink-0 items-center rounded-[6px] border border-[#cbd5e1] bg-white p-0.5 shadow-2xs"
+					role="group"
+					aria-label="Message actions"
+				>
+					<button
+						type="button"
+						class="flex size-[24px] items-center justify-center rounded-[4px] transition-colors {starred
+							? 'text-amber-500 hover:bg-amber-50'
+							: 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'}"
+						aria-label={starred ? 'Remove highlight' : 'Highlight'}
+						aria-pressed={starred}
+						title={starred ? 'Remove highlight (s)' : 'Highlight (s)'}
+						onclick={() => onAction(starred ? 'unstar' : 'star')}
+					>
+						<ActionIcon name={starred ? 'star-filled' : 'star'} />
+					</button>
+
+					<button
+						type="button"
+						class="flex size-[24px] items-center justify-center rounded-[4px] text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+						aria-label={unread ? 'Mark read' : 'Mark unread'}
+						title={unread ? 'Mark read' : 'Mark unread'}
+						onclick={() => onAction(unread ? 'read' : 'unread')}
+					>
+						<ActionIcon name={unread ? 'mail-open' : 'mail'} />
+					</button>
+
+					{#if archiveTarget}
+						<button
+							type="button"
+							class="flex size-[24px] items-center justify-center rounded-[4px] text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+							aria-label="Archive"
+							title="Archive (e)"
+							onclick={() => onAction('move', archiveTarget.id)}
+						>
+							<ActionIcon name="archive" />
+						</button>
+					{/if}
+
+					<button
+						type="button"
+						class="flex size-[24px] items-center justify-center rounded-[4px] transition-colors hover:bg-red-50 hover:text-red-600 {inTrash
+							? 'text-red-600'
+							: 'text-slate-600'}"
+						aria-label={inTrash ? 'Delete forever' : 'Delete'}
+						title={inTrash ? 'Delete forever (#)' : 'Delete (#)'}
+						onclick={() => onAction('delete')}
+					>
+						<ActionIcon name="trash" />
+					</button>
+				</div>
+			{/if}
 		</div>
 	{/if}
 
@@ -179,8 +262,15 @@
 					{latest.subject}
 				</h1>
 
-				<!-- Sender Identity Card -->
-				<div class="flex items-start justify-between gap-3.5 rounded-[8px] border border-[#e2e8f0] bg-slate-50/50 p-3.5 @max-md:flex-col @max-md:gap-2.5">
+				<!--
+					The row you clicked, grown up: the same rail in the same hue, over
+					the same 7% wash. It is what makes the handoff from list to reader
+					read as one thing rather than two panes that happen to agree.
+				-->
+				<div
+					class="z-railed z-hue-wash flex items-start justify-between gap-3.5 rounded-[10px] border py-3.5 pr-3.5 pl-[18px] @max-md:flex-col @max-md:gap-2.5"
+					style:--z-accent={senderTheme.border}
+				>
 					<div class="flex items-start gap-3 min-w-0">
 						<!-- Sender Avatar Badge (Hobday style) -->
 						<div
@@ -210,50 +300,82 @@
 					</div>
 
 					<time
-						class="shrink-0 rounded-[4px] border border-slate-200 bg-white px-2 py-0.5 text-xs font-medium text-slate-600 tabular-nums shadow-2xs"
+						class="shrink-0 rounded-[4px] border border-[#cbd5e1] bg-white px-2 py-0.5 text-xs font-medium text-slate-600 tabular-nums shadow-2xs"
 						datetime={latest.receivedAt}
 					>
 						{formatReaderTime(latest.receivedAt)}
 					</time>
 				</div>
 
-				<!-- Earlier Messages Banner: Modeled directly after Hobday's "Early May bank holiday" full banner -->
+				<!--
+					The count here and the count chip on the list row are the same
+					number about the same thread, so they are the same chip. It used
+					to be an amber banner, which in this shell means "warning" —
+					earlier history is not a warning.
+				-->
 				{#if earlier.length > 0 && !earlierExpanded}
 					<button
 						type="button"
-						class="group flex w-full items-center justify-between gap-4 rounded-[6px] border border-[#d97706] bg-[#fef3c7] px-4 py-2.5 text-left transition-all hover:bg-[#fde68a] shadow-2xs"
+						class="group flex w-full items-center justify-between gap-4 rounded-[10px] border border-[#e2e8f0] bg-white px-3.5 py-2.5 text-left shadow-2xs transition-colors hover:border-[#cbd5e1] hover:bg-slate-50"
 						onclick={() => (earlierExpanded = true)}
 					>
-						<div class="flex items-center gap-2 min-w-0">
-							<span class="flex size-5 items-center justify-center rounded-[4px] bg-[#f59e0b] text-[11px] font-bold text-white tabular-nums">
+						<span class="flex min-w-0 items-center gap-2">
+							<span
+								class="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-[4px] border px-1 font-mono text-[10px] font-semibold tabular-nums"
+								style:background-color={senderTheme.badgeBg}
+								style:border-color={senderTheme.badgeBorder}
+								style:color={senderTheme.badgeText}
+							>
 								{earlier.length}
 							</span>
-							<span class="text-[13px] font-bold text-[#78350f]">
+							<span class="truncate text-[13px] font-medium text-slate-700">
 								Earlier {earlier.length === 1 ? 'message' : 'messages'} in this conversation
 							</span>
-						</div>
-						<span class="text-xs font-bold text-[#92400e] underline underline-offset-2">
+						</span>
+						<span class="flex shrink-0 items-center gap-1 text-[12px] font-semibold text-slate-500 transition-colors group-hover:text-slate-900">
 							Expand history
+							<ActionIcon name="chevron" class="size-3" />
 						</span>
 					</button>
 				{/if}
 
 				{#if earlierExpanded}
-					<div class="space-y-4">
+					<div class="flex flex-col gap-2">
+						<!-- Expanding used to be one-way; the history can be put back. -->
+						<div class="flex items-center gap-2.5" role="separator">
+							<span class="font-mono text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+								History
+							</span>
+							<span class="h-px flex-1 bg-[#e2e8f0]"></span>
+							<button
+								type="button"
+								class="shrink-0 text-[12px] font-semibold text-slate-500 transition-colors hover:text-slate-900"
+								onclick={() => (earlierExpanded = false)}
+							>
+								Collapse
+							</button>
+						</div>
+
 						{#each earlier as message (message.id)}
-							<div class="rounded-[8px] border border-[#e2e8f0] bg-slate-50/70 p-4 space-y-2">
-								<div class="flex items-baseline justify-between gap-2 border-b border-slate-200 pb-2">
-									<div class="flex items-center gap-2 truncate">
-										<span class="text-[13px] font-bold text-slate-800">
+							{@const theme = getHobdayTheme(message.from.email || message.from.name)}
+							<!-- Each earlier message is a row of the thread, railed by its own sender. -->
+							<div
+								class="z-railed space-y-2 rounded-[10px] border border-[#e2e8f0] bg-white py-3 pr-3.5 pl-[18px]"
+								style:--z-accent={theme.border}
+								style:--z-rail-strength="0.32"
+							>
+								<div class="flex items-baseline justify-between gap-2">
+									<div class="flex items-baseline gap-2 truncate">
+										<span class="text-[13px] font-semibold text-slate-800">
 											{message.from.name || message.from.email}
 										</span>
-										<span class="text-xs text-slate-500 truncate">&lt;{message.from.email}&gt;</span>
+										<span class="truncate text-xs text-slate-500">&lt;{message.from.email}&gt;</span>
 									</div>
-									<time class="text-xs text-slate-500 tabular-nums shrink-0" datetime={message.receivedAt}>
+									<time class="shrink-0 text-[11.5px] font-medium text-slate-400 tabular-nums" datetime={message.receivedAt}>
 										{formatReaderTime(message.receivedAt)}
 									</time>
 								</div>
-								<div class="text-[13.5px] leading-relaxed text-slate-700 whitespace-pre-wrap">
+								<div class="text-[13.5px] leading-relaxed whitespace-pre-wrap text-slate-700">
 									{message.bodyText}
 								</div>
 							</div>
@@ -268,15 +390,22 @@
 
 				<!-- Attachments with Hobday-style color-coded file badges -->
 				{#if rendered.attachments.length > 0}
-					<div class="border-t border-[#e2e8f0] pt-4">
-						<div class="mb-2.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">
-							Attachments ({rendered.attachments.length})
+					<div>
+						<!-- The list's group divider, to the letter: label, rule, count. -->
+						<div class="mb-2.5 flex items-center gap-2.5">
+							<span class="font-mono text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
+								Attachments
+							</span>
+							<span class="h-px flex-1 bg-[#e2e8f0]"></span>
+							<span class="text-xs font-semibold text-slate-400 tabular-nums">
+								{rendered.attachments.length}
+							</span>
 						</div>
 						<div class="flex flex-wrap gap-2.5">
 							{#each rendered.attachments as attachment (attachment.blobId)}
 								{@const badge = attachmentBadge(attachment.type)}
 								<div
-									class="flex h-11 items-center gap-3 rounded-[6px] border border-[#cbd5e1] bg-white px-3 shadow-2xs"
+									class="flex h-11 items-center gap-3 rounded-[8px] border border-[#cbd5e1] bg-white px-3 shadow-2xs"
 									title={attachment.name}
 								>
 									<span

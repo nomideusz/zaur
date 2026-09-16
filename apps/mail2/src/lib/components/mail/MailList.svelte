@@ -6,6 +6,7 @@
 	import type { BulkAction } from '../../../routes/mail.remote';
 	import { formatListTime } from '#lib/mail/rows';
 	import { getHobdayTheme } from '#lib/mail/colors';
+	import ActionIcon from './ActionIcon.svelte';
 	import { prefs } from '#lib/settings.svelte.ts';
 
 	interface Props {
@@ -113,60 +114,6 @@
 
 </script>
 
-<!--
-	One icon set, two places: a row's hover strip and the selection header run
-	the same four actions, so they must not drift apart.
--->
-{#snippet starIcon(filled: boolean)}
-	<svg
-		class="size-4"
-		viewBox="0 0 16 16"
-		fill={filled ? 'currentColor' : 'none'}
-		stroke="currentColor"
-		stroke-width={filled ? 0 : 1.3}
-		stroke-linejoin="round"
-		aria-hidden="true"
-	>
-		<path d="M8 1.5l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.2l-3.8 2.1.7-4.3-3.1-3 4.3-.6z" />
-	</svg>
-{/snippet}
-
-<!-- Open envelope = "this becomes read"; closed = "this becomes unread". -->
-{#snippet envelopeIcon(opened: boolean)}
-	{#if opened}
-		<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-			<path d="M2 6.8L8 2.5l6 4.3V13H2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
-			<path d="M2 6.8l6 4.2 6-4.2" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
-		</svg>
-	{:else}
-		<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-			<rect x="2" y="3.5" width="12" height="9" rx="1.2" stroke="currentColor" stroke-width="1.3" />
-			<path d="M2.4 4.6L8 8.8l5.6-4.2" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
-		</svg>
-	{/if}
-{/snippet}
-
-{#snippet archiveIcon()}
-	<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-		<rect x="2" y="2.8" width="12" height="3" rx="0.9" stroke="currentColor" stroke-width="1.3" />
-		<path d="M3.2 5.8v6.3a1 1 0 001 1h7.6a1 1 0 001-1V5.8" stroke="currentColor" stroke-width="1.3" />
-		<path d="M6.4 8.4L8 10l1.6-1.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
-	</svg>
-{/snippet}
-
-{#snippet trashIcon()}
-	<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-		<path d="M3 4.4h10M6.4 4.4V3a.6.6 0 01.6-.6h2a.6.6 0 01.6.6v1.4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
-		<path d="M4.5 4.4l.5 8.1a1 1 0 001 .9h4a1 1 0 001-.9l.5-8.1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
-	</svg>
-{/snippet}
-
-{#snippet chevron()}
-	<svg class="size-3 text-slate-400" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-		<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-	</svg>
-{/snippet}
-
 <section
 	class="@container flex h-full min-h-0 flex-col overflow-hidden bg-white select-none {className}"
 	aria-label="Message list"
@@ -196,7 +143,7 @@
 							/>
 						</svg>
 					</span>
-					{@render chevron()}
+					<ActionIcon name="chevron" class="size-3 text-slate-400" />
 				</Menu.Trigger>
 				<Portal>
 					<Menu.Positioner>
@@ -238,7 +185,7 @@
 						title={allStarred ? 'Unhighlight (s)' : 'Highlight (s)'}
 						onclick={() => onBulk(allStarred ? 'unstar' : 'star')}
 					>
-						{@render starIcon(allStarred)}
+						<ActionIcon name={allStarred ? 'star-filled' : 'star'} />
 					</button>
 
 					<button
@@ -249,7 +196,7 @@
 						title={allRead ? 'Mark unread' : 'Mark read'}
 						onclick={() => onBulk(allRead ? 'unread' : 'read')}
 					>
-						{@render envelopeIcon(!allRead)}
+						<ActionIcon name={allRead ? 'mail' : 'mail-open'} />
 					</button>
 
 					{#if archiveTarget}
@@ -261,7 +208,7 @@
 							title="Archive (e)"
 							onclick={() => onBulk('move', archiveTarget.id)}
 						>
-							{@render archiveIcon()}
+							<ActionIcon name="archive" />
 						</button>
 					{/if}
 
@@ -276,7 +223,7 @@
 						title={mailbox?.kind === 'trash' ? 'Delete forever (#)' : 'Delete (#)'}
 						onclick={() => onBulk('delete')}
 					>
-						{@render trashIcon()}
+						<ActionIcon name="trash" />
 					</button>
 				</div>
 
@@ -284,7 +231,7 @@
 					<Menu.Root positioning={{ placement: 'bottom-start', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
 						<Menu.Trigger class="z-bulk btn-tactile !h-[28px] !px-2 !text-[12px] gap-1 shrink-0" disabled={busy}>
 							Move to
-							{@render chevron()}
+							<ActionIcon name="chevron" class="size-3 text-slate-400" />
 						</Menu.Trigger>
 						<Portal>
 							<Menu.Positioner>
@@ -454,8 +401,9 @@
 							data-row-id={row.threadId}
 							data-state={isSelected ? 'selected' : isCursor ? 'cursor' : 'rest'}
 							data-unread={row.unread ? 'true' : 'false'}
-							class="z-row group/row relative grid cursor-pointer grid-cols-[18px_minmax(0,1fr)] items-start gap-x-3 rounded-[10px] border py-3 pr-3 pl-[18px]"
-							style:--z-row-accent={theme.border}
+							class="z-row z-railed group/row grid cursor-pointer grid-cols-[18px_minmax(0,1fr)] items-start gap-x-3 rounded-[10px] border py-3 pr-3 pl-[18px]"
+							class:z-hue-wash={row.unread}
+							style:--z-accent={theme.border}
 							onclick={() => onOpen(row.threadId)}
 							onkeydown={(event) => {
 								if (event.key === 'Enter' || event.key === ' ') {
@@ -467,9 +415,6 @@
 							tabindex="-1"
 							aria-pressed={isSelected}
 						>
-							<!-- The sender's rail: the hue says who, its weight says unseen. -->
-							<span class="z-row-rail" aria-hidden="true"></span>
-
 							<!-- Selection checkbox: a quiet Hobday box so the row stays a pure text card. -->
 							<button
 								type="button"
@@ -568,7 +513,7 @@
 									title={row.starred ? 'Remove highlight (s)' : 'Highlight (s)'}
 									onclick={(event) => rowAction(event, row.threadId, row.starred ? 'unstar' : 'star')}
 								>
-									{@render starIcon(row.starred)}
+									<ActionIcon name={row.starred ? 'star-filled' : 'star'} />
 								</button>
 
 								<button
@@ -579,7 +524,7 @@
 									title={row.unread ? 'Mark read' : 'Mark unread'}
 									onclick={(event) => rowAction(event, row.threadId, row.unread ? 'read' : 'unread')}
 								>
-									{@render envelopeIcon(row.unread)}
+									<ActionIcon name={row.unread ? 'mail-open' : 'mail'} />
 								</button>
 
 								{#if archiveTarget}
@@ -591,7 +536,7 @@
 										title="Archive (e)"
 										onclick={(event) => rowAction(event, row.threadId, 'move', archiveTarget.id)}
 									>
-										{@render archiveIcon()}
+										<ActionIcon name="archive" />
 									</button>
 								{/if}
 
@@ -603,7 +548,7 @@
 									title={mailbox?.kind === 'trash' ? 'Delete forever (#)' : 'Delete (#)'}
 									onclick={(event) => rowAction(event, row.threadId, 'delete')}
 								>
-									{@render trashIcon()}
+									<ActionIcon name="trash" />
 								</button>
 							</div>
 						</div>
@@ -616,10 +561,10 @@
 
 <style>
 	/*
-	 * A row is a card with the sender's rail down its left edge — the
-	 * notification card's accent bar, in the Hobday hue the reader and the
-	 * compose chips already give that person. Two channels, no collision:
-	 * the hue says who it is from, its weight says whether it has been seen.
+	 * A row is a card wearing `.z-railed` in its sender's hue. Two channels, no
+	 * collision: the hue says who it is from, its weight says whether it has
+	 * been seen. `.z-hue-wash` carries the unseen surface; everything here is
+	 * the part that is this component's own — the state machine.
 	 */
 	.z-row {
 		background: #ffffff;
@@ -630,30 +575,13 @@
 			box-shadow 120ms ease;
 	}
 
-	.z-row-rail {
-		position: absolute;
-		top: 12px;
-		bottom: 12px;
-		left: 7px;
-		width: 3px;
-		border-radius: 999px;
-		background: var(--z-row-accent, #94a3b8);
-		opacity: 0.32;
-		transition: opacity 120ms ease;
+	/* Seen: the rail keeps the hue, and steps back. */
+	.z-row[data-unread='false'] {
+		--z-rail-strength: 0.32;
 	}
 
-	/*
-	 * Unseen wears a 7% wash of its own rail — the calendar chip's pastel fill,
-	 * turned down until it is a tint rather than a block of colour.
-	 */
 	.z-row[data-unread='true'] {
-		background: color-mix(in oklab, var(--z-row-accent) 7%, #ffffff);
-		border-color: color-mix(in oklab, var(--z-row-accent) 30%, #ffffff);
 		box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-	}
-
-	.z-row[data-unread='true'] .z-row-rail {
-		opacity: 1;
 	}
 
 	/* Selection stays blue everywhere, so it outranks the sender's own colour. */
@@ -708,7 +636,7 @@
 		}
 
 		.z-row[data-state='rest'][data-unread='true']:hover {
-			border-color: color-mix(in oklab, var(--z-row-accent) 48%, #ffffff);
+			border-color: color-mix(in oklab, var(--z-accent) 48%, #ffffff);
 		}
 
 		/* One slot, two states: the time steps out, the buttons step in. */

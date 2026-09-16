@@ -374,6 +374,11 @@
 			<Reader
 				class={openThreadId ? '' : 'max-md:hidden'}
 				onBack={viewport.phone ? () => reader.close() : undefined}
+				onAction={() => {}}
+				threadState={rowGroups
+					.flatMap((group) => group.rows)
+					.find((row) => row.threadId === openThreadId) ?? null}
+				archiveTarget={mockMailboxes.find((box) => box.kind === 'archive') ?? null}
 				messages={currentThread ?? undefined}
 				loading={false}
 				error={null}

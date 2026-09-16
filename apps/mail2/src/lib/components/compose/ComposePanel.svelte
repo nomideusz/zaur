@@ -346,7 +346,7 @@
 			{/if}
 			<button
 				type="button"
-				class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition-colors max-md:size-8"
+				class="flex size-6 items-center justify-center rounded-[4px] text-slate-500 hover:bg-slate-200/70 hover:text-slate-900 transition-colors max-md:size-8"
 				aria-label="Minimize"
 				onpointerdown={(event) => event.stopPropagation()}
 				onclick={() => compose.minimize(draft.id)}
@@ -358,7 +358,7 @@
 			{#if !sheet && maximized}
 				<button
 					type="button"
-					class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition-colors"
+					class="flex size-6 items-center justify-center rounded-[4px] text-slate-500 hover:bg-slate-200/70 hover:text-slate-900 transition-colors"
 					aria-label="Restore down"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.toggleMaximize(draft.id)}
@@ -372,7 +372,7 @@
 				<!-- A sheet already fills the shell; there is nothing to maximize. -->
 				<button
 					type="button"
-					class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition-colors"
+					class="flex size-6 items-center justify-center rounded-[4px] text-slate-500 hover:bg-slate-200/70 hover:text-slate-900 transition-colors"
 					aria-label="Maximize"
 					onpointerdown={(event) => event.stopPropagation()}
 					onclick={() => compose.toggleMaximize(draft.id)}
@@ -414,33 +414,33 @@
 					{@const theme = getHobdayTheme(person.email || person.name)}
 					{@const revealEmail =
 						person.name.trim().length > 0 && person.name.trim() !== person.email.trim()}
-					<!-- The chip shows the name; hovering reveals the address in an Ark tooltip. -->
+					<!--
+						The person's colour, at full strength: fill, stroke and text all
+						from their Hobday theme. It used to be a white chip carrying an
+						18px avatar tile — but a chip that already spells the name out
+						does not need initials too, and the tile confined the colour to
+						a corner. Now a row of recipients reads like the list does.
+						Hovering the name still reveals the address in an Ark tooltip.
+					-->
 					<Tooltip disabled={!revealEmail} zIndex={overlayZ}>
 						{#snippet trigger({ props })}
 							<span
 								{...props}
-								class="flex h-[26px] items-center gap-1.5 rounded-[6px] border border-[#cbd5e1] bg-white px-1 shadow-2xs"
+								class="flex h-[26px] items-center gap-1 rounded-[6px] border pr-0.5 pl-2 text-[13px] font-medium shadow-2xs"
+								style:background-color={theme.bg}
+								style:border-color={theme.border}
+								style:color={theme.text}
 							>
-								<span
-									class="flex size-[18px] items-center justify-center rounded-[4px] text-[9px] font-bold"
-									style:background-color={theme.bg}
-									style:border="1px solid {theme.border}"
-									style:color={theme.text}
-								>
-									{initials(person.name, person.email)}
-								</span>
-								<span class="max-w-[160px] truncate text-[13px] text-slate-800"
-									>{person.name || person.email}</span
-								>
+								<span class="max-w-[160px] truncate">{person.name || person.email}</span>
 								<button
 									type="button"
-									class="flex size-[18px] items-center justify-center rounded-[4px] text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+									class="flex size-[18px] items-center justify-center rounded-[4px] transition-colors hover:bg-black/10"
 									aria-label="Remove {person.name || person.email}"
 									onpointerdown={(event) => event.stopPropagation()}
 									onclick={(event) => removeTo(event, person.email)}
 								>
 									<svg class="size-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-										<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+										<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
 									</svg>
 								</button>
 							</span>

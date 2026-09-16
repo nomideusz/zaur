@@ -104,6 +104,41 @@
 	}
 
 	/*
+	 * The sender's rail — an accent bar in that person's Hobday hue, taken from
+	 * `--z-accent`. A list row, the reader's sender card and each earlier
+	 * message in a thread all wear it: it is what carries "the same person is
+	 * the same colour" out of `#lib/mail/colors` and across the panes.
+	 *
+	 * It is a pseudo-element, and absolutely positioned, so it costs no element
+	 * and takes no place in a grid or flex row it sits inside.
+	 */
+	.z-railed {
+		position: relative;
+	}
+
+	.z-railed::before {
+		content: '';
+		position: absolute;
+		top: var(--z-rail-inset, 12px);
+		bottom: var(--z-rail-inset, 12px);
+		left: var(--z-rail-left, 7px);
+		width: 3px;
+		border-radius: 999px;
+		background: var(--z-accent, #94a3b8);
+		opacity: var(--z-rail-strength, 1);
+		transition: opacity 120ms ease;
+	}
+
+	/*
+	 * The calendar chip's pastel fill, turned down until it is a tint: the
+	 * surface a railed thing sits on when it wants to belong to its colour.
+	 */
+	.z-hue-wash {
+		background: color-mix(in oklab, var(--z-accent) 7%, #ffffff);
+		border-color: color-mix(in oklab, var(--z-accent) 30%, #ffffff);
+	}
+
+	/*
 	 * Shell grid — the one piece of layout that changes shape by width.
 	 *
 	 * Phone: a single pane. The page hands the list or the reader `max-md:hidden`

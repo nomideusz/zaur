@@ -312,6 +312,11 @@
 	}
 
 	const cursorRow = $derived(flatRows.find((row) => row.threadId === cursorId));
+	/** The open thread's row — the reader's toolbar flips its icons off it. */
+	const openRowState = $derived(flatRows.find((row) => row.threadId === openThreadId) ?? null);
+	const archiveTarget = $derived(
+		mailboxList?.find((box) => box.kind === 'archive' && box.id !== activeMailbox?.id) ?? null
+	);
 
 	async function openRow(threadId: string) {
 		if (activeMailbox?.kind !== 'drafts') {
@@ -418,14 +423,10 @@
 				runRowShortcut(starred ? 'unstar' : 'star');
 				break;
 			}
-			case 'e': {
+			case 'e':
 				event.preventDefault();
-				const archive = mailboxList?.find(
-					(box) => box.kind === 'archive' && box.id !== activeMailbox?.id
-				);
-				if (archive) runRowShortcut('move', archive.id);
+				if (archiveTarget) runRowShortcut('move', archiveTarget.id);
 				break;
-			}
 			// Deliberately shift-# and not Delete: in Trash this one destroys.
 			case '#':
 				event.preventDefault();
@@ -536,6 +537,11 @@
 					onRetry={() => threadResource?.refresh()}
 					onCompose={openReply}
 					onBack={viewport.phone ? () => reader.close() : undefined}
+					onAction={(action, mailboxId) =>
+						openThreadId && void runBulk(action, mailboxId, [openThreadId])}
+					threadState={openRowState}
+					{archiveTarget}
+					inTrash={activeMailbox?.kind === 'trash'}
 				/>
 			</main>
 

@@ -188,7 +188,7 @@ mockup affordances across from the Hobday prototype; they are gone:
 | Sidebar "Read-only calendars" (UK Holidays) | same, and its checkbox was `|| true` |
 | Sidebar "Manage" | `onManageFolders` was never passed |
 | List category chips | `inferTag()` guessed "Family"/"Work" from subject keywords |
-| Reader "More actions" menu | Archive / Highlight / Mark unseen / Trash, all inert |
+| Reader "More actions" menu | Archive / Highlight / Mark unseen / Trash, all inert — the same four are back in the reader's toolbar now that they do something (see "The message row") |
 | Top-bar search | an input with no handler at all |
 | Profile "Keyboard shortcuts" | inert menu item |
 
@@ -341,8 +341,13 @@ The whole surface speaks one tactile language (`.btn-tactile` in
 - **People are Hobday candy:** `getHobdayTheme` in `#lib/mail/colors`
   deterministically maps an email to one of five themes
   (blue/green/pink/amber/purple) — **the same person is the same colour**
-  in the list row's rail and thread-count chip, the reader sender card, the
-  compose To chips and the account menu. `attachmentBadge` is the one source for the file-kind badge
+  in the list row's rail and thread-count chip, the reader's sender card and
+  thread history, the compose To chips and the account menu. Two primitives in
+  `styles/base.css` carry it: **`.z-railed`** draws that person's accent bar as
+  a `::before` (so it costs no element and takes no place in a grid or flex
+  row), and **`.z-hue-wash`** is the surface to sit it on — `color-mix` of the
+  hue at 7% for the fill and 30% for the border. Both read `--z-accent`, which
+  is the only thing a caller sets. `attachmentBadge` is the one source for the file-kind badge
   (PDF red, image blue, archive amber, else green), shared by the reader
   and compose. Sidebar unread counts wear the same themes — each mailbox's
   count pill is tinted with its own badge colours.
@@ -357,7 +362,7 @@ The whole surface speaks one tactile language (`.btn-tactile` in
 | --- | --- |
 | Send | the login submit — `btn-tactile` filled blue-600, recessed grey until there is a recipient |
 | Attach / Schedule / Discard | the reader toolbar's `btn-tactile`, discard in destructive red |
-| Recipient chips | the Hobday avatar badge — white chip, `#cbd5e1` border, Hobday avatar; hovering a name reveals the address in an Ark tooltip |
+| Recipient chips | the calendar chip — the person's Hobday fill, stroke and text, all three. They were a white chip carrying an 18px avatar tile; a chip that spells the name out does not need initials too, and the tile kept the colour in a corner. The initials live on in the tooltip that reveals the address, and in the suggestion list |
 | Contact suggestions | the Ark menus: 8px card, `#cbd5e1` border, `bg-slate-100` highlight, plus ↵ kbd hint and key-hint footer |
 | Attachment chips | the reader's chips, scaled to the 30px strip; `attachmentBadge` is the one source for the kind colour |
 | To / Subject step markers | the ringed blue status dot on a dock chip with content |
@@ -428,6 +433,29 @@ The rest of the row:
   when scrolling a long folder, so `TODAY` pins to the top of the pane while
   its own rows pass under it.
 
+## The reader wears the row it came from
+
+Open a thread and the sender's card is the row you clicked, grown up: the same
+`.z-railed` bar in the same hue, over the same `.z-hue-wash`. That handoff is
+the whole point — two panes that merely agree on a palette still read as two
+panes; one that hands its colour to the other reads as one thing. Selection
+blue outranks the hue on the row itself, but only on its *surface*: the rail
+keeps the sender's colour, so the link survives being the row you are on.
+
+The rest of the pane follows from the same rule:
+
+- The toolbar gained the **same four icons** the list uses, on the thread being
+  read, so archiving what is open does not mean going back to the list for it.
+  They are the actions the inert "More actions" menu once mimed.
+- **Thread history** is a stack of rows: each earlier message is railed by *its*
+  own sender, at the seen strength, so a thread with three people in it is
+  scannable at a glance. Expanding it used to be one-way; it collapses now.
+- The banner that opens it was amber on amber, which in this shell means
+  *warning* — earlier history is not a warning. It is a plain tactile card, and
+  its count is the **same chip, in the same colours** as the thread count on the
+  list row, because it is the same number about the same thread.
+- `Attachments` is the list's group divider, to the letter: label, rule, count.
+
 ## Bulk actions
 
 Selecting rows (checkbox, `x`, or the Select menu) **swaps the list header's
@@ -449,7 +477,8 @@ one place that is free, costs no height, and moves nothing.
 Everything else about it falls out of that:
 
 - The actions are the **same four icons a row shows on hover**, because they are
-  the same four actions — one `{#snippet}` each, so they cannot drift. They sit
+  the same four actions — one `ActionIcon` component draws all of them, for the
+  row, this header and the reader's toolbar alike, so they cannot drift. They sit
   in a segmented group built like the All/Unseen control they replace, so the
   header keeps its shapes: a menu trigger, then a group, then one trailing
   button.
