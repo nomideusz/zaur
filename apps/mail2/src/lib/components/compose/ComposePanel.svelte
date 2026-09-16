@@ -69,6 +69,8 @@
 	});
 	const sendAtDate = $derived(draft.sendAt ? new Date(draft.sendAt) : null);
 	const scheduleLabel = $derived(sendAtDate ? formatScheduleTime(sendAtDate) : 'Schedule');
+	/** Overlays portal to <body>, so stack them just above their own panel. */
+	const overlayZ = $derived(draft.z + 1);
 
 	function pickSendAt(date: Date) {
 		if (!isSendAtValid(date)) {
@@ -413,7 +415,7 @@
 					{@const revealEmail =
 						person.name.trim().length > 0 && person.name.trim() !== person.email.trim()}
 					<!-- The chip shows the name; hovering reveals the address in an Ark tooltip. -->
-					<Tooltip disabled={!revealEmail}>
+					<Tooltip disabled={!revealEmail} zIndex={overlayZ}>
 						{#snippet trigger({ props })}
 							<span
 								{...props}
@@ -651,8 +653,7 @@
 						sendError: null
 					})}
 				onkeydown={onSubjectKeydown}
-				placeholder="What is this about?"
-				class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none max-md:text-base"
+				class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-900 focus:outline-none max-md:text-base"
 			/>
 		</div>
 
@@ -772,7 +773,7 @@
 						{scheduleLabel}
 					</Popover.Trigger>
 					<Portal>
-						<Popover.Positioner>
+						<Popover.Positioner style={`z-index: ${overlayZ}`}>
 							<Popover.Content
 								class="w-64 rounded-[8px] border border-[#cbd5e1] bg-white p-1.5 shadow-lg outline-none"
 								aria-label="Schedule send"

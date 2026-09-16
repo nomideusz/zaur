@@ -4,8 +4,7 @@
 	import type { MailboxDTO } from '#lib/mail/types';
 	import type { RowGroup, ListRow } from '#lib/mail/rows';
 	import type { BulkAction } from '../../../routes/mail.remote';
-	import { formatListTime, initials } from '#lib/mail/rows';
-	import { getHobdayTheme } from '#lib/mail/colors';
+	import { formatListTime } from '#lib/mail/rows';
 	import { prefs } from '#lib/settings.svelte.ts';
 
 	interface Props {
@@ -298,8 +297,8 @@
 			<div class="flex flex-col gap-2" aria-hidden="true">
 				{#each Array.from({ length: 6 }) as _, index (index)}
 					<div class="animate-pulse rounded-[8px] border border-[#e2e8f0] bg-white p-3.5">
-						<div class="flex items-start gap-3">
-							<div class="size-[34px] rounded-[6px] bg-slate-100"></div>
+						<div class="flex items-center gap-3">
+							<div class="size-[18px] rounded-[4px] bg-slate-100"></div>
 							<div class="flex-1 space-y-2">
 								<div class="h-3.5 w-1/3 rounded bg-slate-100"></div>
 								<div class="h-4 w-3/4 rounded bg-slate-100"></div>
@@ -345,10 +344,9 @@
 					{#each group.rows as row (row.threadId)}
 						{@const isCursor = row.threadId === cursorId}
 						{@const isSelected = selection.has(row.threadId)}
-						{@const theme = getHobdayTheme(row.from.email || row.senderLabel)}
 						<div
 							data-row-id={row.threadId}
-							class="group/row relative grid cursor-pointer grid-cols-[34px_minmax(0,1fr)] items-start gap-3 rounded-[8px] border bg-white px-3.5 py-3 transition-all duration-[120ms] shadow-2xs {isSelected
+							class="group/row relative grid cursor-pointer grid-cols-[18px_minmax(0,1fr)] items-start gap-3 rounded-[8px] border bg-white px-3.5 py-3 transition-all duration-[120ms] shadow-2xs {isSelected
 								? 'border-blue-500 bg-blue-50/50 shadow-xs'
 								: isCursor
 									? 'border-blue-400 bg-blue-50/30'
@@ -377,26 +375,21 @@
 								></span>
 							{/if}
 
-							<!-- Sender Avatar / Selection Box: Hobday Candy Accent Badge -->
+							<!-- Selection checkbox: a quiet Hobday box so the row stays a pure text card. -->
 							<button
-								type="button"
-								class="flex size-[34px] items-center justify-center rounded-[6px] text-xs font-bold transition-transform duration-[120ms] group-hover/row:scale-[1.03]"
-								style:background-color={isSelected ? '#2563eb' : theme.bg}
-								style:border="1px solid {isSelected ? '#1d4ed8' : theme.border}"
-								style:color={isSelected ? '#ffffff' : theme.text}
-								title="Click to toggle selection"
-								onclick={(event) => {
-									event.stopPropagation();
-									onToggleSelect(row.threadId);
-								}}
+							type="button"
+							class="flex size-[18px] items-center justify-center self-center rounded-[5px] border-[1.5px] transition-colors {isSelected ? 'border-blue-600 bg-blue-600 text-white' : 'border-[#94a3b8] bg-white text-transparent hover:border-slate-500'}"
+							aria-label={isSelected ? 'Deselect thread' : 'Select thread'}
+							aria-pressed={isSelected}
+							title={isSelected ? 'Deselect thread' : 'Select thread'}
+							onclick={(event) => {
+							event.stopPropagation();
+							onToggleSelect(row.threadId);
+							}}
 							>
-								{#if isSelected}
-									<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-										<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
-									</svg>
-								{:else}
-									{initials(row.senderLabel, row.from.email)}
-								{/if}
+							<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+							</svg>
 							</button>
 
 							<!-- Message Details -->
@@ -404,13 +397,13 @@
 								<!-- Senders and Meta (Time, Star, Attachments) -->
 								<div class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2">
 									<div class="flex items-center gap-1.5 truncate">
-										<span class="truncate text-[13px] font-semibold {row.unread ? 'text-slate-900' : 'text-slate-700'}">
+										<span class="truncate text-[13px] font-semibold text-slate-800">
 											{row.senderLabel}
 										</span>
 									</div>
 
 									<!-- Right aligned time & status icons (Hobday: tabular bold time) -->
-									<div class="flex items-center gap-1.5 text-xs tabular-nums shrink-0 {row.unread ? 'font-bold text-slate-900' : 'font-medium text-slate-500'}">
+									<div class="flex items-center gap-1.5 text-xs font-medium tabular-nums text-slate-500 shrink-0">
 										{#if row.starred}
 											<svg class="size-3.5 text-amber-500" viewBox="0 0 16 16" fill="currentColor" aria-label="Highlighted">
 												<path d="M8 1.5l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.2l-3.8 2.1.7-4.3-3.1-3 4.3-.6z" />
@@ -426,7 +419,7 @@
 								</div>
 
 								<!-- Subject -->
-								<div class="truncate text-[14px] leading-snug tracking-tight mt-0.5 {row.unread ? 'font-bold text-slate-900' : 'font-medium text-slate-800'}">
+								<div class="truncate text-[14px] leading-snug tracking-tight mt-0.5 font-medium text-slate-800">
 									{row.subject}
 								</div>
 

@@ -8,11 +8,13 @@
 		side?: 'top' | 'right' | 'bottom' | 'left';
 		/** Skip the tooltip and render the trigger as-is when there is nothing extra to reveal. */
 		disabled?: boolean;
+		/** Stack above floating surfaces — pass the owning panel's z + 1. */
+		zIndex?: number;
 		trigger: Snippet<[{ props: Record<string, unknown> }]>;
 		children: Snippet;
 	}
 
-	let { side = 'bottom', disabled = false, trigger, children }: Props = $props();
+	let { side = 'bottom', disabled = false, zIndex, trigger, children }: Props = $props();
 </script>
 
 {#if disabled}
@@ -34,7 +36,7 @@
 			{/snippet}
 		</ArkTooltip.Trigger>
 		<Portal>
-			<ArkTooltip.Positioner>
+			<ArkTooltip.Positioner style={zIndex !== undefined ? `z-index: ${zIndex}` : undefined}>
 				<ArkTooltip.Content
 					class="max-w-[280px] rounded-[8px] border border-[#cbd5e1] bg-white px-2.5 py-2 shadow-lg"
 				>

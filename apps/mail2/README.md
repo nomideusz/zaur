@@ -340,7 +340,7 @@ The whole surface speaks one tactile language (`.btn-tactile` in
 - **People are Hobday candy:** `getHobdayTheme` in `#lib/mail/colors`
   deterministically maps an email to one of five themes
   (blue/green/pink/amber/purple) — **the same person is the same colour**
-  in the list avatar, the reader sender card, the compose To chips and the
+  in the reader sender card, the compose To chips and the
   account menu. `attachmentBadge` is the one source for the file-kind badge
   (PDF red, image blue, archive amber, else green), shared by the reader
   and compose. Sidebar unread counts wear the same themes — each mailbox's
@@ -356,7 +356,7 @@ The whole surface speaks one tactile language (`.btn-tactile` in
 | --- | --- |
 | Send | the login submit — `btn-tactile` filled blue-600, recessed grey until there is a recipient |
 | Attach / Schedule / Discard | the reader toolbar's `btn-tactile`, discard in destructive red |
-| Recipient chips | the list's avatar badge — white chip, `#cbd5e1` border, Hobday avatar; hovering a name reveals the address in an Ark tooltip |
+| Recipient chips | the Hobday avatar badge — white chip, `#cbd5e1` border, Hobday avatar; hovering a name reveals the address in an Ark tooltip |
 | Contact suggestions | the Ark menus: 8px card, `#cbd5e1` border, `bg-slate-100` highlight, plus ↵ kbd hint and key-hint footer |
 | Attachment chips | the reader's chips, scaled to the 30px strip; `attachmentBadge` is the one source for the kind colour |
 | To / Subject step markers | the ringed blue status dot on a dock chip with content |
@@ -396,7 +396,7 @@ thing.
 
 ## Bulk actions
 
-Selecting rows (avatar click, `x`, or the Select menu) opens a bulk bar over
+Selecting rows (checkbox, `x`, or the Select menu) opens a bulk bar over
 the list: mark read/unread, highlight, move to any folder, delete. Selection is
 by **thread**; `selectedEmailIds` expands it back into the message ids the
 folder view holds. Everything funnels through one `bulk` command in
