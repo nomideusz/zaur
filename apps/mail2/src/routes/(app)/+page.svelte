@@ -642,6 +642,7 @@
 					error={threadsResource?.error}
 					{unseenOnly}
 					{cursorId}
+					{openThreadId}
 					{selection}
 					onToggleUnseenOnly={(value) => {
 						unseenOnly = value;

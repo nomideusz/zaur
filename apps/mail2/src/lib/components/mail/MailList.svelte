@@ -28,6 +28,8 @@
 		error: unknown;
 		unseenOnly: boolean;
 		cursorId: string | null;
+		/** The thread in the reader — the one row that has to be findable at a glance. */
+		openThreadId?: string | null;
 		selection: Set<string>;
 		onToggleUnseenOnly: (value: boolean) => void;
 		/** Non-empty while the list is showing results rather than a folder. */
@@ -52,6 +54,7 @@
 		error,
 		unseenOnly,
 		cursorId,
+		openThreadId = null,
 		selection,
 		searchQuery = '',
 		onClearSearch,
@@ -425,14 +428,21 @@
 				<div class="flex flex-col gap-2 pb-2">
 					{#each group.rows as row (row.threadId)}
 						{@const isCursor = row.threadId === cursorId}
+						{@const isOpen = row.threadId === openThreadId}
 						{@const isSelected = selection.has(row.threadId)}
 						{@const channel = rowChannel(row)}
+						<!--
+							Four states, in rank: ticked and open both mean "you picked this" and
+							wear the correspondence selection; the keyboard cursor is a whisper of
+							the same blue; rest is the channel's own colour.
+						-->
 						<div
 							data-row-id={row.threadId}
-							data-state={isSelected ? 'selected' : isCursor ? 'cursor' : 'rest'}
+							data-state={isSelected ? 'selected' : isOpen ? 'open' : isCursor ? 'cursor' : 'rest'}
 							data-unread={row.unread ? 'true' : 'false'}
 							class="z-row z-railed group/row grid cursor-pointer grid-cols-[18px_30px_minmax(0,1fr)] items-start gap-x-[11px] rounded-[10px] border py-[11px] pr-3 pl-[18px] max-md:grid-cols-[30px_minmax(0,1fr)]"
-							class:z-hue-wash={row.unread && !isSelected && !isCursor}
+							class:z-hue-wash={row.unread && !isSelected && !isOpen && !isCursor}
+							aria-current={isOpen ? 'true' : undefined}
 							style={channelStyle(channel)}
 							onclick={() => onOpen(row.threadId)}
 							onkeydown={(event) => {
@@ -601,7 +611,8 @@
 		border-color: #93c5fd;
 	}
 
-	.z-row[data-state='selected'] {
+	.z-row[data-state='selected'],
+	.z-row[data-state='open'] {
 		background: #eff6ff;
 		border-color: #2563eb;
 		box-shadow: 0 0 0 1px #2563eb;
