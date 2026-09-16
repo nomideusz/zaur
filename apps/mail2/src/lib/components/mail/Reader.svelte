@@ -5,9 +5,11 @@
 	import type { MessageDetail } from '@zaur/mail-core';
 	import EmailHtmlFrame from './EmailHtmlFrame.svelte';
 	import { formatBytes, formatReaderTime, typeBadge, initials } from '#lib/mail/rows';
-	import { getHobdayTheme, HOBDAY_THEMES } from '#lib/mail/colors';
+	import { attachmentBadge, getHobdayTheme, HOBDAY_THEMES } from '#lib/mail/colors';
 
 	interface Props {
+		/** The page hides this pane on a phone until a thread is open. */
+		class?: string;
 		messages: MessageDetail[] | undefined;
 		loading: boolean;
 		error: unknown;
@@ -17,9 +19,12 @@
 			message: MessageDetail,
 			anchor: { left: number; top: number; right: number; bottom: number } | null
 		) => void;
+		/** Phone only: the reader is a screen there, so it needs a way back. */
+		onBack?: () => void;
 	}
 
-	let { messages, loading, error, onRetry, onCompose }: Props = $props();
+	let { class: className = '', messages, loading, error, onRetry, onCompose, onBack }: Props =
+		$props();
 
 	let earlierExpanded = $state(false);
 
@@ -60,17 +65,78 @@
 		const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
 		return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
 	}
-
-	function attachmentBadgeTheme(type: string) {
-		const lower = (type || '').toLowerCase();
-		if (lower.includes('pdf')) return { bg: '#fee2e2', border: '#ef4444', text: '#b91c1c' };
-		if (lower.includes('image')) return { bg: '#e0f2fe', border: '#38bdf8', text: '#0369a1' };
-		if (lower.includes('zip') || lower.includes('archive')) return { bg: '#fef3c7', border: '#f59e0b', text: '#b45309' };
-		return { bg: '#dcfce7', border: '#4ade80', text: '#15803d' };
-	}
 </script>
 
-<section class="flex h-full min-h-0 flex-col bg-white select-none" aria-label="Message reader">
+<section
+	class="@container flex h-full min-h-0 flex-col bg-white select-none {className}"
+	aria-label="Message reader"
+>
+	<!-- On a phone the way back has to survive the loading, error and empty
+	     states too, so the toolbar outlives the message it acts on. -->
+	{#if onBack || latest || loading || error}
+		<!-- Reader Action Toolbar: Hobday-style tactile buttons -->
+		<div class="flex h-[46px] shrink-0 items-center justify-between border-b border-[#e2e8f0] px-8 max-md:px-3">
+			<div class="flex items-center gap-2">
+				{#if onBack}
+					<button
+						type="button"
+						class="btn-tactile !h-[30px] !px-2 md:hidden"
+						onclick={onBack}
+						aria-label="Back to the message list"
+					>
+						<svg class="size-4 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M10 3.5L5.5 8l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					</button>
+				{/if}
+
+{#if latest}
+				<button
+					type="button"
+					class="btn-tactile !h-[28px] gap-1.5 max-md:!h-[30px] max-md:!px-2.5"
+					title="Reply"
+					aria-label="Reply"
+					onclick={(event) => latest && onCompose('reply', latest, anchorFrom(event))}
+				>
+					<svg class="size-3.5 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M6 3.5L1.5 8 6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+						<path d="M1.5 8H10a4 4 0 014 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+					</svg>
+					<span class="max-md:hidden">Reply</span>
+				</button>
+
+				<button
+					type="button"
+					class="btn-tactile !h-[28px] gap-1.5 max-md:!h-[30px] max-md:!px-2.5"
+					title="Reply all"
+					aria-label="Reply all"
+					onclick={(event) => latest && onCompose('replyAll', latest, anchorFrom(event))}
+				>
+					<svg class="size-3.5 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M6 3.5L1.5 8 6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+						<path d="M10 3.5L5.5 8 10 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+					<span class="max-md:hidden">Reply all</span>
+				</button>
+
+				<button
+					type="button"
+					class="btn-tactile !h-[28px] gap-1.5 max-md:!h-[30px] max-md:!px-2.5"
+					title="Forward"
+					aria-label="Forward"
+					onclick={(event) => latest && onCompose('forward', latest, anchorFrom(event))}
+				>
+					<svg class="size-3.5 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M10 3.5L14.5 8 10 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+						<path d="M14.5 8H6a4 4 0 00-4 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+					</svg>
+					<span class="max-md:hidden">Forward</span>
+				</button>
+				{/if}
+			</div>
+		</div>
+	{/if}
+
 	{#if error}
 		<div class="flex flex-1 flex-col items-center justify-center gap-2 text-center p-6">
 			<p class="text-sm font-semibold text-slate-800">Couldn't load the conversation</p>
@@ -86,7 +152,7 @@
 			</button>
 		</div>
 	{:else if loading && !messages}
-		<div class="flex flex-1 flex-col gap-5 px-8 pt-8" aria-hidden="true">
+		<div class="flex flex-1 flex-col gap-5 px-8 pt-8 @max-md:px-4 @max-md:pt-6" aria-hidden="true">
 			<div class="h-7 w-2/3 animate-pulse rounded bg-slate-100"></div>
 			<div class="h-4 w-1/3 animate-pulse rounded bg-slate-100"></div>
 			<div class="mt-4 space-y-3">
@@ -102,61 +168,19 @@
 			</p>
 		</div>
 	{:else if latest && rendered}
-		<!-- Reader Action Toolbar: Hobday-style tactile buttons -->
-		<div class="flex h-[46px] shrink-0 items-center justify-between border-b border-[#e2e8f0] px-8">
-			<div class="flex items-center gap-2">
-				<button
-					type="button"
-					class="btn-tactile !h-[28px] gap-1.5"
-					onclick={(event) => latest && onCompose('reply', latest, anchorFrom(event))}
-				>
-					<svg class="size-3.5 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d="M6 3.5L1.5 8 6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-						<path d="M1.5 8H10a4 4 0 014 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-					</svg>
-					<span>Reply</span>
-				</button>
-
-				<button
-					type="button"
-					class="btn-tactile !h-[28px] gap-1.5"
-					onclick={(event) => latest && onCompose('replyAll', latest, anchorFrom(event))}
-				>
-					<svg class="size-3.5 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d="M6 3.5L1.5 8 6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-						<path d="M10 3.5L5.5 8 10 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-					</svg>
-					<span>Reply all</span>
-				</button>
-
-				<button
-					type="button"
-					class="btn-tactile !h-[28px] gap-1.5"
-					onclick={(event) => latest && onCompose('forward', latest, anchorFrom(event))}
-				>
-					<svg class="size-3.5 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d="M10 3.5L14.5 8 10 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-						<path d="M14.5 8H6a4 4 0 00-4 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-					</svg>
-					<span>Forward</span>
-				</button>
-
-			</div>
-		</div>
-
 		<!-- Reader Content Area. The column is left-aligned, not centred: centring
 		     it walks the message away from the list it came from and from the
 		     Reply buttons above it as the pane gets wider. Slack pools on the
 		     right instead, where nothing needs to be reachable. -->
-		<div class="min-h-0 flex-1 overflow-y-auto px-8 py-6 select-text">
+		<div class="min-h-0 flex-1 overflow-y-auto px-8 py-6 select-text @max-md:px-4 @max-md:py-4 overscroll-contain">
 			<div class="flex max-w-[680px] flex-col gap-6">
 				<!-- Conversation Subject -->
-				<h1 class="text-[24px] font-bold leading-tight tracking-tight text-slate-900">
+				<h1 class="text-[24px] font-bold leading-tight tracking-tight text-slate-900 @max-md:text-[19px]">
 					{latest.subject}
 				</h1>
 
 				<!-- Sender Identity Card -->
-				<div class="flex items-start justify-between gap-3.5 rounded-[8px] border border-[#e2e8f0] bg-slate-50/50 p-3.5">
+				<div class="flex items-start justify-between gap-3.5 rounded-[8px] border border-[#e2e8f0] bg-slate-50/50 p-3.5 @max-md:flex-col @max-md:gap-2.5">
 					<div class="flex items-start gap-3 min-w-0">
 						<!-- Sender Avatar Badge (Hobday style) -->
 						<div
@@ -250,7 +274,7 @@
 						</div>
 						<div class="flex flex-wrap gap-2.5">
 							{#each rendered.attachments as attachment (attachment.blobId)}
-								{@const badge = attachmentBadgeTheme(attachment.type)}
+								{@const badge = attachmentBadge(attachment.type)}
 								<div
 									class="flex h-11 items-center gap-3 rounded-[6px] border border-[#cbd5e1] bg-white px-3 shadow-2xs"
 									title={attachment.name}
@@ -283,7 +307,7 @@
 					</svg>
 				</div>
 				<p class="text-sm font-semibold text-slate-800">No message selected</p>
-				<p class="mt-1 text-xs text-slate-500 leading-relaxed">
+				<p class="mt-1 text-xs text-slate-500 leading-relaxed max-md:hidden">
 					Select an email to read, or navigate with <kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 font-mono text-[11px] font-medium text-slate-600">j</kbd> and <kbd class="rounded border border-slate-200 bg-slate-50 px-1 py-0.5 font-mono text-[11px] font-medium text-slate-600">k</kbd>.
 				</p>
 			</div>

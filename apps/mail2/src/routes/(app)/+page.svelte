@@ -19,25 +19,42 @@
 	import ComposeDock from '#lib/components/compose/ComposeDock.svelte';
 	import Toasts from '#lib/components/compose/Toasts.svelte';
 	import { buildRowGroups, selectedEmailIds } from '#lib/mail/rows';
+	import { readerThread } from '#lib/mail/reader-thread.svelte.ts';
 	import { prefs, setPref, LIST_MIN, LIST_MAX, DEFAULT_PREFS } from '#lib/settings.svelte.ts';
 	import { openingPosition, type AnchorRect } from '#lib/compose/layout';
 	import { draftSeed } from '#lib/compose/quote';
 	import { compose } from '#lib/compose/store.svelte.ts';
+	import { viewport } from '#lib/viewport.svelte.ts';
 	import type { ComposeContact } from '#lib/compose/types';
 	import type { MessageDetail } from '@zaur/mail-core';
 
 	let selectedMailboxId = $state<string | null>(null);
 	let unseenOnly = $state(prefs.unseenByDefault);
-	let openThreadId = $state<string | null>(null);
 	let cursorId = $state<string | null>(null);
 	let selection = $state<Set<string>>(new Set());
 	let rootEl = $state<HTMLDivElement | null>(null);
 	let rootW = $state(0);
 	let rootH = $state(0);
 	let bulkBusy = $state(false);
+	/** Below 1024px the sidebar is an overlay drawer, not a column. */
+	let drawerOpen = $state(false);
+
+	const sidebarVisible = $derived(viewport.compact ? drawerOpen : prefs.sidebarOpen);
 
 	function toggleSidebar() {
-		setPref('sidebarOpen', !prefs.sidebarOpen);
+		if (viewport.compact) drawerOpen = !drawerOpen;
+		else setPref('sidebarOpen', !prefs.sidebarOpen);
+	}
+
+	const reader = readerThread();
+	const openThreadId = $derived(reader.id);
+
+	function selectMailbox(id: string) {
+		selectedMailboxId = id;
+		drawerOpen = false;
+		reader.close();
+		cursorId = null;
+		selection = new Set();
 	}
 
 	const session = $derived(whoami()?.current ?? null);
@@ -69,24 +86,10 @@
 		mailboxList?.find((mailbox) => mailbox.id === selectedMailboxId) ?? null
 	);
 
-	function selectPrevMailbox() {
+	function stepMailbox(delta: number) {
 		if (!mailboxList || mailboxList.length === 0) return;
 		const currentIndex = mailboxList.findIndex((m) => m.id === selectedMailboxId);
-		const prevIndex = (currentIndex - 1 + mailboxList.length) % mailboxList.length;
-		selectedMailboxId = mailboxList[prevIndex]!.id;
-		openThreadId = null;
-		cursorId = null;
-		selection = new Set();
-	}
-
-	function selectNextMailbox() {
-		if (!mailboxList || mailboxList.length === 0) return;
-		const currentIndex = mailboxList.findIndex((m) => m.id === selectedMailboxId);
-		const nextIndex = (currentIndex + 1) % mailboxList.length;
-		selectedMailboxId = mailboxList[nextIndex]!.id;
-		openThreadId = null;
-		cursorId = null;
-		selection = new Set();
+		selectMailbox(mailboxList[(currentIndex + delta + mailboxList.length) % mailboxList.length]!.id);
 	}
 
 	const threadsResource = $derived(
@@ -212,14 +215,19 @@
 		return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
 	}
 
-	function openCompose(anchor?: AnchorRect | null) {
-		const position = openingPosition(
+	/** Phone compose is a full-screen sheet — there is no window to place. */
+	function panelPosition(anchor?: AnchorRect | null) {
+		if (viewport.phone) return undefined;
+		return openingPosition(
 			anchor ?? newMessageAnchor(),
 			rootW,
 			rootH,
 			compose.openPanels().length
 		);
-		compose.newDraft(position);
+	}
+
+	function openCompose(anchor?: AnchorRect | null) {
+		compose.newDraft(panelPosition(anchor));
 	}
 
 	function openReply(
@@ -227,13 +235,13 @@
 		message: MessageDetail,
 		anchor: AnchorRect | null
 	) {
-		const position = openingPosition(
-			anchor ?? newMessageAnchor(),
-			rootW,
-			rootH,
-			compose.openPanels().length
+		compose.reply(
+			message,
+			threadResource?.current ?? [message],
+			myEmails,
+			mode,
+			panelPosition(anchor)
 		);
-		compose.reply(message, threadResource?.current ?? [message], myEmails, mode, position);
 	}
 
 	const selectedIds = $derived(selectedEmailIds(threadsResource?.current?.rows, selection));
@@ -270,7 +278,7 @@
 		try {
 			const { count } = await bulk(payload);
 			// A thread that just left the folder can't stay open in the reader.
-			if (leavesFolder && openThreadId && selection.has(openThreadId)) openThreadId = null;
+			if (leavesFolder && openThreadId && selection.has(openThreadId)) reader.close();
 			selection = new Set();
 			void threadsResource?.refresh();
 			void mailboxesResource?.refresh();
@@ -286,7 +294,7 @@
 
 	async function openRow(threadId: string) {
 		if (activeMailbox?.kind !== 'drafts') {
-			openThreadId = threadId;
+			reader.open(threadId);
 			if (prefs.markReadOnOpen) void markThreadRead(threadId);
 			return;
 		}
@@ -294,10 +302,7 @@
 			const messages = await thread({ threadId });
 			const message = messages.at(-1);
 			if (!message) return;
-			compose.reopenDraft(
-				draftSeed(message),
-				openingPosition(newMessageAnchor(), rootW, rootH, compose.openPanels().length)
-			);
+			compose.reopenDraft(draftSeed(message), panelPosition());
 		} catch {
 			compose.pushToast({ text: 'Could not open the draft' });
 		}
@@ -333,6 +338,11 @@
 	}
 
 	function handleKeydown(event: KeyboardEvent) {
+		if (event.key === 'Escape' && drawerOpen) {
+			event.preventDefault();
+			drawerOpen = false;
+			return;
+		}
 		if (event.key === 'Escape') {
 			const front = compose.frontPanel();
 			if (front) {
@@ -392,7 +402,7 @@
 <svelte:window onkeydown={handleKeydown} />
 
 <!-- Ground behind the app column — only visible past the 1780px ceiling. -->
-<div class="flex h-svh w-screen flex-col items-center justify-center bg-[#ebeef2] overflow-hidden text-slate-900">
+<div class="flex h-svh w-full flex-col items-center justify-center bg-[#ebeef2] overflow-hidden text-slate-900">
 	<!-- App column: edge to edge until 1780px, then capped so the chrome at each
 	     end stays within reach of the content in the middle. -->
 	<div
@@ -402,18 +412,13 @@
 		<TopBar
 			mailboxes={mailboxList}
 			activeMailbox={activeMailbox}
-			onSelectMailbox={(id) => {
-				selectedMailboxId = id;
-				openThreadId = null;
-				cursorId = null;
-				selection = new Set();
-			}}
+			onSelectMailbox={selectMailbox}
 			account={session ? { username: session.username, displayName: session.displayName } : null}
 			onSignOut={signOut}
-			sidebarOpen={prefs.sidebarOpen}
+			sidebarOpen={sidebarVisible}
 			onToggleSidebar={toggleSidebar}
-			onPrevMailbox={selectPrevMailbox}
-			onNextMailbox={selectNextMailbox}
+			onPrevMailbox={() => stepMailbox(-1)}
+			onNextMailbox={() => stepMailbox(1)}
 		/>
 
 		{#if !session}
@@ -425,26 +430,38 @@
 			</div>
 		{:else}
 			<main
-				class="grid min-h-0 flex-1"
-				style:grid-template-columns={prefs.sidebarOpen
-					? `240px ${prefs.listWidth}px 1px minmax(0, 1fr)`
-					: `${prefs.listWidth}px 1px minmax(0, 1fr)`}
+				class="z-shell relative min-h-0 flex-1"
+				data-sidebar={sidebarVisible ? 'open' : 'closed'}
+				style:--z-list-w="{prefs.listWidth}px"
 			>
-				{#if prefs.sidebarOpen}
-					<Sidebar
-						mailboxes={mailboxList}
-						activeMailboxId={selectedMailboxId}
-						onSelectMailbox={(id) => {
-							selectedMailboxId = id;
-							openThreadId = null;
-							cursorId = null;
-							selection = new Set();
-						}}
-						onNewMessage={() => openCompose()}
-					/>
+				{#if sidebarVisible}
+					<!-- Below 1024px the sidebar leaves the grid and slides over the
+					     panes; the top bar stays visible so its toggle can dismiss it. -->
+					{#if viewport.compact}
+						<button
+							type="button"
+							class="absolute inset-0 z-40 bg-slate-900/25 lg:hidden"
+							aria-label="Close folder list"
+							onclick={() => (drawerOpen = false)}
+						></button>
+					{/if}
+					<div
+						class="max-lg:absolute max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:w-[280px] max-lg:max-w-[85%] max-lg:shadow-xl"
+					>
+						<Sidebar
+							mailboxes={mailboxList}
+							activeMailboxId={selectedMailboxId}
+							onSelectMailbox={selectMailbox}
+							onNewMessage={() => {
+								drawerOpen = false;
+								openCompose();
+							}}
+						/>
+					</div>
 				{/if}
 
 				<MailList
+					class={openThreadId ? 'max-md:hidden' : ''}
 					mailbox={activeMailbox}
 					mailboxes={mailboxList}
 					groups={rowGroups}
@@ -469,11 +486,13 @@
 				<Splitter width={prefs.listWidth} onResize={setListWidth} onReset={resetListWidth} />
 
 				<Reader
+					class={openThreadId ? '' : 'max-md:hidden'}
 					messages={threadResource?.current}
 					loading={threadResource?.loading ?? false}
 					error={threadResource?.error}
 					onRetry={() => threadResource?.refresh()}
 					onCompose={openReply}
+					onBack={viewport.phone ? () => reader.close() : undefined}
 				/>
 			</main>
 

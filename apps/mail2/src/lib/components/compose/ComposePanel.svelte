@@ -4,6 +4,8 @@
 	import { filterContacts } from '#lib/compose/recipients';
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import { initials } from '#lib/mail/rows';
+	import { attachmentBadge, getHobdayTheme } from '#lib/mail/colors';
+	import { viewport } from '#lib/viewport.svelte.ts';
 	import type { Draft } from '#lib/compose/types';
 
 	interface Props {
@@ -25,6 +27,15 @@
 	const listboxId = $derived(`compose-suggestions-${draft.id}`);
 
 	const maximized = $derived(draft.stage === 'maximized');
+	/**
+	 * A phone has no window manager either: the panel drops its geometry and
+	 * fills the shell. Drag, resize and maximize go with it, and Send moves up
+	 * into the header — the action bar sits under the on-screen keyboard.
+	 * A shell too short to float a panel in (a phone in landscape, a squat
+	 * desktop window) gets the sheet as well.
+	 */
+	const sheet = $derived(viewport.phone || rootH < 520);
+	const filled = $derived(maximized || sheet);
 	const rect = $derived(
 		maximized ? maximizedRect(rootW, rootH) : { x: draft.x, y: draft.y, w: draft.w, h: draft.h }
 	);
@@ -58,7 +69,7 @@
 	} | null = null;
 
 	function startDrag(event: PointerEvent) {
-		if (event.button !== 0) return;
+		if (event.button !== 0 || sheet) return;
 		compose.raise(draft.id);
 		if (draft.stage === 'maximized') compose.toggleMaximize(draft.id);
 		drag = {
@@ -113,7 +124,7 @@
 	} | null = null;
 
 	function startResize(event: PointerEvent, axis: ResizeAxis) {
-		if (event.button !== 0 || draft.stage !== 'default') return;
+		if (event.button !== 0 || sheet || draft.stage !== 'default') return;
 		event.preventDefault();
 		event.stopPropagation();
 		compose.raise(draft.id);
@@ -221,11 +232,30 @@
 		compose.removeTo(draft.id, email);
 	}
 
-	const dotClass = (satisfied: boolean) =>
-		`size-[7px] shrink-0 rounded-pill border ${
-			satisfied ? 'border-accent bg-accent' : 'border-border-strong bg-container'
-		}`;
 </script>
+
+<!-- Step markers, in the shell's status-dot vocabulary: the same ringed blue
+     dot that marks an unread row and a draft with content in the dock. -->
+{#snippet stepDot(done: boolean)}
+	<span
+		class="size-1.5 shrink-0 rounded-full {done ? 'bg-blue-600 ring-2 ring-blue-100' : 'bg-slate-300'}"
+		aria-hidden="true"
+	></span>
+{/snippet}
+
+{#snippet sendButton(compact: boolean)}
+	<button
+		type="button"
+		class="btn-tactile font-semibold {compact ? '!h-8 !px-3 !text-[12px]' : '!h-[30px] !px-4'} {draft
+			.to.length === 0
+			? '!border-slate-200 !bg-slate-100 !text-slate-400'
+			: '!border-blue-700 !bg-blue-600 !text-white hover:!bg-blue-700'}"
+		disabled={draft.sending}
+		onclick={() => void compose.sendDraft(draft.id)}
+	>
+		{draft.scheduled ? 'Schedule send' : draft.sending ? 'Sending…' : 'Send'}
+	</button>
+{/snippet}
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <div
@@ -233,13 +263,15 @@
 	role="dialog"
 	tabindex="-1"
 	aria-label="Compose: {title}"
-	class="absolute flex flex-col overflow-hidden rounded-[10px] border border-[#cbd5e1] bg-white shadow-2xl {draft.gesture
+	class="absolute flex flex-col overflow-hidden bg-white {sheet
+		? 'inset-0'
+		: 'rounded-[10px] border border-[#cbd5e1] shadow-2xl'} {draft.gesture
 		? 'transition-none'
 		: 'transition-[left,top,width,height] duration-[180ms]'}"
-	style:left="{rect.x}px"
-	style:top="{rect.y}px"
-	style:width="{rect.w}px"
-	style:height="{height}px"
+	style:left={sheet ? undefined : `${rect.x}px`}
+	style:top={sheet ? undefined : `${rect.y}px`}
+	style:width={sheet ? undefined : `${rect.w}px`}
+	style:height={sheet ? undefined : `${height}px`}
 	style:z-index="{draft.z}"
 	onpointerdown={() => compose.raise(draft.id)}
 >
@@ -247,7 +279,9 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		bind:this={headerEl}
-		class="flex h-[44px] shrink-0 cursor-grab items-center gap-2.5 border-b border-[#e2e8f0] bg-slate-50/90 px-3.5 select-none active:cursor-grabbing"
+		class="flex h-[44px] shrink-0 touch-none items-center gap-2.5 border-b border-[#e2e8f0] bg-slate-50/90 px-3.5 select-none {sheet
+			? ''
+			: 'cursor-grab active:cursor-grabbing'}"
 		onpointerdown={startDrag}
 		onpointermove={moveDrag}
 		onpointerup={endDrag}
@@ -257,9 +291,12 @@
 		<span class="min-w-0 flex-1 truncate text-[13px] font-semibold text-slate-800">{title}</span>
 
 		<div class="flex items-center gap-1">
+			{#if sheet}
+				{@render sendButton(true)}
+			{/if}
 			<button
 				type="button"
-				class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition-colors"
+				class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition-colors max-md:size-8"
 				aria-label="Minimize"
 				onpointerdown={(event) => event.stopPropagation()}
 				onclick={() => compose.minimize(draft.id)}
@@ -268,7 +305,7 @@
 					<path d="M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 				</svg>
 			</button>
-			{#if maximized}
+			{#if !sheet && maximized}
 				<button
 					type="button"
 					class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition-colors"
@@ -281,7 +318,8 @@
 						<path d="M6.5 3.5h6v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
 					</svg>
 				</button>
-			{:else}
+			{:else if !sheet}
+				<!-- A sheet already fills the shell; there is nothing to maximize. -->
 				<button
 					type="button"
 					class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-slate-200/60 hover:text-slate-700 transition-colors"
@@ -296,7 +334,7 @@
 			{/if}
 			<button
 				type="button"
-				class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+				class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 hover:bg-red-50 hover:text-red-600 transition-colors max-md:size-8"
 				aria-label="Close draft"
 				onpointerdown={(event) => event.stopPropagation()}
 				onclick={() => compose.close(draft.id)}
@@ -313,8 +351,8 @@
 		<!-- To -->
 		<div class="flex min-h-[28px] flex-wrap items-start gap-x-3 gap-y-[6px] py-2">
 			<span class="flex shrink-0 items-center gap-1.5 pt-1">
-				<span class={dotClass(step > 0)} aria-hidden="true"></span>
-				<span class="text-[13px] {step === 0 ? 'text-ink' : 'text-ink-secondary'}">To</span>
+				{@render stepDot(step > 0)}
+				<span class="text-[13px] {step === 0 ? 'font-medium text-slate-900' : 'text-slate-500'}">To</span>
 			</span>
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<!-- svelte-ignore a11y_click_events_have_key_events -->
@@ -323,14 +361,20 @@
 				onclick={() => toInputEl?.focus()}
 			>
 				{#each draft.to as person (person.email)}
-					<span class="flex h-[26px] items-center gap-1.5 rounded-pill border border-[#e2e8e7] bg-canvas pr-1 pl-1.5">
-						<span class="flex size-[18px] items-center justify-center rounded-pill bg-accent text-[9px] font-semibold text-accent-fg">
+					{@const theme = getHobdayTheme(person.email || person.name)}
+					<span class="flex h-[26px] items-center gap-1.5 rounded-[6px] border border-[#cbd5e1] bg-white px-1 shadow-2xs">
+						<span
+							class="flex size-[18px] items-center justify-center rounded-[4px] text-[9px] font-bold"
+							style:background-color={theme.bg}
+							style:border="1px solid {theme.border}"
+							style:color={theme.text}
+						>
 							{initials(person.name, person.email)}
 						</span>
-						<span class="max-w-[160px] truncate text-[13px]">{person.name || person.email}</span>
+						<span class="max-w-[160px] truncate text-[13px] text-slate-800">{person.name || person.email}</span>
 						<button
 							type="button"
-							class="flex size-[18px] items-center justify-center rounded-pill text-ink-secondary transition-colors duration-[160ms] hover:bg-[#e2e8e7]"
+							class="flex size-[18px] items-center justify-center rounded-[4px] text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
 							aria-label="Remove {person.name || person.email}"
 							onpointerdown={(event) => event.stopPropagation()}
 							onclick={(event) => removeTo(event, person.email)}
@@ -354,12 +398,12 @@
 					aria-autocomplete="list"
 					aria-controls={listboxId}
 					placeholder={draft.to.length > 0 ? 'Add another' : 'Name or email address'}
-					class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent text-sm text-ink placeholder:text-ink-secondary focus:outline-none"
+					class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none max-md:text-base"
 				/>
 				{#if !draft.ccOpen}
 					<button
 						type="button"
-						class="h-[22px] rounded-pill border border-line px-2 text-[11px] text-ink-secondary transition-colors duration-[160ms] hover:border-border-strong hover:text-ink"
+						class="btn-tactile !h-[22px] !px-2 !text-[11px]"
 						onclick={() => compose.patch(draft.id, { ccOpen: true })}
 					>
 						Cc
@@ -368,7 +412,7 @@
 				{#if !draft.bccOpen}
 					<button
 						type="button"
-						class="h-[22px] rounded-pill border border-line px-2 text-[11px] text-ink-secondary transition-colors duration-[160ms] hover:border-border-strong hover:text-ink"
+						class="btn-tactile !h-[22px] !px-2 !text-[11px]"
 						onclick={() => compose.patch(draft.id, { bccOpen: true })}
 					>
 						Bcc
@@ -380,16 +424,17 @@
 						id={listboxId}
 						role="listbox"
 						aria-label="Contact suggestions"
-						class="absolute top-[calc(100%+4px)] right-[52px] left-[66px] z-5 max-h-[214px] overflow-y-auto rounded-card border border-border bg-container shadow-suggestion"
+						class="absolute top-[calc(100%+4px)] right-[52px] left-[66px] z-5 max-h-[214px] overflow-y-auto rounded-[8px] border border-[#cbd5e1] bg-white p-1.5 shadow-lg max-md:right-0 max-md:left-0"
 					>
 						{#each suggestions as suggestion, index (suggestion.email)}
+							{@const theme = getHobdayTheme(suggestion.email || suggestion.name)}
 							<button
 								type="button"
 								role="option"
 								aria-selected={index === draft.toHi}
-								class="flex w-full items-center gap-[9px] rounded-menu-item px-2 py-[7px] text-left {index ===
+								class="flex w-full items-center gap-2.5 rounded-[6px] px-2.5 py-1.5 text-left transition-colors {index ===
 								draft.toHi
-									? 'bg-hairline-cool'
+									? 'bg-slate-100'
 									: ''}"
 								onpointerdown={(event) => event.preventDefault()}
 								onclick={() => {
@@ -397,18 +442,25 @@
 									refocusAfterCommit();
 								}}
 							>
-								<span class="flex size-[26px] shrink-0 items-center justify-center rounded-pill bg-accent text-[10px] font-semibold text-accent-fg">
+								<span
+									class="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-[10px] font-bold"
+									style:background-color={theme.bg}
+									style:border="1px solid {theme.border}"
+									style:color={theme.text}
+								>
 									{initials(suggestion.name, suggestion.email)}
 								</span>
-								<span class="min-w-0 flex-1 truncate text-[13px]">{suggestion.name || suggestion.email}</span>
-								<span class="min-w-0 truncate text-xs text-ink-secondary">{suggestion.email}</span>
+								<span class="min-w-0 flex-1 truncate text-[13px] font-medium text-slate-800">
+									{suggestion.name || suggestion.email}
+								</span>
+								<span class="min-w-0 truncate text-xs text-slate-500">{suggestion.email}</span>
 								{#if suggestion.meta}
-									<span class="shrink-0 text-[11px] text-ink-secondary">{suggestion.meta}</span>
+									<span class="shrink-0 text-[11px] text-slate-400">{suggestion.meta}</span>
 								{/if}
 							</button>
 						{/each}
 						{#if suggestions.length === 0}
-							<p class="px-2 py-[7px] text-[13px] text-ink-secondary">
+							<p class="px-2.5 py-1.5 text-[13px] text-slate-500">
 								{draft.toInput.includes('@')
 									? `Press Enter to add ${draft.toInput.trim()}`
 									: 'No matching contacts'}
@@ -420,19 +472,19 @@
 		</div>
 
 		{#if draft.ccOpen}
-			<div class="flex h-[45px] items-center gap-3 border-b border-hairline">
-				<span class="w-[62px] shrink-0 pl-4 text-[13px] text-ink-secondary">Cc</span>
+			<div class="flex h-[45px] items-center gap-3 border-b border-[#e2e8f0]">
+				<span class="w-[62px] shrink-0 pl-4 text-[13px] text-slate-500">Cc</span>
 				<input
 					type="text"
 					value={draft.cc}
 					oninput={(event) =>
 						compose.patch(draft.id, { cc: (event.currentTarget as HTMLInputElement).value })}
 					placeholder="Copy someone in"
-					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-ink placeholder:text-ink-secondary focus:outline-none"
+					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none max-md:text-base"
 				/>
 				<button
 					type="button"
-					class="flex size-[22px] shrink-0 items-center justify-center rounded-menu-item text-ink-secondary transition-colors duration-[160ms] hover:bg-divider"
+					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
 					aria-label="Remove Cc"
 					onclick={() => compose.patch(draft.id, { ccOpen: false, cc: '' })}
 				>
@@ -444,19 +496,19 @@
 		{/if}
 
 		{#if draft.bccOpen}
-			<div class="flex h-[45px] items-center gap-3 border-b border-hairline">
-				<span class="w-[62px] shrink-0 pl-4 text-[13px] text-ink-secondary">Bcc</span>
+			<div class="flex h-[45px] items-center gap-3 border-b border-[#e2e8f0]">
+				<span class="w-[62px] shrink-0 pl-4 text-[13px] text-slate-500">Bcc</span>
 				<input
 					type="text"
 					value={draft.bcc}
 					oninput={(event) =>
 						compose.patch(draft.id, { bcc: (event.currentTarget as HTMLInputElement).value })}
 					placeholder="Hidden recipients"
-					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-ink placeholder:text-ink-secondary focus:outline-none"
+					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none max-md:text-base"
 				/>
 				<button
 					type="button"
-					class="flex size-[22px] shrink-0 items-center justify-center rounded-menu-item text-ink-secondary transition-colors duration-[160ms] hover:bg-divider"
+					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
 					aria-label="Remove Bcc"
 					onclick={() => compose.patch(draft.id, { bccOpen: false, bcc: '' })}
 				>
@@ -468,10 +520,10 @@
 		{/if}
 
 		<!-- Subject -->
-		<div class="flex h-[45px] items-center gap-3 border-b border-hairline {subjectDim} transition-opacity duration-[160ms]">
+		<div class="flex h-[45px] items-center gap-3 border-b border-[#e2e8f0] {subjectDim} transition-opacity duration-[160ms]">
 			<span class="flex w-[62px] shrink-0 items-center gap-1.5 pl-2">
-				<span class={dotClass(step === 2)} aria-hidden="true"></span>
-				<span class="text-[13px] {step === 1 ? 'text-ink' : 'text-ink-secondary'}">Subject</span>
+				{@render stepDot(step === 2)}
+				<span class="text-[13px] {step === 1 ? 'font-medium text-slate-900' : 'text-slate-500'}">Subject</span>
 			</span>
 			<input
 				id={subjectId}
@@ -484,7 +536,7 @@
 					})}
 				onkeydown={onSubjectKeydown}
 				placeholder="What is this about?"
-				class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-ink placeholder:text-ink-secondary focus:outline-none"
+				class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none max-md:text-base"
 			/>
 		</div>
 
@@ -495,16 +547,16 @@
 			value={draft.body}
 			oninput={onBodyInput}
 			onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
-			class="w-full resize-none border-0 bg-transparent pt-[14px] pb-4 text-[15px] leading-[1.7] text-ink-body focus:outline-none {bodyOpen
+			class="w-full resize-none border-0 bg-transparent pt-[14px] pb-4 text-[15px] leading-[1.7] text-slate-800 focus:outline-none max-md:text-base {bodyOpen
 				? 'opacity-100'
-				: 'opacity-68'} {maximized ? 'min-h-0 flex-1 max-w-[46em]' : 'max-w-[33em]'}"
-			style:height={maximized ? undefined : `${bodyHeight}px`}
+				: 'opacity-68'} {filled ? 'min-h-0 flex-1 max-w-[46em]' : 'max-w-[33em]'}"
+			style:height={filled ? undefined : `${bodyHeight}px`}
 			style:transition="height 200ms ease"
 			aria-label="Message"
 		></textarea>
 
 		{#if draft.sendError}
-			<p class="pb-2 text-xs text-danger">{draft.sendError}</p>
+			<p class="pb-2 text-xs font-medium text-red-600">{draft.sendError}</p>
 		{/if}
 	</div>
 
@@ -512,14 +564,24 @@
 	{#if draft.attachments.length > 0}
 		<div class="flex max-h-[66px] shrink-0 flex-wrap content-start gap-2 overflow-y-auto pt-3 pb-3 pr-4 pl-4">
 			{#each draft.attachments as attachment (attachment.id)}
-				<span class="flex h-[30px] shrink-0 items-center gap-2 rounded-control border border-line-light bg-surface-subtle pr-1 pl-2 text-xs">
-					<span class="font-mono text-[10px] text-ink-tertiary">
+				{@const badge = attachmentBadge(attachment.type)}
+				<span class="flex h-[30px] shrink-0 items-center gap-2 rounded-[6px] border border-[#cbd5e1] bg-white pr-1 pl-1.5 shadow-2xs">
+					<span
+						class="flex h-[18px] min-w-[18px] items-center justify-center rounded-[4px] px-1 text-[9px] font-bold uppercase"
+						style:background-color={badge.bg}
+						style:border="1px solid {badge.border}"
+						style:color={badge.text}
+					>
 						{attachmentKind(attachment.name, attachment.type)}
 					</span>
-					<span class="max-w-[180px] truncate {attachment.status === 'error' ? 'text-danger' : ''}">
+					<span
+						class="max-w-[180px] truncate text-[13px] font-medium {attachment.status === 'error'
+							? 'text-red-600'
+							: 'text-slate-800'}"
+					>
 						{attachment.name}
 					</span>
-					<span class="shrink-0 text-ink-tertiary">
+					<span class="shrink-0 text-xs font-medium text-slate-400 tabular-nums">
 						{attachment.status === 'uploading'
 							? '…'
 							: attachment.status === 'error'
@@ -528,7 +590,7 @@
 					</span>
 					<button
 						type="button"
-						class="flex size-[18px] shrink-0 items-center justify-center rounded-full transition-colors duration-[160ms] hover:bg-divider"
+						class="flex size-[18px] shrink-0 items-center justify-center rounded-[4px] text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
 						aria-label="Remove {attachment.name}"
 						onclick={() => compose.removeAttachment(draft.id, attachment.id)}
 					>
@@ -542,25 +604,18 @@
 	{/if}
 
 	<!-- Action bar -->
-	<div class="flex h-[53px] shrink-0 items-center gap-2 border-t border-divider pr-3 pl-4">
+	<div class="flex h-[53px] shrink-0 items-center gap-2 border-t border-[#e2e8f0] pr-3 pl-4">
+		{#if !sheet}
+			{@render sendButton(false)}
+		{/if}
 		<button
 			type="button"
-			class="h-9 rounded-btn px-[18px] text-sm transition-colors duration-[160ms] {draft.to.length ===
-			0
-				? 'bg-divider text-ink-disabled'
-				: 'bg-accent text-accent-fg'} disabled:opacity-100"
-			disabled={draft.sending}
-			onclick={() => void compose.sendDraft(draft.id)}
-		>
-			{draft.scheduled ? 'Schedule send' : draft.sending ? 'Sending…' : 'Send'}
-		</button>
-		<button
-			type="button"
-			class="flex size-8 items-center justify-center rounded-control text-ink-muted transition-colors duration-[160ms] hover:bg-hairline"
+			class="btn-tactile !size-[30px] !p-0"
 			aria-label="Attach a file"
+			title="Attach a file"
 			onclick={() => fileInputEl?.click()}
 		>
-			<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+			<svg class="size-4 text-slate-700" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 				<path
 					d="M10.5 7L7.2 10.3a2.2 2.2 0 01-3.1-3.1l4.9-4.9a1.5 1.5 0 012.1 2.1L6.6 8.9a.8.8 0 01-1.1-1.1l3.5-3.5"
 					stroke="currentColor"
@@ -585,9 +640,9 @@
 		/>
 		<button
 			type="button"
-			class="h-8 rounded-pill px-2.5 text-xs transition-colors duration-[160ms] {draft.scheduled
-				? 'bg-accent-soft text-accent'
-				: 'text-ink-muted hover:bg-hairline'}"
+			class="btn-tactile !h-[30px] !px-2.5 !text-[12px] {draft.scheduled
+				? '!border-blue-400 !bg-blue-50 !text-blue-700'
+				: ''}"
 			aria-pressed={draft.scheduled}
 			onclick={() => compose.toggleSchedule(draft.id)}
 		>
@@ -595,8 +650,9 @@
 		</button>
 		<button
 			type="button"
-			class="ml-auto flex size-8 items-center justify-center rounded-control text-ink-muted transition-colors duration-[160ms] hover:bg-hairline"
+			class="ml-auto btn-tactile !size-[30px] !p-0 !text-red-600 hover:!border-red-300 hover:!bg-red-50"
 			aria-label="Discard draft"
+			title="Discard draft"
 			onclick={() => compose.discard(draft.id)}
 		>
 			<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
@@ -611,7 +667,7 @@
 		</button>
 	</div>
 
-	{#if !maximized}
+	{#if !filled}
 		<!-- Resize: right edge, bottom edge, corner -->
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<div
@@ -639,7 +695,7 @@
 			onpointercancel={endResize}
 		>
 			<svg class="absolute right-1 bottom-1" width="7" height="7" viewBox="0 0 7 7" fill="none" aria-hidden="true">
-				<path d="M6.5 0.5L0.5 6.5M6.5 4L4 6.5" stroke="#c8c8c8" stroke-width="1.5" stroke-linecap="round" />
+				<path d="M6.5 0.5L0.5 6.5M6.5 4L4 6.5" stroke="#94a3b8" stroke-width="1.5" stroke-linecap="round" />
 			</svg>
 		</div>
 	{/if}

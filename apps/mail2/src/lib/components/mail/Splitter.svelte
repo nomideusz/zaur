@@ -54,7 +54,7 @@
 	aria-valuemin={min}
 	aria-valuemax={max}
 	tabindex="0"
-	class="group relative w-px shrink-0 cursor-col-resize bg-line transition-colors duration-[120ms] hover:bg-accent-tint focus:bg-accent-tint focus:outline-none {dragging
+	class="group relative w-px shrink-0 cursor-col-resize touch-none bg-line transition-colors duration-[120ms] max-md:hidden hover:bg-accent-tint focus:bg-accent-tint focus:outline-none {dragging
 		? 'bg-accent-tint'
 		: ''}"
 	onpointerdown={handlePointerDown}

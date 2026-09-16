@@ -13,6 +13,8 @@ theme only** for now; Files and Meet arrive when their designs land.
 - [x] Own login (`/login` + sign out) — Stalwart OAuth credential flow in prod,
   password fallback in dev; 1.0 session sharing still works as a fallback
 - [x] Settings page (`/settings`) + bulk selection actions
+- [x] Phone and tablet layouts (ADR-0005 put the phone pass after the cutover;
+  it turned out to be mostly CSS, so it landed early)
 - [ ] Search via remote functions
 - [ ] Calendar / Contacts (port from 1.0)
 - [ ] OIDC provider flows (mail2 as an identity provider)
@@ -219,6 +221,76 @@ needs to be reachable, and the toolbar shares the column's `px-8` left edge.
 The sign-in card keeps its border and shadow — a centred auth card on a ground
 is a card, not a fake window.
 
+## Phone and tablet
+
+The shell has three shapes, and the breakpoint does nearly all of the work —
+`.z-shell` in `styles/base.css` is one grid whose template changes twice:
+
+| Width | Panes | Sidebar |
+| --- | --- | --- |
+| < 768px | one: the list, or the reader once a thread is open | overlay drawer |
+| 768–1023px | list + reader | overlay drawer |
+| ≥ 1024px | list + reader, and the sidebar when it is open | column |
+
+The middle tier exists because a 240px sidebar plus a 480px list leaves an
+iPad in portrait with a 280px reader. Below 1024 the sidebar leaves the grid
+(`max-lg:absolute`, so it stops being a grid item at all) and slides over the
+panes with a scrim. It sits *under* the top bar rather than over it, so the
+button that opened it is still there to close it.
+
+Which of the two panes a phone shows is not a third state: the page hands
+whichever one is not wanted a `max-md:hidden`. There is no phone-only list
+component and no route for the reader.
+
+`#lib/viewport` is the small part that CSS cannot do — compose geometry is
+inline-styled, the sidebar toggle has to know which flag to write, and opening
+a thread has to know whether to push history. Two `matchMedia` queries, the
+same numbers as the CSS.
+
+### The reader is a screen, not a pane
+
+On a phone the reader takes a **shallow history entry** (`#lib/mail/reader-thread`),
+so Back — the button, the hardware key, iOS' back-swipe — returns to the list
+instead of leaving the app. On wider layouts both panes are on screen, so
+there is nothing to go back from and the open thread stays plain state. The
+back button outlives the message it acts on: it renders in the reader toolbar
+whatever the pane is doing, because a failed load is exactly when you need it.
+
+### Compose is a sheet
+
+A phone has no window manager either, so the panel drops its geometry and
+fills the shell: no drag, no resize, no maximize — and **Send moves up into
+the header**, because the action bar sits under the on-screen keyboard. The
+same happens whenever the shell is under 520px tall (a phone in landscape, a
+squat desktop window): a floating window needs room to float.
+
+`interactive-widget=resizes-content` in the viewport meta gets Chrome to
+shrink the layout viewport for the keyboard rather than paint over it. iOS
+does not honour it — which is why Send is in the header and not only in the
+action bar. Every compose field is 16px on a phone, below which iOS Safari
+zooms the viewport on focus and throws the sheet off-centre.
+
+Minimised drafts keep working: the dock becomes one horizontally scrolling
+strip on the bottom edge (`justify-start` — with `justify-end` the overflow
+spills past the unscrollable start edge), and chip reordering is skipped for
+touch pointers, where the same drag is the strip's scroll.
+
+### Smaller things, and what was left out
+
+- The reader's own metrics — content gutter, subject size, whether the sender
+  card stacks — are **container** queries, not viewport ones. What matters is
+  how wide that pane is, and a tablet's second pane is as narrow as a phone.
+- The status line is hidden below 768px: 36px of keyboard hints and a storage
+  meter is not what a phone should spend its height on, and the top bar's
+  folder chip already carries the unread count.
+- The bulk bar scrolls horizontally rather than wrapping; Delete is ordered
+  ahead of the highlight toggle and Clear so it is on screen without one.
+- New message stays the tactile `+` in the list header. A floating action
+  button is a different design language, and the header button is already
+  there.
+- No swipe-to-archive on rows and no pull-to-refresh — the latter would be
+  meaningless anyway, since JMAP is live.
+
 ## The Zaur mark
 
 Where every other window puts three inert traffic lights, the shell windows
@@ -238,6 +310,34 @@ sits on the window's centre rather than on whatever space is left beside it.
 
 Compose panels have no mark and no dots: their minimize/maximize/close live on
 the right of the header, and the dots only duplicated them.
+
+## One visual language
+
+The shell was built in the tactile style the prototype resolved to — white
+controls on a `#cbd5e1` hairline, `btn-tactile`, blue-600 for anything
+selected, and the Hobday candy palette for per-person avatars. The compose
+panel was the last surface still drawn from the original token set (plum
+accent, `--z-ink*` ramp, pill chips, `#f1f1f1` hairlines), so it read as a
+different app floating over this one. It now uses the shell's language
+throughout:
+
+| Compose | Now matches |
+| --- | --- |
+| Send | the login submit — `btn-tactile` filled blue-600, recessed grey until there is a recipient |
+| Attach / Schedule / Discard | the reader toolbar's `btn-tactile`, discard in the list's destructive red |
+| Recipient chips | the list's avatar badge — **the same person is the same colour** in the list and in the To field |
+| Contact suggestions | the Ark menus: 8px card, `#cbd5e1` border, `bg-slate-100` highlight |
+| Attachment chips | the reader's chips, scaled to the 30px strip; `attachmentBadge` in `#lib/mail/colors` is now the one source for the kind colour |
+| To / Subject step markers | the ringed blue status dot on an unread row and on a dock chip |
+
+The step dots stayed dots rather than becoming the sidebar's checkbox: a 17px
+checkbox does not fit the 62px label column, and the field geometry is a
+contract with `computeAutoHeight`.
+
+`tokens.css` keeps the plum accent — the tokens test pins it as the design
+handoff's resolved value — but nothing in the mail surface reads from it any
+more; only the splitter's hover line and the sign-in page's register link do.
+That drift is worth a decision of its own before the next surface is built.
 
 ## Compose panel geometry
 

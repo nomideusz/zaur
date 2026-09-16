@@ -17,7 +17,7 @@
 </script>
 
 <footer
-	class="flex h-9 shrink-0 items-center justify-between border-t border-[#cbd5e1] bg-white px-4 text-xs font-medium text-slate-500 select-none"
+	class="flex h-9 shrink-0 items-center justify-between border-t border-[#cbd5e1] bg-white px-4 text-xs font-medium text-slate-500 select-none max-md:hidden"
 >
 	<div class="flex items-center gap-3">
 		{#if mailboxName}

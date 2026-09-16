@@ -32,3 +32,22 @@ test('tokens: Tailwind theme bridge exposes the palette as utilities', () => {
 	assert.match(css, /--color-container: var\(--z-container\)/);
 	assert.match(css, /--color-ink: var\(--z-ink\)/);
 });
+
+// --- shell layout ---------------------------------------------------------
+
+const base = readFileSync(new URL('../src/routes/styles/base.css', import.meta.url), 'utf8');
+const shell = base.slice(base.indexOf('.z-shell'));
+
+// The phone shell is a single pane: the page hands whichever of the list and the
+// reader is not on screen a `max-md:hidden`, and a stray extra column would put
+// them side by side at 190px each. The sidebar only rejoins the grid at 1024,
+// below which it is an overlay drawer — a column there would squeeze the reader
+// to nothing on a tablet.
+test('shell: the grid collapses to one pane, then two, then three', () => {
+	assert.match(shell, /\.z-shell \{[^}]*grid-template-columns: minmax\(0, 1fr\);/);
+	assert.match(shell, /@media \(min-width: 768px\) \{\s*\.z-shell \{\s*grid-template-columns: var\(--z-list-w[^)]*\) 1px minmax\(0, 1fr\);/);
+	assert.match(
+		shell,
+		/@media \(min-width: 1024px\) \{\s*\.z-shell\[data-sidebar='open'\] \{\s*grid-template-columns: var\(--z-sidebar-width\)/
+	);
+});

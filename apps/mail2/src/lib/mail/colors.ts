@@ -91,3 +91,22 @@ export function getHobdayTheme(seed: string): HobdayColorTheme {
 	const index = Math.abs(hash) % THEME_KEYS.length;
 	return HOBDAY_THEMES[THEME_KEYS[index]!];
 }
+
+/** No file type maps to red in the five themes, and a PDF has always been red. */
+const PDF_BADGE = { bg: '#fee2e2', border: '#ef4444', text: '#b91c1c' };
+
+/**
+ * The kind badge on an attachment chip — the same colours in the reader and in
+ * a compose draft, so a file looks the same before and after it is sent.
+ */
+export function attachmentBadge(type: string): { bg: string; border: string; text: string } {
+	const mime = (type || '').toLowerCase();
+	const theme =
+		mime.includes('image')
+			? HOBDAY_THEMES.blue
+			: mime.includes('zip') || mime.includes('archive')
+				? HOBDAY_THEMES.amber
+				: HOBDAY_THEMES.green;
+	if (mime.includes('pdf')) return PDF_BADGE;
+	return { bg: theme.badgeBg, border: theme.badgeBorder, text: theme.badgeText };
+}

@@ -40,7 +40,7 @@
 </script>
 
 <aside
-	class="flex h-full w-[240px] shrink-0 flex-col border-r border-[#cbd5e1] bg-white select-none"
+	class="flex h-full w-full shrink-0 flex-col border-r border-[#cbd5e1] bg-white select-none"
 	aria-label="Mailboxes"
 >
 	<!-- Scrollable content area -->

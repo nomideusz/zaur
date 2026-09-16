@@ -9,6 +9,8 @@
 	import { prefs } from '#lib/settings.svelte.ts';
 
 	interface Props {
+		/** The page hides this pane on a phone while the reader is open. */
+		class?: string;
 		mailbox: MailboxDTO | null;
 		mailboxes: MailboxDTO[] | undefined;
 		groups: RowGroup[] | undefined;
@@ -28,6 +30,7 @@
 	}
 
 	let {
+		class: className = '',
 		mailbox,
 		mailboxes,
 		groups,
@@ -93,9 +96,12 @@
 
 </script>
 
-<section class="flex h-full min-h-0 flex-col overflow-hidden bg-white select-none" aria-label="Message list">
+<section
+	class="flex h-full min-h-0 flex-col overflow-hidden bg-white select-none {className}"
+	aria-label="Message list"
+>
 	<!-- List Header with Hobday Tactile Controls -->
-	<div class="flex h-[46px] shrink-0 items-center justify-between gap-3 border-b border-[#e2e8f0] px-4">
+	<div class="flex h-[46px] shrink-0 items-center justify-between gap-3 border-b border-[#e2e8f0] px-4 max-md:px-3">
 		<div class="flex items-center gap-2">
 			<!-- Select Menu Trigger -->
 			<Menu.Root positioning={{ placement: 'bottom-start', gutter: 6, overflowPadding: 12 }} lazyMount unmountOnExit>
@@ -167,14 +173,14 @@
 		<!-- Right: Count indicator & New message -->
 		<div class="flex items-center gap-2">
 			{#if flatRows.length > 0}
-				<span class="text-xs font-medium text-slate-400 tabular-nums">
+				<span class="text-xs font-medium text-slate-400 tabular-nums max-md:hidden">
 					{flatRows.length} {flatRows.length === 1 ? 'message' : 'messages'}
 				</span>
 			{/if}
 			<button
 				type="button"
 				data-new-message
-				class="btn-tactile !size-7 !p-0"
+				class="btn-tactile !size-7 !p-0 max-md:!size-9"
 				onclick={(event) => onNewMessage(event.currentTarget.getBoundingClientRect())}
 				title="New message (c)"
 				aria-label="New message"
@@ -189,7 +195,7 @@
 	<!-- Bulk action bar: only while rows are selected -->
 	{#if selection.size > 0}
 		<div
-			class="flex h-[42px] shrink-0 items-center gap-2 border-b border-[#cbd5e1] bg-blue-50/60 px-4"
+			class="flex h-[42px] shrink-0 items-center gap-2 overflow-x-auto border-b border-[#cbd5e1] bg-blue-50/60 px-4 max-md:px-3 [&>*]:shrink-0"
 			role="toolbar"
 			aria-label="Selection actions"
 		>
@@ -210,7 +216,7 @@
 
 			<button
 				type="button"
-				class="btn-tactile !h-[26px] !px-2 !text-[12px]"
+				class="btn-tactile !h-[26px] !px-2 !text-[12px] max-md:order-1"
 				disabled={busy}
 				onclick={() => onBulk(allStarred ? 'unstar' : 'star')}
 			>
@@ -254,7 +260,7 @@
 
 			<button
 				type="button"
-				class="ml-auto btn-tactile !h-[26px] !px-2 !text-[12px]"
+				class="ml-auto btn-tactile !h-[26px] !px-2 !text-[12px] max-md:order-2"
 				onclick={selectNone}
 			>
 				Clear
@@ -263,7 +269,10 @@
 	{/if}
 
 	<!-- Scrollable Messages List -->
-	<div bind:this={listContainer} class="min-h-0 flex-1 overflow-y-auto px-4 py-3 [scroll-padding-top:8px]">
+	<div
+		bind:this={listContainer}
+		class="min-h-0 flex-1 overflow-y-auto px-4 py-3 [scroll-padding-top:8px] max-md:px-3 overscroll-contain"
+	>
 		{#if error}
 			<div class="flex min-h-[320px] flex-col items-center justify-center gap-2 text-center">
 				<p class="text-sm font-semibold text-slate-800">Couldn't load messages</p>

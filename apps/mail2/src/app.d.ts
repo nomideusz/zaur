@@ -4,7 +4,10 @@ declare global {
 		// interface Error {}
 		// interface Locals {}
 		// interface PageData {}
-		// interface PageState {}
+		interface PageState {
+			/** Thread open in the reader. A history entry on phones, so Back closes it. */
+			reader?: string;
+		}
 		// interface Platform {}
 	}
 }

@@ -103,5 +103,28 @@
 		border-color: transparent;
 	}
 
-	/* macOS window control dots */
+	/*
+	 * Shell grid — the one piece of layout that changes shape by width.
+	 *
+	 * Phone: a single pane. The page hands the list or the reader `max-md:hidden`
+	 * depending on whether a thread is open, so exactly one fills it.
+	 * Tablet: list + reader; the sidebar is an overlay drawer instead of a column.
+	 * Desktop: the sidebar joins as a column whenever it is open.
+	 */
+	.z-shell {
+		display: grid;
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	@media (min-width: 768px) {
+		.z-shell {
+			grid-template-columns: var(--z-list-w, 480px) 1px minmax(0, 1fr);
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.z-shell[data-sidebar='open'] {
+			grid-template-columns: var(--z-sidebar-width) var(--z-list-w, 480px) 1px minmax(0, 1fr);
+		}
+	}
 }

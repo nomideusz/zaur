@@ -3,14 +3,14 @@
 </script>
 
 {#if compose.toasts.length > 0}
-	<div class="absolute bottom-[62px] left-6 z-[60] flex flex-col gap-2">
+	<div class="absolute bottom-[62px] left-6 z-[60] flex flex-col gap-2 max-md:right-3 max-md:bottom-3 max-md:left-3 max-md:z-[80]">
 		{#each compose.toasts as toast (toast.id)}
-			<div class="flex items-center gap-3 rounded-card border border-border bg-container py-2.5 pr-2 pl-3.5 shadow-toast">
-				<p class="text-[13px]">{toast.text}</p>
+			<div class="flex items-center gap-3 rounded-[8px] border border-[#cbd5e1] bg-white py-2.5 pr-2 pl-3.5 shadow-lg">
+				<p class="text-[13px] text-slate-800">{toast.text}</p>
 				{#if toast.actionLabel}
 					<button
 						type="button"
-						class="text-[13px] font-semibold text-accent hover:underline"
+						class="text-[13px] font-semibold text-blue-600 hover:underline"
 						onclick={() => compose.runToastAction(toast.id)}
 					>
 						{toast.actionLabel}
@@ -18,7 +18,7 @@
 				{/if}
 				<button
 					type="button"
-					class="flex size-6 items-center justify-center rounded-menu-item text-ink-secondary transition-colors duration-[160ms] hover:bg-divider"
+					class="flex size-6 items-center justify-center rounded-[4px] text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
 					aria-label="Dismiss notification"
 					onclick={() => compose.dismissToast(toast.id)}
 				>

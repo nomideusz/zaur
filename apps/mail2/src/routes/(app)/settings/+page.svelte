@@ -52,7 +52,7 @@
 
 <svelte:head><title>Settings · Zaur Mail</title></svelte:head>
 
-<div class="flex h-svh w-screen flex-col items-center justify-center bg-[#ebeef2] overflow-hidden text-slate-900">
+<div class="flex h-svh w-full flex-col items-center justify-center bg-[#ebeef2] overflow-hidden text-slate-900">
 	<div class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-white">
 		<header class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[#cbd5e1] bg-white px-4 select-none">
 			<ZaurMark unread={0} label="Settings" />
@@ -71,10 +71,10 @@
 			{/if}
 		</header>
 
-		<div class="min-h-0 flex-1 overflow-y-auto px-6 py-6">
+		<div class="min-h-0 flex-1 overflow-y-auto px-6 py-6 max-md:px-4 max-md:py-4">
 			<div class="mx-auto flex max-w-[640px] flex-col gap-6">
 				<!-- Account -->
-				<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs">
+				<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
 					<h2 class="font-mono text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
 						Account
 					</h2>
@@ -93,7 +93,7 @@
 				</section>
 
 				<!-- Send-as display names -->
-				<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs">
+				<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
 					<h2 class="font-mono text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
 						Display name
 					</h2>
@@ -119,7 +119,7 @@
 												if (event.key === 'Enter') void saveName(row.id, row.draft);
 											}}
 											placeholder="Your name"
-											class="mt-1 h-[32px] w-full rounded-[6px] border border-[#cbd5e1] bg-white px-2.5 text-[13px] shadow-2xs focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
+											class="mt-1 h-[32px] w-full rounded-[6px] border border-[#cbd5e1] bg-white px-2.5 text-[13px] shadow-2xs max-md:text-base focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none"
 										/>
 									</label>
 									<button
@@ -137,7 +137,7 @@
 				</section>
 
 				<!-- Reading prefs (local to this browser) -->
-				<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs">
+				<section class="rounded-[10px] border border-[#e2e8f0] bg-white p-5 shadow-2xs max-md:p-4">
 					<h2 class="font-mono text-[11px] font-semibold tracking-wider text-slate-400 uppercase">
 						Reading
 					</h2>
@@ -191,7 +191,7 @@
 							</select>
 						</label>
 
-						<label class="flex items-center justify-between gap-4 py-2.5">
+						<label class="flex items-center justify-between gap-4 py-2.5 max-md:hidden">
 							<span class="text-[13px] font-medium text-slate-800">Message list width</span>
 							<span class="flex items-center gap-2">
 								<input

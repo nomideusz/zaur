@@ -58,7 +58,7 @@
 						autocomplete="username"
 						placeholder="you@zaur.app"
 						disabled={pending}
-						class="h-9 rounded-[6px] border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:opacity-60 shadow-2xs"
+						class="h-9 rounded-[6px] border border-[#cbd5e1] bg-white px-3 text-sm max-md:text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:opacity-60 shadow-2xs"
 					/>
 				</div>
 
@@ -70,7 +70,7 @@
 						required
 						autocomplete="current-password"
 						disabled={pending}
-						class="h-9 rounded-[6px] border border-[#cbd5e1] bg-white px-3 text-sm text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:opacity-60 shadow-2xs"
+						class="h-9 rounded-[6px] border border-[#cbd5e1] bg-white px-3 text-sm max-md:text-base text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:opacity-60 shadow-2xs"
 					/>
 				</div>
 
@@ -84,7 +84,7 @@
 							autocomplete="one-time-code"
 							placeholder="123456"
 							disabled={pending}
-							class="h-9 rounded-[6px] border border-[#cbd5e1] bg-white px-3 font-mono text-sm tracking-[0.2em] text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:opacity-60 shadow-2xs"
+							class="h-9 rounded-[6px] border border-[#cbd5e1] bg-white px-3 font-mono text-sm max-md:text-base tracking-[0.2em] text-slate-900 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 focus:outline-none disabled:opacity-60 shadow-2xs"
 						/>
 						<p class="text-xs leading-relaxed text-slate-500">
 							Enter the six-digit code from your authenticator app.

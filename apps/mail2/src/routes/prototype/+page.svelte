@@ -11,14 +11,18 @@
 	import { buildRowGroups } from '#lib/mail/rows';
 	import { openingPosition, type AnchorRect } from '#lib/compose/layout';
 	import { compose } from '#lib/compose/store.svelte.ts';
+	import { readerThread } from '#lib/mail/reader-thread.svelte.ts';
+	import { viewport } from '#lib/viewport.svelte.ts';
 	import type { MailboxDTO } from '#lib/mail/types';
 	import type { MessageDetail, MessagePreview } from '@zaur/mail-core';
 
 	let listWidth = $state(480);
 	let sidebarOpen = $state(true);
+	let drawerOpen = $state(false);
 	let selectedMailboxId = $state<string>('inbox');
 	let unseenOnly = $state(false);
-	let openThreadId = $state<string | null>('t1');
+	const reader = readerThread('t1');
+	const openThreadId = $derived(reader.id);
 	let cursorId = $state<string | null>('t1');
 	let selection = $state<Set<string>>(new Set());
 	let rootEl = $state<HTMLDivElement | null>(null);
@@ -233,18 +237,27 @@
 	});
 
 	function openCompose() {
-		const pos = openingPosition(
-			{ left: 300, top: 60, right: 350, bottom: 90 },
-			rootW,
-			rootH,
-			compose.openPanels().length
+		// Phone compose is a full-screen sheet — there is no window to place.
+		if (viewport.phone) {
+			compose.newDraft();
+			return;
+		}
+		compose.newDraft(
+			openingPosition(
+				{ left: 300, top: 60, right: 350, bottom: 90 },
+				rootW,
+				rootH,
+				compose.openPanels().length
+			)
 		);
-		compose.newDraft(pos);
 	}
 
 	function toggleSidebar() {
-		sidebarOpen = !sidebarOpen;
+		if (viewport.compact) drawerOpen = !drawerOpen;
+		else sidebarOpen = !sidebarOpen;
 	}
+
+	const sidebarVisible = $derived(viewport.compact ? drawerOpen : sidebarOpen);
 
 	function selectPrevMailbox() {
 		const idx = mockMailboxes.findIndex((m) => m.id === selectedMailboxId);
@@ -264,7 +277,7 @@
 </svelte:head>
 
 <!-- Desktop Frame Canvas matching Hobday portfolio presentation -->
-<div class="flex h-svh w-screen flex-col items-center justify-center bg-[#ebeef2] overflow-hidden text-slate-900">
+<div class="flex h-svh w-full flex-col items-center justify-center bg-[#ebeef2] overflow-hidden text-slate-900">
 	<div
 		bind:this={rootEl}
 		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-white"
@@ -277,31 +290,47 @@
 				cursorId = null;
 			}}
 			account={{ username: 'anthony@zaur.app', displayName: 'Anthony Hobday' }}
-			{sidebarOpen}
+			sidebarOpen={sidebarVisible}
 			onToggleSidebar={toggleSidebar}
 			onPrevMailbox={selectPrevMailbox}
 			onNextMailbox={selectNextMailbox}
 		/>
 
 		<main
-			class="grid min-h-0 flex-1"
-			style:grid-template-columns={sidebarOpen
-				? `240px ${listWidth}px 1px minmax(0, 1fr)`
-				: `${listWidth}px 1px minmax(0, 1fr)`}
+			class="z-shell relative min-h-0 flex-1"
+			data-sidebar={sidebarVisible ? 'open' : 'closed'}
+			style:--z-list-w="{listWidth}px"
 		>
-			{#if sidebarOpen}
-				<Sidebar
-					mailboxes={mockMailboxes}
-					activeMailboxId={selectedMailboxId}
-					onSelectMailbox={(id) => {
-						selectedMailboxId = id;
-						cursorId = null;
-					}}
-					onNewMessage={openCompose}
-				/>
+			{#if sidebarVisible}
+				{#if viewport.compact}
+					<button
+						type="button"
+						class="absolute inset-0 z-40 bg-slate-900/25 lg:hidden"
+						aria-label="Close folder list"
+						onclick={() => (drawerOpen = false)}
+					></button>
+				{/if}
+				<div
+					class="max-lg:absolute max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:w-[280px] max-lg:max-w-[85%] max-lg:shadow-xl"
+				>
+					<Sidebar
+						mailboxes={mockMailboxes}
+						activeMailboxId={selectedMailboxId}
+						onSelectMailbox={(id) => {
+							selectedMailboxId = id;
+							drawerOpen = false;
+							cursorId = null;
+						}}
+						onNewMessage={() => {
+							drawerOpen = false;
+							openCompose();
+						}}
+					/>
+				</div>
 			{/if}
 
 			<MailList
+				class={openThreadId ? 'max-md:hidden' : ''}
 				mailbox={activeMailbox}
 				mailboxes={mockMailboxes}
 				groups={rowGroups}
@@ -320,7 +349,7 @@
 					selection = next;
 				}}
 				onOpen={(id) => {
-					openThreadId = id;
+					reader.open(id);
 					cursorId = id;
 				}}
 				onRetry={() => {}}
@@ -330,6 +359,8 @@
 			<Splitter width={listWidth} onResize={(w) => (listWidth = w)} onReset={() => (listWidth = 480)} />
 
 			<Reader
+				class={openThreadId ? '' : 'max-md:hidden'}
+				onBack={viewport.phone ? () => reader.close() : undefined}
 				messages={currentThread ?? undefined}
 				loading={false}
 				error={null}

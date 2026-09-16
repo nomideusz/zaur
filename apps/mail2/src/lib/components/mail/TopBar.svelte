@@ -52,14 +52,14 @@
 </script>
 
 <header
-	class="flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-[#cbd5e1] bg-white px-4 select-none"
+	class="flex h-[52px] shrink-0 items-center justify-between gap-3 border-b border-[#cbd5e1] bg-white px-4 select-none max-md:gap-2 max-md:px-2.5"
 >
 	<!-- Left: Window controls + Sidebar toggle + Segmented mailbox selector -->
-	<div class="flex items-center gap-3">
+	<div class="flex min-w-0 items-center gap-3 max-md:gap-2">
 		<!-- Zaur pixel mark: the brand, doubling as an ambient mailbox indicator -->
 		<ZaurMark unread={activeMailbox?.unread ?? 0} />
 
-		<div class="h-4 w-px bg-slate-200"></div>
+		<div class="h-4 w-px bg-slate-200 max-md:hidden"></div>
 
 		{#if onToggleSidebar}
 			<button
@@ -77,11 +77,11 @@
 		{/if}
 
 		<!-- Segmented Control: [<] [ Folder Name ] [>] (Anthony Hobday design) -->
-		<div class="flex items-center rounded-[6px] border border-[#cbd5e1] bg-white shadow-2xs">
+		<div class="flex min-w-0 items-center rounded-[6px] border border-[#cbd5e1] bg-white shadow-2xs">
 			{#if onPrevMailbox}
 				<button
 					type="button"
-					class="flex h-[30px] w-7 items-center justify-center rounded-l-[5px] text-slate-700 transition-colors hover:bg-slate-50 border-r border-[#cbd5e1]"
+					class="flex h-[30px] w-7 items-center justify-center rounded-l-[5px] text-slate-700 transition-colors hover:bg-slate-50 border-r border-[#cbd5e1] max-md:hidden"
 					onclick={onPrevMailbox}
 					title="Previous mailbox"
 					aria-label="Previous mailbox"
@@ -95,9 +95,9 @@
 			{#if mailboxes}
 				<Menu.Root positioning={{ placement: 'bottom-start', gutter: 8, overflowPadding: 12 }} lazyMount unmountOnExit>
 					<Menu.Trigger
-						class="flex h-[30px] items-center gap-2 px-3 text-[13px] font-medium text-slate-800 transition-colors hover:bg-slate-50"
+						class="flex h-[30px] items-center gap-2 px-3 text-[13px] font-medium text-slate-800 transition-colors hover:bg-slate-50 max-md:rounded-[5px]"
 					>
-						<span class="max-w-44 truncate">{activeMailbox?.name ?? 'Folder'}</span>
+						<span class="max-w-44 truncate max-md:max-w-[38vw]">{activeMailbox?.name ?? 'Folder'}</span>
 						{#if activeMailbox && activeMailbox.unread > 0}
 							<span
 								class="flex h-4 min-w-[16px] items-center justify-center rounded-[3px] bg-blue-100 px-1 text-[10px] font-semibold text-blue-700 tabular-nums"
@@ -140,7 +140,7 @@
 			{#if onNextMailbox}
 				<button
 					type="button"
-					class="flex h-[30px] w-7 items-center justify-center rounded-r-[5px] text-slate-700 transition-colors hover:bg-slate-50 border-l border-[#cbd5e1]"
+					class="flex h-[30px] w-7 items-center justify-center rounded-r-[5px] text-slate-700 transition-colors hover:bg-slate-50 border-l border-[#cbd5e1] max-md:hidden"
 					onclick={onNextMailbox}
 					title="Next mailbox"
 					aria-label="Next mailbox"

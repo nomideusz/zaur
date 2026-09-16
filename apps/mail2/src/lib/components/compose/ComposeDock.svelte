@@ -16,7 +16,7 @@
 	}
 
 	function startDrag(event: PointerEvent, id: string) {
-		if (event.button !== 0) return;
+		if (event.button !== 0 || event.pointerType === 'touch') return;
 		drag = { pointerId: event.pointerId, id };
 		compose.trayDragId = id;
 		(event.currentTarget as HTMLElement).setPointerCapture(event.pointerId);
@@ -60,7 +60,7 @@
 {#if minimized.length > 0}
 	<div
 		bind:this={dockEl}
-		class="absolute right-5 bottom-12 z-[68] flex max-w-[calc(100%-360px)] flex-wrap-reverse justify-end gap-2.5"
+		class="absolute right-5 bottom-12 z-[68] flex max-w-[calc(100%-360px)] flex-wrap-reverse justify-end gap-2.5 max-md:right-3 max-md:bottom-3 max-md:left-3 max-md:max-w-none max-md:flex-nowrap max-md:justify-start max-md:overflow-x-auto"
 	>
 		{#each minimized as draft (draft.id)}
 			<div
@@ -68,7 +68,7 @@
 				role="button"
 				tabindex="0"
 				aria-label="Minimized draft: {chipTitle(draft)}. Activate to reopen."
-				class="flex h-11 w-[210px] cursor-grab items-center gap-2 rounded-[8px] border border-[#cbd5e1] bg-white pr-1.5 pl-3 shadow-md select-none transition-all duration-[150ms] hover:border-slate-400 hover:shadow-lg {compose.trayDragId ===
+				class="flex h-11 w-[210px] shrink-0 cursor-grab items-center gap-2 rounded-[8px] border border-[#cbd5e1] bg-white pr-1.5 pl-3 shadow-md select-none transition-all duration-[150ms] hover:border-slate-400 hover:shadow-lg max-md:w-[180px] max-md:cursor-default {compose.trayDragId ===
 				draft.id
 					? '-translate-y-1 shadow-xl'
 					: ''}"
