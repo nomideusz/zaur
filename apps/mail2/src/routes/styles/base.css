@@ -23,6 +23,10 @@
 		font-family: var(--font-sans);
 		font-weight: normal;
 		font-size: 14px;
+		/* Humanist system faces run small (Ubuntu 0.52, Calibri 0.47 x-height):
+		   scale whichever one resolves to one x-height. Line boxes keep using
+		   the unadjusted size, so layout does not shift. */
+		font-size-adjust: 0.56;
 		line-height: 1.5;
 		-webkit-font-smoothing: antialiased;
 	}
