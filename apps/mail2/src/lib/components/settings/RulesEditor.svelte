@@ -73,7 +73,7 @@
 		{ value: 'endsWith', label: 'ends with' }
 	];
 	const FLAGS: { value: RuleFlag; label: string }[] = [
-		{ value: '$important', label: 'Needs you' },
+		{ value: '$important', label: 'Important' },
 		{ value: '\\Flagged', label: 'Flag' },
 		{ value: '\\Seen', label: 'Mark as read' }
 	];

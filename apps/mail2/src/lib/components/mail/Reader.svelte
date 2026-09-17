@@ -85,6 +85,9 @@
 		messageChannel({ mailboxKind, starred, important: latest?.important ?? false })
 	);
 
+	/** A chip only for state the message carries — see `messageChannel`. */
+	const stateLabel = $derived(starred ? 'Flagged' : latest?.important ? 'Important' : null);
+
 	function recipientsLabel(message: MessageDetail): string {
 		const others = [...message.to, ...message.cc].filter(
 			(person) => person.email.toLowerCase() !== message.from.email.toLowerCase()
@@ -241,7 +244,7 @@
 						<div class="min-w-0">
 							<div class="flex items-center gap-2">
 								<span class="truncate text-[14px] font-bold text-[var(--z-ink)]">{latest.from.name || latest.from.email}</span>
-								<span class="z-chip @max-md:hidden">{channel.label}</span>
+								{#if stateLabel}<span class="z-chip @max-md:hidden">{stateLabel}</span>{/if}
 							</div>
 							<div class="z-mono mt-0.5 truncate text-[11px]" style:color={channel.ink}>
 								{latest.from.email} · {recipientsLabel(latest)}
@@ -249,7 +252,7 @@
 						</div>
 					</div>
 					<div class="flex shrink-0 items-center gap-2">
-						<span class="z-chip md:hidden">{channel.label}</span>
+						{#if stateLabel}<span class="z-chip md:hidden">{stateLabel}</span>{/if}
 						<time
 							class="z-mono shrink-0 rounded-[6px] border bg-[var(--z-surface)] px-2 py-[3px] text-[11px] font-medium"
 							style:border-color={timeBorder}

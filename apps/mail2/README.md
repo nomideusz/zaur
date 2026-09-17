@@ -370,7 +370,7 @@ for filled controls:
 | --- | --- | --- |
 | Correspondence | mail, and anything selected | `#dbeafe` `#3b82f6` `#2563eb` `#1e40af` |
 | Confirmed | sent, done, success | `#dcfce7` `#16a34a` `#16a34a` `#14532d` |
-| Needs you | flagged important, drafts, warnings, scheduled | `#fde68a` `#d97706` `#d97706` `#78350f` |
+| Important | `$important`, drafts, warnings, scheduled | `#fde68a` `#d97706` `#d97706` `#78350f` |
 | Flagged | your own flag | `#fbcfe8` `#db2777` `#db2777` `#831843` |
 | Digest | automated mail, custom folders | `#ddd6fe` `#7c3aed` `#7c3aed` `#4c1d95` |
 | Discard | junk, trash, errors | `#fee2e2` `#ef4444` `#dc2626` `#b91c1c` |
@@ -380,6 +380,15 @@ channel. `messageChannel` in `#lib/mail/colors` decides a row's: the folder
 wins for junk, trash, sent and drafts, your flag outranks the server's
 `$important`, and the rest is correspondence — all from what JMAP already
 gives us, nothing new on a message. `mailboxChannel` does the same for folders.
+
+The hues are a colour system, not a taxonomy. A chip only names state the
+message actually carries — **Flagged** (`$flagged`) or **Important**
+(`$important`) — never a kind nobody classified: no "Confirmed" on every Sent
+row, no "Digest" guessed from a folder. Content kinds (receipts, newsletters,
+things that need a reply) are deliberately undecided until Stalwart can
+classify at delivery; when they land they should be JMAP keywords on the
+message (e.g. `$zaur-receipt`), written by Sieve rules or the classifier alike,
+so the client only reads keywords and never cares which wrote them.
 
 **Identity lives on the avatar tile.** Eight quieter tones (steel, sky,
 indigo, rose, lime, orange, plum, stone), picked deterministically per

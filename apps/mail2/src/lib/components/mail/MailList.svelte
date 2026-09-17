@@ -477,9 +477,9 @@
 										<span class="truncate text-[13px] {row.unread ? 'font-bold text-[var(--z-ink)]' : 'font-medium text-[var(--z-muted)]'}">
 											{row.senderLabel}
 										</span>
-										<!-- The channel says what kind of thing this is; the folder already says correspondence. -->
-										{#if channel.key !== 'correspondence' || row.unread}
-											<span class="z-chip @max-[430px]:hidden">{channel.label}</span>
+										<!-- A chip names state the message carries, never a kind nobody classified. -->
+										{#if row.starred || row.important}
+											<span class="z-chip @max-[430px]:hidden">{row.starred ? 'Flagged' : 'Important'}</span>
 										{/if}
 										{#if row.messageCount > 1}
 											<span class="z-chip z-chip-filled !tracking-normal !normal-case" title="{row.messageCount} messages in this conversation">

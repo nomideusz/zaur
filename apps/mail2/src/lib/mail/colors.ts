@@ -51,7 +51,7 @@ function channel(key: ChannelKey, label: string): Channel {
 export const CHANNELS: Record<ChannelKey, Channel> = {
 	correspondence: channel('correspondence', 'Correspondence'),
 	confirmed: channel('confirmed', 'Confirmed'),
-	needs: channel('needs', 'Needs you'),
+	needs: channel('needs', 'Important'),
 	flagged: channel('flagged', 'Flagged'),
 	digest: channel('digest', 'Digest'),
 	discard: channel('discard', 'Junk')
@@ -66,7 +66,9 @@ export function channelStyle(channel: Channel): string {
  * Which channel a message row is: the folder decides for junk, trash, sent
  * and drafts; your own flag outranks the server's "important"; everything
  * else is correspondence. Derived from what JMAP already gives us — nothing
- * here is a new property of a message.
+ * here is a new property of a message. The channel colours a row; only real
+ * per-message state (flagged, important) earns a chip. Content kinds (receipts,
+ * newsletters…) are undecided until Stalwart can classify at delivery.
  */
 export function messageChannel(input: {
 	mailboxKind?: string | null;
