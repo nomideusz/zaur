@@ -156,9 +156,10 @@
 	-->
 	<div class="shrink-0 border-b border-[var(--z-hairline)] {selection.size > 0 ? 'p-1.5' : ''}">
 		<div
-			class="flex h-[46px] items-center justify-between gap-3 {selection.size > 0
-				? 'z-bulk rounded-[10px] border border-[var(--z-accent-stroke)] bg-[var(--z-accent-soft)] px-2.5'
-				: 'px-3.5 max-md:px-3'}"
+			class="flex items-center justify-between gap-3 {selection.size > 0
+				? /* 34 + the 6px inset on each side = the plain header's 46, so rows never move */
+					'z-bulk h-[34px] rounded-[10px] border border-[var(--z-accent-stroke)] bg-[var(--z-accent-soft)] px-1'
+				: 'h-[46px] px-3.5 max-md:px-3'}"
 		>
 			<div class="flex min-w-0 items-center gap-2">
 				<!-- Select menu trigger — the one control both modes keep. -->
