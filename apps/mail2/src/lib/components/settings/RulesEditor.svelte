@@ -213,15 +213,27 @@
 			Someone's hand-written Sieve is not ours to silently replace, so the
 			editor stays shut until they say so.
 		-->
-		<div class="z-railed mt-3 rounded-[10px] border border-[var(--z-ch-needs-solid)] bg-[var(--z-ch-needs-fill)] py-2.5 pr-3 pl-[18px]" style="--z-rail:var(--z-ch-needs-solid);--z-rail-inset:10px">
-			<p class="text-[13px] font-semibold text-[var(--z-ch-needs-ink)]">A filtering script here was not written by Zaur</p>
-			<p class="mt-0.5 text-[12.5px] leading-normal text-[var(--z-ch-needs-ink)]">
-				Rules stay read-only until you hand this account over — taking over replaces that script.
-			</p>
-			<pre class="mt-2.5 max-h-40 overflow-auto rounded-[6px] border border-[var(--z-ch-needs-solid)]/40 bg-[var(--z-surface)] p-2.5 font-mono text-[11px] leading-relaxed text-[var(--z-strong)]">{data.foreignScript ?? ''}</pre>
+		<div class="z-railed mt-3 flex items-start gap-[9px] rounded-[10px] border border-[var(--z-ch-needs-solid)] bg-[var(--z-ch-needs-fill)] py-2.5 pr-3 pl-[18px] text-[var(--z-ch-needs-ink)]" style="--z-rail:var(--z-ch-needs-solid);--z-rail-inset:10px">
+			<svg class="mt-px size-[15px] shrink-0" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+				<circle cx="8" cy="8" r="6.2" stroke="currentColor" stroke-width="1.4" />
+				<path d="M8 5v3.6M8 10.7v.6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+			</svg>
+			<div class="min-w-0 flex-1">
+				<p class="text-[13px] font-semibold">A filtering script here was not written by Zaur</p>
+				<p class="mt-0.5 text-[12.5px] leading-normal">
+					Rules stay read-only until you hand this account over — taking over replaces that script.
+				</p>
+				{#if data.foreignScript}
+					<!-- What would be replaced stays one click away, never silently gone. -->
+					<details class="mt-1.5">
+						<summary class="cursor-pointer text-[12px] font-medium">Show script</summary>
+						<pre class="mt-1.5 max-h-40 overflow-auto rounded-[6px] border border-[var(--z-ch-needs-solid)]/40 bg-[var(--z-surface)] p-2.5 font-mono text-[11px] leading-relaxed text-[var(--z-strong)]">{data.foreignScript}</pre>
+					</details>
+				{/if}
+			</div>
 			<button
 				type="button"
-				class="btn-tactile mt-2.5 !h-7 !border-[var(--z-ch-needs-solid)] !text-[12px] !font-semibold !text-[var(--z-ch-needs-ink)]"
+				class="btn-tactile !h-7 shrink-0 !border-[var(--z-ch-needs-solid)] !px-2.5 !text-[12px] !font-semibold !text-[var(--z-ch-needs-ink)]"
 				disabled={saving}
 				onclick={() => onSave([], true)}
 			>
@@ -346,9 +358,16 @@
 								<input type="checkbox" class="z-check !size-[17px]" checked={rule.stop} onchange={(event) => patch(rule.id, { stop: event.currentTarget.checked })} />
 								Stop checking later rules when this one matches
 							</label>
-							<button type="button" class="btn-tactile btn-danger !h-7 !px-2.5 !text-[12px]" onclick={() => removeRule(rule.id)}>
-								Delete rule
-							</button>
+							<div class="flex items-center gap-1.5">
+								<!-- Order is meaning: a rule that stops ends the ones below it. -->
+								{#if draft.length > 1}
+									<button type="button" class="btn-tactile !h-7 !px-2 !text-[12px]" disabled={index === 0} onclick={() => move(rule.id, -1)}>Move up</button>
+									<button type="button" class="btn-tactile !h-7 !px-2 !text-[12px]" disabled={index === draft.length - 1} onclick={() => move(rule.id, 1)}>Move down</button>
+								{/if}
+								<button type="button" class="btn-tactile btn-danger !h-7 !px-2.5 !text-[12px]" onclick={() => removeRule(rule.id)}>
+									Delete rule
+								</button>
+							</div>
 						</div>
 
 						{#if issues.length > 0}
@@ -380,17 +399,6 @@
 							{#if !rule.enabled}<span class="z-chip">Off</span>{/if}
 							{#if rule.stop}<span class="z-chip">Stop</span>{/if}
 							{#if issues.length > 0}<span class="z-chip" style={channelStyle(CHANNELS.needs)}>Unfinished</span>{/if}
-							<!-- Order is meaning: a rule that stops ends the ones below it. -->
-							<button type="button" class="z-icon-btn shrink-0 disabled:!opacity-30" aria-label="Move up" disabled={index === 0} onclick={() => move(rule.id, -1)}>
-								<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-									<path d="M4 10l4-4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-								</svg>
-							</button>
-							<button type="button" class="z-icon-btn shrink-0 disabled:!opacity-30" aria-label="Move down" disabled={index === draft.length - 1} onclick={() => move(rule.id, 1)}>
-								<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-									<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-								</svg>
-							</button>
 							<button type="button" class="z-icon-btn shrink-0" aria-label="Edit rule" title="Edit rule" onclick={() => (editingId = rule.id)}>
 								<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 									<path d="M11 2.6l2.4 2.4-7.6 7.6-3.2.8.8-3.2z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
@@ -427,42 +435,44 @@
 			{/each}
 
 			{#if draft.length === 0}
-				<p class="text-[13px] leading-relaxed text-[var(--z-soft)]">
-					No rules yet. A rule looks at mail as it arrives and can file it, mark it, or drop it.
-				</p>
+				<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+					<p class="text-[13px] leading-relaxed text-[var(--z-soft)]">
+						No rules yet. A rule looks at mail as it arrives and can file it, mark it, or drop it.
+					</p>
+					<!-- The one rule almost everyone wants, ready to adjust. -->
+					<button type="button" class="btn-tactile !h-7 !px-2.5 !text-[12px]" title="Newsletters and notifications out of the inbox, into a digest folder" onclick={addNewslettersRule}>
+						Start with a newsletters rule
+					</button>
+				</div>
 			{/if}
-		</div>
 
-		<div class="mt-4 flex flex-wrap items-center gap-2">
-			<button type="button" class="btn-tactile !h-[34px]" onclick={addRule}>
+			<button type="button" class="btn-tactile !h-[34px] w-full" onclick={addRule}>
 				<svg class="size-3.5 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<path d="M8 3.5v9M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 				</svg>
 				Add rule
 			</button>
-			{#if !draft.some((rule) => rule.name === 'Newsletters')}
-				<!-- The one rule almost everyone wants, ready to adjust. -->
-				<button type="button" class="btn-tactile !h-[34px]" title="Newsletters and notifications out of the inbox, into a digest folder" onclick={addNewslettersRule}>
-					<span class="inline-block size-2.5 rounded-[3px] border" style:background-color={CHANNELS.digest.fill} style:border-color={CHANNELS.digest.stroke} aria-hidden="true"></span>
-					Newsletters rule
-				</button>
-			{/if}
-			<button
-				type="button"
-				class="btn-tactile !h-[34px] {dirty && !blocked ? 'btn-primary' : ''}"
-				disabled={!dirty || blocked || saving}
-				onclick={() => {
-					editingId = null;
-					onSave($state.snapshot(draft), false);
-				}}
-			>
-				{saving ? 'Saving…' : 'Save rules'}
-			</button>
-			{#if problems.length > 0}
-				<!-- Unfinished rules are kept, just not compiled — say so rather than
-				     letting them look saved and working. -->
-				<span class="text-[12.5px] text-[var(--z-ch-needs-ink)]">Rules that are not finished are saved but will not run.</span>
-			{/if}
 		</div>
+
+		{#if dirty}
+			<div class="mt-3 flex flex-wrap items-center justify-end gap-x-3 gap-y-2">
+				{#if problems.length > 0}
+					<!-- Unfinished rules are kept, just not compiled — say so rather than
+					     letting them look saved and working. -->
+					<span class="mr-auto text-[12.5px] text-[var(--z-ch-needs-ink)]">Rules that are not finished are saved but will not run.</span>
+				{/if}
+				<button
+					type="button"
+					class="btn-tactile btn-primary !h-[34px]"
+					disabled={blocked || saving}
+					onclick={() => {
+						editingId = null;
+						onSave($state.snapshot(draft), false);
+					}}
+				>
+					{saving ? 'Saving…' : 'Save rules'}
+				</button>
+			</div>
+		{/if}
 	{/if}
 </section>
