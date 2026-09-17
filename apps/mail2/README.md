@@ -20,8 +20,8 @@ theme only** for now; Files and Meet arrive when their designs land.
 - [x] Attachment downloads (`/api/download`) †
 - [x] Server-side rules (JMAP Sieve) †
 - [x] Settings that follow the account rather than the browser
-- [x] Design system v2 applied — channel hues, identity tones on avatars, the ZAUR
-  stamp, IBM Plex Mono, tactile controls, the v2 sign-in, phone and settings
+- [x] Design system v2 applied — channel hues, identity tones on avatars, the ZA/UR
+  logomark, Ioskeley Mono, tactile controls, the v2 sign-in, phone and settings
   screens (see [Design system v2](#design-system-v2-pastel-channels-tactile-controls))
 - [x] Design follow-ups from the v2 review — Flagged filter, attachment retry,
   rule cards with a Newsletters template, `@zaur/sprite` dropped, and **dark
@@ -32,7 +32,7 @@ theme only** for now; Files and Meet arrive when their designs land.
   autocomplete and a Contacts pane ‡
 - [x] Calendar pane — JMAP Calendars, server-expanded recurrences ‡
 - [ ] Files pane — waits for its design (ADR-0005), and Stalwart's `FileNode`
-- [x] Installable app (PWA): icons from the stamp, manifest, service worker — see
+- [x] Installable app (PWA): icons from the mark, manifest, service worker — see
   [Installable app](#installable-app-pwa) §
 - [x] New-mail notifications (Web Push), closed tab included — see
   [New-mail notifications](#new-mail-notifications-web-push) §
@@ -340,18 +340,21 @@ touch pointers, where the same drag is the strip's scroll.
 
 ## The mark
 
-Where the pixel dinosaur used to sit, the shell now carries a **stamp**:
-`ZAUR` in letter-spaced mono inside a hard 1px box, 24px tall in the top bar
-and 22px in compact headers. It says *Zaur* rather than *Zaur Mail* because one
-account spans Mail, Chat, Discuss and Meet, and it ties the brand to the mono
-captions already running through the shell.
+The shell's mark is **ZA/UR**: `ZA` over `UR` in Ioskeley Mono Bold, 0.04em
+tracking, line-height 0.8, in a square with a 1px `--z-mark-stroke` on
+`--z-mark-fill` — 30px (8px radius, 14px type) in the 52px toolbar, 26px (7px,
+12px) in compact headers and the phone drawer. Z is rose, A and U cyan, R teal:
+fixed identity inks (`--z-mark-*`), deliberately not channel hues, because a
+channel says what kind of message this is and the mark is not a message. In
+dark the square turns teal on `#0f2b2b` and each letter lifts 58% toward paper.
+It says *Zaur* rather than *Zaur Mail* because one account spans Mail, Chat,
+Discuss and Meet.
 
-The dinosaur did two jobs in that corner — the brand, and an unread indicator
-that changed expression — and a mark that changes expression is charming once
-and ambiguous after that. It also cannot say "12". The unread count lives in
-the folder switcher and the status line now, where a number already does. The
-sprite stays a mascot for marketing and `@zaur/sprite`; it is not the app mark.
-`ZaurMark.svelte` keeps its name and renders the stamp.
+It replaced the `ZAUR` stamp pill, which replaced the pixel dinosaur. The mark
+never carries a count: unread lives in the mailbox list and the status line,
+and never twice in one view — so the Unseen filter tab has no badge, and the
+header's folder switcher only appears (with its count) while the mailbox list
+is collapsed. The sprite stays a mascot for `@zaur/sprite`.
 
 ## Design system v2: pastel channels, tactile controls
 
@@ -398,8 +401,8 @@ The rest follows from those two:
   ramp lives in `tokens.css` too, and every component reads tokens rather
   than hex, so one attribute flips the whole shell — see
   [Dark mode](#dark-mode).
-- **Type.** Libre Franklin for the interface, **IBM Plex Mono** (replacing Noto
-  Sans Mono) for captions, counts, times, addresses and keys. Eight roles from
+- **Type.** Libre Franklin for the interface, **Ioskeley Mono** (replacing IBM
+  Plex Mono) for captions, counts, times, addresses and keys. Eight roles from
   a 38px display down to the 11px uppercase mono caption (`.z-caption`, soft).
 - **Controls are things you could press.** `.btn-tactile` is white, 8px radius,
   `#cbd5e1` border, a 1px shadow and a half-pixel press; `.btn-primary` fills it
@@ -442,7 +445,7 @@ the default conditionally (`.z-row:not(.z-hue-wash)`), not unconditionally.
 The design project proposed a few things that were features rather than paint.
 Those were left for discussion, decided together, and landed in this order:
 
-- **`@zaur/sprite` dropped.** The stamp is the mark; mail2 imported nothing
+- **`@zaur/sprite` dropped.** The ZA/UR logomark is the mark; mail2 imported nothing
   from the package any more.
 - **A Flagged filter, and no Channels sidebar.** The list header is
   All / Unseen / Flagged. Each goes to the server as one JMAP
@@ -860,11 +863,11 @@ to the right one.
 ## Installable app (PWA)
 
 `static/` holds the icons and `manifest.webmanifest`; `scripts/generate-icons.py`
-draws every icon from the stamp's own proportions (`ZaurMark.svelte`), so the
-app icon *is* the mark: the white stamp on ink, inside the maskable safe zone.
-The favicon is the same box around a single Z, which still reads at 16px, and
-`badge.png` is its outline for Android's monochrome status bar. Rerun the script
-if the stamp changes.
+draws every icon from the mark's size ladder (`ZaurMark.svelte`), so the app
+icon *is* the mark: the paper square on ink, inside the maskable safe zone. The
+favicon is the 16px rung of the same mark, and `badge.png` is its stroke and
+letters for Android's monochrome status bar. Rerun the script if the mark
+changes.
 
 The service worker (`src/service-worker/`, registered by Kit as a module) does
 two things: show a push, and open its link. It has **no fetch handler and no

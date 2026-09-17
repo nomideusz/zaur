@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""Draw mail2's PWA icons and favicon from the ZAUR stamp (ZaurMark.svelte).
+"""Draw mail2's PWA icons and favicon from the ZA/UR logomark (ZaurMark.svelte).
 
-The stamp in the shell is `ZAUR` in IBM Plex Mono 600, letter-spaced 0.22em,
-inside a 1px ink box: 24px tall, 9px side padding, 11px type, 6px radius. The
-icons scale those proportions exactly, so the app icon is the mark and not a
-new drawing. A favicon cannot hold four letters at 16-48px, so it is the same
-box around a single Z.
+The mark is `ZA` over `UR` in Ioskeley Mono 700, letter-spaced 0.04em, in a
+square with a 1px stroke. The handoff's size ladder fixes the proportions per
+slot, so each icon scales the ladder rung it stands for rather than a new drawing:
+
+    square  radius  type   line-height
+    64      12      30     0.80          app icons
+    16      4       6.8    0.82          favicon, badge
 
     python3 scripts/generate-icons.py      # writes into static/ (needs Pillow)
 """
@@ -15,64 +17,64 @@ from PIL import Image, ImageDraw, ImageFont
 
 ROOT = Path(__file__).resolve().parent.parent
 STATIC = ROOT / "static"
-FONT = ROOT / "node_modules/@fontsource/ibm-plex-mono/files/ibm-plex-mono-latin-600-normal.woff2"
+FONT = ROOT / "static/fonts/ioskeley-mono/IoskeleyMono-Bold.woff2"
 
 INK = (11, 18, 32, 255)  # --z-ink
-SURFACE = (255, 255, 255, 255)  # --z-surface
+PAPER = (255, 255, 255, 255)  # --z-mark-fill
+STROKE = (148, 163, 184, 255)  # --z-mark-stroke
+LETTERS = {"Z": (225, 29, 72, 255), "A": (8, 145, 178, 255), "U": (8, 145, 178, 255), "R": (13, 148, 136, 255)}
+TRACKING = 0.04
 SUPERSAMPLE = 4
 
-# ZaurMark.svelte, in CSS px at the 24px size.
-STAMP_HEIGHT, PAD_X, TYPE, TRACKING, RADIUS, BORDER = 24, 9, 11, 0.22, 6, 1
+LARGE = (64, 12, 30, 0.80)
+SMALL = (16, 4, 6.8, 0.82)
 
 
-def stamp(text: str, width: int, square: bool = False) -> Image.Image:
-    """The stamp at `width` px, supersampled, transparent outside the box."""
-    font = ImageFont.truetype(str(FONT), 100)
-    advances = [font.getlength(ch) / 100 * TYPE + TRACKING * TYPE for ch in text]
-    # The square favicon trims the padding so one letter still reads at 16px.
-    natural_w = sum(advances) + 2 * (3.5 if square else PAD_X)
-    natural_h = natural_w if square else STAMP_HEIGHT
-    scale = width * SUPERSAMPLE / natural_w
-    w, h = round(natural_w * scale), round(natural_h * scale)
+def mark(width: int, rung: tuple[float, float, float, float]) -> Image.Image:
+    """The mark at `width` px, supersampled, transparent outside the square."""
+    box, radius, type_px, line_height = rung
+    scale = width * SUPERSAMPLE / box
+    w = round(box * scale)
 
-    img = Image.new("RGBA", (w, h), (0, 0, 0, 0))
+    img = Image.new("RGBA", (w, w), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    border = max(1, round(BORDER * scale))
-    draw.rounded_rectangle((0, 0, w - 1, h - 1), radius=round(RADIUS * scale), fill=SURFACE, outline=INK, width=border)
+    draw.rounded_rectangle((0, 0, w - 1, w - 1), radius=round(radius * scale), fill=PAPER, outline=STROKE, width=max(1, round(scale)))
 
-    size = TYPE * scale
+    size = type_px * scale
     face = ImageFont.truetype(str(FONT), round(size))
-    cap_top, cap_bottom = face.getbbox("Z", anchor="ls")[1], 0
-    baseline = h / 2 + (cap_bottom - cap_top) / 2
-    # Letter-spacing trails every glyph (as in CSS), so the text block is centred
-    # including the last gap, which is what the shell's stamp does too.
-    x = (w - sum(a * scale for a in advances)) / 2 + (TRACKING * TYPE * scale) / 2
-    for ch, advance in zip(text, advances):
-        draw.text((x, baseline), ch, font=face, fill=INK, anchor="ls")
-        x += advance * scale
+    advance = face.getlength("Z") + TRACKING * size
+    cap = -face.getbbox("Z", anchor="ls")[1]
+    pitch = line_height * size
+    # Two rows centred as a block; the trailing letter-spacing is trimmed, as
+    # the shell's `margin-right: -0.04em` does.
+    left = (w - (2 * advance - TRACKING * size)) / 2
+    first_baseline = w / 2 - pitch / 2 + cap / 2
+    for row, pair in enumerate(("ZA", "UR")):
+        for col, ch in enumerate(pair):
+            draw.text((left + col * advance, first_baseline + row * pitch), ch, font=face, fill=LETTERS[ch], anchor="ls")
     return img
 
 
 def app_icon(size: int) -> Image.Image:
-    """Full-bleed ink square with the stamp inside the maskable safe zone."""
+    """Full-bleed ink square with the mark inside the maskable safe zone."""
     canvas = Image.new("RGBA", (size * SUPERSAMPLE,) * 2, INK)
-    mark = stamp("ZAUR", round(size * 0.62))
-    canvas.alpha_composite(mark, ((canvas.width - mark.width) // 2, (canvas.height - mark.height) // 2))
+    m = mark(round(size * 0.56), LARGE)
+    canvas.alpha_composite(m, ((canvas.width - m.width) // 2, (canvas.height - m.height) // 2))
     return canvas.resize((size, size), Image.LANCZOS)
 
 
 def favicon(size: int) -> Image.Image:
-    mark = stamp("Z", size, square=True)
-    return mark.resize((size, size), Image.LANCZOS)
+    return mark(size, SMALL).resize((size, size), Image.LANCZOS)
 
 
 def badge(size: int) -> Image.Image:
-    """Android draws the status-bar badge from alpha alone: an outlined Z, no fill."""
-    mark = stamp("Z", size, square=True)
-    white = Image.new("RGBA", mark.size, (255, 255, 255, 255))
-    # Keep only the ink (border and letter) as opaque white.
-    ink = mark.split()[0].point(lambda v: 255 - v)
-    white.putalpha(Image.composite(ink, Image.new("L", mark.size, 0), mark.split()[3]))
+    """Android draws the status-bar badge from alpha alone: stroke and letters, no fill."""
+    m = mark(size, SMALL)
+    # Anything darker than the paper fill is ink; keep it as opaque white.
+    ink = m.convert("L").point(lambda v: 255 if v < 235 else 0)
+    alpha = Image.composite(ink, Image.new("L", m.size, 0), m.split()[3])
+    white = Image.new("RGBA", m.size, (255, 255, 255, 255))
+    white.putalpha(alpha)
     return white.resize((size, size), Image.LANCZOS)
 
 
@@ -84,7 +86,7 @@ def main() -> None:
     favicon(48).save(STATIC / "favicon.png", optimize=True)
     favicon(48).save(STATIC / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
     badge(96).save(STATIC / "badge.png", optimize=True)
-    print("wrote", ", ".join(sorted(p.name for p in STATIC.iterdir())))
+    print("wrote", ", ".join(sorted(p.name for p in STATIC.iterdir() if p.is_file())))
 
 
 if __name__ == "__main__":

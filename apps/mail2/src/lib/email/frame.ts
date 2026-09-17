@@ -80,7 +80,7 @@ function frameStyles(palette: typeof LIGHT, scheme: 'light' | 'dark'): string {
 		color: ${palette.quote};
 	}
 	pre, code {
-		font-family: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
+		font-family: 'Ioskeley Mono', ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
 		font-size: 0.9em;
 	}
 	pre { background: ${palette.well}; border: 1px solid ${palette.rule}; border-radius: 6px; padding: 12px; overflow-x: auto; }

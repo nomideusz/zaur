@@ -7,7 +7,6 @@
 	import { formatListTime, initials } from '#lib/mail/rows';
 	import {
 		CHANNELS,
-		COUNT_BADGE,
 		channelStyle,
 		identityStyle,
 		mailboxChannel,
@@ -225,16 +224,6 @@
 						</button>
 						<button type="button" class="z-segment !h-6 !px-2.5" aria-pressed={filter === 'unseen'} onclick={() => onFilter('unseen')}>
 							Unseen
-							{#if (mailbox?.unread ?? 0) > 0}
-								<span
-									class="z-count !h-4 !min-w-4 !px-1 !text-[9.5px]"
-									style:--z-stroke={COUNT_BADGE.border}
-									style:--z-ink-on={COUNT_BADGE.text}
-									style:background-color={COUNT_BADGE.bg}
-								>
-									{mailbox?.unread}
-								</span>
-							{/if}
 						</button>
 						<button type="button" class="z-segment !h-6 !px-2.5 @max-[430px]:hidden" aria-pressed={filter === 'flagged'} onclick={() => onFilter('flagged')}>
 							Flagged
@@ -367,7 +356,7 @@
 		{:else if loading && !groups}
 			<div class="flex flex-col gap-2 pt-3" aria-hidden="true">
 				{#each [['34%', '72%', '58%'], ['28%', '64%', '48%'], ['40%', '80%', '52%'], ['30%', '68%', '44%'], ['36%', '76%', '60%']] as widths, index (index)}
-					<div class="z-railed z-skeleton rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-surface)] py-[11px] pr-3 pl-[18px]" style:--z-rail="var(--z-hairline)">
+					<div class="z-railed z-skeleton rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-surface)] py-3 pr-3 pl-[18px]" style:--z-rail="var(--z-hairline)" style:--z-rail-inset="12px">
 						<div class="flex items-start gap-[11px]">
 							<span class="size-[30px] shrink-0 rounded-[8px] bg-[var(--z-sunken)]"></span>
 							<div class="flex flex-1 flex-col gap-[7px]">
@@ -444,10 +433,10 @@
 							data-row-id={row.threadId}
 							data-state={isSelected ? 'selected' : isOpen ? 'open' : isCursor ? 'cursor' : 'rest'}
 							data-unread={row.unread ? 'true' : 'false'}
-							class="z-row z-railed group/row grid cursor-pointer grid-cols-[18px_30px_minmax(0,1fr)] items-start gap-x-[11px] rounded-[10px] border py-[11px] pr-3 pl-[18px] max-md:grid-cols-[30px_minmax(0,1fr)]"
+							class="z-row z-railed group/row grid cursor-pointer grid-cols-[18px_30px_minmax(0,1fr)] items-start gap-x-[11px] rounded-[10px] border py-3 pr-3 pl-[18px] max-md:grid-cols-[30px_minmax(0,1fr)]"
 							class:z-hue-wash={row.unread && !isSelected && !isOpen && !isCursor}
 							aria-current={isOpen ? 'true' : undefined}
-							style={channelStyle(channel)}
+							style="{channelStyle(channel)};--z-rail-inset:12px"
 							onclick={() => onOpen(row.threadId)}
 							onkeydown={(event) => {
 								if (event.key === 'Enter' || event.key === ' ') {
@@ -506,7 +495,7 @@
 											<ActionIcon name="clip" class="size-3.5 shrink-0 text-[var(--z-faint)]" label="Has attachment" />
 										{/if}
 										<time
-											class="z-mono text-[11px] {row.unread ? 'font-semibold text-[var(--z-strong)]' : 'font-medium text-[var(--z-soft)]'}"
+											class="z-mono text-[11px] {row.unread && !isSelected && !isOpen ? 'font-semibold text-[var(--z-strong)]' : isSelected || isOpen ? 'font-medium text-[var(--z-muted)]' : 'font-medium text-[var(--z-soft)]'}"
 											datetime={row.receivedAt}
 										>
 											{formatListTime(row.receivedAt)}

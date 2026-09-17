@@ -106,7 +106,7 @@
 <header
 	class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[var(--z-line)] bg-[var(--z-surface)] px-4 select-none max-md:gap-2 max-md:px-2.5"
 >
-	<!-- Left: the stamp, the sidebar toggle, the folder switcher -->
+	<!-- Left: the mark, the sidebar toggle, the folder switcher -->
 	<div class="flex min-w-0 shrink-0 items-center gap-3 max-md:gap-2">
 		<ZaurMark size={'md'} class="max-md:hidden" />
 		<ZaurMark size={'sm'} class="md:hidden" />
@@ -122,6 +122,8 @@
 				aria-label={sidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
 			>
 				<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<!-- The left column fills while the mailbox list is open. -->
+					{#if sidebarOpen}<rect x="2" y="2.5" width="4" height="11" rx="2" fill="currentColor" opacity="0.35" />{/if}
 					<rect x="2" y="2.5" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.3" />
 					<line x1="6" y1="2.5" x2="6" y2="13.5" stroke="currentColor" stroke-width="1.3" />
 				</svg>
@@ -129,89 +131,103 @@
 		{/if}
 
 		<!-- Folder switcher: tactile arrows around a fixed-width sunken label
-		     that stays put while browsing, so the eye has one place to read. -->
-		<div
-			class="flex min-w-0 shrink-0 items-center rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[0_1px_2px_rgba(15,23,42,0.05)] {phoneSearchOpen
-				? 'max-md:hidden'
-				: ''}"
-		>
-			{#if onPrevMailbox}
-				<button
-					type="button"
-					class="flex h-[30px] w-7 items-center justify-center rounded-l-[7px] border-r border-[var(--z-line)] text-[var(--z-strong)] transition-colors hover:bg-[var(--z-hover)] max-md:hidden"
-					onclick={onPrevMailbox}
-					title="Previous mailbox"
-					aria-label="Previous mailbox"
-				>
-					<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-					</svg>
-				</button>
-			{/if}
-
-			{#if mailboxes}
-				<Menu.Root positioning={{ placement: 'bottom-start', gutter: 8, overflowPadding: 12 }} lazyMount unmountOnExit>
-					<Menu.Trigger
-						class="flex h-[30px] w-[184px] items-center justify-center gap-[7px] bg-[var(--z-sunken)] px-2.5 text-[13px] font-semibold text-[var(--z-ink)] transition-colors hover:bg-[var(--z-sunken)] max-md:w-auto max-md:max-w-[46vw] max-md:rounded-[7px] max-md:bg-[var(--z-surface)]"
+		     that stays put while browsing, so the eye has one place to read.
+		     Only while the mailbox list is closed — open, the list already names
+		     the folder and carries its count. -->
+		{#if !sidebarOpen}
+			<div
+				class="flex min-w-0 shrink-0 items-center rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[0_1px_2px_rgba(15,23,42,0.05)] {phoneSearchOpen
+					? 'max-md:hidden'
+					: ''}"
+			>
+				{#if onPrevMailbox}
+					<button
+						type="button"
+						class="flex h-[30px] w-7 items-center justify-center rounded-l-[7px] border-r border-[var(--z-line)] text-[var(--z-strong)] transition-colors hover:bg-[var(--z-hover)] max-md:hidden"
+						onclick={onPrevMailbox}
+						title="Previous mailbox"
+						aria-label="Previous mailbox"
 					>
-						<span class="min-w-0 truncate">{activeMailbox?.name ?? 'Folder'}</span>
-						{#if activeMailbox && activeMailbox.unread > 0}
-							<span
-								class="z-count !h-[17px] !min-w-[17px] !px-1 !text-[10px]"
-								style:--z-stroke={COUNT_BADGE.border}
-								style:--z-ink-on={COUNT_BADGE.text}
-								style:background-color={COUNT_BADGE.bg}
-							>
-								{activeMailbox.unread}
-							</span>
-						{/if}
-						<ActionIcon name="chevron" class="size-3 text-[var(--z-faint)]" />
-					</Menu.Trigger>
-					<Portal>
-						<Menu.Positioner>
-							<Menu.Content class="z-menu z-40 w-60">
-								<div class="z-menu-caption">Switch folder</div>
-								{#each mailboxes as mailbox (mailbox.id)}
-									{@const channel = mailboxChannel(mailbox.kind)}
-									<Menu.Item
-										value={mailbox.id}
-										onSelect={() => onSelectMailbox(mailbox.id)}
-										class="z-menu-item justify-between"
-									>
-										<span class="flex min-w-0 items-center gap-[9px]">
-											<span
-												class="inline-block size-2.5 shrink-0 rounded-[3px] border"
-												style:background-color={channel.fill}
-												style:border-color={channel.stroke}
-												aria-hidden="true"
-											></span>
-											<span class="truncate">{mailbox.name}</span>
-										</span>
-										{#if mailbox.unread > 0}
-											<span class="z-count" style={channelStyle(channel)}>{mailbox.unread}</span>
-										{/if}
-									</Menu.Item>
-								{/each}
-							</Menu.Content>
-						</Menu.Positioner>
-					</Portal>
-				</Menu.Root>
-			{/if}
+						<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					</button>
+				{/if}
 
-			{#if onNextMailbox}
-				<button
-					type="button"
-					class="flex h-[30px] w-7 items-center justify-center rounded-r-[7px] border-l border-[var(--z-line)] text-[var(--z-strong)] transition-colors hover:bg-[var(--z-hover)] max-md:hidden"
-					onclick={onNextMailbox}
-					title="Next mailbox"
-					aria-label="Next mailbox"
-				>
-					<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-					</svg>
-				</button>
-			{/if}
-		</div>
+				{#if mailboxes}
+					<Menu.Root positioning={{ placement: 'bottom-start', gutter: 8, overflowPadding: 12 }} lazyMount unmountOnExit>
+						<Menu.Trigger
+							class="flex h-[30px] w-[184px] items-center justify-center gap-[7px] bg-[var(--z-sunken)] px-2.5 text-[13px] font-semibold text-[var(--z-ink)] transition-colors hover:bg-[var(--z-sunken)] max-md:w-auto max-md:max-w-[46vw] max-md:rounded-[7px] max-md:bg-[var(--z-surface)]"
+						>
+							{#if activeMailbox}
+								{@const channel = mailboxChannel(activeMailbox.kind)}
+								<!-- The folder's channel swatch: the collapsed stand-in for its row in the list. -->
+								<span
+									class="inline-block size-2.5 shrink-0 rounded-[3px] border"
+									style:background-color={channel.fill}
+									style:border-color={channel.stroke}
+									aria-hidden="true"
+								></span>
+							{/if}
+							<span class="min-w-0 truncate">{activeMailbox?.name ?? 'Folder'}</span>
+							{#if activeMailbox && activeMailbox.unread > 0}
+								<span
+									class="z-count !h-[17px] !min-w-[17px] !px-1 !text-[10px]"
+									style:--z-stroke={COUNT_BADGE.border}
+									style:--z-ink-on={COUNT_BADGE.text}
+									style:background-color={COUNT_BADGE.bg}
+								>
+									{activeMailbox.unread}
+								</span>
+							{/if}
+							<ActionIcon name="chevron" class="size-3 text-[var(--z-faint)]" />
+						</Menu.Trigger>
+						<Portal>
+							<Menu.Positioner>
+								<Menu.Content class="z-menu z-40 w-60">
+									<div class="z-menu-caption">Switch folder</div>
+									{#each mailboxes as mailbox (mailbox.id)}
+										{@const channel = mailboxChannel(mailbox.kind)}
+										<Menu.Item
+											value={mailbox.id}
+											onSelect={() => onSelectMailbox(mailbox.id)}
+											class="z-menu-item justify-between"
+										>
+											<span class="flex min-w-0 items-center gap-[9px]">
+												<span
+													class="inline-block size-2.5 shrink-0 rounded-[3px] border"
+													style:background-color={channel.fill}
+													style:border-color={channel.stroke}
+													aria-hidden="true"
+												></span>
+												<span class="truncate">{mailbox.name}</span>
+											</span>
+											{#if mailbox.unread > 0}
+												<span class="z-count" style={channelStyle(channel)}>{mailbox.unread}</span>
+											{/if}
+										</Menu.Item>
+									{/each}
+								</Menu.Content>
+							</Menu.Positioner>
+						</Portal>
+					</Menu.Root>
+				{/if}
+
+				{#if onNextMailbox}
+					<button
+						type="button"
+						class="flex h-[30px] w-7 items-center justify-center rounded-r-[7px] border-l border-[var(--z-line)] text-[var(--z-strong)] transition-colors hover:bg-[var(--z-hover)] max-md:hidden"
+						onclick={onNextMailbox}
+						title="Next mailbox"
+						aria-label="Next mailbox"
+					>
+						<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M6 4l4 4-4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					</button>
+				{/if}
+			</div>
+		{/if}
 	</div>
 
 	<!--
