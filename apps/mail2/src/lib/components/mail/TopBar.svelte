@@ -13,7 +13,13 @@
 		activeMailbox: MailboxDTO | null;
 		onSelectMailbox: (id: string) => void;
 		account: { username: string; displayName: string | null } | null;
+		/** The session's other signed-in accounts, switchable from the account menu. */
+		otherAccounts?: { key: string; username: string; displayName: string | null }[];
+		onSwitchAccount?: (key: string) => void;
+		/** Signs out every account in the session. */
 		onSignOut?: () => void;
+		/** Signs out only the active account; offered once there is more than one. */
+		onSignOutAccount?: () => void;
 		sidebarOpen?: boolean;
 		onToggleSidebar?: () => void;
 		onPrevMailbox?: () => void;
@@ -28,7 +34,10 @@
 		activeMailbox,
 		onSelectMailbox,
 		account,
+		otherAccounts = [],
+		onSwitchAccount,
 		onSignOut,
+		onSignOutAccount,
 		sidebarOpen = true,
 		onToggleSidebar,
 		onPrevMailbox,
@@ -292,16 +301,39 @@
 									<span class="z-mono block truncate text-[10.5px] text-[var(--z-soft)]">{account.username}</span>
 								</span>
 							</div>
+							<!-- Other accounts in this session: one click makes it the active one. -->
+							{#each otherAccounts as other (other.key)}
+								<Menu.Item value="account:{other.key}" class="z-menu-item !h-auto gap-2.5 !py-1.5" onSelect={() => onSwitchAccount?.(other.key)}>
+									<span class="z-avatar !size-6 !text-[10px]" style={identityStyle(other.username)} aria-hidden="true">
+										{initialsOf(other.displayName ?? '', other.username)}
+									</span>
+									<span class="min-w-0">
+										<span class="block truncate text-[12.5px] text-[var(--z-ink)]">{other.displayName ?? other.username}</span>
+										<span class="z-mono block truncate text-[10px] text-[var(--z-soft)]">{other.username}</span>
+									</span>
+								</Menu.Item>
+							{/each}
+							<Menu.Item value="add-account" class="z-menu-item" onSelect={() => goto('/login?mode=add')}>Add account</Menu.Item>
+							<div class="my-1 h-px bg-[var(--z-hairline)]" aria-hidden="true"></div>
 							<!-- The section tabs hide below `sm`; the menu is the phone's way there. -->
 							<Menu.Item value="contacts" class="z-menu-item sm:hidden" onSelect={() => goto('/contacts')}>Contacts</Menu.Item>
 							<Menu.Item value="calendar" class="z-menu-item sm:hidden" onSelect={() => goto('/calendar')}>Calendar</Menu.Item>
 							<Menu.Item value="settings" class="z-menu-item" onSelect={() => goto('/settings')}>Settings</Menu.Item>
+							{#if otherAccounts.length > 0}
+								<Menu.Item
+									value="signout-account"
+									class="z-menu-item !text-[var(--z-ch-discard-ink)] data-highlighted:!bg-[var(--z-ch-discard-hover)]"
+									onSelect={() => onSignOutAccount?.()}
+								>
+									Sign out of this account
+								</Menu.Item>
+							{/if}
 							<Menu.Item
 								value="signout"
 								class="z-menu-item !text-[var(--z-ch-discard-ink)] data-highlighted:!bg-[var(--z-ch-discard-hover)]"
 								onSelect={() => onSignOut?.()}
 							>
-								Sign out
+								{otherAccounts.length > 0 ? 'Sign out of all accounts' : 'Sign out'}
 							</Menu.Item>
 						</Menu.Content>
 					</Menu.Positioner>

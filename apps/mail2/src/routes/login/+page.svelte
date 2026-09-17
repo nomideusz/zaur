@@ -36,7 +36,11 @@
 	});
 
 	$effect(() => {
-		if (result?.ok) goto(data.next, { replaceState: true });
+		if (!result?.ok) return;
+		// A newly added account becomes the active one: reload, so nothing loaded for
+		// the previous account (lists, drafts, the live stream) survives into it.
+		if (data.addingTo) location.assign('/');
+		else goto(data.next, { replaceState: true });
 	});
 
 	// When Stalwart asks for a 2FA code, put the cursor in the code field.
@@ -51,7 +55,7 @@
 </script>
 
 <svelte:head>
-	<title>Sign in · Zaur Mail</title>
+	<title>{data.addingTo ? 'Add an account' : 'Sign in'} · Zaur Mail</title>
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
@@ -70,7 +74,15 @@
 				<span class="text-[17px] font-bold tracking-[-0.025em] text-[var(--z-ink)]">Zaur</span>
 				<span class="z-chip z-chip-filled !tracking-[0.06em]" style="--z-fill:var(--z-ch-needs-fill);--z-stroke:var(--z-ch-needs-solid);--z-ink-on:var(--z-ch-needs-ink)">Beta</span>
 			</div>
-			<h1 class="mt-3.5 text-[22px] leading-[1.15] font-bold tracking-[-0.025em] text-[var(--z-ink)]">Sign in</h1>
+			<h1 class="mt-3.5 text-[22px] leading-[1.15] font-bold tracking-[-0.025em] text-[var(--z-ink)]">
+				{data.addingTo ? 'Add an account' : 'Sign in'}
+			</h1>
+			{#if data.addingTo}
+				<p class="mt-1.5 text-[12.5px] leading-normal text-[var(--z-muted)]">
+					Signed in as <span class="z-mono text-[11.5px] text-[var(--z-strong)]">{data.addingTo}</span>. The account
+					you add here joins it; switch between them from the account menu.
+				</p>
+			{/if}
 
 			<div class="mt-[18px] flex items-center gap-2.5">
 				<span class="z-caption">Credentials</span>
@@ -78,6 +90,9 @@
 			</div>
 
 			<input {...login.fields.next.as('hidden', data.next)} />
+			{#if data.addingTo}
+				<input {...login.fields.mode.as('hidden', 'add')} />
+			{/if}
 
 			<div class="mt-3 flex flex-col gap-2.5">
 				<label class={fieldClass} aria-invalid={errorCard && !needsTotp ? 'true' : undefined}>
@@ -169,10 +184,13 @@
 				{:else if needsTotp}
 					Verify and sign in
 				{:else}
-					Sign in
+					{data.addingTo ? 'Add account' : 'Sign in'}
 				{/if}
 				<kbd class="z-kbd z-kbd-inverse" aria-hidden="true">↵</kbd>
 			</button>
+			{#if data.addingTo}
+				<a href="/" class="btn-tactile mt-2 h-[38px] w-full !text-[13.5px]">Cancel</a>
+			{/if}
 		</div>
 	</form>
 

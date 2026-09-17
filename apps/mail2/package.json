@@ -12,7 +12,7 @@
 		"build": "vite build",
 		"preview": "vite preview",
 		"prepare": "svelte-kit sync || echo ''",
-		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+		"check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json && tsc --noEmit -p src/service-worker",
 		"test": "node --import tsx --test tests/*.test.ts",
 		"smoke:jmap": "node tests/smoke/fake-jmap.mjs",
 		"smoke:seed": "node --import tsx tests/smoke/seed-session.ts"
@@ -25,6 +25,7 @@
 		"@sveltejs/vite-plugin-svelte": "^7.3.0",
 		"@tailwindcss/vite": "^4.3.3",
 		"@types/node": "^25.9.1",
+		"@types/web-push": "^3.6.4",
 		"svelte": "^5.57.0",
 		"svelte-check": "^4.7.6",
 		"tailwindcss": "^4.3.3",
@@ -44,6 +45,7 @@
 		"@zaur/ui": "workspace:*",
 		"clsx": "^2.1.1",
 		"dompurify": "^3.4.6",
-		"valibot": "^1.5.0"
+		"valibot": "^1.5.0",
+		"web-push": "^3.6.7"
 	}
 }

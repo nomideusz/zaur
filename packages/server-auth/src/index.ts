@@ -65,9 +65,16 @@ export {
 	syncSessionAccountRows,
 	touchSessionRow,
 	getAccountPrefs,
-	putAccountPrefs
+	putAccountPrefs,
+	putPushSubscription,
+	getPushSubscription,
+	listPushSubscriptions,
+	setPushSubscriptionMuted,
+	deletePushSubscription,
+	deletePushSubscriptionsForSession,
+	prunePushSubscriptions
 } from './store-db';
-export type { RateLimitOutcome, SessionAccountRow, SessionRow } from './store-db';
+export type { PushSubscriptionRow, RateLimitOutcome, SessionAccountRow, SessionRow } from './store-db';
 export { getStoreDb, startStoreMaintenance } from './store-instance';
 export {
 	getStalwartOauthClientId,

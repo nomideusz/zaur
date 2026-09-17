@@ -87,6 +87,11 @@ export interface SendPayload {
 	body: string;
 	sendAt?: string;
 	attachments?: OutgoingAttachment[];
+	/**
+	 * The account that wrote it (its lowercased address). A message waiting in the
+	 * outbox is only ever sent from that account; the server refuses anything else.
+	 */
+	account?: string;
 }
 
 /** Everything needed to reopen a server draft in a panel. */
@@ -111,6 +116,8 @@ export interface DraftSaveInput {
 }
 
 export interface ComposeTransport {
+	/** The signed-in account's key, or null while the session is still loading. */
+	readonly account: string | null;
 	send(payload: SendPayload): Promise<{ ok: true; emailId?: string }>;
 	cancelScheduled(emailId: string): Promise<unknown>;
 	uploadAttachment(file: File): Promise<OutgoingAttachment>;

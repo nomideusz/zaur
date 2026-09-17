@@ -19,5 +19,11 @@
 		"tests/**/*.js",
 		"tests/**/*.ts"
 	],
-	"exclude": ["node_modules/**", ".svelte-kit/output/**", ".svelte-kit/generated/**"]
+	"exclude": [
+		"node_modules/**",
+		".svelte-kit/output/**",
+		".svelte-kit/generated/**",
+		// Checked on its own against $app/tsconfig/service-worker (see "check").
+		"src/service-worker/**"
+	]
 }

@@ -32,7 +32,12 @@ theme only** for now; Files and Meet arrive when their designs land.
   autocomplete and a Contacts pane ‡
 - [x] Calendar pane — JMAP Calendars, server-expanded recurrences ‡
 - [ ] Files pane — waits for its design (ADR-0005), and Stalwart's `FileNode`
-- [ ] Web Push, multi-account switching, PWA manifest — the cutover items left
+- [x] Installable app (PWA): icons from the stamp, manifest, service worker — see
+  [Installable app](#installable-app-pwa) §
+- [x] New-mail notifications (Web Push), closed tab included — see
+  [New-mail notifications](#new-mail-notifications-web-push) §
+- [x] Several accounts in one session: add, switch, sign out of one — see
+  [Several accounts](#several-accounts) §
 - [ ] OIDC provider flows (mail2 as an identity provider) — post-cutover
 
 † **Written and tested, but never run against a live Stalwart.** See
@@ -42,6 +47,13 @@ theme only** for now; Files and Meet arrive when their designs land.
 shapes follow Stalwart 0.16's source and docs; `pnpm smoke:jmap` (see
 [Smoke-testing without a mailbox](#smoke-testing-without-a-mailbox)) is what
 they have been exercised against.
+
+§ **Run in a real (headless) browser against the fake JMAP server.** Push was
+followed from a fake delivery through the watcher to a real VAPID-signed,
+encrypted request that a local capture decrypted; the browser half (settings
+card, the worker's notification, the thread link) ran separately, because the
+browsers here have no push service. Not yet: a real device, a real push
+service, a live Stalwart event stream.
 
 ## Sign-in
 
@@ -158,6 +170,7 @@ Service settings (mirroring the webmail service):
 | Env | `STALWART_OAUTH_ENABLED=true`, `STALWART_OAUTH_ISSUER_URL=https://mail.zaur.app` |
 | Env | `STALWART_OAUTH_CLIENT_ID=zaur-mail2-prod`, `STALWART_OAUTH_REDIRECT_URI=https://mail2.zaur.app/api/auth/oauth/callback` |
 | Env | `JMAP_INTERNAL_URL=http://mail:8080` |
+| Env | `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` — notifications; webmail's values work (`npx web-push generate-vapid-keys` for new ones). Unset, the settings card says so |
 | Env | `PUBLIC_TRACEWAY_DSN=<token>@https://traceway.zaur.app/api/report` — optional; browser and server errors, plus server tracing (`src/lib/server/tracing.ts`) |
 | Volume | same host directory as webmail's `/app/.data` → `/app/.data` |
 
@@ -844,6 +857,82 @@ Shared calendars ride along: `getCalendars` walks every account the session
 advertises, and an event carries the account it lives in so a write goes back
 to the right one.
 
+## Installable app (PWA)
+
+`static/` holds the icons and `manifest.webmanifest`; `scripts/generate-icons.py`
+draws every icon from the stamp's own proportions (`ZaurMark.svelte`), so the
+app icon *is* the mark: the white stamp on ink, inside the maskable safe zone.
+The favicon is the same box around a single Z, which still reads at 16px, and
+`badge.png` is its outline for Android's monochrome status bar. Rerun the script
+if the stamp changes.
+
+The service worker (`src/service-worker/`, registered by Kit as a module) does
+two things: show a push, and open its link. It has **no fetch handler and no
+cache** — offline reading is not planned, and an app-shell cache is how a
+deploy ends up serving yesterday's JavaScript. It is typechecked against
+`$app/tsconfig/service-worker` in its own folder; the root tsconfig excludes it
+and `pnpm check` runs both.
+
+## New-mail notifications (Web Push)
+
+The design is 1.0's, which has run in production since its first push release:
+the **server** watches each subscribed session's inboxes and pushes; Stalwart's
+own `PushSubscription` is not used.
+
+- `push.remote.ts` — `pushConfig`, `subscribePush`, `unsubscribePush`. A row
+  belongs to the session that registered it, and nobody else can remove it.
+- `#lib/server/push.ts` — VAPID config, the **endpoint allowlist** (the server
+  POSTs to whatever a browser registers, so anything that is not FCM, Mozilla,
+  Apple or Windows push is refused: blind SSRF otherwise), and the sender. A 404
+  or 410 from the push service deletes the row.
+- `#lib/server/push-watcher.ts` — per subscription, per account in its session:
+  the JMAP event stream (polling without one) → `Email/changes` → new unseen
+  inbox mail → one notification, or "N new messages" for a batch. Started from
+  `init` in `hooks.server.ts`.
+- Rows live in the shared SQLite store (`push_subscriptions`), not 1.0's JSON
+  file: that one had no lock. A browser re-registers on every app load, and a
+  row nobody refreshed in 30 days is pruned; signing out deletes the session's
+  rows at once.
+
+Two differences from 1.0, both about the shared session: a watcher that cannot
+connect **backs off** (5 s doubling to 5 min) instead of retrying every five
+seconds, and an auth failure is left for the next resync rather than deleting
+the device's subscription — both apps refresh tokens for the same sessions, and
+a refresh race must not cost anyone their notifications.
+
+The client (`#lib/push.ts`) stores nothing: whether this browser is subscribed
+is read back from its `PushManager`, so the Notifications card in Settings
+cannot disagree with the browser. On iPhone and iPad push only exists for a
+Home Screen app, and the card says that instead of offering a button. Brave
+ships with its push service off; enabling fails with a hint naming the setting.
+
+A notification opens `/?thread=<id>` (plus `&account=<key>` when the session
+holds more than one), which the mail page consumes once: it switches account if
+needed (a reload), cleans the URL with a replacing navigation — not
+`replaceState`, since on a phone the reader pushes a shallow entry relative to
+the page URL — and opens the thread in the inbox.
+
+## Several accounts
+
+`@zaur/server-auth` always kept several accounts per session; mail2 now uses it.
+
+- **Add**: the account menu's *Add account* opens `/login?mode=add`, which skips
+  the signed-in redirect and signs in with `addAccount` (it joins the session
+  and becomes active) instead of `writeSession` (a fresh session of one).
+- **Switch**: `switchAccount` in `session.remote.ts`, then a **full reload**. The
+  page holds a lot that belongs to one account — the query cache, the live event
+  stream, compose's drafts, the synced prefs — and a reload is the one reset that
+  cannot miss any of it.
+- **Other tabs** hear about a switch or sign-out on a `BroadcastChannel` and
+  reload too. The session is shared, so the active account changes for every tab
+  at once — webmail 1.0's tabs included, which cannot be told.
+- **Sign out** offers *this account* (`signOutAccount`) and *all accounts* once
+  there are two.
+- **The outbox follows its author.** Every send carries the account that wrote
+  it; the drain skips another account's queued messages (a wait, not one of the
+  five failed attempts that delete a message), and `send` refuses a mismatch
+  with a 409 — which also covers a stale tab after a switch.
+
 ## Smoke-testing without a mailbox
 
 The `(app)` routes sit behind the session gate, and there is no test mailbox.
@@ -863,6 +952,15 @@ function in Security, Contacts and Calendar end to end, including the
 the payloads it receives, which is how the shapes were checked. The seeded
 password is `not-a-real-password`. Point `SMOKE_JMAP_URL` at a dead port to see
 every error state instead.
+
+`POST http://127.0.0.1:9911/smoke/deliver` (optional `{"subject","from","fromName"}`)
+drops a new unseen message into the inbox, moves the Email state on and sends a
+`StateChange` down every open event stream — mail arriving, for the push watcher
+and the live list.
+
+Remote **commands and forms** need `pnpm dev:mail2` locally, not `node build`:
+adapter-node 6 no longer reads `ORIGIN` and assumes `https`, so over plain
+`http://127.0.0.1` every POST is refused as cross-site (403). Queries still work.
 
 It is a fake: it proves the plumbing, not Stalwart's acceptance of it. The
 first run against the real server is still a test — see the table below.
@@ -916,11 +1014,11 @@ defaults.
 
 ```sh
 pnpm --filter @zaur/mail2 check     # svelte-check
-pnpm --filter @zaur/mail2 test      # 66 tests
+pnpm --filter @zaur/mail2 test      # 83 tests
 pnpm --filter @zaur/mail2 build
 
 pnpm --filter @zaur/mail-core check && pnpm --filter @zaur/mail-core test    # 48
-pnpm --filter @zaur/server-auth check && pnpm --filter @zaur/server-auth test # 42
+pnpm --filter @zaur/server-auth check && pnpm --filter @zaur/server-auth test # 45
 ```
 
 `apps/webmail` currently reports **3 pre-existing `check` errors** — a duplicate
@@ -965,28 +1063,20 @@ the table above**, top to bottom. Every wire shape here was checked against
 Stalwart 0.16's source and docs, and against the fake — the live server is the
 one reviewer that has not seen it.
 
-After that, in the order they earn their place:
+Web Push, several accounts and the installable app have landed (§ above);
+their first real test is a phone with the app installed and two accounts
+signed in. After that:
 
-1. **Web Push.** Stalwart implements `PushSubscription` (RFC 8620 §7.2) with
-   Web Push encryption and, since 0.16.14, VAPID (`urn:ietf:params:jmap:webpush-vapid`,
-   only advertised once `webPushKey` is configured on the server). It is on the
-   cutover checklist; the shell's `LiveUpdates` covers the open tab already, so
-   this is the closed-tab half. 1.0 has a sender and a subscription store to
-   crib from.
-2. **Multi-account switching.** `@zaur/server-auth` already keeps several
-   accounts in one session (`addAccount`, `setActiveAccount`); what is missing
-   is a second login flow and a switcher in the account menu.
-3. **PWA manifest.** There is no `static/` directory yet — the favicon the
-   `app.html` references does not exist — so this is icons first, then a
-   manifest.
-4. **Files pane.** Stalwart speaks JMAP for File Storage (`FileNode/*`) and
+1. **Muting an account's notifications.** The store keeps `muted_accounts` per
+   device already (1.0 has the switch); nothing sets it yet.
+2. **Files pane.** Stalwart speaks JMAP for File Storage (`FileNode/*`) and
    mail-core has the client for it from 1.0; ADR-0005 holds it until the
    design lands.
 
 ## What is still missing
 
 Measured against webmail 1.0 and against what Stalwart actually implements:
-the four items above, and — post-cutover by ADR-0005 — mail2 acting as an OIDC
+the two items above, and — post-cutover by ADR-0005 — mail2 acting as an OIDC
 provider. Stalwart itself is one (`/.well-known/openid-configuration`,
 `/auth/userinfo`), which is worth knowing before building another.
 
@@ -1008,8 +1098,8 @@ Two smaller notes:
   `mail` (folders, threads, one thread, quota, search, bulk actions), `compose`
   (send, schedule, drafts), `settings` (identities, account prefs), `rules`
   (Sieve), `security` (password, TOTP, credentials, devices, recovery),
-  `contacts` (address books and cards), `calendar` (calendars and events) and
-  `session`/`login`. The newer modules validate their arguments with
+  `contacts` (address books and cards), `calendar` (calendars and events), `push`
+  (notification subscriptions) and `session`/`login` (including account switching). The newer modules validate their arguments with
   **valibot** schemas (Kit's Standard Schema hook) and share
   `#lib/server/account` for "who is signed in, give me a JMAP client"; the
   older ones still carry the pass-through `schema<T>()` stub and their own copy

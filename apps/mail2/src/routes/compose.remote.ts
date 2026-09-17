@@ -1,6 +1,6 @@
 import { error } from '@sveltejs/kit';
 import { command, getRequestEvent } from '$app/server';
-import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
+import { accountKey, getActiveAccount, readSessionFull } from '@zaur/server-auth';
 import { createConnectedClient } from '#lib/server/jmap';
 
 function schema<T>() {
@@ -51,6 +51,8 @@ export interface SendInput {
 	/** UTC ISO time for delayed delivery; omit for an immediate send. */
 	sendAt?: string;
 	attachments?: OutgoingAttachmentDTO[];
+	/** The account that wrote it; a message is never sent from a different one. */
+	account?: string;
 }
 
 export interface SendResult {
@@ -101,6 +103,11 @@ export const send = command(schema<SendInput>(), async (input: SendInput): Promi
 	const bcc = cleanRecipients(input.bcc);
 	if (to.length === 0 && cc.length === 0 && bcc.length === 0) {
 		error(400, 'No recipients');
+	}
+	// After an account switch (in this tab or another), a queued or open draft must
+	// not go out under the address that happens to be active now.
+	if (input.account && accountKey(requireAccount().username) !== input.account) {
+		error(409, `Written as ${input.account}; switch to that account to send it`);
 	}
 	const client = await connect();
 	let emailId: string | undefined;

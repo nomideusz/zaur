@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import { goto } from '$app/navigation';
+	import { disablePush, enablePush, pushStatus, type PushStatus } from '#lib/push';
 	import { whoami } from '../../session.remote';
 	import { identities, setDisplayName } from '../../settings.remote';
 	import { logout } from '../../login.remote';
@@ -92,6 +94,36 @@
 		const gb = (bytes: number) => (bytes / 1_000_000_000).toFixed(2);
 		return { label: `${gb(q.used)} GB of ${gb(q.limit)} GB used`, pct: Math.min(100, Math.round((q.used / q.limit) * 100)) };
 	});
+
+	// Notifications belong to the device, like Appearance: read from the browser each visit.
+	let push = $state<PushStatus | null>(null);
+	let pushBusy = $state(false);
+	onMount(() => {
+		pushStatus()
+			.then((next) => (push = next))
+			.catch(() => (push = 'unsupported'));
+	});
+
+	async function togglePush() {
+		pushBusy = true;
+		status = null;
+		try {
+			push = push === 'on' ? await disablePush() : await enablePush();
+		} catch (cause) {
+			status = { text: cause instanceof Error ? cause.message : 'Could not change notifications', error: true };
+		} finally {
+			pushBusy = false;
+		}
+	}
+
+	const pushNote: Record<PushStatus, string> = {
+		unconfigured: 'Not set up on this server',
+		unsupported: 'This browser cannot show notifications',
+		install: 'Add Zaur to your Home Screen (Share → Add to Home Screen) and open it from there',
+		denied: 'Blocked in your browser settings for this site',
+		off: 'Off on this device',
+		on: 'On for this device'
+	};
 
 	const card = 'rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-surface)] p-[18px] shadow-[var(--z-shadow-tactile)] max-md:p-4';
 	const blurb = 'mt-[7px] text-[12.5px] leading-[1.6] text-[var(--z-muted)]';
@@ -279,6 +311,29 @@
 	>
 		Reset to defaults
 	</button>
+</section>
+
+<!-- Notifications -->
+<section class={card}>
+	<h2 class="z-caption">Notifications</h2>
+	<p class={blurb}>New mail in your inbox, even when Zaur Mail is closed. Each device asks for itself.</p>
+
+	<div class="mt-3.5 flex items-center justify-between gap-4 border-t border-[var(--z-sunken)] py-[11px]">
+		<span class="min-w-0">
+			<span class="block {rowLabel}">New mail</span>
+			<span class="z-mono block text-[10.5px] text-[var(--z-soft)]">{push ? pushNote[push] : 'Checking…'}</span>
+		</span>
+		{#if push === 'on' || push === 'off'}
+			<button
+				type="button"
+				class="btn-tactile shrink-0 !h-8 {push === 'off' ? 'btn-primary' : ''}"
+				disabled={pushBusy}
+				onclick={togglePush}
+			>
+				{push === 'on' ? 'Turn off' : 'Turn on'}
+			</button>
+		{/if}
+	</div>
 </section>
 
 <style>

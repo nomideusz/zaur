@@ -550,7 +550,8 @@ class ComposeStore {
 			subject: draft.subject,
 			body: draft.body,
 			sendAt: draft.sendAt ?? undefined,
-			attachments: outgoingAttachments(draft.attachments)
+			attachments: outgoingAttachments(draft.attachments),
+			account: this.#transport?.account ?? undefined
 		};
 
 		draft.sendError = null;
@@ -623,6 +624,10 @@ class ComposeStore {
 		try {
 			const entries = await listOutbox();
 			for (const entry of entries) {
+				// Written in another account: it waits for that account, and a wait is not
+				// a failed attempt (five of those would delete the message).
+				const owner = entry.payload.account;
+				if (owner && owner !== this.#transport.account) continue;
 				try {
 					await this.#transport.send(entry.payload);
 					await removeOutboxEntry(entry.id);

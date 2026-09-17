@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { onMount, untrack } from 'svelte';
 	import { goto, replaceState } from '$app/navigation';
 	import { page } from '$app/state';
+	import { resyncPush } from '#lib/push';
 	import { makeRecipient } from '#lib/compose/recipients';
-	import { whoami } from '../session.remote';
+	import { signOutAccount, switchAccount, whoami } from '../session.remote';
 	import { mailboxes, threads, thread, quota, bulk, type BulkAction, type ListFilter,
 		search as searchRemote
 	} from '../mail.remote';
@@ -100,8 +102,62 @@
 	});
 
 	function signOut() {
+		accountChannel?.postMessage('changed');
 		void logout().then(() => goto('/login', { replaceState: true }));
 	}
+
+	const otherAccounts = $derived((session?.accounts ?? []).filter((account) => !account.active));
+
+	/**
+	 * The active account lives in the shared session, so a switch here changes it
+	 * for every open tab. Each change reloads: this tab to start clean in the new
+	 * account, the others (told over a BroadcastChannel) so none keeps showing,
+	 * or composing in, the account that is no longer active.
+	 */
+	let accountChannel: BroadcastChannel | null = null;
+	onMount(() => {
+		if (typeof BroadcastChannel === 'undefined') return;
+		accountChannel = new BroadcastChannel('zaur-mail2-account');
+		accountChannel.onmessage = () => location.reload();
+		return () => accountChannel?.close();
+	});
+
+	async function useAccount(key: string, then = '/') {
+		try {
+			await switchAccount({ key });
+		} catch {
+			compose.pushToast({ text: 'Could not switch accounts', tone: 'error' });
+			return;
+		}
+		accountChannel?.postMessage('changed');
+		location.assign(then);
+	}
+
+	async function signOutActiveAccount() {
+		if (!session) return;
+		const { signedIn } = await signOutAccount({ key: session.key });
+		accountChannel?.postMessage('changed');
+		location.assign(signedIn ? '/' : '/login');
+	}
+
+	/**
+	 * `?account=<key>`: a notification for another signed-in account switches to
+	 * it first (the reload keeps `?thread=`). Unknown or already active: dropped.
+	 */
+	let accountLinkHandled = false;
+	$effect(() => {
+		if (!session || accountLinkHandled) return;
+		const key = page.url.searchParams.get('account');
+		if (key === null) return;
+		accountLinkHandled = true;
+		untrack(() => {
+			const url = new URL(page.url.href);
+			url.searchParams.delete('account');
+			const known = session.accounts.some((account) => account.key === key);
+			if (known && key !== session.key) void useAccount(key, url.pathname + url.search);
+			else void goto(url, { replaceState: true, reset: false });
+		});
+	});
 
 	const mailboxesResource = $derived(session ? mailboxes() : undefined);
 	const mailboxList = $derived(mailboxesResource?.current ?? undefined);
@@ -186,6 +242,9 @@
 	}
 
 	compose.setTransport({
+		get account() {
+			return session?.key ?? null;
+		},
 		send: async (payload) => {
 			const result = await sendRemote(payload);
 			afterMailMutation();
@@ -436,6 +495,34 @@
 		mailboxList?.find((box) => box.kind === 'archive' && box.id !== activeMailbox?.id) ?? null
 	);
 
+	/**
+	 * `/?thread=<id>` opens that thread in the inbox: where a new-mail
+	 * notification points. Taken off the URL before the reader opens, so Back
+	 * returns to the plain inbox and a reload does not reopen it.
+	 */
+	let threadLinkHandled = false;
+	$effect(() => {
+		if (!session || threadLinkHandled || !activeMailbox) return;
+		// An `?account=` on the same link is settled first (it may reload into another account).
+		if (page.url.searchParams.has('account')) return;
+		const threadId = page.url.searchParams.get('thread');
+		if (threadId === null) return;
+		threadLinkHandled = true;
+		// Untracked: opening marks the thread read, and a command bumps its own state.
+		// A real (replacing) navigation, not replaceState: on a phone the reader pushes
+		// a shallow entry relative to the page's URL, which must already be clean.
+		untrack(() => {
+			const url = new URL(page.url.href);
+			url.searchParams.delete('thread');
+			void goto(url, { replaceState: true, reset: false }).then(() => openRow(threadId));
+		});
+	});
+
+	// A subscribed browser checks in on every load, so its push row does not age out.
+	onMount(() => {
+		resyncPush().catch(() => {});
+	});
+
 	async function openRow(threadId: string) {
 		if (activeMailbox?.kind !== 'drafts') {
 			reader.open(threadId);
@@ -584,7 +671,10 @@
 			activeMailbox={activeMailbox}
 			onSelectMailbox={selectMailbox}
 			account={session ? { username: session.username, displayName: session.displayName } : null}
+			{otherAccounts}
+			onSwitchAccount={(key) => void useAccount(key)}
 			onSignOut={signOut}
+			onSignOutAccount={() => void signOutActiveAccount()}
 			sidebarOpen={sidebarVisible}
 			onToggleSidebar={toggleSidebar}
 			onPrevMailbox={() => stepMailbox(-1)}

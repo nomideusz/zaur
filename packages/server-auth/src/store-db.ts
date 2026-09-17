@@ -77,6 +77,15 @@ export function openStoreDb(dbPath: string): DatabaseSync {
 			prefs TEXT NOT NULL,
 			updated_at INTEGER NOT NULL
 		);
+		CREATE TABLE IF NOT EXISTS push_subscriptions (
+			id TEXT PRIMARY KEY,
+			session_id TEXT NOT NULL,
+			subscription TEXT NOT NULL,
+			muted_accounts TEXT NOT NULL DEFAULT '[]',
+			created_at INTEGER NOT NULL,
+			updated_at INTEGER NOT NULL
+		);
+		CREATE INDEX IF NOT EXISTS idx_push_subscriptions_session ON push_subscriptions (session_id);
 	`);
 	return db;
 }
@@ -344,6 +353,106 @@ export function putAccountPrefs(
 		 VALUES (?, ?, ?)
 		 ON CONFLICT(account_key) DO UPDATE SET prefs = excluded.prefs, updated_at = excluded.updated_at`
 	).run(accountKey, prefs, now);
+}
+
+/* ── Web Push subscriptions ───────────────────────────────────────────────── */
+
+/**
+ * One row per browser that asked for new-mail notifications (Mail 2.0). It is
+ * owned by the session that created it: the watcher notifies for every account
+ * in that session, and the row goes when the session does. `subscription` is
+ * the browser's PushSubscription JSON; `id` is derived from its endpoint, so a
+ * browser re-subscribing updates its row instead of adding one.
+ */
+export interface PushSubscriptionRow {
+	id: string;
+	sessionId: string;
+	subscription: string;
+	mutedAccounts: string[];
+	createdAt: number;
+	updatedAt: number;
+}
+
+interface RawPushSubscriptionRow {
+	id: string;
+	session_id: string;
+	subscription: string;
+	muted_accounts: string;
+	created_at: number;
+	updated_at: number;
+}
+
+function toPushRow(raw: RawPushSubscriptionRow): PushSubscriptionRow {
+	let muted: unknown;
+	try {
+		muted = JSON.parse(raw.muted_accounts);
+	} catch {
+		muted = [];
+	}
+	return {
+		id: raw.id,
+		sessionId: raw.session_id,
+		subscription: raw.subscription,
+		mutedAccounts: Array.isArray(muted) ? muted.filter((key) => typeof key === 'string') : [],
+		createdAt: raw.created_at,
+		updatedAt: raw.updated_at
+	};
+}
+
+/** Insert or refresh; a re-subscribe keeps the row's mutes and creation time. */
+export function putPushSubscription(
+	db: DatabaseSync,
+	row: { id: string; sessionId: string; subscription: string },
+	now = Date.now()
+): void {
+	db.prepare(
+		`INSERT INTO push_subscriptions (id, session_id, subscription, created_at, updated_at)
+		 VALUES (?, ?, ?, ?, ?)
+		 ON CONFLICT(id) DO UPDATE SET session_id = excluded.session_id,
+		   subscription = excluded.subscription, updated_at = excluded.updated_at`
+	).run(row.id, row.sessionId, row.subscription, now, now);
+}
+
+export function getPushSubscription(db: DatabaseSync, id: string): PushSubscriptionRow | null {
+	const raw = db.prepare('SELECT * FROM push_subscriptions WHERE id = ?').get(id) as
+		| RawPushSubscriptionRow
+		| undefined;
+	return raw ? toPushRow(raw) : null;
+}
+
+export function listPushSubscriptions(db: DatabaseSync): PushSubscriptionRow[] {
+	const rows = db
+		.prepare('SELECT * FROM push_subscriptions ORDER BY created_at')
+		.all() as unknown as RawPushSubscriptionRow[];
+	return rows.map(toPushRow);
+}
+
+export function setPushSubscriptionMuted(
+	db: DatabaseSync,
+	id: string,
+	mutedAccounts: string[],
+	now = Date.now()
+): void {
+	db.prepare('UPDATE push_subscriptions SET muted_accounts = ?, updated_at = ? WHERE id = ?').run(
+		JSON.stringify(mutedAccounts),
+		now,
+		id
+	);
+}
+
+export function deletePushSubscription(db: DatabaseSync, id: string): void {
+	db.prepare('DELETE FROM push_subscriptions WHERE id = ?').run(id);
+}
+
+export function deletePushSubscriptionsForSession(db: DatabaseSync, sessionId: string): void {
+	db.prepare('DELETE FROM push_subscriptions WHERE session_id = ?').run(sessionId);
+}
+
+/** Browsers re-subscribe on every load; a row nobody has refreshed in `maxAgeMs` is abandoned. */
+export function prunePushSubscriptions(db: DatabaseSync, now: number, maxAgeMs: number): number {
+	return Number(
+		db.prepare('DELETE FROM push_subscriptions WHERE updated_at < ?').run(now - maxAgeMs).changes
+	);
 }
 
 export function putStepUpProof(

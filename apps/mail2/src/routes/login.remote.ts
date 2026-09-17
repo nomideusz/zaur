@@ -1,7 +1,16 @@
 import { createHash } from 'node:crypto';
 import { command, form, getRequestEvent } from '$app/server';
-import { clearSession, recordSessionDevice, writeSession } from '@zaur/server-auth';
+import {
+	addAccount,
+	clearSession,
+	deletePushSubscriptionsForSession,
+	getStoreDb,
+	readSessionFull,
+	recordSessionDevice,
+	writeSession
+} from '@zaur/server-auth';
 import { attemptLogin, checkLoginRateLimits, getClientAddress } from '#lib/server/login';
+import { pushWatcher } from '#lib/server/push-watcher';
 
 export interface LoginResult {
 	ok: boolean;
@@ -21,6 +30,8 @@ export const login = form('unchecked', async (data): Promise<LoginResult> => {
 	const password = typeof data.password === 'string' ? data.password : '';
 	const totp = typeof data.totp === 'string' ? data.totp : undefined;
 	const remember = data.remember === 'on' || data.remember === true;
+	/** From the account menu: join this browser's session instead of replacing it. */
+	const adding = data.mode === 'add';
 
 	if (!email || !password) {
 		return { ok: false, error: 'Enter your email address and password.' };
@@ -47,7 +58,10 @@ export const login = form('unchecked', async (data): Promise<LoginResult> => {
 
 	switch (result.status) {
 		case 'ok': {
-			writeSession(event.cookies, result.sessionData, { remember });
+			// addAccount keeps the accounts already signed in (and makes this one active);
+			// writeSession starts a fresh session with just this one.
+			if (adding) addAccount(event.cookies, result.sessionData, { remember });
+			else writeSession(event.cookies, result.sessionData, { remember });
 			recordSessionDevice(
 				event.cookies,
 				event.request.headers.get('user-agent'),
@@ -73,6 +87,13 @@ export const login = form('unchecked', async (data): Promise<LoginResult> => {
  * design — one store, one session record.
  */
 export const logout = command(async () => {
-	clearSession(getRequestEvent().cookies);
+	const { cookies } = getRequestEvent();
+	const session = readSessionFull(cookies);
+	// A signed-out browser must stop hearing about the mail it just left.
+	if (session) {
+		deletePushSubscriptionsForSession(getStoreDb(), session.id);
+		pushWatcher.sync();
+	}
+	clearSession(cookies);
 	return { ok: true };
 });

@@ -7,6 +7,13 @@ import {
 	checkRateLimitRow,
 	getAccountPrefs,
 	putAccountPrefs,
+	putPushSubscription,
+	getPushSubscription,
+	listPushSubscriptions,
+	setPushSubscriptionMuted,
+	deletePushSubscription,
+	deletePushSubscriptionsForSession,
+	prunePushSubscriptions,
 	deleteSessionRow,
 	getSessionRow,
 	hasSessionRow,
@@ -241,5 +248,48 @@ describe('account_prefs table', () => {
 		const second = openStoreDb(file);
 		assert.equal(getAccountPrefs(second, 'nom@zaur.app'), '{"unseenByDefault":true}');
 		second.close();
+	});
+});
+
+describe('push_subscriptions table', () => {
+	it('re-subscribing refreshes the row but keeps its mutes and creation time', () => {
+		const db = freshDb();
+		putPushSubscription(db, { id: 'p1', sessionId: 's1', subscription: '{"endpoint":"a"}' }, 1_000);
+		setPushSubscriptionMuted(db, 'p1', ['b@zaur.app'], 2_000);
+		putPushSubscription(db, { id: 'p1', sessionId: 's1', subscription: '{"endpoint":"a2"}' }, 3_000);
+
+		assert.deepEqual(getPushSubscription(db, 'p1'), {
+			id: 'p1',
+			sessionId: 's1',
+			subscription: '{"endpoint":"a2"}',
+			mutedAccounts: ['b@zaur.app'],
+			createdAt: 1_000,
+			updatedAt: 3_000
+		});
+		assert.equal(listPushSubscriptions(db).length, 1);
+	});
+
+	it('goes with its session, and when nobody has refreshed it', () => {
+		const db = freshDb();
+		putPushSubscription(db, { id: 'p1', sessionId: 's1', subscription: '{}' }, 10 * DAY);
+		putPushSubscription(db, { id: 'p2', sessionId: 's1', subscription: '{}' }, 10 * DAY);
+		putPushSubscription(db, { id: 'p3', sessionId: 's2', subscription: '{}' }, 40 * DAY);
+
+		deletePushSubscriptionsForSession(db, 's1');
+		assert.deepEqual(listPushSubscriptions(db).map((row) => row.id), ['p3']);
+
+		putPushSubscription(db, { id: 'p4', sessionId: 's3', subscription: '{}' }, 5 * DAY);
+		assert.equal(prunePushSubscriptions(db, 41 * DAY, 30 * DAY), 1);
+		assert.deepEqual(listPushSubscriptions(db).map((row) => row.id), ['p3']);
+
+		deletePushSubscription(db, 'p3');
+		assert.equal(getPushSubscription(db, 'p3'), null);
+	});
+
+	it('reads a corrupt mute list as none rather than throwing', () => {
+		const db = freshDb();
+		putPushSubscription(db, { id: 'p1', sessionId: 's1', subscription: '{}' });
+		db.prepare("UPDATE push_subscriptions SET muted_accounts = 'not json' WHERE id = 'p1'").run();
+		assert.deepEqual(getPushSubscription(db, 'p1')?.mutedAccounts, []);
 	});
 });

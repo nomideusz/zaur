@@ -1,5 +1,14 @@
-import type { Handle, HandleServerError } from '@sveltejs/kit/hooks';
+import type { Handle, HandleServerError, ServerInit } from '@sveltejs/kit/hooks';
+import { building } from '$app/env';
+import { pushWatcher } from '#lib/server/push-watcher';
 import { reportError } from '#lib/server/report';
+
+// New-mail notifications for every subscribed browser (no-op without VAPID keys).
+export const init: ServerInit = () => {
+	if (building) return;
+	pushWatcher.start();
+	process.on('sveltekit:shutdown', () => pushWatcher.stop());
+};
 
 // Uptime probe. Liveness only: the process is serving requests.
 export const handle: Handle = ({ event, resolve }) =>

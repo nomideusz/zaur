@@ -193,6 +193,13 @@ const apiKeys = new Map();
 
 const log = (...args) => console.log(new Date().toISOString().slice(11, 19), ...args);
 
+// Mail arriving: POST /smoke/deliver adds an unseen inbox message, moves the
+// Email state on and tells every open event stream, which is what the push
+// watcher listens for. Email/changes answers from this log.
+let emailState = 1;
+const deliveries = []; // { state, id }
+const streams = new Set();
+
 function handle([name, args, callId]) {
 	const ok = (data) => [name, { accountId: ACC, ...data }, callId];
 	const fail = (type, description) => ['error', { type, description }, callId];
@@ -241,7 +248,12 @@ function handle([name, args, callId]) {
 		}
 		case 'Email/get': {
 			const ids = args.ids ?? [...emails.keys()];
-			return ok({ state: 'e1', list: ids.filter((id) => emails.has(id)).map((id) => emails.get(id)), notFound: ids.filter((id) => !emails.has(id)) });
+			return ok({ state: `e${emailState}`, list: ids.filter((id) => emails.has(id)).map((id) => emails.get(id)), notFound: ids.filter((id) => !emails.has(id)) });
+		}
+		case 'Email/changes': {
+			const since = Number(String(args.sinceState).slice(1)) || 0;
+			const created = deliveries.filter((d) => d.state > since).map((d) => d.id);
+			return ok({ oldState: args.sinceState, newState: `e${emailState}`, hasMoreChanges: false, created, updated: [], destroyed: [] });
 		}
 		case 'Email/set': {
 			const updated = {};
@@ -434,6 +446,32 @@ function resolveRefs(args, responses) {
 
 http
 	.createServer((req, res) => {
+		if (req.method === 'POST' && req.url === '/smoke/deliver') {
+			let body = '';
+			req.on('data', (chunk) => (body += chunk));
+			req.on('end', () => {
+				const input = body ? JSON.parse(body) : {};
+				const id = `m-${randomUUID().slice(0, 8)}`;
+				emails.set(id, {
+					id, threadId: `t-${id}`, mailboxIds: { inbox: true }, keywords: {},
+					from: [{ name: input.fromName ?? 'Ada Lovelace', email: input.from ?? 'ada@example.com' }],
+					to: [{ name: 'Smoke Tester', email: 'smoke@zaur.app' }],
+					subject: input.subject ?? 'Notes on the engine', receivedAt: new Date().toISOString(), hasAttachment: false,
+					preview: 'Fresh off the fake wire.', ...text('1', 'Fresh off the fake wire.')
+				});
+				emailState += 1;
+				deliveries.push({ state: emailState, id });
+				const inbox = mailboxes.find((mb) => mb.id === 'inbox');
+				inbox.totalEmails += 1;
+				inbox.unreadEmails += 1;
+				const change = JSON.stringify({ '@type': 'StateChange', changed: { [ACC]: { Email: `e${emailState}`, Mailbox: `m${emailState}` } } });
+				for (const stream of streams) stream.write(`event: state\ndata: ${change}\n\n`);
+				log('delivered', id, `→ ${streams.size} event stream(s)`);
+				res.writeHead(200, { 'Content-Type': 'application/json' });
+				res.end(JSON.stringify({ id, threadId: `t-${id}`, state: `e${emailState}` }));
+			});
+			return;
+		}
 		if (!req.headers.authorization) {
 			res.writeHead(401, { 'WWW-Authenticate': 'Basic' });
 			return res.end('auth required');
@@ -446,7 +484,11 @@ http
 			res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache' });
 			res.write('event: ping\ndata: {"interval":30}\n\n');
 			const timer = setInterval(() => res.write('event: ping\ndata: {"interval":30}\n\n'), 25000);
-			req.on('close', () => clearInterval(timer));
+			streams.add(res);
+			req.on('close', () => {
+				clearInterval(timer);
+				streams.delete(res);
+			});
 			return;
 		}
 		if (req.method === 'POST' && req.url === '/jmap') {
