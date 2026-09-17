@@ -1,7 +1,7 @@
 import { error } from '@sveltejs/kit';
-import { command, getRequestEvent } from '$app/server';
-import { accountKey, getActiveAccount, readSessionFull } from '@zaur/server-auth';
-import { createConnectedClient } from '#lib/server/jmap';
+import { command } from '$app/server';
+import { accountKey } from '@zaur/server-auth';
+import { connect, requireAccount } from '#lib/server/account';
 
 function schema<T>() {
 	return {
@@ -13,26 +13,6 @@ function schema<T>() {
 			}
 		}
 	} as any;
-}
-
-function requireAccount() {
-	const { cookies } = getRequestEvent();
-	const session = readSessionFull(cookies);
-	const account = session ? getActiveAccount(session) : undefined;
-	if (!account) error(401, 'Unauthorized');
-	return account;
-}
-
-async function connect() {
-	const account = requireAccount();
-	try {
-		return await createConnectedClient(account);
-	} catch (cause) {
-		if (cause instanceof Error && cause.message === 'Unauthorized') {
-			error(401, 'Unauthorized');
-		}
-		throw cause;
-	}
 }
 
 export interface OutgoingAttachmentDTO {

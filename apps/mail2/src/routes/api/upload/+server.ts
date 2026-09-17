@@ -1,19 +1,11 @@
-import { error, json, type Cookies, type RequestHandler } from '@sveltejs/kit';
-import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
-import type { SessionData } from '@zaur/server-auth';
+import { error, json, type RequestHandler } from '@sveltejs/kit';
+import { requireAccount } from '#lib/server/account';
 import { createConnectedClient } from '#lib/server/jmap';
 import { reportError } from '#lib/server/report';
 
 export const config = {
 	bodySizeLimit: 25 * 1024 * 1024
 };
-
-function requireAccount(cookies: Cookies): SessionData {
-	const session = readSessionFull(cookies);
-	const account = session ? getActiveAccount(session) : undefined;
-	if (!account) error(401, 'Unauthorized');
-	return account;
-}
 
 /**
  * Raw blob upload for compose attachments: the file bytes go through as the
@@ -22,8 +14,8 @@ function requireAccount(cookies: Cookies): SessionData {
  * state, so this is a plain endpoint — same shape as webmail 1.0's
  * /api/jmap/upload proxy.
  */
-export const POST: RequestHandler = async ({ request, cookies }) => {
-	const account = requireAccount(cookies);
+export const POST: RequestHandler = async ({ request }) => {
+	const account = requireAccount();
 
 	const type = request.headers.get('content-type') ?? 'application/octet-stream';
 	const data = await request.arrayBuffer();

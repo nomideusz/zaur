@@ -1,6 +1,7 @@
 /**
- * The signed-in account, for remote functions. Every `*.remote.ts` used to
- * carry its own copy of these two helpers; new modules share this one.
+ * The signed-in account, for remote functions and endpoints alike. Always take
+ * it from here: the account carries its session id, without which a refreshed
+ * OAuth token cannot be saved (and the next refresh signs the user out).
  */
 import { error } from '@sveltejs/kit';
 import { getRequestEvent } from '$app/server';

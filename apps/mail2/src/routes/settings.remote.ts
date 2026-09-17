@@ -1,14 +1,7 @@
 import { error } from '@sveltejs/kit';
-import { query, command, getRequestEvent } from '$app/server';
-import {
-	accountKey,
-	getAccountPrefs,
-	getActiveAccount,
-	getStoreDb,
-	putAccountPrefs,
-	readSessionFull
-} from '@zaur/server-auth';
-import { createConnectedClient } from '#lib/server/jmap';
+import { query, command } from '$app/server';
+import { getAccountPrefs, getStoreDb, putAccountPrefs } from '@zaur/server-auth';
+import { connect, requireAccountKey } from '#lib/server/account';
 import { ACCOUNT_PREF_KEYS, DEFAULT_PREFS, type AccountPrefs } from '#lib/settings';
 
 function schema<T>() {
@@ -21,27 +14,6 @@ function schema<T>() {
 			}
 		}
 	} as any;
-}
-
-async function connect() {
-	const { cookies } = getRequestEvent();
-	const session = readSessionFull(cookies);
-	const account = session ? getActiveAccount(session) : undefined;
-	if (!account) error(401, 'Unauthorized');
-	try {
-		return await createConnectedClient(account);
-	} catch (cause) {
-		if (cause instanceof Error && cause.message === 'Unauthorized') error(401, 'Unauthorized');
-		throw cause;
-	}
-}
-
-function requireAccountKey(): string {
-	const { cookies } = getRequestEvent();
-	const session = readSessionFull(cookies);
-	const account = session ? getActiveAccount(session) : undefined;
-	if (!account) error(401, 'Unauthorized');
-	return accountKey(account.username);
 }
 
 /**

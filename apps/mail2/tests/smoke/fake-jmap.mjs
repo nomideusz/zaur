@@ -199,6 +199,8 @@ const log = (...args) => console.log(new Date().toISOString().slice(11, 19), ...
 let emailState = 1;
 const deliveries = []; // { state, id }
 const streams = new Set();
+// The refresh token the fake currently honours: rt-0 is what an OAuth smoke session is seeded with.
+let refreshGeneration = 0;
 
 function handle([name, args, callId]) {
 	const ok = (data) => [name, { accountId: ACC, ...data }, callId];
@@ -446,6 +448,34 @@ function resolveRefs(args, responses) {
 
 http
 	.createServer((req, res) => {
+		// OAuth, just enough for server-auth's token refresh: discovery plus a token
+		// endpoint that ROTATES refresh tokens and refuses a used one, like a strict
+		// server would. A refreshed token that never gets saved shows up as invalid_grant.
+		if (req.method === 'GET' && req.url === '/.well-known/oauth-authorization-server') {
+			res.writeHead(200, { 'Content-Type': 'application/json' });
+			return res.end(JSON.stringify({
+				issuer: BASE, authorization_endpoint: `${BASE}/authorize`, token_endpoint: `${BASE}/token`,
+				code_challenge_methods_supported: ['S256'], scopes_supported: ['offline_access', 'urn:ietf:params:oauth:scope:mail']
+			}));
+		}
+		if (req.method === 'POST' && req.url === '/token') {
+			let body = '';
+			req.on('data', (chunk) => (body += chunk));
+			req.on('end', () => {
+				const form = new URLSearchParams(body);
+				const presented = form.get('refresh_token');
+				if (form.get('grant_type') !== 'refresh_token' || presented !== `rt-${refreshGeneration}`) {
+					log('token refresh REFUSED', presented, `(current rt-${refreshGeneration})`);
+					res.writeHead(400, { 'Content-Type': 'application/json' });
+					return res.end(JSON.stringify({ error: 'invalid_grant' }));
+				}
+				refreshGeneration += 1;
+				log('token refresh', presented, '→', `rt-${refreshGeneration}`);
+				res.writeHead(200, { 'Content-Type': 'application/json' });
+				res.end(JSON.stringify({ access_token: `at-${refreshGeneration}`, refresh_token: `rt-${refreshGeneration}`, token_type: 'Bearer', expires_in: 60, scope: 'offline_access urn:ietf:params:oauth:scope:mail' }));
+			});
+			return;
+		}
 		if (req.method === 'POST' && req.url === '/smoke/deliver') {
 			let body = '';
 			req.on('data', (chunk) => (body += chunk));

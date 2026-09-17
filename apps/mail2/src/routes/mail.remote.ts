@@ -1,8 +1,6 @@
 import { error } from '@sveltejs/kit';
-import { query, command, getRequestEvent } from '$app/server';
-import { getActiveAccount, readSessionFull, type SessionData } from '@zaur/server-auth';
+import { query, command } from '$app/server';
 import {
-	JMAPClient,
 	isPrimarySidebarMailbox,
 	mapEmailDetail,
 	mapEmailPreview,
@@ -11,7 +9,7 @@ import {
 } from '@zaur/mail-core';
 import type { MailboxKind, MessageDetail, MessagePreview } from '@zaur/mail-core';
 import type { MailboxDTO, ThreadListDTO } from '#lib/mail/types';
-import { createConnectedClient } from '#lib/server/jmap';
+import { connect, requireAccount } from '#lib/server/account';
 
 function schema<T>() {
 	return {
@@ -23,26 +21,6 @@ function schema<T>() {
 			}
 		}
 	} as any;
-}
-
-function requireAccount(): SessionData {
-	const { cookies } = getRequestEvent();
-	const session = readSessionFull(cookies);
-	const account = session ? getActiveAccount(session) : undefined;
-	if (!account) error(401, 'Unauthorized');
-	return account;
-}
-
-async function connect(): Promise<JMAPClient> {
-	const account = requireAccount();
-	try {
-		return await createConnectedClient(account);
-	} catch (cause) {
-		if (cause instanceof Error && cause.message === 'Unauthorized') {
-			error(401, 'Unauthorized');
-		}
-		throw cause;
-	}
 }
 
 export const mailboxes = query(async (): Promise<MailboxDTO[]> => {

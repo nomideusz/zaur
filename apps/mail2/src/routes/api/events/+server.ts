@@ -1,17 +1,9 @@
-import { error, type Cookies, type RequestHandler } from '@sveltejs/kit';
-import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
-import type { SessionData } from '@zaur/server-auth';
+import { error, type RequestHandler } from '@sveltejs/kit';
+import { requireAccount } from '#lib/server/account';
 import { createConnectedClient } from '#lib/server/jmap';
 import { reportError } from '#lib/server/report';
 
 const KEEPALIVE_MS = 15_000;
-
-function requireAccount(cookies: Cookies): SessionData {
-	const session = readSessionFull(cookies);
-	const account = session ? getActiveAccount(session) : undefined;
-	if (!account) error(401, 'Unauthorized');
-	return account;
-}
 
 /**
  * JMAP push, proxied.
@@ -24,8 +16,8 @@ function requireAccount(cookies: Cookies): SessionData {
  * A stream is not remote-function state, so this is a plain endpoint: remote
  * `query`/`command` are request/response, and this one is open for hours.
  */
-export const GET: RequestHandler = async ({ cookies, request }) => {
-	const account = requireAccount(cookies);
+export const GET: RequestHandler = async ({ request }) => {
+	const account = requireAccount();
 
 	let client;
 	try {

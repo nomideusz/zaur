@@ -7,6 +7,7 @@ import {
 	updateAccountTokens,
 	type SessionData
 } from '@zaur/server-auth';
+import { reportError } from '#lib/server/report';
 
 const REFRESH_SKEW_MS = 90_000;
 const refreshes = new Map<string, Promise<SessionData>>();
@@ -53,7 +54,16 @@ async function refreshSession(session: SessionData): Promise<SessionData> {
 				accessTokenExpiresAt: tokens.accessTokenExpiresAt,
 				scope: tokens.scope ?? session.scope
 			};
-			if (next.id) updateAccountTokens(next.id, next);
+			if (next.id) {
+				updateAccountTokens(next.id, next);
+			} else {
+				// Without the session id the rotated refresh token is lost, and the next
+				// refresh fails with the old one: a silent sign-out. Take accounts from
+				// #lib/server/account (or readAccountsById), which carry the id.
+				const lost = new Error('Refreshed OAuth tokens for an account without a session id; not saved');
+				console.error('[jmap]', lost.message, next.username);
+				reportError(lost, { where: 'jmap token refresh' });
+			}
 			return next;
 		} catch (error) {
 			if (error instanceof OauthTokenError && error.code === 'invalid_grant') {

@@ -1,8 +1,7 @@
 import { error } from '@sveltejs/kit';
-import { query, command, getRequestEvent } from '$app/server';
-import { getActiveAccount, readSessionFull, type SessionData } from '@zaur/server-auth';
-import { JMAPClient, buildRuleScript, parseRuleScript, type MailRule } from '@zaur/mail-core';
-import { createConnectedClient } from '#lib/server/jmap';
+import { query, command } from '$app/server';
+import { buildRuleScript, parseRuleScript, type MailRule } from '@zaur/mail-core';
+import { connect, requireAccount } from '#lib/server/account';
 
 function schema<T>() {
 	return {
@@ -14,23 +13,6 @@ function schema<T>() {
 			}
 		}
 	} as any;
-}
-
-function requireAccount(): SessionData {
-	const { cookies } = getRequestEvent();
-	const session = readSessionFull(cookies);
-	const account = session ? getActiveAccount(session) : undefined;
-	if (!account) error(401, 'Unauthorized');
-	return account;
-}
-
-async function connect(): Promise<JMAPClient> {
-	try {
-		return await createConnectedClient(requireAccount());
-	} catch (cause) {
-		if (cause instanceof Error && cause.message === 'Unauthorized') error(401, 'Unauthorized');
-		throw cause;
-	}
 }
 
 /** The script this app owns. One script holds every rule, in order. */

@@ -1,15 +1,7 @@
-import { error, type Cookies, type RequestHandler } from '@sveltejs/kit';
-import { getActiveAccount, readSessionFull } from '@zaur/server-auth';
-import type { SessionData } from '@zaur/server-auth';
+import { error, type RequestHandler } from '@sveltejs/kit';
+import { requireAccount } from '#lib/server/account';
 import { createConnectedClient } from '#lib/server/jmap';
 import { reportError } from '#lib/server/report';
-
-function requireAccount(cookies: Cookies): SessionData {
-	const session = readSessionFull(cookies);
-	const account = session ? getActiveAccount(session) : undefined;
-	if (!account) error(401, 'Unauthorized');
-	return account;
-}
 
 /**
  * Attachment download, proxied.
@@ -21,8 +13,8 @@ function requireAccount(cookies: Cookies): SessionData {
  * The blob is streamed rather than buffered: an attachment can be tens of
  * megabytes and there is no reason for it to sit in this process's heap.
  */
-export const GET: RequestHandler = async ({ url, cookies }) => {
-	const account = requireAccount(cookies);
+export const GET: RequestHandler = async ({ url }) => {
+	const account = requireAccount();
 
 	const blobId = url.searchParams.get('blobId');
 	if (!blobId) error(400, 'Missing blobId');

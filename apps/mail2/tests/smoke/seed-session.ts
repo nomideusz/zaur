@@ -28,13 +28,25 @@ const serverUrl = process.env.SMOKE_JMAP_URL ?? 'http://127.0.0.1:9911';
 
 const id = 'smoke-session-id-0000000000000000000000000000000000000000000';
 const now = Date.now();
-const account = {
-	serverUrl,
-	username: 'smoke@zaur.app',
-	displayName: 'Smoke Tester',
-	authMethod: 'password' as const,
-	password: 'not-a-real-password'
-};
+// SMOKE_OAUTH=1 seeds an OAuth account whose access token has already expired,
+// so the first request refreshes it against the fake's rotating token endpoint.
+const account = process.env.SMOKE_OAUTH
+	? {
+			serverUrl,
+			username: 'smoke@zaur.app',
+			displayName: 'Smoke Tester',
+			authMethod: 'oauth' as const,
+			accessToken: 'at-0',
+			refreshToken: 'rt-0',
+			accessTokenExpiresAt: Date.now() - 1000
+		}
+	: {
+			serverUrl,
+			username: 'smoke@zaur.app',
+			displayName: 'Smoke Tester',
+			authMethod: 'password' as const,
+			password: 'not-a-real-password'
+		};
 const session = wrapAccount(account, id, true);
 putSessionRow(db, {
 	id,

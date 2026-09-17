@@ -1102,8 +1102,9 @@ Two smaller notes:
   (notification subscriptions) and `session`/`login` (including account switching). The newer modules validate their arguments with
   **valibot** schemas (Kit's Standard Schema hook) and share
   `#lib/server/account` for "who is signed in, give me a JMAP client"; the
-  older ones still carry the pass-through `schema<T>()` stub and their own copy
-  of that helper, which is the obvious next tidy-up. Remote **forms** are used
+  older ones still carry the pass-through `schema<T>()` stub, which is the obvious
+  next tidy-up. Their private copies of that helper are gone: those dropped the
+  session id, so a refreshed OAuth token was never saved. Remote **forms** are used
   wherever a password crosses the wire: `_`-prefixed fields are never echoed
   back, and a form still works without JavaScript.
 - **Three things are plain endpoints instead**, because remote functions are
