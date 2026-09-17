@@ -1,91 +1,76 @@
 #!/usr/bin/env python3
-"""Draw mail2's PWA icons and favicon from the ZA/UR logomark (ZaurMark.svelte).
+"""Draw mail2's PNG icons from the ZA/UR mark (ZaurMark.svelte).
 
-The mark is `ZA` over `UR` in Ioskeley Mono 700, letter-spaced 0.04em, in a
-square with a 1px stroke. The handoff's size ladder fixes the proportions per
-slot, so each icon scales the ladder rung it stands for rather than a new drawing:
-
-    square  radius  type   line-height
-    64      12      30     0.80          app icons
-    16      4       6.8    0.82          favicon, badge
+The mark is a 16px icon glyph: four stroked letters on a 16-unit grid, round
+caps and joins, in fixed identity inks. The paths below mirror the component's
+SVG, with its two arcs flattened, so the PNGs are the same drawing — not type.
+`static/favicon.svg` is written by hand from the same paths.
 
     python3 scripts/generate-icons.py      # writes into static/ (needs Pillow)
 """
+import math
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw
 
 ROOT = Path(__file__).resolve().parent.parent
 STATIC = ROOT / "static"
-FONT = ROOT / "static/fonts/ioskeley-mono/IoskeleyMono-Bold.woff2"
-
-INK = (11, 18, 32, 255)  # --z-ink
-PAPER = (255, 255, 255, 255)  # --z-mark-fill
-STROKE = (148, 163, 184, 255)  # --z-mark-stroke
-LETTERS = {"Z": (225, 29, 72, 255), "A": (8, 145, 178, 255), "U": (8, 145, 178, 255), "R": (13, 148, 136, 255)}
-TRACKING = 0.04
 SUPERSAMPLE = 4
 
-LARGE = (64, 12, 30, 0.80)
-SMALL = (16, 4, 6.8, 0.82)
+SURFACE = (255, 255, 255, 255)  # --z-surface
+Z, A, R = (225, 29, 72, 255), (8, 145, 178, 255), (13, 148, 136, 255)  # --z-mark-*
 
 
-def mark(width: int, rung: tuple[float, float, float, float]) -> Image.Image:
-    """The mark at `width` px, supersampled, transparent outside the square."""
-    box, radius, type_px, line_height = rung
-    scale = width * SUPERSAMPLE / box
-    w = round(box * scale)
+def arc(cx: float, cy: float, rx: float, ry: float, start: float, end: float, steps: int = 16) -> list[tuple[float, float]]:
+    return [(cx + rx * math.cos(a), cy + ry * math.sin(a)) for a in (start + (end - start) * i / steps for i in range(steps + 1))]
 
-    img = Image.new("RGBA", (w, w), (0, 0, 0, 0))
+
+# (ink, polyline) — ZaurMark.svelte's paths on the 16-unit grid.
+GLYPH = [
+    (Z, [(2.5, 2.5), (6.5, 2.5), (2.5, 6.5), (6.5, 6.5)]),
+    (A, [(9.5, 6.5), (11.5, 2.5), (13.5, 6.5)]),
+    (A, [(10.25, 5), (12.75, 5)]),
+    (A, [(2.5, 9.5), (2.5, 11.6), *arc(4.5, 11.6, 2, 1.9, math.pi, 0), (6.5, 9.5)]),
+    (R, [(9.5, 13.5), (9.5, 9.5), (11.6, 9.5), *arc(11.6, 10.9, 1.4, 1.4, -math.pi / 2, math.pi / 2), (9.5, 12.3)]),
+    (R, [(11.4, 12.3), (13.5, 13.5)]),
+]
+
+
+def glyph(draw: ImageDraw.ImageDraw, x: float, y: float, unit: float, stroke: float, ink=None) -> None:
+    """Stroke the glyph with its 16-unit box at (x, y), `unit` px per grid unit."""
+    width = max(1, round(stroke * unit))
+    for colour, points in GLYPH:
+        pts = [(x + px * unit, y + py * unit) for px, py in points]
+        fill = ink or colour
+        draw.line(pts, fill=fill, width=width, joint="curve")
+        r = width / 2  # round caps
+        for cx, cy in (pts[0], pts[-1]):
+            draw.ellipse((cx - r, cy - r, cx + r, cy + r), fill=fill)
+
+
+def tile(size: int, glyph_share: float, stroke: float, radius: float, ink=None, background=SURFACE) -> Image.Image:
+    s = size * SUPERSAMPLE
+    img = Image.new("RGBA", (s, s), (0, 0, 0, 0))
     draw = ImageDraw.Draw(img)
-    draw.rounded_rectangle((0, 0, w - 1, w - 1), radius=round(radius * scale), fill=PAPER, outline=STROKE, width=max(1, round(scale)))
-
-    size = type_px * scale
-    face = ImageFont.truetype(str(FONT), round(size))
-    advance = face.getlength("Z") + TRACKING * size
-    cap = -face.getbbox("Z", anchor="ls")[1]
-    pitch = line_height * size
-    # Two rows centred as a block; the trailing letter-spacing is trimmed, as
-    # the shell's `margin-right: -0.04em` does.
-    left = (w - (2 * advance - TRACKING * size)) / 2
-    first_baseline = w / 2 - pitch / 2 + cap / 2
-    for row, pair in enumerate(("ZA", "UR")):
-        for col, ch in enumerate(pair):
-            draw.text((left + col * advance, first_baseline + row * pitch), ch, font=face, fill=LETTERS[ch], anchor="ls")
-    return img
-
-
-def app_icon(size: int) -> Image.Image:
-    """Full-bleed ink square with the mark inside the maskable safe zone."""
-    canvas = Image.new("RGBA", (size * SUPERSAMPLE,) * 2, INK)
-    m = mark(round(size * 0.56), LARGE)
-    canvas.alpha_composite(m, ((canvas.width - m.width) // 2, (canvas.height - m.height) // 2))
-    return canvas.resize((size, size), Image.LANCZOS)
-
-
-def favicon(size: int) -> Image.Image:
-    return mark(size, SMALL).resize((size, size), Image.LANCZOS)
-
-
-def badge(size: int) -> Image.Image:
-    """Android draws the status-bar badge from alpha alone: stroke and letters, no fill."""
-    m = mark(size, SMALL)
-    # Anything darker than the paper fill is ink; keep it as opaque white.
-    ink = m.convert("L").point(lambda v: 255 if v < 235 else 0)
-    alpha = Image.composite(ink, Image.new("L", m.size, 0), m.split()[3])
-    white = Image.new("RGBA", m.size, (255, 255, 255, 255))
-    white.putalpha(alpha)
-    return white.resize((size, size), Image.LANCZOS)
+    if background:
+        draw.rounded_rectangle((0, 0, s - 1, s - 1), radius=round(radius * s), fill=background)
+    unit = s * glyph_share / 16
+    offset = (s - 16 * unit) / 2
+    glyph(draw, offset, offset, unit, stroke, ink)
+    return img.resize((size, size), Image.LANCZOS)
 
 
 def main() -> None:
-    STATIC.mkdir(exist_ok=True)
-    app_icon(192).save(STATIC / "icon-192.png", optimize=True)
-    app_icon(512).save(STATIC / "icon-512.png", optimize=True)
-    app_icon(180).convert("RGB").save(STATIC / "apple-touch-icon.png", optimize=True)
-    favicon(48).save(STATIC / "favicon.png", optimize=True)
-    favicon(48).save(STATIC / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
-    badge(96).save(STATIC / "badge.png", optimize=True)
+    # App icons: full-bleed paper (the platform masks the corners), glyph inside the safe zone.
+    for size, name in ((192, "icon-192.png"), (512, "icon-512.png"), (180, "apple-touch-icon.png")):
+        icon = tile(size, 0.5, 1.15, 0)
+        (icon.convert("RGB") if name.startswith("apple") else icon).save(STATIC / name, optimize=True)
+    # Favicon PNG fallback: favicon.svg's drawing — 85% glyph, heavier stroke.
+    favicon = tile(48, 0.85, 1.5, 3.5 / 16)
+    favicon.save(STATIC / "favicon.png", optimize=True)
+    favicon.save(STATIC / "favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
+    # Android draws the status-bar badge from alpha alone.
+    tile(96, 0.85, 1.5, 0, ink=(255, 255, 255, 255), background=None).save(STATIC / "badge.png", optimize=True)
     print("wrote", ", ".join(sorted(p.name for p in STATIC.iterdir() if p.is_file())))
 
 

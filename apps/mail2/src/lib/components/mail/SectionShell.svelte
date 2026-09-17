@@ -21,8 +21,7 @@
 		<header
 			class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[var(--z-line)] bg-[var(--z-surface)] px-4 select-none max-md:gap-2 max-md:px-2.5"
 		>
-			<ZaurMark size="md" class="max-md:hidden" />
-			<ZaurMark size="sm" class="md:hidden" />
+			<ZaurMark />
 			<div class="h-4 w-px bg-[var(--z-hairline)] max-md:hidden"></div>
 			<a href="/" class="btn-tactile gap-1.5" data-sveltekit-preload-data="hover" title="Back to Mail">
 				<svg class="size-3.5 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">

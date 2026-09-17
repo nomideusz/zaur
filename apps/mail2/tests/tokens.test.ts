@@ -49,16 +49,16 @@ test('tokens: geometry (list width, measure, drawer) is pinned', () => {
 	assert.match(css, /--z-drawer-width: 280px/);
 });
 
-test('tokens: Libre Franklin is the interface face, Ioskeley Mono the code face', () => {
-	assert.match(css, /--font-sans: 'Libre Franklin'/);
-	assert.match(css, /--font-mono: 'Ioskeley Mono'/);
+test('tokens: system faces only, no web fonts', () => {
+	assert.match(css, /--font-sans: Seravek, /);
+	assert.match(css, /--font-mono: ui-monospace, /);
+	assert.doesNotMatch(css, /@font-face/);
 });
 
 test('tokens: the ZA/UR mark keeps its fixed identity inks', () => {
 	assert.match(css, /--z-mark-z: #e11d48/);
 	assert.match(css, /--z-mark-a: #0891b2/);
 	assert.match(css, /--z-mark-r: #0d9488/);
-	assert.match(css, /--z-mark-stroke: #94a3b8/);
 });
 
 test('tokens: four elevations, no more', () => {

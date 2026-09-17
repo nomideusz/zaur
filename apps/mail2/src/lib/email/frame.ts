@@ -39,8 +39,7 @@ function frameStyles(palette: typeof LIGHT, scheme: 'light' | 'dark'): string {
 	html { overflow-x: auto; }
 	body {
 		margin: 0;
-		font-family: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-			'Helvetica Neue', Arial, sans-serif;
+		font-family: Seravek, 'Gill Sans Nova', Ubuntu, Calibri, 'DejaVu Sans', source-sans-pro, sans-serif;
 		font-size: 14px;
 		line-height: 1.65;
 		color: ${palette.ink};
@@ -80,7 +79,7 @@ function frameStyles(palette: typeof LIGHT, scheme: 'light' | 'dark'): string {
 		color: ${palette.quote};
 	}
 	pre, code {
-		font-family: 'Ioskeley Mono', ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
+		font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
 		font-size: 0.9em;
 	}
 	pre { background: ${palette.well}; border: 1px solid ${palette.rule}; border-radius: 6px; padding: 12px; overflow-x: auto; }

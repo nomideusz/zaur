@@ -18,32 +18,6 @@
  * that stroke over the surface, and the ink flips to the light tint.
  */
 
-/* Ioskeley Mono v2.1.0 (OFL-1.1, github.com/ahatem/IoskeleyMono), self-hosted. */
-@font-face {
-	font-family: 'Ioskeley Mono';
-	src: url('/fonts/ioskeley-mono/IoskeleyMono-Regular.woff2') format('woff2');
-	font-weight: 400;
-	font-display: swap;
-}
-@font-face {
-	font-family: 'Ioskeley Mono';
-	src: url('/fonts/ioskeley-mono/IoskeleyMono-Medium.woff2') format('woff2');
-	font-weight: 500;
-	font-display: swap;
-}
-@font-face {
-	font-family: 'Ioskeley Mono';
-	src: url('/fonts/ioskeley-mono/IoskeleyMono-SemiBold.woff2') format('woff2');
-	font-weight: 600;
-	font-display: swap;
-}
-@font-face {
-	font-family: 'Ioskeley Mono';
-	src: url('/fonts/ioskeley-mono/IoskeleyMono-Bold.woff2') format('woff2');
-	font-weight: 700;
-	font-display: swap;
-}
-
 :root {
 	color-scheme: light;
 
@@ -151,16 +125,15 @@
 	--z-id-stone-stroke: #78716c;
 	--z-id-stone-ink: #292524;
 
-	/* The ZA/UR logomark — fixed identity inks, deliberately not channel hues. */
-	--z-mark-stroke: #94a3b8;
-	--z-mark-fill: #ffffff;
+	/* The ZA/UR mark's strokes — fixed identity inks, deliberately not channel hues. */
 	--z-mark-z: #e11d48;
 	--z-mark-a: #0891b2;
 	--z-mark-r: #0d9488;
 
 	/* Type */
-	--font-sans: 'Libre Franklin', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-	--font-mono: 'Ioskeley Mono', ui-monospace, 'Cascadia Code', Menlo, Consolas, monospace;
+	/* System faces only — nothing to download. */
+	--font-sans: Seravek, 'Gill Sans Nova', Ubuntu, Calibri, 'DejaVu Sans', source-sans-pro, sans-serif;
+	--font-mono: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
 	--z-measure: 33em; /* ~70 characters — reading AND writing measure */
 
 	/* Fixed columns */
@@ -270,8 +243,6 @@
 		--z-id-plum-ink: #e9d5ff;
 		--z-id-stone-fill: color-mix(in oklab, #78716c 22%, var(--z-surface));
 		--z-id-stone-ink: #e7e5e4;
-		--z-mark-stroke: #0d9488;
-		--z-mark-fill: #0f2b2b;
 		--z-mark-z: color-mix(in oklab, #e11d48 58%, #ffffff);
 		--z-mark-a: color-mix(in oklab, #0891b2 58%, #ffffff);
 		--z-mark-r: color-mix(in oklab, #0d9488 58%, #ffffff);
@@ -341,8 +312,6 @@
 	--z-id-plum-ink: #e9d5ff;
 	--z-id-stone-fill: color-mix(in oklab, #78716c 22%, var(--z-surface));
 	--z-id-stone-ink: #e7e5e4;
-	--z-mark-stroke: #0d9488;
-	--z-mark-fill: #0f2b2b;
 	--z-mark-z: color-mix(in oklab, #e11d48 58%, #ffffff);
 	--z-mark-a: color-mix(in oklab, #0891b2 58%, #ffffff);
 	--z-mark-r: color-mix(in oklab, #0d9488 58%, #ffffff);

@@ -21,6 +21,7 @@
 		background: var(--z-ground);
 		color: var(--z-ink);
 		font-family: var(--font-sans);
+		font-weight: normal;
 		font-size: 14px;
 		line-height: 1.5;
 		-webkit-font-smoothing: antialiased;

@@ -21,7 +21,7 @@ theme only** for now; Files and Meet arrive when their designs land.
 - [x] Server-side rules (JMAP Sieve) †
 - [x] Settings that follow the account rather than the browser
 - [x] Design system v2 applied — channel hues, identity tones on avatars, the ZA/UR
-  logomark, Ioskeley Mono, tactile controls, the v2 sign-in, phone and settings
+  logomark, system fonts, tactile controls, the v2 sign-in, phone and settings
   screens (see [Design system v2](#design-system-v2-pastel-channels-tactile-controls))
 - [x] Design follow-ups from the v2 review — Flagged filter, attachment retry,
   rule cards with a Newsletters template, `@zaur/sprite` dropped, and **dark
@@ -340,13 +340,14 @@ touch pointers, where the same drag is the strip's scroll.
 
 ## The mark
 
-The shell's mark is **ZA/UR**: `ZA` over `UR` in Ioskeley Mono Bold, 0.04em
-tracking, line-height 0.8, in a square with a 1px `--z-mark-stroke` on
-`--z-mark-fill` — 30px (8px radius, 14px type) in the 52px toolbar, 26px (7px,
-12px) in compact headers and the phone drawer. Z is rose, A and U cyan, R teal:
-fixed identity inks (`--z-mark-*`), deliberately not channel hues, because a
-channel says what kind of message this is and the mark is not a message. In
-dark the square turns teal on `#0f2b2b` and each letter lifts 58% toward paper.
+The shell's mark is **ZA/UR** drawn as an icon, not a logo: four stroked
+letters on the same 16px grid, round caps and ~1.3 stroke as every other glyph,
+in a 32px tile the size of the header's tactile buttons (no shadow — it does
+nothing when pressed). It sits among the icons rather than above them. Z is
+rose, A and U cyan, R teal: fixed identity inks (`--z-mark-*`), deliberately not
+channel hues, because a channel says what kind of message this is and the mark
+is not a message. In dark each ink lifts 58% toward paper. The same paths draw
+`static/favicon.svg` and the PNG icons (`scripts/generate-icons.py`).
 It says *Zaur* rather than *Zaur Mail* because one account spans Mail, Chat,
 Discuss and Meet.
 
@@ -410,8 +411,10 @@ The rest follows from those two:
   ramp lives in `tokens.css` too, and every component reads tokens rather
   than hex, so one attribute flips the whole shell — see
   [Dark mode](#dark-mode).
-- **Type.** Libre Franklin for the interface, **Ioskeley Mono** (replacing IBM
-  Plex Mono) for captions, counts, times, addresses and keys. Eight roles from
+- **Type.** System faces only, nothing downloaded: `Seravek, 'Gill Sans Nova',
+  Ubuntu, Calibri, 'DejaVu Sans', source-sans-pro, sans-serif` for the interface,
+  `ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu
+  Sans Mono', monospace` for captions, counts, times, addresses and keys. Eight roles from
   a 38px display down to the 11px uppercase mono caption (`.z-caption`, soft).
 - **Controls are things you could press.** `.btn-tactile` is white, 8px radius,
   `#cbd5e1` border, a 1px shadow and a half-pixel press; `.btn-primary` fills it
@@ -872,11 +875,11 @@ to the right one.
 ## Installable app (PWA)
 
 `static/` holds the icons and `manifest.webmanifest`; `scripts/generate-icons.py`
-draws every icon from the mark's size ladder (`ZaurMark.svelte`), so the app
-icon *is* the mark: the paper square on ink, inside the maskable safe zone. The
-favicon is the 16px rung of the same mark, and `badge.png` is its stroke and
-letters for Android's monochrome status bar. Rerun the script if the mark
-changes.
+strokes the mark's own paths (`ZaurMark.svelte`), so the app icon *is* the
+mark: the glyph on paper, inside the maskable safe zone. `favicon.svg` is the
+same glyph by hand (with a dark variant); `favicon.png`/`.ico` are its raster
+fallback, and `badge.png` is the glyph alone for Android's monochrome status
+bar. Rerun the script if the mark changes.
 
 The service worker (`src/service-worker/`, registered by Kit as a module) does
 two things: show a push, and open its link. It has **no fetch handler and no

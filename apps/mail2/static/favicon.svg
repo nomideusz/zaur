@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+	<!-- ZaurMark.svelte's glyph on a full tile, scaled to 85% with a heavier stroke so it holds at 16px. -->
+	<style>
+		.tile { fill: #ffffff; }
+		.z { stroke: #e11d48; } .a { stroke: #0891b2; } .r { stroke: #0d9488; }
+		@media (prefers-color-scheme: dark) {
+			.tile { fill: #161d26; }
+			.z { stroke: #f08ea3; } .a { stroke: #88c6d9; } .r { stroke: #88c7bf; }
+		}
+	</style>
+	<rect class="tile" width="16" height="16" rx="3.5" />
+	<g transform="translate(8 8) scale(0.85) translate(-8 -8)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+		<path class="z" d="M2.5 2.5H6.5L2.5 6.5H6.5" />
+		<path class="a" d="M9.5 6.5L11.5 2.5L13.5 6.5M10.25 5H12.75" />
+		<path class="a" d="M2.5 9.5V11.6a2 1.9 0 0 0 4 0V9.5" />
+		<path class="r" d="M9.5 13.5V9.5H11.6a1.4 1.4 0 0 1 0 2.8H9.5M11.4 12.3L13.5 13.5" />
+	</g>
+</svg>

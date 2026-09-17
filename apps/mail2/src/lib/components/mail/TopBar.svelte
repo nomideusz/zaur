@@ -108,8 +108,7 @@
 >
 	<!-- Left: the mark, the sidebar toggle, the folder switcher -->
 	<div class="flex min-w-0 shrink-0 items-center gap-3 max-md:gap-2">
-		<ZaurMark size={'md'} class="max-md:hidden" />
-		<ZaurMark size={'sm'} class="md:hidden" />
+		<ZaurMark />
 
 		<div class="h-4 w-px bg-[var(--z-hairline)] max-md:hidden"></div>
 

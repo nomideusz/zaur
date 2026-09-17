@@ -22,7 +22,7 @@
 	{#if onClose}
 		<!-- Drawer header: the drawer is a screen of its own on a phone. -->
 		<div class="flex h-[52px] shrink-0 items-center justify-between border-b border-[var(--z-hairline)] px-3">
-			<ZaurMark size="sm" />
+			<ZaurMark />
 			<button type="button" class="z-icon-btn !size-8 !rounded-[8px]" aria-label="Close folder list" onclick={onClose}>
 				<svg class="size-[13px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 					<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
