@@ -209,7 +209,7 @@ easiest to put:
   through `settings.remote.ts` (`Identity/get` + `Identity/set`), plus the
   account address, quota and sign-out. Mail rules live here too, as a Sieve
   script — see [Rules](#rules).
-- **The Zaur account (our store).** The four preferences that should be the
+- **The Zaur account (our store).** The five preferences that should be the
   same wherever you sign in — see
   [Settings that follow the account](#settings-that-follow-the-account).
 - **This browser.** `#lib/settings` still owns the `mail2.prefs` localStorage
@@ -230,7 +230,7 @@ mockup affordances across from the Hobday prototype; they are gone:
 | Sidebar "Read-only calendars" (UK Holidays) | same, and its checkbox was `|| true` |
 | Sidebar "Manage" | `onManageFolders` was never passed |
 | List category chips | `inferTag()` guessed "Family"/"Work" from subject keywords |
-| Reader "More actions" menu | Archive / Highlight / Mark unseen / Trash, all inert — the same four are back in the reader's toolbar now that they do something (see "The message row") |
+| Reader "More actions" menu | Archive / Highlight / Mark unseen / Trash, all inert — the actions are back in the reader's toolbar and, since the split Reply button landed, in a menu that runs them (see [Reply is a split button](#reply-is-a-split-button)) |
 | Top-bar search | an input with no handler at all — the slot is wired now, see [Search](#search) |
 | Profile "Keyboard shortcuts" | inert menu item |
 
@@ -314,14 +314,33 @@ and lets the one bar that stays be **60px with 40–44px targets** instead of
 nothing hides and nothing grows.
 
 Its two ends are the two things it must not confuse. **Back sits alone at the
-left edge**; everything that answers the message — the four icons, then Reply
-and Reply all past a hairline — is pushed to the **right**, because a back
-arrow and a reply arrow point the same way and a mis-tap there sends mail to
-someone. (Reply all gained Reply's curved tail for the same reason: drawn as a
-bare `«` it was the back chevron's relative rather than Reply's.) On a desk
-there is no back button to be mistaken for, and the reader's content column is
-left-aligned, so the Reply set folds back to the left edge it has always had —
-three `md:order-*` classes, one bar, no second copy of it.
+left edge**; everything that answers the message — the icons, then Reply past a
+hairline — is pushed to the **right**, because a back arrow and a reply arrow
+point the same way and a mis-tap there sends mail to someone. On a desk there
+is no back button to be mistaken for, and the reader's content column is
+left-aligned, so Reply folds back to the left edge it has always had — three
+`md:order-*` classes, one bar, no second copy of it.
+
+### Reply is a split button
+
+Reply is two controls in one frame: the near half answers, the caret opens
+everything else the message can have done to it. That is what stops the bar
+growing a button per verb — **Reply all** and **Forward** are in there, and so
+is the filing half, **Mark unread**, **Mark as spam** and a **Move to** list of
+every folder that does not already have a control of its own. The next action
+costs a menu line rather than bar width.
+
+What stays on the bar is what you reach for without reading: flag, **spam** and
+the bin at every width, with mark-unread and Archive joining them once the pane
+is past 448px. Spam outranks Archive for that space because junk is the mail
+you most often open only to get rid of — and marking it *is* a move to Junk, so
+it goes through the same `bulk` command Archive does and the toast says what
+was meant ("marked as spam") rather than how it was carried out. Inside Junk
+the same button means the opposite, and files the message back to the inbox.
+
+A move now also refreshes the **destination** folder's cached list. Without
+that, opening the folder you just moved something into showed it as it was
+before, which reads as a move that did not happen.
 
 ### Compose is a sheet
 
@@ -653,8 +672,8 @@ The rest of the row:
 ## The reader wears the row it came from
 
 Open a thread and the sender card is the row you clicked, grown up: the same
-rail in the same channel over the same fill, the same identity tile a size
-larger. That handoff is the whole point — two panes that merely agree on a
+rail in the same channel over the same fill — and, for anyone who turns the
+tiles on, the same identity tile a size larger. That handoff is the whole point — two panes that merely agree on a
 palette still read as two panes; one that hands its colour to the other reads
 as one thing. The channel is decided the same way (`messageChannel`, from the
 folder the thread was opened in and the thread's flags), so the two can never
@@ -662,12 +681,20 @@ disagree.
 
 The rest of the pane follows from the same rule:
 
-- The toolbar's Reply set is labelled where the pane is wide enough and
-  icon-only where it is not, and the **same four icons** the list uses sit in a
-  bordered group beside it; a flagged thread's flag button is filled in the
-  flagged channel. Which of the two leads the bar depends on whether there is a
-  back arrow to keep Reply away from — see
+- The toolbar's Reply is labelled where the pane is wide enough and icon-only
+  where it is not, and the **same icons** the list uses sit in a bordered group
+  beside it; a flagged thread's flag button is filled in the flagged channel.
+  Which of the two leads the bar depends on whether there is a back arrow to
+  keep Reply away from — see
   [A screen gets one bar](#a-screen-gets-one-bar).
+- **The date is the card's top-right corner**, at every width. The card used to
+  stack below 448px, which moved the date under the sender on a phone and back
+  up beside it on a desk; it is one number you look up mid-read, so it holds
+  still and the address line truncates instead.
+- **Avatars are off by default** (`showAvatars`). The rail already carries the
+  channel, the tile is the row's widest ornament, and a list without it fits
+  more mail on a phone. The account's own tile in the top bar is chrome rather
+  than a sender, so it stays either way.
 - **Thread history** is a stack of cards, each railed by *its* sender's
   identity tone at a third strength, so a thread with three people in it is
   scannable at a glance. Expanding it used to be one-way; it collapses now.
@@ -1011,13 +1038,13 @@ first run against the real server is still a test — see the table below.
 
 ## Settings that follow the account
 
-Four of the six preferences travel with the account. **Two deliberately do
+Five of the seven preferences travel with the account. **Two deliberately do
 not**, and this is the part worth stating plainly, because syncing them would
 have been a regression dressed as a feature:
 
 | Preference | Where it lives | Why |
 | --- | --- | --- |
-| `pageSize`, `markReadOnOpen`, `showPreview`, `unseenByDefault` | account | Behaviour and workflow — the same answer is right on every device |
+| `pageSize`, `markReadOnOpen`, `showPreview`, `showAvatars`, `unseenByDefault` | account | Behaviour and workflow — the same answer is right on every device |
 | `listWidth` | device | A pixel width for one screen. Push 760px from a wide monitor and it eats the reader on a laptop |
 | `sidebarOpen` | device | A column on a desktop, an overlay drawer on a phone — not the same question |
 

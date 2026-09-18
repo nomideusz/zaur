@@ -19,6 +19,8 @@
 			| 'mail'
 			| 'mail-open'
 			| 'archive'
+			| 'spam'
+			| 'not-spam'
 			| 'trash'
 			| 'clip'
 			| 'chevron';
@@ -60,6 +62,18 @@
 		<rect x="2" y="2.8" width="12" height="3" rx="0.9" stroke="currentColor" stroke-width="1.3" />
 		<path d="M3.2 5.8v6.3a1 1 0 001 1h7.6a1 1 0 001-1V5.8" stroke="currentColor" stroke-width="1.3" />
 		<path d="M6.4 8.4L8 10l1.6-1.6" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" />
+	</svg>
+{:else if name === 'spam' || name === 'not-spam'}
+	<!-- A shield spanning the same 2→14 box as the archive lid beside it: what
+	     the folder does to the sender, not what it does to the message. -->
+	<svg class={className} viewBox="0 0 16 16" fill="none" role={label ? 'img' : undefined} aria-label={label} aria-hidden={label ? undefined : 'true'}>
+		<path d="M8 2.2l5 1.8v4.3c0 3-2.1 5.2-5 5.9-2.9-.7-5-2.9-5-5.9V4z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round" />
+		{#if name === 'spam'}
+			<path d="M8 5.6v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+			<path d="M8 10.5v.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+		{:else}
+			<path d="M5.9 8.1l1.5 1.5 2.7-2.9" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" />
+		{/if}
 	</svg>
 {:else if name === 'trash'}
 	<!-- Lid spans 2→14, the same as the archive box it stands next to. -->

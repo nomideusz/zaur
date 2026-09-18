@@ -12,6 +12,13 @@ export type Prefs = {
 	markReadOnOpen: boolean;
 	/** Show the snippet line under each subject in the list. */
 	showPreview: boolean;
+	/**
+	 * Show each sender's identity tile in the list and on the reader's sender
+	 * card. Off by default: the rail already carries the channel and the tile is
+	 * the row's widest ornament, so a list without it fits more mail on a phone.
+	 * The account's own tile in the top bar is chrome, not a sender, and stays.
+	 */
+	showAvatars: boolean;
 	/** Start each folder on the Unseen filter instead of All. */
 	unseenByDefault: boolean;
 	/** Light, dark, or whatever the OS says. A device preference: a desk and a phone differ. */
@@ -27,6 +34,7 @@ export const DEFAULT_PREFS: Prefs = {
 	pageSize: 50,
 	markReadOnOpen: true,
 	showPreview: true,
+	showAvatars: false,
 	unseenByDefault: false,
 	theme: 'system'
 };
@@ -41,12 +49,13 @@ export const DEFAULT_PREFS: Prefs = {
  * sidebar is an overlay drawer, than on a desktop where it is a column.
  *
  * A device-shaped preference stored per account is worse than one stored per
- * device, so these are the four that travel.
+ * device, so these are the five that travel.
  */
 export const ACCOUNT_PREF_KEYS = [
 	'pageSize',
 	'markReadOnOpen',
 	'showPreview',
+	'showAvatars',
 	'unseenByDefault'
 ] as const satisfies readonly (keyof Prefs)[];
 
@@ -57,6 +66,7 @@ export function accountPrefsOf(prefs: Prefs): AccountPrefs {
 		pageSize: prefs.pageSize,
 		markReadOnOpen: prefs.markReadOnOpen,
 		showPreview: prefs.showPreview,
+		showAvatars: prefs.showAvatars,
 		unseenByDefault: prefs.unseenByDefault
 	};
 }

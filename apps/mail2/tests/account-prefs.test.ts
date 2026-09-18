@@ -18,19 +18,27 @@ test('ACCOUNT_PREF_KEYS: the device-shaped preferences never travel', () => {
 	assert.deepEqual([...ACCOUNT_PREF_KEYS].sort(), [
 		'markReadOnOpen',
 		'pageSize',
+		'showAvatars',
 		'showPreview',
 		'unseenByDefault'
 	]);
 });
 
-test('accountPrefsOf: carries only the four, whatever else is set', () => {
+test('accountPrefsOf: carries only the five, whatever else is set', () => {
 	const local: Prefs = { ...DEFAULT_PREFS, listWidth: 720, sidebarOpen: false, pageSize: 100 };
 	assert.deepEqual(accountPrefsOf(local), {
 		pageSize: 100,
 		markReadOnOpen: DEFAULT_PREFS.markReadOnOpen,
 		showPreview: DEFAULT_PREFS.showPreview,
+		showAvatars: DEFAULT_PREFS.showAvatars,
 		unseenByDefault: DEFAULT_PREFS.unseenByDefault
 	});
+});
+
+test('showAvatars: off unless the person says otherwise, and it travels', () => {
+	assert.equal(DEFAULT_PREFS.showAvatars, false);
+	const merged = mergeAccountPrefs({ ...DEFAULT_PREFS }, { showAvatars: true });
+	assert.equal(merged.showAvatars, true);
 });
 
 test('mergeAccountPrefs: the account fills in, the device keeps its own shape', () => {

@@ -1,6 +1,10 @@
 <script lang="ts">
+	import { Menu } from '@ark-ui/svelte/menu';
+	import { Portal } from '@ark-ui/svelte/portal';
 	import { renderMessageBody } from '#lib/email/html';
 	import type { MessageDetail } from '@zaur/mail-core';
+	import type { MailboxDTO } from '#lib/mail/types';
+	import { prefs } from '#lib/settings.svelte.ts';
 	import EmailHtmlFrame from './EmailHtmlFrame.svelte';
 	import { attachmentUrl, formatBytes, formatReaderTime, initials } from '#lib/mail/rows';
 	import { attachmentKind } from '#lib/compose/attachments';
@@ -10,6 +14,7 @@
 		channelStyle,
 		identityStyle,
 		identityTone,
+		mailboxChannel,
 		messageChannel
 	} from '#lib/mail/colors';
 	import ActionIcon from './ActionIcon.svelte';
@@ -37,6 +42,10 @@
 		mailboxKind?: string | null;
 		/** Archive is the one move worth a button — absent inside Archive itself. */
 		archiveTarget?: { id: string } | null;
+		/** Every folder: the menu's "Move to" list, and where spam goes. */
+		mailboxes?: MailboxDTO[];
+		/** The folder being read — it is not a destination for itself. */
+		currentMailboxId?: string | null;
 		/** In Trash, delete destroys; the bin says so by being red at rest. */
 		inTrash?: boolean;
 	}
@@ -53,6 +62,8 @@
 		threadState = null,
 		mailboxKind = null,
 		archiveTarget = null,
+		mailboxes,
+		currentMailboxId = null,
 		inTrash = false
 	}: Props = $props();
 
@@ -98,8 +109,43 @@
 		return `to ${first.name || first.email}${rest > 0 ? `, +${rest}` : ''}`;
 	}
 
-	function anchorFrom(event: Event) {
-		const rect = (event.currentTarget as HTMLElement).getBoundingClientRect();
+	/**
+	 * Spam is a move, like Archive: Stalwart learns from the folder a message
+	 * ends up in. Inside Junk the same button means the opposite and files it back
+	 * to the inbox, which is the one way out of that folder worth a button.
+	 */
+	const inJunk = $derived(mailboxKind === 'junk');
+	const spamTarget = $derived(
+		(mailboxes ?? []).find((box) => box.kind === (inJunk ? 'inbox' : 'junk')) ?? null
+	);
+	/**
+	 * Everywhere else this thread could go. A folder is not a destination for
+	 * itself, and neither is one that already has a control of its own: Junk is
+	 * the shield, Trash is the bin, and received mail does not go to Drafts or
+	 * Sent. Archive is listed here rather than twice — it is a move like any
+	 * other, it just also earns a button where the pane is wide enough.
+	 */
+	const moveTargets = $derived(
+		(mailboxes ?? []).filter(
+			(box) =>
+				box.id !== currentMailboxId &&
+				box.id !== spamTarget?.id &&
+				!MOVE_EXCLUDED.has(box.kind)
+		)
+	);
+
+	const MOVE_EXCLUDED = new Set(['drafts', 'sent', 'trash', 'junk']);
+
+	let replyEl = $state<HTMLElement | null>(null);
+
+	/**
+	 * Where a draft opens from. The menu's items have no rect of their own — a
+	 * menu is portalled out of the bar — so every way into compose is anchored on
+	 * the one control that opened it.
+	 */
+	function replyAnchor() {
+		const rect = replyEl?.getBoundingClientRect();
+		if (!rect) return null;
 		return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
 	}
 
@@ -145,10 +191,16 @@
 
 			<!-- The distance that keeps Back and Reply apart. On a desk there is no
 			     Back to keep away from, so the `md:order-*` classes below put the bar
-			     back the way it was: Reply leading, the four icons trailing. -->
+			     back the way it was: Reply leading, the icons trailing. -->
 			<div class="grow md:order-2" aria-hidden="true"></div>
 
-			<!-- The same four icons the list uses, on the thread you are reading. -->
+			<!--
+				The same icons the list uses, on the thread you are reading. Flag, spam
+				and the bin are here at every width — junk mail is what you most often
+				open a message only to get rid of, so it outranks Archive for the space.
+				Mark-unread and Archive step into the menu once the pane is too narrow
+				for five, which is every phone and a tablet's second pane.
+			-->
 			{#if onAction && latest}
 				<div class="z-group shrink-0 md:order-3" role="group" aria-label="Message actions">
 					<button
@@ -165,8 +217,19 @@
 						<ActionIcon name={unread ? 'mail-open' : 'mail'} class="size-[15px]" />
 					</button>
 					{#if archiveTarget}
-						<button type="button" class="z-icon-btn max-md:!size-10" aria-label="Archive" title="Archive (e)" onclick={() => onAction('move', archiveTarget.id)}>
-							<ActionIcon name="archive" class="size-[15px] max-md:size-[17px]" />
+						<button type="button" class="z-icon-btn @max-md:hidden" aria-label="Archive" title="Archive (e)" onclick={() => onAction('move', archiveTarget.id)}>
+							<ActionIcon name="archive" class="size-[15px]" />
+						</button>
+					{/if}
+					{#if spamTarget}
+						<button
+							type="button"
+							class="z-icon-btn max-md:!size-10 hover:!bg-[var(--z-ch-discard-hover)] hover:!text-[var(--z-ch-discard-solid)]"
+							aria-label={inJunk ? 'Not spam' : 'Mark as spam'}
+							title={inJunk ? `Not spam — move to ${spamTarget.name}` : `Mark as spam — move to ${spamTarget.name}`}
+							onclick={() => onAction('move', spamTarget.id)}
+						>
+							<ActionIcon name={inJunk ? 'not-spam' : 'spam'} class="size-[15px] max-md:size-[17px]" />
 						</button>
 					{/if}
 					<button
@@ -181,46 +244,100 @@
 				</div>
 
 				<!-- Phone: a hairline, so the bin at the group's end never reads as the
-				     first of the reply buttons beside it. -->
+				     near half of the reply button beside it. -->
 				<div class="h-7 w-px shrink-0 bg-[var(--z-hairline)] md:hidden" aria-hidden="true"></div>
 			{/if}
 
 			{#if latest}
-				<!-- Reply set. On a desk it leads the bar, sitting over the left-aligned
-				     column it answers; on a phone it trails it, as far from the back
-				     arrow as the bar goes.
+				<!--
+					Reply, split in two. The near half answers; the caret opens
+					everything else this message can have done to it — Reply all and
+					Forward, then the filing actions and the folder list — so the next
+					action to be added costs a menu line rather than bar width.
 
-				     Whether it is labelled is a `@container` question, not a viewport
-				     one — a tablet's second pane is as narrow as a phone, and three
-				     labelled buttons used to wrap and push the four icons clean off its
-				     right edge. How *big* the targets are stays viewport-driven: a
-				     narrow pane on a desk is still being pointed at, not tapped. -->
-				<div class="flex shrink-0 items-center gap-2 max-md:gap-1.5 md:order-1">
-					<button type="button" class="btn-tactile !h-7 max-md:!size-11 max-md:!p-0" title="Reply" aria-label="Reply" onclick={(event) => latest && onCompose('reply', latest, anchorFrom(event))}>
-						<svg class="size-3.5 text-[var(--z-strong)] max-md:size-[18px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					On a desk it leads the bar, sitting over the left-aligned column it
+					answers; on a phone it trails it, as far from the back arrow as the
+					bar goes. Whether it spells "Reply" is a `@container` question, not a
+					viewport one — a tablet's second pane is as narrow as a phone. How
+					*big* the targets are stays viewport-driven: a narrow pane on a desk
+					is still being pointed at, not tapped.
+				-->
+				<div
+					bind:this={replyEl}
+					class="flex shrink-0 items-stretch rounded-[8px] border border-[var(--z-line)] bg-[var(--z-surface)] shadow-[var(--z-shadow-tactile)] md:order-1"
+				>
+					<button
+						type="button"
+						class="flex h-7 items-center gap-[7px] rounded-l-[7px] px-[11px] text-[13px] font-medium text-[var(--z-body)] transition-colors hover:bg-[var(--z-tactile-bg-hover)] max-md:h-11 max-md:w-11 max-md:justify-center max-md:px-0"
+						title="Reply"
+						aria-label="Reply"
+						onclick={() => latest && onCompose('reply', latest, replyAnchor())}
+					>
+						<svg class="size-3.5 shrink-0 text-[var(--z-strong)] max-md:size-[18px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 							<path d="M6 3.5L1.5 8 6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
 							<path d="M1.5 8H10a4 4 0 014 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 						</svg>
-						<span class="@max-lg:hidden">Reply</span>
+						<span class="@max-md:hidden">Reply</span>
 					</button>
-					<button type="button" class="btn-tactile !h-7 max-md:!size-11 max-md:!p-0" title="Reply all" aria-label="Reply all" onclick={(event) => latest && onCompose('replyAll', latest, anchorFrom(event))}>
-						<!-- Two heads on Reply's one tail. Drawn as a bare « it belonged to
-						     the back chevron's family rather than Reply's, which on a phone
-						     with no label under it is the wrong one to be read as. -->
-						<svg class="size-3.5 text-[var(--z-strong)] max-md:size-[18px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-							<path d="M5.5 3.5L1 8 5.5 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-							<path d="M9.5 3.5L5 8 9.5 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-							<path d="M5 8H10a4 4 0 014 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-						</svg>
-						<span class="@max-lg:hidden">Reply all</span>
-					</button>
-					<button type="button" class="btn-tactile !h-7 @max-lg:hidden" title="Forward" aria-label="Forward" onclick={(event) => latest && onCompose('forward', latest, anchorFrom(event))}>
-						<svg class="size-3.5 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-							<path d="M10 3.5L14.5 8 10 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-							<path d="M14.5 8H6a4 4 0 00-4 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-						</svg>
-						Forward
-					</button>
+
+					<!-- Hangs from the caret rather than back over the list: the bar's
+					     left edge is the message column's left edge. A phone has no room
+					     to the right of it, and the popper shifts it back in. -->
+					<Menu.Root positioning={{ placement: 'bottom-start', gutter: 8, overflowPadding: 12 }} lazyMount unmountOnExit>
+						<Menu.Trigger
+							class="flex h-7 w-[26px] items-center justify-center rounded-r-[7px] border-l border-[var(--z-line)] text-[var(--z-strong)] transition-colors hover:bg-[var(--z-tactile-bg-hover)] max-md:h-11 max-md:w-9"
+							aria-label="More message actions"
+							title="More actions"
+						>
+							<ActionIcon name="chevron" class="size-3 text-[var(--z-faint)] max-md:size-[15px]" />
+						</Menu.Trigger>
+						<Portal>
+							<Menu.Positioner>
+								<Menu.Content class="z-menu z-40 w-56">
+									<Menu.Item value="reply-all" class="z-menu-item" onSelect={() => latest && onCompose('replyAll', latest, replyAnchor())}>
+										Reply all
+									</Menu.Item>
+									<Menu.Item value="forward" class="z-menu-item" onSelect={() => latest && onCompose('forward', latest, replyAnchor())}>
+										Forward
+									</Menu.Item>
+
+									{#if onAction}
+										<div class="my-1 h-px bg-[var(--z-hairline)]" aria-hidden="true"></div>
+										<Menu.Item value="seen" class="z-menu-item" onSelect={() => onAction(unread ? 'read' : 'unread')}>
+											{unread ? 'Mark read' : 'Mark unread'}
+										</Menu.Item>
+										{#if spamTarget}
+											<Menu.Item value="spam" class="z-menu-item" onSelect={() => onAction('move', spamTarget.id)}>
+												{inJunk ? 'Not spam' : 'Mark as spam'}
+											</Menu.Item>
+										{/if}
+
+										<!-- Every other folder, drawn like the top bar's switcher: the
+										     same swatch, so a destination reads as the row it will
+										     become. -->
+										{#if moveTargets.length > 0}
+											<div class="my-1 h-px bg-[var(--z-hairline)]" aria-hidden="true"></div>
+											<div class="z-menu-caption">Move to</div>
+											{#each moveTargets as mailbox (mailbox.id)}
+												{@const channel = mailboxChannel(mailbox.kind)}
+												<Menu.Item value="move:{mailbox.id}" class="z-menu-item" onSelect={() => onAction('move', mailbox.id)}>
+													<span class="flex min-w-0 items-center gap-[9px]">
+														<span
+															class="inline-block size-2.5 shrink-0 rounded-[3px] border"
+															style:background-color={channel.fill}
+															style:border-color={channel.stroke}
+															aria-hidden="true"
+														></span>
+														<span class="truncate">{mailbox.name}</span>
+													</span>
+												</Menu.Item>
+											{/each}
+										{/if}
+									{/if}
+								</Menu.Content>
+							</Menu.Positioner>
+						</Portal>
+					</Menu.Root>
 				</div>
 			{/if}
 		</div>
@@ -271,17 +388,24 @@
 
 				<!--
 					The sender card wears the thread's channel — the row you clicked,
-					grown up — and the avatar carries the person. That handoff is what
-					makes list and reader read as one object rather than two panes.
+					grown up. That handoff is what makes list and reader read as one
+					object rather than two panes.
+
+					The card never stacks: when it did, the date slid under the sender on
+					a narrow pane and moved again on a wide one. It belongs in the corner
+					the eye goes to for it, so the row stays a row and the address line
+					truncates instead.
 				-->
 				<div
-					class="z-railed z-hue-wash flex items-start justify-between gap-3 rounded-[10px] border py-3 pr-3 pl-[18px] @max-md:flex-col @max-md:gap-[9px]"
+					class="z-railed z-hue-wash flex items-start justify-between gap-3 rounded-[10px] border py-3 pr-3 pl-[18px]"
 					style="{channelStyle(channel)};--z-rail-inset:10px"
 				>
 					<div class="flex min-w-0 items-start gap-[11px]">
-						<span class="z-avatar !size-[34px] !text-[12px] @max-md:!size-8 @max-md:!text-[11px]" style={identityStyle(latest.from.email || latest.from.name)} aria-hidden="true">
-							{initials(latest.from.name || latest.from.email, latest.from.email)}
-						</span>
+						{#if prefs.showAvatars}
+							<span class="z-avatar !size-[34px] !text-[12px] @max-md:!size-8 @max-md:!text-[11px]" style={identityStyle(latest.from.email || latest.from.name)} aria-hidden="true">
+								{initials(latest.from.name || latest.from.email, latest.from.email)}
+							</span>
+						{/if}
 						<div class="min-w-0">
 							<div class="flex items-center gap-2">
 								<span class="truncate text-[14px] font-bold text-[var(--z-ink)]">{latest.from.name || latest.from.email}</span>
@@ -292,16 +416,18 @@
 							</div>
 						</div>
 					</div>
-					<div class="flex shrink-0 items-center gap-2">
-						{#if stateLabel}<span class="z-chip md:hidden">{stateLabel}</span>{/if}
+					<!-- Top right of the card, at every width. The chip the name has no
+					     room for on a narrow pane falls in under it. -->
+					<div class="flex shrink-0 flex-col items-end gap-1.5">
 						<time
-							class="z-mono shrink-0 rounded-[6px] border bg-[var(--z-surface)] px-2 py-[3px] text-[11px] font-medium"
+							class="z-mono rounded-[6px] border bg-[var(--z-surface)] px-2 py-[3px] text-[11px] font-medium"
 							style:border-color={timeBorder}
 							style:color={channel.ink}
 							datetime={latest.receivedAt}
 						>
 							{formatReaderTime(latest.receivedAt)}
 						</time>
+						{#if stateLabel}<span class="z-chip @md:hidden">{stateLabel}</span>{/if}
 					</div>
 				</div>
 

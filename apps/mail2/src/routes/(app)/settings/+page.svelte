@@ -237,6 +237,11 @@
 		</label>
 
 		<label class="flex cursor-pointer items-center justify-between gap-4 border-t border-[var(--z-sunken)] py-[11px]">
+			<span class={rowLabel}>Show sender avatars</span>
+			<input type="checkbox" class="z-check !size-[19px]" checked={prefs.showAvatars} onchange={(event) => setPref('showAvatars', event.currentTarget.checked)} />
+		</label>
+
+		<label class="flex cursor-pointer items-center justify-between gap-4 border-t border-[var(--z-sunken)] py-[11px]">
 			<span class={rowLabel}>Open folders on Unseen</span>
 			<input type="checkbox" class="z-check !size-[19px]" checked={prefs.unseenByDefault} onchange={(event) => setPref('unseenByDefault', event.currentTarget.checked)} />
 		</label>

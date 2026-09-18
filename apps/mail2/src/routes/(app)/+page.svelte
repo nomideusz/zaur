@@ -457,8 +457,19 @@
 			if (trash) payload = { ...payload, action: 'move', mailboxId: trash.id };
 		}
 		const leavesFolder = payload.action === 'move' || payload.action === 'delete';
+		// Marking spam *is* a move to Junk — the toast should say what was meant,
+		// not how it was carried out.
+		const toJunk =
+			payload.action === 'move' &&
+			mailboxList?.find((box) => box.id === payload.mailboxId)?.kind === 'junk';
 		const verb =
-			payload.action === 'delete' ? 'deleted' : payload.action === 'move' ? 'moved' : 'updated';
+			payload.action === 'delete'
+				? 'deleted'
+				: toJunk
+					? 'marked as spam'
+					: payload.action === 'move'
+						? 'moved'
+						: 'updated';
 		bulkBusy = true;
 		try {
 			const { count } = await bulk(payload);
@@ -467,6 +478,18 @@
 			if (!threadIds) selection = new Set();
 			void listResource?.refresh();
 			void mailboxesResource?.refresh();
+			// The folder that just received these keeps a cached list of its own, so
+			// without this, opening it straight after a move shows it as it was
+			// before — which reads as a move that did not happen.
+			if (payload.action === 'move' && payload.mailboxId) {
+				void threads({
+					mailboxId: payload.mailboxId,
+					filter: listFilter,
+					limit: prefs.pageSize
+				})
+					.refresh()
+					.catch(() => {});
+			}
 			compose.pushToast({ text: `${count} ${count === 1 ? 'message' : 'messages'} ${verb}`, tone: 'success' });
 		} catch (cause) {
 			compose.pushToast({
@@ -773,6 +796,8 @@
 					threadState={openRowState}
 					mailboxKind={activeMailbox?.kind ?? null}
 					{archiveTarget}
+					mailboxes={mailboxList}
+					currentMailboxId={activeMailbox?.id ?? null}
 					inTrash={activeMailbox?.kind === 'trash'}
 				/>
 			</main>

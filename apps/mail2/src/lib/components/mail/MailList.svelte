@@ -434,7 +434,9 @@
 							data-row-id={row.threadId}
 							data-state={isSelected ? 'selected' : isOpen ? 'open' : isCursor ? 'cursor' : 'rest'}
 							data-unread={row.unread ? 'true' : 'false'}
-							class="z-row z-railed group/row grid cursor-pointer grid-cols-[18px_30px_minmax(0,1fr)] items-start gap-x-[11px] rounded-[10px] border py-3 pr-3 pl-[18px] max-md:grid-cols-[30px_minmax(0,1fr)]"
+							class="z-row z-railed group/row grid cursor-pointer items-start gap-x-[11px] rounded-[10px] border py-3 pr-3 pl-[18px] {prefs.showAvatars
+								? 'grid-cols-[18px_30px_minmax(0,1fr)] max-md:grid-cols-[30px_minmax(0,1fr)]'
+								: 'grid-cols-[18px_minmax(0,1fr)] max-md:grid-cols-[minmax(0,1fr)]'}"
 							class:z-hue-wash={row.unread && !isSelected && !isOpen && !isCursor}
 							aria-current={isOpen ? 'true' : undefined}
 							style="{channelStyle(channel)};--z-rail-inset:12px"
@@ -467,10 +469,14 @@
 								</svg>
 							</button>
 
-							<!-- The person: their identity tile, the same tone everywhere they appear. -->
-							<span class="z-avatar self-center" style={identityStyle(row.senderEmail || row.senderLabel)} aria-hidden="true">
-								{initials(row.senderLabel, row.senderEmail)}
-							</span>
+							<!-- The person: their identity tile, the same tone everywhere they
+							     appear. Off by default — see `showAvatars`; the row's rail still
+							     carries the channel, and the grid drops the column with it. -->
+							{#if prefs.showAvatars}
+								<span class="z-avatar self-center" style={identityStyle(row.senderEmail || row.senderLabel)} aria-hidden="true">
+									{initials(row.senderLabel, row.senderEmail)}
+								</span>
+							{/if}
 
 							<div class="min-w-0">
 								<div class="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-2">
