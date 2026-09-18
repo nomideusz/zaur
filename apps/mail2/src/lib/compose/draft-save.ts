@@ -1,4 +1,4 @@
-import { parseAddressList } from './recipients';
+import { recipientEmails } from './recipients';
 import { outgoingAttachments } from './attachments';
 import type { Draft, DraftSaveInput } from './types';
 
@@ -16,23 +16,13 @@ export const DRAFT_CONTENT_KEYS: ReadonlySet<string> = new Set([
 	'attachments'
 ]);
 
-/** The server draft stores parsed recipients, so cc/bcc strings are split here. */
+/** The server draft stores addresses, so the three chip lists unwrap here. */
 export function buildDraftSaveInput(draft: Draft): DraftSaveInput {
-	const seen = new Set<string>();
-	const to: string[] = [];
-	for (const recipient of draft.to) {
-		const email = recipient.email.trim();
-		if (!email) continue;
-		const key = email.toLowerCase();
-		if (seen.has(key)) continue;
-		seen.add(key);
-		to.push(email);
-	}
 	return {
 		jmapDraftId: draft.jmapDraftId,
-		to,
-		cc: parseAddressList(draft.cc),
-		bcc: parseAddressList(draft.bcc),
+		to: recipientEmails(draft.to),
+		cc: recipientEmails(draft.cc),
+		bcc: recipientEmails(draft.bcc),
 		subject: draft.subject,
 		body: draft.body,
 		attachments: outgoingAttachments(draft.attachments)
@@ -60,8 +50,8 @@ export function draftContentSignature(draft: Draft): string {
 export function hasDraftContent(draft: Draft): boolean {
 	return (
 		draft.to.length > 0 ||
-		draft.cc.trim().length > 0 ||
-		draft.bcc.trim().length > 0 ||
+		draft.cc.length > 0 ||
+		draft.bcc.length > 0 ||
 		draft.subject.trim().length > 0 ||
 		draft.body.trim().length > 0 ||
 		draft.attachments.length > 0

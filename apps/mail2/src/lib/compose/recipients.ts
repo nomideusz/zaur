@@ -56,17 +56,37 @@ export function commitRecipient(
 	return { recipient: makeRecipient(input, meta), remaining: '' };
 }
 
-/** Split a Cc/Bcc text field into recipient emails for the send payload. */
-export function parseAddressList(text: string): string[] {
-	const out: string[] = [];
+/** Split an address list — typed, pasted, or stored on a server draft — into chips. */
+export function parseRecipients(text: string, meta = ''): Recipient[] {
+	const out: Recipient[] = [];
 	const seen = new Set<string>();
 	for (const part of text.split(/[,;]+/)) {
-		const recipient = makeRecipient(part);
+		const recipient = makeRecipient(part, meta);
 		if (!recipient) continue;
 		const key = recipient.email.toLowerCase();
 		if (seen.has(key)) continue;
 		seen.add(key);
-		out.push(recipient.email);
+		out.push(recipient);
+	}
+	return out;
+}
+
+/** Split a text field into recipient emails for the send payload. */
+export function parseAddressList(text: string): string[] {
+	return parseRecipients(text).map((recipient) => recipient.email);
+}
+
+/** The addresses on a chip list, deduped, for the wire. */
+export function recipientEmails(list: Recipient[]): string[] {
+	const out: string[] = [];
+	const seen = new Set<string>();
+	for (const recipient of list) {
+		const email = recipient.email.trim();
+		if (!email) continue;
+		const key = email.toLowerCase();
+		if (seen.has(key)) continue;
+		seen.add(key);
+		out.push(email);
 	}
 	return out;
 }

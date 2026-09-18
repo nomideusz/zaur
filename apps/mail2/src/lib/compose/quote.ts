@@ -30,8 +30,9 @@ export function draftSeed(message: MessageDetail): DraftSeed {
 	return {
 		jmapDraftId: message.id,
 		to: message.to.map((person) => ({ name: person.name, email: person.email, meta: '' })),
-		cc: message.cc.map((person) => person.email).join(', '),
-		bcc: message.bcc.map((person) => person.email).join(', '),
+		// Chips, so a reopened draft keeps the names its recipients arrived with.
+		cc: message.cc.map((person) => ({ name: person.name, email: person.email, meta: '' })),
+		bcc: message.bcc.map((person) => ({ name: person.name, email: person.email, meta: '' })),
 		subject: message.subject,
 		body: message.bodyText,
 		attachments: message.attachments

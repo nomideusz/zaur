@@ -365,6 +365,30 @@ now. On a phone they are one chevron rather than two words, and it opens both:
 two labelled buttons cost ~100px of a 390px screen, width the names need more,
 and each row carries its own ✕ for whichever you did not want.
 
+### One address row, drawn three times
+
+To, Cc and Bcc are the same field, so they are the same component: a chip list
+with completion over the same address book, the same identity tones, the same
+Enter/comma/Tab commit and the same Backspace. Cc and Bcc used to be bare
+comma-separated text that was only parsed at send — no completion, no chip, and
+no way to correct one address out of four. They are `Recipient[]` on the draft
+now, like To has always been, and `RecipientField` is what every store method
+takes so none of it exists three times over.
+
+**A chip hands its text back.** Clicking the name opens the chip in place as an
+input holding `Name <address>`, selected: Enter or blur commits it through the
+same parser a typed address goes through, Escape abandons it, and emptying it
+removes the chip. One wrong letter in the fourth of four addresses used to mean
+deleting it and typing the whole thing again.
+
+**The field's name is its placeholder**, not a label in a 72px gutter. A row
+with chips in it says what it is, the rows are always in the same order, and on
+a phone that gutter was a fifth of the screen spent on the word "To". What is
+left at the left edge is the step dot, which fills when the row has something
+in it. The trade is real: once every row is full, nothing spells out which one
+is Cc — the order and the ✕ that only Cc and Bcc carry are what tell them
+apart.
+
 `interactive-widget=resizes-content` in the viewport meta gets Chrome to
 shrink the layout viewport for the keyboard rather than paint over it. iOS
 does not honour it — which is why Send is in the header and not only in the
@@ -499,7 +523,7 @@ Compose follows the same rules, so its parts match what they stand next to:
 | Send | `.btn-primary`, recessed grey until there is a recipient, `⌘↵` inside it on a desk |
 | Attach / Discard | the reader toolbar's tactile buttons; discard in danger red |
 | Schedule | the needs-you channel once a time is set — a filled amber chip that says when |
-| Recipient chips | the person's identity tone, fill, stroke and ink; the tooltip shows their tile and address |
+| Recipient chips | the person's identity tone, fill, stroke and ink; the tooltip shows their tile and address, and clicking the name opens the chip for editing |
 | Suggestions | the menu: the highlighted row is a correspondence card, with a 26px tile, a mono address and a `↵` key |
 | Attachment chips | the reader's chips at 30px; `attachmentBadge` is the one source for the kind colour |
 | To / Subject step markers | 7px dots — the correspondence solid with its stroke when done, line-grey before |

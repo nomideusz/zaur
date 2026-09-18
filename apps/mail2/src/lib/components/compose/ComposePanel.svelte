@@ -16,7 +16,7 @@
 		isSendAtValid
 	} from '#lib/compose/schedule';
 	import { viewport } from '#lib/viewport.svelte.ts';
-	import type { Draft } from '#lib/compose/types';
+	import type { Draft, Recipient, RecipientField } from '#lib/compose/types';
 
 	interface Props {
 		draft: Draft;
@@ -28,13 +28,28 @@
 
 	let panelEl = $state<HTMLDivElement | null>(null);
 	let headerEl = $state<HTMLElement | null>(null);
-	let toInputEl = $state<HTMLInputElement | null>(null);
 	let fileInputEl = $state<HTMLInputElement | null>(null);
 
-	const toId = $derived(`compose-to-${draft.id}`);
+	const fieldId = (field: RecipientField) => `compose-${field}-${draft.id}`;
+	const listboxId = (field: RecipientField) => `compose-suggestions-${field}-${draft.id}`;
 	const subjectId = $derived(`compose-subject-${draft.id}`);
 	const bodyId = $derived(`compose-body-${draft.id}`);
-	const listboxId = $derived(`compose-suggestions-${draft.id}`);
+
+	/**
+	 * The per-field key names. To, Cc and Bcc are one field three times over, so
+	 * everything below reads the one it is drawing rather than existing thrice.
+	 */
+	const INPUT = { to: 'toInput', cc: 'ccInput', bcc: 'bccInput' } as const;
+	const OPEN = { to: 'toOpen', cc: 'ccOpen', bcc: 'bccOpen' } as const;
+	const HI = { to: 'toHi', cc: 'ccHi', bcc: 'bccHi' } as const;
+
+	const inputOf = (field: RecipientField) => draft[INPUT[field]];
+	const openOf = (field: RecipientField) => draft[OPEN[field]];
+	const hiOf = (field: RecipientField) => draft[HI[field]];
+	/** Nobody already on the draft is worth suggesting again, whichever row they are on. */
+	const suggestionsFor = (field: RecipientField) =>
+		filterContacts(compose.contacts, inputOf(field), [...draft.to, ...draft.cc, ...draft.bcc]);
+	const focusField = (field: RecipientField) => document.getElementById(fieldId(field))?.focus();
 
 	const maximized = $derived(draft.stage === 'maximized');
 	/**
@@ -54,7 +69,6 @@
 	const bodyHeight = $derived(bodyHeightPx(draft));
 	// Full-strength once the box has grown — an equality check dimmed it at 340 (maximized).
 	const bodyOpen = $derived(bodyHeight >= 228);
-	const suggestions = $derived(filterContacts(compose.contacts, draft.toInput, draft.to));
 	const title = $derived(draft.subject.trim() || 'New message');
 	/** What a sheet's bar says, where the subject already has a field of its own. */
 	const sheetTitle = $derived(
@@ -112,7 +126,7 @@
 		const target = draft.focusTarget;
 		if (!target) return;
 		compose.consumeFocus(draft.id);
-		const id = target === 'to' ? toId : target === 'subject' ? subjectId : bodyId;
+		const id = target === 'to' ? fieldId('to') : target === 'subject' ? subjectId : bodyId;
 		document.getElementById(id)?.focus();
 	});
 
@@ -211,65 +225,106 @@
 		compose.setGesture(draft.id, false);
 	}
 
-	// --- To field ---
+	// --- address fields ---
 
-	function onToInput(event: Event) {
-		const value = (event.currentTarget as HTMLInputElement).value;
-		compose.patch(draft.id, {
-			toInput: value,
-			toOpen: value.trim().length > 0,
-			toHi: 0
-		});
+	function onRecipientInput(event: Event, field: RecipientField) {
+		compose.setRecipientInput(draft.id, field, (event.currentTarget as HTMLInputElement).value);
 	}
 
-	function onToKeydown(event: KeyboardEvent) {
+	function onRecipientKeydown(event: KeyboardEvent, field: RecipientField) {
+		const items = suggestionsFor(field);
 		if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
 			event.preventDefault();
-			if (!draft.toOpen) {
-				compose.patch(draft.id, { toOpen: true, toHi: 0 });
+			if (!openOf(field)) {
+				compose.setRecipientOpen(draft.id, field, true);
 				return;
 			}
-			const count = Math.max(suggestions.length, 1);
+			const count = Math.max(items.length, 1);
 			const delta = event.key === 'ArrowDown' ? 1 : -1;
-			const next = (draft.toHi + delta + count) % count;
-			compose.patch(draft.id, { toHi: next });
+			compose.setRecipientHighlight(draft.id, field, (hiOf(field) + delta + count) % count);
 			return;
 		}
 		if (event.key === 'Enter' || event.key === ',' || event.key === 'Tab') {
-			const highlighted = suggestions[draft.toHi] ?? null;
-			const text = draft.toInput;
+			const highlighted = items[hiOf(field)] ?? null;
+			const text = inputOf(field);
 			if (!highlighted && !/@/.test(text)) {
 				if (event.key === ',') event.preventDefault();
 				return;
 			}
 			event.preventDefault();
-			compose.commitTo(draft.id, text, highlighted);
-			refocusAfterCommit();
+			compose.addRecipient(draft.id, field, text, highlighted);
+			refocusAfterCommit(field);
 			return;
 		}
 		if (event.key === 'Escape') {
-			if (draft.toOpen) {
+			if (openOf(field)) {
 				// Closes the suggestion list only — must not minimize the panel.
 				event.preventDefault();
 				event.stopPropagation();
-				compose.patch(draft.id, { toOpen: false });
+				compose.setRecipientOpen(draft.id, field, false);
 			}
 			return;
 		}
 		if (event.key === 'Backspace') {
-			compose.backspaceRemoveTo(draft.id);
+			compose.backspaceRemoveRecipient(draft.id, field);
 		}
 	}
 
 	// Picking a recipient must move focus after the input's own focus
 	// restore, hence the double rAF plus a fresh DOM query (spec).
-	function refocusAfterCommit() {
+	function refocusAfterCommit(field: RecipientField) {
 		requestAnimationFrame(() =>
 			requestAnimationFrame(() => {
-				const id = draft.subject.trim() ? toId : subjectId;
+				// From To, a draft with no subject yet moves on to one; Cc and Bcc
+				// always stay put, since you are usually adding more than one.
+				const id = field !== 'to' || draft.subject.trim() ? fieldId(field) : subjectId;
 				document.getElementById(id)?.focus();
 			})
 		);
+	}
+
+	// --- editing a chip ---
+
+	/**
+	 * A chip hands its text back rather than only offering to be deleted: one
+	 * wrong letter in the fourth of four addresses used to mean retyping it.
+	 */
+	let editing = $state<{ field: RecipientField; email: string } | null>(null);
+	let editText = $state('');
+
+	function startEdit(event: MouseEvent, field: RecipientField, person: Recipient) {
+		event.stopPropagation();
+		editing = { field, email: person.email };
+		// `Name <address>` round-trips through `makeRecipient`, so correcting the
+		// address keeps the name that came with it.
+		editText = person.name.trim() ? `${person.name} <${person.email}>` : person.email;
+	}
+
+	function commitEdit() {
+		if (!editing) return;
+		const { field, email } = editing;
+		editing = null;
+		compose.editRecipient(draft.id, field, email, editText);
+	}
+
+	function onEditKeydown(event: KeyboardEvent) {
+		if (event.key === 'Enter' || event.key === 'Tab') {
+			const field = editing?.field;
+			event.preventDefault();
+			commitEdit();
+			if (field) focusField(field);
+		} else if (event.key === 'Escape') {
+			// Abandons the edit only — must not minimize the panel.
+			event.preventDefault();
+			event.stopPropagation();
+			editing = null;
+		}
+	}
+
+	/** An edit starts with the whole address selected: most of them are replacements. */
+	function takeEdit(node: HTMLInputElement) {
+		node.focus();
+		node.select();
 	}
 
 	function onSubjectKeydown(event: KeyboardEvent) {
@@ -285,9 +340,9 @@
 		compose.patch(draft.id, { body: value, bodyOpened: true, sendError: null });
 	}
 
-	function removeTo(event: MouseEvent, email: string) {
+	function removeChip(event: MouseEvent, field: RecipientField, email: string) {
 		event.stopPropagation();
-		compose.removeTo(draft.id, email);
+		compose.removeRecipient(draft.id, field, email);
 	}
 
 </script>
@@ -314,6 +369,244 @@
 			<kbd class="z-kbd z-kbd-inverse !h-[18px]" aria-hidden="true">⌘↵</kbd>
 		{/if}
 	</button>
+{/snippet}
+
+
+<!--
+	One address row, for whichever of the three it is drawing. `label` is the
+	placeholder it shows while empty — see the note where these are rendered.
+-->
+{#snippet addressRow(field: RecipientField, label: string)}
+	{@const list = draft[field]}
+	{@const items = suggestionsFor(field)}
+	<div class="flex min-h-[28px] items-start gap-2.5 border-b border-[var(--z-hairline)] py-2 max-md:min-h-8 max-md:py-2.5">
+		<span class="flex h-[26px] shrink-0 items-center max-md:h-8">{@render stepDot(list.length > 0)}</span>
+
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<div
+			class="relative flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-[6px]"
+			onclick={() => focusField(field)}
+		>
+			{#each list as person (person.email)}
+				{@const theme = identityTone(person.email || person.name)}
+				{#if editing?.field === field && editing.email === person.email}
+					<!-- The chip, opened. It keeps the chip's shape so the row does not
+					     jump, and grows with what is typed into it. -->
+					<input
+						use:takeEdit
+						bind:value={editText}
+						onkeydown={onEditKeydown}
+						onblur={commitEdit}
+						size={Math.max(editText.length + 1, 12)}
+						aria-label="Edit {person.name || person.email}"
+						class="h-[26px] max-w-full min-w-0 rounded-[6px] border px-2 text-[13px] font-medium shadow-[var(--z-shadow-tactile)] focus:outline-none max-md:text-base"
+						style:background-color={theme.fill}
+						style:border-color={theme.stroke}
+						style:color={theme.ink}
+					/>
+				{:else}
+					{@const revealEmail =
+						person.name.trim().length > 0 && person.name.trim() !== person.email.trim()}
+					<!--
+						The person's colour, at full strength: fill, stroke and text all
+						from their Hobday theme. It used to be a white chip carrying an
+						18px avatar tile — but a chip that already spells the name out
+						does not need initials too, and the tile confined the colour to
+						a corner. Now a row of recipients reads like the list does.
+						Hovering the name still reveals the address in an Ark tooltip;
+						clicking it opens the chip for editing.
+					-->
+					<Tooltip disabled={!revealEmail} zIndex={overlayZ}>
+						{#snippet trigger({ props })}
+							<span
+								{...props}
+								class="flex h-[26px] items-center gap-1 rounded-[6px] border px-0.5 text-[13px] font-medium shadow-[var(--z-shadow-tactile)]"
+								style:background-color={theme.fill}
+								style:border-color={theme.stroke}
+								style:color={theme.ink}
+							>
+								<button
+									type="button"
+									class="max-w-[160px] truncate rounded-[4px] px-1.5 transition-colors hover:bg-black/10"
+									title="Edit {person.email}"
+									onpointerdown={(event) => event.stopPropagation()}
+									onclick={(event) => startEdit(event, field, person)}
+								>
+									{person.name || person.email}
+								</button>
+								<button
+									type="button"
+									class="flex size-[18px] shrink-0 items-center justify-center rounded-[4px] transition-colors hover:bg-black/10"
+									aria-label="Remove {person.name || person.email}"
+									onpointerdown={(event) => event.stopPropagation()}
+									onclick={(event) => removeChip(event, field, person.email)}
+								>
+									<svg class="size-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+										<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+									</svg>
+								</button>
+							</span>
+						{/snippet}
+						<div class="flex min-w-0 items-center gap-2">
+							<span
+								class="flex size-[22px] shrink-0 items-center justify-center rounded-[5px] text-[10px] font-bold"
+								style:background-color={theme.fill}
+								style:border="1px solid {theme.stroke}"
+								style:color={theme.ink}
+								aria-hidden="true"
+							>
+								{initials(person.name, person.email)}
+							</span>
+							<span class="min-w-0">
+								<span class="block truncate text-[13px] font-semibold text-[var(--z-body)]">{person.name}</span>
+								<span class="block truncate text-xs text-[var(--z-soft)]">{person.email}</span>
+							</span>
+						</div>
+					</Tooltip>
+				{/if}
+			{/each}
+			<input
+				id={fieldId(field)}
+				type="text"
+				value={inputOf(field)}
+				oninput={(event) => onRecipientInput(event, field)}
+				onkeydown={(event) => onRecipientKeydown(event, field)}
+				onblur={() => compose.commitPendingRecipient(draft.id, field)}
+				role="combobox"
+				aria-expanded={openOf(field)}
+				aria-autocomplete="list"
+				aria-controls={listboxId(field)}
+				aria-label={label}
+				placeholder={list.length > 0 ? '' : label}
+				class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
+			/>
+
+			{#if openOf(field)}
+				<div
+					id={listboxId(field)}
+					role="listbox"
+					aria-label="Contact suggestions"
+					class="absolute top-[calc(100%+4px)] right-0 left-0 z-5 max-h-[214px] overflow-y-auto rounded-[10px] border border-[var(--z-line)] bg-[var(--z-surface)] p-1.5 shadow-[var(--z-shadow-menu)]"
+				>
+					{#each items as suggestion, index (suggestion.email)}
+						{@const theme = identityTone(suggestion.email || suggestion.name)}
+						<button
+							type="button"
+							role="option"
+							aria-selected={index === hiOf(field)}
+							class="flex w-full items-center gap-2.5 rounded-[8px] border px-[9px] py-1.5 text-left transition-colors {index ===
+							hiOf(field)
+								? 'border-[var(--z-accent-stroke)] bg-[var(--z-accent-soft)]' : 'border-transparent'}"
+							onpointerdown={(event) => event.preventDefault()}
+							onclick={() => {
+								compose.addRecipient(draft.id, field, inputOf(field), suggestion);
+								refocusAfterCommit(field);
+							}}
+						>
+							<span
+								class="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-[10px] font-bold"
+								style:background-color={theme.fill}
+								style:border="1px solid {theme.stroke}"
+								style:color={theme.ink}
+							>
+								{initials(suggestion.name, suggestion.email)}
+							</span>
+							<span class="min-w-0 flex-1 truncate text-[13px] font-medium text-[var(--z-body)]">
+								{suggestion.name || suggestion.email}
+							</span>
+							<span class="min-w-0 truncate text-xs text-[var(--z-soft)] max-md:hidden">{suggestion.email}</span>
+							{#if suggestion.meta}
+								<span class="shrink-0 text-[11px] text-[var(--z-faint)] max-md:hidden">{suggestion.meta}</span>
+							{/if}
+							{#if index === hiOf(field)}
+								<kbd class="z-kbd" aria-hidden="true">↵</kbd>
+							{/if}
+						</button>
+					{/each}
+					{#if items.length === 0}
+						<p class="px-2.5 py-1.5 text-[13px] text-[var(--z-soft)]">
+							{#if inputOf(field).includes('@')}
+								Press <kbd class="z-kbd mx-0.5">Enter</kbd> to add {inputOf(field).trim()}
+							{:else}
+								No matching contacts
+							{/if}
+						</p>
+					{:else}
+						<div
+							class="mt-1 flex items-center justify-end gap-3 border-t border-[var(--z-hairline)] px-2 pt-1.5 text-[11px] text-[var(--z-faint)] max-md:hidden"
+						>
+							<span class="flex items-center gap-1"><kbd class="z-kbd" aria-hidden="true">↑↓</kbd> navigate</span>
+							<span class="flex items-center gap-1"><kbd class="z-kbd" aria-hidden="true">↵</kbd> add</span>
+							<span class="flex items-center gap-1"><kbd class="z-kbd" aria-hidden="true">esc</kbd> dismiss</span>
+						</div>
+					{/if}
+				</div>
+			{/if}
+		</div>
+
+		{#if field === 'to'}
+			<!--
+				Cc and Bcc used to live inside the chip row, so the first recipient
+				pushed them onto a line of their own. They hold the row's right edge
+				now: the chips wrap under themselves and these stay where they were.
+
+				A phone gets one chevron instead of two words, and it opens both.
+				Two labelled buttons cost ~100px of a 390px screen — width the names
+				need more, and each row carries its own ✕ for whichever you did not
+				want.
+			-->
+			{#if !draft.ccShown || !draft.bccShown}
+				<div class="flex h-[26px] shrink-0 items-center gap-1 max-md:h-8">
+					<button
+						type="button"
+						class="btn-tactile !size-8 !rounded-[8px] !p-0 md:hidden"
+						aria-label="Show Cc and Bcc"
+						title="Cc and Bcc"
+						onclick={() => {
+							compose.showRecipientField(draft.id, 'cc', true);
+							compose.showRecipientField(draft.id, 'bcc', true);
+						}}
+					>
+						<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					</button>
+					{#if !draft.ccShown}
+						<button
+							type="button"
+							class="btn-tactile !h-[22px] !rounded-[6px] !px-2 !text-[11px] max-md:hidden"
+							onclick={() => compose.showRecipientField(draft.id, 'cc', true)}
+						>
+							Cc
+						</button>
+					{/if}
+					{#if !draft.bccShown}
+						<button
+							type="button"
+							class="btn-tactile !h-[22px] !rounded-[6px] !px-2 !text-[11px] max-md:hidden"
+							onclick={() => compose.showRecipientField(draft.id, 'bcc', true)}
+						>
+							Bcc
+						</button>
+					{/if}
+				</div>
+			{/if}
+		{:else}
+			<span class="flex h-[26px] shrink-0 items-center max-md:h-8">
+				<button
+					type="button"
+					class="flex size-[22px] items-center justify-center rounded-[4px] text-[var(--z-faint)] transition-colors hover:bg-[var(--z-sunken)] hover:text-[var(--z-ink)] max-md:size-8 max-md:rounded-[8px]"
+					aria-label="Remove {label}"
+					onclick={() => compose.showRecipientField(draft.id, field as 'cc' | 'bcc', false)}
+				>
+					<svg class="size-3 max-md:size-[15px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+					</svg>
+				</button>
+			</span>
+		{/if}
+	</div>
 {/snippet}
 
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
@@ -443,286 +736,35 @@
 
 	<!-- Fields -->
 	<div class="flex min-h-0 flex-1 flex-col overflow-y-auto px-4">
-		<!-- To -->
-		<div class="flex min-h-[28px] items-start gap-x-3 py-2 max-md:py-2.5">
-			<span class="flex w-[72px] shrink-0 items-center gap-1.5 pt-1 pl-2">
-				{@render stepDot(step > 0)}
-				<span class="text-[13px] {step === 0 ? 'font-medium text-[var(--z-ink)]' : 'text-[var(--z-soft)]'}">To</span>
-			</span>
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<!-- svelte-ignore a11y_click_events_have_key_events -->
-			<div
-				class="relative flex min-w-0 flex-1 flex-wrap items-center gap-x-1.5 gap-y-[6px]"
-				onclick={() => toInputEl?.focus()}
-			>
-				{#each draft.to as person (person.email)}
-					{@const theme = identityTone(person.email || person.name)}
-					{@const revealEmail =
-						person.name.trim().length > 0 && person.name.trim() !== person.email.trim()}
-					<!--
-						The person's colour, at full strength: fill, stroke and text all
-						from their Hobday theme. It used to be a white chip carrying an
-						18px avatar tile — but a chip that already spells the name out
-						does not need initials too, and the tile confined the colour to
-						a corner. Now a row of recipients reads like the list does.
-						Hovering the name still reveals the address in an Ark tooltip.
-					-->
-					<Tooltip disabled={!revealEmail} zIndex={overlayZ}>
-						{#snippet trigger({ props })}
-							<span
-								{...props}
-								class="flex h-[26px] items-center gap-1 rounded-[6px] border pr-0.5 pl-2 text-[13px] font-medium shadow-[var(--z-shadow-tactile)]"
-								style:background-color={theme.fill}
-								style:border-color={theme.stroke}
-								style:color={theme.ink}
-							>
-								<span class="max-w-[160px] truncate">{person.name || person.email}</span>
-								<button
-									type="button"
-									class="flex size-[18px] items-center justify-center rounded-[4px] transition-colors hover:bg-black/10"
-									aria-label="Remove {person.name || person.email}"
-									onpointerdown={(event) => event.stopPropagation()}
-									onclick={(event) => removeTo(event, person.email)}
-								>
-									<svg class="size-2.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-										<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
-									</svg>
-								</button>
-							</span>
-						{/snippet}
-						<div class="flex min-w-0 items-center gap-2">
-							<span
-								class="flex size-[22px] shrink-0 items-center justify-center rounded-[5px] text-[10px] font-bold"
-								style:background-color={theme.fill}
-								style:border="1px solid {theme.stroke}"
-								style:color={theme.ink}
-								aria-hidden="true"
-							>
-								{initials(person.name, person.email)}
-							</span>
-							<span class="min-w-0">
-								<span class="block truncate text-[13px] font-semibold text-[var(--z-body)]"
-									>{person.name}</span
-								>
-								<span class="block truncate text-xs text-[var(--z-soft)]">{person.email}</span>
-							</span>
-						</div>
-					</Tooltip>
-				{/each}
-				<input
-					bind:this={toInputEl}
-					id={toId}
-					type="text"
-					value={draft.toInput}
-					oninput={onToInput}
-					onkeydown={onToKeydown}
-					onblur={() => compose.commitPendingTo(draft.id)}
-					role="combobox"
-					aria-expanded={draft.toOpen}
-					aria-autocomplete="list"
-					aria-controls={listboxId}
-					placeholder={draft.to.length > 0 ? 'Add another' : 'Name or email address'}
-					class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
-				/>
-				{#if draft.toOpen}
-					<div
-						id={listboxId}
-						role="listbox"
-						aria-label="Contact suggestions"
-						class="absolute top-[calc(100%+4px)] right-[52px] left-[66px] z-5 max-h-[214px] overflow-y-auto rounded-[10px] border border-[var(--z-line)] bg-[var(--z-surface)] p-1.5 shadow-[var(--z-shadow-menu)] max-md:right-0 max-md:left-0"
-					>
-						{#each suggestions as suggestion, index (suggestion.email)}
-							{@const theme = identityTone(suggestion.email || suggestion.name)}
-							<button
-								type="button"
-								role="option"
-								aria-selected={index === draft.toHi}
-								class="flex w-full items-center gap-2.5 rounded-[8px] border px-[9px] py-1.5 text-left transition-colors {index ===
-								draft.toHi
-									? 'border-[var(--z-accent-stroke)] bg-[var(--z-accent-soft)]' : 'border-transparent'}"
-								onpointerdown={(event) => event.preventDefault()}
-								onclick={() => {
-									compose.commitTo(draft.id, draft.toInput, suggestion);
-									refocusAfterCommit();
-								}}
-							>
-								<span
-									class="flex size-[26px] shrink-0 items-center justify-center rounded-[6px] text-[10px] font-bold"
-									style:background-color={theme.fill}
-									style:border="1px solid {theme.stroke}"
-									style:color={theme.ink}
-								>
-									{initials(suggestion.name, suggestion.email)}
-								</span>
-								<span class="min-w-0 flex-1 truncate text-[13px] font-medium text-[var(--z-body)]">
-									{suggestion.name || suggestion.email}
-								</span>
-								<span class="min-w-0 truncate text-xs text-[var(--z-soft)]">{suggestion.email}</span>
-								{#if suggestion.meta}
-									<span class="shrink-0 text-[11px] text-[var(--z-faint)]">{suggestion.meta}</span>
-								{/if}
-								{#if index === draft.toHi}
-									<kbd
-										class="z-kbd"
-										aria-hidden="true">↵</kbd
-									>
-								{/if}
-							</button>
-						{/each}
-						{#if suggestions.length === 0}
-							<p class="px-2.5 py-1.5 text-[13px] text-[var(--z-soft)]">
-								{#if draft.toInput.includes('@')}
-									Press
-									<kbd
-										class="z-kbd mx-0.5"
-										>Enter</kbd
-									>
-									to add {draft.toInput.trim()}
-								{:else}
-									No matching contacts
-								{/if}
-							</p>
-						{:else}
-							<div
-								class="mt-1 flex items-center justify-end gap-3 border-t border-[var(--z-hairline)] px-2 pt-1.5 text-[11px] text-[var(--z-faint)]"
-							>
-								<span class="flex items-center gap-1">
-									<kbd
-										class="z-kbd"
-										aria-hidden="true">↑↓</kbd
-									>
-									navigate
-								</span>
-								<span class="flex items-center gap-1">
-									<kbd
-										class="z-kbd"
-										aria-hidden="true">↵</kbd
-									>
-									add
-								</span>
-								<span class="flex items-center gap-1">
-									<kbd
-										class="z-kbd"
-										aria-hidden="true">esc</kbd
-									>
-									dismiss
-								</span>
-							</div>
-						{/if}
-					</div>
-				{/if}
-			</div>
+		<!--
+			To, Cc and Bcc are one row drawn three times. Each is a chip list with
+			completion over the same address book, so a wrong address in Cc is
+			caught where a wrong address in To always was — the two used to be bare
+			comma-separated inputs that were only parsed at send.
 
-			<!--
-				Cc and Bcc used to live inside the chip row, so the first recipient
-				pushed them onto a line of their own. They hold the row's right edge
-				now: the chips wrap under themselves and these stay where they were.
-
-				A phone gets one chevron instead of two words, and it opens both rows.
-				Two labelled buttons cost ~100px of a 390px screen — width the names
-				need more, and each row carries its own ✕ for whichever you did not
-				want.
-			-->
-			{#if !draft.ccOpen || !draft.bccOpen}
-				<div class="flex shrink-0 items-center gap-1 pt-0.5">
-					<button
-						type="button"
-						class="btn-tactile !size-8 !rounded-[8px] !p-0 md:hidden"
-						aria-label="Show Cc and Bcc"
-						title="Cc and Bcc"
-						onclick={() => compose.patch(draft.id, { ccOpen: true, bccOpen: true })}
-					>
-						<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-							<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
-					</button>
-					{#if !draft.ccOpen}
-						<button
-							type="button"
-							class="btn-tactile !h-[22px] !rounded-[6px] !px-2 !text-[11px] max-md:hidden"
-							onclick={() => compose.patch(draft.id, { ccOpen: true })}
-						>
-							Cc
-						</button>
-					{/if}
-					{#if !draft.bccOpen}
-						<button
-							type="button"
-							class="btn-tactile !h-[22px] !rounded-[6px] !px-2 !text-[11px] max-md:hidden"
-							onclick={() => compose.patch(draft.id, { bccOpen: true })}
-						>
-							Bcc
-						</button>
-					{/if}
-				</div>
-			{/if}
-		</div>
-
-		{#if draft.ccOpen}
-			<div class="flex h-[45px] items-center gap-3 border-b border-[var(--z-hairline)] max-md:h-[52px]">
-				<span class="w-[72px] shrink-0 pl-5 text-[13px] text-[var(--z-soft)]">Cc</span>
-				<input
-					type="text"
-					value={draft.cc}
-					oninput={(event) =>
-						compose.patch(draft.id, { cc: (event.currentTarget as HTMLInputElement).value })}
-					placeholder="Copy someone in"
-					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
-				/>
-				<button
-					type="button"
-					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-[var(--z-faint)] transition-colors hover:bg-[var(--z-sunken)] hover:text-[var(--z-ink)] max-md:size-9 max-md:rounded-[8px]"
-					aria-label="Remove Cc"
-					onclick={() => compose.patch(draft.id, { ccOpen: false, cc: '' })}
-				>
-					<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-					</svg>
-				</button>
-			</div>
-		{/if}
-
-		{#if draft.bccOpen}
-			<div class="flex h-[45px] items-center gap-3 border-b border-[var(--z-hairline)] max-md:h-[52px]">
-				<span class="w-[72px] shrink-0 pl-5 text-[13px] text-[var(--z-soft)]">Bcc</span>
-				<input
-					type="text"
-					value={draft.bcc}
-					oninput={(event) =>
-						compose.patch(draft.id, { bcc: (event.currentTarget as HTMLInputElement).value })}
-					placeholder="Hidden recipients"
-					class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
-				/>
-				<button
-					type="button"
-					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-[var(--z-faint)] transition-colors hover:bg-[var(--z-sunken)] hover:text-[var(--z-ink)] max-md:size-9 max-md:rounded-[8px]"
-					aria-label="Remove Bcc"
-					onclick={() => compose.patch(draft.id, { bccOpen: false, bcc: '' })}
-				>
-					<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
-					</svg>
-				</button>
-			</div>
-		{/if}
+			The field's name is its placeholder, not a label in a 72px gutter: a
+			row with chips in it says what it is, and on a phone that gutter was a
+			fifth of the screen spent saying "To".
+		-->
+		{@render addressRow('to', 'To')}
+		{#if draft.ccShown}{@render addressRow('cc', 'Cc')}{/if}
+		{#if draft.bccShown}{@render addressRow('bcc', 'Bcc')}{/if}
 
 		<!-- Subject -->
-		<div class="flex h-[45px] items-center gap-3 border-b border-[var(--z-hairline)] max-md:h-[52px] {subjectDim} transition-opacity duration-[160ms]">
-			<span class="flex w-[72px] shrink-0 items-center gap-1.5 pl-2">
-				{@render stepDot(step === 2)}
-				<span class="text-[13px] {step === 1 ? 'font-medium text-[var(--z-ink)]' : 'text-[var(--z-soft)]'}">Subject</span>
-			</span>
+		<div class="flex h-[45px] items-center gap-2.5 border-b border-[var(--z-hairline)] max-md:h-[54px] {subjectDim} transition-opacity duration-[160ms]">
+			{@render stepDot(step === 2)}
 			<input
 				id={subjectId}
 				type="text"
 				value={draft.subject}
+				placeholder="Subject"
 				oninput={(event) =>
 					compose.patch(draft.id, {
 						subject: (event.currentTarget as HTMLInputElement).value,
 						sendError: null
 					})}
 				onkeydown={onSubjectKeydown}
-				class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--z-ink)] focus:outline-none max-md:text-base"
+				class="h-7 min-w-0 flex-1 border-0 bg-transparent text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
 			/>
 		</div>
 

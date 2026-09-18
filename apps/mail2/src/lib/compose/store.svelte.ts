@@ -20,7 +20,7 @@ import {
 } from './outbox';
 import { PANEL_DEFAULT_W } from './layout';
 import { formatScheduleTime } from './schedule';
-import { commitRecipient, isDuplicate, makeRecipient, parseAddressList } from './recipients';
+import { commitRecipient, isDuplicate, makeRecipient, recipientEmails } from './recipients';
 import { forwardSeed, replyAllRecipients, replySeed } from './quote';
 import type {
 	ComposeContact,
@@ -29,6 +29,7 @@ import type {
 	DraftAttachment,
 	DraftKind,
 	DraftSeed,
+	RecipientField,
 	FocusTarget,
 	OutgoingAttachment,
 	Recipient,
@@ -48,17 +49,16 @@ export interface Toast {
 	action?: () => void;
 }
 
-function dedupeEmails(list: string[]): string[] {
-	const seen = new Set<string>();
-	const out: string[] = [];
-	for (const email of list) {
-		const key = email.toLowerCase();
-		if (seen.has(key)) continue;
-		seen.add(key);
-		out.push(email);
-	}
-	return out;
-}
+export const RECIPIENT_FIELDS = ['to', 'cc', 'bcc'] as const satisfies readonly RecipientField[];
+
+/**
+ * The per-field key names, so a method can take a field rather than existing
+ * three times. `to`/`cc`/`bcc` are the chip lists themselves and index directly.
+ */
+const INPUT = { to: 'toInput', cc: 'ccInput', bcc: 'bccInput' } as const;
+const OPEN = { to: 'toOpen', cc: 'ccOpen', bcc: 'bccOpen' } as const;
+const HI = { to: 'toHi', cc: 'ccHi', bcc: 'bccHi' } as const;
+const SHOWN = { cc: 'ccShown', bcc: 'bccShown' } as const;
 
 export interface NewDraftOptions {
 	x?: number;
@@ -112,10 +112,16 @@ class ComposeStore {
 			toInput: '',
 			toOpen: false,
 			toHi: 0,
-			cc: '',
-			bcc: '',
+			cc: [],
+			ccInput: '',
 			ccOpen: false,
+			ccHi: 0,
+			bcc: [],
+			bccInput: '',
 			bccOpen: false,
+			bccHi: 0,
+			ccShown: false,
+			bccShown: false,
 			subject: options.subject ?? '',
 			body: options.body ?? '',
 			attachments: options.attachments ?? [],
@@ -309,44 +315,106 @@ class ComposeStore {
 		if (draft) draft.sendAt = sendAt;
 	}
 
-	commitTo(id: string, input: string, highlighted: ComposeContact | null) {
+	// --- recipients ---
+	//
+	// To, Cc and Bcc are one field three times over, so everything below takes
+	// which one it is acting on rather than existing three times.
+
+	setRecipientInput(id: string, field: RecipientField, value: string) {
+		const draft = this.#find(id);
+		if (!draft) return;
+		draft[INPUT[field]] = value;
+		draft[OPEN[field]] = value.trim().length > 0;
+		draft[HI[field]] = 0;
+	}
+
+	setRecipientOpen(id: string, field: RecipientField, open: boolean, highlighted = 0) {
+		const draft = this.#find(id);
+		if (!draft) return;
+		draft[OPEN[field]] = open;
+		draft[HI[field]] = highlighted;
+	}
+
+	setRecipientHighlight(id: string, field: RecipientField, highlighted: number) {
+		const draft = this.#find(id);
+		if (draft) draft[HI[field]] = highlighted;
+	}
+
+	addRecipient(
+		id: string,
+		field: RecipientField,
+		input: string,
+		highlighted: ComposeContact | null
+	) {
 		const draft = this.#find(id);
 		if (!draft) return;
 		const { recipient } = commitRecipient(input, highlighted);
-		draft.toInput = '';
-		draft.toOpen = false;
-		draft.toHi = 0;
-		if (recipient && !isDuplicate(draft.to, recipient.email)) {
-			draft.to.push(recipient);
+		draft[INPUT[field]] = '';
+		draft[OPEN[field]] = false;
+		draft[HI[field]] = 0;
+		if (recipient && !isDuplicate(draft[field], recipient.email)) {
+			draft[field].push(recipient);
 			this.scheduleDraftSave(id);
 		}
 	}
 
 	/**
-	 * Commit a complete address still sitting in the To input. Blurring the
+	 * Commit a complete address still sitting in a recipient input. Blurring the
 	 * field and sending both route through here, so a recipient typed without
 	 * pressing Enter is never silently dropped. Partial text that is not an
 	 * address yet is left alone for the user to finish.
 	 */
-	commitPendingTo(id: string) {
+	commitPendingRecipient(id: string, field: RecipientField) {
 		const draft = this.#find(id);
 		if (!draft) return;
-		if (makeRecipient(draft.toInput)) this.commitTo(id, draft.toInput, null);
-		else draft.toOpen = false;
+		const input = draft[INPUT[field]];
+		if (makeRecipient(input)) this.addRecipient(id, field, input, null);
+		else draft[OPEN[field]] = false;
 	}
 
-	removeTo(id: string, email: string) {
+	removeRecipient(id: string, field: RecipientField, email: string) {
 		const draft = this.#find(id);
 		if (!draft) return;
-		const before = draft.to.length;
-		draft.to = draft.to.filter((r) => r.email !== email);
-		if (draft.to.length !== before) this.scheduleDraftSave(id);
+		const before = draft[field].length;
+		draft[field] = draft[field].filter((r) => r.email !== email);
+		if (draft[field].length !== before) this.scheduleDraftSave(id);
 	}
 
-	backspaceRemoveTo(id: string) {
+	/**
+	 * Correct one chip in place. A typo in the fourth of four addresses used to
+	 * mean deleting it and typing the whole thing again; the chip hands its text
+	 * back instead. Empty text removes it, and text that collides with another
+	 * chip on the same field just drops the one being edited.
+	 */
+	editRecipient(id: string, field: RecipientField, email: string, next: string) {
 		const draft = this.#find(id);
-		if (draft && !draft.toInput && draft.to.length > 0) {
-			draft.to.pop();
+		if (!draft) return;
+		const index = draft[field].findIndex((r) => r.email === email);
+		if (index === -1) return;
+		const replacement = makeRecipient(next, draft[field][index]?.meta ?? '');
+		const rest = draft[field].filter((_, at) => at !== index);
+		if (!replacement || isDuplicate(rest, replacement.email)) draft[field] = rest;
+		else draft[field] = draft[field].map((r, at) => (at === index ? replacement : r));
+		this.scheduleDraftSave(id);
+	}
+
+	backspaceRemoveRecipient(id: string, field: RecipientField) {
+		const draft = this.#find(id);
+		if (draft && !draft[INPUT[field]] && draft[field].length > 0) {
+			draft[field].pop();
+			this.scheduleDraftSave(id);
+		}
+	}
+
+	/** Reveal or hide a Cc / Bcc row. Hiding one empties it — see the ✕ on the row. */
+	showRecipientField(id: string, field: 'cc' | 'bcc', shown: boolean) {
+		const draft = this.#find(id);
+		if (!draft) return;
+		draft[SHOWN[field]] = shown;
+		if (!shown) {
+			draft[field] = [];
+			draft[INPUT[field]] = '';
+			draft[OPEN[field]] = false;
 			this.scheduleDraftSave(id);
 		}
 	}
@@ -503,8 +571,8 @@ class ComposeStore {
 		if (draft) {
 			draft.cc = seed.cc;
 			draft.bcc = seed.bcc;
-			draft.ccOpen = seed.cc.trim().length > 0;
-			draft.bccOpen = seed.bcc.trim().length > 0;
+			draft.ccShown = seed.cc.length > 0;
+			draft.bccShown = seed.bcc.length > 0;
 			this.#savedSignatures.set(id, draftContentSignature(draft));
 		}
 		return id;
@@ -530,9 +598,9 @@ class ComposeStore {
 	async sendDraft(id: string): Promise<void> {
 		const draft = this.#find(id);
 		if (!draft || draft.sending) return;
-		this.commitPendingTo(id);
-		const cc = parseAddressList(draft.cc);
-		const bcc = parseAddressList(draft.bcc);
+		for (const field of RECIPIENT_FIELDS) this.commitPendingRecipient(id, field);
+		const cc = recipientEmails(draft.cc);
+		const bcc = recipientEmails(draft.bcc);
 		if (draft.to.length === 0 && cc.length === 0 && bcc.length === 0) {
 			// Never invent a recipient: restore + focus To instead (spec).
 			if (draft.stage === 'minimized') this.restore(id);
@@ -549,7 +617,7 @@ class ComposeStore {
 		}
 
 		const payload: SendPayload = {
-			to: dedupeEmails(draft.to.map((r) => r.email)),
+			to: recipientEmails(draft.to),
 			cc,
 			bcc,
 			subject: draft.subject,

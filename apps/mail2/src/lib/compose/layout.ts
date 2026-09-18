@@ -45,14 +45,15 @@ export function bodyHeightPx(draft: Draft): 84 | 112 | 228 | 340 {
  * (a CSS transition to `height: auto` never runs).
  */
 export function computeAutoHeight(draft: Draft): number {
-	const toRows = Math.ceil(draft.to.length / 2) * 32;
+	// Chips wrap about two to a line, and every address row grows the same way.
+	const chipRows = (list: { length: number }) => Math.ceil(list.length / 2) * 32;
 	return (
 		45 + // header
-		(44 + toRows) + // To row: 28 content + 8/8 padding (chips wrap ~2 per line)
+		(44 + chipRows(draft.to)) + // To row: 28 content + 8/8 padding
 		45 + // subject row
 		bodyHeightPx(draft) +
-		(draft.ccOpen ? 45 : 0) +
-		(draft.bccOpen ? 45 : 0) +
+		(draft.ccShown ? 44 + chipRows(draft.cc) : 0) +
+		(draft.bccShown ? 44 + chipRows(draft.bcc) : 0) +
 		(draft.attachments.length > 0 ? 54 : 0) +
 		(draft.sendError ? 34 : 0) +
 		53 // action bar

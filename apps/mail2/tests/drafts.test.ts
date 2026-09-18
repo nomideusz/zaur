@@ -24,10 +24,16 @@ function draft(overrides: Partial<Draft> = {}): Draft {
 		toInput: '',
 		toOpen: false,
 		toHi: 0,
-		cc: '',
-		bcc: '',
+		cc: [],
+		ccInput: '',
 		ccOpen: false,
+		ccHi: 0,
+		bcc: [],
+		bccInput: '',
 		bccOpen: false,
+		bccHi: 0,
+		ccShown: false,
+		bccShown: false,
 		subject: '',
 		body: '',
 		attachments: [],
@@ -87,12 +93,12 @@ test('DRAFT_CONTENT_KEYS: content only — no toInput, no geometry', () => {
 	assert.equal(DRAFT_CONTENT_KEYS.has('h'), false);
 });
 
-test('buildDraftSaveInput: dedupes to, splits cc/bcc, passes content through', () => {
+test('buildDraftSaveInput: dedupes every field, passes content through', () => {
 	const input = buildDraftSaveInput(
 		draft({
 			to: [chip('Ada@X.com'), chip('ada@x.com'), chip('', ''), chip('bob@y.com')],
-			cc: 'cara@z.com, Cara <cara@z.com>',
-			bcc: 'hidden@z.com',
+			cc: [chip('cara@z.com'), chip('cara@z.com', 'Cara')],
+			bcc: [chip('hidden@z.com')],
 			subject: 'Hi',
 			body: 'Body',
 			jmapDraftId: 'm-draft-1',
@@ -129,10 +135,10 @@ test('draftContentSignature: same content, different jmapDraftId → same signat
 
 test('hasDraftContent: empty draft is empty, whitespace does not count', () => {
 	assert.equal(hasDraftContent(draft()), false);
-	assert.equal(hasDraftContent(draft({ cc: '  ', bcc: '  ', subject: '  ', body: '\n\t' })), false);
+	assert.equal(hasDraftContent(draft({ subject: '  ', body: '\n\t' })), false);
 	assert.equal(hasDraftContent(draft({ to: [chip('a@x.com')] })), true);
-	assert.equal(hasDraftContent(draft({ cc: 'a@x.com' })), true);
-	assert.equal(hasDraftContent(draft({ bcc: 'a@x.com' })), true);
+	assert.equal(hasDraftContent(draft({ cc: [chip('a@x.com')] })), true);
+	assert.equal(hasDraftContent(draft({ bcc: [chip('a@x.com')] })), true);
 	assert.equal(hasDraftContent(draft({ subject: 'Hi' })), true);
 	assert.equal(hasDraftContent(draft({ body: 'x' })), true);
 	assert.equal(
@@ -164,8 +170,12 @@ test('draftSeed: recipients, body and file attachments — inline images stay ou
 	const seed = draftSeed(detail({ id: 'm-draft-7', attachments: [filePart, inlinePart] }));
 	assert.equal(seed.jmapDraftId, 'm-draft-7');
 	assert.deepEqual(seed.to, [{ name: 'Ada', email: 'ada@example.com', meta: '' }]);
-	assert.equal(seed.cc, 'cara@z.com, bob@y.com');
-	assert.equal(seed.bcc, 'hidden@z.com');
+	// Chips, not a joined string — the reopened draft gets a Cc row like the To one.
+	assert.deepEqual(seed.cc, [
+		{ name: '', email: 'cara@z.com', meta: '' },
+		{ name: '', email: 'bob@y.com', meta: '' }
+	]);
+	assert.deepEqual(seed.bcc, [{ name: '', email: 'hidden@z.com', meta: '' }]);
 	assert.equal(seed.subject, 'Hello');
 	assert.equal(seed.body, 'Half-written body');
 	assert.deepEqual(

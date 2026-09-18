@@ -16,6 +16,9 @@ export type DraftKind = 'new' | 'reply' | 'replyAll' | 'forward' | 'draft';
 
 export type FocusTarget = 'to' | 'subject' | 'body' | null;
 
+/** The three address fields. They are the same field three times over. */
+export type RecipientField = 'to' | 'cc' | 'bcc';
+
 export interface ComposeContact {
 	name: string;
 	email: string;
@@ -54,14 +57,28 @@ export interface PanelRect {
 export interface Draft {
 	id: string;
 	kind: DraftKind;
+	/**
+	 * The three address fields, each a chip list with its own typing state:
+	 * what is half-typed (`Input`), whether its suggestion list is up (`Open`),
+	 * and which suggestion is highlighted (`Hi`). Cc and Bcc used to be plain
+	 * comma-separated strings, which meant no completion, no validation until
+	 * send, and no way to correct one address out of four.
+	 */
 	to: Recipient[];
 	toInput: string;
 	toOpen: boolean;
 	toHi: number;
-	cc: string;
-	bcc: string;
+	cc: Recipient[];
+	ccInput: string;
 	ccOpen: boolean;
+	ccHi: number;
+	bcc: Recipient[];
+	bccInput: string;
 	bccOpen: boolean;
+	bccHi: number;
+	/** Whether the Cc / Bcc rows are on screen at all — both start hidden. */
+	ccShown: boolean;
+	bccShown: boolean;
 	subject: string;
 	body: string;
 	attachments: DraftAttachment[];
@@ -107,8 +124,8 @@ export interface SendPayload {
 export interface DraftSeed {
 	jmapDraftId: string | null;
 	to: Recipient[];
-	cc: string;
-	bcc: string;
+	cc: Recipient[];
+	bcc: Recipient[];
 	subject: string;
 	body: string;
 	attachments: DraftAttachment[];

@@ -3,7 +3,14 @@ import assert from 'node:assert/strict';
 
 // Time-dependent formatting is TZ-sensitive; pin for deterministic tests.
 process.env.TZ = 'UTC';
-import { makeRecipient, commitRecipient, parseAddressList, filterContacts } from '../src/lib/compose/recipients.ts';
+import {
+	makeRecipient,
+	commitRecipient,
+	parseAddressList,
+	parseRecipients,
+	recipientEmails,
+	filterContacts
+} from '../src/lib/compose/recipients.ts';
 import { formatWhen, replySeed, replyAllRecipients, forwardSeed } from '../src/lib/compose/quote.ts';
 import {
 	computeStep,
@@ -38,10 +45,16 @@ function draft(overrides: Partial<Draft> = {}): Draft {
 		toInput: '',
 		toOpen: false,
 		toHi: 0,
-		cc: '',
-		bcc: '',
+		cc: [],
+		ccInput: '',
 		ccOpen: false,
+		ccHi: 0,
+		bcc: [],
+		bccInput: '',
 		bccOpen: false,
+		bccHi: 0,
+		ccShown: false,
+		bccShown: false,
 		subject: '',
 		body: '',
 		attachments: [],
@@ -116,6 +129,21 @@ test('parseAddressList: splits on commas/semicolons and dedupes case-insensitive
 		'c@z.com'
 	]);
 	assert.deepEqual(parseAddressList('not an address'), []);
+});
+
+test('parseRecipients: keeps the names an address list carries, dedupes on address', () => {
+	assert.deepEqual(parseRecipients('Cara <cara@z.com>; bob@y.com, CARA@z.com'), [
+		{ name: 'Cara', email: 'cara@z.com', meta: '' },
+		{ name: '', email: 'bob@y.com', meta: '' }
+	]);
+	assert.deepEqual(parseRecipients(''), []);
+});
+
+test('recipientEmails: the wire form of a chip list, deduped case-insensitively', () => {
+	assert.deepEqual(
+		recipientEmails([chip('Ada@X.com'), chip('ada@x.com'), chip(''), chip('bob@y.com')]),
+		['Ada@X.com', 'bob@y.com']
+	);
 });
 
 test('filterContacts: matches name or email, excludes existing chips, caps results', () => {
@@ -199,9 +227,16 @@ test('computeAutoHeight matches the spec formula', () => {
 		computeAutoHeight(draft({ to: [chip('a@x.com')], subject: 'Hi' })),
 		45 + 44 + 32 + 45 + 228 + 53
 	);
+	// A shown Cc row costs the same 44 as To, plus a chip row once it has one.
 	assert.equal(
-		computeAutoHeight(draft({ to: [chip('a@x.com')], subject: 'Hi', ccOpen: true, sendError: 'x' })),
-		45 + 44 + 32 + 45 + 228 + 45 + 34 + 53
+		computeAutoHeight(draft({ to: [chip('a@x.com')], subject: 'Hi', ccShown: true, sendError: 'x' })),
+		45 + 44 + 32 + 45 + 228 + 44 + 34 + 53
+	);
+	assert.equal(
+		computeAutoHeight(
+			draft({ to: [chip('a@x.com')], subject: 'Hi', ccShown: true, cc: [chip('c@x.com')] })
+		),
+		45 + 44 + 32 + 45 + 228 + 44 + 32 + 53
 	);
 });
 
