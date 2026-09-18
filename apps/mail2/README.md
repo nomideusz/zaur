@@ -271,11 +271,11 @@ is a card, not a fake window.
 The shell has three shapes, and the breakpoint does nearly all of the work —
 `.z-shell` in `styles/base.css` is one grid whose template changes twice:
 
-| Width | Panes | Sidebar |
-| --- | --- | --- |
-| < 768px | one: the list, or the reader once a thread is open | overlay drawer |
-| 768–1023px | list + reader | overlay drawer |
-| ≥ 1024px | list + reader, and the sidebar when it is open | column |
+| Width | Panes | Sidebar | Top bar |
+| --- | --- | --- | --- |
+| < 768px | one: the list, or the reader once a thread is open | overlay drawer | on the list; gone while a thread is open |
+| 768–1023px | list + reader | overlay drawer | always |
+| ≥ 1024px | list + reader, and the sidebar when it is open | column | always |
 
 The middle tier exists because a 240px sidebar plus a 480px list leaves an
 iPad in portrait with a 280px reader. Below 1024 the sidebar leaves the grid
@@ -301,6 +301,28 @@ there is nothing to go back from and the open thread stays plain state. The
 back button outlives the message it acts on: it renders in the reader toolbar
 whatever the pane is doing, because a failed load is exactly when you need it.
 
+### A screen gets one bar
+
+Reading a thread on a phone used to stack two bars: the shell's, with the
+mark, the drawer toggle, the folder switcher and search, and then the reader's
+own. None of the first four is what a screen you are *reading* on is for — the
+list screen one tap away still has all of them — so below 768px the shell's bar
+steps out while a thread is open (`class={openThreadId ? 'max-md:hidden' : ''}`
+on `TopBar`, the same trick the panes use). That gives the message 52px back,
+and lets the one bar that stays be **60px with 40–44px targets** instead of
+52px with 28–32px ones. Above 768px both panes are on screen at once, so
+nothing hides and nothing grows.
+
+Its two ends are the two things it must not confuse. **Back sits alone at the
+left edge**; everything that answers the message — the four icons, then Reply
+and Reply all past a hairline — is pushed to the **right**, because a back
+arrow and a reply arrow point the same way and a mis-tap there sends mail to
+someone. (Reply all gained Reply's curved tail for the same reason: drawn as a
+bare `«` it was the back chevron's relative rather than Reply's.) On a desk
+there is no back button to be mistaken for, and the reader's content column is
+left-aligned, so the Reply set folds back to the left edge it has always had —
+three `md:order-*` classes, one bar, no second copy of it.
+
 ### Compose is a sheet
 
 A phone has no window manager either, so the panel drops its geometry and
@@ -323,8 +345,12 @@ touch pointers, where the same drag is the strip's scroll.
 ### Smaller things, and what was left out
 
 - The reader's own metrics — content gutter, subject size, whether the sender
-  card stacks — are **container** queries, not viewport ones. What matters is
-  how wide that pane is, and a tablet's second pane is as narrow as a phone.
+  card stacks, whether its toolbar labels its Reply set — are **container**
+  queries, not viewport ones. What matters is how wide that pane is, and a
+  tablet's second pane is as narrow as a phone: `Reply` `Reply all` `Forward`
+  spelled out used to wrap and shove the four icons clean off the right edge of
+  an iPad's 340px reader. How *big* the targets are stays a viewport question,
+  though — a narrow pane on a desk is still being pointed at, not tapped.
 - The status line is hidden below 768px: 36px of keyboard hints and a storage
   meter is not what a phone should spend its height on, and the top bar's
   folder chip already carries the unread count.
@@ -636,9 +662,12 @@ disagree.
 
 The rest of the pane follows from the same rule:
 
-- The toolbar's Reply set is labelled on a desk and icon-only on a phone, and
-  the **same four icons** the list uses sit in a bordered group on the right;
-  a flagged thread's flag button is filled in the flagged channel.
+- The toolbar's Reply set is labelled where the pane is wide enough and
+  icon-only where it is not, and the **same four icons** the list uses sit in a
+  bordered group beside it; a flagged thread's flag button is filled in the
+  flagged channel. Which of the two leads the bar depends on whether there is a
+  back arrow to keep Reply away from — see
+  [A screen gets one bar](#a-screen-gets-one-bar).
 - **Thread history** is a stack of cards, each railed by *its* sender's
   identity tone at a third strength, so a thread with three people in it is
   scannable at a glance. Expanding it used to be one-way; it collapses now.

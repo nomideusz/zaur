@@ -111,74 +111,115 @@
 	class="@container flex h-full min-h-0 flex-col bg-[var(--z-surface)] select-none {className}"
 	aria-label="Message reader"
 >
-	<!-- On a phone the way back has to survive the loading, error and empty
-	     states too, so the toolbar outlives the message it acts on. -->
-	{#if onBack || latest || loading || error}
-		<div class="flex h-[46px] shrink-0 items-center justify-between gap-2.5 border-b border-[var(--z-hairline)] px-6 max-md:h-[52px] max-md:px-3">
-			<div class="flex items-center gap-2 max-md:gap-1.5">
-				{#if onBack}
-					<button type="button" class="btn-tactile !size-8 !p-0 md:hidden" onclick={onBack} aria-label="Back to the message list">
-						<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-							<path d="M10 3.5L5.5 8l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
-					</button>
-				{/if}
+	<!--
+		The bar over the message. On a phone it is the *only* bar: the shell's top
+		bar steps out while a thread is open (see `+page.svelte`), because a mark,
+		a drawer toggle and a search field are not what a screen you are reading on
+		is for. So this one is taller there, and its targets are thumb-sized rather
+		than pointer-sized.
 
-				{#if latest}
-					<!-- Reply set: labelled on a desk, icon-only on a phone. -->
-					<button type="button" class="btn-tactile !h-7 max-md:!size-8 max-md:!p-0" title="Reply" aria-label="Reply" onclick={(event) => latest && onCompose('reply', latest, anchorFrom(event))}>
-						<svg class="size-3.5 text-[var(--z-strong)] max-md:size-[15px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-							<path d="M6 3.5L1.5 8 6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-							<path d="M1.5 8H10a4 4 0 014 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-						</svg>
-						<span class="max-md:hidden">Reply</span>
-					</button>
-					<button type="button" class="btn-tactile !h-7 max-md:!size-8 max-md:!p-0" title="Reply all" aria-label="Reply all" onclick={(event) => latest && onCompose('replyAll', latest, anchorFrom(event))}>
-						<svg class="size-3.5 text-[var(--z-strong)] max-md:size-[15px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-							<path d="M6 3.5L1.5 8 6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-							<path d="M10 3.5L5.5 8 10 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-						</svg>
-						<span class="max-md:hidden">Reply all</span>
-					</button>
-					<button type="button" class="btn-tactile !h-7 max-md:hidden" title="Forward" aria-label="Forward" onclick={(event) => latest && onCompose('forward', latest, anchorFrom(event))}>
-						<svg class="size-3.5 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-							<path d="M10 3.5L14.5 8 10 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-							<path d="M14.5 8H6a4 4 0 00-4 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-						</svg>
-						Forward
-					</button>
-				{/if}
-			</div>
+		The way back has to survive the loading, error and empty states too, so the
+		toolbar outlives the message it acts on.
+	-->
+	{#if onBack || latest || loading || error}
+		<div
+			class="flex h-[46px] shrink-0 items-center gap-2.5 border-b border-[var(--z-hairline)] px-6 max-md:h-[60px] max-md:gap-2 max-md:px-2.5"
+		>
+			{#if onBack}
+				<!--
+					Back owns the left edge on its own. Its arrow and Reply's arrow point
+					the same way, so the two are never neighbours: everything that answers
+					the message sits at the far end of the bar, under the thumb.
+				-->
+				<button
+					type="button"
+					class="btn-tactile !size-11 !p-0 md:hidden"
+					onclick={onBack}
+					aria-label="Back to the message list"
+				>
+					<svg class="size-[18px] text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M10 3.5L5.5 8l4.5 4.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+					</svg>
+				</button>
+			{/if}
+
+			<!-- The distance that keeps Back and Reply apart. On a desk there is no
+			     Back to keep away from, so the `md:order-*` classes below put the bar
+			     back the way it was: Reply leading, the four icons trailing. -->
+			<div class="grow md:order-2" aria-hidden="true"></div>
 
 			<!-- The same four icons the list uses, on the thread you are reading. -->
 			{#if onAction && latest}
-				<div class="z-group" role="group" aria-label="Message actions">
+				<div class="z-group shrink-0 md:order-3" role="group" aria-label="Message actions">
 					<button
 						type="button"
-						class="z-icon-btn max-md:!size-7 {starred ? '!bg-[var(--z-ch-flagged-fill)] !text-[var(--z-ch-flagged-solid)]' : ''}"
+						class="z-icon-btn max-md:!size-10 {starred ? '!bg-[var(--z-ch-flagged-fill)] !text-[var(--z-ch-flagged-solid)]' : ''}"
 						aria-label={starred ? 'Remove flag' : 'Flag'}
 						aria-pressed={starred}
 						title={starred ? 'Remove flag (s)' : 'Flag (s)'}
 						onclick={() => onAction(starred ? 'unstar' : 'star')}
 					>
-						<ActionIcon name={starred ? 'star-filled' : 'star'} class="size-[15px]" />
+						<ActionIcon name={starred ? 'star-filled' : 'star'} class="size-[15px] max-md:size-[17px]" />
 					</button>
-					<button type="button" class="z-icon-btn max-md:!size-7 max-md:hidden" aria-label={unread ? 'Mark read' : 'Mark unread'} title={unread ? 'Mark read' : 'Mark unread'} onclick={() => onAction(unread ? 'read' : 'unread')}>
+					<button type="button" class="z-icon-btn @max-md:hidden" aria-label={unread ? 'Mark read' : 'Mark unread'} title={unread ? 'Mark read' : 'Mark unread'} onclick={() => onAction(unread ? 'read' : 'unread')}>
 						<ActionIcon name={unread ? 'mail-open' : 'mail'} class="size-[15px]" />
 					</button>
 					{#if archiveTarget}
-						<button type="button" class="z-icon-btn max-md:!size-7" aria-label="Archive" title="Archive (e)" onclick={() => onAction('move', archiveTarget.id)}>
-							<ActionIcon name="archive" class="size-[15px]" />
+						<button type="button" class="z-icon-btn max-md:!size-10" aria-label="Archive" title="Archive (e)" onclick={() => onAction('move', archiveTarget.id)}>
+							<ActionIcon name="archive" class="size-[15px] max-md:size-[17px]" />
 						</button>
 					{/if}
 					<button
 						type="button"
-						class="z-icon-btn max-md:!size-7 hover:!bg-[var(--z-ch-discard-hover)] hover:!text-[var(--z-ch-discard-solid)] {inTrash ? '!text-[var(--z-ch-discard-solid)]' : ''}"
+						class="z-icon-btn max-md:!size-10 hover:!bg-[var(--z-ch-discard-hover)] hover:!text-[var(--z-ch-discard-solid)] {inTrash ? '!text-[var(--z-ch-discard-solid)]' : ''}"
 						aria-label={inTrash ? 'Delete forever' : 'Delete'}
 						title={inTrash ? 'Delete forever (#)' : 'Delete (#)'}
 						onclick={() => onAction('delete')}
 					>
-						<ActionIcon name="trash" class="size-[15px]" />
+						<ActionIcon name="trash" class="size-[15px] max-md:size-[17px]" />
+					</button>
+				</div>
+
+				<!-- Phone: a hairline, so the bin at the group's end never reads as the
+				     first of the reply buttons beside it. -->
+				<div class="h-7 w-px shrink-0 bg-[var(--z-hairline)] md:hidden" aria-hidden="true"></div>
+			{/if}
+
+			{#if latest}
+				<!-- Reply set. On a desk it leads the bar, sitting over the left-aligned
+				     column it answers; on a phone it trails it, as far from the back
+				     arrow as the bar goes.
+
+				     Whether it is labelled is a `@container` question, not a viewport
+				     one — a tablet's second pane is as narrow as a phone, and three
+				     labelled buttons used to wrap and push the four icons clean off its
+				     right edge. How *big* the targets are stays viewport-driven: a
+				     narrow pane on a desk is still being pointed at, not tapped. -->
+				<div class="flex shrink-0 items-center gap-2 max-md:gap-1.5 md:order-1">
+					<button type="button" class="btn-tactile !h-7 max-md:!size-11 max-md:!p-0" title="Reply" aria-label="Reply" onclick={(event) => latest && onCompose('reply', latest, anchorFrom(event))}>
+						<svg class="size-3.5 text-[var(--z-strong)] max-md:size-[18px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M6 3.5L1.5 8 6 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+							<path d="M1.5 8H10a4 4 0 014 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+						</svg>
+						<span class="@max-lg:hidden">Reply</span>
+					</button>
+					<button type="button" class="btn-tactile !h-7 max-md:!size-11 max-md:!p-0" title="Reply all" aria-label="Reply all" onclick={(event) => latest && onCompose('replyAll', latest, anchorFrom(event))}>
+						<!-- Two heads on Reply's one tail. Drawn as a bare « it belonged to
+						     the back chevron's family rather than Reply's, which on a phone
+						     with no label under it is the wrong one to be read as. -->
+						<svg class="size-3.5 text-[var(--z-strong)] max-md:size-[18px]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M5.5 3.5L1 8 5.5 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+							<path d="M9.5 3.5L5 8 9.5 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+							<path d="M5 8H10a4 4 0 014 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+						</svg>
+						<span class="@max-lg:hidden">Reply all</span>
+					</button>
+					<button type="button" class="btn-tactile !h-7 @max-lg:hidden" title="Forward" aria-label="Forward" onclick={(event) => latest && onCompose('forward', latest, anchorFrom(event))}>
+						<svg class="size-3.5 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M10 3.5L14.5 8 10 12.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+							<path d="M14.5 8H6a4 4 0 00-4 4v.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+						</svg>
+						Forward
 					</button>
 				</div>
 			{/if}

@@ -524,6 +524,9 @@
 	});
 
 	async function openRow(threadId: string) {
+		// The reader hides the top bar on a phone, and with it the drawer's only
+		// toggle — so the drawer never survives into a thread.
+		drawerOpen = false;
 		if (activeMailbox?.kind !== 'drafts') {
 			reader.open(threadId);
 			if (prefs.markReadOnOpen) void markThreadRead(threadId);
@@ -663,8 +666,16 @@
 		bind:this={rootEl}
 		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-[var(--z-surface)]"
 	>
+		<!--
+			A phone reading a thread gets one bar, not two: the reader's own toolbar
+			is taller there and carries everything that screen can do, so the shell's
+			bar (the mark, the drawer toggle, the folder switcher, search) steps out
+			rather than stacking 52px of chrome nobody is reading on top of it. The
+			two panes are both on screen from 768px up, where it stays put.
+		-->
 		<TopBar
 			bind:this={topBar}
+			class={openThreadId ? 'max-md:hidden' : ''}
 			{searchQuery}
 			onSearch={runSearch}
 			mailboxes={mailboxList}

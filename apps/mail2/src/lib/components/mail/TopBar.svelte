@@ -9,6 +9,8 @@
 	import SectionTabs from './SectionTabs.svelte';
 
 	interface Props {
+		/** The page hides the whole bar on a phone while a thread is being read. */
+		class?: string;
 		mailboxes: MailboxDTO[] | undefined;
 		activeMailbox: MailboxDTO | null;
 		onSelectMailbox: (id: string) => void;
@@ -30,6 +32,7 @@
 	}
 
 	let {
+		class: className = '',
 		mailboxes,
 		activeMailbox,
 		onSelectMailbox,
@@ -104,7 +107,7 @@
 </script>
 
 <header
-	class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[var(--z-line)] bg-[var(--z-surface)] px-4 select-none max-md:gap-2 max-md:px-2.5"
+	class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[var(--z-line)] bg-[var(--z-surface)] px-4 select-none max-md:gap-2 max-md:px-2.5 {className}"
 >
 	<!-- Left: the mark, the sidebar toggle, the folder switcher -->
 	<div class="flex min-w-0 shrink-0 items-center gap-3 max-md:gap-2">
