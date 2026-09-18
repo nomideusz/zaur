@@ -27,6 +27,7 @@ import type {
 	ComposeTransport,
 	Draft,
 	DraftAttachment,
+	DraftKind,
 	DraftSeed,
 	FocusTarget,
 	OutgoingAttachment,
@@ -62,6 +63,7 @@ function dedupeEmails(list: string[]): string[] {
 export interface NewDraftOptions {
 	x?: number;
 	y?: number;
+	kind?: DraftKind;
 	to?: Recipient[];
 	subject?: string;
 	body?: string;
@@ -105,6 +107,7 @@ class ComposeStore {
 	newDraft(options: NewDraftOptions = {}): string {
 		const draft: Draft = {
 			id: crypto.randomUUID(),
+			kind: options.kind ?? 'new',
 			to: options.to ?? [],
 			toInput: '',
 			toOpen: false,
@@ -157,6 +160,7 @@ class ComposeStore {
 		}
 		return this.newDraft({
 			...position,
+			kind: mode,
 			to,
 			subject: seed.subject,
 			body: seed.body,
@@ -487,6 +491,7 @@ class ComposeStore {
 	reopenDraft(seed: DraftSeed, position?: { x: number; y: number }): string {
 		const id = this.newDraft({
 			...position,
+			kind: 'draft',
 			to: seed.to,
 			subject: seed.subject,
 			body: seed.body,

@@ -19,6 +19,7 @@ function chip(email: string, name = ''): Recipient {
 function draft(overrides: Partial<Draft> = {}): Draft {
 	return {
 		id: 'd1',
+		kind: 'new',
 		to: [],
 		toInput: '',
 		toOpen: false,

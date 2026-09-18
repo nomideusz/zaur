@@ -148,9 +148,6 @@
 		if (!rect) return null;
 		return { left: rect.left, top: rect.top, right: rect.right, bottom: rect.bottom };
 	}
-
-	/** A lighter stroke for the time chip on the fill: the channel's stroke, thinned. */
-	const timeBorder = $derived(`color-mix(in oklab, ${channel.stroke} 55%, var(--z-surface))`);
 </script>
 
 <section
@@ -416,12 +413,19 @@
 							</div>
 						</div>
 					</div>
-					<!-- Top right of the card, at every width. The chip the name has no
-					     room for on a narrow pane falls in under it. -->
-					<div class="flex shrink-0 flex-col items-end gap-1.5">
+					<!--
+						Top right of the card, at every width, and drawn the way the list
+						row draws its time: plain mono, no pill. A white chip on the wash
+						was the brightest thing in the card and read as a control — the
+						date is the one number you look up mid-read, not something to
+						press.
+
+						The state chip the name has no room for on a narrow pane falls in
+						under it.
+					-->
+					<div class="flex shrink-0 flex-col items-end gap-1.5 pt-px">
 						<time
-							class="z-mono rounded-[6px] border bg-[var(--z-surface)] px-2 py-[3px] text-[11px] font-medium"
-							style:border-color={timeBorder}
+							class="z-mono text-[11.5px] font-medium"
 							style:color={channel.ink}
 							datetime={latest.receivedAt}
 						>

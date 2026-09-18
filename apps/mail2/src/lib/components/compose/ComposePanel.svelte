@@ -56,6 +56,16 @@
 	const bodyOpen = $derived(bodyHeight >= 228);
 	const suggestions = $derived(filterContacts(compose.contacts, draft.toInput, draft.to));
 	const title = $derived(draft.subject.trim() || 'New message');
+	/** What a sheet's bar says, where the subject already has a field of its own. */
+	const sheetTitle = $derived(
+		{
+			new: 'New message',
+			reply: 'Reply',
+			replyAll: 'Reply all',
+			forward: 'Forward',
+			draft: 'Draft'
+		}[draft.kind]
+	);
 	const subjectDim = $derived(draft.to.length === 0 ? 'opacity-68' : 'opacity-100');
 	/** Schedule picker state — transient UI, so local state rather than the draft record. */
 	let scheduleOpen = $state(false);
@@ -295,7 +305,7 @@
 {#snippet sendButton(compact: boolean)}
 	<button
 		type="button"
-		class="btn-tactile btn-primary {compact ? '!h-8 !px-3 !text-[12px]' : '!h-[30px] !px-3.5'}"
+		class="btn-tactile btn-primary {compact ? '!h-11 !px-4 !text-[14px] !font-semibold' : '!h-[30px] !px-3.5'}"
 		disabled={draft.sending || draft.to.length === 0}
 		onclick={() => void compose.sendDraft(draft.id)}
 	>
@@ -328,81 +338,114 @@
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<div
 		bind:this={headerEl}
-		class="flex shrink-0 touch-none items-center gap-2.5 border-b border-[var(--z-hairline)] bg-[var(--z-hover)] pr-2.5 pl-3.5 select-none {sheet
-			? 'h-[52px]'
-			: 'h-[44px] cursor-grab active:cursor-grabbing'}"
+		class="flex shrink-0 touch-none items-center border-b border-[var(--z-hairline)] select-none {sheet
+			? 'h-[60px] gap-2 bg-[var(--z-surface)] px-2.5'
+			: 'h-[44px] cursor-grab gap-2.5 bg-[var(--z-hover)] pr-2.5 pl-3.5 active:cursor-grabbing'}"
 		onpointerdown={startDrag}
 		onpointermove={moveDrag}
 		onpointerup={endDrag}
 		onpointercancel={endDrag}
 		ondblclick={() => compose.toggleMaximize(draft.id)}
 	>
-		<span class="min-w-0 flex-1 truncate text-[13px] font-semibold text-[var(--z-body)]">{title}</span>
-		{#if saveLabel}
-			<span class="z-mono shrink-0 text-[10.5px] text-[var(--z-soft)]">{saveLabel}</span>
-		{/if}
-
-		<div class="flex items-center gap-1">
-			{#if sheet}
-				{@render sendButton(true)}
-			{/if}
+		{#if sheet}
+			<!--
+				A sheet is one screen, so it gets the reader's rule: the way out alone
+				at the left edge, Send at the right where the thumb is, and targets
+				sized for a thumb in between. The bar says what kind of message this is
+				rather than repeating a truncated subject — that is a field two rows
+				down, and the only thing the window header has to tell panels apart.
+			-->
 			<button
 				type="button"
-				class="z-icon-btn hover:!bg-[var(--z-hairline)] max-md:!size-8 max-md:!rounded-[8px]"
-				aria-label="Minimize"
-				onpointerdown={(event) => event.stopPropagation()}
-				onclick={() => compose.minimize(draft.id)}
-			>
-				<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-					<path d="M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-				</svg>
-			</button>
-			{#if !sheet && maximized}
-				<button
-					type="button"
-					class="z-icon-btn hover:!bg-[var(--z-hairline)]"
-					aria-label="Restore down"
-					onpointerdown={(event) => event.stopPropagation()}
-					onclick={() => compose.toggleMaximize(draft.id)}
-				>
-					<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<rect x="3.5" y="6" width="6.5" height="6.5" rx="1" stroke="currentColor" stroke-width="1.4" />
-						<path d="M6.5 3.5h6v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-					</svg>
-				</button>
-			{:else if !sheet}
-				<!-- A sheet already fills the shell; there is nothing to maximize. -->
-				<button
-					type="button"
-					class="z-icon-btn hover:!bg-[var(--z-hairline)]"
-					aria-label="Maximize"
-					onpointerdown={(event) => event.stopPropagation()}
-					onclick={() => compose.toggleMaximize(draft.id)}
-				>
-					<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-						<rect x="4" y="4" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.4" />
-					</svg>
-				</button>
-			{/if}
-			<button
-				type="button"
-				class="z-icon-btn hover:!bg-[var(--z-ch-discard-hover)] hover:!text-[var(--z-ch-discard-solid)] max-md:!size-8 max-md:!rounded-[8px]"
+				class="btn-tactile !size-11 !p-0"
 				aria-label="Close draft"
 				onpointerdown={(event) => event.stopPropagation()}
 				onclick={() => compose.close(draft.id)}
 			>
-				<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-					<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+				<svg class="size-[17px] text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
 				</svg>
 			</button>
-		</div>
+			<span class="min-w-0 flex-1 truncate pl-1 text-[15px] font-bold text-[var(--z-ink)]">{sheetTitle}</span>
+			{#if saveLabel}
+				<span class="z-mono shrink-0 text-[11px] text-[var(--z-soft)]">{saveLabel}</span>
+			{/if}
+			<button
+				type="button"
+				class="btn-tactile !size-11 !p-0"
+				aria-label="Minimize"
+				onpointerdown={(event) => event.stopPropagation()}
+				onclick={() => compose.minimize(draft.id)}
+			>
+				<svg class="size-[17px] text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+					<path d="M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+				</svg>
+			</button>
+			{@render sendButton(true)}
+		{:else}
+			<span class="min-w-0 flex-1 truncate text-[13px] font-semibold text-[var(--z-body)]">{title}</span>
+			{#if saveLabel}
+				<span class="z-mono shrink-0 text-[10.5px] text-[var(--z-soft)]">{saveLabel}</span>
+			{/if}
+
+			<div class="flex items-center gap-1">
+				<button
+					type="button"
+					class="z-icon-btn hover:!bg-[var(--z-hairline)]"
+					aria-label="Minimize"
+					onpointerdown={(event) => event.stopPropagation()}
+					onclick={() => compose.minimize(draft.id)}
+				>
+					<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M3.5 8h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+					</svg>
+				</button>
+				{#if maximized}
+					<button
+						type="button"
+						class="z-icon-btn hover:!bg-[var(--z-hairline)]"
+						aria-label="Restore down"
+						onpointerdown={(event) => event.stopPropagation()}
+						onclick={() => compose.toggleMaximize(draft.id)}
+					>
+						<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<rect x="3.5" y="6" width="6.5" height="6.5" rx="1" stroke="currentColor" stroke-width="1.4" />
+							<path d="M6.5 3.5h6v6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+						</svg>
+					</button>
+				{:else}
+					<button
+						type="button"
+						class="z-icon-btn hover:!bg-[var(--z-hairline)]"
+						aria-label="Maximize"
+						onpointerdown={(event) => event.stopPropagation()}
+						onclick={() => compose.toggleMaximize(draft.id)}
+					>
+						<svg class="size-3.5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<rect x="4" y="4" width="8" height="8" rx="1" stroke="currentColor" stroke-width="1.4" />
+						</svg>
+					</button>
+				{/if}
+				<button
+					type="button"
+					class="z-icon-btn hover:!bg-[var(--z-ch-discard-hover)] hover:!text-[var(--z-ch-discard-solid)]"
+					aria-label="Close draft"
+					onpointerdown={(event) => event.stopPropagation()}
+					onclick={() => compose.close(draft.id)}
+				>
+					<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+						<path d="M4.5 4.5l7 7M11.5 4.5l-7 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+					</svg>
+				</button>
+			</div>
+		{/if}
 	</div>
 
 	<!-- Fields -->
 	<div class="flex min-h-0 flex-1 flex-col overflow-y-auto px-4">
 		<!-- To -->
-		<div class="flex min-h-[28px] flex-wrap items-start gap-x-3 gap-y-[6px] py-2">
-			<span class="flex w-[62px] shrink-0 items-center gap-1.5 pt-1 pl-2">
+		<div class="flex min-h-[28px] items-start gap-x-3 py-2 max-md:py-2.5">
+			<span class="flex w-[72px] shrink-0 items-center gap-1.5 pt-1 pl-2">
 				{@render stepDot(step > 0)}
 				<span class="text-[13px] {step === 0 ? 'font-medium text-[var(--z-ink)]' : 'text-[var(--z-soft)]'}">To</span>
 			</span>
@@ -481,25 +524,6 @@
 					placeholder={draft.to.length > 0 ? 'Add another' : 'Name or email address'}
 					class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
 				/>
-				{#if !draft.ccOpen}
-					<button
-						type="button"
-						class="btn-tactile !h-[22px] !rounded-[6px] !px-2 !text-[11px]"
-						onclick={() => compose.patch(draft.id, { ccOpen: true })}
-					>
-						Cc
-					</button>
-				{/if}
-				{#if !draft.bccOpen}
-					<button
-						type="button"
-						class="btn-tactile !h-[22px] !rounded-[6px] !px-2 !text-[11px]"
-						onclick={() => compose.patch(draft.id, { bccOpen: true })}
-					>
-						Bcc
-					</button>
-				{/if}
-
 				{#if draft.toOpen}
 					<div
 						id={listboxId}
@@ -588,11 +612,55 @@
 					</div>
 				{/if}
 			</div>
+
+			<!--
+				Cc and Bcc used to live inside the chip row, so the first recipient
+				pushed them onto a line of their own. They hold the row's right edge
+				now: the chips wrap under themselves and these stay where they were.
+
+				A phone gets one chevron instead of two words, and it opens both rows.
+				Two labelled buttons cost ~100px of a 390px screen — width the names
+				need more, and each row carries its own ✕ for whichever you did not
+				want.
+			-->
+			{#if !draft.ccOpen || !draft.bccOpen}
+				<div class="flex shrink-0 items-center gap-1 pt-0.5">
+					<button
+						type="button"
+						class="btn-tactile !size-8 !rounded-[8px] !p-0 md:hidden"
+						aria-label="Show Cc and Bcc"
+						title="Cc and Bcc"
+						onclick={() => compose.patch(draft.id, { ccOpen: true, bccOpen: true })}
+					>
+						<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+							<path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+						</svg>
+					</button>
+					{#if !draft.ccOpen}
+						<button
+							type="button"
+							class="btn-tactile !h-[22px] !rounded-[6px] !px-2 !text-[11px] max-md:hidden"
+							onclick={() => compose.patch(draft.id, { ccOpen: true })}
+						>
+							Cc
+						</button>
+					{/if}
+					{#if !draft.bccOpen}
+						<button
+							type="button"
+							class="btn-tactile !h-[22px] !rounded-[6px] !px-2 !text-[11px] max-md:hidden"
+							onclick={() => compose.patch(draft.id, { bccOpen: true })}
+						>
+							Bcc
+						</button>
+					{/if}
+				</div>
+			{/if}
 		</div>
 
 		{#if draft.ccOpen}
-			<div class="flex h-[45px] items-center gap-3 border-b border-[var(--z-hairline)]">
-				<span class="w-[62px] shrink-0 pl-5 text-[13px] text-[var(--z-soft)]">Cc</span>
+			<div class="flex h-[45px] items-center gap-3 border-b border-[var(--z-hairline)] max-md:h-[52px]">
+				<span class="w-[72px] shrink-0 pl-5 text-[13px] text-[var(--z-soft)]">Cc</span>
 				<input
 					type="text"
 					value={draft.cc}
@@ -603,7 +671,7 @@
 				/>
 				<button
 					type="button"
-					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-[var(--z-faint)] transition-colors hover:bg-[var(--z-sunken)] hover:text-[var(--z-ink)]"
+					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-[var(--z-faint)] transition-colors hover:bg-[var(--z-sunken)] hover:text-[var(--z-ink)] max-md:size-9 max-md:rounded-[8px]"
 					aria-label="Remove Cc"
 					onclick={() => compose.patch(draft.id, { ccOpen: false, cc: '' })}
 				>
@@ -615,8 +683,8 @@
 		{/if}
 
 		{#if draft.bccOpen}
-			<div class="flex h-[45px] items-center gap-3 border-b border-[var(--z-hairline)]">
-				<span class="w-[62px] shrink-0 pl-5 text-[13px] text-[var(--z-soft)]">Bcc</span>
+			<div class="flex h-[45px] items-center gap-3 border-b border-[var(--z-hairline)] max-md:h-[52px]">
+				<span class="w-[72px] shrink-0 pl-5 text-[13px] text-[var(--z-soft)]">Bcc</span>
 				<input
 					type="text"
 					value={draft.bcc}
@@ -627,7 +695,7 @@
 				/>
 				<button
 					type="button"
-					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-[var(--z-faint)] transition-colors hover:bg-[var(--z-sunken)] hover:text-[var(--z-ink)]"
+					class="flex size-[22px] shrink-0 items-center justify-center rounded-[4px] text-[var(--z-faint)] transition-colors hover:bg-[var(--z-sunken)] hover:text-[var(--z-ink)] max-md:size-9 max-md:rounded-[8px]"
 					aria-label="Remove Bcc"
 					onclick={() => compose.patch(draft.id, { bccOpen: false, bcc: '' })}
 				>
@@ -639,8 +707,8 @@
 		{/if}
 
 		<!-- Subject -->
-		<div class="flex h-[45px] items-center gap-3 border-b border-[var(--z-hairline)] {subjectDim} transition-opacity duration-[160ms]">
-			<span class="flex w-[62px] shrink-0 items-center gap-1.5 pl-2">
+		<div class="flex h-[45px] items-center gap-3 border-b border-[var(--z-hairline)] max-md:h-[52px] {subjectDim} transition-opacity duration-[160ms]">
+			<span class="flex w-[72px] shrink-0 items-center gap-1.5 pl-2">
 				{@render stepDot(step === 2)}
 				<span class="text-[13px] {step === 1 ? 'font-medium text-[var(--z-ink)]' : 'text-[var(--z-soft)]'}">Subject</span>
 			</span>

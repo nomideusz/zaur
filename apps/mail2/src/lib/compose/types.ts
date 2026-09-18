@@ -6,6 +6,14 @@ export interface Recipient {
 
 export type DraftStage = 'default' | 'maximized' | 'minimized';
 
+/**
+ * What the panel was opened as. The window header names a draft by its subject,
+ * because several can be open at once and the subject is what tells them apart;
+ * a phone sheet has the subject in a field two rows down, so its bar says this
+ * instead.
+ */
+export type DraftKind = 'new' | 'reply' | 'replyAll' | 'forward' | 'draft';
+
 export type FocusTarget = 'to' | 'subject' | 'body' | null;
 
 export interface ComposeContact {
@@ -45,6 +53,7 @@ export interface PanelRect {
 
 export interface Draft {
 	id: string;
+	kind: DraftKind;
 	to: Recipient[];
 	toInput: string;
 	toOpen: boolean;

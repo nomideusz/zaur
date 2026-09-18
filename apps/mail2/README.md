@@ -350,6 +350,21 @@ the header**, because the action bar sits under the on-screen keyboard. The
 same happens whenever the shell is under 520px tall (a phone in landscape, a
 squat desktop window): a floating window needs room to float.
 
+That header is the reader's bar again, for the same reasons. The way out — ✕ —
+is **alone at the left edge** and Send is at the **right**, both thumb-sized,
+with Minimise between them. The bar says **what kind of message this is**
+("Reply", "Forward", "Draft"), not the subject: a sheet has the subject in a
+field two rows down, so the title was spending the widest line on screen
+repeating it, truncated. A window keeps the subject as its title — several can
+be open at once and it is the only thing that tells them apart — so the panel
+carries a `kind` and the two headers read it differently.
+
+**Cc and Bcc left the chip row.** They used to sit inside it, so the first
+recipient pushed them onto a line of their own; they hold the row's right edge
+now. On a phone they are one chevron rather than two words, and it opens both:
+two labelled buttons cost ~100px of a 390px screen, width the names need more,
+and each row carries its own ✕ for whichever you did not want.
+
 `interactive-widget=resizes-content` in the viewport meta gets Chrome to
 shrink the layout viewport for the keyboard rather than paint over it. iOS
 does not honour it — which is why Send is in the header and not only in the
@@ -687,10 +702,12 @@ The rest of the pane follows from the same rule:
   Which of the two leads the bar depends on whether there is a back arrow to
   keep Reply away from — see
   [A screen gets one bar](#a-screen-gets-one-bar).
-- **The date is the card's top-right corner**, at every width. The card used to
-  stack below 448px, which moved the date under the sender on a phone and back
-  up beside it on a desk; it is one number you look up mid-read, so it holds
-  still and the address line truncates instead.
+- **The date is the card's top-right corner**, at every width, drawn the way
+  the list row draws its time: plain mono, no pill. The card used to stack
+  below 448px, which moved the date under the sender on a phone and back up
+  beside it on a desk; it is one number you look up mid-read, so it holds still
+  and the address line truncates instead. The white chip it used to sit in was
+  the brightest thing on the wash and read as a control.
 - **Avatars are off by default** (`showAvatars`). The rail already carries the
   channel, the tile is the row's widest ornament, and a list without it fits
   more mail on a phone. The account's own tile in the top bar is chrome rather
@@ -936,6 +953,15 @@ mark: the glyph on paper, inside the maskable safe zone. `favicon.svg` is the
 same glyph by hand (with a dark variant); `favicon.png`/`.ico` are its raster
 fallback, and `badge.png` is the glyph alone for Android's monochrome status
 bar. Rerun the script if the mark changes.
+
+**`theme_color` is the app's surface, not its ground.** It was `--z-ground`
+(`#eef1f5`), the colour that only shows past the 1780px ceiling — so an
+installed iOS app painted a grey strip above a white app, and whatever
+translucent material iOS draws over the status bar had a hard edge to smear.
+It is `--z-surface` now, in the manifest and in the two `prefers-color-scheme`
+`<meta name="theme-color">` tags, so the strip is the same colour as the bar
+under it and there is nothing left to blur. iOS owns that strip either way;
+what we control is whether it has any contrast to work with.
 
 The service worker (`src/service-worker/`, registered by Kit as a module) does
 two things: show a push, and open its link. It has **no fetch handler and no

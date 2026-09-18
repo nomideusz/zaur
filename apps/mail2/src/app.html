@@ -12,8 +12,16 @@
 			name="viewport"
 			content="width=device-width, initial-scale=1, interactive-widget=resizes-content"
 		/>
-		<meta name="theme-color" content="#eef1f5" media="(prefers-color-scheme: light)" />
-		<meta name="theme-color" content="#070b10" media="(prefers-color-scheme: dark)" />
+		<!--
+			The colour a browser paints around the app: an installed iOS app fills
+			the status bar strip with it, Android the toolbar. It has to be
+			`--z-surface`, the colour of the app's own top bar — it used to be
+			`--z-ground`, which only shows past the 1780px ceiling, so a phone got a
+			grey band above a white app and whatever blur iOS draws up there had a
+			hard edge to smear. Same colour above and below, nothing to blur.
+		-->
+		<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
+		<meta name="theme-color" content="#161d26" media="(prefers-color-scheme: dark)" />
 		<script>
 			// The theme before first paint, so a dark preference does not flash light.
 			// Same key and shape as #lib/settings; "system" leaves the attribute off
