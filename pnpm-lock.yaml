@@ -16,6 +16,9 @@ importers:
       '@ark-ui/svelte':
         specifier: ^5.22.1
         version: 5.22.1(svelte@5.57.0)
+      '@nomideusz/svelte-calendar':
+        specifier: ^0.20.1
+        version: 0.20.1(svelte@5.57.0)
       '@opentelemetry/api':
         specifier: ^1.9.1
         version: 1.9.1
@@ -914,6 +917,9 @@ packages:
     peerDependencies:
       '@capacitor/core': '>=7.0.0'
 
+  '@chenglou/pretext@0.0.9':
+    resolution: {integrity: sha512-vInlpC//3vjRfWTs78k2BBIq/0bUdpjIp8TIn9fXe0NvnChhTQZfjioVzERQQbkQvCVpPpw7PDOrTWMHpq27VA==}
+
   '@cspotcode/source-map-support@0.8.1':
     resolution: {integrity: sha512-IchNf6dN4tHoMFIn/7OE8LWZ19Y6q/67Bmf6vnGREv8RSbBVb9LPJxEcnwrcwX6ixSvaiGoomAUvu4YSxXrVgw==}
     engines: {node: '>=12'}
@@ -1586,6 +1592,11 @@ packages:
 
   '@nomideusz/svelte-calendar@0.13.1':
     resolution: {integrity: sha512-K5ss8ZAoXRTzn1iSBeU2FbRZh3t880q8Mg6jFQsEpSvzXm6JrjNPsCYVGcRNjtcWG/L/7iUdl41clAPIL7Bmtw==}
+    peerDependencies:
+      svelte: ^5.0.0
+
+  '@nomideusz/svelte-calendar@0.20.1':
+    resolution: {integrity: sha512-NxWbIiu/ga4enA/PtXFbYmKJkL9dCGP2ZDUvja/Vah/moi0RUNGuHy5MwJnEikV0Y5Uk3IogIUSg3yFleJUrZA==}
     peerDependencies:
       svelte: ^5.0.0
 
@@ -6693,6 +6704,8 @@ snapshots:
     dependencies:
       '@capacitor/core': 7.6.7
 
+  '@chenglou/pretext@0.0.9': {}
+
   '@cspotcode/source-map-support@0.8.1':
     dependencies:
       '@jridgewell/trace-mapping': 0.3.9
@@ -7238,6 +7251,13 @@ snapshots:
 
   '@nomideusz/svelte-calendar@0.13.1(svelte@5.57.0)':
     dependencies:
+      date-fns: 4.4.0
+      date-fns-tz: 3.2.0(date-fns@4.4.0)
+      svelte: 5.57.0
+
+  '@nomideusz/svelte-calendar@0.20.1(svelte@5.57.0)':
+    dependencies:
+      '@chenglou/pretext': 0.0.9
       date-fns: 4.4.0
       date-fns-tz: 3.2.0(date-fns@4.4.0)
       svelte: 5.57.0

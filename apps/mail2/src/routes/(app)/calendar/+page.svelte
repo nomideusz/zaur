@@ -1,24 +1,25 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { Calendar as CalendarGrid } from '@nomideusz/svelte-calendar';
+	import type { CalendarViewId, TimelineEvent } from '@nomideusz/svelte-calendar';
 	import type { Calendar, CalendarEvent } from '@zaur/mail-core';
 	import { isRecurringInstance } from '@zaur/mail-core';
 	import {
 		addDays,
+		durationBetween,
 		formatEventTime,
 		formatJmapQueryBound,
 		formatMonthTitle,
 		formatWeekRange,
-		isSameDay,
-		isSameMonth,
 		monthGrid,
-		weekDays,
-		weekdayLabels
+		toDateInputValue,
+		weekDays
 	} from '@zaur/mail-core/utils/dates';
 	import SectionShell from '#lib/components/mail/SectionShell.svelte';
 	import EventEditor, { type EventDraft } from '#lib/components/calendar/EventEditor.svelte';
 	import CalendarList from '#lib/components/calendar/CalendarList.svelte';
-	import TimeGrid from '#lib/components/calendar/TimeGrid.svelte';
 	import { eventsOnDay, shiftMonth, startOfDay } from '#lib/calendar/schedule';
+	import { ZAUR_THEME, sourceOf, toTimelineEvent } from '#lib/calendar/bridge';
 	import { LiveUpdates } from '#lib/mail/live';
 	import { whoami } from '../../session.remote';
 	import {
@@ -40,17 +41,24 @@
 
 	/* ── Where we are looking ─────────────────────────────────────────── */
 
-	type View = 'day' | 'week' | 'month';
-	const VIEWS: { value: View; label: string; short: string }[] = [
-		{ value: 'day', label: 'Day', short: 'D' },
-		{ value: 'week', label: 'Week', short: 'W' },
-		{ value: 'month', label: 'Month', short: 'M' }
+	/**
+	 * The grid owns direct manipulation — drag to move, drag an edge to resize,
+	 * sweep empty canvas to create — and we keep the chrome: the shell's own
+	 * tactile view switcher and date nav drive it through `view` and
+	 * `currentDate`, so the header is ours and the geometry is the package's.
+	 */
+	type View = 'day' | 'week' | 'roll' | 'month';
+	const VIEWS: { value: View; label: string; short: string; id: CalendarViewId }[] = [
+		{ value: 'day', label: 'Day', short: 'D', id: 'day-planner' },
+		{ value: 'week', label: 'Week', short: 'W', id: 'week-planner' },
+		{ value: 'roll', label: 'Roll', short: 'R', id: 'week-scroll' },
+		{ value: 'month', label: 'Month', short: 'M', id: 'month-grid' }
 	];
 
 	const today = startOfDay(new Date());
-	/** One date drives all three views: the day in focus. */
 	let anchor = $state(today);
 	let view = $state<View>('week');
+	const viewId = $derived(VIEWS.find((option) => option.value === view)!.id);
 
 	let phone = $state(false);
 	$effect(() => {
@@ -64,12 +72,17 @@
 		return () => narrow.removeEventListener('change', sync);
 	});
 
+	// A phone shows Day and Month only: seven columns at 50px each is not a week,
+	// and the segments it saves are what the date in the header needs.
+	const views = $derived(
+		phone ? VIEWS.filter((option) => option.value === 'day' || option.value === 'month' || option.value === view) : VIEWS
+	);
+
 	const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'Etc/UTC';
-	const labels = weekdayLabels('monday');
 	const month = $derived(monthGrid(anchor.getFullYear(), anchor.getMonth(), 'monday'));
-	/** The days the current view is asking about — and, for month, the grid itself. */
+	/** The days the current view is asking the server about. */
 	const span = $derived(
-		view === 'month' ? month : view === 'week' ? weekDays(anchor, 'monday') : [anchor]
+		view === 'month' ? month : view === 'day' ? [anchor] : weekDays(anchor, 'monday')
 	);
 	const range = $derived({
 		after: formatJmapQueryBound(span[0]!),
@@ -81,27 +94,21 @@
 		anchor =
 			view === 'month'
 				? shiftMonth(anchor, delta)
-				: addDays(anchor, view === 'week' ? 7 * delta : delta);
+				: addDays(anchor, view === 'day' ? delta : 7 * delta);
 	}
-
-	// A phone shows Day and Month only: seven columns at 50px each is not a week,
-	// and the two segments it saves are what the date in the header needs.
-	const views = $derived(
-		phone ? VIEWS.filter((option) => option.value !== 'week' || view === 'week') : VIEWS
-	);
 
 	const title = $derived(
 		view === 'month'
 			? formatMonthTitle(anchor.getFullYear(), anchor.getMonth())
-			: view === 'week'
-				? formatWeekRange(anchor, 'monday')
-				: anchor.toLocaleDateString(
+			: view === 'day'
+				? anchor.toLocaleDateString(
 						undefined,
 						// A phone header has no room for "Saturday, September 19".
 						phone
 							? { weekday: 'short', day: 'numeric', month: 'short' }
 							: { weekday: 'long', day: 'numeric', month: 'long' }
 					)
+				: formatWeekRange(anchor, 'monday')
 	);
 
 	/* ── Data ─────────────────────────────────────────────────────────── */
@@ -118,7 +125,7 @@
 		live.start(({ calendar }) => {
 			if (calendar) {
 				void calendarsResource?.refresh();
-				void eventsResource?.refresh();
+				void reload();
 			}
 		});
 		return () => live.stop();
@@ -136,12 +143,60 @@
 		return calendarById.get(event.calendarIds[0] ?? '')?.color ?? 'var(--z-accent)';
 	}
 
+	/**
+	 * The grid asks for the range it is actually drawing, which is the only
+	 * honest contract: the week planner wants a week, the roll wants the ±8
+	 * weeks it buffers. Remote queries are cached per range, so the day list
+	 * beside a month and the grid behind it resolve to one request.
+	 *
+	 * Rebuilt whenever the calendars' visibility changes or a write lands —
+	 * the grid reloads on a new adapter, and that is the only handle it gives.
+	 */
+	let gridHeight = $state(0);
+	let dataVersion = $state(0);
+	/**
+	 * The bounds the grid last asked for. A remote query caches per argument, so
+	 * refreshing the day list's copy leaves the grid's own copy stale — after a
+	 * write both have to be told, and this is which one the grid holds.
+	 * Plain, not `$state`: the adapter writes it from inside the grid's own
+	 * load effect, and a signal there would feed back into that effect.
+	 */
+	let gridRange: { after: string; before: string; timeZone: string } | null = null;
+	const adapter = $derived.by(() => {
+		const by = calendarById;
+		dataVersion;
+		return {
+			async fetchEvents(range: { start: Date; end: Date }) {
+				const bounds = {
+					after: formatJmapQueryBound(range.start),
+					before: formatJmapQueryBound(range.end),
+					timeZone
+				};
+				gridRange = bounds;
+				const list = await eventsRemote(bounds);
+				return list
+					.filter((event) => event.calendarIds.some((id) => by.get(id)?.isVisible !== false))
+					.map((event) => toTimelineEvent(event, colorOf(event)));
+			}
+		};
+	});
+
+	/** Put the server's answer back in front of both the grid and the day list. */
+	async function reload() {
+		await Promise.all([
+			eventsResource?.refresh(),
+			gridRange ? eventsRemote(gridRange).refresh() : null
+		]);
+		dataVersion++;
+	}
+
 	/* ── Editing ──────────────────────────────────────────────────────── */
 
 	let mode = $state<'view' | 'new' | 'edit'>('view');
 	let editing = $state<CalendarEvent | null>(null);
-	/** What a new event opens on — a day, or the exact slot that was clicked. */
+	/** What a new event opens on — a day, or the exact slot that was drawn. */
 	let draftAt = $state(today);
+	let draftEnd = $state<Date | null>(null);
 	let saving = $state(false);
 	let editorError = $state<string | null>(null);
 	let notice = $state<string | null>(null);
@@ -159,9 +214,10 @@
 		return cause instanceof Error && cause.message ? cause.message : fallback;
 	}
 
-	function startNew(at: Date = anchor) {
+	function startNew(at: Date = anchor, until: Date | null = null) {
 		anchor = startOfDay(at);
 		draftAt = at;
+		draftEnd = until;
 		editing = null;
 		editorError = null;
 		mode = 'new';
@@ -191,13 +247,50 @@
 				await createEvent({ accountId: calendar?.accountId ?? null, timeZone, ...draft });
 				flash('Event created');
 			}
-			await eventsResource?.refresh();
+			await reload();
 			mode = 'view';
 			editing = null;
 		} catch (cause) {
 			editorError = messageOf(cause, 'The event could not be saved.');
 		} finally {
 			saving = false;
+		}
+	}
+
+	/**
+	 * A drag landed. One occurrence of a repeating event moves on its own —
+	 * the same rule the editor states when you open an instance — because the
+	 * synthetic id is what JMAP records the override against.
+	 */
+	async function moveEvent(row: TimelineEvent, start: Date, end: Date) {
+		const event = sourceOf(row);
+		if (!event) return;
+		const calendarId = event.calendarIds[0];
+		if (!calendarId) return;
+		try {
+			await updateEvent({
+				id: event.id,
+				accountId: event.accountId,
+				previousCalendarIds: event.calendarIds,
+				calendarId,
+				title: event.title,
+				start: event.allDay
+					? `${toDateInputValue(start)}T00:00:00`
+					: formatJmapQueryBound(start),
+				duration: durationBetween(start, end, event.allDay),
+				timeZone,
+				allDay: event.allDay,
+				description: event.description ?? '',
+				location: event.location ?? '',
+				repeat: 'none'
+			});
+			await reload();
+			flash(isRecurringInstance(event) ? 'This occurrence moved' : 'Event moved');
+		} catch (cause) {
+			// The grid has already drawn the event where it was dropped; putting
+			// the server's answer back is what undoes it.
+			await reload();
+			flash(messageOf(cause, 'The event could not be moved.'));
 		}
 	}
 
@@ -210,7 +303,7 @@
 		saving = true;
 		try {
 			await deleteEvent({ id: series ? event.baseEventId! : event.id, accountId: event.accountId });
-			await eventsResource?.refresh();
+			await reload();
 			mode = 'view';
 			editing = null;
 			flash('Event deleted');
@@ -242,13 +335,16 @@
 		}
 	}
 
-	const timeShort = new Intl.DateTimeFormat(undefined, { timeStyle: 'short' });
 	const dayTitle = $derived(
 		anchor.toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' })
 	);
 	const editorOpen = $derived(mode !== 'view');
-	/** The month grid needs the day's list beside it; the time grid is already one. */
+	/** The month grid needs the day's list beside it; a planner is already one. */
 	const railOpen = $derived(editorOpen || view === 'month');
+	/** Nothing to drag an event onto if none of your calendars take writes. */
+	const readOnly = $derived(
+		!calendarList.some((calendar) => calendar.myRights.mayWriteAll || calendar.myRights.mayWriteOwn)
+	);
 </script>
 
 <svelte:head><title>Calendar · Zaur Mail</title></svelte:head>
@@ -336,7 +432,7 @@
 			{/if}
 		</aside>
 
-		<!-- The view -->
+		<!-- The grid -->
 		<div class="flex min-w-0 flex-1 flex-col {editorOpen ? 'max-md:hidden' : ''}">
 			{#if notice}
 				<p
@@ -347,97 +443,50 @@
 				</p>
 			{/if}
 
-			{#if view === 'month'}
-				<div class="grid grid-cols-7 border-b border-[var(--z-hairline)]">
-					{#each labels as label (label)}
-						<div class="z-caption px-2 py-1.5 text-center">{label}</div>
-					{/each}
-				</div>
-				<div
-					class="grid min-h-0 flex-1 grid-cols-7 grid-rows-6 overflow-y-auto"
-					role="grid"
-					aria-label={title}
-				>
-					{#each month as day (day.getTime())}
-						{@const inMonth = isSameMonth(day, anchor.getFullYear(), anchor.getMonth())}
-						{@const isToday = isSameDay(day, today)}
-						{@const isSelected = isSameDay(day, anchor)}
-						{@const items = eventsOnDay(visibleEvents, day)}
-						<!-- svelte-ignore a11y_click_events_have_key_events -->
-						<div
-							role="gridcell"
-							tabindex="0"
-							aria-selected={isSelected}
-							class="flex min-h-[84px] flex-col gap-0.5 border-r border-b border-[var(--z-sunken)] p-1 text-left transition-colors {isSelected
-								? 'bg-[var(--z-accent-faint)]'
-								: inMonth
-									? 'bg-[var(--z-surface)]'
-									: 'bg-[var(--z-hover)]/60'} hover:bg-[var(--z-hover)]"
-							onclick={() => (anchor = day)}
-							ondblclick={() => startNew(day)}
-							onkeydown={(pressed) => {
-								if (pressed.key === 'Enter') startNew(day);
-							}}
-						>
-							<span
-								class="flex size-6 items-center justify-center self-end rounded-[6px] text-[12px] tabular-nums {isToday
-									? 'bg-[var(--z-accent)] font-bold text-[var(--z-accent-fg)]'
-									: inMonth
-										? 'font-medium text-[var(--z-strong)]'
-										: 'text-[var(--z-faint)]'}"
-							>
-								{day.getDate()}
-							</span>
-							{#each items.slice(0, 3) as event (event.id)}
-								<button
-									type="button"
-									class="z-event w-full"
-									style:--z-rail={colorOf(event)}
-									onclick={(clicked) => {
-										clicked.stopPropagation();
-										anchor = day;
-										startEdit(event);
-									}}
-									title={event.title}
-								>
-									<!-- A phone's month column is 55px: the title is worth more than the time. -->
-									{#if !event.allDay}
-										<span class="z-mono shrink-0 text-[10px] opacity-70 max-sm:hidden">
-											{timeShort.format(event.start)}
-										</span>
-									{/if}
-									<span class="truncate">{event.title}</span>
-								</button>
-							{/each}
-							{#if items.length > 3}
-								<button
-									type="button"
-									class="px-1 text-left text-[11px] whitespace-nowrap text-[var(--z-soft)] hover:text-[var(--z-ink)]"
-									onclick={(clicked) => {
-										clicked.stopPropagation();
-										anchor = day;
-										view = 'day';
-									}}
-								>
-									+{items.length - 3}<span class="max-sm:hidden">&nbsp;more</span>
-								</button>
-							{/if}
-						</div>
-					{/each}
-				</div>
+			{#if eventsResource?.error}
+				<p class="px-4 py-3 text-[13px] text-[var(--z-ch-discard-ink)]">
+					Could not load events.
+					<button type="button" class="underline" onclick={() => eventsResource?.refresh()}>Retry</button>
+				</p>
 			{:else}
-				<TimeGrid
-					days={span}
-					events={visibleEvents}
-					{colorOf}
-					selected={anchor}
-					onSelectDay={(day) => {
-						anchor = day;
-						view = 'day';
-					}}
-					onOpen={startEdit}
-					onCreate={startNew}
-				/>
+				<!--
+					The grid scrolls itself — sticky day headings, and the roll view
+					scrolling under a drag — so it needs a real height, not `auto`.
+					`bind:clientHeight` is a ResizeObserver in two words.
+				-->
+				<div class="min-h-0 flex-1" bind:clientHeight={gridHeight}>
+					<CalendarGrid
+						{adapter}
+						view={viewId}
+						currentDate={anchor}
+						theme={ZAUR_THEME}
+						autoTheme={false}
+						mondayStart
+						height={gridHeight || 600}
+						borderRadius={0}
+						{readOnly}
+						showModePills={false}
+						showNavigation={false}
+						snapInterval={15}
+						minDuration={15}
+						mobile={phone}
+						ondatechange={(date) => {
+							// `currentDate` is controlled, so the grid echoes back what it
+							// was handed: taking the echo as a change feeds itself forever.
+							const next = startOfDay(date);
+							if (next.getTime() !== anchor.getTime()) anchor = next;
+						}}
+						oneventclick={(row) => {
+							const event = sourceOf(row);
+							if (event) startEdit(event);
+						}}
+						oneventcreate={({ start, end }) => startNew(start, end)}
+						oneventmove={(row, start, end) => void moveEvent(row, start, end)}
+					>
+						<!-- The shell's header already carries the date and the views. -->
+						{#snippet header()}{/snippet}
+					</CalendarGrid>
+				</div>
 			{/if}
 		</div>
 
@@ -452,6 +501,7 @@
 					<EventEditor
 						event={mode === 'edit' ? editing : null}
 						day={draftAt}
+						until={draftEnd}
 						calendars={calendarList}
 						{saving}
 						error={editorError}
@@ -475,12 +525,7 @@
 						</button>
 					</div>
 					<div class="min-h-0 flex-1 overflow-y-auto px-4 py-3">
-						{#if eventsResource?.error}
-							<p class="text-[13px] text-[var(--z-ch-discard-ink)]">
-								Could not load events.
-								<button type="button" class="underline" onclick={() => eventsResource?.refresh()}>Retry</button>
-							</p>
-						{:else if eventsResource?.loading && !eventsResource.current}
+						{#if eventsResource?.loading && !eventsResource.current}
 							<ul class="space-y-2">
 								{#each [1, 2, 3] as n (n)}<li class="z-skeleton h-[52px] rounded-[8px] bg-[var(--z-sunken)]"></li>{/each}
 							</ul>

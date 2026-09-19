@@ -1,13 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import {
-	describeRepeat,
-	eventsOnDay,
-	percentOfDay,
-	placeDay,
-	shiftMonth
-} from '../src/lib/calendar/schedule.ts';
+import { describeRepeat, eventsOnDay, shiftMonth } from '../src/lib/calendar/schedule.ts';
 
 const day = new Date(2026, 8, 19); // Saturday 19 September 2026
 
@@ -30,53 +24,6 @@ test('a day holds what touches it, all-day first', () => {
 	assert.deepEqual(found, [banner, morning]);
 	// Touching the edge is not overlapping it: midnight belongs to the next day.
 	assert.equal(eventsOnDay([{ start: at(24), end: at(25), allDay: false }], day).length, 0);
-});
-
-test('overlapping events share the width, unrelated ones keep it', () => {
-	const nine = event(9, 11);
-	const ten = event(10, 12);
-	const afternoon = event(14, 15);
-	const placed = placeDay([nine, ten, afternoon], day);
-
-	assert.deepEqual(
-		placed.map((item) => [item.lane, item.lanes]),
-		[
-			[0, 2],
-			[1, 2],
-			[0, 1]
-		]
-	);
-	// 09:00–11:00 of a 24h day: an twelfth of it, starting three eighths in.
-	assert.equal(placed[0].top, (9 / 24) * 100);
-	assert.equal(placed[0].height, (2 / 24) * 100);
-});
-
-test('a lane is reused once it is free', () => {
-	// 09–10 and 10–11 do not overlap, but both overlap 09–12: three events, two lanes.
-	const placed = placeDay([event(9, 12), event(9, 10), event(10, 11)], day);
-	assert.deepEqual(
-		placed.map((item) => item.lane),
-		[0, 1, 1]
-	);
-	assert.deepEqual(new Set(placed.map((item) => item.lanes)), new Set([2]));
-});
-
-test('an event running over midnight is clipped to the day and says so', () => {
-	const overnight = {
-		start: new Date(2026, 8, 18, 22, 0),
-		end: new Date(2026, 8, 19, 2, 0),
-		allDay: false
-	};
-	const [placed] = placeDay([overnight], day);
-	assert.equal(placed.top, 0);
-	assert.equal(placed.height, (2 / 24) * 100);
-	assert.equal(placed.continuesBefore, true);
-	assert.equal(placed.continuesAfter, false);
-});
-
-test('the now line is a percentage of its own day', () => {
-	assert.equal(percentOfDay(at(6)), 25);
-	assert.equal(percentOfDay(at(0)), 0);
 });
 
 test('a repeat rule says what it does, and lists dates only when they are certain', () => {

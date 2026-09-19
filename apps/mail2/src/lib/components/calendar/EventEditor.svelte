@@ -27,6 +27,7 @@
 	let {
 		event = null,
 		day = new Date(),
+		until = null,
 		calendars,
 		saving = false,
 		error = null,
@@ -37,6 +38,8 @@
 		event?: CalendarEvent | null;
 		/** Where a new event lands when there is no event to edit. */
 		day?: Date;
+		/** The end a drag drew on the grid; without one the default hour applies. */
+		until?: Date | null;
 		calendars: Calendar[];
 		saving?: boolean;
 		error?: string | null;
@@ -61,6 +64,7 @@
 	$effect(() => {
 		event?.id;
 		day.getTime();
+		until?.getTime();
 		const source = event;
 		if (source) {
 			title = source.title === '(No title)' ? '' : source.title;
@@ -74,7 +78,7 @@
 			description = source.description ?? '';
 			repeat = (source.recurrenceRule?.frequency as EventRepeat | undefined) ?? 'none';
 		} else {
-			const times = defaultEventTimes(day);
+			const times = until ? { start: day, end: until } : defaultEventTimes(day);
 			title = '';
 			calendarId = (writable.find((calendar) => calendar.isDefault) ?? writable[0])?.id ?? '';
 			allDay = false;

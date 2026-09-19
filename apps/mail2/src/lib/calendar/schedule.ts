@@ -1,7 +1,8 @@
 /**
- * The calendar's arithmetic: which events touch a day, where they sit inside
- * it, and what a repeat rule actually does. Pure functions, so the time grid
- * is only geometry and the rules can be tested without a browser.
+ * The calendar's arithmetic: which events touch a day, how the month pages,
+ * and what a repeat rule actually does. Placing events in a time grid used to
+ * live here too; `@nomideusz/svelte-calendar` does that now, and does it with
+ * drag and resize on top.
  */
 import type { EventRepeat } from '@zaur/mail-core';
 
@@ -11,19 +12,6 @@ export interface EventLike {
 	start: Date;
 	end: Date;
 	allDay: boolean;
-}
-
-export interface PlacedEvent<T> {
-	event: T;
-	/** Percentages of the day — straight into `top` and `height`. */
-	top: number;
-	height: number;
-	/** Which column this event takes among the ones it overlaps, of how many. */
-	lane: number;
-	lanes: number;
-	/** Runs past the edge of this day — the tile loses that corner. */
-	continuesBefore: boolean;
-	continuesAfter: boolean;
 }
 
 export function startOfDay(day: Date): Date {
@@ -40,56 +28,6 @@ export function eventsOnDay<T extends EventLike>(events: readonly T[], day: Date
 }
 
 /**
- * Place a day's timed events in the grid. Events that overlap form a cluster
- * and share the width; a cluster is only as wide as it needs to be, so two
- * events at 09:00 do not narrow an unrelated one at 14:00. An event running
- * over midnight is clipped to this day and says so.
- */
-export function placeDay<T extends EventLike>(events: readonly T[], day: Date): PlacedEvent<T>[] {
-	const from = startOfDay(day).getTime();
-	const to = from + DAY_MS;
-	const timed = eventsOnDay(events, day)
-		.filter((event) => !event.allDay)
-		.sort((a, b) => a.start.getTime() - b.start.getTime() || b.end.getTime() - a.end.getTime());
-
-	const placed: PlacedEvent<T>[] = [];
-	let cluster: PlacedEvent<T>[] = [];
-	let laneEnds: number[] = [];
-	let clusterEnd = 0;
-
-	function flush() {
-		for (const item of cluster) item.lanes = laneEnds.length;
-		placed.push(...cluster);
-		cluster = [];
-		laneEnds = [];
-		clusterEnd = 0;
-	}
-
-	for (const event of timed) {
-		const start = Math.max(event.start.getTime(), from);
-		const end = Math.max(Math.min(event.end.getTime(), to), start);
-		if (cluster.length && start >= clusterEnd) flush();
-
-		let lane = laneEnds.findIndex((laneEnd) => laneEnd <= start);
-		if (lane === -1) lane = laneEnds.length;
-		laneEnds[lane] = end;
-		clusterEnd = Math.max(clusterEnd, end);
-
-		cluster.push({
-			event,
-			top: ((start - from) / DAY_MS) * 100,
-			height: ((end - start) / DAY_MS) * 100,
-			lane,
-			lanes: 1,
-			continuesBefore: event.start.getTime() < from,
-			continuesAfter: event.end.getTime() > to
-		});
-	}
-	flush();
-	return placed;
-}
-
-/**
  * The same day, `delta` months away — clamped to the end of a short month.
  * Stepping a `Date` by a month rolls over instead (the 31st of January
  * becomes the 3rd of March), which makes paging a month view skip February.
@@ -98,11 +36,6 @@ export function shiftMonth(date: Date, delta: number): Date {
 	const target = new Date(date.getFullYear(), date.getMonth() + delta, 1);
 	const lastDay = new Date(target.getFullYear(), target.getMonth() + 1, 0).getDate();
 	return new Date(target.getFullYear(), target.getMonth(), Math.min(date.getDate(), lastDay));
-}
-
-/** Where a moment sits in its day, as a percentage. Used for the now line. */
-export function percentOfDay(at: Date): number {
-	return ((at.getTime() - startOfDay(at).getTime()) / DAY_MS) * 100;
 }
 
 /* ── What a repeat rule means ─────────────────────────────────────────── */
