@@ -185,7 +185,10 @@
 
 			<label>
 				<span class={label}>Calendar</span>
-				<select class="{field} mt-1" bind:value={calendarId} required>
+				<!-- Which calendars an event is filed in belongs to the series: the
+				     server refuses the property on an override, so on an occurrence
+				     this says where the event lives rather than offering a move. -->
+				<select class="{field} mt-1" bind:value={calendarId} required disabled={instance}>
 					{#each writable as calendar (calendar.accountId + calendar.id)}
 						<option value={calendar.id}>{calendar.name}</option>
 					{/each}

@@ -1755,13 +1755,15 @@ export class JMAPClient {
 		// "This property cannot be modified on a single occurrence." Nothing is
 		// lost by leaving it out — an occurrence cannot be filed anywhere its
 		// series is not, and no caller offers to move one.
-		if (!input.occurrence) {
+		//
+		// Sent only when the calendar actually changed. An event can be filed in
+		// several calendars at once; callers offer one, so writing the property
+		// on an edit that never touched it — a retitle, a drag — would quietly
+		// unfile the event from all the others.
+		const previousCalendarIds = input.previousCalendarIds ?? [];
+		if (!input.occurrence && !previousCalendarIds.includes(input.calendarId)) {
 			const calendarIds: Record<string, boolean | null> = { [input.calendarId]: true };
-			if (mode === 'update' && input.previousCalendarIds) {
-				for (const id of input.previousCalendarIds) {
-					if (id !== input.calendarId) calendarIds[id] = null;
-				}
-			}
+			for (const id of previousCalendarIds) calendarIds[id] = null;
 			eventData.calendarIds = calendarIds;
 		}
 
