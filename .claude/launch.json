@@ -1,0 +1,17 @@
+{
+	"version": "0.0.1",
+	"configurations": [
+		{
+			"name": "mail2-smoke-jmap",
+			"runtimeExecutable": "node",
+			"runtimeArgs": ["apps/mail2/tests/smoke/fake-jmap.mjs"],
+			"port": 9911
+		},
+		{
+			"name": "mail2-smoke",
+			"runtimeExecutable": "env",
+			"runtimeArgs": ["STORE_DB_PATH=/tmp/claude-1000/-home-nom-dev-apps-zaur/e2618163-d38d-4357-97b9-62c9eb23f0fd/scratchpad/store.sqlite", "pnpm", "--filter", "@zaur/mail2", "dev"],
+			"port": 5175
+		}
+	]
+}

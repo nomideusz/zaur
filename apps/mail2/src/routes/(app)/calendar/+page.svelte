@@ -459,7 +459,7 @@
 					scrolling under a drag — so it needs a real height, not `auto`.
 					`bind:clientHeight` is a ResizeObserver in two words.
 				-->
-				<div class="min-h-0 flex-1" bind:clientHeight={gridHeight}>
+				<div class="z-cal min-h-0 flex-1" bind:clientHeight={gridHeight}>
 					<CalendarGrid
 						{adapter}
 						view={viewId}
@@ -567,3 +567,163 @@
 		{/if}
 	</div>
 </SectionShell>
+
+<style>
+	/*
+	 * The grid's geometry is the package's; what a block looks like is ours.
+	 * Every view hands its blocks the calendar's colour as `--ev-color` (the
+	 * month as `--mg-chip-color`), so one recipe dresses all of them: a pastel
+	 * fill, a stroke of the same hue, a 2px lip under it, ink mixed from the
+	 * hue. Mixed against the surface and the ink, so dark mode is the same rule.
+	 *
+	 * `:global` because the markup is not ours; the `.z-cal` in front both
+	 * fences it to this grid and outranks the package's own scoped rules.
+	 */
+	.z-cal :global {
+		.tw-ev,
+		.tw-ad,
+		.tw-ghost:not(.tw-ghost--create),
+		.wg-ev,
+		.wg-ad,
+		.mb-event,
+		.mb-allday-chip,
+		.mw-ev,
+		.mg-chip:not(.mg-chip--custom) {
+			--ev-hue: var(--ev-color, var(--mg-chip-color));
+			--ev-fill: color-mix(in oklab, var(--ev-hue) 28%, var(--z-surface));
+			--ev-ink: color-mix(in oklab, var(--ev-hue) 30%, var(--z-ink));
+			border: 1px solid color-mix(in oklab, var(--ev-hue) 80%, var(--z-surface));
+			border-bottom-width: 2px;
+			border-radius: 6px;
+			background: var(--ev-fill);
+			color: var(--ev-ink);
+			outline: none;
+		}
+
+		.tw-ev:hover,
+		.tw-ad:hover,
+		.wg-ev:hover,
+		.wg-ad:hover,
+		.mb-event:hover,
+		.mw-ev:hover,
+		.mg-chip:not(.mg-chip--custom):hover {
+			background: color-mix(in oklab, var(--ev-hue) 38%, var(--z-surface));
+		}
+
+		/* Not yet certain, so not yet solid. */
+		.tw-ev--tentative,
+		.tw-ev--limited,
+		.wg-ev--tentative,
+		.wg-ev--limited {
+			border-style: dashed;
+		}
+
+		/* A bar that runs on into the next day has no end to round off here. */
+		.tw-ad--mid,
+		.tw-ad--end:not(.tw-ad--start),
+		.wg-ad--mid,
+		.wg-ad--end:not(.wg-ad--start) {
+			border-left-style: dashed;
+			border-top-left-radius: 0;
+			border-bottom-left-radius: 0;
+		}
+
+		/* The hue is the whole block now; a stripe or a dot would say it twice. */
+		.tw-ev-stripe,
+		.mb-ev-stripe,
+		.mw-ev-stripe,
+		.mb-allday-dot,
+		.mg-chip-dot {
+			display: none;
+		}
+
+		.tw-ev-body {
+			padding: 3px 7px;
+		}
+
+		.tw-ev-title,
+		.tw-ad-title,
+		.tw-ghost-title,
+		.wg-ev-title,
+		.wg-ad-title,
+		.mb-ev-title,
+		.mw-ev-title,
+		.mb-allday-title,
+		.mg-chip-title {
+			color: inherit;
+			font-weight: 600;
+		}
+
+		.tw-ev-time,
+		.tw-ev-loc,
+		.tw-ad-span,
+		.tw-ghost-time,
+		.wg-ev-time,
+		.wg-ev-loc,
+		.mb-ev-time,
+		.mb-ev-loc,
+		.mw-ev-time,
+		.mg-chip-time {
+			color: inherit;
+			font-weight: 500;
+			opacity: 0.78;
+		}
+
+		/* What it is, then when: the title leads, and on a one-line block the
+		   time sits at the far end of it. */
+		.tw-ev-title {
+			order: -1;
+		}
+
+		.tw-ev--compact .tw-ev-time {
+			margin-left: auto;
+		}
+
+		.tw-ad {
+			min-height: 22px;
+		}
+
+		/* ── The grid around them: quiet, one face, no washes ── */
+
+		.tw-hd-wd,
+		.wg-day-wd,
+		.mg-head-cell {
+			font-family: var(--font-sans);
+			font-size: 12px;
+			font-weight: 500;
+			letter-spacing: 0;
+			text-transform: none;
+			color: var(--z-soft);
+		}
+
+		.tw-hd-num {
+			font-size: 15px;
+		}
+
+		.tw-gutter-lb,
+		.tw-ad-gutter-lb {
+			font-size: 11.5px;
+			color: var(--z-soft);
+		}
+
+		/* Yesterday is not greyer than today; its events already step back. */
+		.tw-col.tw-col--past,
+		.mg-cell.mg-cell--out {
+			background: transparent;
+		}
+
+		.mg-daynum {
+			font-size: 13px;
+			color: var(--z-body);
+		}
+
+		.mg-cell--out .mg-daynum {
+			color: var(--z-faint);
+		}
+
+		.mg-chip:not(.mg-chip--custom) {
+			padding: 1px 6px;
+			border-bottom-width: 1px;
+		}
+	}
+</style>

@@ -11,6 +11,10 @@ import type { TimelineEvent } from '@nomideusz/svelte-calendar';
  * reference rather than a colour, so the grid follows `data-theme` and the OS
  * preference through the same tokens every other surface reads — one string,
  * both modes, no probing of the host page.
+ *
+ * One face throughout: the grid's "mono" slot gets the sans too (its times are
+ * already tabular), and a weekend is a day like any other — the colour on this
+ * page belongs to the events.
  */
 export const ZAUR_THEME = `
 	--dt-stage-bg: var(--z-surface);
@@ -28,10 +32,10 @@ export const ZAUR_THEME = `
 	--dt-btn-text: var(--z-accent-fg);
 	--dt-scrollbar: var(--z-line);
 	--dt-success: var(--z-ch-confirmed-solid);
-	--dt-weekend-bg: var(--z-hover);
+	--dt-weekend-bg: transparent;
 	--dt-hover: var(--z-hover);
 	--dt-sans: var(--font-sans);
-	--dt-mono: var(--font-mono);
+	--dt-mono: var(--font-sans);
 `;
 
 /** The event a drag came back with, so a move can be turned into a JMAP patch. */
