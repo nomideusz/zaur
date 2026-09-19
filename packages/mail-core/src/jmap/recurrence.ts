@@ -11,12 +11,111 @@ export const EVENT_REPEAT_OPTIONS: { value: EventRepeat; label: string }[] = [
 	{ value: 'yearly', label: 'Yearly' }
 ];
 
+/** JSCalendar's weekday codes (RFC 8984 §4.3.3). */
+export type WeekdayCode = 'mo' | 'tu' | 'we' | 'th' | 'fr' | 'sa' | 'su';
+
+/** Monday first — the order the editor draws them in. */
+export const WEEKDAYS: { code: WeekdayCode; label: string }[] = [
+	{ code: 'mo', label: 'Mon' },
+	{ code: 'tu', label: 'Tue' },
+	{ code: 'we', label: 'Wed' },
+	{ code: 'th', label: 'Thu' },
+	{ code: 'fr', label: 'Fri' },
+	{ code: 'sa', label: 'Sat' },
+	{ code: 'su', label: 'Sun' }
+];
+
+export interface JmapNDay {
+	'@type': 'NDay';
+	day: WeekdayCode;
+}
+
 export interface JmapRecurrenceRule {
 	'@type': 'RecurrenceRule';
 	frequency: string;
 	interval?: number;
+	byDay?: JmapNDay[];
 	until?: string;
 	count?: number;
+}
+
+export type EventFrequency = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+/**
+ * A repeat rule as the editor holds it — the part of RFC 8984's
+ * `RecurrenceRule` a person can actually be asked for. `EventRepeat` above is
+ * the old bare-frequency form webmail 1.0 still writes; this is the one with
+ * an interval, the weekdays a weekly rule lands on, and an end.
+ */
+export interface EventRecurrence {
+	frequency: EventFrequency;
+	/** 1 = every, 2 = every other. */
+	interval: number;
+	/** Weekly only. Empty means "the day the event already starts on". */
+	byDay: WeekdayCode[];
+	/** Local date-time, exclusive with `count`. */
+	until?: string;
+	/** Occurrences in total, counting the first. Exclusive with `until`. */
+	count?: number;
+}
+
+export const WEEKDAY_OF_INDEX: WeekdayCode[] = ['su', 'mo', 'tu', 'we', 'th', 'fr', 'sa'];
+
+export function weekdayCodeOf(date: Date): WeekdayCode {
+	return WEEKDAY_OF_INDEX[date.getDay()]!;
+}
+
+/** The rule a new event starts from: weekly on the day it is being created. */
+export function defaultRecurrence(start: Date): EventRecurrence {
+	return { frequency: 'weekly', interval: 1, byDay: [weekdayCodeOf(start)] };
+}
+
+/**
+ * The editor's rule as JMAP wants it. `byDay` only travels on a weekly rule —
+ * on a monthly one it would mean "the Mondays of that month", which is a
+ * different rule from the one the editor is offering.
+ */
+export function recurrenceRuleFrom(
+	recurrence: EventRecurrence | null
+): JmapRecurrenceRule | undefined {
+	if (!recurrence) return undefined;
+
+	const rule: JmapRecurrenceRule = {
+		'@type': 'RecurrenceRule',
+		frequency: recurrence.frequency
+	};
+	if (recurrence.interval > 1) rule.interval = recurrence.interval;
+	if (recurrence.frequency === 'weekly' && recurrence.byDay.length) {
+		rule.byDay = recurrence.byDay.map((day) => ({ '@type': 'NDay', day }));
+	}
+	// A rule carries an end or a count, never both.
+	if (recurrence.count !== undefined) rule.count = recurrence.count;
+	else if (recurrence.until) rule.until = recurrence.until;
+	return rule;
+}
+
+/** The other direction: what the server holds, as the editor holds it. */
+export function recurrenceFrom(
+	rule: JmapRecurrenceRule | undefined,
+	start: Date
+): EventRecurrence | null {
+	if (!rule) return null;
+	const frequency = (['daily', 'weekly', 'monthly', 'yearly'] as const).find(
+		(known) => known === rule.frequency
+	);
+	if (!frequency) return null;
+
+	return {
+		frequency,
+		interval: Math.max(1, rule.interval ?? 1),
+		byDay: rule.byDay?.length
+			? rule.byDay.map((day) => day.day)
+			: frequency === 'weekly'
+				? [weekdayCodeOf(start)]
+				: [],
+		until: rule.until,
+		count: rule.count
+	};
 }
 
 /** Stalwart / JMAP Calendars use singular `recurrenceRule`, not `recurrenceRules`. */

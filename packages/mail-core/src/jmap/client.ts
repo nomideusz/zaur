@@ -23,6 +23,7 @@ import type {
 	JMAPPrincipal
 } from './calendar-types';
 import { CALENDAR_PROPERTIES } from './calendar-types';
+import type { JmapRecurrenceRule } from './recurrence';
 import { shareWithPointerPatch } from './calendar-rights';
 import type {
 	JMAPFileNode,
@@ -1736,7 +1737,7 @@ export class JMAPClient {
 			description?: string;
 			location?: string;
 			previousCalendarIds?: string[];
-			recurrenceRule?: { '@type': 'RecurrenceRule'; frequency: string };
+			recurrenceRule?: JmapRecurrenceRule | null;
 		},
 		mode: 'create' | 'update'
 	): Record<string, unknown> {
@@ -1776,7 +1777,10 @@ export class JMAPClient {
 			eventData.locations = null;
 		}
 
-		if (input.recurrenceRule) {
+		// `undefined` leaves the rule alone — an occurrence override must not
+		// touch the series it belongs to. `null` is what turns repeating off;
+		// without it a rule could be set but never cleared.
+		if (input.recurrenceRule !== undefined) {
 			eventData.recurrenceRule = input.recurrenceRule;
 		}
 
@@ -1792,7 +1796,7 @@ export class JMAPClient {
 		showWithoutTime: boolean;
 		description?: string;
 		location?: string;
-		recurrenceRule?: { '@type': 'RecurrenceRule'; frequency: string };
+		recurrenceRule?: JmapRecurrenceRule | null;
 		accountId?: string | null;
 	}): Promise<string> {
 		if (!this.hasCalendars()) throw new Error('Calendars not supported');
@@ -1848,6 +1852,7 @@ export class JMAPClient {
 			description?: string;
 			location?: string;
 			previousCalendarIds?: string[];
+			recurrenceRule?: JmapRecurrenceRule | null;
 			accountId?: string | null;
 		}
 	): Promise<void> {

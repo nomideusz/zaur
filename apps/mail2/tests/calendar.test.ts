@@ -2,6 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
 import { describeRepeat, eventsOnDay, shiftMonth } from '../src/lib/calendar/schedule.ts';
+import type { EventRecurrence } from '@zaur/mail-core';
 
 const day = new Date(2026, 8, 19); // Saturday 19 September 2026
 
@@ -27,18 +28,53 @@ test('a day holds what touches it, all-day first', () => {
 });
 
 test('a repeat rule says what it does, and lists dates only when they are certain', () => {
-	assert.equal(describeRepeat('none', day), null);
-	assert.match(describeRepeat('daily', day)!, /^Every day · then /);
-	assert.match(describeRepeat('weekly', day)!, /^Every Saturday · then /);
+	const every = (over: Partial<EventRecurrence> = {}): EventRecurrence => ({
+		frequency: 'daily',
+		interval: 1,
+		byDay: [],
+		...over
+	});
+
+	assert.equal(describeRepeat(null, day), null);
+	assert.match(describeRepeat(every(), day)!, /^Every day · then /);
+	// A weekly rule with no days named falls back to the start's own weekday.
+	assert.match(describeRepeat(every({ frequency: 'weekly' }), day)!, /^Every week on Saturday · then /);
 	// The 19th exists in every month, so the dates are safe to show.
-	assert.match(describeRepeat('monthly', day)!, /^Every month on the 19th · then /);
+	assert.match(describeRepeat(every({ frequency: 'monthly' }), day)!, /^Every month on the 19th · then /);
 	// The 31st does not: state the rule, promise no dates.
-	assert.equal(describeRepeat('monthly', new Date(2026, 0, 31)), 'Every month on the 31st');
-	// Leap day, likewise. (Month and day order follow the locale.)
-	const leap = describeRepeat('yearly', new Date(2028, 1, 29))!;
-	assert.match(leap, /^Every .*(February|29)/);
+	assert.equal(
+		describeRepeat(every({ frequency: 'monthly' }), new Date(2026, 0, 31)),
+		'Every month on the 31st'
+	);
+	const leap = describeRepeat(every({ frequency: 'yearly' }), new Date(2028, 1, 29))!;
 	assert.doesNotMatch(leap, / · then /);
-	assert.match(describeRepeat('yearly', day)!, /^Every .*September.* · then /);
+});
+
+test('an interval reads as English, not as a number', () => {
+	const rule = (interval: number): EventRecurrence => ({ frequency: 'weekly', interval, byDay: ['mo'] });
+	assert.match(describeRepeat(rule(1), day)!, /^Every week on Mon/);
+	assert.match(describeRepeat(rule(2), day)!, /^Every other week on Mon/);
+	assert.match(describeRepeat(rule(3), day)!, /^Every 3rd week on Mon/);
+});
+
+test('a weekly rule on several days lists the days, and the dates it really lands on', () => {
+	// Saturday 19 September 2026. Every other week on Mon and Wed.
+	const fortnightly: EventRecurrence = { frequency: 'weekly', interval: 2, byDay: ['mo', 'we'] };
+	const line = describeRepeat(fortnightly, day)!;
+	assert.match(line, /^Every other week on Mon and Wed · then /);
+	// The 19th is in the start week, so the next hits are the week after next:
+	// Mon 28 Sep and Wed 30 Sep — not 21/23, which are one week out.
+	assert.match(line, /then \D*28\D+Sep\D*, \D*30\D+Sep\D*$|then Sep 28, Sep 30$/);
+
+	const weekly: EventRecurrence = { frequency: 'weekly', interval: 1, byDay: ['mo', 'we'] };
+	assert.match(describeRepeat(weekly, day)!, /then \D*21\D+Sep\D*, \D*23\D+Sep\D*$|then Sep 21, Sep 23$/);
+});
+
+test('an end is part of what the rule says', () => {
+	const base: EventRecurrence = { frequency: 'weekly', interval: 1, byDay: ['sa'] };
+	assert.match(describeRepeat({ ...base, count: 5 }, day)!, /, 5 times/);
+	assert.match(describeRepeat({ ...base, count: 1 }, day)!, /, once/);
+	assert.match(describeRepeat({ ...base, until: '2026-12-31T23:59:59' }, day)!, / until .*December/);
 });
 
 test('paging by month lands on the same day, and never skips a short one', () => {

@@ -244,7 +244,8 @@
 				});
 				flash('Event saved');
 			} else {
-				await createEvent({ accountId: calendar?.accountId ?? null, timeZone, ...draft });
+				const { keepRecurrence: _ignored, ...create } = draft;
+				await createEvent({ accountId: calendar?.accountId ?? null, timeZone, ...create });
 				flash('Event created');
 			}
 			await reload();
@@ -282,7 +283,10 @@
 				allDay: event.allDay,
 				description: event.description ?? '',
 				location: event.location ?? '',
-				repeat: 'none'
+				// A drag moves an event; it never edits the rule behind it. Without
+				// this a dragged occurrence would write its own rule over the series.
+				keepRecurrence: true,
+				recurrence: null
 			});
 			await reload();
 			flash(isRecurringInstance(event) ? 'This occurrence moved' : 'Event moved');

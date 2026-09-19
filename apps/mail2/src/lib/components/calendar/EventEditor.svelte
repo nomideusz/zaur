@@ -1,6 +1,7 @@
 <script lang="ts">
-	import type { Calendar, CalendarEvent, EventRepeat } from '@zaur/mail-core';
-	import { EVENT_REPEAT_OPTIONS, isRecurringInstance } from '@zaur/mail-core';
+	import type { Calendar, CalendarEvent, EventRecurrence } from '@zaur/mail-core';
+	import { isRecurringInstance, recurrenceFrom } from '@zaur/mail-core';
+	import RepeatPanel from './RepeatPanel.svelte';
 	import {
 		defaultEventTimes,
 		durationBetween,
@@ -10,7 +11,6 @@
 		toDateInputValue,
 		toDatetimeLocalValue
 	} from '@zaur/mail-core/utils/dates';
-	import { describeRepeat } from '#lib/calendar/schedule';
 
 	/** What the editor hands back: already in JMAP's local-datetime + duration form. */
 	export interface EventDraft {
@@ -21,7 +21,9 @@
 		allDay: boolean;
 		description: string;
 		location: string;
-		repeat: EventRepeat;
+		recurrence: EventRecurrence | null;
+		/** An occurrence override must not rewrite the series it came from. */
+		keepRecurrence: boolean;
 	}
 
 	let {
@@ -58,7 +60,7 @@
 	let endValue = $state('');
 	let location = $state('');
 	let description = $state('');
-	let repeat = $state<EventRepeat>('none');
+	let recurrence = $state<EventRecurrence | null>(null);
 
 	// A different event (or a new one on another day) resets the form.
 	$effect(() => {
@@ -76,7 +78,7 @@
 			endValue = allDay ? toDateInputValue(endShown) : toDatetimeLocalValue(endShown);
 			location = source.location ?? '';
 			description = source.description ?? '';
-			repeat = (source.recurrenceRule?.frequency as EventRepeat | undefined) ?? 'none';
+			recurrence = recurrenceFrom(source.recurrenceRule, source.start);
 		} else {
 			const times = until ? { start: day, end: until } : defaultEventTimes(day);
 			title = '';
@@ -86,7 +88,7 @@
 			endValue = toDatetimeLocalValue(times.end);
 			location = '';
 			description = '';
-			repeat = 'none';
+			recurrence = null;
 		}
 	});
 
@@ -112,8 +114,6 @@
 		return { start, end };
 	});
 	const endsBeforeStart = $derived(Boolean(parsed && parsed.end.getTime() < parsed.start.getTime()));
-	/** What the rule actually does, spelled out — "monthly" is not self-evident. */
-	const repeatSummary = $derived(parsed ? describeRepeat(repeat, parsed.start) : null);
 	const canSave = $derived(Boolean(title.trim() && calendarId && parsed && !endsBeforeStart));
 
 	function submit(e: SubmitEvent) {
@@ -127,7 +127,8 @@
 			allDay,
 			description,
 			location,
-			repeat
+			recurrence,
+			keepRecurrence: instance
 		});
 	}
 
@@ -171,31 +172,14 @@
 				<input class="{field} mt-1 !text-[15px] font-semibold" bind:value={title} required autocomplete="off" placeholder="What is happening?" />
 			</label>
 
-			<div class="grid grid-cols-2 gap-3 max-md:grid-cols-1">
-				<label>
-					<span class={label}>Calendar</span>
-					<select class="{field} mt-1" bind:value={calendarId} required>
-						{#each writable as calendar (calendar.accountId + calendar.id)}
-							<option value={calendar.id}>{calendar.name}</option>
-						{/each}
-					</select>
-				</label>
-				<label>
-					<span class={label}>Repeats</span>
-					<select class="{field} mt-1" bind:value={repeat} disabled={instance}>
-						{#each EVENT_REPEAT_OPTIONS as option (option.value)}
-							<option value={option.value}>{option.label}</option>
-						{/each}
-					</select>
-				</label>
-			</div>
-
-			{#if repeatSummary}
-				<p class="-mt-2 flex items-center gap-2 rounded-[8px] border border-[var(--z-hairline)] bg-[var(--z-canvas)] px-3 py-1.5 text-[12px] text-[var(--z-muted)]">
-					<svg class="size-3.5 shrink-0 text-[var(--z-faint)]" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8a5 5 0 018.5-3.5M13 8a5 5 0 01-8.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /><path d="M11.5 2v2.5H9M4.5 14v-2.5H7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
-					{repeatSummary}
-				</p>
-			{/if}
+			<label>
+				<span class={label}>Calendar</span>
+				<select class="{field} mt-1" bind:value={calendarId} required>
+					{#each writable as calendar (calendar.accountId + calendar.id)}
+						<option value={calendar.id}>{calendar.name}</option>
+					{/each}
+				</select>
+			</label>
 
 			<label class="flex items-center gap-2.5 text-[13px] text-[var(--z-strong)]">
 				<input type="checkbox" class="z-check" checked={allDay} onchange={(e) => toggleAllDay(e.currentTarget.checked)} />
@@ -224,6 +208,8 @@
 			{#if endsBeforeStart}
 				<p class="-mt-2 text-[12.5px] text-[var(--z-ch-discard-ink)]">The end has to come after the start.</p>
 			{/if}
+
+			<RepeatPanel bind:recurrence start={parsed?.start ?? day} disabled={instance} />
 
 			<label>
 				<span class={label}>Location</span>

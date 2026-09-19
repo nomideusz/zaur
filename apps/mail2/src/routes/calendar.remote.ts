@@ -17,10 +17,10 @@ import {
 	JmapMethodError,
 	mapCalendar,
 	mapCalendarEvent,
-	recurrenceRuleFor,
+	recurrenceRuleFrom,
 	type Calendar,
 	type CalendarEvent,
-	type EventRepeat
+	type EventRecurrence
 } from '@zaur/mail-core';
 import { connect } from '#lib/server/account';
 
@@ -94,7 +94,16 @@ const eventInput = v.object({
 	allDay: v.boolean(),
 	description: v.pipe(v.string(), v.maxLength(10_000)),
 	location: v.pipe(v.string(), v.maxLength(500)),
-	repeat: v.picklist(['none', 'daily', 'weekly', 'monthly', 'yearly'])
+	/** `null` does not repeat. `count` and `until` are exclusive; count wins. */
+	recurrence: v.nullable(
+		v.object({
+			frequency: v.picklist(['daily', 'weekly', 'monthly', 'yearly']),
+			interval: v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(999)),
+			byDay: v.pipe(v.array(v.picklist(['mo', 'tu', 'we', 'th', 'fr', 'sa', 'su'])), v.maxLength(7)),
+			until: v.optional(v.pipe(v.string(), v.regex(LOCAL_DATETIME))),
+			count: v.optional(v.pipe(v.number(), v.integer(), v.minValue(1), v.maxValue(999)))
+		})
+	)
 });
 
 export const createEvent = command(eventInput, async (input): Promise<{ id: string }> => {
@@ -110,7 +119,7 @@ export const createEvent = command(eventInput, async (input): Promise<{ id: stri
 			showWithoutTime: input.allDay,
 			description: input.description.trim() || undefined,
 			location: input.location.trim() || undefined,
-			recurrenceRule: recurrenceRuleFor(input.repeat as EventRepeat)
+			recurrenceRule: recurrenceRuleFrom(input.recurrence as EventRecurrence | null)
 		});
 		return { id };
 	} catch (cause) {
@@ -127,6 +136,12 @@ export const updateEvent = command(
 	v.object({
 		id: ID,
 		previousCalendarIds: v.pipe(v.array(ID), v.maxLength(20)),
+		/**
+		 * One occurrence of a series leaves the rule alone: Stalwart records the
+		 * edit as an override, and writing a rule onto an override would rewrite
+		 * the series from one of its own instances.
+		 */
+		keepRecurrence: v.optional(v.boolean()),
 		...eventInput.entries
 	}),
 	async (input): Promise<{ ok: true }> => {
@@ -142,7 +157,12 @@ export const updateEvent = command(
 				showWithoutTime: input.allDay,
 				description: input.description.trim() || undefined,
 				location: input.location.trim() || undefined,
-				previousCalendarIds: input.previousCalendarIds
+				previousCalendarIds: input.previousCalendarIds,
+				// `undefined` leaves it alone; `null` clears it; a rule sets it.
+				// Until now nothing was sent at all, so a changed rule was dropped.
+				recurrenceRule: input.keepRecurrence
+					? undefined
+					: (recurrenceRuleFrom(input.recurrence as EventRecurrence | null) ?? null)
 			});
 			return { ok: true };
 		} catch (cause) {
