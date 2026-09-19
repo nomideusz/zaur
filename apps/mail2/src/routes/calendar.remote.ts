@@ -142,6 +142,13 @@ export const updateEvent = command(
 		 * the series from one of its own instances.
 		 */
 		keepRecurrence: v.optional(v.boolean()),
+		/**
+		 * `id` is a synthetic occurrence id, so the patch is an override and
+		 * carries only what one occurrence owns. It implies `keepRecurrence`;
+		 * a drag sets that on its own, for a master event too, because moving
+		 * an event never edits the rule behind it.
+		 */
+		occurrence: v.optional(v.boolean()),
 		...eventInput.entries
 	}),
 	async (input): Promise<{ ok: true }> => {
@@ -158,11 +165,13 @@ export const updateEvent = command(
 				description: input.description.trim() || undefined,
 				location: input.location.trim() || undefined,
 				previousCalendarIds: input.previousCalendarIds,
+				occurrence: input.occurrence,
 				// `undefined` leaves it alone; `null` clears it; a rule sets it.
 				// Until now nothing was sent at all, so a changed rule was dropped.
-				recurrenceRule: input.keepRecurrence
-					? undefined
-					: (recurrenceRuleFrom(input.recurrence as EventRecurrence | null) ?? null)
+				recurrenceRule:
+					input.keepRecurrence || input.occurrence
+						? undefined
+						: (recurrenceRuleFrom(input.recurrence as EventRecurrence | null) ?? null)
 			});
 			return { ok: true };
 		} catch (cause) {

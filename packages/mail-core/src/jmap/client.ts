@@ -1738,24 +1738,32 @@ export class JMAPClient {
 			location?: string;
 			previousCalendarIds?: string[];
 			recurrenceRule?: JmapRecurrenceRule | null;
+			occurrence?: boolean;
 		},
 		mode: 'create' | 'update'
 	): Record<string, unknown> {
-		const calendarIds: Record<string, boolean | null> = { [input.calendarId]: true };
-		if (mode === 'update' && input.previousCalendarIds) {
-			for (const id of input.previousCalendarIds) {
-				if (id !== input.calendarId) calendarIds[id] = null;
-			}
-		}
-
 		const eventData: Record<string, unknown> = {
-			calendarIds,
 			title: input.title,
 			start: input.start,
 			duration: input.duration,
 			timeZone: input.timeZone,
 			showWithoutTime: input.showWithoutTime
 		};
+
+		// Which calendars an event is filed in belongs to the series, not to one
+		// of its instances, and the server refuses the property on an override:
+		// "This property cannot be modified on a single occurrence." Nothing is
+		// lost by leaving it out — an occurrence cannot be filed anywhere its
+		// series is not, and no caller offers to move one.
+		if (!input.occurrence) {
+			const calendarIds: Record<string, boolean | null> = { [input.calendarId]: true };
+			if (mode === 'update' && input.previousCalendarIds) {
+				for (const id of input.previousCalendarIds) {
+					if (id !== input.calendarId) calendarIds[id] = null;
+				}
+			}
+			eventData.calendarIds = calendarIds;
+		}
 
 		if (mode === 'create') {
 			eventData['@type'] = 'Event';
@@ -1854,6 +1862,9 @@ export class JMAPClient {
 			previousCalendarIds?: string[];
 			recurrenceRule?: JmapRecurrenceRule | null;
 			accountId?: string | null;
+			/** `eventId` is one occurrence of a series, so the patch is an
+			 *  override and may carry only what an occurrence owns. */
+			occurrence?: boolean;
 		}
 	): Promise<void> {
 		if (!this.hasCalendars()) throw new Error('Calendars not supported');
@@ -1879,11 +1890,16 @@ export class JMAPClient {
 		}
 
 		const notUpdated = first[1].notUpdated as
-			| Record<string, { description?: string; type?: string }>
+			| Record<string, { description?: string; type?: string; properties?: string[] }>
 			| undefined;
 		if (notUpdated && Object.keys(notUpdated).length) {
 			const firstError = Object.values(notUpdated)[0];
-			throw new Error(firstError?.description ?? firstError?.type ?? 'Failed to update event');
+			// The property names ride along: a SetError that only says a property
+			// was refused, without naming it, is a bug report nobody can act on.
+			const where = firstError?.properties?.length ? ` (${firstError.properties.join(', ')})` : '';
+			throw new Error(
+				`${firstError?.description ?? firstError?.type ?? 'Failed to update event'}${where}`
+			);
 		}
 	}
 
@@ -2293,16 +2309,25 @@ export class JMAPClient {
 		assertEmailSetSucceeded(response, 'Could not update read status');
 	}
 
-	async toggleStar(emailId: string, starred: boolean): Promise<void> {
+	/**
+	 * One `Email/set` for the whole selection, like `markManyAsRead` and
+	 * `toggleImportant`. It used to take a single id, so starring a selection
+	 * meant one JMAP request per message through `Promise.all`, and the server
+	 * answered `maxConcurrentRequests` — from the fourth request, in the
+	 * failures this replaces. Promise.all then rejected, so the owner got an
+	 * error over a selection that had been starred in part.
+	 */
+	async toggleStar(emailIds: string[], starred: boolean): Promise<void> {
+		if (!emailIds.length) return;
+
+		const update: Record<string, Record<string, unknown>> = {};
+		for (const emailId of emailIds) {
+			// `null`, not `false`: a keyword patch is set-or-remove (RFC 8621).
+			update[emailId] = { 'keywords/$flagged': starred ? true : null };
+		}
+
 		const response = await this.request([
-			[
-				'Email/set',
-				{
-					accountId: this.accountId,
-					update: { [emailId]: { 'keywords/$flagged': starred } }
-				},
-				'0'
-			]
+			['Email/set', { accountId: this.accountId, update }, '0']
 		]);
 		assertEmailSetSucceeded(response, 'Could not update star');
 	}

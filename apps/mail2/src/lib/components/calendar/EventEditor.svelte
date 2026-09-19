@@ -22,8 +22,10 @@
 		description: string;
 		location: string;
 		recurrence: EventRecurrence | null;
-		/** An occurrence override must not rewrite the series it came from. */
-		keepRecurrence: boolean;
+		/** The event being edited is one occurrence of a series, so the save is
+		 *  an override: it carries only what an occurrence owns and must not
+		 *  rewrite the rule behind it. */
+		occurrence: boolean;
 	}
 
 	let {
@@ -128,7 +130,7 @@
 			description,
 			location,
 			recurrence,
-			keepRecurrence: instance
+			occurrence: instance
 		});
 	}
 

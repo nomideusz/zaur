@@ -143,7 +143,7 @@ export const bulk = command(
 				break;
 			case 'star':
 			case 'unstar':
-				await Promise.all(ids.map((id) => client.toggleStar(id, action === 'star')));
+				await client.toggleStar(ids, action === 'star');
 				break;
 			case 'move':
 				if (!mailboxId) error(400, 'No destination folder');

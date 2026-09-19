@@ -798,7 +798,7 @@ class MailStore {
 		this.patchThreadMessage(message.id, { starred: next });
 
 		try {
-			await client.toggleStar(message.id, next);
+			await client.toggleStar([message.id], next);
 			this.clearPendingKeyword(message.id, 'starred');
 		} catch {
 			this.clearPendingKeyword(message.id, 'starred');
