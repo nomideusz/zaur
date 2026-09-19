@@ -4,7 +4,7 @@
 	import { page } from '$app/state';
 	import { resyncPush } from '#lib/push';
 	import { makeRecipient } from '#lib/compose/recipients';
-	import { signOutAccount, switchAccount, whoami } from '../session.remote';
+	import { switchAccount, whoami } from '../session.remote';
 	import { mailboxes, threads, thread, quota, bulk, type BulkAction, type ListFilter,
 		search as searchRemote
 	} from '../mail.remote';
@@ -14,7 +14,6 @@
 		saveDraft as saveDraftRemote,
 		deleteDraft as deleteDraftRemote
 	} from '../compose.remote';
-	import { logout } from '../login.remote';
 	import { contacts as contactsRemote } from '../contacts.remote';
 	import { contactDisplayName } from '@zaur/mail-core';
 	import TopBar from '#lib/components/mail/TopBar.svelte';
@@ -101,13 +100,6 @@
 		if (whoami().ready && !current) goto('/login', { replaceState: true });
 	});
 
-	function signOut() {
-		accountChannel?.postMessage('changed');
-		void logout().then(() => goto('/login', { replaceState: true }));
-	}
-
-	const otherAccounts = $derived((session?.accounts ?? []).filter((account) => !account.active));
-
 	/**
 	 * The active account lives in the shared session, so a switch here changes it
 	 * for every open tab. Each change reloads: this tab to start clean in the new
@@ -131,13 +123,6 @@
 		}
 		accountChannel?.postMessage('changed');
 		location.assign(then);
-	}
-
-	async function signOutActiveAccount() {
-		if (!session) return;
-		const { signedIn } = await signOutAccount({ key: session.key });
-		accountChannel?.postMessage('changed');
-		location.assign(signedIn ? '/' : '/login');
 	}
 
 	/**
@@ -704,11 +689,6 @@
 			mailboxes={mailboxList}
 			activeMailbox={activeMailbox}
 			onSelectMailbox={selectMailbox}
-			account={session ? { username: session.username, displayName: session.displayName } : null}
-			{otherAccounts}
-			onSwitchAccount={(key) => void useAccount(key)}
-			onSignOut={signOut}
-			onSignOutAccount={() => void signOutActiveAccount()}
 			sidebarOpen={sidebarVisible}
 			onToggleSidebar={toggleSidebar}
 			onPrevMailbox={() => stepMailbox(-1)}

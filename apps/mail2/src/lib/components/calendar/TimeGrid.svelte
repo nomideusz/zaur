@@ -66,119 +66,127 @@
 	}
 </script>
 
-<div class="flex min-h-0 flex-1 flex-col">
-	{#if days.length > 1}
-		<div class="grid shrink-0 border-b border-[var(--z-hairline)]" style:grid-template-columns={columns}>
-			<div></div>
-			{#each days as day (day.getTime())}
-				{@const isToday = isSameDay(day, now)}
-				<button
-					type="button"
-					class="flex items-baseline justify-center gap-1.5 border-l border-[var(--z-sunken)] py-1.5 transition-colors hover:bg-[var(--z-hover)] {isSameDay(day, selected) ? 'bg-[var(--z-accent-faint)]' : ''}"
-					onclick={() => onSelectDay(day)}
-				>
-					<span class="z-caption">{weekdayShort.format(day)}</span>
-					<span
-						class="flex size-[22px] items-center justify-center rounded-[6px] text-[13px] tabular-nums {isToday
-							? 'bg-[var(--z-accent)] font-bold text-[var(--z-accent-fg)]'
-							: 'font-semibold text-[var(--z-strong)]'}"
+<!--
+	Everything scrolls in one box. The day headings and the all-day row used to
+	sit outside it, which meant they were laid out across the full width while
+	the hour grid lost a classic scrollbar's worth — so the columns drifted
+	apart, up to 13px by Sunday. Inside, all three share one content width and
+	alignment stops depending on how the platform draws its scrollbars. They
+	stick to the top on the way down, which is what you want anyway.
+-->
+<div class="min-h-0 flex-1 overflow-y-auto" bind:this={scroller}>
+	<div class="sticky top-0 z-[4] bg-[var(--z-surface)]">
+		{#if days.length > 1}
+			<div class="grid border-b border-[var(--z-hairline)]" style:grid-template-columns={columns}>
+				<div></div>
+				{#each days as day (day.getTime())}
+					{@const isToday = isSameDay(day, now)}
+					<button
+						type="button"
+						class="flex items-baseline justify-center gap-1.5 border-l border-[var(--z-sunken)] py-1.5 transition-colors hover:bg-[var(--z-hover)] {isSameDay(day, selected) ? 'bg-[var(--z-accent-faint)]' : ''}"
+						onclick={() => onSelectDay(day)}
 					>
-						{day.getDate()}
-					</span>
-				</button>
-			{/each}
-		</div>
-	{/if}
-
-	{#if hasAllDay}
-		<div
-			class="grid max-h-[84px] shrink-0 overflow-y-auto border-b border-[var(--z-hairline)] bg-[var(--z-canvas)]"
-			style:grid-template-columns={columns}
-		>
-			<div class="z-caption flex items-start justify-end px-2 py-1.5 text-[9.5px] tracking-[0.03em] whitespace-nowrap">
-				All day
-			</div>
-			{#each days as day, index (day.getTime())}
-				<div class="flex flex-col gap-0.5 border-l border-[var(--z-sunken)] p-1">
-					{#each allDayByDay[index] as event (event.id)}
-						<button
-							type="button"
-							class="z-event w-full"
-							style:--z-rail={colorOf(event)}
-							onclick={() => onOpen(event)}
-							title={event.title}
+						<span class="z-caption">{weekdayShort.format(day)}</span>
+						<span
+							class="flex size-[22px] items-center justify-center rounded-[6px] text-[13px] tabular-nums {isToday
+								? 'bg-[var(--z-accent)] font-bold text-[var(--z-accent-fg)]'
+								: 'font-semibold text-[var(--z-strong)]'}"
 						>
-							<span class="truncate">{event.title}</span>
-						</button>
-					{/each}
-				</div>
-			{/each}
-		</div>
-	{/if}
-
-	<div class="min-h-0 flex-1 overflow-y-auto" bind:this={scroller}>
-		<div
-			class="relative grid"
-			style:grid-template-columns={columns}
-			style:--z-hour="{HOUR_PX}px"
-			style:height="{24 * HOUR_PX}px"
-		>
-			<div class="relative">
-				{#each HOURS.slice(1) as hour (hour)}
-					<span
-						class="z-mono absolute right-2 -translate-y-1/2 text-[10.5px] text-[var(--z-soft)]"
-						style:top="{(hour / 24) * 100}%"
-					>
-						{hourLabel.format(new Date(2026, 0, 1, hour))}
-					</span>
+							{day.getDate()}
+						</span>
+					</button>
 				{/each}
 			</div>
+		{/if}
 
-			{#each days as day (day.getTime())}
-				{@const isToday = isSameDay(day, now)}
-				<!-- svelte-ignore a11y_click_events_have_key_events -->
-				<div
-					role="gridcell"
-					tabindex="0"
-					aria-label={day.toDateString()}
-					class="z-hours relative border-l border-[var(--z-sunken)] {isSameDay(day, selected) && days.length > 1
-						? 'bg-[var(--z-accent-faint)]'
-						: ''}"
-					onclick={(clicked) => claim(clicked, day)}
-					onkeydown={(pressed) => {
-						if (pressed.key === 'Enter')
-							onCreate(new Date(day.getFullYear(), day.getMonth(), day.getDate(), 9, 0));
-					}}
-				>
-					{#each placeDay(events, day) as item (item.event.id)}
-						<button
-							type="button"
-							class="z-event absolute z-[1]"
-							style:--z-rail={colorOf(item.event)}
-							style:top="{item.top}%"
-							style:height="{item.height}%"
-							style:left="{(item.lane / item.lanes) * 100}%"
-							style:width="calc({100 / item.lanes}% - 3px)"
-							data-continues-before={item.continuesBefore || undefined}
-							data-continues-after={item.continuesAfter || undefined}
-							onclick={() => onOpen(item.event)}
-							title="{item.event.title} · {timeShort.format(item.event.start)}"
-						>
-							<span class="truncate">{item.event.title}</span>
-							<!-- A shared lane in a week column is too narrow for a title and a time both. -->
-							{#if item.lanes === 1 || days.length === 1}
-								<span class="z-mono ml-auto shrink-0 text-[10px] opacity-70">
-									{timeShort.format(item.event.start)}
-								</span>
-							{/if}
-						</button>
-					{/each}
-
-					{#if isToday}
-						<div class="z-now" style:top="{percentOfDay(now)}%"></div>
-					{/if}
+		{#if hasAllDay}
+			<div
+				class="grid max-h-[84px] overflow-y-auto border-b border-[var(--z-hairline)] bg-[var(--z-canvas)]"
+				style:grid-template-columns={columns}
+			>
+				<div class="z-caption flex items-start justify-end px-2 py-1.5 text-[9.5px] tracking-[0.03em] whitespace-nowrap">
+					All day
 				</div>
+				{#each days as day, index (day.getTime())}
+					<div class="flex flex-col gap-0.5 border-l border-[var(--z-sunken)] p-1">
+						{#each allDayByDay[index] as event (event.id)}
+							<button
+								type="button"
+								class="z-event w-full"
+								style:--z-rail={colorOf(event)}
+								onclick={() => onOpen(event)}
+								title={event.title}
+							>
+								<span class="truncate">{event.title}</span>
+							</button>
+						{/each}
+					</div>
+				{/each}
+			</div>
+		{/if}
+	</div>
+
+	<div
+		class="relative grid"
+		style:grid-template-columns={columns}
+		style:--z-hour="{HOUR_PX}px"
+		style:height="{24 * HOUR_PX}px"
+	>
+		<div class="relative">
+			{#each HOURS.slice(1) as hour (hour)}
+				<span
+					class="z-mono absolute right-2 -translate-y-1/2 text-[10.5px] text-[var(--z-soft)]"
+					style:top="{(hour / 24) * 100}%"
+				>
+					{hourLabel.format(new Date(2026, 0, 1, hour))}
+				</span>
 			{/each}
 		</div>
+
+		{#each days as day (day.getTime())}
+			{@const isToday = isSameDay(day, now)}
+			<!-- svelte-ignore a11y_click_events_have_key_events -->
+			<div
+				role="gridcell"
+				tabindex="0"
+				aria-label={day.toDateString()}
+				class="z-hours relative border-l border-[var(--z-sunken)] {isSameDay(day, selected) && days.length > 1
+					? 'bg-[var(--z-accent-faint)]'
+					: ''}"
+				onclick={(clicked) => claim(clicked, day)}
+				onkeydown={(pressed) => {
+					if (pressed.key === 'Enter')
+						onCreate(new Date(day.getFullYear(), day.getMonth(), day.getDate(), 9, 0));
+				}}
+			>
+				{#each placeDay(events, day) as item (item.event.id)}
+					<button
+						type="button"
+						class="z-event absolute z-[1]"
+						style:--z-rail={colorOf(item.event)}
+						style:top="{item.top}%"
+						style:height="{item.height}%"
+						style:left="{(item.lane / item.lanes) * 100}%"
+						style:width="calc({100 / item.lanes}% - 3px)"
+						data-continues-before={item.continuesBefore || undefined}
+						data-continues-after={item.continuesAfter || undefined}
+						onclick={() => onOpen(item.event)}
+						title="{item.event.title} · {timeShort.format(item.event.start)}"
+					>
+						<span class="truncate">{item.event.title}</span>
+						<!-- A shared lane in a week column is too narrow for a title and a time both. -->
+						{#if item.lanes === 1 || days.length === 1}
+							<span class="z-mono ml-auto shrink-0 text-[10px] opacity-70">
+								{timeShort.format(item.event.start)}
+							</span>
+						{/if}
+					</button>
+				{/each}
+
+				{#if isToday}
+					<div class="z-now" style:top="{percentOfDay(now)}%"></div>
+				{/if}
+			</div>
+		{/each}
 	</div>
 </div>

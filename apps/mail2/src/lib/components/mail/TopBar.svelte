@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { Menu } from '@ark-ui/svelte/menu';
 	import { Portal } from '@ark-ui/svelte/portal';
 	import type { MailboxDTO } from '#lib/mail/types';
-	import { COUNT_BADGE, channelStyle, identityStyle, mailboxChannel } from '#lib/mail/colors';
+	import { COUNT_BADGE, channelStyle, mailboxChannel } from '#lib/mail/colors';
 	import ZaurMark from './ZaurMark.svelte';
 	import ActionIcon from './ActionIcon.svelte';
 	import SectionTabs from './SectionTabs.svelte';
+	import AccountMenu from './AccountMenu.svelte';
 
 	interface Props {
 		/** The page hides the whole bar on a phone while a thread is being read. */
@@ -14,14 +14,6 @@
 		mailboxes: MailboxDTO[] | undefined;
 		activeMailbox: MailboxDTO | null;
 		onSelectMailbox: (id: string) => void;
-		account: { username: string; displayName: string | null } | null;
-		/** The session's other signed-in accounts, switchable from the account menu. */
-		otherAccounts?: { key: string; username: string; displayName: string | null }[];
-		onSwitchAccount?: (key: string) => void;
-		/** Signs out every account in the session. */
-		onSignOut?: () => void;
-		/** Signs out only the active account; offered once there is more than one. */
-		onSignOutAccount?: () => void;
 		sidebarOpen?: boolean;
 		onToggleSidebar?: () => void;
 		onPrevMailbox?: () => void;
@@ -36,11 +28,6 @@
 		mailboxes,
 		activeMailbox,
 		onSelectMailbox,
-		account,
-		otherAccounts = [],
-		onSwitchAccount,
-		onSignOut,
-		onSignOutAccount,
 		sidebarOpen = true,
 		onToggleSidebar,
 		onPrevMailbox,
@@ -90,20 +77,7 @@
 		}
 	}
 
-	const initialsOf = (name: string, email: string) => {
-		const source = name.trim() || email.trim();
-		if (!source) return '?';
-		if (!name.trim() && source.includes('@'))
-			return source.slice(0, source.indexOf('@')).slice(0, 2).toUpperCase();
-		const parts = source.split(/[\s@._-]+/).filter(Boolean);
-		return parts.length === 1
-			? source.slice(0, 2).toUpperCase()
-			: ((parts[0]![0] ?? '') + (parts[1]![0] ?? '')).toUpperCase();
-	};
 
-	const accountInitials = $derived(
-		account ? initialsOf(account.displayName ?? '', account.username) : '·'
-	);
 </script>
 
 <header
@@ -299,64 +273,6 @@
 
 		<SectionTabs class="hidden sm:flex" />
 
-		<!-- Account: the person's identity tile, the same tone their card wears. -->
-		{#if account}
-			<Menu.Root positioning={{ placement: 'bottom-end', gutter: 8, overflowPadding: 12 }} lazyMount unmountOnExit>
-				<Menu.Trigger
-					class="z-avatar cursor-pointer transition-[filter] hover:brightness-[0.97]"
-					style={identityStyle(account.username)}
-					aria-label="Account"
-				>
-					{accountInitials}
-				</Menu.Trigger>
-				<Portal>
-					<Menu.Positioner>
-						<Menu.Content class="z-menu z-40 w-60">
-							<div class="mb-1 flex items-center gap-2.5 border-b border-[var(--z-hairline)] px-2 pt-1 pb-2.5">
-								<span class="z-avatar" style={identityStyle(account.username)} aria-hidden="true">{accountInitials}</span>
-								<span class="min-w-0">
-									<span class="block truncate text-[13px] font-semibold text-[var(--z-ink)]">{account.displayName ?? account.username}</span>
-									<span class="z-mono block truncate text-[10.5px] text-[var(--z-soft)]">{account.username}</span>
-								</span>
-							</div>
-							<!-- Other accounts in this session: one click makes it the active one. -->
-							{#each otherAccounts as other (other.key)}
-								<Menu.Item value="account:{other.key}" class="z-menu-item !h-auto gap-2.5 !py-1.5" onSelect={() => onSwitchAccount?.(other.key)}>
-									<span class="z-avatar !size-6 !text-[10px]" style={identityStyle(other.username)} aria-hidden="true">
-										{initialsOf(other.displayName ?? '', other.username)}
-									</span>
-									<span class="min-w-0">
-										<span class="block truncate text-[12.5px] text-[var(--z-ink)]">{other.displayName ?? other.username}</span>
-										<span class="z-mono block truncate text-[10px] text-[var(--z-soft)]">{other.username}</span>
-									</span>
-								</Menu.Item>
-							{/each}
-							<Menu.Item value="add-account" class="z-menu-item" onSelect={() => goto('/login?mode=add')}>Add account</Menu.Item>
-							<div class="my-1 h-px bg-[var(--z-hairline)]" aria-hidden="true"></div>
-							<!-- The section tabs hide below `sm`; the menu is the phone's way there. -->
-							<Menu.Item value="contacts" class="z-menu-item sm:hidden" onSelect={() => goto('/contacts')}>Contacts</Menu.Item>
-							<Menu.Item value="calendar" class="z-menu-item sm:hidden" onSelect={() => goto('/calendar')}>Calendar</Menu.Item>
-							<Menu.Item value="settings" class="z-menu-item" onSelect={() => goto('/settings')}>Settings</Menu.Item>
-							{#if otherAccounts.length > 0}
-								<Menu.Item
-									value="signout-account"
-									class="z-menu-item !text-[var(--z-ch-discard-ink)] data-highlighted:!bg-[var(--z-ch-discard-hover)]"
-									onSelect={() => onSignOutAccount?.()}
-								>
-									Sign out of this account
-								</Menu.Item>
-							{/if}
-							<Menu.Item
-								value="signout"
-								class="z-menu-item !text-[var(--z-ch-discard-ink)] data-highlighted:!bg-[var(--z-ch-discard-hover)]"
-								onSelect={() => onSignOut?.()}
-							>
-								{otherAccounts.length > 0 ? 'Sign out of all accounts' : 'Sign out'}
-							</Menu.Item>
-						</Menu.Content>
-					</Menu.Positioner>
-				</Portal>
-			</Menu.Root>
-		{/if}
+		<AccountMenu />
 	</div>
 </header>

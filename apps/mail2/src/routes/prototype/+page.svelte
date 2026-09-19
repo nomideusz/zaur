@@ -318,7 +318,6 @@
 				selectedMailboxId = id;
 				cursorId = null;
 			}}
-			account={{ username: 'anthony@zaur.app', displayName: 'Anthony Hobday' }}
 			sidebarOpen={sidebarVisible}
 			onToggleSidebar={toggleSidebar}
 			onPrevMailbox={selectPrevMailbox}
