@@ -94,15 +94,22 @@ export function mapCalendarEvent(
 	const start = parseEventStart(event);
 	const end = parseEventEnd(event, start);
 
+	// `expandRecurrences` gives EVERY row a synthetic id and a baseEventId, not
+	// just the occurrences of a series (Stalwart 0.16.23 is the first to stop
+	// doing that). What marks one occurrence is `recurrenceId`. Anything else is
+	// the event itself, and has to carry its own id: a write against a synthetic
+	// id is an instance override, and the server refuses calendarIds there —
+	// "This property cannot be modified on a single occurrence" — so a plain
+	// event could never be moved to another calendar.
+	const master = event.baseEventId && event.baseEventId !== event.id ? event.baseEventId : undefined;
+	const recurrenceId = event.recurrenceId ?? undefined;
+	const occurrence = !!master && !!recurrenceId;
+
 	return {
-		id: event.id,
+		id: occurrence ? event.id : (master ?? event.id),
 		accountId: accountId ?? event.accountId ?? null,
-		baseEventId:
-			event.baseEventId && event.baseEventId !== event.id ? event.baseEventId : undefined,
-		recurrenceId:
-			event.baseEventId && event.baseEventId !== event.id
-				? (event.recurrenceId ?? undefined)
-				: undefined,
+		baseEventId: occurrence ? master : undefined,
+		recurrenceId: occurrence ? recurrenceId : undefined,
 		recurrenceRule: parseRecurrenceRule(event),
 		calendarIds: Object.keys(event.calendarIds ?? {}),
 		title: event.title?.trim() || '(No title)',

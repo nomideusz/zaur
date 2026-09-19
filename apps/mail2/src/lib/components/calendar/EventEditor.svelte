@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { untrack } from 'svelte';
 	import type { Calendar, CalendarEvent, EventRecurrence } from '@zaur/mail-core';
 	import { isRecurringInstance, recurrenceFrom } from '@zaur/mail-core';
 	import RepeatPanel from './RepeatPanel.svelte';
@@ -64,34 +65,42 @@
 	let description = $state('');
 	let recurrence = $state<EventRecurrence | null>(null);
 
+	/**
+	 * What a re-seed keys on. The calendar list is deliberately not part of it:
+	 * it refreshes on its own (a push, a visibility toggle, a tab coming back),
+	 * and re-seeding then throws away what was typed — silently putting the
+	 * event back on the calendar it came from.
+	 */
+	const seed = $derived(`${event?.id ?? 'new'}:${day.getTime()}:${until?.getTime() ?? ''}`);
+
 	// A different event (or a new one on another day) resets the form.
 	$effect(() => {
-		event?.id;
-		day.getTime();
-		until?.getTime();
-		const source = event;
-		if (source) {
-			title = source.title === '(No title)' ? '' : source.title;
-			calendarId = source.calendarIds[0] ?? writable[0]?.id ?? '';
-			allDay = source.allDay;
-			startValue = allDay ? toDateInputValue(source.start) : toDatetimeLocalValue(source.start);
-			// JMAP all-day ends are exclusive midnight; show the last day included.
-			const endShown = allDay ? new Date(source.end.getTime() - 1) : source.end;
-			endValue = allDay ? toDateInputValue(endShown) : toDatetimeLocalValue(endShown);
-			location = source.location ?? '';
-			description = source.description ?? '';
-			recurrence = recurrenceFrom(source.recurrenceRule, source.start);
-		} else {
-			const times = until ? { start: day, end: until } : defaultEventTimes(day);
-			title = '';
-			calendarId = (writable.find((calendar) => calendar.isDefault) ?? writable[0])?.id ?? '';
-			allDay = false;
-			startValue = toDatetimeLocalValue(times.start);
-			endValue = toDatetimeLocalValue(times.end);
-			location = '';
-			description = '';
-			recurrence = null;
-		}
+		seed;
+		untrack(() => {
+			const source = event;
+			if (source) {
+				title = source.title === '(No title)' ? '' : source.title;
+				calendarId = source.calendarIds[0] ?? writable[0]?.id ?? '';
+				allDay = source.allDay;
+				startValue = allDay ? toDateInputValue(source.start) : toDatetimeLocalValue(source.start);
+				// JMAP all-day ends are exclusive midnight; show the last day included.
+				const endShown = allDay ? new Date(source.end.getTime() - 1) : source.end;
+				endValue = allDay ? toDateInputValue(endShown) : toDatetimeLocalValue(endShown);
+				location = source.location ?? '';
+				description = source.description ?? '';
+				recurrence = recurrenceFrom(source.recurrenceRule, source.start);
+			} else {
+				const times = until ? { start: day, end: until } : defaultEventTimes(day);
+				title = '';
+				calendarId = (writable.find((calendar) => calendar.isDefault) ?? writable[0])?.id ?? '';
+				allDay = false;
+				startValue = toDatetimeLocalValue(times.start);
+				endValue = toDatetimeLocalValue(times.end);
+				location = '';
+				description = '';
+				recurrence = null;
+			}
+		});
 	});
 
 	function toggleAllDay(next: boolean) {
