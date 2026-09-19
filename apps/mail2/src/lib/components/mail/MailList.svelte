@@ -390,8 +390,11 @@
 				{/if}
 			</div>
 		{:else if groups && groups.length === 0}
+			<!-- The empty folder wears its own channel — the hue its row, switcher
+			     and count already wear — so "Nothing in Memos" is violet, "No
+			     drafts" amber, and only Junk and Trash are red. -->
 			<div class="mt-3 flex flex-col items-center gap-1 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-surface)] px-4 py-[18px] text-center">
-				<span class="z-tile mb-1.5" style={channelStyle(mailbox?.kind === 'junk' || mailbox?.kind === 'trash' ? CHANNELS.discard : CHANNELS.confirmed)}>
+				<span class="z-tile mb-1.5" style={channelStyle(mailboxChannel(mailbox?.kind))}>
 					<svg class="size-5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						<path d="M2.5 4h11a1 1 0 011 1v7a1 1 0 01-1 1h-11a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" />
 						<path d="M2.5 5.5l5.5 4 5.5-4" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" />
