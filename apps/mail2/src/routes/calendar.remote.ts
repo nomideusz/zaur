@@ -32,6 +32,8 @@ const ID = v.pipe(v.string(), v.minLength(1), v.maxLength(200));
 export interface CalendarsState {
 	supported: boolean;
 	calendars: Calendar[];
+	/** Your own calendar account. Anything else in the list was shared with you. */
+	primaryAccountId: string | null;
 }
 
 function rethrow(cause: unknown): never {
@@ -42,11 +44,12 @@ function rethrow(cause: unknown): never {
 
 export const calendars = query(async (): Promise<CalendarsState> => {
 	const client = await connect();
-	if (!client.hasCalendars()) return { supported: false, calendars: [] };
+	if (!client.hasCalendars()) return { supported: false, calendars: [], primaryAccountId: null };
 	const list = await client.getCalendars();
 	return {
 		supported: true,
-		calendars: list.map((calendar, index) => mapCalendar(calendar, index, calendar.accountId))
+		calendars: list.map((calendar, index) => mapCalendar(calendar, index, calendar.accountId)),
+		primaryAccountId: client.getCalendarAccountId() || null
 	};
 });
 

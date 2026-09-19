@@ -478,6 +478,91 @@
 		border-color: var(--z-stroke, color-mix(in oklab, var(--z-rail) 30%, #ffffff));
 	}
 
+	/*
+	 * A calendar event. One hex arrives on `--z-rail` — the calendar's own
+	 * colour, a single value that cannot ship a light and a dark variant — so
+	 * the fill, the border and the ink are all mixed from it against the
+	 * theme's surface and ink. The tile follows the theme for free, and a
+	 * calendar stays one colour wherever it is drawn. The 3px left edge is
+	 * the same rail a mail row wears, welded to the tile it belongs to.
+	 */
+	.z-event {
+		--z-fill: color-mix(in oklab, var(--z-rail) 15%, var(--z-surface));
+		--z-stroke: color-mix(in oklab, var(--z-rail) 38%, var(--z-surface));
+		--z-ink-on: color-mix(in oklab, var(--z-rail) 45%, var(--z-ink));
+		display: flex;
+		align-items: baseline;
+		gap: 5px;
+		overflow: hidden;
+		min-height: 17px;
+		padding: 0 5px;
+		border: 1px solid var(--z-stroke);
+		border-left: 3px solid var(--z-rail);
+		border-radius: 6px;
+		background: var(--z-fill);
+		color: var(--z-ink-on);
+		font-size: 11.5px;
+		font-weight: 500;
+		line-height: 1.45;
+		text-align: left;
+		cursor: pointer;
+		transition:
+			border-color 120ms ease,
+			box-shadow 120ms ease;
+	}
+
+	.z-event:hover {
+		border-color: var(--z-rail);
+		box-shadow: var(--z-shadow-tactile);
+	}
+
+	/* Ran in from yesterday, or runs on into tomorrow: that corner is not an end. */
+	.z-event[data-continues-before] {
+		border-top-left-radius: 0;
+		border-top-right-radius: 0;
+		border-top-color: transparent;
+	}
+
+	.z-event[data-continues-after] {
+		border-bottom-left-radius: 0;
+		border-bottom-right-radius: 0;
+		border-bottom-color: transparent;
+	}
+
+	/*
+	 * The hour rules behind a day column: one repeating gradient, so a day
+	 * costs a background and not twenty-four elements. `--z-hour` is the row.
+	 */
+	.z-hours {
+		background-image: repeating-linear-gradient(
+			to bottom,
+			var(--z-hairline) 0 1px,
+			transparent 1px var(--z-hour, 48px)
+		);
+	}
+
+	/* Now, across today: a hairline in the discard channel with a bead at its head. */
+	.z-now {
+		position: absolute;
+		right: 0;
+		left: 0;
+		z-index: 2;
+		height: 0;
+		border-top: 1px solid var(--z-ch-discard-solid);
+		pointer-events: none;
+	}
+
+	.z-now::before {
+		content: '';
+		position: absolute;
+		top: -3.5px;
+		left: -3px;
+		width: 7px;
+		height: 7px;
+		border-radius: 999px;
+		background: var(--z-ch-discard-solid);
+	}
+
 	/* A 40–44px icon tile for empty states, in a channel. */
 	.z-tile {
 		display: flex;

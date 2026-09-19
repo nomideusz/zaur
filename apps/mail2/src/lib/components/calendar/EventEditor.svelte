@@ -10,6 +10,7 @@
 		toDateInputValue,
 		toDatetimeLocalValue
 	} from '@zaur/mail-core/utils/dates';
+	import { describeRepeat } from '#lib/calendar/schedule';
 
 	/** What the editor hands back: already in JMAP's local-datetime + duration form. */
 	export interface EventDraft {
@@ -107,6 +108,8 @@
 		return { start, end };
 	});
 	const endsBeforeStart = $derived(Boolean(parsed && parsed.end.getTime() < parsed.start.getTime()));
+	/** What the rule actually does, spelled out — "monthly" is not self-evident. */
+	const repeatSummary = $derived(parsed ? describeRepeat(repeat, parsed.start) : null);
 	const canSave = $derived(Boolean(title.trim() && calendarId && parsed && !endsBeforeStart));
 
 	function submit(e: SubmitEvent) {
@@ -183,12 +186,20 @@
 				</label>
 			</div>
 
+			{#if repeatSummary}
+				<p class="-mt-2 flex items-center gap-2 rounded-[8px] border border-[var(--z-hairline)] bg-[var(--z-canvas)] px-3 py-1.5 text-[12px] text-[var(--z-muted)]">
+					<svg class="size-3.5 shrink-0 text-[var(--z-faint)]" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8a5 5 0 018.5-3.5M13 8a5 5 0 01-8.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /><path d="M11.5 2v2.5H9M4.5 14v-2.5H7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
+					{repeatSummary}
+				</p>
+			{/if}
+
 			<label class="flex items-center gap-2.5 text-[13px] text-[var(--z-strong)]">
 				<input type="checkbox" class="z-check" checked={allDay} onchange={(e) => toggleAllDay(e.currentTarget.checked)} />
 				All day
 			</label>
 
-			<div class="grid grid-cols-2 gap-3 max-md:grid-cols-1">
+			<!-- The panel is 380px: two native datetime controls do not fit side by side. -->
+			<div class="grid gap-3">
 				<label>
 					<span class={label}>Starts</span>
 					{#if allDay}

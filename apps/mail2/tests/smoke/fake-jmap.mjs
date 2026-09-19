@@ -176,15 +176,28 @@ const cards = new Map([
 
 const calendars = [
 	{ id: 'cal1', name: 'Personal', color: '#2563eb', isDefault: true, isVisible: true, isSubscribed: true, sortOrder: 0, myRights: { mayReadItems: true, mayWriteAll: true, mayWriteOwn: true, mayRSVP: true, mayShare: true, mayDelete: true, mayReadFreeBusy: true, mayUpdatePrivate: true } },
-	{ id: 'cal2', name: 'Work', color: '#16a34a', isDefault: false, isVisible: true, isSubscribed: true, sortOrder: 1, myRights: { mayReadItems: true, mayWriteAll: true, mayWriteOwn: true, mayRSVP: true, mayShare: true, mayDelete: true, mayReadFreeBusy: true, mayUpdatePrivate: true } }
+	{ id: 'cal2', name: 'Work', color: '#16a34a', isDefault: false, isVisible: true, isSubscribed: true, sortOrder: 1, shareWith: { 'principal-anna': { mayReadItems: true, mayWriteAll: false, mayWriteOwn: false, mayRSVP: true, mayShare: false, mayDelete: false, mayReadFreeBusy: true, mayUpdatePrivate: false } }, myRights: { mayReadItems: true, mayWriteAll: true, mayWriteOwn: true, mayRSVP: true, mayShare: true, mayDelete: true, mayReadFreeBusy: true, mayUpdatePrivate: true } },
+	{ id: 'cal3', name: 'PL Holidays', color: '#d97706', isDefault: false, isVisible: true, isSubscribed: true, sortOrder: 2, myRights: { mayReadItems: true, mayWriteAll: false, mayWriteOwn: false, mayRSVP: false, mayShare: false, mayDelete: false, mayReadFreeBusy: true, mayUpdatePrivate: false } }
 ];
 const today = new Date();
 const y = today.getFullYear();
 const m = String(today.getMonth() + 1).padStart(2, '0');
+/** Anchored to today, so the day and week views always have something in them. */
+const slot = (offsetDays, hours, minutes = 0) => {
+	const when = new Date(today.getFullYear(), today.getMonth(), today.getDate() + offsetDays, hours, minutes);
+	return `${when.getFullYear()}-${String(when.getMonth() + 1).padStart(2, '0')}-${String(when.getDate()).padStart(2, '0')}T${String(when.getHours()).padStart(2, '0')}:${String(when.getMinutes()).padStart(2, '0')}:00`;
+};
 const events = new Map([
 	['e1', { id: 'e1', uid: 'urn:uuid:e1', calendarIds: { cal1: true }, title: 'Dentist', start: `${y}-${m}-16T09:30:00`, duration: 'PT1H', timeZone: 'Europe/Warsaw', showWithoutTime: false, locations: { l1: { name: 'ul. Długa 5' } } }],
 	['e2', { id: 'e2', uid: 'urn:uuid:e2', calendarIds: { cal2: true }, title: 'Sprint planning', start: `${y}-${m}-16T14:00:00`, duration: 'PT2H', timeZone: 'Europe/Warsaw', showWithoutTime: false, description: 'Bring the backlog.', recurrenceRule: { '@type': 'RecurrenceRule', frequency: 'weekly' } }],
-	['e3', { id: 'e3', uid: 'urn:uuid:e3', calendarIds: { cal1: true }, title: 'Holiday', start: `${y}-${m}-20T00:00:00`, duration: 'P2D', timeZone: 'Europe/Warsaw', showWithoutTime: true }]
+	['e3', { id: 'e3', uid: 'urn:uuid:e3', calendarIds: { cal1: true }, title: 'Holiday', start: `${y}-${m}-20T00:00:00`, duration: 'P2D', timeZone: 'Europe/Warsaw', showWithoutTime: true }],
+	// Three that overlap, so the time grid has lanes to share out.
+	['e4', { id: 'e4', uid: 'urn:uuid:e4', calendarIds: { cal2: true }, title: 'Design review', start: slot(0, 10, 0), duration: 'PT1H30M', timeZone: 'Europe/Warsaw', showWithoutTime: false }],
+	['e5', { id: 'e5', uid: 'urn:uuid:e5', calendarIds: { cal1: true }, title: 'Call with Anna', start: slot(0, 10, 30), duration: 'PT1H', timeZone: 'Europe/Warsaw', showWithoutTime: false, locations: { l1: { name: 'Meet' } } }],
+	['e6', { id: 'e6', uid: 'urn:uuid:e6', calendarIds: { cal2: true }, title: 'Standup', start: slot(0, 9, 0), duration: 'PT15M', timeZone: 'Europe/Warsaw', showWithoutTime: false }],
+	['e7', { id: 'e7', uid: 'urn:uuid:e7', calendarIds: { cal1: true }, title: 'Pick up the kids', start: slot(1, 15, 30), duration: 'PT45M', timeZone: 'Europe/Warsaw', showWithoutTime: false }],
+	['e8', { id: 'e8', uid: 'urn:uuid:e8', calendarIds: { cal2: true }, title: 'Deploy window', start: slot(-1, 22, 0), duration: 'PT5H', timeZone: 'Europe/Warsaw', showWithoutTime: false }],
+	['e9', { id: 'e9', uid: 'urn:uuid:e9', calendarIds: { cal3: true }, title: 'Independence Day', start: slot(2, 0, 0), duration: 'P1D', timeZone: 'Europe/Warsaw', showWithoutTime: true }]
 ]);
 
 let totpUrl = null;
