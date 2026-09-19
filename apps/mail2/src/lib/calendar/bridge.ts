@@ -3,7 +3,7 @@
  * back: an adapter over the JMAP remote functions, and the theme that makes the
  * grid wear the shell's tokens instead of its own.
  */
-import type { CalendarEvent } from '@zaur/mail-core';
+import { eventKey, type CalendarEvent } from '@zaur/mail-core';
 import type { TimelineEvent } from '@nomideusz/svelte-calendar';
 
 /**
@@ -45,7 +45,10 @@ export interface EventPayload {
 
 export function toTimelineEvent(event: CalendarEvent, color: string): TimelineEvent {
 	return {
-		id: event.id,
+		// JMAP event ids are only unique within an account, and a shared calendar
+		// lives in another one: keyed by the bare id, your event and somebody
+		// else's are the same row, and the grid draws only one of them.
+		id: eventKey(event),
 		title: event.title,
 		start: event.start,
 		end: event.end,

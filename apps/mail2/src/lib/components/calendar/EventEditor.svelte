@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { untrack } from 'svelte';
 	import type { Calendar, CalendarEvent, EventRecurrence } from '@zaur/mail-core';
-	import { isRecurringInstance, recurrenceFrom } from '@zaur/mail-core';
+	import { calendarKey, isRecurringInstance, recurrenceFrom } from '@zaur/mail-core';
 	import RepeatPanel from './RepeatPanel.svelte';
 	import {
 		defaultEventTimes,
@@ -16,6 +16,8 @@
 	/** What the editor hands back: already in JMAP's local-datetime + duration form. */
 	export interface EventDraft {
 		calendarId: string;
+		/** The account the calendar lives in — a shared one is not yours. */
+		accountId: string | null;
 		title: string;
 		start: string;
 		duration: string;
@@ -53,11 +55,21 @@
 		onCancel: () => void;
 	} = $props();
 
-	const writable = $derived(calendars.filter((calendar) => calendar.myRights.mayWriteAll || calendar.myRights.mayWriteOwn));
+	// ponytail: an existing event offers only calendars in its own account —
+	// moving one to another account is a copy plus a delete in JMAP, not an
+	// update. Widen it when moving an event into a shared calendar is asked for.
+	const writable = $derived(
+		calendars.filter(
+			(calendar) =>
+				(calendar.myRights.mayWriteAll || calendar.myRights.mayWriteOwn) &&
+				(!event || (calendar.accountId ?? null) === (event.accountId ?? null))
+		)
+	);
 	const instance = $derived(event ? isRecurringInstance(event) : false);
 
 	let title = $state('');
-	let calendarId = $state('');
+	/** `accountId:id` — a bare id collides across accounts (see calendarKey). */
+	let calendarRef = $state('');
 	let allDay = $state(false);
 	let startValue = $state('');
 	let endValue = $state('');
@@ -80,7 +92,10 @@
 			const source = event;
 			if (source) {
 				title = source.title === '(No title)' ? '' : source.title;
-				calendarId = source.calendarIds[0] ?? writable[0]?.id ?? '';
+				const filed = source.calendarIds[0];
+				calendarRef = filed
+					? calendarKey({ id: filed, accountId: source.accountId })
+					: (writable[0] ? calendarKey(writable[0]) : '');
 				allDay = source.allDay;
 				startValue = allDay ? toDateInputValue(source.start) : toDatetimeLocalValue(source.start);
 				// JMAP all-day ends are exclusive midnight; show the last day included.
@@ -92,7 +107,8 @@
 			} else {
 				const times = until ? { start: day, end: until } : defaultEventTimes(day);
 				title = '';
-				calendarId = (writable.find((calendar) => calendar.isDefault) ?? writable[0])?.id ?? '';
+				const fallback = writable.find((calendar) => calendar.isDefault) ?? writable[0];
+				calendarRef = fallback ? calendarKey(fallback) : '';
 				allDay = false;
 				startValue = toDatetimeLocalValue(times.start);
 				endValue = toDatetimeLocalValue(times.end);
@@ -125,13 +141,25 @@
 		return { start, end };
 	});
 	const endsBeforeStart = $derived(Boolean(parsed && parsed.end.getTime() < parsed.start.getTime()));
-	const canSave = $derived(Boolean(title.trim() && calendarId && parsed && !endsBeforeStart));
+	const chosen = $derived(writable.find((calendar) => calendarKey(calendar) === calendarRef) ?? null);
+	/**
+	 * What the select lists: the ones that take writes, plus wherever this event
+	 * already sits. A calendar shared read-only is not writable, and without it
+	 * here the field would read blank rather than saying where the event lives.
+	 */
+	const options = $derived(
+		chosen || !calendarRef
+			? writable
+			: [...calendars.filter((calendar) => calendarKey(calendar) === calendarRef), ...writable]
+	);
+	const canSave = $derived(Boolean(title.trim() && chosen && parsed && !endsBeforeStart));
 
 	function submit(e: SubmitEvent) {
 		e.preventDefault();
-		if (!canSave || !parsed || saving) return;
+		if (!canSave || !parsed || !chosen || saving) return;
 		onSave({
-			calendarId,
+			calendarId: chosen.id,
+			accountId: chosen.accountId,
 			title: title.trim(),
 			start: allDay ? `${toDateInputValue(parsed.start)}T00:00:00` : formatJmapQueryBound(parsed.start),
 			duration: durationBetween(parsed.start, parsed.end, allDay),
@@ -188,9 +216,9 @@
 				<!-- Which calendars an event is filed in belongs to the series: the
 				     server refuses the property on an override, so on an occurrence
 				     this says where the event lives rather than offering a move. -->
-				<select class="{field} mt-1" bind:value={calendarId} required disabled={instance}>
-					{#each writable as calendar (calendar.accountId + calendar.id)}
-						<option value={calendar.id}>{calendar.name}</option>
+				<select class="{field} mt-1" bind:value={calendarRef} required disabled={instance}>
+					{#each options as calendar (calendarKey(calendar))}
+						<option value={calendarKey(calendar)}>{calendar.name}</option>
 					{/each}
 				</select>
 			</label>

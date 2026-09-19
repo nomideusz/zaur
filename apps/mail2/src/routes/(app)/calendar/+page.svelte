@@ -3,7 +3,7 @@
 	import { Calendar as CalendarGrid } from '@nomideusz/svelte-calendar';
 	import type { CalendarViewId, TimelineEvent } from '@nomideusz/svelte-calendar';
 	import type { Calendar, CalendarEvent } from '@zaur/mail-core';
-	import { isRecurringInstance } from '@zaur/mail-core';
+	import { calendarKey, eventKey, isRecurringInstance } from '@zaur/mail-core';
 	import {
 		addDays,
 		durationBetween,
@@ -135,16 +135,24 @@
 		return () => live.stop();
 	});
 
-	const calendarById = $derived(new Map(calendarList.map((calendar) => [calendar.id, calendar])));
+	/**
+	 * JMAP calendar ids are only unique within an account, and a shared calendar
+	 * lives in the sharer's. Your own calendar and one shared with you are both
+	 * `b` — keyed by the bare id, one silently replaces the other, and an event
+	 * filed "here" lands in somebody else's mailbox.
+	 */
+	const calendarByKey = $derived(new Map(calendarList.map((calendar) => [calendarKey(calendar), calendar])));
+	const calendarsOf = (event: CalendarEvent) =>
+		event.calendarIds.map((id) => calendarByKey.get(calendarKey({ id, accountId: event.accountId })));
 	const visibleEvents = $derived(
 		(eventsResource?.current ?? []).filter((event) =>
-			event.calendarIds.some((id) => calendarById.get(id)?.isVisible !== false)
+			calendarsOf(event).some((calendar) => calendar?.isVisible !== false)
 		)
 	);
 	const agenda = $derived(eventsOnDay(visibleEvents, anchor));
 
 	function colorOf(event: CalendarEvent): string {
-		return calendarById.get(event.calendarIds[0] ?? '')?.color ?? 'var(--z-accent)';
+		return calendarsOf(event)[0]?.color ?? 'var(--z-accent)';
 	}
 
 	/**
@@ -167,7 +175,7 @@
 	 */
 	let gridRange: { after: string; before: string; timeZone: string } | null = null;
 	const adapter = $derived.by(() => {
-		const by = calendarById;
+		const by = calendarByKey;
 		dataVersion;
 		return {
 			async fetchEvents(range: { start: Date; end: Date }) {
@@ -179,7 +187,11 @@
 				gridRange = bounds;
 				const list = await eventsRemote(bounds);
 				return list
-					.filter((event) => event.calendarIds.some((id) => by.get(id)?.isVisible !== false))
+					.filter((event) =>
+						event.calendarIds.some(
+							(id) => by.get(calendarKey({ id, accountId: event.accountId }))?.isVisible !== false
+						)
+					)
 					.map((event) => toTimelineEvent(event, colorOf(event)));
 			}
 		};
@@ -236,20 +248,21 @@
 	async function save(draft: EventDraft) {
 		saving = true;
 		editorError = null;
-		const calendar = calendarById.get(draft.calendarId);
 		try {
 			if (mode === 'edit' && editing) {
 				await updateEvent({
 					id: editing.id,
-					accountId: editing.accountId,
 					previousCalendarIds: editing.calendarIds,
 					timeZone,
-					...draft
+					...draft,
+					// The write goes to the account the event lives in, whatever the
+					// draft says — the editor only offers calendars from that account.
+					accountId: editing.accountId
 				});
 				flash('Event saved');
 			} else {
 				const { occurrence: _ignored, ...create } = draft;
-				await createEvent({ accountId: calendar?.accountId ?? null, timeZone, ...create });
+				await createEvent({ timeZone, ...create });
 				flash('Event created');
 			}
 			await reload();
@@ -550,7 +563,7 @@
 							<p class="py-6 text-center text-[13px] text-[var(--z-faint)]">Nothing on this day.</p>
 						{:else}
 							<ul class="space-y-2" role="list">
-								{#each agenda as event (event.id)}
+								{#each agenda as event (eventKey(event))}
 									<li>
 										<button
 											type="button"
@@ -564,7 +577,7 @@
 												<span class="truncate text-[12px] opacity-70">{event.location}</span>
 											{/if}
 											<span class="text-[11px] opacity-60">
-												{calendarById.get(event.calendarIds[0] ?? '')?.name ?? ''}{isRecurringInstance(event)
+												{calendarsOf(event)[0]?.name ?? ''}{isRecurringInstance(event)
 													? ' · Repeats'
 													: ''}
 											</span>
