@@ -59,6 +59,10 @@
 	let anchor = $state(today);
 	let view = $state<View>('week');
 	const viewId = $derived(VIEWS.find((option) => option.value === view)!.id);
+	// The roll view moves the grid's own focus to its centre week's Monday. A
+	// fresh Date per view switch makes the grid take the anchor again, so the
+	// next view opens on the day we kept, not the one the roll drifted to.
+	const gridDate = $derived(view && new Date(anchor));
 
 	let phone = $state(false);
 	$effect(() => {
@@ -463,7 +467,7 @@
 					<CalendarGrid
 						{adapter}
 						view={viewId}
-						currentDate={anchor}
+						currentDate={gridDate}
 						theme={ZAUR_THEME}
 						autoTheme={false}
 						mondayStart
@@ -478,8 +482,16 @@
 						ondatechange={(date) => {
 							// `currentDate` is controlled, so the grid echoes back what it
 							// was handed: taking the echo as a change feeds itself forever.
-							const next = startOfDay(date);
-							if (next.getTime() !== anchor.getTime()) anchor = next;
+							//
+							// The roll view also reports the Monday of whichever week sits
+							// at its centre — on mount too, before anyone scrolls. Inside
+							// the anchored week that is an echo, not navigation: taking it
+							// would land a later switch to Day on Monday instead of the day
+							// we were on. Another week is a real scroll.
+							const next = startOfDay(date).getTime();
+							const inSpan = next >= span[0]!.getTime() && next <= span[span.length - 1]!.getTime();
+							if (view === 'day' || view === 'month' ? next !== anchor.getTime() : !inSpan)
+								anchor = new Date(next);
 						}}
 						oneventclick={(row) => {
 							const event = sourceOf(row);
