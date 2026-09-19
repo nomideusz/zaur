@@ -24,12 +24,6 @@
 		>
 			<ZaurMark />
 			<div class="h-4 w-px bg-[var(--z-hairline)] max-md:hidden"></div>
-			<a href="/" class="btn-tactile gap-1.5" data-sveltekit-preload-data="hover">
-				<svg class="size-3.5 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-					<path d="M10 4l-4 4 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-				</svg>
-				Mail
-			</a>
 			<h1 class="text-[13px] font-semibold text-[var(--z-body)] max-md:hidden">Settings</h1>
 
 			<!-- The same segmented control the top bar uses for its sections. -->
