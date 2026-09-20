@@ -3,10 +3,9 @@
 	import { Portal } from '@ark-ui/svelte/portal';
 	import type { MailboxDTO } from '#lib/mail/types';
 	import { COUNT_BADGE, channelStyle, mailboxChannel } from '#lib/mail/colors';
-	import ZaurMark from './ZaurMark.svelte';
+	import { getShell, useShellBar } from '#lib/shell.svelte.ts';
 	import ActionIcon from './ActionIcon.svelte';
-	import SectionTabs from './SectionTabs.svelte';
-	import AccountMenu from './AccountMenu.svelte';
+	import ShellHeader from './ShellHeader.svelte';
 
 	interface Props {
 		/** The page hides the whole bar on a phone while a thread is being read. */
@@ -35,6 +34,11 @@
 		searchQuery = '',
 		onSearch
 	}: Props = $props();
+
+	// Mail's stretch of the shell's header. Inside the app it goes into the
+	// layout's bar; `/prototype` has no shell, so there it draws the header itself.
+	const shell = getShell();
+	if (shell) useShellBar(shell, bar, () => className);
 
 	let searchEl = $state<HTMLInputElement | null>(null);
 	/** What is typed, which is only the committed query once Enter says so. */
@@ -80,15 +84,9 @@
 
 </script>
 
-<header
-	class="flex h-[52px] shrink-0 items-center gap-3 border-b border-[var(--z-line)] bg-[var(--z-surface)] px-4 select-none max-md:gap-2 max-md:px-2.5 {className}"
->
-	<!-- Left: the mark, the sidebar toggle, the folder switcher -->
+{#snippet bar()}
+	<!-- Left: the sidebar toggle, the folder switcher -->
 	<div class="flex min-w-0 shrink-0 items-center gap-3 max-md:gap-2">
-		<ZaurMark />
-
-		<div class="h-4 w-px bg-[var(--z-hairline)] max-md:hidden"></div>
-
 		{#if onToggleSidebar}
 			<button
 				type="button"
@@ -254,25 +252,22 @@
 		</div>
 	{/if}
 
-	<!-- Right: section tabs + account -->
-	<div class="ml-auto flex items-center gap-2.5">
-		{#if onSearch && !phoneSearchOpen}
-			<!-- Phone: the field swaps in for the folder switcher instead of joining it. -->
-			<button
-				type="button"
-				class="btn-tactile !size-8 !p-0 md:hidden"
-				aria-label="Search mail"
-				onclick={focusSearch}
-			>
-				<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-					<circle cx="7" cy="7" r="4.4" stroke="currentColor" stroke-width="1.4" />
-					<path d="M10.4 10.4L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
-				</svg>
-			</button>
-		{/if}
+	{#if onSearch && !phoneSearchOpen}
+		<!-- Phone: the field swaps in for the folder switcher instead of joining it. -->
+		<button
+			type="button"
+			class="btn-tactile ml-auto !size-8 !p-0 md:hidden"
+			aria-label="Search mail"
+			onclick={focusSearch}
+		>
+			<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+				<circle cx="7" cy="7" r="4.4" stroke="currentColor" stroke-width="1.4" />
+				<path d="M10.4 10.4L14 14" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
+			</svg>
+		</button>
+	{/if}
+{/snippet}
 
-		<SectionTabs class="hidden sm:flex" />
-
-		<AccountMenu />
-	</div>
-</header>
+{#if !shell}
+	<ShellHeader {bar} class={className} />
+{/if}

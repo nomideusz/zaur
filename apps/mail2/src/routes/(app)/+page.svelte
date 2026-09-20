@@ -17,6 +17,7 @@
 	import { contacts as contactsRemote } from '../contacts.remote';
 	import { contactDisplayName } from '@zaur/mail-core';
 	import TopBar from '#lib/components/mail/TopBar.svelte';
+	import { getShell } from '#lib/shell.svelte.ts';
 	import Sidebar from '#lib/components/mail/Sidebar.svelte';
 	import MailList from '#lib/components/mail/MailList.svelte';
 	import Reader from '#lib/components/mail/Reader.svelte';
@@ -51,7 +52,9 @@
 	let listFilter = $state<ListFilter>(prefs.unseenByDefault ? 'unseen' : 'all');
 	let cursorId = $state<string | null>(null);
 	let selection = $state<Set<string>>(new Set());
-	let rootEl = $state<HTMLDivElement | null>(null);
+	// The app column is the layout's; floating compose panels are placed against it.
+	const shell = getShell()!;
+	const rootEl = $derived(shell.frame);
 	let rootW = $state(0);
 	let rootH = $state(0);
 	let bulkBusy = $state(false);
@@ -666,136 +669,126 @@
 
 <svelte:window onkeydown={handleKeydown} />
 
-<!-- Ground behind the app column — only visible past the 1780px ceiling. -->
-<div class="flex h-svh w-full flex-col items-center justify-center bg-[var(--z-ground)] overflow-hidden text-[var(--z-ink)]">
-	<!-- App column: edge to edge until 1780px, then capped so the chrome at each
-	     end stays within reach of the content in the middle. -->
-	<div
-		bind:this={rootEl}
-		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-[var(--z-surface)]"
+<!--
+	A phone reading a thread gets one bar, not two: the reader's own toolbar
+	is taller there and carries everything that screen can do, so the shell's
+	bar (the mark, the drawer toggle, the folder switcher, search) steps out
+	rather than stacking 52px of chrome nobody is reading on top of it. The
+	two panes are both on screen from 768px up, where it stays put.
+-->
+<TopBar
+	bind:this={topBar}
+	class={openThreadId ? 'max-md:hidden' : ''}
+	{searchQuery}
+	onSearch={runSearch}
+	mailboxes={mailboxList}
+	activeMailbox={activeMailbox}
+	onSelectMailbox={selectMailbox}
+	sidebarOpen={sidebarVisible}
+	onToggleSidebar={toggleSidebar}
+	onPrevMailbox={() => stepMailbox(-1)}
+	onNextMailbox={() => stepMailbox(1)}
+/>
+
+{#if !session}
+	<div class="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+		<p class="text-sm font-semibold text-slate-800">Session ended</p>
+		<p class="max-w-[420px] text-[13px] leading-relaxed text-slate-500">
+			Returning you to sign in…
+		</p>
+	</div>
+{:else}
+	<main
+		class="z-shell relative min-h-0 flex-1"
+		data-sidebar={sidebarVisible ? 'open' : 'closed'}
+		style:--z-list-w="{prefs.listWidth}px"
 	>
-		<!--
-			A phone reading a thread gets one bar, not two: the reader's own toolbar
-			is taller there and carries everything that screen can do, so the shell's
-			bar (the mark, the drawer toggle, the folder switcher, search) steps out
-			rather than stacking 52px of chrome nobody is reading on top of it. The
-			two panes are both on screen from 768px up, where it stays put.
-		-->
-		<TopBar
-			bind:this={topBar}
-			class={openThreadId ? 'max-md:hidden' : ''}
-			{searchQuery}
-			onSearch={runSearch}
-			mailboxes={mailboxList}
-			activeMailbox={activeMailbox}
-			onSelectMailbox={selectMailbox}
-			sidebarOpen={sidebarVisible}
-			onToggleSidebar={toggleSidebar}
-			onPrevMailbox={() => stepMailbox(-1)}
-			onNextMailbox={() => stepMailbox(1)}
-		/>
-
-		{#if !session}
-			<div class="flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
-				<p class="text-sm font-semibold text-slate-800">Session ended</p>
-				<p class="max-w-[420px] text-[13px] leading-relaxed text-slate-500">
-					Returning you to sign in…
-				</p>
-			</div>
-		{:else}
-			<main
-				class="z-shell relative min-h-0 flex-1"
-				data-sidebar={sidebarVisible ? 'open' : 'closed'}
-				style:--z-list-w="{prefs.listWidth}px"
+		{#if sidebarVisible}
+			<!-- Below 1024px the sidebar leaves the grid and slides over the
+			     panes; the top bar stays visible so its toggle can dismiss it. -->
+			{#if viewport.compact}
+				<button
+					type="button"
+					class="absolute inset-0 z-40 bg-[var(--z-scrim)] lg:hidden"
+					aria-label="Close folder list"
+					onclick={() => (drawerOpen = false)}
+				></button>
+			{/if}
+			<div
+				class="max-lg:absolute max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:w-[280px] max-lg:max-w-[85%] max-lg:shadow-[var(--z-shadow-panel)]"
 			>
-				{#if sidebarVisible}
-					<!-- Below 1024px the sidebar leaves the grid and slides over the
-					     panes; the top bar stays visible so its toggle can dismiss it. -->
-					{#if viewport.compact}
-						<button
-							type="button"
-							class="absolute inset-0 z-40 bg-[var(--z-scrim)] lg:hidden"
-							aria-label="Close folder list"
-							onclick={() => (drawerOpen = false)}
-						></button>
-					{/if}
-					<div
-						class="max-lg:absolute max-lg:inset-y-0 max-lg:left-0 max-lg:z-50 max-lg:w-[280px] max-lg:max-w-[85%] max-lg:shadow-[var(--z-shadow-panel)]"
-					>
-						<Sidebar
-							mailboxes={mailboxList}
-							activeMailboxId={selectedMailboxId}
-							onSelectMailbox={selectMailbox}
-							onClose={viewport.compact ? () => (drawerOpen = false) : undefined}
-							onNewMessage={() => {
-								drawerOpen = false;
-								openCompose();
-							}}
-						/>
-					</div>
-				{/if}
-
-				<MailList
-					class={openThreadId ? 'max-md:hidden' : ''}
-					{searchQuery}
-					onClearSearch={() => runSearch('')}
-					mailbox={activeMailbox}
+				<Sidebar
 					mailboxes={mailboxList}
-					groups={rowGroups}
-					loading={threadsResource?.loading ?? true}
-					error={threadsResource?.error}
-					filter={listFilter}
-					{cursorId}
-					{openThreadId}
-					{selection}
-					onFilter={(value) => {
-						listFilter = value;
-						cursorId = null;
+					activeMailboxId={selectedMailboxId}
+					onSelectMailbox={selectMailbox}
+					onClose={viewport.compact ? () => (drawerOpen = false) : undefined}
+					onNewMessage={() => {
+						drawerOpen = false;
+						openCompose();
 					}}
-					onSetSelection={(ids) => (selection = ids)}
-					onToggleSelect={toggleSelect}
-					onOpen={(threadId) => void openRow(threadId)}
-					onBulk={(action, mailboxId, threadIds) => void runBulk(action, mailboxId, threadIds)}
-					busy={bulkBusy}
-					onRetry={() => listResource?.refresh()}
-					onNewMessage={(anchor) => openCompose(anchor)}
 				/>
-
-				<Splitter width={prefs.listWidth} onResize={setListWidth} onReset={resetListWidth} />
-
-				<Reader
-					class={openThreadId ? '' : 'max-md:hidden'}
-					messages={threadResource?.current}
-					loading={threadResource?.loading ?? false}
-					error={threadResource?.error}
-					onRetry={() => threadResource?.refresh()}
-					onCompose={openReply}
-					onBack={viewport.phone ? () => reader.close() : undefined}
-					onAction={(action, mailboxId) =>
-						openThreadId && void runBulk(action, mailboxId, [openThreadId])}
-					threadState={openRowState}
-					mailboxKind={activeMailbox?.kind ?? null}
-					{archiveTarget}
-					mailboxes={mailboxList}
-					currentMailboxId={activeMailbox?.id ?? null}
-					inTrash={activeMailbox?.kind === 'trash'}
-				/>
-			</main>
-
-			{#each compose.drafts as draft (draft.id)}
-				{#if draft.stage !== 'minimized'}
-					<ComposePanel {draft} {rootW} {rootH} />
-				{/if}
-			{/each}
-			<ComposeDock />
+			</div>
 		{/if}
 
-		<Toasts />
-
-		<StatusLine
-			mailboxName={activeMailbox?.name ?? null}
-			unseen={activeMailbox?.unread ?? 0}
-			quota={quotaResource?.current}
+		<MailList
+			class={openThreadId ? 'max-md:hidden' : ''}
+			{searchQuery}
+			onClearSearch={() => runSearch('')}
+			mailbox={activeMailbox}
+			mailboxes={mailboxList}
+			groups={rowGroups}
+			loading={threadsResource?.loading ?? true}
+			error={threadsResource?.error}
+			filter={listFilter}
+			{cursorId}
+			{openThreadId}
+			{selection}
+			onFilter={(value) => {
+				listFilter = value;
+				cursorId = null;
+			}}
+			onSetSelection={(ids) => (selection = ids)}
+			onToggleSelect={toggleSelect}
+			onOpen={(threadId) => void openRow(threadId)}
+			onBulk={(action, mailboxId, threadIds) => void runBulk(action, mailboxId, threadIds)}
+			busy={bulkBusy}
+			onRetry={() => listResource?.refresh()}
+			onNewMessage={(anchor) => openCompose(anchor)}
 		/>
-	</div>
-</div>
+
+		<Splitter width={prefs.listWidth} onResize={setListWidth} onReset={resetListWidth} />
+
+		<Reader
+			class={openThreadId ? '' : 'max-md:hidden'}
+			messages={threadResource?.current}
+			loading={threadResource?.loading ?? false}
+			error={threadResource?.error}
+			onRetry={() => threadResource?.refresh()}
+			onCompose={openReply}
+			onBack={viewport.phone ? () => reader.close() : undefined}
+			onAction={(action, mailboxId) =>
+				openThreadId && void runBulk(action, mailboxId, [openThreadId])}
+			threadState={openRowState}
+			mailboxKind={activeMailbox?.kind ?? null}
+			{archiveTarget}
+			mailboxes={mailboxList}
+			currentMailboxId={activeMailbox?.id ?? null}
+			inTrash={activeMailbox?.kind === 'trash'}
+		/>
+	</main>
+
+	{#each compose.drafts as draft (draft.id)}
+		{#if draft.stage !== 'minimized'}
+			<ComposePanel {draft} {rootW} {rootH} />
+		{/if}
+	{/each}
+	<ComposeDock />
+{/if}
+
+<Toasts />
+
+<StatusLine
+	mailboxName={activeMailbox?.name ?? null}
+	unseen={activeMailbox?.unread ?? 0}
+	quota={quotaResource?.current}
+/>

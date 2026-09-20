@@ -308,7 +308,8 @@ mark, the drawer toggle, the folder switcher and search, and then the reader's
 own. None of the first four is what a screen you are *reading* on is for — the
 list screen one tap away still has all of them — so below 768px the shell's bar
 steps out while a thread is open (`class={openThreadId ? 'max-md:hidden' : ''}`
-on `TopBar`, the same trick the panes use). That gives the message 52px back,
+on `TopBar`, which hands it to the layout's header along with its bar — the
+same trick the panes use). That gives the message 52px back,
 and lets the one bar that stays be **60px with 40–44px targets** instead of
 52px with 28–32px ones. Above 768px both panes are on screen at once, so
 nothing hides and nothing grows.
@@ -846,13 +847,39 @@ landed — see [Design follow-ups](#design-follow-ups).
 ## Sections
 
 The top bar's segmented control is the shell's map: **Mail · Contacts ·
-Calendar · Settings**. It used to be two buttons, one of them inert; it is one
-component now (`SectionTabs`), drawn the same in the mail top bar, and in the
-header every sibling section wears (`SectionShell` — the mark, a way back to
-Mail, the section's own controls, the tabs). The current section is read from
-the URL, so a page cannot claim to be one it is not. Below `sm` the tabs hide
-and the account menu carries the same four entries, because a phone's top bar
-has no room for a fifth control.
+Calendar · Settings**. It is one component (`SectionTabs`), and the current
+section is read from the URL, so a page cannot claim to be one it is not. Below
+`sm` the tabs hide and the account menu carries the same four entries, because
+a phone's top bar has no room for a fifth control.
+
+### One header, in the layout
+
+The header belongs to `(app)/+layout.svelte` (`ShellHeader`): the mark on the
+left, the tabs and the account tile on the right, mounted once. Each section
+used to build its own copy — `TopBar` for Mail, `SectionShell` for the rest —
+so every switch tore the header down and rebuilt it, and for a frame the
+account tile was gone and the tabs sat 40px to the right of where they landed.
+That was the jump.
+
+What a section adds to the bar is still its own. It hands the layout a
+**snippet** through context (`#lib/shell.svelte.ts`, `useShellBar`): a snippet
+closes over the component that declares it, so Mail's search field lives in the
+layout's header and still belongs to `TopBar`'s state. `SectionShell` is now
+just that registration — a title and a `controls` snippet — and
+`/prototype`, which has no layout, lets `TopBar` draw the header itself. The
+layout also exposes the app column (`shell.frame`), which Mail's floating
+compose panels are placed against.
+
+Two things in `useShellBar` are deliberate. Who holds the bar is a plain field,
+not state: **an effect's teardown reads state as it was before the change that
+ran it**, so a section leaving would see itself still in `bar` and wipe the one
+its successor had just set — every second switch came up empty until that was
+found. And the context key is a string, because Vite's HMR can hold two
+instances of the module, each minting its own `Symbol`.
+
+The bar arrives on hydration rather than in the server's HTML: a layout renders
+before its page, so there is nothing to hand up yet. The account tile keeps its
+30px while the session loads, so nothing beside it moves when it arrives.
 
 ## Security
 

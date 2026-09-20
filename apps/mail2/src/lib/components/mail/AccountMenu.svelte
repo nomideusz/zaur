@@ -151,4 +151,7 @@
 			</Menu.Positioner>
 		</Portal>
 	</Menu.Root>
+{:else}
+	<!-- The tile's place is kept while the session loads, so the tabs beside it do not shift when it arrives. -->
+	<span class="size-[30px] shrink-0 {className}" aria-hidden="true"></span>
 {/if}
