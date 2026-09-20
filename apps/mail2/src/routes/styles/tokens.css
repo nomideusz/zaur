@@ -125,11 +125,6 @@
 	--z-id-stone-stroke: #78716c;
 	--z-id-stone-ink: #292524;
 
-	/* The ZA/UR mark's strokes — fixed identity inks, deliberately not channel hues. */
-	--z-mark-z: #e11d48;
-	--z-mark-a: #0891b2;
-	--z-mark-r: #0d9488;
-
 	/* Type */
 	/* System faces only — nothing to download. */
 	--font-sans: Seravek, 'Gill Sans Nova', Ubuntu, Calibri, 'DejaVu Sans', source-sans-pro, sans-serif;
@@ -243,9 +238,6 @@
 		--z-id-plum-ink: #e9d5ff;
 		--z-id-stone-fill: color-mix(in oklab, #78716c 22%, var(--z-surface));
 		--z-id-stone-ink: #e7e5e4;
-		--z-mark-z: color-mix(in oklab, #e11d48 58%, #ffffff);
-		--z-mark-a: color-mix(in oklab, #0891b2 58%, #ffffff);
-		--z-mark-r: color-mix(in oklab, #0d9488 58%, #ffffff);
 		--z-shadow-tactile: 0 1px 2px rgba(0, 0, 0, 0.3);
 		--z-shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.03);
 		--z-shadow-menu: 0 12px 32px rgba(0, 0, 0, 0.45);
@@ -312,9 +304,6 @@
 	--z-id-plum-ink: #e9d5ff;
 	--z-id-stone-fill: color-mix(in oklab, #78716c 22%, var(--z-surface));
 	--z-id-stone-ink: #e7e5e4;
-	--z-mark-z: color-mix(in oklab, #e11d48 58%, #ffffff);
-	--z-mark-a: color-mix(in oklab, #0891b2 58%, #ffffff);
-	--z-mark-r: color-mix(in oklab, #0d9488 58%, #ffffff);
 	--z-shadow-tactile: 0 1px 2px rgba(0, 0, 0, 0.3);
 	--z-shadow-raised: 0 1px 2px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 255, 255, 0.03);
 	--z-shadow-menu: 0 12px 32px rgba(0, 0, 0, 0.45);

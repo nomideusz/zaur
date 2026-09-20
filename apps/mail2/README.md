@@ -424,13 +424,13 @@ touch pointers, where the same drag is the strip's scroll.
 
 ## The mark
 
-The shell's mark is **ZA/UR** drawn as an icon, not a logo: four stroked
-letters on the same 16px grid, round caps and ~1.3 stroke as every other glyph,
-in a 32px tile the size of the header's tactile buttons (no shadow — it does
-nothing when pressed). It sits among the icons rather than above them. Z is
-rose, A and U cyan, R teal: fixed identity inks (`--z-mark-*`), deliberately not
-channel hues, because a channel says what kind of message this is and the mark
-is not a message. In dark each ink lifts 58% toward paper. The same paths draw
+The shell's mark is the **Z fold** drawn as an icon, not a logo: two bars and a
+45° fold in one continuous stroke, on the same 16px grid, with the same round
+caps, 1.3 stroke and `--z-strong` ink as every other glyph, inside the same
+`btn-tactile` body as the header's other square buttons. It sits among the
+icons rather than above them, and only its shape says Zaur. It used to wear two
+identity inks, rose leading into teal; on a white tile that read as Gmail, so
+the colour went and the `--z-mark-*` tokens with it. The same path draws
 `static/favicon.svg` and the PNG icons (`scripts/generate-icons.py`).
 It says *Zaur* rather than *Zaur Mail* because one account spans Mail, Chat,
 Discuss and Meet.
