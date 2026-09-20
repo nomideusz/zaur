@@ -78,6 +78,21 @@ function frameStyles(palette: typeof LIGHT, scheme: 'light' | 'dark'): string {
 		border-left: 2px solid ${palette.rule};
 		color: ${palette.quote};
 	}
+	/* A quote the thread already shows above, folded (html.ts foldQuotedHistory). */
+	.z-email-fold { margin-top: 1rem; }
+	.z-email-fold > summary {
+		display: inline-block;
+		padding: 1px 8px;
+		border: 1px solid ${palette.rule};
+		border-radius: 6px;
+		color: ${palette.quote};
+		font-size: 12px;
+		cursor: pointer;
+		list-style: none;
+		user-select: none;
+	}
+	.z-email-fold > summary::-webkit-details-marker { display: none; }
+	.z-email-fold > .z-email-quote { margin-top: 0.6rem; }
 	pre, code {
 		font-family: ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
 		font-size: 0.9em;

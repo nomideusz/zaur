@@ -485,13 +485,47 @@ export function prepareEmailHtml(
 	return postProcessSanitizedHtml(html, options);
 }
 
-export function renderMessageBody(options: {
+/**
+ * Tuck each outermost quote behind a native <details>. The email frame runs no
+ * scripts, and <details> needs none; the frame's ResizeObserver follows the toggle.
+ */
+function foldQuotedHistory(html: string): string {
+	if (!browser || !html.includes('z-email-quote')) return html;
+	const container = document.createElement('div');
+	container.innerHTML = html;
+	for (const quote of container.querySelectorAll('.z-email-quote')) {
+		if (quote.parentElement?.closest('.z-email-quote')) continue;
+		const fold = document.createElement('details');
+		fold.className = 'z-email-fold';
+		const summary = document.createElement('summary');
+		summary.textContent = 'Quoted text';
+		quote.replaceWith(fold);
+		fold.append(summary, quote);
+	}
+	return container.innerHTML;
+}
+
+interface RenderOptions {
 	bodyHtml?: string;
 	bodyText: string;
 	allowExternal: boolean;
 	darkMode?: boolean;
 	preferPlainText?: boolean;
-}): { html: string; blockedExternal: boolean; isHtml: boolean; lightSurface: boolean } {
+	/**
+	 * Fold the quoted original away. For a message whose thread already shows
+	 * the earlier messages above it: the quote is the same text a second time.
+	 */
+	foldQuotes?: boolean;
+}
+
+type RenderedBody = { html: string; blockedExternal: boolean; isHtml: boolean; lightSurface: boolean };
+
+export function renderMessageBody(options: RenderOptions): RenderedBody {
+	const body = renderBody(options);
+	return options.foldQuotes ? { ...body, html: foldQuotedHistory(body.html) } : body;
+}
+
+function renderBody(options: RenderOptions): RenderedBody {
 	if (options.preferPlainText && options.bodyText.trim()) {
 		return {
 			html: plainTextToSafeHtml(options.bodyText),

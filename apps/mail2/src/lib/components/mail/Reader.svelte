@@ -83,7 +83,9 @@
 		const result = renderMessageBody({
 			bodyHtml: latest.bodyHtml,
 			bodyText: latest.bodyText,
-			allowExternal: true
+			allowExternal: true,
+			// Its quote is the earlier messages again, and those are one tap above.
+			foldQuotes: earlier.length > 0
 		});
 		return { ...result, attachments: latest.attachments };
 	});
