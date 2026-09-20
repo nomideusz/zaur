@@ -28,6 +28,8 @@ export interface SendInput {
 	bcc?: string[];
 	subject: string;
 	body: string;
+	/** The written HTML; without it the message goes out as plain text. */
+	bodyHtml?: string;
 	/** UTC ISO time for delayed delivery; omit for an immediate send. */
 	sendAt?: string;
 	attachments?: OutgoingAttachmentDTO[];
@@ -94,7 +96,8 @@ export const send = command(schema<SendInput>(), async (input: SendInput): Promi
 	await client.sendEmail(to, input.subject ?? '', input.body ?? '', {
 		cc: cc.length ? cc : undefined,
 		bcc: bcc.length ? bcc : undefined,
-		format: 'plain',
+		format: input.bodyHtml ? 'html' : 'plain',
+		bodyHtml: input.bodyHtml || undefined,
 		sendAt: input.sendAt,
 		attachments: sanitizeAttachments(input.attachments),
 		onEmailCreated: (id) => {
@@ -121,6 +124,7 @@ export interface DraftSavePayload {
 	bcc?: string[];
 	subject?: string;
 	body?: string;
+	bodyHtml?: string;
 	attachments?: OutgoingAttachmentDTO[];
 }
 
@@ -152,7 +156,8 @@ export const saveDraft = command(
 			body,
 			fromEmail: client.getUsername(),
 			attachments: attachments.length ? attachments : undefined,
-			format: 'plain'
+			format: input.bodyHtml ? 'html' : 'plain',
+			bodyHtml: input.bodyHtml ? String(input.bodyHtml) : undefined
 		});
 		return { emailId };
 	}

@@ -586,6 +586,32 @@ written for a light page, so it keeps its light palette and sits on a white
 card inside the dark reader: recolouring someone else's layout is how you get
 invisible text.
 
+## Rich text in compose
+
+The message box is [Trix](https://github.com/basecamp/trix) (`RichBody.svelte`), a web component
+with one dependency, loaded on the client only. `RichToolbar.svelte` is Trix's toolbar in mail2's
+own buttons: Trix fills an *empty* `<trix-toolbar>` with its markup and sprite sheet, and given
+children it only reads their `data-trix-*` attributes. Trix's stylesheet is not imported.
+
+A draft carries both `bodyHtml` (what the editor holds) and `body` (Trix's plain-text reading: the
+`text/plain` alternative, and what the rest of compose reasons about). `bodyHtml` stays empty until
+something is written, so an untouched reply is not an edit and does not autosave. With it the
+message goes out `multipart/alternative`; without it, plain, as before.
+
+The quoted original is seeded from plain text (`replySeed`) and lives inside the editor as a
+blockquote, so it can be answered inline. Nobody else's HTML is ever loaded into Trix — only a
+reopened draft's, which Trix wrote. Things that bit:
+
+- Trix injects an unlayered `trix-toolbar { display: block }`. Tailwind utilities are layered and
+  lose to it, so the toolbar's `display: flex` is declared unlayered in the component.
+- `trix-change` fires during `loadHTML`; loading is not writing, so it is ignored.
+- While the link dialog is open Trix paints the held selection *into the document* (a
+  `background-color: highlight` span). Changes carrying it are not reported; closing reports again.
+- Files dropped or pasted into the text are refused (`trix-file-accept`) and handed to the
+  attachment strip instead — no inline images yet.
+- Bare `<blockquote>` renders as a plain indent in most clients, so `outgoingHtml` inlines the
+  rule on send (not on save: Trix would strip it on reopen anyway).
+
 ## Compose panel geometry
 
 `#lib/compose/layout` owns the window maths:

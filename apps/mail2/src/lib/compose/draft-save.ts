@@ -13,6 +13,7 @@ export const DRAFT_CONTENT_KEYS: ReadonlySet<string> = new Set([
 	'bcc',
 	'subject',
 	'body',
+	'bodyHtml',
 	'attachments'
 ]);
 
@@ -25,6 +26,7 @@ export function buildDraftSaveInput(draft: Draft): DraftSaveInput {
 		bcc: recipientEmails(draft.bcc),
 		subject: draft.subject,
 		body: draft.body,
+		bodyHtml: draft.bodyHtml,
 		attachments: outgoingAttachments(draft.attachments)
 	};
 }
@@ -42,6 +44,7 @@ export function draftContentSignature(draft: Draft): string {
 		input.bcc,
 		input.subject,
 		input.body,
+		input.bodyHtml,
 		input.attachments
 	]);
 }

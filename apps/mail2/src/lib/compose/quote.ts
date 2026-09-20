@@ -35,6 +35,7 @@ export function draftSeed(message: MessageDetail): DraftSeed {
 		bcc: message.bcc.map((person) => ({ name: person.name, email: person.email, meta: '' })),
 		subject: message.subject,
 		body: message.bodyText,
+		bodyHtml: message.bodyHtml ?? '',
 		attachments: message.attachments
 			.filter((part) => part.disposition !== 'inline')
 			.map((part) => attachmentFromServer(part))

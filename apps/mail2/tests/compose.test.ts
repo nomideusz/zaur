@@ -57,6 +57,7 @@ function draft(overrides: Partial<Draft> = {}): Draft {
 		bccShown: false,
 		subject: '',
 		body: '',
+		bodyHtml: '',
 		attachments: [],
 		sendAt: null,
 		bodyOpened: false,

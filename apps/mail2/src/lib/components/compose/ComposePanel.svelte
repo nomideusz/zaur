@@ -4,6 +4,8 @@
 	import { filterContacts } from '#lib/compose/recipients';
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import { initials } from '#lib/mail/rows';
+	import RichBody from './RichBody.svelte';
+	import RichToolbar from './RichToolbar.svelte';
 	import ActionIcon from '#lib/components/mail/ActionIcon.svelte';
 	import { attachmentBadge, identityTone } from '#lib/mail/colors';
 	import Tooltip from '#lib/components/ui/Tooltip.svelte';
@@ -34,6 +36,7 @@
 	const listboxId = (field: RecipientField) => `compose-suggestions-${field}-${draft.id}`;
 	const subjectId = $derived(`compose-subject-${draft.id}`);
 	const bodyId = $derived(`compose-body-${draft.id}`);
+	const toolsId = $derived(`compose-tools-${draft.id}`);
 
 	/**
 	 * The per-field key names. To, Cc and Bcc are one field three times over, so
@@ -333,11 +336,6 @@
 			compose.patch(draft.id, { bodyOpened: true });
 			document.getElementById(bodyId)?.focus();
 		}
-	}
-
-	function onBodyInput(event: Event) {
-		const value = (event.currentTarget as HTMLTextAreaElement).value;
-		compose.patch(draft.id, { body: value, bodyOpened: true, sendError: null });
 	}
 
 	function removeChip(event: MouseEvent, field: RecipientField, email: string) {
@@ -770,18 +768,19 @@
 
 		<!-- Message -->
 		<!-- Maximized: the message box flexes to fill the pane instead of a fixed step. -->
-		<textarea
+		<RichBody
 			id={bodyId}
-			value={draft.body}
-			oninput={onBodyInput}
+			toolbar={toolsId}
+			html={draft.bodyHtml}
+			text={draft.body}
+			onchange={(body, bodyHtml) => compose.patch(draft.id, { body, bodyHtml, bodyOpened: true, sendError: null })}
 			onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
-			class="w-full resize-none border-0 bg-transparent pt-[14px] pb-4 text-[15px] leading-[1.7] text-[var(--z-body)] focus:outline-none max-md:text-base {bodyOpen
+			onfiles={(files) => compose.attachFiles(draft.id, files)}
+			class="w-full pt-[14px] pb-4 text-[15px] leading-[1.7] text-[var(--z-body)] max-md:text-base {bodyOpen
 				? 'opacity-100'
 				: 'opacity-68'} {filled ? 'min-h-0 flex-1 max-w-[46em]' : 'max-w-[33em]'}"
-			style:height={filled ? undefined : `${bodyHeight}px`}
-			style:transition="height 200ms ease"
-			aria-label="Message"
-		></textarea>
+			height={filled ? undefined : `${bodyHeight}px`}
+		/>
 
 		{#if draft.sendError}
 			<p class="pb-2 text-xs font-medium text-red-600">{draft.sendError}</p>
@@ -847,7 +846,7 @@
 	{/if}
 
 	<!-- Action bar -->
-	<div class="flex h-[53px] shrink-0 items-center gap-2 border-t border-[var(--z-hairline)] pr-3 pl-4">
+	<div class="relative flex h-[53px] shrink-0 items-center gap-2 border-t border-[var(--z-hairline)] pr-3 pl-4">
 		<button
 			type="button"
 			class="btn-tactile !size-[30px] !p-0"
@@ -948,6 +947,8 @@
 						</Popover.Positioner>
 					</Portal>
 				</Popover.Root>
+		<span class="h-5 w-px shrink-0 bg-[var(--z-hairline)]" aria-hidden="true"></span>
+		<RichToolbar id={toolsId} class="overflow-x-auto" />
 		<button
 			type="button"
 			class="ml-auto btn-tactile btn-danger !size-[30px] !p-0"

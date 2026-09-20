@@ -1,3 +1,4 @@
+import { outgoingHtml } from './html';
 import type { MessageDetail } from '@zaur/mail-core';
 import {
 	MAX_ATTACHMENT_BYTES,
@@ -67,6 +68,7 @@ export interface NewDraftOptions {
 	to?: Recipient[];
 	subject?: string;
 	body?: string;
+	bodyHtml?: string;
 	focusTarget?: FocusTarget;
 	attachments?: DraftAttachment[];
 	jmapDraftId?: string | null;
@@ -124,6 +126,7 @@ class ComposeStore {
 			bccShown: false,
 			subject: options.subject ?? '',
 			body: options.body ?? '',
+			bodyHtml: options.bodyHtml ?? '',
 			attachments: options.attachments ?? [],
 			sendAt: null,
 			bodyOpened: false,
@@ -563,6 +566,7 @@ class ComposeStore {
 			to: seed.to,
 			subject: seed.subject,
 			body: seed.body,
+			bodyHtml: seed.bodyHtml,
 			attachments: seed.attachments,
 			jmapDraftId: seed.jmapDraftId,
 			focusTarget: seed.to.length === 0 ? 'to' : seed.subject.trim() ? 'body' : 'subject'
@@ -622,6 +626,7 @@ class ComposeStore {
 			bcc,
 			subject: draft.subject,
 			body: draft.body,
+			bodyHtml: draft.bodyHtml ? outgoingHtml(draft.bodyHtml) : undefined,
 			sendAt: draft.sendAt ?? undefined,
 			attachments: outgoingAttachments(draft.attachments),
 			account: this.#transport?.account ?? undefined
@@ -680,6 +685,7 @@ class ComposeStore {
 				to: payload.to.map((email) => ({ name: '', email, meta: '' })),
 				subject: payload.subject,
 				body: payload.body,
+				bodyHtml: payload.bodyHtml,
 				attachments: payload.attachments?.map((part) => attachmentFromServer(part)),
 				focusTarget: 'subject'
 			});

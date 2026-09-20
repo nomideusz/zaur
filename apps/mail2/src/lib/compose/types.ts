@@ -80,7 +80,10 @@ export interface Draft {
 	ccShown: boolean;
 	bccShown: boolean;
 	subject: string;
+	/** The plain-text reading of the message: the text/plain part, and what compose reasons about. */
 	body: string;
+	/** What the editor holds. Empty until something is written — a seed is only text. */
+	bodyHtml: string;
 	attachments: DraftAttachment[];
 	/** UTC ISO for a delayed send, or null to send immediately. Ephemeral — not persisted. */
 	sendAt: string | null;
@@ -111,6 +114,7 @@ export interface SendPayload {
 	bcc: string[];
 	subject: string;
 	body: string;
+	bodyHtml?: string;
 	sendAt?: string;
 	attachments?: OutgoingAttachment[];
 	/**
@@ -128,6 +132,7 @@ export interface DraftSeed {
 	bcc: Recipient[];
 	subject: string;
 	body: string;
+	bodyHtml: string;
 	attachments: DraftAttachment[];
 }
 
@@ -138,6 +143,7 @@ export interface DraftSaveInput {
 	bcc: string[];
 	subject: string;
 	body: string;
+	bodyHtml: string;
 	attachments: OutgoingAttachment[];
 }
 

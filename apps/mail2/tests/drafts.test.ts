@@ -7,6 +7,7 @@ import {
 	draftContentSignature,
 	hasDraftContent
 } from '../src/lib/compose/draft-save.ts';
+import { outgoingHtml } from '../src/lib/compose/html.ts';
 import { draftSeed } from '../src/lib/compose/quote.ts';
 import { attachmentFromServer } from '../src/lib/compose/attachments.ts';
 import type { Draft, Recipient } from '../src/lib/compose/types.ts';
@@ -36,6 +37,7 @@ function draft(overrides: Partial<Draft> = {}): Draft {
 		bccShown: false,
 		subject: '',
 		body: '',
+		bodyHtml: '',
 		attachments: [],
 		sendAt: null,
 		bodyOpened: false,
@@ -84,6 +86,7 @@ test('DRAFT_CONTENT_KEYS: content only — no toInput, no geometry', () => {
 		'attachments',
 		'bcc',
 		'body',
+		'bodyHtml',
 		'cc',
 		'subject',
 		'to'
@@ -183,4 +186,17 @@ test('draftSeed: recipients, body and file attachments — inline images stay ou
 		[['blob-1', 'ready']]
 	);
 	assert.equal(attachmentFromServer(filePart).name, 'report.pdf');
+});
+
+test('autosave follows formatting too: the same words in bold are a different draft', () => {
+	assert.notEqual(
+		draftContentSignature(draft({ body: 'Hi', bodyHtml: '<div>Hi</div>' })),
+		draftContentSignature(draft({ body: 'Hi', bodyHtml: '<div><strong>Hi</strong></div>' }))
+	);
+});
+
+test('outgoingHtml: quotes carry their own rule, since mail has no stylesheet', () => {
+	const html = outgoingHtml('<div>Hi</div><blockquote>Earlier</blockquote>');
+	assert.match(html, /<blockquote style="[^"]*border-left[^"]*">Earlier/);
+	assert.equal(outgoingHtml('<div>Hi</div>'), '<div>Hi</div>');
 });
