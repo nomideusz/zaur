@@ -96,7 +96,18 @@ with the `mail` container stopped (the password file path is in the script).
 
 The script names the container. It failed every night from 2026-07-08 to 2026-09-20 because it
 still scaled the old CapRover swarm service after mail moved to a Dokploy compose container, and
-nothing watches the log — if the container is renamed again, update the script.
+nothing watched the log — if the container is renamed again, update the script.
+
+### Monitor
+
+Traceway only has pull checks (`http`/`tcp`), so the backup is exposed as one. On success the
+script writes `/var/lib/backup-status/mail.ok`. Container `backup-status` (`busybox httpd`, on
+`dokploy-network` only, no published port) serves `/opt/backup-status/cgi-bin/mail`, which answers
+200 `fresh …` while that marker is younger than 26 h and 503 `stale` otherwise — age is computed
+per request, so a cron that stops running goes red too, not just a failing script. Traceway check
+"mail backup fresh (<26h)" in project *zaur webmail server* polls
+`http://backup-status/cgi-bin/mail` every 5 min. Another backup gets the same treatment: one more
+marker, one more file in `cgi-bin/`, one more check.
 
 ## Adding config here
 
