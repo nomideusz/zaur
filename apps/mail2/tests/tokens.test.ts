@@ -55,10 +55,10 @@ test('tokens: system faces only, no web fonts', () => {
 	assert.doesNotMatch(css, /@font-face/);
 });
 
-test('tokens: the ZA/UR mark keeps its fixed identity inks', () => {
-	assert.match(css, /--z-mark-z: #e11d48/);
-	assert.match(css, /--z-mark-a: #0891b2/);
-	assert.match(css, /--z-mark-r: #0d9488/);
+test('tokens: the mark has no inks of its own — it wears the functional one', () => {
+	// Rose leading into teal on a white tile read as Gmail. The mark is a button
+	// among buttons now (ZaurMark.svelte), drawn in --z-strong like its neighbours.
+	assert.doesNotMatch(css, /--z-mark-/);
 });
 
 test('tokens: four elevations, no more', () => {
