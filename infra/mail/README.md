@@ -77,11 +77,31 @@ Accounts must already exist in Stalwart; the register app creates them through
 the management JMAP API. Do not run the retired PostgreSQL or Logto migration
 scripts against production.
 
+## Backup
+
+Nightly at 03:30, `/root/backup_mail.sh` on contabo (`/etc/cron.d/backup-mail`, log
+`/var/log/backup_mail.log`) stops the `mail` container for ~2 s, copies the
+`captain--stalwart-config` and `captain--stalwart-data` volumes, restarts it, then pushes the copy
+with restic over SFTP to dedi (`storage-vps` in contabo's `~/.ssh/config`), repo
+`/srv/zaur/backups/mail`. Retention: 7 daily, 4 weekly, 12 monthly.
+
+`/srv/zaur` on dedi is a fully allocated 1 TB ext4 image (`/srv/zaur.img`, loop-mounted from
+fstab) — the space reserved for Zaur out of dedi's 2 TB. It is mounted `X-fstrim.notrim` on
+purpose: dedi's weekly `fstrim.timer` would otherwise punch the image sparse and quietly give the
+reservation back. `mkfs` does the same, so after recreating the image re-run
+`fallocate -l 1T /srv/zaur.img` while it is unmounted and check `du -h` reports ~1T.
+
+Restore: `restic -r sftp:storage-vps:/srv/zaur/backups/mail restore latest --target /` on contabo
+with the `mail` container stopped (the password file path is in the script).
+
+The script names the container. It failed every night from 2026-07-08 to 2026-09-20 because it
+still scaled the old CapRover swarm service after mail moved to a Dokploy compose container, and
+nothing watches the log — if the container is renamed again, update the script.
+
 ## Adding config here
 
 When you version Stalwart settings, add files such as:
 
 - `upgrade.md` — version bump checklist
-- `backup.md` — backup/restore procedure
 
 Keep secrets out of git. Reference CapRover env vars or a secrets manager instead.

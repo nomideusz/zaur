@@ -43,7 +43,7 @@ function getConfig() {
     token,
     user,
     password,
-    maxDiskQuota: Number.parseInt(process.env.MAX_DISK_QUOTA || '524288000', 10),
+    maxDiskQuota: Number.parseInt(process.env.MAX_DISK_QUOTA || '26843545600', 10),
     allowlist: (process.env.REGISTRATION_DOMAINS || '')
       .split(',')
       .map((d) => d.trim().toLowerCase())
