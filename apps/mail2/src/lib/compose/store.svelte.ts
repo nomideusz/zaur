@@ -1,4 +1,5 @@
 import { outgoingHtml } from './html';
+import { prefs } from '../settings.svelte.ts';
 import type { MessageDetail } from '@zaur/mail-core';
 import {
 	MAX_ATTACHMENT_BYTES,
@@ -127,6 +128,8 @@ class ComposeStore {
 			subject: options.subject ?? '',
 			body: options.body ?? '',
 			bodyHtml: options.bodyHtml ?? '',
+			// A draft that was written rich reopens rich, whatever the preference says now.
+			plain: options.bodyHtml ? false : prefs.composePlain,
 			attachments: options.attachments ?? [],
 			sendAt: null,
 			bodyOpened: false,
@@ -306,6 +309,15 @@ class ComposeStore {
 				break;
 			}
 		}
+	}
+
+	/**
+	 * Plain ⇄ rich. Going plain keeps the words and drops the formatting (`body` is
+	 * already the editor's plain reading); going rich reseeds the editor from the
+	 * text. This draft only — what new messages start as is a setting.
+	 */
+	setPlain(id: string, plain: boolean) {
+		this.patch(id, { plain, bodyHtml: '', focusTarget: 'body' });
 	}
 
 	consumeFocus(id: string) {

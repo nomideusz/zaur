@@ -84,6 +84,8 @@ export interface Draft {
 	body: string;
 	/** What the editor holds. Empty until something is written — a seed is only text. */
 	bodyHtml: string;
+	/** Written in a plain textarea and sent as text/plain only; `bodyHtml` stays empty. */
+	plain: boolean;
 	attachments: DraftAttachment[];
 	/** UTC ISO for a delayed send, or null to send immediately. Ephemeral — not persisted. */
 	sendAt: string | null;

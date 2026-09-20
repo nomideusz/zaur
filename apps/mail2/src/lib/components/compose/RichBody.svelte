@@ -72,7 +72,10 @@
 			if (file) onfiles([file]);
 		};
 		const focus = () => onfocus?.();
-		node.addEventListener('trix-initialize', init);
+		// Once Trix is loaded (a second panel, a switch back from plain) the element
+		// initializes as it connects — before this effect can listen for it.
+		if (node.editor) init();
+		else node.addEventListener('trix-initialize', init);
 		node.addEventListener('trix-change', change);
 		node.addEventListener('trix-file-accept', accept);
 		node.addEventListener('trix-focus', focus);

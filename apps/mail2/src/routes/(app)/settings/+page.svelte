@@ -262,6 +262,27 @@
 			</div>
 		</div>
 
+		<div class="flex items-center justify-between gap-4 border-t border-[var(--z-sunken)] py-[11px]">
+			<span class="min-w-0">
+				<span class="{rowLabel} block">New messages start as</span>
+				<span class="mt-[1px] block text-[11.5px] leading-[1.35] text-[var(--z-soft)]">
+					Either can be switched per message, with Plain in the compose bar.
+				</span>
+			</span>
+			<div class="z-group" role="group" aria-label="New messages start as">
+				{#each [{ plain: false, label: 'Rich text' }, { plain: true, label: 'Plain text' }] as mode (mode.label)}
+					<button
+						type="button"
+						class="z-segment !h-[26px] !px-[9px] !text-[11.5px]"
+						aria-pressed={prefs.composePlain === mode.plain}
+						onclick={() => setPref('composePlain', mode.plain)}
+					>
+						{mode.label}
+					</button>
+				{/each}
+			</div>
+		</div>
+
 		<!--
 			Not synced on purpose: a theme and a pixel width mean something
 			different on a different screen.

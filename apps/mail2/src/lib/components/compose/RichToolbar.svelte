@@ -6,10 +6,15 @@
 <script lang="ts">
 	interface Props {
 		id: string;
+		/**
+		 * Plain-text mode. The toolbar stays in the document regardless: a <trix-editor>
+		 * looks its toolbar up as it connects and throws if it is not there yet.
+		 */
+		off?: boolean;
 		class?: string;
 	}
 
-	let { id, class: className = '' }: Props = $props();
+	let { id, off = false, class: className = '' }: Props = $props();
 
 	const tools = [
 		{ attribute: 'bold', key: 'b', label: 'Bold', glyph: 'B', style: 'font-weight:700' },
@@ -18,7 +23,7 @@
 	];
 </script>
 
-<trix-toolbar {id} class="z-rich-tools flex min-w-0 items-center gap-0.5 {className}">
+<trix-toolbar {id} class="z-rich-tools flex min-w-0 items-center gap-0.5 {className}" class:z-rich-tools--off={off}>
 	{#each tools as tool (tool.attribute)}
 		<button
 			type="button"
@@ -83,6 +88,9 @@
 	   Tailwind utility (those are layered) — so the row is declared here, unlayered. */
 	:global(trix-toolbar.z-rich-tools) {
 		display: flex;
+	}
+	:global(trix-toolbar.z-rich-tools--off) {
+		display: none;
 	}
 	:global(.z-rich-tools button.trix-active) {
 		background: var(--z-accent-soft);

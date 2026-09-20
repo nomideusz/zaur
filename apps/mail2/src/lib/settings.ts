@@ -23,6 +23,8 @@ export type Prefs = {
 	unseenByDefault: boolean;
 	/** Light, dark, or whatever the OS says. A device preference: a desk and a phone differ. */
 	theme: Theme;
+	/** New messages start as plain text rather than rich. Set in Settings; a panel's own switch is per draft. */
+	composePlain: boolean;
 };
 
 export type Theme = 'system' | 'light' | 'dark';
@@ -36,7 +38,8 @@ export const DEFAULT_PREFS: Prefs = {
 	showPreview: true,
 	showAvatars: false,
 	unseenByDefault: false,
-	theme: 'system'
+	theme: 'system',
+	composePlain: false
 };
 
 /**
@@ -49,14 +52,15 @@ export const DEFAULT_PREFS: Prefs = {
  * sidebar is an overlay drawer, than on a desktop where it is a column.
  *
  * A device-shaped preference stored per account is worse than one stored per
- * device, so these are the five that travel.
+ * device, so these are the six that travel.
  */
 export const ACCOUNT_PREF_KEYS = [
 	'pageSize',
 	'markReadOnOpen',
 	'showPreview',
 	'showAvatars',
-	'unseenByDefault'
+	'unseenByDefault',
+	'composePlain'
 ] as const satisfies readonly (keyof Prefs)[];
 
 export type AccountPrefs = Pick<Prefs, (typeof ACCOUNT_PREF_KEYS)[number]>;
@@ -67,7 +71,8 @@ export function accountPrefsOf(prefs: Prefs): AccountPrefs {
 		markReadOnOpen: prefs.markReadOnOpen,
 		showPreview: prefs.showPreview,
 		showAvatars: prefs.showAvatars,
-		unseenByDefault: prefs.unseenByDefault
+		unseenByDefault: prefs.unseenByDefault,
+		composePlain: prefs.composePlain
 	};
 }
 

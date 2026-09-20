@@ -773,19 +773,36 @@
 
 		<!-- Message -->
 		<!-- Maximized: the message box flexes to fill the pane instead of a fixed step. -->
-		<RichBody
-			id={bodyId}
-			toolbar={toolsId}
-			html={draft.bodyHtml}
-			text={draft.body}
-			onchange={(body, bodyHtml) => compose.patch(draft.id, { body, bodyHtml, bodyOpened: true, sendError: null })}
-			onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
-			onfiles={(files) => compose.attachFiles(draft.id, files)}
-			class="-mr-4 pt-[14px] pr-4 pb-4 text-[15px] leading-[1.7] text-[var(--z-body)] max-md:text-base {bodyOpen
-				? 'opacity-100'
-				: 'opacity-68'} {filled ? 'min-h-0 flex-1 [&>*]:max-w-[46em]' : '[&>*]:max-w-[33em]'}"
-			height={filled ? undefined : `${bodyHeight}px`}
-		/>
+		{#if draft.plain}
+			<textarea
+				id={bodyId}
+				value={draft.body}
+				oninput={(event) =>
+					compose.patch(draft.id, { body: event.currentTarget.value, bodyOpened: true, sendError: null })}
+				onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
+				class="z-mono -mr-4 resize-none border-0 bg-transparent pt-[14px] pr-4 pb-4 text-[14px] leading-[1.7] text-[var(--z-body)] focus:outline-none max-md:text-base {bodyOpen
+					? 'opacity-100'
+					: 'opacity-68'} {filled ? 'min-h-0 flex-1' : ''}"
+				style:height={filled ? undefined : `${bodyHeight}px`}
+				style:transition="height 200ms ease"
+				style:scrollbar-width="thin"
+				aria-label="Message"
+			></textarea>
+		{:else}
+			<RichBody
+				id={bodyId}
+				toolbar={toolsId}
+				html={draft.bodyHtml}
+				text={draft.body}
+				onchange={(body, bodyHtml) => compose.patch(draft.id, { body, bodyHtml, bodyOpened: true, sendError: null })}
+				onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
+				onfiles={(files) => compose.attachFiles(draft.id, files)}
+				class="-mr-4 pt-[14px] pr-4 pb-4 text-[15px] leading-[1.7] text-[var(--z-body)] max-md:text-base {bodyOpen
+					? 'opacity-100'
+					: 'opacity-68'} {filled ? 'min-h-0 flex-1 [&>*]:max-w-[46em]' : '[&>*]:max-w-[33em]'}"
+				height={filled ? undefined : `${bodyHeight}px`}
+			/>
+		{/if}
 
 		{#if draft.sendError}
 			<p class="pb-2 text-xs font-medium text-red-600">{draft.sendError}</p>
@@ -953,7 +970,18 @@
 					</Portal>
 				</Popover.Root>
 		<span class="h-5 w-px shrink-0 bg-[var(--z-hairline)]" aria-hidden="true"></span>
-		<RichToolbar id={toolsId} class="overflow-x-auto" />
+		<RichToolbar id={toolsId} off={draft.plain} class="overflow-x-auto" />
+		<button
+			type="button"
+			class="z-icon-btn !w-auto shrink-0 px-1.5 text-[11.5px] font-semibold {draft.plain
+				? '!bg-[var(--z-accent-soft)] !text-[var(--z-accent-edge)]'
+				: ''}"
+			aria-pressed={draft.plain}
+			title={draft.plain ? 'Switch to rich text' : 'Switch to plain text — formatting is dropped'}
+			onclick={() => compose.setPlain(draft.id, !draft.plain)}
+		>
+			Plain
+		</button>
 		<button
 			type="button"
 			class="ml-auto btn-tactile btn-danger !size-[30px] !p-0"

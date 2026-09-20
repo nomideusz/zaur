@@ -602,6 +602,18 @@ The quoted original is seeded from plain text (`replySeed`) and lives inside the
 blockquote, so it can be answered inline. Nobody else's HTML is ever loaded into Trix — only a
 reopened draft's, which Trix wrote. Things that bit:
 
+**Plain ⇄ rich.** The `Plain` button in the action bar switches a draft (`draft.plain`,
+`compose.setPlain`) between Trix and a monospace textarea. Going plain keeps the words and drops
+the formatting — `body` already is the plain reading — and the message is sent `text/plain` only;
+going rich reseeds the editor from the text. The switch is per draft. What new messages start as
+is Settings → *New messages start as* (`composePlain`, one of the prefs that travel with the
+account); a draft that was saved rich reopens rich regardless.
+
+- A `<trix-editor>` looks its toolbar up **as it connects** and throws if it is not in the document
+  yet, leaving a dead element. So the toolbar is never unmounted in plain mode, only hidden.
+- Once Trix is loaded, `trix-initialize` fires as the element connects — before an effect can
+  listen for it. `RichBody` seeds immediately when `node.editor` already exists; without that a
+  second panel, or a switch back from plain, opened empty.
 - Trix injects an unlayered `trix-toolbar { display: block }`. Tailwind utilities are layered and
   lose to it, so the toolbar's `display: flex` is declared unlayered in the component.
 - `trix-change` fires during `loadHTML`; loading is not writing, so it is ignored.
