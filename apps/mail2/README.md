@@ -616,8 +616,9 @@ reopened draft's, which Trix wrote. Things that bit:
 
 `#lib/compose/layout` owns the window maths:
 
-- **Default size and chrome:** new panels open 680 wide (`PANEL_DEFAULT_W`)
-  with the writing measure unchanged; the action bar keeps attach/schedule on
+- **Default size and chrome:** new panels open 760 wide (`PANEL_DEFAULT_W`)
+  and the message box opens at 340 once it is being written in, with the writing measure
+  unchanged — the editor itself reaches the pane's edge, so its scrollbar sits there; the action bar keeps attach/schedule on
   the left and discard + Send on the right, and the header shows the autosave
   state (`Saving…` / `Saved HH:MM`) next to the title.
 

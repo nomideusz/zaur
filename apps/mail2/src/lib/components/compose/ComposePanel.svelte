@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { attachmentKind, formatAttachmentSize } from '#lib/compose/attachments';
-	import { EDGE, bodyHeightPx, clamp, clampPanel, computeAutoHeight, computeStep, maximizedRect } from '#lib/compose/layout';
+	import { EDGE, PANEL_MIN_H, bodyHeightPx, clamp, clampPanel, computeAutoHeight, computeStep, maximizedRect } from '#lib/compose/layout';
 	import { filterContacts } from '#lib/compose/recipients';
 	import { compose } from '#lib/compose/store.svelte.ts';
 	import { initials } from '#lib/mail/rows';
@@ -67,11 +67,16 @@
 	const rect = $derived(
 		maximized ? maximizedRect(rootW, rootH) : { x: draft.x, y: draft.y, w: draft.w, h: draft.h }
 	);
-	const height = $derived(maximized ? rect.h : draft.auto ? computeAutoHeight(draft) : rect.h);
+	// An auto height never runs off a short shell: the field column scrolls instead.
+	const height = $derived(
+		maximized || !draft.auto
+			? rect.h
+			: Math.max(PANEL_MIN_H, Math.min(computeAutoHeight(draft), rootH - draft.y - EDGE))
+	);
 	const step = $derived(computeStep(draft));
 	const bodyHeight = $derived(bodyHeightPx(draft));
 	// Full-strength once the box has grown — an equality check dimmed it at 340 (maximized).
-	const bodyOpen = $derived(bodyHeight >= 228);
+	const bodyOpen = $derived(bodyHeight >= 340);
 	const title = $derived(draft.subject.trim() || 'New message');
 	/** What a sheet's bar says, where the subject already has a field of its own. */
 	const sheetTitle = $derived(
@@ -776,9 +781,9 @@
 			onchange={(body, bodyHtml) => compose.patch(draft.id, { body, bodyHtml, bodyOpened: true, sendError: null })}
 			onfocus={() => compose.patch(draft.id, { bodyOpened: true })}
 			onfiles={(files) => compose.attachFiles(draft.id, files)}
-			class="w-full pt-[14px] pb-4 text-[15px] leading-[1.7] text-[var(--z-body)] max-md:text-base {bodyOpen
+			class="-mr-4 pt-[14px] pr-4 pb-4 text-[15px] leading-[1.7] text-[var(--z-body)] max-md:text-base {bodyOpen
 				? 'opacity-100'
-				: 'opacity-68'} {filled ? 'min-h-0 flex-1 max-w-[46em]' : 'max-w-[33em]'}"
+				: 'opacity-68'} {filled ? 'min-h-0 flex-1 [&>*]:max-w-[46em]' : '[&>*]:max-w-[33em]'}"
 			height={filled ? undefined : `${bodyHeight}px`}
 		/>
 

@@ -101,6 +101,9 @@
 		display: block;
 		overflow-y: auto;
 		outline: none;
+		/* The box reaches the pane's edge so its scrollbar sits there; the measure is on the blocks. */
+		scrollbar-width: thin;
+		scrollbar-color: var(--z-line) transparent;
 	}
 	:global(trix-editor.z-rich > div) {
 		margin: 0;

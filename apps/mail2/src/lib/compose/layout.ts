@@ -1,13 +1,13 @@
 import type { Draft } from './types';
 
-export const PANEL_DEFAULT_W = 680;
+export const PANEL_DEFAULT_W = 760;
 export const PANEL_MIN_W = 420;
 export const PANEL_MAX_W = 960;
 export const PANEL_MIN_H = 240;
 export const PANEL_MAX_H = 1000;
 export const EDGE = 8;
 /** Height a draft settles at once it has a recipient and a subject. */
-export const PANEL_TYPICAL_H = 420;
+export const PANEL_TYPICAL_H = 530;
 const CASCADE = 26;
 const GAP = 14;
 /** Shell chrome a maximized panel must not sit under: top bar and status line. */
@@ -31,13 +31,12 @@ export function computeStep(draft: Pick<Draft, 'to' | 'subject'>): 0 | 1 | 2 {
 	return 2;
 }
 
-/** 84 → 112 → 228 → 340: the message box grows as the draft takes shape. */
-export function bodyHeightPx(draft: Draft): 84 | 112 | 228 | 340 {
-	if (draft.stage === 'maximized') return 340;
-	if (draft.bodyOpened) return 228;
+/** 84 → 112 → 340: the message box grows as the draft takes shape. */
+export function bodyHeightPx(draft: Draft): 84 | 112 | 340 {
+	if (draft.stage === 'maximized' || draft.bodyOpened) return 340;
 	if (draft.to.length === 0) return 84;
 	if (draft.subject.trim().length === 0) return 112;
-	return 228;
+	return 340;
 }
 
 /**

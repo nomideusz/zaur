@@ -213,8 +213,8 @@ test('computeStep and bodyHeightPx follow the quiet-guidance ladder', () => {
 	assert.equal(computeStep(draft()), 0);
 	assert.equal(bodyHeightPx(draft()), 84);
 	assert.equal(bodyHeightPx(draft({ to: [chip('a@x.com')] })), 112);
-	assert.equal(bodyHeightPx(draft({ to: [chip('a@x.com')], subject: 'Hi' })), 228);
-	assert.equal(bodyHeightPx(draft({ bodyOpened: true })), 228);
+	assert.equal(bodyHeightPx(draft({ to: [chip('a@x.com')], subject: 'Hi' })), 340);
+	assert.equal(bodyHeightPx(draft({ bodyOpened: true })), 340);
 	assert.equal(bodyHeightPx(draft({ stage: 'maximized' })), 340);
 	assert.equal(computeStep(draft({ to: [chip('a@x.com')] })), 1);
 	assert.equal(computeStep(draft({ to: [chip('a@x.com')], subject: 'Hi' })), 2);
@@ -223,21 +223,21 @@ test('computeStep and bodyHeightPx follow the quiet-guidance ladder', () => {
 test('computeAutoHeight matches the spec formula', () => {
 	// 45 header + 44 To + 45 subject + 84 body + 53 actions = 271
 	assert.equal(computeAutoHeight(draft()), 271);
-	// one chip adds one 32px row; recipient+subject grow the body to 228
+	// one chip adds one 32px row; recipient+subject grow the body to 340
 	assert.equal(
 		computeAutoHeight(draft({ to: [chip('a@x.com')], subject: 'Hi' })),
-		45 + 44 + 32 + 45 + 228 + 53
+		45 + 44 + 32 + 45 + 340 + 53
 	);
 	// A shown Cc row costs the same 44 as To, plus a chip row once it has one.
 	assert.equal(
 		computeAutoHeight(draft({ to: [chip('a@x.com')], subject: 'Hi', ccShown: true, sendError: 'x' })),
-		45 + 44 + 32 + 45 + 228 + 44 + 34 + 53
+		45 + 44 + 32 + 45 + 340 + 44 + 34 + 53
 	);
 	assert.equal(
 		computeAutoHeight(
 			draft({ to: [chip('a@x.com')], subject: 'Hi', ccShown: true, cc: [chip('c@x.com')] })
 		),
-		45 + 44 + 32 + 45 + 228 + 44 + 32 + 53
+		45 + 44 + 32 + 45 + 340 + 44 + 32 + 53
 	);
 });
 
@@ -251,27 +251,27 @@ test('maximizedRect: fills the pane between the top bar and the status line', ()
 
 test('openingPosition: leans from the shell centre toward the button, cascades', () => {
 	const shell = { w: 1400, h: 900 };
-	const centreX = (shell.w - PANEL_DEFAULT_W) / 2; // 360
-	const centreY = (shell.h - PANEL_TYPICAL_H) / 2; // 240
+	const centreX = (shell.w - PANEL_DEFAULT_W) / 2; // 320
+	const centreY = (shell.h - PANEL_TYPICAL_H) / 2; // 185
 
 	const fromLeft = openingPosition({ left: 180, top: 100, right: 200, bottom: 134 }, shell.w, shell.h, 0);
-	assert.deepEqual(fromLeft, { x: 135, y: 157 });
+	assert.deepEqual(fromLeft, { x: 95, y: 120 });
 	const fromRight = openingPosition(
 		{ left: 1240, top: 100, right: 1300, bottom: 134 },
 		shell.w,
 		shell.h,
 		0
 	);
-	assert.deepEqual(fromRight, { x: 502, y: 157 });
+	assert.deepEqual(fromRight, { x: 462, y: 120 });
 
 	// The lean follows the button, but never travels all the way to it.
 	assert.ok(fromLeft.x < centreX && fromRight.x > centreX, 'each leans toward its button');
-	assert.ok(Math.abs(fromLeft.x - centreX) < Math.abs(-90 - centreX), 'but stays nearer the centre');
-	assert.ok(Math.abs(fromRight.x - centreX) < Math.abs(990 - centreX), 'but stays nearer the centre');
+	assert.ok(Math.abs(fromLeft.x - centreX) < Math.abs(-190 - centreX), 'but stays nearer the centre');
+	assert.ok(Math.abs(fromRight.x - centreX) < Math.abs(890 - centreX), 'but stays nearer the centre');
 	assert.ok(fromLeft.y > centreY - PANEL_TYPICAL_H / 2, 'and does not ride the top edge');
 
 	const cascaded = openingPosition({ left: 180, top: 100, right: 200, bottom: 134 }, shell.w, shell.h, 1);
-	assert.deepEqual(cascaded, { x: 161, y: 183 });
+	assert.deepEqual(cascaded, { x: 121, y: 146 });
 });
 
 test('openingPosition: a corner button still opens fully inside the shell', () => {
