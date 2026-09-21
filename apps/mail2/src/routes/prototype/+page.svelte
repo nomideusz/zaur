@@ -1,5 +1,6 @@
 <script lang="ts">
 	import TopBar from '#lib/components/mail/TopBar.svelte';
+	import PhoneMailBar from '#lib/components/mail/PhoneMailBar.svelte';
 	import Sidebar from '#lib/components/mail/Sidebar.svelte';
 	import MailList from '#lib/components/mail/MailList.svelte';
 	import Reader from '#lib/components/mail/Reader.svelte';
@@ -323,6 +324,30 @@
 			onPrevMailbox={selectPrevMailbox}
 			onNextMailbox={selectNextMailbox}
 		/>
+
+		{#if !openThreadId}
+			<PhoneMailBar
+				mailboxes={mockMailboxes}
+				{activeMailbox}
+				sidebarOpen={sidebarVisible}
+				onToggleSidebar={toggleSidebar}
+				{searchQuery}
+				onSearch={(next) => {
+					searchQuery = next;
+					cursorId = null;
+				}}
+				filter={listFilter}
+				onFilter={(value) => {
+					listFilter = value;
+					cursorId = null;
+				}}
+				rows={rowGroups.flatMap((group) => group.rows)}
+				{selection}
+				onSetSelection={(ids) => (selection = ids)}
+				onBulk={() => {}}
+				onNewMessage={() => openCompose()}
+			/>
+		{/if}
 
 		<main
 			class="z-shell relative min-h-0 flex-1"

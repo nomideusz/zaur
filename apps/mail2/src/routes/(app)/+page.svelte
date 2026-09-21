@@ -17,6 +17,7 @@
 	import { contacts as contactsRemote } from '../contacts.remote';
 	import { contactDisplayName } from '@zaur/mail-core';
 	import TopBar from '#lib/components/mail/TopBar.svelte';
+	import PhoneMailBar from '#lib/components/mail/PhoneMailBar.svelte';
 	import { getShell } from '#lib/shell.svelte.ts';
 	import Sidebar from '#lib/components/mail/Sidebar.svelte';
 	import MailList from '#lib/components/mail/MailList.svelte';
@@ -49,6 +50,7 @@
 	/** '' means "showing a folder"; anything else means the list shows results. */
 	let searchQuery = $state('');
 	let topBar = $state<ReturnType<typeof TopBar> | null>(null);
+	let phoneBar = $state<ReturnType<typeof PhoneMailBar> | null>(null);
 	let listFilter = $state<ListFilter>(prefs.unseenByDefault ? 'unseen' : 'all');
 	let cursorId = $state<string | null>(null);
 	let selection = $state<Set<string>>(new Set());
@@ -657,7 +659,8 @@
 				break;
 			case '/':
 				event.preventDefault();
-				topBar?.focusSearch();
+				if (viewport.phone) void phoneBar?.focusSearch();
+				else topBar?.focusSearch();
 				break;
 			case 'Escape':
 				if (selection.size > 0) selection = new Set();
@@ -672,9 +675,9 @@
 <!--
 	A phone reading a thread gets one bar, not two: the reader's own toolbar
 	is taller there and carries everything that screen can do, so the shell's
-	bar (the mark, the drawer toggle, the folder switcher, search) steps out
-	rather than stacking 52px of chrome nobody is reading on top of it. The
-	two panes are both on screen from 768px up, where it stays put.
+	bar steps out. While the list is up, PhoneMailBar is that one bar — folder,
+	filter, search, compose and, once something is selected, the bulk actions —
+	and TopBar hides the shell header below `md` so the two never stack.
 -->
 <TopBar
 	bind:this={topBar}
@@ -698,6 +701,28 @@
 		</p>
 	</div>
 {:else}
+	{#if !openThreadId}
+		<PhoneMailBar
+			bind:this={phoneBar}
+			mailboxes={mailboxList}
+			{activeMailbox}
+			sidebarOpen={sidebarVisible}
+			onToggleSidebar={toggleSidebar}
+			{searchQuery}
+			onSearch={runSearch}
+			filter={listFilter}
+			onFilter={(value) => {
+				listFilter = value;
+				cursorId = null;
+			}}
+			rows={flatRows}
+			{selection}
+			onSetSelection={(ids) => (selection = ids)}
+			onBulk={(action, mailboxId) => void runBulk(action, mailboxId)}
+			busy={bulkBusy}
+			onNewMessage={(anchor) => openCompose(anchor)}
+		/>
+	{/if}
 	<main
 		class="z-shell relative min-h-0 flex-1"
 		data-sidebar={sidebarVisible ? 'open' : 'closed'}

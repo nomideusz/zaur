@@ -152,9 +152,10 @@
 		The header swaps its contents rather than growing a second bar: a list
 		that jumps under you the moment you tick a box is the worst time to move
 		it. With a selection up it wears the correspondence fill, so selection
-		reads as one object with the rows it is about.
+		reads as one object with the rows it is about. On a phone this bar is
+		hidden — PhoneMailBar is the one row, above the panes.
 	-->
-	<div class="shrink-0 border-b border-[var(--z-hairline)] {selection.size > 0 ? 'p-1.5' : ''}">
+	<div class="shrink-0 border-b border-[var(--z-hairline)] max-md:hidden {selection.size > 0 ? 'p-1.5' : ''}">
 		<div
 			class="flex items-center justify-between gap-3 {selection.size > 0
 				? /* 34 + the 6px inset on each side = the plain header's 46, so rows never move */
@@ -437,9 +438,9 @@
 							data-row-id={row.threadId}
 							data-state={isSelected ? 'selected' : isOpen ? 'open' : isCursor ? 'cursor' : 'rest'}
 							data-unread={row.unread ? 'true' : 'false'}
-							class="z-row z-railed group/row grid cursor-pointer items-start gap-x-[11px] rounded-[10px] border py-3 pr-3 pl-[18px] {prefs.showAvatars
-								? 'grid-cols-[18px_30px_minmax(0,1fr)] max-md:grid-cols-[30px_minmax(0,1fr)]'
-								: 'grid-cols-[18px_minmax(0,1fr)] max-md:grid-cols-[minmax(0,1fr)]'}"
+							class="z-row z-railed group/row grid cursor-pointer items-start gap-x-[11px] rounded-[10px] border py-3 pr-3 pl-[18px] max-md:gap-x-1 max-md:py-2.5 max-md:pr-2.5 max-md:pl-2 {prefs.showAvatars
+								? 'grid-cols-[18px_30px_minmax(0,1fr)] max-md:grid-cols-[44px_30px_minmax(0,1fr)]'
+								: 'grid-cols-[18px_minmax(0,1fr)] max-md:grid-cols-[44px_minmax(0,1fr)]'}"
 							class:z-hue-wash={row.unread && !isSelected && !isOpen && !isCursor}
 							aria-current={isOpen ? 'true' : undefined}
 							style="{channelStyle(channel)};--z-rail-inset:12px"
@@ -454,11 +455,13 @@
 							tabindex="-1"
 							aria-pressed={isSelected}
 						>
-							<!-- Selection checkbox -->
+							<!--
+								Selection checkbox. On a phone the drawn box stays 17px and the
+								button grows to 44px, which is the target a thumb can actually hit.
+							-->
 							<button
 								type="button"
-								class="hobday-checkbox !size-[18px] self-center max-md:hidden"
-								data-checked={isSelected}
+								class="flex size-[18px] items-center justify-center self-center max-md:size-11"
 								aria-label={isSelected ? 'Deselect thread' : 'Select thread'}
 								aria-pressed={isSelected}
 								title={isSelected ? 'Deselect thread' : 'Select thread'}
@@ -467,9 +470,11 @@
 									onToggleSelect(row.threadId);
 								}}
 							>
-								<svg class="size-3" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-									<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
-								</svg>
+								<span class="hobday-checkbox !size-[18px]" data-checked={isSelected} aria-hidden="true">
+									<svg class="size-3" viewBox="0 0 16 16" fill="none">
+										<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
+									</svg>
+								</span>
 							</button>
 
 							<!-- The person: their identity tile, the same tone everywhere they
@@ -661,7 +666,9 @@
 		}
 	}
 
-	@media (hover: none) {
+	/* Phone layout has no hover strip: a tap would stick it open over the time,
+	   and the actions already live in the bar. A narrow window is that layout. */
+	@media (hover: none), (max-width: 767px) {
 		.z-row-actions {
 			display: none;
 		}

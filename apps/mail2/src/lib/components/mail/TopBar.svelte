@@ -38,7 +38,9 @@
 	// Mail's stretch of the shell's header. Inside the app it goes into the
 	// layout's bar; `/prototype` has no shell, so there it draws the header itself.
 	const shell = getShell();
-	if (shell) useShellBar(shell, bar, () => className);
+	// On a phone Mail draws PhoneMailBar instead, so this header would be a
+	// second row. Other sections never mount TopBar, and keep the shell header.
+	if (shell) useShellBar(shell, bar, () => `max-md:hidden ${className}`.trim());
 
 	let searchEl = $state<HTMLInputElement | null>(null);
 	/** What is typed, which is only the committed query once Enter says so. */
@@ -269,5 +271,5 @@
 {/snippet}
 
 {#if !shell}
-	<ShellHeader {bar} class={className} />
+	<ShellHeader {bar} class="max-md:hidden {className}" />
 {/if}
