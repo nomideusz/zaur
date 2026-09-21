@@ -867,11 +867,15 @@
 		</div>
 	{/if}
 
-	<!-- Action bar -->
-	<div class="relative flex h-[53px] shrink-0 items-center gap-2 border-t border-[var(--z-hairline)] pr-3 pl-4">
+	<!-- Action bar. On a phone every control is a 44px target and the bar grows to hold them. -->
+	<div
+		class="relative flex shrink-0 items-center border-t border-[var(--z-hairline)] {viewport.phone
+			? 'h-16 gap-1 px-2'
+			: 'h-[53px] gap-2 pr-3 pl-4'}"
+	>
 		<button
 			type="button"
-			class="btn-tactile !size-[30px] !p-0"
+			class="btn-tactile shrink-0 !p-0 {viewport.phone ? '!size-11' : '!size-[30px]'}"
 			aria-label="Attach a file"
 			title="Attach a file"
 			onclick={() => fileInputEl?.click()}
@@ -899,7 +903,7 @@
 					unmountOnExit
 				>
 					<Popover.Trigger
-						class="btn-tactile !h-[30px] !px-2.5 !text-[12px] {draft.sendAt
+						class="btn-tactile shrink-0 {viewport.phone ? '!h-11 !min-w-11 !px-2.5 !text-[14px]' : '!h-[30px] !px-2.5 !text-[12px]'} {draft.sendAt
 							? '!border-[var(--z-ch-needs-solid)] !bg-[var(--z-ch-needs-fill)] !text-[var(--z-ch-needs-ink)] !font-semibold'
 							: ''}"
 						aria-label="Schedule send"
@@ -909,7 +913,8 @@
 							<rect x="2" y="3" width="12" height="11" rx="2" stroke="currentColor" stroke-width="1.4" />
 							<path d="M2 6.5h12M5.5 1.5v3M10.5 1.5v3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
 						</svg>
-						{scheduleLabel}
+						<!-- The word eats the formatting row on a phone; the time stays once one is set. -->
+						<span class={viewport.phone && !draft.sendAt ? 'sr-only' : ''}>{scheduleLabel}</span>
 					</Popover.Trigger>
 					<Portal>
 						<Popover.Positioner style={`z-index: ${overlayZ}`}>
@@ -969,11 +974,11 @@
 						</Popover.Positioner>
 					</Portal>
 				</Popover.Root>
-		<span class="h-5 w-px shrink-0 bg-[var(--z-hairline)]" aria-hidden="true"></span>
-		<RichToolbar id={toolsId} off={draft.plain} class="overflow-x-auto" />
+		<span class="{viewport.phone ? 'h-6' : 'h-5'} w-px shrink-0 bg-[var(--z-hairline)]" aria-hidden="true"></span>
+		<RichToolbar id={toolsId} off={draft.plain} large={viewport.phone} class="overflow-x-auto" />
 		<button
 			type="button"
-			class="z-icon-btn !w-auto shrink-0 px-1.5 text-[11.5px] font-semibold {draft.plain
+			class="z-icon-btn !w-auto shrink-0 font-semibold {viewport.phone ? 'h-11 px-3 text-[14px]' : 'px-1.5 text-[11.5px]'} {draft.plain
 				? '!bg-[var(--z-accent-soft)] !text-[var(--z-accent-edge)]'
 				: ''}"
 			aria-pressed={draft.plain}
@@ -984,7 +989,7 @@
 		</button>
 		<button
 			type="button"
-			class="ml-auto btn-tactile btn-danger !size-[30px] !p-0"
+			class="ml-auto btn-tactile btn-danger shrink-0 !p-0 {viewport.phone ? '!size-11' : '!size-[30px]'}"
 			aria-label="Discard draft"
 			title="Discard draft"
 			onclick={() => compose.discard(draft.id)}

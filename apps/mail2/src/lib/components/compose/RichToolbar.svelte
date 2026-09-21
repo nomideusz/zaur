@@ -12,9 +12,11 @@
 		 */
 		off?: boolean;
 		class?: string;
+		/** Phone: each control is a 44px target. The row scrolls when they do not fit. */
+		large?: boolean;
 	}
 
-	let { id, off = false, class: className = '' }: Props = $props();
+	let { id, off = false, large = false, class: className = '' }: Props = $props();
 
 	const tools = [
 		{ attribute: 'bold', key: 'b', label: 'Bold', glyph: 'B', style: 'font-weight:700' },
@@ -23,11 +25,11 @@
 	];
 </script>
 
-<trix-toolbar {id} class="z-rich-tools flex min-w-0 items-center gap-0.5 {className}" class:z-rich-tools--off={off}>
+<trix-toolbar {id} class="z-rich-tools flex min-w-0 items-center {large ? 'gap-1' : 'gap-0.5'} {className}" class:z-rich-tools--off={off}>
 	{#each tools as tool (tool.attribute)}
 		<button
 			type="button"
-			class="z-icon-btn shrink-0 text-[13px]"
+			class="z-icon-btn shrink-0 text-[13px] {large ? '!size-11' : ''}"
 			data-trix-attribute={tool.attribute}
 			data-trix-key={tool.key}
 			title={tool.label}
@@ -37,24 +39,24 @@
 			<span style={tool.style} aria-hidden="true">{tool.glyph}</span>
 		</button>
 	{/each}
-	<button type="button" class="z-icon-btn shrink-0" data-trix-attribute="href" data-trix-action="link" data-trix-key="k" title="Link" aria-label="Link" tabindex={-1}>
+	<button type="button" class="z-icon-btn shrink-0 {large ? '!size-11' : ''}" data-trix-attribute="href" data-trix-action="link" data-trix-key="k" title="Link" aria-label="Link" tabindex={-1}>
 		<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 			<path d="M6.8 9.2a2.6 2.6 0 0 0 3.7 0l2-2a2.6 2.6 0 0 0-3.7-3.7l-.6.6M9.2 6.8a2.6 2.6 0 0 0-3.7 0l-2 2a2.6 2.6 0 0 0 3.7 3.7l.6-.6" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
 		</svg>
 	</button>
-	<button type="button" class="z-icon-btn shrink-0" data-trix-attribute="bullet" title="Bulleted list" aria-label="Bulleted list" tabindex={-1}>
+	<button type="button" class="z-icon-btn shrink-0 {large ? '!size-11' : ''}" data-trix-attribute="bullet" title="Bulleted list" aria-label="Bulleted list" tabindex={-1}>
 		<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 			<path d="M6.5 4h7M6.5 8h7M6.5 12h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
 			<circle cx="3" cy="4" r="1" fill="currentColor" /><circle cx="3" cy="8" r="1" fill="currentColor" /><circle cx="3" cy="12" r="1" fill="currentColor" />
 		</svg>
 	</button>
-	<button type="button" class="z-icon-btn shrink-0" data-trix-attribute="number" title="Numbered list" aria-label="Numbered list" tabindex={-1}>
+	<button type="button" class="z-icon-btn shrink-0 {large ? '!size-11' : ''}" data-trix-attribute="number" title="Numbered list" aria-label="Numbered list" tabindex={-1}>
 		<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 			<path d="M6.5 4h7M6.5 8h7M6.5 12h7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
 			<path d="M2.4 3l.9-.5v3M2.2 10.2c.3-.5 1.6-.6 1.6.3 0 .7-1.6 1.2-1.6 2h1.8" stroke="currentColor" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round" />
 		</svg>
 	</button>
-	<button type="button" class="z-icon-btn shrink-0" data-trix-attribute="quote" title="Quote" aria-label="Quote" tabindex={-1}>
+	<button type="button" class="z-icon-btn shrink-0 {large ? '!size-11' : ''}" data-trix-attribute="quote" title="Quote" aria-label="Quote" tabindex={-1}>
 		<svg class="size-4" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 			<path d="M3 3v10M6.5 5h6.5M6.5 8h6.5M6.5 11h4" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" />
 		</svg>
