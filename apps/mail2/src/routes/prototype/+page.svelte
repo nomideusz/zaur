@@ -374,6 +374,7 @@
 							drawerOpen = false;
 							cursorId = null;
 						}}
+						onClose={viewport.compact ? () => (drawerOpen = false) : undefined}
 						onNewMessage={() => {
 							drawerOpen = false;
 							openCompose();

@@ -17,7 +17,7 @@
 		href?: string;
 		/** Accessible name; away from home the tooltip adds the way back. */
 		label?: string;
-		/** Runs on click before navigation continues — a phone drawer closes itself. */
+		/** When already home, a click runs this instead of navigating — a phone drawer closes itself. */
 		onNavigate?: () => void;
 		/** Extra classes — e.g. to lift the mark out of a header's flow. */
 		class?: string;
@@ -35,7 +35,15 @@
 	aria-label={title}
 	aria-current={isHome ? 'page' : undefined}
 	data-sveltekit-preload-data="hover"
-	onclick={() => onNavigate?.()}
+	onclick={(event) => {
+		if (!onNavigate) return;
+		// Closing the drawer removes this link. Only do that when we are already
+		// home; otherwise the click never gets to navigate.
+		if (isHome) {
+			event.preventDefault();
+			onNavigate();
+		}
+	}}
 	class="btn-tactile !size-8 shrink-0 !p-0 {className}"
 >
 	<svg class="size-4 text-[var(--z-strong)]" viewBox="0 0 16 16" fill="none" aria-hidden="true">

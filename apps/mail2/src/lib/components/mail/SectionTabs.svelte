@@ -1,3 +1,12 @@
+<script module lang="ts">
+	export const sections = [
+		{ href: '/', label: 'Mail', match: (path: string) => path === '/' },
+		{ href: '/contacts', label: 'Contacts', match: (path: string) => path.startsWith('/contacts') },
+		{ href: '/calendar', label: 'Calendar', match: (path: string) => path.startsWith('/calendar') },
+		{ href: '/settings', label: 'Settings', match: (path: string) => path.startsWith('/settings') }
+	] as const;
+</script>
+
 <script lang="ts">
 	import { page } from '$app/state';
 
@@ -7,13 +16,8 @@
 	 * page cannot claim to be one it is not. The active segment wears the
 	 * correspondence fill — the same tint that marks the active filter and a
 	 * selected row, because "the one you are on" is one idea in this shell.
+	 * The phone drawer imports this same list.
 	 */
-	const sections = [
-		{ href: '/', label: 'Mail', match: (path: string) => path === '/' },
-		{ href: '/contacts', label: 'Contacts', match: (path: string) => path.startsWith('/contacts') },
-		{ href: '/calendar', label: 'Calendar', match: (path: string) => path.startsWith('/calendar') },
-		{ href: '/settings', label: 'Settings', match: (path: string) => path.startsWith('/settings') }
-	] as const;
 
 	let { class: className = '' }: { class?: string } = $props();
 
