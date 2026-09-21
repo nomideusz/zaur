@@ -96,6 +96,8 @@
 	style:height
 	style:transition="height 200ms ease"
 	aria-label="Message"
+	autocapitalize="sentences"
+	enterkeyhint="enter"
 ></trix-editor>
 
 <style>

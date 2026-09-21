@@ -58,7 +58,8 @@
 	/**
 	 * A phone has no window manager either: the panel drops its geometry and
 	 * fills the shell. Drag, resize and maximize go with it, and Send moves up
-	 * into the header — the action bar sits under the on-screen keyboard.
+	 * into the header, where the thumb is. The shell itself lifts with the
+	 * keyboard (`#lib/keyboard`), so this bar stays in the visible strip.
 	 * A shell too short to float a panel in (a phone in landscape, a squat
 	 * desktop window) gets the sheet as well.
 	 */
@@ -403,6 +404,11 @@
 						onblur={commitEdit}
 						size={Math.max(editText.length + 1, 12)}
 						aria-label="Edit {person.name || person.email}"
+						autocomplete="off"
+						autocapitalize="none"
+						autocorrect="off"
+						spellcheck="false"
+						enterkeyhint="done"
 						class="h-[26px] max-w-full min-w-0 rounded-[6px] border px-2 text-[13px] font-medium shadow-[var(--z-shadow-tactile)] focus:outline-none max-md:text-base"
 						style:background-color={theme.fill}
 						style:border-color={theme.stroke}
@@ -469,6 +475,11 @@
 					</Tooltip>
 				{/if}
 			{/each}
+			<!--
+				Names and addresses share the field, so this stays a text keyboard:
+				the email one has no comfortable space, and autocorrect would rewrite
+				an address. Done commits the chip.
+			-->
 			<input
 				id={fieldId(field)}
 				type="text"
@@ -482,6 +493,11 @@
 				aria-controls={listboxId(field)}
 				aria-label={label}
 				placeholder={list.length > 0 ? '' : label}
+				autocomplete="off"
+				autocapitalize="none"
+				autocorrect="off"
+				spellcheck="false"
+				enterkeyhint="done"
 				class="h-[26px] min-w-[120px] flex-1 basis-[120px] border-0 bg-transparent text-sm text-[var(--z-ink)] placeholder:text-[var(--z-faint)] focus:outline-none max-md:text-base"
 			/>
 
@@ -761,6 +777,8 @@
 				type="text"
 				value={draft.subject}
 				placeholder="Subject"
+				autocomplete="off"
+				enterkeyhint="next"
 				oninput={(event) =>
 					compose.patch(draft.id, {
 						subject: (event.currentTarget as HTMLInputElement).value,
@@ -787,6 +805,9 @@
 				style:transition="height 200ms ease"
 				style:scrollbar-width="thin"
 				aria-label="Message"
+				autocomplete="off"
+				autocapitalize="sentences"
+				enterkeyhint="enter"
 			></textarea>
 		{:else}
 			<RichBody

@@ -301,7 +301,7 @@
 </svelte:head>
 
 <!-- Desktop Frame Canvas matching Hobday portfolio presentation -->
-<div class="flex h-svh w-full flex-col items-center justify-center bg-[var(--z-ground)] overflow-hidden text-[var(--z-ink)]">
+<div class="z-screen flex w-full flex-col items-center justify-center overflow-hidden bg-[var(--z-ground)] text-[var(--z-ink)]">
 	<div
 		bind:this={rootEl}
 		class="relative flex h-full w-full max-w-[1780px] flex-col overflow-hidden bg-[var(--z-surface)]"

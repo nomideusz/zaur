@@ -243,7 +243,12 @@
 				bind:this={searchEl}
 				bind:value={draft}
 				type="search"
+				inputmode="search"
 				enterkeyhint="search"
+				autocomplete="off"
+				autocapitalize="off"
+				autocorrect="off"
+				spellcheck="false"
 				aria-label="Search mail"
 				placeholder={activeMailbox ? `Search ${activeMailbox.name}…` : 'Search mail…'}
 				class="z-field h-11 w-full pr-11 pl-3 text-base"

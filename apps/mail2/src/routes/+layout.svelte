@@ -1,5 +1,6 @@
 <script lang="ts">
 	import './layout.css';
+	import { installKeyboardInset } from '#lib/keyboard';
 	import { prefs } from '#lib/settings.svelte.ts';
 
 	let { children } = $props();
@@ -15,6 +16,8 @@
 		if (prefs.theme === 'system') delete root.dataset.theme;
 		else root.dataset.theme = prefs.theme;
 	});
+
+	installKeyboardInset();
 </script>
 
 {@render children()}

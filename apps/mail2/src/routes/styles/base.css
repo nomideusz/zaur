@@ -657,3 +657,27 @@
 		}
 	}
 }
+
+/*
+ * Full-screen shells. On a desk, and on a phone whose browser already shrinks
+ * the layout for the keyboard, this is `100svh`. On iOS the keyboard overlays
+ * instead, and `#lib/keyboard` sets the two variables to the visual viewport
+ * so the shell — and the compose bar at its bottom — sits in the strip that
+ * is still visible. The class is unlayered so a utility cannot put `100svh`
+ * back underneath it.
+ */
+.z-screen {
+	height: 100svh;
+}
+
+@media (hover: none) and (pointer: coarse) {
+	.z-screen {
+		height: var(--z-vv-height, 100svh);
+		transform: translateY(var(--z-vv-top, 0px));
+	}
+
+	html.z-keyboard-open,
+	html.z-keyboard-open body {
+		overflow: hidden;
+	}
+}

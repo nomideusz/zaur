@@ -9,7 +9,7 @@
 </script>
 
 <!-- Ground behind the app column — only visible past the 1780px ceiling. -->
-<div class="flex h-svh w-full flex-col items-center justify-center overflow-hidden bg-[var(--z-ground)] text-[var(--z-ink)]">
+<div class="z-screen flex w-full flex-col items-center justify-center overflow-hidden bg-[var(--z-ground)] text-[var(--z-ink)]">
 	<!-- App column: edge to edge until 1780px, then capped so the chrome at each
 	     end stays within reach of the content in the middle. -->
 	<div

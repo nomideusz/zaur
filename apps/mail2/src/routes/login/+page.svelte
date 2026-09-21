@@ -59,7 +59,7 @@
 	<meta name="robots" content="noindex" />
 </svelte:head>
 
-<div class="flex min-h-svh flex-col items-center justify-center gap-5 bg-[var(--z-canvas)] px-6 py-10 text-[var(--z-ink)]">
+<div class="z-screen flex w-full flex-col items-center justify-center gap-5 overflow-y-auto bg-[var(--z-canvas)] px-6 py-10 text-[var(--z-ink)]">
 	<!-- The card: a top edge in the accent, the wordmark with its Beta chip,
 	     and the fields under a captioned rule. The one screen with no channels
 	     on it, so the accent is the only colour. -->
@@ -105,6 +105,10 @@
 						id="login-email"
 						required
 						autocomplete="username"
+						autocapitalize="none"
+						autocorrect="off"
+						spellcheck="false"
+						enterkeyhint="next"
 						placeholder="you@zaur.app"
 						aria-label="Email"
 						disabled={pending}
@@ -122,6 +126,7 @@
 						id="login-password"
 						required
 						autocomplete="current-password"
+						enterkeyhint="go"
 						placeholder="Password"
 						aria-label="Password"
 						disabled={pending}
@@ -140,6 +145,7 @@
 							id="login-totp"
 							inputmode="numeric"
 							autocomplete="one-time-code"
+							enterkeyhint="go"
 							placeholder="Authentication code"
 							aria-label="Authentication code"
 							disabled={pending}
