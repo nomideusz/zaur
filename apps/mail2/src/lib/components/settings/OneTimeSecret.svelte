@@ -27,7 +27,7 @@
 </script>
 
 <div
-	class="z-railed mt-3 rounded-[10px] border border-amber-200 bg-amber-50 p-4"
+	class="z-railed mt-3 rounded-[10px] border border-[var(--z-ch-needs-solid)] bg-[var(--z-ch-needs-fill)] p-4"
 	style:--z-rail="var(--z-ch-needs-solid)"
 	role="alert"
 >

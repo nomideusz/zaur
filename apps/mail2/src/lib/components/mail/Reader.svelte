@@ -442,7 +442,7 @@
 				{#if earlier.length > 0 && !earlierExpanded}
 					<button
 						type="button"
-						class="group flex w-full items-center justify-between gap-4 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-surface)] px-3.5 py-2.5 text-left shadow-[var(--z-shadow-tactile)] transition-colors hover:border-[var(--z-line)] hover:bg-[var(--z-hover)]"
+						class="z-card group flex w-full items-center justify-between gap-4 px-3.5 py-2.5 text-left transition-colors hover:border-[var(--z-line)] hover:bg-[var(--z-hover)]"
 						onclick={() => (earlierExpanded = true)}
 					>
 						<span class="flex min-w-0 items-center gap-[9px]">

@@ -168,62 +168,6 @@ export function identityStyle(seed: string): string {
 	return `--z-id-fill:${tone.fill};--z-id-stroke:${tone.stroke};--z-id-ink:${tone.ink}`;
 }
 
-/* ── Compatibility ────────────────────────────────────────────────────── */
-
-/**
- * The v1 shape a few call sites still read (recipient chips, the account
- * button, contacts and calendar). Backed by the identity ramp now, so those
- * sites already show the person's tone; they will move to `identityTone`
- * as they are touched.
- */
-export interface HobdayColorTheme {
-	name: string;
-	bg: string;
-	border: string;
-	text: string;
-	accent: string;
-	checkboxBg: string;
-	badgeBg: string;
-	badgeBorder: string;
-	badgeText: string;
-}
-
-export function getHobdayTheme(seed: string): HobdayColorTheme {
-	const tone = identityTone(seed);
-	return {
-		name: tone.name,
-		bg: tone.fill,
-		border: tone.stroke,
-		text: tone.ink,
-		accent: tone.stroke,
-		checkboxBg: tone.stroke,
-		badgeBg: tone.fill,
-		badgeBorder: tone.stroke,
-		badgeText: tone.ink
-	};
-}
-
-export interface MailboxColors {
-	/** The solid fill of the folder's checkbox, and its rail when it is open. */
-	check: string;
-	badgeBg: string;
-	badgeBorder: string;
-	badgeText: string;
-	channel: Channel;
-}
-
-/** A folder's colours, all from its channel. */
-export function mailboxTheme(kind: string | undefined | null): MailboxColors {
-	const channel = mailboxChannel(kind);
-	return {
-		check: channel.solid,
-		badgeBg: 'var(--z-surface)',
-		badgeBorder: channel.stroke,
-		badgeText: channel.ink,
-		channel
-	};
-}
-
 /* ── Attachments ──────────────────────────────────────────────────────── */
 
 /**

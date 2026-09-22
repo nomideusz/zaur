@@ -63,17 +63,15 @@
 	/* ── Type ─────────────────────────────────────────────────────────── */
 
 	/*
-	 * Uppercase monospace caption — group dividers, the reader's Attachments
-	 * and History rules, sidebar and settings headings, menu captions. `soft`
-	 * is the lightest ink any text may use; `faint` is for rules and glyphs.
+	 * A heading over a group: the sidebar's Mailboxes, the list's date
+	 * dividers, the reader's Attachments and History rules, a contact's Email.
+	 * Sentence case in the body face, the way the calendar list has always set
+	 * its groups. `soft` is the lightest ink any text may use; `faint` is for
+	 * rules and glyphs. A card's title is its `.z-card-head`, not a caption.
 	 */
 	.z-caption {
-		font-family: var(--font-mono);
-		font-size: 11px;
-		font-weight: 600;
-		letter-spacing: 0.1em;
+		font-size: 12.5px;
 		line-height: 1.4;
-		text-transform: uppercase;
 		color: var(--z-soft);
 	}
 
@@ -162,7 +160,7 @@
 		color: var(--z-ch-discard-ink);
 	}
 
-	.btn-danger:hover {
+	.btn-danger:hover:not(:disabled) {
 		background: var(--z-ch-discard-hover);
 		border-color: var(--z-ch-discard-line);
 	}
@@ -240,21 +238,24 @@
 	/* ── Checkboxes ───────────────────────────────────────────────────── */
 
 	/*
-	 * The shell's checkbox. `--z-check` is the fill when it is on: blue-600
-	 * because selection is blue everywhere, or a channel's solid in the
-	 * sidebar, where the box is what says which mailbox is open. On, the border
-	 * takes the same colour as the fill; off, it is faint, and darkens on hover.
+	 * The shell's checkbox, worn the way a calendar event is (`.z-event`): on,
+	 * a pastel of `--z-check` with a stroke of the same hue, a 2px lip under it
+	 * and a dark tick; off, faint, darkening on hover. `--z-check` is blue
+	 * because selection is blue everywhere, a channel's solid in the sidebar
+	 * (the box says which mailbox is open), a calendar's colour in the calendar
+	 * list (the box is its swatch too). Mixed against the theme's surface and
+	 * ink, so one hex serves light and dark.
 	 *
-	 * `.hobday-checkbox` is the drawn version, for a span or a button that is
-	 * really a toggle; `.z-check` is the same thing on a real `<input>`.
+	 * `.hobday-checkbox` is the drawn version, for a span inside a button that
+	 * is really a toggle; `.z-check` is the same thing on a real `<input>`.
+	 * Both draw the tick themselves, in `currentColor`.
 	 */
 	.hobday-checkbox {
-		display: inline-flex;
-		align-items: center;
-		justify-content: center;
+		display: inline-grid;
+		place-content: center;
 		flex-shrink: 0;
-		width: 17px;
-		height: 17px;
+		width: 18px;
+		height: 18px;
 		border-radius: 5px;
 		border: 1.5px solid var(--z-faint);
 		background: var(--z-surface);
@@ -265,34 +266,41 @@
 			color 120ms ease;
 	}
 
-	.hobday-checkbox[data-checked='true'] {
-		border-color: var(--z-check, var(--z-accent));
-		background: var(--z-check, var(--z-accent));
-		color: #ffffff;
-	}
-
 	.z-check {
 		appearance: none;
 		-webkit-appearance: none;
+		display: inline-grid;
+		place-content: center;
 		flex-shrink: 0;
 		width: 18px;
 		height: 18px;
 		border-radius: 5px;
 		border: 1.5px solid var(--z-faint);
 		background: var(--z-surface);
+		color: transparent;
 		cursor: pointer;
 		transition:
 			background-color 120ms ease,
-			border-color 120ms ease;
+			border-color 120ms ease,
+			color 120ms ease;
 	}
 
+	.hobday-checkbox::before,
+	.z-check::before {
+		content: '';
+		width: 12px;
+		height: 12px;
+		background: currentColor;
+		mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.5 8.5l3 3 6-7' stroke='%23000' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+			center / contain no-repeat;
+	}
+
+	.hobday-checkbox[data-checked='true'],
 	.z-check:checked {
-		border-color: var(--z-check, var(--z-accent));
-		background-color: var(--z-check, var(--z-accent));
-		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M3.5 8.5l3 3 6-7' stroke='%23fff' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-		background-repeat: no-repeat;
-		background-position: center;
-		background-size: 12px 12px;
+		border-color: color-mix(in oklab, var(--z-check, var(--z-accent)) 80%, var(--z-surface));
+		border-bottom-width: 2px;
+		background: color-mix(in oklab, var(--z-check, var(--z-accent)) 28%, var(--z-surface));
+		color: color-mix(in oklab, var(--z-check, var(--z-accent)) 30%, var(--z-ink));
 	}
 
 	@media (hover: hover) {
@@ -446,6 +454,54 @@
 	}
 
 	/*
+	 * A card: a settings section, the contact sheet, the repeat panel, an empty
+	 * folder. A hairline frame on the surface, lifted by the tactile shadow, so
+	 * the line-bordered controls inside it stay the strongest edges. Call sites
+	 * set the padding.
+	 */
+	.z-card {
+		border-radius: 10px;
+		border: 1px solid var(--z-hairline);
+		background: var(--z-surface);
+		box-shadow: var(--z-shadow-tactile);
+	}
+
+	/*
+	 * A card's parts, as the repeat panel wears them: a 44px title bar (a
+	 * checkbox, a status chip or an action may sit in it), the body under a
+	 * hairline, and a band on the canvas for the line that sums the card up,
+	 * says why it is locked, or holds its one closing action.
+	 */
+	.z-card-head {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		min-height: 44px;
+		padding: 6px 16px;
+		font-size: 13px;
+		font-weight: 500;
+		color: var(--z-strong);
+	}
+
+	.z-card-body {
+		padding: 16px;
+		border-top: 1px solid var(--z-hairline);
+	}
+
+	.z-card-foot {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 8px;
+		padding: 8px 16px;
+		border-top: 1px solid var(--z-hairline);
+		border-radius: 0 0 9px 9px;
+		background: var(--z-canvas);
+		font-size: 12px;
+		color: var(--z-muted);
+	}
+
+	/*
 	 * The rail — a 3px accent bar down a card's left edge, in the card's
 	 * channel. A list row, the reader's sender card, a toast and each earlier
 	 * message in a thread all wear it. A pseudo-element, absolutely positioned,
@@ -540,7 +596,7 @@
 		color: var(--z-ink-on, var(--z-muted));
 	}
 
-	/* The rule with a label and a count: TODAY ───── 4 */
+	/* The rule with a label and a count: Today ───── 4 */
 	.z-rule {
 		display: flex;
 		align-items: center;
@@ -556,21 +612,20 @@
 
 	/* ── Menus ────────────────────────────────────────────────────────── */
 
+	/* An open menu holds focus itself; the highlighted item shows where the keys are,
+	   so the browser's own ring round the whole menu says nothing. */
 	.z-menu {
 		border-radius: 12px;
 		border: 1px solid var(--z-line);
 		background: var(--z-surface);
 		padding: 6px;
 		box-shadow: var(--z-shadow-menu);
+		outline: none;
 	}
 
 	.z-menu-caption {
-		padding: 5px 9px 7px;
-		font-family: var(--font-mono);
-		font-size: 10px;
-		font-weight: 600;
-		letter-spacing: 0.1em;
-		text-transform: uppercase;
+		padding: 5px 9px 4px;
+		font-size: 12px;
 		color: var(--z-soft);
 	}
 

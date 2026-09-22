@@ -671,6 +671,7 @@
 </script>
 
 <svelte:window onkeydown={handleKeydown} />
+<svelte:head><title>Mail · Zaur Mail</title></svelte:head>
 
 <!--
 	A phone reading a thread gets one bar, not two: the reader's own toolbar

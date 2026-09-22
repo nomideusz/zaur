@@ -115,16 +115,7 @@
 			class="btn-tactile size-11 shrink-0 p-0 {selection.size > 0 ? '!border-[var(--z-accent-line)]' : ''}"
 			aria-label="Selection options"
 		>
-			<span
-				class="flex size-[18px] items-center justify-center rounded-[5px] border-[1.5px] {selection.size > 0
-					? 'border-[var(--z-accent)] bg-[var(--z-accent)] text-white'
-					: 'border-[var(--z-faint)] bg-[var(--z-surface)] text-transparent'}"
-				aria-hidden="true"
-			>
-				<svg class="size-3" viewBox="0 0 16 16" fill="none">
-					<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
-				</svg>
-			</span>
+			<span class="hobday-checkbox" data-checked={selection.size > 0} aria-hidden="true"></span>
 		</Menu.Trigger>
 		<Portal>
 			<Menu.Positioner>

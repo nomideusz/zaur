@@ -940,7 +940,7 @@
 					<Portal>
 						<Popover.Positioner style={`z-index: ${overlayZ}`}>
 							<Popover.Content
-								class="z-menu w-[260px] outline-none"
+								class="z-menu w-[260px]"
 								aria-label="Schedule send"
 							>
 								{#if draft.sendAt}

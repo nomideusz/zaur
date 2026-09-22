@@ -170,16 +170,7 @@
 						class="btn-tactile !h-7 gap-1.5 !px-2 {selection.size > 0 ? '!border-[var(--z-accent-line)]' : ''}"
 						aria-label="Selection options"
 					>
-						<span
-							class="flex size-[15px] items-center justify-center rounded-[4px] border-[1.5px] transition-colors {selection.size > 0
-								? 'border-[var(--z-accent)] bg-[var(--z-accent)] text-white'
-								: 'border-[var(--z-faint)] bg-[var(--z-surface)] text-transparent'}"
-							aria-hidden="true"
-						>
-							<svg class="size-2.5" viewBox="0 0 16 16" fill="none">
-								<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
-							</svg>
-						</span>
+						<span class="hobday-checkbox" data-checked={selection.size > 0} aria-hidden="true"></span>
 						<ActionIcon name="chevron" class="size-3 text-[var(--z-faint)]" />
 					</Menu.Trigger>
 					<Portal>
@@ -387,7 +378,7 @@
 		{:else if groups && groups.length === 0 && searchQuery}
 			<!-- No results is a different empty than an empty folder, and the useful
 			     thing to offer is what the query language can do. -->
-			<div class="mt-3 flex flex-col items-center gap-1 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-surface)] px-4 py-[18px] text-center">
+			<div class="z-card mt-3 flex flex-col items-center gap-1 px-4 py-[18px] text-center">
 				<span class="z-tile mb-1.5" style={channelStyle(CHANNELS.digest)}>
 					<svg class="size-5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						<circle cx="7" cy="7" r="4.4" stroke="currentColor" stroke-width="1.4" />
@@ -408,7 +399,7 @@
 			<!-- The empty folder wears its own channel — the hue its row, switcher
 			     and count already wear — so "Nothing in Memos" is violet, "No
 			     drafts" amber, and only Junk and Trash are red. -->
-			<div class="mt-3 flex flex-col items-center gap-1 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-surface)] px-4 py-[18px] text-center">
+			<div class="z-card mt-3 flex flex-col items-center gap-1 px-4 py-[18px] text-center">
 				<span class="z-tile mb-1.5" style={channelStyle(mailboxChannel(mailbox?.kind))}>
 					<svg class="size-5" viewBox="0 0 16 16" fill="none" aria-hidden="true">
 						<path d="M2.5 4h11a1 1 0 011 1v7a1 1 0 01-1 1h-11a1 1 0 01-1-1V5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.3" />
@@ -470,7 +461,7 @@
 							aria-pressed={isSelected}
 						>
 							<!--
-								Selection checkbox. On a phone the drawn box stays 17px and the
+								Selection checkbox. On a phone the drawn box stays 18px and the
 								button grows to 44px, which is the target a thumb can actually hit.
 							-->
 							<button
@@ -484,11 +475,7 @@
 									onToggleSelect(row.threadId);
 								}}
 							>
-								<span class="hobday-checkbox !size-[18px]" data-checked={isSelected} aria-hidden="true">
-									<svg class="size-3" viewBox="0 0 16 16" fill="none">
-										<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
-									</svg>
-								</span>
+								<span class="hobday-checkbox" data-checked={isSelected} aria-hidden="true"></span>
 							</button>
 
 							<!-- The person: their identity tile, the same tone everywhere they

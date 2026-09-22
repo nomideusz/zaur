@@ -82,8 +82,8 @@
 	const chipOff = 'border-[var(--z-line)] bg-[var(--z-surface)] text-[var(--z-strong)] hover:bg-[var(--z-hover)]';
 </script>
 
-<div class="rounded-[10px] border border-[var(--z-line)] bg-[var(--z-surface)]">
-	<label class="flex cursor-pointer items-center gap-2.5 px-3 py-2.5 text-[13px] font-medium text-[var(--z-strong)]">
+<div class="z-card">
+	<label class="z-card-head cursor-pointer">
 		<input
 			type="checkbox"
 			class="z-check"
@@ -95,7 +95,7 @@
 	</label>
 
 	{#if recurrence}
-		<div class="flex flex-col gap-3 border-t border-[var(--z-hairline)] px-3 py-3">
+		<div class="z-card-body flex flex-col gap-3">
 			<div class="flex flex-wrap items-center gap-2">
 				<span class="text-[12.5px] text-[var(--z-soft)]">Every</span>
 				<input
@@ -128,7 +128,7 @@
 						<label class="{chip} {on ? chipOn : chipOff} !px-2">
 							<input
 								type="checkbox"
-								class="z-check !size-4"
+								class="z-check"
 								checked={on}
 								{disabled}
 								onchange={(changed) => toggleDay(day.code, changed.currentTarget.checked)}
@@ -178,10 +178,7 @@
 		</div>
 
 		{#if summary}
-			<p
-				class="flex items-center gap-2 rounded-b-[9px] border-t border-[var(--z-hairline)] bg-[var(--z-canvas)] px-3 py-2 text-[12px] text-[var(--z-muted)]"
-				aria-live="polite"
-			>
+			<p class="z-card-foot flex-nowrap" aria-live="polite">
 				<svg class="size-3.5 shrink-0 text-[var(--z-faint)]" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M3 8a5 5 0 018.5-3.5M13 8a5 5 0 01-8.5 3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" /><path d="M11.5 2v2.5H9M4.5 14v-2.5H7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg>
 				{summary}
 			</p>

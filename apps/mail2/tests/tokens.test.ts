@@ -97,6 +97,10 @@ test('base: the primitives every surface draws from exist once', () => {
 		'.z-count',
 		'.z-railed',
 		'.z-hue-wash',
+		'.z-card',
+		'.z-card-head',
+		'.z-card-body',
+		'.z-card-foot',
 		'.z-menu',
 		'.z-caption'
 	]) {
@@ -105,9 +109,12 @@ test('base: the primitives every surface draws from exist once', () => {
 	}
 });
 
-test('base: captions are soft, never faint', () => {
-	const caption = base.slice(base.indexOf('.z-caption {'), base.indexOf('}', base.indexOf('.z-caption {')));
-	assert.match(caption, /color: var\(--z-soft\)/);
+test('base: captions are soft sentence case, never faint or caps', () => {
+	for (const cls of ['.z-caption {', '.z-menu-caption {']) {
+		const caption = base.slice(base.indexOf(cls), base.indexOf('}', base.indexOf(cls)));
+		assert.match(caption, /color: var\(--z-soft\)/, cls);
+		assert.doesNotMatch(caption, /uppercase/, cls);
+	}
 });
 
 // --- shell layout ---------------------------------------------------------

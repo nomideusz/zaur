@@ -86,7 +86,7 @@
 			<button type="button" class="btn-tactile !h-[30px]" onclick={onCancel} disabled={saving}>Cancel</button>
 			<button
 				type="submit"
-				class="btn-tactile !h-[30px] btn-primary disabled:!border-[var(--z-hairline)] disabled:!bg-[var(--z-sunken)] disabled:!text-[var(--z-faint)]"
+				class="btn-tactile btn-primary !h-[30px]"
 				disabled={!canSave || saving}
 			>
 				{saving ? 'Saving…' : 'Save'}
@@ -97,7 +97,7 @@
 	<div class="min-h-0 flex-1 overflow-y-auto px-6 py-5 max-md:px-4">
 		<div class="mx-auto flex max-w-[560px] flex-col gap-4">
 			{#if error}
-				<p class="rounded-[8px] border border-red-200 bg-red-50 px-3 py-2 text-[13px] text-[var(--z-ch-discard-ink)]" role="alert">{error}</p>
+				<p class="rounded-[8px] border border-[var(--z-ch-discard-line)] bg-[var(--z-ch-discard-hover)] px-3 py-2 text-[13px] text-[var(--z-ch-discard-ink)]" role="alert">{error}</p>
 			{/if}
 
 			<div class="grid grid-cols-2 gap-3 max-md:grid-cols-1">

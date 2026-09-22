@@ -4,7 +4,7 @@
 	import type { Contact, ContactInput } from '@zaur/mail-core';
 	import SectionShell from '#lib/components/mail/SectionShell.svelte';
 	import ContactEditor from '#lib/components/contacts/ContactEditor.svelte';
-	import { getHobdayTheme } from '#lib/mail/colors';
+	import { identityStyle } from '#lib/mail/colors';
 	import { whoami } from '../../session.remote';
 	import { contacts as contactsRemote, saveContact, deleteContact } from '../../contacts.remote';
 	import { LiveUpdates } from '#lib/mail/live';
@@ -118,7 +118,7 @@
 			? ((parts[0]![0] ?? '') + (parts[1]![0] ?? '')).toUpperCase()
 			: name.slice(0, 2).toUpperCase();
 	};
-	const theme = (contact: Contact) => getHobdayTheme(contact.emails[0]?.address ?? contactDisplayName(contact));
+	const avatar = (contact: Contact) => identityStyle(contact.emails[0]?.address ?? contactDisplayName(contact));
 
 	/** On a phone the pane shown is the one with something in it. */
 	const detailOpen = $derived(mode !== 'view' || selected !== null);
@@ -178,7 +178,7 @@
 					</div>
 				{:else if !contactsState}
 					<ul class="space-y-1 p-3">
-						{#each [1, 2, 3, 4, 5, 6] as n (n)}<li class="h-[44px] animate-pulse rounded-[8px] bg-[var(--z-sunken)]"></li>{/each}
+						{#each [1, 2, 3, 4, 5, 6] as n (n)}<li class="z-skeleton h-[44px] rounded-[8px] bg-[var(--z-sunken)]"></li>{/each}
 					</ul>
 				{:else if !contactsState.supported}
 					<p class="p-6 text-[13px] leading-relaxed text-[var(--z-soft)]">
@@ -199,7 +199,6 @@
 						</div>
 						<ul role="list">
 							{#each group.items as contact (contact.id)}
-								{@const colors = theme(contact)}
 								{@const isSelected = contact.id === selectedId}
 								<li>
 									<button
@@ -208,14 +207,7 @@
 										onclick={() => open(contact)}
 										aria-current={isSelected ? 'true' : undefined}
 									>
-										<span
-											class="flex size-8 shrink-0 items-center justify-center rounded-[6px] border text-[11px] font-bold"
-											style:background-color={colors.bg}
-											style:border-color={colors.border}
-											style:color={colors.text}
-										>
-											{initials(contact)}
-										</span>
+										<span class="z-avatar" style={avatar(contact)} aria-hidden="true">{initials(contact)}</span>
 										<span class="min-w-0 flex-1">
 											<span class="block truncate text-[13.5px] font-medium text-[var(--z-ink)]">{contactDisplayName(contact)}</span>
 											<span class="block truncate text-[12px] text-[var(--z-soft)]">
@@ -248,7 +240,6 @@
 					}}
 				/>
 			{:else if selected}
-				{@const colors = theme(selected)}
 				<div class="flex h-full flex-col">
 					<div class="flex items-center gap-2 border-b border-[var(--z-hairline)] px-6 py-3 max-md:px-3">
 						<button type="button" class="btn-tactile !size-[30px] !p-0 md:hidden" aria-label="Back to the list" onclick={() => (selectedId = null)}>
@@ -261,21 +252,14 @@
 								Write
 							</a>
 							<button type="button" class="btn-tactile !h-[30px]" onclick={() => (mode = 'edit')}>Edit</button>
-							<button type="button" class="btn-tactile !h-[30px] !text-[var(--z-ch-discard-ink)]" disabled={saving} onclick={() => remove(selected!)}>Delete</button>
+							<button type="button" class="btn-tactile btn-danger !h-[30px]" disabled={saving} onclick={() => remove(selected!)}>Delete</button>
 						</div>
 					</div>
 					<div class="min-h-0 flex-1 overflow-y-auto px-8 py-6 max-md:px-4">
 						<!-- A person is carried by the avatar tile; the card around it stays neutral,
 						     because a surface hue means a channel, not who someone is. -->
-						<div class="flex items-center gap-4 rounded-[10px] border border-[var(--z-hairline)] bg-[var(--z-surface)] p-4 shadow-[var(--z-shadow-tactile)]">
-							<span
-								class="flex size-14 shrink-0 items-center justify-center rounded-[8px] border text-[18px] font-bold"
-								style:background-color={colors.bg}
-								style:border-color={colors.border}
-								style:color={colors.text}
-							>
-								{initials(selected)}
-							</span>
+						<div class="z-card flex items-center gap-4 p-4">
+							<span class="z-avatar !size-14 !text-[18px]" style={avatar(selected)} aria-hidden="true">{initials(selected)}</span>
 							<div class="min-w-0">
 								<h2 class="truncate text-[18px] font-bold tracking-tight text-[var(--z-ink)]">{contactDisplayName(selected)}</h2>
 								{#if selected.nickname}<p class="text-[13px] text-[var(--z-soft)]">“{selected.nickname}”</p>{/if}

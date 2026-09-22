@@ -123,8 +123,8 @@
 					<li>
 						<!--
 							A checkbox row in the folder's channel: the open folder takes the
-							channel's fill and stroke, its rail lights, its box fills with the
-							channel's solid. A closed folder is plain, and the box says so.
+							channel's fill and stroke, its rail lights, its box ticks in the
+							channel's hue. A closed folder is plain, and the box says so.
 						-->
 						<button
 							type="button"
@@ -136,11 +136,7 @@
 							aria-current={isSelected ? 'true' : undefined}
 							onclick={() => onSelectMailbox(mailbox.id)}
 						>
-							<span class="hobday-checkbox" data-checked={isSelected} aria-hidden="true">
-								<svg class="size-[11px]" viewBox="0 0 16 16" fill="none">
-									<path d="M3.5 8.5l3 3 6-7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" />
-								</svg>
-							</span>
+							<span class="hobday-checkbox" data-checked={isSelected} aria-hidden="true"></span>
 							<span class="min-w-0 flex-1 truncate">{mailbox.name}</span>
 							{#if mailbox.unread > 0}
 								<span
