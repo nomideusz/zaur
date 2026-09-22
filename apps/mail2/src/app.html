@@ -13,12 +13,10 @@
 			content="width=device-width, initial-scale=1, interactive-widget=resizes-content"
 		/>
 		<!--
-			The colour a browser paints around the app: an installed iOS app fills
-			the status bar strip with it, Android the toolbar. It has to be
-			`--z-surface`, the colour of the app's own top bar — it used to be
-			`--z-ground`, which only shows past the 1780px ceiling, so a phone got a
-			grey band above a white app and whatever blur iOS draws up there had a
-			hard edge to smear. Same colour above and below, nothing to blur.
+			The colour Android paints its toolbar, and iOS before 26 its status
+			bar: `--z-surface`, the colour of the app's own top bar. iOS 26+
+			ignores it and takes the strip from the page — see `.z-screen` in
+			styles/base.css.
 		-->
 		<meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
 		<meta name="theme-color" content="#161d26" media="(prefers-color-scheme: dark)" />

@@ -729,6 +729,15 @@
 	.z-screen {
 		height: var(--z-vv-height, 100svh);
 		transform: translateY(var(--z-vv-top, 0px));
+		/*
+		 * iOS 26+ paints the status bar strip with the background under the
+		 * page's top edge, but only when a fixed or sticky box holds that edge;
+		 * with none it lays its Liquid Glass blur there instead. Sticky makes
+		 * the shell that box, and moves nothing: nothing it could stick to
+		 * ever scrolls.
+		 */
+		position: sticky;
+		top: 0;
 	}
 
 	html.z-keyboard-open,
