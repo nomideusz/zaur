@@ -196,3 +196,12 @@ test('emptyRule: starts valid enough to edit, not valid enough to compile', () =
 	assert.ok(ruleProblems(blank).length > 0);
 	assert.equal(buildRuleScript([blank]).includes('if '), false);
 });
+
+test('categorize action: addflag cat.<id>, round-trips, validated', () => {
+	const rules = [rule({ actions: [{ type: 'categorize', category: 'receipts' }] })];
+	const script = buildRuleScript(rules);
+	assert.match(script, /require \["imap4flags"\];/);
+	assert.match(script, /addflag "cat\.receipts";/);
+	assert.deepEqual(parseRuleScript(script).rules[0].actions, rules[0].actions);
+	assert.ok(ruleProblems(rule({ actions: [{ type: 'categorize', category: 'nope' }] })).length);
+});

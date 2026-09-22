@@ -16,12 +16,13 @@
 	import { viewport } from '#lib/viewport.svelte.ts';
 	import type { MailboxDTO } from '#lib/mail/types';
 	import type { MessageDetail, MessagePreview } from '@zaur/mail-core';
+	import type { ListFilter } from '../mail.remote';
 
 	let listWidth = $state(480);
 	let sidebarOpen = $state(true);
 	let drawerOpen = $state(false);
 	let selectedMailboxId = $state<string>('inbox');
-	let listFilter = $state<'all' | 'unseen' | 'flagged'>('all');
+	let listFilter = $state<ListFilter>('all');
 	let searchQuery = $state('');
 	let topBar = $state<ReturnType<typeof TopBar> | null>(null);
 	const reader = readerThread('t1');

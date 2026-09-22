@@ -13,6 +13,8 @@
  * with `managed: false`, and the caller is expected to refuse.
  */
 
+import { categoryKeyword, isCategoryId } from './categories.ts';
+
 export type RuleField = 'from' | 'to' | 'cc' | 'subject';
 export type RuleOperator = 'contains' | 'is' | 'startsWith' | 'endsWith';
 /** The keywords the shell already understands elsewhere. */
@@ -27,6 +29,8 @@ export interface RuleCondition {
 export type RuleAction =
 	| { type: 'fileInto'; mailbox: string }
 	| { type: 'addFlag'; flag: RuleFlag }
+	/** A content category (`categories.ts`): the keyword `cat.<id>`, set at delivery. */
+	| { type: 'categorize'; category: string }
 	| { type: 'discard' };
 
 export interface MailRule {
@@ -91,6 +95,8 @@ function actionLines(action: RuleAction): string[] {
 			return [`\tfileinto ${quote(action.mailbox)};`];
 		case 'addFlag':
 			return [`\taddflag ${quote(action.flag)};`];
+		case 'categorize':
+			return [`\taddflag ${quote(categoryKeyword(action.category))};`];
 		case 'discard':
 			return ['\tdiscard;'];
 		default:
@@ -105,7 +111,7 @@ function requiredExtensions(rules: MailRule[]): string[] {
 		if (!rule.enabled) continue;
 		for (const action of rule.actions) {
 			if (action.type === 'fileInto') needed.add('fileinto');
-			if (action.type === 'addFlag') needed.add('imap4flags');
+			if (action.type === 'addFlag' || action.type === 'categorize') needed.add('imap4flags');
 		}
 	}
 	return [...needed].sort();
@@ -127,6 +133,9 @@ export function ruleProblems(rule: MailRule): string[] {
 	}
 	if (rule.actions.some((a) => a.type === 'fileInto' && !a.mailbox.trim())) {
 		problems.push('Choose a folder to file into.');
+	}
+	if (rule.actions.some((a) => a.type === 'categorize' && !isCategoryId(a.category))) {
+		problems.push('Choose a category.');
 	}
 	return problems;
 }
@@ -164,10 +173,8 @@ export function buildRuleScript(rules: MailRule[]): string {
 
 		lines.push(`# ${rule.name.replace(/[\r\n]+/g, ' ')}`);
 		lines.push(`if ${test} {`);
-		const ordered = [
-			...rule.actions.filter((action) => action.type === 'addFlag'),
-			...rule.actions.filter((action) => action.type !== 'addFlag')
-		];
+		const isFlag = (action: RuleAction) => action.type === 'addFlag' || action.type === 'categorize';
+		const ordered = [...rule.actions.filter(isFlag), ...rule.actions.filter((a) => !isFlag(a))];
 		for (const action of ordered) lines.push(...actionLines(action));
 		if (rule.stop) lines.push('\tstop;');
 		lines.push('}');

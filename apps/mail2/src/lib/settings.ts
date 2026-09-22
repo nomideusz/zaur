@@ -25,6 +25,8 @@ export type Prefs = {
 	theme: Theme;
 	/** New messages start as plain text rather than rich. Set in Settings; a panel's own switch is per draft. */
 	composePlain: boolean;
+	/** Let the server ask an AI (TypeSafe) to categorise mail no rule caught. Opt-in: it sends sender, subject and preview off-site. */
+	aiCategories: boolean;
 };
 
 export type Theme = 'system' | 'light' | 'dark';
@@ -39,7 +41,8 @@ export const DEFAULT_PREFS: Prefs = {
 	showAvatars: false,
 	unseenByDefault: false,
 	theme: 'system',
-	composePlain: false
+	composePlain: false,
+	aiCategories: false
 };
 
 /**
@@ -52,7 +55,7 @@ export const DEFAULT_PREFS: Prefs = {
  * sidebar is an overlay drawer, than on a desktop where it is a column.
  *
  * A device-shaped preference stored per account is worse than one stored per
- * device, so these are the six that travel.
+ * device, so these are the ones that travel.
  */
 export const ACCOUNT_PREF_KEYS = [
 	'pageSize',
@@ -60,7 +63,8 @@ export const ACCOUNT_PREF_KEYS = [
 	'showPreview',
 	'showAvatars',
 	'unseenByDefault',
-	'composePlain'
+	'composePlain',
+	'aiCategories'
 ] as const satisfies readonly (keyof Prefs)[];
 
 export type AccountPrefs = Pick<Prefs, (typeof ACCOUNT_PREF_KEYS)[number]>;
@@ -72,7 +76,8 @@ export function accountPrefsOf(prefs: Prefs): AccountPrefs {
 		showPreview: prefs.showPreview,
 		showAvatars: prefs.showAvatars,
 		unseenByDefault: prefs.unseenByDefault,
-		composePlain: prefs.composePlain
+		composePlain: prefs.composePlain,
+		aiCategories: prefs.aiCategories
 	};
 }
 

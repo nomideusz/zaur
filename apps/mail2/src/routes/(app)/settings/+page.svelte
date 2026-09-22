@@ -22,7 +22,8 @@
 		LIST_MIN,
 		LIST_MAX
 	} from '#lib/settings.svelte.ts';
-	import { accountPrefs, setAccountPrefs } from '../../settings.remote';
+	import { accountPrefs, setAccountPrefs, aiCategoriesOffered } from '../../settings.remote';
+	import { CATEGORIES } from '@zaur/mail-core';
 
 	const session = $derived(whoami()?.current ?? null);
 	const identitiesResource = $derived(session ? identities() : undefined);
@@ -38,6 +39,7 @@
 		});
 	});
 	const mailboxesResource = $derived(session ? mailboxes() : undefined);
+	const aiOffered = $derived(session ? aiCategoriesOffered() : undefined);
 	let savingRules = $state(false);
 
 	async function persistRules(next: MailRule[], takeOver: boolean) {
@@ -219,6 +221,31 @@
 	saving={savingRules}
 	onSave={(next, takeOver) => void persistRules(next, takeOver)}
 />
+
+<!-- Categories -->
+<section class={card}>
+	<h2 class="z-caption">Categories</h2>
+	<p class={blurb}>
+		A category names what a message is — it shows as a chip in the list and as a filter.
+		A rule above with <em>Categorise as</em> sets one on delivery; the AI only looks at
+		mail no rule has categorised, so your rules always win.
+	</p>
+	<dl class="mt-3.5 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-[12.5px]">
+		{#each CATEGORIES as category (category.id)}
+			<dt class={rowLabel}>{category.label}</dt>
+			<dd class="text-[var(--z-muted)]">{category.hint}</dd>
+		{/each}
+	</dl>
+	{#if aiOffered?.current}
+		<label class="mt-3.5 flex cursor-pointer items-center justify-between gap-4 border-t border-[var(--z-sunken)] py-[11px]">
+			<span>
+				<span class="block {rowLabel}">Categorise the rest with AI</span>
+				<span class="block text-[12px] text-[var(--z-muted)]">Sends sender, subject and preview of uncategorised mail to TypeSafe. Off by default.</span>
+			</span>
+			<input type="checkbox" class="z-check !size-[19px]" checked={prefs.aiCategories} onchange={(event) => setPref('aiCategories', event.currentTarget.checked)} />
+		</label>
+	{/if}
+</section>
 
 <!-- Reading prefs -->
 <section class={card}>

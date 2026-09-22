@@ -35,6 +35,8 @@ export interface MessagePreview {
 	important: boolean;
 	hasAttachment: boolean;
 	replied?: boolean;
+	/** Content category id (`mail/categories.ts`), when something has classified it. */
+	category?: string;
 }
 
 export interface MessageDetail extends MessagePreview {

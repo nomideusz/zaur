@@ -173,7 +173,7 @@
 
 	const threadsResource = $derived(
 		session && activeMailbox && !searching
-			? threads({ mailboxId: activeMailbox.id, filter: listFilter, limit: prefs.pageSize })
+			? threads({ mailboxId: activeMailbox.id, filter: listFilter, limit: prefs.pageSize, kind: activeMailbox.kind })
 			: undefined
 	);
 

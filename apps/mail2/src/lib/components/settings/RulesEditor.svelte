@@ -7,7 +7,9 @@
 		type RuleCondition,
 		type RuleField,
 		type RuleFlag,
-		type RuleOperator
+		type RuleOperator,
+		CATEGORIES,
+		categoryLabel
 	} from '@zaur/mail-core';
 	import type { MailboxDTO } from '#lib/mail/types';
 	import ActionIcon from '#lib/components/mail/ActionIcon.svelte';
@@ -92,6 +94,7 @@
 	 */
 	function actionChannel(action: RuleAction): Channel {
 		if (action.type === 'discard') return CHANNELS.discard;
+		if (action.type === 'categorize') return CHANNELS.digest;
 		if (action.type === 'addFlag') {
 			if (action.flag === '$important') return CHANNELS.needs;
 			if (action.flag === '\\Flagged') return CHANNELS.flagged;
@@ -104,6 +107,7 @@
 	function actionLabel(action: RuleAction): string {
 		if (action.type === 'discard') return 'Discard';
 		if (action.type === 'addFlag') return flagLabel(action.flag);
+		if (action.type === 'categorize') return categoryLabel(action.category);
 		return `File into ${action.mailbox || '…'}`;
 	}
 
@@ -180,6 +184,7 @@
 			return { type: 'fileInto', mailbox: fileTargets[0]?.name ?? '' };
 		}
 		if (kind === 'discard') return { type: 'discard' };
+		if (kind === 'categorize') return { type: 'categorize', category: CATEGORIES[0]!.id };
 		return {
 			type: 'addFlag',
 			flag: previous?.type === 'addFlag' ? previous.flag : '$important'
@@ -195,8 +200,8 @@
 	<p class="mt-[7px] text-[12.5px] leading-[1.6] text-[var(--z-muted)]">
 		Rules compile to one Sieve script the server runs on delivery, so they apply on every
 		device, whether or not this one is open. A rule is conditions matched <em>all</em> or
-		<em>any</em>, then actions: file into a folder, mark, or discard — and optionally stop
-		testing the rest.
+		<em>any</em>, then actions: file into a folder, mark, categorise, or discard — and
+		optionally stop testing the rest.
 	</p>
 
 	{#if error}
@@ -324,6 +329,7 @@
 									<select class="z-field !h-[30px]" aria-label="Action" value={action.type} onchange={(event) => setAction(rule.id, actionIndex, actionFor(event.currentTarget.value, action))}>
 										<option value="fileInto">File into</option>
 										<option value="addFlag">Mark</option>
+										<option value="categorize">Categorise as</option>
 										<option value="discard">Discard</option>
 									</select>
 									{#if action.type === 'fileInto'}
@@ -336,6 +342,12 @@
 										<select class="z-field min-w-0 flex-1 !h-[30px]" aria-label="Mark as" value={action.flag} onchange={(event) => setAction(rule.id, actionIndex, { type: 'addFlag', flag: event.currentTarget.value as RuleFlag })}>
 											{#each FLAGS as flag (flag.value)}
 												<option value={flag.value}>{flag.label}</option>
+											{/each}
+										</select>
+									{:else if action.type === 'categorize'}
+										<select class="z-field min-w-0 flex-1 !h-[30px]" aria-label="Category" value={action.category} onchange={(event) => setAction(rule.id, actionIndex, { type: 'categorize', category: event.currentTarget.value })}>
+											{#each CATEGORIES as category (category.id)}
+												<option value={category.id}>{category.label}</option>
 											{/each}
 										</select>
 									{:else}

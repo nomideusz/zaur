@@ -1,6 +1,7 @@
 import { extractInlineImages, inlineImageName, rewriteInlineCidImages } from '../email/inline-images';
 import type { JMAPEmail, JMAPBodyPart } from './types';
 import type { Mailbox, MessageAttachment, MessageDetail, MessagePreview } from '../types/mail';
+import { categoryOf } from '../mail/categories.ts';
 
 const ROLE_PRIORITY: Mailbox['role'][] = [
 	'inbox',
@@ -147,7 +148,8 @@ export function mapEmailPreview(email: JMAPEmail, routeMailboxId: string): Messa
 		starred: !!email.keywords?.$flagged,
 		important: !!email.keywords?.$important,
 		hasAttachment: !!email.hasAttachment,
-		replied: !!email.keywords?.$answered
+		replied: !!email.keywords?.$answered,
+		category: categoryOf(email.keywords)
 	};
 }
 

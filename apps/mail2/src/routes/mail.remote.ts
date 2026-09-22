@@ -8,8 +8,11 @@ import {
 	resolveMailboxKind
 } from '@zaur/mail-core';
 import type { MailboxKind, MessageDetail, MessagePreview } from '@zaur/mail-core';
+import { categoryKeyword } from '@zaur/mail-core';
+import { getAccountPrefs, getStoreDb } from '@zaur/server-auth';
 import type { MailboxDTO, ThreadListDTO } from '#lib/mail/types';
-import { connect, requireAccount } from '#lib/server/account';
+import { connect, requireAccount, requireAccountKey } from '#lib/server/account';
+import { categorizeInBackground } from '#lib/server/categorize';
 
 function schema<T>() {
 	return {
@@ -45,19 +48,35 @@ export const mailboxes = query(async (): Promise<MailboxDTO[]> => {
 		);
 });
 
-/** The list header's filter: everything, only unseen, or only what you flagged. */
-export type ListFilter = 'all' | 'unseen' | 'flagged';
+/** The list header's filter: everything, only unseen, only what you flagged, or one category. */
+export type ListFilter = 'all' | 'unseen' | 'flagged' | `cat:${string}`;
+
+/** Folders whose mail is worth categorising: what arrived, not what you sent or threw away. */
+const CATEGORIZED_KINDS: (MailboxKind | null | undefined)[] = ['inbox', 'archive', 'important', 'custom'];
+
+function aiCategoriesOn(): boolean {
+	try {
+		return !!JSON.parse(getAccountPrefs(getStoreDb(), requireAccountKey()) ?? '{}').aiCategories;
+	} catch {
+		return false;
+	}
+}
 
 export const threads = query(
-	schema<{ mailboxId: string; filter?: ListFilter; limit?: number }>(),
-	async ({ mailboxId, filter, limit }): Promise<ThreadListDTO> => {
+	schema<{ mailboxId: string; filter?: ListFilter; limit?: number; kind?: MailboxKind }>(),
+	async ({ mailboxId, filter, limit, kind }): Promise<ThreadListDTO> => {
 		const client = await connect();
 		const { emails } = await client.queryEmails(
 			mailboxId,
 			Math.min(500, Math.max(1, Number(limit) || 50)),
 			0,
-			{ unseenOnly: filter === 'unseen', flaggedOnly: filter === 'flagged' }
+			{
+				unseenOnly: filter === 'unseen',
+				flaggedOnly: filter === 'flagged',
+				keyword: filter?.startsWith('cat:') ? categoryKeyword(filter.slice(4)) : undefined
+			}
 		);
+		if (CATEGORIZED_KINDS.includes(kind) && aiCategoriesOn()) categorizeInBackground(client, emails);
 		return {
 			mailboxId,
 			rows: emails.map((email) => mapEmailPreview(email, mailboxId))

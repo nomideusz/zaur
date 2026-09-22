@@ -2129,12 +2129,14 @@ export class JMAPClient {
 		mailboxId: string,
 		limit = 50,
 		position = 0,
-		options?: { unseenOnly?: boolean; flaggedOnly?: boolean }
+		options?: { unseenOnly?: boolean; flaggedOnly?: boolean; keyword?: string }
 	): Promise<EmailQueryResult> {
 		// One FilterCondition can carry several properties (RFC 8620 §5.5); they AND.
 		const filter: Record<string, unknown> = { inMailbox: mailboxId };
 		if (options?.unseenOnly) filter.notKeyword = '$seen';
 		if (options?.flaggedOnly) filter.hasKeyword = '$flagged';
+		// One hasKeyword per condition; the list offers Flagged or a category, never both.
+		if (options?.keyword) filter.hasKeyword = options.keyword;
 		const response = await this.request([
 			[
 				'Email/query',
@@ -2332,6 +2334,24 @@ export class JMAPClient {
 			['Email/set', { accountId: this.accountId, update }, '0']
 		]);
 		assertEmailSetSucceeded(response, 'Could not update star');
+	}
+
+	/**
+	 * Set or clear keywords across messages in one `Email/set`: `{ id: { 'cat.x': true, 'cat.y': null } }`.
+	 * A keyword patch is set-or-remove (RFC 8621), hence `null` and never `false`.
+	 */
+	async patchKeywords(patches: Record<string, Record<string, true | null>>): Promise<void> {
+		const update: Record<string, Record<string, unknown>> = {};
+		for (const [emailId, keywords] of Object.entries(patches)) {
+			const patch: Record<string, unknown> = {};
+			for (const [keyword, on] of Object.entries(keywords)) patch[`keywords/${keyword}`] = on;
+			update[emailId] = patch;
+		}
+		if (Object.keys(update).length === 0) return;
+		const response = await this.request([
+			['Email/set', { accountId: this.accountId, update }, '0']
+		]);
+		assertEmailSetSucceeded(response, 'Could not update keywords');
 	}
 
 	async toggleImportant(

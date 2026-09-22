@@ -16,6 +16,7 @@ test('ACCOUNT_PREF_KEYS: the device-shaped preferences never travel', () => {
 	assert.equal(ACCOUNT_PREF_KEYS.includes('listWidth' as never), false);
 	assert.equal(ACCOUNT_PREF_KEYS.includes('sidebarOpen' as never), false);
 	assert.deepEqual([...ACCOUNT_PREF_KEYS].sort(), [
+		'aiCategories',
 		'composePlain',
 		'markReadOnOpen',
 		'pageSize',
@@ -25,7 +26,7 @@ test('ACCOUNT_PREF_KEYS: the device-shaped preferences never travel', () => {
 	]);
 });
 
-test('accountPrefsOf: carries only the six, whatever else is set', () => {
+test('accountPrefsOf: carries only the account keys, whatever else is set', () => {
 	const local: Prefs = { ...DEFAULT_PREFS, listWidth: 720, sidebarOpen: false, pageSize: 100 };
 	assert.deepEqual(accountPrefsOf(local), {
 		pageSize: 100,
@@ -33,7 +34,8 @@ test('accountPrefsOf: carries only the six, whatever else is set', () => {
 		showPreview: DEFAULT_PREFS.showPreview,
 		showAvatars: DEFAULT_PREFS.showAvatars,
 		unseenByDefault: DEFAULT_PREFS.unseenByDefault,
-		composePlain: DEFAULT_PREFS.composePlain
+		composePlain: DEFAULT_PREFS.composePlain,
+		aiCategories: DEFAULT_PREFS.aiCategories
 	});
 });
 

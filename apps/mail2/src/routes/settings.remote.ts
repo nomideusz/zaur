@@ -3,6 +3,7 @@ import { query, command } from '$app/server';
 import { getAccountPrefs, getStoreDb, putAccountPrefs } from '@zaur/server-auth';
 import { connect, requireAccountKey } from '#lib/server/account';
 import { ACCOUNT_PREF_KEYS, DEFAULT_PREFS, type AccountPrefs } from '#lib/settings';
+import { aiCategoriesAvailable } from '#lib/server/categorize';
 
 function schema<T>() {
 	return {
@@ -65,6 +66,9 @@ export const setAccountPrefs = command(
 		await accountPrefs().refresh();
 	}
 );
+
+/** Whether this server can categorise mail with AI at all (it needs a TypeSafe key). */
+export const aiCategoriesOffered = query(async (): Promise<boolean> => aiCategoriesAvailable());
 
 export type IdentityDTO = { id: string; email: string; name: string };
 

@@ -32,4 +32,5 @@ export * from './mail/compose-body';
 export * from './mail/thread-list-utils';
 export * from './mail/search-query';
 export * from './mail/sieve-rules';
+export * from './mail/categories';
 export * from './utils/errors';

@@ -4,6 +4,7 @@
 	import type { MailboxDTO } from '#lib/mail/types';
 	import type { RowGroup, ListRow } from '#lib/mail/rows';
 	import type { BulkAction, ListFilter } from '../../../routes/mail.remote';
+	import { CATEGORIES, CATEGORY_OTHER, categoryLabel } from '@zaur/mail-core';
 	import { formatListTime, initials } from '#lib/mail/rows';
 	import {
 		CHANNELS,
@@ -230,6 +231,19 @@
 						<button type="button" class="z-segment !h-6 !px-2.5 @max-[430px]:hidden" aria-pressed={filter === 'flagged'} onclick={() => onFilter('flagged')}>
 							Flagged
 						</button>
+						<!-- Categories are a kind, not a state: one select keeps the group short. -->
+						<select
+							class="z-segment !h-6 !px-2 !pr-1 appearance-none"
+							aria-label="Category"
+							aria-pressed={filter.startsWith('cat:')}
+							value={filter.startsWith('cat:') ? filter : ''}
+							onchange={(event) => onFilter((event.currentTarget.value || 'all') as ListFilter)}
+						>
+							<option value="">Kind…</option>
+							{#each CATEGORIES as category (category.id)}
+								<option value="cat:{category.id}">{category.label}</option>
+							{/each}
+						</select>
 					</div>
 				{/if}
 			</div>
@@ -495,6 +509,8 @@
 										<!-- A chip names state the message carries, never a kind nobody classified. -->
 										{#if row.starred || row.important}
 											<span class="z-chip @max-[430px]:hidden">{row.starred ? 'Flagged' : 'Important'}</span>
+										{:else if row.category && row.category !== CATEGORY_OTHER}
+											<span class="z-chip @max-[430px]:hidden">{categoryLabel(row.category)}</span>
 										{/if}
 										{#if row.messageCount > 1}
 											<span class="z-chip z-chip-filled !tracking-normal !normal-case" title="{row.messageCount} messages in this conversation">
