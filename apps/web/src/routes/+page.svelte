@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'ERPNext 16',
+			desc: 'ERPNext v16 with realtime updates, background jobs, automatic migrations on upgrade and nightly backups to a Railway bucket.',
+			deploy: 'https://railway.com/deploy/erpnext-16',
+			source: 'https://github.com/nomideusz/erpnext-railway'
+		},
+		{
 			name: 'Laya',
 			desc: "Laya's open decision model behind TypeSafe's /v1/systemone API, so Jev SDK code runs on your own server.",
 			deploy: 'https://railway.com/deploy/laya',
