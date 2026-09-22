@@ -109,6 +109,12 @@
 
 	const templates = [
 		{
+			name: 'WordPress Pro',
+			desc: 'WordPress on MariaDB with a Redis object cache, nightly backups to a Railway bucket, and an admin password generated before the site ever goes public.',
+			deploy: 'https://railway.com/deploy/wordpress-pro',
+			source: 'https://github.com/nomideusz/wordpress-railway'
+		},
+		{
 			name: 'ERPNext 16',
 			desc: 'ERPNext v16 with realtime updates, background jobs, automatic migrations on upgrade and nightly backups to a Railway bucket.',
 			deploy: 'https://railway.com/deploy/erpnext-16',
