@@ -109,6 +109,18 @@
 
 	const templates = [
 		{
+			name: 'Minecraft Server',
+			desc: "A Paper server players can join minutes after deploy, run from Crafty's web panel, with nightly backups.",
+			deploy: 'https://railway.com/deploy/minecraft-java',
+			source: 'https://github.com/nomideusz/minecraft-crafty-railway'
+		},
+		{
+			name: 'Odoo 19',
+			desc: 'Odoo 19 with prefork workers, nightly backups to a Railway bucket, and a database manager nobody can reach.',
+			deploy: 'https://railway.com/deploy/odoo-19',
+			source: 'https://github.com/nomideusz/odoo-railway'
+		},
+		{
 			name: 'Mullvad Browser',
 			desc: 'Mullvad Browser in the cloud — Tor-grade anti-fingerprinting without the Tor network.',
 			deploy: 'https://railway.com/deploy/mullvad-browser',
